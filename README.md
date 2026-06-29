@@ -13,6 +13,11 @@ Design your channel library once, then build format-specific codeplugs for the r
 - **Library, then builds** — one master inventory of channels, talk groups, and contacts; per-format builds assemble what each radio needs.
 - **Vendor-neutral core** — radio-specific limits and column mapping live at the import/export boundary only.
 
+## Documentation
+
+- [DESIGN.md](DESIGN.md) — product constitution and architecture
+- [docs/poc-migration/epic-1-context.md](docs/poc-migration/epic-1-context.md) — migration background from codeplug-tool
+
 ## Repository
 
 This repo supersedes the earlier [codeplug-tool](https://github.com/pskillen/codeplug-tool) prototype (archived). Same author, new product thesis and architecture.
