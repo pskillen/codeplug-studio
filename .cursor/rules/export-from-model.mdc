@@ -1,0 +1,49 @@
+---
+description: Export from typed model fields — ban stash-and-replay; document loss; no round-trip test gate
+globs:
+  - "src/core/import-export/**"
+  - "src/core/**/models/**"
+alwaysApply: false
+---
+
+# Export from model
+
+**Critical rule.** When editing related files, if you notice existing code or docs that violate this rule — even outside your current task — **flag it to the user as a high concern** before or alongside your main work. Do not silently ignore, copy the pattern, or defer without mention. Do not attempt to fix if it's outside the original instruction.
+
+Read [DESIGN.md — Design principles](../../DESIGN.md#design-principles) and [DESIGN.md — Testing](../../DESIGN.md#testing).
+
+## What export means here
+
+Import converts CPS wire values into the **library** and **build trait layout**. Export reads `assemble(build, library)` and serialises typed model fields to CPS wire values. The model is the source of truth — including for entities created or edited in the app.
+
+**Re-importing an export may differ.** That is expected. Document loss per format; do not treat round-trip equality as the quality bar.
+
+## Forbidden: stash-and-replay
+
+Do **not** preserve raw vendor column strings in metadata or provenance and prefer them on export. Examples of this anti-pattern:
+
+- `wireColumns: Record<string, string>` or per-format opaque wire bags used to overlay export
+- Per-column replay fields: `dmrIdWire`, `rxToneWire`, `txToneWire`, `squelchWire`, or any `*Wire` cell stash read in export adapters
+- Generic `wireBag`, `importedColumns`, or provenance maps used when computed serialisation differs from the import file
+- Passing tests by replaying the import file instead of serialising from modelled fields
+
+Stash-and-replay hides lossy mappers, breaks edits (model changes ignored when stash wins), and fails for in-app-created entities.
+
+## Required approach
+
+1. **Map at the boundary** — parse wire → typed library/build fields on import; model fields → wire on export (use **mode-aware** rules when CPS sentinels differ by analogue vs digital).
+2. **Extend the model** when a CPS column is not esoteric and export needs it. Prefer existing entity fields when mappers can be fixed.
+3. **Document loss** — if a column is genuinely not modelled, say so in `docs/reference/<format>/` and in tests; do not fake fidelity with a wire stash.
+4. **Thin audit metadata only** — provenance may record import source or merge hints; export code must **never** branch on stashed wire cells instead of model fields.
+
+## Tests
+
+Test import and export **independently** with constructed fixtures per direction. See [DESIGN.md — Required mapping tests](../../DESIGN.md#required-mapping-tests).
+
+- **Wire → internal:** CPS fixture files → expected library + build trait layout.
+- **Internal → wire:** Constructed library + build in memory → expected CPS output.
+- **Round-trip** (`import → export → re-import`) is optional smoke only — never the primary gate.
+
+## Quick check
+
+Before adding metadata that stores CPS cell text: *Will export read this instead of the entity field?* If yes — stop; model the field and fix the mapper.

@@ -31,6 +31,7 @@
 ## Slice 1: AGENTS.md + progress files
 
 **Status:** Complete
+**Commit:** `a33b3fa` — `docs: add AGENTS.md and phase-0 progress tracking`
 
 **Delivered**
 
@@ -40,6 +41,22 @@
 
 ---
 
+## Slice 2: Cursor rules
+
+**Status:** Complete
+
+**Delivered**
+
+- `.cursor/rules/codeplug-studio.mdc`
+- `.cursor/rules/vendor-boundaries.mdc`
+- `.cursor/rules/export-from-model.mdc`
+- `.cursor/rules/documentation-boundaries.mdc`
+- `.cursor/rules/format-agnostic-docs.mdc`
+- `.cursor/rules/layer-boundaries.mdc`
+- `.cursor/rules/library-and-builds.mdc`
+
+---
+
 ## Next
 
-- Slices 2–5: cursor rules, skills, hygiene, PR
+- Slices 3–5: skills, hygiene, PR
