@@ -1,0 +1,36 @@
+# Private operator codeplugs (shared samples live in sample-exports/)
+fixtures/
+local/
+
+# Secrets and local env
+.env
+.env.*
+!.env.example
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editor / IDE (local overrides only — repo keeps .cursor/ rules)
+.idea/
+*.swp
+*.swo
+*~
+
+# Logs and temp
+*.log
+tmp/
+
+# Node / Vite build output
+node_modules/
+dist/
+coverage/
+test-results/
+*.tsbuildinfo
+
+# Operator CPS exports for local testing
+sample-exports/
+
+# Codegen output
+*.generated.ts

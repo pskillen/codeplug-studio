@@ -61,6 +61,7 @@
 ## Slice 3: Cursor skills
 
 **Status:** Complete
+**Commit:** `e0b6cf3` — `chore: adapt cursor skills for codeplug-studio`
 
 **Delivered**
 
@@ -71,6 +72,36 @@
 
 ---
 
+## Slice 4: Doc indexes and repo hygiene
+
+**Status:** Complete
+
+**Delivered**
+
+- `docs/features/README.md`
+- `docs/build/README.md`
+- `docs/poc-migration/README.md`
+- `.gitignore`, `.editorconfig`
+
+---
+
+## Slice 5: Close out and PR
+
+**Status:** In progress
+
+---
+
+## Phase 0 acceptance criteria (#2)
+
+- [x] `DESIGN.md` committed and linked from `README.md`
+- [x] `AGENTS.md` committed; no round-trip fidelity section
+- [x] All seven rules in `.cursor/rules/` present; `no-wire-stash-roundtrip` not ported
+- [x] Four skills adapted under `.cursor/skills/`
+- [x] `docs/features/README.md` exists
+- [x] `.gitignore` covers `node_modules`, `dist`, `.env*`, `sample-exports/`
+
+---
+
 ## Next
 
-- Slices 4–5: hygiene, PR
+- Push branch and open PR `Closes #2`
