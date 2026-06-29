@@ -44,6 +44,7 @@
 ## Slice 2: Cursor rules
 
 **Status:** Complete
+**Commit:** `4dcfee0` — `chore: add cursor rules for Studio architecture`
 
 **Delivered**
 
@@ -57,6 +58,19 @@
 
 ---
 
+## Slice 3: Cursor skills
+
+**Status:** Complete
+
+**Delivered**
+
+- `.cursor/skills/git-workflow/SKILL.md`
+- `.cursor/skills/make-a-plan/SKILL.md`
+- `.cursor/skills/feature-docs/SKILL.md`
+- `.cursor/skills/progress-tracking/SKILL.md`
+
+---
+
 ## Next
 
-- Slices 3–5: skills, hygiene, PR
+- Slices 4–5: hygiene, PR
