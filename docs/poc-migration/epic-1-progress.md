@@ -8,7 +8,7 @@
 
 ## Overall status
 
-**Status:** In progress (Phase 0)
+**Status:** Complete (pending merge)
 
 **Branch:** `2/pskil/design-md`
 
@@ -75,6 +75,7 @@
 ## Slice 4: Doc indexes and repo hygiene
 
 **Status:** Complete
+**Commit:** `2cc9d64` — `chore: add doc indexes and repo hygiene files`
 
 **Delivered**
 
@@ -87,7 +88,7 @@
 
 ## Slice 5: Close out and PR
 
-**Status:** In progress
+**Status:** Complete (pending merge)
 
 ---
 
@@ -99,9 +100,10 @@
 - [x] Four skills adapted under `.cursor/skills/`
 - [x] `docs/features/README.md` exists
 - [x] `.gitignore` covers `node_modules`, `dist`, `.env*`, `sample-exports/`
+- [x] Reviewer/agent can read `DESIGN.md` + `AGENTS.md` without codeplug-tool source
 
 ---
 
 ## Next
 
-- Push branch and open PR `Closes #2`
+- Merge PR; begin Phase 1 scaffold ([#1](https://github.com/pskillen/codeplug-studio/issues/1))

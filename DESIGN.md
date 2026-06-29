@@ -295,7 +295,7 @@ System tests target `core/services` and format adapters, not React routes.
 | 3 — Format wire reference    | `docs/reference/<format>/`                 | Column ↔ type tables, ladders, sentinels                             |
 
 
-See `.cursor/rules/documentation-boundaries.mdc` when added in Phase 0.
+See [`.cursor/rules/documentation-boundaries.mdc`](.cursor/rules/documentation-boundaries.mdc).
 
 ---
 
