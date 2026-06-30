@@ -10,6 +10,8 @@ Instructions for AI agents working in this repository.
 
 **Phase 0** (this branch) is documentation and agent instructions only — no application code yet.
 
+**Phase 1+:** Application code under `src/core/`, `src/integrations/`, `src/app/` with path aliases `@core/*`, `@integrations/*`, `@app/*`.
+
 ## Repository layout
 
 | Path | Role |
