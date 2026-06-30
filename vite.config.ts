@@ -31,6 +31,7 @@ export default defineConfig(({ mode }) => {
       environment: 'jsdom',
       setupFiles: './src/test/setup.ts',
       globals: true,
+      pool: 'threads',
       reporters: isGitHubActions
         ? ['default', ['junit', { outputFile: 'test-results/junit.xml', addFileAttribute: true }]]
         : ['default'],
