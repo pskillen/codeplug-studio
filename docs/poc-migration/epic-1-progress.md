@@ -157,9 +157,9 @@
 ## Phase 1 — core data model (stacked on scaffold)
 
 **Tracking:** [#4](https://github.com/pskillen/codeplug-studio/issues/4)
-**Branch:** `4/pskil/data-model` → base `4/pskil/scaffold-core`
+**Branch:** `4/pskil/data-model` → base `main` (scaffold merged via PR #5)
 
-**Status:** Complete — PR in review
+**Status:** Complete — PR #6 in review
 
 ### Slice 1: Core models + schema version
 
@@ -195,7 +195,6 @@
 
 ## Next
 
-- Merge scaffold PR ([#4](https://github.com/pskillen/codeplug-studio/issues/4))
-- Merge stacked data-model PR into scaffold
+- Merge data-model PR ([#6](https://github.com/pskillen/codeplug-studio/pull/6)) — closes #4
 - Enable GitHub Pages (Actions source) before first release
 - Phase 2: library CRUD UI, map, IndexedDB persistence
