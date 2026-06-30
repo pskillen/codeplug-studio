@@ -99,11 +99,7 @@ export class InMemoryProjectPersistence {
     return this.putRow(this.formatBuilds, row, expectedRevision);
   }
 
-  async deleteEntity(
-    projectId: string,
-    kind: EntityKind,
-    id: string,
-  ): Promise<void> {
+  async deleteEntity(projectId: string, kind: EntityKind, id: string): Promise<void> {
     const map = this.mapForKind(kind);
     if (!map) return;
     map.delete(rowKey(projectId, id));

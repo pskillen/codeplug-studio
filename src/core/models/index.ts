@@ -1,11 +1,6 @@
 export { STUDIO_SCHEMA_VERSION } from './schemaVersion.ts';
 export { newId } from './ids.ts';
-export {
-  initialRevision,
-  nextRevision,
-  isoNow,
-  type PersistableRow,
-} from './revision.ts';
+export { initialRevision, nextRevision, isoNow, type PersistableRow } from './revision.ts';
 export { type ProjectMeta } from './project.ts';
 export {
   type Channel,

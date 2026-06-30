@@ -9,7 +9,8 @@
 ## Overall status
 
 **Phase 0:** Complete (merged `9d70463`)
-**Phase 1 scaffold:** Complete — PR in review (core models in stacked PR)
+**Phase 1 scaffold:** Complete — PR in review
+**Phase 1 data model:** Complete — stacked PR in review
 
 ---
 
@@ -149,12 +150,52 @@
 - [x] CI workflow on PR; Pages workflow on release
 - [x] Placeholder app renders with build footer
 - [x] Layer folders (`src/core`, `src/integrations`, `src/app`) with ESLint boundaries
-- [ ] Core models + persistence — stacked PR `4/pskil/data-model`
+- [x] Core models + persistence — stacked PR `4/pskil/data-model`
+
+---
+
+## Phase 1 — core data model (stacked on scaffold)
+
+**Tracking:** [#4](https://github.com/pskillen/codeplug-studio/issues/4)
+**Branch:** `4/pskil/data-model` → base `4/pskil/scaffold-core`
+
+**Status:** Complete — PR in review
+
+### Slice 1: Core models + schema version
+
+**Commit:** `89f4d26` — `feat(core): add Project Library FormatBuild models`
+
+### Slice 2: Domain helpers + unit tests
+
+**Commit:** `4f2f071` — `test(core): add model and factory unit tests`
+
+### Slice 3: ProjectPersistence port (in-memory)
+
+**Commit:** `fd79b29` — `feat(integrations): add in-memory ProjectPersistence port`
+
+### Slice 4: Feature docs + DESIGN persistence
+
+**Commit:** `ef840ff` — `docs: add data-model hub and update DESIGN persistence`
+
+### Slice 5: Close out
+
+**Commit:** (this PR) — `docs: complete data-model section in epic-1-progress`
+
+---
+
+## Phase 1 data model acceptance criteria (#4)
+
+- [x] `npm run test` — core model + in-memory persistence tests pass
+- [x] `src/core/models/` includes Project, Library entities, FormatBuild, traits registry stub
+- [x] `ProjectPersistence` port in `integrations/` with revision-aware in-memory implementation
+- [x] `STUDIO_SCHEMA_VERSION = 1` defined
+- [x] Data-model doc + types ready for Phase 2 CRUD
 
 ---
 
 ## Next
 
 - Merge scaffold PR ([#4](https://github.com/pskillen/codeplug-studio/issues/4))
-- Merge stacked data-model PR into scaffold (or main after scaffold)
+- Merge stacked data-model PR into scaffold
 - Enable GitHub Pages (Actions source) before first release
+- Phase 2: library CRUD UI, map, IndexedDB persistence

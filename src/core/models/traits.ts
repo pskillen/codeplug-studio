@@ -8,8 +8,7 @@ export const BuildCapabilityTrait = {
   MxNChannelExpansion: 'mxnChannelExpansion',
 } as const;
 
-export type BuildCapabilityTrait =
-  (typeof BuildCapabilityTrait)[keyof typeof BuildCapabilityTrait];
+export type BuildCapabilityTrait = (typeof BuildCapabilityTrait)[keyof typeof BuildCapabilityTrait];
 
 export interface TraitProfile {
   profileId: string;
@@ -43,10 +42,7 @@ export const TRAIT_PROFILES: Record<string, TraitProfile> = {
     profileId: 'chirp-uv5r',
     formatId: 'chirp',
     label: 'CHIRP UV-5R',
-    traits: [
-      BuildCapabilityTrait.FlatMemoryList,
-      BuildCapabilityTrait.PerChannelScanFlag,
-    ],
+    traits: [BuildCapabilityTrait.FlatMemoryList, BuildCapabilityTrait.PerChannelScanFlag],
   },
 };
 

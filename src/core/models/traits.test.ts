@@ -1,9 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import {
-  BuildCapabilityTrait,
-  TRAIT_PROFILES,
-  traitProfileFor,
-} from './traits.ts';
+import { BuildCapabilityTrait, TRAIT_PROFILES, traitProfileFor } from './traits.ts';
 import { STUDIO_SCHEMA_VERSION } from './schemaVersion.ts';
 import { newFormatBuild, newProjectMeta } from '../domain/factories.ts';
 import { nextRevision, initialRevision } from './revision.ts';

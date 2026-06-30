@@ -285,13 +285,13 @@ See [`.cursor/rules/documentation-boundaries.mdc`](.cursor/rules/documentation-b
 
 Aligned with [Epic #1](https://github.com/pskillen/codeplug-studio/issues/1):
 
-| Phase   | Outcome                                                    |
-| ------- | ---------------------------------------------------------- |
-| **0**   | This document, `AGENTS.md`, cursor rules/skills            |
-| **1**   | Scaffold, core models, persistence port (in-memory), CI/Pages      |
+| Phase   | Outcome                                                             |
+| ------- | ------------------------------------------------------------------- |
+| **0**   | This document, `AGENTS.md`, cursor rules/skills                     |
+| **1**   | Scaffold, core models, persistence port (in-memory), CI/Pages       |
 | **2**   | Library UI, map, repeater APIs, IndexedDB persistence — no file I/O |
-| **3**   | Native YAML, Google Drive                                  |
-| **4–6** | CPS formats per epic                                       |
+| **3**   | Native YAML, Google Drive                                           |
+| **4–6** | CPS formats per epic                                                |
 
 ---
 
