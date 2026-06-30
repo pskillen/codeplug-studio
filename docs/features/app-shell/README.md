@@ -8,32 +8,37 @@ Tier-1 reference for the Phase 2 application shell: navigation chrome, route sur
 
 ## Overview
 
-The SPA renders a single `AppLayout` (header + nav + `Outlet` + `BuildFooter`) wrapping all routes under a `HashRouter`. A `ProjectProvider` supplies project state to the tree via the `useProjects()` hook.
+The SPA uses Mantine `AppShell` with two-section navigation (primary + section nav), matching the codeplug-tool UI kit. `ProjectProvider` supplies project state via `useProjects()`.
 
 ```text
 ProjectProvider
 └─ HashRouter
-   └─ AppLayout (header/nav + Outlet + footer)
+   └─ AppLayout (AppShell: header + AppNav + SectionNav + Outlet + footer)
       ├─ /          Projects (lifecycle UI)
-      ├─ /library   Library      (placeholder → #10)
-      ├─ /map       Map          (placeholder → #11)
-      ├─ /reports   Reports      (placeholder → #12)
+      ├─ /library   Library inventory + entity editors
+      ├─ /map       Channel map
+      ├─ /reports   Library summary
+      ├─ /reference Reference tools
       ├─ /settings  Settings shell
       └─ /help      Help shell
 ```
 
+UI primitives live in `src/app/components/ui/` (ported from codeplug-tool). Dev styleguide: `/#/styleguide` (unlinked).
+
 ## Routes
 
-| Path         | Surface   | Status                                  |
-| ------------ | --------- | --------------------------------------- |
-| `/`          | Projects  | Lifecycle UI (create/switch/rename/del) |
-| `/library`   | Library   | CRUD UI — Ticket #10                    |
-| `/map`       | Map       | Channel map — Ticket #11                |
-| `/repeaters` | Repeaters | Directory search/import — Ticket #11    |
-| `/reports`   | Reports   | Library summary — Ticket #12            |
-| `/reference` | Reference | Maidenhead, band plan — Ticket #12      |
-| `/settings`  | Settings  | Shell content                           |
-| `/help`      | Help      | Shell content                           |
+| Path                                      | Surface                 | Status                                  |
+| ----------------------------------------- | ----------------------- | --------------------------------------- |
+| `/`                                       | Projects                | Lifecycle UI (create/switch/rename/del) |
+| `/library`                                | Library                 | Entity CRUD — Ticket #10                |
+| `/library/channels/add-from-ukrepeater`   | Add from ukrepeater.net | Repeater directory import               |
+| `/library/channels/add-from-brandmeister` | Add from BrandMeister   | Repeater directory import               |
+| `/map`                                    | Map                     | Channel map — Ticket #11                |
+| `/reports`                                | Reports                 | Library summary — Ticket #12            |
+| `/reference`                              | Reference               | Maidenhead, band plan — Ticket #12      |
+| `/settings`                               | Settings                | Shell content                           |
+| `/help`                                   | Help                    | Shell content                           |
+| `/styleguide`                             | Styleguide              | Hidden dev page (UI kit demos)          |
 
 Routes that need a project gate on an active project and link back to Projects when none is selected.
 

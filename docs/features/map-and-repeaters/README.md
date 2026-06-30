@@ -1,10 +1,10 @@
 # Map & repeater directories
 
-Tier-1 reference for the Phase 2 channel **map** and **repeater directory** import.
+Tier-1 reference for the Phase 2 channel **map** and **repeater directory** workflows.
 
-**Tracking:** Phase 2 [#11](https://github.com/pskillen/codeplug-studio/issues/11) (Epic [#1](https://github.com/pskillen/codeplug-studio/issues/1))
+**Tracking:** Phase 2 [#11](https://github.com/pskillen/codeplug-studio/issues/11) (Epic [#1](https://github.com/pskillen/codeplug-studio/issues/1)) · UI shell [#8](https://github.com/pskillen/codeplug-studio/issues/8)
 
-**Source:** `src/app/routes/MapPage.tsx`, `src/app/routes/RepeatersPage.tsx`, `src/integrations/repeaters/`, `src/core/domain/maidenhead.ts`
+**Source:** `src/app/routes/MapPage.tsx`, `src/app/routes/library/AddFrom*Page.tsx`, `src/app/components/repeaters/`, `src/integrations/repeaters/`, `src/core/domain/maidenhead.ts`
 
 ## Map (`/map`)
 
@@ -12,16 +12,28 @@ Plots library channels that have a location (`useLocation` + `location`) on a [r
 
 Leaflet's default marker assets are repointed at bundled URLs once in `src/app/components/map/leafletSetup.ts` (the usual Vite + Leaflet icon fix).
 
-## Repeater directories (`/repeaters`)
+## Repeater directories (library workflows)
 
-Search public directories and add results to the library as **vendor-neutral channels**:
+Repeater search is **not** a top-level nav item. It follows the codeplug-tool pattern:
+
+| Workflow                             | Entry point                                                               | Behaviour                                                                 |
+| ------------------------------------ | ------------------------------------------------------------------------- | ------------------------------------------------------------------------- |
+| **New channel from reference**       | Library section nav → _Add from ukrepeater.net_ / _Add from BrandMeister_ | Search a public directory; add results as vendor-neutral library channels |
+| **Check and update current channel** | Channel editor → _Check against directory_                                | Fetch by callsign; diff local fields vs directory; apply selected updates |
+
+Routes:
+
+- `/library/channels/add-from-ukrepeater`
+- `/library/channels/add-from-brandmeister`
+
+### Sources
 
 | Source                  | Client                                       | Search by         | Notes                                             |
 | ----------------------- | -------------------------------------------- | ----------------- | ------------------------------------------------- |
 | UK repeater (RSGB ETCC) | `searchUkRepeatersByCallsign` / `…ByLocator` | callsign, locator | `tx`/`rx` in Hz, `ctcss` Hz, Maidenhead `locator` |
 | BrandMeister            | `searchBrandmeisterByCallsign`               | callsign          | DMR devices; `tx`/`rx` MHz strings, `lat`/`lng`   |
 
-Each client normalises its wire shape into a vendor-neutral `RepeaterListing` (`src/integrations/repeaters/types.ts`); `repeaterListingToChannel` maps a listing to a library `Channel` (FM or DMR profile, frequencies in Hz, location from the locator). No wire strings or directory-specific fields leak into the library.
+Each client normalises its wire shape into a vendor-neutral `RepeaterListing` (`src/integrations/repeaters/types.ts`); `repeaterListingToChannel` maps a listing to a library `Channel` (FM or DMR profile, frequencies in Hz, location from the locator). Channel verify uses `diffChannelFromListing` / `buildPatchFromDiff` in `src/integrations/repeaters/channelDiff.ts`.
 
 Frequency convention: `rxFrequencyHz` is what the radio receives (repeater output), `txFrequencyHz` what it transmits (repeater input).
 
@@ -32,4 +44,4 @@ Frequency convention: `rxFrequencyHz` is what the radio receives (repeater outpu
 
 ## Related
 
-- [library](../library/README.md) · [reports-and-reference](../reports-and-reference/README.md)
+- [app-shell](../app-shell/README.md) · [library](../library/README.md) · [reports-and-reference](../reports-and-reference/README.md)
