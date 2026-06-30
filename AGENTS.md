@@ -73,3 +73,16 @@ Follow [`.cursor/skills/git-workflow/SKILL.md`](.cursor/skills/git-workflow/SKIL
 ## Disclaimer
 
 Frequency and site data loaded from user CSVs is for amateur programming convenience. Not authoritative for emergency operations.
+
+## Cursor Cloud specific instructions
+
+Single service: a Vite + React 19 SPA. Uses **npm** (`package-lock.json`); Node version pinned in `.nvmrc` (22). Dependencies are refreshed automatically by the startup update script, so no install step is needed here.
+
+Standard commands live in `package.json` `scripts` (`dev`, `build`, `lint`, `format:check`, `test`); CI runs them in `.github/workflows/ci.yml`.
+
+Non-obvious notes:
+
+- The dev server (`npm run dev`) serves at **`http://localhost:5173/codeplug-studio/`**, not `/` — `vite.config.ts` sets `base: '/codeplug-studio/'`. The bare root returns a 302 redirect to the base path.
+- Routing is hash-based (`HashRouter`), so in-app routes look like `…/codeplug-studio/#/`.
+- `npm run build` runs `tsc -b` before `vite build`, so it doubles as a typecheck.
+- The footer build info (`__BUILD_ENV__`/`__BUILD_VERSION__`) is injected by Vite `define`; locally both show `local`.
