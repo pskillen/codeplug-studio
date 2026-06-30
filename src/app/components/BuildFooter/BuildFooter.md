@@ -15,7 +15,7 @@ None.
 ```tsx
 import BuildFooter from './components/BuildFooter/BuildFooter.tsx';
 
-<BuildFooter />
+<BuildFooter />;
 ```
 
 ## Behaviour
