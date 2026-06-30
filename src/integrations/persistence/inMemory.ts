@@ -1,5 +1,12 @@
 import type { FormatBuild } from '@core/models/formatBuild.ts';
-import type { Channel, Contact, RxGroupList, TalkGroup } from '@core/models/library.ts';
+import type {
+  AnalogContact,
+  Channel,
+  DigitalContact,
+  RxGroupList,
+  TalkGroup,
+  Zone,
+} from '@core/models/library.ts';
 import type { ProjectMeta } from '@core/models/project.ts';
 import { isoNow, nextRevision } from '@core/models/revision.ts';
 import type { EntityKind, PutResult } from './types.ts';
@@ -23,8 +30,10 @@ function checkRevision<T extends { revision: number }>(
 export interface ProjectSeed {
   meta: ProjectMeta;
   channels?: Channel[];
+  zones?: Zone[];
   talkGroups?: TalkGroup[];
-  contacts?: Contact[];
+  digitalContacts?: DigitalContact[];
+  analogContacts?: AnalogContact[];
   rxGroupLists?: RxGroupList[];
   formatBuilds?: FormatBuild[];
 }
@@ -32,8 +41,10 @@ export interface ProjectSeed {
 export class InMemoryProjectPersistence {
   private projects: RowMap<ProjectMeta> = new Map();
   private channels: RowMap<Channel> = new Map();
+  private zones: RowMap<Zone> = new Map();
   private talkGroups: RowMap<TalkGroup> = new Map();
-  private contacts: RowMap<Contact> = new Map();
+  private digitalContacts: RowMap<DigitalContact> = new Map();
+  private analogContacts: RowMap<AnalogContact> = new Map();
   private rxGroupLists: RowMap<RxGroupList> = new Map();
   private formatBuilds: RowMap<FormatBuild> = new Map();
 
@@ -67,6 +78,14 @@ export class InMemoryProjectPersistence {
     return this.putRow(this.channels, row, expectedRevision);
   }
 
+  async getZone(projectId: string, id: string): Promise<Zone | null> {
+    return this.zones.get(rowKey(projectId, id)) ?? null;
+  }
+
+  async putZone(row: Zone, expectedRevision: number | null): Promise<PutResult> {
+    return this.putRow(this.zones, row, expectedRevision);
+  }
+
   async getTalkGroup(projectId: string, id: string): Promise<TalkGroup | null> {
     return this.talkGroups.get(rowKey(projectId, id)) ?? null;
   }
@@ -75,12 +94,23 @@ export class InMemoryProjectPersistence {
     return this.putRow(this.talkGroups, row, expectedRevision);
   }
 
-  async getContact(projectId: string, id: string): Promise<Contact | null> {
-    return this.contacts.get(rowKey(projectId, id)) ?? null;
+  async getDigitalContact(projectId: string, id: string): Promise<DigitalContact | null> {
+    return this.digitalContacts.get(rowKey(projectId, id)) ?? null;
   }
 
-  async putContact(row: Contact, expectedRevision: number | null): Promise<PutResult> {
-    return this.putRow(this.contacts, row, expectedRevision);
+  async putDigitalContact(
+    row: DigitalContact,
+    expectedRevision: number | null,
+  ): Promise<PutResult> {
+    return this.putRow(this.digitalContacts, row, expectedRevision);
+  }
+
+  async getAnalogContact(projectId: string, id: string): Promise<AnalogContact | null> {
+    return this.analogContacts.get(rowKey(projectId, id)) ?? null;
+  }
+
+  async putAnalogContact(row: AnalogContact, expectedRevision: number | null): Promise<PutResult> {
+    return this.putRow(this.analogContacts, row, expectedRevision);
   }
 
   async getRxGroupList(projectId: string, id: string): Promise<RxGroupList | null> {
@@ -111,11 +141,17 @@ export class InMemoryProjectPersistence {
     for (const row of seed.channels ?? []) {
       this.channels.set(rowKey(row.projectId, row.id), { ...row });
     }
+    for (const row of seed.zones ?? []) {
+      this.zones.set(rowKey(row.projectId, row.id), { ...row });
+    }
     for (const row of seed.talkGroups ?? []) {
       this.talkGroups.set(rowKey(row.projectId, row.id), { ...row });
     }
-    for (const row of seed.contacts ?? []) {
-      this.contacts.set(rowKey(row.projectId, row.id), { ...row });
+    for (const row of seed.digitalContacts ?? []) {
+      this.digitalContacts.set(rowKey(row.projectId, row.id), { ...row });
+    }
+    for (const row of seed.analogContacts ?? []) {
+      this.analogContacts.set(rowKey(row.projectId, row.id), { ...row });
     }
     for (const row of seed.rxGroupLists ?? []) {
       this.rxGroupLists.set(rowKey(row.projectId, row.id), { ...row });
@@ -145,16 +181,29 @@ export class InMemoryProjectPersistence {
 
   private mapForKind(
     kind: EntityKind,
-  ): RowMap<Channel | TalkGroup | Contact | RxGroupList | FormatBuild | ProjectMeta> | null {
+  ): RowMap<
+    | Channel
+    | Zone
+    | TalkGroup
+    | DigitalContact
+    | AnalogContact
+    | RxGroupList
+    | FormatBuild
+    | ProjectMeta
+  > | null {
     switch (kind) {
       case 'project':
         return this.projects;
       case 'channel':
         return this.channels;
+      case 'zone':
+        return this.zones;
       case 'talkGroup':
         return this.talkGroups;
-      case 'contact':
-        return this.contacts;
+      case 'digitalContact':
+        return this.digitalContacts;
+      case 'analogContact':
+        return this.analogContacts;
       case 'rxGroupList':
         return this.rxGroupLists;
       case 'formatBuild':

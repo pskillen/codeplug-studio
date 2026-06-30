@@ -1,42 +1,73 @@
 import type { PersistableRow } from './revision.ts';
-import type { ChannelMode, ChannelTone, EntityRef, GeoPoint } from './libraryTypes.ts';
+import type {
+  ChannelMode,
+  ChannelTone,
+  DigitalChannelMode,
+  DMRTimeSlot,
+  EntityRef,
+  GeoPoint,
+} from './libraryTypes.ts';
 
 export type {
   ChannelMode,
   ChannelTone,
   EntityRef,
   GeoPoint,
+  DMRTimeSlot,
   EntityRefKind,
+  AnalogChannelMode,
+  DigitalChannelMode,
 } from './libraryTypes.ts';
+
+export interface AbstractChannelModeProfile {
+  mode: ChannelMode;
+}
+
+export interface ChannelModeProfileFM extends AbstractChannelModeProfile {
+  mode: 'fm' | 'am' | 'ssb-usb' | 'ssb-lsb';
+  squelch: number | null;
+  rxTone: ChannelTone;
+  txTone: ChannelTone;
+}
+
+export interface ChannelModeProfileDMR extends AbstractChannelModeProfile {
+  mode: 'dmr';
+  colourCode: number | null;
+  timeslot: DMRTimeSlot | null;
+  dmrId: number | null;
+  contactRef: EntityRef | null;
+  rxGroupListId: string | null;
+}
 
 export interface Channel extends PersistableRow {
   name: string;
   callsign: string;
-  mode: ChannelMode;
   rxFrequency: number | null;
   txFrequency: number | null;
-  contactRef: EntityRef | null;
-  rxGroupListId: string | null;
   location: GeoPoint | null;
   useLocation: boolean;
-  rxTone: ChannelTone;
-  txTone: ChannelTone;
   power: number | null;
-  squelch: number | null;
   scanSkip: boolean;
   comment: string;
 }
 
 export interface TalkGroup extends PersistableRow {
+  mode: DigitalChannelMode;
   name: string;
-  dmrId: number;
-  colorCode: number | null;
+  digitalId: number;
   comment: string;
 }
 
-export interface Contact extends PersistableRow {
+export interface DigitalContact extends PersistableRow {
+  mode: DigitalChannelMode;
   name: string;
-  dmrId: number;
+  digitalId: number;
+  comment: string;
+}
+
+export interface AnalogContact extends PersistableRow {
+  name: string;
+  code: string;
   comment: string;
 }
 
@@ -49,9 +80,20 @@ export interface RxGroupList extends PersistableRow {
   members: RxGroupListMember[];
 }
 
+export interface Zone extends PersistableRow {
+  name: string;
+  members: EntityRef[];
+  exportScratchChannel: boolean;
+  exportScanList: boolean;
+  scanCarrierFrequencyHz: number | null;
+  comment: string;
+}
+
 export interface Library {
   channels: Channel[];
+  analogContacts: AnalogContact[];
   talkGroups: TalkGroup[];
-  contacts: Contact[];
+  digitalContacts: DigitalContact[];
   rxGroupLists: RxGroupList[];
+  zones: Zone[];
 }

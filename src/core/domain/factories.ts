@@ -1,7 +1,22 @@
 import { newId } from '../models/ids.ts';
-import type { FormatBuild, Library, LibrarySelection } from '../models/index.ts';
+import type {
+  ChannelSelection,
+  ContactSelection,
+  FormatBuild,
+  Library,
+  RxGroupListSelection,
+  TalkGroupSelection,
+  ZoneSelection,
+} from '../models/index.ts';
 import type { ProjectMeta } from '../models/project.ts';
-import type { Channel, Contact, RxGroupList, TalkGroup } from '../models/library.ts';
+import type {
+  AnalogContact,
+  Channel,
+  DigitalContact,
+  RxGroupList,
+  TalkGroup,
+  Zone,
+} from '../models/library.ts';
 import { emptyTraitLayout } from '../models/traitLayout.ts';
 import { initialRevision, isoNow } from '../models/revision.ts';
 import { traitProfileFor } from '../models/traits.ts';
@@ -9,18 +24,27 @@ import { traitProfileFor } from '../models/traits.ts';
 export function emptyLibrary(): Library {
   return {
     channels: [],
+    analogContacts: [],
     talkGroups: [],
-    contacts: [],
+    digitalContacts: [],
     rxGroupLists: [],
+    zones: [],
   };
 }
 
-export function emptyLibrarySelection(): LibrarySelection {
+function emptyFormatBuildSelections(): {
+  channelSelections: ChannelSelection[];
+  zoneSelections: ZoneSelection[];
+  talkGroupSelections: TalkGroupSelection[];
+  rxGroupListSelections: RxGroupListSelection[];
+  contactSelections: ContactSelection[];
+} {
   return {
-    channelIds: [],
-    talkGroupIds: [],
-    contactIds: [],
-    rxGroupListIds: [],
+    channelSelections: [],
+    zoneSelections: [],
+    talkGroupSelections: [],
+    rxGroupListSelections: [],
+    contactSelections: [],
   };
 }
 
@@ -53,8 +77,8 @@ export function newFormatBuild(projectId: string, profileId: string, name?: stri
     formatId: profile.formatId,
     profileId: profile.profileId,
     name: name ?? profile.label,
-    librarySelection: emptyLibrarySelection(),
     layout: emptyTraitLayout(),
+    ...emptyFormatBuildSelections(),
   };
 }
 
@@ -67,37 +91,55 @@ export function newChannel(projectId: string, name: string, callsign = ''): Chan
     updatedAt: now,
     name,
     callsign,
-    mode: 'fm',
     rxFrequency: null,
     txFrequency: null,
-    contactRef: null,
-    rxGroupListId: null,
     location: null,
     useLocation: false,
-    rxTone: 'none',
-    txTone: 'none',
     power: null,
-    squelch: null,
     scanSkip: false,
     comment: '',
   };
 }
 
-export function newTalkGroup(projectId: string, name: string, dmrId: number): TalkGroup {
+export function newTalkGroup(
+  projectId: string,
+  name: string,
+  digitalId: number,
+  mode: TalkGroup['mode'] = 'dmr',
+): TalkGroup {
   const now = isoNow();
   return {
     id: newId(),
     projectId,
     revision: initialRevision(),
     updatedAt: now,
+    mode,
     name,
-    dmrId,
-    colorCode: null,
+    digitalId,
     comment: '',
   };
 }
 
-export function newContact(projectId: string, name: string, dmrId: number): Contact {
+export function newDigitalContact(
+  projectId: string,
+  name: string,
+  digitalId: number,
+  mode: DigitalContact['mode'] = 'dmr',
+): DigitalContact {
+  const now = isoNow();
+  return {
+    id: newId(),
+    projectId,
+    revision: initialRevision(),
+    updatedAt: now,
+    mode,
+    name,
+    digitalId,
+    comment: '',
+  };
+}
+
+export function newAnalogContact(projectId: string, name: string, code = ''): AnalogContact {
   const now = isoNow();
   return {
     id: newId(),
@@ -105,7 +147,7 @@ export function newContact(projectId: string, name: string, dmrId: number): Cont
     revision: initialRevision(),
     updatedAt: now,
     name,
-    dmrId,
+    code,
     comment: '',
   };
 }
@@ -119,5 +161,21 @@ export function newRxGroupList(projectId: string, name: string): RxGroupList {
     updatedAt: now,
     name,
     members: [],
+  };
+}
+
+export function newZone(projectId: string, name: string): Zone {
+  const now = isoNow();
+  return {
+    id: newId(),
+    projectId,
+    revision: initialRevision(),
+    updatedAt: now,
+    name,
+    members: [],
+    exportScratchChannel: false,
+    exportScanList: false,
+    scanCarrierFrequencyHz: null,
+    comment: '',
   };
 }

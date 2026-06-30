@@ -8,16 +8,20 @@ Tier-1 reference for the vendor-neutral **library + format build** model. Wire-f
 
 ## Overview
 
-A **project** holds operator metadata and references many **persistable rows**: library entities (channels, talk groups, contacts, RX group lists) and **format builds**. The library is the RF inventory; builds add trait-shaped organisation for each CPS workflow.
+A **project** holds operator metadata and references many **persistable rows**: library entities (channels, zones, talk groups, contacts, RX group lists) and **format builds**. The library is the RF inventory; builds select library rows with optional per-build name overrides.
 
 ```mermaid
 erDiagram
   ProjectMeta ||--o{ Channel : rows
+  ProjectMeta ||--o{ Zone : rows
   ProjectMeta ||--o{ TalkGroup : rows
-  ProjectMeta ||--o{ Contact : rows
+  ProjectMeta ||--o{ DigitalContact : rows
+  ProjectMeta ||--o{ AnalogContact : rows
   ProjectMeta ||--o{ RxGroupList : rows
   ProjectMeta ||--o{ FormatBuild : rows
-  FormatBuild }o--o{ Channel : librarySelection
+  Zone }o--o{ Channel : members
+  FormatBuild }o--o{ Channel : channelSelections
+  FormatBuild }o--o{ Zone : zoneSelections
   FormatBuild ||--|| TraitLayout : layout
 ```
 
@@ -46,25 +50,33 @@ See [storage.md](../../poc-migration/storage.md) — Phase 1 uses in-memory row 
 
 Vendor-neutral RF semantics only. UUID `id` FKs; `name` is a display label.
 
-| Entity        | Notes                                                                                 |
-| ------------- | ------------------------------------------------------------------------------------- |
-| `Channel`     | Frequency (Hz), mode, callsign, tones, power, `contactRef`, `rxGroupListId`, location |
-| `TalkGroup`   | DMR group call — `dmrId`, optional `colorCode`                                        |
-| `Contact`     | DMR private call                                                                      |
-| `RxGroupList` | Promiscuous RX list — `memberRefs` as `EntityRef[]`                                   |
+| Entity           | Notes                                                                    |
+| ---------------- | ------------------------------------------------------------------------ |
+| `Channel`        | Frequency (Hz), callsign, power, location, scan skip — mode profiles TBD |
+| `Zone`           | First-class grouping — `members` as channel `EntityRef[]`; export flags  |
+| `TalkGroup`      | Digital group call — `mode`, `digitalId`                                 |
+| `DigitalContact` | Digital private call — `mode`, `digitalId`                               |
+| `AnalogContact`  | Analogue call sign / code                                                |
+| `RxGroupList`    | Promiscuous RX list — `members` as talk-group `EntityRef[]`              |
 
-**Zones are not library entities** in Phase 1 — zone grouping is a **build trait** (`TraitLayout`).
+Mode-specific channel fields (`ChannelModeProfileFM`, `ChannelModeProfileDMR`) are sketched for future attachment to `Channel`.
 
 ## Format build
 
 `FormatBuild` — one CPS workflow target within a project:
 
-| Field              | Purpose                                                |
-| ------------------ | ------------------------------------------------------ |
-| `formatId`         | Wire format family (`opengd77`, `chirp`, `dm32`, …)    |
-| `profileId`        | Trait profile key (e.g. `opengd77-1701`, `chirp-uv5r`) |
-| `librarySelection` | Which library entity ids participate                   |
-| `layout`           | `TraitLayout` — trait-shaped organisation              |
+| Field                   | Purpose                                                 |
+| ----------------------- | ------------------------------------------------------- |
+| `formatId`              | Wire format family (`opengd77`, `chirp`, `dm32`, …)     |
+| `profileId`             | Trait profile key (e.g. `opengd77-1701`, `chirp-uv5r`)  |
+| `channelSelections`     | Included channels + optional `overrides.name`           |
+| `zoneSelections`        | Included zones + optional `overrides.name`              |
+| `talkGroupSelections`   | Included talk groups                                    |
+| `contactSelections`     | Included digital or analogue contacts                   |
+| `rxGroupListSelections` | Included RX group lists                                 |
+| `layout`                | `TraitLayout` — export projection / trait-shaped layout |
+
+`TraitLayout` `ZoneGroupingLayout` expresses export-time ordering; library `Zone` rows are the source of truth for membership.
 
 ## Build capability traits
 
@@ -80,7 +92,7 @@ Build UI and layout compose from traits; wire adapters map `assemble(build, libr
 
 ## Factories and validation
 
-- `src/core/domain/factories.ts` — `newProjectMeta`, `newChannel`, `newFormatBuild`, …
+- `src/core/domain/factories.ts` — `newProjectMeta`, `newChannel`, `newZone`, `newFormatBuild`, …
 - `src/core/domain/validation.ts` — vendor-neutral guards (non-empty names, ref targets exist)
 
 ## Implementation status

@@ -10,7 +10,7 @@ Items **skipped**, **incomplete**, or **discovered during execution** — not fu
 
 - [x] Trait enum and profile → trait matrix — `BuildCapabilityTrait` + `TRAIT_PROFILES` stub in Phase 1
 - [x] Trait layout — discriminated union stub (`ZoneGroupingLayout`, `FlatMemoryLayout`) in `traitLayout.ts`
-- [x] Zones — **build-scoped** via `TraitLayout`, not library entities
+- [x] Zones — **library entities** (`Zone` row); builds reference via `zoneSelections`
 - [x] `version-number` cursor skill — shipped in scaffold PR
 
 ## Phase 1 modelling deferrals

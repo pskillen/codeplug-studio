@@ -5,10 +5,15 @@ export { type ProjectMeta } from './project.ts';
 export {
   type Channel,
   type TalkGroup,
-  type Contact,
+  type DigitalContact,
+  type AnalogContact,
   type RxGroupList,
   type RxGroupListMember,
+  type Zone,
   type Library,
+  type AbstractChannelModeProfile,
+  type ChannelModeProfileFM,
+  type ChannelModeProfileDMR,
 } from './library.ts';
 export {
   BuildCapabilityTrait,
@@ -23,10 +28,21 @@ export {
   type FlatMemoryLayout,
   emptyTraitLayout,
 } from './traitLayout.ts';
-export { type FormatBuild, type LibrarySelection } from './formatBuild.ts';
+export {
+  type FormatBuild,
+  type AbstractLibraryEntitySelection,
+  type ChannelSelection,
+  type ZoneSelection,
+  type TalkGroupSelection,
+  type RxGroupListSelection,
+  type ContactSelection,
+} from './formatBuild.ts';
 export type {
+  AnalogChannelMode,
   ChannelMode,
   ChannelTone,
+  DigitalChannelMode,
+  DMRTimeSlot,
   EntityRef,
   EntityRefKind,
   GeoPoint,

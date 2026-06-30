@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { assertNonEmptyName, validateEntityRef } from './validation.ts';
-import { newChannel, newContact, newTalkGroup } from './factories.ts';
-import { emptyLibrary } from './factories.ts';
+import { emptyLibrary, newChannel, newDigitalContact, newTalkGroup, newZone } from './factories.ts';
 
 describe('validation', () => {
   it('rejects empty names', () => {
@@ -21,17 +20,28 @@ describe('validation', () => {
     );
   });
 
-  it('validates contact refs', () => {
+  it('validates digital contact refs', () => {
     const projectId = 'proj-1';
-    const contact = newContact(projectId, 'Alice', 1234567);
-    const library = { ...emptyLibrary(), contacts: [contact] };
-    validateEntityRef({ kind: 'contact', id: contact.id }, library);
+    const contact = newDigitalContact(projectId, 'Alice', 1234567);
+    const library = { ...emptyLibrary(), digitalContacts: [contact] };
+    validateEntityRef({ kind: 'digitalContact', id: contact.id }, library);
+  });
+
+  it('validates zone channel member refs', () => {
+    const projectId = 'proj-1';
+    const channel = newChannel(projectId, 'Local');
+    const zone = newZone(projectId, 'Home');
+    const library = {
+      ...emptyLibrary(),
+      channels: [channel],
+      zones: [{ ...zone, members: [{ kind: 'channel' as const, id: channel.id }] }],
+    };
+    validateEntityRef({ kind: 'channel', id: channel.id }, library);
   });
 
   it('creates channel with defaults', () => {
     const ch = newChannel('p1', 'Local', 'GB3DA');
     expect(ch.callsign).toBe('GB3DA');
-    expect(ch.mode).toBe('fm');
     expect(ch.revision).toBe(1);
   });
 });

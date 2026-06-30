@@ -1,4 +1,4 @@
-/** Build-scoped zone grouping — channels are library entities referenced by id. */
+/** Export-time zone ordering; library `Zone` rows are the source of truth for membership. */
 export interface ZoneGroupingLayout {
   kind: 'zoneGrouping';
   zones: Array<{
