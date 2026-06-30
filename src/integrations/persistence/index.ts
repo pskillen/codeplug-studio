@@ -1,6 +1,11 @@
-export type { PutResult, EntityKind } from './types.ts';
-export {
-  InMemoryProjectPersistence,
-  type ProjectPersistence,
-  type ProjectSeed,
-} from './inMemory.ts';
+export type {
+  PutResult,
+  EntityKind,
+  LibraryEntityKind,
+  PersistenceChange,
+  PersistenceListener,
+  ProjectPersistence,
+  ProjectSeed,
+} from './types.ts';
+export { InMemoryProjectPersistence } from './inMemory.ts';
+export { IndexedDbProjectPersistence, openProjectPersistence } from './indexedDb.ts';

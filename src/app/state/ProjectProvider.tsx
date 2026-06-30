@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import type { ProjectMeta } from '@core/models/project.ts';
+import { loadActiveProjectId, saveActiveProjectId } from '@integrations/preferences/index.ts';
 import { ProjectContext, type ProjectContextValue } from './ProjectContext.ts';
+import { persistence } from './persistence.ts';
 import { ProjectStore } from './projectStore.ts';
 
 interface ProjectProviderProps {
@@ -12,10 +14,14 @@ export default function ProjectProvider({ children }: ProjectProviderProps) {
   // state survives re-renders. A ref (not useMemo) guarantees it is never
   // recreated; callbacks read storeRef.current rather than depending on it.
   const storeRef = useRef<ProjectStore | null>(null);
-  storeRef.current ??= new ProjectStore();
+  storeRef.current ??= new ProjectStore(persistence);
 
   const [projects, setProjects] = useState<ProjectMeta[]>([]);
-  const [activeProjectId, setActiveProjectId] = useState<string | null>(null);
+  // Restore the last active project from localStorage; reconciled against the
+  // loaded project list below in case it was deleted elsewhere.
+  const [activeProjectId, setActiveProjectId] = useState<string | null>(() =>
+    loadActiveProjectId(),
+  );
   const [loading, setLoading] = useState(true);
 
   const refresh = useCallback(async () => {
@@ -27,7 +33,12 @@ export default function ProjectProvider({ children }: ProjectProviderProps) {
     void storeRef
       .current!.list()
       .then((list) => {
-        if (!cancelled) setProjects(list);
+        if (cancelled) return;
+        setProjects(list);
+        // Drop a restored active id that no longer exists.
+        setActiveProjectId((current) =>
+          current && list.some((p) => p.projectId === current) ? current : null,
+        );
       })
       .finally(() => {
         if (!cancelled) setLoading(false);
@@ -36,6 +47,11 @@ export default function ProjectProvider({ children }: ProjectProviderProps) {
       cancelled = true;
     };
   }, []);
+
+  // Persist the active-project selection so it survives reloads.
+  useEffect(() => {
+    saveActiveProjectId(activeProjectId);
+  }, [activeProjectId]);
 
   const createProject = useCallback(
     async (name: string) => {

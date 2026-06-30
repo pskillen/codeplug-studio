@@ -27,7 +27,7 @@ ProjectProvider
 | Path        | Surface  | Status                                  |
 | ----------- | -------- | --------------------------------------- |
 | `/`         | Projects | Lifecycle UI (create/switch/rename/del) |
-| `/library`  | Library  | Placeholder — Ticket #10                |
+| `/library`  | Library  | CRUD UI — Ticket #10                    |
 | `/map`      | Map      | Placeholder — Ticket #11                |
 | `/reports`  | Reports  | Placeholder — Ticket #12                |
 | `/settings` | Settings | Shell content                           |
@@ -43,13 +43,15 @@ State flows through a thin app-state adapter, `ProjectStore` (`src/app/state/pro
 | --------- | ------------------------------------------------------------ |
 | Create    | `newProjectMeta` + empty library seeded; becomes active      |
 | List      | Sorted by name from the port                                 |
-| Switch    | Sets the active project id (UI state only)                   |
+| Switch    | Sets the active project id (persisted to `localStorage`)     |
 | Rename    | Loads meta, `putProjectMeta` with optimistic revision        |
 | Delete    | Removes the project metadata row; clears active id if it was |
 
 ## Persistence note
 
-Phase 2 Ticket #8 uses the **in-memory** `ProjectPersistence` port, so projects live for the browser session only. Durable browser storage (IndexedDB, per-entity rows + revision + cross-tab notify) arrives in Ticket [#9](https://github.com/pskillen/codeplug-studio/issues/9). See [storage.md](../../poc-migration/storage.md).
+Projects and library rows persist durably in the browser via IndexedDB (Ticket [#9](https://github.com/pskillen/codeplug-studio/issues/9)): one row per entity, optimistic `revision` concurrency, and `BroadcastChannel` cross-tab notifications. A shared singleton (`src/app/state/persistence.ts`) backs the whole app. See [storage.md](../../poc-migration/storage.md) and [library](../library/README.md).
+
+The **active-project selection** is remembered across reloads via `localStorage` (`src/integrations/preferences/`), reconciled against the loaded project list on startup. `localStorage` access stays in the integrations layer.
 
 ## Boundaries
 
