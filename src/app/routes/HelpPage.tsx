@@ -11,8 +11,8 @@ export default function HelpPage() {
           <strong>Projects</strong> — create, switch, rename, and delete projects.
         </li>
         <li>
-          <strong>Library</strong> — channels, talk groups, contacts, RX group lists, zones (coming
-          soon).
+          <strong>Library</strong> — create and edit channels, talk groups, contacts, RX group
+          lists, and zones; stored in your browser.
         </li>
         <li>
           <strong>Map &amp; Reports</strong> — visualise and summarise your library (coming soon).

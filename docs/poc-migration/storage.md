@@ -152,11 +152,12 @@ Keep these constraints; defer store names, indexes, and Dexie vs raw IDB to the 
 
 ## Decision log
 
-| Date       | Decision                                                                                                                                                                                                       |
-| ---------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 2026-06-29 | Hybrid persistence: normalised library entities, project/build metadata, trait layout as JSON per build until model stabilises. No prototype blob lift-and-shift; no full normalisation without measured need. |
-| 2026-06-29 | Session vs durable store: in-memory working copy is default SPA pattern, not a rejection of IDB; multi-tab needs an explicit concurrency policy (undecided).                                                   |
-| 2026-06-29 | Multi-tab entity editing is a product driver: per-entity IDB rows + revision/rejection; single-tab lock ruled out. Build-scoped units that get editor tabs should be rows, not layout-blob-only.               |
+| Date       | Decision                                                                                                                                                                                                                                                           |
+| ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| 2026-06-29 | Hybrid persistence: normalised library entities, project/build metadata, trait layout as JSON per build until model stabilises. No prototype blob lift-and-shift; no full normalisation without measured need.                                                     |
+| 2026-06-29 | Session vs durable store: in-memory working copy is default SPA pattern, not a rejection of IDB; multi-tab needs an explicit concurrency policy (undecided).                                                                                                       |
+| 2026-06-29 | Multi-tab entity editing is a product driver: per-entity IDB rows + revision/rejection; single-tab lock ruled out. Build-scoped units that get editor tabs should be rows, not layout-blob-only.                                                                   |
+| 2026-06-30 | Phase 2 (#9) implemented `IndexedDbProjectPersistence`: one object store per entity kind keyed by `[projectId, id]`, optimistic `revision` concurrency, and `BroadcastChannel` cross-tab change notifications. Build `layout` remains JSON until traits stabilise. |
 
 ---
 

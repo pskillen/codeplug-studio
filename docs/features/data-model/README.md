@@ -97,13 +97,13 @@ Build UI and layout compose from traits; wire adapters map `assemble(build, libr
 
 ## Implementation status
 
-| Area                      | Status              |
-| ------------------------- | ------------------- |
-| Core types                | Shipped (Phase 1)   |
-| `ProjectPersistence` port | Shipped — in-memory |
-| IndexedDB persistence     | Phase 2             |
-| Import/export adapters    | Phase 3+            |
-| Library CRUD UI           | Phase 2             |
+| Area                      | Status                          |
+| ------------------------- | ------------------------------- |
+| Core types                | Shipped (Phase 1)               |
+| `ProjectPersistence` port | Shipped — in-memory + IndexedDB |
+| IndexedDB persistence     | Shipped (Phase 2)               |
+| Import/export adapters    | Phase 3+                        |
+| Library CRUD UI           | Shipped (Phase 2)               |
 
 ## Related
 
