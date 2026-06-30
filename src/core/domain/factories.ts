@@ -12,6 +12,7 @@ import type { ProjectMeta } from '../models/project.ts';
 import type {
   AnalogContact,
   Channel,
+  ChannelModeProfileFM,
   DigitalContact,
   RxGroupList,
   TalkGroup,
@@ -84,6 +85,12 @@ export function newFormatBuild(projectId: string, profileId: string, name?: stri
 
 export function newChannel(projectId: string, name: string, callsign = ''): Channel {
   const now = isoNow();
+  const defaultFmProfile: ChannelModeProfileFM = {
+    mode: 'fm',
+    squelch: null,
+    rxTone: 'none',
+    txTone: 'none',
+  };
   return {
     id: newId(),
     projectId,
@@ -98,6 +105,7 @@ export function newChannel(projectId: string, name: string, callsign = ''): Chan
     power: null,
     scanSkip: false,
     comment: '',
+    modeProfiles: [defaultFmProfile],
   };
 }
 

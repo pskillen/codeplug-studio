@@ -49,6 +49,7 @@ export interface Channel extends PersistableRow {
   power: number | null;
   scanSkip: boolean;
   comment: string;
+  modeProfiles: AbstractChannelModeProfile[];
 }
 
 export interface TalkGroup extends PersistableRow {
