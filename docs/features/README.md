@@ -4,12 +4,14 @@ Tier 1 product and internal-model docs for Codeplug Studio. See [DESIGN.md — D
 
 Topics are added per epic phase — not all folders exist yet.
 
-| Topic                              | Status  | Notes                                                   |
-| ---------------------------------- | ------- | ------------------------------------------------------- |
-| [data-model](data-model/README.md) | Phase 1 | Project, Library, FormatBuild, traits, `PersistableRow` |
-| [app-shell](app-shell/README.md)   | Phase 2 | Navigation shell, route surfaces, project lifecycle     |
-| [library](library/README.md)       | Phase 2 | Library CRUD UI + IndexedDB persistence                 |
-| _(more in later phases)_           | —       | `builds/`, `import-export/`, etc.                       |
+| Topic                                                    | Status  | Notes                                                   |
+| -------------------------------------------------------- | ------- | ------------------------------------------------------- |
+| [data-model](data-model/README.md)                       | Phase 1 | Project, Library, FormatBuild, traits, `PersistableRow` |
+| [app-shell](app-shell/README.md)                         | Phase 2 | Navigation shell, route surfaces, project lifecycle     |
+| [library](library/README.md)                             | Phase 2 | Library CRUD UI + IndexedDB persistence                 |
+| [map-and-repeaters](map-and-repeaters/README.md)         | Phase 2 | Channel map + repeater directory import                 |
+| [reports-and-reference](reports-and-reference/README.md) | Phase 2 | Library summary + reference tools                       |
+| _(more in later phases)_                                 | —       | `builds/`, `import-export/`, etc.                       |
 
 **Migration / epic logs:** [docs/poc-migration/](../poc-migration/) — execution progress for Epic #1.
 
