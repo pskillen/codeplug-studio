@@ -9,8 +9,8 @@ Topics are added per epic phase — not all folders exist yet.
 | [data-model](data-model/README.md)                       | Phase 1 | Project, Library, FormatBuild, traits, `PersistableRow` |
 | [app-shell](app-shell/README.md)                         | Phase 2 | Navigation shell, route surfaces, project lifecycle     |
 | [library](library/README.md)                             | Phase 2 | Library CRUD UI + IndexedDB persistence                 |
-| [map-and-repeaters](map-and-repeaters/README.md)         | Phase 2 | Channel map + repeater directory import                 |
-| [reports-and-reference](reports-and-reference/README.md) | Phase 2 | Library summary + reference tools                       |
+| [map-and-repeaters](map-and-repeaters/README.md)         | Phase 2 | Channel map (react-leaflet)                             |
+| [repeater-directories](repeater-directories/README.md)   | Phase 2 | UK repeater + BrandMeister library workflows            |
 | _(more in later phases)_                                 | —       | `builds/`, `import-export/`, etc.                       |
 
 **Migration / epic logs:** [docs/poc-migration/](../poc-migration/) — execution progress for Epic #1.

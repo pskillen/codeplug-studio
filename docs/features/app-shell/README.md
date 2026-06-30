@@ -31,8 +31,8 @@ UI primitives live in `src/app/components/ui/` (ported from codeplug-tool). Dev 
 | ----------------------------------------- | ----------------------- | --------------------------------------- |
 | `/`                                       | Projects                | Lifecycle UI (create/switch/rename/del) |
 | `/library`                                | Library                 | Entity CRUD — Ticket #10                |
-| `/library/channels/add-from-ukrepeater`   | Add from ukrepeater.net | Repeater directory import               |
-| `/library/channels/add-from-brandmeister` | Add from BrandMeister   | Repeater directory import               |
+| `/library/channels/add-from-ukrepeater`   | Add from ukrepeater.net | [repeater-directories](../repeater-directories/README.md) |
+| `/library/channels/add-from-brandmeister` | Add from BrandMeister   | [repeater-directories](../repeater-directories/README.md) |
 | `/map`                                    | Map                     | Channel map — Ticket #11                |
 | `/reports`                                | Reports                 | Library summary — Ticket #12            |
 | `/reference`                              | Reference               | Maidenhead, band plan — Ticket #12      |
@@ -69,4 +69,5 @@ The **active-project selection** is remembered across reloads via `localStorage`
 
 - [AppLayout sidecar](../../../src/app/components/AppLayout/AppLayout.md)
 - [data-model](../data-model/README.md)
+- [repeater-directories](../repeater-directories/README.md)
 - [DESIGN.md](../../../DESIGN.md)

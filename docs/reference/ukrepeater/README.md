@@ -2,7 +2,7 @@
 
 Authoritative reference for the **RSGB ETCC beta API** (`https://api-beta.rsgb.online`) used by the ukrepeater.net repeater directory in Codeplug Studio.
 
-This is a **remote directory API**, not a CPS wire format. HTTP clients and normalisation live in [`src/integrations/repeaters/`](../../../src/integrations/repeaters/). Feature behaviour: [map & repeater directories](../../features/map-and-repeaters/README.md).
+This is a **remote directory API**, not a CPS wire format. HTTP clients and normalisation live in [`src/integrations/repeaters/`](../../../src/integrations/repeaters/). Feature behaviour: [repeater directories](../../features/repeater-directories/README.md).
 
 ## API
 
@@ -110,5 +110,5 @@ Frequency and site data from ukrepeater.net is for amateur programming convenien
 
 ## Related
 
-- [map & repeater directories feature](../../features/map-and-repeaters/README.md)
+- [repeater directories feature](../../features/repeater-directories/README.md)
 - [ETCC API docs](https://api-beta.rsgb.online/)
