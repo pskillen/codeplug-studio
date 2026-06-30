@@ -1,25 +1,28 @@
 import { HashRouter, Route, Routes } from 'react-router-dom';
-import BuildFooter from './components/BuildFooter/BuildFooter.tsx';
+import ProjectProvider from './state/ProjectProvider.tsx';
+import AppLayout from './components/AppLayout/AppLayout.tsx';
 import HomePage from './routes/HomePage.tsx';
+import LibraryPage from './routes/LibraryPage.tsx';
+import MapPage from './routes/MapPage.tsx';
+import ReportsPage from './routes/ReportsPage.tsx';
+import SettingsPage from './routes/SettingsPage.tsx';
+import HelpPage from './routes/HelpPage.tsx';
 
 export default function App() {
   return (
-    <HashRouter>
-      <div
-        style={{
-          minHeight: '100vh',
-          display: 'flex',
-          flexDirection: 'column',
-          fontFamily: 'system-ui, sans-serif',
-        }}
-      >
-        <main style={{ flex: 1, padding: '2rem' }}>
-          <Routes>
+    <ProjectProvider>
+      <HashRouter>
+        <Routes>
+          <Route element={<AppLayout />}>
             <Route path="/" element={<HomePage />} />
-          </Routes>
-        </main>
-        <BuildFooter />
-      </div>
-    </HashRouter>
+            <Route path="/library" element={<LibraryPage />} />
+            <Route path="/map" element={<MapPage />} />
+            <Route path="/reports" element={<ReportsPage />} />
+            <Route path="/settings" element={<SettingsPage />} />
+            <Route path="/help" element={<HelpPage />} />
+          </Route>
+        </Routes>
+      </HashRouter>
+    </ProjectProvider>
   );
 }
