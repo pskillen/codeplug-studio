@@ -1,10 +1,10 @@
 import 'leaflet/dist/leaflet.css';
-import './../components/map/leafletSetup.ts';
-import type { LatLngExpression } from 'leaflet';
+import type { LatLngBoundsExpression, LatLngExpression } from 'leaflet';
 import { MapContainer, Marker, Popup, TileLayer } from 'react-leaflet';
 import { Link } from 'react-router-dom';
 import { bandLabelForFrequencyHz } from '@core/domain/bandPlan.ts';
 import { useLibrary } from '../state/useLibrary.ts';
+import { defaultMarkerIcon } from '../components/map/leafletSetup.ts';
 
 const UK_CENTRE: LatLngExpression = [54.5, -3];
 
@@ -32,13 +32,8 @@ export default function MapPage() {
       lon: c.location!.lon,
     }));
 
-  const centre: LatLngExpression =
-    located.length > 0
-      ? [
-          located.reduce((s, c) => s + c.lat, 0) / located.length,
-          located.reduce((s, c) => s + c.lon, 0) / located.length,
-        ]
-      : UK_CENTRE;
+  const bounds: LatLngBoundsExpression | undefined =
+    located.length > 0 ? located.map((c) => [c.lat, c.lon] as [number, number]) : undefined;
 
   return (
     <section>
@@ -57,8 +52,10 @@ export default function MapPage() {
         }}
       >
         <MapContainer
-          center={centre}
-          zoom={located.length > 0 ? 9 : 5}
+          center={UK_CENTRE}
+          zoom={5}
+          bounds={bounds}
+          boundsOptions={{ padding: [40, 40], maxZoom: 11 }}
           style={{ height: '100%', width: '100%' }}
           scrollWheelZoom
         >
@@ -67,7 +64,7 @@ export default function MapPage() {
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           />
           {located.map((c) => (
-            <Marker key={c.id} position={[c.lat, c.lon]}>
+            <Marker key={c.id} position={[c.lat, c.lon]} icon={defaultMarkerIcon}>
               <Popup>
                 <strong>{c.name}</strong>
                 <br />
