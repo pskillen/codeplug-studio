@@ -1,0 +1,19 @@
+export type EntityRefKind = 'channel' | 'talkGroup' | 'digitalContact' | 'analogContact';
+
+export interface EntityRef {
+  kind: EntityRefKind;
+  id: string;
+}
+
+export interface GeoPoint {
+  lat: number;
+  lon: number;
+}
+
+export type AnalogChannelMode = 'fm' | 'am' | 'ssb-usb' | 'ssb-lsb';
+export type DigitalChannelMode = 'dmr' | 'dstar' | 'ysf' | 'p25' | 'nxdn';
+export type ChannelMode = AnalogChannelMode | DigitalChannelMode;
+
+export type ChannelTone = 'none' | string;
+
+export type DMRTimeSlot = 1 | 2;
