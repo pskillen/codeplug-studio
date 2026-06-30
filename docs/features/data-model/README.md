@@ -50,14 +50,14 @@ See [storage.md](../../poc-migration/storage.md) — Phase 1 uses in-memory row 
 
 Vendor-neutral RF semantics only. UUID `id` FKs; `name` is a display label.
 
-| Entity           | Notes                                                                    |
-| ---------------- | ------------------------------------------------------------------------ |
+| Entity           | Notes                                                                                    |
+| ---------------- | ---------------------------------------------------------------------------------------- |
 | `Channel`        | Frequency (Hz), callsign, power, location, scan skip; `modeProfiles` (FM / DMR profiles) |
-| `Zone`           | First-class grouping — `members` as channel `EntityRef[]`; export flags  |
-| `TalkGroup`      | Digital group call — `mode`, `digitalId`                                 |
-| `DigitalContact` | Digital private call — `mode`, `digitalId`                               |
-| `AnalogContact`  | Analogue call sign / code                                                |
-| `RxGroupList`    | Promiscuous RX list — `members` as talk-group `EntityRef[]`              |
+| `Zone`           | First-class grouping — `members` as channel `EntityRef[]`; export flags                  |
+| `TalkGroup`      | Digital group call — `mode`, `digitalId`                                                 |
+| `DigitalContact` | Digital private call — `mode`, `digitalId`                                               |
+| `AnalogContact`  | Analogue call sign / code                                                                |
+| `RxGroupList`    | Promiscuous RX list — `members` as talk-group `EntityRef[]`                              |
 
 Mode-specific channel fields live on `modeProfiles` entries (`ChannelModeProfileFM`, `ChannelModeProfileDMR`).
 
