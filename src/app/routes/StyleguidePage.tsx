@@ -1,6 +1,8 @@
 import { Button, Group, Select, Stack, Text, TextInput } from '@mantine/core';
 import { Link } from 'react-router-dom';
 import { useState } from 'react';
+import { UK_BANDS } from '../lib/bands.ts';
+import { BandPill, ModePill } from '../components/pills/index.ts';
 import { EmptyState, FormSection, Page, PageHeader, PageSection } from '../components/ui/index.ts';
 
 const SAMPLE_ROWS = [
@@ -35,6 +37,15 @@ export default function StyleguidePage() {
             <Select label="Mode" data={['FM', 'DMR', 'P25']} defaultValue="FM" />
           </FormSection>
         </Stack>
+      </PageSection>
+
+      <PageSection title="Pills & badges">
+        <Group>
+          <ModePill mode="dmr" />
+          <ModePill mode="fm" />
+          <BandPill band={UK_BANDS.find((b) => b.id === '2m') ?? null} />
+          <BandPill band={UK_BANDS.find((b) => b.id === '70cm') ?? null} />
+        </Group>
       </PageSection>
 
       <PageSection title="EmptyState">

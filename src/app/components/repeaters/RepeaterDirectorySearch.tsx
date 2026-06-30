@@ -12,7 +12,9 @@ import {
 } from '@integrations/repeaters/index.ts';
 import { persistence } from '../../state/persistence.ts';
 import { useProjects } from '../../state/useProjects.ts';
+import { modeFromRepeaterMode } from '../../lib/channelModes.ts';
 import { hzToMhzString } from '../../lib/units.ts';
+import { BandPillsForRepeaterListing, ModePill } from '../pills/index.ts';
 import { FormPage, PageSection } from '../ui/index.ts';
 
 type SearchBy = 'callsign' | 'locator';
@@ -128,7 +130,9 @@ export default function RepeaterDirectorySearch({
             <Table.Thead>
               <Table.Tr>
                 <Table.Th>Callsign</Table.Th>
-                <Table.Th>Details</Table.Th>
+                <Table.Th>Band</Table.Th>
+                <Table.Th>Mode</Table.Th>
+                <Table.Th>Frequencies</Table.Th>
                 <Table.Th />
               </Table.Tr>
             </Table.Thead>
@@ -146,10 +150,20 @@ export default function RepeaterDirectorySearch({
                       ) : null}
                     </Table.Td>
                     <Table.Td>
+                      <BandPillsForRepeaterListing
+                        rxFrequencyHz={r.rxFrequencyHz}
+                        txFrequencyHz={r.txFrequencyHz}
+                        wireBand={r.band}
+                        size="xs"
+                      />
+                    </Table.Td>
+                    <Table.Td>
+                      <ModePill mode={modeFromRepeaterMode(r.mode)} size="xs" />
+                    </Table.Td>
+                    <Table.Td>
                       <Text size="sm">
-                        {r.mode.toUpperCase()} · RX {hzToMhzString(r.rxFrequencyHz) || '—'} / TX{' '}
+                        RX {hzToMhzString(r.rxFrequencyHz) || '—'} / TX{' '}
                         {hzToMhzString(r.txFrequencyHz) || '—'} MHz
-                        {r.band ? ` · ${r.band}` : ''}
                       </Text>
                     </Table.Td>
                     <Table.Td>
