@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Alert, Button, Group, Select, Stack, Table, Text, TextInput } from '@mantine/core';
+import type { Channel } from '@core/models/library.ts';
 import {
   RepeaterDirectoryError,
   repeaterListingToChannel,
@@ -11,11 +12,14 @@ import {
   type RepeaterSource,
 } from '@integrations/repeaters/index.ts';
 import { persistence } from '../../state/persistence.ts';
+import { useLibrary } from '../../state/useLibrary.ts';
 import { useProjects } from '../../state/useProjects.ts';
 import { modeFromRepeaterMode } from '../../lib/channelModes.ts';
 import { hzToMhzString } from '../../lib/units.ts';
 import { BandPillsForRepeaterListing, ModePill } from '../pills/index.ts';
 import { FormPage, PageSection } from '../ui/index.ts';
+import { findChannelByCallsign } from './findChannelByCallsign.ts';
+import RepeaterListingUpdateDialog from './RepeaterListingUpdateDialog.tsx';
 
 type SearchBy = 'callsign' | 'locator';
 
@@ -32,15 +36,31 @@ export default function RepeaterDirectorySearch({
 }: RepeaterDirectorySearchProps) {
   const navigate = useNavigate();
   const { activeProjectId } = useProjects();
+  const { library } = useLibrary();
   const [searchBy, setSearchBy] = useState<SearchBy>('callsign');
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<RepeaterListing[] | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [added, setAdded] = useState<Set<string>>(new Set());
+  const [updateChannel, setUpdateChannel] = useState<Channel | null>(null);
+  const [updateListing, setUpdateListing] = useState<RepeaterListing | null>(null);
+  const [updateOpen, setUpdateOpen] = useState(false);
 
   const canLocator = source === 'ukrepeater' && searchBy === 'locator';
   const sourceLabel = source === 'ukrepeater' ? 'ukrepeater.net' : 'BrandMeister';
+
+  function existingChannel(listing: RepeaterListing): Channel | null {
+    return findChannelByCallsign(library.channels, listing.callsign);
+  }
+
+  function openUpdate(listing: RepeaterListing) {
+    const channel = existingChannel(listing);
+    if (!channel) return;
+    setUpdateChannel(channel);
+    setUpdateListing(listing);
+    setUpdateOpen(true);
+  }
 
   async function handleSearch() {
     if (!query.trim()) return;
@@ -78,6 +98,11 @@ export default function RepeaterDirectorySearch({
       setAdded((prev) => new Set(prev).add(listing.remoteId));
     }
   }
+
+  const dialogChannel =
+    updateChannel && updateListing
+      ? (library.channels.find((c) => c.id === updateChannel.id) ?? updateChannel)
+      : updateChannel;
 
   return (
     <FormPage
@@ -139,6 +164,7 @@ export default function RepeaterDirectorySearch({
             <Table.Tbody>
               {results.map((r) => {
                 const isAdded = added.has(r.remoteId);
+                const existing = existingChannel(r);
                 return (
                   <Table.Tr key={`${r.source}:${r.remoteId}`}>
                     <Table.Td>
@@ -167,14 +193,24 @@ export default function RepeaterDirectorySearch({
                       </Text>
                     </Table.Td>
                     <Table.Td>
-                      <Button
-                        size="compact-sm"
-                        variant={isAdded ? 'light' : 'filled'}
-                        disabled={isAdded}
-                        onClick={() => void handleAdd(r)}
-                      >
-                        {isAdded ? 'Added' : 'Add to library'}
-                      </Button>
+                      {existing ? (
+                        <Button
+                          size="compact-sm"
+                          variant="outline"
+                          onClick={() => openUpdate(r)}
+                        >
+                          Update existing
+                        </Button>
+                      ) : (
+                        <Button
+                          size="compact-sm"
+                          variant={isAdded ? 'light' : 'filled'}
+                          disabled={isAdded}
+                          onClick={() => void handleAdd(r)}
+                        >
+                          {isAdded ? 'Added' : 'Add to library'}
+                        </Button>
+                      )}
                     </Table.Td>
                   </Table.Tr>
                 );
@@ -189,6 +225,15 @@ export default function RepeaterDirectorySearch({
             </Group>
           ) : null}
         </PageSection>
+      ) : null}
+
+      {dialogChannel && updateListing ? (
+        <RepeaterListingUpdateDialog
+          channel={dialogChannel}
+          listing={updateListing}
+          opened={updateOpen}
+          onClose={() => setUpdateOpen(false)}
+        />
       ) : null}
     </FormPage>
   );
