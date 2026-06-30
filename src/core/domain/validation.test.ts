@@ -16,9 +16,9 @@ describe('validation', () => {
       talkGroups: [tg],
     };
     validateEntityRef({ kind: 'talkGroup', id: tg.id }, library);
-    expect(() =>
-      validateEntityRef({ kind: 'talkGroup', id: 'missing' }, library),
-    ).toThrow(/not found/);
+    expect(() => validateEntityRef({ kind: 'talkGroup', id: 'missing' }, library)).toThrow(
+      /not found/,
+    );
   });
 
   it('validates contact refs', () => {

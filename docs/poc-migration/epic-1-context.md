@@ -4,10 +4,10 @@
 
 **Repos:**
 
-| Repo | Role |
-| --- | --- |
-| [pskillen/codeplug-studio](https://github.com/pskillen/codeplug-studio) | **Active** — greenfield product |
-| [pskillen/codeplug-tool](https://github.com/pskillen/codeplug-tool) | **Archive reference** — 500+ commits, pre-release prototype |
+| Repo                                                                    | Role                                                        |
+| ----------------------------------------------------------------------- | ----------------------------------------------------------- |
+| [pskillen/codeplug-studio](https://github.com/pskillen/codeplug-studio) | **Active** — greenfield product                             |
+| [pskillen/codeplug-tool](https://github.com/pskillen/codeplug-tool)     | **Archive reference** — 500+ commits, pre-release prototype |
 
 ---
 
@@ -32,7 +32,7 @@ This is **not** a full rewrite of import/export logic for its own sake. It is a 
 
 **Codeplug Studio** — browser-based designer for amateur radio codeplug layouts.
 
-- Tagline direction: *Design once. Build per radio.*
+- Tagline direction: _Design once. Build per radio._
 - "Studio" implies craft/workshop; still searchable alongside "codeplug" in README/subtitle.
 - Does **not** flash radios or replace vendor CPS. Export → operator imports into OpenGD77 CPS, CHIRP, etc.
 
@@ -56,9 +56,9 @@ That felt wrong because:
 
 **One library per project → one or more format builds, each with a workflow suited to that radio.**
 
-| Layer | What it holds |
-| --- | --- |
-| **Library** | Master inventory: channels, talk groups, contacts, RX group lists, etc. RF semantics live here. Curated once. |
+| Layer            | What it holds                                                                                                                                                       |
+| ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Library**      | Master inventory: channels, talk groups, contacts, RX group lists, etc. RF semantics live here. Curated once.                                                       |
 | **Format build** | Per-target assembly: which library entities are included, how they are **organised** for one CPS format/profile (zones, memory order, scan lists, expansion rules). |
 
 Operator journey (conceptual):
@@ -119,15 +119,15 @@ Radios differ in a **small set of behavioural concerns**, not infinite one-off m
 
 Initial trait set (extend as we learn):
 
-| Trait | Meaning |
-| --- | --- |
-| **Zone grouping** | Named groups of channels; operator switches zone on radio |
-| **Flat memory list** | No zones — one ordered channel/memory list |
-| **Per-channel scan flag** | Scan on/skip per channel; no separate scan-list entity |
-| **Scan lists** | Named scan lists distinct from TX grouping |
-| **Zone as scan list** | Zone membership *is* the scan scope |
-| **Multi talk group per channel** | One RF channel; pick repeater + TG on the channel |
-| **m×n channel expansion** | CPS requires one memory per repeater×talkgroup pair |
+| Trait                            | Meaning                                                   |
+| -------------------------------- | --------------------------------------------------------- |
+| **Zone grouping**                | Named groups of channels; operator switches zone on radio |
+| **Flat memory list**             | No zones — one ordered channel/memory list                |
+| **Per-channel scan flag**        | Scan on/skip per channel; no separate scan-list entity    |
+| **Scan lists**                   | Named scan lists distinct from TX grouping                |
+| **Zone as scan list**            | Zone membership _is_ the scan scope                       |
+| **Multi talk group per channel** | One RF channel; pick repeater + TG on the channel         |
+| **m×n channel expansion**        | CPS requires one memory per repeater×talkgroup pair       |
 
 **Split responsibilities:**
 
@@ -183,14 +183,14 @@ Approved at boundary only: format-specific export truncation, warnings, profile 
 
 ## What to salvage vs leave in the archive
 
-| Salvage (copy/adapt) | Leave behind |
-| --- | --- |
-| `docs/reference/<format>/` wire tables | Round-trip fidelity contract, provenance-boundary docs |
-| Import column parsers (trimmed, no provenance replay) | `importMerge` idempotency complexity |
-| UI primitives: map, DataTable, tone fields, dropzone pieces | `codeplugStore` god-object, old routes/nav |
-| Repeater directory clients (BrandMeister, UK repeater) | Round-trip system tests as quality gate |
-| Test CPS fixtures in local `sample-exports/` (gitignored) | Old `docs/features/*-progress.md` as source of truth |
-| Adapter registry **pattern** | Single-codeplug project mental model |
+| Salvage (copy/adapt)                                        | Leave behind                                           |
+| ----------------------------------------------------------- | ------------------------------------------------------ |
+| `docs/reference/<format>/` wire tables                      | Round-trip fidelity contract, provenance-boundary docs |
+| Import column parsers (trimmed, no provenance replay)       | `importMerge` idempotency complexity                   |
+| UI primitives: map, DataTable, tone fields, dropzone pieces | `codeplugStore` god-object, old routes/nav             |
+| Repeater directory clients (BrandMeister, UK repeater)      | Round-trip system tests as quality gate                |
+| Test CPS fixtures in local `sample-exports/` (gitignored)   | Old `docs/features/*-progress.md` as source of truth   |
+| Adapter registry **pattern**                                | Single-codeplug project mental model                   |
 
 ---
 
@@ -198,17 +198,17 @@ Approved at boundary only: format-specific export truncation, warnings, profile 
 
 The old `.cursor/rules/`, `AGENTS.md`, and skills encoded round-trip fidelity and single-codeplug workflow. **Do not copy wholesale.**
 
-| Asset | Action |
-| --- | --- |
-| `AGENTS.md` | **Rewrite** for Studio; point at `DESIGN.md` |
-| `DESIGN.md` | **Canonical** product constitution (this epic) |
-| `vendor-boundaries.mdc` | **Adapt** — library/build paths, drop round-trip FK baggage |
-| `documentation-boundaries.mdc`, `format-agnostic-docs.mdc` | **Migrate** — three-tier doc model still valid |
-| `no-wire-stash-roundtrip.mdc` | **Replace** with `export-from-model.mdc` — ban stash-and-replay, but not because round-trip |
-| `codeplug-tool.mdc` | **Replace** with `codeplug-studio.mdc` |
-| New: `layer-boundaries.mdc`, `library-and-builds.mdc` | **Add** |
-| Skills: git-workflow, make-a-plan, feature-docs, progress-tracking | **Adapt** repo name and thesis |
-| Old progress/outstanding logs | **Archive reference only** |
+| Asset                                                              | Action                                                                                      |
+| ------------------------------------------------------------------ | ------------------------------------------------------------------------------------------- |
+| `AGENTS.md`                                                        | **Rewrite** for Studio; point at `DESIGN.md`                                                |
+| `DESIGN.md`                                                        | **Canonical** product constitution (this epic)                                              |
+| `vendor-boundaries.mdc`                                            | **Adapt** — library/build paths, drop round-trip FK baggage                                 |
+| `documentation-boundaries.mdc`, `format-agnostic-docs.mdc`         | **Migrate** — three-tier doc model still valid                                              |
+| `no-wire-stash-roundtrip.mdc`                                      | **Replace** with `export-from-model.mdc` — ban stash-and-replay, but not because round-trip |
+| `codeplug-tool.mdc`                                                | **Replace** with `codeplug-studio.mdc`                                                      |
+| New: `layer-boundaries.mdc`, `library-and-builds.mdc`              | **Add**                                                                                     |
+| Skills: git-workflow, make-a-plan, feature-docs, progress-tracking | **Adapt** repo name and thesis                                                              |
+| Old progress/outstanding logs                                      | **Archive reference only**                                                                  |
 
 When editing, flag pre-existing violations of vendor boundaries — do not silently copy anti-patterns from `codeplug-tool`.
 
@@ -216,11 +216,11 @@ When editing, flag pre-existing violations of vendor boundaries — do not silen
 
 ## Documentation tiers (unchanged idea)
 
-| Tier | Where | What |
-| --- | --- | --- |
-| 1 | `docs/features/` | Our library, builds, traits — no CPS column tables |
-| 2 | `docs/reference/*.md` (not in `<format>/`) | Bands, modes, display — link out for wire |
-| 3 | `docs/reference/<format>/` | Full wire mapping tables |
+| Tier | Where                                      | What                                               |
+| ---- | ------------------------------------------ | -------------------------------------------------- |
+| 1    | `docs/features/`                           | Our library, builds, traits — no CPS column tables |
+| 2    | `docs/reference/*.md` (not in `<format>/`) | Bands, modes, display — link out for wire          |
+| 3    | `docs/reference/<format>/`                 | Full wire mapping tables                           |
 
 ---
 
@@ -264,8 +264,8 @@ These are for Phase 1 modelling and UX iteration — not blockers for constituti
 
 ## Revision log
 
-| Date | Change |
-| --- | --- |
-| 2026-06-29 | Initial context dump from migration planning sessions |
-| 2026-06-29 | Link to [storage.md](storage.md) persistence planning notes |
+| Date       | Change                                                                                        |
+| ---------- | --------------------------------------------------------------------------------------------- |
+| 2026-06-29 | Initial context dump from migration planning sessions                                         |
+| 2026-06-29 | Link to [storage.md](storage.md) persistence planning notes                                   |
 | 2026-06-29 | Phase 0 complete — [epic-1-progress.md](epic-1-progress.md), [epic-1-gaps.md](epic-1-gaps.md) |

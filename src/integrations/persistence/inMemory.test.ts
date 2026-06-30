@@ -18,10 +18,7 @@ describe('InMemoryProjectPersistence', () => {
     const channel = newChannel(meta.projectId, 'Local');
     await store.seedProject({ meta, channels: [channel] });
 
-    const result = await store.putChannel(
-      { ...channel, name: 'Local updated' },
-      channel.revision,
-    );
+    const result = await store.putChannel({ ...channel, name: 'Local updated' }, channel.revision);
     expect(result).toEqual({ ok: true, revision: 2 });
 
     const loaded = await store.getChannel(meta.projectId, channel.id);

@@ -12,20 +12,20 @@ Application code lives under `src/core/`, `src/integrations/`, and `src/app/` wi
 
 ## Repository layout
 
-| Path | Role |
-| --- | --- |
-| `README.md` | User-facing overview |
-| `DESIGN.md` | Living product and architecture constitution |
-| `AGENTS.md` | This file — agent workflow index |
-| `docs/poc-migration/` | Epic 1 migration context, progress logs |
-| `docs/features/` | Tier 1 — library, builds, traits, product behaviour |
-| `docs/reference/` | Tier 2 (domain) + Tier 3 (per-format wire tables) |
-| `docs/build/` | CI, Pages, testing |
-| `src/core/` | Models, domain, import/export, services — **no React** |
-| `src/integrations/` | Browser I/O: persistence, cloud, repeater APIs |
-| `src/app/` | React routes, features, components, thin state |
-| `.cursor/rules/` | File-scoped editor rules |
-| `.cursor/skills/` | Agent skills — git workflow, plans, docs, progress |
+| Path                  | Role                                                   |
+| --------------------- | ------------------------------------------------------ |
+| `README.md`           | User-facing overview                                   |
+| `DESIGN.md`           | Living product and architecture constitution           |
+| `AGENTS.md`           | This file — agent workflow index                       |
+| `docs/poc-migration/` | Epic 1 migration context, progress logs                |
+| `docs/features/`      | Tier 1 — library, builds, traits, product behaviour    |
+| `docs/reference/`     | Tier 2 (domain) + Tier 3 (per-format wire tables)      |
+| `docs/build/`         | CI, Pages, testing                                     |
+| `src/core/`           | Models, domain, import/export, services — **no React** |
+| `src/integrations/`   | Browser I/O: persistence, cloud, repeater APIs         |
+| `src/app/`            | React routes, features, components, thin state         |
+| `.cursor/rules/`      | File-scoped editor rules                               |
+| `.cursor/skills/`     | Agent skills — git workflow, plans, docs, progress     |
 
 **Dependency rule:** `app` → `core`; `integrations` → `core`. Never `core` → `app`.
 
@@ -33,11 +33,11 @@ Application code lives under `src/core/`, `src/integrations/`, and `src/app/` wi
 
 The **library** and domain layer are **vendor-neutral**. Radio caps, column names, wire strings, and profile limits apply only at import/export and in `docs/reference/<format>/`.
 
-| Layer | Apply vendor limits? | Examples |
-| --- | --- | --- |
-| **Import / export boundary** | **Yes** | Column mapping, cardinality caps, truncation, warnings — `src/core/import-export/formats/`, `docs/reference/` |
-| **Library, mutations, validation, CRUD UI** | **No** | `src/core/` models and domain — no `OPENGD77_MAX_*`, no format-specific cardinality in library CRUD |
-| **Format builds** | **Trait-shaped, not format-shaped** | Organisation semantics (zones, scan lists, flat memories) compose from **build capability traits** — see [DESIGN.md — Build capability traits](DESIGN.md#build-capability-traits) |
+| Layer                                       | Apply vendor limits?                | Examples                                                                                                                                                                          |
+| ------------------------------------------- | ----------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Import / export boundary**                | **Yes**                             | Column mapping, cardinality caps, truncation, warnings — `src/core/import-export/formats/`, `docs/reference/`                                                                     |
+| **Library, mutations, validation, CRUD UI** | **No**                              | `src/core/` models and domain — no `OPENGD77_MAX_*`, no format-specific cardinality in library CRUD                                                                               |
+| **Format builds**                           | **Trait-shaped, not format-shaped** | Organisation semantics (zones, scan lists, flat memories) compose from **build capability traits** — see [DESIGN.md — Build capability traits](DESIGN.md#build-capability-traits) |
 
 **Internal FK rules:** UUID `id` foreign keys for relationships. `name` fields are display/export labels, not relationship keys.
 

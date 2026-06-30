@@ -9,7 +9,7 @@
 ## Overall status
 
 **Phase 0:** Complete (merged `9d70463`)
-**Phase 1:** In progress
+**Phase 1:** Complete — PR in review
 
 ---
 
@@ -106,14 +106,71 @@
 
 ## Phase 1 — scaffold + core skeleton
 
-**Tracking:** [#4](https://github.com/pskillen/codeplug-studio/issues/4)  
-**Plan:** Phase 1 Scaffold Core (Cursor plan)  
+**Tracking:** [#4](https://github.com/pskillen/codeplug-studio/issues/4)
+**Plan:** Phase 1 Scaffold Core (Cursor plan)
 **Branch:** `4/pskil/scaffold-core` (from `main` after Phase 0 merge)
 
-**Status:** In progress (Slice 0)
+**Status:** Complete — PR in review
+
+### Slice 0: Branch and progress kickoff
+
+**Commit:** `5fbba0b` — `docs: kick off phase 1 tracking for #4`
+
+### Slice 1: Toolchain scaffold
+
+**Commit:** `8e81480` — `chore: add Vite React TypeScript scaffold`
+
+### Slice 2: Layer folders + ESLint boundaries
+
+**Commit:** `9429810` — `chore: add src layer layout and ESLint boundaries`
+
+### Slice 3: Core models + schema version
+
+**Commit:** `0aec94e` — `feat(core): add Project Library FormatBuild models`
+
+### Slice 4: Domain helpers + unit tests
+
+**Commit:** `51740a5` — `test(core): add model and factory unit tests`
+
+### Slice 5: ProjectPersistence port (in-memory)
+
+**Commit:** `f7cd7e5` — `feat(integrations): add in-memory ProjectPersistence port`
+
+### Slice 6: App shell + build footer
+
+**Commit:** `06edc8a` — `feat(app): add placeholder shell and build footer`
+
+### Slice 7: CI, Pages deploy, version-number skill
+
+**Commit:** `425ad06` — `chore: add CI Pages workflows and version-number skill`
+
+### Slice 8: Feature docs + DESIGN touch-up
+
+**Commit:** `2d12e1b` — `docs: add data-model hub and update DESIGN persistence`
+
+### Slice 9: Close out
+
+**Commit:** (this PR) — `docs: complete phase 1 section in epic-1-progress`
+
+---
+
+## Phase 1 acceptance criteria (#4)
+
+- [x] `npm run build` succeeds; `base` is `/codeplug-studio/`
+- [x] `npm run test` — core model + in-memory persistence tests pass
+- [x] `npm run lint` enforces core → no React
+- [x] `src/core/models/` includes Project, Library entities, FormatBuild, traits registry stub
+- [x] `ProjectPersistence` port in `integrations/` with revision-aware in-memory implementation
+- [x] `STUDIO_SCHEMA_VERSION = 1` defined
+- [x] CI workflow on PR; Pages workflow on release
+- [x] Placeholder app renders with build footer
+- [x] No CSV/YAML import/export, no IndexedDB, no Mantine, no library CRUD UI
+- [x] Data-model doc + types ready for Phase 2 CRUD
 
 ---
 
 ## Next
 
-- Complete Phase 1 ([#4](https://github.com/pskillen/codeplug-studio/issues/4)) on `4/pskil/scaffold-core`
+- Merge Phase 1 PR ([#4](https://github.com/pskillen/codeplug-studio/issues/4))
+- Enable GitHub Pages (Actions source) before first release
+- Phase 2: library CRUD UI, map, IndexedDB persistence

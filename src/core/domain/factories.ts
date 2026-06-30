@@ -39,11 +39,7 @@ export function newProjectMeta(name: string, projectId: string = newId()): Proje
   };
 }
 
-export function newFormatBuild(
-  projectId: string,
-  profileId: string,
-  name?: string,
-): FormatBuild {
+export function newFormatBuild(projectId: string, profileId: string, name?: string): FormatBuild {
   const profile = traitProfileFor(profileId);
   if (!profile) {
     throw new Error(`Unknown trait profile: ${profileId}`);

@@ -29,12 +29,12 @@ erDiagram
 
 Every stored entity extends `PersistableRow`:
 
-| Field | Purpose |
-| --- | --- |
-| `id` | UUID primary key |
-| `projectId` | Owning project |
-| `revision` | Optimistic concurrency (integrations layer) |
-| `updatedAt` | ISO timestamp |
+| Field       | Purpose                                     |
+| ----------- | ------------------------------------------- |
+| `id`        | UUID primary key                            |
+| `projectId` | Owning project                              |
+| `revision`  | Optimistic concurrency (integrations layer) |
+| `updatedAt` | ISO timestamp                               |
 
 See [storage.md](../../poc-migration/storage.md) — Phase 1 uses in-memory row maps; Phase 2 adds IndexedDB.
 
@@ -46,12 +46,12 @@ See [storage.md](../../poc-migration/storage.md) — Phase 1 uses in-memory row 
 
 Vendor-neutral RF semantics only. UUID `id` FKs; `name` is a display label.
 
-| Entity | Notes |
-| --- | --- |
-| `Channel` | Frequency (Hz), mode, callsign, tones, power, `contactRef`, `rxGroupListId`, location |
-| `TalkGroup` | DMR group call — `dmrId`, optional `colorCode` |
-| `Contact` | DMR private call |
-| `RxGroupList` | Promiscuous RX list — `memberRefs` as `EntityRef[]` |
+| Entity        | Notes                                                                                 |
+| ------------- | ------------------------------------------------------------------------------------- |
+| `Channel`     | Frequency (Hz), mode, callsign, tones, power, `contactRef`, `rxGroupListId`, location |
+| `TalkGroup`   | DMR group call — `dmrId`, optional `colorCode`                                        |
+| `Contact`     | DMR private call                                                                      |
+| `RxGroupList` | Promiscuous RX list — `memberRefs` as `EntityRef[]`                                   |
 
 **Zones are not library entities** in Phase 1 — zone grouping is a **build trait** (`TraitLayout`).
 
@@ -59,22 +59,22 @@ Vendor-neutral RF semantics only. UUID `id` FKs; `name` is a display label.
 
 `FormatBuild` — one CPS workflow target within a project:
 
-| Field | Purpose |
-| --- | --- |
-| `formatId` | Wire format family (`opengd77`, `chirp`, `dm32`, …) |
-| `profileId` | Trait profile key (e.g. `opengd77-1701`, `chirp-uv5r`) |
-| `librarySelection` | Which library entity ids participate |
-| `layout` | `TraitLayout` — trait-shaped organisation |
+| Field              | Purpose                                                |
+| ------------------ | ------------------------------------------------------ |
+| `formatId`         | Wire format family (`opengd77`, `chirp`, `dm32`, …)    |
+| `profileId`        | Trait profile key (e.g. `opengd77-1701`, `chirp-uv5r`) |
+| `librarySelection` | Which library entity ids participate                   |
+| `layout`           | `TraitLayout` — trait-shaped organisation              |
 
 ## Build capability traits
 
 Declared per profile in `TRAIT_PROFILES` (`src/core/models/traits.ts`). Examples:
 
-| Profile | Traits |
-| --- | --- |
+| Profile         | Traits                                                 |
+| --------------- | ------------------------------------------------------ |
 | `opengd77-1701` | zone grouping, zone-as-scan-list, multi-TG per channel |
-| `dm32-default` | zone grouping, scan lists, m×n expansion |
-| `chirp-uv5r` | flat memory list, per-channel scan flag |
+| `dm32-default`  | zone grouping, scan lists, m×n expansion               |
+| `chirp-uv5r`    | flat memory list, per-channel scan flag                |
 
 Build UI and layout compose from traits; wire adapters map `assemble(build, library)` at export.
 
@@ -85,13 +85,13 @@ Build UI and layout compose from traits; wire adapters map `assemble(build, libr
 
 ## Implementation status
 
-| Area | Status |
-| --- | --- |
-| Core types | Shipped (Phase 1) |
+| Area                      | Status              |
+| ------------------------- | ------------------- |
+| Core types                | Shipped (Phase 1)   |
 | `ProjectPersistence` port | Shipped — in-memory |
-| IndexedDB persistence | Phase 2 |
-| Import/export adapters | Phase 3+ |
-| Library CRUD UI | Phase 2 |
+| IndexedDB persistence     | Phase 2             |
+| Import/export adapters    | Phase 3+            |
+| Library CRUD UI           | Phase 2             |
 
 ## Related
 

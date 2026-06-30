@@ -1,7 +1,13 @@
 import type { PersistableRow } from './revision.ts';
 import type { ChannelMode, ChannelTone, EntityRef, GeoPoint } from './libraryTypes.ts';
 
-export type { ChannelMode, ChannelTone, EntityRef, GeoPoint, EntityRefKind } from './libraryTypes.ts';
+export type {
+  ChannelMode,
+  ChannelTone,
+  EntityRef,
+  GeoPoint,
+  EntityRefKind,
+} from './libraryTypes.ts';
 
 export interface Channel extends PersistableRow {
   name: string;
