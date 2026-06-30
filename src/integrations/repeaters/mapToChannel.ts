@@ -17,7 +17,7 @@ export function repeaterListingToChannel(listing: RepeaterListing, projectId: st
   const tone: ChannelTone = listing.toneHz ? String(listing.toneHz) : 'none';
 
   const profile: ChannelModeProfileFM | ChannelModeProfileDMR =
-    listing.mode === 'dmr'
+    listing.primaryMode === 'dmr'
       ? {
           mode: 'dmr',
           colourCode: listing.colourCode,

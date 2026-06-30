@@ -43,6 +43,10 @@ export default function StyleguidePage() {
         <Group>
           <ModePill mode="dmr" />
           <ModePill mode="fm" />
+          <ModePill mode="dstar" />
+          <ModePill mode="ysf" />
+          <ModePill mode="m17" />
+          <ModePill mode="tetra" />
           <BandPill band={UK_BANDS.find((b) => b.id === '2m') ?? null} />
           <BandPill band={UK_BANDS.find((b) => b.id === '70cm') ?? null} />
         </Group>

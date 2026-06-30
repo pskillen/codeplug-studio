@@ -11,7 +11,8 @@ const fmListing: RepeaterListing = {
   rxFrequencyHz: 145_725_000,
   txFrequencyHz: 145_125_000,
   toneHz: 110.9,
-  mode: 'fm',
+  modes: ['fm', 'ysf'],
+  primaryMode: 'fm',
   colourCode: null,
   locator: 'JO01GR',
   location: { lat: 51.7, lon: 0.6 },
@@ -35,7 +36,7 @@ describe('repeaterListingToChannel', () => {
 
   it('maps a DMR repeater to a channel with a DMR profile and colour code', () => {
     const channel = repeaterListingToChannel(
-      { ...fmListing, mode: 'dmr', colourCode: 1, toneHz: null },
+      { ...fmListing, modes: ['dmr'], primaryMode: 'dmr', colourCode: 1, toneHz: null },
       'p1',
     );
     const profile = channel.modeProfiles[0] as ChannelModeProfileDMR;

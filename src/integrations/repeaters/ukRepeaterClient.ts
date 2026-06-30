@@ -1,5 +1,6 @@
 import { locatorToCoords } from '@core/domain/maidenhead.ts';
-import { RepeaterDirectoryError, type RepeaterListing, type RepeaterMode } from './types.ts';
+import { RepeaterDirectoryError, type RepeaterListing } from './types.ts';
+import { parseUkRepeaterModeCodes } from './ukrepeater/modeCodes.ts';
 
 const ETCC_API_BASE = 'https://api-beta.rsgb.online';
 
@@ -21,26 +22,8 @@ interface EtccResponse {
   data: EtccListing[] | null;
 }
 
-function parseMode(modeCodes: string[]): { mode: RepeaterMode; colourCode: number | null } {
-  let hasAnalog = false;
-  let hasDmr = false;
-  let colourCode: number | null = null;
-  for (const raw of modeCodes) {
-    const code = raw.trim().toUpperCase();
-    if (code === 'A') hasAnalog = true;
-    else if (code === 'D' || code === 'M') hasDmr = true;
-    else if (code.startsWith('D:') || code.startsWith('M:')) {
-      hasDmr = true;
-      const n = Number.parseInt(code.slice(2), 10);
-      if (Number.isFinite(n) && n >= 0 && n <= 15) colourCode = n;
-    }
-  }
-  const mode: RepeaterMode = hasAnalog ? 'fm' : hasDmr ? 'dmr' : 'other';
-  return { mode, colourCode: mode === 'dmr' ? colourCode : null };
-}
-
 function normalise(listing: EtccListing): RepeaterListing {
-  const { mode, colourCode } = parseMode(listing.modeCodes ?? []);
+  const { modes, primaryMode, colourCode } = parseUkRepeaterModeCodes(listing.modeCodes ?? []);
   return {
     source: 'ukrepeater',
     remoteId: String(listing.id),
@@ -49,7 +32,8 @@ function normalise(listing: EtccListing): RepeaterListing {
     rxFrequencyHz: listing.tx && listing.tx > 0 ? listing.tx : null,
     txFrequencyHz: listing.rx && listing.rx > 0 ? listing.rx : null,
     toneHz: listing.ctcss && listing.ctcss > 0 ? listing.ctcss : null,
-    mode,
+    modes,
+    primaryMode,
     colourCode,
     locator: listing.locator ?? null,
     location: listing.locator ? locatorToCoords(listing.locator) : null,

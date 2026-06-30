@@ -41,7 +41,8 @@ describe('searchUkRepeatersByCallsign', () => {
     expect(listing.rxFrequencyHz).toBe(145_725_000);
     expect(listing.txFrequencyHz).toBe(145_125_000);
     expect(listing.toneHz).toBe(110.9);
-    expect(listing.mode).toBe('fm');
+    expect(listing.modes).toEqual(['fm', 'ysf']);
+    expect(listing.primaryMode).toBe('fm');
     expect(listing.location?.lat).toBeCloseTo(51.7, 0);
   });
 
@@ -51,7 +52,7 @@ describe('searchUkRepeatersByCallsign', () => {
         {
           id: 1,
           repeater: 'GB7XX',
-          modeCodes: ['D:1'],
+          modeCodes: ['M:1'],
           tx: 439_000_000,
           rx: 430_600_000,
           band: '70CM',
@@ -59,7 +60,8 @@ describe('searchUkRepeatersByCallsign', () => {
       ],
     });
     const [listing] = await searchUkRepeatersByCallsign('gb7xx');
-    expect(listing.mode).toBe('dmr');
+    expect(listing.modes).toEqual(['dmr']);
+    expect(listing.primaryMode).toBe('dmr');
     expect(listing.colourCode).toBe(1);
   });
 

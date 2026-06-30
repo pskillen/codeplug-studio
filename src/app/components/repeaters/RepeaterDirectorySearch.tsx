@@ -14,9 +14,8 @@ import {
 import { persistence } from '../../state/persistence.ts';
 import { useLibrary } from '../../state/useLibrary.ts';
 import { useProjects } from '../../state/useProjects.ts';
-import { modeFromRepeaterMode } from '../../lib/channelModes.ts';
 import { hzToMhzString } from '../../lib/units.ts';
-import { BandPillsForRepeaterListing, ModePill } from '../pills/index.ts';
+import { BandPillsForRepeaterListing, ModePillsForRepeaterListing } from '../pills/index.ts';
 import { FormPage, PageSection } from '../ui/index.ts';
 import { findChannelByCallsign } from './findChannelByCallsign.ts';
 import RepeaterListingUpdateDialog from './RepeaterListingUpdateDialog.tsx';
@@ -184,7 +183,7 @@ export default function RepeaterDirectorySearch({
                       />
                     </Table.Td>
                     <Table.Td>
-                      <ModePill mode={modeFromRepeaterMode(r.mode)} size="xs" />
+                      <ModePillsForRepeaterListing modes={r.modes} size="xs" />
                     </Table.Td>
                     <Table.Td>
                       <Text size="sm">

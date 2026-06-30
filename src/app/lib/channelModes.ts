@@ -25,6 +25,8 @@ export const CHANNEL_MODES: ChannelModeDefinition[] = [
   { id: 'dstar', label: 'D-STAR', category: 'digital', color: '#7950f2', mantine: 'violet.6' },
   { id: 'p25', label: 'P25', category: 'digital', color: '#12b886', mantine: 'teal.6' },
   { id: 'nxdn', label: 'NXDN', category: 'digital', color: '#868e96', mantine: 'gray.6' },
+  { id: 'm17', label: 'M17', category: 'digital', color: '#20c997', mantine: 'teal.5' },
+  { id: 'tetra', label: 'Tetra', category: 'digital', color: '#6741d9', mantine: 'indigo.6' },
   { id: 'other', label: 'Other', category: 'other', color: '#9c36b5', mantine: 'grape.6' },
 ];
 
@@ -83,11 +85,4 @@ export function mapLegacyChannelMode(mode: string): ChannelMode {
 
 export function normalizeChannelMode(mode: string): ChannelMode {
   return mapLegacyChannelMode(mode);
-}
-
-/** Map normalised repeater directory mode to a display pill mode. */
-export function modeFromRepeaterMode(mode: 'fm' | 'dmr' | 'other'): ChannelMode {
-  if (mode === 'fm') return 'fm';
-  if (mode === 'dmr') return 'dmr';
-  return 'other';
 }
