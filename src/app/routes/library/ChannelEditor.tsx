@@ -9,6 +9,7 @@ import type {
   Library,
 } from '@core/models/library.ts';
 import { newChannel } from '@core/domain/factories.ts';
+import RepeaterVerifyPanel from '../../components/repeaters/RepeaterVerifyPanel.tsx';
 import { FormSection } from '../../components/ui/index.ts';
 import { hzToMhzString, mhzStringToHz, parseOptionalInt } from '../../lib/units.ts';
 import { persistence } from '../../state/persistence.ts';
@@ -91,8 +92,18 @@ export default function ChannelEditor({
     void save(() => persistence.putChannel(row, entity ? entity.revision : null));
   }
 
+  const liveChannel = buildRow();
+
   return (
     <Stack gap="lg" maw={520}>
+      {!entity ? (
+        <Alert color="blue" variant="light">
+          Prefer importing from a directory? Use{' '}
+          <Link to="/library/channels/add-from-ukrepeater">ukrepeater.net</Link> or{' '}
+          <Link to="/library/channels/add-from-brandmeister">BrandMeister</Link> in the section nav.
+        </Alert>
+      ) : null}
+
       <FormSection title="Identity">
         <TextInput label="Name" value={name} onChange={(e) => setName(e.currentTarget.value)} />
         <TextInput
@@ -209,6 +220,8 @@ export default function ChannelEditor({
           />
         </FormSection>
       )}
+
+      {entity ? <RepeaterVerifyPanel channel={liveChannel} /> : null}
 
       {error ? <Alert color="red">{error}</Alert> : null}
       <Group>

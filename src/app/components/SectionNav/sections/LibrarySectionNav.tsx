@@ -1,5 +1,5 @@
 import { Button, NavLink, Stack } from '@mantine/core';
-import { IconPlus } from '@tabler/icons-react';
+import { IconPlus, IconWorldSearch } from '@tabler/icons-react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { ICON_SIZE_NAV, ICON_STROKE } from '../../../lib/iconSizes.ts';
 import { scrollToPageSection } from '../../../lib/scrollToPageSection.ts';
@@ -37,6 +37,24 @@ export default function LibrarySectionNav({ variant }: SectionNavProps) {
             fullWidth={isSidebar}
           >
             New channel
+          </Button>
+          <Button
+            component={Link}
+            to="/library/channels/add-from-ukrepeater"
+            variant="light"
+            leftSection={<IconWorldSearch size={ICON_SIZE_NAV} stroke={ICON_STROKE} />}
+            fullWidth={isSidebar}
+          >
+            Add from ukrepeater.net
+          </Button>
+          <Button
+            component={Link}
+            to="/library/channels/add-from-brandmeister"
+            variant="light"
+            leftSection={<IconWorldSearch size={ICON_SIZE_NAV} stroke={ICON_STROKE} />}
+            fullWidth={isSidebar}
+          >
+            Add from BrandMeister
           </Button>
         </>
       ) : null}

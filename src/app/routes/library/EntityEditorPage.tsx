@@ -53,6 +53,7 @@ export default function EntityEditorPage() {
       case 'channel':
         return (
           <ChannelEditor
+            key={entityId ? library.channels.find((c) => c.id === entityId)?.revision : 'new'}
             projectId={projectId}
             library={library}
             entity={entityId ? (library.channels.find((c) => c.id === entityId) ?? null) : null}
