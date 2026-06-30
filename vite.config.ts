@@ -32,6 +32,7 @@ export default defineConfig(({ mode }) => {
       setupFiles: './src/test/setup.ts',
       globals: true,
       passWithNoTests: true,
+      pool: 'threads',
       reporters: isGitHubActions
         ? ['default', ['junit', { outputFile: 'test-results/junit.xml', addFileAttribute: true }]]
         : ['default'],
