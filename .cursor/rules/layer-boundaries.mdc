@@ -1,0 +1,36 @@
+---
+description: core / integrations / app dependency direction — no React in core; no wire strings in app
+alwaysApply: true
+---
+
+# Layer boundaries
+
+**Critical rule.** When editing related files, if you notice existing code or docs that violate this rule — even outside your current task — **flag it to the user as a high concern** before or alongside your main work. Do not silently ignore, copy the pattern, or defer without mention.
+
+Read [DESIGN.md — Architecture](../../DESIGN.md#architecture) and [AGENTS.md](../../AGENTS.md).
+
+## Layers
+
+| Layer | Path | Contains | Must not contain |
+| --- | --- | --- | --- |
+| **core** | `src/core/` | Models, domain mutations, validation, import/export formats, application services | React, Mantine, DOM APIs, `localStorage`, format wire string literals in domain logic |
+| **integrations** | `src/integrations/` | IndexedDB/localStorage ports, Google Drive, repeater HTTP clients | React components; business rules that belong in core |
+| **app** | `src/app/` | Routes, features, components, thin React state adapters | Direct calls to format adapter internals; CPS column names or wire sentinels hard-coded in UI |
+
+## Dependency direction
+
+```text
+app → core
+integrations → core
+```
+
+**Never** `core` → `app`. **Never** `core` → `integrations`.
+
+Routes and components call **application services** (`importIntoLibrary`, `exportBuild`, `assemble`, …), not format adapters or low-level mutations ad hoc.
+
+## Anti-patterns
+
+- Importing React or Mantine in `src/core/`
+- `src/app/` components parsing CPS CSV columns or comparing wire strings (`"Master"`, `"P2"`)
+- Persistence schema or IndexedDB calls inside `src/core/`
+- Format-specific cardinality checks in library CRUD UI (defer to export warnings)

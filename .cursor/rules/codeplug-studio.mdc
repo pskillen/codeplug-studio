@@ -1,0 +1,29 @@
+---
+description: Conventions when editing Codeplug Studio
+globs: "**/*.{ts,tsx,md}"
+alwaysApply: false
+---
+
+# Codeplug Studio edits
+
+Read [`AGENTS.md`](../../AGENTS.md) and [`DESIGN.md`](../../DESIGN.md) first. For git, plans, and docs see [`.cursor/skills/`](../skills/).
+
+**Critical rules:** [vendor-boundaries.mdc](vendor-boundaries.mdc), [layer-boundaries.mdc](layer-boundaries.mdc), [library-and-builds.mdc](library-and-builds.mdc), [export-from-model.mdc](export-from-model.mdc), and [format-agnostic-docs.mdc](format-agnostic-docs.mdc). When editing related files, if you notice violations — even outside your current task — **flag them to the user as a high concern** before or alongside your main work. Do not silently ignore, copy the pattern, or defer without mention. Do not attempt to fix if it's outside the original instruction.
+
+## Product shape
+
+- **Library** — master inventory of RF assets (channels, talk groups, contacts, …).
+- **Format builds** — per-target assembly with trait-shaped layout; export is a **projection**, not round-trip fidelity.
+- **Application services** — routes call `importIntoLibrary`, `exportBuild`, `assemble(build, library)`; not format adapters directly.
+
+## SPA (`src/` when scaffold exists)
+
+- React + TypeScript under `src/app/`; Vite bundles for GitHub Pages (`base: '/codeplug-studio/'`).
+- Routing via `react-router` HashRouter.
+- Build info via Vite `define` — see `version-number` skill when added in Phase 1.
+
+## Scope
+
+- GitHub Pages deploy is release-triggered — see `docs/build/README.md`.
+- Do not add committed sample codeplugs; use gitignored `sample-exports/` for local CPS files.
+- Migration background: [docs/poc-migration/epic-1-context.md](../../docs/poc-migration/epic-1-context.md).
