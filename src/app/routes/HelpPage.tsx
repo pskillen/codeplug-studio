@@ -15,7 +15,12 @@ export default function HelpPage() {
           lists, and zones; stored in your browser.
         </li>
         <li>
-          <strong>Map &amp; Reports</strong> — visualise and summarise your library (coming soon).
+          <strong>Map &amp; Repeaters</strong> — plot located channels and import from public
+          repeater directories.
+        </li>
+        <li>
+          <strong>Reports &amp; Reference</strong> — library summary plus Maidenhead and band-plan
+          tools.
         </li>
       </ul>
       <p style={{ fontSize: '0.85rem' }}>

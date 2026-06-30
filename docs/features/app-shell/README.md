@@ -24,16 +24,18 @@ ProjectProvider
 
 ## Routes
 
-| Path        | Surface  | Status                                  |
-| ----------- | -------- | --------------------------------------- |
-| `/`         | Projects | Lifecycle UI (create/switch/rename/del) |
-| `/library`  | Library  | CRUD UI — Ticket #10                    |
-| `/map`      | Map      | Placeholder — Ticket #11                |
-| `/reports`  | Reports  | Placeholder — Ticket #12                |
-| `/settings` | Settings | Shell content                           |
-| `/help`     | Help     | Shell content                           |
+| Path         | Surface   | Status                                  |
+| ------------ | --------- | --------------------------------------- |
+| `/`          | Projects  | Lifecycle UI (create/switch/rename/del) |
+| `/library`   | Library   | CRUD UI — Ticket #10                    |
+| `/map`       | Map       | Channel map — Ticket #11                |
+| `/repeaters` | Repeaters | Directory search/import — Ticket #11    |
+| `/reports`   | Reports   | Library summary — Ticket #12            |
+| `/reference` | Reference | Maidenhead, band plan — Ticket #12      |
+| `/settings`  | Settings  | Shell content                           |
+| `/help`      | Help      | Shell content                           |
 
-Feature placeholders gate on an active project and link back to Projects when none is selected.
+Routes that need a project gate on an active project and link back to Projects when none is selected.
 
 ## Project lifecycle
 

@@ -79,3 +79,101 @@ export function findReferencesTo(library: Library, target: ReferenceTarget): Ent
 export function isReferenced(library: Library, target: ReferenceTarget): boolean {
   return findReferencesTo(library, target).length > 0;
 }
+
+/** A foreign key pointing at an entity id that no longer exists in the library. */
+export interface DanglingReference {
+  fromKind: 'channel' | 'zone' | 'rxGroupList';
+  fromId: string;
+  fromName: string;
+  targetKind: ReferenceTarget['kind'];
+  targetId: string;
+  relationship: string;
+}
+
+/**
+ * Find references whose target id is missing from the library — integrity
+ * warnings surfaced in reports. Only UUID `id` relationships are checked.
+ */
+export function findDanglingReferences(library: Library): DanglingReference[] {
+  const channelIds = new Set(library.channels.map((c) => c.id));
+  const talkGroupIds = new Set(library.talkGroups.map((t) => t.id));
+  const digitalContactIds = new Set(library.digitalContacts.map((c) => c.id));
+  const analogContactIds = new Set(library.analogContacts.map((c) => c.id));
+  const rxGroupListIds = new Set(library.rxGroupLists.map((r) => r.id));
+
+  const hasTarget = (target: ReferenceTarget): boolean => {
+    switch (target.kind) {
+      case 'channel':
+        return channelIds.has(target.id);
+      case 'talkGroup':
+        return talkGroupIds.has(target.id);
+      case 'digitalContact':
+        return digitalContactIds.has(target.id);
+      case 'analogContact':
+        return analogContactIds.has(target.id);
+      case 'rxGroupList':
+        return rxGroupListIds.has(target.id);
+    }
+  };
+
+  const dangling: DanglingReference[] = [];
+
+  for (const zone of library.zones) {
+    for (const member of zone.members) {
+      const target: ReferenceTarget = { kind: member.kind, id: member.id };
+      if (!hasTarget(target)) {
+        dangling.push({
+          fromKind: 'zone',
+          fromId: zone.id,
+          fromName: zone.name,
+          targetKind: target.kind,
+          targetId: target.id,
+          relationship: 'zone member',
+        });
+      }
+    }
+  }
+
+  for (const list of library.rxGroupLists) {
+    for (const member of list.members) {
+      const target: ReferenceTarget = { kind: member.ref.kind, id: member.ref.id };
+      if (!hasTarget(target)) {
+        dangling.push({
+          fromKind: 'rxGroupList',
+          fromId: list.id,
+          fromName: list.name,
+          targetKind: target.kind,
+          targetId: target.id,
+          relationship: 'RX group list member',
+        });
+      }
+    }
+  }
+
+  for (const channel of library.channels) {
+    for (const profile of dmrProfiles(channel)) {
+      if (profile.contactRef && !hasTarget(profile.contactRef)) {
+        dangling.push({
+          fromKind: 'channel',
+          fromId: channel.id,
+          fromName: channel.name,
+          targetKind: profile.contactRef.kind,
+          targetId: profile.contactRef.id,
+          relationship: 'channel DMR contact',
+        });
+      }
+      if (profile.rxGroupListId && !rxGroupListIds.has(profile.rxGroupListId)) {
+        dangling.push({
+          fromKind: 'channel',
+          fromId: channel.id,
+          fromName: channel.name,
+          targetKind: 'rxGroupList',
+          targetId: profile.rxGroupListId,
+          relationship: 'channel RX group list',
+        });
+      }
+    }
+  }
+
+  return dangling;
+}
