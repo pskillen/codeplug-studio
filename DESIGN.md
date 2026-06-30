@@ -20,7 +20,6 @@ The archived [codeplug-tool](https://github.com/pskillen/codeplug-tool) prototyp
 
 **Codeplug Studio explicitly drops that goal.**
 
-
 | Old (codeplug-tool)                              | New (Codeplug Studio)                                             |
 | ------------------------------------------------ | ----------------------------------------------------------------- |
 | One codeplug per project, export to many formats | One **library** per project, many **format builds**               |
@@ -29,25 +28,22 @@ The archived [codeplug-tool](https://github.com/pskillen/codeplug-tool) prototyp
 | Heavy import provenance driving export           | Thin audit metadata; **model fields drive export**                |
 | `Codeplug` as the primary edit surface           | **Library** is canonical; builds assemble subsets/layouts         |
 
-
 Salvage from the old repo: wire-format reference docs, import parsers (simplified), UI primitives (map, tables, field widgets). Do not salvage the merge/provenance stack or route/store shape wholesale.
 
 ---
 
 ## Glossary
 
-
 | Term                            | Meaning                                                                                                                                                                                  |
 | ------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **Project**                     | Named container: metadata + one library + zero or more format builds. Persisted as a unit.                                                                                               |
-| **Library**                     | Master inventory — channels, talk groups, contacts, and shared concepts (e.g. zone *definitions* where they are radio-agnostic). The operator's single source of truth for RF assets.    |
+| **Library**                     | Master inventory — channels, talk groups, contacts, and shared concepts (e.g. zone _definitions_ where they are radio-agnostic). The operator's single source of truth for RF assets.    |
 | **Format build** (or **build**) | A format-scoped assembly: library selection + **trait-shaped layout** (zones, flat memories, scan lists, …) for one CPS workflow.                                                        |
 | **Build capability trait**      | A behavioural concern radios may or may not support (zone grouping, scan lists, m×n channel expansion, …). Builds and build UI compose from traits; wire adapters map the result to CPS. |
 | **Trait profile**               | The set of traits enabled for a build, usually fixed per format/profile definition — e.g. OpenGD77-1701 vs CHIRP UV-5R.                                                                  |
 | **Format**                      | A wire interchange family at the import/export boundary — e.g. OpenGD77 CSV, DM32 CSV, CHIRP CSV, native YAML. Siblings; none is the internal model.                                     |
-| **Variant / profile**           | Per-radio specialisation *within* one format — selects trait profile and wire limits at export. Not a separate format.                                                                   |
+| **Variant / profile**           | Per-radio specialisation _within_ one format — selects trait profile and wire limits at export. Not a separate format.                                                                   |
 | **Codeplug** (export sense)     | The CPS-facing output of a build — files the vendor CPS accepts. Not the primary in-app edit model.                                                                                      |
-
 
 User-facing copy may say "codeplug" when the operator would; internal docs use **library** and **build** for clarity.
 
@@ -65,13 +61,13 @@ Export reads the library + build state and serialises to CPS wire values. Re-imp
 
 ### 3. Library, then builds
 
-Operators curate once. Each format build gets a workflow suited to how that radio/CPS *behaves* — not how its CSV happens to be laid out. Overlapping but disjoint terminology stays at the build layer, not in the library.
+Operators curate once. Each format build gets a workflow suited to how that radio/CPS _behaves_ — not how its CSV happens to be laid out. Overlapping but disjoint terminology stays at the build layer, not in the library.
 
 ### 3a. Build workflows from capability traits
 
 Radios differ along a small set of **behavioural concerns** (see [Build capability traits](#build-capability-traits)). Most radios are a permutation of these — not a unique snowflake requiring a one-off app model.
 
-**FormatBuild** data and **build UI** are composed from a **trait profile** (which concerns apply and how). **Wire import/export adapters** remain specific to a format/profile (OpenGD77-1701 CSV, CHIRP UV-5R, …) but *project* library + trait-shaped build state → wire at the boundary.
+**FormatBuild** data and **build UI** are composed from a **trait profile** (which concerns apply and how). **Wire import/export adapters** remain specific to a format/profile (OpenGD77-1701 CSV, CHIRP UV-5R, …) but _project_ library + trait-shaped build state → wire at the boundary.
 
 Do not model OpenGD77 zones in the library because OpenGD77 has a Zones.csv; model **zone grouping** on the build when the trait profile says the radio uses zones.
 
@@ -134,8 +130,6 @@ flowchart TB
   Integrations --> Services
 ```
 
-
-
 ### Application services
 
 Routes and components call **services** (`importIntoLibrary`, `exportBuild`, `assembleBuild`, …), not format adapters or mutations directly. Keeps UI rewrites from breaking import logic.
@@ -168,7 +162,7 @@ FormatBuild
 
 **Relationships:** UUID `id` foreign keys inside the library. `name` fields are display/export labels, not relationship keys.
 
-**Separation:** `Library` holds RF semantics (frequency, mode, talk group ref, …). `FormatBuild.layout` holds *organisation* semantics driven by traits (membership, order, scan participation). Wire adapters read `assemble(build, library)` — they do not dictate the internal shape.
+**Separation:** `Library` holds RF semantics (frequency, mode, talk group ref, …). `FormatBuild.layout` holds _organisation_ semantics driven by traits (membership, order, scan participation). Wire adapters read `assemble(build, library)` — they do not dictate the internal shape.
 
 **Open questions** (resolve during Phase 1 modelling):
 
@@ -197,7 +191,6 @@ FormatBuild
 
 ### Formats and phases
 
-
 | Phase | Formats / capabilities                        |
 | ----- | --------------------------------------------- |
 | 2     | No CSV/YAML I/O — in-app library editing only |
@@ -206,17 +199,15 @@ FormatBuild
 | 5     | Baofeng DM32 CSV                              |
 | 6     | CHIRP CSV (UV-5R, RT-95, UV-21)               |
 
-
 OpenGD77 is one format among many. DM32 and CHIRP are unrelated siblings, not variants of OpenGD77.
 
 ---
 
 ## Build capability traits
 
-Radios and CPS tools differ in how they *organise* channels, not just in CSV column names. A manageable set of **traits** describes those behaviours. A **trait profile** (per format/profile) declares which traits apply; the build model and build UI inherit that combination.
+Radios and CPS tools differ in how they _organise_ channels, not just in CSV column names. A manageable set of **traits** describes those behaviours. A **trait profile** (per format/profile) declares which traits apply; the build model and build UI inherit that combination.
 
 Known traits (initial set — expect more):
-
 
 | Trait                            | Behaviour                                                            | Example radios / formats             |
 | -------------------------------- | -------------------------------------------------------------------- | ------------------------------------ |
@@ -224,10 +215,9 @@ Known traits (initial set — expect more):
 | **Flat memory list**             | No zones — one ordered list of channels/memories                     | CHIRP analogue                       |
 | **Per-channel scan flag**        | Scan enabled/skipped per channel; no separate scan-list entity       | Many analogue rigs                   |
 | **Scan lists**                   | Named lists of channels used for scanning, distinct from TX grouping | DM32                                 |
-| **Zone as scan list**            | Zone membership doubles as scan scope (zone *is* the scan list)      | OpenGD77                             |
+| **Zone as scan list**            | Zone membership doubles as scan scope (zone _is_ the scan list)      | OpenGD77                             |
 | **Multi talk group per channel** | One RF channel; operator picks repeater + TG (or contact) on channel | OpenGD77-style DMR                   |
 | **m×n channel expansion**        | Radio requires one memory per repeater×talkgroup pair                | DM32, Most commerical digital radios |
-
 
 Most target radios are a **permutation** of these (plus caps: max channels, max zones, name length, …). Caps belong at the wire adapter / profile; traits belong in shared build model + UI modules.
 
@@ -242,8 +232,6 @@ flowchart LR
   Build --> Adapter
   Adapter --> CPS[CPS files]
 ```
-
-
 
 **UI implication:** `app/features/builds/` shares trait modules — e.g. `zone-grouping/`, `scan-lists/`, `flat-memories/` — composed per profile. Format-specific pages wire the modules their profile needs.
 
@@ -261,16 +249,13 @@ In codeplug-tool, **full import→export→re-import equality** often stood in f
 
 ### Required mapping tests
 
-
 | Direction                    | Input                                 | Assert                                                                      |
 | ---------------------------- | ------------------------------------- | --------------------------------------------------------------------------- |
 | **Wire → internal (import)** | CPS fixture files                     | Expected library entities + build trait layout (golden JSON/YAML snapshots) |
 | **Internal → wire (export)** | Constructed library + build in memory | Expected CPS columns/rows (golden files or normalised snapshots)            |
 | **Assemble**                 | Library + `FormatBuild`               | Export projection object before serialisation                               |
 
-
 Import and export tests use **different fixtures**. Export tests do not require importing first. Overlap between directions is a nice cross-check, not the definition of correctness.
-
 
 | Layer              | Bar                                                                           |
 | ------------------ | ----------------------------------------------------------------------------- |
@@ -280,20 +265,17 @@ Import and export tests use **different fixtures**. Export tests do not require 
 | **Domain**         | Unit tests on mutations, validation, merge heuristics                         |
 | **Round-trip**     | Optional smoke only; never the primary gate; document expected loss when used |
 
-
 System tests target `core/services` and format adapters, not React routes.
 
 ---
 
 ## Documentation tiers
 
-
 | Tier                         | Location                                   | Contents                                                             |
 | ---------------------------- | ------------------------------------------ | -------------------------------------------------------------------- |
 | 1 — Product / internal model | `docs/features/`                           | Library, builds, entities, UUID rules — no CPS column tables         |
 | 2 — Domain reference         | `docs/reference/*.md` (not in `<format>/`) | Bands, channel modes, display conventions — link out for wire detail |
 | 3 — Format wire reference    | `docs/reference/<format>/`                 | Column ↔ type tables, ladders, sentinels                             |
-
 
 See [`.cursor/rules/documentation-boundaries.mdc`](.cursor/rules/documentation-boundaries.mdc).
 
@@ -303,7 +285,6 @@ See [`.cursor/rules/documentation-boundaries.mdc`](.cursor/rules/documentation-b
 
 Aligned with [Epic #1](https://github.com/pskillen/codeplug-studio/issues/1):
 
-
 | Phase   | Outcome                                                    |
 | ------- | ---------------------------------------------------------- |
 | **0**   | This document, `AGENTS.md`, cursor rules/skills            |
@@ -311,7 +292,6 @@ Aligned with [Epic #1](https://github.com/pskillen/codeplug-studio/issues/1):
 | **2**   | Library UI, map, repeater APIs, localStorage — no file I/O |
 | **3**   | Native YAML, Google Drive                                  |
 | **4–6** | CPS formats per epic                                       |
-
 
 ---
 
@@ -327,10 +307,7 @@ Aligned with [Epic #1](https://github.com/pskillen/codeplug-studio/issues/1):
 
 ## Revision log
 
-
 | Date       | Change                                                       |
 | ---------- | ------------------------------------------------------------ |
 | 2026-06-29 | Initial draft on branch `2/pskil/design-md`                  |
 | 2026-06-29 | Build capability traits; bidirectional mapping test strategy |
-
-

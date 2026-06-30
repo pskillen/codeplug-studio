@@ -4,9 +4,9 @@ Tier 1 product and internal-model docs for Codeplug Studio. See [DESIGN.md — D
 
 Topics are added per epic phase — not all folders exist yet.
 
-| Topic | Status | Notes |
-| --- | --- | --- |
-| *(none yet)* | — | Phase 1+ will add `library/`, `builds/`, `import-export/`, etc. |
+| Topic        | Status | Notes                                                                   |
+| ------------ | ------ | ----------------------------------------------------------------------- |
+| _(none yet)_ | —      | `data-model/`, `library/`, `builds/`, `import-export/` in follow-up PRs |
 
 **Migration / epic logs:** [docs/poc-migration/](../poc-migration/) — execution progress for Epic #1.
 

@@ -28,12 +28,12 @@ Codeplug work is naturally **multi-surface**: operators open individual channels
 
 **Intended concurrency model:** normalised **one row per editable entity** + **revision on write** (optimistic concurrency — reject or prompt when a `put` sees a stale revision).
 
-| Tab editing | Persisted row | Overlap with another tab? |
-| --- | --- | --- |
-| Channel A detail | `channels/{id}` | No — different row from Channel B or Talk group T |
-| Talk group T detail | `talkGroups/{id}` | No |
-| Zone Z (build-scoped) | `zones/{id}` or build-scoped equivalent | No — if zones are first-class rows, not nested only in layout JSON |
-| Project list / map | Read-mostly aggregate | No writes to entity rows — but must **refresh** when other tabs save |
+| Tab editing           | Persisted row                           | Overlap with another tab?                                            |
+| --------------------- | --------------------------------------- | -------------------------------------------------------------------- |
+| Channel A detail      | `channels/{id}`                         | No — different row from Channel B or Talk group T                    |
+| Talk group T detail   | `talkGroups/{id}`                       | No                                                                   |
+| Zone Z (build-scoped) | `zones/{id}` or build-scoped equivalent | No — if zones are first-class rows, not nested only in layout JSON   |
+| Project list / map    | Read-mostly aggregate                   | No writes to entity rows — but must **refresh** when other tabs save |
 
 Different entities → different rows → **no write collision** between tabs. That is the main win over a project JSON blob.
 
@@ -57,12 +57,12 @@ List/map tabs may hydrate a broader working set but should not debounce-save the
 
 ### Approaches ruled out / deferred
 
-| Approach | Verdict |
-| --- | --- |
-| **Single-editor tab** | **Ruled out** — conflicts with how operators work |
-| **Detect + reload whole project** | Fallback for aggregate views only, not entity editors |
-| **Per-entity revision** | **Preferred** — matches entity-per-tab UX |
-| **IDB-primary / local-first** | Deferred unless revision + subscriptions prove insufficient |
+| Approach                          | Verdict                                                     |
+| --------------------------------- | ----------------------------------------------------------- |
+| **Single-editor tab**             | **Ruled out** — conflicts with how operators work           |
+| **Detect + reload whole project** | Fallback for aggregate views only, not entity editors       |
+| **Per-entity revision**           | **Preferred** — matches entity-per-tab UX                   |
+| **IDB-primary / local-first**     | Deferred unless revision + subscriptions prove insufficient |
 
 ---
 
@@ -70,13 +70,13 @@ List/map tabs may hydrate a broader working set but should not debounce-save the
 
 Normalise **editable units** to IndexedDB rows. Pair with **optimistic revision** on every `put`. Defer only what the trait model has not settled yet.
 
-| Layer | Persist as | Rationale |
-| --- | --- | --- |
-| **Project envelope** | Metadata row(s) — id, name, timestamps | Cheap project list; infrequent edits |
-| **Library entities** | One row per channel, talk group, contact, RX group list, … (`projectId` + `id` + `revision`) | Matches entity detail tabs; isolated saves |
-| **Build records** | Metadata per build (`formatId`, `profileId`, name, revision) | One row per build |
-| **Build-scoped editable units** | Prefer rows (zones, scan lists, …) when traits define them | Avoid layout-blob collisions across zone tabs |
-| **Build layout remainder** | Structured JSON only for structure not yet modelled as rows | Shrink over time as traits stabilise |
+| Layer                           | Persist as                                                                                   | Rationale                                     |
+| ------------------------------- | -------------------------------------------------------------------------------------------- | --------------------------------------------- |
+| **Project envelope**            | Metadata row(s) — id, name, timestamps                                                       | Cheap project list; infrequent edits          |
+| **Library entities**            | One row per channel, talk group, contact, RX group list, … (`projectId` + `id` + `revision`) | Matches entity detail tabs; isolated saves    |
+| **Build records**               | Metadata per build (`formatId`, `profileId`, name, revision)                                 | One row per build                             |
+| **Build-scoped editable units** | Prefer rows (zones, scan lists, …) when traits define them                                   | Avoid layout-blob collisions across zone tabs |
+| **Build layout remainder**      | Structured JSON only for structure not yet modelled as rows                                  | Shrink over time as traits stabilise          |
 
 **Concurrency:** each row carries a monotonic `revision` (or `updatedAt` + guard). Save succeeds only if stored revision matches load revision; otherwise reject and surface reload/overwrite in UI.
 
@@ -105,32 +105,32 @@ Normalise **editable units** to IndexedDB rows. Pair with **optimistic revision*
 
 Costs to plan for (adapted from [codeplug-tool#177](https://github.com/pskillen/codeplug-tool/issues/177)):
 
-| Area | Concern |
-| --- | --- |
-| **Model uncertainty** | Trait layout still evolving — row boundaries for build-scoped units may shift |
-| **Schema migration** | `CODEPLUG_SCHEMA_VERSION` bumps may touch N stores |
-| **Import / delete** | Bulk `put` in transactions; cascade delete when removing entities referenced elsewhere |
-| **Interchange** | YAML/CPS still needs assemble/disassemble — normalisation does not remove that |
+| Area                  | Concern                                                                                |
+| --------------------- | -------------------------------------------------------------------------------------- |
+| **Model uncertainty** | Trait layout still evolving — row boundaries for build-scoped units may shift          |
+| **Schema migration**  | `CODEPLUG_SCHEMA_VERSION` bumps may touch N stores                                     |
+| **Import / delete**   | Bulk `put` in transactions; cascade delete when removing entities referenced elsewhere |
+| **Interchange**       | YAML/CPS still needs assemble/disassemble — normalisation does not remove that         |
 
 Benefits beyond multi-tab:
 
-| Benefit | Notes |
-| --- | --- |
+| Benefit                      | Notes                                                                  |
+| ---------------------------- | ---------------------------------------------------------------------- |
 | **Multi-tab entity editing** | **Primary driver** — one tab per channel/zone/TG without write overlap |
-| **Smaller saves** | Per-row `put` instead of rewriting a megabyte blob |
-| **Boot / project list** | Metadata-only load before pulling entity rows |
-| **Cloud entity sync** | Phase 3 — per-row revision aligns with delta upload/download |
-| **Quota** | IndexedDB vs LocalStorage; row model is not required for quota alone |
+| **Smaller saves**            | Per-row `put` instead of rewriting a megabyte blob                     |
+| **Boot / project list**      | Metadata-only load before pulling entity rows                          |
+| **Cloud entity sync**        | Phase 3 — per-row revision aligns with delta upload/download           |
+| **Quota**                    | IndexedDB vs LocalStorage; row model is not required for quota alone   |
 
 ---
 
 ## Phase alignment
 
-| Phase | Persistence relevance |
-| --- | --- |
+| Phase | Persistence relevance                                                                                                                                                |
+| ----- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **1** | Scaffold, core models, **`ProjectPersistence` port** in `integrations/`, envelope versioning strategy — implementation can be minimal or in-memory until models land |
-| **2** | **Local persistence** — entity rows + revision; entity detail routes load/save one row; aggregate views subscribe to cross-tab changes |
-| **3** | Native YAML + Google Drive — full-project serialisation; cloud is interchange, not the edit store (same pattern as prototype) |
+| **2** | **Local persistence** — entity rows + revision; entity detail routes load/save one row; aggregate views subscribe to cross-tab changes                               |
+| **3** | Native YAML + Google Drive — full-project serialisation; cloud is interchange, not the edit store (same pattern as prototype)                                        |
 
 Update [DESIGN.md](../../DESIGN.md) architecture diagram (`localStorage envelope`) when persistence is implemented — it is a placeholder.
 
@@ -152,11 +152,11 @@ Keep these constraints; defer store names, indexes, and Dexie vs raw IDB to the 
 
 ## Decision log
 
-| Date | Decision |
-| --- | --- |
+| Date       | Decision                                                                                                                                                                                                       |
+| ---------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | 2026-06-29 | Hybrid persistence: normalised library entities, project/build metadata, trait layout as JSON per build until model stabilises. No prototype blob lift-and-shift; no full normalisation without measured need. |
-| 2026-06-29 | Session vs durable store: in-memory working copy is default SPA pattern, not a rejection of IDB; multi-tab needs an explicit concurrency policy (undecided). |
-| 2026-06-29 | Multi-tab entity editing is a product driver: per-entity IDB rows + revision/rejection; single-tab lock ruled out. Build-scoped units that get editor tabs should be rows, not layout-blob-only. |
+| 2026-06-29 | Session vs durable store: in-memory working copy is default SPA pattern, not a rejection of IDB; multi-tab needs an explicit concurrency policy (undecided).                                                   |
+| 2026-06-29 | Multi-tab entity editing is a product driver: per-entity IDB rows + revision/rejection; single-tab lock ruled out. Build-scoped units that get editor tabs should be rows, not layout-blob-only.               |
 
 ---
 

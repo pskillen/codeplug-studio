@@ -1,16 +1,15 @@
 # Epic 1 — progress
 
-**Tracking:** [codeplug-studio#1](https://github.com/pskillen/codeplug-studio/issues/1) (Epic) · Phase 0: [codeplug-studio#2](https://github.com/pskillen/codeplug-studio/issues/2)
-**Plan:** Phase 0 Constitution (Cursor plan)
-**Branch:** `2/pskil/design-md`
+**Tracking:** [codeplug-studio#1](https://github.com/pskillen/codeplug-studio/issues/1) (Epic) · Phase 0: [#2](https://github.com/pskillen/codeplug-studio/issues/2) · Phase 1: [#4](https://github.com/pskillen/codeplug-studio/issues/4)
+**Plan:** Phase 1 Scaffold Core (Cursor plan)
+**Branch:** `4/pskil/scaffold-core`
 
 ---
 
 ## Overall status
 
-**Status:** Complete (pending merge)
-
-**Branch:** `2/pskil/design-md`
+**Phase 0:** Complete (merged `9d70463`)
+**Phase 1 scaffold:** Complete — PR in review (core models in stacked PR)
 
 ---
 
@@ -37,7 +36,7 @@
 
 - [AGENTS.md](../../AGENTS.md)
 - [epic-1-progress.md](epic-1-progress.md)
-- [epic-1-outstanding.md](epic-1-outstanding.md)
+- [epic-1-gaps.md](epic-1-gaps.md)
 
 ---
 
@@ -88,7 +87,8 @@
 
 ## Slice 5: Close out and PR
 
-**Status:** Complete (pending merge)
+**Status:** Complete
+**Commit:** merged via PR #3 (`9d70463`)
 
 ---
 
@@ -104,6 +104,57 @@
 
 ---
 
+## Phase 1 — scaffold (SPA shell)
+
+**Tracking:** [#4](https://github.com/pskillen/codeplug-studio/issues/4)
+**Plan:** Phase 1 Scaffold Core (Cursor plan) — scaffold slice only; core models in stacked PR
+**Branch:** `4/pskil/scaffold-core` (from `main` after Phase 0 merge)
+
+**Status:** Complete — PR in review
+
+### Slice 0: Branch and progress kickoff
+
+**Commit:** `5fbba0b` — `docs: kick off phase 1 tracking for #4`
+
+### Slice 1: Toolchain scaffold
+
+**Commit:** `8e81480` — `chore: add Vite React TypeScript scaffold`
+
+### Slice 2: Layer folders + ESLint boundaries
+
+**Commit:** `9429810` — `chore: add src layer layout and ESLint boundaries`
+
+### Slice 3: App shell + build footer
+
+**Commit:** `2eb6469` — `feat(app): add placeholder shell and build footer`
+
+### Slice 4: CI, Pages deploy, version-number skill
+
+**Commit:** `54e8139` — `chore: add CI Pages workflows and version-number skill`
+
+### Slice 5: VS Code launch config
+
+**Commit:** `fb5ed06` — `build(local): add vscode launch config files`
+
+### Slice 6: Close out
+
+**Commit:** (this PR) — `docs: complete scaffold section in epic-1-progress`
+
+---
+
+## Phase 1 scaffold acceptance criteria (#4)
+
+- [x] `npm run build` succeeds; `base` is `/codeplug-studio/`
+- [x] `npm run lint` enforces core → no React
+- [x] CI workflow on PR; Pages workflow on release
+- [x] Placeholder app renders with build footer
+- [x] Layer folders (`src/core`, `src/integrations`, `src/app`) with ESLint boundaries
+- [ ] Core models + persistence — stacked PR `4/pskil/data-model`
+
+---
+
 ## Next
 
-- Merge PR; begin Phase 1 scaffold ([#1](https://github.com/pskillen/codeplug-studio/issues/1))
+- Merge scaffold PR ([#4](https://github.com/pskillen/codeplug-studio/issues/4))
+- Merge stacked data-model PR into scaffold (or main after scaffold)
+- Enable GitHub Pages (Actions source) before first release
