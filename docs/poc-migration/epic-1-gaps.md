@@ -1,8 +1,8 @@
-# Epic 1 — outstanding
+# Epic 1 — gaps
 
 Items **skipped**, **incomplete**, or **discovered during execution** — not future plan phases.
 
-**Tracking:** [codeplug-studio#1](https://github.com/pskillen/codeplug-studio/issues/1) · Phase 0: [codeplug-studio#2](https://github.com/pskillen/codeplug-studio/issues/2)
+**Tracking:** [codeplug-studio#1](https://github.com/pskillen/codeplug-studio/issues/1) · Phase 0: [#2](https://github.com/pskillen/codeplug-studio/issues/2) · Phase 1: [#4](https://github.com/pskillen/codeplug-studio/issues/4)
 
 ---
 

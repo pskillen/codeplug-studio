@@ -1,16 +1,15 @@
 # Epic 1 — progress
 
-**Tracking:** [codeplug-studio#1](https://github.com/pskillen/codeplug-studio/issues/1) (Epic) · Phase 0: [codeplug-studio#2](https://github.com/pskillen/codeplug-studio/issues/2)
-**Plan:** Phase 0 Constitution (Cursor plan)
-**Branch:** `2/pskil/design-md`
+**Tracking:** [codeplug-studio#1](https://github.com/pskillen/codeplug-studio/issues/1) (Epic) · Phase 0: [#2](https://github.com/pskillen/codeplug-studio/issues/2) · Phase 1: [#4](https://github.com/pskillen/codeplug-studio/issues/4)
+**Plan:** Phase 1 Scaffold Core (Cursor plan)
+**Branch:** `4/pskil/scaffold-core`
 
 ---
 
 ## Overall status
 
-**Status:** Complete (pending merge)
-
-**Branch:** `2/pskil/design-md`
+**Phase 0:** Complete (merged `9d70463`)
+**Phase 1:** In progress
 
 ---
 
@@ -37,7 +36,7 @@
 
 - [AGENTS.md](../../AGENTS.md)
 - [epic-1-progress.md](epic-1-progress.md)
-- [epic-1-outstanding.md](epic-1-outstanding.md)
+- [epic-1-gaps.md](epic-1-gaps.md)
 
 ---
 
@@ -88,7 +87,8 @@
 
 ## Slice 5: Close out and PR
 
-**Status:** Complete (pending merge)
+**Status:** Complete
+**Commit:** merged via PR #3 (`9d70463`)
 
 ---
 
@@ -104,6 +104,16 @@
 
 ---
 
+## Phase 1 — scaffold + core skeleton
+
+**Tracking:** [#4](https://github.com/pskillen/codeplug-studio/issues/4)  
+**Plan:** Phase 1 Scaffold Core (Cursor plan)  
+**Branch:** `4/pskil/scaffold-core` (from `main` after Phase 0 merge)
+
+**Status:** In progress (Slice 0)
+
+---
+
 ## Next
 
-- Merge PR; begin Phase 1 scaffold ([#1](https://github.com/pskillen/codeplug-studio/issues/1))
+- Complete Phase 1 ([#4](https://github.com/pskillen/codeplug-studio/issues/4)) on `4/pskil/scaffold-core`
