@@ -15,13 +15,13 @@ Open the URL Vite prints (typically `http://localhost:5173/codeplug-studio/`).
 
 ## Scripts
 
-| Script | Purpose |
-| --- | --- |
-| `npm run dev` | Vite dev server |
-| `npm run build` | Typecheck + production bundle |
-| `npm run test` | Vitest unit tests |
-| `npm run lint` | ESLint |
-| `npm run format` / `format:check` | Prettier |
+| Script                            | Purpose                       |
+| --------------------------------- | ----------------------------- |
+| `npm run dev`                     | Vite dev server               |
+| `npm run build`                   | Typecheck + production bundle |
+| `npm run test`                    | Vitest unit tests             |
+| `npm run lint`                    | ESLint                        |
+| `npm run format` / `format:check` | Prettier                      |
 
 ## CI
 
@@ -44,10 +44,10 @@ Enable **Pages** in repo settings (source: GitHub Actions) if not already done.
 
 Injected via Vite `define` in `vite.config.ts`:
 
-| Variable | Local default | Prod (release build) |
-| --- | --- | --- |
-| `BUILD_ENV` | `local` | `prod` |
-| `BUILD_VERSION` | `local` | Release tag without leading `v` |
+| Variable        | Local default | Prod (release build)            |
+| --------------- | ------------- | ------------------------------- |
+| `BUILD_ENV`     | `local`       | `prod`                          |
+| `BUILD_VERSION` | `local`       | Release tag without leading `v` |
 
 Displayed in [`BuildFooter`](../../src/app/components/BuildFooter/BuildFooter.tsx). See [version-number skill](../../.cursor/skills/version-number/SKILL.md).
 

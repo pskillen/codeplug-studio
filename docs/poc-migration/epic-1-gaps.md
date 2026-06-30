@@ -8,7 +8,12 @@ Items **skipped**, **incomplete**, or **discovered during execution** — not fu
 
 ## Phase 0 / DESIGN.md
 
-- [ ] Trait enum and profile → trait matrix TBD (resolve in Phase 1 modelling)
+- [ ] Trait enum and profile → trait matrix TBD (data-model PR)
 - [ ] Trait layout: discriminated union vs optional sections TBD
 - [ ] Whether zones live at library level or build-only TBD
-- [ ] `version-number` cursor skill deferred to Phase 1 (needs Vite)
+- [x] `version-number` cursor skill — shipped in scaffold PR
+
+## Phase 1 scaffold
+
+- [ ] Core models, validation, persistence port — separate PR (`4/pskil/data-model`) stacked on scaffold
+- [ ] GitHub Pages — enable in repo settings (operator task) before first release deploy
