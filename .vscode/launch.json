@@ -1,0 +1,30 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "type": "node-terminal",
+      "request": "launch",
+      "name": "Run Dev Server",
+      "command": "npm run dev"
+    },
+    {
+      "type": "chrome",
+      "request": "launch",
+      "name": "Launch SPA (Chrome)",
+      "url": "http://localhost:5173/codeplug-studio/#/",
+      "webRoot": "${workspaceFolder}/src",
+      "preLaunchTask": "dev"
+    },
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "Debug Vitest Tests",
+      "autoAttachChildProcesses": true,
+      "skipFiles": ["<node_internals>/**", "**/node_modules/**"],
+      "program": "${workspaceFolder}/node_modules/vitest/vitest.mjs",
+      "args": ["run", "--no-file-parallelism"],
+      "smartStep": true,
+      "console": "integratedTerminal"
+    }
+  ]
+}
