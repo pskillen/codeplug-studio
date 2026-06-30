@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { newChannel, newProjectMeta } from '@core/domain/factories.ts';
+import { newChannel, newProjectMeta, newTalkGroup } from '@core/domain/factories.ts';
 import { InMemoryProjectPersistence } from './inMemory.ts';
+import type { PersistenceChange } from './types.ts';
 
 describe('InMemoryProjectPersistence', () => {
   it('lists seeded projects', async () => {
@@ -48,5 +49,38 @@ describe('InMemoryProjectPersistence', () => {
 
     expect(await store.getChannel(metaA.projectId, chA.id)).not.toBeNull();
     expect(await store.getChannel(metaA.projectId, chB.id)).toBeNull();
+  });
+
+  it('lists entities of one type for a project, sorted by name', async () => {
+    const store = new InMemoryProjectPersistence();
+    const meta = newProjectMeta('Test');
+    await store.seedProject({ meta });
+    await store.putChannel(newChannel(meta.projectId, 'Zulu'), null);
+    await store.putChannel(newChannel(meta.projectId, 'Alpha'), null);
+    await store.putTalkGroup(newTalkGroup(meta.projectId, 'TG', 1), null);
+
+    const channels = await store.listChannels(meta.projectId);
+    expect(channels.map((c) => c.name)).toEqual(['Alpha', 'Zulu']);
+    expect(await store.listTalkGroups(meta.projectId)).toHaveLength(1);
+  });
+
+  it('notifies subscribers on put and delete', async () => {
+    const store = new InMemoryProjectPersistence();
+    const meta = newProjectMeta('Test');
+    await store.seedProject({ meta });
+    const channel = newChannel(meta.projectId, 'Local');
+
+    const changes: PersistenceChange[] = [];
+    const unsubscribe = store.subscribe((c) => changes.push(c));
+
+    await store.putChannel(channel, null);
+    await store.deleteEntity(meta.projectId, 'channel', channel.id);
+    unsubscribe();
+    await store.putChannel(newChannel(meta.projectId, 'After'), null);
+
+    expect(changes).toEqual([
+      { projectId: meta.projectId, kind: 'channel', id: channel.id, op: 'put' },
+      { projectId: meta.projectId, kind: 'channel', id: channel.id, op: 'delete' },
+    ]);
   });
 });

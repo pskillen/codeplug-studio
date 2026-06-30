@@ -9,7 +9,14 @@ import type {
 } from '@core/models/library.ts';
 import type { ProjectMeta } from '@core/models/project.ts';
 import { isoNow, nextRevision } from '@core/models/revision.ts';
-import type { EntityKind, PutResult } from './types.ts';
+import type {
+  EntityKind,
+  PersistenceChange,
+  PersistenceListener,
+  ProjectPersistence,
+  ProjectSeed,
+  PutResult,
+} from './types.ts';
 
 type RowMap<T extends { id: string; projectId: string }> = Map<string, T>;
 
@@ -27,18 +34,7 @@ function checkRevision<T extends { revision: number }>(
   return null;
 }
 
-export interface ProjectSeed {
-  meta: ProjectMeta;
-  channels?: Channel[];
-  zones?: Zone[];
-  talkGroups?: TalkGroup[];
-  digitalContacts?: DigitalContact[];
-  analogContacts?: AnalogContact[];
-  rxGroupLists?: RxGroupList[];
-  formatBuilds?: FormatBuild[];
-}
-
-export class InMemoryProjectPersistence {
+export class InMemoryProjectPersistence implements ProjectPersistence {
   private projects: RowMap<ProjectMeta> = new Map();
   private channels: RowMap<Channel> = new Map();
   private zones: RowMap<Zone> = new Map();
@@ -47,6 +43,7 @@ export class InMemoryProjectPersistence {
   private analogContacts: RowMap<AnalogContact> = new Map();
   private rxGroupLists: RowMap<RxGroupList> = new Map();
   private formatBuilds: RowMap<FormatBuild> = new Map();
+  private listeners = new Set<PersistenceListener>();
 
   async listProjects(): Promise<ProjectMeta[]> {
     return [...this.projects.values()].sort((a, b) => a.name.localeCompare(b.name));
@@ -67,6 +64,7 @@ export class InMemoryProjectPersistence {
       updatedAt: isoNow(),
     };
     this.projects.set(key, updated);
+    this.emit({ projectId: row.projectId, kind: 'project', id: row.id, op: 'put' });
     return { ok: true, revision: updated.revision };
   }
 
@@ -75,7 +73,11 @@ export class InMemoryProjectPersistence {
   }
 
   async putChannel(row: Channel, expectedRevision: number | null): Promise<PutResult> {
-    return this.putRow(this.channels, row, expectedRevision);
+    return this.putRow('channel', this.channels, row, expectedRevision);
+  }
+
+  async listChannels(projectId: string): Promise<Channel[]> {
+    return this.listRows(this.channels, projectId);
   }
 
   async getZone(projectId: string, id: string): Promise<Zone | null> {
@@ -83,7 +85,11 @@ export class InMemoryProjectPersistence {
   }
 
   async putZone(row: Zone, expectedRevision: number | null): Promise<PutResult> {
-    return this.putRow(this.zones, row, expectedRevision);
+    return this.putRow('zone', this.zones, row, expectedRevision);
+  }
+
+  async listZones(projectId: string): Promise<Zone[]> {
+    return this.listRows(this.zones, projectId);
   }
 
   async getTalkGroup(projectId: string, id: string): Promise<TalkGroup | null> {
@@ -91,7 +97,11 @@ export class InMemoryProjectPersistence {
   }
 
   async putTalkGroup(row: TalkGroup, expectedRevision: number | null): Promise<PutResult> {
-    return this.putRow(this.talkGroups, row, expectedRevision);
+    return this.putRow('talkGroup', this.talkGroups, row, expectedRevision);
+  }
+
+  async listTalkGroups(projectId: string): Promise<TalkGroup[]> {
+    return this.listRows(this.talkGroups, projectId);
   }
 
   async getDigitalContact(projectId: string, id: string): Promise<DigitalContact | null> {
@@ -102,7 +112,11 @@ export class InMemoryProjectPersistence {
     row: DigitalContact,
     expectedRevision: number | null,
   ): Promise<PutResult> {
-    return this.putRow(this.digitalContacts, row, expectedRevision);
+    return this.putRow('digitalContact', this.digitalContacts, row, expectedRevision);
+  }
+
+  async listDigitalContacts(projectId: string): Promise<DigitalContact[]> {
+    return this.listRows(this.digitalContacts, projectId);
   }
 
   async getAnalogContact(projectId: string, id: string): Promise<AnalogContact | null> {
@@ -110,7 +124,11 @@ export class InMemoryProjectPersistence {
   }
 
   async putAnalogContact(row: AnalogContact, expectedRevision: number | null): Promise<PutResult> {
-    return this.putRow(this.analogContacts, row, expectedRevision);
+    return this.putRow('analogContact', this.analogContacts, row, expectedRevision);
+  }
+
+  async listAnalogContacts(projectId: string): Promise<AnalogContact[]> {
+    return this.listRows(this.analogContacts, projectId);
   }
 
   async getRxGroupList(projectId: string, id: string): Promise<RxGroupList | null> {
@@ -118,7 +136,11 @@ export class InMemoryProjectPersistence {
   }
 
   async putRxGroupList(row: RxGroupList, expectedRevision: number | null): Promise<PutResult> {
-    return this.putRow(this.rxGroupLists, row, expectedRevision);
+    return this.putRow('rxGroupList', this.rxGroupLists, row, expectedRevision);
+  }
+
+  async listRxGroupLists(projectId: string): Promise<RxGroupList[]> {
+    return this.listRows(this.rxGroupLists, projectId);
   }
 
   async getFormatBuild(projectId: string, id: string): Promise<FormatBuild | null> {
@@ -126,13 +148,23 @@ export class InMemoryProjectPersistence {
   }
 
   async putFormatBuild(row: FormatBuild, expectedRevision: number | null): Promise<PutResult> {
-    return this.putRow(this.formatBuilds, row, expectedRevision);
+    return this.putRow('formatBuild', this.formatBuilds, row, expectedRevision);
+  }
+
+  async listFormatBuilds(projectId: string): Promise<FormatBuild[]> {
+    return this.listRows(this.formatBuilds, projectId);
   }
 
   async deleteEntity(projectId: string, kind: EntityKind, id: string): Promise<void> {
+    if (kind === 'project') {
+      this.projects.delete(rowKey(projectId, id));
+      this.emit({ projectId, kind, id, op: 'delete' });
+      return;
+    }
     const map = this.mapForKind(kind);
     if (!map) return;
     map.delete(rowKey(projectId, id));
+    this.emit({ projectId, kind, id, op: 'delete' });
   }
 
   async seedProject(seed: ProjectSeed): Promise<void> {
@@ -159,9 +191,33 @@ export class InMemoryProjectPersistence {
     for (const row of seed.formatBuilds ?? []) {
       this.formatBuilds.set(rowKey(row.projectId, row.id), { ...row });
     }
+    this.emit({ projectId: meta.projectId, kind: 'project', id: meta.id, op: 'put' });
+  }
+
+  subscribe(listener: PersistenceListener): () => void {
+    this.listeners.add(listener);
+    return () => {
+      this.listeners.delete(listener);
+    };
+  }
+
+  private emit(change: PersistenceChange): void {
+    for (const listener of this.listeners) {
+      listener(change);
+    }
+  }
+
+  private listRows<T extends { id: string; projectId: string; name?: string }>(
+    store: RowMap<T>,
+    projectId: string,
+  ): T[] {
+    return [...store.values()]
+      .filter((row) => row.projectId === projectId)
+      .sort((a, b) => (a.name ?? '').localeCompare(b.name ?? ''));
   }
 
   private putRow<T extends { id: string; projectId: string; revision: number }>(
+    kind: EntityKind,
     store: RowMap<T>,
     row: T,
     expectedRevision: number | null,
@@ -176,24 +232,16 @@ export class InMemoryProjectPersistence {
       updatedAt: isoNow(),
     } as T & { updatedAt: string };
     store.set(key, updated);
+    this.emit({ projectId: row.projectId, kind, id: row.id, op: 'put' });
     return { ok: true, revision: updated.revision };
   }
 
   private mapForKind(
     kind: EntityKind,
   ): RowMap<
-    | Channel
-    | Zone
-    | TalkGroup
-    | DigitalContact
-    | AnalogContact
-    | RxGroupList
-    | FormatBuild
-    | ProjectMeta
+    Channel | Zone | TalkGroup | DigitalContact | AnalogContact | RxGroupList | FormatBuild
   > | null {
     switch (kind) {
-      case 'project':
-        return this.projects;
       case 'channel':
         return this.channels;
       case 'zone':
@@ -208,10 +256,10 @@ export class InMemoryProjectPersistence {
         return this.rxGroupLists;
       case 'formatBuild':
         return this.formatBuilds;
+      case 'project':
+        return null;
       default:
         return null;
     }
   }
 }
-
-export type ProjectPersistence = InMemoryProjectPersistence;
