@@ -1,10 +1,6 @@
 import { newChannel } from '@core/domain/factories.ts';
-import type {
-  Channel,
-  ChannelModeProfileDMR,
-  ChannelModeProfileFM,
-  ChannelTone,
-} from '@core/models/library.ts';
+import type { Channel } from '@core/models/library.ts';
+import { buildModeProfilesFromListing } from './buildModeProfiles.ts';
 import type { RepeaterListing } from './types.ts';
 
 /**
@@ -14,19 +10,6 @@ import type { RepeaterListing } from './types.ts';
  */
 export function repeaterListingToChannel(listing: RepeaterListing, projectId: string): Channel {
   const base = newChannel(projectId, listing.callsign || listing.name || 'Repeater');
-  const tone: ChannelTone = listing.toneHz ? String(listing.toneHz) : 'none';
-
-  const profile: ChannelModeProfileFM | ChannelModeProfileDMR =
-    listing.primaryMode === 'dmr'
-      ? {
-          mode: 'dmr',
-          colourCode: listing.colourCode,
-          timeslot: null,
-          dmrId: null,
-          contactRef: null,
-          rxGroupListId: null,
-        }
-      : { mode: 'fm', squelch: null, rxTone: tone, txTone: tone };
 
   const name =
     listing.callsign && listing.name
@@ -42,6 +25,6 @@ export function repeaterListingToChannel(listing: RepeaterListing, projectId: st
     location: listing.location,
     useLocation: listing.location !== null,
     comment: [listing.name, listing.status].filter((s) => s.length > 0).join(' — '),
-    modeProfiles: [profile],
+    modeProfiles: buildModeProfilesFromListing(listing),
   };
 }

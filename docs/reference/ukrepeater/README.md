@@ -76,7 +76,7 @@ Parser: [`src/integrations/repeaters/ukrepeater/modeCodes.ts`](../../../src/inte
 ### Import vs display
 
 - **Display:** all recognised flags become mode pills on directory search results.
-- **Add to library:** `repeaterListingToChannel` creates an **FM or DMR** profile from `primaryMode` — FM when `A` is present, else DMR when `M`/`M:n` is present, else the first digital mode. Other digital modes are shown in the UI but are not yet first-class channel profiles on import.
+- **Add to library:** `repeaterListingToChannel` creates one `modeProfiles` entry per advertised mode — full **FM** and **DMR** profiles where those modes are present; other digital modes use a mode-only stub until dedicated profile types exist.
 
 DMR timeslot is not in ETCC listings — operator configures in CRUD.
 
@@ -101,7 +101,7 @@ DMR timeslot is not in ETCC listings — operator configures in CRUD.
 | --- | --- |
 | Talk groups, contacts, RX group lists | Operator configures in library CRUD |
 | DMR timeslot | Operator configures in CRUD |
-| Non-FM/DMR digital-only import | FM profile used as fallback unless DMR is present |
+| Non-FM/DMR digital modes on import | Mode-only profile stub (no mode-specific fields yet) |
 | `type`, keeper, ERP, antenna metadata | Not stored on import today |
 
 ## Disclaimer

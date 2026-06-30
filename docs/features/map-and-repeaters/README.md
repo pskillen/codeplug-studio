@@ -33,7 +33,7 @@ Routes:
 | UK repeater (RSGB ETCC) | `searchUkRepeatersByCallsign` / `…ByLocator` | callsign, locator | `tx`/`rx` in Hz, `ctcss` Hz, Maidenhead `locator` |
 | BrandMeister            | `searchBrandmeisterByCallsign`               | callsign          | DMR devices; `tx`/`rx` MHz strings, `lat`/`lng`   |
 
-Each client normalises its wire shape into a vendor-neutral `RepeaterListing` (`src/integrations/repeaters/types.ts`); `repeaterListingToChannel` maps a listing to a library `Channel` (FM or DMR profile, frequencies in Hz, location from the locator). UK listings expose multiple mode flags — see [ukrepeater mode flags](../../reference/ukrepeater/README.md#mode-flags-modecodes). Channel verify uses `diffChannelFromListing` / `buildPatchFromDiff` in `src/integrations/repeaters/channelDiff.ts`.
+Each client normalises its wire shape into a vendor-neutral `RepeaterListing` (`src/integrations/repeaters/types.ts`); `repeaterListingToChannel` maps a listing to a library `Channel` (one `modeProfiles` entry per advertised mode — full FM/DMR profiles plus digital stubs, frequencies in Hz, location from the locator). UK listings expose multiple mode flags — see [ukrepeater mode flags](../../reference/ukrepeater/README.md#mode-flags-modecodes). Channel verify uses `diffChannelFromListing` / `buildPatchFromDiff` in `src/integrations/repeaters/channelDiff.ts`.
 
 Frequency convention: `rxFrequencyHz` is what the radio receives (repeater output), `txFrequencyHz` what it transmits (repeater input).
 

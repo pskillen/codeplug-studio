@@ -1,9 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import type { ChannelModeProfileDMR, ChannelModeProfileFM } from '@core/models/library.ts';
+import { buildModeProfilesFromListing } from './buildModeProfiles.ts';
 import { repeaterListingToChannel } from './mapToChannel.ts';
 import type { RepeaterListing } from './types.ts';
 
-const fmListing: RepeaterListing = {
+const baseListing: RepeaterListing = {
   source: 'ukrepeater',
   remoteId: '4120',
   callsign: 'GB3DA',
@@ -11,7 +12,7 @@ const fmListing: RepeaterListing = {
   rxFrequencyHz: 145_725_000,
   txFrequencyHz: 145_125_000,
   toneHz: 110.9,
-  modes: ['fm', 'ysf'],
+  modes: ['fm'],
   primaryMode: 'fm',
   colourCode: null,
   locator: 'JO01GR',
@@ -20,9 +21,44 @@ const fmListing: RepeaterListing = {
   status: 'OPERATIONAL',
 };
 
+describe('buildModeProfilesFromListing', () => {
+  it('creates FM and DMR profiles for a multi-mode analogue + DMR listing', () => {
+    const profiles = buildModeProfilesFromListing({
+      ...baseListing,
+      modes: ['fm', 'dmr'],
+      colourCode: 1,
+    });
+    expect(profiles).toHaveLength(2);
+    expect(profiles[0]).toMatchObject({ mode: 'fm', rxTone: '110.9' });
+    expect(profiles[1]).toMatchObject({ mode: 'dmr', colourCode: 1 });
+  });
+
+  it('creates stubs for other digital modes alongside FM and DMR', () => {
+    const profiles = buildModeProfilesFromListing({
+      ...baseListing,
+      modes: ['fm', 'dmr', 'dstar', 'ysf', 'p25', 'nxdn'],
+      colourCode: 1,
+    });
+    expect(profiles.map((p) => p.mode)).toEqual([
+      'fm',
+      'dmr',
+      'dstar',
+      'ysf',
+      'p25',
+      'nxdn',
+    ]);
+  });
+
+  it('defaults to a single FM profile when no modes are advertised', () => {
+    const profiles = buildModeProfilesFromListing({ ...baseListing, modes: [] });
+    expect(profiles).toHaveLength(1);
+    expect(profiles[0]?.mode).toBe('fm');
+  });
+});
+
 describe('repeaterListingToChannel', () => {
   it('maps an FM repeater to a channel with an FM profile and tone', () => {
-    const channel = repeaterListingToChannel(fmListing, 'p1');
+    const channel = repeaterListingToChannel(baseListing, 'p1');
     expect(channel.callsign).toBe('GB3DA');
     expect(channel.name).toBe('GB3DA Danbury');
     expect(channel.rxFrequency).toBe(145_725_000);
@@ -34,9 +70,17 @@ describe('repeaterListingToChannel', () => {
     expect(profile.rxTone).toBe('110.9');
   });
 
+  it('maps FM + Fusion to FM profile and YSF stub', () => {
+    const channel = repeaterListingToChannel(
+      { ...baseListing, modes: ['fm', 'ysf'] },
+      'p1',
+    );
+    expect(channel.modeProfiles.map((p) => p.mode)).toEqual(['fm', 'ysf']);
+  });
+
   it('maps a DMR repeater to a channel with a DMR profile and colour code', () => {
     const channel = repeaterListingToChannel(
-      { ...fmListing, modes: ['dmr'], primaryMode: 'dmr', colourCode: 1, toneHz: null },
+      { ...baseListing, modes: ['dmr'], primaryMode: 'dmr', colourCode: 1, toneHz: null },
       'p1',
     );
     const profile = channel.modeProfiles[0] as ChannelModeProfileDMR;
