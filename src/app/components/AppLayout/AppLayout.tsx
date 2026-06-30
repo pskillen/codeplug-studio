@@ -1,78 +1,67 @@
-import type { CSSProperties } from 'react';
-import { NavLink, Outlet } from 'react-router-dom';
+import { AppShell, Box, Divider, Group } from '@mantine/core';
+import { useDisclosure, useMediaQuery } from '@mantine/hooks';
+import { Outlet } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
+import AppNav from '../AppNav/AppNav.tsx';
+import SectionNav from '../SectionNav/SectionNav.tsx';
+import AppHeader from '../ui/AppHeader.tsx';
 import BuildFooter from '../BuildFooter/BuildFooter.tsx';
+import {
+  NAVBAR_WIDTH_WITH_SECONDARY,
+  PRIMARY_NAV_WIDTH,
+  SECONDARY_NAV_WIDTH,
+} from '../../nav/navWidths.ts';
+import { shouldShowSecondaryNav } from '../../nav/sectionNavRegistry.ts';
 import { useProjects } from '../../state/useProjects.ts';
 
-const NAV_ITEMS: { to: string; label: string }[] = [
-  { to: '/', label: 'Projects' },
-  { to: '/library', label: 'Library' },
-  { to: '/map', label: 'Map' },
-  { to: '/repeaters', label: 'Repeaters' },
-  { to: '/reports', label: 'Reports' },
-  { to: '/reference', label: 'Reference' },
-  { to: '/settings', label: 'Settings' },
-  { to: '/help', label: 'Help' },
-];
-
-function navLinkStyle({ isActive }: { isActive: boolean }): CSSProperties {
-  return {
-    padding: '0.35rem 0.7rem',
-    borderRadius: 6,
-    textDecoration: 'none',
-    color: isActive ? '#fff' : '#1f2933',
-    background: isActive ? '#2f6f4f' : 'transparent',
-    fontWeight: isActive ? 600 : 500,
-    fontSize: '0.9rem',
-  };
-}
-
 export default function AppLayout() {
-  const { activeProject } = useProjects();
+  const [opened, { toggle, close }] = useDisclosure();
+  const isDesktopNav = useMediaQuery('(min-width: 48em)');
+  const location = useLocation();
+  const { activeProjectId } = useProjects();
+  const hasActiveProject = activeProjectId != null;
+  const showSecondary = shouldShowSecondaryNav(location.pathname, hasActiveProject);
+  const navbarWidth = showSecondary ? NAVBAR_WIDTH_WITH_SECONDARY : PRIMARY_NAV_WIDTH;
 
   return (
-    <div
-      style={{
-        minHeight: '100vh',
-        display: 'flex',
-        flexDirection: 'column',
-        fontFamily: 'system-ui, sans-serif',
-        color: '#1f2933',
+    <AppShell
+      header={{ height: 56 }}
+      navbar={{
+        width: navbarWidth,
+        breakpoint: 'sm',
+        collapsed: { mobile: !opened },
       }}
+      padding="md"
     >
-      <header
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '1rem',
-          padding: '0.75rem 2rem',
-          borderBottom: '1px solid #e4e7eb',
-          flexWrap: 'wrap',
-        }}
-      >
-        <strong style={{ fontSize: '1.05rem' }}>Codeplug Studio</strong>
-        <nav style={{ display: 'flex', gap: '0.25rem', flexWrap: 'wrap' }}>
-          {NAV_ITEMS.map((item) => (
-            <NavLink key={item.to} to={item.to} end={item.to === '/'} style={navLinkStyle}>
-              {item.label}
-            </NavLink>
-          ))}
-        </nav>
-        <span style={{ marginLeft: 'auto', fontSize: '0.85rem', color: '#52606d' }}>
-          {activeProject ? (
+      <AppShell.Header>
+        <AppHeader opened={opened} onToggle={toggle} />
+      </AppShell.Header>
+
+      <AppShell.Navbar p={0}>
+        <Group wrap="nowrap" align="stretch" gap={0} style={{ height: '100%' }}>
+          <Box w={PRIMARY_NAV_WIDTH} p="md" style={{ flexShrink: 0 }}>
+            <AppNav onNavClick={close} />
+          </Box>
+          {showSecondary && isDesktopNav ? (
             <>
-              Active project: <strong>{activeProject.name}</strong>
+              <Divider orientation="vertical" />
+              <Box w={SECONDARY_NAV_WIDTH} p="md" style={{ flexShrink: 0, overflow: 'hidden' }}>
+                <SectionNav variant="sidebar" />
+              </Box>
             </>
-          ) : (
-            'No active project'
-          )}
-        </span>
-      </header>
+          ) : null}
+        </Group>
+      </AppShell.Navbar>
 
-      <main style={{ flex: 1, padding: '2rem', maxWidth: 960, width: '100%' }}>
+      <AppShell.Main>
+        {showSecondary && !isDesktopNav ? (
+          <Box mb="md">
+            <SectionNav variant="toolbar" />
+          </Box>
+        ) : null}
         <Outlet />
-      </main>
-
-      <BuildFooter />
-    </div>
+        <BuildFooter />
+      </AppShell.Main>
+    </AppShell>
   );
 }

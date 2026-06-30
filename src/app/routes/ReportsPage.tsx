@@ -1,23 +1,18 @@
+import { Alert, SimpleGrid, Stack, Table, Text } from '@mantine/core';
 import { Link } from 'react-router-dom';
 import { summariseLibrary } from '@core/domain/summary.ts';
 import { useLibrary } from '../state/useLibrary.ts';
+import { ListPage, PageSection, PageSectionGrid } from '../components/ui/index.ts';
 
 export default function ReportsPage() {
-  const { library, loading, projectId } = useLibrary();
-
-  if (!projectId) {
-    return (
-      <section>
-        <h1 style={{ marginTop: 0 }}>Reports</h1>
-        <p style={{ color: '#52606d' }}>
-          Select or create a project on the <Link to="/">Projects</Link> page first.
-        </p>
-      </section>
-    );
-  }
+  const { library, loading } = useLibrary();
 
   if (loading) {
-    return <p>Loading…</p>;
+    return (
+      <ListPage title="Reports" description="Read-only summary of the active project's library.">
+        <Text>Loading…</Text>
+      </ListPage>
+    );
   }
 
   const summary = summariseLibrary(library);
@@ -31,30 +26,21 @@ export default function ReportsPage() {
   ];
 
   return (
-    <section>
-      <h1 style={{ marginTop: 0 }}>Reports</h1>
-      <p style={{ color: '#52606d' }}>Read-only summary of the active project&apos;s library.</p>
-
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))',
-          gap: '0.6rem',
-          margin: '1rem 0',
-        }}
-      >
+    <ListPage title="Reports" description="Read-only summary of the active project's library.">
+      <SimpleGrid cols={{ base: 2, sm: 3, md: 6 }} spacing="sm">
         {counts.map((c) => (
-          <div
-            key={c.label}
-            style={{ padding: '0.8rem', border: '1px solid #e4e7eb', borderRadius: 8 }}
-          >
-            <div style={{ fontSize: '1.6rem', fontWeight: 700 }}>{c.value}</div>
-            <div style={{ fontSize: '0.8rem', color: '#7b8794' }}>{c.label}</div>
-          </div>
+          <PageSection key={c.label}>
+            <Text size="xl" fw={700}>
+              {c.value}
+            </Text>
+            <Text size="sm" c="dimmed">
+              {c.label}
+            </Text>
+          </PageSection>
         ))}
-      </div>
+      </SimpleGrid>
 
-      <div style={{ display: 'flex', gap: '2rem', flexWrap: 'wrap' }}>
+      <PageSectionGrid>
         <Breakdown
           title="Channels by mode"
           rows={summary.channelsByMode.map((r) => ({ label: r.mode, count: r.count }))}
@@ -63,47 +49,47 @@ export default function ReportsPage() {
           title="Channels by band"
           rows={summary.channelsByBand.map((r) => ({ label: r.band, count: r.count }))}
         />
-      </div>
+      </PageSectionGrid>
 
-      <p style={{ marginTop: '1rem', color: '#52606d' }}>
+      <Text c="dimmed">
         {summary.channelsWithLocation} channel(s) have a location (
         <Link to="/map">view on map</Link>).
-      </p>
+      </Text>
 
-      <h2 style={{ fontSize: '1.05rem', marginTop: '1.5rem' }}>Integrity warnings</h2>
-      {summary.danglingReferences.length === 0 ? (
-        <p style={{ color: '#2f6f4f' }}>No dangling references — all relationships resolve.</p>
-      ) : (
-        <ul style={{ color: '#b91c1c' }}>
-          {summary.danglingReferences.map((d, i) => (
-            <li key={i}>
-              {d.fromKind} “{d.fromName}” references a missing {d.targetKind} ({d.relationship})
-            </li>
-          ))}
-        </ul>
-      )}
-    </section>
+      <PageSection title="Integrity warnings">
+        {summary.danglingReferences.length === 0 ? (
+          <Alert color="green">No dangling references — all relationships resolve.</Alert>
+        ) : (
+          <Stack gap="xs">
+            {summary.danglingReferences.map((d, i) => (
+              <Text key={i} c="red" size="sm">
+                {d.fromKind} “{d.fromName}” references a missing {d.targetKind} ({d.relationship})
+              </Text>
+            ))}
+          </Stack>
+        )}
+      </PageSection>
+    </ListPage>
   );
 }
 
 function Breakdown({ title, rows }: { title: string; rows: { label: string; count: number }[] }) {
   return (
-    <div>
-      <h2 style={{ fontSize: '1.05rem' }}>{title}</h2>
+    <PageSection title={title}>
       {rows.length === 0 ? (
-        <p style={{ color: '#9aa5b1' }}>No channels.</p>
+        <Text c="dimmed">No channels.</Text>
       ) : (
-        <table style={{ borderCollapse: 'collapse' }}>
-          <tbody>
+        <Table>
+          <Table.Tbody>
             {rows.map((r) => (
-              <tr key={r.label}>
-                <td style={{ padding: '0.2rem 1rem 0.2rem 0' }}>{r.label}</td>
-                <td style={{ padding: '0.2rem 0', fontWeight: 600 }}>{r.count}</td>
-              </tr>
+              <Table.Tr key={r.label}>
+                <Table.Td>{r.label}</Table.Td>
+                <Table.Td fw={600}>{r.count}</Table.Td>
+              </Table.Tr>
             ))}
-          </tbody>
-        </table>
+          </Table.Tbody>
+        </Table>
       )}
-    </div>
+    </PageSection>
   );
 }

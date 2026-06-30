@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import { Alert, Button, Checkbox, Group, Select, Stack, TextInput } from '@mantine/core';
+import { Link } from 'react-router-dom';
 import type {
   Channel,
   ChannelModeProfileDMR,
@@ -7,12 +9,10 @@ import type {
   Library,
 } from '@core/models/library.ts';
 import { newChannel } from '@core/domain/factories.ts';
-import { FieldRow } from '../../components/fields/Fields.tsx';
-import { controlStyle } from '../../components/fields/styles.ts';
+import { FormSection } from '../../components/ui/index.ts';
 import { hzToMhzString, mhzStringToHz, parseOptionalInt } from '../../lib/units.ts';
 import { persistence } from '../../state/persistence.ts';
 import { useEntitySave } from './useEntitySave.ts';
-import EditorActions from './EditorActions.tsx';
 
 type Mode = 'fm' | 'dmr';
 
@@ -46,11 +46,9 @@ export default function ChannelEditor({
   const [comment, setComment] = useState(base.comment);
 
   const [mode, setMode] = useState<Mode>(firstProfileMode(entity));
-  // FM fields
   const [squelch, setSquelch] = useState(fm?.squelch == null ? '' : String(fm.squelch));
   const [rxTone, setRxTone] = useState(fm?.rxTone ?? 'none');
   const [txTone, setTxTone] = useState(fm?.txTone ?? 'none');
-  // DMR fields
   const [colourCode, setColourCode] = useState(
     dmr?.colourCode == null ? '' : String(dmr.colourCode),
   );
@@ -94,120 +92,133 @@ export default function ChannelEditor({
   }
 
   return (
-    <div style={{ maxWidth: 460 }}>
-      <FieldRow label="Name">
-        <input style={controlStyle} value={name} onChange={(e) => setName(e.target.value)} />
-      </FieldRow>
-      <FieldRow label="Callsign">
-        <input
-          style={controlStyle}
+    <Stack gap="lg" maw={520}>
+      <FormSection title="Identity">
+        <TextInput label="Name" value={name} onChange={(e) => setName(e.currentTarget.value)} />
+        <TextInput
+          label="Callsign"
           value={callsign}
-          onChange={(e) => setCallsign(e.target.value)}
+          onChange={(e) => setCallsign(e.currentTarget.value)}
         />
-      </FieldRow>
-      <FieldRow label="RX frequency (MHz)">
-        <input style={controlStyle} value={rx} onChange={(e) => setRx(e.target.value)} />
-      </FieldRow>
-      <FieldRow label="TX frequency (MHz)">
-        <input style={controlStyle} value={tx} onChange={(e) => setTx(e.target.value)} />
-      </FieldRow>
-      <FieldRow label="Power (%)" hint="Blank = radio default">
-        <input style={controlStyle} value={power} onChange={(e) => setPower(e.target.value)} />
-      </FieldRow>
-      <FieldRow label="Comment">
-        <input style={controlStyle} value={comment} onChange={(e) => setComment(e.target.value)} />
-      </FieldRow>
-      <label style={{ display: 'flex', gap: '0.4rem', alignItems: 'center', margin: '0.6rem 0' }}>
-        <input type="checkbox" checked={scanSkip} onChange={(e) => setScanSkip(e.target.checked)} />
-        <span style={{ fontSize: '0.85rem' }}>Skip on scan</span>
-      </label>
+      </FormSection>
 
-      <FieldRow label="Mode">
-        <select style={controlStyle} value={mode} onChange={(e) => setMode(e.target.value as Mode)}>
-          <option value="fm">FM (analogue)</option>
-          <option value="dmr">DMR (digital)</option>
-        </select>
-      </FieldRow>
+      <FormSection title="Frequencies">
+        <TextInput
+          label="RX frequency (MHz)"
+          value={rx}
+          onChange={(e) => setRx(e.currentTarget.value)}
+        />
+        <TextInput
+          label="TX frequency (MHz)"
+          value={tx}
+          onChange={(e) => setTx(e.currentTarget.value)}
+        />
+        <TextInput
+          label="Power (%)"
+          description="Blank = radio default"
+          value={power}
+          onChange={(e) => setPower(e.currentTarget.value)}
+        />
+      </FormSection>
+
+      <FormSection title="Notes">
+        <TextInput
+          label="Comment"
+          value={comment}
+          onChange={(e) => setComment(e.currentTarget.value)}
+        />
+        <Checkbox
+          label="Skip on scan"
+          checked={scanSkip}
+          onChange={(e) => setScanSkip(e.currentTarget.checked)}
+        />
+      </FormSection>
+
+      <FormSection title="Mode">
+        <Select
+          label="Mode"
+          data={[
+            { value: 'fm', label: 'FM (analogue)' },
+            { value: 'dmr', label: 'DMR (digital)' },
+          ]}
+          value={mode}
+          onChange={(v) => setMode((v as Mode) ?? 'fm')}
+        />
+      </FormSection>
 
       {mode === 'fm' ? (
-        <>
-          <FieldRow label="Squelch" hint="Blank = default">
-            <input
-              style={controlStyle}
-              value={squelch}
-              onChange={(e) => setSquelch(e.target.value)}
-            />
-          </FieldRow>
-          <FieldRow label="RX tone">
-            <input
-              style={controlStyle}
-              value={rxTone}
-              onChange={(e) => setRxTone(e.target.value)}
-            />
-          </FieldRow>
-          <FieldRow label="TX tone">
-            <input
-              style={controlStyle}
-              value={txTone}
-              onChange={(e) => setTxTone(e.target.value)}
-            />
-          </FieldRow>
-        </>
+        <FormSection title="FM">
+          <TextInput
+            label="Squelch"
+            description="Blank = default"
+            value={squelch}
+            onChange={(e) => setSquelch(e.currentTarget.value)}
+          />
+          <TextInput
+            label="RX tone"
+            value={rxTone}
+            onChange={(e) => setRxTone(e.currentTarget.value)}
+          />
+          <TextInput
+            label="TX tone"
+            value={txTone}
+            onChange={(e) => setTxTone(e.currentTarget.value)}
+          />
+        </FormSection>
       ) : (
-        <>
-          <FieldRow label="Colour code">
-            <input
-              style={controlStyle}
-              value={colourCode}
-              onChange={(e) => setColourCode(e.target.value)}
-            />
-          </FieldRow>
-          <FieldRow label="Timeslot">
-            <select
-              style={controlStyle}
-              value={timeslot}
-              onChange={(e) => setTimeslot(e.target.value)}
-            >
-              <option value="">—</option>
-              <option value="1">1</option>
-              <option value="2">2</option>
-            </select>
-          </FieldRow>
-          <FieldRow label="DMR ID">
-            <input style={controlStyle} value={dmrId} onChange={(e) => setDmrId(e.target.value)} />
-          </FieldRow>
-          <FieldRow label="Digital contact" hint="UUID reference">
-            <select
-              style={controlStyle}
-              value={contactId}
-              onChange={(e) => setContactId(e.target.value)}
-            >
-              <option value="">— none —</option>
-              {library.digitalContacts.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.name}
-                </option>
-              ))}
-            </select>
-          </FieldRow>
-          <FieldRow label="RX group list" hint="UUID reference">
-            <select
-              style={controlStyle}
-              value={rxGroupListId}
-              onChange={(e) => setRxGroupListId(e.target.value)}
-            >
-              <option value="">— none —</option>
-              {library.rxGroupLists.map((r) => (
-                <option key={r.id} value={r.id}>
-                  {r.name}
-                </option>
-              ))}
-            </select>
-          </FieldRow>
-        </>
+        <FormSection title="DMR">
+          <TextInput
+            label="Colour code"
+            value={colourCode}
+            onChange={(e) => setColourCode(e.currentTarget.value)}
+          />
+          <Select
+            label="Timeslot"
+            data={[
+              { value: '', label: '—' },
+              { value: '1', label: '1' },
+              { value: '2', label: '2' },
+            ]}
+            value={timeslot}
+            onChange={(v) => setTimeslot(v ?? '')}
+          />
+          <TextInput
+            label="DMR ID"
+            value={dmrId}
+            onChange={(e) => setDmrId(e.currentTarget.value)}
+          />
+          <Select
+            label="Digital contact"
+            description="UUID reference"
+            data={[
+              { value: '', label: '— none —' },
+              ...library.digitalContacts.map((c) => ({ value: c.id, label: c.name })),
+            ]}
+            value={contactId}
+            onChange={(v) => setContactId(v ?? '')}
+          />
+          <Select
+            label="RX group list"
+            description="UUID reference"
+            data={[
+              { value: '', label: '— none —' },
+              ...library.rxGroupLists.map((r) => ({ value: r.id, label: r.name })),
+            ]}
+            value={rxGroupListId}
+            onChange={(v) => setRxGroupListId(v ?? '')}
+          />
+        </FormSection>
       )}
 
-      <EditorActions saving={saving} error={error} onSave={handleSave} />
-    </div>
+      {error ? <Alert color="red">{error}</Alert> : null}
+      <Group>
+        <Button onClick={handleSave} loading={saving}>
+          Save
+        </Button>
+        <Button component={Link} to="/library" variant="light">
+          Cancel
+        </Button>
+      </Group>
+    </Stack>
   );
 }

@@ -1,31 +1,42 @@
+import { Anchor, List, Stack, Text } from '@mantine/core';
+import { ListPage, PageSection } from '../components/ui/index.ts';
+
 export default function HelpPage() {
   return (
-    <section>
-      <h1 style={{ marginTop: 0 }}>Help</h1>
-      <p style={{ color: '#52606d' }}>
-        Codeplug Studio is a browser-based designer for amateur radio codeplug layouts. Curate one
-        vendor-neutral library, then assemble format-specific builds per radio.
-      </p>
-      <ul style={{ color: '#52606d', lineHeight: 1.7 }}>
-        <li>
-          <strong>Projects</strong> — create, switch, rename, and delete projects.
-        </li>
-        <li>
-          <strong>Library</strong> — create and edit channels, talk groups, contacts, RX group
-          lists, and zones; stored in your browser.
-        </li>
-        <li>
-          <strong>Map &amp; Repeaters</strong> — plot located channels and import from public
-          repeater directories.
-        </li>
-        <li>
-          <strong>Reports &amp; Reference</strong> — library summary plus Maidenhead and band-plan
-          tools.
-        </li>
-      </ul>
-      <p style={{ fontSize: '0.85rem' }}>
-        <a href="https://github.com/pskillen/codeplug-studio">Project repository &amp; docs</a>
-      </p>
-    </section>
+    <ListPage
+      title="Help"
+      description="Codeplug Studio is a browser-based designer for amateur radio codeplug layouts."
+    >
+      <PageSection title="Workflow">
+        <List spacing="sm" size="sm">
+          <List.Item>
+            <strong>Projects</strong> — create, switch, rename, and delete projects.
+          </List.Item>
+          <List.Item>
+            <strong>Library</strong> — curate channels, talk groups, contacts, RX group lists, and
+            zones in a vendor-neutral inventory.
+          </List.Item>
+          <List.Item>
+            <strong>Repeater directories</strong> — add new channels from ukrepeater.net or
+            BrandMeister, or check an existing channel against the directory from the channel
+            editor.
+          </List.Item>
+          <List.Item>
+            <strong>Map &amp; reports</strong> — plot located channels and review library summary.
+          </List.Item>
+        </List>
+        <Stack gap="xs" mt="md">
+          <Text size="sm">
+            <Anchor
+              href="https://github.com/pskillen/codeplug-studio"
+              target="_blank"
+              rel="noreferrer"
+            >
+              Project repository &amp; docs
+            </Anchor>
+          </Text>
+        </Stack>
+      </PageSection>
+    </ListPage>
   );
 }

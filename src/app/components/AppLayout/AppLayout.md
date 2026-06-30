@@ -1,10 +1,10 @@
 # AppLayout
 
-Top-level application frame: header with brand + primary navigation, the routed content `Outlet`, and the shared `BuildFooter`.
+Top-level application frame: Mantine `AppShell` with header, primary nav (`AppNav`), optional section nav (`SectionNav`), routed content `Outlet`, and `BuildFooter`.
 
 ## Purpose
 
-Provides consistent chrome and navigation across every Phase 2 surface (Projects, Library, Map, Reports, Settings, Help) and surfaces the active project in the header.
+Provides consistent chrome matching the codeplug-tool UI kit: two-section sidebar on desktop, section toolbar on mobile, dark theme, and project switching via `ActiveProjectBar`.
 
 ## Props
 
@@ -21,11 +21,11 @@ None. Rendered as a layout route element; child routes render through `<Outlet /
 
 ## Behaviour
 
-- Reads the active project from `useProjects()` to show "Active project: …" (or "No active project").
-- `NavLink` highlights the current route; the Projects link uses `end` so it only matches `/`.
+- Primary nav shows **Projects** when no active project; **Library / Map / Reports** when a project is selected.
+- Section nav appears on `/library`, `/help`, `/reference`, `/settings` (and library sub-routes). Channel repeater import actions live in the library section nav.
+- `RequireActiveProject` gates library, map, and reports routes.
 
 ## Related
 
-- [ProjectProvider](../../state/ProjectProvider.tsx) / [useProjects](../../state/useProjects.ts)
-- [BuildFooter](../BuildFooter/BuildFooter.md)
-- [docs/features/app-shell/README.md](../../../../docs/features/app-shell/README.md)
+- [AppNav](../AppNav/AppNav.tsx) · [SectionNav](../SectionNav/SectionNav.tsx)
+- [ui kit](../ui/index.ts) · [docs/features/app-shell](../../../../docs/features/app-shell/README.md)

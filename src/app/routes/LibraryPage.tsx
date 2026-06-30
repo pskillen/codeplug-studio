@@ -1,22 +1,12 @@
+import { Button, Group, Stack, Text } from '@mantine/core';
 import { Link } from 'react-router-dom';
 import type { LibraryEntityKind } from '@integrations/persistence/index.ts';
 import { useLibrary } from '../state/useLibrary.ts';
-import { dangerButtonStyle, primaryButtonStyle } from '../components/fields/styles.ts';
+import { EmptyState, ListPage, PageSection } from '../components/ui/index.ts';
 import { LIBRARY_KINDS, describeEntity, entitiesForKind } from './library/registry.ts';
 
 export default function LibraryPage() {
-  const { library, loading, projectId, deleteEntity } = useLibrary();
-
-  if (!projectId) {
-    return (
-      <section>
-        <h1 style={{ marginTop: 0 }}>Library</h1>
-        <p style={{ color: '#52606d' }}>
-          Select or create a project on the <Link to="/">Projects</Link> page first.
-        </p>
-      </section>
-    );
-  }
+  const { library, loading, deleteEntity } = useLibrary();
 
   async function handleDelete(kind: LibraryEntityKind, id: string, name: string) {
     if (!window.confirm(`Delete “${name}”?`)) return;
@@ -28,90 +18,98 @@ export default function LibraryPage() {
   }
 
   return (
-    <section>
-      <h1 style={{ marginTop: 0 }}>Library</h1>
-      <p style={{ color: '#52606d' }}>Curate the vendor-neutral inventory for this project.</p>
+    <ListPage
+      title="Library"
+      description="Curate the vendor-neutral inventory for this project."
+      actions={
+        <Button component={Link} to="/library/channels/new">
+          New channel
+        </Button>
+      }
+    >
       {loading ? (
-        <p>Loading library…</p>
+        <Text>Loading library…</Text>
       ) : (
         LIBRARY_KINDS.map((meta) => {
           const rows = entitiesForKind(library, meta.kind);
           return (
-            <div key={meta.kind} style={{ margin: '1.5rem 0' }}>
-              <div
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.75rem',
-                  marginBottom: '0.5rem',
-                }}
-              >
-                <h2 style={{ fontSize: '1.05rem', margin: 0 }}>
-                  {meta.plural} <span style={{ color: '#9aa5b1' }}>({rows.length})</span>
-                </h2>
-                <Link to={`/library/${meta.slug}/new`} style={primaryButtonStyle}>
-                  + Add
-                </Link>
-              </div>
+            <PageSection
+              key={meta.kind}
+              id={`library-${meta.slug}`}
+              title={`${meta.plural} (${rows.length})`}
+              description={
+                meta.kind === 'channel'
+                  ? 'Add from scratch or import from a repeater directory via the section nav.'
+                  : undefined
+              }
+            >
               {rows.length === 0 ? (
-                <p style={{ color: '#9aa5b1', margin: 0, fontSize: '0.9rem' }}>None yet.</p>
+                <EmptyState
+                  message={`No ${meta.plural.toLowerCase()} yet.`}
+                  action={
+                    <Button
+                      component={Link}
+                      to={`/library/${meta.slug}/new`}
+                      variant="light"
+                      size="compact-sm"
+                    >
+                      Add {meta.label.toLowerCase()}
+                    </Button>
+                  }
+                />
               ) : (
-                <ul
-                  style={{
-                    listStyle: 'none',
-                    padding: 0,
-                    margin: 0,
-                    display: 'grid',
-                    gap: '0.4rem',
-                  }}
-                >
-                  {rows.map((row) => {
-                    const name = row.name;
-                    return (
-                      <li
-                        key={row.id}
-                        style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '0.6rem',
-                          padding: '0.5rem 0.75rem',
-                          border: '1px solid #e4e7eb',
-                          borderRadius: 8,
-                        }}
-                      >
-                        <div style={{ flex: 1 }}>
-                          <Link
-                            to={`/library/${meta.slug}/${row.id}`}
-                            style={{ fontWeight: 600, color: '#1f2933' }}
-                          >
-                            {name}
-                          </Link>
-                          <div style={{ fontSize: '0.78rem', color: '#7b8794' }}>
-                            {describeEntity(library, meta.kind, row.id)}
-                          </div>
-                        </div>
-                        <Link
+                <Stack gap="xs">
+                  {rows.map((row) => (
+                    <Group
+                      key={row.id}
+                      justify="space-between"
+                      wrap="wrap"
+                      p="sm"
+                      style={{
+                        border: '1px solid var(--mantine-color-dark-4)',
+                        borderRadius: 'var(--mantine-radius-md)',
+                      }}
+                    >
+                      <Stack gap={2}>
+                        <Text
+                          component={Link}
                           to={`/library/${meta.slug}/${row.id}`}
-                          style={{ fontSize: '0.85rem' }}
+                          fw={600}
+                          c="inherit"
+                          style={{ textDecoration: 'none' }}
+                        >
+                          {row.name}
+                        </Text>
+                        <Text size="xs" c="dimmed">
+                          {describeEntity(library, meta.kind, row.id)}
+                        </Text>
+                      </Stack>
+                      <Group gap="xs">
+                        <Button
+                          component={Link}
+                          to={`/library/${meta.slug}/${row.id}`}
+                          size="compact-sm"
+                          variant="light"
                         >
                           Edit
-                        </Link>
-                        <button
-                          type="button"
-                          onClick={() => handleDelete(meta.kind, row.id, name)}
-                          style={dangerButtonStyle}
+                        </Button>
+                        <Button
+                          size="compact-sm"
+                          color="red"
+                          variant="light"
+                          onClick={() => handleDelete(meta.kind, row.id, row.name)}
                         >
                           Delete
-                        </button>
-                      </li>
-                    );
-                  })}
-                </ul>
+                        </Button>
+                      </Group>
+                    </Group>
+                  ))}
+                </Stack>
               )}
-            </div>
+            </PageSection>
           );
         })
       )}
-    </section>
+    </ListPage>
   );
 }
