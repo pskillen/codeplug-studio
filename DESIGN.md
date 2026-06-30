@@ -100,14 +100,14 @@ Single Vite + React + TypeScript SPA. No backend. Deploy to GitHub Pages on full
 ```text
 src/
   core/              # Zero React. Models, domain logic, import/export, services.
-  integrations/      # Browser I/O: localStorage, cloud, external repeater APIs.
+  integrations/      # Browser I/O: persistence port, cloud, external repeater APIs.
   app/               # React: routes, features, components, thin state adapters.
 docs/
   features/          # Tier 1 — our product behaviour and internal model
   reference/         # Tier 2 (domain) + Tier 3 (per-format wire tables)
 ```
 
-**Dependency rule:** `app` → `core`, `integrations` → `core`. Never `core` → `app`.
+**Persistence:** `ProjectPersistence` port in `integrations/` — per-entity rows with optimistic `revision`. Phase 1: in-memory; Phase 2: IndexedDB. See [docs/poc-migration/storage.md](docs/poc-migration/storage.md).
 
 ```mermaid
 flowchart TB
@@ -116,7 +116,7 @@ flowchart TB
     State[Thin React state]
   end
   subgraph integrations [integrations]
-    Storage[localStorage envelope]
+    Persistence[ProjectPersistence port]
     Cloud[Google Drive]
     Repeaters[BrandMeister UK repeater APIs]
   end
@@ -128,7 +128,7 @@ flowchart TB
   end
   UI --> State
   State --> Services
-  State --> Storage
+  State --> Persistence
   Services --> Domain
   Services --> IE
   Integrations --> Services
@@ -307,8 +307,8 @@ Aligned with [Epic #1](https://github.com/pskillen/codeplug-studio/issues/1):
 | Phase   | Outcome                                                    |
 | ------- | ---------------------------------------------------------- |
 | **0**   | This document, `AGENTS.md`, cursor rules/skills            |
-| **1**   | Scaffold, core models, persistence envelope, CI/Pages      |
-| **2**   | Library UI, map, repeater APIs, localStorage — no file I/O |
+| **1**   | Scaffold, core models, persistence port (in-memory), CI/Pages      |
+| **2**   | Library UI, map, repeater APIs, IndexedDB persistence — no file I/O |
 | **3**   | Native YAML, Google Drive                                  |
 | **4–6** | CPS formats per epic                                       |
 

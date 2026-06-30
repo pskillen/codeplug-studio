@@ -8,9 +8,7 @@ Instructions for AI agents working in this repository.
 
 **Read first:** [DESIGN.md](DESIGN.md) (product constitution) and [docs/poc-migration/epic-1-context.md](docs/poc-migration/epic-1-context.md) (migration background from [codeplug-tool](https://github.com/pskillen/codeplug-tool)).
 
-**Phase 0** (this branch) is documentation and agent instructions only — no application code yet.
-
-**Phase 1+:** Application code under `src/core/`, `src/integrations/`, `src/app/` with path aliases `@core/*`, `@integrations/*`, `@app/*`.
+Application code lives under `src/core/`, `src/integrations/`, and `src/app/` with path aliases `@core/*`, `@integrations/*`, `@app/*`.
 
 ## Repository layout
 
@@ -22,7 +20,7 @@ Instructions for AI agents working in this repository.
 | `docs/poc-migration/` | Epic 1 migration context, progress logs |
 | `docs/features/` | Tier 1 — library, builds, traits, product behaviour |
 | `docs/reference/` | Tier 2 (domain) + Tier 3 (per-format wire tables) |
-| `docs/build/` | CI, Pages, testing (scaffold in Phase 1) |
+| `docs/build/` | CI, Pages, testing |
 | `src/core/` | Models, domain, import/export, services — **no React** |
 | `src/integrations/` | Browser I/O: persistence, cloud, repeater APIs |
 | `src/app/` | React routes, features, components, thin state |
