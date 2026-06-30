@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import type { ProjectMeta } from '@core/models/project.ts';
 import { ProjectContext, type ProjectContextValue } from './ProjectContext.ts';
+import { persistence } from './persistence.ts';
 import { ProjectStore } from './projectStore.ts';
 
 interface ProjectProviderProps {
@@ -12,7 +13,7 @@ export default function ProjectProvider({ children }: ProjectProviderProps) {
   // state survives re-renders. A ref (not useMemo) guarantees it is never
   // recreated; callbacks read storeRef.current rather than depending on it.
   const storeRef = useRef<ProjectStore | null>(null);
-  storeRef.current ??= new ProjectStore();
+  storeRef.current ??= new ProjectStore(persistence);
 
   const [projects, setProjects] = useState<ProjectMeta[]>([]);
   const [activeProjectId, setActiveProjectId] = useState<string | null>(null);
