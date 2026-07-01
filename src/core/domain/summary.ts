@@ -25,7 +25,7 @@ function tally(values: string[]): { key: string; count: number }[] {
     .sort((a, b) => b.count - a.count || a.key.localeCompare(b.key));
 }
 
-/** Read-only projection over a library for the reports view. Pure. */
+/** Read-only projection over a library for the summary view. Pure. */
 export function summariseLibrary(library: Library): LibrarySummary {
   const byMode = tally(
     library.channels.map((c) => (c.modeProfiles[0]?.mode ?? 'unknown').toUpperCase()),

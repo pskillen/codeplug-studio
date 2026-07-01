@@ -1,4 +1,4 @@
-import { HashRouter, Route, Routes } from 'react-router-dom';
+import { HashRouter, Navigate, Route, Routes } from 'react-router-dom';
 import AppLayout from './components/AppLayout/AppLayout.tsx';
 import RequireActiveProject from './components/RequireActiveProject/RequireActiveProject.tsx';
 import HomePage from './routes/HomePage.tsx';
@@ -7,7 +7,7 @@ import EntityEditorPage from './routes/library/EntityEditorPage.tsx';
 import AddFromUkRepeaterPage from './routes/library/AddFromUkRepeaterPage.tsx';
 import AddFromBrandmeisterPage from './routes/library/AddFromBrandmeisterPage.tsx';
 import MapPage from './routes/MapPage.tsx';
-import ReportsPage from './routes/ReportsPage.tsx';
+import SummaryPage from './routes/SummaryPage.tsx';
 import ReferencePage from './routes/ReferencePage.tsx';
 import SettingsPage from './routes/SettingsPage.tsx';
 import HelpPage from './routes/HelpPage.tsx';
@@ -34,8 +34,9 @@ export default function App() {
               element={<AddFromBrandmeisterPage />}
             />
             <Route path="/library/:kind/:id" element={<EntityEditorPage />} />
+            <Route path="/summary" element={<SummaryPage />} />
+            <Route path="/reports" element={<Navigate to="/summary" replace />} />
             <Route path="/map" element={<MapPage />} />
-            <Route path="/reports" element={<ReportsPage />} />
           </Route>
         </Route>
       </Routes>

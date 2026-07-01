@@ -21,9 +21,9 @@ None. Rendered as a layout route element; child routes render through `<Outlet /
 
 ## Behaviour
 
-- Primary nav shows **Projects** when no active project; **Library / Map / Reports** when a project is selected.
+- Primary nav shows **Projects** when no active project; **Library / Summary / Map** when a project is selected.
 - Section nav appears on `/library`, `/help`, `/reference`, `/settings` (and library sub-routes). Channel repeater import actions live in the library section nav.
-- `RequireActiveProject` gates library, map, and reports routes.
+- `RequireActiveProject` gates library, summary, and map routes.
 
 ## Related
 
