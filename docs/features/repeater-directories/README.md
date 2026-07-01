@@ -2,7 +2,7 @@
 
 Tier-1 reference for **public repeater directory** workflows — searching ukrepeater.net (RSGB ETCC) and BrandMeister, importing results into the vendor-neutral library, and verifying existing channels against directory data.
 
-**Tracking:** Phase 2 [#11](https://github.com/pskillen/codeplug-studio/issues/11) (Epic [#1](https://github.com/pskillen/codeplug-studio/issues/1)) · Search parity [#43](https://github.com/pskillen/codeplug-studio/issues/43) · BrandMeister parity [#44](https://github.com/pskillen/codeplug-studio/issues/44)
+**Tracking:** Phase 2 [#11](https://github.com/pskillen/codeplug-studio/issues/11) (Epic [#1](https://github.com/pskillen/codeplug-studio/issues/1)) · Search parity [#43](https://github.com/pskillen/codeplug-studio/issues/43) · BrandMeister parity [#44](https://github.com/pskillen/codeplug-studio/issues/44) · Callsign-only import gate [#53](https://github.com/pskillen/codeplug-studio/issues/53)
 
 **Source:** `src/app/routes/library/AddFrom*Page.tsx`, `src/app/components/repeaters/`, `src/integrations/repeaters/`
 
@@ -21,6 +21,7 @@ Repeater search is **not** a top-level nav item — it lives under library workf
 | BrandMeister client                | Shipped  | Callsign search ([#44](https://github.com/pskillen/codeplug-studio/issues/44))                                                        |
 | BrandMeister shared search shell   | Shipped  | Same results table; UK-only controls hidden ([#44](https://github.com/pskillen/codeplug-studio/issues/44))                            |
 | Update existing (callsign match)   | Shipped  | Outline button → shared comparison dialog                                                                                             |
+| Import duplicate gate (callsign)   | Shipped  | Add blocked only when callsign already in library — not channel `name` ([#53](https://github.com/pskillen/codeplug-studio/issues/53)) |
 | Directory verify on channel edit   | Shipped  | ukrepeater.net always; BrandMeister when DMR profile ([#43](https://github.com/pskillen/codeplug-studio/issues/43))                   |
 | Title case on UK import            | Shipped  | Toggle on search and verify ([#43](https://github.com/pskillen/codeplug-studio/issues/43))                                            |
 | BrandMeister comment on import     | Shipped  | Omitted by default ([#44](https://github.com/pskillen/codeplug-studio/issues/44))                                                     |
@@ -47,8 +48,8 @@ Repeater search is **not** a top-level nav item — it lives under library workf
 
 | Workflow                             | Entry point                                                               | Behaviour                                               |
 | ------------------------------------ | ------------------------------------------------------------------------- | ------------------------------------------------------- |
-| **New channel from reference**       | Library section nav → _Add from ukrepeater.net_ / _Add from BrandMeister_ | Search directory; add result(s) as library channel(s)   |
-| **Update existing**                  | Same search UI when callsign already in library                           | Outline _Update existing_ → directory comparison dialog |
+| **New channel from reference**       | Library section nav → _Add from ukrepeater.net_ / _Add from BrandMeister_ | Search directory; add result(s) as library channel(s). Duplicate gate is **callsign only** — two repeaters may share a town/qualifier `name`. |
+| **Update existing**                  | Same search UI when callsign already in library                           | Outline _Update existing_ → directory comparison dialog                                                                                     |
 | **Check and update current channel** | Channel editor → _Check ukrepeater.net_ / _Check BrandMeister_            | Fetch by callsign; auto-match listing; diff; apply      |
 
 ### Routes
@@ -108,6 +109,7 @@ Example: `modeCodes: ["A", "D", "M:1", "F", "P", "N"]` → six profiles on impor
 | `RepeaterListingUpdateDialog.tsx` | Directory comparison modal (diff table, apply selected)  |
 | `RepeaterVerifyPanel.tsx`         | Channel editor verify (UK + optional BrandMeister)       |
 | `findChannelByCallsign.ts`        | Case-insensitive library lookup                          |
+| `repeaterDirectoryRows.ts`        | Result rows; callsign-only duplicate gate for import     |
 | `ModePillsForRepeaterListing.tsx` | One pill per advertised mode on results                  |
 | `useRepeaterDirectorySearch.ts`   | Search state hook (UK filters, geocode token)            |
 
