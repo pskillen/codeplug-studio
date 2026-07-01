@@ -33,7 +33,7 @@ Repeater search is **not** a top-level nav item — it lives under library workf
 | ---------------------------------------------------------------- | -------------------------------------------------- |
 | This README                                                      | Workflows, boundaries, code anchors                |
 | [ukrepeater API reference](../../reference/ukrepeater/README.md) | ETCC endpoints, mode flags, field mapping (tier 3) |
-| [map](../map-and-repeaters/README.md)                            | Channel map (separate surface)                     |
+| [map](../map/README.md)                                          | Channel map (separate surface)                     |
 | [library](../library/README.md)                                  | Channel entity CRUD                                |
 | [app-shell](../app-shell/README.md)                              | Routes and section nav                             |
 
@@ -125,5 +125,5 @@ Example: `modeCodes: ["A", "D", "M:1", "F", "P", "N"]` → six profiles on impor
 ## Related
 
 - [ukrepeater reference](../../reference/ukrepeater/README.md)
-- [map](../map-and-repeaters/README.md) · [library](../library/README.md) · [app-shell](../app-shell/README.md)
+- [map](../map/README.md) · [library](../library/README.md) · [app-shell](../app-shell/README.md)
 - Epic progress: [epic-1-progress.md](../../poc-migration/epic-1-progress.md)

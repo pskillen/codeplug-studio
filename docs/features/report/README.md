@@ -1,4 +1,4 @@
-# Reports
+# Report / summary
 
 Read-only summary view over the active project's library. Gives operators an at-a-glance inventory (counts, mode/band breakdowns) and surfaces **integrity warnings** for foreign keys that no longer resolve, without mutating anything.
 
@@ -13,7 +13,7 @@ Read-only summary view over the active project's library. Gives operators an at-
 | Entity counts         | Shipped  | Channels, talk groups, digital/analog contacts, RX group lists, zones |
 | Channels by mode      | Shipped  | From the first `modeProfiles` entry per channel                       |
 | Channels by band      | Shipped  | Via `bandLabelForFrequencyHz` on RX frequency                         |
-| Located-channel count | Shipped  | Links to the [map](../map-and-repeaters/README.md)                    |
+| Located-channel count | Shipped  | Links to the [map](../map/README.md)                                  |
 | Integrity warnings    | Shipped  | Dangling UUID references (`findDanglingReferences`)                   |
 | Export / print report | Deferred | No report export yet                                                  |
 
@@ -25,11 +25,11 @@ Read-only summary view over the active project's library. Gives operators an at-
 
 ## Documentation map
 
-| Doc                                             | Role                                                                   |
-| ----------------------------------------------- | ---------------------------------------------------------------------- |
-| [library](../library/README.md)                 | Entities summarised here; delete-blocking uses the same reference scan |
-| [reference-tools](../reference-tools/README.md) | Band lookup shares `bandPlan`                                          |
-| [data-model](../data-model/README.md)           | Entity shapes and UUID FK rules                                        |
+| Doc                                         | Role                                                                   |
+| ------------------------------------------- | ---------------------------------------------------------------------- |
+| [library](../library/README.md)             | Entities summarised here; delete-blocking uses the same reference scan |
+| [bands reference](../../reference/bands.md) | Band lookup shares `bandPlan` (also on `/reference`)                   |
+| [data-model](../data-model/README.md)       | Entity shapes and UUID FK rules                                        |
 
 ## Manual verify
 

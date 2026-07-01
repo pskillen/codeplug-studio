@@ -20,7 +20,15 @@ This is a **remote directory API**, not a CPS wire format. HTTP clients and norm
 | `/callsign/{call}`  | `/callsign/gb7dc`                  | Listings for repeater callsign |
 | `/locator/{4-or-6}` | `/locator/io92`, `/locator/io92pp` | Listings in locator square     |
 
-Additional ETCC endpoints (`/band/`, `/keeper/`, `/all/systems`) exist on the API but are not wired in the Studio UI yet.
+Additional ETCC endpoints exist on the API but are not wired in the Studio UI yet:
+
+| Endpoint         | Example                  | Returns                          |
+| ---------------- | ------------------------ | -------------------------------- |
+| `/band/{band}`   | `/band/2m`, `/band/70cm` | Listings on band (large payload) |
+| `/keeper/{call}` | `/keeper/g7npw`          | Listings for keeper callsign     |
+| `/all/systems`   | —                        | All public listings              |
+
+There is **no town/QTH endpoint**. Town search geocodes to a 4-character locator, then calls `/locator/`.
 
 ## Listing record (sample)
 

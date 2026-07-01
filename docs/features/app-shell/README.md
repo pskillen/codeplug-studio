@@ -27,18 +27,18 @@ UI primitives live in `src/app/components/ui/` (ported from codeplug-tool). Dev 
 
 ## Routes
 
-| Path                                      | Surface                 | Status                                                       |
-| ----------------------------------------- | ----------------------- | ------------------------------------------------------------ |
-| `/`                                       | Projects                | Lifecycle UI (create/switch/rename/del)                      |
-| `/library`                                | Library                 | Entity CRUD — Ticket #10                                     |
-| `/library/channels/add-from-ukrepeater`   | Add from ukrepeater.net | [repeater-directories](../repeater-directories/README.md)    |
-| `/library/channels/add-from-brandmeister` | Add from BrandMeister   | [repeater-directories](../repeater-directories/README.md)    |
-| `/map`                                    | Map                     | Channel map — Ticket #11                                     |
-| `/reports`                                | Reports                 | [Library summary](../reports/README.md) — Ticket #12         |
-| `/reference`                              | Reference               | [Reference tools](../reference-tools/README.md) — Ticket #12 |
-| `/settings`                               | Settings                | Shell content                                                |
-| `/help`                                   | Help                    | Shell content                                                |
-| `/styleguide`                             | Styleguide              | Hidden dev page (UI kit demos)                               |
+| Path                                      | Surface                 | Status                                                                                      |
+| ----------------------------------------- | ----------------------- | ------------------------------------------------------------------------------------------- |
+| `/`                                       | Projects                | Lifecycle UI (create/switch/rename/del)                                                     |
+| `/library`                                | Library                 | Entity CRUD — Ticket #10                                                                    |
+| `/library/channels/add-from-ukrepeater`   | Add from ukrepeater.net | [repeater-directories](../repeater-directories/README.md)                                   |
+| `/library/channels/add-from-brandmeister` | Add from BrandMeister   | [repeater-directories](../repeater-directories/README.md)                                   |
+| `/map`                                    | Map                     | Channel map — Ticket #11                                                                    |
+| `/reports`                                | Reports                 | [Library summary](../report/README.md) — Ticket #12                                         |
+| `/reference`                              | Reference               | [Maidenhead + band tools](../maidenhead.md), [bands](../../reference/bands.md) — Ticket #12 |
+| `/settings`                               | Settings                | Shell content                                                                               |
+| `/help`                                   | Help                    | Shell content                                                                               |
+| `/styleguide`                             | Styleguide              | Hidden dev page (UI kit demos)                                                              |
 
 Routes that need a project gate on an active project and link back to Projects when none is selected.
 
@@ -70,5 +70,5 @@ The **active-project selection** is remembered across reloads via `localStorage`
 - [AppLayout sidecar](../../../src/app/components/AppLayout/AppLayout.md)
 - [data-model](../data-model/README.md)
 - [repeater-directories](../repeater-directories/README.md)
-- [reports](../reports/README.md) · [reference-tools](../reference-tools/README.md)
+- [report](../report/README.md) · [maidenhead.md](../maidenhead.md) · [bands reference](../../reference/bands.md)
 - [DESIGN.md](../../../DESIGN.md)

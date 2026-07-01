@@ -20,4 +20,5 @@ Leaflet's default marker assets are repointed at bundled URLs once in `src/app/c
 ## Related
 
 - [repeater-directories](../repeater-directories/README.md) — seeding channels with locations from directories
+- [maidenhead.md](../maidenhead.md) — locator conversion used when placing markers
 - [app-shell](../app-shell/README.md) · [library](../library/README.md)

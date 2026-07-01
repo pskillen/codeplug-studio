@@ -41,6 +41,13 @@ If `git status` still shows phantom whole-file edits with empty diffs, run `git 
 | `npm run lint`                    | ESLint                        |
 | `npm run format` / `format:check` | Prettier                      |
 
+## Documentation map
+
+| Doc                                                                  | Contents                                    |
+| -------------------------------------------------------------------- | ------------------------------------------- |
+| [testing/](testing/README.md)                                        | Test layers, mapping strategy, CI alignment |
+| [version-number skill](../../.cursor/skills/version-number/SKILL.md) | Footer build info                           |
+
 ## CI
 
 Pull requests and pushes to `main` run [`.github/workflows/ci.yml`](../../.github/workflows/ci.yml):

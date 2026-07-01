@@ -24,13 +24,23 @@ Operators curate the library once. Multiple format builds may reference the same
 
 ## Format build (per-target assembly)
 
-A **format build** is scoped to one format/profile workflow:
+A **format build** is a **persisted** row scoped to one format/profile workflow:
 
-- `traitProfile` — which **build capability traits** apply (zone grouping, flat memories, scan lists, m×n expansion, …).
-- `librarySelection` — which library entities participate in this build.
-- `layout` — trait-shaped state (zone membership, scan lists, memory order, …).
+- `formatId` + `profileId` — which wire family and variant (trait profile + limits).
+- `*Selections` — which library entities participate; `overrides.name` holds the **CPS wire name** for that build.
+- `layout` — trait-shaped state (zone membership order, scan lists, flat memory order, …).
 
 Do **not** model OpenGD77 zones in the library because OpenGD77 has `Zones.csv`. Model **zone grouping** on the build when the trait profile requires it.
+
+### Why builds are persisted (not export-time only)
+
+Unlike the archive single-codeplug model, builds survive between sessions so the operator can:
+
+- Accept import-populated or profile-default wire names, or customise them.
+- Tune shortened names for profile limits (e.g. 16-character channel names).
+- Review m×n / multi-talkgroup expansion names before the next export.
+
+Export always combines **library + build** via `assemble(build, library)`.
 
 ## Trait profile vs wire adapter
 
