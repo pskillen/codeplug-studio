@@ -18,8 +18,14 @@ import {
 } from '../../../hooks/channelListQueryUtils.ts';
 import { useChannelListQuery } from '../../../hooks/useChannelListQuery.ts';
 import { usePersistedChannelColumnSort } from '../../../hooks/usePersistedChannelColumnSort.ts';
-import { DATATABLE_CALLSIGN_SORT_KEY, DATATABLE_NAME_SORT_KEY } from '../../../lib/dataTable/sort.ts';
-import { distanceLabelForChannel, useFilteredChannels } from '../../../hooks/useChannelListFilters.ts';
+import {
+  DATATABLE_CALLSIGN_SORT_KEY,
+  DATATABLE_NAME_SORT_KEY,
+} from '../../../lib/dataTable/sort.ts';
+import {
+  distanceLabelForChannel,
+  useFilteredChannels,
+} from '../../../hooks/useChannelListFilters.ts';
 import { formatChannelRxTxListCell } from '../../../lib/formatFrequency.ts';
 import { dmrContactDisplayName, dmrRxGroupListName } from '../../../lib/entityRefs.ts';
 import { channelModesForFilter } from '../../../lib/channels.ts';
