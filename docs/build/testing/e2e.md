@@ -12,12 +12,12 @@ npm run test:e2e   # planned
 
 ## Scope (phased)
 
-| Phase | Scenario |
-| --- | --- |
-| 1 | Dev server smoke — home loads, footer shows build info |
-| 2 | Create project → add channel → reload → channel still present |
-| 3 | Import CPS fixture → library counts match → export download |
-| 4 | Map route — located channel marker visible |
+| Phase | Scenario                                                      |
+| ----- | ------------------------------------------------------------- |
+| 1     | Dev server smoke — home loads, footer shows build info        |
+| 2     | Create project → add channel → reload → channel still present |
+| 3     | Import CPS fixture → library counts match → export download   |
+| 4     | Map route — located channel marker visible                    |
 
 ## Configuration notes
 

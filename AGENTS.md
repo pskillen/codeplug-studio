@@ -20,7 +20,7 @@ Application code lives under `src/core/`, `src/integrations/`, and `src/app/` wi
 | `docs/poc-migration/` | Epic 1 migration context, progress logs                |
 | `docs/features/`      | Tier 1 — library, builds, traits, product behaviour    |
 | `docs/reference/`     | Tier 2 (domain) + Tier 3 (per-format wire tables)      |
-| `docs/build/`         | CI, Pages, testing                                     |
+| `docs/build/`         | CI, Pages, [testing](docs/build/testing/README.md)     |
 | `src/core/`           | Models, domain, import/export, services — **no React** |
 | `src/integrations/`   | Browser I/O: persistence, cloud, repeater APIs         |
 | `src/app/`            | React routes, features, components, thin state         |

@@ -10,10 +10,10 @@ Sibling formats differ: DM32 stock CPS uses native `Fixed Analog` / `Fixed Digit
 
 ## When to expand
 
-| Internal state | OpenGD77 export |
-| --- | --- |
-| `multiMode: false` | One `Channels.csv` row per logical channel (unchanged) |
-| `multiMode: true` with N mode profiles | N rows — one per profile |
+| Internal state                         | OpenGD77 export                                        |
+| -------------------------------------- | ------------------------------------------------------ |
+| `multiMode: false`                     | One `Channels.csv` row per logical channel (unchanged) |
+| `multiMode: true` with N mode profiles | N rows — one per profile                               |
 
 Each expanded row uses the profile's mode for `Channel Type` (`Analogue` / `Digital` via [channels.md](channels.md)) and that profile's mode-specific fields (tones, colour code, contact, TG list, etc.). Shared fields (frequencies, location, power, rx-only, TOT, …) copy from the logical channel.
 
@@ -21,10 +21,10 @@ Each expanded row uses the profile's mode for `Channel Type` (`Analogue` / `Digi
 
 Deterministic suffix from mode category (case-sensitive FKs across files):
 
-| Profile category | Suffix | Example (`GB7GL`) |
-| --- | --- | --- |
-| Analog (`fm`, `am`, `ssb-*`) | `-F` | `GB7GL-F` |
-| Digital (`dmr`, `ysf`, …) | `-D` | `GB7GL-D` |
+| Profile category             | Suffix | Example (`GB7GL`) |
+| ---------------------------- | ------ | ----------------- |
+| Analog (`fm`, `am`, `ssb-*`) | `-F`   | `GB7GL-F`         |
+| Digital (`dmr`, `ysf`, …)    | `-D`   | `GB7GL-D`         |
 
 **Collisions:** if a derived name already exists among export wire names (existing channels or other expanded rows), append ` 2`, ` 3`, … until unique.
 

@@ -6,28 +6,28 @@ Stock CPS v1.60 calibration for import/export ladders and caps.
 
 ## Capacity (provisional)
 
-| Entity | Cap |
-| --- | --- |
-| Channels | ~1000 |
-| Zone members | No hard export cap in #67 |
-| RX group list members | 32 |
-| Scan list members | 16 _(deferred archive reference #125)_ |
+| Entity                | Cap                                    |
+| --------------------- | -------------------------------------- |
+| Channels              | ~1000                                  |
+| Zone members          | No hard export cap in #67              |
+| RX group list members | 32                                     |
+| Scan list members     | 16 _(deferred archive reference #125)_ |
 
 ## Power ladder
 
-| Wire | Internal `power` % |
-| --- | --- |
-| `High` | 100 |
-| `Middle` | 50 |
-| `Low` | 20 |
+| Wire     | Internal `power` % |
+| -------- | ------------------ |
+| `High`   | 100                |
+| `Middle` | 50                 |
+| `Low`    | 20                 |
 
 Unset / empty → `null` (export defaults to `High`).
 
 ## Squelch ladder
 
-| Wire `Squelch Level` | Internal `squelch` % |
-| --- | --- |
-| `0`–`9` | `round(level × 100 / 9)` |
+| Wire `Squelch Level` | Internal `squelch` %     |
+| -------------------- | ------------------------ |
+| `0`–`9`              | `round(level × 100 / 9)` |
 
 Analog and digital channels use the same ladder on DM32.
 

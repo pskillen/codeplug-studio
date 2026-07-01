@@ -29,22 +29,22 @@ Wire-format column detail: `docs/reference/<format>/`. Strategy docs cite **outc
 
 ## Required mapping tests
 
-| Direction | Input | Assert |
-| --- | --- | --- |
-| **Wire → internal (import)** | CPS fixture files | Expected library entities + build trait layout (golden JSON/YAML snapshots) |
-| **Internal → wire (export)** | Constructed library + build in memory | Expected CPS columns/rows (golden files or normalised snapshots) |
-| **Assemble** | Library + `FormatBuild` | Export projection object before serialisation |
+| Direction                    | Input                                 | Assert                                                                      |
+| ---------------------------- | ------------------------------------- | --------------------------------------------------------------------------- |
+| **Wire → internal (import)** | CPS fixture files                     | Expected library entities + build trait layout (golden JSON/YAML snapshots) |
+| **Internal → wire (export)** | Constructed library + build in memory | Expected CPS columns/rows (golden files or normalised snapshots)            |
+| **Assemble**                 | Library + `FormatBuild`               | Export projection object before serialisation                               |
 
 ## Import fidelity
 
 **Definition:** Each vendor row maps to the correct library fields (and build layout when the format carries organisation).
 
-| Concern | Where to test |
-| --- | --- |
-| Column → field mapping | Unit tests beside `parse.ts` |
-| File classification | Adapter `detectKind` tests |
-| Multi-file batch assembly | `importIntoLibrary` integration tests |
-| UUID FK resolution | Import resolves wire names to library `id` refs at boundary only |
+| Concern                   | Where to test                                                    |
+| ------------------------- | ---------------------------------------------------------------- |
+| Column → field mapping    | Unit tests beside `parse.ts`                                     |
+| File classification       | Adapter `detectKind` tests                                       |
+| Multi-file batch assembly | `importIntoLibrary` integration tests                            |
+| UUID FK resolution        | Import resolves wire names to library `id` refs at boundary only |
 
 **Rules:**
 
@@ -58,24 +58,24 @@ Wire-format column detail: `docs/reference/<format>/`. Strategy docs cite **outc
 
 **Definition:** Each library entity and build layout field maps to the correct vendor columns and values — from **typed model fields**, not provenance replay.
 
-| Concern | Where to test |
-| --- | --- |
-| Field → column mapping | Unit tests beside `serialise.ts` |
-| Trait layout → zones/scan lists | Per-format export with constructed `FormatBuild` |
-| Name-based FK denormalisation | Wire names resolved from UUID refs at serialise time only |
+| Concern                         | Where to test                                             |
+| ------------------------------- | --------------------------------------------------------- |
+| Field → column mapping          | Unit tests beside `serialise.ts`                          |
+| Trait layout → zones/scan lists | Per-format export with constructed `FormatBuild`          |
+| Name-based FK denormalisation   | Wire names resolved from UUID refs at serialise time only |
 
 **Code anchors (planned):** `src/core/import-export/formats/<format>/`, `src/core/services/exportBuild.ts`, `src/core/services/assemble.ts`.
 
 ## Scenario taxonomy
 
-| Scenario | What it proves | Layer | Status |
-| --- | --- | --- | --- |
-| **Import mapping** | Fixture → golden library (+ build) | Adapter + service | Planned (Phase 4+) |
-| **Export mapping** | Constructed library + build → golden wire | Adapter + service | Planned |
-| **Assemble** | Trait profile shapes export projection | Unit / service | Planned |
-| **Same-format round-trip smoke** | A → internal → A roughly stable | Optional integration | Secondary — not primary gate |
-| **Cross-format** | A → library → B export | Adapter matrix | Planned |
-| **Lossy fields** | Known non-surviving columns documented | Reference + mapping tests | Per `docs/reference/<format>/` |
+| Scenario                         | What it proves                            | Layer                     | Status                         |
+| -------------------------------- | ----------------------------------------- | ------------------------- | ------------------------------ |
+| **Import mapping**               | Fixture → golden library (+ build)        | Adapter + service         | Planned (Phase 4+)             |
+| **Export mapping**               | Constructed library + build → golden wire | Adapter + service         | Planned                        |
+| **Assemble**                     | Trait profile shapes export projection    | Unit / service            | Planned                        |
+| **Same-format round-trip smoke** | A → internal → A roughly stable           | Optional integration      | Secondary — not primary gate   |
+| **Cross-format**                 | A → library → B export                    | Adapter matrix            | Planned                        |
+| **Lossy fields**                 | Known non-surviving columns documented    | Reference + mapping tests | Per `docs/reference/<format>/` |
 
 ### Round-trip (optional smoke only)
 
@@ -88,11 +88,11 @@ Pattern (when adapters ship):
 
 ## Adapter matrix (fill as formats ship)
 
-| Format | Import golden | Export golden | Round-trip smoke |
-| --- | --- | --- | --- |
-| OpenGD77 | Planned | Planned | Optional |
-| CHIRP | Planned | Planned | Optional |
-| DM32 | Planned | Planned | Optional |
+| Format   | Import golden | Export golden | Round-trip smoke |
+| -------- | ------------- | ------------- | ---------------- |
+| OpenGD77 | Planned       | Planned       | Optional         |
+| CHIRP    | Planned       | Planned       | Optional         |
+| DM32     | Planned       | Planned       | Optional         |
 
 ## Related
 

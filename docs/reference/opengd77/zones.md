@@ -6,10 +6,10 @@ Generic column reference for `Zones.csv`. Member column count is radio-profile-s
 
 ## Wire pattern
 
-| Pattern | Role |
-| --- | --- |
-| `Zone Name` | Zone display name; unique within codeplug |
-| `Channel1` … `ChannelN` | Member channel names in **scan order** |
+| Pattern                 | Role                                      |
+| ----------------------- | ----------------------------------------- |
+| `Zone Name`             | Zone display name; unique within codeplug |
+| `Channel1` … `ChannelN` | Member channel names in **scan order**    |
 
 OpenGD77 has **no separate scan-list file** — zone membership defines the scan sequence on the radio.
 
@@ -17,10 +17,10 @@ Empty member cells are unused slots. Trailing empty columns may be omitted on ex
 
 ## Column reference
 
-| Vendor header | Internal field | Required (import) | Import rule | Export rule | Bidirectional mapping | Notes |
-| --- | --- | --- | --- | --- | --- | --- |
-| `Zone Name` | `Zone.name` | **Yes** | Trim; skip row if empty | As stored | String pass-through | |
-| `Channel1`…`ChannelN` | `Zone.meta.imported.memberWireNames[]` | No | Collect non-empty cells in column order; any `Channel\d+` header | Pad into `Channel1`…`ChannelN` up to profile cap | Lossless names | Also resolved to `memberChannelIds` at import |
+| Vendor header         | Internal field                         | Required (import) | Import rule                                                      | Export rule                                      | Bidirectional mapping | Notes                                         |
+| --------------------- | -------------------------------------- | ----------------- | ---------------------------------------------------------------- | ------------------------------------------------ | --------------------- | --------------------------------------------- |
+| `Zone Name`           | `Zone.name`                            | **Yes**           | Trim; skip row if empty                                          | As stored                                        | String pass-through   |                                               |
+| `Channel1`…`ChannelN` | `Zone.meta.imported.memberWireNames[]` | No                | Collect non-empty cells in column order; any `Channel\d+` header | Pad into `Channel1`…`ChannelN` up to profile cap | Lossless names        | Also resolved to `memberChannelIds` at import |
 
 ## Import resolution
 

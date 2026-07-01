@@ -43,10 +43,10 @@ If `git status` still shows phantom whole-file edits with empty diffs, run `git 
 
 ## Documentation map
 
-| Doc | Contents |
-| --- | --- |
-| [testing/](testing/README.md) | Test layers, mapping strategy, CI alignment |
-| [version-number skill](../../.cursor/skills/version-number/SKILL.md) | Footer build info |
+| Doc                                                                  | Contents                                    |
+| -------------------------------------------------------------------- | ------------------------------------------- |
+| [testing/](testing/README.md)                                        | Test layers, mapping strategy, CI alignment |
+| [version-number skill](../../.cursor/skills/version-number/SKILL.md) | Footer build info                           |
 
 ## CI
 

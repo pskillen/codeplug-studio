@@ -33,13 +33,13 @@ Today's shipped exporter uses the [Baofeng 1701](baofeng-1701.md) profile consta
 
 ## Profile index
 
-| Profile | Hardware | Status | Doc |
-| --- | --- | --- | --- |
-| Baofeng 1701 / Retevis RT-84 | Handheld | **Documented; adapter calibrated** | [baofeng-1701.md](baofeng-1701.md) |
-| Radioddity GD-77 / TYT MD-760 | Handheld | Wire format shared; limits TBD | — |
-| TYT MD-UV380 / Retevis RT-3S | Handheld | Wire format shared; limits TBD | — |
-| TYT MD-9600 / Retevis RT-90 | Mobile | Wire format shared; limits TBD | — |
-| Radioddity GD-77S | Headless | Operational differences only; wire format shared | — |
+| Profile                       | Hardware | Status                                           | Doc                                |
+| ----------------------------- | -------- | ------------------------------------------------ | ---------------------------------- |
+| Baofeng 1701 / Retevis RT-84  | Handheld | **Documented; adapter calibrated**               | [baofeng-1701.md](baofeng-1701.md) |
+| Radioddity GD-77 / TYT MD-760 | Handheld | Wire format shared; limits TBD                   | —                                  |
+| TYT MD-UV380 / Retevis RT-3S  | Handheld | Wire format shared; limits TBD                   | —                                  |
+| TYT MD-9600 / Retevis RT-90   | Mobile   | Wire format shared; limits TBD                   | —                                  |
+| Radioddity GD-77S             | Headless | Operational differences only; wire format shared | —                                  |
 
 Add a row and doc file when a profile is researched and validated against CPS exports from that radio.
 

@@ -8,8 +8,8 @@ Import and export require a **radio profile** (`profileId`) for the power ladder
 
 ## Required headers (app import)
 
-| Header | Reason |
-| --- | --- |
+| Header | Reason           |
+| ------ | ---------------- |
 | `Name` | Channel identity |
 
 Full standard header row (21 columns): `Location`, `Name`, `Frequency`, `Duplex`, `Offset`, `Tone`, `rToneFreq`, `cToneFreq`, `DtcsCode`, `DtcsPolarity`, `RxDtcsCode`, `CrossMode`, `Mode`, `TStep`, `Skip`, `Power`, `Comment`, `URCALL`, `RPT1CALL`, `RPT2CALL`, `DVCODE`.
@@ -18,22 +18,22 @@ Parse by **header name**, not column index.
 
 ## Column reference
 
-| CHIRP header | Internal field | Import | Export | Notes |
-| --- | --- | --- | --- | --- |
-| `Location` | — | ignored | 1-based export index | Excluded from bidirectional mapping compare |
-| `Name` | composed wire name | trim; skip empty | `composeChannelWireName(callsign, name, exportNameMode)` | Case-sensitive |
-| `Frequency` | `rxFrequency` | MHz → Hz | Hz → MHz (6 dp) | |
-| `Duplex`+`Offset` | `txFrequency`, `forbidTransmit` | see duplex table | inverse | `off` = TX disabled (`forbidTransmit`) |
-| `Tone` | derived | see tone table | from `rxTone`/`txTone` | |
-| `rToneFreq` | `txTone` (`Tone` mode) | see tone table | see tone table | Default `88.5` when unused |
-| `cToneFreq` | `rxTone`/`txTone` (`TSQL`) | see tone table | see tone table | Default `88.5` when unused |
-| `DtcsCode`/`DtcsPolarity`/`RxDtcsCode`/`CrossMode` | — | ignored | constants `023`/`NN`/`023`/`Tone->Tone` | DCS not modelled yet |
-| `Mode` | `mode`, `bandwidthKHz` | `NFM`→fm+12.5; `FM`→fm+25; `AM`→am | inverse | Not derived from `TStep` |
-| `TStep` | — | ignored | constant `5.00` | |
-| `Skip` | `scanSkip` | `S`→true | true→`S` | `P` unsupported |
-| `Power` | `power` | profile ladder wire→percent | profile ladder percent→wire | Requires `profileId` |
-| `Comment` | `comment` on import only | trim | **Not exported** — internal `comment` field only; column left empty on export |
-| `URCALL`/`RPT1CALL`/`RPT2CALL`/`DVCODE` | — | ignored | empty | Digital — not modelled |
+| CHIRP header                                       | Internal field                  | Import                             | Export                                                                        | Notes                                       |
+| -------------------------------------------------- | ------------------------------- | ---------------------------------- | ----------------------------------------------------------------------------- | ------------------------------------------- |
+| `Location`                                         | —                               | ignored                            | 1-based export index                                                          | Excluded from bidirectional mapping compare |
+| `Name`                                             | composed wire name              | trim; skip empty                   | `composeChannelWireName(callsign, name, exportNameMode)`                      | Case-sensitive                              |
+| `Frequency`                                        | `rxFrequency`                   | MHz → Hz                           | Hz → MHz (6 dp)                                                               |                                             |
+| `Duplex`+`Offset`                                  | `txFrequency`, `forbidTransmit` | see duplex table                   | inverse                                                                       | `off` = TX disabled (`forbidTransmit`)      |
+| `Tone`                                             | derived                         | see tone table                     | from `rxTone`/`txTone`                                                        |                                             |
+| `rToneFreq`                                        | `txTone` (`Tone` mode)          | see tone table                     | see tone table                                                                | Default `88.5` when unused                  |
+| `cToneFreq`                                        | `rxTone`/`txTone` (`TSQL`)      | see tone table                     | see tone table                                                                | Default `88.5` when unused                  |
+| `DtcsCode`/`DtcsPolarity`/`RxDtcsCode`/`CrossMode` | —                               | ignored                            | constants `023`/`NN`/`023`/`Tone->Tone`                                       | DCS not modelled yet                        |
+| `Mode`                                             | `mode`, `bandwidthKHz`          | `NFM`→fm+12.5; `FM`→fm+25; `AM`→am | inverse                                                                       | Not derived from `TStep`                    |
+| `TStep`                                            | —                               | ignored                            | constant `5.00`                                                               |                                             |
+| `Skip`                                             | `scanSkip`                      | `S`→true                           | true→`S`                                                                      | `P` unsupported                             |
+| `Power`                                            | `power`                         | profile ladder wire→percent        | profile ladder percent→wire                                                   | Requires `profileId`                        |
+| `Comment`                                          | `comment` on import only        | trim                               | **Not exported** — internal `comment` field only; column left empty on export |
+| `URCALL`/`RPT1CALL`/`RPT2CALL`/`DVCODE`            | —                               | ignored                            | empty                                                                         | Digital — not modelled                      |
 
 `txFrequency` is derived on import from `Frequency` + `Duplex` + `Offset`.
 
@@ -43,32 +43,32 @@ CHIRP `Name` is the composed wire name (`composeChannelWireName`). Profile `name
 
 ## Duplex
 
-| `Duplex` | Meaning | Model |
-| --- | --- | --- |
-| empty | Simplex | TX = RX, `forbidTransmit=false` |
-| `+` | Positive split | TX = RX + offset |
-| `-` | Negative split | TX = RX − offset |
-| `off` | TX disabled | TX = RX, `forbidTransmit=true` |
+| `Duplex` | Meaning        | Model                           |
+| -------- | -------------- | ------------------------------- |
+| empty    | Simplex        | TX = RX, `forbidTransmit=false` |
+| `+`      | Positive split | TX = RX + offset                |
+| `-`      | Negative split | TX = RX − offset                |
+| `off`    | TX disabled    | TX = RX, `forbidTransmit=true`  |
 
 Export uses `deriveChirpDuplexAndOffset(rxFrequency, txFrequency, forbidTransmit)` — the inverse of import. **Lossy:** zero-offset `+`/`-` (offset 0, TX = RX) collapse to simplex in the model and export with an empty `Duplex` column; CHIRP files that used `+`/`-` with offset `0` will not bidirectional mapping that wire literally.
 
 ## Tones
 
-| `Tone` | `rToneFreq` | `cToneFreq` | Model |
-| --- | --- | --- | --- |
-| empty | — | — | both `none` |
-| `Tone` | TX CTCSS | `88.5` | `txTone` set, `rxTone=none` |
-| `TSQL` | `88.5` | CTCSS | `rxTone=txTone` |
+| `Tone` | `rToneFreq` | `cToneFreq` | Model                       |
+| ------ | ----------- | ----------- | --------------------------- |
+| empty  | —           | —           | both `none`                 |
+| `Tone` | TX CTCSS    | `88.5`      | `txTone` set, `rxTone=none` |
+| `TSQL` | `88.5`      | CTCSS       | `rxTone=txTone`             |
 
 Export uses `88.5` for unused frequency cells.
 
 ## Mode
 
 | CHIRP `Mode` | `mode` | `bandwidthKHz` |
-| --- | --- | --- |
-| `NFM` | `fm` | 12.5 |
-| `FM` | `fm` | 25 |
-| `AM` | `am` | null |
+| ------------ | ------ | -------------- |
+| `NFM`        | `fm`   | 12.5           |
+| `FM`         | `fm`   | 25             |
+| `AM`         | `am`   | null           |
 
 ## Power
 

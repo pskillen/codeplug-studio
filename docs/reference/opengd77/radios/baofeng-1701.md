@@ -13,29 +13,29 @@ Radio profile for the **Baofeng DM-1701** (also sold as **Retevis RT-84**) runni
 
 ## Capacity and cardinality
 
-| Constraint | Value | Source | Notes |
-| --- | --- | --- | --- |
-| Max channels | 1023 | G4EML CPS | `Channel Number` unique integer 1–1023; gaps allowed |
-| Zone members | 80 | CPS export / adapter | `Channel1`…`Channel80` |
-| TG list members | 32 | CPS export / adapter | `Contact1`…`Contact32` |
-| Contacts | ~100+ | CPS / operator practice | No hard app limit today |
-| Channel name display | ~16 chars | CPS UI | Longer names may truncate on radio LCD |
-| TOT range | 0–495, step 15 | G4EML CPS | `0` = off |
-| Colour code | 0–15 | G4EML CPS | Digital channels |
-| Append CSV renumber | Ignores channel numbers | G4EML CPS | Append mode compacts and renumbers sequentially |
+| Constraint           | Value                   | Source                  | Notes                                                |
+| -------------------- | ----------------------- | ----------------------- | ---------------------------------------------------- |
+| Max channels         | 1023                    | G4EML CPS               | `Channel Number` unique integer 1–1023; gaps allowed |
+| Zone members         | 80                      | CPS export / adapter    | `Channel1`…`Channel80`                               |
+| TG list members      | 32                      | CPS export / adapter    | `Contact1`…`Contact32`                               |
+| Contacts             | ~100+                   | CPS / operator practice | No hard app limit today                              |
+| Channel name display | ~16 chars               | CPS UI                  | Longer names may truncate on radio LCD               |
+| TOT range            | 0–495, step 15          | G4EML CPS               | `0` = off                                            |
+| Colour code          | 0–15                    | G4EML CPS               | Digital channels                                     |
+| Append CSV renumber  | Ignores channel numbers | G4EML CPS               | Append mode compacts and renumbers sequentially      |
 
 ## Feature availability
 
-| Feature | 1701 support | App modelling | Notes |
-| --- | --- | --- | --- |
-| DMR digital | Yes | Full | `Channel Type` = `Digital` |
-| Analogue FM | Yes | Full | `Channel Type` = `Analogue`; no dual-mode row |
-| Promiscuous RX (TG lists) | Yes | Full | `TG List` on channel + `TG_Lists.csv` |
-| APRS | Yes (firmware) | **Partial** | `Channels.APRS` name bidirectional mappings; `APRS.csv` body not modelled |
-| DTMF sequences | Yes (firmware) | **Not modelled** | `DTMF.csv` exported header-only |
-| Hotspot / talkaround | Yes | vendorExtras | `TS1_TA_Tx`, `TS2_TA_Tx ID` in vendorExtras |
-| Airband / AM | **No** | N/A | OpenGD77 on 1701 does not carry AM airband — layout convention |
-| YSF / D-STAR / M17 | No native CPS columns | Lossy export | Collapse to `Digital` if set in internal model |
+| Feature                   | 1701 support          | App modelling    | Notes                                                                     |
+| ------------------------- | --------------------- | ---------------- | ------------------------------------------------------------------------- |
+| DMR digital               | Yes                   | Full             | `Channel Type` = `Digital`                                                |
+| Analogue FM               | Yes                   | Full             | `Channel Type` = `Analogue`; no dual-mode row                             |
+| Promiscuous RX (TG lists) | Yes                   | Full             | `TG List` on channel + `TG_Lists.csv`                                     |
+| APRS                      | Yes (firmware)        | **Partial**      | `Channels.APRS` name bidirectional mappings; `APRS.csv` body not modelled |
+| DTMF sequences            | Yes (firmware)        | **Not modelled** | `DTMF.csv` exported header-only                                           |
+| Hotspot / talkaround      | Yes                   | vendorExtras     | `TS1_TA_Tx`, `TS2_TA_Tx ID` in vendorExtras                               |
+| Airband / AM              | **No**                | N/A              | OpenGD77 on 1701 does not carry AM airband — layout convention            |
+| YSF / D-STAR / M17        | No native CPS columns | Lossy export     | Collapse to `Digital` if set in internal model                            |
 
 ## Layout conventions (1701)
 
@@ -51,36 +51,36 @@ These are operator/layout choices, not CSV column differences:
 
 Profile selection is implemented at import and export via `src/core/import-export/formats/opengd77/profiles.ts`:
 
-| Profile id | Zone members | TG members | Max channels |
-| --- | --- | --- | --- |
-| `opengd77-1701` | 80 | 32 | 1023 |
-| `opengd77-md9600` | 80 | 32 | 1023 |
+| Profile id        | Zone members | TG members | Max channels |
+| ----------------- | ------------ | ---------- | ------------ |
+| `opengd77-1701`   | 80           | 32         | 1023         |
+| `opengd77-md9600` | 80           | 32         | 1023         |
 
 ## Power ladder (P-index → percent)
 
-| Wire | Watts (1701) | Percent |
-| --- | --- | --- |
-| `P9` | 5 W | 100 |
-| `P8` | 4 W | 80 |
-| `P7` | 3 W | 60 |
-| `P6` | 2 W | 40 |
-| `P5` | 1 W | 20 |
-| `P4` | 750 mW | 15 |
-| `P3` | 500 mW | 10 |
-| `P2` | 250 mW | 5 |
-| `P1` | 50 mW | 1 |
-| `Master` | radio default | `null` |
+| Wire     | Watts (1701)  | Percent |
+| -------- | ------------- | ------- |
+| `P9`     | 5 W           | 100     |
+| `P8`     | 4 W           | 80      |
+| `P7`     | 3 W           | 60      |
+| `P6`     | 2 W           | 40      |
+| `P5`     | 1 W           | 20      |
+| `P4`     | 750 mW        | 15      |
+| `P3`     | 500 mW        | 10      |
+| `P2`     | 250 mW        | 5       |
+| `P1`     | 50 mW         | 1       |
+| `Master` | radio default | `null`  |
 
 Squelch wire is profile-independent: `N%`, `Disabled` → 0%, `Master` → `null`.
 
 ## Known gaps vs generic reference
 
-| Topic | Status |
-| --- | --- |
-| `Zone Skip` vs `All Skip` | `All Skip` → `scanSkip`; `Zone Skip` in vendorExtras only |
-| `Rx Only` normalisation | Stored as raw string, not `Yes`/`No` boolean |
-| Unresolved zone members | Preserved in `sourceMemberNames`; no import warning UI |
-| Other OpenGD77 radios | Limits assumed same as 1701 until validated — file issues when exports differ |
+| Topic                     | Status                                                                        |
+| ------------------------- | ----------------------------------------------------------------------------- |
+| `Zone Skip` vs `All Skip` | `All Skip` → `scanSkip`; `Zone Skip` in vendorExtras only                     |
+| `Rx Only` normalisation   | Stored as raw string, not `Yes`/`No` boolean                                  |
+| Unresolved zone members   | Preserved in `sourceMemberNames`; no import warning UI                        |
+| Other OpenGD77 radios     | Limits assumed same as 1701 until validated — file issues when exports differ |
 
 ## Related
 

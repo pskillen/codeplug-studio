@@ -10,11 +10,11 @@
 
 ## Layer layout
 
-| Layer | Path | Example tests (shipped) |
-| --- | --- | --- |
-| **core** | `src/core/` | `maidenhead.test.ts`, `bandPlan.test.ts`, `summary.test.ts`, `references.test.ts`, `validation.test.ts`, `traits.test.ts` |
-| **integrations** | `src/integrations/` | `indexedDb.test.ts`, `inMemory.test.ts`, `ukRepeaterClient.test.ts`, `modeCodes.test.ts`, `mapToChannel.test.ts` |
-| **app** | `src/app/` | `projectStore.test.ts`, `libraryService.test.ts` |
+| Layer            | Path                | Example tests (shipped)                                                                                                   |
+| ---------------- | ------------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| **core**         | `src/core/`         | `maidenhead.test.ts`, `bandPlan.test.ts`, `summary.test.ts`, `references.test.ts`, `validation.test.ts`, `traits.test.ts` |
+| **integrations** | `src/integrations/` | `indexedDb.test.ts`, `inMemory.test.ts`, `ukRepeaterClient.test.ts`, `modeCodes.test.ts`, `mapToChannel.test.ts`          |
+| **app**          | `src/app/`          | `projectStore.test.ts`, `libraryService.test.ts`                                                                          |
 
 **Rule:** `core` tests must not import React, Mantine, or browser storage — keep domain and services pure.
 
@@ -26,12 +26,12 @@ Adapter **integration** (import golden, export golden) belongs in mapping tests 
 
 ## Unit vs mapping integration
 
-| Unit | Mapping integration |
-| --- | --- |
-| One CSV row → one channel object | Full bundle → library → golden snapshot |
-| `detectKind` by filename/headers | `importIntoLibrary` multi-file batch |
+| Unit                                | Mapping integration                       |
+| ----------------------------------- | ----------------------------------------- |
+| One CSV row → one channel object    | Full bundle → library → golden snapshot   |
+| `detectKind` by filename/headers    | `importIntoLibrary` multi-file batch      |
 | Single serialiser column formatting | Constructed library + build → wire golden |
-| `summariseLibrary` counts | `assemble` + export serialise |
+| `summariseLibrary` counts           | `assemble` + export serialise             |
 
 **Rule:** If the test needs more than one adapter call or crosses import+export boundary, prefer [mapping-tests.md](mapping-tests.md) scenarios.
 

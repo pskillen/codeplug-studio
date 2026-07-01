@@ -14,11 +14,11 @@ Domain rules for expanding one **logical digital channel** (with an RX group lis
 
 Operators model promiscuous RX with existing library fields — no per-channel multi-talkgroup flag:
 
-| Field | Role |
-| --- | --- |
-| `Channel.rxGroupListId` (or per-profile `rxGroupListId` when `multiMode`) | Which RX group list drives expansion |
-| `RxGroupList.memberRefs` | Ordered talk groups and/or private contacts to expand (UUID refs) |
-| `Channel.contactRef` | TX contact on lean rows; cleared on expanded rows |
+| Field                                                                     | Role                                                              |
+| ------------------------------------------------------------------------- | ----------------------------------------------------------------- |
+| `Channel.rxGroupListId` (or per-profile `rxGroupListId` when `multiMode`) | Which RX group list drives expansion                              |
+| `RxGroupList.memberRefs`                                                  | Ordered talk groups and/or private contacts to expand (UUID refs) |
+| `Channel.contactRef`                                                      | TX contact on lean rows; cleared on expanded rows                 |
 
 RX group list CRUD is how operators manage the talk group set. See [data-model README](../features/data-model/README.md).
 
@@ -28,20 +28,20 @@ RX group list CRUD is how operators manage the talk group set. See [data-model R
 
 Enable TG expansion (`ExportOptions.expandRxGroupLists`) only when the **target format cannot represent RGLs** on the wire.
 
-| Condition | Action |
-| --- | --- |
-| Digital/DMR row with resolvable `rxGroupListId` and ≥1 expandable member | Emit one row per member |
-| Analog or non-DMR row | Never expand |
-| No RGL or zero members after filter | Emit one unchanged row; optional warning |
-| Combined with multi-mode | Mode expand first, then TG expand on digital rows → **m×n** |
+| Condition                                                                | Action                                                      |
+| ------------------------------------------------------------------------ | ----------------------------------------------------------- |
+| Digital/DMR row with resolvable `rxGroupListId` and ≥1 expandable member | Emit one row per member                                     |
+| Analog or non-DMR row                                                    | Never expand                                                |
+| No RGL or zero members after filter                                      | Emit one unchanged row; optional warning                    |
+| Combined with multi-mode                                                 | Mode expand first, then TG expand on digital rows → **m×n** |
 
 Export path: `assemble(build, library)` → trait-aware projection → wire serialisation in `src/core/import-export/formats/<format>/`.
 
 ### Member filter (`ExportOptions.expandRxGroupListMembers`)
 
-| Value | Members expanded |
-| --- | --- |
-| `all` (default) | All `memberRefs` (talk groups and private contacts) |
+| Value            | Members expanded                                                                       |
+| ---------------- | -------------------------------------------------------------------------------------- |
+| `all` (default)  | All `memberRefs` (talk groups and private contacts)                                    |
 | `talkGroupsOnly` | `EntityRef` with `kind: 'talkGroup'` only; skipped private contacts may emit a warning |
 
 ### Expanded row semantics
@@ -61,14 +61,14 @@ Each expanded row is one site × one member:
 
 Controlled by `ExportOptions.multiTalkGroupExportNameMode` (export panel). Default **`callsign_tg_abbrev`**.
 
-| Mode | Composed wire name (before length trim) | Example |
-| --- | --- | --- |
-| `callsign_tg_abbrev` | `{callsign} {tgAbbrevOrName}` | `GB7GL Sco TS2` |
-| `callsign_tg` | `{callsign} {tgLabel}` | `GB7GL Scotland TS2` |
-| `callsign_name_tg` | `{callsign} {name} {tgLabel}` | `GB7GL Glasgow Scotland TS2` |
-| `suffix_tg_abbrev` | `{callsign2} {tgAbbrevOrName}` | `GL Sco TS2` |
-| `suffix_tg_number` | `{callsign2} {number[/ts]}` — failsafe | `GL 950/2` |
-| `append` | **Legacy** — `{baseWireName} {memberLabel}` | `GL Glas Scotland TS2` |
+| Mode                 | Composed wire name (before length trim)     | Example                      |
+| -------------------- | ------------------------------------------- | ---------------------------- |
+| `callsign_tg_abbrev` | `{callsign} {tgAbbrevOrName}`               | `GB7GL Sco TS2`              |
+| `callsign_tg`        | `{callsign} {tgLabel}`                      | `GB7GL Scotland TS2`         |
+| `callsign_name_tg`   | `{callsign} {name} {tgLabel}`               | `GB7GL Glasgow Scotland TS2` |
+| `suffix_tg_abbrev`   | `{callsign2} {tgAbbrevOrName}`              | `GL Sco TS2`                 |
+| `suffix_tg_number`   | `{callsign2} {number[/ts]}` — failsafe      | `GL 950/2`                   |
+| `append`             | **Legacy** — `{baseWireName} {memberLabel}` | `GL Glas Scotland TS2`       |
 
 `callsign` includes multi-mode `-F`/`-D` suffix when present on the expanded row.
 

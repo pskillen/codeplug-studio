@@ -22,7 +22,8 @@ Read [progress-tracking](../progress-tracking/SKILL.md) when an initiative needs
 
 | Pattern | When to use | Examples |
 | --- | --- | --- |
-| **`<topic>/README.md`** | Every feature area — hub page | `library/README.md`, `builds/README.md` |
+| **`<topic>/README.md`** | Every feature area — hub page | `library/README.md`, `report/README.md` |
+| **Single-file topics** | One concern without a folder | `maidenhead.md` |
 | **Sibling deep dives** | One concern per file; README is the map | `trait-layout.md`, `merge-heuristics.md` |
 | **Combined feature folders** | Import + export share one hub when tightly coupled | `import-export/README.md` with format subtrees |
 | **`*-progress.md` / `*-outstanding.md`** | Multi-step plans or tickets spanning PRs | `phase-0-progress.md` |

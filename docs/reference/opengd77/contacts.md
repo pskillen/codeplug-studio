@@ -6,29 +6,29 @@ Generic column reference for `Contacts.csv`. One file holds both **group talk gr
 
 ## Required headers (app import)
 
-| Header | Reason |
-| --- | --- |
-| `Contact Name` | Identity; rows without a name are skipped |
-| `ID` | DMR ID |
-| `ID Type` | Determines talk group vs private contact split |
+| Header         | Reason                                         |
+| -------------- | ---------------------------------------------- |
+| `Contact Name` | Identity; rows without a name are skipped      |
+| `ID`           | DMR ID                                         |
+| `ID Type`      | Determines talk group vs private contact split |
 
 `TS Override` is optional — empty if absent.
 
 ## Column reference
 
-| Vendor header | Internal field | Required (import) | Import rule | Export rule | Bidirectional mapping | Notes |
-| --- | --- | --- | --- | --- | --- | --- |
-| `Contact Name` | `TalkGroup.name` or `Contact.name` | **Yes** | Trim; skip row if empty | As stored | String pass-through | FK target for Channels and TG_Lists |
-| `ID` | `.number` | **Yes** | Trim | As stored | String pass-through | DMR ID integer as string |
-| `ID Type` | (entity kind) | **Yes** | `Group` (case-insensitive) → `TalkGroup`; else → `Contact` | `Group` / `Private` | Lossless split | CPS values: `Group`, `Private` |
-| `TS Override` | `.timeslotOverride` | No | Trim | As stored | String pass-through | `1`, `2`, or `Disabled` — CPS slot hint |
+| Vendor header  | Internal field                     | Required (import) | Import rule                                                | Export rule         | Bidirectional mapping | Notes                                   |
+| -------------- | ---------------------------------- | ----------------- | ---------------------------------------------------------- | ------------------- | --------------------- | --------------------------------------- |
+| `Contact Name` | `TalkGroup.name` or `Contact.name` | **Yes**           | Trim; skip row if empty                                    | As stored           | String pass-through   | FK target for Channels and TG_Lists     |
+| `ID`           | `.number`                          | **Yes**           | Trim                                                       | As stored           | String pass-through   | DMR ID integer as string                |
+| `ID Type`      | (entity kind)                      | **Yes**           | `Group` (case-insensitive) → `TalkGroup`; else → `Contact` | `Group` / `Private` | Lossless split        | CPS values: `Group`, `Private`          |
+| `TS Override`  | `.timeslotOverride`                | No                | Trim                                                       | As stored           | String pass-through   | `1`, `2`, or `Disabled` — CPS slot hint |
 
 ## Split semantics
 
-| `ID Type` | Internal model | Typical use |
-| --- | --- | --- |
-| `Group` | `TalkGroup` | TX/RX talk groups referenced by `Channels.Contact` and TG list members |
-| `Private` | `Contact` | Individual DMR IDs |
+| `ID Type` | Internal model | Typical use                                                            |
+| --------- | -------------- | ---------------------------------------------------------------------- |
+| `Group`   | `TalkGroup`    | TX/RX talk groups referenced by `Channels.Contact` and TG list members |
+| `Private` | `Contact`      | Individual DMR IDs                                                     |
 
 Export order: all talk groups first, then private contacts (order within each group follows codeplug array order).
 

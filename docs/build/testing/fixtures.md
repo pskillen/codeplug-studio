@@ -4,11 +4,11 @@
 
 ## Committed vs local
 
-| Location | Committed | Use |
-| --- | --- | --- |
-| `src/core/import-export/formats/<format>/__fixtures__/` | **Planned** | Per-format golden import/export files |
-| `sample-exports/` | Gitignored | Operator manual testing — personal codeplugs stay local |
-| `e2e/fixtures/` | **Planned** | Minimal bundle for Playwright import → export |
+| Location                                                | Committed   | Use                                                     |
+| ------------------------------------------------------- | ----------- | ------------------------------------------------------- |
+| `src/core/import-export/formats/<format>/__fixtures__/` | **Planned** | Per-format golden import/export files                   |
+| `sample-exports/`                                       | Gitignored  | Operator manual testing — personal codeplugs stay local |
+| `e2e/fixtures/`                                         | **Planned** | Minimal bundle for Playwright import → export           |
 
 **Privacy:** Committed fixtures stay **synthetic and minimal** or **public repeater data** only. Do not commit personal codeplugs without explicit review.
 

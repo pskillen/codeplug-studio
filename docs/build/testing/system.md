@@ -14,11 +14,11 @@ npm run test:system   # planned
 
 Single entry point for production call order — reuse in new scenarios and future Playwright helpers:
 
-| Symbol | Role |
-| --- | --- |
-| `runImportIntoLibraryWorkflow` | parse → preview → apply to library |
-| `runAssembleAndExport` | library + build → wire files |
-| `runPersistAndReload` | IndexedDB round-trip without corruption |
+| Symbol                         | Role                                    |
+| ------------------------------ | --------------------------------------- |
+| `runImportIntoLibraryWorkflow` | parse → preview → apply to library      |
+| `runAssembleAndExport`         | library + build → wire files            |
+| `runPersistAndReload`          | IndexedDB round-trip without corruption |
 
 **Invariant assertions** (reuse across scenarios):
 
@@ -29,13 +29,13 @@ Single entry point for production call order — reuse in new scenarios and futu
 
 ## Scenario matrix (to implement)
 
-| Scenario | Proves |
-| --- | --- |
-| Import into empty library | Entities + warnings |
-| Import merge vs replace | Operator policy honoured |
-| CRUD between import and export | User edits appear on wire |
-| Multi-project isolation | Library A not visible in project B |
-| Persistence reload | IndexedDB schema migration + data integrity |
+| Scenario                       | Proves                                      |
+| ------------------------------ | ------------------------------------------- |
+| Import into empty library      | Entities + warnings                         |
+| Import merge vs replace        | Operator policy honoured                    |
+| CRUD between import and export | User edits appear on wire                   |
+| Multi-project isolation        | Library A not visible in project B          |
+| Persistence reload             | IndexedDB schema migration + data integrity |
 
 ## Code anchors (planned)
 

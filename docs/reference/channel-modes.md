@@ -4,11 +4,11 @@ Canonical reference for channel mode labels, categories, UI pill colours, and fo
 
 ## Categories
 
-| Category | Meaning |
-| --- | --- |
-| `analog` | Analog voice modes — show RX/TX tone fields in the edit form |
+| Category  | Meaning                                                                     |
+| --------- | --------------------------------------------------------------------------- |
+| `analog`  | Analog voice modes — show RX/TX tone fields in the edit form                |
 | `digital` | Digital voice modes — hide tone fields; DMR-only fields apply only to `dmr` |
-| `other` | Unknown or unclassified |
+| `other`   | Unknown or unclassified                                                     |
 
 ## Colour design
 
@@ -16,30 +16,30 @@ Canonical reference for channel mode labels, categories, UI pill colours, and fo
 
 ## Mode table
 
-| ID | Label | Category | Hex | Mantine |
-| --- | --- | --- | --- | --- |
-| `fm` | FM | analog | `#f0c419` | `yellow.5` |
-| `am` | AM | analog | `#fab005` | `yellow.6` |
-| `ssb-usb` | SSB USB | analog | `#fd7e14` | `orange.6` |
-| `ssb-lsb` | SSB LSB | analog | `#e8590c` | `orange.7` |
-| `dmr` | DMR | digital | `#e03131` | `red.7` |
-| `ysf` | YSF | digital | `#339af0` | `blue.5` |
-| `dstar` | D-STAR | digital | `#7950f2` | `violet.6` |
-| `p25` | P25 | digital | `#12b886` | `teal.6` |
-| `nxdn` | NXDN | digital | `#868e96` | `gray.6` |
-| `m17` | M17 | digital | `#20c997` | `teal.5` |
-| `tetra` | Tetra | digital | `#6741d9` | `indigo.6` |
-| `other` | Other | other | `#9c36b5` | `grape.6` |
+| ID        | Label   | Category | Hex       | Mantine    |
+| --------- | ------- | -------- | --------- | ---------- |
+| `fm`      | FM      | analog   | `#f0c419` | `yellow.5` |
+| `am`      | AM      | analog   | `#fab005` | `yellow.6` |
+| `ssb-usb` | SSB USB | analog   | `#fd7e14` | `orange.6` |
+| `ssb-lsb` | SSB LSB | analog   | `#e8590c` | `orange.7` |
+| `dmr`     | DMR     | digital  | `#e03131` | `red.7`    |
+| `ysf`     | YSF     | digital  | `#339af0` | `blue.5`   |
+| `dstar`   | D-STAR  | digital  | `#7950f2` | `violet.6` |
+| `p25`     | P25     | digital  | `#12b886` | `teal.6`   |
+| `nxdn`    | NXDN    | digital  | `#868e96` | `gray.6`   |
+| `m17`     | M17     | digital  | `#20c997` | `teal.5`   |
+| `tetra`   | Tetra   | digital  | `#6741d9` | `indigo.6` |
+| `other`   | Other   | other    | `#9c36b5` | `grape.6`  |
 
 OpenGD77 `Channel Type` wire mapping (`Analogue` / `Digital` / passthrough): [opengd77/channels.md](opengd77/channels.md).
 
 ## Form field applicability
 
-| Field group | Applies when |
-| --- | --- |
-| RX/TX tone | `isAnalogMode(mode)` — `fm`, `am`, `ssb-usb`, `ssb-lsb` |
-| Colour code, timeslot, DMR ID, contact, RX group list | `isDmrMode(mode)` — `dmr` only |
-| (hidden) tones | `isDigitalMode(mode)` — all digital modes |
+| Field group                                           | Applies when                                            |
+| ----------------------------------------------------- | ------------------------------------------------------- |
+| RX/TX tone                                            | `isAnalogMode(mode)` — `fm`, `am`, `ssb-usb`, `ssb-lsb` |
+| Colour code, timeslot, DMR ID, contact, RX group list | `isDmrMode(mode)` — `dmr` only                          |
+| (hidden) tones                                        | `isDigitalMode(mode)` — all digital modes               |
 
 YSF, D-STAR, P25, NXDN, M17, and Tetra are digital but may lack format-specific CPS columns for some adapters. OpenGD77 mode wire rules: [opengd77/channels.md](opengd77/channels.md).
 

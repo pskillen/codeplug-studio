@@ -8,30 +8,30 @@ Authoritative reference for **CHIRP** radio memory CSV exports — one wire form
 
 ## File shape
 
-| Property | Value |
-| --- | --- |
-| Files per export | **One** `.csv` per radio |
+| Property         | Value                                                                  |
+| ---------------- | ---------------------------------------------------------------------- |
+| Files per export | **One** `.csv` per radio                                               |
 | Typical filename | `{RadioModel}_{YYYYMMDD}.csv` (e.g. `Baofeng_UV-5R Mini_20251129.csv`) |
-| Delimiter | Comma |
-| Frequency format | MHz, six decimal places (e.g. `145.500000`) |
-| Foreign keys | None — flat channel list |
+| Delimiter        | Comma                                                                  |
+| Frequency format | MHz, six decimal places (e.g. `145.500000`)                            |
+| Foreign keys     | None — flat channel list                                               |
 
 Sample fixtures: [`sample-exports/Chirp 2026-06-29/`](../../../sample-exports/Chirp%202026-06-29/) (archive reference #101).
 
 ## Two-layer model
 
-| Layer | Location | Contents |
-| --- | --- | --- |
-| **Generic wire format** | This directory ([channels.md](channels.md)) | Column headers, semantic mapping, conversion rules |
-| **Radio profiles** | [`radios/`](radios/README.md) | Per-radio memory size, power ladder, filename conventions |
+| Layer                   | Location                                    | Contents                                                  |
+| ----------------------- | ------------------------------------------- | --------------------------------------------------------- |
+| **Generic wire format** | This directory ([channels.md](channels.md)) | Column headers, semantic mapping, conversion rules        |
+| **Radio profiles**      | [`radios/`](radios/README.md)               | Per-radio memory size, power ladder, filename conventions |
 
 The **internal library model is format-agnostic** ([data model](../../features/data-model/README.md)). CHIRP profile limits apply at **export time** when the operator picks a target radio.
 
 ## File set
 
-| File | Reference | Import (app) | Export (app) | Modelled |
-| --- | --- | --- | --- | --- |
-| `{radio}.csv` | [channels.md](channels.md) | Yes | Yes | `Channel[]` only |
+| File          | Reference                  | Import (app) | Export (app) | Modelled         |
+| ------------- | -------------------------- | ------------ | ------------ | ---------------- |
+| `{radio}.csv` | [channels.md](channels.md) | Yes          | Yes          | `Channel[]` only |
 
 No zones, contacts, talk groups, or RX group lists in CHIRP analogue exports.
 
@@ -39,17 +39,17 @@ No zones, contacts, talk groups, or RX group lists in CHIRP analogue exports.
 
 `detectKind(fileName, headerRow)` in [`src/core/import-export/formats/chirp/adapter.ts`](../../../src/core/import-export/formats/chirp/adapter.ts):
 
-| Signal | Result |
-| --- | --- |
+| Signal                                                            | Result     |
+| ----------------------------------------------------------------- | ---------- |
 | Headers include `Location`, `Name`, `Frequency`, `Duplex`, `Mode` | `channels` |
-| Otherwise | `unknown` |
+| Otherwise                                                         | `unknown`  |
 
 ## Skip vs error
 
-| Outcome | When |
-| --- | --- |
-| **Recognised** | CHIRP header fingerprint matches |
-| **Error** | Recognised file fails parse (empty CSV, unparseable row) |
+| Outcome              | When                                                          |
+| -------------------- | ------------------------------------------------------------- |
+| **Recognised**       | CHIRP header fingerprint matches                              |
+| **Error**            | Recognised file fails parse (empty CSV, unparseable row)      |
 | **Rejected (batch)** | Mixed CHIRP + OpenGD77 files when a single format is selected |
 
 ## DMR columns on analogue exports

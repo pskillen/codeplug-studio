@@ -22,12 +22,12 @@ Extract a shared `renderWithProviders()` helper when the second component test l
 
 ## What to test
 
-| Area | Example |
-| --- | --- |
-| Library CRUD forms | Analog vs DMR field visibility per [channel-modes.md](../../reference/channel-modes.md) |
-| Import preview panel | Warning list, merge vs replace copy |
-| Reports page | Counts render from mocked `summariseLibrary` result |
-| Repeater search | Mode pills, add-to-library disabled states |
+| Area                 | Example                                                                                 |
+| -------------------- | --------------------------------------------------------------------------------------- |
+| Library CRUD forms   | Analog vs DMR field visibility per [channel-modes.md](../../reference/channel-modes.md) |
+| Import preview panel | Warning list, merge vs replace copy                                                     |
+| Reports page         | Counts render from mocked `summariseLibrary` result                                     |
+| Repeater search      | Mode pills, add-to-library disabled states                                              |
 
 ## What not to test here
 

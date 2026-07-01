@@ -6,43 +6,43 @@ Generic column reference for `Channels.csv`. Cardinality and display-length limi
 
 ## Required headers (app import)
 
-| Header | Reason |
-| --- | --- |
-| `Channel Name` | Identity; rows without a name are skipped |
-| `Latitude` | Map/plot support; must be present as a column |
-| `Longitude` | Map/plot support; must be present as a column |
+| Header         | Reason                                        |
+| -------------- | --------------------------------------------- |
+| `Channel Name` | Identity; rows without a name are skipped     |
+| `Latitude`     | Map/plot support; must be present as a column |
+| `Longitude`    | Map/plot support; must be present as a column |
 
 All other columns are optional at import — missing headers yield empty values.
 
 ## Column reference
 
-| Vendor header | Internal field | Required (import) | Import rule | Export rule | Bidirectional mapping | Notes |
-| --- | --- | --- | --- | --- | --- | --- |
-| `Channel Number` | _(export only)_ | No | **Ignored** on import | Sequential `1…n` in channel list order | Not preserved | Direct-access number in All-channels zone; see radio profile for range |
-| `Channel Name` | `Channel.name` | **Yes** | Trim; skip row if empty | As stored | String pass-through | FK target for zones; case-sensitive |
-| `Channel Type` | `Channel.mode` | No | `Analogue`/`Analog` → `fm`; `Digital` → `dmr`; else `other` | All analog modes → `Analogue`; all digital → `Digital`; else passthrough | Lossy for non-FM/DMR | See [channel-modes.md](../channel-modes.md) |
-| `Rx Frequency` | `Channel.rxFrequency` | No | MHz wire → integer Hz | Hz → MHz wire (5 dp) | Lossless when valid | `.` or `,` decimal accepted on import |
-| `Tx Frequency` | `Channel.txFrequency` | No | MHz wire → integer Hz | Hz → MHz wire (5 dp) | Lossless when valid | |
-| `Bandwidth (kHz)` | `Channel.bandwidthKHz` | No | Parse float kHz | As number string | Lossless | Analogue: typically `12.5` or `25` |
-| `Colour Code` | `Channel.colourCode` | No | Parse 0–15 | As integer string | Lossless | Digital only |
-| `Timeslot` | `Channel.timeslot` | No | `1` or `2` | As `1`/`2` | Lossless | Digital only |
-| `Contact` | `Channel.contactName` | No | Trim | As stored | String pass-through | TX talk group name; FK → Contacts.csv |
-| `TG List` | `Channel.rxGroupListName` | No | Trim | As stored | String pass-through | Promiscuous RX list; FK → TG_Lists.csv |
-| `DMR ID` | `Channel.dmrId` | No | Parse integer; `None`/empty → `null` | Mode-aware — see [mode-dependent columns](#mode-dependent-columns) | Lossless | Digital: `None` when unset; analogue: empty |
-| `TS1_TA_Tx` | `Channel.opengd77Extras['TS1_TA_Tx']` | No | Trim → opengd77Extras | From opengd77Extras | opengd77Extras | Talkaround TS1 |
-| `TS2_TA_Tx ID` | `Channel.opengd77Extras['TS2_TA_Tx ID']` | No | Trim → opengd77Extras | From opengd77Extras | opengd77Extras | Talkaround TS2 |
-| `RX Tone` | `Channel.rxTone` | No | Wire → tone enum (`None` → `none`) | Mode-aware — see below | Lossless | CTCSS/DCS; see tones below |
-| `TX Tone` | `Channel.txTone` | No | Wire → tone enum | Mode-aware — see below | Lossless | |
-| `Squelch` | `Channel.squelch` | No | Wire → percent | Mode-aware — see below | Lossless | See [power-squelch.md](power-squelch.md) |
-| `Power` | `Channel.power` | No | Wire → percent | Percent → wire | Lossless | See [power-squelch.md](power-squelch.md) |
-| `Rx Only` | `Channel.forbidTransmit` | No | `Yes`/`No` → boolean | `wireYesNo` | Lossless boolean | |
-| `Zone Skip` | `Channel.opengd77Extras['Zone Skip']` | No | Trim → opengd77Extras | From opengd77Extras | opengd77Extras | Not mapped to `scanSkip` |
-| `All Skip` | `Channel.scanSkip` | No | `Yes` → `true` | `wireYesNo(scanSkip)` | Lossless boolean | Global scan skip |
-| `TOT` | `Channel.transmitTimeout` | No | Parse seconds | As integer string | Lossless | `0` = off; CPS step 15 (0–495) |
-| `VOX` | `Channel.voxEnabled` | No | `Off` or empty → `false`; else `true` | `Off` / `On` | Lossless boolean | |
-| `No Beep` | `Channel.opengd77Extras['No Beep']` | No | Trim → opengd77Extras | From opengd77Extras | opengd77Extras | |
-| `No Eco` | `Channel.opengd77Extras['No Eco']` | No | Trim → opengd77Extras | From opengd77Extras | opengd77Extras | |
-| `APRS` | `Channel.aprsConfigName` | No | Trim | As stored | String pass-through | FK → APRS.csv |
+| Vendor header     | Internal field                           | Required (import) | Import rule                                                 | Export rule                                                              | Bidirectional mapping | Notes                                                                  |
+| ----------------- | ---------------------------------------- | ----------------- | ----------------------------------------------------------- | ------------------------------------------------------------------------ | --------------------- | ---------------------------------------------------------------------- |
+| `Channel Number`  | _(export only)_                          | No                | **Ignored** on import                                       | Sequential `1…n` in channel list order                                   | Not preserved         | Direct-access number in All-channels zone; see radio profile for range |
+| `Channel Name`    | `Channel.name`                           | **Yes**           | Trim; skip row if empty                                     | As stored                                                                | String pass-through   | FK target for zones; case-sensitive                                    |
+| `Channel Type`    | `Channel.mode`                           | No                | `Analogue`/`Analog` → `fm`; `Digital` → `dmr`; else `other` | All analog modes → `Analogue`; all digital → `Digital`; else passthrough | Lossy for non-FM/DMR  | See [channel-modes.md](../channel-modes.md)                            |
+| `Rx Frequency`    | `Channel.rxFrequency`                    | No                | MHz wire → integer Hz                                       | Hz → MHz wire (5 dp)                                                     | Lossless when valid   | `.` or `,` decimal accepted on import                                  |
+| `Tx Frequency`    | `Channel.txFrequency`                    | No                | MHz wire → integer Hz                                       | Hz → MHz wire (5 dp)                                                     | Lossless when valid   |                                                                        |
+| `Bandwidth (kHz)` | `Channel.bandwidthKHz`                   | No                | Parse float kHz                                             | As number string                                                         | Lossless              | Analogue: typically `12.5` or `25`                                     |
+| `Colour Code`     | `Channel.colourCode`                     | No                | Parse 0–15                                                  | As integer string                                                        | Lossless              | Digital only                                                           |
+| `Timeslot`        | `Channel.timeslot`                       | No                | `1` or `2`                                                  | As `1`/`2`                                                               | Lossless              | Digital only                                                           |
+| `Contact`         | `Channel.contactName`                    | No                | Trim                                                        | As stored                                                                | String pass-through   | TX talk group name; FK → Contacts.csv                                  |
+| `TG List`         | `Channel.rxGroupListName`                | No                | Trim                                                        | As stored                                                                | String pass-through   | Promiscuous RX list; FK → TG_Lists.csv                                 |
+| `DMR ID`          | `Channel.dmrId`                          | No                | Parse integer; `None`/empty → `null`                        | Mode-aware — see [mode-dependent columns](#mode-dependent-columns)       | Lossless              | Digital: `None` when unset; analogue: empty                            |
+| `TS1_TA_Tx`       | `Channel.opengd77Extras['TS1_TA_Tx']`    | No                | Trim → opengd77Extras                                       | From opengd77Extras                                                      | opengd77Extras        | Talkaround TS1                                                         |
+| `TS2_TA_Tx ID`    | `Channel.opengd77Extras['TS2_TA_Tx ID']` | No                | Trim → opengd77Extras                                       | From opengd77Extras                                                      | opengd77Extras        | Talkaround TS2                                                         |
+| `RX Tone`         | `Channel.rxTone`                         | No                | Wire → tone enum (`None` → `none`)                          | Mode-aware — see below                                                   | Lossless              | CTCSS/DCS; see tones below                                             |
+| `TX Tone`         | `Channel.txTone`                         | No                | Wire → tone enum                                            | Mode-aware — see below                                                   | Lossless              |                                                                        |
+| `Squelch`         | `Channel.squelch`                        | No                | Wire → percent                                              | Mode-aware — see below                                                   | Lossless              | See [power-squelch.md](power-squelch.md)                               |
+| `Power`           | `Channel.power`                          | No                | Wire → percent                                              | Percent → wire                                                           | Lossless              | See [power-squelch.md](power-squelch.md)                               |
+| `Rx Only`         | `Channel.forbidTransmit`                 | No                | `Yes`/`No` → boolean                                        | `wireYesNo`                                                              | Lossless boolean      |                                                                        |
+| `Zone Skip`       | `Channel.opengd77Extras['Zone Skip']`    | No                | Trim → opengd77Extras                                       | From opengd77Extras                                                      | opengd77Extras        | Not mapped to `scanSkip`                                               |
+| `All Skip`        | `Channel.scanSkip`                       | No                | `Yes` → `true`                                              | `wireYesNo(scanSkip)`                                                    | Lossless boolean      | Global scan skip                                                       |
+| `TOT`             | `Channel.transmitTimeout`                | No                | Parse seconds                                               | As integer string                                                        | Lossless              | `0` = off; CPS step 15 (0–495)                                         |
+| `VOX`             | `Channel.voxEnabled`                     | No                | `Off` or empty → `false`; else `true`                       | `Off` / `On`                                                             | Lossless boolean      |                                                                        |
+| `No Beep`         | `Channel.opengd77Extras['No Beep']`      | No                | Trim → opengd77Extras                                       | From opengd77Extras                                                      | opengd77Extras        |                                                                        |
+| `No Eco`          | `Channel.opengd77Extras['No Eco']`       | No                | Trim → opengd77Extras                                       | From opengd77Extras                                                      | opengd77Extras        |                                                                        |
+| `APRS`            | `Channel.aprsConfigName`                 | No                | Trim                                                        | As stored                                                                | String pass-through   | FK → APRS.csv                                                          |
 
 ### TX Admit
 
@@ -63,21 +63,21 @@ Operator controls and bidirectional mapping caveats: name shortening (Phase 4+).
 
 ## Tone wire forms
 
-| OpenGD77 wire | Internal `rxTone` / `txTone` |
-| --- | --- |
-| `None`, empty | `none` |
-| CTCSS (e.g. `103.5`) | same frequency string |
-| DCS (e.g. `D023N`) | same code string |
+| OpenGD77 wire        | Internal `rxTone` / `txTone` |
+| -------------------- | ---------------------------- |
+| `None`, empty        | `none`                       |
+| CTCSS (e.g. `103.5`) | same frequency string        |
+| DCS (e.g. `D023N`)   | same code string             |
 
 ## Mode-dependent columns
 
 Export derives wire from **model fields + `Channel.mode`** — never from hidden import provenance.
 
-| Column | Digital export | Analogue export |
-| --- | --- | --- |
-| `RX Tone` / `TX Tone` | always empty | `None` when `none`; else CTCSS/DCS wire |
-| `Squelch` | always empty | `Disabled` when `null`; else `N%` |
-| `DMR ID` | `None` when unset; else integer string | always empty |
+| Column                | Digital export                             | Analogue export                           |
+| --------------------- | ------------------------------------------ | ----------------------------------------- |
+| `RX Tone` / `TX Tone` | always empty                               | `None` when `none`; else CTCSS/DCS wire   |
+| `Squelch`             | always empty                               | `Disabled` when `null`; else `N%`         |
+| `DMR ID`              | `None` when unset; else integer string     | always empty                              |
 | `Contact` / `TG List` | `None` when unset; else resolved wire name | empty when unset; else resolved wire name |
 
 `Disabled` squelch and `Master` both map to `squelch: null` on import (radio default).

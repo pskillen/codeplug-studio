@@ -31,11 +31,11 @@ Digital/DMR channels in a mixed project are **skipped** with warnings — CHIRP 
 
 ## Profile index
 
-| Profile id | Hardware | Fixture | Doc |
-| --- | --- | --- | --- |
-| `baofeng-uv5r-mini` | Baofeng UV-5R Mini | `Baofeng_UV-5R Mini_20251129.csv` | [baofeng-uv5r-mini.md](baofeng-uv5r-mini.md) |
+| Profile id          | Hardware            | Fixture                           | Doc                                          |
+| ------------------- | ------------------- | --------------------------------- | -------------------------------------------- |
+| `baofeng-uv5r-mini` | Baofeng UV-5R Mini  | `Baofeng_UV-5R Mini_20251129.csv` | [baofeng-uv5r-mini.md](baofeng-uv5r-mini.md) |
 | `baofeng-uv21prov2` | Baofeng UV-21Pro V2 | `Baofeng_UV-21ProV2_20251129.csv` | [baofeng-uv21prov2.md](baofeng-uv21prov2.md) |
-| `retevis-rt95` | Retevis RT95 VOX | `Retevis_RT95 VOX_20251106.csv` | [retevis-rt95.md](retevis-rt95.md) |
+| `retevis-rt95`      | Retevis RT95 VOX    | `Retevis_RT95 VOX_20251106.csv`   | [retevis-rt95.md](retevis-rt95.md)           |
 
 ## Related
 

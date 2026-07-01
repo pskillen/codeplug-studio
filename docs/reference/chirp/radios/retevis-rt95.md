@@ -6,18 +6,18 @@
 
 ## Limits
 
-| Constraint | Value |
-| --- | --- |
-| Max memory slots | 128 |
+| Constraint       | Value |
+| ---------------- | ----- |
+| Max memory slots | 128   |
 
 ## Power ladder (wire → percent)
 
 Percent = watts ÷ 25 W max. `null` internal percent exports as high (`25W`).
 
-| Wire | Watts | Percent |
-| --- | --- | --- |
-| `25W` | 25 W | 100 |
-| `10W` | 10 W | 40 |
+| Wire  | Watts | Percent |
+| ----- | ----- | ------- |
+| `25W` | 25 W  | 100     |
+| `10W` | 10 W  | 40      |
 
 ## Related
 

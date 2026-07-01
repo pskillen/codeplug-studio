@@ -6,14 +6,14 @@ Internal semantics (vendor-neutral): see [data model — Channel](../../features
 
 ## Power (`Power` column)
 
-| OpenGD77 wire | Internal `power` |
-| --- | --- |
-| `Master`, `P1`, empty | `null` (radio default) |
-| `P2` | `25` |
-| `P4` | `50` |
-| `P8` | `75` |
-| `P100` | `100` |
-| Other `Pn` | `n` (percent), clamped 0–100 |
+| OpenGD77 wire         | Internal `power`             |
+| --------------------- | ---------------------------- |
+| `Master`, `P1`, empty | `null` (radio default)       |
+| `P2`                  | `25`                         |
+| `P4`                  | `50`                         |
+| `P8`                  | `75`                         |
+| `P100`                | `100`                        |
+| Other `Pn`            | `n` (percent), clamped 0–100 |
 
 Export picks the nearest ladder step for non-exact percent values.
 
@@ -21,11 +21,11 @@ Export picks the nearest ladder step for non-exact percent values.
 
 Mode-dependent wire rules — see [channels.md](channels.md#mode-dependent-columns).
 
-| OpenGD77 wire | Internal `squelch` | Applies |
-| --- | --- | --- |
-| `Master`, `Disabled`, empty | `null` (radio default) | Analogue |
-| `N%` (e.g. `75%`) | `N` (percent 0–100) | Analogue |
-| _(any)_ | ignored on import; export always `''` | Digital |
+| OpenGD77 wire               | Internal `squelch`                    | Applies  |
+| --------------------------- | ------------------------------------- | -------- |
+| `Master`, `Disabled`, empty | `null` (radio default)                | Analogue |
+| `N%` (e.g. `75%`)           | `N` (percent 0–100)                   | Analogue |
+| _(any)_                     | ignored on import; export always `''` | Digital  |
 
 ## Related
 

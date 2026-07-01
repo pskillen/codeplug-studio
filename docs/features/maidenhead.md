@@ -25,18 +25,18 @@ The [map](map/README.md) plots channels that have a stored location; locator dis
 
 ## Code anchors
 
-| Path | Role |
-| --- | --- |
-| `src/core/domain/maidenhead.ts` | `locatorToCoords`, `coordsToLocator`, `isValidLocator` |
-| `src/app/routes/ReferencePage.tsx` | Standalone Maidenhead converter section |
-| `src/integrations/repeaters/ukRepeaterClient.ts` | Locator/coords when normalising repeater records |
+| Path                                             | Role                                                   |
+| ------------------------------------------------ | ------------------------------------------------------ |
+| `src/core/domain/maidenhead.ts`                  | `locatorToCoords`, `coordsToLocator`, `isValidLocator` |
+| `src/app/routes/ReferencePage.tsx`               | Standalone Maidenhead converter section                |
+| `src/integrations/repeaters/ukRepeaterClient.ts` | Locator/coords when normalising repeater records       |
 
 ## Inputs and outputs
 
-| Direction | Input | Output |
-| --- | --- | --- |
+| Direction        | Input                                              | Output                                |
+| ---------------- | -------------------------------------------------- | ------------------------------------- |
 | Locator → coords | 4, 6, or 8-character Maidenhead (case-insensitive) | Centre of the finest specified square |
-| Coords → locator | WGS84 lat/lon | 6-character locator (field + square) |
+| Coords → locator | WGS84 lat/lon                                      | 6-character locator (field + square)  |
 
 ## Behaviour
 

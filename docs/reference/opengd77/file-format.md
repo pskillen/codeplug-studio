@@ -14,12 +14,12 @@ Cross-cutting wire-format rules for all OpenGD77 CPS CSV files. Per-file column 
 
 OpenGD77 CPS builds internal indexes from **exact name matches** across files. Typos or case changes silently break links at CPS import — our adapters preserve names for export bidirectional mapping.
 
-| From | Column(s) | References |
-| --- | --- | --- |
-| `Channels.csv` | `Contact` | `Contacts.csv` → `Contact Name` |
-| `Channels.csv` | `TG List` | `TG_Lists.csv` → `TG List Name` |
+| From           | Column(s)             | References                      |
+| -------------- | --------------------- | ------------------------------- |
+| `Channels.csv` | `Contact`             | `Contacts.csv` → `Contact Name` |
+| `Channels.csv` | `TG List`             | `TG_Lists.csv` → `TG List Name` |
 | `TG_Lists.csv` | `Contact1`…`ContactN` | `Contacts.csv` → `Contact Name` |
-| `Zones.csv` | `Channel1`…`ChannelN` | `Channels.csv` → `Channel Name` |
+| `Zones.csv`    | `Channel1`…`ChannelN` | `Channels.csv` → `Channel Name` |
 
 Matching is **case-sensitive**. Renaming a channel requires updating every zone reference; renaming a contact requires updating channels and TG list members.
 
@@ -36,25 +36,25 @@ At the vendor boundary:
 
 ## Boolean and enum conversion
 
-| Wire pattern | Internal | Import | Export |
-| --- | --- | --- | --- |
-| `Yes` / `No` (case-insensitive on import) | `boolean` | `parseYesNo` | `wireYesNo` → `Yes` / `No` |
-| `Off` / non-empty VOX | `voxEnabled: boolean` | `Off` or empty → `false`; any other non-empty → `true` | `wireVoxEnabled` → `Off` / `On` |
-| `Group` / `Private` (`ID Type`) | `TalkGroup` / `Contact` | case-insensitive `group` check | `Group` / `Private` |
-| `Analogue` / `Digital` | `ChannelMode` | see [channel-modes.md](../channel-modes.md) | lossy collapse to `Analogue` / `Digital` |
+| Wire pattern                              | Internal                | Import                                                 | Export                                   |
+| ----------------------------------------- | ----------------------- | ------------------------------------------------------ | ---------------------------------------- |
+| `Yes` / `No` (case-insensitive on import) | `boolean`               | `parseYesNo`                                           | `wireYesNo` → `Yes` / `No`               |
+| `Off` / non-empty VOX                     | `voxEnabled: boolean`   | `Off` or empty → `false`; any other non-empty → `true` | `wireVoxEnabled` → `Off` / `On`          |
+| `Group` / `Private` (`ID Type`)           | `TalkGroup` / `Contact` | case-insensitive `group` check                         | `Group` / `Private`                      |
+| `Analogue` / `Digital`                    | `ChannelMode`           | see [channel-modes.md](../channel-modes.md)            | lossy collapse to `Analogue` / `Digital` |
 
 Most other fields are stored and bidirectional mappingped as **strings** without normalisation (frequencies, tones, power levels, `Rx Only`, etc.).
 
 ## Bidirectional mapping tiers
 
-| Tier | Meaning | Examples |
-| --- | --- | --- |
-| **Lossless** | Parsed to typed/boolean model fields and serialised back | `All Skip` ↔ `scanSkip`, `VOX`, `Use Location`, `Channel Type` for FM/DMR |
-| **String pass-through** | Stored as string; export writes stored value | Frequencies, tones, `Rx Only`, `Contact`, `TG List` |
-| **vendorExtras** | Stored in `Channel.vendorExtras[header]` | `Zone Skip`, `No Beep`, `No Eco`, `TS1_TA_Tx`, `TS2_TA_Tx ID` |
-| **Lossy** | Internal richness not representable on wire | Specific modes (`ysf`, `am`, …) collapse to `Analogue`/`Digital` — see [channel-modes.md](../channel-modes.md) |
-| **Header-only** | Export includes headers; body not modelled | `DTMF.csv`, `APRS.csv` (except channel `APRS` name) |
-| **Not imported** | File skipped entirely on import | `DTMF.csv`, `APRS.csv` today |
+| Tier                    | Meaning                                                  | Examples                                                                                                       |
+| ----------------------- | -------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
+| **Lossless**            | Parsed to typed/boolean model fields and serialised back | `All Skip` ↔ `scanSkip`, `VOX`, `Use Location`, `Channel Type` for FM/DMR                                      |
+| **String pass-through** | Stored as string; export writes stored value             | Frequencies, tones, `Rx Only`, `Contact`, `TG List`                                                            |
+| **vendorExtras**        | Stored in `Channel.vendorExtras[header]`                 | `Zone Skip`, `No Beep`, `No Eco`, `TS1_TA_Tx`, `TS2_TA_Tx ID`                                                  |
+| **Lossy**               | Internal richness not representable on wire              | Specific modes (`ysf`, `am`, …) collapse to `Analogue`/`Digital` — see [channel-modes.md](../channel-modes.md) |
+| **Header-only**         | Export includes headers; body not modelled               | `DTMF.csv`, `APRS.csv` (except channel `APRS` name)                                                            |
+| **Not imported**        | File skipped entirely on import                          | `DTMF.csv`, `APRS.csv` today                                                                                   |
 
 ## Locale and line endings
 

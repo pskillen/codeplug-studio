@@ -34,24 +34,24 @@ flowchart TB
   E2e --> Wire
 ```
 
-| Layer | Doc | Proves | Must not duplicate |
-| --- | --- | --- | --- |
-| Mapping | [mapping-tests.md](mapping-tests.md) | **Primary** — wire ↔ library/build per direction | Browser UI, IndexedDB |
-| Unit | [unit.md](unit.md) | Single function, parser row, domain rule | Full multi-file workflow |
-| Fixtures | [fixtures.md](fixtures.md) | Shared CPS bundles, normalisation rules | — |
-| System | [system.md](system.md) | `core/services` workflows (import into library, assemble, export) | File picker, download events |
-| Component | [component.md](component.md) | Modal copy, form wiring, confirm/cancel | CSV byte equality |
-| E2e | [e2e.md](e2e.md) | Real browser: upload, reload, ZIP download | Parser edge cases in unit |
+| Layer     | Doc                                  | Proves                                                            | Must not duplicate           |
+| --------- | ------------------------------------ | ----------------------------------------------------------------- | ---------------------------- |
+| Mapping   | [mapping-tests.md](mapping-tests.md) | **Primary** — wire ↔ library/build per direction                  | Browser UI, IndexedDB        |
+| Unit      | [unit.md](unit.md)                   | Single function, parser row, domain rule                          | Full multi-file workflow     |
+| Fixtures  | [fixtures.md](fixtures.md)           | Shared CPS bundles, normalisation rules                           | —                            |
+| System    | [system.md](system.md)               | `core/services` workflows (import into library, assemble, export) | File picker, download events |
+| Component | [component.md](component.md)         | Modal copy, form wiring, confirm/cancel                           | CSV byte equality            |
+| E2e       | [e2e.md](e2e.md)                     | Real browser: upload, reload, ZIP download                        | Parser edge cases in unit    |
 
 ## npm scripts
 
-| Script | Command | Scope |
-| --- | --- | --- |
-| All Vitest | `npm test` | Colocated `src/**/*.test.ts(x)` |
-| Watch | `npm run test:watch` | Same, interactive |
-| Coverage | — | **Planned** — not in `package.json` yet |
-| System | — | **Planned** — no `src/test/system/` yet |
-| E2e | — | **Planned** — Playwright not wired |
+| Script     | Command              | Scope                                   |
+| ---------- | -------------------- | --------------------------------------- |
+| All Vitest | `npm test`           | Colocated `src/**/*.test.ts(x)`         |
+| Watch      | `npm run test:watch` | Same, interactive                       |
+| Coverage   | —                    | **Planned** — not in `package.json` yet |
+| System     | —                    | **Planned** — no `src/test/system/` yet |
+| E2e        | —                    | **Planned** — Playwright not wired      |
 
 Run before commit when touching application code: `npm run lint`, `npm run format:check`, `npm test`, and `npm run build` when types or build config change. See [git-workflow](../../.cursor/skills/git-workflow/SKILL.md).
 
@@ -59,14 +59,14 @@ Run before commit when touching application code: `npm run lint`, `npm run forma
 
 Every pull request and push to `main` runs [`.github/workflows/ci.yml`](../../.github/workflows/ci.yml):
 
-| Check | Script | CI | Notes |
-| --- | --- | --- | --- |
-| Prettier | `npm run format:check` | Yes | |
-| ESLint | `npm run lint` | Yes | |
-| Unit tests | `npm run test` | Yes | Vitest; no JUnit reporter yet |
-| Type-check + build | `npm run build` | Yes | `tsc -b && vite build` |
-| Coverage | — | **Planned** | |
-| E2e | — | **Planned** | |
+| Check              | Script                 | CI          | Notes                         |
+| ------------------ | ---------------------- | ----------- | ----------------------------- |
+| Prettier           | `npm run format:check` | Yes         |                               |
+| ESLint             | `npm run lint`         | Yes         |                               |
+| Unit tests         | `npm run test`         | Yes         | Vitest; no JUnit reporter yet |
+| Type-check + build | `npm run build`        | Yes         | `tsc -b && vite build`        |
+| Coverage           | —                      | **Planned** |                               |
+| E2e                | —                      | **Planned** |                               |
 
 Docs-only PRs: `format:check` + link audit is sufficient.
 
@@ -80,20 +80,20 @@ Docs-only PRs: `format:check` + link audit is sufficient.
 
 ## Documentation map
 
-| Doc | Contents |
-| --- | --- |
+| Doc                                  | Contents                                                                          |
+| ------------------------------------ | --------------------------------------------------------------------------------- |
 | [mapping-tests.md](mapping-tests.md) | **Primary** — bidirectional fixture strategy, assemble, optional round-trip smoke |
-| [unit.md](unit.md) | Colocated Vitest by layer |
-| [fixtures.md](fixtures.md) | CPS bundles, `sample-exports/` policy |
-| [system.md](system.md) | Workflow harness — **status: planned** |
-| [component.md](component.md) | RTL patterns — **status: planned** |
-| [e2e.md](e2e.md) | Playwright scope — **status: planned** |
+| [unit.md](unit.md)                   | Colocated Vitest by layer                                                         |
+| [fixtures.md](fixtures.md)           | CPS bundles, `sample-exports/` policy                                             |
+| [system.md](system.md)               | Workflow harness — **status: planned**                                            |
+| [component.md](component.md)         | RTL patterns — **status: planned**                                                |
+| [e2e.md](e2e.md)                     | Playwright scope — **status: planned**                                            |
 
 ## Related
 
-| Resource | Link |
-| --- | --- |
-| Build and deploy | [docs/build/README.md](../README.md) |
-| Data model | [docs/features/data-model/README.md](../../features/data-model/README.md) |
-| OpenGD77 wire format | [docs/reference/opengd77/](../../reference/opengd77/README.md) |
-| PR checks | [`.github/workflows/ci.yml`](../../.github/workflows/ci.yml) |
+| Resource             | Link                                                                      |
+| -------------------- | ------------------------------------------------------------------------- |
+| Build and deploy     | [docs/build/README.md](../README.md)                                      |
+| Data model           | [docs/features/data-model/README.md](../../features/data-model/README.md) |
+| OpenGD77 wire format | [docs/reference/opengd77/](../../reference/opengd77/README.md)            |
+| PR checks            | [`.github/workflows/ci.yml`](../../.github/workflows/ci.yml)              |
