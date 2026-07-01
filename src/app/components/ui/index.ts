@@ -24,4 +24,6 @@ export type {
   DataTableSortState,
   DataTableVariant,
 } from './DataTable.tsx';
+export { default as PercentLevelSlider } from './PercentLevelSlider.tsx';
+export type { PercentLevelSliderProps } from './PercentLevelSlider.tsx';
 export * from './tokens.ts';
