@@ -22,17 +22,14 @@ export const DEFAULT_MAP_FILTER_OPTS: FilterOptions = {
   skipZero: true,
 };
 
-/** Primary RF mode for map colouring — first profile when multi-mode. */
-export function primaryMode(channel: Channel): ChannelMode {
-  return channel.modeProfiles[0]?.mode ?? 'fm';
+/** Primary RF mode for map colouring — first profile when multi-mode; null when none. */
+export function primaryMode(channel: Channel): ChannelMode | null {
+  return channel.modeProfiles[0]?.mode ?? null;
 }
 
 /** All RF modes represented on a channel. */
 export function channelModes(channel: Channel): ChannelMode[] {
-  if (channel.modeProfiles.length > 0) {
-    return channel.modeProfiles.map((p) => p.mode);
-  }
-  return ['fm'];
+  return channel.modeProfiles.map((p) => p.mode);
 }
 
 export function channelDisplayLabel(
@@ -59,13 +56,15 @@ export function markerLabel(group: Channel[], useFull: boolean): string {
   return channelDisplayLabel(ch, useFull);
 }
 
-export function dominantMode(group: Channel[]): ChannelMode {
+export function dominantMode(group: Channel[]): ChannelMode | null {
   const counts = new Map<ChannelMode, number>();
   for (const ch of group) {
     const mode = primaryMode(ch);
+    if (mode == null) continue;
     counts.set(mode, (counts.get(mode) ?? 0) + 1);
   }
-  let best = primaryMode(group[0]);
+  if (counts.size === 0) return null;
+  let best: ChannelMode | null = null;
   let bestCount = 0;
   for (const [mode, count] of counts) {
     if (count > bestCount) {

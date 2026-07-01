@@ -23,6 +23,7 @@ export type ChannelDiffField =
   | 'colourCode'
   | 'mode'
   | 'location'
+  | 'maidenheadLocator'
   | 'useLocation'
   | 'comment';
 
@@ -44,6 +45,7 @@ const FIELD_LABELS: Record<ChannelDiffField, string> = {
   colourCode: 'Colour code',
   mode: 'Mode',
   location: 'Locator / coordinates',
+  maidenheadLocator: 'Maidenhead locator',
   useLocation: 'Use location',
   comment: 'Comment',
 };
@@ -58,6 +60,7 @@ function formatTone(tone: ChannelTone): string {
 }
 
 function formatLocation(channel: Channel): string {
+  if (channel.maidenheadLocator) return channel.maidenheadLocator;
   if (!channel.location) return '—';
   const { lat, lon } = channel.location;
   return `${lat.toFixed(4)}, ${lon.toFixed(4)}`;
@@ -151,6 +154,12 @@ export function diffChannelFromListing(
     !locationEqual(channel.location, remote.location),
   );
   push(
+    'maidenheadLocator',
+    channel.maidenheadLocator ?? '—',
+    remote.maidenheadLocator ?? '—',
+    (channel.maidenheadLocator ?? '') !== (remote.maidenheadLocator ?? ''),
+  );
+  push(
     'useLocation',
     channel.useLocation ? 'Yes' : 'No',
     remote.useLocation ? 'Yes' : 'No',
@@ -184,7 +193,11 @@ export function buildPatchFromDiff(
   if (selected.has('rxFrequency')) next.rxFrequency = remote.rxFrequency;
   if (selected.has('txFrequency')) next.txFrequency = remote.txFrequency;
   if (selected.has('comment')) next.comment = remote.comment;
-  if (selected.has('location')) next.location = remote.location;
+  if (selected.has('location')) {
+    next.location = remote.location;
+    next.maidenheadLocator = remote.maidenheadLocator;
+  }
+  if (selected.has('maidenheadLocator')) next.maidenheadLocator = remote.maidenheadLocator;
   if (selected.has('useLocation')) next.useLocation = remote.useLocation;
   if (selected.has('mode')) next.modeProfiles = remote.modeProfiles;
 

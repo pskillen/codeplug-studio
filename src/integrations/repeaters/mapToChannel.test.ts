@@ -58,6 +58,7 @@ describe('repeaterListingToChannel', () => {
     expect(channel.txFrequency).toBe(145_125_000);
     expect(channel.useLocation).toBe(true);
     expect(channel.location).toEqual({ lat: 51.7, lon: 0.6 });
+    expect(channel.maidenheadLocator).toBe('JO01GR');
     const profile = channel.modeProfiles[0] as ChannelModeProfileAnalog;
     expect(profile.mode).toBe('fm');
     expect(profile.rxTone).toBe('110.9');
