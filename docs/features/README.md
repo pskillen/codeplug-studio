@@ -21,7 +21,8 @@ Agent skills for documentation and execution tracking:
 | Map                  | `src/app/components/CodeplugMap/`, `src/core/domain/mapProjection.ts` | [map/](map/) ([progress](map/map-embed-progress.md)) | Phase 2 ([#22](https://github.com/pskillen/codeplug-studio/issues/22)) |
 | Repeater directories | `src/integrations/repeaters/`                                         | [repeater-directories/](repeater-directories/)       | Phase 2 — UK repeater + BrandMeister library workflows                 |
 | Summary              | `src/app/routes/SummaryPage.tsx`, `src/core/domain/summary.ts`        | [report/](report/)                                   | Phase 2 ([#12](https://github.com/pskillen/codeplug-studio/issues/12)) |
-| Maidenhead           | `src/core/domain/maidenhead.ts`, `src/app/routes/ReferencePage.tsx`   | [maidenhead.md](maidenhead.md)                       | Phase 2 — locator conversion on `/reference`                           |
+| Maidenhead           | `src/core/domain/maidenhead.ts`, `src/app/routes/reference/`        | [maidenhead.md](maidenhead.md), [reference/](reference/) | [#29](https://github.com/pskillen/codeplug-studio/issues/29) — `/reference/maidenhead` |
+| Reference / bands    | `src/core/domain/bandCatalog.ts`, `src/app/routes/reference/`       | [reference/](reference/), [bands.md](../reference/bands.md) | [#30](https://github.com/pskillen/codeplug-studio/issues/30) — `/reference/bands`      |
 | _(later phases)_     | `src/core/import-export/`, `src/app/features/builds/`                 | `builds/`, `import-export/`                          | Planned — persisted `FormatBuild` profiles + CPS import/export         |
 
 ## Reference
