@@ -28,6 +28,7 @@ import { useRepeaterDirectorySearch } from '../../hooks/useRepeaterDirectorySear
 import { isSimplex } from '../../lib/channels.ts';
 import { ICON_SIZE_NAV, ICON_STROKE } from '../../lib/iconSizes.ts';
 import { isOperationalStatus, queryKindHint } from '../../lib/repeaters.ts';
+import { repeaterSearchCapabilities } from '../../lib/repeaterSearchCapabilities.ts';
 import { hzToMhzString } from '../../lib/units.ts';
 import { persistence } from '../../state/persistence.ts';
 import { useLibrary } from '../../state/useLibrary.ts';
@@ -91,6 +92,7 @@ export default function RepeaterDirectorySearch({
   const [updateOpen, setUpdateOpen] = useState(false);
 
   const isUk = source === 'ukrepeater';
+  const capabilities = repeaterSearchCapabilities(source);
   const sourceLabel = isUk ? 'ukrepeater.net' : 'BrandMeister';
   const sourceUrl = isUk ? 'https://ukrepeater.net' : 'https://brandmeister.network';
 
@@ -224,7 +226,9 @@ export default function RepeaterDirectorySearch({
             <TextInput
               label="Search"
               placeholder={
-                isUk ? 'Callsign, locator, band (2m), or town' : 'e.g. GB3RF'
+                capabilities.unifiedQuery
+                  ? 'Callsign, locator, band (2m), or town'
+                  : 'e.g. GB3RF'
               }
               value={search.query}
               onChange={(e) => search.setQuery(e.currentTarget.value)}
@@ -233,7 +237,7 @@ export default function RepeaterDirectorySearch({
               }}
               style={{ flex: 1, minWidth: 200 }}
             />
-            {isUk ? (
+            {capabilities.bandFilter ? (
               <Select
                 label="Band filter"
                 placeholder="Any band"
@@ -244,21 +248,21 @@ export default function RepeaterDirectorySearch({
                 style={{ minWidth: 120 }}
               />
             ) : null}
-            {isUk ? (
+            {capabilities.operationalOnly ? (
               <Switch
                 label="Operational only"
                 checked={search.operationalOnly}
                 onChange={(e) => search.setOperationalOnly(e.currentTarget.checked)}
               />
             ) : null}
-            {isUk ? (
+            {capabilities.titleCaseNames ? (
               <Checkbox
                 label="Title case names"
                 checked={search.titleCaseNames}
                 onChange={(e) => search.setTitleCaseNames(e.currentTarget.checked)}
               />
             ) : null}
-            {isUk ? (
+            {capabilities.useMyLocation ? (
               <UseMyLocationButton onLocation={(lat, lon) => void handleUseMyLocation(lat, lon)} />
             ) : null}
             <Button
@@ -315,11 +319,11 @@ export default function RepeaterDirectorySearch({
                   </Table.Th>
                   <Table.Th>Callsign</Table.Th>
                   <Table.Th>Band</Table.Th>
-                  {isUk ? <Table.Th>Town</Table.Th> : <Table.Th>City</Table.Th>}
+                  <Table.Th>{capabilities.locationLabel}</Table.Th>
                   <Table.Th>Status</Table.Th>
                   <Table.Th>Mode</Table.Th>
                   <Table.Th>Frequencies</Table.Th>
-                  {isUk ? <Table.Th>Locator</Table.Th> : null}
+                  {capabilities.locatorColumn ? <Table.Th>Locator</Table.Th> : null}
                   <Table.Th />
                 </Table.Tr>
               </Table.Thead>
@@ -366,7 +370,7 @@ export default function RepeaterDirectorySearch({
                           {formatListingFrequencies(listing.rxFrequencyHz, listing.txFrequencyHz)}
                         </Text>
                       </Table.Td>
-                      {isUk ? <Table.Td>{listing.locator ?? '—'}</Table.Td> : null}
+                      {capabilities.locatorColumn ? <Table.Td>{listing.locator ?? '—'}</Table.Td> : null}
                       <Table.Td>
                         {row.existing ? (
                           <Button
