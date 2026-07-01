@@ -44,8 +44,8 @@ export default function LibraryPage() {
         />
         {mapSkipped.length > 0 ? (
           <Text size="sm" c="dimmed">
-            {mapSkipped.length} channel{mapSkipped.length === 1 ? '' : 's'} not shown on map (missing
-            coordinates, Use Location = No, or 0,0).
+            {mapSkipped.length} channel{mapSkipped.length === 1 ? '' : 's'} not shown on map
+            (missing coordinates, Use Location = No, or 0,0).
           </Text>
         ) : null}
       </Stack>

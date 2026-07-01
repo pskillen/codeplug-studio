@@ -5,13 +5,13 @@
 
 ## Status
 
-| Slice | Status | Commit |
-| --- | --- | --- |
+| Slice                          | Status   | Commit    |
+| ------------------------------ | -------- | --------- |
 | Core map geometry + projection | Complete | `f0208e1` |
-| CodeplugMap component | Complete | `a3b60c2` |
-| Library embed | Complete | `2f7d9ee` |
-| Remove `/map` route | Complete | pending |
-| Documentation | Not started | — |
+| CodeplugMap component          | Complete | `a3b60c2` |
+| Library embed                  | Complete | `2f7d9ee` |
+| Remove `/map` route            | Complete | `f95aa28` |
+| Documentation                  | Complete | pending   |
 
 ## Shipped
 
@@ -33,6 +33,31 @@
 
 - `LibraryPage.tsx` — `CodeplugMap` in Channels and Zones sections; skipped-channel note; scroll-to-section from route state
 
+### Slice 4 — Remove standalone map route
+
+- Removed Map from primary nav; deleted `MapPage.tsx`
+- `/map` → `/library` redirect with `scrollTo: 'library-channels'`
+- Summary and Help links updated
+
+### Slice 5 — Documentation
+
+- [README.md](README.md), [channels.md](channels.md), [zones.md](zones.md)
+- [app-shell route table](../app-shell/README.md), [features index](../README.md)
+
+## Verify
+
+```bash
+npm run format:check && npm run lint && npm run test && npm run build
+```
+
+Manual smoke:
+
+- Library → Channels: mode markers, labels, popup → channel editor
+- Library → Zones: zone hull overlay, popup → zone editor
+- `/#/map` redirects and scrolls to channels map
+- Primary nav: Library → Summary (no Map)
+- Summary “view on map” → library channels section
+
 ## Next
 
-Slice 4 — remove standalone `/map` route and redirect legacy deep links.
+Open PR — `Closes #22`.

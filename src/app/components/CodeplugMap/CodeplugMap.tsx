@@ -88,7 +88,9 @@ function ChannelPopup({
   onChannelClick?: (channelId: string) => void;
 }) {
   const title =
-    group.length === 1 ? group[0].callsign || group[0].name : `${group[0].callsign || group[0].name} (+${group.length - 1})`;
+    group.length === 1
+      ? group[0].callsign || group[0].name
+      : `${group[0].callsign || group[0].name} (+${group.length - 1})`;
 
   return (
     <div style={{ minWidth: 180, maxWidth: 280 }}>
@@ -440,7 +442,8 @@ export default function CodeplugMap({
               );
             })}
 
-            {groups.length > 0 || (showZoneHulls && zoneHulls.some((zh) => zh.geometry !== 'none')) ? (
+            {groups.length > 0 ||
+            (showZoneHulls && zoneHulls.some((zh) => zh.geometry !== 'none')) ? (
               <FitMapBounds groups={groups} zoneHulls={zoneHulls} showZoneHulls={showZoneHulls} />
             ) : null}
           </MapContainer>

@@ -54,7 +54,12 @@ describe('groupByCoords', () => {
 
     const groups = groupByCoords([a, b, c], true);
     expect(groups).toHaveLength(2);
-    expect(groups.find((g) => g.length === 2)?.map((ch) => ch.name).sort()).toEqual(['A', 'B']);
+    expect(
+      groups
+        .find((g) => g.length === 2)
+        ?.map((ch) => ch.name)
+        .sort(),
+    ).toEqual(['A', 'B']);
   });
 });
 

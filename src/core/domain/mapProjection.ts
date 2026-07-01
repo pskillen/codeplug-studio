@@ -86,8 +86,7 @@ export function applyFilters(
   for (const ch of channels) {
     let reason: string | null = null;
     if (ch.location == null) reason = 'missing coordinates';
-    else if (skipZero && ch.location.lat === 0 && ch.location.lon === 0)
-      reason = '0,0 coordinates';
+    else if (skipZero && ch.location.lat === 0 && ch.location.lon === 0) reason = '0,0 coordinates';
     else if (requireUseLocation && !ch.useLocation) reason = 'Use Location = No';
     if (reason) {
       skipped.push({ name: ch.name, reason });

@@ -1,24 +1,51 @@
 # Channel map
 
-Tier-1 reference for the Phase 2 **channel map** — plotting library channels with a location on a react-leaflet map.
+Tier-1 reference for the **embedded channel map** — plotting library channels with a location on react-leaflet maps inside the Library page.
 
-**Tracking:** Phase 2 [#11](https://github.com/pskillen/codeplug-studio/issues/11) (Epic [#1](https://github.com/pskillen/codeplug-studio/issues/1))
+**Tracking:** [#22](https://github.com/pskillen/codeplug-studio/issues/22) (replaces standalone `/map` from [#11](https://github.com/pskillen/codeplug-studio/issues/11))
 
-**Source:** `src/app/routes/MapPage.tsx`, `src/app/components/map/`, `src/core/domain/maidenhead.ts`
+**Source:** `src/app/components/CodeplugMap/`, `src/core/domain/geo.ts`, `mapView.ts`, `mapProjection.ts`
 
-## Map (`/map`)
+**Progress:** [map-embed-progress.md](map-embed-progress.md) · **Outstanding:** [map-embed-outstanding.md](map-embed-outstanding.md)
 
-Plots library channels that have a location (`useLocation` + `location`) on a [react-leaflet](https://react-leaflet.js.org/) map with OpenStreetMap tiles. Marker popups deep-link to the channel editor (`/library/channels/:id`). Channels gain a location either by manual entry or by importing from a repeater directory whose record carries a Maidenhead locator or lat/lng.
+## Where the map lives
 
-Leaflet's default marker assets are repointed at bundled URLs once in `src/app/components/map/leafletSetup.ts` (the usual Vite + Leaflet icon fix).
+There is **no** top-level Map nav item or `/map` route. Legacy `/#/map` bookmarks redirect to the Library page and scroll to the Channels section (`library-channels`).
+
+The map is embedded in two Library `PageSection` blocks:
+
+| Section  | Element id         | Content                                                     |
+| -------- | ------------------ | ----------------------------------------------------------- |
+| Channels | `library-channels` | Full library map — all channels + zone hulls                |
+| Zones    | `library-zones`    | Same map (tool parity — full context on both list sections) |
+
+Summary “view on map” and deep links use `state={{ scrollTo: 'library-channels' }}` on navigation to `/library`.
+
+## Component stack
+
+```text
+LibraryPage
+└─ CodeplugMap (src/app/components/CodeplugMap/)
+   ├─ MapControls — label + zone toggles
+   ├─ mapProjection — filter, merge, zone member resolution
+   ├─ geo — convex hull, zone colours
+   └─ mapView — auto bounds / single-point zoom
+```
+
+Mode marker colours come from `src/app/lib/channelModes.ts` (`modeColor`). The core layer returns `ChannelMode` values only — no UI colours in `src/core/`.
+
+Tiles: OpenStreetMap via react-leaflet. Leaflet default marker assets are not used; markers are `L.divIcon` dots (see `CodeplugMap.css`).
 
 ## Boundaries
 
-- Map UI in `src/app/` only; uses `useLibrary()` for channel rows.
+- Map UI in `src/app/` only; reads library `Channel` / `Zone` via props or `useLibrary()`.
 - No vendor/format concepts on the map surface.
+- Zone membership resolves via UUID `EntityRef` on `Zone.members` — not wire names.
 
 ## Related
 
-- [repeater-directories](../repeater-directories/README.md) — seeding channels with locations from directories
-- [maidenhead.md](../maidenhead.md) — locator conversion used when placing markers
+- [channels.md](channels.md) — marker filters, labels, popups
+- [zones.md](zones.md) — hull geometry, member resolution
+- [repeater-directories](../repeater-directories/README.md) — seeding channels with locations
+- [maidenhead.md](../maidenhead.md) — locator conversion when placing markers
 - [app-shell](../app-shell/README.md) · [library](../library/README.md)

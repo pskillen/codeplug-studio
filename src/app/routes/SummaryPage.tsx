@@ -55,7 +55,8 @@ export default function SummaryPage() {
         {summary.channelsWithLocation} channel(s) have a location (
         <Link to="/library" state={{ scrollTo: 'library-channels' }}>
           view on map
-        </Link>).
+        </Link>
+        ).
       </Text>
 
       <PageSection title="Integrity warnings">
