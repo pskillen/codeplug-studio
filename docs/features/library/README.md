@@ -8,11 +8,11 @@ Tier-1 reference for editing the vendor-neutral **library** — the per-project 
 
 ## Documentation map
 
-| Doc | Contents |
-| --- | --- |
-| [zone-member-picker.md](zone-member-picker.md) | Two-list zone membership editor |
-| [app-shell/data-table.md](../app-shell/data-table.md) | Shared `DataTable` and list prefs |
-| [app-shell/library-routes-progress.md](../app-shell/library-routes-progress.md) | List routes initiative progress |
+| Doc                                                                             | Contents                          |
+| ------------------------------------------------------------------------------- | --------------------------------- |
+| [zone-member-picker.md](zone-member-picker.md)                                  | Two-list zone membership editor   |
+| [app-shell/data-table.md](../app-shell/data-table.md)                           | Shared `DataTable` and list prefs |
+| [app-shell/library-routes-progress.md](../app-shell/library-routes-progress.md) | List routes initiative progress   |
 
 ## List routes
 
@@ -24,7 +24,7 @@ Tier-1 reference for editing the vendor-neutral **library** — the per-project 
 | `/library/zones`          | `DataTable` — members, comment; operator location + map below table                                          | Yes |
 | `/library/talk-groups`    | `DataTable` — mode, ID, channels/RX lists using, comment                                                     | No  |
 | `/library/contacts`       | Two `DataTable` sections: digital contacts + analog contacts (separate `dq` / `aq` URL filters)              | No  |
-| `/library/rx-group-lists` | `DataTable` — members, channels using                                                                      | No  |
+| `/library/rx-group-lists` | `DataTable` — members, channels using                                                                        | No  |
 
 Shared list UI: [app-shell/data-table.md](../app-shell/data-table.md).
 

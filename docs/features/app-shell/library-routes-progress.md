@@ -15,9 +15,9 @@
 | 5     | `feat(channels): wire section nav filters to channels list`           | Band/mode/search/distance filters in section nav               |
 | 6     | `feat(zones): two-list member picker with ordered membership`         | `ZoneMemberPicker`, Mantine `ZoneEditor`                       |
 | 7     | `refactor(library): remove monolithic library scroll page`            | Deleted `LibraryPage`, editor back links                       |
-| 8     | `docs(library): document routes, channels table, and zone picker`     | app-shell, library, map READMEs + outstanding log                |
+| 8     | `docs(library): document routes, channels table, and zone picker`     | app-shell, library, map READMEs + outstanding log              |
 | 9     | `refactor(app-shell): put library section links above nav controls`   | `LibrarySectionNavFrame`                                       |
-| 10    | `feat(library): migrate entity list pages to DataTable`                | All entity lists on DataTable; removed `LibraryEntityList`     |
+| 10    | `feat(library): migrate entity list pages to DataTable`               | All entity lists on DataTable; removed `LibraryEntityList`     |
 
 ## Docs
 

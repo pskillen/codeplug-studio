@@ -12,45 +12,45 @@ Ported from [codeplug-tool](https://github.com/pskillen/codeplug-tool) `DataTabl
 
 ## Code anchors
 
-| Symbol | Path | Role |
-| --- | --- | --- |
-| `DataTable` | `src/app/components/ui/DataTable.tsx` | Mantine `Table` wrapper — sort, search, column visibility |
-| `useDataTableColumnVisibility` | `src/app/hooks/useDataTableColumnVisibility.ts` | Persist hideable column keys (channels) |
-| `useListNameQuery` | `src/app/hooks/useListNameQuery.ts` | URL + `localStorage` name filter per entity list |
-| `usePersistedEntityListSort` | `src/app/hooks/usePersistedEntityListSort.ts` | Per-project column sort for entity lists |
-| `useChannelListQuery` | `src/app/hooks/useChannelListQuery.ts` | Channels-only filters (band, mode, distance, …) |
-| `filterRowsByName` | `useListNameQuery.ts` | Client-side name substring filter |
-| `referenceCount` / `formatReferenceCount` | `src/app/lib/listReferences.ts` | Reference-count cells via `findReferencesTo` (core) |
-| `sortDataTableRows`, `DATATABLE_NAME_SORT_KEY` | `src/app/lib/dataTable/sort.ts` | Sort state helpers |
-| List prefs storage | `src/app/lib/listPrefs/` | `localStorage` keys, URL sync for channels |
+| Symbol                                         | Path                                            | Role                                                      |
+| ---------------------------------------------- | ----------------------------------------------- | --------------------------------------------------------- |
+| `DataTable`                                    | `src/app/components/ui/DataTable.tsx`           | Mantine `Table` wrapper — sort, search, column visibility |
+| `useDataTableColumnVisibility`                 | `src/app/hooks/useDataTableColumnVisibility.ts` | Persist hideable column keys (channels)                   |
+| `useListNameQuery`                             | `src/app/hooks/useListNameQuery.ts`             | URL + `localStorage` name filter per entity list          |
+| `usePersistedEntityListSort`                   | `src/app/hooks/usePersistedEntityListSort.ts`   | Per-project column sort for entity lists                  |
+| `useChannelListQuery`                          | `src/app/hooks/useChannelListQuery.ts`          | Channels-only filters (band, mode, distance, …)           |
+| `filterRowsByName`                             | `useListNameQuery.ts`                           | Client-side name substring filter                         |
+| `referenceCount` / `formatReferenceCount`      | `src/app/lib/listReferences.ts`                 | Reference-count cells via `findReferencesTo` (core)       |
+| `sortDataTableRows`, `DATATABLE_NAME_SORT_KEY` | `src/app/lib/dataTable/sort.ts`                 | Sort state helpers                                        |
+| List prefs storage                             | `src/app/lib/listPrefs/`                        | `localStorage` keys, URL sync for channels                |
 
 Dev demos: `/#/styleguide` (unlinked).
 
 ## DataTable props (list pages)
 
-| Prop | Typical use |
-| --- | --- |
-| `variant="list"` | Full-width library list (toolbar search shown) |
-| `rows` / `totalRowCount` | Filtered rows + unfiltered count for “showing N of M” |
-| `nameColumn` | Linked name cell → editor route (`getName`, `getPath`) |
-| `callsignColumn` | Channels only — sortable callsign link |
-| `columns` | Extra sortable columns (`sortValue` required when sortable) |
-| `sort` / `onSortChange` | Controlled sort; wire to persisted hooks |
-| `search` / `onSearchChange` | Toolbar name filter |
-| `columnVisibility*` | Channels optional columns only today |
+| Prop                        | Typical use                                                 |
+| --------------------------- | ----------------------------------------------------------- |
+| `variant="list"`            | Full-width library list (toolbar search shown)              |
+| `rows` / `totalRowCount`    | Filtered rows + unfiltered count for “showing N of M”       |
+| `nameColumn`                | Linked name cell → editor route (`getName`, `getPath`)      |
+| `callsignColumn`            | Channels only — sortable callsign link                      |
+| `columns`                   | Extra sortable columns (`sortValue` required when sortable) |
+| `sort` / `onSortChange`     | Controlled sort; wire to persisted hooks                    |
+| `search` / `onSearchChange` | Toolbar name filter                                         |
+| `columnVisibility*`         | Channels optional columns only today                        |
 
 Rows link to editors via `nameColumn.getPath`; there is no inline delete on list pages (matches codeplug-tool channels table).
 
 ## Entity list pages
 
-| Route | `EntityListEntity` | URL name param | Default sort key | Notable columns |
-| --- | --- | --- | --- | --- |
-| `/library/channels` | _(channels prefs)_ | `q` (+ band/mode/…) | name or distance | See [channels list](../library/README.md#channels-list-24) |
-| `/library/zones` | `zones` | `q` | name | Members, comment |
-| `/library/talk-groups` | `talk-groups` | `q` | name | Mode, ID, channels/RX lists using, comment |
-| `/library/contacts` (digital) | `digital-contacts` | `dq` | name | Mode, ID, channels using |
-| `/library/contacts` (analog) | `analog-contacts` | `aq` | name | Code, channels using |
-| `/library/rx-group-lists` | `rx-group-lists` | `q` | name | Members, channels using |
+| Route                         | `EntityListEntity` | URL name param      | Default sort key | Notable columns                                            |
+| ----------------------------- | ------------------ | ------------------- | ---------------- | ---------------------------------------------------------- |
+| `/library/channels`           | _(channels prefs)_ | `q` (+ band/mode/…) | name or distance | See [channels list](../library/README.md#channels-list-24) |
+| `/library/zones`              | `zones`            | `q`                 | name             | Members, comment                                           |
+| `/library/talk-groups`        | `talk-groups`      | `q`                 | name             | Mode, ID, channels/RX lists using, comment                 |
+| `/library/contacts` (digital) | `digital-contacts` | `dq`                | name             | Mode, ID, channels using                                   |
+| `/library/contacts` (analog)  | `analog-contacts`  | `aq`                | name             | Code, channels using                                       |
+| `/library/rx-group-lists`     | `rx-group-lists`   | `q`                 | name             | Members, channels using                                    |
 
 Digital and analog contact tables on `/library/contacts` use **separate** URL params (`dq`, `aq`) so filters do not collide.
 
@@ -58,11 +58,11 @@ Digital and analog contact tables on `/library/contacts` use **separate** URL pa
 
 Prefix: `mm9pdy-codeplug-studio.list.` (`src/app/lib/listPrefs/keys.ts`).
 
-| Key pattern | Contents |
-| --- | --- |
-| `channels.{projectId}` | Channel filters + `columnSort` |
-| `channels.{projectId}.columns` | Hideable column visibility |
-| `{entity}.{projectId}` | Entity list `q` + `columnSort` (`zones`, `talk-groups`, `digital-contacts`, `analog-contacts`, `rx-group-lists`) |
+| Key pattern                    | Contents                                                                                                         |
+| ------------------------------ | ---------------------------------------------------------------------------------------------------------------- |
+| `channels.{projectId}`         | Channel filters + `columnSort`                                                                                   |
+| `channels.{projectId}.columns` | Hideable column visibility                                                                                       |
+| `{entity}.{projectId}`         | Entity list `q` + `columnSort` (`zones`, `talk-groups`, `digital-contacts`, `analog-contacts`, `rx-group-lists`) |
 
 Name filters sync to URL query params when set; on first visit without URL params, stored prefs hydrate the URL (`replace: true`). Debounced writes avoid thrashing `localStorage`.
 

@@ -10,20 +10,20 @@ Replaces checkbox-only zone membership with available ↔ in-zone lists, per-sid
 
 ## Code anchors
 
-| Symbol | Path | Role |
-| --- | --- | --- |
-| `ZoneMemberPicker` | `src/app/components/library/ZoneMemberPicker.tsx` | Two-list UI |
-| `ZoneEditor` | `src/app/routes/library/editors/ZoneEditor.tsx` | Wires picker to form state |
+| Symbol             | Path                                              | Role                       |
+| ------------------ | ------------------------------------------------- | -------------------------- |
+| `ZoneMemberPicker` | `src/app/components/library/ZoneMemberPicker.tsx` | Two-list UI                |
+| `ZoneEditor`       | `src/app/routes/library/editors/ZoneEditor.tsx`   | Wires picker to form state |
 
 ## Behaviour
 
-| Control | Effect |
-| --- | --- |
-| Available search | Filters channels not yet in the zone |
-| In-zone search | Filters current members |
-| Add / Remove | Moves selected rows between lists |
-| Move up / down | Reorders selected in-zone members as a block |
-| Checkbox selection | Multi-select on each side |
+| Control            | Effect                                       |
+| ------------------ | -------------------------------------------- |
+| Available search   | Filters channels not yet in the zone         |
+| In-zone search     | Filters current members                      |
+| Add / Remove       | Moves selected rows between lists            |
+| Move up / down     | Reorders selected in-zone members as a block |
+| Checkbox selection | Multi-select on each side                    |
 
 Channels are sorted by name on the available side. Member order on the in-zone side is exactly what the user arranges — map zone hulls and future export use this order only for membership, not display sort.
 

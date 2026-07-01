@@ -33,7 +33,8 @@ export default function RxGroupListsListPage() {
       {
         key: 'channels',
         header: 'Channels using',
-        render: (r) => formatReferenceCount(referenceCount(library, { kind: 'rxGroupList', id: r.id })),
+        render: (r) =>
+          formatReferenceCount(referenceCount(library, { kind: 'rxGroupList', id: r.id })),
         sortValue: (r) => referenceCount(library, { kind: 'rxGroupList', id: r.id }),
       },
     ];

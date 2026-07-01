@@ -26,13 +26,13 @@ ProjectProvider
 
 ## Documentation map
 
-| Doc | Contents |
-| --- | --- |
-| [data-table.md](data-table.md) | `DataTable`, list prefs, entity list hooks |
-| [library-routes-progress.md](library-routes-progress.md) | Library routes initiative — shipped slices |
-| [library-routes-outstanding.md](library-routes-outstanding.md) | Deferred debt from library routes PR |
-| [library/README.md](../library/README.md) | Library CRUD and list routes |
-| [map/README.md](../map/README.md) | Embedded channel map |
+| Doc                                                            | Contents                                   |
+| -------------------------------------------------------------- | ------------------------------------------ |
+| [data-table.md](data-table.md)                                 | `DataTable`, list prefs, entity list hooks |
+| [library-routes-progress.md](library-routes-progress.md)       | Library routes initiative — shipped slices |
+| [library-routes-outstanding.md](library-routes-outstanding.md) | Deferred debt from library routes PR       |
+| [library/README.md](../library/README.md)                      | Library CRUD and list routes               |
+| [map/README.md](../map/README.md)                              | Embedded channel map                       |
 
 UI primitives live in `src/app/components/ui/` (ported from codeplug-tool). Reusable list infrastructure is documented in [data-table.md](data-table.md). Dev styleguide: `/#/styleguide` (unlinked).
 
@@ -45,7 +45,7 @@ UI primitives live in `src/app/components/ui/` (ported from codeplug-tool). Reus
 | `/library/channels`                       | Channels list           | DataTable + filters + map — [#20](https://github.com/pskillen/codeplug-studio/issues/20), [#24](https://github.com/pskillen/codeplug-studio/issues/24) |
 | `/library/zones`                          | Zones list              | DataTable + map — [#20](https://github.com/pskillen/codeplug-studio/issues/20)                                                                         |
 | `/library/talk-groups`                    | Talk groups list        | DataTable — [#20](https://github.com/pskillen/codeplug-studio/issues/20)                                                                               |
-| `/library/contacts`                       | Contacts list           | Digital + analog DataTables — [#20](https://github.com/pskillen/codeplug-studio/issues/20)                                                               |
+| `/library/contacts`                       | Contacts list           | Digital + analog DataTables — [#20](https://github.com/pskillen/codeplug-studio/issues/20)                                                             |
 | `/library/rx-group-lists`                 | RX group lists list     | DataTable — [#20](https://github.com/pskillen/codeplug-studio/issues/20)                                                                               |
 | `/library/:kind/:id`                      | Entity editor           | CRUD forms — [#10](https://github.com/pskillen/codeplug-studio/issues/10)                                                                              |
 | `/library/channels/add-from-ukrepeater`   | Add from ukrepeater.net | [repeater-directories](../repeater-directories/README.md)                                                                                              |

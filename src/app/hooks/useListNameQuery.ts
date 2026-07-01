@@ -8,9 +8,7 @@ import {
   mergeChannelListPrefs,
   mergeEntityListPrefs,
 } from '../lib/listPrefs/storage.ts';
-import {
-  hasEntityListUrlParams,
-} from '../lib/listPrefs/urlSync.ts';
+import { hasEntityListUrlParams } from '../lib/listPrefs/urlSync.ts';
 import { useProjects } from '../state/useProjects.ts';
 
 function searchParamKeyForEntity(entity: EntityListEntity): string {
@@ -37,7 +35,10 @@ export function useListNameQuery(entity: EntityListEntity): {
     if (hydratedKey.current === visitKey) return;
 
     const currentParams = new URLSearchParams(location.search);
-    if (currentParams.has(paramKey) || (paramKey === 'q' && hasEntityListUrlParams(currentParams))) {
+    if (
+      currentParams.has(paramKey) ||
+      (paramKey === 'q' && hasEntityListUrlParams(currentParams))
+    ) {
       hydratedKey.current = visitKey;
       return;
     }
