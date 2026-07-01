@@ -271,4 +271,4 @@ Follow-up to the original merge — corrects layout, styleguide alignment, and r
 ## Next (Phase 2)
 
 - [#16](https://github.com/pskillen/codeplug-studio/issues/16) — multi-mode channel CRUD (`modeProfiles` editor)
-- Remaining gaps tracked in [epic-1-gaps.md](epic-1-gaps.md) (DataTable port, typed digital profiles, extra repeater search modes)
+- Remaining gaps tracked in [epic-1-gaps.md](epic-1-gaps.md) (typed digital profiles, extra repeater search modes, entity editor styling)

@@ -6,6 +6,14 @@ Tier-1 reference for editing the vendor-neutral **library** — the per-project 
 
 **Source:** `src/app/routes/library/`, `src/app/state/` (`useLibrary`, `libraryService`), `src/core/domain/references.ts`
 
+## Documentation map
+
+| Doc | Contents |
+| --- | --- |
+| [zone-member-picker.md](zone-member-picker.md) | Two-list zone membership editor |
+| [app-shell/data-table.md](../app-shell/data-table.md) | Shared `DataTable` and list prefs |
+| [app-shell/library-routes-progress.md](../app-shell/library-routes-progress.md) | List routes initiative progress |
+
 ## List routes
 
 `/library` redirects to `/library/channels`. Each entity kind has a dedicated list page; section nav order matches `routes/library/nav.ts`:
@@ -13,10 +21,12 @@ Tier-1 reference for editing the vendor-neutral **library** — the per-project 
 | List route                | UI                                                                                                           | Map |
 | ------------------------- | ------------------------------------------------------------------------------------------------------------ | --- |
 | `/library/channels`       | `DataTable` — sortable columns, toolbar search, hideable optional columns, URL + `localStorage` filter prefs | Yes |
-| `/library/zones`          | Card rows via `LibraryEntityList`                                                                            | Yes |
-| `/library/talk-groups`    | Card rows                                                                                                    | No  |
-| `/library/contacts`       | Two sections: digital contacts + analog contacts                                                             | No  |
-| `/library/rx-group-lists` | Card rows                                                                                                    | No  |
+| `/library/zones`          | `DataTable` — members, comment; operator location + map below table                                          | Yes |
+| `/library/talk-groups`    | `DataTable` — mode, ID, channels/RX lists using, comment                                                     | No  |
+| `/library/contacts`       | Two `DataTable` sections: digital contacts + analog contacts (separate `dq` / `aq` URL filters)              | No  |
+| `/library/rx-group-lists` | `DataTable` — members, channels using                                                                      | No  |
+
+Shared list UI: [app-shell/data-table.md](../app-shell/data-table.md).
 
 ### Channels list (#24)
 
@@ -27,11 +37,11 @@ Tier-1 reference for editing the vendor-neutral **library** — the per-project 
 
 ### Contacts page
 
-Digital and analog contacts remain separate models and editor slugs (`digital-contacts`, `analog-contacts`); the combined `/library/contacts` list page is a UX grouping only.
+Digital and analog contacts remain separate models and editor slugs (`digital-contacts`, `analog-contacts`); the combined `/library/contacts` list page is a UX grouping only. Each section has its own `DataTable`, name filter (`dq` / `aq` URL params), and persisted column sort.
 
 ### Zone member picker (#25)
 
-Zone editor uses `ZoneMemberPicker` — available ↔ in-zone lists with per-side search, add/remove, and move up/down. Saved `Zone.members` preserves **picker order** as `{ kind: 'channel', id }[]`.
+Zone editor uses `ZoneMemberPicker` — available ↔ in-zone lists with per-side search, add/remove, and move up/down. Saved `Zone.members` preserves **picker order** as `{ kind: 'channel', id }[]`. See [zone-member-picker.md](zone-member-picker.md).
 
 ## Editor routes
 
@@ -77,6 +87,7 @@ The library holds RF facts you curate once (frequency, mode, contact refs, human
 
 ## Related
 
+- [app-shell/data-table.md](../app-shell/data-table.md) · [zone-member-picker.md](zone-member-picker.md)
 - [app-shell/library-routes-progress.md](../app-shell/library-routes-progress.md) · [app-shell/library-routes-outstanding.md](../app-shell/library-routes-outstanding.md)
 - [map](../map/README.md) — map on channels/zones list routes
 - [data-model](../data-model/README.md) · [app-shell](../app-shell/README.md)

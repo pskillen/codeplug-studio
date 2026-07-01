@@ -15,7 +15,7 @@ There is **no** top-level Map nav item. Legacy `/#/map` bookmarks redirect to `/
 | List route          | Map behaviour                                                                    |
 | ------------------- | -------------------------------------------------------------------------------- |
 | `/library/channels` | Full library map; when distance filter is on, map shows the filtered channel set |
-| `/library/zones`    | Full library map above the zone card list (tool parity — full context)           |
+| `/library/zones`    | Full library map below the zone DataTable (tool parity — full context)           |
 
 Summary “view on map” links to `/library/channels`.
 
