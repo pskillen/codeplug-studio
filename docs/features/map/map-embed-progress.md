@@ -11,7 +11,7 @@
 | CodeplugMap component          | Complete | `a3b60c2` |
 | Library embed                  | Complete | `2f7d9ee` |
 | Remove `/map` route            | Complete | `f95aa28` |
-| Documentation                  | Complete | pending   |
+| Documentation                  | Complete | `534a138` |
 
 ## Shipped
 
