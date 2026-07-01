@@ -37,6 +37,7 @@ import UseMyLocationButton from '../UseMyLocationButton/UseMyLocationButton.tsx'
 import { BandPillsForRepeaterListing, ModePillsForRepeaterListing } from '../pills/index.ts';
 import { FormPage, PageSection } from '../ui/index.ts';
 import { findChannelByCallsign } from './findChannelByCallsign.ts';
+import { buildRepeaterDirectoryRows } from './repeaterDirectoryRows.ts';
 import RepeaterListingUpdateDialog from './RepeaterListingUpdateDialog.tsx';
 
 const BAND_OPTIONS = [
@@ -104,30 +105,14 @@ export default function RepeaterDirectorySearch({
     [isUk, search.titleCaseNames],
   );
 
-  const existingNames = useMemo(
-    () => new Set(library.channels.map((ch) => ch.name)),
-    [library.channels],
-  );
-
   function existingChannel(listing: RepeaterListing): Channel | null {
     return findChannelByCallsign(library.channels, listing.callsign);
   }
 
-  const rows = useMemo(() => {
-    return search.listings.map((listing) => {
-      const mapped = repeaterListingToChannel(listing, activeProjectId ?? '', mapOptions);
-      const name = mapped.name;
-      const existing = findChannelByCallsign(library.channels, listing.callsign);
-      const nameCollision = !existing && existingNames.has(name);
-      return {
-        listing,
-        key: listingKey(listing),
-        nameCollision,
-        existing,
-        mappable: !nameCollision,
-      };
-    });
-  }, [search.listings, existingNames, activeProjectId, mapOptions, library.channels]);
+  const rows = useMemo(
+    () => buildRepeaterDirectoryRows(search.listings, library.channels, listingKey),
+    [search.listings, library.channels],
+  );
 
   function openUpdate(listing: RepeaterListing) {
     const channel = existingChannel(listing);
@@ -151,7 +136,7 @@ export default function RepeaterDirectorySearch({
       setSelected(new Set());
       return;
     }
-    const keys = rows.filter((r) => r.mappable && !r.existing).map((r) => r.key);
+    const keys = rows.filter((r) => !r.existing).map((r) => r.key);
     setSelected(new Set(keys));
   }
 
@@ -170,7 +155,7 @@ export default function RepeaterDirectorySearch({
     let skipped = 0;
     for (const row of rows) {
       if (!selected.has(row.key)) continue;
-      if (!row.mappable || row.existing) {
+      if (row.existing) {
         skipped++;
         continue;
       }
@@ -299,18 +284,14 @@ export default function RepeaterDirectorySearch({
                 <Table.Tr>
                   <Table.Th>
                     <Checkbox
-                      aria-label="Select all mappable"
+                      aria-label="Select all addable"
                       checked={
-                        rows.filter((r) => r.mappable && !r.existing).length > 0 &&
-                        rows
-                          .filter((r) => r.mappable && !r.existing)
-                          .every((r) => selected.has(r.key))
+                        rows.filter((r) => !r.existing).length > 0 &&
+                        rows.filter((r) => !r.existing).every((r) => selected.has(r.key))
                       }
                       indeterminate={
                         selected.size > 0 &&
-                        !rows
-                          .filter((r) => r.mappable && !r.existing)
-                          .every((r) => selected.has(r.key))
+                        !rows.filter((r) => !r.existing).every((r) => selected.has(r.key))
                       }
                       onChange={(e) => toggleAll(e.currentTarget.checked)}
                     />
@@ -329,7 +310,7 @@ export default function RepeaterDirectorySearch({
                 {rows.map((row) => {
                   const { listing } = row;
                   const isAdded = added.has(row.key);
-                  const disabled = !row.mappable || Boolean(row.existing);
+                  const disabled = Boolean(row.existing);
                   return (
                     <Table.Tr key={row.key} opacity={disabled ? 0.6 : 1}>
                       <Table.Td>
@@ -386,7 +367,7 @@ export default function RepeaterDirectorySearch({
                           <Button
                             size="compact-sm"
                             variant={isAdded ? 'light' : 'filled'}
-                            disabled={isAdded || row.nameCollision}
+                            disabled={isAdded}
                             onClick={() => void handleAdd(listing)}
                           >
                             {isAdded ? 'Added' : 'Add to library'}
@@ -399,18 +380,6 @@ export default function RepeaterDirectorySearch({
               </Table.Tbody>
             </Table>
           </ScrollArea>
-
-          {rows.some((r) => r.nameCollision) ? (
-            <Stack gap={4} mt="xs">
-              {rows
-                .filter((r) => r.nameCollision)
-                .map((r) => (
-                  <Text key={`dup-${r.key}`} size="xs" c="orange">
-                    {r.listing.callsign}: channel name already exists in this library
-                  </Text>
-                ))}
-            </Stack>
-          ) : null}
 
           <Group justify="space-between" mt="md">
             <Button disabled={selected.size === 0} onClick={() => void handleAddSelected()}>
