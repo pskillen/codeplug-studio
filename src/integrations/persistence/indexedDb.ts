@@ -18,20 +18,7 @@ import type {
   ProjectSeed,
   PutResult,
 } from './types.ts';
-
-const DEFAULT_DB_NAME = 'codeplug-studio';
-
-/** Object store names, one per persistable entity kind. */
-const STORES: Record<EntityKind, string> = {
-  project: 'projects',
-  channel: 'channels',
-  zone: 'zones',
-  talkGroup: 'talkGroups',
-  digitalContact: 'digitalContacts',
-  analogContact: 'analogContacts',
-  rxGroupList: 'rxGroupLists',
-  formatBuild: 'formatBuilds',
-};
+import { DEFAULT_DB_NAME, STORES } from './stores.ts';
 
 type PersistableRow = {
   id: string;
