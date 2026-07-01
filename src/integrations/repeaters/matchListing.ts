@@ -10,8 +10,7 @@ export function matchListingForChannel(
 
   if (channel.rxFrequency != null && channel.txFrequency != null) {
     const byFreq = listings.find(
-      (l) =>
-        l.rxFrequencyHz === channel.rxFrequency && l.txFrequencyHz === channel.txFrequency,
+      (l) => l.rxFrequencyHz === channel.rxFrequency && l.txFrequencyHz === channel.txFrequency,
     );
     if (byFreq) return byFreq;
   }

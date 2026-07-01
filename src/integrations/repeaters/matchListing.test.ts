@@ -24,15 +24,18 @@ const baseChannel: Channel = {
   id: 'ch-1',
   projectId: 'p1',
   revision: 1,
+  updatedAt: '2026-01-01T00:00:00.000Z',
   name: 'Danbury',
   callsign: 'GB3DA',
   rxFrequency: 145_725_000,
   txFrequency: 145_125_000,
   comment: '',
+  power: null,
+  scanSkip: false,
   useLocation: false,
   location: null,
   maidenheadLocator: null,
-  modeProfiles: [{ mode: 'fm', rxTone: 'none', txTone: 'none' }],
+  modeProfiles: [{ mode: 'fm', rxTone: 'none', txTone: 'none', squelch: null, bandwidthKHz: null }],
 };
 
 describe('matchListingForChannel', () => {

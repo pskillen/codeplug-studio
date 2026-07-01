@@ -96,8 +96,7 @@ export default function RepeaterVerifyPanel({ channel }: RepeaterVerifyPanelProp
     }
   }
 
-  const activeMapOptions =
-    updateListing?.source === 'brandmeister' ? bmMapOptions : ukMapOptions;
+  const activeMapOptions = updateListing?.source === 'brandmeister' ? bmMapOptions : ukMapOptions;
 
   return (
     <PageSection

@@ -226,9 +226,7 @@ export default function RepeaterDirectorySearch({
             <TextInput
               label="Search"
               placeholder={
-                capabilities.unifiedQuery
-                  ? 'Callsign, locator, band (2m), or town'
-                  : 'e.g. GB3RF'
+                capabilities.unifiedQuery ? 'Callsign, locator, band (2m), or town' : 'e.g. GB3RF'
               }
               value={search.query}
               onChange={(e) => search.setQuery(e.currentTarget.value)}
@@ -353,7 +351,9 @@ export default function RepeaterDirectorySearch({
                           size="xs"
                         />
                       </Table.Td>
-                      <Table.Td>{displayListingName(listing, isUk && search.titleCaseNames)}</Table.Td>
+                      <Table.Td>
+                        {displayListingName(listing, isUk && search.titleCaseNames)}
+                      </Table.Td>
                       <Table.Td>
                         <Text
                           size="sm"
@@ -370,7 +370,9 @@ export default function RepeaterDirectorySearch({
                           {formatListingFrequencies(listing.rxFrequencyHz, listing.txFrequencyHz)}
                         </Text>
                       </Table.Td>
-                      {capabilities.locatorColumn ? <Table.Td>{listing.locator ?? '—'}</Table.Td> : null}
+                      {capabilities.locatorColumn ? (
+                        <Table.Td>{listing.locator ?? '—'}</Table.Td>
+                      ) : null}
                       <Table.Td>
                         {row.existing ? (
                           <Button

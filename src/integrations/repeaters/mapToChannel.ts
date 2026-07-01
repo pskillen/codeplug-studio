@@ -19,17 +19,17 @@ function formatListingText(value: string | undefined, titleCaseText: boolean): s
   return titleCaseText ? toTitleCase(trimmed) : trimmed;
 }
 
-function buildComment(
-  listing: RepeaterListing,
-  options: MapListingOptions,
-): string {
+function buildComment(listing: RepeaterListing, options: MapListingOptions): string {
   if (options.omitComment) return '';
   const name = formatListingText(listing.name, options.titleCaseText ?? false);
   const status = formatListingText(listing.status, options.titleCaseText ?? false);
   return [name, status].filter((s) => s.length > 0).join(' — ');
 }
 
-function defaultMapOptions(listing: RepeaterListing, options: MapListingOptions = {}): MapListingOptions {
+function defaultMapOptions(
+  listing: RepeaterListing,
+  options: MapListingOptions = {},
+): MapListingOptions {
   return {
     titleCaseText: options.titleCaseText ?? false,
     omitComment: options.omitComment ?? listing.source === 'brandmeister',

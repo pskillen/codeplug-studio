@@ -67,6 +67,8 @@ describe('searchBrandmeisterByCallsign', () => {
 
   it('throws RepeaterDirectoryError on HTTP failure', async () => {
     mockFetch(500, {});
-    await expect(searchBrandmeisterByCallsign('FAIL')).rejects.toBeInstanceOf(RepeaterDirectoryError);
+    await expect(searchBrandmeisterByCallsign('FAIL')).rejects.toBeInstanceOf(
+      RepeaterDirectoryError,
+    );
   });
 });
