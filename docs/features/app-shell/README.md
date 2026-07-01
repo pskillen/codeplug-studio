@@ -27,18 +27,18 @@ UI primitives live in `src/app/components/ui/` (ported from codeplug-tool). Dev 
 
 ## Routes
 
-| Path                                      | Surface                 | Status                                  |
-| ----------------------------------------- | ----------------------- | --------------------------------------- |
-| `/`                                       | Projects                | Lifecycle UI (create/switch/rename/del) |
-| `/library`                                | Library                 | Entity CRUD — Ticket #10                |
+| Path                                      | Surface                 | Status                                                    |
+| ----------------------------------------- | ----------------------- | --------------------------------------------------------- |
+| `/`                                       | Projects                | Lifecycle UI (create/switch/rename/del)                   |
+| `/library`                                | Library                 | Entity CRUD — Ticket #10                                  |
 | `/library/channels/add-from-ukrepeater`   | Add from ukrepeater.net | [repeater-directories](../repeater-directories/README.md) |
 | `/library/channels/add-from-brandmeister` | Add from BrandMeister   | [repeater-directories](../repeater-directories/README.md) |
-| `/map`                                    | Map                     | Channel map — Ticket #11                |
-| `/reports`                                | Reports                 | Library summary — Ticket #12            |
-| `/reference`                              | Reference               | Maidenhead, band plan — Ticket #12      |
-| `/settings`                               | Settings                | Shell content                           |
-| `/help`                                   | Help                    | Shell content                           |
-| `/styleguide`                             | Styleguide              | Hidden dev page (UI kit demos)          |
+| `/map`                                    | Map                     | Channel map — Ticket #11                                  |
+| `/reports`                                | Reports                 | Library summary — Ticket #12                              |
+| `/reference`                              | Reference               | Maidenhead, band plan — Ticket #12                        |
+| `/settings`                               | Settings                | Shell content                                             |
+| `/help`                                   | Help                    | Shell content                                             |
+| `/styleguide`                             | Styleguide              | Hidden dev page (UI kit demos)                            |
 
 Routes that need a project gate on an active project and link back to Projects when none is selected.
 

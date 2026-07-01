@@ -39,14 +39,7 @@ describe('buildModeProfilesFromListing', () => {
       modes: ['fm', 'dmr', 'dstar', 'ysf', 'p25', 'nxdn'],
       colourCode: 1,
     });
-    expect(profiles.map((p) => p.mode)).toEqual([
-      'fm',
-      'dmr',
-      'dstar',
-      'ysf',
-      'p25',
-      'nxdn',
-    ]);
+    expect(profiles.map((p) => p.mode)).toEqual(['fm', 'dmr', 'dstar', 'ysf', 'p25', 'nxdn']);
   });
 
   it('defaults to a single FM profile when no modes are advertised', () => {
@@ -71,10 +64,7 @@ describe('repeaterListingToChannel', () => {
   });
 
   it('maps FM + Fusion to FM profile and YSF stub', () => {
-    const channel = repeaterListingToChannel(
-      { ...baseListing, modes: ['fm', 'ysf'] },
-      'p1',
-    );
+    const channel = repeaterListingToChannel({ ...baseListing, modes: ['fm', 'ysf'] }, 'p1');
     expect(channel.modeProfiles.map((p) => p.mode)).toEqual(['fm', 'ysf']);
   });
 

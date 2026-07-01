@@ -13,15 +13,7 @@ import { persistence } from '../../state/persistence.ts';
 import { useEntitySave } from './useEntitySave.ts';
 import EditorActions from './EditorActions.tsx';
 
-const DIGITAL_MODES: DigitalChannelMode[] = [
-  'dmr',
-  'dstar',
-  'ysf',
-  'p25',
-  'nxdn',
-  'm17',
-  'tetra',
-];
+const DIGITAL_MODES: DigitalChannelMode[] = ['dmr', 'dstar', 'ysf', 'p25', 'nxdn', 'm17', 'tetra'];
 
 function DigitalModeSelect({
   value,

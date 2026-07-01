@@ -6,19 +6,19 @@ This is a **remote directory API**, not a CPS wire format. HTTP clients and norm
 
 ## API
 
-| Property | Value |
-| --- | --- |
-| Base URL | `https://api-beta.rsgb.online` |
-| Response shape | `{ "data": [ …listing… ] }` |
-| CORS | `Access-Control-Allow-Origin: *` — callable from the browser SPA |
-| Stability | **Beta** — degrade gracefully on failure; attribute source in UI |
+| Property       | Value                                                            |
+| -------------- | ---------------------------------------------------------------- |
+| Base URL       | `https://api-beta.rsgb.online`                                   |
+| Response shape | `{ "data": [ …listing… ] }`                                      |
+| CORS           | `Access-Control-Allow-Origin: *` — callable from the browser SPA |
+| Stability      | **Beta** — degrade gracefully on failure; attribute source in UI |
 
 ### Endpoints (shipped)
 
-| Endpoint | Example | Returns |
-| --- | --- | --- |
-| `/callsign/{call}` | `/callsign/gb7dc` | Listings for repeater callsign |
-| `/locator/{4-or-6}` | `/locator/io92`, `/locator/io92pp` | Listings in locator square |
+| Endpoint            | Example                            | Returns                        |
+| ------------------- | ---------------------------------- | ------------------------------ |
+| `/callsign/{call}`  | `/callsign/gb7dc`                  | Listings for repeater callsign |
+| `/locator/{4-or-6}` | `/locator/io92`, `/locator/io92pp` | Listings in locator square     |
 
 Additional ETCC endpoints (`/band/`, `/keeper/`, `/all/systems`) exist on the API but are not wired in the Studio UI yet.
 
@@ -48,10 +48,10 @@ Additional ETCC endpoints (`/band/`, `/keeper/`, `/all/systems`) exist on the AP
 
 Repeater-side frequencies are **inverted** vs the radio channel:
 
-| ETCC field | `RepeaterListing` / library `Channel` |
-| --- | --- |
-| `tx` (repeater output) | `rxFrequencyHz` / `rxFrequency` |
-| `rx` (repeater input) | `txFrequencyHz` / `txFrequency` |
+| ETCC field             | `RepeaterListing` / library `Channel` |
+| ---------------------- | ------------------------------------- |
+| `tx` (repeater output) | `rxFrequencyHz` / `rxFrequency`       |
+| `rx` (repeater input)  | `txFrequencyHz` / `txFrequency`       |
 
 Values are integer **Hz**.
 
@@ -59,17 +59,17 @@ Values are integer **Hz**.
 
 Each listing carries one or more mode flags. A repeater may advertise several modes (e.g. analogue FM plus Fusion).
 
-| Flag | Meaning | Maps to library mode |
-| --- | --- | --- |
-| `A` | Analogue | `fm` |
-| `D` | D-STAR | `dstar` |
-| `E` | Tetra | `tetra` |
-| `M` | DMR | `dmr` |
-| `M:n` | DMR with colour code *n* (0–15) | `dmr`, `colourCode = n` |
-| `F` | Fusion / YSF | `ysf` |
-| `P` | P25 | `p25` |
-| `7` | M17 | `m17` |
-| `N` | NXDN | `nxdn` |
+| Flag  | Meaning                         | Maps to library mode    |
+| ----- | ------------------------------- | ----------------------- |
+| `A`   | Analogue                        | `fm`                    |
+| `D`   | D-STAR                          | `dstar`                 |
+| `E`   | Tetra                           | `tetra`                 |
+| `M`   | DMR                             | `dmr`                   |
+| `M:n` | DMR with colour code _n_ (0–15) | `dmr`, `colourCode = n` |
+| `F`   | Fusion / YSF                    | `ysf`                   |
+| `P`   | P25                             | `p25`                   |
+| `7`   | M17                             | `m17`                   |
+| `N`   | NXDN                            | `nxdn`                  |
 
 Parser: [`src/integrations/repeaters/ukrepeater/modeCodes.ts`](../../../src/integrations/repeaters/ukrepeater/modeCodes.ts).
 
@@ -82,27 +82,27 @@ DMR timeslot is not in ETCC listings — operator configures in CRUD.
 
 ## Field mapping (ETCC → `RepeaterListing`)
 
-| ETCC field | `RepeaterListing` field | Notes |
-| --- | --- | --- |
-| `tx` | `rxFrequencyHz` | Hz; see inversion above |
-| `rx` | `txFrequencyHz` | Hz |
-| `ctcss` | `toneHz` | `0` or absent → no tone |
-| `modeCodes` | `modes`, `primaryMode`, `colourCode` | See mode flags |
-| `locator` | `location` | Via `locatorToCoords` in core |
-| `repeater` | `callsign` | |
-| `town` | `name` | |
-| `band` | `band` | Wire band code (e.g. `2M`, `70CM`) |
-| `status` | `status` | |
-| `id` | `remoteId` | |
+| ETCC field  | `RepeaterListing` field              | Notes                              |
+| ----------- | ------------------------------------ | ---------------------------------- |
+| `tx`        | `rxFrequencyHz`                      | Hz; see inversion above            |
+| `rx`        | `txFrequencyHz`                      | Hz                                 |
+| `ctcss`     | `toneHz`                             | `0` or absent → no tone            |
+| `modeCodes` | `modes`, `primaryMode`, `colourCode` | See mode flags                     |
+| `locator`   | `location`                           | Via `locatorToCoords` in core      |
+| `repeater`  | `callsign`                           |                                    |
+| `town`      | `name`                               |                                    |
+| `band`      | `band`                               | Wire band code (e.g. `2M`, `70CM`) |
+| `status`    | `status`                             |                                    |
+| `id`        | `remoteId`                           |                                    |
 
 ## Lossy / not modelled
 
-| ETCC data | Treatment |
-| --- | --- |
-| Talk groups, contacts, RX group lists | Operator configures in library CRUD |
-| DMR timeslot | Operator configures in CRUD |
-| Non-FM/DMR digital modes on import | Mode-only profile stub (no mode-specific fields yet) |
-| `type`, keeper, ERP, antenna metadata | Not stored on import today |
+| ETCC data                             | Treatment                                            |
+| ------------------------------------- | ---------------------------------------------------- |
+| Talk groups, contacts, RX group lists | Operator configures in library CRUD                  |
+| DMR timeslot                          | Operator configures in CRUD                          |
+| Non-FM/DMR digital modes on import    | Mode-only profile stub (no mode-specific fields yet) |
+| `type`, keeper, ERP, antenna metadata | Not stored on import today                           |
 
 ## Disclaimer
 

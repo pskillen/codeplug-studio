@@ -14,36 +14,36 @@ Repeater search is **not** a top-level nav item — it lives under library workf
 
 ## Implementation status
 
-| Area | Status | Notes |
-| --- | --- | --- |
-| UK repeater (ETCC) client | Shipped | Callsign + locator search |
-| BrandMeister client | Shipped | Callsign search |
-| Add from directory UI | Shipped | Section nav routes; band/mode pills on results |
-| Update existing (callsign match) | Shipped | Outline button → shared comparison dialog |
-| Directory verify on channel edit | Shipped | `RepeaterVerifyPanel` |
-| Full ETCC mode flag parsing | Shipped | A/D/E/M/F/P/7/N → library modes |
-| Multi-mode import (`modeProfiles`) | Shipped | FM + DMR full profiles; other digital stubs |
-| Multi-mode channel CRUD | Deferred | [#16](https://github.com/pskillen/codeplug-studio/issues/16) — editor still single-profile on save |
-| ETCC postcode / geocode / band search | Deferred | Only callsign + locator today |
-| Offline result cache | Deferred | In-session only |
+| Area                                  | Status   | Notes                                                                                              |
+| ------------------------------------- | -------- | -------------------------------------------------------------------------------------------------- |
+| UK repeater (ETCC) client             | Shipped  | Callsign + locator search                                                                          |
+| BrandMeister client                   | Shipped  | Callsign search                                                                                    |
+| Add from directory UI                 | Shipped  | Section nav routes; band/mode pills on results                                                     |
+| Update existing (callsign match)      | Shipped  | Outline button → shared comparison dialog                                                          |
+| Directory verify on channel edit      | Shipped  | `RepeaterVerifyPanel`                                                                              |
+| Full ETCC mode flag parsing           | Shipped  | A/D/E/M/F/P/7/N → library modes                                                                    |
+| Multi-mode import (`modeProfiles`)    | Shipped  | FM + DMR full profiles; other digital stubs                                                        |
+| Multi-mode channel CRUD               | Deferred | [#16](https://github.com/pskillen/codeplug-studio/issues/16) — editor still single-profile on save |
+| ETCC postcode / geocode / band search | Deferred | Only callsign + locator today                                                                      |
+| Offline result cache                  | Deferred | In-session only                                                                                    |
 
 ## Documentation map
 
-| Doc | Contents |
-| --- | --- |
-| This README | Workflows, boundaries, code anchors |
+| Doc                                                              | Contents                                           |
+| ---------------------------------------------------------------- | -------------------------------------------------- |
+| This README                                                      | Workflows, boundaries, code anchors                |
 | [ukrepeater API reference](../../reference/ukrepeater/README.md) | ETCC endpoints, mode flags, field mapping (tier 3) |
-| [map](../map-and-repeaters/README.md) | Channel map (separate surface) |
-| [library](../library/README.md) | Channel entity CRUD |
-| [app-shell](../app-shell/README.md) | Routes and section nav |
+| [map](../map-and-repeaters/README.md)                            | Channel map (separate surface)                     |
+| [library](../library/README.md)                                  | Channel entity CRUD                                |
+| [app-shell](../app-shell/README.md)                              | Routes and section nav                             |
 
 ## Workflows
 
-| Workflow | Entry point | Behaviour |
-| --- | --- | --- |
-| **New channel from reference** | Library section nav → _Add from ukrepeater.net_ / _Add from BrandMeister_ | Search directory; add result as library channel |
-| **Update existing** | Same search UI when callsign already in library | Outline _Update existing_ → directory comparison dialog |
-| **Check and update current channel** | Channel editor → _Check against directory_ | Fetch by callsign; diff; apply selected fields |
+| Workflow                             | Entry point                                                               | Behaviour                                               |
+| ------------------------------------ | ------------------------------------------------------------------------- | ------------------------------------------------------- |
+| **New channel from reference**       | Library section nav → _Add from ukrepeater.net_ / _Add from BrandMeister_ | Search directory; add result as library channel         |
+| **Update existing**                  | Same search UI when callsign already in library                           | Outline _Update existing_ → directory comparison dialog |
+| **Check and update current channel** | Channel editor → _Check against directory_                                | Fetch by callsign; diff; apply selected fields          |
 
 ### Routes
 
@@ -52,10 +52,10 @@ Repeater search is **not** a top-level nav item — it lives under library workf
 
 ## Sources
 
-| Source | Client | Search by | Wire notes |
-| --- | --- | --- | --- |
+| Source                  | Client                                                       | Search by         | Wire notes                                           |
+| ----------------------- | ------------------------------------------------------------ | ----------------- | ---------------------------------------------------- |
 | UK repeater (RSGB ETCC) | `searchUkRepeatersByCallsign` / `searchUkRepeatersByLocator` | callsign, locator | `tx`/`rx` in Hz; `modeCodes[]`; Maidenhead `locator` |
-| BrandMeister | `searchBrandmeisterByCallsign` | callsign | DMR devices; `tx`/`rx` MHz strings; `lat`/`lng` |
+| BrandMeister            | `searchBrandmeisterByCallsign`                               | callsign          | DMR devices; `tx`/`rx` MHz strings; `lat`/`lng`      |
 
 Both clients normalise to `RepeaterListing` (`src/integrations/repeaters/types.ts`).
 
@@ -71,13 +71,13 @@ flowchart LR
   API --> Client --> Listing --> Map --> Lib
 ```
 
-| Step | Module | Output |
-| --- | --- | --- |
-| HTTP + parse | `ukRepeaterClient.ts`, `brandmeisterClient.ts` | `RepeaterListing` |
-| Mode flags (UK) | `ukrepeater/modeCodes.ts` | `modes[]`, `primaryMode`, `colourCode` |
-| Profiles | `buildModeProfiles.ts` | `modeProfiles[]` on `Channel` |
-| Add | `RepeaterDirectorySearch.tsx` → `persistence.putChannel` | New library row |
-| Verify / update | `RepeaterVerifyPanel.tsx`, `RepeaterListingUpdateDialog.tsx` | `channelDiff.ts` patch |
+| Step            | Module                                                       | Output                                 |
+| --------------- | ------------------------------------------------------------ | -------------------------------------- |
+| HTTP + parse    | `ukRepeaterClient.ts`, `brandmeisterClient.ts`               | `RepeaterListing`                      |
+| Mode flags (UK) | `ukrepeater/modeCodes.ts`                                    | `modes[]`, `primaryMode`, `colourCode` |
+| Profiles        | `buildModeProfiles.ts`                                       | `modeProfiles[]` on `Channel`          |
+| Add             | `RepeaterDirectorySearch.tsx` → `persistence.putChannel`     | New library row                        |
+| Verify / update | `RepeaterVerifyPanel.tsx`, `RepeaterListingUpdateDialog.tsx` | `channelDiff.ts` patch                 |
 
 Frequency convention: `rxFrequencyHz` is what the radio **receives** (repeater output); `txFrequencyHz` is what it **transmits** (repeater input). ETCC field names are inverted — documented in [ukrepeater reference](../../reference/ukrepeater/README.md#frequency-inversion-critical).
 
@@ -93,13 +93,13 @@ Example: `modeCodes: ["A", "D", "M:1", "F", "P", "N"]` → six profiles on impor
 
 ## UI components
 
-| Component | Role |
-| --- | --- |
-| `RepeaterDirectorySearch.tsx` | Shared search form + results table |
+| Component                         | Role                                                    |
+| --------------------------------- | ------------------------------------------------------- |
+| `RepeaterDirectorySearch.tsx`     | Shared search form + results table                      |
 | `RepeaterListingUpdateDialog.tsx` | Directory comparison modal (diff table, apply selected) |
-| `RepeaterVerifyPanel.tsx` | Channel editor verify section |
-| `findChannelByCallsign.ts` | Case-insensitive library lookup |
-| `ModePillsForRepeaterListing.tsx` | One pill per advertised mode on results |
+| `RepeaterVerifyPanel.tsx`         | Channel editor verify section                           |
+| `findChannelByCallsign.ts`        | Case-insensitive library lookup                         |
+| `ModePillsForRepeaterListing.tsx` | One pill per advertised mode on results                 |
 
 ## Boundaries
 

@@ -32,7 +32,9 @@ function dmrProfile(colourCode: number | null): ChannelModeProfileDMR {
  * Build one `modeProfiles` entry per advertised mode. FM and DMR use full profile
  * shapes; other digital modes use mode-only stubs until dedicated profiles exist.
  */
-export function buildModeProfilesFromListing(listing: RepeaterListing): AbstractChannelModeProfile[] {
+export function buildModeProfilesFromListing(
+  listing: RepeaterListing,
+): AbstractChannelModeProfile[] {
   const tone: ChannelTone = listing.toneHz ? String(listing.toneHz) : 'none';
   const profiles: AbstractChannelModeProfile[] = [];
   let analogProfile: ChannelModeProfileFM | null = null;

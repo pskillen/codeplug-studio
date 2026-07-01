@@ -193,11 +193,7 @@ export default function RepeaterDirectorySearch({
                     </Table.Td>
                     <Table.Td>
                       {existing ? (
-                        <Button
-                          size="compact-sm"
-                          variant="outline"
-                          onClick={() => openUpdate(r)}
-                        >
+                        <Button size="compact-sm" variant="outline" onClick={() => openUpdate(r)}>
                           Update existing
                         </Button>
                       ) : (

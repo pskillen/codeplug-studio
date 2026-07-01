@@ -217,18 +217,18 @@ Work immediately following the previous agent — corrects layout, styleguide al
 
 **Status:** In progress — commits on branch; PR not yet opened
 
-| Commit | Summary |
-| --- | --- |
-| `adb6cba` | Mantine, Tabler icons, PostCSS |
-| `17aae11` | Layout kit + Mantine theme |
-| `68c6d11` | AppShell, two-section nav, Mantine pages |
+| Commit    | Summary                                                             |
+| --------- | ------------------------------------------------------------------- |
+| `adb6cba` | Mantine, Tabler icons, PostCSS                                      |
+| `17aae11` | Layout kit + Mantine theme                                          |
+| `68c6d11` | AppShell, two-section nav, Mantine pages                            |
 | `6767e6c` | Repeater search moved into library workflows (removed `/repeaters`) |
-| `b21f476` | App shell + repeater workflow feature docs (initial) |
-| `0336df0` | Band and mode pills (ported from codeplug-tool) |
-| `c201a45` | Update existing when callsign matches library |
-| `81aa71f` | ukrepeater ETCC mode flags reference (tier 3) |
-| `5210fbc` | Full ukrepeater mode parsing + multi-pill display |
-| `44ec4f5` | Multi-mode `modeProfiles` on directory import |
+| `b21f476` | App shell + repeater workflow feature docs (initial)                |
+| `0336df0` | Band and mode pills (ported from codeplug-tool)                     |
+| `c201a45` | Update existing when callsign matches library                       |
+| `81aa71f` | ukrepeater ETCC mode flags reference (tier 3)                       |
+| `5210fbc` | Full ukrepeater mode parsing + multi-pill display                   |
+| `44ec4f5` | Multi-mode `modeProfiles` on directory import                       |
 
 **Delivered (branch)**
 
@@ -246,13 +246,13 @@ Work immediately following the previous agent — corrects layout, styleguide al
 
 ### Phase 2 tickets (overview)
 
-| Ticket | Topic | Progress doc / notes |
-| --- | --- | --- |
-| [#8](https://github.com/pskillen/codeplug-studio/issues/8) | App shell, nav, project lifecycle | Closed on `main`; mop-up on `8/pskil/ui-ux-shell` |
-| [#9](https://github.com/pskillen/codeplug-studio/issues/9) | IndexedDB persistence | See gaps — verify against `main` |
-| [#10](https://github.com/pskillen/codeplug-studio/issues/10) | Library CRUD | Basic editors on `main`; multi-mode CRUD → [#16](https://github.com/pskillen/codeplug-studio/issues/16) |
-| [#11](https://github.com/pskillen/codeplug-studio/issues/11) | Map + repeater directories | Closed; repeater slice extended on branch |
-| [#12](https://github.com/pskillen/codeplug-studio/issues/12) | Reports / reference tools | **Not started** — `/reports` and `/reference` routes exist as shells only |
+| Ticket                                                       | Topic                             | Progress doc / notes                                                                                    |
+| ------------------------------------------------------------ | --------------------------------- | ------------------------------------------------------------------------------------------------------- |
+| [#8](https://github.com/pskillen/codeplug-studio/issues/8)   | App shell, nav, project lifecycle | Closed on `main`; mop-up on `8/pskil/ui-ux-shell`                                                       |
+| [#9](https://github.com/pskillen/codeplug-studio/issues/9)   | IndexedDB persistence             | See gaps — verify against `main`                                                                        |
+| [#10](https://github.com/pskillen/codeplug-studio/issues/10) | Library CRUD                      | Basic editors on `main`; multi-mode CRUD → [#16](https://github.com/pskillen/codeplug-studio/issues/16) |
+| [#11](https://github.com/pskillen/codeplug-studio/issues/11) | Map + repeater directories        | Closed; repeater slice extended on branch                                                               |
+| [#12](https://github.com/pskillen/codeplug-studio/issues/12) | Reports / reference tools         | **Not started** — `/reports` and `/reference` routes exist as shells only                               |
 
 ---
 
