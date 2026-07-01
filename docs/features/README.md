@@ -11,6 +11,8 @@ Topics are added per epic phase — not all folders exist yet.
 | [library](library/README.md)                           | Phase 2 | Library CRUD UI + IndexedDB persistence                 |
 | [map-and-repeaters](map-and-repeaters/README.md)       | Phase 2 | Channel map (react-leaflet)                             |
 | [repeater-directories](repeater-directories/README.md) | Phase 2 | UK repeater + BrandMeister library workflows            |
+| [reports](reports/README.md)                           | Phase 2 | Read-only library summary + integrity warnings          |
+| [reference-tools](reference-tools/README.md)           | Phase 2 | Maidenhead converter, band plan, frequency lookup       |
 | _(more in later phases)_                               | —       | `builds/`, `import-export/`, etc.                       |
 
 **Migration / epic logs:** [docs/poc-migration/](../poc-migration/) — execution progress for Epic #1.

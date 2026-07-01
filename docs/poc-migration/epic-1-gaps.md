@@ -24,9 +24,9 @@ Items **skipped**, **incomplete**, or **discovered during execution** — not fu
 
 ## Phase 2 — documentation (discovered)
 
-- [ ] **Epic progress log gap** — `epic-1-progress.md` had no Phase 2 section until mop-up (2026-06-30); remaining tickets (#9, #10, #12) still need slice-level entries when verified
-- [x] **Hallucinated `reports-and-reference` feature doc** — removed; repeater content lives under [repeater-directories](../features/repeater-directories/README.md)
-- [ ] **App shell feature doc drift** — `docs/features/app-shell/README.md` still lists `/reports` and `/reference` as Ticket #12 deliverables; update when #12 is scoped or routes removed
+- [x] **Epic progress log gap** — Phase 2 backfilled: retrospective slices for PRs #13–#15 and the PR #17 mop-up added to `epic-1-progress.md` (#18, 2026-07-01)
+- [x] **Hallucinated `reports-and-reference` feature doc** — removed; repeater content lives under [repeater-directories](../features/repeater-directories/README.md); reports and reference split into [reports](../features/reports/README.md) + [reference-tools](../features/reference-tools/README.md)
+- [x] **App shell feature doc drift** — `/reports` (library summary) and `/reference` (tools) confirmed as shipped Ticket #12 surfaces (PR #15) and documented in their own hubs; app-shell route table links to them
 
 ## Phase 2 — repeater directories (discovered)
 

@@ -205,17 +205,29 @@
 
 **Tracking:** Epic [#1](https://github.com/pskillen/codeplug-studio/issues/1) · Tickets [#8](https://github.com/pskillen/codeplug-studio/issues/8)–[#12](https://github.com/pskillen/codeplug-studio/issues/12)
 
-**Status:** In progress — partial ship on `main`; significant mop-up on branch `8/pskil/ui-ux-shell` (not yet merged)
+**Status:** Shipped on `main` — original feature merge (PRs [#13](https://github.com/pskillen/codeplug-studio/pull/13)–[#15](https://github.com/pskillen/codeplug-studio/pull/15)) plus UI/UX + repeater mop-up (PR [#17](https://github.com/pskillen/codeplug-studio/pull/17)) merged; retrospective docs via [#18](https://github.com/pskillen/codeplug-studio/issues/18)
 
 ### Documentation debt (previous agent)
 
-A prior Phase 2 pass landed code on `main` but left a **large documentation hole**: feature docs were thin or wrong (e.g. a hallucinated `reports-and-reference` feature folder), `epic-1-progress.md` stopped at Phase 1, and repeater workflows were initially implemented as a standalone `/repeaters` route instead of library-embedded flows. **Outstanding:** coerce remaining Phase 2 tickets into proper progress/outstanding updates and feature docs as each slice merges.
+A prior Phase 2 pass landed code on `main` but left a **large documentation hole**: feature docs were thin or wrong (e.g. a hallucinated `reports-and-reference` feature folder), `epic-1-progress.md` stopped at Phase 1, and repeater workflows were initially implemented as a standalone `/repeaters` route instead of library-embedded flows. Addressed by PR #17 (repeater/map/app-shell docs) and #18 (reports + reference-tools hubs, progress/gaps reconciliation).
 
-### Mop-up — UI shell + repeater directories (`8/pskil/ui-ux-shell`)
+### Original Phase 2 merge (PRs #13–#15)
 
-Work immediately following the previous agent — corrects layout, styleguide alignment, and repeater UX. **Branch:** `8/pskil/ui-ux-shell` · **Issue:** [#8](https://github.com/pskillen/codeplug-studio/issues/8) (shell) + [#11](https://github.com/pskillen/codeplug-studio/issues/11) (map/repeaters)
+Feature code shipped to `main` on 2026-06-30. Retrospective slices (docs backfilled under [#18](https://github.com/pskillen/codeplug-studio/issues/18)):
 
-**Status:** In progress — commits on branch; PR not yet opened
+| PR                                                         | Tickets                                                                                                                    | Status   | Delivered                                                                                                                         | Feature docs                                                                                                                                                                                                           |
+| ---------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- | -------- | --------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [#13](https://github.com/pskillen/codeplug-studio/pull/13) | [#8](https://github.com/pskillen/codeplug-studio/issues/8)                                                                 | Complete | App shell, `HashRouter`, project lifecycle (`ProjectStore`, `ProjectProvider`, `useProjects`)                                     | [app-shell](../features/app-shell/README.md)                                                                                                                                                                           |
+| [#14](https://github.com/pskillen/codeplug-studio/pull/14) | [#9](https://github.com/pskillen/codeplug-studio/issues/9), [#10](https://github.com/pskillen/codeplug-studio/issues/10)   | Complete | IndexedDB persistence (revision + `BroadcastChannel`), active-project `localStorage`, library CRUD, referential-integrity deletes | [library](../features/library/README.md)                                                                                                                                                                               |
+| [#15](https://github.com/pskillen/codeplug-studio/pull/15) | [#11](https://github.com/pskillen/codeplug-studio/issues/11), [#12](https://github.com/pskillen/codeplug-studio/issues/12) | Complete | Channel map, repeater clients + import, `/reports` summary, `/reference` tools                                                    | [map](../features/map-and-repeaters/README.md), [repeater-directories](../features/repeater-directories/README.md), [reports](../features/reports/README.md), [reference-tools](../features/reference-tools/README.md) |
+
+**Verify:** `npm run build && npm run lint && npm run test`; exercise each route with an active project.
+
+### Mop-up — UI shell + repeater directories (PR #17)
+
+Follow-up to the original merge — corrects layout, styleguide alignment, and repeater UX. **Merged:** PR [#17](https://github.com/pskillen/codeplug-studio/pull/17) (`8/pskil/ui-ux-shell`, `f960fbe`) · **Issue:** [#8](https://github.com/pskillen/codeplug-studio/issues/8) (shell) + [#11](https://github.com/pskillen/codeplug-studio/issues/11) (map/repeaters)
+
+**Status:** Complete — merged
 
 | Commit    | Summary                                                             |
 | --------- | ------------------------------------------------------------------- |
@@ -246,18 +258,17 @@ Work immediately following the previous agent — corrects layout, styleguide al
 
 ### Phase 2 tickets (overview)
 
-| Ticket                                                       | Topic                             | Progress doc / notes                                                                                    |
-| ------------------------------------------------------------ | --------------------------------- | ------------------------------------------------------------------------------------------------------- |
-| [#8](https://github.com/pskillen/codeplug-studio/issues/8)   | App shell, nav, project lifecycle | Closed on `main`; mop-up on `8/pskil/ui-ux-shell`                                                       |
-| [#9](https://github.com/pskillen/codeplug-studio/issues/9)   | IndexedDB persistence             | See gaps — verify against `main`                                                                        |
-| [#10](https://github.com/pskillen/codeplug-studio/issues/10) | Library CRUD                      | Basic editors on `main`; multi-mode CRUD → [#16](https://github.com/pskillen/codeplug-studio/issues/16) |
-| [#11](https://github.com/pskillen/codeplug-studio/issues/11) | Map + repeater directories        | Closed; repeater slice extended on branch                                                               |
-| [#12](https://github.com/pskillen/codeplug-studio/issues/12) | Reports / reference tools         | **Not started** — `/reports` and `/reference` routes exist as shells only                               |
+| Ticket                                                       | Topic                             | Progress doc / notes                                                                                                                                                 |
+| ------------------------------------------------------------ | --------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [#8](https://github.com/pskillen/codeplug-studio/issues/8)   | App shell, nav, project lifecycle | Closed on `main`; mop-up on `8/pskil/ui-ux-shell`                                                                                                                    |
+| [#9](https://github.com/pskillen/codeplug-studio/issues/9)   | IndexedDB persistence             | See gaps — verify against `main`                                                                                                                                     |
+| [#10](https://github.com/pskillen/codeplug-studio/issues/10) | Library CRUD                      | Basic editors on `main`; multi-mode CRUD → [#16](https://github.com/pskillen/codeplug-studio/issues/16)                                                              |
+| [#11](https://github.com/pskillen/codeplug-studio/issues/11) | Map + repeater directories        | Closed; repeater slice extended and merged via PR #17                                                                                                                |
+| [#12](https://github.com/pskillen/codeplug-studio/issues/12) | Reports / reference tools         | Shipped (PR #15) — `/reports` summary + `/reference` tools; docs: [reports](../features/reports/README.md), [reference-tools](../features/reference-tools/README.md) |
 
 ---
 
 ## Next (Phase 2)
 
-- Open PR for `8/pskil/ui-ux-shell` (closes / updates #8, #11 doc gaps)
-- Backfill progress entries for #9, #10, #12 as those slices are verified on `main`
 - [#16](https://github.com/pskillen/codeplug-studio/issues/16) — multi-mode channel CRUD (`modeProfiles` editor)
+- Remaining gaps tracked in [epic-1-gaps.md](epic-1-gaps.md) (DataTable port, typed digital profiles, extra repeater search modes)
