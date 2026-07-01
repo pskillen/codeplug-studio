@@ -1,4 +1,4 @@
-import type { EntityRef, Library } from '@core/models/library.ts';
+import type { Channel, ChannelModeProfileDMR, EntityRef, Library } from '@core/models/library.ts';
 
 export function entityRefDisplayName(ref: EntityRef | null, library: Library): string {
   if (!ref) return '';
@@ -14,18 +14,22 @@ export function entityRefDisplayName(ref: EntityRef | null, library: Library): s
   }
 }
 
+function dmrProfile(channel: Channel): ChannelModeProfileDMR | undefined {
+  return channel.modeProfiles.find((p): p is ChannelModeProfileDMR => p.mode === 'dmr');
+}
+
 export function dmrContactDisplayName(library: Library, channelId: string): string {
   const channel = library.channels.find((c) => c.id === channelId);
   if (!channel) return '';
-  const dmr = channel.modeProfiles.find((p) => p.mode === 'dmr');
-  if (!dmr || dmr.mode !== 'dmr' || !dmr.contactRef) return '';
+  const dmr = dmrProfile(channel);
+  if (!dmr?.contactRef) return '';
   return entityRefDisplayName(dmr.contactRef, library);
 }
 
 export function dmrRxGroupListName(library: Library, channelId: string): string {
   const channel = library.channels.find((c) => c.id === channelId);
   if (!channel) return '';
-  const dmr = channel.modeProfiles.find((p) => p.mode === 'dmr');
-  if (!dmr || dmr.mode !== 'dmr' || !dmr.rxGroupListId) return '';
+  const dmr = dmrProfile(channel);
+  if (!dmr?.rxGroupListId) return '';
   return library.rxGroupLists.find((r) => r.id === dmr.rxGroupListId)?.name ?? '';
 }

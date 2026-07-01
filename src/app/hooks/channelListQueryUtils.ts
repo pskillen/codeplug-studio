@@ -1,8 +1,5 @@
 import { DISTANCE_FILTER_MARKS_KM } from '../lib/channels.ts';
-import {
-  channelListColumnsKey,
-  channelListColumnsSchemaKey,
-} from '../lib/listPrefs/keys.ts';
+import { channelListColumnsKey, channelListColumnsSchemaKey } from '../lib/listPrefs/keys.ts';
 
 export { channelListColumnsKey, channelListColumnsSchemaKey } from '../lib/listPrefs/keys.ts';
 
@@ -34,7 +31,7 @@ export function loadChannelVisibleColumns(projectId: string): string[] {
   try {
     const raw = localStorage.getItem(storageKey);
     if (raw !== null) {
-      let cols = (JSON.parse(raw) as string[]).filter((k) =>
+      const cols = (JSON.parse(raw) as string[]).filter((k) =>
         validKeys.has(k as (typeof CHANNEL_OPTIONAL_COLUMNS)[number]['key']),
       );
 

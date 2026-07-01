@@ -10,13 +10,13 @@ Tier-1 reference for editing the vendor-neutral **library** — the per-project 
 
 `/library` redirects to `/library/channels`. Each entity kind has a dedicated list page; section nav order matches `routes/library/nav.ts`:
 
-| List route | UI | Map |
-| ---------- | -- | --- |
-| `/library/channels` | `DataTable` — sortable columns, toolbar search, hideable optional columns, URL + `localStorage` filter prefs | Yes |
-| `/library/zones` | Card rows via `LibraryEntityList` | Yes |
-| `/library/talk-groups` | Card rows | No |
-| `/library/contacts` | Two sections: digital contacts + analog contacts | No |
-| `/library/rx-group-lists` | Card rows | No |
+| List route                | UI                                                                                                           | Map |
+| ------------------------- | ------------------------------------------------------------------------------------------------------------ | --- |
+| `/library/channels`       | `DataTable` — sortable columns, toolbar search, hideable optional columns, URL + `localStorage` filter prefs | Yes |
+| `/library/zones`          | Card rows via `LibraryEntityList`                                                                            | Yes |
+| `/library/talk-groups`    | Card rows                                                                                                    | No  |
+| `/library/contacts`       | Two sections: digital contacts + analog contacts                                                             | No  |
+| `/library/rx-group-lists` | Card rows                                                                                                    | No  |
 
 ### Channels list (#24)
 

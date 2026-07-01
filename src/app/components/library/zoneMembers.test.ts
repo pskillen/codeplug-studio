@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { zoneMembersFromSelectedIds } from './ZoneMemberPicker.tsx';
+import { zoneMembersFromSelectedIds } from './zoneMembers.ts';
 
 describe('zoneMembersFromSelectedIds', () => {
   it('preserves picker order in member refs', () => {

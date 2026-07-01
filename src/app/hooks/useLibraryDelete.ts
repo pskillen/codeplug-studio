@@ -10,7 +10,9 @@ export function useLibraryDelete() {
       if (!window.confirm(`Delete “${name}”?`)) return;
       const outcome = await deleteEntity(kind, id);
       if (!outcome.ok) {
-        const where = outcome.references.map((r) => `• ${r.fromName} (${r.relationship})`).join('\n');
+        const where = outcome.references
+          .map((r) => `• ${r.fromName} (${r.relationship})`)
+          .join('\n');
         window.alert(`Cannot delete “${name}” — still referenced by:\n\n${where}`);
       }
     },

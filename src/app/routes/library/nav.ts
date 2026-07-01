@@ -51,7 +51,5 @@ export function listPathForEditorSlug(slug: string): string {
 }
 
 export function navEntryForListPath(pathname: string): LibraryNavEntry | undefined {
-  return LIBRARY_NAV.find(
-    (e) => pathname === e.listPath || pathname.startsWith(`${e.listPath}/`),
-  );
+  return LIBRARY_NAV.find((e) => pathname === e.listPath || pathname.startsWith(`${e.listPath}/`));
 }

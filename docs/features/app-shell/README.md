@@ -28,25 +28,25 @@ UI primitives live in `src/app/components/ui/` (ported from codeplug-tool). Dev 
 
 ## Routes
 
-| Path                                      | Surface                 | Status                                                                                    |
-| ----------------------------------------- | ----------------------- | ----------------------------------------------------------------------------------------- |
-| `/`                                       | Projects                | Lifecycle UI (create/switch/rename/del)                                                   |
-| `/library`                                | _(redirect)_            | → `/library/channels`                                                                     |
+| Path                                      | Surface                 | Status                                                                                                                                                 |
+| ----------------------------------------- | ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `/`                                       | Projects                | Lifecycle UI (create/switch/rename/del)                                                                                                                |
+| `/library`                                | _(redirect)_            | → `/library/channels`                                                                                                                                  |
 | `/library/channels`                       | Channels list           | DataTable + filters + map — [#20](https://github.com/pskillen/codeplug-studio/issues/20), [#24](https://github.com/pskillen/codeplug-studio/issues/24) |
-| `/library/zones`                          | Zones list              | Card list + map — [#20](https://github.com/pskillen/codeplug-studio/issues/20)            |
-| `/library/talk-groups`                    | Talk groups list        | Card list — [#20](https://github.com/pskillen/codeplug-studio/issues/20)                |
-| `/library/contacts`                       | Contacts list           | Digital + analog sections — [#20](https://github.com/pskillen/codeplug-studio/issues/20)  |
-| `/library/rx-group-lists`                 | RX group lists list     | Card list — [#20](https://github.com/pskillen/codeplug-studio/issues/20)                |
-| `/library/:kind/:id`                      | Entity editor           | CRUD forms — [#10](https://github.com/pskillen/codeplug-studio/issues/10)               |
-| `/library/channels/add-from-ukrepeater`   | Add from ukrepeater.net | [repeater-directories](../repeater-directories/README.md)                                 |
-| `/library/channels/add-from-brandmeister` | Add from BrandMeister   | [repeater-directories](../repeater-directories/README.md)                                 |
-| `/map`                                    | _(redirect)_            | → `/library/channels` (legacy [#11](https://github.com/pskillen/codeplug-studio/issues/11)) |
-| `/summary`                                | Summary                 | [Library summary](../report/README.md) — Ticket #12                                       |
-| `/reports`                                | _(redirect)_            | Redirects to `/summary` (legacy hash route)                                               |
-| `/reference`                              | Reference               | [Maidenhead + band tools](../maidenhead.md), [bands](../../reference/bands.md) — Ticket #12 |
-| `/settings`                               | Settings                | Shell content                                                                             |
-| `/help`                                   | Help                    | Shell content                                                                             |
-| `/styleguide`                             | Styleguide              | Hidden dev page (UI kit demos)                                                            |
+| `/library/zones`                          | Zones list              | Card list + map — [#20](https://github.com/pskillen/codeplug-studio/issues/20)                                                                         |
+| `/library/talk-groups`                    | Talk groups list        | Card list — [#20](https://github.com/pskillen/codeplug-studio/issues/20)                                                                               |
+| `/library/contacts`                       | Contacts list           | Digital + analog sections — [#20](https://github.com/pskillen/codeplug-studio/issues/20)                                                               |
+| `/library/rx-group-lists`                 | RX group lists list     | Card list — [#20](https://github.com/pskillen/codeplug-studio/issues/20)                                                                               |
+| `/library/:kind/:id`                      | Entity editor           | CRUD forms — [#10](https://github.com/pskillen/codeplug-studio/issues/10)                                                                              |
+| `/library/channels/add-from-ukrepeater`   | Add from ukrepeater.net | [repeater-directories](../repeater-directories/README.md)                                                                                              |
+| `/library/channels/add-from-brandmeister` | Add from BrandMeister   | [repeater-directories](../repeater-directories/README.md)                                                                                              |
+| `/map`                                    | _(redirect)_            | → `/library/channels` (legacy [#11](https://github.com/pskillen/codeplug-studio/issues/11))                                                            |
+| `/summary`                                | Summary                 | [Library summary](../report/README.md) — Ticket #12                                                                                                    |
+| `/reports`                                | _(redirect)_            | Redirects to `/summary` (legacy hash route)                                                                                                            |
+| `/reference`                              | Reference               | [Maidenhead + band tools](../maidenhead.md), [bands](../../reference/bands.md) — Ticket #12                                                            |
+| `/settings`                               | Settings                | Shell content                                                                                                                                          |
+| `/help`                                   | Help                    | Shell content                                                                                                                                          |
+| `/styleguide`                             | Styleguide              | Hidden dev page (UI kit demos)                                                                                                                         |
 
 Routes that need a project gate on an active project and link back to Projects when none is selected.
 

@@ -93,18 +93,18 @@ export default function ZoneMemberPicker({
   const [availableSelected, setAvailableSelected] = useState<string[]>([]);
   const [inZoneSelected, setInZoneSelected] = useState<string[]>([]);
 
-  const selectedSet = new Set(selectedIds);
   const availableFilterLower = availableFilter.trim().toLowerCase();
   const inZoneFilterLower = inZoneFilter.trim().toLowerCase();
+  const selectedIdSet = useMemo(() => new Set(selectedIds), [selectedIds]);
 
   const availableChannels = useMemo(
     () =>
       sortByName(channels).filter(
         (ch) =>
-          !selectedSet.has(ch.id) &&
+          !selectedIdSet.has(ch.id) &&
           (!availableFilterLower || ch.name.toLowerCase().includes(availableFilterLower)),
       ),
-    [channels, selectedIds, availableFilterLower],
+    [channels, selectedIdSet, availableFilterLower],
   );
 
   const inZoneChannels = useMemo(
@@ -127,7 +127,7 @@ export default function ZoneMemberPicker({
   };
 
   const addSelected = () => {
-    const toAdd = availableSelected.filter((id) => !selectedSet.has(id));
+    const toAdd = availableSelected.filter((id) => !selectedIdSet.has(id));
     if (!toAdd.length) return;
     onChange([...selectedIds, ...toAdd]);
     setAvailableSelected([]);
@@ -257,9 +257,4 @@ export default function ZoneMemberPicker({
       </SimpleGrid>
     </Stack>
   );
-}
-
-/** Map ordered picker ids to zone member refs. */
-export function zoneMembersFromSelectedIds(selectedIds: string[]): { kind: 'channel'; id: string }[] {
-  return selectedIds.map((id) => ({ kind: 'channel' as const, id }));
 }

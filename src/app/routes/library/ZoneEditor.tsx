@@ -4,9 +4,8 @@ import { Link } from 'react-router-dom';
 import type { Library, Zone } from '@core/models/library.ts';
 import { newZone } from '@core/domain/factories.ts';
 import { FormSection } from '../../components/ui/index.ts';
-import ZoneMemberPicker, {
-  zoneMembersFromSelectedIds,
-} from '../../components/library/ZoneMemberPicker.tsx';
+import ZoneMemberPicker from '../../components/library/ZoneMemberPicker.tsx';
+import { zoneMembersFromSelectedIds } from '../../components/library/zoneMembers.ts';
 import { hzToMhzString, mhzStringToHz } from '../../lib/units.ts';
 import { persistence } from '../../state/persistence.ts';
 import { useEntitySave } from './useEntitySave.ts';
@@ -49,7 +48,10 @@ export default function ZoneEditor({
         <TextInput label="Name" value={name} onChange={(e) => setName(e.currentTarget.value)} />
       </FormSection>
 
-      <FormSection title="Members" description="Order matches export order for zone-capable builds.">
+      <FormSection
+        title="Members"
+        description="Order matches export order for zone-capable builds."
+      >
         <ZoneMemberPicker
           channels={library.channels}
           selectedIds={selectedIds}
@@ -77,7 +79,11 @@ export default function ZoneEditor({
           value={scanCarrier}
           onChange={(e) => setScanCarrier(e.currentTarget.value)}
         />
-        <TextInput label="Comment" value={comment} onChange={(e) => setComment(e.currentTarget.value)} />
+        <TextInput
+          label="Comment"
+          value={comment}
+          onChange={(e) => setComment(e.currentTarget.value)}
+        />
       </FormSection>
 
       <EditorActions

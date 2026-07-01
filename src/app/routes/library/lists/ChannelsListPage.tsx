@@ -5,30 +5,27 @@ import type { Channel } from '@core/models/library.ts';
 import { applyFilters, channelHasGeolocation } from '@core/domain/mapProjection.ts';
 import { coordsToLocator } from '@core/domain/maidenhead.ts';
 import { haversineDistanceM } from '@core/domain/geoDistance.ts';
-import CodeplugMap from '../../components/CodeplugMap/CodeplugMap.tsx';
-import { BandPillForChannel } from '../../components/pills/BandPill.tsx';
-import ModePill from '../../components/pills/ModePill.tsx';
-import UseMyLocationButton from '../../components/UseMyLocationButton/UseMyLocationButton.tsx';
-import { DataTable, ListPage } from '../../components/ui/index.ts';
-import type { DataTableColumn, DataTableSortState } from '../../components/ui/DataTable.tsx';
+import CodeplugMap from '../../../components/CodeplugMap/CodeplugMap.tsx';
+import { BandPillForChannel } from '../../../components/pills/BandPill.tsx';
+import ModePill from '../../../components/pills/ModePill.tsx';
+import UseMyLocationButton from '../../../components/UseMyLocationButton/UseMyLocationButton.tsx';
+import { DataTable, ListPage } from '../../../components/ui/index.ts';
+import type { DataTableColumn, DataTableSortState } from '../../../components/ui/DataTable.tsx';
 import {
   CHANNEL_OPTIONAL_COLUMNS,
   channelListColumnsKey,
   loadChannelVisibleColumns,
-} from '../../hooks/channelListQueryUtils.ts';
-import { useChannelListQuery } from '../../hooks/useChannelListQuery.ts';
-import { usePersistedChannelColumnSort } from '../../hooks/usePersistedChannelColumnSort.ts';
-import { DATATABLE_CALLSIGN_SORT_KEY, DATATABLE_NAME_SORT_KEY } from '../../lib/dataTable/sort.ts';
-import { distanceLabelForChannel, useFilteredChannels } from '../../hooks/useChannelListFilters.ts';
-import { formatChannelRxTxListCell } from '../../lib/formatFrequency.ts';
-import {
-  dmrContactDisplayName,
-  dmrRxGroupListName,
-} from '../../lib/entityRefs.ts';
-import { channelModesForFilter } from '../../lib/channels.ts';
-import { useProjects } from '../../state/useProjects.ts';
-import { useOperatorPosition } from '../../state/operatorPosition.tsx';
-import { useLibrary } from '../../state/useLibrary.ts';
+} from '../../../hooks/channelListQueryUtils.ts';
+import { useChannelListQuery } from '../../../hooks/useChannelListQuery.ts';
+import { usePersistedChannelColumnSort } from '../../../hooks/usePersistedChannelColumnSort.ts';
+import { DATATABLE_CALLSIGN_SORT_KEY, DATATABLE_NAME_SORT_KEY } from '../../../lib/dataTable/sort.ts';
+import { distanceLabelForChannel, useFilteredChannels } from '../../../hooks/useChannelListFilters.ts';
+import { formatChannelRxTxListCell } from '../../../lib/formatFrequency.ts';
+import { dmrContactDisplayName, dmrRxGroupListName } from '../../../lib/entityRefs.ts';
+import { channelModesForFilter } from '../../../lib/channels.ts';
+import { useProjects } from '../../../state/useProjects.ts';
+import { useOperatorPosition } from '../../../state/operatorPosition.tsx';
+import { useLibrary } from '../../../state/useLibrary.ts';
 
 function percentLabel(value: number | null): string {
   if (value == null) return '—';

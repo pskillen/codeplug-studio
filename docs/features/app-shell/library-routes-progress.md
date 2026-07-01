@@ -5,15 +5,15 @@
 
 ## Completed
 
-| Slice | Commit | Summary |
-| ----- | ------ | ------- |
-| 1 | `chore(app-shell): rename visible title to MM9PDY Codeplug Studio` | Tab + header branding |
-| 2 | `refactor(app-shell): library nav catalog and entity list primitives` | `nav.ts`, `LibraryEntityList`, per-route section nav registry |
-| 3 | `feat(ui): port DataTable and channel list filter infrastructure` | DataTable, list prefs, channel filter hooks, operator position |
-| 4 | `feat(library): add per-entity list routes with channels DataTable` | List pages + map on channels/zones |
-| 5 | `feat(channels): wire section nav filters to channels list` | Band/mode/search/distance filters in section nav |
-| 6 | `feat(zones): two-list member picker with ordered membership` | `ZoneMemberPicker`, Mantine `ZoneEditor` |
-| 7 | `refactor(library): remove monolithic library scroll page` | Deleted `LibraryPage`, editor back links |
+| Slice | Commit                                                                | Summary                                                        |
+| ----- | --------------------------------------------------------------------- | -------------------------------------------------------------- |
+| 1     | `chore(app-shell): rename visible title to MM9PDY Codeplug Studio`    | Tab + header branding                                          |
+| 2     | `refactor(app-shell): library nav catalog and entity list primitives` | `nav.ts`, `LibraryEntityList`, per-route section nav registry  |
+| 3     | `feat(ui): port DataTable and channel list filter infrastructure`     | DataTable, list prefs, channel filter hooks, operator position |
+| 4     | `feat(library): add per-entity list routes with channels DataTable`   | List pages + map on channels/zones                             |
+| 5     | `feat(channels): wire section nav filters to channels list`           | Band/mode/search/distance filters in section nav               |
+| 6     | `feat(zones): two-list member picker with ordered membership`         | `ZoneMemberPicker`, Mantine `ZoneEditor`                       |
+| 7     | `refactor(library): remove monolithic library scroll page`            | Deleted `LibraryPage`, editor back links                       |
 
 ## Docs
 

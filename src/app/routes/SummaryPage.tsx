@@ -53,9 +53,7 @@ export default function SummaryPage() {
 
       <Text c="dimmed">
         {summary.channelsWithLocation} channel(s) have a location (
-        <Link to="/library/channels">
-          view on map
-        </Link>
+        <Link to="/library/channels">view on map</Link>
         ).
       </Text>
 

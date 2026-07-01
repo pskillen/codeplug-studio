@@ -13,6 +13,7 @@ function makeChannel(overrides: Partial<Channel> = {}): Channel {
     id: 'ch-1',
     projectId: 'p1',
     revision: 1,
+    updatedAt: '2026-01-01T00:00:00.000Z',
     name: 'Test',
     callsign: 'GB3TEST',
     rxFrequency: 145_000_000,
@@ -29,7 +30,13 @@ function makeChannel(overrides: Partial<Channel> = {}): Channel {
 
 describe('filterChannelsForList', () => {
   const channels = [
-    makeChannel({ id: '1', name: 'Alpha FM', modeProfiles: [{ mode: 'fm', squelch: null, rxTone: 'none', txTone: 'none' }] }),
+    makeChannel({
+      id: '1',
+      name: 'Alpha FM',
+      modeProfiles: [
+        { mode: 'fm', squelch: null, rxTone: 'none', txTone: 'none' },
+      ] as ChannelModeProfileFM[],
+    }),
     makeChannel({
       id: '2',
       name: 'Bravo DMR',
@@ -43,8 +50,8 @@ describe('filterChannelsForList', () => {
           dmrId: 123,
           contactRef: null,
           rxGroupListId: null,
-        } satisfies ChannelModeProfileDMR,
-      ],
+        },
+      ] as ChannelModeProfileDMR[],
     }),
     makeChannel({
       id: '3',
@@ -55,17 +62,53 @@ describe('filterChannelsForList', () => {
   ];
 
   it('filters by name', () => {
-    const result = filterChannelsForList(channels, { nameFilter: 'bravo', bandFilter: [], modeFilter: [], duplexFilter: null, distanceFilterEnabled: false, maxDistanceKm: 25, sortMode: 'name' }, null);
+    const result = filterChannelsForList(
+      channels,
+      {
+        nameFilter: 'bravo',
+        bandFilter: [],
+        modeFilter: [],
+        duplexFilter: null,
+        distanceFilterEnabled: false,
+        maxDistanceKm: 25,
+        sortMode: 'name',
+      },
+      null,
+    );
     expect(result.map((c) => c.id)).toEqual(['2']);
   });
 
   it('filters by mode using modeProfiles', () => {
-    const result = filterChannelsForList(channels, { nameFilter: '', bandFilter: [], modeFilter: ['dmr'], duplexFilter: null, distanceFilterEnabled: false, maxDistanceKm: 25, sortMode: 'name' }, null);
+    const result = filterChannelsForList(
+      channels,
+      {
+        nameFilter: '',
+        bandFilter: [],
+        modeFilter: ['dmr'],
+        duplexFilter: null,
+        distanceFilterEnabled: false,
+        maxDistanceKm: 25,
+        sortMode: 'name',
+      },
+      null,
+    );
     expect(result.map((c) => c.id)).toEqual(['2']);
   });
 
   it('filters by band', () => {
-    const result = filterChannelsForList(channels, { nameFilter: '', bandFilter: ['2m'], modeFilter: [], duplexFilter: null, distanceFilterEnabled: false, maxDistanceKm: 25, sortMode: 'name' }, null);
+    const result = filterChannelsForList(
+      channels,
+      {
+        nameFilter: '',
+        bandFilter: ['2m'],
+        modeFilter: [],
+        duplexFilter: null,
+        distanceFilterEnabled: false,
+        maxDistanceKm: 25,
+        sortMode: 'name',
+      },
+      null,
+    );
     expect(result.map((c) => c.id)).toEqual(['1', '3']);
   });
 });

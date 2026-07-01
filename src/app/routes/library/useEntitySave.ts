@@ -1,7 +1,7 @@
 import { useCallback, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type { PutResult } from '@integrations/persistence/index.ts';
-import { listPathForEditorSlug } from '../routes/library/nav.ts';
+import { listPathForEditorSlug } from './nav.ts';
 
 export interface EntitySaveApi {
   save: (put: () => Promise<PutResult>) => Promise<boolean>;
