@@ -201,7 +201,9 @@ This section **overrides** the default "commit only when the user asks" rule —
 
 ## 5. Documentation — mandatory plan section
 
-Every plan **must** call out documentation work. Use the right skill:
+Every plan **must** call out documentation work. Execution must satisfy [documentation-deliverables.mdc](../rules/documentation-deliverables.mdc) at each commit checkpoint — docs are not deferred to PR time.
+
+Use the right skill:
 
 | Situation | Skill / action |
 |-----------|----------------|

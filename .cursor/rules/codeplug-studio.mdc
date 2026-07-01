@@ -8,7 +8,7 @@ alwaysApply: false
 
 Read [`AGENTS.md`](../../AGENTS.md) and [`DESIGN.md`](../../DESIGN.md) first. For git, plans, and docs see [`.cursor/skills/`](../skills/).
 
-**Critical rules:** [vendor-boundaries.mdc](vendor-boundaries.mdc), [layer-boundaries.mdc](layer-boundaries.mdc), [library-and-builds.mdc](library-and-builds.mdc), [export-from-model.mdc](export-from-model.mdc), and [format-agnostic-docs.mdc](format-agnostic-docs.mdc). When editing related files, if you notice violations — even outside your current task — **flag them to the user as a high concern** before or alongside your main work. Do not silently ignore, copy the pattern, or defer without mention. Do not attempt to fix if it's outside the original instruction.
+**Critical rules:** [documentation-deliverables.mdc](documentation-deliverables.mdc), [vendor-boundaries.mdc](vendor-boundaries.mdc), [layer-boundaries.mdc](layer-boundaries.mdc), [library-and-builds.mdc](library-and-builds.mdc), [export-from-model.mdc](export-from-model.mdc), and [format-agnostic-docs.mdc](format-agnostic-docs.mdc). When editing related files, if you notice violations — even outside your current task — **flag them to the user as a high concern** before or alongside your main work. Do not silently ignore, copy the pattern, or defer without mention. Do not attempt to fix if it's outside the original instruction.
 
 ## Product shape
 

@@ -1,0 +1,28 @@
+---
+description: Documentation ships with behaviour — feature hubs, sidecars, index rows
+alwaysApply: true
+---
+
+# Documentation deliverables
+
+**Critical rule.** When shipping or changing **product behaviour**, documentation is part of the task — not a follow-up PR. Read [feature-docs SKILL](../skills/feature-docs/SKILL.md) for templates; [documentation-boundaries.mdc](documentation-boundaries.mdc) for tier 1 vs 3.
+
+## When to document
+
+| Change | Deliverable |
+| --- | --- |
+| New or changed **feature behaviour** (route, workflow, service, integration) | Update `docs/features/<topic>/README.md` hub and/or a deep-dive sibling; **implementation status** table must reflect shipped state |
+| New **topic** under `docs/features/` | Hub README + row in [docs/features/README.md](../../docs/features/README.md) |
+| New **reusable** component under `src/app/components/` | Sidecar `<ComponentName>.md` next to the component (see [component-sidecars.mdc](component-sidecars.mdc)) |
+| Multi-commit / multi-PR initiative | Progress + outstanding pair per [progress-tracking SKILL](../skills/progress-tracking/SKILL.md) |
+
+## Execution checkpoints
+
+- **Plans:** mandatory **Documentation** section per [make-a-plan SKILL](../skills/make-a-plan/SKILL.md); satisfy this rule at each commit checkpoint.
+- **Before PR:** confirm deliverables in the PR **Documentation** checklist per [git-workflow SKILL](../skills/git-workflow/SKILL.md).
+
+## Anti-patterns
+
+- Shipping UI or integration behaviour with no tier-1 doc update when the feature area already has a hub.
+- Deferring docs to "a later PR" for the same slice of work.
+- Putting CPS wire tables in `docs/features/` — link to `docs/reference/<format>/` instead.

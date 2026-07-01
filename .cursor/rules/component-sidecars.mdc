@@ -1,0 +1,17 @@
+---
+description: Reusable app components need a markdown sidecar in the same directory
+globs: src/app/components/**/*
+alwaysApply: false
+---
+
+# Component sidecars
+
+When adding or materially changing a **reusable** component under `src/app/components/`:
+
+1. Add or update **`<ComponentName>.md`** in the same directory as the component entry file.
+2. Cover: **Purpose**, **Props** (table), **Usage** (short TSX example), **Behaviour**, **Related** (feature hub link under `docs/features/`).
+3. Link the sidecar from the relevant feature hub (e.g. [app-shell](../../docs/features/app-shell/README.md)).
+
+One-off route glue with no reuse outside a single page does not need a sidecar — document the workflow in the feature hub instead.
+
+Pattern detail: [make-a-plan SKILL — §5](../skills/make-a-plan/SKILL.md). Product-level docs: [feature-docs SKILL](../skills/feature-docs/SKILL.md).

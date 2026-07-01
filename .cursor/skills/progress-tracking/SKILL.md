@@ -72,6 +72,8 @@ Update **outstanding** when:
 
 **Always update progress before opening a PR** for initiatives that use this skill.
 
+**Before opening a PR:** confirm documentation deliverables per [documentation-deliverables.mdc](../rules/documentation-deliverables.mdc) (feature hub, sidecars, index row) — same PR as the code unless the plan explicitly split docs-only commits.
+
 ### At handoff
 
 Leave accurate **Status** lines, open PR URLs, branch names, and a **Next:** section for the successor agent.

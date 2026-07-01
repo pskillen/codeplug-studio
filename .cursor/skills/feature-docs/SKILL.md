@@ -1,9 +1,10 @@
 ---
 name: feature-docs
 description: >-
-  How codeplug-studio documents features under docs/features/. Use when adding
-  or updating feature docs, reverse-engineering behaviour for a ticket, or
-  creating progress/outstanding logs for an initiative.
+  How codeplug-studio documents features under docs/features/. Use when
+  implementing or changing any user-facing feature, route, integration workflow,
+  or shared component — not only when explicitly asked to write docs. Also for
+  progress/outstanding logs and reverse-engineering behaviour for a ticket.
 ---
 
 # codeplug-studio feature documentation
@@ -15,6 +16,21 @@ Deploy and release: [docs/build/README.md](../../../docs/build/README.md).
 Read [progress-tracking](../progress-tracking/SKILL.md) when an initiative needs execution handoff files.
 
 **Tier 1 focus:** library, format builds, build capability traits, import/export behaviour — not CPS wire tables (those are tier 3 under `docs/reference/<format>/`).
+
+**Obligation:** [documentation-deliverables.mdc](../rules/documentation-deliverables.mdc) — docs ship in the same PR as behaviour.
+
+---
+
+## Component sidecars (`src/app/components/`)
+
+Reusable UI primitives and widgets get a **sidecar** `<ComponentName>.md` next to the component — not a duplicate hub under `docs/features/`.
+
+| Layer | Where | Contents |
+| --- | --- | --- |
+| **Sidecar** | `src/app/components/<Name>/<Name>.md` | Props, usage, behaviour for contributors |
+| **Feature hub** | `docs/features/<topic>/README.md` | Product workflow, status table, links to sidecars |
+
+See [component-sidecars.mdc](../rules/component-sidecars.mdc) and [make-a-plan §5](../skills/make-a-plan/SKILL.md).
 
 ---
 

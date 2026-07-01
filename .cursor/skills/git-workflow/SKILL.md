@@ -148,11 +148,18 @@ When work is ready:
 ## Summary
 - …
 
+## Documentation
+- [ ] Feature hub / deep dive updated, or N/A (explain why)
+- [ ] New reusable component has sidecar `.md`, or N/A
+- [ ] `docs/features/README.md` index row if new topic, or N/A
+
 ## Test plan
 - [ ] `npm run format:check && npm run lint && npm run test && npm run build` (when applicable)
 - [ ] `npm run dev`, exercise affected routes
 - [ ] …
 ```
+
+See [documentation-deliverables.mdc](../rules/documentation-deliverables.mdc) and [feature-docs](../feature-docs/SKILL.md).
 
 ---
 
