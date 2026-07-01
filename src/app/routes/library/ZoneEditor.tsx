@@ -1,8 +1,12 @@
 import { useState } from 'react';
+import { Checkbox, Stack, TextInput } from '@mantine/core';
+import { Link } from 'react-router-dom';
 import type { Library, Zone } from '@core/models/library.ts';
 import { newZone } from '@core/domain/factories.ts';
-import { FieldRow } from '../../components/fields/Fields.tsx';
-import { controlStyle } from '../../components/fields/styles.ts';
+import { FormSection } from '../../components/ui/index.ts';
+import ZoneMemberPicker, {
+  zoneMembersFromSelectedIds,
+} from '../../components/library/ZoneMemberPicker.tsx';
 import { hzToMhzString, mhzStringToHz } from '../../lib/units.ts';
 import { persistence } from '../../state/persistence.ts';
 import { useEntitySave } from './useEntitySave.ts';
@@ -19,29 +23,18 @@ export default function ZoneEditor({
 }) {
   const base = entity ?? newZone(projectId, '');
   const [name, setName] = useState(base.name);
-  const [members, setMembers] = useState<Set<string>>(new Set(base.members.map((m) => m.id)));
+  const [selectedIds, setSelectedIds] = useState<string[]>(base.members.map((m) => m.id));
   const [exportScratchChannel, setExportScratch] = useState(base.exportScratchChannel);
   const [exportScanList, setExportScanList] = useState(base.exportScanList);
   const [scanCarrier, setScanCarrier] = useState(hzToMhzString(base.scanCarrierFrequencyHz));
   const [comment, setComment] = useState(base.comment);
-  const { save, saving, error } = useEntitySave();
-
-  function toggle(channelId: string) {
-    setMembers((prev) => {
-      const next = new Set(prev);
-      if (next.has(channelId)) next.delete(channelId);
-      else next.add(channelId);
-      return next;
-    });
-  }
+  const { save, saving, error } = useEntitySave('zones');
 
   function handleSave() {
     const row: Zone = {
       ...base,
       name: name.trim() || 'Untitled zone',
-      members: library.channels
-        .filter((c) => members.has(c.id))
-        .map((c) => ({ kind: 'channel' as const, id: c.id })),
+      members: zoneMembersFromSelectedIds(selectedIds),
       exportScratchChannel,
       exportScanList,
       scanCarrierFrequencyHz: mhzStringToHz(scanCarrier),
@@ -51,55 +44,43 @@ export default function ZoneEditor({
   }
 
   return (
-    <div style={{ maxWidth: 460 }}>
-      <FieldRow label="Name">
-        <input style={controlStyle} value={name} onChange={(e) => setName(e.target.value)} />
-      </FieldRow>
+    <Stack gap="md" maw={720}>
+      <FormSection title="Identity">
+        <TextInput label="Name" value={name} onChange={(e) => setName(e.currentTarget.value)} />
+      </FormSection>
 
-      <div style={{ margin: '0.6rem 0' }}>
-        <div style={{ fontSize: '0.85rem', fontWeight: 600, color: '#3e4c59' }}>Channels</div>
+      <FormSection title="Members" description="Order matches export order for zone-capable builds.">
+        <ZoneMemberPicker
+          channels={library.channels}
+          selectedIds={selectedIds}
+          onChange={setSelectedIds}
+        />
         {library.channels.length === 0 ? (
-          <p style={{ color: '#9aa5b1', fontSize: '0.8rem', margin: '0.25rem 0' }}>
-            No channels available.
-          </p>
-        ) : (
-          library.channels.map((c) => (
-            <label key={c.id} style={{ display: 'flex', gap: '0.4rem', alignItems: 'center' }}>
-              <input type="checkbox" checked={members.has(c.id)} onChange={() => toggle(c.id)} />
-              <span style={{ fontSize: '0.85rem' }}>{c.name}</span>
-            </label>
-          ))
-        )}
-      </div>
+          <Link to="/library/channels/new">Add a channel</Link>
+        ) : null}
+      </FormSection>
 
-      <label style={{ display: 'flex', gap: '0.4rem', alignItems: 'center', margin: '0.4rem 0' }}>
-        <input
-          type="checkbox"
+      <FormSection title="Export options">
+        <Checkbox
+          label="Export scratch channel"
           checked={exportScratchChannel}
-          onChange={(e) => setExportScratch(e.target.checked)}
+          onChange={(e) => setExportScratch(e.currentTarget.checked)}
         />
-        <span style={{ fontSize: '0.85rem' }}>Export scratch channel</span>
-      </label>
-      <label style={{ display: 'flex', gap: '0.4rem', alignItems: 'center', margin: '0.4rem 0' }}>
-        <input
-          type="checkbox"
+        <Checkbox
+          label="Export as scan list"
           checked={exportScanList}
-          onChange={(e) => setExportScanList(e.target.checked)}
+          onChange={(e) => setExportScanList(e.currentTarget.checked)}
         />
-        <span style={{ fontSize: '0.85rem' }}>Export as scan list</span>
-      </label>
-      <FieldRow label="Scan carrier frequency (MHz)" hint="Blank = none">
-        <input
-          style={controlStyle}
+        <TextInput
+          label="Scan carrier frequency (MHz)"
+          description="Blank = none"
           value={scanCarrier}
-          onChange={(e) => setScanCarrier(e.target.value)}
+          onChange={(e) => setScanCarrier(e.currentTarget.value)}
         />
-      </FieldRow>
-      <FieldRow label="Comment">
-        <input style={controlStyle} value={comment} onChange={(e) => setComment(e.target.value)} />
-      </FieldRow>
+        <TextInput label="Comment" value={comment} onChange={(e) => setComment(e.currentTarget.value)} />
+      </FormSection>
 
       <EditorActions saving={saving} error={error} onSave={handleSave} />
-    </div>
+    </Stack>
   );
 }
