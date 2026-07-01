@@ -4,8 +4,9 @@
  * keeping `localStorage` access on the integrations side of the boundary.
  */
 
-const ACTIVE_PROJECT_KEY = 'codeplug-studio:activeProjectId';
-const MAPBOX_TOKEN_KEY = 'codeplug-studio:mapboxToken';
+export const ACTIVE_PROJECT_KEY = 'codeplug-studio:activeProjectId';
+export const MAPBOX_TOKEN_KEY = 'codeplug-studio:mapboxToken';
+export const PREFERENCES_STORAGE_PREFIX = 'codeplug-studio:';
 
 export function loadActiveProjectId(): string | null {
   try {

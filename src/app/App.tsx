@@ -17,6 +17,12 @@ import ReferenceIndexPage from './routes/reference/ReferenceIndexPage.tsx';
 import SettingsPage from './routes/SettingsPage.tsx';
 import HelpPage from './routes/HelpPage.tsx';
 import StyleguidePage from './routes/StyleguidePage.tsx';
+import DebugIndexPage from './routes/debug/DebugIndexPage.tsx';
+import DebugIndexedDbPage from './routes/debug/DebugIndexedDbPage.tsx';
+import DebugIndexedDbStorePage from './routes/debug/DebugIndexedDbStorePage.tsx';
+import DebugIndexedDbRowViewerPage from './routes/debug/DebugIndexedDbRowViewerPage.tsx';
+import DebugLocalStoragePage from './routes/debug/DebugLocalStoragePage.tsx';
+import DebugLocalStorageViewerPage from './routes/debug/DebugLocalStorageViewerPage.tsx';
 
 function MapRedirect() {
   return <Navigate to="/library/channels" replace />;
@@ -34,6 +40,18 @@ export default function App() {
           <Route path="/reference/maidenhead" element={<MaidenheadReferencePage />} />
           <Route path="/reference/bands" element={<BandsReferencePage />} />
           <Route path="/styleguide" element={<StyleguidePage />} />
+          <Route path="/debug" element={<DebugIndexPage />} />
+          <Route path="/debug/indexed-db" element={<DebugIndexedDbPage />} />
+          <Route path="/debug/indexed-db/:storeName" element={<DebugIndexedDbStorePage />} />
+          <Route
+            path="/debug/indexed-db/:storeName/:projectId/:id"
+            element={<DebugIndexedDbRowViewerPage />}
+          />
+          <Route path="/debug/local-storage" element={<DebugLocalStoragePage />} />
+          <Route
+            path="/debug/local-storage/:storageKey"
+            element={<DebugLocalStorageViewerPage />}
+          />
           <Route element={<RequireActiveProject />}>
             <Route path="/library" element={<Navigate to="/library/channels" replace />} />
             <Route path="/library/channels" element={<ChannelsListPage />} />

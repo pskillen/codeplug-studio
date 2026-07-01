@@ -1,5 +1,5 @@
 import { Badge, NavLink, Stack } from '@mantine/core';
-import { IconBook, IconHelp, IconSettings } from '@tabler/icons-react';
+import { IconBook, IconBug, IconHelp, IconSettings } from '@tabler/icons-react';
 import { Link, useLocation } from 'react-router-dom';
 import { ICON_SIZE_NAV, ICON_STROKE } from '../../lib/iconSizes.ts';
 import { navActive } from '../../nav/navActive.ts';
@@ -75,6 +75,14 @@ export default function AppNav({ onNavClick }: AppNavProps) {
         label="Reference"
         leftSection={<IconBook size={ICON_SIZE_NAV} stroke={ICON_STROKE} />}
         active={navActive(location.pathname, '/reference')}
+        onClick={onNavClick}
+      />
+      <NavLink
+        component={Link}
+        to="/debug"
+        label="Debug"
+        leftSection={<IconBug size={ICON_SIZE_NAV} stroke={ICON_STROKE} />}
+        active={navActive(location.pathname, '/debug')}
         onClick={onNavClick}
       />
       <NavLink

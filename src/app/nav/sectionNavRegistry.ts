@@ -1,5 +1,6 @@
 import ChannelsSectionNav from '../components/SectionNav/sections/ChannelsSectionNav.tsx';
 import ContactsSectionNav from '../components/SectionNav/sections/ContactsSectionNav.tsx';
+import DebugSectionNav from '../components/SectionNav/sections/DebugSectionNav.tsx';
 import HelpSectionNav from '../components/SectionNav/sections/HelpSectionNav.tsx';
 import BandsReferenceSectionNav from '../components/SectionNav/sections/BandsReferenceSectionNav.tsx';
 import MaidenheadReferenceSectionNav from '../components/SectionNav/sections/MaidenheadReferenceSectionNav.tsx';
@@ -20,6 +21,7 @@ const registry: SectionNavEntry[] = [
   },
   { title: 'Bands', prefix: '/reference/bands', Component: BandsReferenceSectionNav },
   { title: 'Reference', prefix: '/reference', Component: ReferenceSectionNav },
+  { title: 'Debug', prefix: '/debug', Component: DebugSectionNav },
   { title: 'Settings', prefix: '/settings', Component: SettingsSectionNav },
   { title: 'Channels', prefix: '/library/channels', Component: ChannelsSectionNav },
   { title: 'Zones', prefix: '/library/zones', Component: ZonesSectionNav },
@@ -45,6 +47,7 @@ export function shouldShowSecondaryNav(pathname: string, hasActiveProject: boole
   if (
     pathname.startsWith('/help') ||
     pathname.startsWith('/reference') ||
+    pathname.startsWith('/debug') ||
     pathname.startsWith('/settings')
   ) {
     return true;
