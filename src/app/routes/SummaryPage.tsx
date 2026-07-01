@@ -53,7 +53,7 @@ export default function SummaryPage() {
 
       <Text c="dimmed">
         {summary.channelsWithLocation} channel(s) have a location (
-        <Link to="/library" state={{ scrollTo: 'library-channels' }}>
+        <Link to="/library/channels">
           view on map
         </Link>
         ).
