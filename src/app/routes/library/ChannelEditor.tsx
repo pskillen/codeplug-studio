@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Alert, Button, Checkbox, Group, Stack, TextInput } from '@mantine/core';
+import { Alert, Button, Checkbox, Group, SimpleGrid, Stack, TextInput } from '@mantine/core';
 import { Link } from 'react-router-dom';
 import type { Channel, ChannelModeProfile, Library } from '@core/models/library.ts';
 import { reconcileChannelLocation } from '@core/domain/channelLocation.ts';
@@ -14,8 +14,8 @@ import ChannelModeProfilesEditor from '../../components/channels/ChannelModeProf
 import ChannelModesMultiSelect from '../../components/channels/ChannelModesMultiSelect.tsx';
 import type { ChannelMode as UiChannelMode } from '../../lib/channelModes.ts';
 import RepeaterVerifyPanel from '../../components/repeaters/RepeaterVerifyPanel.tsx';
-import { FormSection } from '../../components/ui/index.ts';
-import { hzToMhzString, mhzStringToHz, parseOptionalInt } from '../../lib/units.ts';
+import { FormSection, PercentLevelSlider } from '../../components/ui/index.ts';
+import { hzToMhzString, mhzStringToHz } from '../../lib/units.ts';
 import { persistence } from '../../state/persistence.ts';
 import { useEntitySave } from './useEntitySave.ts';
 
@@ -34,7 +34,7 @@ export default function ChannelEditor({
   const [callsign, setCallsign] = useState(base.callsign);
   const [rx, setRx] = useState(hzToMhzString(base.rxFrequency));
   const [tx, setTx] = useState(hzToMhzString(base.txFrequency));
-  const [power, setPower] = useState(base.power === null ? '' : String(base.power));
+  const [power, setPower] = useState<number | null>(base.power);
   const [scanSkip, setScanSkip] = useState(base.scanSkip);
   const [comment, setComment] = useState(base.comment);
   const [modeProfiles, setModeProfiles] = useState<ChannelModeProfile[]>(base.modeProfiles);
@@ -64,7 +64,7 @@ export default function ChannelEditor({
       callsign,
       rxFrequency: mhzStringToHz(rx),
       txFrequency: mhzStringToHz(tx),
-      power: parseOptionalInt(power),
+      power,
       scanSkip,
       comment,
       location: reconciled.location,
@@ -103,36 +103,14 @@ export default function ChannelEditor({
       ) : null}
 
       <FormSection title="Identity">
-        <TextInput label="Name" value={name} onChange={(e) => setName(e.currentTarget.value)} />
-        <TextInput
-          label="Callsign"
-          value={callsign}
-          onChange={(e) => setCallsign(e.currentTarget.value)}
-        />
-      </FormSection>
-
-      <FormSection title="Frequencies">
-        <TextInput
-          label="RX frequency (MHz)"
-          value={rx}
-          onChange={(e) => setRx(e.currentTarget.value)}
-        />
-        <TextInput
-          label="TX frequency (MHz)"
-          value={tx}
-          onChange={(e) => setTx(e.currentTarget.value)}
-        />
-        <TextInput
-          label="Power (%)"
-          description="Blank = radio default"
-          value={power}
-          onChange={(e) => setPower(e.currentTarget.value)}
-        />
-      </FormSection>
-
-      <ChannelLocationSection value={location} onChange={setLocation} />
-
-      <FormSection title="Notes">
+        <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="sm">
+          <TextInput
+            label="Callsign"
+            value={callsign}
+            onChange={(e) => setCallsign(e.currentTarget.value)}
+          />
+          <TextInput label="Name" value={name} onChange={(e) => setName(e.currentTarget.value)} />
+        </SimpleGrid>
         <TextInput
           label="Comment"
           value={comment}
@@ -143,6 +121,22 @@ export default function ChannelEditor({
           checked={scanSkip}
           onChange={(e) => setScanSkip(e.currentTarget.checked)}
         />
+      </FormSection>
+
+      <FormSection title="Frequencies">
+        <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="sm">
+          <TextInput
+            label="RX frequency (MHz)"
+            value={rx}
+            onChange={(e) => setRx(e.currentTarget.value)}
+          />
+          <TextInput
+            label="TX frequency (MHz)"
+            value={tx}
+            onChange={(e) => setTx(e.currentTarget.value)}
+          />
+        </SimpleGrid>
+        <PercentLevelSlider label="Power" value={power} onChange={setPower} />
       </FormSection>
 
       <FormSection title="Modes">
@@ -158,6 +152,8 @@ export default function ChannelEditor({
           />
         </FormSection>
       ) : null}
+
+      <ChannelLocationSection value={location} onChange={setLocation} />
 
       {entity ? <RepeaterVerifyPanel channel={liveChannel} /> : null}
 
