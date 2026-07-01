@@ -91,9 +91,7 @@ export function getStorageKeyDescriptor(key: string): StorageKeyDescriptor {
 }
 
 function isStudioStorageKey(key: string): boolean {
-  return (
-    key.startsWith(PREFERENCES_STORAGE_PREFIX) || key.startsWith(LIST_PREFS_STORAGE_PREFIX)
-  );
+  return key.startsWith(PREFERENCES_STORAGE_PREFIX) || key.startsWith(LIST_PREFS_STORAGE_PREFIX);
 }
 
 export function listStorageKeys(): StorageKeyRow[] {

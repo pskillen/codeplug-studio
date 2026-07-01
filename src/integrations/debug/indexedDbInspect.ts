@@ -51,7 +51,9 @@ export function isKnownStoreName(storeName: string): boolean {
   return (STORE_NAMES as string[]).includes(storeName);
 }
 
-export async function listStoreSummaries(dbName: string = DEFAULT_DB_NAME): Promise<StoreSummary[]> {
+export async function listStoreSummaries(
+  dbName: string = DEFAULT_DB_NAME,
+): Promise<StoreSummary[]> {
   const db = await openDb(dbName);
   try {
     const summaries: StoreSummary[] = [];

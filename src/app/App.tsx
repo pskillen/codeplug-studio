@@ -48,7 +48,10 @@ export default function App() {
             element={<DebugIndexedDbRowViewerPage />}
           />
           <Route path="/debug/local-storage" element={<DebugLocalStoragePage />} />
-          <Route path="/debug/local-storage/:storageKey" element={<DebugLocalStorageViewerPage />} />
+          <Route
+            path="/debug/local-storage/:storageKey"
+            element={<DebugLocalStorageViewerPage />}
+          />
           <Route element={<RequireActiveProject />}>
             <Route path="/library" element={<Navigate to="/library/channels" replace />} />
             <Route path="/library/channels" element={<ChannelsListPage />} />

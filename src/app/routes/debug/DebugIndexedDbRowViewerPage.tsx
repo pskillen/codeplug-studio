@@ -12,7 +12,11 @@ import {
 } from '@integrations/debug/index.ts';
 
 export default function DebugIndexedDbRowViewerPage() {
-  const { storeName: storeNameParam, projectId: projectIdParam, id: idParam } = useParams<{
+  const {
+    storeName: storeNameParam,
+    projectId: projectIdParam,
+    id: idParam,
+  } = useParams<{
     storeName: string;
     projectId: string;
     id: string;
@@ -20,28 +24,28 @@ export default function DebugIndexedDbRowViewerPage() {
   const storeName = storeNameParam ? decodeIndexedDbParam(storeNameParam) : '';
   const projectId = projectIdParam ? decodeIndexedDbParam(projectIdParam) : '';
   const id = idParam ? decodeIndexedDbParam(idParam) : '';
+  const validationError =
+    !storeName || !projectId || !id || !isKnownStoreName(storeName)
+      ? 'Invalid row reference'
+      : null;
   const [row, setRow] = useState<unknown | null>(null);
   const [missing, setMissing] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const displayError = validationError ?? loadError;
 
   useEffect(() => {
-    if (!storeName || !projectId || !id || !isKnownStoreName(storeName)) {
-      setError('Invalid row reference');
-      setRow(null);
-      setMissing(false);
-      return;
-    }
+    if (validationError) return;
     let cancelled = false;
     void getStoreRow(storeName, projectId, id)
       .then((loaded) => {
         if (cancelled) return;
         setRow(loaded);
         setMissing(loaded == null);
-        setError(null);
+        setLoadError(null);
       })
       .catch((err: unknown) => {
         if (!cancelled) {
-          setError(err instanceof Error ? err.message : 'Failed to read row');
+          setLoadError(err instanceof Error ? err.message : 'Failed to read row');
           setRow(null);
           setMissing(false);
         }
@@ -49,7 +53,7 @@ export default function DebugIndexedDbRowViewerPage() {
     return () => {
       cancelled = true;
     };
-  }, [storeName, projectId, id]);
+  }, [storeName, projectId, id, validationError]);
 
   const title = useMemo(() => {
     if (row && typeof row === 'object' && 'name' in row && typeof row.name === 'string') {
@@ -83,19 +87,19 @@ export default function DebugIndexedDbRowViewerPage() {
           <Code>{id}</Code>
         </Text>
 
-        {error ? (
+        {displayError ? (
           <Alert color="red" title="Read error">
-            {error}
+            {displayError}
           </Alert>
         ) : null}
 
-        {missing ? (
+        {!validationError && missing ? (
           <Alert color="gray" title="Not found">
             No row exists for this key in IndexedDB.
           </Alert>
         ) : null}
 
-        {row != null && !missing && error == null ? (
+        {!validationError && row != null && !missing && loadError == null ? (
           <>
             <Alert color="blue" title="Storage rows as YAML">
               Copy as YAML dumps the persisted JSON row for debugging. This is not the native YAML

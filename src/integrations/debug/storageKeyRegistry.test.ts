@@ -55,9 +55,9 @@ describe('storageKeyRegistry', () => {
     localStorage.setItem('mm9pdy-codeplug-studio.list.zones.proj-1', '{}');
     localStorage.setItem('mm9pdy-codeplug-studio.list.extra.proj-1', '1');
     const rows = listStorageKeys();
-    expect(rows.find((row) => row.key === 'mm9pdy-codeplug-studio.list.channels.proj-1')?.label).toBe(
-      'List prefs (channels)',
-    );
+    expect(
+      rows.find((row) => row.key === 'mm9pdy-codeplug-studio.list.channels.proj-1')?.label,
+    ).toBe('List prefs (channels)');
     expect(rows.find((row) => row.key === 'mm9pdy-codeplug-studio.list.zones.proj-1')?.label).toBe(
       'List prefs (zones)',
     );

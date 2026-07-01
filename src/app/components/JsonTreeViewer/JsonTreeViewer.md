@@ -6,8 +6,8 @@ Read-only collapsible JSON tree for debug and inspection pages. Wraps `@uiw/reac
 
 ## Props
 
-| Prop | Type | Description |
-| --- | --- | --- |
+| Prop    | Type      | Description                                                    |
+| ------- | --------- | -------------------------------------------------------------- |
 | `value` | `unknown` | Data to display. Non-objects are wrapped as `{ value: data }`. |
 
 ## Usage
@@ -15,7 +15,7 @@ Read-only collapsible JSON tree for debug and inspection pages. Wraps `@uiw/reac
 ```tsx
 import JsonTreeViewer from '@app/components/JsonTreeViewer/JsonTreeViewer.tsx';
 
-<JsonTreeViewer value={{ id: 'abc', name: 'Local' }} />
+<JsonTreeViewer value={{ id: 'abc', name: 'Local' }} />;
 ```
 
 ## Behaviour

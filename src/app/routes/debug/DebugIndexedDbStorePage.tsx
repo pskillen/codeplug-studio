@@ -27,15 +27,14 @@ function summarizeRow(row: unknown): IndexedDbRowSummary | null {
 export default function DebugIndexedDbStorePage() {
   const { storeName: storeNameParam } = useParams<{ storeName: string }>();
   const storeName = storeNameParam ? decodeIndexedDbParam(storeNameParam) : '';
+  const validationError =
+    !storeName || !isKnownStoreName(storeName) ? 'Unknown object store' : null;
   const [rows, setRows] = useState<IndexedDbRowSummary[]>([]);
-  const [error, setError] = useState<string | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const displayError = validationError ?? loadError;
 
   useEffect(() => {
-    if (!storeName || !isKnownStoreName(storeName)) {
-      setError('Unknown object store');
-      setRows([]);
-      return;
-    }
+    if (validationError) return;
     let cancelled = false;
     void listStoreRows(storeName)
       .then((loaded) => {
@@ -45,20 +44,23 @@ export default function DebugIndexedDbStorePage() {
             .map((row) => summarizeRow(row))
             .filter((row): row is IndexedDbRowSummary => row != null),
         );
-        setError(null);
+        setLoadError(null);
       })
       .catch((err: unknown) => {
         if (!cancelled) {
-          setError(err instanceof Error ? err.message : 'Failed to read store rows');
+          setLoadError(err instanceof Error ? err.message : 'Failed to read store rows');
           setRows([]);
         }
       });
     return () => {
       cancelled = true;
     };
-  }, [storeName]);
+  }, [storeName, validationError]);
 
-  const tableRows = useMemo(() => rows, [rows]);
+  const tableRows = useMemo(
+    () => (validationError ? [] : rows),
+    [rows, validationError],
+  );
 
   return (
     <Page>
@@ -71,9 +73,9 @@ export default function DebugIndexedDbStorePage() {
           ← IndexedDB
         </Anchor>
       </Text>
-      {error ? (
+      {displayError ? (
         <Text c="red" size="sm" mb="md">
-          {error}
+          {displayError}
         </Text>
       ) : null}
       <DataTable<IndexedDbRowSummary>
