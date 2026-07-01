@@ -16,8 +16,8 @@ ProjectProvider
    └─ AppLayout (AppShell: header + AppNav + SectionNav + Outlet + footer)
       ├─ /          Projects (lifecycle UI)
       ├─ /library   Library inventory + entity editors
+      ├─ /summary   Library summary
       ├─ /map       Channel map
-      ├─ /reports   Library summary
       ├─ /reference Reference tools
       ├─ /settings  Settings shell
       └─ /help      Help shell
@@ -34,7 +34,8 @@ UI primitives live in `src/app/components/ui/` (ported from codeplug-tool). Dev 
 | `/library/channels/add-from-ukrepeater`   | Add from ukrepeater.net | [repeater-directories](../repeater-directories/README.md)                                   |
 | `/library/channels/add-from-brandmeister` | Add from BrandMeister   | [repeater-directories](../repeater-directories/README.md)                                   |
 | `/map`                                    | Map                     | Channel map — Ticket #11                                                                    |
-| `/reports`                                | Reports                 | [Library summary](../report/README.md) — Ticket #12                                         |
+| `/summary`                                | Summary                 | [Library summary](../report/README.md) — Ticket #12                                         |
+| `/reports`                                | _(redirect)_            | Redirects to `/summary` (legacy hash route)                                                 |
 | `/reference`                              | Reference               | [Maidenhead + band tools](../maidenhead.md), [bands](../../reference/bands.md) — Ticket #12 |
 | `/settings`                               | Settings                | Shell content                                                                               |
 | `/help`                                   | Help                    | Shell content                                                                               |
