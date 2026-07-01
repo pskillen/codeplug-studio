@@ -1,5 +1,6 @@
 import { Anchor, List, Stack, Text } from '@mantine/core';
 import { ListPage, PageSection } from '../components/ui/index.ts';
+import { GITHUB_ISSUES_URL, GITHUB_REPO_URL } from '../lib/githubLinks.ts';
 
 export default function HelpPage() {
   return (
@@ -26,15 +27,22 @@ export default function HelpPage() {
             warnings.
           </List.Item>
         </List>
-        <Stack gap="xs" mt="md">
+      </PageSection>
+      <PageSection title="Feedback">
+        <Stack gap="xs">
           <Text size="sm">
-            <Anchor
-              href="https://github.com/pskillen/codeplug-studio"
-              target="_blank"
-              rel="noreferrer"
-            >
-              Project repository &amp; docs
-            </Anchor>
+            Use{' '}
+            <Anchor href={GITHUB_ISSUES_URL} target="_blank" rel="noreferrer">
+              GitHub Issues
+            </Anchor>{' '}
+            for bug reports and feature requests. Include steps to reproduce, what you expected, and
+            which page you were on.
+          </Text>
+          <Text size="sm">
+            <Anchor href={GITHUB_REPO_URL} target="_blank" rel="noreferrer">
+              Project repository
+            </Anchor>{' '}
+            — source code, release notes, and contributor docs.
           </Text>
         </Stack>
       </PageSection>
