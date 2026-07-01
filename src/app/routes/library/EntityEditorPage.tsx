@@ -1,5 +1,7 @@
+import { Anchor } from '@mantine/core';
 import { Link, useParams } from 'react-router-dom';
 import { useLibrary } from '../../state/useLibrary.ts';
+import { FormPage } from '../../components/ui/index.ts';
 import { entitiesForKind, kindBySlug } from './registry.ts';
 import ChannelEditor from './ChannelEditor.tsx';
 import RxGroupListEditor from './RxGroupListEditor.tsx';
@@ -11,23 +13,16 @@ export default function EntityEditorPage() {
   const meta = slug ? kindBySlug(slug) : undefined;
   const { library, loading, projectId } = useLibrary();
 
-  if (!projectId) {
-    return (
-      <section>
-        <h1 style={{ marginTop: 0 }}>Library</h1>
-        <p style={{ color: '#52606d' }}>
-          Select or create a project on the <Link to="/">Projects</Link> page first.
-        </p>
-      </section>
-    );
-  }
-
   if (!meta) {
     return <NotFound message="Unknown entity type." />;
   }
 
   if (loading) {
-    return <p>Loading…</p>;
+    return (
+      <FormPage title="Loading…">
+        <span />
+      </FormPage>
+    );
   }
 
   const isNew = id === 'new' || !id;
@@ -39,23 +34,27 @@ export default function EntityEditorPage() {
   const title = `${isNew ? 'New' : 'Edit'} ${meta.label.toLowerCase()}`;
 
   return (
-    <section>
-      <p style={{ margin: '0 0 0.5rem', fontSize: '0.85rem' }}>
-        <Link to="/library">← Library</Link>
-      </p>
-      <h1 style={{ marginTop: 0 }}>{title}</h1>
+    <FormPage
+      title={title}
+      description={
+        <Anchor component={Link} to="/library" size="sm">
+          ← Back to library
+        </Anchor>
+      }
+    >
       {renderEditor()}
-    </section>
+    </FormPage>
   );
 
   function renderEditor() {
-    if (!meta) return null;
+    if (!projectId) return null;
     const entityId = isNew ? null : (id ?? null);
-    switch (meta.kind) {
+    switch (meta!.kind) {
       case 'channel':
         return (
           <ChannelEditor
-            projectId={projectId!}
+            key={entityId ? library.channels.find((c) => c.id === entityId)?.revision : 'new'}
+            projectId={projectId}
             library={library}
             entity={entityId ? (library.channels.find((c) => c.id === entityId) ?? null) : null}
           />
@@ -63,14 +62,14 @@ export default function EntityEditorPage() {
       case 'talkGroup':
         return (
           <TalkGroupEditor
-            projectId={projectId!}
+            projectId={projectId}
             entity={entityId ? (library.talkGroups.find((t) => t.id === entityId) ?? null) : null}
           />
         );
       case 'digitalContact':
         return (
           <DigitalContactEditor
-            projectId={projectId!}
+            projectId={projectId}
             entity={
               entityId ? (library.digitalContacts.find((c) => c.id === entityId) ?? null) : null
             }
@@ -79,7 +78,7 @@ export default function EntityEditorPage() {
       case 'analogContact':
         return (
           <AnalogContactEditor
-            projectId={projectId!}
+            projectId={projectId}
             entity={
               entityId ? (library.analogContacts.find((c) => c.id === entityId) ?? null) : null
             }
@@ -88,7 +87,7 @@ export default function EntityEditorPage() {
       case 'rxGroupList':
         return (
           <RxGroupListEditor
-            projectId={projectId!}
+            projectId={projectId}
             library={library}
             entity={entityId ? (library.rxGroupLists.find((r) => r.id === entityId) ?? null) : null}
           />
@@ -96,7 +95,7 @@ export default function EntityEditorPage() {
       case 'zone':
         return (
           <ZoneEditor
-            projectId={projectId!}
+            projectId={projectId}
             library={library}
             entity={entityId ? (library.zones.find((z) => z.id === entityId) ?? null) : null}
           />
@@ -107,12 +106,10 @@ export default function EntityEditorPage() {
 
 function NotFound({ message }: { message: string }) {
   return (
-    <section>
-      <h1 style={{ marginTop: 0 }}>Not found</h1>
-      <p style={{ color: '#52606d' }}>{message}</p>
-      <p>
-        <Link to="/library">← Back to library</Link>
-      </p>
-    </section>
+    <FormPage title="Not found" description={message}>
+      <Anchor component={Link} to="/library">
+        ← Back to library
+      </Anchor>
+    </FormPage>
   );
 }

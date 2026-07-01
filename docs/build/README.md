@@ -13,6 +13,24 @@ npm run dev
 
 Open the URL Vite prints (typically `http://localhost:5173/codeplug-studio/`).
 
+### Line endings
+
+The repository stores **LF** for text files (`.gitattributes`). Prettier follows the platform: **CRLF on Windows**, **LF on Linux/macOS and in CI** (`prettier.config.js`).
+
+| Platform           | Git checkout                     | Prettier | Committed to Git |
+| ------------------ | -------------------------------- | -------- | ---------------- |
+| Windows            | CRLF (with `core.autocrlf=true`) | CRLF     | LF               |
+| Linux / macOS / CI | LF                               | LF       | LF               |
+
+On Windows, use `core.autocrlf=true` (the Git for Windows default). If line endings were wrong before `.gitattributes` landed, run once:
+
+```bash
+git add --renormalize .
+git status
+```
+
+If `git status` still shows phantom whole-file edits with empty diffs, run `git restore .` after renormalizing.
+
 ## Scripts
 
 | Script                            | Purpose                       |

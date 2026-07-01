@@ -1,7 +1,6 @@
-import type { GeoPoint } from '@core/models/libraryTypes.ts';
+import type { ChannelMode, GeoPoint } from '@core/models/libraryTypes.ts';
 
 export type RepeaterSource = 'ukrepeater' | 'brandmeister';
-export type RepeaterMode = 'fm' | 'dmr' | 'other';
 
 /**
  * Normalised, vendor-neutral repeater directory result. Each external client
@@ -17,7 +16,10 @@ export interface RepeaterListing {
   rxFrequencyHz: number | null;
   txFrequencyHz: number | null;
   toneHz: number | null;
-  mode: RepeaterMode;
+  /** All modes advertised by the directory listing. */
+  modes: ChannelMode[];
+  /** Preferred mode when creating a library channel from this listing. */
+  primaryMode: ChannelMode;
   colourCode: number | null;
   locator: string | null;
   location: GeoPoint | null;

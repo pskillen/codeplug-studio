@@ -11,7 +11,7 @@ export interface GeoPoint {
 }
 
 export type AnalogChannelMode = 'fm' | 'am' | 'ssb-usb' | 'ssb-lsb';
-export type DigitalChannelMode = 'dmr' | 'dstar' | 'ysf' | 'p25' | 'nxdn';
+export type DigitalChannelMode = 'dmr' | 'dstar' | 'ysf' | 'p25' | 'nxdn' | 'm17' | 'tetra';
 export type ChannelMode = AnalogChannelMode | DigitalChannelMode;
 
 export type ChannelTone = 'none' | string;

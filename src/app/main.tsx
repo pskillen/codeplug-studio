@@ -1,6 +1,12 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
+import { ColorSchemeScript, MantineProvider } from '@mantine/core';
+import '@mantine/core/styles.css';
+import 'leaflet/dist/leaflet.css';
+import '../index.css';
 import App from './App.tsx';
+import ProjectProvider from './state/ProjectProvider.tsx';
+import { theme } from './theme.ts';
 
 const root = document.getElementById('root');
 if (!root) {
@@ -9,6 +15,11 @@ if (!root) {
 
 createRoot(root).render(
   <StrictMode>
-    <App />
+    <ColorSchemeScript defaultColorScheme="dark" />
+    <MantineProvider theme={theme} defaultColorScheme="dark">
+      <ProjectProvider>
+        <App />
+      </ProjectProvider>
+    </MantineProvider>
   </StrictMode>,
 );
