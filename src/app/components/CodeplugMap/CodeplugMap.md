@@ -16,6 +16,7 @@ Embeddable Leaflet map for plotting library channels and zone hull overlays insi
 | `defaultShowLabels`  | `boolean`              | `false`    | Initial state for full-name marker labels            |
 | `defaultShowZones`   | `boolean`              | `true`     | Initial state for zone hull visibility               |
 | `highlightChannelId` | `string`               | —          | Emphasise one channel marker                         |
+| `operatorPosition`   | `{ lat, lon } \| null` | `null`     | Session operator position — blue **You** marker; included in auto bounds |
 | `onChannelClick`     | `(id: string) => void` | —          | Marker popup “Edit channel” action                   |
 | `onZoneClick`        | `(id: string) => void` | —          | Zone popup “Edit zone” action                        |
 
@@ -38,6 +39,7 @@ import CodeplugMap from '../components/CodeplugMap/CodeplugMap.tsx';
 
 - **Fixed filters** (not exposed in UI): `useLocation` required, skip `0,0`, merge co-located markers.
 - **Tiles:** OpenStreetMap via react-leaflet.
+- **Operator marker:** when `operatorPosition` is set, plots a blue **You** marker and includes it in auto bounds.
 - **Zone hulls:** circle (1 site), line (2), convex polygon (3+); see [zones.md](../../../../docs/features/map/zones.md).
 - **Layout:** defers mount until document layout is ready (`useDocumentLayoutReady`); `ResizeObserver` keeps Leaflet sized in inset layouts.
 

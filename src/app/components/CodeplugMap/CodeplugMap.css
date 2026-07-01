@@ -67,6 +67,49 @@
   text-overflow: ellipsis;
 }
 
+.operator-marker-wrap {
+  background: transparent;
+  border: none;
+}
+
+.operator-marker {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+
+.operator-marker-dot {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #228be6;
+  border: 3px solid #fff;
+  box-shadow:
+    0 0 0 2px #228be6,
+    0 1px 4px rgba(0, 0, 0, 0.45);
+  pointer-events: auto;
+  cursor: pointer;
+}
+
+.operator-marker-label {
+  margin-top: 2px;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.15;
+  text-align: center;
+  color: #228be6;
+  text-shadow:
+    -1px -1px 0 #fff,
+    1px -1px 0 #fff,
+    -1px 1px 0 #fff,
+    1px 1px 0 #fff,
+    0 0 3px #fff;
+  pointer-events: none;
+  white-space: nowrap;
+}
+
 .zone-tooltip {
   background: rgba(26, 35, 50, 0.92);
   color: #e7ecf3;
