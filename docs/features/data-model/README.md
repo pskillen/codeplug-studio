@@ -66,7 +66,7 @@ erDiagram
 
 ## Schema version
 
-`STUDIO_SCHEMA_VERSION = 1` in `src/core/models/schemaVersion.ts`. Bumps when persisted row shapes change.
+`STUDIO_SCHEMA_VERSION = 2` in `src/core/models/schemaVersion.ts`. Bumps when persisted row shapes change.
 
 ## Persistable rows
 
@@ -89,16 +89,28 @@ See [storage.md](../../poc-migration/storage.md) — Phase 1 uses in-memory row 
 
 Vendor-neutral RF semantics only. UUID `id` FKs; `name` is a **human display label** — not the CPS wire string for a particular radio.
 
-| Entity           | Notes                                                                                    |
-| ---------------- | ---------------------------------------------------------------------------------------- |
-| `Channel`        | Frequency (Hz), callsign, power, location, scan skip; `modeProfiles` (FM / DMR profiles) |
-| `Zone`           | Inventory grouping — `members` as channel `EntityRef[]`; export flags on the zone row    |
-| `TalkGroup`      | Digital group call — `mode`, `digitalId`                                                 |
-| `DigitalContact` | Digital private call — `mode`, `digitalId`                                               |
-| `AnalogContact`  | Analogue call sign / code                                                                |
-| `RxGroupList`    | Promiscuous RX list — `members` as talk-group `EntityRef[]`                              |
+| Entity           | Notes                                                                                                        |
+| ---------------- | ------------------------------------------------------------------------------------------------------------ |
+| `Channel`        | Frequency (Hz), callsign, power, `location`, `maidenheadLocator`, `useLocation`, scan skip; `modeProfiles[]` |
+| `Zone`           | Inventory grouping — `members` as channel `EntityRef[]`; export flags on the zone row                        |
+| `TalkGroup`      | Digital group call — `mode`, `digitalId`                                                                     |
+| `DigitalContact` | Digital private call — `mode`, `digitalId`                                                                   |
+| `AnalogContact`  | Analogue call sign / code                                                                                    |
+| `RxGroupList`    | Promiscuous RX list — `members` as talk-group `EntityRef[]`                                                  |
 
-Mode-specific channel fields live on `modeProfiles` entries (`ChannelModeProfileFM`, `ChannelModeProfileDMR`).
+Mode-specific channel fields live on `modeProfiles` entries. Union type `ChannelModeProfile`:
+
+| Profile                    | `mode` values                    | Key fields                                                |
+| -------------------------- | -------------------------------- | --------------------------------------------------------- |
+| `ChannelModeProfileAnalog` | `fm`, `am`, `ssb-usb`, `ssb-lsb` | bandwidth, squelch, RX/TX tone                            |
+| `ChannelModeProfileDMR`    | `dmr`                            | colour code, timeslot, DMR ID, contact ref, RX group list |
+| `ChannelModeProfileDstar`  | `dstar`                          | UR / RPT1 / RPT2 calls                                    |
+| `ChannelModeProfileYsf`    | `ysf`                            | DG-ID, WIRES-X DTMF ID                                    |
+| `ChannelModeProfileNxdn`   | `nxdn`                           | RX/TX RAN, unit ID, talk group ref                        |
+| `ChannelModeProfileTetra`  | `tetra`                          | MCC, MNC, GSSI, color code, talk group ref                |
+| `ChannelModeProfileStub`   | `p25`, `m17`                     | mode label only (typed profiles deferred)                 |
+
+`maidenheadLocator` and `location` may both be set; export adapters prefer coordinates when they conflict. See `reconcileChannelLocation` in `src/core/domain/channelLocation.ts`.
 
 Library CRUD edits this layer only — no radio name-length caps, no format wire strings. See [library](../library/README.md).
 

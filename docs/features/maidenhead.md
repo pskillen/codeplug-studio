@@ -20,7 +20,11 @@ The [band plan](../reference/bands.md) lives at `/reference/bands`.
 
 ### Repeater import
 
-When importing from [repeater directories](repeater-directories/README.md), records that carry a Maidenhead locator or lat/lng seed channel `location` and `useLocation` via the same helpers.
+When importing from [repeater directories](repeater-directories/README.md), records that carry a Maidenhead locator or lat/lng seed channel `location`, `maidenheadLocator`, and `useLocation`.
+
+### Channel editor
+
+The library channel editor (`/library/channels/:id`) includes a **Location** section with locator input, lat/lon, use-location, and `MapLocationPicker` (click/drag). Save calls `reconcileChannelLocation` — coordinates win when locator and coords conflict in one edit session. No **Use my location** on this page (reference tool and list maps only).
 
 ### Channel map
 
@@ -28,16 +32,17 @@ The [map](map/README.md) plots channels that have a stored location. Operator **
 
 ## Code anchors
 
-| Path                                                   | Role                                                               |
-| ------------------------------------------------------ | ------------------------------------------------------------------ |
-| `src/core/domain/maidenhead.ts`                        | `locatorToCoords`, `coordsToLocator`, `isValidLocator` (4–10 char) |
-| `src/app/routes/reference/MaidenheadReferencePage.tsx` | Full converter UI                                                  |
-| `src/app/components/MapLocationPicker/`                | Click/drag map picker                                              |
-| `src/integrations/geocode/`                            | Photon + Mapbox geocode client                                     |
-| `src/integrations/preferences/`                        | Mapbox token in `localStorage`                                     |
-| `src/app/hooks/useMapSettings.ts`                      | Settings ↔ preferences bridge                                      |
-| `src/app/lib/channelLookup.ts`                         | Channel autocomplete helpers                                       |
-| `src/integrations/repeaters/ukRepeaterClient.ts`       | Locator/coords when normalising repeater records                   |
+| Path                                                     | Role                                                               |
+| -------------------------------------------------------- | ------------------------------------------------------------------ |
+| `src/core/domain/maidenhead.ts`                          | `locatorToCoords`, `coordsToLocator`, `isValidLocator` (4–10 char) |
+| `src/app/routes/reference/MaidenheadReferencePage.tsx`   | Full converter UI                                                  |
+| `src/app/components/MapLocationPicker/`                  | Click/drag map picker                                              |
+| `src/integrations/geocode/`                              | Photon + Mapbox geocode client                                     |
+| `src/integrations/preferences/`                          | Mapbox token in `localStorage`                                     |
+| `src/app/hooks/useMapSettings.ts`                        | Settings ↔ preferences bridge                                      |
+| `src/app/lib/channelLookup.ts`                           | Channel autocomplete helpers                                       |
+| `src/app/components/channels/ChannelLocationSection.tsx` | Channel editor location block                                      |
+| `src/core/domain/channelLocation.ts`                     | `reconcileChannelLocation` on save                                 |
 
 ## Inputs and outputs
 
@@ -61,13 +66,11 @@ The [map](map/README.md) plots channels that have a stored location. Operator **
 3. Change precision → locator length updates.
 4. Click map / drag marker / **Use my location** → fields stay in sync.
 5. Geocode a postcode (Photon); set Mapbox token in Settings and retry with Mapbox.
-6. With a project active, search a channel with coordinates → **Use location**.
+6. With a project active, open a channel → enter `IO91WM` or click the map → save → reload and confirm locator + coordinates persist.
 
 ## Known gaps
 
-- No `maidenheadLocator` field on channels ([#28](https://github.com/pskillen/codeplug-studio/issues/28)) — picker uses `location` only.
-- No Maidenhead grid overlay on the reference map picker.
-- Channel editor does not yet accept locator input (coordinates only when editing).
+- No Maidenhead grid overlay on the reference or channel editor map picker.
 
 ## Related
 

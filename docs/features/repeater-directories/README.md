@@ -14,18 +14,19 @@ Repeater search is **not** a top-level nav item — it lives under library workf
 
 ## Implementation status
 
-| Area                                  | Status   | Notes                                                                                              |
-| ------------------------------------- | -------- | -------------------------------------------------------------------------------------------------- |
-| UK repeater (ETCC) client             | Shipped  | Callsign + locator search                                                                          |
-| BrandMeister client                   | Shipped  | Callsign search                                                                                    |
-| Add from directory UI                 | Shipped  | Section nav routes; band/mode pills on results                                                     |
-| Update existing (callsign match)      | Shipped  | Outline button → shared comparison dialog                                                          |
-| Directory verify on channel edit      | Shipped  | `RepeaterVerifyPanel`                                                                              |
-| Full ETCC mode flag parsing           | Shipped  | A/D/E/M/F/P/7/N → library modes                                                                    |
-| Multi-mode import (`modeProfiles`)    | Shipped  | FM + DMR full profiles; other digital stubs                                                        |
-| Multi-mode channel CRUD               | Deferred | [#16](https://github.com/pskillen/codeplug-studio/issues/16) — editor still single-profile on save |
-| ETCC postcode / geocode / band search | Deferred | Only callsign + locator today                                                                      |
-| Offline result cache                  | Deferred | In-session only                                                                                    |
+| Area                                  | Status   | Notes                                                                                                |
+| ------------------------------------- | -------- | ---------------------------------------------------------------------------------------------------- |
+| UK repeater (ETCC) client             | Shipped  | Callsign + locator search                                                                            |
+| BrandMeister client                   | Shipped  | Callsign search                                                                                      |
+| Add from directory UI                 | Shipped  | Section nav routes; band/mode pills on results                                                       |
+| Update existing (callsign match)      | Shipped  | Outline button → shared comparison dialog                                                            |
+| Directory verify on channel edit      | Shipped  | `RepeaterVerifyPanel`                                                                                |
+| Full ETCC mode flag parsing           | Shipped  | A/D/E/M/F/P/7/N → library modes                                                                      |
+| Multi-mode import (`modeProfiles`)    | Shipped  | Typed profiles for FM/DMR/D-STAR/YSF/NXDN/TETRA; P25/M17 stubs                                       |
+| Multi-mode channel CRUD               | Shipped  | [#16](https://github.com/pskillen/codeplug-studio/issues/16) — multi-select + tabbed profiles editor |
+| `maidenheadLocator` on import         | Shipped  | [#28](https://github.com/pskillen/codeplug-studio/issues/28) — from ETCC locator or derived coords   |
+| ETCC postcode / geocode / band search | Deferred | Only callsign + locator today                                                                        |
+| Offline result cache                  | Deferred | In-session only                                                                                      |
 
 ## Documentation map
 
@@ -85,9 +86,10 @@ Frequency convention: `rxFrequencyHz` is what the radio **receives** (repeater o
 
 `buildModeProfilesFromListing` creates one `modeProfiles` entry per advertised mode:
 
-- **Analogue (`fm`)** — full `ChannelModeProfileFM` with CTCSS on RX/TX tone when present.
+- **Analogue (`fm`, …)** — full `ChannelModeProfileAnalog` with CTCSS on RX/TX tone when present.
 - **DMR** — full `ChannelModeProfileDMR` with colour code from `M:n` flags.
-- **Other digital** (`dstar`, `ysf`, `p25`, `nxdn`, `m17`, `tetra`) — mode-only stub `{ mode }` until dedicated profile types exist.
+- **D-STAR, YSF, NXDN, TETRA** — full typed profiles with CPS-informed defaults.
+- **P25, M17** — stub `{ mode }` until dedicated profile types ship.
 
 Example: `modeCodes: ["A", "D", "M:1", "F", "P", "N"]` → six profiles on import.
 
@@ -109,8 +111,7 @@ Example: `modeCodes: ["A", "D", "M:1", "F", "P", "N"]` → six profiles on impor
 
 ## Known gaps
 
-- Channel editor collapses `modeProfiles` to a single FM or DMR profile on save — breaks multi-mode imports until [#16](https://github.com/pskillen/codeplug-studio/issues/16).
-- No typed channel profiles for non-FM/DMR digital modes beyond stubs.
+- P25/M17 typed channel profiles beyond stubs.
 - BrandMeister listings always map to DMR-only profiles.
 - UK search: no postcode, address, keeper, or band endpoints wired yet.
 

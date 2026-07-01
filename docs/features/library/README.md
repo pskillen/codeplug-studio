@@ -8,11 +8,12 @@ Tier-1 reference for editing the vendor-neutral **library** — the per-project 
 
 ## Documentation map
 
-| Doc                                                                             | Contents                          |
-| ------------------------------------------------------------------------------- | --------------------------------- |
-| [zone-member-picker.md](zone-member-picker.md)                                  | Two-list zone membership editor   |
-| [app-shell/data-table.md](../app-shell/data-table.md)                           | Shared `DataTable` and list prefs |
-| [app-shell/library-routes-progress.md](../app-shell/library-routes-progress.md) | List routes initiative progress   |
+| Doc                                                                             | Contents                              |
+| ------------------------------------------------------------------------------- | ------------------------------------- |
+| [mode-profiles-progress.md](mode-profiles-progress.md)                          | Multi-mode editor initiative progress |
+| [zone-member-picker.md](zone-member-picker.md)                                  | Two-list zone membership editor       |
+| [app-shell/data-table.md](../app-shell/data-table.md)                           | Shared `DataTable` and list prefs     |
+| [app-shell/library-routes-progress.md](../app-shell/library-routes-progress.md) | List routes initiative progress       |
 
 ## List routes
 
@@ -55,14 +56,21 @@ Zone editor uses `ZoneMemberPicker` — available ↔ in-zone lists with per-sid
 
 | Entity          | Key fields                                                                                                                                           |
 | --------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Channel         | name, callsign, RX/TX (MHz↔Hz), power, scan-skip, comment, FM **or** DMR profile                                                                     |
+| Channel         | name, callsign, RX/TX (MHz↔Hz), power, location + `maidenheadLocator`, scan-skip, comment, **multi** `modeProfiles[]`                                |
 | Talk group      | name, digital mode, group ID, comment                                                                                                                |
 | Digital contact | name, digital mode, contact ID, comment                                                                                                              |
 | Analog contact  | name, code, comment                                                                                                                                  |
 | RX group list   | name, members (talk groups / digital contacts)                                                                                                       |
 | Zone            | name, ordered channel members, `exportScratchChannel` (editor), `exportScanList` / `scanCarrierFrequencyHz` (model only — format build TBD), comment |
 
-Channel DMR profiles reference a **digital contact** and an **RX group list** by UUID `id` (the editor exposes dropdowns); RX group lists and zones hold member `EntityRef[]`. Names are display labels only — never foreign keys.
+Channel DMR profiles reference a **digital contact** and an **RX group list** by UUID `id` (the editor exposes dropdowns); NXDN/TETRA profiles may reference talk groups by UUID. RX group lists and zones hold member `EntityRef[]`. Names are display labels only — never foreign keys.
+
+### Channel editor ([#16](https://github.com/pskillen/codeplug-studio/issues/16), [#28](https://github.com/pskillen/codeplug-studio/issues/28))
+
+- **No default mode** on new channels — operator selects modes via multi-select; `modeProfiles` starts empty.
+- **Location section:** Maidenhead locator, lat/lon, use-location, map click/drag (`ChannelLocationSection` + `MapLocationPicker`). Save reconciles locator ↔ coords via `reconcileChannelLocation` (coordinates win on conflict).
+- **Mode profiles:** tabbed editor per selected mode (`ChannelModeProfilesEditor`).
+- Component sidecars under `src/app/components/channels/` and `MapLocationPicker/`.
 
 ## Data flow
 
