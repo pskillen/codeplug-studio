@@ -9,12 +9,8 @@ import type { RepeaterListing } from './types.ts';
  * only core model fields — no wire strings leak into the library.
  */
 export function repeaterListingToChannel(listing: RepeaterListing, projectId: string): Channel {
-  const base = newChannel(projectId, listing.callsign || listing.name || 'Repeater');
-
-  const name =
-    listing.callsign && listing.name
-      ? `${listing.callsign} ${listing.name}`
-      : listing.callsign || listing.name || base.name;
+  const name = listing.name || listing.callsign || 'Repeater';
+  const base = newChannel(projectId, name);
 
   return {
     ...base,

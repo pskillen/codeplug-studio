@@ -53,7 +53,7 @@ describe('repeaterListingToChannel', () => {
   it('maps an FM repeater to a channel with an FM profile and tone', () => {
     const channel = repeaterListingToChannel(baseListing, 'p1');
     expect(channel.callsign).toBe('GB3DA');
-    expect(channel.name).toBe('GB3DA Danbury');
+    expect(channel.name).toBe('Danbury');
     expect(channel.rxFrequency).toBe(145_725_000);
     expect(channel.txFrequency).toBe(145_125_000);
     expect(channel.useLocation).toBe(true);
@@ -61,6 +61,12 @@ describe('repeaterListingToChannel', () => {
     const profile = channel.modeProfiles[0] as ChannelModeProfileFM;
     expect(profile.mode).toBe('fm');
     expect(profile.rxTone).toBe('110.9');
+  });
+
+  it('falls back to callsign when town is missing', () => {
+    const channel = repeaterListingToChannel({ ...baseListing, name: '' }, 'p1');
+    expect(channel.callsign).toBe('GB3DA');
+    expect(channel.name).toBe('GB3DA');
   });
 
   it('maps FM + Fusion to FM profile and YSF stub', () => {
