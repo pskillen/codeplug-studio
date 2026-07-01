@@ -1,4 +1,5 @@
 import type { Library } from '@core/models/library.ts';
+import { normalizeChannel } from '@core/domain/normalizeChannel.ts';
 import { findReferencesTo, type EntityReference } from '@core/domain/references.ts';
 import type { LibraryEntityKind, ProjectPersistence } from '@integrations/persistence/index.ts';
 
@@ -23,7 +24,14 @@ export class LibraryService {
         this.persistence.listAnalogContacts(projectId),
         this.persistence.listRxGroupLists(projectId),
       ]);
-    return { channels, zones, talkGroups, digitalContacts, analogContacts, rxGroupLists };
+    return {
+      channels: channels.map(normalizeChannel),
+      zones,
+      talkGroups,
+      digitalContacts,
+      analogContacts,
+      rxGroupLists,
+    };
   }
 
   /**

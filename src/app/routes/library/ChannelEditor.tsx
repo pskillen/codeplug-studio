@@ -3,8 +3,8 @@ import { Alert, Button, Checkbox, Group, Select, Stack, TextInput } from '@manti
 import { Link } from 'react-router-dom';
 import type {
   Channel,
+  ChannelModeProfileAnalog,
   ChannelModeProfileDMR,
-  ChannelModeProfileFM,
   DMRTimeSlot,
   Library,
 } from '@core/models/library.ts';
@@ -32,7 +32,7 @@ export default function ChannelEditor({
 }) {
   const base = entity ?? newChannel(projectId, '');
   const fm =
-    (entity?.modeProfiles.find((p) => p.mode !== 'dmr') as ChannelModeProfileFM | undefined) ??
+    (entity?.modeProfiles.find((p) => p.mode !== 'dmr') as ChannelModeProfileAnalog | undefined) ??
     null;
   const dmr =
     (entity?.modeProfiles.find((p) => p.mode === 'dmr') as ChannelModeProfileDMR | undefined) ??
@@ -63,9 +63,9 @@ export default function ChannelEditor({
   const { save, saving, error } = useEntitySave('channels');
 
   function buildRow(): Channel {
-    const profile: ChannelModeProfileFM | ChannelModeProfileDMR =
+    const profile: ChannelModeProfileAnalog | ChannelModeProfileDMR =
       mode === 'fm'
-        ? { mode: 'fm', squelch: parseOptionalInt(squelch), rxTone, txTone }
+        ? { mode: 'fm', squelch: parseOptionalInt(squelch), rxTone, txTone, bandwidthKHz: null }
         : {
             mode: 'dmr',
             colourCode: parseOptionalInt(colourCode),
@@ -83,6 +83,7 @@ export default function ChannelEditor({
       power: parseOptionalInt(power),
       scanSkip,
       comment,
+      maidenheadLocator: base.maidenheadLocator ?? null,
       modeProfiles: [profile],
     };
   }

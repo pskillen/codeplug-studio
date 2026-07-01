@@ -1,9 +1,10 @@
 import type {
   Channel,
+  ChannelModeProfileAnalog,
   ChannelModeProfileDMR,
-  ChannelModeProfileFM,
   ChannelTone,
 } from '@core/models/library.ts';
+import { findAnalogProfile, findDmrProfile } from '@core/domain/modeProfiles.ts';
 import type { RepeaterListing } from './types.ts';
 import { repeaterListingToChannel } from './mapToChannel.ts';
 
@@ -47,14 +48,9 @@ const FIELD_LABELS: Record<ChannelDiffField, string> = {
   comment: 'Comment',
 };
 
-function findFmProfile(channel: Channel): ChannelModeProfileFM | null {
-  const profile = channel.modeProfiles.find((p) => p.mode === 'fm');
-  return profile && profile.mode === 'fm' ? (profile as ChannelModeProfileFM) : null;
-}
-
-function findDmrProfile(channel: Channel): ChannelModeProfileDMR | null {
-  const profile = channel.modeProfiles.find((p) => p.mode === 'dmr');
-  return profile && profile.mode === 'dmr' ? (profile as ChannelModeProfileDMR) : null;
+function findFmProfile(channel: Channel): ChannelModeProfileAnalog | null {
+  const profile = findAnalogProfile(channel);
+  return profile?.mode === 'fm' ? profile : null;
 }
 
 function formatTone(tone: ChannelTone): string {
@@ -198,7 +194,7 @@ export function buildPatchFromDiff(
   if (selected.has('rxTone') || selected.has('txTone') || selected.has('colourCode')) {
     next.modeProfiles = next.modeProfiles.map((profile) => {
       if (profile.mode === 'fm' && remoteFm) {
-        const fm = profile as ChannelModeProfileFM;
+        const fm = profile as ChannelModeProfileAnalog;
         return {
           ...fm,
           rxTone: selected.has('rxTone') ? remoteFm.rxTone : fm.rxTone,

@@ -1,6 +1,6 @@
 import type { PersistableRow } from './revision.ts';
 import type {
-  ChannelMode,
+  AnalogChannelMode,
   ChannelTone,
   DigitalChannelMode,
   DMRTimeSlot,
@@ -19,18 +19,15 @@ export type {
   DigitalChannelMode,
 } from './libraryTypes.ts';
 
-export interface AbstractChannelModeProfile {
-  mode: ChannelMode;
-}
-
-export interface ChannelModeProfileFM extends AbstractChannelModeProfile {
-  mode: 'fm' | 'am' | 'ssb-usb' | 'ssb-lsb';
+export interface ChannelModeProfileAnalog {
+  mode: AnalogChannelMode;
   squelch: number | null;
   rxTone: ChannelTone;
   txTone: ChannelTone;
+  bandwidthKHz: number | null;
 }
 
-export interface ChannelModeProfileDMR extends AbstractChannelModeProfile {
+export interface ChannelModeProfileDMR {
   mode: 'dmr';
   colourCode: number | null;
   timeslot: DMRTimeSlot | null;
@@ -39,6 +36,49 @@ export interface ChannelModeProfileDMR extends AbstractChannelModeProfile {
   rxGroupListId: string | null;
 }
 
+export interface ChannelModeProfileDstar {
+  mode: 'dstar';
+  urCall: string;
+  rpt1Call: string;
+  rpt2Call: string;
+}
+
+export interface ChannelModeProfileYsf {
+  mode: 'ysf';
+  dgId: number | null;
+  wiresDtmfId: string;
+}
+
+export interface ChannelModeProfileNxdn {
+  mode: 'nxdn';
+  rxRan: number | null;
+  txRan: number | null;
+  unitId: number | null;
+  talkGroupRef: EntityRef | null;
+}
+
+export interface ChannelModeProfileTetra {
+  mode: 'tetra';
+  mcc: number | null;
+  mnc: number | null;
+  gssi: number | null;
+  colorCode: number | null;
+  talkGroupRef: EntityRef | null;
+}
+
+export interface ChannelModeProfileStub {
+  mode: 'p25' | 'm17';
+}
+
+export type ChannelModeProfile =
+  | ChannelModeProfileAnalog
+  | ChannelModeProfileDMR
+  | ChannelModeProfileDstar
+  | ChannelModeProfileYsf
+  | ChannelModeProfileNxdn
+  | ChannelModeProfileTetra
+  | ChannelModeProfileStub;
+
 export interface Channel extends PersistableRow {
   name: string;
   callsign: string;
@@ -46,10 +86,12 @@ export interface Channel extends PersistableRow {
   txFrequency: number | null;
   location: GeoPoint | null;
   useLocation: boolean;
+  /** Maidenhead locator when known — not mutually exclusive with `location`. */
+  maidenheadLocator: string | null;
   power: number | null;
   scanSkip: boolean;
   comment: string;
-  modeProfiles: AbstractChannelModeProfile[];
+  modeProfiles: ChannelModeProfile[];
 }
 
 export interface TalkGroup extends PersistableRow {

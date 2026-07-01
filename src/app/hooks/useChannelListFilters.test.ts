@@ -1,14 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import type { Channel, ChannelModeProfileDMR, ChannelModeProfileFM } from '@core/models/library.ts';
+import type { Channel, ChannelModeProfileAnalog, ChannelModeProfileDMR } from '@core/models/library.ts';
+import { defaultModeProfile } from '@core/domain/modeProfiles.ts';
 import { filterChannelsForList } from './useChannelListFilters.ts';
 
 function makeChannel(overrides: Partial<Channel> = {}): Channel {
-  const fm: ChannelModeProfileFM = {
-    mode: 'fm',
-    squelch: null,
-    rxTone: 'none',
-    txTone: 'none',
-  };
+  const fm = defaultModeProfile('fm') as ChannelModeProfileAnalog;
   return {
     id: 'ch-1',
     projectId: 'p1',
@@ -20,6 +16,7 @@ function makeChannel(overrides: Partial<Channel> = {}): Channel {
     txFrequency: 145_000_000,
     location: null,
     useLocation: false,
+    maidenheadLocator: null,
     power: null,
     scanSkip: false,
     comment: '',
@@ -33,9 +30,7 @@ describe('filterChannelsForList', () => {
     makeChannel({
       id: '1',
       name: 'Alpha FM',
-      modeProfiles: [
-        { mode: 'fm', squelch: null, rxTone: 'none', txTone: 'none' },
-      ] as ChannelModeProfileFM[],
+      modeProfiles: [defaultModeProfile('fm') as ChannelModeProfileAnalog],
     }),
     makeChannel({
       id: '2',
