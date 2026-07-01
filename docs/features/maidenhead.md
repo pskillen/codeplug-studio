@@ -1,19 +1,22 @@
 # Maidenhead locator conversion
 
-Conversion between Maidenhead grid locators and WGS84 coordinates — shared `core` domain helper used by the `/reference` page, repeater import, and the channel map.
+Conversion between Maidenhead grid locators and WGS84 coordinates — shared `core` domain helper used by the Maidenhead reference tool, repeater import, and the channel map.
 
-**Tracking:** Phase 2 [#12](https://github.com/pskillen/codeplug-studio/issues/12) (Epic [#1](https://github.com/pskillen/codeplug-studio/issues/1)) · shipped in [PR #15](https://github.com/pskillen/codeplug-studio/pull/15)
+**Tracking:** [#29](https://github.com/pskillen/codeplug-studio/issues/29) · Phase 2 [#12](https://github.com/pskillen/codeplug-studio/issues/12)
 
 ## Purpose
 
-### Reference page (`/reference`)
+### Reference tool (`/reference/maidenhead`)
 
 Operators can convert locators and coordinates ad hoc without an active project:
 
-- Locator → coordinates (4/6/8-character input)
-- Coordinates → 6-character locator
+- Locator ↔ coordinates at selectable precision (4 / 6 / 8 / 10 characters)
+- Map click and drag marker (`MapLocationPicker`)
+- Device geolocation via **Use my location**
+- Address geocode (Photon by default; Mapbox when a token is set in Settings)
+- Channel lookup when a project is active (seeds from channel `location`)
 
-Band lookup and the band-plan table live on the same page; see [bands reference](../reference/bands.md).
+The [band plan](../reference/bands.md) lives at `/reference/bands`.
 
 ### Repeater import
 
@@ -21,43 +24,51 @@ When importing from [repeater directories](repeater-directories/README.md), reco
 
 ### Channel map
 
-The [map](map/README.md) plots channels that have a stored location; locator display on channel CRUD is deferred to a later phase.
+The [map](map/README.md) plots channels that have a stored location. Operator **You** marker appears when **Show my location** is used on library list maps.
 
 ## Code anchors
 
-| Path                                             | Role                                                   |
-| ------------------------------------------------ | ------------------------------------------------------ |
-| `src/core/domain/maidenhead.ts`                  | `locatorToCoords`, `coordsToLocator`, `isValidLocator` |
-| `src/app/routes/ReferencePage.tsx`               | Standalone Maidenhead converter section                |
-| `src/integrations/repeaters/ukRepeaterClient.ts` | Locator/coords when normalising repeater records       |
+| Path                                                   | Role                                                               |
+| ------------------------------------------------------ | ------------------------------------------------------------------ |
+| `src/core/domain/maidenhead.ts`                        | `locatorToCoords`, `coordsToLocator`, `isValidLocator` (4–10 char) |
+| `src/app/routes/reference/MaidenheadReferencePage.tsx` | Full converter UI                                                  |
+| `src/app/components/MapLocationPicker/`                | Click/drag map picker                                              |
+| `src/integrations/geocode/`                            | Photon + Mapbox geocode client                                     |
+| `src/integrations/preferences/`                        | Mapbox token in `localStorage`                                     |
+| `src/app/hooks/useMapSettings.ts`                      | Settings ↔ preferences bridge                                      |
+| `src/app/lib/channelLookup.ts`                         | Channel autocomplete helpers                                       |
+| `src/integrations/repeaters/ukRepeaterClient.ts`       | Locator/coords when normalising repeater records                   |
 
 ## Inputs and outputs
 
-| Direction        | Input                                              | Output                                |
-| ---------------- | -------------------------------------------------- | ------------------------------------- |
-| Locator → coords | 4, 6, or 8-character Maidenhead (case-insensitive) | Centre of the finest specified square |
-| Coords → locator | WGS84 lat/lon                                      | 6-character locator (field + square)  |
+| Direction        | Input                                                  | Output                                |
+| ---------------- | ------------------------------------------------------ | ------------------------------------- |
+| Locator → coords | 4, 6, 8, or 10-character Maidenhead (case-insensitive) | Centre of the finest specified square |
+| Coords → locator | WGS84 lat/lon + precision                              | Locator at chosen precision           |
 
 ## Behaviour
 
 - Invalid characters or length → validation message on the converter; `locatorToCoords` returns `null`.
 - Southern/western hemispheres: negative lat/lon handled per standard Maidenhead rules.
-- Precision: 4 char = field; 6 = square (~5 km); 8 = subsquare.
-- Round-trip at fixed precision: `coordsToLocator(locatorToCoords(loc))` should equal normalised `loc` at that precision.
+- Precision: 4 = field; 6 = square (~5 km); 8 = subsquare; 10 = cell.
+- Geocode: Photon needs no token; Mapbox requires token in Settings → Map.
+- Channel picker disabled without an active project; uses UUID `id` refs, not wire names.
 
 ## Manual verify
 
-1. Visit `/reference` (no active project required).
+1. Visit `/reference/maidenhead` (no active project required for converter/geocode).
 2. Enter `IO91WM` → coordinates near London appear.
-3. Enter lat/lon → a 6-char locator appears.
-4. Import a repeater with a known locator → channel appears on the map with the expected position.
+3. Change precision → locator length updates.
+4. Click map / drag marker / **Use my location** → fields stay in sync.
+5. Geocode a postcode (Photon); set Mapbox token in Settings and retry with Mapbox.
+6. With a project active, search a channel with coordinates → **Use location**.
 
 ## Known gaps
 
-- No dedicated `/#/reference/maidenhead` sub-route (single `/reference` page).
-- No map click/drag picker, geocoding, or device geolocation on the converter.
-- Channel edit form does not yet accept locator input (coordinates only when editing).
+- No `maidenheadLocator` field on channels ([#28](https://github.com/pskillen/codeplug-studio/issues/28)) — picker uses `location` only.
+- No Maidenhead grid overlay on the reference map picker.
+- Channel editor does not yet accept locator input (coordinates only when editing).
 
 ## Related
 
-- [map](map/README.md) · [repeater-directories](repeater-directories/README.md) · [bands reference](../reference/bands.md)
+- [reference/](reference/README.md) · [map](map/README.md) · [repeater-directories](repeater-directories/README.md) · [bands reference](../reference/bands.md)

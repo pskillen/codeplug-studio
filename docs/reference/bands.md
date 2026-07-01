@@ -1,8 +1,6 @@
 # UK frequency bands and services
 
-Canonical reference for band labels, MHz/kHz ranges, UI pill colours, and lookup order. Target implementation: `src/core/domain/bandPlan.ts` must stay aligned with this table as coverage grows. In-app band plan: `/reference` (band-plan section).
-
-> **Studio note:** Phase 2 ships a **curated subset** of amateur bands plus airband, marine, and PMR446 in `bandPlan.ts`. Broadcast LW/MW/SW and microwave bands below are reference targets for later UI work — extend the implementation row-by-row rather than diverging from this doc.
+Canonical reference for band labels, MHz/kHz ranges, UI pill colours, and lookup order. Implementation: `src/core/domain/bandCatalog.ts` (full catalog) and `src/core/domain/bandPlan.ts` (Hz lookup for summary and channel UI). In-app band plan: `/reference/bands`.
 
 **Disclaimer:** For programming convenience only. Not authoritative for on-air operation. Licence class, power, geographic restrictions, and non-amateur TX prohibitions apply.
 
@@ -31,7 +29,7 @@ Non-amateur pills render with an outline style in the UI when band pills ship (s
 | `marine`    | `marine`                                                         | ITU marine VHF coastal listen                   |
 | `pmr`       | `pmr446`                                                         | Licence-free PMR446 (often RX-only on ham rigs) |
 
-Export `BAND_PLAN`, `bandForFrequencyHz`, and `bandLabelForFrequencyHz` from `src/core/domain/bandPlan.ts`. Lookup uses `BAND_PLAN`; band-plan page lists the shipped rows.
+Export `ALL_BANDS`, `BAND_SECTIONS`, `bandForFrequencyHz`, and `bandLabelForFrequencyHz` from `src/core/domain/bandCatalog.ts` / `bandPlan.ts`. Lookup iterates `ALL_BANDS` in frequency order; the band-plan page lists grouped sections.
 
 ## Disambiguation
 

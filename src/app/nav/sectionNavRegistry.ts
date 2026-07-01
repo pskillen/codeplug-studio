@@ -1,6 +1,8 @@
 import ChannelsSectionNav from '../components/SectionNav/sections/ChannelsSectionNav.tsx';
 import ContactsSectionNav from '../components/SectionNav/sections/ContactsSectionNav.tsx';
 import HelpSectionNav from '../components/SectionNav/sections/HelpSectionNav.tsx';
+import BandsReferenceSectionNav from '../components/SectionNav/sections/BandsReferenceSectionNav.tsx';
+import MaidenheadReferenceSectionNav from '../components/SectionNav/sections/MaidenheadReferenceSectionNav.tsx';
 import ReferenceSectionNav from '../components/SectionNav/sections/ReferenceSectionNav.tsx';
 import RxGroupListsSectionNav from '../components/SectionNav/sections/RxGroupListsSectionNav.tsx';
 import SettingsSectionNav from '../components/SectionNav/sections/SettingsSectionNav.tsx';
@@ -11,6 +13,12 @@ import type { SectionNavEntry } from './sectionNavTypes.ts';
 /** Longest prefix first — more specific library list routes win over `/library`. */
 const registry: SectionNavEntry[] = [
   { title: 'Help', prefix: '/help', Component: HelpSectionNav },
+  {
+    title: 'Maidenhead',
+    prefix: '/reference/maidenhead',
+    Component: MaidenheadReferenceSectionNav,
+  },
+  { title: 'Bands', prefix: '/reference/bands', Component: BandsReferenceSectionNav },
   { title: 'Reference', prefix: '/reference', Component: ReferenceSectionNav },
   { title: 'Settings', prefix: '/settings', Component: SettingsSectionNav },
   { title: 'Channels', prefix: '/library/channels', Component: ChannelsSectionNav },

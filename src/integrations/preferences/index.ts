@@ -5,6 +5,7 @@
  */
 
 const ACTIVE_PROJECT_KEY = 'codeplug-studio:activeProjectId';
+const MAPBOX_TOKEN_KEY = 'codeplug-studio:mapboxToken';
 
 export function loadActiveProjectId(): string | null {
   try {
@@ -24,5 +25,26 @@ export function saveActiveProjectId(projectId: string | null): void {
     }
   } catch {
     // Ignore write failures (quota, disabled storage).
+  }
+}
+
+export function loadMapboxToken(): string {
+  try {
+    return globalThis.localStorage?.getItem(MAPBOX_TOKEN_KEY) ?? '';
+  } catch {
+    return '';
+  }
+}
+
+export function saveMapboxToken(token: string): void {
+  try {
+    const trimmed = token.trim();
+    if (trimmed) {
+      globalThis.localStorage?.setItem(MAPBOX_TOKEN_KEY, trimmed);
+    } else {
+      globalThis.localStorage?.removeItem(MAPBOX_TOKEN_KEY);
+    }
+  } catch {
+    // Ignore write failures.
   }
 }

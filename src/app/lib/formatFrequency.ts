@@ -30,6 +30,10 @@ export function formatMhzNumber(mhz: number): string {
   return mhz.toFixed(9);
 }
 
+export function formatBandRangeMhz(minMhz: number, maxMhz: number): string {
+  return `${formatMhzNumber(minMhz)}–${formatMhzNumber(maxMhz)} MHz`;
+}
+
 export function formatChannelRxTxListCell(rxHz: number | null, txHz: number | null): string {
   const fmt = (hz: number | null) =>
     hz != null && hz > 0 ? formatFrequencyHz(hz).replace(' MHz', '') : null;

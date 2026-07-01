@@ -99,6 +99,7 @@ export default function ZonesListPage() {
           zones={zones}
           allChannels={channels}
           height={420}
+          operatorPosition={position}
           onChannelClick={(id) => navigate(`/library/channels/${id}`)}
           onZoneClick={(id) => navigate(`/library/zones/${id}`)}
         />

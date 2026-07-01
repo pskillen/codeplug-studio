@@ -43,6 +43,17 @@ interface ZoneHullData {
   hull?: LatLon[];
 }
 
+function operatorDivIcon(): L.DivIcon {
+  return L.divIcon({
+    className: 'operator-marker-wrap',
+    html: `<div class="operator-marker">
+      <div class="operator-marker-dot"></div>
+      <div class="operator-marker-label">You</div>
+    </div>`,
+    iconAnchor: [0, 0],
+  });
+}
+
 function escapeHtml(s: string): string {
   return String(s)
     .replace(/&/g, '&amp;')
@@ -136,16 +147,24 @@ function FitMapBounds({
   groups,
   zoneHulls,
   showZoneHulls,
+  operatorPosition,
 }: {
   groups: Channel[][];
   zoneHulls: ZoneHullData[];
   showZoneHulls: boolean;
+  operatorPosition?: { lat: number; lon: number } | null;
 }) {
   const map = useMap();
 
   useEffect(() => {
     const zonePoints = showZoneHulls ? zoneHulls.flatMap((zh) => zh.points) : [];
-    const points = collectMapPoints(groups, zonePoints, showZoneHulls);
+    const extraPoints =
+      operatorPosition != null &&
+      Number.isFinite(operatorPosition.lat) &&
+      Number.isFinite(operatorPosition.lon)
+        ? ([[operatorPosition.lat, operatorPosition.lon]] as LatLon[])
+        : [];
+    const points = collectMapPoints(groups, zonePoints, showZoneHulls, extraPoints);
     const action = computeMapView(points, {
       padding: [48, 48],
       maxZoom: 11,
@@ -163,7 +182,7 @@ function FitMapBounds({
       padding: action.padding,
       maxZoom: action.maxZoom,
     });
-  }, [map, groups, zoneHulls, showZoneHulls]);
+  }, [map, groups, zoneHulls, showZoneHulls, operatorPosition]);
 
   return null;
 }
@@ -209,6 +228,7 @@ export interface CodeplugMapProps {
   defaultShowZones?: boolean;
   defaultShowLabels?: boolean;
   highlightChannelId?: string;
+  operatorPosition?: { lat: number; lon: number } | null;
   onChannelClick?: (channelId: string) => void;
   onZoneClick?: (zoneId: string) => void;
 }
@@ -222,6 +242,7 @@ export default function CodeplugMap({
   defaultShowZones = true,
   defaultShowLabels = false,
   highlightChannelId,
+  operatorPosition = null,
   onChannelClick,
   onZoneClick,
 }: CodeplugMapProps) {
@@ -442,9 +463,26 @@ export default function CodeplugMap({
               );
             })}
 
+            {operatorPosition != null &&
+            Number.isFinite(operatorPosition.lat) &&
+            Number.isFinite(operatorPosition.lon) ? (
+              <Marker
+                position={[operatorPosition.lat, operatorPosition.lon]}
+                icon={operatorDivIcon()}
+              >
+                <Popup>You are here</Popup>
+              </Marker>
+            ) : null}
+
             {groups.length > 0 ||
+            operatorPosition != null ||
             (showZoneHulls && zoneHulls.some((zh) => zh.geometry !== 'none')) ? (
-              <FitMapBounds groups={groups} zoneHulls={zoneHulls} showZoneHulls={showZoneHulls} />
+              <FitMapBounds
+                groups={groups}
+                zoneHulls={zoneHulls}
+                showZoneHulls={showZoneHulls}
+                operatorPosition={operatorPosition}
+              />
             ) : null}
           </MapContainer>
         ) : null}
