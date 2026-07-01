@@ -6,12 +6,15 @@ import LibraryPage from './routes/LibraryPage.tsx';
 import EntityEditorPage from './routes/library/EntityEditorPage.tsx';
 import AddFromUkRepeaterPage from './routes/library/AddFromUkRepeaterPage.tsx';
 import AddFromBrandmeisterPage from './routes/library/AddFromBrandmeisterPage.tsx';
-import MapPage from './routes/MapPage.tsx';
 import SummaryPage from './routes/SummaryPage.tsx';
 import ReferencePage from './routes/ReferencePage.tsx';
 import SettingsPage from './routes/SettingsPage.tsx';
 import HelpPage from './routes/HelpPage.tsx';
 import StyleguidePage from './routes/StyleguidePage.tsx';
+
+function MapRedirect() {
+  return <Navigate to="/library" replace state={{ scrollTo: 'library-channels' }} />;
+}
 
 export default function App() {
   return (
@@ -36,7 +39,7 @@ export default function App() {
             <Route path="/library/:kind/:id" element={<EntityEditorPage />} />
             <Route path="/summary" element={<SummaryPage />} />
             <Route path="/reports" element={<Navigate to="/summary" replace />} />
-            <Route path="/map" element={<MapPage />} />
+            <Route path="/map" element={<MapRedirect />} />
           </Route>
         </Route>
       </Routes>

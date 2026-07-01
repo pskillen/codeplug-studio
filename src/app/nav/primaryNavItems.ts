@@ -1,4 +1,4 @@
-import { IconBooks, IconChartBar, IconHome, IconMap } from '@tabler/icons-react';
+import { IconBooks, IconChartBar, IconHome } from '@tabler/icons-react';
 import type { TablerIcon } from '@tabler/icons-react';
 import type { Library } from '@core/models/library.ts';
 
@@ -17,7 +17,6 @@ export interface PrimaryNavItem {
 export const projectNavItems: PrimaryNavItem[] = [
   { to: '/library', label: 'Library', icon: IconBooks, countKey: 'channels' },
   { to: '/summary', label: 'Summary', icon: IconChartBar },
-  { to: '/map', label: 'Map', icon: IconMap },
 ];
 
 export const homeNavItem = { to: '/', label: 'Projects', icon: IconHome };

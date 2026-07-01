@@ -9,8 +9,8 @@
 | --- | --- | --- |
 | Core map geometry + projection | Complete | `f0208e1` |
 | CodeplugMap component | Complete | `a3b60c2` |
-| Library embed | Complete | pending |
-| Remove `/map` route | Not started | — |
+| Library embed | Complete | `2f7d9ee` |
+| Remove `/map` route | Complete | pending |
 | Documentation | Not started | — |
 
 ## Shipped
