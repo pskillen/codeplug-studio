@@ -11,7 +11,9 @@ import TalkGroupsListPage from './routes/library/lists/TalkGroupsListPage.tsx';
 import ContactsListPage from './routes/library/lists/ContactsListPage.tsx';
 import RxGroupListsListPage from './routes/library/lists/RxGroupListsListPage.tsx';
 import SummaryPage from './routes/SummaryPage.tsx';
-import ReferencePage from './routes/ReferencePage.tsx';
+import BandsReferencePage from './routes/reference/BandsReferencePage.tsx';
+import MaidenheadReferencePage from './routes/reference/MaidenheadReferencePage.tsx';
+import ReferenceIndexPage from './routes/reference/ReferenceIndexPage.tsx';
 import SettingsPage from './routes/SettingsPage.tsx';
 import HelpPage from './routes/HelpPage.tsx';
 import StyleguidePage from './routes/StyleguidePage.tsx';
@@ -28,7 +30,9 @@ export default function App() {
           <Route path="/" element={<HomePage />} />
           <Route path="/settings" element={<SettingsPage />} />
           <Route path="/help" element={<HelpPage />} />
-          <Route path="/reference" element={<ReferencePage />} />
+          <Route path="/reference" element={<ReferenceIndexPage />} />
+          <Route path="/reference/maidenhead" element={<MaidenheadReferencePage />} />
+          <Route path="/reference/bands" element={<BandsReferencePage />} />
           <Route path="/styleguide" element={<StyleguidePage />} />
           <Route element={<RequireActiveProject />}>
             <Route path="/library" element={<Navigate to="/library/channels" replace />} />
