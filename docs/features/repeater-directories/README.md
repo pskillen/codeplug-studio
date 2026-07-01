@@ -33,7 +33,7 @@ Repeater search is **not** a top-level nav item — it lives under library workf
 | ---------------------------------------------------------------- | -------------------------------------------------- |
 | This README                                                      | Workflows, boundaries, code anchors                |
 | [ukrepeater API reference](../../reference/ukrepeater/README.md) | ETCC endpoints, mode flags, field mapping (tier 3) |
-| [map](../map/README.md)                                          | Channel map (separate surface)                     |
+| [map](../map/README.md)                                          | Embedded channel map on Library sections           |
 | [library](../library/README.md)                                  | Channel entity CRUD                                |
 | [app-shell](../app-shell/README.md)                              | Routes and section nav                             |
 

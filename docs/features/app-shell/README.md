@@ -15,9 +15,9 @@ ProjectProvider
 └─ HashRouter
    └─ AppLayout (AppShell: header + AppNav + SectionNav + Outlet + footer)
       ├─ /          Projects (lifecycle UI)
-      ├─ /library   Library inventory + entity editors
+      ├─ /library   Library inventory + embedded channel map + entity editors
       ├─ /summary   Library summary
-      ├─ /map       Channel map
+      ├─ /map       _(redirect → /library, scroll to channels map)_
       ├─ /reference Reference tools
       ├─ /settings  Settings shell
       └─ /help      Help shell
@@ -27,19 +27,19 @@ UI primitives live in `src/app/components/ui/` (ported from codeplug-tool). Dev 
 
 ## Routes
 
-| Path                                      | Surface                 | Status                                                                                      |
-| ----------------------------------------- | ----------------------- | ------------------------------------------------------------------------------------------- |
-| `/`                                       | Projects                | Lifecycle UI (create/switch/rename/del)                                                     |
-| `/library`                                | Library                 | Entity CRUD — Ticket #10                                                                    |
-| `/library/channels/add-from-ukrepeater`   | Add from ukrepeater.net | [repeater-directories](../repeater-directories/README.md)                                   |
-| `/library/channels/add-from-brandmeister` | Add from BrandMeister   | [repeater-directories](../repeater-directories/README.md)                                   |
-| `/map`                                    | Map                     | Channel map — Ticket #11                                                                    |
-| `/summary`                                | Summary                 | [Library summary](../report/README.md) — Ticket #12                                         |
-| `/reports`                                | _(redirect)_            | Redirects to `/summary` (legacy hash route)                                                 |
-| `/reference`                              | Reference               | [Maidenhead + band tools](../maidenhead.md), [bands](../../reference/bands.md) — Ticket #12 |
-| `/settings`                               | Settings                | Shell content                                                                               |
-| `/help`                                   | Help                    | Shell content                                                                               |
-| `/styleguide`                             | Styleguide              | Hidden dev page (UI kit demos)                                                              |
+| Path                                      | Surface                 | Status                                                                                                                                |
+| ----------------------------------------- | ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| `/`                                       | Projects                | Lifecycle UI (create/switch/rename/del)                                                                                               |
+| `/library`                                | Library                 | Entity CRUD + embedded map — Ticket #10, #22                                                                                          |
+| `/library/channels/add-from-ukrepeater`   | Add from ukrepeater.net | [repeater-directories](../repeater-directories/README.md)                                                                             |
+| `/library/channels/add-from-brandmeister` | Add from BrandMeister   | [repeater-directories](../repeater-directories/README.md)                                                                             |
+| `/map`                                    | _(redirect)_            | Redirects to `/library` with scroll to `library-channels` (legacy [#11](https://github.com/pskillen/codeplug-studio/issues/11) route) |
+| `/summary`                                | Summary                 | [Library summary](../report/README.md) — Ticket #12                                                                                   |
+| `/reports`                                | _(redirect)_            | Redirects to `/summary` (legacy hash route)                                                                                           |
+| `/reference`                              | Reference               | [Maidenhead + band tools](../maidenhead.md), [bands](../../reference/bands.md) — Ticket #12                                           |
+| `/settings`                               | Settings                | Shell content                                                                                                                         |
+| `/help`                                   | Help                    | Shell content                                                                                                                         |
+| `/styleguide`                             | Styleguide              | Hidden dev page (UI kit demos)                                                                                                        |
 
 Routes that need a project gate on an active project and link back to Projects when none is selected.
 

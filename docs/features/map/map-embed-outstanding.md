@@ -1,0 +1,15 @@
+# Map embed — outstanding
+
+**Tracking:** [#22](https://github.com/pskillen/codeplug-studio/issues/22)
+
+Items discovered during execution — not the plan backlog.
+
+## Deferred (known scope)
+
+- Summary page inset map (tool had it; not in #22 acceptance criteria)
+- `hideFromMap` channel field and filter ([#22](https://github.com/pskillen/codeplug-studio/issues/22) plan note)
+- Map settings UI, Mapbox tiles, Maidenhead grid overlay, operator marker, distance filter
+- `MapLocationPicker` / click-to-set coords on `ChannelEditor`
+- True concave hulls (prototype uses convex)
+- E2E Playwright map tests
+- Relocate embed when [#24](https://github.com/pskillen/codeplug-studio/issues/24) / [#25](https://github.com/pskillen/codeplug-studio/issues/25) land dedicated list routes

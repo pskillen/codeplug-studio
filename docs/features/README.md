@@ -13,16 +13,16 @@ Agent skills for documentation and execution tracking:
 
 ## Features
 
-| Topic                | Source                                                              | Docs                                           | Status                                                                 |
-| -------------------- | ------------------------------------------------------------------- | ---------------------------------------------- | ---------------------------------------------------------------------- |
-| Data model           | `src/core/models/`, `src/core/domain/`                              | [data-model/](data-model/)                     | Phase 1 — project, library, format build, traits                       |
-| App shell            | `src/app/routes/`, `src/app/components/`                            | [app-shell/](app-shell/)                       | Phase 2 — navigation, route surfaces, project lifecycle                |
-| Library CRUD         | `src/app/features/library/`, `src/integrations/persistence/`        | [library/](library/)                           | Phase 2 — channel/talk-group/contact CRUD + IndexedDB                  |
-| Map                  | `src/app/routes/MapPage.tsx`, `src/app/components/map/`             | [map/](map/)                                   | Phase 2 ([#11](https://github.com/pskillen/codeplug-studio/issues/11)) |
-| Repeater directories | `src/integrations/repeaters/`                                       | [repeater-directories/](repeater-directories/) | Phase 2 — UK repeater + BrandMeister library workflows                 |
-| Summary              | `src/app/routes/SummaryPage.tsx`, `src/core/domain/summary.ts`      | [report/](report/)                             | Phase 2 ([#12](https://github.com/pskillen/codeplug-studio/issues/12)) |
-| Maidenhead           | `src/core/domain/maidenhead.ts`, `src/app/routes/ReferencePage.tsx` | [maidenhead.md](maidenhead.md)                 | Phase 2 — locator conversion on `/reference`                           |
-| _(later phases)_     | `src/core/import-export/`, `src/app/features/builds/`               | `builds/`, `import-export/`                    | Planned — persisted `FormatBuild` profiles + CPS import/export         |
+| Topic                | Source                                                                | Docs                                                 | Status                                                                 |
+| -------------------- | --------------------------------------------------------------------- | ---------------------------------------------------- | ---------------------------------------------------------------------- |
+| Data model           | `src/core/models/`, `src/core/domain/`                                | [data-model/](data-model/)                           | Phase 1 — project, library, format build, traits                       |
+| App shell            | `src/app/routes/`, `src/app/components/`                              | [app-shell/](app-shell/)                             | Phase 2 — navigation, route surfaces, project lifecycle                |
+| Library CRUD         | `src/app/features/library/`, `src/integrations/persistence/`          | [library/](library/)                                 | Phase 2 — channel/talk-group/contact CRUD + IndexedDB                  |
+| Map                  | `src/app/components/CodeplugMap/`, `src/core/domain/mapProjection.ts` | [map/](map/) ([progress](map/map-embed-progress.md)) | Phase 2 ([#22](https://github.com/pskillen/codeplug-studio/issues/22)) |
+| Repeater directories | `src/integrations/repeaters/`                                         | [repeater-directories/](repeater-directories/)       | Phase 2 — UK repeater + BrandMeister library workflows                 |
+| Summary              | `src/app/routes/SummaryPage.tsx`, `src/core/domain/summary.ts`        | [report/](report/)                                   | Phase 2 ([#12](https://github.com/pskillen/codeplug-studio/issues/12)) |
+| Maidenhead           | `src/core/domain/maidenhead.ts`, `src/app/routes/ReferencePage.tsx`   | [maidenhead.md](maidenhead.md)                       | Phase 2 — locator conversion on `/reference`                           |
+| _(later phases)_     | `src/core/import-export/`, `src/app/features/builds/`                 | `builds/`, `import-export/`                          | Planned — persisted `FormatBuild` profiles + CPS import/export         |
 
 ## Reference
 

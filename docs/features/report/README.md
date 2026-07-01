@@ -13,7 +13,7 @@ Read-only summary view over the active project's library. Gives operators an at-
 | Entity counts         | Shipped  | Channels, talk groups, digital/analog contacts, RX group lists, zones |
 | Channels by mode      | Shipped  | From the first `modeProfiles` entry per channel                       |
 | Channels by band      | Shipped  | Via `bandLabelForFrequencyHz` on RX frequency                         |
-| Located-channel count | Shipped  | Links to the [map](../map/README.md)                                  |
+| Located-channel count | Shipped  | Links to the [library channels map section](../map/README.md)         |
 | Integrity warnings    | Shipped  | Dangling UUID references (`findDanglingReferences`)                   |
 | Export / print report | Deferred | No report export yet                                                  |
 

@@ -1,0 +1,76 @@
+.codeplug-map-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.codeplug-map {
+  height: 400px;
+  min-height: 300px;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid var(--mantine-color-dark-4);
+}
+
+.channel-marker-wrap {
+  background: transparent;
+  border: none;
+}
+
+.channel-marker {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+
+.channel-marker-dot {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 2px solid #1a1a1a;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.45);
+  pointer-events: auto;
+  cursor: pointer;
+}
+
+.channel-marker-dot.merged {
+  width: 22px;
+  height: 22px;
+}
+
+.channel-marker-dot.highlighted {
+  border-color: #fff;
+  box-shadow:
+    0 0 0 3px #228be6,
+    0 1px 4px rgba(0, 0, 0, 0.45);
+}
+
+.channel-marker-label {
+  margin-top: 2px;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.15;
+  text-align: center;
+  max-width: 120px;
+  color: #111;
+  text-shadow:
+    -1px -1px 0 #fff,
+    1px -1px 0 #fff,
+    -1px 1px 0 #fff,
+    1px 1px 0 #fff,
+    0 0 3px #fff;
+  pointer-events: none;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.zone-tooltip {
+  background: rgba(26, 35, 50, 0.92);
+  color: #e7ecf3;
+  border: 1px solid #2d3a4f;
+  font-size: 0.8rem;
+  padding: 0.25rem 0.5rem;
+}

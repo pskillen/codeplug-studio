@@ -14,7 +14,8 @@ export default function HelpPage() {
           </List.Item>
           <List.Item>
             <strong>Library</strong> — curate channels, talk groups, contacts, RX group lists, and
-            zones in a vendor-neutral inventory.
+            zones in a vendor-neutral inventory. Located channels appear on the map in the Channels
+            and Zones sections.
           </List.Item>
           <List.Item>
             <strong>Repeater directories</strong> — add new channels from ukrepeater.net or
@@ -24,9 +25,6 @@ export default function HelpPage() {
           <List.Item>
             <strong>Summary</strong> — at-a-glance library inventory, breakdowns, and integrity
             warnings.
-          </List.Item>
-          <List.Item>
-            <strong>Map</strong> — plot located channels on a map.
           </List.Item>
         </List>
         <Stack gap="xs" mt="md">

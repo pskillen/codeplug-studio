@@ -1,0 +1,175 @@
+import type { Channel, ChannelMode, Zone } from '../models/library.ts';
+import type { LatLon } from './geo.ts';
+import { uniqueLatLon } from './geo.ts';
+
+export interface FilterOptions {
+  requireUseLocation: boolean;
+  skipZero: boolean;
+}
+
+export interface SkippedChannel {
+  name: string;
+  reason: string;
+}
+
+export interface ZoneMemberMissing {
+  name: string;
+  reason: string;
+}
+
+export const DEFAULT_MAP_FILTER_OPTS: FilterOptions = {
+  requireUseLocation: true,
+  skipZero: true,
+};
+
+/** Primary RF mode for map colouring — first profile when multi-mode. */
+export function primaryMode(channel: Channel): ChannelMode {
+  return channel.modeProfiles[0]?.mode ?? 'fm';
+}
+
+/** All RF modes represented on a channel. */
+export function channelModes(channel: Channel): ChannelMode[] {
+  if (channel.modeProfiles.length > 0) {
+    return channel.modeProfiles.map((p) => p.mode);
+  }
+  return ['fm'];
+}
+
+export function channelDisplayLabel(
+  channel: Pick<Channel, 'callsign' | 'name'>,
+  useFull: boolean,
+): string {
+  if (!useFull) return channel.callsign.trim() || channel.name.trim();
+  const callsign = channel.callsign.trim();
+  const name = channel.name.trim();
+  if (callsign && name) return `${callsign} — ${name}`;
+  return callsign || name;
+}
+
+export function markerLabel(group: Channel[], useFull: boolean): string {
+  const ch = group[0];
+  if (group.length === 1 && channelModes(ch).length > 1) {
+    const base = channelDisplayLabel(ch, useFull);
+    return `${base} (${channelModes(ch).join('+')})`;
+  }
+  if (group.length > 1) {
+    const base = channelDisplayLabel(ch, useFull);
+    return `${base} +${group.length - 1}`;
+  }
+  return channelDisplayLabel(ch, useFull);
+}
+
+export function dominantMode(group: Channel[]): ChannelMode {
+  const counts = new Map<ChannelMode, number>();
+  for (const ch of group) {
+    const mode = primaryMode(ch);
+    counts.set(mode, (counts.get(mode) ?? 0) + 1);
+  }
+  let best = primaryMode(group[0]);
+  let bestCount = 0;
+  for (const [mode, count] of counts) {
+    if (count > bestCount) {
+      bestCount = count;
+      best = mode;
+    }
+  }
+  return best;
+}
+
+export function applyFilters(
+  channels: Channel[],
+  { requireUseLocation, skipZero }: FilterOptions,
+): { plotted: Channel[]; skipped: SkippedChannel[] } {
+  const plotted: Channel[] = [];
+  const skipped: SkippedChannel[] = [];
+
+  for (const ch of channels) {
+    let reason: string | null = null;
+    if (ch.location == null) reason = 'missing coordinates';
+    else if (skipZero && ch.location.lat === 0 && ch.location.lon === 0) reason = '0,0 coordinates';
+    else if (requireUseLocation && !ch.useLocation) reason = 'Use Location = No';
+    if (reason) {
+      skipped.push({ name: ch.name, reason });
+      continue;
+    }
+    plotted.push(ch);
+  }
+  return { plotted, skipped };
+}
+
+export function groupByCoords(list: Channel[], merge: boolean): Channel[][] {
+  if (!merge) return list.map((ch) => [ch]);
+  const map = new Map<string, Channel[]>();
+  for (const ch of list) {
+    const key = `${ch.location!.lat.toFixed(5)},${ch.location!.lon.toFixed(5)}`;
+    if (!map.has(key)) map.set(key, []);
+    map.get(key)!.push(ch);
+  }
+  return [...map.values()];
+}
+
+export function buildChannelById(plotted: Channel[]): Map<string, Channel> {
+  const index = new Map<string, Channel>();
+  for (const ch of plotted) {
+    index.set(ch.id, ch);
+  }
+  return index;
+}
+
+export function zoneGeolocatedPoints(
+  zone: Zone,
+  plottedById: Map<string, Channel>,
+  allChannels: Channel[],
+  { skipZero, requireUseLocation }: FilterOptions,
+): { points: LatLon[]; missing: ZoneMemberMissing[] } {
+  const points: LatLon[] = [];
+  const missing: ZoneMemberMissing[] = [];
+  const seenIds = new Set<string>();
+
+  const channelMembers = zone.members.filter((m) => m.kind === 'channel');
+
+  for (const member of channelMembers) {
+    if (seenIds.has(member.id)) continue;
+    seenIds.add(member.id);
+
+    const ch = plottedById.get(member.id) ?? allChannels.find((c) => c.id === member.id);
+    if (!ch) {
+      missing.push({ name: member.id, reason: 'unresolved member' });
+      continue;
+    }
+
+    if (!plottedById.has(member.id)) {
+      missing.push({
+        name: ch.name,
+        reason: 'filtered out or missing coordinates',
+      });
+      continue;
+    }
+
+    if (ch.location == null) {
+      missing.push({ name: ch.name, reason: 'no coordinates' });
+      continue;
+    }
+    if (skipZero && ch.location.lat === 0 && ch.location.lon === 0) {
+      missing.push({ name: ch.name, reason: '0,0 coordinates' });
+      continue;
+    }
+    if (requireUseLocation && !ch.useLocation) {
+      missing.push({ name: ch.name, reason: 'Use Location = No' });
+      continue;
+    }
+    points.push([ch.location.lat, ch.location.lon]);
+  }
+
+  return { points: uniqueLatLon(points), missing };
+}
+
+export function channelHasGeolocation(channel: Channel): boolean {
+  const { location, useLocation } = channel;
+  return (
+    useLocation &&
+    location != null &&
+    Number.isFinite(location.lat) &&
+    Number.isFinite(location.lon)
+  );
+}
