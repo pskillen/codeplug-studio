@@ -100,6 +100,44 @@ export function coordsFromChannelLocation(
   return null;
 }
 
+/** Character length of a normalised locator (4, 6, 8, or 10); 0 when absent/invalid. */
+export function locatorCharCount(locator: string | null | undefined): number {
+  return normaliseLocator(locator)?.length ?? 0;
+}
+
+/** Decimal places in lat/lon — proxy for coordinate precision (higher = finer). */
+export function coordinateDecimalPrecision(point: GeoPoint): number {
+  const decimalPlaces = (value: number): number => {
+    const trimmed = value.toFixed(8).replace(/\.?0+$/, '');
+    const dot = trimmed.indexOf('.');
+    return dot < 0 ? 0 : trimmed.length - dot - 1;
+  };
+  return Math.min(decimalPlaces(point.lat), decimalPlaces(point.lon));
+}
+
+/** True when the candidate locator is strictly less precise than the reference. */
+export function isLocatorLessPrecise(
+  reference: string | null | undefined,
+  candidate: string | null | undefined,
+): boolean {
+  const refLen = locatorCharCount(reference);
+  const candLen = locatorCharCount(candidate);
+  if (refLen === 0 || candLen === 0) return false;
+  return candLen < refLen;
+}
+
+/** True when candidate coordinates are rounded more coarsely than the reference. */
+export function isCoordinateLessPrecise(
+  reference: GeoPoint | null | undefined,
+  candidate: GeoPoint | null | undefined,
+): boolean {
+  if (!reference || !candidate) return false;
+  const refPrec = coordinateDecimalPrecision(reference);
+  const candPrec = coordinateDecimalPrecision(candidate);
+  if (refPrec === 0 || candPrec === 0) return false;
+  return candPrec < refPrec;
+}
+
 /** Whether locator-derived coords differ materially from stored coordinates. */
 export function locationConflict(
   location: GeoPoint | null,

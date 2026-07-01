@@ -4,6 +4,10 @@ import type {
   ChannelModeProfileDMR,
   ChannelTone,
 } from '@core/models/library.ts';
+import {
+  isCoordinateLessPrecise,
+  isLocatorLessPrecise,
+} from '@core/domain/channelLocation.ts';
 import { findAnalogProfile, findDmrProfile } from '@core/domain/modeProfiles.ts';
 import type { RepeaterListing } from './types.ts';
 import { repeaterListingToChannel, type MapListingOptions } from './mapToChannel.ts';
@@ -33,6 +37,8 @@ export interface ChannelDiffRow {
   local: string;
   remote: string;
   changed: boolean;
+  /** When changed, whether the apply checkbox starts checked (default true). */
+  selectByDefault: boolean;
 }
 
 const FIELD_LABELS: Record<ChannelDiffField, string> = {
@@ -81,6 +87,18 @@ function locationEqual(a: Channel['location'], b: Channel['location']): boolean 
   return Math.abs(a.lat - b.lat) < 0.0001 && Math.abs(a.lon - b.lon) < 0.0001;
 }
 
+function locationSelectByDefault(channel: Channel, remote: Channel, changed: boolean): boolean {
+  if (!changed) return false;
+  if (isCoordinateLessPrecise(channel.location, remote.location)) return false;
+  if (isLocatorLessPrecise(channel.maidenheadLocator, remote.maidenheadLocator)) return false;
+  return true;
+}
+
+function maidenheadSelectByDefault(channel: Channel, remote: Channel, changed: boolean): boolean {
+  if (!changed) return false;
+  return !isLocatorLessPrecise(channel.maidenheadLocator, remote.maidenheadLocator);
+}
+
 export function diffChannelFromListing(
   channel: Channel,
   listing: RepeaterListing,
@@ -88,9 +106,23 @@ export function diffChannelFromListing(
 ): ChannelDiffRow[] {
   const remote = repeaterListingToChannel(listing, channel.projectId, options);
   const rows: ChannelDiffRow[] = [];
+  const hideComment = listing.source === 'brandmeister' || options.omitComment;
 
-  const push = (field: ChannelDiffField, local: string, remoteVal: string, changed: boolean) => {
-    rows.push({ field, label: FIELD_LABELS[field], local, remote: remoteVal, changed });
+  const push = (
+    field: ChannelDiffField,
+    local: string,
+    remoteVal: string,
+    changed: boolean,
+    selectByDefault = changed,
+  ) => {
+    rows.push({
+      field,
+      label: FIELD_LABELS[field],
+      local,
+      remote: remoteVal,
+      changed,
+      selectByDefault: changed ? selectByDefault : false,
+    });
   };
 
   const localFm = findFmProfile(channel);
@@ -148,17 +180,21 @@ export function diffChannelFromListing(
     formatRemoteMode(remote),
     formatMode(channel) !== formatMode(remote),
   );
+  const locationChanged = !locationEqual(channel.location, remote.location);
   push(
     'location',
     formatLocation(channel),
     formatLocation(remote),
-    !locationEqual(channel.location, remote.location),
+    locationChanged,
+    locationSelectByDefault(channel, remote, locationChanged),
   );
+  const locatorChanged = (channel.maidenheadLocator ?? '') !== (remote.maidenheadLocator ?? '');
   push(
     'maidenheadLocator',
     channel.maidenheadLocator ?? '—',
     remote.maidenheadLocator ?? '—',
-    (channel.maidenheadLocator ?? '') !== (remote.maidenheadLocator ?? ''),
+    locatorChanged,
+    maidenheadSelectByDefault(channel, remote, locatorChanged),
   );
   push(
     'useLocation',
@@ -166,12 +202,14 @@ export function diffChannelFromListing(
     remote.useLocation ? 'Yes' : 'No',
     channel.useLocation !== remote.useLocation,
   );
-  push(
-    'comment',
-    channel.comment || '—',
-    remote.comment || '—',
-    channel.comment !== remote.comment,
-  );
+  if (!hideComment) {
+    push(
+      'comment',
+      channel.comment || '—',
+      remote.comment || '—',
+      channel.comment !== remote.comment,
+    );
+  }
 
   return rows;
 }

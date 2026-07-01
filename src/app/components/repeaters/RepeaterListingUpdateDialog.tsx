@@ -42,7 +42,7 @@ function RepeaterListingUpdateDialogBody({
   );
   const changedRows = useMemo(() => diffRows.filter((r) => r.changed), [diffRows]);
   const [selectedFields, setSelectedFields] = useState<Set<ChannelDiffField>>(
-    () => new Set(changedRows.map((r) => r.field)),
+    () => new Set(diffRows.filter((r) => r.selectByDefault).map((r) => r.field)),
   );
   const [applyError, setApplyError] = useState<string | null>(null);
   const [applying, setApplying] = useState(false);

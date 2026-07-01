@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import {
   coordsFromChannelLocation,
+  coordinateDecimalPrecision,
+  isCoordinateLessPrecise,
+  isLocatorLessPrecise,
+  locatorCharCount,
   locationConflict,
   normaliseLocator,
   reconcileChannelLocation,
@@ -92,5 +96,28 @@ describe('coordsFromChannelLocation', () => {
 describe('locationConflict', () => {
   it('detects mismatch between coords and locator', () => {
     expect(locationConflict({ lat: 57.0, lon: -3.5 }, 'IO91WM')).toBe(true);
+  });
+});
+
+describe('location precision helpers', () => {
+  it('counts locator characters', () => {
+    expect(locatorCharCount('IO91')).toBe(4);
+    expect(locatorCharCount('IO91WM')).toBe(6);
+    expect(locatorCharCount(null)).toBe(0);
+  });
+
+  it('detects less precise locator', () => {
+    expect(isLocatorLessPrecise('IO91WM', 'IO91')).toBe(true);
+    expect(isLocatorLessPrecise('IO91', 'IO91WM')).toBe(false);
+  });
+
+  it('detects less precise coordinates', () => {
+    expect(
+      isCoordinateLessPrecise(
+        { lat: 51.123456, lon: -1.234567 },
+        { lat: 51.12, lon: -1.23 },
+      ),
+    ).toBe(true);
+    expect(coordinateDecimalPrecision({ lat: 51.123456, lon: -1.2 })).toBe(1);
   });
 });
