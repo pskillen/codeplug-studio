@@ -33,7 +33,7 @@ Items **skipped**, **incomplete**, or **discovered during execution** — not fu
 - [x] **Multi-mode channel CRUD** — [#16](https://github.com/pskillen/codeplug-studio/issues/16)
 - [x] **Typed digital profiles** — D-STAR, YSF, NXDN, TETRA (P25/M17 remain stubs) — [#16](https://github.com/pskillen/codeplug-studio/issues/16)
 - [x] **`maidenheadLocator` on channels** — [#28](https://github.com/pskillen/codeplug-studio/issues/28)
-- [ ] **UK repeater search modes** — postcode, address, keeper, band endpoints not wired (callsign + locator only)
+- [x] **UK repeater search modes** — geocode/town, band, unified query ([#43](https://github.com/pskillen/codeplug-studio/issues/43)); keeper endpoint still deferred
 - [ ] **Repeater result cache** — no offline/session cache beyond in-memory search results
 
 ## Phase 2 — library / shell (discovered)

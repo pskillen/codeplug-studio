@@ -84,4 +84,27 @@ describe('repeaterListingToChannel', () => {
     expect(profile.mode).toBe('dmr');
     expect(profile.colourCode).toBe(1);
   });
+
+  it('title-cases name and comment when requested', () => {
+    const channel = repeaterListingToChannel(
+      { ...baseListing, name: 'DANBURY', status: 'OPERATIONAL' },
+      'p1',
+      { titleCaseText: true },
+    );
+    expect(channel.name).toBe('Danbury');
+    expect(channel.comment).toBe('Danbury — Operational');
+  });
+
+  it('omits comment for BrandMeister listings by default', () => {
+    const channel = repeaterListingToChannel(
+      {
+        ...baseListing,
+        source: 'brandmeister',
+        name: 'London',
+        status: 'Online',
+      },
+      'p1',
+    );
+    expect(channel.comment).toBe('');
+  });
 });

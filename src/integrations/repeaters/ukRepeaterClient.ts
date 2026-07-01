@@ -73,3 +73,7 @@ export function searchUkRepeatersByCallsign(callsign: string): Promise<RepeaterL
 export function searchUkRepeatersByLocator(locator: string): Promise<RepeaterListing[]> {
   return fetchListings(`locator/${encodeURIComponent(locator.trim().toLowerCase())}`);
 }
+
+export function searchUkRepeatersByBand(band: string): Promise<RepeaterListing[]> {
+  return fetchListings(`band/${encodeURIComponent(band.trim().toLowerCase())}`);
+}
