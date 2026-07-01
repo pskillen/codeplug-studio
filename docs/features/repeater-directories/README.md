@@ -46,11 +46,11 @@ Repeater search is **not** a top-level nav item — it lives under library workf
 
 ## Workflows
 
-| Workflow                             | Entry point                                                               | Behaviour                                               |
-| ------------------------------------ | ------------------------------------------------------------------------- | ------------------------------------------------------- |
+| Workflow                             | Entry point                                                               | Behaviour                                                                                                                                     |
+| ------------------------------------ | ------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
 | **New channel from reference**       | Library section nav → _Add from ukrepeater.net_ / _Add from BrandMeister_ | Search directory; add result(s) as library channel(s). Duplicate gate is **callsign only** — two repeaters may share a town/qualifier `name`. |
-| **Update existing**                  | Same search UI when callsign already in library                           | Outline _Update existing_ → directory comparison dialog                                                                                     |
-| **Check and update current channel** | Channel editor → _Check ukrepeater.net_ / _Check BrandMeister_            | Fetch by callsign; auto-match listing; diff; apply      |
+| **Update existing**                  | Same search UI when callsign already in library                           | Outline _Update existing_ → directory comparison dialog                                                                                       |
+| **Check and update current channel** | Channel editor → _Check ukrepeater.net_ / _Check BrandMeister_            | Fetch by callsign; auto-match listing; diff; apply                                                                                            |
 
 ### Routes
 
