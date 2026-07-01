@@ -14,7 +14,7 @@ export {
   type SearchFilters,
 } from './ukrepeater/queryRouter.ts';
 export { searchBrandmeisterByCallsign } from './brandmeisterClient.ts';
-export { repeaterListingToChannel } from './mapToChannel.ts';
+export { repeaterListingToChannel, type MapListingOptions } from './mapToChannel.ts';
 export {
   buildPatchFromDiff,
   diffChannelFromListing,

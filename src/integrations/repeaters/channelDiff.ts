@@ -6,7 +6,7 @@ import type {
 } from '@core/models/library.ts';
 import { findAnalogProfile, findDmrProfile } from '@core/domain/modeProfiles.ts';
 import type { RepeaterListing } from './types.ts';
-import { repeaterListingToChannel } from './mapToChannel.ts';
+import { repeaterListingToChannel, type MapListingOptions } from './mapToChannel.ts';
 
 function hzToMhzString(hz: number | null): string {
   if (hz === null) return '';
@@ -84,8 +84,9 @@ function locationEqual(a: Channel['location'], b: Channel['location']): boolean 
 export function diffChannelFromListing(
   channel: Channel,
   listing: RepeaterListing,
+  options: MapListingOptions = {},
 ): ChannelDiffRow[] {
-  const remote = repeaterListingToChannel(listing, channel.projectId);
+  const remote = repeaterListingToChannel(listing, channel.projectId, options);
   const rows: ChannelDiffRow[] = [];
 
   const push = (field: ChannelDiffField, local: string, remoteVal: string, changed: boolean) => {
@@ -183,8 +184,9 @@ export function buildPatchFromDiff(
   channel: Channel,
   listing: RepeaterListing,
   selectedFields: ChannelDiffField[],
+  options: MapListingOptions = {},
 ): Channel {
-  const remote = repeaterListingToChannel(listing, channel.projectId);
+  const remote = repeaterListingToChannel(listing, channel.projectId, options);
   const selected = new Set(selectedFields);
   const next: Channel = { ...channel };
 
