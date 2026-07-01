@@ -11,10 +11,7 @@ import type {
   DMRTimeSlot,
   Library,
 } from '@core/models/library.ts';
-import {
-  isAnalogChannelModeProfile,
-  isModeOnlyStub,
-} from '@core/domain/modeProfiles.ts';
+import { isAnalogChannelModeProfile, isModeOnlyStub } from '@core/domain/modeProfiles.ts';
 import ModePill from '../pills/ModePill.tsx';
 import { PercentLevelSlider } from '../ui/index.ts';
 import {
@@ -47,7 +44,9 @@ export default function ChannelModeProfilesEditor({
   onChange,
 }: ChannelModeProfilesEditorProps) {
   const updateProfile = (index: number, patch: Partial<ChannelModeProfile>) => {
-    onChange(profiles.map((p, i) => (i === index ? ({ ...p, ...patch } as ChannelModeProfile) : p)));
+    onChange(
+      profiles.map((p, i) => (i === index ? ({ ...p, ...patch } as ChannelModeProfile) : p)),
+    );
   };
 
   if (profiles.length === 0) {
@@ -135,9 +134,7 @@ function AnalogPanel({
         label="Bandwidth (kHz)"
         data={bandwidthSelectData}
         value={profile.bandwidthKHz != null ? String(profile.bandwidthKHz) : ''}
-        onChange={(v) =>
-          onPatch({ bandwidthKHz: v && v !== '' ? parseFloat(v) : null })
-        }
+        onChange={(v) => onPatch({ bandwidthKHz: v && v !== '' ? parseFloat(v) : null })}
         clearable
       />
       <Group grow>
@@ -356,9 +353,7 @@ function NxdnPanel({
             .map((t) => ({ value: t.id, label: t.name })),
         ]}
         value={profile.talkGroupRef?.id ?? ''}
-        onChange={(v) =>
-          onPatch({ talkGroupRef: v ? { kind: 'talkGroup', id: v } : null })
-        }
+        onChange={(v) => onPatch({ talkGroupRef: v ? { kind: 'talkGroup', id: v } : null })}
         searchable
         clearable
       />
@@ -417,9 +412,7 @@ function TetraPanel({
             .map((t) => ({ value: t.id, label: t.name })),
         ]}
         value={profile.talkGroupRef?.id ?? ''}
-        onChange={(v) =>
-          onPatch({ talkGroupRef: v ? { kind: 'talkGroup', id: v } : null })
-        }
+        onChange={(v) => onPatch({ talkGroupRef: v ? { kind: 'talkGroup', id: v } : null })}
         searchable
         clearable
       />

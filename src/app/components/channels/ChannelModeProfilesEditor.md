@@ -6,22 +6,18 @@ Tabbed editor for per-mode settings on a multi-mode library channel. One tab per
 
 ## Props
 
-| Prop | Type | Description |
-| --- | --- | --- |
-| `profiles` | `ChannelModeProfile[]` | Current mode profiles (order = tab order) |
-| `library` | `Library` | Project library for DMR contact / RX-list / talk-group selects |
-| `onChange` | `(profiles: ChannelModeProfile[]) => void` | Called when any profile field changes |
+| Prop       | Type                                       | Description                                                    |
+| ---------- | ------------------------------------------ | -------------------------------------------------------------- |
+| `profiles` | `ChannelModeProfile[]`                     | Current mode profiles (order = tab order)                      |
+| `library`  | `Library`                                  | Project library for DMR contact / RX-list / talk-group selects |
+| `onChange` | `(profiles: ChannelModeProfile[]) => void` | Called when any profile field changes                          |
 
 ## Usage
 
 ```tsx
 import ChannelModeProfilesEditor from '@app/components/channels/ChannelModeProfilesEditor.tsx';
 
-<ChannelModeProfilesEditor
-  profiles={modeProfiles}
-  library={library}
-  onChange={setModeProfiles}
-/>
+<ChannelModeProfilesEditor profiles={modeProfiles} library={library} onChange={setModeProfiles} />;
 ```
 
 ## Behaviour

@@ -91,9 +91,9 @@ describe('findModeProfile helpers', () => {
 
 describe('validateModeProfiles', () => {
   it('flags duplicate modes', () => {
-    expect(
-      validateModeProfiles([defaultModeProfile('fm'), defaultModeProfile('fm')]),
-    ).toContain('Duplicate mode profile: fm');
+    expect(validateModeProfiles([defaultModeProfile('fm'), defaultModeProfile('fm')])).toContain(
+      'Duplicate mode profile: fm',
+    );
   });
 
   it('flags invalid DMR colour code', () => {

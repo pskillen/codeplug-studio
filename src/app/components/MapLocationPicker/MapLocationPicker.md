@@ -6,12 +6,12 @@ Small Leaflet map for picking WGS84 coordinates by click or draggable marker. Us
 
 ## Props
 
-| Prop | Type | Default | Description |
-| --- | --- | --- | --- |
-| `lat` | `number \| null` | — | Marker latitude; null shows default UK-centred view without marker |
-| `lon` | `number \| null` | — | Marker longitude |
-| `onPick` | `(lat: number, lon: number) => void` | — | Called on map click or marker drag end |
-| `height` | `number \| string` | `280` | Map container height |
+| Prop     | Type                                 | Default | Description                                                        |
+| -------- | ------------------------------------ | ------- | ------------------------------------------------------------------ |
+| `lat`    | `number \| null`                     | —       | Marker latitude; null shows default UK-centred view without marker |
+| `lon`    | `number \| null`                     | —       | Marker longitude                                                   |
+| `onPick` | `(lat: number, lon: number) => void` | —       | Called on map click or marker drag end                             |
+| `height` | `number \| string`                   | `280`   | Map container height                                               |
 
 ## Usage
 
@@ -23,7 +23,7 @@ import MapLocationPicker from '@app/components/MapLocationPicker/MapLocationPick
   lon={lon}
   onPick={(lat, lon) => setCoords({ lat, lon })}
   height={280}
-/>
+/>;
 ```
 
 ## Behaviour

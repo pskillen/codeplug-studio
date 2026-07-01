@@ -2,7 +2,11 @@ import { describe, expect, it } from 'vitest';
 import { defaultModeProfile } from '@core/domain/modeProfiles.ts';
 import { emptyLibrary, newChannel, newTalkGroup, newZone } from './factories.ts';
 import { summariseLibrary } from './summary.ts';
-import type { ChannelModeProfileAnalog, ChannelModeProfileDMR, Library } from '../models/library.ts';
+import type {
+  ChannelModeProfileAnalog,
+  ChannelModeProfileDMR,
+  Library,
+} from '../models/library.ts';
 
 const projectId = 'p1';
 

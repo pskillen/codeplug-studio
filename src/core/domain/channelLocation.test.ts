@@ -91,8 +91,6 @@ describe('coordsFromChannelLocation', () => {
 
 describe('locationConflict', () => {
   it('detects mismatch between coords and locator', () => {
-    expect(
-      locationConflict({ lat: 57.0, lon: -3.5 }, 'IO91WM'),
-    ).toBe(true);
+    expect(locationConflict({ lat: 57.0, lon: -3.5 }, 'IO91WM')).toBe(true);
   });
 });

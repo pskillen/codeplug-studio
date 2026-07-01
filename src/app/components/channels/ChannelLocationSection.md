@@ -6,10 +6,10 @@ Location block for the channel editor: Maidenhead locator, lat/lon inputs, use-l
 
 ## Props
 
-| Prop | Type | Description |
-| --- | --- | --- |
-| `value` | `ChannelLocationValues` | Current locator, coords, useLocation, and `lastEdited` source |
-| `onChange` | `(value: ChannelLocationValues) => void` | Called on any field or map change |
+| Prop       | Type                                     | Description                                                   |
+| ---------- | ---------------------------------------- | ------------------------------------------------------------- |
+| `value`    | `ChannelLocationValues`                  | Current locator, coords, useLocation, and `lastEdited` source |
+| `onChange` | `(value: ChannelLocationValues) => void` | Called on any field or map change                             |
 
 ## Usage
 
@@ -23,15 +23,13 @@ const [location, setLocation] = useState(() =>
   channelLocationValuesFromChannel(entity ?? newChannel(projectId, '')),
 );
 
-<ChannelLocationSection value={location} onChange={setLocation} />
+<ChannelLocationSection value={location} onChange={setLocation} />;
 
 // On save:
 const reconciled = reconcileChannelLocation({
   maidenheadLocator: location.maidenheadLocator || null,
   location:
-    location.lat != null && location.lon != null
-      ? { lat: location.lat, lon: location.lon }
-      : null,
+    location.lat != null && location.lon != null ? { lat: location.lat, lon: location.lon } : null,
   useLocation: location.useLocation,
   lastEdited: location.lastEdited,
 });

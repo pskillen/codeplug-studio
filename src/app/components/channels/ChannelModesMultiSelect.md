@@ -6,12 +6,12 @@ Lets operators choose which RF modes a library channel supports. Selection drive
 
 ## Props
 
-| Prop | Type | Description |
-| --- | --- | --- |
-| `value` | `ChannelMode[]` | Currently selected modes |
-| `onChange` | `(modes: ChannelMode[]) => void` | Called when selection changes |
-| `label` | `string` | Field label (default: `Modes`) |
-| `description` | `string` | Helper text under the label |
+| Prop          | Type                             | Description                    |
+| ------------- | -------------------------------- | ------------------------------ |
+| `value`       | `ChannelMode[]`                  | Currently selected modes       |
+| `onChange`    | `(modes: ChannelMode[]) => void` | Called when selection changes  |
+| `label`       | `string`                         | Field label (default: `Modes`) |
+| `description` | `string`                         | Helper text under the label    |
 
 ## Usage
 
@@ -24,7 +24,7 @@ const selectedModes = modeProfiles.map((p) => p.mode);
 <ChannelModesMultiSelect
   value={selectedModes}
   onChange={(modes) => setModeProfiles(syncModeProfiles(modes, modeProfiles))}
-/>
+/>;
 ```
 
 ## Behaviour

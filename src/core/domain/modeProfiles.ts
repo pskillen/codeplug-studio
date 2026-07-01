@@ -12,7 +12,10 @@ export function isAnalogChannelMode(mode: ChannelMode): mode is AnalogChannelMod
   return ANALOG_MODES.has(mode as AnalogChannelMode);
 }
 
-function defaultAnalogProfile(mode: AnalogChannelMode, tone: ChannelTone = 'none'): ChannelModeProfileAnalog {
+function defaultAnalogProfile(
+  mode: AnalogChannelMode,
+  tone: ChannelTone = 'none',
+): ChannelModeProfileAnalog {
   return {
     mode,
     squelch: null,
@@ -34,7 +37,10 @@ function defaultDmrProfile(): ChannelModeProfileDMR {
 }
 
 /** Default profile shape for a mode — used when adding a profile in CRUD or upgrading stubs. */
-export function defaultModeProfile(mode: ChannelMode, tone: ChannelTone = 'none'): ChannelModeProfile {
+export function defaultModeProfile(
+  mode: ChannelMode,
+  tone: ChannelTone = 'none',
+): ChannelModeProfile {
   if (isAnalogChannelMode(mode)) {
     return defaultAnalogProfile(mode, tone);
   }
@@ -77,7 +83,12 @@ export function normalizeModeProfile(profile: ChannelModeProfile): ChannelModePr
   if (isModeOnlyStub(profile)) {
     return defaultModeProfile(profile.mode);
   }
-  if (profile.mode === 'fm' || profile.mode === 'am' || profile.mode === 'ssb-usb' || profile.mode === 'ssb-lsb') {
+  if (
+    profile.mode === 'fm' ||
+    profile.mode === 'am' ||
+    profile.mode === 'ssb-usb' ||
+    profile.mode === 'ssb-lsb'
+  ) {
     const analog = profile as ChannelModeProfileAnalog & { bandwidthKHz?: number | null };
     return {
       mode: analog.mode,
@@ -105,14 +116,20 @@ export function findModeProfile<M extends ChannelMode>(
   channel: Pick<Channel, 'modeProfiles'>,
   mode: M,
 ): Extract<ChannelModeProfile, { mode: M }> | undefined {
-  return channel.modeProfiles.find((p): p is Extract<ChannelModeProfile, { mode: M }> => p.mode === mode);
+  return channel.modeProfiles.find(
+    (p): p is Extract<ChannelModeProfile, { mode: M }> => p.mode === mode,
+  );
 }
 
-export function findAnalogProfile(channel: Pick<Channel, 'modeProfiles'>): ChannelModeProfileAnalog | null {
+export function findAnalogProfile(
+  channel: Pick<Channel, 'modeProfiles'>,
+): ChannelModeProfileAnalog | null {
   return channel.modeProfiles.find(isAnalogChannelModeProfile) ?? null;
 }
 
-export function findDmrProfile(channel: Pick<Channel, 'modeProfiles'>): ChannelModeProfileDMR | null {
+export function findDmrProfile(
+  channel: Pick<Channel, 'modeProfiles'>,
+): ChannelModeProfileDMR | null {
   return findModeProfile(channel, 'dmr') ?? null;
 }
 
@@ -145,7 +162,11 @@ export function validateModeProfiles(profiles: ChannelModeProfile[]): string[] {
         }
       }
     }
-    if (profile.mode === 'tetra' && profile.colorCode != null && (profile.colorCode < 0 || profile.colorCode > 15)) {
+    if (
+      profile.mode === 'tetra' &&
+      profile.colorCode != null &&
+      (profile.colorCode < 0 || profile.colorCode > 15)
+    ) {
       errors.push('TETRA color code must be 0–15');
     }
     if (profile.mode === 'ysf' && profile.dgId != null && (profile.dgId < 0 || profile.dgId > 99)) {
