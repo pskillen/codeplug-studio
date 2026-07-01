@@ -60,7 +60,7 @@ export default function ChannelEditor({
   );
   const [rxGroupListId, setRxGroupListId] = useState(dmr?.rxGroupListId ?? '');
 
-  const { save, saving, error } = useEntitySave();
+  const { save, saving, error } = useEntitySave('channels');
 
   function buildRow(): Channel {
     const profile: ChannelModeProfileFM | ChannelModeProfileDMR =
@@ -228,7 +228,7 @@ export default function ChannelEditor({
         <Button onClick={handleSave} loading={saving}>
           Save
         </Button>
-        <Button component={Link} to="/library" variant="light">
+        <Button component={Link} to="/library/channels" variant="light">
           Cancel
         </Button>
       </Group>

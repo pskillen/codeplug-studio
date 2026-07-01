@@ -3,6 +3,7 @@ import { Link, useParams } from 'react-router-dom';
 import { useLibrary } from '../../state/useLibrary.ts';
 import { FormPage } from '../../components/ui/index.ts';
 import { entitiesForKind, kindBySlug } from './registry.ts';
+import { listPathForEditorSlug } from './nav.ts';
 import ChannelEditor from './ChannelEditor.tsx';
 import RxGroupListEditor from './RxGroupListEditor.tsx';
 import ZoneEditor from './ZoneEditor.tsx';
@@ -28,17 +29,19 @@ export default function EntityEditorPage() {
   const isNew = id === 'new' || !id;
   const exists = isNew || entitiesForKind(library, meta.kind).some((r) => r.id === id);
   if (!exists) {
-    return <NotFound message={`${meta.label} not found.`} />;
+    return <NotFound message={`${meta.label} not found.`} slug={meta.slug} />;
   }
 
   const title = `${isNew ? 'New' : 'Edit'} ${meta.label.toLowerCase()}`;
+
+  const listPath = listPathForEditorSlug(meta.slug);
 
   return (
     <FormPage
       title={title}
       description={
-        <Anchor component={Link} to="/library" size="sm">
-          ← Back to library
+        <Anchor component={Link} to={listPath} size="sm">
+          ← Back to {meta.plural.toLowerCase()}
         </Anchor>
       }
     >
@@ -104,11 +107,12 @@ export default function EntityEditorPage() {
   }
 }
 
-function NotFound({ message }: { message: string }) {
+function NotFound({ message, slug }: { message: string; slug?: string }) {
+  const listPath = slug ? listPathForEditorSlug(slug) : '/library/channels';
   return (
     <FormPage title="Not found" description={message}>
-      <Anchor component={Link} to="/library">
-        ← Back to library
+      <Anchor component={Link} to={listPath}>
+        ← Back to list
       </Anchor>
     </FormPage>
   );

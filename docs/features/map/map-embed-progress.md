@@ -31,12 +31,14 @@
 
 ### Slice 3 — Library embed
 
-- `LibraryPage.tsx` — `CodeplugMap` in Channels and Zones sections; skipped-channel note; scroll-to-section from route state
+- `ChannelsListPage` / `ZonesListPage` — `CodeplugMap` on dedicated list routes; skipped-channel note; click navigates to editors
+
+_(Historical: originally embedded in monolithic `LibraryPage.tsx`, removed in [#20](https://github.com/pskillen/codeplug-studio/issues/20).)_
 
 ### Slice 4 — Remove standalone map route
 
 - Removed Map from primary nav; deleted `MapPage.tsx`
-- `/map` → `/library` redirect with `scrollTo: 'library-channels'`
+- `/map` → `/library/channels` redirect
 - Summary and Help links updated
 
 ### Slice 5 — Documentation

@@ -5,10 +5,12 @@ export default function EditorActions({
   saving,
   error,
   onSave,
+  cancelPath = '/library/channels',
 }: {
   saving: boolean;
   error: string | null;
   onSave: () => void;
+  cancelPath?: string;
 }) {
   return (
     <div style={{ marginTop: '1rem' }}>
@@ -19,7 +21,7 @@ export default function EditorActions({
         <button type="button" onClick={onSave} disabled={saving} style={primaryButtonStyle}>
           {saving ? 'Saving…' : 'Save'}
         </button>
-        <Link to="/library" style={secondaryButtonStyle}>
+        <Link to={cancelPath} style={secondaryButtonStyle}>
           Cancel
         </Link>
       </div>

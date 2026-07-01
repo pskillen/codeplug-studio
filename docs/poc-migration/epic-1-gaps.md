@@ -38,5 +38,5 @@ Items **skipped**, **incomplete**, or **discovered during execution** — not fu
 ## Phase 2 — library / shell (discovered)
 
 - [ ] **Channel editor** — FM-or-DMR toggle does not reflect multi-profile channels (ties to #16)
-- [ ] **DataTable** — library list pages still use basic tables, not ported DataTable from codeplug-tool
+- [x] **DataTable** — all library list routes use ported `DataTable` ([#20](https://github.com/pskillen/codeplug-studio/issues/20) / PR [#41](https://github.com/pskillen/codeplug-studio/pull/41))
 - [ ] **Entity editors styling** — talk groups, contacts, zones still on pre-Mantine inline patterns on some routes

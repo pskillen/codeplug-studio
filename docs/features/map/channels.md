@@ -37,7 +37,7 @@ See the [map hub](README.md) for overall placement. This layer reads the **inter
 | Require `useLocation`        | on      | Skips channels with `useLocation === false` |
 | Skip `0,0`                   | on      | Skips channels at exactly `0, 0`            |
 
-Skipped channels are summarised below the map on the Library page (count + reasons).
+Skipped channels are summarised below the map on the channels and zones list routes (count + reasons).
 
 ## Behaviour
 

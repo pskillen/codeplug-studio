@@ -2,46 +2,67 @@
 
 Tier-1 reference for the Phase 2 application shell: navigation chrome, route surfaces, and the project lifecycle (create blank project, switch, rename, delete).
 
-**Tracking:** Phase 2 [#8](https://github.com/pskillen/codeplug-studio/issues/8) (Epic [#1](https://github.com/pskillen/codeplug-studio/issues/1))
+**Tracking:** Phase 2 [#8](https://github.com/pskillen/codeplug-studio/issues/8) (Epic [#1](https://github.com/pskillen/codeplug-studio/issues/1)); library list routes [#20](https://github.com/pskillen/codeplug-studio/issues/20)
 
 **Source:** `src/app/`
 
 ## Overview
 
-The SPA uses Mantine `AppShell` with two-section navigation (primary + section nav), matching the codeplug-tool UI kit. `ProjectProvider` supplies project state via `useProjects()`.
+The SPA uses Mantine `AppShell` with two-section navigation (primary + section nav), matching the codeplug-tool UI kit. `ProjectProvider` supplies project state via `useProjects()`. Visible product title: **MM9PDY Codeplug Studio**.
 
 ```text
 ProjectProvider
-└─ HashRouter
-   └─ AppLayout (AppShell: header + AppNav + SectionNav + Outlet + footer)
-      ├─ /          Projects (lifecycle UI)
-      ├─ /library   Library inventory + embedded channel map + entity editors
-      ├─ /summary   Library summary
-      ├─ /map       _(redirect → /library, scroll to channels map)_
-      ├─ /reference Reference tools
-      ├─ /settings  Settings shell
-      └─ /help      Help shell
+└─ OperatorPositionProvider
+   └─ HashRouter
+      └─ AppLayout (AppShell: header + AppNav + SectionNav + Outlet + footer)
+         ├─ /          Projects (lifecycle UI)
+         ├─ /library/* Per-entity library list routes (see library docs)
+         ├─ /summary   Library summary
+         ├─ /map       _(redirect → /library/channels)_
+         ├─ /reference Reference tools
+         ├─ /settings  Settings shell
+         └─ /help      Help shell
 ```
 
-UI primitives live in `src/app/components/ui/` (ported from codeplug-tool). Dev styleguide: `/#/styleguide` (unlinked).
+## Documentation map
+
+| Doc                                                            | Contents                                   |
+| -------------------------------------------------------------- | ------------------------------------------ |
+| [data-table.md](data-table.md)                                 | `DataTable`, list prefs, entity list hooks |
+| [library-routes-progress.md](library-routes-progress.md)       | Library routes initiative — shipped slices |
+| [library-routes-outstanding.md](library-routes-outstanding.md) | Deferred debt from library routes PR       |
+| [library/README.md](../library/README.md)                      | Library CRUD and list routes               |
+| [map/README.md](../map/README.md)                              | Embedded channel map                       |
+
+UI primitives live in `src/app/components/ui/` (ported from codeplug-tool). Reusable list infrastructure is documented in [data-table.md](data-table.md). Dev styleguide: `/#/styleguide` (unlinked).
 
 ## Routes
 
-| Path                                      | Surface                 | Status                                                                                                                                |
-| ----------------------------------------- | ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
-| `/`                                       | Projects                | Lifecycle UI (create/switch/rename/del)                                                                                               |
-| `/library`                                | Library                 | Entity CRUD + embedded map — Ticket #10, #22                                                                                          |
-| `/library/channels/add-from-ukrepeater`   | Add from ukrepeater.net | [repeater-directories](../repeater-directories/README.md)                                                                             |
-| `/library/channels/add-from-brandmeister` | Add from BrandMeister   | [repeater-directories](../repeater-directories/README.md)                                                                             |
-| `/map`                                    | _(redirect)_            | Redirects to `/library` with scroll to `library-channels` (legacy [#11](https://github.com/pskillen/codeplug-studio/issues/11) route) |
-| `/summary`                                | Summary                 | [Library summary](../report/README.md) — Ticket #12                                                                                   |
-| `/reports`                                | _(redirect)_            | Redirects to `/summary` (legacy hash route)                                                                                           |
-| `/reference`                              | Reference               | [Maidenhead + band tools](../maidenhead.md), [bands](../../reference/bands.md) — Ticket #12                                           |
-| `/settings`                               | Settings                | Shell content                                                                                                                         |
-| `/help`                                   | Help                    | Shell content                                                                                                                         |
-| `/styleguide`                             | Styleguide              | Hidden dev page (UI kit demos)                                                                                                        |
+| Path                                      | Surface                 | Status                                                                                                                                                 |
+| ----------------------------------------- | ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `/`                                       | Projects                | Lifecycle UI (create/switch/rename/del)                                                                                                                |
+| `/library`                                | _(redirect)_            | → `/library/channels`                                                                                                                                  |
+| `/library/channels`                       | Channels list           | DataTable + filters + map — [#20](https://github.com/pskillen/codeplug-studio/issues/20), [#24](https://github.com/pskillen/codeplug-studio/issues/24) |
+| `/library/zones`                          | Zones list              | DataTable + map — [#20](https://github.com/pskillen/codeplug-studio/issues/20)                                                                         |
+| `/library/talk-groups`                    | Talk groups list        | DataTable — [#20](https://github.com/pskillen/codeplug-studio/issues/20)                                                                               |
+| `/library/contacts`                       | Contacts list           | Digital + analog DataTables — [#20](https://github.com/pskillen/codeplug-studio/issues/20)                                                             |
+| `/library/rx-group-lists`                 | RX group lists list     | DataTable — [#20](https://github.com/pskillen/codeplug-studio/issues/20)                                                                               |
+| `/library/:kind/:id`                      | Entity editor           | CRUD forms — [#10](https://github.com/pskillen/codeplug-studio/issues/10)                                                                              |
+| `/library/channels/add-from-ukrepeater`   | Add from ukrepeater.net | [repeater-directories](../repeater-directories/README.md)                                                                                              |
+| `/library/channels/add-from-brandmeister` | Add from BrandMeister   | [repeater-directories](../repeater-directories/README.md)                                                                                              |
+| `/map`                                    | _(redirect)_            | → `/library/channels` (legacy [#11](https://github.com/pskillen/codeplug-studio/issues/11))                                                            |
+| `/summary`                                | Summary                 | [Library summary](../report/README.md) — Ticket #12                                                                                                    |
+| `/reports`                                | _(redirect)_            | Redirects to `/summary` (legacy hash route)                                                                                                            |
+| `/reference`                              | Reference               | [Maidenhead + band tools](../maidenhead.md), [bands](../../reference/bands.md) — Ticket #12                                                            |
+| `/settings`                               | Settings                | Shell content                                                                                                                                          |
+| `/help`                                   | Help                    | Shell content                                                                                                                                          |
+| `/styleguide`                             | Styleguide              | Hidden dev page (UI kit demos)                                                                                                                         |
 
 Routes that need a project gate on an active project and link back to Projects when none is selected.
+
+## Section navigation
+
+Library list routes each have a dedicated section-nav entry (longest-prefix match in `sectionNavRegistry.ts`). Shared entity links come from `routes/library/nav.ts` inside `LibrarySectionNavFrame` (entity links → divider → route-specific controls). Contextual **New …** actions vary per route (e.g. contacts: New digital + New analog; channels: repeater import buttons + filters).
 
 ## Project lifecycle
 
@@ -59,7 +80,7 @@ State flows through a thin app-state adapter, `ProjectStore` (`src/app/state/pro
 
 Projects and library rows persist durably in the browser via IndexedDB (Ticket [#9](https://github.com/pskillen/codeplug-studio/issues/9)): one row per entity, optimistic `revision` concurrency, and `BroadcastChannel` cross-tab notifications. A shared singleton (`src/app/state/persistence.ts`) backs the whole app. See [storage.md](../../poc-migration/storage.md) and [library](../library/README.md).
 
-The **active-project selection** is remembered across reloads via `localStorage` (`src/integrations/preferences/`), reconciled against the loaded project list on startup. `localStorage` access stays in the integrations layer.
+The **active-project selection** is remembered across reloads via `localStorage` (`src/integrations/preferences/`), reconciled against the loaded project list on startup. Channel list filter prefs, entity list name/sort prefs, and channel column visibility use per-project `localStorage` keys under `mm9pdy-codeplug-studio.list.*` — see [data-table.md](data-table.md).
 
 ## Boundaries
 
@@ -68,6 +89,7 @@ The **active-project selection** is remembered across reloads via `localStorage`
 
 ## Related
 
+- [data-table.md](data-table.md) · [library-routes-progress.md](library-routes-progress.md) · [library-routes-outstanding.md](library-routes-outstanding.md)
 - [AppLayout sidecar](../../../src/app/components/AppLayout/AppLayout.md)
 - [data-model](../data-model/README.md)
 - [repeater-directories](../repeater-directories/README.md)

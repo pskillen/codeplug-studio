@@ -6,6 +6,7 @@ import 'leaflet/dist/leaflet.css';
 import '../index.css';
 import App from './App.tsx';
 import ProjectProvider from './state/ProjectProvider.tsx';
+import { OperatorPositionProvider } from './state/operatorPosition.tsx';
 import { theme } from './theme.ts';
 
 const root = document.getElementById('root');
@@ -18,7 +19,9 @@ createRoot(root).render(
     <ColorSchemeScript defaultColorScheme="dark" />
     <MantineProvider theme={theme} defaultColorScheme="dark">
       <ProjectProvider>
-        <App />
+        <OperatorPositionProvider>
+          <App />
+        </OperatorPositionProvider>
       </ProjectProvider>
     </MantineProvider>
   </StrictMode>,

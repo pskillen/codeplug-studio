@@ -25,7 +25,7 @@ export default function RxGroupListEditor({
   const [selected, setSelected] = useState<Set<string>>(
     new Set(base.members.map((m) => refKey(m.ref.kind, m.ref.id))),
   );
-  const { save, saving, error } = useEntitySave();
+  const { save, saving, error } = useEntitySave('rx-group-lists');
 
   function toggle(kind: EntityRef['kind'], id: string) {
     setSelected((prev) => {
@@ -70,7 +70,12 @@ export default function RxGroupListEditor({
         kind="digitalContact"
         onToggle={toggle}
       />
-      <EditorActions saving={saving} error={error} onSave={handleSave} />
+      <EditorActions
+        saving={saving}
+        error={error}
+        onSave={handleSave}
+        cancelPath="/library/rx-group-lists"
+      />
     </div>
   );
 }

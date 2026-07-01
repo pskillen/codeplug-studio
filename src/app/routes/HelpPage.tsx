@@ -13,9 +13,8 @@ export default function HelpPage() {
             <strong>Projects</strong> — create, switch, rename, and delete projects.
           </List.Item>
           <List.Item>
-            <strong>Library</strong> — curate channels, talk groups, contacts, RX group lists, and
-            zones in a vendor-neutral inventory. Located channels appear on the map in the Channels
-            and Zones sections.
+            <strong>Library</strong> — dedicated list routes per entity kind (channels, zones, talk
+            groups, contacts, RX group lists). Channels and zones include the codeplug map.
           </List.Item>
           <List.Item>
             <strong>Repeater directories</strong> — add new channels from ukrepeater.net or

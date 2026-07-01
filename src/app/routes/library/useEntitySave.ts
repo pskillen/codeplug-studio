@@ -1,6 +1,7 @@
 import { useCallback, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type { PutResult } from '@integrations/persistence/index.ts';
+import { listPathForEditorSlug } from './nav.ts';
 
 export interface EntitySaveApi {
   save: (put: () => Promise<PutResult>) => Promise<boolean>;
@@ -9,11 +10,12 @@ export interface EntitySaveApi {
 }
 
 /** Shared save flow for entity editors: runs the put, surfaces revision
- * conflicts, and navigates back to the library list on success. */
-export function useEntitySave(): EntitySaveApi {
+ * conflicts, and navigates back to the entity list on success. */
+export function useEntitySave(editorSlug?: string): EntitySaveApi {
   const navigate = useNavigate();
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const listPath = editorSlug ? listPathForEditorSlug(editorSlug) : '/library/channels';
 
   const save = useCallback(
     async (put: () => Promise<PutResult>): Promise<boolean> => {
@@ -29,13 +31,13 @@ export function useEntitySave(): EntitySaveApi {
           );
           return false;
         }
-        navigate('/library');
+        navigate(listPath);
         return true;
       } finally {
         setSaving(false);
       }
     },
-    [navigate],
+    [navigate, listPath],
   );
 
   return { save, saving, error };

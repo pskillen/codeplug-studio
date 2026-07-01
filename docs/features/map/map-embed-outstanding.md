@@ -12,4 +12,3 @@ Items discovered during execution — not the plan backlog.
 - `MapLocationPicker` / click-to-set coords on `ChannelEditor`
 - True concave hulls (prototype uses convex)
 - E2E Playwright map tests
-- Relocate embed when [#24](https://github.com/pskillen/codeplug-studio/issues/24) / [#25](https://github.com/pskillen/codeplug-studio/issues/25) land dedicated list routes
