@@ -2,7 +2,7 @@
 
 Tier-1 reference for the Phase 2 application shell: navigation chrome, route surfaces, and the project lifecycle (create blank project, switch, rename, delete).
 
-**Tracking:** Phase 2 [#8](https://github.com/pskillen/codeplug-studio/issues/8) (Epic [#1](https://github.com/pskillen/codeplug-studio/issues/1)); library list routes [#20](https://github.com/pskillen/codeplug-studio/issues/20)
+**Tracking:** Phase 2 [#8](https://github.com/pskillen/codeplug-studio/issues/8) (Epic [#1](https://github.com/pskillen/codeplug-studio/issues/1)); library list routes [#20](https://github.com/pskillen/codeplug-studio/issues/20); GitHub feedback links [#70](https://github.com/pskillen/codeplug-studio/issues/70)
 
 **Source:** `src/app/`
 
@@ -64,7 +64,7 @@ UI primitives live in `src/app/components/ui/` (ported from codeplug-tool). Reus
 | `/debug/indexed-db/:storeName/:projectId/:id` | IndexedDB row viewer    | JSON tree + Copy YAML                                                                                                                                                    |
 | `/debug/local-storage`                        | LocalStorage keys       | Known keys + `codeplug-studio:` / `mm9pdy-codeplug-studio.` prefix scan                                                                                                  |
 | `/debug/local-storage/:storageKey`            | LocalStorage viewer     | Parsed JSON (tokens masked)                                                                                                                                              |
-| `/help`                                       | Help                    | Shell content                                                                                                                                                            |
+| `/help`                                       | Help                    | Workflow overview + GitHub Issues guidance ([#70](https://github.com/pskillen/codeplug-studio/issues/70))                                                                |
 | `/styleguide`                                 | Styleguide              | Hidden dev page (UI kit demos)                                                                                                                                           |
 
 Routes that need a project gate on an active project and link back to Projects when none is selected.
@@ -91,6 +91,17 @@ Projects and library rows persist durably in the browser via IndexedDB (Ticket [
 
 The **active-project selection** is remembered across reloads via `localStorage` (`src/integrations/preferences/`), reconciled against the loaded project list on startup. Channel list filter prefs, entity list name/sort prefs, and channel column visibility use per-project `localStorage` keys under `mm9pdy-codeplug-studio.list.*` — see [data-table.md](data-table.md).
 
+## Footer and feedback links
+
+Every routed page renders [`BuildFooter`](../../../src/app/components/BuildFooter/BuildFooter.tsx) below the main `Outlet`. The footer shows build env/version plus muted **Repository** and **Report a bug** links (shared URLs in `src/app/lib/githubLinks.ts`).
+
+The **Help** route adds a **Feedback** section with the same repo/issues URLs and short guidance for filing GitHub Issues.
+
+| Area                  | Status  | Notes                                                        |
+| --------------------- | ------- | ------------------------------------------------------------ |
+| Global footer links   | Shipped | [#70](https://github.com/pskillen/codeplug-studio/issues/70) |
+| Help feedback section | Shipped | [#70](https://github.com/pskillen/codeplug-studio/issues/70) |
+
 ## Boundaries
 
 - App layer only (`src/app/`); calls `core` factories and the `integrations` persistence port — never low-level mutations ad hoc.
@@ -100,6 +111,7 @@ The **active-project selection** is remembered across reloads via `localStorage`
 
 - [data-table.md](data-table.md) · [library-routes-progress.md](library-routes-progress.md) · [library-routes-outstanding.md](library-routes-outstanding.md)
 - [AppLayout sidecar](../../../src/app/components/AppLayout/AppLayout.md)
+- [BuildFooter sidecar](../../../src/app/components/BuildFooter/BuildFooter.md)
 - [data-model](../data-model/README.md)
 - [repeater-directories](../repeater-directories/README.md)
 - [report](../report/README.md) · [maidenhead.md](../maidenhead.md) · [bands reference](../../reference/bands.md)

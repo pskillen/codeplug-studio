@@ -22,7 +22,10 @@ import BuildFooter from './components/BuildFooter/BuildFooter.tsx';
 
 Reads `__BUILD_ENV__` and `__BUILD_VERSION__` from Vite `define` (see `.cursor/skills/version-number/SKILL.md`).
 
+Muted **Repository** and **Report a bug** links point at shared constants in `src/app/lib/githubLinks.ts` and open in a new tab (`rel="noreferrer"`).
+
 ## Related
 
 - [docs/build/README.md](../../../../docs/build/README.md)
+- [docs/features/app-shell/README.md](../../../../docs/features/app-shell/README.md)
 - [vite.config.ts](../../../../vite.config.ts)
