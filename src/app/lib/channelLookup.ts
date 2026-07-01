@@ -24,8 +24,7 @@ export function filterChannelOptions(
   return channels
     .filter(
       (ch) =>
-        ch.name.toLowerCase().includes(q) ||
-        (ch.callsign?.toLowerCase().includes(q) ?? false),
+        ch.name.toLowerCase().includes(q) || (ch.callsign?.toLowerCase().includes(q) ?? false),
     )
     .slice(0, 25)
     .map((ch) => ({ value: ch.id, label: channelOptionLabel(ch) }));

@@ -28,23 +28,23 @@ The [map](map/README.md) plots channels that have a stored location. Operator **
 
 ## Code anchors
 
-| Path | Role |
-| --- | --- |
-| `src/core/domain/maidenhead.ts` | `locatorToCoords`, `coordsToLocator`, `isValidLocator` (4–10 char) |
-| `src/app/routes/reference/MaidenheadReferencePage.tsx` | Full converter UI |
-| `src/app/components/MapLocationPicker/` | Click/drag map picker |
-| `src/integrations/geocode/` | Photon + Mapbox geocode client |
-| `src/integrations/preferences/` | Mapbox token in `localStorage` |
-| `src/app/hooks/useMapSettings.ts` | Settings ↔ preferences bridge |
-| `src/app/lib/channelLookup.ts` | Channel autocomplete helpers |
-| `src/integrations/repeaters/ukRepeaterClient.ts` | Locator/coords when normalising repeater records |
+| Path                                                   | Role                                                               |
+| ------------------------------------------------------ | ------------------------------------------------------------------ |
+| `src/core/domain/maidenhead.ts`                        | `locatorToCoords`, `coordsToLocator`, `isValidLocator` (4–10 char) |
+| `src/app/routes/reference/MaidenheadReferencePage.tsx` | Full converter UI                                                  |
+| `src/app/components/MapLocationPicker/`                | Click/drag map picker                                              |
+| `src/integrations/geocode/`                            | Photon + Mapbox geocode client                                     |
+| `src/integrations/preferences/`                        | Mapbox token in `localStorage`                                     |
+| `src/app/hooks/useMapSettings.ts`                      | Settings ↔ preferences bridge                                      |
+| `src/app/lib/channelLookup.ts`                         | Channel autocomplete helpers                                       |
+| `src/integrations/repeaters/ukRepeaterClient.ts`       | Locator/coords when normalising repeater records                   |
 
 ## Inputs and outputs
 
-| Direction | Input | Output |
-| --- | --- | --- |
+| Direction        | Input                                                  | Output                                |
+| ---------------- | ------------------------------------------------------ | ------------------------------------- |
 | Locator → coords | 4, 6, 8, or 10-character Maidenhead (case-insensitive) | Centre of the finest specified square |
-| Coords → locator | WGS84 lat/lon + precision | Locator at chosen precision |
+| Coords → locator | WGS84 lat/lon + precision                              | Locator at chosen precision           |
 
 ## Behaviour
 

@@ -6,19 +6,19 @@ Embeddable Leaflet map for plotting library channels and zone hull overlays insi
 
 ## Props
 
-| Prop                 | Type                   | Default    | Notes                                                |
-| -------------------- | ---------------------- | ---------- | ---------------------------------------------------- |
-| `channels`           | `Channel[]`            | —          | Channels to plot as markers (after internal filters) |
-| `zones`              | `Zone[]`               | `[]`       | Zones to draw hulls for when “Draw zones” is on      |
-| `allChannels`        | `Channel[]`            | `channels` | Full channel list for resolving zone member coords   |
-| `height`             | `number \| string`     | `400`      | Map container height (px or CSS value)               |
-| `showControls`       | `boolean`              | `true`     | Show [`MapControls`](MapControls.tsx) above the map  |
-| `defaultShowLabels`  | `boolean`              | `false`    | Initial state for full-name marker labels            |
-| `defaultShowZones`   | `boolean`              | `true`     | Initial state for zone hull visibility               |
-| `highlightChannelId` | `string`               | —          | Emphasise one channel marker                         |
+| Prop                 | Type                   | Default    | Notes                                                                    |
+| -------------------- | ---------------------- | ---------- | ------------------------------------------------------------------------ |
+| `channels`           | `Channel[]`            | —          | Channels to plot as markers (after internal filters)                     |
+| `zones`              | `Zone[]`               | `[]`       | Zones to draw hulls for when “Draw zones” is on                          |
+| `allChannels`        | `Channel[]`            | `channels` | Full channel list for resolving zone member coords                       |
+| `height`             | `number \| string`     | `400`      | Map container height (px or CSS value)                                   |
+| `showControls`       | `boolean`              | `true`     | Show [`MapControls`](MapControls.tsx) above the map                      |
+| `defaultShowLabels`  | `boolean`              | `false`    | Initial state for full-name marker labels                                |
+| `defaultShowZones`   | `boolean`              | `true`     | Initial state for zone hull visibility                                   |
+| `highlightChannelId` | `string`               | —          | Emphasise one channel marker                                             |
 | `operatorPosition`   | `{ lat, lon } \| null` | `null`     | Session operator position — blue **You** marker; included in auto bounds |
-| `onChannelClick`     | `(id: string) => void` | —          | Marker popup “Edit channel” action                   |
-| `onZoneClick`        | `(id: string) => void` | —          | Zone popup “Edit zone” action                        |
+| `onChannelClick`     | `(id: string) => void` | —          | Marker popup “Edit channel” action                                       |
+| `onZoneClick`        | `(id: string) => void` | —          | Zone popup “Edit zone” action                                            |
 
 ## Usage
 
