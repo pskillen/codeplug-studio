@@ -32,8 +32,8 @@ describe('summariseLibrary', () => {
     expect(summary.counts.talkGroups).toBe(1);
     expect(summary.channelsByMode).toContainEqual({ mode: 'FM', count: 1 });
     expect(summary.channelsByMode).toContainEqual({ mode: 'DMR', count: 1 });
-    expect(summary.channelsByBand).toContainEqual({ band: '2M', count: 1 });
-    expect(summary.channelsByBand).toContainEqual({ band: '70CM', count: 1 });
+    expect(summary.channelsByBand).toContainEqual({ band: '2 m', count: 1 });
+    expect(summary.channelsByBand).toContainEqual({ band: '70 cm', count: 1 });
   });
 
   it('reports dangling references as integrity warnings', () => {
