@@ -1,12 +1,26 @@
+import { useEffect } from 'react';
 import { Button, Group, Stack, Text } from '@mantine/core';
-import { Link } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import type { LibraryEntityKind } from '@integrations/persistence/index.ts';
+import { applyFilters, DEFAULT_MAP_FILTER_OPTS } from '@core/domain/mapProjection.ts';
 import { useLibrary } from '../state/useLibrary.ts';
+import CodeplugMap from '../components/CodeplugMap/CodeplugMap.tsx';
+import { scrollToPageSection } from '../lib/scrollToPageSection.ts';
 import { EmptyState, ListPage, PageSection } from '../components/ui/index.ts';
 import { LIBRARY_KINDS, describeEntity, entitiesForKind } from './library/registry.ts';
 
 export default function LibraryPage() {
   const { library, loading, deleteEntity } = useLibrary();
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  useEffect(() => {
+    const scrollTo = (location.state as { scrollTo?: string } | null)?.scrollTo;
+    if (!scrollTo || loading) return;
+    requestAnimationFrame(() => scrollToPageSection(scrollTo));
+  }, [location.state, loading]);
+
+  const { skipped: mapSkipped } = applyFilters(library.channels, DEFAULT_MAP_FILTER_OPTS);
 
   async function handleDelete(kind: LibraryEntityKind, id: string, name: string) {
     if (!window.confirm(`Delete “${name}”?`)) return;
@@ -15,6 +29,27 @@ export default function LibraryPage() {
       const where = outcome.references.map((r) => `• ${r.fromName} (${r.relationship})`).join('\n');
       window.alert(`Cannot delete “${name}” — still referenced by:\n\n${where}`);
     }
+  }
+
+  function mapPanel() {
+    return (
+      <Stack gap="xs">
+        <CodeplugMap
+          channels={library.channels}
+          zones={library.zones}
+          allChannels={library.channels}
+          height={420}
+          onChannelClick={(id) => navigate(`/library/channels/${id}`)}
+          onZoneClick={(id) => navigate(`/library/zones/${id}`)}
+        />
+        {mapSkipped.length > 0 ? (
+          <Text size="sm" c="dimmed">
+            {mapSkipped.length} channel{mapSkipped.length === 1 ? '' : 's'} not shown on map (missing
+            coordinates, Use Location = No, or 0,0).
+          </Text>
+        ) : null}
+      </Stack>
+    );
   }
 
   return (
@@ -32,6 +67,8 @@ export default function LibraryPage() {
       ) : (
         LIBRARY_KINDS.map((meta) => {
           const rows = entitiesForKind(library, meta.kind);
+          const showMap = meta.kind === 'channel' || meta.kind === 'zone';
+
           return (
             <PageSection
               key={meta.kind}
@@ -43,6 +80,8 @@ export default function LibraryPage() {
                   : undefined
               }
             >
+              {showMap ? mapPanel() : null}
+
               {rows.length === 0 ? (
                 <EmptyState
                   message={`No ${meta.plural.toLowerCase()} yet.`}
@@ -58,7 +97,7 @@ export default function LibraryPage() {
                   }
                 />
               ) : (
-                <Stack gap="xs">
+                <Stack gap="xs" mt={showMap ? 'md' : undefined}>
                   {rows.map((row) => (
                     <Group
                       key={row.id}

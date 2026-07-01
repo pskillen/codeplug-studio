@@ -8,8 +8,8 @@
 | Slice | Status | Commit |
 | --- | --- | --- |
 | Core map geometry + projection | Complete | `f0208e1` |
-| CodeplugMap component | Complete | pending |
-| Library embed | Not started | — |
+| CodeplugMap component | Complete | `a3b60c2` |
+| Library embed | Complete | pending |
 | Remove `/map` route | Not started | — |
 | Documentation | Not started | — |
 
@@ -29,6 +29,10 @@
 - `src/app/components/CodeplugMap/CodeplugMap.css` — marker and zone styles
 - `src/app/hooks/useDocumentLayoutReady.ts` — defer Leaflet mount until layout ready
 
+### Slice 3 — Library embed
+
+- `LibraryPage.tsx` — `CodeplugMap` in Channels and Zones sections; skipped-channel note; scroll-to-section from route state
+
 ## Next
 
-Slice 3 — embed on Library Channels and Zones sections.
+Slice 4 — remove standalone `/map` route and redirect legacy deep links.
