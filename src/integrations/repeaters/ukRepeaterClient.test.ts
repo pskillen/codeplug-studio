@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { repeaterListingToChannel } from './mapToChannel.ts';
 import { RepeaterDirectoryError } from './types.ts';
 import { searchUkRepeatersByCallsign } from './ukRepeaterClient.ts';
 
@@ -38,12 +39,17 @@ describe('searchUkRepeatersByCallsign', () => {
 
     const [listing] = await searchUkRepeatersByCallsign('gb3da');
     expect(listing.callsign).toBe('GB3DA');
+    expect(listing.name).toBe('DANBURY');
     expect(listing.rxFrequencyHz).toBe(145_725_000);
     expect(listing.txFrequencyHz).toBe(145_125_000);
     expect(listing.toneHz).toBe(110.9);
     expect(listing.modes).toEqual(['fm', 'ysf']);
     expect(listing.primaryMode).toBe('fm');
     expect(listing.location?.lat).toBeCloseTo(51.7, 0);
+
+    const channel = repeaterListingToChannel(listing, 'p1');
+    expect(channel.callsign).toBe('GB3DA');
+    expect(channel.name).toBe('DANBURY');
   });
 
   it('parses a DMR listing with colour code', async () => {
