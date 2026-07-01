@@ -22,3 +22,4 @@ export {
   type ChannelDiffField,
   type ChannelDiffRow,
 } from './channelDiff.ts';
+export { matchListingForChannel } from './matchListing.ts';
