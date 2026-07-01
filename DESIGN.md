@@ -156,13 +156,17 @@ Library
 FormatBuild
   id, formatId, profileId?, name
   traitProfile: TraitProfile     # which capability traits apply
-  librarySelection: …           # which library entities participate
+  channelSelections, zoneSelections, …  # libraryEntityId + overrides.name (wire names)
   layout: TraitLayout            # trait-shaped state (zones, scan lists, memory slots, …)
 ```
 
 **Relationships:** UUID `id` foreign keys inside the library. `name` fields are display/export labels, not relationship keys.
 
-**Separation:** `Library` holds RF semantics (frequency, mode, talk group ref, …). `FormatBuild.layout` holds _organisation_ semantics driven by traits (membership, order, scan participation). Wire adapters read `assemble(build, library)` — they do not dictate the internal shape.
+**Separation:** `Library` holds RF semantics (frequency, mode, talk group ref, …). `FormatBuild` holds _target-specific_ state: which library rows participate, trait-shaped `layout`, and **persisted wire-name overrides** per selection. Wire adapters read `assemble(build, library)` — they do not dictate the internal library shape.
+
+**Export is the union of both persisted layers.** The library is not “the export format in neutral clothing”; the build profile supplies the format-scoped mapping (organisation, limits, wire names). The archive [codeplug-tool](https://github.com/pskillen/codeplug-tool) instead held one internal codeplug and re-projected at export time without durable per-target customisation.
+
+**Naming:** Library `name` fields are human labels. CPS wire names for a given radio live on `FormatBuild` selection `overrides.name` (pre-filled on import or by profile shortening rules; operator-editable and persisted). This matters especially for profile length limits (e.g. 16 characters) and m×n / multi-talkgroup expansion, where composed names like `GB7GL Glasgow Scotland TS2` must be abbreviated per target.
 
 **Open questions** (resolve during Phase 1 modelling):
 

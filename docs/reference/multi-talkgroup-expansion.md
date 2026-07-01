@@ -48,7 +48,7 @@ Export path: `assemble(build, library)` → trait-aware projection → wire seri
 
 Each expanded row is one site × one member:
 
-- **Wire name:** composed by `multiTalkGroupExportNameMode` (default `callsign_tg_abbrev`) — see [Wire name modes](#wire-name-modes).
+- **Wire name:** composed by `multiTalkGroupExportNameMode` (default `callsign_tg_abbrev`) — see [Wire name modes](#wire-name-modes). Stored on the **format build** as selection `overrides.name` so profile length limits can be reviewed and edited — not recomputed silently each export.
 - **Contact / TX ref:** the member (`contactRef` on the expanded row)
 - **RX group list:** `null` — single-TG row; no RGL on wire
 - **Timeslot:** when the member has `timeslotOverride`, expanded row `timeslot` reflects it; otherwise inherits lean channel / mode-profile slot.

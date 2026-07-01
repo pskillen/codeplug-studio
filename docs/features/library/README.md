@@ -42,8 +42,12 @@ delete → LibraryService.deleteWithIntegrity → findReferencesTo (core)
 
 ## Boundaries
 
-- Vendor-neutral: no radio caps, format strings, or CSV concepts. Cardinality/limits are deferred to export (later phases).
+- Vendor-neutral: no radio caps, format strings, or CSV concepts. Cardinality/limits and **CPS wire names** belong on the **format build** (`FormatBuild` selections and overrides), not here.
 - `core` holds pure domain + integrity (`references.ts`); persistence orchestration lives in the app layer (`LibraryService`), never in `core`.
+
+## Library vs format build
+
+The library holds RF facts you curate once (frequency, mode, contact refs, human-readable names). When you export to a specific radio, a persisted **`FormatBuild`** maps those entities to that CPS workflow — trait layout, which rows participate, and **wire-name overrides** (including shortened names for 16-character limits or m×n expansion). Export always uses **both** layers; see [data-model — Two persisted layers](../data-model/README.md#two-persisted-layers-not-one-export-format).
 
 ## Related
 

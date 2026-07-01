@@ -22,7 +22,7 @@ Agent skills for documentation and execution tracking:
 | Repeater directories | `src/integrations/repeaters/`                                       | [repeater-directories/](repeater-directories/) | Phase 2 — UK repeater + BrandMeister library workflows                 |
 | Report / summary     | `src/app/routes/ReportsPage.tsx`, `src/core/domain/summary.ts`      | [report/](report/)                             | Phase 2 ([#12](https://github.com/pskillen/codeplug-studio/issues/12)) |
 | Maidenhead           | `src/core/domain/maidenhead.ts`, `src/app/routes/ReferencePage.tsx` | [maidenhead.md](maidenhead.md)                 | Phase 2 — locator conversion on `/reference`                           |
-| _(later phases)_     | `src/core/import-export/`, `src/app/features/builds/`               | `builds/`, `import-export/`                    | Planned — format builds and CPS import/export                          |
+| _(later phases)_     | `src/core/import-export/`, `src/app/features/builds/`               | `builds/`, `import-export/`                    | Planned — persisted `FormatBuild` profiles + CPS import/export         |
 
 ## Reference
 
