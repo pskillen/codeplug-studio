@@ -49,7 +49,7 @@ export function TalkGroupEditor({
   const [mode, setMode] = useState<DigitalChannelMode>(base.mode);
   const [digitalId, setDigitalId] = useState(String(base.digitalId));
   const [comment, setComment] = useState(base.comment);
-  const { save, saving, error } = useEntitySave();
+  const { save, saving, error } = useEntitySave('talk-groups');
 
   function handleSave() {
     const row: TalkGroup = {
@@ -80,7 +80,12 @@ export function TalkGroupEditor({
       <FieldRow label="Comment">
         <input style={controlStyle} value={comment} onChange={(e) => setComment(e.target.value)} />
       </FieldRow>
-      <EditorActions saving={saving} error={error} onSave={handleSave} />
+      <EditorActions
+        saving={saving}
+        error={error}
+        onSave={handleSave}
+        cancelPath="/library/talk-groups"
+      />
     </div>
   );
 }
@@ -97,7 +102,7 @@ export function DigitalContactEditor({
   const [mode, setMode] = useState<DigitalChannelMode>(base.mode);
   const [digitalId, setDigitalId] = useState(String(base.digitalId));
   const [comment, setComment] = useState(base.comment);
-  const { save, saving, error } = useEntitySave();
+  const { save, saving, error } = useEntitySave('digital-contacts');
 
   function handleSave() {
     const row: DigitalContact = {
@@ -128,7 +133,12 @@ export function DigitalContactEditor({
       <FieldRow label="Comment">
         <input style={controlStyle} value={comment} onChange={(e) => setComment(e.target.value)} />
       </FieldRow>
-      <EditorActions saving={saving} error={error} onSave={handleSave} />
+      <EditorActions
+        saving={saving}
+        error={error}
+        onSave={handleSave}
+        cancelPath="/library/contacts"
+      />
     </div>
   );
 }
@@ -144,7 +154,7 @@ export function AnalogContactEditor({
   const [name, setName] = useState(base.name);
   const [code, setCode] = useState(base.code);
   const [comment, setComment] = useState(base.comment);
-  const { save, saving, error } = useEntitySave();
+  const { save, saving, error } = useEntitySave('analog-contacts');
 
   function handleSave() {
     const row: AnalogContact = {
@@ -167,7 +177,12 @@ export function AnalogContactEditor({
       <FieldRow label="Comment">
         <input style={controlStyle} value={comment} onChange={(e) => setComment(e.target.value)} />
       </FieldRow>
-      <EditorActions saving={saving} error={error} onSave={handleSave} />
+      <EditorActions
+        saving={saving}
+        error={error}
+        onSave={handleSave}
+        cancelPath="/library/contacts"
+      />
     </div>
   );
 }

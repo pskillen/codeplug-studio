@@ -80,7 +80,12 @@ export default function ZoneEditor({
         <TextInput label="Comment" value={comment} onChange={(e) => setComment(e.currentTarget.value)} />
       </FormSection>
 
-      <EditorActions saving={saving} error={error} onSave={handleSave} />
+      <EditorActions
+        saving={saving}
+        error={error}
+        onSave={handleSave}
+        cancelPath="/library/zones"
+      />
     </Stack>
   );
 }

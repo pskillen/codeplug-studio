@@ -108,7 +108,7 @@ export default function RepeaterDirectorySearch({
       title={title}
       description={description}
       footer={
-        <Button variant="light" component={Link} to="/library">
+        <Button variant="light" component={Link} to="/library/channels">
           Back to library
         </Button>
       }
@@ -214,7 +214,7 @@ export default function RepeaterDirectorySearch({
           </Table>
           {added.size > 0 ? (
             <Group mt="md">
-              <Button variant="light" onClick={() => navigate('/library')}>
+              <Button variant="light" onClick={() => navigate('/library/channels')}>
                 View library
               </Button>
             </Group>
