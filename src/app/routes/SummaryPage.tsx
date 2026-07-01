@@ -4,12 +4,12 @@ import { summariseLibrary } from '@core/domain/summary.ts';
 import { useLibrary } from '../state/useLibrary.ts';
 import { ListPage, PageSection, PageSectionGrid } from '../components/ui/index.ts';
 
-export default function ReportsPage() {
+export default function SummaryPage() {
   const { library, loading } = useLibrary();
 
   if (loading) {
     return (
-      <ListPage title="Reports" description="Read-only summary of the active project's library.">
+      <ListPage title="Summary" description="Read-only summary of the active project's library.">
         <Text>Loading…</Text>
       </ListPage>
     );
@@ -26,7 +26,7 @@ export default function ReportsPage() {
   ];
 
   return (
-    <ListPage title="Reports" description="Read-only summary of the active project's library.">
+    <ListPage title="Summary" description="Read-only summary of the active project's library.">
       <SimpleGrid cols={{ base: 2, sm: 3, md: 6 }} spacing="sm">
         {counts.map((c) => (
           <PageSection key={c.label}>

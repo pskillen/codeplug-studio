@@ -92,7 +92,7 @@ export interface DanglingReference {
 
 /**
  * Find references whose target id is missing from the library — integrity
- * warnings surfaced in reports. Only UUID `id` relationships are checked.
+ * warnings surfaced in the summary view. Only UUID `id` relationships are checked.
  */
 export function findDanglingReferences(library: Library): DanglingReference[] {
   const channelIds = new Set(library.channels.map((c) => c.id));

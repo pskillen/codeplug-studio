@@ -109,4 +109,4 @@ Coarse UK-oriented receive ranges. SW uses **gap segments** between amateur HF a
 - [Display conventions](./display-conventions.md) — band pill rendering
 - [library feature](../features/library/README.md)
 - [Data model](../features/data-model/README.md)
-- [report](../features/report/README.md) — band breakdowns on `/reports`
+- [report](../features/report/README.md) — band breakdowns on `/summary`

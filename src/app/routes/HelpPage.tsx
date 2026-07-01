@@ -22,7 +22,11 @@ export default function HelpPage() {
             editor.
           </List.Item>
           <List.Item>
-            <strong>Map &amp; reports</strong> — plot located channels and review library summary.
+            <strong>Summary</strong> — at-a-glance library inventory, breakdowns, and integrity
+            warnings.
+          </List.Item>
+          <List.Item>
+            <strong>Map</strong> — plot located channels on a map.
           </List.Item>
         </List>
         <Stack gap="xs" mt="md">

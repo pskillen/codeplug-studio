@@ -26,7 +26,7 @@ Items **skipped**, **incomplete**, or **discovered during execution** — not fu
 
 - [x] **Epic progress log gap** — Phase 2 backfilled: retrospective slices for PRs #13–#15 and the PR #17 mop-up added to `epic-1-progress.md` (#18, 2026-07-01)
 - [x] **Hallucinated `reports-and-reference` feature doc** — removed; repeater content lives under [repeater-directories](../features/repeater-directories/README.md); report and reference split into [report](../features/report/README.md) + [maidenhead.md](../features/maidenhead.md) + tier-2 [bands](../reference/bands.md) ([#26](https://github.com/pskillen/codeplug-studio/issues/26))
-- [x] **App shell feature doc drift** — `/reports` (library summary) and `/reference` (tools) confirmed as shipped Ticket #12 surfaces (PR #15) and documented in their own hubs; app-shell route table links to them
+- [x] **App shell feature doc drift** — `/summary` (library summary; `/reports` redirects) and `/reference` (tools) confirmed as shipped Ticket #12 surfaces (PR #15) and documented in their own hubs; app-shell route table links to them
 
 ## Phase 2 — repeater directories (discovered)
 
