@@ -53,14 +53,14 @@ Zone editor uses `ZoneMemberPicker` — available ↔ in-zone lists with per-sid
 
 ## Entities and editors
 
-| Entity          | Key fields                                                                       |
-| --------------- | -------------------------------------------------------------------------------- |
-| Channel         | name, callsign, RX/TX (MHz↔Hz), power, scan-skip, comment, FM **or** DMR profile |
-| Talk group      | name, digital mode, group ID, comment                                            |
-| Digital contact | name, digital mode, contact ID, comment                                          |
-| Analog contact  | name, code, comment                                                              |
-| RX group list   | name, members (talk groups / digital contacts)                                   |
-| Zone            | name, ordered channel members, export flags, scan carrier frequency, comment     |
+| Entity          | Key fields                                                                                                                                           |
+| --------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Channel         | name, callsign, RX/TX (MHz↔Hz), power, scan-skip, comment, FM **or** DMR profile                                                                     |
+| Talk group      | name, digital mode, group ID, comment                                                                                                                |
+| Digital contact | name, digital mode, contact ID, comment                                                                                                              |
+| Analog contact  | name, code, comment                                                                                                                                  |
+| RX group list   | name, members (talk groups / digital contacts)                                                                                                       |
+| Zone            | name, ordered channel members, `exportScratchChannel` (editor), `exportScanList` / `scanCarrierFrequencyHz` (model only — format build TBD), comment |
 
 Channel DMR profiles reference a **digital contact** and an **RX group list** by UUID `id` (the editor exposes dropdowns); RX group lists and zones hold member `EntityRef[]`. Names are display labels only — never foreign keys.
 

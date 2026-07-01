@@ -9,15 +9,23 @@ import {
   TextInput,
 } from '@mantine/core';
 import { IconArrowLeft, IconArrowRight } from '@tabler/icons-react';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import type { Channel } from '@core/models/library.ts';
 import { ICON_SIZE_NAV, ICON_STROKE } from '../../lib/iconSizes.ts';
 import { sortByName } from '../../lib/channels.ts';
+
+export interface ZoneMemberPickerMapFilters {
+  /** Omit from map channel markers */
+  hiddenMarkerChannelIds: string[];
+  /** Omit from zone hull preview (in-zone members only) */
+  hiddenZoneMemberIds: string[];
+}
 
 export interface ZoneMemberPickerProps {
   channels: Channel[];
   selectedIds: string[];
   onChange: (ids: string[]) => void;
+  onMapFiltersChange?: (filters: ZoneMemberPickerMapFilters) => void;
 }
 
 function moveSelectedBlock(
@@ -83,13 +91,51 @@ function ChannelList({
   );
 }
 
+export function computeZoneMemberPickerMapFilters(
+  channels: Channel[],
+  selectedIds: string[],
+  availableFilter: string,
+  inZoneFilter: string,
+  hideAvailableFilteredFromMap: boolean,
+  hideInZoneFilteredFromMap: boolean,
+): ZoneMemberPickerMapFilters {
+  const selectedIdSet = new Set(selectedIds);
+  const availableFilterLower = availableFilter.trim().toLowerCase();
+  const inZoneFilterLower = inZoneFilter.trim().toLowerCase();
+  const hiddenMarkerChannelIds: string[] = [];
+  const hiddenZoneMemberIds: string[] = [];
+
+  if (hideAvailableFilteredFromMap && availableFilterLower) {
+    for (const ch of channels) {
+      if (!selectedIdSet.has(ch.id) && !ch.name.toLowerCase().includes(availableFilterLower)) {
+        hiddenMarkerChannelIds.push(ch.id);
+      }
+    }
+  }
+
+  if (hideInZoneFilteredFromMap && inZoneFilterLower) {
+    for (const id of selectedIds) {
+      const ch = channels.find((c) => c.id === id);
+      if (ch && !ch.name.toLowerCase().includes(inZoneFilterLower)) {
+        hiddenMarkerChannelIds.push(ch.id);
+        hiddenZoneMemberIds.push(ch.id);
+      }
+    }
+  }
+
+  return { hiddenMarkerChannelIds, hiddenZoneMemberIds };
+}
+
 export default function ZoneMemberPicker({
   channels,
   selectedIds,
   onChange,
+  onMapFiltersChange,
 }: ZoneMemberPickerProps) {
   const [availableFilter, setAvailableFilter] = useState('');
   const [inZoneFilter, setInZoneFilter] = useState('');
+  const [hideAvailableFilteredFromMap, setHideAvailableFilteredFromMap] = useState(true);
+  const [hideInZoneFilteredFromMap, setHideInZoneFilteredFromMap] = useState(true);
   const [availableSelected, setAvailableSelected] = useState<string[]>([]);
   const [inZoneSelected, setInZoneSelected] = useState<string[]>([]);
 
@@ -115,6 +161,30 @@ export default function ZoneMemberPicker({
         .filter((ch) => !inZoneFilterLower || ch.name.toLowerCase().includes(inZoneFilterLower)),
     [channels, selectedIds, inZoneFilterLower],
   );
+
+  const mapFilters = useMemo(
+    () =>
+      computeZoneMemberPickerMapFilters(
+        channels,
+        selectedIds,
+        availableFilter,
+        inZoneFilter,
+        hideAvailableFilteredFromMap,
+        hideInZoneFilteredFromMap,
+      ),
+    [
+      channels,
+      selectedIds,
+      availableFilter,
+      inZoneFilter,
+      hideAvailableFilteredFromMap,
+      hideInZoneFilteredFromMap,
+    ],
+  );
+
+  useEffect(() => {
+    onMapFiltersChange?.(mapFilters);
+  }, [mapFilters, onMapFiltersChange]);
 
   const toggleAvailable = (id: string) => {
     setAvailableSelected((prev) =>
@@ -184,6 +254,12 @@ export default function ZoneMemberPicker({
               emptyLabel="No channels available"
             />
           </ScrollArea>
+          <Checkbox
+            label="Hide filtered entries from map"
+            checked={hideAvailableFilteredFromMap}
+            disabled={!availableFilterLower}
+            onChange={(e) => setHideAvailableFilteredFromMap(e.currentTarget.checked)}
+          />
         </Stack>
 
         <Stack gap="xs" justify="center">
@@ -233,6 +309,12 @@ export default function ZoneMemberPicker({
               emptyLabel="No channels in zone"
             />
           </ScrollArea>
+          <Checkbox
+            label="Hide filtered entries from map"
+            checked={hideInZoneFilteredFromMap}
+            disabled={!inZoneFilterLower}
+            onChange={(e) => setHideInZoneFilteredFromMap(e.currentTarget.checked)}
+          />
           <Group gap="xs">
             <Button
               type="button"
