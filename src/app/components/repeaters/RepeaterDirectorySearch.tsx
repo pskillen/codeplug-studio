@@ -1,31 +1,77 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Alert, Button, Group, Select, Stack, Table, Text, TextInput } from '@mantine/core';
-import type { Channel } from '@core/models/library.ts';
 import {
-  RepeaterDirectoryError,
+  Alert,
+  Anchor,
+  Button,
+  Checkbox,
+  Group,
+  ScrollArea,
+  Select,
+  Stack,
+  Switch,
+  Table,
+  Text,
+  TextInput,
+} from '@mantine/core';
+import { IconSearch } from '@tabler/icons-react';
+import type { Channel } from '@core/models/library.ts';
+import { coordsToLocator } from '@core/domain/maidenhead.ts';
+import { toTitleCase } from '@core/domain/titleCase.ts';
+import {
   repeaterListingToChannel,
-  searchBrandmeisterByCallsign,
-  searchUkRepeatersByCallsign,
-  searchUkRepeatersByLocator,
+  type MapListingOptions,
   type RepeaterListing,
   type RepeaterSource,
 } from '@integrations/repeaters/index.ts';
+import { useRepeaterDirectorySearch } from '../../hooks/useRepeaterDirectorySearch.ts';
+import { isSimplex } from '../../lib/channels.ts';
+import { ICON_SIZE_NAV, ICON_STROKE } from '../../lib/iconSizes.ts';
+import { isOperationalStatus, queryKindHint } from '../../lib/repeaters.ts';
+import { hzToMhzString } from '../../lib/units.ts';
 import { persistence } from '../../state/persistence.ts';
 import { useLibrary } from '../../state/useLibrary.ts';
 import { useProjects } from '../../state/useProjects.ts';
-import { hzToMhzString } from '../../lib/units.ts';
+import UseMyLocationButton from '../UseMyLocationButton/UseMyLocationButton.tsx';
 import { BandPillsForRepeaterListing, ModePillsForRepeaterListing } from '../pills/index.ts';
 import { FormPage, PageSection } from '../ui/index.ts';
 import { findChannelByCallsign } from './findChannelByCallsign.ts';
 import RepeaterListingUpdateDialog from './RepeaterListingUpdateDialog.tsx';
 
-type SearchBy = 'callsign' | 'locator';
+const BAND_OPTIONS = [
+  { value: '2M', label: '2 m' },
+  { value: '70CM', label: '70 cm' },
+  { value: '4M', label: '4 m' },
+  { value: '6M', label: '6 m' },
+  { value: '23CM', label: '23 cm' },
+];
 
 export interface RepeaterDirectorySearchProps {
   source: RepeaterSource;
   title: string;
   description: string;
+}
+
+function listingKey(listing: RepeaterListing): string {
+  return `${listing.source}:${listing.remoteId}`;
+}
+
+function formatListingFrequencies(rxHz: number | null, txHz: number | null): string {
+  if (isSimplex(rxHz, txHz)) {
+    const freq = hzToMhzString(rxHz) || '—';
+    return `Simplex ${freq} MHz`;
+  }
+  return `RX ${hzToMhzString(rxHz) || '—'} / TX ${hzToMhzString(txHz) || '—'} MHz`;
+}
+
+function displayListingName(listing: RepeaterListing, titleCaseNames: boolean): string {
+  if (!listing.name) return '—';
+  return titleCaseNames ? toTitleCase(listing.name) : listing.name;
+}
+
+function displayListingStatus(listing: RepeaterListing, titleCaseNames: boolean): string {
+  if (!listing.status) return '—';
+  return titleCaseNames ? toTitleCase(listing.status) : listing.status;
 }
 
 export default function RepeaterDirectorySearch({
@@ -36,22 +82,50 @@ export default function RepeaterDirectorySearch({
   const navigate = useNavigate();
   const { activeProjectId } = useProjects();
   const { library } = useLibrary();
-  const [searchBy, setSearchBy] = useState<SearchBy>('callsign');
-  const [query, setQuery] = useState('');
-  const [results, setResults] = useState<RepeaterListing[] | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const search = useRepeaterDirectorySearch(source);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
   const [added, setAdded] = useState<Set<string>>(new Set());
+  const [addMessage, setAddMessage] = useState<string | null>(null);
   const [updateChannel, setUpdateChannel] = useState<Channel | null>(null);
   const [updateListing, setUpdateListing] = useState<RepeaterListing | null>(null);
   const [updateOpen, setUpdateOpen] = useState(false);
 
-  const canLocator = source === 'ukrepeater' && searchBy === 'locator';
-  const sourceLabel = source === 'ukrepeater' ? 'ukrepeater.net' : 'BrandMeister';
+  const isUk = source === 'ukrepeater';
+  const sourceLabel = isUk ? 'ukrepeater.net' : 'BrandMeister';
+  const sourceUrl = isUk ? 'https://ukrepeater.net' : 'https://brandmeister.network';
+
+  const mapOptions: MapListingOptions = useMemo(
+    () => ({
+      titleCaseText: isUk ? search.titleCaseNames : false,
+      omitComment: !isUk,
+    }),
+    [isUk, search.titleCaseNames],
+  );
+
+  const existingNames = useMemo(
+    () => new Set(library.channels.map((ch) => ch.name)),
+    [library.channels],
+  );
 
   function existingChannel(listing: RepeaterListing): Channel | null {
     return findChannelByCallsign(library.channels, listing.callsign);
   }
+
+  const rows = useMemo(() => {
+    return search.listings.map((listing) => {
+      const mapped = repeaterListingToChannel(listing, activeProjectId ?? '', mapOptions);
+      const name = mapped.name;
+      const existing = findChannelByCallsign(library.channels, listing.callsign);
+      const nameCollision = !existing && existingNames.has(name);
+      return {
+        listing,
+        key: listingKey(listing),
+        nameCollision,
+        existing,
+        mappable: !nameCollision,
+      };
+    });
+  }, [search.listings, existingNames, activeProjectId, mapOptions, library.channels]);
 
   function openUpdate(listing: RepeaterListing) {
     const channel = existingChannel(listing);
@@ -61,42 +135,70 @@ export default function RepeaterDirectorySearch({
     setUpdateOpen(true);
   }
 
-  async function handleSearch() {
-    if (!query.trim()) return;
-    setLoading(true);
-    setError(null);
-    setResults(null);
-    setAdded(new Set());
-    try {
-      let listings: RepeaterListing[];
-      if (source === 'brandmeister') {
-        listings = await searchBrandmeisterByCallsign(query);
-      } else if (canLocator) {
-        listings = await searchUkRepeatersByLocator(query);
-      } else {
-        listings = await searchUkRepeatersByCallsign(query);
-      }
-      setResults(listings);
-      if (listings.length === 0) {
-        setError(`No repeaters matched your search on ${sourceLabel}.`);
-      }
-    } catch (err) {
-      setError(
-        err instanceof RepeaterDirectoryError ? err.message : 'Search failed. Please try again.',
-      );
-    } finally {
-      setLoading(false);
+  function toggleRow(key: string, checked: boolean) {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (checked) next.add(key);
+      else next.delete(key);
+      return next;
+    });
+  }
+
+  function toggleAll(checked: boolean) {
+    if (!checked) {
+      setSelected(new Set());
+      return;
     }
+    const keys = rows.filter((r) => r.mappable && !r.existing).map((r) => r.key);
+    setSelected(new Set(keys));
   }
 
   async function handleAdd(listing: RepeaterListing) {
     if (!activeProjectId) return;
-    const channel = repeaterListingToChannel(listing, activeProjectId);
+    const channel = repeaterListingToChannel(listing, activeProjectId, mapOptions);
     const result = await persistence.putChannel(channel, null);
     if (result.ok) {
-      setAdded((prev) => new Set(prev).add(listing.remoteId));
+      setAdded((prev) => new Set(prev).add(listingKey(listing)));
     }
   }
+
+  async function handleAddSelected() {
+    if (!activeProjectId) return;
+    let addedCount = 0;
+    let skipped = 0;
+    for (const row of rows) {
+      if (!selected.has(row.key)) continue;
+      if (!row.mappable || row.existing) {
+        skipped++;
+        continue;
+      }
+      const channel = repeaterListingToChannel(row.listing, activeProjectId, mapOptions);
+      const result = await persistence.putChannel(channel, null);
+      if (result.ok) {
+        addedCount++;
+        setAdded((prev) => new Set(prev).add(row.key));
+      } else {
+        skipped++;
+      }
+    }
+    setAddMessage(
+      addedCount > 0
+        ? `Added ${addedCount} channel${addedCount === 1 ? '' : 's'}${skipped ? ` (${skipped} skipped)` : ''}.`
+        : 'No channels were added.',
+    );
+    setSelected(new Set());
+    if (addedCount > 0) {
+      navigate('/library/channels');
+    }
+  }
+
+  async function handleUseMyLocation(lat: number, lon: number) {
+    const locator = coordsToLocator(lat, lon, 4);
+    search.setQuery(locator);
+    await search.search(locator);
+  }
+
+  const kindHint = isUk ? queryKindHint(search.kind) : null;
 
   const dialogChannel =
     updateChannel && updateListing
@@ -118,114 +220,220 @@ export default function RepeaterDirectorySearch({
         description={`Query ${sourceLabel} and add matches to your library.`}
       >
         <Stack gap="sm">
-          {source === 'ukrepeater' ? (
-            <Select
-              label="Search by"
-              data={[
-                { value: 'callsign', label: 'Repeater callsign' },
-                { value: 'locator', label: 'Maidenhead locator' },
-              ]}
-              value={searchBy}
-              onChange={(v) => setSearchBy((v as SearchBy) ?? 'callsign')}
-            />
-          ) : null}
           <Group align="flex-end" wrap="wrap">
             <TextInput
-              label="Query"
-              placeholder={canLocator ? 'e.g. IO91' : 'e.g. GB3DA'}
-              value={query}
-              onChange={(e) => setQuery(e.currentTarget.value)}
+              label="Search"
+              placeholder={
+                isUk ? 'Callsign, locator, band (2m), or town' : 'e.g. GB3RF'
+              }
+              value={search.query}
+              onChange={(e) => search.setQuery(e.currentTarget.value)}
               onKeyDown={(e) => {
-                if (e.key === 'Enter') void handleSearch();
+                if (e.key === 'Enter') void search.search();
               }}
               style={{ flex: 1, minWidth: 200 }}
             />
-            <Button onClick={() => void handleSearch()} loading={loading}>
+            {isUk ? (
+              <Select
+                label="Band filter"
+                placeholder="Any band"
+                data={BAND_OPTIONS}
+                value={search.bandFilter}
+                onChange={search.setBandFilter}
+                clearable
+                style={{ minWidth: 120 }}
+              />
+            ) : null}
+            {isUk ? (
+              <Switch
+                label="Operational only"
+                checked={search.operationalOnly}
+                onChange={(e) => search.setOperationalOnly(e.currentTarget.checked)}
+              />
+            ) : null}
+            {isUk ? (
+              <Checkbox
+                label="Title case names"
+                checked={search.titleCaseNames}
+                onChange={(e) => search.setTitleCaseNames(e.currentTarget.checked)}
+              />
+            ) : null}
+            {isUk ? (
+              <UseMyLocationButton onLocation={(lat, lon) => void handleUseMyLocation(lat, lon)} />
+            ) : null}
+            <Button
+              leftSection={<IconSearch size={ICON_SIZE_NAV} stroke={ICON_STROKE} />}
+              onClick={() => void search.search()}
+              loading={search.loading}
+            >
               Search
             </Button>
           </Group>
-          {error ? <Alert color="red">{error}</Alert> : null}
+
+          {kindHint ? (
+            <Text size="sm" c="dimmed">
+              {kindHint}
+            </Text>
+          ) : null}
+
+          {search.error ? (
+            <Alert color="red">
+              {search.error}{' '}
+              <Anchor href={sourceUrl} target="_blank" rel="noopener noreferrer">
+                {sourceLabel}
+              </Anchor>
+            </Alert>
+          ) : null}
+
+          {addMessage ? <Alert color="green">{addMessage}</Alert> : null}
         </Stack>
       </PageSection>
 
-      {results && results.length > 0 ? (
+      {rows.length > 0 ? (
         <PageSection title="Results">
-          <Table highlightOnHover>
-            <Table.Thead>
-              <Table.Tr>
-                <Table.Th>Callsign</Table.Th>
-                <Table.Th>Band</Table.Th>
-                <Table.Th>Mode</Table.Th>
-                <Table.Th>Frequencies</Table.Th>
-                <Table.Th />
-              </Table.Tr>
-            </Table.Thead>
-            <Table.Tbody>
-              {results.map((r) => {
-                const isAdded = added.has(r.remoteId);
-                const existing = existingChannel(r);
-                return (
-                  <Table.Tr key={`${r.source}:${r.remoteId}`}>
-                    <Table.Td>
-                      <Text fw={600}>{r.callsign}</Text>
-                      {r.name ? (
-                        <Text size="sm" c="dimmed">
-                          {r.name}
-                        </Text>
-                      ) : null}
-                    </Table.Td>
-                    <Table.Td>
-                      <BandPillsForRepeaterListing
-                        rxFrequencyHz={r.rxFrequencyHz}
-                        txFrequencyHz={r.txFrequencyHz}
-                        wireBand={r.band}
-                        size="xs"
-                      />
-                    </Table.Td>
-                    <Table.Td>
-                      <ModePillsForRepeaterListing modes={r.modes} size="xs" />
-                    </Table.Td>
-                    <Table.Td>
-                      <Text size="sm">
-                        RX {hzToMhzString(r.rxFrequencyHz) || '—'} / TX{' '}
-                        {hzToMhzString(r.txFrequencyHz) || '—'} MHz
-                      </Text>
-                    </Table.Td>
-                    <Table.Td>
-                      {existing ? (
-                        <Button size="compact-sm" variant="outline" onClick={() => openUpdate(r)}>
-                          Update existing
-                        </Button>
-                      ) : (
-                        <Button
-                          size="compact-sm"
-                          variant={isAdded ? 'light' : 'filled'}
-                          disabled={isAdded}
-                          onClick={() => void handleAdd(r)}
+          <ScrollArea>
+            <Table highlightOnHover>
+              <Table.Thead>
+                <Table.Tr>
+                  <Table.Th>
+                    <Checkbox
+                      aria-label="Select all mappable"
+                      checked={
+                        rows.filter((r) => r.mappable && !r.existing).length > 0 &&
+                        rows
+                          .filter((r) => r.mappable && !r.existing)
+                          .every((r) => selected.has(r.key))
+                      }
+                      indeterminate={
+                        selected.size > 0 &&
+                        !rows
+                          .filter((r) => r.mappable && !r.existing)
+                          .every((r) => selected.has(r.key))
+                      }
+                      onChange={(e) => toggleAll(e.currentTarget.checked)}
+                    />
+                  </Table.Th>
+                  <Table.Th>Callsign</Table.Th>
+                  <Table.Th>Band</Table.Th>
+                  {isUk ? <Table.Th>Town</Table.Th> : <Table.Th>City</Table.Th>}
+                  <Table.Th>Status</Table.Th>
+                  <Table.Th>Mode</Table.Th>
+                  <Table.Th>Frequencies</Table.Th>
+                  {isUk ? <Table.Th>Locator</Table.Th> : null}
+                  <Table.Th />
+                </Table.Tr>
+              </Table.Thead>
+              <Table.Tbody>
+                {rows.map((row) => {
+                  const { listing } = row;
+                  const isAdded = added.has(row.key);
+                  const disabled = !row.mappable || Boolean(row.existing);
+                  return (
+                    <Table.Tr key={row.key} opacity={disabled ? 0.6 : 1}>
+                      <Table.Td>
+                        <Checkbox
+                          checked={selected.has(row.key)}
+                          disabled={disabled}
+                          onChange={(e) => toggleRow(row.key, e.currentTarget.checked)}
+                          aria-label={`Select ${listing.callsign}`}
+                        />
+                      </Table.Td>
+                      <Table.Td>
+                        <Text fw={600}>{listing.callsign}</Text>
+                      </Table.Td>
+                      <Table.Td>
+                        <BandPillsForRepeaterListing
+                          rxFrequencyHz={listing.rxFrequencyHz}
+                          txFrequencyHz={listing.txFrequencyHz}
+                          wireBand={listing.band}
+                          size="xs"
+                        />
+                      </Table.Td>
+                      <Table.Td>{displayListingName(listing, isUk && search.titleCaseNames)}</Table.Td>
+                      <Table.Td>
+                        <Text
+                          size="sm"
+                          c={isOperationalStatus(listing.status) ? undefined : 'orange'}
                         >
-                          {isAdded ? 'Added' : 'Add to library'}
-                        </Button>
-                      )}
-                    </Table.Td>
-                  </Table.Tr>
-                );
-              })}
-            </Table.Tbody>
-          </Table>
-          {added.size > 0 ? (
-            <Group mt="md">
+                          {displayListingStatus(listing, isUk && search.titleCaseNames)}
+                        </Text>
+                      </Table.Td>
+                      <Table.Td>
+                        <ModePillsForRepeaterListing modes={listing.modes} size="xs" />
+                      </Table.Td>
+                      <Table.Td>
+                        <Text size="sm">
+                          {formatListingFrequencies(listing.rxFrequencyHz, listing.txFrequencyHz)}
+                        </Text>
+                      </Table.Td>
+                      {isUk ? <Table.Td>{listing.locator ?? '—'}</Table.Td> : null}
+                      <Table.Td>
+                        {row.existing ? (
+                          <Button
+                            size="compact-sm"
+                            variant="outline"
+                            onClick={() => openUpdate(listing)}
+                          >
+                            Update existing
+                          </Button>
+                        ) : (
+                          <Button
+                            size="compact-sm"
+                            variant={isAdded ? 'light' : 'filled'}
+                            disabled={isAdded || row.nameCollision}
+                            onClick={() => void handleAdd(listing)}
+                          >
+                            {isAdded ? 'Added' : 'Add to library'}
+                          </Button>
+                        )}
+                      </Table.Td>
+                    </Table.Tr>
+                  );
+                })}
+              </Table.Tbody>
+            </Table>
+          </ScrollArea>
+
+          {rows.some((r) => r.nameCollision) ? (
+            <Stack gap={4} mt="xs">
+              {rows
+                .filter((r) => r.nameCollision)
+                .map((r) => (
+                  <Text key={`dup-${r.key}`} size="xs" c="orange">
+                    {r.listing.callsign}: channel name already exists in this library
+                  </Text>
+                ))}
+            </Stack>
+          ) : null}
+
+          <Group justify="space-between" mt="md">
+            <Button disabled={selected.size === 0} onClick={() => void handleAddSelected()}>
+              Add selected ({selected.size})
+            </Button>
+            {added.size > 0 ? (
               <Button variant="light" onClick={() => navigate('/library/channels')}>
                 View library
               </Button>
-            </Group>
-          ) : null}
+            ) : null}
+          </Group>
         </PageSection>
       ) : null}
+
+      <Text size="xs" c="dimmed">
+        Data from{' '}
+        <Anchor href={sourceUrl} target="_blank" rel="noopener noreferrer">
+          {sourceLabel}
+        </Anchor>
+        {isUk
+          ? ' (RSGB ETCC beta API). For amateur programming convenience — not authoritative for emergency operations.'
+          : '. For amateur programming convenience — not authoritative for emergency operations.'}
+      </Text>
 
       {dialogChannel && updateListing ? (
         <RepeaterListingUpdateDialog
           channel={dialogChannel}
           listing={updateListing}
+          mapOptions={mapOptions}
           opened={updateOpen}
           onClose={() => setUpdateOpen(false)}
         />

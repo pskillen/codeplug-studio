@@ -7,6 +7,7 @@ import {
   diffHasChanges,
   type ChannelDiffField,
   type ChannelDiffRow,
+  type MapListingOptions,
   type RepeaterListing,
 } from '@integrations/repeaters/index.ts';
 import { persistence } from '../../state/persistence.ts';
@@ -17,6 +18,7 @@ export interface RepeaterListingUpdateDialogProps {
   opened: boolean;
   onClose: () => void;
   onApplied?: () => void;
+  mapOptions?: MapListingOptions;
 }
 
 interface RepeaterListingUpdateDialogBodyProps {
@@ -24,6 +26,7 @@ interface RepeaterListingUpdateDialogBodyProps {
   listing: RepeaterListing;
   onClose: () => void;
   onApplied?: () => void;
+  mapOptions?: MapListingOptions;
 }
 
 function RepeaterListingUpdateDialogBody({
@@ -31,10 +34,11 @@ function RepeaterListingUpdateDialogBody({
   listing,
   onClose,
   onApplied,
+  mapOptions,
 }: RepeaterListingUpdateDialogBodyProps) {
   const diffRows: ChannelDiffRow[] = useMemo(
-    () => diffChannelFromListing(channel, listing),
-    [channel, listing],
+    () => diffChannelFromListing(channel, listing, mapOptions),
+    [channel, listing, mapOptions],
   );
   const changedRows = useMemo(() => diffRows.filter((r) => r.changed), [diffRows]);
   const [selectedFields, setSelectedFields] = useState<Set<ChannelDiffField>>(
@@ -56,7 +60,7 @@ function RepeaterListingUpdateDialogBody({
     if (selectedFields.size === 0) return;
     setApplying(true);
     setApplyError(null);
-    const patched = buildPatchFromDiff(channel, listing, [...selectedFields]);
+    const patched = buildPatchFromDiff(channel, listing, [...selectedFields], mapOptions);
     const result = await persistence.putChannel(patched, channel.revision);
     setApplying(false);
     if (!result.ok) {
@@ -126,6 +130,7 @@ export default function RepeaterListingUpdateDialog({
   opened,
   onClose,
   onApplied,
+  mapOptions,
 }: RepeaterListingUpdateDialogProps) {
   const bodyKey = listing ? `${channel.id}:${listing.source}:${listing.remoteId}` : 'none';
 
@@ -138,6 +143,7 @@ export default function RepeaterListingUpdateDialog({
           listing={listing}
           onClose={onClose}
           onApplied={onApplied}
+          mapOptions={mapOptions}
         />
       ) : null}
     </Modal>
