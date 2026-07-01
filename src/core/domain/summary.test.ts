@@ -1,13 +1,22 @@
 import { describe, expect, it } from 'vitest';
+import { defaultModeProfile } from '@core/domain/modeProfiles.ts';
 import { emptyLibrary, newChannel, newTalkGroup, newZone } from './factories.ts';
 import { summariseLibrary } from './summary.ts';
-import type { ChannelModeProfileDMR, Library } from '../models/library.ts';
+import type {
+  ChannelModeProfileAnalog,
+  ChannelModeProfileDMR,
+  Library,
+} from '../models/library.ts';
 
 const projectId = 'p1';
 
 describe('summariseLibrary', () => {
   it('counts entities and groups channels by mode and band', () => {
-    const fm = { ...newChannel(projectId, 'FM 2m'), rxFrequency: 145_500_000 };
+    const fm = {
+      ...newChannel(projectId, 'FM 2m'),
+      rxFrequency: 145_500_000,
+      modeProfiles: [defaultModeProfile('fm') as ChannelModeProfileAnalog],
+    };
     const dmrProfile: ChannelModeProfileDMR = {
       mode: 'dmr',
       colourCode: 1,

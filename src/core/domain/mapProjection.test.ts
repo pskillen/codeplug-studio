@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { newChannel, newZone } from './factories.ts';
+import { defaultModeProfile } from './modeProfiles.ts';
 import {
   applyFilters,
   dominantMode,
@@ -73,7 +74,10 @@ describe('markerLabel', () => {
 
 describe('dominantMode', () => {
   it('picks the most common primary mode in a merged group', () => {
-    const fm = locatedChannel('FM', 56.5, -4.0);
+    const fm = {
+      ...locatedChannel('FM', 56.5, -4.0),
+      modeProfiles: [defaultModeProfile('fm')],
+    };
     const dmrProfile: ChannelModeProfileDMR = {
       mode: 'dmr',
       colourCode: 1,

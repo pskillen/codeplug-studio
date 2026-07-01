@@ -15,8 +15,7 @@ export interface RepeaterVerifyPanelProps {
 }
 
 function sourceForChannel(channel: Channel): 'ukrepeater' | 'brandmeister' {
-  const mode = channel.modeProfiles[0]?.mode;
-  return mode === 'dmr' ? 'brandmeister' : 'ukrepeater';
+  return channel.modeProfiles.some((p) => p.mode === 'dmr') ? 'brandmeister' : 'ukrepeater';
 }
 
 export default function RepeaterVerifyPanel({ channel }: RepeaterVerifyPanelProps) {

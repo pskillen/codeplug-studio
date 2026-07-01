@@ -1,25 +1,23 @@
 import { useState } from 'react';
-import { Alert, Button, Checkbox, Group, Select, Stack, TextInput } from '@mantine/core';
+import { Alert, Button, Checkbox, Group, SimpleGrid, Stack, TextInput } from '@mantine/core';
 import { Link } from 'react-router-dom';
-import type {
-  Channel,
-  ChannelModeProfileDMR,
-  ChannelModeProfileFM,
-  DMRTimeSlot,
-  Library,
-} from '@core/models/library.ts';
+import type { Channel, ChannelModeProfile, Library } from '@core/models/library.ts';
+import { reconcileChannelLocation } from '@core/domain/channelLocation.ts';
 import { newChannel } from '@core/domain/factories.ts';
+import { syncModeProfiles, validateModeProfiles } from '@core/domain/modeProfiles.ts';
+import type { ChannelMode } from '@core/models/libraryTypes.ts';
+import ChannelLocationSection, {
+  channelLocationValuesFromChannel,
+  type ChannelLocationValues,
+} from '../../components/channels/ChannelLocationSection.tsx';
+import ChannelModeProfilesEditor from '../../components/channels/ChannelModeProfilesEditor.tsx';
+import ChannelModesMultiSelect from '../../components/channels/ChannelModesMultiSelect.tsx';
+import type { ChannelMode as UiChannelMode } from '../../lib/channelModes.ts';
 import RepeaterVerifyPanel from '../../components/repeaters/RepeaterVerifyPanel.tsx';
-import { FormSection } from '../../components/ui/index.ts';
-import { hzToMhzString, mhzStringToHz, parseOptionalInt } from '../../lib/units.ts';
+import { FormSection, PercentLevelSlider } from '../../components/ui/index.ts';
+import { hzToMhzString, mhzStringToHz } from '../../lib/units.ts';
 import { persistence } from '../../state/persistence.ts';
 import { useEntitySave } from './useEntitySave.ts';
-
-type Mode = 'fm' | 'dmr';
-
-function firstProfileMode(channel: Channel | null): Mode {
-  return channel?.modeProfiles[0]?.mode === 'dmr' ? 'dmr' : 'fm';
-}
 
 export default function ChannelEditor({
   projectId,
@@ -31,71 +29,71 @@ export default function ChannelEditor({
   library: Library;
 }) {
   const base = entity ?? newChannel(projectId, '');
-  const fm =
-    (entity?.modeProfiles.find((p) => p.mode !== 'dmr') as ChannelModeProfileFM | undefined) ??
-    null;
-  const dmr =
-    (entity?.modeProfiles.find((p) => p.mode === 'dmr') as ChannelModeProfileDMR | undefined) ??
-    null;
 
   const [name, setName] = useState(base.name);
   const [callsign, setCallsign] = useState(base.callsign);
   const [rx, setRx] = useState(hzToMhzString(base.rxFrequency));
   const [tx, setTx] = useState(hzToMhzString(base.txFrequency));
-  const [power, setPower] = useState(base.power === null ? '' : String(base.power));
+  const [power, setPower] = useState<number | null>(base.power);
   const [scanSkip, setScanSkip] = useState(base.scanSkip);
   const [comment, setComment] = useState(base.comment);
-
-  const [mode, setMode] = useState<Mode>(firstProfileMode(entity));
-  const [squelch, setSquelch] = useState(fm?.squelch == null ? '' : String(fm.squelch));
-  const [rxTone, setRxTone] = useState(fm?.rxTone ?? 'none');
-  const [txTone, setTxTone] = useState(fm?.txTone ?? 'none');
-  const [colourCode, setColourCode] = useState(
-    dmr?.colourCode == null ? '' : String(dmr.colourCode),
+  const [modeProfiles, setModeProfiles] = useState<ChannelModeProfile[]>(base.modeProfiles);
+  const [location, setLocation] = useState<ChannelLocationValues>(() =>
+    channelLocationValuesFromChannel(base),
   );
-  const [timeslot, setTimeslot] = useState<string>(dmr?.timeslot ? String(dmr.timeslot) : '');
-  const [dmrId, setDmrId] = useState(dmr?.dmrId == null ? '' : String(dmr.dmrId));
-  const [contactId, setContactId] = useState(
-    dmr?.contactRef?.kind === 'digitalContact' ? dmr.contactRef.id : '',
-  );
-  const [rxGroupListId, setRxGroupListId] = useState(dmr?.rxGroupListId ?? '');
+  const [validationError, setValidationError] = useState<string | null>(null);
 
   const { save, saving, error } = useEntitySave('channels');
 
+  const selectedModes = modeProfiles.map((p) => p.mode as ChannelMode);
+
   function buildRow(): Channel {
-    const profile: ChannelModeProfileFM | ChannelModeProfileDMR =
-      mode === 'fm'
-        ? { mode: 'fm', squelch: parseOptionalInt(squelch), rxTone, txTone }
-        : {
-            mode: 'dmr',
-            colourCode: parseOptionalInt(colourCode),
-            timeslot: timeslot === '' ? null : (Number(timeslot) as DMRTimeSlot),
-            dmrId: parseOptionalInt(dmrId),
-            contactRef: contactId ? { kind: 'digitalContact', id: contactId } : null,
-            rxGroupListId: rxGroupListId || null,
-          };
+    const reconciled = reconcileChannelLocation({
+      maidenheadLocator: location.maidenheadLocator || null,
+      location:
+        location.lat != null && location.lon != null
+          ? { lat: location.lat, lon: location.lon }
+          : null,
+      useLocation: location.useLocation,
+      lastEdited: location.lastEdited,
+    });
+
     return {
       ...base,
       name: name.trim() || 'Untitled channel',
       callsign,
       rxFrequency: mhzStringToHz(rx),
       txFrequency: mhzStringToHz(tx),
-      power: parseOptionalInt(power),
+      power,
       scanSkip,
       comment,
-      modeProfiles: [profile],
+      location: reconciled.location,
+      useLocation: reconciled.useLocation,
+      maidenheadLocator: reconciled.maidenheadLocator,
+      modeProfiles,
     };
   }
 
   function handleSave() {
+    const profileErrors = validateModeProfiles(modeProfiles);
+    if (profileErrors.length > 0) {
+      setValidationError(profileErrors[0] ?? 'Invalid mode profiles');
+      return;
+    }
+    setValidationError(null);
     const row = buildRow();
     void save(() => persistence.putChannel(row, entity ? entity.revision : null));
+  }
+
+  function handleModesChange(modes: UiChannelMode[]) {
+    const coreModes = modes.filter((m): m is ChannelMode => m !== 'other');
+    setModeProfiles(syncModeProfiles(coreModes, modeProfiles));
   }
 
   const liveChannel = buildRow();
 
   return (
-    <Stack gap="lg" maw={520}>
+    <Stack gap="lg" maw={640}>
       {!entity ? (
         <Alert color="blue" variant="light">
           Prefer importing from a directory? Use{' '}
@@ -105,34 +103,14 @@ export default function ChannelEditor({
       ) : null}
 
       <FormSection title="Identity">
-        <TextInput label="Name" value={name} onChange={(e) => setName(e.currentTarget.value)} />
-        <TextInput
-          label="Callsign"
-          value={callsign}
-          onChange={(e) => setCallsign(e.currentTarget.value)}
-        />
-      </FormSection>
-
-      <FormSection title="Frequencies">
-        <TextInput
-          label="RX frequency (MHz)"
-          value={rx}
-          onChange={(e) => setRx(e.currentTarget.value)}
-        />
-        <TextInput
-          label="TX frequency (MHz)"
-          value={tx}
-          onChange={(e) => setTx(e.currentTarget.value)}
-        />
-        <TextInput
-          label="Power (%)"
-          description="Blank = radio default"
-          value={power}
-          onChange={(e) => setPower(e.currentTarget.value)}
-        />
-      </FormSection>
-
-      <FormSection title="Notes">
+        <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="sm">
+          <TextInput
+            label="Callsign"
+            value={callsign}
+            onChange={(e) => setCallsign(e.currentTarget.value)}
+          />
+          <TextInput label="Name" value={name} onChange={(e) => setName(e.currentTarget.value)} />
+        </SimpleGrid>
         <TextInput
           label="Comment"
           value={comment}
@@ -145,84 +123,41 @@ export default function ChannelEditor({
         />
       </FormSection>
 
-      <FormSection title="Mode">
-        <Select
-          label="Mode"
-          data={[
-            { value: 'fm', label: 'FM (analogue)' },
-            { value: 'dmr', label: 'DMR (digital)' },
-          ]}
-          value={mode}
-          onChange={(v) => setMode((v as Mode) ?? 'fm')}
-        />
+      <FormSection title="Frequencies">
+        <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="sm">
+          <TextInput
+            label="RX frequency (MHz)"
+            value={rx}
+            onChange={(e) => setRx(e.currentTarget.value)}
+          />
+          <TextInput
+            label="TX frequency (MHz)"
+            value={tx}
+            onChange={(e) => setTx(e.currentTarget.value)}
+          />
+        </SimpleGrid>
+        <PercentLevelSlider label="Power" value={power} onChange={setPower} />
       </FormSection>
 
-      {mode === 'fm' ? (
-        <FormSection title="FM">
-          <TextInput
-            label="Squelch"
-            description="Blank = default"
-            value={squelch}
-            onChange={(e) => setSquelch(e.currentTarget.value)}
-          />
-          <TextInput
-            label="RX tone"
-            value={rxTone}
-            onChange={(e) => setRxTone(e.currentTarget.value)}
-          />
-          <TextInput
-            label="TX tone"
-            value={txTone}
-            onChange={(e) => setTxTone(e.currentTarget.value)}
+      <FormSection title="Modes">
+        <ChannelModesMultiSelect value={selectedModes} onChange={handleModesChange} />
+      </FormSection>
+
+      {modeProfiles.length > 0 ? (
+        <FormSection title="Mode profiles">
+          <ChannelModeProfilesEditor
+            profiles={modeProfiles}
+            library={library}
+            onChange={setModeProfiles}
           />
         </FormSection>
-      ) : (
-        <FormSection title="DMR">
-          <TextInput
-            label="Colour code"
-            value={colourCode}
-            onChange={(e) => setColourCode(e.currentTarget.value)}
-          />
-          <Select
-            label="Timeslot"
-            data={[
-              { value: '', label: '—' },
-              { value: '1', label: '1' },
-              { value: '2', label: '2' },
-            ]}
-            value={timeslot}
-            onChange={(v) => setTimeslot(v ?? '')}
-          />
-          <TextInput
-            label="DMR ID"
-            value={dmrId}
-            onChange={(e) => setDmrId(e.currentTarget.value)}
-          />
-          <Select
-            label="Digital contact"
-            description="UUID reference"
-            data={[
-              { value: '', label: '— none —' },
-              ...library.digitalContacts.map((c) => ({ value: c.id, label: c.name })),
-            ]}
-            value={contactId}
-            onChange={(v) => setContactId(v ?? '')}
-          />
-          <Select
-            label="RX group list"
-            description="UUID reference"
-            data={[
-              { value: '', label: '— none —' },
-              ...library.rxGroupLists.map((r) => ({ value: r.id, label: r.name })),
-            ]}
-            value={rxGroupListId}
-            onChange={(v) => setRxGroupListId(v ?? '')}
-          />
-        </FormSection>
-      )}
+      ) : null}
+
+      <ChannelLocationSection value={location} onChange={setLocation} />
 
       {entity ? <RepeaterVerifyPanel channel={liveChannel} /> : null}
 
+      {validationError ? <Alert color="red">{validationError}</Alert> : null}
       {error ? <Alert color="red">{error}</Alert> : null}
       <Group>
         <Button onClick={handleSave} loading={saving}>

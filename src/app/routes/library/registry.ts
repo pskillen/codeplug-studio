@@ -63,9 +63,10 @@ export function describeEntity(library: Library, kind: LibraryEntityKind, id: st
     case 'channel': {
       const c = library.channels.find((x) => x.id === id);
       if (!c) return '';
-      const mode = c.modeProfiles[0]?.mode ?? '—';
+      const modes = c.modeProfiles.map((p) => p.mode.toUpperCase());
+      const modeLabel = modes.length > 0 ? modes.join(' + ') : '—';
       const rx = c.rxFrequency ? `${(c.rxFrequency / 1_000_000).toFixed(4)} MHz` : 'no RX';
-      return `${mode.toUpperCase()} · ${rx}`;
+      return `${modeLabel} · ${rx}`;
     }
     case 'talkGroup': {
       const t = library.talkGroups.find((x) => x.id === id);

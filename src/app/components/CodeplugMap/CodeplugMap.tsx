@@ -444,7 +444,7 @@ export default function CodeplugMap({
               const ch = group[0];
               const merged = group.length > 1;
               const mode = merged ? dominantMode(group) : primaryMode(ch);
-              const color = modeColor(mode);
+              const color = mode != null ? modeColor(mode) : modeColor('other');
               const label = markerLabel(group, showLabels);
               const position: LatLon = [ch.location!.lat, ch.location!.lon];
               const highlighted =

@@ -1,9 +1,10 @@
 import type {
   Channel,
+  ChannelModeProfileAnalog,
   ChannelModeProfileDMR,
-  ChannelModeProfileFM,
   ChannelTone,
 } from '@core/models/library.ts';
+import { findAnalogProfile, findDmrProfile } from '@core/domain/modeProfiles.ts';
 import type { RepeaterListing } from './types.ts';
 import { repeaterListingToChannel } from './mapToChannel.ts';
 
@@ -22,6 +23,7 @@ export type ChannelDiffField =
   | 'colourCode'
   | 'mode'
   | 'location'
+  | 'maidenheadLocator'
   | 'useLocation'
   | 'comment';
 
@@ -43,18 +45,14 @@ const FIELD_LABELS: Record<ChannelDiffField, string> = {
   colourCode: 'Colour code',
   mode: 'Mode',
   location: 'Locator / coordinates',
+  maidenheadLocator: 'Maidenhead locator',
   useLocation: 'Use location',
   comment: 'Comment',
 };
 
-function findFmProfile(channel: Channel): ChannelModeProfileFM | null {
-  const profile = channel.modeProfiles.find((p) => p.mode === 'fm');
-  return profile && profile.mode === 'fm' ? (profile as ChannelModeProfileFM) : null;
-}
-
-function findDmrProfile(channel: Channel): ChannelModeProfileDMR | null {
-  const profile = channel.modeProfiles.find((p) => p.mode === 'dmr');
-  return profile && profile.mode === 'dmr' ? (profile as ChannelModeProfileDMR) : null;
+function findFmProfile(channel: Channel): ChannelModeProfileAnalog | null {
+  const profile = findAnalogProfile(channel);
+  return profile?.mode === 'fm' ? profile : null;
 }
 
 function formatTone(tone: ChannelTone): string {
@@ -62,6 +60,7 @@ function formatTone(tone: ChannelTone): string {
 }
 
 function formatLocation(channel: Channel): string {
+  if (channel.maidenheadLocator) return channel.maidenheadLocator;
   if (!channel.location) return '—';
   const { lat, lon } = channel.location;
   return `${lat.toFixed(4)}, ${lon.toFixed(4)}`;
@@ -155,6 +154,12 @@ export function diffChannelFromListing(
     !locationEqual(channel.location, remote.location),
   );
   push(
+    'maidenheadLocator',
+    channel.maidenheadLocator ?? '—',
+    remote.maidenheadLocator ?? '—',
+    (channel.maidenheadLocator ?? '') !== (remote.maidenheadLocator ?? ''),
+  );
+  push(
     'useLocation',
     channel.useLocation ? 'Yes' : 'No',
     remote.useLocation ? 'Yes' : 'No',
@@ -188,7 +193,11 @@ export function buildPatchFromDiff(
   if (selected.has('rxFrequency')) next.rxFrequency = remote.rxFrequency;
   if (selected.has('txFrequency')) next.txFrequency = remote.txFrequency;
   if (selected.has('comment')) next.comment = remote.comment;
-  if (selected.has('location')) next.location = remote.location;
+  if (selected.has('location')) {
+    next.location = remote.location;
+    next.maidenheadLocator = remote.maidenheadLocator;
+  }
+  if (selected.has('maidenheadLocator')) next.maidenheadLocator = remote.maidenheadLocator;
   if (selected.has('useLocation')) next.useLocation = remote.useLocation;
   if (selected.has('mode')) next.modeProfiles = remote.modeProfiles;
 
@@ -198,7 +207,7 @@ export function buildPatchFromDiff(
   if (selected.has('rxTone') || selected.has('txTone') || selected.has('colourCode')) {
     next.modeProfiles = next.modeProfiles.map((profile) => {
       if (profile.mode === 'fm' && remoteFm) {
-        const fm = profile as ChannelModeProfileFM;
+        const fm = profile as ChannelModeProfileAnalog;
         return {
           ...fm,
           rxTone: selected.has('rxTone') ? remoteFm.rxTone : fm.rxTone,

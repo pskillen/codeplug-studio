@@ -30,13 +30,14 @@ Items **skipped**, **incomplete**, or **discovered during execution** — not fu
 
 ## Phase 2 — repeater directories (discovered)
 
-- [ ] **Multi-mode channel CRUD** — import creates multiple `modeProfiles`; channel editor overwrites with single FM/DMR on save → [#16](https://github.com/pskillen/codeplug-studio/issues/16)
-- [ ] **Typed digital profiles** — D-STAR, YSF, P25, NXDN, M17, Tetra import as mode-only stubs; no dedicated `ChannelModeProfile*` types yet
+- [x] **Multi-mode channel CRUD** — [#16](https://github.com/pskillen/codeplug-studio/issues/16)
+- [x] **Typed digital profiles** — D-STAR, YSF, NXDN, TETRA (P25/M17 remain stubs) — [#16](https://github.com/pskillen/codeplug-studio/issues/16)
+- [x] **`maidenheadLocator` on channels** — [#28](https://github.com/pskillen/codeplug-studio/issues/28)
 - [ ] **UK repeater search modes** — postcode, address, keeper, band endpoints not wired (callsign + locator only)
 - [ ] **Repeater result cache** — no offline/session cache beyond in-memory search results
 
 ## Phase 2 — library / shell (discovered)
 
-- [ ] **Channel editor** — FM-or-DMR toggle does not reflect multi-profile channels (ties to #16)
+- [x] **Channel editor** — multi-mode profiles + location ([#16](https://github.com/pskillen/codeplug-studio/issues/16), [#28](https://github.com/pskillen/codeplug-studio/issues/28))
 - [x] **DataTable** — all library list routes use ported `DataTable` ([#20](https://github.com/pskillen/codeplug-studio/issues/20) / PR [#41](https://github.com/pskillen/codeplug-studio/pull/41))
 - [ ] **Entity editors styling** — talk groups, contacts, zones still on pre-Mantine inline patterns on some routes

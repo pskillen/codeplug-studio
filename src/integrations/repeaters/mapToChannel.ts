@@ -1,4 +1,6 @@
 import { newChannel } from '@core/domain/factories.ts';
+import { coordsToLocator } from '@core/domain/maidenhead.ts';
+import { normaliseLocator } from '@core/domain/channelLocation.ts';
 import type { Channel } from '@core/models/library.ts';
 import { buildModeProfilesFromListing } from './buildModeProfiles.ts';
 import type { RepeaterListing } from './types.ts';
@@ -12,6 +14,12 @@ export function repeaterListingToChannel(listing: RepeaterListing, projectId: st
   const name = listing.name || listing.callsign || 'Repeater';
   const base = newChannel(projectId, name);
 
+  const locatorFromListing = listing.locator ? normaliseLocator(listing.locator) : null;
+  const locatorFromCoords =
+    listing.location != null
+      ? coordsToLocator(listing.location.lat, listing.location.lon, 6)
+      : null;
+
   return {
     ...base,
     name,
@@ -20,6 +28,7 @@ export function repeaterListingToChannel(listing: RepeaterListing, projectId: st
     txFrequency: listing.txFrequencyHz,
     location: listing.location,
     useLocation: listing.location !== null,
+    maidenheadLocator: locatorFromListing ?? locatorFromCoords,
     comment: [listing.name, listing.status].filter((s) => s.length > 0).join(' — '),
     modeProfiles: buildModeProfilesFromListing(listing),
   };

@@ -5,8 +5,8 @@ import { newFormatBuild, newProjectMeta } from '../domain/factories.ts';
 import { nextRevision, initialRevision } from './revision.ts';
 
 describe('schemaVersion', () => {
-  it('starts at 1', () => {
-    expect(STUDIO_SCHEMA_VERSION).toBe(1);
+  it('starts at 2', () => {
+    expect(STUDIO_SCHEMA_VERSION).toBe(2);
   });
 });
 

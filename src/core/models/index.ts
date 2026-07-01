@@ -11,9 +11,14 @@ export {
   type RxGroupListMember,
   type Zone,
   type Library,
-  type AbstractChannelModeProfile,
-  type ChannelModeProfileFM,
+  type ChannelModeProfile,
+  type ChannelModeProfileAnalog,
   type ChannelModeProfileDMR,
+  type ChannelModeProfileDstar,
+  type ChannelModeProfileYsf,
+  type ChannelModeProfileNxdn,
+  type ChannelModeProfileTetra,
+  type ChannelModeProfileStub,
 } from './library.ts';
 export {
   BuildCapabilityTrait,

@@ -1,11 +1,12 @@
 import type {
-  AbstractChannelModeProfile,
+  ChannelModeProfile,
+  ChannelModeProfileAnalog,
   ChannelModeProfileDMR,
-  ChannelModeProfileFM,
-  ChannelTone,
 } from '@core/models/library.ts';
 import type { AnalogChannelMode, ChannelMode } from '@core/models/libraryTypes.ts';
+import type { ChannelTone } from '@core/models/libraryTypes.ts';
 import type { RepeaterListing } from './types.ts';
+import { defaultModeProfile } from '@core/domain/modeProfiles.ts';
 
 const ANALOG_MODES = new Set<AnalogChannelMode>(['fm', 'am', 'ssb-usb', 'ssb-lsb']);
 
@@ -13,37 +14,28 @@ function isAnalogMode(mode: ChannelMode): mode is AnalogChannelMode {
   return ANALOG_MODES.has(mode as AnalogChannelMode);
 }
 
-function fmProfile(mode: AnalogChannelMode, tone: ChannelTone): ChannelModeProfileFM {
-  return { mode, squelch: null, rxTone: tone, txTone: tone };
+function analogProfile(mode: AnalogChannelMode, tone: ChannelTone): ChannelModeProfileAnalog {
+  return { ...defaultModeProfile(mode, tone), mode } as ChannelModeProfileAnalog;
 }
 
 function dmrProfile(colourCode: number | null): ChannelModeProfileDMR {
-  return {
-    mode: 'dmr',
-    colourCode,
-    timeslot: null,
-    dmrId: null,
-    contactRef: null,
-    rxGroupListId: null,
-  };
+  return { ...defaultModeProfile('dmr'), colourCode } as ChannelModeProfileDMR;
 }
 
 /**
  * Build one `modeProfiles` entry per advertised mode. FM and DMR use full profile
- * shapes; other digital modes use mode-only stubs until dedicated profiles exist.
+ * shapes; other digital modes use typed defaults.
  */
-export function buildModeProfilesFromListing(
-  listing: RepeaterListing,
-): AbstractChannelModeProfile[] {
+export function buildModeProfilesFromListing(listing: RepeaterListing): ChannelModeProfile[] {
   const tone: ChannelTone = listing.toneHz ? String(listing.toneHz) : 'none';
-  const profiles: AbstractChannelModeProfile[] = [];
-  let analogProfile: ChannelModeProfileFM | null = null;
+  const profiles: ChannelModeProfile[] = [];
+  let analogProfileEntry: ChannelModeProfileAnalog | null = null;
 
   for (const mode of listing.modes) {
     if (isAnalogMode(mode)) {
-      if (!analogProfile) {
-        analogProfile = fmProfile(mode, tone);
-        profiles.push(analogProfile);
+      if (!analogProfileEntry) {
+        analogProfileEntry = analogProfile(mode, tone);
+        profiles.push(analogProfileEntry);
       }
       continue;
     }
@@ -54,12 +46,12 @@ export function buildModeProfilesFromListing(
       continue;
     }
     if (!profiles.some((p) => p.mode === mode)) {
-      profiles.push({ mode });
+      profiles.push(defaultModeProfile(mode));
     }
   }
 
   if (profiles.length === 0) {
-    profiles.push(fmProfile('fm', tone));
+    profiles.push(analogProfile('fm', tone));
   }
 
   return profiles;

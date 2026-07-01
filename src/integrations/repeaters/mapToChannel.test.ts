@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { ChannelModeProfileDMR, ChannelModeProfileFM } from '@core/models/library.ts';
+import type { ChannelModeProfileAnalog, ChannelModeProfileDMR } from '@core/models/library.ts';
 import { buildModeProfilesFromListing } from './buildModeProfiles.ts';
 import { repeaterListingToChannel } from './mapToChannel.ts';
 import type { RepeaterListing } from './types.ts';
@@ -58,7 +58,8 @@ describe('repeaterListingToChannel', () => {
     expect(channel.txFrequency).toBe(145_125_000);
     expect(channel.useLocation).toBe(true);
     expect(channel.location).toEqual({ lat: 51.7, lon: 0.6 });
-    const profile = channel.modeProfiles[0] as ChannelModeProfileFM;
+    expect(channel.maidenheadLocator).toBe('JO01GR');
+    const profile = channel.modeProfiles[0] as ChannelModeProfileAnalog;
     expect(profile.mode).toBe('fm');
     expect(profile.rxTone).toBe('110.9');
   });
