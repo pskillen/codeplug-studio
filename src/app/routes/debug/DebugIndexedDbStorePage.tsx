@@ -57,10 +57,7 @@ export default function DebugIndexedDbStorePage() {
     };
   }, [storeName, validationError]);
 
-  const tableRows = useMemo(
-    () => (validationError ? [] : rows),
-    [rows, validationError],
-  );
+  const tableRows = useMemo(() => (validationError ? [] : rows), [rows, validationError]);
 
   return (
     <Page>
