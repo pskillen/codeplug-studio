@@ -113,10 +113,7 @@ describe('location precision helpers', () => {
 
   it('detects less precise coordinates', () => {
     expect(
-      isCoordinateLessPrecise(
-        { lat: 51.123456, lon: -1.234567 },
-        { lat: 51.12, lon: -1.23 },
-      ),
+      isCoordinateLessPrecise({ lat: 51.123456, lon: -1.234567 }, { lat: 51.12, lon: -1.23 }),
     ).toBe(true);
     expect(coordinateDecimalPrecision({ lat: 51.123456, lon: -1.2 })).toBe(1);
   });

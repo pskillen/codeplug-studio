@@ -36,7 +36,9 @@ function baseChannel(overrides: Partial<Channel> = {}): Channel {
     useLocation: true,
     location: { lat: 51.123456, lon: -1.234567 },
     maidenheadLocator: 'IO91WM',
-    modeProfiles: [{ mode: 'fm', rxTone: 'none', txTone: 'none', squelch: null, bandwidthKHz: null }],
+    modeProfiles: [
+      { mode: 'fm', rxTone: 'none', txTone: 'none', squelch: null, bandwidthKHz: null },
+    ],
     ...overrides,
   };
 }
