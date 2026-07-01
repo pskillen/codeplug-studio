@@ -1,6 +1,6 @@
 # Channel map
 
-Tier-1 reference for the **embedded channel map** — plotting library channels with a location on react-leaflet maps inside the Library page.
+Tier-1 reference for the **embedded channel map** — plotting library channels with a location on react-leaflet maps inside library list routes.
 
 **Tracking:** [#22](https://github.com/pskillen/codeplug-studio/issues/22) (replaces standalone `/map` from [#11](https://github.com/pskillen/codeplug-studio/issues/11))
 
@@ -10,21 +10,19 @@ Tier-1 reference for the **embedded channel map** — plotting library channels 
 
 ## Where the map lives
 
-There is **no** top-level Map nav item or `/map` route. Legacy `/#/map` bookmarks redirect to the Library page and scroll to the Channels section (`library-channels`).
+There is **no** top-level Map nav item. Legacy `/#/map` bookmarks redirect to `/library/channels`.
 
-The map is embedded in two Library `PageSection` blocks:
+| List route            | Map behaviour                                                                 |
+| --------------------- | ----------------------------------------------------------------------------- |
+| `/library/channels`   | Full library map; when distance filter is on, map shows the filtered channel set |
+| `/library/zones`      | Full library map above the zone card list (tool parity — full context)        |
 
-| Section  | Element id         | Content                                                     |
-| -------- | ------------------ | ----------------------------------------------------------- |
-| Channels | `library-channels` | Full library map — all channels + zone hulls                |
-| Zones    | `library-zones`    | Same map (tool parity — full context on both list sections) |
-
-Summary “view on map” and deep links use `state={{ scrollTo: 'library-channels' }}` on navigation to `/library`.
+Summary “view on map” links to `/library/channels`.
 
 ## Component stack
 
 ```text
-LibraryPage
+ChannelsListPage / ZonesListPage
 └─ CodeplugMap (src/app/components/CodeplugMap/)
    ├─ MapControls — label + zone toggles
    ├─ mapProjection — filter, merge, zone member resolution
