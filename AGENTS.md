@@ -12,20 +12,20 @@ Application code lives under `src/core/`, `src/integrations/`, and `src/app/` wi
 
 ## Repository layout
 
-| Path                  | Role                                                   |
-| --------------------- | ------------------------------------------------------ |
-| `README.md`           | User-facing overview                                   |
-| `DESIGN.md`           | Living product and architecture constitution           |
-| `AGENTS.md`           | This file — agent workflow index                       |
-| `docs/poc-migration/` | Epic 1 migration context, progress logs                |
-| `docs/features/`      | Tier 1 — library, builds, traits, product behaviour    |
-| `docs/reference/`     | Tier 2 (domain) + Tier 3 (per-format wire tables)      |
-| `docs/build/`         | CI, Pages, [testing](docs/build/testing/README.md)     |
-| `src/core/`           | Models, domain, import/export, services — **no React** |
-| `src/integrations/`   | Browser I/O: persistence, cloud, repeater APIs         |
-| `src/app/`            | React routes, features, components, thin state         |
+| Path                  | Role                                                     |
+| --------------------- | -------------------------------------------------------- |
+| `README.md`           | User-facing overview                                     |
+| `DESIGN.md`           | Living product and architecture constitution             |
+| `AGENTS.md`           | This file — agent workflow index                         |
+| `docs/poc-migration/` | Epic 1 migration context, progress logs                  |
+| `docs/features/`      | Tier 1 — library, builds, traits, product behaviour      |
+| `docs/reference/`     | Tier 2 (domain) + Tier 3 (per-format wire tables)        |
+| `docs/build/`         | CI, Pages, [testing](docs/build/testing/README.md)       |
+| `src/core/`           | Models, domain, import/export, services — **no React**   |
+| `src/integrations/`   | Browser I/O: persistence, cloud, repeater APIs           |
+| `src/app/`            | React routes, features, components, thin state           |
 | `.cursor/rules/`      | File-scoped editor rules (+ always-applied deliverables) |
-| `.cursor/skills/`     | Agent skills — git workflow, plans, docs, progress     |
+| `.cursor/skills/`     | Agent skills — git workflow, plans, docs, progress       |
 
 **Dependency rule:** `app` → `core`; `integrations` → `core`. Never `core` → `app`.
 
