@@ -24,7 +24,8 @@ Agent skills for documentation and execution tracking:
 | Summary              | `src/app/routes/SummaryPage.tsx`, `src/core/domain/summary.ts`        | [report/](report/)                                          | Phase 2 ([#12](https://github.com/pskillen/codeplug-studio/issues/12))                      |
 | Maidenhead           | `src/core/domain/maidenhead.ts`, `src/app/routes/reference/`          | [maidenhead.md](maidenhead.md), [reference/](reference/)    | [#29](https://github.com/pskillen/codeplug-studio/issues/29) — `/reference/maidenhead`      |
 | Reference / bands    | `src/core/domain/bandCatalog.ts`, `src/app/routes/reference/`         | [reference/](reference/), [bands.md](../reference/bands.md) | [#30](https://github.com/pskillen/codeplug-studio/issues/30) — `/reference/bands`           |
-| _(later phases)_     | `src/core/import-export/`, `src/app/features/builds/`                 | `builds/`, `import-export/`                                 | Planned — persisted `FormatBuild` profiles + CPS import/export                              |
+| Import / export      | `src/core/import-export/`                                             | [import-export/](import-export/) ([progress](import-export/native-yaml-progress.md)) | Phase 3 ([#56](https://github.com/pskillen/codeplug-studio/issues/56)–[#58](https://github.com/pskillen/codeplug-studio/issues/58)) — native YAML core in progress |
+| _(later phases)_     | `src/app/features/builds/`                                            | `builds/`                                                   | Planned — build UI beyond library CRUD                                                      |
 
 ## Reference
 
