@@ -204,14 +204,6 @@ function parseChannel(raw: unknown, index: number): Channel {
     power: expectNullableNumber(record.power, `library.channels[${index}].power`),
     scanSkip: expectBoolean(record.scanSkip, `library.channels[${index}].scanSkip`),
     comment: expectString(record.comment, `library.channels[${index}].comment`),
-    ...(record.exportNameMode !== undefined && record.exportNameMode !== null
-      ? {
-          exportNameMode: expectString(
-            record.exportNameMode,
-            `library.channels[${index}].exportNameMode`,
-          ) as Channel['exportNameMode'],
-        }
-      : {}),
     ...(record.abbreviation !== undefined && record.abbreviation !== null
       ? {
           abbreviation: expectString(

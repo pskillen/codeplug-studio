@@ -51,7 +51,7 @@ OpenGD77 `Channels.csv` has **no TX Admit column**. The internal `Channel.txAdmi
 | `Longitude` | `Channel.location.lon` | **Column required** | Parse float | String from location | Lossless when valid | |
 | `Use Location` | `Channel.useLocation` | No | `Yes` → `true` | `wireYesNo(useLocation)` | Lossless boolean | |
 
-`Channel Name` maps to split internal fields on import and is **composed on export** from `callsign`, `name`, and `exportNameMode`. Split rules: [channel-name-parsing](../../features/channel-name-parsing.md).
+`Channel Name` maps to split internal fields on import and is **composed on export** from `callsign`, `name`, and the operator's default export name style (see [name-shortening](../../features/import-export/name-shortening.md)). Split rules: [channel-name-parsing](../../features/channel-name-parsing.md).
 
 ## Export name length and shortening
 

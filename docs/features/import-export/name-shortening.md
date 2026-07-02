@@ -8,7 +8,7 @@ Export-time channel wire name composition and shortening. Runs at the CPS bounda
 
 ## Pipeline
 
-1. **Compose** — `composeChannelWireName` from callsign, name, `exportNameMode`, optional `abbreviation` fields on library entities.
+1. **Compose** — `composeChannelWireName` from callsign, name, export name mode (browser fallback setting), optional `abbreviation` on library entities.
 2. **Build override** — `channelOverrides.wireName` on the format build (if set).
 3. **Multi-mode expansion** — `-F` / `-D` suffix rows when `expandModes` is true and multiple `modeProfiles` exist ([#89](https://github.com/pskillen/codeplug-studio/issues/89)).
 4. **Shorten** — `applyWireNameLimits` / `finalizeWireName` using the abbreviation dictionary (`data/dictionaries/abbreviations.yaml`) when `shortenNames` is true and the name exceeds `maxNameLength` (profile default or operator override).
@@ -21,7 +21,7 @@ Export-time channel wire name composition and shortening. Runs at the CPS bounda
 | ------------------------------------------------- | ------------------------------------------------------------------------------- |
 | `codeplug-studio.export.shortenNames`             | Enable abbreviation shortening (default on)                                     |
 | `codeplug-studio.export.maxNameLength`            | Override profile `nameLimit`                                                    |
-| `codeplug-studio.export.nameModeOverride`         | Force all channels to one export name mode                                      |
+| `codeplug-studio.export.nameModeOverride`         | Default name style when no build wire override is set                           |
 | `codeplug-studio.export.useChannelAbbreviation`   | Prefer `Channel.abbreviation`                                                   |
 | `codeplug-studio.export.useTalkGroupAbbreviation` | Prefer `TalkGroup.abbreviation` (DM32-style; hidden on lean OpenGD77 export UI) |
 

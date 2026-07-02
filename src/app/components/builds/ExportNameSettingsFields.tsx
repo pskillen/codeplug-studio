@@ -1,10 +1,8 @@
-import { NumberInput, Select, Stack, Switch, Text } from '@mantine/core';
-import { EXPORT_NAME_MODE_OPTIONS } from '@core/domain/channelNaming.ts';
+import { NumberInput, Stack, Switch, Text } from '@mantine/core';
 import {
-  EXPORT_NAME_MODE_RESPECT_PER_CHANNEL,
   useExportSettings,
-  type ExportNameModeOverride,
 } from '../../hooks/useExportSettings.ts';
+import ExportNameModeSelect from './ExportNameModeSelect.tsx';
 
 export interface ExportNameSettingsFieldsProps {
   profileNameLimit?: number;
@@ -21,18 +19,11 @@ export default function ExportNameSettingsFields({
     setShortenNames,
     maxNameLength,
     setMaxNameLength,
-    nameModeOverride,
-    setNameModeOverride,
     useTalkGroupAbbreviation,
     setUseTalkGroupAbbreviation,
     useChannelAbbreviation,
     setUseChannelAbbreviation,
   } = useExportSettings();
-
-  const nameModeData = [
-    { value: EXPORT_NAME_MODE_RESPECT_PER_CHANNEL, label: 'Respect per-channel setting' },
-    ...EXPORT_NAME_MODE_OPTIONS.map((option) => ({ value: option.value, label: option.label })),
-  ];
 
   return (
     <Stack gap="sm">
@@ -63,17 +54,9 @@ export default function ExportNameSettingsFields({
         }}
         disabled={!shortenNames}
       />
-      <Select
-        label="Export name mode override"
-        description="Force all channels to one name style for this export (optional)"
-        data={nameModeData}
-        value={nameModeOverride}
-        onChange={(value) => {
-          if (value == null) return;
-          setNameModeOverride(value as ExportNameModeOverride);
-        }}
-        allowDeselect={false}
+      <ExportNameModeSelect
         disabled={!shortenNames}
+        description="Fallback when shortening applies and a channel has no wire name override on this build."
       />
       {showMultiTalkGroupOptions ? (
         <Switch

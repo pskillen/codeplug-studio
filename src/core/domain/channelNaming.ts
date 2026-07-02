@@ -67,8 +67,7 @@ export function channelPickForWireExport(
   channel: Channel,
   options: ChannelWireExportPickOptions = {},
 ): ChannelWireExportPick {
-  const exportNameMode =
-    options.nameModeOverride ?? channel.exportNameMode ?? DEFAULT_CHANNEL_EXPORT_NAME_MODE;
+  const exportNameMode = options.nameModeOverride ?? DEFAULT_CHANNEL_EXPORT_NAME_MODE;
   const base: ChannelWireExportPick = {
     callsign: channel.callsign,
     name: channel.name,

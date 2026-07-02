@@ -1,5 +1,4 @@
 import type { PersistableRow } from './revision.ts';
-import type { ChannelExportNameMode } from '@core/domain/channelNaming.ts';
 import type {
   AnalogChannelMode,
   ChannelTone,
@@ -95,8 +94,6 @@ export interface Channel extends PersistableRow {
   scanSkip: boolean;
   comment: string;
   modeProfiles: ChannelModeProfile[];
-  /** How export composes CPS wire name from callsign + name. */
-  exportNameMode?: ChannelExportNameMode;
   /** Optional short qualifier used when `useChannelAbbreviation` is enabled at export. */
   abbreviation?: string;
 }

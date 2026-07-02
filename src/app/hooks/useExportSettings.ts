@@ -1,5 +1,8 @@
 import { useCallback, useState } from 'react';
-import type { ChannelExportNameMode } from '@core/domain/channelNaming.ts';
+import {
+  DEFAULT_CHANNEL_EXPORT_NAME_MODE,
+  type ChannelExportNameMode,
+} from '@core/domain/channelNaming.ts';
 import type { CpsExportOptions } from '@core/import-export/types.ts';
 
 export const STORAGE_KEY_EXPORT_SHORTEN_NAMES = 'codeplug-studio.export.shortenNames';
@@ -10,10 +13,7 @@ export const STORAGE_KEY_EXPORT_USE_TG_ABBREVIATION =
 export const STORAGE_KEY_EXPORT_USE_CHANNEL_ABBREVIATION =
   'codeplug-studio.export.useChannelAbbreviation';
 
-export const EXPORT_NAME_MODE_RESPECT_PER_CHANNEL = '';
-
-export type ExportNameModeOverride =
-  ChannelExportNameMode | typeof EXPORT_NAME_MODE_RESPECT_PER_CHANNEL;
+export type ExportNameModeOverride = ChannelExportNameMode;
 
 export interface ExportSettings {
   shortenNames: boolean;
@@ -45,7 +45,7 @@ function readNameModeOverride(): ExportNameModeOverride {
   ) {
     return saved;
   }
-  return EXPORT_NAME_MODE_RESPECT_PER_CHANNEL;
+  return DEFAULT_CHANNEL_EXPORT_NAME_MODE;
 }
 
 function readUseTalkGroupAbbreviation(): boolean {
@@ -64,7 +64,7 @@ export function exportOptionsFromSettings(
     ...base,
     shortenNames: settings.shortenNames,
     ...(settings.maxNameLength != null ? { maxNameLength: settings.maxNameLength } : {}),
-    ...(settings.nameModeOverride ? { nameModeOverride: settings.nameModeOverride } : {}),
+    nameModeOverride: settings.nameModeOverride,
     useTalkGroupAbbreviation: settings.useTalkGroupAbbreviation,
     useChannelAbbreviation: settings.useChannelAbbreviation,
   };
@@ -98,11 +98,7 @@ export function useExportSettings() {
 
   const setNameModeOverride = useCallback((value: ExportNameModeOverride) => {
     setNameModeOverrideState(value);
-    if (!value) {
-      localStorage.removeItem(STORAGE_KEY_EXPORT_NAME_MODE_OVERRIDE);
-    } else {
-      localStorage.setItem(STORAGE_KEY_EXPORT_NAME_MODE_OVERRIDE, value);
-    }
+    localStorage.setItem(STORAGE_KEY_EXPORT_NAME_MODE_OVERRIDE, value);
   }, []);
 
   const setUseTalkGroupAbbreviation = useCallback((value: boolean) => {
