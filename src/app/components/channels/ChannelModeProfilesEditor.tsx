@@ -14,6 +14,7 @@ import type {
 import { isAnalogChannelModeProfile, isModeOnlyStub } from '@core/domain/modeProfiles.ts';
 import ModePill from '../pills/ModePill.tsx';
 import { PercentLevelSlider } from '../ui/index.ts';
+import RxGroupListSummary from '../library/RxGroupListSummary.tsx';
 import {
   BANDWIDTH_KHZ_OPTIONS,
   toneSelectOptions,
@@ -245,6 +246,7 @@ function DmrPanel({
         searchable
         clearable
       />
+      <RxGroupListSummary listId={profile.rxGroupListId} library={library} />
     </>
   );
 }
