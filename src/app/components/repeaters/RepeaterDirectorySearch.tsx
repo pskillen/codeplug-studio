@@ -38,6 +38,7 @@ import { useProjects } from '../../state/useProjects.ts';
 import UseMyLocationButton from '../UseMyLocationButton/UseMyLocationButton.tsx';
 import { BandPillsForRepeaterListing, ModePillsForRepeaterListing } from '../pills/index.ts';
 import { FormPage, PageSection } from '../ui/index.ts';
+import CodeplugMap from '../CodeplugMap/CodeplugMap.tsx';
 import { findChannelByCallsign } from './findChannelByCallsign.ts';
 import { buildRepeaterDirectoryRows } from './repeaterDirectoryRows.ts';
 import RepeaterListingUpdateDialog from './RepeaterListingUpdateDialog.tsx';
@@ -94,6 +95,7 @@ export default function RepeaterDirectorySearch({
   const search = useRepeaterDirectorySearch(source);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [added, setAdded] = useState<Set<string>>(new Set());
+  const [addedChannelIds, setAddedChannelIds] = useState<Record<string, string>>({});
   const [addMessage, setAddMessage] = useState<string | null>(null);
   const [updateChannel, setUpdateChannel] = useState<Channel | null>(null);
   const [updateListing, setUpdateListing] = useState<RepeaterListing | null>(null);
@@ -124,6 +126,23 @@ export default function RepeaterDirectorySearch({
     () => buildRepeaterDirectoryRows(search.listings, library.channels, listingKey),
     [search.listings, library.channels],
   );
+
+  const mapChannels = useMemo(() => {
+    if (!isUk || !activeProjectId || search.listings.length === 0) return [];
+    return search.listings
+      .filter((listing) => listing.location != null)
+      .map((listing) => repeaterListingToChannel(listing, activeProjectId, mapOptions));
+  }, [isUk, activeProjectId, search.listings, mapOptions]);
+
+  const mapSkippedCount = useMemo(() => {
+    if (!isUk) return 0;
+    return search.listings.filter((listing) => listing.location == null).length;
+  }, [isUk, search.listings]);
+
+  function recordListingAdded(key: string, channelId: string) {
+    setAdded((prev) => new Set(prev).add(key));
+    setAddedChannelIds((prev) => ({ ...prev, [key]: channelId }));
+  }
 
   function openUpdate(listing: RepeaterListing) {
     const channel = existingChannel(listing);
@@ -177,7 +196,8 @@ export default function RepeaterDirectorySearch({
       const channel = repeaterListingToChannel(listing, activeProjectId, mapOptions);
       const result = await persistence.putChannel(channel, null);
       if (result.ok) {
-        setAdded((prev) => new Set(prev).add(listingKey(listing)));
+        recordListingAdded(listingKey(listing), channel.id);
+        setAddMessage(`Added ${listing.callsign}. Open the channel editor from the results row.`);
       }
     } finally {
       setAdding(false);
@@ -223,7 +243,7 @@ export default function RepeaterDirectorySearch({
         const result = await persistence.putChannel(channel, null);
         if (result.ok) {
           addedCount++;
-          setAdded((prev) => new Set(prev).add(row.key));
+          recordListingAdded(row.key, channel.id);
         } else {
           skipped++;
         }
@@ -234,7 +254,7 @@ export default function RepeaterDirectorySearch({
           : 'No channels were added.',
       );
       setSelected(new Set());
-      if (addedCount > 0) {
+      if (addedCount > 0 && !isUk) {
         navigate('/library/channels');
       }
     } finally {
@@ -349,6 +369,22 @@ export default function RepeaterDirectorySearch({
 
       {rows.length > 0 ? (
         <PageSection title="Results">
+          {isUk ? (
+            <Stack gap="xs" mb="md">
+              <CodeplugMap
+                channels={mapChannels}
+                zones={[]}
+                allChannels={mapChannels}
+                height={360}
+              />
+              {mapSkippedCount > 0 ? (
+                <Text size="sm" c="dimmed">
+                  {mapSkippedCount} listing{mapSkippedCount === 1 ? '' : 's'} without coordinates
+                  not shown on map.
+                </Text>
+              ) : null}
+            </Stack>
+          ) : null}
           <ScrollArea>
             <Table highlightOnHover>
               <Table.Thead>
@@ -433,6 +469,15 @@ export default function RepeaterDirectorySearch({
                             onClick={() => openUpdate(listing)}
                           >
                             Update existing
+                          </Button>
+                        ) : isAdded && addedChannelIds[row.key] ? (
+                          <Button
+                            size="compact-sm"
+                            variant="light"
+                            component={Link}
+                            to={`/library/channels/${addedChannelIds[row.key]}`}
+                          >
+                            Open channel
                           </Button>
                         ) : (
                           <Button
