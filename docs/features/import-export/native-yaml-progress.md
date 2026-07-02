@@ -14,8 +14,8 @@
 | 3 Export serialiser                 | Complete | `a2e315d` |
 | 4 Import parser + validation        | Complete | `3df28ea` |
 | 5 Registry smoke + PR               | Complete | [#78](https://github.com/pskillen/codeplug-studio/pull/78) |
-| 6 Interchange model + helpers (#59) | Complete | |
-| 7 Persistence replaceProject (#59)  | Pending  |           |
+| 6 Interchange model + helpers (#59) | Complete | `2f760bc` |
+| 7 Persistence replaceProject (#59)  | Complete | |
 | 8 Core services (#59)               | Pending  |           |
 | 9 System tests (#59)                | Pending  |           |
 | 10 App primitives (#60)             | Pending  |           |

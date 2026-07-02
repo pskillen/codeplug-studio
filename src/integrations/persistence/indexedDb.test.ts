@@ -1,6 +1,6 @@
 import 'fake-indexeddb/auto';
 import { afterEach, describe, expect, it } from 'vitest';
-import { newChannel, newProjectMeta, newTalkGroup } from '@core/domain/factories.ts';
+import { newChannel, newFormatBuild, newProjectMeta, newTalkGroup } from '@core/domain/factories.ts';
 import { IndexedDbProjectPersistence } from './indexedDb.ts';
 import type { PersistenceChange } from './types.ts';
 
@@ -112,5 +112,57 @@ describe('IndexedDbProjectPersistence', () => {
       id: channel.id,
       op: 'put',
     });
+  });
+
+  it('loadProjectSeed returns full aggregate including formatBuilds', async () => {
+    const store = makeStore();
+    const meta = newProjectMeta('Test');
+    const channel = newChannel(meta.projectId, 'Local');
+    const build = newFormatBuild(meta.projectId, 'opengd77-1701');
+    await store.seedProject({ meta, channels: [channel], formatBuilds: [build] });
+
+    const seed = await store.loadProjectSeed(meta.projectId);
+    expect(seed?.meta.id).toBe(meta.id);
+    expect(seed?.channels).toHaveLength(1);
+    expect(seed?.formatBuilds).toHaveLength(1);
+    expect(seed?.formatBuilds?.[0]?.id).toBe(build.id);
+  });
+
+  it('replaceProject removes stale rows from a prior seed', async () => {
+    const store = makeStore();
+    const meta = newProjectMeta('Test');
+    const oldChannel = newChannel(meta.projectId, 'Old');
+    const newChannelRow = newChannel(meta.projectId, 'New');
+    await store.seedProject({ meta, channels: [oldChannel] });
+
+    await store.replaceProject(meta.projectId, {
+      meta,
+      channels: [newChannelRow],
+    });
+
+    expect(await store.getChannel(meta.projectId, oldChannel.id)).toBeNull();
+    expect(await store.getChannel(meta.projectId, newChannelRow.id)).not.toBeNull();
+    expect(await store.listChannels(meta.projectId)).toHaveLength(1);
+  });
+
+  it('delete project cascades all library and build rows', async () => {
+    const store = makeStore();
+    const meta = newProjectMeta('Test');
+    const channel = newChannel(meta.projectId, 'Local');
+    const tg = newTalkGroup(meta.projectId, 'World', 91);
+    const build = newFormatBuild(meta.projectId, 'opengd77-1701');
+    await store.seedProject({
+      meta,
+      channels: [channel],
+      talkGroups: [tg],
+      formatBuilds: [build],
+    });
+
+    await store.deleteEntity(meta.projectId, 'project', meta.id);
+
+    expect(await store.loadProjectMeta(meta.projectId)).toBeNull();
+    expect(await store.listChannels(meta.projectId)).toHaveLength(0);
+    expect(await store.listTalkGroups(meta.projectId)).toHaveLength(0);
+    expect(await store.listFormatBuilds(meta.projectId)).toHaveLength(0);
   });
 });

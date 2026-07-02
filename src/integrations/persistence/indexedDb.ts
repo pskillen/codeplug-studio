@@ -18,7 +18,8 @@ import type {
   ProjectSeed,
   PutResult,
 } from './types.ts';
-import { DEFAULT_DB_NAME, STORES } from './stores.ts';
+import { DEFAULT_DB_NAME, STORES, STORE_NAMES } from './stores.ts';
+import { assertSeedProjectId } from './projectSeed.ts';
 
 type PersistableRow = {
   id: string;
@@ -179,6 +180,11 @@ export class IndexedDbProjectPersistence implements ProjectPersistence {
   }
 
   async deleteEntity(projectId: string, kind: EntityKind, id: string): Promise<void> {
+    if (kind === 'project') {
+      await this.deleteAllProjectRows(projectId);
+      this.emit({ projectId, kind, id, op: 'delete' });
+      return;
+    }
     const db = await this.db();
     const storeName = STORES[kind];
     await new Promise<void>((resolve, reject) => {
@@ -189,6 +195,85 @@ export class IndexedDbProjectPersistence implements ProjectPersistence {
       tx.onabort = () => reject(tx.error);
     });
     this.emit({ projectId, kind, id, op: 'delete' });
+  }
+
+  async loadProjectSeed(projectId: string): Promise<ProjectSeed | null> {
+    const meta = await this.loadProjectMeta(projectId);
+    if (!meta) return null;
+    const [channels, zones, talkGroups, digitalContacts, analogContacts, rxGroupLists, formatBuilds] =
+      await Promise.all([
+        this.listChannels(projectId),
+        this.listZones(projectId),
+        this.listTalkGroups(projectId),
+        this.listDigitalContacts(projectId),
+        this.listAnalogContacts(projectId),
+        this.listRxGroupLists(projectId),
+        this.listFormatBuilds(projectId),
+      ]);
+    return {
+      meta,
+      channels,
+      zones,
+      talkGroups,
+      digitalContacts,
+      analogContacts,
+      rxGroupLists,
+      formatBuilds,
+    };
+  }
+
+  async replaceProject(projectId: string, seed: ProjectSeed): Promise<void> {
+    assertSeedProjectId(projectId, seed);
+    const db = await this.db();
+    const writes: { kind: EntityKind; rows: PersistableRow[] }[] = [
+      { kind: 'project', rows: [seed.meta] },
+      { kind: 'channel', rows: seed.channels ?? [] },
+      { kind: 'zone', rows: seed.zones ?? [] },
+      { kind: 'talkGroup', rows: seed.talkGroups ?? [] },
+      { kind: 'digitalContact', rows: seed.digitalContacts ?? [] },
+      { kind: 'analogContact', rows: seed.analogContacts ?? [] },
+      { kind: 'rxGroupList', rows: seed.rxGroupLists ?? [] },
+      { kind: 'formatBuild', rows: seed.formatBuilds ?? [] },
+    ];
+    await new Promise<void>((resolve, reject) => {
+      const tx = db.transaction(STORE_NAMES, 'readwrite');
+      let pendingStores = STORE_NAMES.length;
+      let putsScheduled = false;
+
+      const schedulePuts = () => {
+        if (putsScheduled) return;
+        putsScheduled = true;
+        for (const { kind, rows } of writes) {
+          const os = tx.objectStore(STORES[kind]);
+          for (const row of rows) os.put(row);
+        }
+      };
+
+      const onStoreDone = () => {
+        pendingStores -= 1;
+        if (pendingStores === 0) schedulePuts();
+      };
+
+      for (const storeName of STORE_NAMES) {
+        const os = tx.objectStore(storeName);
+        const req = os.index('byProject').openKeyCursor(IDBKeyRange.only(projectId));
+        req.onsuccess = () => {
+          const cursor = req.result;
+          if (cursor) {
+            os.delete(cursor.primaryKey);
+            cursor.continue();
+          } else {
+            onStoreDone();
+          }
+        };
+        req.onerror = () => reject(req.error);
+      }
+
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => reject(tx.error);
+      tx.onabort = () => reject(tx.error);
+    });
+    this.emit({ projectId, kind: 'project', id: seed.meta.id, op: 'put' });
   }
 
   async seedProject(seed: ProjectSeed): Promise<void> {
@@ -283,6 +368,37 @@ export class IndexedDbProjectPersistence implements ProjectPersistence {
       this.emit({ projectId: row.projectId, kind, id: row.id, op: 'put' });
     }
     return result;
+  }
+
+  private async deleteAllProjectRows(projectId: string): Promise<void> {
+    const db = await this.db();
+    await new Promise<void>((resolve, reject) => {
+      const tx = db.transaction(STORE_NAMES, 'readwrite');
+      let pendingStores = STORE_NAMES.length;
+
+      const onStoreDone = () => {
+        pendingStores -= 1;
+      };
+
+      for (const storeName of STORE_NAMES) {
+        const os = tx.objectStore(storeName);
+        const req = os.index('byProject').openKeyCursor(IDBKeyRange.only(projectId));
+        req.onsuccess = () => {
+          const cursor = req.result;
+          if (cursor) {
+            os.delete(cursor.primaryKey);
+            cursor.continue();
+          } else {
+            onStoreDone();
+          }
+        };
+        req.onerror = () => reject(req.error);
+      }
+
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => reject(tx.error);
+      tx.onabort = () => reject(tx.error);
+    });
   }
 
   private emit(change: PersistenceChange): void {

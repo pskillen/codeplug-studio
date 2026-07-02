@@ -17,6 +17,7 @@ import type {
   ProjectSeed,
   PutResult,
 } from './types.ts';
+import { assertSeedProjectId } from './projectSeed.ts';
 
 type RowMap<T extends { id: string; projectId: string }> = Map<string, T>;
 
@@ -157,7 +158,7 @@ export class InMemoryProjectPersistence implements ProjectPersistence {
 
   async deleteEntity(projectId: string, kind: EntityKind, id: string): Promise<void> {
     if (kind === 'project') {
-      this.projects.delete(rowKey(projectId, id));
+      this.deleteAllProjectRows(projectId);
       this.emit({ projectId, kind, id, op: 'delete' });
       return;
     }
@@ -167,7 +168,51 @@ export class InMemoryProjectPersistence implements ProjectPersistence {
     this.emit({ projectId, kind, id, op: 'delete' });
   }
 
+  async loadProjectSeed(projectId: string): Promise<ProjectSeed | null> {
+    const meta = await this.loadProjectMeta(projectId);
+    if (!meta) return null;
+    const [channels, zones, talkGroups, digitalContacts, analogContacts, rxGroupLists, formatBuilds] =
+      await Promise.all([
+        this.listChannels(projectId),
+        this.listZones(projectId),
+        this.listTalkGroups(projectId),
+        this.listDigitalContacts(projectId),
+        this.listAnalogContacts(projectId),
+        this.listRxGroupLists(projectId),
+        this.listFormatBuilds(projectId),
+      ]);
+    return {
+      meta,
+      channels,
+      zones,
+      talkGroups,
+      digitalContacts,
+      analogContacts,
+      rxGroupLists,
+      formatBuilds,
+    };
+  }
+
+  async replaceProject(projectId: string, seed: ProjectSeed): Promise<void> {
+    assertSeedProjectId(projectId, seed);
+    this.deleteAllProjectRows(projectId);
+    this.writeSeed(seed);
+    this.emit({ projectId, kind: 'project', id: seed.meta.id, op: 'put' });
+  }
+
   async seedProject(seed: ProjectSeed): Promise<void> {
+    this.writeSeed(seed);
+    this.emit({ projectId: seed.meta.projectId, kind: 'project', id: seed.meta.id, op: 'put' });
+  }
+
+  subscribe(listener: PersistenceListener): () => void {
+    this.listeners.add(listener);
+    return () => {
+      this.listeners.delete(listener);
+    };
+  }
+
+  private writeSeed(seed: ProjectSeed): void {
     const { meta } = seed;
     this.projects.set(rowKey(meta.projectId, meta.id), { ...meta });
     for (const row of seed.channels ?? []) {
@@ -191,14 +236,25 @@ export class InMemoryProjectPersistence implements ProjectPersistence {
     for (const row of seed.formatBuilds ?? []) {
       this.formatBuilds.set(rowKey(row.projectId, row.id), { ...row });
     }
-    this.emit({ projectId: meta.projectId, kind: 'project', id: meta.id, op: 'put' });
   }
 
-  subscribe(listener: PersistenceListener): () => void {
-    this.listeners.add(listener);
-    return () => {
-      this.listeners.delete(listener);
-    };
+  private deleteAllProjectRows(projectId: string): void {
+    for (const map of [
+      this.projects,
+      this.channels,
+      this.zones,
+      this.talkGroups,
+      this.digitalContacts,
+      this.analogContacts,
+      this.rxGroupLists,
+      this.formatBuilds,
+    ]) {
+      for (const [key, row] of [...map.entries()]) {
+        if (row.projectId === projectId) {
+          map.delete(key);
+        }
+      }
+    }
   }
 
   private emit(change: PersistenceChange): void {
