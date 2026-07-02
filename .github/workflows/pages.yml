@@ -36,6 +36,7 @@ jobs:
         env:
           BUILD_ENV: prod
           BUILD_VERSION: ${{ github.event.release.tag_name }}
+          VITE_GOOGLE_CLIENT_ID: ${{ secrets.VITE_GOOGLE_CLIENT_ID }}
         run: npm run build
 
       - name: Upload Pages artifact
