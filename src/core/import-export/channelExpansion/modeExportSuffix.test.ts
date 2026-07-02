@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { expansionWireKey, modeExportNameSuffix } from './modeExportSuffix.ts';
+import {
+  expansionWireKey,
+  modeExportNameSuffix,
+  peelModeExportSuffix,
+} from './modeExportSuffix.ts';
 
 describe('modeExportNameSuffix', () => {
   it('uses -F for analog modes', () => {
@@ -20,5 +24,29 @@ describe('modeExportNameSuffix', () => {
   it('builds expansion override keys from channel id and suffix', () => {
     expect(expansionWireKey('ch-1', 'ysf')).toBe('ch-1:-Y');
     expect(expansionWireKey('ch-1', 'dstar')).toBe('ch-1:-DS');
+  });
+});
+
+describe('peelModeExportSuffix', () => {
+  it('peels longest matching mode suffix first', () => {
+    expect(peelModeExportSuffix('GB7GL Glasgow-DS')).toEqual({
+      stem: 'GB7GL Glasgow',
+      suffix: '-DS',
+    });
+    expect(peelModeExportSuffix('GB7GL Glasgow-D')).toEqual({
+      stem: 'GB7GL Glasgow',
+      suffix: '-D',
+    });
+    expect(peelModeExportSuffix('GB7GL Glasgow-F')).toEqual({
+      stem: 'GB7GL Glasgow',
+      suffix: '-F',
+    });
+  });
+
+  it('returns empty suffix when none is present', () => {
+    expect(peelModeExportSuffix('GB7GL Glasgow')).toEqual({
+      stem: 'GB7GL Glasgow',
+      suffix: '',
+    });
   });
 });

@@ -11,7 +11,7 @@ Export-time channel wire name composition and shortening. Runs at the CPS bounda
 1. **Compose** — `composeChannelWireName` from callsign, name, and export name mode (browser fallback setting).
 2. **Build override** — `channelOverrides.wireName` on the format build (if set).
 3. **Multi-mode expansion** — per-mode suffix rows (`-F`, `-D`, `-Y`, `-DS`, …) when `expandModes` is true and multiple `modeProfiles` exist ([#89](https://github.com/pskillen/codeplug-studio/issues/89)).
-4. **Shorten** — `applyWireNameLimits` / `finalizeWireName` when `shortenNames` is true and the name exceeds `maxNameLength`. If `useChannelAbbreviation` is enabled and `Channel.abbreviation` is set, that label is tried **before** dictionary / vowel strategies. Regenerate `dictionary.generated.ts` via `npm run generate:abbreviations` (runs automatically before `test` and `build`).
+4. **Shorten** — `applyWireNameLimits` / `finalizeWireName` when `shortenNames` is true and the name exceeds `maxNameLength`. If `useChannelAbbreviation` is enabled and `Channel.abbreviation` is set, that label is tried **before** dictionary / vowel strategies; multi-mode suffixes (`-F`, `-D`, …) are preserved on the final wire name. Regenerate `dictionary.generated.ts` via `npm run generate:abbreviations` (runs automatically before `test` and `build`).
 
 ## Operator settings
 

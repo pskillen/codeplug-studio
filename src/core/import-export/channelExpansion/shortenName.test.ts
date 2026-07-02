@@ -40,6 +40,13 @@ describe('shortenWireName channel abbreviation', () => {
     expect(shortened.length).toBeLessThanOrEqual(16);
     expect(shortened).not.toBe(full);
   });
+
+  it('preserves multi-mode suffix when abbreviation fits', () => {
+    const shortened = shortenWireName('GB3MT Mugherafelt-D', 16, {
+      recomposeWithChannelAbbreviation: () => "GB3MT M'flt",
+    });
+    expect(shortened).toBe("GB3MT M'flt-D");
+  });
 });
 
 describe('channelWireNamePreviewExamples', () => {

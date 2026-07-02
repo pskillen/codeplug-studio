@@ -1,5 +1,6 @@
 import type { ChannelExportNameMode } from '@core/domain/channelNaming.ts';
 import { isCallsignToken } from '@core/domain/channelNaming.ts';
+import { peelModeExportSuffix } from './modeExportSuffix.ts';
 import { abbreviateWord, matchPhraseAbbreviation } from './abbreviations.ts';
 
 export interface TalkGroupMemberSuffixReplacement {
@@ -44,13 +45,6 @@ export function disambiguationSuffixLength(base: string, reserved: ReadonlySet<s
   let n = 2;
   while (reserved.has(`${base} ${n}`)) n++;
   return ` ${n}`.length;
-}
-
-function peelModeSuffix(name: string): { stem: string; suffix: string } {
-  if (name.endsWith('-F') || name.endsWith('-D')) {
-    return { stem: name.slice(0, -2), suffix: name.slice(-2) };
-  }
-  return { stem: name, suffix: '' };
 }
 
 function isTimeslotToken(token: string): boolean {
@@ -151,12 +145,6 @@ export function shortenWireName(
 ): string {
   if (maxLen < 1 || name.length <= maxLen) return name;
 
-  if (opts.recomposeWithChannelAbbreviation) {
-    const withAbbrev = opts.recomposeWithChannelAbbreviation();
-    if (withAbbrev.length <= maxLen) return withAbbrev;
-    name = withAbbrev;
-  }
-
   let fixedSuffix = opts.fixedSuffix ?? '';
   let peelTarget = name;
   if (fixedSuffix && name.endsWith(fixedSuffix)) {
@@ -165,9 +153,19 @@ export function shortenWireName(
     fixedSuffix = '';
   }
 
-  const { stem, suffix } = peelModeSuffix(peelTarget);
+  const { stem: inputStem, suffix: modeSuffix } = peelModeExportSuffix(peelTarget);
+  let current = inputStem;
+
+  if (opts.recomposeWithChannelAbbreviation) {
+    const withAbbrev = opts.recomposeWithChannelAbbreviation();
+    const { stem: abbrevStem } = peelModeExportSuffix(withAbbrev);
+    const withAbbrevAndMode = `${abbrevStem}${modeSuffix}${fixedSuffix}`;
+    if (withAbbrevAndMode.length <= maxLen) return withAbbrevAndMode;
+    current = abbrevStem;
+  }
+
+  const suffix = modeSuffix;
   const fixedLen = fixedSuffix.length;
-  let current = stem;
   const stemBudget = (extra: number) => Math.max(0, maxLen - suffix.length - fixedLen - extra);
 
   if (opts.talkGroupMemberSuffix) {
@@ -196,7 +194,7 @@ export function shortenWireName(
     opts.exportNameMode === 'callsign_name' &&
     opts.recomposeWithMode
   ) {
-    const downgraded = peelModeSuffix(opts.recomposeWithMode('callsign_suffix'));
+    const downgraded = peelModeExportSuffix(opts.recomposeWithMode('callsign_suffix'));
     if (downgraded.stem !== current || downgraded.suffix !== suffix) {
       current = downgraded.stem;
       const modeSuffix = downgraded.suffix || suffix;
