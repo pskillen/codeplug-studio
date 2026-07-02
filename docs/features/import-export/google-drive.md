@@ -30,6 +30,10 @@ IndexedDB remains the **edit store**; Drive holds portable YAML interchange file
    - `https://<user>.github.io` (GitHub Pages)
 3. Copy the client id to `.env.local` as `VITE_GOOGLE_CLIENT_ID` (see [build README](../../build/README.md)).
 
+### Production (GitHub Pages)
+
+Release builds receive `VITE_GOOGLE_CLIENT_ID` from the repo Actions secret of the same name (see [pages.yml](../../../.github/workflows/pages.yml)). Without it, the deployed SPA shows “not configured” on Settings → Google Drive. Authorized JavaScript origins must include your Pages URL, e.g. `https://pskillen.github.io`.
+
 ## OAuth scope
 
 `https://www.googleapis.com/auth/drive` — list folders, create folders, read/write native YAML files the operator selects.

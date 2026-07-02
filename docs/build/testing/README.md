@@ -57,16 +57,16 @@ Run before commit when touching application code: `npm run lint`, `npm run forma
 
 ## CI on pull requests
 
-Every pull request and push to `main` runs [`.github/workflows/ci.yml`](../../.github/workflows/ci.yml):
+Every pull request and push to `main` runs [`.github/workflows/ci.yml`](../../.github/workflows/ci.yml). Vitest emits `test-results/junit.xml` in CI; [dorny/test-reporter](https://github.com/dorny/test-reporter) publishes per-test pass/fail on the PR Checks tab.
 
-| Check              | Script                 | CI          | Notes                         |
-| ------------------ | ---------------------- | ----------- | ----------------------------- |
-| Prettier           | `npm run format:check` | Yes         |                               |
-| ESLint             | `npm run lint`         | Yes         |                               |
-| Unit tests         | `npm run test`         | Yes         | Vitest; no JUnit reporter yet |
-| Type-check + build | `npm run build`        | Yes         | `tsc -b && vite build`        |
-| Coverage           | —                      | **Planned** |                               |
-| E2e                | —                      | **Planned** |                               |
+| Check              | Script                 | CI          | Notes                                          |
+| ------------------ | ---------------------- | ----------- | ---------------------------------------------- |
+| Prettier           | `npm run format:check` | Yes         |                                                |
+| ESLint             | `npm run lint`         | Yes         |                                                |
+| Unit tests         | `npm run test`         | Yes         | Vitest; JUnit XML + dorny/test-reporter on PRs |
+| Type-check + build | `npm run build`        | Yes         | `tsc -b && vite build`                         |
+| Coverage           | —                      | **Planned** |                                                |
+| E2e                | —                      | **Planned** |                                                |
 
 Docs-only PRs: `format:check` + link audit is sufficient.
 
