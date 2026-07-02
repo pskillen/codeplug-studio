@@ -18,7 +18,8 @@ export default function ZonesListPage() {
   const navigate = useNavigate();
   const { channels, zones } = library;
   const { position, setPosition, clearPosition } = useOperatorPosition();
-  const { nameFilter, nameFilterInput, nameFilterPending, setNameFilter } = useListNameQuery('zones');
+  const { nameFilter, nameFilterInput, nameFilterPending, setNameFilter } =
+    useListNameQuery('zones');
   const [sort, setSort] = usePersistedEntityListSort('zones', {
     columnKey: DATATABLE_NAME_SORT_KEY,
     direction: 'asc',
