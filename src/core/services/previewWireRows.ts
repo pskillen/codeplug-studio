@@ -6,6 +6,7 @@ import {
   overrideByEntityId,
   type OverrideField,
 } from '@core/domain/formatBuildOverrides.ts';
+import { expandChannelWireRows, modeExportNameSuffix } from '@core/import-export/channelExpansion/multiMode.ts';
 import { assemble, type LibrarySlice } from './assemble.ts';
 
 export type WirePreviewEntityKind =
@@ -82,19 +83,36 @@ export function previewWireRows(
   const projection = assemble(build, library, { profileId: _options?.profileId });
 
   switch (entityKind) {
-    case 'channel':
-      return library.channels.map((channel) => {
+    case 'channel': {
+      const expandModes = _options?.expandModes ?? true;
+      const rows: WirePreviewRow[] = [];
+      for (const channel of library.channels) {
         const assembled = projection.channels.find((row) => row.entity.id === channel.id);
-        const generatedWireName = assembled?.wireName ?? channel.name;
-        return previewRow(
-          channel.id,
-          channel.id,
-          'channel',
-          channelDisplayLabel(channel),
-          generatedWireName,
-          build.channelOverrides,
-        );
-      });
+        const baseWireName = assembled?.wireName ?? channel.name;
+        const expansions = expandChannelWireRows(channel, baseWireName, expandModes);
+        for (const expanded of expansions) {
+          const overrideWire = overrideByEntityId(build.channelOverrides).get(expanded.key)
+            ?.wireName?.trim();
+          const generatedWireName = expanded.wireName;
+          const excluded = isEntityExcluded(build.channelOverrides, channel.id);
+          rows.push({
+            key: expanded.key,
+            libraryEntityId: channel.id,
+            entityKind: 'channel',
+            displayLabel:
+              expansions.length > 1
+                ? `${channelDisplayLabel(channel)} (${expanded.mode.toUpperCase()})`
+                : channelDisplayLabel(channel),
+            generatedWireName,
+            effectiveWireName: overrideWire || generatedWireName,
+            excluded,
+            expansionNote:
+              expansions.length > 1 ? `Multi-mode ${modeExportNameSuffix(expanded.mode)} row` : undefined,
+          });
+        }
+      }
+      return rows;
+    }
     case 'zone':
       return library.zones.map((zone) => {
         const assembled = projection.zones.find((row) => row.zoneId === zone.id);

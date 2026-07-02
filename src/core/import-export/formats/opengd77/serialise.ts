@@ -2,10 +2,12 @@ import type { AssembledBuild } from '@core/services/assemble.ts';
 import type { CpsExportOptions } from '@core/import-export/types.ts';
 import type {
   Channel,
+  ChannelModeProfile,
   ChannelModeProfileAnalog,
   ChannelModeProfileDMR,
 } from '@core/models/library.ts';
 import type { ChannelMode } from '@core/models/libraryTypes.ts';
+import { expandChannelWireRows } from '@core/import-export/channelExpansion/multiMode.ts';
 import { formatCsv } from './csvWrite.ts';
 import {
   CHANNEL_COL,
@@ -37,8 +39,6 @@ import {
 } from './channelWire.ts';
 import {
   contactRefWireName,
-  primaryChannelMode,
-  primaryModeProfile,
   rxGroupListWireName,
 } from './exportRefs.ts';
 import { rxGroupListExportMemberNames, zoneExportMemberNames } from './listWire.ts';
@@ -53,7 +53,7 @@ function padRow(headers: string[], values: Record<string, string>): string[] {
 }
 
 function isAnalogProfile(
-  profile: ReturnType<typeof primaryModeProfile>,
+  profile: ChannelModeProfile | null,
 ): profile is ChannelModeProfileAnalog {
   return (
     profile != null &&
@@ -65,7 +65,7 @@ function isAnalogProfile(
 }
 
 function isDmrProfile(
-  profile: ReturnType<typeof primaryModeProfile>,
+  profile: ChannelModeProfile | null,
 ): profile is ChannelModeProfileDMR {
   return profile?.mode === 'dmr';
 }
@@ -74,11 +74,11 @@ function channelRowValues(
   wireName: string,
   channel: Channel,
   mode: ChannelMode,
+  modeProfile: ChannelModeProfile,
   assembled: AssembledBuild,
   profile: OpenGd77RadioProfile,
   rowNumber: number,
 ): Record<string, string> {
-  const modeProfile = primaryModeProfile(channel);
   const analog = isAnalogProfile(modeProfile) ? modeProfile : null;
   const dmr = isDmrProfile(modeProfile) ? modeProfile : null;
 
@@ -119,13 +119,18 @@ export function serialiseChannels(assembled: AssembledBuild, options?: CpsExport
   const profile = getOpenGd77Profile(
     options?.profileId ?? assembled.profileId ?? DEFAULT_OPENGD77_PROFILE_ID,
   );
-  const rows = assembled.channels.map((row, i) =>
+  const expandModes = options?.expandModes ?? true;
+  const expandedRows = assembled.channels.flatMap((row) =>
+    expandChannelWireRows(row.entity, row.wireName, expandModes),
+  );
+  const rows = expandedRows.map((row, i) =>
     padRow(
       CHANNEL_HEADERS,
       channelRowValues(
         row.wireName,
-        row.entity,
-        primaryChannelMode(row.entity),
+        assembled.channels.find((c) => c.entity.id === row.sourceChannelId)!.entity,
+        row.mode,
+        row.modeProfile,
         assembled,
         profile,
         i + 1,
@@ -142,7 +147,7 @@ export function serialiseZones(assembled: AssembledBuild, options?: CpsExportOpt
   const memberHeaders = zoneMemberHeaders(profile.zoneMembers);
   const rows = assembled.zones.map((zone) => {
     const values: Record<string, string> = { 'Zone Name': zone.wireName };
-    zoneExportMemberNames(zone, assembled).forEach((name, i) => {
+    zoneExportMemberNames(zone, assembled, options).forEach((name, i) => {
       if (i < memberHeaders.length) values[memberHeaders[i]!] = name;
     });
     return padRow(ZONE_HEADERS, values);

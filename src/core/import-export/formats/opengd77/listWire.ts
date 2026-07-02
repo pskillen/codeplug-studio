@@ -1,12 +1,22 @@
 import type { AssembledBuild, AssembledZone } from '@core/services/assemble.ts';
+import type { CpsExportOptions } from '@core/import-export/types.ts';
+import { expandZoneMemberWireNames } from '@core/import-export/channelExpansion/multiMode.ts';
 import { channelWireNameById, memberRefWireName } from './exportRefs.ts';
 
 /** Zone member channel wire names for OpenGD77 export. */
-export function zoneExportMemberNames(zone: AssembledZone, assembled: AssembledBuild): string[] {
+export function zoneExportMemberNames(
+  zone: AssembledZone,
+  assembled: AssembledBuild,
+  options?: CpsExportOptions,
+): string[] {
   const wireById = channelWireNameById(assembled);
-  return zone.memberChannelIds
-    .map((id) => wireById.get(id) ?? '')
-    .filter((name) => name.length > 0);
+  const channelById = new Map(assembled.channels.map((row) => [row.entity.id, row.entity]));
+  return expandZoneMemberWireNames(
+    zone.memberChannelIds,
+    channelById,
+    wireById,
+    options?.expandModes ?? true,
+  );
 }
 
 /** RX group list member wire names — from assembled entity wire names. */
