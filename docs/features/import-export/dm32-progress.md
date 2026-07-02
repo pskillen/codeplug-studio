@@ -8,13 +8,13 @@
 
 ## Overall status
 
-**Status:** In progress
+**Status:** Complete (pending merge)
 
 **Branch:** `110/pskil/talk-group-abbreviation`
 
 | Phase | Status | Notes |
 | --- | --- | --- |
-| Shared export prep — TG abbrev + multi-TG wire names ([#110](https://github.com/pskillen/codeplug-studio/issues/110)) | In progress | This branch |
+| Shared export prep — TG abbrev + multi-TG wire names ([#110](https://github.com/pskillen/codeplug-studio/issues/110)) | Complete (pending merge) | This branch |
 | DM32 export adapter | Not started | `src/core/import-export/formats/dm32/` |
 | DM32 build UI (zones, scan lists, `showMultiTalkGroupOptions`) | Not started | Trait modules under `src/app/` |
 | DM32 import adapter | Deferred | Out of epic #37 export scope |
@@ -25,22 +25,24 @@
 
 ## Slice — Talk group abbreviation (#110)
 
-**Status:** In progress  
+**Status:** Complete (pending merge)  
 **Branch:** `110/pskil/talk-group-abbreviation`
 
 **Delivered**
 
 - Progress tracking kickoff — this file + [dm32-outstanding.md](dm32-outstanding.md)
-- Slice 1 — `multiTalkGroupWireName.ts`, `multiTalkGroup.ts`, `entityRefExport.ts`; `CpsExportOptions` multi-TG fields; unit tests
-- Slice 2 — `TalkGroupEditor` with abbreviation + `TalkGroupWireNameExamples`; list Abbrev column; native YAML round-trip test
+- Core — `multiTalkGroupWireName.ts`, `multiTalkGroup.ts`, `entityRefExport.ts`, `talkGroupWireNamePreview.ts`; `CpsExportOptions` multi-TG fields; unit tests (incl. m×n)
+- Library CRUD — `TalkGroupEditor` with abbreviation + `TalkGroupWireNameExamples`; list Abbrev column; native YAML round-trip test
+- Docs — [library README](../library/README.md), [name-shortening.md](name-shortening.md)
 
 **Verify**
 
-- `npm run test -- --run src/core/import-export/channelExpansion/`
-- Manual: `/library/talk-groups/new` — set name + abbreviation, save, reload
+- `npm run format:check && npm run lint && npm run test && npm run build`
+- Manual: `/library/talk-groups/new` — set name + abbreviation, save, reload; Abbrev column on list
+- OpenGD77 export unchanged (no RX-list fan-out on serialise)
 
 ---
 
 ## Next
 
-- Complete #110 core multi-TG wire-name module + library CRUD + docs
+- DM32 export adapter + build UI; wire `expandMultiTalkGroupMemberWireRows` into DM32 serialise and wire preview when `expandRxGroupLists` is enabled
