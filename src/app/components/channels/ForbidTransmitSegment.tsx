@@ -1,7 +1,8 @@
 import { Input, SegmentedControl, Stack } from '@mantine/core';
 
 export interface ForbidTransmitSegmentProps {
-  value: boolean;
+  /** `null` / `undefined` are treated as Allow TX (same as `false`). */
+  value: boolean | null | undefined;
   onChange: (forbidTransmit: boolean) => void;
 }
 
@@ -11,11 +12,12 @@ const OPTIONS = [
 ] as const;
 
 export default function ForbidTransmitSegment({ value, onChange }: ForbidTransmitSegmentProps) {
+  const isRxOnly = value === true;
   return (
     <Stack gap={4}>
       <Input.Label>Transmit</Input.Label>
       <SegmentedControl
-        value={String(value)}
+        value={isRxOnly ? 'true' : 'false'}
         onChange={(next) => onChange(next === 'true')}
         data={[...OPTIONS]}
         fullWidth

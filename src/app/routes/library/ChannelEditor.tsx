@@ -37,7 +37,7 @@ export default function ChannelEditor({
   const [tx, setTx] = useState(hzToMhzString(base.txFrequency));
   const [power, setPower] = useState<number | null>(base.power);
   const [scanSkip, setScanSkip] = useState(base.scanSkip);
-  const [forbidTransmit, setForbidTransmit] = useState(base.forbidTransmit);
+  const [forbidTransmit, setForbidTransmit] = useState(base.forbidTransmit === true);
   const [comment, setComment] = useState(base.comment);
   const [modeProfiles, setModeProfiles] = useState<ChannelModeProfile[]>(base.modeProfiles);
   const [location, setLocation] = useState<ChannelLocationValues>(() =>

@@ -8,7 +8,7 @@ Two-value segmented control for channel transmit permission: **Allow TX** (defau
 
 | Prop       | Type                       | Description                           |
 | ---------- | -------------------------- | ------------------------------------- |
-| `value`    | `boolean`                  | Current `forbidTransmit` flag         |
+| `value`    | `boolean \| null \| undefined` | `null` / omitted → Allow TX; `true` → RX only |
 | `onChange` | `(value: boolean) => void` | Called when the operator changes mode |
 
 ## Usage
@@ -21,7 +21,7 @@ import ForbidTransmitSegment from '@app/components/channels/ForbidTransmitSegmen
 
 ## Behaviour
 
-- **Allow TX** → `forbidTransmit: false` — normal transmit on export.
+- **Allow TX** → `forbidTransmit: false` (or `null` / omitted on legacy rows) — normal transmit on export.
 - **RX only** → `forbidTransmit: true` — maps to CPS `Rx Only` / `Yes` at the OpenGD77 export boundary.
 
 Vendor-neutral field name; wire column mapping is format-specific (see [OpenGD77 channels reference](../../../../docs/reference/opengd77/channels.md)).
