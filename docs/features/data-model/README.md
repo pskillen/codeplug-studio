@@ -91,7 +91,7 @@ Vendor-neutral RF semantics only. UUID `id` FKs; `name` is a **human display lab
 
 | Entity           | Notes                                                                                                        |
 | ---------------- | ------------------------------------------------------------------------------------------------------------ |
-| `Channel`        | Frequency (Hz), callsign, power, `location`, `maidenheadLocator`, `useLocation`, scan skip; `modeProfiles[]` |
+| `Channel`        | Frequency (Hz), callsign, power, `location`, `maidenheadLocator`, `useLocation`, scan skip, `forbidTransmit`; `modeProfiles[]` |
 | `Zone`           | Inventory grouping — `members` as channel `EntityRef[]`; export flags on the zone row                        |
 | `TalkGroup`      | Digital group call — `mode`, `digitalId`                                                                     |
 | `DigitalContact` | Digital private call — `mode`, `digitalId`                                                                   |

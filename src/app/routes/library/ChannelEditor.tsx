@@ -6,6 +6,7 @@ import { reconcileChannelLocation } from '@core/domain/channelLocation.ts';
 import { newChannel } from '@core/domain/factories.ts';
 import { syncModeProfiles, validateModeProfiles } from '@core/domain/modeProfiles.ts';
 import type { ChannelMode } from '@core/models/libraryTypes.ts';
+import ForbidTransmitSegment from '../../components/channels/ForbidTransmitSegment.tsx';
 import ChannelLocationSection, {
   channelLocationValuesFromChannel,
   type ChannelLocationValues,
@@ -36,6 +37,7 @@ export default function ChannelEditor({
   const [tx, setTx] = useState(hzToMhzString(base.txFrequency));
   const [power, setPower] = useState<number | null>(base.power);
   const [scanSkip, setScanSkip] = useState(base.scanSkip);
+  const [forbidTransmit, setForbidTransmit] = useState(base.forbidTransmit);
   const [comment, setComment] = useState(base.comment);
   const [modeProfiles, setModeProfiles] = useState<ChannelModeProfile[]>(base.modeProfiles);
   const [location, setLocation] = useState<ChannelLocationValues>(() =>
@@ -66,6 +68,7 @@ export default function ChannelEditor({
       txFrequency: mhzStringToHz(tx),
       power,
       scanSkip,
+      forbidTransmit,
       comment,
       location: reconciled.location,
       useLocation: reconciled.useLocation,
@@ -137,6 +140,7 @@ export default function ChannelEditor({
           />
         </SimpleGrid>
         <PercentLevelSlider label="Power" value={power} onChange={setPower} />
+        <ForbidTransmitSegment value={forbidTransmit} onChange={setForbidTransmit} />
       </FormSection>
 
       <FormSection title="Modes">

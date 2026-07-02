@@ -51,6 +51,7 @@ library:
   channels:
     - callsign: GB3DA
       comment: Analog FM
+      forbidTransmit: false
       id: 22222222-2222-4222-8222-222222222222
       location:
         lat: 55.9533
@@ -73,6 +74,7 @@ library:
       useLocation: true
     - callsign: GB7GL
       comment: ""
+      forbidTransmit: false
       id: 33333333-3333-4333-8333-333333333333
       location: null
       maidenheadLocator: null

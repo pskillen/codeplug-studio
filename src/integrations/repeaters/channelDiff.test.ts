@@ -35,6 +35,7 @@ function baseChannel(overrides: Partial<Channel> = {}): Channel {
     comment: 'My note',
     power: null,
     scanSkip: false,
+    forbidTransmit: false,
     useLocation: true,
     location: io91wm,
     maidenheadLocator: 'IO91WM',

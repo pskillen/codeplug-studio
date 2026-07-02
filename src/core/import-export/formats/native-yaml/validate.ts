@@ -203,6 +203,10 @@ function parseChannel(raw: unknown, index: number): Channel {
     ),
     power: expectNullableNumber(record.power, `library.channels[${index}].power`),
     scanSkip: expectBoolean(record.scanSkip, `library.channels[${index}].scanSkip`),
+    forbidTransmit:
+      record.forbidTransmit === undefined
+        ? false
+        : expectBoolean(record.forbidTransmit, `library.channels[${index}].forbidTransmit`),
     comment: expectString(record.comment, `library.channels[${index}].comment`),
     ...(record.abbreviation !== undefined && record.abbreviation !== null
       ? {

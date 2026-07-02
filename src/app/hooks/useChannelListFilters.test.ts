@@ -23,6 +23,7 @@ function makeChannel(overrides: Partial<Channel> = {}): Channel {
     maidenheadLocator: null,
     power: null,
     scanSkip: false,
+    forbidTransmit: false,
     comment: '',
     modeProfiles: [fm],
     ...overrides,

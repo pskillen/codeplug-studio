@@ -117,6 +117,31 @@ describe('OpenGD77 export serialise', () => {
     expect(bandwidthForChannel(csv, 'DMR Only')).toBe('');
   });
 
+  it('maps forbidTransmit to Rx Only column', () => {
+    const channel = {
+      ...newChannel('proj', 'RX Only Site'),
+      rxFrequency: 145_750_000,
+      txFrequency: 145_150_000,
+      forbidTransmit: true,
+      modeProfiles: [
+        {
+          mode: 'fm' as const,
+          squelch: null,
+          rxTone: 'none' as const,
+          txTone: 'none' as const,
+          bandwidthKHz: null,
+        },
+      ],
+    };
+    const csv = serialiseChannels(minimalAssembled(channel));
+    const rows = parseCsv(csv);
+    const headers = rows[0]!;
+    const rxOnlyIndex = headers.indexOf(CHANNEL_COL.rxOnly);
+    const nameIndex = headers.indexOf(CHANNEL_COL.name);
+    const dataRow = rows.slice(1).find((row) => row[nameIndex] === 'RX Only Site');
+    expect(dataRow?.[rxOnlyIndex]).toBe('Yes');
+  });
+
   it('serialises channel wire names from assemble projection', () => {
     const assembled = loadAssembled();
     const csv = serialiseChannels(assembled);

@@ -94,6 +94,7 @@ export function fullLibraryAggregate(): ProjectAggregate {
     maidenheadLocator: 'IO85vs',
     power: 25,
     scanSkip: false,
+    forbidTransmit: false,
     comment: 'Analog FM',
     modeProfiles: [
       {
@@ -117,6 +118,7 @@ export function fullLibraryAggregate(): ProjectAggregate {
     maidenheadLocator: null,
     power: null,
     scanSkip: true,
+    forbidTransmit: false,
     comment: '',
     modeProfiles: [
       {

@@ -91,6 +91,7 @@ export function newChannel(projectId: string, name: string, callsign = ''): Chan
     maidenheadLocator: null,
     power: null,
     scanSkip: false,
+    forbidTransmit: false,
     comment: '',
     modeProfiles: [],
   };
