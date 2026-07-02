@@ -5,10 +5,7 @@ import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import { NativeYamlImportError } from './errors.ts';
 import { parseProjectDocument } from './parse.ts';
-import {
-  fullLibraryAggregate,
-  minimalProjectAggregate,
-} from './testFixtures.ts';
+import { fullLibraryAggregate, minimalProjectAggregate } from './testFixtures.ts';
 import { validateDocument } from './validate.ts';
 
 const fixturesDir = join(dirname(fileURLToPath(import.meta.url)), '__fixtures__/import');
@@ -26,7 +23,10 @@ function aggregateEqual(
 
 describe('native-yaml parse', () => {
   it('parses valid minimal fixture', () => {
-    aggregateEqual(parseProjectDocument(readFixture('valid-minimal.yaml')), minimalProjectAggregate());
+    aggregateEqual(
+      parseProjectDocument(readFixture('valid-minimal.yaml')),
+      minimalProjectAggregate(),
+    );
   });
 
   it('parses valid full library fixture', () => {

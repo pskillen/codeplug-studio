@@ -6,14 +6,14 @@
 
 ## Status
 
-| Slice | Status      | Notes |
-| ----- | ----------- | ----- |
-| 0 Kickoff — progress pair + branch | Complete | `df7afbe` |
+| Slice                               | Status   | Notes     |
+| ----------------------------------- | -------- | --------- |
+| 0 Kickoff — progress pair + branch  | Complete | `df7afbe` |
 | 1 Import/export scaffold + envelope | Complete | `2d2a397` |
-| 2 Feature + schema docs | Complete | `e700605` |
-| 3 Export serialiser | Complete | `a2e315d` |
-| 4 Import parser + validation | Complete | |
-| 5 Registry smoke + PR | Pending | |
+| 2 Feature + schema docs             | Complete | `e700605` |
+| 3 Export serialiser                 | Complete | `a2e315d` |
+| 4 Import parser + validation        | Complete | `3df28ea` |
+| 5 Registry smoke + PR               | Complete |           |
 
 ## Shipped
 
@@ -46,3 +46,9 @@
 - `parse.ts`, `validate.ts`, `errors.ts`
 - `__fixtures__/import/` golden files, `parse.test.ts`
 - Import hub + tier 3 validation docs updated
+
+### Slice 5 — Registry smoke + PR
+
+- `roundtrip.test.ts` — adapter + module round-trip smoke
+- `.prettierignore` — native YAML fixture trees
+- Full `npm run format:check`, `lint`, `test`, `build`

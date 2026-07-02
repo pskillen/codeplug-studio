@@ -41,7 +41,9 @@ export function isSingleFileProjectImportAdapter(
   return adapter.capabilities.delivery === 'single-file';
 }
 
-export function isMultiFileImportAdapter(adapter: ImportAdapter): adapter is MultiFileImportAdapter {
+export function isMultiFileImportAdapter(
+  adapter: ImportAdapter,
+): adapter is MultiFileImportAdapter {
   return adapter.capabilities.delivery === 'multi-file';
 }
 

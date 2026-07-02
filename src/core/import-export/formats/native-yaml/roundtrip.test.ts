@@ -1,4 +1,6 @@
 import { describe, expect, it } from 'vitest';
+import { isSingleFileProjectExportAdapter } from '../../exportAdapter.ts';
+import { isSingleFileProjectImportAdapter } from '../../importAdapter.ts';
 import { getExportAdapter, getImportAdapter } from '../../registry.ts';
 import { parseProjectDocument } from './parse.ts';
 import { serialiseProject } from './serialise.ts';
@@ -9,6 +11,13 @@ describe('native-yaml round-trip smoke', () => {
     const aggregate = projectWithFormatBuildAggregate();
     const exportAdapter = getExportAdapter('native-yaml');
     const importAdapter = getImportAdapter('native-yaml');
+
+    if (!isSingleFileProjectExportAdapter(exportAdapter)) {
+      throw new Error('expected single-file export adapter');
+    }
+    if (!isSingleFileProjectImportAdapter(importAdapter)) {
+      throw new Error('expected single-file import adapter');
+    }
 
     const { content } = exportAdapter.serialise(aggregate);
     const { project } = importAdapter.parseDocument(content);

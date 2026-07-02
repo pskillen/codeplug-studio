@@ -14,19 +14,19 @@ IndexedDB remains the **edit store**; YAML and Drive are portable layers on top 
 
 ## Implementation status
 
-| Area | Status | Notes |
-| --- | --- | --- |
-| Adapter contracts + registry | Shipped | `src/core/import-export/` — `ImportAdapter`, `ExportAdapter`, `formatCatalog` |
-| Native YAML — schema + envelope | Shipped | `StudioProjectDocument` v1 — [#56](https://github.com/pskillen/codeplug-studio/issues/56) |
-| Native YAML — export serialiser | Shipped | [#57](https://github.com/pskillen/codeplug-studio/issues/57) |
-| Native YAML — import parser | Shipped | [#58](https://github.com/pskillen/codeplug-studio/issues/58) |
-| Application services (`importProject`, `exportProject`) | Planned | [#59](https://github.com/pskillen/codeplug-studio/issues/59) |
-| Local file UI | Planned | [#60](https://github.com/pskillen/codeplug-studio/issues/60) |
-| Google Drive | Planned | [#61](https://github.com/pskillen/codeplug-studio/issues/61)–[#62](https://github.com/pskillen/codeplug-studio/issues/62) |
-| OpenGD77 CSV | Planned | Phase 4+ — registry slot `planned` |
-| CHIRP CSV | Planned | Phase 4+ |
-| DM32 CSV | Planned | Phase 4+ |
-| qDMR YAML | Planned | Out of Phase 3 scope |
+| Area                                                    | Status  | Notes                                                                                                                     |
+| ------------------------------------------------------- | ------- | ------------------------------------------------------------------------------------------------------------------------- |
+| Adapter contracts + registry                            | Shipped | `src/core/import-export/` — `ImportAdapter`, `ExportAdapter`, `formatCatalog`                                             |
+| Native YAML — schema + envelope                         | Shipped | `StudioProjectDocument` v1 — [#56](https://github.com/pskillen/codeplug-studio/issues/56)                                 |
+| Native YAML — export serialiser                         | Shipped | [#57](https://github.com/pskillen/codeplug-studio/issues/57)                                                              |
+| Native YAML — import parser                             | Shipped | [#58](https://github.com/pskillen/codeplug-studio/issues/58)                                                              |
+| Application services (`importProject`, `exportProject`) | Planned | [#59](https://github.com/pskillen/codeplug-studio/issues/59)                                                              |
+| Local file UI                                           | Planned | [#60](https://github.com/pskillen/codeplug-studio/issues/60)                                                              |
+| Google Drive                                            | Planned | [#61](https://github.com/pskillen/codeplug-studio/issues/61)–[#62](https://github.com/pskillen/codeplug-studio/issues/62) |
+| OpenGD77 CSV                                            | Planned | Phase 4+ — registry slot `planned`                                                                                        |
+| CHIRP CSV                                               | Planned | Phase 4+                                                                                                                  |
+| DM32 CSV                                                | Planned | Phase 4+                                                                                                                  |
+| qDMR YAML                                               | Planned | Out of Phase 3 scope                                                                                                      |
 
 ## Architecture
 
@@ -54,13 +54,13 @@ Routes and UI call **application services** (`importIntoLibrary`, `exportBuild`,
 
 ## Format registry
 
-| Format | Import | Export | Delivery |
-| --- | --- | --- | --- |
+| Format        | Import  | Export  | Delivery                   |
+| ------------- | ------- | ------- | -------------------------- |
 | `native-yaml` | Shipped | Shipped | Single file — full project |
-| `opengd77` | Planned | Planned | Multi-file CSV |
-| `chirp` | Planned | Planned | Single-file CSV |
-| `dm32` | Planned | Planned | Multi-file CSV |
-| `qdmr` | Planned | Planned | YAML (vendor) |
+| `opengd77`    | Planned | Planned | Multi-file CSV             |
+| `chirp`       | Planned | Planned | Single-file CSV            |
+| `dm32`        | Planned | Planned | Multi-file CSV             |
+| `qdmr`        | Planned | Planned | YAML (vendor)              |
 
 Wire mapping for CPS formats lives in `docs/reference/<format>/` — not here.
 
@@ -72,11 +72,11 @@ Wire mapping for CPS formats lives in `docs/reference/<format>/` — not here.
 
 ## Documentation map
 
-| Doc | Contents |
-| --- | --- |
-| [native-yaml/README.md](native-yaml/README.md) | Native YAML product behaviour and code anchors |
-| [native-yaml-progress.md](native-yaml-progress.md) | Execution log for #56–#58 |
-| [native-yaml-outstanding.md](native-yaml-outstanding.md) | Debt discovered during native YAML work |
+| Doc                                                                            | Contents                                        |
+| ------------------------------------------------------------------------------ | ----------------------------------------------- |
+| [native-yaml/README.md](native-yaml/README.md)                                 | Native YAML product behaviour and code anchors  |
+| [native-yaml-progress.md](native-yaml-progress.md)                             | Execution log for #56–#58                       |
+| [native-yaml-outstanding.md](native-yaml-outstanding.md)                       | Debt discovered during native YAML work         |
 | [../../reference/native-yaml/README.md](../../reference/native-yaml/README.md) | Tier 3 — YAML field tables and example document |
 
 ## Related

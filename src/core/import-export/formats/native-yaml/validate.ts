@@ -204,10 +204,7 @@ function parseZone(raw: unknown, index: number): Zone {
       record.exportScratchChannel,
       `library.zones[${index}].exportScratchChannel`,
     ),
-    exportScanList: expectBoolean(
-      record.exportScanList,
-      `library.zones[${index}].exportScanList`,
-    ),
+    exportScanList: expectBoolean(record.exportScanList, `library.zones[${index}].exportScanList`),
     scanCarrierFrequencyHz: expectNullableNumber(
       record.scanCarrierFrequencyHz,
       `library.zones[${index}].scanCarrierFrequencyHz`,
@@ -301,8 +298,8 @@ function parseLibrary(raw: unknown): Library {
   const analogContacts = expectArray(record.analogContacts, 'library.analogContacts').map(
     (row, index) => parseAnalogContact(row, index),
   );
-  const rxGroupLists = expectArray(record.rxGroupLists, 'library.rxGroupLists').map(
-    (row, index) => parseRxGroupList(row, index),
+  const rxGroupLists = expectArray(record.rxGroupLists, 'library.rxGroupLists').map((row, index) =>
+    parseRxGroupList(row, index),
   );
 
   return { channels, zones, talkGroups, digitalContacts, analogContacts, rxGroupLists };
@@ -337,7 +334,10 @@ function parseTraitSection(raw: unknown, index: number): TraitLayoutSection {
             zone.channelIds,
             `layout.sections[${index}].zones[${zoneIndex}].channelIds`,
           ).map((id, idIndex) =>
-            expectString(id, `layout.sections[${index}].zones[${zoneIndex}].channelIds[${idIndex}]`),
+            expectString(
+              id,
+              `layout.sections[${index}].zones[${zoneIndex}].channelIds[${idIndex}]`,
+            ),
           ),
         };
       },
@@ -345,16 +345,10 @@ function parseTraitSection(raw: unknown, index: number): TraitLayoutSection {
     return { kind: 'zoneGrouping', zones } satisfies ZoneGroupingLayout;
   }
   if (kind === 'flatMemory') {
-    const channelIds = expectArray(
-      record.channelIds,
-      `layout.sections[${index}].channelIds`,
-    ).map((id, idIndex) =>
-      expectString(id, `layout.sections[${index}].channelIds[${idIndex}]`),
+    const channelIds = expectArray(record.channelIds, `layout.sections[${index}].channelIds`).map(
+      (id, idIndex) => expectString(id, `layout.sections[${index}].channelIds[${idIndex}]`),
     );
-    const scanFlagsRaw = expectRecord(
-      record.scanFlags,
-      `layout.sections[${index}].scanFlags`,
-    );
+    const scanFlagsRaw = expectRecord(record.scanFlags, `layout.sections[${index}].scanFlags`);
     const scanFlags: Record<string, boolean> = {};
     for (const [key, value] of Object.entries(scanFlagsRaw)) {
       scanFlags[key] = expectBoolean(value, `layout.sections[${index}].scanFlags.${key}`);
@@ -387,11 +381,9 @@ function parseFormatBuild(raw: unknown, index: number): FormatBuild {
     ).map((row, selectionIndex) =>
       parseSelection(row, selectionIndex, `formatBuilds[${index}].channelSelections`),
     ),
-    zoneSelections: expectArray(
-      record.zoneSelections,
-      `formatBuilds[${index}].zoneSelections`,
-    ).map((row, selectionIndex) =>
-      parseSelection(row, selectionIndex, `formatBuilds[${index}].zoneSelections`),
+    zoneSelections: expectArray(record.zoneSelections, `formatBuilds[${index}].zoneSelections`).map(
+      (row, selectionIndex) =>
+        parseSelection(row, selectionIndex, `formatBuilds[${index}].zoneSelections`),
     ),
     talkGroupSelections: expectArray(
       record.talkGroupSelections,
@@ -443,9 +435,7 @@ function validateForeignKeys(library: Library, formatBuilds: FormatBuild[]): voi
     try {
       validateZoneMemberRefs(zone.id, zone.members, library);
     } catch (error) {
-      throw new NativeYamlImportError(
-        error instanceof Error ? error.message : String(error),
-      );
+      throw new NativeYamlImportError(error instanceof Error ? error.message : String(error));
     }
   }
 
@@ -456,18 +446,14 @@ function validateForeignKeys(library: Library, formatBuilds: FormatBuild[]): voi
           try {
             validateEntityRef(profile.contactRef, library);
           } catch (error) {
-            throw new NativeYamlImportError(
-              error instanceof Error ? error.message : String(error),
-            );
+            throw new NativeYamlImportError(error instanceof Error ? error.message : String(error));
           }
         }
         if (profile.rxGroupListId) {
           try {
             validateRxGroupListId(profile.rxGroupListId, library);
           } catch (error) {
-            throw new NativeYamlImportError(
-              error instanceof Error ? error.message : String(error),
-            );
+            throw new NativeYamlImportError(error instanceof Error ? error.message : String(error));
           }
         }
       }
@@ -476,9 +462,7 @@ function validateForeignKeys(library: Library, formatBuilds: FormatBuild[]): voi
           try {
             validateEntityRef(profile.talkGroupRef, library);
           } catch (error) {
-            throw new NativeYamlImportError(
-              error instanceof Error ? error.message : String(error),
-            );
+            throw new NativeYamlImportError(error instanceof Error ? error.message : String(error));
           }
         }
       }
@@ -500,9 +484,7 @@ function validateForeignKeys(library: Library, formatBuilds: FormatBuild[]): voi
       if (section.kind === 'zoneGrouping') {
         for (const zone of section.zones) {
           if (!ids.zoneIds.has(zone.id)) {
-            throw new NativeYamlImportError(
-              `Trait layout zone ${zone.id} not found in library`,
-            );
+            throw new NativeYamlImportError(`Trait layout zone ${zone.id} not found in library`);
           }
           for (const channelId of zone.channelIds) {
             if (!ids.channelIds.has(channelId)) {

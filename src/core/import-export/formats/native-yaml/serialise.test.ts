@@ -17,9 +17,7 @@ function readGolden(name: string): string {
 
 describe('native-yaml serialise', () => {
   it('serialises minimal project', () => {
-    expect(serialiseProject(minimalProjectAggregate())).toBe(
-      readGolden('minimal-project.yaml'),
-    );
+    expect(serialiseProject(minimalProjectAggregate())).toBe(readGolden('minimal-project.yaml'));
   });
 
   it('serialises full library with FK refs', () => {

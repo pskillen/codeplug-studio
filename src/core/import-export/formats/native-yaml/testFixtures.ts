@@ -143,9 +143,7 @@ export function fullLibraryAggregate(): ProjectAggregate {
   const rxGroupList: RxGroupList = {
     ...rowMeta(projectId, FIXTURE_RX_LIST_ID),
     name: 'Scotland TG list',
-    members: [
-      { ref: { kind: 'talkGroup', id: FIXTURE_TG_ID }, timeSlotOverride: 2 },
-    ],
+    members: [{ ref: { kind: 'talkGroup', id: FIXTURE_TG_ID }, timeSlotOverride: 2 }],
   };
 
   return {

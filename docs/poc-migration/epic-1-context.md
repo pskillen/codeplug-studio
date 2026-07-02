@@ -261,9 +261,9 @@ These are for Phase 1 modelling and UX iteration — not blockers for constituti
 
 ## Revision log
 
-| Date       | Change                                                                                        |
-| ---------- | --------------------------------------------------------------------------------------------- |
-| 2026-06-29 | Initial context dump from migration planning sessions                                         |
-| 2026-06-29 | Link to [storage.md](storage.md) persistence planning notes                                   |
-| 2026-06-29 | Phase 0 complete — [epic-1-progress.md](epic-1-progress.md), [epic-1-gaps.md](epic-1-gaps.md) |
+| Date       | Change                                                                                                                                                                          |
+| ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2026-06-29 | Initial context dump from migration planning sessions                                                                                                                           |
+| 2026-06-29 | Link to [storage.md](storage.md) persistence planning notes                                                                                                                     |
+| 2026-06-29 | Phase 0 complete — [epic-1-progress.md](epic-1-progress.md), [epic-1-gaps.md](epic-1-gaps.md)                                                                                   |
 | 2026-07-02 | **Resolved:** Native YAML serialises full project (`ProjectMeta` + library + `formatBuilds[]`) as interchange — see [native-yaml reference](../reference/native-yaml/README.md) |

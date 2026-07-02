@@ -1,10 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { isSingleFileProjectExportAdapter } from './exportAdapter.ts';
 import { isSingleFileProjectImportAdapter } from './importAdapter.ts';
-import {
-  nativeYamlExportAdapter,
-  nativeYamlImportAdapter,
-} from './formats/native-yaml/adapter.ts';
+import { nativeYamlExportAdapter, nativeYamlImportAdapter } from './formats/native-yaml/adapter.ts';
 import { formatCatalog, getExportAdapter, getImportAdapter } from './registry.ts';
 
 describe('adapter contracts', () => {

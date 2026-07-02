@@ -8,12 +8,7 @@ export type ImportDelivery = 'single-file' | 'multi-file';
 export type ExportDelivery = 'single-file' | 'multi-file';
 
 export type ImportEntityKind =
-  | 'channels'
-  | 'zones'
-  | 'contacts'
-  | 'talkGroups'
-  | 'dtmfContacts'
-  | 'rxGroupLists';
+  'channels' | 'zones' | 'contacts' | 'talkGroups' | 'dtmfContacts' | 'rxGroupLists';
 
 export type ImportFileKind = ImportEntityKind | 'unknown';
 

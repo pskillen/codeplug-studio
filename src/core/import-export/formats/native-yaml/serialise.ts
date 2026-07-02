@@ -1,8 +1,5 @@
 import { stringify } from 'yaml';
-import {
-  documentFromAggregate,
-  type ProjectAggregate,
-} from '../../projectDocument.ts';
+import { documentFromAggregate, type ProjectAggregate } from '../../projectDocument.ts';
 
 function sortKeysDeep(value: unknown): unknown {
   if (Array.isArray(value)) {

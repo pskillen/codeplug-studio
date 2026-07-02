@@ -19,23 +19,23 @@ IndexedDB remains the live edit store with per-entity revision concurrency. YAML
 
 ## What is in the document
 
-| Section | Internal type | Notes |
-| --- | --- | --- |
-| `project` | `ProjectMeta` | Operator metadata row |
-| `library` | `Library` | Channels, zones, contacts, talk groups, RX lists |
+| Section        | Internal type   | Notes                                                      |
+| -------------- | --------------- | ---------------------------------------------------------- |
+| `project`      | `ProjectMeta`   | Operator metadata row                                      |
+| `library`      | `Library`       | Channels, zones, contacts, talk groups, RX lists           |
 | `formatBuilds` | `FormatBuild[]` | Per-target builds with selections, overrides, trait layout |
 
 Envelope fields `schemaVersion` and `studioSchemaVersion` are documented in the tier 3 reference.
 
 ## Code anchors
 
-| Module | Role |
-| --- | --- |
+| Module               | Role                                                          |
+| -------------------- | ------------------------------------------------------------- |
 | `projectDocument.ts` | `StudioProjectDocument`, `ProjectAggregate`, envelope helpers |
-| `serialise.ts` | `ProjectAggregate` → YAML string |
-| `parse.ts` | YAML string → structural parse |
-| `validate.ts` | Schema version, FK integrity → `ProjectAggregate` |
-| `adapter.ts` | Registry-facing import/export adapter |
+| `serialise.ts`       | `ProjectAggregate` → YAML string                              |
+| `parse.ts`           | YAML string → structural parse                                |
+| `validate.ts`        | Schema version, FK integrity → `ProjectAggregate`             |
+| `adapter.ts`         | Registry-facing import/export adapter                         |
 
 `ProjectAggregate` in core mirrors `ProjectSeed` in `integrations/persistence/types.ts`. Application services bridge the two in [#59](https://github.com/pskillen/codeplug-studio/issues/59).
 
@@ -72,12 +72,12 @@ Export does **not** update `ProjectMeta.interchange` (export destination memory)
 
 ## Implementation status
 
-| Slice | Status |
-| --- | --- |
-| Contracts + envelope (#56) | Shipped |
-| Export serialiser (#57) | Shipped |
+| Slice                            | Status  |
+| -------------------------------- | ------- |
+| Contracts + envelope (#56)       | Shipped |
+| Export serialiser (#57)          | Shipped |
 | Import parser + validation (#58) | Shipped |
-| Services + UI (#59–#62) | Planned |
+| Services + UI (#59–#62)          | Planned |
 
 ## Testing
 
