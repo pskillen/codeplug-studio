@@ -44,12 +44,21 @@ export function expectBoolean(value: unknown, label: string): boolean {
   return value;
 }
 
+function isNullish(value: unknown): value is null | undefined {
+  return value === null || value === undefined;
+}
+
+export function expectOptionalString(value: unknown, label: string, defaultValue = ''): string {
+  if (isNullish(value)) return defaultValue;
+  return expectString(value, label);
+}
+
 export function expectNullableString(value: unknown, label: string): string | null {
-  if (value === null) return null;
+  if (isNullish(value)) return null;
   return expectString(value, label);
 }
 
 export function expectNullableNumber(value: unknown, label: string): number | null {
-  if (value === null) return null;
+  if (isNullish(value)) return null;
   return expectNumber(value, label);
 }

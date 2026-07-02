@@ -209,6 +209,10 @@ Import rejects when:
 9. `TraitLayout` `channelIds` missing from library
 10. DMR `rxGroupListId` missing from library
 
+**Nullable fields:** columns marked nullable in the tables above may be omitted from YAML or set to `null`; import normalises both to `null` in the library model. Export may omit keys when the stored row has no value (e.g. legacy IndexedDB rows).
+
+**Optional string fields** on mode profiles (e.g. YSF `wiresDtmfId`, D-STAR `rpt1Call` / `rpt2Call`) may be omitted; import applies the same defaults as `defaultModeProfile` in `src/core/domain/modeProfiles.ts` (empty string, or `CQCQCQ` for D-STAR `urCall`, or `none` for analogue tones).
+
 ## Example document
 
 ```yaml

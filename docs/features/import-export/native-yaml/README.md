@@ -29,15 +29,15 @@ Envelope fields `schemaVersion` and `studioSchemaVersion` are documented in the 
 
 ## Code anchors
 
-| Module                         | Role                                                          |
-| ------------------------------ | ------------------------------------------------------------- |
-| `projectDocument.ts`           | `StudioProjectDocument`, `ProjectAggregate`, envelope helpers |
-| `serialise.ts`                 | `ProjectAggregate` → YAML string                              |
-| `parse.ts`                     | YAML string → structural parse                                |
-| `validate.ts`                  | Schema version, FK integrity → `ProjectAggregate`             |
-| `adapter.ts`                   | Registry-facing import/export adapter                         |
-| `importProjectYaml.ts`         | Parse → seed → `seedProject` / `replaceProject`               |
-| `exportProjectYaml.ts`         | `loadProjectSeed` → serialise; optional `interchange` meta    |
+| Module                          | Role                                                          |
+| ------------------------------- | ------------------------------------------------------------- |
+| `projectDocument.ts`            | `StudioProjectDocument`, `ProjectAggregate`, envelope helpers |
+| `serialise.ts`                  | `ProjectAggregate` → YAML string                              |
+| `parse.ts`                      | YAML string → structural parse                                |
+| `validate.ts`                   | Schema version, FK integrity → `ProjectAggregate`             |
+| `adapter.ts`                    | Registry-facing import/export adapter                         |
+| `importProjectYaml.ts`          | Parse → seed → `seedProject` / `replaceProject`               |
+| `exportProjectYaml.ts`          | `loadProjectSeed` → serialise; optional `interchange` meta    |
 | `projectImportExportService.ts` | App facade over persistence singleton                         |
 
 `ProjectAggregate` in core mirrors `ProjectSeed` in `integrations/persistence/types.ts`. Application services bridge the two via `ProjectInterchangePort`.
@@ -59,6 +59,8 @@ Rejected imports throw with a clear message:
 - Inconsistent `projectId` across rows
 - Broken UUID FK (zone member, contact ref, build selection, trait layout channel id, …)
 - `replaceExisting` when YAML project id ≠ active project id
+
+Nullable model fields may be omitted from YAML or set to `null` — import treats both as `null` (see [tier 3 validation rules](../../../reference/native-yaml/README.md#validation-rules-58)).
 
 ## Export path
 

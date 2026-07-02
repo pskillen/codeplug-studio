@@ -39,6 +39,7 @@ import {
   expectNullableNumber,
   expectNullableString,
   expectNumber,
+  expectOptionalString,
   expectRecord,
   expectString,
   isRecord,
@@ -77,6 +78,17 @@ function parseEntityRef(raw: unknown, label: string): EntityRef {
   return { kind, id: expectString(record.id, `${label}.id`) };
 }
 
+function parseNullableEntityRef(raw: unknown, label: string): EntityRef | null {
+  if (raw === undefined || raw === null) return null;
+  return parseEntityRef(raw, label);
+}
+
+function parseNullableDmrTimeslot(value: unknown, label: string): 1 | 2 | null {
+  if (value === undefined || value === null) return null;
+  if (value === 1 || value === 2) return value;
+  throw new NativeYamlImportError(`${label} must be 1, 2, or null`);
+}
+
 function parseModeProfile(raw: unknown, index: number): ChannelModeProfile {
   const record = expectRecord(raw, `modeProfiles[${index}]`);
   const mode = expectString(record.mode, `modeProfiles[${index}].mode`);
@@ -89,8 +101,16 @@ function parseModeProfile(raw: unknown, index: number): ChannelModeProfile {
       return {
         mode,
         squelch: expectNullableNumber(record.squelch, `modeProfiles[${index}].squelch`),
-        rxTone: expectString(record.rxTone, `modeProfiles[${index}].rxTone`) as ChannelTone,
-        txTone: expectString(record.txTone, `modeProfiles[${index}].txTone`) as ChannelTone,
+        rxTone: expectOptionalString(
+          record.rxTone,
+          `modeProfiles[${index}].rxTone`,
+          'none',
+        ) as ChannelTone,
+        txTone: expectOptionalString(
+          record.txTone,
+          `modeProfiles[${index}].txTone`,
+          'none',
+        ) as ChannelTone,
         bandwidthKHz: expectNullableNumber(
           record.bandwidthKHz,
           `modeProfiles[${index}].bandwidthKHz`,
@@ -100,38 +120,26 @@ function parseModeProfile(raw: unknown, index: number): ChannelModeProfile {
       return {
         mode: 'dmr',
         colourCode: expectNullableNumber(record.colourCode, `modeProfiles[${index}].colourCode`),
-        timeslot:
-          record.timeslot === null
-            ? null
-            : record.timeslot === 1 || record.timeslot === 2
-              ? record.timeslot
-              : (() => {
-                  throw new NativeYamlImportError(
-                    `modeProfiles[${index}].timeslot must be 1, 2, or null`,
-                  );
-                })(),
+        timeslot: parseNullableDmrTimeslot(record.timeslot, `modeProfiles[${index}].timeslot`),
         dmrId: expectNullableNumber(record.dmrId, `modeProfiles[${index}].dmrId`),
-        contactRef:
-          record.contactRef === null
-            ? null
-            : parseEntityRef(record.contactRef, `modeProfiles[${index}].contactRef`),
-        rxGroupListId:
-          record.rxGroupListId === null
-            ? null
-            : expectString(record.rxGroupListId, `modeProfiles[${index}].rxGroupListId`),
+        contactRef: parseNullableEntityRef(record.contactRef, `modeProfiles[${index}].contactRef`),
+        rxGroupListId: expectNullableString(
+          record.rxGroupListId,
+          `modeProfiles[${index}].rxGroupListId`,
+        ),
       };
     case 'dstar':
       return {
         mode: 'dstar',
-        urCall: expectString(record.urCall, `modeProfiles[${index}].urCall`),
-        rpt1Call: expectString(record.rpt1Call, `modeProfiles[${index}].rpt1Call`),
-        rpt2Call: expectString(record.rpt2Call, `modeProfiles[${index}].rpt2Call`),
+        urCall: expectOptionalString(record.urCall, `modeProfiles[${index}].urCall`, 'CQCQCQ'),
+        rpt1Call: expectOptionalString(record.rpt1Call, `modeProfiles[${index}].rpt1Call`),
+        rpt2Call: expectOptionalString(record.rpt2Call, `modeProfiles[${index}].rpt2Call`),
       };
     case 'ysf':
       return {
         mode: 'ysf',
         dgId: expectNullableNumber(record.dgId, `modeProfiles[${index}].dgId`),
-        wiresDtmfId: expectString(record.wiresDtmfId, `modeProfiles[${index}].wiresDtmfId`),
+        wiresDtmfId: expectOptionalString(record.wiresDtmfId, `modeProfiles[${index}].wiresDtmfId`),
       };
     case 'nxdn':
       return {
@@ -139,10 +147,10 @@ function parseModeProfile(raw: unknown, index: number): ChannelModeProfile {
         rxRan: expectNullableNumber(record.rxRan, `modeProfiles[${index}].rxRan`),
         txRan: expectNullableNumber(record.txRan, `modeProfiles[${index}].txRan`),
         unitId: expectNullableNumber(record.unitId, `modeProfiles[${index}].unitId`),
-        talkGroupRef:
-          record.talkGroupRef === null
-            ? null
-            : parseEntityRef(record.talkGroupRef, `modeProfiles[${index}].talkGroupRef`),
+        talkGroupRef: parseNullableEntityRef(
+          record.talkGroupRef,
+          `modeProfiles[${index}].talkGroupRef`,
+        ),
       };
     case 'tetra':
       return {
@@ -151,10 +159,10 @@ function parseModeProfile(raw: unknown, index: number): ChannelModeProfile {
         mnc: expectNullableNumber(record.mnc, `modeProfiles[${index}].mnc`),
         gssi: expectNullableNumber(record.gssi, `modeProfiles[${index}].gssi`),
         colorCode: expectNullableNumber(record.colorCode, `modeProfiles[${index}].colorCode`),
-        talkGroupRef:
-          record.talkGroupRef === null
-            ? null
-            : parseEntityRef(record.talkGroupRef, `modeProfiles[${index}].talkGroupRef`),
+        talkGroupRef: parseNullableEntityRef(
+          record.talkGroupRef,
+          `modeProfiles[${index}].talkGroupRef`,
+        ),
       };
     case 'p25':
     case 'm17':
@@ -168,7 +176,7 @@ function parseChannel(raw: unknown, index: number): Channel {
   const record = expectRecord(raw, `library.channels[${index}]`);
   const locationRaw = record.location;
   let location: Channel['location'] = null;
-  if (locationRaw !== null) {
+  if (locationRaw !== undefined && locationRaw !== null) {
     const loc = expectRecord(locationRaw, `library.channels[${index}].location`);
     location = {
       lat: expectNumber(loc.lat, `library.channels[${index}].location.lat`),
