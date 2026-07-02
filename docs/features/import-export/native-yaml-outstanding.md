@@ -1,17 +1,19 @@
 # Native YAML — outstanding
 
-**Tracking:** [#61](https://github.com/pskillen/codeplug-studio/issues/61) · [#62](https://github.com/pskillen/codeplug-studio/issues/62)
+**Tracking:** [#61](https://github.com/pskillen/codeplug-studio/issues/61) · [#62](https://github.com/pskillen/codeplug-studio/issues/62) · Epic [#35](https://github.com/pskillen/codeplug-studio/issues/35)
 
 Items discovered during execution — not the plan backlog.
 
-## Shipped (#59–#60)
+## Shipped (#56–#60)
 
-- `ProjectMeta.interchange` + `importProjectYaml` / `exportProjectYaml`
-- `replaceProject` cascade delete + `/import-export` local file UI
+- Native YAML adapter, services, local file UI — [#78](https://github.com/pskillen/codeplug-studio/pull/78), [#79](https://github.com/pskillen/codeplug-studio/pull/79)
 
-## Deferred (known scope — later Phase 3 tickets)
+## In flight (#61–#62)
 
-- [#61](https://github.com/pskillen/codeplug-studio/issues/61)–[#62](https://github.com/pskillen/codeplug-studio/issues/62) — Google Drive OAuth + browser
+- Google Drive OAuth port + browser UI — see [google-drive.md](google-drive.md)
+
+## Deferred (known scope — later)
+
 - Phase 4+ — CPS CSV adapters (OpenGD77, CHIRP, DM32); registry stubs only
 - Schema migration implementation (reject + stub message only in #58)
-- Full `test:system` matrix beyond native YAML interchange scenario
+- Dropbox / OneDrive cloud providers
