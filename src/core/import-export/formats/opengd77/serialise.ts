@@ -81,7 +81,10 @@ function channelRowValues(
     [CHANNEL_COL.type]: mapModeToOpenGd77ChannelType(mode),
     [CHANNEL_COL.rx]: formatOpenGd77FrequencyWire(channel.rxFrequency),
     [CHANNEL_COL.tx]: formatOpenGd77FrequencyWire(channel.txFrequency),
-    [CHANNEL_COL.bandwidth]: formatOpenGd77BandwidthWire(analog?.bandwidthKHz ?? null),
+    [CHANNEL_COL.bandwidth]: formatOpenGd77BandwidthWire(
+      analog?.bandwidthKHz ?? null,
+      analog != null,
+    ),
     [CHANNEL_COL.colourCode]: formatOpenGd77ColourCodeWire(dmr?.colourCode ?? null),
     [CHANNEL_COL.timeslot]: formatOpenGd77TimeslotWire(dmr?.timeslot ?? null),
     [CHANNEL_COL.contact]: contactRefWireName(assembled, dmr?.contactRef ?? null, mode),

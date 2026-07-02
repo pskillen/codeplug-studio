@@ -3,10 +3,14 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import type { Channel } from '@core/models/library.ts';
+import type { AssembledBuild } from '@core/services/assemble.ts';
+import { newChannel } from '@core/domain/factories.ts';
 import { parseProjectDocument } from '@core/import-export/formats/native-yaml/parse.ts';
 import { assemble } from '@core/services/assemble.ts';
 import { exportBuildAll } from '@core/services/exportBuild.ts';
 import { compareCsvRecords } from '../../../../test/csvRecordCompare.ts';
+import { parseCsv } from '../../../../test/csvParse.ts';
+import { CHANNEL_COL } from './columns.ts';
 import { serialiseChannels, serialiseZones } from './serialise.ts';
 import { collectOpenGd77ExportWarnings } from './warnings.ts';
 
@@ -16,6 +20,30 @@ const fixtureDir = join(
 );
 
 describe('OpenGD77 export serialise', () => {
+  function bandwidthForChannel(csv: string, channelName: string): string {
+    const rows = parseCsv(csv);
+    const headers = rows[0]!;
+    const nameIndex = headers.indexOf(CHANNEL_COL.name);
+    const bandwidthIndex = headers.indexOf(CHANNEL_COL.bandwidth);
+    const dataRow = rows.slice(1).find((row) => row[nameIndex] === channelName);
+    return dataRow?.[bandwidthIndex] ?? '';
+  }
+
+  function minimalAssembled(channel: Channel): AssembledBuild {
+    return {
+      buildId: 'build-1',
+      formatId: 'opengd77',
+      profileId: 'opengd77-1701',
+      buildName: 'Test',
+      channels: [{ entity: channel, wireName: channel.name }],
+      zones: [],
+      talkGroups: [],
+      digitalContacts: [],
+      analogContacts: [],
+      rxGroupLists: [],
+    };
+  }
+
   function loadAssembled() {
     const yaml = readFileSync(join(fixtureDir, 'with-format-build.yaml'), 'utf8');
     const aggregate = parseProjectDocument(yaml);
@@ -30,6 +58,64 @@ describe('OpenGD77 export serialise', () => {
     };
     return assemble(build, library);
   }
+
+  it('defaults analogue bandwidth to 12.5 kHz when unset', () => {
+    const channel = {
+      ...newChannel('proj', 'FM Default'),
+      rxFrequency: 145_750_000,
+      txFrequency: 145_150_000,
+      modeProfiles: [
+        {
+          mode: 'fm' as const,
+          squelch: null,
+          rxTone: 'none' as const,
+          txTone: 'none' as const,
+          bandwidthKHz: null,
+        },
+      ],
+    };
+    const csv = serialiseChannels(minimalAssembled(channel));
+    expect(bandwidthForChannel(csv, 'FM Default')).toBe('12.5');
+  });
+
+  it('exports explicit analogue bandwidth unchanged', () => {
+    const channel = {
+      ...newChannel('proj', 'FM Wide'),
+      rxFrequency: 145_750_000,
+      txFrequency: 145_150_000,
+      modeProfiles: [
+        {
+          mode: 'fm' as const,
+          squelch: null,
+          rxTone: 'none' as const,
+          txTone: 'none' as const,
+          bandwidthKHz: 25,
+        },
+      ],
+    };
+    const csv = serialiseChannels(minimalAssembled(channel));
+    expect(bandwidthForChannel(csv, 'FM Wide')).toBe('25');
+  });
+
+  it('leaves bandwidth empty for digital-only rows', () => {
+    const channel = {
+      ...newChannel('proj', 'DMR Only'),
+      rxFrequency: 430_850_000,
+      txFrequency: 438_450_000,
+      modeProfiles: [
+        {
+          mode: 'dmr' as const,
+          colourCode: 1,
+          timeslot: 1 as const,
+          dmrId: 123,
+          contactRef: null,
+          rxGroupListId: null,
+        },
+      ],
+    };
+    const csv = serialiseChannels(minimalAssembled(channel));
+    expect(bandwidthForChannel(csv, 'DMR Only')).toBe('');
+  });
 
   it('serialises channel wire names from assemble projection', () => {
     const assembled = loadAssembled();
