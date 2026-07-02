@@ -10,8 +10,7 @@ import type {
 import type { ProjectMeta } from '@core/models/project.ts';
 
 export type PutResult =
-  | { ok: true; revision: number }
-  | { ok: false; reason: 'revision_conflict' | 'not_found' };
+  { ok: true; revision: number } | { ok: false; reason: 'revision_conflict' | 'not_found' };
 
 /** Core-local seed shape — mirrors integrations {@link ProjectSeed} without importing it. */
 export interface ProjectSeed {

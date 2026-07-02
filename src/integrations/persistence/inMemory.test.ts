@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { newChannel, newFormatBuild, newProjectMeta, newTalkGroup } from '@core/domain/factories.ts';
+import {
+  newChannel,
+  newFormatBuild,
+  newProjectMeta,
+  newTalkGroup,
+} from '@core/domain/factories.ts';
 import { InMemoryProjectPersistence } from './inMemory.ts';
 import type { PersistenceChange } from './types.ts';
 

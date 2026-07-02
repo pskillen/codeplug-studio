@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { getImportAdapter } from '@core/import-export/registry.ts';
+import { isSingleFileProjectImportAdapter } from '@core/import-export/importAdapter.ts';
 import { exportProjectYaml } from '@core/services/exportProjectYaml.ts';
 import { importProjectYaml } from '@core/services/importProjectYaml.ts';
 import type { ProjectInterchangePort } from '@core/services/projectInterchangePort.ts';
@@ -40,7 +41,11 @@ describe('native YAML interchange system', () => {
     expect(reloaded).not.toBeNull();
 
     const reloadedAggregate = seedToAggregate(reloaded!);
-    const parsedFromExport = getImportAdapter('native-yaml').parseDocument(exported.content).project;
+    const importAdapter = getImportAdapter('native-yaml');
+    if (!isSingleFileProjectImportAdapter(importAdapter)) {
+      throw new Error('expected single-file import adapter');
+    }
+    const parsedFromExport = importAdapter.parseDocument(exported.content).project;
     // Interchange metadata is written during export before replace reload.
     expect(reloadedAggregate.meta.interchange?.localFile?.fileName).toBe('north-wales.yaml');
     expect(reloadedAggregate.meta.interchange?.localFile?.exportedAt).toBeTruthy();

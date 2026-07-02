@@ -1,8 +1,10 @@
 import { ListPage, PageSection, PageSectionGrid } from '../../components/ui/index.ts';
 import ExportProjectYamlPanel from '../../components/interchange/ExportProjectYamlPanel.tsx';
 import ImportYamlIntoActivePanel from '../../components/interchange/ImportYamlIntoActivePanel.tsx';
+import { useProjects } from '../../state/useProjects.ts';
 
 export default function InterchangePage() {
+  const { activeProjectId } = useProjects();
   return (
     <ListPage
       title="Interchange"
@@ -13,7 +15,7 @@ export default function InterchangePage() {
           <ImportYamlIntoActivePanel />
         </PageSection>
         <PageSection title="Export YAML">
-          <ExportProjectYamlPanel />
+          <ExportProjectYamlPanel key={activeProjectId ?? 'none'} />
         </PageSection>
       </PageSectionGrid>
     </ListPage>

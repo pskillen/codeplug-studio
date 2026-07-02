@@ -171,16 +171,23 @@ export class InMemoryProjectPersistence implements ProjectPersistence {
   async loadProjectSeed(projectId: string): Promise<ProjectSeed | null> {
     const meta = await this.loadProjectMeta(projectId);
     if (!meta) return null;
-    const [channels, zones, talkGroups, digitalContacts, analogContacts, rxGroupLists, formatBuilds] =
-      await Promise.all([
-        this.listChannels(projectId),
-        this.listZones(projectId),
-        this.listTalkGroups(projectId),
-        this.listDigitalContacts(projectId),
-        this.listAnalogContacts(projectId),
-        this.listRxGroupLists(projectId),
-        this.listFormatBuilds(projectId),
-      ]);
+    const [
+      channels,
+      zones,
+      talkGroups,
+      digitalContacts,
+      analogContacts,
+      rxGroupLists,
+      formatBuilds,
+    ] = await Promise.all([
+      this.listChannels(projectId),
+      this.listZones(projectId),
+      this.listTalkGroups(projectId),
+      this.listDigitalContacts(projectId),
+      this.listAnalogContacts(projectId),
+      this.listRxGroupLists(projectId),
+      this.listFormatBuilds(projectId),
+    ]);
     return {
       meta,
       channels,

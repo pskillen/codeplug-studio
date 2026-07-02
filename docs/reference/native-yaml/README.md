@@ -38,15 +38,15 @@ Every stored entity includes:
 
 ## `project` (`ProjectMeta`)
 
-| Field                      | Type              | Required |
-| -------------------------- | ----------------- | -------- |
-| _(persistable row fields)_ |                   | yes      |
-| `name`                     | string            | yes      |
-| `description`              | string            | yes      |
-| `notes`                    | string            | yes      |
-| `author`                   | string            | yes      |
-| `createdAt`                | string (ISO 8601) | yes      |
-| `interchange`              | `ProjectInterchange` | no    |
+| Field                      | Type                 | Required |
+| -------------------------- | -------------------- | -------- |
+| _(persistable row fields)_ |                      | yes      |
+| `name`                     | string               | yes      |
+| `description`              | string               | yes      |
+| `notes`                    | string               | yes      |
+| `author`                   | string               | yes      |
+| `createdAt`                | string (ISO 8601)    | yes      |
+| `interchange`              | `ProjectInterchange` | no       |
 
 ### `interchange` (`ProjectInterchange`)
 

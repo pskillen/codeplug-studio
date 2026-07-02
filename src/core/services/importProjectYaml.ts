@@ -1,10 +1,14 @@
 import { getImportAdapter } from '@core/import-export/registry.ts';
+import { isSingleFileProjectImportAdapter } from '@core/import-export/importAdapter.ts';
 import type { ProjectInterchangePort } from './projectInterchangePort.ts';
-import { aggregateToSeed, normaliseSeedForProject, reassignSeedProjectId } from './projectSeedMapping.ts';
+import {
+  aggregateToSeed,
+  normaliseSeedForProject,
+  reassignSeedProjectId,
+} from './projectSeedMapping.ts';
 
 export type ImportProjectYamlMode =
-  | { kind: 'createNew' }
-  | { kind: 'replaceExisting'; projectId: string };
+  { kind: 'createNew' } | { kind: 'replaceExisting'; projectId: string };
 
 export interface ImportProjectYamlResult {
   projectId: string;
@@ -17,6 +21,9 @@ export async function importProjectYaml(
   mode: ImportProjectYamlMode,
 ): Promise<ImportProjectYamlResult> {
   const adapter = getImportAdapter('native-yaml');
+  if (!isSingleFileProjectImportAdapter(adapter)) {
+    throw new Error('native-yaml import adapter must be single-file');
+  }
   const { project: aggregate, warnings } = adapter.parseDocument(yamlText);
   let seed = aggregateToSeed(aggregate);
 

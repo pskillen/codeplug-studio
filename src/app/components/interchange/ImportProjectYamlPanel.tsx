@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Alert, Stack } from '@mantine/core';
+import { Stack } from '@mantine/core';
 import { useNavigate } from 'react-router-dom';
 import { importProjectFromYaml } from '../../services/projectInterchangeService.ts';
 import { useProjects } from '../../state/useProjects.ts';

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Alert, Button, Stack, TextInput } from '@mantine/core';
 import {
   defaultLocalExportFileName,
@@ -10,18 +10,13 @@ import { useProjects } from '../../state/useProjects.ts';
 
 export default function ExportProjectYamlPanel() {
   const { activeProjectId, activeProject, refreshProjects } = useProjects();
-  const [fileName, setFileName] = useState('');
+  const suggestedFileName = activeProject
+    ? (suggestExportDestination(activeProject, 'localFile')?.fileName ??
+      defaultLocalExportFileName(activeProject.name))
+    : '';
+  const [fileName, setFileName] = useState(suggestedFileName);
   const [error, setError] = useState<string | null>(null);
   const [exporting, setExporting] = useState(false);
-
-  useEffect(() => {
-    if (!activeProject) {
-      setFileName('');
-      return;
-    }
-    const suggested = suggestExportDestination(activeProject, 'localFile');
-    setFileName(suggested?.fileName ?? defaultLocalExportFileName(activeProject.name));
-  }, [activeProject]);
 
   async function handleExport() {
     if (!activeProjectId) return;

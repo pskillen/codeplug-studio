@@ -31,14 +31,14 @@ Single entry point for production call order — reuse in new scenarios and futu
 
 ## Scenario matrix
 
-| Scenario                       | Proves                                      | Status   |
-| ------------------------------ | ------------------------------------------- | -------- |
-| Native YAML export → replace   | Services + persistence + interchange meta   | Shipped  |
-| Import into empty library      | Entities + warnings                         | Planned  |
-| Import merge vs replace        | Operator policy honoured                    | Planned  |
-| CRUD between import and export | User edits appear on wire                   | Planned  |
-| Multi-project isolation        | Library A not visible in project B          | Planned  |
-| Persistence reload             | IndexedDB schema migration + data integrity | Planned  |
+| Scenario                       | Proves                                      | Status  |
+| ------------------------------ | ------------------------------------------- | ------- |
+| Native YAML export → replace   | Services + persistence + interchange meta   | Shipped |
+| Import into empty library      | Entities + warnings                         | Planned |
+| Import merge vs replace        | Operator policy honoured                    | Planned |
+| CRUD between import and export | User edits appear on wire                   | Planned |
+| Multi-project isolation        | Library A not visible in project B          | Planned |
+| Persistence reload             | IndexedDB schema migration + data integrity | Planned |
 
 ## Code anchors
 

@@ -19,35 +19,35 @@ IndexedDB remains the live edit store with per-entity revision concurrency. YAML
 
 ## What is in the document
 
-| Section        | Internal type   | Notes                                                      |
-| -------------- | --------------- | ---------------------------------------------------------- |
-| `project`      | `ProjectMeta`   | Operator metadata row; optional `interchange` export memory  |
-| `library`      | `Library`       | Channels, zones, contacts, talk groups, RX lists           |
-| `formatBuilds` | `FormatBuild[]` | Per-target builds with selections, overrides, trait layout |
+| Section        | Internal type   | Notes                                                       |
+| -------------- | --------------- | ----------------------------------------------------------- |
+| `project`      | `ProjectMeta`   | Operator metadata row; optional `interchange` export memory |
+| `library`      | `Library`       | Channels, zones, contacts, talk groups, RX lists            |
+| `formatBuilds` | `FormatBuild[]` | Per-target builds with selections, overrides, trait layout  |
 
 Envelope fields `schemaVersion` and `studioSchemaVersion` are documented in the tier 3 reference.
 
 ## Code anchors
 
-| Module               | Role                                                          |
-| -------------------- | ------------------------------------------------------------- |
-| `projectDocument.ts` | `StudioProjectDocument`, `ProjectAggregate`, envelope helpers |
-| `serialise.ts`       | `ProjectAggregate` → YAML string                              |
-| `parse.ts`           | YAML string → structural parse                                |
-| `validate.ts`        | Schema version, FK integrity → `ProjectAggregate`             |
-| `adapter.ts`         | Registry-facing import/export adapter                         |
-| `importProjectYaml.ts` | Parse → seed → `seedProject` / `replaceProject`             |
-| `exportProjectYaml.ts` | `loadProjectSeed` → serialise; optional `interchange` meta  |
-| `projectInterchangeService.ts` | App facade over persistence singleton               |
+| Module                         | Role                                                          |
+| ------------------------------ | ------------------------------------------------------------- |
+| `projectDocument.ts`           | `StudioProjectDocument`, `ProjectAggregate`, envelope helpers |
+| `serialise.ts`                 | `ProjectAggregate` → YAML string                              |
+| `parse.ts`                     | YAML string → structural parse                                |
+| `validate.ts`                  | Schema version, FK integrity → `ProjectAggregate`             |
+| `adapter.ts`                   | Registry-facing import/export adapter                         |
+| `importProjectYaml.ts`         | Parse → seed → `seedProject` / `replaceProject`               |
+| `exportProjectYaml.ts`         | `loadProjectSeed` → serialise; optional `interchange` meta    |
+| `projectInterchangeService.ts` | App facade over persistence singleton                         |
 
 `ProjectAggregate` in core mirrors `ProjectSeed` in `integrations/persistence/types.ts`. Application services bridge the two via `ProjectInterchangePort`.
 
 ## Import modes (#59)
 
-| Mode               | Behaviour                                                                 |
-| ------------------ | ------------------------------------------------------------------------- |
-| `createNew`        | Fresh `projectId` on meta and every row; `seedProject`                    |
-| `replaceExisting`  | YAML `project.id` must match active project; `replaceProject` (full wipe) |
+| Mode              | Behaviour                                                                 |
+| ----------------- | ------------------------------------------------------------------------- |
+| `createNew`       | Fresh `projectId` on meta and every row; `seedProject`                    |
+| `replaceExisting` | YAML `project.id` must match active project; `replaceProject` (full wipe) |
 
 No merge heuristics or CPS `importMerge` — native YAML is model-first replace only.
 
@@ -79,7 +79,7 @@ loadProjectSeed → ProjectAggregate
 | Export serialiser (#57)          | Shipped |
 | Import parser + validation (#58) | Shipped |
 | Services (#59)                   | Shipped |
-| Local file UI (#60)              | In progress |
+| Local file UI (#60)              | Shipped |
 
 ## Testing
 

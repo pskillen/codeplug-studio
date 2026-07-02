@@ -17,6 +17,7 @@ ProjectProvider
       └─ AppLayout (AppShell: header + AppNav + SectionNav + Outlet + footer)
          ├─ /          Projects (lifecycle UI)
          ├─ /library/* Per-entity library list routes (see library docs)
+         ├─ /interchange Native YAML import/export (active project)
          ├─ /summary   Library summary
          ├─ /map       _(redirect → /library/channels)_
          ├─ /reference Reference tools
@@ -42,7 +43,7 @@ UI primitives live in `src/app/components/ui/` (ported from codeplug-tool). Reus
 
 | Path                                          | Surface                 | Status                                                                                                                                                                   |
 | --------------------------------------------- | ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `/`                                           | Projects                | Lifecycle UI (create/switch/rename/del)                                                                                                                                  |
+| `/`                                           | Projects                | Lifecycle UI (create/switch/rename/delete) + **Import from YAML** ([#60](https://github.com/pskillen/codeplug-studio/issues/60))                                         |
 | `/library`                                    | _(redirect)_            | → `/library/channels`                                                                                                                                                    |
 | `/library/channels`                           | Channels list           | DataTable + filters + map — [#20](https://github.com/pskillen/codeplug-studio/issues/20), [#24](https://github.com/pskillen/codeplug-studio/issues/24)                   |
 | `/library/zones`                              | Zones list              | DataTable + map — [#20](https://github.com/pskillen/codeplug-studio/issues/20)                                                                                           |
@@ -50,6 +51,7 @@ UI primitives live in `src/app/components/ui/` (ported from codeplug-tool). Reus
 | `/library/contacts`                           | Contacts list           | Digital + analog DataTables — [#20](https://github.com/pskillen/codeplug-studio/issues/20)                                                                               |
 | `/library/rx-group-lists`                     | RX group lists list     | DataTable — [#20](https://github.com/pskillen/codeplug-studio/issues/20)                                                                                                 |
 | `/library/:kind/:id`                          | Entity editor           | CRUD forms — [#10](https://github.com/pskillen/codeplug-studio/issues/10)                                                                                                |
+| `/interchange`                                | Interchange             | Native YAML export + replace import — [#59](https://github.com/pskillen/codeplug-studio/issues/59), [#60](https://github.com/pskillen/codeplug-studio/issues/60)         |
 | `/library/channels/add-from-ukrepeater`       | Add from ukrepeater.net | [repeater-directories](../repeater-directories/README.md)                                                                                                                |
 | `/library/channels/add-from-brandmeister`     | Add from BrandMeister   | [repeater-directories](../repeater-directories/README.md)                                                                                                                |
 | `/map`                                        | _(redirect)_            | → `/library/channels` (legacy [#11](https://github.com/pskillen/codeplug-studio/issues/11))                                                                              |
@@ -78,13 +80,13 @@ Library list routes each have a dedicated section-nav entry (longest-prefix matc
 
 State flows through a thin app-state adapter, `ProjectStore` (`src/app/state/projectStore.ts`), over the `ProjectPersistence` port:
 
-| Operation | Behaviour                                                    |
-| --------- | ------------------------------------------------------------ |
-| Create    | `newProjectMeta` + empty library seeded; becomes active      |
-| List      | Sorted by name from the port                                 |
-| Switch    | Sets the active project id (persisted to `localStorage`)     |
-| Rename    | Loads meta, `putProjectMeta` with optimistic revision        |
-| Delete    | Removes the project metadata row; clears active id if it was |
+| Operation | Behaviour                                                                         |
+| --------- | --------------------------------------------------------------------------------- |
+| Create    | `newProjectMeta` + empty library seeded; becomes active                           |
+| List      | Sorted by name from the port                                                      |
+| Switch    | Sets the active project id (persisted to `localStorage`)                          |
+| Rename    | Loads meta, `putProjectMeta` with optimistic revision                             |
+| Delete    | Cascades all project, library, and format-build rows; clears active id if deleted |
 
 ## Persistence note
 

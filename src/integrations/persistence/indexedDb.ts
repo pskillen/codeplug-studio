@@ -200,16 +200,23 @@ export class IndexedDbProjectPersistence implements ProjectPersistence {
   async loadProjectSeed(projectId: string): Promise<ProjectSeed | null> {
     const meta = await this.loadProjectMeta(projectId);
     if (!meta) return null;
-    const [channels, zones, talkGroups, digitalContacts, analogContacts, rxGroupLists, formatBuilds] =
-      await Promise.all([
-        this.listChannels(projectId),
-        this.listZones(projectId),
-        this.listTalkGroups(projectId),
-        this.listDigitalContacts(projectId),
-        this.listAnalogContacts(projectId),
-        this.listRxGroupLists(projectId),
-        this.listFormatBuilds(projectId),
-      ]);
+    const [
+      channels,
+      zones,
+      talkGroups,
+      digitalContacts,
+      analogContacts,
+      rxGroupLists,
+      formatBuilds,
+    ] = await Promise.all([
+      this.listChannels(projectId),
+      this.listZones(projectId),
+      this.listTalkGroups(projectId),
+      this.listDigitalContacts(projectId),
+      this.listAnalogContacts(projectId),
+      this.listRxGroupLists(projectId),
+      this.listFormatBuilds(projectId),
+    ]);
     return {
       meta,
       channels,
@@ -374,11 +381,6 @@ export class IndexedDbProjectPersistence implements ProjectPersistence {
     const db = await this.db();
     await new Promise<void>((resolve, reject) => {
       const tx = db.transaction(STORE_NAMES, 'readwrite');
-      let pendingStores = STORE_NAMES.length;
-
-      const onStoreDone = () => {
-        pendingStores -= 1;
-      };
 
       for (const storeName of STORE_NAMES) {
         const os = tx.objectStore(storeName);
@@ -388,8 +390,6 @@ export class IndexedDbProjectPersistence implements ProjectPersistence {
           if (cursor) {
             os.delete(cursor.primaryKey);
             cursor.continue();
-          } else {
-            onStoreDone();
           }
         };
         req.onerror = () => reject(req.error);

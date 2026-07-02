@@ -29,7 +29,9 @@ vi.mock('../../state/useProjects.ts', () => ({
       description: '',
       notes: '',
       author: '',
-      interchange: { localFile: { fileName: 'north-wales.yaml', exportedAt: '2026-01-02T00:00:00.000Z' } },
+      interchange: {
+        localFile: { fileName: 'north-wales.yaml', exportedAt: '2026-01-02T00:00:00.000Z' },
+      },
     },
     refreshProjects,
     switchProject: vi.fn(),

@@ -1,6 +1,11 @@
 import 'fake-indexeddb/auto';
 import { afterEach, describe, expect, it } from 'vitest';
-import { newChannel, newFormatBuild, newProjectMeta, newTalkGroup } from '@core/domain/factories.ts';
+import {
+  newChannel,
+  newFormatBuild,
+  newProjectMeta,
+  newTalkGroup,
+} from '@core/domain/factories.ts';
 import { IndexedDbProjectPersistence } from './indexedDb.ts';
 import type { PersistenceChange } from './types.ts';
 

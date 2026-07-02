@@ -1,4 +1,5 @@
 import { getExportAdapter } from '@core/import-export/registry.ts';
+import { isSingleFileProjectExportAdapter } from '@core/import-export/exportAdapter.ts';
 import type { ExportDestinationKind } from '@core/models/interchange.ts';
 import {
   defaultLocalExportFileName,
@@ -34,9 +35,7 @@ export async function exportProjectYaml(
     ? suggestExportDestination(seed.meta, options.recordDestination)
     : null;
   const fileName =
-    options.fileName ??
-    suggested?.fileName ??
-    defaultLocalExportFileName(seed.meta.name);
+    options.fileName ?? suggested?.fileName ?? defaultLocalExportFileName(seed.meta.name);
 
   let metaForExport = seed.meta;
   if (options.recordDestination === 'localFile') {
@@ -45,6 +44,9 @@ export async function exportProjectYaml(
 
   const aggregate = seedToAggregate({ ...seed, meta: metaForExport });
   const adapter = getExportAdapter('native-yaml');
+  if (!isSingleFileProjectExportAdapter(adapter)) {
+    throw new Error('native-yaml export adapter must be single-file');
+  }
   const { content, warnings } = adapter.serialise(aggregate);
 
   if (options.recordDestination === 'localFile') {

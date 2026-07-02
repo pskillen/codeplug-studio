@@ -3,7 +3,11 @@ import { MantineProvider } from '@mantine/core';
 import { render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { newProjectMeta } from '@core/domain/factories.ts';
-import { ACTIVE_PROJECT_KEY, MAPBOX_TOKEN_KEY, saveActiveProjectId } from '@integrations/preferences/index.ts';
+import {
+  ACTIVE_PROJECT_KEY,
+  MAPBOX_TOKEN_KEY,
+  saveActiveProjectId,
+} from '@integrations/preferences/index.ts';
 import App from './App.tsx';
 import ProjectProvider from './state/ProjectProvider.tsx';
 import { OperatorPositionProvider } from './state/operatorPosition.tsx';

@@ -6,11 +6,11 @@ Shared file picker for import panels — reads text via `readTextFile` and deleg
 
 ## Props
 
-| Prop | Type | Description |
-| --- | --- | --- |
-| `onFileText` | `(text, fileName) => void \| Promise<void>` | Called with file contents after validation |
-| `error` | `string \| null` | Optional external error (e.g. import service failure) |
-| `disabled` | `boolean` | Disables interaction while parent is busy |
+| Prop         | Type                                        | Description                                           |
+| ------------ | ------------------------------------------- | ----------------------------------------------------- |
+| `onFileText` | `(text, fileName) => void \| Promise<void>` | Called with file contents after validation            |
+| `error`      | `string \| null`                            | Optional external error (e.g. import service failure) |
+| `disabled`   | `boolean`                                   | Disables interaction while parent is busy             |
 
 ## Usage
 
