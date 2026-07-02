@@ -8,7 +8,7 @@ import {
   MAPBOX_TOKEN_KEY,
   saveActiveProjectId,
 } from '@integrations/preferences/index.ts';
-import App from './App.tsx';
+import App, { appRouter } from './App.tsx';
 import ProjectProvider from './state/ProjectProvider.tsx';
 import { OperatorPositionProvider } from './state/operatorPosition.tsx';
 import { persistence } from './state/persistence.ts';
@@ -60,7 +60,11 @@ function createLocalStorageMock() {
 }
 
 function renderApp(initialRoute = '/') {
-  window.location.hash = initialRoute.startsWith('#') ? initialRoute : `#${initialRoute}`;
+  const path = initialRoute.startsWith('#') ? initialRoute.slice(1) : initialRoute;
+  window.location.hash = `#${path}`;
+  if (appRouter.state.location.pathname !== path) {
+    void appRouter.navigate(path, { replace: true });
+  }
   return render(
     <MantineProvider theme={theme} defaultColorScheme="dark">
       <ProjectProvider>

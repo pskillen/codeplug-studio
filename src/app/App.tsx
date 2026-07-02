@@ -1,4 +1,4 @@
-import { HashRouter, Navigate, Route, Routes } from 'react-router-dom';
+import { createHashRouter, Navigate, RouterProvider } from 'react-router-dom';
 import AppLayout from './components/AppLayout/AppLayout.tsx';
 import RequireActiveProject from './components/RequireActiveProject/RequireActiveProject.tsx';
 import HomePage from './routes/HomePage.tsx';
@@ -39,65 +39,73 @@ function MapRedirect() {
   return <Navigate to="/library/channels" replace />;
 }
 
+export const appRouter = createHashRouter([
+  {
+    element: <AppLayout />,
+    children: [
+      { path: '/', element: <HomePage /> },
+      { path: '/settings', element: <SettingsPage /> },
+      { path: '/help', element: <HelpPage /> },
+      { path: '/reference', element: <ReferenceIndexPage /> },
+      { path: '/reference/maidenhead', element: <MaidenheadReferencePage /> },
+      { path: '/reference/bands', element: <BandsReferencePage /> },
+      { path: '/styleguide', element: <StyleguidePage /> },
+      { path: '/debug', element: <DebugIndexPage /> },
+      { path: '/debug/indexed-db', element: <DebugIndexedDbPage /> },
+      { path: '/debug/indexed-db/:storeName', element: <DebugIndexedDbStorePage /> },
+      {
+        path: '/debug/indexed-db/:storeName/:projectId/:id',
+        element: <DebugIndexedDbRowViewerPage />,
+      },
+      { path: '/debug/local-storage', element: <DebugLocalStoragePage /> },
+      {
+        path: '/debug/local-storage/:storageKey',
+        element: <DebugLocalStorageViewerPage />,
+      },
+      {
+        element: <RequireActiveProject />,
+        children: [
+          { path: '/library', element: <Navigate to="/library/channels" replace /> },
+          { path: '/library/channels', element: <ChannelsListPage /> },
+          { path: '/library/zones', element: <ZonesListPage /> },
+          { path: '/library/talk-groups', element: <TalkGroupsListPage /> },
+          { path: '/library/contacts', element: <ContactsListPage /> },
+          { path: '/library/rx-group-lists', element: <RxGroupListsListPage /> },
+          {
+            path: '/library/channels/add-from-ukrepeater',
+            element: <AddFromUkRepeaterPage />,
+          },
+          {
+            path: '/library/channels/add-from-brandmeister',
+            element: <AddFromBrandmeisterPage />,
+          },
+          { path: '/library/:kind/:id', element: <EntityEditorPage /> },
+          { path: '/builds', element: <BuildsListPage /> },
+          { path: '/builds/new', element: <NewBuildPage /> },
+          {
+            path: '/builds/:id',
+            element: <BuildLayout />,
+            children: [
+              { index: true, element: <Navigate to="overview" replace /> },
+              { path: 'overview', element: <BuildOverviewPage /> },
+              { path: 'channels', element: <BuildChannelsWirePage /> },
+              { path: 'zones', element: <BuildZonesWirePage /> },
+              { path: 'talk-groups', element: <BuildTalkGroupsWirePage /> },
+              { path: 'contacts', element: <BuildContactsWirePage /> },
+              { path: 'rx-group-lists', element: <BuildRxGroupListsWirePage /> },
+              { path: 'export', element: <BuildExportPage /> },
+            ],
+          },
+          { path: '/import-export', element: <ImportExportPage /> },
+          { path: '/summary', element: <SummaryPage /> },
+          { path: '/reports', element: <Navigate to="/summary" replace /> },
+          { path: '/map', element: <MapRedirect /> },
+        ],
+      },
+    ],
+  },
+]);
+
 export default function App() {
-  return (
-    <HashRouter>
-      <Routes>
-        <Route element={<AppLayout />}>
-          <Route path="/" element={<HomePage />} />
-          <Route path="/settings" element={<SettingsPage />} />
-          <Route path="/help" element={<HelpPage />} />
-          <Route path="/reference" element={<ReferenceIndexPage />} />
-          <Route path="/reference/maidenhead" element={<MaidenheadReferencePage />} />
-          <Route path="/reference/bands" element={<BandsReferencePage />} />
-          <Route path="/styleguide" element={<StyleguidePage />} />
-          <Route path="/debug" element={<DebugIndexPage />} />
-          <Route path="/debug/indexed-db" element={<DebugIndexedDbPage />} />
-          <Route path="/debug/indexed-db/:storeName" element={<DebugIndexedDbStorePage />} />
-          <Route
-            path="/debug/indexed-db/:storeName/:projectId/:id"
-            element={<DebugIndexedDbRowViewerPage />}
-          />
-          <Route path="/debug/local-storage" element={<DebugLocalStoragePage />} />
-          <Route
-            path="/debug/local-storage/:storageKey"
-            element={<DebugLocalStorageViewerPage />}
-          />
-          <Route element={<RequireActiveProject />}>
-            <Route path="/library" element={<Navigate to="/library/channels" replace />} />
-            <Route path="/library/channels" element={<ChannelsListPage />} />
-            <Route path="/library/zones" element={<ZonesListPage />} />
-            <Route path="/library/talk-groups" element={<TalkGroupsListPage />} />
-            <Route path="/library/contacts" element={<ContactsListPage />} />
-            <Route path="/library/rx-group-lists" element={<RxGroupListsListPage />} />
-            <Route
-              path="/library/channels/add-from-ukrepeater"
-              element={<AddFromUkRepeaterPage />}
-            />
-            <Route
-              path="/library/channels/add-from-brandmeister"
-              element={<AddFromBrandmeisterPage />}
-            />
-            <Route path="/library/:kind/:id" element={<EntityEditorPage />} />
-            <Route path="/builds" element={<BuildsListPage />} />
-            <Route path="/builds/new" element={<NewBuildPage />} />
-            <Route path="/builds/:id" element={<BuildLayout />}>
-              <Route index element={<Navigate to="overview" replace />} />
-              <Route path="overview" element={<BuildOverviewPage />} />
-              <Route path="channels" element={<BuildChannelsWirePage />} />
-              <Route path="zones" element={<BuildZonesWirePage />} />
-              <Route path="talk-groups" element={<BuildTalkGroupsWirePage />} />
-              <Route path="contacts" element={<BuildContactsWirePage />} />
-              <Route path="rx-group-lists" element={<BuildRxGroupListsWirePage />} />
-              <Route path="export" element={<BuildExportPage />} />
-            </Route>
-            <Route path="/import-export" element={<ImportExportPage />} />
-            <Route path="/summary" element={<SummaryPage />} />
-            <Route path="/reports" element={<Navigate to="/summary" replace />} />
-            <Route path="/map" element={<MapRedirect />} />
-          </Route>
-        </Route>
-      </Routes>
-    </HashRouter>
-  );
+  return <RouterProvider router={appRouter} />;
 }
