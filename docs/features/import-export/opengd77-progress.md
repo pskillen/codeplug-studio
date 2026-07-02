@@ -16,7 +16,7 @@
 
 ## Slice 1 — Progress tracking kickoff
 
-**Status:** In progress
+**Status:** Complete
 
 **Delivered**
 
@@ -26,7 +26,15 @@
 
 ## Slice 2 — OpenGD77 radio profiles (#84)
 
-**Status:** Not started
+**Status:** Complete
+
+**Delivered**
+
+- `src/core/import-export/profileLadder.ts`
+- `src/core/import-export/formats/opengd77/profiles.ts` + tests
+- `src/core/import-export/formatProfiles.ts` — `getFormatProfiles('opengd77')`
+- `TRAIT_PROFILES` — `opengd77-md9600`
+- `docs/features/import-export/opengd77/README.md`
 
 ---
 
@@ -44,6 +52,5 @@
 
 ## Next
 
-- Port OpenGD77 profiles core (#84)
 - Build service, routes, and nav (#82)
 - Format catalog UI (#83)

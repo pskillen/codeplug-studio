@@ -23,11 +23,18 @@ describe('trait profiles', () => {
     expect(profile?.traits).toContain(BuildCapabilityTrait.PerChannelScanFlag);
   });
 
+  it('registers opengd77-md9600 with zone traits', () => {
+    const profile = traitProfileFor('opengd77-md9600');
+    expect(profile?.traits).toContain(BuildCapabilityTrait.ZoneGrouping);
+    expect(profile?.traits).toContain(BuildCapabilityTrait.ZoneAsScanList);
+  });
+
   it('has stable profile keys', () => {
     expect(Object.keys(TRAIT_PROFILES).sort()).toEqual([
       'chirp-uv5r',
       'dm32-default',
       'opengd77-1701',
+      'opengd77-md9600',
     ]);
   });
 });

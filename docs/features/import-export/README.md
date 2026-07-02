@@ -23,7 +23,7 @@ IndexedDB remains the **edit store**; YAML and Drive are portable layers on top 
 | Application services (`importProject`, `exportProject`) | Shipped | [#59](https://github.com/pskillen/codeplug-studio/issues/59) — `importProjectYaml` / `exportProjectYaml`                  |
 | Local file UI                                           | Shipped | [#60](https://github.com/pskillen/codeplug-studio/issues/60) — `/import-export`, Home import                              |
 | Google Drive                                            | Shipped | [#61](https://github.com/pskillen/codeplug-studio/issues/61)–[#62](https://github.com/pskillen/codeplug-studio/issues/62) |
-| OpenGD77 CSV                                            | Planned | Phase 4+ — registry slot `planned`                                                                                        |
+| OpenGD77 CSV                                            | Planned | Phase 4+ — registry slot `planned`; **radio profiles shipped** ([#84](https://github.com/pskillen/codeplug-studio/issues/84)) |
 | CHIRP CSV                                               | Planned | Phase 4+                                                                                                                  |
 | DM32 CSV                                                | Planned | Phase 4+                                                                                                                  |
 | qDMR YAML                                               | Planned | Out of Phase 3 scope                                                                                                      |
@@ -78,6 +78,9 @@ Wire mapping for CPS formats lives in `docs/reference/<format>/` — not here.
 | [native-yaml/README.md](native-yaml/README.md)                                 | Native YAML product behaviour and code anchors  |
 | [native-yaml-progress.md](native-yaml-progress.md)                             | Execution log for #56–#58                       |
 | [native-yaml-outstanding.md](native-yaml-outstanding.md)                       | Debt discovered during native YAML work         |
+| [opengd77/README.md](opengd77/README.md)                                       | OpenGD77 profiles and adapter behaviour         |
+| [opengd77-progress.md](opengd77-progress.md)                                   | Phase 4a execution log                          |
+| [opengd77-outstanding.md](opengd77-outstanding.md)                             | OpenGD77 debt and deferrals                     |
 | [../../reference/native-yaml/README.md](../../reference/native-yaml/README.md) | Tier 3 — YAML field tables and example document |
 
 ## Related
