@@ -27,6 +27,7 @@ Shared table for build wire preview pages: per-entity include toggle, display la
 ## Behaviour
 
 - **Include** — `Switch`; unchecked sets `excluded: true` on the build override (sparse storage).
+- **Display name** — library label, optional expansion note, and **Edit in library** link to the entity editor.
 - **Wire name** — local draft with explicit **Apply** (tick) and **Revert** (×) actions; Enter applies, Escape reverts; empty input uses the default name; hint shows clickable `Default: {generatedWireName}` to store the generated name as an explicit override. Unapplied drafts trigger a leave-page confirmation on wire preview routes.
 - Multi-mode channel expansion rows use composite override keys (`channelId:${modeSuffix}`).
 

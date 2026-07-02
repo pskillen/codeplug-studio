@@ -1,5 +1,6 @@
 import {
   ActionIcon,
+  Anchor,
   Group,
   Switch,
   Table,
@@ -10,7 +11,9 @@ import {
 } from '@mantine/core';
 import { IconCheck, IconX } from '@tabler/icons-react';
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import type { WirePreviewRow } from '@core/services/previewWireRows.ts';
+import { libraryEditPathForWirePreviewRow } from '../../lib/wirePreviewRowLinks.ts';
 import { ICON_SIZE_ACTION, ICON_STROKE } from '../../lib/iconSizes.ts';
 
 export interface WirePreviewTableProps {
@@ -199,6 +202,9 @@ export default function WirePreviewTable({
                   {row.expansionNote}
                 </Text>
               ) : null}
+              <Anchor component={Link} to={libraryEditPathForWirePreviewRow(row)} size="xs">
+                Edit in library
+              </Anchor>
             </Table.Td>
             <Table.Td>
               <WireNameOverrideInput
