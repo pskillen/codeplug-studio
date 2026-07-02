@@ -1,18 +1,11 @@
 import { newId } from '../models/ids.ts';
-import type {
-  ChannelSelection,
-  ContactSelection,
-  FormatBuild,
-  Library,
-  RxGroupListSelection,
-  TalkGroupSelection,
-  ZoneSelection,
-} from '../models/index.ts';
+import type { BuildEntityOverride, FormatBuild } from '../models/index.ts';
 import type { ProjectMeta } from '../models/project.ts';
 import type {
   AnalogContact,
   Channel,
   DigitalContact,
+  Library,
   RxGroupList,
   TalkGroup,
   Zone,
@@ -32,19 +25,19 @@ export function emptyLibrary(): Library {
   };
 }
 
-function emptyFormatBuildSelections(): {
-  channelSelections: ChannelSelection[];
-  zoneSelections: ZoneSelection[];
-  talkGroupSelections: TalkGroupSelection[];
-  rxGroupListSelections: RxGroupListSelection[];
-  contactSelections: ContactSelection[];
+function emptyFormatBuildOverrides(): {
+  channelOverrides: BuildEntityOverride[];
+  zoneOverrides: BuildEntityOverride[];
+  talkGroupOverrides: BuildEntityOverride[];
+  rxGroupListOverrides: BuildEntityOverride[];
+  contactOverrides: BuildEntityOverride[];
 } {
   return {
-    channelSelections: [],
-    zoneSelections: [],
-    talkGroupSelections: [],
-    rxGroupListSelections: [],
-    contactSelections: [],
+    channelOverrides: [],
+    zoneOverrides: [],
+    talkGroupOverrides: [],
+    rxGroupListOverrides: [],
+    contactOverrides: [],
   };
 }
 
@@ -78,7 +71,7 @@ export function newFormatBuild(projectId: string, profileId: string, name?: stri
     profileId: profile.profileId,
     name: name ?? profile.label,
     layout: emptyTraitLayout(),
-    ...emptyFormatBuildSelections(),
+    ...emptyFormatBuildOverrides(),
   };
 }
 

@@ -48,11 +48,11 @@ const opengd77Build: FormatBuild = {
   profileId: 'opengd77-1701',
   revision: 1,
   updatedAt: '2026-01-01T00:00:00.000Z',
-  channelSelections: [],
-  zoneSelections: [],
-  contactSelections: [],
-  talkGroupSelections: [],
-  rxGroupListSelections: [],
+  channelOverrides: [],
+  zoneOverrides: [],
+  contactOverrides: [],
+  talkGroupOverrides: [],
+  rxGroupListOverrides: [],
   layout: { sections: [] },
 };
 

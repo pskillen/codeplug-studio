@@ -36,11 +36,11 @@ export function buildProfileOptionsForFormat(formatId: FormatId): BuildProfileOp
 export function buildHasLayoutData(build: FormatBuild): boolean {
   if (build.layout.sections.length > 0) return true;
   return (
-    build.channelSelections.length > 0 ||
-    build.zoneSelections.length > 0 ||
-    build.talkGroupSelections.length > 0 ||
-    build.rxGroupListSelections.length > 0 ||
-    build.contactSelections.length > 0
+    build.channelOverrides.length > 0 ||
+    build.zoneOverrides.length > 0 ||
+    build.talkGroupOverrides.length > 0 ||
+    build.rxGroupListOverrides.length > 0 ||
+    build.contactOverrides.length > 0
   );
 }
 

@@ -1,0 +1,134 @@
+import type { BuildEntityOverride } from '@core/models/formatBuild.ts';
+
+export type OverrideField =
+  | 'channelOverrides'
+  | 'zoneOverrides'
+  | 'talkGroupOverrides'
+  | 'rxGroupListOverrides'
+  | 'contactOverrides';
+
+/** @deprecated Legacy import shape — migrated to {@link BuildEntityOverride}. */
+export interface LegacyEntitySelection {
+  libraryEntityId: string;
+  overrides: { name: string };
+}
+
+export function overrideByEntityId(
+  overrides: BuildEntityOverride[],
+): Map<string, BuildEntityOverride> {
+  return new Map(overrides.map((row) => [row.libraryEntityId, row]));
+}
+
+export function isEntityExcluded(overrides: BuildEntityOverride[], entityId: string): boolean {
+  return overrides.find((row) => row.libraryEntityId === entityId)?.excluded === true;
+}
+
+export function resolveOverrideWireName(
+  overrides: BuildEntityOverride[],
+  entityId: string,
+  generated: string,
+): string {
+  const wireName = overrides.find((row) => row.libraryEntityId === entityId)?.wireName?.trim();
+  return wireName || generated;
+}
+
+/** Convert legacy whitelist selections to sparse opt-out overrides. */
+export function migrateLegacySelections(
+  legacy: LegacyEntitySelection[],
+  allEntityIds: string[],
+): BuildEntityOverride[] {
+  if (legacy.length === 0) {
+    return legacy
+      .filter((row) => row.overrides.name.trim())
+      .map((row) => ({
+        libraryEntityId: row.libraryEntityId,
+        wireName: row.overrides.name.trim(),
+      }));
+  }
+
+  const included = new Set(legacy.map((row) => row.libraryEntityId));
+  const result: BuildEntityOverride[] = [];
+
+  for (const row of legacy) {
+    const wireName = row.overrides.name.trim();
+    if (wireName) {
+      result.push({ libraryEntityId: row.libraryEntityId, wireName });
+    }
+  }
+
+  for (const entityId of allEntityIds) {
+    if (!included.has(entityId)) {
+      result.push({ libraryEntityId: entityId, excluded: true });
+    }
+  }
+
+  return result;
+}
+
+export function parseOverrideArray(raw: unknown, label: string): BuildEntityOverride[] {
+  if (raw === undefined || raw === null) return [];
+  if (!Array.isArray(raw)) {
+    throw new Error(`${label} must be an array`);
+  }
+  return raw.map((row, index) => parseOverrideRow(row, `${label}[${index}]`));
+}
+
+function parseOverrideRow(raw: unknown, label: string): BuildEntityOverride {
+  if (raw === null || typeof raw !== 'object') {
+    throw new Error(`${label} must be an object`);
+  }
+  const record = raw as Record<string, unknown>;
+
+  if ('overrides' in record) {
+    const legacy = record as { libraryEntityId: unknown; overrides: unknown };
+    const overrides = legacy.overrides as Record<string, unknown>;
+    return {
+      libraryEntityId: String(legacy.libraryEntityId),
+      wireName: overrides.name !== undefined ? String(overrides.name) : undefined,
+    };
+  }
+
+  const result: BuildEntityOverride = {
+    libraryEntityId: String(record.libraryEntityId),
+  };
+  if (record.excluded !== undefined) {
+    result.excluded = Boolean(record.excluded);
+  }
+  if (record.wireName !== undefined && record.wireName !== null && record.wireName !== '') {
+    result.wireName = String(record.wireName);
+  }
+  return result;
+}
+
+export function upsertOverride(
+  overrides: BuildEntityOverride[],
+  entityId: string,
+  patch: Partial<Pick<BuildEntityOverride, 'excluded' | 'wireName'>>,
+): BuildEntityOverride[] {
+  const index = overrides.findIndex((row) => row.libraryEntityId === entityId);
+  const existing = index >= 0 ? overrides[index]! : { libraryEntityId: entityId };
+  const merged: BuildEntityOverride = {
+    ...existing,
+    ...patch,
+  };
+
+  const hasWireName = Boolean(merged.wireName?.trim());
+  const isExcluded = merged.excluded === true;
+  if (!hasWireName && !isExcluded) {
+    if (index < 0) return overrides;
+    return overrides.filter((row) => row.libraryEntityId !== entityId);
+  }
+
+  if (!hasWireName) {
+    delete merged.wireName;
+  } else {
+    merged.wireName = merged.wireName!.trim();
+  }
+
+  if (index < 0) {
+    return [...overrides, merged];
+  }
+  const next = [...overrides];
+  next[index] = merged;
+  return next;
+}

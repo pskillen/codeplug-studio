@@ -1,4 +1,4 @@
-import type { FormatBuild } from '@core/models/formatBuild.ts';
+import type { FormatBuild, BuildEntityOverride } from '@core/models/formatBuild.ts';
 import type {
   AnalogContact,
   Channel,
@@ -31,6 +31,8 @@ import {
   validateRxGroupListId,
   validateZoneMemberRefs,
 } from '@core/domain/validation.ts';
+import { migrateFormatBuild } from '@core/domain/migrateFormatBuild.ts';
+import { parseOverrideArray, type LegacyEntitySelection } from '@core/domain/formatBuildOverrides.ts';
 import { NATIVE_YAML_SCHEMA_VERSION, type ProjectAggregate } from '../../projectDocument.ts';
 import {
   NativeYamlImportError,
@@ -318,19 +320,95 @@ function parseLibrary(raw: unknown): Library {
   return { channels, zones, talkGroups, digitalContacts, analogContacts, rxGroupLists };
 }
 
-function parseSelection<T extends { libraryEntityId: string; overrides: { name: string } }>(
-  raw: unknown,
-  index: number,
+function parseLegacySelectionArray(raw: unknown, label: string): LegacyEntitySelection[] {
+  return expectArray(raw, label).map((row, index) => {
+    const record = expectRecord(row, `${label}[${index}]`);
+    const overrides = expectRecord(record.overrides, `${label}[${index}].overrides`);
+    return {
+      libraryEntityId: expectString(record.libraryEntityId, `${label}[${index}].libraryEntityId`),
+      overrides: {
+        name: expectString(overrides.name, `${label}[${index}].overrides.name`),
+      },
+    };
+  });
+}
+
+function parseOverrideField(
+  record: Record<string, unknown>,
+  newKey: string,
+  legacyKey: string,
   label: string,
-): T {
-  const record = expectRecord(raw, `${label}[${index}]`);
-  const overrides = expectRecord(record.overrides, `${label}[${index}].overrides`);
-  return {
-    libraryEntityId: expectString(record.libraryEntityId, `${label}[${index}].libraryEntityId`),
-    overrides: {
-      name: expectString(overrides.name, `${label}[${index}].overrides.name`),
-    },
-  } as T;
+): BuildEntityOverride[] {
+  if (record[newKey] !== undefined && record[newKey] !== null) {
+    return parseOverrideArray(record[newKey], `${label}.${newKey}`);
+  }
+  return [];
+}
+
+interface ParsedFormatBuild {
+  build: FormatBuild;
+  legacy: {
+    channelSelections?: LegacyEntitySelection[];
+    zoneSelections?: LegacyEntitySelection[];
+    talkGroupSelections?: LegacyEntitySelection[];
+    rxGroupListSelections?: LegacyEntitySelection[];
+    contactSelections?: LegacyEntitySelection[];
+  };
+}
+
+function parseFormatBuild(raw: unknown, index: number): ParsedFormatBuild {
+  const record = expectRecord(raw, `formatBuilds[${index}]`);
+  const label = `formatBuilds[${index}]`;
+  const legacy = {
+    channelSelections:
+      record.channelSelections !== undefined && record.channelSelections !== null
+        ? parseLegacySelectionArray(record.channelSelections, `${label}.channelSelections`)
+        : undefined,
+    zoneSelections:
+      record.zoneSelections !== undefined && record.zoneSelections !== null
+        ? parseLegacySelectionArray(record.zoneSelections, `${label}.zoneSelections`)
+        : undefined,
+    talkGroupSelections:
+      record.talkGroupSelections !== undefined && record.talkGroupSelections !== null
+        ? parseLegacySelectionArray(record.talkGroupSelections, `${label}.talkGroupSelections`)
+        : undefined,
+    rxGroupListSelections:
+      record.rxGroupListSelections !== undefined && record.rxGroupListSelections !== null
+        ? parseLegacySelectionArray(
+            record.rxGroupListSelections,
+            `${label}.rxGroupListSelections`,
+          )
+        : undefined,
+    contactSelections:
+      record.contactSelections !== undefined && record.contactSelections !== null
+        ? parseLegacySelectionArray(record.contactSelections, `${label}.contactSelections`)
+        : undefined,
+  };
+
+  const build: FormatBuild = {
+    ...parsePersistableRow(record, label),
+    formatId: expectString(record.formatId, `${label}.formatId`),
+    profileId: expectString(record.profileId, `${label}.profileId`),
+    name: expectString(record.name, `${label}.name`),
+    layout: parseTraitLayout(record.layout),
+    channelOverrides: parseOverrideField(record, 'channelOverrides', 'channelSelections', label),
+    zoneOverrides: parseOverrideField(record, 'zoneOverrides', 'zoneSelections', label),
+    talkGroupOverrides: parseOverrideField(
+      record,
+      'talkGroupOverrides',
+      'talkGroupSelections',
+      label,
+    ),
+    rxGroupListOverrides: parseOverrideField(
+      record,
+      'rxGroupListOverrides',
+      'rxGroupListSelections',
+      label,
+    ),
+    contactOverrides: parseOverrideField(record, 'contactOverrides', 'contactSelections', label),
+  };
+
+  return { build, legacy };
 }
 
 function parseTraitSection(raw: unknown, index: number): TraitLayoutSection {
@@ -376,45 +454,6 @@ function parseTraitLayout(raw: unknown): TraitLayout {
   return {
     sections: expectArray(record.sections, 'layout.sections').map((section, index) =>
       parseTraitSection(section, index),
-    ),
-  };
-}
-
-function parseFormatBuild(raw: unknown, index: number): FormatBuild {
-  const record = expectRecord(raw, `formatBuilds[${index}]`);
-  return {
-    ...parsePersistableRow(record, `formatBuilds[${index}]`),
-    formatId: expectString(record.formatId, `formatBuilds[${index}].formatId`),
-    profileId: expectString(record.profileId, `formatBuilds[${index}].profileId`),
-    name: expectString(record.name, `formatBuilds[${index}].name`),
-    layout: parseTraitLayout(record.layout),
-    channelSelections: expectArray(
-      record.channelSelections,
-      `formatBuilds[${index}].channelSelections`,
-    ).map((row, selectionIndex) =>
-      parseSelection(row, selectionIndex, `formatBuilds[${index}].channelSelections`),
-    ),
-    zoneSelections: expectArray(record.zoneSelections, `formatBuilds[${index}].zoneSelections`).map(
-      (row, selectionIndex) =>
-        parseSelection(row, selectionIndex, `formatBuilds[${index}].zoneSelections`),
-    ),
-    talkGroupSelections: expectArray(
-      record.talkGroupSelections,
-      `formatBuilds[${index}].talkGroupSelections`,
-    ).map((row, selectionIndex) =>
-      parseSelection(row, selectionIndex, `formatBuilds[${index}].talkGroupSelections`),
-    ),
-    rxGroupListSelections: expectArray(
-      record.rxGroupListSelections,
-      `formatBuilds[${index}].rxGroupListSelections`,
-    ).map((row, selectionIndex) =>
-      parseSelection(row, selectionIndex, `formatBuilds[${index}].rxGroupListSelections`),
-    ),
-    contactSelections: expectArray(
-      record.contactSelections,
-      `formatBuilds[${index}].contactSelections`,
-    ).map((row, selectionIndex) =>
-      parseSelection(row, selectionIndex, `formatBuilds[${index}].contactSelections`),
     ),
   };
 }
@@ -559,39 +598,39 @@ function validateForeignKeys(library: Library, formatBuilds: FormatBuild[]): voi
       }
     }
 
-    for (const selection of build.channelSelections) {
-      if (!ids.channelIds.has(selection.libraryEntityId)) {
+    for (const override of build.channelOverrides) {
+      if (!ids.channelIds.has(override.libraryEntityId)) {
         throw new NativeYamlImportError(
-          `Build channel selection ${selection.libraryEntityId} not found in library`,
+          `Build channel override ${override.libraryEntityId} not found in library`,
         );
       }
     }
-    for (const selection of build.zoneSelections) {
-      if (!ids.zoneIds.has(selection.libraryEntityId)) {
+    for (const override of build.zoneOverrides) {
+      if (!ids.zoneIds.has(override.libraryEntityId)) {
         throw new NativeYamlImportError(
-          `Build zone selection ${selection.libraryEntityId} not found in library`,
+          `Build zone override ${override.libraryEntityId} not found in library`,
         );
       }
     }
-    for (const selection of build.talkGroupSelections) {
-      if (!ids.talkGroupIds.has(selection.libraryEntityId)) {
+    for (const override of build.talkGroupOverrides) {
+      if (!ids.talkGroupIds.has(override.libraryEntityId)) {
         throw new NativeYamlImportError(
-          `Build talk group selection ${selection.libraryEntityId} not found in library`,
+          `Build talk group override ${override.libraryEntityId} not found in library`,
         );
       }
     }
-    for (const selection of build.rxGroupListSelections) {
-      if (!ids.rxGroupListIds.has(selection.libraryEntityId)) {
+    for (const override of build.rxGroupListOverrides) {
+      if (!ids.rxGroupListIds.has(override.libraryEntityId)) {
         throw new NativeYamlImportError(
-          `Build RX group list selection ${selection.libraryEntityId} not found in library`,
+          `Build RX group list override ${override.libraryEntityId} not found in library`,
         );
       }
     }
-    for (const selection of build.contactSelections) {
-      const contactId = selection.libraryEntityId;
+    for (const override of build.contactOverrides) {
+      const contactId = override.libraryEntityId;
       if (!ids.digitalContactIds.has(contactId) && !ids.analogContactIds.has(contactId)) {
         throw new NativeYamlImportError(
-          `Build contact selection ${contactId} not found in library`,
+          `Build contact override ${contactId} not found in library`,
         );
       }
     }
@@ -608,17 +647,21 @@ export function validateDocument(raw: unknown): ProjectAggregate {
     );
   }
 
-  if (document.studioSchemaVersion !== STUDIO_SCHEMA_VERSION) {
+  const studioSchemaVersion = document.studioSchemaVersion;
+  if (
+    studioSchemaVersion !== STUDIO_SCHEMA_VERSION &&
+    studioSchemaVersion !== 2
+  ) {
     throw new NativeYamlImportError(
-      `Unsupported studioSchemaVersion: ${String(document.studioSchemaVersion)} (expected ${STUDIO_SCHEMA_VERSION}; migration not implemented)`,
+      `Unsupported studioSchemaVersion: ${String(studioSchemaVersion)} (expected ${STUDIO_SCHEMA_VERSION} or 2)`,
     );
   }
 
   const project = parseProjectMeta(document.project);
   const library = parseLibrary(document.library);
-  const formatBuilds = expectArray(document.formatBuilds, 'formatBuilds').map((row, index) =>
-    parseFormatBuild(row, index),
-  );
+  const formatBuilds = expectArray(document.formatBuilds, 'formatBuilds')
+    .map((row, index) => parseFormatBuild(row, index))
+    .map(({ build, legacy }) => migrateFormatBuild(build, library, legacy));
 
   const allRows = [
     project,

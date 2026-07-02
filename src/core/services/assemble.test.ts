@@ -64,12 +64,17 @@ describe('assemble', () => {
     expect(build.profileId).toBe('opengd77-1701');
   });
 
-  it('filters channels when channelSelections is non-empty', () => {
+  it('excludes channels when channel override marks excluded', () => {
     const yaml = readFileSync(join(fixtureDir, 'with-format-build.yaml'), 'utf8');
     const aggregate = parseProjectDocument(yaml);
     const build = {
       ...aggregate.formatBuilds[0]!,
-      channelSelections: [aggregate.formatBuilds[0]!.channelSelections[0]!],
+      channelOverrides: [
+        {
+          libraryEntityId: '33333333-3333-4333-8333-333333333333',
+          excluded: true,
+        },
+      ],
     };
     const library = {
       channels: aggregate.channels,

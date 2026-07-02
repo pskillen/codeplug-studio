@@ -41,12 +41,7 @@ export {
 } from './traitLayout.ts';
 export {
   type FormatBuild,
-  type AbstractLibraryEntitySelection,
-  type ChannelSelection,
-  type ZoneSelection,
-  type TalkGroupSelection,
-  type RxGroupListSelection,
-  type ContactSelection,
+  type BuildEntityOverride,
 } from './formatBuild.ts';
 export type {
   AnalogChannelMode,
