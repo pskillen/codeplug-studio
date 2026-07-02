@@ -33,6 +33,7 @@ Modal opened from channel edit when the operator chooses **Check BrandMeister ta
 - Disables **Update existing** when other channels reference the same RX group list (`findReferencesTo`).
 - **Create new** repoints only this channel's DMR `rxGroupListId`.
 - Optional **Create missing talk groups** (default on) before building list members.
+- When the linked list already matches BrandMeister, shows a yellow **warning** alert and hides apply controls (checkbox, update/create radios, new list name).
 
 ## Related
 

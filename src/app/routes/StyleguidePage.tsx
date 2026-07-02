@@ -1,4 +1,4 @@
-import { Button, Group, Select, Stack, Text, TextInput } from '@mantine/core';
+import { Alert, Button, Group, Select, Stack, Text, TextInput } from '@mantine/core';
 import { Link } from 'react-router-dom';
 import { useState } from 'react';
 import { UK_BANDS } from '../lib/bands.ts';
@@ -50,6 +50,17 @@ export default function StyleguidePage() {
           <BandPill band={UK_BANDS.find((b) => b.id === '2m') ?? null} />
           <BandPill band={UK_BANDS.find((b) => b.id === '70cm') ?? null} />
         </Group>
+      </PageSection>
+
+      <PageSection
+        title="Alerts"
+        description="Mantine Alert colour conventions — see docs/features/app-shell/alerts.md"
+      >
+        <Stack gap="sm">
+          <Alert color="blue">Informational alert.</Alert>
+          <Alert color="yellow">Warning alert — map token missing pattern.</Alert>
+          <Alert color="red">Error alert — validation failure pattern.</Alert>
+        </Stack>
       </PageSection>
 
       <PageSection title="EmptyState">

@@ -12,11 +12,13 @@ export { maskSensitiveToken, parseStorageRaw, redactParsedValue } from './parseS
 export type { ParsedStorageValue } from './parseStorageValue.ts';
 export {
   decodeIndexedDbParam,
+  filterIndexedDbRowSummaries,
   getStoreRow,
   indexedDbRowViewerPath,
   indexedDbStorePath,
   isKnownStoreName,
   listStoreRows,
   listStoreSummaries,
+  summarizeIndexedDbRow,
 } from './indexedDbInspect.ts';
-export type { ProjectRowCount, StoreSummary } from './indexedDbInspect.ts';
+export type { IndexedDbRowSummary, ProjectRowCount, StoreSummary } from './indexedDbInspect.ts';

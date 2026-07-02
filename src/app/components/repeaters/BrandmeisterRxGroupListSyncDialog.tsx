@@ -17,6 +17,7 @@ import {
   fetchResolvedDeviceTalkGroups,
   RepeaterDirectoryError,
   rxGroupListDiffHasChanges,
+  type BrandMeisterTalkGroupLookupProgress,
   type RepeaterListing,
   type ResolvedBrandMeisterTalkGroup,
 } from '@integrations/repeaters/index.ts';
@@ -28,6 +29,7 @@ import {
   linkedRxGroupList,
   type RxGroupListSyncMode,
 } from '../../lib/brandmeisterRxGroupListSync.ts';
+import BrandMeisterTalkGroupLookupProgressBar from './BrandMeisterTalkGroupLookupProgressBar.tsx';
 
 export interface BrandmeisterRxGroupListSyncDialogProps {
   channel: Channel;
@@ -76,6 +78,11 @@ function BrandmeisterRxGroupListSyncDialogBody({
 
   const [resolved, setResolved] = useState<ResolvedBrandMeisterTalkGroup[]>([]);
   const [loading, setLoading] = useState(true);
+  const [lookupProgress, setLookupProgress] = useState<BrandMeisterTalkGroupLookupProgress | null>({
+    phase: 'device',
+    message: 'Fetching repeater talk groups…',
+    percent: 0,
+  });
   const [error, setError] = useState<string | null>(null);
   const [applyError, setApplyError] = useState<string | null>(null);
   const [applying, setApplying] = useState(false);
@@ -85,7 +92,9 @@ function BrandmeisterRxGroupListSyncDialogBody({
 
   useEffect(() => {
     let cancelled = false;
-    void fetchResolvedDeviceTalkGroups(listing.remoteId)
+    void fetchResolvedDeviceTalkGroups(listing.remoteId, (progress) => {
+      if (!cancelled) setLookupProgress(progress);
+    })
       .then((rows) => {
         if (!cancelled) setResolved(rows);
       })
@@ -100,7 +109,10 @@ function BrandmeisterRxGroupListSyncDialogBody({
         }
       })
       .finally(() => {
-        if (!cancelled) setLoading(false);
+        if (!cancelled) {
+          setLoading(false);
+          setLookupProgress(null);
+        }
       });
     return () => {
       cancelled = true;
@@ -142,13 +154,13 @@ function BrandmeisterRxGroupListSyncDialogBody({
         linked RX group list and apply updates.
       </Text>
 
-      {loading ? <Text size="sm">Loading talk groups…</Text> : null}
+      {loading ? <BrandMeisterTalkGroupLookupProgressBar progress={lookupProgress} /> : null}
       {error ? <Alert color="red">{error}</Alert> : null}
 
       {!loading && !error && resolved.length > 0 ? (
         <>
           {!hasChanges && linked ? (
-            <Text c="dimmed">RX group list already matches BrandMeister.</Text>
+            <Alert color="yellow">RX group list already matches BrandMeister.</Alert>
           ) : (
             <Table>
               <Table.Thead>
@@ -174,41 +186,45 @@ function BrandmeisterRxGroupListSyncDialogBody({
             </Table>
           )}
 
-          <Checkbox
-            label="Create missing talk groups"
-            checked={createMissing}
-            onChange={(e) => setCreateMissing(e.currentTarget.checked)}
-          />
+          {hasChanges ? (
+            <>
+              <Checkbox
+                label="Create missing talk groups"
+                checked={createMissing}
+                onChange={(e) => setCreateMissing(e.currentTarget.checked)}
+              />
 
-          {linked ? (
-            <Radio.Group
-              value={canUpdate ? mode : 'create'}
-              onChange={(value) => setMode(value as RxGroupListSyncMode)}
-            >
-              <Stack gap="xs">
-                <Radio value="update" label={`Update "${linked.name}"`} disabled={!canUpdate} />
-                {sharedCount > 0 ? (
-                  <Text size="xs" c="orange" ml="1.75rem">
-                    {sharedCount} other channel{sharedCount === 1 ? '' : 's'} use this list — create
-                    a new list instead.
-                  </Text>
-                ) : null}
-                <Radio value="create" label="Create new RX group list" />
-              </Stack>
-            </Radio.Group>
-          ) : (
-            <Text size="sm">
-              This channel has no linked RX group list — a new list will be created.
-            </Text>
-          )}
+              {linked ? (
+                <Radio.Group
+                  value={canUpdate ? mode : 'create'}
+                  onChange={(value) => setMode(value as RxGroupListSyncMode)}
+                >
+                  <Stack gap="xs">
+                    <Radio value="update" label={`Update "${linked.name}"`} disabled={!canUpdate} />
+                    {sharedCount > 0 ? (
+                      <Text size="xs" c="orange" ml="1.75rem">
+                        {sharedCount} other channel{sharedCount === 1 ? '' : 's'} use this list —
+                        create a new list instead.
+                      </Text>
+                    ) : null}
+                    <Radio value="create" label="Create new RX group list" />
+                  </Stack>
+                </Radio.Group>
+              ) : (
+                <Text size="sm">
+                  This channel has no linked RX group list — a new list will be created.
+                </Text>
+              )}
 
-          {(!linked || mode === 'create' || !canUpdate) && (
-            <TextInput
-              label="New list name"
-              value={newListName}
-              onChange={(e) => setNewListName(e.currentTarget.value)}
-            />
-          )}
+              {(!linked || mode === 'create' || !canUpdate) && (
+                <TextInput
+                  label="New list name"
+                  value={newListName}
+                  onChange={(e) => setNewListName(e.currentTarget.value)}
+                />
+              )}
+            </>
+          ) : null}
         </>
       ) : null}
 

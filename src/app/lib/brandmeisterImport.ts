@@ -4,6 +4,7 @@ import {
   fetchResolvedDeviceTalkGroups,
   RepeaterDirectoryError,
   type BrandMeisterImportBundle,
+  type BrandMeisterTalkGroupLookupProgressCallback,
   type MapListingOptions,
   type RepeaterListing,
 } from '@integrations/repeaters/index.ts';
@@ -33,6 +34,7 @@ export interface PersistBrandMeisterImportOptions {
   mapOptions: MapListingOptions;
   importTalkGroups: boolean;
   persistence: ProjectPersistence;
+  onTalkGroupLookupProgress?: BrandMeisterTalkGroupLookupProgressCallback;
 }
 
 /**
@@ -42,14 +44,25 @@ export interface PersistBrandMeisterImportOptions {
 export async function persistBrandMeisterImport(
   options: PersistBrandMeisterImportOptions,
 ): Promise<PersistBrandMeisterImportOutcome> {
-  const { listing, projectId, library, mapOptions, importTalkGroups, persistence } = options;
+  const {
+    listing,
+    projectId,
+    library,
+    mapOptions,
+    importTalkGroups,
+    persistence,
+    onTalkGroupLookupProgress,
+  } = options;
 
   let resolvedTalkGroups: Awaited<ReturnType<typeof fetchResolvedDeviceTalkGroups>> = [];
   let warning: string | undefined;
 
   if (importTalkGroups) {
     try {
-      resolvedTalkGroups = await fetchResolvedDeviceTalkGroups(listing.remoteId);
+      resolvedTalkGroups = await fetchResolvedDeviceTalkGroups(
+        listing.remoteId,
+        onTalkGroupLookupProgress,
+      );
     } catch (err) {
       warning =
         err instanceof RepeaterDirectoryError

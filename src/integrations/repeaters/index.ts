@@ -21,6 +21,9 @@ export {
   resolveDeviceTalkGroups,
   resolveTalkGroupName,
   type BrandMeisterStaticTalkGroup,
+  type BrandMeisterTalkGroupLookupProgress,
+  type BrandMeisterTalkGroupLookupProgressCallback,
+  type BrandMeisterTalkGroupLookupPhase,
   type ResolvedBrandMeisterTalkGroup,
 } from './brandmeisterTalkGroups.ts';
 export {

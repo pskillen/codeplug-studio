@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   coordsFromChannelLocation,
   coordinateDecimalPrecision,
+  coordsWithinLocator,
   isCoordinateLessPrecise,
   isLocatorLessPrecise,
   locatorCharCount,
@@ -9,6 +10,7 @@ import {
   normaliseLocator,
   reconcileChannelLocation,
 } from './channelLocation.ts';
+import { coordsToLocator } from './maidenhead.ts';
 
 describe('normaliseLocator', () => {
   it('uppercases valid locator', () => {
@@ -96,6 +98,19 @@ describe('coordsFromChannelLocation', () => {
 describe('locationConflict', () => {
   it('detects mismatch between coords and locator', () => {
     expect(locationConflict({ lat: 57.0, lon: -3.5 }, 'IO91WM')).toBe(true);
+  });
+});
+
+describe('coordsWithinLocator', () => {
+  it('returns true when coordinates fall inside the locator square', () => {
+    const coords = { lat: 51.123456, lon: -1.234567 };
+    expect(coordsWithinLocator(coords, 'IO91WM')).toBe(
+      coordsToLocator(coords.lat, coords.lon, 6) === 'IO91WM',
+    );
+  });
+
+  it('returns false when coordinates fall outside the locator square', () => {
+    expect(coordsWithinLocator({ lat: 57.0, lon: -3.5 }, 'IO91WM')).toBe(false);
   });
 });
 

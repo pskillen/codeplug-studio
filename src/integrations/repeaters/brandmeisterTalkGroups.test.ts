@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { RepeaterDirectoryError } from './types.ts';
 import {
   fetchDeviceTalkGroups,
+  fetchResolvedDeviceTalkGroups,
   loadTalkGroupNameMap,
   resolveDeviceTalkGroups,
   resolveTalkGroupName,
@@ -122,5 +123,22 @@ describe('fetchResolvedDeviceTalkGroups', () => {
       new Map(),
     );
     expect(resolved).toEqual([{ digitalId: 23559, name: 'Scotland West', slot: 1 }]);
+  });
+
+  it('reports progress through device, catalogue, and resolving phases', async () => {
+    mockFetch({
+      '/device/234054/talkgroup': { status: 200, body: GB7AC_STATIC.slice(0, 2) },
+      '/talkgroup': { status: 200, body: { '23551': 'UK TS2' } },
+      '/talkgroup/23559': { status: 200, body: { ID: 23559, Name: 'Scotland West' } },
+      '/talkgroup/23551': { status: 404, body: {} },
+    });
+    const phases: string[] = [];
+    await fetchResolvedDeviceTalkGroups('234054', (progress) => {
+      phases.push(progress.phase);
+    });
+    expect(phases[0]).toBe('device');
+    expect(phases).toContain('catalogue');
+    expect(phases.filter((phase) => phase === 'resolving').length).toBeGreaterThan(0);
+    expect(phases.at(-1)).toBe('resolving');
   });
 });

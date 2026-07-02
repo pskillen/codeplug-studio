@@ -6,6 +6,7 @@ import {
   Button,
   Checkbox,
   Group,
+  Modal,
   ScrollArea,
   Select,
   Stack,
@@ -20,6 +21,7 @@ import { coordsToLocator } from '@core/domain/maidenhead.ts';
 import { toTitleCase } from '@core/domain/titleCase.ts';
 import {
   repeaterListingToChannel,
+  type BrandMeisterTalkGroupLookupProgress,
   type MapListingOptions,
   type RepeaterListing,
   type RepeaterSource,
@@ -39,6 +41,7 @@ import { FormPage, PageSection } from '../ui/index.ts';
 import { findChannelByCallsign } from './findChannelByCallsign.ts';
 import { buildRepeaterDirectoryRows } from './repeaterDirectoryRows.ts';
 import RepeaterListingUpdateDialog from './RepeaterListingUpdateDialog.tsx';
+import BrandMeisterTalkGroupLookupProgressBar from './BrandMeisterTalkGroupLookupProgressBar.tsx';
 import {
   formatBrandMeisterImportMessage,
   persistBrandMeisterImport,
@@ -97,6 +100,8 @@ export default function RepeaterDirectorySearch({
   const [updateOpen, setUpdateOpen] = useState(false);
   const [importTalkGroups, setImportTalkGroups] = useState(true);
   const [adding, setAdding] = useState(false);
+  const [tgLookupProgress, setTgLookupProgress] =
+    useState<BrandMeisterTalkGroupLookupProgress | null>(null);
 
   const isUk = source === 'ukrepeater';
   const capabilities = repeaterSearchCapabilities(source);
@@ -159,6 +164,7 @@ export default function RepeaterDirectorySearch({
           mapOptions,
           importTalkGroups,
           persistence,
+          onTalkGroupLookupProgress: importTalkGroups ? setTgLookupProgress : undefined,
         });
         if (!result.ok) {
           setAddMessage(result.message);
@@ -175,6 +181,7 @@ export default function RepeaterDirectorySearch({
       }
     } finally {
       setAdding(false);
+      setTgLookupProgress(null);
     }
   }
 
@@ -200,6 +207,7 @@ export default function RepeaterDirectorySearch({
             mapOptions,
             importTalkGroups,
             persistence,
+            onTalkGroupLookupProgress: importTalkGroups ? setTgLookupProgress : undefined,
           });
           if (result.ok) {
             addedCount++;
@@ -231,6 +239,7 @@ export default function RepeaterDirectorySearch({
       }
     } finally {
       setAdding(false);
+      setTgLookupProgress(null);
     }
   }
 
@@ -480,6 +489,17 @@ export default function RepeaterDirectorySearch({
           onClose={() => setUpdateOpen(false)}
         />
       ) : null}
+
+      <Modal
+        opened={Boolean(tgLookupProgress)}
+        onClose={() => {}}
+        withCloseButton={false}
+        closeOnClickOutside={false}
+        closeOnEscape={false}
+        title="Loading BrandMeister talk groups"
+      >
+        <BrandMeisterTalkGroupLookupProgressBar progress={tgLookupProgress} />
+      </Modal>
     </FormPage>
   );
 }

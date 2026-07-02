@@ -4,7 +4,13 @@ import type {
   ChannelModeProfileDMR,
   ChannelTone,
 } from '@core/models/library.ts';
-import { isCoordinateLessPrecise, isLocatorLessPrecise } from '@core/domain/channelLocation.ts';
+import {
+  isCoordinateLessPrecise,
+  isLocatorLessPrecise,
+  coordsFromChannelLocation,
+  coordsWithinLocator,
+  normaliseLocator,
+} from '@core/domain/channelLocation.ts';
 import { findAnalogProfile, findDmrProfile } from '@core/domain/modeProfiles.ts';
 import type { RepeaterListing } from './types.ts';
 import { repeaterListingToChannel, type MapListingOptions } from './mapToChannel.ts';
@@ -96,6 +102,29 @@ function maidenheadSelectByDefault(channel: Channel, remote: Channel, changed: b
   return !isLocatorLessPrecise(channel.maidenheadLocator, remote.maidenheadLocator);
 }
 
+/**
+ * When ukrepeater returns coordinates, only offer a maidenhead override if the channel
+ * already has a locator and stored coordinates fall outside that grid square.
+ */
+function maidenheadLocatorChanged(
+  channel: Channel,
+  listing: RepeaterListing,
+  remote: Channel,
+): boolean {
+  const differs = (channel.maidenheadLocator ?? '') !== (remote.maidenheadLocator ?? '');
+  if (!differs) return false;
+  if (listing.source !== 'ukrepeater' || listing.location == null) return true;
+
+  const locator = normaliseLocator(channel.maidenheadLocator);
+  if (!locator) return false;
+
+  const coords = channel.location ?? coordsFromChannelLocation(channel);
+  if (!coords) return false;
+  if (coordsWithinLocator(coords, locator)) return false;
+
+  return true;
+}
+
 export function diffChannelFromListing(
   channel: Channel,
   listing: RepeaterListing,
@@ -185,7 +214,7 @@ export function diffChannelFromListing(
     locationChanged,
     locationSelectByDefault(channel, remote, locationChanged),
   );
-  const locatorChanged = (channel.maidenheadLocator ?? '') !== (remote.maidenheadLocator ?? '');
+  const locatorChanged = maidenheadLocatorChanged(channel, listing, remote);
   push(
     'maidenheadLocator',
     channel.maidenheadLocator ?? '—',
