@@ -50,10 +50,7 @@ export default function ImportYamlIntoActivePanel() {
     <Stack gap="sm">
       <YamlFileDropzone onFileText={handleFile} disabled={importing} />
       {isConfigured ? (
-        <GoogleDriveButton
-          disabled={!connected || importing}
-          onClick={() => setDriveOpen(true)}
-        >
+        <GoogleDriveButton disabled={!connected || importing} onClick={() => setDriveOpen(true)}>
           Open from Drive
         </GoogleDriveButton>
       ) : null}

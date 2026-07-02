@@ -214,7 +214,11 @@ function DriveBrowserBody({
           </Anchor>
         ))}
       </Breadcrumbs>
-      <Stack gap={4} pb="xs" style={{ borderBottom: '1px solid var(--mantine-color-default-border)' }}>
+      <Stack
+        gap={4}
+        pb="xs"
+        style={{ borderBottom: '1px solid var(--mantine-color-default-border)' }}
+      >
         <Text size="xs" c="dimmed" tt="uppercase" fw={600}>
           Optional
         </Text>

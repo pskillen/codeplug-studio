@@ -34,7 +34,11 @@ export default function GoogleDriveConnectSection() {
             Disconnect
           </Button>
         ) : (
-          <GoogleDriveButton loading={loading} disabled={!isConfigured} onClick={() => void connect()}>
+          <GoogleDriveButton
+            loading={loading}
+            disabled={!isConfigured}
+            onClick={() => void connect()}
+          >
             Connect Google Drive
           </GoogleDriveButton>
         )}

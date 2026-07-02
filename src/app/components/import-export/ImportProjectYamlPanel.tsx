@@ -35,10 +35,7 @@ export default function ImportProjectYamlPanel() {
     <Stack gap="sm">
       <YamlFileDropzone onFileText={handleFile} disabled={importing} error={error} />
       {isConfigured ? (
-        <GoogleDriveButton
-          disabled={!connected || importing}
-          onClick={() => setDriveOpen(true)}
-        >
+        <GoogleDriveButton disabled={!connected || importing} onClick={() => setDriveOpen(true)}>
           Open from Drive
         </GoogleDriveButton>
       ) : null}

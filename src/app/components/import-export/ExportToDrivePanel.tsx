@@ -110,7 +110,11 @@ export default function ExportToDrivePanel() {
         <Alert color="gray">Connect Google Drive in Settings before saving files.</Alert>
       )}
       {error ? <Alert color="red">{error}</Alert> : null}
-      <GoogleDriveButton disabled={!connected || saving} loading={saving} onClick={() => setBrowserOpen(true)}>
+      <GoogleDriveButton
+        disabled={!connected || saving}
+        loading={saving}
+        onClick={() => setBrowserOpen(true)}
+      >
         Save to Drive
       </GoogleDriveButton>
       <DriveBrowserModal
