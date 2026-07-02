@@ -13,6 +13,17 @@ npm run dev
 
 Open the URL Vite prints (typically `http://localhost:5173/codeplug-studio/`).
 
+### Google Drive OAuth (optional)
+
+Copy [`.env.example`](../../.env.example) to `.env.local` and set `VITE_GOOGLE_CLIENT_ID` from a [Google Cloud OAuth 2.0 web client](https://console.cloud.google.com/apis/credentials).
+
+Authorized JavaScript origins must include:
+
+- `http://localhost:5173` (local Vite)
+- Your GitHub Pages origin, e.g. `https://pskillen.github.io`
+
+Enable the **Google Drive API** for the project. Scope used by Studio: `https://www.googleapis.com/auth/drive` (folder browse + YAML read/write). Tokens stay in browser localStorage only — see [google-drive.md](../features/import-export/google-drive.md).
+
 ### Line endings
 
 The repository stores **LF** for text files (`.gitattributes`). Prettier follows the platform: **CRLF on Windows**, **LF on Linux/macOS and in CI** (`prettier.config.js`).

@@ -22,6 +22,26 @@ IndexedDB remains the **edit store**; Drive holds portable YAML interchange file
 | `codeplug-studio:drive:lastFolderId` | Last browsed folder id |
 | `codeplug-studio:drive:lastFolderPath` | Breadcrumb path JSON `[{ id, name }, …]` |
 
+## OAuth scope
+
+`https://www.googleapis.com/auth/drive` — list folders, create folders, read/write native YAML files the operator selects. Configure `VITE_GOOGLE_CLIENT_ID` per [build README](../../build/README.md).
+
+## Port API (`GoogleDrivePort`)
+
+| Method | Purpose |
+| --- | --- |
+| `connect()` | GIS OAuth token flow; stores session in localStorage |
+| `disconnect()` | Revoke token + clear session |
+| `isConnected()` | Session present and not expired |
+| `getAccountLabel()` | Connected Google account email |
+| `listChildren(parentId)` | Folders + `.yaml` / `.yml` files |
+| `createFolder(parentId, name)` | New folder in parent |
+| `readFile(fileId)` | Download file text |
+| `writeFile({ parentId, fileName, content, fileId? })` | Create or overwrite YAML |
+| `getFileMetadata(fileId)` | Name, parents, modified time |
+
+Implementation: `src/integrations/cloud/googleDrive.ts`.
+
 ## Implementation status
 
 | Area | Status | Notes |
