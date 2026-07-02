@@ -22,6 +22,7 @@ IndexedDB remains the **edit store**; YAML and Drive are portable layers on top 
 | Native YAML — import parser                             | Shipped | [#58](https://github.com/pskillen/codeplug-studio/issues/58)                                                              |
 | Application services (`importProject`, `exportProject`) | Shipped | [#59](https://github.com/pskillen/codeplug-studio/issues/59) — `importProjectYaml` / `exportProjectYaml`                  |
 | Local file UI                                           | Shipped | [#60](https://github.com/pskillen/codeplug-studio/issues/60) — `/import-export`, Home import                              |
+| Format catalog UI (CPS placeholders)                    | Shipped | [#83](https://github.com/pskillen/codeplug-studio/issues/83) — CPS grid + export build stub                               |
 | Google Drive                                            | Shipped | [#61](https://github.com/pskillen/codeplug-studio/issues/61)–[#62](https://github.com/pskillen/codeplug-studio/issues/62) |
 | OpenGD77 CSV                                            | Planned | Phase 4+ — registry slot `planned`; **radio profiles shipped** ([#84](https://github.com/pskillen/codeplug-studio/issues/84)) |
 | CHIRP CSV                                               | Planned | Phase 4+                                                                                                                  |
@@ -63,6 +64,16 @@ Routes and UI call **application services** (`importProjectYaml`, `exportProject
 | `qdmr`        | Planned | Planned | YAML (vendor)              |
 
 Wire mapping for CPS formats lives in `docs/reference/<format>/` — not here.
+
+## UI (`/import-export`)
+
+The import/export route is organised in three bands:
+
+1. **Native YAML** — shipped import (replace active project) and export (download + Google Drive).
+2. **CPS formats** — `CpsFormatCatalogGrid` driven by `formatCatalog`; planned formats show a “coming soon” alert ([`FormatCatalogPanel`](../../../src/app/components/import-export/FormatCatalogPanel.tsx)).
+3. **Export to CPS** — `ExportBuildSelectorStub` lists persisted format builds; download wiring follows in the export adapter slice.
+
+Optional deep link: `?format=opengd77` highlights the matching catalog card (`useFormatParam`).
 
 ## Vendor-neutral rules
 

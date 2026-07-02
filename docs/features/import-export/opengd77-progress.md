@@ -8,7 +8,7 @@
 
 ## Overall status
 
-**Status:** In progress
+**Status:** Complete (pending merge)
 
 **Branch:** `82/pskil/phase-4a-build-foundation`
 
@@ -51,10 +51,21 @@
 
 ## Slice 4 — Import/export format catalog (#83)
 
-**Status:** Not started
+**Status:** Complete
+
+**Delivered**
+
+- `FormatCatalogPanel`, `CpsFormatCatalogGrid`, `ExportBuildSelectorStub`
+- `useFormatParam` — `?format=` deep link
+- Import/export page redesign
 
 ---
 
+## Overall status
+
+**Status:** Complete (pending merge)
+
 ## Next
 
-- Format catalog UI (#83)
+- Open PR — Closes #82, #83, #84
+- Follow-on: #85 ProfilePicker, #86 assemble, #87 zone editor
