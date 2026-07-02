@@ -1,9 +1,6 @@
 import { Select } from '@mantine/core';
 import { EXPORT_NAME_MODE_OPTIONS } from '@core/domain/channelNaming.ts';
-import {
-  useExportSettings,
-  type ExportNameModeOverride,
-} from '../../hooks/useExportSettings.ts';
+import { useExportSettings, type ExportNameModeOverride } from '../../hooks/useExportSettings.ts';
 
 export interface ExportNameModeSelectProps {
   disabled?: boolean;

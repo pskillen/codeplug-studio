@@ -31,7 +31,9 @@ export function resolveOverrideWireName(
   entityId: string,
   generated: string,
 ): string {
-  const wireName = (overrides ?? []).find((row) => row.libraryEntityId === entityId)?.wireName?.trim();
+  const wireName = (overrides ?? [])
+    .find((row) => row.libraryEntityId === entityId)
+    ?.wireName?.trim();
   return wireName || generated;
 }
 

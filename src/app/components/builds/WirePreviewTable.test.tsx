@@ -12,6 +12,7 @@ const rows: WirePreviewRow[] = [
     displayLabel: 'GB3DA Demo',
     generatedWireName: 'GB3DA Demo',
     effectiveWireName: 'GB3DA Demo',
+    hasWireNameOverride: false,
     excluded: false,
   },
   {
@@ -21,6 +22,7 @@ const rows: WirePreviewRow[] = [
     displayLabel: 'Excluded channel',
     generatedWireName: 'Excluded',
     effectiveWireName: 'Excluded',
+    hasWireNameOverride: false,
     excluded: true,
   },
 ];
@@ -48,7 +50,11 @@ describe('WirePreviewTable', () => {
     const onWireNameChange = vi.fn();
     render(
       <MantineProvider>
-        <WirePreviewTable rows={rows} onExcludedChange={vi.fn()} onWireNameChange={onWireNameChange} />
+        <WirePreviewTable
+          rows={rows}
+          onExcludedChange={vi.fn()}
+          onWireNameChange={onWireNameChange}
+        />
       </MantineProvider>,
     );
 
@@ -64,7 +70,11 @@ describe('WirePreviewTable', () => {
     const onWireNameChange = vi.fn();
     render(
       <MantineProvider>
-        <WirePreviewTable rows={rows} onExcludedChange={vi.fn()} onWireNameChange={onWireNameChange} />
+        <WirePreviewTable
+          rows={rows}
+          onExcludedChange={vi.fn()}
+          onWireNameChange={onWireNameChange}
+        />
       </MantineProvider>,
     );
 
@@ -91,5 +101,6 @@ describe('WirePreviewTable', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'GB3DA Demo' }));
     expect(onWireNameChange).toHaveBeenCalledWith(rows[0], 'GB3DA Demo');
+    expect(screen.getByPlaceholderText('GB3DA Demo')).toHaveValue('GB3DA Demo');
   });
 });

@@ -30,6 +30,7 @@ describe('previewWireRows', () => {
     expect(rows[0]?.displayLabel).toContain('GB3DA');
     expect(rows[0]?.effectiveWireName).toBe('GB3DA Demo');
     expect(rows[0]?.generatedWireName).toBe('GB3DA GB3DA Demo');
+    expect(rows[0]?.hasWireNameOverride).toBe(true);
     expect(rows[1]?.effectiveWireName).toBe('GB7GL Scot');
     expect(rows[1]?.generatedWireName).toBe('GB7GL DMR Scot');
   });

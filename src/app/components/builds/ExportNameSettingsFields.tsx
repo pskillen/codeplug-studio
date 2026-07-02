@@ -1,7 +1,5 @@
 import { NumberInput, Stack, Switch, Text } from '@mantine/core';
-import {
-  useExportSettings,
-} from '../../hooks/useExportSettings.ts';
+import { useExportSettings } from '../../hooks/useExportSettings.ts';
 import ExportNameModeSelect from './ExportNameModeSelect.tsx';
 
 export interface ExportNameSettingsFieldsProps {

@@ -22,6 +22,8 @@ export interface WirePreviewRow {
   displayLabel: string;
   generatedWireName: string;
   effectiveWireName: string;
+  /** True when the build stores an explicit wireName override for this row key. */
+  hasWireNameOverride: boolean;
   excluded: boolean;
   expansionNote?: string;
 }
@@ -52,7 +54,8 @@ function previewRow(
 ): WirePreviewRow {
   const override = overrideByEntityId(overrides).get(key);
   const excluded = override?.excluded === true;
-  const effectiveWireName = override?.wireName?.trim() || generatedWireName;
+  const wireNameOverride = override?.wireName?.trim();
+  const effectiveWireName = wireNameOverride || generatedWireName;
   return {
     key,
     libraryEntityId,
@@ -60,6 +63,7 @@ function previewRow(
     displayLabel,
     generatedWireName,
     effectiveWireName,
+    hasWireNameOverride: Boolean(wireNameOverride),
     excluded,
     expansionNote,
   };
@@ -89,13 +93,16 @@ export function previewWireRows(
           reserved,
           warnings,
         );
-        const channelOverride = overrideByEntityId(build.channelOverrides).get(channel.id)?.wireName?.trim();
+        const channelOverride = overrideByEntityId(build.channelOverrides)
+          .get(channel.id)
+          ?.wireName?.trim();
         for (const generated of generatedExpansions) {
           const keyOverride = overrideByEntityId(build.channelOverrides)
             .get(generated.key)
             ?.wireName?.trim();
           const generatedWireName = generated.wireName;
           const excluded = isEntityExcluded(build.channelOverrides, channel.id);
+          const hasWireNameOverride = Boolean(keyOverride ?? channelOverride);
           rows.push({
             key: generated.key,
             libraryEntityId: channel.id,
@@ -106,6 +113,7 @@ export function previewWireRows(
                 : channelDisplayLabel(channel),
             generatedWireName,
             effectiveWireName: keyOverride ?? channelOverride ?? generatedWireName,
+            hasWireNameOverride,
             excluded,
             expansionNote:
               generatedExpansions.length > 1

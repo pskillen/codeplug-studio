@@ -20,7 +20,7 @@ export default function BuildEntityWirePage({
   entityKind,
   description,
   showExportNameMode = false,
-  clickableDefaultWireName = false,
+  clickableDefaultWireName = true,
 }: BuildEntityWirePageProps) {
   const { build } = useBuildLayout();
   const { rows, nameLimit, error, setRowExcluded, setRowWireName } =

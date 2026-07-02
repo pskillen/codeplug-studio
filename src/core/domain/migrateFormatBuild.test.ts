@@ -31,16 +31,12 @@ describe('normalizeFormatBuildFields', () => {
     const legacy = {
       ...build,
       channelOverrides: undefined,
-      channelSelections: [
-        { libraryEntityId: 'ch-1', overrides: { name: 'Wire A' } },
-      ],
+      channelSelections: [{ libraryEntityId: 'ch-1', overrides: { name: 'Wire A' } }],
     } as unknown as ReturnType<typeof newFormatBuild>;
 
     const normalized = normalizeFormatBuildFields(legacy);
 
-    expect(normalized.channelOverrides).toEqual([
-      { libraryEntityId: 'ch-1', wireName: 'Wire A' },
-    ]);
+    expect(normalized.channelOverrides).toEqual([{ libraryEntityId: 'ch-1', wireName: 'Wire A' }]);
   });
 });
 

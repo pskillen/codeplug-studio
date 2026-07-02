@@ -1,6 +1,15 @@
-import { ActionIcon, Group, Switch, Table, Text, TextInput, Tooltip, UnstyledButton } from '@mantine/core';
+import {
+  ActionIcon,
+  Group,
+  Switch,
+  Table,
+  Text,
+  TextInput,
+  Tooltip,
+  UnstyledButton,
+} from '@mantine/core';
 import { IconCheck, IconX } from '@tabler/icons-react';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import type { WirePreviewRow } from '@core/services/previewWireRows.ts';
 import { ICON_SIZE_ACTION, ICON_STROKE } from '../../lib/iconSizes.ts';
 
@@ -13,7 +22,7 @@ export interface WirePreviewTableProps {
 }
 
 function wireNameCommittedValue(row: WirePreviewRow): string {
-  return row.effectiveWireName !== row.generatedWireName ? row.effectiveWireName : '';
+  return row.hasWireNameOverride ? row.effectiveWireName : '';
 }
 
 function WireNameOverrideInput({
@@ -33,10 +42,6 @@ function WireNameOverrideInput({
   const [draft, setDraft] = useState(committed);
   const dirty = draft !== committed;
 
-  useEffect(() => {
-    setDraft(committed);
-  }, [committed, row.key]);
-
   const tooLong = nameLimit != null && draft.length > nameLimit;
 
   const apply = () => {
@@ -45,6 +50,11 @@ function WireNameOverrideInput({
 
   const revert = () => {
     setDraft(committed);
+  };
+
+  const applyDefault = () => {
+    setDraft(row.generatedWireName);
+    onWireNameChange(row, row.generatedWireName);
   };
 
   return (
@@ -105,7 +115,7 @@ function WireNameOverrideInput({
               component="button"
               type="button"
               disabled={excluded}
-              onClick={() => onWireNameChange(row, row.generatedWireName)}
+              onClick={applyDefault}
               style={{
                 color: 'var(--mantine-color-dimmed)',
                 textDecoration: 'underline',
@@ -167,6 +177,7 @@ export default function WirePreviewTable({
             </Table.Td>
             <Table.Td>
               <WireNameOverrideInput
+                key={`${row.key}:${wireNameCommittedValue(row)}`}
                 row={row}
                 nameLimit={nameLimit}
                 excluded={row.excluded}

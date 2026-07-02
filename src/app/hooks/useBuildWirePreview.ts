@@ -10,7 +10,7 @@ import {
 } from '@core/services/previewWireRows.ts';
 import { traitProfileFor } from '@core/models/traits.ts';
 import { getFormatProfiles } from '@core/import-export/formatProfiles.ts';
-import { useExportSettings } from './useExportSettings.ts';
+import { useExportSettings, exportOptionsFromSettings } from './useExportSettings.ts';
 import { useBuildLayout } from '../routes/builds/BuildLayoutContext.tsx';
 import { useProjects } from '../state/useProjects.ts';
 import { persistence } from '../state/persistence.ts';
@@ -41,18 +41,21 @@ async function loadLibrarySlice(projectId: string): Promise<LibrarySlice> {
 export function useBuildWirePreview(entityKind: WirePreviewEntityKind) {
   const { build } = useBuildLayout();
   const buildRef = useRef(build);
-  buildRef.current = build;
   const saveQueueRef = useRef(Promise.resolve());
 
+  useEffect(() => {
+    buildRef.current = build;
+  }, [build]);
+
   const { activeProjectId } = useProjects();
-  const { exportOptionsFromSettings: optionsFromSettings } = useExportSettings();
+  const { settings } = useExportSettings();
   const [library, setLibrary] = useState<LibrarySlice | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
   const exportOptions = useMemo(
-    () => optionsFromSettings({ profileId: build.profileId, expandModes: true }),
-    [optionsFromSettings, build.profileId],
+    () => exportOptionsFromSettings(settings, { profileId: build.profileId, expandModes: true }),
+    [settings, build.profileId],
   );
 
   const rows = useMemo(() => {

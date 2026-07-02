@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useSyncExternalStore } from 'react';
 import {
   DEFAULT_CHANNEL_EXPORT_NAME_MODE,
   type ChannelExportNameMode,
@@ -56,6 +56,38 @@ function readUseChannelAbbreviation(): boolean {
   return localStorage.getItem(STORAGE_KEY_EXPORT_USE_CHANNEL_ABBREVIATION) === 'true';
 }
 
+function readSettings(): ExportSettings {
+  return {
+    shortenNames: readShortenNames(),
+    maxNameLength: readMaxNameLength(),
+    nameModeOverride: readNameModeOverride(),
+    useTalkGroupAbbreviation: readUseTalkGroupAbbreviation(),
+    useChannelAbbreviation: readUseChannelAbbreviation(),
+  };
+}
+
+const listeners = new Set<() => void>();
+let settingsSnapshot: ExportSettings | null = null;
+
+function subscribe(listener: () => void): () => void {
+  listeners.add(listener);
+  return () => {
+    listeners.delete(listener);
+  };
+}
+
+function getSnapshot(): ExportSettings {
+  settingsSnapshot ??= readSettings();
+  return settingsSnapshot;
+}
+
+function publish(next: ExportSettings): void {
+  settingsSnapshot = next;
+  for (const listener of listeners) {
+    listener();
+  }
+}
+
 export function exportOptionsFromSettings(
   settings: ExportSettings,
   base: CpsExportOptions = {},
@@ -71,67 +103,55 @@ export function exportOptionsFromSettings(
 }
 
 export function useExportSettings() {
-  const [shortenNames, setShortenNamesState] = useState(readShortenNames);
-  const [maxNameLength, setMaxNameLengthState] = useState<number | null>(readMaxNameLength);
-  const [nameModeOverride, setNameModeOverrideState] =
-    useState<ExportNameModeOverride>(readNameModeOverride);
-  const [useTalkGroupAbbreviation, setUseTalkGroupAbbreviationState] = useState(
-    readUseTalkGroupAbbreviation,
-  );
-  const [useChannelAbbreviation, setUseChannelAbbreviationState] = useState(
-    readUseChannelAbbreviation,
-  );
+  const settings = useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
 
   const setShortenNames = useCallback((value: boolean) => {
-    setShortenNamesState(value);
     localStorage.setItem(STORAGE_KEY_EXPORT_SHORTEN_NAMES, String(value));
+    publish({ ...getSnapshot(), shortenNames: value });
   }, []);
 
   const setMaxNameLength = useCallback((value: number | null) => {
-    setMaxNameLengthState(value);
     if (value == null) {
       localStorage.removeItem(STORAGE_KEY_EXPORT_MAX_NAME_LENGTH);
     } else {
       localStorage.setItem(STORAGE_KEY_EXPORT_MAX_NAME_LENGTH, String(value));
     }
+    publish({ ...getSnapshot(), maxNameLength: value });
   }, []);
 
   const setNameModeOverride = useCallback((value: ExportNameModeOverride) => {
-    setNameModeOverrideState(value);
     localStorage.setItem(STORAGE_KEY_EXPORT_NAME_MODE_OVERRIDE, value);
+    publish({ ...getSnapshot(), nameModeOverride: value });
   }, []);
 
   const setUseTalkGroupAbbreviation = useCallback((value: boolean) => {
-    setUseTalkGroupAbbreviationState(value);
     localStorage.setItem(STORAGE_KEY_EXPORT_USE_TG_ABBREVIATION, String(value));
+    publish({ ...getSnapshot(), useTalkGroupAbbreviation: value });
   }, []);
 
   const setUseChannelAbbreviation = useCallback((value: boolean) => {
-    setUseChannelAbbreviationState(value);
     localStorage.setItem(STORAGE_KEY_EXPORT_USE_CHANNEL_ABBREVIATION, String(value));
+    publish({ ...getSnapshot(), useChannelAbbreviation: value });
   }, []);
-
-  const settings: ExportSettings = {
-    shortenNames,
-    maxNameLength,
-    nameModeOverride,
-    useTalkGroupAbbreviation,
-    useChannelAbbreviation,
-  };
 
   return {
     settings,
-    shortenNames,
+    shortenNames: settings.shortenNames,
     setShortenNames,
-    maxNameLength,
+    maxNameLength: settings.maxNameLength,
     setMaxNameLength,
-    nameModeOverride,
+    nameModeOverride: settings.nameModeOverride,
     setNameModeOverride,
-    useTalkGroupAbbreviation,
+    useTalkGroupAbbreviation: settings.useTalkGroupAbbreviation,
     setUseTalkGroupAbbreviation,
-    useChannelAbbreviation,
+    useChannelAbbreviation: settings.useChannelAbbreviation,
     setUseChannelAbbreviation,
     exportOptionsFromSettings: (base: CpsExportOptions = {}) =>
       exportOptionsFromSettings(settings, base),
   };
+}
+
+/** @internal Test helper — reset store between tests. */
+export function resetExportSettingsForTests(): void {
+  settingsSnapshot = null;
 }

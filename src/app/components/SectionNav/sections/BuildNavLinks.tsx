@@ -6,8 +6,7 @@ import { buildNavItems } from '../../../routes/builds/nav.ts';
 export default function BuildNavLinks() {
   const { id: paramId } = useParams();
   const location = useLocation();
-  const buildId =
-    paramId ?? location.pathname.match(/^\/builds\/([^/]+)/)?.[1];
+  const buildId = paramId ?? location.pathname.match(/^\/builds\/([^/]+)/)?.[1];
   const { build } = useFormatBuild(buildId);
 
   if (!build) return null;
