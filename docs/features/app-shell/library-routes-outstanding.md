@@ -7,7 +7,6 @@
 | Item                                   | Notes                                                                |
 | -------------------------------------- | -------------------------------------------------------------------- |
 | Channel merge candidates modal         | Tool parity — not in #24 minimum acceptance                          |
-| RxGroupList two-list member picker     | Checkbox editor unchanged; same pattern as zone picker when uplifted |
 | Reference page route split             | Still one scroll page — separate initiative                          |
 | Full optional-column parity with tool  | Core column set shipped; extend as needed                            |
 | Primary nav per-entity promotion       | Library bucket remains single nav item                               |
