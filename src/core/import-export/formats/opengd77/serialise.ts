@@ -8,6 +8,7 @@ import type {
 } from '@core/models/library.ts';
 import type { ChannelMode } from '@core/models/libraryTypes.ts';
 import { expandChannelWireRows } from '@core/import-export/channelExpansion/multiMode.ts';
+import { withTalkGroupWireNameLimits } from '@core/import-export/channelExpansion/talkGroupWireNames.ts';
 import { formatCsv } from './csvWrite.ts';
 import {
   CHANNEL_COL,
@@ -233,11 +234,12 @@ export function serialiseOpenGd77Files(
   options?: CpsExportOptions,
 ): OpenGd77ExportFiles {
   const profileId = options?.profileId ?? assembled.profileId ?? DEFAULT_OPENGD77_PROFILE_ID;
+  const exportAssembled = withTalkGroupWireNameLimits(assembled, { ...options, profileId });
   return {
-    'Channels.csv': serialiseChannels(assembled, options),
-    'Zones.csv': serialiseZones(assembled, options),
-    'Contacts.csv': serialiseContacts(assembled),
-    'TG_Lists.csv': serialiseRxGroupLists(assembled, profileId),
+    'Channels.csv': serialiseChannels(exportAssembled, options),
+    'Zones.csv': serialiseZones(exportAssembled, options),
+    'Contacts.csv': serialiseContacts(exportAssembled),
+    'TG_Lists.csv': serialiseRxGroupLists(exportAssembled, profileId),
     'DTMF.csv': serialiseDtmfHeaderOnly(),
     'APRS.csv': serialiseAprsHeaderOnly(),
   };

@@ -10,6 +10,7 @@ import {
   expandChannelWireRows,
   modeExportNameSuffix,
 } from '@core/import-export/channelExpansion/multiMode.ts';
+import { applyTalkGroupWireNameLimits } from '@core/import-export/channelExpansion/talkGroupWireNames.ts';
 import { assemble, type LibrarySlice } from './assemble.ts';
 import type { FormatBuild } from '@core/models/formatBuild.ts';
 
@@ -140,20 +141,32 @@ export function previewWireRows(
           build.zoneOverrides,
         );
       });
-    case 'talkGroup':
+    case 'talkGroup': {
+      const reserved = new Set<string>();
+      const warnings: string[] = [];
       return library.talkGroups.map((talkGroup) => {
         const assembled = projection.talkGroups.find((row) => row.entity.id === talkGroup.id);
         const referenced = assembled != null;
+        const baseWireName = assembled?.wireName ?? talkGroup.name;
+        const generatedWireName = applyTalkGroupWireNameLimits(
+          baseWireName,
+          talkGroup,
+          reserved,
+          _options,
+          build.profileId,
+          warnings,
+        );
         return previewRow(
           talkGroup.id,
           talkGroup.id,
           'talkGroup',
           `${talkGroup.name} (ID ${talkGroup.digitalId})`,
-          talkGroup.name,
+          generatedWireName,
           build.talkGroupOverrides,
           referenced ? undefined : 'Not referenced by exported channels',
         );
       });
+    }
     case 'contact': {
       const rows: WirePreviewRow[] = [];
       for (const contact of library.digitalContacts) {

@@ -4,14 +4,14 @@ import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import type { Channel } from '@core/models/library.ts';
 import type { AssembledBuild } from '@core/services/assemble.ts';
-import { newChannel } from '@core/domain/factories.ts';
+import { newChannel, newTalkGroup } from '@core/domain/factories.ts';
 import { parseProjectDocument } from '@core/import-export/formats/native-yaml/parse.ts';
 import { assemble } from '@core/services/assemble.ts';
 import { exportBuildAll } from '@core/services/exportBuild.ts';
 import { compareCsvRecords } from '../../../../test/csvRecordCompare.ts';
 import { parseCsv } from '../../../../test/csvParse.ts';
-import { CHANNEL_COL } from './columns.ts';
-import { serialiseChannels, serialiseZones } from './serialise.ts';
+import { CHANNEL_COL, CONTACT_COL } from './columns.ts';
+import { serialiseChannels, serialiseOpenGd77Files, serialiseZones } from './serialise.ts';
 import { collectOpenGd77ExportWarnings } from './warnings.ts';
 
 const fixtureDir = join(
@@ -205,6 +205,36 @@ describe('OpenGD77 export serialise', () => {
     const second = serialiseChannels(assembled);
     const comparison = compareCsvRecords(first, second, { nameColumn: 'Channel Name' });
     expect(comparison.ok).toBe(true);
+  });
+
+  it('shortens long talk group names in Contacts.csv when shortenNames is enabled', () => {
+    const tg = {
+      ...newTalkGroup('proj', 'Scotland West Region', 23559),
+      abbreviation: 'Scot West',
+    };
+    const assembled: AssembledBuild = {
+      buildId: 'build-1',
+      formatId: 'opengd77',
+      profileId: 'opengd77-1701',
+      buildName: 'Test',
+      channels: [],
+      zones: [],
+      talkGroups: [{ entity: tg, wireName: tg.name }],
+      digitalContacts: [],
+      analogContacts: [],
+      rxGroupLists: [],
+    };
+    const files = serialiseOpenGd77Files(assembled, {
+      profileId: 'opengd77-1701',
+      shortenNames: true,
+      useTalkGroupAbbreviation: true,
+    });
+    const rows = parseCsv(files['Contacts.csv']);
+    const headers = rows[0]!;
+    const nameIndex = headers.indexOf(CONTACT_COL.name);
+    const dataRow = rows.slice(1).find((row) => row[nameIndex] === 'Scot West');
+    expect(dataRow).toBeDefined();
+    expect(dataRow?.[nameIndex]).toBe('Scot West');
   });
 
   it('expands multi-mode channels into -F and -D wire rows when expandModes is true', () => {
