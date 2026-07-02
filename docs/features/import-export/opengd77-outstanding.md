@@ -17,5 +17,5 @@ Items **skipped**, **incomplete**, or **discovered during execution** — not th
 - [ ] Reusable `ProfilePicker` component ([#85](https://github.com/pskillen/codeplug-studio/issues/85))
 - [ ] `assemble` / `exportBuild` services ([#86](https://github.com/pskillen/codeplug-studio/issues/86))
 - [ ] Zone-grouping build editor ([#87](https://github.com/pskillen/codeplug-studio/issues/87))
-- [ ] OpenGD77 export adapter and CPS download UI
-- [ ] OpenGD77 CPS import (Phase 4b)
+- [ ] OpenGD77 export adapter and CPS download UI — **integrate on `/builds/:id`**, not `/import-export` (see [opengd77-progress.md](opengd77-progress.md) plan deviations)
+- [ ] OpenGD77 CPS import (Phase 4b) — remains on Import / export format catalog

@@ -22,9 +22,9 @@ export interface PrimaryNavItem {
 
 export const projectNavItems: PrimaryNavItem[] = [
   { to: '/library', label: 'Library', icon: IconBooks, countKey: 'channels' },
-  { to: '/builds', label: 'Builds', icon: IconHammer },
-  { to: '/import-export', label: 'Import / export', icon: IconArrowsLeftRight },
   { to: '/summary', label: 'Summary', icon: IconChartBar },
+  { to: '/builds', label: 'Radio builds', icon: IconHammer },
+  { to: '/import-export', label: 'Import / export', icon: IconArrowsLeftRight },
 ];
 
 export const homeNavItem = { to: '/', label: 'Projects', icon: IconHome };

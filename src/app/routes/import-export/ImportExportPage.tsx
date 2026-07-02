@@ -1,10 +1,10 @@
-import { Stack } from '@mantine/core';
+import { Anchor, Stack, Text } from '@mantine/core';
+import { Link } from 'react-router-dom';
 import { ListPage, PageSection, PageSectionGrid } from '../../components/ui/index.ts';
 import ExportProjectYamlPanel from '../../components/import-export/ExportProjectYamlPanel.tsx';
 import ExportToDrivePanel from '../../components/import-export/ExportToDrivePanel.tsx';
 import ImportYamlIntoActivePanel from '../../components/import-export/ImportYamlIntoActivePanel.tsx';
 import CpsFormatCatalogGrid from '../../components/import-export/CpsFormatCatalogGrid.tsx';
-import ExportBuildSelectorStub from '../../components/import-export/ExportBuildSelectorStub.tsx';
 import { useFormatParam } from '../../hooks/useFormatParam.ts';
 import { useProjects } from '../../state/useProjects.ts';
 
@@ -44,9 +44,16 @@ export default function ImportExportPage() {
 
         <PageSection
           title="Export to CPS"
-          description="Select a format build for export. Download wiring ships when the OpenGD77 export adapter lands."
+          description="Per-build CPS export lives on each radio build."
         >
-          <ExportBuildSelectorStub />
+          <Text size="sm">
+            Open a build under{' '}
+            <Anchor component={Link} to="/builds">
+              Radio builds
+            </Anchor>{' '}
+            to export when the format adapter ships. Import for CPS formats remains in the catalog
+            above.
+          </Text>
         </PageSection>
       </Stack>
     </ListPage>

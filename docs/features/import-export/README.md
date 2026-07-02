@@ -71,7 +71,7 @@ The import/export route is organised in three bands:
 
 1. **Native YAML** — shipped import (replace active project) and export (download + Google Drive).
 2. **CPS formats** — `CpsFormatCatalogGrid` driven by `formatCatalog`; planned formats show a “coming soon” alert ([`FormatCatalogPanel`](../../../src/app/components/import-export/FormatCatalogPanel.tsx)).
-3. **Export to CPS** — `ExportBuildSelectorStub` lists persisted format builds; download wiring follows in the export adapter slice.
+3. **Export to CPS** — pointer to **Radio builds** (`/builds`); per-build export UI lives on each build detail page ([`ExportBuildCpsPanelStub`](../../../src/app/components/builds/ExportBuildCpsPanelStub.tsx)).
 
 Optional deep link: `?format=opengd77` highlights the matching catalog card (`useFormatParam`).
 

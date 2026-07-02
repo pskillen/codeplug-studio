@@ -7,6 +7,7 @@ import { formatProfileWireHint } from '@core/import-export/formatProfiles.ts';
 import type { FormatId } from '@core/import-export/types.ts';
 import { FormPage, FormSection } from '../../components/ui/index.ts';
 import { TRAIT_LABELS } from './buildHelpers.ts';
+import ExportBuildCpsPanelStub from '../../components/builds/ExportBuildCpsPanelStub.tsx';
 import { BuildService } from '../../state/buildService.ts';
 import { persistence } from '../../state/persistence.ts';
 import { useFormatBuild } from '../../state/useFormatBuilds.ts';
@@ -150,6 +151,10 @@ export default function BuildDetailPage() {
           <Text size="sm" c="dimmed">
             Sections: {build.layout.sections.length}
           </Text>
+        </FormSection>
+
+        <FormSection title="Export to CPS">
+          <ExportBuildCpsPanelStub build={build} />
         </FormSection>
       </Stack>
     </FormPage>
