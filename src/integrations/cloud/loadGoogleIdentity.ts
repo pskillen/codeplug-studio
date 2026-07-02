@@ -53,7 +53,9 @@ export function loadGoogleIdentity(): Promise<GoogleIdentityClient> {
         if (window.google?.accounts?.oauth2) resolve(window.google);
         else reject(new Error('Google Identity Services failed to initialise.'));
       });
-      existing.addEventListener('error', () => reject(new Error('Failed to load Google Identity Services.')));
+      existing.addEventListener('error', () =>
+        reject(new Error('Failed to load Google Identity Services.')),
+      );
       return;
     }
 

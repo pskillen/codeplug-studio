@@ -8,16 +8,16 @@ Lets operators navigate Drive folders with breadcrumbs, create folders, open `.y
 
 ## Props
 
-| Prop | Type | Description |
-| --- | --- | --- |
-| `opened` | `boolean` | Modal visibility |
-| `onClose` | `() => void` | Close handler |
-| `mode` | `'open' \| 'save'` | Open file vs pick save target |
-| `interchangeFolderId` | `string?` | Start folder from project export memory |
-| `defaultFileName` | `string?` | Pre-filled filename in save mode |
-| `onSelectFile` | `(selection) => void` | Open mode — file id, name, text |
-| `onSaveTarget` | `(target) => void` | Save mode — folder, path, filename, optional existing file id |
-| `port` | `GoogleDrivePort?` | Injectable port for tests |
+| Prop                  | Type                  | Description                                                   |
+| --------------------- | --------------------- | ------------------------------------------------------------- |
+| `opened`              | `boolean`             | Modal visibility                                              |
+| `onClose`             | `() => void`          | Close handler                                                 |
+| `mode`                | `'open' \| 'save'`    | Open file vs pick save target                                 |
+| `interchangeFolderId` | `string?`             | Start folder from project export memory                       |
+| `defaultFileName`     | `string?`             | Pre-filled filename in save mode                              |
+| `onSelectFile`        | `(selection) => void` | Open mode — file id, name, text                               |
+| `onSaveTarget`        | `(target) => void`    | Save mode — folder, path, filename, optional existing file id |
+| `port`                | `GoogleDrivePort?`    | Injectable port for tests                                     |
 
 ## Behaviour
 

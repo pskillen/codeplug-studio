@@ -5,10 +5,7 @@ import {
   suggestExportDestination,
 } from '@core/services/interchangeMeta.ts';
 import { googleDrivePort } from '@integrations/cloud/index.ts';
-import {
-  saveDriveLastFolderId,
-  saveDriveLastFolderPath,
-} from '@integrations/cloud/drivePrefs.ts';
+import { saveDriveLastFolderId, saveDriveLastFolderPath } from '@integrations/cloud/drivePrefs.ts';
 import { exportProjectToYaml } from '../../services/projectImportExportService.ts';
 import { useGoogleDrive } from '../../hooks/useGoogleDrive.ts';
 import { useProjects } from '../../state/useProjects.ts';

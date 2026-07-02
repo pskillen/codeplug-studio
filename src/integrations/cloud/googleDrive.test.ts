@@ -1,10 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createGoogleDrivePort } from './googleDrive.ts';
-import {
-  clearDriveSession,
-  loadDriveSession,
-  saveDriveSession,
-} from './drivePrefs.ts';
+import { clearDriveSession, loadDriveSession, saveDriveSession } from './drivePrefs.ts';
 import { DriveAuthError, DriveCancelledError, DriveConfigError } from './driveTypes.ts';
 import type { DriveApiClient } from './driveApi.ts';
 import type { GoogleIdentityClient } from './loadGoogleIdentity.ts';
@@ -28,10 +24,18 @@ function createLocalStorageMock() {
 describe('googleDrive port', () => {
   const api: DriveApiClient = {
     listChildren: vi.fn(async () => [{ id: 'f1', name: 'Folder', kind: 'folder' as const }]),
-    createFolder: vi.fn(async () => ({ id: 'nf', name: 'New', mimeType: 'application/vnd.google-apps.folder' })),
+    createFolder: vi.fn(async () => ({
+      id: 'nf',
+      name: 'New',
+      mimeType: 'application/vnd.google-apps.folder',
+    })),
     readFile: vi.fn(async () => 'yaml-content'),
     writeFile: vi.fn(async () => ({ id: 'wf', name: 'demo.yaml', mimeType: 'application/yaml' })),
-    getFileMetadata: vi.fn(async () => ({ id: 'wf', name: 'demo.yaml', mimeType: 'application/yaml' })),
+    getFileMetadata: vi.fn(async () => ({
+      id: 'wf',
+      name: 'demo.yaml',
+      mimeType: 'application/yaml',
+    })),
     getUserEmail: vi.fn(async () => 'op@example.com'),
   };
 

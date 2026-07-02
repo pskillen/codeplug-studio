@@ -54,11 +54,11 @@ With an active project, **Library** routes persist channels, zones, contacts, ta
 
 **Import / export** (`/import-export`, active project required):
 
-| Panel                 | Mode                                   | Effect                                                                                 |
-| --------------------- | -------------------------------------- | -------------------------------------------------------------------------------------- |
-| Export YAML           | `exportProjectYaml` + browser download | Full project snapshot; `interchange.localFile` remembers filename                      |
-| Save to Drive         | Drive browser + `writeFile`            | Upload YAML; `interchange.googleDrive` remembers folder + file                         |
-| Import YAML (replace) | `replaceExisting` after confirm modal  | `replaceProject` — local file or **Open from Drive**                                   |
+| Panel                 | Mode                                   | Effect                                                            |
+| --------------------- | -------------------------------------- | ----------------------------------------------------------------- |
+| Export YAML           | `exportProjectYaml` + browser download | Full project snapshot; `interchange.localFile` remembers filename |
+| Save to Drive         | Drive browser + `writeFile`            | Upload YAML; `interchange.googleDrive` remembers folder + file    |
+| Import YAML (replace) | `replaceExisting` after confirm modal  | `replaceProject` — local file or **Open from Drive**              |
 
 Replace requires the YAML `project.id` to match the active project. There is no merge mode for native YAML.
 

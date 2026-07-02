@@ -14,12 +14,12 @@ IndexedDB remains the **edit store**; Drive holds portable YAML interchange file
 
 ## localStorage keys
 
-| Key | Purpose |
-| --- | --- |
-| `codeplug-studio:drive:accessToken` | OAuth bearer (masked in Debug) |
-| `codeplug-studio:drive:tokenExpiresAt` | Token expiry (epoch ms) |
-| `codeplug-studio:drive:lastAccount` | Connected Google account email |
-| `codeplug-studio:drive:lastFolderId` | Last browsed folder id |
+| Key                                    | Purpose                                  |
+| -------------------------------------- | ---------------------------------------- |
+| `codeplug-studio:drive:accessToken`    | OAuth bearer (masked in Debug)           |
+| `codeplug-studio:drive:tokenExpiresAt` | Token expiry (epoch ms)                  |
+| `codeplug-studio:drive:lastAccount`    | Connected Google account email           |
+| `codeplug-studio:drive:lastFolderId`   | Last browsed folder id                   |
 | `codeplug-studio:drive:lastFolderPath` | Breadcrumb path JSON `[{ id, name }, …]` |
 
 ## OAuth setup
@@ -36,17 +36,17 @@ IndexedDB remains the **edit store**; Drive holds portable YAML interchange file
 
 ## Port API (`GoogleDrivePort`)
 
-| Method | Purpose |
-| --- | --- |
-| `connect()` | GIS OAuth token flow; stores session in localStorage |
-| `disconnect()` | Revoke token + clear session |
-| `isConnected()` | Session present and not expired |
-| `getAccountLabel()` | Connected Google account email |
-| `listChildren(parentId)` | Folders + `.yaml` / `.yml` files |
-| `createFolder(parentId, name)` | New folder in parent |
-| `readFile(fileId)` | Download file text |
-| `writeFile({ parentId, fileName, content, fileId? })` | Create or overwrite YAML |
-| `getFileMetadata(fileId)` | Name, parents, modified time |
+| Method                                                | Purpose                                              |
+| ----------------------------------------------------- | ---------------------------------------------------- |
+| `connect()`                                           | GIS OAuth token flow; stores session in localStorage |
+| `disconnect()`                                        | Revoke token + clear session                         |
+| `isConnected()`                                       | Session present and not expired                      |
+| `getAccountLabel()`                                   | Connected Google account email                       |
+| `listChildren(parentId)`                              | Folders + `.yaml` / `.yml` files                     |
+| `createFolder(parentId, name)`                        | New folder in parent                                 |
+| `readFile(fileId)`                                    | Download file text                                   |
+| `writeFile({ parentId, fileName, content, fileId? })` | Create or overwrite YAML                             |
+| `getFileMetadata(fileId)`                             | Name, parents, modified time                         |
 
 Implementation: `src/integrations/cloud/googleDrive.ts`.
 
@@ -69,10 +69,10 @@ Implementation: `src/integrations/cloud/googleDrive.ts`.
 - **Create folder** in the current directory
 - Persists browse path to localStorage on navigation
 
-| Mode | Trigger | Result |
-| --- | --- | --- |
-| `open` | Open from Drive | Reads file → `importProjectFromYaml` |
-| `save` | Save to Drive | Picks folder + filename → upload + record destination |
+| Mode   | Trigger         | Result                                                |
+| ------ | --------------- | ----------------------------------------------------- |
+| `open` | Open from Drive | Reads file → `importProjectFromYaml`                  |
+| `save` | Save to Drive   | Picks folder + filename → upload + record destination |
 
 ### Export workflow
 
@@ -89,23 +89,23 @@ Implementation: `src/integrations/cloud/googleDrive.ts`.
 
 ## Error states
 
-| Situation | UI behaviour |
-| --- | --- |
-| Not configured | Yellow alert — missing `VITE_GOOGLE_CLIENT_ID` |
-| Not connected | Prompt to connect in Settings |
-| Auth expired | Error alert + reconnect hint |
-| Sign-in cancelled | Non-destructive message |
-| Network / API failure | Red alert with Drive error message |
-| Duplicate folder name | Drive API conflict message |
+| Situation             | UI behaviour                                   |
+| --------------------- | ---------------------------------------------- |
+| Not configured        | Yellow alert — missing `VITE_GOOGLE_CLIENT_ID` |
+| Not connected         | Prompt to connect in Settings                  |
+| Auth expired          | Error alert + reconnect hint                   |
+| Sign-in cancelled     | Non-destructive message                        |
+| Network / API failure | Red alert with Drive error message             |
+| Duplicate folder name | Drive API conflict message                     |
 
 ## Implementation status
 
-| Area | Status | Notes |
-| --- | --- | --- |
-| OAuth + Drive API port | Shipped | [#61](https://github.com/pskillen/codeplug-studio/issues/61) |
+| Area                          | Status  | Notes                                                        |
+| ----------------------------- | ------- | ------------------------------------------------------------ |
+| OAuth + Drive API port        | Shipped | [#61](https://github.com/pskillen/codeplug-studio/issues/61) |
 | Settings connect / disconnect | Shipped | [#62](https://github.com/pskillen/codeplug-studio/issues/62) |
-| Drive browser modal | Shipped | [#62](https://github.com/pskillen/codeplug-studio/issues/62) |
-| Import / export workflow | Shipped | [#62](https://github.com/pskillen/codeplug-studio/issues/62) |
+| Drive browser modal           | Shipped | [#62](https://github.com/pskillen/codeplug-studio/issues/62) |
+| Import / export workflow      | Shipped | [#62](https://github.com/pskillen/codeplug-studio/issues/62) |
 
 ## Manual verify checklist
 

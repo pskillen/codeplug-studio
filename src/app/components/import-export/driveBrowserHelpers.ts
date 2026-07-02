@@ -11,8 +11,7 @@ export function resolveInitialBrowseState(input: ResolveInitialBrowseInput): {
   folderId: string;
   path: DriveFolderCrumb[];
 } {
-  const folderId =
-    input.interchangeFolderId ?? input.lastFolderId ?? DRIVE_ROOT_FOLDER_ID;
+  const folderId = input.interchangeFolderId ?? input.lastFolderId ?? DRIVE_ROOT_FOLDER_ID;
   const path =
     input.lastFolderPath && input.lastFolderPath.length > 0
       ? input.lastFolderPath
