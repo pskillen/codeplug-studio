@@ -137,5 +137,8 @@ export function normalizeFormatBuildFields(build: LegacyFormatBuild): FormatBuil
         libraryEntityId: row.libraryEntityId,
         wireName: row.overrides.name,
       })),
+    exportUnlinkedChannels: build.exportUnlinkedChannels ?? true,
+    exportUnlinkedTalkGroups: build.exportUnlinkedTalkGroups ?? true,
+    exportUnlinkedRxGroupLists: build.exportUnlinkedRxGroupLists ?? true,
   };
 }

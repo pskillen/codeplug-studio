@@ -2,6 +2,7 @@ import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
+import { newChannel, newTalkGroup } from '@core/domain/factories.ts';
 import { parseProjectDocument } from '@core/import-export/formats/native-yaml/parse.ts';
 import { assemble } from './assemble.ts';
 
@@ -132,5 +133,68 @@ describe('assemble', () => {
     expect(projection.channels[0]?.wireName).toBe('GB3DA GB3DA Demo');
     expect(projection.channels[1]?.wireName).toBe('GB7GL DMR Scotland');
     expect(projection.channels[0]?.wireNameOverride).toBeUndefined();
+  });
+
+  it('includes unlinked talk groups when exportUnlinkedTalkGroups is true (default)', () => {
+    const yaml = readFileSync(join(fixtureDir, 'with-format-build.yaml'), 'utf8');
+    const aggregate = parseProjectDocument(yaml);
+    const build = aggregate.formatBuilds[0]!;
+    const orphanTalkGroup = newTalkGroup(aggregate.meta.id, 'Orphan TG', 9999);
+    const library = {
+      channels: aggregate.channels,
+      zones: aggregate.zones,
+      talkGroups: [...aggregate.talkGroups, orphanTalkGroup],
+      digitalContacts: aggregate.digitalContacts,
+      analogContacts: aggregate.analogContacts,
+      rxGroupLists: aggregate.rxGroupLists,
+    };
+
+    const projection = assemble(build, library);
+    expect(projection.talkGroups.map((row) => row.entity.id)).toContain(orphanTalkGroup.id);
+  });
+
+  it('excludes unlinked talk groups when exportUnlinkedTalkGroups is false', () => {
+    const yaml = readFileSync(join(fixtureDir, 'with-format-build.yaml'), 'utf8');
+    const aggregate = parseProjectDocument(yaml);
+    const build = {
+      ...aggregate.formatBuilds[0]!,
+      exportUnlinkedTalkGroups: false,
+    };
+    const orphanTalkGroup = newTalkGroup(aggregate.meta.id, 'Orphan TG', 9999);
+    const library = {
+      channels: aggregate.channels,
+      zones: aggregate.zones,
+      talkGroups: [...aggregate.talkGroups, orphanTalkGroup],
+      digitalContacts: aggregate.digitalContacts,
+      analogContacts: aggregate.analogContacts,
+      rxGroupLists: aggregate.rxGroupLists,
+    };
+
+    const projection = assemble(build, library);
+    expect(projection.talkGroups.map((row) => row.entity.id)).not.toContain(orphanTalkGroup.id);
+    expect(projection.talkGroups).toHaveLength(1);
+  });
+
+  it('excludes unzoned channels when exportUnlinkedChannels is false', () => {
+    const yaml = readFileSync(join(fixtureDir, 'with-format-build.yaml'), 'utf8');
+    const aggregate = parseProjectDocument(yaml);
+    const build = {
+      ...aggregate.formatBuilds[0]!,
+      exportUnlinkedChannels: false,
+      channelOverrides: [],
+    };
+    const orphanChannel = newChannel(aggregate.meta.id, 'Orphan', 'GB9ZZ');
+    const library = {
+      channels: [...aggregate.channels, orphanChannel],
+      zones: aggregate.zones,
+      talkGroups: aggregate.talkGroups,
+      digitalContacts: aggregate.digitalContacts,
+      analogContacts: aggregate.analogContacts,
+      rxGroupLists: aggregate.rxGroupLists,
+    };
+
+    const projection = assemble(build, library);
+    expect(projection.channels.map((row) => row.entity.id)).not.toContain(orphanChannel.id);
+    expect(projection.channels).toHaveLength(2);
   });
 });

@@ -36,7 +36,7 @@ describe('brandmeisterRxGroupListSync helpers', () => {
     const tg = newTalkGroup('p', 'Scotland West', 23559);
     library.talkGroups.push(tg);
     const list = {
-      ...newRxGroupList('p', 'GB7AC — BrandMeister'),
+      ...newRxGroupList('p', 'GB7AC - BrandMeister'),
       members: [{ ref: { kind: 'talkGroup' as const, id: tg.id }, timeSlotOverride: 2 as const }],
     };
     library.rxGroupLists.push(list);

@@ -18,8 +18,14 @@ export function formatOpenGd77SquelchWire(mode: ChannelMode, percent: number | n
   return `${percent}%`;
 }
 
-export function formatOpenGd77BandwidthWire(khz: number | null): string {
-  if (khz == null) return '';
+/** Analogue export default when library field is unset (narrowband FM). */
+export const OPENGD77_DEFAULT_ANALOG_BANDWIDTH_KHZ = 12.5;
+
+export function formatOpenGd77BandwidthWire(
+  khz: number | null,
+  isAnalogue: boolean = false,
+): string {
+  if (khz == null) return isAnalogue ? String(OPENGD77_DEFAULT_ANALOG_BANDWIDTH_KHZ) : '';
   return String(khz);
 }
 

@@ -22,9 +22,11 @@ FormatBuild + library rows
 
 `assemble(build, library, options?)` returns an **export projection**:
 
-- **Channels** — `channelSelections` order with `overrides.name` as wire name; when selections are empty, all library channels are included.
-- **Zones** — `layout.sections` zone grouping cross-referenced with library `Zone` rows and `zoneSelections` wire names; falls back to library zone membership when layout is empty.
-- **Contacts / talk groups / RX lists** — explicit selections when populated; otherwise entities referenced by exported channels (including RX list members).
+- **Channels** — non-excluded library channels; when `exportUnlinkedChannels` is false, only channels linked in build zone layout or library zones.
+- **Zones** — `layout.sections` zone grouping cross-referenced with library `Zone` rows and `zoneOverrides` wire names; falls back to library zone membership when layout is empty.
+- **Contacts / talk groups / RX lists** — referenced by exported channels (including RX list members); when `exportUnlinkedTalkGroups` / `exportUnlinkedRxGroupLists` are true (default), all non-excluded library rows of that kind are also included.
+
+`exportInclusionWarnings(build, library, assembled)` reports counts when orphan entities are included.
 
 Wire adapters read `AssembledBuild` — they do not query IndexedDB or parse CPS.
 

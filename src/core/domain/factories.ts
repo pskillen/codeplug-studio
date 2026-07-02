@@ -72,6 +72,9 @@ export function newFormatBuild(projectId: string, profileId: string, name?: stri
     name: name ?? profile.label,
     layout: emptyTraitLayout(),
     ...emptyFormatBuildOverrides(),
+    exportUnlinkedChannels: true,
+    exportUnlinkedTalkGroups: true,
+    exportUnlinkedRxGroupLists: true,
   };
 }
 
@@ -91,6 +94,7 @@ export function newChannel(projectId: string, name: string, callsign = ''): Chan
     maidenheadLocator: null,
     power: null,
     scanSkip: false,
+    forbidTransmit: false,
     comment: '',
     modeProfiles: [],
   };

@@ -16,6 +16,7 @@ function channel(partial: Partial<Channel> & Pick<Channel, 'name'>): Channel {
     maidenheadLocator: null,
     power: null,
     scanSkip: false,
+    forbidTransmit: false,
     comment: '',
     modeProfiles: [],
     ...partial,

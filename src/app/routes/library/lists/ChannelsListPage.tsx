@@ -94,6 +94,13 @@ export default function ChannelsListPage() {
         defaultVisible: col.defaultVisible,
       };
 
+      if (col.key === 'abbreviation') {
+        return {
+          ...base,
+          render: (ch: Channel) => ch.abbreviation?.trim() || '—',
+          sortValue: (ch: Channel) => ch.abbreviation?.trim() || '',
+        };
+      }
       if (col.key === 'band') {
         return {
           ...base,

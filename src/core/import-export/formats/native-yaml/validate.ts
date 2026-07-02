@@ -203,6 +203,10 @@ function parseChannel(raw: unknown, index: number): Channel {
     ),
     power: expectNullableNumber(record.power, `library.channels[${index}].power`),
     scanSkip: expectBoolean(record.scanSkip, `library.channels[${index}].scanSkip`),
+    forbidTransmit:
+      record.forbidTransmit === undefined || record.forbidTransmit === null
+        ? false
+        : expectBoolean(record.forbidTransmit, `library.channels[${index}].forbidTransmit`),
     comment: expectString(record.comment, `library.channels[${index}].comment`),
     ...(record.abbreviation !== undefined && record.abbreviation !== null
       ? {
@@ -422,6 +426,31 @@ function parseFormatBuild(raw: unknown, index: number): ParsedFormatBuild {
       label,
     ),
     contactOverrides: parseOverrideField(record, 'contactOverrides', 'contactSelections', label),
+    ...(record.exportUnlinkedChannels !== undefined && record.exportUnlinkedChannels !== null
+      ? {
+          exportUnlinkedChannels: expectBoolean(
+            record.exportUnlinkedChannels,
+            `${label}.exportUnlinkedChannels`,
+          ),
+        }
+      : {}),
+    ...(record.exportUnlinkedTalkGroups !== undefined && record.exportUnlinkedTalkGroups !== null
+      ? {
+          exportUnlinkedTalkGroups: expectBoolean(
+            record.exportUnlinkedTalkGroups,
+            `${label}.exportUnlinkedTalkGroups`,
+          ),
+        }
+      : {}),
+    ...(record.exportUnlinkedRxGroupLists !== undefined &&
+    record.exportUnlinkedRxGroupLists !== null
+      ? {
+          exportUnlinkedRxGroupLists: expectBoolean(
+            record.exportUnlinkedRxGroupLists,
+            `${label}.exportUnlinkedRxGroupLists`,
+          ),
+        }
+      : {}),
   };
 
   return { build, legacy };

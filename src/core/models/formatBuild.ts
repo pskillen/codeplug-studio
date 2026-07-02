@@ -21,4 +21,10 @@ export interface FormatBuild extends PersistableRow {
   talkGroupOverrides: BuildEntityOverride[];
   rxGroupListOverrides: BuildEntityOverride[];
   contactOverrides: BuildEntityOverride[];
+  /** Include library channels not in any zone member list. Default true. */
+  exportUnlinkedChannels?: boolean;
+  /** Include talk groups not referenced by exported channels. Default true. */
+  exportUnlinkedTalkGroups?: boolean;
+  /** Include RX group lists not referenced by exported channels. Default true. */
+  exportUnlinkedRxGroupLists?: boolean;
 }

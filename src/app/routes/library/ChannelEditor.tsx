@@ -6,6 +6,7 @@ import { reconcileChannelLocation } from '@core/domain/channelLocation.ts';
 import { newChannel } from '@core/domain/factories.ts';
 import { syncModeProfiles, validateModeProfiles } from '@core/domain/modeProfiles.ts';
 import type { ChannelMode } from '@core/models/libraryTypes.ts';
+import ForbidTransmitSegment from '../../components/channels/ForbidTransmitSegment.tsx';
 import ChannelLocationSection, {
   channelLocationValuesFromChannel,
   type ChannelLocationValues,
@@ -31,11 +32,13 @@ export default function ChannelEditor({
   const base = entity ?? newChannel(projectId, '');
 
   const [name, setName] = useState(base.name);
+  const [abbreviation, setAbbreviation] = useState(base.abbreviation ?? '');
   const [callsign, setCallsign] = useState(base.callsign);
   const [rx, setRx] = useState(hzToMhzString(base.rxFrequency));
   const [tx, setTx] = useState(hzToMhzString(base.txFrequency));
   const [power, setPower] = useState<number | null>(base.power);
   const [scanSkip, setScanSkip] = useState(base.scanSkip);
+  const [forbidTransmit, setForbidTransmit] = useState(base.forbidTransmit === true);
   const [comment, setComment] = useState(base.comment);
   const [modeProfiles, setModeProfiles] = useState<ChannelModeProfile[]>(base.modeProfiles);
   const [location, setLocation] = useState<ChannelLocationValues>(() =>
@@ -58,7 +61,8 @@ export default function ChannelEditor({
       lastEdited: location.lastEdited,
     });
 
-    return {
+    const trimmedAbbrev = abbreviation.trim();
+    const row: Channel = {
       ...base,
       name: name.trim() || 'Untitled channel',
       callsign,
@@ -66,12 +70,19 @@ export default function ChannelEditor({
       txFrequency: mhzStringToHz(tx),
       power,
       scanSkip,
+      forbidTransmit,
       comment,
       location: reconciled.location,
       useLocation: reconciled.useLocation,
       maidenheadLocator: reconciled.maidenheadLocator,
       modeProfiles,
     };
+    if (trimmedAbbrev) {
+      row.abbreviation = trimmedAbbrev;
+    } else {
+      delete row.abbreviation;
+    }
+    return row;
   }
 
   function handleSave() {
@@ -112,6 +123,12 @@ export default function ChannelEditor({
           <TextInput label="Name" value={name} onChange={(e) => setName(e.currentTarget.value)} />
         </SimpleGrid>
         <TextInput
+          label="Abbreviation"
+          description="Optional. Used at export time when the full name is too long for the radio profile (enable “Use channel abbreviations” on the build export page)."
+          value={abbreviation}
+          onChange={(e) => setAbbreviation(e.currentTarget.value)}
+        />
+        <TextInput
           label="Comment"
           value={comment}
           onChange={(e) => setComment(e.currentTarget.value)}
@@ -137,6 +154,7 @@ export default function ChannelEditor({
           />
         </SimpleGrid>
         <PercentLevelSlider label="Power" value={power} onChange={setPower} />
+        <ForbidTransmitSegment value={forbidTransmit} onChange={setForbidTransmit} />
       </FormSection>
 
       <FormSection title="Modes">

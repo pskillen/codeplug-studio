@@ -30,6 +30,12 @@ vi.mock('../../hooks/useGoogleDrive.ts', () => ({
   }),
 }));
 
+vi.mock('../../state/useFormatBuilds.ts', () => ({
+  useFormatBuilds: () => ({
+    putBuild: vi.fn(async () => ({ ok: true as const })),
+  }),
+}));
+
 vi.mock('../../state/persistence.ts', () => ({
   persistence: {
     listChannels: vi.fn(async () => [{ id: 'ch-1' }]),

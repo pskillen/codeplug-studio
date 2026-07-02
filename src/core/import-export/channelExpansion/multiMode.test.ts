@@ -17,6 +17,7 @@ function multiModeChannel(): Channel {
     maidenheadLocator: null,
     power: null,
     scanSkip: false,
+    forbidTransmit: false,
     comment: '',
     modeProfiles: [
       { mode: 'fm', squelch: 50, rxTone: 'none', txTone: 'none', bandwidthKHz: 12.5 },

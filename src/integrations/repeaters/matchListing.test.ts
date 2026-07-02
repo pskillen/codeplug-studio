@@ -32,6 +32,7 @@ const baseChannel: Channel = {
   comment: '',
   power: null,
   scanSkip: false,
+  forbidTransmit: false,
   useLocation: false,
   location: null,
   maidenheadLocator: null,

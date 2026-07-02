@@ -54,14 +54,14 @@ Zone editor uses `ZoneMemberPicker` — available ↔ in-zone lists with per-sid
 
 ## Entities and editors
 
-| Entity          | Key fields                                                                                                                                           |
-| --------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Channel         | name, callsign, RX/TX (MHz↔Hz), power, location + `maidenheadLocator`, scan-skip, comment, **multi** `modeProfiles[]`                                |
-| Talk group      | name, digital mode, group ID, comment                                                                                                                |
-| Digital contact | name, digital mode, contact ID, comment                                                                                                              |
-| Analog contact  | name, code, comment                                                                                                                                  |
-| RX group list   | name, members (talk groups / digital contacts); optional `timeSlotOverride` per member (`1` \| `2` \| unset)                                         |
-| Zone            | name, ordered channel members, `exportScratchChannel` (editor), `exportScanList` / `scanCarrierFrequencyHz` (model only — format build TBD), comment |
+| Entity          | Key fields                                                                                                                                                         |
+| --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Channel         | name, optional `abbreviation` (export shortening), callsign, RX/TX (MHz↔Hz), power, location + `maidenheadLocator`, scan-skip, comment, **multi** `modeProfiles[]` |
+| Talk group      | name, digital mode, group ID, comment                                                                                                                              |
+| Digital contact | name, digital mode, contact ID, comment                                                                                                                            |
+| Analog contact  | name, code, comment                                                                                                                                                |
+| RX group list   | name, members (talk groups / digital contacts); optional `timeSlotOverride` per member (`1` \| `2` \| unset)                                                       |
+| Zone            | name, ordered channel members, `exportScratchChannel` (editor), `exportScanList` / `scanCarrierFrequencyHz` (model only — format build TBD), comment               |
 
 Channel DMR profiles reference a **digital contact** and an **RX group list** by UUID `id` (the editor exposes dropdowns); NXDN/TETRA profiles may reference talk groups by UUID. RX group lists and zones hold member `EntityRef[]`. `RxGroupListMember.timeSlotOverride` is an optional per-member DMR slot hint (vendor-neutral; maps to CPS TS Override at export). Names are display labels only — never foreign keys.
 

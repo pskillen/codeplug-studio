@@ -18,6 +18,7 @@ function stubChannel(name: string): Channel {
     maidenheadLocator: null,
     power: null,
     scanSkip: false,
+    forbidTransmit: false,
     comment: '',
     modeProfiles: [],
   };

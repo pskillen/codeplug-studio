@@ -30,7 +30,7 @@ export type ApplyRxGroupListSyncResult = { ok: true } | { ok: false; message: st
 
 export function defaultRxGroupListSyncName(callsign: string): string {
   const call = callsign.trim() || 'Repeater';
-  return `${call} — BrandMeister`;
+  return `${call} - BrandMeister`;
 }
 
 export function linkedRxGroupList(channel: Channel, library: Library): RxGroupList | null {

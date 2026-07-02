@@ -94,6 +94,7 @@ export function fullLibraryAggregate(): ProjectAggregate {
     maidenheadLocator: 'IO85vs',
     power: 25,
     scanSkip: false,
+    forbidTransmit: false,
     comment: 'Analog FM',
     modeProfiles: [
       {
@@ -117,6 +118,7 @@ export function fullLibraryAggregate(): ProjectAggregate {
     maidenheadLocator: null,
     power: null,
     scanSkip: true,
+    forbidTransmit: false,
     comment: '',
     modeProfiles: [
       {
@@ -201,6 +203,9 @@ export function projectWithFormatBuildAggregate(): ProjectAggregate {
     talkGroupOverrides: [{ libraryEntityId: FIXTURE_TG_ID, wireName: 'Scotland' }],
     rxGroupListOverrides: [{ libraryEntityId: FIXTURE_RX_LIST_ID, wireName: 'Scotland TG' }],
     contactOverrides: [{ libraryEntityId: FIXTURE_DIGITAL_CONTACT_ID, wireName: 'MM0HAM' }],
+    exportUnlinkedChannels: true,
+    exportUnlinkedTalkGroups: true,
+    exportUnlinkedRxGroupLists: true,
   };
 
   return {

@@ -106,4 +106,22 @@ export class BuildService {
       revision: nextRevision(build.revision),
     };
   }
+
+  withExportInclusionFlags(
+    build: FormatBuild,
+    flags: Partial<
+      Pick<
+        FormatBuild,
+        'exportUnlinkedChannels' | 'exportUnlinkedTalkGroups' | 'exportUnlinkedRxGroupLists'
+      >
+    >,
+  ): FormatBuild {
+    const now = isoNow();
+    return {
+      ...build,
+      ...flags,
+      updatedAt: now,
+      revision: nextRevision(build.revision),
+    };
+  }
 }

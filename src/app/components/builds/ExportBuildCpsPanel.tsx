@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Alert, Button, Group, Modal, Stack, Text } from '@mantine/core';
+import { Alert, Button, Group, Modal, Stack, Switch, Text } from '@mantine/core';
 import { IconDownload, IconPackage } from '@tabler/icons-react';
 import type { FormatBuild } from '@core/models/formatBuild.ts';
 import { traitProfileFor } from '@core/models/traits.ts';
@@ -16,6 +16,8 @@ import { ICON_SIZE_ACTION, ICON_STROKE } from '../../lib/iconSizes.ts';
 import { useGoogleDrive } from '../../hooks/useGoogleDrive.ts';
 import { useExportSettings } from '../../hooks/useExportSettings.ts';
 import { useProjects } from '../../state/useProjects.ts';
+import { useFormatBuilds } from '../../state/useFormatBuilds.ts';
+import { BuildService } from '../../state/buildService.ts';
 import { persistence } from '../../state/persistence.ts';
 import {
   defaultCpsZipFileName,
@@ -28,8 +30,11 @@ export interface ExportBuildCpsPanelProps {
   build: FormatBuild;
 }
 
+const buildService = new BuildService(persistence);
+
 export default function ExportBuildCpsPanel({ build }: ExportBuildCpsPanelProps) {
   const { activeProjectId, activeProject } = useProjects();
+  const { putBuild } = useFormatBuilds();
   const { connected, isConfigured } = useGoogleDrive();
   const formatEntry = formatCatalogEntry(build.formatId as FormatId);
   const profileLabel = traitProfileFor(build.profileId)?.label ?? build.profileId;
@@ -39,6 +44,8 @@ export default function ExportBuildCpsPanel({ build }: ExportBuildCpsPanelProps)
   const [exportWarnings, setExportWarnings] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [exporting, setExporting] = useState(false);
+  const [savingInclusion, setSavingInclusion] = useState(false);
+  const [inclusionError, setInclusionError] = useState<string | null>(null);
   const [driveBrowserOpen, setDriveBrowserOpen] = useState(false);
   const [overwriteOpen, setOverwriteOpen] = useState(false);
   const [pendingDriveTarget, setPendingDriveTarget] = useState<DriveSaveTarget | null>(null);
@@ -72,6 +79,24 @@ export default function ExportBuildCpsPanel({ build }: ExportBuildCpsPanelProps)
   function mergeWarnings(warnings: string[]) {
     if (warnings.length) {
       setExportWarnings((prev) => [...new Set([...prev, ...warnings])]);
+    }
+  }
+
+  async function handleExportInclusionChange(
+    field: 'exportUnlinkedChannels' | 'exportUnlinkedTalkGroups' | 'exportUnlinkedRxGroupLists',
+    checked: boolean,
+  ) {
+    setSavingInclusion(true);
+    setInclusionError(null);
+    const next = buildService.withExportInclusionFlags(build, { [field]: checked });
+    const result = await putBuild(next, build.revision);
+    setSavingInclusion(false);
+    if (!result.ok) {
+      setInclusionError(
+        result.reason === 'revision_conflict'
+          ? 'Build changed elsewhere — reload and try again.'
+          : 'Could not save export settings.',
+      );
     }
   }
 
@@ -197,6 +222,46 @@ export default function ExportBuildCpsPanel({ build }: ExportBuildCpsPanelProps)
           Export name settings
         </Text>
         <ExportNameSettingsFields profileNameLimit={profileNameLimit} />
+      </Stack>
+      <Stack gap="xs">
+        <Text size="sm" fw={600}>
+          Export inclusion
+        </Text>
+        <Switch
+          label="Export channels not linked to a zone"
+          checked={build.exportUnlinkedChannels !== false}
+          disabled={savingInclusion}
+          onChange={(event) =>
+            void handleExportInclusionChange('exportUnlinkedChannels', event.currentTarget.checked)
+          }
+        />
+        <Switch
+          label="Export talk groups not referenced by a channel"
+          checked={build.exportUnlinkedTalkGroups !== false}
+          disabled={savingInclusion}
+          onChange={(event) =>
+            void handleExportInclusionChange(
+              'exportUnlinkedTalkGroups',
+              event.currentTarget.checked,
+            )
+          }
+        />
+        <Switch
+          label="Export RX group lists not referenced by a channel"
+          checked={build.exportUnlinkedRxGroupLists !== false}
+          disabled={savingInclusion}
+          onChange={(event) =>
+            void handleExportInclusionChange(
+              'exportUnlinkedRxGroupLists',
+              event.currentTarget.checked,
+            )
+          }
+        />
+        {inclusionError ? (
+          <Text size="sm" c="red">
+            {inclusionError}
+          </Text>
+        ) : null}
       </Stack>
       {!hasChannels ? (
         <Text size="sm" c="dimmed">

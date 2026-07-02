@@ -92,6 +92,8 @@ export interface Channel extends PersistableRow {
   maidenheadLocator: string | null;
   power: number | null;
   scanSkip: boolean;
+  /** When true, channel is receive-only (no transmit) at export. */
+  forbidTransmit: boolean;
   comment: string;
   modeProfiles: ChannelModeProfile[];
   /** Optional short qualifier used when `useChannelAbbreviation` is enabled at export. */

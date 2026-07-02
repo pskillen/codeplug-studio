@@ -1,4 +1,5 @@
 import type { BuildEntityOverride } from '@core/models/formatBuild.ts';
+import { sanitiseAsciiWireString } from '@core/import-export/sanitiseAsciiWireString.ts';
 
 export type OverrideField =
   | 'channelOverrides'
@@ -34,7 +35,7 @@ export function resolveOverrideWireName(
   const wireName = (overrides ?? [])
     .find((row) => row.libraryEntityId === entityId)
     ?.wireName?.trim();
-  return wireName || generated;
+  return sanitiseAsciiWireString(wireName || generated);
 }
 
 /** Convert legacy whitelist selections to sparse opt-out overrides. */
