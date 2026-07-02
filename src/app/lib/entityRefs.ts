@@ -1,5 +1,9 @@
 import type { Channel, ChannelModeProfileDMR, EntityRef, Library } from '@core/models/library.ts';
 
+export function entityRefKey(ref: EntityRef): string {
+  return `${ref.kind}:${ref.id}`;
+}
+
 export function entityRefDisplayName(ref: EntityRef | null, library: Library): string {
   if (!ref) return '';
   switch (ref.kind) {
