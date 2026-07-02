@@ -89,4 +89,25 @@ describe('assemble', () => {
     expect(projection.channels).toHaveLength(1);
     expect(projection.channels[0]?.entity.id).toBe('22222222-2222-4222-8222-222222222222');
   });
+
+  it('prefers wireName override over the library display name', () => {
+    const yaml = readFileSync(join(fixtureDir, 'with-format-build.yaml'), 'utf8');
+    const aggregate = parseProjectDocument(yaml);
+    const channelId = '22222222-2222-4222-8222-222222222222';
+    const build = {
+      ...aggregate.formatBuilds[0]!,
+      channelOverrides: [{ libraryEntityId: channelId, wireName: 'Custom wire' }],
+    };
+    const library = {
+      channels: aggregate.channels,
+      zones: aggregate.zones,
+      talkGroups: aggregate.talkGroups,
+      digitalContacts: aggregate.digitalContacts,
+      analogContacts: aggregate.analogContacts,
+      rxGroupLists: aggregate.rxGroupLists,
+    };
+
+    const projection = assemble(build, library);
+    expect(projection.channels[0]?.wireName).toBe('Custom wire');
+  });
 });

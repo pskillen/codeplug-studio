@@ -1,0 +1,49 @@
+## Purpose
+
+Operator workflow for reviewing and shaping CPS wire names before export. Each build entity type has a dedicated sub-route under `/builds/:id/*` with a shared `WirePreviewTable`.
+
+**Tracking:** [#87](https://github.com/pskillen/codeplug-studio/issues/87)
+
+**Code:** `src/core/services/previewWireRows.ts`, `src/app/hooks/useBuildWirePreview.ts`, `src/app/routes/builds/wire-preview/`
+
+## Override semantics
+
+Build overrides use **sparse opt-out** storage (`BuildEntityOverride`):
+
+| Field | Meaning |
+| --- | --- |
+| *(no row)* | Entity is **included**; wire name is generated from library fields |
+| `excluded: true` | Omit from export projection |
+| `wireName` | Override the generated CPS name |
+
+Overrides are stored on `FormatBuild` as `channelOverrides`, `zoneOverrides`, `talkGroupOverrides`, `contactOverrides`, and `rxGroupListOverrides` (`studioSchemaVersion: 3`).
+
+## Preview rows
+
+`previewWireRows(build, library, entityKind, options)` returns rows with:
+
+- **displayLabel** — human-readable library label (may note multi-mode suffix)
+- **generatedWireName** — composed from library + export name settings
+- **effectiveWireName** — override or generated
+- **key** — stable override id (composite `${channelId}:-F` / `:-D` for multi-mode expansion rows)
+
+Wire preview pages and the export panel share **`useExportSettings`** (browser `localStorage`) for shortening, name mode, and abbreviation toggles.
+
+## Routes
+
+| Route | Entity kind | Notes |
+| --- | --- | --- |
+| `/builds/:id/channels` | `channel` | Multi-mode channels may show two rows |
+| `/builds/:id/zones` | `zone` | Includes [zone layout editor](zone-grouping.md) when profile has zone grouping |
+| `/builds/:id/talk-groups` | `talkGroup` | Unreferenced TGs still listed with a note |
+| `/builds/:id/contacts` | `contact` | Digital + analog contacts |
+| `/builds/:id/rx-group-lists` | `rxGroupList` | |
+
+Secondary nav is trait-gated (`buildNavItems` in `src/app/routes/builds/nav.ts`).
+
+## Related
+
+- [zone-grouping.md](zone-grouping.md) — build zone layout editor
+- [name-shortening.md](../import-export/name-shortening.md) — abbreviation pipeline
+- [WirePreviewTable sidecar](../../../src/app/components/builds/WirePreviewTable.md)
+- [data-model](../data-model/README.md) — `FormatBuild` overrides

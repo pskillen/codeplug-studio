@@ -15,7 +15,9 @@ The library holds RF semantics once. Each radio/CPS family expects different org
 1. Curate channels, zones, and contacts in **Library**.
 2. Open **Radio builds** (sidebar) → **New build**.
 3. Pick a CPS format (OpenGD77, CHIRP, …) and a **profile** (trait + wire variant).
-4. Review the build overview — edit profile, trait layout, and wire overrides.
+4. Review the build overview — edit profile and capability traits.
+5. Shape wire names and zone layout on entity sub-routes — see [wire-preview.md](wire-preview.md).
+6. Export CPS files from **Export** — see [name-shortening.md](../import-export/name-shortening.md) for export name settings.
 
 See [profiles.md](profiles.md) for profile picker workflows.
 
@@ -44,6 +46,14 @@ Sidebar label is **Radio builds**; routes and code use `builds`.
 
 Per-build CPS export is on `/builds/:id/export` (`ExportBuildCpsPanel`) — not on Import / export. The import/export route keeps an **Export to CPS** section that links here.
 
+## Documentation map
+
+| Doc | Topic |
+| --- | --- |
+| [profiles.md](profiles.md) | Radio profile picker |
+| [wire-preview.md](wire-preview.md) | Wire name overrides and preview routes |
+| [zone-grouping.md](zone-grouping.md) | Build zone layout editor |
+
 ## Persistence
 
 Builds are `FormatBuild` rows in IndexedDB (`formatBuilds` store). CRUD goes through `BuildService` and `useFormatBuilds` — same persistence port as library entities.
@@ -57,7 +67,10 @@ YAML import/export includes `formatBuilds[]` in the project document.
 | List + create + detail shell | Shipped | [#82](https://github.com/pskillen/codeplug-studio/issues/82)                   |
 | Per-build CPS export         | Shipped | `ExportBuildCpsPanel` — per-file CSV, ZIP download, Drive ZIP upload           |
 | Profile picker component     | Shipped | [#85](https://github.com/pskillen/codeplug-studio/issues/85) — `ProfilePicker` |
-| Zone grouping editor         | Planned | [#87](https://github.com/pskillen/codeplug-studio/issues/87)                   |
+| Wire preview + overrides     | Shipped | [#87](https://github.com/pskillen/codeplug-studio/issues/87) — sub-routes + `WirePreviewTable` |
+| Zone grouping editor         | Shipped | [#87](https://github.com/pskillen/codeplug-studio/issues/87) — `BuildZoneLayoutEditor` |
+| Multi-mode channel expansion | Shipped | [#89](https://github.com/pskillen/codeplug-studio/issues/89) — preview + OpenGD77 export |
+| Export name shortening       | Shipped | [#90](https://github.com/pskillen/codeplug-studio/issues/90) — `useExportSettings` + dictionary |
 
 ## Related
 

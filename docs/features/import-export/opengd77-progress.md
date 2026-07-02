@@ -8,14 +8,13 @@
 
 ## Overall status
 
-| Phase                                                  | Status                   | PR                                                         |
-| ------------------------------------------------------ | ------------------------ | ---------------------------------------------------------- |
-| 4a — build shell, profiles, format catalog             | Complete                 | [#94](https://github.com/pskillen/codeplug-studio/pull/94) |
-| 4 — MVP CPS export (adapter + download UI + Drive ZIP) | Complete (pending merge) | [#95](https://github.com/pskillen/codeplug-studio/pull/95) |
+| Phase                                                  | Status   | PR / branch                                                |
+| ------------------------------------------------------ | -------- | ---------------------------------------------------------- |
+| 4a — build shell, profiles, format catalog             | Complete | [#94](https://github.com/pskillen/codeplug-studio/pull/94) |
+| 4 — MVP CPS export (adapter + download UI + Drive ZIP) | Complete | [#95](https://github.com/pskillen/codeplug-studio/pull/95) |
+| Wire preview + export shaping                          | Complete | `87/pskil/build-wire-preview` — [#87](https://github.com/pskillen/codeplug-studio/issues/87), [#89](https://github.com/pskillen/codeplug-studio/issues/89), [#90](https://github.com/pskillen/codeplug-studio/issues/90) |
 
-**Branch:** `85/pskil/opengd77-build-export`
-
-MVP export intentionally omits zone editor ([#87](https://github.com/pskillen/codeplug-studio/issues/87)), multi-mode expansion ([#89](https://github.com/pskillen/codeplug-studio/issues/89)), and name shortening ([#90](https://github.com/pskillen/codeplug-studio/issues/90)).
+**Branch:** `87/pskil/build-wire-preview`
 
 ---
 
@@ -39,7 +38,7 @@ MVP export intentionally omits zone editor ([#87](https://github.com/pskillen/co
 
 ## Phase 4 — MVP export
 
-**Status:** Complete (pending merge)  
+**Status:** Complete  
 **PR:** [#95](https://github.com/pskillen/codeplug-studio/pull/95)  
 **Branch:** `85/pskil/opengd77-build-export`
 
@@ -85,8 +84,6 @@ MVP export intentionally omits zone editor ([#87](https://github.com/pskillen/co
 - `serialise.test.ts` — directional export from assemble fixture
 - `docs/features/import-export/opengd77/export-mapping.md`
 
-One row per channel via first `modeProfile` until [#89](https://github.com/pskillen/codeplug-studio/issues/89).
-
 ### Slice — Browser download + ZIP
 
 **Status:** Complete
@@ -105,7 +102,7 @@ One row per channel via first `modeProfile` until [#89](https://github.com/pskil
 **Delivered**
 
 - `ExportBuildCpsPanel` — per-file CSV buttons, ZIP download, export warnings
-- Replaces `ExportBuildCpsPanelStub` on `/builds/:id`
+- `/builds/:id/export` route
 - `ExportBuildCpsPanel.test.tsx`, component sidecar
 
 ### Slice — Google Drive ZIP upload
@@ -129,19 +126,34 @@ One row per channel via first `modeProfile` until [#89](https://github.com/pskil
 - `warnings.test.ts`, extended `serialise.test.ts`
 - `buildCpsExportService.test.ts`, `driveApi` binary upload tests
 
+---
+
+## Wire preview + export shaping
+
+**Status:** Complete  
+**Branch:** `87/pskil/build-wire-preview`  
+**Issues:** [#87](https://github.com/pskillen/codeplug-studio/issues/87), [#89](https://github.com/pskillen/codeplug-studio/issues/89), [#90](https://github.com/pskillen/codeplug-studio/issues/90)
+
+| Slice | Status | Notes |
+| --- | --- | --- |
+| `BuildEntityOverride` + schema v3 | Complete | Sparse opt-out overrides; YAML migration |
+| Build sub-routes + section nav | Complete | `/builds/:id/*` wire pages + export |
+| `previewWireRows` service | Complete | Shared preview projection |
+| Multi-mode expansion | Complete | `-F`/`-D` rows in preview + `serialise.ts` |
+| Name shortening pipeline | Complete | Dictionary, `useExportSettings`, export panel |
+| Wire preview UI + zone editor | Complete | `WirePreviewTable`, `BuildZoneLayoutEditor` |
+| Docs + tests | Complete | `wire-preview.md`, `zone-grouping.md`, `name-shortening.md` |
+
 **Verify**
 
-- [ ] Open OpenGD77 build with library channels → **Download ZIP** → six CSVs in archive
-- [ ] Per-file CSV download buttons
-- [ ] Export warnings when wire names exceed profile `nameLimit`
-- [ ] **Save ZIP to Drive** (connected Google account)
+- [ ] Channel wire preview — include toggle, wire name override, multi-mode rows
+- [ ] Zones page — seed layout, reorder members, zone wire names
+- [ ] Export page — name settings affect ZIP download wire names
 - [x] `npm run lint`, `npm run test`, `npm run build`
 
 ---
 
 ## Next
 
-- [#87](https://github.com/pskillen/codeplug-studio/issues/87) — zone grouping build editor
-- [#89](https://github.com/pskillen/codeplug-studio/issues/89) — multi-mode channel expansion at export
-- [#90](https://github.com/pskillen/codeplug-studio/issues/90) — export name shortening pipeline
 - Phase 4b — OpenGD77 CPS import (Import / export format catalog)
+- Model review chore — see `opengd77-outstanding.md` (post wire-preview issue)
