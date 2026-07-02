@@ -14,6 +14,30 @@ export {
   type SearchFilters,
 } from './ukrepeater/queryRouter.ts';
 export { searchBrandmeisterByCallsign } from './brandmeisterClient.ts';
+export {
+  fetchDeviceTalkGroups,
+  fetchResolvedDeviceTalkGroups,
+  loadTalkGroupNameMap,
+  resolveDeviceTalkGroups,
+  resolveTalkGroupName,
+  type BrandMeisterStaticTalkGroup,
+  type ResolvedBrandMeisterTalkGroup,
+} from './brandmeisterTalkGroups.ts';
+export {
+  buildBrandmeisterImportBundle,
+  buildRxGroupListFromResolved,
+  patchChannelRxGroupList,
+  resolveTalkGroupsForImport,
+  uniqueRxGroupListName,
+  type BrandMeisterImportBundle,
+} from './brandmeisterImport.ts';
+export {
+  diffRxGroupListMembers,
+  rxGroupListDiffHasChanges,
+  rxGroupListsEquivalent,
+  type RxGroupListDiffRow,
+  type RxGroupListMemberChange,
+} from './rxGroupListDiff.ts';
 export { repeaterListingToChannel, type MapListingOptions } from './mapToChannel.ts';
 export {
   buildPatchFromDiff,
