@@ -1,37 +1,30 @@
 import type { Channel, ChannelModeProfile } from '@core/models/library.ts';
 import type { ChannelMode } from '@core/models/libraryTypes.ts';
 import type { CpsExportOptions } from '@core/import-export/types.ts';
-import { isAnalogMode } from '@core/import-export/formats/opengd77/channelModes.ts';
 import { applyWireNameLimits, composeExportWireName } from './exportWireNames.ts';
+import { expansionWireKey, modeExportNameSuffix } from './modeExportSuffix.ts';
+
+export { modeExportNameSuffix, expansionWireKey } from './modeExportSuffix.ts';
 
 export interface ExpandedChannelWireRow {
   sourceChannelId: string;
-  /** Override storage key — channel id or `${channelId}:-F` / `:-D`. */
+  /** Override storage key — channel id or `${channelId}:${modeSuffix}` for expansion rows. */
   key: string;
   wireName: string;
   mode: ChannelMode;
   modeProfile: ChannelModeProfile;
 }
 
-/** Suffix for derived export wire names per mode category (OpenGD77 multi-mode). */
-export function modeExportNameSuffix(mode: ChannelMode): string {
-  return isAnalogMode(mode) ? '-F' : '-D';
-}
-
-export function expansionWireKey(channelId: string, mode: ChannelMode): string {
-  return `${channelId}:${modeExportNameSuffix(mode)}`;
-}
-
+/**
+ * Expand one assembled channel into one or more export wire rows.
+ * When `expandModes` is true and multiple mode profiles exist, emits per-mode suffixes.
+ */
 function modeProfileForChannel(channel: Channel): ChannelModeProfile {
   const profile = channel.modeProfiles[0];
   if (profile) return profile;
   return { mode: 'fm', squelch: null, rxTone: 'none', txTone: 'none', bandwidthKHz: null };
 }
 
-/**
- * Expand one assembled channel into one or more export wire rows.
- * When `expandModes` is true and multiple mode profiles exist, emits `-F`/`-D` suffixed names.
- */
 export function expandChannelWireRows(
   channel: Channel,
   baseWireName: string | undefined,

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { Channel } from '@core/models/library.ts';
-import { expandChannelWireRows, modeExportNameSuffix } from './multiMode.ts';
+import { expandChannelWireRows } from './multiMode.ts';
 
 function multiModeChannel(): Channel {
   return {
@@ -33,11 +33,6 @@ function multiModeChannel(): Channel {
 }
 
 describe('multiMode expansion', () => {
-  it('modeExportNameSuffix uses -F for analog and -D for digital', () => {
-    expect(modeExportNameSuffix('fm')).toBe('-F');
-    expect(modeExportNameSuffix('dmr')).toBe('-D');
-  });
-
   it('expands multi-mode channel to two wire rows when expandModes is true', () => {
     const rows = expandChannelWireRows(multiModeChannel(), 'GB7GL Glasgow', true);
     expect(rows).toHaveLength(2);

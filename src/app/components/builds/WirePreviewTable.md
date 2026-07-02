@@ -27,7 +27,7 @@ Shared table for build wire preview pages: per-entity include toggle, display la
 
 - **Include** — `Switch`; unchecked sets `excluded: true` on the build override (sparse storage).
 - **Wire name** — local draft with explicit **Apply** (tick) and **Revert** (×) actions; Enter applies, Escape reverts; empty input uses the default name; hint shows `Default: {generatedWireName}` (clickable on the Channels page to store the generated name explicitly).
-- Multi-mode channel expansion rows use composite override keys (`channelId:-F` / `:-D`).
+- Multi-mode channel expansion rows use composite override keys (`channelId:${modeSuffix}`).
 
 ## Related
 

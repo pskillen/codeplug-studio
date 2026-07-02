@@ -23,9 +23,9 @@ Overrides are stored on `FormatBuild` as `channelOverrides`, `zoneOverrides`, `t
 `previewWireRows(build, library, entityKind, options)` returns rows with:
 
 - **displayLabel** — human-readable library label (may note multi-mode suffix)
-- **generatedWireName** — `callsign` + `name` via `defaultChannelWireName` / `composeChannelWireName`; multi-mode channels append `-F` or `-D` when expansion applies
+- **generatedWireName** — `callsign` + `name` via `defaultChannelWireName` / `composeChannelWireName`; multi-mode channels append mode suffixes (`-F`, `-D`, `-Y`, `-DS`, …) when expansion applies
 - **effectiveWireName** — override or generated
-- **key** — stable override id (composite `${channelId}:-F` / `:-D` for multi-mode expansion rows)
+- **key** — stable override id (composite `${channelId}:${modeSuffix}` for multi-mode expansion rows)
 
 Wire preview pages and the export panel share **`useExportSettings`** (browser `localStorage`) for shortening, name mode, and abbreviation toggles. Wire name overrides use a local draft with explicit **Apply** and **Revert** actions before persisting (avoids revision races from implicit debounced saves).
 
