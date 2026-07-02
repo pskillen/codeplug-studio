@@ -45,7 +45,7 @@ export function useBuildWirePreview(entityKind: WirePreviewEntityKind) {
   const [saving, setSaving] = useState(false);
 
   const exportOptions = useMemo(
-    () => optionsFromSettings({ profileId: build.profileId }),
+    () => optionsFromSettings({ profileId: build.profileId, expandModes: true }),
     [optionsFromSettings, build.profileId],
   );
 

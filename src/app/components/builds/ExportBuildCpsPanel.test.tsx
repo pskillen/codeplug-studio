@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { MantineProvider } from '@mantine/core';
 import type { FormatBuild } from '@core/models/formatBuild.ts';
@@ -57,6 +57,25 @@ const opengd77Build: FormatBuild = {
 };
 
 describe('ExportBuildCpsPanel', () => {
+  beforeEach(() => {
+    vi.stubGlobal('localStorage', {
+      getItem: vi.fn(() => null),
+      setItem: vi.fn(),
+      removeItem: vi.fn(),
+    });
+  });
+
+  it('renders export name settings for shipped OpenGD77 builds', async () => {
+    render(
+      <MantineProvider>
+        <ExportBuildCpsPanel build={opengd77Build} />
+      </MantineProvider>,
+    );
+
+    expect(await screen.findByText('Export name settings')).toBeInTheDocument();
+    expect(screen.getByText('Shorten long channel names')).toBeInTheDocument();
+  });
+
   it('renders download ZIP and per-file export actions for shipped OpenGD77 builds', async () => {
     render(
       <MantineProvider>
