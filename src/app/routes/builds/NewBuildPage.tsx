@@ -3,8 +3,9 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { formatCatalog } from '@core/import-export/registry.ts';
 import type { FormatId } from '@core/import-export/types.ts';
+import { traitProfileFor } from '@core/models/traits.ts';
+import ProfilePicker from '../../components/builds/ProfilePicker.tsx';
 import { FormPage, PageSection } from '../../components/ui/index.ts';
-import { buildProfileOptionsForFormat } from './buildHelpers.ts';
 import { useFormatBuilds } from '../../state/useFormatBuilds.ts';
 
 const CPS_FORMATS = formatCatalog.filter((f) => f.id !== 'native-yaml');
@@ -20,8 +21,6 @@ export default function NewBuildPage() {
   const [name, setName] = useState('');
   const [creating, setCreating] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  const profiles = formatId ? buildProfileOptionsForFormat(formatId) : [];
 
   async function handleCreate() {
     if (!profileId) return;
@@ -88,33 +87,14 @@ export default function NewBuildPage() {
             description={`Format: ${formatCatalog.find((f) => f.id === formatId)?.label ?? formatId}`}
           >
             <Stack gap="sm">
-              {profiles.map((profile) => (
-                <Card
-                  key={profile.profileId}
-                  withBorder
-                  padding="md"
-                  style={{ cursor: 'pointer' }}
-                  onClick={() => {
-                    setProfileId(profile.profileId);
-                    setName(profile.label);
-                    setStep('name');
-                  }}
-                >
-                  <Group justify="space-between">
-                    <div>
-                      <Text fw={600}>{profile.label}</Text>
-                      {profile.hint ? (
-                        <Text size="sm" c="dimmed">
-                          {profile.hint}
-                        </Text>
-                      ) : null}
-                    </div>
-                    <Button variant="light" size="compact-sm">
-                      Select
-                    </Button>
-                  </Group>
-                </Card>
-              ))}
+              <ProfilePicker
+                formatId={formatId}
+                onChange={(id) => {
+                  setProfileId(id);
+                  setName(traitProfileFor(id)?.label ?? id);
+                  setStep('name');
+                }}
+              />
               <Button variant="subtle" onClick={() => setStep('format')}>
                 ← Change format
               </Button>

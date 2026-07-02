@@ -3,10 +3,10 @@ import { useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { traitProfileFor } from '@core/models/traits.ts';
 import { formatCatalogEntry } from '@core/import-export/registry.ts';
-import { formatProfileWireHint } from '@core/import-export/formatProfiles.ts';
 import type { FormatId } from '@core/import-export/types.ts';
+import ProfilePicker from '../../components/builds/ProfilePicker.tsx';
 import { FormPage, FormSection } from '../../components/ui/index.ts';
-import { TRAIT_LABELS } from './buildHelpers.ts';
+import { buildHasLayoutData, TRAIT_LABELS } from './buildHelpers.ts';
 import ExportBuildCpsPanelStub from '../../components/builds/ExportBuildCpsPanelStub.tsx';
 import { BuildService } from '../../state/buildService.ts';
 import { persistence } from '../../state/persistence.ts';
@@ -19,22 +19,26 @@ export default function BuildDetailPage() {
   const navigate = useNavigate();
   const { build, loading } = useFormatBuild(id);
   const [name, setName] = useState<string | null>(null);
+  const [profileId, setProfileId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const displayName = name ?? build?.name ?? '';
-  const profile = build ? traitProfileFor(build.profileId) : undefined;
+  const displayProfileId = profileId ?? build?.profileId ?? '';
+  const profile = build ? traitProfileFor(displayProfileId) : undefined;
   const formatEntry = build ? formatCatalogEntry(build.formatId as FormatId) : undefined;
-  const wireHint = build
-    ? formatProfileWireHint(build.formatId as FormatId, build.profileId)
-    : null;
+  const profileDirty = build != null && profileId != null && profileId !== build.profileId;
+  const nameDirty = build != null && name != null && name !== build.name;
 
   async function handleSave() {
     if (!build) return;
     setSaving(true);
     setError(null);
-    const row = buildService.withUpdatedName(build, displayName);
+    let row = buildService.withUpdatedName(build, displayName);
+    if (profileDirty && profileId) {
+      row = buildService.withUpdatedProfile(row, profileId);
+    }
     const result = await buildService.putBuild(row, build.revision);
     setSaving(false);
     if (!result.ok) {
@@ -46,6 +50,20 @@ export default function BuildDetailPage() {
       return;
     }
     setName(null);
+    setProfileId(null);
+  }
+
+  function handleProfileChange(nextProfileId: string) {
+    if (!build || nextProfileId === displayProfileId) return;
+    if (
+      buildHasLayoutData(build) &&
+      !window.confirm(
+        'This build already has layout or selections. Changing profile may change wire limits — continue?',
+      )
+    ) {
+      return;
+    }
+    setProfileId(nextProfileId);
   }
 
   async function handleDelete() {
@@ -97,7 +115,11 @@ export default function BuildDetailPage() {
             </Text>
           ) : null}
           <Group mt="sm">
-            <Button loading={saving} onClick={() => void handleSave()}>
+            <Button
+              loading={saving}
+              disabled={!nameDirty && !profileDirty}
+              onClick={() => void handleSave()}
+            >
               Save
             </Button>
             <Button
@@ -112,24 +134,21 @@ export default function BuildDetailPage() {
         </FormSection>
 
         <FormSection title="Target">
-          <Stack gap="xs">
+          <Stack gap="sm">
             <Text size="sm">
               <Text span fw={600}>
                 Format:{' '}
               </Text>
               {formatEntry?.label ?? build.formatId}
             </Text>
-            <Text size="sm">
-              <Text span fw={600}>
-                Profile:{' '}
-              </Text>
-              {profile?.label ?? build.profileId}
-            </Text>
-            {wireHint ? (
-              <Text size="sm" c="dimmed">
-                {wireHint}
-              </Text>
-            ) : null}
+            <ProfilePicker
+              formatId={build.formatId as FormatId}
+              mode="select"
+              value={displayProfileId}
+              onChange={handleProfileChange}
+              label="Radio profile"
+              description="Trait profile and wire limits for this build"
+            />
           </Stack>
         </FormSection>
 

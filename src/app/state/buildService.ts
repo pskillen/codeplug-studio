@@ -50,4 +50,15 @@ export class BuildService {
       revision: nextRevision(build.revision),
     };
   }
+
+  /** Change radio profile (trait + wire variant) before save. */
+  withUpdatedProfile(build: FormatBuild, profileId: string): FormatBuild {
+    const now = isoNow();
+    return {
+      ...build,
+      profileId,
+      updatedAt: now,
+      revision: nextRevision(build.revision),
+    };
+  }
 }

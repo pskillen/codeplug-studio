@@ -1,9 +1,9 @@
 import { Button, Stack, Text } from '@mantine/core';
+import { useState } from 'react';
 import type { FormatBuild } from '@core/models/formatBuild.ts';
-import { traitProfileFor } from '@core/models/traits.ts';
 import { formatCatalogEntry } from '@core/import-export/registry.ts';
-import { formatProfileWireHint } from '@core/import-export/formatProfiles.ts';
 import type { FormatId } from '@core/import-export/types.ts';
+import ProfilePicker from './ProfilePicker.tsx';
 
 export interface ExportBuildCpsPanelStubProps {
   build: FormatBuild;
@@ -12,8 +12,7 @@ export interface ExportBuildCpsPanelStubProps {
 /** Placeholder for per-build CPS export — download wiring ships with the export adapter. */
 export default function ExportBuildCpsPanelStub({ build }: ExportBuildCpsPanelStubProps) {
   const formatEntry = formatCatalogEntry(build.formatId as FormatId);
-  const profileLabel = traitProfileFor(build.profileId)?.label ?? build.profileId;
-  const wireHint = formatProfileWireHint(build.formatId as FormatId, build.profileId);
+  const [exportProfileId, setExportProfileId] = useState(build.profileId);
 
   return (
     <Stack gap="sm">
@@ -24,23 +23,20 @@ export default function ExportBuildCpsPanelStub({ build }: ExportBuildCpsPanelSt
         </Text>{' '}
         CPS files when the format adapter ships.
       </Text>
-      <Text size="sm">
-        <Text span fw={600}>
-          Profile:{' '}
-        </Text>
-        {profileLabel}
-      </Text>
-      {wireHint ? (
-        <Text size="sm" c="dimmed">
-          {wireHint}
-        </Text>
-      ) : null}
+      <ProfilePicker
+        formatId={build.formatId as FormatId}
+        mode="select"
+        value={exportProfileId}
+        onChange={setExportProfileId}
+        label="Export profile"
+        description="Override wire limits for this export without changing the saved build profile"
+      />
       <Button disabled variant="light">
         Export CPS (coming soon)
       </Button>
       <Text size="sm" c="dimmed">
-        Per-file download and ZIP packaging will appear here. Profile override and export warnings
-        follow in later Phase 4 slices.
+        Per-file download and ZIP packaging will appear here. Export warnings follow in later Phase
+        4 slices.
       </Text>
     </Stack>
   );
