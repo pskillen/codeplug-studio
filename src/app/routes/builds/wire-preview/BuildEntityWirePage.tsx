@@ -18,7 +18,7 @@ export default function BuildEntityWirePage({
   description,
 }: BuildEntityWirePageProps) {
   const { build } = useBuildLayout();
-  const { rows, nameLimit, error, saving, setRowExcluded, setRowWireName } =
+  const { rows, nameLimit, error, setRowExcluded, setRowWireName } =
     useBuildWirePreview(entityKind);
 
   return (
@@ -47,7 +47,6 @@ export default function BuildEntityWirePage({
         <WirePreviewTable
           rows={rows}
           nameLimit={nameLimit}
-          saving={saving}
           onExcludedChange={(row, excluded) => void setRowExcluded(row, excluded)}
           onWireNameChange={(row, wireName) => void setRowWireName(row, wireName)}
         />
