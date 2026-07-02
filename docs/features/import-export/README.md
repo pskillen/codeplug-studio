@@ -19,7 +19,7 @@ IndexedDB remains the **edit store**; YAML and Drive are portable layers on top 
 | Adapter contracts + registry | Shipped | `src/core/import-export/` — `ImportAdapter`, `ExportAdapter`, `formatCatalog` |
 | Native YAML — schema + envelope | Shipped | `StudioProjectDocument` v1 — [#56](https://github.com/pskillen/codeplug-studio/issues/56) |
 | Native YAML — export serialiser | Shipped | [#57](https://github.com/pskillen/codeplug-studio/issues/57) |
-| Native YAML — import parser | In progress | [#58](https://github.com/pskillen/codeplug-studio/issues/58) |
+| Native YAML — import parser | Shipped | [#58](https://github.com/pskillen/codeplug-studio/issues/58) |
 | Application services (`importProject`, `exportProject`) | Planned | [#59](https://github.com/pskillen/codeplug-studio/issues/59) |
 | Local file UI | Planned | [#60](https://github.com/pskillen/codeplug-studio/issues/60) |
 | Google Drive | Planned | [#61](https://github.com/pskillen/codeplug-studio/issues/61)–[#62](https://github.com/pskillen/codeplug-studio/issues/62) |

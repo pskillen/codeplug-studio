@@ -10,9 +10,9 @@
 | ----- | ----------- | ----- |
 | 0 Kickoff — progress pair + branch | Complete | `df7afbe` |
 | 1 Import/export scaffold + envelope | Complete | `2d2a397` |
-| 2 Feature + schema docs | Complete | |
-| 3 Export serialiser | Pending | |
-| 4 Import parser + validation | Pending | |
+| 2 Feature + schema docs | Complete | `e700605` |
+| 3 Export serialiser | Complete | `a2e315d` |
+| 4 Import parser + validation | Complete | |
 | 5 Registry smoke + PR | Pending | |
 
 ## Shipped
@@ -40,3 +40,9 @@
 - `yaml` package dependency
 - `formats/native-yaml/serialise.ts` — stable alphabetical keys, explicit nulls
 - `testFixtures.ts`, `__fixtures__/export/` golden files, `serialise.test.ts`
+
+### Slice 4 — Import parser + validation
+
+- `parse.ts`, `validate.ts`, `errors.ts`
+- `__fixtures__/import/` golden files, `parse.test.ts`
+- Import hub + tier 3 validation docs updated

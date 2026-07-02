@@ -75,8 +75,8 @@ Export does **not** update `ProjectMeta.interchange` (export destination memory)
 | Slice | Status |
 | --- | --- |
 | Contracts + envelope (#56) | Shipped |
-| Export serialiser (#57) | In progress |
-| Import parser + validation (#58) | In progress |
+| Export serialiser (#57) | Shipped |
+| Import parser + validation (#58) | Shipped |
 | Services + UI (#59–#62) | Planned |
 
 ## Testing
