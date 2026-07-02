@@ -19,7 +19,9 @@ export default function ExportBuildSelectorStub() {
   );
 
   const selected = builds.find((b) => b.id === selectedId) ?? null;
-  const profileLabel = selected ? (traitProfileFor(selected.profileId)?.label ?? selected.profileId) : null;
+  const profileLabel = selected
+    ? (traitProfileFor(selected.profileId)?.label ?? selected.profileId)
+    : null;
   const wireHint =
     selected != null
       ? formatProfileWireHint(selected.formatId as FormatId, selected.profileId)
@@ -30,7 +32,9 @@ export default function ExportBuildSelectorStub() {
       <Select
         label="Format build"
         description="Choose a build to export. CPS download wiring ships in a follow-on release."
-        placeholder={loading ? 'Loading builds…' : builds.length ? 'Select a build' : 'No builds yet'}
+        placeholder={
+          loading ? 'Loading builds…' : builds.length ? 'Select a build' : 'No builds yet'
+        }
         data={selectData}
         value={selectedId}
         onChange={setSelectedId}

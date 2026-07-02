@@ -1,4 +1,10 @@
-import { IconArrowsLeftRight, IconBooks, IconChartBar, IconHammer, IconHome } from '@tabler/icons-react';
+import {
+  IconArrowsLeftRight,
+  IconBooks,
+  IconChartBar,
+  IconHammer,
+  IconHome,
+} from '@tabler/icons-react';
 import type { TablerIcon } from '@tabler/icons-react';
 import type { Library } from '@core/models/library.ts';
 

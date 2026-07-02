@@ -21,10 +21,10 @@ Native YAML remains **project interchange** (library + all builds). It is not cr
 
 ## Routes
 
-| Route | Purpose |
-| --- | --- |
-| `/builds` | List builds for the active project |
-| `/builds/new` | Create build — format → profile → name |
+| Route         | Purpose                                               |
+| ------------- | ----------------------------------------------------- |
+| `/builds`     | List builds for the active project                    |
+| `/builds/new` | Create build — format → profile → name                |
 | `/builds/:id` | Build overview — identity, traits, layout placeholder |
 
 Requires an active project (`RequireActiveProject`).
@@ -37,12 +37,12 @@ YAML import/export includes `formatBuilds[]` in the project document.
 
 ## Implementation status
 
-| Area | Status | Notes |
-| --- | --- | --- |
-| List + create + detail shell | Shipped | [#82](https://github.com/pskillen/codeplug-studio/issues/82) |
-| Profile picker component | Planned | [#85](https://github.com/pskillen/codeplug-studio/issues/85) |
-| Zone grouping editor | Planned | [#87](https://github.com/pskillen/codeplug-studio/issues/87) |
-| CPS export from build | Planned | [#86](https://github.com/pskillen/codeplug-studio/issues/86)+ |
+| Area                         | Status  | Notes                                                         |
+| ---------------------------- | ------- | ------------------------------------------------------------- |
+| List + create + detail shell | Shipped | [#82](https://github.com/pskillen/codeplug-studio/issues/82)  |
+| Profile picker component     | Planned | [#85](https://github.com/pskillen/codeplug-studio/issues/85)  |
+| Zone grouping editor         | Planned | [#87](https://github.com/pskillen/codeplug-studio/issues/87)  |
+| CPS export from build        | Planned | [#86](https://github.com/pskillen/codeplug-studio/issues/86)+ |
 
 ## Related
 

@@ -123,7 +123,8 @@ describe('App', () => {
     renderApp('/import-export');
 
     expect(await screen.findByRole('heading', { name: 'Import / export' })).toBeInTheDocument();
-    expect(screen.getByText(/Export the active project/i)).toBeInTheDocument();
+    expect(screen.getByText(/vendor-neutral inside the project/i)).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'CPS formats' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Download YAML/i })).toBeInTheDocument();
   });
 });

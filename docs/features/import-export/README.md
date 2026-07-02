@@ -14,20 +14,20 @@ IndexedDB remains the **edit store**; YAML and Drive are portable layers on top 
 
 ## Implementation status
 
-| Area                                                    | Status  | Notes                                                                                                                     |
-| ------------------------------------------------------- | ------- | ------------------------------------------------------------------------------------------------------------------------- |
-| Adapter contracts + registry                            | Shipped | `src/core/import-export/` — `ImportAdapter`, `ExportAdapter`, `formatCatalog`                                             |
-| Native YAML — schema + envelope                         | Shipped | `StudioProjectDocument` v1 — [#56](https://github.com/pskillen/codeplug-studio/issues/56)                                 |
-| Native YAML — export serialiser                         | Shipped | [#57](https://github.com/pskillen/codeplug-studio/issues/57)                                                              |
-| Native YAML — import parser                             | Shipped | [#58](https://github.com/pskillen/codeplug-studio/issues/58)                                                              |
-| Application services (`importProject`, `exportProject`) | Shipped | [#59](https://github.com/pskillen/codeplug-studio/issues/59) — `importProjectYaml` / `exportProjectYaml`                  |
-| Local file UI                                           | Shipped | [#60](https://github.com/pskillen/codeplug-studio/issues/60) — `/import-export`, Home import                              |
-| Format catalog UI (CPS placeholders)                    | Shipped | [#83](https://github.com/pskillen/codeplug-studio/issues/83) — CPS grid + export build stub                               |
-| Google Drive                                            | Shipped | [#61](https://github.com/pskillen/codeplug-studio/issues/61)–[#62](https://github.com/pskillen/codeplug-studio/issues/62) |
+| Area                                                    | Status  | Notes                                                                                                                         |
+| ------------------------------------------------------- | ------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| Adapter contracts + registry                            | Shipped | `src/core/import-export/` — `ImportAdapter`, `ExportAdapter`, `formatCatalog`                                                 |
+| Native YAML — schema + envelope                         | Shipped | `StudioProjectDocument` v1 — [#56](https://github.com/pskillen/codeplug-studio/issues/56)                                     |
+| Native YAML — export serialiser                         | Shipped | [#57](https://github.com/pskillen/codeplug-studio/issues/57)                                                                  |
+| Native YAML — import parser                             | Shipped | [#58](https://github.com/pskillen/codeplug-studio/issues/58)                                                                  |
+| Application services (`importProject`, `exportProject`) | Shipped | [#59](https://github.com/pskillen/codeplug-studio/issues/59) — `importProjectYaml` / `exportProjectYaml`                      |
+| Local file UI                                           | Shipped | [#60](https://github.com/pskillen/codeplug-studio/issues/60) — `/import-export`, Home import                                  |
+| Format catalog UI (CPS placeholders)                    | Shipped | [#83](https://github.com/pskillen/codeplug-studio/issues/83) — CPS grid + export build stub                                   |
+| Google Drive                                            | Shipped | [#61](https://github.com/pskillen/codeplug-studio/issues/61)–[#62](https://github.com/pskillen/codeplug-studio/issues/62)     |
 | OpenGD77 CSV                                            | Planned | Phase 4+ — registry slot `planned`; **radio profiles shipped** ([#84](https://github.com/pskillen/codeplug-studio/issues/84)) |
-| CHIRP CSV                                               | Planned | Phase 4+                                                                                                                  |
-| DM32 CSV                                                | Planned | Phase 4+                                                                                                                  |
-| qDMR YAML                                               | Planned | Out of Phase 3 scope                                                                                                      |
+| CHIRP CSV                                               | Planned | Phase 4+                                                                                                                      |
+| DM32 CSV                                                | Planned | Phase 4+                                                                                                                      |
+| qDMR YAML                                               | Planned | Out of Phase 3 scope                                                                                                          |
 
 ## Architecture
 

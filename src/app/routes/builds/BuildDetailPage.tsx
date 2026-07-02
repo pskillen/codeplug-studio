@@ -99,7 +99,12 @@ export default function BuildDetailPage() {
             <Button loading={saving} onClick={() => void handleSave()}>
               Save
             </Button>
-            <Button variant="outline" color="red" loading={deleting} onClick={() => void handleDelete()}>
+            <Button
+              variant="outline"
+              color="red"
+              loading={deleting}
+              onClick={() => void handleDelete()}
+            >
               Delete build
             </Button>
           </Group>

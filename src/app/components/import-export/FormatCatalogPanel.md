@@ -6,9 +6,9 @@ Renders one row in the CPS **format catalog** on `/import-export`: format label,
 
 ## Props
 
-| Prop | Type | Description |
-| --- | --- | --- |
-| `entry` | `FormatCatalogEntry` | Registry row from `formatCatalog` |
+| Prop          | Type                 | Description                                          |
+| ------------- | -------------------- | ---------------------------------------------------- |
+| `entry`       | `FormatCatalogEntry` | Registry row from `formatCatalog`                    |
 | `highlighted` | `boolean` (optional) | Scroll into view and outline when `?format=` matches |
 
 ## Usage

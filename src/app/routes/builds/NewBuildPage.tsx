@@ -47,8 +47,7 @@ export default function NewBuildPage() {
     >
       <Stack gap="lg">
         <Text size="sm" c="dimmed">
-          Native YAML is project interchange — not a format build. Pick a CPS target workflow
-          below.
+          Native YAML is project interchange — not a format build. Pick a CPS target workflow below.
         </Text>
 
         {step === 'format' ? (

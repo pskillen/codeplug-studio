@@ -16,8 +16,11 @@ export default function BuildsListPage() {
   const { builds, loading } = useFormatBuilds();
   const navigate = useNavigate();
   const [nameFilter, setNameFilter] = useState('');
-  const { nameFilterInput, setNameFilter: setNameFilterInput, nameFilterPending } =
-    useDebouncedNameFilter(nameFilter, setNameFilter);
+  const {
+    nameFilterInput,
+    setNameFilter: setNameFilterInput,
+    nameFilterPending,
+  } = useDebouncedNameFilter(nameFilter, setNameFilter);
   const [sort, setSort] = useState<DataTableSortState | null>({
     columnKey: DATATABLE_NAME_SORT_KEY,
     direction: 'asc',

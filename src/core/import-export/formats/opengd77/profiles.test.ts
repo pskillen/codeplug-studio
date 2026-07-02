@@ -1,10 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { percentToWire, wireToPercent } from '../../profileLadder.ts';
-import {
-  getOpenGd77Profile,
-  opengd77PercentToWire,
-  opengd77WireToPercent,
-} from './profiles.ts';
+import { getOpenGd77Profile, opengd77PercentToWire, opengd77WireToPercent } from './profiles.ts';
 
 describe('profileLadder', () => {
   it('maps exact wire to percent', () => {
