@@ -13,7 +13,8 @@ import { useLibrary } from '../../../state/useLibrary.ts';
 export default function TalkGroupsListPage() {
   const { library, loading } = useLibrary();
   const { talkGroups } = library;
-  const { nameFilter, setNameFilter } = useListNameQuery('talk-groups');
+  const { nameFilter, nameFilterInput, nameFilterPending, setNameFilter } =
+    useListNameQuery('talk-groups');
   const [sort, setSort] = usePersistedEntityListSort('talk-groups', {
     columnKey: DATATABLE_NAME_SORT_KEY,
     direction: 'asc',
@@ -79,7 +80,8 @@ export default function TalkGroupsListPage() {
         variant="list"
         rows={filtered}
         totalRowCount={talkGroups.length}
-        search={nameFilter}
+        search={nameFilterInput}
+        searchPending={nameFilterPending}
         onSearchChange={setNameFilter}
         searchPlaceholder="Filter name…"
         sort={sort}

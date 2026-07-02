@@ -230,7 +230,8 @@ export default function ChannelsListPage() {
           callsignColumn={sortCtx.callsignColumn}
           nameColumn={sortCtx.nameColumn}
           columns={optionalColumnDefs}
-          search={query.nameFilter}
+          search={query.nameFilterInput}
+          searchPending={query.nameFilterPending}
           onSearchChange={query.setNameFilter}
           searchPlaceholder="Filter name or callsign…"
         />

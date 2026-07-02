@@ -17,7 +17,8 @@ function DigitalContactsTable({
   contacts: DigitalContact[];
   library: ReturnType<typeof useLibrary>['library'];
 }) {
-  const { nameFilter, setNameFilter } = useListNameQuery('digital-contacts');
+  const { nameFilter, nameFilterInput, nameFilterPending, setNameFilter } =
+    useListNameQuery('digital-contacts');
   const [sort, setSort] = usePersistedEntityListSort('digital-contacts', {
     columnKey: DATATABLE_NAME_SORT_KEY,
     direction: 'asc',
@@ -62,7 +63,8 @@ function DigitalContactsTable({
       variant="list"
       rows={filtered}
       totalRowCount={contacts.length}
-      search={nameFilter}
+      search={nameFilterInput}
+      searchPending={nameFilterPending}
       onSearchChange={setNameFilter}
       searchPlaceholder="Filter name…"
       sort={sort}
@@ -78,7 +80,8 @@ function DigitalContactsTable({
 }
 
 function AnalogContactsTable({ contacts }: { contacts: AnalogContact[] }) {
-  const { nameFilter, setNameFilter } = useListNameQuery('analog-contacts');
+  const { nameFilter, nameFilterInput, nameFilterPending, setNameFilter } =
+    useListNameQuery('analog-contacts');
   const [sort, setSort] = usePersistedEntityListSort('analog-contacts', {
     columnKey: DATATABLE_NAME_SORT_KEY,
     direction: 'asc',
@@ -110,7 +113,8 @@ function AnalogContactsTable({ contacts }: { contacts: AnalogContact[] }) {
       variant="list"
       rows={filtered}
       totalRowCount={contacts.length}
-      search={nameFilter}
+      search={nameFilterInput}
+      searchPending={nameFilterPending}
       onSearchChange={setNameFilter}
       searchPlaceholder="Filter name…"
       sort={sort}

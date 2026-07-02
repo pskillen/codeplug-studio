@@ -2,6 +2,7 @@ import {
   Anchor,
   Checkbox,
   Group,
+  Loader,
   MultiSelect,
   ScrollArea,
   Stack,
@@ -59,6 +60,7 @@ export interface DataTableProps<T> {
   onSortChange?: (state: DataTableSortState | null) => void;
   defaultSort?: DataTableSortState;
   search?: string;
+  searchPending?: boolean;
   onSearchChange?: (value: string) => void;
   searchPlaceholder?: string;
   showSearch?: boolean;
@@ -140,6 +142,7 @@ export default function DataTable<T>({
   onSortChange,
   defaultSort,
   search,
+  searchPending,
   onSearchChange,
   searchPlaceholder = 'Filter…',
   showSearch,
@@ -276,6 +279,7 @@ export default function DataTable<T>({
               placeholder={searchPlaceholder}
               value={search ?? ''}
               onChange={(e) => onSearchChange?.(e.currentTarget.value)}
+              rightSection={searchPending ? <Loader size={16} /> : undefined}
               style={{ flex: '1 1 12rem', minWidth: '10rem' }}
               aria-label="Search table"
             />
