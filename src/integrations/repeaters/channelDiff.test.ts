@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { Channel } from '@core/models/library.ts';
+import { locatorToCoords } from '@core/domain/maidenhead.ts';
 import { diffChannelFromListing } from './channelDiff.ts';
 import type { RepeaterListing } from './types.ts';
 
@@ -15,12 +16,13 @@ const baseListing: RepeaterListing = {
   primaryMode: 'fm',
   colourCode: null,
   locator: 'IO91',
-  location: null,
+  location: locatorToCoords('IO91'),
   band: '2M',
   status: 'OPERATIONAL',
 };
 
 function baseChannel(overrides: Partial<Channel> = {}): Channel {
+  const io91wm = locatorToCoords('IO91WM')!;
   return {
     id: 'ch-1',
     projectId: 'p1',
@@ -34,7 +36,7 @@ function baseChannel(overrides: Partial<Channel> = {}): Channel {
     power: null,
     scanSkip: false,
     useLocation: true,
-    location: { lat: 51.123456, lon: -1.234567 },
+    location: io91wm,
     maidenheadLocator: 'IO91WM',
     modeProfiles: [
       { mode: 'fm', rxTone: 'none', txTone: 'none', squelch: null, bandwidthKHz: null },
@@ -60,11 +62,33 @@ describe('diffChannelFromListing', () => {
     expect(rows.some((r) => r.field === 'comment')).toBe(true);
   });
 
-  it('does not select maidenheadLocator by default when remote is less precise', () => {
+  it('does not offer maidenheadLocator override when coords stay within the local locator', () => {
     const rows = diffChannelFromListing(baseChannel(), baseListing);
+    const locatorRow = rows.find((r) => r.field === 'maidenheadLocator');
+    expect(locatorRow?.changed).toBe(false);
+    expect(locatorRow?.selectByDefault).toBe(false);
+  });
+
+  it('offers maidenheadLocator override when coords fall outside the local locator', () => {
+    const rows = diffChannelFromListing(
+      baseChannel({
+        location: { lat: 57.0, lon: -3.5 },
+        maidenheadLocator: 'IO91WM',
+      }),
+      baseListing,
+    );
     const locatorRow = rows.find((r) => r.field === 'maidenheadLocator');
     expect(locatorRow?.changed).toBe(true);
     expect(locatorRow?.selectByDefault).toBe(false);
+  });
+
+  it('does not offer maidenheadLocator override when channel has no locator', () => {
+    const rows = diffChannelFromListing(
+      baseChannel({ maidenheadLocator: null }),
+      baseListing,
+    );
+    const locatorRow = rows.find((r) => r.field === 'maidenheadLocator');
+    expect(locatorRow?.changed).toBe(false);
   });
 
   it('does not select location by default when remote coords are less precise', () => {
@@ -73,7 +97,10 @@ describe('diffChannelFromListing', () => {
       locator: null,
       location: { lat: 51.12, lon: -1.23 },
     };
-    const rows = diffChannelFromListing(baseChannel(), listing);
+    const rows = diffChannelFromListing(
+      baseChannel({ location: { lat: 51.123456, lon: -1.234567 } }),
+      listing,
+    );
     const locationRow = rows.find((r) => r.field === 'location');
     expect(locationRow?.changed).toBe(true);
     expect(locationRow?.selectByDefault).toBe(false);

@@ -1,6 +1,6 @@
 import type { Channel } from '../models/library.ts';
 import type { GeoPoint } from '../models/libraryTypes.ts';
-import { coordsToLocator, isValidLocator, locatorToCoords } from './maidenhead.ts';
+import { coordsToLocator, isValidLocator, locatorToCoords, type LocatorPrecision } from './maidenhead.ts';
 
 export type LocationEditSource = 'locator' | 'coords';
 
@@ -113,6 +113,19 @@ export function coordinateDecimalPrecision(point: GeoPoint): number {
     return dot < 0 ? 0 : trimmed.length - dot - 1;
   };
   return Math.min(decimalPlaces(point.lat), decimalPlaces(point.lon));
+}
+
+/** True when WGS84 coordinates fall inside the grid square for `locator` at its precision. */
+export function coordsWithinLocator(
+  point: GeoPoint,
+  locator: string | null | undefined,
+): boolean {
+  const norm = normaliseLocator(locator);
+  if (!norm) return false;
+  const len = norm.length;
+  if (len !== 4 && len !== 6 && len !== 8 && len !== 10) return false;
+  const derived = coordsToLocator(point.lat, point.lon, len as LocatorPrecision);
+  return derived === norm;
 }
 
 /** True when the candidate locator is strictly less precise than the reference. */
