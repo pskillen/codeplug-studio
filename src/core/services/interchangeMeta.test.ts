@@ -32,12 +32,44 @@ describe('interchangeMeta', () => {
     expect(suggestExportDestination(newProjectMeta('Demo'), 'localFile')).toBeNull();
   });
 
-  it('interchange round-trips through native YAML serialise/parse', () => {
+  it('recordExportDestination stores google drive memory', () => {
+    const meta = newProjectMeta('Demo');
+    const updated = recordExportDestination(meta, 'googleDrive', {
+      fileName: 'demo.yaml',
+      folderId: 'folder-1',
+      folderName: 'Codeplugs',
+      fileId: 'file-1',
+    });
+    expect(updated.interchange?.googleDrive).toEqual({
+      fileName: 'demo.yaml',
+      folderId: 'folder-1',
+      folderName: 'Codeplugs',
+      fileId: 'file-1',
+      exportedAt: expect.any(String),
+    });
+    expect(suggestExportDestination(updated, 'googleDrive')).toEqual({ fileName: 'demo.yaml' });
+  });
+
+  it('interchange round-trips localFile through native YAML serialise/parse', () => {
     const aggregate = minimalProjectAggregate();
     aggregate.meta = recordExportDestination(aggregate.meta, 'localFile', {
       fileName: 'fixture.yaml',
     });
     const parsed = parseProjectDocument(serialiseProject(aggregate));
     expect(parsed.meta.interchange?.localFile?.fileName).toBe('fixture.yaml');
+  });
+
+  it('interchange round-trips googleDrive through native YAML serialise/parse', () => {
+    const aggregate = minimalProjectAggregate();
+    aggregate.meta = recordExportDestination(aggregate.meta, 'googleDrive', {
+      fileName: 'drive.yaml',
+      folderId: 'folder-abc',
+      folderName: 'Exports',
+      fileId: 'file-xyz',
+    });
+    const parsed = parseProjectDocument(serialiseProject(aggregate));
+    expect(parsed.meta.interchange?.googleDrive?.fileName).toBe('drive.yaml');
+    expect(parsed.meta.interchange?.googleDrive?.folderId).toBe('folder-abc');
+    expect(parsed.meta.interchange?.googleDrive?.fileId).toBe('file-xyz');
   });
 });
