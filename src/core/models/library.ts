@@ -116,6 +116,8 @@ export interface AnalogContact extends PersistableRow {
 
 export interface RxGroupListMember {
   ref: EntityRef;
+  /** Optional DMR slot hint for this member — maps to CPS TS Override at export boundary. */
+  timeSlotOverride?: DMRTimeSlot | null;
 }
 
 export interface RxGroupList extends PersistableRow {
