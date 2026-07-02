@@ -1,7 +1,9 @@
 import { Button, type ButtonProps } from '@mantine/core';
+import type { ButtonHTMLAttributes } from 'react';
 import { GoogleDriveIcon } from './GoogleDriveIcon.tsx';
 
-export type GoogleDriveButtonProps = Omit<ButtonProps, 'variant' | 'leftSection' | 'color'>;
+export type GoogleDriveButtonProps = Omit<ButtonProps, 'variant' | 'leftSection' | 'color'> &
+  Pick<ButtonHTMLAttributes<HTMLButtonElement>, 'onClick'>;
 
 /**
  * White bordered button with the Google Drive icon — matches Google’s third-party CTA styling.
