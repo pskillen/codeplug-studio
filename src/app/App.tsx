@@ -23,6 +23,7 @@ import DebugIndexedDbStorePage from './routes/debug/DebugIndexedDbStorePage.tsx'
 import DebugIndexedDbRowViewerPage from './routes/debug/DebugIndexedDbRowViewerPage.tsx';
 import DebugLocalStoragePage from './routes/debug/DebugLocalStoragePage.tsx';
 import DebugLocalStorageViewerPage from './routes/debug/DebugLocalStorageViewerPage.tsx';
+import InterchangePage from './routes/interchange/InterchangePage.tsx';
 
 function MapRedirect() {
   return <Navigate to="/library/channels" replace />;
@@ -68,6 +69,7 @@ export default function App() {
               element={<AddFromBrandmeisterPage />}
             />
             <Route path="/library/:kind/:id" element={<EntityEditorPage />} />
+            <Route path="/interchange" element={<InterchangePage />} />
             <Route path="/summary" element={<SummaryPage />} />
             <Route path="/reports" element={<Navigate to="/summary" replace />} />
             <Route path="/map" element={<MapRedirect />} />

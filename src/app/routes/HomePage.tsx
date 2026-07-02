@@ -2,6 +2,7 @@ import { useState, type FormEvent } from 'react';
 import { Badge, Button, Group, Stack, Text, TextInput } from '@mantine/core';
 import { useProjects } from '../state/useProjects.ts';
 import { EmptyState, ListPage, PageSection } from '../components/ui/index.ts';
+import ImportProjectYamlPanel from '../components/interchange/ImportProjectYamlPanel.tsx';
 
 export default function HomePage() {
   const {
@@ -40,6 +41,10 @@ export default function HomePage() {
             <Button type="submit">Create project</Button>
           </Group>
         </form>
+      </PageSection>
+
+      <PageSection title="Import from YAML">
+        <ImportProjectYamlPanel />
       </PageSection>
 
       {loading ? (

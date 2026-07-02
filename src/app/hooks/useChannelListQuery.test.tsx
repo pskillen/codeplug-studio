@@ -44,6 +44,7 @@ function makeProjectsWrapper(initialEntries: string[]) {
         switchProject: () => {},
         renameProject: async () => {},
         deleteProject: async () => {},
+        refreshProjects: async () => {},
       }),
       [],
     );
