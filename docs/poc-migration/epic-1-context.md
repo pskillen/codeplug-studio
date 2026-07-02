@@ -258,9 +258,6 @@ These are for Phase 1 modelling and UX iteration — not blockers for constituti
 - Trait layout: discriminated union per trait vs optional sections on one object.
 - Whether m×n expansion is a persistent build concern or export-time projection only.
 - RX group lists: library-global vs build-scoped.
-- Native YAML: serialises full project (library + all builds) as interchange format.
-
----
 
 ## Revision log
 
@@ -269,3 +266,4 @@ These are for Phase 1 modelling and UX iteration — not blockers for constituti
 | 2026-06-29 | Initial context dump from migration planning sessions                                         |
 | 2026-06-29 | Link to [storage.md](storage.md) persistence planning notes                                   |
 | 2026-06-29 | Phase 0 complete — [epic-1-progress.md](epic-1-progress.md), [epic-1-gaps.md](epic-1-gaps.md) |
+| 2026-07-02 | **Resolved:** Native YAML serialises full project (`ProjectMeta` + library + `formatBuilds[]`) as interchange — see [native-yaml reference](../reference/native-yaml/README.md) |

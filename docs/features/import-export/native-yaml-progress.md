@@ -9,8 +9,8 @@
 | Slice | Status      | Notes |
 | ----- | ----------- | ----- |
 | 0 Kickoff — progress pair + branch | Complete | `df7afbe` |
-| 1 Import/export scaffold + envelope | Complete | |
-| 2 Feature + schema docs | Pending | |
+| 1 Import/export scaffold + envelope | Complete | `2d2a397` |
+| 2 Feature + schema docs | Complete | |
 | 3 Export serialiser | Pending | |
 | 4 Import parser + validation | Pending | |
 | 5 Registry smoke + PR | Pending | |
@@ -27,3 +27,10 @@
 
 - `src/core/import-export/` — contracts, `StudioProjectDocument`, registry, native-yaml adapter shell
 - `adapterContract.test.ts`
+
+### Slice 2 — Feature + schema docs
+
+- `docs/features/import-export/README.md` hub
+- `docs/features/import-export/native-yaml/README.md` deep-dive
+- `docs/reference/native-yaml/README.md` tier 3 schema + example
+- `docs/poc-migration/epic-1-context.md` — native YAML scope resolved
