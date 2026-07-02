@@ -17,12 +17,12 @@ Export-time channel wire name composition and shortening. Runs at the CPS bounda
 
 `ExportNameSettingsFields` on `/builds/:id/export` persists preferences in browser `localStorage` via `useExportSettings`:
 
-| Key | Effect |
-| --- | --- |
-| `codeplug-studio.export.shortenNames` | Enable abbreviation shortening (default on) |
-| `codeplug-studio.export.maxNameLength` | Override profile `nameLimit` |
-| `codeplug-studio.export.nameModeOverride` | Force all channels to one export name mode |
-| `codeplug-studio.export.useChannelAbbreviation` | Prefer `Channel.abbreviation` |
+| Key                                               | Effect                                                                          |
+| ------------------------------------------------- | ------------------------------------------------------------------------------- |
+| `codeplug-studio.export.shortenNames`             | Enable abbreviation shortening (default on)                                     |
+| `codeplug-studio.export.maxNameLength`            | Override profile `nameLimit`                                                    |
+| `codeplug-studio.export.nameModeOverride`         | Force all channels to one export name mode                                      |
+| `codeplug-studio.export.useChannelAbbreviation`   | Prefer `Channel.abbreviation`                                                   |
 | `codeplug-studio.export.useTalkGroupAbbreviation` | Prefer `TalkGroup.abbreviation` (DM32-style; hidden on lean OpenGD77 export UI) |
 
 Wire preview pages read the same settings when computing `generatedWireName`.

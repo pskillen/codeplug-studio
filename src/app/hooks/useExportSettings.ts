@@ -13,8 +13,7 @@ export const STORAGE_KEY_EXPORT_USE_CHANNEL_ABBREVIATION =
 export const EXPORT_NAME_MODE_RESPECT_PER_CHANNEL = '';
 
 export type ExportNameModeOverride =
-  | ChannelExportNameMode
-  | typeof EXPORT_NAME_MODE_RESPECT_PER_CHANNEL;
+  ChannelExportNameMode | typeof EXPORT_NAME_MODE_RESPECT_PER_CHANNEL;
 
 export interface ExportSettings {
   shortenNames: boolean;

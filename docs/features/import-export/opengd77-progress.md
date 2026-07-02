@@ -8,10 +8,10 @@
 
 ## Overall status
 
-| Phase                                                  | Status   | PR / branch                                                |
-| ------------------------------------------------------ | -------- | ---------------------------------------------------------- |
-| 4a — build shell, profiles, format catalog             | Complete | [#94](https://github.com/pskillen/codeplug-studio/pull/94) |
-| 4 — MVP CPS export (adapter + download UI + Drive ZIP) | Complete | [#95](https://github.com/pskillen/codeplug-studio/pull/95) |
+| Phase                                                  | Status   | PR / branch                                                                                                                                                                                                              |
+| ------------------------------------------------------ | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| 4a — build shell, profiles, format catalog             | Complete | [#94](https://github.com/pskillen/codeplug-studio/pull/94)                                                                                                                                                               |
+| 4 — MVP CPS export (adapter + download UI + Drive ZIP) | Complete | [#95](https://github.com/pskillen/codeplug-studio/pull/95)                                                                                                                                                               |
 | Wire preview + export shaping                          | Complete | `87/pskil/build-wire-preview` — [#87](https://github.com/pskillen/codeplug-studio/issues/87), [#89](https://github.com/pskillen/codeplug-studio/issues/89), [#90](https://github.com/pskillen/codeplug-studio/issues/90) |
 
 **Branch:** `87/pskil/build-wire-preview`
@@ -134,15 +134,15 @@
 **Branch:** `87/pskil/build-wire-preview`  
 **Issues:** [#87](https://github.com/pskillen/codeplug-studio/issues/87), [#89](https://github.com/pskillen/codeplug-studio/issues/89), [#90](https://github.com/pskillen/codeplug-studio/issues/90)
 
-| Slice | Status | Notes |
-| --- | --- | --- |
-| `BuildEntityOverride` + schema v3 | Complete | Sparse opt-out overrides; YAML migration |
-| Build sub-routes + section nav | Complete | `/builds/:id/*` wire pages + export |
-| `previewWireRows` service | Complete | Shared preview projection |
-| Multi-mode expansion | Complete | `-F`/`-D` rows in preview + `serialise.ts` |
-| Name shortening pipeline | Complete | Dictionary, `useExportSettings`, export panel |
-| Wire preview UI + zone editor | Complete | `WirePreviewTable`, `BuildZoneLayoutEditor` |
-| Docs + tests | Complete | `wire-preview.md`, `zone-grouping.md`, `name-shortening.md` |
+| Slice                             | Status   | Notes                                                       |
+| --------------------------------- | -------- | ----------------------------------------------------------- |
+| `BuildEntityOverride` + schema v3 | Complete | Sparse opt-out overrides; YAML migration                    |
+| Build sub-routes + section nav    | Complete | `/builds/:id/*` wire pages + export                         |
+| `previewWireRows` service         | Complete | Shared preview projection                                   |
+| Multi-mode expansion              | Complete | `-F`/`-D` rows in preview + `serialise.ts`                  |
+| Name shortening pipeline          | Complete | Dictionary, `useExportSettings`, export panel               |
+| Wire preview UI + zone editor     | Complete | `WirePreviewTable`, `BuildZoneLayoutEditor`                 |
+| Docs + tests                      | Complete | `wire-preview.md`, `zone-grouping.md`, `name-shortening.md` |
 
 **Verify**
 
@@ -156,4 +156,4 @@
 ## Next
 
 - Phase 4b — OpenGD77 CPS import (Import / export format catalog)
-- Model review chore — see `opengd77-outstanding.md` (post wire-preview issue)
+- Model review chore — [#99](https://github.com/pskillen/codeplug-studio/issues/99)

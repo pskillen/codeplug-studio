@@ -8,15 +8,15 @@ Product behaviour for OpenGD77 CPS CSV in Codeplug Studio. Wire column tables li
 
 ## Implementation status
 
-| Area                                  | Status  | Notes                                                                                                     |
-| ------------------------------------- | ------- | --------------------------------------------------------------------------------------------------------- |
-| Radio variant profiles (1701, MD9600) | Shipped | `profiles.ts` — wire limits, power ladder                                                                 |
-| Trait profile registration            | Shipped | `TRAIT_PROFILES` in `src/core/models/traits.ts`                                                           |
-| Export adapter                        | Shipped | [#88](https://github.com/pskillen/codeplug-studio/issues/88) — `assemble` → serialise                     |
-| Multi-mode channel expansion          | Shipped | [#89](https://github.com/pskillen/codeplug-studio/issues/89) — `-F`/`-D` rows at serialise + preview       |
-| Export name shortening                | Shipped | [#90](https://github.com/pskillen/codeplug-studio/issues/90) — dictionary + `useExportSettings`           |
+| Area                                  | Status  | Notes                                                                                                        |
+| ------------------------------------- | ------- | ------------------------------------------------------------------------------------------------------------ |
+| Radio variant profiles (1701, MD9600) | Shipped | `profiles.ts` — wire limits, power ladder                                                                    |
+| Trait profile registration            | Shipped | `TRAIT_PROFILES` in `src/core/models/traits.ts`                                                              |
+| Export adapter                        | Shipped | [#88](https://github.com/pskillen/codeplug-studio/issues/88) — `assemble` → serialise                        |
+| Multi-mode channel expansion          | Shipped | [#89](https://github.com/pskillen/codeplug-studio/issues/89) — `-F`/`-D` rows at serialise + preview         |
+| Export name shortening                | Shipped | [#90](https://github.com/pskillen/codeplug-studio/issues/90) — dictionary + `useExportSettings`              |
 | Browser download + export UI          | Shipped | `ExportBuildCpsPanel` on `/builds/:id/export` ([#91](https://github.com/pskillen/codeplug-studio/issues/91)) |
-| CPS import                            | Planned | Phase 4b                                                                                                  |
+| CPS import                            | Planned | Phase 4b                                                                                                     |
 
 ## Trait profile vs radio profile
 

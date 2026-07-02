@@ -4,13 +4,13 @@ Shared table for build wire preview pages: per-entity include toggle, display la
 
 ## Props
 
-| Prop | Type | Description |
-| --- | --- | --- |
-| `rows` | `WirePreviewRow[]` | Rows from `previewWireRows` |
-| `nameLimit` | `number` (optional) | Profile wire name cap; shows error when exceeded |
-| `saving` | `boolean` (optional) | Disables controls while persisting |
-| `onExcludedChange` | `(row, excluded) => void` | Include toggle handler |
-| `onWireNameChange` | `(row, wireName) => void` | Wire name input handler |
+| Prop               | Type                      | Description                                      |
+| ------------------ | ------------------------- | ------------------------------------------------ |
+| `rows`             | `WirePreviewRow[]`        | Rows from `previewWireRows`                      |
+| `nameLimit`        | `number` (optional)       | Profile wire name cap; shows error when exceeded |
+| `saving`           | `boolean` (optional)      | Disables controls while persisting               |
+| `onExcludedChange` | `(row, excluded) => void` | Include toggle handler                           |
+| `onWireNameChange` | `(row, wireName) => void` | Wire name input handler                          |
 
 ## Usage
 

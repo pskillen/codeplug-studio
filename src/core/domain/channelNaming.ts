@@ -2,10 +2,7 @@ import type { Channel } from '@core/models/library.ts';
 import { CALLSIGN_TOKEN_PATTERNS } from './channelNaming/patterns.ts';
 
 export type ChannelExportNameMode =
-  | 'callsign_name'
-  | 'callsign_only'
-  | 'name_only'
-  | 'callsign_suffix';
+  'callsign_name' | 'callsign_only' | 'name_only' | 'callsign_suffix';
 
 export const DEFAULT_CHANNEL_EXPORT_NAME_MODE: ChannelExportNameMode = 'callsign_name';
 
@@ -70,7 +67,8 @@ export function channelPickForWireExport(
   channel: Channel,
   options: ChannelWireExportPickOptions = {},
 ): ChannelWireExportPick {
-  const exportNameMode = options.nameModeOverride ?? channel.exportNameMode ?? DEFAULT_CHANNEL_EXPORT_NAME_MODE;
+  const exportNameMode =
+    options.nameModeOverride ?? channel.exportNameMode ?? DEFAULT_CHANNEL_EXPORT_NAME_MODE;
   const base: ChannelWireExportPick = {
     callsign: channel.callsign,
     name: channel.name,

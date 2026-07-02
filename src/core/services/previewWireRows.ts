@@ -4,9 +4,7 @@ import {
   overrideByEntityId,
   type OverrideField,
 } from '@core/domain/formatBuildOverrides.ts';
-import {
-  channelDisplayLabel,
-} from '@core/domain/channelNaming.ts';
+import { channelDisplayLabel } from '@core/domain/channelNaming.ts';
 import {
   expandChannelWireRows,
   modeExportNameSuffix,
@@ -14,12 +12,7 @@ import {
 import { assemble, type LibrarySlice } from './assemble.ts';
 import type { FormatBuild } from '@core/models/formatBuild.ts';
 
-export type WirePreviewEntityKind =
-  | 'channel'
-  | 'zone'
-  | 'talkGroup'
-  | 'contact'
-  | 'rxGroupList';
+export type WirePreviewEntityKind = 'channel' | 'zone' | 'talkGroup' | 'contact' | 'rxGroupList';
 
 export interface WirePreviewRow {
   /** Stable key for override storage — library entity id, or composite for expansion rows. */
@@ -33,9 +26,7 @@ export interface WirePreviewRow {
   expansionNote?: string;
 }
 
-export function overrideFieldForEntityKind(
-  entityKind: WirePreviewEntityKind,
-): OverrideField {
+export function overrideFieldForEntityKind(entityKind: WirePreviewEntityKind): OverrideField {
   switch (entityKind) {
     case 'channel':
       return 'channelOverrides';
@@ -90,7 +81,9 @@ export function previewWireRows(
       const warnings: string[] = [];
       for (const channel of library.channels) {
         const assembled = projection.channels.find((row) => row.entity.id === channel.id);
-        const overrideWireName = overrideByEntityId(build.channelOverrides).get(channel.id)?.wireName;
+        const overrideWireName = overrideByEntityId(build.channelOverrides).get(
+          channel.id,
+        )?.wireName;
         const baseWireName = overrideWireName?.trim() || assembled?.wireName;
         const expansions = expandChannelWireRows(
           channel,
@@ -102,7 +95,9 @@ export function previewWireRows(
           warnings,
         );
         for (const expanded of expansions) {
-          const keyOverride = overrideByEntityId(build.channelOverrides).get(expanded.key)?.wireName?.trim();
+          const keyOverride = overrideByEntityId(build.channelOverrides)
+            .get(expanded.key)
+            ?.wireName?.trim();
           const generatedWireName = expanded.wireName;
           const excluded = isEntityExcluded(build.channelOverrides, channel.id);
           rows.push({

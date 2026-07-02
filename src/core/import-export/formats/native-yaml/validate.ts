@@ -32,7 +32,10 @@ import {
   validateZoneMemberRefs,
 } from '@core/domain/validation.ts';
 import { migrateFormatBuild } from '@core/domain/migrateFormatBuild.ts';
-import { parseOverrideArray, type LegacyEntitySelection } from '@core/domain/formatBuildOverrides.ts';
+import {
+  parseOverrideArray,
+  type LegacyEntitySelection,
+} from '@core/domain/formatBuildOverrides.ts';
 import { NATIVE_YAML_SCHEMA_VERSION, type ProjectAggregate } from '../../projectDocument.ts';
 import {
   NativeYamlImportError,
@@ -360,7 +363,7 @@ function parseLegacySelectionArray(raw: unknown, label: string): LegacyEntitySel
 function parseOverrideField(
   record: Record<string, unknown>,
   newKey: string,
-  legacyKey: string,
+  _legacyKey: string,
   label: string,
 ): BuildEntityOverride[] {
   if (record[newKey] !== undefined && record[newKey] !== null) {
@@ -398,10 +401,7 @@ function parseFormatBuild(raw: unknown, index: number): ParsedFormatBuild {
         : undefined,
     rxGroupListSelections:
       record.rxGroupListSelections !== undefined && record.rxGroupListSelections !== null
-        ? parseLegacySelectionArray(
-            record.rxGroupListSelections,
-            `${label}.rxGroupListSelections`,
-          )
+        ? parseLegacySelectionArray(record.rxGroupListSelections, `${label}.rxGroupListSelections`)
         : undefined,
     contactSelections:
       record.contactSelections !== undefined && record.contactSelections !== null
@@ -653,9 +653,7 @@ function validateForeignKeys(library: Library, formatBuilds: FormatBuild[]): voi
     for (const override of build.contactOverrides) {
       const contactId = override.libraryEntityId;
       if (!ids.digitalContactIds.has(contactId) && !ids.analogContactIds.has(contactId)) {
-        throw new NativeYamlImportError(
-          `Build contact override ${contactId} not found in library`,
-        );
+        throw new NativeYamlImportError(`Build contact override ${contactId} not found in library`);
       }
     }
   }
@@ -672,10 +670,7 @@ export function validateDocument(raw: unknown): ProjectAggregate {
   }
 
   const studioSchemaVersion = document.studioSchemaVersion;
-  if (
-    studioSchemaVersion !== STUDIO_SCHEMA_VERSION &&
-    studioSchemaVersion !== 2
-  ) {
+  if (studioSchemaVersion !== STUDIO_SCHEMA_VERSION && studioSchemaVersion !== 2) {
     throw new NativeYamlImportError(
       `Unsupported studioSchemaVersion: ${String(studioSchemaVersion)} (expected ${STUDIO_SCHEMA_VERSION} or 2)`,
     );

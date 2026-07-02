@@ -37,10 +37,7 @@ import {
   formatOpenGd77ToneWire,
   formatOpenGd77TransmitTimeoutWire,
 } from './channelWire.ts';
-import {
-  contactRefWireName,
-  rxGroupListWireName,
-} from './exportRefs.ts';
+import { contactRefWireName, rxGroupListWireName } from './exportRefs.ts';
 import { rxGroupListExportMemberNames, zoneExportMemberNames } from './listWire.ts';
 import {
   DEFAULT_OPENGD77_PROFILE_ID,
@@ -52,9 +49,7 @@ function padRow(headers: string[], values: Record<string, string>): string[] {
   return headers.map((h) => values[h] ?? '');
 }
 
-function isAnalogProfile(
-  profile: ChannelModeProfile | null,
-): profile is ChannelModeProfileAnalog {
+function isAnalogProfile(profile: ChannelModeProfile | null): profile is ChannelModeProfileAnalog {
   return (
     profile != null &&
     (profile.mode === 'fm' ||
@@ -64,9 +59,7 @@ function isAnalogProfile(
   );
 }
 
-function isDmrProfile(
-  profile: ChannelModeProfile | null,
-): profile is ChannelModeProfileDMR {
+function isDmrProfile(profile: ChannelModeProfile | null): profile is ChannelModeProfileDMR {
   return profile?.mode === 'dmr';
 }
 

@@ -10,11 +10,11 @@ Operator workflow for reviewing and shaping CPS wire names before export. Each b
 
 Build overrides use **sparse opt-out** storage (`BuildEntityOverride`):
 
-| Field | Meaning |
-| --- | --- |
-| *(no row)* | Entity is **included**; wire name is generated from library fields |
-| `excluded: true` | Omit from export projection |
-| `wireName` | Override the generated CPS name |
+| Field            | Meaning                                                            |
+| ---------------- | ------------------------------------------------------------------ |
+| _(no row)_       | Entity is **included**; wire name is generated from library fields |
+| `excluded: true` | Omit from export projection                                        |
+| `wireName`       | Override the generated CPS name                                    |
 
 Overrides are stored on `FormatBuild` as `channelOverrides`, `zoneOverrides`, `talkGroupOverrides`, `contactOverrides`, and `rxGroupListOverrides` (`studioSchemaVersion: 3`).
 
@@ -31,13 +31,13 @@ Wire preview pages and the export panel share **`useExportSettings`** (browser `
 
 ## Routes
 
-| Route | Entity kind | Notes |
-| --- | --- | --- |
-| `/builds/:id/channels` | `channel` | Multi-mode channels may show two rows |
-| `/builds/:id/zones` | `zone` | Includes [zone layout editor](zone-grouping.md) when profile has zone grouping |
-| `/builds/:id/talk-groups` | `talkGroup` | Unreferenced TGs still listed with a note |
-| `/builds/:id/contacts` | `contact` | Digital + analog contacts |
-| `/builds/:id/rx-group-lists` | `rxGroupList` | |
+| Route                        | Entity kind   | Notes                                                                          |
+| ---------------------------- | ------------- | ------------------------------------------------------------------------------ |
+| `/builds/:id/channels`       | `channel`     | Multi-mode channels may show two rows                                          |
+| `/builds/:id/zones`          | `zone`        | Includes [zone layout editor](zone-grouping.md) when profile has zone grouping |
+| `/builds/:id/talk-groups`    | `talkGroup`   | Unreferenced TGs still listed with a note                                      |
+| `/builds/:id/contacts`       | `contact`     | Digital + analog contacts                                                      |
+| `/builds/:id/rx-group-lists` | `rxGroupList` |                                                                                |
 
 Secondary nav is trait-gated (`buildNavItems` in `src/app/routes/builds/nav.ts`).
 

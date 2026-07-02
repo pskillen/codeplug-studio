@@ -10,7 +10,10 @@ export default function BuildExportPage() {
     <FormPage
       title="Export to CPS"
       description={
-        <Link to={`/builds/${build.id}/overview`} style={{ fontSize: 'var(--mantine-font-size-sm)' }}>
+        <Link
+          to={`/builds/${build.id}/overview`}
+          style={{ fontSize: 'var(--mantine-font-size-sm)' }}
+        >
           ← {build.name}
         </Link>
       }

@@ -18,16 +18,8 @@ const buildService = new BuildService(persistence);
 
 export default function BuildZonesWirePage() {
   const { build } = useBuildLayout();
-  const {
-    rows,
-    nameLimit,
-    error,
-    saving,
-    library,
-    setRowExcluded,
-    setRowWireName,
-    persistBuild,
-  } = useBuildWirePreview('zone');
+  const { rows, nameLimit, error, saving, library, setRowExcluded, setRowWireName, persistBuild } =
+    useBuildWirePreview('zone');
 
   const includedChannels = useMemo(() => {
     if (!library) return [];
@@ -50,7 +42,10 @@ export default function BuildZonesWirePage() {
     <FormPage
       title="Zones"
       description={
-        <Link to={`/builds/${build.id}/overview`} style={{ fontSize: 'var(--mantine-font-size-sm)' }}>
+        <Link
+          to={`/builds/${build.id}/overview`}
+          style={{ fontSize: 'var(--mantine-font-size-sm)' }}
+        >
           ← {build.name}
         </Link>
       }

@@ -39,10 +39,7 @@ export {
   type FlatMemoryLayout,
   emptyTraitLayout,
 } from './traitLayout.ts';
-export {
-  type FormatBuild,
-  type BuildEntityOverride,
-} from './formatBuild.ts';
+export { type FormatBuild, type BuildEntityOverride } from './formatBuild.ts';
 export type {
   AnalogChannelMode,
   ChannelMode,

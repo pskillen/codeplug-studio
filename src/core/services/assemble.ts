@@ -192,10 +192,7 @@ function assembleZones(
         memberChannelIds,
       };
     })
-    .filter(
-      (z) =>
-        z.memberChannelIds.length > 0 || overrideByEntityId(overrides).has(z.zoneId),
-    );
+    .filter((z) => z.memberChannelIds.length > 0 || overrideByEntityId(overrides).has(z.zoneId));
 }
 
 function assembleEntityList<T extends { id: string; name: string }>(

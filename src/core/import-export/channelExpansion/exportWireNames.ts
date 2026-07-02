@@ -17,10 +17,7 @@ export function resolveMaxNameLength(
   return getOpenGd77Profile(profileId).nameLimit;
 }
 
-export function composeExportWireName(
-  channel: Channel,
-  options?: CpsExportOptions,
-): string {
+export function composeExportWireName(channel: Channel, options?: CpsExportOptions): string {
   const pick = channelPickForWireExport(channel, {
     nameModeOverride: options?.nameModeOverride as ChannelExportNameMode | undefined,
     useChannelAbbreviation: options?.useChannelAbbreviation,

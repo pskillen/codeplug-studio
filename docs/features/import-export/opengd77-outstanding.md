@@ -9,7 +9,7 @@ Items **skipped**, **incomplete**, or **discovered during execution** — not th
 ## Pre-existing model debt
 
 - [ ] Library `Zone` carries OpenGD77-shaped export fields (`exportScratchChannel`, `exportScanList`, `scanCarrierFrequencyHz`) — zone-as-scan-list belongs on `FormatBuild.layout`, not the library entity ([library-and-builds.mdc](../../../.cursor/rules/library-and-builds.mdc))
-- [ ] **Model review** — chore issue to audit `FormatBuild`, `ZoneGroupingLayout`, trait flags, and composite expansion override keys after wire-preview ship (link TBD in slice 9)
+- [ ] **Model review** — [#99](https://github.com/pskillen/codeplug-studio/issues/99) audit `FormatBuild`, `ZoneGroupingLayout`, trait flags, and composite expansion override keys after wire-preview ship
 
 ---
 

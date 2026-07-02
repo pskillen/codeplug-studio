@@ -18,9 +18,7 @@ export default function BuildZoneLayoutEditor({
   saving = false,
   onSectionChange,
 }: BuildZoneLayoutEditorProps) {
-  const [selectedZoneId, setSelectedZoneId] = useState<string | null>(
-    section.zones[0]?.id ?? null,
-  );
+  const [selectedZoneId, setSelectedZoneId] = useState<string | null>(section.zones[0]?.id ?? null);
 
   const zoneOptions = useMemo(
     () =>

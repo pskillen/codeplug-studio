@@ -1,7 +1,5 @@
 import { NumberInput, Select, Stack, Switch, Text } from '@mantine/core';
-import {
-  EXPORT_NAME_MODE_OPTIONS,
-} from '@core/domain/channelNaming.ts';
+import { EXPORT_NAME_MODE_OPTIONS } from '@core/domain/channelNaming.ts';
 import {
   EXPORT_NAME_MODE_RESPECT_PER_CHANNEL,
   useExportSettings,

@@ -1,9 +1,6 @@
 import type { BuildEntityOverride, FormatBuild } from '@core/models/formatBuild.ts';
 import type { Library } from '@core/models/library.ts';
-import {
-  migrateLegacySelections,
-  type LegacyEntitySelection,
-} from './formatBuildOverrides.ts';
+import { migrateLegacySelections, type LegacyEntitySelection } from './formatBuildOverrides.ts';
 
 export interface LegacyFormatBuildFields {
   channelSelections?: LegacyEntitySelection[];

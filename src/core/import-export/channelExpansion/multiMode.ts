@@ -42,7 +42,8 @@ export function expandChannelWireRows(
   warnings: string[] = [],
 ): ExpandedChannelWireRow[] {
   const composedBase = baseWireName?.trim() || composeExportWireName(channel, options);
-  const profiles = channel.modeProfiles.length > 0 ? channel.modeProfiles : [modeProfileForChannel(channel)];
+  const profiles =
+    channel.modeProfiles.length > 0 ? channel.modeProfiles : [modeProfileForChannel(channel)];
 
   if (!expandModes || profiles.length <= 1) {
     const profile = profiles[0]!;
@@ -68,7 +69,14 @@ export function expandChannelWireRows(
   return profiles.map((profile) => {
     const suffix = modeExportNameSuffix(profile.mode);
     const candidate = `${composedBase}${suffix}`;
-    const wireName = applyWireNameLimits(candidate, channel, reserved, options, profileId, warnings);
+    const wireName = applyWireNameLimits(
+      candidate,
+      channel,
+      reserved,
+      options,
+      profileId,
+      warnings,
+    );
     return {
       sourceChannelId: channel.id,
       key: expansionWireKey(channel.id, profile.mode),

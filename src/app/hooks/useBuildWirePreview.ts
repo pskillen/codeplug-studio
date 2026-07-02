@@ -56,8 +56,8 @@ export function useBuildWirePreview(entityKind: WirePreviewEntityKind) {
 
   const nameLimit = useMemo(() => {
     const profile = traitProfileFor(build.profileId);
-    if (!profile) return undefined;
-    const options = getFormatProfiles(profile.formatId);
+    if (!profile || profile.formatId !== 'opengd77') return undefined;
+    const options = getFormatProfiles('opengd77');
     return options.find((option) => option.profileId === build.profileId)?.nameLimit;
   }, [build.profileId]);
 

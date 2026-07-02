@@ -68,16 +68,16 @@ Wire-format column detail: `docs/reference/<format>/`. Strategy docs cite **outc
 
 ## Scenario taxonomy
 
-| Scenario                         | What it proves                            | Layer                     | Status                         |
-| -------------------------------- | ----------------------------------------- | ------------------------- | ------------------------------ |
-| **Import mapping**               | Fixture → golden library (+ build)        | Adapter + service         | Planned (Phase 4+)             |
-| **Export mapping**               | Constructed library + build → golden wire | Adapter + service         | Shipped (OpenGD77 `serialise.test.ts`) |
-| **Assemble**                     | Trait profile shapes export projection    | Unit / service            | Shipped (`assemble.test.ts`)   |
-| **Wire preview**                 | Overrides + expansion + shortening in UI  | `previewWireRows.test.ts` | Shipped ([#87](https://github.com/pskillen/codeplug-studio/issues/87)–[#90](https://github.com/pskillen/codeplug-studio/issues/90)) |
-| **Export mapping (OpenGD77)**    | Constructed library + build → Channels.csv | `serialise.test.ts`      | Shipped — includes multi-mode expansion |
-| **Same-format round-trip smoke** | A → internal → A roughly stable           | Optional integration      | Secondary — not primary gate   |
-| **Cross-format**                 | A → library → B export                    | Adapter matrix            | Planned                        |
-| **Lossy fields**                 | Known non-surviving columns documented    | Reference + mapping tests | Per `docs/reference/<format>/` |
+| Scenario                         | What it proves                             | Layer                     | Status                                                                                                                              |
+| -------------------------------- | ------------------------------------------ | ------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| **Import mapping**               | Fixture → golden library (+ build)         | Adapter + service         | Planned (Phase 4+)                                                                                                                  |
+| **Export mapping**               | Constructed library + build → golden wire  | Adapter + service         | Shipped (OpenGD77 `serialise.test.ts`)                                                                                              |
+| **Assemble**                     | Trait profile shapes export projection     | Unit / service            | Shipped (`assemble.test.ts`)                                                                                                        |
+| **Wire preview**                 | Overrides + expansion + shortening in UI   | `previewWireRows.test.ts` | Shipped ([#87](https://github.com/pskillen/codeplug-studio/issues/87)–[#90](https://github.com/pskillen/codeplug-studio/issues/90)) |
+| **Export mapping (OpenGD77)**    | Constructed library + build → Channels.csv | `serialise.test.ts`       | Shipped — includes multi-mode expansion                                                                                             |
+| **Same-format round-trip smoke** | A → internal → A roughly stable            | Optional integration      | Secondary — not primary gate                                                                                                        |
+| **Cross-format**                 | A → library → B export                     | Adapter matrix            | Planned                                                                                                                             |
+| **Lossy fields**                 | Known non-surviving columns documented     | Reference + mapping tests | Per `docs/reference/<format>/`                                                                                                      |
 
 ### Round-trip (optional smoke only)
 
@@ -90,11 +90,11 @@ Pattern (when adapters ship):
 
 ## Adapter matrix (fill as formats ship)
 
-| Format   | Import golden | Export golden | Round-trip smoke |
-| -------- | ------------- | ------------- | ---------------- |
+| Format   | Import golden | Export golden                 | Round-trip smoke |
+| -------- | ------------- | ----------------------------- | ---------------- |
 | OpenGD77 | Planned       | Shipped (`serialise.test.ts`) | Optional         |
-| CHIRP    | Planned       | Planned       | Optional         |
-| DM32     | Planned       | Planned       | Optional         |
+| CHIRP    | Planned       | Planned                       | Optional         |
+| DM32     | Planned       | Planned                       | Optional         |
 
 ## Related
 

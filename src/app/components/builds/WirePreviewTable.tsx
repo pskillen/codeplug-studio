@@ -42,9 +42,7 @@ export default function WirePreviewTable({
               <Table.Td>
                 <Switch
                   checked={!row.excluded}
-                  onChange={(event) =>
-                    onExcludedChange(row, !event.currentTarget.checked)
-                  }
+                  onChange={(event) => onExcludedChange(row, !event.currentTarget.checked)}
                   disabled={saving}
                   aria-label={`Include ${row.displayLabel}`}
                 />

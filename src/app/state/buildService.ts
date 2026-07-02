@@ -1,10 +1,7 @@
 import type { FormatBuild } from '@core/models/formatBuild.ts';
 import type { ZoneGroupingLayout } from '@core/models/traitLayout.ts';
 import { newFormatBuild } from '@core/domain/factories.ts';
-import {
-  type OverrideField,
-  upsertOverride,
-} from '@core/domain/formatBuildOverrides.ts';
+import { type OverrideField, upsertOverride } from '@core/domain/formatBuildOverrides.ts';
 import { isoNow, nextRevision } from '@core/models/revision.ts';
 import type { PutResult } from '@integrations/persistence/index.ts';
 import type { ProjectPersistence } from '@integrations/persistence/index.ts';
