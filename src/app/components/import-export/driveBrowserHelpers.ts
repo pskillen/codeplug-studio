@@ -40,6 +40,11 @@ export function findYamlFileByName(
   );
 }
 
+export function formatBrowsePathLabel(path: DriveFolderCrumb[]): string {
+  if (path.length === 0) return 'My Drive';
+  return path.map((crumb) => crumb.name).join(' / ');
+}
+
 export function driveErrorMessage(err: unknown): string {
   if (err instanceof Error) return err.message;
   return String(err);

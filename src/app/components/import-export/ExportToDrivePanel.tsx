@@ -10,6 +10,7 @@ import { exportProjectToYaml } from '../../services/projectImportExportService.t
 import { useGoogleDrive } from '../../hooks/useGoogleDrive.ts';
 import { useProjects } from '../../state/useProjects.ts';
 import DriveBrowserModal, { type DriveSaveTarget } from './DriveBrowserModal.tsx';
+import GoogleDriveButton from './GoogleDriveButton.tsx';
 
 export default function ExportToDrivePanel() {
   const { activeProjectId, activeProject, refreshProjects } = useProjects();
@@ -109,13 +110,16 @@ export default function ExportToDrivePanel() {
         <Alert color="gray">Connect Google Drive in Settings before saving files.</Alert>
       )}
       {error ? <Alert color="red">{error}</Alert> : null}
-      <Button disabled={!connected || saving} onClick={() => setBrowserOpen(true)}>
+      <GoogleDriveButton disabled={!connected || saving} loading={saving} onClick={() => setBrowserOpen(true)}>
         Save to Drive
-      </Button>
+      </GoogleDriveButton>
       <DriveBrowserModal
         opened={browserOpen}
-        onClose={() => setBrowserOpen(false)}
+        onClose={() => {
+          if (!saving) setBrowserOpen(false);
+        }}
         mode="save"
+        saving={saving}
         interchangeFolderId={interchangeFolderId}
         defaultFileName={suggestedFileName}
         onSelectFile={() => undefined}

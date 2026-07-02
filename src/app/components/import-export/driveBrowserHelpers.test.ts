@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   appendFolderToPath,
   findYamlFileByName,
+  formatBrowsePathLabel,
   pathUpToIndex,
   resolveInitialBrowseState,
 } from './driveBrowserHelpers.ts';
@@ -36,5 +37,15 @@ describe('driveBrowserHelpers', () => {
       'demo.yaml',
     );
     expect(match?.id).toBe('1');
+  });
+
+  it('formatBrowsePathLabel joins breadcrumb names', () => {
+    expect(formatBrowsePathLabel([{ id: 'root', name: 'My Drive' }])).toBe('My Drive');
+    expect(
+      formatBrowsePathLabel([
+        { id: 'root', name: 'My Drive' },
+        { id: 'f1', name: 'Codeplugs' },
+      ]),
+    ).toBe('My Drive / Codeplugs');
   });
 });

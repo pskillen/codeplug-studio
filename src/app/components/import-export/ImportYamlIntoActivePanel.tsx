@@ -4,6 +4,7 @@ import { importProjectFromYaml } from '../../services/projectImportExportService
 import { useGoogleDrive } from '../../hooks/useGoogleDrive.ts';
 import { useProjects } from '../../state/useProjects.ts';
 import DriveBrowserModal from './DriveBrowserModal.tsx';
+import GoogleDriveButton from './GoogleDriveButton.tsx';
 import YamlFileDropzone from './YamlFileDropzone.tsx';
 
 export default function ImportYamlIntoActivePanel() {
@@ -49,13 +50,12 @@ export default function ImportYamlIntoActivePanel() {
     <Stack gap="sm">
       <YamlFileDropzone onFileText={handleFile} disabled={importing} />
       {isConfigured ? (
-        <Button
-          variant="light"
+        <GoogleDriveButton
           disabled={!connected || importing}
           onClick={() => setDriveOpen(true)}
         >
           Open from Drive
-        </Button>
+        </GoogleDriveButton>
       ) : null}
       {error ? <Alert color="red">{error}</Alert> : null}
       <DriveBrowserModal

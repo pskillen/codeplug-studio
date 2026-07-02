@@ -1,5 +1,6 @@
 import { Alert, Button, Group, Stack, Text } from '@mantine/core';
 import { useGoogleDrive } from '../../hooks/useGoogleDrive.ts';
+import GoogleDriveButton from '../import-export/GoogleDriveButton.tsx';
 
 export default function GoogleDriveConnectSection() {
   const { connected, accountLabel, loading, error, isConfigured, connect, disconnect } =
@@ -33,9 +34,9 @@ export default function GoogleDriveConnectSection() {
             Disconnect
           </Button>
         ) : (
-          <Button loading={loading} disabled={!isConfigured} onClick={() => void connect()}>
+          <GoogleDriveButton loading={loading} disabled={!isConfigured} onClick={() => void connect()}>
             Connect Google Drive
-          </Button>
+          </GoogleDriveButton>
         )}
       </Group>
     </Stack>

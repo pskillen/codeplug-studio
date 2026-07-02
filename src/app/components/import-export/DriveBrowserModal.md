@@ -15,6 +15,7 @@ Lets operators navigate Drive folders with breadcrumbs, create folders, open `.y
 | `mode`                | `'open' \| 'save'`    | Open file vs pick save target                                 |
 | `interchangeFolderId` | `string?`             | Start folder from project export memory                       |
 | `defaultFileName`     | `string?`             | Pre-filled filename in save mode                              |
+| `saving`              | `boolean?`            | Spinner on **Save here** while parent upload runs             |
 | `onSelectFile`        | `(selection) => void` | Open mode — file id, name, text                               |
 | `onSaveTarget`        | `(target) => void`    | Save mode — folder, path, filename, optional existing file id |
 | `port`                | `GoogleDrivePort?`    | Injectable port for tests                                     |

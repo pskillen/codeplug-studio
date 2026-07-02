@@ -26,9 +26,11 @@ import {
 import {
   appendFolderToPath,
   driveErrorMessage,
+  formatBrowsePathLabel,
   pathUpToIndex,
   resolveInitialBrowseState,
 } from './driveBrowserHelpers.ts';
+import GoogleDriveButton from './GoogleDriveButton.tsx';
 
 export interface DriveOpenSelection {
   fileId: string;
@@ -50,6 +52,7 @@ export interface DriveBrowserModalProps {
   mode: 'open' | 'save';
   interchangeFolderId?: string;
   defaultFileName?: string;
+  saving?: boolean;
   onSelectFile: (selection: DriveOpenSelection) => void;
   onSaveTarget: (target: DriveSaveTarget) => void;
   port?: GoogleDrivePort;
@@ -59,6 +62,7 @@ interface DriveBrowserBodyProps {
   mode: 'open' | 'save';
   interchangeFolderId?: string;
   defaultFileName: string;
+  saving: boolean;
   onClose: () => void;
   onSelectFile: (selection: DriveOpenSelection) => void;
   onSaveTarget: (target: DriveSaveTarget) => void;
@@ -69,6 +73,7 @@ function DriveBrowserBody({
   mode,
   interchangeFolderId,
   defaultFileName,
+  saving,
   onClose,
   onSelectFile,
   onSaveTarget,
@@ -209,18 +214,31 @@ function DriveBrowserBody({
           </Anchor>
         ))}
       </Breadcrumbs>
-      <Group align="flex-end">
-        <TextInput
-          label="New folder"
-          placeholder="Folder name"
-          value={newFolderName}
-          onChange={(event) => setNewFolderName(event.currentTarget.value)}
-          style={{ flex: 1 }}
-        />
-        <Button loading={creatingFolder} onClick={() => void handleCreateFolder()}>
-          Create folder
-        </Button>
-      </Group>
+      <Stack gap={4} pb="xs" style={{ borderBottom: '1px solid var(--mantine-color-default-border)' }}>
+        <Text size="xs" c="dimmed" tt="uppercase" fw={600}>
+          Optional
+        </Text>
+        <Group align="flex-end" gap="xs">
+          <TextInput
+            aria-label="New folder name"
+            placeholder="New folder name"
+            size="xs"
+            value={newFolderName}
+            disabled={saving || creatingFolder}
+            onChange={(event) => setNewFolderName(event.currentTarget.value)}
+            style={{ flex: 1 }}
+          />
+          <Button
+            size="xs"
+            variant="subtle"
+            loading={creatingFolder}
+            disabled={saving}
+            onClick={() => void handleCreateFolder()}
+          >
+            Create folder
+          </Button>
+        </Group>
+      </Stack>
       {loading ? <Text size="sm">Loading…</Text> : null}
       {folders.length > 0 ? (
         <Stack gap={4}>
@@ -256,20 +274,28 @@ function DriveBrowserBody({
           ))}
         </Stack>
       ) : null}
-      {mode === 'save' ? (
-        <>
-          <TextInput
-            label="Filename"
-            value={fileName}
-            onChange={(event) => setFileName(event.currentTarget.value)}
-          />
-          <Button onClick={handleSaveHere}>Save here</Button>
-        </>
-      ) : null}
       {mode === 'open' && !loading && folders.length === 0 && yamlFiles.length === 0 ? (
         <Text size="sm" c="dimmed">
           This folder is empty.
         </Text>
+      ) : null}
+      {mode === 'save' ? (
+        <Stack
+          gap="xs"
+          pt="xs"
+          style={{ borderTop: '1px solid var(--mantine-color-default-border)' }}
+        >
+          <TextInput
+            label="Filename"
+            description={`Save to ${formatBrowsePathLabel(path)}`}
+            value={fileName}
+            disabled={saving}
+            onChange={(event) => setFileName(event.currentTarget.value)}
+          />
+          <GoogleDriveButton loading={saving} disabled={saving} onClick={handleSaveHere}>
+            Save here
+          </GoogleDriveButton>
+        </Stack>
       ) : null}
     </Stack>
   );
@@ -281,6 +307,7 @@ export default function DriveBrowserModal({
   mode,
   interchangeFolderId,
   defaultFileName = '',
+  saving = false,
   onSelectFile,
   onSaveTarget,
   port = googleDrivePort,
@@ -292,6 +319,8 @@ export default function DriveBrowserModal({
       title={mode === 'open' ? 'Open from Google Drive' : 'Save to Google Drive'}
       size="lg"
       centered
+      closeOnClickOutside={!saving}
+      closeOnEscape={!saving}
     >
       {opened ? (
         <DriveBrowserBody
@@ -299,6 +328,7 @@ export default function DriveBrowserModal({
           mode={mode}
           interchangeFolderId={interchangeFolderId}
           defaultFileName={defaultFileName}
+          saving={saving}
           onClose={onClose}
           onSelectFile={onSelectFile}
           onSaveTarget={onSaveTarget}

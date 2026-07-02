@@ -1,10 +1,11 @@
 import { useState } from 'react';
-import { Button, Stack } from '@mantine/core';
+import { Stack } from '@mantine/core';
 import { useNavigate } from 'react-router-dom';
 import { importProjectFromYaml } from '../../services/projectImportExportService.ts';
 import { useGoogleDrive } from '../../hooks/useGoogleDrive.ts';
 import { useProjects } from '../../state/useProjects.ts';
 import DriveBrowserModal from './DriveBrowserModal.tsx';
+import GoogleDriveButton from './GoogleDriveButton.tsx';
 import YamlFileDropzone from './YamlFileDropzone.tsx';
 
 export default function ImportProjectYamlPanel() {
@@ -34,13 +35,12 @@ export default function ImportProjectYamlPanel() {
     <Stack gap="sm">
       <YamlFileDropzone onFileText={handleFile} disabled={importing} error={error} />
       {isConfigured ? (
-        <Button
-          variant="light"
+        <GoogleDriveButton
           disabled={!connected || importing}
           onClick={() => setDriveOpen(true)}
         >
           Open from Drive
-        </Button>
+        </GoogleDriveButton>
       ) : null}
       <DriveBrowserModal
         opened={driveOpen}
