@@ -39,6 +39,10 @@ import { FormPage, PageSection } from '../ui/index.ts';
 import { findChannelByCallsign } from './findChannelByCallsign.ts';
 import { buildRepeaterDirectoryRows } from './repeaterDirectoryRows.ts';
 import RepeaterListingUpdateDialog from './RepeaterListingUpdateDialog.tsx';
+import {
+  formatBrandMeisterImportMessage,
+  persistBrandMeisterImport,
+} from '../../lib/brandmeisterImport.ts';
 
 const BAND_OPTIONS = [
   { value: '2M', label: '2 m' },
@@ -91,6 +95,8 @@ export default function RepeaterDirectorySearch({
   const [updateChannel, setUpdateChannel] = useState<Channel | null>(null);
   const [updateListing, setUpdateListing] = useState<RepeaterListing | null>(null);
   const [updateOpen, setUpdateOpen] = useState(false);
+  const [importTalkGroups, setImportTalkGroups] = useState(true);
+  const [adding, setAdding] = useState(false);
 
   const isUk = source === 'ukrepeater';
   const capabilities = repeaterSearchCapabilities(source);
@@ -142,40 +148,89 @@ export default function RepeaterDirectorySearch({
 
   async function handleAdd(listing: RepeaterListing) {
     if (!activeProjectId) return;
-    const channel = repeaterListingToChannel(listing, activeProjectId, mapOptions);
-    const result = await persistence.putChannel(channel, null);
-    if (result.ok) {
-      setAdded((prev) => new Set(prev).add(listingKey(listing)));
+    setAdding(true);
+    setAddMessage(null);
+    try {
+      if (source === 'brandmeister') {
+        const result = await persistBrandMeisterImport({
+          listing,
+          projectId: activeProjectId,
+          library,
+          mapOptions,
+          importTalkGroups,
+          persistence,
+        });
+        if (!result.ok) {
+          setAddMessage(result.message);
+          return;
+        }
+        setAdded((prev) => new Set(prev).add(listingKey(listing)));
+        setAddMessage(formatBrandMeisterImportMessage(result));
+        return;
+      }
+      const channel = repeaterListingToChannel(listing, activeProjectId, mapOptions);
+      const result = await persistence.putChannel(channel, null);
+      if (result.ok) {
+        setAdded((prev) => new Set(prev).add(listingKey(listing)));
+      }
+    } finally {
+      setAdding(false);
     }
   }
 
   async function handleAddSelected() {
     if (!activeProjectId) return;
+    setAdding(true);
     let addedCount = 0;
     let skipped = 0;
-    for (const row of rows) {
-      if (!selected.has(row.key)) continue;
-      if (row.existing) {
-        skipped++;
-        continue;
+    const warnings: string[] = [];
+    let workingLibrary = library;
+    try {
+      for (const row of rows) {
+        if (!selected.has(row.key)) continue;
+        if (row.existing) {
+          skipped++;
+          continue;
+        }
+        if (source === 'brandmeister') {
+          const result = await persistBrandMeisterImport({
+            listing: row.listing,
+            projectId: activeProjectId,
+            library: workingLibrary,
+            mapOptions,
+            importTalkGroups,
+            persistence,
+          });
+          if (result.ok) {
+            addedCount++;
+            workingLibrary = result.library;
+            setAdded((prev) => new Set(prev).add(row.key));
+            if (result.warning) warnings.push(result.warning);
+          } else {
+            skipped++;
+          }
+          continue;
+        }
+        const channel = repeaterListingToChannel(row.listing, activeProjectId, mapOptions);
+        const result = await persistence.putChannel(channel, null);
+        if (result.ok) {
+          addedCount++;
+          setAdded((prev) => new Set(prev).add(row.key));
+        } else {
+          skipped++;
+        }
       }
-      const channel = repeaterListingToChannel(row.listing, activeProjectId, mapOptions);
-      const result = await persistence.putChannel(channel, null);
-      if (result.ok) {
-        addedCount++;
-        setAdded((prev) => new Set(prev).add(row.key));
-      } else {
-        skipped++;
+      setAddMessage(
+        addedCount > 0
+          ? `Added ${addedCount} channel${addedCount === 1 ? '' : 's'}${skipped ? ` (${skipped} skipped)` : ''}${warnings.length ? `. ${warnings[0]}` : ''}.`
+          : 'No channels were added.',
+      );
+      setSelected(new Set());
+      if (addedCount > 0) {
+        navigate('/library/channels');
       }
-    }
-    setAddMessage(
-      addedCount > 0
-        ? `Added ${addedCount} channel${addedCount === 1 ? '' : 's'}${skipped ? ` (${skipped} skipped)` : ''}.`
-        : 'No channels were added.',
-    );
-    setSelected(new Set());
-    if (addedCount > 0) {
-      navigate('/library/channels');
+    } finally {
+      setAdding(false);
     }
   }
 
@@ -243,6 +298,13 @@ export default function RepeaterDirectorySearch({
                 label="Title case names"
                 checked={search.titleCaseNames}
                 onChange={(e) => search.setTitleCaseNames(e.currentTarget.checked)}
+              />
+            ) : null}
+            {!isUk ? (
+              <Checkbox
+                label="Import talk groups and RX group list"
+                checked={importTalkGroups}
+                onChange={(e) => setImportTalkGroups(e.currentTarget.checked)}
               />
             ) : null}
             {capabilities.useMyLocation ? (
@@ -367,7 +429,8 @@ export default function RepeaterDirectorySearch({
                           <Button
                             size="compact-sm"
                             variant={isAdded ? 'light' : 'filled'}
-                            disabled={isAdded}
+                            disabled={isAdded || adding}
+                            loading={adding}
                             onClick={() => void handleAdd(listing)}
                           >
                             {isAdded ? 'Added' : 'Add to library'}
@@ -382,7 +445,7 @@ export default function RepeaterDirectorySearch({
           </ScrollArea>
 
           <Group justify="space-between" mt="md">
-            <Button disabled={selected.size === 0} onClick={() => void handleAddSelected()}>
+            <Button disabled={selected.size === 0 || adding} loading={adding} onClick={() => void handleAddSelected()}>
               Add selected ({selected.size})
             </Button>
             {added.size > 0 ? (

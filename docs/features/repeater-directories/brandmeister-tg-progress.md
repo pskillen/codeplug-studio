@@ -8,7 +8,7 @@
 | Slice | Status |
 | --- | --- |
 | Model `timeSlotOverride` | Shipped (`14a77f9`) |
-| Integrations bundle | Shipped |
-| Import flow | Pending |
+| Integrations bundle | Shipped (`3c3b826`) |
+| Import flow | Shipped |
 | Verify RGL sync | Pending |
 | Documentation | Pending |
