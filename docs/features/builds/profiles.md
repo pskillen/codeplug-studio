@@ -4,11 +4,12 @@ Operators pick a **radio profile** when creating a format build. The profile def
 
 ## When profiles are chosen
 
-| Workflow | Where | Persisted? |
-| --- | --- | --- |
-| New build | `/builds/new` — format → **profile** → name | Yes — stored on `FormatBuild.profileId` |
-| Build detail | Target section — `ProfilePicker` (select mode) | Yes — after **Save** |
-| CPS export | Export panel — export profile override | No — export-time only unless saved on Target |
+| Workflow     | Where                                          | Persisted?                              |
+| ------------ | ---------------------------------------------- | --------------------------------------- |
+| New build    | `/builds/new` — format → **profile** → name    | Yes — stored on `FormatBuild.profileId` |
+| Build detail | Target section — `ProfilePicker` (select mode) | Yes — after **Save**                    |
+
+Change profile in **Target** before exporting — export uses the saved build `profileId`.
 
 ## OpenGD77 profiles
 
@@ -20,7 +21,7 @@ If the build already has layout sections or entity selections, Studio asks for c
 
 ## Component
 
-[`ProfilePicker`](../../../src/app/components/builds/ProfilePicker.tsx) — card list for new-build wizard; dropdown for detail and export override.
+[`ProfilePicker`](../../../src/app/components/builds/ProfilePicker.tsx) — card list for new-build wizard; dropdown on build detail Target section.
 
 ## Related
 

@@ -1,18 +1,18 @@
 # ProfilePicker
 
-Lists radio variant profiles for a CPS format — used when creating a build, editing a build target, or overriding profile at export time.
+Lists radio variant profiles for a CPS format — used when creating a build or editing the build Target section.
 
 ## Props
 
-| Prop | Type | Description |
-| --- | --- | --- |
-| `formatId` | `FormatId` | CPS format (`opengd77`, `chirp`, …) |
-| `value` | `string \| null` | Selected `profileId` (select mode) |
-| `onChange` | `(profileId: string) => void` | Selection handler |
-| `mode` | `'cards' \| 'select'` | Card list (new build) or dropdown (detail/export) |
-| `label` | `string` | Select label |
-| `description` | `string` | Select description |
-| `disabled` | `boolean` | Disable interaction |
+| Prop          | Type                          | Description                                      |
+| ------------- | ----------------------------- | ------------------------------------------------ |
+| `formatId`    | `FormatId`                    | CPS format (`opengd77`, `chirp`, …)              |
+| `value`       | `string \| null`              | Selected `profileId` (select mode)               |
+| `onChange`    | `(profileId: string) => void` | Selection handler                                |
+| `mode`        | `'cards' \| 'select'`         | Card list (new build) or dropdown (build detail) |
+| `label`       | `string`                      | Select label                                     |
+| `description` | `string`                      | Select description                               |
+| `disabled`    | `boolean`                     | Disable interaction                              |
 
 ## Usage
 
@@ -22,8 +22,8 @@ Lists radio variant profiles for a CPS format — used when creating a build, ed
   mode="select"
   value={profileId}
   onChange={setProfileId}
-  label="Export profile"
-  description="Power ladder and wire limits for target hardware"
+  label="Radio profile"
+  description="Trait profile and wire limits for this build"
 />
 ```
 
@@ -31,7 +31,7 @@ Lists radio variant profiles for a CPS format — used when creating a build, ed
 
 - OpenGD77 profiles show `nameLimit`, channel cap, and wire hints from `getFormatProfiles`.
 - Other formats fall back to trait profile registry entries.
-- Export override does not mutate the persisted build unless the operator saves on the Target section.
+- CPS export uses the saved build `profileId` — change profile in Target, not on the export panel.
 
 ## Related
 

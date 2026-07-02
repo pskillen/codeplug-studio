@@ -8,13 +8,13 @@ Product behaviour for OpenGD77 CPS CSV in Codeplug Studio. Wire column tables li
 
 ## Implementation status
 
-| Area                                  | Status  | Notes                                                         |
-| ------------------------------------- | ------- | ------------------------------------------------------------- |
-| Radio variant profiles (1701, MD9600) | Shipped | `profiles.ts` — wire limits, power ladder                     |
-| Trait profile registration            | Shipped | `TRAIT_PROFILES` in `src/core/models/traits.ts`               |
-| Export adapter                        | Shipped | [#88](https://github.com/pskillen/codeplug-studio/issues/88) — `assemble` → serialise |
+| Area                                  | Status  | Notes                                                                                                     |
+| ------------------------------------- | ------- | --------------------------------------------------------------------------------------------------------- |
+| Radio variant profiles (1701, MD9600) | Shipped | `profiles.ts` — wire limits, power ladder                                                                 |
+| Trait profile registration            | Shipped | `TRAIT_PROFILES` in `src/core/models/traits.ts`                                                           |
+| Export adapter                        | Shipped | [#88](https://github.com/pskillen/codeplug-studio/issues/88) — `assemble` → serialise                     |
 | Browser download service              | Shipped | `buildCpsExportService` — no UI wiring yet ([#91](https://github.com/pskillen/codeplug-studio/issues/91)) |
-| CPS import                            | Planned | Phase 4b                                                      |
+| CPS import                            | Planned | Phase 4b                                                                                                  |
 
 ## Trait profile vs radio profile
 
@@ -43,7 +43,7 @@ Power column mapping (P-levels, `Master` sentinel): [channels.md](../../../refer
 ## UI consumption
 
 - **New build flow** — `getFormatProfiles('opengd77')` lists radio profiles with labels and limit hints.
-- **Export panel** (follow-on) — profile override dropdown defaults to the build's `profileId`.
+- **Export panel** (follow-on) — uses build `profileId` from Target section; no export-time override.
 
 Library CRUD does **not** enforce these caps. Export adapters warn or truncate at the wire boundary only.
 

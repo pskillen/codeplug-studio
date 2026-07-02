@@ -156,5 +156,5 @@ CPS **import** placeholders remain on Import / export (format catalog grid). Onl
 
 - `ProfilePicker` component + sidecar
 - New build wizard and build detail profile edit with layout guardrail
-- Export panel export-time profile override (stub)
+- Export panel shows saved profile read-only — change profile in Target section
 - `docs/features/builds/profiles.md`

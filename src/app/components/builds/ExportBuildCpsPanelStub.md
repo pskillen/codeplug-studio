@@ -20,7 +20,7 @@ import ExportBuildCpsPanelStub from '../../components/builds/ExportBuildCpsPanel
 
 ## Behaviour
 
-- Shows target format label, profile, and wire-limit hint (read-only).
+- Shows target format label, saved profile, and wire-limit hint (read-only).
 - Disabled **Export CPS (coming soon)** button until the format export adapter ships.
 - Full download/ZIP/warnings wiring follows in Phase 4 export slices.
 
