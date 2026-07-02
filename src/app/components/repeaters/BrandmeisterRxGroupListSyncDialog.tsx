@@ -78,13 +78,11 @@ function BrandmeisterRxGroupListSyncDialogBody({
 
   const [resolved, setResolved] = useState<ResolvedBrandMeisterTalkGroup[]>([]);
   const [loading, setLoading] = useState(true);
-  const [lookupProgress, setLookupProgress] = useState<BrandMeisterTalkGroupLookupProgress | null>(
-    {
-      phase: 'device',
-      message: 'Fetching repeater talk groups…',
-      percent: 0,
-    },
-  );
+  const [lookupProgress, setLookupProgress] = useState<BrandMeisterTalkGroupLookupProgress | null>({
+    phase: 'device',
+    message: 'Fetching repeater talk groups…',
+    percent: 0,
+  });
   const [error, setError] = useState<string | null>(null);
   const [applyError, setApplyError] = useState<string | null>(null);
   const [applying, setApplying] = useState(false);
@@ -205,8 +203,8 @@ function BrandmeisterRxGroupListSyncDialogBody({
                     <Radio value="update" label={`Update "${linked.name}"`} disabled={!canUpdate} />
                     {sharedCount > 0 ? (
                       <Text size="xs" c="orange" ml="1.75rem">
-                        {sharedCount} other channel{sharedCount === 1 ? '' : 's'} use this list — create
-                        a new list instead.
+                        {sharedCount} other channel{sharedCount === 1 ? '' : 's'} use this list —
+                        create a new list instead.
                       </Text>
                     ) : null}
                     <Radio value="create" label="Create new RX group list" />

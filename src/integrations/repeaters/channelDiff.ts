@@ -4,7 +4,13 @@ import type {
   ChannelModeProfileDMR,
   ChannelTone,
 } from '@core/models/library.ts';
-import { isCoordinateLessPrecise, isLocatorLessPrecise, coordsFromChannelLocation, coordsWithinLocator, normaliseLocator } from '@core/domain/channelLocation.ts';
+import {
+  isCoordinateLessPrecise,
+  isLocatorLessPrecise,
+  coordsFromChannelLocation,
+  coordsWithinLocator,
+  normaliseLocator,
+} from '@core/domain/channelLocation.ts';
 import { findAnalogProfile, findDmrProfile } from '@core/domain/modeProfiles.ts';
 import type { RepeaterListing } from './types.ts';
 import { repeaterListingToChannel, type MapListingOptions } from './mapToChannel.ts';

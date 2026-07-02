@@ -23,7 +23,8 @@ export function summarizeIndexedDbRow(row: unknown): IndexedDbRowSummary | null 
   const record = row as { projectId?: unknown; id?: unknown; name?: unknown; callsign?: unknown };
   if (typeof record.projectId !== 'string' || typeof record.id !== 'string') return null;
   const name = typeof record.name === 'string' ? record.name : record.id;
-  const callsign = typeof record.callsign === 'string' && record.callsign.length > 0 ? record.callsign : null;
+  const callsign =
+    typeof record.callsign === 'string' && record.callsign.length > 0 ? record.callsign : null;
   return { projectId: record.projectId, id: record.id, name, callsign };
 }
 

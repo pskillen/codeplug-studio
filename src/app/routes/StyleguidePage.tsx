@@ -52,7 +52,10 @@ export default function StyleguidePage() {
         </Group>
       </PageSection>
 
-      <PageSection title="Alerts" description="Mantine Alert colour conventions — see docs/features/app-shell/alerts.md">
+      <PageSection
+        title="Alerts"
+        description="Mantine Alert colour conventions — see docs/features/app-shell/alerts.md"
+      >
         <Stack gap="sm">
           <Alert color="blue">Informational alert.</Alert>
           <Alert color="yellow">Warning alert — map token missing pattern.</Alert>

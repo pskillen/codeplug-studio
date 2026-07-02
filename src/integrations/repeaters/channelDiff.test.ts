@@ -83,10 +83,7 @@ describe('diffChannelFromListing', () => {
   });
 
   it('does not offer maidenheadLocator override when channel has no locator', () => {
-    const rows = diffChannelFromListing(
-      baseChannel({ maidenheadLocator: null }),
-      baseListing,
-    );
+    const rows = diffChannelFromListing(baseChannel({ maidenheadLocator: null }), baseListing);
     const locatorRow = rows.find((r) => r.field === 'maidenheadLocator');
     expect(locatorRow?.changed).toBe(false);
   });

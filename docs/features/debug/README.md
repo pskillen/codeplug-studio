@@ -24,14 +24,14 @@ Mapbox tokens are **masked** in the LocalStorage viewer (`••••` + last f
 
 ## Routes
 
-| Path                                          | Purpose                              |
-| --------------------------------------------- | ------------------------------------ |
-| `/debug`                                      | Overview and privacy warning         |
-| `/debug/indexed-db`                           | Object store row counts per project  |
+| Path                                          | Purpose                                                                                               |
+| --------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
+| `/debug`                                      | Overview and privacy warning                                                                          |
+| `/debug/indexed-db`                           | Object store row counts per project                                                                   |
 | `/debug/indexed-db/:storeName`                | Rows in a store — channels show callsign; name, project id, and entity id are sortable and filterable |
-| `/debug/indexed-db/:storeName/:projectId/:id` | Single row JSON tree                 |
-| `/debug/local-storage`                        | Known + discovered localStorage keys |
-| `/debug/local-storage/:storageKey`            | Parsed JSON for one key              |
+| `/debug/indexed-db/:storeName/:projectId/:id` | Single row JSON tree                                                                                  |
+| `/debug/local-storage`                        | Known + discovered localStorage keys                                                                  |
+| `/debug/local-storage/:storageKey`            | Parsed JSON for one key                                                                               |
 
 Routes do **not** require an active project (same class as Settings and Reference).
 
