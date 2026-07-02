@@ -24,6 +24,9 @@ import DebugIndexedDbRowViewerPage from './routes/debug/DebugIndexedDbRowViewerP
 import DebugLocalStoragePage from './routes/debug/DebugLocalStoragePage.tsx';
 import DebugLocalStorageViewerPage from './routes/debug/DebugLocalStorageViewerPage.tsx';
 import ImportExportPage from './routes/import-export/ImportExportPage.tsx';
+import BuildsListPage from './routes/builds/BuildsListPage.tsx';
+import NewBuildPage from './routes/builds/NewBuildPage.tsx';
+import BuildDetailPage from './routes/builds/BuildDetailPage.tsx';
 
 function MapRedirect() {
   return <Navigate to="/library/channels" replace />;
@@ -69,6 +72,9 @@ export default function App() {
               element={<AddFromBrandmeisterPage />}
             />
             <Route path="/library/:kind/:id" element={<EntityEditorPage />} />
+            <Route path="/builds" element={<BuildsListPage />} />
+            <Route path="/builds/new" element={<NewBuildPage />} />
+            <Route path="/builds/:id" element={<BuildDetailPage />} />
             <Route path="/import-export" element={<ImportExportPage />} />
             <Route path="/summary" element={<SummaryPage />} />
             <Route path="/reports" element={<Navigate to="/summary" replace />} />

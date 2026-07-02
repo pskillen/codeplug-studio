@@ -40,7 +40,12 @@
 
 ## Slice 3 — Format build shell (#82)
 
-**Status:** Not started
+**Status:** Complete
+
+**Delivered**
+
+- `BuildService`, `useFormatBuilds`, `/builds` routes + nav
+- `docs/features/builds/README.md`
 
 ---
 
@@ -52,5 +57,4 @@
 
 ## Next
 
-- Build service, routes, and nav (#82)
 - Format catalog UI (#83)

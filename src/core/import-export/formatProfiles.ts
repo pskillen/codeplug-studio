@@ -1,6 +1,7 @@
 import type { FormatId } from './types.ts';
 import {
   OPENGD77_PROFILES,
+  getOpenGd77Profile,
   type OpenGd77RadioProfile,
 } from './formats/opengd77/profiles.ts';
 
@@ -31,4 +32,15 @@ function openGd77ProfileToOption(profile: OpenGd77RadioProfile): FormatProfileOp
     nameLimit: profile.nameLimit,
     maxChannels: profile.maxChannels,
   };
+}
+
+/** Read-only wire-limit summary for build detail UI — export boundary only. */
+export function formatProfileWireHint(formatId: FormatId, profileId: string): string | null {
+  if (formatId !== 'opengd77') return null;
+  try {
+    const profile = getOpenGd77Profile(profileId);
+    return `${profile.nameLimit}-char wire names · ${profile.maxChannels} channels max · ${profile.zoneMembers} zone members`;
+  } catch {
+    return null;
+  }
 }
