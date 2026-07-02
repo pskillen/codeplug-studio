@@ -10,10 +10,7 @@ export function zoneExportMemberNames(zone: AssembledZone, assembled: AssembledB
 }
 
 /** RX group list member wire names — from assembled entity wire names. */
-export function rxGroupListExportMemberNames(
-  assembled: AssembledBuild,
-  listId: string,
-): string[] {
+export function rxGroupListExportMemberNames(assembled: AssembledBuild, listId: string): string[] {
   const list = assembled.rxGroupLists.find((r) => r.entity.id === listId);
   if (!list) return [];
   return list.entity.members

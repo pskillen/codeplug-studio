@@ -9,7 +9,11 @@ export function downloadBlob(blob: Blob, fileName: string): void {
   URL.revokeObjectURL(url);
 }
 
-export function downloadTextFile(content: string, fileName: string, mimeType = 'text/csv;charset=utf-8'): void {
+export function downloadTextFile(
+  content: string,
+  fileName: string,
+  mimeType = 'text/csv;charset=utf-8',
+): void {
   const blob = new Blob([content], { type: mimeType });
   downloadBlob(blob, fileName);
 }

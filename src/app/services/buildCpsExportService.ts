@@ -10,7 +10,10 @@ export interface CpsDownloadResult {
   warnings: string[];
 }
 
-async function loadLibrarySlice(store: ProjectPersistence, projectId: string): Promise<LibrarySlice> {
+async function loadLibrarySlice(
+  store: ProjectPersistence,
+  projectId: string,
+): Promise<LibrarySlice> {
   const [channels, zones, talkGroups, digitalContacts, analogContacts, rxGroupLists] =
     await Promise.all([
       store.listChannels(projectId),
@@ -36,7 +39,12 @@ async function requireBuild(
 }
 
 function slugifyFileName(name: string): string {
-  return name.trim().replace(/\s+/g, '-').replace(/[^a-zA-Z0-9._-]/g, '') || 'export';
+  return (
+    name
+      .trim()
+      .replace(/\s+/g, '-')
+      .replace(/[^a-zA-Z0-9._-]/g, '') || 'export'
+  );
 }
 
 /** Download one CPS CSV file for a build. */

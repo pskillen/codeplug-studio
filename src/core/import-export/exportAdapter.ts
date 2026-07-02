@@ -1,6 +1,12 @@
 import type { ProjectAggregate } from './projectDocument.ts';
 import type { AssembledBuild } from '@core/services/assemble.ts';
-import type { ExportResult, ExportSerialiseResult, FormatId, FormatStatus, CpsExportOptions } from './types.ts';
+import type {
+  ExportResult,
+  ExportSerialiseResult,
+  FormatId,
+  FormatStatus,
+  CpsExportOptions,
+} from './types.ts';
 
 export interface BaseExportAdapter {
   readonly id: FormatId;

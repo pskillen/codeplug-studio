@@ -1,9 +1,6 @@
 import type { MultiFileExportAdapter } from '@core/import-export/exportAdapter.ts';
 import type { CpsExportOptions } from '@core/import-export/types.ts';
-import {
-  serialiseOpenGd77Files,
-  type OpenGd77ExportFileName,
-} from './serialise.ts';
+import { serialiseOpenGd77Files, type OpenGd77ExportFileName } from './serialise.ts';
 import { collectOpenGd77ExportWarnings } from './warnings.ts';
 
 export const OPENGD77_EXPORT_FILE_NAMES = [

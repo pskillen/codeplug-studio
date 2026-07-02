@@ -10,25 +10,25 @@ Tier-1 summary of how `assemble(build, library)` projection maps to OpenGD77 CPS
 
 Export adapters read `AssembledBuild` from [`assemble`](../../../services/assemble.ts) — not raw IndexedDB rows.
 
-| Projection field | CPS source |
-| --- | --- |
-| `channels[].wireName` | `Channels.csv` name column |
-| `channels[].entity` | Frequency, mode profile, power, location fields |
-| `zones[].wireName` | `Zones.csv` zone name |
+| Projection field           | CPS source                                           |
+| -------------------------- | ---------------------------------------------------- |
+| `channels[].wireName`      | `Channels.csv` name column                           |
+| `channels[].entity`        | Frequency, mode profile, power, location fields      |
+| `zones[].wireName`         | `Zones.csv` zone name                                |
 | `zones[].memberChannelIds` | Zone member columns (resolved to channel wire names) |
-| `talkGroups` / contacts | `Contacts.csv` Group / Private rows |
-| `rxGroupLists` | `TG_Lists.csv` |
+| `talkGroups` / contacts    | `Contacts.csv` Group / Private rows                  |
+| `rxGroupLists`             | `TG_Lists.csv`                                       |
 
 ## Output files
 
-| File | Content |
-| --- | --- |
+| File           | Content                                 |
+| -------------- | --------------------------------------- |
 | `Channels.csv` | Selected channels with build wire names |
-| `Zones.csv` | Zone grouping from build layout |
-| `Contacts.csv` | Talk groups + digital/analog contacts |
-| `TG_Lists.csv` | RX group lists |
-| `DTMF.csv` | Header only (not modelled) |
-| `APRS.csv` | Header only (not modelled) |
+| `Zones.csv`    | Zone grouping from build layout         |
+| `Contacts.csv` | Talk groups + digital/analog contacts   |
+| `TG_Lists.csv` | RX group lists                          |
+| `DTMF.csv`     | Header only (not modelled)              |
+| `APRS.csv`     | Header only (not modelled)              |
 
 ## Profile limits
 

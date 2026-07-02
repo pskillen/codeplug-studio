@@ -42,7 +42,11 @@ import {
   rxGroupListWireName,
 } from './exportRefs.ts';
 import { rxGroupListExportMemberNames, zoneExportMemberNames } from './listWire.ts';
-import { DEFAULT_OPENGD77_PROFILE_ID, getOpenGd77Profile, type OpenGd77RadioProfile } from './profiles.ts';
+import {
+  DEFAULT_OPENGD77_PROFILE_ID,
+  getOpenGd77Profile,
+  type OpenGd77RadioProfile,
+} from './profiles.ts';
 
 function padRow(headers: string[], values: Record<string, string>): string[] {
   return headers.map((h) => values[h] ?? '');
@@ -51,10 +55,18 @@ function padRow(headers: string[], values: Record<string, string>): string[] {
 function isAnalogProfile(
   profile: ReturnType<typeof primaryModeProfile>,
 ): profile is ChannelModeProfileAnalog {
-  return profile != null && (profile.mode === 'fm' || profile.mode === 'am' || profile.mode === 'ssb-usb' || profile.mode === 'ssb-lsb');
+  return (
+    profile != null &&
+    (profile.mode === 'fm' ||
+      profile.mode === 'am' ||
+      profile.mode === 'ssb-usb' ||
+      profile.mode === 'ssb-lsb')
+  );
 }
 
-function isDmrProfile(profile: ReturnType<typeof primaryModeProfile>): profile is ChannelModeProfileDMR {
+function isDmrProfile(
+  profile: ReturnType<typeof primaryModeProfile>,
+): profile is ChannelModeProfileDMR {
   return profile?.mode === 'dmr';
 }
 
@@ -104,7 +116,9 @@ function channelRowValues(
 }
 
 export function serialiseChannels(assembled: AssembledBuild, options?: CpsExportOptions): string {
-  const profile = getOpenGd77Profile(options?.profileId ?? assembled.profileId ?? DEFAULT_OPENGD77_PROFILE_ID);
+  const profile = getOpenGd77Profile(
+    options?.profileId ?? assembled.profileId ?? DEFAULT_OPENGD77_PROFILE_ID,
+  );
   const rows = assembled.channels.map((row, i) =>
     padRow(
       CHANNEL_HEADERS,
@@ -122,7 +136,9 @@ export function serialiseChannels(assembled: AssembledBuild, options?: CpsExport
 }
 
 export function serialiseZones(assembled: AssembledBuild, options?: CpsExportOptions): string {
-  const profile = getOpenGd77Profile(options?.profileId ?? assembled.profileId ?? DEFAULT_OPENGD77_PROFILE_ID);
+  const profile = getOpenGd77Profile(
+    options?.profileId ?? assembled.profileId ?? DEFAULT_OPENGD77_PROFILE_ID,
+  );
   const memberHeaders = zoneMemberHeaders(profile.zoneMembers);
   const rows = assembled.zones.map((zone) => {
     const values: Record<string, string> = { 'Zone Name': zone.wireName };
@@ -174,7 +190,9 @@ export function serialiseContacts(assembled: AssembledBuild): string {
 }
 
 export function serialiseRxGroupLists(assembled: AssembledBuild, profileId?: string): string {
-  const profile = getOpenGd77Profile(profileId ?? assembled.profileId ?? DEFAULT_OPENGD77_PROFILE_ID);
+  const profile = getOpenGd77Profile(
+    profileId ?? assembled.profileId ?? DEFAULT_OPENGD77_PROFILE_ID,
+  );
   const memberHeaders = rxGroupListMemberHeaders(profile.tgListMembers);
   const rows = assembled.rxGroupLists.map((list) => {
     const values: Record<string, string> = { [RX_GROUP_LIST_COL.name]: list.wireName };
@@ -195,12 +213,7 @@ export function serialiseAprsHeaderOnly(): string {
 }
 
 export type OpenGd77ExportFileName =
-  | 'Channels.csv'
-  | 'Zones.csv'
-  | 'Contacts.csv'
-  | 'TG_Lists.csv'
-  | 'DTMF.csv'
-  | 'APRS.csv';
+  'Channels.csv' | 'Zones.csv' | 'Contacts.csv' | 'TG_Lists.csv' | 'DTMF.csv' | 'APRS.csv';
 
 export type OpenGd77ExportFiles = Record<OpenGd77ExportFileName, string>;
 

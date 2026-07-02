@@ -143,8 +143,7 @@ function expandRefsFromRxLists(
 function assembleChannels(build: FormatBuild, library: LibrarySlice): AssembledChannel[] {
   const byId = channelMap(library);
   const selectionIds = build.channelSelections.map((s) => s.libraryEntityId);
-  const ids =
-    selectionIds.length > 0 ? selectionIds : library.channels.map((c) => c.id);
+  const ids = selectionIds.length > 0 ? selectionIds : library.channels.map((c) => c.id);
 
   const assembled: AssembledChannel[] = [];
   for (const id of ids) {
@@ -177,7 +176,10 @@ function assembleZones(
         const libraryZone = zonesById.get(zoneEntry.id);
         const fallbackName = libraryZone?.name ?? zoneEntry.name;
         const memberChannelIds = zoneEntry.channelIds.filter((id) => exportedChannelIds.has(id));
-        if (memberChannelIds.length === 0 && !build.zoneSelections.some((z) => z.libraryEntityId === zoneEntry.id)) {
+        if (
+          memberChannelIds.length === 0 &&
+          !build.zoneSelections.some((z) => z.libraryEntityId === zoneEntry.id)
+        ) {
           continue;
         }
         assembled.push({
@@ -207,7 +209,11 @@ function assembleZones(
         memberChannelIds,
       };
     })
-    .filter((z) => z.memberChannelIds.length > 0 || build.zoneSelections.some((s) => s.libraryEntityId === z.zoneId));
+    .filter(
+      (z) =>
+        z.memberChannelIds.length > 0 ||
+        build.zoneSelections.some((s) => s.libraryEntityId === z.zoneId),
+    );
 }
 
 function assembleEntityList<T extends { id: string; name: string }>(
@@ -272,7 +278,11 @@ export function assemble(
     buildName: build.name,
     channels,
     zones,
-    talkGroups: assembleEntityList(build.talkGroupSelections, library.talkGroups, refs.talkGroupIds),
+    talkGroups: assembleEntityList(
+      build.talkGroupSelections,
+      library.talkGroups,
+      refs.talkGroupIds,
+    ),
     digitalContacts: assembleEntityList(
       build.contactSelections.length > 0
         ? build.contactSelections.filter((s) =>
