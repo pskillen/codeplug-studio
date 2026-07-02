@@ -1,0 +1,46 @@
+import type { FormatId } from './types.ts';
+import {
+  OPENGD77_PROFILES,
+  getOpenGd77Profile,
+  type OpenGd77RadioProfile,
+} from './formats/opengd77/profiles.ts';
+
+export interface FormatProfileOption {
+  profileId: string;
+  label: string;
+  formatId: FormatId;
+  /** Wire limits summary for UI hints — export boundary only. */
+  nameLimit?: number;
+  maxChannels?: number;
+}
+
+/** Radio variant profiles for a CPS format — UI and export adapters. */
+export function getFormatProfiles(formatId: 'opengd77'): FormatProfileOption[];
+export function getFormatProfiles(formatId: FormatId): FormatProfileOption[];
+export function getFormatProfiles(formatId: FormatId): FormatProfileOption[] {
+  if (formatId === 'opengd77') {
+    return OPENGD77_PROFILES.map(openGd77ProfileToOption);
+  }
+  return [];
+}
+
+function openGd77ProfileToOption(profile: OpenGd77RadioProfile): FormatProfileOption {
+  return {
+    profileId: profile.id,
+    label: profile.label,
+    formatId: 'opengd77',
+    nameLimit: profile.nameLimit,
+    maxChannels: profile.maxChannels,
+  };
+}
+
+/** Read-only wire-limit summary for build detail UI — export boundary only. */
+export function formatProfileWireHint(formatId: FormatId, profileId: string): string | null {
+  if (formatId !== 'opengd77') return null;
+  try {
+    const profile = getOpenGd77Profile(profileId);
+    return `${profile.nameLimit}-char wire names · ${profile.maxChannels} channels max · ${profile.zoneMembers} zone members`;
+  } catch {
+    return null;
+  }
+}

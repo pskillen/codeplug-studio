@@ -175,14 +175,14 @@ Neither layer alone is the export format — the wire output is always the combi
 
 ## Implementation status
 
-| Area                      | Status                          |
-| ------------------------- | ------------------------------- |
-| Core types                | Shipped (Phase 1)               |
-| `ProjectPersistence` port | Shipped — in-memory + IndexedDB |
-| IndexedDB persistence     | Shipped (Phase 2)               |
-| Import/export adapters    | Phase 4+                        |
-| Library CRUD UI           | Shipped (Phase 2)               |
-| Build CRUD UI + overrides | Phase 4+                        |
+| Area                      | Status                                                                                                 |
+| ------------------------- | ------------------------------------------------------------------------------------------------------ |
+| Core types                | Shipped (Phase 1)                                                                                      |
+| `ProjectPersistence` port | Shipped — in-memory + IndexedDB                                                                        |
+| IndexedDB persistence     | Shipped (Phase 2)                                                                                      |
+| Import/export adapters    | Phase 4+                                                                                               |
+| Library CRUD UI           | Shipped (Phase 2)                                                                                      |
+| Build CRUD UI + overrides | Shipped (shell) — [#82](https://github.com/pskillen/codeplug-studio/issues/82); trait editors Phase 4+ |
 
 ## Related
 

@@ -28,6 +28,16 @@ export const TRAIT_PROFILES: Record<string, TraitProfile> = {
       BuildCapabilityTrait.MultiTalkGroupPerChannel,
     ],
   },
+  'opengd77-md9600': {
+    profileId: 'opengd77-md9600',
+    formatId: 'opengd77',
+    label: 'OpenGD77 (MD9600)',
+    traits: [
+      BuildCapabilityTrait.ZoneGrouping,
+      BuildCapabilityTrait.ZoneAsScanList,
+      BuildCapabilityTrait.MultiTalkGroupPerChannel,
+    ],
+  },
   'dm32-default': {
     profileId: 'dm32-default',
     formatId: 'dm32',
