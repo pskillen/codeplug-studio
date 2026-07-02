@@ -19,6 +19,8 @@ export type {
   DigitalChannelMode,
 } from './libraryTypes.ts';
 
+export type { ChannelExportNameMode } from '@core/domain/channelNaming.ts';
+
 export interface ChannelModeProfileAnalog {
   mode: AnalogChannelMode;
   squelch: number | null;
@@ -92,6 +94,8 @@ export interface Channel extends PersistableRow {
   scanSkip: boolean;
   comment: string;
   modeProfiles: ChannelModeProfile[];
+  /** Optional short qualifier used when `useChannelAbbreviation` is enabled at export. */
+  abbreviation?: string;
 }
 
 export interface TalkGroup extends PersistableRow {
@@ -99,6 +103,7 @@ export interface TalkGroup extends PersistableRow {
   name: string;
   digitalId: number;
   comment: string;
+  abbreviation?: string;
 }
 
 export interface DigitalContact extends PersistableRow {

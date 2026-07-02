@@ -2,42 +2,13 @@ import type { PersistableRow } from './revision.ts';
 import type { TraitLayout } from './traitLayout.ts';
 
 /**
- * A selection of a library entity.
- * This is a base interface for all library entity selections.
- * The idea is that we can provide typed overrides for each library entity type.
+ * Sparse per-entity customisation for a format build.
+ * No row → entity included with generated wire name at export.
  */
-export interface AbstractLibraryEntitySelection {
+export interface BuildEntityOverride {
   libraryEntityId: string;
-}
-
-export interface ChannelSelection extends AbstractLibraryEntitySelection {
-  overrides: {
-    name: string;
-  };
-}
-
-export interface ZoneSelection extends AbstractLibraryEntitySelection {
-  overrides: {
-    name: string;
-  };
-}
-
-export interface TalkGroupSelection extends AbstractLibraryEntitySelection {
-  overrides: {
-    name: string;
-  };
-}
-
-export interface RxGroupListSelection extends AbstractLibraryEntitySelection {
-  overrides: {
-    name: string;
-  };
-}
-
-export interface ContactSelection extends AbstractLibraryEntitySelection {
-  overrides: {
-    name: string;
-  };
+  excluded?: boolean;
+  wireName?: string;
 }
 
 export interface FormatBuild extends PersistableRow {
@@ -45,9 +16,9 @@ export interface FormatBuild extends PersistableRow {
   profileId: string;
   name: string;
   layout: TraitLayout;
-  channelSelections: ChannelSelection[];
-  zoneSelections: ZoneSelection[];
-  talkGroupSelections: TalkGroupSelection[];
-  rxGroupListSelections: RxGroupListSelection[];
-  contactSelections: ContactSelection[];
+  channelOverrides: BuildEntityOverride[];
+  zoneOverrides: BuildEntityOverride[];
+  talkGroupOverrides: BuildEntityOverride[];
+  rxGroupListOverrides: BuildEntityOverride[];
+  contactOverrides: BuildEntityOverride[];
 }

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Alert, Button, Group, Modal, Stack, Text } from '@mantine/core';
 import { IconDownload, IconPackage } from '@tabler/icons-react';
 import type { FormatBuild } from '@core/models/formatBuild.ts';
@@ -6,13 +6,15 @@ import { traitProfileFor } from '@core/models/traits.ts';
 import { formatCatalogEntry } from '@core/import-export/registry.ts';
 import { getExportAdapter } from '@core/import-export/registry.ts';
 import { isMultiFileExportAdapter } from '@core/import-export/exportAdapter.ts';
-import { formatProfileWireHint } from '@core/import-export/formatProfiles.ts';
+import { formatProfileWireHint, getFormatProfiles } from '@core/import-export/formatProfiles.ts';
 import type { FormatId } from '@core/import-export/types.ts';
+import ExportNameSettingsFields from './ExportNameSettingsFields.tsx';
 import { saveDriveLastFolderId, saveDriveLastFolderPath } from '@integrations/cloud/drivePrefs.ts';
 import DriveBrowserModal, { type DriveSaveTarget } from '../import-export/DriveBrowserModal.tsx';
 import GoogleDriveButton from '../import-export/GoogleDriveButton.tsx';
 import { ICON_SIZE_ACTION, ICON_STROKE } from '../../lib/iconSizes.ts';
 import { useGoogleDrive } from '../../hooks/useGoogleDrive.ts';
+import { useExportSettings } from '../../hooks/useExportSettings.ts';
 import { useProjects } from '../../state/useProjects.ts';
 import { persistence } from '../../state/persistence.ts';
 import {
@@ -41,7 +43,16 @@ export default function ExportBuildCpsPanel({ build }: ExportBuildCpsPanelProps)
   const [overwriteOpen, setOverwriteOpen] = useState(false);
   const [pendingDriveTarget, setPendingDriveTarget] = useState<DriveSaveTarget | null>(null);
 
-  const exportOptions = { profileId: build.profileId };
+  const { exportOptionsFromSettings } = useExportSettings();
+  const profileNameLimit = useMemo(() => {
+    const options = getFormatProfiles(build.formatId as FormatId);
+    return options.find((option) => option.profileId === build.profileId)?.nameLimit;
+  }, [build.formatId, build.profileId]);
+
+  const exportOptions = useMemo(
+    () => exportOptionsFromSettings({ profileId: build.profileId, expandModes: true }),
+    [exportOptionsFromSettings, build.profileId],
+  );
   const hasChannels = Boolean(activeProjectId) && (channelCount ?? 0) > 0;
   const exportShipped = formatEntry?.exportStatus === 'shipped';
   const interchangeFolderId = activeProject?.interchange?.googleDrive?.folderId;
@@ -181,6 +192,12 @@ export default function ExportBuildCpsPanel({ build }: ExportBuildCpsPanelProps)
           {wireHint}
         </Text>
       ) : null}
+      <Stack gap="xs">
+        <Text size="sm" fw={600}>
+          Export name settings
+        </Text>
+        <ExportNameSettingsFields profileNameLimit={profileNameLimit} />
+      </Stack>
       {!hasChannels ? (
         <Text size="sm" c="dimmed">
           Add channels to the library before exporting this build.
@@ -246,8 +263,7 @@ export default function ExportBuildCpsPanel({ build }: ExportBuildCpsPanelProps)
         </Group>
       </Stack>
       <Text size="sm" c="dimmed">
-        Change profile in the Target section above if needed. Zone grouping and name shortening
-        follow in later slices.
+        Wire preview pages show the same name settings. Change profile in Overview if needed.
       </Text>
       <DriveBrowserModal
         opened={driveBrowserOpen}

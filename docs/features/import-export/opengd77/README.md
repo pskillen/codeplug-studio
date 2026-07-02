@@ -8,13 +8,15 @@ Product behaviour for OpenGD77 CPS CSV in Codeplug Studio. Wire column tables li
 
 ## Implementation status
 
-| Area                                  | Status  | Notes                                                                                                     |
-| ------------------------------------- | ------- | --------------------------------------------------------------------------------------------------------- |
-| Radio variant profiles (1701, MD9600) | Shipped | `profiles.ts` — wire limits, power ladder                                                                 |
-| Trait profile registration            | Shipped | `TRAIT_PROFILES` in `src/core/models/traits.ts`                                                           |
-| Export adapter                        | Shipped | [#88](https://github.com/pskillen/codeplug-studio/issues/88) — `assemble` → serialise                     |
-| Browser download service              | Shipped | `buildCpsExportService` — no UI wiring yet ([#91](https://github.com/pskillen/codeplug-studio/issues/91)) |
-| CPS import                            | Planned | Phase 4b                                                                                                  |
+| Area                                  | Status  | Notes                                                                                                        |
+| ------------------------------------- | ------- | ------------------------------------------------------------------------------------------------------------ |
+| Radio variant profiles (1701, MD9600) | Shipped | `profiles.ts` — wire limits, power ladder                                                                    |
+| Trait profile registration            | Shipped | `TRAIT_PROFILES` in `src/core/models/traits.ts`                                                              |
+| Export adapter                        | Shipped | [#88](https://github.com/pskillen/codeplug-studio/issues/88) — `assemble` → serialise                        |
+| Multi-mode channel expansion          | Shipped | [#89](https://github.com/pskillen/codeplug-studio/issues/89) — `-F`/`-D` rows at serialise + preview         |
+| Export name shortening                | Shipped | [#90](https://github.com/pskillen/codeplug-studio/issues/90) — dictionary + `useExportSettings`              |
+| Browser download + export UI          | Shipped | `ExportBuildCpsPanel` on `/builds/:id/export` ([#91](https://github.com/pskillen/codeplug-studio/issues/91)) |
+| CPS import                            | Planned | Phase 4b                                                                                                     |
 
 ## Trait profile vs radio profile
 
@@ -43,7 +45,8 @@ Power column mapping (P-levels, `Master` sentinel): [channels.md](../../../refer
 ## UI consumption
 
 - **New build flow** — `getFormatProfiles('opengd77')` lists radio profiles with labels and limit hints.
-- **Export panel** (follow-on) — uses build `profileId` from Target section; no export-time override.
+- **Build export** (`/builds/:id/export`) — `ExportNameSettingsFields` + build `profileId`; wire preview sub-routes share the same `useExportSettings` preferences.
+- **Multi-mode channels** — when a channel has multiple `modeProfiles`, export and wire preview emit separate `-F` (analog) and `-D` (digital) wire rows unless `expandModes` is false.
 
 Library CRUD does **not** enforce these caps. Export adapters warn or truncate at the wire boundary only.
 
@@ -53,4 +56,5 @@ Library CRUD does **not** enforce these caps. Export adapters warn or truncate a
 - [builds hub](../../builds/README.md) — format build workflows
 - [data-model](../../data-model/README.md) — `FormatBuild`, selections, trait layout
 - [export-mapping.md](export-mapping.md) — internal projection → CPS files
+- [name-shortening.md](../name-shortening.md) — wire name compose + abbreviations ([#90](https://github.com/pskillen/codeplug-studio/issues/90))
 - [cps-services.md](../cps-services.md) — `assemble` and `exportBuild`

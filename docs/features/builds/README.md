@@ -15,7 +15,9 @@ The library holds RF semantics once. Each radio/CPS family expects different org
 1. Curate channels, zones, and contacts in **Library**.
 2. Open **Radio builds** (sidebar) → **New build**.
 3. Pick a CPS format (OpenGD77, CHIRP, …) and a **profile** (trait + wire variant).
-4. Review the build overview — edit profile, trait layout, and wire overrides.
+4. Review the build overview — edit profile and capability traits.
+5. Shape wire names and zone layout on entity sub-routes — see [wire-preview.md](wire-preview.md).
+6. Export CPS files from **Export** — see [name-shortening.md](../import-export/name-shortening.md) for export name settings.
 
 See [profiles.md](profiles.md) for profile picker workflows.
 
@@ -23,11 +25,18 @@ Native YAML remains **project interchange** (library + all builds). It is not cr
 
 ## Routes
 
-| Route         | Purpose                                                                                  |
-| ------------- | ---------------------------------------------------------------------------------------- |
-| `/builds`     | List builds for the active project                                                       |
-| `/builds/new` | Create build — format → profile → name                                                   |
-| `/builds/:id` | Build overview — identity, target profile, traits, layout placeholder, **Export to CPS** |
+| Route                        | Purpose                                     |
+| ---------------------------- | ------------------------------------------- |
+| `/builds`                    | List builds for the active project          |
+| `/builds/new`                | Create build — format → profile → name      |
+| `/builds/:id`                | Redirect → overview                         |
+| `/builds/:id/overview`       | Identity, target profile, capability traits |
+| `/builds/:id/channels`       | Wire preview — channels                     |
+| `/builds/:id/zones`          | Wire preview — zones                        |
+| `/builds/:id/talk-groups`    | Wire preview — talk groups                  |
+| `/builds/:id/contacts`       | Wire preview — contacts                     |
+| `/builds/:id/rx-group-lists` | Wire preview — RX group lists               |
+| `/builds/:id/export`         | CPS export panel                            |
 
 Requires an active project (`RequireActiveProject`).
 
@@ -35,7 +44,15 @@ Sidebar label is **Radio builds**; routes and code use `builds`.
 
 ## CPS export
 
-Per-build CPS export is on the build detail page (`ExportBuildCpsPanel`) — not on Import / export. The import/export route keeps an **Export to CPS** section that links here.
+Per-build CPS export is on `/builds/:id/export` (`ExportBuildCpsPanel`) — not on Import / export. The import/export route keeps an **Export to CPS** section that links here.
+
+## Documentation map
+
+| Doc                                  | Topic                                  |
+| ------------------------------------ | -------------------------------------- |
+| [profiles.md](profiles.md)           | Radio profile picker                   |
+| [wire-preview.md](wire-preview.md)   | Wire name overrides and preview routes |
+| [zone-grouping.md](zone-grouping.md) | Build zone layout editor               |
 
 ## Persistence
 
@@ -45,12 +62,15 @@ YAML import/export includes `formatBuilds[]` in the project document.
 
 ## Implementation status
 
-| Area                         | Status  | Notes                                                                          |
-| ---------------------------- | ------- | ------------------------------------------------------------------------------ |
-| List + create + detail shell | Shipped | [#82](https://github.com/pskillen/codeplug-studio/issues/82)                   |
-| Per-build CPS export         | Shipped | `ExportBuildCpsPanel` — per-file CSV, ZIP download, Drive ZIP upload           |
-| Profile picker component     | Shipped | [#85](https://github.com/pskillen/codeplug-studio/issues/85) — `ProfilePicker` |
-| Zone grouping editor         | Planned | [#87](https://github.com/pskillen/codeplug-studio/issues/87)                   |
+| Area                         | Status   | Notes                                                                                                                 |
+| ---------------------------- | -------- | --------------------------------------------------------------------------------------------------------------------- |
+| List + create + detail shell | Shipped  | [#82](https://github.com/pskillen/codeplug-studio/issues/82)                                                          |
+| Per-build CPS export         | Shipped  | `ExportBuildCpsPanel` — per-file CSV, ZIP download, Drive ZIP upload                                                  |
+| Profile picker component     | Shipped  | [#85](https://github.com/pskillen/codeplug-studio/issues/85) — `ProfilePicker`                                        |
+| Wire preview + overrides     | Shipped  | [#87](https://github.com/pskillen/codeplug-studio/issues/87) — sub-routes + `WirePreviewTable`                        |
+| Zone grouping editor         | Deferred | Library zone membership at export; layout UI follow-on ([#99](https://github.com/pskillen/codeplug-studio/issues/99)) |
+| Multi-mode channel expansion | Shipped  | [#89](https://github.com/pskillen/codeplug-studio/issues/89) — preview + OpenGD77 export                              |
+| Export name shortening       | Shipped  | [#90](https://github.com/pskillen/codeplug-studio/issues/90) — `useExportSettings` + dictionary                       |
 
 ## Related
 

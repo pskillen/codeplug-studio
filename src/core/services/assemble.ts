@@ -1,3 +1,4 @@
+import type { BuildEntityOverride, FormatBuild } from '@core/models/formatBuild.ts';
 import type {
   AnalogContact,
   Channel,
@@ -6,9 +7,16 @@ import type {
   TalkGroup,
   Zone,
 } from '@core/models/library.ts';
-import type { FormatBuild } from '@core/models/formatBuild.ts';
 import type { ZoneGroupingLayout } from '@core/models/traitLayout.ts';
 import type { EntityRef } from '@core/models/libraryTypes.ts';
+import {
+  isEntityExcluded,
+  overrideByEntityId,
+  resolveOverrideWireName,
+} from '@core/domain/formatBuildOverrides.ts';
+import { defaultChannelWireName } from '@core/domain/channelNaming.ts';
+import { migrateFormatBuild } from '@core/domain/migrateFormatBuild.ts';
+import type { Library } from '@core/models/library.ts';
 
 /** Library entities needed for export projection — vendor-neutral slice. */
 export interface LibrarySlice {
@@ -28,6 +36,8 @@ export interface AssembledEntity<T> {
 export interface AssembledChannel {
   entity: Channel;
   wireName: string;
+  /** Set when the build has an explicit channel wire name override. */
+  wireNameOverride?: string;
 }
 
 export interface AssembledZone {
@@ -54,20 +64,6 @@ export interface AssembledBuild {
 export interface AssembleOptions {
   /** Export-time profile override — defaults to `build.profileId`. */
   profileId?: string;
-}
-
-function selectionWireName(
-  selections: Array<{ libraryEntityId: string; overrides: { name: string } }>,
-  entityId: string,
-  fallback: string,
-): string {
-  const sel = selections.find((s) => s.libraryEntityId === entityId);
-  const name = sel?.overrides.name?.trim();
-  return name || fallback;
-}
-
-function channelMap(library: LibrarySlice): Map<string, Channel> {
-  return new Map(library.channels.map((c) => [c.id, c]));
 }
 
 function zoneMap(library: LibrarySlice): Map<string, Zone> {
@@ -141,17 +137,16 @@ function expandRefsFromRxLists(
 }
 
 function assembleChannels(build: FormatBuild, library: LibrarySlice): AssembledChannel[] {
-  const byId = channelMap(library);
-  const selectionIds = build.channelSelections.map((s) => s.libraryEntityId);
-  const ids = selectionIds.length > 0 ? selectionIds : library.channels.map((c) => c.id);
-
+  const overrides = build.channelOverrides;
   const assembled: AssembledChannel[] = [];
-  for (const id of ids) {
-    const entity = byId.get(id);
-    if (!entity) continue;
+  for (const entity of library.channels) {
+    if (isEntityExcluded(overrides, entity.id)) continue;
+    const wireNameOverride = overrideByEntityId(overrides).get(entity.id)?.wireName?.trim();
+    const generated = defaultChannelWireName(entity);
     assembled.push({
       entity,
-      wireName: selectionWireName(build.channelSelections, id, entity.name),
+      wireName: wireNameOverride ?? generated,
+      wireNameOverride,
     });
   }
   return assembled;
@@ -167,24 +162,23 @@ function assembleZones(
   exportedChannelIds: Set<string>,
 ): AssembledZone[] {
   const zonesById = zoneMap(library);
+  const overrides = build.zoneOverrides;
   const sections = zoneGroupingSections(build);
 
   if (sections.length > 0) {
     const assembled: AssembledZone[] = [];
     for (const section of sections) {
       for (const zoneEntry of section.zones) {
+        if (isEntityExcluded(overrides, zoneEntry.id)) continue;
         const libraryZone = zonesById.get(zoneEntry.id);
         const fallbackName = libraryZone?.name ?? zoneEntry.name;
         const memberChannelIds = zoneEntry.channelIds.filter((id) => exportedChannelIds.has(id));
-        if (
-          memberChannelIds.length === 0 &&
-          !build.zoneSelections.some((z) => z.libraryEntityId === zoneEntry.id)
-        ) {
+        if (memberChannelIds.length === 0 && !overrideByEntityId(overrides).has(zoneEntry.id)) {
           continue;
         }
         assembled.push({
           zoneId: zoneEntry.id,
-          wireName: selectionWireName(build.zoneSelections, zoneEntry.id, fallbackName),
+          wireName: resolveOverrideWireName(overrides, zoneEntry.id, fallbackName),
           memberChannelIds,
         });
       }
@@ -192,59 +186,49 @@ function assembleZones(
     return assembled;
   }
 
-  const zoneSelectionIds = new Set(build.zoneSelections.map((z) => z.libraryEntityId));
-  const zones =
-    zoneSelectionIds.size > 0
-      ? library.zones.filter((z) => zoneSelectionIds.has(z.id))
-      : library.zones;
-
-  return zones
+  return library.zones
+    .filter((zone) => !isEntityExcluded(overrides, zone.id))
     .map((zone) => {
       const memberChannelIds = zone.members
         .filter((m: EntityRef) => m.kind === 'channel' && exportedChannelIds.has(m.id))
         .map((m) => m.id);
       return {
         zoneId: zone.id,
-        wireName: selectionWireName(build.zoneSelections, zone.id, zone.name),
+        wireName: resolveOverrideWireName(overrides, zone.id, zone.name),
         memberChannelIds,
       };
     })
-    .filter(
-      (z) =>
-        z.memberChannelIds.length > 0 ||
-        build.zoneSelections.some((s) => s.libraryEntityId === z.zoneId),
-    );
+    .filter((z) => z.memberChannelIds.length > 0 || overrideByEntityId(overrides).has(z.zoneId));
 }
 
 function assembleEntityList<T extends { id: string; name: string }>(
-  buildSelections: Array<{ libraryEntityId: string; overrides: { name: string } }>,
+  overrides: BuildEntityOverride[],
   libraryEntities: T[],
-  referencedIds: Set<string>,
+  candidateIds: Set<string>,
 ): AssembledEntity<T>[] {
-  if (buildSelections.length > 0) {
-    const byId = new Map(libraryEntities.map((e) => [e.id, e]));
-    return buildSelections
-      .map((sel) => {
-        const entity = byId.get(sel.libraryEntityId);
-        if (!entity) return null;
-        return {
-          entity,
-          wireName: selectionWireName(buildSelections, entity.id, entity.name),
-        };
-      })
-      .filter((row): row is AssembledEntity<T> => row !== null);
+  const byId = new Map(libraryEntities.map((entity) => [entity.id, entity]));
+  const overrideMap = overrideByEntityId(overrides);
+  const ids = new Set(candidateIds);
+  for (const row of overrides) {
+    ids.add(row.libraryEntityId);
   }
 
-  return libraryEntities
-    .filter((e) => referencedIds.has(e.id))
-    .map((entity) => ({
+  const assembled: AssembledEntity<T>[] = [];
+  for (const entityId of ids) {
+    if (isEntityExcluded(overrides, entityId)) continue;
+    const entity = byId.get(entityId);
+    if (!entity) continue;
+    if (!candidateIds.has(entityId) && !overrideMap.has(entityId)) continue;
+    assembled.push({
       entity,
-      wireName: entity.name,
-    }));
+      wireName: resolveOverrideWireName(overrides, entity.id, entity.name),
+    });
+  }
+  return assembled;
 }
 
 /**
- * Combine library entities with build selections and trait layout into an
+ * Combine library entities with build overrides and trait layout into an
  * export projection. Wire adapters serialise from this object — not raw rows.
  */
 export function assemble(
@@ -252,9 +236,10 @@ export function assemble(
   library: LibrarySlice,
   options?: AssembleOptions,
 ): AssembledBuild {
-  const channels = assembleChannels(build, library);
+  const normalizedBuild = migrateFormatBuild(build, library as Library);
+  const channels = assembleChannels(normalizedBuild, library);
   const exportedChannelIds = new Set(channels.map((c) => c.entity.id));
-  const zones = assembleZones(build, library, exportedChannelIds);
+  const zones = assembleZones(normalizedBuild, library, exportedChannelIds);
 
   const refs = collectReferencedIds(channels.map((c) => c.entity));
   expandRefsFromRxLists(
@@ -271,38 +256,41 @@ export function assemble(
     }
   }
 
+  const digitalContactIds = new Set(refs.digitalContactIds);
+  const analogContactIds = new Set(refs.analogContactIds);
+  for (const row of normalizedBuild.contactOverrides) {
+    if (library.digitalContacts.some((contact) => contact.id === row.libraryEntityId)) {
+      digitalContactIds.add(row.libraryEntityId);
+    }
+    if (library.analogContacts.some((contact) => contact.id === row.libraryEntityId)) {
+      analogContactIds.add(row.libraryEntityId);
+    }
+  }
+
   return {
-    buildId: build.id,
-    formatId: build.formatId,
-    profileId: options?.profileId ?? build.profileId,
-    buildName: build.name,
+    buildId: normalizedBuild.id,
+    formatId: normalizedBuild.formatId,
+    profileId: options?.profileId ?? normalizedBuild.profileId,
+    buildName: normalizedBuild.name,
     channels,
     zones,
     talkGroups: assembleEntityList(
-      build.talkGroupSelections,
+      normalizedBuild.talkGroupOverrides,
       library.talkGroups,
       refs.talkGroupIds,
     ),
     digitalContacts: assembleEntityList(
-      build.contactSelections.length > 0
-        ? build.contactSelections.filter((s) =>
-            library.digitalContacts.some((c) => c.id === s.libraryEntityId),
-          )
-        : [],
+      normalizedBuild.contactOverrides,
       library.digitalContacts,
-      refs.digitalContactIds,
+      digitalContactIds,
     ),
     analogContacts: assembleEntityList(
-      build.contactSelections.length > 0
-        ? build.contactSelections.filter((s) =>
-            library.analogContacts.some((c) => c.id === s.libraryEntityId),
-          )
-        : [],
+      normalizedBuild.contactOverrides,
       library.analogContacts,
-      refs.analogContactIds,
+      analogContactIds,
     ),
     rxGroupLists: assembleEntityList(
-      build.rxGroupListSelections,
+      normalizedBuild.rxGroupListOverrides,
       library.rxGroupLists,
       refs.rxGroupListIds,
     ),

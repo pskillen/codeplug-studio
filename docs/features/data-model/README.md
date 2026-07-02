@@ -38,7 +38,7 @@ Studio instead keeps a **vendor-neutral library** plus **one or more persisted `
 ### Why format builds exist
 
 1. **Different radio concepts** — zones, scan lists, RX group lists, flat memory lists, and m×n channel expansion are not universal. Trait profiles declare which concepts apply; `FormatBuild.layout` holds the trait-shaped organisation for that target.
-2. **Different wire limits** — especially **name length** (e.g. 16 characters on Baofeng 1701). Library `name` fields are human-oriented labels; the wire name for a given export lives on the build (`channelSelections[].overrides.name`, and analogous overrides on zones, talk groups, etc.). Import or profile rules may pre-fill shortened names; the operator can edit and persist overrides before export.
+2. **Different wire limits** — especially **name length** (e.g. 16 characters on Baofeng 1701). Library `name` fields are human-oriented labels; the wire name for a given export lives on the build (`channelOverrides[].wireName`, and analogous overrides on zones, talk groups, etc.). Import or profile rules may pre-fill shortened names; the operator can edit and persist overrides before export.
 3. **Channel expansion** — when m×n or multi-talkgroup expansion applies, generated wire names like `GB7GL Glasgow Scotland TS2` routinely exceed profile limits unless aggressively abbreviated. That abbreviation is **build-scoped and persisted**, not recomputed silently on every export (so the operator can review and tune).
 
 Wire adapters read `assemble(build, library)` — they do not define the internal library shape. See [DESIGN.md — Data model](../../../DESIGN.md#data-model-sketch) and [multi-talkgroup-expansion.md](../../reference/multi-talkgroup-expansion.md).
@@ -59,8 +59,8 @@ erDiagram
   ProjectMeta ||--o{ RxGroupList : rows
   ProjectMeta ||--o{ FormatBuild : rows
   Zone }o--o{ Channel : members
-  FormatBuild }o--o{ Channel : channelSelections
-  FormatBuild }o--o{ Zone : zoneSelections
+  FormatBuild }o--o{ Channel : channelOverrides
+  FormatBuild }o--o{ Zone : zoneOverrides
   FormatBuild ||--|| TraitLayout : layout
 ```
 
@@ -118,25 +118,25 @@ Library CRUD edits this layer only — no radio name-length caps, no format wire
 
 `FormatBuild` — one **persisted** CPS workflow target within a project. Multiple builds can reference the same library entities with different organisation and wire names.
 
-| Field                   | Purpose                                                                  |
-| ----------------------- | ------------------------------------------------------------------------ |
-| `formatId`              | Wire format family (`opengd77`, `chirp`, `dm32`, …)                      |
-| `profileId`             | Variant within the format — selects trait profile and wire limits        |
-| `name`                  | Operator label for this build (e.g. "GD-77 holiday trip")                |
-| `channelSelections`     | Included channels + `overrides.name` — **CPS wire name for this build**  |
-| `zoneSelections`        | Included zones + `overrides.name`                                        |
-| `talkGroupSelections`   | Included talk groups + `overrides.name`                                  |
-| `contactSelections`     | Included digital or analogue contacts + `overrides.name`                 |
-| `rxGroupListSelections` | Included RX group lists + `overrides.name`                               |
-| `layout`                | `TraitLayout` — trait-shaped organisation (zone order, flat memories, …) |
+| Field                  | Purpose                                                                                   |
+| ---------------------- | ----------------------------------------------------------------------------------------- |
+| `formatId`             | Wire format family (`opengd77`, `chirp`, `dm32`, …)                                       |
+| `profileId`            | Variant within the format — selects trait profile and wire limits                         |
+| `name`                 | Operator label for this build (e.g. "GD-77 holiday trip")                                 |
+| `channelOverrides`     | Sparse channel customisation — `excluded` omits from build; `wireName` is CPS wire string |
+| `zoneOverrides`        | Sparse zone customisation                                                                 |
+| `talkGroupOverrides`   | Sparse talk group customisation                                                           |
+| `contactOverrides`     | Sparse digital or analogue contact customisation                                          |
+| `rxGroupListOverrides` | Sparse RX group list customisation                                                        |
+| `layout`               | `TraitLayout` — trait-shaped organisation (zone order, flat memories, …)                  |
 
-### Selection overrides (wire names)
+### Entity overrides (wire names)
 
-Each `*Selection` row points at a library entity by `libraryEntityId` and may carry `overrides.name`:
+Each `*Overrides` row points at a library entity by `libraryEntityId`:
 
-- On **import**, adapters populate overrides from wire columns (or profile shortening rules) while library fields capture RF semantics.
-- On **export**, wire serialisation uses `overrides.name` when set; otherwise profile defaults / compose rules apply.
-- The operator can **edit overrides in build UI** (Phase 4+) and persist them — shortened names for a 16-character radio do not have to be re-derived on every export.
+- **No row** — entity is included; wire name is generated at preview/export.
+- **`excluded: true`** — entity is omitted from this build's export.
+- **`wireName`** — persisted CPS wire string for that entity.
 
 This is the main place **profile-specific naming limits** land without polluting the vendor-neutral library.
 

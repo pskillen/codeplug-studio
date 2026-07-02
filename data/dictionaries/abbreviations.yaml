@@ -1,0 +1,321 @@
+# Progressive Abbreviation Dictionary — Amateur Radio Codeplug Shortener
+# =======================================================================
+# Format: "Full Term": [level1, level2, level3]
+# Levels are progressively more aggressive. Apply the lowest level first;
+# escalate only if the name still exceeds the target length.
+#
+# Matching should be case-insensitive. Replacements preserve original casing
+# convention (e.g. title case in, title case out).
+#
+# Special category "stopwords" contains tokens that can be dropped entirely
+# as a last resort. Handle separators (spaces, hyphens, slashes) separately.
+
+# ─────────────────────────────────────────────────────────────────────────────
+# GEOGRAPHIC — UK focus, Scotland weighted
+# ─────────────────────────────────────────────────────────────────────────────
+
+geographic:
+  nations:
+    Scotland: [Scot, Sco, SC]
+    England: [Eng, En]
+    Wales: [Wls, WL]
+    Ireland: [Ire, IR]
+    'Northern Ireland': [N Ire, NIre, NI]
+    'United Kingdom': [UK]
+    'Great Britain': [GB]
+    'Middle East': [ME]
+    Europe: [Eur, EU]
+    'Asia': [Asia]
+    'Africa': [Afr, Af]
+    'Australia': [Aus, Oz]
+    'Antarctica': [Ant]
+    'North America': [NA]
+    'South America': [SA]
+
+  scottish_cities:
+    Glasgow: [Glas, Gla, GL]
+    Edinburgh: [Edinb, Edin, Edi]
+    Aberdeen: [Aber, Abd, AB]
+    Dundee: [Dund, Dun, DD]
+    Inverness: [Invrns, Invns, Inv]
+    Stirling: [Stirlg, Stirl, Str]
+    Perth: [Prth, Pth]
+    Paisley: [Paisly, Pais, Pai]
+    Motherwell: [Mthwll, Mthwl, Mwl]
+    Hamilton: [Hamltn, Hamlt, Ham]
+    Falkirk: [Falkrk, Falk, Flk]
+    Dumfries: [Dumfrs, Dumf, Dmf]
+    Kilmarnock: [Kilmrnk, Kilm, Klm]
+    Cumbernauld: [Cumbrnld, Cumb, Cmb]
+    'East Kilbride': [EKilbrd, EKilbr, EKil, EK]
+    Livingston: [Lvgstn, Lvgtn, Lvng, Lvn]
+    Dunfermline: [Dunfrml, Dunfrm, Dunf, Dnf]
+    Kirkcaldy: [Kirkcld, Krkcldy, Krkcl, Krk]
+    Coatbridge: [Coatbrg, Coatbr, Ctbr]
+    Airdrie: [Airdr, Aird, Adr]
+    Greenock: [Grnnk, Grnk, Gnk]
+    'Port Glasgow': [PtGlas, PtGla, PtGl, PG]
+    Dumbarton: [Dumbrtn, Dumbtn, Dmbn]
+    Rutherglen: [Ruthrgl, Rthrgl, Rgl]
+    Cambuslang: [Cambusl, Cmbsl, Cmbl]
+    Bellshill: [Bellshl, Bllshl, Bsh]
+    Clydebank: [Clydebnk, Clydbnk, Cldb]
+    Bishopbriggs: [Bshpbrgs, Bshpbrg, Bpbr]
+    Bearsden: [Bearsd, Brsdn, Bsd]
+    Milngavie: [Milngav, Mlngv, Mlg]
+    Wishaw: [Wshaw, Wsh]
+    Larkhall: [Lrkhll, Lrkhl, Lkh]
+
+  scottish_regions:
+    'Central Belt': [CntBelt, CntBlt, CB]
+    Highlands: [Highlds, Hghlnd, Hlnd, Hld]
+    Borders: [Brdrs, Bdr]
+    Lothian: [Lthian, Lthn, Lth]
+    'West Lothian': [WLothn, WLthn, WLth]
+    'East Lothian': [ELothn, ELthn, ELth]
+    Midlothian: [Midlthn, Midlth, MLth]
+    Ayrshire: [Ayrshre, Ayrsh, Ayrs, Ays]
+    'North Ayrshire': [NAyrsh, NAyrs, NAys]
+    'South Ayrshire': [SAyrsh, SAyrs, SAys]
+    'East Ayrshire': [EAyrsh, EAyrs, EAys]
+    Lanarkshire: [Lnrkshr, Lnrksh, Lnrk]
+    'North Lanarkshire': [NLanrk, NLnrk, NLk]
+    'South Lanarkshire': [SLanrk, SLnrk, SLk]
+    Renfrewshire: [Rnfrwsh, Rnfrsh, Rnfr]
+    'East Renfrewshire': [ERnfrsh, ERnfr]
+    Dunbartonshire: [Dunbrts, Dunbtn, Dnbt]
+    'Argyll & Bute': [ArgBute, ArgBut, AB]
+    Fife: [Fife] # already 4 chars
+    Tayside: [Taysde, Tays, Tay]
+    Angus: [Angus] # already 5 chars
+    Grampian: [Grampin, Grmpn, Grm]
+    'Dumfries & Galloway': [DumfGal, DmfGal, DG]
+    Clyde: [Clyde, Cld]
+    Strathclyde: [Strthcl, Strclyd, Stcl]
+
+  english_cities:
+    London: [Lond, Lon]
+    Birmingham: [Brmghm, Birm, Bhm]
+    Manchester: [Mncstr, Mncstr, Mnc]
+    Liverpool: [Lvpool, Lvpl, Lvp]
+    Sheffield: [Shefld, Sheff, Shf]
+    Bristol: [Brstl, Brist, Brs]
+    Cardiff: [Cardff, Card, Cdf]
+    Newcastle: [Ncstl, Ncstl, Ncl]
+    Nottingham: [Nottm, Nttm, Ntt]
+    Leicester: [Lcstr, Lcstr, Lcs]
+    Coventry: [Covtry, Covtry, Cov]
+    Bradford: [Brdfrd, Brdfrd, Brd]
+    Southampton: [Sthmpt, Soton, Stn]
+    Portsmouth: [Prtsmth, Portsm, Pts]
+    Brighton: [Brghtn, Brghtn, Bgt]
+    Exeter: [Exetr, Extr, Ex]
+    Plymouth: [Plymth, Plmt, Ply]
+    Oxford: [Oxfrd, Oxf]
+    Cambridge: [Cambrg, Cambr, Camb]
+    Norwich: [Nrwch, Nrw]
+    Reading: [Rdng, Rdg]
+    Gloucester: [Glcstr, Glcs, Gls]
+
+  english_regions:
+    Midlands: [Midlnds, Midlnd, Midl, Mid]
+    Yorkshire: [Ykshire, Ykshr, Yks]
+    Lancashire: [Lancshr, Lancs, Lncs]
+    Cumbria: [Cumbr, Cmb]
+    'Lake District': [LkDist, LkDst, LD]
+    Cornwall: [Cornwl, Crnwl, Crn]
+    Devon: [Devon] # 5 chars
+    Suffolk: [Suff, Sfk]
+    Norfolk: [Norflk, Nrflk, Nrf]
+    Lincolnshire: [Lincshr, Lincs, Lncs]
+    Derbyshire: [Derbshr, Derbsh, Drby]
+    Staffordshire: [Staffsh, Staffs, Stfs]
+    Worcestershire: [Wrcstr, Worcs, Wrc]
+    Shropshire: [Shrpsh, Shrops, Shp]
+    Gloucestershire: [Gloucsh, Gloucs, Glos]
+    Berkshire: [Berkshr, Berksh, Berks]
+    Hampshire: [Hampshr, Hamps, Hmp]
+    Merseyside: [Mersysd, Mersd, Msd]
+    'West Midlands': [WMidl, WMid]
+    'East Midlands': [EMidl, EMid]
+    Northumberland: [Nthmbrld, Nthmbl, Nthmb]
+    'County Durham': [CoDurm, Durm, Drm]
+
+  directions:
+    North: [Nth, N]
+    South: [Sth, S]
+    East: [Est, E]
+    West: [Wst, W]
+    Northeast: [NE]
+    Northwest: [NW]
+    Southeast: [SE]
+    Southwest: [SW]
+    Central: [Cent, Cntl, Ctl, C]
+    Northern: [Nthrn, Nth, N]
+    Southern: [Sthrn, Sth, S]
+    Eastern: [Esthrn, Est, E]
+    Western: [Wsthrn, Wst, W]
+    Upper: [Uppr, Up]
+    Lower: [Lwr, Lo]
+    Inner: [Innr, In]
+    Outer: [Outr, Out]
+    Far: [Far] # already 3 chars
+
+# ─────────────────────────────────────────────────────────────────────────────
+# RADIO — General amateur radio terminology
+# ─────────────────────────────────────────────────────────────────────────────
+
+radio:
+  general:
+    Repeater: [Rptr, Rpt, Rp, R]
+    Simplex: [Smplx, Splx, Sx]
+    Digital: [Dgtl, Dgt, D]
+    Analogue: [Anlg, Anl, A]
+    Analog: [Anlg, Anl, A]
+    Channel: [Chan, Ch]
+    Calling: [Callng, Call, Cal]
+    Emergency: [Emrgcy, Emrg, Emr, Em]
+    Local: [Loc, Lcl, Lc]
+    National: [Natl, Nat, Nl]
+    International: [Intl, Int, Il]
+    Regional: [Rgnl, Rgn, Rg]
+    Worldwide: [Wrlwd, Wrld, WW]
+    Gateway: [Gtwy, Gwy, GW]
+    Link: [Lnk, Lk]
+    Network: [Netwrk, Ntwk, Net, Nt]
+    Monitor: [Montr, Mon, Mn]
+    Station: [Stn, St]
+    Mobile: [Mob, Mbl, Mb]
+    Portable: [Portbl, Port, Prt, Pt]
+    Base: [Base, Bs]
+    Receive: [Recv, Rcv, Rx]
+    Transmit: [Xmit, Trnmt, Tx]
+    Antenna: [Antna, Ant]
+    Frequency: [Freq, Frq, Fr]
+    Power: [Pwr, Pw]
+    Output: [Outpt, Out]
+    Input: [Inpt, Inp, In]
+    Offset: [Ofst, Off]
+
+  dmr:
+    Talkgroup: [TGrp, TG]
+    Timeslot: [TSlot, TS]
+    'Time slot': [TSlot, TS]
+    'TS1': ['T1']
+    'TS2': ['T2']
+    BrandMeister: [BrndMst, BM]
+    Phoenix: [Phnx, Phx, Px]
+    Hotspot: [HotSpt, HSpt, HS]
+    Cluster: [Clstr, Clst, Cl]
+    Roaming: [Roamng, Roam, Rm]
+    Dynamic: [Dynmc, Dyn, Dy]
+    Static: [Statc, Stat, St]
+    'Group Call': [GrpCl, GrpC, GC]
+    'Private Call': [PrvCl, PrvC, PC]
+
+  modes:
+    DMR: [DMR] # keep as-is
+    'C4FM': [C4FM] # keep as-is
+    'System Fusion': [YSF]
+    APRS: [APRS] # keep as-is
+    FT8: [FT8] # keep as-is
+    SSTV: [SSTV] # keep as-is
+    RAYNET: [RAYN, RYN]
+    'Packet Radio': [Pkt, Pk]
+
+  bands:
+    '160m': ['160m']
+    '80m': ['80m']
+    '60m': ['60m']
+    '40m': ['40m']
+    '30m': ['30m']
+    '20m': ['20m']
+    '17m': ['17m']
+    '15m': ['15m']
+    '12m': ['12m']
+    '10m': ['10m']
+    '6m': ['6m']
+    '4m': ['4m']
+    '2m': ['2m']
+    '70cm': ['70c', '70']
+    '23cm': ['23c', '23']
+
+# ─────────────────────────────────────────────────────────────────────────────
+# COMMON WORDS — Generic English words that appear in codeplug names
+# ─────────────────────────────────────────────────────────────────────────────
+
+common:
+  functional:
+    Primary: [Primry, Pri, Pr]
+    Secondary: [Secdry, Sec, Sc]
+    Backup: [Bckup, Bkup, Bk]
+    Alternate: [Altnt, Alt]
+    Main: [Main, Mn]
+    Group: [Grp, Gp]
+    List: [Lst, Li]
+    Zone: [Zone, Zn]
+    Scan: [Scan, Scn]
+    Talk: [Tlk, Tk]
+    'Talk In': [TkIn, TI]
+    Home: [Home, Hme, Hm]
+    Shack: [Shck, Shk]
+
+  temporal:
+    Morning: [Mornng, Mrng, Mrn]
+    Evening: [Evnng, Evng, Ev]
+    Night: [Nght, Ngt]
+    Daily: [Dly]
+    Weekly: [Wkly, Wkl]
+
+  activity:
+    Walk: [Wlk, Wk]
+    Commute: [Commt, Cmt]
+    Drive: [Drv, Dv]
+    Work: [Wrk, Wk]
+    Travel: [Trvl, Trv]
+
+  structural:
+    Number: [Num, No, Nr]
+    Point: [Pt]
+    Area: [Area, Ar]
+    Region: [Rgn, Rg]
+    District: [Dist, Dst, Dt]
+    County: [Cnty, Cty]
+    City: [City, Cy]
+    Town: [Town, Twn]
+    Village: [Vllg, Vlg]
+    Valley: [Vally, Vly]
+    Hill: [Hll, Hl]
+    Mountain: [Mtn, Mt]
+    River: [Rvr, Rv]
+    Glen: [Gln] # already 4 chars; used in Scottish place names
+    Loch: [Lch] # already 4 chars
+
+# ─────────────────────────────────────────────────────────────────────────────
+# STOPWORDS — tokens that may be dropped entirely as a final resort
+# These have no abbreviation; the shortening strategy removes them wholesale.
+# ─────────────────────────────────────────────────────────────────────────────
+
+stopwords:
+  - 'the'
+  - 'of'
+  - 'and'
+  - '&'
+  - 'a'
+  - 'at'
+  - 'in'
+  - 'on'
+  - 'for'
+  - 'to'
+  - 'via'
+  - '-' # collapsing separators is its own step; listed here for reference
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# SEPARATOR HANDLING — not abbreviations, but part of the algorithm
+# When names are shortened aggressively, collapsing separators recovers chars.
+# Suggested cascade:
+#   " - "  →  " "  →  ""    (space-dash-space → space → nothing)
+#   " / "  →  "/"  →  ""
+#   " "    →  ""            (final: remove all spaces)
+# ─────────────────────────────────────────────────────────────────────────────

@@ -2,6 +2,7 @@ import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
+import type { Channel } from '@core/models/library.ts';
 import { parseProjectDocument } from '@core/import-export/formats/native-yaml/parse.ts';
 import { assemble } from '@core/services/assemble.ts';
 import { exportBuildAll } from '@core/services/exportBuild.ts';
@@ -93,5 +94,47 @@ describe('OpenGD77 export serialise', () => {
     const second = serialiseChannels(assembled);
     const comparison = compareCsvRecords(first, second, { nameColumn: 'Channel Name' });
     expect(comparison.ok).toBe(true);
+  });
+
+  it('expands multi-mode channels into -F and -D wire rows when expandModes is true', () => {
+    const yaml = readFileSync(join(fixtureDir, 'with-format-build.yaml'), 'utf8');
+    const aggregate = parseProjectDocument(yaml);
+    const build = aggregate.formatBuilds[0]!;
+    const channels: Channel[] = aggregate.channels.map((channel, index) =>
+      index === 1
+        ? {
+            ...channel,
+            modeProfiles: [
+              {
+                mode: 'fm' as const,
+                squelch: 50,
+                rxTone: 'none' as const,
+                txTone: 'none' as const,
+                bandwidthKHz: 12.5,
+              },
+              {
+                mode: 'dmr' as const,
+                colourCode: 1,
+                timeslot: 2 as const,
+                dmrId: 123,
+                contactRef: null,
+                rxGroupListId: null,
+              },
+            ],
+          }
+        : channel,
+    );
+    const library = {
+      channels,
+      zones: aggregate.zones,
+      talkGroups: aggregate.talkGroups,
+      digitalContacts: aggregate.digitalContacts,
+      analogContacts: aggregate.analogContacts,
+      rxGroupLists: aggregate.rxGroupLists,
+    };
+    const assembled = assemble(build, library);
+    const csv = serialiseChannels(assembled, { profileId: build.profileId, expandModes: true });
+    expect(csv).toContain('-F');
+    expect(csv).toContain('-D');
   });
 });

@@ -57,5 +57,9 @@ export function memberRefWireName(assembled: AssembledBuild, ref: EntityRef): st
 }
 
 export function channelWireNameById(assembled: AssembledBuild): Map<string, string> {
-  return new Map(assembled.channels.map((c) => [c.entity.id, c.wireName]));
+  return new Map(
+    assembled.channels.flatMap((row) =>
+      row.wireNameOverride ? [[row.entity.id, row.wireNameOverride] as const] : [],
+    ),
+  );
 }

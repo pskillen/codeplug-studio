@@ -3,6 +3,10 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "generate:abbreviations": "node scripts/generate-abbreviations.mjs",
+    "predev": "npm run generate:abbreviations",
+    "prebuild": "npm run generate:abbreviations",
+    "pretest": "npm run generate:abbreviations",
     "dev": "vite",
     "build": "tsc -b && vite build",
     "preview": "vite preview",

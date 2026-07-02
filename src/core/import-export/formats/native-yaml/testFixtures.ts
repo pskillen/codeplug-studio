@@ -187,24 +187,20 @@ export function projectWithFormatBuildAggregate(): ProjectAggregate {
         },
       ],
     },
-    channelSelections: [
+    channelOverrides: [
       {
         libraryEntityId: FIXTURE_CHANNEL_A_ID,
-        overrides: { name: 'GB3DA Demo' },
+        wireName: 'GB3DA Demo',
       },
       {
         libraryEntityId: FIXTURE_CHANNEL_B_ID,
-        overrides: { name: 'GB7GL Scot' },
+        wireName: 'GB7GL Scot',
       },
     ],
-    zoneSelections: [{ libraryEntityId: FIXTURE_ZONE_ID, overrides: { name: 'Edinburgh' } }],
-    talkGroupSelections: [{ libraryEntityId: FIXTURE_TG_ID, overrides: { name: 'Scotland' } }],
-    rxGroupListSelections: [
-      { libraryEntityId: FIXTURE_RX_LIST_ID, overrides: { name: 'Scotland TG' } },
-    ],
-    contactSelections: [
-      { libraryEntityId: FIXTURE_DIGITAL_CONTACT_ID, overrides: { name: 'MM0HAM' } },
-    ],
+    zoneOverrides: [{ libraryEntityId: FIXTURE_ZONE_ID, wireName: 'Edinburgh' }],
+    talkGroupOverrides: [{ libraryEntityId: FIXTURE_TG_ID, wireName: 'Scotland' }],
+    rxGroupListOverrides: [{ libraryEntityId: FIXTURE_RX_LIST_ID, wireName: 'Scotland TG' }],
+    contactOverrides: [{ libraryEntityId: FIXTURE_DIGITAL_CONTACT_ID, wireName: 'MM0HAM' }],
   };
 
   return {
