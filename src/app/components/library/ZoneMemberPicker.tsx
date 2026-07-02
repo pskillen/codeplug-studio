@@ -11,6 +11,7 @@ import {
 import { IconArrowLeft, IconArrowRight } from '@tabler/icons-react';
 import { useEffect, useMemo, useState } from 'react';
 import type { Channel } from '@core/models/library.ts';
+import { channelDisplayLabel } from '@core/domain/channelNaming.ts';
 import { ICON_SIZE_NAV, ICON_STROKE } from '../../lib/iconSizes.ts';
 import { sortByName } from '../../lib/channels.ts';
 
@@ -58,6 +59,14 @@ function moveSelectedBlock(
   return next;
 }
 
+/** Case-insensitive match on channel name or callsign. */
+export function channelMatchesZoneMemberFilter(channel: Channel, filterLower: string): boolean {
+  if (!filterLower) return true;
+  const name = channel.name.toLowerCase();
+  const callsign = (channel.callsign ?? '').toLowerCase();
+  return name.includes(filterLower) || callsign.includes(filterLower);
+}
+
 function ChannelList({
   items,
   checked,
@@ -82,7 +91,7 @@ function ChannelList({
       {items.map((ch) => (
         <Checkbox
           key={ch.id}
-          label={ch.name}
+          label={channelDisplayLabel(ch)}
           checked={checked.has(ch.id)}
           onChange={() => onToggle(ch.id)}
         />
@@ -107,7 +116,10 @@ export function computeZoneMemberPickerMapFilters(
 
   if (hideAvailableFilteredFromMap && availableFilterLower) {
     for (const ch of channels) {
-      if (!selectedIdSet.has(ch.id) && !ch.name.toLowerCase().includes(availableFilterLower)) {
+      if (
+        !selectedIdSet.has(ch.id) &&
+        !channelMatchesZoneMemberFilter(ch, availableFilterLower)
+      ) {
         hiddenMarkerChannelIds.push(ch.id);
       }
     }
@@ -116,7 +128,7 @@ export function computeZoneMemberPickerMapFilters(
   if (hideInZoneFilteredFromMap && inZoneFilterLower) {
     for (const id of selectedIds) {
       const ch = channels.find((c) => c.id === id);
-      if (ch && !ch.name.toLowerCase().includes(inZoneFilterLower)) {
+      if (ch && !channelMatchesZoneMemberFilter(ch, inZoneFilterLower)) {
         hiddenMarkerChannelIds.push(ch.id);
         hiddenZoneMemberIds.push(ch.id);
       }
@@ -148,7 +160,7 @@ export default function ZoneMemberPicker({
       sortByName(channels).filter(
         (ch) =>
           !selectedIdSet.has(ch.id) &&
-          (!availableFilterLower || ch.name.toLowerCase().includes(availableFilterLower)),
+          (!availableFilterLower || channelMatchesZoneMemberFilter(ch, availableFilterLower)),
       ),
     [channels, selectedIdSet, availableFilterLower],
   );
@@ -158,7 +170,7 @@ export default function ZoneMemberPicker({
       selectedIds
         .map((id) => channels.find((ch) => ch.id === id))
         .filter((ch): ch is Channel => ch != null)
-        .filter((ch) => !inZoneFilterLower || ch.name.toLowerCase().includes(inZoneFilterLower)),
+        .filter((ch) => !inZoneFilterLower || channelMatchesZoneMemberFilter(ch, inZoneFilterLower)),
     [channels, selectedIds, inZoneFilterLower],
   );
 
@@ -231,7 +243,7 @@ export default function ZoneMemberPicker({
         <Stack gap="xs">
           <TextInput
             label="Filter available"
-            placeholder="Search by name…"
+            placeholder="Search by name or callsign…"
             value={availableFilter}
             onChange={(e) => setAvailableFilter(e.currentTarget.value)}
           />
@@ -286,7 +298,7 @@ export default function ZoneMemberPicker({
         <Stack gap="xs">
           <TextInput
             label="Filter in zone"
-            placeholder="Search by name…"
+            placeholder="Search by name or callsign…"
             value={inZoneFilter}
             onChange={(e) => setInZoneFilter(e.currentTarget.value)}
           />
