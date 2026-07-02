@@ -1,5 +1,9 @@
 import type { FormatBuild } from '@core/models/formatBuild.ts';
 import { newFormatBuild } from '@core/domain/factories.ts';
+import {
+  type OverrideField,
+  upsertOverride,
+} from '@core/domain/formatBuildOverrides.ts';
 import { isoNow, nextRevision } from '@core/models/revision.ts';
 import type { PutResult } from '@integrations/persistence/index.ts';
 import type { ProjectPersistence } from '@integrations/persistence/index.ts';
@@ -57,6 +61,38 @@ export class BuildService {
     return {
       ...build,
       profileId,
+      updatedAt: now,
+      revision: nextRevision(build.revision),
+    };
+  }
+
+  withEntityExcluded(
+    build: FormatBuild,
+    field: OverrideField,
+    libraryEntityId: string,
+    excluded: boolean,
+  ): FormatBuild {
+    const now = isoNow();
+    return {
+      ...build,
+      [field]: upsertOverride(build[field], libraryEntityId, { excluded }),
+      updatedAt: now,
+      revision: nextRevision(build.revision),
+    };
+  }
+
+  withWireNameOverride(
+    build: FormatBuild,
+    field: OverrideField,
+    libraryEntityId: string,
+    wireName: string | undefined,
+  ): FormatBuild {
+    const now = isoNow();
+    return {
+      ...build,
+      [field]: upsertOverride(build[field], libraryEntityId, {
+        wireName: wireName?.trim() || undefined,
+      }),
       updatedAt: now,
       revision: nextRevision(build.revision),
     };
