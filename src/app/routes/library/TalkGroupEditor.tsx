@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Button, Group, Select, SimpleGrid, Stack, TextInput } from '@mantine/core';
+import { Button, Group, Select, SimpleGrid, Stack, Text, TextInput } from '@mantine/core';
 import { Link } from 'react-router-dom';
 import type { DigitalChannelMode, TalkGroup } from '@core/models/library.ts';
 import { newTalkGroup } from '@core/domain/factories.ts';

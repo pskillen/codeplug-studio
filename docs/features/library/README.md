@@ -24,7 +24,7 @@ Tier-1 reference for editing the vendor-neutral **library** — the per-project 
 | ------------------------- | ------------------------------------------------------------------------------------------------------------ | --- |
 | `/library/channels`       | `DataTable` — sortable columns, toolbar search, hideable optional columns, URL + `localStorage` filter prefs | Yes |
 | `/library/zones`          | `DataTable` — members, comment; operator location + map below table                                          | Yes |
-| `/library/talk-groups`    | `DataTable` — mode, ID, optional Abbrev, channels/RX lists using, comment                                      | No  |
+| `/library/talk-groups`    | `DataTable` — mode, ID, optional Abbrev, channels/RX lists using, comment                                    | No  |
 | `/library/contacts`       | Two `DataTable` sections: digital contacts + analog contacts (separate `dq` / `aq` URL filters)              | No  |
 | `/library/rx-group-lists` | `DataTable` — members, channels using                                                                        | No  |
 
@@ -66,7 +66,7 @@ Channel editor DMR tab shows `RxGroupListSummary` below the RX group list select
 | Entity          | Key fields                                                                                                                                                         |
 | --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | Channel         | name, optional `abbreviation` (export shortening), callsign, RX/TX (MHz↔Hz), power, location + `maidenheadLocator`, scan-skip, comment, **multi** `modeProfiles[]` |
-| Talk group      | name, optional `abbreviation` (multi-TG export shortening), digital mode, group ID, comment                                                                      |
+| Talk group      | name, optional `abbreviation` (multi-TG export shortening), digital mode, group ID, comment                                                                        |
 | Digital contact | name, digital mode, contact ID, comment                                                                                                                            |
 | Analog contact  | name, code, comment                                                                                                                                                |
 | RX group list   | name, members (talk groups / digital contacts); optional `timeSlotOverride` per member (`1` \| `2` \| unset)                                                       |

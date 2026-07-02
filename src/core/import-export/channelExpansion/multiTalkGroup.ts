@@ -16,10 +16,7 @@ import {
   composeExportWireName,
   resolveMaxNameLength,
 } from './exportWireNames.ts';
-import {
-  entityRefDisplayName,
-  entityRefExportLabel,
-} from './entityRefExport.ts';
+import { entityRefDisplayName, entityRefExportLabel } from './entityRefExport.ts';
 import { expandChannelWireRows, type ExpandedChannelWireRow } from './multiMode.ts';
 import {
   composeMultiTalkGroupWireName,
@@ -56,8 +53,6 @@ export function multiTalkGroupMemberWireKey(
 }
 
 function wireNameContext(
-  channel: Channel,
-  member: EntityRef,
   library: MultiTalkGroupLibrarySlice,
   siteWireName: string,
   timeSlotOverride: DMRTimeSlot | null | undefined,
@@ -81,9 +76,8 @@ function composeWithEscalation(
   timeSlotOverride: DMRTimeSlot | null | undefined,
   options: CpsExportOptions | undefined,
 ): { base: string; mode: MultiTalkGroupExportNameMode; fixedSuffix: string | undefined } {
-  let effectiveMode =
-    options?.multiTalkGroupExportNameMode ?? DEFAULT_MULTI_TG_EXPORT_NAME_MODE;
-  const ctx = wireNameContext(channel, member, library, siteWireName, timeSlotOverride, options);
+  let effectiveMode = options?.multiTalkGroupExportNameMode ?? DEFAULT_MULTI_TG_EXPORT_NAME_MODE;
+  const ctx = wireNameContext(library, siteWireName, timeSlotOverride, options);
 
   if (effectiveMode === 'append') {
     const fullMemberName = entityRefDisplayName(

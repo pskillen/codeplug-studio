@@ -6,11 +6,11 @@ Informational preview of how a talk group name or abbreviation appears on **mult
 
 ## Props
 
-| Prop | Type | Description |
-| --- | --- | --- |
-| `name` | `string` | Talk group display name |
-| `abbreviation` | `string` | Optional abbreviation (live editor value) |
-| `digitalId` | `number` | DMR group ID (used in failsafe naming modes) |
+| Prop           | Type     | Description                                  |
+| -------------- | -------- | -------------------------------------------- |
+| `name`         | `string` | Talk group display name                      |
+| `abbreviation` | `string` | Optional abbreviation (live editor value)    |
+| `digitalId`    | `number` | DMR group ID (used in failsafe naming modes) |
 
 ## Usage
 

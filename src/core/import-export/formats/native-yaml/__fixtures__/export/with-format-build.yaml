@@ -120,7 +120,8 @@ library:
       revision: 1
       updatedAt: 2026-07-02T10:00:00.000Z
   talkGroups:
-    - comment: TG fixture
+    - abbreviation: Sco
+      comment: TG fixture
       digitalId: 950
       id: 55555555-5555-4555-8555-555555555555
       mode: dmr

@@ -1,9 +1,5 @@
 import { useState } from 'react';
-import type {
-  AnalogContact,
-  DigitalChannelMode,
-  DigitalContact,
-} from '@core/models/library.ts';
+import type { AnalogContact, DigitalChannelMode, DigitalContact } from '@core/models/library.ts';
 import { newAnalogContact, newDigitalContact } from '@core/domain/factories.ts';
 import { FieldRow } from '../../components/fields/Fields.tsx';
 import { controlStyle } from '../../components/fields/styles.ts';

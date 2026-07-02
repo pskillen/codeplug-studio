@@ -1,3 +1,5 @@
+import type { Channel } from '@core/models/library.ts';
+import type { DMRTimeSlot } from '@core/models/libraryTypes.ts';
 import { DEFAULT_MULTI_TG_EXPORT_NAME_MODE } from './multiTalkGroupWireName.ts';
 import { applyMultiTalkGroupWireNameLimits } from './multiTalkGroup.ts';
 import { composeMultiTalkGroupWireName } from './multiTalkGroupWireName.ts';
@@ -22,7 +24,7 @@ export interface TalkGroupWireNamePreviewExample {
   limited: string;
 }
 
-function previewChannel(callsign: string) {
+function previewChannel(callsign: string): Channel {
   return {
     id: 'preview-channel',
     projectId: 'preview',
@@ -41,9 +43,9 @@ function previewChannel(callsign: string) {
     comment: '',
     modeProfiles: [
       {
-        mode: 'dmr' as const,
+        mode: 'dmr',
         colourCode: 1,
-        timeslot: 2,
+        timeslot: 2 as DMRTimeSlot,
         dmrId: null,
         contactRef: null,
         rxGroupListId: null,
@@ -84,7 +86,10 @@ export function talkGroupWireNamePreviewExamples(
     memberTimeSlotOverride: 2 as const,
   };
 
-  const modes: { label: string; mode: typeof DEFAULT_MULTI_TG_EXPORT_NAME_MODE | 'callsign_name_tg' | 'callsign_tg' }[] = [
+  const modes: {
+    label: string;
+    mode: typeof DEFAULT_MULTI_TG_EXPORT_NAME_MODE | 'callsign_name_tg' | 'callsign_tg';
+  }[] = [
     { label: 'Callsign + TG abbrev (DM32 default)', mode: 'callsign_tg_abbrev' },
     { label: 'Callsign + TG name', mode: 'callsign_tg' },
     { label: 'Callsign + name + TG', mode: 'callsign_name_tg' },
@@ -98,7 +103,7 @@ export function talkGroupWireNamePreviewExamples(
       member,
       library,
       siteWireName,
-      2,
+      2 as DMRTimeSlot,
       reserved,
       {
         shortenNames: true,

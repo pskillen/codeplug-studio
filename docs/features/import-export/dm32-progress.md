@@ -12,12 +12,12 @@
 
 **Branch:** `110/pskil/talk-group-abbreviation`
 
-| Phase | Status | Notes |
-| --- | --- | --- |
-| Shared export prep — TG abbrev + multi-TG wire names ([#110](https://github.com/pskillen/codeplug-studio/issues/110)) | Complete (pending merge) | This branch |
-| DM32 export adapter | Not started | `src/core/import-export/formats/dm32/` |
-| DM32 build UI (zones, scan lists, `showMultiTalkGroupOptions`) | Not started | Trait modules under `src/app/` |
-| DM32 import adapter | Deferred | Out of epic #37 export scope |
+| Phase                                                                                                                 | Status                   | Notes                                  |
+| --------------------------------------------------------------------------------------------------------------------- | ------------------------ | -------------------------------------- |
+| Shared export prep — TG abbrev + multi-TG wire names ([#110](https://github.com/pskillen/codeplug-studio/issues/110)) | Complete (pending merge) | This branch                            |
+| DM32 export adapter                                                                                                   | Not started              | `src/core/import-export/formats/dm32/` |
+| DM32 build UI (zones, scan lists, `showMultiTalkGroupOptions`)                                                        | Not started              | Trait modules under `src/app/`         |
+| DM32 import adapter                                                                                                   | Deferred                 | Out of epic #37 export scope           |
 
 **Prerequisite:** OpenGD77 wire preview + name shortening — [opengd77-progress.md](opengd77-progress.md) ([#87](https://github.com/pskillen/codeplug-studio/issues/87)–[#90](https://github.com/pskillen/codeplug-studio/issues/90)).
 

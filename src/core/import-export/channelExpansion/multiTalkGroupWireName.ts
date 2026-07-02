@@ -1,4 +1,9 @@
-import type { Channel, ChannelModeProfile, DigitalContact, TalkGroup } from '@core/models/library.ts';
+import type {
+  Channel,
+  ChannelModeProfile,
+  DigitalContact,
+  TalkGroup,
+} from '@core/models/library.ts';
 import type { DMRTimeSlot, EntityRef } from '@core/models/libraryTypes.ts';
 import {
   channelPickForWireExport,
