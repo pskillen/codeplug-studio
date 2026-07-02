@@ -7,7 +7,11 @@ function member(kind: 'talkGroup' | 'digitalContact', id: string): RxGroupListMe
 }
 
 describe('moveSelectedMemberBlock', () => {
-  const members = [member('talkGroup', 'a'), member('talkGroup', 'b'), member('digitalContact', 'c')];
+  const members = [
+    member('talkGroup', 'a'),
+    member('talkGroup', 'b'),
+    member('digitalContact', 'c'),
+  ];
 
   it('moves selected members up as a block', () => {
     const next = moveSelectedMemberBlock(members, new Set(['talkGroup:b']), 'up');

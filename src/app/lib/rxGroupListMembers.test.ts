@@ -1,9 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import {
-  emptyLibrary,
-  newDigitalContact,
-  newTalkGroup,
-} from '@core/domain/factories.ts';
+import { emptyLibrary, newDigitalContact, newTalkGroup } from '@core/domain/factories.ts';
 import { entityRefKey } from './entityRefs.ts';
 import {
   applyTimeslotSegment,
@@ -43,9 +39,9 @@ describe('memberSupportsTimeSlotOverride', () => {
     const dmr = library.digitalContacts[0]!;
     const dstar = library.digitalContacts[1]!;
 
-    expect(
-      memberSupportsTimeSlotOverride({ ref: { kind: 'talkGroup', id: tg.id } }, library),
-    ).toBe(true);
+    expect(memberSupportsTimeSlotOverride({ ref: { kind: 'talkGroup', id: tg.id } }, library)).toBe(
+      true,
+    );
     expect(
       memberSupportsTimeSlotOverride({ ref: { kind: 'digitalContact', id: dmr.id } }, library),
     ).toBe(true);
@@ -98,10 +94,7 @@ describe('resolveRxGroupListMemberDisplay', () => {
       brokenRef: true,
     });
     expect(
-      resolveRxGroupListMemberDisplay(
-        { ref: { kind: 'digitalContact', id: 'missing' } },
-        library,
-      ),
+      resolveRxGroupListMemberDisplay({ ref: { kind: 'digitalContact', id: 'missing' } }, library),
     ).toMatchObject({
       name: 'Missing digital contact',
       brokenRef: true,
@@ -117,7 +110,9 @@ describe('applyTimeslotSegment', () => {
       ref: { kind: 'talkGroup', id: 'tg-1' },
       timeSlotOverride: 1,
     });
-    expect(applyTimeslotSegment(member, 'auto')).toEqual({ ref: { kind: 'talkGroup', id: 'tg-1' } });
+    expect(applyTimeslotSegment(member, 'auto')).toEqual({
+      ref: { kind: 'talkGroup', id: 'tg-1' },
+    });
     expect(timeslotSegmentValue(member)).toBe('2');
     expect(timeslotSegmentValue({ ref: { kind: 'talkGroup', id: 'tg-1' } })).toBe('auto');
   });

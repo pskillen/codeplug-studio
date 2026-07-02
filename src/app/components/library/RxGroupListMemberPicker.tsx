@@ -185,11 +185,7 @@ function InListMemberList({
         return (
           <Stack key={key} gap={4}>
             <Group gap="xs" wrap="nowrap" align="flex-start">
-              <Checkbox
-                checked={checked.has(key)}
-                onChange={() => onToggle(key)}
-                mt={4}
-              />
+              <Checkbox checked={checked.has(key)} onChange={() => onToggle(key)} mt={4} />
               <Stack gap={2} style={{ flex: 1, minWidth: 0 }}>
                 <Group gap="xs" wrap="nowrap" justify="space-between">
                   <MemberRowLabel option={option} />

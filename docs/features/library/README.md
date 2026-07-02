@@ -12,7 +12,7 @@ Tier-1 reference for editing the vendor-neutral **library** — the per-project 
 | ------------------------------------------------------------------------------- | ------------------------------------- |
 | [mode-profiles-progress.md](mode-profiles-progress.md)                          | Multi-mode editor initiative progress |
 | [zone-member-picker.md](zone-member-picker.md)                                  | Two-list zone membership editor       |
-| [rx-group-list-member-picker.md](rx-group-list-member-picker.md)              | Two-list RX group list member editor   |
+| [rx-group-list-member-picker.md](rx-group-list-member-picker.md)                | Two-list RX group list member editor  |
 | [app-shell/data-table.md](../app-shell/data-table.md)                           | Shared `DataTable` and list prefs     |
 | [app-shell/library-routes-progress.md](../app-shell/library-routes-progress.md) | List routes initiative progress       |
 

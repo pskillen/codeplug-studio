@@ -4,13 +4,13 @@
 
 ## Deferred from this PR
 
-| Item                                   | Notes                                                                |
-| -------------------------------------- | -------------------------------------------------------------------- |
-| Channel merge candidates modal         | Tool parity — not in #24 minimum acceptance                          |
-| Reference page route split             | Still one scroll page — separate initiative                          |
-| Full optional-column parity with tool  | Core column set shipped; extend as needed                            |
-| Primary nav per-entity promotion       | Library bucket remains single nav item                               |
-| Section nav name filters (non-channel) | Toolbar search + URL sync shipped; section nav filters optional      |
+| Item                                   | Notes                                                           |
+| -------------------------------------- | --------------------------------------------------------------- |
+| Channel merge candidates modal         | Tool parity — not in #24 minimum acceptance                     |
+| Reference page route split             | Still one scroll page — separate initiative                     |
+| Full optional-column parity with tool  | Core column set shipped; extend as needed                       |
+| Primary nav per-entity promotion       | Library bucket remains single nav item                          |
+| Section nav name filters (non-channel) | Toolbar search + URL sync shipped; section nav filters optional |
 
 ## Follow-up tickets
 

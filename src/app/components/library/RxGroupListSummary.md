@@ -6,10 +6,10 @@ Read-only preview of an RX group list's members — used on the channel DMR tab 
 
 ## Props
 
-| Prop      | Type              | Description                                      |
-| --------- | ----------------- | ------------------------------------------------ |
-| `listId`  | `string \| null`  | Selected RX group list UUID; `null` renders nothing |
-| `library` | `Library`         | Project library for list and member resolution   |
+| Prop      | Type             | Description                                         |
+| --------- | ---------------- | --------------------------------------------------- |
+| `listId`  | `string \| null` | Selected RX group list UUID; `null` renders nothing |
+| `library` | `Library`        | Project library for list and member resolution      |
 
 ## Usage
 

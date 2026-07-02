@@ -10,21 +10,21 @@ Replaces checkbox-only RX group list membership with available ↔ in-list lists
 
 ## Code anchors
 
-| Symbol                     | Path                                                          | Role              |
-| -------------------------- | ------------------------------------------------------------- | ----------------- |
-| `RxGroupListMemberPicker`  | `src/app/components/library/RxGroupListMemberPicker.tsx`      | Two-list UI       |
-| `RxGroupListEditor`        | `src/app/routes/library/RxGroupListEditor.tsx`                | Picker wiring     |
-| `rxGroupListMembers`       | `src/app/lib/rxGroupListMembers.ts`                           | Display + slot helpers |
+| Symbol                    | Path                                                     | Role                   |
+| ------------------------- | -------------------------------------------------------- | ---------------------- |
+| `RxGroupListMemberPicker` | `src/app/components/library/RxGroupListMemberPicker.tsx` | Two-list UI            |
+| `RxGroupListEditor`       | `src/app/routes/library/RxGroupListEditor.tsx`           | Picker wiring          |
+| `rxGroupListMembers`      | `src/app/lib/rxGroupListMembers.ts`                      | Display + slot helpers |
 
 ## Behaviour
 
-| Control              | Effect                                                                 |
-| -------------------- | ---------------------------------------------------------------------- |
-| Available search     | Filters talk groups and digital contacts not yet in the list (name or digital ID) |
-| In-list search       | Filters current members                                                |
-| Add / Remove         | Moves selected rows between lists                                      |
-| Move up / down       | Reorders selected in-list members as a block                           |
-| Timeslot (in-list)   | `Auto` / `TS1` / `TS2` segmented control on DMR talk groups and DMR digital contacts |
+| Control            | Effect                                                                               |
+| ------------------ | ------------------------------------------------------------------------------------ |
+| Available search   | Filters talk groups and digital contacts not yet in the list (name or digital ID)    |
+| In-list search     | Filters current members                                                              |
+| Add / Remove       | Moves selected rows between lists                                                    |
+| Move up / down     | Reorders selected in-list members as a block                                         |
+| Timeslot (in-list) | `Auto` / `TS1` / `TS2` segmented control on DMR talk groups and DMR digital contacts |
 
 `Auto` omits `timeSlotOverride` (unset). `TS1` / `TS2` store typed `1` / `2` on the membership row — vendor-neutral; CPS wire mapping is deferred to format export.
 

@@ -6,13 +6,13 @@ Two-list editor for RX group list membership — talk groups and digital contact
 
 ## Props
 
-| Prop              | Type                    | Description                          |
-| ----------------- | ----------------------- | ------------------------------------ |
-| `talkGroups`      | `TalkGroup[]`           | Available talk groups                |
-| `digitalContacts` | `DigitalContact[]`      | Available digital contacts           |
-| `library`         | `Library`               | Full library (slot visibility rules) |
-| `members`         | `RxGroupListMember[]`   | Current ordered members              |
-| `onChange`        | `(members) => void`     | Called when membership or slots change |
+| Prop              | Type                  | Description                            |
+| ----------------- | --------------------- | -------------------------------------- |
+| `talkGroups`      | `TalkGroup[]`         | Available talk groups                  |
+| `digitalContacts` | `DigitalContact[]`    | Available digital contacts             |
+| `library`         | `Library`             | Full library (slot visibility rules)   |
+| `members`         | `RxGroupListMember[]` | Current ordered members                |
+| `onChange`        | `(members) => void`   | Called when membership or slots change |
 
 ## Usage
 

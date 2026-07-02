@@ -1,9 +1,4 @@
-import type {
-  DMRTimeSlot,
-  EntityRef,
-  Library,
-  RxGroupListMember,
-} from '@core/models/library.ts';
+import type { DMRTimeSlot, EntityRef, Library, RxGroupListMember } from '@core/models/library.ts';
 import { entityRefKey } from './entityRefs.ts';
 
 export type RxGroupListMemberKindLabel = 'Talk group' | 'Digital contact';
