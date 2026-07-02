@@ -17,6 +17,7 @@ import {
   fetchResolvedDeviceTalkGroups,
   RepeaterDirectoryError,
   rxGroupListDiffHasChanges,
+  type BrandMeisterTalkGroupLookupProgress,
   type RepeaterListing,
   type ResolvedBrandMeisterTalkGroup,
 } from '@integrations/repeaters/index.ts';
@@ -28,6 +29,7 @@ import {
   linkedRxGroupList,
   type RxGroupListSyncMode,
 } from '../../lib/brandmeisterRxGroupListSync.ts';
+import BrandMeisterTalkGroupLookupProgressBar from './BrandMeisterTalkGroupLookupProgressBar.tsx';
 
 export interface BrandmeisterRxGroupListSyncDialogProps {
   channel: Channel;
@@ -76,6 +78,13 @@ function BrandmeisterRxGroupListSyncDialogBody({
 
   const [resolved, setResolved] = useState<ResolvedBrandMeisterTalkGroup[]>([]);
   const [loading, setLoading] = useState(true);
+  const [lookupProgress, setLookupProgress] = useState<BrandMeisterTalkGroupLookupProgress | null>(
+    {
+      phase: 'device',
+      message: 'Fetching repeater talk groups…',
+      percent: 0,
+    },
+  );
   const [error, setError] = useState<string | null>(null);
   const [applyError, setApplyError] = useState<string | null>(null);
   const [applying, setApplying] = useState(false);
@@ -85,7 +94,9 @@ function BrandmeisterRxGroupListSyncDialogBody({
 
   useEffect(() => {
     let cancelled = false;
-    void fetchResolvedDeviceTalkGroups(listing.remoteId)
+    void fetchResolvedDeviceTalkGroups(listing.remoteId, (progress) => {
+      if (!cancelled) setLookupProgress(progress);
+    })
       .then((rows) => {
         if (!cancelled) setResolved(rows);
       })
@@ -100,7 +111,10 @@ function BrandmeisterRxGroupListSyncDialogBody({
         }
       })
       .finally(() => {
-        if (!cancelled) setLoading(false);
+        if (!cancelled) {
+          setLoading(false);
+          setLookupProgress(null);
+        }
       });
     return () => {
       cancelled = true;
@@ -142,7 +156,7 @@ function BrandmeisterRxGroupListSyncDialogBody({
         linked RX group list and apply updates.
       </Text>
 
-      {loading ? <Text size="sm">Loading talk groups…</Text> : null}
+      {loading ? <BrandMeisterTalkGroupLookupProgressBar progress={lookupProgress} /> : null}
       {error ? <Alert color="red">{error}</Alert> : null}
 
       {!loading && !error && resolved.length > 0 ? (

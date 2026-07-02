@@ -17,6 +17,21 @@ export interface ResolvedBrandMeisterTalkGroup {
   slot: DMRTimeSlot | null;
 }
 
+export type BrandMeisterTalkGroupLookupPhase = 'device' | 'catalogue' | 'resolving';
+
+export interface BrandMeisterTalkGroupLookupProgress {
+  phase: BrandMeisterTalkGroupLookupPhase;
+  message: string;
+  /** 0–100 for UI progress bars */
+  percent: number;
+  resolvedCount?: number;
+  totalCount?: number;
+}
+
+export type BrandMeisterTalkGroupLookupProgressCallback = (
+  progress: BrandMeisterTalkGroupLookupProgress,
+) => void;
+
 interface TalkGroupDetailResponse {
   ID: number;
   Name: string;
@@ -122,17 +137,40 @@ export async function resolveTalkGroupName(
 export async function resolveDeviceTalkGroups(
   staticRows: BrandMeisterStaticTalkGroup[],
   nameMap?: Map<number, string>,
+  onProgress?: BrandMeisterTalkGroupLookupProgressCallback,
 ): Promise<ResolvedBrandMeisterTalkGroup[]> {
   const map = nameMap ?? (await loadTalkGroupNameMap());
+  const rows = staticRows
+    .map((row) => ({ row, digitalId: parseDigitalId(row.talkgroup) }))
+    .filter(
+      (entry): entry is { row: BrandMeisterStaticTalkGroup; digitalId: number } =>
+        entry.digitalId !== null,
+    );
+  const total = rows.length;
+
+  onProgress?.({
+    phase: 'resolving',
+    message: total > 0 ? `Resolving talk group 1 of ${total}…` : 'Resolving talk group names…',
+    percent: 40,
+    resolvedCount: 0,
+    totalCount: total,
+  });
+
   const resolved: ResolvedBrandMeisterTalkGroup[] = [];
-  for (const row of staticRows) {
-    const digitalId = parseDigitalId(row.talkgroup);
-    if (digitalId === null) continue;
+  for (let index = 0; index < rows.length; index++) {
+    const { row, digitalId } = rows[index]!;
     const name = await resolveTalkGroupName(digitalId, map);
     resolved.push({
       digitalId,
       name,
       slot: parseSlot(row.slot),
+    });
+    onProgress?.({
+      phase: 'resolving',
+      message: `Resolving talk group ${index + 1} of ${total}…`,
+      percent: 40 + Math.round((60 * (index + 1)) / total),
+      resolvedCount: index + 1,
+      totalCount: total,
     });
   }
   return resolved;
@@ -140,9 +178,30 @@ export async function resolveDeviceTalkGroups(
 
 export async function fetchResolvedDeviceTalkGroups(
   deviceId: string,
+  onProgress?: BrandMeisterTalkGroupLookupProgressCallback,
 ): Promise<ResolvedBrandMeisterTalkGroup[]> {
+  onProgress?.({
+    phase: 'device',
+    message: 'Fetching repeater talk groups…',
+    percent: 5,
+  });
   const staticRows = await fetchDeviceTalkGroups(deviceId);
+  onProgress?.({
+    phase: 'device',
+    message: 'Fetching repeater talk groups…',
+    percent: 15,
+  });
   if (staticRows.length === 0) return [];
+  onProgress?.({
+    phase: 'catalogue',
+    message: 'Loading talk group catalogue…',
+    percent: 20,
+  });
   const nameMap = await loadTalkGroupNameMap();
-  return resolveDeviceTalkGroups(staticRows, nameMap);
+  onProgress?.({
+    phase: 'catalogue',
+    message: 'Loading talk group catalogue…',
+    percent: 40,
+  });
+  return resolveDeviceTalkGroups(staticRows, nameMap, onProgress);
 }
