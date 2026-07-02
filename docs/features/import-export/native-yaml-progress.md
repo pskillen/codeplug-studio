@@ -8,8 +8,8 @@
 
 | Slice | Status      | Notes |
 | ----- | ----------- | ----- |
-| 0 Kickoff — progress pair + branch | In progress | |
-| 1 Import/export scaffold + envelope | Pending | |
+| 0 Kickoff — progress pair + branch | Complete | `df7afbe` |
+| 1 Import/export scaffold + envelope | Complete | |
 | 2 Feature + schema docs | Pending | |
 | 3 Export serialiser | Pending | |
 | 4 Import parser + validation | Pending | |
@@ -17,4 +17,13 @@
 
 ## Shipped
 
-_(Updated at each commit checkpoint.)_
+### Slice 0 — Kickoff
+
+- Branch `56/pskil/native-yaml-core`
+- `docs/features/import-export/native-yaml-progress.md` + `native-yaml-outstanding.md`
+- `docs/features/README.md` import-export row
+
+### Slice 1 — Import/export scaffold
+
+- `src/core/import-export/` — contracts, `StudioProjectDocument`, registry, native-yaml adapter shell
+- `adapterContract.test.ts`
