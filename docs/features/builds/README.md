@@ -21,10 +21,10 @@ Native YAML remains **project interchange** (library + all builds). It is not cr
 
 ## Routes
 
-| Route         | Purpose                                               |
-| ------------- | ----------------------------------------------------- |
-| `/builds`     | List builds for the active project                    |
-| `/builds/new` | Create build — format → profile → name                |
+| Route         | Purpose                                                                       |
+| ------------- | ----------------------------------------------------------------------------- |
+| `/builds`     | List builds for the active project                                            |
+| `/builds/new` | Create build — format → profile → name                                        |
 | `/builds/:id` | Build overview — identity, traits, layout placeholder, **Export to CPS** stub |
 
 Requires an active project (`RequireActiveProject`).

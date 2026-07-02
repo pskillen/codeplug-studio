@@ -79,12 +79,12 @@
 
 Original Phase 4a plan assumed CPS **export** UI on `/import-export` via `ExportBuildSelectorStub`. After shipping, export was relocated:
 
-| Plan assumption | Shipped behaviour | Impact on follow-on |
-| --- | --- | --- |
-| Export build selector on Import / export | Per-build export stub on **Radio builds** detail page only | [#86](https://github.com/pskillen/codeplug-studio/issues/86) / export adapter UI: wire download on `BuildDetailPage`, not `ImportExportPage` |
-| Nav: Library, Builds, Import/export, Summary | Nav: Library, **Summary**, **Radio builds**, Import/export | Sidebar label is **Radio builds**; routes/code remain `/builds`, `BuildService`, etc. |
-| Ticket #83 “export section: build selector stub” | Import/export keeps **Export to CPS** heading + link to Radio builds | #83 acceptance met for import catalog; export stub scope moved to builds hub |
-| `ExportBuildSelectorStub` component | Deleted — use `ExportBuildCpsPanelStub` (`src/app/components/builds/`) | Profile picker ([#85](https://github.com/pskillen/codeplug-studio/issues/85)) and CPS export panel ([#88+](https://github.com/pskillen/codeplug-studio/issues/36)) target build detail |
+| Plan assumption                                  | Shipped behaviour                                                      | Impact on follow-on                                                                                                                                                                    |
+| ------------------------------------------------ | ---------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Export build selector on Import / export         | Per-build export stub on **Radio builds** detail page only             | [#86](https://github.com/pskillen/codeplug-studio/issues/86) / export adapter UI: wire download on `BuildDetailPage`, not `ImportExportPage`                                           |
+| Nav: Library, Builds, Import/export, Summary     | Nav: Library, **Summary**, **Radio builds**, Import/export             | Sidebar label is **Radio builds**; routes/code remain `/builds`, `BuildService`, etc.                                                                                                  |
+| Ticket #83 “export section: build selector stub” | Import/export keeps **Export to CPS** heading + link to Radio builds   | #83 acceptance met for import catalog; export stub scope moved to builds hub                                                                                                           |
+| `ExportBuildSelectorStub` component              | Deleted — use `ExportBuildCpsPanelStub` (`src/app/components/builds/`) | Profile picker ([#85](https://github.com/pskillen/codeplug-studio/issues/85)) and CPS export panel ([#88+](https://github.com/pskillen/codeplug-studio/issues/36)) target build detail |
 
 CPS **import** placeholders remain on Import / export (format catalog grid). Only **export** moved to Radio builds.
 

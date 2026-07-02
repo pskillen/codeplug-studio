@@ -6,8 +6,8 @@ Placeholder for **per-build CPS export** on the radio build detail page (`/build
 
 ## Props
 
-| Prop | Type | Description |
-| --- | --- | --- |
+| Prop    | Type          | Description      |
+| ------- | ------------- | ---------------- |
 | `build` | `FormatBuild` | Active build row |
 
 ## Usage
