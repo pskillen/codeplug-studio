@@ -33,7 +33,7 @@ describe('buildBrandmeisterImportBundle', () => {
 
     expect(bundle.talkGroupsToCreate).toHaveLength(2);
     expect(bundle.talkGroupsExisting).toHaveLength(0);
-    expect(bundle.rxGroupList?.name).toBe('GB7AC — BrandMeister');
+    expect(bundle.rxGroupList?.name).toBe('GB7AC - BrandMeister');
     expect(bundle.rxGroupList?.members).toHaveLength(2);
     expect(bundle.rxGroupList?.members[0]?.timeSlotOverride).toBe(1);
     expect(bundle.rxGroupList?.members[1]?.timeSlotOverride).toBe(2);
@@ -72,7 +72,7 @@ describe('buildBrandmeisterImportBundle', () => {
 describe('uniqueRxGroupListName', () => {
   it('appends suffix when name collides', () => {
     const library = emptyLibrary();
-    library.rxGroupLists.push(newRxGroupList('p', 'GB7AC — BrandMeister'));
-    expect(uniqueRxGroupListName('GB7AC — BrandMeister', library)).toBe('GB7AC — BrandMeister 2');
+    library.rxGroupLists.push(newRxGroupList('p', 'GB7AC - BrandMeister'));
+    expect(uniqueRxGroupListName('GB7AC - BrandMeister', library)).toBe('GB7AC - BrandMeister 2');
   });
 });

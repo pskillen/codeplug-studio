@@ -6,7 +6,7 @@ import {
   composeChannelWireName,
   type ChannelExportNameMode,
 } from '@core/domain/channelNaming.ts';
-import { finalizeWireName, uniqueWireName } from './shortenName.ts';
+import { sanitiseAsciiWireString } from '../sanitiseAsciiWireString.ts';
 
 export function resolveMaxNameLength(
   profileId: string | undefined,
@@ -37,7 +37,7 @@ export function applyWireNameLimits(
   const shorten = options?.shortenNames !== false;
 
   if (!shorten || maxLen == null) {
-    const name = uniqueWireName(baseWireName, reserved);
+    const name = sanitiseAsciiWireString(uniqueWireName(baseWireName, reserved));
     reserved.add(name);
     if (maxLen != null && name.length > maxLen) {
       warnings.push(`Channel name "${name}" exceeds ${maxLen} characters`);
@@ -50,14 +50,16 @@ export function applyWireNameLimits(
     useChannelAbbreviation: options?.useChannelAbbreviation,
   });
 
-  return finalizeWireName(
-    baseWireName,
-    reserved,
-    maxLen,
-    {
-      exportNameMode: pick.exportNameMode,
-      recomposeWithMode: (mode) => composeChannelWireName({ ...pick, exportNameMode: mode }),
-    },
-    warnings,
+  return sanitiseAsciiWireString(
+    finalizeWireName(
+      baseWireName,
+      reserved,
+      maxLen,
+      {
+        exportNameMode: pick.exportNameMode,
+        recomposeWithMode: (mode) => composeChannelWireName({ ...pick, exportNameMode: mode }),
+      },
+      warnings,
+    ),
   );
 }

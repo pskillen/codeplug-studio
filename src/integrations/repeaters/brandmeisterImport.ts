@@ -21,7 +21,7 @@ export interface BrandMeisterImportBundle {
 
 function defaultRxGroupListName(callsign: string): string {
   const call = callsign.trim() || 'Repeater';
-  return `${call} — BrandMeister`;
+  return `${call} - BrandMeister`;
 }
 
 export function uniqueRxGroupListName(base: string, library: Library): string {

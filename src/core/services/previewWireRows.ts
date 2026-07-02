@@ -4,7 +4,7 @@ import {
   overrideByEntityId,
   type OverrideField,
 } from '@core/domain/formatBuildOverrides.ts';
-import { channelDisplayLabel } from '@core/domain/channelNaming.ts';
+import { sanitiseAsciiWireString } from '@core/import-export/sanitiseAsciiWireString.ts';
 import {
   expandChannelWireRows,
   modeExportNameSuffix,
@@ -55,13 +55,13 @@ function previewRow(
   const override = overrideByEntityId(overrides).get(key);
   const excluded = override?.excluded === true;
   const wireNameOverride = override?.wireName?.trim();
-  const effectiveWireName = wireNameOverride || generatedWireName;
+  const effectiveWireName = sanitiseAsciiWireString(wireNameOverride || generatedWireName);
   return {
     key,
     libraryEntityId,
     entityKind,
     displayLabel,
-    generatedWireName,
+    generatedWireName: sanitiseAsciiWireString(generatedWireName),
     effectiveWireName,
     hasWireNameOverride: Boolean(wireNameOverride),
     excluded,
@@ -111,8 +111,10 @@ export function previewWireRows(
               generatedExpansions.length > 1
                 ? `${channelDisplayLabel(channel)} (${generated.mode.toUpperCase()})`
                 : channelDisplayLabel(channel),
-            generatedWireName,
-            effectiveWireName: keyOverride ?? channelOverride ?? generatedWireName,
+            generatedWireName: sanitiseAsciiWireString(generatedWireName),
+            effectiveWireName: sanitiseAsciiWireString(
+              keyOverride ?? channelOverride ?? generatedWireName,
+            ),
             hasWireNameOverride,
             excluded,
             expansionNote:

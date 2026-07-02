@@ -43,7 +43,7 @@ All BrandMeister listings normalise to `modes: ['dmr']` at the boundary.
 | `talkgroup`      | `TalkGroup.digitalId`                 | parse as integer; dedupe in library by `digitalId`                                |
 | `slot`           | `RxGroupListMember.timeSlotOverride`  | `"1"` or `"2"` → `DMRTimeSlot`; invalid → `null`                                  |
 | (resolved name)  | `TalkGroup.name`                      | via `/talkgroup/{id}` then bulk `/talkgroup` map; synthetic `TG {id}` last resort |
-| (generated list) | `RxGroupList`                         | default name `{callsign} — BrandMeister`; members in API order                    |
+| (generated list) | `RxGroupList`                         | default name `{callsign} - BrandMeister`; members in API order                    |
 | (channel wire)   | `ChannelModeProfileDMR.rxGroupListId` | UUID FK on imported/verified channel                                              |
 
 Some static talk group IDs return **404** on `/talkgroup/{id}` (slot-encoded or regional variants). Studio falls back to the bulk catalogue, then a synthetic name.

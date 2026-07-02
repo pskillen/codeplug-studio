@@ -82,6 +82,7 @@ Optional deep link: `?format=opengd77` highlights the matching catalog card (`us
 - Internal relationships use UUID `id` fields — `name` is a display or build wire label, not an FK.
 - Export serialises **typed model fields** only — no wire stash or provenance replay ([export-from-model](../../../.cursor/rules/export-from-model.mdc)).
 - Library CRUD and validation stay unlimited; radio caps apply at CPS export adapters only.
+- CPS wire strings are normalised to **printable ASCII** at export (common Unicode punctuation replaced, remaining non-ASCII stripped). Library display names may still contain Unicode; auto-generated defaults use ASCII separators.
 
 ## Documentation map
 
