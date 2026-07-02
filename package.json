@@ -10,6 +10,7 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "test": "vitest run",
+    "test:system": "vitest run src/test/system",
     "test:watch": "vitest"
   },
   "dependencies": {

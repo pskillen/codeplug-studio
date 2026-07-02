@@ -1,0 +1,67 @@
+import { describe, expect, it } from 'vitest';
+import { getImportAdapter } from '@core/import-export/registry.ts';
+import { exportProjectYaml } from '@core/services/exportProjectYaml.ts';
+import { importProjectYaml } from '@core/services/importProjectYaml.ts';
+import type { ProjectInterchangePort } from '@core/services/projectInterchangePort.ts';
+import { seedToAggregate } from '@core/services/projectSeedMapping.ts';
+import { projectWithFormatBuildAggregate } from '@core/import-export/formats/native-yaml/testFixtures.ts';
+import {
+  InMemoryProjectPersistence,
+  seedFromAggregate,
+  type ProjectPersistence,
+  type ProjectSeed,
+} from '@integrations/persistence/index.ts';
+
+function asInterchangePort(store: ProjectPersistence): ProjectInterchangePort {
+  return {
+    seedProject: (seed) => store.seedProject(seed as ProjectSeed),
+    replaceProject: (projectId, seed) => store.replaceProject(projectId, seed as ProjectSeed),
+    loadProjectSeed: (projectId) => store.loadProjectSeed(projectId),
+    putProjectMeta: (row, expectedRevision) => store.putProjectMeta(row, expectedRevision),
+  };
+}
+
+describe('native YAML interchange system', () => {
+  it('export → replaceExisting → reload matches exported document', async () => {
+    const persistence = new InMemoryProjectPersistence();
+    const sourceAggregate = projectWithFormatBuildAggregate();
+    await persistence.seedProject(seedFromAggregate(sourceAggregate));
+    const port = asInterchangePort(persistence);
+    const projectId = sourceAggregate.meta.projectId;
+
+    const exported = await exportProjectYaml(port, projectId, {
+      fileName: 'north-wales.yaml',
+      recordDestination: 'localFile',
+    });
+
+    await importProjectYaml(port, exported.content, { kind: 'replaceExisting', projectId });
+
+    const reloaded = await persistence.loadProjectSeed(projectId);
+    expect(reloaded).not.toBeNull();
+
+    const reloadedAggregate = seedToAggregate(reloaded!);
+    const parsedFromExport = getImportAdapter('native-yaml').parseDocument(exported.content).project;
+    // Interchange metadata is written during export before replace reload.
+    expect(reloadedAggregate.meta.interchange?.localFile?.fileName).toBe('north-wales.yaml');
+    expect(reloadedAggregate.meta.interchange?.localFile?.exportedAt).toBeTruthy();
+
+    expect(reloadedAggregate.channels).toEqual(parsedFromExport.channels);
+    expect(reloadedAggregate.formatBuilds).toEqual(parsedFromExport.formatBuilds);
+    expect(reloadedAggregate.meta.name).toBe(parsedFromExport.meta.name);
+  });
+
+  it('createNew import seeds an isolated project', async () => {
+    const persistence = new InMemoryProjectPersistence();
+    const existing = projectWithFormatBuildAggregate();
+    await persistence.seedProject(seedFromAggregate(existing));
+    const port = asInterchangePort(persistence);
+
+    const exported = await exportProjectYaml(port, existing.meta.projectId);
+    const created = await importProjectYaml(port, exported.content, { kind: 'createNew' });
+
+    expect(created.projectId).not.toBe(existing.meta.projectId);
+    expect(await persistence.listProjects()).toHaveLength(2);
+    const loaded = await persistence.loadProjectSeed(created.projectId);
+    expect(loaded?.channels).toHaveLength(existing.channels.length);
+  });
+});

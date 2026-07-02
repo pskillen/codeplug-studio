@@ -30,10 +30,6 @@ export async function exportProjectYaml(
     throw new Error(`Project not found: ${projectId}`);
   }
 
-  const aggregate = seedToAggregate(seed);
-  const adapter = getExportAdapter('native-yaml');
-  const { content, warnings } = adapter.serialise(aggregate);
-
   const suggested = options.recordDestination
     ? suggestExportDestination(seed.meta, options.recordDestination)
     : null;
@@ -42,9 +38,17 @@ export async function exportProjectYaml(
     suggested?.fileName ??
     defaultLocalExportFileName(seed.meta.name);
 
+  let metaForExport = seed.meta;
   if (options.recordDestination === 'localFile') {
-    const updatedMeta = recordExportDestination(seed.meta, 'localFile', { fileName });
-    const result = await port.putProjectMeta(updatedMeta, seed.meta.revision);
+    metaForExport = recordExportDestination(seed.meta, 'localFile', { fileName });
+  }
+
+  const aggregate = seedToAggregate({ ...seed, meta: metaForExport });
+  const adapter = getExportAdapter('native-yaml');
+  const { content, warnings } = adapter.serialise(aggregate);
+
+  if (options.recordDestination === 'localFile') {
+    const result = await port.putProjectMeta(metaForExport, seed.meta.revision);
     if (!result.ok) {
       throw new Error(`Failed to record export destination: ${result.reason}`);
     }
