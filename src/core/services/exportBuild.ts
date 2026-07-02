@@ -3,7 +3,12 @@ import { getExportAdapter } from '@core/import-export/registry.ts';
 import { isMultiFileExportAdapter } from '@core/import-export/exportAdapter.ts';
 import { buildOpenGd77Zip } from '@core/import-export/formats/opengd77/packageZip.ts';
 import type { CpsExportOptions, ExportResult, FormatId } from '@core/import-export/types.ts';
-import { assemble, exportInclusionWarnings, type AssembledBuild, type LibrarySlice } from './assemble.ts';
+import {
+  assemble,
+  exportInclusionWarnings,
+  type AssembledBuild,
+  type LibrarySlice,
+} from './assemble.ts';
 
 export interface ExportBuildParams {
   build: FormatBuild;

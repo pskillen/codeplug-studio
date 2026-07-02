@@ -62,25 +62,25 @@ YAML import/export includes `formatBuilds[]` in the project document.
 
 ## Implementation status
 
-| Area                         | Status   | Notes                                                                                                                 |
-| ---------------------------- | -------- | --------------------------------------------------------------------------------------------------------------------- |
-| List + create + detail shell | Shipped  | [#82](https://github.com/pskillen/codeplug-studio/issues/82)                                                          |
-| Per-build CPS export         | Shipped  | `ExportBuildCpsPanel` — per-file CSV, ZIP download, Drive ZIP upload                                                  |
-| Profile picker component     | Shipped  | [#85](https://github.com/pskillen/codeplug-studio/issues/85) — `ProfilePicker`                                        |
-| Wire preview + overrides     | Shipped  | [#87](https://github.com/pskillen/codeplug-studio/issues/87) — sub-routes + `WirePreviewTable`                        |
-| Zone grouping editor         | Deferred | Library zone membership at export; layout UI follow-on ([#99](https://github.com/pskillen/codeplug-studio/issues/99)) |
-| Multi-mode channel expansion | Shipped  | [#89](https://github.com/pskillen/codeplug-studio/issues/89) — preview + OpenGD77 export                              |
-| Export name shortening       | Shipped  | [#90](https://github.com/pskillen/codeplug-studio/issues/90) — `useExportSettings` + dictionary                       |
+| Area                         | Status   | Notes                                                                                                                  |
+| ---------------------------- | -------- | ---------------------------------------------------------------------------------------------------------------------- |
+| List + create + detail shell | Shipped  | [#82](https://github.com/pskillen/codeplug-studio/issues/82)                                                           |
+| Per-build CPS export         | Shipped  | `ExportBuildCpsPanel` — per-file CSV, ZIP download, Drive ZIP upload                                                   |
+| Profile picker component     | Shipped  | [#85](https://github.com/pskillen/codeplug-studio/issues/85) — `ProfilePicker`                                         |
+| Wire preview + overrides     | Shipped  | [#87](https://github.com/pskillen/codeplug-studio/issues/87) — sub-routes + `WirePreviewTable`                         |
+| Zone grouping editor         | Deferred | Library zone membership at export; layout UI follow-on ([#99](https://github.com/pskillen/codeplug-studio/issues/99))  |
+| Multi-mode channel expansion | Shipped  | [#89](https://github.com/pskillen/codeplug-studio/issues/89) — preview + OpenGD77 export                               |
+| Export name shortening       | Shipped  | [#90](https://github.com/pskillen/codeplug-studio/issues/90) — `useExportSettings` + dictionary                        |
 | Export inclusion flags       | Shipped  | [#103](https://github.com/pskillen/codeplug-studio/issues/103) — orphan channels/TGs/RGLs on `FormatBuild` + export UI |
 
 ## Export inclusion flags
 
 Per-build toggles on `FormatBuild` (default **on**) control whether orphan library entities are included in CPS export:
 
-| Field | When enabled (default) |
-| ----- | ---------------------- |
-| `exportUnlinkedChannels` | Channels not in any zone member list |
-| `exportUnlinkedTalkGroups` | Talk groups not referenced by an exported channel |
+| Field                        | When enabled (default)                               |
+| ---------------------------- | ---------------------------------------------------- |
+| `exportUnlinkedChannels`     | Channels not in any zone member list                 |
+| `exportUnlinkedTalkGroups`   | Talk groups not referenced by an exported channel    |
 | `exportUnlinkedRxGroupLists` | RX group lists not referenced by an exported channel |
 
 Switches on `/builds/:id/export` persist to the build row. Wire preview `includedPreviewWireRows` honours the same flags.

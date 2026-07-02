@@ -6,9 +6,9 @@ Two-value segmented control for channel transmit permission: **Allow TX** (defau
 
 ## Props
 
-| Prop       | Type                      | Description                          |
-| ---------- | ------------------------- | ------------------------------------ |
-| `value`    | `boolean`                 | Current `forbidTransmit` flag        |
+| Prop       | Type                       | Description                           |
+| ---------- | -------------------------- | ------------------------------------- |
+| `value`    | `boolean`                  | Current `forbidTransmit` flag         |
 | `onChange` | `(value: boolean) => void` | Called when the operator changes mode |
 
 ## Usage

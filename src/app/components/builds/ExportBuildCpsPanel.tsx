@@ -232,10 +232,7 @@ export default function ExportBuildCpsPanel({ build }: ExportBuildCpsPanelProps)
           checked={build.exportUnlinkedChannels !== false}
           disabled={savingInclusion}
           onChange={(event) =>
-            void handleExportInclusionChange(
-              'exportUnlinkedChannels',
-              event.currentTarget.checked,
-            )
+            void handleExportInclusionChange('exportUnlinkedChannels', event.currentTarget.checked)
           }
         />
         <Switch
