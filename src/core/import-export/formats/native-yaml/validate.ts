@@ -201,6 +201,22 @@ function parseChannel(raw: unknown, index: number): Channel {
     power: expectNullableNumber(record.power, `library.channels[${index}].power`),
     scanSkip: expectBoolean(record.scanSkip, `library.channels[${index}].scanSkip`),
     comment: expectString(record.comment, `library.channels[${index}].comment`),
+    ...(record.exportNameMode !== undefined && record.exportNameMode !== null
+      ? {
+          exportNameMode: expectString(
+            record.exportNameMode,
+            `library.channels[${index}].exportNameMode`,
+          ) as Channel['exportNameMode'],
+        }
+      : {}),
+    ...(record.abbreviation !== undefined && record.abbreviation !== null
+      ? {
+          abbreviation: expectString(
+            record.abbreviation,
+            `library.channels[${index}].abbreviation`,
+          ),
+        }
+      : {}),
     modeProfiles: expectArray(record.modeProfiles, `library.channels[${index}].modeProfiles`).map(
       (profile, profileIndex) => parseModeProfile(profile, profileIndex),
     ),
@@ -236,6 +252,14 @@ function parseTalkGroup(raw: unknown, index: number): TalkGroup {
     name: expectString(record.name, `library.talkGroups[${index}].name`),
     digitalId: expectNumber(record.digitalId, `library.talkGroups[${index}].digitalId`),
     comment: expectString(record.comment, `library.talkGroups[${index}].comment`),
+    ...(record.abbreviation !== undefined && record.abbreviation !== null
+      ? {
+          abbreviation: expectString(
+            record.abbreviation,
+            `library.talkGroups[${index}].abbreviation`,
+          ),
+        }
+      : {}),
   };
 }
 

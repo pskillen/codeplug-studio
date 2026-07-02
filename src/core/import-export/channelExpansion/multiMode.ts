@@ -1,6 +1,8 @@
 import type { Channel, ChannelModeProfile } from '@core/models/library.ts';
 import type { ChannelMode } from '@core/models/libraryTypes.ts';
+import type { CpsExportOptions } from '@core/import-export/types.ts';
 import { isAnalogMode } from '@core/import-export/formats/opengd77/channelModes.ts';
+import { applyWireNameLimits, composeExportWireName } from './exportWireNames.ts';
 
 export interface ExpandedChannelWireRow {
   sourceChannelId: string;
@@ -32,18 +34,31 @@ function modeProfileForChannel(channel: Channel): ChannelModeProfile {
  */
 export function expandChannelWireRows(
   channel: Channel,
-  baseWireName: string,
+  baseWireName: string | undefined,
   expandModes = true,
+  options?: CpsExportOptions,
+  profileId?: string,
+  reserved = new Set<string>(),
+  warnings: string[] = [],
 ): ExpandedChannelWireRow[] {
+  const composedBase = baseWireName?.trim() || composeExportWireName(channel, options, profileId);
   const profiles = channel.modeProfiles.length > 0 ? channel.modeProfiles : [modeProfileForChannel(channel)];
 
   if (!expandModes || profiles.length <= 1) {
     const profile = profiles[0]!;
+    const wireName = applyWireNameLimits(
+      composedBase,
+      channel,
+      reserved,
+      options,
+      profileId,
+      warnings,
+    );
     return [
       {
         sourceChannelId: channel.id,
         key: channel.id,
-        wireName: baseWireName,
+        wireName,
         mode: profile.mode,
         modeProfile: profile,
       },
@@ -52,10 +67,12 @@ export function expandChannelWireRows(
 
   return profiles.map((profile) => {
     const suffix = modeExportNameSuffix(profile.mode);
+    const candidate = `${composedBase}${suffix}`;
+    const wireName = applyWireNameLimits(candidate, channel, reserved, options, profileId, warnings);
     return {
       sourceChannelId: channel.id,
       key: expansionWireKey(channel.id, profile.mode),
-      wireName: `${baseWireName}${suffix}`,
+      wireName,
       mode: profile.mode,
       modeProfile: profile,
     };
@@ -68,13 +85,23 @@ export function expandZoneMemberWireNames(
   channelById: Map<string, Channel>,
   wireNameByChannelId: Map<string, string>,
   expandModes = true,
+  options?: CpsExportOptions,
+  profileId?: string,
 ): string[] {
   const names: string[] = [];
+  const reserved = new Set<string>();
   for (const channelId of memberChannelIds) {
     const channel = channelById.get(channelId);
     if (!channel) continue;
-    const baseWireName = wireNameByChannelId.get(channelId) ?? channel.name;
-    const rows = expandChannelWireRows(channel, baseWireName, expandModes);
+    const baseWireName = wireNameByChannelId.get(channelId);
+    const rows = expandChannelWireRows(
+      channel,
+      baseWireName,
+      expandModes,
+      options,
+      profileId,
+      reserved,
+    );
     for (const row of rows) {
       names.push(row.wireName);
     }
@@ -85,10 +112,22 @@ export function expandZoneMemberWireNames(
 export function buildExpandedChannelWireMap(
   channels: Array<{ entity: Channel; wireName: string }>,
   expandModes = true,
+  options?: CpsExportOptions,
+  profileId?: string,
 ): Map<string, string> {
   const map = new Map<string, string>();
+  const reserved = new Set<string>();
+  const warnings: string[] = [];
   for (const row of channels) {
-    for (const expanded of expandChannelWireRows(row.entity, row.wireName, expandModes)) {
+    for (const expanded of expandChannelWireRows(
+      row.entity,
+      row.wireName,
+      expandModes,
+      options,
+      profileId,
+      reserved,
+      warnings,
+    )) {
       map.set(expanded.key, expanded.wireName);
       if (expanded.key === row.entity.id) {
         map.set(row.entity.id, expanded.wireName);

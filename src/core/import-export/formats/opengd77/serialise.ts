@@ -120,8 +120,18 @@ export function serialiseChannels(assembled: AssembledBuild, options?: CpsExport
     options?.profileId ?? assembled.profileId ?? DEFAULT_OPENGD77_PROFILE_ID,
   );
   const expandModes = options?.expandModes ?? true;
+  const warnings: string[] = [];
+  const reserved = new Set<string>();
   const expandedRows = assembled.channels.flatMap((row) =>
-    expandChannelWireRows(row.entity, row.wireName, expandModes),
+    expandChannelWireRows(
+      row.entity,
+      row.wireName,
+      expandModes,
+      options,
+      profile.id,
+      reserved,
+      warnings,
+    ),
   );
   const rows = expandedRows.map((row, i) =>
     padRow(

@@ -16,6 +16,8 @@ export function zoneExportMemberNames(
     channelById,
     wireById,
     options?.expandModes ?? true,
+    options,
+    assembled.profileId,
   );
 }
 

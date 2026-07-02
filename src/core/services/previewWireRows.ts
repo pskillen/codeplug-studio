@@ -1,13 +1,19 @@
 import type { Channel } from '@core/models/library.ts';
-import type { FormatBuild } from '@core/models/formatBuild.ts';
 import type { CpsExportOptions } from '@core/import-export/types.ts';
 import {
   isEntityExcluded,
   overrideByEntityId,
   type OverrideField,
 } from '@core/domain/formatBuildOverrides.ts';
-import { expandChannelWireRows, modeExportNameSuffix } from '@core/import-export/channelExpansion/multiMode.ts';
+import {
+  channelDisplayLabel,
+} from '@core/domain/channelNaming.ts';
+import {
+  expandChannelWireRows,
+  modeExportNameSuffix,
+} from '@core/import-export/channelExpansion/multiMode.ts';
 import { assemble, type LibrarySlice } from './assemble.ts';
+import type { FormatBuild } from '@core/models/formatBuild.ts';
 
 export type WirePreviewEntityKind =
   | 'channel'
@@ -43,11 +49,6 @@ export function overrideFieldForEntityKind(
     case 'rxGroupList':
       return 'rxGroupListOverrides';
   }
-}
-
-function channelDisplayLabel(channel: Channel): string {
-  const parts = [channel.callsign, channel.name].filter(Boolean);
-  return parts.length > 0 ? parts.join(' — ') : channel.name || channel.id;
 }
 
 function previewRow(
@@ -86,13 +87,23 @@ export function previewWireRows(
     case 'channel': {
       const expandModes = _options?.expandModes ?? true;
       const rows: WirePreviewRow[] = [];
+      const reserved = new Set<string>();
+      const warnings: string[] = [];
       for (const channel of library.channels) {
         const assembled = projection.channels.find((row) => row.entity.id === channel.id);
-        const baseWireName = assembled?.wireName ?? channel.name;
-        const expansions = expandChannelWireRows(channel, baseWireName, expandModes);
+        const overrideWireName = overrideByEntityId(build.channelOverrides).get(channel.id)?.wireName;
+        const baseWireName = overrideWireName?.trim() || assembled?.wireName;
+        const expansions = expandChannelWireRows(
+          channel,
+          baseWireName,
+          expandModes,
+          _options,
+          build.profileId,
+          reserved,
+          warnings,
+        );
         for (const expanded of expansions) {
-          const overrideWire = overrideByEntityId(build.channelOverrides).get(expanded.key)
-            ?.wireName?.trim();
+          const keyOverride = overrideByEntityId(build.channelOverrides).get(expanded.key)?.wireName?.trim();
           const generatedWireName = expanded.wireName;
           const excluded = isEntityExcluded(build.channelOverrides, channel.id);
           rows.push({
@@ -104,10 +115,12 @@ export function previewWireRows(
                 ? `${channelDisplayLabel(channel)} (${expanded.mode.toUpperCase()})`
                 : channelDisplayLabel(channel),
             generatedWireName,
-            effectiveWireName: overrideWire || generatedWireName,
+            effectiveWireName: keyOverride || generatedWireName,
             excluded,
             expansionNote:
-              expansions.length > 1 ? `Multi-mode ${modeExportNameSuffix(expanded.mode)} row` : undefined,
+              expansions.length > 1
+                ? `Multi-mode ${modeExportNameSuffix(expanded.mode)} row`
+                : undefined,
           });
         }
       }
