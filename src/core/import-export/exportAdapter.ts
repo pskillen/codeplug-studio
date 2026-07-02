@@ -1,5 +1,6 @@
 import type { ProjectAggregate } from './projectDocument.ts';
-import type { ExportResult, ExportSerialiseResult, FormatId, FormatStatus } from './types.ts';
+import type { AssembledBuild } from '@core/services/assemble.ts';
+import type { ExportResult, ExportSerialiseResult, FormatId, FormatStatus, CpsExportOptions } from './types.ts';
 
 export interface BaseExportAdapter {
   readonly id: FormatId;
@@ -19,9 +20,9 @@ export interface MultiFileExportAdapter extends BaseExportAdapter {
   readonly delivery: 'multi-file';
   readonly fileNames: readonly string[];
   serialiseFile(
-    aggregate: ProjectAggregate,
+    assembled: AssembledBuild,
     fileName: string,
-    options?: Record<string, unknown>,
+    options?: CpsExportOptions,
   ): ExportResult & { content: string };
 }
 

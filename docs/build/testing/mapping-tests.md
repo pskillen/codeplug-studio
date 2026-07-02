@@ -64,7 +64,7 @@ Wire-format column detail: `docs/reference/<format>/`. Strategy docs cite **outc
 | Trait layout → zones/scan lists | Per-format export with constructed `FormatBuild`          |
 | Name-based FK denormalisation   | Wire names resolved from UUID refs at serialise time only |
 
-**Code anchors (planned):** `src/core/import-export/formats/<format>/`, `src/core/services/exportBuild.ts`, `src/core/services/assemble.ts`.
+**Code anchors:** `src/core/import-export/formats/<format>/`, `src/core/services/exportBuild.ts`, `src/core/services/assemble.ts`.
 
 ## Scenario taxonomy
 
@@ -72,7 +72,7 @@ Wire-format column detail: `docs/reference/<format>/`. Strategy docs cite **outc
 | -------------------------------- | ----------------------------------------- | ------------------------- | ------------------------------ |
 | **Import mapping**               | Fixture → golden library (+ build)        | Adapter + service         | Planned (Phase 4+)             |
 | **Export mapping**               | Constructed library + build → golden wire | Adapter + service         | Planned                        |
-| **Assemble**                     | Trait profile shapes export projection    | Unit / service            | Planned                        |
+| **Assemble**                     | Trait profile shapes export projection    | Unit / service            | Shipped (`assemble.test.ts`)   |
 | **Same-format round-trip smoke** | A → internal → A roughly stable           | Optional integration      | Secondary — not primary gate   |
 | **Cross-format**                 | A → library → B export                    | Adapter matrix            | Planned                        |
 | **Lossy fields**                 | Known non-surviving columns documented    | Reference + mapping tests | Per `docs/reference/<format>/` |
