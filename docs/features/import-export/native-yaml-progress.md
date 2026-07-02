@@ -1,8 +1,8 @@
 # Native YAML — progress
 
-**Tracking:** [#56](https://github.com/pskillen/codeplug-studio/issues/56) · [#57](https://github.com/pskillen/codeplug-studio/issues/57) · [#58](https://github.com/pskillen/codeplug-studio/issues/58)  
+**Tracking:** [#56](https://github.com/pskillen/codeplug-studio/issues/56)–[#58](https://github.com/pskillen/codeplug-studio/issues/58) · [#59](https://github.com/pskillen/codeplug-studio/issues/59) · [#60](https://github.com/pskillen/codeplug-studio/issues/60)  
 **Epic:** [Phase 3 #35](https://github.com/pskillen/codeplug-studio/issues/35)  
-**Branch:** `56/pskil/native-yaml-core`
+**Branch:** `59/pskil/interchange-services-ui`
 
 ## Status
 
@@ -13,7 +13,14 @@
 | 2 Feature + schema docs             | Complete | `e700605` |
 | 3 Export serialiser                 | Complete | `a2e315d` |
 | 4 Import parser + validation        | Complete | `3df28ea` |
-| 5 Registry smoke + PR               | Complete |           |
+| 5 Registry smoke + PR               | Complete | [#78](https://github.com/pskillen/codeplug-studio/pull/78) |
+| 6 Interchange model + helpers (#59) | Pending  |           |
+| 7 Persistence replaceProject (#59)  | Pending  |           |
+| 8 Core services (#59)               | Pending  |           |
+| 9 System tests (#59)                | Pending  |           |
+| 10 App primitives (#60)             | Pending  |           |
+| 11 Interchange UI (#60)             | Pending  |           |
+| 12 Routes + workflow docs + PR      | Pending  |           |
 
 ## Shipped
 
