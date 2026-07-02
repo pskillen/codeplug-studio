@@ -2,7 +2,7 @@
 
 Tier-1 reference for **public repeater directory** workflows — searching ukrepeater.net (RSGB ETCC) and BrandMeister, importing results into the vendor-neutral library, and verifying existing channels against directory data.
 
-**Tracking:** Phase 2 [#11](https://github.com/pskillen/codeplug-studio/issues/11) (Epic [#1](https://github.com/pskillen/codeplug-studio/issues/1)) · Search parity [#43](https://github.com/pskillen/codeplug-studio/issues/43) · BrandMeister parity [#44](https://github.com/pskillen/codeplug-studio/issues/44) · Callsign-only import gate [#53](https://github.com/pskillen/codeplug-studio/issues/53)
+**Tracking:** Phase 2 [#11](https://github.com/pskillen/codeplug-studio/issues/11) (Epic [#1](https://github.com/pskillen/codeplug-studio/issues/1)) · Search parity [#43](https://github.com/pskillen/codeplug-studio/issues/43) · BrandMeister parity [#44](https://github.com/pskillen/codeplug-studio/issues/44) · Callsign-only import gate [#53](https://github.com/pskillen/codeplug-studio/issues/53) · BrandMeister TG + RX list [#65](https://github.com/pskillen/codeplug-studio/issues/65)
 
 **Source:** `src/app/routes/library/AddFrom*Page.tsx`, `src/app/components/repeaters/`, `src/integrations/repeaters/`
 
@@ -29,28 +29,30 @@ Repeater search is **not** a top-level nav item — it lives under library workf
 | Multi-mode import (`modeProfiles`) | Shipped  | Typed profiles for FM/DMR/D-STAR/YSF/NXDN/TETRA; P25/M17 stubs                                                                        |
 | Multi-mode channel CRUD            | Shipped  | [#16](https://github.com/pskillen/codeplug-studio/issues/16) — multi-select + tabbed profiles editor                                  |
 | `maidenheadLocator` on import      | Shipped  | [#28](https://github.com/pskillen/codeplug-studio/issues/28) — from ETCC locator or derived coords                                    |
+| BrandMeister TG + RX list import   | Shipped  | [#65](https://github.com/pskillen/codeplug-studio/issues/65) — optional on add; dedupe TGs by `digitalId`                             |
+| BrandMeister RX list verify sync   | Shipped  | [#65](https://github.com/pskillen/codeplug-studio/issues/65) — update or fork shared list after channel diff                          |
 | Bulk verify from channel list      | Deferred | [#49](https://github.com/pskillen/codeplug-studio/issues/49) — separate PR                                                            |
 | ETCC keeper endpoint               | Deferred | Not in archive query router                                                                                                           |
 | Offline result cache               | Deferred | In-session only                                                                                                                       |
 
 ## Documentation map
 
-| Doc                                                              | Contents                                           |
-| ---------------------------------------------------------------- | -------------------------------------------------- |
-| This README                                                      | Workflows, boundaries, code anchors                |
-| [ukrepeater API reference](../../reference/ukrepeater/README.md) | ETCC endpoints, mode flags, field mapping (tier 3) |
-| [BrandMeister reference](../../reference/brandmeister/README.md) | v2 byCall endpoint, field mapping, limits (tier 3) |
-| [map](../map/README.md)                                          | Embedded channel map on Library sections           |
-| [library](../library/README.md)                                  | Channel entity CRUD                                |
-| [app-shell](../app-shell/README.md)                              | Routes and section nav                             |
+| Doc                                                              | Contents                                                 |
+| ---------------------------------------------------------------- | -------------------------------------------------------- |
+| This README                                                      | Workflows, boundaries, code anchors                      |
+| [ukrepeater API reference](../../reference/ukrepeater/README.md) | ETCC endpoints, mode flags, field mapping (tier 3)       |
+| [BrandMeister reference](../../reference/brandmeister/README.md) | v2 device + talk group endpoints, field mapping (tier 3) |
+| [map](../map/README.md)                                          | Embedded channel map on Library sections                 |
+| [library](../library/README.md)                                  | Channel entity CRUD                                      |
+| [app-shell](../app-shell/README.md)                              | Routes and section nav                                   |
 
 ## Workflows
 
-| Workflow                             | Entry point                                                               | Behaviour                                                                                                                                     |
-| ------------------------------------ | ------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
-| **New channel from reference**       | Library section nav → _Add from ukrepeater.net_ / _Add from BrandMeister_ | Search directory; add result(s) as library channel(s). Duplicate gate is **callsign only** — two repeaters may share a town/qualifier `name`. |
-| **Update existing**                  | Same search UI when callsign already in library                           | Outline _Update existing_ → directory comparison dialog                                                                                       |
-| **Check and update current channel** | Channel editor → _Check ukrepeater.net_ / _Check BrandMeister_            | Fetch by callsign; auto-match listing; diff; apply                                                                                            |
+| Workflow                             | Entry point                                                                                                          | Behaviour                                                                                                                                                                                                      |
+| ------------------------------------ | -------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **New channel from reference**       | Library section nav → _Add from ukrepeater.net_ / _Add from BrandMeister_                                            | Search directory; add result(s) as library channel(s). BrandMeister: optional talk groups + RX group list ([#65](https://github.com/pskillen/codeplug-studio/issues/65)). Duplicate gate is **callsign only**. |
+| **Update existing**                  | Same search UI when callsign already in library                                                                      | Outline _Update existing_ → directory comparison dialog                                                                                                                                                        |
+| **Check and update current channel** | Channel editor → _Check ukrepeater.net_ / _Check BrandMeister repeater_ / _Check BrandMeister talk groups & RX list_ | Repeater field diff (UK or BM); separate BM button for RX group list sync ([#65](https://github.com/pskillen/codeplug-studio/issues/65))                                                                       |
 
 ### Routes
 
@@ -78,15 +80,15 @@ flowchart LR
   API --> Client --> Listing --> Map --> Lib
 ```
 
-| Step            | Module                                                       | Output                                 |
-| --------------- | ------------------------------------------------------------ | -------------------------------------- |
-| HTTP + parse    | `ukRepeaterClient.ts`, `brandmeisterClient.ts`               | `RepeaterListing`                      |
-| Query routing   | `ukrepeater/queryRouter.ts`                                  | Auto-detect kind; geocode → locator    |
-| Mode flags (UK) | `ukrepeater/modeCodes.ts`                                    | `modes[]`, `primaryMode`, `colourCode` |
-| Profiles        | `buildModeProfiles.ts`                                       | `modeProfiles[]` on `Channel`          |
-| Add             | `RepeaterDirectorySearch.tsx` → `persistence.putChannel`     | New library row(s)                     |
-| Verify / update | `RepeaterVerifyPanel.tsx`, `RepeaterListingUpdateDialog.tsx` | `channelDiff.ts` patch                 |
-| Listing match   | `matchListing.ts`                                            | Auto-pick on verify when unambiguous   |
+| Step            | Module                                                                                                              | Output                                                                                              |
+| --------------- | ------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------- |
+| HTTP + parse    | `ukRepeaterClient.ts`, `brandmeisterClient.ts`                                                                      | `RepeaterListing`                                                                                   |
+| Query routing   | `ukrepeater/queryRouter.ts`                                                                                         | Auto-detect kind; geocode → locator                                                                 |
+| Mode flags (UK) | `ukrepeater/modeCodes.ts`                                                                                           | `modes[]`, `primaryMode`, `colourCode`                                                              |
+| Profiles        | `buildModeProfiles.ts`                                                                                              | `modeProfiles[]` on `Channel`                                                                       |
+| Add             | `RepeaterDirectorySearch.tsx` → `persistence.putChannel` (UK) or `persistBrandMeisterImport` (BM + optional TG/RGL) | New library row(s)                                                                                  |
+| Verify / update | `RepeaterVerifyPanel.tsx`, `RepeaterListingUpdateDialog.tsx`, `BrandmeisterRxGroupListSyncDialog.tsx`               | `channelDiff.ts` patch; RX list sync ([#65](https://github.com/pskillen/codeplug-studio/issues/65)) |
+| Listing match   | `matchListing.ts`                                                                                                   | Auto-pick on verify when unambiguous                                                                |
 
 Frequency convention: `rxFrequencyHz` is what the radio **receives** (repeater output); `txFrequencyHz` is what it **transmits** (repeater input). ETCC field names are inverted — documented in [ukrepeater reference](../../reference/ukrepeater/README.md#frequency-inversion-critical).
 
@@ -103,15 +105,16 @@ Example: `modeCodes: ["A", "D", "M:1", "F", "P", "N"]` → six profiles on impor
 
 ## UI components
 
-| Component                         | Role                                                     |
-| --------------------------------- | -------------------------------------------------------- |
-| `RepeaterDirectorySearch.tsx`     | Shared search form + results table (source capabilities) |
-| `RepeaterListingUpdateDialog.tsx` | Directory comparison modal (diff table, apply selected)  |
-| `RepeaterVerifyPanel.tsx`         | Channel editor verify (UK + optional BrandMeister)       |
-| `findChannelByCallsign.ts`        | Case-insensitive library lookup                          |
-| `repeaterDirectoryRows.ts`        | Result rows; callsign-only duplicate gate for import     |
-| `ModePillsForRepeaterListing.tsx` | One pill per advertised mode on results                  |
-| `useRepeaterDirectorySearch.ts`   | Search state hook (UK filters, geocode token)            |
+| Component                               | Role                                                                                                           |
+| --------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
+| `RepeaterDirectorySearch.tsx`           | Shared search form + results table (source capabilities)                                                       |
+| `RepeaterListingUpdateDialog.tsx`       | Directory comparison modal (diff table, apply selected)                                                        |
+| `RepeaterVerifyPanel.tsx`               | Channel editor verify (UK + optional BrandMeister)                                                             |
+| `BrandmeisterRxGroupListSyncDialog.tsx` | BrandMeister RX group list diff + update/create ([#65](https://github.com/pskillen/codeplug-studio/issues/65)) |
+| `findChannelByCallsign.ts`              | Case-insensitive library lookup                                                                                |
+| `repeaterDirectoryRows.ts`              | Result rows; callsign-only duplicate gate for import                                                           |
+| `ModePillsForRepeaterListing.tsx`       | One pill per advertised mode on results                                                                        |
+| `useRepeaterDirectorySearch.ts`         | Search state hook (UK filters, geocode token)                                                                  |
 
 ## Boundaries
 
@@ -132,11 +135,12 @@ Example: `modeCodes: ["A", "D", "M:1", "F", "P", "N"]` → six profiles on impor
 2. Library → _Add from ukrepeater.net_ → search `gb3da`, `io91`, `2m`, or a town name → confirm filters and simplex rows.
 3. _Use my location_ seeds a locator search.
 4. Bulk-select results → _Add selected_.
-5. Library → _Add from BrandMeister_ → search a DMR callsign → confirm empty `comment` on import.
-6. Open a DMR channel → _Check ukrepeater.net_ and _Check BrandMeister_ → apply a field patch.
+5. Library → _Add from BrandMeister_ → search `GB7AC` → confirm **Import talk groups and RX group list** (default on) creates channel, talk groups, and RX list; DMR profile linked.
+6. Re-add same callsign with TG import → talk groups deduped by `digitalId`.
+7. Open a DMR channel → _Check BrandMeister repeater_ for field diff; _Check BrandMeister talk groups & RX list_ for RX list sync (separate actions).
 
 ## Related
 
 - [ukrepeater reference](../../reference/ukrepeater/README.md) · [BrandMeister reference](../../reference/brandmeister/README.md)
 - [map](../map/README.md) · [library](../library/README.md) · [app-shell](../app-shell/README.md)
-- Parity progress: [repeater-parity-progress.md](repeater-parity-progress.md)
+- Parity progress: [repeater-parity-progress.md](repeater-parity-progress.md) · BrandMeister TG/RGL: [brandmeister-tg-progress.md](brandmeister-tg-progress.md)
