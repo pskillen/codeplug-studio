@@ -31,6 +31,11 @@ describe('googleDrive port', () => {
     })),
     readFile: vi.fn(async () => 'yaml-content'),
     writeFile: vi.fn(async () => ({ id: 'wf', name: 'demo.yaml', mimeType: 'application/yaml' })),
+    writeBinaryFile: vi.fn(async () => ({
+      id: 'zf',
+      name: 'demo.zip',
+      mimeType: 'application/zip',
+    })),
     getFileMetadata: vi.fn(async () => ({
       id: 'wf',
       name: 'demo.yaml',

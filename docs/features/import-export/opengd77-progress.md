@@ -97,7 +97,53 @@ CPS **import** placeholders remain on Import / export (format catalog grid). Onl
 
 ## Overall status
 
-**Status:** In progress — core export path shipped (slices 1–4); UI download panel and follow-ons deferred
+**Status:** In progress — MVP export UI shipped (slices 8–10); zone editor, multi-mode, name shortening deferred
+
+---
+
+## Slice 9 — ExportBuildCpsPanel UI ([#91](https://github.com/pskillen/codeplug-studio/issues/91))
+
+**Status:** Complete
+
+**Delivered**
+
+- `ExportBuildCpsPanel` — per-file CSV buttons, ZIP download, export warnings
+- Replaces `ExportBuildCpsPanelStub` on `/builds/:id`
+- `ExportBuildCpsPanel.test.tsx`
+
+---
+
+## Slice 10 — Google Drive CPS ZIP upload
+
+**Status:** Complete
+
+**Delivered**
+
+- `driveApi.writeBinaryFile` + `googleDrivePort.writeBinaryFile`
+- `DriveBrowserModal` — `saveConflictKind: zip` for overwrite detection
+- `buildCpsExportService.uploadCpsZipToDrive`
+- Save ZIP to Drive button on export panel
+
+---
+
+## Slice 11 — Export tests
+
+**Status:** Complete
+
+**Delivered**
+
+- `src/test/csvRecordCompare.ts` + `csvParse.ts`
+- `warnings.test.ts`, extended `serialise.test.ts`
+- `buildCpsExportService.test.ts`, `driveApi` binary upload tests
+
+---
+
+## Next
+
+- [#87](https://github.com/pskillen/codeplug-studio/issues/87) zone grouping build editor
+- [#89](https://github.com/pskillen/codeplug-studio/issues/89) multi-mode channel expansion
+- [#90](https://github.com/pskillen/codeplug-studio/issues/90) export name shortening
+- Phase 4b OpenGD77 import
 
 ---
 
@@ -142,9 +188,16 @@ CPS **import** placeholders remain on Import / export (format catalog grid). Onl
 ## Next
 
 - [#87](https://github.com/pskillen/codeplug-studio/issues/87) zone grouping build editor
-- [#89](https://github.com/pskillen/codeplug-studio/issues/89)–[#91](https://github.com/pskillen/codeplug-studio/issues/91) multi-mode, name shortening, `ExportBuildCpsPanel` download UI
-- Google Drive CPS ZIP upload
+- [#89](https://github.com/pskillen/codeplug-studio/issues/89)–[#90](https://github.com/pskillen/codeplug-studio/issues/90) multi-mode, name shortening
 - Phase 4b OpenGD77 import
+
+---
+
+## Removed — superseded by slices 9–11 above
+
+- ~~`ExportBuildCpsPanel` download UI~~ — shipped
+- ~~Google Drive CPS ZIP upload~~ — shipped
+- ~~Extended export golden tests~~ — shipped (`csvRecordCompare`, `warnings.test.ts`)
 
 ---
 

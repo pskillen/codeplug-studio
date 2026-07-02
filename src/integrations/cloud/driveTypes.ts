@@ -7,7 +7,7 @@ export const DRIVE_ROOT_FOLDER_ID = 'root';
 export interface DriveListItem {
   id: string;
   name: string;
-  kind: 'folder' | 'yaml';
+  kind: 'folder' | 'yaml' | 'zip';
   modifiedTime?: string;
 }
 

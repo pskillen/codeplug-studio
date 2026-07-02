@@ -5,7 +5,9 @@ import { describe, expect, it } from 'vitest';
 import { parseProjectDocument } from '@core/import-export/formats/native-yaml/parse.ts';
 import { assemble } from '@core/services/assemble.ts';
 import { exportBuildAll } from '@core/services/exportBuild.ts';
+import { compareCsvRecords } from '../../../../test/csvRecordCompare.ts';
 import { serialiseChannels, serialiseZones } from './serialise.ts';
+import { collectOpenGd77ExportWarnings } from './warnings.ts';
 
 const fixtureDir = join(
   dirname(fileURLToPath(import.meta.url)),
@@ -71,5 +73,25 @@ describe('OpenGD77 export serialise', () => {
     expect(result.files['Channels.csv']).toContain('GB3DA Demo');
     expect(result.files['Contacts.csv']).toContain('Scotland');
     expect(result.files['TG_Lists.csv']).toContain('Scotland TG');
+  });
+
+  it('export warnings surface long wire names', () => {
+    const assembled = loadAssembled();
+    const longName = 'ThisNameIsWayTooLong';
+    assembled.channels[0] = {
+      ...assembled.channels[0]!,
+      wireName: longName,
+      entity: { ...assembled.channels[0]!.entity, name: longName },
+    };
+    const warnings = collectOpenGd77ExportWarnings(assembled);
+    expect(warnings.length).toBeGreaterThan(0);
+  });
+
+  it('channels CSV is self-consistent when re-exported from same projection', () => {
+    const assembled = loadAssembled();
+    const first = serialiseChannels(assembled);
+    const second = serialiseChannels(assembled);
+    const comparison = compareCsvRecords(first, second, { nameColumn: 'Channel Name' });
+    expect(comparison.ok).toBe(true);
   });
 });

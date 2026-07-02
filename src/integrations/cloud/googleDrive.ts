@@ -34,6 +34,13 @@ export interface GoogleDrivePort {
     content: string;
     fileId?: string;
   }): Promise<DriveFileMetadata>;
+  writeBinaryFile(params: {
+    parentId: string;
+    fileName: string;
+    content: Uint8Array;
+    mimeType?: string;
+    fileId?: string;
+  }): Promise<DriveFileMetadata>;
   getFileMetadata(fileId: string): Promise<DriveFileMetadata>;
 }
 
@@ -181,6 +188,11 @@ export function createGoogleDrivePort(deps?: Partial<GoogleDriveDeps>): GoogleDr
     async writeFile(params) {
       const session = getValidSession();
       return resolved.api.writeFile(params, session.accessToken);
+    },
+
+    async writeBinaryFile(params) {
+      const session = getValidSession();
+      return resolved.api.writeBinaryFile(params, session.accessToken);
     },
 
     async getFileMetadata(fileId) {
