@@ -23,6 +23,18 @@ export function formatTimeSlotOverride(slot?: DMRTimeSlot | null): string {
   return '—';
 }
 
+export function timeslotSegmentValue(member: RxGroupListMember): string {
+  if (member.timeSlotOverride === 1) return '1';
+  if (member.timeSlotOverride === 2) return '2';
+  return 'auto';
+}
+
+export function applyTimeslotSegment(member: RxGroupListMember, value: string): RxGroupListMember {
+  if (value === '1') return { ref: member.ref, timeSlotOverride: 1 };
+  if (value === '2') return { ref: member.ref, timeSlotOverride: 2 };
+  return { ref: member.ref };
+}
+
 export function memberSupportsTimeSlotOverride(
   member: RxGroupListMember,
   library: Library,

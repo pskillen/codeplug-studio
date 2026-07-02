@@ -6,10 +6,12 @@ import {
 } from '@core/domain/factories.ts';
 import { entityRefKey } from './entityRefs.ts';
 import {
+  applyTimeslotSegment,
   formatTimeSlotOverride,
   memberOptionMatchesFilter,
   memberSupportsTimeSlotOverride,
   resolveRxGroupListMemberDisplay,
+  timeslotSegmentValue,
 } from './rxGroupListMembers.ts';
 
 describe('entityRefKey', () => {
@@ -104,6 +106,20 @@ describe('resolveRxGroupListMemberDisplay', () => {
       name: 'Missing digital contact',
       brokenRef: true,
     });
+  });
+});
+
+describe('applyTimeslotSegment', () => {
+  const member = { ref: { kind: 'talkGroup' as const, id: 'tg-1' }, timeSlotOverride: 2 as const };
+
+  it('sets and clears typed slot values', () => {
+    expect(applyTimeslotSegment(member, '1')).toEqual({
+      ref: { kind: 'talkGroup', id: 'tg-1' },
+      timeSlotOverride: 1,
+    });
+    expect(applyTimeslotSegment(member, 'auto')).toEqual({ ref: { kind: 'talkGroup', id: 'tg-1' } });
+    expect(timeslotSegmentValue(member)).toBe('2');
+    expect(timeslotSegmentValue({ ref: { kind: 'talkGroup', id: 'tg-1' } })).toBe('auto');
   });
 });
 

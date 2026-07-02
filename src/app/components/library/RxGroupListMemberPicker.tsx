@@ -4,6 +4,7 @@ import {
   Checkbox,
   Group,
   ScrollArea,
+  SegmentedControl,
   SimpleGrid,
   Stack,
   Text,
@@ -11,15 +12,27 @@ import {
 } from '@mantine/core';
 import { IconArrowLeft, IconArrowRight } from '@tabler/icons-react';
 import { useMemo, useState } from 'react';
-import type { DigitalContact, EntityRef, RxGroupListMember, TalkGroup } from '@core/models/library.ts';
+import type {
+  DigitalContact,
+  EntityRef,
+  Library,
+  RxGroupListMember,
+  TalkGroup,
+} from '@core/models/library.ts';
 import { ICON_SIZE_NAV, ICON_STROKE } from '../../lib/iconSizes.ts';
 import { sortByName } from '../../lib/channels.ts';
 import { entityRefKey } from '../../lib/entityRefs.ts';
-import { memberOptionMatchesFilter } from '../../lib/rxGroupListMembers.ts';
+import {
+  applyTimeslotSegment,
+  memberOptionMatchesFilter,
+  memberSupportsTimeSlotOverride,
+  timeslotSegmentValue,
+} from '../../lib/rxGroupListMembers.ts';
 
 export interface RxGroupListMemberPickerProps {
   talkGroups: TalkGroup[];
   digitalContacts: DigitalContact[];
+  library: Library;
   members: RxGroupListMember[];
   onChange: (members: RxGroupListMember[]) => void;
 }
@@ -135,9 +148,74 @@ function MemberList({
   );
 }
 
+const TIMESLOT_SEGMENTS = [
+  { value: 'auto', label: 'Auto' },
+  { value: '1', label: 'TS1' },
+  { value: '2', label: 'TS2' },
+] as const;
+
+function InListMemberList({
+  rows,
+  library,
+  checked,
+  onToggle,
+  onTimeslotChange,
+  emptyLabel,
+}: {
+  rows: { member: RxGroupListMember; option: MemberOption }[];
+  library: Library;
+  checked: Set<string>;
+  onToggle: (key: string) => void;
+  onTimeslotChange: (key: string, value: string) => void;
+  emptyLabel: string;
+}) {
+  if (!rows.length) {
+    return (
+      <Text size="sm" c="dimmed" p="xs">
+        {emptyLabel}
+      </Text>
+    );
+  }
+
+  return (
+    <Stack gap={8} p="xs">
+      {rows.map(({ member, option }) => {
+        const key = entityRefKey(member.ref);
+        const showSlot = memberSupportsTimeSlotOverride(member, library);
+        return (
+          <Stack key={key} gap={4}>
+            <Group gap="xs" wrap="nowrap" align="flex-start">
+              <Checkbox
+                checked={checked.has(key)}
+                onChange={() => onToggle(key)}
+                mt={4}
+              />
+              <Stack gap={2} style={{ flex: 1, minWidth: 0 }}>
+                <Group gap="xs" wrap="nowrap" justify="space-between">
+                  <MemberRowLabel option={option} />
+                  <MemberKindBadge kind={option.ref.kind} />
+                </Group>
+                {showSlot ? (
+                  <SegmentedControl
+                    size="xs"
+                    data={[...TIMESLOT_SEGMENTS]}
+                    value={timeslotSegmentValue(member)}
+                    onChange={(value) => onTimeslotChange(key, value)}
+                  />
+                ) : null}
+              </Stack>
+            </Group>
+          </Stack>
+        );
+      })}
+    </Stack>
+  );
+}
+
 export default function RxGroupListMemberPicker({
   talkGroups,
   digitalContacts,
+  library,
   members,
   onChange,
 }: RxGroupListMemberPickerProps) {
@@ -227,6 +305,15 @@ export default function RxGroupListMemberPicker({
     onChange(moveSelectedMemberBlock(members, new Set(inListSelected), direction));
   };
 
+  const setMemberTimeslot = (refKey: string, value: string) => {
+    onChange(
+      members.map((member) => {
+        if (entityRefKey(member.ref) !== refKey) return member;
+        return applyTimeslotSegment(member, value);
+      }),
+    );
+  };
+
   const canMoveUp = inListSelected.some((key) => {
     const index = members.findIndex((member) => entityRefKey(member.ref) === key);
     return index > 0;
@@ -302,8 +389,12 @@ export default function RxGroupListMemberPicker({
           <Text size="sm" fw={500}>
             In list (export order)
           </Text>
+          <Text size="xs" c="dimmed">
+            Timeslot override applies to this list membership only. Auto lets the channel slot or
+            export rules decide.
+          </Text>
           <ScrollArea
-            h={240}
+            h={280}
             type="auto"
             offsetScrollbars
             style={{
@@ -311,10 +402,12 @@ export default function RxGroupListMemberPicker({
               borderRadius: 'var(--mantine-radius-sm)',
             }}
           >
-            <MemberList
-              items={inListMembers.map(({ option }) => option)}
+            <InListMemberList
+              rows={inListMembers}
+              library={library}
               checked={new Set(inListSelected)}
               onToggle={toggleInList}
+              onTimeslotChange={setMemberTimeslot}
               emptyLabel="No members in list"
             />
           </ScrollArea>

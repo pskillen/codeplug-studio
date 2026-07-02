@@ -32,6 +32,7 @@ export default function RxGroupListEditor({
       <RxGroupListMemberPicker
         talkGroups={library.talkGroups}
         digitalContacts={library.digitalContacts}
+        library={library}
         members={members}
         onChange={setMembers}
       />
