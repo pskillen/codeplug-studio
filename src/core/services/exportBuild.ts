@@ -1,6 +1,7 @@
 import type { FormatBuild } from '@core/models/formatBuild.ts';
 import { getExportAdapter } from '@core/import-export/registry.ts';
 import { isMultiFileExportAdapter } from '@core/import-export/exportAdapter.ts';
+import { buildOpenGd77Zip } from '@core/import-export/formats/opengd77/packageZip.ts';
 import type { CpsExportOptions, ExportResult, FormatId } from '@core/import-export/types.ts';
 import { assemble, type AssembledBuild, type LibrarySlice } from './assemble.ts';
 
@@ -64,4 +65,14 @@ export function exportBuildAll({
   }
 
   return { assembled, files, warnings };
+}
+
+/** Serialise all CPS files and package as a ZIP byte array. */
+export function exportBuildZip({
+  build,
+  library,
+  options,
+}: Omit<ExportBuildParams, 'fileName'>): ExportBuildAllResult & { zip: Uint8Array } {
+  const result = exportBuildAll({ build, library, options });
+  return { ...result, zip: buildOpenGd77Zip(result.files) };
 }
