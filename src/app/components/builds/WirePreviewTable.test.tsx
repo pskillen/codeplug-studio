@@ -103,4 +103,28 @@ describe('WirePreviewTable', () => {
     expect(onWireNameChange).toHaveBeenCalledWith(rows[0], 'GB3DA Demo');
     expect(screen.getByPlaceholderText('GB3DA Demo')).toHaveValue('GB3DA Demo');
   });
+
+  it('reports unapplied wire name drafts', () => {
+    const onUnsavedChangesChange = vi.fn();
+    render(
+      <MantineProvider>
+        <WirePreviewTable
+          rows={rows}
+          onExcludedChange={vi.fn()}
+          onWireNameChange={vi.fn()}
+          onUnsavedChangesChange={onUnsavedChangesChange}
+        />
+      </MantineProvider>,
+    );
+
+    expect(onUnsavedChangesChange).toHaveBeenCalledWith(false);
+
+    fireEvent.change(screen.getByPlaceholderText('GB3DA Demo'), {
+      target: { value: 'Custom' },
+    });
+    expect(onUnsavedChangesChange).toHaveBeenLastCalledWith(true);
+
+    fireEvent.click(screen.getByLabelText('Revert wire name'));
+    expect(onUnsavedChangesChange).toHaveBeenLastCalledWith(false);
+  });
 });

@@ -7,6 +7,7 @@ export default function BuildChannelsWirePage() {
       entityKind="channel"
       description="Toggle inclusion and override wire names. Multi-mode channels may appear as separate rows."
       showExportNameMode
+      showChannelAbbreviation
     />
   );
 }
