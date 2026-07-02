@@ -1,13 +1,13 @@
 import { ListPage, PageSection, PageSectionGrid } from '../../components/ui/index.ts';
-import ExportProjectYamlPanel from '../../components/interchange/ExportProjectYamlPanel.tsx';
-import ImportYamlIntoActivePanel from '../../components/interchange/ImportYamlIntoActivePanel.tsx';
+import ExportProjectYamlPanel from '../../components/import-export/ExportProjectYamlPanel.tsx';
+import ImportYamlIntoActivePanel from '../../components/import-export/ImportYamlIntoActivePanel.tsx';
 import { useProjects } from '../../state/useProjects.ts';
 
-export default function InterchangePage() {
+export default function ImportExportPage() {
   const { activeProjectId } = useProjects();
   return (
     <ListPage
-      title="Interchange"
+      title="Import / export"
       description="Export the active project to native YAML or replace it from a backup file."
     >
       <PageSectionGrid>

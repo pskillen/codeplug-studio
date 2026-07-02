@@ -7,7 +7,7 @@ import ExportProjectYamlPanel from './ExportProjectYamlPanel.tsx';
 const exportProjectToYaml = vi.fn();
 const refreshProjects = vi.fn();
 
-vi.mock('../../services/projectInterchangeService.ts', () => ({
+vi.mock('../../services/projectImportExportService.ts', () => ({
   exportProjectToYaml: (...args: unknown[]) => exportProjectToYaml(...args),
   importProjectFromYaml: vi.fn(),
 }));

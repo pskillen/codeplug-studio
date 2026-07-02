@@ -1,4 +1,4 @@
-Single-file drag-or-click target for native YAML interchange (`.yaml` / `.yml`).
+Single-file drag-or-click target for native YAML import (`.yaml` / `.yml`).
 
 ## Purpose
 

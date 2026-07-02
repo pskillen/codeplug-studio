@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Alert, Button, Modal, Stack, Text } from '@mantine/core';
-import { importProjectFromYaml } from '../../services/projectInterchangeService.ts';
+import { importProjectFromYaml } from '../../services/projectImportExportService.ts';
 import { useProjects } from '../../state/useProjects.ts';
 import YamlFileDropzone from './YamlFileDropzone.tsx';
 

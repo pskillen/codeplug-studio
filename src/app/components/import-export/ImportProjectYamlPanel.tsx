@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Stack } from '@mantine/core';
 import { useNavigate } from 'react-router-dom';
-import { importProjectFromYaml } from '../../services/projectInterchangeService.ts';
+import { importProjectFromYaml } from '../../services/projectImportExportService.ts';
 import { useProjects } from '../../state/useProjects.ts';
 import YamlFileDropzone from './YamlFileDropzone.tsx';
 

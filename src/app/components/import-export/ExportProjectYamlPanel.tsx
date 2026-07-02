@@ -5,7 +5,7 @@ import {
   suggestExportDestination,
 } from '@core/services/interchangeMeta.ts';
 import { downloadBlob } from '../../lib/downloadBlob.ts';
-import { exportProjectToYaml } from '../../services/projectInterchangeService.ts';
+import { exportProjectToYaml } from '../../services/projectImportExportService.ts';
 import { useProjects } from '../../state/useProjects.ts';
 
 export default function ExportProjectYamlPanel() {

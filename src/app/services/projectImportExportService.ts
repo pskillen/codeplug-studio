@@ -38,7 +38,7 @@ export async function exportProjectToYaml(
 }
 
 /** Test hook — inject an in-memory port without touching IndexedDB. */
-export function createProjectInterchangeService(store: ProjectPersistence) {
+export function createProjectImportExportService(store: ProjectPersistence) {
   const testPort = asInterchangePort(store);
   return {
     importProjectFromYaml: (yamlText: string, mode: ImportProjectYamlMode) =>

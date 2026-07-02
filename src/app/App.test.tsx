@@ -115,14 +115,14 @@ describe('App', () => {
     expect(await screen.findByText('channels')).toBeInTheDocument();
   });
 
-  it('renders interchange when a project is active', async () => {
+  it('renders import/export when a project is active', async () => {
     const meta = newProjectMeta('Test project');
     await persistence.seedProject({ meta });
     saveActiveProjectId(meta.projectId);
 
-    renderApp('/interchange');
+    renderApp('/import-export');
 
-    expect(await screen.findByRole('heading', { name: 'Interchange' })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'Import / export' })).toBeInTheDocument();
     expect(screen.getByText(/Export the active project/i)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Download YAML/i })).toBeInTheDocument();
   });

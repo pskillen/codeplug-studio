@@ -74,7 +74,7 @@ export default function YamlFileDropzone({
       >
         <Text size="sm">Drop a native YAML file here, or click to browse</Text>
         <Text size="xs" c="dimmed" mt="xs">
-          Single `.yaml` / `.yml` project interchange
+          Single `.yaml` / `.yml` native YAML project file
         </Text>
       </Box>
       <input

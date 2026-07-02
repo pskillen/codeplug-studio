@@ -16,7 +16,7 @@ export interface PrimaryNavItem {
 
 export const projectNavItems: PrimaryNavItem[] = [
   { to: '/library', label: 'Library', icon: IconBooks, countKey: 'channels' },
-  { to: '/interchange', label: 'Interchange', icon: IconArrowsLeftRight },
+  { to: '/import-export', label: 'Import / export', icon: IconArrowsLeftRight },
   { to: '/summary', label: 'Summary', icon: IconChartBar },
 ];
 
