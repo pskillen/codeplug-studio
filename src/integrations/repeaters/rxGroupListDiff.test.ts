@@ -27,8 +27,8 @@ describe('diffRxGroupListMembers', () => {
     const list = {
       ...newRxGroupList('p', 'GB7AC — BrandMeister'),
       members: [
-        { ref: { kind: 'talkGroup' as const, id: tg1.id }, timeSlotOverride: 2 },
-        { ref: { kind: 'talkGroup' as const, id: tg2.id }, timeSlotOverride: 1 },
+        { ref: { kind: 'talkGroup' as const, id: tg1.id }, timeSlotOverride: 2 as const },
+        { ref: { kind: 'talkGroup' as const, id: tg2.id }, timeSlotOverride: 1 as const },
       ],
     };
 
@@ -45,8 +45,8 @@ describe('diffRxGroupListMembers', () => {
     const list = {
       ...newRxGroupList('p', 'GB7AC — BrandMeister'),
       members: [
-        { ref: { kind: 'talkGroup' as const, id: tg1.id }, timeSlotOverride: 1 },
-        { ref: { kind: 'talkGroup' as const, id: tg2.id }, timeSlotOverride: 2 },
+        { ref: { kind: 'talkGroup' as const, id: tg1.id }, timeSlotOverride: 1 as const },
+        { ref: { kind: 'talkGroup' as const, id: tg2.id }, timeSlotOverride: 2 as const },
       ],
     };
 

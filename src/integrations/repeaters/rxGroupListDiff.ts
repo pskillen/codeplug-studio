@@ -48,10 +48,7 @@ function remoteMemberSnapshots(
   }));
 }
 
-function slotsEqual(
-  a: DMRTimeSlot | null | undefined,
-  b: DMRTimeSlot | null | undefined,
-): boolean {
+function slotsEqual(a: DMRTimeSlot | null | undefined, b: DMRTimeSlot | null | undefined): boolean {
   return (a ?? null) === (b ?? null);
 }
 

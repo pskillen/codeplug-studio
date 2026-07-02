@@ -445,7 +445,11 @@ export default function RepeaterDirectorySearch({
           </ScrollArea>
 
           <Group justify="space-between" mt="md">
-            <Button disabled={selected.size === 0 || adding} loading={adding} onClick={() => void handleAddSelected()}>
+            <Button
+              disabled={selected.size === 0 || adding}
+              loading={adding}
+              onClick={() => void handleAddSelected()}
+            >
               Add selected ({selected.size})
             </Button>
             {added.size > 0 ? (

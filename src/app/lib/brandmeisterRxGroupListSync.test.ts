@@ -37,7 +37,7 @@ describe('brandmeisterRxGroupListSync helpers', () => {
     library.talkGroups.push(tg);
     const list = {
       ...newRxGroupList('p', 'GB7AC — BrandMeister'),
-      members: [{ ref: { kind: 'talkGroup' as const, id: tg.id }, timeSlotOverride: 2 }],
+      members: [{ ref: { kind: 'talkGroup' as const, id: tg.id }, timeSlotOverride: 2 as const }],
     };
     library.rxGroupLists.push(list);
     const dmr: ChannelModeProfileDMR = {

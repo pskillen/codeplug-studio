@@ -38,7 +38,9 @@ export async function fetchDeviceTalkGroups(
 ): Promise<BrandMeisterStaticTalkGroup[]> {
   let response: Response;
   try {
-    response = await fetch(`${BRANDMEISTER_API_BASE}/device/${encodeURIComponent(deviceId)}/talkgroup`);
+    response = await fetch(
+      `${BRANDMEISTER_API_BASE}/device/${encodeURIComponent(deviceId)}/talkgroup`,
+    );
   } catch {
     throw new RepeaterDirectoryError(
       'Could not reach BrandMeister — check your network connection.',

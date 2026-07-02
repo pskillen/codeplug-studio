@@ -63,16 +63,16 @@ function buildMembers(
   resolved: ResolvedBrandMeisterTalkGroup[],
   talkGroupIdByDigitalId: Map<number, string>,
 ): RxGroupListMember[] {
-  return resolved
-    .map((row) => {
-      const id = talkGroupIdByDigitalId.get(row.digitalId);
-      if (!id) return null;
-      return {
-        ref: { kind: 'talkGroup' as const, id },
-        timeSlotOverride: row.slot,
-      };
-    })
-    .filter((member): member is RxGroupListMember => member !== null);
+  const members: RxGroupListMember[] = [];
+  for (const row of resolved) {
+    const id = talkGroupIdByDigitalId.get(row.digitalId);
+    if (!id) continue;
+    members.push({
+      ref: { kind: 'talkGroup', id },
+      timeSlotOverride: row.slot,
+    });
+  }
+  return members;
 }
 
 /**

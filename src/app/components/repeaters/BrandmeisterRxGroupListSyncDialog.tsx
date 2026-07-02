@@ -80,9 +80,7 @@ function BrandmeisterRxGroupListSyncDialogBody({
   const [applyError, setApplyError] = useState<string | null>(null);
   const [applying, setApplying] = useState(false);
   const [createMissing, setCreateMissing] = useState(true);
-  const [mode, setMode] = useState<RxGroupListSyncMode>(
-    linked && canUpdate ? 'update' : 'create',
-  );
+  const [mode, setMode] = useState<RxGroupListSyncMode>(linked && canUpdate ? 'update' : 'create');
   const [newListName, setNewListName] = useState(defaultRxGroupListSyncName(listing.callsign));
 
   useEffect(() => {
@@ -222,10 +220,7 @@ function BrandmeisterRxGroupListSyncDialogBody({
         </Button>
         <Button
           disabled={
-            loading ||
-            Boolean(error) ||
-            resolved.length === 0 ||
-            (!hasChanges && Boolean(linked))
+            loading || Boolean(error) || resolved.length === 0 || (!hasChanges && Boolean(linked))
           }
           loading={applying}
           onClick={() => void handleApply()}

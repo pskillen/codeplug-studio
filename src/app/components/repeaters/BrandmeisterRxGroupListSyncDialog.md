@@ -6,14 +6,14 @@ Second-step modal after a BrandMeister directory check on channel edit. Compares
 
 ## Props
 
-| Prop | Type | Description |
-| --- | --- | --- |
-| `channel` | `Channel` | Channel being verified |
-| `library` | `Library` | Current project library (for TG/RGL resolution) |
-| `listing` | `RepeaterListing` | Matched BrandMeister device listing |
-| `opened` | `boolean` | Modal visibility |
-| `onClose` | `() => void` | Close handler |
-| `onApplied?` | `() => void` | Called after successful apply |
+| Prop         | Type              | Description                                     |
+| ------------ | ----------------- | ----------------------------------------------- |
+| `channel`    | `Channel`         | Channel being verified                          |
+| `library`    | `Library`         | Current project library (for TG/RGL resolution) |
+| `listing`    | `RepeaterListing` | Matched BrandMeister device listing             |
+| `opened`     | `boolean`         | Modal visibility                                |
+| `onClose`    | `() => void`      | Close handler                                   |
+| `onApplied?` | `() => void`      | Called after successful apply                   |
 
 ## Usage
 

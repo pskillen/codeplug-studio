@@ -26,19 +26,14 @@ export interface ApplyRxGroupListSyncOptions {
   persistence: ProjectPersistence;
 }
 
-export type ApplyRxGroupListSyncResult =
-  | { ok: true }
-  | { ok: false; message: string };
+export type ApplyRxGroupListSyncResult = { ok: true } | { ok: false; message: string };
 
 export function defaultRxGroupListSyncName(callsign: string): string {
   const call = callsign.trim() || 'Repeater';
   return `${call} — BrandMeister`;
 }
 
-export function linkedRxGroupList(
-  channel: Channel,
-  library: Library,
-): RxGroupList | null {
+export function linkedRxGroupList(channel: Channel, library: Library): RxGroupList | null {
   const dmr = findDmrProfile(channel);
   if (!dmr?.rxGroupListId) return null;
   return library.rxGroupLists.find((list) => list.id === dmr.rxGroupListId) ?? null;

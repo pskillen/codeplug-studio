@@ -1,10 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { emptyLibrary, newRxGroupList, newTalkGroup } from '@core/domain/factories.ts';
 import type { RepeaterListing } from './types.ts';
-import {
-  buildBrandmeisterImportBundle,
-  uniqueRxGroupListName,
-} from './brandmeisterImport.ts';
+import { buildBrandmeisterImportBundle, uniqueRxGroupListName } from './brandmeisterImport.ts';
 import type { ResolvedBrandMeisterTalkGroup } from './brandmeisterTalkGroups.ts';
 
 const listing: RepeaterListing = {

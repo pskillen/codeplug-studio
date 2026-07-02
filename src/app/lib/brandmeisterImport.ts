@@ -106,7 +106,7 @@ function mergeImportIntoLibrary(library: Library, bundle: BrandMeisterImportBund
   };
 }
 
-function persistFailure(result: PutResult): BrandMeisterImportFailure {
+function persistFailure(result: Extract<PutResult, { ok: false }>): BrandMeisterImportFailure {
   if (result.reason === 'revision_conflict') {
     return {
       ok: false,
