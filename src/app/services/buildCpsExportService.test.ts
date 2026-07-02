@@ -1,10 +1,10 @@
-import { readFileSync } from 'node:fs';
-import { dirname, join } from 'node:path';
-import { fileURLToPath } from 'node:url';
 import { describe, expect, it, vi } from 'vitest';
-import { parseProjectDocument } from '@core/import-export/formats/native-yaml/parse.ts';
+import {
+  newChannel,
+  newFormatBuild,
+  newProjectMeta,
+} from '@core/domain/factories.ts';
 import { InMemoryProjectPersistence } from '@integrations/persistence/inMemory.ts';
-import { newProjectMeta } from '@core/domain/factories.ts';
 import {
   buildCpsZipBytes,
   defaultCpsZipFileName,
@@ -25,29 +25,18 @@ vi.mock('@integrations/cloud/index.ts', () => ({
   },
 }));
 
-const fixtureDir = join(
-  dirname(fileURLToPath(import.meta.url)),
-  '../../core/import-export/formats/native-yaml/__fixtures__/export',
-);
-
 describe('buildCpsExportService', () => {
-  async function seedFixtureStore() {
-    const yaml = readFileSync(join(fixtureDir, 'with-format-build.yaml'), 'utf8');
-    const aggregate = parseProjectDocument(yaml);
+  async function seedStore() {
     const meta = newProjectMeta('Export test');
-    meta.projectId = aggregate.formatBuilds[0]!.projectId;
+    const channel = newChannel(meta.projectId, 'GB3DA Demo', 'GB3DA');
+    const build = newFormatBuild(meta.projectId, 'opengd77-1701', 'OpenGD77 1701');
     const store = new InMemoryProjectPersistence();
     await store.seedProject({
       meta,
-      channels: aggregate.channels,
-      zones: aggregate.zones,
-      talkGroups: aggregate.talkGroups,
-      digitalContacts: aggregate.digitalContacts,
-      analogContacts: aggregate.analogContacts,
-      rxGroupLists: aggregate.rxGroupLists,
-      formatBuilds: aggregate.formatBuilds,
+      channels: [channel],
+      formatBuilds: [build],
     });
-    return { store, build: aggregate.formatBuilds[0]!, projectId: meta.projectId };
+    return { store, build, projectId: meta.projectId };
   }
 
   it('defaultCpsZipFileName slugifies build name and format id', () => {
@@ -55,7 +44,7 @@ describe('buildCpsExportService', () => {
   });
 
   it('buildCpsZipBytes returns a non-empty zip with expected filename', async () => {
-    const { store, build, projectId } = await seedFixtureStore();
+    const { store, build, projectId } = await seedStore();
     const result = await buildCpsZipBytes(projectId, build.id, undefined, store);
     expect(result.fileName).toBe('OpenGD77-1701-opengd77.zip');
     expect(result.zip.byteLength).toBeGreaterThan(0);
@@ -65,7 +54,7 @@ describe('buildCpsExportService', () => {
 
   it('uploadCpsZipToDrive writes binary zip to Google Drive', async () => {
     writeBinaryFile.mockClear();
-    const { store, build, projectId } = await seedFixtureStore();
+    const { store, build, projectId } = await seedStore();
     const result = await uploadCpsZipToDrive(
       projectId,
       build.id,

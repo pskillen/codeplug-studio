@@ -42,16 +42,13 @@ export default function ExportBuildCpsPanel({ build }: ExportBuildCpsPanelProps)
   const [pendingDriveTarget, setPendingDriveTarget] = useState<DriveSaveTarget | null>(null);
 
   const exportOptions = { profileId: build.profileId };
-  const hasChannels = channelCount !== null && channelCount > 0;
+  const hasChannels = Boolean(activeProjectId) && (channelCount ?? 0) > 0;
   const exportShipped = formatEntry?.exportStatus === 'shipped';
   const interchangeFolderId = activeProject?.interchange?.googleDrive?.folderId;
   const suggestedZipName = defaultCpsZipFileName(build.name, build.formatId as FormatId);
 
   useEffect(() => {
-    if (!activeProjectId) {
-      setChannelCount(null);
-      return;
-    }
+    if (!activeProjectId) return;
     let cancelled = false;
     void persistence.listChannels(activeProjectId).then((channels) => {
       if (!cancelled) setChannelCount(channels.length);
