@@ -78,15 +78,21 @@ Enable **Pages** in repo settings (source: GitHub Actions) if not already done.
 
 ## Build-time variables
 
-Injected via Vite `define` in `vite.config.ts`:
+| Variable                | Local default            | Prod (release build)                              |
+| ----------------------- | ------------------------ | ------------------------------------------------- |
+| `BUILD_ENV`             | `local`                  | `prod` (via `pages.yml`)                          |
+| `BUILD_VERSION`         | `local`                  | Release tag without leading `v` (via `pages.yml`) |
+| `VITE_GOOGLE_CLIENT_ID` | `.env.local` (see above) | GitHub Actions secret `VITE_GOOGLE_CLIENT_ID`     |
 
-| Variable        | Local default | Prod (release build)            |
-| --------------- | ------------- | ------------------------------- |
-| `BUILD_ENV`     | `local`       | `prod`                          |
-| `BUILD_VERSION` | `local`       | Release tag without leading `v` |
+`BUILD_ENV` and `BUILD_VERSION` are injected via Vite `define` in `vite.config.ts`. `VITE_GOOGLE_CLIENT_ID` is read from the environment at build time by Vite (`import.meta.env`).
+
+**One-time repo setup (operator):** Settings → Secrets and variables → Actions → add secret `VITE_GOOGLE_CLIENT_ID` with your Google Cloud OAuth web client id. Required for Google Drive Connect on the deployed GitHub Pages site.
 
 Displayed in [`BuildFooter`](../../src/app/components/BuildFooter/BuildFooter.tsx). See [version-number skill](../../.cursor/skills/version-number/SKILL.md).
 
 ## Post-deploy check
 
-After publishing a release, open the live site and confirm the footer shows `prod · <semver>` matching the release tag.
+After publishing a release, open the live site and confirm:
+
+- Footer shows `prod · <semver>` matching the release tag.
+- Settings → Google Drive shows **Connect** (not the yellow “not configured” alert) when `VITE_GOOGLE_CLIENT_ID` is set in repo Actions secrets.
