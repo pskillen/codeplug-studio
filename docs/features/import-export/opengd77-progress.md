@@ -92,5 +92,17 @@ CPS **import** placeholders remain on Import / export (format catalog grid). Onl
 
 ## Next
 
-- Merge [#94](https://github.com/pskillen/codeplug-studio/pull/94)
-- Follow-on: #85 ProfilePicker, #86 assemble, #87 zone editor — **export download on build detail**
+- Phase 4 export UI — branch `85/pskil/opengd77-build-export`
+
+---
+
+## Slice 5 — ProfilePicker ([#85](https://github.com/pskillen/codeplug-studio/issues/85))
+
+**Status:** Complete
+
+**Delivered**
+
+- `ProfilePicker` component + sidecar
+- New build wizard and build detail profile edit with layout guardrail
+- Export panel export-time profile override (stub)
+- `docs/features/builds/profiles.md`
