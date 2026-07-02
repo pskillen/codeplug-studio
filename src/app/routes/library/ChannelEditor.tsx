@@ -155,7 +155,7 @@ export default function ChannelEditor({
 
       <ChannelLocationSection value={location} onChange={setLocation} />
 
-      {entity ? <RepeaterVerifyPanel channel={liveChannel} /> : null}
+      {entity ? <RepeaterVerifyPanel channel={liveChannel} library={library} /> : null}
 
       {validationError ? <Alert color="red">{validationError}</Alert> : null}
       {error ? <Alert color="red">{error}</Alert> : null}

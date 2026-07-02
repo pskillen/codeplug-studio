@@ -9,6 +9,6 @@
 | --- | --- |
 | Model `timeSlotOverride` | Shipped (`14a77f9`) |
 | Integrations bundle | Shipped (`3c3b826`) |
-| Import flow | Shipped |
-| Verify RGL sync | Pending |
+| Import flow | Shipped (`011c33a`) |
+| Verify RGL sync | Shipped |
 | Documentation | Pending |

@@ -1,7 +1,8 @@
 import { useMemo, useState } from 'react';
 import { Alert, Button, Checkbox, Group, Modal, Radio, Stack } from '@mantine/core';
-import type { Channel } from '@core/models/library.ts';
+import type { Channel, Library } from '@core/models/library.ts';
 import {
+  fetchResolvedDeviceTalkGroups,
   matchListingForChannel,
   RepeaterDirectoryError,
   searchBrandmeisterByCallsign,
@@ -10,10 +11,13 @@ import {
   type RepeaterListing,
 } from '@integrations/repeaters/index.ts';
 import { PageSection } from '../ui/index.ts';
+import BrandmeisterRxGroupListSyncDialog from './BrandmeisterRxGroupListSyncDialog.tsx';
 import RepeaterListingUpdateDialog from './RepeaterListingUpdateDialog.tsx';
+import { shouldOfferRxGroupListSync } from '../../lib/brandmeisterRxGroupListSync.ts';
 
 export interface RepeaterVerifyPanelProps {
   channel: Channel;
+  library: Library;
 }
 
 function channelHasDmr(channel: Channel): boolean {
@@ -34,7 +38,7 @@ function VerifySourceButton({ label, loading, onCheck }: VerifySourceButtonProps
   );
 }
 
-export default function RepeaterVerifyPanel({ channel }: RepeaterVerifyPanelProps) {
+export default function RepeaterVerifyPanel({ channel, library }: RepeaterVerifyPanelProps) {
   const [ukLoading, setUkLoading] = useState(false);
   const [bmLoading, setBmLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -42,6 +46,7 @@ export default function RepeaterVerifyPanel({ channel }: RepeaterVerifyPanelProp
   const [pickerOpen, setPickerOpen] = useState(false);
   const [updateListing, setUpdateListing] = useState<RepeaterListing | null>(null);
   const [updateOpen, setUpdateOpen] = useState(false);
+  const [rglSyncOpen, setRglSyncOpen] = useState(false);
   const [titleCaseNames, setTitleCaseNames] = useState(true);
 
   const showBrandmeister = channelHasDmr(channel);
@@ -54,6 +59,26 @@ export default function RepeaterVerifyPanel({ channel }: RepeaterVerifyPanelProp
   function openUpdateForListing(listing: RepeaterListing) {
     setUpdateListing(listing);
     setUpdateOpen(true);
+  }
+
+  async function maybeOpenRxGroupListSync(listing: RepeaterListing) {
+    if (listing.source !== 'brandmeister') return;
+    try {
+      const resolved = await fetchResolvedDeviceTalkGroups(listing.remoteId);
+      if (shouldOfferRxGroupListSync(channel, resolved, library)) {
+        setRglSyncOpen(true);
+      }
+    } catch {
+      // Channel field diff is sufficient when talk groups are unavailable.
+    }
+  }
+
+  function handleChannelDialogClose() {
+    setUpdateOpen(false);
+    const listing = updateListing;
+    if (listing) {
+      void maybeOpenRxGroupListSync(listing);
+    }
   }
 
   async function runCheck(
@@ -149,8 +174,18 @@ export default function RepeaterVerifyPanel({ channel }: RepeaterVerifyPanelProp
         listing={updateListing}
         mapOptions={activeMapOptions}
         opened={updateOpen}
-        onClose={() => setUpdateOpen(false)}
+        onClose={handleChannelDialogClose}
       />
+
+      {updateListing?.source === 'brandmeister' ? (
+        <BrandmeisterRxGroupListSyncDialog
+          channel={channel}
+          library={library}
+          listing={updateListing}
+          opened={rglSyncOpen}
+          onClose={() => setRglSyncOpen(false)}
+        />
+      ) : null}
     </PageSection>
   );
 }
