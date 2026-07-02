@@ -46,17 +46,30 @@ Every stored entity includes:
 | `notes`                    | string            | yes      |
 | `author`                   | string            | yes      |
 | `createdAt`                | string (ISO 8601) | yes      |
+| `interchange`              | `ProjectInterchange` | no    |
 
-### Future: `interchange` (#59)
+### `interchange` (`ProjectInterchange`)
 
-Not emitted in v1 exports until [#59](https://github.com/pskillen/codeplug-studio/issues/59) implements export destination memory:
+Optional export destination memory — omitted when never exported.
 
-| Field                                 | Type   | Purpose                             |
-| ------------------------------------- | ------ | ----------------------------------- |
-| `interchange.lastLocalExportFileName` | string | Pre-fill next local export filename |
-| `interchange.drive.folderId`          | string | Last Google Drive folder            |
-| `interchange.drive.fileId`            | string | Last Drive file                     |
-| `interchange.drive.fileName`          | string | Display name on Drive               |
+**`localFile`**
+
+| Field        | Type              | Required |
+| ------------ | ----------------- | -------- |
+| `fileName`   | string            | yes      |
+| `exportedAt` | string (ISO 8601) | yes      |
+
+**`googleDrive`**
+
+| Field        | Type              | Required |
+| ------------ | ----------------- | -------- |
+| `folderId`   | string            | yes      |
+| `folderName` | string            | no       |
+| `fileId`     | string            | yes      |
+| `fileName`   | string            | yes      |
+| `exportedAt` | string (ISO 8601) | yes      |
+
+CPS format destination keys (e.g. `opengd77`) are reserved for Phase 4+.
 
 ## `library` object
 

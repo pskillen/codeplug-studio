@@ -1,4 +1,5 @@
 import type { PersistableRow } from './revision.ts';
+import type { ProjectInterchange } from './interchange.ts';
 
 export interface ProjectMeta extends PersistableRow {
   name: string;
@@ -6,4 +7,5 @@ export interface ProjectMeta extends PersistableRow {
   notes: string;
   author: string;
   createdAt: string;
+  interchange?: ProjectInterchange;
 }

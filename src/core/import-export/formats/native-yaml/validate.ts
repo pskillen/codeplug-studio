@@ -13,6 +13,11 @@ import type {
   Zone,
 } from '@core/models/library.ts';
 import type { ProjectMeta } from '@core/models/project.ts';
+import type {
+  GoogleDriveInterchange,
+  LocalFileInterchange,
+  ProjectInterchange,
+} from '@core/models/interchange.ts';
 import { STUDIO_SCHEMA_VERSION } from '@core/models/schemaVersion.ts';
 import type {
   FlatMemoryLayout,
@@ -406,8 +411,40 @@ function parseFormatBuild(raw: unknown, index: number): FormatBuild {
   };
 }
 
+function parseProjectInterchange(raw: unknown): ProjectInterchange | undefined {
+  if (raw === undefined || raw === null) return undefined;
+  const record = expectRecord(raw, 'project.interchange');
+  const interchange: ProjectInterchange = {};
+
+  if (record.localFile !== undefined && record.localFile !== null) {
+    const local = expectRecord(record.localFile, 'project.interchange.localFile');
+    interchange.localFile = {
+      fileName: expectString(local.fileName, 'project.interchange.localFile.fileName'),
+      exportedAt: expectString(local.exportedAt, 'project.interchange.localFile.exportedAt'),
+    } satisfies LocalFileInterchange;
+  }
+
+  if (record.googleDrive !== undefined && record.googleDrive !== null) {
+    const drive = expectRecord(record.googleDrive, 'project.interchange.googleDrive');
+    interchange.googleDrive = {
+      folderId: expectString(drive.folderId, 'project.interchange.googleDrive.folderId'),
+      folderName:
+        drive.folderName === undefined || drive.folderName === null
+          ? undefined
+          : expectString(drive.folderName, 'project.interchange.googleDrive.folderName'),
+      fileId: expectString(drive.fileId, 'project.interchange.googleDrive.fileId'),
+      fileName: expectString(drive.fileName, 'project.interchange.googleDrive.fileName'),
+      exportedAt: expectString(drive.exportedAt, 'project.interchange.googleDrive.exportedAt'),
+    } satisfies GoogleDriveInterchange;
+  }
+
+  return Object.keys(interchange).length > 0 ? interchange : {};
+}
+
 function parseProjectMeta(raw: unknown): ProjectMeta {
   const record = expectRecord(raw, 'project');
+  const interchange =
+    record.interchange === undefined ? undefined : parseProjectInterchange(record.interchange);
   return {
     ...parsePersistableRow(record, 'project'),
     name: expectString(record.name, 'project.name'),
@@ -415,6 +452,7 @@ function parseProjectMeta(raw: unknown): ProjectMeta {
     notes: expectString(record.notes, 'project.notes'),
     author: expectString(record.author, 'project.author'),
     createdAt: expectString(record.createdAt, 'project.createdAt'),
+    ...(interchange !== undefined ? { interchange } : {}),
   };
 }
 
