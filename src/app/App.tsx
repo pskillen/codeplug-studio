@@ -26,7 +26,10 @@ import DebugLocalStorageViewerPage from './routes/debug/DebugLocalStorageViewerP
 import ImportExportPage from './routes/import-export/ImportExportPage.tsx';
 import BuildsListPage from './routes/builds/BuildsListPage.tsx';
 import NewBuildPage from './routes/builds/NewBuildPage.tsx';
-import BuildDetailPage from './routes/builds/BuildDetailPage.tsx';
+import BuildLayout from './routes/builds/BuildLayout.tsx';
+import BuildOverviewPage from './routes/builds/BuildOverviewPage.tsx';
+import BuildExportPage from './routes/builds/BuildExportPage.tsx';
+import BuildWirePreviewPlaceholderPage from './routes/builds/BuildWirePreviewPlaceholderPage.tsx';
 
 function MapRedirect() {
   return <Navigate to="/library/channels" replace />;
@@ -74,7 +77,28 @@ export default function App() {
             <Route path="/library/:kind/:id" element={<EntityEditorPage />} />
             <Route path="/builds" element={<BuildsListPage />} />
             <Route path="/builds/new" element={<NewBuildPage />} />
-            <Route path="/builds/:id" element={<BuildDetailPage />} />
+            <Route path="/builds/:id" element={<BuildLayout />}>
+              <Route index element={<Navigate to="overview" replace />} />
+              <Route path="overview" element={<BuildOverviewPage />} />
+              <Route
+                path="channels"
+                element={<BuildWirePreviewPlaceholderPage title="Channels" />}
+              />
+              <Route path="zones" element={<BuildWirePreviewPlaceholderPage title="Zones" />} />
+              <Route
+                path="talk-groups"
+                element={<BuildWirePreviewPlaceholderPage title="Talk groups" />}
+              />
+              <Route
+                path="contacts"
+                element={<BuildWirePreviewPlaceholderPage title="Contacts" />}
+              />
+              <Route
+                path="rx-group-lists"
+                element={<BuildWirePreviewPlaceholderPage title="RX group lists" />}
+              />
+              <Route path="export" element={<BuildExportPage />} />
+            </Route>
             <Route path="/import-export" element={<ImportExportPage />} />
             <Route path="/summary" element={<SummaryPage />} />
             <Route path="/reports" element={<Navigate to="/summary" replace />} />

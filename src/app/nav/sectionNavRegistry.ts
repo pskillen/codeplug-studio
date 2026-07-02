@@ -9,7 +9,9 @@ import RxGroupListsSectionNav from '../components/SectionNav/sections/RxGroupLis
 import SettingsSectionNav from '../components/SectionNav/sections/SettingsSectionNav.tsx';
 import TalkGroupsSectionNav from '../components/SectionNav/sections/TalkGroupsSectionNav.tsx';
 import ZonesSectionNav from '../components/SectionNav/sections/ZonesSectionNav.tsx';
+import BuildsSectionNav from '../components/SectionNav/sections/BuildsSectionNav.tsx';
 import type { SectionNavEntry } from './sectionNavTypes.ts';
+import { isBuildDetailPath } from '../routes/builds/nav.ts';
 
 /** Longest prefix first — more specific library list routes win over `/library`. */
 const registry: SectionNavEntry[] = [
@@ -29,9 +31,13 @@ const registry: SectionNavEntry[] = [
   { title: 'Contacts', prefix: '/library/contacts', Component: ContactsSectionNav },
   { title: 'RX group lists', prefix: '/library/rx-group-lists', Component: RxGroupListsSectionNav },
   { title: 'Library', prefix: '/library', Component: ChannelsSectionNav },
+  { title: 'Radio build', prefix: '/builds/', Component: BuildsSectionNav },
 ];
 
 export function resolveSectionNav(pathname: string): SectionNavEntry | null {
+  if (pathname === '/builds/new' || pathname === '/builds') {
+    return null;
+  }
   for (const entry of registry) {
     if (pathname === entry.prefix || pathname.startsWith(`${entry.prefix}/`)) {
       return entry;
@@ -51,6 +57,9 @@ export function shouldShowSecondaryNav(pathname: string, hasActiveProject: boole
     pathname.startsWith('/settings')
   ) {
     return true;
+  }
+  if (isBuildDetailPath(pathname)) {
+    return hasActiveProject;
   }
   return hasActiveProject;
 }

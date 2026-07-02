@@ -63,10 +63,6 @@ export interface AssembleOptions {
   profileId?: string;
 }
 
-function channelMap(library: LibrarySlice): Map<string, Channel> {
-  return new Map(library.channels.map((c) => [c.id, c]));
-}
-
 function zoneMap(library: LibrarySlice): Map<string, Zone> {
   return new Map(library.zones.map((z) => [z.id, z]));
 }

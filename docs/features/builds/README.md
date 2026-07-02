@@ -23,11 +23,18 @@ Native YAML remains **project interchange** (library + all builds). It is not cr
 
 ## Routes
 
-| Route         | Purpose                                                                                  |
-| ------------- | ---------------------------------------------------------------------------------------- |
-| `/builds`     | List builds for the active project                                                       |
-| `/builds/new` | Create build — format → profile → name                                                   |
-| `/builds/:id` | Build overview — identity, target profile, traits, layout placeholder, **Export to CPS** |
+| Route                      | Purpose                                                          |
+| -------------------------- | ---------------------------------------------------------------- |
+| `/builds`                  | List builds for the active project                               |
+| `/builds/new`              | Create build — format → profile → name                           |
+| `/builds/:id`              | Redirect → overview                                              |
+| `/builds/:id/overview`     | Identity, target profile, capability traits                      |
+| `/builds/:id/channels`     | Wire preview — channels                                          |
+| `/builds/:id/zones`        | Wire preview + zone layout (when profile has zone grouping)      |
+| `/builds/:id/talk-groups`  | Wire preview — talk groups                                       |
+| `/builds/:id/contacts`     | Wire preview — contacts                                          |
+| `/builds/:id/rx-group-lists` | Wire preview — RX group lists                                  |
+| `/builds/:id/export`       | CPS export panel                                                 |
 
 Requires an active project (`RequireActiveProject`).
 
@@ -35,7 +42,7 @@ Sidebar label is **Radio builds**; routes and code use `builds`.
 
 ## CPS export
 
-Per-build CPS export is on the build detail page (`ExportBuildCpsPanel`) — not on Import / export. The import/export route keeps an **Export to CPS** section that links here.
+Per-build CPS export is on `/builds/:id/export` (`ExportBuildCpsPanel`) — not on Import / export. The import/export route keeps an **Export to CPS** section that links here.
 
 ## Persistence
 
