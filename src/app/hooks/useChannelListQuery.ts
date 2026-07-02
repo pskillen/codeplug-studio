@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { useSearchParams, useLocation } from 'react-router-dom';
 import {
-  debouncedMergeChannelListPrefs,
   loadChannelListPrefs,
   mergeChannelListPrefs,
   type ChannelListPrefs,
@@ -12,6 +11,7 @@ import {
   hasChannelListUrlParams,
 } from '../lib/listPrefs/urlSync.ts';
 import { useProjects } from '../state/useProjects.ts';
+import { useDebouncedNameFilter } from './useDebouncedNameFilter.ts';
 import {
   defaultMaxDistanceKm,
   parseCsvParam,
@@ -22,6 +22,8 @@ import {
 
 export interface ChannelListQuery {
   nameFilter: string;
+  nameFilterInput: string;
+  nameFilterPending: boolean;
   sortMode: ChannelSortMode;
   bandFilter: string[];
   modeFilter: string[];
@@ -82,10 +84,9 @@ export function useChannelListQuery(): ChannelListQuery {
   const maxDistanceKm = parseMaxDistanceKm(searchParams.get('maxKm'));
 
   const persistPrefs = useCallback(
-    (patch: Partial<ChannelListPrefs>, debounce = false) => {
+    (patch: Partial<ChannelListPrefs>) => {
       if (!activeProjectId) return;
-      if (debounce) debouncedMergeChannelListPrefs(activeProjectId, patch);
-      else mergeChannelListPrefs(activeProjectId, patch);
+      mergeChannelListPrefs(activeProjectId, patch);
     },
     [activeProjectId],
   );
@@ -104,12 +105,17 @@ export function useChannelListQuery(): ChannelListQuery {
     [setSearchParams],
   );
 
-  const setNameFilter = useCallback(
+  const commitNameFilter = useCallback(
     (value: string) => {
       updateParams((p) => setOrDelete(p, 'q', value || null));
-      persistPrefs({ q: value }, true);
+      persistPrefs({ q: value });
     },
     [updateParams, persistPrefs],
+  );
+
+  const { nameFilterInput, setNameFilter, nameFilterPending } = useDebouncedNameFilter(
+    nameFilter,
+    commitNameFilter,
   );
 
   const setSortMode = useCallback(
@@ -169,6 +175,8 @@ export function useChannelListQuery(): ChannelListQuery {
 
   return {
     nameFilter,
+    nameFilterInput,
+    nameFilterPending,
     sortMode,
     bandFilter,
     modeFilter,

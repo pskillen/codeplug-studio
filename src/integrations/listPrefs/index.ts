@@ -13,9 +13,6 @@ export {
   saveStringArray,
 } from './columnVisibility.ts';
 export {
-  debouncedMergeChannelListPrefs,
-  debouncedMergeEntityListPrefs,
-  flushDebouncedListPrefs,
   loadChannelListPrefs,
   loadEntityListPrefs,
   mergeChannelListPrefs,

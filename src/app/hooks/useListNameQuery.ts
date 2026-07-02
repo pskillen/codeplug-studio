@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useRef } from 'react';
 import { useSearchParams, useLocation } from 'react-router-dom';
 import {
-  debouncedMergeEntityListPrefs,
   loadChannelListPrefs,
   loadEntityListPrefs,
   mergeChannelListPrefs,
@@ -10,6 +9,7 @@ import {
 } from '@integrations/listPrefs/index.ts';
 import { hasEntityListUrlParams } from '../lib/listPrefs/urlSync.ts';
 import { useProjects } from '../state/useProjects.ts';
+import { useDebouncedNameFilter } from './useDebouncedNameFilter.ts';
 
 function searchParamKeyForEntity(entity: EntityListEntity): string {
   if (entity === 'digital-contacts') return 'dq';
@@ -19,6 +19,8 @@ function searchParamKeyForEntity(entity: EntityListEntity): string {
 
 export function useListNameQuery(entity: EntityListEntity): {
   nameFilter: string;
+  nameFilterInput: string;
+  nameFilterPending: boolean;
   setNameFilter: (value: string) => void;
 } {
   const { activeProjectId } = useProjects();
@@ -45,8 +47,6 @@ export function useListNameQuery(entity: EntityListEntity): {
 
     const stored = loadEntityListPrefs(entity, activeProjectId);
     if (stored?.q) {
-      const next = new URLSearchParams();
-      next.set(paramKey, stored.q);
       setSearchParams(
         (prev) => {
           const merged = new URLSearchParams(prev);
@@ -61,7 +61,7 @@ export function useListNameQuery(entity: EntityListEntity): {
 
   const nameFilter = searchParams.get(paramKey) ?? '';
 
-  const setNameFilter = useCallback(
+  const commitNameFilter = useCallback(
     (value: string) => {
       setSearchParams(
         (prev) => {
@@ -73,12 +73,17 @@ export function useListNameQuery(entity: EntityListEntity): {
         { replace: true },
       );
       if (!activeProjectId) return;
-      debouncedMergeEntityListPrefs(entity, activeProjectId, { q: value });
+      mergeEntityListPrefs(entity, activeProjectId, { q: value });
     },
     [activeProjectId, entity, paramKey, setSearchParams],
   );
 
-  return { nameFilter, setNameFilter };
+  const { nameFilterInput, setNameFilter, nameFilterPending } = useDebouncedNameFilter(
+    nameFilter,
+    commitNameFilter,
+  );
+
+  return { nameFilter, nameFilterInput, nameFilterPending, setNameFilter };
 }
 
 export function filterRowsByName<T>(
