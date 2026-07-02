@@ -90,9 +90,61 @@ CPS **import** placeholders remain on Import / export (format catalog grid). Onl
 
 ---
 
+**Tracking:** [#36](https://github.com/pskillen/codeplug-studio/issues/36) · Phase 4a [#85](https://github.com/pskillen/codeplug-studio/issues/85)–[#88](https://github.com/pskillen/codeplug-studio/issues/88)
+**Branch:** `85/pskil/opengd77-build-export`
+
+---
+
+## Overall status
+
+**Status:** In progress — core export path shipped (slices 1–4); UI download panel and follow-ons deferred
+
+---
+
+## Slice 6 — assemble + exportBuild ([#86](https://github.com/pskillen/codeplug-studio/issues/86))
+
+**Status:** Complete
+
+**Delivered**
+
+- `src/core/services/assemble.ts` + tests
+- `src/core/services/exportBuild.ts` — per-file and ZIP bytes
+- `docs/features/import-export/cps-services.md`
+
+---
+
+## Slice 7 — OpenGD77 export adapter ([#88](https://github.com/pskillen/codeplug-studio/issues/88))
+
+**Status:** Complete
+
+**Delivered**
+
+- `serialise.ts`, `channelWire.ts`, `listWire.ts`, `warnings.ts`, `adapter.ts`, `columns.ts`, `csvWrite.ts`
+- Registry: OpenGD77 `exportStatus: shipped`
+- `serialise.test.ts` — directional export from assemble fixture
+- `docs/features/import-export/opengd77/export-mapping.md`
+
+---
+
+## Slice 8 — Browser download + ZIP ([#85](https://github.com/pskillen/codeplug-studio/issues/85) plan slice 4)
+
+**Status:** Complete
+
+**Delivered**
+
+- `fflate` dependency
+- `src/integrations/download/browserDownload.ts`
+- `src/core/import-export/formats/opengd77/packageZip.ts`
+- `src/app/services/buildCpsExportService.ts` — `downloadCpsFile`, `downloadCpsZip`
+
+---
+
 ## Next
 
-- Phase 4 export UI — branch `85/pskil/opengd77-build-export`
+- [#87](https://github.com/pskillen/codeplug-studio/issues/87) zone grouping build editor
+- [#89](https://github.com/pskillen/codeplug-studio/issues/89)–[#91](https://github.com/pskillen/codeplug-studio/issues/91) multi-mode, name shortening, `ExportBuildCpsPanel` download UI
+- Google Drive CPS ZIP upload
+- Phase 4b OpenGD77 import
 
 ---
 

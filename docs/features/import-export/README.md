@@ -24,7 +24,9 @@ IndexedDB remains the **edit store**; YAML and Drive are portable layers on top 
 | Local file UI                                           | Shipped | [#60](https://github.com/pskillen/codeplug-studio/issues/60) — `/import-export`, Home import                                  |
 | Format catalog UI (CPS placeholders)                    | Shipped | [#83](https://github.com/pskillen/codeplug-studio/issues/83) — CPS grid + export build stub                                   |
 | Google Drive                                            | Shipped | [#61](https://github.com/pskillen/codeplug-studio/issues/61)–[#62](https://github.com/pskillen/codeplug-studio/issues/62)     |
-| OpenGD77 CSV                                            | Planned | Phase 4+ — registry slot `planned`; **radio profiles shipped** ([#84](https://github.com/pskillen/codeplug-studio/issues/84)) |
+| OpenGD77 CSV export                                     | Shipped | [#88](https://github.com/pskillen/codeplug-studio/issues/88) — adapter + `exportBuild`; UI ([#91](https://github.com/pskillen/codeplug-studio/issues/91)) deferred |
+| CPS export services (`assemble`, `exportBuild`)           | Shipped | [#86](https://github.com/pskillen/codeplug-studio/issues/86) — [cps-services.md](cps-services.md) |
+| OpenGD77 CSV import                                     | Planned | Phase 4b                                                                                                                      |
 | CHIRP CSV                                               | Planned | Phase 4+                                                                                                                      |
 | DM32 CSV                                                | Planned | Phase 4+                                                                                                                      |
 | qDMR YAML                                               | Planned | Out of Phase 3 scope                                                                                                          |
@@ -58,7 +60,7 @@ Routes and UI call **application services** (`importProjectYaml`, `exportProject
 | Format        | Import  | Export  | Delivery                   |
 | ------------- | ------- | ------- | -------------------------- |
 | `native-yaml` | Shipped | Shipped | Single file — full project |
-| `opengd77`    | Planned | Planned | Multi-file CSV             |
+| `opengd77`    | Planned | Shipped | Multi-file CSV             |
 | `chirp`       | Planned | Planned | Single-file CSV            |
 | `dm32`        | Planned | Planned | Multi-file CSV             |
 | `qdmr`        | Planned | Planned | YAML (vendor)              |

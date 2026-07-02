@@ -2,7 +2,7 @@
 
 Items **skipped**, **incomplete**, or **discovered during execution** — not the plan's future phases.
 
-**Tracking:** [#36](https://github.com/pskillen/codeplug-studio/issues/36) · Phase 4a [#82](https://github.com/pskillen/codeplug-studio/issues/82)–[#84](https://github.com/pskillen/codeplug-studio/issues/84)
+**Tracking:** [#36](https://github.com/pskillen/codeplug-studio/issues/36) · branch `85/pskil/opengd77-build-export`
 
 ---
 
@@ -12,9 +12,21 @@ Items **skipped**, **incomplete**, or **discovered during execution** — not th
 
 ---
 
-## Deferred to follow-on tickets
+## Deferred to follow-on (not in current PR scope)
 
-- [ ] `assemble` / `exportBuild` services ([#86](https://github.com/pskillen/codeplug-studio/issues/86))
 - [ ] Zone-grouping build editor ([#87](https://github.com/pskillen/codeplug-studio/issues/87))
-- [ ] OpenGD77 export adapter and CPS download UI — **integrate on `/builds/:id`**, not `/import-export` (see [opengd77-progress.md](opengd77-progress.md) plan deviations)
+- [ ] Multi-mode channel expansion at export ([#89](https://github.com/pskillen/codeplug-studio/issues/89))
+- [ ] Export name shortening pipeline ([#90](https://github.com/pskillen/codeplug-studio/issues/90))
+- [ ] `ExportBuildCpsPanel` download UI on `/builds/:id` ([#91](https://github.com/pskillen/codeplug-studio/issues/91)) — wire `buildCpsExportService` to replace stub
+- [ ] Google Drive CPS ZIP upload (build detail)
+- [ ] Extended export golden tests beyond `serialise.test.ts`
 - [ ] OpenGD77 CPS import (Phase 4b) — remains on Import / export format catalog
+
+---
+
+## Shipped in current branch (for reference)
+
+- [x] `ProfilePicker` ([#85](https://github.com/pskillen/codeplug-studio/issues/85))
+- [x] `assemble` / `exportBuild` ([#86](https://github.com/pskillen/codeplug-studio/issues/86))
+- [x] OpenGD77 export adapter core ([#88](https://github.com/pskillen/codeplug-studio/issues/88))
+- [x] `downloadCpsFile` / `downloadCpsZip` service helpers (no UI buttons yet)

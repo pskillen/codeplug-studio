@@ -51,7 +51,7 @@ YAML import/export includes `formatBuilds[]` in the project document.
 | Per-build CPS export stub    | Shipped | `ExportBuildCpsPanelStub` on build detail                     |
 | Profile picker component     | Shipped | [#85](https://github.com/pskillen/codeplug-studio/issues/85) — `ProfilePicker` |
 | Zone grouping editor         | Planned | [#87](https://github.com/pskillen/codeplug-studio/issues/87)  |
-| CPS export download          | Planned | [#86](https://github.com/pskillen/codeplug-studio/issues/86)+ |
+| CPS export download          | Planned | [#91](https://github.com/pskillen/codeplug-studio/issues/91) — `buildCpsExportService` shipped, UI stub remains |
 
 ## Related
 
