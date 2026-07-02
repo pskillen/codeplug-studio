@@ -31,7 +31,6 @@ function WireNameOverrideInput({
     [onWireNameChange, row],
   );
   const { nameFilterInput, setNameFilter } = useDebouncedNameFilter(committed, onCommit);
-  const overrideActive = committed.length > 0;
   const tooLong = nameLimit != null && nameFilterInput.length > nameLimit;
 
   return (
@@ -44,11 +43,9 @@ function WireNameOverrideInput({
         disabled={excluded}
         error={tooLong ? `Exceeds ${nameLimit} characters` : undefined}
       />
-      {!overrideActive && nameFilterInput.length === 0 ? (
-        <Text size="xs" c="dimmed">
-          Generated: {row.generatedWireName}
-        </Text>
-      ) : null}
+      <Text size="xs" c="dimmed">
+        Default: {row.generatedWireName}
+      </Text>
     </>
   );
 }
