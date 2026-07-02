@@ -1,7 +1,4 @@
-import {
-  LIST_ENTITY_LABELS,
-  LIST_PREFS_STORAGE_PREFIX,
-} from '@integrations/listPrefs/index.ts';
+import { LIST_ENTITY_LABELS, LIST_PREFS_STORAGE_PREFIX } from '@integrations/listPrefs/index.ts';
 import {
   ACTIVE_PROJECT_KEY,
   MAPBOX_TOKEN_KEY,

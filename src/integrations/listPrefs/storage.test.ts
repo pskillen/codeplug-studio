@@ -57,9 +57,9 @@ describe('listPrefs storage', () => {
     expect(JSON.parse(localStorage.getItem(entityListPrefsKey('zones', 'proj-1'))!)).toEqual({
       q: 'north',
     });
-    expect(
-      JSON.parse(localStorage.getItem(entityListPrefsKey('talk-groups', 'proj-1'))!),
-    ).toEqual({ q: 'local' });
+    expect(JSON.parse(localStorage.getItem(entityListPrefsKey('talk-groups', 'proj-1'))!)).toEqual({
+      q: 'local',
+    });
   });
 });
 

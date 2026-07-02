@@ -12,7 +12,11 @@ export function readStorageRaw(key: string): string | null {
   return readRaw(key);
 }
 
-export function loadStringArray(storageKey: string, validKeys: Set<string>, fallback: string[]): string[] {
+export function loadStringArray(
+  storageKey: string,
+  validKeys: Set<string>,
+  fallback: string[],
+): string[] {
   try {
     const raw = readRaw(storageKey);
     if (raw !== null) {

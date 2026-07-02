@@ -1,9 +1,5 @@
 export type EntityListEntity =
-  | 'zones'
-  | 'talk-groups'
-  | 'digital-contacts'
-  | 'analog-contacts'
-  | 'rx-group-lists';
+  'zones' | 'talk-groups' | 'digital-contacts' | 'analog-contacts' | 'rx-group-lists';
 
 export type ChannelSortMode = 'name' | 'distance';
 

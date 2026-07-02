@@ -1,7 +1,10 @@
 import { DISTANCE_FILTER_MARKS_KM } from '../lib/channels.ts';
 import { loadChannelVisibleColumns as loadChannelVisibleColumnsFromStorage } from '@integrations/listPrefs/index.ts';
 
-export { channelListColumnsKey, channelListColumnsSchemaKey } from '@integrations/listPrefs/index.ts';
+export {
+  channelListColumnsKey,
+  channelListColumnsSchemaKey,
+} from '@integrations/listPrefs/index.ts';
 export type { ChannelSortMode } from '@integrations/listPrefs/index.ts';
 
 export const CHANNEL_LIST_COLUMNS_SCHEMA_VERSION = 1;

@@ -20,6 +20,7 @@ const TEST_PROJECT_ID = 'project-test-1';
 
 function makeProjectMeta(projectId: string): ProjectMeta {
   return {
+    id: projectId,
     projectId,
     revision: 1,
     updatedAt: '2026-01-01T00:00:00.000Z',
