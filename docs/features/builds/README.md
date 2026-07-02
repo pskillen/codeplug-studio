@@ -32,7 +32,7 @@ Native YAML remains **project interchange** (library + all builds). It is not cr
 | `/builds/:id`                | Redirect → overview                                         |
 | `/builds/:id/overview`       | Identity, target profile, capability traits                 |
 | `/builds/:id/channels`       | Wire preview — channels                                     |
-| `/builds/:id/zones`          | Wire preview + zone layout (when profile has zone grouping) |
+| `/builds/:id/zones`          | Wire preview — zones                                        |
 | `/builds/:id/talk-groups`    | Wire preview — talk groups                                  |
 | `/builds/:id/contacts`       | Wire preview — contacts                                     |
 | `/builds/:id/rx-group-lists` | Wire preview — RX group lists                               |
@@ -68,7 +68,7 @@ YAML import/export includes `formatBuilds[]` in the project document.
 | Per-build CPS export         | Shipped | `ExportBuildCpsPanel` — per-file CSV, ZIP download, Drive ZIP upload                            |
 | Profile picker component     | Shipped | [#85](https://github.com/pskillen/codeplug-studio/issues/85) — `ProfilePicker`                  |
 | Wire preview + overrides     | Shipped | [#87](https://github.com/pskillen/codeplug-studio/issues/87) — sub-routes + `WirePreviewTable`  |
-| Zone grouping editor         | Shipped | [#87](https://github.com/pskillen/codeplug-studio/issues/87) — `BuildZoneLayoutEditor`          |
+| Zone grouping editor         | Deferred | Library zone membership at export; layout UI follow-on ([#99](https://github.com/pskillen/codeplug-studio/issues/99)) |
 | Multi-mode channel expansion | Shipped | [#89](https://github.com/pskillen/codeplug-studio/issues/89) — preview + OpenGD77 export        |
 | Export name shortening       | Shipped | [#90](https://github.com/pskillen/codeplug-studio/issues/90) — `useExportSettings` + dictionary |
 

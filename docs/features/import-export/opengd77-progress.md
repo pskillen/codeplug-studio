@@ -141,7 +141,7 @@
 | `previewWireRows` service         | Complete | Shared preview projection                                   |
 | Multi-mode expansion              | Complete | `-F`/`-D` rows in preview + `serialise.ts`                  |
 | Name shortening pipeline          | Complete | Dictionary, `useExportSettings`, export panel               |
-| Wire preview UI + zone editor     | Complete | `WirePreviewTable`, `BuildZoneLayoutEditor`                 |
+| Wire preview UI              | Shipped | `WirePreviewTable` on entity sub-routes                       |
 | Docs + tests                      | Complete | `wire-preview.md`, `zone-grouping.md`, `name-shortening.md` |
 
 **Verify**
