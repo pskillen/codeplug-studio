@@ -11,6 +11,35 @@ export interface StoreSummary {
   byProject: ProjectRowCount[];
 }
 
+export interface IndexedDbRowSummary {
+  projectId: string;
+  id: string;
+  name: string;
+  callsign: string | null;
+}
+
+export function summarizeIndexedDbRow(row: unknown): IndexedDbRowSummary | null {
+  if (!row || typeof row !== 'object') return null;
+  const record = row as { projectId?: unknown; id?: unknown; name?: unknown; callsign?: unknown };
+  if (typeof record.projectId !== 'string' || typeof record.id !== 'string') return null;
+  const name = typeof record.name === 'string' ? record.name : record.id;
+  const callsign = typeof record.callsign === 'string' && record.callsign.length > 0 ? record.callsign : null;
+  return { projectId: record.projectId, id: record.id, name, callsign };
+}
+
+export function filterIndexedDbRowSummaries(
+  rows: IndexedDbRowSummary[],
+  query: string,
+): IndexedDbRowSummary[] {
+  const q = query.trim().toLowerCase();
+  if (!q) return rows;
+  return rows.filter((row) =>
+    [row.name, row.callsign, row.projectId, row.id]
+      .filter((value): value is string => typeof value === 'string' && value.length > 0)
+      .some((value) => value.toLowerCase().includes(q)),
+  );
+}
+
 function promisifyRequest<T>(request: IDBRequest<T>): Promise<T> {
   return new Promise((resolve, reject) => {
     request.onsuccess = () => resolve(request.result);
