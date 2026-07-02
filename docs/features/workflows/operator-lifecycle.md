@@ -53,9 +53,9 @@ Format-specific CSV export (`exportBuild`, `assemble`) is separate from native Y
 
 ## Services (not UI → adapters)
 
-| UI entry              | Service                                   | Persistence                                   |
-| --------------------- | ----------------------------------------- | --------------------------------------------- |
-| Home import panel     | `importProjectFromYaml` `createNew`       | `seedProject`                                 |
+| UI entry                | Service                                   | Persistence                                   |
+| ----------------------- | ----------------------------------------- | --------------------------------------------- |
+| Home import panel       | `importProjectFromYaml` `createNew`       | `seedProject`                                 |
 | Import / export replace | `importProjectFromYaml` `replaceExisting` | `replaceProject`                              |
 | Import / export export  | `exportProjectToYaml`                     | `loadProjectSeed` + optional `putProjectMeta` |
 
