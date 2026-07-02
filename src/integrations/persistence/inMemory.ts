@@ -18,6 +18,7 @@ import type {
   PutResult,
 } from './types.ts';
 import { assertSeedProjectId } from './projectSeed.ts';
+import { readFormatBuildRow } from './formatBuildRow.ts';
 
 type RowMap<T extends { id: string; projectId: string }> = Map<string, T>;
 
@@ -145,15 +146,16 @@ export class InMemoryProjectPersistence implements ProjectPersistence {
   }
 
   async getFormatBuild(projectId: string, id: string): Promise<FormatBuild | null> {
-    return this.formatBuilds.get(rowKey(projectId, id)) ?? null;
+    const row = this.formatBuilds.get(rowKey(projectId, id));
+    return row ? readFormatBuildRow(row) : null;
   }
 
   async putFormatBuild(row: FormatBuild, expectedRevision: number | null): Promise<PutResult> {
-    return this.putRow('formatBuild', this.formatBuilds, row, expectedRevision);
+    return this.putRow('formatBuild', this.formatBuilds, readFormatBuildRow(row), expectedRevision);
   }
 
   async listFormatBuilds(projectId: string): Promise<FormatBuild[]> {
-    return this.listRows(this.formatBuilds, projectId);
+    return this.listRows(this.formatBuilds, projectId).map(readFormatBuildRow);
   }
 
   async deleteEntity(projectId: string, kind: EntityKind, id: string): Promise<void> {

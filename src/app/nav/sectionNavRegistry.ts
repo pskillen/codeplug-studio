@@ -31,7 +31,7 @@ const registry: SectionNavEntry[] = [
   { title: 'Contacts', prefix: '/library/contacts', Component: ContactsSectionNav },
   { title: 'RX group lists', prefix: '/library/rx-group-lists', Component: RxGroupListsSectionNav },
   { title: 'Library', prefix: '/library', Component: ChannelsSectionNav },
-  { title: 'Radio build', prefix: '/builds/', Component: BuildsSectionNav },
+  { title: 'Radio build', prefix: '/builds', Component: BuildsSectionNav },
 ];
 
 export function resolveSectionNav(pathname: string): SectionNavEntry | null {

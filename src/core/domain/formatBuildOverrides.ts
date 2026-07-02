@@ -14,21 +14,24 @@ export interface LegacyEntitySelection {
 }
 
 export function overrideByEntityId(
-  overrides: BuildEntityOverride[],
+  overrides: BuildEntityOverride[] | undefined,
 ): Map<string, BuildEntityOverride> {
-  return new Map(overrides.map((row) => [row.libraryEntityId, row]));
+  return new Map((overrides ?? []).map((row) => [row.libraryEntityId, row]));
 }
 
-export function isEntityExcluded(overrides: BuildEntityOverride[], entityId: string): boolean {
-  return overrides.find((row) => row.libraryEntityId === entityId)?.excluded === true;
+export function isEntityExcluded(
+  overrides: BuildEntityOverride[] | undefined,
+  entityId: string,
+): boolean {
+  return (overrides ?? []).find((row) => row.libraryEntityId === entityId)?.excluded === true;
 }
 
 export function resolveOverrideWireName(
-  overrides: BuildEntityOverride[],
+  overrides: BuildEntityOverride[] | undefined,
   entityId: string,
   generated: string,
 ): string {
-  const wireName = overrides.find((row) => row.libraryEntityId === entityId)?.wireName?.trim();
+  const wireName = (overrides ?? []).find((row) => row.libraryEntityId === entityId)?.wireName?.trim();
   return wireName || generated;
 }
 
@@ -101,12 +104,13 @@ function parseOverrideRow(raw: unknown, label: string): BuildEntityOverride {
 }
 
 export function upsertOverride(
-  overrides: BuildEntityOverride[],
+  overrides: BuildEntityOverride[] | undefined,
   entityId: string,
   patch: Partial<Pick<BuildEntityOverride, 'excluded' | 'wireName'>>,
 ): BuildEntityOverride[] {
-  const index = overrides.findIndex((row) => row.libraryEntityId === entityId);
-  const existing = index >= 0 ? overrides[index]! : { libraryEntityId: entityId };
+  const rows = overrides ?? [];
+  const index = rows.findIndex((row) => row.libraryEntityId === entityId);
+  const existing = index >= 0 ? rows[index]! : { libraryEntityId: entityId };
   const merged: BuildEntityOverride = {
     ...existing,
     ...patch,
@@ -115,8 +119,8 @@ export function upsertOverride(
   const hasWireName = Boolean(merged.wireName?.trim());
   const isExcluded = merged.excluded === true;
   if (!hasWireName && !isExcluded) {
-    if (index < 0) return overrides;
-    return overrides.filter((row) => row.libraryEntityId !== entityId);
+    if (index < 0) return rows;
+    return rows.filter((row) => row.libraryEntityId !== entityId);
   }
 
   if (!hasWireName) {
@@ -126,9 +130,9 @@ export function upsertOverride(
   }
 
   if (index < 0) {
-    return [...overrides, merged];
+    return [...rows, merged];
   }
-  const next = [...overrides];
+  const next = [...rows];
   next[index] = merged;
   return next;
 }

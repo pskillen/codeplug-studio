@@ -1,5 +1,6 @@
 import type { BuildEntityOverride, FormatBuild } from '@core/models/formatBuild.ts';
 import type { Library } from '@core/models/library.ts';
+import { emptyTraitLayout } from '@core/models/traitLayout.ts';
 import { migrateLegacySelections, type LegacyEntitySelection } from './formatBuildOverrides.ts';
 
 export interface LegacyFormatBuildFields {
@@ -105,6 +106,7 @@ function missingOverrideFields(build: LegacyFormatBuild): boolean {
 export function normalizeFormatBuildFields(build: LegacyFormatBuild): FormatBuild {
   return {
     ...build,
+    layout: build.layout ?? emptyTraitLayout(),
     channelOverrides:
       build.channelOverrides ??
       (build.channelSelections ?? []).map((row) => ({

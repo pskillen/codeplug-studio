@@ -20,6 +20,7 @@ import type {
 } from './types.ts';
 import { DEFAULT_DB_NAME, STORES, STORE_NAMES } from './stores.ts';
 import { assertSeedProjectId } from './projectSeed.ts';
+import { readFormatBuildRow } from './formatBuildRow.ts';
 
 type PersistableRow = {
   id: string;
@@ -170,13 +171,15 @@ export class IndexedDbProjectPersistence implements ProjectPersistence {
   }
 
   async getFormatBuild(projectId: string, id: string): Promise<FormatBuild | null> {
-    return this.getRow<FormatBuild>('formatBuild', projectId, id);
+    const row = await this.getRow<FormatBuild>('formatBuild', projectId, id);
+    return row ? readFormatBuildRow(row) : null;
   }
   async putFormatBuild(row: FormatBuild, expectedRevision: number | null): Promise<PutResult> {
-    return this.putRow('formatBuild', row, expectedRevision);
+    return this.putRow('formatBuild', readFormatBuildRow(row), expectedRevision);
   }
   async listFormatBuilds(projectId: string): Promise<FormatBuild[]> {
-    return this.listRows<FormatBuild>('formatBuild', projectId);
+    const rows = await this.listRows<FormatBuild>('formatBuild', projectId);
+    return rows.map(readFormatBuildRow);
   }
 
   async deleteEntity(projectId: string, kind: EntityKind, id: string): Promise<void> {
