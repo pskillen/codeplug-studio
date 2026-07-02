@@ -67,5 +67,5 @@
 
 ## Next
 
-- Open PR — Closes #82, #83, #84
+- Merge [#94](https://github.com/pskillen/codeplug-studio/pull/94)
 - Follow-on: #85 ProfilePicker, #86 assemble, #87 zone editor
