@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ACTIVE_PROJECT_KEY, MAPBOX_TOKEN_KEY } from '@integrations/preferences/index.ts';
+import { DRIVE_ACCESS_TOKEN_KEY } from '@integrations/cloud/drivePrefs.ts';
 import {
   decodeStorageKeyParam,
   formatByteSize,
@@ -84,6 +85,16 @@ describe('storageKeyRegistry', () => {
       redact: true,
     });
     expect(entry.present).toBe(true);
+    expect(entry.parsed).toEqual({ value: '••••oken' });
+  });
+
+  it('readStorageEntry redacts google drive access token', () => {
+    localStorage.setItem(DRIVE_ACCESS_TOKEN_KEY, 'ya29.super-secret-token');
+    const entry = readStorageEntry({
+      key: DRIVE_ACCESS_TOKEN_KEY,
+      label: 'Google Drive access token',
+      redact: true,
+    });
     expect(entry.parsed).toEqual({ value: '••••oken' });
   });
 

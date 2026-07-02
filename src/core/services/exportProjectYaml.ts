@@ -12,6 +12,12 @@ import { seedToAggregate } from './projectSeedMapping.ts';
 export interface ExportProjectYamlOptions {
   fileName?: string;
   recordDestination?: ExportDestinationKind;
+  /** Required when `recordDestination` is `googleDrive`. */
+  driveDestination?: {
+    folderId: string;
+    folderName?: string;
+    fileId: string;
+  };
 }
 
 export interface ExportProjectYamlResult {
@@ -40,6 +46,17 @@ export async function exportProjectYaml(
   let metaForExport = seed.meta;
   if (options.recordDestination === 'localFile') {
     metaForExport = recordExportDestination(seed.meta, 'localFile', { fileName });
+  } else if (options.recordDestination === 'googleDrive') {
+    const drive = options.driveDestination;
+    if (!drive?.folderId || !drive.fileId) {
+      throw new Error('googleDrive export requires driveDestination.folderId and fileId');
+    }
+    metaForExport = recordExportDestination(seed.meta, 'googleDrive', {
+      fileName,
+      folderId: drive.folderId,
+      folderName: drive.folderName,
+      fileId: drive.fileId,
+    });
   }
 
   const aggregate = seedToAggregate({ ...seed, meta: metaForExport });
@@ -49,7 +66,7 @@ export async function exportProjectYaml(
   }
   const { content, warnings } = adapter.serialise(aggregate);
 
-  if (options.recordDestination === 'localFile') {
+  if (options.recordDestination === 'localFile' || options.recordDestination === 'googleDrive') {
     const result = await port.putProjectMeta(metaForExport, seed.meta.revision);
     if (!result.ok) {
       throw new Error(`Failed to record export destination: ${result.reason}`);

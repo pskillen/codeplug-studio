@@ -107,4 +107,27 @@ describe('exportProjectYaml', () => {
     expect(loaded?.meta.interchange?.localFile?.fileName).toBe('my-export.yaml');
     expect(loaded?.meta.interchange?.localFile?.exportedAt).toBeTruthy();
   });
+
+  it('records googleDrive interchange metadata when requested', async () => {
+    const aggregate = fullLibraryAggregate();
+    const port = createMockPort(aggregateToSeed(aggregate));
+
+    await exportProjectYaml(port, aggregate.meta.projectId, {
+      fileName: 'my-export.yaml',
+      recordDestination: 'googleDrive',
+      driveDestination: {
+        folderId: 'folder-1',
+        folderName: 'Codeplugs',
+        fileId: 'file-1',
+      },
+    });
+
+    const loaded = await port.loadProjectSeed(aggregate.meta.projectId);
+    expect(loaded?.meta.interchange?.googleDrive).toMatchObject({
+      fileName: 'my-export.yaml',
+      folderId: 'folder-1',
+      folderName: 'Codeplugs',
+      fileId: 'file-1',
+    });
+  });
 });

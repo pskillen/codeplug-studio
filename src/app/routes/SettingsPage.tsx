@@ -1,5 +1,6 @@
 import { Button, Group, PasswordInput, Stack, Text } from '@mantine/core';
 import { useMapSettings } from '../hooks/useMapSettings.ts';
+import GoogleDriveConnectSection from '../components/settings/GoogleDriveConnectSection.tsx';
 import { ListPage, PageSection } from '../components/ui/index.ts';
 
 export default function SettingsPage() {
@@ -21,6 +22,10 @@ export default function SettingsPage() {
             The active project selection is remembered in localStorage.
           </Text>
         </Stack>
+      </PageSection>
+
+      <PageSection id="settings-drive" title="Google Drive">
+        <GoogleDriveConnectSection />
       </PageSection>
 
       <PageSection id="settings-map" title="Map">

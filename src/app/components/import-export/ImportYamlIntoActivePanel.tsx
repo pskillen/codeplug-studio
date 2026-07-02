@@ -1,15 +1,20 @@
 import { useState } from 'react';
 import { Alert, Button, Modal, Stack, Text } from '@mantine/core';
 import { importProjectFromYaml } from '../../services/projectImportExportService.ts';
+import { useGoogleDrive } from '../../hooks/useGoogleDrive.ts';
 import { useProjects } from '../../state/useProjects.ts';
+import DriveBrowserModal from './DriveBrowserModal.tsx';
+import GoogleDriveButton from './GoogleDriveButton.tsx';
 import YamlFileDropzone from './YamlFileDropzone.tsx';
 
 export default function ImportYamlIntoActivePanel() {
   const { activeProjectId, activeProject, refreshProjects } = useProjects();
+  const { connected, isConfigured } = useGoogleDrive();
   const [error, setError] = useState<string | null>(null);
   const [importing, setImporting] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [pendingText, setPendingText] = useState<string | null>(null);
+  const [driveOpen, setDriveOpen] = useState(false);
 
   async function handleFile(text: string) {
     setError(null);
@@ -44,7 +49,22 @@ export default function ImportYamlIntoActivePanel() {
   return (
     <Stack gap="sm">
       <YamlFileDropzone onFileText={handleFile} disabled={importing} />
+      {isConfigured ? (
+        <GoogleDriveButton disabled={!connected || importing} onClick={() => setDriveOpen(true)}>
+          Open from Drive
+        </GoogleDriveButton>
+      ) : null}
       {error ? <Alert color="red">{error}</Alert> : null}
+      <DriveBrowserModal
+        opened={driveOpen}
+        onClose={() => setDriveOpen(false)}
+        mode="open"
+        onSelectFile={({ content }) => {
+          setDriveOpen(false);
+          void handleFile(content);
+        }}
+        onSaveTarget={() => undefined}
+      />
       <Modal
         opened={confirmOpen}
         onClose={() => {
