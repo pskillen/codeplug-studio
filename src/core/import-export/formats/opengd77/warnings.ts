@@ -42,6 +42,14 @@ export function collectOpenGd77ExportWarnings(
     }
   }
 
+  for (const row of assembled.talkGroups) {
+    if (row.wireName.length > maxNameLength) {
+      warnings.push(
+        `Talk group wire name "${row.wireName}" exceeds ${maxNameLength} characters for ${profile.label}`,
+      );
+    }
+  }
+
   for (const list of assembled.rxGroupLists) {
     if (list.entity.members.length > profile.tgListMembers) {
       warnings.push(

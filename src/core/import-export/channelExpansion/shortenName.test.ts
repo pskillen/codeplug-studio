@@ -47,6 +47,15 @@ describe('shortenWireName channel abbreviation', () => {
     });
     expect(shortened).toBe("GB3MT M'flt-D");
   });
+
+  it('replaces a trailing talk-group member suffix before dictionary steps', () => {
+    const name = 'GB7AC Largs Scot West TS1';
+    const shortened = shortenWireName(name, 20, {
+      talkGroupMemberSuffix: { full: 'Scot West TS1', abbreviated: 'SW1' },
+    });
+    expect(shortened).toBe('GB7AC Largs SW1');
+    expect(shortened.length).toBeLessThanOrEqual(20);
+  });
 });
 
 describe('channelWireNamePreviewExamples', () => {

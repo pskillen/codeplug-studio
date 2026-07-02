@@ -1,5 +1,12 @@
+import type { MultiTalkGroupExportNameMode } from './channelExpansion/multiTalkGroupWireName.ts';
+
 /** Canonical format ids — shared by registry and future UI. */
 export type FormatId = 'native-yaml' | 'opengd77' | 'chirp' | 'dm32' | 'qdmr';
+
+export type { MultiTalkGroupExportNameMode } from './channelExpansion/multiTalkGroupWireName.ts';
+export { DEFAULT_MULTI_TG_EXPORT_NAME_MODE } from './channelExpansion/multiTalkGroupWireName.ts';
+
+export type ExpandRxGroupListMembers = 'all' | 'talkGroupsOnly';
 
 export type FormatStatus = 'shipped' | 'planned';
 
@@ -52,6 +59,12 @@ export interface CpsExportOptions {
   useTalkGroupAbbreviation?: boolean;
   /** Use channel abbreviation in composed wire names. */
   useChannelAbbreviation?: boolean;
+  /** Expand logical channels with RX group lists into one row per member (formats without native RGL). */
+  expandRxGroupLists?: boolean;
+  /** Which RX list members to expand when expandRxGroupLists is true. Default `all`. */
+  expandRxGroupListMembers?: ExpandRxGroupListMembers;
+  /** How multi-TG expanded rows compose wire names. Default `callsign_tg_abbrev`. */
+  multiTalkGroupExportNameMode?: MultiTalkGroupExportNameMode;
 }
 
 export interface ImportDocumentResult extends ExportResult {

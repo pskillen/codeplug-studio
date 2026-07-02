@@ -39,6 +39,12 @@ export default function TalkGroupsListPage() {
         sortValue: (tg) => tg.digitalId,
       },
       {
+        key: 'abbreviation',
+        header: 'Abbrev',
+        render: (tg) => tg.abbreviation?.trim() || '—',
+        sortValue: (tg) => tg.abbreviation?.trim() || '',
+      },
+      {
         key: 'usage',
         header: 'Channels / RX lists using',
         render: (tg) => {
