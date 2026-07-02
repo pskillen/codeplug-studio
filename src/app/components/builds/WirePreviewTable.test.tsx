@@ -75,4 +75,21 @@ describe('WirePreviewTable', () => {
     expect(onWireNameChange).not.toHaveBeenCalled();
     expect(input).toHaveValue('');
   });
+
+  it('applies generated wire name when default label is clicked', () => {
+    const onWireNameChange = vi.fn();
+    render(
+      <MantineProvider>
+        <WirePreviewTable
+          rows={rows}
+          clickableDefaultWireName
+          onExcludedChange={vi.fn()}
+          onWireNameChange={onWireNameChange}
+        />
+      </MantineProvider>,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'GB3DA Demo' }));
+    expect(onWireNameChange).toHaveBeenCalledWith(rows[0], 'GB3DA Demo');
+  });
 });

@@ -33,7 +33,7 @@ Wire preview pages and the export panel share **`useExportSettings`** (browser `
 
 | Route                        | Entity kind   | Notes                                                                          |
 | ---------------------------- | ------------- | ------------------------------------------------------------------------------ |
-| `/builds/:id/channels`       | `channel`     | Multi-mode channels may show two rows                                          |
+| `/builds/:id/channels`       | `channel`     | Export name mode selector; click default name to store override; multi-mode rows |
 | `/builds/:id/zones`          | `zone`        | Includes [zone layout editor](zone-grouping.md) when profile has zone grouping |
 | `/builds/:id/talk-groups`    | `talkGroup`   | Unreferenced TGs still listed with a note                                      |
 | `/builds/:id/contacts`       | `contact`     | Digital + analog contacts                                                      |

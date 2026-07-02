@@ -1,4 +1,4 @@
-import { ActionIcon, Group, Switch, Table, Text, TextInput, Tooltip } from '@mantine/core';
+import { ActionIcon, Group, Switch, Table, Text, TextInput, Tooltip, UnstyledButton } from '@mantine/core';
 import { IconCheck, IconX } from '@tabler/icons-react';
 import { useEffect, useState } from 'react';
 import type { WirePreviewRow } from '@core/services/previewWireRows.ts';
@@ -7,6 +7,7 @@ import { ICON_SIZE_ACTION, ICON_STROKE } from '../../lib/iconSizes.ts';
 export interface WirePreviewTableProps {
   rows: WirePreviewRow[];
   nameLimit?: number;
+  clickableDefaultWireName?: boolean;
   onExcludedChange: (row: WirePreviewRow, excluded: boolean) => void;
   onWireNameChange: (row: WirePreviewRow, wireName: string) => void;
 }
@@ -19,11 +20,13 @@ function WireNameOverrideInput({
   row,
   nameLimit,
   excluded,
+  clickableDefaultWireName,
   onWireNameChange,
 }: {
   row: WirePreviewRow;
   nameLimit?: number;
   excluded: boolean;
+  clickableDefaultWireName?: boolean;
   onWireNameChange: (row: WirePreviewRow, wireName: string) => void;
 }) {
   const committed = wireNameCommittedValue(row);
@@ -95,7 +98,26 @@ function WireNameOverrideInput({
         ) : null}
       </Group>
       <Text size="xs" c="dimmed">
-        Default: {row.generatedWireName}
+        Default:{' '}
+        {clickableDefaultWireName ? (
+          <Tooltip label="Store this name as an explicit override">
+            <UnstyledButton
+              component="button"
+              type="button"
+              disabled={excluded}
+              onClick={() => onWireNameChange(row, row.generatedWireName)}
+              style={{
+                color: 'var(--mantine-color-dimmed)',
+                textDecoration: 'underline',
+                cursor: excluded ? 'not-allowed' : 'pointer',
+              }}
+            >
+              {row.generatedWireName}
+            </UnstyledButton>
+          </Tooltip>
+        ) : (
+          row.generatedWireName
+        )}
       </Text>
     </>
   );
@@ -104,6 +126,7 @@ function WireNameOverrideInput({
 export default function WirePreviewTable({
   rows,
   nameLimit,
+  clickableDefaultWireName = false,
   onExcludedChange,
   onWireNameChange,
 }: WirePreviewTableProps) {
@@ -147,6 +170,7 @@ export default function WirePreviewTable({
                 row={row}
                 nameLimit={nameLimit}
                 excluded={row.excluded}
+                clickableDefaultWireName={clickableDefaultWireName}
                 onWireNameChange={onWireNameChange}
               />
             </Table.Td>
