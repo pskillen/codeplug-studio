@@ -1,3 +1,4 @@
+import type { BuildEntityOverride } from '@core/models/formatBuild.ts';
 import { sanitiseAsciiWireString } from '@core/import-export/sanitiseAsciiWireString.ts';
 
 export type OverrideField =

@@ -7,6 +7,9 @@ formatBuilds:
     contactOverrides:
       - libraryEntityId: 66666666-6666-4666-8666-666666666666
         wireName: MM0HAM
+    exportUnlinkedChannels: true
+    exportUnlinkedRxGroupLists: true
+    exportUnlinkedTalkGroups: true
     formatId: opengd77
     id: 99999999-9999-4999-8999-999999999999
     layout:

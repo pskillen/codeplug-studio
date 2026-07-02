@@ -6,6 +6,7 @@ import {
   composeChannelWireName,
   type ChannelExportNameMode,
 } from '@core/domain/channelNaming.ts';
+import { finalizeWireName, uniqueWireName } from './shortenName.ts';
 import { sanitiseAsciiWireString } from '../sanitiseAsciiWireString.ts';
 
 export function resolveMaxNameLength(

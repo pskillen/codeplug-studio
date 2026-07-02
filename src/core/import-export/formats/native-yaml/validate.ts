@@ -426,6 +426,31 @@ function parseFormatBuild(raw: unknown, index: number): ParsedFormatBuild {
       label,
     ),
     contactOverrides: parseOverrideField(record, 'contactOverrides', 'contactSelections', label),
+    ...(record.exportUnlinkedChannels !== undefined && record.exportUnlinkedChannels !== null
+      ? {
+          exportUnlinkedChannels: expectBoolean(
+            record.exportUnlinkedChannels,
+            `${label}.exportUnlinkedChannels`,
+          ),
+        }
+      : {}),
+    ...(record.exportUnlinkedTalkGroups !== undefined && record.exportUnlinkedTalkGroups !== null
+      ? {
+          exportUnlinkedTalkGroups: expectBoolean(
+            record.exportUnlinkedTalkGroups,
+            `${label}.exportUnlinkedTalkGroups`,
+          ),
+        }
+      : {}),
+    ...(record.exportUnlinkedRxGroupLists !== undefined &&
+    record.exportUnlinkedRxGroupLists !== null
+      ? {
+          exportUnlinkedRxGroupLists: expectBoolean(
+            record.exportUnlinkedRxGroupLists,
+            `${label}.exportUnlinkedRxGroupLists`,
+          ),
+        }
+      : {}),
   };
 
   return { build, legacy };

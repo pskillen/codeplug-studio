@@ -136,11 +136,42 @@ function expandRefsFromRxLists(
   }
 }
 
+function zoneLinkedChannelIds(build: FormatBuild, library: LibrarySlice): Set<string> {
+  const ids = new Set<string>();
+  for (const section of zoneGroupingSections(build)) {
+    for (const zone of section.zones) {
+      for (const channelId of zone.channelIds) {
+        ids.add(channelId);
+      }
+    }
+  }
+  for (const zone of library.zones) {
+    for (const member of zone.members) {
+      if (member.kind === 'channel') {
+        ids.add(member.id);
+      }
+    }
+  }
+  return ids;
+}
+
+function withExportInclusionDefaults(build: FormatBuild): FormatBuild {
+  return {
+    ...build,
+    exportUnlinkedChannels: build.exportUnlinkedChannels ?? true,
+    exportUnlinkedTalkGroups: build.exportUnlinkedTalkGroups ?? true,
+    exportUnlinkedRxGroupLists: build.exportUnlinkedRxGroupLists ?? true,
+  };
+}
+
 function assembleChannels(build: FormatBuild, library: LibrarySlice): AssembledChannel[] {
   const overrides = build.channelOverrides;
+  const includeUnlinked = build.exportUnlinkedChannels !== false;
+  const zoneLinked = zoneLinkedChannelIds(build, library);
   const assembled: AssembledChannel[] = [];
   for (const entity of library.channels) {
     if (isEntityExcluded(overrides, entity.id)) continue;
+    if (!includeUnlinked && !zoneLinked.has(entity.id)) continue;
     const wireNameOverride = overrideByEntityId(overrides).get(entity.id)?.wireName?.trim();
     const generated = defaultChannelWireName(entity);
     assembled.push({
@@ -205,10 +236,16 @@ function assembleEntityList<T extends { id: string; name: string }>(
   overrides: BuildEntityOverride[],
   libraryEntities: T[],
   candidateIds: Set<string>,
+  includeUnlinkedLibrary: boolean,
 ): AssembledEntity<T>[] {
   const byId = new Map(libraryEntities.map((entity) => [entity.id, entity]));
   const overrideMap = overrideByEntityId(overrides);
   const ids = new Set(candidateIds);
+  if (includeUnlinkedLibrary) {
+    for (const entity of libraryEntities) {
+      ids.add(entity.id);
+    }
+  }
   for (const row of overrides) {
     ids.add(row.libraryEntityId);
   }
@@ -218,13 +255,63 @@ function assembleEntityList<T extends { id: string; name: string }>(
     if (isEntityExcluded(overrides, entityId)) continue;
     const entity = byId.get(entityId);
     if (!entity) continue;
-    if (!candidateIds.has(entityId) && !overrideMap.has(entityId)) continue;
+    const referenced = candidateIds.has(entityId);
+    const hasOverride = overrideMap.has(entityId);
+    if (!referenced && !hasOverride && !includeUnlinkedLibrary) continue;
     assembled.push({
       entity,
       wireName: resolveOverrideWireName(overrides, entity.id, entity.name),
     });
   }
   return assembled;
+}
+
+/** Warnings when orphan library entities are included in export. */
+export function exportInclusionWarnings(
+  build: FormatBuild,
+  library: LibrarySlice,
+  assembled: AssembledBuild,
+): string[] {
+  const warnings: string[] = [];
+  const normalized = withExportInclusionDefaults(build);
+
+  if (normalized.exportUnlinkedChannels !== false) {
+    const zoneLinked = zoneLinkedChannelIds(normalized, library);
+    const orphanCount = assembled.channels.filter((row) => !zoneLinked.has(row.entity.id)).length;
+    if (orphanCount > 0) {
+      warnings.push(`Including ${orphanCount} channel(s) not linked to a zone`);
+    }
+  }
+
+  const channelEntities = assembled.channels.map((row) => row.entity);
+  const refs = collectReferencedIds(channelEntities);
+  expandRefsFromRxLists(
+    library,
+    refs.rxGroupListIds,
+    refs.talkGroupIds,
+    refs.digitalContactIds,
+    refs.analogContactIds,
+  );
+
+  if (normalized.exportUnlinkedTalkGroups !== false) {
+    const orphanTgCount = assembled.talkGroups.filter(
+      (row) => !refs.talkGroupIds.has(row.entity.id),
+    ).length;
+    if (orphanTgCount > 0) {
+      warnings.push(`Including ${orphanTgCount} talk group(s) not referenced by a channel`);
+    }
+  }
+
+  if (normalized.exportUnlinkedRxGroupLists !== false) {
+    const orphanListCount = assembled.rxGroupLists.filter(
+      (row) => !refs.rxGroupListIds.has(row.entity.id),
+    ).length;
+    if (orphanListCount > 0) {
+      warnings.push(`Including ${orphanListCount} RX group list(s) not referenced by a channel`);
+    }
+  }
+
+  return warnings;
 }
 
 /**
@@ -236,7 +323,9 @@ export function assemble(
   library: LibrarySlice,
   options?: AssembleOptions,
 ): AssembledBuild {
-  const normalizedBuild = migrateFormatBuild(build, library as Library);
+  const normalizedBuild = withExportInclusionDefaults(
+    migrateFormatBuild(build, library as Library),
+  );
   const channels = assembleChannels(normalizedBuild, library);
   const exportedChannelIds = new Set(channels.map((c) => c.entity.id));
   const zones = assembleZones(normalizedBuild, library, exportedChannelIds);
@@ -278,21 +367,25 @@ export function assemble(
       normalizedBuild.talkGroupOverrides,
       library.talkGroups,
       refs.talkGroupIds,
+      normalizedBuild.exportUnlinkedTalkGroups !== false,
     ),
     digitalContacts: assembleEntityList(
       normalizedBuild.contactOverrides,
       library.digitalContacts,
       digitalContactIds,
+      false,
     ),
     analogContacts: assembleEntityList(
       normalizedBuild.contactOverrides,
       library.analogContacts,
       analogContactIds,
+      false,
     ),
     rxGroupLists: assembleEntityList(
       normalizedBuild.rxGroupListOverrides,
       library.rxGroupLists,
       refs.rxGroupListIds,
+      normalizedBuild.exportUnlinkedRxGroupLists !== false,
     ),
   };
 }

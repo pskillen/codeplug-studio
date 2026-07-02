@@ -4,6 +4,7 @@ import {
   overrideByEntityId,
   type OverrideField,
 } from '@core/domain/formatBuildOverrides.ts';
+import { channelDisplayLabel } from '@core/domain/channelNaming.ts';
 import { sanitiseAsciiWireString } from '@core/import-export/sanitiseAsciiWireString.ts';
 import {
   expandChannelWireRows,
@@ -201,14 +202,39 @@ export function previewWireRows(
   }
 }
 
-/** Rows that would be included in export (not excluded and, for referenced kinds, in projection). */
+/** Rows that would be included in export (not excluded and matching export inclusion flags). */
 export function includedPreviewWireRows(
   build: FormatBuild,
   library: LibrarySlice,
   entityKind: WirePreviewEntityKind,
   options?: CpsExportOptions,
 ): WirePreviewRow[] {
-  return previewWireRows(build, library, entityKind, options).filter((row) => !row.excluded);
+  const projection = assemble(build, library, { profileId: options?.profileId });
+  const rows = previewWireRows(build, library, entityKind, options).filter((row) => !row.excluded);
+
+  const includeUnlinkedChannels = build.exportUnlinkedChannels !== false;
+  const includeUnlinkedTalkGroups = build.exportUnlinkedTalkGroups !== false;
+  const includeUnlinkedRxGroupLists = build.exportUnlinkedRxGroupLists !== false;
+
+  switch (entityKind) {
+    case 'channel':
+      if (includeUnlinkedChannels) return rows;
+      return rows.filter((row) =>
+        projection.channels.some((channel) => channel.entity.id === row.libraryEntityId),
+      );
+    case 'talkGroup':
+      if (includeUnlinkedTalkGroups) return rows;
+      return rows.filter((row) =>
+        projection.talkGroups.some((tg) => tg.entity.id === row.libraryEntityId),
+      );
+    case 'rxGroupList':
+      if (includeUnlinkedRxGroupLists) return rows;
+      return rows.filter((row) =>
+        projection.rxGroupLists.some((list) => list.entity.id === row.libraryEntityId),
+      );
+    default:
+      return rows;
+  }
 }
 
 export function isPreviewRowExcluded(

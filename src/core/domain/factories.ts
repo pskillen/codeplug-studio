@@ -72,6 +72,9 @@ export function newFormatBuild(projectId: string, profileId: string, name?: stri
     name: name ?? profile.label,
     layout: emptyTraitLayout(),
     ...emptyFormatBuildOverrides(),
+    exportUnlinkedChannels: true,
+    exportUnlinkedTalkGroups: true,
+    exportUnlinkedRxGroupLists: true,
   };
 }
 
