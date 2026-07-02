@@ -1,153 +1,70 @@
 # OpenGD77 CSV — progress
 
-**Tracking:** [#36](https://github.com/pskillen/codeplug-studio/issues/36) · Phase 4a [#82](https://github.com/pskillen/codeplug-studio/issues/82)–[#84](https://github.com/pskillen/codeplug-studio/issues/84)
-**Plan:** Phase 4a foundation — builds shell, format catalog, OpenGD77 profiles
-**Branch:** `82/pskil/phase-4a-build-foundation`
+**Tracking:** [#36](https://github.com/pskillen/codeplug-studio/issues/36)  
+**Epic:** Phase 4 build + export ([#85](https://github.com/pskillen/codeplug-studio/issues/85)–[#91](https://github.com/pskillen/codeplug-studio/issues/91))  
+**Foundation:** Phase 4a ([#82](https://github.com/pskillen/codeplug-studio/issues/82)–[#84](https://github.com/pskillen/codeplug-studio/issues/84))
 
 ---
 
 ## Overall status
 
-**Status:** Complete — [#94](https://github.com/pskillen/codeplug-studio/pull/94) (includes post-plan CPS export UX revision)
+| Phase                                                  | Status                   | PR                                                         |
+| ------------------------------------------------------ | ------------------------ | ---------------------------------------------------------- |
+| 4a — build shell, profiles, format catalog             | Complete                 | [#94](https://github.com/pskillen/codeplug-studio/pull/94) |
+| 4 — MVP CPS export (adapter + download UI + Drive ZIP) | Complete (pending merge) | [#95](https://github.com/pskillen/codeplug-studio/pull/95) |
 
-**Branch:** `82/pskil/phase-4a-build-foundation`
-
----
-
-## Slice 1 — Progress tracking kickoff
-
-**Status:** Complete
-
-**Delivered**
-
-- Progress and outstanding log pair created
-
----
-
-## Slice 2 — OpenGD77 radio profiles (#84)
-
-**Status:** Complete
-
-**Delivered**
-
-- `src/core/import-export/profileLadder.ts`
-- `src/core/import-export/formats/opengd77/profiles.ts` + tests
-- `src/core/import-export/formatProfiles.ts` — `getFormatProfiles('opengd77')`
-- `TRAIT_PROFILES` — `opengd77-md9600`
-- `docs/features/import-export/opengd77/README.md`
-
----
-
-## Slice 3 — Format build shell (#82)
-
-**Status:** Complete
-
-**Delivered**
-
-- `BuildService`, `useFormatBuilds`, `/builds` routes + nav
-- `docs/features/builds/README.md`
-
----
-
-## Slice 4 — Import/export format catalog (#83)
-
-**Status:** Complete (revised — see **Plan deviations** below)
-
-**Delivered**
-
-- `FormatCatalogPanel`, `CpsFormatCatalogGrid`
-- `useFormatParam` — `?format=` deep link
-- Import/export page redesign (native YAML + CPS catalog)
-- ~~`ExportBuildSelectorStub` on import/export~~ → moved to build detail (post-plan UX pass)
-
----
-
-## Post-plan UX — CPS export on Radio builds (#94 follow-up)
-
-**Status:** Complete
-
-**Delivered**
-
-- Sidebar: **Radio builds** label; order Library → Summary → Radio builds → Import / export
-- `ExportBuildCpsPanelStub` on `/builds/:id` (replaces import/export build selector)
-- Import/export **Export to CPS** section retained as pointer to Radio builds
-- Removed `ExportBuildSelectorStub`
-
----
-
-## Plan deviations (inform follow-on tickets)
-
-Original Phase 4a plan assumed CPS **export** UI on `/import-export` via `ExportBuildSelectorStub`. After shipping, export was relocated:
-
-| Plan assumption                                  | Shipped behaviour                                                      | Impact on follow-on                                                                                                                                                                    |
-| ------------------------------------------------ | ---------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Export build selector on Import / export         | Per-build export stub on **Radio builds** detail page only             | [#86](https://github.com/pskillen/codeplug-studio/issues/86) / export adapter UI: wire download on `BuildDetailPage`, not `ImportExportPage`                                           |
-| Nav: Library, Builds, Import/export, Summary     | Nav: Library, **Summary**, **Radio builds**, Import/export             | Sidebar label is **Radio builds**; routes/code remain `/builds`, `BuildService`, etc.                                                                                                  |
-| Ticket #83 “export section: build selector stub” | Import/export keeps **Export to CPS** heading + link to Radio builds   | #83 acceptance met for import catalog; export stub scope moved to builds hub                                                                                                           |
-| `ExportBuildSelectorStub` component              | Deleted — use `ExportBuildCpsPanelStub` (`src/app/components/builds/`) | Profile picker ([#85](https://github.com/pskillen/codeplug-studio/issues/85)) and CPS export panel ([#88+](https://github.com/pskillen/codeplug-studio/issues/36)) target build detail |
-
-CPS **import** placeholders remain on Import / export (format catalog grid). Only **export** moved to Radio builds.
-
----
-
-**Tracking:** [#36](https://github.com/pskillen/codeplug-studio/issues/36) · Phase 4a [#85](https://github.com/pskillen/codeplug-studio/issues/85)–[#88](https://github.com/pskillen/codeplug-studio/issues/88)
 **Branch:** `85/pskil/opengd77-build-export`
 
----
-
-## Overall status
-
-**Status:** In progress — MVP export UI shipped (slices 8–10); zone editor, multi-mode, name shortening deferred
+MVP export intentionally omits zone editor ([#87](https://github.com/pskillen/codeplug-studio/issues/87)), multi-mode expansion ([#89](https://github.com/pskillen/codeplug-studio/issues/89)), and name shortening ([#90](https://github.com/pskillen/codeplug-studio/issues/90)).
 
 ---
 
-## Slice 9 — ExportBuildCpsPanel UI ([#91](https://github.com/pskillen/codeplug-studio/issues/91))
+## Phase 4a foundation
+
+**Status:** Complete  
+**PR:** [#94](https://github.com/pskillen/codeplug-studio/pull/94)  
+**Branch:** `82/pskil/phase-4a-build-foundation`
+
+| Slice                              | Status   | Notes                                                            |
+| ---------------------------------- | -------- | ---------------------------------------------------------------- |
+| Progress pair kickoff              | Complete | This file + `opengd77-outstanding.md`                            |
+| OpenGD77 radio profiles (#84)      | Complete | `profiles.ts`, `formatProfiles.ts`, trait `opengd77-md9600`      |
+| Format build shell (#82)           | Complete | `/builds` routes, `BuildService`, builds hub docs                |
+| Import/export format catalog (#83) | Complete | `FormatCatalogPanel`; CPS export relocated to build detail (#94) |
+| Post-plan UX (#94)                 | Complete | **Radio builds** nav; export pointer on Import / export          |
+
+**Plan deviation (inform follow-on):** CPS export UI moved from Import / export to per-build detail on Radio builds. `ExportBuildSelectorStub` deleted; export panel lives under `src/app/components/builds/`.
+
+---
+
+## Phase 4 — MVP export
+
+**Status:** Complete (pending merge)  
+**PR:** [#95](https://github.com/pskillen/codeplug-studio/pull/95)  
+**Branch:** `85/pskil/opengd77-build-export`
+
+| Slice                             | Issue                                                        | Status   |
+| --------------------------------- | ------------------------------------------------------------ | -------- |
+| ProfilePicker                     | [#85](https://github.com/pskillen/codeplug-studio/issues/85) | Complete |
+| `assemble` + `exportBuild`        | [#86](https://github.com/pskillen/codeplug-studio/issues/86) | Complete |
+| OpenGD77 export adapter           | [#88](https://github.com/pskillen/codeplug-studio/issues/88) | Complete |
+| Browser download + ZIP helpers    | (plan slice 4)                                               | Complete |
+| ExportBuildCpsPanel UI            | [#91](https://github.com/pskillen/codeplug-studio/issues/91) | Complete |
+| Google Drive ZIP upload           | (plan slice 9)                                               | Complete |
+| Export tests + `csvRecordCompare` | (plan slice 10)                                              | Complete |
+
+### Slice — ProfilePicker ([#85](https://github.com/pskillen/codeplug-studio/issues/85))
 
 **Status:** Complete
 
 **Delivered**
 
-- `ExportBuildCpsPanel` — per-file CSV buttons, ZIP download, export warnings
-- Replaces `ExportBuildCpsPanelStub` on `/builds/:id`
-- `ExportBuildCpsPanel.test.tsx`
+- `ProfilePicker` component + sidecar
+- New build wizard and build detail Target profile edit (layout guardrail)
+- Export panel shows saved profile read-only — change profile in Target section
+- `docs/features/builds/profiles.md`
 
----
-
-## Slice 10 — Google Drive CPS ZIP upload
-
-**Status:** Complete
-
-**Delivered**
-
-- `driveApi.writeBinaryFile` + `googleDrivePort.writeBinaryFile`
-- `DriveBrowserModal` — `saveConflictKind: zip` for overwrite detection
-- `buildCpsExportService.uploadCpsZipToDrive`
-- Save ZIP to Drive button on export panel
-
----
-
-## Slice 11 — Export tests
-
-**Status:** Complete
-
-**Delivered**
-
-- `src/test/csvRecordCompare.ts` + `csvParse.ts`
-- `warnings.test.ts`, extended `serialise.test.ts`
-- `buildCpsExportService.test.ts`, `driveApi` binary upload tests
-
----
-
-## Next
-
-- [#87](https://github.com/pskillen/codeplug-studio/issues/87) zone grouping build editor
-- [#89](https://github.com/pskillen/codeplug-studio/issues/89) multi-mode channel expansion
-- [#90](https://github.com/pskillen/codeplug-studio/issues/90) export name shortening
-- Phase 4b OpenGD77 import
-
----
-
-## Slice 6 — assemble + exportBuild ([#86](https://github.com/pskillen/codeplug-studio/issues/86))
+### Slice — `assemble` + `exportBuild` ([#86](https://github.com/pskillen/codeplug-studio/issues/86))
 
 **Status:** Complete
 
@@ -157,9 +74,7 @@ CPS **import** placeholders remain on Import / export (format catalog grid). Onl
 - `src/core/services/exportBuild.ts` — per-file and ZIP bytes
 - `docs/features/import-export/cps-services.md`
 
----
-
-## Slice 7 — OpenGD77 export adapter ([#88](https://github.com/pskillen/codeplug-studio/issues/88))
+### Slice — OpenGD77 export adapter ([#88](https://github.com/pskillen/codeplug-studio/issues/88))
 
 **Status:** Complete
 
@@ -170,9 +85,9 @@ CPS **import** placeholders remain on Import / export (format catalog grid). Onl
 - `serialise.test.ts` — directional export from assemble fixture
 - `docs/features/import-export/opengd77/export-mapping.md`
 
----
+One row per channel via first `modeProfile` until [#89](https://github.com/pskillen/codeplug-studio/issues/89).
 
-## Slice 8 — Browser download + ZIP ([#85](https://github.com/pskillen/codeplug-studio/issues/85) plan slice 4)
+### Slice — Browser download + ZIP
 
 **Status:** Complete
 
@@ -183,31 +98,50 @@ CPS **import** placeholders remain on Import / export (format catalog grid). Onl
 - `src/core/import-export/formats/opengd77/packageZip.ts`
 - `src/app/services/buildCpsExportService.ts` — `downloadCpsFile`, `downloadCpsZip`
 
----
-
-## Next
-
-- [#87](https://github.com/pskillen/codeplug-studio/issues/87) zone grouping build editor
-- [#89](https://github.com/pskillen/codeplug-studio/issues/89)–[#90](https://github.com/pskillen/codeplug-studio/issues/90) multi-mode, name shortening
-- Phase 4b OpenGD77 import
-
----
-
-## Removed — superseded by slices 9–11 above
-
-- ~~`ExportBuildCpsPanel` download UI~~ — shipped
-- ~~Google Drive CPS ZIP upload~~ — shipped
-- ~~Extended export golden tests~~ — shipped (`csvRecordCompare`, `warnings.test.ts`)
-
----
-
-## Slice 5 — ProfilePicker ([#85](https://github.com/pskillen/codeplug-studio/issues/85))
+### Slice — ExportBuildCpsPanel ([#91](https://github.com/pskillen/codeplug-studio/issues/91))
 
 **Status:** Complete
 
 **Delivered**
 
-- `ProfilePicker` component + sidecar
-- New build wizard and build detail profile edit with layout guardrail
-- Export panel shows saved profile read-only — change profile in Target section
-- `docs/features/builds/profiles.md`
+- `ExportBuildCpsPanel` — per-file CSV buttons, ZIP download, export warnings
+- Replaces `ExportBuildCpsPanelStub` on `/builds/:id`
+- `ExportBuildCpsPanel.test.tsx`, component sidecar
+
+### Slice — Google Drive ZIP upload
+
+**Status:** Complete
+
+**Delivered**
+
+- `driveApi.writeBinaryFile` + `googleDrivePort.writeBinaryFile`
+- `DriveBrowserModal` — `saveConflictKind: zip` for overwrite detection
+- `buildCpsExportService.uploadCpsZipToDrive`
+- Save ZIP to Drive on export panel
+
+### Slice — Export tests
+
+**Status:** Complete
+
+**Delivered**
+
+- `src/test/csvRecordCompare.ts` + `csvParse.ts`
+- `warnings.test.ts`, extended `serialise.test.ts`
+- `buildCpsExportService.test.ts`, `driveApi` binary upload tests
+
+**Verify**
+
+- [ ] Open OpenGD77 build with library channels → **Download ZIP** → six CSVs in archive
+- [ ] Per-file CSV download buttons
+- [ ] Export warnings when wire names exceed profile `nameLimit`
+- [ ] **Save ZIP to Drive** (connected Google account)
+- [x] `npm run lint`, `npm run test`, `npm run build`
+
+---
+
+## Next
+
+- [#87](https://github.com/pskillen/codeplug-studio/issues/87) — zone grouping build editor
+- [#89](https://github.com/pskillen/codeplug-studio/issues/89) — multi-mode channel expansion at export
+- [#90](https://github.com/pskillen/codeplug-studio/issues/90) — export name shortening pipeline
+- Phase 4b — OpenGD77 CPS import (Import / export format catalog)

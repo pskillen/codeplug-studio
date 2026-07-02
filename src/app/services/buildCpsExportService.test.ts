@@ -1,9 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import {
-  newChannel,
-  newFormatBuild,
-  newProjectMeta,
-} from '@core/domain/factories.ts';
+import { newChannel, newFormatBuild, newProjectMeta } from '@core/domain/factories.ts';
 import { InMemoryProjectPersistence } from '@integrations/persistence/inMemory.ts';
 import {
   buildCpsZipBytes,
