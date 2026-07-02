@@ -89,6 +89,8 @@ export interface ProjectPersistence {
 
   deleteEntity(projectId: string, kind: EntityKind, id: string): Promise<void>;
   seedProject(seed: ProjectSeed): Promise<void>;
+  loadProjectSeed(projectId: string): Promise<ProjectSeed | null>;
+  replaceProject(projectId: string, seed: ProjectSeed): Promise<void>;
 
   /** Subscribe to change notifications. Returns an unsubscribe function. */
   subscribe(listener: PersistenceListener): () => void;

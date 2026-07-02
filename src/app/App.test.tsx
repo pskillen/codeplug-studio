@@ -2,10 +2,16 @@ import 'fake-indexeddb/auto';
 import { MantineProvider } from '@mantine/core';
 import { render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { ACTIVE_PROJECT_KEY, MAPBOX_TOKEN_KEY } from '@integrations/preferences/index.ts';
+import { newProjectMeta } from '@core/domain/factories.ts';
+import {
+  ACTIVE_PROJECT_KEY,
+  MAPBOX_TOKEN_KEY,
+  saveActiveProjectId,
+} from '@integrations/preferences/index.ts';
 import App from './App.tsx';
 import ProjectProvider from './state/ProjectProvider.tsx';
 import { OperatorPositionProvider } from './state/operatorPosition.tsx';
+import { persistence } from './state/persistence.ts';
 import { theme } from './theme.ts';
 
 vi.mock('react-leaflet', () => ({
@@ -107,5 +113,17 @@ describe('App', () => {
 
     expect(screen.getByRole('heading', { name: 'IndexedDB' })).toBeInTheDocument();
     expect(await screen.findByText('channels')).toBeInTheDocument();
+  });
+
+  it('renders import/export when a project is active', async () => {
+    const meta = newProjectMeta('Test project');
+    await persistence.seedProject({ meta });
+    saveActiveProjectId(meta.projectId);
+
+    renderApp('/import-export');
+
+    expect(await screen.findByRole('heading', { name: 'Import / export' })).toBeInTheDocument();
+    expect(screen.getByText(/Export the active project/i)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Download YAML/i })).toBeInTheDocument();
   });
 });

@@ -41,16 +41,6 @@ export interface ProjectAggregate {
   formatBuilds: FormatBuild[];
 }
 
-/**
- * Placeholder for export destination memory — field lands on ProjectMeta in #59.
- *
- * @example
- * interchange?: {
- *   lastLocalExportFileName?: string;
- *   drive?: { folderId: string; fileId?: string; fileName?: string };
- * };
- */
-
 export function emptyLibrary(): Library {
   return {
     channels: [],

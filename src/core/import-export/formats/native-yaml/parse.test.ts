@@ -33,6 +33,38 @@ describe('native-yaml parse', () => {
     aggregateEqual(parseProjectDocument(readFixture('valid-full.yaml')), fullLibraryAggregate());
   });
 
+  it('parses channels with omitted nullable fields', () => {
+    const aggregate = parseProjectDocument(readFixture('omitted-nullables.yaml'));
+    expect(aggregate.channels).toHaveLength(1);
+    const channel = aggregate.channels[0]!;
+    expect(channel.maidenheadLocator).toBeNull();
+    expect(channel.location).toBeNull();
+    expect(channel.rxFrequency).toBeNull();
+    expect(channel.txFrequency).toBeNull();
+    expect(channel.power).toBeNull();
+    const fm = channel.modeProfiles[0];
+    expect(fm?.mode).toBe('fm');
+    if (fm?.mode === 'fm') {
+      expect(fm.squelch).toBeNull();
+      expect(fm.bandwidthKHz).toBeNull();
+    }
+    const dmr = channel.modeProfiles[1];
+    expect(dmr?.mode).toBe('dmr');
+    if (dmr?.mode === 'dmr') {
+      expect(dmr.contactRef).toBeNull();
+      expect(dmr.rxGroupListId).toBeNull();
+      expect(dmr.timeslot).toBeNull();
+      expect(dmr.colourCode).toBeNull();
+      expect(dmr.dmrId).toBeNull();
+    }
+    const ysf = channel.modeProfiles[2];
+    expect(ysf?.mode).toBe('ysf');
+    if (ysf?.mode === 'ysf') {
+      expect(ysf.wiresDtmfId).toBe('');
+      expect(ysf.dgId).toBeNull();
+    }
+  });
+
   it('rejects corrupt YAML', () => {
     expect(() => parseProjectDocument(readFixture('corrupt.yaml'))).toThrow(NativeYamlImportError);
     expect(() => parseProjectDocument(readFixture('corrupt.yaml'))).toThrow(/Invalid YAML syntax/);

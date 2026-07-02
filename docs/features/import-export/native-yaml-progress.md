@@ -1,19 +1,26 @@
 # Native YAML — progress
 
-**Tracking:** [#56](https://github.com/pskillen/codeplug-studio/issues/56) · [#57](https://github.com/pskillen/codeplug-studio/issues/57) · [#58](https://github.com/pskillen/codeplug-studio/issues/58)  
+**Tracking:** [#56](https://github.com/pskillen/codeplug-studio/issues/56)–[#58](https://github.com/pskillen/codeplug-studio/issues/58) · [#59](https://github.com/pskillen/codeplug-studio/issues/59) · [#60](https://github.com/pskillen/codeplug-studio/issues/60)  
 **Epic:** [Phase 3 #35](https://github.com/pskillen/codeplug-studio/issues/35)  
-**Branch:** `56/pskil/native-yaml-core`
+**Branch:** `59/pskil/interchange-services-ui`
 
 ## Status
 
-| Slice                               | Status   | Notes     |
-| ----------------------------------- | -------- | --------- |
-| 0 Kickoff — progress pair + branch  | Complete | `df7afbe` |
-| 1 Import/export scaffold + envelope | Complete | `2d2a397` |
-| 2 Feature + schema docs             | Complete | `e700605` |
-| 3 Export serialiser                 | Complete | `a2e315d` |
-| 4 Import parser + validation        | Complete | `3df28ea` |
-| 5 Registry smoke + PR               | Complete |           |
+| Slice                               | Status   | Notes                                                      |
+| ----------------------------------- | -------- | ---------------------------------------------------------- |
+| 0 Kickoff — progress pair + branch  | Complete | `df7afbe`                                                  |
+| 1 Import/export scaffold + envelope | Complete | `2d2a397`                                                  |
+| 2 Feature + schema docs             | Complete | `e700605`                                                  |
+| 3 Export serialiser                 | Complete | `a2e315d`                                                  |
+| 4 Import parser + validation        | Complete | `3df28ea`                                                  |
+| 5 Registry smoke + PR               | Complete | [#78](https://github.com/pskillen/codeplug-studio/pull/78) |
+| 6 Interchange model + helpers (#59) | Complete | `2f760bc`                                                  |
+| 7 Persistence replaceProject (#59)  | Complete |                                                            |
+| 8 Core services (#59)               | Complete |                                                            |
+| 9 System tests (#59)                | Complete |                                                            |
+| 10 App primitives (#60)             | Complete |                                                            |
+| 11 Import/export UI (#60)           | Complete |                                                            |
+| 12 Routes + workflow docs + PR      | Complete |                                                            |
 
 ## Shipped
 

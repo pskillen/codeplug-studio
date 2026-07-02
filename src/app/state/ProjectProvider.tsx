@@ -24,7 +24,7 @@ export default function ProjectProvider({ children }: ProjectProviderProps) {
   );
   const [loading, setLoading] = useState(true);
 
-  const refresh = useCallback(async () => {
+  const refreshProjects = useCallback(async () => {
     setProjects(await storeRef.current!.list());
   }, []);
 
@@ -56,10 +56,10 @@ export default function ProjectProvider({ children }: ProjectProviderProps) {
   const createProject = useCallback(
     async (name: string) => {
       const created = await storeRef.current!.create(name);
-      await refresh();
+      await refreshProjects();
       setActiveProjectId(created.projectId);
     },
-    [refresh],
+    [refreshProjects],
   );
 
   const switchProject = useCallback((projectId: string) => {
@@ -69,18 +69,18 @@ export default function ProjectProvider({ children }: ProjectProviderProps) {
   const renameProject = useCallback(
     async (projectId: string, name: string) => {
       await storeRef.current!.rename(projectId, name);
-      await refresh();
+      await refreshProjects();
     },
-    [refresh],
+    [refreshProjects],
   );
 
   const deleteProject = useCallback(
     async (projectId: string) => {
       await storeRef.current!.delete(projectId);
       setActiveProjectId((current) => (current === projectId ? null : current));
-      await refresh();
+      await refreshProjects();
     },
-    [refresh],
+    [refreshProjects],
   );
 
   const value = useMemo<ProjectContextValue>(() => {
@@ -94,6 +94,7 @@ export default function ProjectProvider({ children }: ProjectProviderProps) {
       switchProject,
       renameProject,
       deleteProject,
+      refreshProjects,
     };
   }, [
     projects,
@@ -103,6 +104,7 @@ export default function ProjectProvider({ children }: ProjectProviderProps) {
     switchProject,
     renameProject,
     deleteProject,
+    refreshProjects,
   ]);
 
   return <ProjectContext.Provider value={value}>{children}</ProjectContext.Provider>;

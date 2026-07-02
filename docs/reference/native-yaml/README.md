@@ -38,25 +38,38 @@ Every stored entity includes:
 
 ## `project` (`ProjectMeta`)
 
-| Field                      | Type              | Required |
-| -------------------------- | ----------------- | -------- |
-| _(persistable row fields)_ |                   | yes      |
-| `name`                     | string            | yes      |
-| `description`              | string            | yes      |
-| `notes`                    | string            | yes      |
-| `author`                   | string            | yes      |
-| `createdAt`                | string (ISO 8601) | yes      |
+| Field                      | Type                 | Required |
+| -------------------------- | -------------------- | -------- |
+| _(persistable row fields)_ |                      | yes      |
+| `name`                     | string               | yes      |
+| `description`              | string               | yes      |
+| `notes`                    | string               | yes      |
+| `author`                   | string               | yes      |
+| `createdAt`                | string (ISO 8601)    | yes      |
+| `interchange`              | `ProjectInterchange` | no       |
 
-### Future: `interchange` (#59)
+### `interchange` (`ProjectInterchange`)
 
-Not emitted in v1 exports until [#59](https://github.com/pskillen/codeplug-studio/issues/59) implements export destination memory:
+Optional export destination memory — omitted when never exported.
 
-| Field                                 | Type   | Purpose                             |
-| ------------------------------------- | ------ | ----------------------------------- |
-| `interchange.lastLocalExportFileName` | string | Pre-fill next local export filename |
-| `interchange.drive.folderId`          | string | Last Google Drive folder            |
-| `interchange.drive.fileId`            | string | Last Drive file                     |
-| `interchange.drive.fileName`          | string | Display name on Drive               |
+**`localFile`**
+
+| Field        | Type              | Required |
+| ------------ | ----------------- | -------- |
+| `fileName`   | string            | yes      |
+| `exportedAt` | string (ISO 8601) | yes      |
+
+**`googleDrive`**
+
+| Field        | Type              | Required |
+| ------------ | ----------------- | -------- |
+| `folderId`   | string            | yes      |
+| `folderName` | string            | no       |
+| `fileId`     | string            | yes      |
+| `fileName`   | string            | yes      |
+| `exportedAt` | string (ISO 8601) | yes      |
+
+CPS format destination keys (e.g. `opengd77`) are reserved for Phase 4+.
 
 ## `library` object
 
@@ -195,6 +208,10 @@ Import rejects when:
 8. Zone `members` contain non-channel refs
 9. `TraitLayout` `channelIds` missing from library
 10. DMR `rxGroupListId` missing from library
+
+**Nullable fields:** columns marked nullable in the tables above may be omitted from YAML or set to `null`; import normalises both to `null` in the library model. Export may omit keys when the stored row has no value (e.g. legacy IndexedDB rows).
+
+**Optional string fields** on mode profiles (e.g. YSF `wiresDtmfId`, D-STAR `rpt1Call` / `rpt2Call`) may be omitted; import applies the same defaults as `defaultModeProfile` in `src/core/domain/modeProfiles.ts` (empty string, or `CQCQCQ` for D-STAR `urCall`, or `none` for analogue tones).
 
 ## Example document
 
