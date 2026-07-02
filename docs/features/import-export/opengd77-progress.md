@@ -8,7 +8,7 @@
 
 ## Overall status
 
-**Status:** Complete (pending merge)
+**Status:** Complete — [#94](https://github.com/pskillen/codeplug-studio/pull/94)
 
 **Branch:** `82/pskil/phase-4a-build-foundation`
 
@@ -60,10 +60,6 @@
 - Import/export page redesign
 
 ---
-
-## Overall status
-
-**Status:** Complete (pending merge)
 
 ## Next
 
