@@ -34,3 +34,9 @@
 - `docs/features/import-export/native-yaml/README.md` deep-dive
 - `docs/reference/native-yaml/README.md` tier 3 schema + example
 - `docs/poc-migration/epic-1-context.md` — native YAML scope resolved
+
+### Slice 3 — Export serialiser
+
+- `yaml` package dependency
+- `formats/native-yaml/serialise.ts` — stable alphabetical keys, explicit nulls
+- `testFixtures.ts`, `__fixtures__/export/` golden files, `serialise.test.ts`

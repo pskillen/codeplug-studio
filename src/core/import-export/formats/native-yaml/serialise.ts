@@ -1,7 +1,27 @@
-import type { ProjectAggregate } from '../../projectDocument.ts';
+import { stringify } from 'yaml';
+import {
+  documentFromAggregate,
+  type ProjectAggregate,
+} from '../../projectDocument.ts';
 
-/** Serialise a project aggregate to native YAML. Implemented in export slice (#57). */
+function sortKeysDeep(value: unknown): unknown {
+  if (Array.isArray(value)) {
+    return value.map(sortKeysDeep);
+  }
+  if (value !== null && typeof value === 'object') {
+    const record = value as Record<string, unknown>;
+    const sorted: Record<string, unknown> = {};
+    for (const key of Object.keys(record).sort()) {
+      sorted[key] = sortKeysDeep(record[key]);
+    }
+    return sorted;
+  }
+  return value;
+}
+
+/** Serialise a project aggregate to native YAML v1. */
 export function serialiseProject(aggregate: ProjectAggregate): string {
-  void aggregate;
-  throw new Error('native-yaml serialise not implemented');
+  const document = documentFromAggregate(aggregate);
+  const sorted = sortKeysDeep(document);
+  return stringify(sorted, { lineWidth: 0 }).trimEnd();
 }
