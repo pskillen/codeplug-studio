@@ -5,7 +5,7 @@ import {
   serializeCsvParam,
   type ChannelSortMode,
 } from '../../hooks/channelListQueryUtils.ts';
-import type { ChannelListPrefs, EntityListPrefs } from './types.ts';
+import type { ChannelListPrefs, EntityListPrefs } from '@integrations/listPrefs/index.ts';
 
 const CHANNEL_LIST_PARAM_KEYS = [
   'q',

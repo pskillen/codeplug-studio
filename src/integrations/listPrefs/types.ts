@@ -1,8 +1,18 @@
-import type { DataTableSortState } from '../dataTable/sort.ts';
-import type { ChannelSortMode } from '../../hooks/channelListQueryUtils.ts';
-
 export type EntityListEntity =
-  'zones' | 'talk-groups' | 'digital-contacts' | 'analog-contacts' | 'rx-group-lists';
+  | 'zones'
+  | 'talk-groups'
+  | 'digital-contacts'
+  | 'analog-contacts'
+  | 'rx-group-lists';
+
+export type ChannelSortMode = 'name' | 'distance';
+
+export type DataTableSortDirection = 'asc' | 'desc';
+
+export interface DataTableSortState {
+  columnKey: string;
+  direction: DataTableSortDirection;
+}
 
 export interface ChannelListPrefs {
   q?: string;

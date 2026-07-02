@@ -4,13 +4,13 @@ import {
   debouncedMergeChannelListPrefs,
   loadChannelListPrefs,
   mergeChannelListPrefs,
-} from '../lib/listPrefs/storage.ts';
+  type ChannelListPrefs,
+} from '@integrations/listPrefs/index.ts';
 import {
   channelListPrefsFromSearchParams,
   channelListPrefsToSearchParams,
   hasChannelListUrlParams,
 } from '../lib/listPrefs/urlSync.ts';
-import type { ChannelListPrefs } from '../lib/listPrefs/types.ts';
 import { useProjects } from '../state/useProjects.ts';
 import {
   defaultMaxDistanceKm,

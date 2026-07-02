@@ -1,13 +1,13 @@
 import { useCallback, useEffect, useRef } from 'react';
 import { useSearchParams, useLocation } from 'react-router-dom';
-import type { EntityListEntity } from '../lib/listPrefs/types.ts';
 import {
   debouncedMergeEntityListPrefs,
   loadChannelListPrefs,
   loadEntityListPrefs,
   mergeChannelListPrefs,
   mergeEntityListPrefs,
-} from '../lib/listPrefs/storage.ts';
+  type EntityListEntity,
+} from '@integrations/listPrefs/index.ts';
 import { hasEntityListUrlParams } from '../lib/listPrefs/urlSync.ts';
 import { useProjects } from '../state/useProjects.ts';
 

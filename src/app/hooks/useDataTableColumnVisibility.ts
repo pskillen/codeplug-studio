@@ -1,4 +1,5 @@
 import { useCallback, useSyncExternalStore } from 'react';
+import { loadStringArray, readStorageRaw, saveStringArray } from '@integrations/listPrefs/index.ts';
 
 export interface ColumnVisibilityDef {
   key: string;
@@ -30,15 +31,7 @@ function getDisabledSnapshot(storageKey: string, defs: ColumnVisibilityDef[]): s
 
 function loadFromStorage(storageKey: string, defs: ColumnVisibilityDef[]): string[] {
   const validKeys = new Set(defs.map((d) => d.key));
-  try {
-    const raw = localStorage.getItem(storageKey);
-    if (raw !== null) {
-      return (JSON.parse(raw) as string[]).filter((k) => validKeys.has(k));
-    }
-  } catch {
-    /* ignore */
-  }
-  return defaultVisibleKeys(defs);
+  return loadStringArray(storageKey, validKeys, defaultVisibleKeys(defs));
 }
 
 const stores = new Map<
@@ -70,7 +63,7 @@ function getStore(storageKey: string, defs: ColumnVisibilityDef[], customLoad?: 
 }
 
 function readStorageValue(storageKey: string): string | null {
-  return localStorage.getItem(storageKey);
+  return readStorageRaw(storageKey);
 }
 
 function getSnapshot(
@@ -132,7 +125,7 @@ export function useDataTableColumnVisibility(
   const setVisibleCols = useCallback(
     (cols: string[]) => {
       if (!enabled) return;
-      localStorage.setItem(storageKey, JSON.stringify(cols));
+      saveStringArray(storageKey, cols);
       emitChange(storageKey);
     },
     [storageKey, enabled],

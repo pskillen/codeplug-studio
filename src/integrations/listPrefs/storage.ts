@@ -1,13 +1,13 @@
+import { LIST_NAME_FILTER_DEBOUNCE_MS } from './constants.ts';
 import { channelListPrefsKey, entityListPrefsKey } from './keys.ts';
 import type { ChannelListPrefs, EntityListEntity, EntityListPrefs } from './types.ts';
 
 const debounceTimers = new Map<string, ReturnType<typeof setTimeout>>();
-const DEBOUNCE_MS = 300;
 
 function readJson<T>(key: string): T | null {
   try {
-    const raw = localStorage.getItem(key);
-    if (raw === null) return null;
+    const raw = globalThis.localStorage?.getItem(key);
+    if (raw === null || raw === undefined) return null;
     return JSON.parse(raw) as T;
   } catch {
     return null;
@@ -15,7 +15,11 @@ function readJson<T>(key: string): T | null {
 }
 
 function writeJson(key: string, value: unknown): void {
-  localStorage.setItem(key, JSON.stringify(value));
+  try {
+    globalThis.localStorage?.setItem(key, JSON.stringify(value));
+  } catch {
+    // Ignore write failures (quota, disabled storage).
+  }
 }
 
 export function loadChannelListPrefs(projectId: string): ChannelListPrefs | null {
@@ -74,7 +78,7 @@ export function debouncedMergeChannelListPrefs(
     setTimeout(() => {
       debounceTimers.delete(key);
       mergeChannelListPrefs(projectId, patch);
-    }, DEBOUNCE_MS),
+    }, LIST_NAME_FILTER_DEBOUNCE_MS),
   );
 }
 
@@ -91,6 +95,15 @@ export function debouncedMergeEntityListPrefs(
     setTimeout(() => {
       debounceTimers.delete(key);
       mergeEntityListPrefs(entity, projectId, patch);
-    }, DEBOUNCE_MS),
+    }, LIST_NAME_FILTER_DEBOUNCE_MS),
   );
+}
+
+/** Flush pending debounced writes — for tests. */
+export function flushDebouncedListPrefs(): void {
+  for (const [key, timer] of debounceTimers) {
+    clearTimeout(timer);
+    debounceTimers.delete(key);
+    void key;
+  }
 }

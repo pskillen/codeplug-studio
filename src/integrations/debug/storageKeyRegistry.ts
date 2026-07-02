@@ -1,12 +1,15 @@
 import {
+  LIST_ENTITY_LABELS,
+  LIST_PREFS_STORAGE_PREFIX,
+} from '@integrations/listPrefs/index.ts';
+import {
   ACTIVE_PROJECT_KEY,
   MAPBOX_TOKEN_KEY,
   PREFERENCES_STORAGE_PREFIX,
 } from '@integrations/preferences/index.ts';
 import { parseStorageRaw, redactParsedValue } from './parseStorageValue.ts';
 
-/** Matches `src/app/lib/listPrefs/keys.ts` — kept here to avoid integrations → app imports. */
-export const LIST_PREFS_STORAGE_PREFIX = 'mm9pdy-codeplug-studio.list.';
+export { LIST_PREFS_STORAGE_PREFIX };
 
 export interface StorageKeyDescriptor {
   key: string;
@@ -30,15 +33,6 @@ const KNOWN_STORAGE_KEYS: StorageKeyDescriptor[] = [
   { key: ACTIVE_PROJECT_KEY, label: 'Active project id', redact: false },
   { key: MAPBOX_TOKEN_KEY, label: 'Mapbox token', redact: true },
 ];
-
-const LIST_ENTITY_LABELS: Record<string, string> = {
-  channels: 'channels',
-  zones: 'zones',
-  'talk-groups': 'talk groups',
-  'digital-contacts': 'digital contacts',
-  'analog-contacts': 'analog contacts',
-  'rx-group-lists': 'RX group lists',
-};
 
 export function formatByteSize(bytes: number): string {
   if (bytes === 0) return '0 B';
