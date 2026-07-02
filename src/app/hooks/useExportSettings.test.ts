@@ -41,4 +41,14 @@ describe('useExportSettings', () => {
     expect(second.current.nameModeOverride).toBe('callsign_only');
     expect(localStorage.getItem(STORAGE_KEY_EXPORT_NAME_MODE_OVERRIDE)).toBe('callsign_only');
   });
+
+  it('defaults useChannelAbbreviation to on until explicitly disabled', () => {
+    const { result } = renderHook(() => useExportSettings());
+    expect(result.current.useChannelAbbreviation).toBe(true);
+
+    act(() => {
+      result.current.setUseChannelAbbreviation(false);
+    });
+    expect(result.current.useChannelAbbreviation).toBe(false);
+  });
 });

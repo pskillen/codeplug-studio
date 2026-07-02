@@ -21,7 +21,6 @@ export function resolveMaxNameLength(
 export function composeExportWireName(channel: Channel, options?: CpsExportOptions): string {
   const pick = channelPickForWireExport(channel, {
     nameModeOverride: options?.nameModeOverride as ChannelExportNameMode | undefined,
-    useChannelAbbreviation: options?.useChannelAbbreviation,
   });
   return composeChannelWireName(pick);
 }
@@ -48,8 +47,12 @@ export function applyWireNameLimits(
 
   const pick = channelPickForWireExport(channel, {
     nameModeOverride: options?.nameModeOverride as ChannelExportNameMode | undefined,
-    useChannelAbbreviation: options?.useChannelAbbreviation,
   });
+  const abbrev = channel.abbreviation?.trim();
+  const recomposeWithChannelAbbreviation =
+    abbrev && options?.useChannelAbbreviation !== false
+      ? () => composeChannelWireName({ ...pick, name: abbrev })
+      : undefined;
 
   return sanitiseAsciiWireString(
     finalizeWireName(
@@ -59,6 +62,7 @@ export function applyWireNameLimits(
       {
         exportNameMode: pick.exportNameMode,
         recomposeWithMode: (mode) => composeChannelWireName({ ...pick, exportNameMode: mode }),
+        recomposeWithChannelAbbreviation,
       },
       warnings,
     ),

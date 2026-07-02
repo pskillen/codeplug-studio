@@ -1,5 +1,6 @@
 import {
   ActionIcon,
+  Anchor,
   Group,
   Switch,
   Table,
@@ -9,8 +10,10 @@ import {
   UnstyledButton,
 } from '@mantine/core';
 import { IconCheck, IconX } from '@tabler/icons-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import type { WirePreviewRow } from '@core/services/previewWireRows.ts';
+import { libraryEditPathForWirePreviewRow } from '../../lib/wirePreviewRowLinks.ts';
 import { ICON_SIZE_ACTION, ICON_STROKE } from '../../lib/iconSizes.ts';
 
 export interface WirePreviewTableProps {
@@ -19,6 +22,7 @@ export interface WirePreviewTableProps {
   clickableDefaultWireName?: boolean;
   onExcludedChange: (row: WirePreviewRow, excluded: boolean) => void;
   onWireNameChange: (row: WirePreviewRow, wireName: string) => void;
+  onUnsavedChangesChange?: (hasUnsaved: boolean) => void;
 }
 
 function wireNameCommittedValue(row: WirePreviewRow): string {
@@ -31,16 +35,22 @@ function WireNameOverrideInput({
   excluded,
   clickableDefaultWireName,
   onWireNameChange,
+  onDirtyChange,
 }: {
   row: WirePreviewRow;
   nameLimit?: number;
   excluded: boolean;
   clickableDefaultWireName?: boolean;
   onWireNameChange: (row: WirePreviewRow, wireName: string) => void;
+  onDirtyChange: (dirty: boolean) => void;
 }) {
   const committed = wireNameCommittedValue(row);
   const [draft, setDraft] = useState(committed);
   const dirty = draft !== committed;
+
+  useEffect(() => {
+    onDirtyChange(dirty);
+  }, [dirty, onDirtyChange]);
 
   const tooLong = nameLimit != null && draft.length > nameLimit;
 
@@ -139,7 +149,25 @@ export default function WirePreviewTable({
   clickableDefaultWireName = false,
   onExcludedChange,
   onWireNameChange,
+  onUnsavedChangesChange,
 }: WirePreviewTableProps) {
+  const [dirtyKeys, setDirtyKeys] = useState<Set<string>>(() => new Set());
+
+  useEffect(() => {
+    onUnsavedChangesChange?.(dirtyKeys.size > 0);
+  }, [dirtyKeys, onUnsavedChangesChange]);
+
+  const setRowDirty = (key: string, dirty: boolean) => {
+    setDirtyKeys((prev) => {
+      const has = prev.has(key);
+      if (dirty === has) return prev;
+      const next = new Set(prev);
+      if (dirty) next.add(key);
+      else next.delete(key);
+      return next;
+    });
+  };
+
   if (rows.length === 0) {
     return (
       <Text c="dimmed" size="sm">
@@ -174,6 +202,9 @@ export default function WirePreviewTable({
                   {row.expansionNote}
                 </Text>
               ) : null}
+              <Anchor component={Link} to={libraryEditPathForWirePreviewRow(row)} size="xs">
+                Edit in library
+              </Anchor>
             </Table.Td>
             <Table.Td>
               <WireNameOverrideInput
@@ -183,6 +214,7 @@ export default function WirePreviewTable({
                 excluded={row.excluded}
                 clickableDefaultWireName={clickableDefaultWireName}
                 onWireNameChange={onWireNameChange}
+                onDirtyChange={(dirty) => setRowDirty(row.key, dirty)}
               />
             </Table.Td>
           </Table.Tr>

@@ -96,7 +96,7 @@ export interface Channel extends PersistableRow {
   forbidTransmit: boolean;
   comment: string;
   modeProfiles: ChannelModeProfile[];
-  /** Optional short qualifier used when `useChannelAbbreviation` is enabled at export. */
+  /** Optional short qualifier tried first when export wire names exceed profile limits. */
   abbreviation?: string;
 }
 

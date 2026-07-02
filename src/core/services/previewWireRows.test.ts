@@ -163,4 +163,33 @@ describe('previewWireRows', () => {
       'GB7GL DMR Scotland',
     );
   });
+
+  it('prefers channel abbreviation over vowel squeeze in preview', () => {
+    const yaml = readFileSync(join(fixtureDir, 'with-format-build.yaml'), 'utf8');
+    const aggregate = parseProjectDocument(yaml);
+    const build = {
+      ...aggregate.formatBuilds[0]!,
+      channelOverrides: [],
+    };
+    const channels = aggregate.channels.map((channel, index) =>
+      index === 1
+        ? { ...channel, callsign: 'GB3MT', name: 'Mugherafelt', abbreviation: "M'flt" }
+        : channel,
+    );
+    const library = {
+      channels,
+      zones: aggregate.zones,
+      talkGroups: aggregate.talkGroups,
+      digitalContacts: aggregate.digitalContacts,
+      analogContacts: aggregate.analogContacts,
+      rxGroupLists: aggregate.rxGroupLists,
+    };
+
+    const rows = previewWireRows(build, library, 'channel', {
+      profileId: build.profileId,
+      shortenNames: true,
+    });
+    const row = rows.find((r) => r.libraryEntityId === channels[1]!.id);
+    expect(row?.generatedWireName).toBe("GB3MT M'flt");
+  });
 });

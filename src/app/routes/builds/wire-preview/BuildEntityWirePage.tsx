@@ -1,9 +1,12 @@
-import { Stack, Text } from '@mantine/core';
+import { Button, Group, Modal, Stack, Text } from '@mantine/core';
 import { Link } from 'react-router-dom';
+import { useState } from 'react';
 import ExportNameModeSelect from '../../../components/builds/ExportNameModeSelect.tsx';
+import UseChannelAbbreviationSwitch from '../../../components/builds/UseChannelAbbreviationSwitch.tsx';
 import WirePreviewTable from '../../../components/builds/WirePreviewTable.tsx';
 import { FormPage } from '../../../components/ui/index.ts';
 import { useBuildWirePreview } from '../../../hooks/useBuildWirePreview.ts';
+import { useUnsavedNavigationGuard } from '../../../hooks/useUnsavedNavigationGuard.ts';
 import { useBuildLayout } from '../BuildLayoutContext.tsx';
 import type { WirePreviewEntityKind } from '@core/services/previewWireRows.ts';
 
@@ -12,6 +15,7 @@ export interface BuildEntityWirePageProps {
   entityKind: WirePreviewEntityKind;
   description?: string;
   showExportNameMode?: boolean;
+  showChannelAbbreviation?: boolean;
   clickableDefaultWireName?: boolean;
 }
 
@@ -20,11 +24,14 @@ export default function BuildEntityWirePage({
   entityKind,
   description,
   showExportNameMode = false,
+  showChannelAbbreviation = false,
   clickableDefaultWireName = true,
 }: BuildEntityWirePageProps) {
   const { build } = useBuildLayout();
   const { rows, nameLimit, error, setRowExcluded, setRowWireName } =
     useBuildWirePreview(entityKind);
+  const [hasUnsavedWireNames, setHasUnsavedWireNames] = useState(false);
+  const { modalOpen, stay, leave } = useUnsavedNavigationGuard(hasUnsavedWireNames);
 
   return (
     <FormPage
@@ -52,14 +59,33 @@ export default function BuildEntityWirePage({
         {showExportNameMode ? (
           <ExportNameModeSelect description="Fallback style for channels without an explicit wire name override on this build." />
         ) : null}
+        {showChannelAbbreviation ? <UseChannelAbbreviationSwitch /> : null}
         <WirePreviewTable
           rows={rows}
           nameLimit={nameLimit}
           clickableDefaultWireName={clickableDefaultWireName}
           onExcludedChange={(row, excluded) => void setRowExcluded(row, excluded)}
           onWireNameChange={(row, wireName) => void setRowWireName(row, wireName)}
+          onUnsavedChangesChange={setHasUnsavedWireNames}
         />
       </Stack>
+
+      <Modal opened={modalOpen} onClose={stay} title="Unapplied wire name changes" centered>
+        <Stack gap="md">
+          <Text size="sm">
+            Some wire names have edits that were not applied. Leave this page and discard those
+            changes, or stay to apply them.
+          </Text>
+          <Group justify="flex-end">
+            <Button variant="default" onClick={stay}>
+              Stay on page
+            </Button>
+            <Button color="red" variant="light" onClick={leave}>
+              Leave and discard
+            </Button>
+          </Group>
+        </Stack>
+      </Modal>
     </FormPage>
   );
 }

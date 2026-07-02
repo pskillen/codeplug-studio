@@ -12,6 +12,7 @@ Tier-1 reference for editing the vendor-neutral **library** — the per-project 
 | ------------------------------------------------------------------------------- | ------------------------------------- |
 | [mode-profiles-progress.md](mode-profiles-progress.md)                          | Multi-mode editor initiative progress |
 | [zone-member-picker.md](zone-member-picker.md)                                  | Two-list zone membership editor       |
+| [rx-group-list-member-picker.md](rx-group-list-member-picker.md)                | Two-list RX group list member editor  |
 | [app-shell/data-table.md](../app-shell/data-table.md)                           | Shared `DataTable` and list prefs     |
 | [app-shell/library-routes-progress.md](../app-shell/library-routes-progress.md) | List routes initiative progress       |
 
@@ -44,6 +45,14 @@ Digital and analog contacts remain separate models and editor slugs (`digital-co
 
 Zone editor uses `ZoneMemberPicker` — available ↔ in-zone lists with per-side search, add/remove, and move up/down. Saved `Zone.members` preserves **picker order** as `{ kind: 'channel', id }[]`. See [zone-member-picker.md](zone-member-picker.md).
 
+### RX group list member picker ([#107](https://github.com/pskillen/codeplug-studio/issues/107), [#108](https://github.com/pskillen/codeplug-studio/issues/108))
+
+RX group list editor uses `RxGroupListMemberPicker` — same interaction pattern as zones, with a unified talk-group + digital-contact pool. Per-member `timeSlotOverride` (`Auto` / `TS1` / `TS2`) is editable on the in-list side for DMR members. See [rx-group-list-member-picker.md](rx-group-list-member-picker.md).
+
+### Channel DMR RX list summary ([#75](https://github.com/pskillen/codeplug-studio/issues/75))
+
+Channel editor DMR tab shows `RxGroupListSummary` below the RX group list selector — live member preview with link to the list editor. Sidecar: `src/app/components/library/RxGroupListSummary.md`.
+
 ## Editor routes
 
 | Path                 | Purpose                                  |
@@ -70,6 +79,7 @@ Channel DMR profiles reference a **digital contact** and an **RX group list** by
 - **No default mode** on new channels — operator selects modes via multi-select; `modeProfiles` starts empty.
 - **Location section:** Maidenhead locator, lat/lon, use-location, map click/drag (`ChannelLocationSection` + `MapLocationPicker`). Save reconciles locator ↔ coords via `reconcileChannelLocation` (coordinates win on conflict).
 - **Mode profiles:** tabbed editor per selected mode (`ChannelModeProfilesEditor`).
+- **DMR tab:** below the RX group list selector, `RxGroupListSummary` shows the selected list's members (name, kind, digital ID, timeslot override) with a link to the list editor ([#75](https://github.com/pskillen/codeplug-studio/issues/75)).
 - Component sidecars under `src/app/components/channels/` and `MapLocationPicker/`.
 
 ## Data flow
@@ -95,7 +105,7 @@ The library holds RF facts you curate once (frequency, mode, contact refs, human
 
 ## Related
 
-- [app-shell/data-table.md](../app-shell/data-table.md) · [zone-member-picker.md](zone-member-picker.md)
+- [app-shell/data-table.md](../app-shell/data-table.md) · [zone-member-picker.md](zone-member-picker.md) · [rx-group-list-member-picker.md](rx-group-list-member-picker.md)
 - [app-shell/library-routes-progress.md](../app-shell/library-routes-progress.md) · [app-shell/library-routes-outstanding.md](../app-shell/library-routes-outstanding.md)
 - [map](../map/README.md) — map on channels/zones list routes
 - [data-model](../data-model/README.md) · [app-shell](../app-shell/README.md)

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Alert, Button, Checkbox, Group, SimpleGrid, Stack, TextInput } from '@mantine/core';
+import { Alert, Button, Checkbox, Group, SimpleGrid, Stack, Text, TextInput } from '@mantine/core';
 import { Link } from 'react-router-dom';
 import type { Channel, ChannelModeProfile, Library } from '@core/models/library.ts';
 import { reconcileChannelLocation } from '@core/domain/channelLocation.ts';
@@ -13,6 +13,7 @@ import ChannelLocationSection, {
 } from '../../components/channels/ChannelLocationSection.tsx';
 import ChannelModeProfilesEditor from '../../components/channels/ChannelModeProfilesEditor.tsx';
 import ChannelModesMultiSelect from '../../components/channels/ChannelModesMultiSelect.tsx';
+import ChannelWireNameExamples from '../../components/channels/ChannelWireNameExamples.tsx';
 import type { ChannelMode as UiChannelMode } from '../../lib/channelModes.ts';
 import RepeaterVerifyPanel from '../../components/repeaters/RepeaterVerifyPanel.tsx';
 import { FormSection, PercentLevelSlider } from '../../components/ui/index.ts';
@@ -117,23 +118,37 @@ export default function ChannelEditor({
         <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="sm">
           <TextInput
             label="Callsign"
+            description="The callsign, if this is a fixed station. Optional for simplex channels."
             value={callsign}
             onChange={(e) => setCallsign(e.currentTarget.value)}
           />
-          <TextInput label="Name" value={name} onChange={(e) => setName(e.currentTarget.value)} />
         </SimpleGrid>
-        <TextInput
-          label="Abbreviation"
-          description="Optional. Used at export time when the full name is too long for the radio profile (enable “Use channel abbreviations” on the build export page)."
-          value={abbreviation}
-          onChange={(e) => setAbbreviation(e.currentTarget.value)}
-        />
+        <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="sm">
+          <TextInput
+            label="Name"
+            description="The full unabbreviated name of the channel. May be shortened on export."
+            value={name}
+            onChange={(e) => setName(e.currentTarget.value)}
+          />
+          <TextInput
+            label="Abbreviation"
+            description="Optional short label used when export shortening needs a shorter name."
+            value={abbreviation}
+            onChange={(e) => setAbbreviation(e.currentTarget.value)}
+          />
+        </SimpleGrid>
+        <ChannelWireNameExamples callsign={callsign} name={name} abbreviation={abbreviation} />
         <TextInput
           label="Comment"
+          description="Optional comment for the channel. Usually internal but may be exported in some formats."
           value={comment}
           onChange={(e) => setComment(e.currentTarget.value)}
         />
+        <Text component="label" htmlFor="scanSkip" size="sm" fw={500}>
+          Scanning
+        </Text>
         <Checkbox
+          id="scanSkip"
           label="Skip on scan"
           checked={scanSkip}
           onChange={(e) => setScanSkip(e.currentTarget.checked)}

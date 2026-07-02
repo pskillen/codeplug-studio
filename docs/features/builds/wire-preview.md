@@ -27,17 +27,17 @@ Overrides are stored on `FormatBuild` as `channelOverrides`, `zoneOverrides`, `t
 - **effectiveWireName** — override or generated
 - **key** — stable override id (composite `${channelId}:${modeSuffix}` for multi-mode expansion rows)
 
-Wire preview pages and the export panel share **`useExportSettings`** (browser `localStorage`) for shortening, name mode, and abbreviation toggles. Wire name overrides use a local draft with explicit **Apply** and **Revert** actions before persisting (avoids revision races from implicit debounced saves).
+Wire preview pages and the export panel share **`useExportSettings`** (browser `localStorage`) for shortening, name mode, and abbreviation toggles. Wire name overrides use a local draft with explicit **Apply** and **Revert** actions before persisting (avoids revision races from implicit debounced saves). Navigating away with unapplied drafts opens a confirmation dialog (`useUnsavedNavigationGuard`).
 
 ## Routes
 
-| Route                        | Entity kind   | Notes                                                                            |
-| ---------------------------- | ------------- | -------------------------------------------------------------------------------- |
-| `/builds/:id/channels`       | `channel`     | Export name mode selector; click default name to store override; multi-mode rows |
-| `/builds/:id/zones`          | `zone`        | Click default name to store override                                             |
-| `/builds/:id/talk-groups`    | `talkGroup`   | Unreferenced TGs still listed; click default name to store override              |
-| `/builds/:id/contacts`       | `contact`     | Digital + analog contacts; click default name to store override                  |
-| `/builds/:id/rx-group-lists` | `rxGroupList` | Click default name to store override                                             |
+| Route                        | Entity kind   | Notes                                                                                                                                                  |
+| ---------------------------- | ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `/builds/:id/channels`       | `channel`     | Export name mode + **use channel abbreviations** toggles; click default name to store override; multi-mode rows; leave-page guard for unapplied drafts |
+| `/builds/:id/zones`          | `zone`        | Click default name to store override                                                                                                                   |
+| `/builds/:id/talk-groups`    | `talkGroup`   | Unreferenced TGs still listed; click default name to store override                                                                                    |
+| `/builds/:id/contacts`       | `contact`     | Digital + analog contacts; click default name to store override                                                                                        |
+| `/builds/:id/rx-group-lists` | `rxGroupList` | Click default name to store override                                                                                                                   |
 
 Secondary nav is trait-gated (`buildNavItems` in `src/app/routes/builds/nav.ts`).
 
