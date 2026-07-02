@@ -21,11 +21,11 @@
 | 10 App primitives (#60)             | Complete |                                                            |
 | 11 Import/export UI (#60)           | Complete |                                                            |
 | 12 Routes + workflow docs + PR      | Complete | [#79](https://github.com/pskillen/codeplug-studio/pull/79) |
-| 13 Drive kickoff (#61–#62)          | Pending  |                                                            |
-| 14 Drive prefs + port (#61)         | Pending  |                                                            |
-| 15 Core googleDrive destination     | Pending  |                                                            |
-| 16 Drive settings + browser (#62)   | Pending  |                                                            |
-| 17 Drive workflow + docs + PR       | Pending  |                                                            |
+| 13 Drive kickoff (#61–#62)          | Complete | `fbd5522`                                                  |
+| 14 Drive prefs + port (#61)         | Complete | `b5ece53`, `597b513`                                       |
+| 15 Core googleDrive destination     | Complete | `93de080`                                                  |
+| 16 Drive settings + browser (#62)   | Complete | `c2ce067`, `d91ec85`                                       |
+| 17 Drive workflow + docs + PR       | Complete |                                                            |
 
 ## Shipped
 

@@ -12,7 +12,7 @@ Studio's **full-project** portable format: `ProjectMeta`, all library entities, 
 Native YAML lets operators and contributors:
 
 - Back up an entire project outside IndexedDB
-- Move projects between browsers (future: Google Drive — [#61](https://github.com/pskillen/codeplug-studio/issues/61))
+- Move projects between browsers and Google Drive ([#61](https://github.com/pskillen/codeplug-studio/issues/61)–[#62](https://github.com/pskillen/codeplug-studio/issues/62))
 - Round-trip Studio's own model **losslessly** — unlike CPS CSV export
 
 IndexedDB remains the live edit store with per-entity revision concurrency. YAML is **interchange**, not the session working copy ([storage.md](../../../poc-migration/storage.md)).
@@ -66,12 +66,12 @@ Nullable model fields may be omitted from YAML or set to `null` — import treat
 
 ```text
 loadProjectSeed → ProjectAggregate
-  → optional recordExportDestination on meta (localFile / googleDrive stub)
+  → optional recordExportDestination on meta (localFile / googleDrive)
   → serialise → YAML download
   → putProjectMeta when recording destination
 ```
 
-`ProjectMeta.interchange.localFile` remembers the last export filename for pre-fill on the next download ([#59](https://github.com/pskillen/codeplug-studio/issues/59)).
+`ProjectMeta.interchange.localFile` and `interchange.googleDrive` remember last export destinations for pre-fill ([#59](https://github.com/pskillen/codeplug-studio/issues/59), [#62](https://github.com/pskillen/codeplug-studio/issues/62)).
 
 ## Implementation status
 

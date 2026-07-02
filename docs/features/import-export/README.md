@@ -22,7 +22,7 @@ IndexedDB remains the **edit store**; YAML and Drive are portable layers on top 
 | Native YAML — import parser                             | Shipped | [#58](https://github.com/pskillen/codeplug-studio/issues/58)                                                              |
 | Application services (`importProject`, `exportProject`) | Shipped | [#59](https://github.com/pskillen/codeplug-studio/issues/59) — `importProjectYaml` / `exportProjectYaml`                  |
 | Local file UI                                           | Shipped | [#60](https://github.com/pskillen/codeplug-studio/issues/60) — `/import-export`, Home import                              |
-| Google Drive                                            | Planned | [#61](https://github.com/pskillen/codeplug-studio/issues/61)–[#62](https://github.com/pskillen/codeplug-studio/issues/62) |
+| Google Drive                                            | Shipped | [#61](https://github.com/pskillen/codeplug-studio/issues/61)–[#62](https://github.com/pskillen/codeplug-studio/issues/62) |
 | OpenGD77 CSV                                            | Planned | Phase 4+ — registry slot `planned`                                                                                        |
 | CHIRP CSV                                               | Planned | Phase 4+                                                                                                                  |
 | DM32 CSV                                                | Planned | Phase 4+                                                                                                                  |
@@ -74,6 +74,7 @@ Wire mapping for CPS formats lives in `docs/reference/<format>/` — not here.
 
 | Doc                                                                            | Contents                                        |
 | ------------------------------------------------------------------------------ | ----------------------------------------------- |
+| [google-drive.md](google-drive.md)                                             | Google Drive OAuth, browser, export workflow    |
 | [native-yaml/README.md](native-yaml/README.md)                                 | Native YAML product behaviour and code anchors  |
 | [native-yaml-progress.md](native-yaml-progress.md)                             | Execution log for #56–#58                       |
 | [native-yaml-outstanding.md](native-yaml-outstanding.md)                       | Debt discovered during native YAML work         |
