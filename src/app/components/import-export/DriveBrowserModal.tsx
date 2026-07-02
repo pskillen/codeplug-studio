@@ -55,20 +55,32 @@ export interface DriveBrowserModalProps {
   port?: GoogleDrivePort;
 }
 
-export default function DriveBrowserModal({
-  opened,
-  onClose,
+interface DriveBrowserBodyProps {
+  mode: 'open' | 'save';
+  interchangeFolderId?: string;
+  defaultFileName: string;
+  onClose: () => void;
+  onSelectFile: (selection: DriveOpenSelection) => void;
+  onSaveTarget: (target: DriveSaveTarget) => void;
+  port: GoogleDrivePort;
+}
+
+function DriveBrowserBody({
   mode,
   interchangeFolderId,
-  defaultFileName = '',
+  defaultFileName,
+  onClose,
   onSelectFile,
   onSaveTarget,
-  port = googleDrivePort,
-}: DriveBrowserModalProps) {
-  const [folderId, setFolderId] = useState(DRIVE_ROOT_FOLDER_ID);
-  const [path, setPath] = useState<DriveFolderCrumb[]>([
-    { id: DRIVE_ROOT_FOLDER_ID, name: 'My Drive' },
-  ]);
+  port,
+}: DriveBrowserBodyProps) {
+  const initial = resolveInitialBrowseState({
+    interchangeFolderId,
+    lastFolderId: loadDriveLastFolderId(),
+    lastFolderPath: loadDriveLastFolderPath(),
+  });
+  const [folderId, setFolderId] = useState(initial.folderId);
+  const [path, setPath] = useState<DriveFolderCrumb[]>(initial.path);
   const [children, setChildren] = useState<DriveListItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -77,38 +89,25 @@ export default function DriveBrowserModal({
   const [creatingFolder, setCreatingFolder] = useState(false);
 
   useEffect(() => {
-    if (!opened) return;
-    const initial = resolveInitialBrowseState({
-      interchangeFolderId,
-      lastFolderId: loadDriveLastFolderId(),
-      lastFolderPath: loadDriveLastFolderPath(),
-    });
-    setFolderId(initial.folderId);
-    setPath(initial.path);
-    setFileName(defaultFileName);
-    setError(null);
-  }, [opened, interchangeFolderId, defaultFileName]);
-
-  useEffect(() => {
-    if (!opened || !port.isConnected()) return;
+    if (!port.isConnected()) return;
     let cancelled = false;
-    setLoading(true);
-    setError(null);
-    void port
-      .listChildren(folderId)
-      .then((items) => {
+    const load = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const items = await port.listChildren(folderId);
         if (!cancelled) setChildren(items);
-      })
-      .catch((err) => {
+      } catch (err) {
         if (!cancelled) setError(driveErrorMessage(err));
-      })
-      .finally(() => {
+      } finally {
         if (!cancelled) setLoading(false);
-      });
+      }
+    };
+    void load();
     return () => {
       cancelled = true;
     };
-  }, [opened, folderId, port]);
+  }, [folderId, port]);
 
   function persistBrowseState(nextFolderId: string, nextPath: DriveFolderCrumb[]) {
     saveDriveLastFolderId(nextFolderId);
@@ -184,6 +183,109 @@ export default function DriveBrowserModal({
   const yamlFiles = children.filter((child) => child.kind === 'yaml');
 
   return (
+    <Stack gap="sm">
+      {!port.isConnected() ? (
+        <Alert color="yellow">Connect Google Drive in Settings before browsing files.</Alert>
+      ) : null}
+      {error ? (
+        <Alert color="red">
+          {error}
+          {error.toLowerCase().includes('auth') ? (
+            <Text size="sm" mt="xs">
+              Reconnect from Settings if your session expired.
+            </Text>
+          ) : null}
+        </Alert>
+      ) : null}
+      <Breadcrumbs>
+        {path.map((crumb, index) => (
+          <Anchor
+            key={crumb.id}
+            component="button"
+            type="button"
+            onClick={() => navigateToCrumb(index)}
+          >
+            {crumb.name}
+          </Anchor>
+        ))}
+      </Breadcrumbs>
+      <Group align="flex-end">
+        <TextInput
+          label="New folder"
+          placeholder="Folder name"
+          value={newFolderName}
+          onChange={(event) => setNewFolderName(event.currentTarget.value)}
+          style={{ flex: 1 }}
+        />
+        <Button loading={creatingFolder} onClick={() => void handleCreateFolder()}>
+          Create folder
+        </Button>
+      </Group>
+      {loading ? <Text size="sm">Loading…</Text> : null}
+      {folders.length > 0 ? (
+        <Stack gap={4}>
+          <Text size="sm" fw={600}>
+            Folders
+          </Text>
+          {folders.map((folder) => (
+            <Button
+              key={folder.id}
+              variant="subtle"
+              justify="flex-start"
+              onClick={() => openFolder(folder)}
+            >
+              {folder.name}
+            </Button>
+          ))}
+        </Stack>
+      ) : null}
+      {mode === 'open' && yamlFiles.length > 0 ? (
+        <Stack gap={4}>
+          <Text size="sm" fw={600}>
+            YAML files
+          </Text>
+          {yamlFiles.map((file) => (
+            <Button
+              key={file.id}
+              variant="light"
+              justify="flex-start"
+              onClick={() => void handleOpenFile(file)}
+            >
+              {file.name}
+            </Button>
+          ))}
+        </Stack>
+      ) : null}
+      {mode === 'save' ? (
+        <>
+          <TextInput
+            label="Filename"
+            value={fileName}
+            onChange={(event) => setFileName(event.currentTarget.value)}
+          />
+          <Button onClick={handleSaveHere}>Save here</Button>
+        </>
+      ) : null}
+      {mode === 'open' && !loading && folders.length === 0 && yamlFiles.length === 0 ? (
+        <Text size="sm" c="dimmed">
+          This folder is empty.
+        </Text>
+      ) : null}
+    </Stack>
+  );
+}
+
+export default function DriveBrowserModal({
+  opened,
+  onClose,
+  mode,
+  interchangeFolderId,
+  defaultFileName = '',
+  onSelectFile,
+  onSaveTarget,
+  port = googleDrivePort,
+}: DriveBrowserModalProps) {
+  return (
     <Modal
       opened={opened}
       onClose={onClose}
@@ -191,95 +293,18 @@ export default function DriveBrowserModal({
       size="lg"
       centered
     >
-      <Stack gap="sm">
-        {!port.isConnected() ? (
-          <Alert color="yellow">Connect Google Drive in Settings before browsing files.</Alert>
-        ) : null}
-        {error ? (
-          <Alert color="red">
-            {error}
-            {error.toLowerCase().includes('auth') ? (
-              <Text size="sm" mt="xs">
-                Reconnect from Settings if your session expired.
-              </Text>
-            ) : null}
-          </Alert>
-        ) : null}
-        <Breadcrumbs>
-          {path.map((crumb, index) => (
-            <Anchor
-              key={crumb.id}
-              component="button"
-              type="button"
-              onClick={() => navigateToCrumb(index)}
-            >
-              {crumb.name}
-            </Anchor>
-          ))}
-        </Breadcrumbs>
-        <Group align="flex-end">
-          <TextInput
-            label="New folder"
-            placeholder="Folder name"
-            value={newFolderName}
-            onChange={(event) => setNewFolderName(event.currentTarget.value)}
-            style={{ flex: 1 }}
-          />
-          <Button loading={creatingFolder} onClick={() => void handleCreateFolder()}>
-            Create folder
-          </Button>
-        </Group>
-        {loading ? <Text size="sm">Loading…</Text> : null}
-        {folders.length > 0 ? (
-          <Stack gap={4}>
-            <Text size="sm" fw={600}>
-              Folders
-            </Text>
-            {folders.map((folder) => (
-              <Button
-                key={folder.id}
-                variant="subtle"
-                justify="flex-start"
-                onClick={() => openFolder(folder)}
-              >
-                {folder.name}
-              </Button>
-            ))}
-          </Stack>
-        ) : null}
-        {mode === 'open' && yamlFiles.length > 0 ? (
-          <Stack gap={4}>
-            <Text size="sm" fw={600}>
-              YAML files
-            </Text>
-            {yamlFiles.map((file) => (
-              <Button
-                key={file.id}
-                variant="light"
-                justify="flex-start"
-                onClick={() => void handleOpenFile(file)}
-              >
-                {file.name}
-              </Button>
-            ))}
-          </Stack>
-        ) : null}
-        {mode === 'save' ? (
-          <>
-            <TextInput
-              label="Filename"
-              value={fileName}
-              onChange={(event) => setFileName(event.currentTarget.value)}
-            />
-            <Button onClick={handleSaveHere}>Save here</Button>
-          </>
-        ) : null}
-        {mode === 'open' && !loading && folders.length === 0 && yamlFiles.length === 0 ? (
-          <Text size="sm" c="dimmed">
-            This folder is empty.
-          </Text>
-        ) : null}
-      </Stack>
+      {opened ? (
+        <DriveBrowserBody
+          key={`${mode}-${interchangeFolderId ?? 'root'}-${defaultFileName}`}
+          mode={mode}
+          interchangeFolderId={interchangeFolderId}
+          defaultFileName={defaultFileName}
+          onClose={onClose}
+          onSelectFile={onSelectFile}
+          onSaveTarget={onSaveTarget}
+          port={port}
+        />
+      ) : null}
     </Modal>
   );
 }

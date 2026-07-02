@@ -18,7 +18,6 @@ import {
   getGoogleClientId,
   loadGoogleIdentity,
   type GoogleIdentityClient,
-  type GoogleTokenClient,
 } from './loadGoogleIdentity.ts';
 
 export interface GoogleDrivePort {
@@ -64,8 +63,7 @@ function requestAccessToken(
   clientId: string,
 ): Promise<{ accessToken: string; expiresAt: number }> {
   return new Promise((resolve, reject) => {
-    let client: GoogleTokenClient | null = null;
-    client = identity.accounts.oauth2.initTokenClient({
+    const client = identity.accounts.oauth2.initTokenClient({
       client_id: clientId,
       scope: DRIVE_OAUTH_SCOPE,
       callback: (response) => {

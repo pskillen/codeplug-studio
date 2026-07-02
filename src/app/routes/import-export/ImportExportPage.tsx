@@ -1,5 +1,7 @@
+import { Stack } from '@mantine/core';
 import { ListPage, PageSection, PageSectionGrid } from '../../components/ui/index.ts';
 import ExportProjectYamlPanel from '../../components/import-export/ExportProjectYamlPanel.tsx';
+import ExportToDrivePanel from '../../components/import-export/ExportToDrivePanel.tsx';
 import ImportYamlIntoActivePanel from '../../components/import-export/ImportYamlIntoActivePanel.tsx';
 import { useProjects } from '../../state/useProjects.ts';
 
@@ -15,7 +17,10 @@ export default function ImportExportPage() {
           <ImportYamlIntoActivePanel />
         </PageSection>
         <PageSection title="Export YAML">
-          <ExportProjectYamlPanel key={activeProjectId ?? 'none'} />
+          <Stack gap="md">
+            <ExportProjectYamlPanel key={activeProjectId ?? 'none'} />
+            <ExportToDrivePanel key={`${activeProjectId ?? 'none'}-drive`} />
+          </Stack>
         </PageSection>
       </PageSectionGrid>
     </ListPage>

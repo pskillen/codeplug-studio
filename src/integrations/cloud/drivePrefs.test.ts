@@ -2,7 +2,6 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   clearDriveSession,
   DRIVE_ACCESS_TOKEN_KEY,
-  DRIVE_LAST_FOLDER_ID_KEY,
   DRIVE_LAST_FOLDER_PATH_KEY,
   loadDriveLastFolderId,
   loadDriveLastFolderPath,
