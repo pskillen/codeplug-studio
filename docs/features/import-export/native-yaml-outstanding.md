@@ -7,7 +7,7 @@ Items discovered during execution — not the plan backlog.
 ## Shipped (#59–#60)
 
 - `ProjectMeta.interchange` + `importProjectYaml` / `exportProjectYaml`
-- `replaceProject` cascade delete + `/interchange` local file UI
+- `replaceProject` cascade delete + `/import-export` local file UI
 
 ## Deferred (known scope — later Phase 3 tickets)
 

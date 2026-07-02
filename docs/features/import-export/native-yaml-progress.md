@@ -19,7 +19,7 @@
 | 8 Core services (#59)               | Complete |                                                            |
 | 9 System tests (#59)                | Complete |                                                            |
 | 10 App primitives (#60)             | Complete |                                                            |
-| 11 Interchange UI (#60)             | Complete |                                                            |
+| 11 Import/export UI (#60)           | Complete |                                                            |
 | 12 Routes + workflow docs + PR      | Complete |                                                            |
 
 ## Shipped

@@ -11,14 +11,14 @@ flowchart LR
   Home[Home / Projects]
   Library[Library CRUD]
   IDB[(IndexedDB)]
-  Interchange[/interchange]
+  ImportExport[/import-export]
   YAML[Native YAML file]
 
   Home -->|Create blank| IDB
   Home -->|Import YAML createNew| IDB
   IDB --> Library
-  Library --> Interchange
-  Interchange -->|Export download| YAML
+  Library --> ImportExport
+  ImportExport -->|Export download| YAML
   YAML -->|Replace active confirm| IDB
 ```
 
@@ -36,9 +36,9 @@ On **Home** (`/`):
 
 With an active project, **Library** routes persist channels, zones, contacts, talk groups, and RX lists per row (`revision` optimistic concurrency). Changes stay in IndexedDB until exported.
 
-### 3. Native YAML interchange
+### 3. Import / export (native YAML)
 
-**Interchange** (`/interchange`, active project required):
+**Import / export** (`/import-export`, active project required):
 
 | Panel                 | Mode                                   | Effect                                                                                 |
 | --------------------- | -------------------------------------- | -------------------------------------------------------------------------------------- |
@@ -49,17 +49,17 @@ Replace requires the YAML `project.id` to match the active project. There is no 
 
 ### 4. Later — CPS build export (Phase 4+)
 
-Format-specific CSV export (`exportBuild`, `assemble`) is separate from native YAML interchange. Operators will export a **build** for vendor CPS; native YAML remains the lossless Studio backup.
+Format-specific CSV export (`exportBuild`, `assemble`) is separate from native YAML import/export. Operators will export a **build** for vendor CPS; native YAML remains the lossless Studio backup.
 
 ## Services (not UI → adapters)
 
-| UI entry            | Service                                   | Persistence                                   |
-| ------------------- | ----------------------------------------- | --------------------------------------------- |
-| Home import panel   | `importProjectFromYaml` `createNew`       | `seedProject`                                 |
-| Interchange replace | `importProjectFromYaml` `replaceExisting` | `replaceProject`                              |
-| Interchange export  | `exportProjectToYaml`                     | `loadProjectSeed` + optional `putProjectMeta` |
+| UI entry              | Service                                   | Persistence                                   |
+| --------------------- | ----------------------------------------- | --------------------------------------------- |
+| Home import panel     | `importProjectFromYaml` `createNew`       | `seedProject`                                 |
+| Import / export replace | `importProjectFromYaml` `replaceExisting` | `replaceProject`                              |
+| Import / export export  | `exportProjectToYaml`                     | `loadProjectSeed` + optional `putProjectMeta` |
 
-App wiring: `src/app/services/projectInterchangeService.ts`.
+App wiring: `src/app/services/projectImportExportService.ts`.
 
 ## Related
 

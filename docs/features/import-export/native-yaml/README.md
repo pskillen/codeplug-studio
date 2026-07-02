@@ -38,7 +38,7 @@ Envelope fields `schemaVersion` and `studioSchemaVersion` are documented in the 
 | `adapter.ts`                   | Registry-facing import/export adapter                         |
 | `importProjectYaml.ts`         | Parse → seed → `seedProject` / `replaceProject`               |
 | `exportProjectYaml.ts`         | `loadProjectSeed` → serialise; optional `interchange` meta    |
-| `projectInterchangeService.ts` | App facade over persistence singleton                         |
+| `projectImportExportService.ts` | App facade over persistence singleton                         |
 
 `ProjectAggregate` in core mirrors `ProjectSeed` in `integrations/persistence/types.ts`. Application services bridge the two via `ProjectInterchangePort`.
 
