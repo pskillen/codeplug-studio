@@ -1,6 +1,7 @@
 import { NumberInput, Stack, Switch, Text } from '@mantine/core';
 import { useExportSettings } from '../../hooks/useExportSettings.ts';
 import ExportNameModeSelect from './ExportNameModeSelect.tsx';
+import UseChannelAbbreviationSwitch from './UseChannelAbbreviationSwitch.tsx';
 
 export interface ExportNameSettingsFieldsProps {
   profileNameLimit?: number;
@@ -19,8 +20,6 @@ export default function ExportNameSettingsFields({
     setMaxNameLength,
     useTalkGroupAbbreviation,
     setUseTalkGroupAbbreviation,
-    useChannelAbbreviation,
-    setUseChannelAbbreviation,
   } = useExportSettings();
 
   return (
@@ -65,13 +64,7 @@ export default function ExportNameSettingsFields({
           disabled={!shortenNames}
         />
       ) : null}
-      <Switch
-        label="Use channel abbreviations"
-        description="Prefer Channel.abbreviation for the name qualifier in export wire names"
-        checked={useChannelAbbreviation}
-        onChange={(e) => setUseChannelAbbreviation(e.currentTarget.checked)}
-        disabled={!shortenNames}
-      />
+      <UseChannelAbbreviationSwitch />
       <Text size="xs" c="dimmed">
         Preferences are saved in browser localStorage.
       </Text>

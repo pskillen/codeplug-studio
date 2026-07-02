@@ -60,7 +60,6 @@ export function composeChannelWireName(channel: ChannelWireExportPick): string {
 
 export interface ChannelWireExportPickOptions {
   nameModeOverride?: ChannelExportNameMode;
-  useChannelAbbreviation?: boolean;
 }
 
 export function channelPickForWireExport(
@@ -68,16 +67,11 @@ export function channelPickForWireExport(
   options: ChannelWireExportPickOptions = {},
 ): ChannelWireExportPick {
   const exportNameMode = options.nameModeOverride ?? DEFAULT_CHANNEL_EXPORT_NAME_MODE;
-  const base: ChannelWireExportPick = {
+  return {
     callsign: channel.callsign,
     name: channel.name,
     exportNameMode,
   };
-  if (options.useChannelAbbreviation) {
-    const abbrev = channel.abbreviation?.trim();
-    if (abbrev) return { ...base, name: abbrev };
-  }
-  return base;
 }
 
 /** Default CPS wire name before mode suffixes and build overrides. */

@@ -20,6 +20,8 @@ export interface ShortenWireNameOptions {
   exportNameMode?: ChannelExportNameMode;
   /** Recompose the wire name with a different export name mode (suffix downgrade). */
   recomposeWithMode?: (mode: ChannelExportNameMode) => string;
+  /** Recompose using `Channel.abbreviation` before dictionary / vowel strategies. */
+  recomposeWithChannelAbbreviation?: () => string;
   /** Replace a trailing multi-talkgroup member suffix before other strategies. */
   talkGroupMemberSuffix?: TalkGroupMemberSuffixReplacement;
   /** Protected trailing suffix for multi-TG composed names — shorten the leading portion only. */
@@ -148,6 +150,12 @@ export function shortenWireName(
   opts: ShortenWireNameOptions = {},
 ): string {
   if (maxLen < 1 || name.length <= maxLen) return name;
+
+  if (opts.recomposeWithChannelAbbreviation) {
+    const withAbbrev = opts.recomposeWithChannelAbbreviation();
+    if (withAbbrev.length <= maxLen) return withAbbrev;
+    name = withAbbrev;
+  }
 
   let fixedSuffix = opts.fixedSuffix ?? '';
   let peelTarget = name;

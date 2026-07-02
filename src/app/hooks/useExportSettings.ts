@@ -53,7 +53,8 @@ function readUseTalkGroupAbbreviation(): boolean {
 }
 
 function readUseChannelAbbreviation(): boolean {
-  return localStorage.getItem(STORAGE_KEY_EXPORT_USE_CHANNEL_ABBREVIATION) === 'true';
+  const saved = localStorage.getItem(STORAGE_KEY_EXPORT_USE_CHANNEL_ABBREVIATION);
+  return saved !== 'false';
 }
 
 function readSettings(): ExportSettings {
