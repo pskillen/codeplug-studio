@@ -14,20 +14,22 @@ IndexedDB remains the **edit store**; YAML and Drive are portable layers on top 
 
 ## Implementation status
 
-| Area                                                    | Status  | Notes                                                                                                                         |
-| ------------------------------------------------------- | ------- | ----------------------------------------------------------------------------------------------------------------------------- |
-| Adapter contracts + registry                            | Shipped | `src/core/import-export/` — `ImportAdapter`, `ExportAdapter`, `formatCatalog`                                                 |
-| Native YAML — schema + envelope                         | Shipped | `StudioProjectDocument` v1 — [#56](https://github.com/pskillen/codeplug-studio/issues/56)                                     |
-| Native YAML — export serialiser                         | Shipped | [#57](https://github.com/pskillen/codeplug-studio/issues/57)                                                                  |
-| Native YAML — import parser                             | Shipped | [#58](https://github.com/pskillen/codeplug-studio/issues/58)                                                                  |
-| Application services (`importProject`, `exportProject`) | Shipped | [#59](https://github.com/pskillen/codeplug-studio/issues/59) — `importProjectYaml` / `exportProjectYaml`                      |
-| Local file UI                                           | Shipped | [#60](https://github.com/pskillen/codeplug-studio/issues/60) — `/import-export`, Home import                                  |
-| Format catalog UI (CPS placeholders)                    | Shipped | [#83](https://github.com/pskillen/codeplug-studio/issues/83) — CPS grid + export build stub                                   |
-| Google Drive                                            | Shipped | [#61](https://github.com/pskillen/codeplug-studio/issues/61)–[#62](https://github.com/pskillen/codeplug-studio/issues/62)     |
-| OpenGD77 CSV                                            | Planned | Phase 4+ — registry slot `planned`; **radio profiles shipped** ([#84](https://github.com/pskillen/codeplug-studio/issues/84)) |
-| CHIRP CSV                                               | Planned | Phase 4+                                                                                                                      |
-| DM32 CSV                                                | Planned | Phase 4+                                                                                                                      |
-| qDMR YAML                                               | Planned | Out of Phase 3 scope                                                                                                          |
+| Area                                                    | Status  | Notes                                                                                                                                                                                               |
+| ------------------------------------------------------- | ------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Adapter contracts + registry                            | Shipped | `src/core/import-export/` — `ImportAdapter`, `ExportAdapter`, `formatCatalog`                                                                                                                       |
+| Native YAML — schema + envelope                         | Shipped | `StudioProjectDocument` v1 — [#56](https://github.com/pskillen/codeplug-studio/issues/56)                                                                                                           |
+| Native YAML — export serialiser                         | Shipped | [#57](https://github.com/pskillen/codeplug-studio/issues/57)                                                                                                                                        |
+| Native YAML — import parser                             | Shipped | [#58](https://github.com/pskillen/codeplug-studio/issues/58)                                                                                                                                        |
+| Application services (`importProject`, `exportProject`) | Shipped | [#59](https://github.com/pskillen/codeplug-studio/issues/59) — `importProjectYaml` / `exportProjectYaml`                                                                                            |
+| Local file UI                                           | Shipped | [#60](https://github.com/pskillen/codeplug-studio/issues/60) — `/import-export`, Home import                                                                                                        |
+| Format catalog UI (CPS placeholders)                    | Shipped | [#83](https://github.com/pskillen/codeplug-studio/issues/83) — CPS grid + export build stub                                                                                                         |
+| Google Drive                                            | Shipped | [#61](https://github.com/pskillen/codeplug-studio/issues/61)–[#62](https://github.com/pskillen/codeplug-studio/issues/62)                                                                           |
+| OpenGD77 CSV export                                     | Shipped | [#88](https://github.com/pskillen/codeplug-studio/issues/88) adapter + [#91](https://github.com/pskillen/codeplug-studio/issues/91) UI — [#95](https://github.com/pskillen/codeplug-studio/pull/95) |
+| CPS export services (`assemble`, `exportBuild`)         | Shipped | [#86](https://github.com/pskillen/codeplug-studio/issues/86) — [cps-services.md](cps-services.md)                                                                                                   |
+| OpenGD77 CSV import                                     | Planned | Phase 4b                                                                                                                                                                                            |
+| CHIRP CSV                                               | Planned | Phase 4+                                                                                                                                                                                            |
+| DM32 CSV                                                | Planned | Phase 4+                                                                                                                                                                                            |
+| qDMR YAML                                               | Planned | Out of Phase 3 scope                                                                                                                                                                                |
 
 ## Architecture
 
@@ -58,7 +60,7 @@ Routes and UI call **application services** (`importProjectYaml`, `exportProject
 | Format        | Import  | Export  | Delivery                   |
 | ------------- | ------- | ------- | -------------------------- |
 | `native-yaml` | Shipped | Shipped | Single file — full project |
-| `opengd77`    | Planned | Planned | Multi-file CSV             |
+| `opengd77`    | Planned | Shipped | Multi-file CSV             |
 | `chirp`       | Planned | Planned | Single-file CSV            |
 | `dm32`        | Planned | Planned | Multi-file CSV             |
 | `qdmr`        | Planned | Planned | YAML (vendor)              |
@@ -71,7 +73,7 @@ The import/export route is organised in three bands:
 
 1. **Native YAML** — shipped import (replace active project) and export (download + Google Drive).
 2. **CPS formats** — `CpsFormatCatalogGrid` driven by `formatCatalog`; planned formats show a “coming soon” alert ([`FormatCatalogPanel`](../../../src/app/components/import-export/FormatCatalogPanel.tsx)).
-3. **Export to CPS** — pointer to **Radio builds** (`/builds`); per-build export UI lives on each build detail page ([`ExportBuildCpsPanelStub`](../../../src/app/components/builds/ExportBuildCpsPanelStub.tsx)).
+3. **Export to CPS** — pointer to **Radio builds** (`/builds`); per-build export UI lives on each build detail page ([`ExportBuildCpsPanel`](../../../src/app/components/builds/ExportBuildCpsPanel.tsx)).
 
 Optional deep link: `?format=opengd77` highlights the matching catalog card (`useFormatParam`).
 

@@ -2,7 +2,7 @@
 
 Items **skipped**, **incomplete**, or **discovered during execution** — not the plan's future phases.
 
-**Tracking:** [#36](https://github.com/pskillen/codeplug-studio/issues/36) · Phase 4a [#82](https://github.com/pskillen/codeplug-studio/issues/82)–[#84](https://github.com/pskillen/codeplug-studio/issues/84)
+**Tracking:** [#36](https://github.com/pskillen/codeplug-studio/issues/36) · branch `85/pskil/opengd77-build-export` · PR [#95](https://github.com/pskillen/codeplug-studio/pull/95)
 
 ---
 
@@ -12,10 +12,10 @@ Items **skipped**, **incomplete**, or **discovered during execution** — not th
 
 ---
 
-## Deferred to follow-on tickets
+## MVP export scope ([#95](https://github.com/pskillen/codeplug-studio/pull/95))
 
-- [ ] Reusable `ProfilePicker` component ([#85](https://github.com/pskillen/codeplug-studio/issues/85))
-- [ ] `assemble` / `exportBuild` services ([#86](https://github.com/pskillen/codeplug-studio/issues/86))
-- [ ] Zone-grouping build editor ([#87](https://github.com/pskillen/codeplug-studio/issues/87))
-- [ ] OpenGD77 export adapter and CPS download UI — **integrate on `/builds/:id`**, not `/import-export` (see [opengd77-progress.md](opengd77-progress.md) plan deviations)
-- [ ] OpenGD77 CPS import (Phase 4b) — remains on Import / export format catalog
+Intentionally deferred from the MVP PR — tracked as GitHub issues, listed in [opengd77-progress.md](opengd77-progress.md) **Next**:
+
+- Zone-grouping build editor ([#87](https://github.com/pskillen/codeplug-studio/issues/87)) — export uses library zone layout until editor ships
+- Multi-mode channel expansion ([#89](https://github.com/pskillen/codeplug-studio/issues/89)) — one export row per channel today
+- Export name shortening ([#90](https://github.com/pskillen/codeplug-studio/issues/90)) — long wire names warn but are not truncated

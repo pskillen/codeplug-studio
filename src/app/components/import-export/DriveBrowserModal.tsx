@@ -52,6 +52,8 @@ export interface DriveBrowserModalProps {
   mode: 'open' | 'save';
   interchangeFolderId?: string;
   defaultFileName?: string;
+  /** File kind used to detect name conflicts when saving (default `yaml`). */
+  saveConflictKind?: 'yaml' | 'zip';
   saving?: boolean;
   onSelectFile: (selection: DriveOpenSelection) => void;
   onSaveTarget: (target: DriveSaveTarget) => void;
@@ -62,6 +64,7 @@ interface DriveBrowserBodyProps {
   mode: 'open' | 'save';
   interchangeFolderId?: string;
   defaultFileName: string;
+  saveConflictKind: 'yaml' | 'zip';
   saving: boolean;
   onClose: () => void;
   onSelectFile: (selection: DriveOpenSelection) => void;
@@ -73,6 +76,7 @@ function DriveBrowserBody({
   mode,
   interchangeFolderId,
   defaultFileName,
+  saveConflictKind,
   saving,
   onClose,
   onSelectFile,
@@ -173,7 +177,8 @@ function DriveBrowserBody({
     }
     const folderName = path[path.length - 1]?.name ?? 'My Drive';
     const existing = children.find(
-      (child) => child.kind === 'yaml' && child.name.toLowerCase() === trimmed.toLowerCase(),
+      (child) =>
+        child.kind === saveConflictKind && child.name.toLowerCase() === trimmed.toLowerCase(),
     );
     onSaveTarget({
       folderId,
@@ -311,6 +316,7 @@ export default function DriveBrowserModal({
   mode,
   interchangeFolderId,
   defaultFileName = '',
+  saveConflictKind = 'yaml',
   saving = false,
   onSelectFile,
   onSaveTarget,
@@ -332,6 +338,7 @@ export default function DriveBrowserModal({
           mode={mode}
           interchangeFolderId={interchangeFolderId}
           defaultFileName={defaultFileName}
+          saveConflictKind={saveConflictKind}
           saving={saving}
           onClose={onClose}
           onSelectFile={onSelectFile}

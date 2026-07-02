@@ -1,5 +1,6 @@
 import type { FormatId } from '@core/import-export/types.ts';
 import { getFormatProfiles } from '@core/import-export/formatProfiles.ts';
+import type { FormatBuild } from '@core/models/formatBuild.ts';
 import { TRAIT_PROFILES } from '@core/models/traits.ts';
 
 export interface BuildProfileOption {
@@ -29,6 +30,18 @@ export function buildProfileOptionsForFormat(formatId: FormatId): BuildProfileOp
       label: p.label,
       formatId: p.formatId as FormatId,
     }));
+}
+
+/** True when changing profile may invalidate layout or wire overrides. */
+export function buildHasLayoutData(build: FormatBuild): boolean {
+  if (build.layout.sections.length > 0) return true;
+  return (
+    build.channelSelections.length > 0 ||
+    build.zoneSelections.length > 0 ||
+    build.talkGroupSelections.length > 0 ||
+    build.rxGroupListSelections.length > 0 ||
+    build.contactSelections.length > 0
+  );
 }
 
 export const TRAIT_LABELS: Record<string, string> = {

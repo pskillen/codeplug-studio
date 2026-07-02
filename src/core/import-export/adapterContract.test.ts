@@ -26,18 +26,23 @@ describe('adapter contracts', () => {
     expect(getExportAdapter('native-yaml').id).toBe('native-yaml');
   });
 
-  it('registry throws for planned CPS formats', () => {
+  it('registry resolves shipped opengd77 export adapter', () => {
+    expect(getExportAdapter('opengd77').id).toBe('opengd77');
+    expect(getExportAdapter('opengd77').delivery).toBe('multi-file');
+  });
+
+  it('registry throws for planned CPS import adapters', () => {
     expect(() => getImportAdapter('opengd77')).toThrow(/No import adapter/);
     expect(() => getExportAdapter('chirp')).toThrow(/No export adapter/);
   });
 
-  it('format catalog lists native-yaml as shipped and CPS as planned', () => {
+  it('format catalog lists native-yaml and opengd77 export as shipped', () => {
     const nativeYaml = formatCatalog.find((f) => f.id === 'native-yaml');
     expect(nativeYaml?.importStatus).toBe('shipped');
     expect(nativeYaml?.exportStatus).toBe('shipped');
 
     const opengd77 = formatCatalog.find((f) => f.id === 'opengd77');
     expect(opengd77?.importStatus).toBe('planned');
-    expect(opengd77?.exportStatus).toBe('planned');
+    expect(opengd77?.exportStatus).toBe('shipped');
   });
 });

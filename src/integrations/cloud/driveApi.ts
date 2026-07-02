@@ -16,6 +16,16 @@ export interface DriveApiClient {
     params: { parentId: string; fileName: string; content: string; fileId?: string },
     accessToken: string,
   ): Promise<DriveFileMetadata>;
+  writeBinaryFile(
+    params: {
+      parentId: string;
+      fileName: string;
+      content: Uint8Array;
+      mimeType?: string;
+      fileId?: string;
+    },
+    accessToken: string,
+  ): Promise<DriveFileMetadata>;
   getFileMetadata(fileId: string, accessToken: string): Promise<DriveFileMetadata>;
   getUserEmail(accessToken: string): Promise<string>;
 }
@@ -25,6 +35,25 @@ const DRIVE_API_BASE = 'https://www.googleapis.com/drive/v3';
 function isYamlName(name: string): boolean {
   const lower = name.toLowerCase();
   return lower.endsWith('.yaml') || lower.endsWith('.yml');
+}
+
+function isZipName(name: string): boolean {
+  return name.toLowerCase().endsWith('.zip');
+}
+
+function buildMultipartBinaryBody(
+  boundary: string,
+  metadata: string,
+  mimeType: string,
+  content: Uint8Array,
+): Blob {
+  const encoder = new TextEncoder();
+  const preamble = encoder.encode(
+    `--${boundary}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n${metadata}\r\n--${boundary}\r\nContent-Type: ${mimeType}\r\n\r\n`,
+  );
+  const closing = encoder.encode(`\r\n--${boundary}--\r\n`);
+  const fileBytes = new Uint8Array(content);
+  return new Blob([preamble, fileBytes, closing]);
 }
 
 async function parseDriveError(response: Response): Promise<never> {
@@ -100,6 +129,9 @@ function mapListItem(file: {
   if (isYamlName(file.name)) {
     return { id: file.id, name: file.name, kind: 'yaml', modifiedTime: file.modifiedTime };
   }
+  if (isZipName(file.name)) {
+    return { id: file.id, name: file.name, kind: 'zip', modifiedTime: file.modifiedTime };
+  }
   return null;
 }
 
@@ -173,6 +205,46 @@ export function createDriveApiClient(fetchImpl: typeof fetch = fetch): DriveApiC
         `--${boundary}--`,
         '',
       ].join('\r\n');
+
+      const response = await driveFetch(
+        fetchImpl,
+        'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart',
+        accessToken,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': `multipart/related; boundary=${boundary}` },
+          body: multipartBody,
+        },
+      );
+      return (await response.json()) as DriveFileMetadata;
+    },
+
+    async writeBinaryFile(
+      { parentId, fileName, content, mimeType = 'application/zip', fileId },
+      accessToken,
+    ) {
+      if (fileId) {
+        const response = await driveFetch(
+          fetchImpl,
+          `https://www.googleapis.com/upload/drive/v3/files/${encodeURIComponent(fileId)}?uploadType=media`,
+          accessToken,
+          {
+            method: 'PATCH',
+            headers: { 'Content-Type': mimeType },
+            body: new Uint8Array(content),
+          },
+        );
+        const body = (await response.json()) as DriveFileMetadata;
+        return { ...body, name: body.name ?? fileName };
+      }
+
+      const boundary = `codeplug_${Date.now()}`;
+      const metadata = JSON.stringify({
+        name: fileName,
+        parents: [parentId],
+        mimeType,
+      });
+      const multipartBody = buildMultipartBinaryBody(boundary, metadata, mimeType, content);
 
       const response = await driveFetch(
         fetchImpl,
