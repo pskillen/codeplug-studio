@@ -145,7 +145,6 @@ export function applyMultiTalkGroupWireNameLimits(
   profileId: string | undefined,
   warnings: string[],
 ): string {
-  const tgMode = options?.multiTalkGroupExportNameMode ?? DEFAULT_MULTI_TG_EXPORT_NAME_MODE;
   const { base, mode, fixedSuffix } = composeWithEscalation(
     channel,
     member,

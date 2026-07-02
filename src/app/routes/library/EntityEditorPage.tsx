@@ -7,7 +7,8 @@ import { listPathForEditorSlug } from './nav.ts';
 import ChannelEditor from './ChannelEditor.tsx';
 import RxGroupListEditor from './RxGroupListEditor.tsx';
 import ZoneEditor from './ZoneEditor.tsx';
-import { AnalogContactEditor, DigitalContactEditor, TalkGroupEditor } from './SimpleEditors.tsx';
+import TalkGroupEditor from './TalkGroupEditor.tsx';
+import { AnalogContactEditor, DigitalContactEditor } from './SimpleEditors.tsx';
 
 export default function EntityEditorPage() {
   const { kind: slug, id } = useParams();

@@ -32,10 +32,12 @@
 
 - Progress tracking kickoff — this file + [dm32-outstanding.md](dm32-outstanding.md)
 - Slice 1 — `multiTalkGroupWireName.ts`, `multiTalkGroup.ts`, `entityRefExport.ts`; `CpsExportOptions` multi-TG fields; unit tests
+- Slice 2 — `TalkGroupEditor` with abbreviation + `TalkGroupWireNameExamples`; list Abbrev column; native YAML round-trip test
 
 **Verify**
 
 - `npm run test -- --run src/core/import-export/channelExpansion/`
+- Manual: `/library/talk-groups/new` — set name + abbreviation, save, reload
 
 ---
 

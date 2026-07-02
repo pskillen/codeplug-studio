@@ -66,6 +66,7 @@ export function fullLibraryAggregate(): ProjectAggregate {
     name: 'Scotland',
     digitalId: 950,
     comment: 'TG fixture',
+    abbreviation: 'Sco',
   };
 
   const digitalContact: DigitalContact = {

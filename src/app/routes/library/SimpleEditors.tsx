@@ -3,9 +3,8 @@ import type {
   AnalogContact,
   DigitalChannelMode,
   DigitalContact,
-  TalkGroup,
 } from '@core/models/library.ts';
-import { newAnalogContact, newDigitalContact, newTalkGroup } from '@core/domain/factories.ts';
+import { newAnalogContact, newDigitalContact } from '@core/domain/factories.ts';
 import { FieldRow } from '../../components/fields/Fields.tsx';
 import { controlStyle } from '../../components/fields/styles.ts';
 import { parseOptionalInt } from '../../lib/units.ts';
@@ -34,59 +33,6 @@ function DigitalModeSelect({
         </option>
       ))}
     </select>
-  );
-}
-
-export function TalkGroupEditor({
-  projectId,
-  entity,
-}: {
-  projectId: string;
-  entity: TalkGroup | null;
-}) {
-  const base = entity ?? newTalkGroup(projectId, '', 0);
-  const [name, setName] = useState(base.name);
-  const [mode, setMode] = useState<DigitalChannelMode>(base.mode);
-  const [digitalId, setDigitalId] = useState(String(base.digitalId));
-  const [comment, setComment] = useState(base.comment);
-  const { save, saving, error } = useEntitySave('talk-groups');
-
-  function handleSave() {
-    const row: TalkGroup = {
-      ...base,
-      name: name.trim() || 'Untitled talk group',
-      mode,
-      digitalId: parseOptionalInt(digitalId) ?? 0,
-      comment,
-    };
-    void save(() => persistence.putTalkGroup(row, entity ? entity.revision : null));
-  }
-
-  return (
-    <div style={{ maxWidth: 460 }}>
-      <FieldRow label="Name">
-        <input style={controlStyle} value={name} onChange={(e) => setName(e.target.value)} />
-      </FieldRow>
-      <FieldRow label="Mode">
-        <DigitalModeSelect value={mode} onChange={setMode} />
-      </FieldRow>
-      <FieldRow label="Group ID">
-        <input
-          style={controlStyle}
-          value={digitalId}
-          onChange={(e) => setDigitalId(e.target.value)}
-        />
-      </FieldRow>
-      <FieldRow label="Comment">
-        <input style={controlStyle} value={comment} onChange={(e) => setComment(e.target.value)} />
-      </FieldRow>
-      <EditorActions
-        saving={saving}
-        error={error}
-        onSave={handleSave}
-        cancelPath="/library/talk-groups"
-      />
-    </div>
   );
 }
 

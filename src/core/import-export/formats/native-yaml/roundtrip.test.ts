@@ -30,4 +30,12 @@ describe('native-yaml round-trip smoke', () => {
     const yaml = serialiseProject(aggregate);
     expect(parseProjectDocument(yaml)).toEqual(aggregate);
   });
+
+  it('preserves TalkGroup.abbreviation on round-trip', () => {
+    const aggregate = projectWithFormatBuildAggregate();
+    expect(aggregate.talkGroups[0]?.abbreviation).toBe('Sco');
+    const yaml = serialiseProject(aggregate);
+    const parsed = parseProjectDocument(yaml);
+    expect(parsed.talkGroups[0]?.abbreviation).toBe('Sco');
+  });
 });
