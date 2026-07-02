@@ -1,4 +1,5 @@
 import { nativeYamlExportAdapter, nativeYamlImportAdapter } from './formats/native-yaml/adapter.ts';
+import { opengd77ExportAdapter } from './formats/opengd77/adapter.ts';
 import type { ExportAdapter } from './exportAdapter.ts';
 import type { ImportAdapter } from './importAdapter.ts';
 import type { FormatCatalogEntry, FormatId } from './types.ts';
@@ -14,7 +15,7 @@ export const formatCatalog: readonly FormatCatalogEntry[] = [
     id: 'opengd77',
     label: 'OpenGD77 CSV',
     importStatus: 'planned',
-    exportStatus: 'planned',
+    exportStatus: 'shipped',
   },
   {
     id: 'chirp',
@@ -38,7 +39,10 @@ export const formatCatalog: readonly FormatCatalogEntry[] = [
 
 export const importAdapters: readonly ImportAdapter[] = [nativeYamlImportAdapter];
 
-export const exportAdapters: readonly ExportAdapter[] = [nativeYamlExportAdapter];
+export const exportAdapters: readonly ExportAdapter[] = [
+  nativeYamlExportAdapter,
+  opengd77ExportAdapter,
+];
 
 export function getImportAdapter(id: FormatId): ImportAdapter {
   const adapter = importAdapters.find((a) => a.id === id);

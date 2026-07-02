@@ -1,5 +1,6 @@
 import type { FormatBuild } from '@core/models/formatBuild.ts';
-import { getExportAdapter, isMultiFileExportAdapter } from '@core/import-export/registry.ts';
+import { getExportAdapter } from '@core/import-export/registry.ts';
+import { isMultiFileExportAdapter } from '@core/import-export/exportAdapter.ts';
 import type { CpsExportOptions, ExportResult, FormatId } from '@core/import-export/types.ts';
 import { assemble, type AssembledBuild, type LibrarySlice } from './assemble.ts';
 
