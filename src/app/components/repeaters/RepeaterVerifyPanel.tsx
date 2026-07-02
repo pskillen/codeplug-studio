@@ -1,8 +1,7 @@
 import { useMemo, useState } from 'react';
-import { Alert, Button, Checkbox, Group, Modal, Radio, Stack } from '@mantine/core';
+import { Alert, Button, Checkbox, Group, Modal, Radio, Stack, Text } from '@mantine/core';
 import type { Channel, Library } from '@core/models/library.ts';
 import {
-  fetchResolvedDeviceTalkGroups,
   matchListingForChannel,
   RepeaterDirectoryError,
   searchBrandmeisterByCallsign,
@@ -13,38 +12,28 @@ import {
 import { PageSection } from '../ui/index.ts';
 import BrandmeisterRxGroupListSyncDialog from './BrandmeisterRxGroupListSyncDialog.tsx';
 import RepeaterListingUpdateDialog from './RepeaterListingUpdateDialog.tsx';
-import { shouldOfferRxGroupListSync } from '../../lib/brandmeisterRxGroupListSync.ts';
 
 export interface RepeaterVerifyPanelProps {
   channel: Channel;
   library: Library;
 }
 
+type VerifyIntent = 'repeater' | 'talkGroups';
+
 function channelHasDmr(channel: Channel): boolean {
   return channel.modeProfiles.some((p) => p.mode === 'dmr');
 }
 
-interface VerifySourceButtonProps {
-  label: string;
-  loading: boolean;
-  onCheck: () => void;
-}
-
-function VerifySourceButton({ label, loading, onCheck }: VerifySourceButtonProps) {
-  return (
-    <Button variant="light" loading={loading} onClick={() => void onCheck()}>
-      Check {label}
-    </Button>
-  );
-}
-
 export default function RepeaterVerifyPanel({ channel, library }: RepeaterVerifyPanelProps) {
   const [ukLoading, setUkLoading] = useState(false);
-  const [bmLoading, setBmLoading] = useState(false);
+  const [bmRepeaterLoading, setBmRepeaterLoading] = useState(false);
+  const [bmTalkGroupsLoading, setBmTalkGroupsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [listings, setListings] = useState<RepeaterListing[]>([]);
+  const [pickerIntent, setPickerIntent] = useState<VerifyIntent>('repeater');
   const [pickerOpen, setPickerOpen] = useState(false);
   const [updateListing, setUpdateListing] = useState<RepeaterListing | null>(null);
+  const [syncListing, setSyncListing] = useState<RepeaterListing | null>(null);
   const [updateOpen, setUpdateOpen] = useState(false);
   const [rglSyncOpen, setRglSyncOpen] = useState(false);
   const [titleCaseNames, setTitleCaseNames] = useState(true);
@@ -56,33 +45,27 @@ export default function RepeaterVerifyPanel({ channel, library }: RepeaterVerify
   );
   const bmMapOptions: MapListingOptions = useMemo(() => ({ omitComment: true }), []);
 
-  function openUpdateForListing(listing: RepeaterListing) {
+  function openRepeaterUpdate(listing: RepeaterListing) {
     setUpdateListing(listing);
     setUpdateOpen(true);
   }
 
-  async function maybeOpenRxGroupListSync(listing: RepeaterListing) {
-    if (listing.source !== 'brandmeister') return;
-    try {
-      const resolved = await fetchResolvedDeviceTalkGroups(listing.remoteId);
-      if (shouldOfferRxGroupListSync(channel, resolved, library)) {
-        setRglSyncOpen(true);
-      }
-    } catch {
-      // Channel field diff is sufficient when talk groups are unavailable.
-    }
+  function openTalkGroupSync(listing: RepeaterListing) {
+    setSyncListing(listing);
+    setRglSyncOpen(true);
   }
 
-  function handleChannelDialogClose() {
-    setUpdateOpen(false);
-    const listing = updateListing;
-    if (listing) {
-      void maybeOpenRxGroupListSync(listing);
+  function chooseListing(listing: RepeaterListing, intent: VerifyIntent) {
+    if (intent === 'repeater') {
+      openRepeaterUpdate(listing);
+      return;
     }
+    openTalkGroupSync(listing);
   }
 
-  async function runCheck(
+  async function runDirectoryCheck(
     source: 'ukrepeater' | 'brandmeister',
+    intent: VerifyIntent,
     setLoading: (value: boolean) => void,
   ) {
     if (!channel.callsign.trim()) {
@@ -103,14 +86,15 @@ export default function RepeaterVerifyPanel({ channel, library }: RepeaterVerify
       }
       const auto = matchListingForChannel(channel, results);
       if (auto) {
-        openUpdateForListing(auto);
+        chooseListing(auto, intent);
         return;
       }
       if (results.length === 1) {
-        openUpdateForListing(results[0]!);
+        chooseListing(results[0]!, intent);
         return;
       }
       setListings(results);
+      setPickerIntent(intent);
       setPickerOpen(true);
     } catch (err) {
       setError(
@@ -122,36 +106,75 @@ export default function RepeaterVerifyPanel({ channel, library }: RepeaterVerify
   }
 
   const activeMapOptions = updateListing?.source === 'brandmeister' ? bmMapOptions : ukMapOptions;
+  const pickerTitle =
+    pickerIntent === 'repeater' ? 'Choose repeater listing' : 'Choose repeater for talk groups';
 
   return (
     <PageSection
       title="Check against directory"
-      description="Compare this channel with public repeater directories and apply selected field updates."
+      description="Compare this channel with public repeater directories and apply selected updates."
     >
-      <Stack gap="sm">
-        <Group align="flex-end" wrap="wrap">
-          <VerifySourceButton
-            label="ukrepeater.net"
-            loading={ukLoading}
-            onCheck={() => void runCheck('ukrepeater', setUkLoading)}
-          />
-          {showBrandmeister ? (
-            <VerifySourceButton
-              label="BrandMeister"
-              loading={bmLoading}
-              onCheck={() => void runCheck('brandmeister', setBmLoading)}
+      <Stack gap="lg">
+        <Stack gap="xs">
+          <Text component="h3" size="sm" fw={600}>
+            Repeater details
+          </Text>
+          <Text size="sm" c="dimmed">
+            Frequencies, colour code, location, and other channel fields from the directory listing.
+          </Text>
+          <Group align="flex-end" wrap="wrap">
+            <Button
+              variant="light"
+              loading={ukLoading}
+              onClick={() => void runDirectoryCheck('ukrepeater', 'repeater', setUkLoading)}
+            >
+              Check ukrepeater.net
+            </Button>
+            {showBrandmeister ? (
+              <Button
+                variant="light"
+                loading={bmRepeaterLoading}
+                onClick={() =>
+                  void runDirectoryCheck('brandmeister', 'repeater', setBmRepeaterLoading)
+                }
+              >
+                Check BrandMeister repeater
+              </Button>
+            ) : null}
+            <Checkbox
+              label="Title case names"
+              checked={titleCaseNames}
+              onChange={(e) => setTitleCaseNames(e.currentTarget.checked)}
             />
-          ) : null}
-          <Checkbox
-            label="Title case names"
-            checked={titleCaseNames}
-            onChange={(e) => setTitleCaseNames(e.currentTarget.checked)}
-          />
-        </Group>
+          </Group>
+        </Stack>
+
+        {showBrandmeister ? (
+          <Stack gap="xs">
+            <Text component="h3" size="sm" fw={600}>
+              BrandMeister talk groups
+            </Text>
+            <Text size="sm" c="dimmed">
+              Compare static talk groups on the repeater and sync this channel&apos;s RX group list.
+              This does not change frequencies or other repeater details.
+            </Text>
+            <Button
+              variant="light"
+              fullWidth
+              loading={bmTalkGroupsLoading}
+              onClick={() =>
+                void runDirectoryCheck('brandmeister', 'talkGroups', setBmTalkGroupsLoading)
+              }
+            >
+              Check BrandMeister talk groups &amp; RX list
+            </Button>
+          </Stack>
+        ) : null}
+
         {error ? <Alert color="red">{error}</Alert> : null}
       </Stack>
 
-      <Modal opened={pickerOpen} onClose={() => setPickerOpen(false)} title="Choose listing">
+      <Modal opened={pickerOpen} onClose={() => setPickerOpen(false)} title={pickerTitle}>
         <Radio.Group>
           <Stack gap="xs">
             {listings.map((listing) => (
@@ -161,7 +184,7 @@ export default function RepeaterVerifyPanel({ channel, library }: RepeaterVerify
                 label={`${listing.callsign} — ${listing.name || listing.band} (${listing.status})`}
                 onClick={() => {
                   setPickerOpen(false);
-                  openUpdateForListing(listing);
+                  chooseListing(listing, pickerIntent);
                 }}
               />
             ))}
@@ -174,14 +197,14 @@ export default function RepeaterVerifyPanel({ channel, library }: RepeaterVerify
         listing={updateListing}
         mapOptions={activeMapOptions}
         opened={updateOpen}
-        onClose={handleChannelDialogClose}
+        onClose={() => setUpdateOpen(false)}
       />
 
-      {updateListing?.source === 'brandmeister' ? (
+      {syncListing ? (
         <BrandmeisterRxGroupListSyncDialog
           channel={channel}
           library={library}
-          listing={updateListing}
+          listing={syncListing}
           opened={rglSyncOpen}
           onClose={() => setRglSyncOpen(false)}
         />

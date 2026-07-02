@@ -48,11 +48,11 @@ Repeater search is **not** a top-level nav item — it lives under library workf
 
 ## Workflows
 
-| Workflow                             | Entry point                                                               | Behaviour                                                                                                                                                                                                      |
-| ------------------------------------ | ------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **New channel from reference**       | Library section nav → _Add from ukrepeater.net_ / _Add from BrandMeister_ | Search directory; add result(s) as library channel(s). BrandMeister: optional talk groups + RX group list ([#65](https://github.com/pskillen/codeplug-studio/issues/65)). Duplicate gate is **callsign only**. |
-| **Update existing**                  | Same search UI when callsign already in library                           | Outline _Update existing_ → directory comparison dialog                                                                                                                                                        |
-| **Check and update current channel** | Channel editor → _Check ukrepeater.net_ / _Check BrandMeister_            | Fetch by callsign; auto-match listing; channel field diff; BrandMeister then offers RX group list sync ([#65](https://github.com/pskillen/codeplug-studio/issues/65))                                          |
+| Workflow                             | Entry point                                                                                                          | Behaviour                                                                                                                                                                                                      |
+| ------------------------------------ | -------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **New channel from reference**       | Library section nav → _Add from ukrepeater.net_ / _Add from BrandMeister_                                            | Search directory; add result(s) as library channel(s). BrandMeister: optional talk groups + RX group list ([#65](https://github.com/pskillen/codeplug-studio/issues/65)). Duplicate gate is **callsign only**. |
+| **Update existing**                  | Same search UI when callsign already in library                                                                      | Outline _Update existing_ → directory comparison dialog                                                                                                                                                        |
+| **Check and update current channel** | Channel editor → _Check ukrepeater.net_ / _Check BrandMeister repeater_ / _Check BrandMeister talk groups & RX list_ | Repeater field diff (UK or BM); separate BM button for RX group list sync ([#65](https://github.com/pskillen/codeplug-studio/issues/65))                                                                       |
 
 ### Routes
 
@@ -137,7 +137,7 @@ Example: `modeCodes: ["A", "D", "M:1", "F", "P", "N"]` → six profiles on impor
 4. Bulk-select results → _Add selected_.
 5. Library → _Add from BrandMeister_ → search `GB7AC` → confirm **Import talk groups and RX group list** (default on) creates channel, talk groups, and RX list; DMR profile linked.
 6. Re-add same callsign with TG import → talk groups deduped by `digitalId`.
-7. Open a DMR channel → _Check BrandMeister_ → apply channel patch if needed → RX group list sync dialog when remote static TGs differ.
+7. Open a DMR channel → _Check BrandMeister repeater_ for field diff; _Check BrandMeister talk groups & RX list_ for RX list sync (separate actions).
 
 ## Related
 

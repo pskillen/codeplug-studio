@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Second-step modal after a BrandMeister directory check on channel edit. Compares the channel's linked RX group list against BrandMeister static talk groups and lets the operator update the existing list or create a new one.
+Modal opened from channel edit when the operator chooses **Check BrandMeister talk groups & RX list** on `RepeaterVerifyPanel`. Compares the channel's linked RX group list against BrandMeister static talk groups and lets the operator update the existing list or create a new one.
 
 ## Props
 
