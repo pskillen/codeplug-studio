@@ -116,10 +116,7 @@ export function computeZoneMemberPickerMapFilters(
 
   if (hideAvailableFilteredFromMap && availableFilterLower) {
     for (const ch of channels) {
-      if (
-        !selectedIdSet.has(ch.id) &&
-        !channelMatchesZoneMemberFilter(ch, availableFilterLower)
-      ) {
+      if (!selectedIdSet.has(ch.id) && !channelMatchesZoneMemberFilter(ch, availableFilterLower)) {
         hiddenMarkerChannelIds.push(ch.id);
       }
     }
@@ -170,7 +167,9 @@ export default function ZoneMemberPicker({
       selectedIds
         .map((id) => channels.find((ch) => ch.id === id))
         .filter((ch): ch is Channel => ch != null)
-        .filter((ch) => !inZoneFilterLower || channelMatchesZoneMemberFilter(ch, inZoneFilterLower)),
+        .filter(
+          (ch) => !inZoneFilterLower || channelMatchesZoneMemberFilter(ch, inZoneFilterLower),
+        ),
     [channels, selectedIds, inZoneFilterLower],
   );
 
