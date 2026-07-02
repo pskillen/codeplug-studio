@@ -1,7 +1,8 @@
-import { Switch, Table, Text, TextInput } from '@mantine/core';
-import { useCallback } from 'react';
+import { ActionIcon, Group, Switch, Table, Text, TextInput, Tooltip } from '@mantine/core';
+import { IconCheck, IconX } from '@tabler/icons-react';
+import { useEffect, useState } from 'react';
 import type { WirePreviewRow } from '@core/services/previewWireRows.ts';
-import { useDebouncedNameFilter } from '../../hooks/useDebouncedNameFilter.ts';
+import { ICON_SIZE_ACTION, ICON_STROKE } from '../../lib/iconSizes.ts';
 
 export interface WirePreviewTableProps {
   rows: WirePreviewRow[];
@@ -26,23 +27,73 @@ function WireNameOverrideInput({
   onWireNameChange: (row: WirePreviewRow, wireName: string) => void;
 }) {
   const committed = wireNameCommittedValue(row);
-  const onCommit = useCallback(
-    (value: string) => onWireNameChange(row, value),
-    [onWireNameChange, row],
-  );
-  const { nameFilterInput, setNameFilter } = useDebouncedNameFilter(committed, onCommit);
-  const tooLong = nameLimit != null && nameFilterInput.length > nameLimit;
+  const [draft, setDraft] = useState(committed);
+  const dirty = draft !== committed;
+
+  useEffect(() => {
+    setDraft(committed);
+  }, [committed, row.key]);
+
+  const tooLong = nameLimit != null && draft.length > nameLimit;
+
+  const apply = () => {
+    onWireNameChange(row, draft);
+  };
+
+  const revert = () => {
+    setDraft(committed);
+  };
 
   return (
     <>
-      <TextInput
-        size="xs"
-        placeholder={row.generatedWireName}
-        value={nameFilterInput}
-        onChange={(event) => setNameFilter(event.currentTarget.value)}
-        disabled={excluded}
-        error={tooLong ? `Exceeds ${nameLimit} characters` : undefined}
-      />
+      <Group gap="xs" wrap="nowrap" align="flex-start">
+        <TextInput
+          flex={1}
+          size="xs"
+          placeholder={row.generatedWireName}
+          value={draft}
+          onChange={(event) => setDraft(event.currentTarget.value)}
+          onKeyDown={(event) => {
+            if (event.key === 'Enter' && dirty && !tooLong && !excluded) {
+              event.preventDefault();
+              apply();
+            }
+            if (event.key === 'Escape' && dirty) {
+              event.preventDefault();
+              revert();
+            }
+          }}
+          disabled={excluded}
+          error={tooLong ? `Exceeds ${nameLimit} characters` : undefined}
+        />
+        {dirty ? (
+          <Group gap={4} wrap="nowrap">
+            <Tooltip label="Apply wire name">
+              <ActionIcon
+                variant="light"
+                color="green"
+                size="sm"
+                aria-label="Apply wire name"
+                disabled={tooLong || excluded}
+                onClick={apply}
+              >
+                <IconCheck size={ICON_SIZE_ACTION} stroke={ICON_STROKE} />
+              </ActionIcon>
+            </Tooltip>
+            <Tooltip label="Revert wire name">
+              <ActionIcon
+                variant="light"
+                color="gray"
+                size="sm"
+                aria-label="Revert wire name"
+                onClick={revert}
+              >
+                <IconX size={ICON_SIZE_ACTION} stroke={ICON_STROKE} />
+              </ActionIcon>
+            </Tooltip>
+          </Group>
+        ) : null}
+      </Group>
       <Text size="xs" c="dimmed">
         Default: {row.generatedWireName}
       </Text>

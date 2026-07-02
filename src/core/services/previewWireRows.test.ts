@@ -29,7 +29,9 @@ describe('previewWireRows', () => {
     expect(rows).toHaveLength(2);
     expect(rows[0]?.displayLabel).toContain('GB3DA');
     expect(rows[0]?.effectiveWireName).toBe('GB3DA Demo');
+    expect(rows[0]?.generatedWireName).toBe('GB3DA GB3DA Demo');
     expect(rows[1]?.effectiveWireName).toBe('GB7GL Scot');
+    expect(rows[1]?.generatedWireName).toBe('GB7GL DMR Scot');
   });
 
   it('marks excluded channels in preview rows', () => {
@@ -101,8 +103,10 @@ describe('previewWireRows', () => {
     });
     const multiModeRows = rows.filter((row) => row.libraryEntityId === channels[1]!.id);
     expect(multiModeRows).toHaveLength(2);
-    expect(multiModeRows[0]?.effectiveWireName).toMatch(/-F$/);
-    expect(multiModeRows[1]?.effectiveWireName).toMatch(/-D$/);
+    expect(multiModeRows[0]?.generatedWireName).toMatch(/-F$/);
+    expect(multiModeRows[1]?.generatedWireName).toMatch(/-D$/);
+    expect(multiModeRows[0]?.effectiveWireName).toBe('GB7GL Scot');
+    expect(multiModeRows[1]?.effectiveWireName).toBe('GB7GL Scot');
   });
 
   it('shortens wire names at the profile name limit in preview', () => {

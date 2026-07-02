@@ -27,7 +27,7 @@ Overrides are stored on `FormatBuild` as `channelOverrides`, `zoneOverrides`, `t
 - **effectiveWireName** — override or generated
 - **key** — stable override id (composite `${channelId}:-F` / `:-D` for multi-mode expansion rows)
 
-Wire preview pages and the export panel share **`useExportSettings`** (browser `localStorage`) for shortening, name mode, and abbreviation toggles. Wire name overrides debounce before persisting so inputs stay editable during save (same pattern as list name filters).
+Wire preview pages and the export panel share **`useExportSettings`** (browser `localStorage`) for shortening, name mode, and abbreviation toggles. Wire name overrides use a local draft with explicit **Apply** and **Revert** actions before persisting (avoids revision races from implicit debounced saves).
 
 ## Routes
 

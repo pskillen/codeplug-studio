@@ -1,4 +1,6 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import type { FormatBuild } from '@core/models/formatBuild.ts';
+import { isEntityExcluded, overrideByEntityId } from '@core/domain/formatBuildOverrides.ts';
 import type { LibrarySlice } from '@core/services/assemble.ts';
 import {
   overrideFieldForEntityKind,
@@ -38,6 +40,10 @@ async function loadLibrarySlice(projectId: string): Promise<LibrarySlice> {
 
 export function useBuildWirePreview(entityKind: WirePreviewEntityKind) {
   const { build } = useBuildLayout();
+  const buildRef = useRef(build);
+  buildRef.current = build;
+  const saveQueueRef = useRef(Promise.resolve());
+
   const { activeProjectId } = useProjects();
   const { exportOptionsFromSettings: optionsFromSettings } = useExportSettings();
   const [library, setLibrary] = useState<LibrarySlice | null>(null);
@@ -72,34 +78,57 @@ export function useBuildWirePreview(entityKind: WirePreviewEntityKind) {
     };
   }, [activeProjectId, build.updatedAt]);
 
-  const persistBuild = useCallback(
-    async (nextBuild: typeof build) => {
+  const persistBuild = useCallback((mutate: (current: FormatBuild) => FormatBuild) => {
+    const run = async () => {
+      const current = buildRef.current;
+      const next = mutate(current);
+      if (next === current) return;
+
       setSaving(true);
-      setError(null);
-      const result = await buildService.putBuild(nextBuild, build.revision);
+      const result = await buildService.putBuild(next, current.revision);
       setSaving(false);
-      if (!result.ok) {
+      if (result.ok) {
+        buildRef.current = { ...next, revision: result.revision };
+        setError(null);
+      } else {
         setError(
           result.reason === 'revision_conflict'
             ? 'This build was changed elsewhere. Reload the page.'
             : 'Save failed.',
         );
       }
+    };
+    saveQueueRef.current = saveQueueRef.current.then(run, run);
+    return saveQueueRef.current;
+  }, []);
+
+  const setRowExcluded = useCallback(
+    (row: WirePreviewRow, excluded: boolean) => {
+      const field = overrideFieldForEntityKind(entityKind);
+      void persistBuild((current) => {
+        if (isEntityExcluded(current[field], row.libraryEntityId) === excluded) {
+          return current;
+        }
+        return buildService.withEntityExcluded(current, field, row.libraryEntityId, excluded);
+      });
     },
-    [build.revision],
+    [entityKind, persistBuild],
   );
 
-  async function setRowExcluded(row: WirePreviewRow, excluded: boolean) {
-    const field = overrideFieldForEntityKind(entityKind);
-    const next = buildService.withEntityExcluded(build, field, row.libraryEntityId, excluded);
-    await persistBuild(next);
-  }
-
-  async function setRowWireName(row: WirePreviewRow, wireName: string) {
-    const field = overrideFieldForEntityKind(entityKind);
-    const next = buildService.withWireNameOverride(build, field, row.key, wireName);
-    await persistBuild(next);
-  }
+  const setRowWireName = useCallback(
+    (row: WirePreviewRow, wireName: string) => {
+      const field = overrideFieldForEntityKind(entityKind);
+      const trimmed = wireName.trim();
+      void persistBuild((current) => {
+        const existing = overrideByEntityId(current[field]).get(row.key)?.wireName?.trim();
+        if ((existing ?? '') === trimmed) {
+          return current;
+        }
+        return buildService.withWireNameOverride(current, field, row.key, wireName);
+      });
+    },
+    [entityKind, persistBuild],
+  );
 
   return {
     build,

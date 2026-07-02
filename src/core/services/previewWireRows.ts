@@ -50,7 +50,7 @@ function previewRow(
   overrides: FormatBuild[OverrideField],
   expansionNote?: string,
 ): WirePreviewRow {
-  const override = overrideByEntityId(overrides).get(libraryEntityId);
+  const override = overrideByEntityId(overrides).get(key);
   const excluded = override?.excluded === true;
   const effectiveWireName = override?.wireName?.trim() || generatedWireName;
   return {
@@ -80,38 +80,36 @@ export function previewWireRows(
       const reserved = new Set<string>();
       const warnings: string[] = [];
       for (const channel of library.channels) {
-        const overrideWireName = overrideByEntityId(build.channelOverrides).get(
-          channel.id,
-        )?.wireName;
-        const expansions = expandChannelWireRows(
+        const generatedExpansions = expandChannelWireRows(
           channel,
-          overrideWireName?.trim() || undefined,
+          undefined,
           expandModes,
           _options,
           build.profileId,
           reserved,
           warnings,
         );
-        for (const expanded of expansions) {
+        const channelOverride = overrideByEntityId(build.channelOverrides).get(channel.id)?.wireName?.trim();
+        for (const generated of generatedExpansions) {
           const keyOverride = overrideByEntityId(build.channelOverrides)
-            .get(expanded.key)
+            .get(generated.key)
             ?.wireName?.trim();
-          const generatedWireName = expanded.wireName;
+          const generatedWireName = generated.wireName;
           const excluded = isEntityExcluded(build.channelOverrides, channel.id);
           rows.push({
-            key: expanded.key,
+            key: generated.key,
             libraryEntityId: channel.id,
             entityKind: 'channel',
             displayLabel:
-              expansions.length > 1
-                ? `${channelDisplayLabel(channel)} (${expanded.mode.toUpperCase()})`
+              generatedExpansions.length > 1
+                ? `${channelDisplayLabel(channel)} (${generated.mode.toUpperCase()})`
                 : channelDisplayLabel(channel),
             generatedWireName,
-            effectiveWireName: keyOverride || generatedWireName,
+            effectiveWireName: keyOverride ?? channelOverride ?? generatedWireName,
             excluded,
             expansionNote:
-              expansions.length > 1
-                ? `Multi-mode ${modeExportNameSuffix(expanded.mode)} row`
+              generatedExpansions.length > 1
+                ? `Multi-mode ${modeExportNameSuffix(generated.mode)} row`
                 : undefined,
           });
         }
@@ -122,27 +120,25 @@ export function previewWireRows(
       return library.zones.map((zone) => {
         const assembled = projection.zones.find((row) => row.zoneId === zone.id);
         const memberCount = assembled?.memberChannelIds.length ?? zone.members.length;
-        const generatedWireName = assembled?.wireName ?? zone.name;
         return previewRow(
           zone.id,
           zone.id,
           'zone',
           `${zone.name} (${memberCount} channel${memberCount === 1 ? '' : 's'})`,
-          generatedWireName,
+          zone.name,
           build.zoneOverrides,
         );
       });
     case 'talkGroup':
       return library.talkGroups.map((talkGroup) => {
         const assembled = projection.talkGroups.find((row) => row.entity.id === talkGroup.id);
-        const generatedWireName = assembled?.wireName ?? talkGroup.name;
         const referenced = assembled != null;
         return previewRow(
           talkGroup.id,
           talkGroup.id,
           'talkGroup',
           `${talkGroup.name} (ID ${talkGroup.digitalId})`,
-          generatedWireName,
+          talkGroup.name,
           build.talkGroupOverrides,
           referenced ? undefined : 'Not referenced by exported channels',
         );
@@ -151,14 +147,13 @@ export function previewWireRows(
       const rows: WirePreviewRow[] = [];
       for (const contact of library.digitalContacts) {
         const assembled = projection.digitalContacts.find((row) => row.entity.id === contact.id);
-        const generatedWireName = assembled?.wireName ?? contact.name;
         rows.push(
           previewRow(
             contact.id,
             contact.id,
             'contact',
             `${contact.name} (digital ${contact.digitalId})`,
-            generatedWireName,
+            contact.name,
             build.contactOverrides,
             assembled ? undefined : 'Not referenced by exported channels',
           ),
@@ -166,14 +161,13 @@ export function previewWireRows(
       }
       for (const contact of library.analogContacts) {
         const assembled = projection.analogContacts.find((row) => row.entity.id === contact.id);
-        const generatedWireName = assembled?.wireName ?? contact.name;
         rows.push(
           previewRow(
             contact.id,
             contact.id,
             'contact',
             `${contact.name} (analog)`,
-            generatedWireName,
+            contact.name,
             build.contactOverrides,
             assembled ? undefined : 'Not referenced by exported channels',
           ),
@@ -184,13 +178,12 @@ export function previewWireRows(
     case 'rxGroupList':
       return library.rxGroupLists.map((list) => {
         const assembled = projection.rxGroupLists.find((row) => row.entity.id === list.id);
-        const generatedWireName = assembled?.wireName ?? list.name;
         return previewRow(
           list.id,
           list.id,
           'rxGroupList',
           `${list.name} (${list.members.length} members)`,
-          generatedWireName,
+          list.name,
           build.rxGroupListOverrides,
           assembled ? undefined : 'Not referenced by exported channels',
         );
