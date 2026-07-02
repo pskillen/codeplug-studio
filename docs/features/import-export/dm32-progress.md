@@ -30,11 +30,12 @@
 
 **Delivered**
 
-- (pending) Progress tracking kickoff — this file + [dm32-outstanding.md](dm32-outstanding.md)
+- Progress tracking kickoff — this file + [dm32-outstanding.md](dm32-outstanding.md)
+- Slice 1 — `multiTalkGroupWireName.ts`, `multiTalkGroup.ts`, `entityRefExport.ts`; `CpsExportOptions` multi-TG fields; unit tests
 
 **Verify**
 
-- (pending)
+- `npm run test -- --run src/core/import-export/channelExpansion/`
 
 ---
 
