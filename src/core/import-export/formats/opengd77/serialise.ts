@@ -118,7 +118,7 @@ export function serialiseChannels(assembled: AssembledBuild, options?: CpsExport
   const expandedRows = assembled.channels.flatMap((row) =>
     expandChannelWireRows(
       row.entity,
-      row.wireName,
+      row.wireNameOverride,
       expandModes,
       options,
       profile.id,

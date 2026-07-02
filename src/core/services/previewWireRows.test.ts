@@ -130,4 +130,32 @@ describe('previewWireRows', () => {
     });
     expect(rows[0]?.effectiveWireName.length).toBeLessThanOrEqual(16);
   });
+
+  it('generates channel wire names from callsign and name when no override', () => {
+    const yaml = readFileSync(join(fixtureDir, 'with-format-build.yaml'), 'utf8');
+    const aggregate = parseProjectDocument(yaml);
+    const build = {
+      ...aggregate.formatBuilds[0]!,
+      channelOverrides: [],
+    };
+    const library = {
+      channels: aggregate.channels,
+      zones: aggregate.zones,
+      talkGroups: aggregate.talkGroups,
+      digitalContacts: aggregate.digitalContacts,
+      analogContacts: aggregate.analogContacts,
+      rxGroupLists: aggregate.rxGroupLists,
+    };
+
+    const rows = previewWireRows(build, library, 'channel', {
+      profileId: build.profileId,
+      shortenNames: false,
+    });
+    expect(rows.find((row) => row.libraryEntityId.endsWith('2222'))?.generatedWireName).toBe(
+      'GB3DA GB3DA Demo',
+    );
+    expect(rows.find((row) => row.libraryEntityId.endsWith('3333'))?.generatedWireName).toBe(
+      'GB7GL DMR Scotland',
+    );
+  });
 });

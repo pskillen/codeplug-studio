@@ -23,7 +23,7 @@ Overrides are stored on `FormatBuild` as `channelOverrides`, `zoneOverrides`, `t
 `previewWireRows(build, library, entityKind, options)` returns rows with:
 
 - **displayLabel** — human-readable library label (may note multi-mode suffix)
-- **generatedWireName** — composed from library + export name settings
+- **generatedWireName** — `callsign` + `name` via `defaultChannelWireName` / `composeChannelWireName`; multi-mode channels append `-F` or `-D` when expansion applies
 - **effectiveWireName** — override or generated
 - **key** — stable override id (composite `${channelId}:-F` / `:-D` for multi-mode expansion rows)
 

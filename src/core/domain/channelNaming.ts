@@ -81,6 +81,14 @@ export function channelPickForWireExport(
   return base;
 }
 
+/** Default CPS wire name before mode suffixes and build overrides. */
+export function defaultChannelWireName(
+  channel: Channel,
+  options: ChannelWireExportPickOptions = {},
+): string {
+  return composeChannelWireName(channelPickForWireExport(channel, options));
+}
+
 export function channelDisplayLabel(channel: Channel): string {
   const parts = [channel.callsign, channel.name].filter(Boolean);
   return parts.length > 0 ? parts.join(' — ') : channel.name || channel.id;

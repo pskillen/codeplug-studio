@@ -110,4 +110,27 @@ describe('assemble', () => {
     const projection = assemble(build, library);
     expect(projection.channels[0]?.wireName).toBe('Custom wire');
   });
+
+  it('composes default channel wire names from callsign and name', () => {
+    const yaml = readFileSync(join(fixtureDir, 'with-format-build.yaml'), 'utf8');
+    const aggregate = parseProjectDocument(yaml);
+    const build = {
+      ...aggregate.formatBuilds[0]!,
+      channelOverrides: [],
+    };
+    const library = {
+      channels: aggregate.channels,
+      zones: aggregate.zones,
+      talkGroups: aggregate.talkGroups,
+      digitalContacts: aggregate.digitalContacts,
+      analogContacts: aggregate.analogContacts,
+      rxGroupLists: aggregate.rxGroupLists,
+    };
+
+    const projection = assemble(build, library);
+    expect(projection.channels).toHaveLength(2);
+    expect(projection.channels[0]?.wireName).toBe('GB3DA GB3DA Demo');
+    expect(projection.channels[1]?.wireName).toBe('GB7GL DMR Scotland');
+    expect(projection.channels[0]?.wireNameOverride).toBeUndefined();
+  });
 });

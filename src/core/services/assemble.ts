@@ -14,6 +14,7 @@ import {
   overrideByEntityId,
   resolveOverrideWireName,
 } from '@core/domain/formatBuildOverrides.ts';
+import { defaultChannelWireName } from '@core/domain/channelNaming.ts';
 import { migrateFormatBuild } from '@core/domain/migrateFormatBuild.ts';
 import type { Library } from '@core/models/library.ts';
 
@@ -35,6 +36,8 @@ export interface AssembledEntity<T> {
 export interface AssembledChannel {
   entity: Channel;
   wireName: string;
+  /** Set when the build has an explicit channel wire name override. */
+  wireNameOverride?: string;
 }
 
 export interface AssembledZone {
@@ -138,9 +141,12 @@ function assembleChannels(build: FormatBuild, library: LibrarySlice): AssembledC
   const assembled: AssembledChannel[] = [];
   for (const entity of library.channels) {
     if (isEntityExcluded(overrides, entity.id)) continue;
+    const wireNameOverride = overrideByEntityId(overrides).get(entity.id)?.wireName?.trim();
+    const generated = defaultChannelWireName(entity);
     assembled.push({
       entity,
-      wireName: resolveOverrideWireName(overrides, entity.id, entity.name),
+      wireName: wireNameOverride ?? generated,
+      wireNameOverride,
     });
   }
   return assembled;

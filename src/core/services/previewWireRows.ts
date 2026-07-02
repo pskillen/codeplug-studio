@@ -80,14 +80,12 @@ export function previewWireRows(
       const reserved = new Set<string>();
       const warnings: string[] = [];
       for (const channel of library.channels) {
-        const assembled = projection.channels.find((row) => row.entity.id === channel.id);
         const overrideWireName = overrideByEntityId(build.channelOverrides).get(
           channel.id,
         )?.wireName;
-        const baseWireName = overrideWireName?.trim() || assembled?.wireName;
         const expansions = expandChannelWireRows(
           channel,
-          baseWireName,
+          overrideWireName?.trim() || undefined,
           expandModes,
           _options,
           build.profileId,
