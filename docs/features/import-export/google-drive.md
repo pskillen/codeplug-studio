@@ -12,6 +12,16 @@ OAuth access tokens and browse preferences stay in **browser localStorage** only
 
 IndexedDB remains the **edit store**; Drive holds portable YAML interchange files only.
 
+## localStorage keys
+
+| Key | Purpose |
+| --- | --- |
+| `codeplug-studio:drive:accessToken` | OAuth bearer (masked in Debug) |
+| `codeplug-studio:drive:tokenExpiresAt` | Token expiry (epoch ms) |
+| `codeplug-studio:drive:lastAccount` | Connected Google account email |
+| `codeplug-studio:drive:lastFolderId` | Last browsed folder id |
+| `codeplug-studio:drive:lastFolderPath` | Breadcrumb path JSON `[{ id, name }, …]` |
+
 ## Implementation status
 
 | Area | Status | Notes |
