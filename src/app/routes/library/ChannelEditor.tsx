@@ -32,6 +32,7 @@ export default function ChannelEditor({
   const base = entity ?? newChannel(projectId, '');
 
   const [name, setName] = useState(base.name);
+  const [abbreviation, setAbbreviation] = useState(base.abbreviation ?? '');
   const [callsign, setCallsign] = useState(base.callsign);
   const [rx, setRx] = useState(hzToMhzString(base.rxFrequency));
   const [tx, setTx] = useState(hzToMhzString(base.txFrequency));
@@ -60,7 +61,8 @@ export default function ChannelEditor({
       lastEdited: location.lastEdited,
     });
 
-    return {
+    const trimmedAbbrev = abbreviation.trim();
+    const row: Channel = {
       ...base,
       name: name.trim() || 'Untitled channel',
       callsign,
@@ -75,6 +77,12 @@ export default function ChannelEditor({
       maidenheadLocator: reconciled.maidenheadLocator,
       modeProfiles,
     };
+    if (trimmedAbbrev) {
+      row.abbreviation = trimmedAbbrev;
+    } else {
+      delete row.abbreviation;
+    }
+    return row;
   }
 
   function handleSave() {
@@ -114,6 +122,12 @@ export default function ChannelEditor({
           />
           <TextInput label="Name" value={name} onChange={(e) => setName(e.currentTarget.value)} />
         </SimpleGrid>
+        <TextInput
+          label="Abbreviation"
+          description="Optional. Used at export time when the full name is too long for the radio profile (enable “Use channel abbreviations” on the build export page)."
+          value={abbreviation}
+          onChange={(e) => setAbbreviation(e.currentTarget.value)}
+        />
         <TextInput
           label="Comment"
           value={comment}

@@ -6,10 +6,10 @@ Two-value segmented control for channel transmit permission: **Allow TX** (defau
 
 ## Props
 
-| Prop       | Type                       | Description                           |
-| ---------- | -------------------------- | ------------------------------------- |
+| Prop       | Type                           | Description                                   |
+| ---------- | ------------------------------ | --------------------------------------------- |
 | `value`    | `boolean \| null \| undefined` | `null` / omitted → Allow TX; `true` → RX only |
-| `onChange` | `(value: boolean) => void` | Called when the operator changes mode |
+| `onChange` | `(value: boolean) => void`     | Called when the operator changes mode         |
 
 ## Usage
 

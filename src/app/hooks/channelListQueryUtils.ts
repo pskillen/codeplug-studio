@@ -10,6 +10,7 @@ export type { ChannelSortMode } from '@integrations/listPrefs/index.ts';
 export const CHANNEL_LIST_COLUMNS_SCHEMA_VERSION = 1;
 
 export const CHANNEL_OPTIONAL_COLUMNS = [
+  { key: 'abbreviation', header: 'Abbrev', defaultVisible: true },
   { key: 'band', header: 'Band', defaultVisible: true },
   { key: 'mode', header: 'Mode', defaultVisible: true },
   { key: 'rxTx', header: 'RX/TX', defaultVisible: true },
