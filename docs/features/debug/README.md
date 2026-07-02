@@ -63,13 +63,14 @@ IndexedDB row YAML copy is labelled **storage rows as YAML** — interim JSON du
 | `codeplug-studio:*` (other)       | Future prefs — shown as "Preferences (unknown)"   | No      |
 | `mm9pdy-codeplug-studio.list.*`   | List filters, sort, column visibility per project | No      |
 
-List-prefs keys follow `mm9pdy-codeplug-studio.list.{entity}.{projectId}` with optional `.columns` / `.columns-schema` suffixes. Entities: `channels`, `zones`, `talk-groups`, `digital-contacts`, `analog-contacts`, `rx-group-lists`.
+List-prefs keys follow `mm9pdy-codeplug-studio.list.{entity}.{projectId}` with optional `.columns` / `.columns-schema` suffixes. Entity labels for the debug index come from `LIST_ENTITY_LABELS` in [`src/integrations/listPrefs/constants.ts`](../../../src/integrations/listPrefs/constants.ts) (shared with [`storageKeyRegistry.ts`](../../../src/integrations/debug/storageKeyRegistry.ts) — no duplicated prefix in app).
 
 ## Code anchors
 
 | Layer            | Module                                                                                        |
 | ---------------- | --------------------------------------------------------------------------------------------- |
 | Integrations     | `src/integrations/debug/storageKeyRegistry.ts`, `indexedDbInspect.ts`, `parseStorageValue.ts` |
+| List prefs keys  | `src/integrations/listPrefs/` (`LIST_PREFS_STORAGE_PREFIX`, `LIST_ENTITY_LABELS`)             |
 | Preferences keys | `src/integrations/preferences/index.ts` (`ACTIVE_PROJECT_KEY`, `MAPBOX_TOKEN_KEY`)            |
 | Routes           | `src/app/routes/debug/`                                                                       |
 | Tree viewer      | `src/app/components/JsonTreeViewer/JsonTreeViewer.tsx`                                        |
@@ -81,6 +82,7 @@ List-prefs keys follow `mm9pdy-codeplug-studio.list.{entity}.{projectId}` with o
 2. Create a project with channels → `/#/debug/indexed-db` shows non-zero `channels` count.
 3. Drill into a channel row → JSON tree expands; Copy YAML works.
 4. Set a Mapbox token in Settings → `/#/debug/local-storage` shows masked token in viewer.
+5. Filter a library list → `/#/debug/local-storage` shows labelled list-prefs keys for the active project.
 
 ## Related
 

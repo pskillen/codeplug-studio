@@ -1,4 +1,4 @@
-import { Button, MultiSelect, Slider, Stack, Switch, Text, TextInput } from '@mantine/core';
+import { Button, Loader, MultiSelect, Slider, Stack, Switch, Text, TextInput } from '@mantine/core';
 import { IconPlus, IconWorldSearch } from '@tabler/icons-react';
 import { Link } from 'react-router-dom';
 import { useMemo } from 'react';
@@ -74,8 +74,9 @@ export default function ChannelsSectionNav({ variant }: SectionNavProps) {
         <TextInput
           label="Search"
           placeholder="Filter name or callsign…"
-          value={query.nameFilter}
+          value={query.nameFilterInput}
           onChange={(e) => query.setNameFilter(e.currentTarget.value)}
+          rightSection={query.nameFilterPending ? <Loader size={16} /> : undefined}
           size={isSidebar ? 'sm' : 'md'}
         />
 

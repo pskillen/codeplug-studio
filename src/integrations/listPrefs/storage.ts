@@ -1,13 +1,10 @@
 import { channelListPrefsKey, entityListPrefsKey } from './keys.ts';
 import type { ChannelListPrefs, EntityListEntity, EntityListPrefs } from './types.ts';
 
-const debounceTimers = new Map<string, ReturnType<typeof setTimeout>>();
-const DEBOUNCE_MS = 300;
-
 function readJson<T>(key: string): T | null {
   try {
-    const raw = localStorage.getItem(key);
-    if (raw === null) return null;
+    const raw = globalThis.localStorage?.getItem(key);
+    if (raw === null || raw === undefined) return null;
     return JSON.parse(raw) as T;
   } catch {
     return null;
@@ -15,7 +12,11 @@ function readJson<T>(key: string): T | null {
 }
 
 function writeJson(key: string, value: unknown): void {
-  localStorage.setItem(key, JSON.stringify(value));
+  try {
+    globalThis.localStorage?.setItem(key, JSON.stringify(value));
+  } catch {
+    // Ignore write failures (quota, disabled storage).
+  }
 }
 
 export function loadChannelListPrefs(projectId: string): ChannelListPrefs | null {
@@ -60,37 +61,4 @@ export function mergeEntityListPrefs(
   const next = { ...current, ...patch };
   saveEntityListPrefs(entity, projectId, next);
   return next;
-}
-
-export function debouncedMergeChannelListPrefs(
-  projectId: string,
-  patch: Partial<ChannelListPrefs>,
-): void {
-  const key = channelListPrefsKey(projectId);
-  const existing = debounceTimers.get(key);
-  if (existing) clearTimeout(existing);
-  debounceTimers.set(
-    key,
-    setTimeout(() => {
-      debounceTimers.delete(key);
-      mergeChannelListPrefs(projectId, patch);
-    }, DEBOUNCE_MS),
-  );
-}
-
-export function debouncedMergeEntityListPrefs(
-  entity: EntityListEntity,
-  projectId: string,
-  patch: Partial<EntityListPrefs>,
-): void {
-  const key = entityListPrefsKey(entity, projectId);
-  const existing = debounceTimers.get(key);
-  if (existing) clearTimeout(existing);
-  debounceTimers.set(
-    key,
-    setTimeout(() => {
-      debounceTimers.delete(key);
-      mergeEntityListPrefs(entity, projectId, patch);
-    }, DEBOUNCE_MS),
-  );
 }

@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useState } from 'react';
 import type { DataTableSortState } from '../lib/dataTable/sort.ts';
-import type { EntityListEntity } from '../lib/listPrefs/types.ts';
+import type { EntityListEntity } from '@integrations/listPrefs/index.ts';
 import { useProjects } from '../state/useProjects.ts';
 import { loadEntityListColumnSort, persistEntityListColumnSort } from './useListNameQuery.ts';
 

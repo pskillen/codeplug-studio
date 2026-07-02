@@ -12,7 +12,8 @@ import { useLibrary } from '../../../state/useLibrary.ts';
 export default function RxGroupListsListPage() {
   const { library, loading } = useLibrary();
   const { rxGroupLists } = library;
-  const { nameFilter, setNameFilter } = useListNameQuery('rx-group-lists');
+  const { nameFilter, nameFilterInput, nameFilterPending, setNameFilter } =
+    useListNameQuery('rx-group-lists');
   const [sort, setSort] = usePersistedEntityListSort('rx-group-lists', {
     columnKey: DATATABLE_NAME_SORT_KEY,
     direction: 'asc',
@@ -54,7 +55,8 @@ export default function RxGroupListsListPage() {
         variant="list"
         rows={filtered}
         totalRowCount={rxGroupLists.length}
-        search={nameFilter}
+        search={nameFilterInput}
+        searchPending={nameFilterPending}
         onSearchChange={setNameFilter}
         searchPlaceholder="Filter name…"
         sort={sort}

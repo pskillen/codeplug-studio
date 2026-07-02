@@ -1,11 +1,13 @@
 import { DISTANCE_FILTER_MARKS_KM } from '../lib/channels.ts';
-import { channelListColumnsKey, channelListColumnsSchemaKey } from '../lib/listPrefs/keys.ts';
+import { loadChannelVisibleColumns as loadChannelVisibleColumnsFromStorage } from '@integrations/listPrefs/index.ts';
 
-export { channelListColumnsKey, channelListColumnsSchemaKey } from '../lib/listPrefs/keys.ts';
+export {
+  channelListColumnsKey,
+  channelListColumnsSchemaKey,
+} from '@integrations/listPrefs/index.ts';
+export type { ChannelSortMode } from '@integrations/listPrefs/index.ts';
 
 export const CHANNEL_LIST_COLUMNS_SCHEMA_VERSION = 1;
-
-export type ChannelSortMode = 'name' | 'distance';
 
 export const CHANNEL_OPTIONAL_COLUMNS = [
   { key: 'band', header: 'Band', defaultVisible: true },
@@ -24,29 +26,13 @@ export function defaultChannelVisibleColumns(): string[] {
 }
 
 export function loadChannelVisibleColumns(projectId: string): string[] {
-  const storageKey = channelListColumnsKey(projectId);
-  const schemaKey = channelListColumnsSchemaKey(projectId);
   const validKeys = new Set(CHANNEL_OPTIONAL_COLUMNS.map((c) => c.key));
-
-  try {
-    const raw = localStorage.getItem(storageKey);
-    if (raw !== null) {
-      const cols = (JSON.parse(raw) as string[]).filter((k) =>
-        validKeys.has(k as (typeof CHANNEL_OPTIONAL_COLUMNS)[number]['key']),
-      );
-
-      const schema = Number.parseInt(localStorage.getItem(schemaKey) ?? '0', 10);
-      if (schema < CHANNEL_LIST_COLUMNS_SCHEMA_VERSION) {
-        localStorage.setItem(storageKey, JSON.stringify(cols));
-        localStorage.setItem(schemaKey, String(CHANNEL_LIST_COLUMNS_SCHEMA_VERSION));
-      }
-
-      return cols;
-    }
-  } catch {
-    /* ignore */
-  }
-  return defaultChannelVisibleColumns();
+  return loadChannelVisibleColumnsFromStorage(
+    projectId,
+    validKeys,
+    defaultChannelVisibleColumns(),
+    CHANNEL_LIST_COLUMNS_SCHEMA_VERSION,
+  );
 }
 
 export function defaultMaxDistanceKm(): number {
