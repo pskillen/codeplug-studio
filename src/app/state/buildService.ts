@@ -1,4 +1,5 @@
 import type { FormatBuild } from '@core/models/formatBuild.ts';
+import type { ZoneGroupingLayout } from '@core/models/traitLayout.ts';
 import { newFormatBuild } from '@core/domain/factories.ts';
 import {
   type OverrideField,
@@ -93,6 +94,17 @@ export class BuildService {
       [field]: upsertOverride(build[field], libraryEntityId, {
         wireName: wireName?.trim() || undefined,
       }),
+      updatedAt: now,
+      revision: nextRevision(build.revision),
+    };
+  }
+
+  withZoneGroupingSection(build: FormatBuild, section: ZoneGroupingLayout): FormatBuild {
+    const now = isoNow();
+    const other = build.layout.sections.filter((s) => s.kind !== 'zoneGrouping');
+    return {
+      ...build,
+      layout: { sections: [...other, section] },
       updatedAt: now,
       revision: nextRevision(build.revision),
     };

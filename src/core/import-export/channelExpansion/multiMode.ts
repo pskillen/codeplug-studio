@@ -41,7 +41,7 @@ export function expandChannelWireRows(
   reserved = new Set<string>(),
   warnings: string[] = [],
 ): ExpandedChannelWireRow[] {
-  const composedBase = baseWireName?.trim() || composeExportWireName(channel, options, profileId);
+  const composedBase = baseWireName?.trim() || composeExportWireName(channel, options);
   const profiles = channel.modeProfiles.length > 0 ? channel.modeProfiles : [modeProfileForChannel(channel)];
 
   if (!expandModes || profiles.length <= 1) {

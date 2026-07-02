@@ -1,4 +1,3 @@
-import type { Channel } from '@core/models/library.ts';
 import type { CpsExportOptions } from '@core/import-export/types.ts';
 import {
   isEntityExcluded,

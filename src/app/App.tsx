@@ -29,7 +29,11 @@ import NewBuildPage from './routes/builds/NewBuildPage.tsx';
 import BuildLayout from './routes/builds/BuildLayout.tsx';
 import BuildOverviewPage from './routes/builds/BuildOverviewPage.tsx';
 import BuildExportPage from './routes/builds/BuildExportPage.tsx';
-import BuildWirePreviewPlaceholderPage from './routes/builds/BuildWirePreviewPlaceholderPage.tsx';
+import BuildChannelsWirePage from './routes/builds/wire-preview/BuildChannelsWirePage.tsx';
+import BuildZonesWirePage from './routes/builds/wire-preview/BuildZonesWirePage.tsx';
+import BuildTalkGroupsWirePage from './routes/builds/wire-preview/BuildTalkGroupsWirePage.tsx';
+import BuildContactsWirePage from './routes/builds/wire-preview/BuildContactsWirePage.tsx';
+import BuildRxGroupListsWirePage from './routes/builds/wire-preview/BuildRxGroupListsWirePage.tsx';
 
 function MapRedirect() {
   return <Navigate to="/library/channels" replace />;
@@ -80,23 +84,11 @@ export default function App() {
             <Route path="/builds/:id" element={<BuildLayout />}>
               <Route index element={<Navigate to="overview" replace />} />
               <Route path="overview" element={<BuildOverviewPage />} />
-              <Route
-                path="channels"
-                element={<BuildWirePreviewPlaceholderPage title="Channels" />}
-              />
-              <Route path="zones" element={<BuildWirePreviewPlaceholderPage title="Zones" />} />
-              <Route
-                path="talk-groups"
-                element={<BuildWirePreviewPlaceholderPage title="Talk groups" />}
-              />
-              <Route
-                path="contacts"
-                element={<BuildWirePreviewPlaceholderPage title="Contacts" />}
-              />
-              <Route
-                path="rx-group-lists"
-                element={<BuildWirePreviewPlaceholderPage title="RX group lists" />}
-              />
+              <Route path="channels" element={<BuildChannelsWirePage />} />
+              <Route path="zones" element={<BuildZonesWirePage />} />
+              <Route path="talk-groups" element={<BuildTalkGroupsWirePage />} />
+              <Route path="contacts" element={<BuildContactsWirePage />} />
+              <Route path="rx-group-lists" element={<BuildRxGroupListsWirePage />} />
               <Route path="export" element={<BuildExportPage />} />
             </Route>
             <Route path="/import-export" element={<ImportExportPage />} />

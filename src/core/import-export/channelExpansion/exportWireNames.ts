@@ -20,7 +20,6 @@ export function resolveMaxNameLength(
 export function composeExportWireName(
   channel: Channel,
   options?: CpsExportOptions,
-  profileId?: string,
 ): string {
   const pick = channelPickForWireExport(channel, {
     nameModeOverride: options?.nameModeOverride as ChannelExportNameMode | undefined,
