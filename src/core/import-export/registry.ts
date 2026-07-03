@@ -1,5 +1,6 @@
 import { nativeYamlExportAdapter, nativeYamlImportAdapter } from './formats/native-yaml/adapter.ts';
 import { opengd77ExportAdapter } from './formats/opengd77/adapter.ts';
+import { dm32ExportAdapter } from './formats/dm32/adapter.ts';
 import type { ExportAdapter } from './exportAdapter.ts';
 import type { ImportAdapter } from './importAdapter.ts';
 import type { FormatCatalogEntry, FormatId } from './types.ts';
@@ -27,7 +28,7 @@ export const formatCatalog: readonly FormatCatalogEntry[] = [
     id: 'dm32',
     label: 'DM32 CSV',
     importStatus: 'planned',
-    exportStatus: 'planned',
+    exportStatus: 'shipped',
   },
   {
     id: 'qdmr',
@@ -42,6 +43,7 @@ export const importAdapters: readonly ImportAdapter[] = [nativeYamlImportAdapter
 export const exportAdapters: readonly ExportAdapter[] = [
   nativeYamlExportAdapter,
   opengd77ExportAdapter,
+  dm32ExportAdapter,
 ];
 
 export function getImportAdapter(id: FormatId): ImportAdapter {

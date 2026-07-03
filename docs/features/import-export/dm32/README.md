@@ -16,7 +16,7 @@ Product behaviour for Baofeng DM-32UV CPS CSV export in Codeplug Studio. Wire co
 | Zone export trait layout        | Shipped | [#104](https://github.com/pskillen/codeplug-studio/issues/104) — flags on `ZoneGroupingLayout`, not library `Zone` |
 | Multi-TG wire core + TG abbrev  | Shipped | [#110](https://github.com/pskillen/codeplug-studio/issues/110)                                                     |
 | Trait profile registration      | Shipped | `dm32-baofeng-dm32uv` in `TRAIT_PROFILES`                                                                          |
-| Export adapter                  | Open    | [#115](https://github.com/pskillen/codeplug-studio/issues/115) — `assemble` → serialise                            |
+| Export adapter                  | Shipped | [#115](https://github.com/pskillen/codeplug-studio/issues/115) — [export-mapping.md](export-mapping.md) |
 | Build zone export UI            | Open    | [#121](https://github.com/pskillen/codeplug-studio/issues/121)                                                     |
 | Zone-derived `Scan.csv`         | Open    | [#129](https://github.com/pskillen/codeplug-studio/issues/129)                                                     |
 | CPS import                      | Planned | [#112](https://github.com/pskillen/codeplug-studio/issues/112)                                                     |

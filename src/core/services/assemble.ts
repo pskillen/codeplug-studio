@@ -59,6 +59,8 @@ export interface AssembledBuild {
   digitalContacts: AssembledEntity<DigitalContact>[];
   analogContacts: AssembledEntity<AnalogContact>[];
   rxGroupLists: AssembledEntity<RxGroupList>[];
+  /** Set by exportBuild for adapters that need raw library access (e.g. DM32 RX expansion). */
+  library?: LibrarySlice;
 }
 
 export interface AssembleOptions {
