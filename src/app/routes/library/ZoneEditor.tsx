@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useState } from 'react';
-import { Checkbox, Stack, Text, TextInput } from '@mantine/core';
+import { Stack, Text, TextInput } from '@mantine/core';
 import { Link, useNavigate } from 'react-router-dom';
 import type { Library, Zone } from '@core/models/library.ts';
 import { newZone } from '@core/domain/factories.ts';
@@ -27,7 +27,6 @@ export default function ZoneEditor({
   const navigate = useNavigate();
   const [name, setName] = useState(base.name);
   const [selectedIds, setSelectedIds] = useState<string[]>(base.members.map((m) => m.id));
-  const [exportScratchChannel, setExportScratch] = useState(base.exportScratchChannel);
   const [comment, setComment] = useState(base.comment);
   const [mapFilters, setMapFilters] = useState<ZoneMemberPickerMapFilters>({
     hiddenMarkerChannelIds: [],
@@ -54,10 +53,9 @@ export default function ZoneEditor({
       ...base,
       name: name.trim() || 'Untitled zone',
       members: zoneMembersFromSelectedIds(previewMemberIds),
-      exportScratchChannel,
       comment,
     };
-  }, [base, name, previewMemberIds, exportScratchChannel, comment]);
+  }, [base, name, previewMemberIds, comment]);
 
   const channelsForMap = useMemo(
     () => library.channels.filter((ch) => !hiddenMarkerIds.has(ch.id)),
@@ -79,9 +77,6 @@ export default function ZoneEditor({
       ...base,
       name: name.trim() || 'Untitled zone',
       members: zoneMembersFromSelectedIds(selectedIds),
-      exportScratchChannel,
-      exportScanList: base.exportScanList,
-      scanCarrierFrequencyHz: base.scanCarrierFrequencyHz,
       comment,
     };
     void save(() => persistence.putZone(row, entity ? entity.revision : null));
@@ -91,6 +86,11 @@ export default function ZoneEditor({
     <Stack gap="md">
       <FormSection title="Identity">
         <TextInput label="Name" value={name} onChange={(e) => setName(e.currentTarget.value)} />
+        <TextInput
+          label="Comment"
+          value={comment}
+          onChange={(e) => setComment(e.currentTarget.value)}
+        />
       </FormSection>
 
       <FormSection
@@ -119,19 +119,6 @@ export default function ZoneEditor({
             (missing coordinates, Use Location = No, or 0,0).
           </Text>
         ) : null}
-      </FormSection>
-
-      <FormSection title="Export options">
-        <Checkbox
-          label="Export scratch channel"
-          checked={exportScratchChannel}
-          onChange={(e) => setExportScratch(e.currentTarget.checked)}
-        />
-        <TextInput
-          label="Comment"
-          value={comment}
-          onChange={(e) => setComment(e.currentTarget.value)}
-        />
       </FormSection>
 
       <EditorActions

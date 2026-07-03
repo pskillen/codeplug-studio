@@ -172,9 +172,6 @@ export function newZone(projectId: string, name: string): Zone {
     updatedAt: now,
     name,
     members: [],
-    exportScratchChannel: false,
-    exportScanList: false,
-    scanCarrierFrequencyHz: null,
     comment: '',
   };
 }

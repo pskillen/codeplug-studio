@@ -28,7 +28,7 @@ IndexedDB remains the **edit store**; YAML and Drive are portable layers on top 
 | CPS export services (`assemble`, `exportBuild`)         | Shipped | [#86](https://github.com/pskillen/codeplug-studio/issues/86) — [cps-services.md](cps-services.md)                                                                                                   |
 | OpenGD77 CSV import                                     | Planned | Phase 4b                                                                                                                                                                                            |
 | CHIRP CSV                                               | Planned | Phase 4+                                                                                                                                                                                            |
-| DM32 CSV                                                | Planned | Phase 4+                                                                                                                                                                                            |
+| DM32 CSV                                                | In progress | Export [#37](https://github.com/pskillen/codeplug-studio/issues/37); import [#112](https://github.com/pskillen/codeplug-studio/issues/112) — [dm32-progress.md](dm32-progress.md) |
 | qDMR YAML                                               | Planned | Out of Phase 3 scope                                                                                                                                                                                |
 
 ## Architecture

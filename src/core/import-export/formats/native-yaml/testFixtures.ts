@@ -137,9 +137,6 @@ export function fullLibraryAggregate(): ProjectAggregate {
     ...rowMeta(projectId, FIXTURE_ZONE_ID),
     name: 'Edinburgh',
     members: [{ kind: 'channel', id: FIXTURE_CHANNEL_A_ID }],
-    exportScratchChannel: false,
-    exportScanList: true,
-    scanCarrierFrequencyHz: 430_912_500,
     comment: 'Zone fixture',
   };
 

@@ -135,9 +135,6 @@ export interface RxGroupList extends PersistableRow {
 export interface Zone extends PersistableRow {
   name: string;
   members: EntityRef[];
-  exportScratchChannel: boolean;
-  exportScanList: boolean;
-  scanCarrierFrequencyHz: number | null;
   comment: string;
 }
 
