@@ -38,10 +38,10 @@ export const TRAIT_PROFILES: Record<string, TraitProfile> = {
       BuildCapabilityTrait.MultiTalkGroupPerChannel,
     ],
   },
-  'dm32-default': {
-    profileId: 'dm32-default',
+  'dm32-baofeng-dm32uv': {
+    profileId: 'dm32-baofeng-dm32uv',
     formatId: 'dm32',
-    label: 'Baofeng DM32',
+    label: 'Baofeng DM-32UV',
     traits: [
       BuildCapabilityTrait.ZoneGrouping,
       BuildCapabilityTrait.ScanLists,
