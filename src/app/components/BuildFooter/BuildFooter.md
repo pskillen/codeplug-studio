@@ -4,7 +4,7 @@ Muted page footer showing build environment and version injected at compile time
 
 ## Purpose
 
-Lets operators and contributors see which deployment a browser tab is running (`local` vs `prod`) and which release tag was baked in.
+Lets operators and contributors see which deployment a browser tab is running (`local`, `next`, `dev`, `staging`, or `prod`) and which version was baked in.
 
 ## Props
 

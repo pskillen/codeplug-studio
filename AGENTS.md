@@ -61,7 +61,7 @@ Follow [`.cursor/skills/git-workflow/SKILL.md`](.cursor/skills/git-workflow/SKIL
 
 - Prefer **atomic conventional commits** per logical change.
 - Branch + pull request for features; `main` holds releasable source.
-- **Publish:** full GitHub release (not pre-release) → GitHub Pages (`base: '/codeplug-studio/'` when scaffold exists).
+- **Publish:** merge to `main` → continuous **next** deploy; push to `dev` → **dev** deploy; pre-release → **staging**; full GitHub release → **prod** on Cloudflare Pages (`https://codeplug.pskillen.xyz`).
 - Use **`user-github`** MCP for issues and PRs — not `gh` CLI.
 - Do not commit `.env`, secrets, or personal `sample-exports/`.
 

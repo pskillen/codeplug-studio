@@ -1,8 +1,15 @@
 # Build and deploy
 
-Codeplug Studio is a static Vite SPA deployed to **GitHub Pages** when a **full GitHub release** is published (not a pre-release).
+Codeplug Studio is a static Vite SPA deployed to **Cloudflare Pages** via GitHub Actions (direct upload with Wrangler — not the Cloudflare dashboard Git integration).
 
-**Base path:** `/codeplug-studio/` (see `vite.config.ts`).
+**Base path:** `/` (custom domain; see `vite.config.ts`).
+
+| Environment | URL                                     | Trigger                       |
+| ----------- | --------------------------------------- | ----------------------------- |
+| **prod**    | `https://codeplug.pskillen.xyz`         | Full GitHub release published |
+| **staging** | `https://staging.codeplug.pskillen.xyz` | Pre-release published         |
+| **next**    | `https://next.codeplug.pskillen.xyz`    | Push to `main`                |
+| **dev**     | `https://dev.codeplug.pskillen.xyz`     | Push to `dev`                 |
 
 ## Local development
 
@@ -11,7 +18,7 @@ npm install
 npm run dev
 ```
 
-Open the URL Vite prints (typically `http://localhost:5173/codeplug-studio/`).
+Open the URL Vite prints (typically `http://localhost:5173/`).
 
 ### Google Drive OAuth (optional)
 
@@ -20,7 +27,10 @@ Copy [`.env.example`](../../.env.example) to `.env.local` and set `VITE_GOOGLE_C
 Authorized JavaScript origins must include:
 
 - `http://localhost:5173` (local Vite)
-- Your GitHub Pages origin, e.g. `https://pskillen.github.io`
+- `https://codeplug.pskillen.xyz` (prod)
+- `https://staging.codeplug.pskillen.xyz` (staging)
+- `https://next.codeplug.pskillen.xyz` (next)
+- `https://dev.codeplug.pskillen.xyz` (dev)
 
 Enable the **Google Drive API** for the project. Scope used by Studio: `https://www.googleapis.com/auth/drive` (folder browse + YAML read/write). Tokens stay in browser localStorage only — see [google-drive.md](../features/import-export/google-drive.md).
 
@@ -65,34 +75,48 @@ Pull requests and pushes to `main` run [`.github/workflows/ci.yml`](../../.githu
 
 `format:check` → `lint` → `test` → `build`
 
-## GitHub Pages deploy
+## Cloudflare Pages deploy
 
-[`.github/workflows/pages.yml`](../../.github/workflows/pages.yml) runs on `release: released`.
+Deploy workflows call the reusable [`.github/workflows/cloudflare-pages.yaml`](../../.github/workflows/cloudflare-pages.yaml), which runs `npm ci`, `npm run build`, then `wrangler pages deploy dist` to the `codeplug-studio` Cloudflare Pages project.
 
-1. Merge to `main`
-2. Publish a **full** GitHub release with tag `v*` (e.g. `v0.1.0`)
-3. Workflow builds with `BUILD_ENV=prod` and `BUILD_VERSION` from the tag
-4. Site deploys to GitHub Pages
+| Workflow                                               | Trigger                | `BUILD_ENV` |
+| ------------------------------------------------------ | ---------------------- | ----------- |
+| [`prod.yaml`](../../.github/workflows/prod.yaml)       | `release: released`    | `prod`      |
+| [`staging.yaml`](../../.github/workflows/staging.yaml) | `release: prereleased` | `staging`   |
+| [`next.yaml`](../../.github/workflows/next.yaml)       | `push` to `main`       | `next`      |
+| [`dev.yaml`](../../.github/workflows/dev.yaml)         | `push` to `dev`        | `dev`       |
 
-Enable **Pages** in repo settings (source: GitHub Actions) if not already done.
+**Production** deploys omit `--branch` (production slot on the Pages project). **Staging**, **next**, and **dev** deploy as preview branches (`staging`, `main`, and `dev` respectively), mapped to custom subdomains in Cloudflare.
+
+### Operator setup (one-time)
+
+1. Create a Cloudflare Pages project named `codeplug-studio` via **Direct Upload** — do not connect GitHub in the CF dashboard.
+2. Map custom domains: `codeplug.pskillen.xyz` → production; branch aliases for `staging`, `main` (next), and `dev` preview branches.
+3. Add GitHub Actions secrets under **Settings → Secrets and variables → Actions**:
+
+| Secret                   | Purpose                                                         |
+| ------------------------ | --------------------------------------------------------------- |
+| `CLOUDFLARE_API_TOKEN`   | API token with **Cloudflare Pages — Edit** (and account read)   |
+| `CLOUDFLARE_ACCOUNT_ID`  | Cloudflare account id                                           |
+| `GOOGLE_OAUTH_CLIENT_ID` | Google OAuth web client id for Drive Connect on deployed builds |
+
+Create the API token in the Cloudflare dashboard with account-scoped **Cloudflare Pages → Edit** permission.
 
 ## Build-time variables
 
-| Variable                | Local default            | Prod (release build)                              |
-| ----------------------- | ------------------------ | ------------------------------------------------- |
-| `BUILD_ENV`             | `local`                  | `prod` (via `pages.yml`)                          |
-| `BUILD_VERSION`         | `local`                  | Release tag without leading `v` (via `pages.yml`) |
-| `VITE_GOOGLE_CLIENT_ID` | `.env.local` (see above) | GitHub Actions secret `GOOGLE_OAUTH_CLIENT_ID`    |
+| Variable                | Local default            | Deployed builds (via workflows)                  |
+| ----------------------- | ------------------------ | ------------------------------------------------ |
+| `BUILD_ENV`             | `local`                  | `prod`, `staging`, `next`, or `dev`              |
+| `BUILD_VERSION`         | `local`                  | Release tag or commit SHA (leading `v` stripped) |
+| `VITE_GOOGLE_CLIENT_ID` | `.env.local` (see above) | GitHub Actions secret `GOOGLE_OAUTH_CLIENT_ID`   |
 
 `BUILD_ENV` and `BUILD_VERSION` are injected via Vite `define` in `vite.config.ts`. `VITE_GOOGLE_CLIENT_ID` is read from the environment at build time by Vite (`import.meta.env`).
-
-**One-time repo setup (operator):** Settings → Secrets and variables → Actions → add secret `GOOGLE_OAUTH_CLIENT_ID` with your Google Cloud OAuth web client id. Required for Google Drive Connect on the deployed GitHub Pages site.
 
 Displayed in [`BuildFooter`](../../src/app/components/BuildFooter/BuildFooter.tsx). See [version-number skill](../../.cursor/skills/version-number/SKILL.md).
 
 ## Post-deploy check
 
-After publishing a release, open the live site and confirm:
+After a deploy, open the live site and confirm:
 
-- Footer shows `prod · <semver>` matching the release tag.
+- Footer shows the expected environment and version (e.g. `prod · 0.2.0` after a full release).
 - Settings → Google Drive shows **Connect** (not the yellow “not configured” alert) when `GOOGLE_OAUTH_CLIENT_ID` is set in repo Actions secrets.

@@ -91,7 +91,7 @@ Operator data and tokens (maps, OAuth) stay in browser storage. Never commit sec
 
 ## Architecture
 
-Single Vite + React + TypeScript SPA. No backend. Deploy to GitHub Pages on full release publish.
+Single Vite + React + TypeScript SPA. No backend. Deploy to Cloudflare Pages via GitHub Actions (prod on full release publish).
 
 ```text
 src/

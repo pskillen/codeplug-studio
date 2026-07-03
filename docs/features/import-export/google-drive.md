@@ -27,12 +27,15 @@ IndexedDB remains the **edit store**; Drive holds portable YAML interchange file
 1. Create a Google Cloud project and enable **Google Drive API**.
 2. Create an **OAuth 2.0 Web client** with authorized JavaScript origins:
    - `http://localhost:5173` (local Vite)
-   - `https://<user>.github.io` (GitHub Pages)
+   - `https://codeplug.pskillen.xyz` (prod)
+   - `https://staging.codeplug.pskillen.xyz` (staging)
+   - `https://next.codeplug.pskillen.xyz` (next)
+   - `https://dev.codeplug.pskillen.xyz` (dev)
 3. Copy the client id to `.env.local` as `VITE_GOOGLE_CLIENT_ID` (see [build README](../../build/README.md)).
 
-### Production (GitHub Pages)
+### Production and pre-production (Cloudflare Pages)
 
-Release builds receive `VITE_GOOGLE_CLIENT_ID` from the repo Actions secret `GOOGLE_OAUTH_CLIENT_ID` (see [pages.yml](../../../.github/workflows/pages.yml)). Without it, the deployed SPA shows “not configured” on Settings → Google Drive. Authorized JavaScript origins must include your Pages URL, e.g. `https://pskillen.github.io`.
+Release and pre-release builds receive `VITE_GOOGLE_CLIENT_ID` from the repo Actions secret `GOOGLE_OAUTH_CLIENT_ID` (see [cloudflare-pages.yaml](../../../.github/workflows/cloudflare-pages.yaml)). Without it, the deployed SPA shows “not configured” on Settings → Google Drive. Authorized JavaScript origins must include the hostnames listed above.
 
 ## OAuth scope
 

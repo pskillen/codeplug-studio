@@ -14,7 +14,7 @@ export default defineConfig(({ mode }) => {
   );
 
   return {
-    base: '/codeplug-studio/',
+    base: '/',
     plugins: [react()],
     resolve: {
       alias: {
