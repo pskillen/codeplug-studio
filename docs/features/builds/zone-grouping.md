@@ -9,12 +9,17 @@ How zones appear on the CPS wire for builds with the **zone grouping** trait. Li
 ## Operator workflow
 
 1. Curate zone membership in **Library → Zones**.
-2. Open **Radio builds → Zones** on the build — same wire preview table as other entity pages (include toggle + wire name override).
-3. Export from **Export** — `assemble` projects zones from library membership (or build layout when present).
+2. Open **Radio builds → Zones** on the build — wire preview table (include toggle + wire name override).
+3. For **DM32** builds, use the export controls above the table:
+   - **Export scratch channel** — per-zone flag on `ZoneGroupingLayout` (serialisation deferred; UI persists the preference).
+   - **Export scan list** — when enabled, export emits a zone-derived `Scan.csv` entry (subject to the master toggle on Export).
+   - **Scan carrier frequency** — MHz simplex for the `{zoneName} Scan` carrier channel (default 145.500).
+   - **Include in scan list** — per-member toggle on library zone membership (`includeInScanList`; default on). Honoured when `Channel.scanSkip` is not set.
+4. Export from **Export** — `assemble` projects zones from library membership (or build layout when present).
 
 A dedicated build zone layout editor (member reorder per zone) is **deferred** — see [#99](https://github.com/pskillen/codeplug-studio/issues/99).
 
-**DM32 export knobs** (`exportScratchChannel`, `exportScanList`, `scanCarrierFrequencyHz`) persist on `ZoneGroupingLayout` zone entries for DM32 builds ([#104](https://github.com/pskillen/codeplug-studio/issues/104)). Build UI: [#121](https://github.com/pskillen/codeplug-studio/issues/121).
+**DM32 export knobs** (`exportScratchChannel`, `exportScanList`, `scanCarrierFrequencyHz`) persist on `ZoneGroupingLayout` zone entries ([#104](https://github.com/pskillen/codeplug-studio/issues/104)). Per-member scan inclusion is vendor-neutral on library `Zone.members`.
 
 ## Related
 

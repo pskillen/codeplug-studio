@@ -1,6 +1,7 @@
+import type { ReactNode } from 'react';
 import { Button, Group, Modal, Stack, Text } from '@mantine/core';
-import { Link } from 'react-router-dom';
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import ExportNameModeSelect from '../../../components/builds/ExportNameModeSelect.tsx';
 import UseChannelAbbreviationSwitch from '../../../components/builds/UseChannelAbbreviationSwitch.tsx';
 import WirePreviewTable from '../../../components/builds/WirePreviewTable.tsx';
@@ -17,6 +18,7 @@ export interface BuildEntityWirePageProps {
   showExportNameMode?: boolean;
   showChannelAbbreviation?: boolean;
   clickableDefaultWireName?: boolean;
+  beforeTable?: ReactNode;
 }
 
 export default function BuildEntityWirePage({
@@ -26,6 +28,7 @@ export default function BuildEntityWirePage({
   showExportNameMode = false,
   showChannelAbbreviation = false,
   clickableDefaultWireName = true,
+  beforeTable,
 }: BuildEntityWirePageProps) {
   const { build } = useBuildLayout();
   const { rows, nameLimit, error, setRowExcluded, setRowWireName } =
@@ -60,6 +63,7 @@ export default function BuildEntityWirePage({
           <ExportNameModeSelect description="Fallback style for channels without an explicit wire name override on this build." />
         ) : null}
         {showChannelAbbreviation ? <UseChannelAbbreviationSwitch /> : null}
+        {beforeTable}
         <WirePreviewTable
           rows={rows}
           nameLimit={nameLimit}

@@ -1,5 +1,5 @@
 import type { FormatBuild } from '@core/models/formatBuild.ts';
-import type { ZoneGroupingLayout } from '@core/models/traitLayout.ts';
+import type { ZoneGroupingLayout, ZoneGroupingZoneEntry } from '@core/models/traitLayout.ts';
 import type { LibrarySlice } from '@core/services/assemble.ts';
 import { zoneMemberChannelIds } from '@core/domain/zoneMembers.ts';
 
@@ -16,6 +16,17 @@ export function seedZoneGroupingFromLibrary(library: LibrarySlice): ZoneGrouping
       name: zone.name,
       channelIds: zoneMemberChannelIds(zone),
     })),
+  };
+}
+
+export function updateZoneGroupingEntry(
+  section: ZoneGroupingLayout,
+  zoneId: string,
+  patch: Partial<ZoneGroupingZoneEntry>,
+): ZoneGroupingLayout {
+  return {
+    ...section,
+    zones: section.zones.map((zone) => (zone.id === zoneId ? { ...zone, ...patch } : zone)),
   };
 }
 
