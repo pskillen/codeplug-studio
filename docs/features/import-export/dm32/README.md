@@ -10,40 +10,40 @@ Product behaviour for Baofeng DM-32UV CPS CSV export in Codeplug Studio. Wire co
 
 ## Implementation status
 
-| Area | Status | Notes |
-| --- | --- | --- |
-| Radio profile + column scaffold | Shipped | [#114](https://github.com/pskillen/codeplug-studio/issues/114) — `profiles.ts`, `columns.ts`, fixtures |
-| Zone export trait layout | Shipped | [#104](https://github.com/pskillen/codeplug-studio/issues/104) — flags on `ZoneGroupingLayout`, not library `Zone` |
-| Multi-TG wire core + TG abbrev | Shipped | [#110](https://github.com/pskillen/codeplug-studio/issues/110) |
-| Trait profile registration | Shipped | `dm32-baofeng-dm32uv` in `TRAIT_PROFILES` |
-| Export adapter | Open | [#115](https://github.com/pskillen/codeplug-studio/issues/115) — `assemble` → serialise |
-| Build zone export UI | Open | [#121](https://github.com/pskillen/codeplug-studio/issues/121) |
-| Zone-derived `Scan.csv` | Open | [#129](https://github.com/pskillen/codeplug-studio/issues/129) |
-| CPS import | Planned | [#112](https://github.com/pskillen/codeplug-studio/issues/112) |
+| Area                            | Status  | Notes                                                                                                              |
+| ------------------------------- | ------- | ------------------------------------------------------------------------------------------------------------------ |
+| Radio profile + column scaffold | Shipped | [#114](https://github.com/pskillen/codeplug-studio/issues/114) — `profiles.ts`, `columns.ts`, fixtures             |
+| Zone export trait layout        | Shipped | [#104](https://github.com/pskillen/codeplug-studio/issues/104) — flags on `ZoneGroupingLayout`, not library `Zone` |
+| Multi-TG wire core + TG abbrev  | Shipped | [#110](https://github.com/pskillen/codeplug-studio/issues/110)                                                     |
+| Trait profile registration      | Shipped | `dm32-baofeng-dm32uv` in `TRAIT_PROFILES`                                                                          |
+| Export adapter                  | Open    | [#115](https://github.com/pskillen/codeplug-studio/issues/115) — `assemble` → serialise                            |
+| Build zone export UI            | Open    | [#121](https://github.com/pskillen/codeplug-studio/issues/121)                                                     |
+| Zone-derived `Scan.csv`         | Open    | [#129](https://github.com/pskillen/codeplug-studio/issues/129)                                                     |
+| CPS import                      | Planned | [#112](https://github.com/pskillen/codeplug-studio/issues/112)                                                     |
 
 ## Trait profile vs radio profile
 
-| Concept | Where | Purpose |
-| --- | --- | --- |
-| **Trait profile** | `TRAIT_PROFILES` in `src/core/models/traits.ts` | Build capability traits: zone grouping, scan lists, m×n expansion |
-| **Radio profile** | `DM32_PROFILES` in `profiles.ts` | Wire limits at the CPS boundary: channels, RX list members, scan list members, power/squelch ladders |
+| Concept           | Where                                           | Purpose                                                                                              |
+| ----------------- | ----------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
+| **Trait profile** | `TRAIT_PROFILES` in `src/core/models/traits.ts` | Build capability traits: zone grouping, scan lists, m×n expansion                                    |
+| **Radio profile** | `DM32_PROFILES` in `profiles.ts`                | Wire limits at the CPS boundary: channels, RX list members, scan list members, power/squelch ladders |
 
 Both use profile id **`dm32-baofeng-dm32uv`**.
 
 ## Radio profile (tier 1 summary)
 
-| Profile | Label | Channel cap | RX list members | Scan list members | Name limit |
-| --- | --- | --- | --- | --- | --- |
-| `dm32-baofeng-dm32uv` | Baofeng DM-32UV | 1000 | 32 | 16 | 16 |
+| Profile               | Label           | Channel cap | RX list members | Scan list members | Name limit |
+| --------------------- | --------------- | ----------- | --------------- | ----------------- | ---------- |
+| `dm32-baofeng-dm32uv` | Baofeng DM-32UV | 1000        | 32              | 16                | 16         |
 
 Per-radio wire detail: [docs/reference/dm32/radios/](../../../reference/dm32/radios/README.md).
 
 ## Expandable channels (DM32 vs OpenGD77)
 
-| Axis | DM32 | OpenGD77 |
-| --- | --- | --- |
-| Multi-mode | Native `Fixed Analog` / `Fixed Digital` on one row (`expandModes: false`) | Separate `-F`/`-D` rows |
-| Multi-talkgroup | Flat per-TG channel rows (`expandRxGroupLists: true`) | Native `TG List` + `TG_Lists.csv` |
+| Axis            | DM32                                                                      | OpenGD77                          |
+| --------------- | ------------------------------------------------------------------------- | --------------------------------- |
+| Multi-mode      | Native `Fixed Analog` / `Fixed Digital` on one row (`expandModes: false`) | Separate `-F`/`-D` rows           |
+| Multi-talkgroup | Flat per-TG channel rows (`expandRxGroupLists: true`)                     | Native `TG List` + `TG_Lists.csv` |
 
 See [name-shortening.md](../name-shortening.md) and [dm32/multi-talkgroup.md](../../../reference/dm32/multi-talkgroup.md).
 
@@ -53,12 +53,12 @@ DM32 scratch channel, scan-list export, and scan carrier frequency live on **`Fo
 
 ## Deferrals
 
-| Item | Tracking |
-| --- | --- |
-| `Scan.csv` export (zone-derived) | [#129](https://github.com/pskillen/codeplug-studio/issues/129) |
-| `Scan.csv` import | [#112](https://github.com/pskillen/codeplug-studio/issues/112) or later |
-| `DMR-ID.csv` / channel `DMR ID` | Accepted lossy gap |
-| Manual scan-list CRUD | Future |
+| Item                             | Tracking                                                                |
+| -------------------------------- | ----------------------------------------------------------------------- |
+| `Scan.csv` export (zone-derived) | [#129](https://github.com/pskillen/codeplug-studio/issues/129)          |
+| `Scan.csv` import                | [#112](https://github.com/pskillen/codeplug-studio/issues/112) or later |
+| `DMR-ID.csv` / channel `DMR ID`  | Accepted lossy gap                                                      |
+| Manual scan-list CRUD            | Future                                                                  |
 
 ## Related
 

@@ -1,9 +1,5 @@
 import type { FormatId } from './types.ts';
-import {
-  DM32_PROFILES,
-  getDm32Profile,
-  type Dm32RadioProfile,
-} from './formats/dm32/profiles.ts';
+import { DM32_PROFILES, getDm32Profile, type Dm32RadioProfile } from './formats/dm32/profiles.ts';
 import {
   OPENGD77_PROFILES,
   getOpenGd77Profile,

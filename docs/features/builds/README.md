@@ -62,16 +62,16 @@ YAML import/export includes `formatBuilds[]` in the project document.
 
 ## Implementation status
 
-| Area                         | Status   | Notes                                                                                                                  |
-| ---------------------------- | -------- | ---------------------------------------------------------------------------------------------------------------------- |
-| List + create + detail shell | Shipped  | [#82](https://github.com/pskillen/codeplug-studio/issues/82)                                                           |
-| Per-build CPS export         | Shipped  | `ExportBuildCpsPanel` — per-file CSV, ZIP download, Drive ZIP upload                                                   |
-| Profile picker component     | Shipped  | [#85](https://github.com/pskillen/codeplug-studio/issues/85) — `ProfilePicker`                                         |
-| Wire preview + overrides     | Shipped  | [#87](https://github.com/pskillen/codeplug-studio/issues/87) — sub-routes + `WirePreviewTable`                         |
+| Area                         | Status   | Notes                                                                                                                                                                                              |
+| ---------------------------- | -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| List + create + detail shell | Shipped  | [#82](https://github.com/pskillen/codeplug-studio/issues/82)                                                                                                                                       |
+| Per-build CPS export         | Shipped  | `ExportBuildCpsPanel` — per-file CSV, ZIP download, Drive ZIP upload                                                                                                                               |
+| Profile picker component     | Shipped  | [#85](https://github.com/pskillen/codeplug-studio/issues/85) — `ProfilePicker`                                                                                                                     |
+| Wire preview + overrides     | Shipped  | [#87](https://github.com/pskillen/codeplug-studio/issues/87) — sub-routes + `WirePreviewTable`                                                                                                     |
 | Zone grouping editor         | Deferred | Library zone membership at export; DM32 export flags on layout ([#104](https://github.com/pskillen/codeplug-studio/issues/104)); UI [#121](https://github.com/pskillen/codeplug-studio/issues/121) |
-| Multi-mode channel expansion | Shipped  | [#89](https://github.com/pskillen/codeplug-studio/issues/89) — preview + OpenGD77 export                               |
-| Export name shortening       | Shipped  | [#90](https://github.com/pskillen/codeplug-studio/issues/90) — `useExportSettings` + dictionary                        |
-| Export inclusion flags       | Shipped  | [#103](https://github.com/pskillen/codeplug-studio/issues/103) — orphan channels/TGs/RGLs on `FormatBuild` + export UI |
+| Multi-mode channel expansion | Shipped  | [#89](https://github.com/pskillen/codeplug-studio/issues/89) — preview + OpenGD77 export                                                                                                           |
+| Export name shortening       | Shipped  | [#90](https://github.com/pskillen/codeplug-studio/issues/90) — `useExportSettings` + dictionary                                                                                                    |
+| Export inclusion flags       | Shipped  | [#103](https://github.com/pskillen/codeplug-studio/issues/103) — orphan channels/TGs/RGLs on `FormatBuild` + export UI                                                                             |
 
 ## Export inclusion flags
 

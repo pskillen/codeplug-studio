@@ -70,7 +70,7 @@ Channel editor DMR tab shows `RxGroupListSummary` below the RX group list select
 | Digital contact | name, digital mode, contact ID, comment                                                                                                                            |
 | Analog contact  | name, code, comment                                                                                                                                                |
 | RX group list   | name, members (talk groups / digital contacts); optional `timeSlotOverride` per member (`1` \| `2` \| unset)                                                       |
-| Zone            | name, ordered channel members (`EntityRef[]`), comment |
+| Zone            | name, ordered channel members (`EntityRef[]`), comment                                                                                                             |
 
 Channel DMR profiles reference a **digital contact** and an **RX group list** by UUID `id` (the editor exposes dropdowns); NXDN/TETRA profiles may reference talk groups by UUID. RX group lists and zones hold member `EntityRef[]`. `RxGroupListMember.timeSlotOverride` is an optional per-member DMR slot hint (vendor-neutral; maps to CPS TS Override at export). Names are display labels only — never foreign keys.
 

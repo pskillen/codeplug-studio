@@ -8,9 +8,9 @@ Tier 3 schema for Codeplug Studio's full-project interchange format. Internal ty
 
 ## Version fields
 
-| Field                 | Type    | Required | Meaning                                                                                                                                           |
-| --------------------- | ------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `schemaVersion`       | `1`     | yes      | Native YAML envelope version. Only `1` is accepted in this release.                                                                               |
+| Field                 | Type    | Required | Meaning                                                                                                                                                                                                     |
+| --------------------- | ------- | -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `schemaVersion`       | `1`     | yes      | Native YAML envelope version. Only `1` is accepted in this release.                                                                                                                                         |
 | `studioSchemaVersion` | integer | yes      | Must equal `STUDIO_SCHEMA_VERSION` in `src/core/models/schemaVersion.ts` (currently `4`). Imports accept `2`, `3`, or `4`; older zone export fields on library `Zone` migrate to DM32 build layout on load. |
 
 Bump `schemaVersion` when the YAML envelope shape changes. Bump `studioSchemaVersion` (constant) when persisted row types change.
@@ -173,9 +173,9 @@ Section discriminant is `kind`:
 
 **`zoneGrouping`**
 
-| Field   | Type                                   |
-| ------- | -------------------------------------- |
-| `kind`  | `zoneGrouping`                         |
+| Field   | Type                                                                                          |
+| ------- | --------------------------------------------------------------------------------------------- |
+| `kind`  | `zoneGrouping`                                                                                |
 | `zones` | `{ id, name, channelIds, exportScratchChannel?, exportScanList?, scanCarrierFrequencyHz? }[]` |
 
 **`flatMemory`**

@@ -30,12 +30,10 @@ export function readLegacyZoneExportFields(zone: ZoneWithLegacy): LegacyZoneExpo
 }
 
 export function stripZoneExportFields(zone: ZoneWithLegacy): Zone {
-  const {
-    exportScratchChannel: _scratch,
-    exportScanList: _scan,
-    scanCarrierFrequencyHz: _carrier,
-    ...rest
-  } = zone;
+  const rest = { ...zone };
+  delete rest.exportScratchChannel;
+  delete rest.exportScanList;
+  delete rest.scanCarrierFrequencyHz;
   return rest;
 }
 

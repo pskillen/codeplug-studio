@@ -150,11 +150,11 @@ Build UI and layout compose from traits; wire adapters map `assemble(build, libr
 
 Declared per profile in `TRAIT_PROFILES` (`src/core/models/traits.ts`). Examples:
 
-| Profile         | Traits                                                 |
-| --------------- | ------------------------------------------------------ |
-| `opengd77-1701` | zone grouping, zone-as-scan-list, multi-TG per channel |
-| `dm32-baofeng-dm32uv` | zone grouping, scan lists, m×n expansion |
-| `chirp-uv5r`    | flat memory list, per-channel scan flag                |
+| Profile               | Traits                                                 |
+| --------------------- | ------------------------------------------------------ |
+| `opengd77-1701`       | zone grouping, zone-as-scan-list, multi-TG per channel |
+| `dm32-baofeng-dm32uv` | zone grouping, scan lists, m×n expansion               |
+| `chirp-uv5r`          | flat memory list, per-channel scan flag                |
 
 ### Export path (recap)
 
