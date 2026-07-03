@@ -16,8 +16,18 @@ import {
 import { applyTalkGroupWireNameLimits } from '@core/import-export/channelExpansion/talkGroupWireNames.ts';
 import { assemble, type LibrarySlice } from './assemble.ts';
 import type { FormatBuild } from '@core/models/formatBuild.ts';
+import type { Channel, ChannelModeProfileDMR } from '@core/models/library.ts';
+import type { DMRTimeSlot, EntityRef } from '@core/models/libraryTypes.ts';
 
 export type WirePreviewEntityKind = 'channel' | 'zone' | 'talkGroup' | 'contact' | 'rxGroupList';
+
+export const PREVIEW_ROW_NOT_REFERENCED_NOTE = 'Not referenced by exported channels';
+
+/** Optional sub-lines under the display name — expansion context for wire naming. */
+export interface WirePreviewDisplayLine {
+  label: string;
+  value: string;
+}
 
 export interface WirePreviewRow {
   /** Stable key for override storage — library entity id, or composite for expansion rows. */
@@ -31,6 +41,7 @@ export interface WirePreviewRow {
   hasWireNameOverride: boolean;
   excluded: boolean;
   expansionNote?: string;
+  displayDetails?: WirePreviewDisplayLine[];
 }
 
 export function overrideFieldForEntityKind(entityKind: WirePreviewEntityKind): OverrideField {
@@ -56,6 +67,7 @@ function previewRow(
   generatedWireName: string,
   overrides: FormatBuild[OverrideField],
   expansionNote?: string,
+  displayDetails?: WirePreviewDisplayLine[],
 ): WirePreviewRow {
   const override = overrideByEntityId(overrides).get(key);
   const excluded = override?.excluded === true;
@@ -71,7 +83,44 @@ function previewRow(
     hasWireNameOverride: Boolean(wireNameOverride),
     excluded,
     expansionNote,
+    displayDetails,
   };
+}
+
+function isDmrProfile(profile: Channel['modeProfiles'][number]): profile is ChannelModeProfileDMR {
+  return profile.mode === 'dmr';
+}
+
+function rxListMemberTimeslot(
+  channel: Channel,
+  memberRef: EntityRef,
+  library: LibrarySlice,
+): DMRTimeSlot {
+  const dmrProfile = channel.modeProfiles.find(isDmrProfile);
+  if (!dmrProfile?.rxGroupListId) return dmrProfile?.timeslot ?? 1;
+  const list = library.rxGroupLists.find((row) => row.id === dmrProfile.rxGroupListId);
+  const member = list?.members.find(
+    (entry) => entry.ref.kind === memberRef.kind && entry.ref.id === memberRef.id,
+  );
+  return member?.timeSlotOverride ?? dmrProfile.timeslot ?? 1;
+}
+
+function dm32RxListFanOutDisplayDetails(
+  channel: Channel,
+  txContactRef: EntityRef | null,
+  library: LibrarySlice,
+): WirePreviewDisplayLine[] | undefined {
+  if (txContactRef?.kind !== 'talkGroup') return undefined;
+  const talkGroup = library.talkGroups.find((row) => row.id === txContactRef.id);
+  if (!talkGroup) return undefined;
+  const timeslot = rxListMemberTimeslot(channel, txContactRef, library);
+  return [
+    { label: 'Channel', value: channel.name.trim() || channelDisplayLabel(channel) },
+    {
+      label: 'Talk group',
+      value: `${talkGroup.name} (${talkGroup.digitalId}) · Slot ${timeslot}`,
+    },
+  ];
 }
 
 export function previewWireRows(
@@ -124,6 +173,9 @@ export function previewWireRows(
             hasWireNameOverride: Boolean(keyOverride ?? channelOverride),
             excluded: isEntityExcluded(build.channelOverrides, channel.id),
             expansionNote: generated.expansionNote,
+            displayDetails: generated.expansionNote
+              ? dm32RxListFanOutDisplayDetails(channel, generated.txContactRef, library)
+              : undefined,
           });
         }
         return rows;
@@ -207,7 +259,7 @@ export function previewWireRows(
           `${talkGroup.name} (ID ${talkGroup.digitalId})`,
           generatedWireName,
           build.talkGroupOverrides,
-          referenced ? undefined : 'Not referenced by exported channels',
+          referenced ? undefined : PREVIEW_ROW_NOT_REFERENCED_NOTE,
         );
       });
     }
@@ -223,7 +275,7 @@ export function previewWireRows(
             `${contact.name} (digital ${contact.digitalId})`,
             contact.name,
             build.contactOverrides,
-            assembled ? undefined : 'Not referenced by exported channels',
+            assembled ? undefined : PREVIEW_ROW_NOT_REFERENCED_NOTE,
           ),
         );
       }
@@ -237,7 +289,7 @@ export function previewWireRows(
             `${contact.name} (analog)`,
             contact.name,
             build.contactOverrides,
-            assembled ? undefined : 'Not referenced by exported channels',
+            assembled ? undefined : PREVIEW_ROW_NOT_REFERENCED_NOTE,
           ),
         );
       }
@@ -253,7 +305,7 @@ export function previewWireRows(
           `${list.name} (${list.members.length} members)`,
           list.name,
           build.rxGroupListOverrides,
-          assembled ? undefined : 'Not referenced by exported channels',
+          assembled ? undefined : PREVIEW_ROW_NOT_REFERENCED_NOTE,
         );
       });
   }
@@ -288,6 +340,12 @@ export function includedPreviewWireRows(
       if (includeUnlinkedRxGroupLists) return rows;
       return rows.filter((row) =>
         projection.rxGroupLists.some((list) => list.entity.id === row.libraryEntityId),
+      );
+    case 'contact':
+      return rows.filter(
+        (row) =>
+          projection.digitalContacts.some((contact) => contact.entity.id === row.libraryEntityId) ||
+          projection.analogContacts.some((contact) => contact.entity.id === row.libraryEntityId),
       );
     default:
       return rows;

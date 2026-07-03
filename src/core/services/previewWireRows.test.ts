@@ -4,6 +4,7 @@ import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import type { Channel } from '@core/models/library.ts';
 import { parseProjectDocument } from '@core/import-export/formats/native-yaml/parse.ts';
+import { newChannel, newFormatBuild, newRxGroupList, newTalkGroup } from '@core/domain/factories.ts';
 import { previewWireRows } from './previewWireRows.ts';
 
 const fixtureDir = join(
@@ -191,5 +192,56 @@ describe('previewWireRows', () => {
     });
     const row = rows.find((r) => r.libraryEntityId === channels[1]!.id);
     expect(row?.generatedWireName).toBe("GB3MT M'flt");
+  });
+
+  it('adds channel and talk group display details for DM32 RX-list fan-out rows', () => {
+    const projectId = 'proj-dm32-preview';
+    const tg1 = { ...newTalkGroup(projectId, 'Scotland', 2355), id: 'tg-scotland' };
+    const tg2 = { ...newTalkGroup(projectId, 'Local', 9), id: 'tg-local' };
+    const rgl = {
+      ...newRxGroupList(projectId, 'Scotland'),
+      id: 'rgl-scotland',
+      members: [
+        { ref: { kind: 'talkGroup' as const, id: tg1.id } },
+        { ref: { kind: 'talkGroup' as const, id: tg2.id } },
+      ],
+    };
+    const channel: Channel = {
+      ...newChannel(projectId, 'GB7GL Repeater', 'GB7GL'),
+      id: 'ch-gb7gl',
+      rxFrequency: 430_850_000,
+      txFrequency: 438_450_000,
+      modeProfiles: [
+        {
+          mode: 'dmr',
+          colourCode: 7,
+          timeslot: 1,
+          dmrId: null,
+          contactRef: null,
+          rxGroupListId: rgl.id,
+        },
+      ],
+    };
+    const build = newFormatBuild(projectId, 'dm32-baofeng-dm32uv', 'DM32 preview');
+    const library = {
+      channels: [channel],
+      zones: [],
+      talkGroups: [tg1, tg2],
+      digitalContacts: [],
+      analogContacts: [],
+      rxGroupLists: [rgl],
+    };
+
+    const rows = previewWireRows(build, library, 'channel', { profileId: build.profileId });
+    const fanOutRows = rows.filter((row) => row.displayDetails?.length);
+    expect(fanOutRows).toHaveLength(2);
+    expect(fanOutRows[0]?.displayDetails).toEqual([
+      { label: 'Channel', value: 'GB7GL Repeater' },
+      { label: 'Talk group', value: 'Scotland (2355) · Slot 1' },
+    ]);
+    expect(fanOutRows[1]?.displayDetails).toEqual([
+      { label: 'Channel', value: 'GB7GL Repeater' },
+      { label: 'Talk group', value: 'Local (9) · Slot 1' },
+    ]);
   });
 });

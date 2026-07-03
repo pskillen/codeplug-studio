@@ -23,6 +23,7 @@ Overrides are stored on `FormatBuild` as `channelOverrides`, `zoneOverrides`, `t
 `previewWireRows(build, library, entityKind, options)` returns rows with:
 
 - **displayLabel** — human-readable library label (may note multi-mode suffix)
+- **displayDetails** — optional `{ label, value }` sub-lines under the display name (DM32 RX-list fan-out shows channel name and talk group id/slot)
 - **generatedWireName** — `callsign` + `name` via `defaultChannelWireName` / `composeChannelWireName`; multi-mode channels append mode suffixes (`-F`, `-D`, `-Y`, `-DS`, …) when expansion applies
 - **effectiveWireName** — override or generated
 - **key** — stable override id (composite `${channelId}:${modeSuffix}` for multi-mode expansion rows; `${channelId}:${memberKey}` for DM32 RX-list fan-out)
@@ -30,9 +31,11 @@ Overrides are stored on `FormatBuild` as `channelOverrides`, `zoneOverrides`, `t
 
 Wire preview pages and the export panel share **`useExportSettings`** (browser `localStorage`) for shortening, name mode, abbreviation toggles, and DM32 zone-derived scan export. Wire name overrides use a local draft with explicit **Apply** and **Revert** actions before persisting (avoids revision races from implicit debounced saves). Navigating away with unapplied drafts opens a confirmation dialog (`useUnsavedNavigationGuard`).
 
+Each entity wire page offers **Hide items not to be included in export** above the table. When enabled, rows are filtered with `includedPreviewWireRows` (respects per-row include toggles and **Export inclusion** on `/builds/:id/export` for orphan channels, talk groups, and RX group lists). Contacts not referenced by exported channels are always omitted when the toggle is on.
+
 ### DM32 channel fan-out
 
-For `formatId === 'dm32'`, channel preview uses the same expansion path as export: `expandAllDm32ChannelsForExport` with `expandModes: false` and `expandRxGroupLists: true`. Channels linked to an RX group list with multiple talk-group members appear as one row per member; expansion notes describe the fan-out. OpenGD77 builds continue to use multi-mode expansion only.
+For `formatId === 'dm32'`, channel preview uses the same expansion path as export: `expandAllDm32ChannelsForExport` with `expandModes: false` and `expandRxGroupLists: true`. Channels linked to an RX group list with multiple talk-group members appear as one row per member. Fan-out rows include **displayDetails** (channel name, talk group name + digital ID + slot) so operators know what drives the generated wire name. OpenGD77 builds continue to use multi-mode expansion only.
 
 ## Routes
 
