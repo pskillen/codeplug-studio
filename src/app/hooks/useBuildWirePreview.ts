@@ -3,6 +3,7 @@ import type { FormatBuild } from '@core/models/formatBuild.ts';
 import { isEntityExcluded, overrideByEntityId } from '@core/domain/formatBuildOverrides.ts';
 import type { LibrarySlice } from '@core/services/assemble.ts';
 import {
+  includedPreviewWireRows,
   overrideFieldForEntityKind,
   previewWireRows,
   type WirePreviewEntityKind,
@@ -53,6 +54,7 @@ export function useBuildWirePreview(entityKind: WirePreviewEntityKind) {
   const [library, setLibrary] = useState<LibrarySlice | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [hideNotIncludedInExport, setHideNotIncludedInExport] = useState(false);
 
   const exportOptions = useMemo(() => {
     const base = {
@@ -63,10 +65,24 @@ export function useBuildWirePreview(entityKind: WirePreviewEntityKind) {
     return exportOptionsFromSettings(settings, base);
   }, [settings, build.formatId, build.profileId]);
 
-  const rows = useMemo(() => {
+  const allRows = useMemo(() => {
     if (!library) return [];
     return previewWireRows(build, library, entityKind, exportOptions);
   }, [build, library, entityKind, exportOptions]);
+
+  const includedRowKeys = useMemo(() => {
+    if (!library) return new Set<string>();
+    return new Set(
+      includedPreviewWireRows(build, library, entityKind, exportOptions).map((row) => row.key),
+    );
+  }, [build, library, entityKind, exportOptions]);
+
+  const rows = useMemo(() => {
+    if (!hideNotIncludedInExport) return allRows;
+    return allRows.filter((row) => includedRowKeys.has(row.key));
+  }, [allRows, hideNotIncludedInExport, includedRowKeys]);
+
+  const hiddenRowCount = allRows.length - rows.length;
 
   const nameLimit = useMemo(() => {
     const profile = traitProfileFor(build.profileId);
@@ -141,6 +157,10 @@ export function useBuildWirePreview(entityKind: WirePreviewEntityKind) {
   return {
     build,
     rows,
+    allRows,
+    hiddenRowCount,
+    hideNotIncludedInExport,
+    setHideNotIncludedInExport,
     nameLimit,
     error,
     saving,
