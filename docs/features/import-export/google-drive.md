@@ -32,7 +32,7 @@ IndexedDB remains the **edit store**; Drive holds portable YAML interchange file
 
 ### Production (GitHub Pages)
 
-Release builds receive `VITE_GOOGLE_CLIENT_ID` from the repo Actions secret of the same name (see [pages.yml](../../../.github/workflows/pages.yml)). Without it, the deployed SPA shows “not configured” on Settings → Google Drive. Authorized JavaScript origins must include your Pages URL, e.g. `https://pskillen.github.io`.
+Release builds receive `VITE_GOOGLE_CLIENT_ID` from the repo Actions secret `GOOGLE_OAUTH_CLIENT_ID` (see [pages.yml](../../../.github/workflows/pages.yml)). Without it, the deployed SPA shows “not configured” on Settings → Google Drive. Authorized JavaScript origins must include your Pages URL, e.g. `https://pskillen.github.io`.
 
 ## OAuth scope
 
