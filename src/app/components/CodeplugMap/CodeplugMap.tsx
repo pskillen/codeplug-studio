@@ -32,7 +32,9 @@ import type { Channel, Zone } from '@core/models/library.ts';
 import { modeColor, modeLabel } from '../../lib/channelModes.ts';
 import { hzToMhzString } from '../../lib/units.ts';
 import { useDocumentLayoutReady } from '../../hooks/useDocumentLayoutReady.ts';
+import { useMapSettings } from '../../hooks/useMapSettings.ts';
 import MapControls from './MapControls.tsx';
+import MaidenheadGridLayer from './MaidenheadGridLayer.tsx';
 import './CodeplugMap.css';
 
 interface ZoneHullData {
@@ -267,6 +269,7 @@ export default function CodeplugMap({
   onZoneClick,
 }: CodeplugMapProps) {
   const mapLayoutReady = useDocumentLayoutReady();
+  const { maidenheadGrid } = useMapSettings();
   const [showLabels, setShowLabels] = useState(defaultShowLabels);
   const [showZoneHulls, setShowZoneHulls] = useState(defaultShowZones);
 
@@ -363,6 +366,8 @@ export default function CodeplugMap({
               attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
               url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
             />
+
+            <MaidenheadGridLayer mode={maidenheadGrid} />
 
             {showZoneHulls
               ? zoneHulls.map((zh) => {
