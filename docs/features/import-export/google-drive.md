@@ -56,13 +56,14 @@ Implementation: `src/integrations/cloud/googleDrive.ts`.
 
 ## UI flows
 
-### Settings — connect / disconnect
+### Settings — status and disconnect
 
 `/settings` → **Google Drive** section (`GoogleDriveConnectSection`):
 
 - Shows connection status and account email
-- **Connect** opens GIS OAuth (disabled when `VITE_GOOGLE_CLIENT_ID` is unset)
 - **Disconnect** revokes the token and clears the session
+- When disconnected, copy points operators to **Open from Drive** / **Save to Drive** in the app (connect happens there, not in Settings)
+- When `VITE_GOOGLE_CLIENT_ID` is unset, shows OAuth setup guidance
 
 ### Drive browser modal
 
@@ -89,31 +90,47 @@ Implementation: `src/integrations/cloud/googleDrive.ts`.
 
 ### Import workflow
 
-- **Home** import panel and **Import / export** replace panel: **Open from Drive** → select YAML → existing create/replace confirm flow
+- **Home** import panel and **Import / export** replace panel: **Open from Drive** (`GoogleDriveActionButton`) → select YAML → existing create/replace confirm flow
+
+When Drive is not connected, the button stays visible (greyed). Click runs GIS OAuth, then opens the Drive browser on success.
+
+When OAuth is not configured, click opens `GoogleDriveNotConfiguredModal` with **Go to Settings**.
+
+## Components
+
+| Component                       | Role                                                      |
+| ------------------------------- | --------------------------------------------------------- |
+| `GoogleDriveButton`             | Presentational CTA styling                                |
+| `GoogleDriveActionButton`       | Open/save CTAs — inline connect, then Drive browser       |
+| `GoogleDriveNotConfiguredModal` | Settings redirect when `VITE_GOOGLE_CLIENT_ID` is missing |
+| `DriveBrowserModal`             | Folder browser when connected                             |
 
 ## Error states
 
-| Situation             | UI behaviour                                   |
-| --------------------- | ---------------------------------------------- |
-| Not configured        | Yellow alert — missing `VITE_GOOGLE_CLIENT_ID` |
-| Not connected         | Prompt to connect in Settings                  |
-| Auth expired          | Error alert + reconnect hint                   |
-| Sign-in cancelled     | Non-destructive message                        |
-| Network / API failure | Red alert with Drive error message             |
-| Duplicate folder name | Drive API conflict message                     |
+| Situation             | UI behaviour                                                               |
+| --------------------- | -------------------------------------------------------------------------- |
+| Not configured        | Drive action buttons greyed; click → modal → Settings (OAuth client setup) |
+| Not connected         | Drive action buttons greyed; click → GIS OAuth → Drive browser on success  |
+| Sign-in cancelled     | No browser open; no error alert                                            |
+| Connect failed        | Inline red alert on the action button                                      |
+| Auth expired          | Treated as not connected — same inline connect on next Drive button click  |
+| Network / API failure | Red alert with Drive error message                                         |
+| Duplicate folder name | Drive API conflict message                                                 |
 
 ## Implementation status
 
-| Area                          | Status  | Notes                                                        |
-| ----------------------------- | ------- | ------------------------------------------------------------ |
-| OAuth + Drive API port        | Shipped | [#61](https://github.com/pskillen/codeplug-studio/issues/61) |
-| Settings connect / disconnect | Shipped | [#62](https://github.com/pskillen/codeplug-studio/issues/62) |
-| Drive browser modal           | Shipped | [#62](https://github.com/pskillen/codeplug-studio/issues/62) |
-| Import / export workflow      | Shipped | [#62](https://github.com/pskillen/codeplug-studio/issues/62) |
+| Area                         | Status  | Notes                                                                                     |
+| ---------------------------- | ------- | ----------------------------------------------------------------------------------------- |
+| OAuth + Drive API port       | Shipped | [#61](https://github.com/pskillen/codeplug-studio/issues/61)                              |
+| Settings status / disconnect | Shipped | [#62](https://github.com/pskillen/codeplug-studio/issues/62)                              |
+| Drive browser modal          | Shipped | [#62](https://github.com/pskillen/codeplug-studio/issues/62)                              |
+| Import / export workflow     | Shipped | [#62](https://github.com/pskillen/codeplug-studio/issues/62)                              |
+| Disconnected Drive CTA UX    | Shipped | [#141](https://github.com/pskillen/codeplug-studio/issues/141) — inline connect on action |
 
 ## Manual verify checklist
 
-- [ ] Connect / disconnect in Settings with a real OAuth client
+- [ ] Disconnect in Settings with a real OAuth client
+- [ ] Click **Open from Drive** while disconnected → GIS connect → browser opens
 - [ ] Browse folders, create folder, path restored on reopen
 - [ ] Open YAML from Drive → replace active project (or create on Home)
 - [ ] Save to Drive → re-save defaults to last file; overwrite requires confirm

@@ -7,14 +7,12 @@ import {
 import { googleDrivePort } from '@integrations/cloud/index.ts';
 import { saveDriveLastFolderId, saveDriveLastFolderPath } from '@integrations/cloud/drivePrefs.ts';
 import { exportProjectToYaml } from '../../services/projectImportExportService.ts';
-import { useGoogleDrive } from '../../hooks/useGoogleDrive.ts';
 import { useProjects } from '../../state/useProjects.ts';
 import DriveBrowserModal, { type DriveSaveTarget } from './DriveBrowserModal.tsx';
-import GoogleDriveButton from './GoogleDriveButton.tsx';
+import GoogleDriveActionButton from './GoogleDriveActionButton.tsx';
 
 export default function ExportToDrivePanel() {
   const { activeProjectId, activeProject, refreshProjects } = useProjects();
-  const { connected, isConfigured } = useGoogleDrive();
   const [browserOpen, setBrowserOpen] = useState(false);
   const [overwriteOpen, setOverwriteOpen] = useState(false);
   const [pendingTarget, setPendingTarget] = useState<DriveSaveTarget | null>(null);
@@ -103,20 +101,14 @@ export default function ExportToDrivePanel() {
 
   return (
     <Stack gap="sm">
-      {!isConfigured ? (
-        <Alert color="yellow">Google Drive is not configured for this build.</Alert>
-      ) : null}
-      {connected ? null : (
-        <Alert color="gray">Connect Google Drive in Settings before saving files.</Alert>
-      )}
       {error ? <Alert color="red">{error}</Alert> : null}
-      <GoogleDriveButton
-        disabled={!connected || saving}
+      <GoogleDriveActionButton
         loading={saving}
+        disabled={saving}
         onClick={() => setBrowserOpen(true)}
       >
         Save to Drive
-      </GoogleDriveButton>
+      </GoogleDriveActionButton>
       <DriveBrowserModal
         opened={browserOpen}
         onClose={() => {

@@ -11,9 +11,8 @@ import type { FormatId } from '@core/import-export/types.ts';
 import ExportNameSettingsFields from './ExportNameSettingsFields.tsx';
 import { saveDriveLastFolderId, saveDriveLastFolderPath } from '@integrations/cloud/drivePrefs.ts';
 import DriveBrowserModal, { type DriveSaveTarget } from '../import-export/DriveBrowserModal.tsx';
-import GoogleDriveButton from '../import-export/GoogleDriveButton.tsx';
+import GoogleDriveActionButton from '../import-export/GoogleDriveActionButton.tsx';
 import { ICON_SIZE_ACTION, ICON_STROKE } from '../../lib/iconSizes.ts';
-import { useGoogleDrive } from '../../hooks/useGoogleDrive.ts';
 import { useExportSettings } from '../../hooks/useExportSettings.ts';
 import { useProjects } from '../../state/useProjects.ts';
 import { useFormatBuilds } from '../../state/useFormatBuilds.ts';
@@ -35,7 +34,6 @@ const buildService = new BuildService(persistence);
 export default function ExportBuildCpsPanel({ build }: ExportBuildCpsPanelProps) {
   const { activeProjectId, activeProject } = useProjects();
   const { putBuild } = useFormatBuilds();
-  const { connected, isConfigured } = useGoogleDrive();
   const formatEntry = formatCatalogEntry(build.formatId as FormatId);
   const profileLabel = traitProfileFor(build.profileId)?.label ?? build.profileId;
   const wireHint = formatProfileWireHint(build.formatId as FormatId, build.profileId);
@@ -311,23 +309,13 @@ export default function ExportBuildCpsPanel({ build }: ExportBuildCpsPanelProps)
         >
           Download ZIP
         </Button>
-        {!isConfigured ? (
-          <Alert color="yellow" p="xs">
-            Google Drive is not configured for this build.
-          </Alert>
-        ) : connected ? (
-          <GoogleDriveButton
-            disabled={!hasChannels || exporting}
-            loading={exporting}
-            onClick={() => setDriveBrowserOpen(true)}
-          >
-            Save ZIP to Drive
-          </GoogleDriveButton>
-        ) : (
-          <Text size="sm" c="dimmed">
-            Connect Google Drive in Settings to upload exports.
-          </Text>
-        )}
+        <GoogleDriveActionButton
+          disabled={!hasChannels || exporting}
+          loading={exporting}
+          onClick={() => setDriveBrowserOpen(true)}
+        >
+          Save ZIP to Drive
+        </GoogleDriveActionButton>
       </Group>
       <Stack gap={4}>
         <Text size="sm" fw={600}>

@@ -1,6 +1,8 @@
 # GoogleDriveButton
 
-White bordered CTA with the multicolor Google Drive icon — used for connect, open, and save actions.
+White bordered CTA with the multicolor Google Drive icon.
+
+For import/export and CPS export file actions, use `GoogleDriveActionButton`, which handles inline OAuth connect when needed.
 
 ## Usage
 
@@ -14,5 +16,6 @@ Accepts standard Mantine `Button` props except `variant`, `color`, and `leftSect
 
 ## Related
 
+- `GoogleDriveActionButton.tsx` — open/save CTAs with inline connect
 - `GoogleDriveIcon.tsx`
 - [google-drive.md](../../../../docs/features/import-export/google-drive.md)
