@@ -38,6 +38,7 @@ import CodeplugMap from '../components/CodeplugMap/CodeplugMap.tsx';
 ## Behaviour
 
 - **Fixed filters** (not exposed in UI): `useLocation` required, skip `0,0`, merge co-located markers.
+- **Co-located stacks:** dot diameter scales with stack count; hover tooltip lists `callsign — name` per channel; click popup shows the same plus mode/freq.
 - **Tiles:** OpenStreetMap via react-leaflet.
 - **Operator marker:** when `operatorPosition` is set, plots a blue **You** marker and includes it in auto bounds.
 - **Zone hulls:** circle (1 site), line (2), convex polygon (3+); see [zones.md](../../../../docs/features/map/zones.md).

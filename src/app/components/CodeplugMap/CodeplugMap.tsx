@@ -16,9 +16,11 @@ import {
   DEFAULT_MAP_FILTER_OPTS,
   applyFilters,
   buildChannelById,
+  channelDisplayLabel,
   channelModes,
   dominantMode,
   groupByCoords,
+  markerDotSizePx,
   markerLabel,
   primaryMode,
   zoneGeolocatedPoints,
@@ -65,17 +67,29 @@ function escapeHtml(s: string): string {
 function channelDivIcon(
   color: string,
   label: string,
-  merged: boolean,
+  stackCount: number,
   highlighted: boolean,
 ): L.DivIcon {
+  const size = markerDotSizePx(stackCount);
+  const merged = stackCount > 1;
   return L.divIcon({
     className: 'channel-marker-wrap',
     html: `<div class="channel-marker">
-      <div class="channel-marker-dot${merged ? ' merged' : ''}${highlighted ? ' highlighted' : ''}" style="background:${color}"></div>
+      <div class="channel-marker-dot${merged ? ' merged' : ''}${highlighted ? ' highlighted' : ''}" style="background:${color};width:${size}px;height:${size}px"></div>
       <div class="channel-marker-label">${escapeHtml(label)}</div>
     </div>`,
     iconAnchor: [0, 0],
   });
+}
+
+function ChannelTooltipLines({ group }: { group: Channel[] }) {
+  return (
+    <>
+      {group.map((ch) => (
+        <div key={ch.id}>{channelDisplayLabel(ch, true)}</div>
+      ))}
+    </>
+  );
 }
 
 function formatFreqPair(rx: number | null, tx: number | null): string {
@@ -100,17 +114,22 @@ function ChannelPopup({
 }) {
   const title =
     group.length === 1
-      ? group[0].callsign || group[0].name
-      : `${group[0].callsign || group[0].name} (+${group.length - 1})`;
+      ? channelDisplayLabel(group[0], true)
+      : `${group.length} channels at this location`;
 
   return (
     <div style={{ minWidth: 180, maxWidth: 280 }}>
-      <strong>{title}</strong>
+      {group.length > 1 ? (
+        <>
+          <strong>{title}</strong>
+          <br />
+        </>
+      ) : null}
       {group.map((ch) => {
         const freq = formatFreqPair(ch.rxFrequency, ch.txFrequency);
         return (
           <div key={ch.id} style={{ marginBottom: '0.5rem' }}>
-            <strong>{ch.name}</strong>
+            <strong>{channelDisplayLabel(ch, true)}</strong>
             <br />
             <span style={{ opacity: 0.85 }}>
               {modeSummary(ch)}
@@ -442,8 +461,8 @@ export default function CodeplugMap({
 
             {groups.map((group) => {
               const ch = group[0];
-              const merged = group.length > 1;
-              const mode = merged ? dominantMode(group) : primaryMode(ch);
+              const stackCount = group.length;
+              const mode = stackCount > 1 ? dominantMode(group) : primaryMode(ch);
               const color = mode != null ? modeColor(mode) : modeColor('other');
               const label = markerLabel(group, showLabels);
               const position: LatLon = [ch.location!.lat, ch.location!.lon];
@@ -454,8 +473,11 @@ export default function CodeplugMap({
                 <Marker
                   key={`${ch.id}-${position[0]}-${position[1]}`}
                   position={position}
-                  icon={channelDivIcon(color, label, merged, highlighted)}
+                  icon={channelDivIcon(color, label, stackCount, highlighted)}
                 >
+                  <Tooltip sticky direction="top" className="channel-tooltip">
+                    <ChannelTooltipLines group={group} />
+                  </Tooltip>
                   <Popup>
                     <ChannelPopup group={group} onChannelClick={onChannelClick} />
                   </Popup>
