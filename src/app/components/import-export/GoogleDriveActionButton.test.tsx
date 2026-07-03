@@ -8,14 +8,16 @@ vi.mock('../../hooks/useGoogleDrive.ts', () => ({
   useGoogleDrive: vi.fn(),
 }));
 
-import { useGoogleDrive } from '../../hooks/useGoogleDrive.ts';
+import { useGoogleDrive, type DriveConnectResult } from '../../hooks/useGoogleDrive.ts';
 
 const mockedUseGoogleDrive = vi.mocked(useGoogleDrive);
 
 function mockDriveState(
   connected: boolean,
   isConfigured: boolean,
-  connect: ReturnType<typeof vi.fn> = vi.fn(),
+  connect: () => Promise<DriveConnectResult> = vi.fn(async (): Promise<DriveConnectResult> => ({
+    status: 'connected',
+  })),
 ) {
   mockedUseGoogleDrive.mockReturnValue({
     port: {} as never,
@@ -30,7 +32,13 @@ function mockDriveState(
   });
 }
 
-function renderButton(connected: boolean, isConfigured = true, connect = vi.fn()) {
+function renderButton(
+  connected: boolean,
+  isConfigured = true,
+  connect: () => Promise<DriveConnectResult> = vi.fn(async (): Promise<DriveConnectResult> => ({
+    status: 'connected',
+  })),
+) {
   mockDriveState(connected, isConfigured, connect);
   return render(
     <MemoryRouter>
@@ -117,8 +125,13 @@ describe('GoogleDriveActionButton', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Open from Drive' }));
 
     await waitFor(() => {
-      expect(screen.getByRole('heading', { name: 'Google Drive not configured' })).toBeInTheDocument();
+      expect(
+        screen.getByRole('heading', { name: 'Google Drive not configured' }),
+      ).toBeInTheDocument();
     });
-    expect(screen.getByRole('link', { name: 'Go to Settings' })).toHaveAttribute('href', '/settings');
+    expect(screen.getByRole('link', { name: 'Go to Settings' })).toHaveAttribute(
+      'href',
+      '/settings',
+    );
   });
 });
