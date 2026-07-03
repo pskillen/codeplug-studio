@@ -4,9 +4,14 @@
  * keeping `localStorage` access on the integrations side of the boundary.
  */
 
+import type { MaidenheadGridMode } from '@core/domain/maidenheadGrid.ts';
+
 export const ACTIVE_PROJECT_KEY = 'codeplug-studio:activeProjectId';
 export const MAPBOX_TOKEN_KEY = 'codeplug-studio:mapboxToken';
+export const MAIDENHEAD_GRID_KEY = 'codeplug-studio:maidenheadGrid';
 export const PREFERENCES_STORAGE_PREFIX = 'codeplug-studio:';
+
+const MAIDENHEAD_GRID_MODES = new Set<MaidenheadGridMode>(['off', '4', '6']);
 
 export function loadActiveProjectId(): string | null {
   try {
@@ -44,6 +49,31 @@ export function saveMapboxToken(token: string): void {
       globalThis.localStorage?.setItem(MAPBOX_TOKEN_KEY, trimmed);
     } else {
       globalThis.localStorage?.removeItem(MAPBOX_TOKEN_KEY);
+    }
+  } catch {
+    // Ignore write failures.
+  }
+}
+
+export function loadMaidenheadGridMode(): MaidenheadGridMode {
+  try {
+    const raw = globalThis.localStorage?.getItem(MAIDENHEAD_GRID_KEY);
+    if (raw === '8') return '6';
+    if (raw && MAIDENHEAD_GRID_MODES.has(raw as MaidenheadGridMode)) {
+      return raw as MaidenheadGridMode;
+    }
+  } catch {
+    // localStorage may be unavailable.
+  }
+  return 'off';
+}
+
+export function saveMaidenheadGridMode(mode: MaidenheadGridMode): void {
+  try {
+    if (mode === 'off') {
+      globalThis.localStorage?.removeItem(MAIDENHEAD_GRID_KEY);
+    } else {
+      globalThis.localStorage?.setItem(MAIDENHEAD_GRID_KEY, mode);
     }
   } catch {
     // Ignore write failures.

@@ -30,6 +30,8 @@ import MapLocationPicker from '@app/components/MapLocationPicker/MapLocationPick
 
 - Recentres when `lat`/`lon` change (zoom ≥ 10 when positioned).
 - OpenStreetMap raster tiles; no Mapbox token required.
+- **Maidenhead grid:** same overlay as `CodeplugMap` when enabled in Settings.
+- **Map settings** link scrolls to the Map section on `/settings`.
 - Waits for document layout before mounting (avoids Leaflet size glitches).
 - ResizeObserver + window load invalidate map size.
 

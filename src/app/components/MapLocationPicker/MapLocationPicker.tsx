@@ -1,7 +1,13 @@
 import L from 'leaflet';
+import { Anchor, Group } from '@mantine/core';
 import { useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { MapContainer, Marker, TileLayer, useMap, useMapEvents } from 'react-leaflet';
+import MaidenheadGridLayer from '../CodeplugMap/MaidenheadGridLayer.tsx';
+import '../CodeplugMap/CodeplugMap.css';
 import { useDocumentLayoutReady } from '../../hooks/useDocumentLayoutReady.ts';
+import { useMapSettings } from '../../hooks/useMapSettings.ts';
+import { SETTINGS_MAP_SECTION_ID } from '../../lib/settingsSections.ts';
 
 const DEFAULT_CENTER: [number, number] = [56.5, -4.0];
 const DEFAULT_ZOOM = 6;
@@ -80,40 +86,57 @@ export default function MapLocationPicker({
   height = 280,
 }: MapLocationPickerProps) {
   const mapLayoutReady = useDocumentLayoutReady();
+  const { maidenheadGrid } = useMapSettings();
   const hasPosition = lat != null && lon != null;
   const center: [number, number] = hasPosition ? [lat, lon] : DEFAULT_CENTER;
+  const mapStyle = typeof height === 'number' ? { height: `${height}px` } : { height };
 
   return (
-    <div style={{ height, width: '100%', borderRadius: 8, overflow: 'hidden' }}>
-      {mapLayoutReady ? (
-        <MapContainer
-          center={center}
-          zoom={hasPosition ? 11 : DEFAULT_ZOOM}
-          preferCanvas
-          style={{ height: '100%', width: '100%' }}
+    <div className="codeplug-map-wrap">
+      <Group justify="flex-end" align="center" className="codeplug-map-toolbar">
+        <Anchor
+          component={Link}
+          to="/settings"
+          state={{ scrollTo: SETTINGS_MAP_SECTION_ID }}
+          size="xs"
+          c="dimmed"
         >
-          <MapResizeFix />
-          <MapClickHandler onPick={onPick} />
-          {hasPosition ? <MapViewSync lat={lat} lon={lon} /> : null}
-          <TileLayer
-            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-          />
-          {hasPosition ? (
-            <Marker
-              position={[lat, lon]}
-              icon={pickIcon()}
-              draggable
-              eventHandlers={{
-                dragend(e) {
-                  const { lat: markerLat, lng } = e.target.getLatLng();
-                  onPick(markerLat, lng);
-                },
-              }}
+          Map settings
+        </Anchor>
+      </Group>
+
+      <div className="codeplug-map" style={mapStyle}>
+        {mapLayoutReady ? (
+          <MapContainer
+            center={center}
+            zoom={hasPosition ? 11 : DEFAULT_ZOOM}
+            preferCanvas
+            style={{ height: '100%', width: '100%' }}
+          >
+            <MapResizeFix />
+            <MapClickHandler onPick={onPick} />
+            {hasPosition ? <MapViewSync lat={lat} lon={lon} /> : null}
+            <TileLayer
+              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
             />
-          ) : null}
-        </MapContainer>
-      ) : null}
+            <MaidenheadGridLayer mode={maidenheadGrid} />
+            {hasPosition ? (
+              <Marker
+                position={[lat, lon]}
+                icon={pickIcon()}
+                draggable
+                eventHandlers={{
+                  dragend(e) {
+                    const { lat: markerLat, lng } = e.target.getLatLng();
+                    onPick(markerLat, lng);
+                  },
+                }}
+              />
+            ) : null}
+          </MapContainer>
+        ) : null}
+      </div>
     </div>
   );
 }

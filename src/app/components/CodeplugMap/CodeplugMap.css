@@ -4,6 +4,10 @@
   gap: 0.5rem;
 }
 
+.codeplug-map-toolbar {
+  min-height: 1.5rem;
+}
+
 .codeplug-map {
   height: 400px;
   min-height: 300px;
@@ -125,4 +129,38 @@
   font-size: 0.8rem;
   padding: 0.35rem 0.5rem;
   line-height: 1.35;
+}
+
+.maidenhead-grid-label-wrap.leaflet-div-icon {
+  background: transparent;
+  border: none;
+  width: 0 !important;
+  height: 0 !important;
+  margin-left: 0 !important;
+  margin-top: 0 !important;
+}
+
+.maidenhead-grid-label {
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  color: #364fc7;
+  display: block;
+  font-size: 0.7rem;
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  left: 0;
+  letter-spacing: 0.04em;
+  line-height: 1;
+  padding: 0;
+  pointer-events: none;
+  position: absolute;
+  top: 0;
+  transform: translate(-50%, -50%);
+  white-space: nowrap;
+  text-shadow:
+    0 0 3px #fff,
+    0 0 6px #fff,
+    0 0 9px rgba(255, 255, 255, 0.95),
+    0 0 2px rgba(54, 79, 199, 0.55);
 }
