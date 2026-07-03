@@ -1,15 +1,13 @@
 import { useState } from 'react';
 import { Alert, Button, Modal, Stack, Text } from '@mantine/core';
 import { importProjectFromYaml } from '../../services/projectImportExportService.ts';
-import { useGoogleDrive } from '../../hooks/useGoogleDrive.ts';
 import { useProjects } from '../../state/useProjects.ts';
 import DriveBrowserModal from './DriveBrowserModal.tsx';
-import GoogleDriveButton from './GoogleDriveButton.tsx';
+import GoogleDriveActionButton from './GoogleDriveActionButton.tsx';
 import YamlFileDropzone from './YamlFileDropzone.tsx';
 
 export default function ImportYamlIntoActivePanel() {
   const { activeProjectId, activeProject, refreshProjects } = useProjects();
-  const { connected, isConfigured } = useGoogleDrive();
   const [error, setError] = useState<string | null>(null);
   const [importing, setImporting] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
@@ -49,11 +47,9 @@ export default function ImportYamlIntoActivePanel() {
   return (
     <Stack gap="sm">
       <YamlFileDropzone onFileText={handleFile} disabled={importing} />
-      {isConfigured ? (
-        <GoogleDriveButton disabled={!connected || importing} onClick={() => setDriveOpen(true)}>
-          Open from Drive
-        </GoogleDriveButton>
-      ) : null}
+      <GoogleDriveActionButton disabled={importing} onClick={() => setDriveOpen(true)}>
+        Open from Drive
+      </GoogleDriveActionButton>
       {error ? <Alert color="red">{error}</Alert> : null}
       <DriveBrowserModal
         opened={driveOpen}
