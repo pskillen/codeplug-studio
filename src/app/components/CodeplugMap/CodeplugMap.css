@@ -126,3 +126,30 @@
   padding: 0.35rem 0.5rem;
   line-height: 1.35;
 }
+
+.maidenhead-grid-label-wrap.leaflet-div-icon {
+  background: transparent;
+  border: none;
+  width: auto !important;
+  height: auto !important;
+  margin-left: 0 !important;
+  margin-top: 0 !important;
+  transform: translate(-50%, -50%);
+}
+
+.maidenhead-grid-label {
+  background: color-mix(in srgb, var(--mantine-color-body, #fff) 82%, transparent);
+  border: 1px solid color-mix(in srgb, var(--mantine-color-default-border, #ced4da) 70%, transparent);
+  border-radius: 4px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+  color: var(--mantine-color-dimmed, #495057);
+  display: block;
+  font-size: 0.7rem;
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  line-height: 1;
+  padding: 0.15rem 0.35rem;
+  pointer-events: none;
+  white-space: nowrap;
+}
