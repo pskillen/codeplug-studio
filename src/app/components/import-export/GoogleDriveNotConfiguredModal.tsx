@@ -2,30 +2,27 @@ import { Button, Modal, Stack, Text } from '@mantine/core';
 import { Link } from 'react-router-dom';
 import { SETTINGS_DRIVE_SECTION_ID } from '../../lib/settingsSections.ts';
 
-export interface GoogleDriveConnectPromptModalProps {
+export interface GoogleDriveNotConfiguredModalProps {
   opened: boolean;
   onClose: () => void;
-  isConfigured: boolean;
 }
 
-export default function GoogleDriveConnectPromptModal({
+export default function GoogleDriveNotConfiguredModal({
   opened,
   onClose,
-  isConfigured,
-}: GoogleDriveConnectPromptModalProps) {
+}: GoogleDriveNotConfiguredModalProps) {
   return (
     <Modal
       opened={opened}
       onClose={onClose}
-      title="Google Drive not connected"
+      title="Google Drive not configured"
       centered
       transitionProps={{ duration: 0 }}
     >
       <Stack gap="md">
         <Text size="sm">
-          {isConfigured
-            ? 'Connect Google Drive in Settings to open and save files from the cloud.'
-            : 'Google Drive is not configured for this build. Set VITE_GOOGLE_CLIENT_ID for local development — see Settings for details.'}
+          Google Drive is not configured for this build. Set <code>VITE_GOOGLE_CLIENT_ID</code> for
+          local development — see Settings for details.
         </Text>
         <Button
           component={Link}

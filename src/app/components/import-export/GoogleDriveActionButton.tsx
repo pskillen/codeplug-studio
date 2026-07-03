@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Alert, Stack } from '@mantine/core';
 import { useGoogleDrive } from '../../hooks/useGoogleDrive.ts';
 import GoogleDriveButton, { type GoogleDriveButtonProps } from './GoogleDriveButton.tsx';
-import GoogleDriveConnectPromptModal from './GoogleDriveConnectPromptModal.tsx';
+import GoogleDriveNotConfiguredModal from './GoogleDriveNotConfiguredModal.tsx';
 
 const disconnectedRootStyle = {
   opacity: 0.55,
@@ -74,10 +74,9 @@ export default function GoogleDriveActionButton({
           {connectError}
         </Alert>
       ) : null}
-      <GoogleDriveConnectPromptModal
+      <GoogleDriveNotConfiguredModal
         opened={notConfiguredOpen}
         onClose={() => setNotConfiguredOpen(false)}
-        isConfigured={isConfigured}
       />
     </Stack>
   );

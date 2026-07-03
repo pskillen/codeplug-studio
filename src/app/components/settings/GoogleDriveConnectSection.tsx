@@ -1,10 +1,8 @@
-import { Alert, Button, Group, Stack, Text } from '@mantine/core';
+import { Alert, Button, Stack, Text } from '@mantine/core';
 import { useGoogleDrive } from '../../hooks/useGoogleDrive.ts';
-import GoogleDriveButton from '../import-export/GoogleDriveButton.tsx';
 
 export default function GoogleDriveConnectSection() {
-  const { connected, accountLabel, loading, error, isConfigured, connect, disconnect } =
-    useGoogleDrive();
+  const { connected, accountLabel, loading, error, isConfigured, disconnect } = useGoogleDrive();
 
   return (
     <Stack gap="sm">
@@ -24,25 +22,16 @@ export default function GoogleDriveConnectSection() {
         </Text>
       ) : (
         <Text size="sm" c="dimmed">
-          Not connected
+          Not connected — use <strong>Open from Drive</strong> or <strong>Save to Drive</strong>{' '}
+          anywhere in the app to connect.
         </Text>
       )}
       {error ? <Alert color="red">{error}</Alert> : null}
-      <Group>
-        {connected ? (
-          <Button variant="light" color="red" loading={loading} onClick={() => void disconnect()}>
-            Disconnect
-          </Button>
-        ) : (
-          <GoogleDriveButton
-            loading={loading}
-            disabled={!isConfigured}
-            onClick={() => void connect()}
-          >
-            Connect Google Drive
-          </GoogleDriveButton>
-        )}
-      </Group>
+      {connected ? (
+        <Button variant="light" color="red" loading={loading} onClick={() => void disconnect()}>
+          Disconnect
+        </Button>
+      ) : null}
     </Stack>
   );
 }
