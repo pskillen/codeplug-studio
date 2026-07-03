@@ -1,20 +1,20 @@
 # GoogleDriveActionButton
 
-Drive file-action CTA with connection gating — wraps `GoogleDriveButton` for open/save workflows outside Settings.
+Drive file-action CTA with connection gating — wraps `GoogleDriveButton` for open/save workflows.
 
 ## Purpose
 
-When Google Drive is not connected (or OAuth is not configured), the button stays **visible and greyed** but remains clickable. Click opens `GoogleDriveConnectPromptModal` with a link to **Settings → Google Drive** instead of the Drive browser.
+When Google Drive is not connected, the button stays **visible and greyed** but remains clickable. Click runs GIS OAuth via `useGoogleDrive().connect()`, then calls the parent `onClick` (typically opening `DriveBrowserModal`) on success.
 
-Use raw `GoogleDriveButton` on the Settings connect action itself.
+When OAuth is not configured (`!VITE_GOOGLE_CLIENT_ID`), click opens `GoogleDriveNotConfiguredModal` with a link to **Settings → Google Drive**.
 
 ## Props
 
 | Prop       | Type                      | Notes                                                  |
 | ---------- | ------------------------- | ------------------------------------------------------ |
-| `onClick`  | `() => void`              | Runs when Drive is ready                               |
-| `disabled` | `boolean`                 | Blocks action and prompt (e.g. importing, no channels) |
-| `loading`  | `boolean`                 | Standard Mantine loading state                         |
+| `onClick`  | `() => void`              | Runs when Drive is ready (after connect if needed)   |
+| `disabled` | `boolean`                 | Blocks action (e.g. importing, no channels)            |
+| `loading`  | `boolean`                 | Parent busy state; combined with OAuth loading on button |
 | …          | `GoogleDriveButton` props | `children`, `styles`, etc.                             |
 
 ## Usage
@@ -28,11 +28,12 @@ Use raw `GoogleDriveButton` on the Settings connect action itself.
 ## Behaviour
 
 - `driveReady = connected && isConfigured` from `useGoogleDrive`
-- Not ready: reduced opacity; click → prompt modal → `/settings` with `scrollTo: settings-drive`
-- Ready: delegates `onClick` to parent (opens `DriveBrowserModal`, etc.)
+- Not configured: click → `GoogleDriveNotConfiguredModal` → Settings
+- Configured but not connected: click → `connect()` → parent `onClick` on success; cancelled sign-in is silent; other failures show inline `Alert`
+- Ready: delegates `onClick` to parent immediately
 
 ## Related
 
 - `GoogleDriveButton.tsx` — presentational CTA
-- `GoogleDriveConnectPromptModal.tsx`
+- `GoogleDriveNotConfiguredModal.tsx`
 - [google-drive.md](../../../../docs/features/import-export/google-drive.md)
