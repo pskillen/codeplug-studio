@@ -86,12 +86,12 @@ Deploy workflows call the reusable [`.github/workflows/cloudflare-pages.yaml`](.
 | [`next.yaml`](../../.github/workflows/next.yaml)       | `push` to `main`       | `next`      |
 | [`dev.yaml`](../../.github/workflows/dev.yaml)         | `push` to `dev`        | `dev`       |
 
-**Production** deploys omit `--branch` (production slot on the Pages project). **Staging**, **next**, and **dev** deploy as preview branches (`staging`, `main`, and `dev` respectively), mapped to custom subdomains in Cloudflare.
+**Production** deploys omit `--branch` (production slot on the Pages project). **Staging**, **next**, and **dev** deploy as preview branches (`staging`, `next`, and `dev` respectively), mapped to custom subdomains in Cloudflare.
 
 ### Operator setup (one-time)
 
 1. Create a Cloudflare Pages project named `codeplug-studio` via **Direct Upload** — do not connect GitHub in the CF dashboard.
-2. Map custom domains: `codeplug.pskillen.xyz` → production; branch aliases for `staging`, `main` (next), and `dev` preview branches.
+2. Map custom domains: `codeplug.pskillen.xyz` → production; branch aliases for `staging`, `next`, and `dev` preview branches.
 3. Add GitHub Actions secrets under **Settings → Secrets and variables → Actions**:
 
 | Secret                   | Purpose                                                         |

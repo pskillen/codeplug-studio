@@ -10,5 +10,5 @@ jobs:
     uses: ./.github/workflows/cloudflare-pages.yaml
     secrets: inherit
     with:
-      build_env: next
-      cloudflare_branch: main
+      build_env: main
+      cloudflare_branch: next
