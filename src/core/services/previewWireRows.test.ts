@@ -5,7 +5,7 @@ import { describe, expect, it } from 'vitest';
 import type { Channel } from '@core/models/library.ts';
 import { parseProjectDocument } from '@core/import-export/formats/native-yaml/parse.ts';
 import { newChannel, newFormatBuild, newRxGroupList, newTalkGroup } from '@core/domain/factories.ts';
-import { previewWireRows, includedPreviewWireRows } from './previewWireRows.ts';
+import { previewWireRows, includedPreviewWireRows, isPreviewRowIncludedInExport } from './previewWireRows.ts';
 
 const fixtureDir = join(
   dirname(fileURLToPath(import.meta.url)),
@@ -313,5 +313,92 @@ describe('previewWireRows', () => {
 
     const included = includedPreviewWireRows(build, library, 'channel');
     expect(included.map((row) => row.libraryEntityId)).toEqual([zonedChannel.id]);
+  });
+
+  it('wire preview hide toggle shows orphan channels when off and hides when on', () => {
+    const projectId = 'proj-hide-toggle';
+    const zonedChannel = {
+      ...newChannel(projectId, 'Zoned', 'GB3ZZ'),
+      id: 'ch-zoned',
+    };
+    const orphanChannel = {
+      ...newChannel(projectId, 'Orphan', 'GB9YY'),
+      id: 'ch-orphan',
+    };
+    const zone = {
+      id: 'zone-edinburgh',
+      projectId,
+      revision: 1,
+      updatedAt: '2026-01-01T00:00:00.000Z',
+      name: 'Edinburgh',
+      comment: '',
+      members: [{ channelId: zonedChannel.id }],
+    };
+    const build = {
+      ...newFormatBuild(projectId, 'opengd77-1701', 'Hide toggle test'),
+      exportUnlinkedChannels: false,
+      layout: { sections: [] },
+    };
+    const library = {
+      channels: [zonedChannel, orphanChannel],
+      zones: [zone],
+      talkGroups: [],
+      digitalContacts: [],
+      analogContacts: [],
+      rxGroupLists: [],
+    };
+
+    const allRows = previewWireRows(build, library, 'channel');
+    const visibleWhenHidden = allRows.filter((row) =>
+      isPreviewRowIncludedInExport(build, library, 'channel', row),
+    );
+
+    expect(allRows.map((row) => row.libraryEntityId).sort()).toEqual(['ch-orphan', 'ch-zoned']);
+    expect(visibleWhenHidden.map((row) => row.libraryEntityId)).toEqual([zonedChannel.id]);
+    expect(allRows.find((row) => row.libraryEntityId === orphanChannel.id)?.expansionNote).toBe(
+      'Not linked to a zone',
+    );
+  });
+
+  it('lists unlinked DM32 channels in preview so hide toggle can reveal them', () => {
+    const projectId = 'proj-dm32-orphan';
+    const zonedChannel = {
+      ...newChannel(projectId, 'Zoned', 'GB3ZZ'),
+      id: 'ch-zoned',
+      modeProfiles: [{ mode: 'fm' as const, squelch: 50, rxTone: 'none' as const, txTone: 'none' as const, bandwidthKHz: 12.5 }],
+    };
+    const orphanChannel = {
+      ...newChannel(projectId, 'Orphan', 'GB9YY'),
+      id: 'ch-orphan',
+      modeProfiles: [{ mode: 'fm' as const, squelch: 50, rxTone: 'none' as const, txTone: 'none' as const, bandwidthKHz: 12.5 }],
+    };
+    const zone = {
+      id: 'zone-edinburgh',
+      projectId,
+      revision: 1,
+      updatedAt: '2026-01-01T00:00:00.000Z',
+      name: 'Edinburgh',
+      comment: '',
+      members: [{ channelId: zonedChannel.id }],
+    };
+    const build = {
+      ...newFormatBuild(projectId, 'dm32-baofeng-dm32uv', 'DM32 hide toggle'),
+      exportUnlinkedChannels: false,
+      layout: { sections: [] },
+    };
+    const library = {
+      channels: [zonedChannel, orphanChannel],
+      zones: [zone],
+      talkGroups: [],
+      digitalContacts: [],
+      analogContacts: [],
+      rxGroupLists: [],
+    };
+
+    const allRows = previewWireRows(build, library, 'channel');
+    expect(allRows.some((row) => row.libraryEntityId === orphanChannel.id)).toBe(true);
+    expect(
+      allRows.find((row) => row.libraryEntityId === orphanChannel.id)?.expansionNote,
+    ).toBe('Not linked to a zone');
   });
 });

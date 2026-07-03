@@ -4,7 +4,7 @@ import {
   overrideByEntityId,
   type OverrideField,
 } from '@core/domain/formatBuildOverrides.ts';
-import { channelDisplayLabel } from '@core/domain/channelNaming.ts';
+import { channelDisplayLabel, defaultChannelWireName } from '@core/domain/channelNaming.ts';
 import { sanitiseAsciiWireString } from '@core/import-export/sanitiseAsciiWireString.ts';
 import {
   expandAllDm32ChannelsForExport,
@@ -22,6 +22,8 @@ import type { DMRTimeSlot, EntityRef } from '@core/models/libraryTypes.ts';
 export type WirePreviewEntityKind = 'channel' | 'zone' | 'talkGroup' | 'contact' | 'rxGroupList';
 
 export const PREVIEW_ROW_NOT_REFERENCED_NOTE = 'Not referenced by exported channels';
+
+export const PREVIEW_ROW_NOT_ZONE_LINKED_NOTE = 'Not linked to a zone';
 
 /** Optional sub-lines under the display name — expansion context for wire naming. */
 export interface WirePreviewDisplayLine {
@@ -178,8 +180,30 @@ export function previewWireRows(
               : undefined,
           });
         }
+        const exportedChannelIds = new Set(projection.channels.map((row) => row.entity.id));
+        for (const channel of library.channels) {
+          if (exportedChannelIds.has(channel.id)) continue;
+          const channelOverride = overrideByEntityId(build.channelOverrides)
+            .get(channel.id)
+            ?.wireName?.trim();
+          const generatedWireName = defaultChannelWireName(channel);
+          rows.push({
+            key: channel.id,
+            libraryEntityId: channel.id,
+            entityKind: 'channel',
+            displayLabel: channelDisplayLabel(channel),
+            generatedWireName: sanitiseAsciiWireString(generatedWireName),
+            effectiveWireName: sanitiseAsciiWireString(channelOverride ?? generatedWireName),
+            hasWireNameOverride: Boolean(channelOverride),
+            excluded: isEntityExcluded(build.channelOverrides, channel.id),
+            expansionNote: PREVIEW_ROW_NOT_ZONE_LINKED_NOTE,
+          });
+        }
         return rows;
       }
+
+      const zoneLinkedForPreview =
+        build.exportUnlinkedChannels === false ? zoneLinkedChannelIds(build, library) : null;
 
       for (const channel of library.channels) {
         const generatedExpansions = expandChannelWireRows(
@@ -218,7 +242,9 @@ export function previewWireRows(
             expansionNote:
               generatedExpansions.length > 1
                 ? `Multi-mode ${modeExportNameSuffix(generated.mode)} row`
-                : undefined,
+                : zoneLinkedForPreview && !zoneLinkedForPreview.has(channel.id)
+                  ? PREVIEW_ROW_NOT_ZONE_LINKED_NOTE
+                  : undefined,
           });
         }
       }
@@ -311,6 +337,32 @@ export function previewWireRows(
   }
 }
 
+/** Whether a preview row would be included in CPS export (per-row include toggle + export inclusion flags). */
+export function isPreviewRowIncludedInExport(
+  build: FormatBuild,
+  library: LibrarySlice,
+  entityKind: WirePreviewEntityKind,
+  row: WirePreviewRow,
+): boolean {
+  if (row.excluded) return false;
+
+  switch (entityKind) {
+    case 'channel':
+      if (build.exportUnlinkedChannels !== false) return true;
+      return zoneLinkedChannelIds(build, library).has(row.libraryEntityId);
+    case 'talkGroup':
+      if (build.exportUnlinkedTalkGroups !== false) return true;
+      return row.expansionNote !== PREVIEW_ROW_NOT_REFERENCED_NOTE;
+    case 'rxGroupList':
+      if (build.exportUnlinkedRxGroupLists !== false) return true;
+      return row.expansionNote !== PREVIEW_ROW_NOT_REFERENCED_NOTE;
+    case 'contact':
+      return row.expansionNote !== PREVIEW_ROW_NOT_REFERENCED_NOTE;
+    default:
+      return true;
+  }
+}
+
 /** Rows that would be included in export (not excluded and matching export inclusion flags). */
 export function includedPreviewWireRows(
   build: FormatBuild,
@@ -318,39 +370,9 @@ export function includedPreviewWireRows(
   entityKind: WirePreviewEntityKind,
   options?: CpsExportOptions,
 ): WirePreviewRow[] {
-  const projection = assemble(build, library, { profileId: options?.profileId });
-  const rows = previewWireRows(build, library, entityKind, options).filter((row) => !row.excluded);
-
-  const includeUnlinkedChannels = build.exportUnlinkedChannels !== false;
-  const includeUnlinkedTalkGroups = build.exportUnlinkedTalkGroups !== false;
-  const includeUnlinkedRxGroupLists = build.exportUnlinkedRxGroupLists !== false;
-
-  switch (entityKind) {
-    case 'channel':
-      if (includeUnlinkedChannels) return rows;
-      {
-        const zoneLinked = zoneLinkedChannelIds(build, library);
-        return rows.filter((row) => zoneLinked.has(row.libraryEntityId));
-      }
-    case 'talkGroup':
-      if (includeUnlinkedTalkGroups) return rows;
-      return rows.filter((row) =>
-        projection.talkGroups.some((tg) => tg.entity.id === row.libraryEntityId),
-      );
-    case 'rxGroupList':
-      if (includeUnlinkedRxGroupLists) return rows;
-      return rows.filter((row) =>
-        projection.rxGroupLists.some((list) => list.entity.id === row.libraryEntityId),
-      );
-    case 'contact':
-      return rows.filter(
-        (row) =>
-          projection.digitalContacts.some((contact) => contact.entity.id === row.libraryEntityId) ||
-          projection.analogContacts.some((contact) => contact.entity.id === row.libraryEntityId),
-      );
-    default:
-      return rows;
-  }
+  return previewWireRows(build, library, entityKind, options).filter((row) =>
+    isPreviewRowIncludedInExport(build, library, entityKind, row),
+  );
 }
 
 export function isPreviewRowExcluded(

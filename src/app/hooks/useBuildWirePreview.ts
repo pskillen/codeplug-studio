@@ -3,7 +3,7 @@ import type { FormatBuild } from '@core/models/formatBuild.ts';
 import { isEntityExcluded, overrideByEntityId } from '@core/domain/formatBuildOverrides.ts';
 import type { LibrarySlice } from '@core/services/assemble.ts';
 import {
-  includedPreviewWireRows,
+  isPreviewRowIncludedInExport,
   overrideFieldForEntityKind,
   previewWireRows,
   type WirePreviewEntityKind,
@@ -70,17 +70,12 @@ export function useBuildWirePreview(entityKind: WirePreviewEntityKind) {
     return previewWireRows(build, library, entityKind, exportOptions);
   }, [build, library, entityKind, exportOptions]);
 
-  const includedRowKeys = useMemo(() => {
-    if (!library) return new Set<string>();
-    return new Set(
-      includedPreviewWireRows(build, library, entityKind, exportOptions).map((row) => row.key),
-    );
-  }, [build, library, entityKind, exportOptions]);
-
   const rows = useMemo(() => {
-    if (!hideNotIncludedInExport) return allRows;
-    return allRows.filter((row) => includedRowKeys.has(row.key));
-  }, [allRows, hideNotIncludedInExport, includedRowKeys]);
+    if (!hideNotIncludedInExport || !library) return allRows;
+    return allRows.filter((row) =>
+      isPreviewRowIncludedInExport(build, library, entityKind, row),
+    );
+  }, [allRows, hideNotIncludedInExport, build, library, entityKind]);
 
   const hiddenRowCount = allRows.length - rows.length;
 
