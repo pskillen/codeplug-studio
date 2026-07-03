@@ -29,6 +29,7 @@ IndexedDB remains the **edit store**; Drive holds portable YAML interchange file
    - `http://localhost:5173` (local Vite)
    - `https://codeplug.pskillen.xyz` (prod)
    - `https://staging.codeplug.pskillen.xyz` (staging)
+   - `https://next.codeplug.pskillen.xyz` (next)
    - `https://dev.codeplug.pskillen.xyz` (dev)
 3. Copy the client id to `.env.local` as `VITE_GOOGLE_CLIENT_ID` (see [build README](../../build/README.md)).
 

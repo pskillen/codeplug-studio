@@ -11,7 +11,7 @@ description: >-
 
 ## Overview
 
-This repo is a **Vite + React + TypeScript SPA** (when scaffolded) with `src/core/`, `src/integrations/`, and `src/app/`, deployed to **Cloudflare Pages** via GitHub Actions. **Dev** deploys on every push to `main`; **staging** on pre-release publish; **prod** on full release publish. One issue, one branch, one PR.
+This repo is a **Vite + React + TypeScript SPA** (when scaffolded) with `src/core/`, `src/integrations/`, and `src/app/`, deployed to **Cloudflare Pages** via GitHub Actions. **Next** deploys on every push to `main`; **dev** on push to `dev`; **staging** on pre-release publish; **prod** on full release publish. One issue, one branch, one PR.
 
 Workflow: plan → issue (when non-trivial) → branch → commit → PR → merge to `main` → publish releases for staging/prod deploys.
 
@@ -172,4 +172,4 @@ See [documentation-deliverables.mdc](../rules/documentation-deliverables.mdc) an
 | Pre-commit | lint, test, build when `package.json` exists; no secrets in diff |
 | Commit | Conventional commits; atomic; Shell `working_directory` = repo root |
 | PR | push; one PR; link issue; describe manual test steps |
-| Deploy | Merge to `main` (dev deploy); pre-release → staging; full release (tag `v*`) → prod on Cloudflare Pages |
+| Deploy | Merge to `main` (next deploy); push to `dev` (dev deploy); pre-release → staging; full release (tag `v*`) → prod on Cloudflare Pages |

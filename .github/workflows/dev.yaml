@@ -3,7 +3,7 @@ name: Deploy dev
 on:
   push:
     branches:
-      - main
+      - dev
 
 jobs:
   deploy:
@@ -12,4 +12,4 @@ jobs:
     with:
       build_env: dev
       build_version: ${{ github.sha }}
-      cloudflare_branch: main
+      cloudflare_branch: dev

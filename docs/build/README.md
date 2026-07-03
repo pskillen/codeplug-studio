@@ -8,7 +8,8 @@ Codeplug Studio is a static Vite SPA deployed to **Cloudflare Pages** via GitHub
 | ----------- | --------------------------------------- | ----------------------------- |
 | **prod**    | `https://codeplug.pskillen.xyz`         | Full GitHub release published |
 | **staging** | `https://staging.codeplug.pskillen.xyz` | Pre-release published         |
-| **dev**     | `https://dev.codeplug.pskillen.xyz`     | Push to `main`                |
+| **next**    | `https://next.codeplug.pskillen.xyz`    | Push to `main`                |
+| **dev**     | `https://dev.codeplug.pskillen.xyz`     | Push to `dev`                 |
 
 ## Local development
 
@@ -28,6 +29,7 @@ Authorized JavaScript origins must include:
 - `http://localhost:5173` (local Vite)
 - `https://codeplug.pskillen.xyz` (prod)
 - `https://staging.codeplug.pskillen.xyz` (staging)
+- `https://next.codeplug.pskillen.xyz` (next)
 - `https://dev.codeplug.pskillen.xyz` (dev)
 
 Enable the **Google Drive API** for the project. Scope used by Studio: `https://www.googleapis.com/auth/drive` (folder browse + YAML read/write). Tokens stay in browser localStorage only — see [google-drive.md](../features/import-export/google-drive.md).
@@ -81,14 +83,15 @@ Deploy workflows call the reusable [`.github/workflows/cloudflare-pages.yaml`](.
 | ------------------------------------------------------ | ---------------------- | ----------- |
 | [`prod.yaml`](../../.github/workflows/prod.yaml)       | `release: released`    | `prod`      |
 | [`staging.yaml`](../../.github/workflows/staging.yaml) | `release: prereleased` | `staging`   |
-| [`main.yaml`](../../.github/workflows/main.yaml)       | `push` to `main`       | `dev`       |
+| [`next.yaml`](../../.github/workflows/next.yaml)       | `push` to `main`       | `next`      |
+| [`dev.yaml`](../../.github/workflows/dev.yaml)         | `push` to `dev`        | `dev`       |
 
-**Production** deploys omit `--branch` (production slot on the Pages project). **Staging** and **dev** deploy as preview branches (`staging` and `main` respectively), mapped to custom subdomains in Cloudflare.
+**Production** deploys omit `--branch` (production slot on the Pages project). **Staging**, **next**, and **dev** deploy as preview branches (`staging`, `main`, and `dev` respectively), mapped to custom subdomains in Cloudflare.
 
 ### Operator setup (one-time)
 
 1. Create a Cloudflare Pages project named `codeplug-studio` via **Direct Upload** — do not connect GitHub in the CF dashboard.
-2. Map custom domains: `codeplug.pskillen.xyz` → production; branch aliases for `staging` and `main` preview branches.
+2. Map custom domains: `codeplug.pskillen.xyz` → production; branch aliases for `staging`, `main` (next), and `dev` preview branches.
 3. Add GitHub Actions secrets under **Settings → Secrets and variables → Actions**:
 
 | Secret                   | Purpose                                                         |
@@ -103,7 +106,7 @@ Create the API token in the Cloudflare dashboard with account-scoped **Cloudflar
 
 | Variable                | Local default            | Deployed builds (via workflows)                  |
 | ----------------------- | ------------------------ | ------------------------------------------------ |
-| `BUILD_ENV`             | `local`                  | `prod`, `staging`, or `dev`                      |
+| `BUILD_ENV`             | `local`                  | `prod`, `staging`, `next`, or `dev`              |
 | `BUILD_VERSION`         | `local`                  | Release tag or commit SHA (leading `v` stripped) |
 | `VITE_GOOGLE_CLIENT_ID` | `.env.local` (see above) | GitHub Actions secret `GOOGLE_OAUTH_CLIENT_ID`   |
 
