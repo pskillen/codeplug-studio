@@ -5,6 +5,7 @@ import {
   applyFilters,
   dominantMode,
   groupByCoords,
+  markerDotSizePx,
   markerLabel,
   zoneGeolocatedPoints,
 } from './mapProjection.ts';
@@ -69,6 +70,16 @@ describe('markerLabel', () => {
     const a = locatedChannel('A', 56.5, -4.0);
     const b = locatedChannel('B', 56.5, -4.0);
     expect(markerLabel([a, b], false)).toBe('GB3AA +1');
+  });
+});
+
+describe('markerDotSizePx', () => {
+  it('scales dot diameter with stack count', () => {
+    expect(markerDotSizePx(1)).toBe(18);
+    expect(markerDotSizePx(2)).toBe(22);
+    expect(markerDotSizePx(3)).toBe(26);
+    expect(markerDotSizePx(5)).toBe(34);
+    expect(markerDotSizePx(10)).toBe(34);
   });
 });
 

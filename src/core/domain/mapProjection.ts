@@ -43,6 +43,20 @@ export function channelDisplayLabel(
   return callsign || name;
 }
 
+/** Base channel marker diameter (px) before stack scaling. */
+export const MARKER_DOT_BASE_PX = 18;
+/** Extra diameter (px) per co-located channel beyond the first. */
+export const MARKER_DOT_STACK_INCREMENT_PX = 4;
+export const MARKER_DOT_MAX_PX = 34;
+
+export function markerDotSizePx(stackCount: number): number {
+  const count = Math.max(1, Math.floor(stackCount));
+  return Math.min(
+    MARKER_DOT_MAX_PX,
+    MARKER_DOT_BASE_PX + (count - 1) * MARKER_DOT_STACK_INCREMENT_PX,
+  );
+}
+
 export function markerLabel(group: Channel[], useFull: boolean): string {
   const ch = group[0];
   if (group.length === 1 && channelModes(ch).length > 1) {
