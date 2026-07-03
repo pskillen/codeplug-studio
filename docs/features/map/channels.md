@@ -12,6 +12,7 @@ See the [map hub](README.md) for overall placement. This layer reads the **inter
 | `groupByCoords`                                | same                                             | Merge channels at identical lat/lon           |
 | `buildChannelById`                             | same                                             | Plotted channels indexed by `id`              |
 | `primaryMode` / `dominantMode` / `markerLabel` | same                                             | Marker colour mode and label text             |
+| `markerDotSizePx`                              | same                                             | Dot diameter from co-located stack count      |
 | `CodeplugMap`                                  | `src/app/components/CodeplugMap/CodeplugMap.tsx` | react-leaflet markers + popups                |
 | `modeColor`                                    | `src/app/lib/channelModes.ts`                    | Mode → hex colour (app layer only)            |
 
@@ -19,8 +20,8 @@ See the [map hub](README.md) for overall placement. This layer reads the **inter
 
 | Field                               | Used for                                                                            |
 | ----------------------------------- | ----------------------------------------------------------------------------------- |
-| `name`                              | Popup title, full-name label                                                        |
-| `callsign`                          | Default marker label                                                                |
+| `name`                              | Popup and tooltip text (with callsign)                                              |
+| `callsign`                          | Default marker label; tooltip/popup `callsign — name`                               |
 | `location` (`{ lat, lon } \| null`) | Marker position; `null` → skipped                                                   |
 | `useLocation`                       | Filter — `false` excludes when the fixed filter is on                               |
 | `modeProfiles[]`                    | Marker colour from `modeProfiles[0].mode`; multi-profile label shows combined modes |
@@ -47,11 +48,15 @@ Skipped channels are summarised below the map on the channels and zones list rou
 
 ### Co-located merge
 
-`groupByCoords(..., true)` groups channels whose lat/lon match at five decimal places. One marker is drawn; the label shows `callsign +N` for merged groups. Marker colour uses `dominantMode` (most common `modeProfiles[0].mode` in the group).
+`groupByCoords(..., true)` groups channels whose lat/lon match at five decimal places. One marker is drawn; the label shows `callsign +N` for merged groups. Dot diameter grows with stack size (`markerDotSizePx`: +4 px per extra channel, capped at 34 px). Marker colour uses `dominantMode` (most common `modeProfiles[0].mode` in the group).
+
+### Hover tooltips
+
+Each channel marker has a sticky tooltip listing every channel in a co-located group as `callsign — name` (same format as the full-name label toggle).
 
 ### Popups
 
-Each marker popup lists every channel in the group: name, mode summary (`modeProfiles` → labels), RX/TX MHz, and an **Edit channel** action when `onChannelClick` is wired (Library navigates to `/library/channels/:id`).
+Each marker popup lists every channel in the group: `callsign — name`, mode summary (`modeProfiles` → labels), RX/TX MHz, and an **Edit channel** action when `onChannelClick` is wired (Library navigates to `/library/channels/:id`). Merged groups show a count header above the per-channel lines.
 
 ### Auto bounds
 
