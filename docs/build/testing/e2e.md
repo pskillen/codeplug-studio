@@ -2,7 +2,7 @@
 
 **Status: planned** — Playwright not installed; no `npm run test:e2e` script.
 
-**Purpose:** Prove real browser behaviour that unit and component tests cannot — file upload, IndexedDB persistence across reload, ZIP download, hash-router navigation on GitHub Pages base path (`/codeplug-studio/`).
+**Purpose:** Prove real browser behaviour that unit and component tests cannot — file upload, IndexedDB persistence across reload, ZIP download, hash-router navigation at site root (`/`).
 
 ## Target command
 
@@ -21,7 +21,7 @@ npm run test:e2e   # planned
 
 ## Configuration notes
 
-- Base URL must include Vite `base`: `/codeplug-studio/`
+- Base URL is site root (`/`); hash routes use `#/…`
 - Use committed minimal fixtures from [fixtures.md](fixtures.md) — not `sample-exports/`
 - Run against `npm run preview` build output in CI (not dev server)
 
@@ -34,4 +34,4 @@ npm run test:e2e   # planned
 
 - [Testing hub](README.md)
 - [Fixtures](fixtures.md)
-- [docs/build/README.md](../README.md) — Pages deploy
+- [docs/build/README.md](../README.md) — Cloudflare Pages deploy

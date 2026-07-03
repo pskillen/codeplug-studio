@@ -3,8 +3,8 @@ name: version-number
 description: >-
   Display build environment and version in page footers for Codeplug Studio SPA.
   Covers Vite define injection at build time, local fallbacks, and footer UI.
-  Use when adding build info, wiring pages.yml, or debugging which release a
-  tab is running.
+  Use when adding build info, wiring deploy workflows, or debugging which release
+  a tab is running.
 ---
 
 # Build version and environment in footer
@@ -26,18 +26,23 @@ Pair with [git-workflow](../git-workflow/SKILL.md) for releases and
 | `src/vite-env.d.ts` | Global declarations |
 | `src/app/components/BuildFooter/BuildFooter.tsx` | Footer UI |
 | `src/app/App.tsx` | Mounts footer on every route |
-| `.github/workflows/pages.yml` | Prod build env on release |
+| `.github/workflows/cloudflare-pages.yaml` | Reusable build + deploy |
+| `.github/workflows/prod.yaml` | Prod env on full release |
+| `.github/workflows/staging.yaml` | Staging env on pre-release |
+| `.github/workflows/main.yaml` | Dev env on push to `main` |
 
-GitHub Pages base path: `/codeplug-studio/` (see `vite.config.ts`).
+Site base path: `/` (see `vite.config.ts`).
 
 ---
 
 ## Values
 
-| Environment | `BUILD_ENV` | `BUILD_VERSION` |
-| --- | --- | --- |
-| local | `local` | `local` |
-| prod (published release) | `prod` | SemVer from tag (leading `v` stripped) |
+| Environment | `BUILD_ENV` | `BUILD_VERSION` | Trigger |
+| --- | --- | --- | --- |
+| local | `local` | `local` | `npm run dev` |
+| dev | `dev` | commit SHA | push to `main` |
+| staging | `staging` | SemVer from tag (leading `v` stripped) | pre-release publish |
+| prod | `prod` | SemVer from tag (leading `v` stripped) | full release publish |
 
 ---
 
@@ -46,16 +51,19 @@ GitHub Pages base path: `/codeplug-studio/` (see `vite.config.ts`).
 ```bash
 npm run dev          # footer: local · local
 BUILD_ENV=prod BUILD_VERSION=v0.1.0 npm run build && npm run preview
+BUILD_ENV=staging BUILD_VERSION=0.2.0-rc.1 npm run build && npm run preview
 ```
 
 ---
 
-## pages.yml
+## Deploy workflows
+
+Build env is set in [`.github/workflows/cloudflare-pages.yaml`](../../../.github/workflows/cloudflare-pages.yaml):
 
 ```yaml
 env:
-  BUILD_ENV: prod
-  BUILD_VERSION: ${{ github.event.release.tag_name }}
+  BUILD_ENV: ${{ inputs.build_env }}
+  BUILD_VERSION: ${{ inputs.build_version }}
 ```
 
-After publishing a full release, verify footer on the live site shows `prod · <semver>`.
+After publishing a full release, verify footer on `https://codeplug.pskillen.xyz` shows `prod · <semver>`.

@@ -1,7 +1,7 @@
 ---
 name: git-workflow
 description: >-
-  Git workflow for codeplug-studio — browser SPA on GitHub Pages. Plan with
+  Git workflow for codeplug-studio — browser SPA on Cloudflare Pages. Plan with
   GitHub issues, branch by issue when tracked, use conventional commits, open
   PRs with linked tickets. Use when starting features, committing, or opening
   pull requests in this repo.
@@ -11,9 +11,9 @@ description: >-
 
 ## Overview
 
-This repo is a **Vite + React + TypeScript SPA** (when scaffolded) with `src/core/`, `src/integrations/`, and `src/app/`, deployed to **GitHub Pages** when a **full GitHub release is published** (not a pre-release). One issue, one branch, one PR.
+This repo is a **Vite + React + TypeScript SPA** (when scaffolded) with `src/core/`, `src/integrations/`, and `src/app/`, deployed to **Cloudflare Pages** via GitHub Actions. **Dev** deploys on every push to `main`; **staging** on pre-release publish; **prod** on full release publish. One issue, one branch, one PR.
 
-Workflow: plan → issue (when non-trivial) → branch → commit → PR → merge to `main` → publish a GitHub release to publish Pages.
+Workflow: plan → issue (when non-trivial) → branch → commit → PR → merge to `main` → publish releases for staging/prod deploys.
 
 Use the **`user-github`** MCP for issues and PRs. The `gh` CLI is not available on this machine.
 
@@ -172,4 +172,4 @@ See [documentation-deliverables.mdc](../rules/documentation-deliverables.mdc) an
 | Pre-commit | lint, test, build when `package.json` exists; no secrets in diff |
 | Commit | Conventional commits; atomic; Shell `working_directory` = repo root |
 | PR | push; one PR; link issue; describe manual test steps |
-| Deploy | Merge to `main`, then publish a full GitHub release (tag `v*`) → GitHub Pages (`base: '/codeplug-studio/'`) |
+| Deploy | Merge to `main` (dev deploy); pre-release → staging; full release (tag `v*`) → prod on Cloudflare Pages |
