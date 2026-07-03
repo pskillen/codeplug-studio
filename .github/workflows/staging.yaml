@@ -1,0 +1,14 @@
+name: Deploy staging
+
+on:
+  release:
+    types: [prereleased]
+
+jobs:
+  deploy:
+    uses: ./.github/workflows/cloudflare-pages.yaml
+    secrets: inherit
+    with:
+      build_env: staging
+      build_version: ${{ github.event.release.tag_name }}
+      cloudflare_branch: staging

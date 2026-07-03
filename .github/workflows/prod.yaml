@@ -1,0 +1,13 @@
+name: Deploy production
+
+on:
+  release:
+    types: [released]
+
+jobs:
+  deploy:
+    uses: ./.github/workflows/cloudflare-pages.yaml
+    secrets: inherit
+    with:
+      build_env: prod
+      build_version: ${{ github.event.release.tag_name }}

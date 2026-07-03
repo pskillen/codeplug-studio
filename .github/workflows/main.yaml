@@ -1,0 +1,15 @@
+name: Deploy dev
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    uses: ./.github/workflows/cloudflare-pages.yaml
+    secrets: inherit
+    with:
+      build_env: dev
+      build_version: ${{ github.sha }}
+      cloudflare_branch: main
