@@ -33,7 +33,8 @@ On DM32 builds, **Export name settings** also shows **use talk group abbreviatio
 
 ## Related
 
-- [wire-preview.md](../builds/wire-preview.md) — UI workflow
+- [wire-preview.md](wire-preview.md) — UI workflow
+- [wire-name-composition.md](../builds/wire-name-composition.md) — traits → fields matrix for generated names
 - [dm32-progress.md](dm32-progress.md) — DM32 export epic execution log ([#37](https://github.com/pskillen/codeplug-studio/issues/37))
 - [OpenGD77 profiles](opengd77/README.md) — per-radio `nameLimit`
 - [multi-talkgroup-expansion.md](../../reference/multi-talkgroup-expansion.md) — RX-list fan-out rules
