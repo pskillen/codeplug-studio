@@ -11,7 +11,7 @@ Tier 3 schema for Codeplug Studio's full-project interchange format. Internal ty
 | Field                 | Type    | Required | Meaning                                                                                                                                           |
 | --------------------- | ------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `schemaVersion`       | `1`     | yes      | Native YAML envelope version. Only `1` is accepted in this release.                                                                               |
-| `studioSchemaVersion` | integer | yes      | Must equal `STUDIO_SCHEMA_VERSION` in `src/core/models/schemaVersion.ts` (currently `2`). Mismatch rejects import; migration hook is future work. |
+| `studioSchemaVersion` | integer | yes      | Must equal `STUDIO_SCHEMA_VERSION` in `src/core/models/schemaVersion.ts` (currently `4`). Imports accept `2`, `3`, or `4`; older zone export fields on library `Zone` migrate to DM32 build layout on load. |
 
 Bump `schemaVersion` when the YAML envelope shape changes. Bump `studioSchemaVersion` (constant) when persisted row types change.
 
@@ -105,15 +105,14 @@ Mode profile discriminant is `mode`. See [data-model](../../features/data-model/
 
 ### `Zone`
 
-| Field                    | Type          | Notes                    |
-| ------------------------ | ------------- | ------------------------ |
-| _(persistable row)_      |               |                          |
-| `name`                   | string        |                          |
-| `members`                | `EntityRef[]` | `kind` must be `channel` |
-| `exportScratchChannel`   | boolean       |                          |
-| `exportScanList`         | boolean       |                          |
-| `scanCarrierFrequencyHz` | number        | nullable                 |
-| `comment`                | string        |                          |
+| Field               | Type          | Notes                    |
+| ------------------- | ------------- | ------------------------ |
+| _(persistable row)_ |               |                          |
+| `name`              | string        |                          |
+| `members`           | `EntityRef[]` | `kind` must be `channel` |
+| `comment`           | string        |                          |
+
+DM32 zone export flags (`exportScratchChannel`, `exportScanList`, `scanCarrierFrequencyHz`) live on **`zoneGrouping` layout zone entries**, not on library zones (schema v4+).
 
 ### `TalkGroup` / `DigitalContact`
 
@@ -177,7 +176,7 @@ Section discriminant is `kind`:
 | Field   | Type                                   |
 | ------- | -------------------------------------- |
 | `kind`  | `zoneGrouping`                         |
-| `zones` | `{ id, name, channelIds: string[] }[]` |
+| `zones` | `{ id, name, channelIds, exportScratchChannel?, exportScanList?, scanCarrierFrequencyHz? }[]` |
 
 **`flatMemory`**
 
@@ -201,7 +200,7 @@ Import rejects when:
 1. YAML cannot be parsed
 2. Top-level shape is not an object with required keys
 3. `schemaVersion !== 1`
-4. `studioSchemaVersion !== STUDIO_SCHEMA_VERSION`
+4. `studioSchemaVersion` not in `2`, `3`, or `4` (current `STUDIO_SCHEMA_VERSION`)
 5. Any row has `projectId` ≠ `project.id`
 6. Duplicate `id` within one entity array
 7. Any `EntityRef` or `libraryEntityId` does not resolve

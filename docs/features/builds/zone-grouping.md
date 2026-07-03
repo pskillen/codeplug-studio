@@ -14,6 +14,8 @@ How zones appear on the CPS wire for builds with the **zone grouping** trait. Li
 
 A dedicated build zone layout editor (member reorder per zone) is **deferred** — see [#99](https://github.com/pskillen/codeplug-studio/issues/99).
 
+**DM32 export knobs** (`exportScratchChannel`, `exportScanList`, `scanCarrierFrequencyHz`) persist on `ZoneGroupingLayout` zone entries for DM32 builds ([#104](https://github.com/pskillen/codeplug-studio/issues/104)). Build UI: [#121](https://github.com/pskillen/codeplug-studio/issues/121).
+
 ## Related
 
 - [wire-preview.md](wire-preview.md) — override semantics and shared table

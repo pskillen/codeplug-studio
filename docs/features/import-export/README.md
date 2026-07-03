@@ -95,6 +95,7 @@ Optional deep link: `?format=opengd77` highlights the matching catalog card (`us
 | [opengd77/README.md](opengd77/README.md)                                       | OpenGD77 profiles and adapter behaviour         |
 | [opengd77-progress.md](opengd77-progress.md)                                   | Phase 4a execution log                          |
 | [opengd77-outstanding.md](opengd77-outstanding.md)                             | OpenGD77 debt and deferrals                     |
+| [dm32/README.md](dm32/README.md)                                               | DM32 export hub ([#113](https://github.com/pskillen/codeplug-studio/issues/113)) |
 | [dm32-progress.md](dm32-progress.md)                                           | Epic #37 DM32 export execution log              |
 | [dm32-outstanding.md](dm32-outstanding.md)                                     | DM32 export debt and deferrals                  |
 | [../../reference/dm32/README.md](../../reference/dm32/README.md)               | Tier 3 — DM32 wire tables                       |
