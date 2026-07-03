@@ -98,34 +98,34 @@ When OAuth is not configured, click opens `GoogleDriveNotConfiguredModal` with *
 
 ## Components
 
-| Component                     | Role                                                        |
-| ----------------------------- | ----------------------------------------------------------- |
-| `GoogleDriveButton`           | Presentational CTA styling                                  |
-| `GoogleDriveActionButton`     | Open/save CTAs — inline connect, then Drive browser         |
+| Component                       | Role                                                      |
+| ------------------------------- | --------------------------------------------------------- |
+| `GoogleDriveButton`             | Presentational CTA styling                                |
+| `GoogleDriveActionButton`       | Open/save CTAs — inline connect, then Drive browser       |
 | `GoogleDriveNotConfiguredModal` | Settings redirect when `VITE_GOOGLE_CLIENT_ID` is missing |
-| `DriveBrowserModal`           | Folder browser when connected                               |
+| `DriveBrowserModal`             | Folder browser when connected                             |
 
 ## Error states
 
-| Situation             | UI behaviour                                                                 |
-| --------------------- | ---------------------------------------------------------------------------- |
-| Not configured        | Drive action buttons greyed; click → modal → Settings (OAuth client setup)     |
-| Not connected         | Drive action buttons greyed; click → GIS OAuth → Drive browser on success    |
-| Sign-in cancelled     | No browser open; no error alert                                              |
-| Connect failed        | Inline red alert on the action button                                        |
-| Auth expired          | Treated as not connected — same inline connect on next Drive button click    |
-| Network / API failure | Red alert with Drive error message                                           |
-| Duplicate folder name | Drive API conflict message                                                   |
+| Situation             | UI behaviour                                                               |
+| --------------------- | -------------------------------------------------------------------------- |
+| Not configured        | Drive action buttons greyed; click → modal → Settings (OAuth client setup) |
+| Not connected         | Drive action buttons greyed; click → GIS OAuth → Drive browser on success  |
+| Sign-in cancelled     | No browser open; no error alert                                            |
+| Connect failed        | Inline red alert on the action button                                      |
+| Auth expired          | Treated as not connected — same inline connect on next Drive button click  |
+| Network / API failure | Red alert with Drive error message                                         |
+| Duplicate folder name | Drive API conflict message                                                 |
 
 ## Implementation status
 
-| Area                          | Status  | Notes                                                                                      |
-| ----------------------------- | ------- | ------------------------------------------------------------------------------------------ |
-| OAuth + Drive API port        | Shipped | [#61](https://github.com/pskillen/codeplug-studio/issues/61)                               |
-| Settings status / disconnect  | Shipped | [#62](https://github.com/pskillen/codeplug-studio/issues/62)                               |
-| Drive browser modal           | Shipped | [#62](https://github.com/pskillen/codeplug-studio/issues/62)                               |
-| Import / export workflow      | Shipped | [#62](https://github.com/pskillen/codeplug-studio/issues/62)                               |
-| Disconnected Drive CTA UX     | Shipped | [#141](https://github.com/pskillen/codeplug-studio/issues/141) — inline connect on action  |
+| Area                         | Status  | Notes                                                                                     |
+| ---------------------------- | ------- | ----------------------------------------------------------------------------------------- |
+| OAuth + Drive API port       | Shipped | [#61](https://github.com/pskillen/codeplug-studio/issues/61)                              |
+| Settings status / disconnect | Shipped | [#62](https://github.com/pskillen/codeplug-studio/issues/62)                              |
+| Drive browser modal          | Shipped | [#62](https://github.com/pskillen/codeplug-studio/issues/62)                              |
+| Import / export workflow     | Shipped | [#62](https://github.com/pskillen/codeplug-studio/issues/62)                              |
+| Disconnected Drive CTA UX    | Shipped | [#141](https://github.com/pskillen/codeplug-studio/issues/141) — inline connect on action |
 
 ## Manual verify checklist
 

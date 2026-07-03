@@ -10,12 +10,12 @@ When OAuth is not configured (`!VITE_GOOGLE_CLIENT_ID`), click opens `GoogleDriv
 
 ## Props
 
-| Prop       | Type                      | Notes                                                  |
-| ---------- | ------------------------- | ------------------------------------------------------ |
-| `onClick`  | `() => void`              | Runs when Drive is ready (after connect if needed)   |
-| `disabled` | `boolean`                 | Blocks action (e.g. importing, no channels)            |
+| Prop       | Type                      | Notes                                                    |
+| ---------- | ------------------------- | -------------------------------------------------------- |
+| `onClick`  | `() => void`              | Runs when Drive is ready (after connect if needed)       |
+| `disabled` | `boolean`                 | Blocks action (e.g. importing, no channels)              |
 | `loading`  | `boolean`                 | Parent busy state; combined with OAuth loading on button |
-| …          | `GoogleDriveButton` props | `children`, `styles`, etc.                             |
+| …          | `GoogleDriveButton` props | `children`, `styles`, etc.                               |
 
 ## Usage
 
