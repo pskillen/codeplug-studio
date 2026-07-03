@@ -11,7 +11,7 @@ export const MAPBOX_TOKEN_KEY = 'codeplug-studio:mapboxToken';
 export const MAIDENHEAD_GRID_KEY = 'codeplug-studio:maidenheadGrid';
 export const PREFERENCES_STORAGE_PREFIX = 'codeplug-studio:';
 
-const MAIDENHEAD_GRID_MODES = new Set<MaidenheadGridMode>(['off', '4', '6', '8']);
+const MAIDENHEAD_GRID_MODES = new Set<MaidenheadGridMode>(['off', '4', '6']);
 
 export function loadActiveProjectId(): string | null {
   try {
@@ -58,6 +58,7 @@ export function saveMapboxToken(token: string): void {
 export function loadMaidenheadGridMode(): MaidenheadGridMode {
   try {
     const raw = globalThis.localStorage?.getItem(MAIDENHEAD_GRID_KEY);
+    if (raw === '8') return '6';
     if (raw && MAIDENHEAD_GRID_MODES.has(raw as MaidenheadGridMode)) {
       return raw as MaidenheadGridMode;
     }

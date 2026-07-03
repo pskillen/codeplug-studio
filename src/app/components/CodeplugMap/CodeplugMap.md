@@ -41,7 +41,7 @@ import CodeplugMap from '../components/CodeplugMap/CodeplugMap.tsx';
 - **Toolbar:** optional [`MapControls`](MapControls.tsx) checkboxes plus **Map settings** link to `/settings` (scrolls to Map section).
 - **Co-located stacks:** dot diameter scales with stack count; hover tooltip lists `callsign — name` per channel; click popup shows the same plus mode/freq.
 - **Tiles:** OpenStreetMap via react-leaflet.
-- **Maidenhead grid:** optional overlay from Settings — maximum resolution Off / 4 / 6 / 8; finer detail unlocks by zoom (6-char at 10+, 8-char at 15+). See [maidenhead-grid doc](../../../../docs/features/map/maidenhead-grid.md).
+- **Maidenhead grid:** optional overlay from Settings — maximum resolution Off / 4 / 6; finer detail unlocks by zoom (6-char at 10+). See [maidenhead-grid doc](../../../../docs/features/map/maidenhead-grid.md).
 - **Operator marker:** when `operatorPosition` is set, plots a blue **You** marker and includes it in auto bounds.
 - **Zone hulls:** circle (1 site), line (2), convex polygon (3+); see [zones.md](../../../../docs/features/map/zones.md).
 - **Layout:** defers mount until document layout is ready (`useDocumentLayoutReady`); `ResizeObserver` keeps Leaflet sized in inset layouts.

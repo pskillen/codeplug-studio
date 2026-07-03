@@ -13,7 +13,6 @@ const MIN_LABEL_CELL_WIDTH_PX = 48;
 const LON_STEP_BY_LEVEL: Record<GridPrecision, number> = {
   4: 2,
   6: 2 / 24,
-  8: 2 / 240,
 };
 
 const LINE_STYLE: Record<
@@ -22,7 +21,6 @@ const LINE_STYLE: Record<
 > = {
   4: { color: '#495057', weight: 1.25, opacity: 0.55 },
   6: { color: '#868e96', weight: 1, opacity: 0.38, dashArray: '8, 6' },
-  8: { color: '#adb5bd', weight: 0.75, opacity: 0.28, dashArray: '2, 5' },
 };
 
 function boundsFromLeaflet(bounds: L.LatLngBounds) {

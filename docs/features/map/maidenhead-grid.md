@@ -20,31 +20,30 @@ Gives geographic context when working with Maidenhead locators (channel list map
 
 ## Settings
 
-Maximum locator precision — finer detail unlocks as you zoom in.
+Maximum locator precision — finer detail unlocks as you zoom in. Grid overlay stops at **6 characters** (8-char grid removed for performance).
 
-| Option             | Max precision | Zoom &lt; 10 | Zoom 10–14 | Zoom ≥ 15 |
-| ------------------ | ------------- | ------------ | ---------- | --------- |
-| Off                | `off`         | none         | none       | none      |
-| Up to 4 characters | `4`           | 4-char       | 4-char     | 4-char    |
-| Up to 6 characters | `6`           | 4-char       | 6-char     | 6-char    |
-| Up to 8 characters | `8`           | 4-char       | 6-char     | 8-char    |
+| Option             | Max precision | Zoom &lt; 10 | Zoom ≥ 10 |
+| ------------------ | ------------- | ------------ | --------- |
+| Off                | `off`         | none         | none      |
+| Up to 4 characters | `4`           | 4-char       | 4-char    |
+| Up to 6 characters | `6`           | 4-char       | 6-char    |
 
 Lines are cumulative (coarser grids stay visible). Labels show only the finest active level.
 
-**Storage key:** `codeplug-studio:maidenheadGrid` (browser `localStorage` only).
+**Storage key:** `codeplug-studio:maidenheadGrid` (browser `localStorage` only). Legacy stored value `8` loads as `6`.
 
 ## Visual design
 
 Intentionally reworked from the archive `codeplug-tool` overlay:
 
-- **Lines:** level 4 solid; level 6 dashed; level 8 dotted — stronger level-4 contrast for typical library map zooms (z6–9).
-- **Labels:** indigo text with white + tinted glow (no background box); centred on each cell; omitted when estimated cell width on screen is below ~48px.
+- **Lines:** level 4 solid; level 6 dashed — stronger level-4 contrast for typical library map zooms (z6–9).
+- **Labels:** indigo text with white + tinted glow (no background box); centred on each cell.
 - **Density:** labels omitted when estimated cell width on screen is below ~48px.
 
 ## Behaviour
 
 - Viewport-scoped: lines and labels recompute on pan/zoom (`moveend` / `zoomend`).
-- Setting value is **maximum resolution**; actual detail is the finest level allowed at the current zoom (thresholds: 6-char at zoom **≥ 10**, 8-char at zoom **≥ 15** when max permits).
+- Setting value is **maximum resolution**; actual detail is the finest level allowed at the current zoom (6-char at zoom **≥ 10** when max permits).
 - Rendered below zone hulls and channel markers.
 - Applies to `CodeplugMap` on `/library/channels` and `/library/zones`, and to `MapLocationPicker` on `/reference/maidenhead` (and the channel editor location section).
 
@@ -53,9 +52,8 @@ Intentionally reworked from the archive `codeplug-tool` overlay:
 1. `/settings` → **Up to 4 characters** → open `/library/channels` with geolocated channels.
 2. Confirm ~2° × 1° lines and 4-char labels (e.g. `IO85` over Glasgow).
 3. Set **Up to 6 characters** → zoom out shows 4-char only; zoom to 10+ for 6-char lines/labels.
-4. Set **Up to 8 characters** → zoom to 15+ for 8-char detail.
-5. Pan/zoom → grid updates; setting persists after reload.
-6. **Off** → no grid overlay.
+4. Pan/zoom → grid updates; setting persists after reload.
+5. **Off** → no grid overlay.
 
 ## Related
 

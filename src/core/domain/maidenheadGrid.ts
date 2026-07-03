@@ -1,9 +1,9 @@
 import { coordsToLocator } from './maidenhead.ts';
 
 /** User setting: maximum locator precision to allow (progressive by zoom). */
-export type MaidenheadGridMode = 'off' | '4' | '6' | '8';
+export type MaidenheadGridMode = 'off' | '4' | '6';
 
-export type GridPrecision = 4 | 6 | 8;
+export type GridPrecision = 4 | 6;
 
 export interface MapBounds {
   south: number;
@@ -27,8 +27,6 @@ const LON_STEP_4 = 2;
 const LAT_STEP_4 = 1;
 const LON_STEP_6 = 2 / 24;
 const LAT_STEP_6 = 1 / 24;
-const LON_STEP_8 = 2 / 240;
-const LAT_STEP_8 = 1 / 240;
 const ORIGIN_LON = -180;
 const ORIGIN_LAT = -90;
 
@@ -37,13 +35,9 @@ const DEFAULT_BUFFER_DEG = 0.5;
 /** Finest 6-char lines/labels appear at this Leaflet zoom or above (when max ≥ 6). */
 export const MIN_ZOOM_FOR_6_DETAIL = 10;
 
-/** Finest 8-char lines/labels appear at this Leaflet zoom or above (when max = 8). */
-export const MIN_ZOOM_FOR_8_DETAIL = 15;
-
 const LEVEL_STEPS: Record<GridPrecision, { lon: number; lat: number }> = {
   4: { lon: LON_STEP_4, lat: LAT_STEP_4 },
   6: { lon: LON_STEP_6, lat: LAT_STEP_6 },
-  8: { lon: LON_STEP_8, lat: LAT_STEP_8 },
 };
 
 function maxPrecision(mode: MaidenheadGridMode): GridPrecision | null {
@@ -60,7 +54,6 @@ export function activeGridDetail(
   if (max == null) return null;
   if (zoom == null) return max;
 
-  if (max >= 8 && zoom >= MIN_ZOOM_FOR_8_DETAIL) return 8;
   if (max >= 6 && zoom >= MIN_ZOOM_FOR_6_DETAIL) return 6;
   return 4;
 }
@@ -125,7 +118,7 @@ export function computeGridLines(
   const padded = padBounds(bounds, bufferDeg);
   const lines: GridLine[] = [];
 
-  for (const level of [4, 6, 8] as const) {
+  for (const level of [4, 6] as const) {
     if (level > active) break;
     const { lon, lat } = LEVEL_STEPS[level];
     addLevelLines(lines, padded, level, lon, lat);
