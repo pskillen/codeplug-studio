@@ -38,7 +38,7 @@ Lines are cumulative (coarser grids stay visible). Labels show only the finest a
 Intentionally reworked from the archive `codeplug-tool` overlay:
 
 - **Lines:** level 4 solid; level 6 dashed; level 8 dotted — stronger level-4 contrast for typical library map zooms (z6–9).
-- **Labels:** small pill badges (semi-opaque surface + border) instead of transparent text with white halo.
+- **Labels:** indigo text with white + tinted glow (no background box); centred on each cell; omitted when estimated cell width on screen is below ~48px.
 - **Density:** labels omitted when estimated cell width on screen is below ~48px.
 
 ## Behaviour

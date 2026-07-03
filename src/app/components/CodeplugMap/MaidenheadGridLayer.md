@@ -29,7 +29,7 @@ const { maidenheadGrid } = useMapSettings();
 
 - Recomputes lines and labels on `moveend` / `zoomend`.
 - **Lines:** cumulative by level (4, then 6, then 8 when zoom permits). Level 4 solid; 6 dashed; 8 dotted.
-- **Labels:** active precision only; omitted when estimated cell width on screen is below ~48px.
+- **Labels:** active precision only; indigo text with contrasting glow, centred on cell; omitted when estimated cell width on screen is below ~48px.
 - Non-interactive (`interactive={false}`) — does not capture pointer events.
 - Rendered below zone hulls and channel markers.
 
