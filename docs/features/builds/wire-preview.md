@@ -31,7 +31,7 @@ Overrides are stored on `FormatBuild` as `channelOverrides`, `zoneOverrides`, `t
 
 Wire preview pages and the export panel share **`useExportSettings`** (browser `localStorage`) for shortening, name mode, abbreviation toggles, and DM32 zone-derived scan export. Wire name overrides use a local draft with explicit **Apply** and **Revert** actions before persisting (avoids revision races from implicit debounced saves). Navigating away with unapplied drafts opens a confirmation dialog (`useUnsavedNavigationGuard`).
 
-Each entity wire page offers **Hide items not to be included in export** above the table. When enabled, rows are filtered with `includedPreviewWireRows` (respects per-row include toggles and **Export inclusion** on `/builds/:id/export` for orphan channels, talk groups, and RX group lists). Contacts not referenced by exported channels are always omitted when the toggle is on.
+Each entity wire page offers **Hide items not to be included in export** above the table when the library has rows for that entity kind (the toggle stays visible even when filtering hides every row). When enabled, rows are filtered with `includedPreviewWireRows` (respects per-row include toggles and **Export inclusion** on `/builds/:id/export` for orphan channels, talk groups, and RX group lists). Channel zone linkage uses library `Zone.members` plus build `zoneGrouping` layout — see [wire-name-composition.md](wire-name-composition.md#zone-membership-vs-wire-names). Contacts not referenced by exported channels are always omitted when the toggle is on.
 
 ### DM32 channel fan-out
 

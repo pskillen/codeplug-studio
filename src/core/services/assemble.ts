@@ -140,7 +140,12 @@ function expandRefsFromRxLists(
   }
 }
 
-function zoneLinkedChannelIds(build: FormatBuild, library: LibrarySlice): Set<string> {
+function zoneGroupingSections(build: FormatBuild): ZoneGroupingLayout[] {
+  return build.layout.sections.filter((s): s is ZoneGroupingLayout => s.kind === 'zoneGrouping');
+}
+
+/** Channel ids linked via build zone layout and/or library zone membership. */
+export function zoneLinkedChannelIds(build: FormatBuild, library: LibrarySlice): Set<string> {
   const ids = new Set<string>();
   for (const section of zoneGroupingSections(build)) {
     for (const zone of section.zones) {
@@ -183,10 +188,6 @@ function assembleChannels(build: FormatBuild, library: LibrarySlice): AssembledC
     });
   }
   return assembled;
-}
-
-function zoneGroupingSections(build: FormatBuild): ZoneGroupingLayout[] {
-  return build.layout.sections.filter((s): s is ZoneGroupingLayout => s.kind === 'zoneGrouping');
 }
 
 function assembleZones(

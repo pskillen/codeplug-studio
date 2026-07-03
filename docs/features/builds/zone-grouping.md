@@ -1,6 +1,6 @@
 ## Purpose
 
-How zones appear on the CPS wire for builds with the **zone grouping** trait. Library `Zone` rows are the source of truth for membership; export order follows library zone order unless a build has a persisted `ZoneGroupingLayout` section (e.g. from YAML import).
+How zones appear on the CPS wire for builds with the **zone grouping** trait. **Library `Zone.members` is the source of truth for channel↔zone linkage** (export inclusion, assemble, wire-preview hide). A persisted `ZoneGroupingLayout` on the build supplies export order and DM32-only export flags — it does not replace library membership for inclusion.
 
 **Tracking:** [#87](https://github.com/pskillen/codeplug-studio/issues/87)
 
@@ -24,5 +24,6 @@ A dedicated build zone layout editor (member reorder per zone) is **deferred** �
 ## Related
 
 - [wire-preview.md](wire-preview.md) — override semantics and shared table
+- [wire-name-composition.md](wire-name-composition.md) — zone linkage vs wire naming
 - [data-model](../data-model/README.md) — trait layout vs library zones
 - [cps-services.md](../import-export/cps-services.md) — `assemble` zone projection

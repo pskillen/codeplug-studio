@@ -27,7 +27,7 @@ export function normalizeZoneMemberEntry(raw: unknown): ZoneMemberEntry {
 }
 
 export function zoneMemberChannelIds(zone: Zone): string[] {
-  return zone.members.map((member) => member.channelId);
+  return zone.members.map((member) => normalizeZoneMemberEntry(member).channelId);
 }
 
 export function zoneMemberEntityRefs(zone: Zone): EntityRef[] {

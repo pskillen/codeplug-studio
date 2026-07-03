@@ -32,10 +32,10 @@ export default function BuildEntityWirePage({
   const {
     build,
     rows,
-    allRows,
     hiddenRowCount,
     hideNotIncludedInExport,
     setHideNotIncludedInExport,
+    hasWirePreviewEntities,
     nameLimit,
     error,
     setRowExcluded,
@@ -72,7 +72,7 @@ export default function BuildEntityWirePage({
         ) : null}
         {showChannelAbbreviation ? <UseChannelAbbreviationSwitch /> : null}
         {beforeTable}
-        {allRows.length > 0 ? (
+        {hasWirePreviewEntities ? (
           <Stack gap={4}>
             <Switch
               label="Hide items not to be included in export"

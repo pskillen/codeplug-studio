@@ -5,7 +5,7 @@ import { describe, expect, it } from 'vitest';
 import type { Channel } from '@core/models/library.ts';
 import { parseProjectDocument } from '@core/import-export/formats/native-yaml/parse.ts';
 import { newChannel, newFormatBuild, newRxGroupList, newTalkGroup } from '@core/domain/factories.ts';
-import { previewWireRows } from './previewWireRows.ts';
+import { previewWireRows, includedPreviewWireRows } from './previewWireRows.ts';
 
 const fixtureDir = join(
   dirname(fileURLToPath(import.meta.url)),
@@ -243,5 +243,75 @@ describe('previewWireRows', () => {
       { label: 'Channel', value: 'GB7GL Repeater' },
       { label: 'Talk group', value: 'Local (9) · Slot 1' },
     ]);
+  });
+
+  it('keeps library-zoned channels when exportUnlinkedChannels is false', () => {
+    const projectId = 'proj-zone-link';
+    const zonedChannel = {
+      ...newChannel(projectId, 'Zoned', 'GB3ZZ'),
+      id: 'ch-zoned',
+    };
+    const orphanChannel = {
+      ...newChannel(projectId, 'Orphan', 'GB9YY'),
+      id: 'ch-orphan',
+    };
+    const zone = {
+      id: 'zone-edinburgh',
+      projectId,
+      revision: 1,
+      updatedAt: '2026-01-01T00:00:00.000Z',
+      name: 'Edinburgh',
+      comment: '',
+      members: [{ channelId: zonedChannel.id }],
+    };
+    const build = {
+      ...newFormatBuild(projectId, 'opengd77-1701', 'Zone link test'),
+      exportUnlinkedChannels: false,
+      layout: { sections: [] },
+    };
+    const library = {
+      channels: [zonedChannel, orphanChannel],
+      zones: [zone],
+      talkGroups: [],
+      digitalContacts: [],
+      analogContacts: [],
+      rxGroupLists: [],
+    };
+
+    const included = includedPreviewWireRows(build, library, 'channel');
+    expect(included.map((row) => row.libraryEntityId)).toEqual([zonedChannel.id]);
+  });
+
+  it('keeps library-zoned channels with legacy zone member refs when exportUnlinkedChannels is false', () => {
+    const projectId = 'proj-legacy-zone';
+    const zonedChannel = {
+      ...newChannel(projectId, 'Legacy zoned', 'GB3ZZ'),
+      id: 'ch-legacy-zoned',
+    };
+    const zone = {
+      id: 'zone-legacy',
+      projectId,
+      revision: 1,
+      updatedAt: '2026-01-01T00:00:00.000Z',
+      name: 'Legacy zone',
+      comment: '',
+      members: [{ kind: 'channel', id: zonedChannel.id } as unknown as { channelId: string }],
+    };
+    const build = {
+      ...newFormatBuild(projectId, 'opengd77-1701', 'Legacy zone test'),
+      exportUnlinkedChannels: false,
+      layout: { sections: [] },
+    };
+    const library = {
+      channels: [zonedChannel],
+      zones: [zone],
+      talkGroups: [],
+      digitalContacts: [],
+      analogContacts: [],
+      rxGroupLists: [],
+    };
+
+    const included = includedPreviewWireRows(build, library, 'channel');
+    expect(included.map((row) => row.libraryEntityId)).toEqual([zonedChannel.id]);
   });
 });

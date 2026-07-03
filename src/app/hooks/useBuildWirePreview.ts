@@ -84,6 +84,22 @@ export function useBuildWirePreview(entityKind: WirePreviewEntityKind) {
 
   const hiddenRowCount = allRows.length - rows.length;
 
+  const hasWirePreviewEntities = useMemo(() => {
+    if (!library) return false;
+    switch (entityKind) {
+      case 'channel':
+        return library.channels.length > 0;
+      case 'zone':
+        return library.zones.length > 0;
+      case 'talkGroup':
+        return library.talkGroups.length > 0;
+      case 'contact':
+        return library.digitalContacts.length + library.analogContacts.length > 0;
+      case 'rxGroupList':
+        return library.rxGroupLists.length > 0;
+    }
+  }, [library, entityKind]);
+
   const nameLimit = useMemo(() => {
     const profile = traitProfileFor(build.profileId);
     if (!profile) return undefined;
@@ -161,6 +177,7 @@ export function useBuildWirePreview(entityKind: WirePreviewEntityKind) {
     hiddenRowCount,
     hideNotIncludedInExport,
     setHideNotIncludedInExport,
+    hasWirePreviewEntities,
     nameLimit,
     error,
     saving,

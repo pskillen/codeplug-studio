@@ -14,7 +14,7 @@ import {
   modeExportNameSuffix,
 } from '@core/import-export/channelExpansion/multiMode.ts';
 import { applyTalkGroupWireNameLimits } from '@core/import-export/channelExpansion/talkGroupWireNames.ts';
-import { assemble, type LibrarySlice } from './assemble.ts';
+import { assemble, zoneLinkedChannelIds, type LibrarySlice } from './assemble.ts';
 import type { FormatBuild } from '@core/models/formatBuild.ts';
 import type { Channel, ChannelModeProfileDMR } from '@core/models/library.ts';
 import type { DMRTimeSlot, EntityRef } from '@core/models/libraryTypes.ts';
@@ -328,9 +328,10 @@ export function includedPreviewWireRows(
   switch (entityKind) {
     case 'channel':
       if (includeUnlinkedChannels) return rows;
-      return rows.filter((row) =>
-        projection.channels.some((channel) => channel.entity.id === row.libraryEntityId),
-      );
+      {
+        const zoneLinked = zoneLinkedChannelIds(build, library);
+        return rows.filter((row) => zoneLinked.has(row.libraryEntityId));
+      }
     case 'talkGroup':
       if (includeUnlinkedTalkGroups) return rows;
       return rows.filter((row) =>
