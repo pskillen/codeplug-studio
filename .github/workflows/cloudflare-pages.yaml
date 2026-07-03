@@ -1,0 +1,64 @@
+name: Deploy to Cloudflare Pages
+
+on:
+  workflow_call:
+    inputs:
+      build_env:
+        required: true
+        type: string
+      build_version:
+        required: true
+        type: string
+      cloudflare_branch:
+        required: false
+        type: string
+        default: ''
+
+permissions:
+  contents: read
+
+concurrency:
+  group: cf-pages-${{ inputs.build_env }}
+  cancel-in-progress: true
+
+env:
+  CF_PAGES_PROJECT_NAME: codeplug-studio
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup Node
+        uses: actions/setup-node@v6
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build SPA
+        env:
+          BUILD_ENV: ${{ inputs.build_env }}
+          BUILD_VERSION: ${{ inputs.build_version }}
+          VITE_GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_OAUTH_CLIENT_ID }}
+        run: npm run build
+
+      - name: Deploy to Cloudflare Pages (production)
+        if: ${{ inputs.cloudflare_branch == '' }}
+        uses: cloudflare/wrangler-action@v4
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages deploy dist --project-name=${{ env.CF_PAGES_PROJECT_NAME }}
+
+      - name: Deploy to Cloudflare Pages (preview)
+        if: ${{ inputs.cloudflare_branch != '' }}
+        uses: cloudflare/wrangler-action@v4
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages deploy dist --project-name=${{ env.CF_PAGES_PROJECT_NAME }} --branch=${{ inputs.cloudflare_branch }}
