@@ -1,6 +1,5 @@
 import type { AssembledBuild } from '@core/services/assemble.ts';
 import type { CpsExportOptions } from '@core/import-export/types.ts';
-import type { EntityRef } from '@core/models/libraryTypes.ts';
 import {
   buildTalkGroupWireNameMap,
   type TalkGroupWireNameMap,

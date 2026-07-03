@@ -8,7 +8,6 @@ import type {
   Zone,
 } from '@core/models/library.ts';
 import type { ZoneGroupingLayout } from '@core/models/traitLayout.ts';
-import type { EntityRef } from '@core/models/libraryTypes.ts';
 import {
   isEntityExcluded,
   overrideByEntityId,

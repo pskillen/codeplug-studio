@@ -7,6 +7,9 @@ import {
 import { channelDisplayLabel } from '@core/domain/channelNaming.ts';
 import { sanitiseAsciiWireString } from '@core/import-export/sanitiseAsciiWireString.ts';
 import {
+  expandAllDm32ChannelsForExport,
+} from '@core/import-export/formats/dm32/channelExpansion.ts';
+import {
   expandChannelWireRows,
   modeExportNameSuffix,
 } from '@core/import-export/channelExpansion/multiMode.ts';
@@ -81,10 +84,51 @@ export function previewWireRows(
 
   switch (entityKind) {
     case 'channel': {
-      const expandModes = _options?.expandModes ?? true;
+      const expandModes = build.formatId === 'dm32' ? false : (_options?.expandModes ?? true);
       const rows: WirePreviewRow[] = [];
       const reserved = new Set<string>();
       const warnings: string[] = [];
+
+      if (build.formatId === 'dm32') {
+        const assembled = projection;
+        const dm32Options = {
+          ..._options,
+          expandModes: false,
+          expandRxGroupLists: _options?.expandRxGroupLists ?? true,
+          profileId: _options?.profileId ?? build.profileId,
+        };
+        const expanded = expandAllDm32ChannelsForExport(
+          assembled,
+          library,
+          dm32Options,
+          warnings,
+        );
+        for (const generated of expanded) {
+          const channel = library.channels.find((c) => c.id === generated.sourceChannelId);
+          if (!channel) continue;
+          const channelOverride = overrideByEntityId(build.channelOverrides)
+            .get(channel.id)
+            ?.wireName?.trim();
+          const keyOverride = overrideByEntityId(build.channelOverrides)
+            .get(generated.key)
+            ?.wireName?.trim();
+          rows.push({
+            key: generated.key,
+            libraryEntityId: channel.id,
+            entityKind: 'channel',
+            displayLabel: channelDisplayLabel(channel),
+            generatedWireName: sanitiseAsciiWireString(generated.wireName),
+            effectiveWireName: sanitiseAsciiWireString(
+              keyOverride ?? channelOverride ?? generated.wireName,
+            ),
+            hasWireNameOverride: Boolean(keyOverride ?? channelOverride),
+            excluded: isEntityExcluded(build.channelOverrides, channel.id),
+            expansionNote: generated.expansionNote,
+          });
+        }
+        return rows;
+      }
+
       for (const channel of library.channels) {
         const generatedExpansions = expandChannelWireRows(
           channel,

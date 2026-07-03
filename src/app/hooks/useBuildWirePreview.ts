@@ -53,10 +53,14 @@ export function useBuildWirePreview(entityKind: WirePreviewEntityKind) {
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
-  const exportOptions = useMemo(
-    () => exportOptionsFromSettings(settings, { profileId: build.profileId, expandModes: true }),
-    [settings, build.profileId],
-  );
+  const exportOptions = useMemo(() => {
+    const base = {
+      profileId: build.profileId,
+      expandModes: build.formatId !== 'dm32',
+      ...(build.formatId === 'dm32' ? { expandRxGroupLists: true } : {}),
+    };
+    return exportOptionsFromSettings(settings, base);
+  }, [settings, build.formatId, build.profileId]);
 
   const rows = useMemo(() => {
     if (!library) return [];
@@ -65,8 +69,8 @@ export function useBuildWirePreview(entityKind: WirePreviewEntityKind) {
 
   const nameLimit = useMemo(() => {
     const profile = traitProfileFor(build.profileId);
-    if (!profile || profile.formatId !== 'opengd77') return undefined;
-    const options = getFormatProfiles('opengd77');
+    if (!profile) return undefined;
+    const options = getFormatProfiles(profile.formatId);
     return options.find((option) => option.profileId === build.profileId)?.nameLimit;
   }, [build.profileId]);
 

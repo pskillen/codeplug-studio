@@ -27,8 +27,9 @@ Export-time channel wire name composition and shortening. Runs at the CPS bounda
 | `codeplug-studio.export.nameModeOverride`         | Default name style when no build wire override is set                                                                                                   |
 | `codeplug-studio.export.useChannelAbbreviation`   | Prefer `Channel.abbreviation` before dictionary shortening (default on)                                                                                 |
 | `codeplug-studio.export.useTalkGroupAbbreviation` | Prefer `TalkGroup.abbreviation` when shortening talk-group wire names (Contacts.csv / FK columns) and for multi-talkgroup channel suffixes (DM32-style) |
+| `codeplug-studio.export.exportZoneDerivedScanLists` | Master toggle for DM32 zone-derived `Scan.csv` export (default on); per-zone flags on the Zones page still apply |
 
-Wire preview pages read the same settings when computing `generatedWireName`.
+On DM32 builds, **Export name settings** also shows **use talk group abbreviation** (multi-talkgroup options). Wire preview and export share DM32 expansion: no multi-mode rows; RX-list fan-out when a channel references a multi-member RX group list.
 
 ## Related
 

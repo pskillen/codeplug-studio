@@ -25,16 +25,21 @@ Overrides are stored on `FormatBuild` as `channelOverrides`, `zoneOverrides`, `t
 - **displayLabel** — human-readable library label (may note multi-mode suffix)
 - **generatedWireName** — `callsign` + `name` via `defaultChannelWireName` / `composeChannelWireName`; multi-mode channels append mode suffixes (`-F`, `-D`, `-Y`, `-DS`, …) when expansion applies
 - **effectiveWireName** — override or generated
-- **key** — stable override id (composite `${channelId}:${modeSuffix}` for multi-mode expansion rows)
+- **key** — stable override id (composite `${channelId}:${modeSuffix}` for multi-mode expansion rows; `${channelId}:${memberKey}` for DM32 RX-list fan-out)
+- **expansionNote** — human-readable note when a row is synthesized (multi-mode suffix or RX-list member fan-out)
 
-Wire preview pages and the export panel share **`useExportSettings`** (browser `localStorage`) for shortening, name mode, and abbreviation toggles. Wire name overrides use a local draft with explicit **Apply** and **Revert** actions before persisting (avoids revision races from implicit debounced saves). Navigating away with unapplied drafts opens a confirmation dialog (`useUnsavedNavigationGuard`).
+Wire preview pages and the export panel share **`useExportSettings`** (browser `localStorage`) for shortening, name mode, abbreviation toggles, and DM32 zone-derived scan export. Wire name overrides use a local draft with explicit **Apply** and **Revert** actions before persisting (avoids revision races from implicit debounced saves). Navigating away with unapplied drafts opens a confirmation dialog (`useUnsavedNavigationGuard`).
+
+### DM32 channel fan-out
+
+For `formatId === 'dm32'`, channel preview uses the same expansion path as export: `expandAllDm32ChannelsForExport` with `expandModes: false` and `expandRxGroupLists: true`. Channels linked to an RX group list with multiple talk-group members appear as one row per member; expansion notes describe the fan-out. OpenGD77 builds continue to use multi-mode expansion only.
 
 ## Routes
 
 | Route                        | Entity kind   | Notes                                                                                                                                                  |
 | ---------------------------- | ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `/builds/:id/channels`       | `channel`     | Export name mode + **use channel abbreviations** toggles; click default name to store override; multi-mode rows; leave-page guard for unapplied drafts |
-| `/builds/:id/zones`          | `zone`        | Click default name to store override                                                                                                                   |
+| `/builds/:id/channels`       | `channel`     | Export name mode + **use channel abbreviations** toggles; click default name to store override; multi-mode rows (OpenGD77) or RX-list fan-out rows (DM32); leave-page guard for unapplied drafts |
+| `/builds/:id/zones`          | `zone`        | Click default name to store override; DM32 builds show zone export trait controls above the table                                                                                                  |
 | `/builds/:id/talk-groups`    | `talkGroup`   | Unreferenced TGs still listed; click default name to store override                                                                                    |
 | `/builds/:id/contacts`       | `contact`     | Digital + analog contacts; click default name to store override                                                                                        |
 | `/builds/:id/rx-group-lists` | `rxGroupList` | Click default name to store override                                                                                                                   |

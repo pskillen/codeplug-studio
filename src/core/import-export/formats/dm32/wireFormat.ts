@@ -4,7 +4,6 @@ import {
   DEFAULT_DM32_PROFILE_ID,
   dm32PercentToSquelchWire,
   dm32PercentToWire,
-  getDm32Profile,
 } from './profiles.ts';
 import { isAnalogMode, isDmrMode } from './channelModes.ts';
 

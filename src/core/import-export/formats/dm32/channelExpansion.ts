@@ -2,8 +2,6 @@ import type {
   Channel,
   ChannelModeProfile,
   ChannelModeProfileDMR,
-  DigitalContact,
-  TalkGroup,
 } from '@core/models/library.ts';
 import type { EntityRef, ChannelMode } from '@core/models/libraryTypes.ts';
 import type { CpsExportOptions } from '@core/import-export/types.ts';
@@ -16,7 +14,6 @@ import {
   expandChannelWireRows,
   type ExpandedChannelWireRow,
 } from '@core/import-export/channelExpansion/multiMode.ts';
-import { composeExportWireName } from '@core/import-export/channelExpansion/exportWireNames.ts';
 import { DM32_NON_EXPANDABLE_RX_GROUP_LISTS } from './columns.ts';
 
 export interface ExpandedDm32ChannelRow {
@@ -28,6 +25,7 @@ export interface ExpandedDm32ChannelRow {
   /** TX contact for this row — member ref when RX-list expanded. */
   txContactRef: EntityRef | null;
   rxGroupListId: string | null;
+  expansionNote?: string;
 }
 
 function isDmrProfile(profile: ChannelModeProfile): profile is ChannelModeProfileDMR {
@@ -74,10 +72,7 @@ function shouldSkipRxExpansion(
   return false;
 }
 
-function toDm32Rows(
-  siteRows: ExpandedChannelWireRow[],
-  dmrProfile: ChannelModeProfileDMR | null,
-): ExpandedDm32ChannelRow[] {
+function toDm32Rows(siteRows: ExpandedChannelWireRow[]): ExpandedDm32ChannelRow[] {
   return siteRows.map((row) => ({
     sourceChannelId: row.sourceChannelId,
     key: row.key,
@@ -126,6 +121,7 @@ export function expandDm32ChannelWireRows(
         modeProfile: row.modeProfile,
         txContactRef: row.memberRef,
         rxGroupListId: null,
+        expansionNote: row.expansionNote,
       }));
     }
   }
@@ -139,7 +135,7 @@ export function expandDm32ChannelWireRows(
     reserved,
     warnings,
   );
-  return toDm32Rows(siteRows, dmrProfile);
+  return toDm32Rows(siteRows);
 }
 
 /** Expand all assembled channels for DM32 export, preserving order. */

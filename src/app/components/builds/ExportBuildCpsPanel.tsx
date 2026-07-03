@@ -50,16 +50,21 @@ export default function ExportBuildCpsPanel({ build }: ExportBuildCpsPanelProps)
   const [overwriteOpen, setOverwriteOpen] = useState(false);
   const [pendingDriveTarget, setPendingDriveTarget] = useState<DriveSaveTarget | null>(null);
 
-  const { exportOptionsFromSettings } = useExportSettings();
+  const { exportOptionsFromSettings, setExportZoneDerivedScanLists, exportZoneDerivedScanLists } =
+    useExportSettings();
   const profileNameLimit = useMemo(() => {
     const options = getFormatProfiles(build.formatId as FormatId);
     return options.find((option) => option.profileId === build.profileId)?.nameLimit;
   }, [build.formatId, build.profileId]);
 
-  const exportOptions = useMemo(
-    () => exportOptionsFromSettings({ profileId: build.profileId, expandModes: true }),
-    [exportOptionsFromSettings, build.profileId],
-  );
+  const exportOptions = useMemo(() => {
+    const base = {
+      profileId: build.profileId,
+      expandModes: build.formatId === 'dm32' ? false : true,
+      expandRxGroupLists: build.formatId === 'dm32' ? true : undefined,
+    };
+    return exportOptionsFromSettings(base);
+  }, [exportOptionsFromSettings, build.formatId, build.profileId]);
   const hasChannels = Boolean(activeProjectId) && (channelCount ?? 0) > 0;
   const exportShipped = formatEntry?.exportStatus === 'shipped';
   const interchangeFolderId = activeProject?.interchange?.googleDrive?.folderId;
@@ -221,8 +226,26 @@ export default function ExportBuildCpsPanel({ build }: ExportBuildCpsPanelProps)
         <Text size="sm" fw={600}>
           Export name settings
         </Text>
-        <ExportNameSettingsFields profileNameLimit={profileNameLimit} />
+        <ExportNameSettingsFields
+          profileNameLimit={profileNameLimit}
+          showMultiTalkGroupOptions={build.formatId === 'dm32'}
+        />
       </Stack>
+      {build.formatId === 'dm32' ? (
+        <Stack gap="xs">
+          <Text size="sm" fw={600}>
+            DM32 export options
+          </Text>
+          <Switch
+            label="Export zone-derived scan lists (Scan.csv)"
+            description="Requires per-zone scan export enabled on the Zones page."
+            checked={exportZoneDerivedScanLists}
+            onChange={(event) =>
+              setExportZoneDerivedScanLists(event.currentTarget.checked)
+            }
+          />
+        </Stack>
+      ) : null}
       <Stack gap="xs">
         <Text size="sm" fw={600}>
           Export inclusion

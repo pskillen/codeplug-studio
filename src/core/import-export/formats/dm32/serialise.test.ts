@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { Channel } from '@core/models/library.ts';
 import type { FormatBuild } from '@core/models/formatBuild.ts';
 import { newChannel, newFormatBuild, newTalkGroup, newZone } from '@core/domain/factories.ts';
-import { replaceZoneGroupingSection, seedZoneGroupingFromLibrary } from '@core/domain/zoneGroupingLayout.ts';
+import { seedZoneGroupingFromLibrary } from '@core/domain/zoneGroupingLayout.ts';
 import { assemble, type LibrarySlice } from '@core/services/assemble.ts';
 import { serialiseDm32Files } from './serialise.ts';
 import { CHANNEL_COL, ZONE_COL, SCAN_COL } from './columns.ts';

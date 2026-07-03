@@ -21,7 +21,7 @@
 | Export adapter                   | [#115](https://github.com/pskillen/codeplug-studio/issues/115) | Complete | `115/pskil/dm32-export`                    |
 | Zone-derived scan lists          | [#129](https://github.com/pskillen/codeplug-studio/issues/129) | Complete | Schema v5, `zoneDerivedScanLists/`         |
 | Zone export trait UI             | [#121](https://github.com/pskillen/codeplug-studio/issues/121) | Complete | Build zones page controls                  |
-| Export UI + wire preview fan-out | [#119](https://github.com/pskillen/codeplug-studio/issues/119) | Open     | Export panel + channel fan-out preview     |
+| Export UI + wire preview fan-out | [#119](https://github.com/pskillen/codeplug-studio/issues/119) | Complete | Export panel + channel fan-out preview     |
 | Directional export tests         | [#122](https://github.com/pskillen/codeplug-studio/issues/122) | Open     | Next                                       |
 | Export epic closeout docs        | [#123](https://github.com/pskillen/codeplug-studio/issues/123) | Open     | After #122                                 |
 
@@ -46,29 +46,25 @@
 
 ## Slice — Talk group abbreviation ([#110](https://github.com/pskillen/codeplug-studio/issues/110))
 
-**Status:** Complete
-
-**Not wired yet** (tracked in [#119](https://github.com/pskillen/codeplug-studio/issues/119))
-
-- `showMultiTalkGroupOptions` on export panel — [#119](https://github.com/pskillen/codeplug-studio/issues/119)
+**Status:** Complete — wired in DM32 export + wire preview ([#115](https://github.com/pskillen/codeplug-studio/issues/115), [#119](https://github.com/pskillen/codeplug-studio/issues/119))
 
 ---
 
-## Slice — Zone export trait UI ([#121](https://github.com/pskillen/codeplug-studio/issues/121))
+## Slice — Export UI + wire preview ([#119](https://github.com/pskillen/codeplug-studio/issues/119))
 
 **Status:** Complete  
 **Branch:** `115/pskil/dm32-export`
 
 **Delivered**
 
-- `BuildZoneExportControls` on `/builds/:id/zones` for DM32 builds
-- Per-zone `exportScratchChannel`, `exportScanList`, scan carrier MHz on `ZoneGroupingLayout`
-- Per-member `includeInScanList` on library zone membership
-- [zone-grouping.md](../builds/zone-grouping.md) operator workflow
+- DM32 channel wire preview via `expandAllDm32ChannelsForExport` (RX-list fan-out)
+- Export panel: `showMultiTalkGroupOptions`, zone-derived scan master toggle
+- `useExportSettings.exportZoneDerivedScanLists` persisted in localStorage
+- [wire-preview.md](../builds/wire-preview.md), [name-shortening.md](name-shortening.md)
 
 ---
 
 ## Next
 
-1. [#119](https://github.com/pskillen/codeplug-studio/issues/119) — export panel + wire preview fan-out
-2. [#122](https://github.com/pskillen/codeplug-studio/issues/122) → [#123](https://github.com/pskillen/codeplug-studio/issues/123)
+1. [#122](https://github.com/pskillen/codeplug-studio/issues/122) — directional export tests
+2. [#123](https://github.com/pskillen/codeplug-studio/issues/123) — epic closeout + PR
