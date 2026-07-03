@@ -5,8 +5,8 @@ import { newFormatBuild, newProjectMeta } from '../domain/factories.ts';
 import { nextRevision, initialRevision } from './revision.ts';
 
 describe('schemaVersion', () => {
-  it('starts at 3', () => {
-    expect(STUDIO_SCHEMA_VERSION).toBe(3);
+  it('starts at 4', () => {
+    expect(STUDIO_SCHEMA_VERSION).toBe(4);
   });
 });
 
@@ -32,7 +32,7 @@ describe('trait profiles', () => {
   it('has stable profile keys', () => {
     expect(Object.keys(TRAIT_PROFILES).sort()).toEqual([
       'chirp-uv5r',
-      'dm32-default',
+      'dm32-baofeng-dm32uv',
       'opengd77-1701',
       'opengd77-md9600',
     ]);

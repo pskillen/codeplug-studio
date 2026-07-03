@@ -1,4 +1,5 @@
 import type { ProjectAggregate } from '@core/import-export/projectDocument.ts';
+import { migrateProjectAggregate } from '@core/domain/migrateZoneExportFields.ts';
 import { newId } from '@core/models/ids.ts';
 import type { ProjectSeed } from './projectInterchangePort.ts';
 
@@ -16,7 +17,7 @@ export function aggregateToSeed(aggregate: ProjectAggregate): ProjectSeed {
 }
 
 export function seedToAggregate(seed: ProjectSeed): ProjectAggregate {
-  return {
+  return migrateProjectAggregate({
     meta: seed.meta,
     channels: seed.channels ?? [],
     zones: seed.zones ?? [],
@@ -25,7 +26,7 @@ export function seedToAggregate(seed: ProjectSeed): ProjectAggregate {
     analogContacts: seed.analogContacts ?? [],
     rxGroupLists: seed.rxGroupLists ?? [],
     formatBuilds: seed.formatBuilds ?? [],
-  };
+  });
 }
 
 /** Assign a fresh project id to meta and every seeded row (import createNew). */

@@ -32,6 +32,7 @@ import {
   validateZoneMemberRefs,
 } from '@core/domain/validation.ts';
 import { migrateFormatBuild } from '@core/domain/migrateFormatBuild.ts';
+import { migrateProjectAggregate } from '@core/domain/migrateZoneExportFields.ts';
 import {
   parseOverrideArray,
   type LegacyEntitySelection,
@@ -222,25 +223,48 @@ function parseChannel(raw: unknown, index: number): Channel {
   };
 }
 
-function parseZone(raw: unknown, index: number): Zone {
+function parseZone(raw: unknown, index: number, studioSchemaVersion: number): Zone {
   const record = expectRecord(raw, `library.zones[${index}]`);
-  return {
+  const zone: Zone = {
     ...parsePersistableRow(record, `library.zones[${index}]`),
     name: expectString(record.name, `library.zones[${index}].name`),
     members: expectArray(record.members, `library.zones[${index}].members`).map((member, i) =>
       parseEntityRef(member, `library.zones[${index}].members[${i}]`),
     ),
-    exportScratchChannel: expectBoolean(
-      record.exportScratchChannel,
-      `library.zones[${index}].exportScratchChannel`,
-    ),
-    exportScanList: expectBoolean(record.exportScanList, `library.zones[${index}].exportScanList`),
-    scanCarrierFrequencyHz: expectNullableNumber(
-      record.scanCarrierFrequencyHz,
-      `library.zones[${index}].scanCarrierFrequencyHz`,
-    ),
     comment: expectString(record.comment, `library.zones[${index}].comment`),
   };
+
+  if (studioSchemaVersion >= STUDIO_SCHEMA_VERSION) {
+    return zone;
+  }
+
+  return {
+    ...zone,
+    ...(record.exportScratchChannel !== undefined && record.exportScratchChannel !== null
+      ? {
+          exportScratchChannel: expectBoolean(
+            record.exportScratchChannel,
+            `library.zones[${index}].exportScratchChannel`,
+          ),
+        }
+      : {}),
+    ...(record.exportScanList !== undefined && record.exportScanList !== null
+      ? {
+          exportScanList: expectBoolean(
+            record.exportScanList,
+            `library.zones[${index}].exportScanList`,
+          ),
+        }
+      : {}),
+    ...(record.scanCarrierFrequencyHz !== undefined
+      ? {
+          scanCarrierFrequencyHz: expectNullableNumber(
+            record.scanCarrierFrequencyHz,
+            `library.zones[${index}].scanCarrierFrequencyHz`,
+          ),
+        }
+      : {}),
+  } as Zone;
 }
 
 function parseTalkGroup(raw: unknown, index: number): TalkGroup {
@@ -319,13 +343,13 @@ function parseRxGroupList(raw: unknown, index: number): RxGroupList {
   };
 }
 
-function parseLibrary(raw: unknown): Library {
+function parseLibrary(raw: unknown, studioSchemaVersion: number): Library {
   const record = expectRecord(raw, 'library');
   const channels = expectArray(record.channels, 'library.channels').map((row, index) =>
     parseChannel(row, index),
   );
   const zones = expectArray(record.zones, 'library.zones').map((row, index) =>
-    parseZone(row, index),
+    parseZone(row, index, studioSchemaVersion),
   );
   const talkGroups = expectArray(record.talkGroups, 'library.talkGroups').map((row, index) =>
     parseTalkGroup(row, index),
@@ -475,6 +499,30 @@ function parseTraitSection(raw: unknown, index: number): TraitLayoutSection {
               `layout.sections[${index}].zones[${zoneIndex}].channelIds[${idIndex}]`,
             ),
           ),
+          ...(zone.exportScratchChannel !== undefined && zone.exportScratchChannel !== null
+            ? {
+                exportScratchChannel: expectBoolean(
+                  zone.exportScratchChannel,
+                  `layout.sections[${index}].zones[${zoneIndex}].exportScratchChannel`,
+                ),
+              }
+            : {}),
+          ...(zone.exportScanList !== undefined && zone.exportScanList !== null
+            ? {
+                exportScanList: expectBoolean(
+                  zone.exportScanList,
+                  `layout.sections[${index}].zones[${zoneIndex}].exportScanList`,
+                ),
+              }
+            : {}),
+          ...(zone.scanCarrierFrequencyHz !== undefined
+            ? {
+                scanCarrierFrequencyHz: expectNullableNumber(
+                  zone.scanCarrierFrequencyHz,
+                  `layout.sections[${index}].zones[${zoneIndex}].scanCarrierFrequencyHz`,
+                ),
+              }
+            : {}),
         };
       },
     );
@@ -691,14 +739,18 @@ export function validateDocument(raw: unknown): ProjectAggregate {
   }
 
   const studioSchemaVersion = document.studioSchemaVersion;
-  if (studioSchemaVersion !== STUDIO_SCHEMA_VERSION && studioSchemaVersion !== 2) {
+  if (
+    studioSchemaVersion !== STUDIO_SCHEMA_VERSION &&
+    studioSchemaVersion !== 2 &&
+    studioSchemaVersion !== 3
+  ) {
     throw new NativeYamlImportError(
-      `Unsupported studioSchemaVersion: ${String(studioSchemaVersion)} (expected ${STUDIO_SCHEMA_VERSION} or 2)`,
+      `Unsupported studioSchemaVersion: ${String(studioSchemaVersion)} (expected ${STUDIO_SCHEMA_VERSION}, 3, or 2)`,
     );
   }
 
   const project = parseProjectMeta(document.project);
-  const library = parseLibrary(document.library);
+  const library = parseLibrary(document.library, studioSchemaVersion);
   const formatBuilds = expectArray(document.formatBuilds, 'formatBuilds')
     .map((row, index) => parseFormatBuild(row, index))
     .map(({ build, legacy }) => migrateFormatBuild(build, library, legacy));
@@ -725,7 +777,7 @@ export function validateDocument(raw: unknown): ProjectAggregate {
 
   validateForeignKeys(library, formatBuilds);
 
-  return {
+  return migrateProjectAggregate({
     meta: project,
     channels: library.channels,
     zones: library.zones,
@@ -734,7 +786,7 @@ export function validateDocument(raw: unknown): ProjectAggregate {
     analogContacts: library.analogContacts,
     rxGroupLists: library.rxGroupLists,
     formatBuilds,
-  };
+  });
 }
 
 export function isNativeYamlDocument(raw: unknown): boolean {

@@ -142,7 +142,7 @@ This is the main place **profile-specific naming limits** land without polluting
 
 ### Trait layout
 
-`TraitLayout` sections (`ZoneGroupingLayout`, `FlatMemoryLayout`, …) express export-time organisation driven by the profile's capability traits. Library `Zone` membership is the source of truth for which channels belong to a zone; the build layout controls order and how traits project to wire (e.g. zone-as-scan-list).
+`TraitLayout` sections (`ZoneGroupingLayout`, `FlatMemoryLayout`, …) express export-time organisation driven by the profile's capability traits. Library `Zone` membership is the source of truth for which channels belong to a zone; the build layout controls order and format-specific export knobs (e.g. DM32 scratch channel / scan-list flags on `ZoneGroupingLayout` zone entries).
 
 Build UI and layout compose from traits; wire adapters map `assemble(build, library)` at export. Build editor UI ships in a later phase; the model and persistence shape are in place from Phase 1.
 
@@ -150,11 +150,11 @@ Build UI and layout compose from traits; wire adapters map `assemble(build, libr
 
 Declared per profile in `TRAIT_PROFILES` (`src/core/models/traits.ts`). Examples:
 
-| Profile         | Traits                                                 |
-| --------------- | ------------------------------------------------------ |
-| `opengd77-1701` | zone grouping, zone-as-scan-list, multi-TG per channel |
-| `dm32-default`  | zone grouping, scan lists, m×n expansion               |
-| `chirp-uv5r`    | flat memory list, per-channel scan flag                |
+| Profile               | Traits                                                 |
+| --------------------- | ------------------------------------------------------ |
+| `opengd77-1701`       | zone grouping, zone-as-scan-list, multi-TG per channel |
+| `dm32-baofeng-dm32uv` | zone grouping, scan lists, m×n expansion               |
+| `chirp-uv5r`          | flat memory list, per-channel scan flag                |
 
 ### Export path (recap)
 

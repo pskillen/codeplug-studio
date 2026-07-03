@@ -2,19 +2,23 @@
 
 Items **skipped**, **incomplete**, or **discovered during execution** — not the plan's future phases.
 
-**Tracking:** [#37](https://github.com/pskillen/codeplug-studio/issues/37) · [#110](https://github.com/pskillen/codeplug-studio/issues/110)
+**Tracking:** [#37](https://github.com/pskillen/codeplug-studio/issues/37) · [#112](https://github.com/pskillen/codeplug-studio/issues/112) (import)
 
 ---
 
-## Epic deferrals (known at kickoff)
+## Epic deferrals
 
-- [ ] DM32 export adapter not yet implemented (`src/core/import-export/formats/dm32/`)
-- [ ] RX-list fan-out not wired into wire preview or OpenGD77 serialise
-- [ ] `showMultiTalkGroupOptions` export UI hidden until DM32 build export ships
-- [ ] DM32 import adapter — explicitly out of epic #37
+- [ ] DM32 export adapter — [#115](https://github.com/pskillen/codeplug-studio/issues/115)
+- [ ] RX-list fan-out not wired into wire preview or DM32 serialise — [#115](https://github.com/pskillen/codeplug-studio/issues/115), [#119](https://github.com/pskillen/codeplug-studio/issues/119)
+- [ ] `showMultiTalkGroupOptions` export UI hidden until DM32 export — [#119](https://github.com/pskillen/codeplug-studio/issues/119)
+- [ ] Build zone export trait UI — [#121](https://github.com/pskillen/codeplug-studio/issues/121)
+- [ ] Zone-derived `Scan.csv` synthesis — [#129](https://github.com/pskillen/codeplug-studio/issues/129)
+- [ ] DM32 import — epic [#112](https://github.com/pskillen/codeplug-studio/issues/112)
+- [ ] Manual scan-list CRUD + import round-trip — archive [codeplug-tool#125](https://github.com/pskillen/codeplug-tool/issues/125)
+- [ ] `DMR-ID.csv` — accepted lossy gap
 
 ---
 
-## Discovered during #110
+## Discovered during execution
 
 _(none yet)_

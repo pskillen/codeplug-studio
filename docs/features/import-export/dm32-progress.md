@@ -1,48 +1,63 @@
 # Baofeng DM32 CSV export — progress
 
-**Epic:** [#37](https://github.com/pskillen/codeplug-studio/issues/37) (Phase 5 — DM32 CSV **export**; import deferred)  
-**Plan:** Talk group abbreviation — [#110](https://github.com/pskillen/codeplug-studio/issues/110)  
-**Tier-3 wire reference:** [docs/reference/dm32/](../../reference/dm32/README.md)
+**Epic:** [#37](https://github.com/pskillen/codeplug-studio/issues/37) (Phase 5 — DM32 CSV **export**)  
+**Import epic:** [#112](https://github.com/pskillen/codeplug-studio/issues/112) (Phase 5b)  
+**Hub:** [dm32/README.md](dm32/README.md)  
+**Tier-3 wire reference:** [docs/reference/dm32/](../../reference/dm32/README.md)  
+**Archive reference:** [codeplug-tool#67](https://github.com/pskillen/codeplug-tool/issues/67)
 
 ---
 
 ## Overall status
 
-**Status:** Complete (pending merge)
+**Status:** In progress — export foundation landed 2026-07-03
 
-**Branch:** `110/pskil/talk-group-abbreviation`
+| Phase                            | Issue                                                          | Status   | Notes                                      |
+| -------------------------------- | -------------------------------------------------------------- | -------- | ------------------------------------------ |
+| TG abbrev + multi-TG wire core   | [#110](https://github.com/pskillen/codeplug-studio/issues/110) | Complete | Shipped                                    |
+| Zone export trait refactor       | [#104](https://github.com/pskillen/codeplug-studio/issues/104) | Complete | PR `104/pskil/dm32-foundation`             |
+| Feature hub README               | [#113](https://github.com/pskillen/codeplug-studio/issues/113) | Complete | [dm32/README.md](dm32/README.md)           |
+| Profiles + columns + fixtures    | [#114](https://github.com/pskillen/codeplug-studio/issues/114) | Complete | `formats/dm32/`, `test-data/baofeng-dm32/` |
+| Zone export trait UI             | [#121](https://github.com/pskillen/codeplug-studio/issues/121) | Open     | Next — build zones page                    |
+| Zone-derived scan lists          | [#129](https://github.com/pskillen/codeplug-studio/issues/129) | Open     | After #115 / #121                          |
+| Export adapter                   | [#115](https://github.com/pskillen/codeplug-studio/issues/115) | Open     | Wire #110 expansion core                   |
+| Export UI + wire preview fan-out | [#119](https://github.com/pskillen/codeplug-studio/issues/119) | Open     | `showMultiTalkGroupOptions`                |
+| Directional export tests         | [#122](https://github.com/pskillen/codeplug-studio/issues/122) | Open     | After #115                                 |
+| Export epic closeout docs        | [#123](https://github.com/pskillen/codeplug-studio/issues/123) | Open     | After export ship                          |
 
-| Phase                                                                                                                 | Status                   | Notes                                  |
-| --------------------------------------------------------------------------------------------------------------------- | ------------------------ | -------------------------------------- |
-| Shared export prep — TG abbrev + multi-TG wire names ([#110](https://github.com/pskillen/codeplug-studio/issues/110)) | Complete (pending merge) | This branch                            |
-| DM32 export adapter                                                                                                   | Not started              | `src/core/import-export/formats/dm32/` |
-| DM32 build UI (zones, scan lists, `showMultiTalkGroupOptions`)                                                        | Not started              | Trait modules under `src/app/`         |
-| DM32 import adapter                                                                                                   | Deferred                 | Out of epic #37 export scope           |
-
-**Prerequisite:** OpenGD77 wire preview + name shortening — [opengd77-progress.md](opengd77-progress.md) ([#87](https://github.com/pskillen/codeplug-studio/issues/87)–[#90](https://github.com/pskillen/codeplug-studio/issues/90)).
+**Import (Phase 5b — [#112](https://github.com/pskillen/codeplug-studio/issues/112)):** [#124](https://github.com/pskillen/codeplug-studio/issues/124)–[#128](https://github.com/pskillen/codeplug-studio/issues/128) — unblocked on export scaffold.
 
 ---
 
-## Slice — Talk group abbreviation (#110)
+## Slice — Export foundation ([#104](https://github.com/pskillen/codeplug-studio/issues/104), [#114](https://github.com/pskillen/codeplug-studio/issues/114), [#113](https://github.com/pskillen/codeplug-studio/issues/113))
 
-**Status:** Complete (pending merge)  
-**Branch:** `110/pskil/talk-group-abbreviation`
+**Status:** Complete  
+**Branch:** `104/pskil/dm32-foundation`
 
 **Delivered**
 
-- Progress tracking kickoff — this file + [dm32-outstanding.md](dm32-outstanding.md)
-- Core — `multiTalkGroupWireName.ts`, `multiTalkGroup.ts`, `entityRefExport.ts`, `talkGroupWireNamePreview.ts`; `CpsExportOptions` multi-TG fields; unit tests (incl. m×n)
-- Library CRUD — `TalkGroupEditor` with abbreviation + `TalkGroupWireNameExamples`; list Abbrev column; native YAML round-trip test
-- Docs — [library README](../library/README.md), [name-shortening.md](name-shortening.md)
+- `src/core/import-export/formats/dm32/` — profiles, columns, csvWrite, packageZip; profile ladder tests
+- `getFormatProfiles('dm32')`; trait profile id `dm32-baofeng-dm32uv`
+- `test-data/baofeng-dm32/v1.60/` fixtures (six in-scope CSVs)
+- Zone export flags on `ZoneGroupingLayout`; removed from library `Zone`; schema v4 + migration
+- [dm32/README.md](dm32/README.md) hub + cross-doc updates
 
-**Verify**
+---
 
-- `npm run format:check && npm run lint && npm run test && npm run build`
-- Manual: `/library/talk-groups/new` — set name + abbreviation, save, reload; Abbrev column on list
-- OpenGD77 export unchanged (no RX-list fan-out on serialise)
+## Slice — Talk group abbreviation ([#110](https://github.com/pskillen/codeplug-studio/issues/110))
+
+**Status:** Complete
+
+**Not wired yet** (tracked in [#115](https://github.com/pskillen/codeplug-studio/issues/115), [#119](https://github.com/pskillen/codeplug-studio/issues/119))
+
+- `expandMultiTalkGroupMemberWireRows` not called from DM32 serialise or wire preview
+- `showMultiTalkGroupOptions` hidden on export panel until DM32 export ships
 
 ---
 
 ## Next
 
-- DM32 export adapter + build UI; wire `expandMultiTalkGroupMemberWireRows` into DM32 serialise and wire preview when `expandRxGroupLists` is enabled
+1. [#115](https://github.com/pskillen/codeplug-studio/issues/115) — DM32 export adapter
+2. [#121](https://github.com/pskillen/codeplug-studio/issues/121) ∥ [#119](https://github.com/pskillen/codeplug-studio/issues/119)
+3. [#129](https://github.com/pskillen/codeplug-studio/issues/129) — zone-derived `Scan.csv`
+4. [#122](https://github.com/pskillen/codeplug-studio/issues/122) → [#123](https://github.com/pskillen/codeplug-studio/issues/123)

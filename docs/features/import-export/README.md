@@ -14,22 +14,22 @@ IndexedDB remains the **edit store**; YAML and Drive are portable layers on top 
 
 ## Implementation status
 
-| Area                                                    | Status  | Notes                                                                                                                                                                                               |
-| ------------------------------------------------------- | ------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Adapter contracts + registry                            | Shipped | `src/core/import-export/` — `ImportAdapter`, `ExportAdapter`, `formatCatalog`                                                                                                                       |
-| Native YAML — schema + envelope                         | Shipped | `StudioProjectDocument` v1 — [#56](https://github.com/pskillen/codeplug-studio/issues/56)                                                                                                           |
-| Native YAML — export serialiser                         | Shipped | [#57](https://github.com/pskillen/codeplug-studio/issues/57)                                                                                                                                        |
-| Native YAML — import parser                             | Shipped | [#58](https://github.com/pskillen/codeplug-studio/issues/58)                                                                                                                                        |
-| Application services (`importProject`, `exportProject`) | Shipped | [#59](https://github.com/pskillen/codeplug-studio/issues/59) — `importProjectYaml` / `exportProjectYaml`                                                                                            |
-| Local file UI                                           | Shipped | [#60](https://github.com/pskillen/codeplug-studio/issues/60) — `/import-export`, Home import                                                                                                        |
-| Format catalog UI (CPS placeholders)                    | Shipped | [#83](https://github.com/pskillen/codeplug-studio/issues/83) — CPS grid + export build stub                                                                                                         |
-| Google Drive                                            | Shipped | [#61](https://github.com/pskillen/codeplug-studio/issues/61)–[#62](https://github.com/pskillen/codeplug-studio/issues/62)                                                                           |
-| OpenGD77 CSV export                                     | Shipped | [#88](https://github.com/pskillen/codeplug-studio/issues/88) adapter + [#91](https://github.com/pskillen/codeplug-studio/issues/91) UI — [#95](https://github.com/pskillen/codeplug-studio/pull/95) |
-| CPS export services (`assemble`, `exportBuild`)         | Shipped | [#86](https://github.com/pskillen/codeplug-studio/issues/86) — [cps-services.md](cps-services.md)                                                                                                   |
-| OpenGD77 CSV import                                     | Planned | Phase 4b                                                                                                                                                                                            |
-| CHIRP CSV                                               | Planned | Phase 4+                                                                                                                                                                                            |
-| DM32 CSV                                                | Planned | Phase 4+                                                                                                                                                                                            |
-| qDMR YAML                                               | Planned | Out of Phase 3 scope                                                                                                                                                                                |
+| Area                                                    | Status      | Notes                                                                                                                                                                                               |
+| ------------------------------------------------------- | ----------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Adapter contracts + registry                            | Shipped     | `src/core/import-export/` — `ImportAdapter`, `ExportAdapter`, `formatCatalog`                                                                                                                       |
+| Native YAML — schema + envelope                         | Shipped     | `StudioProjectDocument` v1 — [#56](https://github.com/pskillen/codeplug-studio/issues/56)                                                                                                           |
+| Native YAML — export serialiser                         | Shipped     | [#57](https://github.com/pskillen/codeplug-studio/issues/57)                                                                                                                                        |
+| Native YAML — import parser                             | Shipped     | [#58](https://github.com/pskillen/codeplug-studio/issues/58)                                                                                                                                        |
+| Application services (`importProject`, `exportProject`) | Shipped     | [#59](https://github.com/pskillen/codeplug-studio/issues/59) — `importProjectYaml` / `exportProjectYaml`                                                                                            |
+| Local file UI                                           | Shipped     | [#60](https://github.com/pskillen/codeplug-studio/issues/60) — `/import-export`, Home import                                                                                                        |
+| Format catalog UI (CPS placeholders)                    | Shipped     | [#83](https://github.com/pskillen/codeplug-studio/issues/83) — CPS grid + export build stub                                                                                                         |
+| Google Drive                                            | Shipped     | [#61](https://github.com/pskillen/codeplug-studio/issues/61)–[#62](https://github.com/pskillen/codeplug-studio/issues/62)                                                                           |
+| OpenGD77 CSV export                                     | Shipped     | [#88](https://github.com/pskillen/codeplug-studio/issues/88) adapter + [#91](https://github.com/pskillen/codeplug-studio/issues/91) UI — [#95](https://github.com/pskillen/codeplug-studio/pull/95) |
+| CPS export services (`assemble`, `exportBuild`)         | Shipped     | [#86](https://github.com/pskillen/codeplug-studio/issues/86) — [cps-services.md](cps-services.md)                                                                                                   |
+| OpenGD77 CSV import                                     | Planned     | Phase 4b                                                                                                                                                                                            |
+| CHIRP CSV                                               | Planned     | Phase 4+                                                                                                                                                                                            |
+| DM32 CSV                                                | In progress | Export [#37](https://github.com/pskillen/codeplug-studio/issues/37); import [#112](https://github.com/pskillen/codeplug-studio/issues/112) — [dm32-progress.md](dm32-progress.md)                   |
+| qDMR YAML                                               | Planned     | Out of Phase 3 scope                                                                                                                                                                                |
 
 ## Architecture
 
@@ -86,19 +86,20 @@ Optional deep link: `?format=opengd77` highlights the matching catalog card (`us
 
 ## Documentation map
 
-| Doc                                                                            | Contents                                        |
-| ------------------------------------------------------------------------------ | ----------------------------------------------- |
-| [google-drive.md](google-drive.md)                                             | Google Drive OAuth, browser, export workflow    |
-| [native-yaml/README.md](native-yaml/README.md)                                 | Native YAML product behaviour and code anchors  |
-| [native-yaml-progress.md](native-yaml-progress.md)                             | Execution log for #56–#58                       |
-| [native-yaml-outstanding.md](native-yaml-outstanding.md)                       | Debt discovered during native YAML work         |
-| [opengd77/README.md](opengd77/README.md)                                       | OpenGD77 profiles and adapter behaviour         |
-| [opengd77-progress.md](opengd77-progress.md)                                   | Phase 4a execution log                          |
-| [opengd77-outstanding.md](opengd77-outstanding.md)                             | OpenGD77 debt and deferrals                     |
-| [dm32-progress.md](dm32-progress.md)                                           | Epic #37 DM32 export execution log              |
-| [dm32-outstanding.md](dm32-outstanding.md)                                     | DM32 export debt and deferrals                  |
-| [../../reference/dm32/README.md](../../reference/dm32/README.md)               | Tier 3 — DM32 wire tables                       |
-| [../../reference/native-yaml/README.md](../../reference/native-yaml/README.md) | Tier 3 — YAML field tables and example document |
+| Doc                                                                            | Contents                                                                         |
+| ------------------------------------------------------------------------------ | -------------------------------------------------------------------------------- |
+| [google-drive.md](google-drive.md)                                             | Google Drive OAuth, browser, export workflow                                     |
+| [native-yaml/README.md](native-yaml/README.md)                                 | Native YAML product behaviour and code anchors                                   |
+| [native-yaml-progress.md](native-yaml-progress.md)                             | Execution log for #56–#58                                                        |
+| [native-yaml-outstanding.md](native-yaml-outstanding.md)                       | Debt discovered during native YAML work                                          |
+| [opengd77/README.md](opengd77/README.md)                                       | OpenGD77 profiles and adapter behaviour                                          |
+| [opengd77-progress.md](opengd77-progress.md)                                   | Phase 4a execution log                                                           |
+| [opengd77-outstanding.md](opengd77-outstanding.md)                             | OpenGD77 debt and deferrals                                                      |
+| [dm32/README.md](dm32/README.md)                                               | DM32 export hub ([#113](https://github.com/pskillen/codeplug-studio/issues/113)) |
+| [dm32-progress.md](dm32-progress.md)                                           | Epic #37 DM32 export execution log                                               |
+| [dm32-outstanding.md](dm32-outstanding.md)                                     | DM32 export debt and deferrals                                                   |
+| [../../reference/dm32/README.md](../../reference/dm32/README.md)               | Tier 3 — DM32 wire tables                                                        |
+| [../../reference/native-yaml/README.md](../../reference/native-yaml/README.md) | Tier 3 — YAML field tables and example document                                  |
 
 ## Related
 
