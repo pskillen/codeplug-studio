@@ -1,12 +1,24 @@
 import { Button, Group, PasswordInput, Select, Stack, Text } from '@mantine/core';
 import type { MaidenheadGridMode } from '@core/domain/maidenheadGrid.ts';
+import { useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
+import { SETTINGS_MAP_SECTION_ID } from '../lib/settingsSections.ts';
 import { useMapSettings } from '../hooks/useMapSettings.ts';
+import { scrollToPageSection } from '../lib/scrollToPageSection.ts';
 import GoogleDriveConnectSection from '../components/settings/GoogleDriveConnectSection.tsx';
 import { ListPage, PageSection } from '../components/ui/index.ts';
 
 export default function SettingsPage() {
+  const location = useLocation();
   const { mapboxToken, setMapboxToken, saveToken, clearToken, maidenheadGrid, setMaidenheadGrid } =
     useMapSettings();
+
+  useEffect(() => {
+    const scrollTo = (location.state as { scrollTo?: string } | null)?.scrollTo;
+    if (scrollTo) {
+      scrollToPageSection(scrollTo);
+    }
+  }, [location]);
 
   return (
     <ListPage
@@ -30,7 +42,7 @@ export default function SettingsPage() {
         <GoogleDriveConnectSection />
       </PageSection>
 
-      <PageSection id="settings-map" title="Map">
+      <PageSection id={SETTINGS_MAP_SECTION_ID} title="Map">
         <Stack gap="lg">
           <Stack gap="sm" id="settings-map-geocode">
             <Text size="sm" c="dimmed">

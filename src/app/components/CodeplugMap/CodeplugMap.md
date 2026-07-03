@@ -38,6 +38,7 @@ import CodeplugMap from '../components/CodeplugMap/CodeplugMap.tsx';
 ## Behaviour
 
 - **Fixed filters** (not exposed in UI): `useLocation` required, skip `0,0`, merge co-located markers.
+- **Toolbar:** optional [`MapControls`](MapControls.tsx) checkboxes plus **Map settings** link to `/settings` (scrolls to Map section).
 - **Co-located stacks:** dot diameter scales with stack count; hover tooltip lists `callsign — name` per channel; click popup shows the same plus mode/freq.
 - **Tiles:** OpenStreetMap via react-leaflet.
 - **Maidenhead grid:** optional overlay from Settings — maximum resolution Off / 4 / 6 / 8; finer detail unlocks by zoom (6-char at 10+, 8-char at 15+). See [maidenhead-grid doc](../../../../docs/features/map/maidenhead-grid.md).

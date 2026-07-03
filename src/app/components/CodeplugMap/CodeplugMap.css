@@ -4,6 +4,10 @@
   gap: 0.5rem;
 }
 
+.codeplug-map-toolbar {
+  min-height: 1.5rem;
+}
+
 .codeplug-map {
   height: 400px;
   min-height: 300px;

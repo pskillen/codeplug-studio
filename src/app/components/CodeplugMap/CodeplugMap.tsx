@@ -1,6 +1,8 @@
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
+import { Anchor, Group } from '@mantine/core';
 import { useEffect, useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
 import {
   Circle,
   MapContainer,
@@ -33,6 +35,7 @@ import { modeColor, modeLabel } from '../../lib/channelModes.ts';
 import { hzToMhzString } from '../../lib/units.ts';
 import { useDocumentLayoutReady } from '../../hooks/useDocumentLayoutReady.ts';
 import { useMapSettings } from '../../hooks/useMapSettings.ts';
+import { SETTINGS_MAP_SECTION_ID } from '../../lib/settingsSections.ts';
 import MapControls from './MapControls.tsx';
 import MaidenheadGridLayer from './MaidenheadGridLayer.tsx';
 import './CodeplugMap.css';
@@ -344,14 +347,27 @@ export default function CodeplugMap({
 
   return (
     <div className="codeplug-map-wrap">
-      {showControls ? (
-        <MapControls
-          showLabels={showLabels}
-          onShowLabelsChange={setShowLabels}
-          showZones={showZoneHulls}
-          onShowZonesChange={setShowZoneHulls}
-        />
-      ) : null}
+      <Group justify="space-between" align="center" wrap="wrap" className="codeplug-map-toolbar">
+        {showControls ? (
+          <MapControls
+            showLabels={showLabels}
+            onShowLabelsChange={setShowLabels}
+            showZones={showZoneHulls}
+            onShowZonesChange={setShowZoneHulls}
+          />
+        ) : (
+          <span />
+        )}
+        <Anchor
+          component={Link}
+          to="/settings"
+          state={{ scrollTo: SETTINGS_MAP_SECTION_ID }}
+          size="xs"
+          c="dimmed"
+        >
+          Map settings
+        </Anchor>
+      </Group>
 
       <div className="codeplug-map" style={mapStyle}>
         {mapLayoutReady ? (
