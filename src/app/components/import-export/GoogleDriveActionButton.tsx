@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Alert, Stack } from '@mantine/core';
 import { useGoogleDrive } from '../../hooks/useGoogleDrive.ts';
 import GoogleDriveButton, { type GoogleDriveButtonProps } from './GoogleDriveButton.tsx';
 import GoogleDriveConnectPromptModal from './GoogleDriveConnectPromptModal.tsx';
@@ -17,8 +18,8 @@ export type GoogleDriveActionButtonProps = Omit<GoogleDriveButtonProps, 'onClick
 };
 
 /**
- * Drive file action CTA — greyed when OAuth is not ready; click opens a Settings prompt instead
- * of the Drive browser. Use raw {@link GoogleDriveButton} on Settings for Connect itself.
+ * Drive file action CTA — greyed when OAuth is not ready; click runs GIS connect then the action.
+ * When OAuth is not configured, click opens a Settings prompt. Settings Disconnect stays separate.
  */
 export default function GoogleDriveActionButton({
   onClick,
@@ -27,34 +28,57 @@ export default function GoogleDriveActionButton({
   styles,
   ...props
 }: GoogleDriveActionButtonProps) {
-  const { connected, isConfigured } = useGoogleDrive();
-  const [promptOpen, setPromptOpen] = useState(false);
+  const { connected, isConfigured, connect, loading: driveLoading } = useGoogleDrive();
+  const [notConfiguredOpen, setNotConfiguredOpen] = useState(false);
+  const [connectError, setConnectError] = useState<string | null>(null);
   const driveReady = connected && isConfigured;
-  const operationBlocked = Boolean(disabled || loading);
+  const operationBlocked = Boolean(disabled || loading || driveLoading);
+
+  async function handleClick() {
+    if (operationBlocked) return;
+    setConnectError(null);
+
+    if (!isConfigured) {
+      setNotConfiguredOpen(true);
+      return;
+    }
+
+    if (!connected) {
+      const result = await connect();
+      if (result.status === 'connected') {
+        onClick();
+        return;
+      }
+      if (result.status === 'failed') {
+        setConnectError(result.message);
+      }
+      return;
+    }
+
+    onClick();
+  }
 
   return (
-    <>
+    <Stack gap="xs">
       <GoogleDriveButton
         {...props}
-        loading={loading}
+        loading={loading || driveLoading}
         disabled={operationBlocked}
         styles={
           !driveReady && !operationBlocked ? { root: disconnectedRootStyle, ...styles } : styles
         }
-        onClick={() => {
-          if (operationBlocked) return;
-          if (!driveReady) {
-            setPromptOpen(true);
-            return;
-          }
-          onClick();
-        }}
+        onClick={() => void handleClick()}
       />
+      {connectError ? (
+        <Alert color="red" onClose={() => setConnectError(null)} withCloseButton>
+          {connectError}
+        </Alert>
+      ) : null}
       <GoogleDriveConnectPromptModal
-        opened={promptOpen}
-        onClose={() => setPromptOpen(false)}
+        opened={notConfiguredOpen}
+        onClose={() => setNotConfiguredOpen(false)}
         isConfigured={isConfigured}
       />
-    </>
+    </Stack>
   );
 }

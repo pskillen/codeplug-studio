@@ -18,6 +18,11 @@ function formatDriveError(err: unknown): string {
   return String(err);
 }
 
+export type DriveConnectResult =
+  | { status: 'connected' }
+  | { status: 'cancelled' }
+  | { status: 'failed'; message: string };
+
 export function useGoogleDrive(port: GoogleDrivePort = googleDrivePort) {
   const [connected, setConnected] = useState(() => port.isConnected());
   const [accountLabel, setAccountLabel] = useState(() => port.getAccountLabel());
@@ -30,15 +35,22 @@ export function useGoogleDrive(port: GoogleDrivePort = googleDrivePort) {
     setAccountLabel(port.getAccountLabel());
   }, [port]);
 
-  const connect = useCallback(async () => {
+  const connect = useCallback(async (): Promise<DriveConnectResult> => {
     setLoading(true);
     setError(null);
     try {
       await port.connect();
       refresh();
+      return port.isConnected() ? { status: 'connected' } : { status: 'failed', message: 'Could not connect to Google Drive.' };
     } catch (err) {
-      setError(formatDriveError(err));
+      if (err instanceof DriveCancelledError) {
+        refresh();
+        return { status: 'cancelled' };
+      }
+      const message = formatDriveError(err);
+      setError(message);
       refresh();
+      return { status: 'failed', message };
     } finally {
       setLoading(false);
     }

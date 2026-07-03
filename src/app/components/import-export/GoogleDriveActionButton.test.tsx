@@ -12,7 +12,11 @@ import { useGoogleDrive } from '../../hooks/useGoogleDrive.ts';
 
 const mockedUseGoogleDrive = vi.mocked(useGoogleDrive);
 
-function mockDriveState(connected: boolean, isConfigured: boolean) {
+function mockDriveState(
+  connected: boolean,
+  isConfigured: boolean,
+  connect: ReturnType<typeof vi.fn> = vi.fn(),
+) {
   mockedUseGoogleDrive.mockReturnValue({
     port: {} as never,
     connected,
@@ -20,14 +24,14 @@ function mockDriveState(connected: boolean, isConfigured: boolean) {
     loading: false,
     error: null,
     isConfigured,
-    connect: vi.fn(),
+    connect,
     disconnect: vi.fn(),
     refresh: vi.fn(),
   });
 }
 
-function renderButton(connected: boolean, isConfigured = true) {
-  mockDriveState(connected, isConfigured);
+function renderButton(connected: boolean, isConfigured = true, connect = vi.fn()) {
+  mockDriveState(connected, isConfigured, connect);
   return render(
     <MemoryRouter>
       <MantineProvider>
@@ -38,15 +42,56 @@ function renderButton(connected: boolean, isConfigured = true) {
 }
 
 describe('GoogleDriveActionButton', () => {
-  it('opens settings prompt when Drive is not connected', async () => {
-    renderButton(false);
+  it('connects then runs onClick when Drive is not connected', async () => {
+    const onClick = vi.fn();
+    const connect = vi.fn(async () => ({ status: 'connected' as const }));
+    mockDriveState(false, true, connect);
+    render(
+      <MemoryRouter>
+        <MantineProvider>
+          <GoogleDriveActionButton onClick={onClick}>Open from Drive</GoogleDriveActionButton>
+        </MantineProvider>
+      </MemoryRouter>,
+    );
 
     fireEvent.click(screen.getByRole('button', { name: 'Open from Drive' }));
 
     await waitFor(() => {
-      expect(screen.getByRole('heading', { name: 'Google Drive not connected' })).toBeInTheDocument();
+      expect(connect).toHaveBeenCalledOnce();
+      expect(onClick).toHaveBeenCalledOnce();
     });
-    expect(screen.getByRole('link', { name: 'Go to Settings' })).toHaveAttribute('href', '/settings');
+  });
+
+  it('does not run onClick when connect is cancelled', async () => {
+    const onClick = vi.fn();
+    const connect = vi.fn(async () => ({ status: 'cancelled' as const }));
+    mockDriveState(false, true, connect);
+    render(
+      <MemoryRouter>
+        <MantineProvider>
+          <GoogleDriveActionButton onClick={onClick}>Open from Drive</GoogleDriveActionButton>
+        </MantineProvider>
+      </MemoryRouter>,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Open from Drive' }));
+
+    await waitFor(() => {
+      expect(connect).toHaveBeenCalledOnce();
+    });
+    expect(onClick).not.toHaveBeenCalled();
+  });
+
+  it('shows connect error when OAuth fails', async () => {
+    const connect = vi.fn(async () => ({
+      status: 'failed' as const,
+      message: 'Google sign-in failed.',
+    }));
+    renderButton(false, true, connect);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Open from Drive' }));
+
+    expect(await screen.findByText('Google sign-in failed.')).toBeInTheDocument();
   });
 
   it('calls onClick when Drive is connected', () => {
@@ -66,7 +111,7 @@ describe('GoogleDriveActionButton', () => {
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
   });
 
-  it('explains missing OAuth client when not configured', async () => {
+  it('opens not-configured modal when OAuth client is missing', async () => {
     renderButton(false, false);
 
     fireEvent.click(screen.getByRole('button', { name: 'Open from Drive' }));
@@ -74,5 +119,6 @@ describe('GoogleDriveActionButton', () => {
     await waitFor(() => {
       expect(screen.getByText(/not configured for this build/i)).toBeInTheDocument();
     });
+    expect(screen.getByRole('link', { name: 'Go to Settings' })).toHaveAttribute('href', '/settings');
   });
 });
