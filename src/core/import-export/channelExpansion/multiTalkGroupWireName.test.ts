@@ -51,6 +51,19 @@ describe('composeMultiTalkGroupWireName', () => {
     });
     expect(composed).toBe('GB7GL-D Sco TS2');
   });
+
+  it('composes callsign + TG number without timeslot in suffix_tg_number mode', () => {
+    const ch = channel({ callsign: 'GB7GL', name: 'Glasgow' });
+    const tg = talkGroup({ name: 'Scotland TS2', digitalId: 950 });
+    const member = { kind: 'talkGroup' as const, id: tg.id };
+    const composed = composeMultiTalkGroupWireName(ch, member, 'suffix_tg_number', {
+      talkGroups: [tg],
+      digitalContacts: [],
+      memberTimeSlotOverride: 2,
+      siteWireName: 'GB7GL',
+    });
+    expect(composed).toBe('GL 950');
+  });
 });
 
 describe('applyMultiTalkGroupWireNameLimits', () => {

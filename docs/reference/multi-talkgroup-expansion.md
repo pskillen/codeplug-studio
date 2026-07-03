@@ -67,7 +67,7 @@ Controlled by `ExportOptions.multiTalkGroupExportNameMode` (export panel). Defau
 | `callsign_tg`        | `{callsign} {tgLabel}`                      | `GB7GL Scotland TS2`         |
 | `callsign_name_tg`   | `{callsign} {name} {tgLabel}`               | `GB7GL Glasgow Scotland TS2` |
 | `suffix_tg_abbrev`   | `{callsign2} {tgAbbrevOrName}`              | `GL Sco TS2`                 |
-| `suffix_tg_number`   | `{callsign2} {number[/ts]}` — failsafe      | `GL 950/2`                   |
+| `suffix_tg_number`   | `{callsign2} {number}` — failsafe           | `GL 950`                     |
 | `append`             | **Legacy** — `{baseWireName} {memberLabel}` | `GL Glas Scotland TS2`       |
 
 `callsign` includes multi-mode `-F`/`-D` suffix when present on the expanded row.
