@@ -1,4 +1,5 @@
 import type { Channel, ChannelMode, Zone } from '../models/library.ts';
+import { zoneMemberChannelIds } from './zoneMembers.ts';
 import type { LatLon } from './geo.ts';
 import { uniqueLatLon } from './geo.ts';
 
@@ -139,19 +140,19 @@ export function zoneGeolocatedPoints(
   const missing: ZoneMemberMissing[] = [];
   const seenIds = new Set<string>();
 
-  const channelMembers = zone.members.filter((m) => m.kind === 'channel');
+  const channelMembers = zoneMemberChannelIds(zone);
 
-  for (const member of channelMembers) {
-    if (seenIds.has(member.id)) continue;
-    seenIds.add(member.id);
+  for (const memberId of channelMembers) {
+    if (seenIds.has(memberId)) continue;
+    seenIds.add(memberId);
 
-    const ch = plottedById.get(member.id) ?? allChannels.find((c) => c.id === member.id);
+    const ch = plottedById.get(memberId) ?? allChannels.find((c) => c.id === memberId);
     if (!ch) {
-      missing.push({ name: member.id, reason: 'unresolved member' });
+      missing.push({ name: memberId, reason: 'unresolved member' });
       continue;
     }
 
-    if (!plottedById.has(member.id)) {
+    if (!plottedById.has(memberId)) {
       missing.push({
         name: ch.name,
         reason: 'filtered out or missing coordinates',

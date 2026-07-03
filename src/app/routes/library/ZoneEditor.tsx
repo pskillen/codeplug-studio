@@ -9,7 +9,10 @@ import { FormSection } from '../../components/ui/index.ts';
 import ZoneMemberPicker, {
   type ZoneMemberPickerMapFilters,
 } from '../../components/library/ZoneMemberPicker.tsx';
-import { zoneMembersFromSelectedIds } from '../../components/library/zoneMembers.ts';
+import {
+  zoneMembersFromSelectedIds,
+  zoneMemberIdsFromZone,
+} from '../../components/library/zoneMembers.ts';
 import { persistence } from '../../state/persistence.ts';
 import { useEntitySave } from './useEntitySave.ts';
 import EditorActions from './EditorActions.tsx';
@@ -26,7 +29,7 @@ export default function ZoneEditor({
   const base = entity ?? newZone(projectId, '');
   const navigate = useNavigate();
   const [name, setName] = useState(base.name);
-  const [selectedIds, setSelectedIds] = useState<string[]>(base.members.map((m) => m.id));
+  const [selectedIds, setSelectedIds] = useState<string[]>(zoneMemberIdsFromZone(base.members));
   const [comment, setComment] = useState(base.comment);
   const [mapFilters, setMapFilters] = useState<ZoneMemberPickerMapFilters>({
     hiddenMarkerChannelIds: [],

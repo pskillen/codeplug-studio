@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { isSingleFileProjectExportAdapter } from './exportAdapter.ts';
+import { isMultiFileExportAdapter, isSingleFileProjectExportAdapter } from './exportAdapter.ts';
 import { isSingleFileProjectImportAdapter } from './importAdapter.ts';
 import { nativeYamlExportAdapter, nativeYamlImportAdapter } from './formats/native-yaml/adapter.ts';
 import { formatCatalog, getExportAdapter, getImportAdapter } from './registry.ts';
@@ -31,6 +31,17 @@ describe('adapter contracts', () => {
     expect(getExportAdapter('opengd77').delivery).toBe('multi-file');
   });
 
+  it('registry resolves shipped dm32 export adapter', () => {
+    const adapter = getExportAdapter('dm32');
+    expect(adapter.id).toBe('dm32');
+    expect(isMultiFileExportAdapter(adapter)).toBe(true);
+    if (isMultiFileExportAdapter(adapter)) {
+      expect(adapter.delivery).toBe('multi-file');
+      expect(adapter.fileNames).toContain('Channels.csv');
+      expect(adapter.fileNames).toContain('Scan.csv');
+    }
+  });
+
   it('registry throws for planned CPS import adapters', () => {
     expect(() => getImportAdapter('opengd77')).toThrow(/No import adapter/);
     expect(() => getExportAdapter('chirp')).toThrow(/No export adapter/);
@@ -44,5 +55,9 @@ describe('adapter contracts', () => {
     const opengd77 = formatCatalog.find((f) => f.id === 'opengd77');
     expect(opengd77?.importStatus).toBe('planned');
     expect(opengd77?.exportStatus).toBe('shipped');
+
+    const dm32 = formatCatalog.find((f) => f.id === 'dm32');
+    expect(dm32?.exportStatus).toBe('shipped');
+    expect(dm32?.importStatus).toBe('planned');
   });
 });

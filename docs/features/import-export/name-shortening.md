@@ -20,19 +20,21 @@ Export-time channel wire name composition and shortening. Runs at the CPS bounda
 
 `ExportNameSettingsFields` on `/builds/:id/export` persists preferences in browser `localStorage` via `useExportSettings`:
 
-| Key                                               | Effect                                                                                                                                                  |
-| ------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `codeplug-studio.export.shortenNames`             | Enable abbreviation shortening (default on)                                                                                                             |
-| `codeplug-studio.export.maxNameLength`            | Override profile `nameLimit`                                                                                                                            |
-| `codeplug-studio.export.nameModeOverride`         | Default name style when no build wire override is set                                                                                                   |
-| `codeplug-studio.export.useChannelAbbreviation`   | Prefer `Channel.abbreviation` before dictionary shortening (default on)                                                                                 |
-| `codeplug-studio.export.useTalkGroupAbbreviation` | Prefer `TalkGroup.abbreviation` when shortening talk-group wire names (Contacts.csv / FK columns) and for multi-talkgroup channel suffixes (DM32-style) |
+| Key                                                 | Effect                                                                                                                                                  |
+| --------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `codeplug-studio.export.shortenNames`               | Enable abbreviation shortening (default on)                                                                                                             |
+| `codeplug-studio.export.maxNameLength`              | Override profile `nameLimit`                                                                                                                            |
+| `codeplug-studio.export.nameModeOverride`           | Default name style when no build wire override is set                                                                                                   |
+| `codeplug-studio.export.useChannelAbbreviation`     | Prefer `Channel.abbreviation` before dictionary shortening (default on)                                                                                 |
+| `codeplug-studio.export.useTalkGroupAbbreviation`   | Prefer `TalkGroup.abbreviation` when shortening talk-group wire names (Contacts.csv / FK columns) and for multi-talkgroup channel suffixes (DM32-style) |
+| `codeplug-studio.export.exportZoneDerivedScanLists` | Master toggle for DM32 zone-derived `Scan.csv` export (default on); per-zone flags on the Zones page still apply                                        |
 
-Wire preview pages read the same settings when computing `generatedWireName`.
+On DM32 builds, **Export name settings** also shows **use talk group abbreviation** (multi-talkgroup options). Wire preview and export share DM32 expansion: no multi-mode rows; RX-list fan-out when a channel references a multi-member RX group list.
 
 ## Related
 
-- [wire-preview.md](../builds/wire-preview.md) — UI workflow
+- [wire-preview.md](wire-preview.md) — UI workflow
+- [wire-name-composition.md](../builds/wire-name-composition.md) — traits → fields matrix for generated names
 - [dm32-progress.md](dm32-progress.md) — DM32 export epic execution log ([#37](https://github.com/pskillen/codeplug-studio/issues/37))
 - [OpenGD77 profiles](opengd77/README.md) — per-radio `nameLimit`
 - [multi-talkgroup-expansion.md](../../reference/multi-talkgroup-expansion.md) — RX-list fan-out rules

@@ -10,7 +10,7 @@ describe('findReferencesTo', () => {
     const channel = newChannel(projectId, 'Local');
     const zone = {
       ...newZone(projectId, 'Home'),
-      members: [{ kind: 'channel' as const, id: channel.id }],
+      members: [{ channelId: channel.id }],
     };
     const library: Library = { ...emptyLibrary(), channels: [channel], zones: [zone] };
 

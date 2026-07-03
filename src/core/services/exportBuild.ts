@@ -1,7 +1,9 @@
 import type { FormatBuild } from '@core/models/formatBuild.ts';
+import { findZoneGroupingSection } from '@core/domain/zoneGroupingLayout.ts';
 import { getExportAdapter } from '@core/import-export/registry.ts';
 import { isMultiFileExportAdapter } from '@core/import-export/exportAdapter.ts';
 import { buildOpenGd77Zip } from '@core/import-export/formats/opengd77/packageZip.ts';
+import { buildDm32Zip } from '@core/import-export/formats/dm32/packageZip.ts';
 import type { CpsExportOptions, ExportResult, FormatId } from '@core/import-export/types.ts';
 import {
   assemble,
@@ -38,7 +40,12 @@ export function exportBuildFile({
   options,
 }: ExportBuildParams): ExportResult & { content: string; assembled: AssembledBuild } {
   const exportOptions = mergeExportOptions(build, options);
-  const assembled = assemble(build, library, { profileId: exportOptions.profileId });
+  const projection = assemble(build, library, { profileId: exportOptions.profileId });
+  const assembled = {
+    ...projection,
+    library,
+    zoneGrouping: findZoneGroupingSection(build),
+  };
   const adapter = getExportAdapter(build.formatId as FormatId);
   if (!isMultiFileExportAdapter(adapter)) {
     throw new Error(`Format ${build.formatId} does not support multi-file CPS export`);
@@ -54,7 +61,12 @@ export function exportBuildAll({
   options,
 }: Omit<ExportBuildParams, 'fileName'>): ExportBuildAllResult {
   const exportOptions = mergeExportOptions(build, options);
-  const assembled = assemble(build, library, { profileId: exportOptions.profileId });
+  const projection = assemble(build, library, { profileId: exportOptions.profileId });
+  const assembled = {
+    ...projection,
+    library,
+    zoneGrouping: findZoneGroupingSection(build),
+  };
   const adapter = getExportAdapter(build.formatId as FormatId);
   if (!isMultiFileExportAdapter(adapter)) {
     throw new Error(`Format ${build.formatId} does not support multi-file CPS export`);
@@ -79,5 +91,7 @@ export function exportBuildZip({
   options,
 }: Omit<ExportBuildParams, 'fileName'>): ExportBuildAllResult & { zip: Uint8Array } {
   const result = exportBuildAll({ build, library, options });
-  return { ...result, zip: buildOpenGd77Zip(result.files) };
+  const zip =
+    build.formatId === 'dm32' ? buildDm32Zip(result.files) : buildOpenGd77Zip(result.files);
+  return { ...result, zip };
 }

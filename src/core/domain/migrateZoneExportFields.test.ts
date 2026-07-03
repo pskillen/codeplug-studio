@@ -23,7 +23,7 @@ function legacyZone(): Zone & {
     revision: initialRevision(),
     updatedAt: '2026-07-02T10:00:00.000Z',
     name: 'Edinburgh',
-    members: [{ kind: 'channel', id: '22222222-2222-4222-8222-222222222222' }],
+    members: [{ channelId: '22222222-2222-4222-8222-222222222222' }],
     exportScratchChannel: false,
     exportScanList: true,
     scanCarrierFrequencyHz: 430_912_500,

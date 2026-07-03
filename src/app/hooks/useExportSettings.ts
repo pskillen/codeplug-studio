@@ -12,6 +12,8 @@ export const STORAGE_KEY_EXPORT_USE_TG_ABBREVIATION =
   'codeplug-studio.export.useTalkGroupAbbreviation';
 export const STORAGE_KEY_EXPORT_USE_CHANNEL_ABBREVIATION =
   'codeplug-studio.export.useChannelAbbreviation';
+export const STORAGE_KEY_EXPORT_ZONE_DERIVED_SCAN =
+  'codeplug-studio.export.exportZoneDerivedScanLists';
 
 export type ExportNameModeOverride = ChannelExportNameMode;
 
@@ -21,6 +23,7 @@ export interface ExportSettings {
   nameModeOverride: ExportNameModeOverride;
   useTalkGroupAbbreviation: boolean;
   useChannelAbbreviation: boolean;
+  exportZoneDerivedScanLists: boolean;
 }
 
 function readShortenNames(): boolean {
@@ -52,6 +55,10 @@ function readUseTalkGroupAbbreviation(): boolean {
   return localStorage.getItem(STORAGE_KEY_EXPORT_USE_TG_ABBREVIATION) === 'true';
 }
 
+function readExportZoneDerivedScanLists(): boolean {
+  return localStorage.getItem(STORAGE_KEY_EXPORT_ZONE_DERIVED_SCAN) !== 'false';
+}
+
 function readUseChannelAbbreviation(): boolean {
   const saved = localStorage.getItem(STORAGE_KEY_EXPORT_USE_CHANNEL_ABBREVIATION);
   return saved !== 'false';
@@ -64,6 +71,7 @@ function readSettings(): ExportSettings {
     nameModeOverride: readNameModeOverride(),
     useTalkGroupAbbreviation: readUseTalkGroupAbbreviation(),
     useChannelAbbreviation: readUseChannelAbbreviation(),
+    exportZoneDerivedScanLists: readExportZoneDerivedScanLists(),
   };
 }
 
@@ -100,6 +108,7 @@ export function exportOptionsFromSettings(
     nameModeOverride: settings.nameModeOverride,
     useTalkGroupAbbreviation: settings.useTalkGroupAbbreviation,
     useChannelAbbreviation: settings.useChannelAbbreviation,
+    exportZoneDerivedScanLists: settings.exportZoneDerivedScanLists,
   };
 }
 
@@ -135,6 +144,11 @@ export function useExportSettings() {
     publish({ ...getSnapshot(), useChannelAbbreviation: value });
   }, []);
 
+  const setExportZoneDerivedScanLists = useCallback((value: boolean) => {
+    localStorage.setItem(STORAGE_KEY_EXPORT_ZONE_DERIVED_SCAN, String(value));
+    publish({ ...getSnapshot(), exportZoneDerivedScanLists: value });
+  }, []);
+
   return {
     settings,
     shortenNames: settings.shortenNames,
@@ -147,6 +161,8 @@ export function useExportSettings() {
     setUseTalkGroupAbbreviation,
     useChannelAbbreviation: settings.useChannelAbbreviation,
     setUseChannelAbbreviation,
+    exportZoneDerivedScanLists: settings.exportZoneDerivedScanLists,
+    setExportZoneDerivedScanLists,
     exportOptionsFromSettings: (base: CpsExportOptions = {}) =>
       exportOptionsFromSettings(settings, base),
   };

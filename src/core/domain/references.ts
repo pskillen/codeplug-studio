@@ -1,5 +1,6 @@
 import type { ChannelModeProfileDMR, EntityRef, Library } from '../models/library.ts';
 import type { EntityRefKind } from '../models/libraryTypes.ts';
+import { zoneMemberChannelIds } from './zoneMembers.ts';
 
 /** A reference held by one library entity pointing at a target entity. */
 export interface EntityReference {
@@ -34,7 +35,7 @@ export function findReferencesTo(library: Library, target: ReferenceTarget): Ent
 
   // Zones reference channels via members.
   for (const zone of library.zones) {
-    if (zone.members.some((m) => refMatches(m, target))) {
+    if (target.kind === 'channel' && zoneMemberChannelIds(zone).includes(target.id)) {
       refs.push({
         fromKind: 'zone',
         fromId: zone.id,
@@ -119,8 +120,8 @@ export function findDanglingReferences(library: Library): DanglingReference[] {
   const dangling: DanglingReference[] = [];
 
   for (const zone of library.zones) {
-    for (const member of zone.members) {
-      const target: ReferenceTarget = { kind: member.kind, id: member.id };
+    for (const channelId of zoneMemberChannelIds(zone)) {
+      const target: ReferenceTarget = { kind: 'channel', id: channelId };
       if (!hasTarget(target)) {
         dangling.push({
           fromKind: 'zone',

@@ -8,13 +8,13 @@ import type {
   Zone,
 } from '@core/models/library.ts';
 import type { ZoneGroupingLayout } from '@core/models/traitLayout.ts';
-import type { EntityRef } from '@core/models/libraryTypes.ts';
 import {
   isEntityExcluded,
   overrideByEntityId,
   resolveOverrideWireName,
 } from '@core/domain/formatBuildOverrides.ts';
 import { defaultChannelWireName } from '@core/domain/channelNaming.ts';
+import { zoneMemberChannelIds } from '@core/domain/zoneMembers.ts';
 import { migrateFormatBuild } from '@core/domain/migrateFormatBuild.ts';
 import type { Library } from '@core/models/library.ts';
 
@@ -59,6 +59,10 @@ export interface AssembledBuild {
   digitalContacts: AssembledEntity<DigitalContact>[];
   analogContacts: AssembledEntity<AnalogContact>[];
   rxGroupLists: AssembledEntity<RxGroupList>[];
+  /** Set by exportBuild for adapters that need raw library access (e.g. DM32 RX expansion). */
+  library?: LibrarySlice;
+  /** Zone grouping layout section when build has one — used for DM32 scan/scratch export. */
+  zoneGrouping?: ZoneGroupingLayout;
 }
 
 export interface AssembleOptions {
@@ -136,7 +140,12 @@ function expandRefsFromRxLists(
   }
 }
 
-function zoneLinkedChannelIds(build: FormatBuild, library: LibrarySlice): Set<string> {
+function zoneGroupingSections(build: FormatBuild): ZoneGroupingLayout[] {
+  return build.layout.sections.filter((s): s is ZoneGroupingLayout => s.kind === 'zoneGrouping');
+}
+
+/** Channel ids linked via build zone layout and/or library zone membership. */
+export function zoneLinkedChannelIds(build: FormatBuild, library: LibrarySlice): Set<string> {
   const ids = new Set<string>();
   for (const section of zoneGroupingSections(build)) {
     for (const zone of section.zones) {
@@ -146,10 +155,8 @@ function zoneLinkedChannelIds(build: FormatBuild, library: LibrarySlice): Set<st
     }
   }
   for (const zone of library.zones) {
-    for (const member of zone.members) {
-      if (member.kind === 'channel') {
-        ids.add(member.id);
-      }
+    for (const channelId of zoneMemberChannelIds(zone)) {
+      ids.add(channelId);
     }
   }
   return ids;
@@ -181,10 +188,6 @@ function assembleChannels(build: FormatBuild, library: LibrarySlice): AssembledC
     });
   }
   return assembled;
-}
-
-function zoneGroupingSections(build: FormatBuild): ZoneGroupingLayout[] {
-  return build.layout.sections.filter((s): s is ZoneGroupingLayout => s.kind === 'zoneGrouping');
 }
 
 function assembleZones(
@@ -220,9 +223,9 @@ function assembleZones(
   return library.zones
     .filter((zone) => !isEntityExcluded(overrides, zone.id))
     .map((zone) => {
-      const memberChannelIds = zone.members
-        .filter((m: EntityRef) => m.kind === 'channel' && exportedChannelIds.has(m.id))
-        .map((m) => m.id);
+      const memberChannelIds = zoneMemberChannelIds(zone).filter((id) =>
+        exportedChannelIds.has(id),
+      );
       return {
         zoneId: zone.id,
         wireName: resolveOverrideWireName(overrides, zone.id, zone.name),

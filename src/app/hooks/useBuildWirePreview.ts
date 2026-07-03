@@ -3,6 +3,7 @@ import type { FormatBuild } from '@core/models/formatBuild.ts';
 import { isEntityExcluded, overrideByEntityId } from '@core/domain/formatBuildOverrides.ts';
 import type { LibrarySlice } from '@core/services/assemble.ts';
 import {
+  isPreviewRowIncludedInExport,
   overrideFieldForEntityKind,
   previewWireRows,
   type WirePreviewEntityKind,
@@ -10,6 +11,7 @@ import {
 } from '@core/services/previewWireRows.ts';
 import { traitProfileFor } from '@core/models/traits.ts';
 import { getFormatProfiles } from '@core/import-export/formatProfiles.ts';
+import type { FormatId } from '@core/import-export/types.ts';
 import { useExportSettings, exportOptionsFromSettings } from './useExportSettings.ts';
 import { useBuildLayout } from '../routes/builds/BuildLayoutContext.tsx';
 import { useProjects } from '../state/useProjects.ts';
@@ -52,21 +54,49 @@ export function useBuildWirePreview(entityKind: WirePreviewEntityKind) {
   const [library, setLibrary] = useState<LibrarySlice | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [hideNotIncludedInExport, setHideNotIncludedInExport] = useState(false);
 
-  const exportOptions = useMemo(
-    () => exportOptionsFromSettings(settings, { profileId: build.profileId, expandModes: true }),
-    [settings, build.profileId],
-  );
+  const exportOptions = useMemo(() => {
+    const base = {
+      profileId: build.profileId,
+      expandModes: build.formatId !== 'dm32',
+      ...(build.formatId === 'dm32' ? { expandRxGroupLists: true } : {}),
+    };
+    return exportOptionsFromSettings(settings, base);
+  }, [settings, build.formatId, build.profileId]);
 
-  const rows = useMemo(() => {
+  const allRows = useMemo(() => {
     if (!library) return [];
     return previewWireRows(build, library, entityKind, exportOptions);
   }, [build, library, entityKind, exportOptions]);
 
+  const rows = useMemo(() => {
+    if (!hideNotIncludedInExport || !library) return allRows;
+    return allRows.filter((row) => isPreviewRowIncludedInExport(build, library, entityKind, row));
+  }, [allRows, hideNotIncludedInExport, build, library, entityKind]);
+
+  const hiddenRowCount = allRows.length - rows.length;
+
+  const hasWirePreviewEntities = useMemo(() => {
+    if (!library) return false;
+    switch (entityKind) {
+      case 'channel':
+        return library.channels.length > 0;
+      case 'zone':
+        return library.zones.length > 0;
+      case 'talkGroup':
+        return library.talkGroups.length > 0;
+      case 'contact':
+        return library.digitalContacts.length + library.analogContacts.length > 0;
+      case 'rxGroupList':
+        return library.rxGroupLists.length > 0;
+    }
+  }, [library, entityKind]);
+
   const nameLimit = useMemo(() => {
     const profile = traitProfileFor(build.profileId);
-    if (!profile || profile.formatId !== 'opengd77') return undefined;
-    const options = getFormatProfiles('opengd77');
+    if (!profile) return undefined;
+    const options = getFormatProfiles(profile.formatId as FormatId);
     return options.find((option) => option.profileId === build.profileId)?.nameLimit;
   }, [build.profileId]);
 
@@ -136,6 +166,11 @@ export function useBuildWirePreview(entityKind: WirePreviewEntityKind) {
   return {
     build,
     rows,
+    allRows,
+    hiddenRowCount,
+    hideNotIncludedInExport,
+    setHideNotIncludedInExport,
+    hasWirePreviewEntities,
     nameLimit,
     error,
     saving,

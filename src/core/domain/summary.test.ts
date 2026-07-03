@@ -48,7 +48,7 @@ describe('summariseLibrary', () => {
   it('reports dangling references as integrity warnings', () => {
     const zone = {
       ...newZone(projectId, 'Ghosts'),
-      members: [{ kind: 'channel' as const, id: 'missing' }],
+      members: [{ channelId: 'missing' }],
     };
     const library: Library = { ...emptyLibrary(), zones: [zone] };
 

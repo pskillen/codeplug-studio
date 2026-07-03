@@ -2,6 +2,7 @@ import {
   ActionIcon,
   Anchor,
   Group,
+  Stack,
   Switch,
   Table,
   Text,
@@ -143,6 +144,27 @@ function WireNameOverrideInput({
   );
 }
 
+function WirePreviewDisplayCell({ row }: { row: WirePreviewRow }) {
+  return (
+    <Stack gap={4}>
+      <Text size="sm">{row.displayLabel}</Text>
+      {row.displayDetails?.map((line) => (
+        <Text key={line.label} size="xs" c="dimmed">
+          {line.label}: {line.value}
+        </Text>
+      ))}
+      {row.expansionNote && !row.displayDetails?.length ? (
+        <Text size="xs" c="dimmed">
+          {row.expansionNote}
+        </Text>
+      ) : null}
+      <Anchor component={Link} to={libraryEditPathForWirePreviewRow(row)} size="xs">
+        Edit in library
+      </Anchor>
+    </Stack>
+  );
+}
+
 export default function WirePreviewTable({
   rows,
   nameLimit,
@@ -181,8 +203,8 @@ export default function WirePreviewTable({
       <Table.Thead>
         <Table.Tr>
           <Table.Th>Include</Table.Th>
-          <Table.Th>Display name</Table.Th>
-          <Table.Th>Wire name</Table.Th>
+          <Table.Th>Library name</Table.Th>
+          <Table.Th>Export name</Table.Th>
         </Table.Tr>
       </Table.Thead>
       <Table.Tbody>
@@ -196,15 +218,7 @@ export default function WirePreviewTable({
               />
             </Table.Td>
             <Table.Td>
-              <Text size="sm">{row.displayLabel}</Text>
-              {row.expansionNote ? (
-                <Text size="xs" c="dimmed">
-                  {row.expansionNote}
-                </Text>
-              ) : null}
-              <Anchor component={Link} to={libraryEditPathForWirePreviewRow(row)} size="xs">
-                Edit in library
-              </Anchor>
+              <WirePreviewDisplayCell row={row} />
             </Table.Td>
             <Table.Td>
               <WireNameOverrideInput

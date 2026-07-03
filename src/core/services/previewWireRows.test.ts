@@ -4,7 +4,17 @@ import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import type { Channel } from '@core/models/library.ts';
 import { parseProjectDocument } from '@core/import-export/formats/native-yaml/parse.ts';
-import { previewWireRows } from './previewWireRows.ts';
+import {
+  newChannel,
+  newFormatBuild,
+  newRxGroupList,
+  newTalkGroup,
+} from '@core/domain/factories.ts';
+import {
+  previewWireRows,
+  includedPreviewWireRows,
+  isPreviewRowIncludedInExport,
+} from './previewWireRows.ts';
 
 const fixtureDir = join(
   dirname(fileURLToPath(import.meta.url)),
@@ -191,5 +201,229 @@ describe('previewWireRows', () => {
     });
     const row = rows.find((r) => r.libraryEntityId === channels[1]!.id);
     expect(row?.generatedWireName).toBe("GB3MT M'flt");
+  });
+
+  it('adds channel and talk group display details for DM32 RX-list fan-out rows', () => {
+    const projectId = 'proj-dm32-preview';
+    const tg1 = { ...newTalkGroup(projectId, 'Scotland', 2355), id: 'tg-scotland' };
+    const tg2 = { ...newTalkGroup(projectId, 'Local', 9), id: 'tg-local' };
+    const rgl = {
+      ...newRxGroupList(projectId, 'Scotland'),
+      id: 'rgl-scotland',
+      members: [
+        { ref: { kind: 'talkGroup' as const, id: tg1.id } },
+        { ref: { kind: 'talkGroup' as const, id: tg2.id } },
+      ],
+    };
+    const channel: Channel = {
+      ...newChannel(projectId, 'GB7GL Repeater', 'GB7GL'),
+      id: 'ch-gb7gl',
+      rxFrequency: 430_850_000,
+      txFrequency: 438_450_000,
+      modeProfiles: [
+        {
+          mode: 'dmr',
+          colourCode: 7,
+          timeslot: 1,
+          dmrId: null,
+          contactRef: null,
+          rxGroupListId: rgl.id,
+        },
+      ],
+    };
+    const build = newFormatBuild(projectId, 'dm32-baofeng-dm32uv', 'DM32 preview');
+    const library = {
+      channels: [channel],
+      zones: [],
+      talkGroups: [tg1, tg2],
+      digitalContacts: [],
+      analogContacts: [],
+      rxGroupLists: [rgl],
+    };
+
+    const rows = previewWireRows(build, library, 'channel', { profileId: build.profileId });
+    const fanOutRows = rows.filter((row) => row.displayDetails?.length);
+    expect(fanOutRows).toHaveLength(2);
+    expect(fanOutRows[0]?.displayDetails).toEqual([
+      { label: 'Channel', value: 'GB7GL Repeater' },
+      { label: 'Talk group', value: 'Scotland (2355) · Slot 1' },
+    ]);
+    expect(fanOutRows[1]?.displayDetails).toEqual([
+      { label: 'Channel', value: 'GB7GL Repeater' },
+      { label: 'Talk group', value: 'Local (9) · Slot 1' },
+    ]);
+  });
+
+  it('keeps library-zoned channels when exportUnlinkedChannels is false', () => {
+    const projectId = 'proj-zone-link';
+    const zonedChannel = {
+      ...newChannel(projectId, 'Zoned', 'GB3ZZ'),
+      id: 'ch-zoned',
+    };
+    const orphanChannel = {
+      ...newChannel(projectId, 'Orphan', 'GB9YY'),
+      id: 'ch-orphan',
+    };
+    const zone = {
+      id: 'zone-edinburgh',
+      projectId,
+      revision: 1,
+      updatedAt: '2026-01-01T00:00:00.000Z',
+      name: 'Edinburgh',
+      comment: '',
+      members: [{ channelId: zonedChannel.id }],
+    };
+    const build = {
+      ...newFormatBuild(projectId, 'opengd77-1701', 'Zone link test'),
+      exportUnlinkedChannels: false,
+      layout: { sections: [] },
+    };
+    const library = {
+      channels: [zonedChannel, orphanChannel],
+      zones: [zone],
+      talkGroups: [],
+      digitalContacts: [],
+      analogContacts: [],
+      rxGroupLists: [],
+    };
+
+    const included = includedPreviewWireRows(build, library, 'channel');
+    expect(included.map((row) => row.libraryEntityId)).toEqual([zonedChannel.id]);
+  });
+
+  it('keeps library-zoned channels with legacy zone member refs when exportUnlinkedChannels is false', () => {
+    const projectId = 'proj-legacy-zone';
+    const zonedChannel = {
+      ...newChannel(projectId, 'Legacy zoned', 'GB3ZZ'),
+      id: 'ch-legacy-zoned',
+    };
+    const zone = {
+      id: 'zone-legacy',
+      projectId,
+      revision: 1,
+      updatedAt: '2026-01-01T00:00:00.000Z',
+      name: 'Legacy zone',
+      comment: '',
+      members: [{ kind: 'channel', id: zonedChannel.id } as unknown as { channelId: string }],
+    };
+    const build = {
+      ...newFormatBuild(projectId, 'opengd77-1701', 'Legacy zone test'),
+      exportUnlinkedChannels: false,
+      layout: { sections: [] },
+    };
+    const library = {
+      channels: [zonedChannel],
+      zones: [zone],
+      talkGroups: [],
+      digitalContacts: [],
+      analogContacts: [],
+      rxGroupLists: [],
+    };
+
+    const included = includedPreviewWireRows(build, library, 'channel');
+    expect(included.map((row) => row.libraryEntityId)).toEqual([zonedChannel.id]);
+  });
+
+  it('wire preview hide toggle shows orphan channels when off and hides when on', () => {
+    const projectId = 'proj-hide-toggle';
+    const zonedChannel = {
+      ...newChannel(projectId, 'Zoned', 'GB3ZZ'),
+      id: 'ch-zoned',
+    };
+    const orphanChannel = {
+      ...newChannel(projectId, 'Orphan', 'GB9YY'),
+      id: 'ch-orphan',
+    };
+    const zone = {
+      id: 'zone-edinburgh',
+      projectId,
+      revision: 1,
+      updatedAt: '2026-01-01T00:00:00.000Z',
+      name: 'Edinburgh',
+      comment: '',
+      members: [{ channelId: zonedChannel.id }],
+    };
+    const build = {
+      ...newFormatBuild(projectId, 'opengd77-1701', 'Hide toggle test'),
+      exportUnlinkedChannels: false,
+      layout: { sections: [] },
+    };
+    const library = {
+      channels: [zonedChannel, orphanChannel],
+      zones: [zone],
+      talkGroups: [],
+      digitalContacts: [],
+      analogContacts: [],
+      rxGroupLists: [],
+    };
+
+    const allRows = previewWireRows(build, library, 'channel');
+    const visibleWhenHidden = allRows.filter((row) =>
+      isPreviewRowIncludedInExport(build, library, 'channel', row),
+    );
+
+    expect(allRows.map((row) => row.libraryEntityId).sort()).toEqual(['ch-orphan', 'ch-zoned']);
+    expect(visibleWhenHidden.map((row) => row.libraryEntityId)).toEqual([zonedChannel.id]);
+    expect(allRows.find((row) => row.libraryEntityId === orphanChannel.id)?.expansionNote).toBe(
+      'Not linked to a zone',
+    );
+  });
+
+  it('lists unlinked DM32 channels in preview so hide toggle can reveal them', () => {
+    const projectId = 'proj-dm32-orphan';
+    const zonedChannel = {
+      ...newChannel(projectId, 'Zoned', 'GB3ZZ'),
+      id: 'ch-zoned',
+      modeProfiles: [
+        {
+          mode: 'fm' as const,
+          squelch: 50,
+          rxTone: 'none' as const,
+          txTone: 'none' as const,
+          bandwidthKHz: 12.5,
+        },
+      ],
+    };
+    const orphanChannel = {
+      ...newChannel(projectId, 'Orphan', 'GB9YY'),
+      id: 'ch-orphan',
+      modeProfiles: [
+        {
+          mode: 'fm' as const,
+          squelch: 50,
+          rxTone: 'none' as const,
+          txTone: 'none' as const,
+          bandwidthKHz: 12.5,
+        },
+      ],
+    };
+    const zone = {
+      id: 'zone-edinburgh',
+      projectId,
+      revision: 1,
+      updatedAt: '2026-01-01T00:00:00.000Z',
+      name: 'Edinburgh',
+      comment: '',
+      members: [{ channelId: zonedChannel.id }],
+    };
+    const build = {
+      ...newFormatBuild(projectId, 'dm32-baofeng-dm32uv', 'DM32 hide toggle'),
+      exportUnlinkedChannels: false,
+      layout: { sections: [] },
+    };
+    const library = {
+      channels: [zonedChannel, orphanChannel],
+      zones: [zone],
+      talkGroups: [],
+      digitalContacts: [],
+      analogContacts: [],
+      rxGroupLists: [],
+    };
+
+    const allRows = previewWireRows(build, library, 'channel');
+    expect(allRows.some((row) => row.libraryEntityId === orphanChannel.id)).toBe(true);
+    expect(allRows.find((row) => row.libraryEntityId === orphanChannel.id)?.expansionNote).toBe(
+      'Not linked to a zone',
+    );
   });
 });

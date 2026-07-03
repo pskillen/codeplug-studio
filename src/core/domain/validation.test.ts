@@ -34,7 +34,7 @@ describe('validation', () => {
     const library = {
       ...emptyLibrary(),
       channels: [channel],
-      zones: [{ ...zone, members: [{ kind: 'channel' as const, id: channel.id }] }],
+      zones: [{ ...zone, members: [{ channelId: channel.id }] }],
     };
     validateEntityRef({ kind: 'channel', id: channel.id }, library);
   });

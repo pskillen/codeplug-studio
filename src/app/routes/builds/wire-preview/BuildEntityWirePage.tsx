@@ -1,13 +1,13 @@
-import { Button, Group, Modal, Stack, Text } from '@mantine/core';
-import { Link } from 'react-router-dom';
+import type { ReactNode } from 'react';
+import { Button, Group, Modal, Stack, Switch, Text } from '@mantine/core';
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import ExportNameModeSelect from '../../../components/builds/ExportNameModeSelect.tsx';
 import UseChannelAbbreviationSwitch from '../../../components/builds/UseChannelAbbreviationSwitch.tsx';
 import WirePreviewTable from '../../../components/builds/WirePreviewTable.tsx';
 import { FormPage } from '../../../components/ui/index.ts';
 import { useBuildWirePreview } from '../../../hooks/useBuildWirePreview.ts';
 import { useUnsavedNavigationGuard } from '../../../hooks/useUnsavedNavigationGuard.ts';
-import { useBuildLayout } from '../BuildLayoutContext.tsx';
 import type { WirePreviewEntityKind } from '@core/services/previewWireRows.ts';
 
 export interface BuildEntityWirePageProps {
@@ -17,6 +17,7 @@ export interface BuildEntityWirePageProps {
   showExportNameMode?: boolean;
   showChannelAbbreviation?: boolean;
   clickableDefaultWireName?: boolean;
+  beforeTable?: ReactNode;
 }
 
 export default function BuildEntityWirePage({
@@ -26,10 +27,20 @@ export default function BuildEntityWirePage({
   showExportNameMode = false,
   showChannelAbbreviation = false,
   clickableDefaultWireName = true,
+  beforeTable,
 }: BuildEntityWirePageProps) {
-  const { build } = useBuildLayout();
-  const { rows, nameLimit, error, setRowExcluded, setRowWireName } =
-    useBuildWirePreview(entityKind);
+  const {
+    build,
+    rows,
+    hiddenRowCount,
+    hideNotIncludedInExport,
+    setHideNotIncludedInExport,
+    hasWirePreviewEntities,
+    nameLimit,
+    error,
+    setRowExcluded,
+    setRowWireName,
+  } = useBuildWirePreview(entityKind);
   const [hasUnsavedWireNames, setHasUnsavedWireNames] = useState(false);
   const { modalOpen, stay, leave } = useUnsavedNavigationGuard(hasUnsavedWireNames);
 
@@ -60,6 +71,22 @@ export default function BuildEntityWirePage({
           <ExportNameModeSelect description="Fallback style for channels without an explicit wire name override on this build." />
         ) : null}
         {showChannelAbbreviation ? <UseChannelAbbreviationSwitch /> : null}
+        {beforeTable}
+        {hasWirePreviewEntities ? (
+          <Stack gap={4}>
+            <Switch
+              label="Hide items not to be included in export"
+              checked={hideNotIncludedInExport}
+              onChange={(event) => setHideNotIncludedInExport(event.currentTarget.checked)}
+            />
+            <Text size="xs" c="dimmed">
+              Respects include toggles on this page and{' '}
+              <Link to={`/builds/${build.id}/export`}>Export inclusion</Link> on the export page for
+              orphan channels, talk groups, and RX group lists.
+              {hideNotIncludedInExport && hiddenRowCount > 0 ? ` (${hiddenRowCount} hidden)` : null}
+            </Text>
+          </Stack>
+        ) : null}
         <WirePreviewTable
           rows={rows}
           nameLimit={nameLimit}

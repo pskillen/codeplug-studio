@@ -34,7 +34,7 @@ export interface MultiTalkGroupWireNameContext {
   nameModeOverride?: ChannelExportNameMode;
   /** Expanded row channel wire name — supplies mode suffix and name-only callsign fallback. */
   siteWireName?: string;
-  /** Per RGL member slot hint for `suffix_tg_number` token. */
+  /** Per RGL member slot hint — used for `Channels.csv` Time Slot, not wire name composition. */
   memberTimeSlotOverride?: DMRTimeSlot | null;
 }
 
@@ -83,11 +83,8 @@ function siteCallsignSuffix(channel: Channel, ctx: MultiTalkGroupWireNameContext
   return callsignSuffix(token);
 }
 
-function talkGroupNumberToken(tg: TalkGroup, timeSlotOverride?: DMRTimeSlot | null): string {
-  const number = String(tg.digitalId);
-  const ts = timeSlotOverride != null ? String(timeSlotOverride) : null;
-  if (number && ts) return `${number}/${ts}`;
-  return number;
+function talkGroupNumberToken(tg: TalkGroup): string {
+  return String(tg.digitalId);
 }
 
 function channelNameQualifier(channel: Channel, ctx: MultiTalkGroupWireNameContext): string {
@@ -158,7 +155,7 @@ export function composeMultiTalkGroupWireName(
         return label ? joinParts(suffix, label) : suffix || name;
       }
       case 'suffix_tg_number': {
-        const token = talkGroupNumberToken(tg, ctx.memberTimeSlotOverride);
+        const token = talkGroupNumberToken(tg);
         return token ? joinParts(suffix, token) : joinParts(suffix, tg.name);
       }
       default:
@@ -204,7 +201,7 @@ export function multiTalkGroupProtectedSuffix(
     if (!tg) return undefined;
 
     if (mode === 'suffix_tg_number') {
-      const token = talkGroupNumberToken(tg, ctx.memberTimeSlotOverride);
+      const token = talkGroupNumberToken(tg);
       return token ? ` ${token}` : ` ${tg.name}`;
     }
 

@@ -1,5 +1,6 @@
 import type { Channel } from '@core/models/library.ts';
 import type { CpsExportOptions } from '@core/import-export/types.ts';
+import { getDm32Profile } from '@core/import-export/formats/dm32/profiles.ts';
 import { getOpenGd77Profile } from '@core/import-export/formats/opengd77/profiles.ts';
 import {
   channelPickForWireExport,
@@ -15,7 +16,13 @@ export function resolveMaxNameLength(
 ): number | undefined {
   if (options?.maxNameLength != null) return options.maxNameLength;
   if (!profileId) return undefined;
-  return getOpenGd77Profile(profileId).nameLimit;
+  if (profileId.startsWith('dm32-')) return getDm32Profile(profileId).nameLimit;
+  if (profileId.startsWith('opengd77-')) return getOpenGd77Profile(profileId).nameLimit;
+  try {
+    return getOpenGd77Profile(profileId).nameLimit;
+  } catch {
+    return getDm32Profile(profileId).nameLimit;
+  }
 }
 
 export function composeExportWireName(channel: Channel, options?: CpsExportOptions): string {
