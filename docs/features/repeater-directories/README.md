@@ -18,8 +18,8 @@ Repeater search is **not** a top-level nav item — it lives under library workf
 | ---------------------------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------- |
 | UK repeater (ETCC) client          | Shipped  | Callsign, locator, band; town via geocode → locator ([#43](https://github.com/pskillen/codeplug-studio/issues/43))                    |
 | UK unified search UI               | Shipped  | Auto-detect query, filters, use-my-location, bulk add, simplex display ([#43](https://github.com/pskillen/codeplug-studio/issues/43)) |
-| UK search results map              | Shipped  | Results map on add-from-ukrepeater ([#118](https://github.com/pskillen/codeplug-studio/issues/118))                                   |
-| UK post-add channel link           | Shipped  | Open channel editor from results row after add ([#118](https://github.com/pskillen/codeplug-studio/issues/118))                       |
+| Directory search results map       | Shipped  | All directory searches with geolocated listings ([#118](https://github.com/pskillen/codeplug-studio/issues/118))                      |
+| Library channel link on callsign   | Shipped  | Callsign links to channel editor when callsign matches library ([#118](https://github.com/pskillen/codeplug-studio/issues/118))       |
 | BrandMeister client                | Shipped  | Callsign search ([#44](https://github.com/pskillen/codeplug-studio/issues/44))                                                        |
 | BrandMeister shared search shell   | Shipped  | Same results table; UK-only controls hidden ([#44](https://github.com/pskillen/codeplug-studio/issues/44))                            |
 | Update existing (callsign match)   | Shipped  | Outline button → shared comparison dialog                                                                                             |

@@ -128,16 +128,20 @@ export default function RepeaterDirectorySearch({
   );
 
   const mapChannels = useMemo(() => {
-    if (!isUk || !activeProjectId || search.listings.length === 0) return [];
+    if (!activeProjectId || search.listings.length === 0) return [];
     return search.listings
       .filter((listing) => listing.location != null)
       .map((listing) => repeaterListingToChannel(listing, activeProjectId, mapOptions));
-  }, [isUk, activeProjectId, search.listings, mapOptions]);
+  }, [activeProjectId, search.listings, mapOptions]);
 
-  const mapSkippedCount = useMemo(() => {
-    if (!isUk) return 0;
-    return search.listings.filter((listing) => listing.location == null).length;
-  }, [isUk, search.listings]);
+  const mapSkippedCount = useMemo(
+    () => search.listings.filter((listing) => listing.location == null).length,
+    [search.listings],
+  );
+
+  function libraryChannelIdForRow(row: (typeof rows)[number]): string | null {
+    return row.existing?.id ?? addedChannelIds[row.key] ?? null;
+  }
 
   function recordListingAdded(key: string, channelId: string) {
     setAdded((prev) => new Set(prev).add(key));
@@ -254,9 +258,6 @@ export default function RepeaterDirectorySearch({
           : 'No channels were added.',
       );
       setSelected(new Set());
-      if (addedCount > 0 && !isUk) {
-        navigate('/library/channels');
-      }
     } finally {
       setAdding(false);
       setTgLookupProgress(null);
@@ -369,22 +370,22 @@ export default function RepeaterDirectorySearch({
 
       {rows.length > 0 ? (
         <PageSection title="Results">
-          {isUk ? (
-            <Stack gap="xs" mb="md">
+          <Stack gap="xs" mb="md">
+            {mapChannels.length > 0 ? (
               <CodeplugMap
                 channels={mapChannels}
                 zones={[]}
                 allChannels={mapChannels}
                 height={360}
               />
-              {mapSkippedCount > 0 ? (
-                <Text size="sm" c="dimmed">
-                  {mapSkippedCount} listing{mapSkippedCount === 1 ? '' : 's'} without coordinates
-                  not shown on map.
-                </Text>
-              ) : null}
-            </Stack>
-          ) : null}
+            ) : null}
+            {mapSkippedCount > 0 ? (
+              <Text size="sm" c="dimmed">
+                {mapSkippedCount} listing{mapSkippedCount === 1 ? '' : 's'} without coordinates not
+                shown on map.
+              </Text>
+            ) : null}
+          </Stack>
           <ScrollArea>
             <Table highlightOnHover>
               <Table.Thead>
@@ -418,6 +419,7 @@ export default function RepeaterDirectorySearch({
                   const { listing } = row;
                   const isAdded = added.has(row.key);
                   const disabled = Boolean(row.existing);
+                  const libraryChannelId = libraryChannelIdForRow(row);
                   return (
                     <Table.Tr key={row.key} opacity={disabled ? 0.6 : 1}>
                       <Table.Td>
@@ -429,7 +431,17 @@ export default function RepeaterDirectorySearch({
                         />
                       </Table.Td>
                       <Table.Td>
-                        <Text fw={600}>{listing.callsign}</Text>
+                        {libraryChannelId ? (
+                          <Anchor
+                            component={Link}
+                            to={`/library/channels/${libraryChannelId}`}
+                            fw={600}
+                          >
+                            {listing.callsign}
+                          </Anchor>
+                        ) : (
+                          <Text fw={600}>{listing.callsign}</Text>
+                        )}
                       </Table.Td>
                       <Table.Td>
                         <BandPillsForRepeaterListing
@@ -470,12 +482,12 @@ export default function RepeaterDirectorySearch({
                           >
                             Update existing
                           </Button>
-                        ) : isAdded && addedChannelIds[row.key] ? (
+                        ) : isAdded && libraryChannelId ? (
                           <Button
                             size="compact-sm"
                             variant="light"
                             component={Link}
-                            to={`/library/channels/${addedChannelIds[row.key]}`}
+                            to={`/library/channels/${libraryChannelId}`}
                           >
                             Open channel
                           </Button>
