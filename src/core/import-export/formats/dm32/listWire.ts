@@ -34,10 +34,7 @@ export function rxGroupListExportMemberNames(
 
 export function zoneExportMemberNames(
   memberChannelIds: string[],
-  expansionByChannelId: Map<
-    string,
-    Array<{ wireName: string; sourceChannelId: string }>
-  >,
+  expansionByChannelId: Map<string, Array<{ wireName: string; sourceChannelId: string }>>,
 ): string[] {
   const names: string[] = [];
   for (const channelId of memberChannelIds) {

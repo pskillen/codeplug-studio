@@ -17,16 +17,16 @@ export function minimalDm32ExportBuild(): FormatBuild {
   const build = newFormatBuild(PROJECT_ID, 'dm32-baofeng-dm32uv', 'DM32 minimal');
   return {
     ...build,
-    contactOverrides: [
-      { libraryEntityId: 'dc-disconnect' },
-      { libraryEntityId: 'dtmf-1' },
-    ],
+    contactOverrides: [{ libraryEntityId: 'dc-disconnect' }, { libraryEntityId: 'dtmf-1' }],
   };
 }
 
 /** Library slice that serialises to {@link minimalDm32Bundle}. */
 export function minimalDm32ExportLibrary(): LibrarySlice {
-  const tgBmScotland: TalkGroup = { ...newTalkGroup(PROJECT_ID, 'BM Scotland', 2355), id: 'tg-bm-scotland' };
+  const tgBmScotland: TalkGroup = {
+    ...newTalkGroup(PROJECT_ID, 'BM Scotland', 2355),
+    id: 'tg-bm-scotland',
+  };
   const tgLocal: TalkGroup = { ...newTalkGroup(PROJECT_ID, 'Local', 9), id: 'tg-local' };
 
   const rxScotland: RxGroupList = {

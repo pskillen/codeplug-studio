@@ -371,8 +371,7 @@ export default function CodeplugMap({
                     <div>
                       <strong>{zh.zone.name}</strong>
                       <br />
-                      {zoneMemberChannelIds(zh.zone).length} zone members ·{' '}
-                      {zh.shapeNote}
+                      {zoneMemberChannelIds(zh.zone).length} zone members · {zh.shapeNote}
                       {zh.missing.length ? (
                         <>
                           <br />

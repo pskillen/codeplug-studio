@@ -6,9 +6,7 @@ import {
 } from '@core/domain/formatBuildOverrides.ts';
 import { channelDisplayLabel, defaultChannelWireName } from '@core/domain/channelNaming.ts';
 import { sanitiseAsciiWireString } from '@core/import-export/sanitiseAsciiWireString.ts';
-import {
-  expandAllDm32ChannelsForExport,
-} from '@core/import-export/formats/dm32/channelExpansion.ts';
+import { expandAllDm32ChannelsForExport } from '@core/import-export/formats/dm32/channelExpansion.ts';
 import {
   expandChannelWireRows,
   modeExportNameSuffix,
@@ -148,12 +146,7 @@ export function previewWireRows(
           expandRxGroupLists: _options?.expandRxGroupLists ?? true,
           profileId: _options?.profileId ?? build.profileId,
         };
-        const expanded = expandAllDm32ChannelsForExport(
-          assembled,
-          library,
-          dm32Options,
-          warnings,
-        );
+        const expanded = expandAllDm32ChannelsForExport(assembled, library, dm32Options, warnings);
         for (const generated of expanded) {
           const channel = library.channels.find((c) => c.id === generated.sourceChannelId);
           if (!channel) continue;

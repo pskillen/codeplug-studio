@@ -122,7 +122,9 @@ export function deriveZoneDerivedScanLists(
     );
 
     if (memberWireNames.length === 0) {
-      warnings.push(`Zone "${assembledZone.wireName}" has no scan-eligible members; scan list skipped`);
+      warnings.push(
+        `Zone "${assembledZone.wireName}" has no scan-eligible members; scan list skipped`,
+      );
       continue;
     }
 

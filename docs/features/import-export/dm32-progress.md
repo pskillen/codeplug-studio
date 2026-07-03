@@ -74,3 +74,18 @@
 ## Next
 
 Import epic [#112](https://github.com/pskillen/codeplug-studio/issues/112) — DM32 CPS import (Phase 5b).
+
+---
+
+## Post-epic — wire preview polish (PR #137 follow-up, 2026-07-03)
+
+**Status:** Complete on `115/pskil/dm32-export`
+
+| Slice                        | Commit                                                            | Notes                                                          |
+| ---------------------------- | ----------------------------------------------------------------- | -------------------------------------------------------------- |
+| DM32 fan-out display details | `feat(ui): DM32 wire preview expansion display details`           | Channel + TG sub-lines under display name                      |
+| Export hide toggle           | `feat(ui): hide wire preview rows omitted from export`            | Per-entity table switch + export inclusion explainer           |
+| Library zone linkage         | `fix(builds): honour library zone members in export hide filter`  | Legacy `Zone.members` refs; `zoneLinkedChannelIds`             |
+| Multi-TG wire token          | `fix(multi-tg): omit timeslot from suffix number wire token`      | `suffix_tg_number` uses TG ID only                             |
+| Wire name composition hub    | `docs(builds): add wire name composition reference hub`           | [wire-name-composition.md](../builds/wire-name-composition.md) |
+| Hide toggle filter fix       | `fix(builds): wire preview hide toggle filters per-row inclusion` | `isPreviewRowIncludedInExport`; DM32 orphan rows in preview    |

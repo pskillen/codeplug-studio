@@ -48,12 +48,12 @@ Per-build CPS export is on `/builds/:id/export` (`ExportBuildCpsPanel`) — not 
 
 ## Documentation map
 
-| Doc                                  | Topic                                  |
-| ------------------------------------ | -------------------------------------- |
-| [profiles.md](profiles.md)           | Radio profile picker                   |
-| [wire-preview.md](wire-preview.md)   | Wire name overrides and preview routes |
+| Doc                                                  | Topic                                         |
+| ---------------------------------------------------- | --------------------------------------------- |
+| [profiles.md](profiles.md)                           | Radio profile picker                          |
+| [wire-preview.md](wire-preview.md)                   | Wire name overrides and preview routes        |
 | [wire-name-composition.md](wire-name-composition.md) | Traits → fields for auto-generated wire names |
-| [zone-grouping.md](zone-grouping.md) | Build zone layout editor               |
+| [zone-grouping.md](zone-grouping.md)                 | Build zone layout editor                      |
 
 ## Persistence
 

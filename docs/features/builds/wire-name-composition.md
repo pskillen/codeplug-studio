@@ -21,12 +21,12 @@ Preview and export share the same options via `useExportSettings` (browser `loca
 
 Before any expansion, `defaultChannelWireName` / `composeChannelWireName` uses **`Channel.callsign`**, **`Channel.name`**, and the active **export name mode**:
 
-| Export name mode (`ChannelExportNameMode`) | Fields used | Example |
-| --- | --- | --- |
-| `callsign_name` (default) | callsign + name | `GB7GL Glasgow` |
-| `callsign_only` | callsign, else name | `GB7GL` |
-| `name_only` | name, else callsign | `Glasgow` |
-| `callsign_suffix` | last 2 chars of callsign + name | `GL Glasgow` |
+| Export name mode (`ChannelExportNameMode`) | Fields used                     | Example         |
+| ------------------------------------------ | ------------------------------- | --------------- |
+| `callsign_name` (default)                  | callsign + name                 | `GB7GL Glasgow` |
+| `callsign_only`                            | callsign, else name             | `GB7GL`         |
+| `name_only`                                | name, else callsign             | `Glasgow`       |
+| `callsign_suffix`                          | last 2 chars of callsign + name | `GL Glasgow`    |
 
 **Operator controls:** fallback mode on wire preview (channels) and export panel (`nameModeOverride` in localStorage). Per-channel **`Channel.abbreviation`** is used during shortening, not in the initial compose step.
 
@@ -36,12 +36,12 @@ Before any expansion, `defaultChannelWireName` / `composeChannelWireName` uses *
 
 Traits come from the build **profile** (`traitProfileFor`). Only one expansion stack applies per format build.
 
-| Trait | Profiles | What expands | Wire name effect |
-| --- | --- | --- | --- |
-| *(none)* | CHIRP flat memory | Single row per channel | Base name only |
-| `mxnChannelExpansion` | DM32 | RX group list → one row per TG/contact member | Multi-TG compose modes (below); **no** `-F`/`-D` suffix rows |
-| `multiTalkGroupPerChannel` | OpenGD77 | Native RGL on wire — **no fan-out** | Base name only; TG list is a separate CPS file |
-| Multi-mode (implicit when `modeProfiles.length > 1` and `expandModes`) | OpenGD77 | One row per mode profile | Appends mode suffix to base name |
+| Trait                                                                  | Profiles          | What expands                                  | Wire name effect                                             |
+| ---------------------------------------------------------------------- | ----------------- | --------------------------------------------- | ------------------------------------------------------------ |
+| _(none)_                                                               | CHIRP flat memory | Single row per channel                        | Base name only                                               |
+| `mxnChannelExpansion`                                                  | DM32              | RX group list → one row per TG/contact member | Multi-TG compose modes (below); **no** `-F`/`-D` suffix rows |
+| `multiTalkGroupPerChannel`                                             | OpenGD77          | Native RGL on wire — **no fan-out**           | Base name only; TG list is a separate CPS file               |
+| Multi-mode (implicit when `modeProfiles.length > 1` and `expandModes`) | OpenGD77          | One row per mode profile                      | Appends mode suffix to base name                             |
 
 DM32 does **not** use OpenGD77 multi-mode expansion in preview or export (`expandModes: false`). Dual FM+DMR on one frequency becomes one DM32 row (Fixed Digital / Fixed Analog semantics at serialise).
 
@@ -49,10 +49,10 @@ DM32 does **not** use OpenGD77 multi-mode expansion in preview or export (`expan
 
 When `expandModes` is true and a channel has multiple `modeProfiles`:
 
-| Profile category | Suffix appended to composed base | Example base → wire |
-| --- | --- | --- |
-| Analog (`fm`, `am`, `ssb-*`) | `-F` | `GB7GL` → `GB7GL-F` |
-| Digital (`dmr`, `ysf`, …) | `-D` | `GB7GL` → `GB7GL-D` |
+| Profile category             | Suffix appended to composed base | Example base → wire |
+| ---------------------------- | -------------------------------- | ------------------- |
+| Analog (`fm`, `am`, `ssb-*`) | `-F`                             | `GB7GL` → `GB7GL-F` |
+| Digital (`dmr`, `ysf`, …)    | `-D`                             | `GB7GL` → `GB7GL-D` |
 
 Override keys for expansion rows: `${channelId}:${modeSuffix}` (e.g. `…3333:-D`).
 
@@ -62,14 +62,14 @@ See [OpenGD77 multi-mode](../../reference/opengd77/multi-mode.md).
 
 When a DMR profile has `rxGroupListId` with expandable members and `expandRxGroupLists` is true:
 
-| `multiTalkGroupExportNameMode` | Channel fields | Talk group / contact fields | Example |
-| --- | --- | --- | --- |
-| `callsign_tg_abbrev` (default) | callsign (+ mode tag from site wire if present) | `TalkGroup.abbreviation` or name | `GB7GL Sco TS2` |
-| `callsign_tg` | callsign | TG name | `GB7GL Scotland TS2` |
-| `callsign_name_tg` | callsign + `Channel.name` | TG name | `GB7GL Glasgow Scotland TS2` |
-| `suffix_tg_abbrev` | callsign **suffix** (last 2) | TG abbrev or name | `GL Sco TS2` |
-| `suffix_tg_number` | callsign suffix | `TalkGroup.digitalId` only | `GL 950` |
-| `append` (legacy) | prior site wire name | member label via `talkGroupMemberSuffix` | `GL Glas Scotland TS2` |
+| `multiTalkGroupExportNameMode` | Channel fields                                  | Talk group / contact fields              | Example                      |
+| ------------------------------ | ----------------------------------------------- | ---------------------------------------- | ---------------------------- |
+| `callsign_tg_abbrev` (default) | callsign (+ mode tag from site wire if present) | `TalkGroup.abbreviation` or name         | `GB7GL Sco TS2`              |
+| `callsign_tg`                  | callsign                                        | TG name                                  | `GB7GL Scotland TS2`         |
+| `callsign_name_tg`             | callsign + `Channel.name`                       | TG name                                  | `GB7GL Glasgow Scotland TS2` |
+| `suffix_tg_abbrev`             | callsign **suffix** (last 2)                    | TG abbrev or name                        | `GL Sco TS2`                 |
+| `suffix_tg_number`             | callsign suffix                                 | `TalkGroup.digitalId` only               | `GL 950`                     |
+| `append` (legacy)              | prior site wire name                            | member label via `talkGroupMemberSuffix` | `GL Glas Scotland TS2`       |
 
 Private contact members use contact **name** where TG label would appear. **`RxGroupListMember.timeSlotOverride`** affects `Channels.csv` Time Slot on the expanded row — not the composed wire name.
 
@@ -81,12 +81,12 @@ See [multi-talkgroup-expansion](../../reference/multi-talkgroup-expansion.md).
 
 When `shortenNames` is true and the name exceeds the profile **`nameLimit`** (or `maxNameLength` override):
 
-| Entity | Prefer before dictionary | Protected suffix |
-| --- | --- | --- |
-| Channel (base) | `Channel.abbreviation` if `useChannelAbbreviation` | Multi-mode `-F`/`-D` preserved |
-| Channel (multi-TG row) | TG abbrev in TG-first modes | Trailing TG token protected in `callsign_tg_*` / `suffix_tg_*` modes |
-| Talk group | `TalkGroup.abbreviation` if `useTalkGroupAbbreviation` | — |
-| Zone / contact / RX list | Dictionary / vowel squeeze on name | — |
+| Entity                   | Prefer before dictionary                               | Protected suffix                                                     |
+| ------------------------ | ------------------------------------------------------ | -------------------------------------------------------------------- |
+| Channel (base)           | `Channel.abbreviation` if `useChannelAbbreviation`     | Multi-mode `-F`/`-D` preserved                                       |
+| Channel (multi-TG row)   | TG abbrev in TG-first modes                            | Trailing TG token protected in `callsign_tg_*` / `suffix_tg_*` modes |
+| Talk group               | `TalkGroup.abbreviation` if `useTalkGroupAbbreviation` | —                                                                    |
+| Zone / contact / RX list | Dictionary / vowel squeeze on name                     | —                                                                    |
 
 Dictionary: `dictionary.generated.ts` (`npm run generate:abbreviations`).
 
@@ -94,12 +94,12 @@ See [name-shortening.md](../import-export/name-shortening.md).
 
 ## Other entity wire names
 
-| Entity | Default generated name | Override field |
-| --- | --- | --- |
-| Zone | `Zone.name` | `zoneOverrides.wireName` |
-| Talk group | `TalkGroup.name` (then shorten) | `talkGroupOverrides.wireName` |
-| Digital / analog contact | contact `name` | `contactOverrides.wireName` |
-| RX group list | list `name` | `rxGroupListOverrides.wireName` |
+| Entity                   | Default generated name          | Override field                  |
+| ------------------------ | ------------------------------- | ------------------------------- |
+| Zone                     | `Zone.name`                     | `zoneOverrides.wireName`        |
+| Talk group               | `TalkGroup.name` (then shorten) | `talkGroupOverrides.wireName`   |
+| Digital / analog contact | contact `name`                  | `contactOverrides.wireName`     |
+| RX group list            | list `name`                     | `rxGroupListOverrides.wireName` |
 
 Talk groups and contacts also carry **reference notes** in wire preview when not used by exported channels (`Not referenced by exported channels`).
 

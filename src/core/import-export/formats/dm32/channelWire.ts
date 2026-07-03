@@ -1,4 +1,9 @@
-import type { Channel, ChannelModeProfile, ChannelModeProfileAnalog, ChannelModeProfileDMR } from '@core/models/library.ts';
+import type {
+  Channel,
+  ChannelModeProfile,
+  ChannelModeProfileAnalog,
+  ChannelModeProfileDMR,
+} from '@core/models/library.ts';
 import type { AssembledBuild } from '@core/services/assemble.ts';
 import type { CpsExportOptions } from '@core/import-export/types.ts';
 import { CHANNEL_COL } from './columns.ts';
@@ -41,7 +46,15 @@ export function serialiseDm32ChannelRow(
   const profiles =
     sourceChannel.modeProfiles.length > 0
       ? sourceChannel.modeProfiles
-      : [{ mode: 'fm' as const, squelch: null, rxTone: 'none' as const, txTone: 'none' as const, bandwidthKHz: null }];
+      : [
+          {
+            mode: 'fm' as const,
+            squelch: null,
+            rxTone: 'none' as const,
+            txTone: 'none' as const,
+            bandwidthKHz: null,
+          },
+        ];
   const fmProfile = profiles.find(isAnalogProfile);
   const dmrProfile = profiles.find(isDmrProfile);
 

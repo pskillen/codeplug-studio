@@ -69,9 +69,7 @@ function carrierExpandedRow(carrier: SyntheticScanCarrier): ExpandedDm32ChannelR
   };
 }
 
-function serialiseScanCsv(
-  scanExport: ReturnType<typeof deriveZoneDerivedScanLists>,
-): string {
+function serialiseScanCsv(scanExport: ReturnType<typeof deriveZoneDerivedScanLists>): string {
   const rows = scanExport.scanRows.map((row) => padRow(SCAN_HEADERS, row.values));
   return formatCsv(SCAN_HEADERS, rows);
 }

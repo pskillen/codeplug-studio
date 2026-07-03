@@ -13,24 +13,24 @@ Product-level overview of how Codeplug Studio projects **library + build** into 
 
 ## Output files
 
-| File | Source |
-| --- | --- |
-| `Channels.csv` | Expanded channel rows (RX-list fan-out; `expandModes: false`) |
-| `Zones.csv` | Assembled zones; member names match expanded channel wire names |
-| `Talkgroups.csv` | Assembled talk groups with profile name limits |
-| `Contacts.csv` | Digital contacts (private call wire shape) |
-| `RXGroupLists.csv` | Assembled RX group lists |
-| `DTMFContacts.csv` | Analog contacts |
-| `Scan.csv` | Zone-derived scan synthesis ([#129](../../issues/129)) when enabled |
+| File               | Source                                                              |
+| ------------------ | ------------------------------------------------------------------- |
+| `Channels.csv`     | Expanded channel rows (RX-list fan-out; `expandModes: false`)       |
+| `Zones.csv`        | Assembled zones; member names match expanded channel wire names     |
+| `Talkgroups.csv`   | Assembled talk groups with profile name limits                      |
+| `Contacts.csv`     | Digital contacts (private call wire shape)                          |
+| `RXGroupLists.csv` | Assembled RX group lists                                            |
+| `DTMFContacts.csv` | Analog contacts                                                     |
+| `Scan.csv`         | Zone-derived scan synthesis ([#129](../../issues/129)) when enabled |
 
 ## Expansion rules (DM32-specific)
 
-| Option | Value | Effect |
-| --- | --- | --- |
-| `expandModes` | `false` | Multi-mode channels stay on one row (`Fixed Analog` / `Fixed Digital`) |
-| `expandRxGroupLists` | `true` | One channel row per RX-list member |
-| `skipExpandWhenTxContactSet` | `true` | Skip fan-out when channel has both TX contact and RX list |
-| Non-expandable lists | `ALL` | Native CPS list — no fan-out |
+| Option                       | Value   | Effect                                                                 |
+| ---------------------------- | ------- | ---------------------------------------------------------------------- |
+| `expandModes`                | `false` | Multi-mode channels stay on one row (`Fixed Analog` / `Fixed Digital`) |
+| `expandRxGroupLists`         | `true`  | One channel row per RX-list member                                     |
+| `skipExpandWhenTxContactSet` | `true`  | Skip fan-out when channel has both TX contact and RX list              |
+| Non-expandable lists         | `ALL`   | Native CPS list — no fan-out                                           |
 
 ## Documented loss
 

@@ -72,9 +72,7 @@ export function useBuildWirePreview(entityKind: WirePreviewEntityKind) {
 
   const rows = useMemo(() => {
     if (!hideNotIncludedInExport || !library) return allRows;
-    return allRows.filter((row) =>
-      isPreviewRowIncludedInExport(build, library, entityKind, row),
-    );
+    return allRows.filter((row) => isPreviewRowIncludedInExport(build, library, entityKind, row));
   }, [allRows, hideNotIncludedInExport, build, library, entityKind]);
 
   const hiddenRowCount = allRows.length - rows.length;

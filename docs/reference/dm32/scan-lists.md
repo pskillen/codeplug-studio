@@ -18,17 +18,17 @@ Member filter: `includeInScanList !== false` and `Channel.scanSkip !== true`. Ca
 
 ## Wire columns (`Scan.csv`)
 
-| Column | Export value |
-| --- | --- |
-| `Scan Name` | Zone wire name |
-| `CTC Scan Mode` | `Detection CTC` |
-| `Scan Tx Mode` | `Last Actived Channel` |
-| `Hang Time` | `5.0` |
-| `Priority Channel 1/2` | `None` |
-| `Designed Channel` | Carrier wire name |
-| `Priority Sweep Time` | `500` |
-| `Talkback` | `0` |
-| `Channel Members` | Pipe-separated expanded channel wire names |
+| Column                 | Export value                               |
+| ---------------------- | ------------------------------------------ |
+| `Scan Name`            | Zone wire name                             |
+| `CTC Scan Mode`        | `Detection CTC`                            |
+| `Scan Tx Mode`         | `Last Actived Channel`                     |
+| `Hang Time`            | `5.0`                                      |
+| `Priority Channel 1/2` | `None`                                     |
+| `Designed Channel`     | Carrier wire name                          |
+| `Priority Sweep Time`  | `500`                                      |
+| `Talkback`             | `0`                                        |
+| `Channel Members`      | Pipe-separated expanded channel wire names |
 
 ## Import
 

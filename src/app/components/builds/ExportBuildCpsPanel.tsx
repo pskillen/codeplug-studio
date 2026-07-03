@@ -240,9 +240,7 @@ export default function ExportBuildCpsPanel({ build }: ExportBuildCpsPanelProps)
             label="Export zone-derived scan lists (Scan.csv)"
             description="Requires per-zone scan export enabled on the Zones page."
             checked={exportZoneDerivedScanLists}
-            onChange={(event) =>
-              setExportZoneDerivedScanLists(event.currentTarget.checked)
-            }
+            onChange={(event) => setExportZoneDerivedScanLists(event.currentTarget.checked)}
           />
         </Stack>
       ) : null}

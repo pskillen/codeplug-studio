@@ -1,8 +1,4 @@
-import type {
-  Channel,
-  ChannelModeProfile,
-  ChannelModeProfileDMR,
-} from '@core/models/library.ts';
+import type { Channel, ChannelModeProfile, ChannelModeProfileDMR } from '@core/models/library.ts';
 import type { EntityRef, ChannelMode } from '@core/models/libraryTypes.ts';
 import type { CpsExportOptions } from '@core/import-export/types.ts';
 import type { AssembledBuild } from '@core/services/assemble.ts';
@@ -69,7 +65,10 @@ function rxListMembersForChannel(
   _channel: Channel,
   dmrProfile: ChannelModeProfileDMR | null,
   assembled: AssembledBuild,
-): Array<{ ref: EntityRef; timeSlotOverride?: import('@core/models/libraryTypes.ts').DMRTimeSlot | null }> {
+): Array<{
+  ref: EntityRef;
+  timeSlotOverride?: import('@core/models/libraryTypes.ts').DMRTimeSlot | null;
+}> {
   if (!dmrProfile?.rxGroupListId) return [];
   const list = assembled.rxGroupLists.find((r) => r.entity.id === dmrProfile.rxGroupListId);
   if (!list) return [];

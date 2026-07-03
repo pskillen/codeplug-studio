@@ -25,9 +25,7 @@ describe('zoneMemberChannelIds', () => {
   it('normalises legacy EntityRef members on read', () => {
     expect(
       zoneMemberChannelIds(
-        zone([
-          { kind: 'channel', id: 'ch-legacy' } as unknown as Zone['members'][number],
-        ]),
+        zone([{ kind: 'channel', id: 'ch-legacy' } as unknown as Zone['members'][number]]),
       ),
     ).toEqual(['ch-legacy']);
   });

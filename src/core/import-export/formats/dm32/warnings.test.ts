@@ -48,7 +48,12 @@ describe('collectDm32ExportWarnings', () => {
     const library = minimalDm32ExportLibrary();
     const base = assembled();
     const warnings: string[] = [];
-    const expanded = expandAllDm32ChannelsForExport(base, library, { profileId: base.profileId }, warnings);
+    const expanded = expandAllDm32ChannelsForExport(
+      base,
+      library,
+      { profileId: base.profileId },
+      warnings,
+    );
     expect(expanded.length).toBeLessThanOrEqual(1000);
     const capped = collectDm32ExportWarnings(base, library, {
       profileId: base.profileId,

@@ -9,7 +9,10 @@ import { FormSection } from '../../components/ui/index.ts';
 import ZoneMemberPicker, {
   type ZoneMemberPickerMapFilters,
 } from '../../components/library/ZoneMemberPicker.tsx';
-import { zoneMembersFromSelectedIds, zoneMemberIdsFromZone } from '../../components/library/zoneMembers.ts';
+import {
+  zoneMembersFromSelectedIds,
+  zoneMemberIdsFromZone,
+} from '../../components/library/zoneMembers.ts';
 import { persistence } from '../../state/persistence.ts';
 import { useEntitySave } from './useEntitySave.ts';
 import EditorActions from './EditorActions.tsx';

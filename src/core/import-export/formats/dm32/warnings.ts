@@ -14,7 +14,9 @@ export function collectDm32ExportWarnings(
   library: LibrarySlice,
   options?: CpsExportOptions,
 ): string[] {
-  const profile = getDm32Profile(options?.profileId ?? assembled.profileId ?? DEFAULT_DM32_PROFILE_ID);
+  const profile = getDm32Profile(
+    options?.profileId ?? assembled.profileId ?? DEFAULT_DM32_PROFILE_ID,
+  );
   const warnings: string[] = [];
   const maxNameLength = options?.maxNameLength ?? profile.nameLimit;
   const expanded = expandAllDm32ChannelsForExport(assembled, library, options, warnings);

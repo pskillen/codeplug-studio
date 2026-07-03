@@ -77,17 +77,13 @@ export default function BuildEntityWirePage({
             <Switch
               label="Hide items not to be included in export"
               checked={hideNotIncludedInExport}
-              onChange={(event) =>
-                setHideNotIncludedInExport(event.currentTarget.checked)
-              }
+              onChange={(event) => setHideNotIncludedInExport(event.currentTarget.checked)}
             />
             <Text size="xs" c="dimmed">
               Respects include toggles on this page and{' '}
-              <Link to={`/builds/${build.id}/export`}>Export inclusion</Link> on the export page
-              for orphan channels, talk groups, and RX group lists.
-              {hideNotIncludedInExport && hiddenRowCount > 0
-                ? ` (${hiddenRowCount} hidden)`
-                : null}
+              <Link to={`/builds/${build.id}/export`}>Export inclusion</Link> on the export page for
+              orphan channels, talk groups, and RX group lists.
+              {hideNotIncludedInExport && hiddenRowCount > 0 ? ` (${hiddenRowCount} hidden)` : null}
             </Text>
           </Stack>
         ) : null}

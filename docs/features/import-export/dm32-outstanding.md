@@ -26,8 +26,10 @@ Items **skipped**, **incomplete**, or **discovered during execution** — not th
 ## Manual verify (export epic)
 
 - [ ] DM32 build → Export panel shows multi-TG options + zone-derived scan toggle
-- [ ] Wire preview channels page shows RX-list fan-out rows with expansion notes
+- [ ] Wire preview channels page shows RX-list fan-out rows with **displayDetails** (channel + talk group)
+- [ ] Wire preview **Hide items not to be included in export** reveals/hides orphans per export inclusion flags
 - [ ] Build zones page: per-zone export flags + per-member scan inclusion (DM32 only)
 - [ ] Download ZIP: six core CSVs + `Scan.csv` when zone scan enabled; `Scan List` FKs wired
 - [ ] Master scan toggle off → no scan lists despite zone flags
 - [ ] OpenGD77 export regression unchanged
+- [ ] Multi-TG `suffix_tg_number` wire names omit timeslot (ID only)

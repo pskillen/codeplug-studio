@@ -4,8 +4,17 @@ import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import type { Channel } from '@core/models/library.ts';
 import { parseProjectDocument } from '@core/import-export/formats/native-yaml/parse.ts';
-import { newChannel, newFormatBuild, newRxGroupList, newTalkGroup } from '@core/domain/factories.ts';
-import { previewWireRows, includedPreviewWireRows, isPreviewRowIncludedInExport } from './previewWireRows.ts';
+import {
+  newChannel,
+  newFormatBuild,
+  newRxGroupList,
+  newTalkGroup,
+} from '@core/domain/factories.ts';
+import {
+  previewWireRows,
+  includedPreviewWireRows,
+  isPreviewRowIncludedInExport,
+} from './previewWireRows.ts';
 
 const fixtureDir = join(
   dirname(fileURLToPath(import.meta.url)),
@@ -365,12 +374,28 @@ describe('previewWireRows', () => {
     const zonedChannel = {
       ...newChannel(projectId, 'Zoned', 'GB3ZZ'),
       id: 'ch-zoned',
-      modeProfiles: [{ mode: 'fm' as const, squelch: 50, rxTone: 'none' as const, txTone: 'none' as const, bandwidthKHz: 12.5 }],
+      modeProfiles: [
+        {
+          mode: 'fm' as const,
+          squelch: 50,
+          rxTone: 'none' as const,
+          txTone: 'none' as const,
+          bandwidthKHz: 12.5,
+        },
+      ],
     };
     const orphanChannel = {
       ...newChannel(projectId, 'Orphan', 'GB9YY'),
       id: 'ch-orphan',
-      modeProfiles: [{ mode: 'fm' as const, squelch: 50, rxTone: 'none' as const, txTone: 'none' as const, bandwidthKHz: 12.5 }],
+      modeProfiles: [
+        {
+          mode: 'fm' as const,
+          squelch: 50,
+          rxTone: 'none' as const,
+          txTone: 'none' as const,
+          bandwidthKHz: 12.5,
+        },
+      ],
     };
     const zone = {
       id: 'zone-edinburgh',
@@ -397,8 +422,8 @@ describe('previewWireRows', () => {
 
     const allRows = previewWireRows(build, library, 'channel');
     expect(allRows.some((row) => row.libraryEntityId === orphanChannel.id)).toBe(true);
-    expect(
-      allRows.find((row) => row.libraryEntityId === orphanChannel.id)?.expansionNote,
-    ).toBe('Not linked to a zone');
+    expect(allRows.find((row) => row.libraryEntityId === orphanChannel.id)?.expansionNote).toBe(
+      'Not linked to a zone',
+    );
   });
 });

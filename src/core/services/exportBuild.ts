@@ -92,8 +92,6 @@ export function exportBuildZip({
 }: Omit<ExportBuildParams, 'fileName'>): ExportBuildAllResult & { zip: Uint8Array } {
   const result = exportBuildAll({ build, library, options });
   const zip =
-    build.formatId === 'dm32'
-      ? buildDm32Zip(result.files)
-      : buildOpenGd77Zip(result.files);
+    build.formatId === 'dm32' ? buildDm32Zip(result.files) : buildOpenGd77Zip(result.files);
   return { ...result, zip };
 }

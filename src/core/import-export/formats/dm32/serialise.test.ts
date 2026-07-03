@@ -4,7 +4,13 @@ import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import type { Channel } from '@core/models/library.ts';
 import type { FormatBuild } from '@core/models/formatBuild.ts';
-import { newChannel, newFormatBuild, newRxGroupList, newTalkGroup, newZone } from '@core/domain/factories.ts';
+import {
+  newChannel,
+  newFormatBuild,
+  newRxGroupList,
+  newTalkGroup,
+  newZone,
+} from '@core/domain/factories.ts';
 import { seedZoneGroupingFromLibrary } from '@core/domain/zoneGroupingLayout.ts';
 import { assemble, type LibrarySlice } from '@core/services/assemble.ts';
 import { serialiseDm32Files } from './serialise.ts';
@@ -35,9 +41,7 @@ function fmChannel(name: string, overrides: Partial<Channel> = {}): Channel {
     ...newChannel(PROJECT_ID, name),
     rxFrequency: 430_012_500,
     txFrequency: 430_012_500,
-    modeProfiles: [
-      { mode: 'fm', squelch: 50, rxTone: 'none', txTone: 'none', bandwidthKHz: 12.5 },
-    ],
+    modeProfiles: [{ mode: 'fm', squelch: 50, rxTone: 'none', txTone: 'none', bandwidthKHz: 12.5 }],
     ...overrides,
   };
 }

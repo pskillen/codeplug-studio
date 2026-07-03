@@ -7,10 +7,10 @@ Export-time synthesis of **scan lists**, **scan carrier channels**, and channel 
 
 ## Two-level gating
 
-| Layer | Where | Purpose |
-| --- | --- | --- |
-| **Build layout** | `ZoneGroupingLayout` zone entry | Per-zone `exportScanList`, `scanCarrierFrequencyHz` |
-| **Export options** | DM32 export panel | Master `exportZoneDerivedScanLists` (default on) |
+| Layer              | Where                           | Purpose                                             |
+| ------------------ | ------------------------------- | --------------------------------------------------- |
+| **Build layout**   | `ZoneGroupingLayout` zone entry | Per-zone `exportScanList`, `scanCarrierFrequencyHz` |
+| **Export options** | DM32 export panel               | Master `exportZoneDerivedScanLists` (default on)    |
 
 ```text
 emitScan(zone) = layout.exportScanList === true
@@ -35,11 +35,11 @@ When scan export is enabled for a zone:
 
 ## Format behaviour
 
-| Target | Zone scan flags |
-| --- | --- |
-| **DM32** | Honoured when master toggle on |
-| **OpenGD77** | Ignored (zone = scan) |
-| **CHIRP** | Ignored |
+| Target       | Zone scan flags                |
+| ------------ | ------------------------------ |
+| **DM32**     | Honoured when master toggle on |
+| **OpenGD77** | Ignored (zone = scan)          |
+| **CHIRP**    | Ignored                        |
 
 ## Related
 

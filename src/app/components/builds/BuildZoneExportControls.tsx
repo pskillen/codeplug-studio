@@ -1,12 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import {
-  Accordion,
-  Group,
-  NumberInput,
-  Stack,
-  Switch,
-  Text,
-} from '@mantine/core';
+import { Accordion, Group, NumberInput, Stack, Switch, Text } from '@mantine/core';
 import type { FormatBuild } from '@core/models/formatBuild.ts';
 import type { Zone, ZoneMemberEntry } from '@core/models/library.ts';
 import type { ZoneGroupingLayout } from '@core/models/traitLayout.ts';
@@ -63,10 +56,7 @@ export default function BuildZoneExportControls() {
     };
   }, [activeProjectId, build.updatedAt]);
 
-  const layout = useMemo(
-    () => (library ? ensureLayout(build, library) : null),
-    [build, library],
-  );
+  const layout = useMemo(() => (library ? ensureLayout(build, library) : null), [build, library]);
 
   const zoneById = useMemo(
     () => new Map((library?.zones ?? []).map((zone) => [zone.id, zone])),
@@ -87,7 +77,11 @@ export default function BuildZoneExportControls() {
       );
       setSaving(false);
       if (!result.ok) {
-        setError(result.reason === 'revision_conflict' ? 'Build changed elsewhere — reload.' : 'Save failed.');
+        setError(
+          result.reason === 'revision_conflict'
+            ? 'Build changed elsewhere — reload.'
+            : 'Save failed.',
+        );
       } else {
         setError(null);
       }
@@ -119,7 +113,9 @@ export default function BuildZoneExportControls() {
           prev
             ? {
                 ...prev,
-                zones: prev.zones.map((row) => (row.id === zone.id ? { ...zone, members, revision: result.revision } : row)),
+                zones: prev.zones.map((row) =>
+                  row.id === zone.id ? { ...zone, members, revision: result.revision } : row,
+                ),
               }
             : prev,
         );
