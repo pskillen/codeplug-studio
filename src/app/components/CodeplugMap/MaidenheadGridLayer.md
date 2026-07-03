@@ -6,8 +6,8 @@ Leaflet overlay that draws Maidenhead locator grid lines and cell labels inside 
 
 ## Props
 
-| Prop   | Type                 | Notes                                      |
-| ------ | -------------------- | ------------------------------------------ |
+| Prop   | Type                 | Notes                                       |
+| ------ | -------------------- | ------------------------------------------- |
 | `mode` | `MaidenheadGridMode` | User max precision: `off`, `4`, `6`, or `8` |
 
 ## Usage

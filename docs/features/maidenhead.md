@@ -28,13 +28,14 @@ The library channel editor (`/library/channels/:id`) includes a **Location** sec
 
 ### Channel map
 
-The [map](map/README.md) plots channels that have a stored location. Operator **You** marker appears when **Show my location** is used on library list maps.
+The [map](map/README.md) plots channels that have a stored location. Operator **You** marker appears when **Show my location** is used on library list maps. An optional [Maidenhead grid overlay](map/maidenhead-grid.md) is enabled from Settings ([#45](https://github.com/pskillen/codeplug-studio/issues/45)).
 
 ## Code anchors
 
 | Path                                                     | Role                                                               |
 | -------------------------------------------------------- | ------------------------------------------------------------------ |
 | `src/core/domain/maidenhead.ts`                          | `locatorToCoords`, `coordsToLocator`, `isValidLocator` (4–10 char) |
+| `src/core/domain/maidenheadGrid.ts`                      | Grid line/label geometry for map overlay                           |
 | `src/app/routes/reference/MaidenheadReferencePage.tsx`   | Full converter UI                                                  |
 | `src/app/components/MapLocationPicker/`                  | Click/drag map picker                                              |
 | `src/integrations/geocode/`                              | Photon + Mapbox geocode client                                     |
@@ -67,10 +68,6 @@ The [map](map/README.md) plots channels that have a stored location. Operator **
 4. Click map / drag marker / **Use my location** → fields stay in sync.
 5. Geocode a postcode (Photon); set Mapbox token in Settings and retry with Mapbox.
 6. With a project active, open a channel → enter `IO91WM` or click the map → save → reload and confirm locator + coordinates persist.
-
-## Known gaps
-
-- No Maidenhead grid overlay on the reference or channel editor map picker.
 
 ## Related
 

@@ -139,7 +139,8 @@
 
 .maidenhead-grid-label {
   background: color-mix(in srgb, var(--mantine-color-body, #fff) 82%, transparent);
-  border: 1px solid color-mix(in srgb, var(--mantine-color-default-border, #ced4da) 70%, transparent);
+  border: 1px solid
+    color-mix(in srgb, var(--mantine-color-default-border, #ced4da) 70%, transparent);
   border-radius: 4px;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
   color: var(--mantine-color-dimmed, #495057);
