@@ -7,6 +7,8 @@ import {
   replaceZoneGroupingSection,
   seedZoneGroupingFromLibrary,
 } from './zoneGroupingLayout.ts';
+import { zoneMemberChannelIds } from './zoneMembers.ts';
+import { migrateZoneMemberEntries } from './migrateZoneMembers.ts';
 
 export interface LegacyZoneExportFields {
   exportScratchChannel: boolean;
@@ -50,7 +52,7 @@ function applyLegacyToZoneEntry(
 }
 
 function channelIdsFromZone(zone: Zone): string[] {
-  return zone.members.filter((member) => member.kind === 'channel').map((member) => member.id);
+  return zoneMemberChannelIds(zone);
 }
 
 export function migrateZoneExportFieldsToBuildLayout(
@@ -123,22 +125,23 @@ export function migrateDm32ProfileId(formatBuilds: FormatBuild[]): FormatBuild[]
 
 /** Normalise legacy library zone export fields and profile ids on load/import. */
 export function migrateProjectAggregate(aggregate: ProjectAggregate): ProjectAggregate {
+  const withMembers = migrateZoneMemberEntries(aggregate);
   const library: Library = {
-    channels: aggregate.channels,
-    zones: aggregate.zones,
-    talkGroups: aggregate.talkGroups,
-    digitalContacts: aggregate.digitalContacts,
-    analogContacts: aggregate.analogContacts,
-    rxGroupLists: aggregate.rxGroupLists,
+    channels: withMembers.channels,
+    zones: withMembers.zones,
+    talkGroups: withMembers.talkGroups,
+    digitalContacts: withMembers.digitalContacts,
+    analogContacts: withMembers.analogContacts,
+    rxGroupLists: withMembers.rxGroupLists,
   };
 
   const { library: migratedLibrary, formatBuilds } = migrateZoneExportFieldsToBuildLayout(
     library,
-    aggregate.formatBuilds,
+    withMembers.formatBuilds,
   );
 
   return {
-    meta: aggregate.meta,
+    meta: withMembers.meta,
     channels: migratedLibrary.channels,
     zones: migratedLibrary.zones,
     talkGroups: migratedLibrary.talkGroups,

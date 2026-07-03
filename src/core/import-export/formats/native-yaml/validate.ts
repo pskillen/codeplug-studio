@@ -29,8 +29,9 @@ import {
   libraryEntityIds,
   validateEntityRef,
   validateRxGroupListId,
-  validateZoneMemberRefs,
+  validateZoneMembers,
 } from '@core/domain/validation.ts';
+import { normalizeZoneMemberEntry } from '@core/domain/zoneMembers.ts';
 import { migrateFormatBuild } from '@core/domain/migrateFormatBuild.ts';
 import { migrateProjectAggregate } from '@core/domain/migrateZoneExportFields.ts';
 import {
@@ -228,8 +229,8 @@ function parseZone(raw: unknown, index: number, studioSchemaVersion: number): Zo
   const zone: Zone = {
     ...parsePersistableRow(record, `library.zones[${index}]`),
     name: expectString(record.name, `library.zones[${index}].name`),
-    members: expectArray(record.members, `library.zones[${index}].members`).map((member, i) =>
-      parseEntityRef(member, `library.zones[${index}].members[${i}]`),
+    members: expectArray(record.members, `library.zones[${index}].members`).map((member) =>
+      normalizeZoneMemberEntry(member),
     ),
     comment: expectString(record.comment, `library.zones[${index}].comment`),
   };
@@ -611,7 +612,7 @@ function validateForeignKeys(library: Library, formatBuilds: FormatBuild[]): voi
 
   for (const zone of library.zones) {
     try {
-      validateZoneMemberRefs(zone.id, zone.members, library);
+      validateZoneMembers(zone.id, zone.members, library);
     } catch (error) {
       throw new NativeYamlImportError(error instanceof Error ? error.message : String(error));
     }
@@ -741,11 +742,12 @@ export function validateDocument(raw: unknown): ProjectAggregate {
   const studioSchemaVersion = document.studioSchemaVersion;
   if (
     studioSchemaVersion !== STUDIO_SCHEMA_VERSION &&
-    studioSchemaVersion !== 2 &&
-    studioSchemaVersion !== 3
+    studioSchemaVersion !== 4 &&
+    studioSchemaVersion !== 3 &&
+    studioSchemaVersion !== 2
   ) {
     throw new NativeYamlImportError(
-      `Unsupported studioSchemaVersion: ${String(studioSchemaVersion)} (expected ${STUDIO_SCHEMA_VERSION}, 3, or 2)`,
+      `Unsupported studioSchemaVersion: ${String(studioSchemaVersion)} (expected ${STUDIO_SCHEMA_VERSION}, 4, 3, or 2)`,
     );
   }
 

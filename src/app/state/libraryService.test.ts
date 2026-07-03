@@ -27,7 +27,7 @@ describe('LibraryService', () => {
     const channel = newChannel(projectId, 'Local');
     const zone = {
       ...newZone(projectId, 'Home'),
-      members: [{ kind: 'channel' as const, id: channel.id }],
+      members: [{ channelId: channel.id }],
     };
     await persistence.putChannel(channel, null);
     await persistence.putZone(zone, null);
@@ -56,7 +56,7 @@ describe('LibraryService', () => {
     const channel = newChannel(projectId, 'Local');
     const zone = {
       ...newZone(projectId, 'Home'),
-      members: [{ kind: 'channel' as const, id: channel.id }],
+      members: [{ channelId: channel.id }],
     };
     await persistence.putChannel(channel, null);
     await persistence.putZone(zone, null);

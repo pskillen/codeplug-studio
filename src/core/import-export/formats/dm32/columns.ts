@@ -93,6 +93,22 @@ export const RX_GROUP_LIST_COL = {
 
 export const RX_GROUP_LIST_HEADERS: string[] = Object.values(RX_GROUP_LIST_COL);
 
+export const SCAN_COL = {
+  number: 'No.',
+  name: 'Scan Name',
+  ctcScanMode: 'CTC Scan Mode',
+  scanTxMode: 'Scan Tx Mode',
+  hangTime: 'Hang Time',
+  priorityChannel1: 'Priority Channel 1',
+  priorityChannel2: 'Priority Channel 2',
+  designedChannel: 'Designed Channel',
+  prioritySweepTime: 'Priority Sweep Time',
+  talkback: 'Talkback',
+  channelMembers: 'Channel Members',
+} as const;
+
+export const SCAN_HEADERS: string[] = Object.values(SCAN_COL);
+
 /** DM32 export file names (v1.60 PascalCase). */
 export const DM32_EXPORT_FILE_NAMES = [
   'Channels.csv',
@@ -101,6 +117,7 @@ export const DM32_EXPORT_FILE_NAMES = [
   'Contacts.csv',
   'RXGroupLists.csv',
   'DTMFContacts.csv',
+  'Scan.csv',
 ] as const;
 
 export type Dm32ExportFileName = (typeof DM32_EXPORT_FILE_NAMES)[number];

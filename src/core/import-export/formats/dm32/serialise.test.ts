@@ -2,9 +2,10 @@ import { describe, expect, it } from 'vitest';
 import type { Channel } from '@core/models/library.ts';
 import type { FormatBuild } from '@core/models/formatBuild.ts';
 import { newChannel, newFormatBuild, newTalkGroup, newZone } from '@core/domain/factories.ts';
+import { replaceZoneGroupingSection, seedZoneGroupingFromLibrary } from '@core/domain/zoneGroupingLayout.ts';
 import { assemble, type LibrarySlice } from '@core/services/assemble.ts';
 import { serialiseDm32Files } from './serialise.ts';
-import { CHANNEL_COL, ZONE_COL } from './columns.ts';
+import { CHANNEL_COL, ZONE_COL, SCAN_COL } from './columns.ts';
 import { parseCsv } from '../../../../test/csvParse.ts';
 
 const PROJECT_ID = 'proj-1';
@@ -48,7 +49,7 @@ describe('DM32 export serialise', () => {
   it('serialises zones with pipe-separated member names', () => {
     const channel = fmChannel('Test Chan');
     const zone = newZone(PROJECT_ID, 'My Zone');
-    zone.members = [{ kind: 'channel', id: channel.id }];
+    zone.members = [{ channelId: channel.id }];
     const build = dm32Build();
     const library: LibrarySlice = {
       channels: [channel],
@@ -110,5 +111,54 @@ describe('DM32 export serialise', () => {
     const files = serialiseDm32Files(assembled, library);
     const rows = parseCsv(files['Channels.csv']);
     expect(rows.length).toBe(3);
+  });
+
+  it('emits Scan.csv and carrier when zone exportScanList is enabled', () => {
+    const channel = fmChannel('Member One');
+    const zone = newZone(PROJECT_ID, 'Glasgow');
+    zone.members = [{ channelId: channel.id }];
+    const build = dm32Build();
+    const layout = seedZoneGroupingFromLibrary({
+      channels: [channel],
+      zones: [zone],
+      talkGroups: [],
+      digitalContacts: [],
+      analogContacts: [],
+      rxGroupLists: [],
+    });
+    layout.zones[0] = {
+      ...layout.zones[0]!,
+      exportScanList: true,
+      scanCarrierFrequencyHz: 145_500_000,
+    };
+    build.layout = { sections: [layout] };
+
+    const library: LibrarySlice = {
+      channels: [channel],
+      zones: [zone],
+      talkGroups: [],
+      digitalContacts: [],
+      analogContacts: [],
+      rxGroupLists: [],
+    };
+    const assembled = {
+      ...assemble(build, library),
+      library,
+      zoneGrouping: layout,
+    };
+    const files = serialiseDm32Files(assembled, library);
+    const scanRows = parseCsv(files['Scan.csv']);
+    expect(scanRows.length).toBeGreaterThan(1);
+    const scanNameIndex = scanRows[0]!.indexOf(SCAN_COL.name);
+    expect(scanRows[1]?.[scanNameIndex]).toBe('Glasgow');
+
+    const channelRows = parseCsv(files['Channels.csv']);
+    const scanListIndex = channelRows[0]!.indexOf(CHANNEL_COL.scanList);
+    const hasScanFk = channelRows.slice(1).some((row) => row[scanListIndex] === 'Glasgow');
+    expect(hasScanFk).toBe(true);
+
+    const zoneRows = parseCsv(files['Zones.csv']);
+    const membersIndex = zoneRows[0]!.indexOf(ZONE_COL.members);
+    expect(zoneRows[1]?.[membersIndex]).toMatch(/^Glasgow Scan\|/);
   });
 });

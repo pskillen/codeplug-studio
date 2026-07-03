@@ -65,6 +65,8 @@ export interface CpsExportOptions {
   expandRxGroupListMembers?: ExpandRxGroupListMembers;
   /** How multi-TG expanded rows compose wire names. Default `callsign_tg_abbrev`. */
   multiTalkGroupExportNameMode?: MultiTalkGroupExportNameMode;
+  /** When false, skip zone-derived Scan.csv synthesis on DM32 export. Default true. */
+  exportZoneDerivedScanLists?: boolean;
 }
 
 export interface ImportDocumentResult extends ExportResult {

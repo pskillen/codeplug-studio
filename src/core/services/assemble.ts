@@ -15,6 +15,7 @@ import {
   resolveOverrideWireName,
 } from '@core/domain/formatBuildOverrides.ts';
 import { defaultChannelWireName } from '@core/domain/channelNaming.ts';
+import { zoneMemberChannelIds } from '@core/domain/zoneMembers.ts';
 import { migrateFormatBuild } from '@core/domain/migrateFormatBuild.ts';
 import type { Library } from '@core/models/library.ts';
 
@@ -61,6 +62,8 @@ export interface AssembledBuild {
   rxGroupLists: AssembledEntity<RxGroupList>[];
   /** Set by exportBuild for adapters that need raw library access (e.g. DM32 RX expansion). */
   library?: LibrarySlice;
+  /** Zone grouping layout section when build has one — used for DM32 scan/scratch export. */
+  zoneGrouping?: ZoneGroupingLayout;
 }
 
 export interface AssembleOptions {
@@ -148,10 +151,8 @@ function zoneLinkedChannelIds(build: FormatBuild, library: LibrarySlice): Set<st
     }
   }
   for (const zone of library.zones) {
-    for (const member of zone.members) {
-      if (member.kind === 'channel') {
-        ids.add(member.id);
-      }
+    for (const channelId of zoneMemberChannelIds(zone)) {
+      ids.add(channelId);
     }
   }
   return ids;
@@ -222,9 +223,9 @@ function assembleZones(
   return library.zones
     .filter((zone) => !isEntityExcluded(overrides, zone.id))
     .map((zone) => {
-      const memberChannelIds = zone.members
-        .filter((m: EntityRef) => m.kind === 'channel' && exportedChannelIds.has(m.id))
-        .map((m) => m.id);
+      const memberChannelIds = zoneMemberChannelIds(zone).filter((id) =>
+        exportedChannelIds.has(id),
+      );
       return {
         zoneId: zone.id,
         wireName: resolveOverrideWireName(overrides, zone.id, zone.name),

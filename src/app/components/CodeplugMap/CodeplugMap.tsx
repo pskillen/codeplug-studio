@@ -25,6 +25,7 @@ import {
   primaryMode,
   zoneGeolocatedPoints,
 } from '@core/domain/mapProjection.ts';
+import { zoneMemberChannelIds } from '@core/domain/zoneMembers.ts';
 import { convexHullLatLon, zoneColor, type LatLon } from '@core/domain/geo.ts';
 import { collectMapPoints, computeMapView } from '@core/domain/mapView.ts';
 import type { Channel, Zone } from '@core/models/library.ts';
@@ -284,7 +285,7 @@ export default function CodeplugMap({
     return zones.map((zone, index) => {
       const { points, missing } = zoneGeolocatedPoints(zone, plottedById, channelPool, filterOpts);
       const colors = zoneColor(index);
-      const memberCount = zone.members.filter((m) => m.kind === 'channel').length;
+      const memberCount = zoneMemberChannelIds(zone).length;
 
       if (points.length === 0) {
         return {
@@ -370,7 +371,7 @@ export default function CodeplugMap({
                     <div>
                       <strong>{zh.zone.name}</strong>
                       <br />
-                      {zh.zone.members.filter((m) => m.kind === 'channel').length} zone members ·{' '}
+                      {zoneMemberChannelIds(zh.zone).length} zone members ·{' '}
                       {zh.shapeNote}
                       {zh.missing.length ? (
                         <>

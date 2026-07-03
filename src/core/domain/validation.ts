@@ -1,4 +1,4 @@
-import type { EntityRef, Library } from '../models/library.ts';
+import type { EntityRef, Library, ZoneMemberEntry } from '../models/library.ts';
 
 export function assertNonEmptyName(name: string, field: string): void {
   if (!name.trim()) {
@@ -47,6 +47,23 @@ export function validateRxGroupListId(rxGroupListId: string, library: Library): 
   }
 }
 
+export function validateZoneMembers(
+  zoneId: string,
+  members: ZoneMemberEntry[],
+  library: Library,
+): void {
+  const ids = libraryEntityIds(library);
+  if (!ids.zoneIds.has(zoneId)) {
+    throw new Error(`Zone not found in library: ${zoneId}`);
+  }
+  for (const member of members) {
+    if (!ids.channelIds.has(member.channelId)) {
+      throw new Error(`Zone member channel not found in library: ${member.channelId}`);
+    }
+  }
+}
+
+/** @deprecated Use validateZoneMembers — accepts legacy EntityRef[] during migration. */
 export function validateZoneMemberRefs(
   zoneId: string,
   members: EntityRef[],

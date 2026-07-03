@@ -1,4 +1,5 @@
 import type { FormatBuild } from '@core/models/formatBuild.ts';
+import { findZoneGroupingSection } from '@core/domain/zoneGroupingLayout.ts';
 import { getExportAdapter } from '@core/import-export/registry.ts';
 import { isMultiFileExportAdapter } from '@core/import-export/exportAdapter.ts';
 import { buildOpenGd77Zip } from '@core/import-export/formats/opengd77/packageZip.ts';
@@ -39,7 +40,12 @@ export function exportBuildFile({
   options,
 }: ExportBuildParams): ExportResult & { content: string; assembled: AssembledBuild } {
   const exportOptions = mergeExportOptions(build, options);
-  const assembled = { ...assemble(build, library, { profileId: exportOptions.profileId }), library };
+  const projection = assemble(build, library, { profileId: exportOptions.profileId });
+  const assembled = {
+    ...projection,
+    library,
+    zoneGrouping: findZoneGroupingSection(build),
+  };
   const adapter = getExportAdapter(build.formatId as FormatId);
   if (!isMultiFileExportAdapter(adapter)) {
     throw new Error(`Format ${build.formatId} does not support multi-file CPS export`);
@@ -55,7 +61,12 @@ export function exportBuildAll({
   options,
 }: Omit<ExportBuildParams, 'fileName'>): ExportBuildAllResult {
   const exportOptions = mergeExportOptions(build, options);
-  const assembled = { ...assemble(build, library, { profileId: exportOptions.profileId }), library };
+  const projection = assemble(build, library, { profileId: exportOptions.profileId });
+  const assembled = {
+    ...projection,
+    library,
+    zoneGrouping: findZoneGroupingSection(build),
+  };
   const adapter = getExportAdapter(build.formatId as FormatId);
   if (!isMultiFileExportAdapter(adapter)) {
     throw new Error(`Format ${build.formatId} does not support multi-file CPS export`);
