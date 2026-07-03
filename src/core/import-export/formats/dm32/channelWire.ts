@@ -34,7 +34,7 @@ export function serialiseDm32ChannelRow(
   profileId: string,
   rowNumber: number,
   talkGroupWireNames: Dm32TalkGroupWireNameMap,
-  options?: CpsExportOptions,
+  _options?: CpsExportOptions,
   scanListWire = 'None',
 ): Record<string, string> {
   const profile = getDm32Profile(profileId);

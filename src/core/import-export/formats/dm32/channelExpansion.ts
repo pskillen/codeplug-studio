@@ -14,6 +14,7 @@ import {
   expandChannelWireRows,
   type ExpandedChannelWireRow,
 } from '@core/import-export/channelExpansion/multiMode.ts';
+import { isAnalogMode, isDmrMode } from './channelModes.ts';
 import { DM32_NON_EXPANDABLE_RX_GROUP_LISTS } from './columns.ts';
 
 export interface ExpandedDm32ChannelRow {
@@ -29,7 +30,27 @@ export interface ExpandedDm32ChannelRow {
 }
 
 function isDmrProfile(profile: ChannelModeProfile): profile is ChannelModeProfileDMR {
-  return profile.mode === 'dmr';
+  return isDmrMode(profile.mode);
+}
+
+function isAnalogProfile(profile: ChannelModeProfile): profile is ChannelModeProfile {
+  return isAnalogMode(profile.mode);
+}
+
+function dualModeRow(
+  channel: Channel,
+  baseWireName: string,
+  dmrProfile: ChannelModeProfileDMR,
+): ExpandedDm32ChannelRow {
+  return {
+    sourceChannelId: channel.id,
+    key: channel.id,
+    wireName: baseWireName,
+    mode: dmrProfile.mode,
+    modeProfile: dmrProfile,
+    txContactRef: dmrProfile.contactRef,
+    rxGroupListId: dmrProfile.rxGroupListId,
+  };
 }
 
 function dm32ExportOptions(
@@ -45,7 +66,7 @@ function dm32ExportOptions(
 }
 
 function rxListMembersForChannel(
-  channel: Channel,
+  _channel: Channel,
   dmrProfile: ChannelModeProfileDMR | null,
   assembled: AssembledBuild,
 ): Array<{ ref: EntityRef; timeSlotOverride?: import('@core/models/libraryTypes.ts').DMRTimeSlot | null }> {
@@ -124,6 +145,11 @@ export function expandDm32ChannelWireRows(
         expansionNote: row.expansionNote,
       }));
     }
+  }
+
+  const fmProfile = channel.modeProfiles.find(isAnalogProfile) ?? null;
+  if (channel.modeProfiles.length > 1 && dmrProfile && fmProfile) {
+    return [dualModeRow(channel, baseWireName, dmrProfile)];
   }
 
   const siteRows = expandChannelWireRows(

@@ -10,6 +10,7 @@ import {
 } from '@core/services/previewWireRows.ts';
 import { traitProfileFor } from '@core/models/traits.ts';
 import { getFormatProfiles } from '@core/import-export/formatProfiles.ts';
+import type { FormatId } from '@core/import-export/types.ts';
 import { useExportSettings, exportOptionsFromSettings } from './useExportSettings.ts';
 import { useBuildLayout } from '../routes/builds/BuildLayoutContext.tsx';
 import { useProjects } from '../state/useProjects.ts';
@@ -70,7 +71,7 @@ export function useBuildWirePreview(entityKind: WirePreviewEntityKind) {
   const nameLimit = useMemo(() => {
     const profile = traitProfileFor(build.profileId);
     if (!profile) return undefined;
-    const options = getFormatProfiles(profile.formatId);
+    const options = getFormatProfiles(profile.formatId as FormatId);
     return options.find((option) => option.profileId === build.profileId)?.nameLimit;
   }, [build.profileId]);
 

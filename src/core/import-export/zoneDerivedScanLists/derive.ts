@@ -4,6 +4,7 @@ import type { CpsExportOptions } from '@core/import-export/types.ts';
 import type { AssembledBuild, LibrarySlice } from '@core/services/assemble.ts';
 import { memberIncludedInScanList } from '@core/domain/zoneMembers.ts';
 import type { ExpandedDm32ChannelRow } from '../formats/dm32/channelExpansion.ts';
+import { newChannel } from '@core/domain/factories.ts';
 import { SCAN_COL } from '../formats/dm32/columns.ts';
 import { DEFAULT_DM32_PROFILE_ID, getDm32Profile } from '../formats/dm32/profiles.ts';
 import { applyWireNameLimits } from '../channelExpansion/exportWireNames.ts';
@@ -72,23 +73,9 @@ function shortenCarrierName(
 ): string {
   const base = `${zoneName} Scan`.trim();
   const stub = {
+    ...newChannel('', base),
     id: 'carrier',
     projectId: '',
-    revision: { version: 1, updatedAt: '', updatedBy: '' },
-    updatedAt: '',
-    createdAt: '',
-    name: base,
-    callsign: '',
-    rxFrequency: null,
-    txFrequency: null,
-    location: null,
-    useLocation: false,
-    maidenheadLocator: null,
-    power: null,
-    scanSkip: false,
-    forbidTransmit: false,
-    comment: '',
-    modeProfiles: [],
   };
   return applyWireNameLimits(base, stub, reserved, { shortenNames: true }, profileId, warnings);
 }

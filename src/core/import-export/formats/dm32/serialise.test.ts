@@ -1,12 +1,32 @@
+import { readFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import type { Channel } from '@core/models/library.ts';
 import type { FormatBuild } from '@core/models/formatBuild.ts';
-import { newChannel, newFormatBuild, newTalkGroup, newZone } from '@core/domain/factories.ts';
+import { newChannel, newFormatBuild, newRxGroupList, newTalkGroup, newZone } from '@core/domain/factories.ts';
 import { seedZoneGroupingFromLibrary } from '@core/domain/zoneGroupingLayout.ts';
 import { assemble, type LibrarySlice } from '@core/services/assemble.ts';
 import { serialiseDm32Files } from './serialise.ts';
 import { CHANNEL_COL, ZONE_COL, SCAN_COL } from './columns.ts';
 import { parseCsv } from '../../../../test/csvParse.ts';
+import { minimalDm32Bundle } from '../../../../test/dm32/bundles.ts';
+import {
+  minimalDm32ExportBuild,
+  minimalDm32ExportLibrary,
+} from '../../../../test/dm32/minimalExportLibrary.ts';
+import {
+  compareCsvHeaders,
+  compareDm32ExportBundle,
+  DM32_CORE_EXPORT_FILES,
+  formatDm32BundleCompareFailure,
+} from '../../../../test/dm32CsvCompare.ts';
+import { exportBuildAll } from '@core/services/exportBuild.ts';
+
+const fixtureDir = join(
+  dirname(fileURLToPath(import.meta.url)),
+  '../../../../../test-data/baofeng-dm32/v1.60',
+);
 
 const PROJECT_ID = 'proj-1';
 
@@ -93,12 +113,8 @@ describe('DM32 export serialise', () => {
       analogContacts: [],
       rxGroupLists: [
         {
+          ...newRxGroupList(PROJECT_ID, 'My RGL'),
           id: 'rgl-1',
-          projectId: PROJECT_ID,
-          revision: channel.revision,
-          updatedAt: channel.updatedAt,
-          createdAt: channel.createdAt,
-          name: 'My RGL',
           members: [
             { ref: { kind: 'talkGroup', id: tg1.id } },
             { ref: { kind: 'talkGroup', id: tg2.id } },
@@ -160,5 +176,39 @@ describe('DM32 export serialise', () => {
     const zoneRows = parseCsv(files['Zones.csv']);
     const membersIndex = zoneRows[0]!.indexOf(ZONE_COL.members);
     expect(zoneRows[1]?.[membersIndex]).toMatch(/^Glasgow Scan\|/);
+  });
+
+  /**
+   * Excluded from row compare: No., Scan List (zone-derived), DMR ID (radio label).
+   * See docs/reference/dm32/channels.md and export-mapping.md.
+   */
+  it('minimal library export matches synthetic golden bundle', () => {
+    const build = minimalDm32ExportBuild();
+    const library = minimalDm32ExportLibrary();
+    const assembled = { ...assemble(build, library), library };
+    const exported = serialiseDm32Files(assembled, library);
+    const comparison = compareDm32ExportBundle(minimalDm32Bundle, exported);
+    expect(comparison.ok, formatDm32BundleCompareFailure(comparison)).toBe(true);
+  });
+
+  it('exportBuildAll returns core DM32 CSV files for minimal library', () => {
+    const build = minimalDm32ExportBuild();
+    const library = minimalDm32ExportLibrary();
+    const result = exportBuildAll({ build, library });
+    const fileNames = Object.keys(result.files).sort();
+    for (const fileName of DM32_CORE_EXPORT_FILES) {
+      expect(fileNames).toContain(fileName);
+    }
+    expect(result.files['Channels.csv']).toContain('GB7FE Stirling');
+  });
+
+  it('v1.60 fixture headers match export headers for core files', () => {
+    const build = minimalDm32ExportBuild();
+    const library = minimalDm32ExportLibrary();
+    const exported = serialiseDm32Files({ ...assemble(build, library), library }, library);
+    for (const fileName of DM32_CORE_EXPORT_FILES) {
+      const fixtureCsv = readFileSync(join(fixtureDir, fileName), 'utf8');
+      expect(compareCsvHeaders(fixtureCsv, exported[fileName]!)).toBe(true);
+    }
   });
 });

@@ -1,5 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
+import { unzipSync } from 'fflate';
 import { newChannel, newFormatBuild, newProjectMeta } from '@core/domain/factories.ts';
+import { DM32_CORE_EXPORT_FILES } from '../../test/dm32CsvCompare.ts';
 import { InMemoryProjectPersistence } from '@integrations/persistence/inMemory.ts';
 import {
   buildCpsZipBytes,
@@ -46,6 +48,24 @@ describe('buildCpsExportService', () => {
     expect(result.zip.byteLength).toBeGreaterThan(0);
     expect(result.zip[0]).toBe(0x50);
     expect(result.warnings).toEqual(['Including 1 channel(s) not linked to a zone']);
+  });
+
+  it('buildCpsZipBytes for DM32 build contains core CSV files', async () => {
+    const meta = newProjectMeta('DM32 export test');
+    const channel = newChannel(meta.projectId, 'GB7FE Stirling');
+    const build = newFormatBuild(meta.projectId, 'dm32-baofeng-dm32uv', 'DM32 UV');
+    const store = new InMemoryProjectPersistence();
+    await store.seedProject({
+      meta,
+      channels: [channel],
+      formatBuilds: [build],
+    });
+    const result = await buildCpsZipBytes(meta.projectId, build.id, undefined, store);
+    expect(result.fileName).toBe('DM32-UV-dm32.zip');
+    const entries = Object.keys(unzipSync(result.zip));
+    for (const fileName of DM32_CORE_EXPORT_FILES) {
+      expect(entries).toContain(fileName);
+    }
   });
 
   it('uploadCpsZipToDrive writes binary zip to Google Drive', async () => {
