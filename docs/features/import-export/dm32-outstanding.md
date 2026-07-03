@@ -6,19 +6,28 @@ Items **skipped**, **incomplete**, or **discovered during execution** — not th
 
 ---
 
-## Epic deferrals
+## Epic deferrals (post-export closeout)
 
-- [ ] DM32 export adapter — [#115](https://github.com/pskillen/codeplug-studio/issues/115)
-- [ ] RX-list fan-out not wired into wire preview or DM32 serialise — [#115](https://github.com/pskillen/codeplug-studio/issues/115), [#119](https://github.com/pskillen/codeplug-studio/issues/119)
-- [ ] `showMultiTalkGroupOptions` export UI hidden until DM32 export — [#119](https://github.com/pskillen/codeplug-studio/issues/119)
-- [ ] Build zone export trait UI — [#121](https://github.com/pskillen/codeplug-studio/issues/121)
-- [ ] Zone-derived `Scan.csv` synthesis — [#129](https://github.com/pskillen/codeplug-studio/issues/129)
-- [ ] DM32 import — epic [#112](https://github.com/pskillen/codeplug-studio/issues/112)
-- [ ] Manual scan-list CRUD + import round-trip — archive [codeplug-tool#125](https://github.com/pskillen/codeplug-tool/issues/125)
-- [ ] `DMR-ID.csv` — accepted lossy gap
+- [ ] DM32 **import** — epic [#112](https://github.com/pskillen/codeplug-studio/issues/112) (Phase 5b)
+- [ ] Manual `ScanList` entity CRUD and scan import round-trip
+- [ ] `DMR-ID.csv` export — accepted lossy gap (profile default label only)
+- [ ] `exportScratchChannel` serialisation — UI persists layout flag; wire deferred
+- [ ] Full v1.60 fixture row compare — awaits import adapter; header parity + minimal golden bundle shipped in [#122](https://github.com/pskillen/codeplug-studio/issues/122)
 
 ---
 
 ## Discovered during execution
 
-_(none yet)_
+- **Empty `Scan.csv` in ZIP** — export always serialises header row; ZIP includes `Scan.csv` even when no zone scan lists emit (omit-from-ZIP polish optional).
+- **Unlinked contacts** — `Contacts.csv` / `DTMFContacts.csv` only include library entities referenced by channels (or forced via build `contactOverrides`).
+
+---
+
+## Manual verify (export epic)
+
+- [ ] DM32 build → Export panel shows multi-TG options + zone-derived scan toggle
+- [ ] Wire preview channels page shows RX-list fan-out rows with expansion notes
+- [ ] Build zones page: per-zone export flags + per-member scan inclusion (DM32 only)
+- [ ] Download ZIP: six core CSVs + `Scan.csv` when zone scan enabled; `Scan List` FKs wired
+- [ ] Master scan toggle off → no scan lists despite zone flags
+- [ ] OpenGD77 export regression unchanged

@@ -16,9 +16,11 @@ Product behaviour for Baofeng DM-32UV CPS CSV export in Codeplug Studio. Wire co
 | Zone export trait layout        | Shipped | [#104](https://github.com/pskillen/codeplug-studio/issues/104) — flags on `ZoneGroupingLayout`, not library `Zone` |
 | Multi-TG wire core + TG abbrev  | Shipped | [#110](https://github.com/pskillen/codeplug-studio/issues/110)                                                     |
 | Trait profile registration      | Shipped | `dm32-baofeng-dm32uv` in `TRAIT_PROFILES`                                                                          |
-| Export adapter                  | Shipped | [#115](https://github.com/pskillen/codeplug-studio/issues/115) — [export-mapping.md](export-mapping.md) |
-| Build zone export UI            | Open    | [#121](https://github.com/pskillen/codeplug-studio/issues/121)                                                     |
-| Zone-derived `Scan.csv`         | Open    | [#129](https://github.com/pskillen/codeplug-studio/issues/129)                                                     |
+| Export adapter                  | Shipped | [#115](https://github.com/pskillen/codeplug-studio/issues/115) — [export-mapping.md](export-mapping.md)          |
+| Zone-derived `Scan.csv`         | Shipped | [#129](https://github.com/pskillen/codeplug-studio/issues/129) — [zone-derived scan reference](../../../reference/zone-derived-scan-lists.md) |
+| Build zone export UI            | Shipped | [#121](https://github.com/pskillen/codeplug-studio/issues/121) — [zone-grouping.md](../../builds/zone-grouping.md) |
+| Export UI + wire preview        | Shipped | [#119](https://github.com/pskillen/codeplug-studio/issues/119) — multi-TG options, scan master toggle            |
+| Directional export tests        | Shipped | [#122](https://github.com/pskillen/codeplug-studio/issues/122) — [mapping-tests.md](../../../build/testing/mapping-tests.md) |
 | CPS import                      | Planned | [#112](https://github.com/pskillen/codeplug-studio/issues/112)                                                     |
 
 ## Trait profile vs radio profile
@@ -49,15 +51,15 @@ See [name-shortening.md](../name-shortening.md) and [dm32/multi-talkgroup.md](..
 
 ## Zone export knobs (build layout)
 
-DM32 scratch channel, scan-list export, and scan carrier frequency live on **`FormatBuild.layout`** zone grouping entries (`exportScratchChannel`, `exportScanList`, `scanCarrierFrequencyHz`) — not on library zones ([#104](https://github.com/pskillen/codeplug-studio/issues/104)). Build UI for these flags: [#121](https://github.com/pskillen/codeplug-studio/issues/121).
+DM32 scratch channel, scan-list export, and scan carrier frequency live on **`FormatBuild.layout`** zone grouping entries (`exportScratchChannel`, `exportScanList`, `scanCarrierFrequencyHz`) — not on library zones ([#104](https://github.com/pskillen/codeplug-studio/issues/104)). Per-member scan inclusion is vendor-neutral on library `Zone.members` (`includeInScanList`). Operator workflow: [zone-grouping.md](../../builds/zone-grouping.md).
 
 ## Deferrals
 
 | Item                             | Tracking                                                                |
 | -------------------------------- | ----------------------------------------------------------------------- |
-| `Scan.csv` export (zone-derived) | [#129](https://github.com/pskillen/codeplug-studio/issues/129)          |
 | `Scan.csv` import                | [#112](https://github.com/pskillen/codeplug-studio/issues/112) or later |
-| `DMR-ID.csv` / channel `DMR ID`  | Accepted lossy gap                                                      |
+| `DMR-ID.csv` / channel `DMR ID`  | Accepted lossy gap — profile default label on export                    |
+| `exportScratchChannel` serialise | UI flag only until wire behaviour ships                                 |
 | Manual scan-list CRUD            | Future                                                                  |
 
 ## Related

@@ -10,20 +10,21 @@
 
 ## Overall status
 
-**Status:** In progress — export adapter + zone-derived scan shipped 2026-07-03
+**Status:** Complete — DM32 export epic closed 2026-07-03  
+**Branch / PR:** `115/pskil/dm32-export`
 
 | Phase                            | Issue                                                          | Status   | Notes                                      |
 | -------------------------------- | -------------------------------------------------------------- | -------- | ------------------------------------------ |
 | TG abbrev + multi-TG wire core   | [#110](https://github.com/pskillen/codeplug-studio/issues/110) | Complete | Shipped                                    |
-| Zone export trait refactor       | [#104](https://github.com/pskillen/codeplug-studio/issues/104) | Complete | PR `104/pskil/dm32-foundation`             |
+| Zone export trait refactor       | [#104](https://github.com/pskillen/codeplug-studio/issues/104) | Complete | PR #136 foundation                         |
 | Feature hub README               | [#113](https://github.com/pskillen/codeplug-studio/issues/113) | Complete | [dm32/README.md](dm32/README.md)           |
 | Profiles + columns + fixtures    | [#114](https://github.com/pskillen/codeplug-studio/issues/114) | Complete | `formats/dm32/`, `test-data/baofeng-dm32/` |
 | Export adapter                   | [#115](https://github.com/pskillen/codeplug-studio/issues/115) | Complete | `115/pskil/dm32-export`                    |
 | Zone-derived scan lists          | [#129](https://github.com/pskillen/codeplug-studio/issues/129) | Complete | Schema v5, `zoneDerivedScanLists/`         |
 | Zone export trait UI             | [#121](https://github.com/pskillen/codeplug-studio/issues/121) | Complete | Build zones page controls                  |
 | Export UI + wire preview fan-out | [#119](https://github.com/pskillen/codeplug-studio/issues/119) | Complete | Export panel + channel fan-out preview     |
-| Directional export tests         | [#122](https://github.com/pskillen/codeplug-studio/issues/122) | Open     | Next                                       |
-| Export epic closeout docs        | [#123](https://github.com/pskillen/codeplug-studio/issues/123) | Open     | After #122                                 |
+| Directional export tests         | [#122](https://github.com/pskillen/codeplug-studio/issues/122) | Complete | `dm32CsvCompare`, minimal golden bundle    |
+| Export epic closeout docs        | [#123](https://github.com/pskillen/codeplug-studio/issues/123) | Complete | This log + hub reconciliation              |
 
 **Import (Phase 5b — [#112](https://github.com/pskillen/codeplug-studio/issues/112)):** [#124](https://github.com/pskillen/codeplug-studio/issues/124)–[#128](https://github.com/pskillen/codeplug-studio/issues/128) — unblocked on export scaffold.
 
@@ -31,40 +32,45 @@
 
 ## Slice — Export foundation ([#104](https://github.com/pskillen/codeplug-studio/issues/104), [#114](https://github.com/pskillen/codeplug-studio/issues/114), [#113](https://github.com/pskillen/codeplug-studio/issues/113))
 
-**Status:** Complete  
-**Branch:** `104/pskil/dm32-foundation`
-
-**Delivered**
-
-- `src/core/import-export/formats/dm32/` — profiles, columns, csvWrite, packageZip; profile ladder tests
-- `getFormatProfiles('dm32')`; trait profile id `dm32-baofeng-dm32uv`
-- `test-data/baofeng-dm32/v1.60/` fixtures (six in-scope CSVs)
-- Zone export flags on `ZoneGroupingLayout`; removed from library `Zone`; schema v4 + migration
-- [dm32/README.md](dm32/README.md) hub + cross-doc updates
+**Status:** Complete — merged via PR #136
 
 ---
 
-## Slice — Talk group abbreviation ([#110](https://github.com/pskillen/codeplug-studio/issues/110))
+## Slice — Export adapter ([#115](https://github.com/pskillen/codeplug-studio/issues/115))
 
-**Status:** Complete — wired in DM32 export + wire preview ([#115](https://github.com/pskillen/codeplug-studio/issues/115), [#119](https://github.com/pskillen/codeplug-studio/issues/119))
+**Status:** Complete  
+**Commit:** `feat(dm32): export adapter and serialise from assemble`
+
+---
+
+## Slice — Zone-derived scan ([#129](https://github.com/pskillen/codeplug-studio/issues/129))
+
+**Status:** Complete  
+**Commit:** `feat(dm32): zone-derived scan list export synthesis`
+
+---
+
+## Slice — Zone export trait UI ([#121](https://github.com/pskillen/codeplug-studio/issues/121))
+
+**Status:** Complete  
+**Commit:** `feat(ui): DM32 build zone export trait controls`
 
 ---
 
 ## Slice — Export UI + wire preview ([#119](https://github.com/pskillen/codeplug-studio/issues/119))
 
 **Status:** Complete  
-**Branch:** `115/pskil/dm32-export`
+**Commit:** `feat(ui): DM32 export settings and wire preview fan-out`
 
-**Delivered**
+---
 
-- DM32 channel wire preview via `expandAllDm32ChannelsForExport` (RX-list fan-out)
-- Export panel: `showMultiTalkGroupOptions`, zone-derived scan master toggle
-- `useExportSettings.exportZoneDerivedScanLists` persisted in localStorage
-- [wire-preview.md](../builds/wire-preview.md), [name-shortening.md](name-shortening.md)
+## Slice — Directional tests ([#122](https://github.com/pskillen/codeplug-studio/issues/122))
+
+**Status:** Complete  
+**Commit:** `test(dm32): directional export tests and registry verification`
 
 ---
 
 ## Next
 
-1. [#122](https://github.com/pskillen/codeplug-studio/issues/122) — directional export tests
-2. [#123](https://github.com/pskillen/codeplug-studio/issues/123) — epic closeout + PR
+Import epic [#112](https://github.com/pskillen/codeplug-studio/issues/112) — DM32 CPS import (Phase 5b).
