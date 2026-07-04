@@ -2,7 +2,7 @@
 
 **Status: planned** — Playwright not installed; no `npm run test:e2e` script.
 
-**Purpose:** Prove real browser behaviour that unit and component tests cannot — file upload, IndexedDB persistence across reload, ZIP download, hash-router navigation at site root (`/`).
+**Purpose:** Prove real browser behaviour that unit and component tests cannot — file upload, IndexedDB persistence across reload, ZIP download, path-based router navigation at site root (`/`).
 
 ## Target command
 
@@ -21,7 +21,7 @@ npm run test:e2e   # planned
 
 ## Configuration notes
 
-- Base URL is site root (`/`); hash routes use `#/…`
+- Base URL is site root (`/`); routes use path URLs (`/library/channels`, …)
 - Use committed minimal fixtures from [fixtures.md](fixtures.md) — not `sample-exports/`
 - Run against `npm run preview` build output in CI (not dev server)
 

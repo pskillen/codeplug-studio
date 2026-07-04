@@ -2,7 +2,7 @@
 
 Mantine [`Alert`](https://mantine.dev/core/alert/) primitives for inline status and validation feedback. No wrapper component — import directly from `@mantine/core`.
 
-**Live demos:** `/#/styleguide` → **Alerts** section (ported from codeplug-tool).
+**Live demos:** `/styleguide` → **Alerts** section (ported from codeplug-tool).
 
 ## Colour conventions
 

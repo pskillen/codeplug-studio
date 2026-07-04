@@ -26,7 +26,7 @@ Ported from [codeplug-tool](https://github.com/pskillen/codeplug-tool) `DataTabl
 | List prefs storage                             | `src/integrations/listPrefs/`                   | `localStorage` keys, load/save/merge                      |
 | List prefs URL sync                            | `src/app/lib/listPrefs/urlSync.ts`              | URL ↔ prefs mapping (app layer)                           |
 
-Dev demos: `/#/styleguide` (unlinked).
+Dev demos: `/styleguide` (unlinked).
 
 ## DataTable props (list pages)
 

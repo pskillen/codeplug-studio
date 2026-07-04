@@ -78,11 +78,11 @@ List-prefs keys follow `mm9pdy-codeplug-studio.list.{entity}.{projectId}` with o
 
 ## Manual verify
 
-1. Open `/#/debug` — confirm privacy alert and tool links.
-2. Create a project with channels → `/#/debug/indexed-db` shows non-zero `channels` count.
+1. Open `/debug` — confirm privacy alert and tool links.
+2. Create a project with channels → `/debug/indexed-db` shows non-zero `channels` count.
 3. Drill into a channel row → JSON tree expands; Copy YAML works.
-4. Set a Mapbox token in Settings → `/#/debug/local-storage` shows masked token in viewer.
-5. Filter a library list → `/#/debug/local-storage` shows labelled list-prefs keys for the active project.
+4. Set a Mapbox token in Settings → `/debug/local-storage` shows masked token in viewer.
+5. Filter a library list → `/debug/local-storage` shows labelled list-prefs keys for the active project.
 
 ## Related
 

@@ -11,7 +11,7 @@
       "type": "chrome",
       "request": "launch",
       "name": "Launch SPA (Chrome)",
-      "url": "http://localhost:5173/codeplug-studio/#/",
+      "url": "http://localhost:5173/",
       "webRoot": "${workspaceFolder}/src",
       "preLaunchTask": "dev"
     },

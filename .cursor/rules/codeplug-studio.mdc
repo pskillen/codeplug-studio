@@ -18,12 +18,12 @@ Read [`AGENTS.md`](../../AGENTS.md) and [`DESIGN.md`](../../DESIGN.md) first. Fo
 
 ## SPA (`src/` when scaffold exists)
 
-- React + TypeScript under `src/app/`; Vite bundles for GitHub Pages (`base: '/codeplug-studio/'`).
-- Routing via `react-router` HashRouter.
+- React + TypeScript under `src/app/`; Vite bundles for Cloudflare Pages (`base: '/'`).
+- Routing via `react-router` `createBrowserRouter` (path URLs).
 - Build info via Vite `define` — see `version-number` skill when added in Phase 1.
 
 ## Scope
 
-- GitHub Pages deploy is release-triggered — see `docs/build/README.md`.
+- Cloudflare Pages deploy via GitHub Actions — see `docs/build/README.md`.
 - Do not add committed sample codeplugs; use gitignored `sample-exports/` for local CPS files.
 - Migration background: [docs/poc-migration/epic-1-context.md](../../docs/poc-migration/epic-1-context.md).
