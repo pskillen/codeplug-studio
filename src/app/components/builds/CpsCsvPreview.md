@@ -35,6 +35,8 @@ import CpsCsvPreviewModal from './CpsCsvPreviewModal.tsx';
 
 - Parses CSV by header row (`csvToTable` in core) — not column index.
 - Each tab shows a row-count badge.
+- Per-column **Filter** inputs (case-insensitive substring; AND across columns).
+- Click a column header to sort ascending/descending (locale-aware, numeric-aware).
 - `CpsCsvPreviewModal` fetches only while `opened` (lazy serialisation).
 - Export warnings appear in a yellow alert above the tabs.
 
