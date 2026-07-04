@@ -5,6 +5,7 @@ import HomePage from './routes/HomePage.tsx';
 import EntityEditorPage from './routes/library/EntityEditorPage.tsx';
 import AddFromUkRepeaterPage from './routes/library/AddFromUkRepeaterPage.tsx';
 import AddFromBrandmeisterPage from './routes/library/AddFromBrandmeisterPage.tsx';
+import AddChannelSetPage from './routes/library/AddChannelSetPage.tsx';
 import ChannelsListPage from './routes/library/lists/ChannelsListPage.tsx';
 import ZonesListPage from './routes/library/lists/ZonesListPage.tsx';
 import TalkGroupsListPage from './routes/library/lists/TalkGroupsListPage.tsx';
@@ -78,6 +79,10 @@ export const appRouter = createBrowserRouter([
           {
             path: '/library/channels/add-from-brandmeister',
             element: <AddFromBrandmeisterPage />,
+          },
+          {
+            path: '/library/channels/add-channel-set',
+            element: <AddChannelSetPage />,
           },
           { path: '/library/:kind/:id', element: <EntityEditorPage /> },
           { path: '/builds', element: <BuildsListPage /> },

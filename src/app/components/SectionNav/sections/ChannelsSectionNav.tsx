@@ -1,5 +1,5 @@
 import { Button, Loader, MultiSelect, Slider, Stack, Switch, Text, TextInput } from '@mantine/core';
-import { IconPlus, IconWorldSearch } from '@tabler/icons-react';
+import { IconPlus, IconPlaylistAdd, IconWorldSearch } from '@tabler/icons-react';
 import { Link } from 'react-router-dom';
 import { useMemo } from 'react';
 import UseMyLocationButton from '../../UseMyLocationButton/UseMyLocationButton.tsx';
@@ -49,6 +49,16 @@ export default function ChannelsSectionNav({ variant }: SectionNavProps) {
           fullWidth={isSidebar}
         >
           New channel
+        </Button>
+
+        <Button
+          component={Link}
+          to="/library/channels/add-channel-set"
+          variant="light"
+          leftSection={<IconPlaylistAdd size={ICON_SIZE_NAV} stroke={ICON_STROKE} />}
+          fullWidth={isSidebar}
+        >
+          Add channel set…
         </Button>
 
         <Button
