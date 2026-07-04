@@ -90,6 +90,15 @@ Deploy workflows call the reusable [`.github/workflows/cloudflare-pages.yaml`](.
 
 **Preview** workflows pass `cloudflare_branch` (`staging`, `next`, or `dev`) for pre-production hostnames. Do not use `--branch=main` on continuous `main` pushes — that slot is production only.
 
+### SPA fallback (path-based routing)
+
+The app uses `createBrowserRouter` with path URLs (`/library/channels`, not `/#/library/channels`). Deep links and hard refresh must serve `index.html` for client routes.
+
+- **Cloudflare default:** when the build has no top-level `404.html`, Pages treats the project as an SPA and serves `index.html` for unmatched paths.
+- **Explicit rewrite:** [`public/_redirects`](../../public/_redirects) (`/* /index.html 200`) is copied into `dist/` by Vite and deployed with every build — belt-and-suspenders for all environments (prod, staging, next, dev).
+
+Local check: `npm run build && npm run preview`, then open `/library/channels` or `/debug` directly in the browser.
+
 ### Operator setup (one-time)
 
 1. Create a Cloudflare Pages project named `codeplug-studio` via **Direct Upload** — do not connect GitHub in the CF dashboard.
@@ -121,4 +130,5 @@ Displayed in [`BuildFooter`](../../src/app/components/BuildFooter/BuildFooter.ts
 After a deploy, open the live site and confirm:
 
 - Footer shows the expected environment and version (e.g. `prod · 0.2.0` after a full release).
+- Hard refresh on nested routes (e.g. `/library/channels`, `/settings`, `/debug`) loads the SPA — no 404 from the host.
 - Settings → Google Drive shows **Connect** (not the yellow “not configured” alert) when `GOOGLE_OAUTH_CLIENT_ID` is set in repo Actions secrets.
