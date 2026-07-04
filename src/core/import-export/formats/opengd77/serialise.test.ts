@@ -9,7 +9,7 @@ import { parseProjectDocument } from '@core/import-export/formats/native-yaml/pa
 import { assemble } from '@core/services/assemble.ts';
 import { exportBuildAll } from '@core/services/exportBuild.ts';
 import { compareCsvRecords } from '../../../../test/csvRecordCompare.ts';
-import { parseCsv } from '../../../../test/csvParse.ts';
+import { parseCsv } from '@core/import-export/csvParse.ts';
 import { CHANNEL_COL, CONTACT_COL } from './columns.ts';
 import { serialiseChannels, serialiseOpenGd77Files, serialiseZones } from './serialise.ts';
 import { collectOpenGd77ExportWarnings } from './warnings.ts';

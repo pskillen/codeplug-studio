@@ -1,18 +1,26 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { MantineProvider } from '@mantine/core';
 import type { FormatBuild } from '@core/models/formatBuild.ts';
 import ExportBuildCpsPanel from './ExportBuildCpsPanel.tsx';
 
-const { downloadCpsZip, downloadCpsFile } = vi.hoisted(() => ({
+const { downloadCpsZip, downloadCpsFile, previewCpsExport } = vi.hoisted(() => ({
   downloadCpsZip: vi.fn(async () => ({ warnings: [] as string[] })),
   downloadCpsFile: vi.fn(async () => ({ warnings: [] as string[] })),
+  previewCpsExport: vi.fn(async () => ({
+    files: {
+      'Channels.csv': 'Name,RxFrequency\nTestCh,145.00000',
+      'Zones.csv': 'Name,Channels\nZone1,TestCh',
+    },
+    warnings: [] as string[],
+  })),
 }));
 
 vi.mock('../../services/buildCpsExportService.ts', () => ({
   defaultCpsZipFileName: () => 'demo-opengd77.zip',
   downloadCpsFile,
   downloadCpsZip,
+  previewCpsExport,
   uploadCpsZipToDrive: vi.fn(),
 }));
 
@@ -111,5 +119,25 @@ describe('ExportBuildCpsPanel', () => {
 
     expect(screen.getByText(/export is planned/i)).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Download ZIP' })).not.toBeInTheDocument();
+  });
+
+  it('opens CSV preview modal with per-file tabs after Preview CSV', async () => {
+    render(
+      <MantineProvider>
+        <ExportBuildCpsPanel build={opengd77Build} />
+      </MantineProvider>,
+    );
+
+    const previewButton = await screen.findByRole('button', { name: 'Preview CSV' });
+    expect(previewButton).not.toBeDisabled();
+    fireEvent.click(previewButton);
+
+    expect(await screen.findByRole('dialog', { name: 'CSV preview' })).toBeInTheDocument();
+    await waitFor(() => {
+      expect(previewCpsExport).toHaveBeenCalled();
+    });
+    expect(await screen.findByRole('tab', { name: /Channels\.csv/ })).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: /Zones\.csv/ })).toBeInTheDocument();
+    expect(screen.getByRole('cell', { name: 'TestCh' })).toBeInTheDocument();
   });
 });

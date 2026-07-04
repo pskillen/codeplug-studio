@@ -16,6 +16,7 @@ Per-build CPS export on the Radio builds detail page — per-file CSV downloads,
 - **Download ZIP** packages all CPS CSV files via `buildCpsExportService.downloadCpsZip`.
 - **Individual files** trigger `downloadCpsFile` per adapter `fileNames`.
 - **Save ZIP to Drive** opens `DriveBrowserModal` in save mode (`saveConflictKind: zip`) and uploads via `uploadCpsZipToDrive`.
+- **Preview CSV** (`variant="outline"`, after Save ZIP to Drive) opens `CpsCsvPreviewModal` — tabbed read-only tables via `previewCpsExport` / `exportBuildAll` (lazy while modal is open).
 - Planned formats (`exportStatus !== 'shipped'`) show a grey alert instead of actions.
 
 ## Usage
@@ -28,5 +29,6 @@ import ExportBuildCpsPanel from '../../components/builds/ExportBuildCpsPanel.tsx
 
 ## Related
 
-- [`buildCpsExportService.ts`](../../services/buildCpsExportService.ts) — assemble + export + download/Drive wiring
+- [`buildCpsExportService.ts`](../../services/buildCpsExportService.ts) — assemble + export + download/Drive/preview wiring
+- [`CpsCsvPreview.md`](CpsCsvPreview.md) — tabbed CSV preview modal
 - [`docs/features/builds/README.md`](../../../../docs/features/builds/README.md) — build export workflow
