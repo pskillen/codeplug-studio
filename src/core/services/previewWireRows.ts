@@ -262,7 +262,7 @@ export function previewWireRows(
       return library.talkGroups.map((talkGroup) => {
         const assembled = projection.talkGroups.find((row) => row.entity.id === talkGroup.id);
         const referenced = assembled != null;
-        const baseWireName = assembled?.wireName ?? talkGroup.name;
+        const baseWireName = talkGroup.name;
         const generatedWireName = applyTalkGroupWireNameLimits(
           baseWireName,
           talkGroup,
