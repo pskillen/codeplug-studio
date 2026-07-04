@@ -4,12 +4,12 @@ Codeplug Studio is a static Vite SPA deployed to **Cloudflare Pages** via GitHub
 
 **Base path:** `/` (custom domain; see `vite.config.ts`).
 
-| Environment | URL                                     | Trigger                       | `BUILD_ENV` | CF branch           |
-| ----------- | --------------------------------------- | ----------------------------- | ----------- | ------------------- |
-| **prod**    | `https://codeplug.pskillen.xyz`         | Full GitHub release published | `prod`      | `main` (production) |
-| **staging** | `https://staging.codeplug.pskillen.xyz` | Pre-release published         | `staging`   | `staging` (preview) |
-| **next**    | `https://next.codeplug.pskillen.xyz`    | Push to `main`                | `main`      | `next` (preview)    |
-| **dev**     | `https://dev.codeplug.pskillen.xyz`     | Push to `dev`                 | `dev`       | `dev` (preview)     |
+| Environment | URL                                   | Trigger                       | `BUILD_ENV` | CF branch           |
+| ----------- | ------------------------------------- | ----------------------------- | ----------- | ------------------- |
+| **prod**    | `https://codeplug.mm9pdy.net`         | Full GitHub release published | `prod`      | `main` (production) |
+| **staging** | `https://staging.codeplug.mm9pdy.net` | Pre-release published         | `staging`   | `staging` (preview) |
+| **next**    | `https://next.codeplug.mm9pdy.net`    | Push to `main`                | `main`      | `next` (preview)    |
+| **dev**     | `https://dev.codeplug.mm9pdy.net`     | Push to `dev`                 | `dev`       | `dev` (preview)     |
 
 ## Local development
 
@@ -27,10 +27,10 @@ Copy [`.env.example`](../../.env.example) to `.env.local` and set `VITE_GOOGLE_C
 Authorized JavaScript origins must include:
 
 - `http://localhost:5173` (local Vite)
-- `https://codeplug.pskillen.xyz` (prod)
-- `https://staging.codeplug.pskillen.xyz` (staging)
-- `https://next.codeplug.pskillen.xyz` (next)
-- `https://dev.codeplug.pskillen.xyz` (dev)
+- `https://codeplug.mm9pdy.net` (prod)
+- `https://staging.codeplug.mm9pdy.net` (staging)
+- `https://next.codeplug.mm9pdy.net` (next)
+- `https://dev.codeplug.mm9pdy.net` (dev)
 
 Enable the **Google Drive API** for the project. Scope used by Studio: `https://www.googleapis.com/auth/drive` (folder browse + YAML read/write). Tokens stay in browser localStorage only — see [google-drive.md](../features/import-export/google-drive.md).
 
@@ -93,7 +93,7 @@ Deploy workflows call the reusable [`.github/workflows/cloudflare-pages.yaml`](.
 ### Operator setup (one-time)
 
 1. Create a Cloudflare Pages project named `codeplug-studio` via **Direct Upload** — do not connect GitHub in the CF dashboard.
-2. Map custom domains: `codeplug.pskillen.xyz` → production; branch aliases for `staging`, `next`, and `dev` preview branches.
+2. Map custom domains: `codeplug.mm9pdy.net` → production; branch aliases for `staging`, `next`, and `dev` preview branches.
 3. Add GitHub Actions secrets under **Settings → Secrets and variables → Actions**:
 
 | Secret                   | Purpose                                                         |

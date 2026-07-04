@@ -27,10 +27,10 @@ IndexedDB remains the **edit store**; Drive holds portable YAML interchange file
 1. Create a Google Cloud project and enable **Google Drive API**.
 2. Create an **OAuth 2.0 Web client** with authorized JavaScript origins:
    - `http://localhost:5173` (local Vite)
-   - `https://codeplug.pskillen.xyz` (prod)
-   - `https://staging.codeplug.pskillen.xyz` (staging)
-   - `https://next.codeplug.pskillen.xyz` (next)
-   - `https://dev.codeplug.pskillen.xyz` (dev)
+   - `https://codeplug.mm9pdy.net` (prod)
+   - `https://staging.codeplug.mm9pdy.net` (staging)
+   - `https://next.codeplug.mm9pdy.net` (next)
+   - `https://dev.codeplug.mm9pdy.net` (dev)
 3. Copy the client id to `.env.local` as `VITE_GOOGLE_CLIENT_ID` (see [build README](../../build/README.md)).
 
 ### Production and pre-production (Cloudflare Pages)

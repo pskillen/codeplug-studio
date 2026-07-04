@@ -68,4 +68,4 @@ env:
   BUILD_VERSION: ${{ inputs.build_version }}
 ```
 
-After publishing a full release, verify footer on `https://codeplug.pskillen.xyz` shows `prod · <semver>`.
+After publishing a full release, verify footer on `https://codeplug.mm9pdy.net` shows `prod · <semver>`.
