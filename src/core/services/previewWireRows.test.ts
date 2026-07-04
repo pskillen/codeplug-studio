@@ -45,6 +45,62 @@ describe('previewWireRows', () => {
     expect(rows[1]?.generatedWireName).toBe('GB7GL DMR Scot');
   });
 
+  it('keeps talk group generated wire name separate from build override', () => {
+    const yaml = readFileSync(join(fixtureDir, 'with-format-build.yaml'), 'utf8');
+    const aggregate = parseProjectDocument(yaml);
+    const tgId = '55555555-5555-4555-8555-555555555555';
+    const build = {
+      ...aggregate.formatBuilds[0]!,
+      talkGroupOverrides: [{ libraryEntityId: tgId, wireName: 'Custom Override' }],
+    };
+    const library = {
+      channels: aggregate.channels,
+      zones: aggregate.zones,
+      talkGroups: aggregate.talkGroups.map((talkGroup) =>
+        talkGroup.id === tgId ? { ...talkGroup, name: 'Scotland Full Name' } : talkGroup,
+      ),
+      digitalContacts: aggregate.digitalContacts,
+      analogContacts: aggregate.analogContacts,
+      rxGroupLists: aggregate.rxGroupLists,
+    };
+
+    const rows = previewWireRows(build, library, 'talkGroup', { shortenNames: false });
+    const row = rows.find((entry) => entry.libraryEntityId === tgId);
+    expect(row?.generatedWireName).toBe('Scotland Full Name');
+    expect(row?.effectiveWireName).toBe('Custom Override');
+    expect(row?.hasWireNameOverride).toBe(true);
+  });
+
+  it('applies talk group abbreviation to generated wire name when override is set', () => {
+    const yaml = readFileSync(join(fixtureDir, 'with-format-build.yaml'), 'utf8');
+    const aggregate = parseProjectDocument(yaml);
+    const tgId = '55555555-5555-4555-8555-555555555555';
+    const build = {
+      ...aggregate.formatBuilds[0]!,
+      talkGroupOverrides: [{ libraryEntityId: tgId, wireName: 'Short override' }],
+    };
+    const library = {
+      channels: aggregate.channels,
+      zones: aggregate.zones,
+      talkGroups: aggregate.talkGroups.map((talkGroup) =>
+        talkGroup.id === tgId
+          ? { ...talkGroup, name: 'Very Long Talk Group Name', abbreviation: 'VL TGN' }
+          : talkGroup,
+      ),
+      digitalContacts: aggregate.digitalContacts,
+      analogContacts: aggregate.analogContacts,
+      rxGroupLists: aggregate.rxGroupLists,
+    };
+
+    const rows = previewWireRows(build, library, 'talkGroup', {
+      profileId: build.profileId,
+      shortenNames: true,
+    });
+    const row = rows.find((entry) => entry.libraryEntityId === tgId);
+    expect(row?.generatedWireName).toBe('VL TGN');
+    expect(row?.effectiveWireName).toBe('Short override');
+  });
+
   it('marks excluded channels in preview rows', () => {
     const yaml = readFileSync(join(fixtureDir, 'with-format-build.yaml'), 'utf8');
     const aggregate = parseProjectDocument(yaml);
