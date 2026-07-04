@@ -4,19 +4,19 @@ Read-only tabbed table preview of CPS CSV export files.
 
 ## Components
 
-| File | Role |
-| --- | --- |
-| `CpsCsvPreview.tsx` | Tabbed `Table` per CSV file |
+| File                     | Role                                                                |
+| ------------------------ | ------------------------------------------------------------------- |
+| `CpsCsvPreview.tsx`      | Tabbed `Table` per CSV file                                         |
 | `CpsCsvPreviewModal.tsx` | Modal shell; loads preview via `useBuildCpsExportPreview` when open |
 
 ## Props — `CpsCsvPreview`
 
-| Prop | Type | Description |
-| --- | --- | --- |
-| `fileNames` | `readonly string[]` | Tab order (from format adapter) |
-| `tablesByFile` | `Record<string, CsvTable>` | Parsed headers + rows per file |
-| `loading` | `boolean` | Show spinner while serialising |
-| `error` | `string \| null` | Export/preview failure message |
+| Prop           | Type                       | Description                     |
+| -------------- | -------------------------- | ------------------------------- |
+| `fileNames`    | `readonly string[]`        | Tab order (from format adapter) |
+| `tablesByFile` | `Record<string, CsvTable>` | Parsed headers + rows per file  |
+| `loading`      | `boolean`                  | Show spinner while serialising  |
+| `error`        | `string \| null`           | Export/preview failure message  |
 
 ## Usage
 

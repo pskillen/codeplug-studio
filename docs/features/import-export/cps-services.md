@@ -35,6 +35,8 @@ Wire adapters read `AssembledBuild` — they do not query IndexedDB or parse CPS
 - `exportBuildFile({ build, library, fileName, options })` — one CPS file.
 - `exportBuildAll({ build, library, options })` — all files for the format adapter.
 
+App-layer `previewCpsExport` in `buildCpsExportService.ts` calls `exportBuildAll` without triggering a browser download; the build export page modal parses results with `csvToTable` for on-screen preview ([#151](https://github.com/pskillen/codeplug-studio/issues/151)).
+
 `options.profileId` overrides the build's saved profile for wire limits without mutating the build row.
 
 ## Related
