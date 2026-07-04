@@ -8,14 +8,14 @@ Tier-1 reference for editing the vendor-neutral **library** — the per-project 
 
 ## Documentation map
 
-| Doc                                                                             | Contents                              |
-| ------------------------------------------------------------------------------- | ------------------------------------- |
-| [mode-profiles-progress.md](mode-profiles-progress.md)                          | Multi-mode editor initiative progress |
-| [zone-member-picker.md](zone-member-picker.md)                                  | Two-list zone membership editor       |
+| Doc                                                                             | Contents                                                                                 |
+| ------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
+| [mode-profiles-progress.md](mode-profiles-progress.md)                          | Multi-mode editor initiative progress                                                    |
+| [zone-member-picker.md](zone-member-picker.md)                                  | Two-list zone membership editor                                                          |
 | [channel-sets-progress.md](channel-sets-progress.md)                            | Channel sets initiative ([#172](https://github.com/pskillen/codeplug-studio/issues/172)) |
-| [rx-group-list-member-picker.md](rx-group-list-member-picker.md)                | Two-list RX group list member editor  |
-| [app-shell/data-table.md](../app-shell/data-table.md)                           | Shared `DataTable` and list prefs     |
-| [app-shell/library-routes-progress.md](../app-shell/library-routes-progress.md) | List routes initiative progress       |
+| [rx-group-list-member-picker.md](rx-group-list-member-picker.md)                | Two-list RX group list member editor                                                     |
+| [app-shell/data-table.md](../app-shell/data-table.md)                           | Shared `DataTable` and list prefs                                                        |
+| [app-shell/library-routes-progress.md](../app-shell/library-routes-progress.md) | List routes initiative progress                                                          |
 
 ## List routes
 
@@ -60,12 +60,12 @@ Channel editor DMR tab shows `RxGroupListSummary` below the RX group list select
 
 Generate curated frequency inventories into the library:
 
-| Set | Channels | Notes |
-| --- | --- | --- |
-| PMR446 | 16 | Default `forbidTransmit` |
-| UK VHF simplex (V- or S-channels) | 30 | Same grid, pick naming scheme |
-| UK UHF simplex (U272–U288 or legacy U16–U32) | 17 | Same grid, pick naming scheme |
-| UK CB / EU CEPT CB | 40 each | |
+| Set                                          | Channels | Notes                         |
+| -------------------------------------------- | -------- | ----------------------------- |
+| PMR446                                       | 16       | Default `forbidTransmit`      |
+| UK VHF simplex (V- or S-channels)            | 30       | Same grid, pick naming scheme |
+| UK UHF simplex (U272–U288 or legacy U16–U32) | 17       | Same grid, pick naming scheme |
+| UK CB / EU CEPT CB                           | 40 each  |                               |
 
 Workflow: pick set → preview table with dedup status → optional power, forbid-TX, name prefix, **also create zone** → bulk `putChannel` (+ optional `putZone`). Duplicate RX frequencies in the library are skipped.
 

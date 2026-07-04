@@ -5,11 +5,7 @@ export type {
   ChannelSetId,
   ChannelSetTemplate,
 } from './types.ts';
-export {
-  CHANNEL_SET_DEFINITIONS,
-  allChannelSetIds,
-  channelSetDefinition,
-} from './definitions.ts';
+export { CHANNEL_SET_DEFINITIONS, allChannelSetIds, channelSetDefinition } from './definitions.ts';
 export { classifyChannelSetDedup } from './dedup.ts';
 export { generateChannelsFromSet } from './generate.ts';
 export {

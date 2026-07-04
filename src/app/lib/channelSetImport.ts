@@ -24,8 +24,7 @@ export interface PersistChannelSetImportFailure {
 }
 
 export type PersistChannelSetImportOutcome =
-  | PersistChannelSetImportSuccess
-  | PersistChannelSetImportFailure;
+  PersistChannelSetImportSuccess | PersistChannelSetImportFailure;
 
 export async function persistChannelSetImport(
   options: PersistChannelSetImportOptions,
@@ -85,9 +84,7 @@ export function formatChannelSetImportMessage(
   outcome: PersistChannelSetImportSuccess,
   zoneName?: string,
 ): string {
-  const parts = [
-    `Added ${outcome.addedCount} channel${outcome.addedCount === 1 ? '' : 's'}`,
-  ];
+  const parts = [`Added ${outcome.addedCount} channel${outcome.addedCount === 1 ? '' : 's'}`];
   if (outcome.skippedCount > 0) {
     parts.push(`skipped ${outcome.skippedCount} duplicate${outcome.skippedCount === 1 ? '' : 's'}`);
   }

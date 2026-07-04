@@ -6,16 +6,16 @@ Library workflow for generating curated channel sets (PMR446, UK V/U FM simplex 
 
 ## Props
 
-| Prop | Type | Description |
-| --- | --- | --- |
-| *(none)* | — | Reads active project and library from app state hooks |
+| Prop     | Type | Description                                           |
+| -------- | ---- | ----------------------------------------------------- |
+| _(none)_ | —    | Reads active project and library from app state hooks |
 
 ## Usage
 
 ```tsx
 import ChannelSetPicker from '@app/components/channelSets/ChannelSetPicker.tsx';
 
-<ChannelSetPicker />
+<ChannelSetPicker />;
 ```
 
 Routed at `/library/channels/add-channel-set` via `AddChannelSetPage`.

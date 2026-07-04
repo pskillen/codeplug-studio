@@ -13,7 +13,8 @@ export const CHANNEL_SET_DEFINITIONS: readonly ChannelSetDefinition[] = [
   {
     id: 'pmr446',
     label: 'PMR446',
-    description: '16 licence-free PMR446 channels (446 MHz, 12.5 kHz). RX-only typical on ham rigs.',
+    description:
+      '16 licence-free PMR446 channels (446 MHz, 12.5 kHz). RX-only typical on ham rigs.',
     defaultForbidTransmit: true,
     defaultBandwidthKHz: 12.5,
     templates: pmr446Templates,
@@ -21,7 +22,8 @@ export const CHANNEL_SET_DEFINITIONS: readonly ChannelSetDefinition[] = [
   {
     id: 'uk-vhf-simplex-v',
     label: 'UK VHF simplex (V-channels)',
-    description: '30 UK 2 m FM simplex channels V16–V45 (145.200–145.5625 MHz). Calling V40 @ 145.500 MHz.',
+    description:
+      '30 UK 2 m FM simplex channels V16–V45 (145.200–145.5625 MHz). Calling V40 @ 145.500 MHz.',
     defaultForbidTransmit: false,
     defaultBandwidthKHz: 12.5,
     templates: ukVhfSimplexVTemplates,
@@ -38,7 +40,8 @@ export const CHANNEL_SET_DEFINITIONS: readonly ChannelSetDefinition[] = [
   {
     id: 'uk-uhf-simplex-u',
     label: 'UK UHF simplex (U-channels)',
-    description: '17 UK 70 cm FM simplex channels U272–U288 (433.400–433.600 MHz). Calling U280 @ 433.500 MHz.',
+    description:
+      '17 UK 70 cm FM simplex channels U272–U288 (433.400–433.600 MHz). Calling U280 @ 433.500 MHz.',
     defaultForbidTransmit: false,
     defaultBandwidthKHz: 12.5,
     templates: ukUhfSimplexUTemplates,
