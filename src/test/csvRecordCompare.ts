@@ -1,4 +1,4 @@
-import { parseCsv } from './csvParse.ts';
+import { parseCsv } from '@core/import-export/csvParse.ts';
 
 export interface CsvRecordCompareOptions {
   nameColumn?: string;

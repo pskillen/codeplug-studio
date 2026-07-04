@@ -13,7 +13,7 @@ import {
   type CsvRecordCompareOptions,
   type CsvRecordCompareResult,
 } from './csvRecordCompare.ts';
-import { parseCsv } from './csvParse.ts';
+import { parseCsv } from '@core/import-export/csvParse.ts';
 
 /** Six core DM32 CPS files plus optional Scan.csv (omitted when no scan lists export). */
 export const DM32_CORE_EXPORT_FILES = [

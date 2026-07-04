@@ -15,7 +15,7 @@ import { seedZoneGroupingFromLibrary } from '@core/domain/zoneGroupingLayout.ts'
 import { assemble, type LibrarySlice } from '@core/services/assemble.ts';
 import { serialiseDm32Files } from './serialise.ts';
 import { CHANNEL_COL, ZONE_COL, SCAN_COL } from './columns.ts';
-import { parseCsv } from '../../../../test/csvParse.ts';
+import { parseCsv } from '@core/import-export/csvParse.ts';
 import { minimalDm32Bundle } from '../../../../test/dm32/bundles.ts';
 import {
   minimalDm32ExportBuild,
