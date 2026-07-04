@@ -10,7 +10,7 @@ Tier-1 reference for the **embedded channel map** — plotting library channels 
 
 ## Where the map lives
 
-There is **no** top-level Map nav item. Legacy `/#/map` bookmarks redirect to `/library/channels`.
+There is **no** top-level Map nav item. Legacy `/map` bookmarks redirect to `/library/channels`.
 
 | List route          | Map behaviour                                                                    |
 | ------------------- | -------------------------------------------------------------------------------- |

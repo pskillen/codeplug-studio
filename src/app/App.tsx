@@ -1,4 +1,4 @@
-import { createHashRouter, Navigate, RouterProvider } from 'react-router-dom';
+import { createBrowserRouter, Navigate, RouterProvider } from 'react-router-dom';
 import AppLayout from './components/AppLayout/AppLayout.tsx';
 import RequireActiveProject from './components/RequireActiveProject/RequireActiveProject.tsx';
 import HomePage from './routes/HomePage.tsx';
@@ -39,7 +39,7 @@ function MapRedirect() {
   return <Navigate to="/library/channels" replace />;
 }
 
-export const appRouter = createHashRouter([
+export const appRouter = createBrowserRouter([
   {
     element: <AppLayout />,
     children: [

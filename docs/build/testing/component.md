@@ -16,7 +16,7 @@ App components typically need:
 
 - Mantine `MantineProvider`
 - Project/library context from `src/app/state/`
-- `MemoryRouter` with `basename: '/codeplug-studio/'` when routes matter
+- `MemoryRouter` at `/` when routes matter
 
 Extract a shared `renderWithProviders()` helper when the second component test lands.
 

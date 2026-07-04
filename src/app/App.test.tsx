@@ -61,7 +61,7 @@ function createLocalStorageMock() {
 
 function renderApp(initialRoute = '/') {
   const path = initialRoute.startsWith('#') ? initialRoute.slice(1) : initialRoute;
-  window.location.hash = `#${path}`;
+  window.history.pushState({}, '', path);
   if (appRouter.state.location.pathname !== path) {
     void appRouter.navigate(path, { replace: true });
   }
@@ -82,6 +82,8 @@ describe('App', () => {
   });
 
   afterEach(() => {
+    window.history.pushState({}, '', '/');
+    void appRouter.navigate('/', { replace: true });
     vi.unstubAllGlobals();
   });
 

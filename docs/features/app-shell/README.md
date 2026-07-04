@@ -13,7 +13,7 @@ The SPA uses Mantine `AppShell` with two-section navigation (primary + section n
 ```text
 ProjectProvider
 └─ OperatorPositionProvider
-   └─ HashRouter
+   └─ BrowserRouter
       └─ AppLayout (AppShell: header + AppNav + SectionNav + Outlet + footer)
          ├─ /          Projects (lifecycle UI)
          ├─ /library/* Per-entity library list routes (see library docs)
@@ -37,7 +37,7 @@ ProjectProvider
 | [library/README.md](../library/README.md)                      | Library CRUD and list routes               |
 | [map/README.md](../map/README.md)                              | Embedded channel map                       |
 
-UI primitives live in `src/app/components/ui/` (ported from codeplug-tool). Reusable list infrastructure is documented in [data-table.md](data-table.md). Inline feedback uses Mantine `Alert` — see [alerts.md](alerts.md). Dev styleguide: `/#/styleguide` (unlinked).
+UI primitives live in `src/app/components/ui/` (ported from codeplug-tool). Reusable list infrastructure is documented in [data-table.md](data-table.md). Inline feedback uses Mantine `Alert` — see [alerts.md](alerts.md). Dev styleguide: `/styleguide` (unlinked).
 
 ## Routes
 
@@ -56,7 +56,7 @@ UI primitives live in `src/app/components/ui/` (ported from codeplug-tool). Reus
 | `/library/channels/add-from-brandmeister`     | Add from BrandMeister   | [repeater-directories](../repeater-directories/README.md)                                                                                                                |
 | `/map`                                        | _(redirect)_            | → `/library/channels` (legacy [#11](https://github.com/pskillen/codeplug-studio/issues/11))                                                                              |
 | `/summary`                                    | Summary                 | [Library summary](../report/README.md) — Ticket #12                                                                                                                      |
-| `/reports`                                    | _(redirect)_            | Redirects to `/summary` (legacy hash route)                                                                                                                              |
+| `/reports`                                    | _(redirect)_            | Redirects to `/summary` (legacy route)                                                                                                                                   |
 | `/reference`                                  | Reference hub           | Choose Maidenhead or Bands from section nav — [#29](https://github.com/pskillen/codeplug-studio/issues/29), [#30](https://github.com/pskillen/codeplug-studio/issues/30) |
 | `/reference/maidenhead`                       | Maidenhead converter    | [maidenhead.md](../maidenhead.md) — map, geocode, channel lookup                                                                                                         |
 | `/reference/bands`                            | Band plan               | [bands.md](../../reference/bands.md) — grouped pills table                                                                                                               |
