@@ -1,6 +1,6 @@
 import type { FormatBuild } from '@core/models/formatBuild.ts';
 import type { CpsExportOptions, FormatId } from '@core/import-export/types.ts';
-import { exportBuildFile, exportBuildZip } from '@core/services/exportBuild.ts';
+import { exportBuildAll, exportBuildFile, exportBuildZip } from '@core/services/exportBuild.ts';
 import type { LibrarySlice } from '@core/services/assemble.ts';
 import type { ProjectPersistence } from '@integrations/persistence/index.ts';
 import { downloadTextFile, downloadZip } from '@integrations/download/browserDownload.ts';
@@ -14,6 +14,11 @@ export interface CpsDriveUploadTarget {
 }
 
 export interface CpsDownloadResult {
+  warnings: string[];
+}
+
+export interface CpsPreviewResult {
+  files: Record<string, string>;
   warnings: string[];
 }
 
@@ -57,6 +62,19 @@ function slugifyFileName(name: string): string {
 /** Default ZIP archive name for a build CPS export. */
 export function defaultCpsZipFileName(buildName: string, formatId: FormatId): string {
   return `${slugifyFileName(buildName)}-${formatId}.zip`;
+}
+
+/** Serialise all CPS CSV files for preview (no browser download). */
+export async function previewCpsExport(
+  projectId: string,
+  buildId: string,
+  options?: CpsExportOptions,
+  store: ProjectPersistence = persistence,
+): Promise<CpsPreviewResult> {
+  const build = await requireBuild(store, projectId, buildId);
+  const library = await loadLibrarySlice(store, projectId);
+  const result = exportBuildAll({ build, library, options });
+  return { files: result.files, warnings: result.warnings };
 }
 
 /** Download one CPS CSV file for a build. */
