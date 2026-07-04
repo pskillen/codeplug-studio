@@ -21,19 +21,31 @@ export function ukVhfSimplexVName(index: number): string {
 }
 
 /**
- * Legacy S-channel names aligned to the V16–V45 grid (S20 = 145.500 MHz).
- * Even slots use historic S08–S22; odd slots use S17–S45 (parallel label, no historic S).
+ * Legacy S-channel names for the V16–V45 grid (S20 = 145.500 MHz).
+ * Even indices use historic S08–S22; odd indices use S31–S45 (no historic S).
  */
-export function ukVhfSimplexSName(index: number): string {
-  if (index % 2 === 0) {
-    return `S${8 + index / 2}`;
+const UK_VHF_SIMPLEX_S_NAMES_INTERNAL: readonly string[] = (() => {
+  const names: string[] = [];
+  let oddS = 31;
+  for (let i = 0; i < 30; i++) {
+    if (i % 2 === 0) {
+      names.push(`S${8 + i / 2}`);
+    } else {
+      names.push(`S${oddS++}`);
+    }
   }
-  return `S${16 + index}`;
+  return names;
+})();
+
+export function ukVhfSimplexSName(index: number): string {
+  const name = UK_VHF_SIMPLEX_S_NAMES_INTERNAL[index];
+  if (!name) {
+    throw new RangeError(`UK VHF simplex S index out of range: ${index}`);
+  }
+  return name;
 }
 
-export const UK_VHF_SIMPLEX_S_NAMES: readonly string[] = UK_VHF_SIMPLEX_HZ.map((_, i) =>
-  ukVhfSimplexSName(i),
-);
+export const UK_VHF_SIMPLEX_S_NAMES: readonly string[] = UK_VHF_SIMPLEX_S_NAMES_INTERNAL;
 
 /** U272…U288 (current RSGB simplex designators). */
 export function ukUhfSimplexUName(index: number): string {
