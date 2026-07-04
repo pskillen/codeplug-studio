@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Alert, Button, Group, Modal, Stack, Switch, Text } from '@mantine/core';
-import { IconDownload, IconPackage } from '@tabler/icons-react';
+import { IconDownload, IconPackage, IconTable } from '@tabler/icons-react';
 import type { FormatBuild } from '@core/models/formatBuild.ts';
 import { traitProfileFor } from '@core/models/traits.ts';
 import { formatCatalogEntry } from '@core/import-export/registry.ts';
@@ -9,6 +9,7 @@ import { isMultiFileExportAdapter } from '@core/import-export/exportAdapter.ts';
 import { formatProfileWireHint, getFormatProfiles } from '@core/import-export/formatProfiles.ts';
 import type { FormatId } from '@core/import-export/types.ts';
 import ExportNameSettingsFields from './ExportNameSettingsFields.tsx';
+import CpsCsvPreviewModal from './CpsCsvPreviewModal.tsx';
 import { saveDriveLastFolderId, saveDriveLastFolderPath } from '@integrations/cloud/drivePrefs.ts';
 import DriveBrowserModal, { type DriveSaveTarget } from '../import-export/DriveBrowserModal.tsx';
 import GoogleDriveActionButton from '../import-export/GoogleDriveActionButton.tsx';
@@ -45,6 +46,7 @@ export default function ExportBuildCpsPanel({ build }: ExportBuildCpsPanelProps)
   const [savingInclusion, setSavingInclusion] = useState(false);
   const [inclusionError, setInclusionError] = useState<string | null>(null);
   const [driveBrowserOpen, setDriveBrowserOpen] = useState(false);
+  const [previewOpen, setPreviewOpen] = useState(false);
   const [overwriteOpen, setOverwriteOpen] = useState(false);
   const [pendingDriveTarget, setPendingDriveTarget] = useState<DriveSaveTarget | null>(null);
 
@@ -316,6 +318,14 @@ export default function ExportBuildCpsPanel({ build }: ExportBuildCpsPanelProps)
         >
           Save ZIP to Drive
         </GoogleDriveActionButton>
+        <Button
+          variant="outline"
+          leftSection={<IconTable size={ICON_SIZE_ACTION} stroke={ICON_STROKE} />}
+          disabled={!hasChannels || exporting}
+          onClick={() => setPreviewOpen(true)}
+        >
+          Preview CSV
+        </Button>
       </Group>
       <Stack gap={4}>
         <Text size="sm" fw={600}>
@@ -349,6 +359,12 @@ export default function ExportBuildCpsPanel({ build }: ExportBuildCpsPanelProps)
         saving={exporting}
         onSelectFile={() => {}}
         onSaveTarget={handleDriveSaveTarget}
+      />
+      <CpsCsvPreviewModal
+        opened={previewOpen}
+        onClose={() => setPreviewOpen(false)}
+        build={build}
+        exportOptions={exportOptions}
       />
       <Modal
         opened={overwriteOpen}
