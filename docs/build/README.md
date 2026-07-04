@@ -4,12 +4,12 @@ Codeplug Studio is a static Vite SPA deployed to **Cloudflare Pages** via GitHub
 
 **Base path:** `/` (custom domain; see `vite.config.ts`).
 
-| Environment | URL                                     | Trigger                       |
-| ----------- | --------------------------------------- | ----------------------------- |
-| **prod**    | `https://codeplug.pskillen.xyz`         | Full GitHub release published |
-| **staging** | `https://staging.codeplug.pskillen.xyz` | Pre-release published         |
-| **next**    | `https://next.codeplug.pskillen.xyz`    | Push to `main`                |
-| **dev**     | `https://dev.codeplug.pskillen.xyz`     | Push to `dev`                 |
+| Environment | URL                                     | Trigger                       | `BUILD_ENV` | CF branch           |
+| ----------- | --------------------------------------- | ----------------------------- | ----------- | ------------------- |
+| **prod**    | `https://codeplug.pskillen.xyz`         | Full GitHub release published | `prod`      | `main` (production) |
+| **staging** | `https://staging.codeplug.pskillen.xyz` | Pre-release published         | `staging`   | `staging` (preview) |
+| **next**    | `https://next.codeplug.pskillen.xyz`    | Push to `main`                | `main`      | `next` (preview)    |
+| **dev**     | `https://dev.codeplug.pskillen.xyz`     | Push to `dev`                 | `dev`       | `dev` (preview)     |
 
 ## Local development
 
@@ -83,10 +83,12 @@ Deploy workflows call the reusable [`.github/workflows/cloudflare-pages.yaml`](.
 | ------------------------------------------------------ | ---------------------- | ----------- |
 | [`prod.yaml`](../../.github/workflows/prod.yaml)       | `release: released`    | `prod`      |
 | [`staging.yaml`](../../.github/workflows/staging.yaml) | `release: prereleased` | `staging`   |
-| [`next.yaml`](../../.github/workflows/next.yaml)       | `push` to `main`       | `next`      |
+| [`main.yaml`](../../.github/workflows/main.yaml)       | `push` to `main`       | `main`      |
 | [`dev.yaml`](../../.github/workflows/dev.yaml)         | `push` to `dev`        | `dev`       |
 
-**Production** deploys omit `--branch` (production slot on the Pages project). **Staging**, **next**, and **dev** deploy as preview branches (`staging`, `next`, and `dev` respectively), mapped to custom subdomains in Cloudflare.
+**Production** (`prod.yaml`) deploys with `--branch=main` (the CF production branch). Release workflows check out a tag (detached `HEAD`); omitting `--branch` creates a throwaway preview on branch `HEAD` instead of production.
+
+**Preview** workflows pass `cloudflare_branch` (`staging`, `next`, or `dev`) for pre-production hostnames. Do not use `--branch=main` on continuous `main` pushes — that slot is production only.
 
 ### Operator setup (one-time)
 
@@ -106,7 +108,7 @@ Create the API token in the Cloudflare dashboard with account-scoped **Cloudflar
 
 | Variable                | Local default            | Deployed builds (via workflows)                  |
 | ----------------------- | ------------------------ | ------------------------------------------------ |
-| `BUILD_ENV`             | `local`                  | `prod`, `staging`, `next`, or `dev`              |
+| `BUILD_ENV`             | `local`                  | `prod`, `staging`, `main`, or `dev`              |
 | `BUILD_VERSION`         | `local`                  | Release tag or commit SHA (leading `v` stripped) |
 | `VITE_GOOGLE_CLIENT_ID` | `.env.local` (see above) | GitHub Actions secret `GOOGLE_OAUTH_CLIENT_ID`   |
 

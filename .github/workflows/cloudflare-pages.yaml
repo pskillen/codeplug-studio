@@ -23,6 +23,7 @@ concurrency:
 
 env:
   CF_PAGES_PROJECT_NAME: codeplug-studio
+  CF_PAGES_PRODUCTION_BRANCH: main
 
 jobs:
   deploy:
@@ -62,7 +63,7 @@ jobs:
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          command: pages deploy dist --project-name=${{ env.CF_PAGES_PROJECT_NAME }}
+          command: pages deploy dist --project-name=${{ env.CF_PAGES_PROJECT_NAME }} --branch=${{ env.CF_PAGES_PRODUCTION_BRANCH }}
 
       - name: Deploy to Cloudflare Pages (preview)
         if: ${{ inputs.cloudflare_branch != '' }}

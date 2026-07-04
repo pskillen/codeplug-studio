@@ -29,7 +29,7 @@ Pair with [git-workflow](../git-workflow/SKILL.md) for releases and
 | `.github/workflows/cloudflare-pages.yaml` | Reusable build + deploy |
 | `.github/workflows/prod.yaml` | Prod env on full release |
 | `.github/workflows/staging.yaml` | Staging env on pre-release |
-| `.github/workflows/next.yaml` | Next env on push to `main` |
+| `.github/workflows/main.yaml` | Main env on push to `main` (CF preview branch `next`) |
 | `.github/workflows/dev.yaml` | Dev env on push to `dev` |
 
 Site base path: `/` (see `vite.config.ts`).
@@ -41,7 +41,7 @@ Site base path: `/` (see `vite.config.ts`).
 | Environment | `BUILD_ENV` | `BUILD_VERSION` | Trigger |
 | --- | --- | --- | --- |
 | local | `local` | `local` | `npm run dev` |
-| next | `next` | commit SHA | push to `main` |
+| next (continuous) | `main` | commit SHA | push to `main` → CF branch `next` |
 | dev | `dev` | commit SHA | push to `dev` |
 | staging | `staging` | SemVer from tag (leading `v` stripped) | pre-release publish |
 | prod | `prod` | SemVer from tag (leading `v` stripped) | full release publish |
@@ -53,7 +53,7 @@ Site base path: `/` (see `vite.config.ts`).
 ```bash
 npm run dev          # footer: local · local
 BUILD_ENV=prod BUILD_VERSION=v0.1.0 npm run build && npm run preview
-BUILD_ENV=next BUILD_VERSION=abc1234 npm run build && npm run preview
+BUILD_ENV=main BUILD_VERSION=abc1234 npm run build && npm run preview
 ```
 
 ---
