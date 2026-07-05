@@ -15,7 +15,7 @@ How zones appear on the CPS wire for builds with the **zone grouping** trait. **
    - **Export scan list** — when enabled, export emits a zone-derived `Scan.csv` entry (subject to the master toggle on Export).
    - **Scan carrier frequency** — MHz simplex for the `{zoneName} Scan` carrier channel (default 145.500).
    - **Include in scan list** — per-member toggle on library zone membership (`includeInScanList`; default on). Honoured when `Channel.scanSkip` is not set.
-4. Export from **Export** — `assemble` projects zones from library membership (or build layout when present).
+4. Export from **Export** — `assemble` projects zones from library membership (or build layout when present). **Nested zone members** are flattened to channel ids before wire serialisation — see [nested-zones.md](../library/nested-zones.md).
 
 A dedicated build zone layout editor (member reorder per zone) is **deferred** — see [#99](https://github.com/pskillen/codeplug-studio/issues/99).
 
