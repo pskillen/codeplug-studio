@@ -8,13 +8,14 @@ Tier-1 reference for editing the vendor-neutral **library** — the per-project 
 
 ## Documentation map
 
-| Doc                                                                             | Contents                              |
-| ------------------------------------------------------------------------------- | ------------------------------------- |
-| [mode-profiles-progress.md](mode-profiles-progress.md)                          | Multi-mode editor initiative progress |
-| [zone-member-picker.md](zone-member-picker.md)                                  | Two-list zone membership editor       |
-| [rx-group-list-member-picker.md](rx-group-list-member-picker.md)                | Two-list RX group list member editor  |
-| [app-shell/data-table.md](../app-shell/data-table.md)                           | Shared `DataTable` and list prefs     |
-| [app-shell/library-routes-progress.md](../app-shell/library-routes-progress.md) | List routes initiative progress       |
+| Doc                                                                             | Contents                                                                                 |
+| ------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
+| [mode-profiles-progress.md](mode-profiles-progress.md)                          | Multi-mode editor initiative progress                                                    |
+| [zone-member-picker.md](zone-member-picker.md)                                  | Two-list zone membership editor                                                          |
+| [channel-sets-progress.md](channel-sets-progress.md)                            | Channel sets initiative ([#172](https://github.com/pskillen/codeplug-studio/issues/172)) |
+| [rx-group-list-member-picker.md](rx-group-list-member-picker.md)                | Two-list RX group list member editor                                                     |
+| [app-shell/data-table.md](../app-shell/data-table.md)                           | Shared `DataTable` and list prefs                                                        |
+| [app-shell/library-routes-progress.md](../app-shell/library-routes-progress.md) | List routes initiative progress                                                          |
 
 ## List routes
 
@@ -52,6 +53,25 @@ RX group list editor uses `RxGroupListMemberPicker` — same interaction pattern
 ### Channel DMR RX list summary ([#75](https://github.com/pskillen/codeplug-studio/issues/75))
 
 Channel editor DMR tab shows `RxGroupListSummary` below the RX group list selector — live member preview with link to the list editor. Sidecar: `src/app/components/library/RxGroupListSummary.md`.
+
+### Channel sets ([#172](https://github.com/pskillen/codeplug-studio/issues/172))
+
+**Route:** `/library/channels/add-channel-set` — section nav **Add channel set…**
+
+Generate curated frequency inventories into the library:
+
+| Set                                            | Channels | Notes                    |
+| ---------------------------------------------- | -------- | ------------------------ |
+| PMR446                                         | 16       | Default `forbidTransmit` |
+| UK VHF simplex (V-channels or legacy S08–S23)  | 30 / 16  | Pick naming scheme       |
+| UK UHF simplex (U272–U288 or legacy SU16–SU32) | 17       | Pick naming scheme       |
+| UK CB / EU CEPT CB                             | 40 each  |                          |
+
+Workflow: pick set → preview table (per-channel checkboxes, dedup status) → optional power, **bandwidth** (12.5 or 25 kHz), forbid-TX, name prefix, **also create zone** → bulk `putChannel` (+ optional `putZone`). Duplicate RX frequencies in the library are skipped.
+
+- Core: `src/core/domain/channelSets/`, `src/core/services/channelSetImport.ts`
+- UI: `ChannelSetPicker` — sidecar `src/app/components/channelSets/ChannelSetPicker.md`
+- Reference: [channel-sets.md](../../reference/channel-sets.md)
 
 ## Editor routes
 
