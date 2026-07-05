@@ -14,7 +14,7 @@ import {
   resolveOverrideWireName,
 } from '@core/domain/formatBuildOverrides.ts';
 import { defaultChannelWireName } from '@core/domain/channelNaming.ts';
-import { zoneMemberChannelIds } from '@core/domain/zoneMembers.ts';
+import { resolveEffectiveZoneChannelIds } from '@core/domain/zoneHierarchy.ts';
 import { migrateFormatBuild } from '@core/domain/migrateFormatBuild.ts';
 import type { Library } from '@core/models/library.ts';
 
@@ -155,7 +155,7 @@ export function zoneLinkedChannelIds(build: FormatBuild, library: LibrarySlice):
     }
   }
   for (const zone of library.zones) {
-    for (const channelId of zoneMemberChannelIds(zone)) {
+    for (const channelId of resolveEffectiveZoneChannelIds(zone, library.zones)) {
       ids.add(channelId);
     }
   }
@@ -223,7 +223,7 @@ function assembleZones(
   return library.zones
     .filter((zone) => !isEntityExcluded(overrides, zone.id))
     .map((zone) => {
-      const memberChannelIds = zoneMemberChannelIds(zone).filter((id) =>
+      const memberChannelIds = resolveEffectiveZoneChannelIds(zone, library.zones).filter((id) =>
         exportedChannelIds.has(id),
       );
       return {

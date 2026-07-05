@@ -1,5 +1,5 @@
 import type { Channel, ChannelMode, Zone } from '../models/library.ts';
-import { zoneMemberChannelIds } from './zoneMembers.ts';
+import { resolveEffectiveZoneChannelIds } from './zoneHierarchy.ts';
 import type { LatLon } from './geo.ts';
 import { uniqueLatLon } from './geo.ts';
 
@@ -132,6 +132,7 @@ export function buildChannelById(plotted: Channel[]): Map<string, Channel> {
 
 export function zoneGeolocatedPoints(
   zone: Zone,
+  allZones: Zone[],
   plottedById: Map<string, Channel>,
   allChannels: Channel[],
   { skipZero, requireUseLocation }: FilterOptions,
@@ -140,7 +141,7 @@ export function zoneGeolocatedPoints(
   const missing: ZoneMemberMissing[] = [];
   const seenIds = new Set<string>();
 
-  const channelMembers = zoneMemberChannelIds(zone);
+  const channelMembers = resolveEffectiveZoneChannelIds(zone, allZones);
 
   for (const memberId of channelMembers) {
     if (seenIds.has(memberId)) continue;

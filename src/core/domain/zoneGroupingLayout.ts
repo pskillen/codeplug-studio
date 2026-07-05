@@ -1,7 +1,7 @@
 import type { FormatBuild } from '@core/models/formatBuild.ts';
 import type { ZoneGroupingLayout, ZoneGroupingZoneEntry } from '@core/models/traitLayout.ts';
 import type { LibrarySlice } from '@core/services/assemble.ts';
-import { zoneMemberChannelIds } from '@core/domain/zoneMembers.ts';
+import { resolveEffectiveZoneChannelIds } from '@core/domain/zoneHierarchy.ts';
 
 export function findZoneGroupingSection(build: FormatBuild): ZoneGroupingLayout | undefined {
   return build.layout.sections.find((s): s is ZoneGroupingLayout => s.kind === 'zoneGrouping');
@@ -14,7 +14,7 @@ export function seedZoneGroupingFromLibrary(library: LibrarySlice): ZoneGrouping
     zones: library.zones.map((zone) => ({
       id: zone.id,
       name: zone.name,
-      channelIds: zoneMemberChannelIds(zone),
+      channelIds: resolveEffectiveZoneChannelIds(zone, library.zones),
     })),
   };
 }

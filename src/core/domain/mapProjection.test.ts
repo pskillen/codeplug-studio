@@ -129,7 +129,7 @@ describe('zoneGeolocatedPoints', () => {
       ],
     };
 
-    const { points, missing } = zoneGeolocatedPoints(zone, plottedById, all, {
+    const { points, missing } = zoneGeolocatedPoints(zone, [zone], plottedById, all, {
       requireUseLocation: true,
       skipZero: true,
     });
@@ -147,7 +147,7 @@ describe('zoneGeolocatedPoints', () => {
     };
     const plottedById = buildChannelById([ch]);
 
-    const { points } = zoneGeolocatedPoints(zone, plottedById, [ch], {
+    const { points } = zoneGeolocatedPoints(zone, [zone], plottedById, [ch], {
       requireUseLocation: true,
       skipZero: true,
     });

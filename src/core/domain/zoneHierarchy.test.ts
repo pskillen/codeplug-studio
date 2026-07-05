@@ -46,7 +46,7 @@ describe('resolveEffectiveZoneChannelIds', () => {
       { kind: 'channel', channelId: 'ch-1' },
       { kind: 'channel', channelId: 'ch-2' },
     ]);
-    expect(resolveEffectiveZoneChannelIds(glasgow, library([glasgow], ['ch-1', 'ch-2']))).toEqual([
+    expect(resolveEffectiveZoneChannelIds(glasgow, [glasgow])).toEqual([
       'ch-1',
       'ch-2',
     ]);
@@ -61,36 +61,33 @@ describe('resolveEffectiveZoneChannelIds', () => {
       { kind: 'zone', zoneId: 'z-e' },
     ]);
     const lib = library([glasgow, edinburgh, scotland], ['ch-1', 'ch-2']);
-    expect(resolveEffectiveZoneChannelIds(scotland, lib)).toEqual(['ch-1', 'ch-2']);
+    expect(resolveEffectiveZoneChannelIds(scotland, lib.zones)).toEqual(['ch-1', 'ch-2']);
   });
 
   it('returns empty when child zone is missing', () => {
     const parent = zone('z-p', 'Parent', [{ kind: 'zone', zoneId: 'missing' }]);
-    expect(resolveEffectiveZoneChannelIds(parent, library([parent]))).toEqual([]);
+    expect(resolveEffectiveZoneChannelIds(parent, [parent])).toEqual([]);
   });
 });
 
 describe('zoneMembershipHasCycle', () => {
   it('detects direct self-reference', () => {
     const a = zone('z-a', 'A', []);
-    const lib = library([a]);
-    expect(
-      zoneMembershipHasCycle('z-a', [{ kind: 'zone', zoneId: 'z-a' }], lib),
-    ).toBe(true);
+    expect(zoneMembershipHasCycle('z-a', [{ kind: 'zone', zoneId: 'z-a' }], [a])).toBe(true);
   });
 
   it('detects indirect cycle', () => {
     const a = zone('z-a', 'A', [{ kind: 'zone', zoneId: 'z-b' }]);
     const b = zone('z-b', 'B', [{ kind: 'zone', zoneId: 'z-a' }]);
     const lib = library([a, b]);
-    expect(zoneMembershipHasCycle('z-a', a.members, lib)).toBe(true);
+    expect(zoneMembershipHasCycle('z-a', a.members, lib.zones)).toBe(true);
   });
 
   it('allows acyclic hierarchy', () => {
     const child = zone('z-c', 'Child', [{ kind: 'channel', channelId: 'ch-1' }]);
     const parent = zone('z-p', 'Parent', [{ kind: 'zone', zoneId: 'z-c' }]);
     const lib = library([child, parent], ['ch-1']);
-    expect(zoneMembershipHasCycle('z-p', parent.members, lib)).toBe(false);
+    expect(zoneMembershipHasCycle('z-p', parent.members, lib.zones)).toBe(false);
   });
 });
 
@@ -99,7 +96,7 @@ describe('zoneIdsExcludedFromMembership', () => {
     const child = zone('z-c', 'Child', []);
     const parent = zone('z-p', 'Parent', [{ kind: 'zone', zoneId: 'z-c' }]);
     const lib = library([child, parent]);
-    expect(zoneIdsExcludedFromMembership('z-p', lib)).toEqual(new Set(['z-p', 'z-c']));
+    expect(zoneIdsExcludedFromMembership('z-p', lib.zones)).toEqual(new Set(['z-p', 'z-c']));
   });
 });
 

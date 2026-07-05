@@ -1,16 +1,16 @@
-import type { Library, Zone, ZoneMemberEntry } from '@core/models/library.ts';
+import type { Zone, ZoneMemberEntry } from '@core/models/library.ts';
 import { normalizeZoneMemberEntry } from './zoneMembers.ts';
 
-function zoneMap(library: Library): Map<string, Zone> {
-  return new Map(library.zones.map((zone) => [zone.id, zone]));
+function zoneMap(zones: Zone[]): Map<string, Zone> {
+  return new Map(zones.map((zone) => [zone.id, zone]));
 }
 
 /**
  * Flatten a zone's membership to channel ids in member order.
  * Child zones are expanded depth-first; duplicate channel ids are skipped (first wins).
  */
-export function resolveEffectiveZoneChannelIds(zone: Zone, library: Library): string[] {
-  const zonesById = zoneMap(library);
+export function resolveEffectiveZoneChannelIds(zone: Zone, zones: Zone[]): string[] {
+  const zonesById = zoneMap(zones);
   const result: string[] = [];
   const seen = new Set<string>();
 
@@ -48,9 +48,9 @@ function membersForZone(
 export function zoneMembershipHasCycle(
   rootZoneId: string,
   proposedMembers: ZoneMemberEntry[],
-  library: Library,
+  zones: Zone[],
 ): boolean {
-  const zonesById = zoneMap(library);
+  const zonesById = zoneMap(zones);
 
   function visit(zoneId: string, path: Set<string>): boolean {
     if (path.has(zoneId)) return true;
@@ -73,8 +73,8 @@ export function zoneMembershipHasCycle(
 }
 
 /** Zone ids that must not be offered as members when editing zoneId (self + descendants). */
-export function zoneIdsExcludedFromMembership(zoneId: string, library: Library): Set<string> {
-  const zonesById = zoneMap(library);
+export function zoneIdsExcludedFromMembership(zoneId: string, zones: Zone[]): Set<string> {
+  const zonesById = zoneMap(zones);
   const excluded = new Set<string>([zoneId]);
 
   function walk(currentId: string): void {

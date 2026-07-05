@@ -197,4 +197,61 @@ describe('assemble', () => {
     expect(projection.channels.map((row) => row.entity.id)).not.toContain(orphanChannel.id);
     expect(projection.channels).toHaveLength(2);
   });
+
+  it('flattens nested library zones into assembled member channel ids', () => {
+    const projectId = 'proj-nested';
+    const child = {
+      ...newChannel(projectId, 'Child ch'),
+      id: 'ch-child',
+    };
+    const childZone = {
+      id: 'zone-child',
+      projectId,
+      revision: 1,
+      updatedAt: '2026-01-01T00:00:00.000Z',
+      name: 'Child',
+      comment: '',
+      members: [{ kind: 'channel' as const, channelId: child.id }],
+    };
+    const parentZone = {
+      id: 'zone-parent',
+      projectId,
+      revision: 1,
+      updatedAt: '2026-01-01T00:00:00.000Z',
+      name: 'Parent',
+      comment: '',
+      members: [{ kind: 'zone' as const, zoneId: childZone.id }],
+    };
+    const library = {
+      channels: [child],
+      zones: [childZone, parentZone],
+      talkGroups: [],
+      digitalContacts: [],
+      analogContacts: [],
+      rxGroupLists: [],
+    };
+    const build = {
+      id: 'build-1',
+      projectId,
+      revision: 1,
+      updatedAt: '2026-01-01T00:00:00.000Z',
+      name: 'Nested test',
+      formatId: 'opengd77',
+      profileId: 'opengd77-1701',
+      layout: { sections: [] },
+      channelOverrides: [],
+      zoneOverrides: [],
+      talkGroupOverrides: [],
+      rxGroupListOverrides: [],
+      channelSelections: [],
+      talkGroupSelections: [],
+      rxGroupListSelections: [],
+      digitalContactSelections: [],
+      analogContactSelections: [],
+    };
+
+    const projection = assemble(build, library);
+    const parent = projection.zones.find((z) => z.zoneId === parentZone.id);
+    expect(parent?.memberChannelIds).toEqual([child.id]);
+  });
 });

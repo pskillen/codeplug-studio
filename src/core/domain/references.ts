@@ -1,6 +1,7 @@
 import type { ChannelModeProfileDMR, EntityRef, Library } from '../models/library.ts';
 import type { EntityRefKind } from '../models/libraryTypes.ts';
-import { zoneMemberChannelIds } from './zoneMembers.ts';
+import { directZoneMemberZoneIds, normalizeZoneMemberEntry } from './zoneMembers.ts';
+import { resolveEffectiveZoneChannelIds } from './zoneHierarchy.ts';
 
 /** A reference held by one library entity pointing at a target entity. */
 export interface EntityReference {
@@ -13,7 +14,7 @@ export interface EntityReference {
 
 /** Target of a reference scan: a library entity addressed by kind + UUID id. */
 export interface ReferenceTarget {
-  kind: EntityRefKind | 'rxGroupList';
+  kind: EntityRefKind | 'rxGroupList' | 'zone';
   id: string;
 }
 
@@ -33,14 +34,25 @@ function dmrProfiles(channel: Library['channels'][number]): ChannelModeProfileDM
 export function findReferencesTo(library: Library, target: ReferenceTarget): EntityReference[] {
   const refs: EntityReference[] = [];
 
-  // Zones reference channels via members.
+  // Zones reference channels via members (effective flattened set).
   for (const zone of library.zones) {
-    if (target.kind === 'channel' && zoneMemberChannelIds(zone).includes(target.id)) {
+    if (
+      target.kind === 'channel' &&
+      resolveEffectiveZoneChannelIds(zone, library.zones).includes(target.id)
+    ) {
       refs.push({
         fromKind: 'zone',
         fromId: zone.id,
         fromName: zone.name,
         relationship: 'zone member',
+      });
+    }
+    if (target.kind === 'zone' && directZoneMemberZoneIds(zone).includes(target.id)) {
+      refs.push({
+        fromKind: 'zone',
+        fromId: zone.id,
+        fromName: zone.name,
+        relationship: 'nested zone member',
       });
     }
   }
@@ -102,10 +114,14 @@ export function findDanglingReferences(library: Library): DanglingReference[] {
   const analogContactIds = new Set(library.analogContacts.map((c) => c.id));
   const rxGroupListIds = new Set(library.rxGroupLists.map((r) => r.id));
 
+  const zoneIds = new Set(library.zones.map((z) => z.id));
+
   const hasTarget = (target: ReferenceTarget): boolean => {
     switch (target.kind) {
       case 'channel':
         return channelIds.has(target.id);
+      case 'zone':
+        return zoneIds.has(target.id);
       case 'talkGroup':
         return talkGroupIds.has(target.id);
       case 'digitalContact':
@@ -120,8 +136,23 @@ export function findDanglingReferences(library: Library): DanglingReference[] {
   const dangling: DanglingReference[] = [];
 
   for (const zone of library.zones) {
-    for (const channelId of zoneMemberChannelIds(zone)) {
-      const target: ReferenceTarget = { kind: 'channel', id: channelId };
+    for (const raw of zone.members) {
+      const member = normalizeZoneMemberEntry(raw);
+      if (member.kind === 'channel') {
+        const target: ReferenceTarget = { kind: 'channel', id: member.channelId };
+        if (!hasTarget(target)) {
+          dangling.push({
+            fromKind: 'zone',
+            fromId: zone.id,
+            fromName: zone.name,
+            targetKind: target.kind,
+            targetId: target.id,
+            relationship: 'zone member',
+          });
+        }
+        continue;
+      }
+      const target: ReferenceTarget = { kind: 'zone', id: member.zoneId };
       if (!hasTarget(target)) {
         dangling.push({
           fromKind: 'zone',
@@ -129,7 +160,7 @@ export function findDanglingReferences(library: Library): DanglingReference[] {
           fromName: zone.name,
           targetKind: target.kind,
           targetId: target.id,
-          relationship: 'zone member',
+          relationship: 'nested zone member',
         });
       }
     }
