@@ -1,4 +1,4 @@
-import type { Library, Zone, ZoneMemberEntry } from '@core/models/library.ts';
+import type { Zone, ZoneMemberEntry } from '@core/models/library.ts';
 import type { EntityRef } from '@core/models/libraryTypes.ts';
 
 /** Legacy v4 shape — `{ kind: 'channel', id }`. */

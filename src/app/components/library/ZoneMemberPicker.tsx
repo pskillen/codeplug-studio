@@ -9,35 +9,46 @@ import {
   TextInput,
 } from '@mantine/core';
 import { IconArrowLeft, IconArrowRight } from '@tabler/icons-react';
-import { useEffect, useMemo, useState } from 'react';
-import type { Channel } from '@core/models/library.ts';
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
+import { Link } from 'react-router-dom';
+import type { Channel, Zone, ZoneMemberEntry } from '@core/models/library.ts';
 import { channelDisplayLabel } from '@core/domain/channelNaming.ts';
+import { zoneIdsExcludedFromMembership } from '@core/domain/zoneHierarchy.ts';
 import { ICON_SIZE_NAV, ICON_STROKE } from '../../lib/iconSizes.ts';
 import { sortByName } from '../../lib/channels.ts';
+import {
+  channelMatchesZoneMemberFilter,
+  computeZoneMemberPickerMapFilters,
+  type ZoneMemberPickerMapFilters,
+} from './zoneMemberPickerUtils.ts';
+import {
+  entryFromMemberKey,
+  memberKeysFromMembers,
+  membersFromMemberKeys,
+  type ZonePickerMemberKey,
+} from './zoneMembers.ts';
 
-export interface ZoneMemberPickerMapFilters {
-  /** Omit from map channel markers */
-  hiddenMarkerChannelIds: string[];
-  /** Omit from zone hull preview (in-zone members only) */
-  hiddenZoneMemberIds: string[];
-}
+export type { ZoneMemberPickerMapFilters } from './zoneMemberPickerUtils.ts';
+export { channelMatchesZoneMemberFilter, computeZoneMemberPickerMapFilters } from './zoneMemberPickerUtils.ts';
 
 export interface ZoneMemberPickerProps {
   channels: Channel[];
-  selectedIds: string[];
-  onChange: (ids: string[]) => void;
+  zones: Zone[];
+  editingZoneId: string | null;
+  members: ZoneMemberEntry[];
+  onChange: (members: ZoneMemberEntry[]) => void;
   onMapFiltersChange?: (filters: ZoneMemberPickerMapFilters) => void;
 }
 
 function moveSelectedBlock(
-  ids: string[],
-  selected: Set<string>,
+  keys: ZonePickerMemberKey[],
+  selected: Set<ZonePickerMemberKey>,
   direction: 'up' | 'down',
-): string[] {
-  const next = [...ids];
+): ZonePickerMemberKey[] {
+  const next = [...keys];
   const indices = next
-    .map((id, index) => ({ id, index }))
-    .filter(({ id }) => selected.has(id))
+    .map((key, index) => ({ key, index }))
+    .filter(({ key }) => selected.has(key))
     .map(({ index }) => index);
 
   if (direction === 'up') {
@@ -59,12 +70,9 @@ function moveSelectedBlock(
   return next;
 }
 
-/** Case-insensitive match on channel name or callsign. */
-export function channelMatchesZoneMemberFilter(channel: Channel, filterLower: string): boolean {
+function zoneMatchesFilter(zone: Zone, filterLower: string): boolean {
   if (!filterLower) return true;
-  const name = channel.name.toLowerCase();
-  const callsign = (channel.callsign ?? '').toLowerCase();
-  return name.includes(filterLower) || callsign.includes(filterLower);
+  return zone.name.toLowerCase().includes(filterLower);
 }
 
 function ChannelList({
@@ -100,44 +108,116 @@ function ChannelList({
   );
 }
 
-export function computeZoneMemberPickerMapFilters(
-  channels: Channel[],
-  selectedIds: string[],
-  availableFilter: string,
-  inZoneFilter: string,
-  hideAvailableFilteredFromMap: boolean,
-  hideInZoneFilteredFromMap: boolean,
-): ZoneMemberPickerMapFilters {
-  const selectedIdSet = new Set(selectedIds);
-  const availableFilterLower = availableFilter.trim().toLowerCase();
-  const inZoneFilterLower = inZoneFilter.trim().toLowerCase();
-  const hiddenMarkerChannelIds: string[] = [];
-  const hiddenZoneMemberIds: string[] = [];
-
-  if (hideAvailableFilteredFromMap && availableFilterLower) {
-    for (const ch of channels) {
-      if (!selectedIdSet.has(ch.id) && !channelMatchesZoneMemberFilter(ch, availableFilterLower)) {
-        hiddenMarkerChannelIds.push(ch.id);
-      }
-    }
+function ZoneList({
+  items,
+  checked,
+  onToggle,
+  emptyLabel,
+}: {
+  items: Zone[];
+  checked: Set<string>;
+  onToggle: (id: string) => void;
+  emptyLabel: string;
+}) {
+  if (!items.length) {
+    return (
+      <Text size="sm" c="dimmed" p="xs">
+        {emptyLabel}
+      </Text>
+    );
   }
 
-  if (hideInZoneFilteredFromMap && inZoneFilterLower) {
-    for (const id of selectedIds) {
-      const ch = channels.find((c) => c.id === id);
-      if (ch && !channelMatchesZoneMemberFilter(ch, inZoneFilterLower)) {
-        hiddenMarkerChannelIds.push(ch.id);
-        hiddenZoneMemberIds.push(ch.id);
+  return (
+    <Stack gap={4} p="xs">
+      {items.map((zone) => (
+        <Checkbox
+          key={zone.id}
+          label={
+            <Group gap={4} wrap="nowrap">
+              <Text size="sm">Zone: {zone.name}</Text>
+              <Text component={Link} to={`/library/zones/${zone.id}`} size="xs" c="dimmed">
+                edit
+              </Text>
+            </Group>
+          }
+          checked={checked.has(zone.id)}
+          onChange={() => onToggle(zone.id)}
+        />
+      ))}
+    </Stack>
+  );
+}
+
+function InZoneMemberList({
+  memberKeys,
+  channels,
+  zones,
+  checked,
+  onToggle,
+  filterLower,
+  emptyLabel,
+}: {
+  memberKeys: ZonePickerMemberKey[];
+  channels: Channel[];
+  zones: Zone[];
+  checked: Set<ZonePickerMemberKey>;
+  onToggle: (key: ZonePickerMemberKey) => void;
+  filterLower: string;
+  emptyLabel: string;
+}) {
+  const rows = memberKeys
+    .map((key) => {
+      const entry = entryFromMemberKey(key);
+      if (entry.kind === 'channel') {
+        const ch = channels.find((row) => row.id === entry.channelId);
+        if (!ch) return null;
+        if (filterLower && !channelMatchesZoneMemberFilter(ch, filterLower)) return null;
+        return { key, label: channelDisplayLabel(ch) };
       }
-    }
+      const zone = zones.find((row) => row.id === entry.zoneId);
+      if (!zone) return null;
+      if (filterLower && !zoneMatchesFilter(zone, filterLower)) return null;
+      return {
+        key,
+        label: (
+          <Group gap={4} wrap="nowrap">
+            <Text size="sm">Zone: {zone.name}</Text>
+            <Text component={Link} to={`/library/zones/${zone.id}`} size="xs" c="dimmed">
+              edit
+            </Text>
+          </Group>
+        ),
+      };
+    })
+    .filter((row): row is { key: ZonePickerMemberKey; label: ReactNode } => row != null);
+
+  if (!rows.length) {
+    return (
+      <Text size="sm" c="dimmed" p="xs">
+        {emptyLabel}
+      </Text>
+    );
   }
 
-  return { hiddenMarkerChannelIds, hiddenZoneMemberIds };
+  return (
+    <Stack gap={4} p="xs">
+      {rows.map((row) => (
+        <Checkbox
+          key={row.key}
+          label={row.label}
+          checked={checked.has(row.key)}
+          onChange={() => onToggle(row.key)}
+        />
+      ))}
+    </Stack>
+  );
 }
 
 export default function ZoneMemberPicker({
   channels,
-  selectedIds,
+  zones,
+  editingZoneId,
+  members,
   onChange,
   onMapFiltersChange,
 }: ZoneMemberPickerProps) {
@@ -145,51 +225,65 @@ export default function ZoneMemberPicker({
   const [inZoneFilter, setInZoneFilter] = useState('');
   const [hideAvailableFilteredFromMap, setHideAvailableFilteredFromMap] = useState(true);
   const [hideInZoneFilteredFromMap, setHideInZoneFilteredFromMap] = useState(true);
-  const [availableSelected, setAvailableSelected] = useState<string[]>([]);
-  const [inZoneSelected, setInZoneSelected] = useState<string[]>([]);
+  const [availableChannelSelected, setAvailableChannelSelected] = useState<string[]>([]);
+  const [availableZoneSelected, setAvailableZoneSelected] = useState<string[]>([]);
+  const [inZoneSelected, setInZoneSelected] = useState<ZonePickerMemberKey[]>([]);
 
+  const memberKeys = useMemo(() => memberKeysFromMembers(members), [members]);
+  const memberKeySet = useMemo(() => new Set(memberKeys), [memberKeys]);
   const availableFilterLower = availableFilter.trim().toLowerCase();
   const inZoneFilterLower = inZoneFilter.trim().toLowerCase();
-  const selectedIdSet = useMemo(() => new Set(selectedIds), [selectedIds]);
+  const selectedChannelIds = useMemo(() => zoneMemberIdsFromMembers(members, channels), [members, channels]);
+
+  const excludedZoneIds = useMemo(
+    () => (editingZoneId ? zoneIdsExcludedFromMembership(editingZoneId, zones) : new Set<string>()),
+    [editingZoneId, zones],
+  );
 
   const availableChannels = useMemo(
     () =>
       sortByName(channels).filter(
         (ch) =>
-          !selectedIdSet.has(ch.id) &&
+          !memberKeySet.has(`channel:${ch.id}`) &&
           (!availableFilterLower || channelMatchesZoneMemberFilter(ch, availableFilterLower)),
       ),
-    [channels, selectedIdSet, availableFilterLower],
+    [channels, memberKeySet, availableFilterLower],
   );
 
-  const inZoneChannels = useMemo(
+  const availableZones = useMemo(
     () =>
-      selectedIds
-        .map((id) => channels.find((ch) => ch.id === id))
-        .filter((ch): ch is Channel => ch != null)
+      [...zones]
+        .sort((a, b) => a.name.localeCompare(b.name))
         .filter(
-          (ch) => !inZoneFilterLower || channelMatchesZoneMemberFilter(ch, inZoneFilterLower),
+          (zone) =>
+            !excludedZoneIds.has(zone.id) &&
+            !memberKeySet.has(`zone:${zone.id}`) &&
+            (!availableFilterLower || zoneMatchesFilter(zone, availableFilterLower)),
         ),
-    [channels, selectedIds, inZoneFilterLower],
+    [zones, excludedZoneIds, memberKeySet, availableFilterLower],
   );
 
   const mapFilters = useMemo(
     () =>
       computeZoneMemberPickerMapFilters(
         channels,
-        selectedIds,
+        selectedChannelIds,
         availableFilter,
         inZoneFilter,
         hideAvailableFilteredFromMap,
         hideInZoneFilteredFromMap,
+        members,
+        zones,
       ),
     [
       channels,
-      selectedIds,
+      selectedChannelIds,
       availableFilter,
       inZoneFilter,
       hideAvailableFilteredFromMap,
       hideInZoneFilteredFromMap,
+      members,
+      zones,
     ],
   );
 
@@ -197,60 +291,58 @@ export default function ZoneMemberPicker({
     onMapFiltersChange?.(mapFilters);
   }, [mapFilters, onMapFiltersChange]);
 
-  const toggleAvailable = (id: string) => {
-    setAvailableSelected((prev) =>
-      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
-    );
-  };
-
-  const toggleInZone = (id: string) => {
-    setInZoneSelected((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
+  const setMembersFromKeys = (keys: ZonePickerMemberKey[]) => {
+    onChange(membersFromMemberKeys(keys));
   };
 
   const addSelected = () => {
-    const toAdd = availableSelected.filter((id) => !selectedIdSet.has(id));
+    const toAdd: ZonePickerMemberKey[] = [
+      ...availableChannelSelected.map((id) => `channel:${id}` as const),
+      ...availableZoneSelected.map((id) => `zone:${id}` as const),
+    ].filter((key) => !memberKeySet.has(key));
     if (!toAdd.length) return;
-    onChange([...selectedIds, ...toAdd]);
-    setAvailableSelected([]);
+    setMembersFromKeys([...memberKeys, ...toAdd]);
+    setAvailableChannelSelected([]);
+    setAvailableZoneSelected([]);
   };
 
   const removeSelected = () => {
     if (!inZoneSelected.length) return;
     const remove = new Set(inZoneSelected);
-    onChange(selectedIds.filter((id) => !remove.has(id)));
+    setMembersFromKeys(memberKeys.filter((key) => !remove.has(key)));
     setInZoneSelected([]);
   };
 
   const moveSelected = (direction: 'up' | 'down') => {
     if (!inZoneSelected.length) return;
-    onChange(moveSelectedBlock(selectedIds, new Set(inZoneSelected), direction));
+    setMembersFromKeys(moveSelectedBlock(memberKeys, new Set(inZoneSelected), direction));
   };
 
-  const canMoveUp = inZoneSelected.some((id) => selectedIds.indexOf(id) > 0);
-  const canMoveDown = inZoneSelected.some((id) => {
-    const index = selectedIds.indexOf(id);
-    return index >= 0 && index < selectedIds.length - 1;
+  const canMoveUp = inZoneSelected.some((key) => memberKeys.indexOf(key) > 0);
+  const canMoveDown = inZoneSelected.some((key) => {
+    const index = memberKeys.indexOf(key);
+    return index >= 0 && index < memberKeys.length - 1;
   });
 
   return (
     <Stack gap="sm">
       <Text size="sm" c="dimmed">
-        {selectedIds.length} member{selectedIds.length === 1 ? '' : 's'}
+        {members.length} direct member{members.length === 1 ? '' : 's'}
       </Text>
 
       <SimpleGrid cols={{ base: 1, sm: 3 }} spacing="md">
         <Stack gap="xs">
           <TextInput
             label="Filter available"
-            placeholder="Search by name or callsign…"
+            placeholder="Search channels or zones…"
             value={availableFilter}
             onChange={(e) => setAvailableFilter(e.currentTarget.value)}
           />
           <Text size="sm" fw={500}>
-            Available
+            Available channels
           </Text>
           <ScrollArea
-            h={240}
+            h={160}
             type="auto"
             offsetScrollbars
             style={{
@@ -260,9 +352,36 @@ export default function ZoneMemberPicker({
           >
             <ChannelList
               items={availableChannels}
-              checked={new Set(availableSelected)}
-              onToggle={toggleAvailable}
+              checked={new Set(availableChannelSelected)}
+              onToggle={(id) =>
+                setAvailableChannelSelected((prev) =>
+                  prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
+                )
+              }
               emptyLabel="No channels available"
+            />
+          </ScrollArea>
+          <Text size="sm" fw={500}>
+            Available zones
+          </Text>
+          <ScrollArea
+            h={120}
+            type="auto"
+            offsetScrollbars
+            style={{
+              border: '1px solid var(--mantine-color-default-border)',
+              borderRadius: 'var(--mantine-radius-sm)',
+            }}
+          >
+            <ZoneList
+              items={availableZones}
+              checked={new Set(availableZoneSelected)}
+              onToggle={(id) =>
+                setAvailableZoneSelected((prev) =>
+                  prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
+                )
+              }
+              emptyLabel="No zones available"
             />
           </ScrollArea>
           <Checkbox
@@ -278,7 +397,7 @@ export default function ZoneMemberPicker({
             type="button"
             variant="light"
             onClick={addSelected}
-            disabled={!availableSelected.length}
+            disabled={!availableChannelSelected.length && !availableZoneSelected.length}
             rightSection={<IconArrowRight size={ICON_SIZE_NAV} stroke={ICON_STROKE} />}
           >
             Add
@@ -297,7 +416,7 @@ export default function ZoneMemberPicker({
         <Stack gap="xs">
           <TextInput
             label="Filter in zone"
-            placeholder="Search by name or callsign…"
+            placeholder="Search members…"
             value={inZoneFilter}
             onChange={(e) => setInZoneFilter(e.currentTarget.value)}
           />
@@ -313,11 +432,18 @@ export default function ZoneMemberPicker({
               borderRadius: 'var(--mantine-radius-sm)',
             }}
           >
-            <ChannelList
-              items={inZoneChannels}
+            <InZoneMemberList
+              memberKeys={memberKeys}
+              channels={channels}
+              zones={zones}
               checked={new Set(inZoneSelected)}
-              onToggle={toggleInZone}
-              emptyLabel="No channels in zone"
+              onToggle={(key) =>
+                setInZoneSelected((prev) =>
+                  prev.includes(key) ? prev.filter((x) => x !== key) : [...prev, key],
+                )
+              }
+              filterLower={inZoneFilterLower}
+              emptyLabel="No members in zone"
             />
           </ScrollArea>
           <Checkbox
@@ -350,4 +476,17 @@ export default function ZoneMemberPicker({
       </SimpleGrid>
     </Stack>
   );
+}
+
+function zoneMemberIdsFromMembers(members: ZoneMemberEntry[], channels: Channel[]): string[] {
+  const channelIds = new Set(channels.map((ch) => ch.id));
+  const ids: string[] = [];
+  for (const member of members) {
+    const key = memberKeyFromEntry(member);
+    if (key.startsWith('channel:')) {
+      const id = key.slice('channel:'.length);
+      if (channelIds.has(id)) ids.push(id);
+    }
+  }
+  return ids;
 }

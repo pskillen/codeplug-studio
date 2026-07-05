@@ -33,7 +33,7 @@ describe('computeZoneMemberPickerMapFilters', () => {
       { ...newChannel(projectId, 'Alpha'), callsign: 'GB3AA', id: 'a' },
       { ...newChannel(projectId, 'Bravo'), callsign: 'GB3BB', id: 'b' },
     ];
-    const filters = computeZoneMemberPickerMapFilters(channels, [], 'gb3bb', '', true, true);
+    const filters = computeZoneMemberPickerMapFilters(channels, [], 'gb3bb', '', true, true, [], []);
     expect(filters.hiddenMarkerChannelIds).toEqual(['a']);
   });
 
@@ -49,6 +49,11 @@ describe('computeZoneMemberPickerMapFilters', () => {
       'gb3aa',
       true,
       true,
+      [
+        { kind: 'channel', channelId: 'a' },
+        { kind: 'channel', channelId: 'b' },
+      ],
+      [],
     );
     expect(filters.hiddenMarkerChannelIds).toEqual(['b']);
     expect(filters.hiddenZoneMemberIds).toEqual(['b']);
