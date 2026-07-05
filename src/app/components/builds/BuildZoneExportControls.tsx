@@ -199,27 +199,33 @@ export default function BuildZoneExportControls() {
                     <Text size="sm" fw={500}>
                       Include in scan list
                     </Text>
-                    {zone.members.map((member) => {
-                      const channel = channelById.get(member.channelId);
-                      const label = channel ? channelDisplayLabel(channel) : member.channelId;
-                      return (
-                        <Group key={member.channelId} justify="space-between" wrap="nowrap">
-                          <Text size="sm">{label}</Text>
-                          <Switch
-                            aria-label={`Include ${label} in scan list`}
-                            checked={member.includeInScanList !== false}
-                            disabled={saving}
-                            onChange={(event) =>
-                              void updateMemberScanInclusion(
-                                zone,
-                                member.channelId,
-                                event.currentTarget.checked,
-                              )
-                            }
-                          />
-                        </Group>
-                      );
-                    })}
+                    {zone.members
+                      .map(normalizeZoneMemberEntry)
+                      .filter(
+                        (member): member is Extract<ZoneMemberEntry, { kind: 'channel' }> =>
+                          member.kind === 'channel',
+                      )
+                      .map((member) => {
+                        const channel = channelById.get(member.channelId);
+                        const label = channel ? channelDisplayLabel(channel) : member.channelId;
+                        return (
+                          <Group key={member.channelId} justify="space-between" wrap="nowrap">
+                            <Text size="sm">{label}</Text>
+                            <Switch
+                              aria-label={`Include ${label} in scan list`}
+                              checked={member.includeInScanList !== false}
+                              disabled={saving}
+                              onChange={(event) =>
+                                void updateMemberScanInclusion(
+                                  zone,
+                                  member.channelId,
+                                  event.currentTarget.checked,
+                                )
+                              }
+                            />
+                          </Group>
+                        );
+                      })}
                   </Stack>
                 </Stack>
               </Accordion.Panel>

@@ -248,6 +248,7 @@ describe('assemble', () => {
       rxGroupListSelections: [],
       digitalContactSelections: [],
       analogContactSelections: [],
+      contactOverrides: [],
     };
 
     const projection = assemble(build, library);

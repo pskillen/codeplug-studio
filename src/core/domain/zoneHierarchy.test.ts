@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { Library, Zone } from '@core/models/library.ts';
+import { newChannel } from '@core/domain/factories.ts';
 import {
   resolveEffectiveZoneChannelIds,
   zoneIdsExcludedFromMembership,
@@ -21,17 +22,7 @@ function zone(id: string, name: string, members: Zone['members']): Zone {
 
 function library(zones: Zone[], channelIds: string[] = []): Library {
   return {
-    channels: channelIds.map((id) => ({
-      id,
-      projectId: 'p1',
-      revision: 1,
-      updatedAt: '2026-01-01T00:00:00.000Z',
-      name: id,
-      rxFrequency: 145_000_000,
-      txFrequency: 145_000_000,
-      modeProfiles: [],
-      comment: '',
-    })),
+    channels: channelIds.map((id) => ({ ...newChannel('p1', id), id })),
     analogContacts: [],
     talkGroups: [],
     digitalContacts: [],

@@ -122,10 +122,10 @@ describe('zoneGeolocatedPoints', () => {
     const zone = {
       ...newZone(projectId, 'Test zone'),
       members: [
-        { channelId: ch1.id },
-        { channelId: ch2.id },
-        { channelId: noLoc.id },
-        { channelId: 'ghost-id' },
+        { kind: 'channel' as const, channelId: ch1.id },
+        { kind: 'channel' as const, channelId: ch2.id },
+        { kind: 'channel' as const, channelId: noLoc.id },
+        { kind: 'channel' as const, channelId: 'ghost-id' },
       ],
     };
 
@@ -143,7 +143,7 @@ describe('zoneGeolocatedPoints', () => {
     const ch = locatedChannel('Solo', 56.5, -4.0);
     const zone = {
       ...newZone(projectId, 'Solo zone'),
-      members: [{ channelId: ch.id }],
+      members: [{ kind: 'channel' as const, channelId: ch.id }],
     };
     const plottedById = buildChannelById([ch]);
 

@@ -34,9 +34,9 @@ describe('validation', () => {
     const library = {
       ...emptyLibrary(),
       channels: [channel],
-      zones: [{ ...zone, members: [{ channelId: channel.id }] }],
+      zones: [{ ...zone, members: [{ kind: 'channel' as const, channelId: channel.id }] }],
     };
-    validateEntityRef({ kind: 'channel', id: channel.id }, library);
+    validateEntityRef({ kind: 'channel' as const, id: channel.id }, library);
   });
 
   it('creates channel with defaults', () => {

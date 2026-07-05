@@ -23,10 +23,13 @@ import {
 } from './zoneMemberPickerUtils.ts';
 import {
   entryFromMemberKey,
+  memberKeyFromEntry,
   memberKeysFromMembers,
   membersFromMemberKeys,
   type ZonePickerMemberKey,
 } from './zoneMembers.ts';
+
+type InZoneMemberRow = { key: ZonePickerMemberKey; label: ReactNode };
 
 export type { ZoneMemberPickerMapFilters } from './zoneMemberPickerUtils.ts';
 export {
@@ -168,19 +171,19 @@ function InZoneMemberList({
   filterLower: string;
   emptyLabel: string;
 }) {
-  const rows = memberKeys
-    .map((key) => {
-      const entry = entryFromMemberKey(key);
-      if (entry.kind === 'channel') {
-        const ch = channels.find((row) => row.id === entry.channelId);
-        if (!ch) return null;
-        if (filterLower && !channelMatchesZoneMemberFilter(ch, filterLower)) return null;
-        return { key, label: channelDisplayLabel(ch) };
-      }
-      const zone = zones.find((row) => row.id === entry.zoneId);
-      if (!zone) return null;
-      if (filterLower && !zoneMatchesFilter(zone, filterLower)) return null;
-      return {
+  const rows = memberKeys.flatMap((key): InZoneMemberRow[] => {
+    const entry = entryFromMemberKey(key);
+    if (entry.kind === 'channel') {
+      const ch = channels.find((row) => row.id === entry.channelId);
+      if (!ch) return [];
+      if (filterLower && !channelMatchesZoneMemberFilter(ch, filterLower)) return [];
+      return [{ key, label: channelDisplayLabel(ch) }];
+    }
+    const zone = zones.find((row) => row.id === entry.zoneId);
+    if (!zone) return [];
+    if (filterLower && !zoneMatchesFilter(zone, filterLower)) return [];
+    return [
+      {
         key,
         label: (
           <Group gap={4} wrap="nowrap">
@@ -190,9 +193,9 @@ function InZoneMemberList({
             </Text>
           </Group>
         ),
-      };
-    })
-    .filter((row): row is { key: ZonePickerMemberKey; label: ReactNode } => row != null);
+      },
+    ];
+  });
 
   if (!rows.length) {
     return (

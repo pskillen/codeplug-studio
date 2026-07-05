@@ -327,7 +327,7 @@ describe('previewWireRows', () => {
       updatedAt: '2026-01-01T00:00:00.000Z',
       name: 'Edinburgh',
       comment: '',
-      members: [{ channelId: zonedChannel.id }],
+      members: [{ kind: 'channel' as const, channelId: zonedChannel.id }],
     };
     const build = {
       ...newFormatBuild(projectId, 'opengd77-1701', 'Zone link test'),
@@ -360,7 +360,7 @@ describe('previewWireRows', () => {
       updatedAt: '2026-01-01T00:00:00.000Z',
       name: 'Legacy zone',
       comment: '',
-      members: [{ kind: 'channel', id: zonedChannel.id } as unknown as { channelId: string }],
+      members: [{ kind: 'channel' as const, channelId: zonedChannel.id }],
     };
     const build = {
       ...newFormatBuild(projectId, 'opengd77-1701', 'Legacy zone test'),
@@ -397,7 +397,7 @@ describe('previewWireRows', () => {
       updatedAt: '2026-01-01T00:00:00.000Z',
       name: 'Edinburgh',
       comment: '',
-      members: [{ channelId: zonedChannel.id }],
+      members: [{ kind: 'channel' as const, channelId: zonedChannel.id }],
     };
     const build = {
       ...newFormatBuild(projectId, 'opengd77-1701', 'Hide toggle test'),
@@ -460,7 +460,7 @@ describe('previewWireRows', () => {
       updatedAt: '2026-01-01T00:00:00.000Z',
       name: 'Edinburgh',
       comment: '',
-      members: [{ channelId: zonedChannel.id }],
+      members: [{ kind: 'channel' as const, channelId: zonedChannel.id }],
     };
     const build = {
       ...newFormatBuild(projectId, 'dm32-baofeng-dm32uv', 'DM32 hide toggle'),

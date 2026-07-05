@@ -73,7 +73,7 @@ describe('DM32 export serialise', () => {
   it('serialises zones with pipe-separated member names', () => {
     const channel = fmChannel('Test Chan');
     const zone = newZone(PROJECT_ID, 'My Zone');
-    zone.members = [{ channelId: channel.id }];
+    zone.members = [{ kind: 'channel' as const, channelId: channel.id }];
     const build = dm32Build();
     const library: LibrarySlice = {
       channels: [channel],
@@ -136,7 +136,7 @@ describe('DM32 export serialise', () => {
   it('emits Scan.csv and carrier when zone exportScanList is enabled', () => {
     const channel = fmChannel('Member One');
     const zone = newZone(PROJECT_ID, 'Glasgow');
-    zone.members = [{ channelId: channel.id }];
+    zone.members = [{ kind: 'channel' as const, channelId: channel.id }];
     const build = dm32Build();
     const layout = seedZoneGroupingFromLibrary({
       channels: [channel],

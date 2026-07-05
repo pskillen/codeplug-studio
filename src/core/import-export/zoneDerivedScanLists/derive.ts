@@ -2,7 +2,7 @@ import type { Channel, Zone } from '@core/models/library.ts';
 import type { ZoneGroupingLayout, ZoneGroupingZoneEntry } from '@core/models/traitLayout.ts';
 import type { CpsExportOptions } from '@core/import-export/types.ts';
 import type { AssembledBuild, LibrarySlice } from '@core/services/assemble.ts';
-import { memberIncludedInScanList } from '@core/domain/zoneMembers.ts';
+import { memberIncludedInScanList, normalizeZoneMemberEntry } from '@core/domain/zoneMembers.ts';
 import type { ExpandedDm32ChannelRow } from '../formats/dm32/channelExpansion.ts';
 import { newChannel } from '@core/domain/factories.ts';
 import { SCAN_COL } from '../formats/dm32/columns.ts';
@@ -43,10 +43,28 @@ function layoutEntry(
   return layout?.zones.find((zone) => zone.id === zoneId);
 }
 
-function scanMemberIds(zone: Zone): string[] {
-  return zone.members
-    .filter((member) => memberIncludedInScanList(member))
-    .map((member) => member.channelId);
+function scanMemberIds(zone: Zone, zones: Zone[]): string[] {
+  const zonesById = new Map(zones.map((row) => [row.id, row]));
+  const result: string[] = [];
+  const seen = new Set<string>();
+
+  function walk(current: Zone): void {
+    for (const raw of current.members) {
+      const member = normalizeZoneMemberEntry(raw);
+      if (member.kind === 'channel') {
+        if (!memberIncludedInScanList(member)) continue;
+        if (seen.has(member.channelId)) continue;
+        seen.add(member.channelId);
+        result.push(member.channelId);
+        continue;
+      }
+      const child = zonesById.get(member.zoneId);
+      if (child) walk(child);
+    }
+  }
+
+  walk(zone);
+  return result;
 }
 
 function expandedWireNamesForMembers(
@@ -114,7 +132,7 @@ export function deriveZoneDerivedScanLists(
     const libraryZone = zoneById.get(assembledZone.zoneId);
     if (!libraryZone) continue;
 
-    const memberIds = scanMemberIds(libraryZone);
+    const memberIds = scanMemberIds(libraryZone, library.zones);
     const memberWireNames = expandedWireNamesForMembers(
       memberIds,
       channelById,
