@@ -30,9 +30,9 @@ export const CHANNEL_SET_DEFINITIONS: readonly ChannelSetDefinition[] = [
   },
   {
     id: 'uk-vhf-simplex-s',
-    label: 'UK VHF simplex (S-channels)',
+    label: 'UK VHF simplex (legacy S08–S23)',
     description:
-      'Same frequencies as V-channels with legacy S designators (S08–S31). Calling S20 @ 145.500 MHz.',
+      '16 legacy S-channels on even V-channel frequencies (145.200–145.575 MHz). Calling S20 @ 145.500 MHz.',
     defaultForbidTransmit: false,
     defaultBandwidthKHz: 12.5,
     templates: ukVhfSimplexSTemplates,
@@ -48,9 +48,9 @@ export const CHANNEL_SET_DEFINITIONS: readonly ChannelSetDefinition[] = [
   },
   {
     id: 'uk-uhf-simplex-s',
-    label: 'UK UHF simplex (legacy U16–U32)',
+    label: 'UK UHF simplex (legacy SU16–SU32)',
     description:
-      'Same frequencies as U-channels with legacy numbering U16–U32. Calling U24 @ 433.500 MHz.',
+      'Same frequencies as U-channels with legacy SU16–SU32 numbering. Calling SU24 @ 433.500 MHz.',
     defaultForbidTransmit: false,
     defaultBandwidthKHz: 12.5,
     templates: ukUhfSimplexLegacyTemplates,

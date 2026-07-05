@@ -15,46 +15,27 @@ export function buildLinearGridHz(
 export const UK_VHF_SIMPLEX_HZ = buildLinearGridHz(145_200_000, 30, 12_500);
 export const UK_UHF_SIMPLEX_HZ = buildLinearGridHz(433_400_000, 17, 12_500);
 
+/** Even V-channel grid for legacy S08–S23 (25 kHz steps = every other 12.5 kHz slot). */
+export const UK_VHF_SIMPLEX_LEGACY_S_HZ = buildLinearGridHz(145_200_000, 16, 25_000);
+
 /** V16…V45 naming for UK VHF FM simplex grid. */
 export function ukVhfSimplexVName(index: number): string {
   return `V${16 + index}`;
 }
 
-/**
- * Legacy S-channel names for the V16–V45 grid (S20 = 145.500 MHz).
- * Even indices use historic S08–S22; odd indices use S31–S45 (no historic S).
- */
-const UK_VHF_SIMPLEX_S_NAMES_INTERNAL: readonly string[] = (() => {
-  const names: string[] = [];
-  let oddS = 31;
-  for (let i = 0; i < 30; i++) {
-    if (i % 2 === 0) {
-      names.push(`S${8 + i / 2}`);
-    } else {
-      names.push(`S${oddS++}`);
-    }
-  }
-  return names;
-})();
-
-export function ukVhfSimplexSName(index: number): string {
-  const name = UK_VHF_SIMPLEX_S_NAMES_INTERNAL[index];
-  if (!name) {
-    throw new RangeError(`UK VHF simplex S index out of range: ${index}`);
-  }
-  return name;
+/** Legacy S08…S23 on even V-channel frequencies. */
+export function ukVhfSimplexLegacySName(index: number): string {
+  return `S${String(8 + index).padStart(2, '0')}`;
 }
-
-export const UK_VHF_SIMPLEX_S_NAMES: readonly string[] = UK_VHF_SIMPLEX_S_NAMES_INTERNAL;
 
 /** U272…U288 (current RSGB simplex designators). */
 export function ukUhfSimplexUName(index: number): string {
   return `U${272 + index}`;
 }
 
-/** U16…U32 (legacy numbering at the same frequencies as U272–U288). */
-export function ukUhfSimplexLegacyName(index: number): string {
-  return `U${16 + index}`;
+/** SU16…SU32 (legacy numbering at the same frequencies as U272–U288). */
+export function ukUhfSimplexLegacySuName(index: number): string {
+  return `SU${16 + index}`;
 }
 
 function simplexTemplates(
@@ -73,7 +54,7 @@ export function ukVhfSimplexVTemplates(): ChannelSetTemplate[] {
 }
 
 export function ukVhfSimplexSTemplates(): ChannelSetTemplate[] {
-  return simplexTemplates(UK_VHF_SIMPLEX_HZ, ukVhfSimplexSName);
+  return simplexTemplates(UK_VHF_SIMPLEX_LEGACY_S_HZ, ukVhfSimplexLegacySName);
 }
 
 export function ukUhfSimplexUTemplates(): ChannelSetTemplate[] {
@@ -81,7 +62,7 @@ export function ukUhfSimplexUTemplates(): ChannelSetTemplate[] {
 }
 
 export function ukUhfSimplexLegacyTemplates(): ChannelSetTemplate[] {
-  return simplexTemplates(UK_UHF_SIMPLEX_HZ, ukUhfSimplexLegacyName);
+  return simplexTemplates(UK_UHF_SIMPLEX_HZ, ukUhfSimplexLegacySuName);
 }
 
 /** ETSI PMR446: 16 channels, 12.5 kHz spacing from 446.00625 MHz. */

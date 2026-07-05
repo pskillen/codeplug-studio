@@ -21,11 +21,13 @@ describe('generateChannelsFromSet', () => {
       namePrefix: 'TEST-',
       power: 25,
       forbidTransmit: true,
+      bandwidthKHz: 25,
     });
     expect(channels[0]?.name).toBe('TEST-V16');
     expect(channels[0]?.power).toBe(25);
     expect(channels[0]?.forbidTransmit).toBe(true);
     expect(channels[0]?.rxFrequency).toBe(channels[0]?.txFrequency);
+    expect(channels[0]?.modeProfiles[0]).toMatchObject({ bandwidthKHz: 25 });
   });
 });
 

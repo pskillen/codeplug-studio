@@ -60,14 +60,14 @@ Channel editor DMR tab shows `RxGroupListSummary` below the RX group list select
 
 Generate curated frequency inventories into the library:
 
-| Set                                          | Channels | Notes                         |
-| -------------------------------------------- | -------- | ----------------------------- |
-| PMR446                                       | 16       | Default `forbidTransmit`      |
-| UK VHF simplex (V- or S-channels)            | 30       | Same grid, pick naming scheme |
-| UK UHF simplex (U272–U288 or legacy U16–U32) | 17       | Same grid, pick naming scheme |
-| UK CB / EU CEPT CB                           | 40 each  |                               |
+| Set                                            | Channels | Notes                    |
+| ---------------------------------------------- | -------- | ------------------------ |
+| PMR446                                         | 16       | Default `forbidTransmit` |
+| UK VHF simplex (V-channels or legacy S08–S23)  | 30 / 16  | Pick naming scheme       |
+| UK UHF simplex (U272–U288 or legacy SU16–SU32) | 17       | Pick naming scheme       |
+| UK CB / EU CEPT CB                             | 40 each  |                          |
 
-Workflow: pick set → preview table with dedup status → optional power, forbid-TX, name prefix, **also create zone** → bulk `putChannel` (+ optional `putZone`). Duplicate RX frequencies in the library are skipped.
+Workflow: pick set → preview table (per-channel checkboxes, dedup status) → optional power, **bandwidth** (12.5 or 25 kHz), forbid-TX, name prefix, **also create zone** → bulk `putChannel` (+ optional `putZone`). Duplicate RX frequencies in the library are skipped.
 
 - Core: `src/core/domain/channelSets/`, `src/core/services/channelSetImport.ts`
 - UI: `ChannelSetPicker` — sidecar `src/app/components/channelSets/ChannelSetPicker.md`

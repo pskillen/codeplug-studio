@@ -11,8 +11,8 @@ export { generateChannelsFromSet } from './generate.ts';
 export {
   UK_UHF_SIMPLEX_HZ,
   UK_VHF_SIMPLEX_HZ,
-  UK_VHF_SIMPLEX_S_NAMES,
+  UK_VHF_SIMPLEX_LEGACY_S_HZ,
   buildLinearGridHz,
-  ukVhfSimplexSName,
+  ukVhfSimplexLegacySName,
   ukVhfSimplexVName,
 } from './frequencies.ts';

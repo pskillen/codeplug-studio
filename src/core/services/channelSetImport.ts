@@ -11,6 +11,8 @@ export interface ChannelSetImportOptions extends ChannelSetGenerateOptions {
   alsoCreateZone?: boolean;
   /** Zone name when alsoCreateZone is true; defaults to set label. */
   zoneName?: string;
+  /** Template indices to include; omit for all channels in the set. */
+  includedIndices?: number[];
 }
 
 export interface SkippedChannel {
@@ -39,7 +41,10 @@ export function buildChannelSetImportPlan(
   options: ChannelSetImportOptions = {},
 ): ChannelSetImportPlan {
   const generated = generateChannelsFromSet(projectId, setId, options);
-  const dedup = classifyChannelSetDedup(library.channels, generated);
+  const included = options.includedIndices
+    ? generated.filter((_, index) => options.includedIndices!.includes(index))
+    : generated;
+  const dedup = classifyChannelSetDedup(library.channels, included);
 
   const skipped: SkippedChannel[] = [
     ...dedup.skippedByRxHz.map((channel) => ({ channel, reason: 'rx_hz' as const })),

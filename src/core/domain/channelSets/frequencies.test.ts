@@ -2,15 +2,15 @@ import { describe, expect, it } from 'vitest';
 import {
   UK_UHF_SIMPLEX_HZ,
   UK_VHF_SIMPLEX_HZ,
-  UK_VHF_SIMPLEX_S_NAMES,
+  UK_VHF_SIMPLEX_LEGACY_S_HZ,
   buildLinearGridHz,
   euCbCeptTemplates,
   pmr446Templates,
   ukCb2781Templates,
   ukUhfSimplexLegacyTemplates,
   ukUhfSimplexUTemplates,
+  ukVhfSimplexLegacySName,
   ukVhfSimplexSTemplates,
-  ukVhfSimplexSName,
   ukVhfSimplexVTemplates,
 } from './frequencies.ts';
 
@@ -46,12 +46,15 @@ describe('UK VHF simplex', () => {
     expect(v40?.rxFrequencyHz).toBe(145_500_000);
   });
 
-  it('S-set names include S20 at calling frequency', () => {
+  it('legacy S-set has S08–S23 with S20 at calling frequency', () => {
     const sTemplates = ukVhfSimplexSTemplates();
+    expect(sTemplates).toHaveLength(16);
+    expect(sTemplates[0]?.name).toBe('S08');
+    expect(sTemplates[15]?.name).toBe('S23');
+    expect(UK_VHF_SIMPLEX_LEGACY_S_HZ).toHaveLength(16);
+    expect(ukVhfSimplexLegacySName(12)).toBe('S20');
     const s20 = sTemplates.find((t) => t.name === 'S20');
     expect(s20?.rxFrequencyHz).toBe(145_500_000);
-    expect(UK_VHF_SIMPLEX_S_NAMES).toHaveLength(30);
-    expect(ukVhfSimplexSName(24)).toBe('S20');
   });
 });
 
@@ -65,11 +68,11 @@ describe('UK UHF simplex', () => {
     expect(UK_UHF_SIMPLEX_HZ[16]).toBe(433_600_000);
   });
 
-  it('places U280 and legacy U24 calling at 433.500 MHz', () => {
+  it('places U280 and legacy SU24 calling at 433.500 MHz', () => {
     const uTemplates = ukUhfSimplexUTemplates();
     const legacy = ukUhfSimplexLegacyTemplates();
     expect(uTemplates.find((t) => t.name === 'U280')?.rxFrequencyHz).toBe(433_500_000);
-    expect(legacy.find((t) => t.name === 'U24')?.rxFrequencyHz).toBe(433_500_000);
+    expect(legacy.find((t) => t.name === 'SU24')?.rxFrequencyHz).toBe(433_500_000);
   });
 });
 

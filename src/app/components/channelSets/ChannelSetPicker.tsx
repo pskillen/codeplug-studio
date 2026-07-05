@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import {
   Alert,
   Button,
+  Checkbox,
   Group,
   NumberInput,
   ScrollArea,
@@ -39,9 +40,15 @@ const SET_OPTIONS = CHANNEL_SET_DEFINITIONS.map((def) => ({
   label: `${def.label} (${def.templates().length} ch)`,
 }));
 
+const BANDWIDTH_OPTIONS = [
+  { value: '12.5', label: '12.5 kHz (NFM)' },
+  { value: '25', label: '25 kHz (wide FM)' },
+];
+
 type PreviewStatus = 'add' | 'skip_rx' | 'skip_name';
 
 interface PreviewRow {
+  index: number;
   name: string;
   rxHz: number;
   txHz: number;
@@ -60,6 +67,17 @@ function previewStatusLabel(status: PreviewStatus): string {
   }
 }
 
+function formatFrequencyCell(rxHz: number, txHz: number): string {
+  if (rxHz === txHz) {
+    return `${hzToMhzString(rxHz)} simplex`;
+  }
+  return `${hzToMhzString(rxHz)} / ${hzToMhzString(txHz)}`;
+}
+
+function allIndices(count: number): Set<number> {
+  return new Set(Array.from({ length: count }, (_, i) => i));
+}
+
 export default function ChannelSetPicker() {
   const navigate = useNavigate();
   const { activeProjectId } = useProjects();
@@ -68,9 +86,13 @@ export default function ChannelSetPicker() {
   const [setId, setSetId] = useState<ChannelSetId>('pmr446');
   const [namePrefix, setNamePrefix] = useState('');
   const [power, setPower] = useState<number | string>('');
+  const [bandwidthKHz, setBandwidthKHz] = useState('12.5');
   const [forbidTransmit, setForbidTransmit] = useState<boolean | null>(null);
   const [alsoCreateZone, setAlsoCreateZone] = useState(false);
   const [zoneName, setZoneName] = useState('');
+  const [selectedIndices, setSelectedIndices] = useState<Set<number>>(() =>
+    allIndices(channelSetDefinition('pmr446').templates().length),
+  );
   const [adding, setAdding] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -79,14 +101,16 @@ export default function ChannelSetPicker() {
 
   const effectiveForbidTransmit = forbidTransmit ?? definition.defaultForbidTransmit;
   const powerValue = power === '' ? null : Number(power);
+  const bandwidthValue = Number(bandwidthKHz);
 
   const generateOptions = useMemo(
     () => ({
       namePrefix: namePrefix || undefined,
       power: powerValue,
       forbidTransmit: effectiveForbidTransmit,
+      bandwidthKHz: bandwidthValue,
     }),
-    [namePrefix, powerValue, effectiveForbidTransmit],
+    [namePrefix, powerValue, effectiveForbidTransmit, bandwidthValue],
   );
 
   const previewRows = useMemo((): PreviewRow[] => {
@@ -96,12 +120,13 @@ export default function ChannelSetPicker() {
     const skipRx = new Set(dedup.skippedByRxHz.map((ch) => ch.id));
     const skipName = new Set(dedup.skippedByName.map((ch) => ch.id));
 
-    return generated.map((ch) => {
+    return generated.map((ch, index) => {
       let status: PreviewStatus = 'add';
       if (skipRx.has(ch.id)) status = 'skip_rx';
       else if (skipName.has(ch.id)) status = 'skip_name';
       const mode = ch.modeProfiles[0]?.mode ?? 'fm';
       return {
+        index,
         name: ch.name,
         rxHz: ch.rxFrequency ?? 0,
         txHz: ch.txFrequency ?? 0,
@@ -111,7 +136,33 @@ export default function ChannelSetPicker() {
     });
   }, [activeProjectId, setId, generateOptions, library.channels]);
 
-  const addCount = previewRows.filter((r) => r.status === 'add').length;
+  const addCount = previewRows.filter(
+    (r) => r.status === 'add' && selectedIndices.has(r.index),
+  ).length;
+
+  function toggleIndex(index: number, checked: boolean) {
+    setSelectedIndices((prev) => {
+      const next = new Set(prev);
+      if (checked) next.add(index);
+      else next.delete(index);
+      return next;
+    });
+  }
+
+  function toggleAllSelectable(checked: boolean) {
+    if (checked) {
+      setSelectedIndices(
+        new Set(previewRows.filter((r) => r.status === 'add').map((r) => r.index)),
+      );
+    } else {
+      setSelectedIndices(new Set());
+    }
+  }
+
+  const selectableCount = previewRows.filter((r) => r.status === 'add').length;
+  const allSelectableChecked =
+    selectableCount > 0 &&
+    previewRows.filter((r) => r.status === 'add').every((r) => selectedIndices.has(r.index));
 
   async function handleAdd() {
     if (!activeProjectId || addCount === 0) return;
@@ -119,10 +170,15 @@ export default function ChannelSetPicker() {
     setError(null);
     setSuccess(null);
 
+    const includedIndices = previewRows
+      .filter((r) => r.status === 'add' && selectedIndices.has(r.index))
+      .map((r) => r.index);
+
     const plan = buildChannelSetImportPlan(library, activeProjectId, setId, {
       ...generateOptions,
       alsoCreateZone,
       zoneName: zoneName.trim() || definition.label,
+      includedIndices,
     });
 
     const outcome = await persistChannelSetImport({
@@ -178,8 +234,10 @@ export default function ChannelSetPicker() {
               value={setId}
               onChange={(value) => {
                 if (value) {
-                  setSetId(value as ChannelSetId);
+                  const id = value as ChannelSetId;
+                  setSetId(id);
                   setForbidTransmit(null);
+                  setSelectedIndices(allIndices(channelSetDefinition(id).templates().length));
                 }
               }}
             />
@@ -202,6 +260,13 @@ export default function ChannelSetPicker() {
               min={0}
               max={100}
               clampBehavior="strict"
+            />
+            <Select
+              label="Bandwidth (kHz)"
+              description="FM channel bandwidth applied to every generated channel"
+              data={BANDWIDTH_OPTIONS}
+              value={bandwidthKHz}
+              onChange={(value) => setBandwidthKHz(value ?? '12.5')}
             />
             <Switch
               label="Forbid transmit"
@@ -231,6 +296,15 @@ export default function ChannelSetPicker() {
             <Table striped highlightOnHover withTableBorder>
               <Table.Thead>
                 <Table.Tr>
+                  <Table.Th>
+                    <Checkbox
+                      aria-label="Select all addable channels"
+                      checked={allSelectableChecked}
+                      indeterminate={addCount > 0 && addCount < selectableCount}
+                      onChange={(e) => toggleAllSelectable(e.currentTarget.checked)}
+                      disabled={selectableCount === 0}
+                    />
+                  </Table.Th>
                   <Table.Th>Name</Table.Th>
                   <Table.Th>RX / TX (MHz)</Table.Th>
                   <Table.Th>Mode</Table.Th>
@@ -240,10 +314,16 @@ export default function ChannelSetPicker() {
               <Table.Tbody>
                 {previewRows.map((row) => (
                   <Table.Tr key={`${row.name}-${row.rxHz}`}>
-                    <Table.Td>{row.name}</Table.Td>
                     <Table.Td>
-                      {hzToMhzString(row.rxHz)} / {hzToMhzString(row.txHz)}
+                      <Checkbox
+                        aria-label={`Include ${row.name}`}
+                        checked={selectedIndices.has(row.index)}
+                        disabled={row.status !== 'add'}
+                        onChange={(e) => toggleIndex(row.index, e.currentTarget.checked)}
+                      />
                     </Table.Td>
+                    <Table.Td>{row.name}</Table.Td>
+                    <Table.Td>{formatFrequencyCell(row.rxHz, row.txHz)}</Table.Td>
                     <Table.Td>
                       <ModePill mode={row.mode as 'fm'} size="xs" />
                     </Table.Td>

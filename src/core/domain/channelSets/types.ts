@@ -29,6 +29,8 @@ export interface ChannelSetGenerateOptions {
   namePrefix?: string;
   power?: number | null;
   forbidTransmit?: boolean;
+  /** FM channel bandwidth in kHz; defaults to the set definition (12.5). */
+  bandwidthKHz?: number;
 }
 
 export interface ChannelSetDedupResult {

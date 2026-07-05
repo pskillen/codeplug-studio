@@ -37,4 +37,13 @@ describe('buildChannelSetImportPlan', () => {
     expect(plan.channelsToAdd).toHaveLength(0);
     expect(plan.zone).toBeUndefined();
   });
+
+  it('respects includedIndices', () => {
+    const plan = buildChannelSetImportPlan(emptyLibrary(), PROJECT_ID, 'pmr446', {
+      includedIndices: [0, 2],
+    });
+    expect(plan.channelsToAdd).toHaveLength(2);
+    expect(plan.channelsToAdd[0]?.name).toBe('PMR446-1');
+    expect(plan.channelsToAdd[1]?.name).toBe('PMR446-3');
+  });
 });

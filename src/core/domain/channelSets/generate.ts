@@ -24,7 +24,8 @@ export function generateChannelsFromSet(
   const def = channelSetDefinition(setId);
   const forbidTransmit = options.forbidTransmit ?? def.defaultForbidTransmit;
   const power = options.power !== undefined ? options.power : null;
-  const modeProfiles = [fmNfmProfile(def.defaultBandwidthKHz)];
+  const bandwidthKHz = options.bandwidthKHz ?? def.defaultBandwidthKHz;
+  const modeProfiles = [fmNfmProfile(bandwidthKHz)];
 
   return def.templates().map((template) => {
     const name = applyNamePrefix(template.name, options.namePrefix);
