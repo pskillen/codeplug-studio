@@ -46,10 +46,7 @@ describe('resolveEffectiveZoneChannelIds', () => {
       { kind: 'channel', channelId: 'ch-1' },
       { kind: 'channel', channelId: 'ch-2' },
     ]);
-    expect(resolveEffectiveZoneChannelIds(glasgow, [glasgow])).toEqual([
-      'ch-1',
-      'ch-2',
-    ]);
+    expect(resolveEffectiveZoneChannelIds(glasgow, [glasgow])).toEqual(['ch-1', 'ch-2']);
   });
 
   it('flattens nested zones depth-first and dedupes channels', () => {

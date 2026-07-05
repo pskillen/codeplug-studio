@@ -6,10 +6,10 @@
 
 ## Status
 
-| Slice | Issue | Status | Notes |
-| ----- | ----- | ------ | ----- |
-| Create zone from selected channels | [#154](https://github.com/pskillen/codeplug-studio/issues/154) | Complete | `ChannelsListPage` selection + `ZoneEditor` location state |
-| Nested zones (denormalised on export) | [#157](https://github.com/pskillen/codeplug-studio/issues/157) | Complete | Schema v6, flatten at assemble/map/export |
+| Slice                                 | Issue                                                          | Status   | Notes                                                      |
+| ------------------------------------- | -------------------------------------------------------------- | -------- | ---------------------------------------------------------- |
+| Create zone from selected channels    | [#154](https://github.com/pskillen/codeplug-studio/issues/154) | Complete | `ChannelsListPage` selection + `ZoneEditor` location state |
+| Nested zones (denormalised on export) | [#157](https://github.com/pskillen/codeplug-studio/issues/157) | Complete | Schema v6, flatten at assemble/map/export                  |
 
 ## Shipped
 

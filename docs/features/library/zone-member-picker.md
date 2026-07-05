@@ -12,24 +12,24 @@ The zone editor also embeds **`CodeplugMap`** below the picker so hull geometry 
 
 ## Code anchors
 
-| Symbol             | Path                                              | Role                      |
-| ------------------ | ------------------------------------------------- | ------------------------- |
-| `ZoneMemberPicker` | `src/app/components/library/ZoneMemberPicker.tsx` | Two-list UI               |
-| `zoneMemberPickerUtils` | `src/app/components/library/zoneMemberPickerUtils.ts` | Map filter helpers |
-| `ZoneEditor`       | `src/app/routes/library/ZoneEditor.tsx`           | Picker + live map preview |
+| Symbol                  | Path                                                  | Role                      |
+| ----------------------- | ----------------------------------------------------- | ------------------------- |
+| `ZoneMemberPicker`      | `src/app/components/library/ZoneMemberPicker.tsx`     | Two-list UI               |
+| `zoneMemberPickerUtils` | `src/app/components/library/zoneMemberPickerUtils.ts` | Map filter helpers        |
+| `ZoneEditor`            | `src/app/routes/library/ZoneEditor.tsx`               | Picker + live map preview |
 
 Sidecar: `src/app/components/library/ZoneMemberPicker.md`.
 
 ## Behaviour
 
-| Control                        | Effect                                                                                                                                                                            |
-| ------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Available search               | Filters **channels** and **zones** not yet in the zone by name (channels also match callsign)                                                                                   |
-| In-zone search                 | Filters current members (channel name/callsign or zone name)                                                                                                                      |
+| Control                        | Effect                                                                                                                                                                             |
+| ------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Available search               | Filters **channels** and **zones** not yet in the zone by name (channels also match callsign)                                                                                      |
+| In-zone search                 | Filters current members (channel name/callsign or zone name)                                                                                                                       |
 | Hide filtered entries from map | One checkbox below each list; when checked and a filter is active, matching entries are omitted from map markers; in-zone filter also trims the zone hull preview for channel rows |
-| Add / Remove                   | Moves selected rows between lists                                                                                                                                                 |
-| Move up / down                 | Reorders selected in-zone members as a block                                                                                                                                      |
-| Checkbox selection             | Multi-select on each side                                                                                                                                                           |
+| Add / Remove                   | Moves selected rows between lists                                                                                                                                                  |
+| Move up / down                 | Reorders selected in-zone members as a block                                                                                                                                       |
+| Checkbox selection             | Multi-select on each side                                                                                                                                                          |
 
 **Available zones** excludes the zone being edited, its descendant zones (would create a cycle), and zones already in the member list.
 

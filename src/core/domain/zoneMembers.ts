@@ -49,7 +49,10 @@ export function normalizeZoneMemberEntry(raw: unknown): ZoneMemberEntry {
 export function directZoneMemberChannelIds(zone: Zone): string[] {
   return zone.members
     .map((member) => normalizeZoneMemberEntry(member))
-    .filter((member): member is Extract<ZoneMemberEntry, { kind: 'channel' }> => member.kind === 'channel')
+    .filter(
+      (member): member is Extract<ZoneMemberEntry, { kind: 'channel' }> =>
+        member.kind === 'channel',
+    )
     .map((member) => member.channelId);
 }
 
@@ -59,7 +62,9 @@ export const zoneMemberChannelIds = directZoneMemberChannelIds;
 export function directZoneMemberZoneIds(zone: Zone): string[] {
   return zone.members
     .map((member) => normalizeZoneMemberEntry(member))
-    .filter((member): member is Extract<ZoneMemberEntry, { kind: 'zone' }> => member.kind === 'zone')
+    .filter(
+      (member): member is Extract<ZoneMemberEntry, { kind: 'zone' }> => member.kind === 'zone',
+    )
     .map((member) => member.zoneId);
 }
 

@@ -6,20 +6,20 @@ Channel filtering and the plotted-channel index are defined in [channels.md](cha
 
 ## Code anchors
 
-| Symbol                 | File                                             | Role                                             |
-| ---------------------- | ------------------------------------------------ | ------------------------------------------------ |
-| `resolveEffectiveZoneChannelIds` | `src/core/domain/zoneHierarchy.ts`               | Flatten nested zones → channel ids for hulls     |
-| `zoneGeolocatedPoints` | `src/core/domain/mapProjection.ts`               | Resolve effective channels → lat/lon with skip reasons |
-| `uniqueLatLon`         | `src/core/domain/geo.ts`                         | Dedupe sites to 5 decimal places                 |
-| `convexHullLatLon`     | same                                             | Andrew's monotone chain on `[lat, lon]`          |
-| `zoneColor`            | same                                             | Distinct hue per zone index                      |
-| Zone hull rendering    | `src/app/components/CodeplugMap/CodeplugMap.tsx` | Circle / polyline / polygon layers               |
+| Symbol                           | File                                             | Role                                                   |
+| -------------------------------- | ------------------------------------------------ | ------------------------------------------------------ |
+| `resolveEffectiveZoneChannelIds` | `src/core/domain/zoneHierarchy.ts`               | Flatten nested zones → channel ids for hulls           |
+| `zoneGeolocatedPoints`           | `src/core/domain/mapProjection.ts`               | Resolve effective channels → lat/lon with skip reasons |
+| `uniqueLatLon`                   | `src/core/domain/geo.ts`                         | Dedupe sites to 5 decimal places                       |
+| `convexHullLatLon`               | same                                             | Andrew's monotone chain on `[lat, lon]`                |
+| `zoneColor`                      | same                                             | Distinct hue per zone index                            |
+| Zone hull rendering              | `src/app/components/CodeplugMap/CodeplugMap.tsx` | Circle / polyline / polygon layers                     |
 
 ## Inputs — the `Zone` model
 
-| Field     | Used for                                                                    |
-| --------- | --------------------------------------------------------------------------- |
-| `name`    | Tooltip, popup title                                                        |
+| Field     | Used for                                                                  |
+| --------- | ------------------------------------------------------------------------- |
+| `name`    | Tooltip, popup title                                                      |
 | `members` | Channel and/or nested zone refs — flattened to channels for hull geometry |
 
 Duplicate member ids within one zone are deduplicated while preserving first-occurrence order.

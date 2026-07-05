@@ -12,21 +12,21 @@ Nesting is **not reconstructed** from flat CPS import — it is created and main
 
 ## Code anchors
 
-| Symbol | Path | Role |
-| --- | --- | --- |
-| `ZoneMemberEntry` | `src/core/models/library.ts` | `kind: 'channel'` or `kind: 'zone'` members |
-| `resolveEffectiveZoneChannelIds` | `src/core/domain/zoneHierarchy.ts` | Flatten to ordered, deduped channel ids |
-| `zoneMembershipHasCycle` | same | Acyclic graph check |
-| `validateZoneMembership` | `src/core/domain/validation.ts` | Ref + cycle validation on save |
-| `assemble` | `src/core/services/assemble.ts` | Export projection uses effective channels |
-| `ZoneMemberPicker` | `src/app/components/library/ZoneMemberPicker.tsx` | Channels + zones pools |
+| Symbol                           | Path                                              | Role                                        |
+| -------------------------------- | ------------------------------------------------- | ------------------------------------------- |
+| `ZoneMemberEntry`                | `src/core/models/library.ts`                      | `kind: 'channel'` or `kind: 'zone'` members |
+| `resolveEffectiveZoneChannelIds` | `src/core/domain/zoneHierarchy.ts`                | Flatten to ordered, deduped channel ids     |
+| `zoneMembershipHasCycle`         | same                                              | Acyclic graph check                         |
+| `validateZoneMembership`         | `src/core/domain/validation.ts`                   | Ref + cycle validation on save              |
+| `assemble`                       | `src/core/services/assemble.ts`                   | Export projection uses effective channels   |
+| `ZoneMemberPicker`               | `src/app/components/library/ZoneMemberPicker.tsx` | Channels + zones pools                      |
 
 ## Model semantics
 
-| Member kind | Stored as | Export |
-| --- | --- | --- |
-| `channel` | `{ kind: 'channel', channelId, includeInScanList? }` | Wire channel name (after assemble) |
-| `zone` | `{ kind: 'zone', zoneId }` | Expanded to child zone's effective channels, depth-first |
+| Member kind | Stored as                                            | Export                                                   |
+| ----------- | ---------------------------------------------------- | -------------------------------------------------------- |
+| `channel`   | `{ kind: 'channel', channelId, includeInScanList? }` | Wire channel name (after assemble)                       |
+| `zone`      | `{ kind: 'zone', zoneId }`                           | Expanded to child zone's effective channels, depth-first |
 
 Rules:
 

@@ -8,12 +8,12 @@ Tier-1 reference for editing the vendor-neutral **library** — the per-project 
 
 ## Implementation status
 
-| Area | Status | Notes |
-| --- | --- | --- |
+| Area                                    | Status                                                                   | Notes                                              |
+| --------------------------------------- | ------------------------------------------------------------------------ | -------------------------------------------------- |
 | Channels list bulk selection → new zone | Shipped ([#154](https://github.com/pskillen/codeplug-studio/issues/154)) | `DataTable` selectable; **New zone from selected** |
-| Nested zone members | Shipped ([#157](https://github.com/pskillen/codeplug-studio/issues/157)) | Flatten at export; `studioSchemaVersion: 6` |
-| Zone member picker (channels) | Shipped ([#25](https://github.com/pskillen/codeplug-studio/issues/25)) | Two-list editor |
-| Channel sets | Shipped ([#172](https://github.com/pskillen/codeplug-studio/issues/172)) | Optional zone on import |
+| Nested zone members                     | Shipped ([#157](https://github.com/pskillen/codeplug-studio/issues/157)) | Flatten at export; `studioSchemaVersion: 6`        |
+| Zone member picker (channels)           | Shipped ([#25](https://github.com/pskillen/codeplug-studio/issues/25))   | Two-list editor                                    |
+| Channel sets                            | Shipped ([#172](https://github.com/pskillen/codeplug-studio/issues/172)) | Optional zone on import                            |
 
 ## Documentation map
 
@@ -22,7 +22,7 @@ Tier-1 reference for editing the vendor-neutral **library** — the per-project 
 | [mode-profiles-progress.md](mode-profiles-progress.md)                          | Multi-mode editor initiative progress                                                    |
 | [zone-member-picker.md](zone-member-picker.md)                                  | Two-list zone membership editor                                                          |
 | [nested-zones.md](nested-zones.md)                                              | Hierarchical zones; flatten at export                                                    |
-| [library-zones-progress.md](library-zones-progress.md)                            | Zone selection + nesting initiative progress                                             |
+| [library-zones-progress.md](library-zones-progress.md)                          | Zone selection + nesting initiative progress                                             |
 | [channel-sets-progress.md](channel-sets-progress.md)                            | Channel sets initiative ([#172](https://github.com/pskillen/codeplug-studio/issues/172)) |
 | [rx-group-list-member-picker.md](rx-group-list-member-picker.md)                | Two-list RX group list member editor                                                     |
 | [app-shell/data-table.md](../app-shell/data-table.md)                           | Shared `DataTable` and list prefs                                                        |
@@ -102,7 +102,7 @@ Workflow: pick set → preview table (per-channel checkboxes, dedup status) → 
 | Digital contact | name, digital mode, contact ID, comment                                                                                                                            |
 | Analog contact  | name, code, comment                                                                                                                                                |
 | RX group list   | name, members (talk groups / digital contacts); optional `timeSlotOverride` per member (`1` \| `2` \| unset)                                                       |
-| Zone            | name, ordered members (`channel` and/or nested `zone` refs), comment                                                                                             |
+| Zone            | name, ordered members (`channel` and/or nested `zone` refs), comment                                                                                               |
 
 Channel DMR profiles reference a **digital contact** and an **RX group list** by UUID `id` (the editor exposes dropdowns); NXDN/TETRA profiles may reference talk groups by UUID. RX group lists and zones hold member `EntityRef[]`. `RxGroupListMember.timeSlotOverride` is an optional per-member DMR slot hint (vendor-neutral; maps to CPS TS Override at export). Names are display labels only — never foreign keys.
 

@@ -76,7 +76,7 @@ export function validateZoneMembership(
     }
   }
 
-  if (zoneMembershipHasCycle(zoneId, normalized, library)) {
+  if (zoneMembershipHasCycle(zoneId, normalized, library.zones)) {
     throw new Error('Zone membership would create a cycle');
   }
 }

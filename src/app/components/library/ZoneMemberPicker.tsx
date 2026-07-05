@@ -29,7 +29,10 @@ import {
 } from './zoneMembers.ts';
 
 export type { ZoneMemberPickerMapFilters } from './zoneMemberPickerUtils.ts';
-export { channelMatchesZoneMemberFilter, computeZoneMemberPickerMapFilters } from './zoneMemberPickerUtils.ts';
+export {
+  channelMatchesZoneMemberFilter,
+  computeZoneMemberPickerMapFilters,
+} from './zoneMemberPickerUtils.ts';
 
 export interface ZoneMemberPickerProps {
   channels: Channel[];
@@ -233,7 +236,10 @@ export default function ZoneMemberPicker({
   const memberKeySet = useMemo(() => new Set(memberKeys), [memberKeys]);
   const availableFilterLower = availableFilter.trim().toLowerCase();
   const inZoneFilterLower = inZoneFilter.trim().toLowerCase();
-  const selectedChannelIds = useMemo(() => zoneMemberIdsFromMembers(members, channels), [members, channels]);
+  const selectedChannelIds = useMemo(
+    () => zoneMemberIdsFromMembers(members, channels),
+    [members, channels],
+  );
 
   const excludedZoneIds = useMemo(
     () => (editingZoneId ? zoneIdsExcludedFromMembership(editingZoneId, zones) : new Set<string>()),

@@ -5,7 +5,11 @@ import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import { NativeYamlImportError } from './errors.ts';
 import { parseProjectDocument } from './parse.ts';
-import { fullLibraryAggregate, minimalProjectAggregate, nestedZonesAggregate } from './testFixtures.ts';
+import {
+  fullLibraryAggregate,
+  minimalProjectAggregate,
+  nestedZonesAggregate,
+} from './testFixtures.ts';
 import { serialiseProject } from './serialise.ts';
 import { validateDocument } from './validate.ts';
 
