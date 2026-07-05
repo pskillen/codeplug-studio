@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useState } from 'react';
 import { Stack, Text, TextInput } from '@mantine/core';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import type { Library, Zone } from '@core/models/library.ts';
 import { newZone } from '@core/domain/factories.ts';
 import { applyFilters, DEFAULT_MAP_FILTER_OPTS } from '@core/domain/mapProjection.ts';
@@ -16,6 +16,7 @@ import {
 import { persistence } from '../../state/persistence.ts';
 import { useEntitySave } from './useEntitySave.ts';
 import EditorActions from './EditorActions.tsx';
+import { readInitialChannelIds } from './zoneEditorState.ts';
 
 export default function ZoneEditor({
   projectId,
@@ -28,8 +29,15 @@ export default function ZoneEditor({
 }) {
   const base = entity ?? newZone(projectId, '');
   const navigate = useNavigate();
+  const location = useLocation();
+  const initialChannelIds =
+    entity === null ? readInitialChannelIds(location.state) : [];
   const [name, setName] = useState(base.name);
-  const [selectedIds, setSelectedIds] = useState<string[]>(zoneMemberIdsFromZone(base.members));
+  const [selectedIds, setSelectedIds] = useState<string[]>(() =>
+    initialChannelIds.length > 0
+      ? initialChannelIds
+      : zoneMemberIdsFromZone(base.members),
+  );
   const [comment, setComment] = useState(base.comment);
   const [mapFilters, setMapFilters] = useState<ZoneMemberPickerMapFilters>({
     hiddenMarkerChannelIds: [],
