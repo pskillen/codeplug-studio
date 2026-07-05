@@ -136,7 +136,7 @@ export function fullLibraryAggregate(): ProjectAggregate {
   const zone: Zone = {
     ...rowMeta(projectId, FIXTURE_ZONE_ID),
     name: 'Edinburgh',
-    members: [{ channelId: FIXTURE_CHANNEL_A_ID }],
+    members: [{ kind: 'channel', channelId: FIXTURE_CHANNEL_A_ID }],
     comment: 'Zone fixture',
   };
 

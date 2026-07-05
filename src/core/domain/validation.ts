@@ -1,4 +1,6 @@
 import type { EntityRef, Library, ZoneMemberEntry } from '../models/library.ts';
+import { normalizeZoneMemberEntry } from './zoneMembers.ts';
+import { zoneMembershipHasCycle } from './zoneHierarchy.ts';
 
 export function assertNonEmptyName(name: string, field: string): void {
   if (!name.trim()) {
@@ -47,7 +49,7 @@ export function validateRxGroupListId(rxGroupListId: string, library: Library): 
   }
 }
 
-export function validateZoneMembers(
+export function validateZoneMembership(
   zoneId: string,
   members: ZoneMemberEntry[],
   library: Library,
@@ -56,11 +58,35 @@ export function validateZoneMembers(
   if (!ids.zoneIds.has(zoneId)) {
     throw new Error(`Zone not found in library: ${zoneId}`);
   }
-  for (const member of members) {
-    if (!ids.channelIds.has(member.channelId)) {
-      throw new Error(`Zone member channel not found in library: ${member.channelId}`);
+
+  const normalized = members.map((member) => normalizeZoneMemberEntry(member));
+
+  for (const member of normalized) {
+    if (member.kind === 'channel') {
+      if (!ids.channelIds.has(member.channelId)) {
+        throw new Error(`Zone member channel not found in library: ${member.channelId}`);
+      }
+      continue;
+    }
+    if (member.zoneId === zoneId) {
+      throw new Error('Zone cannot include itself as a member');
+    }
+    if (!ids.zoneIds.has(member.zoneId)) {
+      throw new Error(`Zone member zone not found in library: ${member.zoneId}`);
     }
   }
+
+  if (zoneMembershipHasCycle(zoneId, normalized, library)) {
+    throw new Error('Zone membership would create a cycle');
+  }
+}
+
+export function validateZoneMembers(
+  zoneId: string,
+  members: ZoneMemberEntry[],
+  library: Library,
+): void {
+  validateZoneMembership(zoneId, members, library);
 }
 
 /** @deprecated Use validateZoneMembers — accepts legacy EntityRef[] during migration. */

@@ -9,6 +9,7 @@ import {
   updateZoneGroupingEntry,
 } from '@core/domain/zoneGroupingLayout.ts';
 import { channelDisplayLabel } from '@core/domain/channelNaming.ts';
+import { normalizeZoneMemberEntry } from '@core/domain/zoneMembers.ts';
 import { useBuildLayout } from '../../routes/builds/BuildLayoutContext.tsx';
 import { useProjects } from '../../state/useProjects.ts';
 import { useFormatBuilds } from '../../state/useFormatBuilds.ts';
@@ -100,11 +101,14 @@ export default function BuildZoneExportControls() {
   const updateMemberScanInclusion = useCallback(
     async (zone: Zone, channelId: string, includeInScanList: boolean) => {
       if (!activeProjectId) return;
-      const members: ZoneMemberEntry[] = zone.members.map((member) =>
-        member.channelId === channelId
-          ? { ...member, includeInScanList: includeInScanList ? undefined : false }
-          : member,
-      );
+      const members: ZoneMemberEntry[] = zone.members.map((raw) => {
+        const member = normalizeZoneMemberEntry(raw);
+        if (member.kind !== 'channel' || member.channelId !== channelId) return member;
+        return {
+          ...member,
+          includeInScanList: includeInScanList ? undefined : false,
+        };
+      });
       setSaving(true);
       const result = await persistence.putZone({ ...zone, members }, zone.revision);
       setSaving(false);

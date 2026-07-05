@@ -4,9 +4,9 @@ import { zoneMembersFromSelectedIds } from './zoneMembers.ts';
 describe('zoneMembersFromSelectedIds', () => {
   it('preserves picker order in member entries', () => {
     expect(zoneMembersFromSelectedIds(['c3', 'c1', 'c2'])).toEqual([
-      { channelId: 'c3' },
-      { channelId: 'c1' },
-      { channelId: 'c2' },
+      { kind: 'channel', channelId: 'c3' },
+      { kind: 'channel', channelId: 'c1' },
+      { kind: 'channel', channelId: 'c2' },
     ]);
   });
 });
