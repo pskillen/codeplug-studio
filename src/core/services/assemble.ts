@@ -14,6 +14,7 @@ import {
   resolveOverrideWireName,
 } from '@core/domain/formatBuildOverrides.ts';
 import { defaultChannelWireName } from '@core/domain/channelNaming.ts';
+import { channelInAnyZoneMembership } from '@core/domain/zoneMembership.ts';
 import { resolveEffectiveZoneChannelIds } from '@core/domain/zoneHierarchy.ts';
 import { orderChannelIdsByLayoutHint } from '@core/domain/zoneGroupingLayout.ts';
 import { migrateFormatBuild } from '@core/domain/migrateFormatBuild.ts';
@@ -145,14 +146,7 @@ function zoneGroupingSections(build: FormatBuild): ZoneGroupingLayout[] {
   return build.layout.sections.filter((s): s is ZoneGroupingLayout => s.kind === 'zoneGrouping');
 }
 
-export function channelInAnyZoneMembership(channelId: string, library: LibrarySlice): boolean {
-  for (const zone of library.zones) {
-    if (resolveEffectiveZoneChannelIds(zone, library.zones).includes(channelId)) {
-      return true;
-    }
-  }
-  return false;
-}
+export { channelInAnyZoneMembership } from '@core/domain/zoneMembership.ts';
 
 /** Channel ids that appear in at least one exporting standalone zone (nested flatten included). */
 export function exportReachableChannelIds(build: FormatBuild, library: LibrarySlice): Set<string> {

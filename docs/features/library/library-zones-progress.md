@@ -2,13 +2,14 @@
 
 **Epic:** [#179 — Channel and Zone Management](https://github.com/pskillen/codeplug-studio/issues/179)
 
-**Branch:** `181/pskil/zone-from-location`
+**Branch:** `180/pskil/unified-zone-pivoted-ui`
 
 ## Status
 
-| Slice                                 | Issue                                                          | Status   | Notes                                                      |
-| ------------------------------------- | -------------------------------------------------------------- | -------- | ---------------------------------------------------------- |
-| Create zone from selected channels    | [#154](https://github.com/pskillen/codeplug-studio/issues/154) | Complete | `ChannelsListPage` selection + `ZoneEditor` location state |
+| Slice                                 | Issue                                                          | Status      | Notes                                                      |
+| ------------------------------------- | -------------------------------------------------------------- | ----------- | ---------------------------------------------------------- |
+| Unified zone-pivoted UI               | [#180](https://github.com/pskillen/codeplug-studio/issues/180) | In progress | Core membership helpers shipped                              |
+| Create zone from selected channels    | [#154](https://github.com/pskillen/codeplug-studio/issues/154) | Complete    | `ChannelsListPage` selection + `ZoneEditor` location state |
 | Nested zones (denormalised on export) | [#157](https://github.com/pskillen/codeplug-studio/issues/157) | Complete | Model v6; export flatten + `omitFromExport` v7             |
 | Zone from location (proximity)        | [#181](https://github.com/pskillen/codeplug-studio/issues/181) | Complete | `/library/zones/new-from-location`; map emphasis modes     |
 
