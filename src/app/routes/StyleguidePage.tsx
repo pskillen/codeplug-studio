@@ -133,7 +133,7 @@ function ImageCheckboxDemo() {
         description="Mantine UI vacation cards — image optional on each option."
         value={vacation}
         onChange={setVacation}
-        cols={{ base: 1, sm: 2 }}
+        cols={{ base: 2, sm: 3 }}
         options={[
           {
             value: 'beach',
@@ -167,7 +167,7 @@ function ImageCheckboxDemo() {
         description="Channel mode picker uses `ModePill` in the media slot."
         value={modes}
         onChange={setModes}
-        cols={{ base: 1, sm: 2 }}
+        cols={{ base: 2, sm: 3 }}
         options={[
           {
             value: 'fm',

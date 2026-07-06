@@ -36,7 +36,7 @@ export default function ChannelModesMultiSelect({
       value={value}
       onChange={onChange}
       options={MODE_OPTIONS}
-      cols={{ base: 1, sm: 2 }}
+      cols={{ base: 2, sm: 3 }}
     />
   );
 }
