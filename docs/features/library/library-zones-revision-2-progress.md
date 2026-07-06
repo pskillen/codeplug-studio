@@ -30,4 +30,4 @@
 
 ## Next
 
-Open PR for [#180](https://github.com/pskillen/codeplug-studio/issues/180); push to `dev` for preview.
+Merged via PR [#198](https://github.com/pskillen/codeplug-studio/pull/198) when approved. Dev preview: push to `dev` (force-updated from abandoned unified branch).
