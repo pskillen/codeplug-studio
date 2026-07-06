@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Alert, Button, Checkbox, Group, SimpleGrid, Stack, Text, TextInput } from '@mantine/core';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import type { Channel, ChannelModeProfile, Library } from '@core/models/library.ts';
 import { reconcileChannelLocation } from '@core/domain/channelLocation.ts';
 import { newChannel } from '@core/domain/factories.ts';
@@ -16,6 +16,8 @@ import ChannelModesMultiSelect from '../../components/channels/ChannelModesMulti
 import ChannelWireNameExamples from '../../components/channels/ChannelWireNameExamples.tsx';
 import type { ChannelMode as UiChannelMode } from '../../lib/channelModes.ts';
 import RepeaterVerifyPanel from '../../components/repeaters/RepeaterVerifyPanel.tsx';
+import ChannelZoneMembershipSection from '../../components/library/ChannelZoneMembershipSection.tsx';
+import ChannelDeleteButton from '../../components/library/ChannelDeleteButton.tsx';
 import { FormSection, PercentLevelSlider } from '../../components/ui/index.ts';
 import { hzToMhzString, mhzStringToHz } from '../../lib/units.ts';
 import { persistence } from '../../state/persistence.ts';
@@ -48,6 +50,7 @@ export default function ChannelEditor({
   const [validationError, setValidationError] = useState<string | null>(null);
 
   const { save, saving, error } = useEntitySave('channels');
+  const navigate = useNavigate();
 
   const selectedModes = modeProfiles.map((p) => p.mode as ChannelMode);
 
@@ -84,6 +87,30 @@ export default function ChannelEditor({
       delete row.abbreviation;
     }
     return row;
+  }
+
+  function handleDuplicate() {
+    if (!entity) return;
+    const source = buildRow();
+    const copyName = `${source.name.trim() || 'Untitled channel'} (copy)`;
+    const copy = newChannel(projectId, copyName, source.callsign);
+    const row: Channel = {
+      ...copy,
+      abbreviation: source.abbreviation,
+      rxFrequency: source.rxFrequency,
+      txFrequency: source.txFrequency,
+      power: source.power,
+      scanSkip: source.scanSkip,
+      forbidTransmit: source.forbidTransmit,
+      comment: source.comment,
+      location: source.location,
+      useLocation: source.useLocation,
+      maidenheadLocator: source.maidenheadLocator,
+      modeProfiles: source.modeProfiles.map((profile) => ({ ...profile })),
+    };
+    void persistence.putChannel(row, null).then((result) => {
+      if (result.ok) navigate(`/library/channels/${row.id}`);
+    });
   }
 
   function handleSave() {
@@ -188,6 +215,12 @@ export default function ChannelEditor({
 
       <ChannelLocationSection value={location} onChange={setLocation} />
 
+      {entity ? (
+        <FormSection title="Zone membership">
+          <ChannelZoneMembershipSection channelId={entity.id} library={library} />
+        </FormSection>
+      ) : null}
+
       {entity ? <RepeaterVerifyPanel channel={liveChannel} library={library} /> : null}
 
       {validationError ? <Alert color="red">{validationError}</Alert> : null}
@@ -199,6 +232,14 @@ export default function ChannelEditor({
         <Button component={Link} to="/library/channels" variant="light">
           Cancel
         </Button>
+        {entity ? (
+          <>
+            <Button variant="default" onClick={() => void handleDuplicate()}>
+              Duplicate
+            </Button>
+            <ChannelDeleteButton channel={entity} onDeleted={() => navigate('/library/channels')} />
+          </>
+        ) : null}
       </Group>
     </Stack>
   );

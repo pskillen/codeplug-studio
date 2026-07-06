@@ -8,38 +8,40 @@ Tier-1 reference for editing the vendor-neutral **library** — the per-project 
 
 ## Implementation status
 
-| Area                                    | Status                                                                   | Notes                                              |
-| --------------------------------------- | ------------------------------------------------------------------------ | -------------------------------------------------- |
-| Channels list bulk selection → new zone | Shipped ([#154](https://github.com/pskillen/codeplug-studio/issues/154)) | `DataTable` selectable; **New zone from selected** |
-| Zone from location (proximity)          | Shipped ([#181](https://github.com/pskillen/codeplug-studio/issues/181)) | Section nav **New zone from location**             |
-| Nested zone members                     | Shipped ([#157](https://github.com/pskillen/codeplug-studio/issues/157)) | Flatten at export; `omitFromExport`; schema v7     |
-| Zone member picker (channels)           | Shipped ([#25](https://github.com/pskillen/codeplug-studio/issues/25))   | Two-list editor                                    |
-| Channel sets                            | Shipped ([#172](https://github.com/pskillen/codeplug-studio/issues/172)) | Optional zone on import                            |
+| Area                                    | Status                                                                   | Notes                                                              |
+| --------------------------------------- | ------------------------------------------------------------------------ | ------------------------------------------------------------------ |
+| Zone + channel editor cross-links       | Shipped ([#180](https://github.com/pskillen/codeplug-studio/issues/180)) | Revision-2 — see [zone-member-picker.md](zone-member-picker.md)    |
+| Channel / zone delete                   | Shipped ([#180](https://github.com/pskillen/codeplug-studio/issues/180)) | Editors + channels list; zone membership cascade on channel delete |
+| Channels list bulk selection → new zone | Shipped ([#154](https://github.com/pskillen/codeplug-studio/issues/154)) | `DataTable` selectable; **New zone from selected**                 |
+| Zone from location (proximity)          | Shipped ([#181](https://github.com/pskillen/codeplug-studio/issues/181)) | Section nav **New zone from location**                             |
+| Nested zone members                     | Shipped ([#157](https://github.com/pskillen/codeplug-studio/issues/157)) | Flatten at export; `omitFromExport`; schema v7                     |
+| Zone member editor                      | Shipped ([#180](https://github.com/pskillen/codeplug-studio/issues/180)) | Vertical stacked editor on zone form                               |
+| Channel sets                            | Shipped ([#172](https://github.com/pskillen/codeplug-studio/issues/172)) | Optional zone on import                                            |
 
 ## Documentation map
 
-| Doc                                                                             | Contents                                                                                 |
-| ------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
-| [mode-profiles-progress.md](mode-profiles-progress.md)                          | Multi-mode editor initiative progress                                                    |
-| [zone-member-picker.md](zone-member-picker.md)                                  | Two-list zone membership editor                                                          |
-| [nested-zones.md](nested-zones.md)                                              | Hierarchical zones; flatten at export                                                    |
-| [library-zones-progress.md](library-zones-progress.md)                          | Zone selection + nesting initiative progress                                             |
-| [channel-sets-progress.md](channel-sets-progress.md)                            | Channel sets initiative ([#172](https://github.com/pskillen/codeplug-studio/issues/172)) |
-| [rx-group-list-member-picker.md](rx-group-list-member-picker.md)                | Two-list RX group list member editor                                                     |
-| [app-shell/data-table.md](../app-shell/data-table.md)                           | Shared `DataTable` and list prefs                                                        |
-| [app-shell/library-routes-progress.md](../app-shell/library-routes-progress.md) | List routes initiative progress                                                          |
+| Doc                                                                             | Contents                                                                                     |
+| ------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
+| [mode-profiles-progress.md](mode-profiles-progress.md)                          | Multi-mode editor initiative progress                                                        |
+| [zone-member-picker.md](zone-member-picker.md)                                  | Vertical zone member editor ([#180](https://github.com/pskillen/codeplug-studio/issues/180)) |
+| [library-zones-revision-2-progress.md](library-zones-revision-2-progress.md)    | Revision-2 zone management progress                                                          |
+| [nested-zones.md](nested-zones.md)                                              | Hierarchical zones; flatten at export                                                        |
+| [channel-sets-progress.md](channel-sets-progress.md)                            | Channel sets initiative ([#172](https://github.com/pskillen/codeplug-studio/issues/172))     |
+| [rx-group-list-member-picker.md](rx-group-list-member-picker.md)                | Two-list RX group list member editor                                                         |
+| [app-shell/data-table.md](../app-shell/data-table.md)                           | Shared `DataTable` and list prefs                                                            |
+| [app-shell/library-routes-progress.md](../app-shell/library-routes-progress.md) | List routes initiative progress                                                              |
 
 ## List routes
 
 `/library` redirects to `/library/channels`. Each entity kind has a dedicated list page; section nav order matches `routes/library/nav.ts`:
 
-| List route                | UI                                                                                                           | Map |
-| ------------------------- | ------------------------------------------------------------------------------------------------------------ | --- |
-| `/library/channels`       | `DataTable` — sortable columns, toolbar search, hideable optional columns, URL + `localStorage` filter prefs | Yes |
-| `/library/zones`          | `DataTable` — members, comment; operator location + map below table                                          | Yes |
-| `/library/talk-groups`    | `DataTable` — mode, ID, optional Abbrev, channels/RX lists using, comment                                    | No  |
-| `/library/contacts`       | Two `DataTable` sections: digital contacts + analog contacts (separate `dq` / `aq` URL filters)              | No  |
-| `/library/rx-group-lists` | `DataTable` — members, channels using                                                                        | No  |
+| List route                | UI                                                                                                                                                | Map |
+| ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- | --- |
+| `/library/channels`       | `DataTable` — sortable columns, **Zones** column, delete row action, toolbar search, hideable optional columns, URL + `localStorage` filter prefs | Yes |
+| `/library/zones`          | `DataTable` — members, comment; operator location + map below table                                                                               | Yes |
+| `/library/talk-groups`    | `DataTable` — mode, ID, optional Abbrev, channels/RX lists using, comment                                                                         | No  |
+| `/library/contacts`       | Two `DataTable` sections: digital contacts + analog contacts (separate `dq` / `aq` URL filters)                                                   | No  |
+| `/library/rx-group-lists` | `DataTable` — members, channels using                                                                                                             | No  |
 
 Shared list UI: [app-shell/data-table.md](../app-shell/data-table.md).
 
@@ -50,16 +52,18 @@ Shared list UI: [app-shell/data-table.md](../app-shell/data-table.md).
 - Column sort and visibility prefs persist per project.
 - `modeProfiles[]` drives mode pills and mode filter matching (vendor-neutral labels only).
 - **Row checkboxes** and **New zone from selected** ([#154](https://github.com/pskillen/codeplug-studio/issues/154)) — navigates to zone editor with members pre-filled in table order.
+- **Zones** column — direct zone badges (link to zone editor), **Not in a zone** / **Nested only** when applicable ([#180](https://github.com/pskillen/codeplug-studio/issues/180)).
+- **Delete** row action — removes channel; offers remove-from-zones cascade when blocked by zone membership.
+
+### Zone member editor (#25, #157, #180)
+
+Zone editor uses **`ZoneMemberEditor`** — vertical layout: rich **In this zone** list (export order, per-channel `includeInScanList`, reorder) above **Other channels & zones** add pool. Channel editor shows **`ChannelZoneMembershipSection`** — list zones containing the channel, add/remove without opening each zone. See [zone-member-picker.md](zone-member-picker.md). Sidecars: `ZoneMemberEditor.md`, `ChannelZoneMembershipSection.md`.
+
+The zone editor map uses **Draw this zone** / **Draw other zones** controls: the editing zone hull is full colour; other library zones render muted for reference. Channels outside the zone are dimmed on the map (same treatment as out-of-radius channels on zone-from-location). Auto-fit zoom uses only the editing zone's member channels (not the full library).
 
 ### Contacts page
 
 Digital and analog contacts remain separate models and editor slugs (`digital-contacts`, `analog-contacts`); the combined `/library/contacts` list page is a UX grouping only. Each section has its own `DataTable`, name filter (`dq` / `aq` URL params), and persisted column sort.
-
-### Zone member picker (#25, #157)
-
-Zone editor uses `ZoneMemberPicker` — available ↔ in-zone lists for **channels** and **zones**, per-side search, add/remove, and move up/down. Saved `Zone.members` preserves **picker order**; nested zones flatten at export. See [zone-member-picker.md](zone-member-picker.md) and [nested-zones.md](nested-zones.md). Sidecar: `src/app/components/library/ZoneMemberPicker.md`.
-
-The zone editor map uses **Draw this zone** / **Draw other zones** controls: the editing zone hull is full colour; other library zones render muted for reference. Channels outside the zone are dimmed on the map (same treatment as out-of-radius channels on zone-from-location). Auto-fit zoom uses only the editing zone's member channels (not the full library).
 
 ### Zone from location ([#181](https://github.com/pskillen/codeplug-studio/issues/181))
 
@@ -128,6 +132,8 @@ Channel DMR profiles reference a **digital contact** and an **RX group list** by
 - **No default mode** on new channels — operator selects modes via multi-select; `modeProfiles` starts empty.
 - **Location section:** Maidenhead locator, lat/lon, use-location, map click/drag (`ChannelLocationSection` + `MapLocationPicker`). Save reconciles locator ↔ coords via `reconcileChannelLocation` (coordinates win on conflict).
 - **Mode profiles:** tabbed editor per selected mode (`ChannelModeProfilesEditor`).
+- **Zone membership** (edit only): `ChannelZoneMembershipSection` — zones containing this channel, add/remove ([#180](https://github.com/pskillen/codeplug-studio/issues/180)).
+- **Duplicate** and **Delete channel** actions on saved channels ([#180](https://github.com/pskillen/codeplug-studio/issues/180)).
 - **DMR tab:** below the RX group list selector, `RxGroupListSummary` shows the selected list's members (name, kind, digital ID, timeslot override) with a link to the list editor ([#75](https://github.com/pskillen/codeplug-studio/issues/75)).
 - Component sidecars under `src/app/components/channels/` and `MapLocationPicker/`.
 
@@ -163,6 +169,6 @@ The library holds RF facts you curate once (frequency, mode, contact refs, human
 
 - [app-shell/data-table.md](../app-shell/data-table.md) · [zone-member-picker.md](zone-member-picker.md) · [rx-group-list-member-picker.md](rx-group-list-member-picker.md)
 - [app-shell/library-routes-progress.md](../app-shell/library-routes-progress.md) · [app-shell/library-routes-outstanding.md](../app-shell/library-routes-outstanding.md)
-- [map](../map/README.md) — map on channels/zones list routes
+- [map](../map/README.md) — maps on channels/zones list routes + Summary overview
 - [data-model](../data-model/README.md) · [app-shell](../app-shell/README.md)
 - [storage.md](../../poc-migration/storage.md) — persistence design

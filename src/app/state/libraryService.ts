@@ -1,6 +1,11 @@
 import type { Library } from '@core/models/library.ts';
 import { normalizeChannel } from '@core/domain/normalizeChannel.ts';
 import { findReferencesTo, type EntityReference } from '@core/domain/references.ts';
+import {
+  removeChannelsFromZoneMembers,
+  zonesWithDirectChannelMember,
+} from '@core/domain/zoneMembership.ts';
+import { validateZoneMembership } from '@core/domain/validation.ts';
 import type { LibraryEntityKind, ProjectPersistence } from '@integrations/persistence/index.ts';
 
 export type DeleteOutcome = { ok: true } | { ok: false; references: EntityReference[] };
@@ -52,5 +57,33 @@ export class LibraryService {
     }
     await this.persistence.deleteEntity(projectId, kind, id);
     return { ok: true };
+  }
+
+  /** Remove a channel from every zone that lists it as a direct member. */
+  async removeChannelFromDirectZones(projectId: string, channelId: string): Promise<void> {
+    let library = await this.loadLibrary(projectId);
+    const targets = zonesWithDirectChannelMember(channelId, library.zones);
+    for (const zone of targets) {
+      const nextMembers = removeChannelsFromZoneMembers(zone.members, [channelId]);
+      const updated = { ...zone, members: nextMembers };
+      validateZoneMembership(zone.id, nextMembers, {
+        ...library,
+        zones: library.zones.map((z) => (z.id === zone.id ? updated : z)),
+      });
+      const result = await this.persistence.putZone(updated, zone.revision);
+      if (!result.ok) {
+        throw new Error(
+          result.reason === 'revision_conflict'
+            ? 'A zone was changed elsewhere. Reload and try again.'
+            : 'Failed to update zone membership.',
+        );
+      }
+      library = {
+        ...library,
+        zones: library.zones.map((z) =>
+          z.id === zone.id ? { ...updated, revision: result.revision } : z,
+        ),
+      };
+    }
   }
 }

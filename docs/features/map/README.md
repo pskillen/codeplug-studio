@@ -15,14 +15,15 @@ There is **no** top-level Map nav item. Legacy `/map` bookmarks redirect to `/li
 | List route          | Map behaviour                                                                    |
 | ------------------- | -------------------------------------------------------------------------------- |
 | `/library/channels` | Full library map; when distance filter is on, map shows the filtered channel set |
-| `/library/zones`    | Full library map below the zone DataTable (tool parity — full context)           |
+| `/library/zones`    | Full library map below the zone DataTable                                        |
+| `/summary`          | Full-library overview map with click-through to channel and zone editors         |
 
-Summary “view on map” links to `/library/channels`.
+Summary and list routes each embed a map — list pages keep contextual maps for their workflow; Summary provides the library-wide overview.
 
 ## Component stack
 
 ```text
-ChannelsListPage / ZonesListPage
+ChannelsListPage / ZonesListPage / SummaryPage
 └─ CodeplugMap (src/app/components/CodeplugMap/)
    ├─ MapControls — label + zone toggles
    ├─ MaidenheadGridLayer — optional locator grid (Settings)
