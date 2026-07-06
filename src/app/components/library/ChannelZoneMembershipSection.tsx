@@ -117,7 +117,12 @@ export default function ChannelZoneMembershipSection({
                 {zone.name}
               </Text>
               <Group gap="xs" wrap="nowrap">
-                <Button component={Link} to={`/library/zones/${zone.id}`} variant="subtle" size="compact-xs">
+                <Button
+                  component={Link}
+                  to={`/library/zones/${zone.id}`}
+                  variant="subtle"
+                  size="compact-xs"
+                >
                   Open zone
                 </Button>
                 <Button
@@ -150,7 +155,12 @@ export default function ChannelZoneMembershipSection({
                 {zone.name}
                 {viaNestedZoneName ? ` (via ${viaNestedZoneName})` : ''}
               </Text>
-              <Button component={Link} to={`/library/zones/${zone.id}`} variant="subtle" size="compact-xs">
+              <Button
+                component={Link}
+                to={`/library/zones/${zone.id}`}
+                variant="subtle"
+                size="compact-xs"
+              >
                 Open zone
               </Button>
             </Group>

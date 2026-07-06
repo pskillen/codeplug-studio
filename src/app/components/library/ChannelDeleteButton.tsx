@@ -43,7 +43,13 @@ export default function ChannelDeleteButton({
 
   return (
     <>
-      <Button color="red" variant={variant} size={size} loading={busy} onClick={() => void handleDelete()}>
+      <Button
+        color="red"
+        variant={variant}
+        size={size}
+        loading={busy}
+        onClick={() => void handleDelete()}
+      >
         Delete channel
       </Button>
       {error ? (

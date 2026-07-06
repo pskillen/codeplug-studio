@@ -162,7 +162,12 @@ export default function ZoneEditor({
         </Text>
         {entity ? (
           <Group>
-            <Button variant="light" color="red" size="compact-sm" onClick={() => void handleDelete()}>
+            <Button
+              variant="light"
+              color="red"
+              size="compact-sm"
+              onClick={() => void handleDelete()}
+            >
               Delete zone
             </Button>
           </Group>

@@ -8,14 +8,14 @@ Manages **In this zone** members (export order) and **Other channels & zones** a
 
 ## Props
 
-| Prop | Type | Description |
-| --- | --- | --- |
-| `channels` | `Channel[]` | Full library channels |
-| `zones` | `Zone[]` | Full library zones |
-| `editingZoneId` | `string \| null` | Zone being edited (`null` on create) |
-| `members` | `ZoneMemberEntry[]` | Current member list |
-| `onChange` | `(members) => void` | Member list updates |
-| `onMapFiltersChange` | optional | Map hide-filter callback |
+| Prop                 | Type                | Description                          |
+| -------------------- | ------------------- | ------------------------------------ |
+| `channels`           | `Channel[]`         | Full library channels                |
+| `zones`              | `Zone[]`            | Full library zones                   |
+| `editingZoneId`      | `string \| null`    | Zone being edited (`null` on create) |
+| `members`            | `ZoneMemberEntry[]` | Current member list                  |
+| `onChange`           | `(members) => void` | Member list updates                  |
+| `onMapFiltersChange` | optional            | Map hide-filter callback             |
 
 ## Usage
 

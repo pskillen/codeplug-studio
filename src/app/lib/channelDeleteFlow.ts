@@ -2,17 +2,12 @@ import type { Channel } from '@core/models/library.ts';
 import type { DeleteOutcome } from '../state/libraryService.ts';
 import { LibraryService } from '../state/libraryService.ts';
 import { persistence } from '../state/persistence.ts';
-import {
-  formatEntityReferences,
-  referencesAreZoneMembershipOnly,
-} from './entityDeleteMessages.ts';
+import { formatEntityReferences, referencesAreZoneMembershipOnly } from './entityDeleteMessages.ts';
 
 const service = new LibraryService(persistence);
 
 export type ChannelDeleteFlowResult =
-  | { status: 'deleted' }
-  | { status: 'cancelled' }
-  | { status: 'blocked'; message: string };
+  { status: 'deleted' } | { status: 'cancelled' } | { status: 'blocked'; message: string };
 
 export async function runChannelDeleteFlow(options: {
   projectId: string;
@@ -41,5 +36,8 @@ export async function runChannelDeleteFlow(options: {
     if (result.ok) return { status: 'deleted' };
   }
 
-  return { status: 'blocked', message: `Delete blocked — ${formatEntityReferences(result.references)}` };
+  return {
+    status: 'blocked',
+    message: `Delete blocked — ${formatEntityReferences(result.references)}`,
+  };
 }

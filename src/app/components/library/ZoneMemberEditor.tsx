@@ -16,7 +16,10 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import type { Channel, Zone, ZoneMemberEntry } from '@core/models/library.ts';
 import { channelDisplayLabel } from '@core/domain/channelNaming.ts';
-import { resolveEffectiveZoneChannelIds, zoneIdsExcludedFromMembership } from '@core/domain/zoneHierarchy.ts';
+import {
+  resolveEffectiveZoneChannelIds,
+  zoneIdsExcludedFromMembership,
+} from '@core/domain/zoneHierarchy.ts';
 import {
   reorderZoneMembers,
   setChannelMemberIncludeInScanList,
@@ -460,8 +463,16 @@ function InZoneMemberRow({
       <Paper withBorder p="xs" radius="sm">
         <Group gap="sm" wrap="nowrap" justify="space-between">
           <Group gap="sm" wrap="nowrap" style={{ flex: 1, minWidth: 0 }}>
-            <Checkbox checked={selected} onChange={onToggleSelect} aria-label={`Select ${zone.name}`} />
-            <IconGripVertical size={14} stroke={ICON_STROKE} style={{ opacity: 0.35, flexShrink: 0 }} />
+            <Checkbox
+              checked={selected}
+              onChange={onToggleSelect}
+              aria-label={`Select ${zone.name}`}
+            />
+            <IconGripVertical
+              size={14}
+              stroke={ICON_STROKE}
+              style={{ opacity: 0.35, flexShrink: 0 }}
+            />
             <Stack gap={0} style={{ minWidth: 0 }}>
               <Text size="sm" fw={500} truncate>
                 Zone: {zone.name}
@@ -475,7 +486,13 @@ function InZoneMemberRow({
             <Text component={Link} to={`/library/zones/${zone.id}`} size="xs">
               Open zone
             </Text>
-            <ActionIcon variant="subtle" color="red" size="sm" onClick={onRemove} aria-label="Remove">
+            <ActionIcon
+              variant="subtle"
+              color="red"
+              size="sm"
+              onClick={onRemove}
+              aria-label="Remove"
+            >
               <IconX size={14} stroke={ICON_STROKE} />
             </ActionIcon>
           </Group>
@@ -497,7 +514,11 @@ function InZoneMemberRow({
             onChange={onToggleSelect}
             aria-label={`Select ${channelDisplayLabel(channel)}`}
           />
-          <IconGripVertical size={14} stroke={ICON_STROKE} style={{ opacity: 0.35, flexShrink: 0 }} />
+          <IconGripVertical
+            size={14}
+            stroke={ICON_STROKE}
+            style={{ opacity: 0.35, flexShrink: 0 }}
+          />
           <Stack gap={4} style={{ minWidth: 0, flex: 1 }}>
             <Group gap="xs" wrap="wrap">
               <Text size="sm" fw={500}>
@@ -561,9 +582,11 @@ function AvailableChannelRow({
       <Text size="xs" c="dimmed" style={{ flexShrink: 0 }}>
         {formatChannelRxTxListCell(channel.rxFrequency, channel.txFrequency) || '—'}
       </Text>
-      {channelModesForFilter(channel).slice(0, 2).map((mode) => (
-        <ModePill key={mode} mode={mode} size="xs" />
-      ))}
+      {channelModesForFilter(channel)
+        .slice(0, 2)
+        .map((mode) => (
+          <ModePill key={mode} mode={mode} size="xs" />
+        ))}
     </Group>
   );
 }

@@ -8,16 +8,16 @@
 
 ## Status
 
-| Slice | Issue | Status | Notes |
-| --- | --- | --- | --- |
-| Branch setup + progress logs | #180 | Complete | |
-| Core zone membership helpers | #180 | Complete | `zoneMembership.ts` |
-| Vertical zone member editor | #180 | Complete | `ZoneMemberEditor` |
-| Channel editor zone membership | #180 | Complete | `ChannelZoneMembershipSection` |
-| Delete flows | #180 | Complete | Cascade remove from zones |
-| Channels list polish + Summary map | #180 | Complete | Zones column, duplicate channel |
-| Documentation | #180 | Complete | Hub + zone-member-picker + map README |
-| PR + dev deploy | #180 | Pending | |
+| Slice                              | Issue | Status   | Notes                                 |
+| ---------------------------------- | ----- | -------- | ------------------------------------- |
+| Branch setup + progress logs       | #180  | Complete |                                       |
+| Core zone membership helpers       | #180  | Complete | `zoneMembership.ts`                   |
+| Vertical zone member editor        | #180  | Complete | `ZoneMemberEditor`                    |
+| Channel editor zone membership     | #180  | Complete | `ChannelZoneMembershipSection`        |
+| Delete flows                       | #180  | Complete | Cascade remove from zones             |
+| Channels list polish + Summary map | #180  | Complete | Zones column, duplicate channel       |
+| Documentation                      | #180  | Complete | Hub + zone-member-picker + map README |
+| PR + dev deploy                    | #180  | Pending  |                                       |
 
 ## Shipped commits
 

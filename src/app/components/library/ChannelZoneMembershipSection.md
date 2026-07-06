@@ -8,10 +8,10 @@ Zone membership is owned by `Zone.members`. This section on the channel editor l
 
 ## Props
 
-| Prop | Type | Description |
-| --- | --- | --- |
-| `channelId` | `string` | Channel being edited |
-| `library` | `Library` | Active project library snapshot |
+| Prop        | Type      | Description                     |
+| ----------- | --------- | ------------------------------- |
+| `channelId` | `string`  | Channel being edited            |
+| `library`   | `Library` | Active project library snapshot |
 
 ## Usage
 

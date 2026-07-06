@@ -19,26 +19,26 @@ The zone editor embeds **`CodeplugMap`** below the editor so hull geometry updat
 
 ## Code anchors
 
-| Symbol                       | Path                                                  | Role                               |
-| ---------------------------- | ----------------------------------------------------- | ---------------------------------- |
-| `ZoneMemberEditor`           | `src/app/components/library/ZoneMemberEditor.tsx`     | Vertical stacked UI                |
-| `zoneMemberPickerUtils`      | `src/app/components/library/zoneMemberPickerUtils.ts` | Map filter helpers                 |
-| `ChannelZoneMembershipSection` | `src/app/components/library/ChannelZoneMembershipSection.tsx` | Channel-side membership |
-| `ZoneEditor`                 | `src/app/routes/library/ZoneEditor.tsx`               | Editor + live map preview          |
+| Symbol                         | Path                                                          | Role                      |
+| ------------------------------ | ------------------------------------------------------------- | ------------------------- |
+| `ZoneMemberEditor`             | `src/app/components/library/ZoneMemberEditor.tsx`             | Vertical stacked UI       |
+| `zoneMemberPickerUtils`        | `src/app/components/library/zoneMemberPickerUtils.ts`         | Map filter helpers        |
+| `ChannelZoneMembershipSection` | `src/app/components/library/ChannelZoneMembershipSection.tsx` | Channel-side membership   |
+| `ZoneEditor`                   | `src/app/routes/library/ZoneEditor.tsx`                       | Editor + live map preview |
 
 Sidecars: `ZoneMemberEditor.md`, `ChannelZoneMembershipSection.md`.
 
 ## Behaviour
 
-| Control | Effect |
-| --- | --- |
-| In-zone filter | Filters current members (channel name/callsign or zone name) |
-| Other pool filter | Filters available channels and zones |
-| Add selected | Appends checked rows from the other pool |
-| Move up / down | Reorders selected in-zone members as a block; **Alt+↑ / Alt+↓** shortcuts |
-| Remove | Per-row ✕ or bulk **Remove selected** |
-| Include in scan list | Per direct channel member — `includeInScanList` (default true) |
-| Hide filtered from map | Separate checkboxes for each pool |
+| Control                | Effect                                                                    |
+| ---------------------- | ------------------------------------------------------------------------- |
+| In-zone filter         | Filters current members (channel name/callsign or zone name)              |
+| Other pool filter      | Filters available channels and zones                                      |
+| Add selected           | Appends checked rows from the other pool                                  |
+| Move up / down         | Reorders selected in-zone members as a block; **Alt+↑ / Alt+↓** shortcuts |
+| Remove                 | Per-row ✕ or bulk **Remove selected**                                     |
+| Include in scan list   | Per direct channel member — `includeInScanList` (default true)            |
+| Hide filtered from map | Separate checkboxes for each pool                                         |
 
 **Available zones** excludes the zone being edited, its descendant zones (would create a cycle), and zones already in the member list.
 
