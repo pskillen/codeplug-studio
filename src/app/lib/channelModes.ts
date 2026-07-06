@@ -1,6 +1,9 @@
 /** Channel mode display — mirror docs/reference/channel-modes.md */
 
-import type { ChannelMode as CoreChannelMode } from '@core/models/libraryTypes.ts';
+import type {
+  ChannelMode as CoreChannelMode,
+  DigitalChannelMode,
+} from '@core/models/libraryTypes.ts';
 
 export type ChannelModeCategory = 'analog' | 'digital' | 'other';
 
@@ -31,6 +34,24 @@ export const CHANNEL_MODES: ChannelModeDefinition[] = [
 ];
 
 const modeById = new Map(CHANNEL_MODES.map((m) => [m.id, m]));
+
+/** Canonical digital mode order for talk groups, contacts, and segmented controls. */
+export const DIGITAL_CHANNEL_MODES: readonly DigitalChannelMode[] = [
+  'dmr',
+  'dstar',
+  'ysf',
+  'p25',
+  'nxdn',
+  'm17',
+  'tetra',
+];
+
+export function digitalModeSegmentOptions(): { value: DigitalChannelMode; label: string }[] {
+  return DIGITAL_CHANNEL_MODES.map((mode) => ({
+    value: mode,
+    label: getModeDefinition(mode).label,
+  }));
+}
 
 export function getModeDefinition(mode: ChannelMode): ChannelModeDefinition {
   return modeById.get(mode) ?? modeById.get('other')!;

@@ -1,4 +1,4 @@
-import { Input, SegmentedControl, Stack } from '@mantine/core';
+import GradientSegmentedControl from '../ui/GradientSegmentedControl.tsx';
 
 export interface ForbidTransmitSegmentProps {
   /** `null` / `undefined` are treated as Allow TX (same as `false`). */
@@ -12,16 +12,15 @@ const OPTIONS = [
 ] as const;
 
 export default function ForbidTransmitSegment({ value, onChange }: ForbidTransmitSegmentProps) {
-  const isRxOnly = value === true;
+  const wireValue = value === true ? 'true' : 'false';
   return (
-    <Stack gap={4}>
-      <Input.Label>Transmit</Input.Label>
-      <SegmentedControl
-        value={isRxOnly ? 'true' : 'false'}
-        onChange={(next) => onChange(next === 'true')}
-        data={[...OPTIONS]}
-        fullWidth
-      />
-    </Stack>
+    <GradientSegmentedControl
+      label="Transmit"
+      value={wireValue}
+      onChange={(next) => onChange(next === 'true')}
+      data={[...OPTIONS]}
+      scheme="allowForbid"
+      fullWidth
+    />
   );
 }

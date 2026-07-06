@@ -26,4 +26,47 @@ export type {
 } from './DataTable.tsx';
 export { default as PercentLevelSlider } from './PercentLevelSlider.tsx';
 export type { PercentLevelSliderProps } from './PercentLevelSlider.tsx';
+export { default as GradientSegmentedControl } from './GradientSegmentedControl.tsx';
+export type {
+  GradientSegmentOption,
+  GradientSegmentedControlProps,
+} from './GradientSegmentedControl.tsx';
+export {
+  ALLOW_FORBID_SCHEME,
+  DIGITAL_MODE_PILL_SCHEME,
+  FIVE_SEGMENT_SCHEME,
+  FOUR_SEGMENT_SCHEME,
+  GRADIENT_SEGMENT_SCHEMES,
+  ON_OFF_SCHEME,
+  THREE_SEGMENT_SCHEME,
+  resolveScheme,
+  segmentColorsForCount,
+} from './gradientSegmentedSchemes.ts';
+export type {
+  GradientSegmentScheme,
+  GradientSegmentSchemeName,
+} from './gradientSegmentedSchemes.ts';
+export { buildTrackGradient, resolveSegmentColor } from './gradientSegmentColors.ts';
+export type { SegmentColor } from './gradientSegmentColors.ts';
+export { default as SelectedItemList } from './SelectedItemList.tsx';
+export type {
+  SelectedItemListFilterProps,
+  SelectedItemListProps,
+  SelectedItemListRenderProps,
+} from './SelectedItemList.tsx';
+export { default as AvailableItemPicker } from './AvailableItemPicker.tsx';
+export type {
+  AvailableItemPickerFilterProps,
+  AvailableItemPickerProps,
+  AvailableItemPickerRenderProps,
+  AvailableItemPickerSection,
+} from './AvailableItemPicker.tsx';
+export { default as PillTabs } from './PillTabs.tsx';
+export type { PillTabsItem, PillTabsProps } from './PillTabs.tsx';
+export { ImageCheckbox, ImageCheckboxGroup } from './ImageCheckbox.tsx';
+export type {
+  ImageCheckboxGroupProps,
+  ImageCheckboxOption,
+  ImageCheckboxProps,
+} from './ImageCheckbox.tsx';
 export * from './tokens.ts';

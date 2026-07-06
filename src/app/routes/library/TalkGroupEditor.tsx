@@ -1,17 +1,16 @@
 import { useState } from 'react';
-import { Button, Group, Select, SimpleGrid, Stack, Text, TextInput } from '@mantine/core';
+import { Button, Group, SimpleGrid, Stack, Text, TextInput } from '@mantine/core';
 import { Link } from 'react-router-dom';
 import type { DigitalChannelMode, TalkGroup } from '@core/models/library.ts';
 import { newTalkGroup } from '@core/domain/factories.ts';
 import TalkGroupWireNameExamples from '../../components/library/TalkGroupWireNameExamples.tsx';
-import { FormSection } from '../../components/ui/index.ts';
+import { FormSection, GradientSegmentedControl } from '../../components/ui/index.ts';
+import { digitalModeSegmentOptions } from '../../lib/channelModes.ts';
 import { parseOptionalInt } from '../../lib/units.ts';
 import { persistence } from '../../state/persistence.ts';
 import { useEntitySave } from './useEntitySave.ts';
 
-const DIGITAL_MODE_OPTIONS = (
-  ['dmr', 'dstar', 'ysf', 'p25', 'nxdn', 'm17', 'tetra'] as DigitalChannelMode[]
-).map((m) => ({ value: m, label: m.toUpperCase() }));
+const MODE_OPTIONS = digitalModeSegmentOptions();
 
 export function TalkGroupEditor({
   projectId,
@@ -74,19 +73,19 @@ export function TalkGroupEditor({
           abbreviation={abbreviation}
           digitalId={liveDigitalId}
         />
-        <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="sm">
-          <Select
-            label="Mode"
-            data={DIGITAL_MODE_OPTIONS}
-            value={mode}
-            onChange={(value) => setMode((value as DigitalChannelMode) ?? 'dmr')}
-          />
-          <TextInput
-            label="Group ID"
-            value={digitalId}
-            onChange={(e) => setDigitalId(e.currentTarget.value)}
-          />
-        </SimpleGrid>
+        <GradientSegmentedControl
+          label="Mode"
+          value={mode}
+          onChange={setMode}
+          data={MODE_OPTIONS}
+          scheme="digitalModes"
+          fullWidth
+        />
+        <TextInput
+          label="Group ID"
+          value={digitalId}
+          onChange={(e) => setDigitalId(e.currentTarget.value)}
+        />
         <TextInput
           label="Comment"
           value={comment}

@@ -32,6 +32,7 @@ Manages **In this zone** members (export order) and **Other channels & zones** a
 
 ## Behaviour
 
+- Composes [`SelectedItemList`](../ui/SelectedItemList.md) (in-zone list) and [`AvailableItemPicker`](../ui/AvailableItemPicker.md) (add pool) with domain-specific row renderers.
 - **In this zone:** rich channel rows (freq, mode pills, scan skip badge, scan-list checkbox), nested zone rows with effective counts, move up/down, Alt+↑/↓, remove per-row or bulk.
 - **Other channels & zones:** filter, multi-select add, hide-from-map checkboxes.
 - Map filters via `computeZoneMemberPickerMapFilters` in `zoneMemberPickerUtils.ts`.

@@ -47,7 +47,7 @@ Shared list UI: [app-shell/data-table.md](../app-shell/data-table.md).
 
 ### Channels list (#24)
 
-- Filters in section nav: name/callsign search, band, mode, simplex/split, distance radius (when operator location is set).
+- Filters on the list page (`ChannelListFilters`): band, mode, simplex/split, distance radius (when operator location is set). Name/callsign search is on the `DataTable` toolbar only.
 - Filter state syncs to URL query params and per-project `localStorage`.
 - Column sort and visibility prefs persist per project.
 - `modeProfiles[]` drives mode pills and mode filter matching (vendor-neutral labels only).
@@ -140,9 +140,19 @@ Channel DMR profiles reference a **digital contact** and an **RX group list** by
 ### Talk group editor ([#110](https://github.com/pskillen/codeplug-studio/issues/110))
 
 - **Identity:** name + optional abbreviation on one row (`TalkGroupEditor`); `TalkGroupWireNameExamples` shows informational multi-talkgroup wire-name previews at a typical 16-character limit.
+- **Mode:** `GradientSegmentedControl` with `digitalModes` scheme — segment colours match `ModePill` (`channelModes.ts`).
 - **List:** optional **Abbrev** column on `/library/talk-groups` (default visible).
 - **Persistence:** empty abbreviation omitted on save; native YAML round-trip preserves the field.
 - Sidecar: `src/app/components/library/TalkGroupWireNameExamples.md`.
+
+### Digital contact editor
+
+- **Identity:** `DigitalContactEditor` — Mantine `FormSection`, `TextInput`, Save/Cancel `Group` (matches talk group / channel editor shell).
+- **Mode:** `GradientSegmentedControl` with `digitalModes` scheme — same labels and colours as talk groups and `ModePill`.
+
+### Analog contact editor
+
+- **Identity:** `AnalogContactEditor` — same Mantine form shell as digital contacts (name, code, comment).
 
 ## Data flow
 

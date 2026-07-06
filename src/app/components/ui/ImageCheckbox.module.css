@@ -1,0 +1,37 @@
+.button {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  transition:
+    background-color 150ms ease,
+    border-color 150ms ease;
+  border-radius: var(--mantine-radius-sm);
+  padding: var(--mantine-spacing-sm);
+  border: 1px solid light-dark(var(--mantine-color-gray-3), var(--mantine-color-dark-8));
+  background-color: light-dark(var(--mantine-color-white), var(--mantine-color-dark-8));
+
+  &[data-checked] {
+    border-color: var(--mantine-color-brand-filled);
+    background-color: var(--mantine-color-brand-light);
+  }
+}
+
+.media {
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.body {
+  flex: 1;
+  margin-left: var(--mantine-spacing-md);
+  min-width: 0;
+  text-align: left;
+}
+
+.checkbox {
+  flex-shrink: 0;
+}

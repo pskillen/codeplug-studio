@@ -19,12 +19,14 @@ The zone editor embeds **`CodeplugMap`** below the editor so hull geometry updat
 
 ## Code anchors
 
-| Symbol                         | Path                                                          | Role                      |
-| ------------------------------ | ------------------------------------------------------------- | ------------------------- |
-| `ZoneMemberEditor`             | `src/app/components/library/ZoneMemberEditor.tsx`             | Vertical stacked UI       |
-| `zoneMemberPickerUtils`        | `src/app/components/library/zoneMemberPickerUtils.ts`         | Map filter helpers        |
-| `ChannelZoneMembershipSection` | `src/app/components/library/ChannelZoneMembershipSection.tsx` | Channel-side membership   |
-| `ZoneEditor`                   | `src/app/routes/library/ZoneEditor.tsx`                       | Editor + live map preview |
+| Symbol                         | Path                                                          | Role                         |
+| ------------------------------ | ------------------------------------------------------------- | ---------------------------- |
+| `ZoneMemberEditor`             | `src/app/components/library/ZoneMemberEditor.tsx`             | Vertical stacked UI          |
+| `SelectedItemList`             | `src/app/components/ui/SelectedItemList.tsx`                  | Generic selected-member list |
+| `AvailableItemPicker`          | `src/app/components/ui/AvailableItemPicker.tsx`               | Generic pool picker          |
+| `zoneMemberPickerUtils`        | `src/app/components/library/zoneMemberPickerUtils.ts`         | Map filter helpers           |
+| `ChannelZoneMembershipSection` | `src/app/components/library/ChannelZoneMembershipSection.tsx` | Channel-side membership      |
+| `ZoneEditor`                   | `src/app/routes/library/ZoneEditor.tsx`                       | Editor + live map preview    |
 
 Sidecars: `ZoneMemberEditor.md`, `ChannelZoneMembershipSection.md`.
 

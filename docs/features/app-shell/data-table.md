@@ -93,7 +93,7 @@ Never commit operator values from browser storage.
 1. Open `/library/zones` — sort by Members; reload — sort persists.
 2. Filter talk groups by name — type rapidly; input stays responsive; spinner shows briefly; table updates after ~300 ms; URL gains `?q=`; reload — filter persists.
 3. On `/library/contacts`, set digital and analog filters independently — URL shows `dq` and `aq`; each debounces separately.
-4. Channels: section nav and list page search stay in sync after debounce; optional columns hide/show; distance filter requires operator location (section nav).
+4. Channels: list-page filters + `DataTable` search; optional columns hide/show; distance filter requires operator location (**Show my location** below the table).
 
 ## Known gaps
 

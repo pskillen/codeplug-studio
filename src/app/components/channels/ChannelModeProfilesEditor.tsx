@@ -1,4 +1,4 @@
-import { Group, NumberInput, Select, Stack, Tabs, Text, TextInput } from '@mantine/core';
+import { Group, NumberInput, Select, Stack, Text, TextInput } from '@mantine/core';
 import type {
   ChannelModeProfile,
   ChannelModeProfileAnalog,
@@ -13,7 +13,7 @@ import type {
 } from '@core/models/library.ts';
 import { isAnalogChannelModeProfile, isModeOnlyStub } from '@core/domain/modeProfiles.ts';
 import ModePill from '../pills/ModePill.tsx';
-import { PercentLevelSlider } from '../ui/index.ts';
+import { PercentLevelSlider, PillTabs } from '../ui/index.ts';
 import RxGroupListSummary from '../library/RxGroupListSummary.tsx';
 import {
   BANDWIDTH_KHZ_OPTIONS,
@@ -50,29 +50,13 @@ export default function ChannelModeProfilesEditor({
     );
   };
 
-  if (profiles.length === 0) {
-    return (
-      <Text size="sm" c="dimmed">
-        Select at least one mode above to configure mode-specific settings.
-      </Text>
-    );
-  }
-
   return (
-    <Tabs defaultValue={profiles[0]?.mode ?? 'fm'}>
-      <Tabs.List>
-        {profiles.map((p) => (
-          <Tabs.Tab key={p.mode} value={p.mode}>
-            <Group gap={6}>
-              <ModePill mode={p.mode} size="xs" />
-              {modeLabel(p.mode)}
-            </Group>
-          </Tabs.Tab>
-        ))}
-      </Tabs.List>
-
-      {profiles.map((profile, index) => (
-        <Tabs.Panel key={profile.mode} value={profile.mode} pt="md">
+    <PillTabs
+      items={profiles.map((profile, index) => ({
+        value: profile.mode,
+        leading: <ModePill mode={profile.mode} size="xs" />,
+        label: modeLabel(profile.mode),
+        panel: (
           <Stack gap="sm">
             {isAnalogChannelModeProfile(profile) ? (
               <AnalogPanel profile={profile} onPatch={(patch) => updateProfile(index, patch)} />
@@ -116,9 +100,14 @@ export default function ChannelModeProfilesEditor({
               </Text>
             ) : null}
           </Stack>
-        </Tabs.Panel>
-      ))}
-    </Tabs>
+        ),
+      }))}
+      emptyState={
+        <Text size="sm" c="dimmed">
+          Select at least one mode above to configure mode-specific settings.
+        </Text>
+      }
+    />
   );
 }
 
