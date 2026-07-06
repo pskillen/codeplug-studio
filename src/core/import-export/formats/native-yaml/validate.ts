@@ -233,6 +233,14 @@ function parseZone(raw: unknown, index: number, studioSchemaVersion: number): Zo
       normalizeZoneMemberEntry(member),
     ),
     comment: expectString(record.comment, `library.zones[${index}].comment`),
+    ...(record.omitFromExport !== undefined && record.omitFromExport !== null
+      ? {
+          omitFromExport: expectBoolean(
+            record.omitFromExport,
+            `library.zones[${index}].omitFromExport`,
+          ),
+        }
+      : {}),
   };
 
   if (studioSchemaVersion >= STUDIO_SCHEMA_VERSION) {
@@ -742,13 +750,14 @@ export function validateDocument(raw: unknown): ProjectAggregate {
   const studioSchemaVersion = document.studioSchemaVersion;
   if (
     studioSchemaVersion !== STUDIO_SCHEMA_VERSION &&
+    studioSchemaVersion !== 6 &&
     studioSchemaVersion !== 5 &&
     studioSchemaVersion !== 4 &&
     studioSchemaVersion !== 3 &&
     studioSchemaVersion !== 2
   ) {
     throw new NativeYamlImportError(
-      `Unsupported studioSchemaVersion: ${String(studioSchemaVersion)} (expected ${STUDIO_SCHEMA_VERSION}, 5, 4, 3, or 2)`,
+      `Unsupported studioSchemaVersion: ${String(studioSchemaVersion)} (expected ${STUDIO_SCHEMA_VERSION}, 6, 5, 4, 3, or 2)`,
     );
   }
 

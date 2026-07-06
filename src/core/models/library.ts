@@ -140,6 +140,8 @@ export interface Zone extends PersistableRow {
   name: string;
   members: ZoneMemberEntry[];
   comment: string;
+  /** When true, zone is omitted from Zones.csv but still flattens into parent zones. */
+  omitFromExport?: boolean;
 }
 
 export interface Library {

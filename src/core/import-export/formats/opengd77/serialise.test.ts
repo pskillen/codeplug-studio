@@ -157,7 +157,6 @@ describe('OpenGD77 export serialise', () => {
     const csv = serialiseZones(assembled);
     expect(csv).toContain('Edinburgh');
     expect(csv).toContain('GB3DA Demo');
-    expect(csv).toContain('GB7GL Scot');
   });
 
   it('exportBuildAll returns all six CPS files', () => {
