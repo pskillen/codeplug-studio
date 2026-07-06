@@ -5,10 +5,8 @@ import {
   Checkbox,
   Group,
   Paper,
-  ScrollArea,
   Stack,
   Text,
-  TextInput,
   Tooltip,
 } from '@mantine/core';
 import { IconGripVertical, IconX } from '@tabler/icons-react';
@@ -27,6 +25,8 @@ import {
 import { memberIncludedInScanList } from '@core/domain/zoneMembers.ts';
 import { BandPillForChannel } from '../pills/BandPill.tsx';
 import ModePill from '../pills/ModePill.tsx';
+import AvailableItemPicker from '../ui/AvailableItemPicker.tsx';
+import SelectedItemList from '../ui/SelectedItemList.tsx';
 import { channelModesForFilter, sortByName } from '../../lib/channels.ts';
 import { formatChannelRxTxListCell } from '../../lib/formatFrequency.ts';
 import { ICON_STROKE } from '../../lib/iconSizes.ts';
@@ -259,177 +259,146 @@ export default function ZoneMemberEditor({
 
   return (
     <Stack gap="lg">
-      <Stack gap="xs">
-        <Group justify="space-between" align="flex-end" wrap="wrap">
-          <Stack gap={4}>
-            <Text size="sm" fw={600}>
-              In this zone
-            </Text>
-            <Text size="sm" c="dimmed">
-              {members.length} direct member{members.length === 1 ? '' : 's'}
-              {editingZoneId ? ` · ${effectiveChannelCount} channels effective` : ''} — export order
-            </Text>
-          </Stack>
-          <TextInput
-            placeholder="Filter members…"
-            value={inZoneFilter}
-            onChange={(e) => setInZoneFilter(e.currentTarget.value)}
-            size="xs"
-            maw={240}
-            aria-label="Filter in-zone members"
+      <SelectedItemList
+        title="In this zone"
+        description={`${members.length} direct member${members.length === 1 ? '' : 's'}${
+          editingZoneId ? ` · ${effectiveChannelCount} channels effective` : ''
+        } — export order`}
+        filter={{
+          value: inZoneFilter,
+          onChange: setInZoneFilter,
+          placeholder: 'Filter members…',
+          'aria-label': 'Filter in-zone members',
+        }}
+        itemKeys={filteredInZoneKeys}
+        selectedKeys={inZoneSelected}
+        onToggleSelect={toggleInZone}
+        onRemove={(key) => removeKeys([key])}
+        emptyMessage="No members in zone"
+        renderItem={({ itemKey, selected, onToggleSelect, onRemove }) => (
+          <InZoneMemberRow
+            key={itemKey}
+            memberKey={itemKey}
+            member={members.find((m) => memberKeyFromEntry(m) === itemKey)}
+            channelsById={channelsById}
+            zones={zones}
+            selected={selected}
+            onToggleSelect={onToggleSelect}
+            onRemove={onRemove}
+            onIncludeInScanListChange={handleIncludeInScanList}
           />
-        </Group>
+        )}
+        toolbar={
+          <Group gap="xs">
+            <Button
+              type="button"
+              variant="default"
+              size="compact-sm"
+              onClick={() => moveSelected('up')}
+              disabled={!canMoveUp}
+            >
+              Move up
+            </Button>
+            <Button
+              type="button"
+              variant="default"
+              size="compact-sm"
+              onClick={() => moveSelected('down')}
+              disabled={!canMoveDown}
+            >
+              Move down
+            </Button>
+            <Button
+              type="button"
+              variant="light"
+              size="compact-sm"
+              onClick={removeSelected}
+              disabled={!inZoneSelected.length}
+            >
+              Remove selected
+            </Button>
+            <Text size="xs" c="dimmed">
+              Alt+↑ / Alt+↓ reorders selection
+            </Text>
+          </Group>
+        }
+      />
 
-        <ScrollArea.Autosize mah={360} type="auto" offsetScrollbars>
-          <Stack gap={6}>
-            {filteredInZoneKeys.length === 0 ? (
-              <Text size="sm" c="dimmed" p="xs">
-                No members in zone
-              </Text>
-            ) : (
-              filteredInZoneKeys.map((key) => (
-                <InZoneMemberRow
-                  key={key}
-                  memberKey={key}
-                  member={members.find((m) => memberKeyFromEntry(m) === key)}
-                  channelsById={channelsById}
-                  zones={zones}
-                  selected={inZoneSelected.includes(key)}
-                  onToggleSelect={() => toggleInZone(key)}
-                  onRemove={() => removeKeys([key])}
-                  onIncludeInScanListChange={handleIncludeInScanList}
+      <AvailableItemPicker
+        title="Other channels & zones"
+        filter={{
+          value: availableFilter,
+          onChange: setAvailableFilter,
+          placeholder: 'Filter…',
+          'aria-label': 'Filter available channels and zones',
+        }}
+        sections={[
+          {
+            id: 'channels',
+            title: 'Channels',
+            itemKeys: availableChannels.map((ch) => ch.id),
+            selectedKeys: availableChannelSelected,
+            onToggleSelect: (id) =>
+              setAvailableChannelSelected((prev) =>
+                prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
+              ),
+            emptyMessage: 'No channels available',
+            renderItem: ({ itemKey, checked, onToggle }) => {
+              const channel = channelsById.get(itemKey);
+              if (!channel) return null;
+              return (
+                <AvailableChannelRow
+                  key={itemKey}
+                  channel={channel}
+                  checked={checked}
+                  onToggle={onToggle}
                 />
-              ))
-            )}
-          </Stack>
-        </ScrollArea.Autosize>
-
-        <Group gap="xs">
-          <Button
-            type="button"
-            variant="default"
-            size="compact-sm"
-            onClick={() => moveSelected('up')}
-            disabled={!canMoveUp}
-          >
-            Move up
-          </Button>
-          <Button
-            type="button"
-            variant="default"
-            size="compact-sm"
-            onClick={() => moveSelected('down')}
-            disabled={!canMoveDown}
-          >
-            Move down
-          </Button>
-          <Button
-            type="button"
-            variant="light"
-            size="compact-sm"
-            onClick={removeSelected}
-            disabled={!inZoneSelected.length}
-          >
-            Remove selected
-          </Button>
-          <Text size="xs" c="dimmed">
-            Alt+↑ / Alt+↓ reorders selection
-          </Text>
-        </Group>
-      </Stack>
-
-      <Stack gap="xs">
-        <Group justify="space-between" align="flex-end" wrap="wrap">
-          <Text size="sm" fw={600}>
-            Other channels &amp; zones
-          </Text>
-          <TextInput
-            placeholder="Filter…"
-            value={availableFilter}
-            onChange={(e) => setAvailableFilter(e.currentTarget.value)}
-            size="xs"
-            maw={240}
-            aria-label="Filter available channels and zones"
-          />
-        </Group>
-
-        <ScrollArea.Autosize mah={280} type="auto" offsetScrollbars>
-          <Stack gap="md">
-            <Stack gap={4}>
-              <Text size="xs" fw={500} c="dimmed" tt="uppercase">
-                Channels
-              </Text>
-              {availableChannels.length === 0 ? (
-                <Text size="sm" c="dimmed" p="xs">
-                  No channels available
-                </Text>
-              ) : (
-                availableChannels.map((ch) => (
-                  <AvailableChannelRow
-                    key={ch.id}
-                    channel={ch}
-                    checked={availableChannelSelected.includes(ch.id)}
-                    onToggle={() =>
-                      setAvailableChannelSelected((prev) =>
-                        prev.includes(ch.id) ? prev.filter((x) => x !== ch.id) : [...prev, ch.id],
-                      )
-                    }
-                  />
-                ))
-              )}
-            </Stack>
-
-            <Stack gap={4}>
-              <Text size="xs" fw={500} c="dimmed" tt="uppercase">
-                Zones
-              </Text>
-              {availableZones.length === 0 ? (
-                <Text size="sm" c="dimmed" p="xs">
-                  No zones available
-                </Text>
-              ) : (
-                availableZones.map((zone) => (
-                  <Checkbox
-                    key={zone.id}
-                    label={`Zone: ${zone.name}`}
-                    checked={availableZoneSelected.includes(zone.id)}
-                    onChange={() =>
-                      setAvailableZoneSelected((prev) =>
-                        prev.includes(zone.id)
-                          ? prev.filter((x) => x !== zone.id)
-                          : [...prev, zone.id],
-                      )
-                    }
-                  />
-                ))
-              )}
-            </Stack>
-          </Stack>
-        </ScrollArea.Autosize>
-
-        <Group gap="sm">
-          <Button
-            type="button"
-            variant="light"
-            onClick={addSelected}
-            disabled={!availableChannelSelected.length && !availableZoneSelected.length}
-          >
-            Add selected
-          </Button>
-          <Checkbox
-            label="Hide filtered entries from map"
-            checked={hideAvailableFilteredFromMap}
-            disabled={!availableFilterLower}
-            onChange={(e) => setHideAvailableFilteredFromMap(e.currentTarget.checked)}
-          />
-          <Checkbox
-            label="Hide filtered in-zone members from map"
-            checked={hideInZoneFilteredFromMap}
-            disabled={!inZoneFilterLower}
-            onChange={(e) => setHideInZoneFilteredFromMap(e.currentTarget.checked)}
-          />
-        </Group>
-      </Stack>
+              );
+            },
+          },
+          {
+            id: 'zones',
+            title: 'Zones',
+            itemKeys: availableZones.map((zone) => zone.id),
+            selectedKeys: availableZoneSelected,
+            onToggleSelect: (id) =>
+              setAvailableZoneSelected((prev) =>
+                prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
+              ),
+            emptyMessage: 'No zones available',
+            renderItem: ({ itemKey, checked, onToggle }) => {
+              const zone = zonesById.get(itemKey);
+              if (!zone) return null;
+              return (
+                <Checkbox
+                  key={itemKey}
+                  label={`Zone: ${zone.name}`}
+                  checked={checked}
+                  onChange={onToggle}
+                />
+              );
+            },
+          },
+        ]}
+        onAddSelected={addSelected}
+        addDisabled={!availableChannelSelected.length && !availableZoneSelected.length}
+        footer={
+          <>
+            <Checkbox
+              label="Hide filtered entries from map"
+              checked={hideAvailableFilteredFromMap}
+              disabled={!availableFilterLower}
+              onChange={(e) => setHideAvailableFilteredFromMap(e.currentTarget.checked)}
+            />
+            <Checkbox
+              label="Hide filtered in-zone members from map"
+              checked={hideInZoneFilteredFromMap}
+              disabled={!inZoneFilterLower}
+              onChange={(e) => setHideInZoneFilteredFromMap(e.currentTarget.checked)}
+            />
+          </>
+        }
+      />
     </Stack>
   );
 }

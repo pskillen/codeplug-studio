@@ -48,4 +48,17 @@ export type {
 } from './gradientSegmentedSchemes.ts';
 export { buildTrackGradient, resolveSegmentColor } from './gradientSegmentColors.ts';
 export type { SegmentColor } from './gradientSegmentColors.ts';
+export { default as SelectedItemList } from './SelectedItemList.tsx';
+export type {
+  SelectedItemListFilterProps,
+  SelectedItemListProps,
+  SelectedItemListRenderProps,
+} from './SelectedItemList.tsx';
+export { default as AvailableItemPicker } from './AvailableItemPicker.tsx';
+export type {
+  AvailableItemPickerFilterProps,
+  AvailableItemPickerProps,
+  AvailableItemPickerRenderProps,
+  AvailableItemPickerSection,
+} from './AvailableItemPicker.tsx';
 export * from './tokens.ts';
