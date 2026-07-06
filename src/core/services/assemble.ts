@@ -191,6 +191,10 @@ function assembleChannels(build: FormatBuild, library: LibrarySlice): AssembledC
   return assembled;
 }
 
+function zoneExportsStandalone(zone: Zone): boolean {
+  return zone.omitFromExport !== true;
+}
+
 function assembleZones(
   build: FormatBuild,
   library: LibrarySlice,
@@ -206,7 +210,7 @@ function assembleZones(
       for (const zoneEntry of section.zones) {
         if (isEntityExcluded(overrides, zoneEntry.id)) continue;
         const libraryZone = zonesById.get(zoneEntry.id);
-        if (!libraryZone) continue;
+        if (!libraryZone || !zoneExportsStandalone(libraryZone)) continue;
         const effectiveIds = resolveEffectiveZoneChannelIds(libraryZone, library.zones);
         const memberChannelIds = orderChannelIdsByLayoutHint(effectiveIds, zoneEntry.channelIds).filter(
           (id) => exportedChannelIds.has(id),
@@ -225,7 +229,7 @@ function assembleZones(
   }
 
   return library.zones
-    .filter((zone) => !isEntityExcluded(overrides, zone.id))
+    .filter((zone) => !isEntityExcluded(overrides, zone.id) && zoneExportsStandalone(zone))
     .map((zone) => {
       const memberChannelIds = resolveEffectiveZoneChannelIds(zone, library.zones).filter((id) =>
         exportedChannelIds.has(id),

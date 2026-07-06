@@ -337,4 +337,71 @@ describe('assemble', () => {
     const glasgow = projection.zones.find((z) => z.zoneId === parentZone.id);
     expect(glasgow?.memberChannelIds).toEqual([direct.id, child.id]);
   });
+
+  it('omits nested-only zones from export but flattens into parent', () => {
+    const projectId = 'proj-omit';
+    const pmr = {
+      ...newChannel(projectId, 'PMR ch'),
+      id: 'ch-pmr',
+    };
+    const glasgowCh = {
+      ...newChannel(projectId, 'Glasgow ch'),
+      id: 'ch-glasgow',
+    };
+    const pmrZone = {
+      id: 'zone-pmr',
+      projectId,
+      revision: 1,
+      updatedAt: '2026-01-01T00:00:00.000Z',
+      name: 'PMR446',
+      comment: '',
+      omitFromExport: true,
+      members: [{ kind: 'channel' as const, channelId: pmr.id }],
+    };
+    const glasgowZone = {
+      id: 'zone-glasgow',
+      projectId,
+      revision: 1,
+      updatedAt: '2026-01-01T00:00:00.000Z',
+      name: 'Glasgow',
+      comment: '',
+      members: [
+        { kind: 'channel' as const, channelId: glasgowCh.id },
+        { kind: 'zone' as const, zoneId: pmrZone.id },
+      ],
+    };
+    const library = {
+      channels: [pmr, glasgowCh],
+      zones: [pmrZone, glasgowZone],
+      talkGroups: [],
+      digitalContacts: [],
+      analogContacts: [],
+      rxGroupLists: [],
+    };
+    const build = {
+      id: 'build-omit',
+      projectId,
+      revision: 1,
+      updatedAt: '2026-01-01T00:00:00.000Z',
+      name: 'Omit test',
+      formatId: 'opengd77',
+      profileId: 'opengd77-1701',
+      layout: { sections: [] },
+      channelOverrides: [],
+      zoneOverrides: [],
+      talkGroupOverrides: [],
+      rxGroupListOverrides: [],
+      channelSelections: [],
+      talkGroupSelections: [],
+      rxGroupListSelections: [],
+      digitalContactSelections: [],
+      analogContactSelections: [],
+      contactOverrides: [],
+    };
+
+    const projection = assemble(build, library);
+    expect(projection.zones.map((z) => z.zoneId)).toEqual([glasgowZone.id]);
+    const glasgow = projection.zones.find((z) => z.zoneId === glasgowZone.id);
+    expect(glasgow?.memberChannelIds).toEqual([glasgowCh.id, pmr.id]);
+  });
 });
