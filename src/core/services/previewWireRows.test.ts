@@ -524,4 +524,64 @@ describe('previewWireRows', () => {
     expect(glasgowRow?.omitFromExport).toBeFalsy();
     expect(isPreviewRowIncludedInExport(build, library, 'zone', glasgowRow!)).toBe(true);
   });
+
+  it('attaches direct zone member counts for zone wire preview rows', () => {
+    const projectId = 'proj-zone-badges';
+    const ch = { ...newChannel(projectId, 'Direct'), id: 'ch-1' };
+    const childZone = { ...newZone(projectId, 'Child'), id: 'zone-child', members: [] };
+    const parentZone = {
+      ...newZone(projectId, 'Parent'),
+      id: 'zone-parent',
+      members: [
+        { kind: 'channel' as const, channelId: ch.id },
+        { kind: 'zone' as const, zoneId: childZone.id },
+      ],
+    };
+    const build = { ...newFormatBuild(projectId, 'opengd77-1701', 'Badges'), formatId: 'opengd77' };
+    const library = {
+      channels: [ch],
+      zones: [childZone, parentZone],
+      talkGroups: [],
+      digitalContacts: [],
+      analogContacts: [],
+      rxGroupLists: [],
+    };
+
+    const row = previewWireRows(build, library, 'zone').find(
+      (r) => r.libraryEntityId === parentZone.id,
+    );
+    expect(row?.displayLabel).toBe('Parent');
+    expect(row?.zoneDirectMembers).toEqual({
+      channelCount: 1,
+      zoneCount: 1,
+      channelNames: [expect.stringContaining('Direct')],
+      zoneNames: ['Child'],
+    });
+  });
+
+  it('excludes channels in standalone omitFromExport zones from export preview', () => {
+    const projectId = 'proj-omit-channel-preview';
+    const pmrChannel = { ...newChannel(projectId, 'PMR'), id: 'ch-pmr' };
+    const pmrZone = {
+      ...newZone(projectId, 'PMR446'),
+      id: 'zone-pmr',
+      omitFromExport: true,
+      members: [{ kind: 'channel' as const, channelId: pmrChannel.id }],
+    };
+    const build = {
+      ...newFormatBuild(projectId, 'opengd77-1701', 'Omit channel preview'),
+      formatId: 'opengd77',
+    };
+    const library = {
+      channels: [pmrChannel],
+      zones: [pmrZone],
+      talkGroups: [],
+      digitalContacts: [],
+      analogContacts: [],
+      rxGroupLists: [],
+    };
+
+    const row = previewWireRows(build, library, 'channel')[0];
+    expect(isPreviewRowIncludedInExport(build, library, 'channel', row)).toBe(false);
+  });
 });

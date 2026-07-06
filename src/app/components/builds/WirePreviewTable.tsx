@@ -16,6 +16,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import type { WirePreviewRow } from '@core/services/previewWireRows.ts';
 import { libraryEditPathForWirePreviewRow } from '../../lib/wirePreviewRowLinks.ts';
+import ZoneMemberSummaryBadges from '../library/ZoneMemberSummaryBadges.tsx';
 import { ICON_SIZE_ACTION, ICON_STROKE } from '../../lib/iconSizes.ts';
 
 export interface WirePreviewTableProps {
@@ -150,6 +151,16 @@ function WirePreviewDisplayCell({ row }: { row: WirePreviewRow }) {
     <Stack gap={4}>
       <Group gap="xs" wrap="wrap" align="center">
         <Text size="sm">{row.displayLabel}</Text>
+        {row.zoneDirectMembers ? (
+          <Group gap={4} wrap="wrap">
+            <ZoneMemberSummaryBadges
+              channelCount={row.zoneDirectMembers.channelCount}
+              zoneCount={row.zoneDirectMembers.zoneCount}
+              channelNames={row.zoneDirectMembers.channelNames}
+              zoneNames={row.zoneDirectMembers.zoneNames}
+            />
+          </Group>
+        ) : null}
         {row.omitFromExport ? (
           <Badge size="xs" variant="light" color="gray">
             Not exported as zone

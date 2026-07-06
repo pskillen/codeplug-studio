@@ -39,13 +39,13 @@ For `formatId === 'dm32'`, channel preview uses the same expansion path as expor
 
 ## Routes
 
-| Route                        | Entity kind   | Notes                                                                                                                                                                                            |
-| ---------------------------- | ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `/builds/:id/channels`       | `channel`     | Export name mode + **use channel abbreviations** toggles; click default name to store override; multi-mode rows (OpenGD77) or RX-list fan-out rows (DM32); leave-page guard for unapplied drafts |
-| `/builds/:id/zones`          | `zone`        | Click default name to store override; **Not exported as zone** badge when library `omitFromExport` is set; DM32 builds show zone export trait controls above the table |
-| `/builds/:id/talk-groups`    | `talkGroup`   | Unreferenced TGs still listed; click default name to store override                                                                                                                              |
-| `/builds/:id/contacts`       | `contact`     | Digital + analog contacts; click default name to store override                                                                                                                                  |
-| `/builds/:id/rx-group-lists` | `rxGroupList` | Click default name to store override                                                                                                                                                             |
+| Route                        | Entity kind   | Notes                                                                                                                                                                                                                                |
+| ---------------------------- | ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `/builds/:id/channels`       | `channel`     | Export name mode + **use channel abbreviations** toggles; click default name to store override; multi-mode rows (OpenGD77) or RX-list fan-out rows (DM32); leave-page guard for unapplied drafts                                     |
+| `/builds/:id/zones`          | `zone`        | Click default name to store override; **Not exported as zone** badge when library `omitFromExport` is set; **N channels** / **M zones** member pills with name tooltips; DM32 builds show zone export trait controls above the table |
+| `/builds/:id/talk-groups`    | `talkGroup`   | Unreferenced TGs still listed; click default name to store override                                                                                                                                                                  |
+| `/builds/:id/contacts`       | `contact`     | Digital + analog contacts; click default name to store override                                                                                                                                                                      |
+| `/builds/:id/rx-group-lists` | `rxGroupList` | Click default name to store override                                                                                                                                                                                                 |
 
 Secondary nav is trait-gated (`buildNavItems` in `src/app/routes/builds/nav.ts`).
 

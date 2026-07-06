@@ -12,10 +12,16 @@ import {
   modeExportNameSuffix,
 } from '@core/import-export/channelExpansion/multiMode.ts';
 import { applyTalkGroupWireNameLimits } from '@core/import-export/channelExpansion/talkGroupWireNames.ts';
-import { assemble, zoneLinkedChannelIds, type LibrarySlice } from './assemble.ts';
+import {
+  assemble,
+  channelInAnyZoneMembership,
+  zoneLinkedChannelIds,
+  type LibrarySlice,
+} from './assemble.ts';
 import type { FormatBuild } from '@core/models/formatBuild.ts';
-import type { Channel, ChannelModeProfileDMR } from '@core/models/library.ts';
+import type { Channel, ChannelModeProfileDMR, Zone } from '@core/models/library.ts';
 import type { DMRTimeSlot, EntityRef } from '@core/models/libraryTypes.ts';
+import { directZoneMemberChannelIds, directZoneMemberZoneIds } from '@core/domain/zoneMembers.ts';
 
 export type WirePreviewEntityKind = 'channel' | 'zone' | 'talkGroup' | 'contact' | 'rxGroupList';
 
@@ -30,6 +36,14 @@ export const PREVIEW_ROW_OMIT_FROM_EXPORT_NOTE =
 export interface WirePreviewDisplayLine {
   label: string;
   value: string;
+}
+
+/** Direct zone members for wire-preview badges (channels and nested zones). */
+export interface WirePreviewZoneDirectMembers {
+  channelCount: number;
+  zoneCount: number;
+  channelNames: string[];
+  zoneNames: string[];
 }
 
 export interface WirePreviewRow {
@@ -47,6 +61,8 @@ export interface WirePreviewRow {
   displayDetails?: WirePreviewDisplayLine[];
   /** Library zone flagged omitFromExport — no standalone Zones.csv row. */
   omitFromExport?: boolean;
+  /** Direct library zone members — zones wire preview only. */
+  zoneDirectMembers?: WirePreviewZoneDirectMembers;
 }
 
 export function overrideFieldForEntityKind(entityKind: WirePreviewEntityKind): OverrideField {
@@ -62,6 +78,22 @@ export function overrideFieldForEntityKind(entityKind: WirePreviewEntityKind): O
     case 'rxGroupList':
       return 'rxGroupListOverrides';
   }
+}
+
+function zoneDirectMembersPreview(zone: Zone, library: LibrarySlice): WirePreviewZoneDirectMembers {
+  const channelIds = directZoneMemberChannelIds(zone);
+  const zoneIds = directZoneMemberZoneIds(zone);
+  const channelById = new Map(library.channels.map((ch) => [ch.id, ch]));
+  const zoneById = new Map(library.zones.map((row) => [row.id, row]));
+  return {
+    channelCount: channelIds.length,
+    zoneCount: zoneIds.length,
+    channelNames: channelIds.map((id) => {
+      const ch = channelById.get(id);
+      return ch ? channelDisplayLabel(ch) : id;
+    }),
+    zoneNames: zoneIds.map((id) => zoneById.get(id)?.name ?? id),
+  };
 }
 
 function previewRow(
@@ -250,20 +282,20 @@ export function previewWireRows(
     }
     case 'zone':
       return library.zones.map((zone) => {
-        const assembled = projection.zones.find((row) => row.zoneId === zone.id);
-        const memberCount = assembled?.memberChannelIds.length ?? zone.members.length;
         const omitFromExport = zone.omitFromExport === true;
+        const zoneDirectMembers = zoneDirectMembersPreview(zone, library);
         return {
           ...previewRow(
             zone.id,
             zone.id,
             'zone',
-            `${zone.name} (${memberCount} channel${memberCount === 1 ? '' : 's'})`,
+            zone.name,
             zone.name,
             build.zoneOverrides,
             omitFromExport ? PREVIEW_ROW_OMIT_FROM_EXPORT_NOTE : undefined,
           ),
           omitFromExport,
+          zoneDirectMembers,
         };
       });
     case 'talkGroup': {
@@ -351,7 +383,16 @@ export function isPreviewRowIncludedInExport(
 
   switch (entityKind) {
     case 'channel':
-      if (build.exportUnlinkedChannels !== false) return true;
+      if (build.exportUnlinkedChannels !== false) {
+        const reachable = zoneLinkedChannelIds(build, library);
+        if (
+          !reachable.has(row.libraryEntityId) &&
+          channelInAnyZoneMembership(row.libraryEntityId, library)
+        ) {
+          return false;
+        }
+        return true;
+      }
       return zoneLinkedChannelIds(build, library).has(row.libraryEntityId);
     case 'talkGroup':
       if (build.exportUnlinkedTalkGroups !== false) return true;
