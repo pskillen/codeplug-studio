@@ -2,7 +2,7 @@
 
 **Epic:** [#179 — Channel and Zone Management](https://github.com/pskillen/codeplug-studio/issues/179)
 
-**Branch:** `154/pskil/zone-selection-and-nesting`
+**Branch:** `181/pskil/zone-from-location`
 
 ## Status
 
@@ -10,6 +10,7 @@
 | ------------------------------------- | -------------------------------------------------------------- | -------- | ---------------------------------------------------------- |
 | Create zone from selected channels    | [#154](https://github.com/pskillen/codeplug-studio/issues/154) | Complete | `ChannelsListPage` selection + `ZoneEditor` location state |
 | Nested zones (denormalised on export) | [#157](https://github.com/pskillen/codeplug-studio/issues/157) | Complete | Model v6; export flatten + `omitFromExport` v7             |
+| Zone from location (proximity)        | [#181](https://github.com/pskillen/codeplug-studio/issues/181) | Complete | `/library/zones/new-from-location`; map emphasis modes     |
 
 ## Shipped
 
@@ -26,7 +27,12 @@
 - `feat(library): omitFromExport toggle on zone editor`
 - `test(import-export): nested zone flatten and omitFromExport in CPS export`
 - `docs(library): nested zone export and omitFromExport`
+- `feat(core): proximity zone channel selection helper`
+- `feat(map): proximity overlays and zone hull emphasis modes`
+- `feat(library): zone-from-location page and nav entry`
+- `feat(library): emphasise editing zone on zone editor map`
+- `docs(library): zone from location workflow`
 
 ## Next
 
-Merge PR [#182](https://github.com/pskillen/codeplug-studio/pull/182); verify on `dev`.
+Open PR for [#181](https://github.com/pskillen/codeplug-studio/issues/181); verify on `dev`.
