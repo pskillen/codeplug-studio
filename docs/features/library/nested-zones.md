@@ -30,9 +30,9 @@ Nesting is **not reconstructed** from flat CPS import — it is created and main
 | `channel`   | `{ kind: 'channel', channelId, includeInScanList? }` | Wire channel name (after assemble)                       |
 | `zone`      | `{ kind: 'zone', zoneId }`                           | Expanded to child zone's effective channels, depth-first |
 
-| Zone field       | Default | Export effect                                                                |
-| ---------------- | ------- | ---------------------------------------------------------------------------- |
-| `omitFromExport` | off     | When on: no row in `Zones.csv`; channels still flatten into parent zone rows |
+| Zone field       | Default | Export effect                                                                                                                                                                            |
+| ---------------- | ------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `omitFromExport` | off     | When on: no row in `Zones.csv`; channels flatten into parent zone rows. Channels export only when reachable via a parent zone — standalone omit-only zones do not export their channels. |
 
 Rules:
 
@@ -47,7 +47,7 @@ Rules:
 2. Edit a parent zone → **Available zones** pool → add child zones to **In zone**.
 3. Optionally enable **Don't export as its own zone** on a child zone used only as a building block (e.g. PMR446 simplex set nested inside every city zone).
 4. Save — cycle errors surface before persistence.
-5. `/library/zones` list shows direct member count; nested zones also show `(N channels effective)`; **Nested only** badge when `omitFromExport` is set.
+5. `/library/zones` list shows direct member summary (e.g. `3 channels + 1 zone`); **Nested only** badge when `omitFromExport` is set.
 6. Export / map hulls use the **effective** (flattened) channel set.
 
 ## Native YAML

@@ -76,3 +76,18 @@ export function memberIncludedInScanList(member: ZoneMemberEntry): boolean {
   if (member.kind !== 'channel') return true;
   return member.includeInScanList !== false;
 }
+
+function pluralCount(count: number, singular: string, plural: string): string {
+  return `${count} ${count === 1 ? singular : plural}`;
+}
+
+/** Human-readable direct member counts for list UI — channels and/or nested zones. */
+export function formatZoneDirectMemberSummary(zone: Zone): string {
+  const channelCount = directZoneMemberChannelIds(zone).length;
+  const zoneCount = directZoneMemberZoneIds(zone).length;
+  const parts: string[] = [];
+  if (channelCount > 0) parts.push(pluralCount(channelCount, 'channel', 'channels'));
+  if (zoneCount > 0) parts.push(pluralCount(zoneCount, 'zone', 'zones'));
+  if (parts.length === 0) return 'No members';
+  return parts.join(' + ');
+}

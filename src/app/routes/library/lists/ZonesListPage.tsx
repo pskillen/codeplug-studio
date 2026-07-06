@@ -2,8 +2,7 @@ import { Badge, Button, Group, Stack, Text } from '@mantine/core';
 import { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type { Zone } from '@core/models/library.ts';
-import { resolveEffectiveZoneChannelIds } from '@core/domain/zoneHierarchy.ts';
-import { directZoneMemberZoneIds } from '@core/domain/zoneMembers.ts';
+import { formatZoneDirectMemberSummary } from '@core/domain/zoneMembers.ts';
 import { applyFilters, DEFAULT_MAP_FILTER_OPTS } from '@core/domain/mapProjection.ts';
 import CodeplugMap from '../../../components/CodeplugMap/CodeplugMap.tsx';
 import UseMyLocationButton from '../../../components/UseMyLocationButton/UseMyLocationButton.tsx';
@@ -38,11 +37,7 @@ export default function ZonesListPage() {
         key: 'members',
         header: 'Members',
         render: (z) => {
-          const direct = z.members.length;
-          const hasNested = directZoneMemberZoneIds(z).length > 0;
-          const countLabel = !hasNested
-            ? String(direct)
-            : `${direct} (${resolveEffectiveZoneChannelIds(z, zones).length} channels effective)`;
+          const countLabel = formatZoneDirectMemberSummary(z);
           return (
             <Group gap="xs" wrap="nowrap">
               <Text size="sm">{countLabel}</Text>
@@ -63,7 +58,7 @@ export default function ZonesListPage() {
         sortValue: (z) => z.comment || '',
       },
     ];
-  }, [zones]);
+  }, []);
 
   if (loading) {
     return (
