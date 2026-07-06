@@ -7,8 +7,8 @@ import AddFromUkRepeaterPage from './routes/library/AddFromUkRepeaterPage.tsx';
 import AddFromBrandmeisterPage from './routes/library/AddFromBrandmeisterPage.tsx';
 import AddChannelSetPage from './routes/library/AddChannelSetPage.tsx';
 import ZoneFromLocationPage from './routes/library/ZoneFromLocationPage.tsx';
-import ChannelsListPage from './routes/library/lists/ChannelsListPage.tsx';
-import ZonesListPage from './routes/library/lists/ZonesListPage.tsx';
+import ChannelsAndZonesPage from './routes/library/ChannelsAndZonesPage.tsx';
+import ChannelsListRedirect from './routes/library/lists/ChannelsListRedirect.tsx';
 import TalkGroupsListPage from './routes/library/lists/TalkGroupsListPage.tsx';
 import ContactsListPage from './routes/library/lists/ContactsListPage.tsx';
 import RxGroupListsListPage from './routes/library/lists/RxGroupListsListPage.tsx';
@@ -38,7 +38,7 @@ import BuildContactsWirePage from './routes/builds/wire-preview/BuildContactsWir
 import BuildRxGroupListsWirePage from './routes/builds/wire-preview/BuildRxGroupListsWirePage.tsx';
 
 function MapRedirect() {
-  return <Navigate to="/library/channels" replace />;
+  return <Navigate to="/library/zones?pivot=all" replace />;
 }
 
 export const appRouter = createBrowserRouter([
@@ -67,9 +67,9 @@ export const appRouter = createBrowserRouter([
       {
         element: <RequireActiveProject />,
         children: [
-          { path: '/library', element: <Navigate to="/library/channels" replace /> },
-          { path: '/library/channels', element: <ChannelsListPage /> },
-          { path: '/library/zones', element: <ZonesListPage /> },
+          { path: '/library', element: <Navigate to="/library/zones?pivot=all" replace /> },
+          { path: '/library/channels', element: <ChannelsListRedirect /> },
+          { path: '/library/zones', element: <ChannelsAndZonesPage /> },
           {
             path: '/library/zones/new-from-location',
             element: <ZoneFromLocationPage />,
