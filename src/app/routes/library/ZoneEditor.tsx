@@ -3,7 +3,12 @@ import { Stack, Switch, Text, TextInput } from '@mantine/core';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import type { Library, Zone, ZoneMemberEntry } from '@core/models/library.ts';
 import { newZone } from '@core/domain/factories.ts';
-import { applyFilters, DEFAULT_MAP_FILTER_OPTS } from '@core/domain/mapProjection.ts';
+import {
+  applyFilters,
+  channelHasGeolocation,
+  DEFAULT_MAP_FILTER_OPTS,
+} from '@core/domain/mapProjection.ts';
+import { resolveEffectiveZoneChannelIds } from '@core/domain/zoneHierarchy.ts';
 import { validateZoneMembership } from '@core/domain/validation.ts';
 import CodeplugMap from '../../components/CodeplugMap/CodeplugMap.tsx';
 import { FormSection } from '../../components/ui/index.ts';
@@ -75,6 +80,18 @@ export default function ZoneEditor({
     const others = library.zones.filter((z) => z.id !== base.id);
     return [...others, previewZone];
   }, [library.zones, base.id, previewZone]);
+
+  const fitBoundsChannelIds = useMemo(
+    () => resolveEffectiveZoneChannelIds(previewZone, zonesForMap),
+    [previewZone, zonesForMap],
+  );
+
+  const dimmedChannelIds = useMemo(() => {
+    const memberIds = new Set(fitBoundsChannelIds);
+    return channelsForMap
+      .filter((ch) => channelHasGeolocation(ch) && !memberIds.has(ch.id))
+      .map((ch) => ch.id);
+  }, [channelsForMap, fitBoundsChannelIds]);
 
   const mapSkipped = useMemo(
     () => applyFilters(library.channels, DEFAULT_MAP_FILTER_OPTS).skipped,
@@ -148,6 +165,10 @@ export default function ZoneEditor({
           zones={zonesForMap}
           allChannels={library.channels}
           height={360}
+          mapControlMode="zoneEmphasis"
+          emphasisZoneId={base.id}
+          fitBoundsChannelIds={fitBoundsChannelIds}
+          dimmedChannelIds={dimmedChannelIds}
           onChannelClick={(id) => navigate(`/library/channels/${id}`)}
         />
         {mapSkipped.length > 0 ? (

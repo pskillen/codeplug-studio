@@ -11,6 +11,7 @@ Tier-1 reference for editing the vendor-neutral **library** — the per-project 
 | Area                                    | Status                                                                   | Notes                                              |
 | --------------------------------------- | ------------------------------------------------------------------------ | -------------------------------------------------- |
 | Channels list bulk selection → new zone | Shipped ([#154](https://github.com/pskillen/codeplug-studio/issues/154)) | `DataTable` selectable; **New zone from selected** |
+| Zone from location (proximity)          | Shipped ([#181](https://github.com/pskillen/codeplug-studio/issues/181)) | Section nav **New zone from location**             |
 | Nested zone members                     | Shipped ([#157](https://github.com/pskillen/codeplug-studio/issues/157)) | Flatten at export; `omitFromExport`; schema v7     |
 | Zone member picker (channels)           | Shipped ([#25](https://github.com/pskillen/codeplug-studio/issues/25))   | Two-list editor                                    |
 | Channel sets                            | Shipped ([#172](https://github.com/pskillen/codeplug-studio/issues/172)) | Optional zone on import                            |
@@ -57,6 +58,22 @@ Digital and analog contacts remain separate models and editor slugs (`digital-co
 ### Zone member picker (#25, #157)
 
 Zone editor uses `ZoneMemberPicker` — available ↔ in-zone lists for **channels** and **zones**, per-side search, add/remove, and move up/down. Saved `Zone.members` preserves **picker order**; nested zones flatten at export. See [zone-member-picker.md](zone-member-picker.md) and [nested-zones.md](nested-zones.md). Sidecar: `src/app/components/library/ZoneMemberPicker.md`.
+
+The zone editor map uses **Draw this zone** / **Draw other zones** controls: the editing zone hull is full colour; other library zones render muted for reference. Channels outside the zone are dimmed on the map (same treatment as out-of-radius channels on zone-from-location). Auto-fit zoom uses only the editing zone's member channels (not the full library).
+
+### Zone from location ([#181](https://github.com/pskillen/codeplug-studio/issues/181))
+
+**Route:** `/library/zones/new-from-location` — section nav **New zone from location**
+
+Map-first workflow to create a zone from geolocated channels within a radius of a reference point:
+
+1. Set **reference position** — map click, Maidenhead locator, city/postcode geocode (Photon or Mapbox), **Use my location**, or pick an existing channel with coordinates.
+2. Choose **radius** (km slider with snap marks 5–200; default 25).
+3. Preview on the map — radius circle, dimmed out-of-radius channels, optional dashed **Draw new zone** hull; existing zones shown muted when **Draw other zones** is on.
+4. Review the **selected channels** table (nearest-first order).
+5. **Create zone** — persists a new `Zone` with channel members and opens the zone editor.
+
+Core selection: `selectChannelsWithinRadius` in `src/core/domain/proximityZone.ts`. Channels without coordinates are excluded. Membership is a static snapshot at creation time.
 
 ### RX group list member picker ([#107](https://github.com/pskillen/codeplug-studio/issues/107), [#108](https://github.com/pskillen/codeplug-studio/issues/108))
 
