@@ -34,9 +34,7 @@ describe('assemble', () => {
 
     expect(projection.zones).toHaveLength(1);
     expect(projection.zones[0]?.wireName).toBe('Edinburgh');
-    expect(projection.zones[0]?.memberChannelIds).toEqual([
-      '22222222-2222-4222-8222-222222222222',
-    ]);
+    expect(projection.zones[0]?.memberChannelIds).toEqual(['22222222-2222-4222-8222-222222222222']);
 
     expect(projection.talkGroups).toHaveLength(1);
     expect(projection.talkGroups[0]?.wireName).toBe('Scotland');

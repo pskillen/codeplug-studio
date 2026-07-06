@@ -9,7 +9,7 @@
 | Slice                                 | Issue                                                          | Status   | Notes                                                      |
 | ------------------------------------- | -------------------------------------------------------------- | -------- | ---------------------------------------------------------- |
 | Create zone from selected channels    | [#154](https://github.com/pskillen/codeplug-studio/issues/154) | Complete | `ChannelsListPage` selection + `ZoneEditor` location state |
-| Nested zones (denormalised on export) | [#157](https://github.com/pskillen/codeplug-studio/issues/157) | Complete | Schema v6, flatten at assemble/map/export                  |
+| Nested zones (denormalised on export) | [#157](https://github.com/pskillen/codeplug-studio/issues/157) | Complete | Model v6; export flatten + `omitFromExport` v7             |
 
 ## Shipped
 
@@ -20,7 +20,13 @@
 - `feat(library): zone member picker supports nested zones`
 - `feat(import-export): native YAML nested zone members`
 - `docs(library): zone selection and nested zones`
+- `fix(core): flatten nested zones when build has zoneGrouping layout`
+- `feat(core): studio schema v7 zone omitFromExport flag`
+- `feat(core): omit nested-only zones from assemble export projection`
+- `feat(library): omitFromExport toggle on zone editor`
+- `test(import-export): nested zone flatten and omitFromExport in CPS export`
+- `docs(library): nested zone export and omitFromExport`
 
 ## Next
 
-Open PR; push to `origin/dev` for remote verification.
+Merge PR [#182](https://github.com/pskillen/codeplug-studio/pull/182); verify on `dev`.

@@ -11,7 +11,7 @@ Tier-1 reference for editing the vendor-neutral **library** — the per-project 
 | Area                                    | Status                                                                   | Notes                                              |
 | --------------------------------------- | ------------------------------------------------------------------------ | -------------------------------------------------- |
 | Channels list bulk selection → new zone | Shipped ([#154](https://github.com/pskillen/codeplug-studio/issues/154)) | `DataTable` selectable; **New zone from selected** |
-| Nested zone members                     | Shipped ([#157](https://github.com/pskillen/codeplug-studio/issues/157)) | Flatten at export; `studioSchemaVersion: 6`        |
+| Nested zone members                     | Shipped ([#157](https://github.com/pskillen/codeplug-studio/issues/157)) | Flatten at export; `omitFromExport`; schema v7     |
 | Zone member picker (channels)           | Shipped ([#25](https://github.com/pskillen/codeplug-studio/issues/25))   | Two-list editor                                    |
 | Channel sets                            | Shipped ([#172](https://github.com/pskillen/codeplug-studio/issues/172)) | Optional zone on import                            |
 

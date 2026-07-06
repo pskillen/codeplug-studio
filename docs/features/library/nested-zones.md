@@ -15,10 +15,12 @@ Nesting is **not reconstructed** from flat CPS import — it is created and main
 | Symbol                           | Path                                              | Role                                        |
 | -------------------------------- | ------------------------------------------------- | ------------------------------------------- |
 | `ZoneMemberEntry`                | `src/core/models/library.ts`                      | `kind: 'channel'` or `kind: 'zone'` members |
+| `Zone.omitFromExport`            | same                                              | Skip standalone `Zones.csv` row             |
 | `resolveEffectiveZoneChannelIds` | `src/core/domain/zoneHierarchy.ts`                | Flatten to ordered, deduped channel ids     |
 | `zoneMembershipHasCycle`         | same                                              | Acyclic graph check                         |
 | `validateZoneMembership`         | `src/core/domain/validation.ts`                   | Ref + cycle validation on save              |
 | `assemble`                       | `src/core/services/assemble.ts`                   | Export projection uses effective channels   |
+| `orderChannelIdsByLayoutHint`    | `src/core/domain/zoneGroupingLayout.ts`           | Optional member order from build layout     |
 | `ZoneMemberPicker`               | `src/app/components/library/ZoneMemberPicker.tsx` | Channels + zones pools                      |
 
 ## Model semantics
@@ -28,30 +30,38 @@ Nesting is **not reconstructed** from flat CPS import — it is created and main
 | `channel`   | `{ kind: 'channel', channelId, includeInScanList? }` | Wire channel name (after assemble)                       |
 | `zone`      | `{ kind: 'zone', zoneId }`                           | Expanded to child zone's effective channels, depth-first |
 
+| Zone field       | Default | Export effect                                                                |
+| ---------------- | ------- | ---------------------------------------------------------------------------- |
+| `omitFromExport` | off     | When on: no row in `Zones.csv`; channels still flatten into parent zone rows |
+
 Rules:
 
 - **Acyclic** — a zone cannot include itself; no cycles through zone→zone refs (validation error in zone editor).
 - **Dedup** — when flattening, the same channel id appearing via multiple paths is exported once (first occurrence in walk order wins).
 - **Vendor-neutral** — no radio caps in library CRUD; profile overflow **warnings** at export (existing OpenGD77/DM32 warning paths on assembled flat lists).
+- **Library is membership source of truth** — `assemble` always derives zone `memberChannelIds` from live library membership (`resolveEffectiveZoneChannelIds`), even when the build has a persisted `zoneGrouping` section. Layout `channelIds` are an **order hint** only (see [zone-grouping.md](../builds/zone-grouping.md)).
 
 ## Operator workflow
 
 1. Create child zones with channel members as today.
 2. Edit a parent zone → **Available zones** pool → add child zones to **In zone**.
-3. Save — cycle errors surface before persistence.
-4. `/library/zones` list shows direct member count; nested zones also show `(N channels effective)`.
-5. Export / map hulls use the **effective** (flattened) channel set.
+3. Optionally enable **Don't export as its own zone** on a child zone used only as a building block (e.g. PMR446 simplex set nested inside every city zone).
+4. Save — cycle errors surface before persistence.
+5. `/library/zones` list shows direct member count; nested zones also show `(N channels effective)`; **Nested only** badge when `omitFromExport` is set.
+6. Export / map hulls use the **effective** (flattened) channel set.
 
 ## Native YAML
 
-`studioSchemaVersion: 6` — zone members serialise with `kind: channel` or `kind: zone`. Older exports with `{ channelId }` only migrate on import.
+`studioSchemaVersion: 7` — zone members serialise with `kind: channel` or `kind: zone`; optional `omitFromExport: true` (sparse). Imports accept v6+; v6 exports with `{ channelId }` only migrate on import.
 
 ## Manual verify
 
-1. Create zones `Glasgow`, `Edinburgh`, and parent `Scotland` with zone members.
-2. Export an OpenGD77 build — parent zone `Zones.csv` row lists all flattened channel wire names.
-3. Attempt `Glasgow` ⊃ `Scotland` while `Scotland` ⊃ `Glasgow` — save blocked with cycle message.
-4. Export/import project YAML — nested members preserved.
+1. Create zones **PMR446** (channel members) and **Glasgow** (Glasgow channels + nested PMR446 zone member).
+2. Export OpenGD77 and DM32 builds — **Glasgow** `Zones.csv` row includes PMR channels; **PMR446** row present.
+3. Enable **Don't export as its own zone** on PMR446 — re-export; PMR446 row absent; Glasgow row still includes PMR channels.
+4. With **Omit channels not in a zone** enabled on export, PMR channels remain included (linked via nested flatten).
+5. Attempt `Glasgow` ⊃ `Scotland` while `Scotland` ⊃ `Glasgow` — save blocked with cycle message.
+6. Export/import project YAML — nested members and `omitFromExport` preserved.
 
 ## Related
 

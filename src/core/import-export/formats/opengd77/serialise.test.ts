@@ -203,7 +203,10 @@ describe('OpenGD77 export serialise', () => {
     const assembled = assemble(build, library);
     const csv = serialiseZones(assembled);
     const rows = parseCsv(csv);
-    const zoneNames = rows.slice(1).map((row) => row[0]).filter(Boolean);
+    const zoneNames = rows
+      .slice(1)
+      .map((row) => row[0])
+      .filter(Boolean);
     expect(zoneNames).toEqual(['Glasgow']);
     const glasgowRow = rows.slice(1).find((row) => row[0] === 'Glasgow');
     expect(glasgowRow?.[1]).toBe('GB7GL DMR Scot');

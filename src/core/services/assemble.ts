@@ -212,9 +212,10 @@ function assembleZones(
         const libraryZone = zonesById.get(zoneEntry.id);
         if (!libraryZone || !zoneExportsStandalone(libraryZone)) continue;
         const effectiveIds = resolveEffectiveZoneChannelIds(libraryZone, library.zones);
-        const memberChannelIds = orderChannelIdsByLayoutHint(effectiveIds, zoneEntry.channelIds).filter(
-          (id) => exportedChannelIds.has(id),
-        );
+        const memberChannelIds = orderChannelIdsByLayoutHint(
+          effectiveIds,
+          zoneEntry.channelIds,
+        ).filter((id) => exportedChannelIds.has(id));
         if (memberChannelIds.length === 0 && !overrideByEntityId(overrides).has(zoneEntry.id)) {
           continue;
         }
