@@ -1,0 +1,5 @@
+.indicator {
+  transition:
+    background-color var(--sc-transition-duration, 200ms) var(--sc-transition-timing-function, ease),
+    transform var(--sc-transition-duration, 200ms) var(--sc-transition-timing-function, ease);
+}

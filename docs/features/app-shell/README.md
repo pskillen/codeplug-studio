@@ -28,14 +28,15 @@ ProjectProvider
 
 ## Documentation map
 
-| Doc                                                            | Contents                                   |
-| -------------------------------------------------------------- | ------------------------------------------ |
-| [data-table.md](data-table.md)                                 | `DataTable`, list prefs, entity list hooks |
-| [alerts.md](alerts.md)                                         | Mantine `Alert` colour conventions         |
-| [library-routes-progress.md](library-routes-progress.md)       | Library routes initiative — shipped slices |
-| [library-routes-outstanding.md](library-routes-outstanding.md) | Deferred debt from library routes PR       |
-| [library/README.md](../library/README.md)                      | Library CRUD and list routes               |
-| [map/README.md](../map/README.md)                              | Embedded channel map                       |
+| Doc                                                                                 | Contents                                          |
+| ----------------------------------------------------------------------------------- | ------------------------------------------------- |
+| [data-table.md](data-table.md)                                                      | `DataTable`, list prefs, entity list hooks        |
+| [alerts.md](alerts.md)                                                              | Mantine `Alert` colour conventions                |
+| [GradientSegmentedControl](../../src/app/components/ui/GradientSegmentedControl.md) | Per-segment indicator colours with fade on change |
+| [library-routes-progress.md](library-routes-progress.md)                            | Library routes initiative — shipped slices        |
+| [library-routes-outstanding.md](library-routes-outstanding.md)                      | Deferred debt from library routes PR              |
+| [library/README.md](../library/README.md)                                           | Library CRUD and list routes                      |
+| [map/README.md](../map/README.md)                                                   | Embedded channel map                              |
 
 UI primitives live in `src/app/components/ui/` (ported from codeplug-tool). Reusable list infrastructure is documented in [data-table.md](data-table.md). Inline feedback uses Mantine `Alert` — see [alerts.md](alerts.md). Dev styleguide: `/styleguide` (unlinked).
 

@@ -23,6 +23,7 @@ import {
   EmptyState,
   FormPage,
   FormSection,
+  GradientSegmentedControl,
   ListPage,
   Page,
   PageHeader,
@@ -30,6 +31,7 @@ import {
   PageSectionGrid,
   PercentLevelSlider,
 } from '../components/ui/index.ts';
+import ForbidTransmitSegment from '../components/channels/ForbidTransmitSegment.tsx';
 
 const SAMPLE_ROWS = [
   { id: '1', name: 'GB3DA Stornoway' },
@@ -74,6 +76,35 @@ function PercentLevelSliderDemo({
   const [value, setValue] = useState(initial);
   return (
     <PercentLevelSlider label={label} value={value} onChange={setValue} zeroLabel={zeroLabel} />
+  );
+}
+
+function ForbidTransmitSegmentDemo() {
+  const [forbidTransmit, setForbidTransmit] = useState(false);
+  return <ForbidTransmitSegment value={forbidTransmit} onChange={setForbidTransmit} />;
+}
+
+function GradientSegmentedControlDemo({
+  label,
+  scheme,
+  options,
+  initial,
+}: {
+  label: string;
+  scheme: 'onOff' | 'allowForbid' | 'three' | 'four' | 'five';
+  options: { value: string; label: string }[];
+  initial: string;
+}) {
+  const [value, setValue] = useState(initial);
+  return (
+    <GradientSegmentedControl
+      label={label}
+      value={value}
+      onChange={setValue}
+      scheme={scheme}
+      data={options}
+      fullWidth
+    />
   );
 }
 
@@ -267,6 +298,57 @@ export default function StyleguidePage() {
             <TextInput label="Name" placeholder="Channel name" />
             <Select label="Mode" data={['FM', 'DMR', 'P25']} defaultValue="FM" />
           </FormSection>
+        </Stack>
+      </PageSection>
+
+      <PageSection
+        title="GradientSegmentedControl"
+        description="Default track; indicator colour fades to match the active segment."
+      >
+        <Stack gap="lg" maw={480}>
+          <GradientSegmentedControlDemo
+            label="On / Off"
+            scheme="onOff"
+            initial="on"
+            options={[
+              { value: 'on', label: 'On' },
+              { value: 'off', label: 'Off' },
+            ]}
+          />
+          <ForbidTransmitSegmentDemo />
+          <GradientSegmentedControlDemo
+            label="Three segments"
+            scheme="three"
+            initial="a"
+            options={[
+              { value: 'a', label: 'A' },
+              { value: 'b', label: 'B' },
+              { value: 'c', label: 'C' },
+            ]}
+          />
+          <GradientSegmentedControlDemo
+            label="Four segments"
+            scheme="four"
+            initial="1"
+            options={[
+              { value: '1', label: '1' },
+              { value: '2', label: '2' },
+              { value: '3', label: '3' },
+              { value: '4', label: '4' },
+            ]}
+          />
+          <GradientSegmentedControlDemo
+            label="Five segments"
+            scheme="five"
+            initial="low"
+            options={[
+              { value: 'low', label: 'Low' },
+              { value: 'med-low', label: 'Med−' },
+              { value: 'med', label: 'Med' },
+              { value: 'med-high', label: 'Med+' },
+              { value: 'high', label: 'High' },
+            ]}
+          />
         </Stack>
       </PageSection>
 
