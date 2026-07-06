@@ -52,12 +52,12 @@ export default function ChannelEditor({
   const selectedModes = modeProfiles.map((p) => p.mode as ChannelMode);
 
   function buildRow(): Channel {
+    const lat = Number.parseFloat(location.lat);
+    const lon = Number.parseFloat(location.lon);
+    const hasCoords = Number.isFinite(lat) && Number.isFinite(lon);
     const reconciled = reconcileChannelLocation({
       maidenheadLocator: location.maidenheadLocator || null,
-      location:
-        location.lat != null && location.lon != null
-          ? { lat: location.lat, lon: location.lon }
-          : null,
+      location: hasCoords ? { lat, lon } : null,
       useLocation: location.useLocation,
       lastEdited: location.lastEdited,
     });

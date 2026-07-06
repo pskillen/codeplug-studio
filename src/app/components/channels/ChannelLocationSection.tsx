@@ -7,10 +7,16 @@ import { FormSection } from '../ui/index.ts';
 
 export interface ChannelLocationValues {
   maidenheadLocator: string;
-  lat: number | null;
-  lon: number | null;
+  /** Decimal degrees as typed text — parse on save, not on every keystroke. */
+  lat: string;
+  lon: string;
   useLocation: boolean;
   lastEdited: LocationEditSource;
+}
+
+function parseCoord(value: string): number | null {
+  const n = Number.parseFloat(value);
+  return Number.isFinite(n) ? n : null;
 }
 
 export interface ChannelLocationSectionProps {
@@ -38,8 +44,8 @@ export default function ChannelLocationSection({ value, onChange }: ChannelLocat
     onChange({
       ...value,
       maidenheadLocator: trimmed.toUpperCase(),
-      lat: coords?.lat ?? value.lat,
-      lon: coords?.lon ?? value.lon,
+      lat: coords != null ? String(coords.lat) : value.lat,
+      lon: coords != null ? String(coords.lon) : value.lon,
       useLocation: true,
       lastEdited: 'locator',
     });
@@ -49,8 +55,8 @@ export default function ChannelLocationSection({ value, onChange }: ChannelLocat
     setLocatorError(null);
     onChange({
       ...value,
-      lat,
-      lon,
+      lat: String(lat),
+      lon: String(lon),
       maidenheadLocator: coordsToLocator(lat, lon, 6),
       useLocation: true,
       lastEdited: 'coords',
@@ -61,8 +67,8 @@ export default function ChannelLocationSection({ value, onChange }: ChannelLocat
     setLocatorError(null);
     onChange({
       maidenheadLocator: '',
-      lat: null,
-      lon: null,
+      lat: '',
+      lon: '',
       useLocation: false,
       lastEdited: 'coords',
     });
@@ -88,12 +94,14 @@ export default function ChannelLocationSection({ value, onChange }: ChannelLocat
         <Group grow>
           <NumberInput
             label="Latitude"
-            value={value.lat ?? undefined}
+            value={value.lat}
             onChange={(v) => {
-              const lat = typeof v === 'number' ? v : null;
+              const lat = String(v ?? '');
               const next = { ...value, lat, lastEdited: 'coords' as const };
-              if (lat != null && value.lon != null) {
-                next.maidenheadLocator = coordsToLocator(lat, value.lon, 6);
+              const latN = parseCoord(lat);
+              const lonN = parseCoord(value.lon);
+              if (latN != null && lonN != null) {
+                next.maidenheadLocator = coordsToLocator(latN, lonN, 6);
               }
               onChange(next);
             }}
@@ -101,12 +109,14 @@ export default function ChannelLocationSection({ value, onChange }: ChannelLocat
           />
           <NumberInput
             label="Longitude"
-            value={value.lon ?? undefined}
+            value={value.lon}
             onChange={(v) => {
-              const lon = typeof v === 'number' ? v : null;
+              const lon = String(v ?? '');
               const next = { ...value, lon, lastEdited: 'coords' as const };
-              if (value.lat != null && lon != null) {
-                next.maidenheadLocator = coordsToLocator(value.lat, lon, 6);
+              const latN = parseCoord(value.lat);
+              const lonN = parseCoord(lon);
+              if (latN != null && lonN != null) {
+                next.maidenheadLocator = coordsToLocator(latN, lonN, 6);
               }
               onChange(next);
             }}
@@ -127,7 +137,12 @@ export default function ChannelLocationSection({ value, onChange }: ChannelLocat
             Clear position
           </Button>
         </Group>
-        <MapLocationPicker lat={value.lat} lon={value.lon} onPick={applyCoords} height={280} />
+        <MapLocationPicker
+          lat={parseCoord(value.lat)}
+          lon={parseCoord(value.lon)}
+          onPick={applyCoords}
+          height={280}
+        />
       </Stack>
     </FormSection>
   );
@@ -141,8 +156,8 @@ export function channelLocationValuesFromChannel(channel: {
 }): ChannelLocationValues {
   return {
     maidenheadLocator: channel.maidenheadLocator ?? '',
-    lat: channel.location?.lat ?? null,
-    lon: channel.location?.lon ?? null,
+    lat: channel.location?.lat != null ? String(channel.location.lat) : '',
+    lon: channel.location?.lon != null ? String(channel.location.lon) : '',
     useLocation: channel.useLocation,
     lastEdited: 'coords',
   };
