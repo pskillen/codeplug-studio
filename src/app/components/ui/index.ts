@@ -63,4 +63,10 @@ export type {
 } from './AvailableItemPicker.tsx';
 export { default as PillTabs } from './PillTabs.tsx';
 export type { PillTabsItem, PillTabsProps } from './PillTabs.tsx';
+export { ImageCheckbox, ImageCheckboxGroup } from './ImageCheckbox.tsx';
+export type {
+  ImageCheckboxGroupProps,
+  ImageCheckboxOption,
+  ImageCheckboxProps,
+} from './ImageCheckbox.tsx';
 export * from './tokens.ts';

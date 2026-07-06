@@ -37,6 +37,7 @@ import {
   PageSectionGrid,
   PercentLevelSlider,
   PillTabs,
+  ImageCheckboxGroup,
   SelectedItemList,
 } from '../components/ui/index.ts';
 import ForbidTransmitSegment from '../components/channels/ForbidTransmitSegment.tsx';
@@ -113,6 +114,88 @@ function GradientSegmentedControlDemo({
       data={options}
       fullWidth
     />
+  );
+}
+
+function vacationIcon(emoji: string, fill: string): string {
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40"><rect width="40" height="40" rx="6" fill="${fill}"/><text x="20" y="27" font-size="20" text-anchor="middle">${emoji}</text></svg>`;
+  return `data:image/svg+xml,${encodeURIComponent(svg)}`;
+}
+
+function ImageCheckboxDemo() {
+  const [vacation, setVacation] = useState<string[]>(['beach']);
+  const [modes, setModes] = useState<ChannelMode[]>(['fm', 'dmr']);
+
+  return (
+    <Stack gap="xl" maw={640}>
+      <ImageCheckboxGroup
+        label="With images"
+        description="Mantine UI vacation cards — image optional on each option."
+        value={vacation}
+        onChange={setVacation}
+        cols={{ base: 1, sm: 2 }}
+        options={[
+          {
+            value: 'beach',
+            title: 'Beach vacation',
+            description: 'Sun and sea',
+            imageSrc: vacationIcon('🏖', '#fff3bf'),
+          },
+          {
+            value: 'city',
+            title: 'City trips',
+            description: 'Sightseeing',
+            imageSrc: vacationIcon('🏙', '#d0ebff'),
+          },
+          {
+            value: 'hike',
+            title: 'Hiking vacation',
+            description: 'Mountains',
+            imageSrc: vacationIcon('⛰', '#d3f9d8'),
+          },
+          {
+            value: 'winter',
+            title: 'Winter vacation',
+            description: 'Snow and ice',
+            imageSrc: vacationIcon('❄', '#e7f5ff'),
+          },
+        ]}
+      />
+
+      <ImageCheckboxGroup
+        label="Media slot (no image)"
+        description="Channel mode picker uses `ModePill` in the media slot."
+        value={modes}
+        onChange={setModes}
+        cols={{ base: 1, sm: 2 }}
+        options={[
+          {
+            value: 'fm',
+            title: 'FM',
+            description: 'Analog',
+            media: <ModePill mode="fm" size="xs" />,
+          },
+          {
+            value: 'dmr',
+            title: 'DMR',
+            description: 'Digital',
+            media: <ModePill mode="dmr" size="xs" />,
+          },
+          {
+            value: 'dstar',
+            title: 'D-STAR',
+            description: 'Digital',
+            media: <ModePill mode="dstar" size="xs" />,
+          },
+          {
+            value: 'ysf',
+            title: 'YSF',
+            description: 'Digital',
+            media: <ModePill mode="ysf" size="xs" />,
+          },
+        ]}
+      />
+    </Stack>
   );
 }
 
@@ -817,6 +900,13 @@ export default function StyleguidePage() {
             ]}
           />
         </Stack>
+      </PageSection>
+
+      <PageSection
+        title="ImageCheckbox"
+        description="Card checkboxes with optional image or custom media — from Mantine UI inputs gallery."
+      >
+        <ImageCheckboxDemo />
       </PageSection>
 
       <PageSection
