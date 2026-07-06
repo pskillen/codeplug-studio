@@ -1,29 +1,20 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useState } from 'react';
 import { Stack, Switch, Text, TextInput } from '@mantine/core';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import type { Library, Zone, ZoneMemberEntry } from '@core/models/library.ts';
 import { newZone } from '@core/domain/factories.ts';
-import {
-  applyFilters,
-  channelHasGeolocation,
-  DEFAULT_MAP_FILTER_OPTS,
-} from '@core/domain/mapProjection.ts';
-import { resolveEffectiveZoneChannelIds } from '@core/domain/zoneHierarchy.ts';
 import { validateZoneMembership } from '@core/domain/validation.ts';
-import CodeplugMap from '../../components/CodeplugMap/CodeplugMap.tsx';
 import { FormSection } from '../../components/ui/index.ts';
-import ZoneMemberPicker, {
-  type ZoneMemberPickerMapFilters,
-} from '../../components/library/ZoneMemberPicker.tsx';
 import {
   normalizeZoneMembers,
   zoneMembersFromSelectedIds,
 } from '../../components/library/zoneMembers.ts';
 import { persistence } from '../../state/persistence.ts';
-import { useEntitySave } from './useEntitySave.ts';
 import EditorActions from './EditorActions.tsx';
 import { readInitialChannelIds } from './zoneEditorState.ts';
+import { zonePivotPath } from './zonePivotQuery.ts';
 
+/** Create-only zone form — existing zones edit on the unified pivot screen. */
 export default function ZoneEditor({
   projectId,
   entity,
@@ -38,7 +29,7 @@ export default function ZoneEditor({
   const location = useLocation();
   const initialChannelIds = entity === null ? readInitialChannelIds(location.state) : [];
   const [name, setName] = useState(base.name);
-  const [members, setMembers] = useState<ZoneMemberEntry[]>(() =>
+  const [members] = useState<ZoneMemberEntry[]>(() =>
     initialChannelIds.length > 0
       ? zoneMembersFromSelectedIds(initialChannelIds)
       : normalizeZoneMembers(base.members),
@@ -46,59 +37,10 @@ export default function ZoneEditor({
   const [comment, setComment] = useState(base.comment);
   const [omitFromExport, setOmitFromExport] = useState(base.omitFromExport === true);
   const [validationError, setValidationError] = useState<string | null>(null);
-  const [mapFilters, setMapFilters] = useState<ZoneMemberPickerMapFilters>({
-    hiddenMarkerChannelIds: [],
-    hiddenZoneMemberIds: [],
-  });
-  const { save, saving, error } = useEntitySave('zones');
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const handleMapFiltersChange = useCallback((filters: ZoneMemberPickerMapFilters) => {
-    setMapFilters(filters);
-  }, []);
-
-  const hiddenMarkerIds = useMemo(
-    () => new Set(mapFilters.hiddenMarkerChannelIds),
-    [mapFilters.hiddenMarkerChannelIds],
-  );
-
-  const previewZone = useMemo((): Zone => {
-    return {
-      ...base,
-      name: name.trim() || 'Untitled zone',
-      members,
-      comment,
-      omitFromExport: omitFromExport ? true : undefined,
-    };
-  }, [base, name, members, comment, omitFromExport]);
-
-  const channelsForMap = useMemo(
-    () => library.channels.filter((ch) => !hiddenMarkerIds.has(ch.id)),
-    [library.channels, hiddenMarkerIds],
-  );
-
-  const zonesForMap = useMemo(() => {
-    const others = library.zones.filter((z) => z.id !== base.id);
-    return [...others, previewZone];
-  }, [library.zones, base.id, previewZone]);
-
-  const fitBoundsChannelIds = useMemo(
-    () => resolveEffectiveZoneChannelIds(previewZone, zonesForMap),
-    [previewZone, zonesForMap],
-  );
-
-  const dimmedChannelIds = useMemo(() => {
-    const memberIds = new Set(fitBoundsChannelIds);
-    return channelsForMap
-      .filter((ch) => channelHasGeolocation(ch) && !memberIds.has(ch.id))
-      .map((ch) => ch.id);
-  }, [channelsForMap, fitBoundsChannelIds]);
-
-  const mapSkipped = useMemo(
-    () => applyFilters(library.channels, DEFAULT_MAP_FILTER_OPTS).skipped,
-    [library.channels],
-  );
-
-  function handleSave() {
+  const handleSave = useCallback(async () => {
     const row: Zone = {
       ...base,
       name: name.trim() || 'Untitled zone',
@@ -109,9 +51,7 @@ export default function ZoneEditor({
     try {
       const libraryForValidation = {
         ...library,
-        zones: entity
-          ? library.zones.map((zone) => (zone.id === row.id ? row : zone))
-          : [...library.zones, row],
+        zones: [...library.zones, row],
       };
       validateZoneMembership(row.id, members, libraryForValidation);
       setValidationError(null);
@@ -119,8 +59,20 @@ export default function ZoneEditor({
       setValidationError(err instanceof Error ? err.message : 'Invalid zone membership');
       return;
     }
-    void save(() => persistence.putZone(row, entity ? entity.revision : null));
-  }
+
+    setSaving(true);
+    setError(null);
+    try {
+      const result = await persistence.putZone(row, null);
+      if (!result.ok) {
+        setError('Save failed.');
+        return;
+      }
+      navigate(zonePivotPath({ pivot: 'zone', zoneId: row.id }));
+    } finally {
+      setSaving(false);
+    }
+  }, [base, comment, library, members, name, navigate, omitFromExport]);
 
   const displayError = validationError ?? error;
 
@@ -139,42 +91,12 @@ export default function ZoneEditor({
           onChange={(e) => setOmitFromExport(e.currentTarget.checked)}
         />
         <Text size="sm" c="dimmed">
-          Enable when this zone is only a building block for other zones — for example a PMR446
-          simplex set you nest inside every city zone. Its channels still export inside parent
-          zones; this zone will not get its own row in Zones.csv.
+          Add channels and nested zones on the unified channels & zones screen after saving.
         </Text>
-      </FormSection>
-
-      <FormSection
-        title="Members"
-        description="Order matches export order for zone-capable builds. Nested zones flatten at export."
-      >
-        <ZoneMemberPicker
-          channels={library.channels}
-          zones={library.zones}
-          editingZoneId={base.id}
-          members={members}
-          onChange={setMembers}
-          onMapFiltersChange={handleMapFiltersChange}
-        />
-        {library.channels.length === 0 ? (
-          <Link to="/library/channels/new">Add a channel</Link>
-        ) : null}
-        <CodeplugMap
-          channels={channelsForMap}
-          zones={zonesForMap}
-          allChannels={library.channels}
-          height={360}
-          mapControlMode="zoneEmphasis"
-          emphasisZoneId={base.id}
-          fitBoundsChannelIds={fitBoundsChannelIds}
-          dimmedChannelIds={dimmedChannelIds}
-          onChannelClick={(id) => navigate(`/library/channels/${id}`)}
-        />
-        {mapSkipped.length > 0 ? (
+        {initialChannelIds.length > 0 ? (
           <Text size="sm" c="dimmed">
-            {mapSkipped.length} channel{mapSkipped.length === 1 ? '' : 's'} not shown on map
-            (missing coordinates, Use Location = No, or 0,0).
+            {initialChannelIds.length} channel{initialChannelIds.length === 1 ? '' : 's'} will be
+            added as members.
           </Text>
         ) : null}
       </FormSection>
@@ -182,8 +104,8 @@ export default function ZoneEditor({
       <EditorActions
         saving={saving}
         error={displayError}
-        onSave={handleSave}
-        cancelPath="/library/zones"
+        onSave={() => void handleSave()}
+        cancelPath="/library/zones?pivot=all"
       />
     </Stack>
   );

@@ -3,12 +3,16 @@ import { IconPlus } from '@tabler/icons-react';
 import { useCallback, useMemo, useState } from 'react';
 import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { newZone } from '@core/domain/factories.ts';
+import CodeplugMap from '../../components/CodeplugMap/CodeplugMap.tsx';
 import ZonePivotPanel, { pivotLabel } from '../../components/library/ZonePivotPanel.tsx';
 import LibraryChannelTable from '../../components/library/LibraryChannelTable.tsx';
 import AddChannelsToZoneModal from '../../components/library/AddChannelsToZoneModal.tsx';
+import ZoneInlineSettings from '../../components/library/ZoneInlineSettings.tsx';
+import UseMyLocationButton from '../../components/UseMyLocationButton/UseMyLocationButton.tsx';
 import { ListPage } from '../../components/ui/index.ts';
 import { useChannelListQuery } from '../../hooks/useChannelListQuery.ts';
 import { useZonePivotChannelRows } from '../../hooks/useZonePivotChannelRows.ts';
+import { useZonePivotMap } from '../../hooks/useZonePivotMap.ts';
 import { ICON_SIZE_NAV, ICON_STROKE } from '../../lib/iconSizes.ts';
 import { persistence } from '../../state/persistence.ts';
 import { useLibrary } from '../../state/useLibrary.ts';
@@ -17,7 +21,7 @@ import { DEFAULT_ZONE_PIVOT, parseZonePivotSearch, zonePivotPath } from './zoneP
 
 export default function ChannelsAndZonesPage() {
   const { library, loading, projectId } = useLibrary();
-  const { position } = useOperatorPosition();
+  const { position, setPosition, clearPosition } = useOperatorPosition();
   const location = useLocation();
   const navigate = useNavigate();
   const query = useChannelListQuery();
@@ -40,6 +44,8 @@ export default function ChannelsAndZonesPage() {
     query,
     position,
   );
+
+  const { config: mapConfig, skippedCount } = useZonePivotMap(library, pivot, activeZone, rows);
 
   const handleCreateZoneFromSelected = useCallback(() => {
     if (!projectId || selectedKeys.length === 0) return;
@@ -118,6 +124,7 @@ export default function ChannelsAndZonesPage() {
           <Box hiddenFrom="md">
             <ZonePivotPanel zones={zones} pivot={pivot} variant="inline" />
           </Box>
+          {activeZone ? <ZoneInlineSettings zone={activeZone} library={library} /> : null}
           <LibraryChannelTable
             library={library}
             rows={rows}
@@ -128,6 +135,46 @@ export default function ChannelsAndZonesPage() {
             onSelectedKeysChange={setSelectedKeys}
             toolbar={toolbar}
           />
+          {position ? (
+            <Group gap="sm" align="center">
+              {position.accuracyMeters != null && Number.isFinite(position.accuracyMeters) ? (
+                <Text size="sm" c="dimmed">
+                  My location accuracy ±{Math.round(position.accuracyMeters)} m
+                </Text>
+              ) : null}
+              <Button variant="subtle" size="compact-sm" onClick={clearPosition}>
+                Clear my location
+              </Button>
+            </Group>
+          ) : (
+            <UseMyLocationButton
+              label="Show my location"
+              onLocation={(lat, lon, accuracyMeters) =>
+                setPosition({ lat, lon, accuracyMeters: accuracyMeters ?? null })
+              }
+            />
+          )}
+          <CodeplugMap
+            channels={mapConfig.channels}
+            zones={mapConfig.zones}
+            allChannels={mapConfig.allChannels}
+            height={360}
+            operatorPosition={position}
+            mapControlMode={mapConfig.mapControlMode}
+            emphasisZoneId={mapConfig.emphasisZoneId}
+            fitBoundsChannelIds={mapConfig.fitBoundsChannelIds}
+            dimmedChannelIds={mapConfig.dimmedChannelIds}
+            onChannelClick={(id) => navigate(`/library/channels/${id}`)}
+            onZoneClick={(id) =>
+              navigate(zonePivotPath({ pivot: 'zone', zoneId: id }))
+            }
+          />
+          {skippedCount > 0 ? (
+            <Text size="sm" c="dimmed">
+              {skippedCount} channel{skippedCount === 1 ? '' : 's'} not shown on map (missing
+              coordinates, Use Location = No, or 0,0).
+            </Text>
+          ) : null}
         </Stack>
       </Group>
       <AddChannelsToZoneModal

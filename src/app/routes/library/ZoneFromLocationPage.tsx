@@ -43,6 +43,7 @@ import {
 import { primaryButtonStyle, secondaryButtonStyle } from '../../components/fields/styles.ts';
 import { persistence } from '../../state/persistence.ts';
 import { useLibrary } from '../../state/useLibrary.ts';
+import { zonePivotPath } from './zonePivotQuery.ts';
 
 const GEOCODE_PROVIDER_OPTIONS: { value: GeocodeProvider; label: string }[] = [
   { value: 'mapbox', label: 'Mapbox' },
@@ -208,7 +209,7 @@ export default function ZoneFromLocationPage() {
     setSaving(true);
     void persistence
       .putZone(row, null)
-      .then(() => navigate(`/library/zones/${row.id}`))
+      .then(() => navigate(zonePivotPath({ pivot: 'zone', zoneId: row.id })))
       .catch((err) => {
         setError(err instanceof Error ? err.message : 'Failed to create zone');
       })
@@ -390,7 +391,7 @@ export default function ZoneFromLocationPage() {
             }
             onMapClick={(lat, lon) => applyCentre(lat, lon)}
             onChannelClick={(id) => navigate(`/library/channels/${id}`)}
-            onZoneClick={(id) => navigate(`/library/zones/${id}`)}
+            onZoneClick={(id) => navigate(zonePivotPath({ pivot: 'zone', zoneId: id }))}
           />
           {!centre ? (
             <Text size="sm" c="dimmed" mt="xs">

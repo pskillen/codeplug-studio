@@ -1,9 +1,10 @@
 import { Anchor } from '@mantine/core';
-import { Link, useParams } from 'react-router-dom';
+import { Link, Navigate, useParams } from 'react-router-dom';
 import { useLibrary } from '../../state/useLibrary.ts';
 import { FormPage } from '../../components/ui/index.ts';
 import { entitiesForKind, kindBySlug } from './registry.ts';
 import { listPathForEditorSlug } from './nav.ts';
+import { zonePivotPath } from './zonePivotQuery.ts';
 import ChannelEditor from './ChannelEditor.tsx';
 import RxGroupListEditor from './RxGroupListEditor.tsx';
 import ZoneEditor from './ZoneEditor.tsx';
@@ -31,6 +32,10 @@ export default function EntityEditorPage() {
   const exists = isNew || entitiesForKind(library, meta.kind).some((r) => r.id === id);
   if (!exists) {
     return <NotFound message={`${meta.label} not found.`} slug={meta.slug} />;
+  }
+
+  if (meta.kind === 'zone' && !isNew && id) {
+    return <Navigate to={zonePivotPath({ pivot: 'zone', zoneId: id })} replace />;
   }
 
   const title = `${isNew ? 'New' : 'Edit'} ${meta.label.toLowerCase()}`;
@@ -101,7 +106,7 @@ export default function EntityEditorPage() {
           <ZoneEditor
             projectId={projectId}
             library={library}
-            entity={entityId ? (library.zones.find((z) => z.id === entityId) ?? null) : null}
+            entity={null}
           />
         );
     }
