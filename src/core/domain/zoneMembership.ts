@@ -114,9 +114,7 @@ export function reorderZoneMembers(
 ): ZoneMemberEntry[] {
   const keys = members.map((member) => memberSelectionKey(member));
   const nextKeys =
-    direction === 'up'
-      ? moveKeyBlockUp(keys, selectedKeys)
-      : moveKeyBlockDown(keys, selectedKeys);
+    direction === 'up' ? moveKeyBlockUp(keys, selectedKeys) : moveKeyBlockDown(keys, selectedKeys);
   if (nextKeys === keys) return members;
   const byKey = new Map(members.map((member) => [memberSelectionKey(member), member]));
   return nextKeys.map((key) => byKey.get(key)!);

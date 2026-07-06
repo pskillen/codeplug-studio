@@ -1,5 +1,5 @@
 import { Button, Group, Stack, Switch, Text, TextInput } from '@mantine/core';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type { Library, Zone } from '@core/models/library.ts';
 import { validateZoneMembership } from '@core/domain/validation.ts';
@@ -20,12 +20,6 @@ export default function ZoneInlineSettings({ zone, library }: ZoneInlineSettings
   const [omitFromExport, setOmitFromExport] = useState(zone.omitFromExport === true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    setName(zone.name);
-    setComment(zone.comment);
-    setOmitFromExport(zone.omitFromExport === true);
-  }, [zone]);
 
   const persist = useCallback(
     async (patch: Partial<Zone>) => {

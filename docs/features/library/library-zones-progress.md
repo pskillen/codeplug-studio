@@ -8,10 +8,10 @@
 
 | Slice                                 | Issue                                                          | Status      | Notes                                                      |
 | ------------------------------------- | -------------------------------------------------------------- | ----------- | ---------------------------------------------------------- |
-| Unified zone-pivoted UI               | [#180](https://github.com/pskillen/codeplug-studio/issues/180) | In progress | Channel table views, zone member actions                     |
+| Unified zone-pivoted UI               | [#180](https://github.com/pskillen/codeplug-studio/issues/180) | In progress | Channel table views, zone member actions                   |
 | Create zone from selected channels    | [#154](https://github.com/pskillen/codeplug-studio/issues/154) | Complete    | `ChannelsListPage` selection + `ZoneEditor` location state |
-| Nested zones (denormalised on export) | [#157](https://github.com/pskillen/codeplug-studio/issues/157) | Complete | Model v6; export flatten + `omitFromExport` v7             |
-| Zone from location (proximity)        | [#181](https://github.com/pskillen/codeplug-studio/issues/181) | Complete | `/library/zones/new-from-location`; map emphasis modes     |
+| Nested zones (denormalised on export) | [#157](https://github.com/pskillen/codeplug-studio/issues/157) | Complete    | Model v6; export flatten + `omitFromExport` v7             |
+| Zone from location (proximity)        | [#181](https://github.com/pskillen/codeplug-studio/issues/181) | Complete    | `/library/zones/new-from-location`; map emphasis modes     |
 
 ## Shipped
 

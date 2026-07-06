@@ -11,17 +11,17 @@ import {
 import { useCallback, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import type { Channel, Library, Zone } from '@core/models/library.ts';
-import {
-  addChannelsToZoneMembers,
-  addZonesToZoneMembers,
-} from '@core/domain/zoneMembership.ts';
+import { addChannelsToZoneMembers, addZonesToZoneMembers } from '@core/domain/zoneMembership.ts';
 import { directZoneMemberChannelIds } from '@core/domain/zoneMembers.ts';
 import { zoneIdsExcludedFromMembership } from '@core/domain/zoneHierarchy.ts';
 import { validateZoneMembership } from '@core/domain/validation.ts';
 import { DataTable } from '../ui/index.ts';
 import { useChannelListQuery } from '../../hooks/useChannelListQuery.ts';
 import { useFilteredChannels } from '../../hooks/useChannelListFilters.ts';
-import { useLibraryChannelColumns, useLibraryChannelSortCtx } from '../../hooks/useLibraryChannelColumns.tsx';
+import {
+  useLibraryChannelColumns,
+  useLibraryChannelSortCtx,
+} from '../../hooks/useLibraryChannelColumns.tsx';
 import { sortDataTableRows } from '../../lib/dataTable/sort.ts';
 import { DATATABLE_NAME_SORT_KEY } from '../../lib/dataTable/sort.ts';
 import { useOperatorPosition } from '../../state/operatorPosition.tsx';
@@ -82,7 +82,11 @@ export default function AddChannelsToZoneModal({
   const filteredChannels = useFilteredChannels(membershipFilteredChannels, query, position);
   const sortedChannels = useMemo(
     () =>
-      sortDataTableRows(filteredChannels, { columnKey: DATATABLE_NAME_SORT_KEY, direction: 'asc' }, sortCtx),
+      sortDataTableRows(
+        filteredChannels,
+        { columnKey: DATATABLE_NAME_SORT_KEY, direction: 'asc' },
+        sortCtx,
+      ),
     [filteredChannels, sortCtx],
   );
 
@@ -156,13 +160,7 @@ export default function AddChannelsToZoneModal({
   }, [effectiveZone, persistMembers, selectedZoneIds]);
 
   return (
-    <Modal
-      opened={opened}
-      onClose={handleClose}
-      title="Add to zone"
-      size="xl"
-      centered
-    >
+    <Modal opened={opened} onClose={handleClose} title="Add to zone" size="xl" centered>
       <Stack gap="md">
         {!targetZone ? (
           <ZoneSelect

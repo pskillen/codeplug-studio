@@ -124,7 +124,13 @@ export default function ChannelsAndZonesPage() {
           <Box hiddenFrom="md">
             <ZonePivotPanel zones={zones} pivot={pivot} variant="inline" />
           </Box>
-          {activeZone ? <ZoneInlineSettings zone={activeZone} library={library} /> : null}
+          {activeZone ? (
+            <ZoneInlineSettings
+              key={`${activeZone.id}-${activeZone.revision}`}
+              zone={activeZone}
+              library={library}
+            />
+          ) : null}
           <LibraryChannelTable
             library={library}
             rows={rows}
@@ -165,9 +171,7 @@ export default function ChannelsAndZonesPage() {
             fitBoundsChannelIds={mapConfig.fitBoundsChannelIds}
             dimmedChannelIds={mapConfig.dimmedChannelIds}
             onChannelClick={(id) => navigate(`/library/channels/${id}`)}
-            onZoneClick={(id) =>
-              navigate(zonePivotPath({ pivot: 'zone', zoneId: id }))
-            }
+            onZoneClick={(id) => navigate(zonePivotPath({ pivot: 'zone', zoneId: id }))}
           />
           {skippedCount > 0 ? (
             <Text size="sm" c="dimmed">

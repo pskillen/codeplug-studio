@@ -34,8 +34,7 @@ export default function ZonePivotPanel({ zones, pivot, variant }: ZonePivotPanel
     })),
   ];
 
-  const selectValue =
-    pivot.pivot === 'zone' && pivot.zoneId ? `zone:${pivot.zoneId}` : pivot.pivot;
+  const selectValue = pivot.pivot === 'zone' && pivot.zoneId ? `zone:${pivot.zoneId}` : pivot.pivot;
 
   const handleSelectChange = (value: string | null) => {
     if (!value || value === 'all') {

@@ -1,11 +1,15 @@
 import { Alert, SimpleGrid, Stack, Table, Text } from '@mantine/core';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { applyFilters, DEFAULT_MAP_FILTER_OPTS } from '@core/domain/mapProjection.ts';
 import { summariseLibrary } from '@core/domain/summary.ts';
+import CodeplugMap from '../components/CodeplugMap/CodeplugMap.tsx';
 import { useLibrary } from '../state/useLibrary.ts';
 import { ListPage, PageSection, PageSectionGrid } from '../components/ui/index.ts';
+import { zonePivotPath } from './library/zonePivotQuery.ts';
 
 export default function SummaryPage() {
   const { library, loading } = useLibrary();
+  const navigate = useNavigate();
 
   if (loading) {
     return (
@@ -16,6 +20,9 @@ export default function SummaryPage() {
   }
 
   const summary = summariseLibrary(library);
+  const { channels, zones } = library;
+  const mapSkipped = applyFilters(channels, DEFAULT_MAP_FILTER_OPTS).skipped;
+
   const counts: { label: string; value: number }[] = [
     { label: 'Channels', value: summary.counts.channels },
     { label: 'Talk groups', value: summary.counts.talkGroups },
@@ -52,10 +59,26 @@ export default function SummaryPage() {
       </PageSectionGrid>
 
       <Text c="dimmed">
-        {summary.channelsWithLocation} channel(s) have a location (
-        <Link to="/library/channels">view on map</Link>
-        ).
+        {summary.channelsWithLocation} channel(s) have a location — manage them on{' '}
+        <Link to={zonePivotPath({ pivot: 'all', zoneId: null })}>Channels & zones</Link>.
       </Text>
+
+      <PageSection title="Library map">
+        <CodeplugMap
+          channels={channels}
+          zones={zones}
+          allChannels={channels}
+          height={480}
+          onChannelClick={(id) => navigate(`/library/channels/${id}`)}
+          onZoneClick={(id) => navigate(zonePivotPath({ pivot: 'zone', zoneId: id }))}
+        />
+        {mapSkipped.length > 0 ? (
+          <Text size="sm" c="dimmed" mt="sm">
+            {mapSkipped.length} channel{mapSkipped.length === 1 ? '' : 's'} not shown on map
+            (missing coordinates, Use Location = No, or 0,0).
+          </Text>
+        ) : null}
+      </PageSection>
 
       <PageSection title="Integrity warnings">
         {summary.danglingReferences.length === 0 ? (

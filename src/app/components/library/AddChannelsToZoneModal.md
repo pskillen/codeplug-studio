@@ -8,13 +8,13 @@ Replaces the two-list `ZoneMemberPicker` shuttle for membership changes. Operato
 
 ## Props
 
-| Prop | Type | Notes |
-| --- | --- | --- |
-| `opened` | `boolean` | Modal visibility |
-| `onClose` | `() => void` | Close handler |
-| `library` | `Library` | Active project library |
+| Prop         | Type           | Notes                                                      |
+| ------------ | -------------- | ---------------------------------------------------------- |
+| `opened`     | `boolean`      | Modal visibility                                           |
+| `onClose`    | `() => void`   | Close handler                                              |
+| `library`    | `Library`      | Active project library                                     |
 | `targetZone` | `Zone \| null` | Active zone; when `null`, shows zone picker (orphans flow) |
-| `onAdded?` | `() => void` | Called after successful `putZone` |
+| `onAdded?`   | `() => void`   | Called after successful `putZone`                          |
 
 ## Usage
 

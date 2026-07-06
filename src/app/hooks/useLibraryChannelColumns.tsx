@@ -13,10 +13,7 @@ import { formatChannelRxTxListCell } from '../lib/formatFrequency.ts';
 import { dmrContactDisplayName, dmrRxGroupListName } from '../lib/entityRefs.ts';
 import { channelModesForFilter } from '../lib/channels.ts';
 import type { OperatorPosition } from '../state/operatorPosition.tsx';
-import {
-  DATATABLE_CALLSIGN_SORT_KEY,
-  DATATABLE_NAME_SORT_KEY,
-} from '../lib/dataTable/sort.ts';
+import { DATATABLE_CALLSIGN_SORT_KEY, DATATABLE_NAME_SORT_KEY } from '../lib/dataTable/sort.ts';
 
 function percentLabel(value: number | null): string {
   if (value == null) return '—';

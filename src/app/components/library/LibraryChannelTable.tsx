@@ -1,10 +1,7 @@
 import { Button, Group, Stack, Text } from '@mantine/core';
 import { useCallback, useMemo, useState, type ReactNode } from 'react';
 import type { Channel, Library, Zone } from '@core/models/library.ts';
-import {
-  removeChannelsFromZoneMembers,
-  reorderZoneMembers,
-} from '@core/domain/zoneMembership.ts';
+import { removeChannelsFromZoneMembers, reorderZoneMembers } from '@core/domain/zoneMembership.ts';
 import { validateZoneMembership } from '@core/domain/validation.ts';
 import { DataTable } from '../ui/index.ts';
 import type { DataTableSortState } from '../ui/DataTable.tsx';

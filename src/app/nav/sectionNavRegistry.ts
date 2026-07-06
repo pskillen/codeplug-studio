@@ -1,4 +1,4 @@
-import ChannelsSectionNav from '../components/SectionNav/sections/ChannelsSectionNav.tsx';
+import ChannelsAndZonesSectionNav from '../components/SectionNav/sections/ChannelsAndZonesSectionNav.tsx';
 import ContactsSectionNav from '../components/SectionNav/sections/ContactsSectionNav.tsx';
 import DebugSectionNav from '../components/SectionNav/sections/DebugSectionNav.tsx';
 import HelpSectionNav from '../components/SectionNav/sections/HelpSectionNav.tsx';
@@ -8,7 +8,6 @@ import ReferenceSectionNav from '../components/SectionNav/sections/ReferenceSect
 import RxGroupListsSectionNav from '../components/SectionNav/sections/RxGroupListsSectionNav.tsx';
 import SettingsSectionNav from '../components/SectionNav/sections/SettingsSectionNav.tsx';
 import TalkGroupsSectionNav from '../components/SectionNav/sections/TalkGroupsSectionNav.tsx';
-import ZonesSectionNav from '../components/SectionNav/sections/ZonesSectionNav.tsx';
 import BuildsSectionNav from '../components/SectionNav/sections/BuildsSectionNav.tsx';
 import type { SectionNavEntry } from './sectionNavTypes.ts';
 import { isBuildDetailPath } from '../routes/builds/nav.ts';
@@ -25,12 +24,12 @@ const registry: SectionNavEntry[] = [
   { title: 'Reference', prefix: '/reference', Component: ReferenceSectionNav },
   { title: 'Debug', prefix: '/debug', Component: DebugSectionNav },
   { title: 'Settings', prefix: '/settings', Component: SettingsSectionNav },
-  { title: 'Channels', prefix: '/library/channels', Component: ChannelsSectionNav },
-  { title: 'Zones', prefix: '/library/zones', Component: ZonesSectionNav },
+  { title: 'Channels & zones', prefix: '/library/zones', Component: ChannelsAndZonesSectionNav },
+  { title: 'Channels & zones', prefix: '/library/channels', Component: ChannelsAndZonesSectionNav },
   { title: 'Talk groups', prefix: '/library/talk-groups', Component: TalkGroupsSectionNav },
   { title: 'Contacts', prefix: '/library/contacts', Component: ContactsSectionNav },
   { title: 'RX group lists', prefix: '/library/rx-group-lists', Component: RxGroupListsSectionNav },
-  { title: 'Library', prefix: '/library', Component: ChannelsSectionNav },
+  { title: 'Library', prefix: '/library', Component: ChannelsAndZonesSectionNav },
   { title: 'Radio build', prefix: '/builds', Component: BuildsSectionNav },
 ];
 

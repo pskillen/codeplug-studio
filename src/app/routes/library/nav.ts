@@ -8,20 +8,15 @@ export interface LibraryNavEntry {
   sectionNavTitle: string;
 }
 
+const CHANNELS_ZONES_PATH = '/library/zones?pivot=all';
+
 export const LIBRARY_NAV: LibraryNavEntry[] = [
   {
-    label: 'Channel',
-    plural: 'Channels',
-    listPath: '/library/channels',
-    editorSlugs: ['channels'],
-    sectionNavTitle: 'Channels',
-  },
-  {
-    label: 'Zone',
-    plural: 'Zones',
+    label: 'Channel & zone',
+    plural: 'Channels & zones',
     listPath: '/library/zones',
-    editorSlugs: ['zones'],
-    sectionNavTitle: 'Zones',
+    editorSlugs: ['channels', 'zones'],
+    sectionNavTitle: 'Channels & zones',
   },
   {
     label: 'Talk group',
@@ -47,9 +42,15 @@ export const LIBRARY_NAV: LibraryNavEntry[] = [
 ];
 
 export function listPathForEditorSlug(slug: string): string {
-  return LIBRARY_NAV.find((e) => e.editorSlugs.includes(slug))?.listPath ?? '/library/channels';
+  if (slug === 'channels' || slug === 'zones') return CHANNELS_ZONES_PATH;
+  return LIBRARY_NAV.find((e) => e.editorSlugs.includes(slug))?.listPath ?? CHANNELS_ZONES_PATH;
 }
 
 export function navEntryForListPath(pathname: string): LibraryNavEntry | undefined {
+  if (pathname === '/library/channels' || pathname.startsWith('/library/channels/')) {
+    return LIBRARY_NAV[0];
+  }
   return LIBRARY_NAV.find((e) => pathname === e.listPath || pathname.startsWith(`${e.listPath}/`));
 }
+
+export { CHANNELS_ZONES_PATH };

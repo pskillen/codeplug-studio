@@ -38,11 +38,10 @@ describe('channelInAnyZoneMembership', () => {
   it('detects direct and nested membership', () => {
     const child = zone('z-child', 'Child', [{ kind: 'channel', channelId: 'ch-nested' }]);
     const parent = zone('z-parent', 'Parent', [{ kind: 'zone', zoneId: 'z-child' }]);
-    const lib = library(['ch-direct', 'ch-nested', 'ch-orphan'], [
-      zone('z-direct', 'Direct', [{ kind: 'channel', channelId: 'ch-direct' }]),
-      child,
-      parent,
-    ]);
+    const lib = library(
+      ['ch-direct', 'ch-nested', 'ch-orphan'],
+      [zone('z-direct', 'Direct', [{ kind: 'channel', channelId: 'ch-direct' }]), child, parent],
+    );
 
     expect(channelInAnyZoneMembership('ch-direct', lib)).toBe(true);
     expect(channelInAnyZoneMembership('ch-nested', lib)).toBe(true);
@@ -52,9 +51,10 @@ describe('channelInAnyZoneMembership', () => {
 
 describe('unzonedChannelIds', () => {
   it('returns channels in no zone', () => {
-    const lib = library(['ch-1', 'ch-2'], [
-      zone('z-1', 'One', [{ kind: 'channel', channelId: 'ch-1' }]),
-    ]);
+    const lib = library(
+      ['ch-1', 'ch-2'],
+      [zone('z-1', 'One', [{ kind: 'channel', channelId: 'ch-1' }])],
+    );
     expect(unzonedChannelIds(lib)).toEqual(['ch-2']);
     expect(channelsNotInAnyZone(lib).map((ch) => ch.id)).toEqual(['ch-2']);
   });

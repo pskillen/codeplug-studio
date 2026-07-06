@@ -102,13 +102,7 @@ export default function EntityEditorPage() {
           />
         );
       case 'zone':
-        return (
-          <ZoneEditor
-            projectId={projectId}
-            library={library}
-            entity={null}
-          />
-        );
+        return <ZoneEditor projectId={projectId} library={library} entity={null} />;
     }
   }
 }
