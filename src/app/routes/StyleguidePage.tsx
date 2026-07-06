@@ -36,6 +36,7 @@ import {
   PageSection,
   PageSectionGrid,
   PercentLevelSlider,
+  PillTabs,
   SelectedItemList,
 } from '../components/ui/index.ts';
 import ForbidTransmitSegment from '../components/channels/ForbidTransmitSegment.tsx';
@@ -111,6 +112,48 @@ function GradientSegmentedControlDemo({
       scheme={scheme}
       data={options}
       fullWidth
+    />
+  );
+}
+
+function PillTabsDemo() {
+  const [active, setActive] = useState('fm');
+  return (
+    <PillTabs
+      value={active}
+      onChange={setActive}
+      items={[
+        {
+          value: 'fm',
+          leading: <ModePill mode="fm" size="xs" />,
+          label: 'FM',
+          panel: (
+            <Text size="sm" c="dimmed">
+              Analog panel body — bandwidth, tones, squelch.
+            </Text>
+          ),
+        },
+        {
+          value: 'dmr',
+          leading: <ModePill mode="dmr" size="xs" />,
+          label: 'DMR',
+          panel: (
+            <Text size="sm" c="dimmed">
+              Digital panel body — colour code, contact, RX group list.
+            </Text>
+          ),
+        },
+        {
+          value: 'dstar',
+          leading: <ModePill mode="dstar" size="xs" />,
+          label: 'D-STAR',
+          panel: (
+            <Text size="sm" c="dimmed">
+              Stub panel — swap tab panels for mode-specific form sections.
+            </Text>
+          ),
+        },
+      ]}
     />
   );
 }
@@ -773,6 +816,15 @@ export default function StyleguidePage() {
               { value: 'high', label: 'High' },
             ]}
           />
+        </Stack>
+      </PageSection>
+
+      <PageSection
+        title="PillTabs"
+        description="Tabs with optional leading pill or badge — channel mode profiles use this pattern."
+      >
+        <Stack maw={560}>
+          <PillTabsDemo />
         </Stack>
       </PageSection>
 

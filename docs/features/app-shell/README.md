@@ -35,6 +35,7 @@ ProjectProvider
 | [GradientSegmentedControl](../../src/app/components/ui/GradientSegmentedControl.md) | Per-segment indicator colours with fade on change |
 | [SelectedItemList](../../src/app/components/ui/SelectedItemList.md)                 | Ordered selected-member list shell                |
 | [AvailableItemPicker](../../src/app/components/ui/AvailableItemPicker.md)           | Sectioned pool picker shell                       |
+| [PillTabs](../../src/app/components/ui/PillTabs.md)                                 | Tabs with optional leading pill/badge in labels   |
 | [library-routes-progress.md](library-routes-progress.md)                            | Library routes initiative — shipped slices        |
 | [library-routes-outstanding.md](library-routes-outstanding.md)                      | Deferred debt from library routes PR              |
 | [library/README.md](../library/README.md)                                           | Library CRUD and list routes                      |

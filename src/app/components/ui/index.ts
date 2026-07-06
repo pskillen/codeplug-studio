@@ -61,4 +61,6 @@ export type {
   AvailableItemPickerRenderProps,
   AvailableItemPickerSection,
 } from './AvailableItemPicker.tsx';
+export { default as PillTabs } from './PillTabs.tsx';
+export type { PillTabsItem, PillTabsProps } from './PillTabs.tsx';
 export * from './tokens.ts';

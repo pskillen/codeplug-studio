@@ -22,7 +22,7 @@ import ChannelModeProfilesEditor from '@app/components/channels/ChannelModeProfi
 
 ## Behaviour
 
-- Renders nothing useful when `profiles` is empty — parent should pair with `ChannelModesMultiSelect`.
+- Renders `PillTabs` with one tab per profile (`ModePill` + label); empty state when `profiles` is empty.
 - Analog tabs: bandwidth, RX/TX tone, squelch slider.
 - DMR tab: colour code, timeslot, DMR ID, digital contact or talk group, RX group list, then **`RxGroupListSummary`** when a list is selected (live preview; link to list editor).
 - D-STAR / YSF / NXDN / TETRA: mode-specific fields per internal model.
@@ -31,6 +31,7 @@ import ChannelModeProfilesEditor from '@app/components/channels/ChannelModeProfi
 
 ## Related
 
+- [PillTabs](../ui/PillTabs.md)
 - [RxGroupListSummary](../library/RxGroupListSummary.md)
 - [ChannelModesMultiSelect](./ChannelModesMultiSelect.md)
 - [docs/features/data-model/README.md](../../../docs/features/data-model/README.md)
