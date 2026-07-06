@@ -54,6 +54,7 @@ The **library** and domain layer are **vendor-neutral**. Radio caps, column name
 5. **Minimize scope** — one feature per PR; match existing patterns once scaffold exists.
 6. **Privacy** — operator data and tokens stay in browser storage only; never in the repo.
 7. **Docs ship with behaviour** — tier-1 feature hubs, component sidecars, and index rows in the same PR as the code ([documentation-deliverables.mdc](.cursor/rules/documentation-deliverables.mdc), [feature-docs](.cursor/skills/feature-docs/SKILL.md)).
+8. **New CPS format** — follow [adding-a-new-format.md](docs/features/import-export/adding-a-new-format.md) for adapter, trait, test, and UI checklist.
 
 ## Git workflow
 

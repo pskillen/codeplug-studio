@@ -86,20 +86,21 @@ Optional deep link: `?format=opengd77` highlights the matching catalog card (`us
 
 ## Documentation map
 
-| Doc                                                                            | Contents                                                                         |
-| ------------------------------------------------------------------------------ | -------------------------------------------------------------------------------- |
-| [google-drive.md](google-drive.md)                                             | Google Drive OAuth, browser, export workflow                                     |
-| [native-yaml/README.md](native-yaml/README.md)                                 | Native YAML product behaviour and code anchors                                   |
-| [native-yaml-progress.md](native-yaml-progress.md)                             | Execution log for #56–#58                                                        |
-| [native-yaml-outstanding.md](native-yaml-outstanding.md)                       | Debt discovered during native YAML work                                          |
-| [opengd77/README.md](opengd77/README.md)                                       | OpenGD77 profiles and adapter behaviour                                          |
-| [opengd77-progress.md](opengd77-progress.md)                                   | Phase 4a execution log                                                           |
-| [opengd77-outstanding.md](opengd77-outstanding.md)                             | OpenGD77 debt and deferrals                                                      |
-| [dm32/README.md](dm32/README.md)                                               | DM32 export hub ([#113](https://github.com/pskillen/codeplug-studio/issues/113)) |
-| [dm32-progress.md](dm32-progress.md)                                           | Epic #37 DM32 export execution log                                               |
-| [dm32-outstanding.md](dm32-outstanding.md)                                     | DM32 export debt and deferrals                                                   |
-| [../../reference/dm32/README.md](../../reference/dm32/README.md)               | Tier 3 — DM32 wire tables                                                        |
-| [../../reference/native-yaml/README.md](../../reference/native-yaml/README.md) | Tier 3 — YAML field tables and example document                                  |
+| Doc                                                                            | Contents                                                                                                               |
+| ------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------- |
+| [adding-a-new-format.md](adding-a-new-format.md)                               | **Canonical checklist** for shipping a new CPS format ([#183](https://github.com/pskillen/codeplug-studio/issues/183)) |
+| [google-drive.md](google-drive.md)                                             | Google Drive OAuth, browser, export workflow                                                                           |
+| [native-yaml/README.md](native-yaml/README.md)                                 | Native YAML product behaviour and code anchors                                                                         |
+| [native-yaml-progress.md](native-yaml-progress.md)                             | Execution log for #56–#58                                                                                              |
+| [native-yaml-outstanding.md](native-yaml-outstanding.md)                       | Debt discovered during native YAML work                                                                                |
+| [opengd77/README.md](opengd77/README.md)                                       | OpenGD77 profiles and adapter behaviour                                                                                |
+| [opengd77-progress.md](opengd77-progress.md)                                   | Phase 4a execution log                                                                                                 |
+| [opengd77-outstanding.md](opengd77-outstanding.md)                             | OpenGD77 debt and deferrals                                                                                            |
+| [dm32/README.md](dm32/README.md)                                               | DM32 export hub ([#113](https://github.com/pskillen/codeplug-studio/issues/113))                                       |
+| [dm32-progress.md](dm32-progress.md)                                           | Epic #37 DM32 export execution log                                                                                     |
+| [dm32-outstanding.md](dm32-outstanding.md)                                     | DM32 export debt and deferrals                                                                                         |
+| [../../reference/dm32/README.md](../../reference/dm32/README.md)               | Tier 3 — DM32 wire tables                                                                                              |
+| [../../reference/native-yaml/README.md](../../reference/native-yaml/README.md) | Tier 3 — YAML field tables and example document                                                                        |
 
 ## Related
 

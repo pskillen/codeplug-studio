@@ -75,7 +75,7 @@ Docs-only PRs: `format:check` + link audit is sufficient.
 1. **Changing a parser or serialiser column** → unit test beside `parse.ts` / `serialise.ts`; extend mapping scenario if semantics cross files.
 2. **Changing import into library / merge** → service test in `src/core/services/`; system scenario when multi-step workflow lands.
 3. **Changing UI only** → component RTL under `src/app/` or e2e when browser behaviour matters.
-4. **New format adapter** → register under `src/core/import-export/formats/<format>/`; reference docs under `docs/reference/<format>/`; fixture bundle; fill adapter matrix in [mapping-tests.md](mapping-tests.md).
+4. **New format adapter** → follow [adding-a-new-format.md](../features/import-export/adding-a-new-format.md); register under `src/core/import-export/formats/<format>/`; reference docs under `docs/reference/<format>/`; fixture bundle; fill adapter matrix in [mapping-tests.md](mapping-tests.md).
 5. **Pure domain helper** (geo, validation, maidenhead) → colocated `*.test.ts` in `src/core/` or `src/integrations/`.
 
 ## Documentation map
