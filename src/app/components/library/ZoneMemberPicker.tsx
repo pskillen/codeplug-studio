@@ -245,8 +245,11 @@ export default function ZoneMemberPicker({
   );
 
   const excludedZoneIds = useMemo(
-    () => (editingZoneId ? zoneIdsExcludedFromMembership(editingZoneId, zones) : new Set<string>()),
-    [editingZoneId, zones],
+    () =>
+      editingZoneId
+        ? zoneIdsExcludedFromMembership(editingZoneId, zones, members)
+        : new Set<string>(),
+    [editingZoneId, zones, members],
   );
 
   const availableChannels = useMemo(

@@ -73,15 +73,22 @@ export function zoneMembershipHasCycle(
 }
 
 /** Zone ids that must not be offered as members when editing zoneId (self + descendants). */
-export function zoneIdsExcludedFromMembership(zoneId: string, zones: Zone[]): Set<string> {
+export function zoneIdsExcludedFromMembership(
+  zoneId: string,
+  zones: Zone[],
+  proposedRootMembers?: ZoneMemberEntry[],
+): Set<string> {
   const zonesById = zoneMap(zones);
   const excluded = new Set<string>([zoneId]);
 
   function walk(currentId: string): void {
     const zone = zonesById.get(currentId);
     if (!zone) return;
-    for (const raw of zone.members) {
-      const member = normalizeZoneMemberEntry(raw);
+    const members =
+      currentId === zoneId && proposedRootMembers != null
+        ? proposedRootMembers.map((member) => normalizeZoneMemberEntry(member))
+        : zone.members.map((member) => normalizeZoneMemberEntry(member));
+    for (const member of members) {
       if (member.kind === 'zone' && !excluded.has(member.zoneId)) {
         excluded.add(member.zoneId);
         walk(member.zoneId);

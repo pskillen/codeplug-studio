@@ -86,6 +86,13 @@ describe('zoneIdsExcludedFromMembership', () => {
     const lib = library([child, parent]);
     expect(zoneIdsExcludedFromMembership('z-p', lib.zones)).toEqual(new Set(['z-p', 'z-c']));
   });
+
+  it('uses proposed root members when editing', () => {
+    const child = zone('z-c', 'Child', []);
+    const parent = zone('z-p', 'Parent', [{ kind: 'zone', zoneId: 'z-c' }]);
+    const lib = library([child, parent]);
+    expect(zoneIdsExcludedFromMembership('z-p', lib.zones, [])).toEqual(new Set(['z-p']));
+  });
 });
 
 describe('directZoneMemberChannelIds', () => {
