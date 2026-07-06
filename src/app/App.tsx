@@ -6,6 +6,7 @@ import EntityEditorPage from './routes/library/EntityEditorPage.tsx';
 import AddFromUkRepeaterPage from './routes/library/AddFromUkRepeaterPage.tsx';
 import AddFromBrandmeisterPage from './routes/library/AddFromBrandmeisterPage.tsx';
 import AddChannelSetPage from './routes/library/AddChannelSetPage.tsx';
+import ZoneFromLocationPage from './routes/library/ZoneFromLocationPage.tsx';
 import ChannelsListPage from './routes/library/lists/ChannelsListPage.tsx';
 import ZonesListPage from './routes/library/lists/ZonesListPage.tsx';
 import TalkGroupsListPage from './routes/library/lists/TalkGroupsListPage.tsx';
@@ -69,6 +70,10 @@ export const appRouter = createBrowserRouter([
           { path: '/library', element: <Navigate to="/library/channels" replace /> },
           { path: '/library/channels', element: <ChannelsListPage /> },
           { path: '/library/zones', element: <ZonesListPage /> },
+          {
+            path: '/library/zones/new-from-location',
+            element: <ZoneFromLocationPage />,
+          },
           { path: '/library/talk-groups', element: <TalkGroupsListPage /> },
           { path: '/library/contacts', element: <ContactsListPage /> },
           { path: '/library/rx-group-lists', element: <RxGroupListsListPage /> },
