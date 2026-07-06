@@ -192,7 +192,8 @@ describe('assemble', () => {
 
     const projection = assemble(build, library);
     expect(projection.channels.map((row) => row.entity.id)).not.toContain(orphanChannel.id);
-    expect(projection.channels).toHaveLength(2);
+    expect(projection.channels).toHaveLength(1);
+    expect(projection.channels[0]?.entity.id).toBe('22222222-2222-4222-8222-222222222222');
   });
 
   it('flattens nested library zones into assembled member channel ids', () => {
@@ -401,5 +402,69 @@ describe('assemble', () => {
     expect(projection.zones.map((z) => z.zoneId)).toEqual([glasgowZone.id]);
     const glasgow = projection.zones.find((z) => z.zoneId === glasgowZone.id);
     expect(glasgow?.memberChannelIds).toEqual([glasgowCh.id, pmr.id]);
+  });
+
+  it('excludes channels from standalone omitFromExport zones not nested in a parent', () => {
+    const projectId = 'proj-omit-orphan';
+    const pmr = {
+      ...newChannel(projectId, 'PMR ch'),
+      id: 'ch-pmr',
+    };
+    const other = {
+      ...newChannel(projectId, 'Other ch'),
+      id: 'ch-other',
+    };
+    const pmrZone = {
+      id: 'zone-pmr',
+      projectId,
+      revision: 1,
+      updatedAt: '2026-01-01T00:00:00.000Z',
+      name: 'PMR446',
+      comment: '',
+      omitFromExport: true,
+      members: [{ kind: 'channel' as const, channelId: pmr.id }],
+    };
+    const glasgowZone = {
+      id: 'zone-glasgow',
+      projectId,
+      revision: 1,
+      updatedAt: '2026-01-01T00:00:00.000Z',
+      name: 'Glasgow',
+      comment: '',
+      members: [{ kind: 'channel' as const, channelId: other.id }],
+    };
+    const library = {
+      channels: [pmr, other],
+      zones: [pmrZone, glasgowZone],
+      talkGroups: [],
+      digitalContacts: [],
+      analogContacts: [],
+      rxGroupLists: [],
+    };
+    const build = {
+      id: 'build-omit-orphan',
+      projectId,
+      revision: 1,
+      updatedAt: '2026-01-01T00:00:00.000Z',
+      name: 'Omit orphan test',
+      formatId: 'opengd77',
+      profileId: 'opengd77-1701',
+      layout: { sections: [] },
+      channelOverrides: [],
+      zoneOverrides: [],
+      talkGroupOverrides: [],
+      rxGroupListOverrides: [],
+      channelSelections: [],
+      talkGroupSelections: [],
+      rxGroupListSelections: [],
+      digitalContactSelections: [],
+      analogContactSelections: [],
+      contactOverrides: [],
+    };
+
+    const projection = assemble(build, library);
+    expect(projection.zones.map((z) => z.zoneId)).toEqual([glasgowZone.id]);
+    expect(projection.channels.map((c) => c.entity.id)).toEqual([other.id]);
+    expect(projection.channels.some((c) => c.entity.id === pmr.id)).toBe(false);
   });
 });
