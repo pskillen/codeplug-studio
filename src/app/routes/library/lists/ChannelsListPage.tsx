@@ -2,6 +2,7 @@ import { Button, Group, Stack, Text } from '@mantine/core';
 import { useCallback, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type { Channel } from '@core/models/library.ts';
+import { zonesWithDirectChannelMember } from '@core/domain/zoneMembership.ts';
 import { applyFilters, channelHasGeolocation } from '@core/domain/mapProjection.ts';
 import { coordsToLocator } from '@core/domain/maidenhead.ts';
 import { haversineDistanceM } from '@core/domain/geoDistance.ts';
@@ -34,6 +35,7 @@ import { useProjects } from '../../../state/useProjects.ts';
 import { useOperatorPosition } from '../../../state/operatorPosition.tsx';
 import { useLibrary } from '../../../state/useLibrary.ts';
 import ChannelListDeleteAction from '../../../components/library/ChannelListDeleteAction.tsx';
+import ChannelZonesListCell from '../../../components/library/ChannelZonesListCell.tsx';
 
 function percentLabel(value: number | null): string {
   if (value == null) return '—';
@@ -97,6 +99,16 @@ export default function ChannelsListPage() {
         defaultVisible: col.defaultVisible,
       };
 
+      if (col.key === 'zones') {
+        return {
+          ...base,
+          render: (ch: Channel) => <ChannelZonesListCell channel={ch} zones={zones} />,
+          sortValue: (ch: Channel) =>
+            zonesWithDirectChannelMember(ch.id, zones)
+              .map((z) => z.name)
+              .join(', '),
+        };
+      }
       if (col.key === 'abbreviation') {
         return {
           ...base,
@@ -184,7 +196,7 @@ export default function ChannelsListPage() {
           ch.location && ch.useLocation ? coordsToLocator(ch.location.lat, ch.location.lon, 6) : '',
       };
     });
-  }, [library, position]);
+  }, [library, position, zones]);
 
   const tableColumns = useMemo((): DataTableColumn<Channel>[] => {
     return [

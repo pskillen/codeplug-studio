@@ -89,6 +89,30 @@ export default function ChannelEditor({
     return row;
   }
 
+  function handleDuplicate() {
+    if (!entity) return;
+    const source = buildRow();
+    const copyName = `${source.name.trim() || 'Untitled channel'} (copy)`;
+    const copy = newChannel(projectId, copyName, source.callsign);
+    const row: Channel = {
+      ...copy,
+      abbreviation: source.abbreviation,
+      rxFrequency: source.rxFrequency,
+      txFrequency: source.txFrequency,
+      power: source.power,
+      scanSkip: source.scanSkip,
+      forbidTransmit: source.forbidTransmit,
+      comment: source.comment,
+      location: source.location,
+      useLocation: source.useLocation,
+      maidenheadLocator: source.maidenheadLocator,
+      modeProfiles: source.modeProfiles.map((profile) => ({ ...profile })),
+    };
+    void persistence.putChannel(row, null).then((result) => {
+      if (result.ok) navigate(`/library/channels/${row.id}`);
+    });
+  }
+
   function handleSave() {
     const profileErrors = validateModeProfiles(modeProfiles);
     if (profileErrors.length > 0) {
@@ -209,7 +233,12 @@ export default function ChannelEditor({
           Cancel
         </Button>
         {entity ? (
-          <ChannelDeleteButton channel={entity} onDeleted={() => navigate('/library/channels')} />
+          <>
+            <Button variant="default" onClick={() => void handleDuplicate()}>
+              Duplicate
+            </Button>
+            <ChannelDeleteButton channel={entity} onDeleted={() => navigate('/library/channels')} />
+          </>
         ) : null}
       </Group>
     </Stack>

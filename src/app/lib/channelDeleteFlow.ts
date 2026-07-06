@@ -1,11 +1,11 @@
 import type { Channel } from '@core/models/library.ts';
-import type { DeleteOutcome } from '../../state/libraryService.ts';
-import { LibraryService } from '../../state/libraryService.ts';
-import { persistence } from '../../state/persistence.ts';
+import type { DeleteOutcome } from '../state/libraryService.ts';
+import { LibraryService } from '../state/libraryService.ts';
+import { persistence } from '../state/persistence.ts';
 import {
   formatEntityReferences,
   referencesAreZoneMembershipOnly,
-} from '../../lib/entityDeleteMessages.ts';
+} from './entityDeleteMessages.ts';
 
 const service = new LibraryService(persistence);
 
