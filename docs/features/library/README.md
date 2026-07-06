@@ -150,6 +150,10 @@ Channel DMR profiles reference a **digital contact** and an **RX group list** by
 - **Identity:** `DigitalContactEditor` — Mantine `FormSection`, `TextInput`, Save/Cancel `Group` (matches talk group / channel editor shell).
 - **Mode:** `GradientSegmentedControl` with `digitalModes` scheme — same labels and colours as talk groups and `ModePill`.
 
+### Analog contact editor
+
+- **Identity:** `AnalogContactEditor` — same Mantine form shell as digital contacts (name, code, comment).
+
 ## Data flow
 
 ```text

@@ -9,7 +9,7 @@ import RxGroupListEditor from './RxGroupListEditor.tsx';
 import ZoneEditor from './ZoneEditor.tsx';
 import { TalkGroupEditor } from './TalkGroupEditor.tsx';
 import { DigitalContactEditor } from './DigitalContactEditor.tsx';
-import { AnalogContactEditor } from './SimpleEditors.tsx';
+import { AnalogContactEditor } from './AnalogContactEditor.tsx';
 
 export default function EntityEditorPage() {
   const { kind: slug, id } = useParams();
