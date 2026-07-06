@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useState } from 'react';
-import { Stack, Switch, Text, TextInput } from '@mantine/core';
+import { Button, Group, Stack, Switch, Text, TextInput } from '@mantine/core';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import type { Library, Zone, ZoneMemberEntry } from '@core/models/library.ts';
 import { newZone } from '@core/domain/factories.ts';
@@ -12,14 +12,15 @@ import { resolveEffectiveZoneChannelIds } from '@core/domain/zoneHierarchy.ts';
 import { validateZoneMembership } from '@core/domain/validation.ts';
 import CodeplugMap from '../../components/CodeplugMap/CodeplugMap.tsx';
 import { FormSection } from '../../components/ui/index.ts';
-import ZoneMemberPicker, {
-  type ZoneMemberPickerMapFilters,
-} from '../../components/library/ZoneMemberPicker.tsx';
+import ZoneMemberEditor, {
+  type ZoneMemberEditorMapFilters,
+} from '../../components/library/ZoneMemberEditor.tsx';
 import {
   normalizeZoneMembers,
   zoneMembersFromSelectedIds,
 } from '../../components/library/zoneMembers.ts';
 import { persistence } from '../../state/persistence.ts';
+import { useLibrary } from '../../state/useLibrary.ts';
 import { useEntitySave } from './useEntitySave.ts';
 import EditorActions from './EditorActions.tsx';
 import { readInitialChannelIds } from './zoneEditorState.ts';
@@ -36,6 +37,7 @@ export default function ZoneEditor({
   const base = entity ?? newZone(projectId, '');
   const navigate = useNavigate();
   const location = useLocation();
+  const { deleteEntity } = useLibrary();
   const initialChannelIds = entity === null ? readInitialChannelIds(location.state) : [];
   const [name, setName] = useState(base.name);
   const [members, setMembers] = useState<ZoneMemberEntry[]>(() =>
@@ -46,13 +48,14 @@ export default function ZoneEditor({
   const [comment, setComment] = useState(base.comment);
   const [omitFromExport, setOmitFromExport] = useState(base.omitFromExport === true);
   const [validationError, setValidationError] = useState<string | null>(null);
-  const [mapFilters, setMapFilters] = useState<ZoneMemberPickerMapFilters>({
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [mapFilters, setMapFilters] = useState<ZoneMemberEditorMapFilters>({
     hiddenMarkerChannelIds: [],
     hiddenZoneMemberIds: [],
   });
   const { save, saving, error } = useEntitySave('zones');
 
-  const handleMapFiltersChange = useCallback((filters: ZoneMemberPickerMapFilters) => {
+  const handleMapFiltersChange = useCallback((filters: ZoneMemberEditorMapFilters) => {
     setMapFilters(filters);
   }, []);
 
@@ -122,10 +125,24 @@ export default function ZoneEditor({
     void save(() => persistence.putZone(row, entity ? entity.revision : null));
   }
 
-  const displayError = validationError ?? error;
+  const handleDelete = useCallback(async () => {
+    if (!entity) return;
+    if (!window.confirm(`Delete zone “${entity.name}”? Channels stay in the library.`)) return;
+    setDeleteError(null);
+    const result = await deleteEntity('zone', entity.id);
+    if (result.ok) {
+      navigate('/library/zones');
+    } else {
+      setDeleteError(
+        `Delete blocked — ${result.references.length} entit${result.references.length === 1 ? 'y' : 'ies'} still reference this zone.`,
+      );
+    }
+  }, [deleteEntity, entity, navigate]);
+
+  const displayError = validationError ?? error ?? deleteError;
 
   return (
-    <Stack gap="md">
+    <Stack gap="md" maw={960}>
       <FormSection title="Identity">
         <TextInput label="Name" value={name} onChange={(e) => setName(e.currentTarget.value)} />
         <TextInput
@@ -143,13 +160,20 @@ export default function ZoneEditor({
           simplex set you nest inside every city zone. Its channels still export inside parent
           zones; this zone will not get its own row in Zones.csv.
         </Text>
+        {entity ? (
+          <Group>
+            <Button variant="light" color="red" size="compact-sm" onClick={() => void handleDelete()}>
+              Delete zone
+            </Button>
+          </Group>
+        ) : null}
       </FormSection>
 
       <FormSection
         title="Members"
         description="Order matches export order for zone-capable builds. Nested zones flatten at export."
       >
-        <ZoneMemberPicker
+        <ZoneMemberEditor
           channels={library.channels}
           zones={library.zones}
           editingZoneId={base.id}

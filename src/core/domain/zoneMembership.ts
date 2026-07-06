@@ -237,8 +237,7 @@ export function setChannelMemberIncludeInScanList(
     if (member.kind !== 'channel' || member.channelId !== channelId) return raw;
     changed = true;
     if (includeInScanList) {
-      const { includeInScanList: _omit, ...rest } = member;
-      return rest;
+      return { kind: 'channel' as const, channelId: member.channelId };
     }
     return { ...member, includeInScanList: false };
   });
