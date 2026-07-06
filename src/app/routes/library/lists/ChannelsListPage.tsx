@@ -35,6 +35,7 @@ import { useProjects } from '../../../state/useProjects.ts';
 import { useOperatorPosition } from '../../../state/operatorPosition.tsx';
 import { useLibrary } from '../../../state/useLibrary.ts';
 import ChannelListDeleteAction from '../../../components/library/ChannelListDeleteAction.tsx';
+import ChannelListFilters from '../../../components/library/ChannelListFilters.tsx';
 import ChannelZonesListCell from '../../../components/library/ChannelZonesListCell.tsx';
 
 function percentLabel(value: number | null): string {
@@ -265,6 +266,8 @@ export default function ChannelsListPage() {
             header after setting location.
           </Text>
         ) : null}
+
+        <ChannelListFilters />
 
         <DataTable
           variant="list"

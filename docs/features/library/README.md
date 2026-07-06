@@ -47,7 +47,7 @@ Shared list UI: [app-shell/data-table.md](../app-shell/data-table.md).
 
 ### Channels list (#24)
 
-- Filters in section nav: name/callsign search, band, mode, simplex/split, distance radius (when operator location is set).
+- Filters on the list page (`ChannelListFilters`): band, mode, simplex/split, distance radius (when operator location is set). Name/callsign search is on the `DataTable` toolbar only.
 - Filter state syncs to URL query params and per-project `localStorage`.
 - Column sort and visibility prefs persist per project.
 - `modeProfiles[]` drives mode pills and mode filter matching (vendor-neutral labels only).
