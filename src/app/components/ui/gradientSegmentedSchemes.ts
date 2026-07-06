@@ -1,3 +1,5 @@
+import { DIGITAL_CHANNEL_MODES, modeColor } from '../../lib/channelModes.ts';
+
 export interface GradientSegmentScheme {
   /** Mantine palette names or CSS colors — one per segment (left → right). */
   segmentColors: readonly string[];
@@ -28,12 +30,18 @@ export const FIVE_SEGMENT_SCHEME: GradientSegmentScheme = {
   segmentColors: ['blue', 'cyan', 'teal', 'lime', 'orange'],
 };
 
+/** Digital channel modes — matches `ModePill` / `modeColor` (DMR → Tetra order). */
+export const DIGITAL_MODE_PILL_SCHEME: GradientSegmentScheme = {
+  segmentColors: DIGITAL_CHANNEL_MODES.map((mode) => modeColor(mode)),
+};
+
 export const GRADIENT_SEGMENT_SCHEMES = {
   onOff: ON_OFF_SCHEME,
   allowForbid: ALLOW_FORBID_SCHEME,
   three: THREE_SEGMENT_SCHEME,
   four: FOUR_SEGMENT_SCHEME,
   five: FIVE_SEGMENT_SCHEME,
+  digitalModes: DIGITAL_MODE_PILL_SCHEME,
 } as const;
 
 export type GradientSegmentSchemeName = keyof typeof GRADIENT_SEGMENT_SCHEMES;

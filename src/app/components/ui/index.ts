@@ -33,6 +33,7 @@ export type {
 } from './GradientSegmentedControl.tsx';
 export {
   ALLOW_FORBID_SCHEME,
+  DIGITAL_MODE_PILL_SCHEME,
   FIVE_SEGMENT_SCHEME,
   FOUR_SEGMENT_SCHEME,
   GRADIENT_SEGMENT_SCHEMES,
