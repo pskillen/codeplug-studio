@@ -100,6 +100,7 @@ Pattern (when adapters ship):
 ## Related
 
 - [Testing hub](README.md)
+- [Adding a new format](../features/import-export/adding-a-new-format.md) — canonical adapter checklist
 - [Fixtures](fixtures.md)
 - [Unit tests](unit.md)
 - [multi-talkgroup-expansion.md](../../reference/multi-talkgroup-expansion.md) — export-time expansion rules
