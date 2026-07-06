@@ -22,11 +22,11 @@ This is a **remote directory API**, not a CPS wire format. HTTP clients and norm
 
 Additional ETCC endpoints exist on the API but are not wired in the Studio UI yet:
 
-| Endpoint         | Example                  | Returns                          |
-| ---------------- | ------------------------ | -------------------------------- |
-| `/band/{band}`   | `/band/2m`, `/band/70cm` | Listings on band (large payload) |
-| `/keeper/{call}` | `/keeper/g7npw`          | Listings for keeper callsign     |
-| `/all/systems`   | —                        | All public listings              |
+| Endpoint         | Example                  | Returns                                                                                                                                                                                              |
+| ---------------- | ------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `/band/{band}`   | `/band/2m`, `/band/70cm` | Listings on band (large payload) — **not used by Studio UI**; band narrowing is client-side after `/callsign/` or `/locator/` fetch ([#191](https://github.com/pskillen/codeplug-studio/issues/191)) |
+| `/keeper/{call}` | `/keeper/g7npw`          | Listings for keeper callsign                                                                                                                                                                         |
+| `/all/systems`   | —                        | All public listings                                                                                                                                                                                  |
 
 There is **no town/QTH endpoint**. Town search geocodes to a 4-character locator, then calls `/locator/`.
 

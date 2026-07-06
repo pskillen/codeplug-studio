@@ -1,18 +1,22 @@
 import { useCallback, useState } from 'react';
+import type { ChannelMode } from '@core/models/libraryTypes.ts';
 import {
   RepeaterDirectoryError,
+  detectQueryKind,
   searchBrandmeisterByCallsign,
   searchUkRepeaters,
   type QueryKind,
   type RepeaterListing,
   type RepeaterSource,
 } from '@integrations/repeaters/index.ts';
+import { bandFromWireLabel } from '../lib/bands.ts';
 import { useMapSettings } from './useMapSettings.ts';
 
 export interface RepeaterDirectorySearchState {
   query: string;
   operationalOnly: boolean;
   bandFilter: string | null;
+  modeFilter: string[];
   titleCaseNames: boolean;
   loading: boolean;
   error: string | null;
@@ -25,6 +29,7 @@ export function useRepeaterDirectorySearch(source: RepeaterSource) {
   const [query, setQuery] = useState('');
   const [operationalOnly, setOperationalOnly] = useState(true);
   const [bandFilter, setBandFilter] = useState<string | null>(null);
+  const [modeFilter, setModeFilter] = useState<string[]>([]);
   const [titleCaseNames, setTitleCaseNames] = useState(true);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -35,7 +40,7 @@ export function useRepeaterDirectorySearch(source: RepeaterSource) {
     async (queryOverride?: string) => {
       const trimmed = (queryOverride ?? query).trim();
       if (!trimmed) {
-        setError('Enter a callsign, locator, band, or town.');
+        setError('Enter a callsign, locator, or town.');
         return;
       }
 
@@ -52,11 +57,22 @@ export function useRepeaterDirectorySearch(source: RepeaterSource) {
           return;
         }
 
+        if (detectQueryKind(trimmed) === 'band') {
+          const bandValue = trimmed.toUpperCase();
+          setBandFilter(bandValue);
+          setKind('band');
+          setListings([]);
+          const label = bandFromWireLabel(bandValue)?.label ?? bandValue;
+          setError(`Band filter set to ${label} — enter a callsign, locator, or town to search.`);
+          return;
+        }
+
         const result = await searchUkRepeaters(
           trimmed,
           {
             operationalOnly,
             band: bandFilter ?? undefined,
+            modes: modeFilter.length ? (modeFilter as ChannelMode[]) : undefined,
           },
           {
             mapboxToken: mapboxToken.trim() || undefined,
@@ -65,7 +81,9 @@ export function useRepeaterDirectorySearch(source: RepeaterSource) {
         setKind(result.kind);
         setListings(result.listings);
         if (result.listings.length === 0) {
-          setError('No repeaters matched your search on ukrepeater.net.');
+          const narrow =
+            bandFilter || modeFilter.length ? ' Try clearing band or mode filters.' : '';
+          setError(`No repeaters matched your search on ukrepeater.net.${narrow}`);
         }
       } catch (err) {
         setListings([]);
@@ -77,7 +95,7 @@ export function useRepeaterDirectorySearch(source: RepeaterSource) {
         setLoading(false);
       }
     },
-    [query, operationalOnly, bandFilter, mapboxToken, source],
+    [query, operationalOnly, bandFilter, modeFilter, mapboxToken, source],
   );
 
   return {
@@ -87,6 +105,8 @@ export function useRepeaterDirectorySearch(source: RepeaterSource) {
     setOperationalOnly,
     bandFilter,
     setBandFilter,
+    modeFilter,
+    setModeFilter,
     titleCaseNames,
     setTitleCaseNames,
     loading,

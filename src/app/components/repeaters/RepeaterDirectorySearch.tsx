@@ -7,6 +7,7 @@ import {
   Checkbox,
   Group,
   Modal,
+  MultiSelect,
   ScrollArea,
   Select,
   Stack,
@@ -31,6 +32,7 @@ import { isSimplex } from '../../lib/channels.ts';
 import { ICON_SIZE_NAV, ICON_STROKE } from '../../lib/iconSizes.ts';
 import { isOperationalStatus, queryKindHint } from '../../lib/repeaters.ts';
 import { repeaterSearchCapabilities } from '../../lib/repeaterSearchCapabilities.ts';
+import { modeFilterOptions } from '../../lib/channelModes.ts';
 import { hzToMhzString } from '../../lib/units.ts';
 import { persistence } from '../../state/persistence.ts';
 import { useLibrary } from '../../state/useLibrary.ts';
@@ -55,6 +57,8 @@ const BAND_OPTIONS = [
   { value: '6M', label: '6 m' },
   { value: '23CM', label: '23 cm' },
 ];
+
+const UK_MODE_FILTER_OPTIONS = modeFilterOptions().filter((o) => o.value !== 'other');
 
 export interface RepeaterDirectorySearchProps {
   source: RepeaterSource;
@@ -295,9 +299,7 @@ export default function RepeaterDirectorySearch({
           <Group align="flex-end" wrap="wrap">
             <TextInput
               label="Search"
-              placeholder={
-                capabilities.unifiedQuery ? 'Callsign, locator, band (2m), or town' : 'e.g. GB3RF'
-              }
+              placeholder={capabilities.unifiedQuery ? 'Callsign, locator, or town' : 'e.g. GB3RF'}
               value={search.query}
               onChange={(e) => search.setQuery(e.currentTarget.value)}
               onKeyDown={(e) => {
@@ -314,6 +316,17 @@ export default function RepeaterDirectorySearch({
                 onChange={search.setBandFilter}
                 clearable
                 style={{ minWidth: 120 }}
+              />
+            ) : null}
+            {capabilities.modeFilter ? (
+              <MultiSelect
+                label="Mode filter"
+                placeholder="Any mode"
+                data={UK_MODE_FILTER_OPTIONS}
+                value={search.modeFilter}
+                onChange={search.setModeFilter}
+                clearable
+                style={{ minWidth: 140 }}
               />
             ) : null}
             {capabilities.operationalOnly ? (
@@ -349,7 +362,7 @@ export default function RepeaterDirectorySearch({
             </Button>
           </Group>
 
-          {kindHint ? (
+          {kindHint && !search.error ? (
             <Text size="sm" c="dimmed">
               {kindHint}
             </Text>
