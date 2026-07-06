@@ -29,12 +29,13 @@ const selectedModes = modeProfiles.map((p) => p.mode);
 
 ## Behaviour
 
-- Options come from `CHANNEL_MODES` in `src/app/lib/channelModes.ts` (excludes display-only `other`).
+- Renders an `ImageCheckboxGroup` of mode cards (`ModePill` + category subtitle) from `CHANNEL_MODES` (excludes display-only `other`).
 - No “primary mode” — all selected modes are equal; profile tab order follows selection order.
 - Deselecting a mode drops its profile on the next sync (parent should call `syncModeProfiles`).
 
 ## Related
 
+- [ImageCheckbox](../ui/ImageCheckbox.md)
 - [ChannelModeProfilesEditor](./ChannelModeProfilesEditor.md)
 - [docs/reference/channel-modes.md](../../../docs/reference/channel-modes.md)
 - [#16](https://github.com/pskillen/codeplug-studio/issues/16)
