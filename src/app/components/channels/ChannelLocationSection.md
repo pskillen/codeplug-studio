@@ -26,10 +26,12 @@ const [location, setLocation] = useState(() =>
 <ChannelLocationSection value={location} onChange={setLocation} />;
 
 // On save:
+const lat = Number.parseFloat(location.lat);
+const lon = Number.parseFloat(location.lon);
+const hasCoords = Number.isFinite(lat) && Number.isFinite(lon);
 const reconciled = reconcileChannelLocation({
   maidenheadLocator: location.maidenheadLocator || null,
-  location:
-    location.lat != null && location.lon != null ? { lat: location.lat, lon: location.lon } : null,
+  location: hasCoords ? { lat, lon } : null,
   useLocation: location.useLocation,
   lastEdited: location.lastEdited,
 });
@@ -39,6 +41,7 @@ const reconciled = reconcileChannelLocation({
 
 - Valid locator on blur → derives lat/lon and sets `useLocation: true`.
 - Lat/lon or map pick → derives 6-character locator; sets `lastEdited: 'coords'`.
+- Lat/lon fields keep **string** draft values while typing so partial decimals (e.g. `55.`) are not dropped.
 - Invalid locator on blur → inline error; does not overwrite coordinates.
 - **No** “Use my location” button on this page (reference tool / list maps only).
 - `clearPosition` resets locator, coords, and `useLocation`.
