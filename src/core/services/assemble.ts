@@ -15,6 +15,7 @@ import {
 } from '@core/domain/formatBuildOverrides.ts';
 import { defaultChannelWireName } from '@core/domain/channelNaming.ts';
 import { resolveEffectiveZoneChannelIds } from '@core/domain/zoneHierarchy.ts';
+import { orderChannelIdsByLayoutHint } from '@core/domain/zoneGroupingLayout.ts';
 import { migrateFormatBuild } from '@core/domain/migrateFormatBuild.ts';
 import type { Library } from '@core/models/library.ts';
 
@@ -205,14 +206,17 @@ function assembleZones(
       for (const zoneEntry of section.zones) {
         if (isEntityExcluded(overrides, zoneEntry.id)) continue;
         const libraryZone = zonesById.get(zoneEntry.id);
-        const fallbackName = libraryZone?.name ?? zoneEntry.name;
-        const memberChannelIds = zoneEntry.channelIds.filter((id) => exportedChannelIds.has(id));
+        if (!libraryZone) continue;
+        const effectiveIds = resolveEffectiveZoneChannelIds(libraryZone, library.zones);
+        const memberChannelIds = orderChannelIdsByLayoutHint(effectiveIds, zoneEntry.channelIds).filter(
+          (id) => exportedChannelIds.has(id),
+        );
         if (memberChannelIds.length === 0 && !overrideByEntityId(overrides).has(zoneEntry.id)) {
           continue;
         }
         assembled.push({
           zoneId: zoneEntry.id,
-          wireName: resolveOverrideWireName(overrides, zoneEntry.id, fallbackName),
+          wireName: resolveOverrideWireName(overrides, zoneEntry.id, libraryZone.name),
           memberChannelIds,
         });
       }

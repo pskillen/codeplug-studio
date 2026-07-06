@@ -7,7 +7,7 @@ import {
   replaceZoneGroupingSection,
   seedZoneGroupingFromLibrary,
 } from './zoneGroupingLayout.ts';
-import { zoneMemberChannelIds } from './zoneMembers.ts';
+import { resolveEffectiveZoneChannelIds } from './zoneHierarchy.ts';
 import { migrateZoneMemberEntries } from './migrateZoneMembers.ts';
 
 export interface LegacyZoneExportFields {
@@ -51,8 +51,8 @@ function applyLegacyToZoneEntry(
   };
 }
 
-function channelIdsFromZone(zone: Zone): string[] {
-  return zoneMemberChannelIds(zone);
+function channelIdsFromZone(zone: Zone, zones: Zone[]): string[] {
+  return resolveEffectiveZoneChannelIds(zone, zones);
 }
 
 export function migrateZoneExportFieldsToBuildLayout(
@@ -97,7 +97,7 @@ export function migrateZoneExportFieldsToBuildLayout(
       updatedZones.push({
         id: zone.id,
         name: zone.name,
-        channelIds: channelIdsFromZone(zone),
+        channelIds: channelIdsFromZone(zone, cleanedLibrary.zones),
         ...(legacy
           ? {
               exportScratchChannel: legacy.exportScratchChannel,

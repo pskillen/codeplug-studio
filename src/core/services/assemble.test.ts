@@ -36,7 +36,6 @@ describe('assemble', () => {
     expect(projection.zones[0]?.wireName).toBe('Edinburgh');
     expect(projection.zones[0]?.memberChannelIds).toEqual([
       '22222222-2222-4222-8222-222222222222',
-      '33333333-3333-4333-8333-333333333333',
     ]);
 
     expect(projection.talkGroups).toHaveLength(1);
@@ -254,5 +253,88 @@ describe('assemble', () => {
     const projection = assemble(build, library);
     const parent = projection.zones.find((z) => z.zoneId === parentZone.id);
     expect(parent?.memberChannelIds).toEqual([child.id]);
+  });
+
+  it('flattens nested zones when build has stale zoneGrouping channelIds', () => {
+    const projectId = 'proj-nested-layout';
+    const child = {
+      ...newChannel(projectId, 'PMR ch'),
+      id: 'ch-pmr',
+    };
+    const direct = {
+      ...newChannel(projectId, 'Glasgow ch'),
+      id: 'ch-glasgow',
+    };
+    const childZone = {
+      id: 'zone-pmr',
+      projectId,
+      revision: 1,
+      updatedAt: '2026-01-01T00:00:00.000Z',
+      name: 'PMR446',
+      comment: '',
+      members: [{ kind: 'channel' as const, channelId: child.id }],
+    };
+    const parentZone = {
+      id: 'zone-glasgow',
+      projectId,
+      revision: 1,
+      updatedAt: '2026-01-01T00:00:00.000Z',
+      name: 'Glasgow',
+      comment: '',
+      members: [
+        { kind: 'channel' as const, channelId: direct.id },
+        { kind: 'zone' as const, zoneId: childZone.id },
+      ],
+    };
+    const library = {
+      channels: [child, direct],
+      zones: [childZone, parentZone],
+      talkGroups: [],
+      digitalContacts: [],
+      analogContacts: [],
+      rxGroupLists: [],
+    };
+    const build = {
+      id: 'build-layout',
+      projectId,
+      revision: 1,
+      updatedAt: '2026-01-01T00:00:00.000Z',
+      name: 'Nested layout test',
+      formatId: 'dm32',
+      profileId: 'dm32-baofeng-dm32uv',
+      layout: {
+        sections: [
+          {
+            kind: 'zoneGrouping' as const,
+            zones: [
+              {
+                id: parentZone.id,
+                name: parentZone.name,
+                channelIds: [direct.id],
+              },
+              {
+                id: childZone.id,
+                name: childZone.name,
+                channelIds: [child.id],
+              },
+            ],
+          },
+        ],
+      },
+      channelOverrides: [],
+      zoneOverrides: [],
+      talkGroupOverrides: [],
+      rxGroupListOverrides: [],
+      channelSelections: [],
+      talkGroupSelections: [],
+      rxGroupListSelections: [],
+      digitalContactSelections: [],
+      analogContactSelections: [],
+      contactOverrides: [],
+    };
+
+    const projection = assemble(build, library);
+    const glasgow = projection.zones.find((z) => z.zoneId === parentZone.id);
+    expect(glasgow?.memberChannelIds).toEqual([direct.id, child.id]);
   });
 });
