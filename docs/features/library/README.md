@@ -59,7 +59,7 @@ Digital and analog contacts remain separate models and editor slugs (`digital-co
 
 Zone editor uses `ZoneMemberPicker` — available ↔ in-zone lists for **channels** and **zones**, per-side search, add/remove, and move up/down. Saved `Zone.members` preserves **picker order**; nested zones flatten at export. See [zone-member-picker.md](zone-member-picker.md) and [nested-zones.md](nested-zones.md). Sidecar: `src/app/components/library/ZoneMemberPicker.md`.
 
-The zone editor map uses **Draw this zone** / **Draw other zones** controls: the editing zone hull is full colour; other library zones render muted for reference. Auto-fit zoom uses only the editing zone's member channels (not the full library).
+The zone editor map uses **Draw this zone** / **Draw other zones** controls: the editing zone hull is full colour; other library zones render muted for reference. Channels outside the zone are dimmed on the map (same treatment as out-of-radius channels on zone-from-location). Auto-fit zoom uses only the editing zone's member channels (not the full library).
 
 ### Zone from location ([#181](https://github.com/pskillen/codeplug-studio/issues/181))
 
