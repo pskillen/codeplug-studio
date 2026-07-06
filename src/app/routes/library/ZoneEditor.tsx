@@ -148,6 +148,8 @@ export default function ZoneEditor({
           zones={zonesForMap}
           allChannels={library.channels}
           height={360}
+          mapControlMode="zoneEmphasis"
+          emphasisZoneId={base.id}
           onChannelClick={(id) => navigate(`/library/channels/${id}`)}
         />
         {mapSkipped.length > 0 ? (
