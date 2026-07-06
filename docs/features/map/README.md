@@ -1,8 +1,8 @@
 # Channel map
 
-Tier-1 reference for the **embedded channel map** — plotting library channels with a location on react-leaflet maps inside library list routes.
+Tier-1 reference for the **embedded channel map** — plotting library channels with a location on react-leaflet maps.
 
-**Tracking:** [#22](https://github.com/pskillen/codeplug-studio/issues/22) (replaces standalone `/map` from [#11](https://github.com/pskillen/codeplug-studio/issues/11))
+**Tracking:** [#22](https://github.com/pskillen/codeplug-studio/issues/22) (replaces standalone `/map` from [#11](https://github.com/pskillen/codeplug-studio/issues/11)); unified placement [#180](https://github.com/pskillen/codeplug-studio/issues/180)
 
 **Source:** `src/app/components/CodeplugMap/`, `src/core/domain/geo.ts`, `mapView.ts`, `mapProjection.ts`
 
@@ -10,19 +10,20 @@ Tier-1 reference for the **embedded channel map** — plotting library channels 
 
 ## Where the map lives
 
-There is **no** top-level Map nav item. Legacy `/map` bookmarks redirect to `/library/channels`.
+There is **no** top-level Map nav item. Legacy `/map` bookmarks redirect to `/library/zones?pivot=all`.
 
-| List route          | Map behaviour                                                                    |
-| ------------------- | -------------------------------------------------------------------------------- |
-| `/library/channels` | Full library map; when distance filter is on, map shows the filtered channel set |
-| `/library/zones`    | Full library map below the zone DataTable (tool parity — full context)           |
+| Location                           | Map behaviour                                             |
+| ---------------------------------- | --------------------------------------------------------- |
+| `/summary`                         | **Full library** — all geolocated channels and zone hulls |
+| `/library/zones` (unified screen)  | **Contextual** per pivot — all / orphans / zone-emphasis  |
+| `/library/zones/new-from-location` | Proximity workflow map (radius + hull preview)            |
 
-Summary “view on map” links to `/library/channels`.
+Legacy `/library/channels` redirects to the unified screen (no standalone list map).
 
 ## Component stack
 
 ```text
-ChannelsListPage / ZonesListPage
+ChannelsAndZonesPage / SummaryPage / ZoneFromLocationPage
 └─ CodeplugMap (src/app/components/CodeplugMap/)
    ├─ MapControls — label + zone toggles
    ├─ MaidenheadGridLayer — optional locator grid (Settings)
@@ -39,10 +40,11 @@ Tiles: OpenStreetMap via react-leaflet. Leaflet default marker assets are not us
 
 - Map UI in `src/app/` only; reads library `Channel` / `Zone` via props or `useLibrary()`.
 - No vendor/format concepts on the map surface.
-- Zone membership resolves via UUID `EntityRef` on `Zone.members` — not wire names.
+- Zone membership resolves via UUID refs on `Zone.members` — not wire names.
 
 ## Related
 
+- [zone-pivoted-ui.md](../library/zone-pivoted-ui.md) — pivot map rules
 - [channels.md](channels.md) — marker filters, labels, popups
 - [zones.md](zones.md) — hull geometry, member resolution
 - [maidenhead-grid.md](maidenhead-grid.md) — optional Maidenhead grid overlay ([#45](https://github.com/pskillen/codeplug-studio/issues/45))

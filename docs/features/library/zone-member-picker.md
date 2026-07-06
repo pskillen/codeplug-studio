@@ -1,8 +1,10 @@
 # Zone member picker
 
-Deep dive for **`ZoneMemberPicker`** — the two-list membership editor used on the zone form.
+Deep dive for **`ZoneMemberPicker`** — the legacy two-list membership editor.
 
 **Tracking:** [#25](https://github.com/pskillen/codeplug-studio/issues/25), nested zones [#157](https://github.com/pskillen/codeplug-studio/issues/157)
+
+> **Superseded on zone editor** by the unified channels & zones screen ([#180](https://github.com/pskillen/codeplug-studio/issues/180)). Use `AddChannelsToZoneModal` on `/library/zones` instead. This component remains for reference and may be removed in a follow-up.
 
 ## Purpose
 

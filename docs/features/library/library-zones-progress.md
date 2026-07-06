@@ -6,14 +6,24 @@
 
 ## Status
 
-| Slice                                 | Issue                                                          | Status      | Notes                                                      |
-| ------------------------------------- | -------------------------------------------------------------- | ----------- | ---------------------------------------------------------- |
-| Unified zone-pivoted UI               | [#180](https://github.com/pskillen/codeplug-studio/issues/180) | In progress | Channel table views, zone member actions                   |
-| Create zone from selected channels    | [#154](https://github.com/pskillen/codeplug-studio/issues/154) | Complete    | `ChannelsListPage` selection + `ZoneEditor` location state |
-| Nested zones (denormalised on export) | [#157](https://github.com/pskillen/codeplug-studio/issues/157) | Complete    | Model v6; export flatten + `omitFromExport` v7             |
-| Zone from location (proximity)        | [#181](https://github.com/pskillen/codeplug-studio/issues/181) | Complete    | `/library/zones/new-from-location`; map emphasis modes     |
+| Slice                                 | Issue                                                          | Status   | Notes                                                |
+| ------------------------------------- | -------------------------------------------------------------- | -------- | ---------------------------------------------------- |
+| Unified zone-pivoted UI               | [#180](https://github.com/pskillen/codeplug-studio/issues/180) | Complete | [zone-pivoted-ui.md](zone-pivoted-ui.md)             |
+| Create zone from selected channels    | [#154](https://github.com/pskillen/codeplug-studio/issues/154) | Complete | Toolbar on unified screen                            |
+| Nested zones (denormalised on export) | [#157](https://github.com/pskillen/codeplug-studio/issues/157) | Complete | Model v6; export flatten + `omitFromExport` v7       |
+| Zone from location (proximity)        | [#181](https://github.com/pskillen/codeplug-studio/issues/181) | Complete | `/library/zones/new-from-location`; opens zone pivot |
 
-## Shipped
+## Shipped (#180)
+
+- `feat(core): zone membership helpers for unified library UI`
+- `feat(library): zone-pivoted shell route and pivot navigation`
+- `feat(library): channel table views on zone-pivoted screen`
+- `feat(library): add-channels modal replaces zone member picker`
+- `refactor(library): contextual maps and inline zone CRUD on unified screen`
+- `feat(library): move full-library map to summary and consolidate nav`
+- `docs(library): zone-pivoted channels and zones management`
+
+## Shipped (prior)
 
 - `feat(library): create zone from selected channels`
 - `feat(core): nested zone members and effective channel resolution`
@@ -36,4 +46,4 @@
 
 ## Next
 
-Open PR for [#181](https://github.com/pskillen/codeplug-studio/issues/181); verify on `dev`.
+Open PR for [#180](https://github.com/pskillen/codeplug-studio/issues/180); verify on `dev`.
