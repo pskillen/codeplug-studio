@@ -14,28 +14,28 @@ Repeater search is **not** a top-level nav item — it lives under library workf
 
 ## Implementation status
 
-| Area                               | Status   | Notes                                                                                                                                 |
-| ---------------------------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------- |
-| UK repeater (ETCC) client          | Shipped  | Callsign, locator; town via geocode → locator ([#43](https://github.com/pskillen/codeplug-studio/issues/43))                            |
+| Area                               | Status   | Notes                                                                                                                                                                                                        |
+| ---------------------------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| UK repeater (ETCC) client          | Shipped  | Callsign, locator; town via geocode → locator ([#43](https://github.com/pskillen/codeplug-studio/issues/43))                                                                                                 |
 | UK unified search UI               | Shipped  | Auto-detect query, band + mode client-side filters, use-my-location, bulk add ([#43](https://github.com/pskillen/codeplug-studio/issues/43), [#191](https://github.com/pskillen/codeplug-studio/issues/191)) |
-| Directory search results map       | Shipped  | All directory searches with geolocated listings ([#118](https://github.com/pskillen/codeplug-studio/issues/118))                      |
-| Library channel link on callsign   | Shipped  | Callsign links to channel editor when callsign matches library ([#118](https://github.com/pskillen/codeplug-studio/issues/118))       |
-| BrandMeister client                | Shipped  | Callsign search ([#44](https://github.com/pskillen/codeplug-studio/issues/44))                                                        |
-| BrandMeister shared search shell   | Shipped  | Same results table; UK-only controls hidden ([#44](https://github.com/pskillen/codeplug-studio/issues/44))                            |
-| Update existing (callsign match)   | Shipped  | Outline button → shared comparison dialog                                                                                             |
-| Import duplicate gate (callsign)   | Shipped  | Add blocked only when callsign already in library — not channel `name` ([#53](https://github.com/pskillen/codeplug-studio/issues/53)) |
-| Directory verify on channel edit   | Shipped  | ukrepeater.net always; BrandMeister when DMR profile ([#43](https://github.com/pskillen/codeplug-studio/issues/43))                   |
-| Title case on UK import            | Shipped  | Toggle on search and verify ([#43](https://github.com/pskillen/codeplug-studio/issues/43))                                            |
-| BrandMeister comment on import     | Shipped  | Omitted by default ([#44](https://github.com/pskillen/codeplug-studio/issues/44))                                                     |
-| Full ETCC mode flag parsing        | Shipped  | A/D/E/M/F/P/7/N → library modes                                                                                                       |
-| Multi-mode import (`modeProfiles`) | Shipped  | Typed profiles for FM/DMR/D-STAR/YSF/NXDN/TETRA; P25/M17 stubs                                                                        |
-| Multi-mode channel CRUD            | Shipped  | [#16](https://github.com/pskillen/codeplug-studio/issues/16) — multi-select + tabbed profiles editor                                  |
-| `maidenheadLocator` on import      | Shipped  | [#28](https://github.com/pskillen/codeplug-studio/issues/28) — from ETCC locator or derived coords                                    |
-| BrandMeister TG + RX list import   | Shipped  | [#65](https://github.com/pskillen/codeplug-studio/issues/65) — optional on add; dedupe TGs by `digitalId`                             |
-| BrandMeister RX list verify sync   | Shipped  | [#65](https://github.com/pskillen/codeplug-studio/issues/65) — update or fork shared list after channel diff                          |
-| Bulk verify from channel list      | Deferred | [#49](https://github.com/pskillen/codeplug-studio/issues/49) — separate PR                                                            |
-| ETCC keeper endpoint               | Deferred | Not in archive query router                                                                                                           |
-| Offline result cache               | Deferred | In-session only                                                                                                                       |
+| Directory search results map       | Shipped  | All directory searches with geolocated listings ([#118](https://github.com/pskillen/codeplug-studio/issues/118))                                                                                             |
+| Library channel link on callsign   | Shipped  | Callsign links to channel editor when callsign matches library ([#118](https://github.com/pskillen/codeplug-studio/issues/118))                                                                              |
+| BrandMeister client                | Shipped  | Callsign search ([#44](https://github.com/pskillen/codeplug-studio/issues/44))                                                                                                                               |
+| BrandMeister shared search shell   | Shipped  | Same results table; UK-only controls hidden ([#44](https://github.com/pskillen/codeplug-studio/issues/44))                                                                                                   |
+| Update existing (callsign match)   | Shipped  | Outline button → shared comparison dialog                                                                                                                                                                    |
+| Import duplicate gate (callsign)   | Shipped  | Add blocked only when callsign already in library — not channel `name` ([#53](https://github.com/pskillen/codeplug-studio/issues/53))                                                                        |
+| Directory verify on channel edit   | Shipped  | ukrepeater.net always; BrandMeister when DMR profile ([#43](https://github.com/pskillen/codeplug-studio/issues/43))                                                                                          |
+| Title case on UK import            | Shipped  | Toggle on search and verify ([#43](https://github.com/pskillen/codeplug-studio/issues/43))                                                                                                                   |
+| BrandMeister comment on import     | Shipped  | Omitted by default ([#44](https://github.com/pskillen/codeplug-studio/issues/44))                                                                                                                            |
+| Full ETCC mode flag parsing        | Shipped  | A/D/E/M/F/P/7/N → library modes                                                                                                                                                                              |
+| Multi-mode import (`modeProfiles`) | Shipped  | Typed profiles for FM/DMR/D-STAR/YSF/NXDN/TETRA; P25/M17 stubs                                                                                                                                               |
+| Multi-mode channel CRUD            | Shipped  | [#16](https://github.com/pskillen/codeplug-studio/issues/16) — multi-select + tabbed profiles editor                                                                                                         |
+| `maidenheadLocator` on import      | Shipped  | [#28](https://github.com/pskillen/codeplug-studio/issues/28) — from ETCC locator or derived coords                                                                                                           |
+| BrandMeister TG + RX list import   | Shipped  | [#65](https://github.com/pskillen/codeplug-studio/issues/65) — optional on add; dedupe TGs by `digitalId`                                                                                                    |
+| BrandMeister RX list verify sync   | Shipped  | [#65](https://github.com/pskillen/codeplug-studio/issues/65) — update or fork shared list after channel diff                                                                                                 |
+| Bulk verify from channel list      | Deferred | [#49](https://github.com/pskillen/codeplug-studio/issues/49) — separate PR                                                                                                                                   |
+| ETCC keeper endpoint               | Deferred | Not in archive query router                                                                                                                                                                                  |
+| Offline result cache               | Deferred | In-session only                                                                                                                                                                                              |
 
 ## Documentation map
 
@@ -63,10 +63,10 @@ Repeater search is **not** a top-level nav item — it lives under library workf
 
 ## Sources
 
-| Source                  | Client / router                                   | Search by                               | Wire notes                                           |
-| ----------------------- | ------------------------------------------------- | --------------------------------------- | ---------------------------------------------------- |
+| Source                  | Client / router                                   | Search by                                                             | Wire notes                                           |
+| ----------------------- | ------------------------------------------------- | --------------------------------------------------------------------- | ---------------------------------------------------- |
 | UK repeater (RSGB ETCC) | `searchUkRepeaters` / `ukrepeater/queryRouter.ts` | callsign, locator, town (geocode); band + mode via post-fetch filters | `tx`/`rx` in Hz; `modeCodes[]`; Maidenhead `locator` |
-| BrandMeister            | `searchBrandmeisterByCallsign`                    | callsign only                           | DMR devices; `tx`/`rx` MHz strings; `lat`/`lng`      |
+| BrandMeister            | `searchBrandmeisterByCallsign`                    | callsign only                                                         | DMR devices; `tx`/`rx` MHz strings; `lat`/`lng`      |
 
 Both clients normalise to `RepeaterListing` (`src/integrations/repeaters/types.ts`).
 
@@ -82,15 +82,15 @@ flowchart LR
   API --> Client --> Listing --> Map --> Lib
 ```
 
-| Step            | Module                                                                                                              | Output                                                                                              |
-| --------------- | ------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------- |
-| HTTP + parse    | `ukRepeaterClient.ts`, `brandmeisterClient.ts`                                                                      | `RepeaterListing`                                                                                   |
+| Step            | Module                                                                                                              | Output                                                                                                                                                     |
+| --------------- | ------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| HTTP + parse    | `ukRepeaterClient.ts`, `brandmeisterClient.ts`                                                                      | `RepeaterListing`                                                                                                                                          |
 | Query routing   | `ukrepeater/queryRouter.ts`                                                                                         | Auto-detect kind; geocode → locator; band + mode narrowed in `filterListings` after fetch ([#191](https://github.com/pskillen/codeplug-studio/issues/191)) |
-| Mode flags (UK) | `ukrepeater/modeCodes.ts`                                                                                           | `modes[]`, `primaryMode`, `colourCode`                                                              |
-| Profiles        | `buildModeProfiles.ts`                                                                                              | `modeProfiles[]` on `Channel`                                                                       |
-| Add             | `RepeaterDirectorySearch.tsx` → `persistence.putChannel` (UK) or `persistBrandMeisterImport` (BM + optional TG/RGL) | New library row(s)                                                                                  |
-| Verify / update | `RepeaterVerifyPanel.tsx`, `RepeaterListingUpdateDialog.tsx`, `BrandmeisterRxGroupListSyncDialog.tsx`               | `channelDiff.ts` patch; RX list sync ([#65](https://github.com/pskillen/codeplug-studio/issues/65)) |
-| Listing match   | `matchListing.ts`                                                                                                   | Auto-pick on verify when unambiguous                                                                |
+| Mode flags (UK) | `ukrepeater/modeCodes.ts`                                                                                           | `modes[]`, `primaryMode`, `colourCode`                                                                                                                     |
+| Profiles        | `buildModeProfiles.ts`                                                                                              | `modeProfiles[]` on `Channel`                                                                                                                              |
+| Add             | `RepeaterDirectorySearch.tsx` → `persistence.putChannel` (UK) or `persistBrandMeisterImport` (BM + optional TG/RGL) | New library row(s)                                                                                                                                         |
+| Verify / update | `RepeaterVerifyPanel.tsx`, `RepeaterListingUpdateDialog.tsx`, `BrandmeisterRxGroupListSyncDialog.tsx`               | `channelDiff.ts` patch; RX list sync ([#65](https://github.com/pskillen/codeplug-studio/issues/65))                                                        |
+| Listing match   | `matchListing.ts`                                                                                                   | Auto-pick on verify when unambiguous                                                                                                                       |
 
 Frequency convention: `rxFrequencyHz` is what the radio **receives** (repeater output); `txFrequencyHz` is what it **transmits** (repeater input). ETCC field names are inverted — documented in [ukrepeater reference](../../reference/ukrepeater/README.md#frequency-inversion-critical).
 

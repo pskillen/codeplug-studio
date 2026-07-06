@@ -299,9 +299,7 @@ export default function RepeaterDirectorySearch({
           <Group align="flex-end" wrap="wrap">
             <TextInput
               label="Search"
-              placeholder={
-                capabilities.unifiedQuery ? 'Callsign, locator, or town' : 'e.g. GB3RF'
-              }
+              placeholder={capabilities.unifiedQuery ? 'Callsign, locator, or town' : 'e.g. GB3RF'}
               value={search.query}
               onChange={(e) => search.setQuery(e.currentTarget.value)}
               onKeyDown={(e) => {

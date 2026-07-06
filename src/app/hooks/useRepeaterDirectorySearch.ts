@@ -63,9 +63,7 @@ export function useRepeaterDirectorySearch(source: RepeaterSource) {
           setKind('band');
           setListings([]);
           const label = bandFromWireLabel(bandValue)?.label ?? bandValue;
-          setError(
-            `Band filter set to ${label} — enter a callsign, locator, or town to search.`,
-          );
+          setError(`Band filter set to ${label} — enter a callsign, locator, or town to search.`);
           return;
         }
 
