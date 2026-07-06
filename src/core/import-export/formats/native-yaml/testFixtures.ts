@@ -237,3 +237,30 @@ export function nestedZonesAggregate(): ProjectAggregate {
     zones: [childZone, parentZone, ...base.zones],
   };
 }
+
+/** Glasgow nests PMR446; PMR446 is omitFromExport (nested-only building block). */
+export function glasgowPmrNestedAggregate(): ProjectAggregate {
+  const base = fullLibraryAggregate();
+  const projectId = FIXTURE_PROJECT_ID;
+  const pmrZone: Zone = {
+    ...rowMeta(projectId, FIXTURE_CHILD_ZONE_ID),
+    name: 'PMR446',
+    omitFromExport: true,
+    members: [{ kind: 'channel', channelId: FIXTURE_CHANNEL_A_ID }],
+    comment: '',
+  };
+  const glasgowZone: Zone = {
+    ...rowMeta(projectId, FIXTURE_PARENT_ZONE_ID),
+    name: 'Glasgow',
+    members: [
+      { kind: 'channel', channelId: FIXTURE_CHANNEL_B_ID },
+      { kind: 'zone', zoneId: FIXTURE_CHILD_ZONE_ID },
+    ],
+    comment: '',
+  };
+  return {
+    ...base,
+    zones: [pmrZone, glasgowZone],
+    formatBuilds: [],
+  };
+}

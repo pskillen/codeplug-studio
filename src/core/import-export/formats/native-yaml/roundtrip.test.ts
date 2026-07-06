@@ -8,6 +8,7 @@ import {
   FIXTURE_CHANNEL_B_ID,
   FIXTURE_CHILD_ZONE_ID,
   FIXTURE_PARENT_ZONE_ID,
+  glasgowPmrNestedAggregate,
   nestedZonesAggregate,
   projectWithFormatBuildAggregate,
 } from './testFixtures.ts';
@@ -53,5 +54,13 @@ describe('native-yaml round-trip smoke', () => {
       { kind: 'zone', zoneId: FIXTURE_CHILD_ZONE_ID },
       { kind: 'channel', channelId: FIXTURE_CHANNEL_B_ID },
     ]);
+  });
+
+  it('preserves omitFromExport on round-trip', () => {
+    const aggregate = glasgowPmrNestedAggregate();
+    const parsed = parseProjectDocument(serialiseProject(aggregate));
+    const pmr = parsed.zones.find((zone) => zone.id === FIXTURE_CHILD_ZONE_ID);
+    expect(pmr?.omitFromExport).toBe(true);
+    expect(pmr?.name).toBe('PMR446');
   });
 });
