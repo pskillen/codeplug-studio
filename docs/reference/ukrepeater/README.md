@@ -24,7 +24,7 @@ Additional ETCC endpoints exist on the API but are not wired in the Studio UI ye
 
 | Endpoint         | Example                  | Returns                          |
 | ---------------- | ------------------------ | -------------------------------- |
-| `/band/{band}`   | `/band/2m`, `/band/70cm` | Listings on band (large payload) |
+| `/band/{band}`   | `/band/2m`, `/band/70cm` | Listings on band (large payload) — **not used by Studio UI**; band narrowing is client-side after `/callsign/` or `/locator/` fetch ([#191](https://github.com/pskillen/codeplug-studio/issues/191)) |
 | `/keeper/{call}` | `/keeper/g7npw`          | Listings for keeper callsign     |
 | `/all/systems`   | —                        | All public listings              |
 

@@ -2,7 +2,7 @@
 
 Tier-1 reference for **public repeater directory** workflows — searching ukrepeater.net (RSGB ETCC) and BrandMeister, importing results into the vendor-neutral library, and verifying existing channels against directory data.
 
-**Tracking:** Phase 2 [#11](https://github.com/pskillen/codeplug-studio/issues/11) (Epic [#1](https://github.com/pskillen/codeplug-studio/issues/1)) · Search parity [#43](https://github.com/pskillen/codeplug-studio/issues/43) · BrandMeister parity [#44](https://github.com/pskillen/codeplug-studio/issues/44) · Callsign-only import gate [#53](https://github.com/pskillen/codeplug-studio/issues/53) · BrandMeister TG + RX list [#65](https://github.com/pskillen/codeplug-studio/issues/65)
+**Tracking:** Phase 2 [#11](https://github.com/pskillen/codeplug-studio/issues/11) (Epic [#1](https://github.com/pskillen/codeplug-studio/issues/1)) · Search parity [#43](https://github.com/pskillen/codeplug-studio/issues/43) · BrandMeister parity [#44](https://github.com/pskillen/codeplug-studio/issues/44) · Callsign-only import gate [#53](https://github.com/pskillen/codeplug-studio/issues/53) · BrandMeister TG + RX list [#65](https://github.com/pskillen/codeplug-studio/issues/65) · UK client-side filters [#191](https://github.com/pskillen/codeplug-studio/issues/191)
 
 **Source:** `src/app/routes/library/AddFrom*Page.tsx`, `src/app/components/repeaters/`, `src/integrations/repeaters/`
 
@@ -16,8 +16,8 @@ Repeater search is **not** a top-level nav item — it lives under library workf
 
 | Area                               | Status   | Notes                                                                                                                                 |
 | ---------------------------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------- |
-| UK repeater (ETCC) client          | Shipped  | Callsign, locator, band; town via geocode → locator ([#43](https://github.com/pskillen/codeplug-studio/issues/43))                    |
-| UK unified search UI               | Shipped  | Auto-detect query, filters, use-my-location, bulk add, simplex display ([#43](https://github.com/pskillen/codeplug-studio/issues/43)) |
+| UK repeater (ETCC) client          | Shipped  | Callsign, locator; town via geocode → locator ([#43](https://github.com/pskillen/codeplug-studio/issues/43))                            |
+| UK unified search UI               | Shipped  | Auto-detect query, band + mode client-side filters, use-my-location, bulk add ([#43](https://github.com/pskillen/codeplug-studio/issues/43), [#191](https://github.com/pskillen/codeplug-studio/issues/191)) |
 | Directory search results map       | Shipped  | All directory searches with geolocated listings ([#118](https://github.com/pskillen/codeplug-studio/issues/118))                      |
 | Library channel link on callsign   | Shipped  | Callsign links to channel editor when callsign matches library ([#118](https://github.com/pskillen/codeplug-studio/issues/118))       |
 | BrandMeister client                | Shipped  | Callsign search ([#44](https://github.com/pskillen/codeplug-studio/issues/44))                                                        |
@@ -65,7 +65,7 @@ Repeater search is **not** a top-level nav item — it lives under library workf
 
 | Source                  | Client / router                                   | Search by                               | Wire notes                                           |
 | ----------------------- | ------------------------------------------------- | --------------------------------------- | ---------------------------------------------------- |
-| UK repeater (RSGB ETCC) | `searchUkRepeaters` / `ukrepeater/queryRouter.ts` | callsign, locator, band, town (geocode) | `tx`/`rx` in Hz; `modeCodes[]`; Maidenhead `locator` |
+| UK repeater (RSGB ETCC) | `searchUkRepeaters` / `ukrepeater/queryRouter.ts` | callsign, locator, town (geocode); band + mode via post-fetch filters | `tx`/`rx` in Hz; `modeCodes[]`; Maidenhead `locator` |
 | BrandMeister            | `searchBrandmeisterByCallsign`                    | callsign only                           | DMR devices; `tx`/`rx` MHz strings; `lat`/`lng`      |
 
 Both clients normalise to `RepeaterListing` (`src/integrations/repeaters/types.ts`).
@@ -85,7 +85,7 @@ flowchart LR
 | Step            | Module                                                                                                              | Output                                                                                              |
 | --------------- | ------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------- |
 | HTTP + parse    | `ukRepeaterClient.ts`, `brandmeisterClient.ts`                                                                      | `RepeaterListing`                                                                                   |
-| Query routing   | `ukrepeater/queryRouter.ts`                                                                                         | Auto-detect kind; geocode → locator                                                                 |
+| Query routing   | `ukrepeater/queryRouter.ts`                                                                                         | Auto-detect kind; geocode → locator; band + mode narrowed in `filterListings` after fetch ([#191](https://github.com/pskillen/codeplug-studio/issues/191)) |
 | Mode flags (UK) | `ukrepeater/modeCodes.ts`                                                                                           | `modes[]`, `primaryMode`, `colourCode`                                                              |
 | Profiles        | `buildModeProfiles.ts`                                                                                              | `modeProfiles[]` on `Channel`                                                                       |
 | Add             | `RepeaterDirectorySearch.tsx` → `persistence.putChannel` (UK) or `persistBrandMeisterImport` (BM + optional TG/RGL) | New library row(s)                                                                                  |
@@ -134,7 +134,7 @@ Example: `modeCodes: ["A", "D", "M:1", "F", "P", "N"]` → six profiles on impor
 ## Manual verify
 
 1. Create/select a project with an empty library.
-2. Library → _Add from ukrepeater.net_ → search `gb3da`, `io91`, `2m`, or a town name → confirm filters and simplex rows.
+2. Library → _Add from ukrepeater.net_ → search `gb3da`, `io91`, or a town name with band and/or mode filters applied → confirm filtered results and simplex rows. Typing a band token (e.g. `2m`) sets the band filter and prompts for a callsign, locator, or town.
 3. _Use my location_ seeds a locator search.
 4. Bulk-select results → _Add selected_.
 5. Library → _Add from BrandMeister_ → search `GB7AC` → confirm **Import talk groups and RX group list** (default on) creates channel, talk groups, and RX list; DMR profile linked.
