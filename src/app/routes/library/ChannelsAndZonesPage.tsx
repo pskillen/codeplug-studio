@@ -5,6 +5,7 @@ import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { newZone } from '@core/domain/factories.ts';
 import ZonePivotPanel, { pivotLabel } from '../../components/library/ZonePivotPanel.tsx';
 import LibraryChannelTable from '../../components/library/LibraryChannelTable.tsx';
+import AddChannelsToZoneModal from '../../components/library/AddChannelsToZoneModal.tsx';
 import { ListPage } from '../../components/ui/index.ts';
 import { useChannelListQuery } from '../../hooks/useChannelListQuery.ts';
 import { useZonePivotChannelRows } from '../../hooks/useZonePivotChannelRows.ts';
@@ -21,6 +22,7 @@ export default function ChannelsAndZonesPage() {
   const navigate = useNavigate();
   const query = useChannelListQuery();
   const [selectedKeys, setSelectedKeys] = useState<string[]>([]);
+  const [addModalOpen, setAddModalOpen] = useState(false);
 
   const pivot = useMemo(() => parseZonePivotSearch(location.search), [location.search]);
 
@@ -80,6 +82,16 @@ export default function ChannelsAndZonesPage() {
       >
         New zone from selected
       </Button>
+      {pivot.pivot === 'zone' ? (
+        <Button variant="light" size="compact-sm" onClick={() => setAddModalOpen(true)}>
+          Add channels…
+        </Button>
+      ) : null}
+      {pivot.pivot === 'orphans' ? (
+        <Button variant="light" size="compact-sm" onClick={() => setAddModalOpen(true)}>
+          Add to zone…
+        </Button>
+      ) : null}
       {pivot.pivot !== 'zone' ? (
         <Button variant="light" size="compact-sm" onClick={() => void handleCreateEmptyZone()}>
           New zone
@@ -118,6 +130,12 @@ export default function ChannelsAndZonesPage() {
           />
         </Stack>
       </Group>
+      <AddChannelsToZoneModal
+        opened={addModalOpen}
+        onClose={() => setAddModalOpen(false)}
+        library={library}
+        targetZone={pivot.pivot === 'zone' ? activeZone : null}
+      />
     </ListPage>
   );
 }
