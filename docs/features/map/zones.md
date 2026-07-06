@@ -13,6 +13,7 @@ Channel filtering and the plotted-channel index are defined in [channels.md](cha
 | `uniqueLatLon`                   | `src/core/domain/geo.ts`                         | Dedupe sites to 5 decimal places                       |
 | `convexHullLatLon`               | same                                             | Andrew's monotone chain on `[lat, lon]`                |
 | `zoneColor`                      | same                                             | Distinct hue per zone index                            |
+| `selectChannelsWithinRadius`     | `src/core/domain/proximityZone.ts`               | Channels within radius of a point (zone-from-location) |
 | Zone hull rendering              | `src/app/components/CodeplugMap/CodeplugMap.tsx` | Circle / polyline / polygon layers                     |
 
 ## Inputs — the `Zone` model
@@ -26,9 +27,23 @@ Duplicate member ids within one zone are deduplicated while preserving first-occ
 
 ## Controls
 
+### Standard map (`mapControlMode: 'standard'`)
+
 | Control    | Default | Effect                          |
 | ---------- | ------- | ------------------------------- |
 | Draw zones | on      | When off, no hull layers render |
+
+### Zone emphasis maps (`zoneEmphasis` / `zoneFromLocation`)
+
+Used on the zone editor and **zone from location** page.
+
+| Control          | Default | Effect                                                                    |
+| ---------------- | ------- | ------------------------------------------------------------------------- |
+| Draw this zone   | on      | Solid hull for the editing zone (`emphasisZoneId`)                        |
+| Draw new zone    | on      | Dashed provisional hull from selected channel coords (from-location only) |
+| Draw other zones | on      | Muted grey hulls for other library zones                                  |
+
+**Proximity preview** (zone from location): `referencePosition` + `referenceRadiusM` draw a centre pin and radius circle; `dimmedChannelIds` lowers marker opacity for channels outside the radius.
 
 The fixed coordinate filters (`useLocation`, skip `0,0`) apply to hull points the same way as markers.
 

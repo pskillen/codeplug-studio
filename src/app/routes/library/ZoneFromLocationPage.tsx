@@ -12,7 +12,7 @@ import {
   TextInput,
 } from '@mantine/core';
 import { useDebouncedValue } from '@mantine/hooks';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
   selectChannelsWithinRadius,
@@ -124,14 +124,13 @@ export default function ZoneFromLocationPage() {
     setLocatorError(null);
   }, []);
 
-  useEffect(() => {
-    if (nameEdited || !centre) return;
-    if (centre.label) {
-      setZoneName(centre.label);
-      return;
-    }
-    setZoneName(`Zone near ${coordsToLocator(centre.lat, centre.lon, 6)}`);
-  }, [centre, nameEdited]);
+  const suggestedZoneName = useMemo(() => {
+    if (!centre) return '';
+    if (centre.label) return centre.label;
+    return `Zone near ${coordsToLocator(centre.lat, centre.lon, 6)}`;
+  }, [centre]);
+
+  const resolvedZoneName = nameEdited ? zoneName : suggestedZoneName;
 
   const handleLocatorChange = (value: string) => {
     setLocator(value);
@@ -186,7 +185,7 @@ export default function ZoneFromLocationPage() {
 
   const handleCreate = () => {
     if (!projectId || !centre || selection.channelIds.length === 0) return;
-    const trimmedName = zoneName.trim();
+    const trimmedName = resolvedZoneName.trim();
     if (!trimmedName) {
       setError('Enter a zone name');
       return;
@@ -255,7 +254,8 @@ export default function ZoneFromLocationPage() {
     );
   }
 
-  const canCreate = centre != null && selection.channelIds.length > 0 && zoneName.trim().length > 0;
+  const canCreate =
+    centre != null && selection.channelIds.length > 0 && resolvedZoneName.trim().length > 0;
 
   return (
     <FormPage
@@ -385,7 +385,7 @@ export default function ZoneFromLocationPage() {
             dimmedChannelIds={centre ? dimmedChannelIds : []}
             provisionalZone={
               selection.channelIds.length > 0
-                ? { channelIds: selection.channelIds, label: zoneName.trim() || 'New zone' }
+                ? { channelIds: selection.channelIds, label: resolvedZoneName.trim() || 'New zone' }
                 : null
             }
             onMapClick={(lat, lon) => applyCentre(lat, lon)}
@@ -428,7 +428,7 @@ export default function ZoneFromLocationPage() {
         <FormSection title="Zone name">
           <TextInput
             label="Name"
-            value={zoneName}
+            value={resolvedZoneName}
             onChange={(e) => {
               setNameEdited(true);
               setZoneName(e.currentTarget.value);

@@ -67,7 +67,9 @@ interface OverlayHullData {
 
 const MUTED_HULL_STROKE = '#868e96';
 
-function geometryFromPoints(points: LatLon[]): Pick<OverlayHullData, 'geometry' | 'hull' | 'shapeNote'> {
+function geometryFromPoints(
+  points: LatLon[],
+): Pick<OverlayHullData, 'geometry' | 'hull' | 'shapeNote'> {
   if (points.length === 0) {
     return { geometry: 'none', shapeNote: 'no geolocated members' };
   }
@@ -283,8 +285,7 @@ function FitMapBounds({
   const map = useMap();
 
   useEffect(() => {
-    const zonePoints =
-      hullPoints ?? (showZoneHulls ? zoneHulls.flatMap((zh) => zh.points) : []);
+    const zonePoints = hullPoints ?? (showZoneHulls ? zoneHulls.flatMap((zh) => zh.points) : []);
     const includeZones = zonePoints.length > 0;
     const extraPoints: LatLon[] = [];
     if (
@@ -549,14 +550,7 @@ export default function CodeplugMap({
     }
 
     return overlays;
-  }, [
-    isEmphasisMode,
-    showThisZone,
-    showOtherZones,
-    emphasisZoneId,
-    zoneHulls,
-    provisionalHull,
-  ]);
+  }, [isEmphasisMode, showThisZone, showOtherZones, emphasisZoneId, zoneHulls, provisionalHull]);
 
   const mapStyle = typeof height === 'number' ? { height: `${height}px` } : { height };
 
