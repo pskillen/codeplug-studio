@@ -34,10 +34,7 @@ describe('assemble', () => {
 
     expect(projection.zones).toHaveLength(1);
     expect(projection.zones[0]?.wireName).toBe('Edinburgh');
-    expect(projection.zones[0]?.memberChannelIds).toEqual([
-      '22222222-2222-4222-8222-222222222222',
-      '33333333-3333-4333-8333-333333333333',
-    ]);
+    expect(projection.zones[0]?.memberChannelIds).toEqual(['22222222-2222-4222-8222-222222222222']);
 
     expect(projection.talkGroups).toHaveLength(1);
     expect(projection.talkGroups[0]?.wireName).toBe('Scotland');
@@ -195,6 +192,279 @@ describe('assemble', () => {
 
     const projection = assemble(build, library);
     expect(projection.channels.map((row) => row.entity.id)).not.toContain(orphanChannel.id);
-    expect(projection.channels).toHaveLength(2);
+    expect(projection.channels).toHaveLength(1);
+    expect(projection.channels[0]?.entity.id).toBe('22222222-2222-4222-8222-222222222222');
+  });
+
+  it('flattens nested library zones into assembled member channel ids', () => {
+    const projectId = 'proj-nested';
+    const child = {
+      ...newChannel(projectId, 'Child ch'),
+      id: 'ch-child',
+    };
+    const childZone = {
+      id: 'zone-child',
+      projectId,
+      revision: 1,
+      updatedAt: '2026-01-01T00:00:00.000Z',
+      name: 'Child',
+      comment: '',
+      members: [{ kind: 'channel' as const, channelId: child.id }],
+    };
+    const parentZone = {
+      id: 'zone-parent',
+      projectId,
+      revision: 1,
+      updatedAt: '2026-01-01T00:00:00.000Z',
+      name: 'Parent',
+      comment: '',
+      members: [{ kind: 'zone' as const, zoneId: childZone.id }],
+    };
+    const library = {
+      channels: [child],
+      zones: [childZone, parentZone],
+      talkGroups: [],
+      digitalContacts: [],
+      analogContacts: [],
+      rxGroupLists: [],
+    };
+    const build = {
+      id: 'build-1',
+      projectId,
+      revision: 1,
+      updatedAt: '2026-01-01T00:00:00.000Z',
+      name: 'Nested test',
+      formatId: 'opengd77',
+      profileId: 'opengd77-1701',
+      layout: { sections: [] },
+      channelOverrides: [],
+      zoneOverrides: [],
+      talkGroupOverrides: [],
+      rxGroupListOverrides: [],
+      channelSelections: [],
+      talkGroupSelections: [],
+      rxGroupListSelections: [],
+      digitalContactSelections: [],
+      analogContactSelections: [],
+      contactOverrides: [],
+    };
+
+    const projection = assemble(build, library);
+    const parent = projection.zones.find((z) => z.zoneId === parentZone.id);
+    expect(parent?.memberChannelIds).toEqual([child.id]);
+  });
+
+  it('flattens nested zones when build has stale zoneGrouping channelIds', () => {
+    const projectId = 'proj-nested-layout';
+    const child = {
+      ...newChannel(projectId, 'PMR ch'),
+      id: 'ch-pmr',
+    };
+    const direct = {
+      ...newChannel(projectId, 'Glasgow ch'),
+      id: 'ch-glasgow',
+    };
+    const childZone = {
+      id: 'zone-pmr',
+      projectId,
+      revision: 1,
+      updatedAt: '2026-01-01T00:00:00.000Z',
+      name: 'PMR446',
+      comment: '',
+      members: [{ kind: 'channel' as const, channelId: child.id }],
+    };
+    const parentZone = {
+      id: 'zone-glasgow',
+      projectId,
+      revision: 1,
+      updatedAt: '2026-01-01T00:00:00.000Z',
+      name: 'Glasgow',
+      comment: '',
+      members: [
+        { kind: 'channel' as const, channelId: direct.id },
+        { kind: 'zone' as const, zoneId: childZone.id },
+      ],
+    };
+    const library = {
+      channels: [child, direct],
+      zones: [childZone, parentZone],
+      talkGroups: [],
+      digitalContacts: [],
+      analogContacts: [],
+      rxGroupLists: [],
+    };
+    const build = {
+      id: 'build-layout',
+      projectId,
+      revision: 1,
+      updatedAt: '2026-01-01T00:00:00.000Z',
+      name: 'Nested layout test',
+      formatId: 'dm32',
+      profileId: 'dm32-baofeng-dm32uv',
+      layout: {
+        sections: [
+          {
+            kind: 'zoneGrouping' as const,
+            zones: [
+              {
+                id: parentZone.id,
+                name: parentZone.name,
+                channelIds: [direct.id],
+              },
+              {
+                id: childZone.id,
+                name: childZone.name,
+                channelIds: [child.id],
+              },
+            ],
+          },
+        ],
+      },
+      channelOverrides: [],
+      zoneOverrides: [],
+      talkGroupOverrides: [],
+      rxGroupListOverrides: [],
+      channelSelections: [],
+      talkGroupSelections: [],
+      rxGroupListSelections: [],
+      digitalContactSelections: [],
+      analogContactSelections: [],
+      contactOverrides: [],
+    };
+
+    const projection = assemble(build, library);
+    const glasgow = projection.zones.find((z) => z.zoneId === parentZone.id);
+    expect(glasgow?.memberChannelIds).toEqual([direct.id, child.id]);
+  });
+
+  it('omits nested-only zones from export but flattens into parent', () => {
+    const projectId = 'proj-omit';
+    const pmr = {
+      ...newChannel(projectId, 'PMR ch'),
+      id: 'ch-pmr',
+    };
+    const glasgowCh = {
+      ...newChannel(projectId, 'Glasgow ch'),
+      id: 'ch-glasgow',
+    };
+    const pmrZone = {
+      id: 'zone-pmr',
+      projectId,
+      revision: 1,
+      updatedAt: '2026-01-01T00:00:00.000Z',
+      name: 'PMR446',
+      comment: '',
+      omitFromExport: true,
+      members: [{ kind: 'channel' as const, channelId: pmr.id }],
+    };
+    const glasgowZone = {
+      id: 'zone-glasgow',
+      projectId,
+      revision: 1,
+      updatedAt: '2026-01-01T00:00:00.000Z',
+      name: 'Glasgow',
+      comment: '',
+      members: [
+        { kind: 'channel' as const, channelId: glasgowCh.id },
+        { kind: 'zone' as const, zoneId: pmrZone.id },
+      ],
+    };
+    const library = {
+      channels: [pmr, glasgowCh],
+      zones: [pmrZone, glasgowZone],
+      talkGroups: [],
+      digitalContacts: [],
+      analogContacts: [],
+      rxGroupLists: [],
+    };
+    const build = {
+      id: 'build-omit',
+      projectId,
+      revision: 1,
+      updatedAt: '2026-01-01T00:00:00.000Z',
+      name: 'Omit test',
+      formatId: 'opengd77',
+      profileId: 'opengd77-1701',
+      layout: { sections: [] },
+      channelOverrides: [],
+      zoneOverrides: [],
+      talkGroupOverrides: [],
+      rxGroupListOverrides: [],
+      channelSelections: [],
+      talkGroupSelections: [],
+      rxGroupListSelections: [],
+      digitalContactSelections: [],
+      analogContactSelections: [],
+      contactOverrides: [],
+    };
+
+    const projection = assemble(build, library);
+    expect(projection.zones.map((z) => z.zoneId)).toEqual([glasgowZone.id]);
+    const glasgow = projection.zones.find((z) => z.zoneId === glasgowZone.id);
+    expect(glasgow?.memberChannelIds).toEqual([glasgowCh.id, pmr.id]);
+  });
+
+  it('excludes channels from standalone omitFromExport zones not nested in a parent', () => {
+    const projectId = 'proj-omit-orphan';
+    const pmr = {
+      ...newChannel(projectId, 'PMR ch'),
+      id: 'ch-pmr',
+    };
+    const other = {
+      ...newChannel(projectId, 'Other ch'),
+      id: 'ch-other',
+    };
+    const pmrZone = {
+      id: 'zone-pmr',
+      projectId,
+      revision: 1,
+      updatedAt: '2026-01-01T00:00:00.000Z',
+      name: 'PMR446',
+      comment: '',
+      omitFromExport: true,
+      members: [{ kind: 'channel' as const, channelId: pmr.id }],
+    };
+    const glasgowZone = {
+      id: 'zone-glasgow',
+      projectId,
+      revision: 1,
+      updatedAt: '2026-01-01T00:00:00.000Z',
+      name: 'Glasgow',
+      comment: '',
+      members: [{ kind: 'channel' as const, channelId: other.id }],
+    };
+    const library = {
+      channels: [pmr, other],
+      zones: [pmrZone, glasgowZone],
+      talkGroups: [],
+      digitalContacts: [],
+      analogContacts: [],
+      rxGroupLists: [],
+    };
+    const build = {
+      id: 'build-omit-orphan',
+      projectId,
+      revision: 1,
+      updatedAt: '2026-01-01T00:00:00.000Z',
+      name: 'Omit orphan test',
+      formatId: 'opengd77',
+      profileId: 'opengd77-1701',
+      layout: { sections: [] },
+      channelOverrides: [],
+      zoneOverrides: [],
+      talkGroupOverrides: [],
+      rxGroupListOverrides: [],
+      channelSelections: [],
+      talkGroupSelections: [],
+      rxGroupListSelections: [],
+      digitalContactSelections: [],
+      analogContactSelections: [],
+      contactOverrides: [],
+    };
+
+    const projection = assemble(build, library);
+    expect(projection.zones.map((z) => z.zoneId)).toEqual([glasgowZone.id]);
+    expect(projection.channels.map((c) => c.entity.id)).toEqual([other.id]);
+    expect(projection.channels.some((c) => c.entity.id === pmr.id)).toBe(false);
   });
 });

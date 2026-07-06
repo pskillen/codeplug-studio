@@ -8,7 +8,7 @@ function migrateZoneMembers(zone: Zone): Zone {
   return changed ? { ...zone, members } : zone;
 }
 
-/** Migrate legacy zone member EntityRef[] to ZoneMemberEntry[] (schema v5). */
+/** Migrate zone members to discriminated union entries (schema v6). */
 export function migrateZoneMemberEntries(aggregate: ProjectAggregate): ProjectAggregate {
   let changed = false;
   const zones = aggregate.zones.map((zone) => {

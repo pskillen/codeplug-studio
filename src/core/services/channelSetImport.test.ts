@@ -24,7 +24,11 @@ describe('buildChannelSetImportPlan', () => {
     });
     expect(plan.zone?.name).toBe('VHF Simplex');
     expect(plan.zone?.members).toHaveLength(plan.channelsToAdd.length);
-    expect(plan.zone?.members[0]?.channelId).toBe(plan.channelsToAdd[0]?.id);
+    const firstMember = plan.zone?.members[0];
+    expect(firstMember?.kind).toBe('channel');
+    if (firstMember?.kind === 'channel') {
+      expect(firstMember.channelId).toBe(plan.channelsToAdd[0]?.id);
+    }
   });
 
   it('does not create a zone when all channels are skipped', () => {

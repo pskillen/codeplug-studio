@@ -28,7 +28,7 @@ export interface ChannelSetImportPlan {
 }
 
 function zoneMembersFromChannelIds(channelIds: string[]): ZoneMemberEntry[] {
-  return channelIds.map((channelId) => ({ channelId }));
+  return channelIds.map((channelId) => ({ kind: 'channel' as const, channelId }));
 }
 
 /**

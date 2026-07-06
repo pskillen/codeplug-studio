@@ -1,7 +1,7 @@
 import type { FormatBuild } from '@core/models/formatBuild.ts';
 import type { ZoneGroupingLayout, ZoneGroupingZoneEntry } from '@core/models/traitLayout.ts';
 import type { LibrarySlice } from '@core/services/assemble.ts';
-import { zoneMemberChannelIds } from '@core/domain/zoneMembers.ts';
+import { resolveEffectiveZoneChannelIds } from '@core/domain/zoneHierarchy.ts';
 
 export function findZoneGroupingSection(build: FormatBuild): ZoneGroupingLayout | undefined {
   return build.layout.sections.find((s): s is ZoneGroupingLayout => s.kind === 'zoneGrouping');
@@ -14,9 +14,32 @@ export function seedZoneGroupingFromLibrary(library: LibrarySlice): ZoneGrouping
     zones: library.zones.map((zone) => ({
       id: zone.id,
       name: zone.name,
-      channelIds: zoneMemberChannelIds(zone),
+      // Snapshot for member order hints and DM32 flags — assemble re-derives membership from library.
+      channelIds: resolveEffectiveZoneChannelIds(zone, library.zones),
     })),
   };
+}
+
+/** Apply layout channelIds as an order hint; append effective ids not present in the hint. */
+export function orderChannelIdsByLayoutHint(
+  effectiveIds: string[],
+  layoutChannelIds: string[],
+): string[] {
+  if (layoutChannelIds.length === 0) return effectiveIds;
+  const effectiveSet = new Set(effectiveIds);
+  const ordered: string[] = [];
+  const seen = new Set<string>();
+  for (const id of layoutChannelIds) {
+    if (!effectiveSet.has(id) || seen.has(id)) continue;
+    seen.add(id);
+    ordered.push(id);
+  }
+  for (const id of effectiveIds) {
+    if (seen.has(id)) continue;
+    seen.add(id);
+    ordered.push(id);
+  }
+  return ordered;
 }
 
 export function updateZoneGroupingEntry(

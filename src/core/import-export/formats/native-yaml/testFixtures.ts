@@ -21,6 +21,8 @@ export const FIXTURE_DIGITAL_CONTACT_ID = '66666666-6666-4666-8666-666666666666'
 export const FIXTURE_ANALOG_CONTACT_ID = '77777777-7777-4777-8777-777777777777';
 export const FIXTURE_RX_LIST_ID = '88888888-8888-4888-8888-888888888888';
 export const FIXTURE_BUILD_ID = '99999999-9999-4999-8999-999999999999';
+export const FIXTURE_CHILD_ZONE_ID = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
+export const FIXTURE_PARENT_ZONE_ID = 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb';
 
 function rowMeta(projectId: string, id: string) {
   return {
@@ -136,7 +138,7 @@ export function fullLibraryAggregate(): ProjectAggregate {
   const zone: Zone = {
     ...rowMeta(projectId, FIXTURE_ZONE_ID),
     name: 'Edinburgh',
-    members: [{ channelId: FIXTURE_CHANNEL_A_ID }],
+    members: [{ kind: 'channel', channelId: FIXTURE_CHANNEL_A_ID }],
     comment: 'Zone fixture',
   };
 
@@ -209,5 +211,56 @@ export function projectWithFormatBuildAggregate(): ProjectAggregate {
   return {
     ...base,
     formatBuilds: [build],
+  };
+}
+
+export function nestedZonesAggregate(): ProjectAggregate {
+  const base = fullLibraryAggregate();
+  const projectId = FIXTURE_PROJECT_ID;
+  const childZone: Zone = {
+    ...rowMeta(projectId, FIXTURE_CHILD_ZONE_ID),
+    name: 'Glasgow',
+    members: [{ kind: 'channel', channelId: FIXTURE_CHANNEL_A_ID }],
+    comment: '',
+  };
+  const parentZone: Zone = {
+    ...rowMeta(projectId, FIXTURE_PARENT_ZONE_ID),
+    name: 'Scotland',
+    members: [
+      { kind: 'zone', zoneId: FIXTURE_CHILD_ZONE_ID },
+      { kind: 'channel', channelId: FIXTURE_CHANNEL_B_ID },
+    ],
+    comment: 'Nested fixture',
+  };
+  return {
+    ...base,
+    zones: [childZone, parentZone, ...base.zones],
+  };
+}
+
+/** Glasgow nests PMR446; PMR446 is omitFromExport (nested-only building block). */
+export function glasgowPmrNestedAggregate(): ProjectAggregate {
+  const base = fullLibraryAggregate();
+  const projectId = FIXTURE_PROJECT_ID;
+  const pmrZone: Zone = {
+    ...rowMeta(projectId, FIXTURE_CHILD_ZONE_ID),
+    name: 'PMR446',
+    omitFromExport: true,
+    members: [{ kind: 'channel', channelId: FIXTURE_CHANNEL_A_ID }],
+    comment: '',
+  };
+  const glasgowZone: Zone = {
+    ...rowMeta(projectId, FIXTURE_PARENT_ZONE_ID),
+    name: 'Glasgow',
+    members: [
+      { kind: 'channel', channelId: FIXTURE_CHANNEL_B_ID },
+      { kind: 'zone', zoneId: FIXTURE_CHILD_ZONE_ID },
+    ],
+    comment: '',
+  };
+  return {
+    ...base,
+    zones: [pmrZone, glasgowZone],
+    formatBuilds: [],
   };
 }

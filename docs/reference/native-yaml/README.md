@@ -8,10 +8,10 @@ Tier 3 schema for Codeplug Studio's full-project interchange format. Internal ty
 
 ## Version fields
 
-| Field                 | Type    | Required | Meaning                                                                                                                                                                                                     |
-| --------------------- | ------- | -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `schemaVersion`       | `1`     | yes      | Native YAML envelope version. Only `1` is accepted in this release.                                                                                                                                         |
-| `studioSchemaVersion` | integer | yes      | Must equal `STUDIO_SCHEMA_VERSION` in `src/core/models/schemaVersion.ts` (currently `4`). Imports accept `2`, `3`, or `4`; older zone export fields on library `Zone` migrate to DM32 build layout on load. |
+| Field                 | Type    | Required | Meaning                                                                                                                                                                                            |
+| --------------------- | ------- | -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `schemaVersion`       | `1`     | yes      | Native YAML envelope version. Only `1` is accepted in this release.                                                                                                                                |
+| `studioSchemaVersion` | integer | yes      | Must equal `STUDIO_SCHEMA_VERSION` in `src/core/models/schemaVersion.ts` (currently `7`). Imports accept `2`–`7`; older zone export fields on library `Zone` migrate to DM32 build layout on load. |
 
 Bump `schemaVersion` when the YAML envelope shape changes. Bump `studioSchemaVersion` (constant) when persisted row types change.
 
@@ -105,12 +105,13 @@ Mode profile discriminant is `mode`. See [data-model](../../features/data-model/
 
 ### `Zone`
 
-| Field               | Type          | Notes                    |
-| ------------------- | ------------- | ------------------------ |
-| _(persistable row)_ |               |                          |
-| `name`              | string        |                          |
-| `members`           | `EntityRef[]` | `kind` must be `channel` |
-| `comment`           | string        |                          |
+| Field               | Type                | Notes                                                                                                       |
+| ------------------- | ------------------- | ----------------------------------------------------------------------------------------------------------- |
+| _(persistable row)_ |                     |                                                                                                             |
+| `name`              | string              |                                                                                                             |
+| `members`           | `ZoneMemberEntry[]` | `kind: channel` (`channelId`, optional `includeInScanList`) or `kind: zone` (`zoneId`)                      |
+| `comment`           | string              |                                                                                                             |
+| `omitFromExport`    | boolean             | optional; when `true`, zone omitted from `Zones.csv` export row (nested flatten into parents still applies) |
 
 DM32 zone export flags (`exportScratchChannel`, `exportScanList`, `scanCarrierFrequencyHz`) live on **`zoneGrouping` layout zone entries**, not on library zones (schema v4+).
 

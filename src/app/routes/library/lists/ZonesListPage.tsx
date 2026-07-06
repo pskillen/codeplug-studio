@@ -1,7 +1,8 @@
-import { Button, Group, Stack, Text } from '@mantine/core';
+import { Badge, Button, Group, Stack, Text } from '@mantine/core';
 import { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type { Zone } from '@core/models/library.ts';
+import { formatZoneDirectMemberSummary } from '@core/domain/zoneMembers.ts';
 import { applyFilters, DEFAULT_MAP_FILTER_OPTS } from '@core/domain/mapProjection.ts';
 import CodeplugMap from '../../../components/CodeplugMap/CodeplugMap.tsx';
 import UseMyLocationButton from '../../../components/UseMyLocationButton/UseMyLocationButton.tsx';
@@ -35,7 +36,19 @@ export default function ZonesListPage() {
       {
         key: 'members',
         header: 'Members',
-        render: (z) => z.members.length,
+        render: (z) => {
+          const countLabel = formatZoneDirectMemberSummary(z);
+          return (
+            <Group gap="xs" wrap="nowrap">
+              <Text size="sm">{countLabel}</Text>
+              {z.omitFromExport ? (
+                <Badge size="xs" variant="light">
+                  Nested only
+                </Badge>
+              ) : null}
+            </Group>
+          );
+        },
         sortValue: (z) => z.members.length,
       },
       {

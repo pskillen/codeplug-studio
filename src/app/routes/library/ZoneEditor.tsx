@@ -1,21 +1,23 @@
 import { useCallback, useMemo, useState } from 'react';
-import { Stack, Text, TextInput } from '@mantine/core';
-import { Link, useNavigate } from 'react-router-dom';
-import type { Library, Zone } from '@core/models/library.ts';
+import { Stack, Switch, Text, TextInput } from '@mantine/core';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import type { Library, Zone, ZoneMemberEntry } from '@core/models/library.ts';
 import { newZone } from '@core/domain/factories.ts';
 import { applyFilters, DEFAULT_MAP_FILTER_OPTS } from '@core/domain/mapProjection.ts';
+import { validateZoneMembership } from '@core/domain/validation.ts';
 import CodeplugMap from '../../components/CodeplugMap/CodeplugMap.tsx';
 import { FormSection } from '../../components/ui/index.ts';
 import ZoneMemberPicker, {
   type ZoneMemberPickerMapFilters,
 } from '../../components/library/ZoneMemberPicker.tsx';
 import {
+  normalizeZoneMembers,
   zoneMembersFromSelectedIds,
-  zoneMemberIdsFromZone,
 } from '../../components/library/zoneMembers.ts';
 import { persistence } from '../../state/persistence.ts';
 import { useEntitySave } from './useEntitySave.ts';
 import EditorActions from './EditorActions.tsx';
+import { readInitialChannelIds } from './zoneEditorState.ts';
 
 export default function ZoneEditor({
   projectId,
@@ -28,9 +30,17 @@ export default function ZoneEditor({
 }) {
   const base = entity ?? newZone(projectId, '');
   const navigate = useNavigate();
+  const location = useLocation();
+  const initialChannelIds = entity === null ? readInitialChannelIds(location.state) : [];
   const [name, setName] = useState(base.name);
-  const [selectedIds, setSelectedIds] = useState<string[]>(zoneMemberIdsFromZone(base.members));
+  const [members, setMembers] = useState<ZoneMemberEntry[]>(() =>
+    initialChannelIds.length > 0
+      ? zoneMembersFromSelectedIds(initialChannelIds)
+      : normalizeZoneMembers(base.members),
+  );
   const [comment, setComment] = useState(base.comment);
+  const [omitFromExport, setOmitFromExport] = useState(base.omitFromExport === true);
+  const [validationError, setValidationError] = useState<string | null>(null);
   const [mapFilters, setMapFilters] = useState<ZoneMemberPickerMapFilters>({
     hiddenMarkerChannelIds: [],
     hiddenZoneMemberIds: [],
@@ -46,19 +56,15 @@ export default function ZoneEditor({
     [mapFilters.hiddenMarkerChannelIds],
   );
 
-  const previewMemberIds = useMemo(
-    () => selectedIds.filter((id) => !mapFilters.hiddenZoneMemberIds.includes(id)),
-    [selectedIds, mapFilters.hiddenZoneMemberIds],
-  );
-
   const previewZone = useMemo((): Zone => {
     return {
       ...base,
       name: name.trim() || 'Untitled zone',
-      members: zoneMembersFromSelectedIds(previewMemberIds),
+      members,
       comment,
+      omitFromExport: omitFromExport ? true : undefined,
     };
-  }, [base, name, previewMemberIds, comment]);
+  }, [base, name, members, comment, omitFromExport]);
 
   const channelsForMap = useMemo(
     () => library.channels.filter((ch) => !hiddenMarkerIds.has(ch.id)),
@@ -79,11 +85,27 @@ export default function ZoneEditor({
     const row: Zone = {
       ...base,
       name: name.trim() || 'Untitled zone',
-      members: zoneMembersFromSelectedIds(selectedIds),
+      members,
       comment,
+      omitFromExport: omitFromExport ? true : undefined,
     };
+    try {
+      const libraryForValidation = {
+        ...library,
+        zones: entity
+          ? library.zones.map((zone) => (zone.id === row.id ? row : zone))
+          : [...library.zones, row],
+      };
+      validateZoneMembership(row.id, members, libraryForValidation);
+      setValidationError(null);
+    } catch (err) {
+      setValidationError(err instanceof Error ? err.message : 'Invalid zone membership');
+      return;
+    }
     void save(() => persistence.putZone(row, entity ? entity.revision : null));
   }
+
+  const displayError = validationError ?? error;
 
   return (
     <Stack gap="md">
@@ -94,16 +116,28 @@ export default function ZoneEditor({
           value={comment}
           onChange={(e) => setComment(e.currentTarget.value)}
         />
+        <Switch
+          label="Don't export as its own zone"
+          checked={omitFromExport}
+          onChange={(e) => setOmitFromExport(e.currentTarget.checked)}
+        />
+        <Text size="sm" c="dimmed">
+          Enable when this zone is only a building block for other zones — for example a PMR446
+          simplex set you nest inside every city zone. Its channels still export inside parent
+          zones; this zone will not get its own row in Zones.csv.
+        </Text>
       </FormSection>
 
       <FormSection
         title="Members"
-        description="Order matches export order for zone-capable builds."
+        description="Order matches export order for zone-capable builds. Nested zones flatten at export."
       >
         <ZoneMemberPicker
           channels={library.channels}
-          selectedIds={selectedIds}
-          onChange={setSelectedIds}
+          zones={library.zones}
+          editingZoneId={base.id}
+          members={members}
+          onChange={setMembers}
           onMapFiltersChange={handleMapFiltersChange}
         />
         {library.channels.length === 0 ? (
@@ -126,7 +160,7 @@ export default function ZoneEditor({
 
       <EditorActions
         saving={saving}
-        error={error}
+        error={displayError}
         onSave={handleSave}
         cancelPath="/library/zones"
       />

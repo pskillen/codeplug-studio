@@ -9,7 +9,7 @@ export default function BuildZonesWirePage() {
     <BuildEntityWirePage
       title="Zones"
       entityKind="zone"
-      description="Toggle inclusion and override zone wire names for export."
+      description="Toggle inclusion and override zone wire names for export. Zones with Don't export as its own zone in the library are marked and omitted from Zones.csv."
       beforeTable={build.formatId === 'dm32' ? <BuildZoneExportControls /> : undefined}
     />
   );

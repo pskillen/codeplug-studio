@@ -4,8 +4,16 @@ import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import type { Channel } from '@core/models/library.ts';
 import type { AssembledBuild } from '@core/services/assemble.ts';
-import { newChannel, newTalkGroup } from '@core/domain/factories.ts';
+import { newChannel, newFormatBuild, newTalkGroup } from '@core/domain/factories.ts';
 import { parseProjectDocument } from '@core/import-export/formats/native-yaml/parse.ts';
+import {
+  FIXTURE_CHANNEL_A_ID,
+  FIXTURE_CHANNEL_B_ID,
+  FIXTURE_CHILD_ZONE_ID,
+  FIXTURE_PARENT_ZONE_ID,
+  FIXTURE_PROJECT_ID,
+  glasgowPmrNestedAggregate,
+} from '@core/import-export/formats/native-yaml/testFixtures.ts';
 import { assemble } from '@core/services/assemble.ts';
 import { exportBuildAll } from '@core/services/exportBuild.ts';
 import { compareCsvRecords } from '../../../../test/csvRecordCompare.ts';
@@ -157,7 +165,52 @@ describe('OpenGD77 export serialise', () => {
     const csv = serialiseZones(assembled);
     expect(csv).toContain('Edinburgh');
     expect(csv).toContain('GB3DA Demo');
-    expect(csv).toContain('GB7GL Scot');
+  });
+
+  it('flattens nested zones and omits nested-only rows in Zones.csv', () => {
+    const aggregate = glasgowPmrNestedAggregate();
+    const library = {
+      channels: aggregate.channels,
+      zones: aggregate.zones,
+      talkGroups: aggregate.talkGroups,
+      digitalContacts: aggregate.digitalContacts,
+      analogContacts: aggregate.analogContacts,
+      rxGroupLists: aggregate.rxGroupLists,
+    };
+    const build = {
+      ...newFormatBuild(FIXTURE_PROJECT_ID, 'opengd77-1701', 'Nested export'),
+      formatId: 'opengd77',
+      layout: {
+        sections: [
+          {
+            kind: 'zoneGrouping' as const,
+            zones: [
+              {
+                id: FIXTURE_PARENT_ZONE_ID,
+                name: 'Glasgow',
+                channelIds: [FIXTURE_CHANNEL_B_ID],
+              },
+              {
+                id: FIXTURE_CHILD_ZONE_ID,
+                name: 'PMR446',
+                channelIds: [FIXTURE_CHANNEL_A_ID],
+              },
+            ],
+          },
+        ],
+      },
+    };
+    const assembled = assemble(build, library);
+    const csv = serialiseZones(assembled);
+    const rows = parseCsv(csv);
+    const zoneNames = rows
+      .slice(1)
+      .map((row) => row[0])
+      .filter(Boolean);
+    expect(zoneNames).toEqual(['Glasgow']);
+    const glasgowRow = rows.slice(1).find((row) => row[0] === 'Glasgow');
+    expect(glasgowRow?.[1]).toBe('GB7GL DMR Scot');
+    expect(glasgowRow?.[2]).toBe('GB3DA GB3DA Demo');
   });
 
   it('exportBuildAll returns all six CPS files', () => {

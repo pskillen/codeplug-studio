@@ -6,7 +6,7 @@ import { nextRevision, initialRevision } from './revision.ts';
 
 describe('schemaVersion', () => {
   it('starts at 4', () => {
-    expect(STUDIO_SCHEMA_VERSION).toBe(5);
+    expect(STUDIO_SCHEMA_VERSION).toBe(7);
   });
 });
 

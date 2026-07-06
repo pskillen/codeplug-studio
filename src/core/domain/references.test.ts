@@ -10,14 +10,14 @@ describe('findReferencesTo', () => {
     const channel = newChannel(projectId, 'Local');
     const zone = {
       ...newZone(projectId, 'Home'),
-      members: [{ channelId: channel.id }],
+      members: [{ kind: 'channel' as const, channelId: channel.id }],
     };
     const library: Library = { ...emptyLibrary(), channels: [channel], zones: [zone] };
 
-    const refs = findReferencesTo(library, { kind: 'channel', id: channel.id });
+    const refs = findReferencesTo(library, { kind: 'channel' as const, id: channel.id });
     expect(refs).toHaveLength(1);
     expect(refs[0]).toMatchObject({ fromKind: 'zone', fromName: 'Home' });
-    expect(isReferenced(library, { kind: 'channel', id: channel.id })).toBe(true);
+    expect(isReferenced(library, { kind: 'channel' as const, id: channel.id })).toBe(true);
   });
 
   it('finds RX group lists that reference a talk group', () => {

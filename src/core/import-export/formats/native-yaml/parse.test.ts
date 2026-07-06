@@ -5,7 +5,12 @@ import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import { NativeYamlImportError } from './errors.ts';
 import { parseProjectDocument } from './parse.ts';
-import { fullLibraryAggregate, minimalProjectAggregate } from './testFixtures.ts';
+import {
+  fullLibraryAggregate,
+  minimalProjectAggregate,
+  nestedZonesAggregate,
+} from './testFixtures.ts';
+import { serialiseProject } from './serialise.ts';
 import { validateDocument } from './validate.ts';
 
 const fixturesDir = join(dirname(fileURLToPath(import.meta.url)), '__fixtures__/import');
@@ -31,6 +36,11 @@ describe('native-yaml parse', () => {
 
   it('parses valid full library fixture', () => {
     aggregateEqual(parseProjectDocument(readFixture('valid-full.yaml')), fullLibraryAggregate());
+  });
+
+  it('parses nested zone members via serialised round-trip', () => {
+    const aggregate = nestedZonesAggregate();
+    aggregateEqual(parseProjectDocument(serialiseProject(aggregate)), aggregate);
   });
 
   it('parses channels with omitted nullable fields', () => {

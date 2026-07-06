@@ -132,16 +132,16 @@ export interface RxGroupList extends PersistableRow {
   members: RxGroupListMember[];
 }
 
-export interface ZoneMemberEntry {
-  channelId: string;
-  /** When false, channel stays in zone but is omitted from derived scan lists. Default true. */
-  includeInScanList?: boolean;
-}
+export type ZoneMemberEntry =
+  | { kind: 'channel'; channelId: string; includeInScanList?: boolean }
+  | { kind: 'zone'; zoneId: string };
 
 export interface Zone extends PersistableRow {
   name: string;
   members: ZoneMemberEntry[];
   comment: string;
+  /** When true, zone is omitted from Zones.csv but still flattens into parent zones. */
+  omitFromExport?: boolean;
 }
 
 export interface Library {

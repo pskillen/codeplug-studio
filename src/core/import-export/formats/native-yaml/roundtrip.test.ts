@@ -4,7 +4,14 @@ import { isSingleFileProjectImportAdapter } from '../../importAdapter.ts';
 import { getExportAdapter, getImportAdapter } from '../../registry.ts';
 import { parseProjectDocument } from './parse.ts';
 import { serialiseProject } from './serialise.ts';
-import { projectWithFormatBuildAggregate } from './testFixtures.ts';
+import {
+  FIXTURE_CHANNEL_B_ID,
+  FIXTURE_CHILD_ZONE_ID,
+  FIXTURE_PARENT_ZONE_ID,
+  glasgowPmrNestedAggregate,
+  nestedZonesAggregate,
+  projectWithFormatBuildAggregate,
+} from './testFixtures.ts';
 
 describe('native-yaml round-trip smoke', () => {
   it('serialise → parse preserves aggregate via adapters', () => {
@@ -37,5 +44,23 @@ describe('native-yaml round-trip smoke', () => {
     const yaml = serialiseProject(aggregate);
     const parsed = parseProjectDocument(yaml);
     expect(parsed.talkGroups[0]?.abbreviation).toBe('Sco');
+  });
+
+  it('preserves nested zone members on round-trip', () => {
+    const aggregate = nestedZonesAggregate();
+    const parsed = parseProjectDocument(serialiseProject(aggregate));
+    const parent = parsed.zones.find((zone) => zone.id === FIXTURE_PARENT_ZONE_ID);
+    expect(parent?.members).toEqual([
+      { kind: 'zone', zoneId: FIXTURE_CHILD_ZONE_ID },
+      { kind: 'channel', channelId: FIXTURE_CHANNEL_B_ID },
+    ]);
+  });
+
+  it('preserves omitFromExport on round-trip', () => {
+    const aggregate = glasgowPmrNestedAggregate();
+    const parsed = parseProjectDocument(serialiseProject(aggregate));
+    const pmr = parsed.zones.find((zone) => zone.id === FIXTURE_CHILD_ZONE_ID);
+    expect(pmr?.omitFromExport).toBe(true);
+    expect(pmr?.name).toBe('PMR446');
   });
 });

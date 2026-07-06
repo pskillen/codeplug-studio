@@ -28,6 +28,14 @@ import {
   formatDm32BundleCompareFailure,
 } from '../../../../test/dm32CsvCompare.ts';
 import { exportBuildAll } from '@core/services/exportBuild.ts';
+import {
+  FIXTURE_CHANNEL_A_ID,
+  FIXTURE_CHANNEL_B_ID,
+  FIXTURE_CHILD_ZONE_ID,
+  FIXTURE_PARENT_ZONE_ID,
+  FIXTURE_PROJECT_ID,
+  glasgowPmrNestedAggregate,
+} from '@core/import-export/formats/native-yaml/testFixtures.ts';
 
 const fixtureDir = join(
   dirname(fileURLToPath(import.meta.url)),
@@ -73,7 +81,7 @@ describe('DM32 export serialise', () => {
   it('serialises zones with pipe-separated member names', () => {
     const channel = fmChannel('Test Chan');
     const zone = newZone(PROJECT_ID, 'My Zone');
-    zone.members = [{ channelId: channel.id }];
+    zone.members = [{ kind: 'channel' as const, channelId: channel.id }];
     const build = dm32Build();
     const library: LibrarySlice = {
       channels: [channel],
@@ -89,6 +97,49 @@ describe('DM32 export serialise', () => {
     const headers = rows[0]!;
     const membersIndex = headers.indexOf(ZONE_COL.members);
     expect(rows[1]?.[membersIndex]).toBe('Test Chan');
+  });
+
+  it('flattens nested zones and omits nested-only zone in Zones.csv', () => {
+    const aggregate = glasgowPmrNestedAggregate();
+    const library: LibrarySlice = {
+      channels: aggregate.channels,
+      zones: aggregate.zones,
+      talkGroups: aggregate.talkGroups,
+      digitalContacts: aggregate.digitalContacts,
+      analogContacts: aggregate.analogContacts,
+      rxGroupLists: aggregate.rxGroupLists,
+    };
+    const build: FormatBuild = {
+      ...newFormatBuild(FIXTURE_PROJECT_ID, 'dm32-baofeng-dm32uv', 'Nested export'),
+      formatId: 'dm32',
+      layout: {
+        sections: [
+          {
+            kind: 'zoneGrouping',
+            zones: [
+              {
+                id: FIXTURE_PARENT_ZONE_ID,
+                name: 'Glasgow',
+                channelIds: [FIXTURE_CHANNEL_B_ID],
+              },
+              {
+                id: FIXTURE_CHILD_ZONE_ID,
+                name: 'PMR446',
+                channelIds: [FIXTURE_CHANNEL_A_ID],
+              },
+            ],
+          },
+        ],
+      },
+    };
+    const files = serialiseDm32Files(assemble(build, library), library);
+    const zoneRows = parseCsv(files['Zones.csv']);
+    const headers = zoneRows[0]!;
+    const nameIndex = headers.indexOf(ZONE_COL.name);
+    const membersIndex = headers.indexOf(ZONE_COL.members);
+    const dataRows = zoneRows.slice(1);
+    expect(dataRows.map((row) => row[nameIndex])).toEqual(['Glasgow']);
+    expect(dataRows[0]?.[membersIndex]).toBe('GB7GL DMR Scot|GB3DA GB3DA Demo');
   });
 
   it('expands RX group list members into separate channel rows', () => {
@@ -136,7 +187,7 @@ describe('DM32 export serialise', () => {
   it('emits Scan.csv and carrier when zone exportScanList is enabled', () => {
     const channel = fmChannel('Member One');
     const zone = newZone(PROJECT_ID, 'Glasgow');
-    zone.members = [{ channelId: channel.id }];
+    zone.members = [{ kind: 'channel' as const, channelId: channel.id }];
     const build = dm32Build();
     const layout = seedZoneGroupingFromLibrary({
       channels: [channel],

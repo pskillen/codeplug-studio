@@ -110,7 +110,10 @@ export function minimalDm32ExportLibrary(): LibrarySlice {
   const zoneNorth: Zone = {
     ...newZone(PROJECT_ID, 'North'),
     id: 'zone-north',
-    members: [{ channelId: chGb7fe.id }, { channelId: chGb3fe.id }],
+    members: [
+      { kind: 'channel' as const, channelId: chGb7fe.id },
+      { kind: 'channel' as const, channelId: chGb3fe.id },
+    ],
   };
 
   const disconnect = { ...newDigitalContact(PROJECT_ID, 'Disconnect', 4000), id: 'dc-disconnect' };

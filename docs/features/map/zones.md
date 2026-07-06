@@ -2,24 +2,25 @@
 
 Convex hull overlays — how a library `Zone`'s members become coloured shapes on the embedded map.
 
-Channel filtering and the plotted-channel index are defined in [channels.md](channels.md). Membership uses UUID `EntityRef` entries on `Zone.members` — vendor-neutral, not wire names.
+Channel filtering and the plotted-channel index are defined in [channels.md](channels.md). Membership uses `Zone.members` (`kind: 'channel'` and/or nested `kind: 'zone'`) — vendor-neutral, not wire names. Map hulls resolve the **effective** (flattened) channel set via `resolveEffectiveZoneChannelIds` — see [nested-zones.md](../library/nested-zones.md).
 
 ## Code anchors
 
-| Symbol                 | File                                             | Role                                             |
-| ---------------------- | ------------------------------------------------ | ------------------------------------------------ |
-| `zoneGeolocatedPoints` | `src/core/domain/mapProjection.ts`               | Resolve zone members → lat/lon with skip reasons |
-| `uniqueLatLon`         | `src/core/domain/geo.ts`                         | Dedupe sites to 5 decimal places                 |
-| `convexHullLatLon`     | same                                             | Andrew's monotone chain on `[lat, lon]`          |
-| `zoneColor`            | same                                             | Distinct hue per zone index                      |
-| Zone hull rendering    | `src/app/components/CodeplugMap/CodeplugMap.tsx` | Circle / polyline / polygon layers               |
+| Symbol                           | File                                             | Role                                                   |
+| -------------------------------- | ------------------------------------------------ | ------------------------------------------------------ |
+| `resolveEffectiveZoneChannelIds` | `src/core/domain/zoneHierarchy.ts`               | Flatten nested zones → channel ids for hulls           |
+| `zoneGeolocatedPoints`           | `src/core/domain/mapProjection.ts`               | Resolve effective channels → lat/lon with skip reasons |
+| `uniqueLatLon`                   | `src/core/domain/geo.ts`                         | Dedupe sites to 5 decimal places                       |
+| `convexHullLatLon`               | same                                             | Andrew's monotone chain on `[lat, lon]`                |
+| `zoneColor`                      | same                                             | Distinct hue per zone index                            |
+| Zone hull rendering              | `src/app/components/CodeplugMap/CodeplugMap.tsx` | Circle / polyline / polygon layers                     |
 
 ## Inputs — the `Zone` model
 
-| Field     | Used for                                                                    |
-| --------- | --------------------------------------------------------------------------- |
-| `name`    | Tooltip, popup title                                                        |
-| `members` | `EntityRef[]` — only `kind: 'channel'` entries are resolved for hull points |
+| Field     | Used for                                                                  |
+| --------- | ------------------------------------------------------------------------- |
+| `name`    | Tooltip, popup title                                                      |
+| `members` | Channel and/or nested zone refs — flattened to channels for hull geometry |
 
 Duplicate member ids within one zone are deduplicated while preserving first-occurrence order.
 
@@ -35,7 +36,7 @@ The fixed coordinate filters (`useLocation`, skip `0,0`) apply to hull points th
 
 ### Member resolution
 
-For each `members` entry with `kind: 'channel'`, `zoneGeolocatedPoints` produces a point or a skip reason:
+For the **effective channel set** (including channels from nested child zones), `zoneGeolocatedPoints` produces a point or a skip reason per channel id:
 
 | Condition                                        | Result                                |
 | ------------------------------------------------ | ------------------------------------- |

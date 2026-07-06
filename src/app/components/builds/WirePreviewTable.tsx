@@ -1,6 +1,7 @@
 import {
   ActionIcon,
   Anchor,
+  Badge,
   Group,
   Stack,
   Switch,
@@ -15,6 +16,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import type { WirePreviewRow } from '@core/services/previewWireRows.ts';
 import { libraryEditPathForWirePreviewRow } from '../../lib/wirePreviewRowLinks.ts';
+import ZoneMemberSummaryBadges from '../library/ZoneMemberSummaryBadges.tsx';
 import { ICON_SIZE_ACTION, ICON_STROKE } from '../../lib/iconSizes.ts';
 
 export interface WirePreviewTableProps {
@@ -147,7 +149,24 @@ function WireNameOverrideInput({
 function WirePreviewDisplayCell({ row }: { row: WirePreviewRow }) {
   return (
     <Stack gap={4}>
-      <Text size="sm">{row.displayLabel}</Text>
+      <Group gap="xs" wrap="wrap" align="center">
+        <Text size="sm">{row.displayLabel}</Text>
+        {row.zoneDirectMembers ? (
+          <Group gap={4} wrap="wrap">
+            <ZoneMemberSummaryBadges
+              channelCount={row.zoneDirectMembers.channelCount}
+              zoneCount={row.zoneDirectMembers.zoneCount}
+              channelNames={row.zoneDirectMembers.channelNames}
+              zoneNames={row.zoneDirectMembers.zoneNames}
+            />
+          </Group>
+        ) : null}
+        {row.omitFromExport ? (
+          <Badge size="xs" variant="light" color="gray">
+            Not exported as zone
+          </Badge>
+        ) : null}
+      </Group>
       {row.displayDetails?.map((line) => (
         <Text key={line.label} size="xs" c="dimmed">
           {line.label}: {line.value}
@@ -208,31 +227,45 @@ export default function WirePreviewTable({
         </Table.Tr>
       </Table.Thead>
       <Table.Tbody>
-        {rows.map((row) => (
-          <Table.Tr key={row.key} opacity={row.excluded ? 0.55 : 1}>
-            <Table.Td>
-              <Switch
-                checked={!row.excluded}
-                onChange={(event) => onExcludedChange(row, !event.currentTarget.checked)}
-                aria-label={`Include ${row.displayLabel}`}
-              />
-            </Table.Td>
-            <Table.Td>
-              <WirePreviewDisplayCell row={row} />
-            </Table.Td>
-            <Table.Td>
-              <WireNameOverrideInput
-                key={`${row.key}:${wireNameCommittedValue(row)}`}
-                row={row}
-                nameLimit={nameLimit}
-                excluded={row.excluded}
-                clickableDefaultWireName={clickableDefaultWireName}
-                onWireNameChange={onWireNameChange}
-                onDirtyChange={(dirty) => setRowDirty(row.key, dirty)}
-              />
-            </Table.Td>
-          </Table.Tr>
-        ))}
+        {rows.map((row) => {
+          const skippedByLibrary = row.omitFromExport === true;
+          const effectivelyIncluded = !row.excluded && !skippedByLibrary;
+          return (
+            <Table.Tr key={row.key} opacity={effectivelyIncluded ? 1 : 0.55}>
+              <Table.Td>
+                <Tooltip
+                  label={
+                    skippedByLibrary
+                      ? 'This zone is set not to export as its own zone in the library'
+                      : undefined
+                  }
+                  disabled={!skippedByLibrary}
+                >
+                  <Switch
+                    checked={effectivelyIncluded}
+                    disabled={skippedByLibrary}
+                    onChange={(event) => onExcludedChange(row, !event.currentTarget.checked)}
+                    aria-label={`Include ${row.displayLabel}`}
+                  />
+                </Tooltip>
+              </Table.Td>
+              <Table.Td>
+                <WirePreviewDisplayCell row={row} />
+              </Table.Td>
+              <Table.Td>
+                <WireNameOverrideInput
+                  key={`${row.key}:${wireNameCommittedValue(row)}`}
+                  row={row}
+                  nameLimit={nameLimit}
+                  excluded={!effectivelyIncluded}
+                  clickableDefaultWireName={clickableDefaultWireName}
+                  onWireNameChange={onWireNameChange}
+                  onDirtyChange={(dirty) => setRowDirty(row.key, dirty)}
+                />
+              </Table.Td>
+            </Table.Tr>
+          );
+        })}
       </Table.Tbody>
     </Table>
   );

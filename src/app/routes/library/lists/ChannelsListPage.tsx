@@ -1,5 +1,5 @@
 import { Button, Group, Stack, Text } from '@mantine/core';
-import { useCallback, useMemo } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type { Channel } from '@core/models/library.ts';
 import { applyFilters, channelHasGeolocation } from '@core/domain/mapProjection.ts';
@@ -21,6 +21,7 @@ import { usePersistedChannelColumnSort } from '../../../hooks/usePersistedChanne
 import {
   DATATABLE_CALLSIGN_SORT_KEY,
   DATATABLE_NAME_SORT_KEY,
+  sortDataTableRows,
 } from '../../../lib/dataTable/sort.ts';
 import {
   distanceLabelForChannel,
@@ -47,6 +48,7 @@ export default function ChannelsListPage() {
   const query = useChannelListQuery();
   const filtered = useFilteredChannels(channels, query, position, { skipSort: true });
   const [columnSortOverride, setColumnSortOverride] = usePersistedChannelColumnSort();
+  const [selectedKeys, setSelectedKeys] = useState<string[]>([]);
 
   const mapChannels = query.distanceFilterEnabled ? filtered : channels;
   const { skipped } = applyFilters(channels, { requireUseLocation: true, skipZero: true });
@@ -199,6 +201,19 @@ export default function ChannelsListPage() {
     [optionalColumnDefs],
   );
 
+  const sortedRows = useMemo(
+    () => sortDataTableRows(filtered, effectiveSort, sortCtx),
+    [filtered, effectiveSort, sortCtx],
+  );
+
+  const handleCreateZoneFromSelected = useCallback(() => {
+    const selectedSet = new Set(selectedKeys);
+    const orderedIds = sortedRows.filter((ch) => selectedSet.has(ch.id)).map((ch) => ch.id);
+    if (orderedIds.length === 0) return;
+    setSelectedKeys([]);
+    navigate('/library/zones/new', { state: { initialChannelIds: orderedIds } });
+  }, [navigate, selectedKeys, sortedRows]);
+
   const distanceSortPending = query.sortMode === 'distance' && !position;
 
   const columnStorageKey = activeProjectId ? channelListColumnsKey(activeProjectId) : undefined;
@@ -241,6 +256,19 @@ export default function ChannelsListPage() {
           searchPending={query.nameFilterPending}
           onSearchChange={query.setNameFilter}
           searchPlaceholder="Filter name or callsign…"
+          selectable
+          selectedKeys={selectedKeys}
+          onSelectedKeysChange={setSelectedKeys}
+          toolbar={
+            <Button
+              variant="light"
+              size="compact-sm"
+              disabled={selectedKeys.length === 0}
+              onClick={handleCreateZoneFromSelected}
+            >
+              New zone from selected
+            </Button>
+          }
         />
 
         {skipped.length > 0 ? (

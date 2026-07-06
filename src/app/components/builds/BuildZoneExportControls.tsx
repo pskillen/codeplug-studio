@@ -9,6 +9,7 @@ import {
   updateZoneGroupingEntry,
 } from '@core/domain/zoneGroupingLayout.ts';
 import { channelDisplayLabel } from '@core/domain/channelNaming.ts';
+import { normalizeZoneMemberEntry } from '@core/domain/zoneMembers.ts';
 import { useBuildLayout } from '../../routes/builds/BuildLayoutContext.tsx';
 import { useProjects } from '../../state/useProjects.ts';
 import { useFormatBuilds } from '../../state/useFormatBuilds.ts';
@@ -100,11 +101,14 @@ export default function BuildZoneExportControls() {
   const updateMemberScanInclusion = useCallback(
     async (zone: Zone, channelId: string, includeInScanList: boolean) => {
       if (!activeProjectId) return;
-      const members: ZoneMemberEntry[] = zone.members.map((member) =>
-        member.channelId === channelId
-          ? { ...member, includeInScanList: includeInScanList ? undefined : false }
-          : member,
-      );
+      const members: ZoneMemberEntry[] = zone.members.map((raw) => {
+        const member = normalizeZoneMemberEntry(raw);
+        if (member.kind !== 'channel' || member.channelId !== channelId) return member;
+        return {
+          ...member,
+          includeInScanList: includeInScanList ? undefined : false,
+        };
+      });
       setSaving(true);
       const result = await persistence.putZone({ ...zone, members }, zone.revision);
       setSaving(false);
@@ -195,27 +199,33 @@ export default function BuildZoneExportControls() {
                     <Text size="sm" fw={500}>
                       Include in scan list
                     </Text>
-                    {zone.members.map((member) => {
-                      const channel = channelById.get(member.channelId);
-                      const label = channel ? channelDisplayLabel(channel) : member.channelId;
-                      return (
-                        <Group key={member.channelId} justify="space-between" wrap="nowrap">
-                          <Text size="sm">{label}</Text>
-                          <Switch
-                            aria-label={`Include ${label} in scan list`}
-                            checked={member.includeInScanList !== false}
-                            disabled={saving}
-                            onChange={(event) =>
-                              void updateMemberScanInclusion(
-                                zone,
-                                member.channelId,
-                                event.currentTarget.checked,
-                              )
-                            }
-                          />
-                        </Group>
-                      );
-                    })}
+                    {zone.members
+                      .map(normalizeZoneMemberEntry)
+                      .filter(
+                        (member): member is Extract<ZoneMemberEntry, { kind: 'channel' }> =>
+                          member.kind === 'channel',
+                      )
+                      .map((member) => {
+                        const channel = channelById.get(member.channelId);
+                        const label = channel ? channelDisplayLabel(channel) : member.channelId;
+                        return (
+                          <Group key={member.channelId} justify="space-between" wrap="nowrap">
+                            <Text size="sm">{label}</Text>
+                            <Switch
+                              aria-label={`Include ${label} in scan list`}
+                              checked={member.includeInScanList !== false}
+                              disabled={saving}
+                              onChange={(event) =>
+                                void updateMemberScanInclusion(
+                                  zone,
+                                  member.channelId,
+                                  event.currentTarget.checked,
+                                )
+                              }
+                            />
+                          </Group>
+                        );
+                      })}
                   </Stack>
                 </Stack>
               </Accordion.Panel>
