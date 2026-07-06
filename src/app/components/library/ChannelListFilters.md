@@ -12,7 +12,7 @@ import ChannelListFilters from '@app/components/library/ChannelListFilters.tsx';
 
 ## State
 
-Reads and writes via `useChannelListQuery` (URL + per-project `localStorage`). Operator location for distance filtering comes from `useOperatorPosition` — the list page also exposes **Show my location** for the map below the table.
+Reads and writes via `useChannelListQuery` (URL + per-project `localStorage`). Operator location for distance filtering comes from `useOperatorPosition` — **Show my location** sits above the distance switch; the list page also exposes location controls below the table for the map.
 
 ## Related
 

@@ -1,20 +1,28 @@
-import { MultiSelect, SimpleGrid, Slider, Stack, Switch, Text } from '@mantine/core';
+import { MultiSelect, Pill, SimpleGrid, Slider, Stack, Switch, Text } from '@mantine/core';
 import { useMemo } from 'react';
 import { DISTANCE_FILTER_MARKS_KM } from '../../lib/channels.ts';
-import { ALL_BANDS, bandsFromFrequencies } from '../../lib/bands.ts';
-import { modeFilterOptions } from '../../lib/channelModes.ts';
+import { ALL_BANDS, bandsFromFrequencies, type BandDefinition } from '../../lib/bands.ts';
+import { modeFilterOptions, type ChannelMode } from '../../lib/channelModes.ts';
 import { useChannelListQuery } from '../../hooks/useChannelListQuery.ts';
 import { useFilteredChannels } from '../../hooks/useChannelListFilters.ts';
+import UseMyLocationButton from '../UseMyLocationButton/UseMyLocationButton.tsx';
+import BandPill from '../pills/BandPill.tsx';
+import ModePill from '../pills/ModePill.tsx';
 import { useLibrary } from '../../state/useLibrary.ts';
 import { useOperatorPosition } from '../../state/operatorPosition.tsx';
+
+function bandByIdMap(): Map<string, BandDefinition> {
+  return new Map(ALL_BANDS.map((b) => [b.id, b]));
+}
 
 /** Band, mode, duplex, and distance filters for the channels list page (search lives on `DataTable`). */
 export default function ChannelListFilters() {
   const { library } = useLibrary();
   const { channels } = library;
-  const { position } = useOperatorPosition();
+  const { position, setPosition } = useOperatorPosition();
   const query = useChannelListQuery();
   const filtered = useFilteredChannels(channels, query, position);
+  const bandsById = useMemo(() => bandByIdMap(), []);
 
   const bandOptions = useMemo(() => {
     const ids = new Set<string>();
@@ -42,6 +50,14 @@ export default function ChannelListFilters() {
           value={query.bandFilter}
           onChange={query.setBandFilter}
           clearable
+          renderPill={({ option, onRemove }) => (
+            <Pill withRemoveButton onRemove={onRemove}>
+              <BandPill band={bandsById.get(String(option.value)) ?? null} size="xs" />
+            </Pill>
+          )}
+          renderOption={({ option }) => (
+            <BandPill band={bandsById.get(String(option.value)) ?? null} size="xs" />
+          )}
         />
 
         <MultiSelect
@@ -50,6 +66,14 @@ export default function ChannelListFilters() {
           value={query.modeFilter}
           onChange={query.setModeFilter}
           clearable
+          renderPill={({ option, onRemove }) => (
+            <Pill withRemoveButton onRemove={onRemove}>
+              <ModePill mode={String(option.value) as ChannelMode} size="xs" />
+            </Pill>
+          )}
+          renderOption={({ option }) => (
+            <ModePill mode={String(option.value) as ChannelMode} size="xs" />
+          )}
         />
 
         <MultiSelect
@@ -64,6 +88,15 @@ export default function ChannelListFilters() {
           maxValues={1}
         />
       </SimpleGrid>
+
+      {!position ? (
+        <UseMyLocationButton
+          label="Show my location"
+          onLocation={(lat, lon, accuracyMeters) =>
+            setPosition({ lat, lon, accuracyMeters: accuracyMeters ?? null })
+          }
+        />
+      ) : null}
 
       <Switch
         label="Within distance"
@@ -94,7 +127,7 @@ export default function ChannelListFilters() {
 
       {distanceFilterPending ? (
         <Text size="sm" c="dimmed">
-          Set your location below to apply the distance radius.
+          Set your location above to apply the distance radius.
         </Text>
       ) : null}
     </Stack>
