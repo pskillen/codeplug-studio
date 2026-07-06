@@ -44,6 +44,15 @@ const notOperational: RepeaterListing = {
   status: 'NOT OPERATIONAL',
 };
 
+const dmrListing: RepeaterListing = {
+  ...sampleListing,
+  remoteId: '3',
+  callsign: 'GB7DC',
+  modes: ['dmr', 'fm'],
+  primaryMode: 'dmr',
+  band: '70CM',
+};
+
 afterEach(() => {
   vi.clearAllMocks();
 });
@@ -83,6 +92,24 @@ describe('filterListings', () => {
     expect(filterListings(listings, { band: '2M' })).toHaveLength(2);
     expect(filterListings(listings, { band: '70CM' })).toHaveLength(0);
   });
+
+  it('filters by mode', () => {
+    const withDmr = [...listings, dmrListing];
+    expect(filterListings(withDmr, { modes: ['dmr'] })).toHaveLength(1);
+    expect(filterListings(withDmr, { modes: ['fm'] })).toHaveLength(3);
+    expect(filterListings(withDmr, { modes: ['ysf'] })).toHaveLength(0);
+  });
+
+  it('filters by band and mode together', () => {
+    const withDmr = [...listings, dmrListing];
+    expect(filterListings(withDmr, { band: '70CM', modes: ['dmr'] })).toHaveLength(1);
+    expect(filterListings(withDmr, { band: '2M', modes: ['dmr'] })).toHaveLength(0);
+  });
+
+  it('filters by mode and operational status', () => {
+    const withDmr = [...listings, dmrListing];
+    expect(filterListings(withDmr, { operationalOnly: true, modes: ['dmr'] })).toHaveLength(1);
+  });
 });
 
 describe('routeQuery', () => {
@@ -101,11 +128,11 @@ describe('routeQuery', () => {
     expect(searchUkRepeatersByLocator).toHaveBeenCalledWith('IO92');
   });
 
-  it('routes band queries', async () => {
-    vi.mocked(searchUkRepeatersByBand).mockResolvedValue([sampleListing]);
+  it('returns empty listings for band token queries without calling band API', async () => {
     const result = await routeQuery('2m');
     expect(result.kind).toBe('band');
-    expect(searchUkRepeatersByBand).toHaveBeenCalledWith('2m');
+    expect(result.listings).toHaveLength(0);
+    expect(searchUkRepeatersByBand).not.toHaveBeenCalled();
   });
 
   it('geocodes town queries to locator search', async () => {
@@ -132,5 +159,15 @@ describe('searchUkRepeaters', () => {
     vi.mocked(searchUkRepeatersByLocator).mockResolvedValue([sampleListing, notOperational]);
     const result = await searchUkRepeaters('Derby', { operationalOnly: true });
     expect(result.listings).toHaveLength(1);
+  });
+
+  it('applies band and mode filters after callsign fetch without band API', async () => {
+    const withDmr = [sampleListing, dmrListing];
+    vi.mocked(searchUkRepeatersByCallsign).mockResolvedValue(withDmr);
+    const result = await searchUkRepeaters('GB3', { band: '2M', modes: ['dmr'] });
+    expect(result.kind).toBe('callsign');
+    expect(result.listings).toHaveLength(0);
+    expect(searchUkRepeatersByBand).not.toHaveBeenCalled();
+    expect(searchUkRepeatersByCallsign).toHaveBeenCalled();
   });
 });

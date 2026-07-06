@@ -1,11 +1,8 @@
 import { coordsToLocator, isValidLocator } from '@core/domain/maidenhead.ts';
+import type { ChannelMode } from '@core/models/libraryTypes.ts';
 import { geocodeQuery, type GeocodeProvider } from '@integrations/geocode/index.ts';
 import type { RepeaterListing } from '../types.ts';
-import {
-  searchUkRepeatersByBand,
-  searchUkRepeatersByCallsign,
-  searchUkRepeatersByLocator,
-} from '../ukRepeaterClient.ts';
+import { searchUkRepeatersByCallsign, searchUkRepeatersByLocator } from '../ukRepeaterClient.ts';
 
 export type QueryKind = 'callsign' | 'locator' | 'band' | 'town';
 
@@ -29,6 +26,7 @@ export interface SearchFilters {
   operationalOnly?: boolean;
   townSubstring?: string;
   band?: string;
+  modes?: ChannelMode[];
 }
 
 export function detectQueryKind(query: string): QueryKind {
@@ -57,6 +55,10 @@ export function filterListings(
     const needle = filters.townSubstring.trim().toUpperCase();
     result = result.filter((l) => (l.name ?? '').toUpperCase().includes(needle));
   }
+  if (filters.modes?.length) {
+    const wanted = new Set(filters.modes);
+    result = result.filter((l) => l.modes.some((m) => wanted.has(m)));
+  }
   return result;
 }
 
@@ -78,7 +80,7 @@ export async function routeQuery(
     return { kind, listings: await searchUkRepeatersByLocator(trimmed) };
   }
   if (kind === 'band') {
-    return { kind, listings: await searchUkRepeatersByBand(trimmed) };
+    return { kind, listings: [] };
   }
 
   const geo = await geocodeQuery(trimmed, {
