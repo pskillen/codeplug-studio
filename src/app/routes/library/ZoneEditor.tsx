@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useState } from 'react';
-import { Stack, Text, TextInput } from '@mantine/core';
+import { Stack, Switch, Text, TextInput } from '@mantine/core';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import type { Library, Zone, ZoneMemberEntry } from '@core/models/library.ts';
 import { newZone } from '@core/domain/factories.ts';
@@ -39,6 +39,7 @@ export default function ZoneEditor({
       : normalizeZoneMembers(base.members),
   );
   const [comment, setComment] = useState(base.comment);
+  const [omitFromExport, setOmitFromExport] = useState(base.omitFromExport === true);
   const [validationError, setValidationError] = useState<string | null>(null);
   const [mapFilters, setMapFilters] = useState<ZoneMemberPickerMapFilters>({
     hiddenMarkerChannelIds: [],
@@ -61,8 +62,9 @@ export default function ZoneEditor({
       name: name.trim() || 'Untitled zone',
       members,
       comment,
+      omitFromExport: omitFromExport ? true : undefined,
     };
-  }, [base, name, members, comment]);
+  }, [base, name, members, comment, omitFromExport]);
 
   const channelsForMap = useMemo(
     () => library.channels.filter((ch) => !hiddenMarkerIds.has(ch.id)),
@@ -85,6 +87,7 @@ export default function ZoneEditor({
       name: name.trim() || 'Untitled zone',
       members,
       comment,
+      omitFromExport: omitFromExport ? true : undefined,
     };
     try {
       const libraryForValidation = {
@@ -113,6 +116,16 @@ export default function ZoneEditor({
           value={comment}
           onChange={(e) => setComment(e.currentTarget.value)}
         />
+        <Switch
+          label="Don't export as its own zone"
+          checked={omitFromExport}
+          onChange={(e) => setOmitFromExport(e.currentTarget.checked)}
+        />
+        <Text size="sm" c="dimmed">
+          Enable when this zone is only a building block for other zones — for example a PMR446
+          simplex set you nest inside every city zone. Its channels still export inside parent
+          zones; this zone will not get its own row in Zones.csv.
+        </Text>
       </FormSection>
 
       <FormSection

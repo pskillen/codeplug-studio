@@ -1,4 +1,4 @@
-import { Button, Group, Stack, Text } from '@mantine/core';
+import { Badge, Button, Group, Stack, Text } from '@mantine/core';
 import { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type { Zone } from '@core/models/library.ts';
@@ -40,9 +40,19 @@ export default function ZonesListPage() {
         render: (z) => {
           const direct = z.members.length;
           const hasNested = directZoneMemberZoneIds(z).length > 0;
-          if (!hasNested) return String(direct);
-          const effective = resolveEffectiveZoneChannelIds(z, zones).length;
-          return `${direct} (${effective} channels effective)`;
+          const countLabel = !hasNested
+            ? String(direct)
+            : `${direct} (${resolveEffectiveZoneChannelIds(z, zones).length} channels effective)`;
+          return (
+            <Group gap="xs" wrap="nowrap">
+              <Text size="sm">{countLabel}</Text>
+              {z.omitFromExport ? (
+                <Badge size="xs" variant="light">
+                  Nested only
+                </Badge>
+              ) : null}
+            </Group>
+          );
         },
         sortValue: (z) => z.members.length,
       },
