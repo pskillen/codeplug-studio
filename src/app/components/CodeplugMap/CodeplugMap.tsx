@@ -110,7 +110,7 @@ function hullPathOptions(
       fillColor: MUTED_HULL_STROKE,
       fillOpacity: 0.25,
       weight: 2,
-      opacity: 0.60,
+      opacity: 0.6,
     };
   }
   const base: L.PathOptions = {

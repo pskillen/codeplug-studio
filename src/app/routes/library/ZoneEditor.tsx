@@ -3,7 +3,11 @@ import { Stack, Switch, Text, TextInput } from '@mantine/core';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import type { Library, Zone, ZoneMemberEntry } from '@core/models/library.ts';
 import { newZone } from '@core/domain/factories.ts';
-import { applyFilters, channelHasGeolocation, DEFAULT_MAP_FILTER_OPTS } from '@core/domain/mapProjection.ts';
+import {
+  applyFilters,
+  channelHasGeolocation,
+  DEFAULT_MAP_FILTER_OPTS,
+} from '@core/domain/mapProjection.ts';
 import { resolveEffectiveZoneChannelIds } from '@core/domain/zoneHierarchy.ts';
 import { validateZoneMembership } from '@core/domain/validation.ts';
 import CodeplugMap from '../../components/CodeplugMap/CodeplugMap.tsx';
