@@ -16,6 +16,7 @@ import ChannelModesMultiSelect from '../../components/channels/ChannelModesMulti
 import ChannelWireNameExamples from '../../components/channels/ChannelWireNameExamples.tsx';
 import type { ChannelMode as UiChannelMode } from '../../lib/channelModes.ts';
 import RepeaterVerifyPanel from '../../components/repeaters/RepeaterVerifyPanel.tsx';
+import ChannelZoneMembershipSection from '../../components/library/ChannelZoneMembershipSection.tsx';
 import { FormSection, PercentLevelSlider } from '../../components/ui/index.ts';
 import { hzToMhzString, mhzStringToHz } from '../../lib/units.ts';
 import { persistence } from '../../state/persistence.ts';
@@ -187,6 +188,12 @@ export default function ChannelEditor({
       ) : null}
 
       <ChannelLocationSection value={location} onChange={setLocation} />
+
+      {entity ? (
+        <FormSection title="Zone membership">
+          <ChannelZoneMembershipSection channelId={entity.id} library={library} />
+        </FormSection>
+      ) : null}
 
       {entity ? <RepeaterVerifyPanel channel={liveChannel} library={library} /> : null}
 
