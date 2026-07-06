@@ -1,5 +1,15 @@
 import { useState } from 'react';
-import { Alert, Button, Checkbox, Group, SimpleGrid, Stack, Text, TextInput } from '@mantine/core';
+import {
+  Alert,
+  Button,
+  Checkbox,
+  Group,
+  SimpleGrid,
+  Stack,
+  Tabs,
+  Text,
+  TextInput,
+} from '@mantine/core';
 import { Link, useNavigate } from 'react-router-dom';
 import type { Channel, ChannelModeProfile, Library } from '@core/models/library.ts';
 import { reconcileChannelLocation } from '@core/domain/channelLocation.ts';
@@ -141,87 +151,111 @@ export default function ChannelEditor({
         </Alert>
       ) : null}
 
-      <FormSection title="Identity">
-        <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="sm">
-          <TextInput
-            label="Callsign"
-            description="The callsign, if this is a fixed station. Optional for simplex channels."
-            value={callsign}
-            onChange={(e) => setCallsign(e.currentTarget.value)}
-          />
-        </SimpleGrid>
-        <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="sm">
-          <TextInput
-            label="Name"
-            description="The full unabbreviated name of the channel. May be shortened on export."
-            value={name}
-            onChange={(e) => setName(e.currentTarget.value)}
-          />
-          <TextInput
-            label="Abbreviation"
-            description="Optional short label used when export shortening needs a shorter name."
-            value={abbreviation}
-            onChange={(e) => setAbbreviation(e.currentTarget.value)}
-          />
-        </SimpleGrid>
-        <ChannelWireNameExamples callsign={callsign} name={name} abbreviation={abbreviation} />
-        <TextInput
-          label="Comment"
-          description="Optional comment for the channel. Usually internal but may be exported in some formats."
-          value={comment}
-          onChange={(e) => setComment(e.currentTarget.value)}
-        />
-        <Text component="label" htmlFor="scanSkip" size="sm" fw={500}>
-          Scanning
-        </Text>
-        <Checkbox
-          id="scanSkip"
-          label="Skip on scan"
-          checked={scanSkip}
-          onChange={(e) => setScanSkip(e.currentTarget.checked)}
-        />
-      </FormSection>
+      <Tabs defaultValue="identity">
+        <Tabs.List>
+          <Tabs.Tab value="identity">Identity</Tabs.Tab>
+          <Tabs.Tab value="frequencies">Frequencies</Tabs.Tab>
+          <Tabs.Tab value="modes">Modes</Tabs.Tab>
+          <Tabs.Tab value="location">Location</Tabs.Tab>
+          {entity ? <Tabs.Tab value="zones">Zones</Tabs.Tab> : null}
+          {entity ? <Tabs.Tab value="verify">Repeater</Tabs.Tab> : null}
+        </Tabs.List>
 
-      <FormSection title="Frequencies">
-        <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="sm">
-          <TextInput
-            label="RX frequency (MHz)"
-            value={rx}
-            onChange={(e) => setRx(e.currentTarget.value)}
-          />
-          <TextInput
-            label="TX frequency (MHz)"
-            value={tx}
-            onChange={(e) => setTx(e.currentTarget.value)}
-          />
-        </SimpleGrid>
-        <PercentLevelSlider label="Power" value={power} onChange={setPower} />
-        <ForbidTransmitSegment value={forbidTransmit} onChange={setForbidTransmit} />
-      </FormSection>
+        <Tabs.Panel value="identity" pt="md">
+          <FormSection>
+            <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="sm">
+              <TextInput
+                label="Callsign"
+                description="The callsign, if this is a fixed station. Optional for simplex channels."
+                value={callsign}
+                onChange={(e) => setCallsign(e.currentTarget.value)}
+              />
+            </SimpleGrid>
+            <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="sm">
+              <TextInput
+                label="Name"
+                description="The full unabbreviated name of the channel. May be shortened on export."
+                value={name}
+                onChange={(e) => setName(e.currentTarget.value)}
+              />
+              <TextInput
+                label="Abbreviation"
+                description="Optional short label used when export shortening needs a shorter name."
+                value={abbreviation}
+                onChange={(e) => setAbbreviation(e.currentTarget.value)}
+              />
+            </SimpleGrid>
+            <ChannelWireNameExamples callsign={callsign} name={name} abbreviation={abbreviation} />
+            <TextInput
+              label="Comment"
+              description="Optional comment for the channel. Usually internal but may be exported in some formats."
+              value={comment}
+              onChange={(e) => setComment(e.currentTarget.value)}
+            />
+            <Text component="label" htmlFor="scanSkip" size="sm" fw={500}>
+              Scanning
+            </Text>
+            <Checkbox
+              id="scanSkip"
+              label="Skip on scan"
+              checked={scanSkip}
+              onChange={(e) => setScanSkip(e.currentTarget.checked)}
+            />
+          </FormSection>
+        </Tabs.Panel>
 
-      <FormSection title="Modes">
-        <ChannelModesMultiSelect value={selectedModes} onChange={handleModesChange} />
-      </FormSection>
+        <Tabs.Panel value="frequencies" pt="md">
+          <FormSection>
+            <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="sm">
+              <TextInput
+                label="RX frequency (MHz)"
+                value={rx}
+                onChange={(e) => setRx(e.currentTarget.value)}
+              />
+              <TextInput
+                label="TX frequency (MHz)"
+                value={tx}
+                onChange={(e) => setTx(e.currentTarget.value)}
+              />
+            </SimpleGrid>
+            <PercentLevelSlider label="Power" value={power} onChange={setPower} />
+            <ForbidTransmitSegment value={forbidTransmit} onChange={setForbidTransmit} />
+          </FormSection>
+        </Tabs.Panel>
 
-      {modeProfiles.length > 0 ? (
-        <FormSection title="Mode profiles">
-          <ChannelModeProfilesEditor
-            profiles={modeProfiles}
-            library={library}
-            onChange={setModeProfiles}
-          />
-        </FormSection>
-      ) : null}
+        <Tabs.Panel value="modes" pt="md">
+          <Stack gap="lg">
+            <FormSection>
+              <ChannelModesMultiSelect value={selectedModes} onChange={handleModesChange} />
+            </FormSection>
+            {modeProfiles.length > 0 ? (
+              <FormSection>
+                <ChannelModeProfilesEditor
+                  profiles={modeProfiles}
+                  library={library}
+                  onChange={setModeProfiles}
+                />
+              </FormSection>
+            ) : null}
+          </Stack>
+        </Tabs.Panel>
 
-      <ChannelLocationSection value={location} onChange={setLocation} />
+        <Tabs.Panel value="location" pt="md">
+          <ChannelLocationSection value={location} onChange={setLocation} />
+        </Tabs.Panel>
 
-      {entity ? (
-        <FormSection title="Zone membership">
-          <ChannelZoneMembershipSection channelId={entity.id} library={library} />
-        </FormSection>
-      ) : null}
+        {entity ? (
+          <Tabs.Panel value="zones" pt="md">
+            <ChannelZoneMembershipSection channelId={entity.id} library={library} />
+          </Tabs.Panel>
+        ) : null}
 
-      {entity ? <RepeaterVerifyPanel channel={liveChannel} library={library} /> : null}
+        {entity ? (
+          <Tabs.Panel value="verify" pt="md">
+            <RepeaterVerifyPanel channel={liveChannel} library={library} />
+          </Tabs.Panel>
+        ) : null}
+      </Tabs>
 
       {validationError ? <Alert color="red">{validationError}</Alert> : null}
       {error ? <Alert color="red">{error}</Alert> : null}
