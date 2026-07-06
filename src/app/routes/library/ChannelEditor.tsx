@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Alert, Button, Checkbox, Group, SimpleGrid, Stack, Text, TextInput } from '@mantine/core';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import type { Channel, ChannelModeProfile, Library } from '@core/models/library.ts';
 import { reconcileChannelLocation } from '@core/domain/channelLocation.ts';
 import { newChannel } from '@core/domain/factories.ts';
@@ -17,6 +17,7 @@ import ChannelWireNameExamples from '../../components/channels/ChannelWireNameEx
 import type { ChannelMode as UiChannelMode } from '../../lib/channelModes.ts';
 import RepeaterVerifyPanel from '../../components/repeaters/RepeaterVerifyPanel.tsx';
 import ChannelZoneMembershipSection from '../../components/library/ChannelZoneMembershipSection.tsx';
+import ChannelDeleteButton from '../../components/library/ChannelDeleteButton.tsx';
 import { FormSection, PercentLevelSlider } from '../../components/ui/index.ts';
 import { hzToMhzString, mhzStringToHz } from '../../lib/units.ts';
 import { persistence } from '../../state/persistence.ts';
@@ -49,6 +50,7 @@ export default function ChannelEditor({
   const [validationError, setValidationError] = useState<string | null>(null);
 
   const { save, saving, error } = useEntitySave('channels');
+  const navigate = useNavigate();
 
   const selectedModes = modeProfiles.map((p) => p.mode as ChannelMode);
 
@@ -206,6 +208,9 @@ export default function ChannelEditor({
         <Button component={Link} to="/library/channels" variant="light">
           Cancel
         </Button>
+        {entity ? (
+          <ChannelDeleteButton channel={entity} onDeleted={() => navigate('/library/channels')} />
+        ) : null}
       </Group>
     </Stack>
   );

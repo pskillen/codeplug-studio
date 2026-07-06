@@ -33,6 +33,7 @@ import { channelModesForFilter } from '../../../lib/channels.ts';
 import { useProjects } from '../../../state/useProjects.ts';
 import { useOperatorPosition } from '../../../state/operatorPosition.tsx';
 import { useLibrary } from '../../../state/useLibrary.ts';
+import ChannelListDeleteAction from '../../../components/library/ChannelListDeleteAction.tsx';
 
 function percentLabel(value: number | null): string {
   if (value == null) return '—';
@@ -185,9 +186,22 @@ export default function ChannelsListPage() {
     });
   }, [library, position]);
 
+  const tableColumns = useMemo((): DataTableColumn<Channel>[] => {
+    return [
+      ...optionalColumnDefs,
+      {
+        key: 'actions',
+        header: '',
+        hideable: false,
+        defaultVisible: true,
+        render: (ch: Channel) => <ChannelListDeleteAction channel={ch} />,
+      },
+    ];
+  }, [optionalColumnDefs]);
+
   const sortCtx = useMemo(
     () => ({
-      columns: optionalColumnDefs,
+      columns: tableColumns,
       callsignColumn: {
         getName: (ch: Channel) => ch.callsign || '—',
         getPath: (ch: Channel) => `/library/channels/${ch.id}`,
@@ -198,7 +212,7 @@ export default function ChannelsListPage() {
         getPath: (ch: Channel) => `/library/channels/${ch.id}`,
       },
     }),
-    [optionalColumnDefs],
+    [optionalColumnDefs, tableColumns],
   );
 
   const sortedRows = useMemo(
@@ -251,7 +265,7 @@ export default function ChannelsListPage() {
           columnVisibilityLoad={columnStorageKey ? loadVisibleColumns : undefined}
           callsignColumn={sortCtx.callsignColumn}
           nameColumn={sortCtx.nameColumn}
-          columns={optionalColumnDefs}
+          columns={tableColumns}
           search={query.nameFilterInput}
           searchPending={query.nameFilterPending}
           onSearchChange={query.setNameFilter}
