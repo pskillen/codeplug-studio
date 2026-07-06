@@ -23,6 +23,7 @@ Embeddable Leaflet map for plotting library channels and zone hull overlays insi
 | `referencePosition`  | `{ lat, lon } \| null`                               | `null`       | Proximity centre pin (red **Centre**) and radius circle anchor           |
 | `referenceRadiusM`   | `number \| null`                                     | `null`       | Draw great-circle radius circle around `referencePosition` (metres)      |
 | `dimmedChannelIds`   | `string[]`                                           | `[]`         | Lower-opacity markers (e.g. channels outside proximity radius)           |
+| `fitBoundsChannelIds`| `string[]`                                           | —            | Limit auto-fit bounds to these channel markers (+ emphasis hull)         |
 | `onMapClick`         | `(lat, lon) => void`                                 | —            | Set reference position by clicking the map                               |
 | `onChannelClick`     | `(id: string) => void`                               | —            | Marker popup “Edit channel” action                                       |
 | `onZoneClick`        | `(id: string) => void`                               | —            | Zone popup “Edit zone” action                                            |

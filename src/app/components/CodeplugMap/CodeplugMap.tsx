@@ -108,9 +108,9 @@ function hullPathOptions(
     return {
       color: MUTED_HULL_STROKE,
       fillColor: MUTED_HULL_STROKE,
-      fillOpacity: 0.08,
+      fillOpacity: 0.25,
       weight: 2,
-      opacity: 0.35,
+      opacity: 0.60,
     };
   }
   const base: L.PathOptions = {
@@ -388,6 +388,8 @@ export interface CodeplugMapProps {
   referencePosition?: { lat: number; lon: number } | null;
   referenceRadiusM?: number | null;
   dimmedChannelIds?: readonly string[];
+  /** When set, auto-fit bounds use only these channel markers (plus emphasis hull). */
+  fitBoundsChannelIds?: readonly string[];
   onMapClick?: (lat: number, lon: number) => void;
   onChannelClick?: (channelId: string) => void;
   onZoneClick?: (zoneId: string) => void;
@@ -409,6 +411,7 @@ export default function CodeplugMap({
   referencePosition = null,
   referenceRadiusM = null,
   dimmedChannelIds = [],
+  fitBoundsChannelIds,
   onMapClick,
   onChannelClick,
   onZoneClick,
@@ -555,10 +558,23 @@ export default function CodeplugMap({
   const mapStyle = typeof height === 'number' ? { height: `${height}px` } : { height };
 
   const boundsHullPoints = useMemo(() => {
-    if (isEmphasisMode) return overlayHulls.flatMap((hull) => hull.points);
+    if (isEmphasisMode) {
+      if (fitBoundsChannelIds != null) {
+        return overlayHulls
+          .filter((hull) => hull.variant === 'emphasis' || hull.variant === 'provisional')
+          .flatMap((hull) => hull.points);
+      }
+      return overlayHulls.flatMap((hull) => hull.points);
+    }
     if (!showZoneHulls) return [];
     return zoneHulls.flatMap((zh) => zh.points);
-  }, [isEmphasisMode, overlayHulls, showZoneHulls, zoneHulls]);
+  }, [isEmphasisMode, overlayHulls, showZoneHulls, zoneHulls, fitBoundsChannelIds]);
+
+  const boundsGroups = useMemo(() => {
+    if (!fitBoundsChannelIds?.length) return groups;
+    const idSet = new Set(fitBoundsChannelIds);
+    return groups.filter((group) => group.some((ch) => idSet.has(ch.id)));
+  }, [groups, fitBoundsChannelIds]);
 
   function renderHullShape(
     key: string,
@@ -778,12 +794,12 @@ export default function CodeplugMap({
               </Marker>
             ) : null}
 
-            {groups.length > 0 ||
+            {boundsGroups.length > 0 ||
             operatorPosition != null ||
             referencePosition != null ||
             boundsHullPoints.length > 0 ? (
               <FitMapBounds
-                groups={groups}
+                groups={boundsGroups}
                 zoneHulls={zoneHulls}
                 showZoneHulls={!isEmphasisMode && showZoneHulls}
                 hullPoints={isEmphasisMode ? boundsHullPoints : undefined}

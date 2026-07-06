@@ -41,7 +41,7 @@ Used on the zone editor and **zone from location** page.
 | ---------------- | ------- | ------------------------------------------------------------------------- |
 | Draw this zone   | on      | Solid hull for the editing zone (`emphasisZoneId`)                        |
 | Draw new zone    | on      | Dashed provisional hull from selected channel coords (from-location only) |
-| Draw other zones | on      | Muted grey hulls for other library zones                                  |
+| Draw other zones | on      | Muted grey hulls for other library zones (~45% stroke opacity)            |
 
 **Proximity preview** (zone from location): `referencePosition` + `referenceRadiusM` draw a centre pin and radius circle; `dimmedChannelIds` lowers marker opacity for channels outside the radius.
 
