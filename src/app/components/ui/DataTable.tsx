@@ -1,9 +1,10 @@
 import {
   Anchor,
+  Button,
   Checkbox,
   Group,
   Loader,
-  MultiSelect,
+  Modal,
   ScrollArea,
   Stack,
   Table,
@@ -54,6 +55,7 @@ export interface DataTableProps<T> {
   columns: DataTableColumn<T>[];
   emptyState?: ReactNode;
   caption?: ReactNode;
+  /** Rendered below the table (e.g. bulk actions). */
   toolbar?: ReactNode;
   variant?: DataTableVariant;
   sort?: DataTableSortState | null;
@@ -269,38 +271,54 @@ export default function DataTable<T>({
     sortedRows.length === 0 && totalRowCount !== undefined && totalRowCount > 0;
 
   const columnPickerData = hideableDefs.map((d) => ({ value: d.key, label: d.header }));
+  const [columnModalOpen, setColumnModalOpen] = useState(false);
+
+  const showMetaRow =
+    isList &&
+    (showSearchInput ||
+      showColumnPicker ||
+      totalRowCount !== undefined ||
+      resultCount !== undefined);
+
+  const toggleHideableColumn = useCallback(
+    (key: string, checked: boolean) => {
+      if (checked) {
+        setVisibleHideableKeys([...visibleHideableKeys, key]);
+      } else {
+        setVisibleHideableKeys(visibleHideableKeys.filter((k) => k !== key));
+      }
+    },
+    [setVisibleHideableKeys, visibleHideableKeys],
+  );
 
   return (
     <Stack gap="sm">
-      {showSearchInput || showColumnPicker || toolbar ? (
-        <Group gap="sm" align="flex-end" wrap="wrap">
-          {showSearchInput ? (
-            <TextInput
-              placeholder={searchPlaceholder}
-              value={search ?? ''}
-              onChange={(e) => onSearchChange?.(e.currentTarget.value)}
-              rightSection={searchPending ? <Loader size={16} /> : undefined}
-              style={{ flex: '1 1 12rem', minWidth: '10rem' }}
-              aria-label="Search table"
-            />
-          ) : null}
+      {showSearchInput ? (
+        <TextInput
+          placeholder={searchPlaceholder}
+          value={search ?? ''}
+          onChange={(e) => onSearchChange?.(e.currentTarget.value)}
+          rightSection={searchPending ? <Loader size={16} /> : undefined}
+          w="100%"
+          aria-label="Search table"
+        />
+      ) : null}
+
+      {showMetaRow ? (
+        <Group justify="space-between" align="center" wrap="nowrap" gap="sm">
+          <Text size="sm" c="dimmed">
+            {displayCount} result{displayCount === 1 ? '' : 's'}
+          </Text>
           {showColumnPicker ? (
-            <MultiSelect
-              placeholder="Columns"
-              data={columnPickerData}
-              value={visibleHideableKeys}
-              onChange={setVisibleHideableKeys}
-              clearable
-              style={{ flex: '1 1 10rem', minWidth: '8rem' }}
-              aria-label="Visible columns"
-            />
+            <Button
+              variant="subtle"
+              size="compact-sm"
+              onClick={() => setColumnModalOpen(true)}
+              style={{ flexShrink: 0 }}
+            >
+              Show/hide cols
+            </Button>
           ) : null}
-          {isList && sortedRows.length > 0 ? (
-            <Text size="sm" c="dimmed" style={{ marginLeft: 'auto' }}>
-              {displayCount} result{displayCount === 1 ? '' : 's'}
-            </Text>
-          ) : null}
-          {toolbar}
         </Group>
       ) : null}
 
@@ -402,6 +420,9 @@ export default function DataTable<T>({
           </Table.Tbody>
         </Table>
       </ScrollArea.Autosize>
+
+      {toolbar ? <Group gap="sm">{toolbar}</Group> : null}
+
       {caption ? (
         typeof caption === 'string' ? (
           <Text size="sm" c="dimmed">
@@ -410,6 +431,26 @@ export default function DataTable<T>({
         ) : (
           caption
         )
+      ) : null}
+
+      {showColumnPicker ? (
+        <Modal
+          opened={columnModalOpen}
+          onClose={() => setColumnModalOpen(false)}
+          title="Show/hide columns"
+          size="sm"
+        >
+          <Stack gap="xs">
+            {columnPickerData.map((col) => (
+              <Checkbox
+                key={col.value}
+                label={col.label}
+                checked={visibleHideableKeys.includes(col.value)}
+                onChange={(e) => toggleHideableColumn(col.value, e.currentTarget.checked)}
+              />
+            ))}
+          </Stack>
+        </Modal>
       ) : null}
     </Stack>
   );

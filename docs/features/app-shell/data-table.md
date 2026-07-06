@@ -30,17 +30,20 @@ Dev demos: `/styleguide` (unlinked).
 
 ## DataTable props (list pages)
 
-| Prop                        | Typical use                                                                         |
-| --------------------------- | ----------------------------------------------------------------------------------- |
-| `variant="list"`            | Full-width library list (toolbar search shown)                                      |
-| `rows` / `totalRowCount`    | Filtered rows + unfiltered count for “showing N of M”                               |
-| `nameColumn`                | Linked name cell → editor route (`getName`, `getPath`)                              |
-| `callsignColumn`            | Channels only — sortable callsign link                                              |
-| `columns`                   | Extra sortable columns (`sortValue` required when sortable)                         |
-| `sort` / `onSortChange`     | Controlled sort; wire to persisted hooks                                            |
-| `search` / `onSearchChange` | Toolbar name filter — bind **`nameFilterInput`** / `setNameFilter` from query hooks |
-| `searchPending`             | Show Mantine `Loader` while draft input ≠ committed filter                          |
-| `columnVisibility*`         | Channels optional columns only today                                                |
+| Prop                        | Typical use                                                                                    |
+| --------------------------- | ---------------------------------------------------------------------------------------------- |
+| `variant="list"`            | Full-width library list (toolbar search shown)                                                 |
+| `rows` / `totalRowCount`    | Filtered rows + unfiltered count for “showing N of M”                                          |
+| `nameColumn`                | Linked name cell → editor route (`getName`, `getPath`)                                         |
+| `callsignColumn`            | Channels only — sortable callsign link                                                         |
+| `columns`                   | Extra sortable columns (`sortValue` required when sortable)                                    |
+| `sort` / `onSortChange`     | Controlled sort; wire to persisted hooks                                                       |
+| `search` / `onSearchChange` | Full-width toolbar name filter — bind **`nameFilterInput`** / `setNameFilter` from query hooks |
+| `searchPending`             | Show Mantine `Loader` while draft input ≠ committed filter                                     |
+| `columnVisibility*`         | Channels optional columns — **Show/hide cols** opens a modal with checkboxes                   |
+| `toolbar`                   | Actions rendered **below** the table (e.g. **New zone from selected** on channels)             |
+
+List layout: full-width search → result count row (with optional column picker button) → table → footer toolbar.
 
 Rows link to editors via `nameColumn.getPath`; there is no inline delete on list pages (matches codeplug-tool channels table).
 
