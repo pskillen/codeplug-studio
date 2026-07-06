@@ -9,6 +9,7 @@ import {
   newFormatBuild,
   newRxGroupList,
   newTalkGroup,
+  newZone,
 } from '@core/domain/factories.ts';
 import {
   previewWireRows,
@@ -481,5 +482,46 @@ describe('previewWireRows', () => {
     expect(allRows.find((row) => row.libraryEntityId === orphanChannel.id)?.expansionNote).toBe(
       'Not linked to a zone',
     );
+  });
+
+  it('marks zones with omitFromExport and excludes them from export preview', () => {
+    const projectId = 'proj-omit-zone-preview';
+    const pmrChannel = {
+      ...newChannel(projectId, 'PMR', 'GB3PMR'),
+      id: 'ch-pmr',
+    };
+    const pmrZone = {
+      ...newZone(projectId, 'PMR446'),
+      id: 'zone-pmr',
+      omitFromExport: true,
+      members: [{ kind: 'channel' as const, channelId: pmrChannel.id }],
+    };
+    const glasgowZone = {
+      ...newZone(projectId, 'Glasgow'),
+      id: 'zone-glasgow',
+      members: [{ kind: 'zone' as const, zoneId: pmrZone.id }],
+    };
+    const build = {
+      ...newFormatBuild(projectId, 'opengd77-1701', 'Omit preview'),
+      formatId: 'opengd77',
+    };
+    const library = {
+      channels: [pmrChannel],
+      zones: [pmrZone, glasgowZone],
+      talkGroups: [],
+      digitalContacts: [],
+      analogContacts: [],
+      rxGroupLists: [],
+    };
+
+    const rows = previewWireRows(build, library, 'zone');
+    const pmrRow = rows.find((row) => row.libraryEntityId === pmrZone.id);
+    const glasgowRow = rows.find((row) => row.libraryEntityId === glasgowZone.id);
+
+    expect(pmrRow?.omitFromExport).toBe(true);
+    expect(pmrRow?.expansionNote).toContain('Not exported as its own zone');
+    expect(isPreviewRowIncludedInExport(build, library, 'zone', pmrRow!)).toBe(false);
+    expect(glasgowRow?.omitFromExport).toBeFalsy();
+    expect(isPreviewRowIncludedInExport(build, library, 'zone', glasgowRow!)).toBe(true);
   });
 });

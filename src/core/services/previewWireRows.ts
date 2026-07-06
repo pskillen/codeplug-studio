@@ -23,6 +23,9 @@ export const PREVIEW_ROW_NOT_REFERENCED_NOTE = 'Not referenced by exported chann
 
 export const PREVIEW_ROW_NOT_ZONE_LINKED_NOTE = 'Not linked to a zone';
 
+export const PREVIEW_ROW_OMIT_FROM_EXPORT_NOTE =
+  'Not exported as its own zone — channels still export inside parent zones (library setting)';
+
 /** Optional sub-lines under the display name — expansion context for wire naming. */
 export interface WirePreviewDisplayLine {
   label: string;
@@ -42,6 +45,8 @@ export interface WirePreviewRow {
   excluded: boolean;
   expansionNote?: string;
   displayDetails?: WirePreviewDisplayLine[];
+  /** Library zone flagged omitFromExport — no standalone Zones.csv row. */
+  omitFromExport?: boolean;
 }
 
 export function overrideFieldForEntityKind(entityKind: WirePreviewEntityKind): OverrideField {
@@ -247,14 +252,19 @@ export function previewWireRows(
       return library.zones.map((zone) => {
         const assembled = projection.zones.find((row) => row.zoneId === zone.id);
         const memberCount = assembled?.memberChannelIds.length ?? zone.members.length;
-        return previewRow(
-          zone.id,
-          zone.id,
-          'zone',
-          `${zone.name} (${memberCount} channel${memberCount === 1 ? '' : 's'})`,
-          zone.name,
-          build.zoneOverrides,
-        );
+        const omitFromExport = zone.omitFromExport === true;
+        return {
+          ...previewRow(
+            zone.id,
+            zone.id,
+            'zone',
+            `${zone.name} (${memberCount} channel${memberCount === 1 ? '' : 's'})`,
+            zone.name,
+            build.zoneOverrides,
+            omitFromExport ? PREVIEW_ROW_OMIT_FROM_EXPORT_NOTE : undefined,
+          ),
+          omitFromExport,
+        };
       });
     case 'talkGroup': {
       const reserved = new Set<string>();
@@ -351,6 +361,8 @@ export function isPreviewRowIncludedInExport(
       return row.expansionNote !== PREVIEW_ROW_NOT_REFERENCED_NOTE;
     case 'contact':
       return row.expansionNote !== PREVIEW_ROW_NOT_REFERENCED_NOTE;
+    case 'zone':
+      return !row.omitFromExport;
     default:
       return true;
   }
