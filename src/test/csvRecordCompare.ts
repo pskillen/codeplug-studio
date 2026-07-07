@@ -154,3 +154,26 @@ export function compareCsvRecords(
     fieldDiffs,
   };
 }
+
+export function formatCsvRecordCompareFailure(result: CsvRecordCompareResult): string {
+  const lines: string[] = [];
+  if (result.originalCount !== result.exportedCount) {
+    lines.push(`Record count: ${result.originalCount} original → ${result.exportedCount} exported`);
+  }
+  /* eslint-disable no-control-regex */
+  if (result.missingInExport.length) {
+    lines.push(`Unmatched original rows: ${result.missingInExport.length}`);
+    lines.push(`  e.g. ${result.missingInExport[0]?.replace(/\u0001/g, ' | ')}`);
+  }
+  if (result.missingInOriginal.length) {
+    lines.push(`Unmatched exported rows: ${result.missingInOriginal.length}`);
+    lines.push(`  e.g. ${result.missingInOriginal[0]?.replace(/\u0001/g, ' | ')}`);
+  }
+  /* eslint-enable no-control-regex */
+  for (const diff of result.fieldDiffs.slice(0, 10)) {
+    lines.push(
+      `${diff.column}: ${JSON.stringify(diff.original)} → ${JSON.stringify(diff.exported)}`,
+    );
+  }
+  return lines.join('\n');
+}

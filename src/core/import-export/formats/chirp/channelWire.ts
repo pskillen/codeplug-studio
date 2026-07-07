@@ -1,4 +1,4 @@
-import type { Channel, ChannelModeProfileAnalog } from '@core/models/library.ts';
+import type { Channel, ChannelModeProfileAnalog, ScanInclusion } from '@core/models/library.ts';
 import type { ChannelTone } from '@core/models/libraryTypes.ts';
 import { chirpPercentToWire, chirpWireToPercent } from './profiles.ts';
 
@@ -160,6 +160,11 @@ export function deriveChirpDuplexAndOffset(
   const offsetMhz = Math.abs(diffHz) / 1_000_000;
   if (diffHz > 0) return { duplex: '+', offsetMhz };
   return { duplex: '-', offsetMhz };
+}
+
+/** CHIRP `Skip` column `S` means skip scan; empty means participate. */
+export function scanInclusionFromChirpSkipColumn(wire: string): ScanInclusion {
+  return wire.trim().toUpperCase() === 'S' ? 'skip' : 'alwaysScan';
 }
 
 /** TStep is ignored on import — export always emits `5.00`. */

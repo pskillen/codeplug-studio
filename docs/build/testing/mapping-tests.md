@@ -71,11 +71,12 @@ Wire-format column detail: `docs/reference/<format>/`. Strategy docs cite **outc
 | Scenario                         | What it proves                             | Layer                                                 | Status                                                                                                                              |
 | -------------------------------- | ------------------------------------------ | ----------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
 | **Import mapping**               | Fixture → golden library (+ build)         | Adapter + service                                     | Planned (Phase 4+)                                                                                                                  |
-| **Export mapping**               | Constructed library + build → golden wire  | Adapter + service                                     | Shipped (OpenGD77 + DM32 `serialise.test.ts`)                                                                                       |
+| **Export mapping**               | Constructed library + build → golden wire  | Adapter + service                                     | Shipped (OpenGD77, DM32, CHIRP `serialise.test.ts` / `exportGolden.test.ts`) |
 | **Assemble**                     | Trait profile shapes export projection     | Unit / service                                        | Shipped (`assemble.test.ts`)                                                                                                        |
 | **Wire preview**                 | Overrides + expansion + shortening in UI   | `previewWireRows.test.ts`                             | Shipped ([#87](https://github.com/pskillen/codeplug-studio/issues/87)–[#90](https://github.com/pskillen/codeplug-studio/issues/90)) |
 | **Export mapping (OpenGD77)**    | Constructed library + build → Channels.csv | `serialise.test.ts`                                   | Shipped — includes multi-mode expansion                                                                                             |
 | **Export mapping (DM32)**        | Minimal library + synthetic golden bundle  | `formats/dm32/serialise.test.ts`, `dm32CsvCompare.ts` | Shipped — RX-list fan-out, zone scan, v1.60 header parity; excludes `No.`, `Scan List`, `DMR ID`, unmodelled APRS defaults          |
+| **Export mapping (CHIRP)**       | Fixture-derived library + flat memory build | `formats/chirp/exportGolden.test.ts`                | Shipped — per-profile golden CSV compare; excludes `Location`, `Comment`; analogue FM/AM only                                          |
 | **Same-format round-trip smoke** | A → internal → A roughly stable            | Optional integration                                  | Secondary — not primary gate                                                                                                        |
 | **Cross-format**                 | A → library → B export                     | Adapter matrix                                        | Planned                                                                                                                             |
 | **Lossy fields**                 | Known non-surviving columns documented     | Reference + mapping tests                             | Per `docs/reference/<format>/`                                                                                                      |
@@ -94,7 +95,7 @@ Pattern (when adapters ship):
 | Format   | Import golden | Export golden                                     | Round-trip smoke |
 | -------- | ------------- | ------------------------------------------------- | ---------------- |
 | OpenGD77 | Planned       | Shipped (`serialise.test.ts`)                     | Optional         |
-| CHIRP    | Planned       | Planned                                           | Optional         |
+| CHIRP    | Planned       | Shipped (`exportGolden.test.ts`, `serialise.test.ts`) | Optional         |
 | DM32     | Planned       | Shipped (`serialise.test.ts`, `warnings.test.ts`) | Optional         |
 
 ## Related
