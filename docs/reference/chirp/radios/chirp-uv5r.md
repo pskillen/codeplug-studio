@@ -1,7 +1,7 @@
 # Baofeng UV-5R Mini — CHIRP profile
 
-**Profile id:** `baofeng-uv5r-mini`  
-**Fixture:** `test-data/chirp/20260629/baofeng-uv5r-mini/Baofeng_UV-5R Mini_20251129.csv`  
+**Profile id:** `chirp-uv5r`  
+**Fixture:** `formats/chirp/__fixtures__/export/Baofeng_UV-5R Mini_20251129.csv`  
 **Max RF:** 5 W
 
 ## Limits
@@ -9,6 +9,7 @@
 | Constraint       | Value   | Export behaviour                                                         |
 | ---------------- | ------- | ------------------------------------------------------------------------ |
 | Max memory slots | 128     | Warn when channel count exceeds; truncate lowest-priority rows if forced |
+| Channel name     | 7 chars | Name shortening at export boundary                                       |
 | Modes            | NFM, AM | Skip non-FM/AM internal modes with warning                               |
 
 ## Power ladder (wire → percent)

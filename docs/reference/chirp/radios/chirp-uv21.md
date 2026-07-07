@@ -1,7 +1,7 @@
 # Baofeng UV-21Pro V2 — CHIRP profile
 
-**Profile id:** `baofeng-uv21prov2`  
-**Fixture:** `test-data/chirp/20260629/baofeng-uv21proV2/Baofeng_UV-21ProV2_20251129.csv`  
+**Profile id:** `chirp-uv21`  
+**Fixture:** `formats/chirp/__fixtures__/export/Baofeng_UV-21ProV2_20251129.csv`  
 **Max RF:** 6 W
 
 ## Limits
@@ -9,6 +9,7 @@
 | Constraint       | Value |
 | ---------------- | ----- |
 | Max memory slots | 128   |
+| Channel name     | 16    |
 
 ## Power ladder (wire → percent)
 
