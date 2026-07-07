@@ -1,13 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import {
-  Accordion,
-  Button,
-  Group,
-  MultiSelect,
-  Stack,
-  Text,
-  TextInput,
-} from '@mantine/core';
+import { Accordion, Button, Group, MultiSelect, Stack, Text, TextInput } from '@mantine/core';
 import type { FormatBuild } from '@core/models/formatBuild.ts';
 import type { ScanListEntry, ScanListsLayout } from '@core/models/traitLayout.ts';
 import { channelDisplayLabel } from '@core/domain/channelNaming.ts';
@@ -34,7 +26,9 @@ async function loadLibrarySlice(projectId: string): Promise<LibrarySlice> {
 }
 
 function findScanListsSection(build: FormatBuild): ScanListsLayout | undefined {
-  return build.layout.sections.find((section): section is ScanListsLayout => section.kind === 'scanLists');
+  return build.layout.sections.find(
+    (section): section is ScanListsLayout => section.kind === 'scanLists',
+  );
 }
 
 function emptyScanListsLayout(): ScanListsLayout {
@@ -178,9 +172,7 @@ export default function BuildScanListLayoutEditor() {
                     label="Name"
                     value={entry.name}
                     disabled={saving}
-                    onChange={(event) =>
-                      updateEntry(entry.id, { name: event.currentTarget.value })
-                    }
+                    onChange={(event) => updateEntry(entry.id, { name: event.currentTarget.value })}
                   />
                   <MultiSelect
                     label="Channels"

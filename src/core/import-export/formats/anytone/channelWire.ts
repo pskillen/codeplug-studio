@@ -16,7 +16,9 @@ import {
 import { DEFAULT_ANYTONE_PROFILE_ID, getAnytoneProfile } from './profiles.ts';
 
 function dmrProfile(channel: Channel): ChannelModeProfileDMR | null {
-  const profile = channel.modeProfiles.find((row): row is ChannelModeProfileDMR => row.mode === 'dmr');
+  const profile = channel.modeProfiles.find(
+    (row): row is ChannelModeProfileDMR => row.mode === 'dmr',
+  );
   return profile ?? null;
 }
 
@@ -43,7 +45,9 @@ export function serialiseAnytoneChannelRow(
     [CHANNEL_COL.name]: row.wireName,
     [CHANNEL_COL.rx]: formatAnytoneFrequencyMHz(channel.rxFrequency),
     [CHANNEL_COL.tx]: formatAnytoneFrequencyMHz(channel.txFrequency),
-    [CHANNEL_COL.channelType]: formatAnytoneChannelType(dmr?.mode ?? channel.modeProfiles[0]?.mode ?? 'dmr'),
+    [CHANNEL_COL.channelType]: formatAnytoneChannelType(
+      dmr?.mode ?? channel.modeProfiles[0]?.mode ?? 'dmr',
+    ),
     [CHANNEL_COL.power]: formatAnytonePowerWire(profile.id, channel.power),
     [CHANNEL_COL.bandwidth]: formatAnytoneBandwidthKhz(
       analog && 'bandwidthKHz' in analog ? analog.bandwidthKHz : 12.5,

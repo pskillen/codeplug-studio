@@ -6,6 +6,14 @@ Items **skipped**, **incomplete**, or **discovered during execution** — not sc
 
 ---
 
+## Shipped in Phase 7 export ([#228](https://github.com/pskillen/codeplug-studio/issues/228))
+
+- [x] **DMR MVP export** — core DMR CSV bundle + ZIP ([#233](https://github.com/pskillen/codeplug-studio/issues/233))
+- [x] **Dedicated scan lists** — `ScanListsLayout`, scan list build page, channel `scanListId` ([#234](https://github.com/pskillen/codeplug-studio/issues/234))
+- [x] **Directional export goldens** — `exportGolden.test.ts` ([#236](https://github.com/pskillen/codeplug-studio/issues/236))
+
+---
+
 ## Build model notes (post-#243)
 
 - **`orderOrSlot` on `BuildEntityOverride`** — shipped for CHIRP flat memory ([#243](https://github.com/pskillen/codeplug-studio/pull/243)). Anytone `Channel.CSV` / `AMAir.CSV` / `FM.CSV` `No.` columns are the likely export target for the same field (including fixed VFO slot numbers). Confirm per-bank behaviour in [#232](https://github.com/pskillen/codeplug-studio/issues/232) / [#233](https://github.com/pskillen/codeplug-studio/issues/233).

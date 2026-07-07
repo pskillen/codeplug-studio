@@ -3,10 +3,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, it } from 'vitest';
 import { exportBuildAll } from '@core/services/exportBuild.ts';
-import {
-  minimalAnytoneExportBuild,
-  minimalAnytoneExportLibrary,
-} from './exportGoldenFixtures.ts';
+import { minimalAnytoneExportBuild, minimalAnytoneExportLibrary } from './exportGoldenFixtures.ts';
 
 const fixtureDir = join(dirname(fileURLToPath(import.meta.url)), '__fixtures__/export');
 

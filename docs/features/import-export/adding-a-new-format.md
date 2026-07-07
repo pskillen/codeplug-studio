@@ -11,6 +11,7 @@ The internal [library + format build model](../data-model/README.md) is the hub 
 | OpenGD77 CSV | Planned | Shipped | `src/core/import-export/formats/opengd77/`    |
 | DM32 CSV     | Planned | Shipped | `src/core/import-export/formats/dm32/`        |
 | CHIRP CSV    | Planned | Shipped | `src/core/import-export/formats/chirp/`       |
+| Anytone CPS  | Planned | Shipped | `src/core/import-export/formats/anytone/`     |
 | Native YAML  | Shipped | Shipped | `src/core/import-export/formats/native-yaml/` |
 
 ---
@@ -157,7 +158,7 @@ src/core/import-export/formats/<format>/
 - [ ] Add `TraitProfile` in `src/core/models/traits.ts` — drives build UI composition
 - [ ] Add radio profiles in `formats/<format>/profiles.ts`
 - [ ] Extend `getFormatProfiles()` in `formatProfiles.ts` + `formatProfileWireHint` if needed
-- [ ] Wire ZIP packaging in `exportBuild.ts` if not following OpenGD77/DM32 pattern
+- [ ] Wire ZIP packaging in `exportBuild.ts` if not following OpenGD77/DM32 pattern — `exportBuildZip` branches per multi-file format (`buildOpenGd77Zip`, `buildDm32Zip`, `buildAnytoneZip`, …); add a branch when shipping a new multi-file delivery
 
 Use `satisfies ImportAdapter` / `satisfies MultiFileExportAdapter` (or single-file variants) on adapter objects.
 
@@ -220,6 +221,9 @@ Each format build is created from a **trait profile** (`TRAIT_PROFILES` in `src/
 | `opengd77-1701`, `opengd77-md9600` | `opengd77` | `ZoneGrouping`, `ZoneAsScanList`, `MultiTalkGroupPerChannel` |
 | `dm32-baofeng-dm32uv`              | `dm32`     | `ZoneGrouping`, `ScanLists`, `MxNChannelExpansion`           |
 | `chirp-uv5r`                       | `chirp`    | `FlatMemoryList`, `PerChannelScanFlag`                       |
+| `anytone-at-d890uv`                | `anytone`  | `ZoneGrouping`, `ScanLists` (dedicated `ScanList.CSV`)       |
+
+**Dedicated scan lists:** formats with a first-class scan-list CPS file (Anytone `ScanList.CSV`) use `ScanListsLayout` on `FormatBuild.layout` — not DM32-style zone-derived scan. Channel→scan-list assignment is `scanListId` on `channelOverrides`. See `traitLayout.ts` and `assemble.ts`.
 
 **Two profile registries** share `profileId` keys where both exist:
 
@@ -502,6 +506,22 @@ End-to-end smoke before PR:
 | UI            | `BuildMemoriesPage`, `ExportBuildCpsPanel` (Download CSV)                         |
 | Tests         | `exportGolden.test.ts`, `serialise.test.ts`, `exportChannelWire.test.ts`          |
 | Expansion     | Neither mode nor TG fan-out — flat analogue memories only                         |
+
+---
+
+## Worked example: Anytone (export shipped)
+
+| Step           | Location                                                                                      |
+| -------------- | --------------------------------------------------------------------------------------------- |
+| Feature hub    | `docs/features/import-export/anytone/README.md`                                               |
+| Reference hub  | `docs/reference/anytone/README.md`                                                            |
+| Fixtures       | `test-data/anytone/at-d890uv/` (wire spike) + `formats/anytone/__fixtures__/export/` (golden) |
+| Export adapter | `formats/anytone/adapter.ts`, `serialise.ts`, `channelWire.ts`, `packageZip.ts`               |
+| Scan lists     | `ScanListsLayout` on build; `BuildScanListsWirePage`, `BuildScanListLayoutEditor`             |
+| Trait profile  | `anytone-at-d890uv` — `ZoneGrouping` + `ScanLists`                                            |
+| ZIP branch     | `buildAnytoneZip` in `exportBuild.ts`                                                         |
+| Tests          | `exportGolden.test.ts`, `serialise.test.ts`, `columns.test.ts`                                |
+| Expansion      | Multi-mode **off**; multi-TG **off** (native RGL); dedicated scan lists                       |
 
 ---
 

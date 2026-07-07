@@ -24,10 +24,7 @@ export function formatAnytoneChannelType(mode: string): string {
   return 'D-Digital';
 }
 
-export function formatAnytonePowerWire(
-  profileId: string,
-  percent: number | null,
-): string {
+export function formatAnytonePowerWire(profileId: string, percent: number | null): string {
   return anytonePercentToWire(profileId, percent);
 }
 

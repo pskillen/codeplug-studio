@@ -9,10 +9,7 @@ import {
   compareCsvRecords,
   formatCsvRecordCompareFailure,
 } from '../../../../test/csvRecordCompare.ts';
-import {
-  minimalAnytoneExportBuild,
-  minimalAnytoneExportLibrary,
-} from './exportGoldenFixtures.ts';
+import { minimalAnytoneExportBuild, minimalAnytoneExportLibrary } from './exportGoldenFixtures.ts';
 
 const fixtureDir = join(dirname(fileURLToPath(import.meta.url)), '__fixtures__/export');
 

@@ -4,7 +4,10 @@ import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import { detectKind } from './columns.ts';
 
-const FIXTURE_DIR = join(dirname(fileURLToPath(import.meta.url)), '../../../../../test-data/anytone/at-d890uv');
+const FIXTURE_DIR = join(
+  dirname(fileURLToPath(import.meta.url)),
+  '../../../../../test-data/anytone/at-d890uv',
+);
 
 function fixtureHeaderRow(fileName: string): string[] {
   const text = readFileSync(join(FIXTURE_DIR, fileName), 'utf8');
@@ -26,13 +29,15 @@ describe('anytone detectKind', () => {
   });
 
   it('classifies DMRTalkGroups.CSV', () => {
-    expect(detectKind('DMRTalkGroups.CSV', fixtureHeaderRow('DMRTalkGroups.CSV'))).toBe('talkGroups');
+    expect(detectKind('DMRTalkGroups.CSV', fixtureHeaderRow('DMRTalkGroups.CSV'))).toBe(
+      'talkGroups',
+    );
   });
 
   it('classifies DMRReceiveGroupCallList.CSV', () => {
-    expect(detectKind('DMRReceiveGroupCallList.CSV', fixtureHeaderRow('DMRReceiveGroupCallList.CSV'))).toBe(
-      'rxGroupLists',
-    );
+    expect(
+      detectKind('DMRReceiveGroupCallList.CSV', fixtureHeaderRow('DMRReceiveGroupCallList.CSV')),
+    ).toBe('rxGroupLists');
   });
 
   it('classifies RadioIDList.CSV', () => {

@@ -2,7 +2,9 @@ import type { AssembledBuild } from '@core/services/assemble.ts';
 import type { LibrarySlice } from '@core/services/assemble.ts';
 import { formatAnytoneFrequencyMHz } from './wireFormat.ts';
 
-export function channelFrequencyById(assembled: AssembledBuild): Map<string, { rx: string; tx: string }> {
+export function channelFrequencyById(
+  assembled: AssembledBuild,
+): Map<string, { rx: string; tx: string }> {
   const map = new Map<string, { rx: string; tx: string }>();
   for (const row of assembled.channels) {
     map.set(row.entity.id, {

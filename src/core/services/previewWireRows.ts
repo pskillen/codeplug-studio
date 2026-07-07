@@ -28,12 +28,7 @@ import { isChirpAnalogueExportable } from '@core/import-export/formats/chirp/cha
 import { previewGeneratedChannelWireName } from './previewChannelWireName.ts';
 
 export type WirePreviewEntityKind =
-  | 'channel'
-  | 'zone'
-  | 'scanList'
-  | 'talkGroup'
-  | 'contact'
-  | 'rxGroupList';
+  'channel' | 'zone' | 'scanList' | 'talkGroup' | 'contact' | 'rxGroupList';
 
 export const PREVIEW_ROW_NOT_REFERENCED_NOTE = 'Not referenced by exported channels';
 
@@ -115,7 +110,9 @@ function zoneDirectMembersPreview(zone: Zone, library: LibrarySlice): WirePrevie
 }
 
 function scanListsLayout(build: FormatBuild): ScanListsLayout | undefined {
-  return build.layout.sections.find((section): section is ScanListsLayout => section.kind === 'scanLists');
+  return build.layout.sections.find(
+    (section): section is ScanListsLayout => section.kind === 'scanLists',
+  );
 }
 
 function previewRow(

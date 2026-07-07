@@ -4,7 +4,7 @@ Product behaviour for Anytone CPS CSV in Codeplug Studio. Wire column tables liv
 
 **Tracking:** Phase 7 export [#228](https://github.com/pskillen/codeplug-studio/issues/228) · Import [#229](https://github.com/pskillen/codeplug-studio/issues/229)
 
-**Source (planned):** `src/core/import-export/formats/anytone/`
+**Source:** `src/core/import-export/formats/anytone/`
 
 **Progress:** [anytone-progress.md](../anytone-progress.md) · **Outstanding:** [anytone-outstanding.md](../anytone-outstanding.md)
 
@@ -66,7 +66,7 @@ Library CRUD does **not** enforce radio caps. Export adapters warn or truncate a
 
 ## Operator lifecycle
 
-Create an `anytone-at-d890uv` build, curate library + build layout, export CPS CSV bundle for vendor CPS import — see [operator lifecycle](../workflows/operator-lifecycle.md) (Anytone path ships with [#235](https://github.com/pskillen/codeplug-studio/issues/235)).
+Create an `anytone-at-d890uv` build, curate library zones + build scan lists, assign per-channel scan lists on the Channels page, preview wire rows, and export a CPS CSV ZIP from the build Export page — see [operator lifecycle](../workflows/operator-lifecycle.md).
 
 ## Related
 
