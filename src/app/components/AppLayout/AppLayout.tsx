@@ -6,6 +6,7 @@ import AppNav from '../AppNav/AppNav.tsx';
 import SectionNav from '../SectionNav/SectionNav.tsx';
 import AppHeader from '../ui/AppHeader.tsx';
 import BuildFooter from '../BuildFooter/BuildFooter.tsx';
+import CookieConsentBanner from '../CookieConsentBanner/CookieConsentBanner.tsx';
 import {
   NAVBAR_WIDTH_WITH_SECONDARY,
   PRIMARY_NAV_WIDTH,
@@ -59,6 +60,7 @@ export default function AppLayout() {
             <SectionNav variant="toolbar" />
           </Box>
         ) : null}
+        <CookieConsentBanner />
         <Outlet />
         <BuildFooter />
       </AppShell.Main>

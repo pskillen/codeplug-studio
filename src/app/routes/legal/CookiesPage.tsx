@@ -1,5 +1,6 @@
 import { Anchor, List, Stack, Text } from '@mantine/core';
 import { Link } from 'react-router-dom';
+import CookiePreferenceControl from '../../components/CookieConsentBanner/CookiePreferenceControl.tsx';
 import { ListPage, PageSection } from '../components/ui/index.ts';
 
 export default function CookiesPage() {
@@ -42,9 +43,7 @@ export default function CookiesPage() {
 
       <PageSection title="Your preference">
         <Stack gap="sm" id="cookie-preference">
-          <Text size="sm" c="dimmed">
-            Preference controls appear here once you have seen the cookie banner.
-          </Text>
+          <CookiePreferenceControl />
         </Stack>
       </PageSection>
     </ListPage>
