@@ -11,6 +11,6 @@
 | Cookie banner | Shipped | `CookieConsentBanner` |
 | Dual GA CI wiring | Shipped | prod + pre-prod secrets |
 | GA4 + path sanitization | Shipped | `gtag.ts`, `analyticsPagePath` |
+| Playwright consent smoke | Shipped | `e2e/cookie-consent.spec.ts` |
 | Vitest coverage | Shipped | `App.test.tsx` consent + legal |
-| Playwright consent smoke | Pending | |
 | Documentation | Pending | |

@@ -1,23 +1,31 @@
 # End-to-end tests
 
-**Status: planned** — Playwright not installed; no `npm run test:e2e` script.
+**Status: partial** — Playwright installed; cookie consent smoke shipped ([#176](https://github.com/pskillen/codeplug-studio/issues/176)). Home load and persistence smokes remain ([#162](https://github.com/pskillen/codeplug-studio/issues/162)).
 
 **Purpose:** Prove real browser behaviour that unit and component tests cannot — file upload, IndexedDB persistence across reload, ZIP download, path-based router navigation at site root (`/`).
 
 ## Target command
 
 ```bash
-npm run test:e2e   # planned
+npm run build && npm run test:e2e
 ```
+
+Playwright starts `vite preview` on port 4173 automatically (see `playwright.config.ts`).
+
+## Shipped scenarios
+
+| Spec | Scenario |
+| --- | --- |
+| `e2e/cookie-consent.spec.ts` | Banner on first visit; accept/decline persistence; no GA network before opt-in |
 
 ## Scope (phased)
 
-| Phase | Scenario                                                      |
-| ----- | ------------------------------------------------------------- |
-| 1     | Dev server smoke — home loads, footer shows build info        |
-| 2     | Create project → add channel → reload → channel still present |
-| 3     | Import CPS fixture → library counts match → export download   |
-| 4     | Map route — located channel marker visible                    |
+| Phase | Scenario | Status |
+| ----- | -------- | ------ |
+| 1 | Dev server smoke — home loads, footer shows build info | Planned ([#162](https://github.com/pskillen/codeplug-studio/issues/162)) |
+| 2 | Create project → add channel → reload → channel still present | Planned ([#162](https://github.com/pskillen/codeplug-studio/issues/162)) |
+| 3 | Import CPS fixture → library counts match → export download | Planned |
+| 4 | Map route — located channel marker visible | Planned |
 
 ## Configuration notes
 
