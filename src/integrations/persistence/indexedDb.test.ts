@@ -6,6 +6,7 @@ import {
   newProjectMeta,
   newTalkGroup,
 } from '@core/domain/factories.ts';
+import type { Channel } from '@core/models/library.ts';
 import { IndexedDbProjectPersistence } from './indexedDb.ts';
 import type { PersistenceChange } from './types.ts';
 
@@ -52,9 +53,14 @@ describe('IndexedDbProjectPersistence', () => {
     const channel = newChannel(meta.projectId, 'Legacy');
     const { scanInclusion: _scanInclusion, ...legacyRow } = channel;
     void _scanInclusion;
+    const legacyStoredRow: Omit<Channel, 'scanInclusion'> & { scanSkip: boolean } = {
+      ...legacyRow,
+      scanSkip: true,
+    };
     await store.seedProject({
       meta,
-      channels: [{ ...legacyRow, scanSkip: true } as typeof channel],
+      // Pre-schema-v8 rows persisted without scanInclusion.
+      channels: [legacyStoredRow as unknown as Channel],
     });
 
     const loaded = await store.getChannel(meta.projectId, channel.id);
