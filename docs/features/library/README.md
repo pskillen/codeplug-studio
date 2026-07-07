@@ -135,7 +135,7 @@ Channel DMR profiles reference a **digital contact** and an **RX group list** by
 
 - **Top-level tabs:** Identity, Frequencies, Modes (mode pick + `PillTabs` profiles), Location, Zone membership (edit only), Repeater verify (edit only) — reduces scroll on long channel forms.
 - **No default mode** on new channels — operator selects modes via card grid (`ChannelModesMultiSelect`); `modeProfiles` starts empty.
-- **Location section:** Maidenhead locator, lat/lon, use-location, map click/drag (`ChannelLocationSection` + `MapLocationPicker`). Save reconciles locator ↔ coords via `reconcileChannelLocation` (coordinates win on conflict).
+- **Location section:** Maidenhead locator, lat/lon, use-location, map click/drag (`ChannelLocationSection` + `MapLocationPicker`). Map unmounts when another editor tab is active ([#208](https://github.com/pskillen/codeplug-studio/issues/208)). Save reconciles locator ↔ coords via `reconcileChannelLocation` (coordinates win on conflict).
 - **Mode profiles:** tabbed editor per selected mode (`ChannelModeProfilesEditor`).
 - **Zone membership** (edit only): `ChannelZoneMembershipSection` — zones containing this channel, add/remove ([#180](https://github.com/pskillen/codeplug-studio/issues/180)).
 - **Duplicate** and **Delete channel** actions on saved channels ([#180](https://github.com/pskillen/codeplug-studio/issues/180)).

@@ -48,6 +48,7 @@ export default function ChannelEditor({
   const [location, setLocation] = useState<ChannelLocationValues>(() =>
     channelLocationValuesFromChannel(base),
   );
+  const [activeTab, setActiveTab] = useState('identity');
   const [validationError, setValidationError] = useState<string | null>(null);
 
   const { save, saving, error } = useEntitySave('channels');
@@ -142,7 +143,7 @@ export default function ChannelEditor({
         </Alert>
       ) : null}
 
-      <Tabs defaultValue="identity">
+      <Tabs value={activeTab} onChange={(value) => value && setActiveTab(value)}>
         <Tabs.List>
           <Tabs.Tab value="identity">Identity</Tabs.Tab>
           <Tabs.Tab value="frequencies">Frequencies</Tabs.Tab>
@@ -224,7 +225,11 @@ export default function ChannelEditor({
         </Tabs.Panel>
 
         <Tabs.Panel value="location" pt="md">
-          <ChannelLocationSection value={location} onChange={setLocation} />
+          <ChannelLocationSection
+            value={location}
+            onChange={setLocation}
+            mapActive={activeTab === 'location'}
+          />
         </Tabs.Panel>
 
         {entity ? (
