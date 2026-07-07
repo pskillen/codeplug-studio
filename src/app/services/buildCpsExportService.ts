@@ -1,6 +1,13 @@
 import type { FormatBuild } from '@core/models/formatBuild.ts';
 import type { CpsExportOptions, FormatId } from '@core/import-export/types.ts';
-import { exportBuildAll, exportBuildFile, exportBuildZip } from '@core/services/exportBuild.ts';
+import { isSingleFileCpsExportAdapter } from '@core/import-export/exportAdapter.ts';
+import { getExportAdapter } from '@core/import-export/registry.ts';
+import {
+  exportBuildAll,
+  exportBuildFile,
+  exportBuildSingleFile,
+  exportBuildZip,
+} from '@core/services/exportBuild.ts';
 import type { LibrarySlice } from '@core/services/assemble.ts';
 import type { ProjectPersistence } from '@integrations/persistence/index.ts';
 import { downloadTextFile, downloadZip } from '@integrations/download/browserDownload.ts';
@@ -64,6 +71,15 @@ export function defaultCpsZipFileName(buildName: string, formatId: FormatId): st
   return `${slugifyFileName(buildName)}-${formatId}.zip`;
 }
 
+/** Default single-file CPS name from the format adapter profile. */
+export function defaultCpsSingleFileName(formatId: FormatId, profileId: string): string {
+  const adapter = getExportAdapter(formatId);
+  if (isSingleFileCpsExportAdapter(adapter)) {
+    return adapter.defaultFileName(profileId);
+  }
+  return `${slugifyFileName(profileId)}.csv`;
+}
+
 /** Serialise all CPS CSV files for preview (no browser download). */
 export async function previewCpsExport(
   projectId: string,
@@ -74,6 +90,19 @@ export async function previewCpsExport(
   const build = await requireBuild(store, projectId, buildId);
   const library = await loadLibrarySlice(store, projectId);
   const result = exportBuildAll({ build, library, options });
+  return { files: result.files, warnings: result.warnings };
+}
+
+/** Serialise a single CPS CSV for preview (no browser download). */
+export async function previewCpsSingleFile(
+  projectId: string,
+  buildId: string,
+  options?: CpsExportOptions,
+  store: ProjectPersistence = persistence,
+): Promise<CpsPreviewResult> {
+  const build = await requireBuild(store, projectId, buildId);
+  const library = await loadLibrarySlice(store, projectId);
+  const result = exportBuildSingleFile({ build, library, options });
   return { files: result.files, warnings: result.warnings };
 }
 
@@ -88,6 +117,21 @@ export async function downloadCpsFile(
   const build = await requireBuild(store, projectId, buildId);
   const library = await loadLibrarySlice(store, projectId);
   const result = exportBuildFile({ build, library, fileName, options });
+  downloadTextFile(result.content, fileName);
+  return { warnings: result.warnings };
+}
+
+/** Download a single CPS CSV file for a build (CHIRP memory export). */
+export async function downloadCpsSingleFile(
+  projectId: string,
+  buildId: string,
+  options?: CpsExportOptions,
+  store: ProjectPersistence = persistence,
+): Promise<CpsDownloadResult> {
+  const build = await requireBuild(store, projectId, buildId);
+  const library = await loadLibrarySlice(store, projectId);
+  const result = exportBuildSingleFile({ build, library, options });
+  const fileName = options?.fileName ?? result.fileName;
   downloadTextFile(result.content, fileName);
   return { warnings: result.warnings };
 }

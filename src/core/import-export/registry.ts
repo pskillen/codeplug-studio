@@ -23,7 +23,7 @@ export const formatCatalog: readonly FormatCatalogEntry[] = [
     id: 'chirp',
     label: 'CHIRP CSV',
     importStatus: 'planned',
-    exportStatus: 'planned',
+    exportStatus: 'shipped',
   },
   {
     id: 'dm32',

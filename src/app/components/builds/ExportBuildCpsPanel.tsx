@@ -8,11 +8,12 @@ import {
   getExportAdapter,
   getFormatExportDefaults,
 } from '@core/import-export/registry.ts';
-import { isMultiFileExportAdapter } from '@core/import-export/exportAdapter.ts';
+import { isMultiFileExportAdapter, isSingleFileCpsExportAdapter } from '@core/import-export/exportAdapter.ts';
 import { formatProfileWireHint, getFormatProfiles } from '@core/import-export/formatProfiles.ts';
 import type { FormatId } from '@core/import-export/types.ts';
 import { mergeExportOptions } from '@core/services/exportBuild.ts';
 import ExportNameSettingsFields from './ExportNameSettingsFields.tsx';
+import ProfilePicker from './ProfilePicker.tsx';
 import DefaultScanInclusionSegment from './DefaultScanInclusionSegment.tsx';
 import CpsCsvPreviewModal from './CpsCsvPreviewModal.tsx';
 import { saveDriveLastFolderId, saveDriveLastFolderPath } from '@integrations/cloud/drivePrefs.ts';
@@ -30,8 +31,10 @@ import { useFormatBuilds } from '../../state/useFormatBuilds.ts';
 import { BuildService } from '../../state/buildService.ts';
 import { persistence } from '../../state/persistence.ts';
 import {
+  defaultCpsSingleFileName,
   defaultCpsZipFileName,
   downloadCpsFile,
+  downloadCpsSingleFile,
   downloadCpsZip,
   uploadCpsZipToDrive,
 } from '../../services/buildCpsExportService.ts';
@@ -59,16 +62,34 @@ export default function ExportBuildCpsPanel({ build }: ExportBuildCpsPanelProps)
   const [settingsError, setSettingsError] = useState<string | null>(null);
   const [driveBrowserOpen, setDriveBrowserOpen] = useState(false);
   const [previewOpen, setPreviewOpen] = useState(false);
+  const [exportProfileId, setExportProfileId] = useState(build.profileId);
+  const [lastBuildProfileId, setLastBuildProfileId] = useState(build.profileId);
+  if (build.profileId !== lastBuildProfileId) {
+    setLastBuildProfileId(build.profileId);
+    setExportProfileId(build.profileId);
+  }
   const [overwriteOpen, setOverwriteOpen] = useState(false);
   const [pendingDriveTarget, setPendingDriveTarget] = useState<DriveSaveTarget | null>(null);
   const migratedRef = useRef(false);
 
   const profileNameLimit = useMemo(() => {
     const options = getFormatProfiles(build.formatId as FormatId);
-    return options.find((option) => option.profileId === build.profileId)?.nameLimit;
-  }, [build.formatId, build.profileId]);
+    const profileId =
+      build.formatId === 'chirp' ? exportProfileId : build.profileId;
+    return options.find((option) => option.profileId === profileId)?.nameLimit;
+  }, [build.formatId, build.profileId, exportProfileId]);
 
-  const exportOptions = useMemo(() => mergeExportOptions(build), [build]);
+  const exportOptions = useMemo(
+    () =>
+      mergeExportOptions(build, {
+        profileId: exportProfileId,
+        fileName:
+          build.formatId === 'chirp'
+            ? defaultCpsSingleFileName(build.formatId as FormatId, exportProfileId)
+            : undefined,
+      }),
+    [build, exportProfileId],
+  );
   const hasChannels = Boolean(activeProjectId) && (channelCount ?? 0) > 0;
   const exportShipped = formatEntry?.exportStatus === 'shipped';
   const interchangeFolderId = activeProject?.interchange?.googleDrive?.folderId;
@@ -139,6 +160,20 @@ export default function ExportBuildCpsPanel({ build }: ExportBuildCpsPanelProps)
           ? 'Build changed elsewhere — reload and try again.'
           : 'Could not save export settings.',
       );
+    }
+  }
+
+  async function handleDownloadSingleFile() {
+    if (!activeProjectId) return;
+    setExporting(true);
+    setError(null);
+    try {
+      const result = await downloadCpsSingleFile(activeProjectId, build.id, exportOptions);
+      mergeWarnings(result.warnings);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setExporting(false);
     }
   }
 
@@ -230,11 +265,134 @@ export default function ExportBuildCpsPanel({ build }: ExportBuildCpsPanelProps)
     );
   }
 
+  if (isSingleFileCpsExportAdapter(adapter)) {
+    const suggestedCsvName = defaultCpsSingleFileName(
+      build.formatId as FormatId,
+      exportProfileId,
+    );
+    const profileOverridesBuild = exportProfileId !== build.profileId;
+
+    return (
+      <Stack gap="sm">
+        <Text size="sm">
+          Export as{' '}
+          <Text span fw={600}>
+            {formatEntry?.label ?? build.formatId}
+          </Text>{' '}
+          memory CSV using the profile below.
+        </Text>
+        <ProfilePicker
+          mode="select"
+          formatId={build.formatId as FormatId}
+          value={exportProfileId}
+          onChange={setExportProfileId}
+          description="CHIRP memory layout and power ladder for target hardware"
+        />
+        {profileOverridesBuild ? (
+          <Text size="sm" c="dimmed">
+            Export uses {traitProfileFor(exportProfileId)?.label ?? exportProfileId}; build default
+            is {profileLabel}.
+          </Text>
+        ) : null}
+        <Stack gap="xs">
+          <Text size="sm" fw={600}>
+            Export name settings
+          </Text>
+          <ExportNameSettingsFields
+            build={build}
+            saving={savingSettings}
+            onPatch={(patch) => void handleExportSettingsPatch(patch)}
+            profileNameLimit={profileNameLimit}
+          />
+        </Stack>
+        <Stack gap="xs">
+          <Text size="sm" fw={600}>
+            Scan export
+          </Text>
+          <DefaultScanInclusionSegment
+            value={defaultScanValue}
+            formatDefault={formatDefaults.defaultScanInclusion}
+            disabled={savingSettings}
+            onChange={(defaultScanInclusion) =>
+              void handleExportSettingsPatch({ defaultScanInclusion })
+            }
+          />
+        </Stack>
+        <Stack gap="xs">
+          <Text size="sm" fw={600}>
+            Export inclusion
+          </Text>
+          <Switch
+            label="Export channels not in the memory list"
+            checked={build.exportUnlinkedChannels !== false}
+            disabled={savingSettings}
+            onChange={(event) =>
+              void handleExportInclusionChange('exportUnlinkedChannels', event.currentTarget.checked)
+            }
+          />
+          {settingsError ? (
+            <Text size="sm" c="red">
+              {settingsError}
+            </Text>
+          ) : null}
+        </Stack>
+        {!hasChannels ? (
+          <Text size="sm" c="dimmed">
+            Add channels to the library and memory list before exporting this build.
+          </Text>
+        ) : null}
+        {error ? <Alert color="red">{error}</Alert> : null}
+        {exportWarnings.length > 0 ? (
+          <Alert color="yellow" title="Export warnings">
+            <Stack gap={4}>
+              {exportWarnings.map((warning) => (
+                <Text key={warning} size="sm">
+                  {warning}
+                </Text>
+              ))}
+            </Stack>
+          </Alert>
+        ) : null}
+        <Group gap="xs">
+          <Button
+            leftSection={<IconDownload size={ICON_SIZE_ACTION} stroke={ICON_STROKE} />}
+            variant="filled"
+            disabled={!hasChannels || exporting}
+            loading={exporting}
+            onClick={() => void handleDownloadSingleFile()}
+          >
+            Download CSV
+          </Button>
+          <Button
+            variant="outline"
+            leftSection={<IconTable size={ICON_SIZE_ACTION} stroke={ICON_STROKE} />}
+            disabled={!hasChannels || exporting}
+            onClick={() => setPreviewOpen(true)}
+          >
+            Preview CSV
+          </Button>
+        </Group>
+        <Text size="sm" c="dimmed">
+          Only analogue FM/AM channels are exported. Digital modes are skipped with a warning.
+          Suggested filename: {suggestedCsvName}
+        </Text>
+        <Text size="sm" c="dimmed">
+          Wire preview pages show the same export settings. Reorder memories on the Memories page.
+        </Text>
+        <CpsCsvPreviewModal
+          opened={previewOpen}
+          onClose={() => setPreviewOpen(false)}
+          build={build}
+          exportOptions={exportOptions}
+        />
+      </Stack>
+    );
+  }
+
   if (!isMultiFileExportAdapter(adapter)) {
     return (
-      <Alert color="gray">
-        {formatEntry?.label ?? build.formatId} uses a single-file export path — not wired on build
-        detail yet.
+      <Alert color="gray" title="Export not available">
+        No exporter delivery mode is registered for {formatEntry?.label ?? build.formatId}.
       </Alert>
     );
   }

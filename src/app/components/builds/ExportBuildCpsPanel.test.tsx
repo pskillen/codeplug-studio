@@ -4,9 +4,11 @@ import { MantineProvider } from '@mantine/core';
 import type { FormatBuild } from '@core/models/formatBuild.ts';
 import ExportBuildCpsPanel from './ExportBuildCpsPanel.tsx';
 
-const { downloadCpsZip, downloadCpsFile, previewCpsExport } = vi.hoisted(() => ({
+const { downloadCpsZip, downloadCpsFile, downloadCpsSingleFile, previewCpsExport, previewCpsSingleFile } =
+  vi.hoisted(() => ({
   downloadCpsZip: vi.fn(async () => ({ warnings: [] as string[] })),
   downloadCpsFile: vi.fn(async () => ({ warnings: [] as string[] })),
+  downloadCpsSingleFile: vi.fn(async () => ({ warnings: [] as string[] })),
   previewCpsExport: vi.fn(async () => ({
     files: {
       'Channels.csv': 'Name,RxFrequency\nTestCh,145.00000',
@@ -14,13 +16,22 @@ const { downloadCpsZip, downloadCpsFile, previewCpsExport } = vi.hoisted(() => (
     },
     warnings: [] as string[],
   })),
+  previewCpsSingleFile: vi.fn(async () => ({
+    files: {
+      'Baofeng_UV-5R Mini_export.csv': 'Location,Name,Frequency\n0,TestCh,145.00000',
+    },
+    warnings: [] as string[],
+  })),
 }));
 
 vi.mock('../../services/buildCpsExportService.ts', () => ({
+  defaultCpsSingleFileName: () => 'Baofeng_UV-5R Mini_export.csv',
   defaultCpsZipFileName: () => 'demo-opengd77.zip',
   downloadCpsFile,
+  downloadCpsSingleFile,
   downloadCpsZip,
   previewCpsExport,
+  previewCpsSingleFile,
   uploadCpsZipToDrive: vi.fn(),
 }));
 
@@ -106,7 +117,7 @@ describe('ExportBuildCpsPanel', () => {
     expect(screen.getByRole('button', { name: 'Zones.csv' })).not.toBeDisabled();
   });
 
-  it('shows planned-format alert for non-shipped exporters', () => {
+  it('renders CHIRP single-file export actions for shipped CHIRP builds', async () => {
     const chirpBuild: FormatBuild = {
       ...opengd77Build,
       formatId: 'chirp',
@@ -118,8 +129,34 @@ describe('ExportBuildCpsPanel', () => {
       </MantineProvider>,
     );
 
-    expect(screen.getByText(/export is planned/i)).toBeInTheDocument();
+    expect(await screen.findByText(/CHIRP CSV/)).toBeInTheDocument();
+    const csvButton = await screen.findByRole('button', { name: 'Download CSV' });
+    expect(csvButton).not.toBeDisabled();
     expect(screen.queryByRole('button', { name: 'Download ZIP' })).not.toBeInTheDocument();
+    expect(screen.getByText(/not in the memory list/i)).toBeInTheDocument();
+    expect(screen.getByText(/Only analogue FM\/AM channels/i)).toBeInTheDocument();
+  });
+
+  it('opens CSV preview modal for CHIRP single-file export', async () => {
+    const chirpBuild: FormatBuild = {
+      ...opengd77Build,
+      formatId: 'chirp',
+      profileId: 'chirp-uv5r',
+    };
+    render(
+      <MantineProvider>
+        <ExportBuildCpsPanel build={chirpBuild} />
+      </MantineProvider>,
+    );
+
+    const previewButton = await screen.findByRole('button', { name: 'Preview CSV' });
+    fireEvent.click(previewButton);
+
+    expect(await screen.findByRole('dialog', { name: 'CSV preview' })).toBeInTheDocument();
+    await waitFor(() => {
+      expect(previewCpsSingleFile).toHaveBeenCalled();
+    });
+    expect(await screen.findByRole('cell', { name: 'TestCh' })).toBeInTheDocument();
   });
 
   it('opens CSV preview modal with per-file tabs after Preview CSV', async () => {

@@ -77,5 +77,9 @@ describe('adapter contracts', () => {
     const dm32 = formatCatalog.find((f) => f.id === 'dm32');
     expect(dm32?.exportStatus).toBe('shipped');
     expect(dm32?.importStatus).toBe('planned');
+
+    const chirp = formatCatalog.find((f) => f.id === 'chirp');
+    expect(chirp?.exportStatus).toBe('shipped');
+    expect(chirp?.importStatus).toBe('planned');
   });
 });
