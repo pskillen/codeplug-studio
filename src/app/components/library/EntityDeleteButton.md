@@ -6,15 +6,15 @@ Destructive delete control for library entity editors. Runs [`runEntityDeleteFlo
 
 ## Props
 
-| Prop              | Type                    | Description                                      |
-| ----------------- | ----------------------- | ------------------------------------------------ |
-| `kind`            | `LibraryEntityKind`     | Entity type (`talkGroup`, `zone`, …)             |
-| `entityId`        | `string`                | Target entity UUID                               |
-| `label`           | `string`                | Display name for confirm dialog                  |
-| `onDeleted`       | `() => void`            | Called after successful delete (e.g. navigate)   |
-| `confirmMessage`  | `string`                | Optional override for `window.confirm` copy      |
-| `size`            | Mantine button size     | Default `compact-sm`                             |
-| `variant`         | Mantine button variant  | Default `light`                                  |
+| Prop             | Type                   | Description                                    |
+| ---------------- | ---------------------- | ---------------------------------------------- |
+| `kind`           | `LibraryEntityKind`    | Entity type (`talkGroup`, `zone`, …)           |
+| `entityId`       | `string`               | Target entity UUID                             |
+| `label`          | `string`               | Display name for confirm dialog                |
+| `onDeleted`      | `() => void`           | Called after successful delete (e.g. navigate) |
+| `confirmMessage` | `string`               | Optional override for `window.confirm` copy    |
+| `size`           | Mantine button size    | Default `compact-sm`                           |
+| `variant`        | Mantine button variant | Default `light`                                |
 
 ## Usage
 
@@ -26,7 +26,7 @@ import EntityDeleteButton from '@app/components/library/EntityDeleteButton.tsx';
   entityId={entity.id}
   label={entity.name}
   onDeleted={() => navigate('/library/talk-groups')}
-/>
+/>;
 ```
 
 ## Behaviour

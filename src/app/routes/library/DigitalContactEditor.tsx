@@ -4,7 +4,11 @@ import { Link, useNavigate } from 'react-router-dom';
 import type { DigitalChannelMode, DigitalContact } from '@core/models/library.ts';
 import { newDigitalContact } from '@core/domain/factories.ts';
 import EntityDeleteButton from '../../components/library/EntityDeleteButton.tsx';
-import { FormSection, GradientSegmentedControl, UnsavedChangesModal } from '../../components/ui/index.ts';
+import {
+  FormSection,
+  GradientSegmentedControl,
+  UnsavedChangesModal,
+} from '../../components/ui/index.ts';
 import { digitalModeSegmentOptions } from '../../lib/channelModes.ts';
 import { parseOptionalInt } from '../../lib/units.ts';
 import { useEntityEditorUnsavedGuard } from '../../hooks/useEntityFormDirty.ts';

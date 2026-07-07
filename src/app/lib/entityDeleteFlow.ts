@@ -5,9 +5,7 @@ import { formatEntityReferences } from './entityDeleteMessages.ts';
 import { kindMeta } from '../routes/library/registry.ts';
 
 export type EntityDeleteFlowResult =
-  | { status: 'deleted' }
-  | { status: 'cancelled' }
-  | { status: 'blocked'; message: string };
+  { status: 'deleted' } | { status: 'cancelled' } | { status: 'blocked'; message: string };
 
 export type DeleteEntityFn = (kind: LibraryEntityKind, id: string) => Promise<DeleteOutcome>;
 

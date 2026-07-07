@@ -6,13 +6,13 @@ Confirm dialog when the operator tries to leave a form with unsaved edits. Paire
 
 ## Props
 
-| Prop       | Type         | Description                                      |
-| ---------- | ------------ | ------------------------------------------------ |
-| `opened`   | `boolean`    | Modal visibility (from guard `modalOpen`)      |
-| `onStay`   | `() => void` | Stay on the page — calls guard `stay`            |
-| `onLeave`  | `() => void` | Discard and navigate — calls guard `leave`       |
-| `title`    | `string`     | Modal title (default: "Unsaved changes")         |
-| `message`  | `string`     | Body copy (default: generic leave-without-save)  |
+| Prop      | Type         | Description                                     |
+| --------- | ------------ | ----------------------------------------------- |
+| `opened`  | `boolean`    | Modal visibility (from guard `modalOpen`)       |
+| `onStay`  | `() => void` | Stay on the page — calls guard `stay`           |
+| `onLeave` | `() => void` | Discard and navigate — calls guard `leave`      |
+| `title`   | `string`     | Modal title (default: "Unsaved changes")        |
+| `message` | `string`     | Body copy (default: generic leave-without-save) |
 
 ## Usage
 
@@ -27,7 +27,7 @@ const { isDirty, permitNavigationRef, permitNavigationOnce } = useEntityFormDirt
 });
 const { modalOpen, stay, leave } = useUnsavedNavigationGuard(isDirty, permitNavigationRef);
 
-<UnsavedChangesModal opened={modalOpen} onStay={stay} onLeave={leave} />
+<UnsavedChangesModal opened={modalOpen} onStay={stay} onLeave={leave} />;
 ```
 
 ## Behaviour

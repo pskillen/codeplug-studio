@@ -1,11 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { emptyLibrary, newChannel, newRxGroupList, newTalkGroup, newZone } from './factories.ts';
 import { findReferencesTo, isReferenced } from './references.ts';
-import type {
-  ChannelModeProfileDMR,
-  ChannelModeProfileNxdn,
-  Library,
-} from '../models/library.ts';
+import type { ChannelModeProfileDMR, ChannelModeProfileNxdn, Library } from '../models/library.ts';
 
 const projectId = 'p1';
 

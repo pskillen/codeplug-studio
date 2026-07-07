@@ -4,7 +4,10 @@ import type { PutResult } from '@integrations/persistence/index.ts';
 import { listPathForEditorSlug } from './nav.ts';
 
 export interface EntitySaveApi {
-  save: (put: () => Promise<PutResult>) => Promise<boolean>;
+  save: (
+    put: () => Promise<PutResult>,
+    options?: { permitNavigation?: () => void },
+  ) => Promise<boolean>;
   saving: boolean;
   error: string | null;
 }

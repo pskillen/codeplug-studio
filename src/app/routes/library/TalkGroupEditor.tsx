@@ -5,7 +5,11 @@ import type { DigitalChannelMode, TalkGroup } from '@core/models/library.ts';
 import { newTalkGroup } from '@core/domain/factories.ts';
 import TalkGroupWireNameExamples from '../../components/library/TalkGroupWireNameExamples.tsx';
 import EntityDeleteButton from '../../components/library/EntityDeleteButton.tsx';
-import { FormSection, GradientSegmentedControl, UnsavedChangesModal } from '../../components/ui/index.ts';
+import {
+  FormSection,
+  GradientSegmentedControl,
+  UnsavedChangesModal,
+} from '../../components/ui/index.ts';
 import { useEntityEditorUnsavedGuard } from '../../hooks/useEntityFormDirty.ts';
 import { digitalModeSegmentOptions } from '../../lib/channelModes.ts';
 import { parseOptionalInt } from '../../lib/units.ts';

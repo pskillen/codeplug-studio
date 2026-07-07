@@ -3,7 +3,7 @@ import type { DeleteOutcome } from '../state/libraryService.ts';
 import { LibraryService } from '../state/libraryService.ts';
 import { persistence } from '../state/persistence.ts';
 import { referencesAreZoneMembershipOnly } from './entityDeleteMessages.ts';
-import { runEntityDeleteFlow, type EntityDeleteFlowResult } from './entityDeleteFlow.ts';
+import { runEntityDeleteFlow, type DeleteEntityFn, type EntityDeleteFlowResult } from './entityDeleteFlow.ts';
 
 const service = new LibraryService(persistence);
 
@@ -17,12 +17,13 @@ export async function runChannelDeleteFlow(options: {
 }): Promise<ChannelDeleteFlowResult> {
   const { projectId, channel, deleteEntity, reload } = options;
   const label = channel.name || channel.callsign || 'this channel';
+  const deleteChannel: DeleteEntityFn = (kind, id) => deleteEntity(kind as 'channel', id);
 
   return runEntityDeleteFlow({
     kind: 'channel',
     entityId: channel.id,
     label,
-    deleteEntity,
+    deleteEntity: deleteChannel,
     cascade: async ({ references }) => {
       if (!referencesAreZoneMembershipOnly(references)) return 'cancelled';
       const zoneCount = references.length;

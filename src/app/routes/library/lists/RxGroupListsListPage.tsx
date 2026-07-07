@@ -43,9 +43,7 @@ export default function RxGroupListsListPage() {
         key: 'actions',
         header: '',
         hideable: false,
-        render: (r) => (
-          <EntityListDeleteAction kind="rxGroupList" entityId={r.id} label={r.name} />
-        ),
+        render: (r) => <EntityListDeleteAction kind="rxGroupList" entityId={r.id} label={r.name} />,
       },
     ];
   }, [library]);

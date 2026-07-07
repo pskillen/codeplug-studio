@@ -6,12 +6,12 @@ Row-level trash icon for library `DataTable` lists. Same delete flow as [`Entity
 
 ## Props
 
-| Prop             | Type                | Description                                 |
-| ---------------- | ------------------- | ------------------------------------------- |
-| `kind`           | `LibraryEntityKind` | Entity type                                 |
-| `entityId`       | `string`            | Target entity UUID                          |
-| `label`          | `string`            | Display name for confirm and tooltip        |
-| `confirmMessage` | `string`            | Optional `window.confirm` override          |
+| Prop             | Type                | Description                          |
+| ---------------- | ------------------- | ------------------------------------ |
+| `kind`           | `LibraryEntityKind` | Entity type                          |
+| `entityId`       | `string`            | Target entity UUID                   |
+| `label`          | `string`            | Display name for confirm and tooltip |
+| `confirmMessage` | `string`            | Optional `window.confirm` override   |
 
 ## Usage
 
