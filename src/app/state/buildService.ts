@@ -79,6 +79,21 @@ export class BuildService {
     };
   }
 
+  withEntityForceIncluded(
+    build: FormatBuild,
+    field: OverrideField,
+    libraryEntityId: string,
+    forceInclude: boolean,
+  ): FormatBuild {
+    const now = isoNow();
+    return {
+      ...build,
+      [field]: upsertOverride(build[field], libraryEntityId, { forceInclude }),
+      updatedAt: now,
+      revision: nextRevision(build.revision),
+    };
+  }
+
   withWireNameOverride(
     build: FormatBuild,
     field: OverrideField,

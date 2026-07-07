@@ -24,6 +24,7 @@ export interface WirePreviewTableProps {
   nameLimit?: number;
   clickableDefaultWireName?: boolean;
   onExcludedChange: (row: WirePreviewRow, excluded: boolean) => void;
+  onForceIncludeChange?: (row: WirePreviewRow, forceInclude: boolean) => void;
   onWireNameChange: (row: WirePreviewRow, wireName: string) => void;
   onUnsavedChangesChange?: (hasUnsaved: boolean) => void;
 }
@@ -146,6 +147,55 @@ function WireNameOverrideInput({
   );
 }
 
+function rowEffectivelyIncluded(row: WirePreviewRow): boolean {
+  return !row.excluded && (row.forceInclude === true || row.omitFromExport !== true);
+}
+
+function WirePreviewExportControls({
+  row,
+  onExcludedChange,
+  onForceIncludeChange,
+}: {
+  row: WirePreviewRow;
+  onExcludedChange: (row: WirePreviewRow, excluded: boolean) => void;
+  onForceIncludeChange?: (row: WirePreviewRow, forceInclude: boolean) => void;
+}) {
+  const skippedByLibrary = row.omitFromExport === true;
+
+  if (skippedByLibrary && onForceIncludeChange) {
+    return (
+      <Stack gap={6}>
+        <Tooltip label="Export this zone as its own row in this build, despite the library setting">
+          <Switch
+            size="xs"
+            label="Force export"
+            checked={row.forceInclude === true}
+            onChange={(event) => onForceIncludeChange(row, event.currentTarget.checked)}
+            aria-label={`Force export ${row.displayLabel} as its own zone`}
+          />
+        </Tooltip>
+        {row.forceInclude ? (
+          <Switch
+            size="xs"
+            label="Skip from export"
+            checked={row.excluded}
+            onChange={(event) => onExcludedChange(row, event.currentTarget.checked)}
+            aria-label={`Skip ${row.displayLabel} from export`}
+          />
+        ) : null}
+      </Stack>
+    );
+  }
+
+  return (
+    <Switch
+      checked={row.excluded}
+      onChange={(event) => onExcludedChange(row, event.currentTarget.checked)}
+      aria-label={`Skip ${row.displayLabel} from export`}
+    />
+  );
+}
+
 function WirePreviewDisplayCell({ row }: { row: WirePreviewRow }) {
   return (
     <Stack gap={4}>
@@ -189,6 +239,7 @@ export default function WirePreviewTable({
   nameLimit,
   clickableDefaultWireName = false,
   onExcludedChange,
+  onForceIncludeChange,
   onWireNameChange,
   onUnsavedChangesChange,
 }: WirePreviewTableProps) {
@@ -221,33 +272,22 @@ export default function WirePreviewTable({
     <Table striped highlightOnHover withTableBorder>
       <Table.Thead>
         <Table.Tr>
-          <Table.Th>Include</Table.Th>
+          <Table.Th>Export</Table.Th>
           <Table.Th>Library name</Table.Th>
           <Table.Th>Export name</Table.Th>
         </Table.Tr>
       </Table.Thead>
       <Table.Tbody>
         {rows.map((row) => {
-          const skippedByLibrary = row.omitFromExport === true;
-          const effectivelyIncluded = !row.excluded && !skippedByLibrary;
+          const effectivelyIncluded = rowEffectivelyIncluded(row);
           return (
             <Table.Tr key={row.key} opacity={effectivelyIncluded ? 1 : 0.55}>
               <Table.Td>
-                <Tooltip
-                  label={
-                    skippedByLibrary
-                      ? 'This zone is set not to export as its own zone in the library'
-                      : undefined
-                  }
-                  disabled={!skippedByLibrary}
-                >
-                  <Switch
-                    checked={effectivelyIncluded}
-                    disabled={skippedByLibrary}
-                    onChange={(event) => onExcludedChange(row, !event.currentTarget.checked)}
-                    aria-label={`Include ${row.displayLabel}`}
-                  />
-                </Tooltip>
+                <WirePreviewExportControls
+                  row={row}
+                  onExcludedChange={onExcludedChange}
+                  onForceIncludeChange={onForceIncludeChange}
+                />
               </Table.Td>
               <Table.Td>
                 <WirePreviewDisplayCell row={row} />

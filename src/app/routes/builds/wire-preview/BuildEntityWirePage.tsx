@@ -46,6 +46,7 @@ export default function BuildEntityWirePage({
     nameLimit,
     error,
     setRowExcluded,
+    setRowForceIncluded,
     setRowWireName,
     persistBuild,
   } = useBuildWirePreview(entityKind);
@@ -108,7 +109,7 @@ export default function BuildEntityWirePage({
               onChange={(event) => setHideNotIncludedInExport(event.currentTarget.checked)}
             />
             <Text size="xs" c="dimmed">
-              Respects include toggles on this page and{' '}
+              Respects skip toggles on this page and{' '}
               <Link to={`/builds/${build.id}/export`}>Export inclusion</Link> on the export page for
               orphan channels, talk groups, and RX group lists.
               {hideNotIncludedInExport && hiddenRowCount > 0 ? ` (${hiddenRowCount} hidden)` : null}
@@ -120,6 +121,7 @@ export default function BuildEntityWirePage({
           nameLimit={nameLimit}
           clickableDefaultWireName={clickableDefaultWireName}
           onExcludedChange={setRowExcluded}
+          onForceIncludeChange={entityKind === 'zone' ? setRowForceIncluded : undefined}
           onWireNameChange={setRowWireName}
           onUnsavedChangesChange={setHasUnsavedWireNames}
         />
