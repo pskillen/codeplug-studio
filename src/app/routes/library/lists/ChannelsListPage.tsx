@@ -1,4 +1,4 @@
-import { Button, Group, Stack, Text } from '@mantine/core';
+import { Alert, Button, Group, Stack, Text } from '@mantine/core';
 import { useCallback, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type { Channel } from '@core/models/library.ts';
@@ -35,8 +35,13 @@ import { useProjects } from '../../../state/useProjects.ts';
 import { useOperatorPosition } from '../../../state/operatorPosition.tsx';
 import { useLibrary } from '../../../state/useLibrary.ts';
 import ChannelListDeleteAction from '../../../components/library/ChannelListDeleteAction.tsx';
+import ChannelBulkEditModal from '../../../components/library/ChannelBulkEditModal.tsx';
 import ChannelListFilters from '../../../components/library/ChannelListFilters.tsx';
 import ChannelZonesListCell from '../../../components/library/ChannelZonesListCell.tsx';
+import {
+  formatChannelBulkEditMessage,
+  type PersistChannelBulkEditSuccess,
+} from '../../../lib/channelBulkEdit.ts';
 
 function percentLabel(value: number | null): string {
   if (value == null) return '—';
@@ -53,6 +58,8 @@ export default function ChannelsListPage() {
   const filtered = useFilteredChannels(channels, query, position, { skipSort: true });
   const [columnSortOverride, setColumnSortOverride] = usePersistedChannelColumnSort();
   const [selectedKeys, setSelectedKeys] = useState<string[]>([]);
+  const [bulkEditOpen, setBulkEditOpen] = useState(false);
+  const [bulkEditMessage, setBulkEditMessage] = useState<string | null>(null);
 
   const mapChannels = query.distanceFilterEnabled ? filtered : channels;
   const { skipped } = applyFilters(channels, { requireUseLocation: true, skipZero: true });
@@ -233,6 +240,11 @@ export default function ChannelsListPage() {
     [filtered, effectiveSort, sortCtx],
   );
 
+  const selectedChannels = useMemo(() => {
+    const selectedSet = new Set(selectedKeys);
+    return sortedRows.filter((ch) => selectedSet.has(ch.id));
+  }, [selectedKeys, sortedRows]);
+
   const handleCreateZoneFromSelected = useCallback(() => {
     const selectedSet = new Set(selectedKeys);
     const orderedIds = sortedRows.filter((ch) => selectedSet.has(ch.id)).map((ch) => ch.id);
@@ -240,6 +252,21 @@ export default function ChannelsListPage() {
     setSelectedKeys([]);
     navigate('/library/zones/new', { state: { initialChannelIds: orderedIds } });
   }, [navigate, selectedKeys, sortedRows]);
+
+  const handleBulkEdit = useCallback(() => {
+    if (selectedChannels.length === 0) return;
+    if (selectedChannels.length === 1) {
+      navigate(`/library/channels/${selectedChannels[0]!.id}`);
+      return;
+    }
+    setBulkEditMessage(null);
+    setBulkEditOpen(true);
+  }, [navigate, selectedChannels]);
+
+  const handleBulkEditApplied = useCallback((outcome: PersistChannelBulkEditSuccess) => {
+    setBulkEditMessage(formatChannelBulkEditMessage(outcome));
+    setSelectedKeys([]);
+  }, []);
 
   const distanceSortPending = query.sortMode === 'distance' && !position;
 
@@ -267,6 +294,12 @@ export default function ChannelsListPage() {
           </Text>
         ) : null}
 
+        {bulkEditMessage ? (
+          <Alert color="green" withCloseButton onClose={() => setBulkEditMessage(null)}>
+            {bulkEditMessage}
+          </Alert>
+        ) : null}
+
         <ChannelListFilters />
 
         <DataTable
@@ -289,15 +322,32 @@ export default function ChannelsListPage() {
           selectedKeys={selectedKeys}
           onSelectedKeysChange={setSelectedKeys}
           toolbar={
-            <Button
-              variant="light"
-              size="compact-sm"
-              disabled={selectedKeys.length === 0}
-              onClick={handleCreateZoneFromSelected}
-            >
-              New zone from selected
-            </Button>
+            <Group gap="xs">
+              <Button
+                variant="light"
+                size="compact-sm"
+                disabled={selectedKeys.length === 0}
+                onClick={handleBulkEdit}
+              >
+                Bulk edit
+              </Button>
+              <Button
+                variant="light"
+                size="compact-sm"
+                disabled={selectedKeys.length === 0}
+                onClick={handleCreateZoneFromSelected}
+              >
+                New zone from selected
+              </Button>
+            </Group>
           }
+        />
+
+        <ChannelBulkEditModal
+          opened={bulkEditOpen}
+          onClose={() => setBulkEditOpen(false)}
+          channels={selectedChannels}
+          onApplied={handleBulkEditApplied}
         />
 
         {skipped.length > 0 ? (

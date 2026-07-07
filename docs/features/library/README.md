@@ -13,6 +13,7 @@ Tier-1 reference for editing the vendor-neutral **library** — the per-project 
 | Zone + channel editor cross-links       | Shipped ([#180](https://github.com/pskillen/codeplug-studio/issues/180)) | Revision-2 — see [zone-member-picker.md](zone-member-picker.md)    |
 | Channel / zone delete                   | Shipped ([#180](https://github.com/pskillen/codeplug-studio/issues/180)) | Editors + channels list; zone membership cascade on channel delete |
 | Channels list bulk selection → new zone | Shipped ([#154](https://github.com/pskillen/codeplug-studio/issues/154)) | `DataTable` selectable; **New zone from selected**                 |
+| Channels list bulk edit                 | Shipped ([#207](https://github.com/pskillen/codeplug-studio/issues/207)) | **Bulk edit** modal — scan, forbid TX, power, analog squelch       |
 | Zone from location (proximity)          | Shipped ([#181](https://github.com/pskillen/codeplug-studio/issues/181)) | Section nav **New zone from location**                             |
 | Nested zone members                     | Shipped ([#157](https://github.com/pskillen/codeplug-studio/issues/157)) | Flatten at export; `omitFromExport`; schema v7                     |
 | Tri-state scan inclusion                | Shipped ([#203](https://github.com/pskillen/codeplug-studio/issues/203)) | `scanInclusion`; build export default; schema v8                   |
@@ -52,7 +53,9 @@ Shared list UI: [app-shell/data-table.md](../app-shell/data-table.md).
 - Filter state syncs to URL query params and per-project `localStorage`.
 - Column sort and visibility prefs persist per project.
 - `modeProfiles[]` drives mode pills and mode filter matching (vendor-neutral labels only).
-- **Row checkboxes** and **New zone from selected** ([#154](https://github.com/pskillen/codeplug-studio/issues/154)) — navigates to zone editor with members pre-filled in table order.
+- **Row checkboxes**, **Bulk edit** ([#207](https://github.com/pskillen/codeplug-studio/issues/207)), and **New zone from selected** ([#154](https://github.com/pskillen/codeplug-studio/issues/154)).
+  - **Bulk edit** — select 2+ channels to open `ChannelBulkEditModal` (see sidecar `ChannelBulkEditModal.md`). Each field is opt-in; unset fields leave existing values. Channel-level: scan inclusion, forbid TX, power. Analog squelch patches existing analog mode profiles only (skipped on digital-only channels). Selecting exactly one channel opens the standard channel editor instead.
+  - **New zone from selected** — navigates to zone editor with members pre-filled in table order.
 - **Zones** column — direct zone badges (link to zone editor), **Not in a zone** / **Nested only** when applicable ([#180](https://github.com/pskillen/codeplug-studio/issues/180)).
 - **Delete** row action — removes channel; offers remove-from-zones cascade when blocked by zone membership.
 
