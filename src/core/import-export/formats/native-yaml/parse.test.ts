@@ -94,10 +94,7 @@ describe('native-yaml parse', () => {
   });
 
   it('migrates legacy ssb-usb mode profile on import', () => {
-    const yaml = readFixture('omitted-nullables.yaml').replace(
-      'mode: fm',
-      'mode: ssb-usb',
-    );
+    const yaml = readFixture('omitted-nullables.yaml').replace('mode: fm', 'mode: ssb-usb');
     const parsed = parseProjectDocument(yaml);
     const profile = parsed.channels[0]?.modeProfiles[0];
     expect(profile?.mode).toBe('ssb');

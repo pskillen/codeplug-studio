@@ -56,8 +56,7 @@ export function buildModeProfilesFromListing(listing: RepeaterListing): ChannelM
         ssbSideband = legacySsb;
       }
       if (!analogProfileEntry) {
-        const analogMode: AnalogChannelMode =
-          legacySsb != null || mode === 'ssb' ? 'ssb' : mode;
+        const analogMode: AnalogChannelMode = legacySsb != null || mode === 'ssb' ? 'ssb' : mode;
         const sideband = analogMode === 'ssb' ? (ssbSideband ?? 'usb') : undefined;
         analogProfileEntry = analogProfile(analogMode, tone, sideband);
         profiles.push(analogProfileEntry);

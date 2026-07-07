@@ -140,9 +140,9 @@ describe('validateModeProfiles', () => {
   });
 
   it('flags duplicate ssb profiles', () => {
-    expect(
-      validateModeProfiles([defaultModeProfile('ssb'), defaultModeProfile('ssb')]),
-    ).toContain('Duplicate mode profile: ssb');
+    expect(validateModeProfiles([defaultModeProfile('ssb'), defaultModeProfile('ssb')])).toContain(
+      'Duplicate mode profile: ssb',
+    );
   });
 
   it('flags invalid DMR colour code', () => {

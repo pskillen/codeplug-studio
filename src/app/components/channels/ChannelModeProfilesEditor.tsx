@@ -1,4 +1,13 @@
-import { Group, Input, NumberInput, SegmentedControl, Select, Stack, Text, TextInput } from '@mantine/core';
+import {
+  Group,
+  Input,
+  NumberInput,
+  SegmentedControl,
+  Select,
+  Stack,
+  Text,
+  TextInput,
+} from '@mantine/core';
 import type {
   ChannelModeProfile,
   ChannelModeProfileAnalog,

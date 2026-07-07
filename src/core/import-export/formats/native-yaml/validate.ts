@@ -131,10 +131,7 @@ function parseAnalogModeProfile(
       `modeProfiles[${index}].txTone`,
       'none',
     ) as ChannelTone,
-    bandwidthKHz: expectNullableNumber(
-      record.bandwidthKHz,
-      `modeProfiles[${index}].bandwidthKHz`,
-    ),
+    bandwidthKHz: expectNullableNumber(record.bandwidthKHz, `modeProfiles[${index}].bandwidthKHz`),
     ...(record.ssbSideband !== undefined && record.ssbSideband !== null
       ? { ssbSideband: parseSsbSideband(record.ssbSideband, index) }
       : {}),

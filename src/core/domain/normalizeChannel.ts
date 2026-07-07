@@ -18,8 +18,6 @@ export function normalizeChannel(channel: LegacyChannel): Channel {
     ...rest,
     scanInclusion: resolveScanInclusion(channel),
     maidenheadLocator: channel.maidenheadLocator ?? null,
-    modeProfiles: dedupeSsbModeProfiles(
-      (channel.modeProfiles ?? []).map(normalizeModeProfile),
-    ),
+    modeProfiles: dedupeSsbModeProfiles((channel.modeProfiles ?? []).map(normalizeModeProfile)),
   };
 }
