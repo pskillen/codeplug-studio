@@ -66,7 +66,7 @@ erDiagram
 
 ## Schema version
 
-`STUDIO_SCHEMA_VERSION = 2` in `src/core/models/schemaVersion.ts`. Bumps when persisted row shapes change.
+`STUDIO_SCHEMA_VERSION = 9` in `src/core/models/schemaVersion.ts`. Bumps when persisted row shapes change.
 
 ## Persistable rows
 
@@ -100,15 +100,15 @@ Vendor-neutral RF semantics only. UUID `id` FKs; `name` is a **human display lab
 
 Mode-specific channel fields live on `modeProfiles` entries. Union type `ChannelModeProfile`:
 
-| Profile                    | `mode` values                    | Key fields                                                |
-| -------------------------- | -------------------------------- | --------------------------------------------------------- |
-| `ChannelModeProfileAnalog` | `fm`, `am`, `ssb-usb`, `ssb-lsb` | bandwidth, squelch, RX/TX tone                            |
-| `ChannelModeProfileDMR`    | `dmr`                            | colour code, timeslot, DMR ID, contact ref, RX group list |
-| `ChannelModeProfileDstar`  | `dstar`                          | UR / RPT1 / RPT2 calls                                    |
-| `ChannelModeProfileYsf`    | `ysf`                            | DG-ID, WIRES-X DTMF ID                                    |
-| `ChannelModeProfileNxdn`   | `nxdn`                           | RX/TX RAN, unit ID, talk group ref                        |
-| `ChannelModeProfileTetra`  | `tetra`                          | MCC, MNC, GSSI, color code, talk group ref                |
-| `ChannelModeProfileStub`   | `p25`, `m17`                     | mode label only (typed profiles deferred)                 |
+| Profile                    | `mode` values     | Key fields                                                                           |
+| -------------------------- | ----------------- | ------------------------------------------------------------------------------------ |
+| `ChannelModeProfileAnalog` | `fm`, `am`, `ssb` | bandwidth, squelch, RX/TX tone; `ssbSideband` (`usb` \| `lsb`) when `mode === 'ssb'` |
+| `ChannelModeProfileDMR`    | `dmr`             | colour code, timeslot, DMR ID, contact ref, RX group list                            |
+| `ChannelModeProfileDstar`  | `dstar`           | UR / RPT1 / RPT2 calls                                                               |
+| `ChannelModeProfileYsf`    | `ysf`             | DG-ID, WIRES-X DTMF ID                                                               |
+| `ChannelModeProfileNxdn`   | `nxdn`            | RX/TX RAN, unit ID, talk group ref                                                   |
+| `ChannelModeProfileTetra`  | `tetra`           | MCC, MNC, GSSI, color code, talk group ref                                           |
+| `ChannelModeProfileStub`   | `p25`, `m17`      | mode label only (typed profiles deferred)                                            |
 
 `maidenheadLocator` and `location` may both be set; export adapters prefer coordinates when they conflict. See `reconcileChannelLocation` in `src/core/domain/channelLocation.ts`.
 

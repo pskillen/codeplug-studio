@@ -8,10 +8,10 @@ Tier 3 schema for Codeplug Studio's full-project interchange format. Internal ty
 
 ## Version fields
 
-| Field                 | Type    | Required | Meaning                                                                                                                                                                              |
-| --------------------- | ------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `schemaVersion`       | `1`     | yes      | Native YAML envelope version. Only `1` is accepted in this release.                                                                                                                  |
-| `studioSchemaVersion` | integer | yes      | Must equal `STUDIO_SCHEMA_VERSION` in `src/core/models/schemaVersion.ts` (currently `8`). Imports accept `2`–`8`; legacy `scanSkip` on channels migrates to `scanInclusion` on load. |
+| Field                 | Type    | Required | Meaning                                                                                                                                                                                                                                                         |
+| --------------------- | ------- | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `schemaVersion`       | `1`     | yes      | Native YAML envelope version. Only `1` is accepted in this release.                                                                                                                                                                                             |
+| `studioSchemaVersion` | integer | yes      | Must equal `STUDIO_SCHEMA_VERSION` in `src/core/models/schemaVersion.ts` (currently `9`). Imports accept `2`–`9`; legacy `scanSkip` on channels migrates to `scanInclusion` on load; legacy `ssb-usb` / `ssb-lsb` mode values migrate to `ssb` + `ssbSideband`. |
 
 Bump `schemaVersion` when the YAML envelope shape changes. Bump `studioSchemaVersion` (constant) when persisted row types change.
 
@@ -101,7 +101,7 @@ Arrays may be empty. Serialiser emits all six keys.
 | `comment`           | string                              | no       |
 | `modeProfiles`      | `ChannelModeProfile[]`              | no       |
 
-Mode profile discriminant is `mode`. See [data-model](../../features/data-model/README.md) for per-mode fields.
+Mode profile discriminant is `mode`. See [data-model](../../features/data-model/README.md) for per-mode fields. Analog `ssb` profiles may include `ssbSideband: usb | lsb` (defaults to `usb`). Import accepts legacy `ssb-usb` / `ssb-lsb` mode strings and normalises them on load.
 
 ### `Zone`
 
@@ -209,7 +209,7 @@ Import rejects when:
 1. YAML cannot be parsed
 2. Top-level shape is not an object with required keys
 3. `schemaVersion !== 1`
-4. `studioSchemaVersion` not in `2`, `3`, or `4` (current `STUDIO_SCHEMA_VERSION`)
+4. `studioSchemaVersion` not in `2`–`9` (current `STUDIO_SCHEMA_VERSION`)
 5. Any row has `projectId` ≠ `project.id`
 6. Duplicate `id` within one entity array
 7. Any `EntityRef` or `libraryEntityId` does not resolve
@@ -219,7 +219,7 @@ Import rejects when:
 
 **Nullable fields:** columns marked nullable in the tables above may be omitted from YAML or set to `null`; import normalises both to `null` in the library model. Export may omit keys when the stored row has no value (e.g. legacy IndexedDB rows).
 
-**Optional string fields** on mode profiles (e.g. YSF `wiresDtmfId`, D-STAR `rpt1Call` / `rpt2Call`) may be omitted; import applies the same defaults as `defaultModeProfile` in `src/core/domain/modeProfiles.ts` (empty string, or `CQCQCQ` for D-STAR `urCall`, or `none` for analogue tones).
+**Optional string fields** on mode profiles (e.g. YSF `wiresDtmfId`, D-STAR `rpt1Call` / `rpt2Call`) may be omitted; import applies the same defaults as `defaultModeProfile` in `src/core/domain/modeProfiles.ts` (empty string, or `CQCQCQ` for D-STAR `urCall`, or `none` for analogue tones). SSB `ssbSideband` defaults to `usb` when omitted.
 
 ## Example document
 
