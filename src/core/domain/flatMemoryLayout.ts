@@ -1,8 +1,17 @@
 import type { FormatBuild } from '@core/models/formatBuild.ts';
 import type { FlatMemoryLayout } from '@core/models/traitLayout.ts';
+import type { Channel } from '@core/models/library.ts';
 import type { LibrarySlice } from '@core/services/assemble.ts';
 import { isEntityExcluded, isEntityForceIncluded } from '@core/domain/formatBuildOverrides.ts';
 import { BuildCapabilityTrait, traitProfileFor } from '@core/models/traits.ts';
+import { isChirpAnalogueExportable } from '@core/import-export/formats/chirp/channelWire.ts';
+
+function channelEligibleForFlatMemory(build: FormatBuild, channel: Channel): boolean {
+  if (build.formatId === 'chirp' && !isChirpAnalogueExportable(channel)) {
+    return false;
+  }
+  return true;
+}
 
 export function buildUsesFlatMemoryList(build: FormatBuild): boolean {
   const profile = traitProfileFor(build.profileId);
@@ -23,6 +32,7 @@ export function seedFlatMemoryFromBuild(
 
   for (const channel of library.channels) {
     if (isEntityExcluded(build.channelOverrides, channel.id)) continue;
+    if (!channelEligibleForFlatMemory(build, channel)) continue;
     channelIds.push(channel.id);
     seen.add(channel.id);
   }
@@ -52,6 +62,8 @@ export function flatMemoryExportChannelIds(build: FormatBuild, library: LibraryS
 
   for (const id of section.channelIds) {
     if (isEntityExcluded(build.channelOverrides, id) || seen.has(id)) continue;
+    const channel = library.channels.find((row) => row.id === id);
+    if (channel && !channelEligibleForFlatMemory(build, channel)) continue;
     ordered.push(id);
     seen.add(id);
   }
