@@ -1,6 +1,7 @@
 import type { BuildEntityOverride, FormatBuild } from '@core/models/formatBuild.ts';
 import type { Library } from '@core/models/library.ts';
 import { emptyTraitLayout } from '@core/models/traitLayout.ts';
+import { migrateFlatMemoryLayoutOrderOnly } from './exportOrderOrSlot.ts';
 import { migrateLegacySelections, type LegacyEntitySelection } from './formatBuildOverrides.ts';
 
 export interface LegacyFormatBuildFields {
@@ -104,7 +105,7 @@ function missingOverrideFields(build: LegacyFormatBuild): boolean {
 
 /** Rename-only normalisation when library is unavailable (e.g. IndexedDB read). */
 export function normalizeFormatBuildFields(build: LegacyFormatBuild): FormatBuild {
-  return {
+  const normalized: FormatBuild = {
     ...build,
     layout: build.layout ?? emptyTraitLayout(),
     channelOverrides:
@@ -141,4 +142,5 @@ export function normalizeFormatBuildFields(build: LegacyFormatBuild): FormatBuil
     exportUnlinkedTalkGroups: build.exportUnlinkedTalkGroups ?? true,
     exportUnlinkedRxGroupLists: build.exportUnlinkedRxGroupLists ?? true,
   };
+  return migrateFlatMemoryLayoutOrderOnly(normalized);
 }

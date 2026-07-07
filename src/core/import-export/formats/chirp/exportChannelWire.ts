@@ -76,6 +76,33 @@ function channelWireName(
   );
 }
 
+/** Empty CHIRP memory row — preserves a blank slot at `location`. */
+export function blankChirpMemoryRow(location: number): string[] {
+  return [
+    String(location),
+    '',
+    '',
+    '',
+    '',
+    '',
+    '',
+    '',
+    DEFAULT_DTCS_CODE,
+    DEFAULT_DTCS_POLARITY,
+    DEFAULT_DTCS_CODE,
+    DEFAULT_CROSS_MODE,
+    '',
+    formatChirpTStepWire(),
+    '',
+    '',
+    '',
+    '',
+    '',
+    '',
+    '',
+  ];
+}
+
 /** Map one assembled channel to a CHIRP CSV row (header order). */
 export function channelToChirpRow(
   row: AssembledChannel,

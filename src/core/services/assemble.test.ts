@@ -639,13 +639,22 @@ describe('assemble', () => {
 
   it('projects flat memory order for CHIRP builds', () => {
     const projectId = '11111111-1111-4111-8111-111111111111';
+    const fmProfile = {
+      mode: 'fm' as const,
+      rxTone: 'none' as const,
+      txTone: 'none' as const,
+      squelch: null,
+      bandwidthKHz: 12.5,
+    };
     const ch1 = {
       ...newChannel(projectId, 'VHF'),
       id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+      modeProfiles: [fmProfile],
     };
     const ch2 = {
       ...newChannel(projectId, 'UHF'),
       id: 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',
+      modeProfiles: [fmProfile],
     };
     const library = {
       channels: [ch1, ch2],
@@ -680,7 +689,7 @@ describe('assemble', () => {
     };
 
     const projection = assemble(build, library);
-    expect(projection.flatMemory?.channelIds).toEqual([ch2.id, ch1.id]);
+    expect(projection.channelMemorySlots?.map((slot) => slot.channelId)).toEqual([ch2.id, ch1.id]);
     expect(projection.channels.map((c) => c.entity.id).sort()).toEqual([ch1.id, ch2.id]);
     expect(projection.zones).toEqual([]);
   });

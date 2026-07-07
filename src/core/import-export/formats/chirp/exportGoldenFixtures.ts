@@ -103,10 +103,11 @@ export function libraryAndBuildFromChirpFixture(
     name: 'CHIRP golden export',
     formatId: 'chirp',
     profileId,
-    layout: {
-      sections: [{ kind: 'flatMemory', channelIds, scanFlags: {} }],
-    },
-    channelOverrides: [],
+    layout: { sections: [] },
+    channelOverrides: channelIds.map((libraryEntityId, index) => ({
+      libraryEntityId,
+      orderOrSlot: index + 1,
+    })),
     zoneOverrides: [],
     talkGroupOverrides: [],
     rxGroupListOverrides: [],

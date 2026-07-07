@@ -6,7 +6,7 @@ import { serialiseChirpCsv } from './serialise.ts';
 const projectId = '11111111-1111-4111-8111-111111111111';
 
 describe('chirp/serialise', () => {
-  it('serialises flat memory order with location indices', () => {
+  it('serialises memory slot order with location indices', () => {
     const ch1 = {
       ...newChannel(projectId, 'First'),
       id: 'ch-1',
@@ -51,7 +51,10 @@ describe('chirp/serialise', () => {
       digitalContacts: [],
       analogContacts: [],
       rxGroupLists: [],
-      flatMemory: { kind: 'flatMemory', channelIds: ['ch-2', 'ch-1'], scanFlags: {} },
+      channelMemorySlots: [
+        { slot: 1, channelId: 'ch-2' },
+        { slot: 2, channelId: 'ch-1' },
+      ],
     };
 
     const { csv, warnings } = serialiseChirpCsv(assembled);
@@ -60,6 +63,49 @@ describe('chirp/serialise', () => {
     expect(lines).toHaveLength(3);
     expect(lines[1]?.startsWith('1,Second,')).toBe(true);
     expect(lines[2]?.startsWith('2,First,')).toBe(true);
+  });
+
+  it('emits blank rows for empty memory slots', () => {
+    const ch1 = {
+      ...newChannel(projectId, 'First'),
+      id: 'ch-1',
+      rxFrequency: 145_500_000,
+      txFrequency: 145_500_000,
+      modeProfiles: [
+        {
+          mode: 'fm' as const,
+          rxTone: 'none' as const,
+          txTone: 'none' as const,
+          squelch: null,
+          bandwidthKHz: 12.5,
+        },
+      ],
+    };
+    const assembled: AssembledBuild = {
+      buildId: 'b1',
+      formatId: 'chirp',
+      profileId: 'chirp-uv5r',
+      buildName: 'Test',
+      channels: [{ entity: ch1, wireName: 'First' }],
+      zones: [],
+      talkGroups: [],
+      digitalContacts: [],
+      analogContacts: [],
+      rxGroupLists: [],
+      channelMemorySlots: [
+        { slot: 1, channelId: 'ch-1' },
+        { slot: 2, channelId: null },
+        { slot: 3, channelId: null },
+      ],
+    };
+
+    const { csv } = serialiseChirpCsv(assembled);
+    const lines = csv.trim().split('\n');
+    expect(lines).toHaveLength(4);
+    expect(lines[1]?.startsWith('1,First,')).toBe(true);
+    expect(lines[2]?.startsWith('2,')).toBe(true);
+    expect(lines[2]?.split(',')[1]).toBe('');
+    expect(lines[3]?.startsWith('3,')).toBe(true);
   });
 
   it('skips digital-only channels with warning', () => {
@@ -88,7 +134,7 @@ describe('chirp/serialise', () => {
       digitalContacts: [],
       analogContacts: [],
       rxGroupLists: [],
-      flatMemory: { kind: 'flatMemory', channelIds: ['ch-dmr'], scanFlags: {} },
+      channelMemorySlots: [{ slot: 1, channelId: 'ch-dmr' }],
     };
 
     const { csv, warnings } = serialiseChirpCsv(assembled);

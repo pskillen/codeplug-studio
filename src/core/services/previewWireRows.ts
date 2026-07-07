@@ -185,8 +185,15 @@ export function previewWireRows(
       const warnings: string[] = [];
 
       if (build.formatId === 'chirp') {
-        const memoryIds =
-          projection.flatMemory?.channelIds ?? projection.channels.map((row) => row.entity.id);
+        const memorySlots =
+          projection.channelMemorySlots ??
+          projection.channels.map((row, index) => ({
+            slot: index + 1,
+            channelId: row.entity.id,
+          }));
+        const memoryIds = memorySlots
+          .map((slot) => slot.channelId)
+          .filter((id): id is string => id != null);
         const memorySet = new Set(memoryIds);
         const rows: WirePreviewRow[] = [];
 
@@ -208,11 +215,12 @@ export function previewWireRows(
           });
         };
 
-        memoryIds.forEach((channelId, index) => {
-          const channel = library.channels.find((row) => row.id === channelId);
+        memorySlots.forEach((slot) => {
+          if (!slot.channelId) return;
+          const channel = library.channels.find((row) => row.id === slot.channelId);
           if (!channel) return;
           if (!isChirpAnalogueExportable(channel)) return;
-          pushChannelRow(channel, `Location ${index + 1}`);
+          pushChannelRow(channel, `Location ${slot.slot}`);
         });
 
         for (const channel of library.channels) {
