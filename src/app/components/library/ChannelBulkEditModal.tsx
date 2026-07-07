@@ -184,7 +184,7 @@ function ChannelBulkEditModalBody({
         </Group>
       </UnstyledButton>
 
-      <Collapse in={showChannelList}>
+      <Collapse expanded={showChannelList}>
         <Box mah={160} style={{ overflowY: 'auto' }} pt="xs">
           <Stack gap={4}>
             {channels.map((channel) => (
