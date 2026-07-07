@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Tri-state channel scan control for library CRUD — **Default**, **Skip scan**, and **Always scan**. Wraps `GradientSegmentedControl` with the `three` colour scheme.
+Tri-state channel scan control for library CRUD — **Skip scan**, **Default**, and **Always scan** (left to right). Wraps `GradientSegmentedControl` with the `three` colour scheme.
 
 ## Props
 

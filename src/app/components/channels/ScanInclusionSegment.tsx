@@ -7,8 +7,8 @@ export interface ScanInclusionSegmentProps {
 }
 
 const OPTIONS = [
-  { value: 'default', label: 'Default' },
   { value: 'skip', label: 'Skip scan' },
+  { value: 'default', label: 'Default' },
   { value: 'alwaysScan', label: 'Always scan' },
 ] as const;
 
