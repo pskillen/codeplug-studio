@@ -3,6 +3,7 @@ import type { AssembledBuild } from '@core/services/assemble.ts';
 import type {
   ExportResult,
   ExportSerialiseResult,
+  FormatExportDefaults,
   FormatId,
   FormatStatus,
   CpsExportOptions,
@@ -12,6 +13,7 @@ export interface BaseExportAdapter {
   readonly id: FormatId;
   readonly label: string;
   readonly status: FormatStatus;
+  readonly defaultExportSettings?: FormatExportDefaults;
 }
 
 /** Full-project single-file interchange (native YAML). */

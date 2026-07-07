@@ -16,6 +16,11 @@ export const dm32ExportAdapter: MultiFileExportAdapter = {
   label: 'Baofeng DM32 CPS CSV',
   status: 'shipped',
   delivery: 'multi-file',
+  defaultExportSettings: {
+    defaultScanInclusion: 'scan',
+    expandModes: false,
+    expandRxGroupLists: true,
+  },
   fileNames: DM32_EXPORT_FILE_NAMES,
   serialiseFile(assembled, fileName, options?: CpsExportOptions) {
     const library = requireLibrary(assembled.library);

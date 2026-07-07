@@ -93,7 +93,7 @@ export function newChannel(projectId: string, name: string, callsign = ''): Chan
     useLocation: false,
     maidenheadLocator: null,
     power: null,
-    scanSkip: false,
+    scanInclusion: 'default',
     forbidTransmit: false,
     comment: '',
     modeProfiles: [],

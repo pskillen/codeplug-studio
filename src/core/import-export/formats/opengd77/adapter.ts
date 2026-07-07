@@ -17,6 +17,11 @@ export const opengd77ExportAdapter: MultiFileExportAdapter = {
   label: 'OpenGD77 CPS CSV',
   status: 'shipped',
   delivery: 'multi-file',
+  defaultExportSettings: {
+    defaultScanInclusion: 'scan',
+    expandModes: true,
+    expandRxGroupLists: false,
+  },
   fileNames: OPENGD77_EXPORT_FILE_NAMES,
   serialiseFile(assembled, fileName, options?: CpsExportOptions) {
     const warnings = collectOpenGd77ExportWarnings(assembled, options);
