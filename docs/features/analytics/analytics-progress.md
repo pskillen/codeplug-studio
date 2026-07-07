@@ -7,7 +7,7 @@
 | Slice | Status | Notes |
 | --- | --- | --- |
 | Consent storage API | Shipped | `analyticsConsent.ts` |
-| Legal pages + footer | Pending | |
+| Legal pages + footer | Shipped | `/privacy`, `/terms`, `/cookies` |
 | Cookie banner | Pending | |
 | Dual GA CI wiring | Pending | |
 | GA4 + path sanitization | Pending | |
