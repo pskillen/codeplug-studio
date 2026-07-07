@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { isMultiFileExportAdapter, isSingleFileProjectExportAdapter } from './exportAdapter.ts';
+import {
+  isMultiFileExportAdapter,
+  isSingleFileCpsExportAdapter,
+  isSingleFileProjectExportAdapter,
+} from './exportAdapter.ts';
 import { isSingleFileProjectImportAdapter } from './importAdapter.ts';
 import { nativeYamlExportAdapter, nativeYamlImportAdapter } from './formats/native-yaml/adapter.ts';
 import { formatCatalog, getExportAdapter, getImportAdapter } from './registry.ts';
@@ -45,9 +49,20 @@ describe('adapter contracts', () => {
     }
   });
 
+  it('registry resolves chirp single-file CPS export adapter', () => {
+    const adapter = getExportAdapter('chirp');
+    expect(adapter.id).toBe('chirp');
+    expect(adapter.defaultExportSettings?.defaultScanInclusion).toBe('skip');
+    expect(adapter.defaultExportSettings?.expandModes).toBe(false);
+    expect(isSingleFileCpsExportAdapter(adapter)).toBe(true);
+    if (isSingleFileCpsExportAdapter(adapter)) {
+      expect(adapter.defaultFileName('chirp-uv5r')).toContain('UV-5R');
+      expect(typeof adapter.serialise).toBe('function');
+    }
+  });
+
   it('registry throws for planned CPS import adapters', () => {
     expect(() => getImportAdapter('opengd77')).toThrow(/No import adapter/);
-    expect(() => getExportAdapter('chirp')).toThrow(/No export adapter/);
   });
 
   it('format catalog lists native-yaml and opengd77 export as shipped', () => {

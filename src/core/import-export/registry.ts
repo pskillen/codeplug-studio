@@ -1,6 +1,7 @@
 import { nativeYamlExportAdapter, nativeYamlImportAdapter } from './formats/native-yaml/adapter.ts';
 import { opengd77ExportAdapter } from './formats/opengd77/adapter.ts';
 import { dm32ExportAdapter } from './formats/dm32/adapter.ts';
+import { chirpExportAdapter } from './formats/chirp/adapter.ts';
 import type { ExportAdapter } from './exportAdapter.ts';
 import type { ImportAdapter } from './importAdapter.ts';
 import type { FormatCatalogEntry, FormatExportDefaults, FormatId } from './types.ts';
@@ -44,6 +45,7 @@ export const exportAdapters: readonly ExportAdapter[] = [
   nativeYamlExportAdapter,
   opengd77ExportAdapter,
   dm32ExportAdapter,
+  chirpExportAdapter,
 ];
 
 export function getImportAdapter(id: FormatId): ImportAdapter {
