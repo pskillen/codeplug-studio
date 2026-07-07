@@ -8,10 +8,15 @@ import {
   FIXTURE_CHANNEL_B_ID,
   FIXTURE_CHILD_ZONE_ID,
   FIXTURE_PARENT_ZONE_ID,
+  FIXTURE_PROJECT_ID,
+  FIXTURE_TIMESTAMP,
   glasgowPmrNestedAggregate,
+  minimalProjectAggregate,
   nestedZonesAggregate,
   projectWithFormatBuildAggregate,
 } from './testFixtures.ts';
+import type { Channel } from '@core/models/library.ts';
+import { initialRevision } from '@core/models/revision.ts';
 
 describe('native-yaml round-trip smoke', () => {
   it('serialise → parse preserves aggregate via adapters', () => {
@@ -62,5 +67,43 @@ describe('native-yaml round-trip smoke', () => {
     const pmr = parsed.zones.find((zone) => zone.id === FIXTURE_CHILD_ZONE_ID);
     expect(pmr?.omitFromExport).toBe(true);
     expect(pmr?.name).toBe('PMR446');
+  });
+
+  it('serialises ssb mode with sideband on round-trip', () => {
+    const ssbChannel: Channel = {
+      id: 'cccccccc-cccc-4ccc-8ccc-cccccccccccc',
+      projectId: FIXTURE_PROJECT_ID,
+      revision: initialRevision(),
+      updatedAt: FIXTURE_TIMESTAMP,
+      name: 'HF SSB',
+      callsign: 'G0SSB',
+      rxFrequency: 14200000,
+      txFrequency: 14200000,
+      location: null,
+      useLocation: false,
+      maidenheadLocator: null,
+      power: null,
+      scanInclusion: 'default',
+      forbidTransmit: false,
+      comment: '',
+      modeProfiles: [
+        {
+          mode: 'ssb',
+          squelch: null,
+          rxTone: 'none',
+          txTone: 'none',
+          bandwidthKHz: null,
+          ssbSideband: 'lsb',
+        },
+      ],
+    };
+    const aggregate = { ...minimalProjectAggregate(), channels: [ssbChannel] };
+    const yaml = serialiseProject(aggregate);
+    expect(yaml).toContain('mode: ssb');
+    expect(yaml).toContain('ssbSideband: lsb');
+    expect(parseProjectDocument(yaml).channels[0]?.modeProfiles[0]).toMatchObject({
+      mode: 'ssb',
+      ssbSideband: 'lsb',
+    });
   });
 });

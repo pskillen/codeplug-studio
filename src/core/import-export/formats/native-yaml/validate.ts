@@ -15,6 +15,7 @@ import type {
   Library,
   RxGroupList,
   RxGroupListMember,
+  SsbSideband,
   TalkGroup,
   Zone,
 } from '@core/models/library.ts';
@@ -37,6 +38,8 @@ import {
   validateRxGroupListId,
   validateZoneMembers,
 } from '@core/domain/validation.ts';
+import { normalizeModeProfile } from '@core/domain/modeProfiles.ts';
+import { normalizeChannel } from '@core/domain/normalizeChannel.ts';
 import { normalizeZoneMemberEntry } from '@core/domain/zoneMembers.ts';
 import { migrateFormatBuild } from '@core/domain/migrateFormatBuild.ts';
 import { migrateProjectAggregate } from '@core/domain/migrateZoneExportFields.ts';
@@ -102,6 +105,43 @@ function parseNullableDmrTimeslot(value: unknown, label: string): 1 | 2 | null {
   throw new NativeYamlImportError(`${label} must be 1, 2, or null`);
 }
 
+function parseSsbSideband(raw: unknown, index: number): SsbSideband {
+  const value = expectString(raw, `modeProfiles[${index}].ssbSideband`);
+  if (value !== 'usb' && value !== 'lsb') {
+    throw new NativeYamlImportError(`modeProfiles[${index}].ssbSideband is invalid: ${value}`);
+  }
+  return value;
+}
+
+function parseAnalogModeProfile(
+  record: Record<string, unknown>,
+  index: number,
+  mode: string,
+): ChannelModeProfile {
+  const profile = {
+    mode,
+    squelch: expectNullableNumber(record.squelch, `modeProfiles[${index}].squelch`),
+    rxTone: expectOptionalString(
+      record.rxTone,
+      `modeProfiles[${index}].rxTone`,
+      'none',
+    ) as ChannelTone,
+    txTone: expectOptionalString(
+      record.txTone,
+      `modeProfiles[${index}].txTone`,
+      'none',
+    ) as ChannelTone,
+    bandwidthKHz: expectNullableNumber(
+      record.bandwidthKHz,
+      `modeProfiles[${index}].bandwidthKHz`,
+    ),
+    ...(record.ssbSideband !== undefined && record.ssbSideband !== null
+      ? { ssbSideband: parseSsbSideband(record.ssbSideband, index) }
+      : {}),
+  };
+  return normalizeModeProfile(profile as ChannelModeProfile);
+}
+
 function parseModeProfile(raw: unknown, index: number): ChannelModeProfile {
   const record = expectRecord(raw, `modeProfiles[${index}]`);
   const mode = expectString(record.mode, `modeProfiles[${index}].mode`);
@@ -109,26 +149,10 @@ function parseModeProfile(raw: unknown, index: number): ChannelModeProfile {
   switch (mode) {
     case 'fm':
     case 'am':
+    case 'ssb':
     case 'ssb-usb':
     case 'ssb-lsb':
-      return {
-        mode,
-        squelch: expectNullableNumber(record.squelch, `modeProfiles[${index}].squelch`),
-        rxTone: expectOptionalString(
-          record.rxTone,
-          `modeProfiles[${index}].rxTone`,
-          'none',
-        ) as ChannelTone,
-        txTone: expectOptionalString(
-          record.txTone,
-          `modeProfiles[${index}].txTone`,
-          'none',
-        ) as ChannelTone,
-        bandwidthKHz: expectNullableNumber(
-          record.bandwidthKHz,
-          `modeProfiles[${index}].bandwidthKHz`,
-        ),
-      };
+      return parseAnalogModeProfile(record, index, mode);
     case 'dmr':
       return {
         mode: 'dmr',
@@ -213,7 +237,7 @@ function parseChannel(raw: unknown, index: number): Channel {
     };
   }
 
-  return {
+  return normalizeChannel({
     ...parsePersistableRow(record, `library.channels[${index}]`),
     name: expectString(record.name, `library.channels[${index}].name`),
     callsign: expectString(record.callsign, `library.channels[${index}].callsign`),
@@ -243,7 +267,7 @@ function parseChannel(raw: unknown, index: number): Channel {
     modeProfiles: expectArray(record.modeProfiles, `library.channels[${index}].modeProfiles`).map(
       (profile, profileIndex) => parseModeProfile(profile, profileIndex),
     ),
-  };
+  });
 }
 
 function parseZone(raw: unknown, index: number, studioSchemaVersion: number): Zone {
@@ -850,6 +874,7 @@ export function validateDocument(raw: unknown): ProjectAggregate {
   const studioSchemaVersion = document.studioSchemaVersion;
   if (
     studioSchemaVersion !== STUDIO_SCHEMA_VERSION &&
+    studioSchemaVersion !== 8 &&
     studioSchemaVersion !== 7 &&
     studioSchemaVersion !== 6 &&
     studioSchemaVersion !== 5 &&
@@ -858,7 +883,7 @@ export function validateDocument(raw: unknown): ProjectAggregate {
     studioSchemaVersion !== 2
   ) {
     throw new NativeYamlImportError(
-      `Unsupported studioSchemaVersion: ${String(studioSchemaVersion)} (expected ${STUDIO_SCHEMA_VERSION}, 7, 6, 5, 4, 3, or 2)`,
+      `Unsupported studioSchemaVersion: ${String(studioSchemaVersion)} (expected ${STUDIO_SCHEMA_VERSION}, 8, 7, 6, 5, 4, 3, or 2)`,
     );
   }
 

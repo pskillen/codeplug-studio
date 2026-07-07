@@ -92,6 +92,28 @@ describe('native-yaml parse', () => {
     const legacy = parseProjectDocument(legacyYaml);
     expect(legacy.channels[0]?.scanInclusion).toBe('skip');
   });
+
+  it('migrates legacy ssb-usb mode profile on import', () => {
+    const yaml = readFixture('omitted-nullables.yaml').replace(
+      'mode: fm',
+      'mode: ssb-usb',
+    );
+    const parsed = parseProjectDocument(yaml);
+    const profile = parsed.channels[0]?.modeProfiles[0];
+    expect(profile?.mode).toBe('ssb');
+    if (profile?.mode === 'ssb') {
+      expect(profile.ssbSideband).toBe('usb');
+    }
+  });
+
+  it('parses ssb profile with explicit lsb sideband', () => {
+    const yaml = readFixture('omitted-nullables.yaml')
+      .replace('mode: fm', 'mode: ssb')
+      .replace('rxTone: none', 'ssbSideband: lsb\n          rxTone: none');
+    const parsed = parseProjectDocument(yaml);
+    const profile = parsed.channels[0]?.modeProfiles[0];
+    expect(profile).toMatchObject({ mode: 'ssb', ssbSideband: 'lsb' });
+  });
 });
 
 describe('native-yaml validate', () => {
