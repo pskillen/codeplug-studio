@@ -467,4 +467,175 @@ describe('assemble', () => {
     expect(projection.channels.map((c) => c.entity.id)).toEqual([other.id]);
     expect(projection.channels.some((c) => c.entity.id === pmr.id)).toBe(false);
   });
+
+  it('exports nested omitFromExport zone when forceInclude override is set', () => {
+    const projectId = 'proj-force-include-nested';
+    const pmr = {
+      ...newChannel(projectId, 'PMR ch'),
+      id: 'ch-pmr',
+    };
+    const glasgowCh = {
+      ...newChannel(projectId, 'Glasgow ch'),
+      id: 'ch-glasgow',
+    };
+    const pmrZone = {
+      id: 'zone-pmr',
+      projectId,
+      revision: 1,
+      updatedAt: '2026-01-01T00:00:00.000Z',
+      name: 'PMR446',
+      comment: '',
+      omitFromExport: true,
+      members: [{ kind: 'channel' as const, channelId: pmr.id }],
+    };
+    const glasgowZone = {
+      id: 'zone-glasgow',
+      projectId,
+      revision: 1,
+      updatedAt: '2026-01-01T00:00:00.000Z',
+      name: 'Glasgow',
+      comment: '',
+      members: [
+        { kind: 'channel' as const, channelId: glasgowCh.id },
+        { kind: 'zone' as const, zoneId: pmrZone.id },
+      ],
+    };
+    const library = {
+      channels: [pmr, glasgowCh],
+      zones: [pmrZone, glasgowZone],
+      talkGroups: [],
+      digitalContacts: [],
+      analogContacts: [],
+      rxGroupLists: [],
+    };
+    const build = {
+      id: 'build-force-include',
+      projectId,
+      revision: 1,
+      updatedAt: '2026-01-01T00:00:00.000Z',
+      name: 'Force include test',
+      formatId: 'opengd77',
+      profileId: 'opengd77-1701',
+      layout: { sections: [] },
+      channelOverrides: [],
+      zoneOverrides: [{ libraryEntityId: pmrZone.id, forceInclude: true }],
+      talkGroupOverrides: [],
+      rxGroupListOverrides: [],
+      channelSelections: [],
+      talkGroupSelections: [],
+      rxGroupListSelections: [],
+      digitalContactSelections: [],
+      analogContactSelections: [],
+      contactOverrides: [],
+    };
+
+    const projection = assemble(build, library);
+    expect(projection.zones.map((z) => z.zoneId).sort()).toEqual(
+      [glasgowZone.id, pmrZone.id].sort(),
+    );
+    const glasgow = projection.zones.find((z) => z.zoneId === glasgowZone.id);
+    expect(glasgow?.memberChannelIds).toEqual([glasgowCh.id, pmr.id]);
+  });
+
+  it('exports channels from standalone omitFromExport zone when forceInclude is set', () => {
+    const projectId = 'proj-force-include-orphan';
+    const pmr = {
+      ...newChannel(projectId, 'PMR ch'),
+      id: 'ch-pmr',
+    };
+    const pmrZone = {
+      id: 'zone-pmr',
+      projectId,
+      revision: 1,
+      updatedAt: '2026-01-01T00:00:00.000Z',
+      name: 'PMR446',
+      comment: '',
+      omitFromExport: true,
+      members: [{ kind: 'channel' as const, channelId: pmr.id }],
+    };
+    const library = {
+      channels: [pmr],
+      zones: [pmrZone],
+      talkGroups: [],
+      digitalContacts: [],
+      analogContacts: [],
+      rxGroupLists: [],
+    };
+    const build = {
+      id: 'build-force-include-orphan',
+      projectId,
+      revision: 1,
+      updatedAt: '2026-01-01T00:00:00.000Z',
+      name: 'Force include orphan test',
+      formatId: 'opengd77',
+      profileId: 'opengd77-1701',
+      layout: { sections: [] },
+      channelOverrides: [],
+      zoneOverrides: [{ libraryEntityId: pmrZone.id, forceInclude: true }],
+      talkGroupOverrides: [],
+      rxGroupListOverrides: [],
+      channelSelections: [],
+      talkGroupSelections: [],
+      rxGroupListSelections: [],
+      digitalContactSelections: [],
+      analogContactSelections: [],
+      contactOverrides: [],
+    };
+
+    const projection = assemble(build, library);
+    expect(projection.zones.map((z) => z.zoneId)).toEqual([pmrZone.id]);
+    expect(projection.channels.map((c) => c.entity.id)).toEqual([pmr.id]);
+  });
+
+  it('excluded override wins over forceInclude on zones', () => {
+    const projectId = 'proj-excluded-wins';
+    const pmr = {
+      ...newChannel(projectId, 'PMR ch'),
+      id: 'ch-pmr',
+    };
+    const pmrZone = {
+      id: 'zone-pmr',
+      projectId,
+      revision: 1,
+      updatedAt: '2026-01-01T00:00:00.000Z',
+      name: 'PMR446',
+      comment: '',
+      omitFromExport: true,
+      members: [{ kind: 'channel' as const, channelId: pmr.id }],
+    };
+    const library = {
+      channels: [pmr],
+      zones: [pmrZone],
+      talkGroups: [],
+      digitalContacts: [],
+      analogContacts: [],
+      rxGroupLists: [],
+    };
+    const build = {
+      id: 'build-excluded-wins',
+      projectId,
+      revision: 1,
+      updatedAt: '2026-01-01T00:00:00.000Z',
+      name: 'Excluded wins test',
+      formatId: 'opengd77',
+      profileId: 'opengd77-1701',
+      layout: { sections: [] },
+      channelOverrides: [],
+      zoneOverrides: [
+        { libraryEntityId: pmrZone.id, forceInclude: true, excluded: true },
+      ],
+      talkGroupOverrides: [],
+      rxGroupListOverrides: [],
+      channelSelections: [],
+      talkGroupSelections: [],
+      rxGroupListSelections: [],
+      digitalContactSelections: [],
+      analogContactSelections: [],
+      contactOverrides: [],
+    };
+
+    const projection = assemble(build, library);
+    expect(projection.zones).toEqual([]);
+    expect(projection.channels).toEqual([]);
+  });
 });

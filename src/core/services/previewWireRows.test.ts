@@ -525,6 +525,66 @@ describe('previewWireRows', () => {
     expect(isPreviewRowIncludedInExport(build, library, 'zone', glasgowRow!)).toBe(true);
   });
 
+  it('includes omitFromExport zone in preview when forceInclude override is set', () => {
+    const projectId = 'proj-force-include-preview';
+    const pmrChannel = {
+      ...newChannel(projectId, 'PMR', 'GB3PMR'),
+      id: 'ch-pmr',
+    };
+    const pmrZone = {
+      ...newZone(projectId, 'PMR446'),
+      id: 'zone-pmr',
+      omitFromExport: true,
+      members: [{ kind: 'channel' as const, channelId: pmrChannel.id }],
+    };
+    const build = {
+      ...newFormatBuild(projectId, 'opengd77-1701', 'Force include preview'),
+      formatId: 'opengd77',
+      zoneOverrides: [{ libraryEntityId: pmrZone.id, forceInclude: true }],
+    };
+    const library = {
+      channels: [pmrChannel],
+      zones: [pmrZone],
+      talkGroups: [],
+      digitalContacts: [],
+      analogContacts: [],
+      rxGroupLists: [],
+    };
+
+    const row = previewWireRows(build, library, 'zone')[0];
+    expect(row?.forceInclude).toBe(true);
+    expect(isPreviewRowIncludedInExport(build, library, 'zone', row!)).toBe(true);
+  });
+
+  it('excludes force-included omit zone from preview when build excluded is set', () => {
+    const projectId = 'proj-force-excluded-preview';
+    const pmrChannel = { ...newChannel(projectId, 'PMR'), id: 'ch-pmr' };
+    const pmrZone = {
+      ...newZone(projectId, 'PMR446'),
+      id: 'zone-pmr',
+      omitFromExport: true,
+      members: [{ kind: 'channel' as const, channelId: pmrChannel.id }],
+    };
+    const build = {
+      ...newFormatBuild(projectId, 'opengd77-1701', 'Force excluded preview'),
+      formatId: 'opengd77',
+      zoneOverrides: [
+        { libraryEntityId: pmrZone.id, forceInclude: true, excluded: true },
+      ],
+    };
+    const library = {
+      channels: [pmrChannel],
+      zones: [pmrZone],
+      talkGroups: [],
+      digitalContacts: [],
+      analogContacts: [],
+      rxGroupLists: [],
+    };
+
+    const row = previewWireRows(build, library, 'zone')[0];
+    expect(isPreviewRowIncludedInExport(build, library, 'zone', row!)).toBe(false);
+  });
+
   it('attaches direct zone member counts for zone wire preview rows', () => {
     const projectId = 'proj-zone-badges';
     const ch = { ...newChannel(projectId, 'Direct'), id: 'ch-1' };
