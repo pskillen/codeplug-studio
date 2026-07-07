@@ -1,4 +1,4 @@
-import { Group, NumberInput, Select, Stack, Text, TextInput } from '@mantine/core';
+import { Group, Input, NumberInput, SegmentedControl, Select, Stack, Text, TextInput } from '@mantine/core';
 import type {
   ChannelModeProfile,
   ChannelModeProfileAnalog,
@@ -120,6 +120,18 @@ function AnalogPanel({
 }) {
   return (
     <>
+      {profile.mode === 'ssb' ? (
+        <Input.Wrapper label="Sideband">
+          <SegmentedControl
+            data={[
+              { value: 'usb', label: 'USB' },
+              { value: 'lsb', label: 'LSB' },
+            ]}
+            value={profile.ssbSideband ?? 'usb'}
+            onChange={(value) => onPatch({ ssbSideband: value as 'usb' | 'lsb' })}
+          />
+        </Input.Wrapper>
+      ) : null}
       <Select
         label="Bandwidth (kHz)"
         data={bandwidthSelectData}
