@@ -2,21 +2,25 @@
 
 **Tracking:** [#38](https://github.com/pskillen/codeplug-studio/issues/38) · branch `38/pskil/chirp-csv-export`
 
-## Shipped / in flight
+## Shipped
 
-| Slice | Status | Notes |
-| --- | --- | --- |
-| Feature hub + progress docs | In progress | `docs/features/import-export/chirp/` |
-| Tier-3 profile id alignment | In progress | `chirp-uv5r`, `chirp-rt95`, `chirp-uv21` |
-| Profiles + columns + fixtures | Pending | `formats/chirp/` |
-| Flat memory assemble | Pending | `flatMemoryLayout.ts`, `assemble.ts` |
-| Export adapter | Pending | `serialise.ts`, `channelWire.ts` |
-| Memories UI + wire preview | Pending | `BuildMemoriesPage` |
-| Export panel + single-file path | Pending | `exportBuildSingleFile` |
-| Golden export tests | Pending | Three profile fixtures |
-| Epic closeout docs | Pending | Hub status → shipped |
+| Slice                           | Status   | Notes                                                          |
+| ------------------------------- | -------- | -------------------------------------------------------------- |
+| Feature hub + progress docs     | Complete | `docs/features/import-export/chirp/`                           |
+| Tier-3 profile id alignment     | Complete | `chirp-uv5r`, `chirp-rt95`, `chirp-uv21`                       |
+| Profiles + columns + fixtures   | Complete | `formats/chirp/`                                               |
+| Flat memory assemble            | Complete | `flatMemoryLayout.ts`, `assemble.ts`                           |
+| Export adapter                  | Complete | `serialise.ts`, `channelWire.ts`, `SingleFileCpsExportAdapter` |
+| Memories UI + wire preview      | Complete | `BuildMemoriesPage`, `previewWireRows` CHIRP branch            |
+| Export panel + single-file path | Complete | `exportBuildSingleFile`, `ExportBuildCpsPanel`                 |
+| Golden export tests             | Complete | `exportGolden.test.ts` — three profile fixtures                |
+| Epic closeout docs              | Complete | Hub status → export shipped                                    |
+
+## Outstanding
+
+See [chirp-outstanding.md](chirp-outstanding.md) — import (#214), DCS modelling, cross-format smoke.
 
 ## Verify
 
-- `npm run test` — CHIRP adapter + serialise tests
-- Manual: CHIRP build → Memories reorder → Export CSV
+- `npm run test` — `formats/chirp/*`, `ExportBuildCpsPanel.test.tsx`
+- Manual: CHIRP build → Memories reorder → Export CSV → load in CHIRP

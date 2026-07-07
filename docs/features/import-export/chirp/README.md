@@ -8,31 +8,32 @@ Product behaviour for CHIRP analogue FM/AM CSV in Codeplug Studio. Wire column t
 
 ## Implementation status
 
-| Area | Status | Notes |
-| --- | --- | --- |
-| Wire reference | Shipped | [reference/chirp/](../../../reference/chirp/README.md) |
-| Trait profiles (`chirp-uv5r`, `chirp-rt95`, `chirp-uv21`) | In progress | `TRAIT_PROFILES` — `FlatMemoryList`, `PerChannelScanFlag` |
-| Radio profiles + columns scaffold | In progress | `formats/chirp/profiles.ts`, `columns.ts` |
-| Flat memory assemble projection | Planned | `assemble` + `flatMemoryLayout` |
-| Export adapter (single CSV) | Planned | `assemble` → `serialiseChirpCsv` |
-| Memories build UI | Planned | Ordered channel list on CHIRP builds |
-| Browser download + export UI | Planned | `ExportBuildCpsPanel` single-file path |
-| CPS import | Planned | Phase 6b [#214](https://github.com/pskillen/codeplug-studio/issues/214) |
+| Area                                                      | Status  | Notes                                                                   |
+| --------------------------------------------------------- | ------- | ----------------------------------------------------------------------- |
+| Wire reference                                            | Shipped | [reference/chirp/](../../../reference/chirp/README.md)                  |
+| Trait profiles (`chirp-uv5r`, `chirp-rt95`, `chirp-uv21`) | Shipped | `TRAIT_PROFILES` — `FlatMemoryList`, `PerChannelScanFlag`               |
+| Radio profiles + columns                                  | Shipped | `formats/chirp/profiles.ts`, `columns.ts`                               |
+| Flat memory assemble projection                           | Shipped | `flatMemoryLayout.ts`, `assemble.ts`                                    |
+| Export adapter (single CSV)                               | Shipped | `exportBuildSingleFile` → `serialiseChirpCsv`                           |
+| Memories build UI                                         | Shipped | `/builds/:id/memories` — `BuildMemoriesPage`                            |
+| Browser download + export UI                              | Shipped | `ExportBuildCpsPanel` — Download CSV + preview                          |
+| Export golden tests                                       | Shipped | `exportGolden.test.ts` — three profile fixtures                         |
+| CPS import                                                | Planned | Phase 6b [#214](https://github.com/pskillen/codeplug-studio/issues/214) |
 
 ## Trait profile vs radio profile
 
 Studio uses two related concepts (same `profileId` keys):
 
-| Concept | Where | Purpose |
-| --- | --- | --- |
+| Concept           | Where                                           | Purpose                                                                             |
+| ----------------- | ----------------------------------------------- | ----------------------------------------------------------------------------------- |
 | **Trait profile** | `TRAIT_PROFILES` in `src/core/models/traits.ts` | Build capability traits — flat memory list, per-channel scan flag. Drives build UI. |
-| **Radio profile** | `CHIRP_PROFILES` in `formats/chirp/profiles.ts` | Wire limits at export: `maxMemorySlots`, `nameLimit`, power ladder. |
+| **Radio profile** | `CHIRP_PROFILES` in `formats/chirp/profiles.ts` | Wire limits at export: `maxMemorySlots`, `nameLimit`, power ladder.                 |
 
-| Profile id | Label | Name limit | Memory slots |
-| --- | --- | --- | --- |
-| `chirp-uv5r` | Baofeng UV-5R Mini | 7 | 128 |
-| `chirp-rt95` | Retevis RT95 VOX | 16 | 128 |
-| `chirp-uv21` | Baofeng UV-21Pro V2 | 16 | 128 |
+| Profile id   | Label               | Name limit | Memory slots |
+| ------------ | ------------------- | ---------- | ------------ |
+| `chirp-uv5r` | Baofeng UV-5R Mini  | 7          | 128          |
+| `chirp-rt95` | Retevis RT95 VOX    | 16         | 128          |
+| `chirp-uv21` | Baofeng UV-21Pro V2 | 16         | 128          |
 
 Per-radio wire detail: [docs/reference/chirp/radios/](../../../reference/chirp/radios/README.md).
 
@@ -55,15 +56,15 @@ CHIRP builds do **not** use library zones — organisation is flat memory order 
 
 ## Lossy fields
 
-| Field | Behaviour |
-| --- | --- |
-| `Location` | Export-time assignment from build memory order |
-| DMR columns (`URCALL`, …) | Empty on analogue export |
-| Mixed-project digital channels | Skipped with warning |
-| `DtcsCode` / `CrossMode` | Export constants only — DCS not modelled |
-| Duplex `+`/`-` with offset 0 | Collapses to simplex in model |
-| `Comment` | Not exported — library field only |
-| `TStep` | Constant `5.00` on export |
+| Field                          | Behaviour                                      |
+| ------------------------------ | ---------------------------------------------- |
+| `Location`                     | Export-time assignment from build memory order |
+| DMR columns (`URCALL`, …)      | Empty on analogue export                       |
+| Mixed-project digital channels | Skipped with warning                           |
+| `DtcsCode` / `CrossMode`       | Export constants only — DCS not modelled       |
+| Duplex `+`/`-` with offset 0   | Collapses to simplex in model                  |
+| `Comment`                      | Not exported — library field only              |
+| `TStep`                        | Constant `5.00` on export                      |
 
 ## Related
 
