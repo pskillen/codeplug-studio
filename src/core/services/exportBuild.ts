@@ -2,7 +2,10 @@ import type { FormatBuild } from '@core/models/formatBuild.ts';
 import { findZoneGroupingSection } from '@core/domain/zoneGroupingLayout.ts';
 import { mergeExportOptions } from '@core/import-export/exportSettingsMerge.ts';
 import { getExportAdapter } from '@core/import-export/registry.ts';
-import { isMultiFileExportAdapter } from '@core/import-export/exportAdapter.ts';
+import {
+  isMultiFileExportAdapter,
+  isSingleFileCpsExportAdapter,
+} from '@core/import-export/exportAdapter.ts';
 import { buildOpenGd77Zip } from '@core/import-export/formats/opengd77/packageZip.ts';
 import { buildDm32Zip } from '@core/import-export/formats/dm32/packageZip.ts';
 import type { CpsExportOptions, ExportResult, FormatId } from '@core/import-export/types.ts';
@@ -78,6 +81,41 @@ export function exportBuildAll({
   }
 
   return { assembled, files, warnings };
+}
+
+/** Serialise a single CPS file (CHIRP memory CSV). */
+export function exportBuildSingleFile({
+  build,
+  library,
+  options,
+}: Omit<ExportBuildParams, 'fileName'>): ExportBuildAllResult & {
+  fileName: string;
+  content: string;
+} {
+  const exportOptions = mergeExportOptions(build, options);
+  const projection = assemble(build, library, { profileId: exportOptions.profileId });
+  const assembled = {
+    ...projection,
+    library,
+    zoneGrouping: findZoneGroupingSection(build),
+  };
+  const adapter = getExportAdapter(build.formatId as FormatId);
+  if (!isSingleFileCpsExportAdapter(adapter)) {
+    throw new Error(`Format ${build.formatId} does not support single-file CPS export`);
+  }
+
+  const fileName =
+    options?.fileName ?? adapter.defaultFileName(exportOptions.profileId ?? build.profileId);
+  const result = adapter.serialise(assembled, exportOptions);
+  const warnings = [...exportInclusionWarnings(build, library, assembled), ...result.warnings];
+
+  return {
+    assembled,
+    files: { [fileName]: result.content },
+    warnings,
+    fileName,
+    content: result.content,
+  };
 }
 
 /** Serialise all CPS files and package as a ZIP byte array. */

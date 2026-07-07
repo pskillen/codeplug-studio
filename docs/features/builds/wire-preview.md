@@ -10,12 +10,13 @@ Operator workflow for reviewing and shaping CPS wire names before export. Each b
 
 Build overrides use **sparse opt-out** storage (`BuildEntityOverride`):
 
-| Field            | Meaning                                                                       |
-| ---------------- | ----------------------------------------------------------------------------- |
-| _(no row)_       | Entity is **included**; wire name is generated from library fields            |
-| `excluded: true` | Omit from export projection                                                   |
-| `forceInclude`   | Zone overrides only — export standalone zone despite library `omitFromExport` |
-| `wireName`       | Override the generated CPS name                                               |
+| Field            | Meaning                                                                         |
+| ---------------- | ------------------------------------------------------------------------------- |
+| _(no row)_       | Entity is **included**; wire name is generated from library fields              |
+| `excluded: true` | Omit from export projection                                                     |
+| `forceInclude`   | Zone overrides only — export standalone zone despite library `omitFromExport`   |
+| `wireName`       | Override the generated CPS name                                                 |
+| `orderOrSlot`    | 1-based top-level export position (CHIRP memory `Location`; gaps → blank slots) |
 
 Overrides are stored on `FormatBuild` as `channelOverrides`, `zoneOverrides`, `talkGroupOverrides`, `contactOverrides`, and `rxGroupListOverrides` (`studioSchemaVersion: 3`).
 

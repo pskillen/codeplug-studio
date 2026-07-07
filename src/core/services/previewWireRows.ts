@@ -23,12 +23,18 @@ import type { FormatBuild } from '@core/models/formatBuild.ts';
 import type { Channel, ChannelModeProfileDMR, Zone } from '@core/models/library.ts';
 import type { DMRTimeSlot, EntityRef } from '@core/models/libraryTypes.ts';
 import { directZoneMemberChannelIds, directZoneMemberZoneIds } from '@core/domain/zoneMembers.ts';
+import { isChirpAnalogueExportable } from '@core/import-export/formats/chirp/channelWire.ts';
+import { previewGeneratedChannelWireName } from './previewChannelWireName.ts';
 
 export type WirePreviewEntityKind = 'channel' | 'zone' | 'talkGroup' | 'contact' | 'rxGroupList';
 
 export const PREVIEW_ROW_NOT_REFERENCED_NOTE = 'Not referenced by exported channels';
 
 export const PREVIEW_ROW_NOT_ZONE_LINKED_NOTE = 'Not linked to a zone';
+
+export const PREVIEW_ROW_NOT_IN_MEMORY_LIST_NOTE = 'Not in memory list';
+
+export const PREVIEW_ROW_NOT_ANALOGUE_CHIRP_NOTE = 'Not analogue — skipped on CHIRP export';
 
 export const PREVIEW_ROW_OMIT_FROM_EXPORT_NOTE =
   'Not exported as its own zone — channels still export inside parent zones (library setting)';
@@ -177,6 +183,54 @@ export function previewWireRows(
       const rows: WirePreviewRow[] = [];
       const reserved = new Set<string>();
       const warnings: string[] = [];
+
+      if (build.formatId === 'chirp') {
+        const memorySlots =
+          projection.channelMemorySlots ??
+          projection.channels.map((row, index) => ({
+            slot: index + 1,
+            channelId: row.entity.id,
+          }));
+        const memoryIds = memorySlots
+          .map((slot) => slot.channelId)
+          .filter((id): id is string => id != null);
+        const memorySet = new Set(memoryIds);
+        const rows: WirePreviewRow[] = [];
+
+        const pushChannelRow = (channel: Channel, expansionNote?: string) => {
+          const channelOverride = overrideByEntityId(build.channelOverrides)
+            .get(channel.id)
+            ?.wireName?.trim();
+          const generatedWireName = previewGeneratedChannelWireName(channel, build, _options);
+          rows.push({
+            key: channel.id,
+            libraryEntityId: channel.id,
+            entityKind: 'channel',
+            displayLabel: channelDisplayLabel(channel),
+            generatedWireName: sanitiseAsciiWireString(generatedWireName),
+            effectiveWireName: sanitiseAsciiWireString(channelOverride ?? generatedWireName),
+            hasWireNameOverride: Boolean(channelOverride),
+            excluded: isEntityExcluded(build.channelOverrides, channel.id),
+            expansionNote,
+          });
+        };
+
+        memorySlots.forEach((slot) => {
+          if (!slot.channelId) return;
+          const channel = library.channels.find((row) => row.id === slot.channelId);
+          if (!channel) return;
+          if (!isChirpAnalogueExportable(channel)) return;
+          pushChannelRow(channel, `Location ${slot.slot}`);
+        });
+
+        for (const channel of library.channels) {
+          if (memorySet.has(channel.id)) continue;
+          if (!isChirpAnalogueExportable(channel)) continue;
+          pushChannelRow(channel, PREVIEW_ROW_NOT_IN_MEMORY_LIST_NOTE);
+        }
+
+        return rows;
+      }
 
       if (build.formatId === 'dm32') {
         const assembled = projection;

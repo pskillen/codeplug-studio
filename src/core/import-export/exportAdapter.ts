@@ -23,6 +23,16 @@ export interface SingleFileProjectExportAdapter extends BaseExportAdapter {
   serialise(aggregate: ProjectAggregate): ExportSerialiseResult;
 }
 
+/** CPS single-file export (CHIRP memory CSV). */
+export interface SingleFileCpsExportAdapter extends BaseExportAdapter {
+  readonly delivery: 'single-file-cps';
+  defaultFileName(profileId: string): string;
+  serialise(
+    assembled: AssembledBuild,
+    options?: CpsExportOptions,
+  ): ExportResult & { content: string };
+}
+
 /** CPS multi-file export (Phase 4+). */
 export interface MultiFileExportAdapter extends BaseExportAdapter {
   readonly delivery: 'multi-file';
@@ -34,12 +44,19 @@ export interface MultiFileExportAdapter extends BaseExportAdapter {
   ): ExportResult & { content: string };
 }
 
-export type ExportAdapter = SingleFileProjectExportAdapter | MultiFileExportAdapter;
+export type ExportAdapter =
+  SingleFileProjectExportAdapter | SingleFileCpsExportAdapter | MultiFileExportAdapter;
 
 export function isSingleFileProjectExportAdapter(
   adapter: ExportAdapter,
 ): adapter is SingleFileProjectExportAdapter {
   return adapter.delivery === 'single-file';
+}
+
+export function isSingleFileCpsExportAdapter(
+  adapter: ExportAdapter,
+): adapter is SingleFileCpsExportAdapter {
+  return adapter.delivery === 'single-file-cps';
 }
 
 export function isMultiFileExportAdapter(

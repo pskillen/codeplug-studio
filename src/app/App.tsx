@@ -104,6 +104,7 @@ export const appRouter = createBrowserRouter([
             children: [
               { index: true, element: <Navigate to="overview" replace /> },
               { path: 'overview', element: <BuildOverviewPage /> },
+              { path: 'memories', element: <Navigate to="channels" replace /> },
               { path: 'channels', element: <BuildChannelsWirePage /> },
               { path: 'zones', element: <BuildZonesWirePage /> },
               { path: 'talk-groups', element: <BuildTalkGroupsWirePage /> },

@@ -8,8 +8,18 @@ describe('formatProfiles', () => {
     expect(profiles[0]?.nameLimit).toBe(16);
   });
 
-  it('returns wire hint for OpenGD77 profiles only', () => {
+  it('lists CHIRP profiles for UI', () => {
+    const profiles = getFormatProfiles('chirp');
+    expect(profiles.map((p) => p.profileId).sort()).toEqual([
+      'chirp-rt95',
+      'chirp-uv21',
+      'chirp-uv5r',
+    ]);
+    expect(profiles.find((p) => p.profileId === 'chirp-uv5r')?.nameLimit).toBe(7);
+  });
+
+  it('returns wire hint for OpenGD77 and CHIRP profiles', () => {
     expect(formatProfileWireHint('opengd77', 'opengd77-1701')).toMatch(/16-char/);
-    expect(formatProfileWireHint('chirp', 'chirp-uv5r')).toBeNull();
+    expect(formatProfileWireHint('chirp', 'chirp-uv5r')).toMatch(/7-char/);
   });
 });

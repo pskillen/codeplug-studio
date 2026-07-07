@@ -636,4 +636,61 @@ describe('assemble', () => {
     expect(projection.zones).toEqual([]);
     expect(projection.channels).toEqual([]);
   });
+
+  it('projects flat memory order for CHIRP builds', () => {
+    const projectId = '11111111-1111-4111-8111-111111111111';
+    const fmProfile = {
+      mode: 'fm' as const,
+      rxTone: 'none' as const,
+      txTone: 'none' as const,
+      squelch: null,
+      bandwidthKHz: 12.5,
+    };
+    const ch1 = {
+      ...newChannel(projectId, 'VHF'),
+      id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+      modeProfiles: [fmProfile],
+    };
+    const ch2 = {
+      ...newChannel(projectId, 'UHF'),
+      id: 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',
+      modeProfiles: [fmProfile],
+    };
+    const library = {
+      channels: [ch1, ch2],
+      zones: [],
+      talkGroups: [],
+      digitalContacts: [],
+      analogContacts: [],
+      rxGroupLists: [],
+    };
+    const build = {
+      id: 'build-chirp',
+      projectId,
+      revision: 1,
+      updatedAt: '2026-01-01T00:00:00.000Z',
+      name: 'CHIRP test',
+      formatId: 'chirp',
+      profileId: 'chirp-uv5r',
+      layout: {
+        sections: [
+          {
+            kind: 'flatMemory' as const,
+            channelIds: [ch2.id, ch1.id],
+            scanFlags: {},
+          },
+        ],
+      },
+      channelOverrides: [],
+      zoneOverrides: [],
+      talkGroupOverrides: [],
+      rxGroupListOverrides: [],
+      contactOverrides: [],
+    };
+
+    const projection = assemble(build, library);
+    expect(projection.channelMemorySlots?.map((slot) => slot.channelId)).toEqual([ch2.id, ch1.id]);
+    expect(projection.channels.map((c) => c.entity.id).sort()).toEqual([ch1.id, ch2.id]);
+    expect(projection.zones).toEqual([]);
+  });
 });

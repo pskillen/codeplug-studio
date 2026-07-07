@@ -1,7 +1,7 @@
 # Retevis RT95 VOX — CHIRP profile
 
-**Profile id:** `retevis-rt95`  
-**Fixture:** `test-data/chirp/20260629/retevis-rt95/Retevis_RT95 VOX_20251106.csv`  
+**Profile id:** `chirp-rt95`  
+**Fixture:** `formats/chirp/__fixtures__/export/Retevis_RT95 VOX_20251106.csv`  
 **Max RF:** 25 W
 
 ## Limits
@@ -9,6 +9,7 @@
 | Constraint       | Value |
 | ---------------- | ----- |
 | Max memory slots | 128   |
+| Channel name     | 16    |
 
 ## Power ladder (wire → percent)
 

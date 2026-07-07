@@ -28,7 +28,7 @@ IndexedDB remains the **edit store**; YAML and Drive are portable layers on top 
 | CPS export services (`assemble`, `exportBuild`)         | Shipped | [#86](https://github.com/pskillen/codeplug-studio/issues/86) — [cps-services.md](cps-services.md)                                                                                                   |
 | Build `exportSettings` on `FormatBuild`                 | Shipped | [#203](https://github.com/pskillen/codeplug-studio/issues/203) — name shortening, scan default, DM32 scan master; YAML round-trip                                                                   |
 | OpenGD77 CSV import                                     | Planned | Phase 4b                                                                                                                                                                                            |
-| CHIRP CSV                                               | Planned | Phase 4+                                                                                                                                                                                            |
+| CHIRP CSV export                                        | Shipped | [#38](https://github.com/pskillen/codeplug-studio/issues/38) — [chirp/README.md](chirp/README.md); import [#214](https://github.com/pskillen/codeplug-studio/issues/214) planned                    |
 | DM32 CSV export                                         | Shipped | [#37](https://github.com/pskillen/codeplug-studio/issues/37) — [dm32/README.md](dm32/README.md); import [#112](https://github.com/pskillen/codeplug-studio/issues/112) planned                      |
 | qDMR YAML                                               | Planned | Out of Phase 3 scope                                                                                                                                                                                |
 
@@ -62,7 +62,7 @@ Routes and UI call **application services** (`importProjectYaml`, `exportProject
 | ------------- | ------- | ------- | -------------------------- |
 | `native-yaml` | Shipped | Shipped | Single file — full project |
 | `opengd77`    | Planned | Shipped | Multi-file CSV             |
-| `chirp`       | Planned | Planned | Single-file CSV            |
+| `chirp`       | Planned | Shipped | Single-file memory CSV     |
 | `dm32`        | Planned | Shipped | Multi-file CSV             |
 | `qdmr`        | Planned | Planned | YAML (vendor)              |
 

@@ -1,10 +1,13 @@
 import { useEffect, useMemo, useState } from 'react';
 import type { FormatBuild } from '@core/models/formatBuild.ts';
 import { csvToTable, type CsvTable } from '@core/import-export/csvParse.ts';
-import { isMultiFileExportAdapter } from '@core/import-export/exportAdapter.ts';
+import {
+  isMultiFileExportAdapter,
+  isSingleFileCpsExportAdapter,
+} from '@core/import-export/exportAdapter.ts';
 import { getExportAdapter } from '@core/import-export/registry.ts';
 import type { CpsExportOptions, FormatId } from '@core/import-export/types.ts';
-import { previewCpsExport } from '../services/buildCpsExportService.ts';
+import { previewCpsExport, previewCpsSingleFile } from '../services/buildCpsExportService.ts';
 import { useProjects } from '../state/useProjects.ts';
 
 export interface UseBuildCpsExportPreviewParams {
@@ -31,12 +34,16 @@ export function useBuildCpsExportPreview({
   const fileNames = useMemo(() => {
     try {
       const adapter = getExportAdapter(build.formatId as FormatId);
-      if (!isMultiFileExportAdapter(adapter)) return [];
-      return [...adapter.fileNames];
+      if (isMultiFileExportAdapter(adapter)) return [...adapter.fileNames];
+      if (isSingleFileCpsExportAdapter(adapter)) {
+        const profileId = exportOptions.profileId ?? build.profileId;
+        return [adapter.defaultFileName(profileId)];
+      }
+      return [];
     } catch {
       return [];
     }
-  }, [build.formatId]);
+  }, [build.formatId, build.profileId, exportOptions.profileId]);
 
   const requestKey = useMemo(
     () =>
@@ -55,7 +62,16 @@ export function useBuildCpsExportPreview({
 
     let cancelled = false;
 
-    void previewCpsExport(activeProjectId, build.id, exportOptions)
+    const preview = (() => {
+      try {
+        const adapter = getExportAdapter(build.formatId as FormatId);
+        return isSingleFileCpsExportAdapter(adapter) ? previewCpsSingleFile : previewCpsExport;
+      } catch {
+        return previewCpsExport;
+      }
+    })();
+
+    void preview(activeProjectId, build.id, exportOptions)
       .then((result) => {
         if (cancelled) return;
         setSnapshot({

@@ -6,12 +6,12 @@ The internal [library + format build model](../data-model/README.md) is the hub 
 
 **Reference implementations today:**
 
-| Format       | Import  | Export  | Adapter path                                             |
-| ------------ | ------- | ------- | -------------------------------------------------------- |
-| OpenGD77 CSV | Planned | Shipped | `src/core/import-export/formats/opengd77/`               |
-| DM32 CSV     | Planned | Shipped | `src/core/import-export/formats/dm32/`                   |
-| CHIRP CSV    | Planned | Planned | _(no adapter yet — trait profile + reference docs only)_ |
-| Native YAML  | Shipped | Shipped | `src/core/import-export/formats/native-yaml/`            |
+| Format       | Import  | Export  | Adapter path                                  |
+| ------------ | ------- | ------- | --------------------------------------------- |
+| OpenGD77 CSV | Planned | Shipped | `src/core/import-export/formats/opengd77/`    |
+| DM32 CSV     | Planned | Shipped | `src/core/import-export/formats/dm32/`        |
+| CHIRP CSV    | Planned | Shipped | `src/core/import-export/formats/chirp/`       |
+| Native YAML  | Shipped | Shipped | `src/core/import-export/formats/native-yaml/` |
 
 ---
 
@@ -124,10 +124,10 @@ All formats share `src/core/import-export/`:
 
 ### Delivery variants
 
-| `delivery`    | Import                    | Export           | Typical formats |
-| ------------- | ------------------------- | ---------------- | --------------- |
-| `multi-file`  | Folder or loose CSV batch | Per-file + ZIP   | OpenGD77, DM32  |
-| `single-file` | One memory CSV            | One CSV download | CHIRP (planned) |
+| `delivery`        | Import                    | Export           | Typical formats |
+| ----------------- | ------------------------- | ---------------- | --------------- |
+| `multi-file`      | Folder or loose CSV batch | Per-file + ZIP   | OpenGD77, DM32  |
+| `single-file-cps` | One memory CSV            | One CSV download | CHIRP           |
 
 Native YAML uses `single-file` **project** adapters (`parseDocument` / `serialise(aggregate)`) — full library + all builds in one file.
 
@@ -203,9 +203,11 @@ Register defaults on the export adapter and in `getFormatExportDefaults()` for p
 - Apply `CpsExportOptions.profileId` radio limits; options override build defaults without mutating the build row
 - Normalise wire strings to printable ASCII via `sanitiseAsciiWireString.ts` where applicable
 
-**Single-file CPS** (planned for CHIRP):
+**Single-file CPS** (`SingleFileCpsExportAdapter` — shipped for CHIRP):
 
-- One `serialiseFile` or dedicated single-file export shape returning one CSV
+- `defaultFileName(profileId)` — suggested download name
+- `serialise(assembled, options?)` → `{ content, warnings }`
+- App path: `exportBuildSingleFile` → `downloadCpsSingleFile` / `previewCpsSingleFile`
 
 ---
 
@@ -439,7 +441,7 @@ FormatA → import → library + builds → export → FormatB
 - [ ] Document expected loss at each boundary in reference docs
 - [ ] Do not assume symmetric loss — document each direction
 
-Cross-format tests are **planned**; OpenGD77 ↔ CHIRP was the first pair in the archive tool and remains the template when CHIRP export ships.
+Cross-format tests are **planned**; OpenGD77 ↔ CHIRP was the first pair in the archive tool — CHIRP export is shipped; cross-format golden remains optional.
 
 ---
 
@@ -487,15 +489,19 @@ End-to-end smoke before PR:
 
 ---
 
-## Worked example: CHIRP (planned)
+## Worked example: CHIRP (export shipped)
 
-| Step          | Location                                                    |
-| ------------- | ----------------------------------------------------------- |
-| Reference hub | `docs/reference/chirp/README.md`                            |
-| Trait profile | `chirp-uv5r` — `FlatMemoryList`, `PerChannelScanFlag`       |
-| Adapter       | **Not yet** — `formats/chirp/` to be created                |
-| Delivery      | `single-file` — one memory CSV                              |
-| Expansion     | Likely neither mode nor TG fan-out — flat analogue memories |
+| Step          | Location                                                                          |
+| ------------- | --------------------------------------------------------------------------------- |
+| Feature hub   | `docs/features/import-export/chirp/README.md`                                     |
+| Reference hub | `docs/reference/chirp/README.md`                                                  |
+| Trait profile | `chirp-uv5r`, `chirp-rt95`, `chirp-uv21` — `FlatMemoryList`, `PerChannelScanFlag` |
+| Adapter       | `formats/chirp/adapter.ts`, `serialise.ts`, `exportChannelWire.ts`                |
+| Delivery      | `single-file-cps` — one memory CSV                                                |
+| Assemble      | `flatMemoryLayout.ts` — ordered `channelIds` on build layout                      |
+| UI            | `BuildMemoriesPage`, `ExportBuildCpsPanel` (Download CSV)                         |
+| Tests         | `exportGolden.test.ts`, `serialise.test.ts`, `exportChannelWire.test.ts`          |
+| Expansion     | Neither mode nor TG fan-out — flat analogue memories only                         |
 
 ---
 

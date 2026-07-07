@@ -31,6 +31,8 @@ describe('trait profiles', () => {
 
   it('has stable profile keys', () => {
     expect(Object.keys(TRAIT_PROFILES).sort()).toEqual([
+      'chirp-rt95',
+      'chirp-uv21',
       'chirp-uv5r',
       'dm32-baofeng-dm32uv',
       'opengd77-1701',

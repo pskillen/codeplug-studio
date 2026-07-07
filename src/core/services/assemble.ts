@@ -18,6 +18,13 @@ import { defaultChannelWireName } from '@core/domain/channelNaming.ts';
 import { channelInAnyZoneMembership } from '@core/domain/zoneMembership.ts';
 import { resolveEffectiveZoneChannelIds } from '@core/domain/zoneHierarchy.ts';
 import { orderChannelIdsByLayoutHint } from '@core/domain/zoneGroupingLayout.ts';
+import {
+  buildUsesFlatMemoryList,
+  chirpMemoryChannelIds,
+  migrateFlatMemoryLayoutToOrderOrSlot,
+  resolveChirpChannelMemorySlots,
+  type ExportMemorySlot,
+} from '@core/domain/exportOrderOrSlot.ts';
 import { migrateFormatBuild } from '@core/domain/migrateFormatBuild.ts';
 import type { Library } from '@core/models/library.ts';
 
@@ -66,6 +73,8 @@ export interface AssembledBuild {
   library?: LibrarySlice;
   /** Zone grouping layout section when build has one — used for DM32 scan/scratch export. */
   zoneGrouping?: ZoneGroupingLayout;
+  /** CHIRP flat-memory slots (blank slots have `channelId: null`). */
+  channelMemorySlots?: ExportMemorySlot[];
 }
 
 export interface AssembleOptions {
@@ -151,6 +160,10 @@ export { channelInAnyZoneMembership } from '@core/domain/zoneMembership.ts';
 
 /** Channel ids that appear in at least one exporting standalone zone (nested flatten included). */
 export function exportReachableChannelIds(build: FormatBuild, library: LibrarySlice): Set<string> {
+  if (buildUsesFlatMemoryList(build)) {
+    return new Set(chirpMemoryChannelIds(build, library));
+  }
+
   const zonesById = zoneMap(library);
   const overrides = build.zoneOverrides;
   const ids = new Set<string>();
@@ -317,10 +330,18 @@ export function exportInclusionWarnings(
   const normalized = withExportInclusionDefaults(build);
 
   if (normalized.exportUnlinkedChannels !== false) {
-    const zoneLinked = zoneLinkedChannelIds(normalized, library);
-    const orphanCount = assembled.channels.filter((row) => !zoneLinked.has(row.entity.id)).length;
-    if (orphanCount > 0) {
-      warnings.push(`Including ${orphanCount} channel(s) not linked to a zone`);
+    if (buildUsesFlatMemoryList(normalized)) {
+      const memoryIds = new Set(chirpMemoryChannelIds(normalized, library));
+      const orphanCount = assembled.channels.filter((row) => !memoryIds.has(row.entity.id)).length;
+      if (orphanCount > 0) {
+        warnings.push(`Including ${orphanCount} channel(s) not in memory list`);
+      }
+    } else {
+      const zoneLinked = zoneLinkedChannelIds(normalized, library);
+      const orphanCount = assembled.channels.filter((row) => !zoneLinked.has(row.entity.id)).length;
+      if (orphanCount > 0) {
+        warnings.push(`Including ${orphanCount} channel(s) not linked to a zone`);
+      }
     }
   }
 
@@ -364,9 +385,11 @@ export function assemble(
   library: LibrarySlice,
   options?: AssembleOptions,
 ): AssembledBuild {
-  const normalizedBuild = withExportInclusionDefaults(
-    migrateFormatBuild(build, library as Library),
-  );
+  const migratedBase = migrateFormatBuild(build, library as Library);
+  const migratedBuild = buildUsesFlatMemoryList(migratedBase)
+    ? migrateFlatMemoryLayoutToOrderOrSlot(migratedBase, library)
+    : migratedBase;
+  const normalizedBuild = withExportInclusionDefaults(migratedBuild);
   const channels = assembleChannels(normalizedBuild, library);
   const exportedChannelIds = new Set(channels.map((c) => c.entity.id));
   const zones = assembleZones(normalizedBuild, library, exportedChannelIds);
@@ -428,5 +451,8 @@ export function assemble(
       refs.rxGroupListIds,
       normalizedBuild.exportUnlinkedRxGroupLists !== false,
     ),
+    channelMemorySlots: buildUsesFlatMemoryList(normalizedBuild)
+      ? resolveChirpChannelMemorySlots(normalizedBuild, library)
+      : undefined,
   };
 }
