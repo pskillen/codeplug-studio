@@ -30,7 +30,7 @@ IndexedDB remains the **edit store**; YAML and Drive are portable layers on top 
 | OpenGD77 CSV import                                     | Planned | Phase 4b                                                                                                                                                                                            |
 | CHIRP CSV export                                        | Shipped | [#38](https://github.com/pskillen/codeplug-studio/issues/38) — [chirp/README.md](chirp/README.md); import [#214](https://github.com/pskillen/codeplug-studio/issues/214) planned                    |
 | DM32 CSV export                                         | Shipped | [#37](https://github.com/pskillen/codeplug-studio/issues/37) — [dm32/README.md](dm32/README.md); import [#112](https://github.com/pskillen/codeplug-studio/issues/112) planned                      |
-| Anytone CPS export                                      | Planned | [#228](https://github.com/pskillen/codeplug-studio/issues/228) — wire spike shipped ([#230](https://github.com/pskillen/codeplug-studio/issues/230)); [anytone/README.md](anytone/README.md)          |
+| Anytone CPS export                                      | Planned | [#228](https://github.com/pskillen/codeplug-studio/issues/228) — wire spike shipped ([#230](https://github.com/pskillen/codeplug-studio/issues/230)); [anytone/README.md](anytone/README.md)        |
 | qDMR YAML                                               | Planned | Out of Phase 3 scope                                                                                                                                                                                |
 
 ## Architecture
@@ -102,14 +102,14 @@ Optional deep link: `?format=opengd77` highlights the matching catalog card (`us
 | [dm32/README.md](dm32/README.md)                                               | DM32 export hub ([#113](https://github.com/pskillen/codeplug-studio/issues/113))                                       |
 | [dm32-progress.md](dm32-progress.md)                                           | Epic #37 DM32 export execution log                                                                                     |
 | [dm32-outstanding.md](dm32-outstanding.md)                                     | DM32 export debt and deferrals                                                                                         |
-| [chirp/README.md](chirp/README.md)                                           | CHIRP export hub ([#38](https://github.com/pskillen/codeplug-studio/issues/38))                                          |
-| [chirp-progress.md](chirp-progress.md)                                       | Phase 6 CHIRP export execution log                                                                                       |
-| [chirp-outstanding.md](chirp-outstanding.md)                                 | CHIRP export debt and deferrals                                                                                        |
+| [chirp/README.md](chirp/README.md)                                             | CHIRP export hub ([#38](https://github.com/pskillen/codeplug-studio/issues/38))                                        |
+| [chirp-progress.md](chirp-progress.md)                                         | Phase 6 CHIRP export execution log                                                                                     |
+| [chirp-outstanding.md](chirp-outstanding.md)                                   | CHIRP export debt and deferrals                                                                                        |
 | [../../reference/chirp/README.md](../../reference/chirp/README.md)             | Tier 3 — CHIRP wire tables                                                                                             |
-| [anytone/README.md](anytone/README.md)                                       | Anytone export hub ([#231](https://github.com/pskillen/codeplug-studio/issues/231))                                    |
-| [anytone-progress.md](anytone-progress.md)                                   | Phase 7 wire spike + export execution log                                                                              |
-| [anytone-outstanding.md](anytone-outstanding.md)                             | Anytone debt and deferrals                                                                                             |
-| [../../reference/anytone/README.md](../../reference/anytone/README.md)       | Tier 3 — Anytone wire tables                                                                                           |
+| [anytone/README.md](anytone/README.md)                                         | Anytone export hub ([#231](https://github.com/pskillen/codeplug-studio/issues/231))                                    |
+| [anytone-progress.md](anytone-progress.md)                                     | Phase 7 wire spike + export execution log                                                                              |
+| [anytone-outstanding.md](anytone-outstanding.md)                               | Anytone debt and deferrals                                                                                             |
+| [../../reference/anytone/README.md](../../reference/anytone/README.md)         | Tier 3 — Anytone wire tables                                                                                           |
 | [../../reference/dm32/README.md](../../reference/dm32/README.md)               | Tier 3 — DM32 wire tables                                                                                              |
 | [../../reference/native-yaml/README.md](../../reference/native-yaml/README.md) | Tier 3 — YAML field tables and example document                                                                        |
 

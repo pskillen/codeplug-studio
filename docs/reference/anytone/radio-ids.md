@@ -6,11 +6,11 @@ DMR radio ID labels referenced from `Channel.CSV` (`Radio ID` column).
 
 ## Headers
 
-| Header     | Purpose                                |
-| ---------- | -------------------------------------- |
-| `No.`      | Index                                  |
-| `Radio ID` | Numeric DMR ID (e.g. `1234567`)        |
-| `Name`     | Label referenced by channels           |
+| Header     | Purpose                         |
+| ---------- | ------------------------------- |
+| `No.`      | Index                           |
+| `Radio ID` | Numeric DMR ID (e.g. `1234567`) |
+| `Name`     | Label referenced by channels    |
 
 ## Internal mapping
 

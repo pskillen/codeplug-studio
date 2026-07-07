@@ -8,27 +8,27 @@ Per-channel APRS flags on `Channel.CSV`: [aprs-on-channels.md](aprs-on-channels.
 
 ## Fidelity tier
 
-| Tier            | Status                                              |
-| --------------- | --------------------------------------------------- |
-| **Not modelled** | No first-class internal entity today               |
-| Export v1       | Header-only or fixture-default row (OpenGD77 pattern) until model lands |
+| Tier             | Status                                                                  |
+| ---------------- | ----------------------------------------------------------------------- |
+| **Not modelled** | No first-class internal entity today                                    |
+| Export v1        | Header-only or fixture-default row (OpenGD77 pattern) until model lands |
 
 ## Column groups (inventory)
 
 ### Timing and roaming
 
-| Columns | Purpose (wire)                    |
-| ------- | --------------------------------- |
-| `Manual TX Interval[s]` | Manual beacon interval      |
+| Columns                    | Purpose (wire)         |
+| -------------------------- | ---------------------- |
+| `Manual TX Interval[s]`    | Manual beacon interval |
 | `APRS Auto TX Interval[s]` | Auto beacon interval   |
-| `Support For Roaming` | Roaming enable               |
-| `Fixed Location Beacon` | Fixed GPS beacon flag      |
+| `Support For Roaming`      | Roaming enable         |
+| `Fixed Location Beacon`    | Fixed GPS beacon flag  |
 
 ### GPS / fixed position
 
-| Columns | Purpose                           |
-| ------- | --------------------------------- |
-| `LatiDegree`, `LatiMinInt`, `LatiMinMark`, `North or South` | Latitude |
+| Columns                                                                    | Purpose   |
+| -------------------------------------------------------------------------- | --------- |
+| `LatiDegree`, `LatiMinInt`, `LatiMinMark`, `North or South`                | Latitude  |
 | `LongtiDegree`, `LongtiMinInt`, `LongtiMinMark`, `East or West Hemisphere` | Longitude |
 
 ### APRS channel slots (×8)
@@ -37,23 +37,23 @@ Repeating pattern `channelN`, `slotN`, `Aprs TgN`, `Call TypeN` for N=1…8 — 
 
 ### Identity and path
 
-| Column              | Sample (redacted)   |
-| ------------------- | ----------------- |
-| `TOCALL` / `TOCALL SSID` | `APAT81` / `0` |
-| `Your Call Sign` / `Your SSID` | Operator callsign |
-| `APRS Symbol Table` / `APRS Map Icon` | `/` / `[` |
-| `Digipeater Path`   | e.g. `WIDE1-1,WIDE2-1` |
-| `Enter Your Sending Text` | Free text status |
+| Column                                | Sample (redacted)      |
+| ------------------------------------- | ---------------------- |
+| `TOCALL` / `TOCALL SSID`              | `APAT81` / `0`         |
+| `Your Call Sign` / `Your SSID`        | Operator callsign      |
+| `APRS Symbol Table` / `APRS Map Icon` | `/` / `[`              |
+| `Digipeater Path`                     | e.g. `WIDE1-1,WIDE2-1` |
+| `Enter Your Sending Text`             | Free text status       |
 
 ### RF and TX
 
-| Columns | Purpose                           |
-| ------- | --------------------------------- |
-| `Transmission Frequency [MHz]` | APRS TX frequency          |
-| `Transmit Delay[ms]`, `Prewave Time[ms]` | Timing                |
-| `Send Sub Tone`, `CTCSS`, `DCS` | Tone settings            |
-| `Transmit Power` | Power level                      |
-| `Transmission Frequency"0` … `"7` | Additional TX freq slots (quoted header names) |
+| Columns                                  | Purpose                                        |
+| ---------------------------------------- | ---------------------------------------------- |
+| `Transmission Frequency [MHz]`           | APRS TX frequency                              |
+| `Transmit Delay[ms]`, `Prewave Time[ms]` | Timing                                         |
+| `Send Sub Tone`, `CTCSS`, `DCS`          | Tone settings                                  |
+| `Transmit Power`                         | Power level                                    |
+| `Transmission Frequency"0` … `"7`        | Additional TX freq slots (quoted header names) |
 
 ### RX filters (×32)
 

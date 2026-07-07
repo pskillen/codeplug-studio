@@ -6,40 +6,40 @@ Primary DMR (and mixed-mode) channel table for AT-D890UV CPS. **76 columns** in 
 
 ## Required headers (target import)
 
-| Header              | Reason                          |
-| ------------------- | ------------------------------- |
-| `Channel Name`      | Identity; case-sensitive FK     |
-| `Receive Frequency` | RX frequency                    |
-| `Channel Type`      | Mode mapping                    |
+| Header              | Reason                      |
+| ------------------- | --------------------------- |
+| `Channel Name`      | Identity; case-sensitive FK |
+| `Receive Frequency` | RX frequency                |
+| `Channel Type`      | Mode mapping                |
 
 ## Channel Type (observed)
 
-| Wire        | Target internal mapping (provisional)                    |
-| ----------- | -------------------------------------------------------- |
-| `D-Digital` | `modeProfiles: [{ mode: 'dmr', … }]`                    |
+| Wire           | Target internal mapping (provisional)                      |
+| -------------- | ---------------------------------------------------------- |
+| `D-Digital`    | `modeProfiles: [{ mode: 'dmr', … }]`                       |
 | _(others TBD)_ | Analog / NXDN / mixed types — extend when sample available |
 
 ## Core columns — DMR mapping
 
-| Vendor header                    | Internal field / location              | Notes                                      |
-| -------------------------------- | -------------------------------------- | ------------------------------------------ |
-| `No.`                            | `channelOverrides.orderOrSlot`         | 1-based CPS slot; VFO rows use fixed high numbers (`4001+`) — same build override field as CHIRP `Location` ([#243](https://github.com/pskillen/codeplug-studio/pull/243)) |
-| `Channel Name`                   | Build `wireName` / `Channel.name`      | Case-sensitive FK                          |
-| `Receive Frequency`              | `Channel.rxFrequency`                  | MHz → Hz                                   |
-| `Transmit Frequency`             | `Channel.txFrequency`                  | MHz → Hz                                   |
-| `Channel Type`                   | `modeProfiles[]`                       | See Channel Type table                     |
-| `Transmit Power`                 | `Channel.power`                        | `Low` / `High` / … → % ladder (TBD profile) |
-| `Band Width`                     | `modeProfiles[].bandwidthKHz`          | `12.5K` → 12.5                             |
-| `CTCSS/DCS Decode` / `Encode`    | `rxTone` / `txTone` on analog profile  | `Off` when none                            |
-| `Contact/Talk Group`             | DMR `contactRef`                       | Name FK → talk group or contact            |
-| `Contact/Talk Group Call Type`   | Ref kind hint                          | `Group Call` / `Private Call`              |
-| `Contact/Talk Group TG/DMR ID`   | `TalkGroup.digitalId` / contact ID     | Denormalised on wire                       |
-| `Radio ID`                       | DMR ID label                           | Name FK → `RadioIDList.CSV`                |
-| `RX Color Code`                  | `colourCode`                           |                                            |
-| `Slot`                           | `timeslot`                             | `1` / `2`                                  |
-| `Scan List`                      | Build scan list ref                    | Name FK → `ScanList.CSV`; `None`           |
-| `Receive Group List`             | `rxGroupListId`                        | Name FK → `DMRReceiveGroupCallList.CSV`    |
-| `PTT Prohibit`                   | `forbidTransmit` or export flag        | TBD                                        |
+| Vendor header                  | Internal field / location             | Notes                                                                                                                                                                      |
+| ------------------------------ | ------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `No.`                          | `channelOverrides.orderOrSlot`        | 1-based CPS slot; VFO rows use fixed high numbers (`4001+`) — same build override field as CHIRP `Location` ([#243](https://github.com/pskillen/codeplug-studio/pull/243)) |
+| `Channel Name`                 | Build `wireName` / `Channel.name`     | Case-sensitive FK                                                                                                                                                          |
+| `Receive Frequency`            | `Channel.rxFrequency`                 | MHz → Hz                                                                                                                                                                   |
+| `Transmit Frequency`           | `Channel.txFrequency`                 | MHz → Hz                                                                                                                                                                   |
+| `Channel Type`                 | `modeProfiles[]`                      | See Channel Type table                                                                                                                                                     |
+| `Transmit Power`               | `Channel.power`                       | `Low` / `High` / … → % ladder (TBD profile)                                                                                                                                |
+| `Band Width`                   | `modeProfiles[].bandwidthKHz`         | `12.5K` → 12.5                                                                                                                                                             |
+| `CTCSS/DCS Decode` / `Encode`  | `rxTone` / `txTone` on analog profile | `Off` when none                                                                                                                                                            |
+| `Contact/Talk Group`           | DMR `contactRef`                      | Name FK → talk group or contact                                                                                                                                            |
+| `Contact/Talk Group Call Type` | Ref kind hint                         | `Group Call` / `Private Call`                                                                                                                                              |
+| `Contact/Talk Group TG/DMR ID` | `TalkGroup.digitalId` / contact ID    | Denormalised on wire                                                                                                                                                       |
+| `Radio ID`                     | DMR ID label                          | Name FK → `RadioIDList.CSV`                                                                                                                                                |
+| `RX Color Code`                | `colourCode`                          |                                                                                                                                                                            |
+| `Slot`                         | `timeslot`                            | `1` / `2`                                                                                                                                                                  |
+| `Scan List`                    | Build scan list ref                   | Name FK → `ScanList.CSV`; `None`                                                                                                                                           |
+| `Receive Group List`           | `rxGroupListId`                       | Name FK → `DMRReceiveGroupCallList.CSV`                                                                                                                                    |
+| `PTT Prohibit`                 | `forbidTransmit` or export flag       | TBD                                                                                                                                                                        |
 
 ## Per-channel APRS columns
 

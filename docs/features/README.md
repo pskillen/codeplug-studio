@@ -44,6 +44,6 @@ Domain-neutral amateur-radio facts (tier 2) and per-format CPS wire tables (tier
 | OpenGD77 CPS CSV              | [reference/opengd77/](../reference/opengd77/README.md) — generic wire format + per-radio [variant profiles](../reference/opengd77/radios/README.md) |
 | CHIRP CSV (analogue FM/AM)    | [reference/chirp/](../reference/chirp/README.md)                                                                                                    |
 | DM32 CSV                      | [reference/dm32/](../reference/dm32/README.md)                                                                                                      |
-| Anytone CPS CSV               | [reference/anytone/](../reference/anytone/README.md) — AT-D890UV wire spike; [variant profile](../reference/anytone/radios/at-d890uv.md)         |
+| Anytone CPS CSV               | [reference/anytone/](../reference/anytone/README.md) — AT-D890UV wire spike; [variant profile](../reference/anytone/radios/at-d890uv.md)            |
 
 Add a row when a new feature folder ships. Reference trees are **per format** (OpenGD77, DM32, CHIRP, …); OpenGD77 is the first documented, not the internal model default.

@@ -6,22 +6,22 @@ Redacted minimal CPS export for wire-spike tests and documentation ([#230](https
 
 ## Files
 
-| File | Rows | Role |
-| ---- | ---- | ---- |
-| `Channel.CSV` | 4 | 2 programmed + 2 VFO |
-| `DMRZone.CSV` | 1 | Zone cross-linked to channels |
-| `ScanList.CSV` | 1 | Scan list |
-| `DMRTalkGroups.CSV` | 2 | Talk groups |
-| `DMRReceiveGroupCallList.CSV` | 1 | RX group list |
-| `RadioIDList.CSV` | 1 | DMR ID label |
-| `DMRDigitalContactList.CSV` | 0 | Header only |
-| `AMAir.CSV` | 2 | AM airband (extended) |
-| `FM.CSV` | 2 | Broadcast FM (extended) |
-| `APRS.CSV` | 1 | Global APRS config (redacted) |
-| `NXSetting.CSV` | 1 | NXDN global settings |
-| `NXTalkGroup.CSV` | 0 | Header only |
-| `NXDigitalContactList.CSV` | 0 | Header only |
-| `NXReceiveGroupCallList.CSV` | 0 | Header only |
+| File                          | Rows | Role                          |
+| ----------------------------- | ---- | ----------------------------- |
+| `Channel.CSV`                 | 4    | 2 programmed + 2 VFO          |
+| `DMRZone.CSV`                 | 1    | Zone cross-linked to channels |
+| `ScanList.CSV`                | 1    | Scan list                     |
+| `DMRTalkGroups.CSV`           | 2    | Talk groups                   |
+| `DMRReceiveGroupCallList.CSV` | 1    | RX group list                 |
+| `RadioIDList.CSV`             | 1    | DMR ID label                  |
+| `DMRDigitalContactList.CSV`   | 0    | Header only                   |
+| `AMAir.CSV`                   | 2    | AM airband (extended)         |
+| `FM.CSV`                      | 2    | Broadcast FM (extended)       |
+| `APRS.CSV`                    | 1    | Global APRS config (redacted) |
+| `NXSetting.CSV`               | 1    | NXDN global settings          |
+| `NXTalkGroup.CSV`             | 0    | Header only                   |
+| `NXDigitalContactList.CSV`    | 0    | Header only                   |
+| `NXReceiveGroupCallList.CSV`  | 0    | Header only                   |
 
 ## Redaction
 

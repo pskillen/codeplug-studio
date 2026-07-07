@@ -4,54 +4,54 @@ Cross-cutting rules for AT-D890UV CPS CSV exports. Per-entity columns live in si
 
 ## Physical format
 
-| Property        | Value (AT-D890UV sample)                                      |
-| --------------- | ------------------------------------------------------------- |
-| Delimiter       | Comma (`,`)                                                   |
-| Quoting         | Fields quoted with `"` when needed; header row quoted         |
-| Encoding        | UTF-8 assumed (verify BOM on import)                          |
-| Line endings    | CRLF or LF — normalise to LF in tests                          |
-| Filename casing | PascalCase with `.CSV` extension (e.g. `Channel.CSV`)           |
+| Property        | Value (AT-D890UV sample)                              |
+| --------------- | ----------------------------------------------------- |
+| Delimiter       | Comma (`,`)                                           |
+| Quoting         | Fields quoted with `"` when needed; header row quoted |
+| Encoding        | UTF-8 assumed (verify BOM on import)                  |
+| Line endings    | CRLF or LF — normalise to LF in tests                 |
+| Filename casing | PascalCase with `.CSV` extension (e.g. `Channel.CSV`) |
 
 ## Frequencies
 
-| Context                         | Wire format                          | Internal              |
-| ------------------------------- | ------------------------------------ | --------------------- |
-| `Channel.CSV` RX/TX             | MHz, five decimal places (`438.80000`) | Hz (`rxFrequency`, `txFrequency`) |
-| `AMAir.CSV` / `FM.CSV`          | MHz, four decimal places (`118.8000`, `99.500`) | Hz              |
-| Zone / scan member freq columns | MHz, five decimal places, pipe-aligned with members | Hz (export denormalisation) |
+| Context                         | Wire format                                         | Internal                          |
+| ------------------------------- | --------------------------------------------------- | --------------------------------- |
+| `Channel.CSV` RX/TX             | MHz, five decimal places (`438.80000`)              | Hz (`rxFrequency`, `txFrequency`) |
+| `AMAir.CSV` / `FM.CSV`          | MHz, four decimal places (`118.8000`, `99.500`)     | Hz                                |
+| Zone / scan member freq columns | MHz, five decimal places, pipe-aligned with members | Hz (export denormalisation)       |
 
 ## Foreign keys
 
 Lists cross-reference each other by **exact name match** (case-sensitive) at the wire edge:
 
-| Pattern              | Example                                              |
-| -------------------- | ---------------------------------------------------- |
-| Single name          | `Scan List` → `Zone A SCL`                           |
-| Pipe-separated names | `Zone Channel Member` → `Channel 1\|Channel 2`       |
-| Pipe-separated IDs   | `Contact TG/DMR ID` → `23551\|2355`                  |
-| Sentinels            | `None`, `Off` — document per column in entity docs   |
+| Pattern              | Example                                            |
+| -------------------- | -------------------------------------------------- |
+| Single name          | `Scan List` → `Zone A SCL`                         |
+| Pipe-separated names | `Zone Channel Member` → `Channel 1\|Channel 2`     |
+| Pipe-separated IDs   | `Contact TG/DMR ID` → `23551\|2355`                |
+| Sentinels            | `None`, `Off` — document per column in entity docs |
 
 Internal model uses UUID `id` FKs; name resolution belongs in import/export adapters only.
 
 ## Row numbering (`No.`)
 
-| File            | Programmed rows     | VFO / special rows              |
-| --------------- | ------------------- | ------------------------------- |
-| `Channel.CSV`   | Low `No.` (1, 2, …) | VFO at `4001`, `4002`, …        |
-| `AMAir.CSV`     | Low `No.`           | VFO at `257` in sample          |
-| `FM.CSV`        | Low `No.`           | VFO at `101` in sample          |
-| Zones, scan, TG | Sequential from 1   | —                               |
+| File            | Programmed rows     | VFO / special rows       |
+| --------------- | ------------------- | ------------------------ |
+| `Channel.CSV`   | Low `No.` (1, 2, …) | VFO at `4001`, `4002`, … |
+| `AMAir.CSV`     | Low `No.`           | VFO at `257` in sample   |
+| `FM.CSV`        | Low `No.`           | VFO at `101` in sample   |
+| Zones, scan, TG | Sequential from 1   | —                        |
 
 Export adapters should preserve CPS slot semantics when round-tripping imported codeplugs.
 
 ## Fidelity tiers
 
-| Tier            | Meaning                                                |
-| --------------- | ------------------------------------------------------ |
-| **Bidirectional** | Wire ↔ internal model field with documented mapping  |
+| Tier               | Meaning                                               |
+| ------------------ | ----------------------------------------------------- |
+| **Bidirectional**  | Wire ↔ internal model field with documented mapping   |
 | **Export default** | Constant or profile default on export when unmodelled |
-| **Header-only** | File exported with headers; body not modelled yet      |
-| **Skip**        | File not imported or exported                          |
+| **Header-only**    | File exported with headers; body not modelled yet     |
+| **Skip**           | File not imported or exported                         |
 
 ## Locale
 
