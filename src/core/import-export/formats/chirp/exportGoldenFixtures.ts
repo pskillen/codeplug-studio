@@ -1,6 +1,6 @@
 import { parseCsv } from '@core/import-export/csvParse.ts';
 import type { FormatBuild } from '@core/models/formatBuild.ts';
-import type { Channel } from '@core/models/library.ts';
+import type { Channel, ChannelModeProfileAnalog } from '@core/models/library.ts';
 import type { LibrarySlice } from '@core/services/assemble.ts';
 import { CHIRP_COL } from './columns.ts';
 import {

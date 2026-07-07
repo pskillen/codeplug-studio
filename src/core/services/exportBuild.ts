@@ -104,7 +104,8 @@ export function exportBuildSingleFile({
     throw new Error(`Format ${build.formatId} does not support single-file CPS export`);
   }
 
-  const fileName = options?.fileName ?? adapter.defaultFileName(exportOptions.profileId);
+  const fileName =
+    options?.fileName ?? adapter.defaultFileName(exportOptions.profileId ?? build.profileId);
   const result = adapter.serialise(assembled, exportOptions);
   const warnings = [...exportInclusionWarnings(build, library, assembled), ...result.warnings];
 
