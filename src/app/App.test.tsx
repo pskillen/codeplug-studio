@@ -1,12 +1,14 @@
 import 'fake-indexeddb/auto';
 import { MantineProvider } from '@mantine/core';
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { newProjectMeta } from '@core/domain/factories.ts';
 import {
   ACTIVE_PROJECT_KEY,
+  ANALYTICS_CONSENT_KEY,
   MAPBOX_TOKEN_KEY,
   saveActiveProjectId,
+  setAnalyticsConsent,
 } from '@integrations/preferences/index.ts';
 import App, { appRouter } from './App.tsx';
 import ProjectProvider from './state/ProjectProvider.tsx';
@@ -37,6 +39,13 @@ vi.mock('react-leaflet', () => ({
     },
   }),
   useMapEvents: () => null,
+}));
+
+vi.mock('@integrations/analytics/index.ts', () => ({
+  trackPageView: vi.fn(),
+  getMeasurementId: vi.fn(() => ''),
+  initAnalytics: vi.fn(),
+  resetAnalyticsForTests: vi.fn(),
 }));
 
 function createLocalStorageMock() {
@@ -134,5 +143,43 @@ describe('App', () => {
     expect(screen.getByRole('heading', { name: 'Export to CPS' })).toBeInTheDocument();
     expect(screen.getByText(/Open a build under/i)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Download YAML/i })).toBeInTheDocument();
+  });
+
+  it('renders legal pages', () => {
+    const privacy = renderApp('/privacy');
+    expect(screen.getByRole('heading', { name: 'Privacy policy' })).toBeInTheDocument();
+    privacy.unmount();
+
+    const terms = renderApp('/terms');
+    expect(screen.getByRole('heading', { name: 'Terms of use' })).toBeInTheDocument();
+    terms.unmount();
+
+    renderApp('/cookies');
+    expect(screen.getByRole('heading', { name: 'Cookies & storage' })).toBeInTheDocument();
+  });
+
+  it('shows cookie banner when consent is unset and hides after accept', () => {
+    renderApp('/');
+
+    const banner = screen.getByRole('dialog', { name: 'Cookie consent' });
+    expect(banner).toBeInTheDocument();
+
+    fireEvent.click(within(banner).getByRole('button', { name: 'Accept analytics' }));
+    expect(screen.queryByRole('dialog', { name: 'Cookie consent' })).not.toBeInTheDocument();
+    expect(localStorage.getItem(ANALYTICS_CONSENT_KEY)).toContain('accepted');
+  });
+
+  it('hides cookie banner when consent was previously declined', () => {
+    setAnalyticsConsent('declined');
+    renderApp('/');
+    expect(screen.queryByRole('dialog', { name: 'Cookie consent' })).not.toBeInTheDocument();
+  });
+
+  it('shows legal links in the footer', () => {
+    setAnalyticsConsent('declined');
+    renderApp('/');
+    expect(screen.getByRole('link', { name: 'Cookies' })).toHaveAttribute('href', '/cookies');
+    expect(screen.getByRole('link', { name: 'Privacy' })).toHaveAttribute('href', '/privacy');
+    expect(screen.getByRole('link', { name: 'Terms' })).toHaveAttribute('href', '/terms');
   });
 });

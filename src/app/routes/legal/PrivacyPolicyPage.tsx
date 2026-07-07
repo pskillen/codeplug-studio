@@ -1,7 +1,7 @@
 import { Anchor, List, Text } from '@mantine/core';
 import { Link } from 'react-router-dom';
-import { ListPage, PageSection } from '../components/ui/index.ts';
-import { GITHUB_ISSUES_URL, GITHUB_REPO_URL } from '../lib/githubLinks.ts';
+import { ListPage, PageSection } from '../../components/ui/index.ts';
+import { GITHUB_ISSUES_URL, GITHUB_REPO_URL } from '../../lib/githubLinks.ts';
 
 export default function PrivacyPolicyPage() {
   return (

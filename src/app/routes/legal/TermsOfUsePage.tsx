@@ -1,5 +1,5 @@
 import { List, Text } from '@mantine/core';
-import { ListPage, PageSection } from '../components/ui/index.ts';
+import { ListPage, PageSection } from '../../components/ui/index.ts';
 
 export default function TermsOfUsePage() {
   return (

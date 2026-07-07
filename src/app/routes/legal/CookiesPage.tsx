@@ -1,7 +1,7 @@
 import { Anchor, List, Stack, Text } from '@mantine/core';
 import { Link } from 'react-router-dom';
 import CookiePreferenceControl from '../../components/CookieConsentBanner/CookiePreferenceControl.tsx';
-import { ListPage, PageSection } from '../components/ui/index.ts';
+import { ListPage, PageSection } from '../../components/ui/index.ts';
 
 export default function CookiesPage() {
   return (
