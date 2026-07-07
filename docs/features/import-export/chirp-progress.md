@@ -4,17 +4,17 @@
 
 ## Shipped
 
-| Slice                           | Status   | Notes                                                          |
-| ------------------------------- | -------- | -------------------------------------------------------------- |
-| Feature hub + progress docs     | Complete | `docs/features/import-export/chirp/`                           |
-| Tier-3 profile id alignment     | Complete | `chirp-uv5r`, `chirp-rt95`, `chirp-uv21`                       |
-| Profiles + columns + fixtures   | Complete | `formats/chirp/`                                               |
-| Flat memory assemble            | Complete | `flatMemoryLayout.ts`, `assemble.ts`                           |
-| Export adapter                  | Complete | `serialise.ts`, `channelWire.ts`, `SingleFileCpsExportAdapter` |
-| Memories UI + wire preview      | Complete | `BuildMemoriesPage`, `previewWireRows` CHIRP branch            |
-| Export panel + single-file path | Complete | `exportBuildSingleFile`, `ExportBuildCpsPanel`                 |
-| Golden export tests             | Complete | `exportGolden.test.ts` — three profile fixtures                |
-| Epic closeout docs              | Complete | Hub status → export shipped                                    |
+| Slice                           | Status   | Notes                                                           |
+| ------------------------------- | -------- | --------------------------------------------------------------- |
+| Feature hub + progress docs     | Complete | `docs/features/import-export/chirp/`                            |
+| Tier-3 profile id alignment     | Complete | `chirp-uv5r`, `chirp-rt95`, `chirp-uv21`                        |
+| Profiles + columns + fixtures   | Complete | `formats/chirp/`                                                |
+| Flat memory assemble            | Complete | `flatMemoryLayout.ts`, `assemble.ts`                            |
+| Export adapter                  | Complete | `serialise.ts`, `channelWire.ts`, `SingleFileCpsExportAdapter`  |
+| Channels UI + wire preview      | Complete | `BuildFlatMemoryChannelsPage` — default-include, scan tri-state |
+| Export panel + single-file path | Complete | `exportBuildSingleFile`, `ExportBuildCpsPanel`                  |
+| Golden export tests             | Complete | `exportGolden.test.ts` — three profile fixtures                 |
+| Epic closeout docs              | Complete | Hub status → export shipped                                     |
 
 ## Outstanding
 

@@ -15,7 +15,7 @@ Product behaviour for CHIRP analogue FM/AM CSV in Codeplug Studio. Wire column t
 | Radio profiles + columns                                  | Shipped | `formats/chirp/profiles.ts`, `columns.ts`                               |
 | Flat memory assemble projection                           | Shipped | `flatMemoryLayout.ts`, `assemble.ts`                                    |
 | Export adapter (single CSV)                               | Shipped | `exportBuildSingleFile` → `serialiseChirpCsv`                           |
-| Memories build UI                                         | Shipped | `/builds/:id/memories` — `BuildMemoriesPage`                            |
+| Channels build UI                                         | Shipped | `/builds/:id/channels` — flat memory list, wire names, scan tri-state   |
 | Browser download + export UI                              | Shipped | `ExportBuildCpsPanel` — Download CSV + preview                          |
 | Export golden tests                                       | Shipped | `exportGolden.test.ts` — three profile fixtures                         |
 | CPS import                                                | Planned | Phase 6b [#214](https://github.com/pskillen/codeplug-studio/issues/214) |
@@ -41,14 +41,12 @@ Per-radio wire detail: [docs/reference/chirp/radios/](../../../reference/chirp/r
 
 1. Curate analogue channels in the **library** (shared across builds).
 2. Create a **CHIRP build** for the target radio profile.
-3. On **Memories**, order channels for export (`Location` 1…n).
-4. Set per-channel **scan inclusion** on library channels or via build export defaults (`Skip` column).
-5. **Export** a single profile-correct CSV from `/builds/:id/export`.
-
-CHIRP builds do **not** use library zones — organisation is flat memory order on the build layout.
+3. On **Channels**, review the default-included analogue memory list, reorder, set wire names, default scan behaviour, and per-channel scan overrides.
+4. **Export** a single profile-correct CSV from `/builds/:id/export` — organisation follows flat memory order on the build layout.
 
 ## Export behaviour
 
+- **Include by default** — all analogue FM/AM library channels start in the memory list; remove rows to exclude from export.
 - **Single CSV** download (not ZIP).
 - **Analogue channels only** — digital/DMR channels skipped with warning.
 - **`Location`:** 1-based index in flat memory order — not stored in the library.
