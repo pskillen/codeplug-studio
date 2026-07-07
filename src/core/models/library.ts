@@ -6,6 +6,7 @@ import type {
   DMRTimeSlot,
   EntityRef,
   GeoPoint,
+  SsbSideband,
 } from './libraryTypes.ts';
 
 export type {
