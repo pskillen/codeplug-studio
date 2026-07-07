@@ -2,7 +2,7 @@ import type { DefaultScanInclusion } from '@core/models/formatBuild.ts';
 import type { MultiTalkGroupExportNameMode } from './channelExpansion/multiTalkGroupWireName.ts';
 
 /** Canonical format ids — shared by registry and future UI. */
-export type FormatId = 'native-yaml' | 'opengd77' | 'chirp' | 'dm32' | 'qdmr';
+export type FormatId = 'native-yaml' | 'opengd77' | 'chirp' | 'dm32' | 'anytone' | 'qdmr';
 
 export type { MultiTalkGroupExportNameMode } from './channelExpansion/multiTalkGroupWireName.ts';
 export { DEFAULT_MULTI_TG_EXPORT_NAME_MODE } from './channelExpansion/multiTalkGroupWireName.ts';
@@ -25,7 +25,14 @@ export type ImportDelivery = 'single-file' | 'multi-file';
 export type ExportDelivery = 'single-file' | 'multi-file';
 
 export type ImportEntityKind =
-  'channels' | 'zones' | 'contacts' | 'talkGroups' | 'dtmfContacts' | 'rxGroupLists';
+  | 'channels'
+  | 'zones'
+  | 'contacts'
+  | 'talkGroups'
+  | 'dtmfContacts'
+  | 'rxGroupLists'
+  | 'scanLists'
+  | 'radioIds';
 
 export type ImportFileKind = ImportEntityKind | 'unknown';
 

@@ -10,6 +10,11 @@ import {
   getOpenGd77Profile,
   type OpenGd77RadioProfile,
 } from './formats/opengd77/profiles.ts';
+import {
+  ANYTONE_PROFILES,
+  getAnytoneProfile,
+  type AnytoneRadioProfile,
+} from './formats/anytone/profiles.ts';
 
 export interface FormatProfileOption {
   profileId: string;
@@ -24,6 +29,7 @@ export interface FormatProfileOption {
 export function getFormatProfiles(formatId: 'opengd77'): FormatProfileOption[];
 export function getFormatProfiles(formatId: 'dm32'): FormatProfileOption[];
 export function getFormatProfiles(formatId: 'chirp'): FormatProfileOption[];
+export function getFormatProfiles(formatId: 'anytone'): FormatProfileOption[];
 export function getFormatProfiles(formatId: FormatId): FormatProfileOption[];
 export function getFormatProfiles(formatId: FormatId): FormatProfileOption[] {
   if (formatId === 'opengd77') {
@@ -34,6 +40,9 @@ export function getFormatProfiles(formatId: FormatId): FormatProfileOption[] {
   }
   if (formatId === 'chirp') {
     return CHIRP_PROFILES.map(chirpProfileToOption);
+  }
+  if (formatId === 'anytone') {
+    return ANYTONE_PROFILES.map(anytoneProfileToOption);
   }
   return [];
 }
@@ -68,6 +77,16 @@ function chirpProfileToOption(profile: ChirpRadioProfile): FormatProfileOption {
   };
 }
 
+function anytoneProfileToOption(profile: AnytoneRadioProfile): FormatProfileOption {
+  return {
+    profileId: profile.id,
+    label: profile.label,
+    formatId: 'anytone',
+    nameLimit: profile.nameLimit,
+    maxChannels: profile.maxChannels,
+  };
+}
+
 /** Read-only wire-limit summary for build detail UI — export boundary only. */
 export function formatProfileWireHint(formatId: FormatId, profileId: string): string | null {
   if (formatId === 'opengd77') {
@@ -90,6 +109,14 @@ export function formatProfileWireHint(formatId: FormatId, profileId: string): st
     try {
       const profile = getChirpProfile(profileId);
       return `${profile.nameLimit}-char wire names · ${profile.maxMemorySlots} memory slots`;
+    } catch {
+      return null;
+    }
+  }
+  if (formatId === 'anytone') {
+    try {
+      const profile = getAnytoneProfile(profileId);
+      return `${profile.nameLimit}-char wire names · ${profile.maxChannels} channels max · ${profile.scanListMembers} scan members`;
     } catch {
       return null;
     }

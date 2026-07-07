@@ -29,8 +29,15 @@ describe('trait profiles', () => {
     expect(profile?.traits).toContain(BuildCapabilityTrait.ZoneAsScanList);
   });
 
+  it('registers anytone-at-d890uv with zone grouping and scan lists', () => {
+    const profile = traitProfileFor('anytone-at-d890uv');
+    expect(profile?.traits).toContain(BuildCapabilityTrait.ZoneGrouping);
+    expect(profile?.traits).toContain(BuildCapabilityTrait.ScanLists);
+  });
+
   it('has stable profile keys', () => {
     expect(Object.keys(TRAIT_PROFILES).sort()).toEqual([
+      'anytone-at-d890uv',
       'chirp-rt95',
       'chirp-uv21',
       'chirp-uv5r',

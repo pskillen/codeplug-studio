@@ -16,7 +16,7 @@
 | --------------------------- | -------------------------------------------------------------- | -------- | ------------------------------------ |
 | Wire spike + fixtures       | [#230](https://github.com/pskillen/codeplug-studio/issues/230) | Complete | DMR + extended wire docs + test-data |
 | Feature hub README          | [#231](https://github.com/pskillen/codeplug-studio/issues/231) | Complete | Tier-1 hub + index rows              |
-| Profile, columns, registry  | [#232](https://github.com/pskillen/codeplug-studio/issues/232) | Pending  | Next — trait + scaffold              |
+| Profile, columns, registry  | [#232](https://github.com/pskillen/codeplug-studio/issues/232) | In progress | Branch `228/pskil/anytone-cps-export` |
 | Export adapter              | [#233](https://github.com/pskillen/codeplug-studio/issues/233) | Pending  | DMR MVP first                        |
 | Build editor + wire preview | [#234](https://github.com/pskillen/codeplug-studio/issues/234) | Pending  |                                      |
 | Format catalog CPS export   | [#235](https://github.com/pskillen/codeplug-studio/issues/235) | Pending  |                                      |

@@ -49,6 +49,21 @@ describe('adapter contracts', () => {
     }
   });
 
+  it('registry resolves anytone multi-file export adapter stub', () => {
+    const adapter = getExportAdapter('anytone');
+    expect(adapter.id).toBe('anytone');
+    expect(adapter.defaultExportSettings?.defaultScanInclusion).toBe('scan');
+    expect(adapter.defaultExportSettings?.expandModes).toBe(false);
+    expect(adapter.defaultExportSettings?.expandRxGroupLists).toBe(false);
+    expect(isMultiFileExportAdapter(adapter)).toBe(true);
+    if (isMultiFileExportAdapter(adapter)) {
+      expect(adapter.delivery).toBe('multi-file');
+      expect(adapter.fileNames).toContain('Channel.CSV');
+      expect(adapter.fileNames).toContain('DMRZone.CSV');
+      expect(adapter.fileNames).toContain('ScanList.CSV');
+    }
+  });
+
   it('registry resolves chirp single-file CPS export adapter', () => {
     const adapter = getExportAdapter('chirp');
     expect(adapter.id).toBe('chirp');
@@ -81,5 +96,9 @@ describe('adapter contracts', () => {
     const chirp = formatCatalog.find((f) => f.id === 'chirp');
     expect(chirp?.exportStatus).toBe('shipped');
     expect(chirp?.importStatus).toBe('planned');
+
+    const anytone = formatCatalog.find((f) => f.id === 'anytone');
+    expect(anytone?.exportStatus).toBe('planned');
+    expect(anytone?.importStatus).toBe('planned');
   });
 });
