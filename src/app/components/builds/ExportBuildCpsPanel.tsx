@@ -8,7 +8,10 @@ import {
   getExportAdapter,
   getFormatExportDefaults,
 } from '@core/import-export/registry.ts';
-import { isMultiFileExportAdapter, isSingleFileCpsExportAdapter } from '@core/import-export/exportAdapter.ts';
+import {
+  isMultiFileExportAdapter,
+  isSingleFileCpsExportAdapter,
+} from '@core/import-export/exportAdapter.ts';
 import { formatProfileWireHint, getFormatProfiles } from '@core/import-export/formatProfiles.ts';
 import type { FormatId } from '@core/import-export/types.ts';
 import { mergeExportOptions } from '@core/services/exportBuild.ts';
@@ -74,8 +77,7 @@ export default function ExportBuildCpsPanel({ build }: ExportBuildCpsPanelProps)
 
   const profileNameLimit = useMemo(() => {
     const options = getFormatProfiles(build.formatId as FormatId);
-    const profileId =
-      build.formatId === 'chirp' ? exportProfileId : build.profileId;
+    const profileId = build.formatId === 'chirp' ? exportProfileId : build.profileId;
     return options.find((option) => option.profileId === profileId)?.nameLimit;
   }, [build.formatId, build.profileId, exportProfileId]);
 
@@ -266,10 +268,7 @@ export default function ExportBuildCpsPanel({ build }: ExportBuildCpsPanelProps)
   }
 
   if (isSingleFileCpsExportAdapter(adapter)) {
-    const suggestedCsvName = defaultCpsSingleFileName(
-      build.formatId as FormatId,
-      exportProfileId,
-    );
+    const suggestedCsvName = defaultCpsSingleFileName(build.formatId as FormatId, exportProfileId);
     const profileOverridesBuild = exportProfileId !== build.profileId;
 
     return (
@@ -327,7 +326,10 @@ export default function ExportBuildCpsPanel({ build }: ExportBuildCpsPanelProps)
             checked={build.exportUnlinkedChannels !== false}
             disabled={savingSettings}
             onChange={(event) =>
-              void handleExportInclusionChange('exportUnlinkedChannels', event.currentTarget.checked)
+              void handleExportInclusionChange(
+                'exportUnlinkedChannels',
+                event.currentTarget.checked,
+              )
             }
           />
           {settingsError ? (

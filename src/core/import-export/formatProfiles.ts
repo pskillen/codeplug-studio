@@ -1,5 +1,9 @@
 import type { FormatId } from './types.ts';
-import { CHIRP_PROFILES, getChirpProfile, type ChirpRadioProfile } from './formats/chirp/profiles.ts';
+import {
+  CHIRP_PROFILES,
+  getChirpProfile,
+  type ChirpRadioProfile,
+} from './formats/chirp/profiles.ts';
 import { DM32_PROFILES, getDm32Profile, type Dm32RadioProfile } from './formats/dm32/profiles.ts';
 import {
   OPENGD77_PROFILES,

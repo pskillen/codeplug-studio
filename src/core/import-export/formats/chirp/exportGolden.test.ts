@@ -5,7 +5,10 @@ import { describe, expect, it } from 'vitest';
 import { formatCatalogEntry, getExportAdapter } from '@core/import-export/registry.ts';
 import { isSingleFileCpsExportAdapter } from '@core/import-export/exportAdapter.ts';
 import { exportBuildSingleFile } from '@core/services/exportBuild.ts';
-import { compareCsvRecords, formatCsvRecordCompareFailure } from '../../../../test/csvRecordCompare.ts';
+import {
+  compareCsvRecords,
+  formatCsvRecordCompareFailure,
+} from '../../../../test/csvRecordCompare.ts';
 import { libraryAndBuildFromChirpFixture } from './exportGoldenFixtures.ts';
 
 const fixtureDir = join(dirname(fileURLToPath(import.meta.url)), '__fixtures__/export');

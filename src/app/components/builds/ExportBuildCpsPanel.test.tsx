@@ -4,8 +4,13 @@ import { MantineProvider } from '@mantine/core';
 import type { FormatBuild } from '@core/models/formatBuild.ts';
 import ExportBuildCpsPanel from './ExportBuildCpsPanel.tsx';
 
-const { downloadCpsZip, downloadCpsFile, downloadCpsSingleFile, previewCpsExport, previewCpsSingleFile } =
-  vi.hoisted(() => ({
+const {
+  downloadCpsZip,
+  downloadCpsFile,
+  downloadCpsSingleFile,
+  previewCpsExport,
+  previewCpsSingleFile,
+} = vi.hoisted(() => ({
   downloadCpsZip: vi.fn(async () => ({ warnings: [] as string[] })),
   downloadCpsFile: vi.fn(async () => ({ warnings: [] as string[] })),
   downloadCpsSingleFile: vi.fn(async () => ({ warnings: [] as string[] })),

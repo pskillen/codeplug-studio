@@ -1,10 +1,7 @@
 import type { FormatBuild } from '@core/models/formatBuild.ts';
 import type { FlatMemoryLayout } from '@core/models/traitLayout.ts';
 import type { LibrarySlice } from '@core/services/assemble.ts';
-import {
-  isEntityExcluded,
-  isEntityForceIncluded,
-} from '@core/domain/formatBuildOverrides.ts';
+import { isEntityExcluded, isEntityForceIncluded } from '@core/domain/formatBuildOverrides.ts';
 import { BuildCapabilityTrait, traitProfileFor } from '@core/models/traits.ts';
 
 export function buildUsesFlatMemoryList(build: FormatBuild): boolean {
@@ -48,10 +45,7 @@ export function resolveFlatMemorySection(
 }
 
 /** Effective flat-memory channel ids for export — layout order with force-include append. */
-export function flatMemoryExportChannelIds(
-  build: FormatBuild,
-  library: LibrarySlice,
-): string[] {
+export function flatMemoryExportChannelIds(build: FormatBuild, library: LibrarySlice): string[] {
   const section = resolveFlatMemorySection(build, library);
   const ordered: string[] = [];
   const seen = new Set<string>();

@@ -45,9 +45,7 @@ export interface MultiFileExportAdapter extends BaseExportAdapter {
 }
 
 export type ExportAdapter =
-  | SingleFileProjectExportAdapter
-  | SingleFileCpsExportAdapter
-  | MultiFileExportAdapter;
+  SingleFileProjectExportAdapter | SingleFileCpsExportAdapter | MultiFileExportAdapter;
 
 export function isSingleFileProjectExportAdapter(
   adapter: ExportAdapter,

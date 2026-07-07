@@ -1,8 +1,5 @@
 import type { ChannelExportNameMode } from '@core/domain/channelNaming.ts';
-import {
-  channelPickForWireExport,
-  composeChannelWireName,
-} from '@core/domain/channelNaming.ts';
+import { channelPickForWireExport, composeChannelWireName } from '@core/domain/channelNaming.ts';
 import type { AssembledChannel } from '@core/services/assemble.ts';
 import { formatChirpSkipColumn } from '@core/import-export/scanInclusion/wire.ts';
 import {
@@ -52,9 +49,7 @@ function channelWireName(
   const pick = channelPickForWireExport(row.entity, {
     nameModeOverride: options.nameModeOverride,
   });
-  let base = row.wireNameOverride?.trim()
-    ? row.wireName
-    : composeChannelWireName(pick);
+  let base = row.wireNameOverride?.trim() ? row.wireName : composeChannelWireName(pick);
 
   const abbrev = row.entity.abbreviation?.trim();
   if (abbrev && (options.useChannelAbbreviation || exportOptions?.useChannelAbbreviation)) {
@@ -63,9 +58,7 @@ function channelWireName(
 
   if (!options.shortenNames) {
     if (base.length > options.maxNameLength) {
-      options.warnings?.push(
-        `Channel name "${base}" exceeds ${options.maxNameLength} characters`,
-      );
+      options.warnings?.push(`Channel name "${base}" exceeds ${options.maxNameLength} characters`);
     }
     if (!options.reserved.has(base)) {
       options.reserved.add(base);
@@ -127,9 +120,7 @@ export function channelToChirpRow(
   ];
 }
 
-export function buildChirpScanContext(
-  exportOptions?: CpsExportOptions,
-): ScanInclusionContext {
+export function buildChirpScanContext(exportOptions?: CpsExportOptions): ScanInclusionContext {
   return buildScanContext(
     exportOptions?.defaultScanInclusion
       ? { defaultScanInclusion: exportOptions.defaultScanInclusion }

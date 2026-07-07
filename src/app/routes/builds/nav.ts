@@ -12,9 +12,7 @@ export function buildNavItems(build: FormatBuild): BuildNavItem[] {
   const base = `/builds/${build.id}`;
   const traits = new Set(traitProfileFor(build.profileId)?.traits ?? []);
 
-  const items: BuildNavItem[] = [
-    { label: 'Overview', path: `${base}/overview` },
-  ];
+  const items: BuildNavItem[] = [{ label: 'Overview', path: `${base}/overview` }];
 
   if (traits.has(BuildCapabilityTrait.FlatMemoryList)) {
     items.push({ label: 'Memories', path: `${base}/memories` });

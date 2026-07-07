@@ -1,7 +1,10 @@
 import { useEffect, useMemo, useState } from 'react';
 import type { FormatBuild } from '@core/models/formatBuild.ts';
 import { csvToTable, type CsvTable } from '@core/import-export/csvParse.ts';
-import { isMultiFileExportAdapter, isSingleFileCpsExportAdapter } from '@core/import-export/exportAdapter.ts';
+import {
+  isMultiFileExportAdapter,
+  isSingleFileCpsExportAdapter,
+} from '@core/import-export/exportAdapter.ts';
 import { getExportAdapter } from '@core/import-export/registry.ts';
 import type { CpsExportOptions, FormatId } from '@core/import-export/types.ts';
 import { previewCpsExport, previewCpsSingleFile } from '../services/buildCpsExportService.ts';
@@ -59,17 +62,14 @@ export function useBuildCpsExportPreview({
 
     let cancelled = false;
 
-    const preview =
-      (() => {
-        try {
-          const adapter = getExportAdapter(build.formatId as FormatId);
-          return isSingleFileCpsExportAdapter(adapter)
-            ? previewCpsSingleFile
-            : previewCpsExport;
-        } catch {
-          return previewCpsExport;
-        }
-      })();
+    const preview = (() => {
+      try {
+        const adapter = getExportAdapter(build.formatId as FormatId);
+        return isSingleFileCpsExportAdapter(adapter) ? previewCpsSingleFile : previewCpsExport;
+      } catch {
+        return previewCpsExport;
+      }
+    })();
 
     void preview(activeProjectId, build.id, exportOptions)
       .then((result) => {

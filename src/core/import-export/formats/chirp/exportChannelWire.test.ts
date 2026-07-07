@@ -16,7 +16,15 @@ function testWireOptions(): ChirpChannelWireOptions {
 function assembledChannel(patch: Partial<ReturnType<typeof newChannel>>): AssembledChannel {
   const entity = {
     ...newChannel(projectId, 'Test'),
-    modeProfiles: [{ mode: 'fm' as const, rxTone: 'none' as const, txTone: 'none' as const, squelch: null, bandwidthKHz: 12.5 }],
+    modeProfiles: [
+      {
+        mode: 'fm' as const,
+        rxTone: 'none' as const,
+        txTone: 'none' as const,
+        squelch: null,
+        bandwidthKHz: 12.5,
+      },
+    ],
     ...patch,
   };
   return { entity, wireName: entity.name };

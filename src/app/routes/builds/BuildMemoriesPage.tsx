@@ -10,7 +10,10 @@ import {
   resolveFlatMemorySection,
   seedFlatMemoryFromBuild,
 } from '@core/domain/flatMemoryLayout.ts';
-import { buildScanContext, resolveEffectiveScanInclusion } from '@core/import-export/scanInclusion/resolve.ts';
+import {
+  buildScanContext,
+  resolveEffectiveScanInclusion,
+} from '@core/import-export/scanInclusion/resolve.ts';
 import { getFormatExportDefaults } from '@core/import-export/registry.ts';
 import type { Channel } from '@core/models/library.ts';
 import { FormPage } from '../../components/ui/index.ts';
@@ -71,10 +74,7 @@ export default function BuildMemoriesPage() {
 
   const scanContext = useMemo(
     () =>
-      buildScanContext(
-        resolvedBuildExportSettings(build),
-        getFormatExportDefaults(build.formatId),
-      ),
+      buildScanContext(resolvedBuildExportSettings(build), getFormatExportDefaults(build.formatId)),
     [build],
   );
 

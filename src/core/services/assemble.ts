@@ -330,9 +330,7 @@ export function exportInclusionWarnings(
   if (normalized.exportUnlinkedChannels !== false) {
     if (buildUsesFlatMemoryList(normalized)) {
       const memoryIds = new Set(resolveFlatMemorySection(normalized, library).channelIds);
-      const orphanCount = assembled.channels.filter(
-        (row) => !memoryIds.has(row.entity.id),
-      ).length;
+      const orphanCount = assembled.channels.filter((row) => !memoryIds.has(row.entity.id)).length;
       if (orphanCount > 0) {
         warnings.push(`Including ${orphanCount} channel(s) not in memory list`);
       }

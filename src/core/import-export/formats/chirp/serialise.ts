@@ -29,8 +29,7 @@ export function serialiseChirpCsv(
   const warnings: string[] = [];
 
   const orderedIds =
-    assembled.flatMemory?.channelIds ??
-    assembled.channels.map((row) => row.entity.id);
+    assembled.flatMemory?.channelIds ?? assembled.channels.map((row) => row.entity.id);
 
   const byId = channelById(assembled);
   const analogueRows: AssembledChannel[] = [];

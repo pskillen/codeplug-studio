@@ -189,10 +189,7 @@ export function previewWireRows(
         const memorySet = new Set(memoryIds);
         const rows: WirePreviewRow[] = [];
 
-        const pushChannelRow = (
-          channel: Channel,
-          expansionNote?: string,
-        ) => {
+        const pushChannelRow = (channel: Channel, expansionNote?: string) => {
           const channelOverride = overrideByEntityId(build.channelOverrides)
             .get(channel.id)
             ?.wireName?.trim();

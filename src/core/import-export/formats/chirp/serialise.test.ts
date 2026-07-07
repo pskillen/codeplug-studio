@@ -13,7 +13,13 @@ describe('chirp/serialise', () => {
       rxFrequency: 145_500_000,
       txFrequency: 145_500_000,
       modeProfiles: [
-        { mode: 'fm' as const, rxTone: 'none' as const, txTone: 'none' as const, squelch: null, bandwidthKHz: 12.5 },
+        {
+          mode: 'fm' as const,
+          rxTone: 'none' as const,
+          txTone: 'none' as const,
+          squelch: null,
+          bandwidthKHz: 12.5,
+        },
       ],
     };
     const ch2 = {
@@ -22,7 +28,13 @@ describe('chirp/serialise', () => {
       rxFrequency: 433_500_000,
       txFrequency: 433_500_000,
       modeProfiles: [
-        { mode: 'fm' as const, rxTone: 'none' as const, txTone: 'none' as const, squelch: null, bandwidthKHz: 12.5 },
+        {
+          mode: 'fm' as const,
+          rxTone: 'none' as const,
+          txTone: 'none' as const,
+          squelch: null,
+          bandwidthKHz: 12.5,
+        },
       ],
     };
     const assembled: AssembledBuild = {
