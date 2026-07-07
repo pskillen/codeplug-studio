@@ -4,18 +4,35 @@ import type {
   ChannelModeProfileDMR,
 } from '@core/models/library.ts';
 import type { AnalogChannelMode, ChannelMode } from '@core/models/libraryTypes.ts';
-import type { ChannelTone } from '@core/models/libraryTypes.ts';
+import type { ChannelTone, SsbSideband } from '@core/models/libraryTypes.ts';
 import type { RepeaterListing } from './types.ts';
 import { defaultModeProfile } from '@core/domain/modeProfiles.ts';
 
-const ANALOG_MODES = new Set<AnalogChannelMode>(['fm', 'am', 'ssb-usb', 'ssb-lsb']);
+const ANALOG_MODES = new Set<AnalogChannelMode>(['fm', 'am', 'ssb']);
+
+const LEGACY_SSB_SIDEBAND: Record<string, SsbSideband> = {
+  'ssb-usb': 'usb',
+  'ssb-lsb': 'lsb',
+};
 
 function isAnalogMode(mode: ChannelMode): mode is AnalogChannelMode {
   return ANALOG_MODES.has(mode as AnalogChannelMode);
 }
 
-function analogProfile(mode: AnalogChannelMode, tone: ChannelTone): ChannelModeProfileAnalog {
-  return { ...defaultModeProfile(mode, tone), mode } as ChannelModeProfileAnalog;
+function resolveSsbSideband(mode: ChannelMode): SsbSideband | null {
+  return LEGACY_SSB_SIDEBAND[mode] ?? (mode === 'ssb' ? 'usb' : null);
+}
+
+function analogProfile(
+  mode: AnalogChannelMode,
+  tone: ChannelTone,
+  ssbSideband?: SsbSideband,
+): ChannelModeProfileAnalog {
+  const profile = { ...defaultModeProfile(mode, tone), mode } as ChannelModeProfileAnalog;
+  if (mode === 'ssb' && ssbSideband) {
+    profile.ssbSideband = ssbSideband;
+  }
+  return profile;
 }
 
 function dmrProfile(colourCode: number | null): ChannelModeProfileDMR {
@@ -30,12 +47,22 @@ export function buildModeProfilesFromListing(listing: RepeaterListing): ChannelM
   const tone: ChannelTone = listing.toneHz ? String(listing.toneHz) : 'none';
   const profiles: ChannelModeProfile[] = [];
   let analogProfileEntry: ChannelModeProfileAnalog | null = null;
+  let ssbSideband: SsbSideband | null = null;
 
   for (const mode of listing.modes) {
-    if (isAnalogMode(mode)) {
+    const legacySsb = resolveSsbSideband(mode);
+    if (isAnalogMode(mode) || legacySsb != null) {
+      if (legacySsb != null && ssbSideband == null) {
+        ssbSideband = legacySsb;
+      }
       if (!analogProfileEntry) {
-        analogProfileEntry = analogProfile(mode, tone);
+        const analogMode: AnalogChannelMode =
+          legacySsb != null || mode === 'ssb' ? 'ssb' : mode;
+        const sideband = analogMode === 'ssb' ? (ssbSideband ?? 'usb') : undefined;
+        analogProfileEntry = analogProfile(analogMode, tone, sideband);
         profiles.push(analogProfileEntry);
+      } else if (legacySsb != null && analogProfileEntry.mode === 'ssb' && ssbSideband != null) {
+        analogProfileEntry.ssbSideband = ssbSideband;
       }
       continue;
     }

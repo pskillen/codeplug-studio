@@ -31,7 +31,7 @@ import {
   zoneMemberHeaders,
   rxGroupListMemberHeaders,
 } from './columns.ts';
-import { mapModeToOpenGd77ChannelType } from './channelModes.ts';
+import { isAnalogMode, mapModeToOpenGd77ChannelType } from './channelModes.ts';
 import {
   formatOpenGd77BandwidthWire,
   formatOpenGd77ColourCodeWire,
@@ -56,13 +56,7 @@ function padRow(headers: string[], values: Record<string, string>): string[] {
 }
 
 function isAnalogProfile(profile: ChannelModeProfile | null): profile is ChannelModeProfileAnalog {
-  return (
-    profile != null &&
-    (profile.mode === 'fm' ||
-      profile.mode === 'am' ||
-      profile.mode === 'ssb-usb' ||
-      profile.mode === 'ssb-lsb')
-  );
+  return profile != null && isAnalogMode(profile.mode);
 }
 
 function isDmrProfile(profile: ChannelModeProfile | null): profile is ChannelModeProfileDMR {
