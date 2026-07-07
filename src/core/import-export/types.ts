@@ -1,3 +1,4 @@
+import type { DefaultScanInclusion } from '@core/models/formatBuild.ts';
 import type { MultiTalkGroupExportNameMode } from './channelExpansion/multiTalkGroupWireName.ts';
 
 /** Canonical format ids — shared by registry and future UI. */
@@ -6,7 +7,16 @@ export type FormatId = 'native-yaml' | 'opengd77' | 'chirp' | 'dm32' | 'qdmr';
 export type { MultiTalkGroupExportNameMode } from './channelExpansion/multiTalkGroupWireName.ts';
 export { DEFAULT_MULTI_TG_EXPORT_NAME_MODE } from './channelExpansion/multiTalkGroupWireName.ts';
 
+export type { DefaultScanInclusion } from '@core/models/formatBuild.ts';
+
 export type ExpandRxGroupListMembers = 'all' | 'talkGroupsOnly';
+
+/** Format-level export defaults — registered per CPS adapter. */
+export interface FormatExportDefaults {
+  defaultScanInclusion: DefaultScanInclusion;
+  expandModes?: boolean;
+  expandRxGroupLists?: boolean;
+}
 
 export type FormatStatus = 'shipped' | 'planned';
 
@@ -67,6 +77,8 @@ export interface CpsExportOptions {
   multiTalkGroupExportNameMode?: MultiTalkGroupExportNameMode;
   /** When false, skip zone-derived Scan.csv synthesis on DM32 export. Default true. */
   exportZoneDerivedScanLists?: boolean;
+  /** Resolved default for channels with `scanInclusion: default`. From build or format adapter. */
+  defaultScanInclusion?: DefaultScanInclusion;
 }
 
 export interface ImportDocumentResult extends ExportResult {

@@ -14,7 +14,7 @@ function channel(partial: Partial<Channel> & Pick<Channel, 'name' | 'callsign'>)
     useLocation: false,
     maidenheadLocator: null,
     power: null,
-    scanSkip: false,
+    scanInclusion: 'default',
     forbidTransmit: false,
     comment: '',
     modeProfiles: [],

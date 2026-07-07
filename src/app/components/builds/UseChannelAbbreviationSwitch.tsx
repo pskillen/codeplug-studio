@@ -1,21 +1,24 @@
 import { Switch } from '@mantine/core';
-import { useExportSettings } from '../../hooks/useExportSettings.ts';
 
 export interface UseChannelAbbreviationSwitchProps {
+  shortenNames: boolean;
+  value: boolean;
+  onChange: (value: boolean) => void;
   disabled?: boolean;
 }
 
 export default function UseChannelAbbreviationSwitch({
+  shortenNames,
+  value,
+  onChange,
   disabled,
 }: UseChannelAbbreviationSwitchProps) {
-  const { shortenNames, useChannelAbbreviation, setUseChannelAbbreviation } = useExportSettings();
-
   return (
     <Switch
       label="Use channel abbreviations"
       description="When shortening, try Channel.abbreviation before dictionary rules"
-      checked={useChannelAbbreviation}
-      onChange={(e) => setUseChannelAbbreviation(e.currentTarget.checked)}
+      checked={value}
+      onChange={(e) => onChange(e.currentTarget.checked)}
       disabled={disabled ?? !shortenNames}
     />
   );

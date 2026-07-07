@@ -1,5 +1,6 @@
 import type { FormatBuild } from '@core/models/formatBuild.ts';
 import { findZoneGroupingSection } from '@core/domain/zoneGroupingLayout.ts';
+import { mergeExportOptions } from '@core/import-export/exportSettingsMerge.ts';
 import { getExportAdapter } from '@core/import-export/registry.ts';
 import { isMultiFileExportAdapter } from '@core/import-export/exportAdapter.ts';
 import { buildOpenGd77Zip } from '@core/import-export/formats/opengd77/packageZip.ts';
@@ -25,12 +26,7 @@ export interface ExportBuildAllResult {
   warnings: string[];
 }
 
-function mergeExportOptions(build: FormatBuild, options?: CpsExportOptions): CpsExportOptions {
-  return {
-    ...options,
-    profileId: options?.profileId ?? build.profileId,
-  };
-}
+export { mergeExportOptions };
 
 /** Serialise one CPS file from a build + library. */
 export function exportBuildFile({

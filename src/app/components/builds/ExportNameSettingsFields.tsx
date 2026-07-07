@@ -1,34 +1,36 @@
 import { NumberInput, Stack, Switch, Text } from '@mantine/core';
-import { useExportSettings } from '../../hooks/useExportSettings.ts';
+import type { BuildExportSettings, FormatBuild } from '@core/models/formatBuild.ts';
+import type { ChannelExportNameMode } from '@core/domain/channelNaming.ts';
+import { resolvedBuildExportSettings } from '../../lib/buildExportSettingsUi.ts';
 import ExportNameModeSelect from './ExportNameModeSelect.tsx';
 import UseChannelAbbreviationSwitch from './UseChannelAbbreviationSwitch.tsx';
 
 export interface ExportNameSettingsFieldsProps {
+  build: FormatBuild;
+  onPatch: (patch: Partial<BuildExportSettings>) => void;
+  saving?: boolean;
   profileNameLimit?: number;
   /** RX-list fan-out formats only (e.g. DM32). Hidden on OpenGD77 lean export. */
   showMultiTalkGroupOptions?: boolean;
 }
 
 export default function ExportNameSettingsFields({
+  build,
+  onPatch,
+  saving = false,
   profileNameLimit,
   showMultiTalkGroupOptions = false,
 }: ExportNameSettingsFieldsProps) {
-  const {
-    shortenNames,
-    setShortenNames,
-    maxNameLength,
-    setMaxNameLength,
-    useTalkGroupAbbreviation,
-    setUseTalkGroupAbbreviation,
-  } = useExportSettings();
+  const settings = resolvedBuildExportSettings(build);
 
   return (
     <Stack gap="sm">
       <Switch
         label="Shorten long channel names"
         description="Abbreviate names that exceed the target length at export time"
-        checked={shortenNames}
-        onChange={(e) => setShortenNames(e.currentTarget.checked)}
+        checked={settings.shortenNames}
+        disabled={saving}
+        onChange={(e) => onPatch({ shortenNames: e.currentTarget.checked })}
       />
       <NumberInput
         label="Target name length"
@@ -40,34 +42,43 @@ export default function ExportNameSettingsFields({
         placeholder={profileNameLimit != null ? String(profileNameLimit) : 'Profile default'}
         min={1}
         max={64}
-        value={maxNameLength ?? ''}
+        value={settings.maxNameLength ?? ''}
+        disabled={saving || !settings.shortenNames}
         onChange={(value) => {
           if (value === '' || value == null) {
-            setMaxNameLength(null);
+            onPatch({ maxNameLength: null });
             return;
           }
           const n = typeof value === 'number' ? value : Number.parseInt(String(value), 10);
-          setMaxNameLength(Number.isFinite(n) && n > 0 ? n : null);
+          onPatch({ maxNameLength: Number.isFinite(n) && n > 0 ? n : null });
         }}
-        disabled={!shortenNames}
       />
       <ExportNameModeSelect
-        disabled={!shortenNames}
+        value={settings.nameModeOverride}
+        disabled={saving || !settings.shortenNames}
+        onChange={(nameModeOverride) => onPatch({ nameModeOverride })}
         description="Fallback when shortening applies and a channel has no wire name override on this build."
       />
       {showMultiTalkGroupOptions ? (
         <Switch
           label="Use talk group abbreviations"
           description="Prefer TalkGroup.abbreviation for multi-talkgroup channel suffixes"
-          checked={useTalkGroupAbbreviation}
-          onChange={(e) => setUseTalkGroupAbbreviation(e.currentTarget.checked)}
-          disabled={!shortenNames}
+          checked={settings.useTalkGroupAbbreviation}
+          disabled={saving || !settings.shortenNames}
+          onChange={(e) => onPatch({ useTalkGroupAbbreviation: e.currentTarget.checked })}
         />
       ) : null}
-      <UseChannelAbbreviationSwitch />
+      <UseChannelAbbreviationSwitch
+        shortenNames={settings.shortenNames}
+        value={settings.useChannelAbbreviation}
+        disabled={saving}
+        onChange={(useChannelAbbreviation) => onPatch({ useChannelAbbreviation })}
+      />
       <Text size="xs" c="dimmed">
-        Preferences are saved in browser localStorage.
+        Saved with this build and included in native YAML export.
       </Text>
     </Stack>
   );
 }
+
+export type { ChannelExportNameMode };

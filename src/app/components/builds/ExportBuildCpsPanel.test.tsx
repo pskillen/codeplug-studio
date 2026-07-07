@@ -40,7 +40,7 @@ vi.mock('../../hooks/useGoogleDrive.ts', () => ({
 
 vi.mock('../../state/useFormatBuilds.ts', () => ({
   useFormatBuilds: () => ({
-    putBuild: vi.fn(async () => ({ ok: true as const })),
+    putBuild: vi.fn(async () => ({ ok: true as const, revision: 2 })),
   }),
 }));
 
@@ -88,6 +88,7 @@ describe('ExportBuildCpsPanel', () => {
 
     expect(await screen.findByText('Export name settings')).toBeInTheDocument();
     expect(screen.getByText('Shorten long channel names')).toBeInTheDocument();
+    expect(screen.getByText('Default scan behaviour')).toBeInTheDocument();
   });
 
   it('renders download ZIP and per-file export actions for shipped OpenGD77 builds', async () => {

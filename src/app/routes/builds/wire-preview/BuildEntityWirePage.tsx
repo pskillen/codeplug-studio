@@ -2,13 +2,19 @@ import type { ReactNode } from 'react';
 import { Button, Group, Modal, Stack, Switch, Text } from '@mantine/core';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
+import type { ChannelExportNameMode } from '@core/domain/channelNaming.ts';
 import ExportNameModeSelect from '../../../components/builds/ExportNameModeSelect.tsx';
 import UseChannelAbbreviationSwitch from '../../../components/builds/UseChannelAbbreviationSwitch.tsx';
 import WirePreviewTable from '../../../components/builds/WirePreviewTable.tsx';
 import { FormPage } from '../../../components/ui/index.ts';
+import { resolvedBuildExportSettings } from '../../../lib/buildExportSettingsUi.ts';
 import { useBuildWirePreview } from '../../../hooks/useBuildWirePreview.ts';
 import { useUnsavedNavigationGuard } from '../../../hooks/useUnsavedNavigationGuard.ts';
+import { BuildService } from '../../../state/buildService.ts';
+import { persistence } from '../../../state/persistence.ts';
 import type { WirePreviewEntityKind } from '@core/services/previewWireRows.ts';
+
+const buildService = new BuildService(persistence);
 
 export interface BuildEntityWirePageProps {
   title: string;
@@ -40,9 +46,20 @@ export default function BuildEntityWirePage({
     error,
     setRowExcluded,
     setRowWireName,
+    persistBuild,
   } = useBuildWirePreview(entityKind);
   const [hasUnsavedWireNames, setHasUnsavedWireNames] = useState(false);
   const { modalOpen, stay, leave } = useUnsavedNavigationGuard(hasUnsavedWireNames);
+  const exportSettings = resolvedBuildExportSettings(build);
+
+  function patchExportSettings(
+    patch: Partial<{
+      nameModeOverride: ChannelExportNameMode;
+      useChannelAbbreviation: boolean;
+    }>,
+  ) {
+    void persistBuild((current) => buildService.withExportSettings(current, patch));
+  }
 
   return (
     <FormPage
@@ -68,9 +85,19 @@ export default function BuildEntityWirePage({
           </Text>
         ) : null}
         {showExportNameMode ? (
-          <ExportNameModeSelect description="Fallback style for channels without an explicit wire name override on this build." />
+          <ExportNameModeSelect
+            value={exportSettings.nameModeOverride}
+            onChange={(nameModeOverride) => patchExportSettings({ nameModeOverride })}
+            description="Fallback style for channels without an explicit wire name override on this build."
+          />
         ) : null}
-        {showChannelAbbreviation ? <UseChannelAbbreviationSwitch /> : null}
+        {showChannelAbbreviation ? (
+          <UseChannelAbbreviationSwitch
+            shortenNames={exportSettings.shortenNames}
+            value={exportSettings.useChannelAbbreviation}
+            onChange={(useChannelAbbreviation) => patchExportSettings({ useChannelAbbreviation })}
+          />
+        ) : null}
         {beforeTable}
         {hasWirePreviewEntities ? (
           <Stack gap={4}>
@@ -91,24 +118,20 @@ export default function BuildEntityWirePage({
           rows={rows}
           nameLimit={nameLimit}
           clickableDefaultWireName={clickableDefaultWireName}
-          onExcludedChange={(row, excluded) => void setRowExcluded(row, excluded)}
-          onWireNameChange={(row, wireName) => void setRowWireName(row, wireName)}
+          onExcludedChange={setRowExcluded}
+          onWireNameChange={setRowWireName}
           onUnsavedChangesChange={setHasUnsavedWireNames}
         />
       </Stack>
-
-      <Modal opened={modalOpen} onClose={stay} title="Unapplied wire name changes" centered>
-        <Stack gap="md">
-          <Text size="sm">
-            Some wire names have edits that were not applied. Leave this page and discard those
-            changes, or stay to apply them.
-          </Text>
+      <Modal opened={modalOpen} onClose={stay} title="Unsaved wire name changes" centered>
+        <Stack gap="sm">
+          <Text size="sm">You have unsaved wire name edits. Leave without saving?</Text>
           <Group justify="flex-end">
             <Button variant="default" onClick={stay}>
-              Stay on page
+              Stay
             </Button>
-            <Button color="red" variant="light" onClick={leave}>
-              Leave and discard
+            <Button color="red" onClick={leave}>
+              Leave
             </Button>
           </Group>
         </Stack>

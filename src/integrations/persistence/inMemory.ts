@@ -18,6 +18,7 @@ import type {
   PutResult,
 } from './types.ts';
 import { assertSeedProjectId } from './projectSeed.ts';
+import { readChannelRow } from './channelRow.ts';
 import { readFormatBuildRow } from './formatBuildRow.ts';
 
 type RowMap<T extends { id: string; projectId: string }> = Map<string, T>;
@@ -71,7 +72,8 @@ export class InMemoryProjectPersistence implements ProjectPersistence {
   }
 
   async getChannel(projectId: string, id: string): Promise<Channel | null> {
-    return this.channels.get(rowKey(projectId, id)) ?? null;
+    const row = this.channels.get(rowKey(projectId, id));
+    return row ? readChannelRow(row) : null;
   }
 
   async putChannel(row: Channel, expectedRevision: number | null): Promise<PutResult> {
@@ -79,7 +81,7 @@ export class InMemoryProjectPersistence implements ProjectPersistence {
   }
 
   async listChannels(projectId: string): Promise<Channel[]> {
-    return this.listRows(this.channels, projectId);
+    return this.listRows(this.channels, projectId).map(readChannelRow);
   }
 
   async getZone(projectId: string, id: string): Promise<Zone | null> {

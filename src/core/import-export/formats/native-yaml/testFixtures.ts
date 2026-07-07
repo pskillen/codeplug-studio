@@ -96,7 +96,7 @@ export function fullLibraryAggregate(): ProjectAggregate {
     useLocation: true,
     maidenheadLocator: 'IO85vs',
     power: 25,
-    scanSkip: false,
+    scanInclusion: 'default',
     forbidTransmit: false,
     comment: 'Analog FM',
     modeProfiles: [
@@ -120,7 +120,7 @@ export function fullLibraryAggregate(): ProjectAggregate {
     useLocation: false,
     maidenheadLocator: null,
     power: null,
-    scanSkip: true,
+    scanInclusion: 'skip',
     forbidTransmit: false,
     comment: '',
     modeProfiles: [

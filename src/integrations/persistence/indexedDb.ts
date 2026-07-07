@@ -20,6 +20,7 @@ import type {
 } from './types.ts';
 import { DEFAULT_DB_NAME, STORES, STORE_NAMES } from './stores.ts';
 import { assertSeedProjectId } from './projectSeed.ts';
+import { readChannelRow } from './channelRow.ts';
 import { readFormatBuildRow } from './formatBuildRow.ts';
 
 type PersistableRow = {
@@ -108,13 +109,15 @@ export class IndexedDbProjectPersistence implements ProjectPersistence {
   }
 
   async getChannel(projectId: string, id: string): Promise<Channel | null> {
-    return this.getRow<Channel>('channel', projectId, id);
+    const row = await this.getRow<Channel>('channel', projectId, id);
+    return row ? readChannelRow(row) : null;
   }
   async putChannel(row: Channel, expectedRevision: number | null): Promise<PutResult> {
     return this.putRow('channel', row, expectedRevision);
   }
   async listChannels(projectId: string): Promise<Channel[]> {
-    return this.listRows<Channel>('channel', projectId);
+    const rows = await this.listRows<Channel>('channel', projectId);
+    return rows.map(readChannelRow);
   }
 
   async getZone(projectId: string, id: string): Promise<Zone | null> {

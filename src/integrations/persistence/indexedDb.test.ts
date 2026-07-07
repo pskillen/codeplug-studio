@@ -6,6 +6,7 @@ import {
   newProjectMeta,
   newTalkGroup,
 } from '@core/domain/factories.ts';
+import type { Channel } from '@core/models/library.ts';
 import { IndexedDbProjectPersistence } from './indexedDb.ts';
 import type { PersistenceChange } from './types.ts';
 
@@ -44,6 +45,27 @@ describe('IndexedDbProjectPersistence', () => {
 
     const channels = await store.listChannels(meta.projectId);
     expect(channels.map((c) => c.name)).toEqual(['Alpha', 'Zulu']);
+  });
+
+  it('defaults scanInclusion when reading legacy channel rows', async () => {
+    const store = makeStore();
+    const meta = newProjectMeta('Test');
+    const channel = newChannel(meta.projectId, 'Legacy');
+    const { scanInclusion: _scanInclusion, ...legacyRow } = channel;
+    void _scanInclusion;
+    const legacyStoredRow: Omit<Channel, 'scanInclusion'> & { scanSkip: boolean } = {
+      ...legacyRow,
+      scanSkip: true,
+    };
+    await store.seedProject({
+      meta,
+      // Pre-schema-v8 rows persisted without scanInclusion.
+      channels: [legacyStoredRow as unknown as Channel],
+    });
+
+    const loaded = await store.getChannel(meta.projectId, channel.id);
+    expect(loaded?.scanInclusion).toBe('skip');
+    expect(loaded).not.toHaveProperty('scanSkip');
   });
 
   it('bumps revision on update and rejects stale writes', async () => {

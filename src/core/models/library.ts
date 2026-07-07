@@ -21,6 +21,9 @@ export type {
 
 export type { ChannelExportNameMode } from '@core/domain/channelNaming.ts';
 
+/** Per-channel scan participation at export — resolved against build + format defaults when `default`. */
+export type ScanInclusion = 'default' | 'skip' | 'alwaysScan';
+
 export interface ChannelModeProfileAnalog {
   mode: AnalogChannelMode;
   squelch: number | null;
@@ -91,7 +94,7 @@ export interface Channel extends PersistableRow {
   /** Maidenhead locator when known — not mutually exclusive with `location`. */
   maidenheadLocator: string | null;
   power: number | null;
-  scanSkip: boolean;
+  scanInclusion: ScanInclusion;
   /** When true, channel is receive-only (no transmit) at export. */
   forbidTransmit: boolean;
   comment: string;

@@ -52,6 +52,7 @@ describe('native-yaml parse', () => {
     expect(channel.rxFrequency).toBeNull();
     expect(channel.txFrequency).toBeNull();
     expect(channel.power).toBeNull();
+    expect(channel.scanInclusion).toBe('default');
     const fm = channel.modeProfiles[0];
     expect(fm?.mode).toBe('fm');
     if (fm?.mode === 'fm') {
@@ -78,6 +79,18 @@ describe('native-yaml parse', () => {
   it('rejects corrupt YAML', () => {
     expect(() => parseProjectDocument(readFixture('corrupt.yaml'))).toThrow(NativeYamlImportError);
     expect(() => parseProjectDocument(readFixture('corrupt.yaml'))).toThrow(/Invalid YAML syntax/);
+  });
+
+  it('defaults scanInclusion when omitted and migrates legacy scanSkip', () => {
+    const omitted = parseProjectDocument(readFixture('omitted-nullables.yaml'));
+    expect(omitted.channels[0]?.scanInclusion).toBe('default');
+
+    const legacyYaml = readFixture('omitted-nullables.yaml').replace(
+      'useLocation: false',
+      'useLocation: false\n      scanSkip: true',
+    );
+    const legacy = parseProjectDocument(legacyYaml);
+    expect(legacy.channels[0]?.scanInclusion).toBe('skip');
   });
 });
 

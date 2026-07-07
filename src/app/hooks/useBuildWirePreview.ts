@@ -12,7 +12,7 @@ import {
 import { traitProfileFor } from '@core/models/traits.ts';
 import { getFormatProfiles } from '@core/import-export/formatProfiles.ts';
 import type { FormatId } from '@core/import-export/types.ts';
-import { useExportSettings, exportOptionsFromSettings } from './useExportSettings.ts';
+import { mergeExportOptions } from '@core/services/exportBuild.ts';
 import { useBuildLayout } from '../routes/builds/BuildLayoutContext.tsx';
 import { useProjects } from '../state/useProjects.ts';
 import { persistence } from '../state/persistence.ts';
@@ -50,20 +50,11 @@ export function useBuildWirePreview(entityKind: WirePreviewEntityKind) {
   }, [build]);
 
   const { activeProjectId } = useProjects();
-  const { settings } = useExportSettings();
   const [library, setLibrary] = useState<LibrarySlice | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [hideNotIncludedInExport, setHideNotIncludedInExport] = useState(false);
-
-  const exportOptions = useMemo(() => {
-    const base = {
-      profileId: build.profileId,
-      expandModes: build.formatId !== 'dm32',
-      ...(build.formatId === 'dm32' ? { expandRxGroupLists: true } : {}),
-    };
-    return exportOptionsFromSettings(settings, base);
-  }, [settings, build.formatId, build.profileId]);
+  const exportOptions = useMemo(() => mergeExportOptions(build), [build]);
 
   const allRows = useMemo(() => {
     if (!library) return [];

@@ -8,10 +8,10 @@ Tier 3 schema for Codeplug Studio's full-project interchange format. Internal ty
 
 ## Version fields
 
-| Field                 | Type    | Required | Meaning                                                                                                                                                                                            |
-| --------------------- | ------- | -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `schemaVersion`       | `1`     | yes      | Native YAML envelope version. Only `1` is accepted in this release.                                                                                                                                |
-| `studioSchemaVersion` | integer | yes      | Must equal `STUDIO_SCHEMA_VERSION` in `src/core/models/schemaVersion.ts` (currently `7`). Imports accept `2`–`7`; older zone export fields on library `Zone` migrate to DM32 build layout on load. |
+| Field                 | Type    | Required | Meaning                                                                                                                                                                              |
+| --------------------- | ------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `schemaVersion`       | `1`     | yes      | Native YAML envelope version. Only `1` is accepted in this release.                                                                                                                  |
+| `studioSchemaVersion` | integer | yes      | Must equal `STUDIO_SCHEMA_VERSION` in `src/core/models/schemaVersion.ts` (currently `8`). Imports accept `2`–`8`; legacy `scanSkip` on channels migrates to `scanInclusion` on load. |
 
 Bump `schemaVersion` when the YAML envelope shape changes. Bump `studioSchemaVersion` (constant) when persisted row types change.
 
@@ -86,20 +86,20 @@ Arrays may be empty. Serialiser emits all six keys.
 
 ### `Channel`
 
-| Field               | Type                           | Nullable |
-| ------------------- | ------------------------------ | -------- |
-| _(persistable row)_ |                                |          |
-| `name`              | string                         | no       |
-| `callsign`          | string                         | no       |
-| `rxFrequency`       | number (Hz)                    | yes      |
-| `txFrequency`       | number (Hz)                    | yes      |
-| `location`          | `{ lat: number; lon: number }` | yes      |
-| `useLocation`       | boolean                        | no       |
-| `maidenheadLocator` | string                         | yes      |
-| `power`             | number (0–100)                 | yes      |
-| `scanSkip`          | boolean                        | no       |
-| `comment`           | string                         | no       |
-| `modeProfiles`      | `ChannelModeProfile[]`         | no       |
+| Field               | Type                                | Nullable |
+| ------------------- | ----------------------------------- | -------- |
+| _(persistable row)_ |                                     |          |
+| `name`              | string                              | no       |
+| `callsign`          | string                              | no       |
+| `rxFrequency`       | number (Hz)                         | yes      |
+| `txFrequency`       | number (Hz)                         | yes      |
+| `location`          | `{ lat: number; lon: number }`      | yes      |
+| `useLocation`       | boolean                             | no       |
+| `maidenheadLocator` | string                              | yes      |
+| `power`             | number (0–100)                      | yes      |
+| `scanInclusion`     | `default` \| `skip` \| `alwaysScan` | no       | Legacy `scanSkip` boolean accepted on import (`true`→`skip`, `false`→`default`) |
+| `comment`           | string                              | no       |
+| `modeProfiles`      | `ChannelModeProfile[]`              | no       |
 
 Mode profile discriminant is `mode`. See [data-model](../../features/data-model/README.md) for per-mode fields.
 
@@ -151,18 +151,26 @@ DM32 zone export flags (`exportScratchChannel`, `exportScanList`, `scanCarrierFr
 
 ## `formatBuilds[]`
 
-| Field                   | Type                                         |
-| ----------------------- | -------------------------------------------- |
-| _(persistable row)_     |                                              |
-| `formatId`              | string                                       |
-| `profileId`             | string                                       |
-| `name`                  | string                                       |
-| `layout`                | `TraitLayout`                                |
-| `channelSelections`     | `{ libraryEntityId, overrides: { name } }[]` |
-| `zoneSelections`        | same pattern                                 |
-| `talkGroupSelections`   | same pattern                                 |
-| `rxGroupListSelections` | same pattern                                 |
-| `contactSelections`     | same pattern                                 |
+| Field                        | Type                             |
+| ---------------------------- | -------------------------------- |
+| _(persistable row)_          |                                  |
+| `formatId`                   | string                           |
+| `profileId`                  | string                           |
+| `name`                       | string                           |
+| `layout`                     | `TraitLayout`                    |
+| `channelOverrides`           | `BuildEntityOverride[]`          |
+| `zoneOverrides`              | `BuildEntityOverride[]`          |
+| `talkGroupOverrides`         | `BuildEntityOverride[]`          |
+| `rxGroupListOverrides`       | `BuildEntityOverride[]`          |
+| `contactOverrides`           | `BuildEntityOverride[]`          |
+| `exportUnlinkedChannels`     | boolean (optional)               |
+| `exportUnlinkedTalkGroups`   | boolean (optional)               |
+| `exportUnlinkedRxGroupLists` | boolean (optional)               |
+| `exportSettings`             | `BuildExportSettings` (optional) |
+
+`exportSettings` fields: `defaultScanInclusion`, `shortenNames`, `maxNameLength`, `nameModeOverride`, `useChannelAbbreviation`, `useTalkGroupAbbreviation`, `exportZoneDerivedScanLists`, `expandModes`, `expandRxGroupLists`, …
+
+Legacy `*Selections` arrays migrate to `*Overrides` on import.
 
 ### `TraitLayout`
 

@@ -1,5 +1,29 @@
 import type { PersistableRow } from './revision.ts';
 import type { TraitLayout } from './traitLayout.ts';
+import type {
+  ExpandRxGroupListMembers,
+  MultiTalkGroupExportNameMode,
+} from '@core/import-export/types.ts';
+import type { ChannelExportNameMode } from './library.ts';
+
+/** How channels with `scanInclusion: default` serialise when build omits an override. */
+export type DefaultScanInclusion = 'skip' | 'scan';
+
+/** Per-build export preferences — persisted on FormatBuild and native YAML. */
+export interface BuildExportSettings {
+  /** Override format default for `default` channels. */
+  defaultScanInclusion?: DefaultScanInclusion;
+  shortenNames?: boolean;
+  maxNameLength?: number | null;
+  nameModeOverride?: ChannelExportNameMode;
+  useChannelAbbreviation?: boolean;
+  useTalkGroupAbbreviation?: boolean;
+  exportZoneDerivedScanLists?: boolean;
+  multiTalkGroupExportNameMode?: MultiTalkGroupExportNameMode;
+  expandModes?: boolean;
+  expandRxGroupLists?: boolean;
+  expandRxGroupListMembers?: ExpandRxGroupListMembers;
+}
 
 /**
  * Sparse per-entity customisation for a format build.
@@ -27,4 +51,6 @@ export interface FormatBuild extends PersistableRow {
   exportUnlinkedTalkGroups?: boolean;
   /** Include RX group lists not referenced by exported channels. Default true. */
   exportUnlinkedRxGroupLists?: boolean;
+  /** Export-affecting preferences for this build (name shortening, scan defaults, …). */
+  exportSettings?: BuildExportSettings;
 }
