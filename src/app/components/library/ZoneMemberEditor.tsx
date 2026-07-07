@@ -497,9 +497,14 @@ function InZoneMemberRow({
               {channelModesForFilter(channel).map((mode) => (
                 <ModePill key={mode} mode={mode} size="xs" />
               ))}
-              {channel.scanSkip ? (
+              {channel.scanInclusion === 'skip' ? (
                 <Badge size="xs" variant="light" color="gray">
                   Skip scan
+                </Badge>
+              ) : null}
+              {channel.scanInclusion === 'alwaysScan' ? (
+                <Badge size="xs" variant="light" color="teal">
+                  Always scan
                 </Badge>
               ) : null}
             </Group>

@@ -1,22 +1,13 @@
 import { useState } from 'react';
-import {
-  Alert,
-  Button,
-  Checkbox,
-  Group,
-  SimpleGrid,
-  Stack,
-  Tabs,
-  Text,
-  TextInput,
-} from '@mantine/core';
+import { Alert, Button, Group, SimpleGrid, Stack, Tabs, TextInput } from '@mantine/core';
 import { Link, useNavigate } from 'react-router-dom';
-import type { Channel, ChannelModeProfile, Library } from '@core/models/library.ts';
+import type { Channel, ChannelModeProfile, Library, ScanInclusion } from '@core/models/library.ts';
 import { reconcileChannelLocation } from '@core/domain/channelLocation.ts';
 import { newChannel } from '@core/domain/factories.ts';
 import { syncModeProfiles, validateModeProfiles } from '@core/domain/modeProfiles.ts';
 import type { ChannelMode } from '@core/models/libraryTypes.ts';
 import ForbidTransmitSegment from '../../components/channels/ForbidTransmitSegment.tsx';
+import ScanInclusionSegment from '../../components/channels/ScanInclusionSegment.tsx';
 import ChannelLocationSection, {
   channelLocationValuesFromChannel,
   type ChannelLocationValues,
@@ -50,7 +41,7 @@ export default function ChannelEditor({
   const [rx, setRx] = useState(hzToMhzString(base.rxFrequency));
   const [tx, setTx] = useState(hzToMhzString(base.txFrequency));
   const [power, setPower] = useState<number | null>(base.power);
-  const [scanSkip, setScanSkip] = useState(base.scanSkip);
+  const [scanInclusion, setScanInclusion] = useState<ScanInclusion>(base.scanInclusion);
   const [forbidTransmit, setForbidTransmit] = useState(base.forbidTransmit === true);
   const [comment, setComment] = useState(base.comment);
   const [modeProfiles, setModeProfiles] = useState<ChannelModeProfile[]>(base.modeProfiles);
@@ -83,7 +74,7 @@ export default function ChannelEditor({
       rxFrequency: mhzStringToHz(rx),
       txFrequency: mhzStringToHz(tx),
       power,
-      scanSkip,
+      scanInclusion,
       forbidTransmit,
       comment,
       location: reconciled.location,
@@ -110,7 +101,7 @@ export default function ChannelEditor({
       rxFrequency: source.rxFrequency,
       txFrequency: source.txFrequency,
       power: source.power,
-      scanSkip: source.scanSkip,
+      scanInclusion: source.scanInclusion,
       forbidTransmit: source.forbidTransmit,
       comment: source.comment,
       location: source.location,
@@ -192,15 +183,7 @@ export default function ChannelEditor({
               value={comment}
               onChange={(e) => setComment(e.currentTarget.value)}
             />
-            <Text component="label" htmlFor="scanSkip" size="sm" fw={500}>
-              Scanning
-            </Text>
-            <Checkbox
-              id="scanSkip"
-              label="Skip on scan"
-              checked={scanSkip}
-              onChange={(e) => setScanSkip(e.currentTarget.checked)}
-            />
+            <ScanInclusionSegment value={scanInclusion} onChange={setScanInclusion} />
           </FormSection>
         </Tabs.Panel>
 

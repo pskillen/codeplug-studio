@@ -41,6 +41,7 @@ import {
   SelectedItemList,
 } from '../components/ui/index.ts';
 import ForbidTransmitSegment from '../components/channels/ForbidTransmitSegment.tsx';
+import ScanInclusionSegment from '../components/channels/ScanInclusionSegment.tsx';
 
 const SAMPLE_ROWS = [
   { id: '1', name: 'GB3DA Stornoway' },
@@ -91,6 +92,11 @@ function PercentLevelSliderDemo({
 function ForbidTransmitSegmentDemo() {
   const [forbidTransmit, setForbidTransmit] = useState(false);
   return <ForbidTransmitSegment value={forbidTransmit} onChange={setForbidTransmit} />;
+}
+
+function ScanInclusionSegmentDemo() {
+  const [scanInclusion, setScanInclusion] = useState<'default' | 'skip' | 'alwaysScan'>('default');
+  return <ScanInclusionSegment value={scanInclusion} onChange={setScanInclusion} />;
 }
 
 function GradientSegmentedControlDemo({
@@ -275,7 +281,7 @@ const MEMBERSHIP_DEMO_CATALOG = {
     subtitle: '145.500 / 145.500 MHz',
     modes: ['fm'] as ChannelMode[],
     bandId: '2m' as const,
-    scanSkip: true,
+    scanInclusion: 'skip',
   },
   echo: {
     key: 'echo',
@@ -312,7 +318,7 @@ const MEMBERSHIP_DEMO_CATALOG = {
     subtitle: string;
     modes?: ChannelMode[];
     bandId?: '2m' | '70cm';
-    scanSkip?: boolean;
+    scanInclusion?: 'default' | 'skip' | 'alwaysScan';
   }
 >;
 
@@ -496,11 +502,25 @@ function MembershipListsDemo() {
                       {entry.modes.map((mode) => (
                         <ModePill key={mode} mode={mode} size="xs" />
                       ))}
-                      {'scanSkip' in entry && entry.scanSkip ? (
-                        <Badge size="xs" variant="light" color="gray">
-                          Skip scan
-                        </Badge>
-                      ) : null}
+                      {(() => {
+                        const scanInclusion =
+                          'scanInclusion' in entry ? entry.scanInclusion : undefined;
+                        if (scanInclusion === 'skip') {
+                          return (
+                            <Badge size="xs" variant="light" color="gray">
+                              Skip scan
+                            </Badge>
+                          );
+                        }
+                        if (scanInclusion === 'alwaysScan') {
+                          return (
+                            <Badge size="xs" variant="light" color="teal">
+                              Always scan
+                            </Badge>
+                          );
+                        }
+                        return null;
+                      })()}
                     </Group>
                     <Text size="xs" c="dimmed">
                       {entry.subtitle}
@@ -866,6 +886,7 @@ export default function StyleguidePage() {
             ]}
           />
           <ForbidTransmitSegmentDemo />
+          <ScanInclusionSegmentDemo />
           <GradientSegmentedControlDemo
             label="Three segments"
             scheme="three"
