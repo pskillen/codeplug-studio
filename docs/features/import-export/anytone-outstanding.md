@@ -1,0 +1,48 @@
+# Anytone CPS CSV — outstanding
+
+Items **skipped**, **incomplete**, or **discovered during execution** — not scheduled export-adapter phases.
+
+**Tracking:** [#228](https://github.com/pskillen/codeplug-studio/issues/228) · [#229](https://github.com/pskillen/codeplug-studio/issues/229) (import)
+
+---
+
+## Build model notes (post-#243)
+
+- **`orderOrSlot` on `BuildEntityOverride`** — shipped for CHIRP flat memory ([#243](https://github.com/pskillen/codeplug-studio/pull/243)). Anytone `Channel.CSV` / `AMAir.CSV` / `FM.CSV` `No.` columns are the likely export target for the same field (including fixed VFO slot numbers). Confirm per-bank behaviour in [#232](https://github.com/pskillen/codeplug-studio/issues/232) / [#233](https://github.com/pskillen/codeplug-studio/issues/233).
+
+## Model gaps (discovered during wire spike)
+
+- [ ] **APRS internal model** — D890 `APRS.CSV` is a single global config row (~150 columns) plus per-channel flags on `Channel.CSV`. No first-class `AprsConfiguration` entity today. Proposed shape documented in [aprs.md](../../reference/anytone/aprs.md); needs follow-up GitHub issue before import/export serialisation.
+- [ ] **NXDN multi-protocol build** — parallel NX* file set mirrors DMR; may need build trait or export partition beyond DMR-only zone grouping. Wire documented; adapter deferred post-DMR MVP ([#233](https://github.com/pskillen/codeplug-studio/issues/233)).
+- [ ] **AM air + broadcast FM export projection** — maps to existing `Channel` (`am` / `fm`, receive-only) but separate CPS banks (`AMAir.CSV`, `FM.CSV`). Export slice after DMR MVP; consider `ParallelReceiveOnlyBanks` trait vs adapter-only partition.
+
+---
+
+## Sample export quirks
+
+- `DMRDigitalContactList.CSV` — header only (no body rows) in operator fixture source.
+- NX contact / talk group / RGL files — header only in operator fixture source; wire docs derived from headers + `Channel.CSV` NXDN tail columns.
+- `AMZone.CSV` — header only in operator fixture source.
+
+---
+
+## Epic deferrals
+
+- [ ] Anytone **import** — epic [#229](https://github.com/pskillen/codeplug-studio/issues/229) (Phase 7b)
+- [ ] Sibling variants (AT-D878UV, AT-D578UV, …)
+- [ ] Encryption, hotkeys, roaming, `OptionalSetting.CSV`, DTMF/MDC deep wire (inventory only in tier-3 README)
+
+---
+
+## Redaction rules (fixtures)
+
+Operator export redacted before commit:
+
+| Source pattern              | Fixture replacement        |
+| --------------------------- | -------------------------- |
+| Calls signs / operator IDs  | `TEST01`, `1234567`        |
+| Personal channel/zone names | `Channel 1`, `Zone A`, …   |
+| APRS callsigns / digi text  | Synthetic / empty          |
+| Real repeater / station IDs | Public or synthetic TG IDs |
+
+Do not commit raw Downloads folder or `sample-exports/` personal data.
