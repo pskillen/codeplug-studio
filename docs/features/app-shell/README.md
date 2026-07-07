@@ -23,7 +23,10 @@ ProjectProvider
          ├─ /reference Reference tools
          ├─ /debug     Storage inspectors (IndexedDB + localStorage)
          ├─ /settings  Settings shell
-         └─ /help      Help shell
+         ├─ /privacy   Privacy policy (analytics + local data)
+         ├─ /terms     Terms of use
+         ├─ /cookies   Cookies & storage (+ change consent)
+         ├─ /help      Help shell
 ```
 
 ## Documentation map
@@ -73,6 +76,9 @@ UI primitives live in `src/app/components/ui/` (ported from codeplug-tool). Reus
 | `/debug/local-storage`                        | LocalStorage keys       | Known keys + `codeplug-studio:` / `mm9pdy-codeplug-studio.` prefix scan                                                                                                  |
 | `/debug/local-storage/:storageKey`            | LocalStorage viewer     | Parsed JSON (tokens masked)                                                                                                                                              |
 | `/help`                                       | Help                    | Workflow overview + GitHub Issues guidance ([#70](https://github.com/pskillen/codeplug-studio/issues/70))                                                                |
+| `/privacy`                                    | Privacy policy          | Browser-local data + optional analytics summary ([#96](https://github.com/pskillen/codeplug-studio/issues/96))                                                           |
+| `/terms`                                      | Terms of use            | Hobby-tool disclaimer ([#96](https://github.com/pskillen/codeplug-studio/issues/96))                                                                                     |
+| `/cookies`                                    | Cookies & storage       | Essential vs analytics cookies; change consent ([#96](https://github.com/pskillen/codeplug-studio/issues/96))                                                            |
 | `/styleguide`                                 | Styleguide              | Hidden dev page (UI kit demos)                                                                                                                                           |
 
 Routes that need a project gate on an active project and link back to Projects when none is selected.
@@ -101,14 +107,17 @@ The **active-project selection** is remembered across reloads via `localStorage`
 
 ## Footer and feedback links
 
-Every routed page renders [`BuildFooter`](../../../src/app/components/BuildFooter/BuildFooter.tsx) below the main `Outlet`. The footer shows build env/version plus muted **Repository** and **Report a bug** links (shared URLs in `src/app/lib/githubLinks.ts`).
+Every routed page renders [`BuildFooter`](../../../src/app/components/BuildFooter/BuildFooter.tsx) below the main `Outlet`. The footer shows build env/version plus muted **Cookies**, **Privacy**, **Terms**, **Repository**, and **Report a bug** links.
+
+A [`CookieConsentBanner`](../../../src/app/components/CookieConsentBanner/CookieConsentBanner.tsx) is mounted in [`AppLayout`](../../../src/app/components/AppLayout/AppLayout.tsx) above the outlet on first visit until the operator accepts or declines analytics cookies. See [analytics](../analytics/README.md).
 
 The **Help** route adds a **Feedback** section with the same repo/issues URLs and short guidance for filing GitHub Issues.
 
-| Area                  | Status  | Notes                                                        |
-| --------------------- | ------- | ------------------------------------------------------------ |
-| Global footer links   | Shipped | [#70](https://github.com/pskillen/codeplug-studio/issues/70) |
-| Help feedback section | Shipped | [#70](https://github.com/pskillen/codeplug-studio/issues/70) |
+| Area                  | Status  | Notes                                                                                                                      |
+| --------------------- | ------- | -------------------------------------------------------------------------------------------------------------------------- |
+| Global footer links   | Shipped | [#70](https://github.com/pskillen/codeplug-studio/issues/70), [#96](https://github.com/pskillen/codeplug-studio/issues/96) |
+| Cookie consent banner | Shipped | [#96](https://github.com/pskillen/codeplug-studio/issues/96)                                                               |
+| Help feedback section | Shipped | [#70](https://github.com/pskillen/codeplug-studio/issues/70)                                                               |
 
 ## Boundaries
 

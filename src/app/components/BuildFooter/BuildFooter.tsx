@@ -1,5 +1,15 @@
+import type { ReactNode } from 'react';
 import { Anchor, Group, Text } from '@mantine/core';
+import { Link } from 'react-router-dom';
 import { GITHUB_ISSUES_URL, GITHUB_REPO_URL } from '../../lib/githubLinks.ts';
+
+function FooterLink({ to, children }: { to: string; children: ReactNode }) {
+  return (
+    <Text component={Link} to={to} size="sm" c="dimmed" style={{ textDecoration: 'none' }}>
+      {children}
+    </Text>
+  );
+}
 
 export default function BuildFooter() {
   return (
@@ -15,6 +25,18 @@ export default function BuildFooter() {
         <span>
           Codeplug Studio · {__BUILD_ENV__} · {__BUILD_VERSION__}
         </span>
+        <Text span inherit c="dimmed">
+          ·
+        </Text>
+        <FooterLink to="/cookies">Cookies</FooterLink>
+        <Text span inherit c="dimmed">
+          ·
+        </Text>
+        <FooterLink to="/privacy">Privacy</FooterLink>
+        <Text span inherit c="dimmed">
+          ·
+        </Text>
+        <FooterLink to="/terms">Terms</FooterLink>
         <Text span inherit c="dimmed">
           ·
         </Text>

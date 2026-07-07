@@ -79,3 +79,15 @@ export function saveMaidenheadGridMode(mode: MaidenheadGridMode): void {
     // Ignore write failures.
   }
 }
+
+export {
+  ANALYTICS_CONSENT_KEY,
+  ANALYTICS_CONSENT_VERSION,
+  clearAnalyticsConsent,
+  getAnalyticsConsent,
+  isAnalyticsConsentAccepted,
+  setAnalyticsConsent,
+  subscribeAnalyticsConsent,
+  type AnalyticsConsentChoice,
+  type AnalyticsConsentState,
+} from './analyticsConsent.ts';

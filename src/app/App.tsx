@@ -36,6 +36,9 @@ import BuildZonesWirePage from './routes/builds/wire-preview/BuildZonesWirePage.
 import BuildTalkGroupsWirePage from './routes/builds/wire-preview/BuildTalkGroupsWirePage.tsx';
 import BuildContactsWirePage from './routes/builds/wire-preview/BuildContactsWirePage.tsx';
 import BuildRxGroupListsWirePage from './routes/builds/wire-preview/BuildRxGroupListsWirePage.tsx';
+import PrivacyPolicyPage from './routes/legal/PrivacyPolicyPage.tsx';
+import TermsOfUsePage from './routes/legal/TermsOfUsePage.tsx';
+import CookiesPage from './routes/legal/CookiesPage.tsx';
 
 function MapRedirect() {
   return <Navigate to="/library/channels" replace />;
@@ -48,6 +51,9 @@ export const appRouter = createBrowserRouter([
       { path: '/', element: <HomePage /> },
       { path: '/settings', element: <SettingsPage /> },
       { path: '/help', element: <HelpPage /> },
+      { path: '/privacy', element: <PrivacyPolicyPage /> },
+      { path: '/terms', element: <TermsOfUsePage /> },
+      { path: '/cookies', element: <CookiesPage /> },
       { path: '/reference', element: <ReferenceIndexPage /> },
       { path: '/reference/maidenhead', element: <MaidenheadReferencePage /> },
       { path: '/reference/bands', element: <BandsReferencePage /> },
