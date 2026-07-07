@@ -66,19 +66,19 @@ Full export path: [cps-services.md](cps-services.md).
 
 ### Library vs build vs format
 
-| Concern                                         | Layer                                       | Examples                                        |
-| ----------------------------------------------- | ------------------------------------------- | ----------------------------------------------- |
-| RF semantics (frequency, mode, TG ref)          | Library `Channel`, `TalkGroup`, …           | Shared across all builds                        |
-| Which entities participate + wire names         | `FormatBuild` selections + `overrides.name` | Per-build CPS labels                            |
-| Organisation (zones, scan lists, flat memories) | `FormatBuild.layout` (trait-shaped)         | OpenGD77 zones vs CHIRP flat list               |
-| Zone membership (channels + nested zones)       | Library `Zone.members`                      | `kind: 'channel'` / `kind: 'zone'`              |
-| Omit standalone zone row on export              | Library `Zone.omitFromExport`               | Nested building blocks                          |
-| Per-build zone wire name / exclude              | `FormatBuild.zoneOverrides`                 | `excluded`, `wireName`                          |
-| Format-only zone flags                          | `ZoneGroupingLayout` on build               | DM32 `exportScanList`, `scanCarrierFrequencyHz` |
-| Per-member scan list filter                     | Library `ZoneMemberEntry.includeInScanList` | DM32 zone-derived scan only                     |
+| Concern                                         | Layer                                       | Examples                                                           |
+| ----------------------------------------------- | ------------------------------------------- | ------------------------------------------------------------------ |
+| RF semantics (frequency, mode, TG ref)          | Library `Channel`, `TalkGroup`, …           | Shared across all builds                                           |
+| Which entities participate + wire names         | `FormatBuild` selections + `overrides.name` | Per-build CPS labels                                               |
+| Organisation (zones, scan lists, flat memories) | `FormatBuild.layout` (trait-shaped)         | OpenGD77 zones vs CHIRP flat list                                  |
+| Zone membership (channels + nested zones)       | Library `Zone.members`                      | `kind: 'channel'` / `kind: 'zone'`                                 |
+| Omit standalone zone row on export              | Library `Zone.omitFromExport`               | Nested building blocks                                             |
+| Per-build zone wire name / exclude              | `FormatBuild.zoneOverrides`                 | `excluded`, `wireName`                                             |
+| Format-only zone flags                          | `ZoneGroupingLayout` on build               | DM32 `exportScanList`, `scanCarrierFrequencyHz`                    |
+| Per-member scan list filter                     | Library `ZoneMemberEntry.includeInScanList` | DM32 zone-derived scan only                                        |
 | Channel scan inclusion                          | Library `Channel.scanInclusion`             | Tri-state; see [scan-inclusion](../../reference/scan-inclusion.md) |
-| Export-affecting prefs                          | `FormatBuild.exportSettings`                | Name shortening, default scan behaviour, DM32 scan master |
-| Format scan default                             | Adapter `defaultExportSettings`             | e.g. CHIRP `skip`, OpenGD77/DM32 `scan`         |
+| Export-affecting prefs                          | `FormatBuild.exportSettings`                | Name shortening, default scan behaviour, DM32 scan master          |
+| Format scan default                             | Adapter `defaultExportSettings`             | e.g. CHIRP `skip`, OpenGD77/DM32 `scan`                            |
 
 **Rule for serialisers:** consume `AssembledBuild` — especially `zones[].memberChannelIds` (flat UUID lists). Do **not** re-walk library nesting or `ZoneGroupingLayout.channelIds` as membership source of truth; `assemble` already flattened effective membership.
 
@@ -163,11 +163,11 @@ Use `satisfies ImportAdapter` / `satisfies MultiFileExportAdapter` (or single-fi
 
 ### Export settings and scan defaults ([#203](https://github.com/pskillen/codeplug-studio/issues/203))
 
-| Storage | What | Examples |
-| --- | --- | --- |
-| **Adapter** `defaultExportSettings` | Format-level defaults when build omits a value | `defaultScanInclusion`, `expandModes`, `expandRxGroupLists` |
-| **`FormatBuild.exportSettings`** | Per-build operator choices (IndexedDB + native YAML) | `defaultScanInclusion`, `shortenNames`, `exportZoneDerivedScanLists` |
-| **Browser `localStorage`** | Visual-only prefs | Wire-preview hide filter, column visibility |
+| Storage                             | What                                                 | Examples                                                             |
+| ----------------------------------- | ---------------------------------------------------- | -------------------------------------------------------------------- |
+| **Adapter** `defaultExportSettings` | Format-level defaults when build omits a value       | `defaultScanInclusion`, `expandModes`, `expandRxGroupLists`          |
+| **`FormatBuild.exportSettings`**    | Per-build operator choices (IndexedDB + native YAML) | `defaultScanInclusion`, `shortenNames`, `exportZoneDerivedScanLists` |
+| **Browser `localStorage`**          | Visual-only prefs                                    | Wire-preview hide filter, column visibility                          |
 
 Register defaults on the export adapter and in `getFormatExportDefaults()` for planned formats without a shipped adapter (e.g. CHIRP).
 
@@ -371,12 +371,12 @@ Studio surfaces formats in **three places**: project interchange (`/import-expor
 
 ### Build export (`/builds/:id/export`)
 
-| Component       | Path                                            | Checklist                                                                                |
-| --------------- | ----------------------------------------------- | ---------------------------------------------------------------------------------------- |
-| Export panel    | `ExportBuildCpsPanel.tsx`                       | Gated on `exportStatus === 'shipped'`                                                    |
-| App service     | `buildCpsExportService.ts`                      | `previewCpsExport`, `downloadCpsZip`, Drive upload                                       |
-| CSV preview     | `CpsCsvPreviewModal.tsx`                        | Tabbed per-file preview ([#151](https://github.com/pskillen/codeplug-studio/issues/151)) |
-| Export settings | `ExportNameSettingsFields`, `DefaultScanInclusionSegment` | `FormatBuild.exportSettings` + adapter `defaultExportSettings` |
+| Component       | Path                                                      | Checklist                                                                                |
+| --------------- | --------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
+| Export panel    | `ExportBuildCpsPanel.tsx`                                 | Gated on `exportStatus === 'shipped'`                                                    |
+| App service     | `buildCpsExportService.ts`                                | `previewCpsExport`, `downloadCpsZip`, Drive upload                                       |
+| CSV preview     | `CpsCsvPreviewModal.tsx`                                  | Tabbed per-file preview ([#151](https://github.com/pskillen/codeplug-studio/issues/151)) |
+| Export settings | `ExportNameSettingsFields`, `DefaultScanInclusionSegment` | `FormatBuild.exportSettings` + adapter `defaultExportSettings`                           |
 
 - [ ] Per-file download + ZIP for `multi-file` adapters
 - [ ] Profile override in export UI (does not mutate build row)

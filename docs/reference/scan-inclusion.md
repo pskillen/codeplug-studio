@@ -8,11 +8,11 @@ Wire column mapping per format: [CHIRP `Skip`](chirp/channels.md), [OpenGD77 `Al
 
 `Channel.scanInclusion` — tri-state, vendor-neutral:
 
-| Value | Operator meaning |
-| --- | --- |
-| `default` | Defer to the **format build** export setting at serialise time |
-| `skip` | Always exclude from scan on wire |
-| `alwaysScan` | Always include on scan wire |
+| Value        | Operator meaning                                               |
+| ------------ | -------------------------------------------------------------- |
+| `default`    | Defer to the **format build** export setting at serialise time |
+| `skip`       | Always exclude from scan on wire                               |
+| `alwaysScan` | Always include on scan wire                                    |
 
 Replaces legacy boolean `scanSkip` (schema v8). Import migration: `true` → `skip`; `false` → `default`.
 
@@ -24,21 +24,21 @@ Resolution order for `default` channels:
 2. Format adapter `defaultExportSettings.defaultScanInclusion`
 3. Fallback `scan`
 
-| Format | Adapter default when build omits override |
-| --- | --- |
-| OpenGD77 | `scan` |
-| DM32 | `scan` |
-| CHIRP | `skip` |
+| Format   | Adapter default when build omits override |
+| -------- | ----------------------------------------- |
+| OpenGD77 | `scan`                                    |
+| DM32     | `scan`                                    |
+| CHIRP    | `skip`                                    |
 
 Implementation: `src/core/import-export/scanInclusion/resolve.ts`.
 
 ## Orthogonal concepts
 
-| Field | Layer | Concern |
-| --- | --- | --- |
-| `ZoneMemberEntry.includeInScanList` | Library zone membership | DM32 zone-derived scan list membership filter |
-| `FormatBuild.exportSettings.defaultScanInclusion` | Build | Default for `scanInclusion: default` channels |
-| `FlatMemoryLayout.scanFlags` | Build layout (CHIRP trait) | **Deprecated** — superseded by library `scanInclusion` |
+| Field                                             | Layer                      | Concern                                                |
+| ------------------------------------------------- | -------------------------- | ------------------------------------------------------ |
+| `ZoneMemberEntry.includeInScanList`               | Library zone membership    | DM32 zone-derived scan list membership filter          |
+| `FormatBuild.exportSettings.defaultScanInclusion` | Build                      | Default for `scanInclusion: default` channels          |
+| `FlatMemoryLayout.scanFlags`                      | Build layout (CHIRP trait) | **Deprecated** — superseded by library `scanInclusion` |
 
 ## UI
 

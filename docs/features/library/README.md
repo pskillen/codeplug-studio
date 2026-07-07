@@ -117,14 +117,14 @@ Workflow: pick set → preview table (per-channel checkboxes, dedup status) → 
 
 ## Entities and editors
 
-| Entity          | Key fields                                                                                                                                                         |
-| --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Entity          | Key fields                                                                                                                                                                                         |
+| --------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Channel         | name, optional `abbreviation` (export shortening), callsign, RX/TX (MHz↔Hz), power, location + `maidenheadLocator`, `scanInclusion` (default/skip/alwaysScan), comment, **multi** `modeProfiles[]` |
-| Talk group      | name, optional `abbreviation` (multi-TG export shortening), digital mode, group ID, comment                                                                        |
-| Digital contact | name, digital mode, contact ID, comment                                                                                                                            |
-| Analog contact  | name, code, comment                                                                                                                                                |
-| RX group list   | name, members (talk groups / digital contacts); optional `timeSlotOverride` per member (`1` \| `2` \| unset)                                                       |
-| Zone            | name, ordered members (`channel` and/or nested `zone` refs), comment                                                                                               |
+| Talk group      | name, optional `abbreviation` (multi-TG export shortening), digital mode, group ID, comment                                                                                                        |
+| Digital contact | name, digital mode, contact ID, comment                                                                                                                                                            |
+| Analog contact  | name, code, comment                                                                                                                                                                                |
+| RX group list   | name, members (talk groups / digital contacts); optional `timeSlotOverride` per member (`1` \| `2` \| unset)                                                                                       |
+| Zone            | name, ordered members (`channel` and/or nested `zone` refs), comment                                                                                                                               |
 
 Channel DMR profiles reference a **digital contact** and an **RX group list** by UUID `id` (the editor exposes dropdowns); NXDN/TETRA profiles may reference talk groups by UUID. RX group lists and zones hold member `EntityRef[]`. `RxGroupListMember.timeSlotOverride` is an optional per-member DMR slot hint (vendor-neutral; maps to CPS TS Override at export). Names are display labels only — never foreign keys.
 
