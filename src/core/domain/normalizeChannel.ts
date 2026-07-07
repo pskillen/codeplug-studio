@@ -12,7 +12,8 @@ function resolveScanInclusion(channel: LegacyChannel): ScanInclusion {
 
 /** Upgrade persisted channel rows after schema bumps or legacy stub profiles. */
 export function normalizeChannel(channel: LegacyChannel): Channel {
-  const { scanSkip: _legacy, ...rest } = channel;
+  const { scanSkip: _scanSkip, ...rest } = channel;
+  void _scanSkip;
   return {
     ...rest,
     scanInclusion: resolveScanInclusion(channel),

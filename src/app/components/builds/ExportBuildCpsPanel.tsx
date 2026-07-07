@@ -91,10 +91,12 @@ export default function ExportBuildCpsPanel({ build }: ExportBuildCpsPanelProps)
     if (migratedRef.current || !buildNeedsLegacyExportSettingsMigration(build)) return;
     migratedRef.current = true;
     const legacy = legacyExportSettingsFromLocalStorage();
-    void handleExportSettingsPatch(legacy, build.revision).then((ok) => {
+    void (async () => {
+      const ok = await handleExportSettingsPatch(legacy, build.revision);
       if (ok) clearLegacyExportSettingsLocalStorage();
-    });
-  }, [build]);
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- one-time migration on mount
+  }, [build.id]);
 
   function mergeWarnings(warnings: string[]) {
     if (warnings.length) {
