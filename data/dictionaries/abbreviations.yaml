@@ -222,6 +222,9 @@ radio:
     SSTV: [SSTV] # keep as-is
     RAYNET: [RAYN, RYN]
     'Packet Radio': [Pkt, Pk]
+    'PMR 446': [PMR446, PMR]
+    'PMR-446': [PMR446, PMR]
+    'PMR446': [PMR]
 
   bands:
     '160m': ['160m']
