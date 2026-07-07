@@ -17,6 +17,7 @@ export type {
   EntityRefKind,
   AnalogChannelMode,
   DigitalChannelMode,
+  SsbSideband,
 } from './libraryTypes.ts';
 
 export type { ChannelExportNameMode } from '@core/domain/channelNaming.ts';
@@ -30,6 +31,8 @@ export interface ChannelModeProfileAnalog {
   rxTone: ChannelTone;
   txTone: ChannelTone;
   bandwidthKHz: number | null;
+  /** USB vs LSB when `mode === 'ssb'`; defaults to `usb` when omitted. */
+  ssbSideband?: SsbSideband;
 }
 
 export interface ChannelModeProfileDMR {

@@ -1,6 +1,6 @@
 import type { Channel, ScanInclusion } from '../models/library.ts';
 import { scanInclusionFromLegacyBoolean } from '@core/import-export/scanInclusion/index.ts';
-import { normalizeModeProfile } from './modeProfiles.ts';
+import { dedupeSsbModeProfiles, normalizeModeProfile } from './modeProfiles.ts';
 
 type LegacyChannel = Channel & { scanSkip?: boolean };
 
@@ -18,6 +18,8 @@ export function normalizeChannel(channel: LegacyChannel): Channel {
     ...rest,
     scanInclusion: resolveScanInclusion(channel),
     maidenheadLocator: channel.maidenheadLocator ?? null,
-    modeProfiles: (channel.modeProfiles ?? []).map(normalizeModeProfile),
+    modeProfiles: dedupeSsbModeProfiles(
+      (channel.modeProfiles ?? []).map(normalizeModeProfile),
+    ),
   };
 }
