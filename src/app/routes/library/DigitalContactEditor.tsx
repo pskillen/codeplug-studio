@@ -3,9 +3,10 @@ import { Button, Group, Stack, Text, TextInput } from '@mantine/core';
 import { Link } from 'react-router-dom';
 import type { DigitalChannelMode, DigitalContact } from '@core/models/library.ts';
 import { newDigitalContact } from '@core/domain/factories.ts';
-import { FormSection, GradientSegmentedControl } from '../../components/ui/index.ts';
+import { FormSection, GradientSegmentedControl, UnsavedChangesModal } from '../../components/ui/index.ts';
 import { digitalModeSegmentOptions } from '../../lib/channelModes.ts';
 import { parseOptionalInt } from '../../lib/units.ts';
+import { useEntityEditorUnsavedGuard } from '../../hooks/useEntityFormDirty.ts';
 import { persistence } from '../../state/persistence.ts';
 import { useEntitySave } from './useEntitySave.ts';
 
@@ -25,15 +26,23 @@ export function DigitalContactEditor({
   const [comment, setComment] = useState(base.comment);
   const { save, saving, error } = useEntitySave('digital-contacts');
 
-  function handleSave() {
-    const row: DigitalContact = {
+  function buildRow(): DigitalContact {
+    return {
       ...base,
       name: name.trim() || 'Untitled contact',
       mode,
       digitalId: parseOptionalInt(digitalId) ?? 0,
       comment,
     };
-    void save(() => persistence.putDigitalContact(row, entity ? entity.revision : null));
+  }
+
+  const { permitNavigationOnce, modalOpen, stay, leave } = useEntityEditorUnsavedGuard(buildRow);
+
+  function handleSave() {
+    const row = buildRow();
+    void save(() => persistence.putDigitalContact(row, entity ? entity.revision : null), {
+      permitNavigation: permitNavigationOnce,
+    });
   }
 
   return (
@@ -73,6 +82,7 @@ export function DigitalContactEditor({
           Cancel
         </Button>
       </Group>
+      <UnsavedChangesModal opened={modalOpen} onStay={stay} onLeave={leave} />
     </Stack>
   );
 }

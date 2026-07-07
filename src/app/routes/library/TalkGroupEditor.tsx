@@ -4,7 +4,8 @@ import { Link } from 'react-router-dom';
 import type { DigitalChannelMode, TalkGroup } from '@core/models/library.ts';
 import { newTalkGroup } from '@core/domain/factories.ts';
 import TalkGroupWireNameExamples from '../../components/library/TalkGroupWireNameExamples.tsx';
-import { FormSection, GradientSegmentedControl } from '../../components/ui/index.ts';
+import { FormSection, GradientSegmentedControl, UnsavedChangesModal } from '../../components/ui/index.ts';
+import { useEntityEditorUnsavedGuard } from '../../hooks/useEntityFormDirty.ts';
 import { digitalModeSegmentOptions } from '../../lib/channelModes.ts';
 import { parseOptionalInt } from '../../lib/units.ts';
 import { persistence } from '../../state/persistence.ts';
@@ -44,9 +45,13 @@ export function TalkGroupEditor({
     return row;
   }
 
+  const { permitNavigationOnce, modalOpen, stay, leave } = useEntityEditorUnsavedGuard(buildRow);
+
   function handleSave() {
     const row = buildRow();
-    void save(() => persistence.putTalkGroup(row, entity ? entity.revision : null));
+    void save(() => persistence.putTalkGroup(row, entity ? entity.revision : null), {
+      permitNavigation: permitNavigationOnce,
+    });
   }
 
   const liveDigitalId = parseOptionalInt(digitalId) ?? 0;
@@ -106,6 +111,7 @@ export function TalkGroupEditor({
           Cancel
         </Button>
       </Group>
+      <UnsavedChangesModal opened={modalOpen} onStay={stay} onLeave={leave} />
     </Stack>
   );
 }

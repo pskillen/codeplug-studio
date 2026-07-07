@@ -18,7 +18,10 @@ export function useEntitySave(editorSlug?: string): EntitySaveApi {
   const listPath = editorSlug ? listPathForEditorSlug(editorSlug) : '/library/channels';
 
   const save = useCallback(
-    async (put: () => Promise<PutResult>): Promise<boolean> => {
+    async (
+      put: () => Promise<PutResult>,
+      options?: { permitNavigation?: () => void },
+    ): Promise<boolean> => {
       setSaving(true);
       setError(null);
       try {
@@ -31,6 +34,7 @@ export function useEntitySave(editorSlug?: string): EntitySaveApi {
           );
           return false;
         }
+        options?.permitNavigation?.();
         navigate(listPath);
         return true;
       } finally {

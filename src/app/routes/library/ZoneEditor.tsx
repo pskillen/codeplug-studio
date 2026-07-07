@@ -11,7 +11,8 @@ import {
 import { resolveEffectiveZoneChannelIds } from '@core/domain/zoneHierarchy.ts';
 import { validateZoneMembership } from '@core/domain/validation.ts';
 import CodeplugMap from '../../components/CodeplugMap/CodeplugMap.tsx';
-import { FormSection } from '../../components/ui/index.ts';
+import { FormSection, UnsavedChangesModal } from '../../components/ui/index.ts';
+import { useEntityEditorUnsavedGuard } from '../../hooks/useEntityFormDirty.ts';
 import ZoneMemberEditor, {
   type ZoneMemberEditorMapFilters,
 } from '../../components/library/ZoneMemberEditor.tsx';
@@ -101,14 +102,20 @@ export default function ZoneEditor({
     [library.channels],
   );
 
-  function handleSave() {
-    const row: Zone = {
+  function buildRow(): Zone {
+    return {
       ...base,
       name: name.trim() || 'Untitled zone',
       members,
       comment,
       omitFromExport: omitFromExport ? true : undefined,
     };
+  }
+
+  const { permitNavigationOnce, modalOpen, stay, leave } = useEntityEditorUnsavedGuard(buildRow);
+
+  function handleSave() {
+    const row = buildRow();
     try {
       const libraryForValidation = {
         ...library,
@@ -122,7 +129,9 @@ export default function ZoneEditor({
       setValidationError(err instanceof Error ? err.message : 'Invalid zone membership');
       return;
     }
-    void save(() => persistence.putZone(row, entity ? entity.revision : null));
+    void save(() => persistence.putZone(row, entity ? entity.revision : null), {
+      permitNavigation: permitNavigationOnce,
+    });
   }
 
   const handleDelete = useCallback(async () => {
@@ -214,6 +223,7 @@ export default function ZoneEditor({
         onSave={handleSave}
         cancelPath="/library/zones"
       />
+      <UnsavedChangesModal opened={modalOpen} onStay={stay} onLeave={leave} />
     </Stack>
   );
 }

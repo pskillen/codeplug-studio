@@ -1,4 +1,5 @@
-import { useCallback, useRef } from 'react';
+import { useCallback, useRef, useState } from 'react';
+import { useUnsavedNavigationGuard } from './useUnsavedNavigationGuard.ts';
 
 function deepEqual(a: unknown, b: unknown): boolean {
   if (Object.is(a, b)) return true;
@@ -43,4 +44,21 @@ export function useEntityFormDirty<T>({ baseline, buildCurrent }: UseEntityFormD
   }, []);
 
   return { isDirty, permitNavigationRef, permitNavigationOnce, resetPermitNavigation };
+}
+
+/** Captures the first `buildSnapshot()` result as the dirty baseline for this mount. */
+export function useFormBaseline<T>(buildSnapshot: () => T): T {
+  const [baseline] = useState(buildSnapshot);
+  return baseline;
+}
+
+/** Dirty tracking + navigation guard for library entity editors. */
+export function useEntityEditorUnsavedGuard<T>(buildCurrent: () => T) {
+  const baseline = useFormBaseline(buildCurrent);
+  const { isDirty, permitNavigationRef, permitNavigationOnce } = useEntityFormDirty({
+    baseline,
+    buildCurrent,
+  });
+  const { modalOpen, stay, leave } = useUnsavedNavigationGuard(isDirty, permitNavigationRef);
+  return { permitNavigationOnce, modalOpen, stay, leave };
 }
