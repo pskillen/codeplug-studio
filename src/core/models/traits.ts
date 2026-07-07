@@ -51,7 +51,19 @@ export const TRAIT_PROFILES: Record<string, TraitProfile> = {
   'chirp-uv5r': {
     profileId: 'chirp-uv5r',
     formatId: 'chirp',
-    label: 'CHIRP UV-5R',
+    label: 'Baofeng UV-5R Mini',
+    traits: [BuildCapabilityTrait.FlatMemoryList, BuildCapabilityTrait.PerChannelScanFlag],
+  },
+  'chirp-rt95': {
+    profileId: 'chirp-rt95',
+    formatId: 'chirp',
+    label: 'Retevis RT95 VOX',
+    traits: [BuildCapabilityTrait.FlatMemoryList, BuildCapabilityTrait.PerChannelScanFlag],
+  },
+  'chirp-uv21': {
+    profileId: 'chirp-uv21',
+    formatId: 'chirp',
+    label: 'Baofeng UV-21Pro V2',
     traits: [BuildCapabilityTrait.FlatMemoryList, BuildCapabilityTrait.PerChannelScanFlag],
   },
 };
