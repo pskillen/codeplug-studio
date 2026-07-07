@@ -13,7 +13,7 @@ Product behaviour for CHIRP analogue FM/AM CSV in Codeplug Studio. Wire column t
 | Wire reference                                            | Shipped | [reference/chirp/](../../../reference/chirp/README.md)                  |
 | Trait profiles (`chirp-uv5r`, `chirp-rt95`, `chirp-uv21`) | Shipped | `TRAIT_PROFILES` — `FlatMemoryList`, `PerChannelScanFlag`               |
 | Radio profiles + columns                                  | Shipped | `formats/chirp/profiles.ts`, `columns.ts`                               |
-| Flat memory assemble projection                           | Shipped | `flatMemoryLayout.ts`, `assemble.ts`                                    |
+| Flat memory assemble projection                           | Shipped | `exportOrderOrSlot.ts`, `assemble.ts` — `orderOrSlot` on overrides      |
 | Export adapter (single CSV)                               | Shipped | `exportBuildSingleFile` → `serialiseChirpCsv`                           |
 | Channels build UI                                         | Shipped | `/builds/:id/channels` — flat memory list, wire names, scan tri-state   |
 | Browser download + export UI                              | Shipped | `ExportBuildCpsPanel` — Download CSV + preview                          |
@@ -46,7 +46,8 @@ Per-radio wire detail: [docs/reference/chirp/radios/](../../../reference/chirp/r
 
 ## Export behaviour
 
-- **Include by default** — all analogue FM/AM library channels start in the memory list; remove rows to exclude from export.
+- **Include by default** — empty `channelOverrides` includes all analogue FM/AM channels; set `excluded: true` to opt out.
+- **Memory order** — `orderOrSlot` on `channelOverrides` (1-based); gaps export as blank CHIRP memory slots.
 - **Single CSV** download (not ZIP).
 - **Analogue channels only** — digital/DMR channels skipped with warning.
 - **`Location`:** 1-based index in flat memory order — not stored in the library.
