@@ -171,169 +171,164 @@ function ChannelBulkEditModalBody({
 
   return (
     <Stack gap="md">
-        <UnstyledButton
-          onClick={() => setShowChannelList((v) => !v)}
-          aria-expanded={showChannelList}
-        >
-          <Group gap={6} wrap="nowrap">
-            {showChannelList ? (
-              <IconChevronDown size={ICON_SIZE_NAV} stroke={ICON_STROKE} />
-            ) : (
-              <IconChevronRight size={ICON_SIZE_NAV} stroke={ICON_STROKE} />
-            )}
-            <Text size="sm" c="dimmed">
-              View selected channels
-            </Text>
-          </Group>
-        </UnstyledButton>
-
-        <Collapse in={showChannelList}>
-          <ScrollArea.Autosize mah={160} offsetScrollbars>
-            <Stack gap={4}>
-              {channels.map((channel) => (
-                <Text key={channel.id} size="sm">
-                  {channel.name || 'Untitled'}
-                  {channel.callsign ? (
-                    <Text component="span" c="dimmed" inherit>
-                      {' '}
-                      · {channel.callsign}
-                    </Text>
-                  ) : null}
-                </Text>
-              ))}
-            </Stack>
-          </ScrollArea.Autosize>
-        </Collapse>
-
-        <Stack gap="sm">
-          <Checkbox
-            label="Change scan inclusion"
-            checked={form.changeScanInclusion}
-            onChange={(e) =>
-              setForm((prev) => ({ ...prev, changeScanInclusion: e.currentTarget.checked }))
-            }
-          />
-          <fieldset
-            disabled={!form.changeScanInclusion}
-            style={{ border: 0, padding: 0, margin: 0, minWidth: 0 }}
-          >
-            <ScanInclusionSegment
-              value={form.scanInclusion}
-              onChange={(scanInclusion) => setForm((prev) => ({ ...prev, scanInclusion }))}
-            />
-          </fieldset>
-          {form.changeScanInclusion && impact.scanInclusion ? (
-            <Text size="xs" c="dimmed">
-              {channelLevelImpactText(impact.scanInclusion.appliesTo)}
-            </Text>
-          ) : null}
-
-          <Checkbox
-            label="Change transmit permission"
-            checked={form.changeForbidTransmit}
-            onChange={(e) =>
-              setForm((prev) => ({ ...prev, changeForbidTransmit: e.currentTarget.checked }))
-            }
-          />
-          <fieldset
-            disabled={!form.changeForbidTransmit}
-            style={{ border: 0, padding: 0, margin: 0, minWidth: 0 }}
-          >
-            <ForbidTransmitSegment
-              value={form.forbidTransmit}
-              onChange={(forbidTransmit) => setForm((prev) => ({ ...prev, forbidTransmit }))}
-            />
-          </fieldset>
-          {form.changeForbidTransmit && impact.forbidTransmit ? (
-            <Text size="xs" c="dimmed">
-              {channelLevelImpactText(impact.forbidTransmit.appliesTo)}
-            </Text>
-          ) : null}
-
-          <Checkbox
-            label="Change power"
-            checked={form.changePower}
-            onChange={(e) => setForm((prev) => ({ ...prev, changePower: e.currentTarget.checked }))}
-          />
-          <fieldset
-            disabled={!form.changePower}
-            style={{ border: 0, padding: 0, margin: 0, minWidth: 0 }}
-          >
-            <PercentLevelSlider
-              label="Power"
-              value={form.power}
-              onChange={(power) => setForm((prev) => ({ ...prev, power }))}
-            />
-          </fieldset>
-          {form.changePower && impact.power ? (
-            <Text size="xs" c="dimmed">
-              {channelLevelImpactText(impact.power.appliesTo)}
-            </Text>
-          ) : null}
-        </Stack>
-
-        {showAnalogSection ? (
-          <Accordion variant="separated">
-            <Accordion.Item value="analog">
-              <Accordion.Control description="Updates squelch on existing analog mode profiles only. Does not add or remove modes.">
-                Analog mode settings
-              </Accordion.Control>
-              <Accordion.Panel>
-                <Stack gap="sm">
-                  <Checkbox
-                    label="Change squelch"
-                    checked={form.changeAnalogSquelch}
-                    onChange={(e) =>
-                      setForm((prev) => ({
-                        ...prev,
-                        changeAnalogSquelch: e.currentTarget.checked,
-                      }))
-                    }
-                  />
-                  <fieldset
-                    disabled={!form.changeAnalogSquelch}
-                    style={{ border: 0, padding: 0, margin: 0, minWidth: 0 }}
-                  >
-                    <PercentLevelSlider
-                      label="Squelch"
-                      value={form.analogSquelch}
-                      onChange={(analogSquelch) =>
-                        setForm((prev) => ({ ...prev, analogSquelch }))
-                      }
-                      zeroLabel="Open (0%)"
-                    />
-                  </fieldset>
-                  {form.changeAnalogSquelch && impact.analogSquelch ? (
-                    <Text size="xs" c="dimmed">
-                      {analogImpactText(
-                        impact.analogSquelch.appliesTo,
-                        impact.analogSquelch.skipped,
-                        total,
-                      )}
-                    </Text>
-                  ) : null}
-                </Stack>
-              </Accordion.Panel>
-            </Accordion.Item>
-          </Accordion>
-        ) : null}
-
-        {!hasChanges ? (
+      <UnstyledButton onClick={() => setShowChannelList((v) => !v)} aria-expanded={showChannelList}>
+        <Group gap={6} wrap="nowrap">
+          {showChannelList ? (
+            <IconChevronDown size={ICON_SIZE_NAV} stroke={ICON_STROKE} />
+          ) : (
+            <IconChevronRight size={ICON_SIZE_NAV} stroke={ICON_STROKE} />
+          )}
           <Text size="sm" c="dimmed">
-            Enable at least one change above to apply.
+            View selected channels
+          </Text>
+        </Group>
+      </UnstyledButton>
+
+      <Collapse in={showChannelList}>
+        <ScrollArea.Autosize mah={160} offsetScrollbars>
+          <Stack gap={4}>
+            {channels.map((channel) => (
+              <Text key={channel.id} size="sm">
+                {channel.name || 'Untitled'}
+                {channel.callsign ? (
+                  <Text component="span" c="dimmed" inherit>
+                    {' '}
+                    · {channel.callsign}
+                  </Text>
+                ) : null}
+              </Text>
+            ))}
+          </Stack>
+        </ScrollArea.Autosize>
+      </Collapse>
+
+      <Stack gap="sm">
+        <Checkbox
+          label="Change scan inclusion"
+          checked={form.changeScanInclusion}
+          onChange={(e) =>
+            setForm((prev) => ({ ...prev, changeScanInclusion: e.currentTarget.checked }))
+          }
+        />
+        <fieldset
+          disabled={!form.changeScanInclusion}
+          style={{ border: 0, padding: 0, margin: 0, minWidth: 0 }}
+        >
+          <ScanInclusionSegment
+            value={form.scanInclusion}
+            onChange={(scanInclusion) => setForm((prev) => ({ ...prev, scanInclusion }))}
+          />
+        </fieldset>
+        {form.changeScanInclusion && impact.scanInclusion ? (
+          <Text size="xs" c="dimmed">
+            {channelLevelImpactText(impact.scanInclusion.appliesTo)}
           </Text>
         ) : null}
 
-        {errorMessage ? <Alert color="red">{errorMessage}</Alert> : null}
+        <Checkbox
+          label="Change transmit permission"
+          checked={form.changeForbidTransmit}
+          onChange={(e) =>
+            setForm((prev) => ({ ...prev, changeForbidTransmit: e.currentTarget.checked }))
+          }
+        />
+        <fieldset
+          disabled={!form.changeForbidTransmit}
+          style={{ border: 0, padding: 0, margin: 0, minWidth: 0 }}
+        >
+          <ForbidTransmitSegment
+            value={form.forbidTransmit}
+            onChange={(forbidTransmit) => setForm((prev) => ({ ...prev, forbidTransmit }))}
+          />
+        </fieldset>
+        {form.changeForbidTransmit && impact.forbidTransmit ? (
+          <Text size="xs" c="dimmed">
+            {channelLevelImpactText(impact.forbidTransmit.appliesTo)}
+          </Text>
+        ) : null}
 
-        <Group justify="flex-end">
-          <Button variant="default" onClick={onClose} disabled={applying}>
-            Cancel
-          </Button>
-          <Button onClick={() => void handleApply()} loading={applying} disabled={!hasChanges}>
-            Apply
-          </Button>
-        </Group>
+        <Checkbox
+          label="Change power"
+          checked={form.changePower}
+          onChange={(e) => setForm((prev) => ({ ...prev, changePower: e.currentTarget.checked }))}
+        />
+        <fieldset
+          disabled={!form.changePower}
+          style={{ border: 0, padding: 0, margin: 0, minWidth: 0 }}
+        >
+          <PercentLevelSlider
+            label="Power"
+            value={form.power}
+            onChange={(power) => setForm((prev) => ({ ...prev, power }))}
+          />
+        </fieldset>
+        {form.changePower && impact.power ? (
+          <Text size="xs" c="dimmed">
+            {channelLevelImpactText(impact.power.appliesTo)}
+          </Text>
+        ) : null}
+      </Stack>
+
+      {showAnalogSection ? (
+        <Accordion variant="separated">
+          <Accordion.Item value="analog">
+            <Accordion.Control description="Updates squelch on existing analog mode profiles only. Does not add or remove modes.">
+              Analog mode settings
+            </Accordion.Control>
+            <Accordion.Panel>
+              <Stack gap="sm">
+                <Checkbox
+                  label="Change squelch"
+                  checked={form.changeAnalogSquelch}
+                  onChange={(e) =>
+                    setForm((prev) => ({
+                      ...prev,
+                      changeAnalogSquelch: e.currentTarget.checked,
+                    }))
+                  }
+                />
+                <fieldset
+                  disabled={!form.changeAnalogSquelch}
+                  style={{ border: 0, padding: 0, margin: 0, minWidth: 0 }}
+                >
+                  <PercentLevelSlider
+                    label="Squelch"
+                    value={form.analogSquelch}
+                    onChange={(analogSquelch) => setForm((prev) => ({ ...prev, analogSquelch }))}
+                    zeroLabel="Open (0%)"
+                  />
+                </fieldset>
+                {form.changeAnalogSquelch && impact.analogSquelch ? (
+                  <Text size="xs" c="dimmed">
+                    {analogImpactText(
+                      impact.analogSquelch.appliesTo,
+                      impact.analogSquelch.skipped,
+                      total,
+                    )}
+                  </Text>
+                ) : null}
+              </Stack>
+            </Accordion.Panel>
+          </Accordion.Item>
+        </Accordion>
+      ) : null}
+
+      {!hasChanges ? (
+        <Text size="sm" c="dimmed">
+          Enable at least one change above to apply.
+        </Text>
+      ) : null}
+
+      {errorMessage ? <Alert color="red">{errorMessage}</Alert> : null}
+
+      <Group justify="flex-end">
+        <Button variant="default" onClick={onClose} disabled={applying}>
+          Cancel
+        </Button>
+        <Button onClick={() => void handleApply()} loading={applying} disabled={!hasChanges}>
+          Apply
+        </Button>
+      </Group>
     </Stack>
   );
 }

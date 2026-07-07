@@ -75,8 +75,8 @@ describe('persistChannelBulkEdit', () => {
 
 describe('formatChannelBulkEditMessage', () => {
   it('formats updated and skipped counts', () => {
-    expect(
-      formatChannelBulkEditMessage({ ok: true, updatedCount: 3, skippedCount: 2 }),
-    ).toBe('Updated 3 channels; 2 unchanged (values already matched or no applicable mode profile).');
+    expect(formatChannelBulkEditMessage({ ok: true, updatedCount: 3, skippedCount: 2 })).toBe(
+      'Updated 3 channels; 2 unchanged (values already matched or no applicable mode profile).',
+    );
   });
 });

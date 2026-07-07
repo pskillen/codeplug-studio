@@ -34,8 +34,7 @@ export interface PersistChannelBulkEditFailure {
 }
 
 export type PersistChannelBulkEditOutcome =
-  | PersistChannelBulkEditSuccess
-  | PersistChannelBulkEditFailure;
+  PersistChannelBulkEditSuccess | PersistChannelBulkEditFailure;
 
 export async function persistChannelBulkEdit(
   options: PersistChannelBulkEditOptions,
@@ -96,9 +95,7 @@ function persistFailure(
 export function formatChannelBulkEditMessage(outcome: PersistChannelBulkEditSuccess): string {
   const parts: string[] = [];
   if (outcome.updatedCount > 0) {
-    parts.push(
-      `Updated ${outcome.updatedCount} channel${outcome.updatedCount === 1 ? '' : 's'}`,
-    );
+    parts.push(`Updated ${outcome.updatedCount} channel${outcome.updatedCount === 1 ? '' : 's'}`);
   }
   if (outcome.skippedCount > 0) {
     parts.push(

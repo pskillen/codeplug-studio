@@ -11,10 +11,7 @@ import {
 
 const projectId = 'proj-bulk-edit';
 
-function channelWithProfiles(
-  name: string,
-  modeProfiles: ChannelModeProfile[],
-): Channel {
+function channelWithProfiles(name: string, modeProfiles: ChannelModeProfile[]): Channel {
   return { ...newChannel(projectId, name), modeProfiles };
 }
 
@@ -70,9 +67,7 @@ describe('channelBulkEditWouldChange', () => {
       power: 50,
     };
 
-    expect(
-      channelBulkEditWouldChange(channel, { scanInclusion: 'skip', power: 50 }),
-    ).toBe(false);
+    expect(channelBulkEditWouldChange(channel, { scanInclusion: 'skip', power: 50 })).toBe(false);
   });
 
   it('returns false for analog squelch on DMR-only channel', () => {
@@ -83,14 +78,9 @@ describe('channelBulkEditWouldChange', () => {
 
 describe('analyzeChannelBulkEditImpact', () => {
   it('counts channel-level fields for all selected channels', () => {
-    const channels = [
-      newChannel(projectId, 'A'),
-      newChannel(projectId, 'B'),
-    ];
+    const channels = [newChannel(projectId, 'A'), newChannel(projectId, 'B')];
 
-    expect(
-      analyzeChannelBulkEditImpact(channels, { scanInclusion: 'alwaysScan' }),
-    ).toEqual({
+    expect(analyzeChannelBulkEditImpact(channels, { scanInclusion: 'alwaysScan' })).toEqual({
       scanInclusion: { appliesTo: 2, skipped: 0 },
     });
   });
