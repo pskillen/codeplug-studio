@@ -1,4 +1,7 @@
-import { isAnalyticsConsentAccepted, subscribeAnalyticsConsent } from '../preferences/analyticsConsent.ts';
+import {
+  isAnalyticsConsentAccepted,
+  subscribeAnalyticsConsent,
+} from '../preferences/analyticsConsent.ts';
 
 declare global {
   interface Window {

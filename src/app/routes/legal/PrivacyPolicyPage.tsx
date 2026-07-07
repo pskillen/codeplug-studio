@@ -11,9 +11,9 @@ export default function PrivacyPolicyPage() {
     >
       <PageSection title="Summary">
         <Text size="sm">
-          Codeplug Studio runs entirely in your browser. Your codeplug projects, library channels, and
-          related data are stored locally on your device (IndexedDB and browser storage). We do not
-          operate a server that stores your codeplug contents.
+          Codeplug Studio runs entirely in your browser. Your codeplug projects, library channels,
+          and related data are stored locally on your device (IndexedDB and browser storage). We do
+          not operate a server that stores your codeplug contents.
         </Text>
       </PageSection>
 

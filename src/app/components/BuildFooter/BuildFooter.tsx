@@ -5,13 +5,7 @@ import { GITHUB_ISSUES_URL, GITHUB_REPO_URL } from '../../lib/githubLinks.ts';
 
 function FooterLink({ to, children }: { to: string; children: ReactNode }) {
   return (
-    <Text
-      component={Link}
-      to={to}
-      size="sm"
-      c="dimmed"
-      style={{ textDecoration: 'none' }}
-    >
+    <Text component={Link} to={to} size="sm" c="dimmed" style={{ textDecoration: 'none' }}>
       {children}
     </Text>
   );

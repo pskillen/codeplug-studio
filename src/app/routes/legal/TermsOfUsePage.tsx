@@ -3,10 +3,7 @@ import { ListPage, PageSection } from '../../components/ui/index.ts';
 
 export default function TermsOfUsePage() {
   return (
-    <ListPage
-      title="Terms of use"
-      description="Using Codeplug Studio as a hobby programming aid."
-    >
+    <ListPage title="Terms of use" description="Using Codeplug Studio as a hobby programming aid.">
       <PageSection title="As-is software">
         <Text size="sm">
           Codeplug Studio is provided as-is, without warranty. It helps you design codeplug layouts
@@ -18,7 +15,8 @@ export default function TermsOfUsePage() {
       <PageSection title="Your responsibility">
         <List spacing="sm" size="sm">
           <List.Item>
-            You are responsible for verifying frequencies, tones, and programming before transmitting.
+            You are responsible for verifying frequencies, tones, and programming before
+            transmitting.
           </List.Item>
           <List.Item>
             Frequency and repeater data loaded from third-party sources is for amateur programming
@@ -34,8 +32,8 @@ export default function TermsOfUsePage() {
       <PageSection title="Data">
         <Text size="sm">
           Your projects live in browser storage on your device. Back up important work (native YAML
-          export, cloud storage if configured). We are not liable for data loss from clearing browser
-          storage or device failure.
+          export, cloud storage if configured). We are not liable for data loss from clearing
+          browser storage or device failure.
         </Text>
       </PageSection>
 

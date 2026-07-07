@@ -105,12 +105,12 @@ Local check: `npm run build && npm run preview`, then open `/library/channels` o
 2. Map custom domains: `codeplug.mm9pdy.net` → production; branch aliases for `staging`, `next`, and `dev` preview branches.
 3. Add GitHub Actions secrets under **Settings → Secrets and variables → Actions**:
 
-| Secret                   | Purpose                                                         |
-| ------------------------ | --------------------------------------------------------------- |
-| `CLOUDFLARE_API_TOKEN`   | API token with **Cloudflare Pages — Edit** (and account read)   |
-| `CLOUDFLARE_ACCOUNT_ID`  | Cloudflare account id                                           |
-| `GOOGLE_OAUTH_CLIENT_ID` | Google OAuth web client id for Drive Connect on deployed builds |
-| `GA_MEASUREMENT_ID`      | GA4 measurement ID for **production** deploys (`prod`)          |
+| Secret                      | Purpose                                                           |
+| --------------------------- | ----------------------------------------------------------------- |
+| `CLOUDFLARE_API_TOKEN`      | API token with **Cloudflare Pages — Edit** (and account read)     |
+| `CLOUDFLARE_ACCOUNT_ID`     | Cloudflare account id                                             |
+| `GOOGLE_OAUTH_CLIENT_ID`    | Google OAuth web client id for Drive Connect on deployed builds   |
+| `GA_MEASUREMENT_ID`         | GA4 measurement ID for **production** deploys (`prod`)            |
 | `GA_MEASUREMENT_ID_PREPROD` | GA4 measurement ID for **staging**, **next**, and **dev** deploys |
 
 Create the API token in the Cloudflare dashboard with account-scoped **Cloudflare Pages → Edit** permission.
@@ -133,12 +133,12 @@ See [analytics feature docs](../features/analytics/README.md) for what is and is
 
 ## Build-time variables
 
-| Variable                | Local default            | Deployed builds (via workflows)                  |
-| ----------------------- | ------------------------ | ------------------------------------------------ |
-| `BUILD_ENV`             | `local`                  | `prod`, `staging`, `main`, or `dev`              |
-| `BUILD_VERSION`         | `local`                  | Release tag or commit SHA (leading `v` stripped) |
-| `VITE_GOOGLE_CLIENT_ID` | `.env.local` (see above) | GitHub Actions secret `GOOGLE_OAUTH_CLIENT_ID`   |
-| `VITE_GA_MEASUREMENT_ID` | `.env.local` (optional) | `GA_MEASUREMENT_ID` (prod) or `GA_MEASUREMENT_ID_PREPROD` (pre-prod) |
+| Variable                 | Local default            | Deployed builds (via workflows)                                      |
+| ------------------------ | ------------------------ | -------------------------------------------------------------------- |
+| `BUILD_ENV`              | `local`                  | `prod`, `staging`, `main`, or `dev`                                  |
+| `BUILD_VERSION`          | `local`                  | Release tag or commit SHA (leading `v` stripped)                     |
+| `VITE_GOOGLE_CLIENT_ID`  | `.env.local` (see above) | GitHub Actions secret `GOOGLE_OAUTH_CLIENT_ID`                       |
+| `VITE_GA_MEASUREMENT_ID` | `.env.local` (optional)  | `GA_MEASUREMENT_ID` (prod) or `GA_MEASUREMENT_ID_PREPROD` (pre-prod) |
 
 `BUILD_ENV` and `BUILD_VERSION` are injected via Vite `define` in `vite.config.ts`. `VITE_GOOGLE_CLIENT_ID` and `VITE_GA_MEASUREMENT_ID` are read from the environment at build time by Vite (`import.meta.env`).
 

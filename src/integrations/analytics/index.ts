@@ -1,6 +1,1 @@
-export {
-  getMeasurementId,
-  initAnalytics,
-  resetAnalyticsForTests,
-  trackPageView,
-} from './gtag.ts';
+export { getMeasurementId, initAnalytics, resetAnalyticsForTests, trackPageView } from './gtag.ts';

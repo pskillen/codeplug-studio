@@ -113,11 +113,11 @@ A [`CookieConsentBanner`](../../../src/app/components/CookieConsentBanner/Cookie
 
 The **Help** route adds a **Feedback** section with the same repo/issues URLs and short guidance for filing GitHub Issues.
 
-| Area                  | Status  | Notes                                                        |
-| --------------------- | ------- | ------------------------------------------------------------ |
+| Area                  | Status  | Notes                                                                                                                      |
+| --------------------- | ------- | -------------------------------------------------------------------------------------------------------------------------- |
 | Global footer links   | Shipped | [#70](https://github.com/pskillen/codeplug-studio/issues/70), [#96](https://github.com/pskillen/codeplug-studio/issues/96) |
-| Cookie consent banner | Shipped | [#96](https://github.com/pskillen/codeplug-studio/issues/96) |
-| Help feedback section | Shipped | [#70](https://github.com/pskillen/codeplug-studio/issues/70) |
+| Cookie consent banner | Shipped | [#96](https://github.com/pskillen/codeplug-studio/issues/96)                                                               |
+| Help feedback section | Shipped | [#70](https://github.com/pskillen/codeplug-studio/issues/70)                                                               |
 
 ## Boundaries
 

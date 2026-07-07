@@ -14,18 +14,18 @@ Playwright starts `vite preview` on port 4173 automatically (see `playwright.con
 
 ## Shipped scenarios
 
-| Spec | Scenario |
-| --- | --- |
+| Spec                         | Scenario                                                                       |
+| ---------------------------- | ------------------------------------------------------------------------------ |
 | `e2e/cookie-consent.spec.ts` | Banner on first visit; accept/decline persistence; no GA network before opt-in |
 
 ## Scope (phased)
 
-| Phase | Scenario | Status |
-| ----- | -------- | ------ |
-| 1 | Dev server smoke — home loads, footer shows build info | Planned ([#162](https://github.com/pskillen/codeplug-studio/issues/162)) |
-| 2 | Create project → add channel → reload → channel still present | Planned ([#162](https://github.com/pskillen/codeplug-studio/issues/162)) |
-| 3 | Import CPS fixture → library counts match → export download | Planned |
-| 4 | Map route — located channel marker visible | Planned |
+| Phase | Scenario                                                      | Status                                                                   |
+| ----- | ------------------------------------------------------------- | ------------------------------------------------------------------------ |
+| 1     | Dev server smoke — home loads, footer shows build info        | Planned ([#162](https://github.com/pskillen/codeplug-studio/issues/162)) |
+| 2     | Create project → add channel → reload → channel still present | Planned ([#162](https://github.com/pskillen/codeplug-studio/issues/162)) |
+| 3     | Import CPS fixture → library counts match → export download   | Planned                                                                  |
+| 4     | Map route — located channel marker visible                    | Planned                                                                  |
 
 ## Configuration notes
 

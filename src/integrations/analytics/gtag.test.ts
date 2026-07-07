@@ -1,14 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import {
-  clearAnalyticsConsent,
-  setAnalyticsConsent,
-} from '../preferences/analyticsConsent.ts';
-import {
-  getMeasurementId,
-  initAnalytics,
-  resetAnalyticsForTests,
-  trackPageView,
-} from './gtag.ts';
+import { clearAnalyticsConsent, setAnalyticsConsent } from '../preferences/analyticsConsent.ts';
+import { getMeasurementId, initAnalytics, resetAnalyticsForTests, trackPageView } from './gtag.ts';
 
 function createLocalStorageMock() {
   const store = new Map<string, string>();
@@ -28,7 +20,11 @@ function createLocalStorageMock() {
 
 describe('gtag analytics', () => {
   const appendChild = vi.fn();
-  const createElement = vi.fn(() => ({ async: false, src: '', onload: null as (() => void) | null }));
+  const createElement = vi.fn(() => ({
+    async: false,
+    src: '',
+    onload: null as (() => void) | null,
+  }));
 
   beforeEach(() => {
     vi.stubGlobal('localStorage', createLocalStorageMock());

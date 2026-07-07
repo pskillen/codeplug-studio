@@ -1,8 +1,5 @@
 import { matchPath } from 'react-router-dom';
-import {
-  ANALYTICS_ROUTE_TEMPLATES,
-  isAnalyticsExcludedPath,
-} from './analyticsRouteTemplates.ts';
+import { ANALYTICS_ROUTE_TEMPLATES, isAnalyticsExcludedPath } from './analyticsRouteTemplates.ts';
 
 /**
  * Map a browser pathname to a route template for GA4 page_view, or null when tracking

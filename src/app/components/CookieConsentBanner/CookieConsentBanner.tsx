@@ -46,11 +46,7 @@ export default function CookieConsentBanner() {
         <Button size="compact-sm" onClick={() => setAnalyticsConsent('accepted')}>
           Accept analytics
         </Button>
-        <Button
-          size="compact-sm"
-          variant="default"
-          onClick={() => setAnalyticsConsent('declined')}
-        >
+        <Button size="compact-sm" variant="default" onClick={() => setAnalyticsConsent('declined')}>
           Essential only
         </Button>
       </Group>

@@ -8,15 +8,15 @@ Anonymous page-view measurement and the consent/legal plumbing needed to run Goo
 
 ## Implementation status
 
-| Area | Status | Notes |
-| --- | --- | --- |
-| Cookie consent banner | Shipped | First visit; accept / essential only |
-| Legal pages | Shipped | `/privacy`, `/terms`, `/cookies` |
-| Consent preference API | Shipped | `localStorage` key `codeplug-studio:analytics-consent` |
-| GA4 integration | Shipped | Consent-gated `gtag.js`; page views only |
-| Path sanitization | Shipped | Route templates — no entity UUIDs in GA |
-| Dual-property CI | Shipped | Prod vs pre-prod measurement IDs at build time |
-| Playwright smoke | Shipped | [#176](https://github.com/pskillen/codeplug-studio/issues/176) |
+| Area                   | Status  | Notes                                                          |
+| ---------------------- | ------- | -------------------------------------------------------------- |
+| Cookie consent banner  | Shipped | First visit; accept / essential only                           |
+| Legal pages            | Shipped | `/privacy`, `/terms`, `/cookies`                               |
+| Consent preference API | Shipped | `localStorage` key `codeplug-studio:analytics-consent`         |
+| GA4 integration        | Shipped | Consent-gated `gtag.js`; page views only                       |
+| Path sanitization      | Shipped | Route templates — no entity UUIDs in GA                        |
+| Dual-property CI       | Shipped | Prod vs pre-prod measurement IDs at build time                 |
+| Playwright smoke       | Shipped | [#176](https://github.com/pskillen/codeplug-studio/issues/176) |
 
 ## Consent flow
 
@@ -46,26 +46,26 @@ Essential app storage (IndexedDB projects, UI prefs) works regardless of analyti
 
 ## Build configuration
 
-| Variable | Purpose |
-| --- | --- |
+| Variable                 | Purpose                                                                |
+| ------------------------ | ---------------------------------------------------------------------- |
 | `VITE_GA_MEASUREMENT_ID` | Baked in at build time; absent in local dev unless set in `.env.local` |
 
 Deployed builds receive the ID from GitHub Actions secrets — see [build README](../../build/README.md#google-analytics-4-optional):
 
-| Deploy | Secret |
-| --- | --- |
-| Production | `GA_MEASUREMENT_ID` |
+| Deploy             | Secret                      |
+| ------------------ | --------------------------- |
+| Production         | `GA_MEASUREMENT_ID`         |
 | Staging, next, dev | `GA_MEASUREMENT_ID_PREPROD` |
 
 ## Code anchors
 
-| Module | Role |
-| --- | --- |
-| `src/integrations/preferences/analyticsConsent.ts` | Persist and subscribe to consent |
-| `src/integrations/analytics/gtag.ts` | Load gtag after consent; `trackPageView` |
-| `src/app/lib/analyticsPagePath.ts` | Pathname → route template |
-| `src/app/hooks/usePageAnalytics.ts` | Fire page views on `useLocation` changes |
-| `src/app/hooks/useAnalyticsConsent.ts` | React hook for consent state |
+| Module                                             | Role                                     |
+| -------------------------------------------------- | ---------------------------------------- |
+| `src/integrations/preferences/analyticsConsent.ts` | Persist and subscribe to consent         |
+| `src/integrations/analytics/gtag.ts`               | Load gtag after consent; `trackPageView` |
+| `src/app/lib/analyticsPagePath.ts`                 | Pathname → route template                |
+| `src/app/hooks/usePageAnalytics.ts`                | Fire page views on `useLocation` changes |
+| `src/app/hooks/useAnalyticsConsent.ts`             | React hook for consent state             |
 
 ## Component sidecars
 

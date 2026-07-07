@@ -31,9 +31,9 @@ export default function CookiesPage() {
 
       <PageSection title="Optional analytics cookies">
         <Text size="sm">
-          If you accept analytics, Google Analytics 4 may set cookies to measure anonymous page views.
-          No codeplug data is included. You can decline and use the app fully — only usage statistics
-          are withheld. See the{' '}
+          If you accept analytics, Google Analytics 4 may set cookies to measure anonymous page
+          views. No codeplug data is included. You can decline and use the app fully — only usage
+          statistics are withheld. See the{' '}
           <Anchor component={Link} to="/privacy" size="sm">
             Privacy policy
           </Anchor>{' '}
