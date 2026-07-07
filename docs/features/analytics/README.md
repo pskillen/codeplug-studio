@@ -33,9 +33,14 @@ Essential app storage (IndexedDB projects, UI prefs) works regardless of analyti
 
 ## What GA collects (when accepted)
 
-- Sanitized route templates on navigation (e.g. `/library/:kind/:id`, not real UUIDs)
-- A page view is sent when analytics is accepted (including on the current page, without requiring navigation) and on each subsequent route change
-- Rough session / page counts (GA4 defaults)
+- **`page_view` events only** — no custom events, clicks, or workflow milestones in v1
+- Fired by `usePageAnalytics` when **all** of:
+  1. Analytics cookies accepted (`codeplug-studio:analytics-consent`)
+  2. `VITE_GA_MEASUREMENT_ID` present in the build
+  3. `gtag.js` has finished loading
+  4. Current route maps to a sanitized template (not excluded)
+- Triggers on **consent accept** (current page) and on each **client-side navigation** (React Router path change)
+- Sanitized route templates (e.g. `/library/:kind/:id`, not real UUIDs)
 - Deploy environment is visible in the footer (`__BUILD_ENV__`) but is not sent as a custom dimension in v1
 
 ## What GA does not collect
@@ -43,7 +48,7 @@ Essential app storage (IndexedDB projects, UI prefs) works regardless of analyti
 - Project names, channel data, callsigns, frequencies
 - Mapbox or Google Drive tokens
 - `localStorage` / IndexedDB keys or values
-- Debug or styleguide routes (`/debug/*`, `/styleguide` are excluded)
+- **Debug or styleguide routes** — `/debug`, `/debug/*`, `/styleguide` are excluded (no `page_view`)
 
 ## Build configuration
 

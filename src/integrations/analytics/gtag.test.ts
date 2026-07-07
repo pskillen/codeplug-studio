@@ -42,8 +42,12 @@ describe('gtag analytics', () => {
     vi.stubGlobal('document', {
       createElement,
       head: { appendChild },
+      title: '',
     });
-    vi.stubGlobal('location', { origin: 'https://dev.codeplug.mm9pdy.net' });
+    vi.stubGlobal('location', {
+      origin: 'https://dev.codeplug.mm9pdy.net',
+      href: 'https://dev.codeplug.mm9pdy.net/',
+    });
   });
 
   afterEach(() => {
@@ -72,28 +76,28 @@ describe('gtag analytics', () => {
     expect(createElement).not.toHaveBeenCalled();
   });
 
-  it('queues page_view until gtag.js loads, then sends config hit', () => {
+  it('queues page_view until gtag.js loads, then sends page_view event', () => {
     const gtagCalls: unknown[][] = [];
-    window.gtag = (...args: unknown[]) => {
+    window.gtag = ((...args: unknown[]) => {
       gtagCalls.push(args);
-    };
+    }) as typeof window.gtag;
 
     setAnalyticsConsent('accepted');
     trackPageView('/library/channels');
-    const configBeforeLoad = gtagCalls.some(
-      (call) =>
-        call[0] === 'config' &&
-        (call[2] as { page_path?: string })?.page_path === '/library/channels',
+    const eventBeforeLoad = gtagCalls.some(
+      (call) => call[0] === 'event' && call[1] === 'page_view',
     );
-    expect(configBeforeLoad).toBe(false);
+    expect(eventBeforeLoad).toBe(false);
 
     scriptOnload?.();
     expect(gtagCalls).toContainEqual([
-      'config',
-      'G-TEST123',
+      'event',
+      'page_view',
       {
+        send_to: 'G-TEST123',
         page_path: '/library/channels',
-        page_location: 'https://dev.codeplug.mm9pdy.net/library/channels',
+        page_location: 'https://dev.codeplug.mm9pdy.net/',
+        page_title: '',
       },
     ]);
   });

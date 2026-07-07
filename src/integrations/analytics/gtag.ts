@@ -6,9 +6,14 @@ import {
 declare global {
   interface Window {
     dataLayer?: unknown[];
-    gtag?: (...args: unknown[]) => void;
+    gtag?: Gtag;
   }
 }
+
+type Gtag = {
+  (...args: unknown[]): void;
+  /** gtag.js replaces the stub after the external script loads. */
+};
 
 let scriptInjected = false;
 let analyticsReady = false;
@@ -21,12 +26,15 @@ export function getMeasurementId(): string {
   return import.meta.env.VITE_GA_MEASUREMENT_ID?.trim() ?? '';
 }
 
-function ensureDataLayer(): void {
+/** Match Google's snippet — push `arguments`, not a rest-params array. */
+function installGtagStub(): void {
   window.dataLayer = window.dataLayer ?? [];
   if (!window.gtag) {
-    window.gtag = (...args: unknown[]) => {
-      window.dataLayer?.push(args);
-    };
+    window.gtag = function gtag() {
+      // gtag.js requires dataLayer.push(arguments), not a rest-params array.
+      // eslint-disable-next-line prefer-rest-params -- Google gtag queue contract
+      window.dataLayer?.push(arguments);
+    } as Gtag;
   }
 }
 
@@ -37,7 +45,6 @@ function notifyReady(): void {
 }
 
 function markReady(measurementId: string): void {
-  window.gtag?.('config', measurementId, { send_page_view: false });
   analyticsReady = true;
   if (pendingPagePath) {
     const path = pendingPagePath;
@@ -51,8 +58,11 @@ function injectGtagScript(measurementId: string): void {
   if (scriptInjected || typeof document === 'undefined') {
     return;
   }
-  ensureDataLayer();
+  installGtagStub();
   window.gtag?.('js', new Date());
+  // Disable the automatic first page_view; we send explicit page_view events per route.
+  window.gtag?.('config', measurementId, { send_page_view: false });
+
   const script = document.createElement('script');
   script.async = true;
   script.src = `https://www.googletagmanager.com/gtag/js?id=${encodeURIComponent(measurementId)}`;
@@ -67,9 +77,11 @@ function injectGtagScript(measurementId: string): void {
 }
 
 function sendPageView(pagePath: string, measurementId: string): void {
-  window.gtag?.('config', measurementId, {
+  window.gtag?.('event', 'page_view', {
+    send_to: measurementId,
     page_path: pagePath,
-    page_location: `${window.location.origin}${pagePath}`,
+    page_location: window.location.href,
+    page_title: document.title,
   });
 }
 
