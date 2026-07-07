@@ -35,6 +35,12 @@ export interface BuildEntityOverride {
   /** Per-build override: export as standalone zone despite library `omitFromExport`. */
   forceInclude?: boolean;
   wireName?: string;
+  /**
+   * 1-based position in this entity kind's top-level export list.
+   * CHIRP: memory Location; gaps between values become blank memory slots.
+   * Unset → default placement after any explicit slots (library order).
+   */
+  orderOrSlot?: number;
 }
 
 export interface FormatBuild extends PersistableRow {

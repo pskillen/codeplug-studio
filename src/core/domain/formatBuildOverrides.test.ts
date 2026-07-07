@@ -36,4 +36,15 @@ describe('formatBuildOverrides', () => {
     const next = upsertOverride(existing, 'zone-1', { forceInclude: false });
     expect(next).toEqual([{ libraryEntityId: 'zone-1', wireName: 'PMR' }]);
   });
+
+  it('parses and retains orderOrSlot on override rows', () => {
+    const rows = parseOverrideArray(
+      [{ libraryEntityId: 'ch-1', orderOrSlot: 5 }],
+      'channelOverrides',
+    );
+    expect(rows).toEqual([{ libraryEntityId: 'ch-1', orderOrSlot: 5 }]);
+    const next = upsertOverride(undefined, 'ch-1', { orderOrSlot: 3 });
+    expect(next).toEqual([{ libraryEntityId: 'ch-1', orderOrSlot: 3 }]);
+    expect(upsertOverride(next, 'ch-1', { orderOrSlot: undefined })).toEqual([]);
+  });
 });

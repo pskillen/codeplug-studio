@@ -34,6 +34,15 @@ export function isEntityForceIncluded(
   return (overrides ?? []).find((row) => row.libraryEntityId === entityId)?.forceInclude === true;
 }
 
+export function overrideOrderOrSlot(
+  overrides: BuildEntityOverride[] | undefined,
+  entityId: string,
+): number | undefined {
+  const value = (overrides ?? []).find((row) => row.libraryEntityId === entityId)?.orderOrSlot;
+  if (value == null || !Number.isFinite(value) || value < 1) return undefined;
+  return Math.trunc(value);
+}
+
 export function resolveOverrideWireName(
   overrides: BuildEntityOverride[] | undefined,
   entityId: string,
@@ -113,13 +122,21 @@ function parseOverrideRow(raw: unknown, label: string): BuildEntityOverride {
   if (record.wireName !== undefined && record.wireName !== null && record.wireName !== '') {
     result.wireName = String(record.wireName);
   }
+  if (record.orderOrSlot !== undefined && record.orderOrSlot !== null) {
+    const orderOrSlot = Number(record.orderOrSlot);
+    if (Number.isFinite(orderOrSlot) && orderOrSlot >= 1) {
+      result.orderOrSlot = Math.trunc(orderOrSlot);
+    }
+  }
   return result;
 }
 
 export function upsertOverride(
   overrides: BuildEntityOverride[] | undefined,
   entityId: string,
-  patch: Partial<Pick<BuildEntityOverride, 'excluded' | 'forceInclude' | 'wireName'>>,
+  patch: Partial<
+    Pick<BuildEntityOverride, 'excluded' | 'forceInclude' | 'wireName' | 'orderOrSlot'>
+  >,
 ): BuildEntityOverride[] {
   const rows = overrides ?? [];
   const index = rows.findIndex((row) => row.libraryEntityId === entityId);
@@ -132,7 +149,18 @@ export function upsertOverride(
   const hasWireName = Boolean(merged.wireName?.trim());
   const isExcluded = merged.excluded === true;
   const isForceIncluded = merged.forceInclude === true;
-  if (!hasWireName && !isExcluded && !isForceIncluded) {
+
+  if ('orderOrSlot' in patch) {
+    if (patch.orderOrSlot != null && Number.isFinite(patch.orderOrSlot) && patch.orderOrSlot >= 1) {
+      merged.orderOrSlot = Math.trunc(patch.orderOrSlot);
+    } else {
+      delete merged.orderOrSlot;
+    }
+  }
+
+  const hasOrderOrSlot =
+    merged.orderOrSlot != null && Number.isFinite(merged.orderOrSlot) && merged.orderOrSlot >= 1;
+  if (!hasWireName && !isExcluded && !isForceIncluded && !hasOrderOrSlot) {
     if (index < 0) return rows;
     return rows.filter((row) => row.libraryEntityId !== entityId);
   }
