@@ -69,19 +69,33 @@ export function findReferencesTo(library: Library, target: ReferenceTarget): Ent
     }
   }
 
-  // Channels reference contacts and RX group lists via their DMR profile.
+  // Channels reference contacts, RX group lists, and talk groups via mode profiles.
   for (const channel of library.channels) {
-    for (const profile of dmrProfiles(channel)) {
-      const refsContact = profile.contactRef !== null && refMatches(profile.contactRef, target);
-      const refsRxList = target.kind === 'rxGroupList' && profile.rxGroupListId === target.id;
-      if (refsContact || refsRxList) {
-        refs.push({
-          fromKind: 'channel',
-          fromId: channel.id,
-          fromName: channel.name,
-          relationship: refsContact ? 'channel DMR contact' : 'channel RX group list',
-        });
-        break;
+    for (const profile of channel.modeProfiles) {
+      if (profile.mode === 'dmr') {
+        const refsContact = profile.contactRef !== null && refMatches(profile.contactRef, target);
+        const refsRxList = target.kind === 'rxGroupList' && profile.rxGroupListId === target.id;
+        if (refsContact || refsRxList) {
+          refs.push({
+            fromKind: 'channel',
+            fromId: channel.id,
+            fromName: channel.name,
+            relationship: refsContact ? 'channel DMR contact' : 'channel RX group list',
+          });
+          break;
+        }
+        continue;
+      }
+      if (profile.mode === 'nxdn' || profile.mode === 'tetra') {
+        if (profile.talkGroupRef !== null && refMatches(profile.talkGroupRef, target)) {
+          refs.push({
+            fromKind: 'channel',
+            fromId: channel.id,
+            fromName: channel.name,
+            relationship: `channel ${profile.mode.toUpperCase()} talk group`,
+          });
+          break;
+        }
       }
     }
   }

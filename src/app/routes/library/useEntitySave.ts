@@ -4,7 +4,10 @@ import type { PutResult } from '@integrations/persistence/index.ts';
 import { listPathForEditorSlug } from './nav.ts';
 
 export interface EntitySaveApi {
-  save: (put: () => Promise<PutResult>) => Promise<boolean>;
+  save: (
+    put: () => Promise<PutResult>,
+    options?: { permitNavigation?: () => void },
+  ) => Promise<boolean>;
   saving: boolean;
   error: string | null;
 }
@@ -18,7 +21,10 @@ export function useEntitySave(editorSlug?: string): EntitySaveApi {
   const listPath = editorSlug ? listPathForEditorSlug(editorSlug) : '/library/channels';
 
   const save = useCallback(
-    async (put: () => Promise<PutResult>): Promise<boolean> => {
+    async (
+      put: () => Promise<PutResult>,
+      options?: { permitNavigation?: () => void },
+    ): Promise<boolean> => {
       setSaving(true);
       setError(null);
       try {
@@ -31,6 +37,7 @@ export function useEntitySave(editorSlug?: string): EntitySaveApi {
           );
           return false;
         }
+        options?.permitNavigation?.();
         navigate(listPath);
         return true;
       } finally {

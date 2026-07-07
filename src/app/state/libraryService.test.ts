@@ -51,17 +51,22 @@ describe('LibraryService', () => {
     expect(await persistence.getTalkGroup(projectId, tg.id)).toBeNull();
   });
 
-  it('deletes zones freely (not referenced by other entities)', async () => {
+  it('blocks deleting a zone referenced as a nested member', async () => {
     const { persistence, service, projectId } = await setup();
-    const channel = newChannel(projectId, 'Local');
-    const zone = {
-      ...newZone(projectId, 'Home'),
-      members: [{ kind: 'channel' as const, channelId: channel.id }],
+    const inner = newZone(projectId, 'Inner');
+    const outer = {
+      ...newZone(projectId, 'Outer'),
+      members: [{ kind: 'zone' as const, zoneId: inner.id }],
     };
-    await persistence.putChannel(channel, null);
-    await persistence.putZone(zone, null);
+    await persistence.putZone(inner, null);
+    await persistence.putZone(outer, null);
 
-    const outcome = await service.deleteWithIntegrity(projectId, 'zone', zone.id);
-    expect(outcome.ok).toBe(true);
+    const outcome = await service.deleteWithIntegrity(projectId, 'zone', inner.id);
+    expect(outcome.ok).toBe(false);
+    if (!outcome.ok) {
+      expect(outcome.references[0]?.fromName).toBe('Outer');
+      expect(outcome.references[0]?.relationship).toBe('nested zone member');
+    }
+    expect(await persistence.getZone(projectId, inner.id)).not.toBeNull();
   });
 });

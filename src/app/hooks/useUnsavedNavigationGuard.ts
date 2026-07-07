@@ -1,12 +1,17 @@
-import { useEffect } from 'react';
+import { type RefObject, useEffect } from 'react';
 import { useBlocker } from 'react-router-dom';
 
 /**
  * Blocks in-app navigation and tab close when `active` is true.
- * Returns modal handlers — render a confirm dialog when `modalOpen` is true.
+ * Pass `permitNavigationRef` and set it to `true` immediately before
+ * intentional navigation (e.g. after a successful save) so the blocker
+ * does not intercept that transition.
  */
-export function useUnsavedNavigationGuard(active: boolean) {
-  const blocker = useBlocker(active);
+export function useUnsavedNavigationGuard(
+  active: boolean,
+  permitNavigationRef?: RefObject<boolean>,
+) {
+  const blocker = useBlocker(() => active && !(permitNavigationRef?.current ?? false));
   const modalOpen = blocker.state === 'blocked';
 
   useEffect(() => {

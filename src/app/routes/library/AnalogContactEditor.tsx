@@ -1,9 +1,11 @@
 import { useState } from 'react';
 import { Button, Group, Stack, Text, TextInput } from '@mantine/core';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import type { AnalogContact } from '@core/models/library.ts';
 import { newAnalogContact } from '@core/domain/factories.ts';
-import { FormSection } from '../../components/ui/index.ts';
+import EntityDeleteButton from '../../components/library/EntityDeleteButton.tsx';
+import { FormSection, UnsavedChangesModal } from '../../components/ui/index.ts';
+import { useEntityEditorUnsavedGuard } from '../../hooks/useEntityFormDirty.ts';
 import { persistence } from '../../state/persistence.ts';
 import { useEntitySave } from './useEntitySave.ts';
 
@@ -19,15 +21,24 @@ export function AnalogContactEditor({
   const [code, setCode] = useState(base.code);
   const [comment, setComment] = useState(base.comment);
   const { save, saving, error } = useEntitySave('analog-contacts');
+  const navigate = useNavigate();
 
-  function handleSave() {
-    const row: AnalogContact = {
+  function buildRow(): AnalogContact {
+    return {
       ...base,
       name: name.trim() || 'Untitled contact',
       code,
       comment,
     };
-    void save(() => persistence.putAnalogContact(row, entity ? entity.revision : null));
+  }
+
+  const { permitNavigationOnce, modalOpen, stay, leave } = useEntityEditorUnsavedGuard(buildRow);
+
+  function handleSave() {
+    const row = buildRow();
+    void save(() => persistence.putAnalogContact(row, entity ? entity.revision : null), {
+      permitNavigation: permitNavigationOnce,
+    });
   }
 
   return (
@@ -54,7 +65,16 @@ export function AnalogContactEditor({
         <Button component={Link} to="/library/contacts" variant="light">
           Cancel
         </Button>
+        {entity ? (
+          <EntityDeleteButton
+            kind="analogContact"
+            entityId={entity.id}
+            label={entity.name}
+            onDeleted={() => navigate('/library/contacts')}
+          />
+        ) : null}
       </Group>
+      <UnsavedChangesModal opened={modalOpen} onStay={stay} onLeave={leave} />
     </Stack>
   );
 }

@@ -1,10 +1,16 @@
 import { useState } from 'react';
 import { Button, Group, SimpleGrid, Stack, Text, TextInput } from '@mantine/core';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import type { DigitalChannelMode, TalkGroup } from '@core/models/library.ts';
 import { newTalkGroup } from '@core/domain/factories.ts';
 import TalkGroupWireNameExamples from '../../components/library/TalkGroupWireNameExamples.tsx';
-import { FormSection, GradientSegmentedControl } from '../../components/ui/index.ts';
+import EntityDeleteButton from '../../components/library/EntityDeleteButton.tsx';
+import {
+  FormSection,
+  GradientSegmentedControl,
+  UnsavedChangesModal,
+} from '../../components/ui/index.ts';
+import { useEntityEditorUnsavedGuard } from '../../hooks/useEntityFormDirty.ts';
 import { digitalModeSegmentOptions } from '../../lib/channelModes.ts';
 import { parseOptionalInt } from '../../lib/units.ts';
 import { persistence } from '../../state/persistence.ts';
@@ -26,6 +32,7 @@ export function TalkGroupEditor({
   const [digitalId, setDigitalId] = useState(String(base.digitalId));
   const [comment, setComment] = useState(base.comment);
   const { save, saving, error } = useEntitySave('talk-groups');
+  const navigate = useNavigate();
 
   function buildRow(): TalkGroup {
     const trimmedAbbrev = abbreviation.trim();
@@ -44,9 +51,13 @@ export function TalkGroupEditor({
     return row;
   }
 
+  const { permitNavigationOnce, modalOpen, stay, leave } = useEntityEditorUnsavedGuard(buildRow);
+
   function handleSave() {
     const row = buildRow();
-    void save(() => persistence.putTalkGroup(row, entity ? entity.revision : null));
+    void save(() => persistence.putTalkGroup(row, entity ? entity.revision : null), {
+      permitNavigation: permitNavigationOnce,
+    });
   }
 
   const liveDigitalId = parseOptionalInt(digitalId) ?? 0;
@@ -105,7 +116,16 @@ export function TalkGroupEditor({
         <Button component={Link} to="/library/talk-groups" variant="light">
           Cancel
         </Button>
+        {entity ? (
+          <EntityDeleteButton
+            kind="talkGroup"
+            entityId={entity.id}
+            label={entity.name}
+            onDeleted={() => navigate('/library/talk-groups')}
+          />
+        ) : null}
       </Group>
+      <UnsavedChangesModal opened={modalOpen} onStay={stay} onLeave={leave} />
     </Stack>
   );
 }

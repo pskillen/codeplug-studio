@@ -19,7 +19,8 @@ import type { ChannelMode as UiChannelMode } from '../../lib/channelModes.ts';
 import RepeaterVerifyPanel from '../../components/repeaters/RepeaterVerifyPanel.tsx';
 import ChannelZoneMembershipSection from '../../components/library/ChannelZoneMembershipSection.tsx';
 import ChannelDeleteButton from '../../components/library/ChannelDeleteButton.tsx';
-import { FormSection, PercentLevelSlider } from '../../components/ui/index.ts';
+import { FormSection, PercentLevelSlider, UnsavedChangesModal } from '../../components/ui/index.ts';
+import { useEntityEditorUnsavedGuard } from '../../hooks/useEntityFormDirty.ts';
 import { hzToMhzString, mhzStringToHz } from '../../lib/units.ts';
 import { persistence } from '../../state/persistence.ts';
 import { useEntitySave } from './useEntitySave.ts';
@@ -91,6 +92,8 @@ export default function ChannelEditor({
     return row;
   }
 
+  const { permitNavigationOnce, modalOpen, stay, leave } = useEntityEditorUnsavedGuard(buildRow);
+
   function handleDuplicate() {
     if (!entity) return;
     const source = buildRow();
@@ -123,7 +126,9 @@ export default function ChannelEditor({
     }
     setValidationError(null);
     const row = buildRow();
-    void save(() => persistence.putChannel(row, entity ? entity.revision : null));
+    void save(() => persistence.putChannel(row, entity ? entity.revision : null), {
+      permitNavigation: permitNavigationOnce,
+    });
   }
 
   function handleModesChange(modes: UiChannelMode[]) {
@@ -263,6 +268,7 @@ export default function ChannelEditor({
           </>
         ) : null}
       </Group>
+      <UnsavedChangesModal opened={modalOpen} onStay={stay} onLeave={leave} />
     </Stack>
   );
 }

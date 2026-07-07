@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { emptyLibrary, newChannel, newRxGroupList, newTalkGroup, newZone } from './factories.ts';
 import { findReferencesTo, isReferenced } from './references.ts';
-import type { ChannelModeProfileDMR, Library } from '../models/library.ts';
+import type { ChannelModeProfileDMR, ChannelModeProfileNxdn, Library } from '../models/library.ts';
 
 const projectId = 'p1';
 
@@ -49,6 +49,39 @@ describe('findReferencesTo', () => {
     const refs = findReferencesTo(library, { kind: 'rxGroupList', id: list.id });
     expect(refs).toHaveLength(1);
     expect(refs[0]).toMatchObject({ fromKind: 'channel', relationship: 'channel RX group list' });
+  });
+
+  it('finds channels that reference a talk group via NXDN profile', () => {
+    const tg = newTalkGroup(projectId, 'World', 91);
+    const nxdnProfile: ChannelModeProfileNxdn = {
+      mode: 'nxdn',
+      rxRan: null,
+      txRan: null,
+      unitId: null,
+      talkGroupRef: { kind: 'talkGroup', id: tg.id },
+    };
+    const channel = { ...newChannel(projectId, 'NXDN ch'), modeProfiles: [nxdnProfile] };
+    const library: Library = { ...emptyLibrary(), channels: [channel], talkGroups: [tg] };
+
+    const refs = findReferencesTo(library, { kind: 'talkGroup', id: tg.id });
+    expect(refs).toHaveLength(1);
+    expect(refs[0]).toMatchObject({
+      fromKind: 'channel',
+      relationship: 'channel NXDN talk group',
+    });
+  });
+
+  it('finds zones that nest another zone', () => {
+    const inner = newZone(projectId, 'Inner');
+    const outer = {
+      ...newZone(projectId, 'Outer'),
+      members: [{ kind: 'zone' as const, zoneId: inner.id }],
+    };
+    const library: Library = { ...emptyLibrary(), zones: [inner, outer] };
+
+    const refs = findReferencesTo(library, { kind: 'zone', id: inner.id });
+    expect(refs).toHaveLength(1);
+    expect(refs[0]).toMatchObject({ fromName: 'Outer', relationship: 'nested zone member' });
   });
 
   it('returns empty when nothing references the target', () => {

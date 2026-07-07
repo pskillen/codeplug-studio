@@ -8,17 +8,18 @@ Tier-1 reference for editing the vendor-neutral **library** — the per-project 
 
 ## Implementation status
 
-| Area                                    | Status                                                                   | Notes                                                              |
-| --------------------------------------- | ------------------------------------------------------------------------ | ------------------------------------------------------------------ |
-| Zone + channel editor cross-links       | Shipped ([#180](https://github.com/pskillen/codeplug-studio/issues/180)) | Revision-2 — see [zone-member-picker.md](zone-member-picker.md)    |
-| Channel / zone delete                   | Shipped ([#180](https://github.com/pskillen/codeplug-studio/issues/180)) | Editors + channels list; zone membership cascade on channel delete |
-| Channels list bulk selection → new zone | Shipped ([#154](https://github.com/pskillen/codeplug-studio/issues/154)) | `DataTable` selectable; **New zone from selected**                 |
-| Channels list bulk edit                 | Shipped ([#207](https://github.com/pskillen/codeplug-studio/issues/207)) | **Bulk edit** modal — scan, forbid TX, power, analog squelch       |
-| Zone from location (proximity)          | Shipped ([#181](https://github.com/pskillen/codeplug-studio/issues/181)) | Section nav **New zone from location**                             |
-| Nested zone members                     | Shipped ([#157](https://github.com/pskillen/codeplug-studio/issues/157)) | Flatten at export; `omitFromExport`; schema v7                     |
-| Tri-state scan inclusion                | Shipped ([#203](https://github.com/pskillen/codeplug-studio/issues/203)) | `scanInclusion`; build export default; schema v8                   |
-| Zone member editor                      | Shipped ([#180](https://github.com/pskillen/codeplug-studio/issues/180)) | Vertical stacked editor on zone form                               |
-| Channel sets                            | Shipped ([#172](https://github.com/pskillen/codeplug-studio/issues/172)) | Optional zone on import                                            |
+| Area                                    | Status                                                                                                                                   | Notes                                                                          |
+| --------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------ |
+| Zone + channel editor cross-links       | Shipped ([#180](https://github.com/pskillen/codeplug-studio/issues/180))                                                                 | Revision-2 — see [zone-member-picker.md](zone-member-picker.md)                |
+| Channel / zone delete                   | Shipped ([#180](https://github.com/pskillen/codeplug-studio/issues/180), [#202](https://github.com/pskillen/codeplug-studio/issues/202)) | All entity kinds — editors + list row actions; channel zone-membership cascade |
+| Unsaved-changes guard on editors        | Shipped ([#189](https://github.com/pskillen/codeplug-studio/issues/189))                                                                 | `UnsavedChangesModal` + `useEntityEditorUnsavedGuard` on all entity editors    |
+| Channels list bulk selection → new zone | Shipped ([#154](https://github.com/pskillen/codeplug-studio/issues/154))                                                                 | `DataTable` selectable; **New zone from selected**                             |
+| Channels list bulk edit                 | Shipped ([#207](https://github.com/pskillen/codeplug-studio/issues/207))                                                                 | **Bulk edit** modal — scan, forbid TX, power, analog squelch                   |
+| Zone from location (proximity)          | Shipped ([#181](https://github.com/pskillen/codeplug-studio/issues/181))                                                                 | Section nav **New zone from location**                                         |
+| Nested zone members                     | Shipped ([#157](https://github.com/pskillen/codeplug-studio/issues/157))                                                                 | Flatten at export; `omitFromExport`; schema v7                                 |
+| Tri-state scan inclusion                | Shipped ([#203](https://github.com/pskillen/codeplug-studio/issues/203))                                                                 | `scanInclusion`; build export default; schema v8                               |
+| Zone member editor                      | Shipped ([#180](https://github.com/pskillen/codeplug-studio/issues/180))                                                                 | Vertical stacked editor on zone form                                           |
+| Channel sets                            | Shipped ([#172](https://github.com/pskillen/codeplug-studio/issues/172))                                                                 | Optional zone on import                                                        |
 
 ## Documentation map
 
@@ -40,16 +41,17 @@ Tier-1 reference for editing the vendor-neutral **library** — the per-project 
 | List route                | UI                                                                                                                                                | Map |
 | ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- | --- |
 | `/library/channels`       | `DataTable` — sortable columns, **Zones** column, delete row action, toolbar search, hideable optional columns, URL + `localStorage` filter prefs | Yes |
-| `/library/zones`          | `DataTable` — members, comment; operator location + map below table                                                                               | Yes |
-| `/library/talk-groups`    | `DataTable` — mode, ID, optional Abbrev, channels/RX lists using, comment                                                                         | No  |
-| `/library/contacts`       | Two `DataTable` sections: digital contacts + analog contacts (separate `dq` / `aq` URL filters)                                                   | No  |
-| `/library/rx-group-lists` | `DataTable` — members, channels using                                                                                                             | No  |
+| `/library/zones`          | `DataTable` — members, comment, delete row action; operator location + map below table                                                            | Yes |
+| `/library/talk-groups`    | `DataTable` — mode, ID, optional Abbrev, channels/RX lists using, comment, delete row action                                                      | No  |
+| `/library/contacts`       | Two `DataTable` sections: digital contacts + analog contacts (separate `dq` / `aq` URL filters), delete row action each                           | No  |
+| `/library/rx-group-lists` | `DataTable` — members, channels using, delete row action                                                                                          | No  |
 
 Shared list UI: [app-shell/data-table.md](../app-shell/data-table.md).
 
 ### Channels list (#24)
 
 - Filters on the list page (`ChannelListFilters`): band, mode, simplex/split, distance radius (when operator location is set). Name/callsign search is on the `DataTable` toolbar only.
+- The embedded map plots the **same filtered channel set** as the table (all active filters apply).
 - Filter state syncs to URL query params and per-project `localStorage`.
 - Column sort and visibility prefs persist per project.
 - `modeProfiles[]` drives mode pills and mode filter matching (vendor-neutral labels only).
@@ -118,6 +120,16 @@ Workflow: pick set → preview table (per-channel checkboxes, dedup status) → 
 
 `:kind` is a slug (`channels`, `talk-groups`, `digital-contacts`, `analog-contacts`, `rx-group-lists`, `zones`) mapped to an internal `EntityKind` in `routes/library/registry.ts`. Editors navigate back to the matching list route on save/cancel via `listPathForEditorSlug()`.
 
+### Unsaved changes ([#189](https://github.com/pskillen/codeplug-studio/issues/189))
+
+All entity editors track dirty form state against the mount baseline (`useEntityEditorUnsavedGuard`). When dirty:
+
+- In-app navigation (Cancel link, section nav, back link) opens [`UnsavedChangesModal`](../../src/app/components/ui/UnsavedChangesModal.md) — Stay or Leave.
+- Tab close triggers the browser `beforeunload` prompt.
+- **Save** calls `permitNavigationOnce` before navigating back to the list.
+
+**Not guarded:** zone membership on the channel editor **Zones** tab — `ChannelZoneMembershipSection` persists add/remove immediately (separate from the main channel form).
+
 ## Entities and editors
 
 | Entity          | Key fields                                                                                                                                                                                         |
@@ -169,7 +181,8 @@ delete → LibraryService.deleteWithIntegrity → findReferencesTo (core)
 ```
 
 - **Optimistic concurrency:** editors save with the loaded `revision`; a stale write returns `revision_conflict` and the editor shows a reload-and-retry message.
-- **Referential integrity:** deletes are **blocked** when another entity still references the target (e.g. a zone listing a channel, an RX group list listing a talk group, a channel DMR profile pointing at a contact / RX list). The block lists the referencing entities.
+- **Referential integrity:** deletes are **blocked** when another entity still references the target (e.g. a zone listing a channel, an RX group list listing a talk group, a channel mode profile pointing at a contact / RX list / talk group, a parent zone nesting a child zone). The block lists the referencing entities.
+- **Delete UI ([#202](https://github.com/pskillen/codeplug-studio/issues/202)):** every saved entity has a **Delete** button on its editor (`EntityDeleteButton`; channels use `ChannelDeleteButton` for zone cascade). List pages add a trash **actions** column (`EntityListDeleteAction`; channels use `ChannelListDeleteAction`). Flow: `runEntityDeleteFlow` → `useLibrary().deleteEntity` → `LibraryService.deleteWithIntegrity`. Channel delete may offer remove-from-zones cascade when blocked only by zone membership.
 
 ## Boundaries
 

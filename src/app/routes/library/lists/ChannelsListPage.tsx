@@ -61,8 +61,8 @@ export default function ChannelsListPage() {
   const [bulkEditOpen, setBulkEditOpen] = useState(false);
   const [bulkEditMessage, setBulkEditMessage] = useState<string | null>(null);
 
-  const mapChannels = query.distanceFilterEnabled ? filtered : channels;
-  const { skipped } = applyFilters(channels, { requireUseLocation: true, skipZero: true });
+  const mapChannels = filtered;
+  const { skipped } = applyFilters(filtered, { requireUseLocation: true, skipZero: true });
 
   const effectiveSort = useMemo((): DataTableSortState => {
     if (columnSortOverride) return columnSortOverride;
@@ -380,7 +380,7 @@ export default function ChannelsListPage() {
         <CodeplugMap
           channels={mapChannels}
           zones={zones}
-          allChannels={channels}
+          allChannels={mapChannels}
           height={420}
           operatorPosition={position}
           onChannelClick={(id) => navigate(`/library/channels/${id}`)}

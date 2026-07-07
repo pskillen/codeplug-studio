@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useState } from 'react';
-import { Button, Group, Stack, Switch, Text, TextInput } from '@mantine/core';
+import { Stack, Switch, Text, TextInput } from '@mantine/core';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import type { Library, Zone, ZoneMemberEntry } from '@core/models/library.ts';
 import { newZone } from '@core/domain/factories.ts';
@@ -11,16 +11,17 @@ import {
 import { resolveEffectiveZoneChannelIds } from '@core/domain/zoneHierarchy.ts';
 import { validateZoneMembership } from '@core/domain/validation.ts';
 import CodeplugMap from '../../components/CodeplugMap/CodeplugMap.tsx';
-import { FormSection } from '../../components/ui/index.ts';
+import { FormSection, UnsavedChangesModal } from '../../components/ui/index.ts';
+import { useEntityEditorUnsavedGuard } from '../../hooks/useEntityFormDirty.ts';
 import ZoneMemberEditor, {
   type ZoneMemberEditorMapFilters,
 } from '../../components/library/ZoneMemberEditor.tsx';
+import EntityDeleteButton from '../../components/library/EntityDeleteButton.tsx';
 import {
   normalizeZoneMembers,
   zoneMembersFromSelectedIds,
 } from '../../components/library/zoneMembers.ts';
 import { persistence } from '../../state/persistence.ts';
-import { useLibrary } from '../../state/useLibrary.ts';
 import { useEntitySave } from './useEntitySave.ts';
 import EditorActions from './EditorActions.tsx';
 import { readInitialChannelIds } from './zoneEditorState.ts';
@@ -37,7 +38,6 @@ export default function ZoneEditor({
   const base = entity ?? newZone(projectId, '');
   const navigate = useNavigate();
   const location = useLocation();
-  const { deleteEntity } = useLibrary();
   const initialChannelIds = entity === null ? readInitialChannelIds(location.state) : [];
   const [name, setName] = useState(base.name);
   const [members, setMembers] = useState<ZoneMemberEntry[]>(() =>
@@ -48,7 +48,6 @@ export default function ZoneEditor({
   const [comment, setComment] = useState(base.comment);
   const [omitFromExport, setOmitFromExport] = useState(base.omitFromExport === true);
   const [validationError, setValidationError] = useState<string | null>(null);
-  const [deleteError, setDeleteError] = useState<string | null>(null);
   const [mapFilters, setMapFilters] = useState<ZoneMemberEditorMapFilters>({
     hiddenMarkerChannelIds: [],
     hiddenZoneMemberIds: [],
@@ -101,14 +100,20 @@ export default function ZoneEditor({
     [library.channels],
   );
 
-  function handleSave() {
-    const row: Zone = {
+  function buildRow(): Zone {
+    return {
       ...base,
       name: name.trim() || 'Untitled zone',
       members,
       comment,
       omitFromExport: omitFromExport ? true : undefined,
     };
+  }
+
+  const { permitNavigationOnce, modalOpen, stay, leave } = useEntityEditorUnsavedGuard(buildRow);
+
+  function handleSave() {
+    const row = buildRow();
     try {
       const libraryForValidation = {
         ...library,
@@ -122,24 +127,12 @@ export default function ZoneEditor({
       setValidationError(err instanceof Error ? err.message : 'Invalid zone membership');
       return;
     }
-    void save(() => persistence.putZone(row, entity ? entity.revision : null));
+    void save(() => persistence.putZone(row, entity ? entity.revision : null), {
+      permitNavigation: permitNavigationOnce,
+    });
   }
 
-  const handleDelete = useCallback(async () => {
-    if (!entity) return;
-    if (!window.confirm(`Delete zone “${entity.name}”? Channels stay in the library.`)) return;
-    setDeleteError(null);
-    const result = await deleteEntity('zone', entity.id);
-    if (result.ok) {
-      navigate('/library/zones');
-    } else {
-      setDeleteError(
-        `Delete blocked — ${result.references.length} entit${result.references.length === 1 ? 'y' : 'ies'} still reference this zone.`,
-      );
-    }
-  }, [deleteEntity, entity, navigate]);
-
-  const displayError = validationError ?? error ?? deleteError;
+  const displayError = validationError ?? error;
 
   return (
     <Stack gap="md" maw={960}>
@@ -161,16 +154,12 @@ export default function ZoneEditor({
           zones; this zone will not get its own row in Zones.csv.
         </Text>
         {entity ? (
-          <Group>
-            <Button
-              variant="light"
-              color="red"
-              size="compact-sm"
-              onClick={() => void handleDelete()}
-            >
-              Delete zone
-            </Button>
-          </Group>
+          <EntityDeleteButton
+            kind="zone"
+            entityId={entity.id}
+            label={entity.name}
+            onDeleted={() => navigate('/library/zones')}
+          />
         ) : null}
       </FormSection>
 
@@ -214,6 +203,7 @@ export default function ZoneEditor({
         onSave={handleSave}
         cancelPath="/library/zones"
       />
+      <UnsavedChangesModal opened={modalOpen} onStay={stay} onLeave={leave} />
     </Stack>
   );
 }

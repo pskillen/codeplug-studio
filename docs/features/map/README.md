@@ -12,11 +12,11 @@ Tier-1 reference for the **embedded channel map** — plotting library channels 
 
 There is **no** top-level Map nav item. Legacy `/map` bookmarks redirect to `/library/channels`.
 
-| List route          | Map behaviour                                                                    |
-| ------------------- | -------------------------------------------------------------------------------- |
-| `/library/channels` | Full library map; when distance filter is on, map shows the filtered channel set |
-| `/library/zones`    | Full library map below the zone DataTable                                        |
-| `/summary`          | Full-library overview map with click-through to channel and zone editors         |
+| List route          | Map behaviour                                                                            |
+| ------------------- | ---------------------------------------------------------------------------------------- |
+| `/library/channels` | Map plots the same filtered channel set as the list (name, band, mode, duplex, distance) |
+| `/library/zones`    | Full library map below the zone DataTable                                                |
+| `/summary`          | Full-library overview map with click-through to channel and zone editors                 |
 
 Summary and list routes each embed a map — list pages keep contextual maps for their workflow; Summary provides the library-wide overview.
 

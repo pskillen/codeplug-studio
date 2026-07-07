@@ -1,8 +1,18 @@
 import { MultiSelect, Pill, SimpleGrid, Slider, Stack, Switch, Text } from '@mantine/core';
-import { useMemo } from 'react';
+import { useMemo, type CSSProperties } from 'react';
 import { DISTANCE_FILTER_MARKS_KM } from '../../lib/channels.ts';
-import { ALL_BANDS, bandsFromFrequencies, type BandDefinition } from '../../lib/bands.ts';
-import { modeFilterOptions, type ChannelMode } from '../../lib/channelModes.ts';
+import {
+  ALL_BANDS,
+  bandsFromFrequencies,
+  isAmateurBand,
+  type BandDefinition,
+} from '../../lib/bands.ts';
+import {
+  modeColor,
+  modeFilterOptions,
+  modeLabel,
+  type ChannelMode,
+} from '../../lib/channelModes.ts';
 import { useChannelListQuery } from '../../hooks/useChannelListQuery.ts';
 import { useFilteredChannels } from '../../hooks/useChannelListFilters.ts';
 import UseMyLocationButton from '../UseMyLocationButton/UseMyLocationButton.tsx';
@@ -15,6 +25,18 @@ function bandByIdMap(): Map<string, BandDefinition> {
   return new Map(ALL_BANDS.map((b) => [b.id, b]));
 }
 
+function bandMultiSelectPillStyle(band: BandDefinition): CSSProperties {
+  if (isAmateurBand(band)) {
+    return { backgroundColor: band.color, color: '#fff' };
+  }
+  return {
+    border: `1px solid ${band.color}`,
+    borderColor: band.color,
+    color: band.color,
+    backgroundColor: `${band.color}18`,
+  };
+}
+
 /** Band, mode, duplex, and distance filters for the channels list page (search lives on `DataTable`). */
 export default function ChannelListFilters() {
   const { library } = useLibrary();
@@ -25,14 +47,14 @@ export default function ChannelListFilters() {
   const bandsById = useMemo(() => bandByIdMap(), []);
 
   const bandOptions = useMemo(() => {
-    const ids = new Set<string>();
+    const ids = new Set<string>(query.bandFilter);
     for (const ch of channels) {
       for (const band of bandsFromFrequencies(ch.rxFrequency, ch.txFrequency)) {
         ids.add(band.id);
       }
     }
     return ALL_BANDS.filter((b) => ids.has(b.id)).map((b) => ({ value: b.id, label: b.label }));
-  }, [channels]);
+  }, [channels, query.bandFilter]);
 
   const distanceFilterPending = query.distanceFilterEnabled && !position;
 
@@ -50,11 +72,16 @@ export default function ChannelListFilters() {
           value={query.bandFilter}
           onChange={query.setBandFilter}
           clearable
-          renderPill={({ option, onRemove }) => (
-            <Pill withRemoveButton onRemove={onRemove}>
-              <BandPill band={bandsById.get(String(option.value)) ?? null} size="xs" />
-            </Pill>
-          )}
+          renderPill={({ option, onRemove }) => {
+            if (!option) return null;
+            const band = bandsById.get(String(option.value));
+            if (!band) return null;
+            return (
+              <Pill withRemoveButton onRemove={onRemove} style={bandMultiSelectPillStyle(band)}>
+                {band.label}
+              </Pill>
+            );
+          }}
           renderOption={({ option }) => (
             <BandPill band={bandsById.get(String(option.value)) ?? null} size="xs" />
           )}
@@ -66,11 +93,18 @@ export default function ChannelListFilters() {
           value={query.modeFilter}
           onChange={query.setModeFilter}
           clearable
-          renderPill={({ option, onRemove }) => (
-            <Pill withRemoveButton onRemove={onRemove}>
-              <ModePill mode={String(option.value) as ChannelMode} size="xs" />
-            </Pill>
-          )}
+          renderPill={({ option, onRemove }) => {
+            const mode = String(option.value) as ChannelMode;
+            return (
+              <Pill
+                withRemoveButton
+                onRemove={onRemove}
+                style={{ backgroundColor: modeColor(mode), color: '#1a1b1e' }}
+              >
+                {modeLabel(mode)}
+              </Pill>
+            );
+          }}
           renderOption={({ option }) => (
             <ModePill mode={String(option.value) as ChannelMode} size="xs" />
           )}
