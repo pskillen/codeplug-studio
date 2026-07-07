@@ -25,14 +25,14 @@ export default function ChannelListFilters() {
   const bandsById = useMemo(() => bandByIdMap(), []);
 
   const bandOptions = useMemo(() => {
-    const ids = new Set<string>();
+    const ids = new Set<string>(query.bandFilter);
     for (const ch of channels) {
       for (const band of bandsFromFrequencies(ch.rxFrequency, ch.txFrequency)) {
         ids.add(band.id);
       }
     }
     return ALL_BANDS.filter((b) => ids.has(b.id)).map((b) => ({ value: b.id, label: b.label }));
-  }, [channels]);
+  }, [channels, query.bandFilter]);
 
   const distanceFilterPending = query.distanceFilterEnabled && !position;
 
@@ -50,11 +50,13 @@ export default function ChannelListFilters() {
           value={query.bandFilter}
           onChange={query.setBandFilter}
           clearable
-          renderPill={({ option, onRemove }) => (
-            <Pill withRemoveButton onRemove={onRemove}>
-              <BandPill band={bandsById.get(String(option.value)) ?? null} size="xs" />
-            </Pill>
-          )}
+          renderPill={({ option, onRemove }) =>
+            option ? (
+              <Pill withRemoveButton onRemove={onRemove}>
+                <BandPill band={bandsById.get(String(option.value)) ?? null} size="xs" />
+              </Pill>
+            ) : null
+          }
           renderOption={({ option }) => (
             <BandPill band={bandsById.get(String(option.value)) ?? null} size="xs" />
           )}
