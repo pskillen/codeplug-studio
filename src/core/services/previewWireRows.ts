@@ -24,6 +24,7 @@ import type { Channel, ChannelModeProfileDMR, Zone } from '@core/models/library.
 import type { DMRTimeSlot, EntityRef } from '@core/models/libraryTypes.ts';
 import { directZoneMemberChannelIds, directZoneMemberZoneIds } from '@core/domain/zoneMembers.ts';
 import { isChirpAnalogueExportable } from '@core/import-export/formats/chirp/channelWire.ts';
+import { previewGeneratedChannelWireName } from './previewChannelWireName.ts';
 
 export type WirePreviewEntityKind = 'channel' | 'zone' | 'talkGroup' | 'contact' | 'rxGroupList';
 
@@ -193,7 +194,7 @@ export function previewWireRows(
           const channelOverride = overrideByEntityId(build.channelOverrides)
             .get(channel.id)
             ?.wireName?.trim();
-          const generatedWireName = defaultChannelWireName(channel);
+          const generatedWireName = previewGeneratedChannelWireName(channel, build, _options);
           rows.push({
             key: channel.id,
             libraryEntityId: channel.id,
@@ -210,14 +211,13 @@ export function previewWireRows(
         memoryIds.forEach((channelId, index) => {
           const channel = library.channels.find((row) => row.id === channelId);
           if (!channel) return;
-          const note = !isChirpAnalogueExportable(channel)
-            ? PREVIEW_ROW_NOT_ANALOGUE_CHIRP_NOTE
-            : `Location ${index + 1}`;
-          pushChannelRow(channel, note);
+          if (!isChirpAnalogueExportable(channel)) return;
+          pushChannelRow(channel, `Location ${index + 1}`);
         });
 
         for (const channel of library.channels) {
           if (memorySet.has(channel.id)) continue;
+          if (!isChirpAnalogueExportable(channel)) continue;
           pushChannelRow(channel, PREVIEW_ROW_NOT_IN_MEMORY_LIST_NOTE);
         }
 
