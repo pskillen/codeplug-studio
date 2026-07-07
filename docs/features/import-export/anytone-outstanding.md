@@ -6,6 +6,10 @@ Items **skipped**, **incomplete**, or **discovered during execution** — not sc
 
 ---
 
+## Build model notes (post-#243)
+
+- **`orderOrSlot` on `BuildEntityOverride`** — shipped for CHIRP flat memory ([#243](https://github.com/pskillen/codeplug-studio/pull/243)). Anytone `Channel.CSV` / `AMAir.CSV` / `FM.CSV` `No.` columns are the likely export target for the same field (including fixed VFO slot numbers). Confirm per-bank behaviour in [#232](https://github.com/pskillen/codeplug-studio/issues/232) / [#233](https://github.com/pskillen/codeplug-studio/issues/233).
+
 ## Model gaps (discovered during wire spike)
 
 - [ ] **APRS internal model** — D890 `APRS.CSV` is a single global config row (~150 columns) plus per-channel flags on `Channel.CSV`. No first-class `AprsConfiguration` entity today. Proposed shape documented in [aprs.md](../../reference/anytone/aprs.md); needs follow-up GitHub issue before import/export serialisation.

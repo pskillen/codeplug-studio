@@ -23,7 +23,7 @@ Primary DMR (and mixed-mode) channel table for AT-D890UV CPS. **76 columns** in 
 
 | Vendor header                    | Internal field / location              | Notes                                      |
 | -------------------------------- | -------------------------------------- | ------------------------------------------ |
-| `No.`                            | Export slot index                      | VFO rows use high numbers (`4001+`)        |
+| `No.`                            | `channelOverrides.orderOrSlot`         | 1-based CPS slot; VFO rows use fixed high numbers (`4001+`) — same build override field as CHIRP `Location` ([#243](https://github.com/pskillen/codeplug-studio/pull/243)) |
 | `Channel Name`                   | Build `wireName` / `Channel.name`      | Case-sensitive FK                          |
 | `Receive Frequency`              | `Channel.rxFrequency`                  | MHz → Hz                                   |
 | `Transmit Frequency`             | `Channel.txFrequency`                  | MHz → Hz                                   |

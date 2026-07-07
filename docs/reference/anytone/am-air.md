@@ -20,7 +20,7 @@ Separate **AM airband receive memory bank** for AT-D890UV — not stored in `Cha
 | `Name`           | `Channel.name` / build `wireName`                      | **Maps today** |
 | _(implicit)_     | `modeProfiles: [{ mode: 'am', … }]`                    | **Maps today** |
 | _(implicit)_     | `forbidTransmit: true`                                 | **Maps today** |
-| `No.`            | CPS slot / VFO semantics                               | Export boundary |
+| `No.`            | `channelOverrides.orderOrSlot` in AM bank              | VFO at fixed high slot (`257` in sample); export boundary — see CHIRP `orderOrSlot` pattern ([#243](https://github.com/pskillen/codeplug-studio/pull/243)) |
 
 AM air channels are **library `Channel` rows** at the semantic level. Export adapter **partitions** receive-only AM channels into `AMAir.CSV` rather than `Channel.CSV` — adapter logic or a future build trait (`ParallelReceiveOnlyBanks`); not a new library entity type.
 

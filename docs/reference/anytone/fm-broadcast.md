@@ -19,6 +19,7 @@ Separate **broadcast FM receive memory bank** for AT-D890UV.
 | ---------------- | ------------------------------------------------------ | ------------- |
 | `Frequency[MHz]` | `Channel.rxFrequency` (Hz)                             | **Maps today** |
 | `Name`           | `Channel.name` / build `wireName`                      | **Maps today** |
+| `No.`            | `channelOverrides.orderOrSlot` in FM bank              | VFO at fixed high slot (`101` in sample) |
 | `Scan`           | `Channel.scanInclusion` or build export knob           | **TBD** — `Add` may mean include in FM scan bank |
 | _(implicit)_     | `modeProfiles: [{ mode: 'fm', … }]`                    | **Maps today** |
 | _(implicit)_     | `forbidTransmit: true`                                 | **Maps today** |
