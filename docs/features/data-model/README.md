@@ -136,6 +136,7 @@ Each `*Overrides` row points at a library entity by `libraryEntityId`:
 
 - **No row** — entity is included; wire name is generated at preview/export.
 - **`excluded: true`** — entity is omitted from this build's export.
+- **`forceInclude: true`** — zone overrides only; export as standalone zone despite library `omitFromExport` (`excluded` wins if both set).
 - **`wireName`** — persisted CPS wire string for that entity.
 
 This is the main place **profile-specific naming limits** land without polluting the vendor-neutral library.

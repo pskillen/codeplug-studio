@@ -1,6 +1,6 @@
 ## Purpose
 
-Shared table for build wire preview pages: per-entity include toggle, display label, and wire name override input.
+Shared table for build wire preview pages: per-entity export controls, display label, and wire name override input.
 
 ## Props
 
@@ -8,7 +8,8 @@ Shared table for build wire preview pages: per-entity include toggle, display la
 | -------------------------- | --------------------------------- | ------------------------------------------------------------------------ |
 | `rows`                     | `WirePreviewRow[]`                | Rows from `previewWireRows`                                              |
 | `nameLimit`                | `number` (optional)               | Profile wire name cap; shows error when exceeded                         |
-| `onExcludedChange`         | `(row, excluded) => void`         | Include toggle handler                                                   |
+| `onExcludedChange`         | `(row, excluded) => void`         | Skip-from-export toggle handler (`excluded: true` when checked)          |
+| `onForceIncludeChange`     | `(row, forceInclude) => void` (optional) | Force-export handler for library `omitFromExport` zones (zones page only) |
 | `onWireNameChange`         | `(row, wireName) => void`         | Wire name input handler                                                  |
 | `onUnsavedChangesChange`   | `(hasUnsaved) => void` (optional) | True while any row has an unapplied draft                                |
 | `clickableDefaultWireName` | `boolean` (optional)              | When true, the default name hint is clickable to store it as an override |
@@ -20,13 +21,14 @@ Shared table for build wire preview pages: per-entity include toggle, display la
   rows={rows}
   nameLimit={16}
   onExcludedChange={(row, excluded) => void setRowExcluded(row, excluded)}
+  onForceIncludeChange={entityKind === 'zone' ? setRowForceIncluded : undefined}
   onWireNameChange={(row, wireName) => void setRowWireName(row, wireName)}
 />
 ```
 
 ## Behaviour
 
-- **Include** — `Switch`; unchecked sets `excluded: true` on the build override (sparse storage). Disabled when the library zone has `omitFromExport` (tooltip explains the library setting).
+- **Export column** — default rows: **Skip from export** `Switch` (checked = `excluded: true`). Library `omitFromExport` zones: **Force export** switch (`forceInclude` on `zoneOverrides`); when force export is on, a **Skip from export** switch appears for build-level exclusion.
 - **Display name (internal data)** — library label; **N channels** / **M zones** pills (hover for first six names); **Not exported as zone** badge when `omitFromExport`; optional **displayDetails** sub-lines (e.g. DM32 RX-list fan-out: channel name, talk group name + ID + slot); fallback expansion note for other synthesized rows; **Edit in library** link.
 - **Wire name** — local draft with explicit **Apply** (tick) and **Revert** (×) actions; Enter applies, Escape reverts; empty input uses the default name; hint shows clickable `Default: {generatedWireName}` to store the generated name as an explicit override. Unapplied drafts trigger a leave-page confirmation on wire preview routes.
 - Multi-mode channel expansion rows use composite override keys (`channelId:${modeSuffix}`).
