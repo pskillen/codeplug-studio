@@ -2,7 +2,9 @@ import { useState } from 'react';
 import type { Library, RxGroupList } from '@core/models/library.ts';
 import { newRxGroupList } from '@core/domain/factories.ts';
 import { Stack, TextInput } from '@mantine/core';
+import { useNavigate } from 'react-router-dom';
 import RxGroupListMemberPicker from '../../components/library/RxGroupListMemberPicker.tsx';
+import EntityDeleteButton from '../../components/library/EntityDeleteButton.tsx';
 import { UnsavedChangesModal } from '../../components/ui/index.ts';
 import { useEntityEditorUnsavedGuard } from '../../hooks/useEntityFormDirty.ts';
 import { persistence } from '../../state/persistence.ts';
@@ -22,6 +24,7 @@ export default function RxGroupListEditor({
   const [name, setName] = useState(base.name);
   const [members, setMembers] = useState(base.members);
   const { save, saving, error } = useEntitySave('rx-group-lists');
+  const navigate = useNavigate();
 
   function buildRow(): RxGroupList {
     return { ...base, name: name.trim() || 'Untitled list', members };
@@ -52,6 +55,14 @@ export default function RxGroupListEditor({
         onSave={handleSave}
         cancelPath="/library/rx-group-lists"
       />
+      {entity ? (
+        <EntityDeleteButton
+          kind="rxGroupList"
+          entityId={entity.id}
+          label={entity.name}
+          onDeleted={() => navigate('/library/rx-group-lists')}
+        />
+      ) : null}
       <UnsavedChangesModal opened={modalOpen} onStay={stay} onLeave={leave} />
     </Stack>
   );

@@ -6,6 +6,7 @@ import { formatZoneDirectMemberSummary } from '@core/domain/zoneMembers.ts';
 import { applyFilters, DEFAULT_MAP_FILTER_OPTS } from '@core/domain/mapProjection.ts';
 import CodeplugMap from '../../../components/CodeplugMap/CodeplugMap.tsx';
 import UseMyLocationButton from '../../../components/UseMyLocationButton/UseMyLocationButton.tsx';
+import EntityListDeleteAction from '../../../components/library/EntityListDeleteAction.tsx';
 import { DataTable, ListPage } from '../../../components/ui/index.ts';
 import type { DataTableColumn } from '../../../components/ui/DataTable.tsx';
 import { filterRowsByName, useListNameQuery } from '../../../hooks/useListNameQuery.ts';
@@ -56,6 +57,12 @@ export default function ZonesListPage() {
         header: 'Comment',
         render: (z) => z.comment || '—',
         sortValue: (z) => z.comment || '',
+      },
+      {
+        key: 'actions',
+        header: '',
+        hideable: false,
+        render: (z) => <EntityListDeleteAction kind="zone" entityId={z.id} label={z.name} />,
       },
     ];
   }, []);

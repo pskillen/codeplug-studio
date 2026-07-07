@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import { Text } from '@mantine/core';
 import type { TalkGroup } from '@core/models/library.ts';
+import EntityListDeleteAction from '../../../components/library/EntityListDeleteAction.tsx';
 import ModePill from '../../../components/pills/ModePill.tsx';
 import { DataTable, ListPage } from '../../../components/ui/index.ts';
 import type { DataTableColumn } from '../../../components/ui/DataTable.tsx';
@@ -68,6 +69,14 @@ export default function TalkGroupsListPage() {
         header: 'Comment',
         render: (tg) => tg.comment || '—',
         sortValue: (tg) => tg.comment || '',
+      },
+      {
+        key: 'actions',
+        header: '',
+        hideable: false,
+        render: (tg) => (
+          <EntityListDeleteAction kind="talkGroup" entityId={tg.id} label={tg.name} />
+        ),
       },
     ];
   }, [library]);

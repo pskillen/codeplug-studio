@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import { Stack, Text } from '@mantine/core';
 import type { AnalogContact, DigitalContact } from '@core/models/library.ts';
+import EntityListDeleteAction from '../../../components/library/EntityListDeleteAction.tsx';
 import ModePill from '../../../components/pills/ModePill.tsx';
 import { DataTable, ListPage, PageSection } from '../../../components/ui/index.ts';
 import type { DataTableColumn } from '../../../components/ui/DataTable.tsx';
@@ -55,6 +56,14 @@ function DigitalContactsTable({
         render: (c) => c.comment || '—',
         sortValue: (c) => c.comment || '',
       },
+      {
+        key: 'actions',
+        header: '',
+        hideable: false,
+        render: (c) => (
+          <EntityListDeleteAction kind="digitalContact" entityId={c.id} label={c.name} />
+        ),
+      },
     ];
   }, [library]);
 
@@ -79,7 +88,13 @@ function DigitalContactsTable({
   );
 }
 
-function AnalogContactsTable({ contacts }: { contacts: AnalogContact[] }) {
+function AnalogContactsTable({
+  contacts,
+  library,
+}: {
+  contacts: AnalogContact[];
+  library: ReturnType<typeof useLibrary>['library'];
+}) {
   const { nameFilter, nameFilterInput, nameFilterPending, setNameFilter } =
     useListNameQuery('analog-contacts');
   const [sort, setSort] = usePersistedEntityListSort('analog-contacts', {
@@ -105,8 +120,23 @@ function AnalogContactsTable({ contacts }: { contacts: AnalogContact[] }) {
         render: (c) => c.comment || '—',
         sortValue: (c) => c.comment || '',
       },
+      {
+        key: 'channels',
+        header: 'Channels using',
+        render: (c) =>
+          formatReferenceCount(referenceCount(library, { kind: 'analogContact', id: c.id })),
+        sortValue: (c) => referenceCount(library, { kind: 'analogContact', id: c.id }),
+      },
+      {
+        key: 'actions',
+        header: '',
+        hideable: false,
+        render: (c) => (
+          <EntityListDeleteAction kind="analogContact" entityId={c.id} label={c.name} />
+        ),
+      },
     ];
-  }, []);
+  }, [library]);
 
   return (
     <DataTable
@@ -148,7 +178,7 @@ export default function ContactsListPage() {
         </PageSection>
 
         <PageSection title={`Analog contacts (${library.analogContacts.length})`}>
-          <AnalogContactsTable contacts={library.analogContacts} />
+          <AnalogContactsTable contacts={library.analogContacts} library={library} />
         </PageSection>
       </Stack>
     </ListPage>

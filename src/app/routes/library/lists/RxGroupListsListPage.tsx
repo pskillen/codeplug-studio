@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import { Text } from '@mantine/core';
 import type { RxGroupList } from '@core/models/library.ts';
+import EntityListDeleteAction from '../../../components/library/EntityListDeleteAction.tsx';
 import { DataTable, ListPage } from '../../../components/ui/index.ts';
 import type { DataTableColumn } from '../../../components/ui/DataTable.tsx';
 import { filterRowsByName, useListNameQuery } from '../../../hooks/useListNameQuery.ts';
@@ -37,6 +38,14 @@ export default function RxGroupListsListPage() {
         render: (r) =>
           formatReferenceCount(referenceCount(library, { kind: 'rxGroupList', id: r.id })),
         sortValue: (r) => referenceCount(library, { kind: 'rxGroupList', id: r.id }),
+      },
+      {
+        key: 'actions',
+        header: '',
+        hideable: false,
+        render: (r) => (
+          <EntityListDeleteAction kind="rxGroupList" entityId={r.id} label={r.name} />
+        ),
       },
     ];
   }, [library]);

@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { Button, Group, Stack, Text, TextInput } from '@mantine/core';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import type { AnalogContact } from '@core/models/library.ts';
 import { newAnalogContact } from '@core/domain/factories.ts';
+import EntityDeleteButton from '../../components/library/EntityDeleteButton.tsx';
 import { FormSection, UnsavedChangesModal } from '../../components/ui/index.ts';
 import { useEntityEditorUnsavedGuard } from '../../hooks/useEntityFormDirty.ts';
 import { persistence } from '../../state/persistence.ts';
@@ -20,6 +21,7 @@ export function AnalogContactEditor({
   const [code, setCode] = useState(base.code);
   const [comment, setComment] = useState(base.comment);
   const { save, saving, error } = useEntitySave('analog-contacts');
+  const navigate = useNavigate();
 
   function buildRow(): AnalogContact {
     return {
@@ -63,6 +65,14 @@ export function AnalogContactEditor({
         <Button component={Link} to="/library/contacts" variant="light">
           Cancel
         </Button>
+        {entity ? (
+          <EntityDeleteButton
+            kind="analogContact"
+            entityId={entity.id}
+            label={entity.name}
+            onDeleted={() => navigate('/library/contacts')}
+          />
+        ) : null}
       </Group>
       <UnsavedChangesModal opened={modalOpen} onStay={stay} onLeave={leave} />
     </Stack>
