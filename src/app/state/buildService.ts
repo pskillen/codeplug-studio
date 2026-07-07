@@ -1,5 +1,5 @@
 import type { FormatBuild, BuildExportSettings } from '@core/models/formatBuild.ts';
-import type { ZoneGroupingLayout, FlatMemoryLayout } from '@core/models/traitLayout.ts';
+import type { ZoneGroupingLayout } from '@core/models/traitLayout.ts';
 import { newFormatBuild } from '@core/domain/factories.ts';
 import { type OverrideField, upsertOverride } from '@core/domain/formatBuildOverrides.ts';
 import { isoNow, nextRevision } from '@core/models/revision.ts';
@@ -114,17 +114,6 @@ export class BuildService {
   withZoneGroupingSection(build: FormatBuild, section: ZoneGroupingLayout): FormatBuild {
     const now = isoNow();
     const other = build.layout.sections.filter((s) => s.kind !== 'zoneGrouping');
-    return {
-      ...build,
-      layout: { sections: [...other, section] },
-      updatedAt: now,
-      revision: nextRevision(build.revision),
-    };
-  }
-
-  withFlatMemorySection(build: FormatBuild, section: FlatMemoryLayout): FormatBuild {
-    const now = isoNow();
-    const other = build.layout.sections.filter((s) => s.kind !== 'flatMemory');
     return {
       ...build,
       layout: { sections: [...other, section] },

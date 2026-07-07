@@ -4,15 +4,12 @@ import { IconArrowDown, IconArrowUp, IconPlus, IconTrash } from '@tabler/icons-r
 import { Link } from 'react-router-dom';
 import type { BuildExportSettings } from '@core/models/formatBuild.ts';
 import { channelDisplayLabel } from '@core/domain/channelNaming.ts';
-import { overrideByEntityId } from '@core/domain/formatBuildOverrides.ts';
+import { isEntityExcluded, overrideByEntityId } from '@core/domain/formatBuildOverrides.ts';
 import {
-  addFlatMemoryChannel,
-  findFlatMemorySection,
-  removeFlatMemoryChannel,
-  reorderFlatMemoryChannels,
-  seedFlatMemoryFromBuild,
-} from '@core/domain/flatMemoryLayout.ts';
-import { isChirpAnalogueExportable } from '@core/import-export/formats/chirp/channelWire.ts';
+  applyDenseChannelOrderOrSlots,
+  chirpMemoryChannelIds,
+  isChirpFlatMemoryChannel,
+} from '@core/domain/exportOrderOrSlot.ts';
 import { getFormatProfiles } from '@core/import-export/formatProfiles.ts';
 import { getFormatExportDefaults } from '@core/import-export/registry.ts';
 import type { FormatId } from '@core/import-export/types.ts';
@@ -39,7 +36,7 @@ import { persistence } from '../../state/persistence.ts';
 const buildService = new BuildService(persistence);
 
 function analogueChannels(channels: Channel[]): Channel[] {
-  return channels.filter((channel) => isChirpAnalogueExportable(channel));
+  return channels.filter((channel) => isChirpFlatMemoryChannel(channel));
 }
 
 export default function BuildFlatMemoryChannelsPage() {
@@ -48,14 +45,12 @@ export default function BuildFlatMemoryChannelsPage() {
   const { activeProjectId } = useProjects();
   const { putBuild } = useFormatBuilds();
   const [channels, setChannels] = useState<Channel[]>([]);
-  const [channelsLoaded, setChannelsLoaded] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [settingsError, setSettingsError] = useState<string | null>(null);
   const [savingSettings, setSavingSettings] = useState(false);
   const [dirtyWireNameKeys, setDirtyWireNameKeys] = useState<Set<string>>(() => new Set());
   const hasUnsavedWireNames = dirtyWireNameKeys.size > 0;
-  const seededRef = useRef(false);
   const { modalOpen, stay, leave } = useUnsavedNavigationGuard(hasUnsavedWireNames);
 
   useEffect(() => {
@@ -76,12 +71,8 @@ export default function BuildFlatMemoryChannelsPage() {
   useEffect(() => {
     if (!activeProjectId) return;
     let cancelled = false;
-    setChannelsLoaded(false);
     void persistence.listChannels(activeProjectId).then((rows) => {
-      if (!cancelled) {
-        setChannels(rows);
-        setChannelsLoaded(true);
-      }
+      if (!cancelled) setChannels(rows);
     });
     return () => {
       cancelled = true;
@@ -100,75 +91,38 @@ export default function BuildFlatMemoryChannelsPage() {
     [channels],
   );
 
-  const persistedSection = useMemo(() => findFlatMemorySection(build), [build]);
-
-  const memorySection = useMemo(() => {
-    if (persistedSection) return persistedSection;
-    return seedFlatMemoryFromBuild(build, librarySlice);
-  }, [persistedSection, build, librarySlice]);
-
   const channelById = useMemo(() => new Map(channels.map((ch) => [ch.id, ch])), [channels]);
 
   const memoryChannelIds = useMemo(
-    () =>
-      memorySection.channelIds.filter((channelId) => {
-        const channel = channelById.get(channelId);
-        if (!channel) return true;
-        return isChirpAnalogueExportable(channel);
-      }),
-    [memorySection.channelIds, channelById],
+    () => chirpMemoryChannelIds(build, librarySlice),
+    [build, librarySlice],
   );
 
-  const persistSection = useCallback(
-    async (nextSection: typeof memorySection) => {
+  const persistBuild = useCallback(
+    async (next: typeof build) => {
       const current = buildRef.current;
       setSaving(true);
       setError(null);
-      const next = buildService.withFlatMemorySection(current, nextSection);
       const result = await putBuild(next, current.revision);
       setSaving(false);
       if (!result.ok) {
         setError(
           result.reason === 'revision_conflict'
             ? 'Build changed elsewhere — reload and try again.'
-            : 'Could not save memory list.',
+            : 'Could not save build.',
         );
       }
     },
     [putBuild],
   );
 
-  useEffect(() => {
-    seededRef.current = false;
-  }, [build.id]);
-
-  useEffect(() => {
-    if (!channelsLoaded || persistedSection || seededRef.current) return;
-
-    const seed = seedFlatMemoryFromBuild(buildRef.current, librarySlice);
-    if (seed.channelIds.length === 0) return;
-
-    seededRef.current = true;
-    void persistSection(seed);
-  }, [channelsLoaded, persistedSection, librarySlice, persistSection]);
-
-  useEffect(() => {
-    if (!channelsLoaded || !persistedSection) return;
-
-    const digitalIds = persistedSection.channelIds.filter((channelId) => {
-      const channel = channelById.get(channelId);
-      return channel != null && !isChirpAnalogueExportable(channel);
-    });
-    if (digitalIds.length === 0) return;
-
-    const nextIds = persistedSection.channelIds.filter((id) => !digitalIds.includes(id));
-    void persistSection(reorderFlatMemoryChannels(persistedSection, nextIds));
-  }, [channelsLoaded, persistedSection, channelById, persistSection]);
-
-  const notInList = useMemo(() => {
-    const inList = new Set(memoryChannelIds);
-    return analogueChannels(channels).filter((ch) => !inList.has(ch.id));
-  }, [channels, memoryChannelIds]);
+  const excludedChannelIds = useMemo(
+    () =>
+      analogueChannels(channels)
+        .filter((channel) => isEntityExcluded(build.channelOverrides, channel.id))
+        .map((channel) => channel.id),
+    [channels, build.channelOverrides],
+  );
 
   async function handleExportSettingsPatch(patch: Partial<BuildExportSettings>) {
     setSavingSettings(true);
@@ -253,15 +207,37 @@ export default function BuildFlatMemoryChannelsPage() {
     })();
   }
 
+  function setChannelOrder(orderedChannelIds: string[]) {
+    const current = buildRef.current;
+    const nextOverrides = applyDenseChannelOrderOrSlots(
+      current.channelOverrides,
+      orderedChannelIds,
+    );
+    void persistBuild({ ...current, channelOverrides: nextOverrides });
+  }
+
   function moveChannel(channelId: string, direction: 'up' | 'down') {
     const ids = [...memoryChannelIds];
     const index = ids.indexOf(channelId);
     if (index < 0) return;
     const target = direction === 'up' ? index - 1 : index + 1;
     if (target < 0 || target >= ids.length) return;
-    const nextIds = [...ids];
-    [nextIds[index], nextIds[target]] = [nextIds[target]!, nextIds[index]!];
-    void persistSection(reorderFlatMemoryChannels(memorySection, nextIds));
+    [ids[index], ids[target]] = [ids[target]!, ids[index]!];
+    setChannelOrder(ids);
+  }
+
+  function excludeChannel(channelId: string) {
+    const current = buildRef.current;
+    void persistBuild(
+      buildService.withEntityExcluded(current, 'channelOverrides', channelId, true),
+    );
+  }
+
+  function includeChannel(channelId: string) {
+    const current = buildRef.current;
+    void persistBuild(
+      buildService.withEntityExcluded(current, 'channelOverrides', channelId, false),
+    );
   }
 
   return (
@@ -279,7 +255,8 @@ export default function BuildFlatMemoryChannelsPage() {
       <Stack gap="md">
         <Text size="sm" c="dimmed">
           All analogue FM/AM library channels are included by default. Remove channels to exclude
-          them from export. Location numbers (1…n) follow this list. Digital modes are not exported.
+          them from export. Location numbers (1…n) follow export order. Digital modes are not
+          exported.
         </Text>
         <ExportNameModeSelect
           value={exportSettings.nameModeOverride}
@@ -407,9 +384,7 @@ export default function BuildFlatMemoryChannelsPage() {
                       size="sm"
                       aria-label="Exclude from export"
                       disabled={saving}
-                      onClick={() =>
-                        void persistSection(removeFlatMemoryChannel(memorySection, channelId))
-                      }
+                      onClick={() => excludeChannel(channelId)}
                     >
                       <IconTrash size={ICON_SIZE_ACTION} stroke={ICON_STROKE} />
                     </ActionIcon>
@@ -420,26 +395,28 @@ export default function BuildFlatMemoryChannelsPage() {
           </Table.Tbody>
         </Table>
 
-        {notInList.length > 0 ? (
+        {excludedChannelIds.length > 0 ? (
           <Stack gap="xs">
             <Text size="sm" fw={600}>
               Include excluded channel
             </Text>
             <Group gap="xs">
-              {notInList.map((channel) => (
-                <Button
-                  key={channel.id}
-                  size="compact-sm"
-                  variant="light"
-                  leftSection={<IconPlus size={14} stroke={ICON_STROKE} />}
-                  disabled={saving}
-                  onClick={() =>
-                    void persistSection(addFlatMemoryChannel(memorySection, channel.id))
-                  }
-                >
-                  {channelDisplayLabel(channel)}
-                </Button>
-              ))}
+              {excludedChannelIds.map((channelId) => {
+                const channel = channelById.get(channelId);
+                if (!channel) return null;
+                return (
+                  <Button
+                    key={channelId}
+                    size="compact-sm"
+                    variant="light"
+                    leftSection={<IconPlus size={14} stroke={ICON_STROKE} />}
+                    disabled={saving}
+                    onClick={() => includeChannel(channelId)}
+                  >
+                    {channelDisplayLabel(channel)}
+                  </Button>
+                );
+              })}
             </Group>
           </Stack>
         ) : null}
