@@ -229,9 +229,14 @@ function WirePreviewDisplayCell({ row }: { row: WirePreviewRow }) {
           {row.expansionNote}
         </Text>
       ) : null}
-      <Anchor component={Link} to={libraryEditPathForWirePreviewRow(row)} size="xs">
-        Edit in library
-      </Anchor>
+      {(() => {
+        const libraryPath = libraryEditPathForWirePreviewRow(row);
+        return libraryPath ? (
+          <Anchor component={Link} to={libraryPath} size="xs">
+            Edit in library
+          </Anchor>
+        ) : null;
+      })()}
     </Stack>
   );
 }

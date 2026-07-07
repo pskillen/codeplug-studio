@@ -36,6 +36,7 @@ function minimalAssembled(overrides: Partial<AssembledBuild> = {}): AssembledBui
     digitalContacts: [],
     analogContacts: [],
     rxGroupLists: [],
+    scanLists: [],
     ...overrides,
   };
 }

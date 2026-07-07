@@ -46,6 +46,7 @@ function dm32Build(): FormatBuild {
     talkGroupOverrides: [],
     rxGroupListOverrides: [],
     contactOverrides: [],
+    scanListOverrides: [],
     exportUnlinkedChannels: true,
     exportUnlinkedTalkGroups: true,
     exportUnlinkedRxGroupLists: true,

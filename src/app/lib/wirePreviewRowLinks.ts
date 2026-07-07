@@ -1,6 +1,6 @@
 import type { WirePreviewRow } from '@core/services/previewWireRows.ts';
 
-function editorSlugForRow(row: WirePreviewRow): string {
+function editorSlugForRow(row: WirePreviewRow): string | null {
   switch (row.entityKind) {
     case 'channel':
       return 'channels';
@@ -12,9 +12,13 @@ function editorSlugForRow(row: WirePreviewRow): string {
       return 'rx-group-lists';
     case 'contact':
       return row.displayLabel.includes('(analog)') ? 'analog-contacts' : 'digital-contacts';
+    case 'scanList':
+      return null;
   }
 }
 
-export function libraryEditPathForWirePreviewRow(row: WirePreviewRow): string {
-  return `/library/${editorSlugForRow(row)}/${row.libraryEntityId}`;
+export function libraryEditPathForWirePreviewRow(row: WirePreviewRow): string | null {
+  const slug = editorSlugForRow(row);
+  if (slug === null) return null;
+  return `/library/${slug}/${row.libraryEntityId}`;
 }

@@ -51,6 +51,7 @@ describe('chirp/serialise', () => {
       digitalContacts: [],
       analogContacts: [],
       rxGroupLists: [],
+      scanLists: [],
       channelMemorySlots: [
         { slot: 1, channelId: 'ch-2' },
         { slot: 2, channelId: 'ch-1' },
@@ -92,6 +93,7 @@ describe('chirp/serialise', () => {
       digitalContacts: [],
       analogContacts: [],
       rxGroupLists: [],
+      scanLists: [],
       channelMemorySlots: [
         { slot: 1, channelId: 'ch-1' },
         { slot: 2, channelId: null },
@@ -134,6 +136,7 @@ describe('chirp/serialise', () => {
       digitalContacts: [],
       analogContacts: [],
       rxGroupLists: [],
+      scanLists: [],
       channelMemorySlots: [{ slot: 1, channelId: 'ch-dmr' }],
     };
 

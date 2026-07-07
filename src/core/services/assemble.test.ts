@@ -247,6 +247,7 @@ describe('assemble', () => {
       digitalContactSelections: [],
       analogContactSelections: [],
       contactOverrides: [],
+      scanListOverrides: [],
     };
 
     const projection = assemble(build, library);
@@ -330,6 +331,7 @@ describe('assemble', () => {
       digitalContactSelections: [],
       analogContactSelections: [],
       contactOverrides: [],
+      scanListOverrides: [],
     };
 
     const projection = assemble(build, library);
@@ -396,6 +398,7 @@ describe('assemble', () => {
       digitalContactSelections: [],
       analogContactSelections: [],
       contactOverrides: [],
+      scanListOverrides: [],
     };
 
     const projection = assemble(build, library);
@@ -460,6 +463,7 @@ describe('assemble', () => {
       digitalContactSelections: [],
       analogContactSelections: [],
       contactOverrides: [],
+      scanListOverrides: [],
     };
 
     const projection = assemble(build, library);
@@ -527,6 +531,7 @@ describe('assemble', () => {
       digitalContactSelections: [],
       analogContactSelections: [],
       contactOverrides: [],
+      scanListOverrides: [],
     };
 
     const projection = assemble(build, library);
@@ -580,6 +585,7 @@ describe('assemble', () => {
       digitalContactSelections: [],
       analogContactSelections: [],
       contactOverrides: [],
+      scanListOverrides: [],
     };
 
     const projection = assemble(build, library);
@@ -630,6 +636,7 @@ describe('assemble', () => {
       digitalContactSelections: [],
       analogContactSelections: [],
       contactOverrides: [],
+      scanListOverrides: [],
     };
 
     const projection = assemble(build, library);
@@ -686,6 +693,7 @@ describe('assemble', () => {
       talkGroupOverrides: [],
       rxGroupListOverrides: [],
       contactOverrides: [],
+      scanListOverrides: [],
     };
 
     const projection = assemble(build, library);
@@ -695,8 +703,9 @@ describe('assemble', () => {
   });
 
   it('projects dedicated scan lists and channel scan list wire names', () => {
-    const ch1 = newChannel({ name: 'Channel 1' });
-    const ch2 = newChannel({ name: 'Channel 2' });
+    const projectId = 'project-1';
+    const ch1 = newChannel(projectId, 'Channel 1');
+    const ch2 = newChannel(projectId, 'Channel 2');
     const scanListId = 'scan-list-1';
     const build = {
       ...newFormatBuild('project-1', 'anytone-at-d890uv'),

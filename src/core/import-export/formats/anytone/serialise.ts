@@ -137,7 +137,7 @@ function serialiseDigitalContactsCsv(assembled: AssembledBuild): string {
   const rows = assembled.digitalContacts.map((contact, index) =>
     padRow(DIGITAL_CONTACT_HEADERS, {
       [DIGITAL_CONTACT_COL.number]: String(index + 1),
-      [DIGITAL_CONTACT_COL.callsign]: contact.entity.callsign ?? '',
+      [DIGITAL_CONTACT_COL.callsign]: '',
       [DIGITAL_CONTACT_COL.name]: contact.wireName,
       [DIGITAL_CONTACT_COL.callType]: 'Private Call',
     }),

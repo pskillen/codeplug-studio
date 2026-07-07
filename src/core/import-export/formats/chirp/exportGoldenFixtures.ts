@@ -112,6 +112,7 @@ export function libraryAndBuildFromChirpFixture(
     talkGroupOverrides: [],
     rxGroupListOverrides: [],
     contactOverrides: [],
+    scanListOverrides: [],
     exportSettings: { shortenNames: false },
   };
 

@@ -565,7 +565,7 @@ function parseFormatBuild(raw: unknown, index: number): ParsedFormatBuild {
     layout: parseTraitLayout(record.layout),
     channelOverrides: parseOverrideField(record, 'channelOverrides', 'channelSelections', label),
     zoneOverrides: parseOverrideField(record, 'zoneOverrides', 'zoneSelections', label),
-    scanListOverrides: parseOverrideField(record, 'scanListOverrides', undefined, label),
+    scanListOverrides: parseOverrideField(record, 'scanListOverrides', '', label),
     talkGroupOverrides: parseOverrideField(
       record,
       'talkGroupOverrides',
