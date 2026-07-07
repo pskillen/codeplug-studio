@@ -6,10 +6,10 @@ Location block for the channel editor: Maidenhead locator, lat/lon inputs, use-l
 
 ## Props
 
-| Prop        | Type                                     | Description                                                   |
-| ----------- | ---------------------------------------- | ------------------------------------------------------------- |
-| `value`     | `ChannelLocationValues`                  | Current locator, coords, useLocation, and `lastEdited` source |
-| `onChange`  | `(value: ChannelLocationValues) => void` | Called on any field or map change                             |
+| Prop        | Type                                     | Description                                                                            |
+| ----------- | ---------------------------------------- | -------------------------------------------------------------------------------------- |
+| `value`     | `ChannelLocationValues`                  | Current locator, coords, useLocation, and `lastEdited` source                          |
+| `onChange`  | `(value: ChannelLocationValues) => void` | Called on any field or map change                                                      |
 | `mapActive` | `boolean`                                | When `false`, locator/coords fields stay mounted but the map unmounts (default `true`) |
 
 ## Usage
