@@ -28,7 +28,7 @@ Shared table for build wire preview pages: per-entity export controls, display l
 
 ## Behaviour
 
-- **Export column** — default rows: **Skip from export** `Switch` (checked = `excluded: true`). Library `omitFromExport` zones: **Force export** switch (`forceInclude` on `zoneOverrides`); when force export is on, a **Skip from export** switch appears for build-level exclusion.
+- **Skip from export column** — default rows: **Skip from export** `Switch` (checked = `excluded: true`). Library `omitFromExport` zones: **Force export** switch (`forceInclude` on `zoneOverrides`); when force export is on, a **Skip from export** switch appears for build-level exclusion.
 - **Display name (internal data)** — library label; **N channels** / **M zones** pills (hover for first six names); **Not exported as zone** badge when `omitFromExport`; optional **displayDetails** sub-lines (e.g. DM32 RX-list fan-out: channel name, talk group name + ID + slot); fallback expansion note for other synthesized rows; **Edit in library** link.
 - **Wire name** — local draft with explicit **Apply** (tick) and **Revert** (×) actions; Enter applies, Escape reverts; empty input uses the default name; hint shows clickable `Default: {generatedWireName}` to store the generated name as an explicit override. Unapplied drafts trigger a leave-page confirmation on wire preview routes.
 - Multi-mode channel expansion rows use composite override keys (`channelId:${modeSuffix}`).

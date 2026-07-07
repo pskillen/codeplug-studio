@@ -189,6 +189,8 @@ function WirePreviewExportControls({
 
   return (
     <Switch
+      size="xs"
+      label="Skip from export"
       checked={row.excluded}
       onChange={(event) => onExcludedChange(row, event.currentTarget.checked)}
       aria-label={`Skip ${row.displayLabel} from export`}
@@ -272,7 +274,7 @@ export default function WirePreviewTable({
     <Table striped highlightOnHover withTableBorder>
       <Table.Thead>
         <Table.Tr>
-          <Table.Th>Export</Table.Th>
+          <Table.Th>Skip from export</Table.Th>
           <Table.Th>Library name</Table.Th>
           <Table.Th>Export name</Table.Th>
         </Table.Tr>

@@ -61,6 +61,7 @@ describe('WirePreviewTable', () => {
       onWireNameChange: vi.fn(),
     });
 
+    expect(screen.getByText('Skip from export', { selector: 'th' })).toBeInTheDocument();
     expect(screen.getByText('GB3DA Demo')).toBeInTheDocument();
     expect(screen.getByText('Excluded channel')).toBeInTheDocument();
     expect(screen.getByLabelText('Skip GB3DA Demo from export')).not.toBeChecked();
