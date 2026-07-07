@@ -139,6 +139,20 @@ export function isAnalogChannelModeProfile(
   return isAnalogChannelMode(profile.mode);
 }
 
+export function channelHasAnalogProfile(channel: Pick<Channel, 'modeProfiles'>): boolean {
+  return channel.modeProfiles.some(isAnalogChannelModeProfile);
+}
+
+/** Patch every analog mode profile on a channel — does not add or remove profiles. */
+export function patchAllAnalogProfiles(
+  channel: Pick<Channel, 'modeProfiles'>,
+  patch: Partial<ChannelModeProfileAnalog>,
+): ChannelModeProfile[] {
+  return channel.modeProfiles.map((profile) =>
+    isAnalogChannelModeProfile(profile) ? { ...profile, ...patch } : profile,
+  );
+}
+
 export function validateModeProfiles(profiles: ChannelModeProfile[]): string[] {
   const errors: string[] = [];
   const seen = new Set<ChannelMode>();
