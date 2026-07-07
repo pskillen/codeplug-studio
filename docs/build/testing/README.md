@@ -51,7 +51,7 @@ flowchart TB
 | Watch      | `npm run test:watch` | Same, interactive                       |
 | Coverage   | —                    | **Planned** — not in `package.json` yet |
 | System     | —                    | **Planned** — no `src/test/system/` yet |
-| E2e        | —                    | **Planned** — Playwright not wired      |
+| E2e        | `npm run test:e2e`   | Playwright — cookie consent smoke shipped ([#176](https://github.com/pskillen/codeplug-studio/issues/176)); see [e2e.md](e2e.md) |
 
 Run before commit when touching application code: `npm run lint`, `npm run format:check`, `npm test`, and `npm run build` when types or build config change. See [git-workflow](../../.cursor/skills/git-workflow/SKILL.md).
 
@@ -66,7 +66,7 @@ Every pull request and push to `main` runs [`.github/workflows/ci.yml`](../../.g
 | Unit tests         | `npm run test`         | Yes         | Vitest; JUnit XML + dorny/test-reporter on PRs |
 | Type-check + build | `npm run build`        | Yes         | `tsc -b && vite build`                         |
 | Coverage           | —                      | **Planned** |                                                |
-| E2e                | —                      | **Planned** |                                                |
+| E2e                | `npm run test:e2e`     | Yes (separate job) | Playwright on `vite preview`; consent smoke |
 
 Docs-only PRs: `format:check` + link audit is sufficient.
 

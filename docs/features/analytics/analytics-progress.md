@@ -11,6 +11,10 @@
 | Cookie banner | Shipped | `CookieConsentBanner` |
 | Dual GA CI wiring | Shipped | prod + pre-prod secrets |
 | GA4 + path sanitization | Shipped | `gtag.ts`, `analyticsPagePath` |
-| Playwright consent smoke | Shipped | `e2e/cookie-consent.spec.ts` |
 | Vitest coverage | Shipped | `App.test.tsx` consent + legal |
-| Documentation | Pending | |
+| Playwright consent smoke | Shipped | `e2e/cookie-consent.spec.ts` |
+| Documentation | Shipped | `docs/features/analytics/README.md` |
+
+## PR
+
+Single PR on branch `96/pskil/usage-analytics` — closes #96, #97, #98, #173, #174, #175, #176 (partial #162 Playwright scaffold).
