@@ -277,9 +277,13 @@ function ChannelBulkEditModalBody({
       {showAnalogSection ? (
         <Accordion variant="separated">
           <Accordion.Item value="analog">
-            <Accordion.Control description="Updates squelch on existing analog mode profiles only. Does not add or remove modes.">
+            <Accordion.Control>
               Analog mode settings
+              <Text size="xs" c="dimmed">
+                Updates squelch on existing analog mode profiles only. Does not add or remove modes.
+              </Text>
             </Accordion.Control>
+
             <Accordion.Panel>
               <Stack gap="sm">
                 <Checkbox
