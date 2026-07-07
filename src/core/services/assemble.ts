@@ -258,8 +258,7 @@ function assembleZones(
 
   return library.zones
     .filter(
-      (zone) =>
-        !isEntityExcluded(overrides, zone.id) && zoneExportsStandalone(zone, overrides),
+      (zone) => !isEntityExcluded(overrides, zone.id) && zoneExportsStandalone(zone, overrides),
     )
     .map((zone) => {
       const memberChannelIds = resolveEffectiveZoneChannelIds(zone, library.zones).filter((id) =>

@@ -79,9 +79,7 @@ describe('native-yaml round-trip smoke', () => {
         {
           ...build,
           zoneOverrides: build.zoneOverrides.map((row) =>
-            row.libraryEntityId === FIXTURE_ZONE_ID
-              ? { ...row, forceInclude: true }
-              : row,
+            row.libraryEntityId === FIXTURE_ZONE_ID ? { ...row, forceInclude: true } : row,
           ),
         },
       ],

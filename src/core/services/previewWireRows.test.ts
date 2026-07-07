@@ -568,9 +568,7 @@ describe('previewWireRows', () => {
     const build = {
       ...newFormatBuild(projectId, 'opengd77-1701', 'Force excluded preview'),
       formatId: 'opengd77',
-      zoneOverrides: [
-        { libraryEntityId: pmrZone.id, forceInclude: true, excluded: true },
-      ],
+      zoneOverrides: [{ libraryEntityId: pmrZone.id, forceInclude: true, excluded: true }],
     };
     const library = {
       channels: [pmrChannel],

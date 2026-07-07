@@ -10,12 +10,12 @@ Operator workflow for reviewing and shaping CPS wire names before export. Each b
 
 Build overrides use **sparse opt-out** storage (`BuildEntityOverride`):
 
-| Field            | Meaning                                                            |
-| ---------------- | ------------------------------------------------------------------ |
-| _(no row)_       | Entity is **included**; wire name is generated from library fields |
-| `excluded: true` | Omit from export projection                                        |
+| Field            | Meaning                                                                       |
+| ---------------- | ----------------------------------------------------------------------------- |
+| _(no row)_       | Entity is **included**; wire name is generated from library fields            |
+| `excluded: true` | Omit from export projection                                                   |
 | `forceInclude`   | Zone overrides only — export standalone zone despite library `omitFromExport` |
-| `wireName`       | Override the generated CPS name                                    |
+| `wireName`       | Override the generated CPS name                                               |
 
 Overrides are stored on `FormatBuild` as `channelOverrides`, `zoneOverrides`, `talkGroupOverrides`, `contactOverrides`, and `rxGroupListOverrides` (`studioSchemaVersion: 3`).
 
@@ -40,13 +40,13 @@ For `formatId === 'dm32'`, channel preview uses the same expansion path as expor
 
 ## Routes
 
-| Route                        | Entity kind   | Notes                                                                                                                                                                                                                                |
-| ---------------------------- | ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `/builds/:id/channels`       | `channel`     | Export name mode + **use channel abbreviations** toggles; click default name to store override; multi-mode rows (OpenGD77) or RX-list fan-out rows (DM32); leave-page guard for unapplied drafts                                     |
+| Route                        | Entity kind   | Notes                                                                                                                                                                                                                                                                     |
+| ---------------------------- | ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `/builds/:id/channels`       | `channel`     | Export name mode + **use channel abbreviations** toggles; click default name to store override; multi-mode rows (OpenGD77) or RX-list fan-out rows (DM32); leave-page guard for unapplied drafts                                                                          |
 | `/builds/:id/zones`          | `zone`        | Click default name to store override; **Not exported as zone** badge when library `omitFromExport` is set; **Force export** per-build override; **N channels** / **M zones** member pills with name tooltips; DM32 builds show zone export trait controls above the table |
-| `/builds/:id/talk-groups`    | `talkGroup`   | Unreferenced TGs still listed; click default name to store override                                                                                                                                                                  |
-| `/builds/:id/contacts`       | `contact`     | Digital + analog contacts; click default name to store override                                                                                                                                                                      |
-| `/builds/:id/rx-group-lists` | `rxGroupList` | Click default name to store override                                                                                                                                                                                                 |
+| `/builds/:id/talk-groups`    | `talkGroup`   | Unreferenced TGs still listed; click default name to store override                                                                                                                                                                                                       |
+| `/builds/:id/contacts`       | `contact`     | Digital + analog contacts; click default name to store override                                                                                                                                                                                                           |
+| `/builds/:id/rx-group-lists` | `rxGroupList` | Click default name to store override                                                                                                                                                                                                                                      |
 
 Secondary nav is trait-gated (`buildNavItems` in `src/app/routes/builds/nav.ts`).
 

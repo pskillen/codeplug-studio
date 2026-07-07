@@ -621,9 +621,7 @@ describe('assemble', () => {
       profileId: 'opengd77-1701',
       layout: { sections: [] },
       channelOverrides: [],
-      zoneOverrides: [
-        { libraryEntityId: pmrZone.id, forceInclude: true, excluded: true },
-      ],
+      zoneOverrides: [{ libraryEntityId: pmrZone.id, forceInclude: true, excluded: true }],
       talkGroupOverrides: [],
       rxGroupListOverrides: [],
       channelSelections: [],

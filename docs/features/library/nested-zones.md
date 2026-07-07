@@ -30,8 +30,8 @@ Nesting is **not reconstructed** from flat CPS import — it is created and main
 | `channel`   | `{ kind: 'channel', channelId, includeInScanList? }` | Wire channel name (after assemble)                       |
 | `zone`      | `{ kind: 'zone', zoneId }`                           | Expanded to child zone's effective channels, depth-first |
 
-| Zone field       | Default | Export effect                                                                                                                                                                            |
-| ---------------- | ------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Zone field       | Default | Export effect                                                                                                                                                                                                                                                                                       |
+| ---------------- | ------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `omitFromExport` | off     | When on: no row in `Zones.csv`; channels flatten into parent zone rows. Channels export only when reachable via a parent zone — standalone omit-only zones do not export their channels unless a build sets `forceInclude` on the zone override (see [wire-preview.md](../builds/wire-preview.md)). |
 
 Rules:
