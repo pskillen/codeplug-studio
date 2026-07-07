@@ -11,12 +11,9 @@ export interface BuildNavItem {
 export function buildNavItems(build: FormatBuild): BuildNavItem[] {
   const base = `/builds/${build.id}`;
   const traits = new Set(traitProfileFor(build.profileId)?.traits ?? []);
+  const flatMemory = traits.has(BuildCapabilityTrait.FlatMemoryList);
 
   const items: BuildNavItem[] = [{ label: 'Overview', path: `${base}/overview` }];
-
-  if (traits.has(BuildCapabilityTrait.FlatMemoryList)) {
-    items.push({ label: 'Memories', path: `${base}/memories` });
-  }
 
   items.push({ label: 'Channels', path: `${base}/channels` });
 
@@ -24,12 +21,15 @@ export function buildNavItems(build: FormatBuild): BuildNavItem[] {
     items.push({ label: 'Zones', path: `${base}/zones` });
   }
 
-  items.push(
-    { label: 'Talk groups', path: `${base}/talk-groups` },
-    { label: 'Contacts', path: `${base}/contacts` },
-    { label: 'RX group lists', path: `${base}/rx-group-lists` },
-    { label: 'Export', path: `${base}/export` },
-  );
+  if (!flatMemory) {
+    items.push(
+      { label: 'Talk groups', path: `${base}/talk-groups` },
+      { label: 'Contacts', path: `${base}/contacts` },
+      { label: 'RX group lists', path: `${base}/rx-group-lists` },
+    );
+  }
+
+  items.push({ label: 'Export', path: `${base}/export` });
 
   return items;
 }
