@@ -16,6 +16,18 @@ export interface ZoneGroupingLayout {
   zones: ZoneGroupingZoneEntry[];
 }
 
+/** Dedicated scan lists for formats with first-class ScanList CPS files. */
+export interface ScanListEntry {
+  id: string;
+  name: string;
+  channelIds: string[];
+}
+
+export interface ScanListsLayout {
+  kind: 'scanLists';
+  scanLists: ScanListEntry[];
+}
+
 /** Flat memory list ordering for analogue-style radios. */
 export interface FlatMemoryLayout {
   kind: 'flatMemory';
@@ -23,7 +35,7 @@ export interface FlatMemoryLayout {
   scanFlags: Record<string, boolean>;
 }
 
-export type TraitLayoutSection = ZoneGroupingLayout | FlatMemoryLayout;
+export type TraitLayoutSection = ZoneGroupingLayout | ScanListsLayout | FlatMemoryLayout;
 
 export interface TraitLayout {
   sections: TraitLayoutSection[];

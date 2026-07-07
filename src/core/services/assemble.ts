@@ -7,7 +7,7 @@ import type {
   TalkGroup,
   Zone,
 } from '@core/models/library.ts';
-import type { ZoneGroupingLayout } from '@core/models/traitLayout.ts';
+import type { ZoneGroupingLayout, ScanListsLayout } from '@core/models/traitLayout.ts';
 import {
   isEntityExcluded,
   isEntityForceIncluded,
@@ -48,6 +48,14 @@ export interface AssembledChannel {
   wireName: string;
   /** Set when the build has an explicit channel wire name override. */
   wireNameOverride?: string;
+  /** CPS scan list wire name from channel override scanListId — `None` when unset. */
+  scanListWireName?: string;
+}
+
+export interface AssembledScanList {
+  scanListId: string;
+  wireName: string;
+  memberChannelIds: string[];
 }
 
 export interface AssembledZone {
@@ -65,6 +73,7 @@ export interface AssembledBuild {
   buildName: string;
   channels: AssembledChannel[];
   zones: AssembledZone[];
+  scanLists: AssembledScanList[];
   talkGroups: AssembledEntity<TalkGroup>[];
   digitalContacts: AssembledEntity<DigitalContact>[];
   analogContacts: AssembledEntity<AnalogContact>[];
@@ -73,6 +82,8 @@ export interface AssembledBuild {
   library?: LibrarySlice;
   /** Zone grouping layout section when build has one — used for DM32 scan/scratch export. */
   zoneGrouping?: ZoneGroupingLayout;
+  /** Dedicated scan lists layout when build has one — Anytone ScanList.CSV. */
+  scanListsLayout?: ScanListsLayout;
   /** CHIRP flat-memory slots (blank slots have `channelId: null`). */
   channelMemorySlots?: ExportMemorySlot[];
 }
@@ -154,6 +165,48 @@ function expandRefsFromRxLists(
 
 function zoneGroupingSections(build: FormatBuild): ZoneGroupingLayout[] {
   return build.layout.sections.filter((s): s is ZoneGroupingLayout => s.kind === 'zoneGrouping');
+}
+
+function scanListsSections(build: FormatBuild): ScanListsLayout[] {
+  return build.layout.sections.filter((s): s is ScanListsLayout => s.kind === 'scanLists');
+}
+
+function resolveChannelScanListWireName(
+  channelId: string,
+  channelOverrides: BuildEntityOverride[],
+  scanListById: Map<string, AssembledScanList>,
+): string {
+  const scanListId = overrideByEntityId(channelOverrides).get(channelId)?.scanListId;
+  if (!scanListId) return 'None';
+  return scanListById.get(scanListId)?.wireName ?? 'None';
+}
+
+function assembleScanLists(
+  build: FormatBuild,
+  exportedChannelIds: Set<string>,
+): AssembledScanList[] {
+  const sections = scanListsSections(build);
+  if (sections.length === 0) return [];
+
+  const overrides = build.scanListOverrides ?? [];
+  const assembled: AssembledScanList[] = [];
+
+  for (const section of sections) {
+    for (const entry of section.scanLists) {
+      if (isEntityExcluded(overrides, entry.id)) continue;
+      const memberChannelIds = entry.channelIds.filter((id) => exportedChannelIds.has(id));
+      if (memberChannelIds.length === 0 && !overrideByEntityId(overrides).has(entry.id)) {
+        continue;
+      }
+      assembled.push({
+        scanListId: entry.id,
+        wireName: resolveOverrideWireName(overrides, entry.id, entry.name),
+        memberChannelIds,
+      });
+    }
+  }
+
+  return assembled;
 }
 
 export { channelInAnyZoneMembership } from '@core/domain/zoneMembership.ts';
@@ -393,8 +446,18 @@ export function assemble(
   const channels = assembleChannels(normalizedBuild, library);
   const exportedChannelIds = new Set(channels.map((c) => c.entity.id));
   const zones = assembleZones(normalizedBuild, library, exportedChannelIds);
+  const scanLists = assembleScanLists(normalizedBuild, exportedChannelIds);
+  const scanListById = new Map(scanLists.map((list) => [list.scanListId, list]));
+  const channelsWithScanLists = channels.map((row) => ({
+    ...row,
+    scanListWireName: resolveChannelScanListWireName(
+      row.entity.id,
+      normalizedBuild.channelOverrides,
+      scanListById,
+    ),
+  }));
 
-  const refs = collectReferencedIds(channels.map((c) => c.entity));
+  const refs = collectReferencedIds(channelsWithScanLists.map((c) => c.entity));
   expandRefsFromRxLists(
     library,
     refs.rxGroupListIds,
@@ -425,8 +488,9 @@ export function assemble(
     formatId: normalizedBuild.formatId,
     profileId: options?.profileId ?? normalizedBuild.profileId,
     buildName: normalizedBuild.name,
-    channels,
+    channels: channelsWithScanLists,
     zones,
+    scanLists,
     talkGroups: assembleEntityList(
       normalizedBuild.talkGroupOverrides,
       library.talkGroups,
@@ -454,5 +518,7 @@ export function assemble(
     channelMemorySlots: buildUsesFlatMemoryList(normalizedBuild)
       ? resolveChirpChannelMemorySlots(normalizedBuild, library)
       : undefined,
+    zoneGrouping: zoneGroupingSections(normalizedBuild)[0],
+    scanListsLayout: scanListsSections(normalizedBuild)[0],
   };
 }

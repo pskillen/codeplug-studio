@@ -4,6 +4,7 @@ import { sanitiseAsciiWireString } from '@core/import-export/sanitiseAsciiWireSt
 export type OverrideField =
   | 'channelOverrides'
   | 'zoneOverrides'
+  | 'scanListOverrides'
   | 'talkGroupOverrides'
   | 'rxGroupListOverrides'
   | 'contactOverrides';
@@ -128,6 +129,9 @@ function parseOverrideRow(raw: unknown, label: string): BuildEntityOverride {
       result.orderOrSlot = Math.trunc(orderOrSlot);
     }
   }
+  if (record.scanListId !== undefined && record.scanListId !== null && record.scanListId !== '') {
+    result.scanListId = String(record.scanListId);
+  }
   return result;
 }
 
@@ -135,7 +139,10 @@ export function upsertOverride(
   overrides: BuildEntityOverride[] | undefined,
   entityId: string,
   patch: Partial<
-    Pick<BuildEntityOverride, 'excluded' | 'forceInclude' | 'wireName' | 'orderOrSlot'>
+    Pick<
+      BuildEntityOverride,
+      'excluded' | 'forceInclude' | 'wireName' | 'orderOrSlot' | 'scanListId'
+    >
   >,
 ): BuildEntityOverride[] {
   const rows = overrides ?? [];
@@ -158,9 +165,19 @@ export function upsertOverride(
     }
   }
 
+  if ('scanListId' in patch) {
+    if (patch.scanListId?.trim()) {
+      merged.scanListId = patch.scanListId.trim();
+    } else {
+      delete merged.scanListId;
+    }
+  }
+
   const hasOrderOrSlot =
     merged.orderOrSlot != null && Number.isFinite(merged.orderOrSlot) && merged.orderOrSlot >= 1;
-  if (!hasWireName && !isExcluded && !isForceIncluded && !hasOrderOrSlot) {
+  const hasScanListId = Boolean(merged.scanListId?.trim());
+
+  if (!hasWireName && !isExcluded && !isForceIncluded && !hasOrderOrSlot && !hasScanListId) {
     if (index < 0) return rows;
     return rows.filter((row) => row.libraryEntityId !== entityId);
   }

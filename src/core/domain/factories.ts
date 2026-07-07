@@ -28,6 +28,7 @@ export function emptyLibrary(): Library {
 function emptyFormatBuildOverrides(): {
   channelOverrides: BuildEntityOverride[];
   zoneOverrides: BuildEntityOverride[];
+  scanListOverrides: BuildEntityOverride[];
   talkGroupOverrides: BuildEntityOverride[];
   rxGroupListOverrides: BuildEntityOverride[];
   contactOverrides: BuildEntityOverride[];
@@ -35,6 +36,7 @@ function emptyFormatBuildOverrides(): {
   return {
     channelOverrides: [],
     zoneOverrides: [],
+    scanListOverrides: [],
     talkGroupOverrides: [],
     rxGroupListOverrides: [],
     contactOverrides: [],

@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
-import { newChannel, newTalkGroup } from '@core/domain/factories.ts';
+import { newChannel, newFormatBuild, newTalkGroup } from '@core/domain/factories.ts';
 import { parseProjectDocument } from '@core/import-export/formats/native-yaml/parse.ts';
 import { assemble } from './assemble.ts';
 
@@ -692,5 +692,47 @@ describe('assemble', () => {
     expect(projection.channelMemorySlots?.map((slot) => slot.channelId)).toEqual([ch2.id, ch1.id]);
     expect(projection.channels.map((c) => c.entity.id).sort()).toEqual([ch1.id, ch2.id]);
     expect(projection.zones).toEqual([]);
+  });
+
+  it('projects dedicated scan lists and channel scan list wire names', () => {
+    const ch1 = newChannel({ name: 'Channel 1' });
+    const ch2 = newChannel({ name: 'Channel 2' });
+    const scanListId = 'scan-list-1';
+    const build = {
+      ...newFormatBuild('project-1', 'anytone-at-d890uv'),
+      layout: {
+        sections: [
+          {
+            kind: 'scanLists' as const,
+            scanLists: [
+              {
+                id: scanListId,
+                name: 'Zone A SCL',
+                channelIds: [ch1.id, ch2.id],
+              },
+            ],
+          },
+        ],
+      },
+      channelOverrides: [{ libraryEntityId: ch1.id, scanListId }],
+    };
+    const library = {
+      channels: [ch1, ch2],
+      zones: [],
+      talkGroups: [],
+      digitalContacts: [],
+      analogContacts: [],
+      rxGroupLists: [],
+    };
+
+    const projection = assemble(build, library);
+
+    expect(projection.scanLists).toHaveLength(1);
+    expect(projection.scanLists[0]?.wireName).toBe('Zone A SCL');
+    expect(projection.scanLists[0]?.memberChannelIds).toEqual([ch1.id, ch2.id]);
+    const ch1Row = projection.channels.find((row) => row.entity.id === ch1.id);
+    const ch2Row = projection.channels.find((row) => row.entity.id === ch2.id);
+    expect(ch1Row?.scanListWireName).toBe('Zone A SCL');
+    expect(ch2Row?.scanListWireName).toBe('None');
   });
 });

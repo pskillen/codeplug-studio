@@ -75,6 +75,7 @@ export function migrateFormatBuild(
       build.zoneOverrides ?? [],
       zoneIds,
     ),
+    scanListOverrides: build.scanListOverrides ?? [],
     talkGroupOverrides: migrateOverrideField(
       legacyFields.talkGroupSelections,
       build.talkGroupOverrides ?? [],
@@ -97,6 +98,7 @@ function missingOverrideFields(build: LegacyFormatBuild): boolean {
   return (
     build.channelOverrides === undefined ||
     build.zoneOverrides === undefined ||
+    build.scanListOverrides === undefined ||
     build.talkGroupOverrides === undefined ||
     build.rxGroupListOverrides === undefined ||
     build.contactOverrides === undefined
@@ -120,6 +122,7 @@ export function normalizeFormatBuildFields(build: LegacyFormatBuild): FormatBuil
         libraryEntityId: row.libraryEntityId,
         wireName: row.overrides.name,
       })),
+    scanListOverrides: build.scanListOverrides ?? [],
     talkGroupOverrides:
       build.talkGroupOverrides ??
       (build.talkGroupSelections ?? []).map((row) => ({
