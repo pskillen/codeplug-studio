@@ -4,17 +4,32 @@ import type {
   ChannelModeProfileAnalog,
   ChannelModeProfileDMR,
 } from '../models/library.ts';
-import type { AnalogChannelMode, ChannelMode, ChannelTone } from '../models/libraryTypes.ts';
+import type {
+  AnalogChannelMode,
+  ChannelMode,
+  ChannelTone,
+  SsbSideband,
+} from '../models/libraryTypes.ts';
 
-const ANALOG_MODES = new Set<AnalogChannelMode>(['fm', 'am', 'ssb-usb', 'ssb-lsb']);
+const ANALOG_MODES = new Set<AnalogChannelMode>(['fm', 'am', 'ssb']);
+
+const LEGACY_SSB_MODE_TO_SIDEBAND: Record<string, SsbSideband> = {
+  'ssb-usb': 'usb',
+  'ssb-lsb': 'lsb',
+};
 
 export function isAnalogChannelMode(mode: ChannelMode): mode is AnalogChannelMode {
   return ANALOG_MODES.has(mode as AnalogChannelMode);
 }
 
+function legacySsbSideband(mode: string): SsbSideband | null {
+  return LEGACY_SSB_MODE_TO_SIDEBAND[mode] ?? null;
+}
+
 function defaultAnalogProfile(
   mode: AnalogChannelMode,
   tone: ChannelTone = 'none',
+  ssbSideband: SsbSideband = 'usb',
 ): ChannelModeProfileAnalog {
   return {
     mode,
@@ -22,6 +37,7 @@ function defaultAnalogProfile(
     rxTone: tone,
     txTone: tone,
     bandwidthKHz: null,
+    ...(mode === 'ssb' ? { ssbSideband } : {}),
   };
 }
 
@@ -78,27 +94,54 @@ export function isModeOnlyStub(profile: ChannelModeProfile): boolean {
   return keys.length === 1 && keys[0] === 'mode';
 }
 
+function normalizeAnalogProfile(
+  profile: ChannelModeProfileAnalog & { mode?: string },
+): ChannelModeProfileAnalog {
+  const legacySideband = legacySsbSideband(profile.mode ?? '');
+  const mode: AnalogChannelMode =
+    legacySideband != null ? 'ssb' : (profile.mode as AnalogChannelMode);
+  const ssbSideband: SsbSideband =
+    mode === 'ssb' ? (legacySideband ?? profile.ssbSideband ?? 'usb') : 'usb';
+
+  return {
+    mode,
+    squelch: profile.squelch ?? null,
+    rxTone: profile.rxTone ?? 'none',
+    txTone: profile.txTone ?? 'none',
+    bandwidthKHz: profile.bandwidthKHz ?? null,
+    ...(mode === 'ssb' ? { ssbSideband } : {}),
+  };
+}
+
 /** Upgrade legacy `{ mode }` stubs and partial analog profiles to full typed shapes. */
 export function normalizeModeProfile(profile: ChannelModeProfile): ChannelModeProfile {
+  const legacySideband = legacySsbSideband(profile.mode);
   if (isModeOnlyStub(profile)) {
+    if (legacySideband != null) {
+      return defaultAnalogProfile('ssb', 'none', legacySideband);
+    }
     return defaultModeProfile(profile.mode);
   }
   if (
     profile.mode === 'fm' ||
     profile.mode === 'am' ||
-    profile.mode === 'ssb-usb' ||
-    profile.mode === 'ssb-lsb'
+    profile.mode === 'ssb' ||
+    legacySideband != null
   ) {
-    const analog = profile as ChannelModeProfileAnalog & { bandwidthKHz?: number | null };
-    return {
-      mode: analog.mode,
-      squelch: analog.squelch ?? null,
-      rxTone: analog.rxTone ?? 'none',
-      txTone: analog.txTone ?? 'none',
-      bandwidthKHz: analog.bandwidthKHz ?? null,
-    };
+    return normalizeAnalogProfile(profile as ChannelModeProfileAnalog);
   }
   return profile;
+}
+
+/** Drop duplicate `ssb` profiles after legacy migration (keep first). */
+export function dedupeSsbModeProfiles(profiles: ChannelModeProfile[]): ChannelModeProfile[] {
+  let seenSsb = false;
+  return profiles.filter((profile) => {
+    if (profile.mode !== 'ssb') return true;
+    if (seenSsb) return false;
+    seenSsb = true;
+    return true;
+  });
 }
 
 export function syncModeProfiles(

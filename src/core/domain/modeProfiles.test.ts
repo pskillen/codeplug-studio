@@ -26,6 +26,13 @@ describe('defaultModeProfile', () => {
     });
   });
 
+  it('returns ssb profile with default usb sideband', () => {
+    expect(defaultModeProfile('ssb')).toMatchObject({
+      mode: 'ssb',
+      ssbSideband: 'usb',
+    });
+  });
+
   it('returns full dstar shape', () => {
     expect(defaultModeProfile('dstar')).toMatchObject({
       mode: 'dstar',
@@ -52,6 +59,42 @@ describe('normalizeModeProfile', () => {
       txTone: 'none' as const,
     } as ChannelModeProfile;
     expect(normalizeModeProfile(legacy)).toMatchObject({ bandwidthKHz: null });
+  });
+
+  it('migrates legacy ssb-usb to ssb with usb sideband', () => {
+    const legacy = {
+      mode: 'ssb-usb',
+      squelch: null,
+      rxTone: 'none',
+      txTone: 'none',
+      bandwidthKHz: null,
+    } as unknown as ChannelModeProfile;
+    expect(normalizeModeProfile(legacy)).toMatchObject({
+      mode: 'ssb',
+      ssbSideband: 'usb',
+    });
+  });
+
+  it('migrates legacy ssb-lsb to ssb with lsb sideband', () => {
+    const legacy = { mode: 'ssb-lsb' } as unknown as ChannelModeProfile;
+    expect(normalizeModeProfile(legacy)).toMatchObject({
+      mode: 'ssb',
+      ssbSideband: 'lsb',
+    });
+  });
+
+  it('defaults ssb sideband to usb when omitted', () => {
+    const legacy = {
+      mode: 'ssb',
+      squelch: null,
+      rxTone: 'none',
+      txTone: 'none',
+      bandwidthKHz: null,
+    } as ChannelModeProfileAnalog;
+    expect(normalizeModeProfile(legacy)).toMatchObject({
+      mode: 'ssb',
+      ssbSideband: 'usb',
+    });
   });
 });
 
@@ -93,6 +136,12 @@ describe('validateModeProfiles', () => {
   it('flags duplicate modes', () => {
     expect(validateModeProfiles([defaultModeProfile('fm'), defaultModeProfile('fm')])).toContain(
       'Duplicate mode profile: fm',
+    );
+  });
+
+  it('flags duplicate ssb profiles', () => {
+    expect(validateModeProfiles([defaultModeProfile('ssb'), defaultModeProfile('ssb')])).toContain(
+      'Duplicate mode profile: ssb',
     );
   });
 

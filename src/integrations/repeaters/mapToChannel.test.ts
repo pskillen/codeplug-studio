@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { ChannelModeProfileAnalog, ChannelModeProfileDMR } from '@core/models/library.ts';
+import type { ChannelMode } from '@core/models/libraryTypes.ts';
 import { buildModeProfilesFromListing } from './buildModeProfiles.ts';
 import { repeaterListingToChannel } from './mapToChannel.ts';
 import type { RepeaterListing } from './types.ts';
@@ -46,6 +47,23 @@ describe('buildModeProfilesFromListing', () => {
     const profiles = buildModeProfilesFromListing({ ...baseListing, modes: [] });
     expect(profiles).toHaveLength(1);
     expect(profiles[0]?.mode).toBe('fm');
+  });
+
+  it('collapses legacy ssb modes to one ssb profile with first sideband', () => {
+    const profiles = buildModeProfilesFromListing({
+      ...baseListing,
+      modes: ['ssb-usb', 'ssb-lsb'] as unknown as ChannelMode[],
+    });
+    expect(profiles).toHaveLength(1);
+    expect(profiles[0]).toMatchObject({ mode: 'ssb', ssbSideband: 'usb' });
+  });
+
+  it('keeps fm when listed before ssb', () => {
+    const profiles = buildModeProfilesFromListing({
+      ...baseListing,
+      modes: ['fm', 'ssb'],
+    });
+    expect(profiles.map((p) => p.mode)).toEqual(['fm']);
   });
 });
 

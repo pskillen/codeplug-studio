@@ -21,8 +21,7 @@ export interface ChannelModeDefinition {
 export const CHANNEL_MODES: ChannelModeDefinition[] = [
   { id: 'fm', label: 'FM', category: 'analog', color: '#f0c419', mantine: 'yellow.5' },
   { id: 'am', label: 'AM', category: 'analog', color: '#fab005', mantine: 'yellow.6' },
-  { id: 'ssb-usb', label: 'SSB USB', category: 'analog', color: '#fd7e14', mantine: 'orange.6' },
-  { id: 'ssb-lsb', label: 'SSB LSB', category: 'analog', color: '#e8590c', mantine: 'orange.7' },
+  { id: 'ssb', label: 'SSB', category: 'analog', color: '#fd7e14', mantine: 'orange.6' },
   { id: 'dmr', label: 'DMR', category: 'digital', color: '#e03131', mantine: 'red.7' },
   { id: 'ysf', label: 'YSF', category: 'digital', color: '#339af0', mantine: 'blue.5' },
   { id: 'dstar', label: 'D-STAR', category: 'digital', color: '#7950f2', mantine: 'violet.6' },
@@ -100,6 +99,7 @@ export function mapModeToOpenGd77ChannelType(mode: ChannelMode): string {
 export function mapLegacyChannelMode(mode: string): ChannelMode {
   if (mode === 'analogue') return 'fm';
   if (mode === 'digital') return 'dmr';
+  if (mode === 'ssb-usb' || mode === 'ssb-lsb') return 'ssb';
   if (modeById.has(mode as ChannelMode)) return mode as ChannelMode;
   return 'other';
 }

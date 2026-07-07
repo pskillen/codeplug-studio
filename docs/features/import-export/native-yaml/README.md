@@ -75,13 +75,13 @@ loadProjectSeed → ProjectAggregate
 
 ## Implementation status
 
-| Slice                            | Status  |
-| -------------------------------- | ------- |
-| Contracts + envelope (#56)       | Shipped |
-| Export serialiser (#57)          | Shipped |
-| Import parser + validation (#58) | Shipped |
-| Services (#59)                   | Shipped |
-| Local file UI (#60)              | Shipped |
+| Slice                            | Status                                                                                                                               |
+| -------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| Contracts + envelope (#56)       | Shipped                                                                                                                              |
+| Export serialiser (#57)          | Shipped                                                                                                                              |
+| Import parser + validation (#58) | Shipped — `studioSchemaVersion` 9; legacy SSB modes migrate on load ([#204](https://github.com/pskillen/codeplug-studio/issues/204)) |
+| Services (#59)                   | Shipped                                                                                                                              |
+| Local file UI (#60)              | Shipped                                                                                                                              |
 
 ## Testing
 

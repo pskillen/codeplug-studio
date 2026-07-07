@@ -95,6 +95,28 @@ describe('filterChannelsForList', () => {
     expect(result.map((c) => c.id)).toEqual(['2']);
   });
 
+  it('filters by ssb mode', () => {
+    const ssbChannel = makeChannel({
+      id: '4',
+      name: 'HF SSB',
+      modeProfiles: [defaultModeProfile('ssb')],
+    });
+    const result = filterChannelsForList(
+      [ssbChannel],
+      {
+        nameFilter: '',
+        bandFilter: [],
+        modeFilter: ['ssb'],
+        duplexFilter: null,
+        distanceFilterEnabled: false,
+        maxDistanceKm: 25,
+        sortMode: 'name',
+      },
+      null,
+    );
+    expect(result).toHaveLength(1);
+  });
+
   it('filters by band', () => {
     const result = filterChannelsForList(
       channels,

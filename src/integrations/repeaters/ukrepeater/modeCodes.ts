@@ -15,8 +15,7 @@ const FLAG_TO_MODE: Record<string, ChannelMode> = {
 const MODE_DISPLAY_ORDER: ChannelMode[] = [
   'fm',
   'am',
-  'ssb-usb',
-  'ssb-lsb',
+  'ssb',
   'dmr',
   'dstar',
   'ysf',

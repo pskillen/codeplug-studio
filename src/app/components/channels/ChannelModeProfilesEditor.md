@@ -23,7 +23,7 @@ import ChannelModeProfilesEditor from '@app/components/channels/ChannelModeProfi
 ## Behaviour
 
 - Renders `PillTabs` with one tab per profile (`ModePill` + label); empty state when `profiles` is empty.
-- Analog tabs: bandwidth, RX/TX tone, squelch slider.
+- Analog tabs: bandwidth, RX/TX tone, squelch slider; SSB tab adds USB/LSB sideband control.
 - DMR tab: colour code, timeslot, DMR ID, digital contact or talk group, RX group list, then **`RxGroupListSummary`** when a list is selected (live preview; link to list editor).
 - D-STAR / YSF / NXDN / TETRA: mode-specific fields per internal model.
 - P25 / M17 stubs show placeholder copy until typed profiles ship.
