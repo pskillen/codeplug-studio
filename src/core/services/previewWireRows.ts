@@ -1,6 +1,7 @@
 import type { CpsExportOptions } from '@core/import-export/types.ts';
 import {
   isEntityExcluded,
+  isEntityForceIncluded,
   overrideByEntityId,
   type OverrideField,
 } from '@core/domain/formatBuildOverrides.ts';
@@ -61,6 +62,8 @@ export interface WirePreviewRow {
   displayDetails?: WirePreviewDisplayLine[];
   /** Library zone flagged omitFromExport — no standalone Zones.csv row. */
   omitFromExport?: boolean;
+  /** Per-build override: export standalone zone despite library omitFromExport. */
+  forceInclude?: boolean;
   /** Direct library zone members — zones wire preview only. */
   zoneDirectMembers?: WirePreviewZoneDirectMembers;
 }
@@ -283,6 +286,7 @@ export function previewWireRows(
     case 'zone':
       return library.zones.map((zone) => {
         const omitFromExport = zone.omitFromExport === true;
+        const forceInclude = isEntityForceIncluded(build.zoneOverrides, zone.id);
         const zoneDirectMembers = zoneDirectMembersPreview(zone, library);
         return {
           ...previewRow(
@@ -295,6 +299,7 @@ export function previewWireRows(
             omitFromExport ? PREVIEW_ROW_OMIT_FROM_EXPORT_NOTE : undefined,
           ),
           omitFromExport,
+          forceInclude,
           zoneDirectMembers,
         };
       });
@@ -403,6 +408,7 @@ export function isPreviewRowIncludedInExport(
     case 'contact':
       return row.expansionNote !== PREVIEW_ROW_NOT_REFERENCED_NOTE;
     case 'zone':
+      if (row.forceInclude) return true;
       return !row.omitFromExport;
     default:
       return true;

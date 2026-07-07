@@ -30,9 +30,9 @@ Nesting is **not reconstructed** from flat CPS import — it is created and main
 | `channel`   | `{ kind: 'channel', channelId, includeInScanList? }` | Wire channel name (after assemble)                       |
 | `zone`      | `{ kind: 'zone', zoneId }`                           | Expanded to child zone's effective channels, depth-first |
 
-| Zone field       | Default | Export effect                                                                                                                                                                            |
-| ---------------- | ------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `omitFromExport` | off     | When on: no row in `Zones.csv`; channels flatten into parent zone rows. Channels export only when reachable via a parent zone — standalone omit-only zones do not export their channels. |
+| Zone field       | Default | Export effect                                                                                                                                                                                                                                                                                       |
+| ---------------- | ------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `omitFromExport` | off     | When on: no row in `Zones.csv`; channels flatten into parent zone rows. Channels export only when reachable via a parent zone — standalone omit-only zones do not export their channels unless a build sets `forceInclude` on the zone override (see [wire-preview.md](../builds/wire-preview.md)). |
 
 Rules:
 
@@ -59,9 +59,10 @@ Rules:
 1. Create zones **PMR446** (channel members) and **Glasgow** (Glasgow channels + nested PMR446 zone member).
 2. Export OpenGD77 and DM32 builds — **Glasgow** `Zones.csv` row includes PMR channels; **PMR446** row present.
 3. Enable **Don't export as its own zone** on PMR446 — re-export; PMR446 row absent; Glasgow row still includes PMR channels.
-4. With **Omit channels not in a zone** enabled on export, PMR channels remain included (linked via nested flatten).
-5. Attempt `Glasgow` ⊃ `Scotland` while `Scotland` ⊃ `Glasgow` — save blocked with cycle message.
-6. Export/import project YAML — nested members and `omitFromExport` preserved.
+4. On a format build **Zones** wire-preview page, enable **Force export** for PMR446 — re-export; PMR446 standalone row appears in this build only (library `omitFromExport` unchanged).
+5. With **Omit channels not in a zone** enabled on export, PMR channels remain included (linked via nested flatten).
+6. Attempt `Glasgow` ⊃ `Scotland` while `Scotland` ⊃ `Glasgow` — save blocked with cycle message.
+7. Export/import project YAML — nested members, `omitFromExport`, and `forceInclude` on zone overrides preserved.
 
 ## Related
 

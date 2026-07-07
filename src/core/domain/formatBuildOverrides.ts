@@ -27,6 +27,13 @@ export function isEntityExcluded(
   return (overrides ?? []).find((row) => row.libraryEntityId === entityId)?.excluded === true;
 }
 
+export function isEntityForceIncluded(
+  overrides: BuildEntityOverride[] | undefined,
+  entityId: string,
+): boolean {
+  return (overrides ?? []).find((row) => row.libraryEntityId === entityId)?.forceInclude === true;
+}
+
 export function resolveOverrideWireName(
   overrides: BuildEntityOverride[] | undefined,
   entityId: string,
@@ -100,6 +107,9 @@ function parseOverrideRow(raw: unknown, label: string): BuildEntityOverride {
   if (record.excluded !== undefined) {
     result.excluded = Boolean(record.excluded);
   }
+  if (record.forceInclude !== undefined) {
+    result.forceInclude = Boolean(record.forceInclude);
+  }
   if (record.wireName !== undefined && record.wireName !== null && record.wireName !== '') {
     result.wireName = String(record.wireName);
   }
@@ -109,7 +119,7 @@ function parseOverrideRow(raw: unknown, label: string): BuildEntityOverride {
 export function upsertOverride(
   overrides: BuildEntityOverride[] | undefined,
   entityId: string,
-  patch: Partial<Pick<BuildEntityOverride, 'excluded' | 'wireName'>>,
+  patch: Partial<Pick<BuildEntityOverride, 'excluded' | 'forceInclude' | 'wireName'>>,
 ): BuildEntityOverride[] {
   const rows = overrides ?? [];
   const index = rows.findIndex((row) => row.libraryEntityId === entityId);
@@ -121,7 +131,8 @@ export function upsertOverride(
 
   const hasWireName = Boolean(merged.wireName?.trim());
   const isExcluded = merged.excluded === true;
-  if (!hasWireName && !isExcluded) {
+  const isForceIncluded = merged.forceInclude === true;
+  if (!hasWireName && !isExcluded && !isForceIncluded) {
     if (index < 0) return rows;
     return rows.filter((row) => row.libraryEntityId !== entityId);
   }
@@ -130,6 +141,14 @@ export function upsertOverride(
     delete merged.wireName;
   } else {
     merged.wireName = merged.wireName!.trim();
+  }
+
+  if (!isForceIncluded) {
+    delete merged.forceInclude;
+  }
+
+  if (!isExcluded) {
+    delete merged.excluded;
   }
 
   if (index < 0) {

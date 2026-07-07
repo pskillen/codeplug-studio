@@ -29,6 +29,19 @@ const rows: WirePreviewRow[] = [
   },
 ];
 
+const omitZoneRow: WirePreviewRow = {
+  key: 'zone-pmr',
+  libraryEntityId: 'zone-pmr',
+  entityKind: 'zone',
+  displayLabel: 'PMR446',
+  generatedWireName: 'PMR446',
+  effectiveWireName: 'PMR446',
+  hasWireNameOverride: false,
+  excluded: false,
+  omitFromExport: true,
+  forceInclude: false,
+};
+
 describe('WirePreviewTable', () => {
   function renderTable(props: ComponentProps<typeof WirePreviewTable>) {
     return render(
@@ -40,7 +53,7 @@ describe('WirePreviewTable', () => {
     );
   }
 
-  it('renders include toggles and wire name inputs for preview rows', () => {
+  it('renders skip-from-export toggles and wire name inputs for preview rows', () => {
     renderTable({
       rows,
       nameLimit: 16,
@@ -48,10 +61,23 @@ describe('WirePreviewTable', () => {
       onWireNameChange: vi.fn(),
     });
 
+    expect(screen.getByText('Skip from export', { selector: 'th' })).toBeInTheDocument();
     expect(screen.getByText('GB3DA Demo')).toBeInTheDocument();
     expect(screen.getByText('Excluded channel')).toBeInTheDocument();
-    expect(screen.getByLabelText('Include GB3DA Demo')).toBeChecked();
-    expect(screen.getByLabelText('Include Excluded channel')).not.toBeChecked();
+    expect(screen.getByLabelText('Skip GB3DA Demo from export')).not.toBeChecked();
+    expect(screen.getByLabelText('Skip Excluded channel from export')).toBeChecked();
+  });
+
+  it('calls onExcludedChange with skip state when toggle changes', () => {
+    const onExcludedChange = vi.fn();
+    renderTable({
+      rows: [rows[0]!],
+      onExcludedChange,
+      onWireNameChange: vi.fn(),
+    });
+
+    fireEvent.click(screen.getByLabelText('Skip GB3DA Demo from export'));
+    expect(onExcludedChange).toHaveBeenCalledWith(rows[0], true);
   });
 
   it('links each row to the library editor', () => {
@@ -131,5 +157,33 @@ describe('WirePreviewTable', () => {
 
     fireEvent.click(screen.getByLabelText('Revert wire name'));
     expect(onUnsavedChangesChange).toHaveBeenLastCalledWith(false);
+  });
+
+  it('shows force export control for omitFromExport zones when handler provided', () => {
+    const onForceIncludeChange = vi.fn();
+    renderTable({
+      rows: [omitZoneRow],
+      onExcludedChange: vi.fn(),
+      onForceIncludeChange,
+      onWireNameChange: vi.fn(),
+    });
+
+    expect(screen.getByLabelText('Force export PMR446 as its own zone')).toBeInTheDocument();
+    expect(screen.getByText('Not exported as zone')).toBeInTheDocument();
+    expect(screen.queryByLabelText('Skip PMR446 from export')).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByLabelText('Force export PMR446 as its own zone'));
+    expect(onForceIncludeChange).toHaveBeenCalledWith(omitZoneRow, true);
+  });
+
+  it('shows skip toggle when omit zone is force-included', () => {
+    renderTable({
+      rows: [{ ...omitZoneRow, forceInclude: true }],
+      onExcludedChange: vi.fn(),
+      onForceIncludeChange: vi.fn(),
+      onWireNameChange: vi.fn(),
+    });
+
+    expect(screen.getByLabelText('Skip PMR446 from export')).toBeInTheDocument();
   });
 });

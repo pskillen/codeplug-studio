@@ -172,6 +172,17 @@ DM32 zone export flags (`exportScratchChannel`, `exportScanList`, `scanCarrierFr
 
 Legacy `*Selections` arrays migrate to `*Overrides` on import.
 
+### `BuildEntityOverride`
+
+| Field             | Type    | Notes                                                                    |
+| ----------------- | ------- | ------------------------------------------------------------------------ |
+| `libraryEntityId` | UUID    | Required                                                                 |
+| `excluded`        | boolean | Omit entity from this build's export                                     |
+| `forceInclude`    | boolean | Zone overrides only — export standalone despite library `omitFromExport` |
+| `wireName`        | string  | CPS wire string override                                                 |
+
+Sparse storage: omit keys when unset at export.
+
 ### `TraitLayout`
 
 | Field      | Type                   |

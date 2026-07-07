@@ -10,6 +10,7 @@ import type {
 import type { ZoneGroupingLayout } from '@core/models/traitLayout.ts';
 import {
   isEntityExcluded,
+  isEntityForceIncluded,
   overrideByEntityId,
   resolveOverrideWireName,
 } from '@core/domain/formatBuildOverrides.ts';
@@ -166,13 +167,13 @@ export function exportReachableChannelIds(build: FormatBuild, library: LibrarySl
       for (const zoneEntry of section.zones) {
         if (isEntityExcluded(overrides, zoneEntry.id)) continue;
         const libraryZone = zonesById.get(zoneEntry.id);
-        if (libraryZone && zoneExportsStandalone(libraryZone)) addFromZone(libraryZone);
+        if (libraryZone && zoneExportsStandalone(libraryZone, overrides)) addFromZone(libraryZone);
       }
     }
   } else {
     for (const zone of library.zones) {
       if (isEntityExcluded(overrides, zone.id)) continue;
-      if (zoneExportsStandalone(zone)) addFromZone(zone);
+      if (zoneExportsStandalone(zone, overrides)) addFromZone(zone);
     }
   }
 
@@ -216,7 +217,8 @@ function assembleChannels(build: FormatBuild, library: LibrarySlice): AssembledC
   return assembled;
 }
 
-function zoneExportsStandalone(zone: Zone): boolean {
+function zoneExportsStandalone(zone: Zone, overrides: BuildEntityOverride[]): boolean {
+  if (isEntityForceIncluded(overrides, zone.id)) return true;
   return zone.omitFromExport !== true;
 }
 
@@ -235,7 +237,7 @@ function assembleZones(
       for (const zoneEntry of section.zones) {
         if (isEntityExcluded(overrides, zoneEntry.id)) continue;
         const libraryZone = zonesById.get(zoneEntry.id);
-        if (!libraryZone || !zoneExportsStandalone(libraryZone)) continue;
+        if (!libraryZone || !zoneExportsStandalone(libraryZone, overrides)) continue;
         const effectiveIds = resolveEffectiveZoneChannelIds(libraryZone, library.zones);
         const memberChannelIds = orderChannelIdsByLayoutHint(
           effectiveIds,
@@ -255,7 +257,9 @@ function assembleZones(
   }
 
   return library.zones
-    .filter((zone) => !isEntityExcluded(overrides, zone.id) && zoneExportsStandalone(zone))
+    .filter(
+      (zone) => !isEntityExcluded(overrides, zone.id) && zoneExportsStandalone(zone, overrides),
+    )
     .map((zone) => {
       const memberChannelIds = resolveEffectiveZoneChannelIds(zone, library.zones).filter((id) =>
         exportedChannelIds.has(id),

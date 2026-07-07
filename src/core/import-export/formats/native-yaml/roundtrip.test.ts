@@ -10,6 +10,7 @@ import {
   FIXTURE_PARENT_ZONE_ID,
   FIXTURE_PROJECT_ID,
   FIXTURE_TIMESTAMP,
+  FIXTURE_ZONE_ID,
   glasgowPmrNestedAggregate,
   minimalProjectAggregate,
   nestedZonesAggregate,
@@ -67,6 +68,28 @@ describe('native-yaml round-trip smoke', () => {
     const pmr = parsed.zones.find((zone) => zone.id === FIXTURE_CHILD_ZONE_ID);
     expect(pmr?.omitFromExport).toBe(true);
     expect(pmr?.name).toBe('PMR446');
+  });
+
+  it('preserves forceInclude on zone overrides round-trip', () => {
+    const aggregate = projectWithFormatBuildAggregate();
+    const build = aggregate.formatBuilds[0]!;
+    const withForceInclude = {
+      ...aggregate,
+      formatBuilds: [
+        {
+          ...build,
+          zoneOverrides: build.zoneOverrides.map((row) =>
+            row.libraryEntityId === FIXTURE_ZONE_ID ? { ...row, forceInclude: true } : row,
+          ),
+        },
+      ],
+    };
+    const parsed = parseProjectDocument(serialiseProject(withForceInclude));
+    const parsedBuild = parsed.formatBuilds[0];
+    expect(
+      parsedBuild?.zoneOverrides.find((row) => row.libraryEntityId === FIXTURE_ZONE_ID)
+        ?.forceInclude,
+    ).toBe(true);
   });
 
   it('serialises ssb mode with sideband on round-trip', () => {

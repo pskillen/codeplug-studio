@@ -1,6 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { FormatBuild } from '@core/models/formatBuild.ts';
-import { isEntityExcluded, overrideByEntityId } from '@core/domain/formatBuildOverrides.ts';
+import {
+  isEntityExcluded,
+  isEntityForceIncluded,
+  overrideByEntityId,
+} from '@core/domain/formatBuildOverrides.ts';
 import type { LibrarySlice } from '@core/services/assemble.ts';
 import {
   isPreviewRowIncludedInExport,
@@ -139,6 +143,24 @@ export function useBuildWirePreview(entityKind: WirePreviewEntityKind) {
     [entityKind, persistBuild],
   );
 
+  const setRowForceIncluded = useCallback(
+    (row: WirePreviewRow, forceInclude: boolean) => {
+      if (entityKind !== 'zone') return;
+      void persistBuild((current) => {
+        if (isEntityForceIncluded(current.zoneOverrides, row.libraryEntityId) === forceInclude) {
+          return current;
+        }
+        return buildService.withEntityForceIncluded(
+          current,
+          'zoneOverrides',
+          row.libraryEntityId,
+          forceInclude,
+        );
+      });
+    },
+    [entityKind, persistBuild],
+  );
+
   const setRowWireName = useCallback(
     (row: WirePreviewRow, wireName: string) => {
       const field = overrideFieldForEntityKind(entityKind);
@@ -167,6 +189,7 @@ export function useBuildWirePreview(entityKind: WirePreviewEntityKind) {
     saving,
     library,
     setRowExcluded,
+    setRowForceIncluded,
     setRowWireName,
     persistBuild,
   };
