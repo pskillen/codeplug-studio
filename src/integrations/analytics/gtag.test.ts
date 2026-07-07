@@ -20,10 +20,12 @@ function createLocalStorageMock() {
 
 describe('gtag analytics', () => {
   const appendChild = vi.fn();
+  let scriptOnload: (() => void) | null = null;
   const createElement = vi.fn(() => ({
     async: false,
     src: '',
     onload: null as (() => void) | null,
+    onerror: null as (() => void) | null,
   }));
 
   beforeEach(() => {
@@ -33,10 +35,15 @@ describe('gtag analytics', () => {
     clearAnalyticsConsent();
     appendChild.mockClear();
     createElement.mockClear();
+    scriptOnload = null;
+    appendChild.mockImplementation((script: { onload: (() => void) | null }) => {
+      scriptOnload = script.onload;
+    });
     vi.stubGlobal('document', {
       createElement,
       head: { appendChild },
     });
+    vi.stubGlobal('location', { origin: 'https://dev.codeplug.mm9pdy.net' });
   });
 
   afterEach(() => {
@@ -65,18 +72,29 @@ describe('gtag analytics', () => {
     expect(createElement).not.toHaveBeenCalled();
   });
 
-  it('injects gtag and sends page_view when consent accepted', () => {
-    setAnalyticsConsent('accepted');
+  it('queues page_view until gtag.js loads, then sends config hit', () => {
     const gtagCalls: unknown[][] = [];
     window.gtag = (...args: unknown[]) => {
       gtagCalls.push(args);
     };
 
-    initAnalytics();
-    expect(createElement).toHaveBeenCalled();
-    expect(appendChild).toHaveBeenCalled();
-
+    setAnalyticsConsent('accepted');
     trackPageView('/library/channels');
-    expect(gtagCalls).toContainEqual(['event', 'page_view', { page_path: '/library/channels' }]);
+    const configBeforeLoad = gtagCalls.some(
+      (call) =>
+        call[0] === 'config' &&
+        (call[2] as { page_path?: string })?.page_path === '/library/channels',
+    );
+    expect(configBeforeLoad).toBe(false);
+
+    scriptOnload?.();
+    expect(gtagCalls).toContainEqual([
+      'config',
+      'G-TEST123',
+      {
+        page_path: '/library/channels',
+        page_location: 'https://dev.codeplug.mm9pdy.net/library/channels',
+      },
+    ]);
   });
 });

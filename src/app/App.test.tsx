@@ -46,6 +46,8 @@ vi.mock('@integrations/analytics/index.ts', () => ({
   getMeasurementId: vi.fn(() => ''),
   initAnalytics: vi.fn(),
   resetAnalyticsForTests: vi.fn(),
+  isAnalyticsReady: vi.fn(() => false),
+  subscribeAnalyticsReady: vi.fn(() => () => {}),
 }));
 
 function createLocalStorageMock() {

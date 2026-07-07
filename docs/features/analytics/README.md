@@ -34,6 +34,7 @@ Essential app storage (IndexedDB projects, UI prefs) works regardless of analyti
 ## What GA collects (when accepted)
 
 - Sanitized route templates on navigation (e.g. `/library/:kind/:id`, not real UUIDs)
+- A page view is sent when analytics is accepted (including on the current page, without requiring navigation) and on each subsequent route change
 - Rough session / page counts (GA4 defaults)
 - Deploy environment is visible in the footer (`__BUILD_ENV__`) but is not sent as a custom dimension in v1
 
