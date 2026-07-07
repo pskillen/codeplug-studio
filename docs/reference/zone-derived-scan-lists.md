@@ -22,7 +22,7 @@ emitScan(zone) = layout.exportScanList === true
 A channel is included in a zone-derived scan list when:
 
 1. `ZoneMemberEntry.includeInScanList !== false`, and
-2. `Channel.scanSkip !== true`
+2. `effectiveScanSkips(channel, exportOptions)` — honours `scanInclusion` tri-state + build `defaultScanInclusion`
 
 ## Scan carrier
 

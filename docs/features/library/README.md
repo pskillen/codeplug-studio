@@ -15,6 +15,7 @@ Tier-1 reference for editing the vendor-neutral **library** — the per-project 
 | Channels list bulk selection → new zone | Shipped ([#154](https://github.com/pskillen/codeplug-studio/issues/154)) | `DataTable` selectable; **New zone from selected**                 |
 | Zone from location (proximity)          | Shipped ([#181](https://github.com/pskillen/codeplug-studio/issues/181)) | Section nav **New zone from location**                             |
 | Nested zone members                     | Shipped ([#157](https://github.com/pskillen/codeplug-studio/issues/157)) | Flatten at export; `omitFromExport`; schema v7                     |
+| Tri-state scan inclusion                | Shipped ([#203](https://github.com/pskillen/codeplug-studio/issues/203)) | `scanInclusion`; build export default; schema v8                   |
 | Zone member editor                      | Shipped ([#180](https://github.com/pskillen/codeplug-studio/issues/180)) | Vertical stacked editor on zone form                               |
 | Channel sets                            | Shipped ([#172](https://github.com/pskillen/codeplug-studio/issues/172)) | Optional zone on import                                            |
 
@@ -118,7 +119,7 @@ Workflow: pick set → preview table (per-channel checkboxes, dedup status) → 
 
 | Entity          | Key fields                                                                                                                                                         |
 | --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Channel         | name, optional `abbreviation` (export shortening), callsign, RX/TX (MHz↔Hz), power, location + `maidenheadLocator`, scan-skip, comment, **multi** `modeProfiles[]` |
+| Channel         | name, optional `abbreviation` (export shortening), callsign, RX/TX (MHz↔Hz), power, location + `maidenheadLocator`, `scanInclusion` (default/skip/alwaysScan), comment, **multi** `modeProfiles[]` |
 | Talk group      | name, optional `abbreviation` (multi-TG export shortening), digital mode, group ID, comment                                                                        |
 | Digital contact | name, digital mode, contact ID, comment                                                                                                                            |
 | Analog contact  | name, code, comment                                                                                                                                                |
