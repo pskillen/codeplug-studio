@@ -68,7 +68,7 @@ export function formatCatalogEntry(id: FormatId): FormatCatalogEntry | undefined
 
 const CHIRP_EXPORT_DEFAULTS: FormatExportDefaults = {
   defaultScanInclusion: 'skip',
-  expandModes: true,
+  expandModes: false,
   expandRxGroupLists: false,
 };
 
