@@ -14,8 +14,13 @@ export function buildNavItems(build: FormatBuild): BuildNavItem[] {
 
   const items: BuildNavItem[] = [
     { label: 'Overview', path: `${base}/overview` },
-    { label: 'Channels', path: `${base}/channels` },
   ];
+
+  if (traits.has(BuildCapabilityTrait.FlatMemoryList)) {
+    items.push({ label: 'Memories', path: `${base}/memories` });
+  }
+
+  items.push({ label: 'Channels', path: `${base}/channels` });
 
   if (traits.has(BuildCapabilityTrait.ZoneGrouping)) {
     items.push({ label: 'Zones', path: `${base}/zones` });

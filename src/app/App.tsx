@@ -31,6 +31,7 @@ import NewBuildPage from './routes/builds/NewBuildPage.tsx';
 import BuildLayout from './routes/builds/BuildLayout.tsx';
 import BuildOverviewPage from './routes/builds/BuildOverviewPage.tsx';
 import BuildExportPage from './routes/builds/BuildExportPage.tsx';
+import BuildMemoriesPage from './routes/builds/BuildMemoriesPage.tsx';
 import BuildChannelsWirePage from './routes/builds/wire-preview/BuildChannelsWirePage.tsx';
 import BuildZonesWirePage from './routes/builds/wire-preview/BuildZonesWirePage.tsx';
 import BuildTalkGroupsWirePage from './routes/builds/wire-preview/BuildTalkGroupsWirePage.tsx';
@@ -104,6 +105,7 @@ export const appRouter = createBrowserRouter([
             children: [
               { index: true, element: <Navigate to="overview" replace /> },
               { path: 'overview', element: <BuildOverviewPage /> },
+              { path: 'memories', element: <BuildMemoriesPage /> },
               { path: 'channels', element: <BuildChannelsWirePage /> },
               { path: 'zones', element: <BuildZonesWirePage /> },
               { path: 'talk-groups', element: <BuildTalkGroupsWirePage /> },
