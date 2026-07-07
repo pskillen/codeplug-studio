@@ -4,6 +4,9 @@ import GradientSegmentedControl from '../ui/GradientSegmentedControl.tsx';
 export interface ScanInclusionSegmentProps {
   value: ScanInclusion;
   onChange: (scanInclusion: ScanInclusion) => void;
+  /** Table row layout — omits label and description. */
+  compact?: boolean;
+  disabled?: boolean;
 }
 
 const OPTIONS = [
@@ -12,16 +15,33 @@ const OPTIONS = [
   { value: 'alwaysScan', label: 'Always scan' },
 ] as const;
 
-export default function ScanInclusionSegment({ value, onChange }: ScanInclusionSegmentProps) {
+const COMPACT_OPTIONS = [
+  { value: 'skip', label: 'Skip' },
+  { value: 'default', label: 'Default' },
+  { value: 'alwaysScan', label: 'Scan' },
+] as const;
+
+export default function ScanInclusionSegment({
+  value,
+  onChange,
+  compact = false,
+  disabled = false,
+}: ScanInclusionSegmentProps) {
   return (
     <GradientSegmentedControl
-      label="Scanning"
-      description="Default defers to the format build export setting. Skip and Always scan override that default."
+      label={compact ? undefined : 'Scanning'}
+      description={
+        compact
+          ? undefined
+          : 'Default defers to the format build export setting. Skip and Always scan override that default.'
+      }
       value={value}
       onChange={(next) => onChange(next as ScanInclusion)}
-      data={[...OPTIONS]}
+      data={compact ? [...COMPACT_OPTIONS] : [...OPTIONS]}
       scheme="three"
-      fullWidth
+      fullWidth={!compact}
+      size={compact ? 'xs' : undefined}
+      disabled={disabled}
     />
   );
 }
