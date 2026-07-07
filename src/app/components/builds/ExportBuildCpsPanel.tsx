@@ -1,20 +1,30 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Alert, Button, Group, Modal, Stack, Switch, Text } from '@mantine/core';
 import { IconDownload, IconPackage, IconTable } from '@tabler/icons-react';
-import type { FormatBuild } from '@core/models/formatBuild.ts';
+import type { BuildExportSettings, FormatBuild } from '@core/models/formatBuild.ts';
 import { traitProfileFor } from '@core/models/traits.ts';
-import { formatCatalogEntry } from '@core/import-export/registry.ts';
-import { getExportAdapter } from '@core/import-export/registry.ts';
+import {
+  formatCatalogEntry,
+  getExportAdapter,
+  getFormatExportDefaults,
+} from '@core/import-export/registry.ts';
 import { isMultiFileExportAdapter } from '@core/import-export/exportAdapter.ts';
 import { formatProfileWireHint, getFormatProfiles } from '@core/import-export/formatProfiles.ts';
 import type { FormatId } from '@core/import-export/types.ts';
+import { mergeExportOptions } from '@core/services/exportBuild.ts';
 import ExportNameSettingsFields from './ExportNameSettingsFields.tsx';
+import DefaultScanInclusionSegment from './DefaultScanInclusionSegment.tsx';
 import CpsCsvPreviewModal from './CpsCsvPreviewModal.tsx';
 import { saveDriveLastFolderId, saveDriveLastFolderPath } from '@integrations/cloud/drivePrefs.ts';
 import DriveBrowserModal, { type DriveSaveTarget } from '../import-export/DriveBrowserModal.tsx';
 import GoogleDriveActionButton from '../import-export/GoogleDriveActionButton.tsx';
 import { ICON_SIZE_ACTION, ICON_STROKE } from '../../lib/iconSizes.ts';
-import { useExportSettings } from '../../hooks/useExportSettings.ts';
+import { resolvedBuildExportSettings } from '../../lib/buildExportSettingsUi.ts';
+import {
+  buildNeedsLegacyExportSettingsMigration,
+  clearLegacyExportSettingsLocalStorage,
+  legacyExportSettingsFromLocalStorage,
+} from '../../lib/migrateLegacyExportSettings.ts';
 import { useProjects } from '../../state/useProjects.ts';
 import { useFormatBuilds } from '../../state/useFormatBuilds.ts';
 import { BuildService } from '../../state/buildService.ts';
@@ -38,37 +48,33 @@ export default function ExportBuildCpsPanel({ build }: ExportBuildCpsPanelProps)
   const formatEntry = formatCatalogEntry(build.formatId as FormatId);
   const profileLabel = traitProfileFor(build.profileId)?.label ?? build.profileId;
   const wireHint = formatProfileWireHint(build.formatId as FormatId, build.profileId);
+  const formatDefaults = getFormatExportDefaults(build.formatId);
+  const resolvedSettings = resolvedBuildExportSettings(build);
 
   const [channelCount, setChannelCount] = useState<number | null>(null);
   const [exportWarnings, setExportWarnings] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [exporting, setExporting] = useState(false);
-  const [savingInclusion, setSavingInclusion] = useState(false);
-  const [inclusionError, setInclusionError] = useState<string | null>(null);
+  const [savingSettings, setSavingSettings] = useState(false);
+  const [settingsError, setSettingsError] = useState<string | null>(null);
   const [driveBrowserOpen, setDriveBrowserOpen] = useState(false);
   const [previewOpen, setPreviewOpen] = useState(false);
   const [overwriteOpen, setOverwriteOpen] = useState(false);
   const [pendingDriveTarget, setPendingDriveTarget] = useState<DriveSaveTarget | null>(null);
+  const migratedRef = useRef(false);
 
-  const { exportOptionsFromSettings, setExportZoneDerivedScanLists, exportZoneDerivedScanLists } =
-    useExportSettings();
   const profileNameLimit = useMemo(() => {
     const options = getFormatProfiles(build.formatId as FormatId);
     return options.find((option) => option.profileId === build.profileId)?.nameLimit;
   }, [build.formatId, build.profileId]);
 
-  const exportOptions = useMemo(() => {
-    const base = {
-      profileId: build.profileId,
-      expandModes: build.formatId === 'dm32' ? false : true,
-      expandRxGroupLists: build.formatId === 'dm32' ? true : undefined,
-    };
-    return exportOptionsFromSettings(base);
-  }, [exportOptionsFromSettings, build.formatId, build.profileId]);
+  const exportOptions = useMemo(() => mergeExportOptions(build), [build]);
   const hasChannels = Boolean(activeProjectId) && (channelCount ?? 0) > 0;
   const exportShipped = formatEntry?.exportStatus === 'shipped';
   const interchangeFolderId = activeProject?.interchange?.googleDrive?.folderId;
   const suggestedZipName = defaultCpsZipFileName(build.name, build.formatId as FormatId);
+  const defaultScanValue =
+    resolvedSettings.defaultScanInclusion ?? formatDefaults.defaultScanInclusion;
 
   useEffect(() => {
     if (!activeProjectId) return;
@@ -81,23 +87,52 @@ export default function ExportBuildCpsPanel({ build }: ExportBuildCpsPanelProps)
     };
   }, [activeProjectId, build.id]);
 
+  useEffect(() => {
+    if (migratedRef.current || !buildNeedsLegacyExportSettingsMigration(build)) return;
+    migratedRef.current = true;
+    const legacy = legacyExportSettingsFromLocalStorage();
+    void handleExportSettingsPatch(legacy, build.revision).then((ok) => {
+      if (ok) clearLegacyExportSettingsLocalStorage();
+    });
+  }, [build]);
+
   function mergeWarnings(warnings: string[]) {
     if (warnings.length) {
       setExportWarnings((prev) => [...new Set([...prev, ...warnings])]);
     }
   }
 
+  async function handleExportSettingsPatch(
+    patch: Partial<BuildExportSettings>,
+    expectedRevision = build.revision,
+  ): Promise<boolean> {
+    setSavingSettings(true);
+    setSettingsError(null);
+    const next = buildService.withExportSettings(build, patch);
+    const result = await putBuild(next, expectedRevision);
+    setSavingSettings(false);
+    if (!result.ok) {
+      setSettingsError(
+        result.reason === 'revision_conflict'
+          ? 'Build changed elsewhere — reload and try again.'
+          : 'Could not save export settings.',
+      );
+      return false;
+    }
+    return true;
+  }
+
   async function handleExportInclusionChange(
     field: 'exportUnlinkedChannels' | 'exportUnlinkedTalkGroups' | 'exportUnlinkedRxGroupLists',
     checked: boolean,
   ) {
-    setSavingInclusion(true);
-    setInclusionError(null);
+    setSavingSettings(true);
+    setSettingsError(null);
     const next = buildService.withExportInclusionFlags(build, { [field]: checked });
     const result = await putBuild(next, build.revision);
-    setSavingInclusion(false);
+    setSavingSettings(false);
     if (!result.ok) {
-      setInclusionError(
+      setSettingsError(
         result.reason === 'revision_conflict'
           ? 'Build changed elsewhere — reload and try again.'
           : 'Could not save export settings.',
@@ -227,23 +262,39 @@ export default function ExportBuildCpsPanel({ build }: ExportBuildCpsPanelProps)
           Export name settings
         </Text>
         <ExportNameSettingsFields
+          build={build}
+          saving={savingSettings}
+          onPatch={(patch) => void handleExportSettingsPatch(patch)}
           profileNameLimit={profileNameLimit}
           showMultiTalkGroupOptions={build.formatId === 'dm32'}
         />
       </Stack>
-      {build.formatId === 'dm32' ? (
-        <Stack gap="xs">
-          <Text size="sm" fw={600}>
-            DM32 export options
-          </Text>
+      <Stack gap="xs">
+        <Text size="sm" fw={600}>
+          Scan export
+        </Text>
+        <DefaultScanInclusionSegment
+          value={defaultScanValue}
+          formatDefault={formatDefaults.defaultScanInclusion}
+          disabled={savingSettings}
+          onChange={(defaultScanInclusion) =>
+            void handleExportSettingsPatch({ defaultScanInclusion })
+          }
+        />
+        {build.formatId === 'dm32' ? (
           <Switch
             label="Export zone-derived scan lists (Scan.csv)"
             description="Requires per-zone scan export enabled on the Zones page."
-            checked={exportZoneDerivedScanLists}
-            onChange={(event) => setExportZoneDerivedScanLists(event.currentTarget.checked)}
+            checked={resolvedSettings.exportZoneDerivedScanLists}
+            disabled={savingSettings}
+            onChange={(event) =>
+              void handleExportSettingsPatch({
+                exportZoneDerivedScanLists: event.currentTarget.checked,
+              })
+            }
           />
-        </Stack>
-      ) : null}
+        ) : null}
+      </Stack>
       <Stack gap="xs">
         <Text size="sm" fw={600}>
           Export inclusion
@@ -251,7 +302,7 @@ export default function ExportBuildCpsPanel({ build }: ExportBuildCpsPanelProps)
         <Switch
           label="Export channels not linked to a zone"
           checked={build.exportUnlinkedChannels !== false}
-          disabled={savingInclusion}
+          disabled={savingSettings}
           onChange={(event) =>
             void handleExportInclusionChange('exportUnlinkedChannels', event.currentTarget.checked)
           }
@@ -259,7 +310,7 @@ export default function ExportBuildCpsPanel({ build }: ExportBuildCpsPanelProps)
         <Switch
           label="Export talk groups not referenced by a channel"
           checked={build.exportUnlinkedTalkGroups !== false}
-          disabled={savingInclusion}
+          disabled={savingSettings}
           onChange={(event) =>
             void handleExportInclusionChange(
               'exportUnlinkedTalkGroups',
@@ -270,7 +321,7 @@ export default function ExportBuildCpsPanel({ build }: ExportBuildCpsPanelProps)
         <Switch
           label="Export RX group lists not referenced by a channel"
           checked={build.exportUnlinkedRxGroupLists !== false}
-          disabled={savingInclusion}
+          disabled={savingSettings}
           onChange={(event) =>
             void handleExportInclusionChange(
               'exportUnlinkedRxGroupLists',
@@ -278,9 +329,9 @@ export default function ExportBuildCpsPanel({ build }: ExportBuildCpsPanelProps)
             )
           }
         />
-        {inclusionError ? (
+        {settingsError ? (
           <Text size="sm" c="red">
-            {inclusionError}
+            {settingsError}
           </Text>
         ) : null}
       </Stack>
@@ -347,7 +398,7 @@ export default function ExportBuildCpsPanel({ build }: ExportBuildCpsPanelProps)
         </Group>
       </Stack>
       <Text size="sm" c="dimmed">
-        Wire preview pages show the same name settings. Change profile in Overview if needed.
+        Wire preview pages show the same export settings. Change profile in Overview if needed.
       </Text>
       <DriveBrowserModal
         opened={driveBrowserOpen}

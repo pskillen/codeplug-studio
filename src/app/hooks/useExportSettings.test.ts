@@ -1,10 +1,10 @@
-import { act, renderHook } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
-  STORAGE_KEY_EXPORT_NAME_MODE_OVERRIDE,
-  resetExportSettingsForTests,
-  useExportSettings,
-} from './useExportSettings.ts';
+  legacyExportSettingsFromLocalStorage,
+  clearLegacyExportSettingsLocalStorage,
+  buildNeedsLegacyExportSettingsMigration,
+} from '../lib/migrateLegacyExportSettings.ts';
+import { STORAGE_KEY_EXPORT_SHORTEN_NAMES } from './useExportSettings.ts';
 
 function createStorageMock() {
   const storage = new Map<string, string>();
@@ -19,36 +19,30 @@ function createStorageMock() {
   };
 }
 
-describe('useExportSettings', () => {
+describe('legacy export settings migration', () => {
   beforeEach(() => {
     vi.stubGlobal('localStorage', createStorageMock());
-    resetExportSettingsForTests();
   });
 
   afterEach(() => {
     vi.unstubAllGlobals();
-    resetExportSettingsForTests();
   });
 
-  it('syncs name mode changes across hook instances', () => {
-    const { result: first } = renderHook(() => useExportSettings());
-    const { result: second } = renderHook(() => useExportSettings());
-
-    act(() => {
-      first.current.setNameModeOverride('callsign_only');
-    });
-
-    expect(second.current.nameModeOverride).toBe('callsign_only');
-    expect(localStorage.getItem(STORAGE_KEY_EXPORT_NAME_MODE_OVERRIDE)).toBe('callsign_only');
+  it('reads legacy localStorage values into build export settings', () => {
+    localStorage.setItem(STORAGE_KEY_EXPORT_SHORTEN_NAMES, 'false');
+    expect(legacyExportSettingsFromLocalStorage().shortenNames).toBe(false);
   });
 
-  it('defaults useChannelAbbreviation to on until explicitly disabled', () => {
-    const { result } = renderHook(() => useExportSettings());
-    expect(result.current.useChannelAbbreviation).toBe(true);
+  it('detects builds without export settings', () => {
+    expect(buildNeedsLegacyExportSettingsMigration({})).toBe(true);
+    expect(
+      buildNeedsLegacyExportSettingsMigration({ exportSettings: { shortenNames: true } }),
+    ).toBe(false);
+  });
 
-    act(() => {
-      result.current.setUseChannelAbbreviation(false);
-    });
-    expect(result.current.useChannelAbbreviation).toBe(false);
+  it('clears legacy localStorage keys', () => {
+    localStorage.setItem(STORAGE_KEY_EXPORT_SHORTEN_NAMES, 'false');
+    clearLegacyExportSettingsLocalStorage();
+    expect(localStorage.getItem(STORAGE_KEY_EXPORT_SHORTEN_NAMES)).toBeNull();
   });
 });

@@ -1,18 +1,20 @@
 import { Select } from '@mantine/core';
 import { EXPORT_NAME_MODE_OPTIONS } from '@core/domain/channelNaming.ts';
-import { useExportSettings, type ExportNameModeOverride } from '../../hooks/useExportSettings.ts';
+import type { ChannelExportNameMode } from '@core/domain/channelNaming.ts';
 
 export interface ExportNameModeSelectProps {
+  value: ChannelExportNameMode;
+  onChange: (value: ChannelExportNameMode) => void;
   disabled?: boolean;
   description?: string;
 }
 
 export default function ExportNameModeSelect({
+  value,
+  onChange,
   disabled = false,
   description = 'Fallback when a channel has no wire name override on this build. Set overrides on the Channels wire page.',
 }: ExportNameModeSelectProps) {
-  const { nameModeOverride, setNameModeOverride } = useExportSettings();
-
   return (
     <Select
       label="Default export name style"
@@ -21,10 +23,10 @@ export default function ExportNameModeSelect({
         value: option.value,
         label: option.label,
       }))}
-      value={nameModeOverride}
-      onChange={(value) => {
-        if (value == null) return;
-        setNameModeOverride(value as ExportNameModeOverride);
+      value={value}
+      onChange={(next) => {
+        if (next == null) return;
+        onChange(next as ChannelExportNameMode);
       }}
       allowDeselect={false}
       disabled={disabled}

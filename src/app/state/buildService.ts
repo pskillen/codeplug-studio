@@ -1,4 +1,4 @@
-import type { FormatBuild } from '@core/models/formatBuild.ts';
+import type { FormatBuild, BuildExportSettings } from '@core/models/formatBuild.ts';
 import type { ZoneGroupingLayout } from '@core/models/traitLayout.ts';
 import { newFormatBuild } from '@core/domain/factories.ts';
 import { type OverrideField, upsertOverride } from '@core/domain/formatBuildOverrides.ts';
@@ -120,6 +120,19 @@ export class BuildService {
     return {
       ...build,
       ...flags,
+      updatedAt: now,
+      revision: nextRevision(build.revision),
+    };
+  }
+
+  withExportSettings(build: FormatBuild, patch: Partial<BuildExportSettings>): FormatBuild {
+    const now = isoNow();
+    return {
+      ...build,
+      exportSettings: {
+        ...build.exportSettings,
+        ...patch,
+      },
       updatedAt: now,
       revision: nextRevision(build.revision),
     };
