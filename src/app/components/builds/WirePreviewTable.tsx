@@ -33,7 +33,7 @@ function wireNameCommittedValue(row: WirePreviewRow): string {
   return row.hasWireNameOverride ? row.effectiveWireName : '';
 }
 
-function WireNameOverrideInput({
+export function WireNameOverrideInput({
   row,
   nameLimit,
   excluded,
