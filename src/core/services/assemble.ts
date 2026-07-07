@@ -12,6 +12,7 @@ import {
   isEntityExcluded,
   isEntityForceIncluded,
   overrideByEntityId,
+  overrideOrderOrSlot,
   resolveOverrideWireName,
 } from '@core/domain/formatBuildOverrides.ts';
 import { defaultChannelWireName } from '@core/domain/channelNaming.ts';
@@ -50,6 +51,8 @@ export interface AssembledChannel {
   wireNameOverride?: string;
   /** CPS scan list wire name from channel override scanListId — `None` when unset. */
   scanListWireName?: string;
+  /** 1-based CPS slot (`No.` column) when build override sets orderOrSlot. */
+  orderOrSlot?: number;
 }
 
 export interface AssembledScanList {
@@ -455,6 +458,7 @@ export function assemble(
       normalizedBuild.channelOverrides,
       scanListById,
     ),
+    orderOrSlot: overrideOrderOrSlot(normalizedBuild.channelOverrides, row.entity.id),
   }));
 
   const refs = collectReferencedIds(channelsWithScanLists.map((c) => c.entity));
