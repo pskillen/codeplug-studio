@@ -379,7 +379,7 @@ export default function ExportBuildCpsPanel({ build }: ExportBuildCpsPanelProps)
           Suggested filename: {suggestedCsvName}
         </Text>
         <Text size="sm" c="dimmed">
-          Wire preview pages show the same export settings. Reorder memories on the Memories page.
+          Export name settings match the Channels page. Reorder memories on Channels.
         </Text>
         <CpsCsvPreviewModal
           opened={previewOpen}
