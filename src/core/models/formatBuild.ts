@@ -32,6 +32,8 @@ export interface BuildExportSettings {
 export interface BuildEntityOverride {
   libraryEntityId: string;
   excluded?: boolean;
+  /** Per-build override: export as standalone zone despite library `omitFromExport`. */
+  forceInclude?: boolean;
   wireName?: string;
 }
 
