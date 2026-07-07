@@ -79,6 +79,10 @@ export function useBuildWirePreview(entityKind: WirePreviewEntityKind) {
         return library.channels.length > 0;
       case 'zone':
         return library.zones.length > 0;
+      case 'scanList': {
+        const layout = build.layout.sections.find((s) => s.kind === 'scanLists');
+        return layout != null && layout.scanLists.length > 0;
+      }
       case 'talkGroup':
         return library.talkGroups.length > 0;
       case 'contact':

@@ -9,16 +9,16 @@
 
 ## Overall status
 
-**Status:** Wave 0 complete — wire spike + feature hub ([#230](https://github.com/pskillen/codeplug-studio/issues/230), [#231](https://github.com/pskillen/codeplug-studio/issues/231))  
-**Branch:** `230/pskil/anytone-wire-spike-hub`
+**Status:** Export implementation in progress — branch `228/pskil/anytone-cps-export`  
+**Branch:** `228/pskil/anytone-cps-export`
 
 | Phase                       | Issue                                                          | Status   | Notes                                |
 | --------------------------- | -------------------------------------------------------------- | -------- | ------------------------------------ |
 | Wire spike + fixtures       | [#230](https://github.com/pskillen/codeplug-studio/issues/230) | Complete | DMR + extended wire docs + test-data |
 | Feature hub README          | [#231](https://github.com/pskillen/codeplug-studio/issues/231) | Complete | Tier-1 hub + index rows              |
-| Profile, columns, registry  | [#232](https://github.com/pskillen/codeplug-studio/issues/232) | In progress | Branch `228/pskil/anytone-cps-export` |
-| Export adapter              | [#233](https://github.com/pskillen/codeplug-studio/issues/233) | Pending  | DMR MVP first                        |
-| Build editor + wire preview | [#234](https://github.com/pskillen/codeplug-studio/issues/234) | Pending  |                                      |
+| Profile, columns, registry  | [#232](https://github.com/pskillen/codeplug-studio/issues/232) | Complete | Scaffold on export branch            |
+| Export adapter              | [#233](https://github.com/pskillen/codeplug-studio/issues/233) | Complete | DMR MVP serialisers + ZIP            |
+| Build editor + wire preview | [#234](https://github.com/pskillen/codeplug-studio/issues/234) | Complete | Scan lists route + channel assignment |
 | Format catalog CPS export   | [#235](https://github.com/pskillen/codeplug-studio/issues/235) | Pending  |                                      |
 | Directional export tests    | [#236](https://github.com/pskillen/codeplug-studio/issues/236) | Pending  |                                      |
 | Export epic reconciliation  | [#237](https://github.com/pskillen/codeplug-studio/issues/237) | Pending  |                                      |

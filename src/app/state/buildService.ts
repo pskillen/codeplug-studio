@@ -1,5 +1,5 @@
 import type { FormatBuild, BuildExportSettings } from '@core/models/formatBuild.ts';
-import type { ZoneGroupingLayout } from '@core/models/traitLayout.ts';
+import type { ScanListsLayout, ZoneGroupingLayout } from '@core/models/traitLayout.ts';
 import { newFormatBuild } from '@core/domain/factories.ts';
 import { type OverrideField, upsertOverride } from '@core/domain/formatBuildOverrides.ts';
 import { isoNow, nextRevision } from '@core/models/revision.ts';
@@ -117,6 +117,33 @@ export class BuildService {
     return {
       ...build,
       layout: { sections: [...other, section] },
+      updatedAt: now,
+      revision: nextRevision(build.revision),
+    };
+  }
+
+  withScanListsSection(build: FormatBuild, section: ScanListsLayout): FormatBuild {
+    const now = isoNow();
+    const other = build.layout.sections.filter((s) => s.kind !== 'scanLists');
+    return {
+      ...build,
+      layout: { sections: [...other, section] },
+      updatedAt: now,
+      revision: nextRevision(build.revision),
+    };
+  }
+
+  withChannelScanListId(
+    build: FormatBuild,
+    channelId: string,
+    scanListId: string | undefined,
+  ): FormatBuild {
+    const now = isoNow();
+    return {
+      ...build,
+      channelOverrides: upsertOverride(build.channelOverrides, channelId, {
+        scanListId: scanListId || undefined,
+      }),
       updatedAt: now,
       revision: nextRevision(build.revision),
     };

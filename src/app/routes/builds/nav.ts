@@ -21,6 +21,10 @@ export function buildNavItems(build: FormatBuild): BuildNavItem[] {
     items.push({ label: 'Zones', path: `${base}/zones` });
   }
 
+  if (traits.has(BuildCapabilityTrait.ScanLists)) {
+    items.push({ label: 'Scan lists', path: `${base}/scan-lists` });
+  }
+
   if (!flatMemory) {
     items.push(
       { label: 'Talk groups', path: `${base}/talk-groups` },
