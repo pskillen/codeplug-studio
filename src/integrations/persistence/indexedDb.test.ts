@@ -68,6 +68,33 @@ describe('IndexedDbProjectPersistence', () => {
     expect(loaded).not.toHaveProperty('scanSkip');
   });
 
+  it('migrates legacy ssb-usb mode profiles on read', async () => {
+    const store = makeStore();
+    const meta = newProjectMeta('Test');
+    const channel = newChannel(meta.projectId, 'SSB Legacy');
+    const legacyChannel: Channel = {
+      ...channel,
+      modeProfiles: [
+        {
+          mode: 'ssb-usb',
+          squelch: null,
+          rxTone: 'none',
+          txTone: 'none',
+          bandwidthKHz: null,
+        } as unknown as Channel['modeProfiles'][number],
+      ],
+    };
+    await store.seedProject({ meta, channels: [legacyChannel] });
+
+    const loaded = await store.getChannel(meta.projectId, channel.id);
+    expect(loaded?.modeProfiles).toHaveLength(1);
+    const profile = loaded?.modeProfiles[0];
+    expect(profile?.mode).toBe('ssb');
+    if (profile?.mode === 'ssb') {
+      expect(profile.ssbSideband).toBe('usb');
+    }
+  });
+
   it('bumps revision on update and rejects stale writes', async () => {
     const store = makeStore();
     const meta = newProjectMeta('Test');
