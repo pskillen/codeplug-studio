@@ -1,6 +1,7 @@
 import { LIST_ENTITY_LABELS, LIST_PREFS_STORAGE_PREFIX } from '@integrations/listPrefs/index.ts';
 import {
   ACTIVE_PROJECT_KEY,
+  ANALYTICS_CONSENT_KEY,
   MAPBOX_TOKEN_KEY,
   PREFERENCES_STORAGE_PREFIX,
 } from '@integrations/preferences/index.ts';
@@ -36,6 +37,7 @@ export interface StorageEntry {
 const KNOWN_STORAGE_KEYS: StorageKeyDescriptor[] = [
   { key: ACTIVE_PROJECT_KEY, label: 'Active project id', redact: false },
   { key: MAPBOX_TOKEN_KEY, label: 'Mapbox token', redact: true },
+  { key: ANALYTICS_CONSENT_KEY, label: 'Analytics cookie consent', redact: false },
   { key: DRIVE_ACCESS_TOKEN_KEY, label: 'Google Drive access token', redact: true },
   { key: DRIVE_TOKEN_EXPIRES_AT_KEY, label: 'Google Drive token expiry', redact: false },
   { key: DRIVE_LAST_ACCOUNT_KEY, label: 'Google Drive account', redact: false },
@@ -79,7 +81,9 @@ function describeListPrefsKey(key: string): string | null {
 
 function describePreferencesKey(key: string): string | null {
   if (!key.startsWith(PREFERENCES_STORAGE_PREFIX)) return null;
-  if (key === ACTIVE_PROJECT_KEY || key === MAPBOX_TOKEN_KEY) return null;
+  if (key === ACTIVE_PROJECT_KEY || key === MAPBOX_TOKEN_KEY || key === ANALYTICS_CONSENT_KEY) {
+    return null;
+  }
   if (key.startsWith('codeplug-studio:drive:')) return 'Google Drive preference';
   return 'Preferences (unknown)';
 }

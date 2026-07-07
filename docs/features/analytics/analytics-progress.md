@@ -1,0 +1,16 @@
+# Analytics epic — progress
+
+**Epic:** [#96](https://github.com/pskillen/codeplug-studio/issues/96)
+
+## Shipped in this initiative
+
+| Slice | Status | Notes |
+| --- | --- | --- |
+| Consent storage API | Shipped | `analyticsConsent.ts` |
+| Legal pages + footer | Pending | |
+| Cookie banner | Pending | |
+| Dual GA CI wiring | Pending | |
+| GA4 + path sanitization | Pending | |
+| Vitest coverage | Pending | |
+| Playwright consent smoke | Pending | |
+| Documentation | Pending | |
