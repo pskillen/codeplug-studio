@@ -10,6 +10,8 @@ export { default as EmptyState } from './EmptyState.tsx';
 export type { EmptyStateProps } from './EmptyState.tsx';
 export { default as ListPage } from './ListPage.tsx';
 export type { ListPageProps } from './ListPage.tsx';
+export { default as UnsavedChangesModal } from './UnsavedChangesModal.tsx';
+export type { UnsavedChangesModalProps } from './UnsavedChangesModal.tsx';
 export { default as FormPage } from './FormPage.tsx';
 export type { FormPageProps } from './FormPage.tsx';
 export { default as FormSection } from './FormSection.tsx';

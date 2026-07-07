@@ -40,6 +40,7 @@ ProjectProvider
 | [AvailableItemPicker](../../src/app/components/ui/AvailableItemPicker.md)           | Sectioned pool picker shell                       |
 | [PillTabs](../../src/app/components/ui/PillTabs.md)                                 | Tabs with optional leading pill/badge in labels   |
 | [ImageCheckbox](../../src/app/components/ui/ImageCheckbox.md)                       | Card checkbox with optional image or media slot   |
+| [UnsavedChangesModal](../../src/app/components/ui/UnsavedChangesModal.md)         | Confirm before leaving a dirty form               |
 | [library-routes-progress.md](library-routes-progress.md)                            | Library routes initiative — shipped slices        |
 | [library-routes-outstanding.md](library-routes-outstanding.md)                      | Deferred debt from library routes PR              |
 | [library/README.md](../library/README.md)                                           | Library CRUD and list routes                      |

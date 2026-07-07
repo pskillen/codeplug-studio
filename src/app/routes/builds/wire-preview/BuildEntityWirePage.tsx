@@ -1,11 +1,12 @@
 import type { ReactNode } from 'react';
-import { Button, Group, Modal, Stack, Switch, Text } from '@mantine/core';
+import { Stack, Switch, Text } from '@mantine/core';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import type { ChannelExportNameMode } from '@core/domain/channelNaming.ts';
 import ExportNameModeSelect from '../../../components/builds/ExportNameModeSelect.tsx';
 import UseChannelAbbreviationSwitch from '../../../components/builds/UseChannelAbbreviationSwitch.tsx';
 import WirePreviewTable from '../../../components/builds/WirePreviewTable.tsx';
+import UnsavedChangesModal from '../../../components/ui/UnsavedChangesModal.tsx';
 import { FormPage } from '../../../components/ui/index.ts';
 import { resolvedBuildExportSettings } from '../../../lib/buildExportSettingsUi.ts';
 import { useBuildWirePreview } from '../../../hooks/useBuildWirePreview.ts';
@@ -123,19 +124,13 @@ export default function BuildEntityWirePage({
           onUnsavedChangesChange={setHasUnsavedWireNames}
         />
       </Stack>
-      <Modal opened={modalOpen} onClose={stay} title="Unsaved wire name changes" centered>
-        <Stack gap="sm">
-          <Text size="sm">You have unsaved wire name edits. Leave without saving?</Text>
-          <Group justify="flex-end">
-            <Button variant="default" onClick={stay}>
-              Stay
-            </Button>
-            <Button color="red" onClick={leave}>
-              Leave
-            </Button>
-          </Group>
-        </Stack>
-      </Modal>
+      <UnsavedChangesModal
+        opened={modalOpen}
+        onStay={stay}
+        onLeave={leave}
+        title="Unsaved wire name changes"
+        message="You have unsaved wire name edits. Leave without saving?"
+      />
     </FormPage>
   );
 }
