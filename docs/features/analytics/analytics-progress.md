@@ -10,7 +10,7 @@
 | Legal pages + footer | Shipped | `/privacy`, `/terms`, `/cookies` |
 | Cookie banner | Shipped | `CookieConsentBanner` |
 | Dual GA CI wiring | Shipped | prod + pre-prod secrets |
-| GA4 + path sanitization | Pending | |
+| GA4 + path sanitization | Shipped | `gtag.ts`, `analyticsPagePath` |
 | Vitest coverage | Pending | |
 | Playwright consent smoke | Pending | |
 | Documentation | Pending | |
