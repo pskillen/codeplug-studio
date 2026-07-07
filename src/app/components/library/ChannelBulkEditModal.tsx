@@ -3,12 +3,12 @@ import {
   Accordion,
   Alert,
   Badge,
+  Box,
   Button,
   Checkbox,
   Collapse,
   Group,
   Modal,
-  ScrollArea,
   Stack,
   Text,
   UnstyledButton,
@@ -185,7 +185,7 @@ function ChannelBulkEditModalBody({
       </UnstyledButton>
 
       <Collapse in={showChannelList}>
-        <ScrollArea.Autosize mah={160} offsetScrollbars>
+        <Box mah={160} style={{ overflowY: 'auto' }} pt="xs">
           <Stack gap={4}>
             {channels.map((channel) => (
               <Text key={channel.id} size="sm">
@@ -199,16 +199,17 @@ function ChannelBulkEditModalBody({
               </Text>
             ))}
           </Stack>
-        </ScrollArea.Autosize>
+        </Box>
       </Collapse>
 
       <Stack gap="sm">
         <Checkbox
           label="Change scan inclusion"
           checked={form.changeScanInclusion}
-          onChange={(e) =>
-            setForm((prev) => ({ ...prev, changeScanInclusion: e.currentTarget.checked }))
-          }
+          onChange={(e) => {
+            const checked = e.currentTarget.checked;
+            setForm((prev) => ({ ...prev, changeScanInclusion: checked }));
+          }}
         />
         <fieldset
           disabled={!form.changeScanInclusion}
@@ -228,9 +229,10 @@ function ChannelBulkEditModalBody({
         <Checkbox
           label="Change transmit permission"
           checked={form.changeForbidTransmit}
-          onChange={(e) =>
-            setForm((prev) => ({ ...prev, changeForbidTransmit: e.currentTarget.checked }))
-          }
+          onChange={(e) => {
+            const checked = e.currentTarget.checked;
+            setForm((prev) => ({ ...prev, changeForbidTransmit: checked }));
+          }}
         />
         <fieldset
           disabled={!form.changeForbidTransmit}
@@ -250,7 +252,10 @@ function ChannelBulkEditModalBody({
         <Checkbox
           label="Change power"
           checked={form.changePower}
-          onChange={(e) => setForm((prev) => ({ ...prev, changePower: e.currentTarget.checked }))}
+          onChange={(e) => {
+            const checked = e.currentTarget.checked;
+            setForm((prev) => ({ ...prev, changePower: checked }));
+          }}
         />
         <fieldset
           disabled={!form.changePower}
@@ -280,12 +285,10 @@ function ChannelBulkEditModalBody({
                 <Checkbox
                   label="Change squelch"
                   checked={form.changeAnalogSquelch}
-                  onChange={(e) =>
-                    setForm((prev) => ({
-                      ...prev,
-                      changeAnalogSquelch: e.currentTarget.checked,
-                    }))
-                  }
+                  onChange={(e) => {
+                    const checked = e.currentTarget.checked;
+                    setForm((prev) => ({ ...prev, changeAnalogSquelch: checked }));
+                  }}
                 />
                 <fieldset
                   disabled={!form.changeAnalogSquelch}
