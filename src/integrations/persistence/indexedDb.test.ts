@@ -46,6 +46,22 @@ describe('IndexedDbProjectPersistence', () => {
     expect(channels.map((c) => c.name)).toEqual(['Alpha', 'Zulu']);
   });
 
+  it('defaults scanInclusion when reading legacy channel rows', async () => {
+    const store = makeStore();
+    const meta = newProjectMeta('Test');
+    const channel = newChannel(meta.projectId, 'Legacy');
+    const { scanInclusion: _scanInclusion, ...legacyRow } = channel;
+    void _scanInclusion;
+    await store.seedProject({
+      meta,
+      channels: [{ ...legacyRow, scanSkip: true } as typeof channel],
+    });
+
+    const loaded = await store.getChannel(meta.projectId, channel.id);
+    expect(loaded?.scanInclusion).toBe('skip');
+    expect(loaded).not.toHaveProperty('scanSkip');
+  });
+
   it('bumps revision on update and rejects stale writes', async () => {
     const store = makeStore();
     const meta = newProjectMeta('Test');

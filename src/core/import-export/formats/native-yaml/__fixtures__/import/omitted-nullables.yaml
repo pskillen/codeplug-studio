@@ -9,7 +9,6 @@ library:
       name: Sparse channel
       callsign: GB7XX
       useLocation: false
-      scanInclusion: default
       comment: ""
       modeProfiles:
         - mode: fm
