@@ -36,7 +36,7 @@ export const formatCatalog: readonly FormatCatalogEntry[] = [
     id: 'anytone',
     label: 'Anytone CPS CSV',
     importStatus: 'planned',
-    exportStatus: 'planned',
+    exportStatus: 'shipped',
     issue: '228',
   },
   {

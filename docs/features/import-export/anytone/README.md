@@ -14,10 +14,10 @@ Product behaviour for Anytone CPS CSV in Codeplug Studio. Wire column tables liv
 | ------------------------------------- | ------- | ------------------------------------------------------------------------------------------------------------- |
 | Wire reference + fixtures (AT-D890UV) | Shipped | [#230](https://github.com/pskillen/codeplug-studio/issues/230) — tier-3 docs + `test-data/anytone/at-d890uv/` |
 | Extended wire (AM/FM/APRS/NXDN)       | Shipped | Wire documented; export deferred — see model gaps below                                                       |
-| Radio variant profile (`at-d890uv`)   | Planned | [#232](https://github.com/pskillen/codeplug-studio/issues/232) — `profiles.ts`, trait registration            |
-| Export adapter (DMR MVP)              | Planned | [#233](https://github.com/pskillen/codeplug-studio/issues/233)                                                |
-| Build editor + wire preview           | Planned | [#234](https://github.com/pskillen/codeplug-studio/issues/234)                                                |
-| Format catalog CPS export             | Planned | [#235](https://github.com/pskillen/codeplug-studio/issues/235)                                                |
+| Radio variant profile (`at-d890uv`)   | Shipped | [#232](https://github.com/pskillen/codeplug-studio/issues/232) — `profiles.ts`, trait registration            |
+| Export adapter (DMR MVP)              | Shipped | [#233](https://github.com/pskillen/codeplug-studio/issues/233)                                                |
+| Build editor + wire preview           | Shipped | [#234](https://github.com/pskillen/codeplug-studio/issues/234)                                                |
+| Format catalog CPS export             | Shipped | [#235](https://github.com/pskillen/codeplug-studio/issues/235)                                                |
 | Directional export tests              | Planned | [#236](https://github.com/pskillen/codeplug-studio/issues/236)                                                |
 | CPS import                            | Planned | [#229](https://github.com/pskillen/codeplug-studio/issues/229) (Phase 7b)                                     |
 

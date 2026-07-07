@@ -15,7 +15,7 @@ function requireLibrary(library: LibrarySlice | undefined): LibrarySlice {
 export const anytoneExportAdapter: MultiFileExportAdapter = {
   id: 'anytone',
   label: 'Anytone CPS CSV',
-  status: 'planned',
+  status: 'shipped',
   delivery: 'multi-file',
   defaultExportSettings: {
     defaultScanInclusion: 'scan',

@@ -49,7 +49,7 @@ describe('adapter contracts', () => {
     }
   });
 
-  it('registry resolves anytone multi-file export adapter stub', () => {
+  it('registry resolves anytone multi-file export adapter', () => {
     const adapter = getExportAdapter('anytone');
     expect(adapter.id).toBe('anytone');
     expect(adapter.defaultExportSettings?.defaultScanInclusion).toBe('scan');
@@ -58,6 +58,7 @@ describe('adapter contracts', () => {
     expect(isMultiFileExportAdapter(adapter)).toBe(true);
     if (isMultiFileExportAdapter(adapter)) {
       expect(adapter.delivery).toBe('multi-file');
+      expect(adapter.status).toBe('shipped');
       expect(adapter.fileNames).toContain('Channel.CSV');
       expect(adapter.fileNames).toContain('DMRZone.CSV');
       expect(adapter.fileNames).toContain('ScanList.CSV');
@@ -98,7 +99,7 @@ describe('adapter contracts', () => {
     expect(chirp?.importStatus).toBe('planned');
 
     const anytone = formatCatalog.find((f) => f.id === 'anytone');
-    expect(anytone?.exportStatus).toBe('planned');
+    expect(anytone?.exportStatus).toBe('shipped');
     expect(anytone?.importStatus).toBe('planned');
   });
 });
