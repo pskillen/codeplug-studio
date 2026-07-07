@@ -53,6 +53,7 @@ import CodeplugMap from '../components/CodeplugMap/CodeplugMap.tsx';
 - **Operator marker:** when `operatorPosition` is set, plots a blue **You** marker and includes it in auto bounds.
 - **Zone hulls:** circle (1 site), line (2), convex polygon (3+); emphasis, muted, or dashed provisional variants; see [zones.md](../../../../docs/features/map/zones.md).
 - **Layout:** defers mount until document layout is ready (`useDocumentLayoutReady`); `ResizeObserver` keeps Leaflet sized in inset layouts.
+- **Tabs / collapsibles:** if embedded inside Mantine tabs or similar, the parent must unmount the map when hidden — Leaflet cannot re-init on a reused container. See `MapLocationPicker` `active` prop and [#208](https://github.com/pskillen/codeplug-studio/issues/208).
 
 ## Related
 

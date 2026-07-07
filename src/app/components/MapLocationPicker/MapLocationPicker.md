@@ -12,6 +12,7 @@ Small Leaflet map for picking WGS84 coordinates by click or draggable marker. Us
 | `lon`    | `number \| null`                     | —       | Marker longitude                                                   |
 | `onPick` | `(lat: number, lon: number) => void` | —       | Called on map click or marker drag end                             |
 | `height` | `number \| string`                   | `280`   | Map container height                                               |
+| `active` | `boolean`                            | `true`  | When `false`, renders a sized placeholder without `MapContainer`   |
 
 ## Usage
 
@@ -34,6 +35,7 @@ import MapLocationPicker from '@app/components/MapLocationPicker/MapLocationPick
 - **Map settings** link scrolls to the Map section on `/settings`.
 - Waits for document layout before mounting (avoids Leaflet size glitches).
 - ResizeObserver + window load invalidate map size.
+- **Tabs / collapsibles:** Leaflet cannot reuse a hidden container. Pass `active={false}` (or unmount the component) when the map is not visible — e.g. channel editor Location tab passes `mapActive` via `ChannelLocationSection`. See [#208](https://github.com/pskillen/codeplug-studio/issues/208).
 
 ## Related
 

@@ -6,10 +6,11 @@ Location block for the channel editor: Maidenhead locator, lat/lon inputs, use-l
 
 ## Props
 
-| Prop       | Type                                     | Description                                                   |
-| ---------- | ---------------------------------------- | ------------------------------------------------------------- |
-| `value`    | `ChannelLocationValues`                  | Current locator, coords, useLocation, and `lastEdited` source |
-| `onChange` | `(value: ChannelLocationValues) => void` | Called on any field or map change                             |
+| Prop        | Type                                     | Description                                                   |
+| ----------- | ---------------------------------------- | ------------------------------------------------------------- |
+| `value`     | `ChannelLocationValues`                  | Current locator, coords, useLocation, and `lastEdited` source |
+| `onChange`  | `(value: ChannelLocationValues) => void` | Called on any field or map change                             |
+| `mapActive` | `boolean`                                | When `false`, locator/coords fields stay mounted but the map unmounts (default `true`) |
 
 ## Usage
 
@@ -23,7 +24,11 @@ const [location, setLocation] = useState(() =>
   channelLocationValuesFromChannel(entity ?? newChannel(projectId, '')),
 );
 
-<ChannelLocationSection value={location} onChange={setLocation} />;
+<ChannelLocationSection
+  value={location}
+  onChange={setLocation}
+  mapActive={activeTab === 'location'}
+/>;
 
 // On save:
 const lat = Number.parseFloat(location.lat);
@@ -45,6 +50,7 @@ const reconciled = reconcileChannelLocation({
 - Invalid locator on blur → inline error; does not overwrite coordinates.
 - **No** “Use my location” button on this page (reference tool / list maps only).
 - `clearPosition` resets locator, coords, and `useLocation`.
+- **Map mount:** `ChannelEditor` passes `mapActive` so the map unmounts when another tab is selected (Leaflet container reuse constraint).
 
 ## Related
 
