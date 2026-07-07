@@ -110,8 +110,26 @@ Local check: `npm run build && npm run preview`, then open `/library/channels` o
 | `CLOUDFLARE_API_TOKEN`   | API token with **Cloudflare Pages — Edit** (and account read)   |
 | `CLOUDFLARE_ACCOUNT_ID`  | Cloudflare account id                                           |
 | `GOOGLE_OAUTH_CLIENT_ID` | Google OAuth web client id for Drive Connect on deployed builds |
+| `GA_MEASUREMENT_ID`      | GA4 measurement ID for **production** deploys (`prod`)          |
+| `GA_MEASUREMENT_ID_PREPROD` | GA4 measurement ID for **staging**, **next**, and **dev** deploys |
 
 Create the API token in the Cloudflare dashboard with account-scoped **Cloudflare Pages → Edit** permission.
+
+### Google Analytics 4 (optional)
+
+Anonymous page-view analytics is consent-gated in the SPA. Deployed builds receive a measurement ID at compile time; local dev omits it unless you set `VITE_GA_MEASUREMENT_ID` in `.env.local`.
+
+1. Create **two** GA4 web data streams (separate properties keep prod reports clean):
+   - **Prod** — `https://codeplug.mm9pdy.net`
+   - **Pre-prod** — `dev`, `next`, and `staging` hostnames (`dev.codeplug.mm9pdy.net`, `next.codeplug.mm9pdy.net`, `staging.codeplug.mm9pdy.net`)
+2. Copy each Measurement ID (`G-XXXXXXXX`).
+3. Add GitHub Actions secrets:
+   - `GA_MEASUREMENT_ID` — prod stream (injected when `build_env` is `prod`)
+   - `GA_MEASUREMENT_ID_PREPROD` — pre-prod stream (injected for `staging`, `main`, and `dev` deploy workflows)
+4. In GA admin for both streams: review data retention, disable ads personalization signals if desired.
+5. After deploy: accept analytics cookies on the live site → confirm events in the matching property's Realtime report.
+
+See [analytics feature docs](../features/analytics/README.md) for what is and is not collected.
 
 ## Build-time variables
 
@@ -120,8 +138,9 @@ Create the API token in the Cloudflare dashboard with account-scoped **Cloudflar
 | `BUILD_ENV`             | `local`                  | `prod`, `staging`, `main`, or `dev`              |
 | `BUILD_VERSION`         | `local`                  | Release tag or commit SHA (leading `v` stripped) |
 | `VITE_GOOGLE_CLIENT_ID` | `.env.local` (see above) | GitHub Actions secret `GOOGLE_OAUTH_CLIENT_ID`   |
+| `VITE_GA_MEASUREMENT_ID` | `.env.local` (optional) | `GA_MEASUREMENT_ID` (prod) or `GA_MEASUREMENT_ID_PREPROD` (pre-prod) |
 
-`BUILD_ENV` and `BUILD_VERSION` are injected via Vite `define` in `vite.config.ts`. `VITE_GOOGLE_CLIENT_ID` is read from the environment at build time by Vite (`import.meta.env`).
+`BUILD_ENV` and `BUILD_VERSION` are injected via Vite `define` in `vite.config.ts`. `VITE_GOOGLE_CLIENT_ID` and `VITE_GA_MEASUREMENT_ID` are read from the environment at build time by Vite (`import.meta.env`).
 
 Displayed in [`BuildFooter`](../../src/app/components/BuildFooter/BuildFooter.tsx). See [version-number skill](../../.cursor/skills/version-number/SKILL.md).
 

@@ -9,7 +9,7 @@
 | Consent storage API | Shipped | `analyticsConsent.ts` |
 | Legal pages + footer | Shipped | `/privacy`, `/terms`, `/cookies` |
 | Cookie banner | Shipped | `CookieConsentBanner` |
-| Dual GA CI wiring | Pending | |
+| Dual GA CI wiring | Shipped | prod + pre-prod secrets |
 | GA4 + path sanitization | Pending | |
 | Vitest coverage | Pending | |
 | Playwright consent smoke | Pending | |

@@ -50,11 +50,23 @@ jobs:
             echo "BUILD_VERSION=$(git rev-parse --short HEAD)" >> "$GITHUB_ENV"
           fi
 
+      - name: Set GA measurement ID
+        run: |
+          case "${{ inputs.build_env }}" in
+            prod)
+              echo "VITE_GA_MEASUREMENT_ID=${{ secrets.GA_MEASUREMENT_ID }}" >> "$GITHUB_ENV"
+              ;;
+            staging|main|dev)
+              echo "VITE_GA_MEASUREMENT_ID=${{ secrets.GA_MEASUREMENT_ID_PREPROD }}" >> "$GITHUB_ENV"
+              ;;
+          esac
+
       - name: Build SPA
         env:
           BUILD_ENV: ${{ inputs.build_env }}
           BUILD_VERSION: ${{ env.BUILD_VERSION }}
           VITE_GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_OAUTH_CLIENT_ID }}
+          VITE_GA_MEASUREMENT_ID: ${{ env.VITE_GA_MEASUREMENT_ID }}
         run: npm run build
 
       - name: Deploy to Cloudflare Pages (production)
