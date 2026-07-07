@@ -22,9 +22,15 @@ function parseCoord(value: string): number | null {
 export interface ChannelLocationSectionProps {
   value: ChannelLocationValues;
   onChange: (value: ChannelLocationValues) => void;
+  /** When false, the map unmounts while locator/coords fields stay mounted. */
+  mapActive?: boolean;
 }
 
-export default function ChannelLocationSection({ value, onChange }: ChannelLocationSectionProps) {
+export default function ChannelLocationSection({
+  value,
+  onChange,
+  mapActive = true,
+}: ChannelLocationSectionProps) {
   const [locatorError, setLocatorError] = useState<string | null>(null);
 
   const applyLocator = (raw: string) => {
@@ -142,6 +148,7 @@ export default function ChannelLocationSection({ value, onChange }: ChannelLocat
           lon={parseCoord(value.lon)}
           onPick={applyCoords}
           height={280}
+          active={mapActive}
         />
       </Stack>
     </FormSection>

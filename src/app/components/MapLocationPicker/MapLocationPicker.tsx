@@ -77,6 +77,8 @@ export interface MapLocationPickerProps {
   lon: number | null;
   onPick: (lat: number, lon: number) => void;
   height?: number | string;
+  /** When false, render a sized placeholder without MapContainer (avoids Leaflet reuse errors in tabs). */
+  active?: boolean;
 }
 
 export default function MapLocationPicker({
@@ -84,6 +86,7 @@ export default function MapLocationPicker({
   lon,
   onPick,
   height = 280,
+  active = true,
 }: MapLocationPickerProps) {
   const mapLayoutReady = useDocumentLayoutReady();
   const { maidenheadGrid } = useMapSettings();
@@ -106,7 +109,7 @@ export default function MapLocationPicker({
       </Group>
 
       <div className="codeplug-map" style={mapStyle}>
-        {mapLayoutReady ? (
+        {active && mapLayoutReady ? (
           <MapContainer
             center={center}
             zoom={hasPosition ? 11 : DEFAULT_ZOOM}
