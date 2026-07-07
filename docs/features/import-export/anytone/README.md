@@ -18,7 +18,7 @@ Product behaviour for Anytone CPS CSV in Codeplug Studio. Wire column tables liv
 | Export adapter (DMR MVP)              | Shipped | [#233](https://github.com/pskillen/codeplug-studio/issues/233)                                                |
 | Build editor + wire preview           | Shipped | [#234](https://github.com/pskillen/codeplug-studio/issues/234)                                                |
 | Format catalog CPS export             | Shipped | [#235](https://github.com/pskillen/codeplug-studio/issues/235)                                                |
-| Directional export tests              | Planned | [#236](https://github.com/pskillen/codeplug-studio/issues/236)                                                |
+| Directional export tests              | Shipped | [#236](https://github.com/pskillen/codeplug-studio/issues/236)                                                |
 | CPS import                            | Planned | [#229](https://github.com/pskillen/codeplug-studio/issues/229) (Phase 7b)                                     |
 
 ## Format identity

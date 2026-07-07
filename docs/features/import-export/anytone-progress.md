@@ -20,7 +20,7 @@
 | Export adapter              | [#233](https://github.com/pskillen/codeplug-studio/issues/233) | Complete | DMR MVP serialisers + ZIP            |
 | Build editor + wire preview | [#234](https://github.com/pskillen/codeplug-studio/issues/234) | Complete | Scan lists route + channel assignment |
 | Format catalog CPS export   | [#235](https://github.com/pskillen/codeplug-studio/issues/235) | Complete | Catalog `exportStatus: shipped`            |
-| Directional export tests    | [#236](https://github.com/pskillen/codeplug-studio/issues/236) | Pending  |                                      |
+| Directional export tests    | [#236](https://github.com/pskillen/codeplug-studio/issues/236) | Complete | `exportGolden.test.ts`               |
 | Export epic reconciliation  | [#237](https://github.com/pskillen/codeplug-studio/issues/237) | Pending  |                                      |
 
 ---
