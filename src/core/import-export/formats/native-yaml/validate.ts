@@ -1,4 +1,10 @@
-import type { FormatBuild, BuildEntityOverride } from '@core/models/formatBuild.ts';
+import { scanInclusionFromLegacyBoolean } from '@core/import-export/scanInclusion/index.ts';
+import type {
+  BuildEntityOverride,
+  BuildExportSettings,
+  FormatBuild,
+} from '@core/models/formatBuild.ts';
+import type { ScanInclusion } from '@core/models/library.ts';
 import type {
   AnalogContact,
   Channel,
@@ -179,6 +185,22 @@ function parseModeProfile(raw: unknown, index: number): ChannelModeProfile {
   }
 }
 
+const SCAN_INCLUSION_VALUES = ['default', 'skip', 'alwaysScan'] as const;
+
+function parseScanInclusion(record: Record<string, unknown>, label: string): ScanInclusion {
+  if (record.scanInclusion !== undefined && record.scanInclusion !== null) {
+    const value = expectString(record.scanInclusion, `${label}.scanInclusion`);
+    if (!(SCAN_INCLUSION_VALUES as readonly string[]).includes(value)) {
+      throw new NativeYamlImportError(`${label}.scanInclusion is invalid: ${value}`);
+    }
+    return value as ScanInclusion;
+  }
+  if (record.scanSkip !== undefined && record.scanSkip !== null) {
+    return scanInclusionFromLegacyBoolean(expectBoolean(record.scanSkip, `${label}.scanSkip`));
+  }
+  return 'default';
+}
+
 function parseChannel(raw: unknown, index: number): Channel {
   const record = expectRecord(raw, `library.channels[${index}]`);
   const locationRaw = record.location;
@@ -204,7 +226,7 @@ function parseChannel(raw: unknown, index: number): Channel {
       `library.channels[${index}].maidenheadLocator`,
     ),
     power: expectNullableNumber(record.power, `library.channels[${index}].power`),
-    scanSkip: expectBoolean(record.scanSkip, `library.channels[${index}].scanSkip`),
+    scanInclusion: parseScanInclusion(record, `library.channels[${index}]`),
     forbidTransmit:
       record.forbidTransmit === undefined || record.forbidTransmit === null
         ? false
@@ -401,6 +423,81 @@ function parseOverrideField(
   return [];
 }
 
+function parseExportSettings(raw: unknown, label: string): BuildExportSettings | undefined {
+  if (raw === undefined || raw === null) return undefined;
+  const record = expectRecord(raw, label);
+  const settings: BuildExportSettings = {};
+  if (record.defaultScanInclusion !== undefined && record.defaultScanInclusion !== null) {
+    const value = expectString(record.defaultScanInclusion, `${label}.defaultScanInclusion`);
+    if (value !== 'skip' && value !== 'scan') {
+      throw new NativeYamlImportError(`${label}.defaultScanInclusion is invalid: ${value}`);
+    }
+    settings.defaultScanInclusion = value;
+  }
+  if (record.shortenNames !== undefined && record.shortenNames !== null) {
+    settings.shortenNames = expectBoolean(record.shortenNames, `${label}.shortenNames`);
+  }
+  if (record.maxNameLength !== undefined) {
+    settings.maxNameLength = expectNullableNumber(record.maxNameLength, `${label}.maxNameLength`);
+  }
+  if (record.nameModeOverride !== undefined && record.nameModeOverride !== null) {
+    settings.nameModeOverride = expectString(
+      record.nameModeOverride,
+      `${label}.nameModeOverride`,
+    ) as BuildExportSettings['nameModeOverride'];
+  }
+  if (record.useChannelAbbreviation !== undefined && record.useChannelAbbreviation !== null) {
+    settings.useChannelAbbreviation = expectBoolean(
+      record.useChannelAbbreviation,
+      `${label}.useChannelAbbreviation`,
+    );
+  }
+  if (record.useTalkGroupAbbreviation !== undefined && record.useTalkGroupAbbreviation !== null) {
+    settings.useTalkGroupAbbreviation = expectBoolean(
+      record.useTalkGroupAbbreviation,
+      `${label}.useTalkGroupAbbreviation`,
+    );
+  }
+  if (
+    record.exportZoneDerivedScanLists !== undefined &&
+    record.exportZoneDerivedScanLists !== null
+  ) {
+    settings.exportZoneDerivedScanLists = expectBoolean(
+      record.exportZoneDerivedScanLists,
+      `${label}.exportZoneDerivedScanLists`,
+    );
+  }
+  if (
+    record.multiTalkGroupExportNameMode !== undefined &&
+    record.multiTalkGroupExportNameMode !== null
+  ) {
+    settings.multiTalkGroupExportNameMode = expectString(
+      record.multiTalkGroupExportNameMode,
+      `${label}.multiTalkGroupExportNameMode`,
+    ) as BuildExportSettings['multiTalkGroupExportNameMode'];
+  }
+  if (record.expandModes !== undefined && record.expandModes !== null) {
+    settings.expandModes = expectBoolean(record.expandModes, `${label}.expandModes`);
+  }
+  if (record.expandRxGroupLists !== undefined && record.expandRxGroupLists !== null) {
+    settings.expandRxGroupLists = expectBoolean(
+      record.expandRxGroupLists,
+      `${label}.expandRxGroupLists`,
+    );
+  }
+  if (record.expandRxGroupListMembers !== undefined && record.expandRxGroupListMembers !== null) {
+    const value = expectString(
+      record.expandRxGroupListMembers,
+      `${label}.expandRxGroupListMembers`,
+    );
+    if (value !== 'all' && value !== 'talkGroupsOnly') {
+      throw new NativeYamlImportError(`${label}.expandRxGroupListMembers is invalid: ${value}`);
+    }
+    settings.expandRxGroupListMembers = value;
+  }
+  return Object.keys(settings).length > 0 ? settings : undefined;
+}
+
 interface ParsedFormatBuild {
   build: FormatBuild;
   legacy: {
@@ -483,6 +580,9 @@ function parseFormatBuild(raw: unknown, index: number): ParsedFormatBuild {
             `${label}.exportUnlinkedRxGroupLists`,
           ),
         }
+      : {}),
+    ...(record.exportSettings !== undefined && record.exportSettings !== null
+      ? { exportSettings: parseExportSettings(record.exportSettings, `${label}.exportSettings`) }
       : {}),
   };
 
@@ -750,6 +850,7 @@ export function validateDocument(raw: unknown): ProjectAggregate {
   const studioSchemaVersion = document.studioSchemaVersion;
   if (
     studioSchemaVersion !== STUDIO_SCHEMA_VERSION &&
+    studioSchemaVersion !== 7 &&
     studioSchemaVersion !== 6 &&
     studioSchemaVersion !== 5 &&
     studioSchemaVersion !== 4 &&
@@ -757,7 +858,7 @@ export function validateDocument(raw: unknown): ProjectAggregate {
     studioSchemaVersion !== 2
   ) {
     throw new NativeYamlImportError(
-      `Unsupported studioSchemaVersion: ${String(studioSchemaVersion)} (expected ${STUDIO_SCHEMA_VERSION}, 6, 5, 4, 3, or 2)`,
+      `Unsupported studioSchemaVersion: ${String(studioSchemaVersion)} (expected ${STUDIO_SCHEMA_VERSION}, 7, 6, 5, 4, 3, or 2)`,
     );
   }
 

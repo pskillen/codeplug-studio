@@ -31,7 +31,7 @@ const baseChannel: Channel = {
   txFrequency: 145_125_000,
   comment: '',
   power: null,
-  scanSkip: false,
+  scanInclusion: 'default',
   forbidTransmit: false,
   useLocation: false,
   location: null,

@@ -27,13 +27,16 @@ describe('adapter contracts', () => {
   });
 
   it('registry resolves shipped opengd77 export adapter', () => {
-    expect(getExportAdapter('opengd77').id).toBe('opengd77');
-    expect(getExportAdapter('opengd77').delivery).toBe('multi-file');
+    const adapter = getExportAdapter('opengd77');
+    expect(adapter.id).toBe('opengd77');
+    expect(adapter.defaultExportSettings?.defaultScanInclusion).toBe('scan');
+    expect(adapter.delivery).toBe('multi-file');
   });
 
   it('registry resolves shipped dm32 export adapter', () => {
     const adapter = getExportAdapter('dm32');
     expect(adapter.id).toBe('dm32');
+    expect(adapter.defaultExportSettings?.defaultScanInclusion).toBe('scan');
     expect(isMultiFileExportAdapter(adapter)).toBe(true);
     if (isMultiFileExportAdapter(adapter)) {
       expect(adapter.delivery).toBe('multi-file');

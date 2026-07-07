@@ -71,7 +71,7 @@ library:
       projectId: 11111111-1111-4111-8111-111111111111
       revision: 1
       rxFrequency: 430912500
-      scanSkip: false
+      scanInclusion: default
       txFrequency: 430912500
       updatedAt: 2026-07-02T10:00:00.000Z
       useLocation: true
@@ -95,7 +95,7 @@ library:
       projectId: 11111111-1111-4111-8111-111111111111
       revision: 1
       rxFrequency: 439087500
-      scanSkip: true
+      scanInclusion: skip
       txFrequency: 430587500
       updatedAt: 2026-07-02T10:00:00.000Z
       useLocation: false
@@ -150,4 +150,4 @@ project:
   revision: 1
   updatedAt: 2026-07-02T10:00:00.000Z
 schemaVersion: 1
-studioSchemaVersion: 7
+studioSchemaVersion: 8

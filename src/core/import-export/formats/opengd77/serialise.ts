@@ -1,5 +1,10 @@
 import type { AssembledBuild } from '@core/services/assemble.ts';
 import type { CpsExportOptions } from '@core/import-export/types.ts';
+import {
+  buildScanContext,
+  formatOpenGd77AllSkip,
+  resolveEffectiveScanInclusion,
+} from '@core/import-export/scanInclusion/index.ts';
 import type {
   Channel,
   ChannelModeProfile,
@@ -72,9 +77,17 @@ function channelRowValues(
   assembled: AssembledBuild,
   profile: OpenGd77RadioProfile,
   rowNumber: number,
+  options?: CpsExportOptions,
 ): Record<string, string> {
   const analog = isAnalogProfile(modeProfile) ? modeProfile : null;
   const dmr = isDmrProfile(modeProfile) ? modeProfile : null;
+  const scanContext = buildScanContext(
+    options?.defaultScanInclusion != null
+      ? { defaultScanInclusion: options.defaultScanInclusion }
+      : undefined,
+    { defaultScanInclusion: 'scan' },
+  );
+  const effectiveScan = resolveEffectiveScanInclusion(channel, scanContext);
 
   const values: Record<string, string> = {
     [CHANNEL_COL.number]: String(rowNumber),
@@ -96,7 +109,7 @@ function channelRowValues(
     [CHANNEL_COL.squelch]: formatOpenGd77SquelchWire(mode, analog?.squelch ?? null),
     [CHANNEL_COL.power]: formatOpenGd77PowerWire(channel.power, profile.id),
     [CHANNEL_COL.rxOnly]: wireYesNo(channel.forbidTransmit === true),
-    [CHANNEL_COL.allSkip]: wireYesNo(channel.scanSkip),
+    [CHANNEL_COL.allSkip]: wireYesNo(formatOpenGd77AllSkip(effectiveScan)),
     [CHANNEL_COL.tot]: formatOpenGd77TransmitTimeoutWire(null),
     [CHANNEL_COL.vox]: wireVoxEnabled(false),
     [CHANNEL_COL.aprs]: '',
@@ -141,6 +154,7 @@ export function serialiseChannels(assembled: AssembledBuild, options?: CpsExport
         assembled,
         profile,
         i + 1,
+        options,
       ),
     ),
   );

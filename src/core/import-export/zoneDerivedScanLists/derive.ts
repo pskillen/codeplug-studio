@@ -1,6 +1,7 @@
 import type { Channel, Zone } from '@core/models/library.ts';
 import type { ZoneGroupingLayout, ZoneGroupingZoneEntry } from '@core/models/traitLayout.ts';
 import type { CpsExportOptions } from '@core/import-export/types.ts';
+import { buildScanContext, effectiveScanSkips } from '@core/import-export/scanInclusion/index.ts';
 import type { AssembledBuild, LibrarySlice } from '@core/services/assemble.ts';
 import { memberIncludedInScanList, normalizeZoneMemberEntry } from '@core/domain/zoneMembers.ts';
 import type { ExpandedDm32ChannelRow } from '../formats/dm32/channelExpansion.ts';
@@ -71,11 +72,18 @@ function expandedWireNamesForMembers(
   memberIds: string[],
   channelById: Map<string, Channel>,
   expansionByChannelId: Map<string, ExpandedDm32ChannelRow[]>,
+  options?: CpsExportOptions,
 ): string[] {
+  const scanContext = buildScanContext(
+    options?.defaultScanInclusion != null
+      ? { defaultScanInclusion: options.defaultScanInclusion }
+      : undefined,
+    { defaultScanInclusion: 'scan' },
+  );
   const names: string[] = [];
   for (const channelId of memberIds) {
     const channel = channelById.get(channelId);
-    if (!channel || channel.scanSkip) continue;
+    if (!channel || effectiveScanSkips(channel, scanContext)) continue;
     for (const row of expansionByChannelId.get(channelId) ?? []) {
       names.push(row.wireName);
     }
@@ -137,6 +145,7 @@ export function deriveZoneDerivedScanLists(
       memberIds,
       channelById,
       expansionByChannelId,
+      options,
     );
 
     if (memberWireNames.length === 0) {

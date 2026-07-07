@@ -34,7 +34,7 @@ function baseChannel(overrides: Partial<Channel> = {}): Channel {
     txFrequency: 145_125_000,
     comment: 'My note',
     power: null,
-    scanSkip: false,
+    scanInclusion: 'default',
     forbidTransmit: false,
     useLocation: true,
     location: io91wm,
