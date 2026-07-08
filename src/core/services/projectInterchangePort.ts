@@ -4,6 +4,7 @@ import type {
   Channel,
   DigitalContact,
   RxGroupList,
+  ScanList,
   TalkGroup,
   Zone,
 } from '@core/models/library.ts';
@@ -21,6 +22,7 @@ export interface ProjectSeed {
   digitalContacts?: DigitalContact[];
   analogContacts?: AnalogContact[];
   rxGroupLists?: RxGroupList[];
+  scanLists?: ScanList[];
   formatBuilds?: FormatBuild[];
 }
 

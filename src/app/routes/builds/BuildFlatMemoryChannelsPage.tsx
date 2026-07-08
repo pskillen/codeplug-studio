@@ -87,6 +87,7 @@ export default function BuildFlatMemoryChannelsPage() {
       digitalContacts: [],
       analogContacts: [],
       rxGroupLists: [],
+      scanLists: [],
     }),
     [channels],
   );

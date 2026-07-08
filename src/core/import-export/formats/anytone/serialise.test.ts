@@ -117,6 +117,7 @@ describe('anytone serialise', () => {
       digitalContacts: [],
       analogContacts: [],
       rxGroupLists: [],
+    scanLists: [],
     };
 
     const assembled = assemble(build, library);

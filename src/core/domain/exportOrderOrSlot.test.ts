@@ -33,6 +33,7 @@ describe('exportOrderOrSlot', () => {
     digitalContacts: [],
     analogContacts: [],
     rxGroupLists: [],
+      scanLists: [],
   };
 
   it('includes all analogue channels densely when overrides are empty', () => {

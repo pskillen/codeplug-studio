@@ -133,6 +133,7 @@ export function migrateProjectAggregate(aggregate: ProjectAggregate): ProjectAgg
     digitalContacts: withMembers.digitalContacts,
     analogContacts: withMembers.analogContacts,
     rxGroupLists: withMembers.rxGroupLists,
+    scanLists: withMembers.scanLists ?? [],
   };
 
   const { library: migratedLibrary, formatBuilds } = migrateZoneExportFieldsToBuildLayout(
@@ -148,6 +149,7 @@ export function migrateProjectAggregate(aggregate: ProjectAggregate): ProjectAgg
     digitalContacts: migratedLibrary.digitalContacts,
     analogContacts: migratedLibrary.analogContacts,
     rxGroupLists: migratedLibrary.rxGroupLists,
+    scanLists: migratedLibrary.scanLists,
     formatBuilds,
   };
 }

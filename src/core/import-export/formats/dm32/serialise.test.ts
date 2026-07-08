@@ -69,6 +69,7 @@ describe('DM32 export serialise', () => {
       digitalContacts: [],
       analogContacts: [],
       rxGroupLists: [],
+      scanLists: [],
     };
     const assembled = assemble(build, library);
     const files = serialiseDm32Files(assembled, library);
@@ -90,6 +91,7 @@ describe('DM32 export serialise', () => {
       digitalContacts: [],
       analogContacts: [],
       rxGroupLists: [],
+      scanLists: [],
     };
     const assembled = assemble(build, library);
     const files = serialiseDm32Files(assembled, library);
@@ -108,6 +110,7 @@ describe('DM32 export serialise', () => {
       digitalContacts: aggregate.digitalContacts,
       analogContacts: aggregate.analogContacts,
       rxGroupLists: aggregate.rxGroupLists,
+    scanLists: [],
     };
     const build: FormatBuild = {
       ...newFormatBuild(FIXTURE_PROJECT_ID, 'dm32-baofeng-dm32uv', 'Nested export'),
@@ -177,6 +180,7 @@ describe('DM32 export serialise', () => {
         },
       ],
       zones: [],
+      scanLists: [],
     };
     const assembled = assemble(build, library);
     const files = serialiseDm32Files(assembled, library);
@@ -196,6 +200,7 @@ describe('DM32 export serialise', () => {
       digitalContacts: [],
       analogContacts: [],
       rxGroupLists: [],
+      scanLists: [],
     });
     layout.zones[0] = {
       ...layout.zones[0]!,
@@ -211,6 +216,7 @@ describe('DM32 export serialise', () => {
       digitalContacts: [],
       analogContacts: [],
       rxGroupLists: [],
+      scanLists: [],
     };
     const assembled = {
       ...assemble(build, library),

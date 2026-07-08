@@ -8,11 +8,11 @@ import {
   exportBuildSingleFile,
   exportBuildZip,
 } from '@core/services/exportBuild.ts';
-import type { LibrarySlice } from '@core/services/assemble.ts';
 import type { ProjectPersistence } from '@integrations/persistence/index.ts';
 import { downloadTextFile, downloadZip } from '@integrations/download/browserDownload.ts';
 import { googleDrivePort } from '@integrations/cloud/index.ts';
 import { persistence } from '../state/persistence.ts';
+import { loadLibrarySlice } from '../lib/loadLibrarySlice.ts';
 
 export interface CpsDriveUploadTarget {
   folderId: string;
@@ -27,22 +27,6 @@ export interface CpsDownloadResult {
 export interface CpsPreviewResult {
   files: Record<string, string>;
   warnings: string[];
-}
-
-async function loadLibrarySlice(
-  store: ProjectPersistence,
-  projectId: string,
-): Promise<LibrarySlice> {
-  const [channels, zones, talkGroups, digitalContacts, analogContacts, rxGroupLists] =
-    await Promise.all([
-      store.listChannels(projectId),
-      store.listZones(projectId),
-      store.listTalkGroups(projectId),
-      store.listDigitalContacts(projectId),
-      store.listAnalogContacts(projectId),
-      store.listRxGroupLists(projectId),
-    ]);
-  return { channels, zones, talkGroups, digitalContacts, analogContacts, rxGroupLists };
 }
 
 async function requireBuild(

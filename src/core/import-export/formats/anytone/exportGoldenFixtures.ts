@@ -56,6 +56,7 @@ export function minimalAnytoneExportLibrary(): LibrarySlice {
     digitalContacts: [],
     analogContacts: [],
     rxGroupLists: [],
+  scanLists: [],
   };
 }
 

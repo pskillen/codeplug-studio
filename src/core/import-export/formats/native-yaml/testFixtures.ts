@@ -54,6 +54,7 @@ export function minimalProjectAggregate(): ProjectAggregate {
     digitalContacts: [],
     analogContacts: [],
     rxGroupLists: [],
+      scanLists: [],
     formatBuilds: [],
   };
 }
@@ -156,6 +157,7 @@ export function fullLibraryAggregate(): ProjectAggregate {
     digitalContacts: [digitalContact],
     analogContacts: [analogContact],
     rxGroupLists: [rxGroupList],
+    scanLists: [],
     formatBuilds: [],
   };
 }

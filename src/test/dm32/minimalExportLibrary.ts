@@ -126,5 +126,6 @@ export function minimalDm32ExportLibrary(): LibrarySlice {
     digitalContacts: [disconnect],
     analogContacts: [dtmf],
     rxGroupLists: [rxScotland, rxAll],
+    scanLists: [],
   };
 }

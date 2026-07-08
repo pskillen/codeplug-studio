@@ -4,6 +4,7 @@ import type {
   Channel,
   DigitalContact,
   RxGroupList,
+  ScanList,
   TalkGroup,
   Zone,
 } from '@core/models/library.ts';
@@ -37,6 +38,19 @@ export interface LibrarySlice {
   digitalContacts: DigitalContact[];
   analogContacts: AnalogContact[];
   rxGroupLists: RxGroupList[];
+  scanLists: ScanList[];
+}
+
+export function librarySliceFrom(library: Library): LibrarySlice {
+  return {
+    channels: library.channels,
+    zones: library.zones,
+    talkGroups: library.talkGroups,
+    digitalContacts: library.digitalContacts,
+    analogContacts: library.analogContacts,
+    rxGroupLists: library.rxGroupLists,
+    scanLists: library.scanLists,
+  };
 }
 
 export interface AssembledEntity<T> {

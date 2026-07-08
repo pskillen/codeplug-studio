@@ -21,28 +21,9 @@ import { useBuildLayout } from '../routes/builds/BuildLayoutContext.tsx';
 import { useProjects } from '../state/useProjects.ts';
 import { persistence } from '../state/persistence.ts';
 import { BuildService } from '../state/buildService.ts';
+import { loadLibrarySlice } from '../lib/loadLibrarySlice.ts';
 
 const buildService = new BuildService(persistence);
-
-async function loadLibrarySlice(projectId: string): Promise<LibrarySlice> {
-  const [channels, zones, talkGroups, digitalContacts, analogContacts, rxGroupLists] =
-    await Promise.all([
-      persistence.listChannels(projectId),
-      persistence.listZones(projectId),
-      persistence.listTalkGroups(projectId),
-      persistence.listDigitalContacts(projectId),
-      persistence.listAnalogContacts(projectId),
-      persistence.listRxGroupLists(projectId),
-    ]);
-  return {
-    channels,
-    zones,
-    talkGroups,
-    digitalContacts,
-    analogContacts,
-    rxGroupLists,
-  };
-}
 
 export function useBuildWirePreview(entityKind: WirePreviewEntityKind) {
   const { build } = useBuildLayout();
@@ -102,7 +83,7 @@ export function useBuildWirePreview(entityKind: WirePreviewEntityKind) {
   useEffect(() => {
     if (!activeProjectId) return;
     let cancelled = false;
-    void loadLibrarySlice(activeProjectId).then((slice) => {
+    void loadLibrarySlice(persistence, activeProjectId).then((slice) => {
       if (!cancelled) setLibrary(slice);
     });
     return () => {

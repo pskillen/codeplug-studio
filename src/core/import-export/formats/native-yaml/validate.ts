@@ -15,6 +15,7 @@ import type {
   Library,
   RxGroupList,
   RxGroupListMember,
+  ScanList,
   SsbSideband,
   TalkGroup,
   Zone,
@@ -396,6 +397,23 @@ function parseRxGroupList(raw: unknown, index: number): RxGroupList {
   };
 }
 
+function parseScanList(raw: unknown, index: number): ScanList {
+  const record = expectRecord(raw, `library.scanLists[${index}]`);
+  return {
+    ...parsePersistableRow(record, `library.scanLists[${index}]`),
+    name: expectString(record.name, `library.scanLists[${index}].name`),
+    memberChannelIds: expectArray(
+      record.memberChannelIds,
+      `library.scanLists[${index}].memberChannelIds`,
+    ).map((channelId, channelIndex) =>
+      expectString(
+        channelId,
+        `library.scanLists[${index}].memberChannelIds[${channelIndex}]`,
+      ),
+    ),
+  };
+}
+
 function parseLibrary(raw: unknown, studioSchemaVersion: number): Library {
   const record = expectRecord(raw, 'library');
   const channels = expectArray(record.channels, 'library.channels').map((row, index) =>
@@ -416,8 +434,14 @@ function parseLibrary(raw: unknown, studioSchemaVersion: number): Library {
   const rxGroupLists = expectArray(record.rxGroupLists, 'library.rxGroupLists').map((row, index) =>
     parseRxGroupList(row, index),
   );
+  const scanLists =
+    record.scanLists === undefined || record.scanLists === null
+      ? []
+      : expectArray(record.scanLists, 'library.scanLists').map((row, index) =>
+          parseScanList(row, index),
+        );
 
-  return { channels, zones, talkGroups, digitalContacts, analogContacts, rxGroupLists };
+  return { channels, zones, talkGroups, digitalContacts, analogContacts, rxGroupLists, scanLists };
 }
 
 function parseLegacySelectionArray(raw: unknown, label: string): LegacyEntitySelection[] {
@@ -946,6 +970,7 @@ export function validateDocument(raw: unknown): ProjectAggregate {
     ...library.digitalContacts,
     ...library.analogContacts,
     ...library.rxGroupLists,
+    ...library.scanLists,
     ...formatBuilds,
   ];
 
@@ -956,6 +981,7 @@ export function validateDocument(raw: unknown): ProjectAggregate {
   assertUniqueIds(library.digitalContacts, 'library.digitalContacts');
   assertUniqueIds(library.analogContacts, 'library.analogContacts');
   assertUniqueIds(library.rxGroupLists, 'library.rxGroupLists');
+  assertUniqueIds(library.scanLists, 'library.scanLists');
   assertUniqueIds(formatBuilds, 'formatBuilds');
 
   validateForeignKeys(library, formatBuilds);
@@ -968,6 +994,7 @@ export function validateDocument(raw: unknown): ProjectAggregate {
     digitalContacts: library.digitalContacts,
     analogContacts: library.analogContacts,
     rxGroupLists: library.rxGroupLists,
+    scanLists: library.scanLists,
     formatBuilds,
   });
 }

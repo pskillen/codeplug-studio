@@ -8,22 +8,10 @@ import { useProjects } from '../../state/useProjects.ts';
 import { useFormatBuilds } from '../../state/useFormatBuilds.ts';
 import { persistence } from '../../state/persistence.ts';
 import { BuildService } from '../../state/buildService.ts';
+import { loadLibrarySlice } from '../../lib/loadLibrarySlice.ts';
 import type { LibrarySlice } from '@core/services/assemble.ts';
 
 const buildService = new BuildService(persistence);
-
-async function loadLibrarySlice(projectId: string): Promise<LibrarySlice> {
-  const [channels, zones, talkGroups, digitalContacts, analogContacts, rxGroupLists] =
-    await Promise.all([
-      persistence.listChannels(projectId),
-      persistence.listZones(projectId),
-      persistence.listTalkGroups(projectId),
-      persistence.listDigitalContacts(projectId),
-      persistence.listAnalogContacts(projectId),
-      persistence.listRxGroupLists(projectId),
-    ]);
-  return { channels, zones, talkGroups, digitalContacts, analogContacts, rxGroupLists };
-}
 
 function findScanListsSection(build: FormatBuild): ScanListsLayout | undefined {
   return build.layout.sections.find(
@@ -78,7 +66,7 @@ export default function BuildScanListLayoutEditor() {
   useEffect(() => {
     if (!activeProjectId) return;
     let cancelled = false;
-    void loadLibrarySlice(activeProjectId).then((slice) => {
+    void loadLibrarySlice(persistence, activeProjectId).then((slice) => {
       if (!cancelled) setLibrary(slice);
     });
     return () => {
