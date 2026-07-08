@@ -9,7 +9,7 @@ Cross-cutting rules for AT-D890UV CPS CSV exports. Per-entity columns live in si
 | Delimiter       | Comma (`,`)                                                                                            |
 | Quoting         | **All** fields double-quoted on every line, including the header row (e.g. `"No.","Channel Name","1"`) |
 | Encoding        | UTF-8 assumed (verify BOM on import)                                                                   |
-| Line endings    | **CRLF** on Studio export (official CPS bundles); normalise to LF in tests when comparing fixtures |
+| Line endings    | **CRLF** on Studio export (official CPS bundles); normalise to LF in tests when comparing fixtures     |
 | Filename casing | PascalCase with `.CSV` extension (e.g. `Channel.CSV`)                                                  |
 
 ### Quoting and embedded double quotes
