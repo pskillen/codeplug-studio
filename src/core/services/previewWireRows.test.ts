@@ -176,6 +176,53 @@ describe('previewWireRows', () => {
     expect(rows[1]?.expansionNote).toBeUndefined();
   });
 
+  it('shortens anytone channel wire names at profile name limit without explicit maxNameLength', () => {
+    const projectId = '11111111-1111-4111-8111-111111111111';
+    const channel = {
+      ...newChannel(projectId, 'Very Long Channel Name That Exceeds Limit'),
+      callsign: 'GB3GL',
+      rxFrequency: 438_800_000,
+      txFrequency: 434_000_000,
+      modeProfiles: [
+        {
+          mode: 'dmr' as const,
+          colourCode: 1,
+          timeslot: 2 as const,
+          dmrId: 1234567,
+          contactRef: null,
+          rxGroupListId: null,
+        },
+      ],
+    };
+    const zone = {
+      ...newZone(projectId, 'Zone A'),
+      members: [{ kind: 'channel' as const, channelId: channel.id }],
+    };
+    const build = {
+      ...newFormatBuild(projectId, 'anytone-at-d890uv'),
+      layout: {
+        sections: [
+          {
+            kind: 'zoneGrouping' as const,
+            zones: [{ id: zone.id, name: zone.name, channelIds: [channel.id] }],
+          },
+        ],
+      },
+    };
+    const library = {
+      channels: [channel],
+      zones: [zone],
+      talkGroups: [],
+      digitalContacts: [],
+      analogContacts: [],
+      rxGroupLists: [],
+      scanLists: [],
+    };
+
+    const rows = previewWireRows(build, library, 'channel');
+    expect(rows[0]?.effectiveWireName.length).toBeLessThanOrEqual(16);
+  });
+
   it('expands multi-mode channels into separate preview rows', () => {
     const yaml = readFileSync(join(fixtureDir, 'with-format-build.yaml'), 'utf8');
     const aggregate = parseProjectDocument(yaml);
