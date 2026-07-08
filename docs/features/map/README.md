@@ -46,6 +46,7 @@ Tiles: OpenStreetMap via react-leaflet. Leaflet default marker assets are not us
 
 - [channels.md](channels.md) — marker filters, labels, popups
 - [zones.md](zones.md) — hull geometry, member resolution
+- [#261](https://github.com/pskillen/codeplug-studio/issues/261) — `hideFromInternalMap` channel flag (Location tab checkbox)
 - [maidenhead-grid.md](maidenhead-grid.md) — optional Maidenhead grid overlay ([#45](https://github.com/pskillen/codeplug-studio/issues/45))
 - [repeater-directories](../repeater-directories/README.md) — seeding channels with locations
 - [maidenhead.md](../maidenhead.md) — locator conversion when placing markers

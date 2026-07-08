@@ -24,6 +24,7 @@ See the [map hub](README.md) for overall placement. This layer reads the **inter
 | `callsign`                          | Default marker label; tooltip/popup `callsign — name`                               |
 | `location` (`{ lat, lon } \| null`) | Marker position; `null` → skipped                                                   |
 | `useLocation`                       | Filter — `false` excludes when the fixed filter is on                               |
+| `hideFromInternalMap`               | Internal flag — always excludes the channel from markers and hulls when `true`      |
 | `modeProfiles[]`                    | Marker colour from `modeProfiles[0].mode`; multi-profile label shows combined modes |
 | `rxFrequency`, `txFrequency`        | Popup MHz line (stored Hz, displayed via `hzToMhzString`)                           |
 
@@ -37,6 +38,7 @@ See the [map hub](README.md) for overall placement. This layer reads the **inter
 | Draw zones                   | on      | Show/hide zone hulls — [zones.md](zones.md) |
 | Require `useLocation`        | on      | Skips channels with `useLocation === false` |
 | Skip `0,0`                   | on      | Skips channels at exactly `0, 0`            |
+| `hideFromInternalMap`        | —       | Always skips flagged channels               |
 
 Skipped channels are summarised below the map on the channels and zones list routes (count + reasons).
 
@@ -44,7 +46,7 @@ Skipped channels are summarised below the map on the channels and zones list rou
 
 ### Plot vs skip
 
-`applyFilters` walks the channel list once. A channel is **plotted** only when it has a non-null `location`, passes the `useLocation` check, and is not at `0,0` (when skip-zero is on).
+`applyFilters` walks the channel list once. A channel is **plotted** only when it has a non-null `location`, passes the `useLocation` check, is not at `0,0` (when skip-zero is on), and `hideFromInternalMap` is not `true`.
 
 ### Co-located merge
 
