@@ -44,6 +44,13 @@ export const LIBRARY_NAV: LibraryNavEntry[] = [
     editorSlugs: ['rx-group-lists'],
     sectionNavTitle: 'RX group lists',
   },
+  {
+    label: 'Scan list',
+    plural: 'Scan lists',
+    listPath: '/library/scan-lists',
+    editorSlugs: ['scan-lists'],
+    sectionNavTitle: 'Scan lists',
+  },
 ];
 
 export function listPathForEditorSlug(slug: string): string {

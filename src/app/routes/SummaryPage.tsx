@@ -28,6 +28,7 @@ export default function SummaryPage() {
     { label: 'Digital contacts', value: summary.counts.digitalContacts },
     { label: 'Analog contacts', value: summary.counts.analogContacts },
     { label: 'RX group lists', value: summary.counts.rxGroupLists },
+    { label: 'Scan lists', value: summary.counts.scanLists },
     { label: 'Zones', value: summary.counts.zones },
   ];
 

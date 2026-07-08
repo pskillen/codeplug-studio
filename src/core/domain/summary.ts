@@ -9,6 +9,7 @@ export interface LibrarySummary {
     digitalContacts: number;
     analogContacts: number;
     rxGroupLists: number;
+    scanLists: number;
     zones: number;
   };
   channelsByMode: { mode: string; count: number }[];
@@ -42,6 +43,7 @@ export function summariseLibrary(library: Library): LibrarySummary {
       digitalContacts: library.digitalContacts.length,
       analogContacts: library.analogContacts.length,
       rxGroupLists: library.rxGroupLists.length,
+      scanLists: library.scanLists.length,
       zones: library.zones.length,
     },
     channelsByMode: byMode,
