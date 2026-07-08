@@ -430,7 +430,6 @@ export default function ExportBuildCpsPanel({ build }: ExportBuildCpsPanelProps)
           saving={savingSettings}
           onPatch={(patch) => void handleExportSettingsPatch(patch)}
           profileNameLimit={profileNameLimit}
-          showMultiTalkGroupOptions={build.formatId === 'dm32'}
         />
       </Stack>
       <Stack gap="xs">

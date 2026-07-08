@@ -20,7 +20,7 @@ export const DEFAULT_BUILD_EXPORT_SETTINGS: Required<
   shortenNames: true,
   nameModeOverride: DEFAULT_CHANNEL_EXPORT_NAME_MODE,
   useChannelAbbreviation: true,
-  useTalkGroupAbbreviation: false,
+  useTalkGroupAbbreviation: true,
   exportZoneDerivedScanLists: true,
   multiTalkGroupExportNameMode: DEFAULT_MULTI_TG_EXPORT_NAME_MODE,
   expandRxGroupListMembers: 'all',
