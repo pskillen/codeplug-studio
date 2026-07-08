@@ -142,6 +142,7 @@ src/core/import-export/formats/<format>/
   parse.ts         # wire row → library entities (import)
   serialise.ts     # AssembledBuild → CPS files (export)
   channelWire.ts   # per-channel column mapping
+  exportChannelWire.ts  # wire name composition + nameLimit (flat formats — CHIRP, Anytone)
   listWire.ts      # zones / RX group lists member wire names
   exportRefs.ts    # UUID → wire name denormalisation
   warnings.ts      # profile cardinality / inclusion warnings
@@ -156,7 +157,8 @@ src/core/import-export/formats/<format>/
 - [ ] Add `FormatCatalogEntry` row in `registry.ts` (`importStatus` / `exportStatus`)
 - [ ] Register adapter in `importAdapters` and/or `exportAdapters`
 - [ ] Add `TraitProfile` in `src/core/models/traits.ts` — drives build UI composition
-- [ ] Add radio profiles in `formats/<format>/profiles.ts`
+- [ ] Add radio profiles in `formats/<format>/profiles.ts` (`nameLimit` and caps for export warnings)
+- [ ] Extend `resolveMaxNameLength` in `channelExpansion/exportWireNames.ts` for new `profileId` prefixes
 - [ ] Extend `getFormatProfiles()` in `formatProfiles.ts` + `formatProfileWireHint` if needed
 - [ ] Wire ZIP packaging in `exportBuild.ts` if not following OpenGD77/DM32 pattern — `exportBuildZip` branches per multi-file format (`buildOpenGd77Zip`, `buildDm32Zip`, `buildAnytoneZip`, …); add a branch when shipping a new multi-file delivery
 
@@ -292,6 +294,28 @@ Collapse is **best-effort** — ambiguous groups stay flat until the operator me
 
 Domain background: [data-model](../data-model/README.md), [name-shortening.md](name-shortening.md).
 
+### Channel wire names (all formats — preview ↔ export parity)
+
+`assemble` stores a **thin** channel label (`defaultChannelWireName` + optional `channelOverrides.wireName`). It does **not** apply export name mode, abbreviation, profile `nameLimit`, or uniqueness shortening — those run later at the format boundary.
+
+**Do not** use `assembled.channels[].wireName` as the CPS wire name in preview or serialise unless you have already run the format’s full composition step.
+
+| Format trait stack                             | Preview (`previewWireRows.ts`)                             | Export (`serialise.ts`)                                                                                         |
+| ---------------------------------------------- | ---------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| Multi-mode expansion (OpenGD77)                | `expandChannelWireRows`                                    | Same helper in serialise                                                                                        |
+| Multi-TG fan-out (DM32)                        | `expandAllDm32ChannelsForExport`                           | Same helper in serialise                                                                                        |
+| Flat / single row per channel (CHIRP, Anytone) | `previewGeneratedChannelWireName(channel, build, options)` | Format `exportChannelWire.ts` — e.g. `channelWireName` / `anytoneChannelWireName` calling `applyWireNameLimits` |
+
+Checklist for flat/single-row formats:
+
+- [ ] Add `nameLimit` to `formats/<format>/profiles.ts` and extend `resolveMaxNameLength` in `channelExpansion/exportWireNames.ts` for your `profileId` prefix
+- [ ] Preview branch calls `previewGeneratedChannelWireName` — **not** `assembledRow.wireName`
+- [ ] Export applies the same rules at serialise (shared `applyWireNameLimits`; optional `exportChannelWire.ts` beside `channelWire.ts`)
+- [ ] `collect*ExportWarnings` warns when explicit overrides exceed `nameLimit` (do not silently shorten operator overrides)
+- [ ] Tests: `previewWireRows.test.ts` without explicit `maxNameLength` in options; directional export test on the name column
+
+See [wire-name-composition.md](../builds/wire-name-composition.md) for the full pipeline. Regression: [#287](https://github.com/pskillen/codeplug-studio/issues/287).
+
 ---
 
 ## 5. Data model
@@ -391,11 +415,11 @@ Studio surfaces formats in **three places**: project interchange (`/import-expor
 
 ### Wire preview (`/builds/:id/channels`, talk groups, zones, …)
 
-| Component    | Path                     | Checklist                                       |
-| ------------ | ------------------------ | ----------------------------------------------- |
-| Preview hook | `useBuildWirePreview.ts` | Loads library + applies export settings         |
-| Row builder  | `previewWireRows.ts`     | **Must mirror export expansion** for the format |
-| Table        | `WirePreviewTable.tsx`   | Override editing, fan-out display               |
+| Component    | Path                     | Checklist                                                                                                            |
+| ------------ | ------------------------ | -------------------------------------------------------------------------------------------------------------------- |
+| Preview hook | `useBuildWirePreview.ts` | Loads library + applies export settings                                                                              |
+| Row builder  | `previewWireRows.ts`     | **Must mirror export** — expansion helpers or `previewGeneratedChannelWireName`; never raw `assemble.wireName` alone |
+| Table        | `WirePreviewTable.tsx`   | Override editing, fan-out display                                                                                    |
 
 - [ ] Add or extend format branch in `previewWireRows.ts` when expansion differs from OpenGD77 defaults
 - [ ] Wire name overrides from `FormatBuild` reflected in preview rows
@@ -511,17 +535,17 @@ End-to-end smoke before PR:
 
 ## Worked example: Anytone (export shipped)
 
-| Step           | Location                                                                                      |
-| -------------- | --------------------------------------------------------------------------------------------- |
-| Feature hub    | `docs/features/import-export/anytone/README.md`                                               |
-| Reference hub  | `docs/reference/anytone/README.md`                                                            |
-| Fixtures       | `test-data/anytone/at-d890uv/` (wire spike) + `formats/anytone/__fixtures__/export/` (golden) |
-| Export adapter | `formats/anytone/adapter.ts`, `serialise.ts`, `channelWire.ts`, `packageZip.ts`               |
-| Scan lists     | Library `ScanList`; `BuildScanListsWirePage`, `BuildScanListLibraryGuidance`                  |
-| Trait profile  | `anytone-at-d890uv` — `ZoneGrouping` + `DedicatedScanLists`                                   |
-| ZIP branch     | `buildAnytoneZip` in `exportBuild.ts`                                                         |
-| Tests          | `exportGolden.test.ts`, `serialise.test.ts`, `columns.test.ts`                                |
-| Expansion      | Multi-mode **off**; multi-TG **off** (native RGL); dedicated scan lists                       |
+| Step           | Location                                                                                                |
+| -------------- | ------------------------------------------------------------------------------------------------------- |
+| Feature hub    | `docs/features/import-export/anytone/README.md`                                                         |
+| Reference hub  | `docs/reference/anytone/README.md`                                                                      |
+| Fixtures       | `test-data/anytone/at-d890uv/` (wire spike) + `formats/anytone/__fixtures__/export/` (golden)           |
+| Export adapter | `formats/anytone/adapter.ts`, `serialise.ts`, `channelWire.ts`, `exportChannelWire.ts`, `packageZip.ts` |
+| Scan lists     | Library `ScanList`; `BuildScanListsWirePage`, `BuildScanListLibraryGuidance`                            |
+| Trait profile  | `anytone-at-d890uv` — `ZoneGrouping` + `DedicatedScanLists`                                             |
+| ZIP branch     | `buildAnytoneZip` in `exportBuild.ts`                                                                   |
+| Tests          | `exportGolden.test.ts`, `serialise.test.ts`, `exportChannelWire.test.ts`, `previewWireRows` name-limit  |
+| Expansion      | Multi-mode **off**; multi-TG **off** (native RGL); dedicated scan lists                                 |
 
 ---
 
@@ -567,7 +591,7 @@ Use as a PR self-review list when shipping a new format slice.
 - [ ] New build + profile picker
 - [ ] Trait build pages for organisation semantics
 - [ ] Export panel + ZIP + warnings + CSV preview
-- [ ] Wire preview matches export expansion
+- [ ] Wire preview matches export expansion **and** name-limit composition (see §4 channel wire names)
 - [ ] Format-specific export settings defaults
 
 ### Manual
