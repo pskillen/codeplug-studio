@@ -60,3 +60,16 @@
 - Tier-1: `docs/features/import-export/anytone/README.md`
 
 **Next:** [#232](https://github.com/pskillen/codeplug-studio/issues/232) — profile, columns scaffold, registry.
+
+---
+
+## Wave 2 — cross-file wire name fidelity ([#292](https://github.com/pskillen/codeplug-studio/issues/292))
+
+**Status:** Complete
+
+| Slice                         | Status   | Notes                                                                      |
+| ----------------------------- | -------- | -------------------------------------------------------------------------- |
+| Export wire context           | Complete | `exportWireContext.ts` — one canonical name per entity per export pass     |
+| Serialiser FK alignment       | Complete | Channels, zones, scan lists, TGs, RGLs, AMAir/FM receive banks             |
+| Wire preview + export UI copy | Complete | List previews shortened; uses shared **Shorten long names** export setting |
+| Directional tests             | Complete | `exportWireContext.test.ts` cross-file name equality                       |

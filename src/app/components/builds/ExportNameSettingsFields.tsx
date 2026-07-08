@@ -26,8 +26,8 @@ export default function ExportNameSettingsFields({
   return (
     <Stack gap="sm">
       <Switch
-        label="Shorten long channel names"
-        description="Abbreviate names that exceed the target length at export time"
+        label="Shorten long names"
+        description="Abbreviate names that exceed the target length at export"
         checked={settings.shortenNames}
         disabled={saving}
         onChange={(e) => onPatch({ shortenNames: e.currentTarget.checked })}

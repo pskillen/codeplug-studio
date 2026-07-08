@@ -1,0 +1,186 @@
+import { describe, expect, it } from 'vitest';
+import { defaultModeProfile } from '@core/domain/modeProfiles.ts';
+import {
+  newChannel,
+  newFormatBuild,
+  newRxGroupList,
+  newScanList,
+  newTalkGroup,
+  newZone,
+} from '@core/domain/factories.ts';
+import { assemble } from '@core/services/assemble.ts';
+import { csvToTable } from '@core/import-export/csvParse.ts';
+import { exportBuildAll } from '@core/services/exportBuild.ts';
+import { previewWireRows } from '@core/services/previewWireRows.ts';
+import { serialiseAnytoneFiles } from './serialise.ts';
+
+const PROJECT_ID = '11111111-1111-4111-8111-111111111111';
+const LONG_TG_NAME = 'Scotland West Regional Talk Group';
+const LONG_ZONE_NAME = 'GLA GLASGOW TOWER ZONE NAME';
+const LONG_RGL_NAME = 'Scotland West Receive Group List';
+const LONG_CHANNEL_NAME = 'Very Long DMR Channel Name';
+const LONG_AIR_NAME = 'GLA GLASGOW TOWER AIRBAND';
+
+function cell(table: ReturnType<typeof csvToTable>, rowIndex: number, column: string): string {
+  const colIndex = table.headers.indexOf(column);
+  return table.rows[rowIndex]?.[colIndex] ?? '';
+}
+
+describe('anytone export wire context', () => {
+  it('uses consistent shortened wire names across export files', () => {
+    const tg = newTalkGroup(PROJECT_ID, LONG_TG_NAME, 23551);
+    const rgl = {
+      ...newRxGroupList(PROJECT_ID, LONG_RGL_NAME),
+      members: [{ ref: { kind: 'talkGroup' as const, id: tg.id } }],
+    };
+    const dmrChannel = {
+      ...newChannel(PROJECT_ID, LONG_CHANNEL_NAME),
+      rxFrequency: 438_800_000,
+      txFrequency: 434_000_000,
+      modeProfiles: [
+        {
+          mode: 'dmr' as const,
+          colourCode: 1,
+          timeslot: 1 as const,
+          dmrId: 1234567,
+          contactRef: { kind: 'talkGroup' as const, id: tg.id },
+          rxGroupListId: rgl.id,
+        },
+      ],
+    };
+    const airChannel = {
+      ...newChannel(PROJECT_ID, LONG_AIR_NAME),
+      rxFrequency: 118_800_000,
+      txFrequency: null,
+      forbidTransmit: true,
+      modeProfiles: [defaultModeProfile('am')],
+    };
+    const scanListId = 'scan-long';
+    const scanList = {
+      ...newScanList(PROJECT_ID, 'Very Long Scan List Name Here'),
+      id: scanListId,
+      memberChannelIds: [dmrChannel.id],
+    };
+    const zone = {
+      ...newZone(PROJECT_ID, LONG_ZONE_NAME),
+      members: [
+        { kind: 'channel' as const, channelId: dmrChannel.id },
+        { kind: 'channel' as const, channelId: airChannel.id },
+      ],
+    };
+    const build = {
+      ...newFormatBuild(PROJECT_ID, 'anytone-at-d890uv'),
+      layout: {
+        sections: [
+          {
+            kind: 'zoneGrouping' as const,
+            zones: [{ id: zone.id, name: zone.name, channelIds: [dmrChannel.id, airChannel.id] }],
+          },
+        ],
+      },
+      exportSettings: { shortenNames: true },
+    };
+    const library = {
+      channels: [dmrChannel, airChannel],
+      zones: [zone],
+      talkGroups: [tg],
+      digitalContacts: [],
+      analogContacts: [],
+      rxGroupLists: [rgl],
+      scanLists: [scanList],
+    };
+
+    const assembled = assemble(build, library);
+    const files = serialiseAnytoneFiles(assembled, library, {
+      profileId: 'anytone-at-d890uv',
+      shortenNames: true,
+    });
+    const fullExport = exportBuildAll({ build, library });
+    const amAirCsv = fullExport.files['AMAir.CSV']!;
+
+    const channelTable = csvToTable(files['Channel.CSV']);
+    const zoneTable = csvToTable(files['DMRZone.CSV']);
+    const tgTable = csvToTable(files['DMRTalkGroups.CSV']);
+    const rglTable = csvToTable(files['DMRReceiveGroupCallList.CSV']);
+    const scanTable = csvToTable(files['ScanList.CSV']);
+    const amAirTable = csvToTable(amAirCsv);
+
+    const channelName = cell(channelTable, 0, 'Channel Name');
+    const tgName = cell(tgTable, 0, 'Name');
+    const rglContact = cell(rglTable, 0, 'Contact').split('|')[0] ?? '';
+    const zoneMembers = cell(zoneTable, 0, 'Zone Channel Member').split('|');
+    const scanMembers = cell(scanTable, 0, 'Scan Channel Member').split('|');
+    const amAirName = cell(amAirTable, 0, 'Name');
+
+    expect(channelName.length).toBeLessThanOrEqual(16);
+    expect(tgName.length).toBeLessThanOrEqual(16);
+    expect(rglContact.length).toBeLessThanOrEqual(16);
+    expect(tgName).toBe(rglContact);
+    expect(zoneMembers[0]).toBe(channelName);
+    expect(zoneMembers[1]).toBe(amAirName);
+    expect(scanMembers[0]).toBe(channelName);
+    expect(amAirName.length).toBe(16);
+  });
+});
+
+describe('anytone wire preview list limits', () => {
+  it('shortens zone, scan list, and RX group list wire names at profile limit', () => {
+    const tg = newTalkGroup(PROJECT_ID, LONG_TG_NAME, 23551);
+    const rgl = {
+      ...newRxGroupList(PROJECT_ID, LONG_RGL_NAME),
+      members: [{ ref: { kind: 'talkGroup' as const, id: tg.id } }],
+    };
+    const channel = {
+      ...newChannel(PROJECT_ID, LONG_CHANNEL_NAME),
+      rxFrequency: 438_800_000,
+      txFrequency: 434_000_000,
+      modeProfiles: [
+        {
+          mode: 'dmr' as const,
+          colourCode: 1,
+          timeslot: 1 as const,
+          dmrId: 1234567,
+          contactRef: { kind: 'talkGroup' as const, id: tg.id },
+          rxGroupListId: rgl.id,
+        },
+      ],
+    };
+    const scanList = {
+      ...newScanList(PROJECT_ID, 'Very Long Scan List Name Here'),
+      memberChannelIds: [channel.id],
+    };
+    const zone = {
+      ...newZone(PROJECT_ID, LONG_ZONE_NAME),
+      members: [{ kind: 'channel' as const, channelId: channel.id }],
+    };
+    const build = {
+      ...newFormatBuild(PROJECT_ID, 'anytone-at-d890uv'),
+      layout: {
+        sections: [
+          {
+            kind: 'zoneGrouping' as const,
+            zones: [{ id: zone.id, name: zone.name, channelIds: [channel.id] }],
+          },
+        ],
+      },
+      exportSettings: { shortenNames: true },
+    };
+    const library = {
+      channels: [channel],
+      zones: [zone],
+      talkGroups: [tg],
+      digitalContacts: [],
+      analogContacts: [],
+      rxGroupLists: [rgl],
+      scanLists: [scanList],
+    };
+
+    const zoneRow = previewWireRows(build, library, 'zone')[0];
+    const scanRow = previewWireRows(build, library, 'scanList')[0];
+    const rglRow = previewWireRows(build, library, 'rxGroupList')[0];
+
+    expect(zoneRow?.effectiveWireName.length).toBeLessThanOrEqual(16);
+    expect(scanRow?.effectiveWireName.length).toBeLessThanOrEqual(16);
+    expect(rglRow?.effectiveWireName.length).toBeLessThanOrEqual(16);
+  });
+});

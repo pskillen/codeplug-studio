@@ -37,6 +37,8 @@ Lists cross-reference each other by **exact name match** (case-sensitive) at the
 
 Internal model uses UUID `id` FKs; name resolution belongs in import/export adapters only.
 
+When **Shorten long names** is enabled on a build (default), Studio shortens CPS name columns to the radio profile limit at export. Anytone requires one canonical string per entity across all CSV files in a single export pass ([#292](https://github.com/pskillen/codeplug-studio/issues/292)).
+
 ## Row numbering (`No.`)
 
 | File            | Programmed rows     | VFO / special rows       |

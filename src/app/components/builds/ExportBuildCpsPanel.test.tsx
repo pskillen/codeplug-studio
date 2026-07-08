@@ -110,7 +110,7 @@ describe('ExportBuildCpsPanel', () => {
     );
 
     expect(await screen.findByText('Export name settings')).toBeInTheDocument();
-    expect(screen.getByText('Shorten long channel names')).toBeInTheDocument();
+    expect(screen.getByText('Shorten long names')).toBeInTheDocument();
     expect(screen.getByText('Default scan behaviour')).toBeInTheDocument();
   });
 
