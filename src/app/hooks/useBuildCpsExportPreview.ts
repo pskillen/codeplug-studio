@@ -102,7 +102,15 @@ export function useBuildCpsExportPreview({
     return () => {
       cancelled = true;
     };
-  }, [enabled, activeProjectId, build.id, requestKey, exportOptions, fallbackFileNames]);
+  }, [
+    enabled,
+    activeProjectId,
+    build.id,
+    build.formatId,
+    requestKey,
+    exportOptions,
+    fallbackFileNames,
+  ]);
 
   const isCurrentSnapshot = snapshot?.requestKey === requestKey;
   const files = isCurrentSnapshot ? snapshot.files : null;

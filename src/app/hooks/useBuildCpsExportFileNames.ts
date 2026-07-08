@@ -34,7 +34,9 @@ export function useBuildCpsExportFileNames(build: FormatBuild, exportOptions: Cp
       staticExportFileNames(build.formatId as FormatId, build.profileId, exportOptions.profileId),
     [build.formatId, build.profileId, exportOptions.profileId],
   );
-  const [fileNames, setFileNames] = useState<string[]>(fallbackFileNames);
+  const [resolved, setResolved] = useState<{ requestKey: string; fileNames: string[] } | null>(
+    null,
+  );
 
   const requestKey = useMemo(
     () =>
@@ -49,20 +51,16 @@ export function useBuildCpsExportFileNames(build: FormatBuild, exportOptions: Cp
   );
 
   useEffect(() => {
-    setFileNames(fallbackFileNames);
-  }, [fallbackFileNames]);
-
-  useEffect(() => {
     if (!activeProjectId) return;
 
     let cancelled = false;
 
     void listCpsExportFileNames(activeProjectId, build.id, exportOptions)
       .then((names) => {
-        if (!cancelled) setFileNames([...names]);
+        if (!cancelled) setResolved({ requestKey, fileNames: [...names] });
       })
       .catch(() => {
-        if (!cancelled) setFileNames(fallbackFileNames);
+        if (!cancelled) setResolved({ requestKey, fileNames: fallbackFileNames });
       });
 
     return () => {
@@ -70,5 +68,6 @@ export function useBuildCpsExportFileNames(build: FormatBuild, exportOptions: Cp
     };
   }, [activeProjectId, build.id, requestKey, exportOptions, fallbackFileNames]);
 
-  return fileNames;
+  const isCurrent = resolved?.requestKey === requestKey;
+  return isCurrent ? resolved.fileNames : fallbackFileNames;
 }
