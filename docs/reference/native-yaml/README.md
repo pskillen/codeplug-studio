@@ -11,7 +11,7 @@ Tier 3 schema for Codeplug Studio's full-project interchange format. Internal ty
 | Field                 | Type    | Required | Meaning                                                                                                                                                                                                                                                                                                                                                                                      |
 | --------------------- | ------- | -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `schemaVersion`       | `1`     | yes      | Native YAML envelope version. Only `1` is accepted in this release.                                                                                                                                                                                                                                                                                                                          |
-| `studioSchemaVersion` | integer | yes      | Must equal `STUDIO_SCHEMA_VERSION` in `src/core/models/schemaVersion.ts` (currently `11`). Imports accept `2`–`11`; v9 files without `library.scanLists` migrate on load; legacy `channelOverrides.scanListId` hoists to `Channel.scanListId`; legacy `scanSkip` on channels migrates to `scanInclusion` on load; legacy `ssb-usb` / `ssb-lsb` mode values migrate to `ssb` + `ssbSideband`. |
+| `studioSchemaVersion` | integer | yes      | Must equal `STUDIO_SCHEMA_VERSION` in `src/core/models/schemaVersion.ts` (currently `12`). Imports accept `2`–`12`; v9 files without `library.scanLists` migrate on load; legacy `channelOverrides.scanListId` hoists to `Channel.scanListId`; legacy `scanSkip` on channels migrates to `scanInclusion` on load; legacy `ssb-usb` / `ssb-lsb` mode values migrate to `ssb` + `ssbSideband`. |
 
 Bump `schemaVersion` when the YAML envelope shape changes. Bump `studioSchemaVersion` (constant) when persisted row types change.
 
@@ -87,21 +87,22 @@ Arrays may be empty. Serialiser emits all seven keys.
 
 ### `Channel`
 
-| Field               | Type                                | Nullable |
-| ------------------- | ----------------------------------- | -------- |
-| _(persistable row)_ |                                     |          |
-| `name`              | string                              | no       |
-| `callsign`          | string                              | no       |
-| `rxFrequency`       | number (Hz)                         | yes      |
-| `txFrequency`       | number (Hz)                         | yes      |
-| `location`          | `{ lat: number; lon: number }`      | yes      |
-| `useLocation`       | boolean                             | no       |
-| `maidenheadLocator` | string                              | yes      |
-| `power`             | number (0–100)                      | yes      |
-| `scanInclusion`     | `default` \| `skip` \| `alwaysScan` | no       | Legacy `scanSkip` boolean accepted on import (`true`→`skip`, `false`→`default`) |
-| `scanListId`        | string (UUID)                       | yes      | Optional FK to `library.scanLists[].id` — Channel.CSV Scan List column          |
-| `comment`           | string                              | no       |
-| `modeProfiles`      | `ChannelModeProfile[]`              | no       |
+| Field                 | Type                                | Nullable |
+| --------------------- | ----------------------------------- | -------- |
+| _(persistable row)_   |                                     |          |
+| `name`                | string                              | no       |
+| `callsign`            | string                              | no       |
+| `rxFrequency`         | number (Hz)                         | yes      |
+| `txFrequency`         | number (Hz)                         | yes      |
+| `location`            | `{ lat: number; lon: number }`      | yes      |
+| `useLocation`         | boolean                             | no       |
+| `hideFromInternalMap` | boolean                             | no       | Optional; when `true`, channel omitted from internal Codeplug Studio maps only (not CPS export) |
+| `maidenheadLocator`   | string                              | yes      |
+| `power`               | number (0–100)                      | yes      |
+| `scanInclusion`       | `default` \| `skip` \| `alwaysScan` | no       | Legacy `scanSkip` boolean accepted on import (`true`→`skip`, `false`→`default`)                 |
+| `scanListId`          | string (UUID)                       | yes      | Optional FK to `library.scanLists[].id` — Channel.CSV Scan List column                          |
+| `comment`             | string                              | no       |
+| `modeProfiles`        | `ChannelModeProfile[]`              | no       |
 
 Mode profile discriminant is `mode`. See [data-model](../../features/data-model/README.md) for per-mode fields. Analog `ssb` profiles may include `ssbSideband: usb | lsb` (defaults to `usb`). Import accepts legacy `ssb-usb` / `ssb-lsb` mode strings and normalises them on load.
 
@@ -241,7 +242,7 @@ Import rejects when:
 1. YAML cannot be parsed
 2. Top-level shape is not an object with required keys
 3. `schemaVersion !== 1`
-4. `studioSchemaVersion` not in `2`–`11` (current `STUDIO_SCHEMA_VERSION`)
+4. `studioSchemaVersion` not in `2`–`12` (current `STUDIO_SCHEMA_VERSION`)
 5. Any row has `projectId` ≠ `project.id`
 6. Duplicate `id` within one entity array
 7. Any `EntityRef` or `libraryEntityId` does not resolve

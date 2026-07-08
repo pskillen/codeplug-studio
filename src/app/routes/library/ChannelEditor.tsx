@@ -97,6 +97,11 @@ export default function ChannelEditor({
     } else {
       delete row.scanListId;
     }
+    if (location.hideFromInternalMap) {
+      row.hideFromInternalMap = true;
+    } else {
+      delete row.hideFromInternalMap;
+    }
     return row;
   }
 
@@ -120,6 +125,7 @@ export default function ChannelEditor({
       location: source.location,
       useLocation: source.useLocation,
       maidenheadLocator: source.maidenheadLocator,
+      hideFromInternalMap: source.hideFromInternalMap,
       modeProfiles: source.modeProfiles.map((profile) => ({ ...profile })),
     };
     void persistence.putChannel(row, null).then((result) => {

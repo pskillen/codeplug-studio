@@ -21,6 +21,7 @@ import {
   buildChannelById,
   channelDisplayLabel,
   channelModes,
+  channelPlottableOnMap,
   dominantMode,
   groupByCoords,
   markerDotSizePx,
@@ -491,8 +492,8 @@ export default function CodeplugMap({
     const points: LatLon[] = [];
     for (const channelId of provisionalZone.channelIds) {
       const ch = channelPool.find((row) => row.id === channelId);
-      if (ch?.location != null && ch.useLocation) {
-        points.push([ch.location.lat, ch.location.lon]);
+      if (ch && channelPlottableOnMap(ch, filterOpts)) {
+        points.push([ch.location!.lat, ch.location!.lon]);
       }
     }
     const unique = uniqueLatLon(points);
@@ -508,7 +509,7 @@ export default function CodeplugMap({
       hull: geo.hull,
       variant: 'provisional',
     };
-  }, [provisionalZone, channelPool]);
+  }, [provisionalZone, channelPool, filterOpts]);
 
   const overlayHulls: OverlayHullData[] = useMemo(() => {
     if (!isEmphasisMode) return [];

@@ -46,6 +46,20 @@ describe('applyFilters', () => {
     expect(skipped.map((s) => s.reason)).toContain('Use Location = No');
     expect(skipped.map((s) => s.reason)).toContain('0,0 coordinates');
   });
+
+  it('skips channels hidden from the internal map', () => {
+    const visible = locatedChannel('Visible', 56.5, -4.0);
+    const hidden = { ...locatedChannel('Hidden', 57.0, -3.5), hideFromInternalMap: true };
+
+    const { plotted, skipped } = applyFilters([visible, hidden], {
+      requireUseLocation: true,
+      skipZero: true,
+    });
+
+    expect(plotted).toHaveLength(1);
+    expect(plotted[0].name).toBe('Visible');
+    expect(skipped).toEqual([{ name: 'Hidden', reason: 'hidden from map' }]);
+  });
 });
 
 describe('groupByCoords', () => {
@@ -153,5 +167,22 @@ describe('zoneGeolocatedPoints', () => {
     });
 
     expect(points).toEqual([[56.5, -4.0]]);
+  });
+
+  it('reports hidden-from-map reason for filtered members', () => {
+    const hidden = { ...locatedChannel('Hidden', 56.5, -4.0), hideFromInternalMap: true };
+    const zone = {
+      ...newZone(projectId, 'Hidden member zone'),
+      members: [{ kind: 'channel' as const, channelId: hidden.id }],
+    };
+    const plottedById = buildChannelById([]);
+
+    const { points, missing } = zoneGeolocatedPoints(zone, [zone], plottedById, [hidden], {
+      requireUseLocation: true,
+      skipZero: true,
+    });
+
+    expect(points).toHaveLength(0);
+    expect(missing).toEqual([{ name: 'Hidden', reason: 'hidden from map' }]);
   });
 });

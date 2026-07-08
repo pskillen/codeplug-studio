@@ -74,6 +74,18 @@ describe('native-yaml parse', () => {
       expect(ysf.wiresDtmfId).toBe('');
       expect(ysf.dgId).toBeNull();
     }
+    expect(channel.hideFromInternalMap).toBeUndefined();
+  });
+
+  it('parses hideFromInternalMap when true', () => {
+    const aggregate = fullLibraryAggregate();
+    const channel = aggregate.channels[0]!;
+    const withHidden = {
+      ...aggregate,
+      channels: [{ ...channel, hideFromInternalMap: true }],
+    };
+    const parsed = parseProjectDocument(serialiseProject(withHidden));
+    expect(parsed.channels[0]?.hideFromInternalMap).toBe(true);
   });
 
   it('rejects corrupt YAML', () => {

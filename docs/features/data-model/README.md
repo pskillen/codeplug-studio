@@ -89,14 +89,14 @@ See [storage.md](../../poc-migration/storage.md) — Phase 1 uses in-memory row 
 
 Vendor-neutral RF semantics only. UUID `id` FKs; `name` is a **human display label** — not the CPS wire string for a particular radio.
 
-| Entity           | Notes                                                                                                                          |
-| ---------------- | ------------------------------------------------------------------------------------------------------------------------------ |
-| `Channel`        | Frequency (Hz), callsign, power, `location`, `maidenheadLocator`, `useLocation`, scan skip, `forbidTransmit`; `modeProfiles[]` |
-| `Zone`           | Inventory grouping — `members` as channel `EntityRef[]`; export flags on the zone row                                          |
-| `TalkGroup`      | Digital group call — `mode`, `digitalId`                                                                                       |
-| `DigitalContact` | Digital private call — `mode`, `digitalId`                                                                                     |
-| `AnalogContact`  | Analogue call sign / code                                                                                                      |
-| `RxGroupList`    | Promiscuous RX list — `members` as talk-group `EntityRef[]`                                                                    |
+| Entity           | Notes                                                                                                                                                                           |
+| ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `Channel`        | Frequency (Hz), callsign, power, `location`, `maidenheadLocator`, `useLocation`, `hideFromInternalMap` (app-only map visibility), scan skip, `forbidTransmit`; `modeProfiles[]` |
+| `Zone`           | Inventory grouping — `members` as channel `EntityRef[]`; export flags on the zone row                                                                                           |
+| `TalkGroup`      | Digital group call — `mode`, `digitalId`                                                                                                                                        |
+| `DigitalContact` | Digital private call — `mode`, `digitalId`                                                                                                                                      |
+| `AnalogContact`  | Analogue call sign / code                                                                                                                                                       |
+| `RxGroupList`    | Promiscuous RX list — `members` as talk-group `EntityRef[]`                                                                                                                     |
 
 Mode-specific channel fields live on `modeProfiles` entries. Union type `ChannelModeProfile`:
 
@@ -111,6 +111,8 @@ Mode-specific channel fields live on `modeProfiles` entries. Union type `Channel
 | `ChannelModeProfileStub`   | `p25`, `m17`      | mode label only (typed profiles deferred)                                            |
 
 `maidenheadLocator` and `location` may both be set; export adapters prefer coordinates when they conflict. See `reconcileChannelLocation` in `src/core/domain/channelLocation.ts`.
+
+`hideFromInternalMap` is **internal-only** — persisted in native YAML and IndexedDB; omitted from all CPS wire formats. When `true`, the channel is excluded from embedded Codeplug Studio maps but remains in lists, builds, distance sort, and export.
 
 Library CRUD edits this layer only — no radio name-length caps, no format wire strings. See [library](../library/README.md).
 
