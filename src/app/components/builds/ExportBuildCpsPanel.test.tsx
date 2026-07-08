@@ -10,6 +10,7 @@ const {
   downloadCpsSingleFile,
   previewCpsExport,
   previewCpsSingleFile,
+  listCpsExportFileNames,
 } = vi.hoisted(() => ({
   downloadCpsZip: vi.fn(async () => ({ warnings: [] as string[] })),
   downloadCpsFile: vi.fn(async () => ({ warnings: [] as string[] })),
@@ -20,13 +21,16 @@ const {
       'Zones.csv': 'Name,Channels\nZone1,TestCh',
     },
     warnings: [] as string[],
+    fileNames: ['Channels.csv', 'Zones.csv'],
   })),
   previewCpsSingleFile: vi.fn(async () => ({
     files: {
       'Baofeng_UV-5R Mini_export.csv': 'Location,Name,Frequency\n0,TestCh,145.00000',
     },
     warnings: [] as string[],
+    fileNames: ['Baofeng_UV-5R Mini_export.csv'],
   })),
+  listCpsExportFileNames: vi.fn(async () => ['Channels.csv', 'Zones.csv']),
 }));
 
 vi.mock('../../services/buildCpsExportService.ts', () => ({
@@ -37,6 +41,7 @@ vi.mock('../../services/buildCpsExportService.ts', () => ({
   downloadCpsZip,
   previewCpsExport,
   previewCpsSingleFile,
+  listCpsExportFileNames,
   uploadCpsZipToDrive: vi.fn(),
 }));
 
@@ -200,5 +205,47 @@ describe('ExportBuildCpsPanel', () => {
     expect(await screen.findByRole('tab', { name: /Channels\.csv/ })).toBeInTheDocument();
     expect(screen.getByRole('tab', { name: /Zones\.csv/ })).toBeInTheDocument();
     expect(screen.getByRole('cell', { name: 'TestCh' })).toBeInTheDocument();
+  });
+
+  it('shows conditional Anytone receive-bank files in individual download buttons', async () => {
+    listCpsExportFileNames.mockResolvedValueOnce([
+      'Channel.CSV',
+      'DMRZone.CSV',
+      'ScanList.CSV',
+      'DMRTalkGroups.CSV',
+      'DMRDigitalContactList.CSV',
+      'DMRReceiveGroupCallList.CSV',
+      'RadioIDList.CSV',
+      'AMAir.CSV',
+    ]);
+    previewCpsExport.mockResolvedValueOnce({
+      files: {
+        'Channel.CSV': '"No.","Channel Name"\n"1","DMR 1"',
+        'AMAir.CSV': '"No.","Frequency[MHz]","Name"\n"1","118.8000","Tower"',
+      },
+      warnings: [],
+      fileNames: ['Channel.CSV', 'AMAir.CSV'],
+    });
+
+    const anytoneBuild: FormatBuild = {
+      ...opengd77Build,
+      formatId: 'anytone',
+      profileId: 'anytone-at-d890uv',
+    };
+    render(
+      <MantineProvider>
+        <ExportBuildCpsPanel build={anytoneBuild} />
+      </MantineProvider>,
+    );
+
+    expect(await screen.findByRole('button', { name: 'AMAir.CSV' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Channel.CSV' })).toBeInTheDocument();
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Preview CSV' }));
+    expect(await screen.findByRole('dialog', { name: 'CSV preview' })).toBeInTheDocument();
+    await waitFor(() => {
+      expect(previewCpsExport).toHaveBeenCalled();
+    });
+    expect(await screen.findByRole('tab', { name: /AMAir\.CSV/ })).toBeInTheDocument();
   });
 });
