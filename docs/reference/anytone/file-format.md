@@ -7,10 +7,14 @@ Cross-cutting rules for AT-D890UV CPS CSV exports. Per-entity columns live in si
 | Property        | Value (AT-D890UV sample)                              |
 | --------------- | ----------------------------------------------------- |
 | Delimiter       | Comma (`,`)                                           |
-| Quoting         | Fields quoted with `"` when needed; header row quoted |
+| Quoting         | **All** fields double-quoted on every line, including the header row (e.g. `"No.","Channel Name","1"`) |
 | Encoding        | UTF-8 assumed (verify BOM on import)                  |
 | Line endings    | CRLF or LF — normalise to LF in tests                 |
 | Filename casing | PascalCase with `.CSV` extension (e.g. `Channel.CSV`) |
+
+### Quoting and embedded double quotes
+
+Studio export wraps every field in double quotes. Embedded `"` characters in wire values are **stripped** on export (`Foo "bar"` → `"Foo bar"`) — not RFC 4180 `""` escaping. Anytone CPS does not reliably escape quotes on import or export; stripping avoids malformed cells. Library model values are unchanged; loss is documented at the export boundary only. Unlikely in practice for channel or list names.
 
 ## Frequencies
 
