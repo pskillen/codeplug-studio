@@ -27,8 +27,12 @@ import {
 } from './columns.ts';
 import { formatCsv } from './csvWrite.ts';
 import { serialiseAnytoneChannelRow } from './channelWire.ts';
-import { anytoneChannelWireName } from './exportChannelWire.ts';
-import { channelFrequencyById, rxGroupListMemberNames, wireNameByChannelId } from './listWire.ts';
+import {
+  buildAnytoneExportWireContext,
+  padReceiveBankName,
+  type AnytoneExportWireContext,
+} from './exportWireContext.ts';
+import { channelFrequencyById, rxGroupListMemberNames } from './listWire.ts';
 import { DEFAULT_ANYTONE_PROFILE_ID, getAnytoneProfile } from './profiles.ts';
 import { partitionAnytoneChannels } from './receiveOnlyBanks.ts';
 import {
@@ -38,13 +42,8 @@ import {
 
 export type AnytoneExportFiles = Record<AnytoneExportFileName, string>;
 
-const AM_AIR_NAME_WIDTH = 16;
 const AM_AIR_VFO_MHZ = '108.0000';
 const FM_BROADCAST_VFO_MHZ = '88.000';
-
-function padReceiveBankName(name: string): string {
-  return name.padEnd(AM_AIR_NAME_WIDTH, ' ').slice(0, AM_AIR_NAME_WIDTH);
-}
 
 function formatAmAirMhz(rxHz: number): string {
   return (rxHz / 1_000_000).toFixed(4);
@@ -69,34 +68,35 @@ function padRow(headers: string[], values: Record<string, string>): string[] {
 
 function serialiseChannelsCsv(
   assembled: AssembledBuild,
+  context: AnytoneExportWireContext,
   options?: CpsExportOptions,
-  warnings: string[] = [],
 ): string {
   const profileId = options?.profileId ?? assembled.profileId ?? DEFAULT_ANYTONE_PROFILE_ID;
   const { dmrChannels } = partitionAnytoneChannels(assembled);
   const ordered = sortReceiveBankChannels(dmrChannels);
-  const reserved = new Set<string>();
-  const wireOptions = { reserved, warnings };
 
   const rows = ordered.map((row, index) => {
     const slot = row.orderOrSlot ?? index + 1;
-    const wireName = anytoneChannelWireName(row, wireOptions, options, profileId);
     return padRow(
       CHANNEL_HEADERS,
-      serialiseAnytoneChannelRow(row, assembled, profileId, slot, options, wireName),
+      serialiseAnytoneChannelRow(row, assembled, profileId, slot, options, context),
     );
   });
   return formatCsv(CHANNEL_HEADERS, rows);
 }
 
-function serialiseZonesCsv(assembled: AssembledBuild): string {
+function serialiseZonesCsv(
+  assembled: AssembledBuild,
+  context: AnytoneExportWireContext,
+): string {
   const channels = channelFrequencyById(assembled);
-  const wireNames = wireNameByChannelId(assembled);
   const rows = assembled.zones.map((zone, index) =>
     padRow(ZONE_HEADERS, {
       [ZONE_COL.number]: String(index + 1),
-      [ZONE_COL.name]: zone.wireName,
-      [ZONE_COL.members]: zone.memberChannelIds.map((id) => wireNames.get(id) ?? '').join('|'),
+      [ZONE_COL.name]: context.zoneWireName(zone.zoneId),
+      [ZONE_COL.members]: zone.memberChannelIds
+        .map((id) => context.memberChannelWireName(id))
+        .join('|'),
       [ZONE_COL.memberRx]: zone.memberChannelIds
         .map((id) => channels.get(id)?.rx ?? '0.00000')
         .join('|'),
@@ -104,7 +104,7 @@ function serialiseZonesCsv(assembled: AssembledBuild): string {
         .map((id) => channels.get(id)?.tx ?? '0.00000')
         .join('|'),
       [ZONE_COL.aChannel]: zone.memberChannelIds[0]
-        ? (wireNames.get(zone.memberChannelIds[0]!) ?? '')
+        ? context.memberChannelWireName(zone.memberChannelIds[0]!)
         : '',
       [ZONE_COL.aChannelRx]: zone.memberChannelIds[0]
         ? (channels.get(zone.memberChannelIds[0]!)?.rx ?? '')
@@ -113,7 +113,7 @@ function serialiseZonesCsv(assembled: AssembledBuild): string {
         ? (channels.get(zone.memberChannelIds[0]!)?.tx ?? '')
         : '',
       [ZONE_COL.bChannel]: zone.memberChannelIds[1]
-        ? (wireNames.get(zone.memberChannelIds[1]!) ?? '')
+        ? context.memberChannelWireName(zone.memberChannelIds[1]!)
         : '',
       [ZONE_COL.bChannelRx]: zone.memberChannelIds[1]
         ? (channels.get(zone.memberChannelIds[1]!)?.rx ?? '')
@@ -127,15 +127,17 @@ function serialiseZonesCsv(assembled: AssembledBuild): string {
   return formatCsv(ZONE_HEADERS, rows);
 }
 
-function serialiseScanListsCsv(assembled: AssembledBuild): string {
+function serialiseScanListsCsv(
+  assembled: AssembledBuild,
+  context: AnytoneExportWireContext,
+): string {
   const channels = channelFrequencyById(assembled);
-  const wireNames = wireNameByChannelId(assembled);
   const rows = assembled.scanLists.map((scanList, index) =>
     padRow(SCAN_LIST_HEADERS, {
       [SCAN_LIST_COL.number]: String(index + 1),
-      [SCAN_LIST_COL.name]: scanList.wireName,
+      [SCAN_LIST_COL.name]: context.scanListWireName(scanList.scanListId),
       [SCAN_LIST_COL.members]: scanList.memberChannelIds
-        .map((id) => wireNames.get(id) ?? '')
+        .map((id) => context.memberChannelWireName(id))
         .join('|'),
       [SCAN_LIST_COL.memberRx]: scanList.memberChannelIds
         .map((id) => channels.get(id)?.rx ?? '0.00000')
@@ -161,12 +163,15 @@ function serialiseScanListsCsv(assembled: AssembledBuild): string {
   return formatCsv(SCAN_LIST_HEADERS, rows);
 }
 
-function serialiseTalkGroupsCsv(assembled: AssembledBuild): string {
+function serialiseTalkGroupsCsv(
+  assembled: AssembledBuild,
+  context: AnytoneExportWireContext,
+): string {
   const rows = assembled.talkGroups.map((tg, index) =>
     padRow(TALK_GROUP_HEADERS, {
       [TALK_GROUP_COL.number]: String(index + 1),
       [TALK_GROUP_COL.radioId]: String(tg.entity.digitalId),
-      [TALK_GROUP_COL.name]: tg.wireName,
+      [TALK_GROUP_COL.name]: context.talkGroupWireName(tg.entity.id),
       [TALK_GROUP_COL.callType]: 'Group Call',
       [TALK_GROUP_COL.callAlert]: 'None',
     }),
@@ -174,24 +179,30 @@ function serialiseTalkGroupsCsv(assembled: AssembledBuild): string {
   return formatCsv(TALK_GROUP_HEADERS, rows);
 }
 
-function serialiseDigitalContactsCsv(assembled: AssembledBuild): string {
+function serialiseDigitalContactsCsv(
+  assembled: AssembledBuild,
+  context: AnytoneExportWireContext,
+): string {
   const rows = assembled.digitalContacts.map((contact, index) =>
     padRow(DIGITAL_CONTACT_HEADERS, {
       [DIGITAL_CONTACT_COL.number]: String(index + 1),
       [DIGITAL_CONTACT_COL.callsign]: '',
-      [DIGITAL_CONTACT_COL.name]: contact.wireName,
+      [DIGITAL_CONTACT_COL.name]: context.digitalContactWireName(contact.entity.id),
       [DIGITAL_CONTACT_COL.callType]: 'Private Call',
     }),
   );
   return formatCsv(DIGITAL_CONTACT_HEADERS, rows);
 }
 
-function serialiseRxGroupListsCsv(assembled: AssembledBuild): string {
+function serialiseRxGroupListsCsv(
+  assembled: AssembledBuild,
+  context: AnytoneExportWireContext,
+): string {
   const rows = assembled.rxGroupLists.map((list, index) => {
-    const members = rxGroupListMemberNames(assembled, list.entity.id);
+    const members = rxGroupListMemberNames(assembled, list.entity.id, context);
     return padRow(RX_GROUP_LIST_HEADERS, {
       [RX_GROUP_LIST_COL.number]: String(index + 1),
-      [RX_GROUP_LIST_COL.name]: list.wireName,
+      [RX_GROUP_LIST_COL.name]: context.rxGroupListWireName(list.entity.id),
       [RX_GROUP_LIST_COL.contacts]: members.names.join('|'),
       [RX_GROUP_LIST_COL.contactIds]: members.ids.join('|'),
     });
@@ -211,7 +222,13 @@ function serialiseRadioIdsCsv(profileId: string): string {
   return formatCsv(RADIO_ID_HEADERS, rows);
 }
 
-export function serialiseAmAirCsv(assembled: AssembledBuild): string {
+export function serialiseAmAirCsv(
+  assembled: AssembledBuild,
+  options?: CpsExportOptions,
+  warnings: string[] = [],
+  context?: AnytoneExportWireContext,
+): string {
+  const ctx = context ?? buildAnytoneExportWireContext(assembled, options, warnings);
   const { amAirChannels } = partitionAnytoneChannels(assembled);
   const ordered = sortReceiveBankChannels(amAirChannels);
   const rows: string[][] = ordered.map((row, index) => {
@@ -220,7 +237,7 @@ export function serialiseAmAirCsv(assembled: AssembledBuild): string {
     return padRow(AM_AIR_HEADERS, {
       [AM_AIR_COL.number]: String(slot),
       [AM_AIR_COL.frequencyMhz]: formatAmAirMhz(rxHz),
-      [AM_AIR_COL.name]: padReceiveBankName(row.wireName),
+      [AM_AIR_COL.name]: ctx.receiveBankWireName(row.entity.id),
     });
   });
 
@@ -238,7 +255,10 @@ export function serialiseAmAirCsv(assembled: AssembledBuild): string {
 export function serialiseFmBroadcastCsv(
   assembled: AssembledBuild,
   options?: CpsExportOptions,
+  warnings: string[] = [],
+  context?: AnytoneExportWireContext,
 ): string {
+  const ctx = context ?? buildAnytoneExportWireContext(assembled, options, warnings);
   const formatDefaults =
     options?.defaultScanInclusion != null
       ? { defaultScanInclusion: options.defaultScanInclusion }
@@ -254,7 +274,7 @@ export function serialiseFmBroadcastCsv(
       [FM_BROADCAST_COL.number]: String(slot),
       [FM_BROADCAST_COL.frequencyMhz]: formatFmBroadcastMhz(rxHz),
       [FM_BROADCAST_COL.scan]: scan,
-      [FM_BROADCAST_COL.name]: padReceiveBankName(row.wireName),
+      [FM_BROADCAST_COL.name]: ctx.receiveBankWireName(row.entity.id),
     });
   });
 
@@ -275,16 +295,18 @@ export function serialiseAnytoneFiles(
   library: LibrarySlice,
   options?: CpsExportOptions,
   warnings: string[] = [],
+  context?: AnytoneExportWireContext,
 ): AnytoneExportFiles {
   void library;
   const profileId = options?.profileId ?? assembled.profileId ?? DEFAULT_ANYTONE_PROFILE_ID;
+  const ctx = context ?? buildAnytoneExportWireContext(assembled, options, warnings);
   return {
-    'Channel.CSV': serialiseChannelsCsv(assembled, options, warnings),
-    'DMRZone.CSV': serialiseZonesCsv(assembled),
-    'ScanList.CSV': serialiseScanListsCsv(assembled),
-    'DMRTalkGroups.CSV': serialiseTalkGroupsCsv(assembled),
-    'DMRDigitalContactList.CSV': serialiseDigitalContactsCsv(assembled),
-    'DMRReceiveGroupCallList.CSV': serialiseRxGroupListsCsv(assembled),
+    'Channel.CSV': serialiseChannelsCsv(assembled, ctx, options),
+    'DMRZone.CSV': serialiseZonesCsv(assembled, ctx),
+    'ScanList.CSV': serialiseScanListsCsv(assembled, ctx),
+    'DMRTalkGroups.CSV': serialiseTalkGroupsCsv(assembled, ctx),
+    'DMRDigitalContactList.CSV': serialiseDigitalContactsCsv(assembled, ctx),
+    'DMRReceiveGroupCallList.CSV': serialiseRxGroupListsCsv(assembled, ctx),
     'RadioIDList.CSV': serialiseRadioIdsCsv(profileId),
   };
 }
@@ -296,20 +318,19 @@ export function serialiseAnytoneFile(
   options?: CpsExportOptions,
   warnings: string[] = [],
 ): string {
+  const context = buildAnytoneExportWireContext(assembled, options, warnings);
   if (fileName === 'AMAir.CSV') {
     void library;
-    void warnings;
-    return serialiseAmAirCsv(assembled);
+    return serialiseAmAirCsv(assembled, options, warnings, context);
   }
   if (fileName === 'FM.CSV') {
     void library;
-    void warnings;
-    return serialiseFmBroadcastCsv(assembled, options);
+    return serialiseFmBroadcastCsv(assembled, options, warnings, context);
   }
   if (!ANYTONE_EXPORT_FILE_NAMES.includes(fileName as AnytoneExportFileName)) {
     throw new Error(`Unknown Anytone export file: ${fileName}`);
   }
-  const files = serialiseAnytoneFiles(assembled, library, options, warnings);
+  const files = serialiseAnytoneFiles(assembled, library, options, warnings, context);
   return files[fileName as AnytoneExportFileName];
 }
 

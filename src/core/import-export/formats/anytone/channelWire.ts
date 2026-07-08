@@ -3,6 +3,7 @@ import type { AssembledBuild, AssembledChannel } from '@core/services/assemble.t
 import type { CpsExportOptions } from '@core/import-export/types.ts';
 import { CHANNEL_COL, CHANNEL_HEADERS } from './columns.ts';
 import { CHANNEL_ROW_DEFAULTS } from './channelDefaults.ts';
+import type { AnytoneExportWireContext } from './exportWireContext.ts';
 import {
   formatAnytoneBandwidthKhz,
   formatAnytoneChannelType,
@@ -26,24 +27,86 @@ function analogProfile(channel: Channel) {
   return channel.modeProfiles.find((row) => row.mode === 'fm' || row.mode === 'am') ?? null;
 }
 
+function resolveContactWireName(
+  assembled: AssembledBuild,
+  context: AnytoneExportWireContext | undefined,
+  ref: ChannelModeProfileDMR['contactRef'] | null | undefined,
+): { name: string; callType: string; digitalId: string } {
+  if (!ref) {
+    return { name: '', callType: 'Group Call', digitalId: '' };
+  }
+  if (context) {
+    if (ref.kind === 'talkGroup') {
+      const tg = assembled.talkGroups.find((row) => row.entity.id === ref.id);
+      return {
+        name: context.talkGroupWireName(ref.id),
+        callType: 'Group Call',
+        digitalId: tg ? String(tg.entity.digitalId) : '',
+      };
+    }
+    if (ref.kind === 'digitalContact') {
+      const contact = assembled.digitalContacts.find((row) => row.entity.id === ref.id);
+      return {
+        name: context.digitalContactWireName(ref.id),
+        callType: 'Private Call',
+        digitalId: contact ? String(contact.entity.digitalId) : '',
+      };
+    }
+    return { name: '', callType: 'Group Call', digitalId: '' };
+  }
+  return resolveEntityWireName(assembled, ref);
+}
+
+function resolveScanListWireName(
+  channel: Channel,
+  row: AssembledChannel,
+  context: AnytoneExportWireContext | undefined,
+): string {
+  if (context && channel.scanListId) {
+    const name = context.scanListWireName(channel.scanListId);
+    return name || 'None';
+  }
+  return row.scanListWireName ?? 'None';
+}
+
+function resolveRxGroupListColumn(
+  assembled: AssembledBuild,
+  context: AnytoneExportWireContext | undefined,
+  listId: string | null | undefined,
+): string {
+  if (!listId) return 'None';
+  if (context) {
+    const name = context.rxGroupListWireName(listId);
+    return name || 'None';
+  }
+  return resolveRxGroupListWireName(assembled, listId);
+}
+
 export function serialiseAnytoneChannelRow(
   row: AssembledChannel,
   assembled: AssembledBuild,
   profileId: string,
   slot: number,
   options?: CpsExportOptions,
-  wireName?: string,
+  contextOrWireName?: AnytoneExportWireContext | string,
 ): Record<string, string> {
   const channel = row.entity;
   const dmr = dmrProfile(channel);
   const analog = analogProfile(channel);
   const profile = getAnytoneProfile(options?.profileId ?? profileId ?? DEFAULT_ANYTONE_PROFILE_ID);
-  const contact = resolveEntityWireName(assembled, dmr?.contactRef ?? null);
+  const context =
+    typeof contextOrWireName === 'object' && contextOrWireName != null
+      ? contextOrWireName
+      : undefined;
+  const wireNameOverride =
+    typeof contextOrWireName === 'string' ? contextOrWireName : undefined;
+  const contact = resolveContactWireName(assembled, context, dmr?.contactRef ?? null);
 
   const values: Record<string, string> = {
     ...CHANNEL_ROW_DEFAULTS,
     [CHANNEL_COL.number]: String(slot),
-    [CHANNEL_COL.name]: wireName ?? row.wireName,
+    [CHANNEL_COL.name]:
+      context?.channelWireName(channel.id) ?? wireNameOverride ?? row.wireName,
     [CHANNEL_COL.rx]: formatAnytoneFrequencyMHz(channel.rxFrequency),
     [CHANNEL_COL.tx]: formatAnytoneFrequencyMHz(channel.txFrequency),
     [CHANNEL_COL.channelType]: formatAnytoneChannelType(
@@ -65,8 +128,8 @@ export function serialiseAnytoneChannelRow(
     [CHANNEL_COL.radioId]: profile.defaultRadioIdLabel,
     [CHANNEL_COL.colourCode]: String(dmr?.colourCode ?? 1),
     [CHANNEL_COL.slot]: formatAnytoneTimeslot(dmr?.timeslot ?? null),
-    [CHANNEL_COL.scanList]: row.scanListWireName ?? 'None',
-    [CHANNEL_COL.rxGroupList]: resolveRxGroupListWireName(assembled, dmr?.rxGroupListId),
+    [CHANNEL_COL.scanList]: resolveScanListWireName(channel, row, context),
+    [CHANNEL_COL.rxGroupList]: resolveRxGroupListColumn(assembled, context, dmr?.rxGroupListId),
     [CHANNEL_COL.pttProhibit]: channel.forbidTransmit ? 'On' : 'Off',
   };
 
