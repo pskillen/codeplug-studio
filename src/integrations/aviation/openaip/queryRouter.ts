@@ -1,9 +1,6 @@
 import { coordsToLocator, isValidLocator, locatorToCoords } from '@core/domain/maidenhead.ts';
 import { geocodeQuery, type GeocodeProvider } from '@integrations/geocode/index.ts';
-import {
-  searchOpenAipAirportsByText,
-  searchOpenAipAirportsNear,
-} from '../openaipClient.ts';
+import { searchOpenAipAirportsByText, searchOpenAipAirportsNear } from '../openaipClient.ts';
 import type { AirportListing, AirportQueryKind, AirportSearchResult } from '../types.ts';
 import { AviationDirectoryError } from '../types.ts';
 
@@ -31,9 +28,7 @@ export interface RouteAirportQueryOptions {
 function requireApiKey(apiKey: string): string {
   const trimmed = apiKey.trim();
   if (!trimmed) {
-    throw new AviationDirectoryError(
-      'OpenAIP API key is not configured — add one in Settings.',
-    );
+    throw new AviationDirectoryError('OpenAIP API key is not configured — add one in Settings.');
   }
   return trimmed;
 }
@@ -129,7 +124,9 @@ export function sortAirportsByDistance(
       ? haversineKm(reference.lat, reference.lon, airport.location.lat, airport.location.lon)
       : Number.POSITIVE_INFINITY,
   }));
-  withDistance.sort((a, b) => a.distanceKm - b.distanceKm || a.airport.name.localeCompare(b.airport.name));
+  withDistance.sort(
+    (a, b) => a.distanceKm - b.distanceKm || a.airport.name.localeCompare(b.airport.name),
+  );
   return withDistance.map((row) => row.airport);
 }
 

@@ -5,7 +5,9 @@ import type { AssembledBuild, AssembledChannel } from '@core/services/assemble.t
 const AIRBAND_BAND_ID = 'airband';
 const FM_BROADCAST_BAND_ID = 'fm-broadcast';
 
-export function isReceiveOnlyChannel(channel: Pick<Channel, 'forbidTransmit' | 'txFrequency'>): boolean {
+export function isReceiveOnlyChannel(
+  channel: Pick<Channel, 'forbidTransmit' | 'txFrequency'>,
+): boolean {
   return channel.forbidTransmit || channel.txFrequency == null;
 }
 

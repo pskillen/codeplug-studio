@@ -1,8 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import {
-  generateChannelsFromAirport,
-  type AirbandAirportInput,
-} from './generate.ts';
+import { generateChannelsFromAirport, type AirbandAirportInput } from './generate.ts';
 
 const glasgowAirport: AirbandAirportInput = {
   name: 'Glasgow',

@@ -25,7 +25,12 @@ export function formatAirportDistanceKm(
   reference: { lat: number; lon: number } | null,
 ): string | null {
   if (!reference || !listing.location) return null;
-  const metres = haversineDistanceM(reference.lat, reference.lon, listing.location.lat, listing.location.lon);
+  const metres = haversineDistanceM(
+    reference.lat,
+    reference.lon,
+    listing.location.lat,
+    listing.location.lon,
+  );
   return `${(metres / 1000).toFixed(1)} km`;
 }
 

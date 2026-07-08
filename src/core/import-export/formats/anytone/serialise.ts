@@ -239,8 +239,7 @@ export function serialiseFmBroadcastCsv(
   const rows: string[][] = ordered.map((row, index) => {
     const slot = row.orderOrSlot ?? index + 1;
     const rxHz = row.entity.rxFrequency ?? 0;
-    const scan =
-      resolveEffectiveScanInclusion(row.entity, scanContext) === 'skip' ? 'Del' : 'Add';
+    const scan = resolveEffectiveScanInclusion(row.entity, scanContext) === 'skip' ? 'Del' : 'Add';
     return padRow(FM_BROADCAST_HEADERS, {
       [FM_BROADCAST_COL.number]: String(slot),
       [FM_BROADCAST_COL.frequencyMhz]: formatFmBroadcastMhz(rxHz),

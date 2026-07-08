@@ -300,7 +300,12 @@ export default function OpenAipAirportSearch() {
         <PageSection title="Results">
           <Stack gap="md">
             {mapChannels.length > 0 ? (
-              <CodeplugMap channels={mapChannels} zones={[]} allChannels={mapChannels} height={360} />
+              <CodeplugMap
+                channels={mapChannels}
+                zones={[]}
+                allChannels={mapChannels}
+                height={360}
+              />
             ) : (
               <Text size="sm" c="dimmed">
                 No geolocated airports to plot on the map.

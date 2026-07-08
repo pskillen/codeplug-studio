@@ -19,7 +19,9 @@ describe('buildAirbandImportPlan', () => {
       forbidTransmit: true,
       scanInclusion: 'default',
       comment: '',
-      modeProfiles: [{ mode: 'am', squelch: null, rxTone: 'none', txTone: 'none', bandwidthKHz: 12.5 }],
+      modeProfiles: [
+        { mode: 'am', squelch: null, rxTone: 'none', txTone: 'none', bandwidthKHz: 12.5 },
+      ],
       revision: { updatedAt: '', version: 1 },
       updatedAt: '',
     });

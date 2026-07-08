@@ -6,23 +6,23 @@ This is a **remote aviation data API**, not a CPS wire format. HTTP clients and 
 
 ## API
 
-| Property       | Value                                                                 |
-| -------------- | --------------------------------------------------------------------- |
-| Base URL       | `https://api.core.openaip.net`                                        |
-| Auth           | Request header `x-openaip-api-key` (operator key from Settings)       |
-| Response shape | Paginated `{ items, totalCount, totalPages, page, nextPage }`           |
-| CORS           | Callable from the browser SPA when key is valid                       |
-| Attribution    | Required — see [aviation hub](../../features/aviation/README.md)      |
+| Property       | Value                                                            |
+| -------------- | ---------------------------------------------------------------- |
+| Base URL       | `https://api.core.openaip.net`                                   |
+| Auth           | Request header `x-openaip-api-key` (operator key from Settings)  |
+| Response shape | Paginated `{ items, totalCount, totalPages, page, nextPage }`    |
+| CORS           | Callable from the browser SPA when key is valid                  |
+| Attribution    | Required — see [aviation hub](../../features/aviation/README.md) |
 
 Official docs: [docs.openaip.net](https://docs.openaip.net/#/).
 
 ### Endpoints (shipped)
 
-| Endpoint     | Query params (shipped)                         | Returns                          |
-| ------------ | ---------------------------------------------- | -------------------------------- |
-| `GET /airports` | `search`, `searchOptLwc` (text)             | ICAO / IATA / name matches       |
-| `GET /airports` | `pos` (`lon,lat`), `dist` (metres, radius)  | Airports near a point            |
-| `GET /airports` | `page`, `limit` (pagination)                  | Client follows `nextPage`        |
+| Endpoint        | Query params (shipped)                     | Returns                    |
+| --------------- | ------------------------------------------ | -------------------------- |
+| `GET /airports` | `search`, `searchOptLwc` (text)            | ICAO / IATA / name matches |
+| `GET /airports` | `pos` (`lon,lat`), `dist` (metres, radius) | Airports near a point      |
+| `GET /airports` | `page`, `limit` (pagination)               | Client follows `nextPage`  |
 
 **Coordinate order:** `pos` is **`longitude,latitude`** (GeoJSON order), not lat/lon.
 
@@ -55,18 +55,18 @@ Town and Maidenhead locator searches geocode to a point (Mapbox or Photon), then
 
 ## Field mapping
 
-| OpenAIP wire              | `AirportListing` / import input      |
-| ------------------------- | ------------------------------------ |
-| `_id`                     | `openAipId`                          |
-| `name`                    | `name`                               |
-| `icaoCode`                | `icao` (uppercased)                  |
-| `iataCode`                | `iata` (uppercased)                  |
-| `elevation.value`         | `elevationM`                         |
-| `geometry.coordinates[0]` | `location.lon`                       |
-| `geometry.coordinates[1]` | `location.lat`                       |
+| OpenAIP wire              | `AirportListing` / import input       |
+| ------------------------- | ------------------------------------- |
+| `_id`                     | `openAipId`                           |
+| `name`                    | `name`                                |
+| `icaoCode`                | `icao` (uppercased)                   |
+| `iataCode`                | `iata` (uppercased)                   |
+| `elevation.value`         | `elevationM`                          |
+| `geometry.coordinates[0]` | `location.lon`                        |
+| `geometry.coordinates[1]` | `location.lat`                        |
 | `frequencies[].value`     | MHz string → `rxFrequencyHz` (Hz int) |
 | `frequencies[].type`      | Service label via type enum or `name` |
-| `frequencies[].name`      | Preferred over type enum when set    |
+| `frequencies[].name`      | Preferred over type enum when set     |
 
 ## Frequency `type` enum
 
@@ -76,14 +76,14 @@ When `name` is absent, Studio maps OpenAIP `type` integers to service labels (e.
 
 At import, `generateChannelsFromAirport` (`src/core/domain/airband/generate.ts`) projects each civil airband frequency into a normal library `Channel`:
 
-| Generated field   | Value                                              |
-| ----------------- | -------------------------------------------------- |
-| `modeProfiles`    | Single AM profile (default 12.5 kHz bandwidth)     |
-| `rxFrequency`     | Hz from OpenAIP MHz wire                          |
-| `txFrequency`     | `null`                                             |
-| `forbidTransmit`  | `true` (default)                                   |
-| `name`            | `{IATA or ICAO} {service}` (e.g. `GLA Tower`)      |
-| `location`        | Airport coordinates when present                   |
+| Generated field  | Value                                          |
+| ---------------- | ---------------------------------------------- |
+| `modeProfiles`   | Single AM profile (default 12.5 kHz bandwidth) |
+| `rxFrequency`    | Hz from OpenAIP MHz wire                       |
+| `txFrequency`    | `null`                                         |
+| `forbidTransmit` | `true` (default)                               |
+| `name`           | `{IATA or ICAO} {service}` (e.g. `GLA Tower`)  |
+| `location`       | Airport coordinates when present               |
 
 Frequencies outside the civil airband band catalog (`bandFromFrequencyMhz` → `airband`) are **skipped** at generation — not an error.
 

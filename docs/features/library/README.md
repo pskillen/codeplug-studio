@@ -21,22 +21,22 @@ Tier-1 reference for editing the vendor-neutral **library** — the per-project 
 | Library scan lists                      | Shipped ([#257](https://github.com/pskillen/codeplug-studio/issues/257))                                                                 | `ScanList` entity; schema v10; Anytone dedicated scan                          |
 | Zone member editor                      | Shipped ([#180](https://github.com/pskillen/codeplug-studio/issues/180))                                                                 | Vertical stacked editor on zone form                                           |
 | Channel sets                            | Shipped ([#172](https://github.com/pskillen/codeplug-studio/issues/172))                                                                 | Optional zone on import                                                        |
-| OpenAIP airband import                  | Shipped ([#263](https://github.com/pskillen/codeplug-studio/issues/263))                                                                 | `/library/channels/add-from-openaip` — see [aviation](../aviation/README.md) |
+| OpenAIP airband import                  | Shipped ([#263](https://github.com/pskillen/codeplug-studio/issues/263))                                                                 | `/library/channels/add-from-openaip` — see [aviation](../aviation/README.md)   |
 
 ## Documentation map
 
-| Doc                                                                             | Contents                                                                                     |
-| ------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
-| [mode-profiles-progress.md](mode-profiles-progress.md)                          | Multi-mode editor initiative progress                                                        |
-| [zone-member-picker.md](zone-member-picker.md)                                  | Vertical zone member editor ([#180](https://github.com/pskillen/codeplug-studio/issues/180)) |
-| [library-zones-revision-2-progress.md](library-zones-revision-2-progress.md)    | Revision-2 zone management progress                                                          |
-| [nested-zones.md](nested-zones.md)                                              | Hierarchical zones; flatten at export                                                        |
-| [channel-sets-progress.md](channel-sets-progress.md)                            | Channel sets initiative ([#172](https://github.com/pskillen/codeplug-studio/issues/172))     |
-| [rx-group-list-member-picker.md](rx-group-list-member-picker.md)                | Two-list RX group list member editor                                                         |
-| [scan-lists.md](scan-lists.md)                                                  | Library scan lists ([#257](https://github.com/pskillen/codeplug-studio/issues/257))          |
+| Doc                                                                             | Contents                                                                                        |
+| ------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
+| [mode-profiles-progress.md](mode-profiles-progress.md)                          | Multi-mode editor initiative progress                                                           |
+| [zone-member-picker.md](zone-member-picker.md)                                  | Vertical zone member editor ([#180](https://github.com/pskillen/codeplug-studio/issues/180))    |
+| [library-zones-revision-2-progress.md](library-zones-revision-2-progress.md)    | Revision-2 zone management progress                                                             |
+| [nested-zones.md](nested-zones.md)                                              | Hierarchical zones; flatten at export                                                           |
+| [channel-sets-progress.md](channel-sets-progress.md)                            | Channel sets initiative ([#172](https://github.com/pskillen/codeplug-studio/issues/172))        |
+| [rx-group-list-member-picker.md](rx-group-list-member-picker.md)                | Two-list RX group list member editor                                                            |
+| [scan-lists.md](scan-lists.md)                                                  | Library scan lists ([#257](https://github.com/pskillen/codeplug-studio/issues/257))             |
 | [aviation](../aviation/README.md)                                               | OpenAIP airport airband import ([#263](https://github.com/pskillen/codeplug-studio/issues/263)) |
-| [app-shell/data-table.md](../app-shell/data-table.md)                           | Shared `DataTable` and list prefs                                                            |
-| [app-shell/library-routes-progress.md](../app-shell/library-routes-progress.md) | List routes initiative progress                                                              |
+| [app-shell/data-table.md](../app-shell/data-table.md)                           | Shared `DataTable` and list prefs                                                               |
+| [app-shell/library-routes-progress.md](../app-shell/library-routes-progress.md) | List routes initiative progress                                                                 |
 
 ## List routes
 

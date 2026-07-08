@@ -12,17 +12,15 @@
 - Slice 3: Settings OpenAIP API key section
 - Slice 4: OpenAIP airport search UI (route, nav, map, batch import)
 - Slice 5: OpenAIP reference + aviation/library feature docs
-
-## In flight
-
 - Slice 6: system attributions screen (`/attributions`)
 - Slice 7: Anytone `AMAir.CSV` export partition
 - Slice 8: Anytone `FM.CSV` export partition
+- Slice 9: CI green — PR pending
 
 ## In flight
 
-- Slice 9: close-out + PR
+_(none)_
 
 ## Planned
 
-_(none — epic complete pending PR)_
+_(none)_

@@ -41,7 +41,12 @@ export const ATTRIBUTIONS: AttributionEntry[] = [
       'Optional geocoding for town/address search when you provide a Mapbox access token in Settings.',
     homeUrl: 'https://www.mapbox.com/',
     termsUrl: 'https://www.mapbox.com/legal/tos',
-    usedIn: ['Settings → Map', 'Maidenhead reference', 'Zone from location', 'Repeater / airport search geocode'],
+    usedIn: [
+      'Settings → Map',
+      'Maidenhead reference',
+      'Zone from location',
+      'Repeater / airport search geocode',
+    ],
   },
   {
     id: 'osm-photon',

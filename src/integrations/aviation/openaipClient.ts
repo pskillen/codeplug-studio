@@ -98,9 +98,7 @@ async function fetchOpenAipPage(
       },
     });
   } catch {
-    throw new AviationDirectoryError(
-      'Could not reach OpenAIP — check your network connection.',
-    );
+    throw new AviationDirectoryError('Could not reach OpenAIP — check your network connection.');
   }
 
   if (response.status === 401 || response.status === 403) {
