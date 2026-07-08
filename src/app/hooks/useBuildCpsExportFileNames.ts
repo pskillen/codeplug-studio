@@ -27,13 +27,11 @@ function staticExportFileNames(
 }
 
 /** Resolved CPS export file list for multi-file builds (includes conditional files). */
-export function useBuildCpsExportFileNames(
-  build: FormatBuild,
-  exportOptions: CpsExportOptions,
-) {
+export function useBuildCpsExportFileNames(build: FormatBuild, exportOptions: CpsExportOptions) {
   const { activeProjectId } = useProjects();
   const fallbackFileNames = useMemo(
-    () => staticExportFileNames(build.formatId as FormatId, build.profileId, exportOptions.profileId),
+    () =>
+      staticExportFileNames(build.formatId as FormatId, build.profileId, exportOptions.profileId),
     [build.formatId, build.profileId, exportOptions.profileId],
   );
   const [fileNames, setFileNames] = useState<string[]>(fallbackFileNames);

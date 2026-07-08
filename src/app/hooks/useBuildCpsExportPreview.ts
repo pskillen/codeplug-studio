@@ -24,10 +24,7 @@ interface PreviewSnapshot {
   error: string | null;
 }
 
-function staticPreviewFileNames(
-  build: FormatBuild,
-  exportOptions: CpsExportOptions,
-): string[] {
+function staticPreviewFileNames(build: FormatBuild, exportOptions: CpsExportOptions): string[] {
   try {
     const adapter = getExportAdapter(build.formatId as FormatId);
     if (isMultiFileExportAdapter(adapter)) return [...adapter.fileNames];

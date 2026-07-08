@@ -2,6 +2,7 @@ import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { MantineProvider } from '@mantine/core';
 import type { FormatBuild } from '@core/models/formatBuild.ts';
+import type { CpsPreviewResult } from '../../services/buildCpsExportService.ts';
 import ExportBuildCpsPanel from './ExportBuildCpsPanel.tsx';
 
 const {
@@ -15,19 +16,19 @@ const {
   downloadCpsZip: vi.fn(async () => ({ warnings: [] as string[] })),
   downloadCpsFile: vi.fn(async () => ({ warnings: [] as string[] })),
   downloadCpsSingleFile: vi.fn(async () => ({ warnings: [] as string[] })),
-  previewCpsExport: vi.fn(async () => ({
+  previewCpsExport: vi.fn(async (): Promise<CpsPreviewResult> => ({
     files: {
       'Channels.csv': 'Name,RxFrequency\nTestCh,145.00000',
       'Zones.csv': 'Name,Channels\nZone1,TestCh',
     },
-    warnings: [] as string[],
+    warnings: [],
     fileNames: ['Channels.csv', 'Zones.csv'],
   })),
-  previewCpsSingleFile: vi.fn(async () => ({
+  previewCpsSingleFile: vi.fn(async (): Promise<CpsPreviewResult> => ({
     files: {
       'Baofeng_UV-5R Mini_export.csv': 'Location,Name,Frequency\n0,TestCh,145.00000',
     },
-    warnings: [] as string[],
+    warnings: [],
     fileNames: ['Baofeng_UV-5R Mini_export.csv'],
   })),
   listCpsExportFileNames: vi.fn(async () => ['Channels.csv', 'Zones.csv']),

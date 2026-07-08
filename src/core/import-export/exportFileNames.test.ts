@@ -1,10 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import {
-  newChannel,
-  newFormatBuild,
-  newTalkGroup,
-  newZone,
-} from '@core/domain/factories.ts';
+import { newChannel, newFormatBuild, newTalkGroup, newZone } from '@core/domain/factories.ts';
 import { assemble } from '@core/services/assemble.ts';
 import { resolveEffectiveExportFileNames } from './exportFileNames.ts';
 import { ANYTONE_EXPORT_FILE_NAMES } from './formats/anytone/columns.ts';
@@ -38,6 +33,7 @@ function anytoneLibraryWithAirband() {
         mode: 'am' as const,
         squelch: 50,
         rxTone: 'none' as const,
+        txTone: 'none' as const,
         bandwidthKHz: 8.33,
       },
     ],
