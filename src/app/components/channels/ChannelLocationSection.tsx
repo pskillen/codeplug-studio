@@ -141,9 +141,7 @@ export default function ChannelLocationSection({
           label="Hide this channel from the map"
           description="Coordinates are kept; this channel is omitted from Codeplug Studio maps only"
           checked={value.hideFromInternalMap}
-          onChange={(e) =>
-            onChange({ ...value, hideFromInternalMap: e.currentTarget.checked })
-          }
+          onChange={(e) => onChange({ ...value, hideFromInternalMap: e.currentTarget.checked })}
         />
         <Group justify="space-between" align="center">
           <Text size="xs" c="dimmed">

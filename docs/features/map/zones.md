@@ -53,15 +53,15 @@ The fixed coordinate filters (`useLocation`, skip `0,0`) apply to hull points th
 
 For the **effective channel set** (including channels from nested child zones), `zoneGeolocatedPoints` produces a point or a skip reason per channel id:
 
-| Condition                                        | Result                                |
-| ------------------------------------------------ | ------------------------------------- |
-| Member id not found in library                   | `unresolved member`                   |
+| Condition                                        | Result                                                     |
+| ------------------------------------------------ | ---------------------------------------------------------- |
+| Member id not found in library                   | `unresolved member`                                        |
 | Member not in plotted set (filtered / no coords) | `filtered out or missing coordinates` or `hidden from map` |
-| Channel has no `location`                        | `no coordinates`                      |
-| `0, 0` with skip-zero on                         | `0,0 coordinates`                     |
-| `useLocation === false`                          | `Use Location = No`                   |
-| `hideFromInternalMap === true`                   | `hidden from map`                     |
-| Otherwise                                        | Point `[lat, lon]` added              |
+| Channel has no `location`                        | `no coordinates`                                           |
+| `0, 0` with skip-zero on                         | `0,0 coordinates`                                          |
+| `useLocation === false`                          | `Use Location = No`                                        |
+| `hideFromInternalMap === true`                   | `hidden from map`                                          |
+| Otherwise                                        | Point `[lat, lon]` added                                   |
 
 Distinct sites are deduplicated with `toFixed(5)` on lat and lon.
 

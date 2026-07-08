@@ -89,14 +89,14 @@ See [storage.md](../../poc-migration/storage.md) — Phase 1 uses in-memory row 
 
 Vendor-neutral RF semantics only. UUID `id` FKs; `name` is a **human display label** — not the CPS wire string for a particular radio.
 
-| Entity           | Notes                                                                                                                          |
-| ---------------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| Entity           | Notes                                                                                                                                                                           |
+| ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `Channel`        | Frequency (Hz), callsign, power, `location`, `maidenheadLocator`, `useLocation`, `hideFromInternalMap` (app-only map visibility), scan skip, `forbidTransmit`; `modeProfiles[]` |
-| `Zone`           | Inventory grouping — `members` as channel `EntityRef[]`; export flags on the zone row                                          |
-| `TalkGroup`      | Digital group call — `mode`, `digitalId`                                                                                       |
-| `DigitalContact` | Digital private call — `mode`, `digitalId`                                                                                     |
-| `AnalogContact`  | Analogue call sign / code                                                                                                      |
-| `RxGroupList`    | Promiscuous RX list — `members` as talk-group `EntityRef[]`                                                                    |
+| `Zone`           | Inventory grouping — `members` as channel `EntityRef[]`; export flags on the zone row                                                                                           |
+| `TalkGroup`      | Digital group call — `mode`, `digitalId`                                                                                                                                        |
+| `DigitalContact` | Digital private call — `mode`, `digitalId`                                                                                                                                      |
+| `AnalogContact`  | Analogue call sign / code                                                                                                                                                       |
+| `RxGroupList`    | Promiscuous RX list — `members` as talk-group `EntityRef[]`                                                                                                                     |
 
 Mode-specific channel fields live on `modeProfiles` entries. Union type `ChannelModeProfile`:
 

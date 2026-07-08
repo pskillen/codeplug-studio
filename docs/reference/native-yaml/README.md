@@ -87,22 +87,22 @@ Arrays may be empty. Serialiser emits all seven keys.
 
 ### `Channel`
 
-| Field               | Type                                | Nullable |
-| ------------------- | ----------------------------------- | -------- |
-| _(persistable row)_ |                                     |          |
-| `name`              | string                              | no       |
-| `callsign`          | string                              | no       |
-| `rxFrequency`       | number (Hz)                         | yes      |
-| `txFrequency`       | number (Hz)                         | yes      |
-| `location`          | `{ lat: number; lon: number }`      | yes      |
-| `useLocation`       | boolean                             | no       |
-| `hideFromInternalMap` | boolean                           | no       | Optional; when `true`, channel omitted from internal Codeplug Studio maps only (not CPS export) |
-| `maidenheadLocator` | string                              | yes      |
-| `power`             | number (0–100)                      | yes      |
-| `scanInclusion`     | `default` \| `skip` \| `alwaysScan` | no       | Legacy `scanSkip` boolean accepted on import (`true`→`skip`, `false`→`default`) |
-| `scanListId`        | string (UUID)                       | yes      | Optional FK to `library.scanLists[].id` — Channel.CSV Scan List column          |
-| `comment`           | string                              | no       |
-| `modeProfiles`      | `ChannelModeProfile[]`              | no       |
+| Field                 | Type                                | Nullable |
+| --------------------- | ----------------------------------- | -------- |
+| _(persistable row)_   |                                     |          |
+| `name`                | string                              | no       |
+| `callsign`            | string                              | no       |
+| `rxFrequency`         | number (Hz)                         | yes      |
+| `txFrequency`         | number (Hz)                         | yes      |
+| `location`            | `{ lat: number; lon: number }`      | yes      |
+| `useLocation`         | boolean                             | no       |
+| `hideFromInternalMap` | boolean                             | no       | Optional; when `true`, channel omitted from internal Codeplug Studio maps only (not CPS export) |
+| `maidenheadLocator`   | string                              | yes      |
+| `power`               | number (0–100)                      | yes      |
+| `scanInclusion`       | `default` \| `skip` \| `alwaysScan` | no       | Legacy `scanSkip` boolean accepted on import (`true`→`skip`, `false`→`default`)                 |
+| `scanListId`          | string (UUID)                       | yes      | Optional FK to `library.scanLists[].id` — Channel.CSV Scan List column                          |
+| `comment`             | string                              | no       |
+| `modeProfiles`        | `ChannelModeProfile[]`              | no       |
 
 Mode profile discriminant is `mode`. See [data-model](../../features/data-model/README.md) for per-mode fields. Analog `ssb` profiles may include `ssbSideband: usb | lsb` (defaults to `usb`). Import accepts legacy `ssb-usb` / `ssb-lsb` mode strings and normalises them on load.
 
