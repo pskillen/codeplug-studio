@@ -18,9 +18,27 @@ export interface UseBuildCpsExportPreviewParams {
 
 interface PreviewSnapshot {
   requestKey: string;
+  fileNames: string[];
   files: Record<string, string>;
   warnings: string[];
   error: string | null;
+}
+
+function staticPreviewFileNames(
+  build: FormatBuild,
+  exportOptions: CpsExportOptions,
+): string[] {
+  try {
+    const adapter = getExportAdapter(build.formatId as FormatId);
+    if (isMultiFileExportAdapter(adapter)) return [...adapter.fileNames];
+    if (isSingleFileCpsExportAdapter(adapter)) {
+      const profileId = exportOptions.profileId ?? build.profileId;
+      return [adapter.defaultFileName(profileId)];
+    }
+    return [];
+  } catch {
+    return [];
+  }
 }
 
 export function useBuildCpsExportPreview({
@@ -31,19 +49,10 @@ export function useBuildCpsExportPreview({
   const { activeProjectId } = useProjects();
   const [snapshot, setSnapshot] = useState<PreviewSnapshot | null>(null);
 
-  const fileNames = useMemo(() => {
-    try {
-      const adapter = getExportAdapter(build.formatId as FormatId);
-      if (isMultiFileExportAdapter(adapter)) return [...adapter.fileNames];
-      if (isSingleFileCpsExportAdapter(adapter)) {
-        const profileId = exportOptions.profileId ?? build.profileId;
-        return [adapter.defaultFileName(profileId)];
-      }
-      return [];
-    } catch {
-      return [];
-    }
-  }, [build.formatId, build.profileId, exportOptions.profileId]);
+  const fallbackFileNames = useMemo(
+    () => staticPreviewFileNames(build, exportOptions),
+    [build, exportOptions],
+  );
 
   const requestKey = useMemo(
     () =>
@@ -76,6 +85,7 @@ export function useBuildCpsExportPreview({
         if (cancelled) return;
         setSnapshot({
           requestKey,
+          fileNames: result.fileNames,
           files: result.files,
           warnings: result.warnings,
           error: null,
@@ -85,6 +95,7 @@ export function useBuildCpsExportPreview({
         if (cancelled) return;
         setSnapshot({
           requestKey,
+          fileNames: fallbackFileNames,
           files: {},
           warnings: [],
           error: err instanceof Error ? err.message : String(err),
@@ -94,10 +105,11 @@ export function useBuildCpsExportPreview({
     return () => {
       cancelled = true;
     };
-  }, [enabled, activeProjectId, build.id, requestKey, exportOptions]);
+  }, [enabled, activeProjectId, build.id, requestKey, exportOptions, fallbackFileNames]);
 
   const isCurrentSnapshot = snapshot?.requestKey === requestKey;
   const files = isCurrentSnapshot ? snapshot.files : null;
+  const fileNames = isCurrentSnapshot ? snapshot.fileNames : fallbackFileNames;
   const warnings = isCurrentSnapshot ? snapshot.warnings : [];
   const error = isCurrentSnapshot ? snapshot.error : null;
   const loading = enabled && !isCurrentSnapshot;
