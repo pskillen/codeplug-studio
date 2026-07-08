@@ -11,6 +11,7 @@ export interface ChannelLocationValues {
   lat: string;
   lon: string;
   useLocation: boolean;
+  hideFromInternalMap: boolean;
   lastEdited: LocationEditSource;
 }
 
@@ -72,6 +73,7 @@ export default function ChannelLocationSection({
   const clearPosition = () => {
     setLocatorError(null);
     onChange({
+      ...value,
       maidenheadLocator: '',
       lat: '',
       lon: '',
@@ -131,9 +133,17 @@ export default function ChannelLocationSection({
         </Group>
         <Checkbox
           label="Use location"
-          description="Include this channel on maps and distance filters when coordinates are set"
+          description="Use coordinates for distance sort and export when the format supports location"
           checked={value.useLocation}
           onChange={(e) => onChange({ ...value, useLocation: e.currentTarget.checked })}
+        />
+        <Checkbox
+          label="Hide this channel from the map"
+          description="Coordinates are kept; this channel is omitted from Codeplug Studio maps only"
+          checked={value.hideFromInternalMap}
+          onChange={(e) =>
+            onChange({ ...value, hideFromInternalMap: e.currentTarget.checked })
+          }
         />
         <Group justify="space-between" align="center">
           <Text size="xs" c="dimmed">
@@ -160,12 +170,14 @@ export function channelLocationValuesFromChannel(channel: {
   location: { lat: number; lon: number } | null;
   useLocation: boolean;
   maidenheadLocator: string | null;
+  hideFromInternalMap?: boolean;
 }): ChannelLocationValues {
   return {
     maidenheadLocator: channel.maidenheadLocator ?? '',
     lat: channel.location?.lat != null ? String(channel.location.lat) : '',
     lon: channel.location?.lon != null ? String(channel.location.lon) : '',
     useLocation: channel.useLocation,
+    hideFromInternalMap: channel.hideFromInternalMap === true,
     lastEdited: 'coords',
   };
 }

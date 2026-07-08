@@ -8,7 +8,7 @@ Location block for the channel editor: Maidenhead locator, lat/lon inputs, use-l
 
 | Prop        | Type                                     | Description                                                                            |
 | ----------- | ---------------------------------------- | -------------------------------------------------------------------------------------- |
-| `value`     | `ChannelLocationValues`                  | Current locator, coords, useLocation, and `lastEdited` source                          |
+| `value`     | `ChannelLocationValues`                  | Current locator, coords, useLocation, hideFromInternalMap, and `lastEdited` source     |
 | `onChange`  | `(value: ChannelLocationValues) => void` | Called on any field or map change                                                      |
 | `mapActive` | `boolean`                                | When `false`, locator/coords fields stay mounted but the map unmounts (default `true`) |
 
@@ -49,7 +49,8 @@ const reconciled = reconcileChannelLocation({
 - Lat/lon fields keep **string** draft values while typing so partial decimals (e.g. `55.`) are not dropped.
 - Invalid locator on blur → inline error; does not overwrite coordinates.
 - **No** “Use my location” button on this page (reference tool / list maps only).
-- `clearPosition` resets locator, coords, and `useLocation`.
+- `clearPosition` resets locator, coords, and `useLocation` (does not change `hideFromInternalMap`).
+- **Hide from map:** `hideFromInternalMap` is app-only — omits the channel from embedded Codeplug Studio maps; coordinates and distance sort are unchanged.
 - **Map mount:** `ChannelEditor` passes `mapActive` so the map unmounts when another tab is selected (Leaflet container reuse constraint).
 
 ## Related
@@ -57,3 +58,4 @@ const reconciled = reconcileChannelLocation({
 - [MapLocationPicker](../MapLocationPicker/MapLocationPicker.md)
 - [docs/features/maidenhead.md](../../../docs/features/maidenhead.md)
 - [#28](https://github.com/pskillen/codeplug-studio/issues/28)
+- [#261](https://github.com/pskillen/codeplug-studio/issues/261)
