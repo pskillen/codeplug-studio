@@ -308,16 +308,12 @@ export function previewWireRows(
       if (build.formatId === 'anytone') {
         const zoneLinkedForPreview =
           build.exportUnlinkedChannels === false ? zoneLinkedChannelIds(build, library) : null;
-        const assembledByChannelId = new Map(
-          projection.channels.map((row) => [row.entity.id, row] as const),
-        );
 
         for (const channel of library.channels) {
-          const assembledRow = assembledByChannelId.get(channel.id);
           const channelOverride = overrideByEntityId(build.channelOverrides)
             .get(channel.id)
             ?.wireName?.trim();
-          const generatedWireName = assembledRow?.wireName ?? defaultChannelWireName(channel);
+          const generatedWireName = previewGeneratedChannelWireName(channel, build, _options);
           rows.push({
             key: channel.id,
             libraryEntityId: channel.id,

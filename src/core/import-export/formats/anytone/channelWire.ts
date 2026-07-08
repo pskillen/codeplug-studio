@@ -32,6 +32,7 @@ export function serialiseAnytoneChannelRow(
   profileId: string,
   slot: number,
   options?: CpsExportOptions,
+  wireName?: string,
 ): Record<string, string> {
   const channel = row.entity;
   const dmr = dmrProfile(channel);
@@ -42,7 +43,7 @@ export function serialiseAnytoneChannelRow(
   const values: Record<string, string> = {
     ...CHANNEL_ROW_DEFAULTS,
     [CHANNEL_COL.number]: String(slot),
-    [CHANNEL_COL.name]: row.wireName,
+    [CHANNEL_COL.name]: wireName ?? row.wireName,
     [CHANNEL_COL.rx]: formatAnytoneFrequencyMHz(channel.rxFrequency),
     [CHANNEL_COL.tx]: formatAnytoneFrequencyMHz(channel.txFrequency),
     [CHANNEL_COL.channelType]: formatAnytoneChannelType(
