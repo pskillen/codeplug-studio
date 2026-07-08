@@ -22,12 +22,18 @@ export default function ExportNameSettingsFields({
   showMultiTalkGroupOptions = false,
 }: ExportNameSettingsFieldsProps) {
   const settings = resolvedBuildExportSettings(build);
+  const shortenWireNamesLabel =
+    build.formatId === 'anytone' ? 'Shorten long wire names' : 'Shorten long channel names';
+  const shortenWireNamesDescription =
+    build.formatId === 'anytone'
+      ? 'Abbreviate channel, zone, scan list, talk group, and RX group list names that exceed the target length at export'
+      : 'Abbreviate names that exceed the target length at export time';
 
   return (
     <Stack gap="sm">
       <Switch
-        label="Shorten long channel names"
-        description="Abbreviate names that exceed the target length at export time"
+        label={shortenWireNamesLabel}
+        description={shortenWireNamesDescription}
         checked={settings.shortenNames}
         disabled={saving}
         onChange={(e) => onPatch({ shortenNames: e.currentTarget.checked })}
