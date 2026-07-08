@@ -2,6 +2,7 @@
  * Canonical AT-D890UV CPS manifest order (export-all).
  * Source: test-data/anytone/at-d890uv/meep.LST
  */
+import { ANYTONE_CSV_LINE_ENDING } from './csvWrite.ts';
 export const ANYTONE_CPS_MANIFEST_ORDER = [
   'Channel.CSV',
   'RadioIDList.CSV',
@@ -90,5 +91,5 @@ export function serialiseAnytoneLstManifest(exportedCsvFiles: readonly string[])
     String(entries.length),
     ...entries.map(({ index, fileName }) => `${index},"${fileName}"`),
   ];
-  return `${lines.join('\n')}\n`;
+  return `${lines.join(ANYTONE_CSV_LINE_ENDING)}${ANYTONE_CSV_LINE_ENDING}`;
 }

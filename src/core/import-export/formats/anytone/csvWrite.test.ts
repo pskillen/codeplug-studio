@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { escapeCsvField, formatCsv, formatCsvRow, sanitizeCsvFieldValue } from './csvWrite.ts';
+import {
+  ANYTONE_CSV_LINE_ENDING,
+  escapeCsvField,
+  formatCsv,
+  formatCsvRow,
+  sanitizeCsvFieldValue,
+} from './csvWrite.ts';
 
 describe('anytone/csvWrite', () => {
   describe('sanitizeCsvFieldValue', () => {
@@ -40,14 +46,22 @@ describe('anytone/csvWrite', () => {
   });
 
   describe('formatCsv', () => {
-    it('quotes header and data rows with trailing newline', () => {
+    it('quotes header and data rows with CRLF line endings', () => {
       const csv = formatCsv(['No.', 'Name'], [['1', 'Channel 1']]);
-      expect(csv).toBe('"No.","Name"\n"1","Channel 1"\n');
+      expect(csv).toBe(
+        `"No.","Name"${ANYTONE_CSV_LINE_ENDING}"1","Channel 1"${ANYTONE_CSV_LINE_ENDING}`,
+      );
+    });
+
+    it('uses CRLF only — no bare LF between rows', () => {
+      const csv = formatCsv(['No.', 'Name'], [['1', 'Channel 1']]);
+      expect(csv).toContain('\r\n');
+      expect(csv.replace(/\r\n/g, '')).not.toContain('\n');
     });
 
     it('strips quotes from data values in full export', () => {
       const csv = formatCsv(['Name'], [['Foo "bar"']]);
-      expect(csv).toBe('"Name"\n"Foo bar"\n');
+      expect(csv).toBe(`"Name"${ANYTONE_CSV_LINE_ENDING}"Foo bar"${ANYTONE_CSV_LINE_ENDING}`);
     });
   });
 });

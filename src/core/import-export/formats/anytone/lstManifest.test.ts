@@ -3,6 +3,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import { ANYTONE_EXPORT_FILE_NAMES } from './columns.ts';
+import { ANYTONE_CSV_LINE_ENDING } from './csvWrite.ts';
 import {
   ANYTONE_CPS_MANIFEST_ORDER,
   anytoneLstFileName,
@@ -48,15 +49,17 @@ describe('anytone lstManifest', () => {
         '5,"DMRTalkGroups.CSV"',
         '8,"DMRReceiveGroupCallList.CSV"',
         '15,"DMRDigitalContactList.CSV"',
-      ].join('\n') + '\n',
+      ].join(ANYTONE_CSV_LINE_ENDING) + ANYTONE_CSV_LINE_ENDING,
     );
+    expect(manifest).toContain('\r\n');
+    expect(manifest.replace(/\r\n/g, '')).not.toContain('\n');
   });
 
   it('appends AMAir.CSV at canonical index 27 when present', () => {
     const exported = [...ANYTONE_EXPORT_FILE_NAMES, 'AMAir.CSV'];
     const entries = orderExportedFilesForManifest(exported);
     expect(entries.map((e) => e.index)).toEqual([0, 1, 2, 3, 5, 8, 15, 27]);
-    expect(serialiseAnytoneLstManifest(exported).split('\n')[8]).toBe('27,"AMAir.CSV"');
+    expect(serialiseAnytoneLstManifest(exported).split(/\r?\n/)[8]).toBe('27,"AMAir.CSV"');
   });
 
   it('ignores unknown files and .LST in input', () => {
@@ -66,6 +69,9 @@ describe('anytone lstManifest', () => {
       'NotAReal.CSV',
       'RadioIDList.CSV',
     ]);
-    expect(manifest).toBe(['2', '0,"Channel.CSV"', '1,"RadioIDList.CSV"'].join('\n') + '\n');
+    expect(manifest).toBe(
+      ['2', '0,"Channel.CSV"', '1,"RadioIDList.CSV"'].join(ANYTONE_CSV_LINE_ENDING) +
+        ANYTONE_CSV_LINE_ENDING,
+    );
   });
 });
