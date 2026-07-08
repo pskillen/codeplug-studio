@@ -7,7 +7,7 @@ export {
 } from '@integrations/listPrefs/index.ts';
 export type { ChannelSortMode } from '@integrations/listPrefs/index.ts';
 
-export const CHANNEL_LIST_COLUMNS_SCHEMA_VERSION = 1;
+export const CHANNEL_LIST_COLUMNS_SCHEMA_VERSION = 2;
 
 export const CHANNEL_OPTIONAL_COLUMNS = [
   { key: 'zones', header: 'Zones', defaultVisible: true },
@@ -17,6 +17,7 @@ export const CHANNEL_OPTIONAL_COLUMNS = [
   { key: 'rxTx', header: 'RX/TX', defaultVisible: true },
   { key: 'contact', header: 'Contact', defaultVisible: true },
   { key: 'rgl', header: 'RX group list', defaultVisible: true },
+  { key: 'scanList', header: 'Scan list', defaultVisible: false },
   { key: 'loc', header: 'Locator', defaultVisible: false },
   { key: 'distance', header: 'Distance from me', defaultVisible: true },
   { key: 'power', header: 'Power', defaultVisible: false },

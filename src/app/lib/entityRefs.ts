@@ -37,3 +37,9 @@ export function dmrRxGroupListName(library: Library, channelId: string): string 
   if (!dmr?.rxGroupListId) return '';
   return library.rxGroupLists.find((r) => r.id === dmr.rxGroupListId)?.name ?? '';
 }
+
+export function channelScanListName(library: Library, channelId: string): string {
+  const channel = library.channels.find((c) => c.id === channelId);
+  if (!channel?.scanListId) return '';
+  return library.scanLists.find((list) => list.id === channel.scanListId)?.name ?? '';
+}

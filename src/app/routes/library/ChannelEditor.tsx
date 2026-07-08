@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Alert, Button, Group, SimpleGrid, Stack, Tabs, TextInput } from '@mantine/core';
+import { Alert, Button, Group, Select, SimpleGrid, Stack, Tabs, TextInput } from '@mantine/core';
 import { Link, useNavigate } from 'react-router-dom';
 import type { Channel, ChannelModeProfile, Library, ScanInclusion } from '@core/models/library.ts';
 import { reconcileChannelLocation } from '@core/domain/channelLocation.ts';
@@ -18,6 +18,7 @@ import ChannelWireNameExamples from '../../components/channels/ChannelWireNameEx
 import type { ChannelMode as UiChannelMode } from '../../lib/channelModes.ts';
 import RepeaterVerifyPanel from '../../components/repeaters/RepeaterVerifyPanel.tsx';
 import ChannelZoneMembershipSection from '../../components/library/ChannelZoneMembershipSection.tsx';
+import ScanListSummary from '../../components/library/ScanListSummary.tsx';
 import ChannelDeleteButton from '../../components/library/ChannelDeleteButton.tsx';
 import { FormSection, PercentLevelSlider, UnsavedChangesModal } from '../../components/ui/index.ts';
 import { useEntityEditorUnsavedGuard } from '../../hooks/useEntityFormDirty.ts';
@@ -43,6 +44,7 @@ export default function ChannelEditor({
   const [tx, setTx] = useState(hzToMhzString(base.txFrequency));
   const [power, setPower] = useState<number | null>(base.power);
   const [scanInclusion, setScanInclusion] = useState<ScanInclusion>(base.scanInclusion);
+  const [scanListId, setScanListId] = useState(base.scanListId ?? '');
   const [forbidTransmit, setForbidTransmit] = useState(base.forbidTransmit === true);
   const [comment, setComment] = useState(base.comment);
   const [modeProfiles, setModeProfiles] = useState<ChannelModeProfile[]>(base.modeProfiles);
@@ -89,6 +91,12 @@ export default function ChannelEditor({
     } else {
       delete row.abbreviation;
     }
+    const trimmedScanListId = scanListId.trim();
+    if (trimmedScanListId) {
+      row.scanListId = trimmedScanListId;
+    } else {
+      delete row.scanListId;
+    }
     return row;
   }
 
@@ -106,6 +114,7 @@ export default function ChannelEditor({
       txFrequency: source.txFrequency,
       power: source.power,
       scanInclusion: source.scanInclusion,
+      scanListId: source.scanListId,
       forbidTransmit: source.forbidTransmit,
       comment: source.comment,
       location: source.location,
@@ -137,6 +146,10 @@ export default function ChannelEditor({
   }
 
   const liveChannel = buildRow();
+  const scanListOptions = [
+    { value: '', label: 'None' },
+    ...library.scanLists.map((list) => ({ value: list.id, label: list.name })),
+  ];
 
   return (
     <Stack gap="lg" maw={640}>
@@ -153,6 +166,7 @@ export default function ChannelEditor({
           <Tabs.Tab value="identity">Identity</Tabs.Tab>
           <Tabs.Tab value="frequencies">Frequencies</Tabs.Tab>
           <Tabs.Tab value="modes">Modes</Tabs.Tab>
+          <Tabs.Tab value="scanning">Scanning</Tabs.Tab>
           <Tabs.Tab value="location">Location</Tabs.Tab>
           {entity ? <Tabs.Tab value="zones">Zones</Tabs.Tab> : null}
           {entity ? <Tabs.Tab value="verify">Repeater</Tabs.Tab> : null}
@@ -189,8 +203,27 @@ export default function ChannelEditor({
               value={comment}
               onChange={(e) => setComment(e.currentTarget.value)}
             />
-            <ScanInclusionSegment value={scanInclusion} onChange={setScanInclusion} />
           </FormSection>
+        </Tabs.Panel>
+
+        <Tabs.Panel value="scanning" pt="md">
+          <Stack gap="lg">
+            <FormSection>
+              <ScanInclusionSegment value={scanInclusion} onChange={setScanInclusion} />
+            </FormSection>
+            <FormSection>
+              <Select
+                label="Scan list"
+                description="Dedicated scan list for CPS export (Channel.CSV Scan List column). List membership is edited under Library → Scan lists."
+                data={scanListOptions}
+                value={scanListId}
+                onChange={(value) => setScanListId(value ?? '')}
+                clearable
+                searchable
+              />
+              <ScanListSummary listId={scanListId || null} library={library} />
+            </FormSection>
+          </Stack>
         </Tabs.Panel>
 
         <Tabs.Panel value="frequencies" pt="md">
