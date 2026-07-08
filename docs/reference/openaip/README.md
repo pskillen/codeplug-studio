@@ -18,13 +18,13 @@ Official docs: [docs.openaip.net](https://docs.openaip.net/#/).
 
 ### Endpoints (shipped)
 
-| Endpoint        | Query params (shipped)                     | Returns                    |
-| --------------- | ------------------------------------------ | -------------------------- |
-| `GET /airports` | `search`, `searchOptLwc` (text)            | ICAO / IATA / name matches |
-| `GET /airports` | `pos` (`lon,lat`), `dist` (metres, radius) | Airports near a point      |
-| `GET /airports` | `page`, `limit` (pagination)               | Client follows `nextPage`  |
+| Endpoint            | Query params (shipped)                     | Returns                    |
+| ------------------- | ------------------------------------------ | -------------------------- |
+| `GET /api/airports` | `search`, `searchOptLwc` (text)            | ICAO / IATA / name matches |
+| `GET /api/airports` | `pos` (`lat,lon`), `dist` (metres, radius) | Airports near a point      |
+| `GET /api/airports` | `page`, `limit` (pagination)               | Client follows `nextPage`  |
 
-**Coordinate order:** `pos` is **`longitude,latitude`** (GeoJSON order), not lat/lon.
+**Coordinate order:** `pos` is **`latitude,longitude`**.
 
 Town and Maidenhead locator searches geocode to a point (Mapbox or Photon), then call the radius endpoint. ICAO (4 letters), IATA (3 letters), and free-text name use the `search` parameter.
 

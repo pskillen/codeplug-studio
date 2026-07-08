@@ -84,7 +84,7 @@ async function fetchOpenAipPage(
   apiKey: string,
   params: Record<string, string>,
 ): Promise<OpenAipListResponse> {
-  const url = new URL(`${OPENAIP_API_BASE}/airports`);
+  const url = new URL(`${OPENAIP_API_BASE}/api/airports`);
   for (const [key, value] of Object.entries(params)) {
     url.searchParams.set(key, value);
   }
@@ -142,7 +142,7 @@ async function fetchAllOpenAipAirports(
   return airports;
 }
 
-/** Search airports near a position. `pos` is `lon,lat` per OpenAIP API. */
+/** Search airports near a position. `pos` is `lat,lon` per OpenAIP API. */
 export function searchOpenAipAirportsNear(
   apiKey: string,
   lat: number,
@@ -150,7 +150,7 @@ export function searchOpenAipAirportsNear(
   radiusMetres: number,
 ): Promise<AirportListing[]> {
   return fetchAllOpenAipAirports(apiKey, {
-    pos: `${lon},${lat}`,
+    pos: `${lat},${lon}`,
     dist: String(Math.max(1, Math.round(radiusMetres))),
   });
 }
