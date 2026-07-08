@@ -24,6 +24,7 @@ Items **skipped**, **incomplete**, or **discovered during execution** — not sc
 - [ ] **APRS internal model** — D890 `APRS.CSV` is a single global config row (~150 columns) plus per-channel flags on `Channel.CSV`. No first-class `AprsConfiguration` entity today. Proposed shape documented in [aprs.md](../../reference/anytone/aprs.md); needs follow-up GitHub issue before import/export serialisation.
 - [ ] **NXDN multi-protocol build** — parallel NX* file set mirrors DMR; may need build trait or export partition beyond DMR-only zone grouping. Wire documented; adapter deferred post-DMR MVP ([#233](https://github.com/pskillen/codeplug-studio/issues/233)).
 - [x] **AM air + broadcast FM export projection** — `AMAir.CSV` / `FM.CSV` partition ([#267](https://github.com/pskillen/codeplug-studio/issues/267), [#268](https://github.com/pskillen/codeplug-studio/issues/268))
+- [x] **Cross-file wire name shortening** — shared export wire context; preview alignment ([#292](https://github.com/pskillen/codeplug-studio/issues/292))
 
 ---
 

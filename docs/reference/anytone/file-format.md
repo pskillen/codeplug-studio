@@ -37,6 +37,8 @@ Lists cross-reference each other by **exact name match** (case-sensitive) at the
 
 Internal model uses UUID `id` FKs; name resolution belongs in import/export adapters only.
 
+When **Shorten long wire names** is enabled on an Anytone build (default), Studio shortens every CPS name FK column to the radio profile limit (16 characters on AT-D890UV) in one export pass — channels, zones, scan lists, talk groups, RX group lists, and receive-bank names share the same canonical wire string per entity across all CSV files.
+
 ## Row numbering (`No.`)
 
 | File            | Programmed rows     | VFO / special rows       |
