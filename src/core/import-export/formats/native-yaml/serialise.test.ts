@@ -12,20 +12,28 @@ import {
 const fixturesDir = join(dirname(fileURLToPath(import.meta.url)), '__fixtures__/export');
 
 function readGolden(name: string): string {
-  return readFileSync(join(fixturesDir, name), 'utf8').trimEnd();
+  return readFileSync(join(fixturesDir, name), 'utf8').trimEnd().replace(/\r\n/g, '\n');
+}
+
+function normaliseYamlEol(value: string): string {
+  return value.replace(/\r\n/g, '\n');
 }
 
 describe('native-yaml serialise', () => {
   it('serialises minimal project', () => {
-    expect(serialiseProject(minimalProjectAggregate())).toBe(readGolden('minimal-project.yaml'));
+    expect(normaliseYamlEol(serialiseProject(minimalProjectAggregate()))).toBe(
+      readGolden('minimal-project.yaml'),
+    );
   });
 
   it('serialises full library with FK refs', () => {
-    expect(serialiseProject(fullLibraryAggregate())).toBe(readGolden('full-library.yaml'));
+    expect(normaliseYamlEol(serialiseProject(fullLibraryAggregate()))).toBe(
+      readGolden('full-library.yaml'),
+    );
   });
 
   it('serialises format build with trait layout and selections', () => {
-    expect(serialiseProject(projectWithFormatBuildAggregate())).toBe(
+    expect(normaliseYamlEol(serialiseProject(projectWithFormatBuildAggregate()))).toBe(
       readGolden('with-format-build.yaml'),
     );
   });
