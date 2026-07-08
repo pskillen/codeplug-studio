@@ -244,63 +244,49 @@ export function previewWireRows(
           profileId: _options?.profileId ?? build.profileId,
         };
         const expanded = expandAllDm32ChannelsForExport(assembled, library, dm32Options, warnings);
+        const expandedByChannelId = new Map<string, (typeof expanded)[number][]>();
         for (const generated of expanded) {
-          const channel = library.channels.find((c) => c.id === generated.sourceChannelId);
-          if (!channel) continue;
-          const channelOverride = overrideByEntityId(build.channelOverrides)
-            .get(channel.id)
-            ?.wireName?.trim();
-          const keyOverride = overrideByEntityId(build.channelOverrides)
-            .get(generated.key)
-            ?.wireName?.trim();
-          rows.push({
-            key: generated.key,
-            libraryEntityId: channel.id,
-            entityKind: 'channel',
-            displayLabel: channelDisplayLabel(channel),
-            generatedWireName: sanitiseAsciiWireString(generated.wireName),
-            effectiveWireName: sanitiseAsciiWireString(
-              keyOverride ?? channelOverride ?? generated.wireName,
-            ),
-            hasWireNameOverride: Boolean(keyOverride ?? channelOverride),
-            excluded: isEntityExcluded(build.channelOverrides, channel.id),
-            expansionNote: generated.expansionNote,
-            displayDetails: generated.expansionNote
-              ? dm32RxListFanOutDisplayDetails(channel, generated.txContactRef, library)
-              : undefined,
-          });
+          const list = expandedByChannelId.get(generated.sourceChannelId) ?? [];
+          list.push(generated);
+          expandedByChannelId.set(generated.sourceChannelId, list);
         }
-        const exportedChannelIds = new Set(projection.channels.map((row) => row.entity.id));
+        const zoneLinkedForPreview =
+          build.exportUnlinkedChannels === false ? zoneLinkedChannelIds(build, library) : null;
+
         for (const channel of library.channels) {
-          if (exportedChannelIds.has(channel.id)) continue;
+          const generatedRows = expandedByChannelId.get(channel.id);
+          if (generatedRows) {
+            for (const generated of generatedRows) {
+              const channelOverride = overrideByEntityId(build.channelOverrides)
+                .get(channel.id)
+                ?.wireName?.trim();
+              const keyOverride = overrideByEntityId(build.channelOverrides)
+                .get(generated.key)
+                ?.wireName?.trim();
+              rows.push({
+                key: generated.key,
+                libraryEntityId: channel.id,
+                entityKind: 'channel',
+                displayLabel: channelDisplayLabel(channel),
+                generatedWireName: sanitiseAsciiWireString(generated.wireName),
+                effectiveWireName: sanitiseAsciiWireString(
+                  keyOverride ?? channelOverride ?? generated.wireName,
+                ),
+                hasWireNameOverride: Boolean(keyOverride ?? channelOverride),
+                excluded: isEntityExcluded(build.channelOverrides, channel.id),
+                expansionNote: generated.expansionNote,
+                displayDetails: generated.expansionNote
+                  ? dm32RxListFanOutDisplayDetails(channel, generated.txContactRef, library)
+                  : undefined,
+              });
+            }
+            continue;
+          }
+
           const channelOverride = overrideByEntityId(build.channelOverrides)
             .get(channel.id)
             ?.wireName?.trim();
           const generatedWireName = defaultChannelWireName(channel);
-          rows.push({
-            key: channel.id,
-            libraryEntityId: channel.id,
-            entityKind: 'channel',
-            displayLabel: channelDisplayLabel(channel),
-            generatedWireName: sanitiseAsciiWireString(generatedWireName),
-            effectiveWireName: sanitiseAsciiWireString(channelOverride ?? generatedWireName),
-            hasWireNameOverride: Boolean(channelOverride),
-            excluded: isEntityExcluded(build.channelOverrides, channel.id),
-            expansionNote: PREVIEW_ROW_NOT_ZONE_LINKED_NOTE,
-          });
-        }
-        return rows;
-      }
-
-      if (build.formatId === 'anytone') {
-        const zoneLinkedForPreview =
-          build.exportUnlinkedChannels === false ? zoneLinkedChannelIds(build, library) : null;
-        for (const assembledRow of projection.channels) {
-          const channel = assembledRow.entity;
-          const channelOverride = overrideByEntityId(build.channelOverrides)
-            .get(channel.id)
-            ?.wireName?.trim();
-          const generatedWireName = assembledRow.wireName;
           rows.push({
             key: channel.id,
             libraryEntityId: channel.id,
@@ -316,13 +302,22 @@ export function previewWireRows(
                 : undefined,
           });
         }
-        const exportedChannelIds = new Set(projection.channels.map((row) => row.entity.id));
+        return rows;
+      }
+
+      if (build.formatId === 'anytone') {
+        const zoneLinkedForPreview =
+          build.exportUnlinkedChannels === false ? zoneLinkedChannelIds(build, library) : null;
+        const assembledByChannelId = new Map(
+          projection.channels.map((row) => [row.entity.id, row] as const),
+        );
+
         for (const channel of library.channels) {
-          if (exportedChannelIds.has(channel.id)) continue;
+          const assembledRow = assembledByChannelId.get(channel.id);
           const channelOverride = overrideByEntityId(build.channelOverrides)
             .get(channel.id)
             ?.wireName?.trim();
-          const generatedWireName = defaultChannelWireName(channel);
+          const generatedWireName = assembledRow?.wireName ?? defaultChannelWireName(channel);
           rows.push({
             key: channel.id,
             libraryEntityId: channel.id,
@@ -332,7 +327,10 @@ export function previewWireRows(
             effectiveWireName: sanitiseAsciiWireString(channelOverride ?? generatedWireName),
             hasWireNameOverride: Boolean(channelOverride),
             excluded: isEntityExcluded(build.channelOverrides, channel.id),
-            expansionNote: PREVIEW_ROW_NOT_ZONE_LINKED_NOTE,
+            expansionNote:
+              zoneLinkedForPreview && !zoneLinkedForPreview.has(channel.id)
+                ? PREVIEW_ROW_NOT_ZONE_LINKED_NOTE
+                : undefined,
           });
         }
         return rows;
