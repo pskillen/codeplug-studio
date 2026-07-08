@@ -9,6 +9,7 @@ import {
 } from './zoneGroupingLayout.ts';
 import { resolveEffectiveZoneChannelIds } from './zoneHierarchy.ts';
 import { migrateZoneMemberEntries } from './migrateZoneMembers.ts';
+import { migrateBuildScanListsToLibrary } from './migrateScanLists.ts';
 
 export interface LegacyZoneExportFields {
   exportScratchChannel: boolean;
@@ -141,7 +142,7 @@ export function migrateProjectAggregate(aggregate: ProjectAggregate): ProjectAgg
     withMembers.formatBuilds,
   );
 
-  return {
+  return migrateBuildScanListsToLibrary({
     meta: withMembers.meta,
     channels: migratedLibrary.channels,
     zones: migratedLibrary.zones,
@@ -151,5 +152,5 @@ export function migrateProjectAggregate(aggregate: ProjectAggregate): ProjectAgg
     rxGroupLists: migratedLibrary.rxGroupLists,
     scanLists: migratedLibrary.scanLists,
     formatBuilds,
-  };
+  });
 }

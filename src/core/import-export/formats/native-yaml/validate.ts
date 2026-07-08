@@ -38,6 +38,7 @@ import {
   libraryEntityIds,
   validateEntityRef,
   validateRxGroupListId,
+  validateScanListMembers,
   validateZoneMembers,
 } from '@core/domain/validation.ts';
 import { normalizeModeProfile } from '@core/domain/modeProfiles.ts';
@@ -834,6 +835,14 @@ function validateForeignKeys(library: Library, formatBuilds: FormatBuild[]): voi
     }
   }
 
+  for (const list of library.scanLists) {
+    try {
+      validateScanListMembers(list.memberChannelIds, library);
+    } catch (error) {
+      throw new NativeYamlImportError(error instanceof Error ? error.message : String(error));
+    }
+  }
+
   for (const build of formatBuilds) {
     for (const section of build.layout.sections) {
       if (section.kind === 'zoneGrouping') {
@@ -879,7 +888,7 @@ function validateForeignKeys(library: Library, formatBuilds: FormatBuild[]): voi
       }
     }
 
-    const scanListIds = new Set<string>();
+    const scanListIds = new Set(library.scanLists.map((list) => list.id));
     for (const section of build.layout.sections) {
       if (section.kind === 'scanLists') {
         for (const scanList of section.scanLists) {
@@ -896,7 +905,7 @@ function validateForeignKeys(library: Library, formatBuilds: FormatBuild[]): voi
       }
       if (override.scanListId && !scanListIds.has(override.scanListId)) {
         throw new NativeYamlImportError(
-          `Build channel override scanListId ${override.scanListId} not found in trait layout`,
+          `Build channel override scanListId ${override.scanListId} not found in library scan lists`,
         );
       }
     }
@@ -943,6 +952,7 @@ export function validateDocument(raw: unknown): ProjectAggregate {
   const studioSchemaVersion = document.studioSchemaVersion;
   if (
     studioSchemaVersion !== STUDIO_SCHEMA_VERSION &&
+    studioSchemaVersion !== 9 &&
     studioSchemaVersion !== 8 &&
     studioSchemaVersion !== 7 &&
     studioSchemaVersion !== 6 &&
@@ -952,7 +962,7 @@ export function validateDocument(raw: unknown): ProjectAggregate {
     studioSchemaVersion !== 2
   ) {
     throw new NativeYamlImportError(
-      `Unsupported studioSchemaVersion: ${String(studioSchemaVersion)} (expected ${STUDIO_SCHEMA_VERSION}, 8, 7, 6, 5, 4, 3, or 2)`,
+      `Unsupported studioSchemaVersion: ${String(studioSchemaVersion)} (expected ${STUDIO_SCHEMA_VERSION}, 9, 8, 7, 6, 5, 4, 3, or 2)`,
     );
   }
 
