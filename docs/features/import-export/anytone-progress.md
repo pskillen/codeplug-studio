@@ -67,9 +67,9 @@
 
 **Status:** Complete
 
-| Slice                         | Status   | Notes                                                                  |
-| ----------------------------- | -------- | ---------------------------------------------------------------------- |
-| Export wire context           | Complete | `exportWireContext.ts` — one canonical name per entity per export pass |
-| Serialiser FK alignment       | Complete | Channels, zones, scan lists, TGs, RGLs, AMAir/FM receive banks         |
-| Wire preview + export UI copy | Complete | List previews shortened; Anytone **Shorten long wire names** label     |
-| Directional tests             | Complete | `exportWireContext.test.ts` cross-file name equality                   |
+| Slice                         | Status   | Notes                                                                      |
+| ----------------------------- | -------- | -------------------------------------------------------------------------- |
+| Export wire context           | Complete | `exportWireContext.ts` — one canonical name per entity per export pass     |
+| Serialiser FK alignment       | Complete | Channels, zones, scan lists, TGs, RGLs, AMAir/FM receive banks             |
+| Wire preview + export UI copy | Complete | List previews shortened; uses shared **Shorten long names** export setting |
+| Directional tests             | Complete | `exportWireContext.test.ts` cross-file name equality                       |

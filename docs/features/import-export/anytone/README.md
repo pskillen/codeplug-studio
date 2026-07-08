@@ -70,7 +70,7 @@ Library CRUD does **not** enforce radio caps. Export adapters warn or truncate a
 
 ## Operator lifecycle
 
-Create an `anytone-at-d890uv` build, curate library zones and **scan lists** (`/library/scan-lists`), assign per-channel scan lists on the build **Channels** page, preview wire rows, and export a CPS CSV ZIP from the build Export page — no DM32-style **Default scan behaviour** control ([#258](https://github.com/pskillen/codeplug-studio/issues/258)). Exported CSV files use **Windows (CRLF) line endings** for AT-D890UV CPS import ([#291](https://github.com/pskillen/codeplug-studio/issues/291)). **Shorten long wire names** (build export settings) applies to all CPS name FK columns on export ([#292](https://github.com/pskillen/codeplug-studio/issues/292)). See [operator lifecycle](../workflows/operator-lifecycle.md) and [library scan lists](../../library/scan-lists.md).
+Create an `anytone-at-d890uv` build, curate library zones and **scan lists** (`/library/scan-lists`), assign per-channel scan lists on the build **Channels** page, preview wire rows, and export a CPS CSV ZIP from the build Export page — no DM32-style **Default scan behaviour** control ([#258](https://github.com/pskillen/codeplug-studio/issues/258)). Exported CSV files use **Windows (CRLF) line endings** for AT-D890UV CPS import ([#291](https://github.com/pskillen/codeplug-studio/issues/291)). Cross-file name consistency on export ([#292](https://github.com/pskillen/codeplug-studio/issues/292)). See [operator lifecycle](../workflows/operator-lifecycle.md) and [library scan lists](../../library/scan-lists.md).
 
 ## Related
 
