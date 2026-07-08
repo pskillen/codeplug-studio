@@ -13,7 +13,10 @@ import {
   modeExportNameSuffix,
 } from '@core/import-export/channelExpansion/multiMode.ts';
 import { applyTalkGroupWireNameLimits } from '@core/import-export/channelExpansion/talkGroupWireNames.ts';
-import { applyAnytoneListWireNameLimits } from '@core/import-export/formats/anytone/exportWireContext.ts';
+import {
+  applyListWireNameLimits,
+  formatUsesListNameShortening,
+} from '@core/import-export/channelExpansion/listWireNames.ts';
 import {
   assemble,
   channelInAnyZoneMembership,
@@ -382,8 +385,8 @@ export function previewWireRows(
       return rows;
     }
     case 'zone': {
-      const shortenForAnytone = build.formatId === 'anytone';
-      const reserved = shortenForAnytone ? new Set<string>() : null;
+      const shortenListNames = formatUsesListNameShortening(build.formatId);
+      const reserved = shortenListNames ? new Set<string>() : null;
       const warnings: string[] = [];
       return library.zones.map((zone) => {
         const omitFromExport = zone.omitFromExport === true;
@@ -391,14 +394,8 @@ export function previewWireRows(
         const zoneDirectMembers = zoneDirectMembersPreview(zone, library);
         const assembledZone = projection.zones.find((row) => row.zoneId === zone.id);
         const baseWireName = assembledZone?.wireName ?? zone.name;
-        const generatedWireName = shortenForAnytone
-          ? applyAnytoneListWireNameLimits(
-              baseWireName,
-              reserved!,
-              _options,
-              build.profileId,
-              warnings,
-            )
+        const generatedWireName = shortenListNames
+          ? applyListWireNameLimits(baseWireName, reserved!, _options, build.profileId, warnings)
           : zone.name;
         return {
           ...previewRow(
@@ -417,21 +414,15 @@ export function previewWireRows(
       });
     }
     case 'scanList': {
-      const shortenForAnytone = build.formatId === 'anytone';
-      const reserved = shortenForAnytone ? new Set<string>() : null;
+      const shortenListNames = build.formatId === 'anytone';
+      const reserved = shortenListNames ? new Set<string>() : null;
       const warnings: string[] = [];
       return library.scanLists.map((entry) => {
         const assembled = projection.scanLists.find((row) => row.scanListId === entry.id);
         const memberCount = entry.memberChannelIds.length;
         const baseWireName = assembled?.wireName ?? entry.name;
-        const generatedWireName = shortenForAnytone
-          ? applyAnytoneListWireNameLimits(
-              baseWireName,
-              reserved!,
-              _options,
-              build.profileId,
-              warnings,
-            )
+        const generatedWireName = shortenListNames
+          ? applyListWireNameLimits(baseWireName, reserved!, _options, build.profileId, warnings)
           : entry.name;
         return previewRow(
           entry.id,
@@ -471,22 +462,18 @@ export function previewWireRows(
       });
     }
     case 'contact': {
-      const shortenForAnytone = build.formatId === 'anytone';
-      const reserved = shortenForAnytone ? new Set<string>() : null;
+      const shortenListNames = formatUsesListNameShortening(build.formatId);
+      const shortenContacts = build.formatId === 'anytone' || build.formatId === 'opengd77';
+      const reserved = shortenContacts ? new Set<string>() : null;
       const warnings: string[] = [];
       const rows: WirePreviewRow[] = [];
       for (const contact of library.digitalContacts) {
         const assembled = projection.digitalContacts.find((row) => row.entity.id === contact.id);
         const baseWireName = assembled?.wireName ?? contact.name;
-        const generatedWireName = shortenForAnytone
-          ? applyAnytoneListWireNameLimits(
-              baseWireName,
-              reserved!,
-              _options,
-              build.profileId,
-              warnings,
-            )
-          : contact.name;
+        const generatedWireName =
+          shortenContacts && shortenListNames
+            ? applyListWireNameLimits(baseWireName, reserved!, _options, build.profileId, warnings)
+            : contact.name;
         rows.push(
           previewRow(
             contact.id,
@@ -501,13 +488,18 @@ export function previewWireRows(
       }
       for (const contact of library.analogContacts) {
         const assembled = projection.analogContacts.find((row) => row.entity.id === contact.id);
+        const baseWireName = assembled?.wireName ?? contact.name;
+        const generatedWireName =
+          shortenContacts && shortenListNames
+            ? applyListWireNameLimits(baseWireName, reserved!, _options, build.profileId, warnings)
+            : contact.name;
         rows.push(
           previewRow(
             contact.id,
             contact.id,
             'contact',
             `${contact.name} (analog)`,
-            contact.name,
+            generatedWireName,
             build.contactOverrides,
             assembled ? undefined : PREVIEW_ROW_NOT_REFERENCED_NOTE,
           ),
@@ -516,20 +508,14 @@ export function previewWireRows(
       return rows;
     }
     case 'rxGroupList': {
-      const shortenForAnytone = build.formatId === 'anytone';
-      const reserved = shortenForAnytone ? new Set<string>() : null;
+      const shortenListNames = formatUsesListNameShortening(build.formatId);
+      const reserved = shortenListNames ? new Set<string>() : null;
       const warnings: string[] = [];
       return library.rxGroupLists.map((list) => {
         const assembled = projection.rxGroupLists.find((row) => row.entity.id === list.id);
         const baseWireName = assembled?.wireName ?? list.name;
-        const generatedWireName = shortenForAnytone
-          ? applyAnytoneListWireNameLimits(
-              baseWireName,
-              reserved!,
-              _options,
-              build.profileId,
-              warnings,
-            )
+        const generatedWireName = shortenListNames
+          ? applyListWireNameLimits(baseWireName, reserved!, _options, build.profileId, warnings)
           : list.name;
         return previewRow(
           list.id,
