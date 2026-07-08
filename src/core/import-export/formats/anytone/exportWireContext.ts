@@ -1,21 +1,23 @@
 import type { AssembledBuild, AssembledChannel } from '@core/services/assemble.ts';
 import { applyTalkGroupWireNameLimits } from '@core/import-export/channelExpansion/talkGroupWireNames.ts';
 import { resolveMaxNameLength } from '@core/import-export/channelExpansion/exportWireNames.ts';
-import { finalizeWireName, uniqueWireName } from '@core/import-export/channelExpansion/shortenName.ts';
+import {
+  finalizeWireName,
+  uniqueWireName,
+} from '@core/import-export/channelExpansion/shortenName.ts';
 import { sanitiseAsciiWireString } from '@core/import-export/sanitiseAsciiWireString.ts';
 import type { CpsExportOptions } from '@core/import-export/types.ts';
 import { anytoneChannelWireName } from './exportChannelWire.ts';
-import {
-  isAmAirbandBankChannel,
-  isFmBroadcastBankChannel,
-} from './receiveOnlyBanks.ts';
+import { isAmAirbandBankChannel, isFmBroadcastBankChannel } from './receiveOnlyBanks.ts';
 import { DEFAULT_ANYTONE_PROFILE_ID } from './profiles.ts';
 
 export const ANYTONE_RECEIVE_BANK_NAME_WIDTH = 16;
 
 /** CPS receive-bank name column — fixed 16-char field (space-padded). */
 export function padReceiveBankName(name: string): string {
-  return name.padEnd(ANYTONE_RECEIVE_BANK_NAME_WIDTH, ' ').slice(0, ANYTONE_RECEIVE_BANK_NAME_WIDTH);
+  return name
+    .padEnd(ANYTONE_RECEIVE_BANK_NAME_WIDTH, ' ')
+    .slice(0, ANYTONE_RECEIVE_BANK_NAME_WIDTH);
 }
 
 /** Shorten zone / scan list / RX group list / digital contact wire names at export. */
@@ -141,10 +143,7 @@ export function buildAnytoneExportWireContext(
   const memberChannelWireName = (channelId: string): string => {
     const row = channelRowById(assembled, channelId);
     if (!row) return '';
-    if (
-      isAmAirbandBankChannel(row.entity) ||
-      isFmBroadcastBankChannel(row.entity)
-    ) {
+    if (isAmAirbandBankChannel(row.entity) || isFmBroadcastBankChannel(row.entity)) {
       return receiveBankWireName(channelId);
     }
     return channelWireNames.get(channelId) ?? '';

@@ -98,15 +98,13 @@ export function serialiseAnytoneChannelRow(
     typeof contextOrWireName === 'object' && contextOrWireName != null
       ? contextOrWireName
       : undefined;
-  const wireNameOverride =
-    typeof contextOrWireName === 'string' ? contextOrWireName : undefined;
+  const wireNameOverride = typeof contextOrWireName === 'string' ? contextOrWireName : undefined;
   const contact = resolveContactWireName(assembled, context, dmr?.contactRef ?? null);
 
   const values: Record<string, string> = {
     ...CHANNEL_ROW_DEFAULTS,
     [CHANNEL_COL.number]: String(slot),
-    [CHANNEL_COL.name]:
-      context?.channelWireName(channel.id) ?? wireNameOverride ?? row.wireName,
+    [CHANNEL_COL.name]: context?.channelWireName(channel.id) ?? wireNameOverride ?? row.wireName,
     [CHANNEL_COL.rx]: formatAnytoneFrequencyMHz(channel.rxFrequency),
     [CHANNEL_COL.tx]: formatAnytoneFrequencyMHz(channel.txFrequency),
     [CHANNEL_COL.channelType]: formatAnytoneChannelType(

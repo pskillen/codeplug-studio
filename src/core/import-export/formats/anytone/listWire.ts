@@ -23,10 +23,7 @@ export function wireNameByChannelId(assembled: AssembledBuild): Map<string, stri
 export function rxGroupListMemberNames(
   assembled: AssembledBuild,
   listId: string,
-  context?: Pick<
-    AnytoneExportWireContext,
-    'talkGroupWireName' | 'digitalContactWireName'
-  >,
+  context?: Pick<AnytoneExportWireContext, 'talkGroupWireName' | 'digitalContactWireName'>,
 ): { names: string[]; ids: string[] } {
   const list = assembled.rxGroupLists.find((row) => row.entity.id === listId);
   if (!list) return { names: [], ids: [] };
@@ -36,18 +33,14 @@ export function rxGroupListMemberNames(
     if (member.ref.kind === 'talkGroup') {
       const tg = assembled.talkGroups.find((row) => row.entity.id === member.ref.id);
       if (tg) {
-        names.push(
-          context ? context.talkGroupWireName(member.ref.id) : tg.wireName,
-        );
+        names.push(context ? context.talkGroupWireName(member.ref.id) : tg.wireName);
         ids.push(String(tg.entity.digitalId));
       }
     }
     if (member.ref.kind === 'digitalContact') {
       const contact = assembled.digitalContacts.find((row) => row.entity.id === member.ref.id);
       if (contact) {
-        names.push(
-          context ? context.digitalContactWireName(member.ref.id) : contact.wireName,
-        );
+        names.push(context ? context.digitalContactWireName(member.ref.id) : contact.wireName);
         ids.push(String(contact.entity.digitalId));
       }
     }

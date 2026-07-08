@@ -85,10 +85,7 @@ function serialiseChannelsCsv(
   return formatCsv(CHANNEL_HEADERS, rows);
 }
 
-function serialiseZonesCsv(
-  assembled: AssembledBuild,
-  context: AnytoneExportWireContext,
-): string {
+function serialiseZonesCsv(assembled: AssembledBuild, context: AnytoneExportWireContext): string {
   const channels = channelFrequencyById(assembled);
   const rows = assembled.zones.map((zone, index) =>
     padRow(ZONE_HEADERS, {
