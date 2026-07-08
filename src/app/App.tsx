@@ -42,6 +42,7 @@ import BuildRxGroupListsWirePage from './routes/builds/wire-preview/BuildRxGroup
 import PrivacyPolicyPage from './routes/legal/PrivacyPolicyPage.tsx';
 import TermsOfUsePage from './routes/legal/TermsOfUsePage.tsx';
 import CookiesPage from './routes/legal/CookiesPage.tsx';
+import AttributionsPage from './routes/AttributionsPage.tsx';
 
 function MapRedirect() {
   return <Navigate to="/library/channels" replace />;
@@ -54,6 +55,7 @@ export const appRouter = createBrowserRouter([
       { path: '/', element: <HomePage /> },
       { path: '/settings', element: <SettingsPage /> },
       { path: '/help', element: <HelpPage /> },
+      { path: '/attributions', element: <AttributionsPage /> },
       { path: '/privacy', element: <PrivacyPolicyPage /> },
       { path: '/terms', element: <TermsOfUsePage /> },
       { path: '/cookies', element: <CookiesPage /> },

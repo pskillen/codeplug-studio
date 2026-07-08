@@ -39,6 +39,7 @@ export const ANALYTICS_ROUTE_TEMPLATES = [
   '/cookies',
   '/terms',
   '/settings',
+  '/attributions',
   '/help',
   '/builds',
   '/debug',

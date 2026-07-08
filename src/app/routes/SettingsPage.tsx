@@ -1,4 +1,5 @@
 import { Button, Group, PasswordInput, Select, Stack, Text, Anchor } from '@mantine/core';
+import { Link } from 'react-router-dom';
 import type { MaidenheadGridMode } from '@core/domain/maidenheadGrid.ts';
 import { useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
@@ -41,7 +42,14 @@ export default function SettingsPage() {
       </PageSection>
 
       <PageSection id="settings-drive" title="Google Drive">
-        <GoogleDriveConnectSection />
+        <Stack gap="sm">
+          <GoogleDriveConnectSection />
+          <Text size="xs" c="dimmed">
+            <Anchor component={Link} to="/attributions" size="xs">
+              Google Drive attributions
+            </Anchor>
+          </Text>
+        </Stack>
       </PageSection>
 
       <PageSection id={SETTINGS_OPENAIP_SECTION_ID} title="OpenAIP">
@@ -78,7 +86,10 @@ export default function SettingsPage() {
             <Anchor href="https://www.openaip.net/" target="_blank" rel="noreferrer">
               OpenAIP
             </Anchor>{' '}
-            contributors — programming convenience only; not authoritative for aviation operations.
+            contributors — programming convenience only; not authoritative for aviation operations.{' '}
+            <Anchor component={Link} to="/attributions" size="xs">
+              All attributions
+            </Anchor>
           </Text>
         </Stack>
       </PageSection>
@@ -102,6 +113,12 @@ export default function SettingsPage() {
                 Clear
               </Button>
             </Group>
+            <Text size="xs" c="dimmed">
+              Map tiles and geocoding credits —{' '}
+              <Anchor component={Link} to="/attributions" size="xs">
+                Attributions
+              </Anchor>
+            </Text>
           </Stack>
 
           <Stack gap="sm" id="settings-maidenhead-grid">

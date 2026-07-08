@@ -354,7 +354,10 @@ export default function OpenAipAirportSearch() {
           OpenAIP
         </Anchor>{' '}
         contributors. Frequencies may change with AIP amendments — RX monitoring only; not
-        authoritative for aviation operations.
+        authoritative for aviation operations.{' '}
+        <Anchor component={Link} to="/attributions" size="xs">
+          Attributions
+        </Anchor>
       </Text>
     </FormPage>
   );
