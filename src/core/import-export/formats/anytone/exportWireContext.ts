@@ -1,11 +1,6 @@
 import type { AssembledBuild, AssembledChannel } from '@core/services/assemble.ts';
 import { applyTalkGroupWireNameLimits } from '@core/import-export/channelExpansion/talkGroupWireNames.ts';
-import { resolveMaxNameLength } from '@core/import-export/channelExpansion/exportWireNames.ts';
-import {
-  finalizeWireName,
-  uniqueWireName,
-} from '@core/import-export/channelExpansion/shortenName.ts';
-import { sanitiseAsciiWireString } from '@core/import-export/sanitiseAsciiWireString.ts';
+import { applyListWireNameLimits } from '@core/import-export/channelExpansion/listWireNames.ts';
 import type { CpsExportOptions } from '@core/import-export/types.ts';
 import { anytoneChannelWireName } from './exportChannelWire.ts';
 import { isAmAirbandBankChannel, isFmBroadcastBankChannel } from './receiveOnlyBanks.ts';
@@ -20,31 +15,8 @@ export function padReceiveBankName(name: string): string {
     .slice(0, ANYTONE_RECEIVE_BANK_NAME_WIDTH);
 }
 
-/** Shorten zone / scan list / RX group list / digital contact wire names at export. */
-export function applyAnytoneListWireNameLimits(
-  baseWireName: string,
-  reserved: Set<string>,
-  options: CpsExportOptions | undefined,
-  profileId: string | undefined,
-  warnings: string[],
-): string {
-  const maxLen = resolveMaxNameLength(profileId ?? options?.profileId, options);
-  const shorten = options?.shortenNames !== false;
-  const base = baseWireName.trim();
-
-  if (!shorten || maxLen == null) {
-    const name = sanitiseAsciiWireString(uniqueWireName(base, reserved));
-    reserved.add(name);
-    if (maxLen != null && name.length > maxLen) {
-      warnings.push(`Wire name "${name}" exceeds ${maxLen} characters`);
-    }
-    return name;
-  }
-
-  return sanitiseAsciiWireString(
-    finalizeWireName(base, reserved, maxLen, { allowCallsignSuffixDowngrade: false }, warnings),
-  );
-}
+/** @deprecated Use applyListWireNameLimits from channelExpansion/listWireNames.ts */
+export const applyAnytoneListWireNameLimits = applyListWireNameLimits;
 
 export interface AnytoneExportWireContext {
   channelWireNames: ReadonlyMap<string, string>;
@@ -107,7 +79,7 @@ export function buildAnytoneExportWireContext(
   for (const row of assembled.digitalContacts) {
     digitalContactWireNames.set(
       row.entity.id,
-      applyAnytoneListWireNameLimits(row.wireName, reserved, options, profileId, warnings),
+      applyListWireNameLimits(row.wireName, reserved, options, profileId, warnings),
     );
   }
 
@@ -115,7 +87,7 @@ export function buildAnytoneExportWireContext(
   for (const zone of assembled.zones) {
     zoneWireNames.set(
       zone.zoneId,
-      applyAnytoneListWireNameLimits(zone.wireName, reserved, options, profileId, warnings),
+      applyListWireNameLimits(zone.wireName, reserved, options, profileId, warnings),
     );
   }
 
@@ -123,7 +95,7 @@ export function buildAnytoneExportWireContext(
   for (const scanList of assembled.scanLists) {
     scanListWireNames.set(
       scanList.scanListId,
-      applyAnytoneListWireNameLimits(scanList.wireName, reserved, options, profileId, warnings),
+      applyListWireNameLimits(scanList.wireName, reserved, options, profileId, warnings),
     );
   }
 
@@ -131,7 +103,7 @@ export function buildAnytoneExportWireContext(
   for (const list of assembled.rxGroupLists) {
     rxGroupListWireNames.set(
       list.entity.id,
-      applyAnytoneListWireNameLimits(list.wireName, reserved, options, profileId, warnings),
+      applyListWireNameLimits(list.wireName, reserved, options, profileId, warnings),
     );
   }
 
