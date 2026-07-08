@@ -3,7 +3,7 @@ import { emptyLibrary } from '@core/domain/factories.ts';
 import { buildAirbandImportPlan } from './airbandImport.ts';
 
 describe('buildAirbandImportPlan', () => {
-  it('dedupes and creates optional zone', () => {
+  it('dedupes and creates optional batch zone with default name', () => {
     const library = emptyLibrary();
     library.channels.push({
       id: 'existing',
@@ -31,14 +31,16 @@ describe('buildAirbandImportPlan', () => {
       'p1',
       [
         {
-          name: 'Glasgow',
-          icao: 'EGPF',
-          iata: 'GLA',
-          location: null,
-          frequencies: [
-            { service: 'Tower', rxFrequencyHz: 118_805_000 },
-            { service: 'ATIS', rxFrequencyHz: 129_575_000 },
-          ],
+          airport: {
+            name: 'Glasgow',
+            icao: 'EGPF',
+            iata: 'GLA',
+            location: null,
+            frequencies: [
+              { service: 'Tower', rxFrequencyHz: 118_805_000 },
+              { service: 'ATIS', rxFrequencyHz: 129_575_000 },
+            ],
+          },
         },
       ],
       { alsoCreateZone: true },
@@ -47,7 +49,70 @@ describe('buildAirbandImportPlan', () => {
     expect(plan.totalChannelsToAdd).toHaveLength(1);
     expect(plan.totalSkipped).toHaveLength(1);
     expect(plan.zones).toHaveLength(1);
-    expect(plan.zones[0]?.name).toBe('EGPF — Glasgow');
+    expect(plan.zones[0]?.name).toBe('Airband');
     expect(plan.zones[0]?.members).toHaveLength(1);
+  });
+
+  it('imports only selected frequency indices', () => {
+    const library = emptyLibrary();
+    const plan = buildAirbandImportPlan(
+      library,
+      'p1',
+      [
+        {
+          airport: {
+            name: 'Glasgow',
+            icao: 'EGPF',
+            iata: 'GLA',
+            location: null,
+            frequencies: [
+              { service: 'Tower', rxFrequencyHz: 118_805_000 },
+              { service: 'ATIS', rxFrequencyHz: 129_575_000 },
+            ],
+          },
+          frequencyIndices: [1],
+        },
+      ],
+      {},
+    );
+
+    expect(plan.totalChannelsToAdd).toHaveLength(1);
+    expect(plan.totalChannelsToAdd[0]?.name).toContain('ATIS');
+  });
+
+  it('creates one batch zone across multiple airports', () => {
+    const library = emptyLibrary();
+    const plan = buildAirbandImportPlan(
+      library,
+      'p1',
+      [
+        {
+          airport: {
+            name: 'Glasgow',
+            icao: 'EGPF',
+            iata: 'GLA',
+            location: null,
+            frequencies: [{ service: 'Tower', rxFrequencyHz: 118_805_000 }],
+          },
+          frequencyIndices: [0],
+        },
+        {
+          airport: {
+            name: 'Edinburgh',
+            icao: 'EGPH',
+            iata: 'EDI',
+            location: null,
+            frequencies: [{ service: 'Tower', rxFrequencyHz: 118_705_000 }],
+          },
+          frequencyIndices: [0],
+        },
+      ],
+      { alsoCreateZone: true, zoneName: 'Scottish airband' },
+    );
+
+    expect(plan.totalChannelsToAdd).toHaveLength(2);
+    expect(plan.zones).toHaveLength(1);
+    expect(plan.zones[0]?.name).toBe('Scottish airband');
+    expect(plan.zones[0]?.members).toHaveLength(2);
   });
 });

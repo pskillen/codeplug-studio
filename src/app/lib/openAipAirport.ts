@@ -20,6 +20,21 @@ export function airportListingKey(listing: AirportListing): string {
   return `openaip:${listing.openAipId}`;
 }
 
+export function airportFrequencyKey(listing: AirportListing, frequencyIndex: number): string {
+  return `${airportListingKey(listing)}:${frequencyIndex}`;
+}
+
+export function parseAirportFrequencyKey(
+  key: string,
+): { airportKey: string; frequencyIndex: number } | null {
+  const lastColon = key.lastIndexOf(':');
+  if (lastColon <= 0) return null;
+  const airportKey = key.slice(0, lastColon);
+  const frequencyIndex = Number(key.slice(lastColon + 1));
+  if (!Number.isInteger(frequencyIndex) || frequencyIndex < 0) return null;
+  return { airportKey, frequencyIndex };
+}
+
 export function formatAirportDistanceKm(
   listing: AirportListing,
   reference: { lat: number; lon: number } | null,

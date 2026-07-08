@@ -14,7 +14,6 @@ export function useOpenAipAirportSearch() {
 
   const [query, setQuery] = useState('');
   const [radiusKm, setRadiusKm] = useState(50);
-  const [alsoCreateZone, setAlsoCreateZone] = useState(true);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [kind, setKind] = useState<AirportQueryKind | null>(null);
@@ -72,8 +71,6 @@ export function useOpenAipAirportSearch() {
     setQuery,
     radiusKm,
     setRadiusKm,
-    alsoCreateZone,
-    setAlsoCreateZone,
     loading,
     error,
     kind,

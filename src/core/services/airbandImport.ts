@@ -6,8 +6,19 @@ import type { Channel, Library, Zone, ZoneMemberEntry } from '@core/models/libra
 
 export interface AirbandImportOptions extends AirbandGenerateOptions {
   alsoCreateZone?: boolean;
-  /** Zone name when alsoCreateZone is true; defaults to airport label. */
+  /** Zone name when alsoCreateZone is true; defaults to "Airband". */
   zoneName?: string;
+  /**
+   * When alsoCreateZone is true, create one zone per airport entry.
+   * Default false — one batch zone containing all imported channels.
+   */
+  zonePerAirport?: boolean;
+}
+
+export interface AirbandAirportSelection {
+  airport: AirbandAirportInput;
+  /** Import only these frequency indices; omit to import all civil airband frequencies. */
+  frequencyIndices?: number[];
 }
 
 export interface SkippedAirbandChannel {
@@ -29,23 +40,27 @@ export interface AirbandImportPlan {
   zones: Zone[];
 }
 
+const DEFAULT_ZONE_NAME = 'Airband';
+
 function zoneMembersFromChannelIds(channelIds: string[]): ZoneMemberEntry[] {
   return channelIds.map((channelId) => ({ kind: 'channel' as const, channelId }));
 }
 
-function defaultZoneName(airport: AirbandAirportInput): string {
-  const code = airport.icao ?? airport.iata;
-  if (code && airport.name) return `${code} — ${airport.name}`;
-  return airport.name || code || 'Airband';
+function resolveZoneName(options: AirbandImportOptions): string {
+  return options.zoneName?.trim() || DEFAULT_ZONE_NAME;
 }
 
 function buildSingleAirportPlan(
   library: Library,
   projectId: string,
-  airport: AirbandAirportInput,
+  selection: AirbandAirportSelection,
   options: AirbandImportOptions,
+  createPerAirportZone: boolean,
 ): AirbandAirportImportPlan {
-  const generated = generateChannelsFromAirport(projectId, airport, options);
+  const generated = generateChannelsFromAirport(projectId, selection.airport, {
+    ...options,
+    frequencyIndices: selection.frequencyIndices ?? options.frequencyIndices,
+  });
   const dedup = classifyChannelSetDedup(library.channels, generated);
 
   const skipped: SkippedAirbandChannel[] = [
@@ -54,16 +69,15 @@ function buildSingleAirportPlan(
   ];
 
   let zone: Zone | undefined;
-  if (options.alsoCreateZone && dedup.toAdd.length > 0) {
-    const zoneName = options.zoneName?.trim() || defaultZoneName(airport);
+  if (options.alsoCreateZone && createPerAirportZone && dedup.toAdd.length > 0) {
     zone = {
-      ...newZone(projectId, zoneName),
+      ...newZone(projectId, resolveZoneName(options)),
       members: zoneMembersFromChannelIds(dedup.toAdd.map((ch) => ch.id)),
     };
   }
 
   return {
-    airport,
+    airport: selection.airport,
     channelsToAdd: dedup.toAdd,
     skipped,
     zone,
@@ -76,16 +90,28 @@ function buildSingleAirportPlan(
 export function buildAirbandImportPlan(
   library: Library,
   projectId: string,
-  airports: AirbandAirportInput[],
+  selections: readonly AirbandAirportSelection[],
   options: AirbandImportOptions = {},
 ): AirbandImportPlan {
-  const airportPlans = airports.map((airport) =>
-    buildSingleAirportPlan(library, projectId, airport, options),
+  const zonePerAirport = options.zonePerAirport ?? false;
+  const airportPlans = selections.map((selection) =>
+    buildSingleAirportPlan(library, projectId, selection, options, zonePerAirport),
   );
 
   const totalChannelsToAdd = airportPlans.flatMap((plan) => plan.channelsToAdd);
   const totalSkipped = airportPlans.flatMap((plan) => plan.skipped);
-  const zones = airportPlans.flatMap((plan) => (plan.zone ? [plan.zone] : []));
+
+  let zones: Zone[];
+  if (options.alsoCreateZone && !zonePerAirport && totalChannelsToAdd.length > 0) {
+    zones = [
+      {
+        ...newZone(projectId, resolveZoneName(options)),
+        members: zoneMembersFromChannelIds(totalChannelsToAdd.map((ch) => ch.id)),
+      },
+    ];
+  } else {
+    zones = airportPlans.flatMap((plan) => (plan.zone ? [plan.zone] : []));
+  }
 
   return {
     airports: airportPlans,
