@@ -23,6 +23,22 @@ export const DEFAULT_MAP_FILTER_OPTS: FilterOptions = {
   skipZero: true,
 };
 
+/** Skip reason when a channel must not appear on the internal map, or null when plottable. */
+export function channelMapSkipReason(
+  ch: Channel,
+  { requireUseLocation, skipZero }: FilterOptions,
+): string | null {
+  if (ch.location == null) return 'missing coordinates';
+  if (skipZero && ch.location.lat === 0 && ch.location.lon === 0) return '0,0 coordinates';
+  if (requireUseLocation && !ch.useLocation) return 'Use Location = No';
+  if (ch.hideFromInternalMap) return 'hidden from map';
+  return null;
+}
+
+export function channelPlottableOnMap(ch: Channel, opts: FilterOptions): boolean {
+  return channelMapSkipReason(ch, opts) === null;
+}
+
 /** Primary RF mode for map colouring — first profile when multi-mode; null when none. */
 export function primaryMode(channel: Channel): ChannelMode | null {
   return channel.modeProfiles[0]?.mode ?? null;
@@ -98,10 +114,7 @@ export function applyFilters(
   const skipped: SkippedChannel[] = [];
 
   for (const ch of channels) {
-    let reason: string | null = null;
-    if (ch.location == null) reason = 'missing coordinates';
-    else if (skipZero && ch.location.lat === 0 && ch.location.lon === 0) reason = '0,0 coordinates';
-    else if (requireUseLocation && !ch.useLocation) reason = 'Use Location = No';
+    const reason = channelMapSkipReason(ch, { requireUseLocation, skipZero });
     if (reason) {
       skipped.push({ name: ch.name, reason });
       continue;
@@ -156,7 +169,7 @@ export function zoneGeolocatedPoints(
     if (!plottedById.has(memberId)) {
       missing.push({
         name: ch.name,
-        reason: 'filtered out or missing coordinates',
+        reason: ch.hideFromInternalMap ? 'hidden from map' : 'filtered out or missing coordinates',
       });
       continue;
     }
