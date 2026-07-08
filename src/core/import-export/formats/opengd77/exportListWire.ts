@@ -1,9 +1,7 @@
 import type { AssembledBuild } from '@core/services/assemble.ts';
 import type { CpsExportOptions } from '@core/import-export/types.ts';
 import { expandChannelWireRows } from '@core/import-export/channelExpansion/multiMode.ts';
-import {
-  buildListWireNameMap,
-} from '@core/import-export/channelExpansion/listWireNames.ts';
+import { buildListWireNameMap } from '@core/import-export/channelExpansion/listWireNames.ts';
 import { DEFAULT_OPENGD77_PROFILE_ID } from './profiles.ts';
 
 export interface OpenGd77ListWireMaps {

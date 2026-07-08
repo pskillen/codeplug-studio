@@ -25,7 +25,7 @@ Items **skipped**, **incomplete**, or **discovered during execution** — not th
 
 ## Manual verify (export epic)
 
-- [ ] DM32 build → Export panel shows multi-TG options + zone-derived scan toggle
+- [ ] DM32 build → Export panel shows zone-derived scan toggle (multi-TG abbrev unified under **Use abbreviations from library**)
 - [ ] Wire preview channels page shows RX-list fan-out rows with **displayDetails** (channel + talk group)
 - [ ] Wire preview **Hide items not to be included in export** reveals/hides orphans per export inclusion flags
 - [ ] Build zones page: per-zone export flags + per-member scan inclusion (DM32 only)
