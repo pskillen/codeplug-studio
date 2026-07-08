@@ -59,7 +59,7 @@ Committed fixture: [`test-data/anytone/at-d890uv/`](../../../test-data/anytone/a
 | `AutoRepeaterOffsetFrequencys.CSV`      | —                                      | Skip                 | Skip            | Skip            | Repeater offsets                        |
 | `DigitalContactWhitelist(Repeater).CSV` | —                                      | Skip                 | Skip            | Skip            | Repeater whitelist                      |
 | `TalkGroupWhitelist(Repeater).CSV`      | —                                      | Skip                 | Skip            | Skip            | Repeater whitelist                      |
-| `meep.LST`                              | —                                      | Skip                 | Skip            | Skip            | Non-CSV sidecar; not parsed             |
+| `meep.LST`                              | [lst-manifest.md](lst-manifest.md)     | Skip                 | Skip            | **Yes**         | CPS manifest sidecar — export only; lists ZIP CSV members |
 
 Cross-cutting rules: [file-format.md](file-format.md).
 

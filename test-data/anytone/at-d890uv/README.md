@@ -22,6 +22,7 @@ Redacted minimal CPS export for wire-spike tests and documentation ([#230](https
 | `NXTalkGroup.CSV`             | 0    | Header only                   |
 | `NXDigitalContactList.CSV`    | 0    | Header only                   |
 | `NXReceiveGroupCallList.CSV`  | 0    | Header only                   |
+| `meep.LST`                    | 38   | Full export-all manifest ref  |
 
 ## Redaction
 
