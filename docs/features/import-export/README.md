@@ -30,7 +30,7 @@ IndexedDB remains the **edit store**; YAML and Drive are portable layers on top 
 | OpenGD77 CSV import                                     | Planned | Phase 4b                                                                                                                                                                                            |
 | CHIRP CSV export                                        | Shipped | [#38](https://github.com/pskillen/codeplug-studio/issues/38) — [chirp/README.md](chirp/README.md); import [#214](https://github.com/pskillen/codeplug-studio/issues/214) planned                    |
 | DM32 CSV export                                         | Shipped | [#37](https://github.com/pskillen/codeplug-studio/issues/37) — [dm32/README.md](dm32/README.md); import [#112](https://github.com/pskillen/codeplug-studio/issues/112) planned                      |
-| Anytone CPS export                                      | Planned | [#228](https://github.com/pskillen/codeplug-studio/issues/228) — wire spike shipped ([#230](https://github.com/pskillen/codeplug-studio/issues/230)); [anytone/README.md](anytone/README.md)        |
+| Anytone CPS export                                      | Shipped | [#228](https://github.com/pskillen/codeplug-studio/issues/228) — AT-D890UV DMR MVP; [anytone/README.md](anytone/README.md)                                                                          |
 | qDMR YAML                                               | Planned | Out of Phase 3 scope                                                                                                                                                                                |
 
 ## Architecture
@@ -65,7 +65,7 @@ Routes and UI call **application services** (`importProjectYaml`, `exportProject
 | `opengd77`    | Planned | Shipped | Multi-file CSV             |
 | `chirp`       | Planned | Shipped | Single-file memory CSV     |
 | `dm32`        | Planned | Shipped | Multi-file CSV             |
-| `anytone`     | Planned | Planned | Multi-file CSV             |
+| `anytone`     | Planned | Shipped | Multi-file CSV             |
 | `qdmr`        | Planned | Planned | YAML (vendor)              |
 
 Wire mapping for CPS formats lives in `docs/reference/<format>/` — not here.

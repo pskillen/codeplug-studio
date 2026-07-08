@@ -41,6 +41,8 @@ export interface BuildEntityOverride {
    * Unset → default placement after any explicit slots (library order).
    */
   orderOrSlot?: number;
+  /** Build scan list entry id (`ScanListEntry.id`) for CPS scan list assignment. */
+  scanListId?: string;
 }
 
 export interface FormatBuild extends PersistableRow {
@@ -50,6 +52,7 @@ export interface FormatBuild extends PersistableRow {
   layout: TraitLayout;
   channelOverrides: BuildEntityOverride[];
   zoneOverrides: BuildEntityOverride[];
+  scanListOverrides: BuildEntityOverride[];
   talkGroupOverrides: BuildEntityOverride[];
   rxGroupListOverrides: BuildEntityOverride[];
   contactOverrides: BuildEntityOverride[];

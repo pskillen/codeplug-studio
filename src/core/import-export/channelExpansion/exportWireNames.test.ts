@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { Channel } from '@core/models/library.ts';
-import { applyWireNameLimits } from './exportWireNames.ts';
+import { applyWireNameLimits, resolveMaxNameLength } from './exportWireNames.ts';
 import { expandChannelWireRows } from './multiMode.ts';
 
 function channel(partial: Partial<Channel> & Pick<Channel, 'name' | 'callsign'>): Channel {
@@ -22,6 +22,16 @@ function channel(partial: Partial<Channel> & Pick<Channel, 'name' | 'callsign'>)
     ...partial,
   };
 }
+
+describe('resolveMaxNameLength', () => {
+  it('resolves Anytone profile name limits by prefix', () => {
+    expect(resolveMaxNameLength('anytone-at-d890uv')).toBe(16);
+  });
+
+  it('returns undefined for unknown profile ids', () => {
+    expect(resolveMaxNameLength('unknown-profile')).toBeUndefined();
+  });
+});
 
 describe('applyWireNameLimits', () => {
   it('uses channel abbreviation before dictionary shortening by default', () => {

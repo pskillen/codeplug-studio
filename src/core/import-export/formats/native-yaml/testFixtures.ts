@@ -200,6 +200,7 @@ export function projectWithFormatBuildAggregate(): ProjectAggregate {
       },
     ],
     zoneOverrides: [{ libraryEntityId: FIXTURE_ZONE_ID, wireName: 'Edinburgh' }],
+    scanListOverrides: [],
     talkGroupOverrides: [{ libraryEntityId: FIXTURE_TG_ID, wireName: 'Scotland' }],
     rxGroupListOverrides: [{ libraryEntityId: FIXTURE_RX_LIST_ID, wireName: 'Scotland TG' }],
     contactOverrides: [{ libraryEntityId: FIXTURE_DIGITAL_CONTACT_ID, wireName: 'MM0HAM' }],

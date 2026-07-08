@@ -16,6 +16,7 @@ function assembledTalkGroup(tg: TalkGroup, wireName?: string): AssembledBuild {
     digitalContacts: [],
     analogContacts: [],
     rxGroupLists: [],
+    scanLists: [],
   };
 }
 

@@ -2,6 +2,7 @@ import { nativeYamlExportAdapter, nativeYamlImportAdapter } from './formats/nati
 import { opengd77ExportAdapter } from './formats/opengd77/adapter.ts';
 import { dm32ExportAdapter } from './formats/dm32/adapter.ts';
 import { chirpExportAdapter } from './formats/chirp/adapter.ts';
+import { anytoneExportAdapter } from './formats/anytone/adapter.ts';
 import type { ExportAdapter } from './exportAdapter.ts';
 import type { ImportAdapter } from './importAdapter.ts';
 import type { FormatCatalogEntry, FormatExportDefaults, FormatId } from './types.ts';
@@ -32,6 +33,13 @@ export const formatCatalog: readonly FormatCatalogEntry[] = [
     exportStatus: 'shipped',
   },
   {
+    id: 'anytone',
+    label: 'Anytone CPS CSV',
+    importStatus: 'planned',
+    exportStatus: 'shipped',
+    issue: '228',
+  },
+  {
     id: 'qdmr',
     label: 'qDMR YAML',
     importStatus: 'planned',
@@ -46,6 +54,7 @@ export const exportAdapters: readonly ExportAdapter[] = [
   opengd77ExportAdapter,
   dm32ExportAdapter,
   chirpExportAdapter,
+  anytoneExportAdapter,
 ];
 
 export function getImportAdapter(id: FormatId): ImportAdapter {
@@ -86,10 +95,17 @@ const DM32_EXPORT_DEFAULTS: FormatExportDefaults = {
   expandRxGroupLists: true,
 };
 
+const ANYTONE_EXPORT_DEFAULTS: FormatExportDefaults = {
+  defaultScanInclusion: 'scan',
+  expandModes: false,
+  expandRxGroupLists: false,
+};
+
 const FORMAT_EXPORT_DEFAULTS: Partial<Record<FormatId, FormatExportDefaults>> = {
   chirp: CHIRP_EXPORT_DEFAULTS,
   opengd77: OPENGD77_EXPORT_DEFAULTS,
   dm32: DM32_EXPORT_DEFAULTS,
+  anytone: ANYTONE_EXPORT_DEFAULTS,
 };
 
 export function getFormatExportDefaults(formatId: string): FormatExportDefaults {

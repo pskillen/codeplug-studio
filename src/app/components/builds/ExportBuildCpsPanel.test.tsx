@@ -83,6 +83,7 @@ const opengd77Build: FormatBuild = {
   contactOverrides: [],
   talkGroupOverrides: [],
   rxGroupListOverrides: [],
+  scanListOverrides: [],
   layout: { sections: [] },
 };
 

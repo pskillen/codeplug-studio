@@ -20,13 +20,15 @@ import {
   type LibrarySlice,
 } from './assemble.ts';
 import type { FormatBuild } from '@core/models/formatBuild.ts';
+import type { ScanListsLayout } from '@core/models/traitLayout.ts';
 import type { Channel, ChannelModeProfileDMR, Zone } from '@core/models/library.ts';
 import type { DMRTimeSlot, EntityRef } from '@core/models/libraryTypes.ts';
 import { directZoneMemberChannelIds, directZoneMemberZoneIds } from '@core/domain/zoneMembers.ts';
 import { isChirpAnalogueExportable } from '@core/import-export/formats/chirp/channelWire.ts';
 import { previewGeneratedChannelWireName } from './previewChannelWireName.ts';
 
-export type WirePreviewEntityKind = 'channel' | 'zone' | 'talkGroup' | 'contact' | 'rxGroupList';
+export type WirePreviewEntityKind =
+  'channel' | 'zone' | 'scanList' | 'talkGroup' | 'contact' | 'rxGroupList';
 
 export const PREVIEW_ROW_NOT_REFERENCED_NOTE = 'Not referenced by exported channels';
 
@@ -80,6 +82,8 @@ export function overrideFieldForEntityKind(entityKind: WirePreviewEntityKind): O
       return 'channelOverrides';
     case 'zone':
       return 'zoneOverrides';
+    case 'scanList':
+      return 'scanListOverrides';
     case 'talkGroup':
       return 'talkGroupOverrides';
     case 'contact':
@@ -103,6 +107,12 @@ function zoneDirectMembersPreview(zone: Zone, library: LibrarySlice): WirePrevie
     }),
     zoneNames: zoneIds.map((id) => zoneById.get(id)?.name ?? id),
   };
+}
+
+function scanListsLayout(build: FormatBuild): ScanListsLayout | undefined {
+  return build.layout.sections.find(
+    (section): section is ScanListsLayout => section.kind === 'scanLists',
+  );
 }
 
 function previewRow(
@@ -289,6 +299,52 @@ export function previewWireRows(
         return rows;
       }
 
+      if (build.formatId === 'anytone') {
+        const zoneLinkedForPreview =
+          build.exportUnlinkedChannels === false ? zoneLinkedChannelIds(build, library) : null;
+        for (const assembledRow of projection.channels) {
+          const channel = assembledRow.entity;
+          const channelOverride = overrideByEntityId(build.channelOverrides)
+            .get(channel.id)
+            ?.wireName?.trim();
+          const generatedWireName = assembledRow.wireName;
+          rows.push({
+            key: channel.id,
+            libraryEntityId: channel.id,
+            entityKind: 'channel',
+            displayLabel: channelDisplayLabel(channel),
+            generatedWireName: sanitiseAsciiWireString(generatedWireName),
+            effectiveWireName: sanitiseAsciiWireString(channelOverride ?? generatedWireName),
+            hasWireNameOverride: Boolean(channelOverride),
+            excluded: isEntityExcluded(build.channelOverrides, channel.id),
+            expansionNote:
+              zoneLinkedForPreview && !zoneLinkedForPreview.has(channel.id)
+                ? PREVIEW_ROW_NOT_ZONE_LINKED_NOTE
+                : undefined,
+          });
+        }
+        const exportedChannelIds = new Set(projection.channels.map((row) => row.entity.id));
+        for (const channel of library.channels) {
+          if (exportedChannelIds.has(channel.id)) continue;
+          const channelOverride = overrideByEntityId(build.channelOverrides)
+            .get(channel.id)
+            ?.wireName?.trim();
+          const generatedWireName = defaultChannelWireName(channel);
+          rows.push({
+            key: channel.id,
+            libraryEntityId: channel.id,
+            entityKind: 'channel',
+            displayLabel: channelDisplayLabel(channel),
+            generatedWireName: sanitiseAsciiWireString(generatedWireName),
+            effectiveWireName: sanitiseAsciiWireString(channelOverride ?? generatedWireName),
+            hasWireNameOverride: Boolean(channelOverride),
+            excluded: isEntityExcluded(build.channelOverrides, channel.id),
+            expansionNote: PREVIEW_ROW_NOT_ZONE_LINKED_NOTE,
+          });
+        }
+        return rows;
+      }
+
       const zoneLinkedForPreview =
         build.exportUnlinkedChannels === false ? zoneLinkedChannelIds(build, library) : null;
 
@@ -357,6 +413,23 @@ export function previewWireRows(
           zoneDirectMembers,
         };
       });
+    case 'scanList': {
+      const layout = scanListsLayout(build);
+      const entries = layout?.scanLists ?? [];
+      return entries.map((entry) => {
+        const assembled = projection.scanLists.find((row) => row.scanListId === entry.id);
+        const memberCount = entry.channelIds.length;
+        return previewRow(
+          entry.id,
+          entry.id,
+          'scanList',
+          `${entry.name} (${memberCount} channels)`,
+          entry.name,
+          build.scanListOverrides,
+          assembled && memberCount > 0 ? undefined : 'No channels in scan list',
+        );
+      });
+    }
     case 'talkGroup': {
       const reserved = new Set<string>();
       const warnings: string[] = [];

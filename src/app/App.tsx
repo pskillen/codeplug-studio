@@ -33,6 +33,7 @@ import BuildOverviewPage from './routes/builds/BuildOverviewPage.tsx';
 import BuildExportPage from './routes/builds/BuildExportPage.tsx';
 import BuildChannelsWirePage from './routes/builds/wire-preview/BuildChannelsWirePage.tsx';
 import BuildZonesWirePage from './routes/builds/wire-preview/BuildZonesWirePage.tsx';
+import BuildScanListsWirePage from './routes/builds/wire-preview/BuildScanListsWirePage.tsx';
 import BuildTalkGroupsWirePage from './routes/builds/wire-preview/BuildTalkGroupsWirePage.tsx';
 import BuildContactsWirePage from './routes/builds/wire-preview/BuildContactsWirePage.tsx';
 import BuildRxGroupListsWirePage from './routes/builds/wire-preview/BuildRxGroupListsWirePage.tsx';
@@ -107,6 +108,7 @@ export const appRouter = createBrowserRouter([
               { path: 'memories', element: <Navigate to="channels" replace /> },
               { path: 'channels', element: <BuildChannelsWirePage /> },
               { path: 'zones', element: <BuildZonesWirePage /> },
+              { path: 'scan-lists', element: <BuildScanListsWirePage /> },
               { path: 'talk-groups', element: <BuildTalkGroupsWirePage /> },
               { path: 'contacts', element: <BuildContactsWirePage /> },
               { path: 'rx-group-lists', element: <BuildRxGroupListsWirePage /> },

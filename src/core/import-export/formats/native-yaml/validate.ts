@@ -31,6 +31,7 @@ import type {
   TraitLayout,
   TraitLayoutSection,
   ZoneGroupingLayout,
+  ScanListsLayout,
 } from '@core/models/traitLayout.ts';
 import {
   libraryEntityIds,
@@ -564,6 +565,7 @@ function parseFormatBuild(raw: unknown, index: number): ParsedFormatBuild {
     layout: parseTraitLayout(record.layout),
     channelOverrides: parseOverrideField(record, 'channelOverrides', 'channelSelections', label),
     zoneOverrides: parseOverrideField(record, 'zoneOverrides', 'zoneSelections', label),
+    scanListOverrides: parseOverrideField(record, 'scanListOverrides', '', label),
     talkGroupOverrides: parseOverrideField(
       record,
       'talkGroupOverrides',
@@ -657,6 +659,27 @@ function parseTraitSection(raw: unknown, index: number): TraitLayoutSection {
       },
     );
     return { kind: 'zoneGrouping', zones } satisfies ZoneGroupingLayout;
+  }
+  if (kind === 'scanLists') {
+    const scanLists = expectArray(record.scanLists, `layout.sections[${index}].scanLists`).map(
+      (listRaw, listIndex) => {
+        const list = expectRecord(listRaw, `layout.sections[${index}].scanLists[${listIndex}]`);
+        return {
+          id: expectString(list.id, `layout.sections[${index}].scanLists[${listIndex}].id`),
+          name: expectString(list.name, `layout.sections[${index}].scanLists[${listIndex}].name`),
+          channelIds: expectArray(
+            list.channelIds,
+            `layout.sections[${index}].scanLists[${listIndex}].channelIds`,
+          ).map((id, idIndex) =>
+            expectString(
+              id,
+              `layout.sections[${index}].scanLists[${listIndex}].channelIds[${idIndex}]`,
+            ),
+          ),
+        };
+      },
+    );
+    return { kind: 'scanLists', scanLists } satisfies ScanListsLayout;
   }
   if (kind === 'flatMemory') {
     const channelIds = expectArray(record.channelIds, `layout.sections[${index}].channelIds`).map(
@@ -819,12 +842,37 @@ function validateForeignKeys(library: Library, formatBuilds: FormatBuild[]): voi
           }
         }
       }
+      if (section.kind === 'scanLists') {
+        for (const scanList of section.scanLists) {
+          for (const channelId of scanList.channelIds) {
+            if (!ids.channelIds.has(channelId)) {
+              throw new NativeYamlImportError(
+                `Trait layout channel ${channelId} not found in library`,
+              );
+            }
+          }
+        }
+      }
+    }
+
+    const scanListIds = new Set<string>();
+    for (const section of build.layout.sections) {
+      if (section.kind === 'scanLists') {
+        for (const scanList of section.scanLists) {
+          scanListIds.add(scanList.id);
+        }
+      }
     }
 
     for (const override of build.channelOverrides) {
       if (!ids.channelIds.has(override.libraryEntityId)) {
         throw new NativeYamlImportError(
           `Build channel override ${override.libraryEntityId} not found in library`,
+        );
+      }
+      if (override.scanListId && !scanListIds.has(override.scanListId)) {
+        throw new NativeYamlImportError(
+          `Build channel override scanListId ${override.scanListId} not found in trait layout`,
         );
       }
     }

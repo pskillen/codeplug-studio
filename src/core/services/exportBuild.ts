@@ -8,6 +8,7 @@ import {
 } from '@core/import-export/exportAdapter.ts';
 import { buildOpenGd77Zip } from '@core/import-export/formats/opengd77/packageZip.ts';
 import { buildDm32Zip } from '@core/import-export/formats/dm32/packageZip.ts';
+import { buildAnytoneZip } from '@core/import-export/formats/anytone/packageZip.ts';
 import type { CpsExportOptions, ExportResult, FormatId } from '@core/import-export/types.ts';
 import {
   assemble,
@@ -126,6 +127,10 @@ export function exportBuildZip({
 }: Omit<ExportBuildParams, 'fileName'>): ExportBuildAllResult & { zip: Uint8Array } {
   const result = exportBuildAll({ build, library, options });
   const zip =
-    build.formatId === 'dm32' ? buildDm32Zip(result.files) : buildOpenGd77Zip(result.files);
+    build.formatId === 'dm32'
+      ? buildDm32Zip(result.files)
+      : build.formatId === 'anytone'
+        ? buildAnytoneZip(result.files)
+        : buildOpenGd77Zip(result.files);
   return { ...result, zip };
 }

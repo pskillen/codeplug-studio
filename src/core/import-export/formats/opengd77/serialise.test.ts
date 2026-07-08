@@ -49,6 +49,7 @@ describe('OpenGD77 export serialise', () => {
       digitalContacts: [],
       analogContacts: [],
       rxGroupLists: [],
+      scanLists: [],
     };
   }
 
@@ -276,6 +277,7 @@ describe('OpenGD77 export serialise', () => {
       digitalContacts: [],
       analogContacts: [],
       rxGroupLists: [],
+      scanLists: [],
     };
     const files = serialiseOpenGd77Files(assembled, {
       profileId: 'opengd77-1701',

@@ -66,6 +66,12 @@ export const TRAIT_PROFILES: Record<string, TraitProfile> = {
     label: 'Baofeng UV-21Pro V2',
     traits: [BuildCapabilityTrait.FlatMemoryList, BuildCapabilityTrait.PerChannelScanFlag],
   },
+  'anytone-at-d890uv': {
+    profileId: 'anytone-at-d890uv',
+    formatId: 'anytone',
+    label: 'Anytone AT-D890UV',
+    traits: [BuildCapabilityTrait.ZoneGrouping, BuildCapabilityTrait.ScanLists],
+  },
 };
 
 export function traitProfileFor(profileId: string): TraitProfile | undefined {
