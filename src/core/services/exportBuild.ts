@@ -9,6 +9,11 @@ import {
 import { buildOpenGd77Zip } from '@core/import-export/formats/opengd77/packageZip.ts';
 import { buildDm32Zip } from '@core/import-export/formats/dm32/packageZip.ts';
 import { buildAnytoneZip } from '@core/import-export/formats/anytone/packageZip.ts';
+import {
+  anytoneLstFileName,
+  isAnytoneLstFileName,
+  serialiseAnytoneLstManifest,
+} from '@core/import-export/formats/anytone/lstManifest.ts';
 import { resolveEffectiveExportFileNames } from '@core/import-export/exportFileNames.ts';
 import type { CpsExportOptions, ExportResult, FormatId } from '@core/import-export/types.ts';
 import {
@@ -33,6 +38,35 @@ export interface ExportBuildAllResult {
 
 export { mergeExportOptions };
 
+function anytoneLstStem(options: CpsExportOptions): string | undefined {
+  const stem = options.projectName?.trim();
+  return stem || undefined;
+}
+
+function appendAnytoneLstManifest(
+  formatId: FormatId,
+  files: Record<string, string>,
+  csvFileNames: readonly string[],
+  options: CpsExportOptions,
+): void {
+  if (formatId !== 'anytone') return;
+  const projectName = anytoneLstStem(options);
+  if (!projectName) return;
+  const lstName = anytoneLstFileName(projectName);
+  files[lstName] = serialiseAnytoneLstManifest(csvFileNames);
+}
+
+function listCsvAndSidecarFileNames(
+  formatId: FormatId,
+  csvFileNames: readonly string[],
+  options: CpsExportOptions,
+): readonly string[] {
+  if (formatId !== 'anytone' || !anytoneLstStem(options)) {
+    return csvFileNames;
+  }
+  return [...csvFileNames, anytoneLstFileName(options.projectName!)];
+}
+
 /** Ordered CPS file names for a build without serialising file bodies. */
 export function listExportBuildFileNames({
   build,
@@ -46,7 +80,8 @@ export function listExportBuildFileNames({
     library,
     zoneGrouping: findZoneGroupingSection(build),
   };
-  return resolveEffectiveExportFileNames(build.formatId as FormatId, assembled);
+  const csvFileNames = resolveEffectiveExportFileNames(build.formatId as FormatId, assembled);
+  return listCsvAndSidecarFileNames(build.formatId as FormatId, csvFileNames, exportOptions);
 }
 
 /** Serialise one CPS file from a build + library. */
@@ -67,6 +102,16 @@ export function exportBuildFile({
   if (!isMultiFileExportAdapter(adapter)) {
     throw new Error(`Format ${build.formatId} does not support multi-file CPS export`);
   }
+
+  if (
+    build.formatId === 'anytone' &&
+    isAnytoneLstFileName(fileName, exportOptions.projectName)
+  ) {
+    const csvFileNames = resolveEffectiveExportFileNames(build.formatId as FormatId, assembled);
+    const content = serialiseAnytoneLstManifest(csvFileNames);
+    return { content, warnings: [], assembled };
+  }
+
   const result = adapter.serialiseFile(assembled, fileName, exportOptions);
   return { ...result, assembled };
 }
@@ -99,6 +144,8 @@ export function exportBuildAll({
     files[name] = result.content;
     warnings.push(...result.warnings);
   }
+
+  appendAnytoneLstManifest(build.formatId as FormatId, files, exportFileNames, exportOptions);
 
   return { assembled, files, warnings };
 }

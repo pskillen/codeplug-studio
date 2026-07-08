@@ -86,6 +86,8 @@ export interface CpsExportOptions {
   exportZoneDerivedScanLists?: boolean;
   /** Resolved default for channels with `scanInclusion: default`. From build or format adapter. */
   defaultScanInclusion?: DefaultScanInclusion;
+  /** Project display name — used for Anytone `.LST` manifest filename stem. */
+  projectName?: string;
 }
 
 export interface ImportDocumentResult extends ExportResult {
