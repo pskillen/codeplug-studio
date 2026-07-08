@@ -103,10 +103,7 @@ export function exportBuildFile({
     throw new Error(`Format ${build.formatId} does not support multi-file CPS export`);
   }
 
-  if (
-    build.formatId === 'anytone' &&
-    isAnytoneLstFileName(fileName, exportOptions.projectName)
-  ) {
+  if (build.formatId === 'anytone' && isAnytoneLstFileName(fileName, exportOptions.projectName)) {
     const csvFileNames = resolveEffectiveExportFileNames(build.formatId as FormatId, assembled);
     const content = serialiseAnytoneLstManifest(csvFileNames);
     return { content, warnings: [], assembled };

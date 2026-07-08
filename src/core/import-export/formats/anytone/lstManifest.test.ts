@@ -12,7 +12,10 @@ import {
 } from './lstManifest.ts';
 
 const fixtureLst = readFileSync(
-  join(dirname(fileURLToPath(import.meta.url)), '../../../../../test-data/anytone/at-d890uv/meep.LST'),
+  join(
+    dirname(fileURLToPath(import.meta.url)),
+    '../../../../../test-data/anytone/at-d890uv/meep.LST',
+  ),
   'utf8',
 );
 
