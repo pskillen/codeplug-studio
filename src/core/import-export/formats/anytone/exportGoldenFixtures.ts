@@ -1,4 +1,4 @@
-import { newChannel, newFormatBuild, newTalkGroup, newZone } from '@core/domain/factories.ts';
+import { newChannel, newFormatBuild, newScanList, newTalkGroup, newZone } from '@core/domain/factories.ts';
 import type { FormatBuild } from '@core/models/formatBuild.ts';
 import type { LibrarySlice } from '@core/services/assemble.ts';
 
@@ -48,6 +48,11 @@ export function minimalAnytoneExportLibrary(): LibrarySlice {
       { kind: 'channel' as const, channelId: ch2.id },
     ],
   };
+  const scanList = {
+    ...newScanList(ANYTONE_GOLDEN_PROJECT_ID, 'Zone A SCL'),
+    id: ANYTONE_GOLDEN_SCAN_LIST_ID,
+    memberChannelIds: [ch1.id, ch2.id],
+  };
 
   return {
     channels: [ch1, ch2],
@@ -56,7 +61,7 @@ export function minimalAnytoneExportLibrary(): LibrarySlice {
     digitalContacts: [],
     analogContacts: [],
     rxGroupLists: [],
-  scanLists: [],
+    scanLists: [scanList],
   };
 }
 
@@ -72,16 +77,6 @@ export function minimalAnytoneExportBuild(library: LibrarySlice): FormatBuild {
         {
           kind: 'zoneGrouping',
           zones: [{ id: zone.id, name: zone.name, channelIds: [ch1.id, ch2.id] }],
-        },
-        {
-          kind: 'scanLists',
-          scanLists: [
-            {
-              id: ANYTONE_GOLDEN_SCAN_LIST_ID,
-              name: 'Zone A SCL',
-              channelIds: [ch1.id, ch2.id],
-            },
-          ],
         },
       ],
     },

@@ -200,27 +200,35 @@ function resolveChannelScanListWireName(
 
 function assembleScanLists(
   build: FormatBuild,
+  library: LibrarySlice,
   exportedChannelIds: Set<string>,
 ): AssembledScanList[] {
-  const sections = scanListsSections(build);
-  if (sections.length === 0) return [];
+  const layoutEntries = scanListsSections(build).flatMap((section) => section.scanLists);
+  const sources =
+    library.scanLists.length > 0
+      ? library.scanLists.map((list) => ({
+          id: list.id,
+          name: list.name,
+          channelIds: list.memberChannelIds,
+        }))
+      : layoutEntries;
+
+  if (sources.length === 0) return [];
 
   const overrides = build.scanListOverrides ?? [];
   const assembled: AssembledScanList[] = [];
 
-  for (const section of sections) {
-    for (const entry of section.scanLists) {
-      if (isEntityExcluded(overrides, entry.id)) continue;
-      const memberChannelIds = entry.channelIds.filter((id) => exportedChannelIds.has(id));
-      if (memberChannelIds.length === 0 && !overrideByEntityId(overrides).has(entry.id)) {
-        continue;
-      }
-      assembled.push({
-        scanListId: entry.id,
-        wireName: resolveOverrideWireName(overrides, entry.id, entry.name),
-        memberChannelIds,
-      });
+  for (const entry of sources) {
+    if (isEntityExcluded(overrides, entry.id)) continue;
+    const memberChannelIds = entry.channelIds.filter((id) => exportedChannelIds.has(id));
+    if (memberChannelIds.length === 0 && !overrideByEntityId(overrides).has(entry.id)) {
+      continue;
     }
+    assembled.push({
+      scanListId: entry.id,
+      wireName: resolveOverrideWireName(overrides, entry.id, entry.name),
+      memberChannelIds,
+    });
   }
 
   return assembled;
@@ -463,7 +471,7 @@ export function assemble(
   const channels = assembleChannels(normalizedBuild, library);
   const exportedChannelIds = new Set(channels.map((c) => c.entity.id));
   const zones = assembleZones(normalizedBuild, library, exportedChannelIds);
-  const scanLists = assembleScanLists(normalizedBuild, exportedChannelIds);
+  const scanLists = assembleScanLists(normalizedBuild, library, exportedChannelIds);
   const scanListById = new Map(scanLists.map((list) => [list.scanListId, list]));
   const channelsWithScanLists = channels.map((row) => ({
     ...row,

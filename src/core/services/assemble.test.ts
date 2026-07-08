@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
-import { newChannel, newFormatBuild, newTalkGroup } from '@core/domain/factories.ts';
+import { newChannel, newFormatBuild, newScanList, newTalkGroup } from '@core/domain/factories.ts';
 import { parseProjectDocument } from '@core/import-export/formats/native-yaml/parse.ts';
 import { assemble } from './assemble.ts';
 
@@ -723,22 +723,13 @@ describe('assemble', () => {
     const ch1 = newChannel(projectId, 'Channel 1');
     const ch2 = newChannel(projectId, 'Channel 2');
     const scanListId = 'scan-list-1';
+    const scanList = {
+      ...newScanList(projectId, 'Zone A SCL'),
+      id: scanListId,
+      memberChannelIds: [ch1.id, ch2.id],
+    };
     const build = {
       ...newFormatBuild('project-1', 'anytone-at-d890uv'),
-      layout: {
-        sections: [
-          {
-            kind: 'scanLists' as const,
-            scanLists: [
-              {
-                id: scanListId,
-                name: 'Zone A SCL',
-                channelIds: [ch1.id, ch2.id],
-              },
-            ],
-          },
-        ],
-      },
       channelOverrides: [{ libraryEntityId: ch1.id, scanListId }],
     };
     const library = {
@@ -748,7 +739,7 @@ describe('assemble', () => {
       digitalContacts: [],
       analogContacts: [],
       rxGroupLists: [],
-    scanLists: [],
+      scanLists: [scanList],
     };
 
     const projection = assemble(build, library);

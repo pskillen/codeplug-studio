@@ -20,7 +20,6 @@ import {
   type LibrarySlice,
 } from './assemble.ts';
 import type { FormatBuild } from '@core/models/formatBuild.ts';
-import type { ScanListsLayout } from '@core/models/traitLayout.ts';
 import type { Channel, ChannelModeProfileDMR, Zone } from '@core/models/library.ts';
 import type { DMRTimeSlot, EntityRef } from '@core/models/libraryTypes.ts';
 import { directZoneMemberChannelIds, directZoneMemberZoneIds } from '@core/domain/zoneMembers.ts';
@@ -109,11 +108,6 @@ function zoneDirectMembersPreview(zone: Zone, library: LibrarySlice): WirePrevie
   };
 }
 
-function scanListsLayout(build: FormatBuild): ScanListsLayout | undefined {
-  return build.layout.sections.find(
-    (section): section is ScanListsLayout => section.kind === 'scanLists',
-  );
-}
 
 function previewRow(
   key: string,
@@ -414,11 +408,9 @@ export function previewWireRows(
         };
       });
     case 'scanList': {
-      const layout = scanListsLayout(build);
-      const entries = layout?.scanLists ?? [];
-      return entries.map((entry) => {
+      return library.scanLists.map((entry) => {
         const assembled = projection.scanLists.find((row) => row.scanListId === entry.id);
-        const memberCount = entry.channelIds.length;
+        const memberCount = entry.memberChannelIds.length;
         return previewRow(
           entry.id,
           entry.id,
