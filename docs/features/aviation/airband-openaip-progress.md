@@ -15,7 +15,7 @@
 - Slice 6: system attributions screen (`/attributions`)
 - Slice 7: Anytone `AMAir.CSV` export partition
 - Slice 8: Anytone `FM.CSV` export partition
-- Slice 9: CI green — PR pending
+- Slice 9: CI green — [PR #275](https://github.com/pskillen/codeplug-studio/pull/275)
 
 ## In flight
 
