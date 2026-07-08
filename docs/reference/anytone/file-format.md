@@ -4,13 +4,13 @@ Cross-cutting rules for AT-D890UV CPS CSV exports. Per-entity columns live in si
 
 ## Physical format
 
-| Property        | Value (AT-D890UV sample)                              |
-| --------------- | ----------------------------------------------------- |
-| Delimiter       | Comma (`,`)                                           |
+| Property        | Value (AT-D890UV sample)                                                                               |
+| --------------- | ------------------------------------------------------------------------------------------------------ |
+| Delimiter       | Comma (`,`)                                                                                            |
 | Quoting         | **All** fields double-quoted on every line, including the header row (e.g. `"No.","Channel Name","1"`) |
-| Encoding        | UTF-8 assumed (verify BOM on import)                  |
-| Line endings    | CRLF or LF — normalise to LF in tests                 |
-| Filename casing | PascalCase with `.CSV` extension (e.g. `Channel.CSV`) |
+| Encoding        | UTF-8 assumed (verify BOM on import)                                                                   |
+| Line endings    | CRLF or LF — normalise to LF in tests                                                                  |
+| Filename casing | PascalCase with `.CSV` extension (e.g. `Channel.CSV`)                                                  |
 
 ### Quoting and embedded double quotes
 

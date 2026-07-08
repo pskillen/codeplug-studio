@@ -20,7 +20,9 @@ const UNIVERSALLY_QUOTED_LINE = /^("[^"]*")(,"[^"]*")*$/;
 export function assertUniversallyQuotedCsv(text: string): void {
   const lines = text.split(/\r?\n/).filter((line) => line.length > 0);
   for (const line of lines) {
-    expect(line, `line not universally quoted: ${line.slice(0, 80)}`).toMatch(UNIVERSALLY_QUOTED_LINE);
+    expect(line, `line not universally quoted: ${line.slice(0, 80)}`).toMatch(
+      UNIVERSALLY_QUOTED_LINE,
+    );
   }
 }
 

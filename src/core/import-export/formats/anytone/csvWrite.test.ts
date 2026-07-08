@@ -1,10 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import {
-  escapeCsvField,
-  formatCsv,
-  formatCsvRow,
-  sanitizeCsvFieldValue,
-} from './csvWrite.ts';
+import { escapeCsvField, formatCsv, formatCsvRow, sanitizeCsvFieldValue } from './csvWrite.ts';
 
 describe('anytone/csvWrite', () => {
   describe('sanitizeCsvFieldValue', () => {
