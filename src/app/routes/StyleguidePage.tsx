@@ -39,6 +39,7 @@ import {
   PillTabs,
   ImageCheckboxGroup,
   SelectedItemList,
+  SplitButton,
 } from '../components/ui/index.ts';
 import ForbidTransmitSegment from '../components/channels/ForbidTransmitSegment.tsx';
 import ScanInclusionSegment from '../components/channels/ScanInclusionSegment.tsx';
@@ -97,6 +98,22 @@ function ForbidTransmitSegmentDemo() {
 function ScanInclusionSegmentDemo() {
   const [scanInclusion, setScanInclusion] = useState<'default' | 'skip' | 'alwaysScan'>('default');
   return <ScanInclusionSegment value={scanInclusion} onChange={setScanInclusion} />;
+}
+
+function SplitButtonDemo() {
+  const [last, setLast] = useState('None');
+  return (
+    <Stack gap="sm" maw={320}>
+      <SplitButton
+        label="Add channels"
+        onClick={() => setLast('Add channels')}
+        menuItems={[{ label: 'Add as zone', onClick: () => setLast('Add as zone') }]}
+      />
+      <Text size="sm" c="dimmed">
+        Last action: {last}
+      </Text>
+    </Stack>
+  );
 }
 
 function GradientSegmentedControlDemo({
@@ -921,6 +938,13 @@ export default function StyleguidePage() {
             ]}
           />
         </Stack>
+      </PageSection>
+
+      <PageSection
+        title="SplitButton"
+        description="Primary action with a chevron menu for secondary actions — from Mantine UI buttons gallery."
+      >
+        <SplitButtonDemo />
       </PageSection>
 
       <PageSection

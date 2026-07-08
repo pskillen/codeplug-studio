@@ -73,4 +73,6 @@ export type {
 } from './ImageCheckbox.tsx';
 export { default as BadgeCard } from './BadgeCard.tsx';
 export type { BadgeCardBadge, BadgeCardProps } from './BadgeCard.tsx';
+export { default as SplitButton } from './SplitButton.tsx';
+export type { SplitButtonMenuItem, SplitButtonProps } from './SplitButton.tsx';
 export * from './tokens.ts';
