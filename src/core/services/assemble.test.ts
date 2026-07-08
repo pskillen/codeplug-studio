@@ -23,7 +23,7 @@ describe('assemble', () => {
       digitalContacts: aggregate.digitalContacts,
       analogContacts: aggregate.analogContacts,
       rxGroupLists: aggregate.rxGroupLists,
-    scanLists: [],
+      scanLists: [],
     };
 
     const projection = assemble(build, library);
@@ -56,7 +56,7 @@ describe('assemble', () => {
       digitalContacts: aggregate.digitalContacts,
       analogContacts: aggregate.analogContacts,
       rxGroupLists: aggregate.rxGroupLists,
-    scanLists: [],
+      scanLists: [],
     };
 
     const projection = assemble(build, library, { profileId: 'opengd77-md9600' });
@@ -83,7 +83,7 @@ describe('assemble', () => {
       digitalContacts: aggregate.digitalContacts,
       analogContacts: aggregate.analogContacts,
       rxGroupLists: aggregate.rxGroupLists,
-    scanLists: [],
+      scanLists: [],
     };
 
     const projection = assemble(build, library);
@@ -106,7 +106,7 @@ describe('assemble', () => {
       digitalContacts: aggregate.digitalContacts,
       analogContacts: aggregate.analogContacts,
       rxGroupLists: aggregate.rxGroupLists,
-    scanLists: [],
+      scanLists: [],
     };
 
     const projection = assemble(build, library);
@@ -127,7 +127,7 @@ describe('assemble', () => {
       digitalContacts: aggregate.digitalContacts,
       analogContacts: aggregate.analogContacts,
       rxGroupLists: aggregate.rxGroupLists,
-    scanLists: [],
+      scanLists: [],
     };
 
     const projection = assemble(build, library);
@@ -149,7 +149,7 @@ describe('assemble', () => {
       digitalContacts: aggregate.digitalContacts,
       analogContacts: aggregate.analogContacts,
       rxGroupLists: aggregate.rxGroupLists,
-    scanLists: [],
+      scanLists: [],
     };
 
     const projection = assemble(build, library);
@@ -171,7 +171,7 @@ describe('assemble', () => {
       digitalContacts: aggregate.digitalContacts,
       analogContacts: aggregate.analogContacts,
       rxGroupLists: aggregate.rxGroupLists,
-    scanLists: [],
+      scanLists: [],
     };
 
     const projection = assemble(build, library);
@@ -195,7 +195,7 @@ describe('assemble', () => {
       digitalContacts: aggregate.digitalContacts,
       analogContacts: aggregate.analogContacts,
       rxGroupLists: aggregate.rxGroupLists,
-    scanLists: [],
+      scanLists: [],
     };
 
     const projection = assemble(build, library);
@@ -235,7 +235,7 @@ describe('assemble', () => {
       digitalContacts: [],
       analogContacts: [],
       rxGroupLists: [],
-    scanLists: [],
+      scanLists: [],
     };
     const build = {
       id: 'build-1',
@@ -302,7 +302,7 @@ describe('assemble', () => {
       digitalContacts: [],
       analogContacts: [],
       rxGroupLists: [],
-    scanLists: [],
+      scanLists: [],
     };
     const build = {
       id: 'build-layout',
@@ -388,7 +388,7 @@ describe('assemble', () => {
       digitalContacts: [],
       analogContacts: [],
       rxGroupLists: [],
-    scanLists: [],
+      scanLists: [],
     };
     const build = {
       id: 'build-omit',
@@ -454,7 +454,7 @@ describe('assemble', () => {
       digitalContacts: [],
       analogContacts: [],
       rxGroupLists: [],
-    scanLists: [],
+      scanLists: [],
     };
     const build = {
       id: 'build-omit-orphan',
@@ -523,7 +523,7 @@ describe('assemble', () => {
       digitalContacts: [],
       analogContacts: [],
       rxGroupLists: [],
-    scanLists: [],
+      scanLists: [],
     };
     const build = {
       id: 'build-force-include',
@@ -578,7 +578,7 @@ describe('assemble', () => {
       digitalContacts: [],
       analogContacts: [],
       rxGroupLists: [],
-    scanLists: [],
+      scanLists: [],
     };
     const build = {
       id: 'build-force-include-orphan',
@@ -630,7 +630,7 @@ describe('assemble', () => {
       digitalContacts: [],
       analogContacts: [],
       rxGroupLists: [],
-    scanLists: [],
+      scanLists: [],
     };
     const build = {
       id: 'build-excluded-wins',
@@ -685,7 +685,7 @@ describe('assemble', () => {
       digitalContacts: [],
       analogContacts: [],
       rxGroupLists: [],
-    scanLists: [],
+      scanLists: [],
     };
     const build = {
       id: 'build-chirp',

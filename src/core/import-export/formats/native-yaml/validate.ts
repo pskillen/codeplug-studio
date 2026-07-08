@@ -407,10 +407,7 @@ function parseScanList(raw: unknown, index: number): ScanList {
       record.memberChannelIds,
       `library.scanLists[${index}].memberChannelIds`,
     ).map((channelId, channelIndex) =>
-      expectString(
-        channelId,
-        `library.scanLists[${index}].memberChannelIds[${channelIndex}]`,
-      ),
+      expectString(channelId, `library.scanLists[${index}].memberChannelIds[${channelIndex}]`),
     ),
   };
 }

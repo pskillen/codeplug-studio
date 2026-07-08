@@ -34,7 +34,7 @@ describe('previewWireRows', () => {
       digitalContacts: aggregate.digitalContacts,
       analogContacts: aggregate.analogContacts,
       rxGroupLists: aggregate.rxGroupLists,
-    scanLists: [],
+      scanLists: [],
     };
 
     const rows = previewWireRows(build, library, 'channel');
@@ -64,7 +64,7 @@ describe('previewWireRows', () => {
       digitalContacts: aggregate.digitalContacts,
       analogContacts: aggregate.analogContacts,
       rxGroupLists: aggregate.rxGroupLists,
-    scanLists: [],
+      scanLists: [],
     };
 
     const rows = previewWireRows(build, library, 'talkGroup', { shortenNames: false });
@@ -93,7 +93,7 @@ describe('previewWireRows', () => {
       digitalContacts: aggregate.digitalContacts,
       analogContacts: aggregate.analogContacts,
       rxGroupLists: aggregate.rxGroupLists,
-    scanLists: [],
+      scanLists: [],
     };
 
     const rows = previewWireRows(build, library, 'talkGroup', {
@@ -124,7 +124,7 @@ describe('previewWireRows', () => {
       digitalContacts: aggregate.digitalContacts,
       analogContacts: aggregate.analogContacts,
       rxGroupLists: aggregate.rxGroupLists,
-    scanLists: [],
+      scanLists: [],
     };
 
     const rows = previewWireRows(build, library, 'channel');
@@ -167,7 +167,7 @@ describe('previewWireRows', () => {
       digitalContacts: aggregate.digitalContacts,
       analogContacts: aggregate.analogContacts,
       rxGroupLists: aggregate.rxGroupLists,
-    scanLists: [],
+      scanLists: [],
     };
 
     const rows = previewWireRows(build, library, 'channel', {
@@ -198,7 +198,7 @@ describe('previewWireRows', () => {
       digitalContacts: aggregate.digitalContacts,
       analogContacts: aggregate.analogContacts,
       rxGroupLists: aggregate.rxGroupLists,
-    scanLists: [],
+      scanLists: [],
     };
 
     const rows = previewWireRows(build, library, 'channel', {
@@ -223,7 +223,7 @@ describe('previewWireRows', () => {
       digitalContacts: aggregate.digitalContacts,
       analogContacts: aggregate.analogContacts,
       rxGroupLists: aggregate.rxGroupLists,
-    scanLists: [],
+      scanLists: [],
     };
 
     const rows = previewWireRows(build, library, 'channel', {
@@ -257,7 +257,7 @@ describe('previewWireRows', () => {
       digitalContacts: aggregate.digitalContacts,
       analogContacts: aggregate.analogContacts,
       rxGroupLists: aggregate.rxGroupLists,
-    scanLists: [],
+      scanLists: [],
     };
 
     const rows = previewWireRows(build, library, 'channel', {

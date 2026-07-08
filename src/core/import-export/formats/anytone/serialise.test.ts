@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { newChannel, newFormatBuild, newScanList, newTalkGroup, newZone } from '@core/domain/factories.ts';
+import {
+  newChannel,
+  newFormatBuild,
+  newScanList,
+  newTalkGroup,
+  newZone,
+} from '@core/domain/factories.ts';
 import { assemble } from '@core/services/assemble.ts';
 import { serialiseAnytoneFiles } from './serialise.ts';
 import { serialiseAnytoneChannelRow } from './channelWire.ts';

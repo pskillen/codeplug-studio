@@ -48,9 +48,7 @@ export function migrateBuildScanListsToLibrary(aggregate: ProjectAggregate): Pro
           libraryChanged = true;
           continue;
         }
-        const mergedMembers = [
-          ...new Set([...existing.memberChannelIds, ...entry.channelIds]),
-        ];
+        const mergedMembers = [...new Set([...existing.memberChannelIds, ...entry.channelIds])];
         if (
           mergedMembers.length !== existing.memberChannelIds.length ||
           existing.name !== entry.name

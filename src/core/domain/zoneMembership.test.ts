@@ -33,7 +33,7 @@ function library(channels: string[], zones: Zone[]): Library {
     talkGroups: [],
     digitalContacts: [],
     rxGroupLists: [],
-      scanLists: [],
+    scanLists: [],
     zones,
   };
 }

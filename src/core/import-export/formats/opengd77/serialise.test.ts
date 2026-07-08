@@ -64,7 +64,7 @@ describe('OpenGD77 export serialise', () => {
       digitalContacts: aggregate.digitalContacts,
       analogContacts: aggregate.analogContacts,
       rxGroupLists: aggregate.rxGroupLists,
-    scanLists: [],
+      scanLists: [],
     };
     return assemble(build, library);
   }
@@ -178,7 +178,7 @@ describe('OpenGD77 export serialise', () => {
       digitalContacts: aggregate.digitalContacts,
       analogContacts: aggregate.analogContacts,
       rxGroupLists: aggregate.rxGroupLists,
-    scanLists: [],
+      scanLists: [],
     };
     const build = {
       ...newFormatBuild(FIXTURE_PROJECT_ID, 'opengd77-1701', 'Nested export'),
@@ -227,7 +227,7 @@ describe('OpenGD77 export serialise', () => {
       digitalContacts: aggregate.digitalContacts,
       analogContacts: aggregate.analogContacts,
       rxGroupLists: aggregate.rxGroupLists,
-    scanLists: [],
+      scanLists: [],
     };
 
     const result = exportBuildAll({ build, library });
@@ -330,7 +330,7 @@ describe('OpenGD77 export serialise', () => {
       digitalContacts: aggregate.digitalContacts,
       analogContacts: aggregate.analogContacts,
       rxGroupLists: aggregate.rxGroupLists,
-    scanLists: [],
+      scanLists: [],
     };
     const assembled = assemble(build, library);
     const csv = serialiseChannels(assembled, { profileId: build.profileId, expandModes: true });

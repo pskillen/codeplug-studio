@@ -327,7 +327,14 @@ export class InMemoryProjectPersistence implements ProjectPersistence {
   private mapForKind(
     kind: EntityKind,
   ): RowMap<
-    Channel | Zone | TalkGroup | DigitalContact | AnalogContact | RxGroupList | ScanList | FormatBuild
+    | Channel
+    | Zone
+    | TalkGroup
+    | DigitalContact
+    | AnalogContact
+    | RxGroupList
+    | ScanList
+    | FormatBuild
   > | null {
     switch (kind) {
       case 'channel':

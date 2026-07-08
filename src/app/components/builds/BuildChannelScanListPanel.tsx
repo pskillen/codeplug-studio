@@ -118,8 +118,8 @@ export default function BuildChannelScanListPanel() {
         Scan list assignment
       </Text>
       <Text size="sm" c="dimmed">
-        Maps each channel to a scan list on Channel.CSV. Member channels for ScanList.CSV are managed
-        in{' '}
+        Maps each channel to a scan list on Channel.CSV. Member channels for ScanList.CSV are
+        managed in{' '}
         <Anchor component={Link} to="/library/scan-lists">
           Library → Scan lists
         </Anchor>

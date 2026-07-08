@@ -108,7 +108,6 @@ function zoneDirectMembersPreview(zone: Zone, library: LibrarySlice): WirePrevie
   };
 }
 
-
 function previewRow(
   key: string,
   libraryEntityId: string,

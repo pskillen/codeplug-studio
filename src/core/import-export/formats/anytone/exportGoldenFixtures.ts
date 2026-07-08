@@ -1,4 +1,10 @@
-import { newChannel, newFormatBuild, newScanList, newTalkGroup, newZone } from '@core/domain/factories.ts';
+import {
+  newChannel,
+  newFormatBuild,
+  newScanList,
+  newTalkGroup,
+  newZone,
+} from '@core/domain/factories.ts';
 import type { FormatBuild } from '@core/models/formatBuild.ts';
 import type { LibrarySlice } from '@core/services/assemble.ts';
 

@@ -110,7 +110,7 @@ describe('DM32 export serialise', () => {
       digitalContacts: aggregate.digitalContacts,
       analogContacts: aggregate.analogContacts,
       rxGroupLists: aggregate.rxGroupLists,
-    scanLists: [],
+      scanLists: [],
     };
     const build: FormatBuild = {
       ...newFormatBuild(FIXTURE_PROJECT_ID, 'dm32-baofeng-dm32uv', 'Nested export'),

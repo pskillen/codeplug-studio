@@ -54,7 +54,7 @@ export function minimalProjectAggregate(): ProjectAggregate {
     digitalContacts: [],
     analogContacts: [],
     rxGroupLists: [],
-      scanLists: [],
+    scanLists: [],
     formatBuilds: [],
   };
 }
