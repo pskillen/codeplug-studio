@@ -37,6 +37,16 @@ export default function ChannelsSectionNav(props: SectionNavProps) {
 
           <Button
             component={Link}
+            to="/library/channels/add-from-openaip"
+            variant="light"
+            leftSection={<IconWorldSearch size={ICON_SIZE_NAV} stroke={ICON_STROKE} />}
+            fullWidth={isSidebar}
+          >
+            Add from OpenAIP
+          </Button>
+
+          <Button
+            component={Link}
             to="/library/channels/add-from-brandmeister"
             variant="light"
             leftSection={<IconWorldSearch size={ICON_SIZE_NAV} stroke={ICON_STROKE} />}

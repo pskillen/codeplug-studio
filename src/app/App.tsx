@@ -4,6 +4,7 @@ import RequireActiveProject from './components/RequireActiveProject/RequireActiv
 import HomePage from './routes/HomePage.tsx';
 import EntityEditorPage from './routes/library/EntityEditorPage.tsx';
 import AddFromUkRepeaterPage from './routes/library/AddFromUkRepeaterPage.tsx';
+import AddFromOpenAipPage from './routes/library/AddFromOpenAipPage.tsx';
 import AddFromBrandmeisterPage from './routes/library/AddFromBrandmeisterPage.tsx';
 import AddChannelSetPage from './routes/library/AddChannelSetPage.tsx';
 import ZoneFromLocationPage from './routes/library/ZoneFromLocationPage.tsx';
@@ -89,6 +90,10 @@ export const appRouter = createBrowserRouter([
           {
             path: '/library/channels/add-from-ukrepeater',
             element: <AddFromUkRepeaterPage />,
+          },
+          {
+            path: '/library/channels/add-from-openaip',
+            element: <AddFromOpenAipPage />,
           },
           {
             path: '/library/channels/add-from-brandmeister',
