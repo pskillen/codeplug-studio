@@ -71,4 +71,6 @@ export type {
   ImageCheckboxOption,
   ImageCheckboxProps,
 } from './ImageCheckbox.tsx';
+export { default as BadgeCard } from './BadgeCard.tsx';
+export type { BadgeCardBadge, BadgeCardProps } from './BadgeCard.tsx';
 export * from './tokens.ts';

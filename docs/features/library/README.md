@@ -125,7 +125,7 @@ Workflow: pick set → preview table (per-channel checkboxes, dedup status) → 
 
 ### OpenAIP airband ([#263](https://github.com/pskillen/codeplug-studio/issues/263))
 
-**Route:** `/library/channels/add-from-openaip` — section nav **Add from OpenAIP**
+**Route:** `/library/channels/add-from-openaip` — section nav **Add from…** → OpenAIP
 
 Search [OpenAIP](https://www.openaip.net/) for airport frequencies and import RX-only AM channels:
 
