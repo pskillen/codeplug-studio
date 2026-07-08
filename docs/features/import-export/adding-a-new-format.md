@@ -216,14 +216,14 @@ Register defaults on the export adapter and in `getFormatExportDefaults()` for p
 
 Each format build is created from a **trait profile** (`TRAIT_PROFILES` in `src/core/models/traits.ts`). Traits compose build UI and `FormatBuild.layout` — they are **not** CPS column names.
 
-| `profileId`                        | `formatId` | Traits (shipped)                                             |
-| ---------------------------------- | ---------- | ------------------------------------------------------------ |
-| `opengd77-1701`, `opengd77-md9600` | `opengd77` | `ZoneGrouping`, `ZoneAsScanList`, `MultiTalkGroupPerChannel` |
-| `dm32-baofeng-dm32uv`              | `dm32`     | `ZoneGrouping`, `ScanLists`, `MxNChannelExpansion`           |
-| `chirp-uv5r`                       | `chirp`    | `FlatMemoryList`, `PerChannelScanFlag`                       |
-| `anytone-at-d890uv`                | `anytone`  | `ZoneGrouping`, `ScanLists` (dedicated `ScanList.CSV`)       |
+| `profileId`                        | `formatId` | Traits (shipped)                                                           |
+| ---------------------------------- | ---------- | -------------------------------------------------------------------------- |
+| `opengd77-1701`, `opengd77-md9600` | `opengd77` | `ZoneGrouping`, `ZoneAsScanList`, `MultiTalkGroupPerChannel`               |
+| `dm32-baofeng-dm32uv`              | `dm32`     | `ZoneGrouping`, `ScanLists`, `MxNChannelExpansion`                         |
+| `chirp-uv5r`                       | `chirp`    | `FlatMemoryList`, `PerChannelScanFlag`                                     |
+| `anytone-at-d890uv`                | `anytone`  | `ZoneGrouping`, `DedicatedScanLists` (library `ScanList` + `ScanList.CSV`) |
 
-**Dedicated scan lists:** formats with a first-class scan-list CPS file (Anytone `ScanList.CSV`) use `ScanListsLayout` on `FormatBuild.layout` — not DM32-style zone-derived scan. Channel→scan-list assignment is `scanListId` on `channelOverrides`. See `traitLayout.ts` and `assemble.ts`.
+**Dedicated scan lists:** formats with a first-class scan-list CPS file (Anytone `ScanList.CSV`) use the `DedicatedScanLists` trait and library `ScanList` entities — not DM32-style zone-derived `ScanLists`. Channel→scan-list assignment is `scanListId` on `channelOverrides`. See [library scan lists](../../features/library/scan-lists.md) and `assemble.ts`.
 
 **Two profile registries** share `profileId` keys where both exist:
 
@@ -517,8 +517,8 @@ End-to-end smoke before PR:
 | Reference hub  | `docs/reference/anytone/README.md`                                                            |
 | Fixtures       | `test-data/anytone/at-d890uv/` (wire spike) + `formats/anytone/__fixtures__/export/` (golden) |
 | Export adapter | `formats/anytone/adapter.ts`, `serialise.ts`, `channelWire.ts`, `packageZip.ts`               |
-| Scan lists     | `ScanListsLayout` on build; `BuildScanListsWirePage`, `BuildScanListLayoutEditor`             |
-| Trait profile  | `anytone-at-d890uv` — `ZoneGrouping` + `ScanLists`                                            |
+| Scan lists     | Library `ScanList`; `BuildScanListsWirePage`, `BuildScanListLibraryGuidance`                  |
+| Trait profile  | `anytone-at-d890uv` — `ZoneGrouping` + `DedicatedScanLists`                                   |
 | ZIP branch     | `buildAnytoneZip` in `exportBuild.ts`                                                         |
 | Tests          | `exportGolden.test.ts`, `serialise.test.ts`, `columns.test.ts`                                |
 | Expansion      | Multi-mode **off**; multi-TG **off** (native RGL); dedicated scan lists                       |

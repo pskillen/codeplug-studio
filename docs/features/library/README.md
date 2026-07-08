@@ -1,6 +1,6 @@
 # Library CRUD
 
-Tier-1 reference for editing the vendor-neutral **library** — the per-project inventory of channels, talk groups, contacts, RX group lists, and zones.
+Tier-1 reference for editing the vendor-neutral **library** — the per-project inventory of channels, talk groups, contacts, RX group lists, scan lists, and zones.
 
 **Tracking:** Phase 2 [#10](https://github.com/pskillen/codeplug-studio/issues/10) (persistence: [#9](https://github.com/pskillen/codeplug-studio/issues/9), Epic [#1](https://github.com/pskillen/codeplug-studio/issues/1)); list routes [#20](https://github.com/pskillen/codeplug-studio/issues/20), channels table [#24](https://github.com/pskillen/codeplug-studio/issues/24), zone picker [#25](https://github.com/pskillen/codeplug-studio/issues/25); zone management epic [#179](https://github.com/pskillen/codeplug-studio/issues/179)
 
@@ -18,6 +18,7 @@ Tier-1 reference for editing the vendor-neutral **library** — the per-project 
 | Zone from location (proximity)          | Shipped ([#181](https://github.com/pskillen/codeplug-studio/issues/181))                                                                 | Section nav **New zone from location**                                         |
 | Nested zone members                     | Shipped ([#157](https://github.com/pskillen/codeplug-studio/issues/157))                                                                 | Flatten at export; `omitFromExport`; schema v7                                 |
 | Tri-state scan inclusion                | Shipped ([#203](https://github.com/pskillen/codeplug-studio/issues/203))                                                                 | `scanInclusion`; build export default; schema v8                               |
+| Library scan lists                      | Shipped ([#257](https://github.com/pskillen/codeplug-studio/issues/257))                                                                 | `ScanList` entity; schema v10; Anytone dedicated scan                          |
 | Zone member editor                      | Shipped ([#180](https://github.com/pskillen/codeplug-studio/issues/180))                                                                 | Vertical stacked editor on zone form                                           |
 | Channel sets                            | Shipped ([#172](https://github.com/pskillen/codeplug-studio/issues/172))                                                                 | Optional zone on import                                                        |
 
@@ -31,6 +32,7 @@ Tier-1 reference for editing the vendor-neutral **library** — the per-project 
 | [nested-zones.md](nested-zones.md)                                              | Hierarchical zones; flatten at export                                                        |
 | [channel-sets-progress.md](channel-sets-progress.md)                            | Channel sets initiative ([#172](https://github.com/pskillen/codeplug-studio/issues/172))     |
 | [rx-group-list-member-picker.md](rx-group-list-member-picker.md)                | Two-list RX group list member editor                                                         |
+| [scan-lists.md](scan-lists.md)                                                  | Library scan lists ([#257](https://github.com/pskillen/codeplug-studio/issues/257))          |
 | [app-shell/data-table.md](../app-shell/data-table.md)                           | Shared `DataTable` and list prefs                                                            |
 | [app-shell/library-routes-progress.md](../app-shell/library-routes-progress.md) | List routes initiative progress                                                              |
 
@@ -45,6 +47,7 @@ Tier-1 reference for editing the vendor-neutral **library** — the per-project 
 | `/library/talk-groups`    | `DataTable` — mode, ID, optional Abbrev, channels/RX lists using, comment, delete row action                                                      | No  |
 | `/library/contacts`       | Two `DataTable` sections: digital contacts + analog contacts (separate `dq` / `aq` URL filters), delete row action each                           | No  |
 | `/library/rx-group-lists` | `DataTable` — members, channels using, delete row action                                                                                          | No  |
+| `/library/scan-lists`     | `DataTable` — member count, channels-using ref count, delete row action                                                                           | No  |
 
 Shared list UI: [app-shell/data-table.md](../app-shell/data-table.md).
 
@@ -89,6 +92,12 @@ Core selection: `selectChannelsWithinRadius` in `src/core/domain/proximityZone.t
 
 RX group list editor uses `RxGroupListMemberPicker` — same interaction pattern as zones, with a unified talk-group + digital-contact pool. Per-member `timeSlotOverride` (`Auto` / `TS1` / `TS2`) is editable on the in-list side for DMR members. See [rx-group-list-member-picker.md](rx-group-list-member-picker.md).
 
+### Scan lists ([#257](https://github.com/pskillen/codeplug-studio/issues/257))
+
+**Route:** `/library/scan-lists` — section nav **Scan lists**
+
+`ScanListEditor` uses `ScanListMemberEditor` for ordered channel membership (channels only — no nested zones). Build pages for `DedicatedScanLists` profiles link here for list curation; per-channel scan assignment stays on the build Channels wire page. See [scan-lists.md](scan-lists.md).
+
 ### Channel DMR RX list summary ([#75](https://github.com/pskillen/codeplug-studio/issues/75))
 
 Channel editor DMR tab shows `RxGroupListSummary` below the RX group list selector — live member preview with link to the list editor. Sidecar: `src/app/components/library/RxGroupListSummary.md`.
@@ -118,7 +127,7 @@ Workflow: pick set → preview table (per-channel checkboxes, dedup status) → 
 | -------------------- | ---------------------------------------- |
 | `/library/:kind/:id` | Edit an entity (`:id` = `new` to create) |
 
-`:kind` is a slug (`channels`, `talk-groups`, `digital-contacts`, `analog-contacts`, `rx-group-lists`, `zones`) mapped to an internal `EntityKind` in `routes/library/registry.ts`. Editors navigate back to the matching list route on save/cancel via `listPathForEditorSlug()`.
+`:kind` is a slug (`channels`, `talk-groups`, `digital-contacts`, `analog-contacts`, `rx-group-lists`, `scan-lists`, `zones`) mapped to an internal `EntityKind` in `routes/library/registry.ts`. Editors navigate back to the matching list route on save/cancel via `listPathForEditorSlug()`.
 
 ### Unsaved changes ([#189](https://github.com/pskillen/codeplug-studio/issues/189))
 
@@ -139,6 +148,7 @@ All entity editors track dirty form state against the mount baseline (`useEntity
 | Digital contact | name, digital mode, contact ID, comment                                                                                                                                                            |
 | Analog contact  | name, code, comment                                                                                                                                                                                |
 | RX group list   | name, members (talk groups / digital contacts); optional `timeSlotOverride` per member (`1` \| `2` \| unset)                                                                                       |
+| Scan list       | name, ordered `memberChannelIds` (channel UUID FKs)                                                                                                                                                |
 | Zone            | name, ordered members (`channel` and/or nested `zone` refs), comment                                                                                                                               |
 
 Channel DMR profiles reference a **digital contact** and an **RX group list** by UUID `id` (the editor exposes dropdowns); NXDN/TETRA profiles may reference talk groups by UUID. RX group lists and zones hold member `EntityRef[]`. `RxGroupListMember.timeSlotOverride` is an optional per-member DMR slot hint (vendor-neutral; maps to CPS TS Override at export). Names are display labels only — never foreign keys.
