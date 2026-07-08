@@ -9,7 +9,7 @@ Items **skipped**, **incomplete**, or **discovered during execution** — not sc
 ## Shipped in Phase 7 export ([#228](https://github.com/pskillen/codeplug-studio/issues/228))
 
 - [x] **DMR MVP export** — core DMR CSV bundle + ZIP ([#233](https://github.com/pskillen/codeplug-studio/issues/233))
-- [x] **Dedicated scan lists** — library `ScanList` entity, build channel `scanListId`, `DedicatedScanLists` trait ([#257](https://github.com/pskillen/codeplug-studio/issues/257), [#234](https://github.com/pskillen/codeplug-studio/issues/234))
+- [x] **Dedicated scan lists** — library `ScanList` entity + `Channel.scanListId` ([#257](https://github.com/pskillen/codeplug-studio/issues/257), [#234](https://github.com/pskillen/codeplug-studio/issues/234))
 - [x] **Export scan UI** — hide DM32-style default scan inclusion on dedicated-scan builds ([#258](https://github.com/pskillen/codeplug-studio/issues/258))
 - [x] **Directional export goldens** — `exportGolden.test.ts` ([#236](https://github.com/pskillen/codeplug-studio/issues/236))
 
@@ -17,7 +17,6 @@ Items **skipped**, **incomplete**, or **discovered during execution** — not sc
 
 ## Build model notes (post-#243)
 
-- **Build `channelOverrides.scanListId` on delete** — `findReferencesTo` for library scan lists does not yet block delete when a build still references the list via channel overrides. Operators may get dangling FKs until build refs are included in integrity checks.
 - **`orderOrSlot` on `BuildEntityOverride`** — shipped for CHIRP flat memory ([#243](https://github.com/pskillen/codeplug-studio/pull/243)). Anytone `Channel.CSV` / `AMAir.CSV` / `FM.CSV` `No.` columns are the likely export target for the same field (including fixed VFO slot numbers). Confirm per-bank behaviour in [#232](https://github.com/pskillen/codeplug-studio/issues/232) / [#233](https://github.com/pskillen/codeplug-studio/issues/233).
 
 ## Model gaps (discovered during wire spike)

@@ -22,38 +22,39 @@ Relationships use UUID `id` fields only — never wire names as internal FKs.
 
 ## Library vs build
 
-| Concern                          | Layer   | Field / UI                                                                              |
-| -------------------------------- | ------- | --------------------------------------------------------------------------------------- |
-| List membership (`ScanList.CSV`) | Library | `ScanList.memberChannelIds` — `/library/scan-lists` editor                              |
-| Wire name / omit from export     | Build   | `scanListOverrides` — Scan lists wire preview page                                      |
-| Channel → scan list FK           | Build   | `channelOverrides.scanListId` — Channels wire preview (dedicated builds)                |
-| Default scan inclusion           | Build   | `exportSettings.defaultScanInclusion` — **not** shown for `DedicatedScanLists` profiles |
+| Concern                          | Layer   | Field / UI                                                                    |
+| -------------------------------- | ------- | ----------------------------------------------------------------------------- |
+| List membership (`ScanList.CSV`) | Library | `ScanList.memberChannelIds` — `/library/scan-lists` editor                    |
+| Wire name / omit from export     | Build   | `scanListOverrides` — Scan lists wire preview page                            |
+| Channel → scan list FK           | Library | `Channel.scanListId` — channel editor **Scanning** tab + channels list column |
+| Default scan inclusion           | Library | `Channel.scanInclusion` on **Scanning** tab                                   |
+| Wire name / omit from export     | Build   | `scanListOverrides` — Scan lists wire preview page                            |
 
-`assemble` reads `library.scanLists`, applies `scanListOverrides`, filters members to the exported channel set, and resolves channel `scanListWireName` from `channelOverrides.scanListId`.
+`assemble` reads `library.scanLists`, applies `scanListOverrides`, filters members to the exported channel set, and resolves channel `scanListWireName` from `Channel.scanListId`.
 
 ## Code anchors
 
-| Symbol                           | Path                                                         | Role                           |
-| -------------------------------- | ------------------------------------------------------------ | ------------------------------ |
-| `ScanList`                       | `src/core/models/library.ts`                                 | Entity type                    |
-| `newScanList`                    | `src/core/domain/factories.ts`                               | Factory                        |
-| `assembleScanLists`              | `src/core/services/assemble.ts`                              | Library → export projection    |
-| `migrateBuildScanListsToLibrary` | `src/core/domain/migrateScanLists.ts`                        | Hoist legacy `ScanListsLayout` |
-| `ScanListsListPage`              | `src/app/routes/library/ScanListsListPage.tsx`               | List route                     |
-| `ScanListEditor`                 | `src/app/routes/library/ScanListEditor.tsx`                  | Name + members                 |
-| `ScanListMemberEditor`           | `src/app/components/library/ScanListMemberEditor.tsx`        | Channel member picker          |
+| Symbol                           | Path                                                         | Role                                 |
+| -------------------------------- | ------------------------------------------------------------ | ------------------------------------ |
+| `ScanList`                       | `src/core/models/library.ts`                                 | Entity type                          |
+| `newScanList`                    | `src/core/domain/factories.ts`                               | Factory                              |
+| `assembleScanLists`              | `src/core/services/assemble.ts`                              | Library → export projection          |
+| `migrateBuildScanListsToLibrary` | `src/core/domain/migrateScanLists.ts`                        | Hoist legacy `ScanListsLayout`       |
+| `ScanListsListPage`              | `src/app/routes/library/ScanListsListPage.tsx`               | List route                           |
+| `ScanListEditor`                 | `src/app/routes/library/ScanListEditor.tsx`                  | Name + members                       |
+| `ScanListMemberEditor`           | `src/app/components/library/ScanListMemberEditor.tsx`        | Channel member picker                |
 | `BuildScanListLibraryGuidance`   | `src/app/components/builds/BuildScanListLibraryGuidance.tsx` | Build scan lists page → library link |
-| `WirePreviewTable` scan column   | `src/app/components/builds/WirePreviewTable.tsx`             | Channels build — hideable Scan list column |
+| `ScanListSummary`                | `src/app/components/library/ScanListSummary.tsx`             | Channel editor scan list preview     |
 
 ## Migration
 
-Projects with build-scoped `ScanListsLayout` sections hoist entries into `library.scanLists` on load (`migrateProjectAggregate`), preserving entry `id` so existing `scanListOverrides` and `channelOverrides.scanListId` remain valid. Legacy layout sections are stripped after hoist; native YAML v9 files without `library.scanLists` import and migrate the same way.
+Projects with build-scoped `ScanListsLayout` sections hoist entries into `library.scanLists` on load (`migrateProjectAggregate`), preserving entry `id` so existing `scanListOverrides` stay valid. Legacy `channelOverrides.scanListId` hoists to `Channel.scanListId` (schema v11).
 
 ## Manual verify
 
 1. `/library/scan-lists` → create list, add channels, reorder — save and reopen; order matches.
-2. Anytone build → Channels page — assign scan list per row in the wire preview table (toggle **Show scan list column** to hide).
-3. Export ZIP — `Channel.CSV` `Scan List` and `ScanList.CSV` align.
+2. Channel editor **Scanning** tab — set scan inclusion + scan list; list page optional **Scan list** column.
+3. Anytone build → export ZIP — `Channel.CSV` `Scan List` and `ScanList.CSV` align.
 4. Export page — no **Default scan behaviour** segment; dedicated-scan copy instead ([#258](https://github.com/pskillen/codeplug-studio/issues/258)).
 
 ## Related
