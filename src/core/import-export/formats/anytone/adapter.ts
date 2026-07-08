@@ -2,7 +2,7 @@ import type { MultiFileExportAdapter } from '@core/import-export/exportAdapter.t
 import type { CpsExportOptions } from '@core/import-export/types.ts';
 import type { LibrarySlice } from '@core/services/assemble.ts';
 import { ANYTONE_EXPORT_FILE_NAMES } from './columns.ts';
-import { serialiseAnytoneFile } from './serialise.ts';
+import { serialiseAnytoneFile, resolveAnytoneExportFileNames } from './serialise.ts';
 import { collectAnytoneExportWarnings } from './warnings.ts';
 
 function requireLibrary(library: LibrarySlice | undefined): LibrarySlice {
@@ -23,6 +23,9 @@ export const anytoneExportAdapter: MultiFileExportAdapter = {
     expandRxGroupLists: false,
   },
   fileNames: [...ANYTONE_EXPORT_FILE_NAMES],
+  resolveExportFileNames(assembled) {
+    return resolveAnytoneExportFileNames(assembled);
+  },
   serialiseFile(assembled, fileName, options?: CpsExportOptions) {
     const library = requireLibrary(assembled.library);
     const warnings = collectAnytoneExportWarnings(assembled, library, options);

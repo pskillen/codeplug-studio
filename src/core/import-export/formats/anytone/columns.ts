@@ -180,6 +180,32 @@ export const RADIO_ID_COL = {
 
 export const RADIO_ID_HEADERS: string[] = Object.values(RADIO_ID_COL);
 
+export const AM_AIR_COL = {
+  number: 'No.',
+  frequencyMhz: 'Frequency[MHz]',
+  name: 'Name',
+} as const;
+
+export const AM_AIR_HEADERS: string[] = Object.values(AM_AIR_COL);
+
+export const FM_BROADCAST_COL = {
+  number: 'No.',
+  frequencyMhz: 'Frequency[MHz]',
+  scan: 'Scan',
+  name: 'Name',
+} as const;
+
+export const FM_BROADCAST_HEADERS: string[] = Object.values(FM_BROADCAST_COL);
+
+/** VFO sentinel slots in receive-only banks (AT-D890UV fixtures). */
+export const ANYTONE_AM_AIR_VFO_SLOT = 257;
+export const ANYTONE_FM_BROADCAST_VFO_SLOT = 101;
+
+/** Optional receive-bank files — included only when partition is non-empty. */
+export const ANYTONE_RECEIVE_BANK_FILE_NAMES = ['AMAir.CSV', 'FM.CSV'] as const;
+
+export type AnytoneReceiveBankFileName = (typeof ANYTONE_RECEIVE_BANK_FILE_NAMES)[number];
+
 /** DMR MVP export file names (AT-D890UV casing). */
 export const ANYTONE_EXPORT_FILE_NAMES = [
   'Channel.CSV',

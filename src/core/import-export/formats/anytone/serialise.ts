@@ -1,12 +1,19 @@
 import type { AssembledBuild } from '@core/services/assemble.ts';
+import type { AssembledChannel } from '@core/services/assemble.ts';
 import type { CpsExportOptions } from '@core/import-export/types.ts';
 import type { LibrarySlice } from '@core/services/assemble.ts';
 import type { AnytoneExportFileName } from './columns.ts';
 import {
+  AM_AIR_COL,
+  AM_AIR_HEADERS,
+  ANYTONE_AM_AIR_VFO_SLOT,
   ANYTONE_EXPORT_FILE_NAMES,
+  ANYTONE_FM_BROADCAST_VFO_SLOT,
   CHANNEL_HEADERS,
   DIGITAL_CONTACT_COL,
   DIGITAL_CONTACT_HEADERS,
+  FM_BROADCAST_COL,
+  FM_BROADCAST_HEADERS,
   RADIO_ID_COL,
   RADIO_ID_HEADERS,
   RX_GROUP_LIST_COL,
@@ -22,8 +29,38 @@ import { formatCsv } from './csvWrite.ts';
 import { serialiseAnytoneChannelRow } from './channelWire.ts';
 import { channelFrequencyById, rxGroupListMemberNames, wireNameByChannelId } from './listWire.ts';
 import { DEFAULT_ANYTONE_PROFILE_ID, getAnytoneProfile } from './profiles.ts';
+import { partitionAnytoneChannels } from './receiveOnlyBanks.ts';
+import {
+  buildScanContext,
+  resolveEffectiveScanInclusion,
+} from '@core/import-export/scanInclusion/resolve.ts';
 
 export type AnytoneExportFiles = Record<AnytoneExportFileName, string>;
+
+const AM_AIR_NAME_WIDTH = 16;
+const AM_AIR_VFO_MHZ = '108.0000';
+const FM_BROADCAST_VFO_MHZ = '88.000';
+
+function padReceiveBankName(name: string): string {
+  return name.padEnd(AM_AIR_NAME_WIDTH, ' ').slice(0, AM_AIR_NAME_WIDTH);
+}
+
+function formatAmAirMhz(rxHz: number): string {
+  return (rxHz / 1_000_000).toFixed(4);
+}
+
+function formatFmBroadcastMhz(rxHz: number): string {
+  return (rxHz / 1_000_000).toFixed(3);
+}
+
+function sortReceiveBankChannels(channels: AssembledChannel[]): AssembledChannel[] {
+  return [...channels].sort((a, b) => {
+    const slotA = a.orderOrSlot ?? Number.MAX_SAFE_INTEGER;
+    const slotB = b.orderOrSlot ?? Number.MAX_SAFE_INTEGER;
+    if (slotA !== slotB) return slotA - slotB;
+    return a.wireName.localeCompare(b.wireName);
+  });
+}
 
 function padRow(headers: string[], values: Record<string, string>): string[] {
   return headers.map((header) => values[header] ?? '');
@@ -31,12 +68,8 @@ function padRow(headers: string[], values: Record<string, string>): string[] {
 
 function serialiseChannelsCsv(assembled: AssembledBuild, options?: CpsExportOptions): string {
   const profileId = options?.profileId ?? assembled.profileId ?? DEFAULT_ANYTONE_PROFILE_ID;
-  const ordered = [...assembled.channels].sort((a, b) => {
-    const slotA = a.orderOrSlot ?? Number.MAX_SAFE_INTEGER;
-    const slotB = b.orderOrSlot ?? Number.MAX_SAFE_INTEGER;
-    if (slotA !== slotB) return slotA - slotB;
-    return a.wireName.localeCompare(b.wireName);
-  });
+  const { dmrChannels } = partitionAnytoneChannels(assembled);
+  const ordered = sortReceiveBankChannels(dmrChannels);
 
   const rows = ordered.map((row, index) => {
     const slot = row.orderOrSlot ?? index + 1;
@@ -170,6 +203,65 @@ function serialiseRadioIdsCsv(profileId: string): string {
   return formatCsv(RADIO_ID_HEADERS, rows);
 }
 
+export function serialiseAmAirCsv(assembled: AssembledBuild): string {
+  const { amAirChannels } = partitionAnytoneChannels(assembled);
+  const ordered = sortReceiveBankChannels(amAirChannels);
+  const rows: string[][] = ordered.map((row, index) => {
+    const slot = row.orderOrSlot ?? index + 1;
+    const rxHz = row.entity.rxFrequency ?? 0;
+    return padRow(AM_AIR_HEADERS, {
+      [AM_AIR_COL.number]: String(slot),
+      [AM_AIR_COL.frequencyMhz]: formatAmAirMhz(rxHz),
+      [AM_AIR_COL.name]: padReceiveBankName(row.wireName),
+    });
+  });
+
+  rows.push(
+    padRow(AM_AIR_HEADERS, {
+      [AM_AIR_COL.number]: String(ANYTONE_AM_AIR_VFO_SLOT),
+      [AM_AIR_COL.frequencyMhz]: AM_AIR_VFO_MHZ,
+      [AM_AIR_COL.name]: padReceiveBankName('VFO'),
+    }),
+  );
+
+  return formatCsv(AM_AIR_HEADERS, rows);
+}
+
+export function serialiseFmBroadcastCsv(
+  assembled: AssembledBuild,
+  options?: CpsExportOptions,
+): string {
+  const formatDefaults =
+    options?.defaultScanInclusion != null
+      ? { defaultScanInclusion: options.defaultScanInclusion }
+      : undefined;
+  const scanContext = buildScanContext(undefined, formatDefaults);
+  const { fmBroadcastChannels } = partitionAnytoneChannels(assembled);
+  const ordered = sortReceiveBankChannels(fmBroadcastChannels);
+  const rows: string[][] = ordered.map((row, index) => {
+    const slot = row.orderOrSlot ?? index + 1;
+    const rxHz = row.entity.rxFrequency ?? 0;
+    const scan = resolveEffectiveScanInclusion(row.entity, scanContext) === 'skip' ? 'Del' : 'Add';
+    return padRow(FM_BROADCAST_HEADERS, {
+      [FM_BROADCAST_COL.number]: String(slot),
+      [FM_BROADCAST_COL.frequencyMhz]: formatFmBroadcastMhz(rxHz),
+      [FM_BROADCAST_COL.scan]: scan,
+      [FM_BROADCAST_COL.name]: padReceiveBankName(row.wireName),
+    });
+  });
+
+  rows.push(
+    padRow(FM_BROADCAST_HEADERS, {
+      [FM_BROADCAST_COL.number]: String(ANYTONE_FM_BROADCAST_VFO_SLOT),
+      [FM_BROADCAST_COL.frequencyMhz]: FM_BROADCAST_VFO_MHZ,
+      [FM_BROADCAST_COL.scan]: 'Del',
+      [FM_BROADCAST_COL.name]: padReceiveBankName('VFO'),
+    }),
+  );
+
+  return formatCsv(FM_BROADCAST_HEADERS, rows);
+}
+
 export function serialiseAnytoneFiles(
   assembled: AssembledBuild,
   library: LibrarySlice,
@@ -197,9 +289,31 @@ export function serialiseAnytoneFile(
   options?: CpsExportOptions,
   warnings: string[] = [],
 ): string {
+  if (fileName === 'AMAir.CSV') {
+    void library;
+    void warnings;
+    return serialiseAmAirCsv(assembled);
+  }
+  if (fileName === 'FM.CSV') {
+    void library;
+    void warnings;
+    return serialiseFmBroadcastCsv(assembled, options);
+  }
   if (!ANYTONE_EXPORT_FILE_NAMES.includes(fileName as AnytoneExportFileName)) {
     throw new Error(`Unknown Anytone export file: ${fileName}`);
   }
   const files = serialiseAnytoneFiles(assembled, library, options, warnings);
   return files[fileName as AnytoneExportFileName];
+}
+
+export function resolveAnytoneExportFileNames(assembled: AssembledBuild): string[] {
+  const partition = partitionAnytoneChannels(assembled);
+  const names: string[] = [...ANYTONE_EXPORT_FILE_NAMES];
+  if (partition.amAirChannels.length > 0) {
+    names.push('AMAir.CSV');
+  }
+  if (partition.fmBroadcastChannels.length > 0) {
+    names.push('FM.CSV');
+  }
+  return names;
 }

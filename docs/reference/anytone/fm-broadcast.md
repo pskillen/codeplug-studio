@@ -15,14 +15,14 @@ Separate **broadcast FM receive memory bank** for AT-D890UV.
 
 ## Internal model mapping
 
-| Wire             | Internal (target)                            | Status                                           |
-| ---------------- | -------------------------------------------- | ------------------------------------------------ |
-| `Frequency[MHz]` | `Channel.rxFrequency` (Hz)                   | **Maps today**                                   |
-| `Name`           | `Channel.name` / build `wireName`            | **Maps today**                                   |
-| `No.`            | `channelOverrides.orderOrSlot` in FM bank    | VFO at fixed high slot (`101` in sample)         |
-| `Scan`           | `Channel.scanInclusion` or build export knob | **TBD** — `Add` may mean include in FM scan bank |
-| _(implicit)_     | `modeProfiles: [{ mode: 'fm', … }]`          | **Maps today**                                   |
-| _(implicit)_     | `forbidTransmit: true`                       | **Maps today**                                   |
+| Wire             | Internal (target)                                      | Status                                                                   |
+| ---------------- | ------------------------------------------------------ | ------------------------------------------------------------------------ |
+| `Frequency[MHz]` | `Channel.rxFrequency` (Hz)                             | **Maps today**                                                           |
+| `Name`           | `Channel.name` / build `wireName`                      | **Maps today**                                                           |
+| `No.`            | `channelOverrides.orderOrSlot` in FM bank              | VFO at fixed high slot (`101` in sample)                                 |
+| `Scan`           | `Channel.scanInclusion` + build `defaultScanInclusion` | **Maps today** — `Add` when effective inclusion is scan, `Del` when skip |
+| _(implicit)_     | `modeProfiles: [{ mode: 'fm', … }]`                    | **Maps today**                                                           |
+| _(implicit)_     | `forbidTransmit: true`                                 | **Maps today**                                                           |
 
 UK FM broadcast band: [bands.md](../bands.md) (`fm-broadcast`, 87.5–108 MHz).
 
@@ -30,10 +30,10 @@ Export adapter partitions library channels with `mode: 'fm'` and receive-only se
 
 ## Fidelity
 
-| Direction | Status                |
-| --------- | --------------------- |
-| Import    | Planned               |
-| Export    | Deferred post-DMR MVP |
+| Direction | Status                                                                   |
+| --------- | ------------------------------------------------------------------------ |
+| Import    | Planned                                                                  |
+| Export    | Shipped ([#268](https://github.com/pskillen/codeplug-studio/issues/268)) |
 
 ## Related
 

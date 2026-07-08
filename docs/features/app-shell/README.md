@@ -40,6 +40,8 @@ ProjectProvider
 | [AvailableItemPicker](../../src/app/components/ui/AvailableItemPicker.md)            | Sectioned pool picker shell                       |
 | [PillTabs](../../src/app/components/ui/PillTabs.md)                                  | Tabs with optional leading pill/badge in labels   |
 | [ImageCheckbox](../../src/app/components/ui/ImageCheckbox.md)                        | Card checkbox with optional image or media slot   |
+| [BadgeCard](../../src/app/components/ui/BadgeCard.md)                                | Mantine UI badge feature card                     |
+| [AddFromDataSourceModal](../../src/app/components/library/AddFromDataSourceModal.md) | External directory picker modal                   |
 | [UnsavedChangesModal](../../src/app/components/ui/UnsavedChangesModal.md)            | Confirm before leaving a dirty form               |
 | [EntityDeleteButton](../../src/app/components/library/EntityDeleteButton.md)         | Editor footer delete for library entities         |
 | [EntityListDeleteAction](../../src/app/components/library/EntityListDeleteAction.md) | List row delete trash icon                        |
@@ -79,6 +81,7 @@ UI primitives live in `src/app/components/ui/` (ported from codeplug-tool). Reus
 | `/debug/local-storage`                        | LocalStorage keys       | Known keys + `codeplug-studio:` / `mm9pdy-codeplug-studio.` prefix scan                                                                                                  |
 | `/debug/local-storage/:storageKey`            | LocalStorage viewer     | Parsed JSON (tokens masked)                                                                                                                                              |
 | `/help`                                       | Help                    | Workflow overview + GitHub Issues guidance ([#70](https://github.com/pskillen/codeplug-studio/issues/70))                                                                |
+| `/attributions`                               | Attributions            | External data source credits ([#264](https://github.com/pskillen/codeplug-studio/issues/264))                                                                            |
 | `/privacy`                                    | Privacy policy          | Browser-local data + optional analytics summary ([#96](https://github.com/pskillen/codeplug-studio/issues/96))                                                           |
 | `/terms`                                      | Terms of use            | Hobby-tool disclaimer ([#96](https://github.com/pskillen/codeplug-studio/issues/96))                                                                                     |
 | `/cookies`                                    | Cookies & storage       | Essential vs analytics cookies; change consent ([#96](https://github.com/pskillen/codeplug-studio/issues/96))                                                            |
@@ -88,7 +91,7 @@ Routes that need a project gate on an active project and link back to Projects w
 
 ## Section navigation
 
-Library list routes each have a dedicated section-nav entry (longest-prefix match in `sectionNavRegistry.ts`). Shared entity links come from `routes/library/nav.ts` inside `LibrarySectionNavFrame` (entity links → divider → route-specific controls). Contextual **New …** actions vary per route (e.g. contacts: New digital + New analog; channels: repeater import buttons + filters).
+Library list routes each have a dedicated section-nav entry (longest-prefix match in `sectionNavRegistry.ts`). Shared entity links come from `routes/library/nav.ts` inside `LibrarySectionNavFrame` (entity links → divider → route-specific controls). Contextual **New …** actions vary per route (e.g. contacts: New digital + New analog; channels: **Add channel set…** + **Add from…** modal for external directories).
 
 ## Project lifecycle
 

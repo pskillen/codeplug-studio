@@ -4,6 +4,7 @@ import RequireActiveProject from './components/RequireActiveProject/RequireActiv
 import HomePage from './routes/HomePage.tsx';
 import EntityEditorPage from './routes/library/EntityEditorPage.tsx';
 import AddFromUkRepeaterPage from './routes/library/AddFromUkRepeaterPage.tsx';
+import AddFromOpenAipPage from './routes/library/AddFromOpenAipPage.tsx';
 import AddFromBrandmeisterPage from './routes/library/AddFromBrandmeisterPage.tsx';
 import AddChannelSetPage from './routes/library/AddChannelSetPage.tsx';
 import ZoneFromLocationPage from './routes/library/ZoneFromLocationPage.tsx';
@@ -41,6 +42,7 @@ import BuildRxGroupListsWirePage from './routes/builds/wire-preview/BuildRxGroup
 import PrivacyPolicyPage from './routes/legal/PrivacyPolicyPage.tsx';
 import TermsOfUsePage from './routes/legal/TermsOfUsePage.tsx';
 import CookiesPage from './routes/legal/CookiesPage.tsx';
+import AttributionsPage from './routes/AttributionsPage.tsx';
 
 function MapRedirect() {
   return <Navigate to="/library/channels" replace />;
@@ -53,6 +55,7 @@ export const appRouter = createBrowserRouter([
       { path: '/', element: <HomePage /> },
       { path: '/settings', element: <SettingsPage /> },
       { path: '/help', element: <HelpPage /> },
+      { path: '/attributions', element: <AttributionsPage /> },
       { path: '/privacy', element: <PrivacyPolicyPage /> },
       { path: '/terms', element: <TermsOfUsePage /> },
       { path: '/cookies', element: <CookiesPage /> },
@@ -89,6 +92,10 @@ export const appRouter = createBrowserRouter([
           {
             path: '/library/channels/add-from-ukrepeater',
             element: <AddFromUkRepeaterPage />,
+          },
+          {
+            path: '/library/channels/add-from-openaip',
+            element: <AddFromOpenAipPage />,
           },
           {
             path: '/library/channels/add-from-brandmeister',

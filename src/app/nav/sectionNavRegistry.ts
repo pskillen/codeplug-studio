@@ -16,6 +16,7 @@ import { isBuildDetailPath } from '../routes/builds/nav.ts';
 
 /** Longest prefix first — more specific library list routes win over `/library`. */
 const registry: SectionNavEntry[] = [
+  { title: 'Help', prefix: '/attributions', Component: HelpSectionNav },
   { title: 'Help', prefix: '/help', Component: HelpSectionNav },
   {
     title: 'Maidenhead',
@@ -54,6 +55,7 @@ export function shouldShowSecondaryNav(pathname: string, hasActiveProject: boole
   if (!entry) return false;
   if (
     pathname.startsWith('/help') ||
+    pathname.startsWith('/attributions') ||
     pathname.startsWith('/reference') ||
     pathname.startsWith('/debug') ||
     pathname.startsWith('/settings')

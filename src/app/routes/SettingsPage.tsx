@@ -1,9 +1,11 @@
-import { Button, Group, PasswordInput, Select, Stack, Text } from '@mantine/core';
+import { Button, Group, PasswordInput, Select, Stack, Text, Anchor } from '@mantine/core';
+import { Link } from 'react-router-dom';
 import type { MaidenheadGridMode } from '@core/domain/maidenheadGrid.ts';
 import { useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
-import { SETTINGS_MAP_SECTION_ID } from '../lib/settingsSections.ts';
+import { SETTINGS_MAP_SECTION_ID, SETTINGS_OPENAIP_SECTION_ID } from '../lib/settingsSections.ts';
 import { useMapSettings } from '../hooks/useMapSettings.ts';
+import { useOpenAipSettings } from '../hooks/useOpenAipSettings.ts';
 import { scrollToPageSection } from '../lib/scrollToPageSection.ts';
 import GoogleDriveConnectSection from '../components/settings/GoogleDriveConnectSection.tsx';
 import { ListPage, PageSection } from '../components/ui/index.ts';
@@ -12,6 +14,7 @@ export default function SettingsPage() {
   const location = useLocation();
   const { mapboxToken, setMapboxToken, saveToken, clearToken, maidenheadGrid, setMaidenheadGrid } =
     useMapSettings();
+  const { openAipApiKey, setOpenAipApiKey, saveApiKey, clearApiKey } = useOpenAipSettings();
 
   useEffect(() => {
     const scrollTo = (location.state as { scrollTo?: string } | null)?.scrollTo;
@@ -39,7 +42,56 @@ export default function SettingsPage() {
       </PageSection>
 
       <PageSection id="settings-drive" title="Google Drive">
-        <GoogleDriveConnectSection />
+        <Stack gap="sm">
+          <GoogleDriveConnectSection />
+          <Text size="xs" c="dimmed">
+            <Anchor component={Link} to="/attributions" size="xs">
+              Google Drive attributions
+            </Anchor>
+          </Text>
+        </Stack>
+      </PageSection>
+
+      <PageSection id={SETTINGS_OPENAIP_SECTION_ID} title="OpenAIP">
+        <Stack gap="sm">
+          <Text size="sm" c="dimmed">
+            API key for airport frequency search via{' '}
+            <Anchor href="https://www.openaip.net/" target="_blank" rel="noreferrer">
+              OpenAIP
+            </Anchor>
+            . Stored in this browser only — never sent to Codeplug Studio servers. Requests go
+            directly from your browser to OpenAIP.
+          </Text>
+          <Text size="sm" c="dimmed">
+            Obtain a key from your OpenAIP account{' '}
+            <Anchor href="https://docs.openaip.net/" target="_blank" rel="noreferrer">
+              API Clients
+            </Anchor>{' '}
+            page after signing in.
+          </Text>
+          <PasswordInput
+            label="OpenAIP API key"
+            placeholder="Your API key"
+            value={openAipApiKey}
+            onChange={(e) => setOpenAipApiKey(e.currentTarget.value)}
+          />
+          <Group>
+            <Button onClick={saveApiKey}>Save key</Button>
+            <Button variant="subtle" onClick={clearApiKey}>
+              Clear
+            </Button>
+          </Group>
+          <Text size="xs" c="dimmed">
+            Data ©{' '}
+            <Anchor href="https://www.openaip.net/" target="_blank" rel="noreferrer">
+              OpenAIP
+            </Anchor>{' '}
+            contributors — programming convenience only; not authoritative for aviation operations.{' '}
+            <Anchor component={Link} to="/attributions" size="xs">
+              All attributions
+            </Anchor>
+          </Text>
+        </Stack>
       </PageSection>
 
       <PageSection id={SETTINGS_MAP_SECTION_ID} title="Map">
@@ -61,6 +113,12 @@ export default function SettingsPage() {
                 Clear
               </Button>
             </Group>
+            <Text size="xs" c="dimmed">
+              Map tiles and geocoding credits —{' '}
+              <Anchor component={Link} to="/attributions" size="xs">
+                Attributions
+              </Anchor>
+            </Text>
           </Stack>
 
           <Stack gap="sm" id="settings-maidenhead-grid">

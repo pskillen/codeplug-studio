@@ -12,6 +12,12 @@ export default function HelpSectionNav() {
         label="Overview"
         active={location.pathname === '/help'}
       />
+      <NavLink
+        component={Link}
+        to="/attributions"
+        label="Attributions"
+        active={location.pathname === '/attributions'}
+      />
     </Stack>
   );
 }

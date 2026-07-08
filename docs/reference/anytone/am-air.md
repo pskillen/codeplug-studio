@@ -39,10 +39,10 @@ Maps to build zone grouping for AM bank — deferred with AM export slice.
 
 ## Fidelity
 
-| Direction | Status                                                                                 |
-| --------- | -------------------------------------------------------------------------------------- |
-| Import    | Planned                                                                                |
-| Export    | Deferred post-DMR MVP ([#233](https://github.com/pskillen/codeplug-studio/issues/233)) |
+| Direction | Status                                                                   |
+| --------- | ------------------------------------------------------------------------ |
+| Import    | Planned                                                                  |
+| Export    | Shipped ([#267](https://github.com/pskillen/codeplug-studio/issues/267)) |
 
 ## Related
 

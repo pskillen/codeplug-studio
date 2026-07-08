@@ -75,7 +75,7 @@ export function exportBuildAll({
   const files: Record<string, string> = {};
   const warnings: string[] = [...exportInclusionWarnings(build, library, assembled)];
 
-  for (const name of adapter.fileNames) {
+  for (const name of adapter.resolveExportFileNames?.(assembled) ?? adapter.fileNames) {
     const result = adapter.serialiseFile(assembled, name, exportOptions);
     files[name] = result.content;
     warnings.push(...result.warnings);
