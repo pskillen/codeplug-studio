@@ -4,6 +4,7 @@ import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import { formatCatalogEntry, getExportAdapter } from '@core/import-export/registry.ts';
 import { isMultiFileExportAdapter } from '@core/import-export/exportAdapter.ts';
+import { ANYTONE_EXPORT_FILE_NAMES } from './columns.ts';
 import { exportBuildAll } from '@core/services/exportBuild.ts';
 import {
   compareCsvRecords,
@@ -12,6 +13,18 @@ import {
 import { minimalAnytoneExportBuild, minimalAnytoneExportLibrary } from './exportGoldenFixtures.ts';
 
 const fixtureDir = join(dirname(fileURLToPath(import.meta.url)), '__fixtures__/export');
+
+/** Every non-empty line must be comma-separated fields each wrapped in double quotes. */
+const UNIVERSALLY_QUOTED_LINE = /^("[^"]*")(,"[^"]*")*$/;
+
+export function assertUniversallyQuotedCsv(text: string): void {
+  const lines = text.split(/\r?\n/).filter((line) => line.length > 0);
+  for (const line of lines) {
+    expect(line, `line not universally quoted: ${line.slice(0, 80)}`).toMatch(
+      UNIVERSALLY_QUOTED_LINE,
+    );
+  }
+}
 
 /**
  * Excluded from row compare: No. (slot assignment), unmodelled Channel.CSV defaults.
@@ -82,6 +95,18 @@ describe('anytone/export golden', () => {
       expect(adapter.status).toBe('shipped');
       expect(adapter.fileNames).toContain('Channel.CSV');
       expect(adapter.fileNames).toContain('DMRZone.CSV');
+    }
+  });
+
+  it('minimal export uses universal double-quoting on all CPS files', () => {
+    const library = minimalAnytoneExportLibrary();
+    const build = minimalAnytoneExportBuild(library);
+    const result = exportBuildAll({ build, library });
+
+    for (const fileName of ANYTONE_EXPORT_FILE_NAMES) {
+      const content = result.files[fileName];
+      expect(content, `missing export file ${fileName}`).toBeDefined();
+      assertUniversallyQuotedCsv(content!);
     }
   });
 
