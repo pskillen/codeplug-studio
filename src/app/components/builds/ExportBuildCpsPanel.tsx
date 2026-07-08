@@ -41,6 +41,7 @@ import {
   downloadCpsZip,
   uploadCpsZipToDrive,
 } from '../../services/buildCpsExportService.ts';
+import { useBuildCpsExportFileNames } from '../../hooks/useBuildCpsExportFileNames.ts';
 
 export interface ExportBuildCpsPanelProps {
   build: FormatBuild;
@@ -92,6 +93,7 @@ export default function ExportBuildCpsPanel({ build }: ExportBuildCpsPanelProps)
       }),
     [build, exportProfileId],
   );
+  const exportFileNames = useBuildCpsExportFileNames(build, exportOptions);
   const hasChannels = Boolean(activeProjectId) && (channelCount ?? 0) > 0;
   const exportShipped = formatEntry?.exportStatus === 'shipped';
   const interchangeFolderId = activeProject?.interchange?.googleDrive?.folderId;
@@ -552,7 +554,7 @@ export default function ExportBuildCpsPanel({ build }: ExportBuildCpsPanelProps)
           Individual files
         </Text>
         <Group gap="xs">
-          {adapter.fileNames.map((fileName) => (
+          {exportFileNames.map((fileName) => (
             <Button
               key={fileName}
               size="xs"

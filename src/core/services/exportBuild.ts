@@ -9,6 +9,7 @@ import {
 import { buildOpenGd77Zip } from '@core/import-export/formats/opengd77/packageZip.ts';
 import { buildDm32Zip } from '@core/import-export/formats/dm32/packageZip.ts';
 import { buildAnytoneZip } from '@core/import-export/formats/anytone/packageZip.ts';
+import { resolveEffectiveExportFileNames } from '@core/import-export/exportFileNames.ts';
 import type { CpsExportOptions, ExportResult, FormatId } from '@core/import-export/types.ts';
 import {
   assemble,
@@ -31,6 +32,22 @@ export interface ExportBuildAllResult {
 }
 
 export { mergeExportOptions };
+
+/** Ordered CPS file names for a build without serialising file bodies. */
+export function listExportBuildFileNames({
+  build,
+  library,
+  options,
+}: Omit<ExportBuildParams, 'fileName'>): readonly string[] {
+  const exportOptions = mergeExportOptions(build, options);
+  const projection = assemble(build, library, { profileId: exportOptions.profileId });
+  const assembled = {
+    ...projection,
+    library,
+    zoneGrouping: findZoneGroupingSection(build),
+  };
+  return resolveEffectiveExportFileNames(build.formatId as FormatId, assembled);
+}
 
 /** Serialise one CPS file from a build + library. */
 export function exportBuildFile({
@@ -75,7 +92,9 @@ export function exportBuildAll({
   const files: Record<string, string> = {};
   const warnings: string[] = [...exportInclusionWarnings(build, library, assembled)];
 
-  for (const name of adapter.resolveExportFileNames?.(assembled) ?? adapter.fileNames) {
+  const exportFileNames = resolveEffectiveExportFileNames(build.formatId as FormatId, assembled);
+
+  for (const name of exportFileNames) {
     const result = adapter.serialiseFile(assembled, name, exportOptions);
     files[name] = result.content;
     warnings.push(...result.warnings);

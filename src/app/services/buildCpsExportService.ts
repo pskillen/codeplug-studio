@@ -7,6 +7,7 @@ import {
   exportBuildFile,
   exportBuildSingleFile,
   exportBuildZip,
+  listExportBuildFileNames,
 } from '@core/services/exportBuild.ts';
 import type { ProjectPersistence } from '@integrations/persistence/index.ts';
 import { downloadTextFile, downloadZip } from '@integrations/download/browserDownload.ts';
@@ -27,6 +28,7 @@ export interface CpsDownloadResult {
 export interface CpsPreviewResult {
   files: Record<string, string>;
   warnings: string[];
+  fileNames: string[];
 }
 
 async function requireBuild(
@@ -74,7 +76,23 @@ export async function previewCpsExport(
   const build = await requireBuild(store, projectId, buildId);
   const library = await loadLibrarySlice(store, projectId);
   const result = exportBuildAll({ build, library, options });
-  return { files: result.files, warnings: result.warnings };
+  return {
+    files: result.files,
+    warnings: result.warnings,
+    fileNames: [...listExportBuildFileNames({ build, library, options })],
+  };
+}
+
+/** Ordered CPS file names for a build (static + conditional) without serialising bodies. */
+export async function listCpsExportFileNames(
+  projectId: string,
+  buildId: string,
+  options?: CpsExportOptions,
+  store: ProjectPersistence = persistence,
+): Promise<readonly string[]> {
+  const build = await requireBuild(store, projectId, buildId);
+  const library = await loadLibrarySlice(store, projectId);
+  return listExportBuildFileNames({ build, library, options });
 }
 
 /** Serialise a single CPS CSV for preview (no browser download). */
@@ -87,7 +105,12 @@ export async function previewCpsSingleFile(
   const build = await requireBuild(store, projectId, buildId);
   const library = await loadLibrarySlice(store, projectId);
   const result = exportBuildSingleFile({ build, library, options });
-  return { files: result.files, warnings: result.warnings };
+  const fileName = options?.fileName ?? result.fileName;
+  return {
+    files: result.files,
+    warnings: result.warnings,
+    fileNames: [fileName],
+  };
 }
 
 /** Download one CPS CSV file for a build. */
