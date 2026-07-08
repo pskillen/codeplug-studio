@@ -165,6 +165,23 @@ describe('ExportBuildCpsPanel', () => {
     expect(await screen.findByRole('cell', { name: 'TestCh' })).toBeInTheDocument();
   });
 
+  it('hides default scan behaviour for Anytone dedicated scan list builds', async () => {
+    const anytoneBuild: FormatBuild = {
+      ...opengd77Build,
+      formatId: 'anytone',
+      profileId: 'anytone-at-d890uv',
+    };
+    render(
+      <MantineProvider>
+        <ExportBuildCpsPanel build={anytoneBuild} />
+      </MantineProvider>,
+    );
+
+    expect(await screen.findByText('Scan export')).toBeInTheDocument();
+    expect(screen.queryByText('Default scan behaviour')).not.toBeInTheDocument();
+    expect(screen.getByText(/Library → Scan lists/i)).toBeInTheDocument();
+  });
+
   it('opens CSV preview modal with per-file tabs after Preview CSV', async () => {
     render(
       <MantineProvider>

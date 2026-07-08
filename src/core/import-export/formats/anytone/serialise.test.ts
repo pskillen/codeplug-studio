@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { newChannel, newFormatBuild, newTalkGroup, newZone } from '@core/domain/factories.ts';
+import { newChannel, newFormatBuild, newScanList, newTalkGroup, newZone } from '@core/domain/factories.ts';
 import { assemble } from '@core/services/assemble.ts';
 import { serialiseAnytoneFiles } from './serialise.ts';
 import { serialiseAnytoneChannelRow } from './channelWire.ts';
@@ -93,6 +93,11 @@ describe('anytone serialise', () => {
       ],
     };
     const scanListId = 'scan-1';
+    const scanList = {
+      ...newScanList(PROJECT_ID, 'Zone A SCL'),
+      id: scanListId,
+      memberChannelIds: [ch1.id, ch2.id],
+    };
     const build = {
       ...newFormatBuild(PROJECT_ID, 'anytone-at-d890uv'),
       layout: {
@@ -101,12 +106,9 @@ describe('anytone serialise', () => {
             kind: 'zoneGrouping' as const,
             zones: [{ id: zone.id, name: zone.name, channelIds: [ch1.id, ch2.id] }],
           },
-          {
-            kind: 'scanLists' as const,
-            scanLists: [{ id: scanListId, name: 'Zone A SCL', channelIds: [ch1.id, ch2.id] }],
-          },
         ],
       },
+      exportSettings: { defaultScanInclusion: 'skip' as const },
       channelOverrides: [{ libraryEntityId: ch1.id, scanListId }],
       zoneOverrides: [{ libraryEntityId: zone.id, wireName: 'Zone A' }],
     };
@@ -117,7 +119,7 @@ describe('anytone serialise', () => {
       digitalContacts: [],
       analogContacts: [],
       rxGroupLists: [],
-    scanLists: [],
+      scanLists: [scanList],
     };
 
     const assembled = assemble(build, library);
@@ -128,5 +130,33 @@ describe('anytone serialise', () => {
     expect(files['ScanList.CSV']).toContain('Zone A SCL');
     expect(files['DMRTalkGroups.CSV']).toContain('TG Alpha');
     expect(files['RadioIDList.CSV']).toContain('TEST01');
+    expect(assembled.channels.find((c) => c.entity.id === ch1.id)?.scanListWireName).toBe(
+      'Zone A SCL',
+    );
+  });
+
+  it('ignores defaultScanInclusion for Scan List column', () => {
+    const channel = newChannel(PROJECT_ID, 'Channel 1');
+    const row = serialiseAnytoneChannelRow(
+      { entity: channel, wireName: 'Channel 1', scanListWireName: 'My List' },
+      {
+        buildId: 'b1',
+        formatId: 'anytone',
+        profileId: 'anytone-at-d890uv',
+        buildName: 'Test',
+        channels: [{ entity: channel, wireName: 'Channel 1', scanListWireName: 'My List' }],
+        zones: [],
+        scanLists: [],
+        talkGroups: [],
+        digitalContacts: [],
+        analogContacts: [],
+        rxGroupLists: [],
+      },
+      'anytone-at-d890uv',
+      1,
+      { defaultScanInclusion: 'skip' },
+    );
+
+    expect(row['Scan List']).toBe('My List');
   });
 });

@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Alert, Button, Group, Modal, Stack, Switch, Text } from '@mantine/core';
 import { IconDownload, IconPackage, IconTable } from '@tabler/icons-react';
 import type { BuildExportSettings, FormatBuild } from '@core/models/formatBuild.ts';
-import { traitProfileFor } from '@core/models/traits.ts';
+import { traitProfileFor, showsDefaultScanInclusion } from '@core/models/traits.ts';
 import {
   formatCatalogEntry,
   getExportAdapter,
@@ -435,14 +435,21 @@ export default function ExportBuildCpsPanel({ build }: ExportBuildCpsPanelProps)
         <Text size="sm" fw={600}>
           Scan export
         </Text>
-        <DefaultScanInclusionSegment
-          value={defaultScanValue}
-          formatDefault={formatDefaults.defaultScanInclusion}
-          disabled={savingSettings}
-          onChange={(defaultScanInclusion) =>
-            void handleExportSettingsPatch({ defaultScanInclusion })
-          }
-        />
+        {showsDefaultScanInclusion(build.profileId) ? (
+          <DefaultScanInclusionSegment
+            value={defaultScanValue}
+            formatDefault={formatDefaults.defaultScanInclusion}
+            disabled={savingSettings}
+            onChange={(defaultScanInclusion) =>
+              void handleExportSettingsPatch({ defaultScanInclusion })
+            }
+          />
+        ) : (
+          <Text size="sm" c="dimmed">
+            Dedicated scan lists use library membership (Library → Scan lists) and per-channel
+            assignment on the Channels page — not export defaults.
+          </Text>
+        )}
         {build.formatId === 'dm32' ? (
           <Switch
             label="Export zone-derived scan lists (Scan.csv)"
