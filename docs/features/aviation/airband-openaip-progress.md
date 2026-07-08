@@ -15,7 +15,14 @@
 
 ## In flight
 
-- Slice 6: system attributions screen
+- Slice 6: system attributions screen (`/attributions`)
+- Slice 7: Anytone `AMAir.CSV` export partition
+- Slice 8: Anytone `FM.CSV` export partition
+
+## In flight
+
+- Slice 9: close-out + PR
 
 ## Planned
-- Anytone `AMAir.CSV` / `FM.CSV` export partition
+
+_(none — epic complete pending PR)_

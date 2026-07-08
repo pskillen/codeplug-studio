@@ -17,8 +17,8 @@ Tier-1 reference for **airport airband monitoring** workflows — searching [Ope
 | Settings API key | Shipped | Browser `localStorage` only |
 | Core airband generation | Shipped | `src/core/domain/airband/` |
 | System attributions | Shipped | [#264](https://github.com/pskillen/codeplug-studio/issues/264) — `/attributions` |
-| Anytone `AMAir.CSV` export | Planned | [#267](https://github.com/pskillen/codeplug-studio/issues/267) |
-| Anytone `FM.CSV` export | Planned | [#268](https://github.com/pskillen/codeplug-studio/issues/268) |
+| Anytone `AMAir.CSV` export | Shipped | [#267](https://github.com/pskillen/codeplug-studio/issues/267) |
+| Anytone `FM.CSV` export | Shipped | [#268](https://github.com/pskillen/codeplug-studio/issues/268) |
 
 ## Documentation map
 
