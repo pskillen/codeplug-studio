@@ -49,6 +49,7 @@ export default function BuildEntityWirePage({
     setRowForceIncluded,
     setRowWireName,
     persistBuild,
+    scanListColumn,
   } = useBuildWirePreview(entityKind);
   const [hasUnsavedWireNames, setHasUnsavedWireNames] = useState(false);
   const { modalOpen, stay, leave } = useUnsavedNavigationGuard(hasUnsavedWireNames);
@@ -124,6 +125,7 @@ export default function BuildEntityWirePage({
           onForceIncludeChange={entityKind === 'zone' ? setRowForceIncluded : undefined}
           onWireNameChange={setRowWireName}
           onUnsavedChangesChange={setHasUnsavedWireNames}
+          scanListColumn={scanListColumn}
         />
       </Stack>
       <UnsavedChangesModal

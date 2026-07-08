@@ -42,7 +42,8 @@ Relationships use UUID `id` fields only — never wire names as internal FKs.
 | `ScanListsListPage`              | `src/app/routes/library/ScanListsListPage.tsx`               | List route                     |
 | `ScanListEditor`                 | `src/app/routes/library/ScanListEditor.tsx`                  | Name + members                 |
 | `ScanListMemberEditor`           | `src/app/components/library/ScanListMemberEditor.tsx`        | Channel member picker          |
-| `BuildScanListLibraryGuidance`   | `src/app/components/builds/BuildScanListLibraryGuidance.tsx` | Build page → library link      |
+| `BuildScanListLibraryGuidance`   | `src/app/components/builds/BuildScanListLibraryGuidance.tsx` | Build scan lists page → library link |
+| `WirePreviewTable` scan column   | `src/app/components/builds/WirePreviewTable.tsx`             | Channels build — hideable Scan list column |
 
 ## Migration
 
@@ -51,8 +52,8 @@ Projects with build-scoped `ScanListsLayout` sections hoist entries into `librar
 ## Manual verify
 
 1. `/library/scan-lists` → create list, add channels, reorder — save and reopen; order matches.
-2. Anytone build → Scan lists page shows library guidance; wire preview lists library scan lists.
-3. Channels page → assign scan list per channel; export ZIP — `Channel.CSV` `Scan List` and `ScanList.CSV` align.
+2. Anytone build → Channels page — assign scan list per row in the wire preview table (toggle **Show scan list column** to hide).
+3. Export ZIP — `Channel.CSV` `Scan List` and `ScanList.CSV` align.
 4. Export page — no **Default scan behaviour** segment; dedicated-scan copy instead ([#258](https://github.com/pskillen/codeplug-studio/issues/258)).
 
 ## Related
