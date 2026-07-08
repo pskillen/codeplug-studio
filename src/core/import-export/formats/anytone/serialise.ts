@@ -231,9 +231,11 @@ export function serialiseFmBroadcastCsv(
   assembled: AssembledBuild,
   options?: CpsExportOptions,
 ): string {
-  const scanContext = buildScanContext(undefined, {
-    defaultScanInclusion: options?.defaultScanInclusion,
-  });
+  const formatDefaults =
+    options?.defaultScanInclusion != null
+      ? { defaultScanInclusion: options.defaultScanInclusion }
+      : undefined;
+  const scanContext = buildScanContext(undefined, formatDefaults);
   const { fmBroadcastChannels } = partitionAnytoneChannels(assembled);
   const ordered = sortReceiveBankChannels(fmBroadcastChannels);
   const rows: string[][] = ordered.map((row, index) => {

@@ -36,8 +36,8 @@ describe('normaliseOpenAipAirport', () => {
       elevation: { value: 8 },
       geometry: { type: 'Point', coordinates: [-4.433, 55.8719] },
       frequencies: [
-        { value: '119.100', unit: 2, type: 14, primary: true, publicUse: true },
-        { value: '129.575', unit: 2, type: 15, primary: false, publicUse: true, name: 'ATIS' },
+        { value: '119.100', type: 14, primary: true },
+        { value: '129.575', type: 15, primary: false, name: 'ATIS' },
       ],
     });
 

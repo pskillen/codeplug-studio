@@ -22,7 +22,7 @@ describe('buildAirbandImportPlan', () => {
       modeProfiles: [
         { mode: 'am', squelch: null, rxTone: 'none', txTone: 'none', bandwidthKHz: 12.5 },
       ],
-      revision: { updatedAt: '', version: 1 },
+      revision: 1,
       updatedAt: '',
     });
 

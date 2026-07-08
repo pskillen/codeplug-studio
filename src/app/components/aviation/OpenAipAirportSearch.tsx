@@ -115,7 +115,7 @@ function AirportCard({
           </Group>
         </Group>
 
-        <Collapse in={expanded}>
+        <Collapse expanded={expanded}>
           {airport.frequencies.length === 0 ? (
             <Text size="sm" c="dimmed">
               No published frequencies in OpenAIP for this airport.
