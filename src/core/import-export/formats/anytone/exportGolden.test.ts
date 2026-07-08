@@ -5,7 +5,12 @@ import { describe, expect, it } from 'vitest';
 import { formatCatalogEntry, getExportAdapter } from '@core/import-export/registry.ts';
 import { isMultiFileExportAdapter } from '@core/import-export/exportAdapter.ts';
 import { ANYTONE_EXPORT_FILE_NAMES } from './columns.ts';
-import { exportBuildAll } from '@core/services/exportBuild.ts';
+import { serialiseAnytoneLstManifest } from './lstManifest.ts';
+import {
+  exportBuildAll,
+  exportBuildZip,
+  listExportBuildFileNames,
+} from '@core/services/exportBuild.ts';
 import {
   compareCsvRecords,
   formatCsvRecordCompareFailure,
@@ -164,5 +169,20 @@ describe('anytone/export golden', () => {
         `records: ${comparison.originalCount} → ${comparison.exportedCount}`,
     ).toBe(true);
     expect(comparison.originalCount).toBe(comparison.exportedCount);
+  });
+
+  it('includes project LST manifest when projectName is set', () => {
+    const library = minimalAnytoneExportLibrary();
+    const build = minimalAnytoneExportBuild(library);
+    const options = { projectName: 'meep' };
+    const result = exportBuildAll({ build, library, options });
+
+    const expectedLst = serialiseAnytoneLstManifest([...ANYTONE_EXPORT_FILE_NAMES]);
+    expect(result.files['meep.LST']).toBe(expectedLst);
+    expect(listExportBuildFileNames({ build, library, options })).toContain('meep.LST');
+
+    const zipped = exportBuildZip({ build, library, options });
+    expect(zipped.files['meep.LST']).toBe(expectedLst);
+    expect(zipped.zip.length).toBeGreaterThan(0);
   });
 });

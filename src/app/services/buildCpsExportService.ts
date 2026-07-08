@@ -43,6 +43,18 @@ async function requireBuild(
   return build;
 }
 
+async function mergeProjectExportOptions(
+  store: ProjectPersistence,
+  projectId: string,
+  options?: CpsExportOptions,
+): Promise<CpsExportOptions> {
+  const meta = await store.loadProjectMeta(projectId);
+  if (!meta?.name?.trim()) {
+    return options ?? {};
+  }
+  return { ...options, projectName: meta.name };
+}
+
 function slugifyFileName(name: string): string {
   return (
     name
@@ -75,11 +87,12 @@ export async function previewCpsExport(
 ): Promise<CpsPreviewResult> {
   const build = await requireBuild(store, projectId, buildId);
   const library = await loadLibrarySlice(store, projectId);
-  const result = exportBuildAll({ build, library, options });
+  const exportOptions = await mergeProjectExportOptions(store, projectId, options);
+  const result = exportBuildAll({ build, library, options: exportOptions });
   return {
     files: result.files,
     warnings: result.warnings,
-    fileNames: [...listExportBuildFileNames({ build, library, options })],
+    fileNames: [...listExportBuildFileNames({ build, library, options: exportOptions })],
   };
 }
 
@@ -92,7 +105,8 @@ export async function listCpsExportFileNames(
 ): Promise<readonly string[]> {
   const build = await requireBuild(store, projectId, buildId);
   const library = await loadLibrarySlice(store, projectId);
-  return listExportBuildFileNames({ build, library, options });
+  const exportOptions = await mergeProjectExportOptions(store, projectId, options);
+  return listExportBuildFileNames({ build, library, options: exportOptions });
 }
 
 /** Serialise a single CPS CSV for preview (no browser download). */
@@ -123,7 +137,8 @@ export async function downloadCpsFile(
 ): Promise<CpsDownloadResult> {
   const build = await requireBuild(store, projectId, buildId);
   const library = await loadLibrarySlice(store, projectId);
-  const result = exportBuildFile({ build, library, fileName, options });
+  const exportOptions = await mergeProjectExportOptions(store, projectId, options);
+  const result = exportBuildFile({ build, library, fileName, options: exportOptions });
   downloadTextFile(result.content, fileName);
   return { warnings: result.warnings };
 }
@@ -152,7 +167,8 @@ export async function downloadCpsZip(
 ): Promise<CpsDownloadResult> {
   const build = await requireBuild(store, projectId, buildId);
   const library = await loadLibrarySlice(store, projectId);
-  const result = exportBuildZip({ build, library, options });
+  const exportOptions = await mergeProjectExportOptions(store, projectId, options);
+  const result = exportBuildZip({ build, library, options: exportOptions });
   const zipName =
     options?.fileName ?? defaultCpsZipFileName(build.name, build.formatId as FormatId);
   downloadZip(result.zip, zipName);
@@ -168,7 +184,8 @@ export async function buildCpsZipBytes(
 ): Promise<{ zip: Uint8Array; fileName: string; warnings: string[] }> {
   const build = await requireBuild(store, projectId, buildId);
   const library = await loadLibrarySlice(store, projectId);
-  const result = exportBuildZip({ build, library, options });
+  const exportOptions = await mergeProjectExportOptions(store, projectId, options);
+  const result = exportBuildZip({ build, library, options: exportOptions });
   const fileName =
     options?.fileName ?? defaultCpsZipFileName(build.name, build.formatId as FormatId);
   return { zip: result.zip, fileName, warnings: result.warnings };
