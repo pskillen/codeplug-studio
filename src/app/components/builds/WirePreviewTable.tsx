@@ -3,7 +3,6 @@ import {
   Anchor,
   Badge,
   Group,
-  Select,
   Stack,
   Switch,
   Table,
@@ -20,15 +19,6 @@ import { libraryEditPathForWirePreviewRow } from '../../lib/wirePreviewRowLinks.
 import ZoneMemberSummaryBadges from '../library/ZoneMemberSummaryBadges.tsx';
 import { ICON_SIZE_ACTION, ICON_STROKE } from '../../lib/iconSizes.ts';
 
-export interface WirePreviewScanListColumn {
-  options: { value: string; label: string }[];
-  getScanListId: (row: WirePreviewRow) => string | undefined;
-  onScanListChange: (row: WirePreviewRow, scanListId: string | undefined) => void;
-  disabled?: boolean;
-  /** When false, only the None option is available — show create-list guidance. */
-  libraryHasScanLists?: boolean;
-}
-
 export interface WirePreviewTableProps {
   rows: WirePreviewRow[];
   nameLimit?: number;
@@ -37,7 +27,6 @@ export interface WirePreviewTableProps {
   onForceIncludeChange?: (row: WirePreviewRow, forceInclude: boolean) => void;
   onWireNameChange: (row: WirePreviewRow, wireName: string) => void;
   onUnsavedChangesChange?: (hasUnsaved: boolean) => void;
-  scanListColumn?: WirePreviewScanListColumn;
 }
 
 function wireNameCommittedValue(row: WirePreviewRow): string {
@@ -252,39 +241,6 @@ function WirePreviewDisplayCell({ row }: { row: WirePreviewRow }) {
   );
 }
 
-function WirePreviewScanListCell({
-  row,
-  column,
-  disabled,
-}: {
-  row: WirePreviewRow;
-  column: WirePreviewScanListColumn;
-  disabled: boolean;
-}) {
-  if (row.entityKind !== 'channel') {
-    return (
-      <Text size="xs" c="dimmed">
-        —
-      </Text>
-    );
-  }
-
-  const value = column.getScanListId(row) ?? '';
-
-  return (
-    <Select
-      size="xs"
-      data={column.options}
-      value={value}
-      disabled={disabled || column.disabled}
-      aria-label={`Scan list for ${row.displayLabel}`}
-      onChange={(next) =>
-        column.onScanListChange(row, next && next.length > 0 ? next : undefined)
-      }
-    />
-  );
-}
-
 export default function WirePreviewTable({
   rows,
   nameLimit,
@@ -293,10 +249,8 @@ export default function WirePreviewTable({
   onForceIncludeChange,
   onWireNameChange,
   onUnsavedChangesChange,
-  scanListColumn,
 }: WirePreviewTableProps) {
   const [dirtyKeys, setDirtyKeys] = useState<Set<string>>(() => new Set());
-  const [showScanListColumn, setShowScanListColumn] = useState(true);
 
   useEffect(() => {
     onUnsavedChangesChange?.(dirtyKeys.size > 0);
@@ -321,93 +275,45 @@ export default function WirePreviewTable({
     );
   }
 
-  const scanListVisible = scanListColumn != null && showScanListColumn;
-
   return (
-    <Stack gap="xs">
-      {scanListColumn ? (
-        <Text size="sm" c="dimmed">
-          {scanListColumn.libraryHasScanLists === false ? (
-            <>
-              No library scan lists yet —{' '}
-              <Anchor component={Link} to="/library/scan-lists/new">
-                create one
-              </Anchor>{' '}
-              to assign the Channel.CSV Scan List column. List membership for ScanList.CSV is
-              managed under{' '}
-              <Anchor component={Link} to="/library/scan-lists">
-                Library → Scan lists
-              </Anchor>
-              .
-            </>
-          ) : (
-            <>
-              Per-channel Scan List on Channel.CSV. Member channels for ScanList.CSV are managed in{' '}
-              <Anchor component={Link} to="/library/scan-lists">
-                Library → Scan lists
-              </Anchor>
-              .
-            </>
-          )}
-        </Text>
-      ) : null}
-      {scanListColumn ? (
-        <Switch
-          size="xs"
-          label="Show scan list column"
-          checked={showScanListColumn}
-          onChange={(event) => setShowScanListColumn(event.currentTarget.checked)}
-        />
-      ) : null}
-      <Table striped highlightOnHover withTableBorder>
-        <Table.Thead>
-          <Table.Tr>
-            <Table.Th>Skip from export</Table.Th>
-            <Table.Th>Library name</Table.Th>
-            {scanListVisible ? <Table.Th>Scan list</Table.Th> : null}
-            <Table.Th>Export name</Table.Th>
-          </Table.Tr>
-        </Table.Thead>
-        <Table.Tbody>
-          {rows.map((row) => {
-            const effectivelyIncluded = rowEffectivelyIncluded(row);
-            return (
-              <Table.Tr key={row.key} opacity={effectivelyIncluded ? 1 : 0.55}>
-                <Table.Td>
-                  <WirePreviewExportControls
-                    row={row}
-                    onExcludedChange={onExcludedChange}
-                    onForceIncludeChange={onForceIncludeChange}
-                  />
-                </Table.Td>
-                <Table.Td>
-                  <WirePreviewDisplayCell row={row} />
-                </Table.Td>
-                {scanListVisible && scanListColumn ? (
-                  <Table.Td>
-                    <WirePreviewScanListCell
-                      row={row}
-                      column={scanListColumn}
-                      disabled={!effectivelyIncluded}
-                    />
-                  </Table.Td>
-                ) : null}
-                <Table.Td>
-                  <WireNameOverrideInput
-                    key={`${row.key}:${wireNameCommittedValue(row)}`}
-                    row={row}
-                    nameLimit={nameLimit}
-                    excluded={!effectivelyIncluded}
-                    clickableDefaultWireName={clickableDefaultWireName}
-                    onWireNameChange={onWireNameChange}
-                    onDirtyChange={(dirty) => setRowDirty(row.key, dirty)}
-                  />
-                </Table.Td>
-              </Table.Tr>
-            );
-          })}
-        </Table.Tbody>
-      </Table>
-    </Stack>
+    <Table striped highlightOnHover withTableBorder>
+      <Table.Thead>
+        <Table.Tr>
+          <Table.Th>Skip from export</Table.Th>
+          <Table.Th>Library name</Table.Th>
+          <Table.Th>Export name</Table.Th>
+        </Table.Tr>
+      </Table.Thead>
+      <Table.Tbody>
+        {rows.map((row) => {
+          const effectivelyIncluded = rowEffectivelyIncluded(row);
+          return (
+            <Table.Tr key={row.key} opacity={effectivelyIncluded ? 1 : 0.55}>
+              <Table.Td>
+                <WirePreviewExportControls
+                  row={row}
+                  onExcludedChange={onExcludedChange}
+                  onForceIncludeChange={onForceIncludeChange}
+                />
+              </Table.Td>
+              <Table.Td>
+                <WirePreviewDisplayCell row={row} />
+              </Table.Td>
+              <Table.Td>
+                <WireNameOverrideInput
+                  key={`${row.key}:${wireNameCommittedValue(row)}`}
+                  row={row}
+                  nameLimit={nameLimit}
+                  excluded={!effectivelyIncluded}
+                  clickableDefaultWireName={clickableDefaultWireName}
+                  onWireNameChange={onWireNameChange}
+                  onDirtyChange={(dirty) => setRowDirty(row.key, dirty)}
+                />
+              </Table.Td>
+            </Table.Tr>
+          );
+        })}
+      </Table.Tbody>
+    </Table>
   );
 }

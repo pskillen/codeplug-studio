@@ -5,7 +5,6 @@ import {
   isEntityForceIncluded,
   overrideByEntityId,
 } from '@core/domain/formatBuildOverrides.ts';
-import { hasDedicatedScanLists } from '@core/models/traits.ts';
 import type { LibrarySlice } from '@core/services/assemble.ts';
 import {
   isPreviewRowIncludedInExport,
@@ -23,7 +22,6 @@ import { useProjects } from '../state/useProjects.ts';
 import { persistence } from '../state/persistence.ts';
 import { BuildService } from '../state/buildService.ts';
 import { loadLibrarySlice } from '../lib/loadLibrarySlice.ts';
-import type { WirePreviewScanListColumn } from '../components/builds/WirePreviewTable.tsx';
 
 const buildService = new BuildService(persistence);
 
@@ -163,42 +161,6 @@ export function useBuildWirePreview(entityKind: WirePreviewEntityKind) {
     [entityKind, persistBuild],
   );
 
-  const channelOverrides = useMemo(
-    () => overrideByEntityId(build.channelOverrides),
-    [build.channelOverrides],
-  );
-
-  const setChannelScanListId = useCallback(
-    (row: WirePreviewRow, scanListId: string | undefined) => {
-      void persistBuild((current) => {
-        const existing = overrideByEntityId(current.channelOverrides).get(row.libraryEntityId)
-          ?.scanListId;
-        if ((existing ?? undefined) === (scanListId ?? undefined)) {
-          return current;
-        }
-        return buildService.withChannelScanListId(current, row.libraryEntityId, scanListId);
-      });
-    },
-    [persistBuild],
-  );
-
-  const scanListColumn = useMemo((): WirePreviewScanListColumn | undefined => {
-    if (entityKind !== 'channel' || !hasDedicatedScanLists(build.profileId) || !library) {
-      return undefined;
-    }
-    const scanLists = library.scanLists;
-    return {
-      options: [
-        { value: '', label: 'None' },
-        ...scanLists.map((entry) => ({ value: entry.id, label: entry.name })),
-      ],
-      getScanListId: (row) => channelOverrides.get(row.libraryEntityId)?.scanListId,
-      onScanListChange: setChannelScanListId,
-      disabled: saving,
-      libraryHasScanLists: scanLists.length > 0,
-    };
-  }, [entityKind, build.profileId, library, channelOverrides, setChannelScanListId, saving]);
-
   return {
     build,
     rows,
@@ -215,6 +177,5 @@ export function useBuildWirePreview(entityKind: WirePreviewEntityKind) {
     setRowForceIncluded,
     setRowWireName,
     persistBuild,
-    scanListColumn,
   };
 }

@@ -186,29 +186,4 @@ describe('WirePreviewTable', () => {
 
     expect(screen.getByLabelText('Skip PMR446 from export')).toBeInTheDocument();
   });
-
-  it('renders hideable scan list column for channel rows', () => {
-    const onScanListChange = vi.fn();
-    renderTable({
-      rows: [rows[0]!],
-      onExcludedChange: vi.fn(),
-      onWireNameChange: vi.fn(),
-      scanListColumn: {
-        options: [
-          { value: '', label: 'None' },
-          { value: 'sl-1', label: 'Zone scan' },
-        ],
-        getScanListId: () => undefined,
-        onScanListChange,
-        libraryHasScanLists: true,
-      },
-    });
-
-    expect(screen.getByText('Scan list', { selector: 'th' })).toBeInTheDocument();
-    expect(screen.getByRole('combobox')).toBeInTheDocument();
-
-    fireEvent.click(screen.getByLabelText('Show scan list column'));
-    expect(screen.queryByText('Scan list', { selector: 'th' })).not.toBeInTheDocument();
-    expect(screen.queryByRole('combobox')).not.toBeInTheDocument();
-  });
 });

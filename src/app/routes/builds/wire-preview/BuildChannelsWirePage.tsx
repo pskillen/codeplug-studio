@@ -13,7 +13,7 @@ export default function BuildChannelsWirePage() {
     <BuildEntityWirePage
       title="Channels"
       entityKind="channel"
-      description="Toggle inclusion, override wire names, and assign scan lists. Multi-mode channels may appear as separate rows."
+      description="Toggle inclusion and override wire names. Multi-mode channels may appear as separate rows. Assign scan lists on each channel in the library."
       showExportNameMode
       showChannelAbbreviation
     />
