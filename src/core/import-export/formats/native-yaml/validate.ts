@@ -38,6 +38,7 @@ import {
   libraryEntityIds,
   validateEntityRef,
   validateRxGroupListId,
+  validateScanListId,
   validateScanListMembers,
   validateZoneMembers,
 } from '@core/domain/validation.ts';
@@ -256,6 +257,14 @@ function parseChannel(raw: unknown, index: number): Channel {
         ? false
         : expectBoolean(record.forbidTransmit, `library.channels[${index}].forbidTransmit`),
     comment: expectString(record.comment, `library.channels[${index}].comment`),
+    ...(record.scanListId !== undefined && record.scanListId !== null
+      ? {
+          scanListId: expectNullableString(
+            record.scanListId,
+            `library.channels[${index}].scanListId`,
+          ),
+        }
+      : {}),
     ...(record.abbreviation !== undefined && record.abbreviation !== null
       ? {
           abbreviation: expectString(
@@ -793,6 +802,13 @@ function validateForeignKeys(library: Library, formatBuilds: FormatBuild[]): voi
   }
 
   for (const channel of library.channels) {
+    if (channel.scanListId) {
+      try {
+        validateScanListId(channel.scanListId, library);
+      } catch (error) {
+        throw new NativeYamlImportError(error instanceof Error ? error.message : String(error));
+      }
+    }
     for (const profile of channel.modeProfiles) {
       if (profile.mode === 'dmr') {
         if (profile.contactRef) {
@@ -949,6 +965,7 @@ export function validateDocument(raw: unknown): ProjectAggregate {
   const studioSchemaVersion = document.studioSchemaVersion;
   if (
     studioSchemaVersion !== STUDIO_SCHEMA_VERSION &&
+    studioSchemaVersion !== 10 &&
     studioSchemaVersion !== 9 &&
     studioSchemaVersion !== 8 &&
     studioSchemaVersion !== 7 &&
@@ -959,7 +976,7 @@ export function validateDocument(raw: unknown): ProjectAggregate {
     studioSchemaVersion !== 2
   ) {
     throw new NativeYamlImportError(
-      `Unsupported studioSchemaVersion: ${String(studioSchemaVersion)} (expected ${STUDIO_SCHEMA_VERSION}, 9, 8, 7, 6, 5, 4, 3, or 2)`,
+      `Unsupported studioSchemaVersion: ${String(studioSchemaVersion)} (expected ${STUDIO_SCHEMA_VERSION}, 10, 9, 8, 7, 6, 5, 4, 3, or 2)`,
     );
   }
 

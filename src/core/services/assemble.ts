@@ -189,11 +189,10 @@ function scanListsSections(build: FormatBuild): ScanListsLayout[] {
 }
 
 function resolveChannelScanListWireName(
-  channelId: string,
-  channelOverrides: BuildEntityOverride[],
+  channel: { scanListId?: string | null },
   scanListById: Map<string, AssembledScanList>,
 ): string {
-  const scanListId = overrideByEntityId(channelOverrides).get(channelId)?.scanListId;
+  const scanListId = channel.scanListId?.trim();
   if (!scanListId) return 'None';
   return scanListById.get(scanListId)?.wireName ?? 'None';
 }
@@ -475,11 +474,7 @@ export function assemble(
   const scanListById = new Map(scanLists.map((list) => [list.scanListId, list]));
   const channelsWithScanLists = channels.map((row) => ({
     ...row,
-    scanListWireName: resolveChannelScanListWireName(
-      row.entity.id,
-      normalizedBuild.channelOverrides,
-      scanListById,
-    ),
+    scanListWireName: resolveChannelScanListWireName(row.entity, scanListById),
     orderOrSlot: overrideOrderOrSlot(normalizedBuild.channelOverrides, row.entity.id),
   }));
 

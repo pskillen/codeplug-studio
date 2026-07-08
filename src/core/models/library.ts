@@ -99,6 +99,8 @@ export interface Channel extends PersistableRow {
   maidenheadLocator: string | null;
   power: number | null;
   scanInclusion: ScanInclusion;
+  /** Optional FK to library `ScanList` for dedicated-scan-list CPS export. */
+  scanListId?: string | null;
   /** When true, channel is receive-only (no transmit) at export. */
   forbidTransmit: boolean;
   comment: string;

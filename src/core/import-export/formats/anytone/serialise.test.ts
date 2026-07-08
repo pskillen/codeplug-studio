@@ -61,8 +61,10 @@ describe('anytone serialise', () => {
 
   it('serialises MVP file bundle from assembled build', () => {
     const tg = newTalkGroup(PROJECT_ID, 'TG Alpha', 2355);
+    const scanListId = 'scan-1';
     const ch1 = {
       ...newChannel(PROJECT_ID, 'Channel 1'),
+      scanListId,
       rxFrequency: 438_800_000,
       txFrequency: 434_000_000,
       modeProfiles: [
@@ -98,7 +100,6 @@ describe('anytone serialise', () => {
         { kind: 'channel' as const, channelId: ch2.id },
       ],
     };
-    const scanListId = 'scan-1';
     const scanList = {
       ...newScanList(PROJECT_ID, 'Zone A SCL'),
       id: scanListId,
@@ -115,7 +116,6 @@ describe('anytone serialise', () => {
         ],
       },
       exportSettings: { defaultScanInclusion: 'skip' as const },
-      channelOverrides: [{ libraryEntityId: ch1.id, scanListId }],
       zoneOverrides: [{ libraryEntityId: zone.id, wireName: 'Zone A' }],
     };
     const library = {

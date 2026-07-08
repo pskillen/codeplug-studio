@@ -10,6 +10,7 @@ import {
 import { resolveEffectiveZoneChannelIds } from './zoneHierarchy.ts';
 import { migrateZoneMemberEntries } from './migrateZoneMembers.ts';
 import { migrateBuildScanListsToLibrary } from './migrateScanLists.ts';
+import { migrateChannelScanListFromBuildOverrides } from './migrateChannelScanList.ts';
 
 export interface LegacyZoneExportFields {
   exportScratchChannel: boolean;
@@ -142,15 +143,17 @@ export function migrateProjectAggregate(aggregate: ProjectAggregate): ProjectAgg
     withMembers.formatBuilds,
   );
 
-  return migrateBuildScanListsToLibrary({
-    meta: withMembers.meta,
-    channels: migratedLibrary.channels,
-    zones: migratedLibrary.zones,
-    talkGroups: migratedLibrary.talkGroups,
-    digitalContacts: migratedLibrary.digitalContacts,
-    analogContacts: migratedLibrary.analogContacts,
-    rxGroupLists: migratedLibrary.rxGroupLists,
-    scanLists: migratedLibrary.scanLists,
-    formatBuilds,
-  });
+  return migrateChannelScanListFromBuildOverrides(
+    migrateBuildScanListsToLibrary({
+      meta: withMembers.meta,
+      channels: migratedLibrary.channels,
+      zones: migratedLibrary.zones,
+      talkGroups: migratedLibrary.talkGroups,
+      digitalContacts: migratedLibrary.digitalContacts,
+      analogContacts: migratedLibrary.analogContacts,
+      rxGroupLists: migratedLibrary.rxGroupLists,
+      scanLists: migratedLibrary.scanLists,
+      formatBuilds,
+    }),
+  );
 }

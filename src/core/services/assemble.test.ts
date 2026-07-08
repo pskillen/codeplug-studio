@@ -720,18 +720,15 @@ describe('assemble', () => {
 
   it('projects dedicated scan lists and channel scan list wire names', () => {
     const projectId = 'project-1';
-    const ch1 = newChannel(projectId, 'Channel 1');
-    const ch2 = newChannel(projectId, 'Channel 2');
     const scanListId = 'scan-list-1';
+    const ch1 = { ...newChannel(projectId, 'Channel 1'), scanListId };
+    const ch2 = newChannel(projectId, 'Channel 2');
     const scanList = {
       ...newScanList(projectId, 'Zone A SCL'),
       id: scanListId,
       memberChannelIds: [ch1.id, ch2.id],
     };
-    const build = {
-      ...newFormatBuild('project-1', 'anytone-at-d890uv'),
-      channelOverrides: [{ libraryEntityId: ch1.id, scanListId }],
-    };
+    const build = newFormatBuild('project-1', 'anytone-at-d890uv');
     const library = {
       channels: [ch1, ch2],
       zones: [],

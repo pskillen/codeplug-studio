@@ -17,6 +17,7 @@ export function minimalAnytoneExportLibrary(): LibrarySlice {
   const tg = newTalkGroup(ANYTONE_GOLDEN_PROJECT_ID, 'TG Alpha', 2355);
   const ch1 = {
     ...newChannel(ANYTONE_GOLDEN_PROJECT_ID, 'Channel 1'),
+    scanListId: ANYTONE_GOLDEN_SCAN_LIST_ID,
     rxFrequency: 438_800_000,
     txFrequency: 434_000_000,
     power: 25,
@@ -86,7 +87,6 @@ export function minimalAnytoneExportBuild(library: LibrarySlice): FormatBuild {
         },
       ],
     },
-    channelOverrides: [{ libraryEntityId: ch1.id, scanListId: ANYTONE_GOLDEN_SCAN_LIST_ID }],
     zoneOverrides: [{ libraryEntityId: zone.id, wireName: 'Zone A' }],
   };
 }

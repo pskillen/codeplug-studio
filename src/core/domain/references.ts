@@ -81,8 +81,16 @@ export function findReferencesTo(library: Library, target: ReferenceTarget): Ent
     }
   }
 
-  // Channels reference contacts, RX group lists, and talk groups via mode profiles.
+  // Channels reference contacts, RX group lists, talk groups, and scan lists.
   for (const channel of library.channels) {
+    if (target.kind === 'scanList' && channel.scanListId === target.id) {
+      refs.push({
+        fromKind: 'channel',
+        fromId: channel.id,
+        fromName: channel.name,
+        relationship: 'channel scan list',
+      });
+    }
     for (const profile of channel.modeProfiles) {
       if (profile.mode === 'dmr') {
         const refsContact = profile.contactRef !== null && refMatches(profile.contactRef, target);
@@ -229,6 +237,16 @@ export function findDanglingReferences(library: Library): DanglingReference[] {
   }
 
   for (const channel of library.channels) {
+    if (channel.scanListId && !scanListIds.has(channel.scanListId)) {
+      dangling.push({
+        fromKind: 'channel',
+        fromId: channel.id,
+        fromName: channel.name,
+        targetKind: 'scanList',
+        targetId: channel.scanListId,
+        relationship: 'channel scan list',
+      });
+    }
     for (const profile of dmrProfiles(channel)) {
       if (profile.contactRef && !hasTarget(profile.contactRef)) {
         dangling.push({
