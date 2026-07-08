@@ -1,12 +1,18 @@
 import { describe, expect, it } from 'vitest';
-import { BuildCapabilityTrait, TRAIT_PROFILES, traitProfileFor } from './traits.ts';
+import {
+  BuildCapabilityTrait,
+  TRAIT_PROFILES,
+  hasDedicatedScanLists,
+  showsDefaultScanInclusion,
+  traitProfileFor,
+} from './traits.ts';
 import { STUDIO_SCHEMA_VERSION } from './schemaVersion.ts';
 import { newFormatBuild, newProjectMeta } from '../domain/factories.ts';
 import { nextRevision, initialRevision } from './revision.ts';
 
 describe('schemaVersion', () => {
   it('starts at 4', () => {
-    expect(STUDIO_SCHEMA_VERSION).toBe(9);
+    expect(STUDIO_SCHEMA_VERSION).toBe(11);
   });
 });
 
@@ -29,10 +35,26 @@ describe('trait profiles', () => {
     expect(profile?.traits).toContain(BuildCapabilityTrait.ZoneAsScanList);
   });
 
-  it('registers anytone-at-d890uv with zone grouping and scan lists', () => {
+  it('registers anytone-at-d890uv with zone grouping and dedicated scan lists', () => {
     const profile = traitProfileFor('anytone-at-d890uv');
     expect(profile?.traits).toContain(BuildCapabilityTrait.ZoneGrouping);
+    expect(profile?.traits).toContain(BuildCapabilityTrait.DedicatedScanLists);
+    expect(profile?.traits).not.toContain(BuildCapabilityTrait.ScanLists);
+  });
+
+  it('registers dm32 with zone-derived scan lists trait', () => {
+    const profile = traitProfileFor('dm32-baofeng-dm32uv');
     expect(profile?.traits).toContain(BuildCapabilityTrait.ScanLists);
+    expect(profile?.traits).not.toContain(BuildCapabilityTrait.DedicatedScanLists);
+  });
+
+  it('distinguishes dedicated vs zone-derived scan list semantics', () => {
+    expect(hasDedicatedScanLists('anytone-at-d890uv')).toBe(true);
+    expect(hasDedicatedScanLists('dm32-baofeng-dm32uv')).toBe(false);
+    expect(showsDefaultScanInclusion('anytone-at-d890uv')).toBe(false);
+    expect(showsDefaultScanInclusion('dm32-baofeng-dm32uv')).toBe(true);
+    expect(showsDefaultScanInclusion('opengd77-1701')).toBe(true);
+    expect(showsDefaultScanInclusion('chirp-uv5r')).toBe(true);
   });
 
   it('has stable profile keys', () => {

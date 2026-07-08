@@ -7,6 +7,7 @@ import type {
   DigitalContact,
   Library,
   RxGroupList,
+  ScanList,
   TalkGroup,
   Zone,
 } from '../models/library.ts';
@@ -21,6 +22,7 @@ export function emptyLibrary(): Library {
     talkGroups: [],
     digitalContacts: [],
     rxGroupLists: [],
+    scanLists: [],
     zones: [],
   };
 }
@@ -162,6 +164,18 @@ export function newRxGroupList(projectId: string, name: string): RxGroupList {
     updatedAt: now,
     name,
     members: [],
+  };
+}
+
+export function newScanList(projectId: string, name: string): ScanList {
+  const now = isoNow();
+  return {
+    id: newId(),
+    projectId,
+    revision: initialRevision(),
+    updatedAt: now,
+    name,
+    memberChannelIds: [],
   };
 }
 

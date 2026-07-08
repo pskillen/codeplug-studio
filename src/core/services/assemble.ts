@@ -4,6 +4,7 @@ import type {
   Channel,
   DigitalContact,
   RxGroupList,
+  ScanList,
   TalkGroup,
   Zone,
 } from '@core/models/library.ts';
@@ -37,6 +38,19 @@ export interface LibrarySlice {
   digitalContacts: DigitalContact[];
   analogContacts: AnalogContact[];
   rxGroupLists: RxGroupList[];
+  scanLists: ScanList[];
+}
+
+export function librarySliceFrom(library: Library): LibrarySlice {
+  return {
+    channels: library.channels,
+    zones: library.zones,
+    talkGroups: library.talkGroups,
+    digitalContacts: library.digitalContacts,
+    analogContacts: library.analogContacts,
+    rxGroupLists: library.rxGroupLists,
+    scanLists: library.scanLists,
+  };
 }
 
 export interface AssembledEntity<T> {
@@ -175,38 +189,45 @@ function scanListsSections(build: FormatBuild): ScanListsLayout[] {
 }
 
 function resolveChannelScanListWireName(
-  channelId: string,
-  channelOverrides: BuildEntityOverride[],
+  channel: { scanListId?: string | null },
   scanListById: Map<string, AssembledScanList>,
 ): string {
-  const scanListId = overrideByEntityId(channelOverrides).get(channelId)?.scanListId;
+  const scanListId = channel.scanListId?.trim();
   if (!scanListId) return 'None';
   return scanListById.get(scanListId)?.wireName ?? 'None';
 }
 
 function assembleScanLists(
   build: FormatBuild,
+  library: LibrarySlice,
   exportedChannelIds: Set<string>,
 ): AssembledScanList[] {
-  const sections = scanListsSections(build);
-  if (sections.length === 0) return [];
+  const layoutEntries = scanListsSections(build).flatMap((section) => section.scanLists);
+  const sources =
+    library.scanLists.length > 0
+      ? library.scanLists.map((list) => ({
+          id: list.id,
+          name: list.name,
+          channelIds: list.memberChannelIds,
+        }))
+      : layoutEntries;
+
+  if (sources.length === 0) return [];
 
   const overrides = build.scanListOverrides ?? [];
   const assembled: AssembledScanList[] = [];
 
-  for (const section of sections) {
-    for (const entry of section.scanLists) {
-      if (isEntityExcluded(overrides, entry.id)) continue;
-      const memberChannelIds = entry.channelIds.filter((id) => exportedChannelIds.has(id));
-      if (memberChannelIds.length === 0 && !overrideByEntityId(overrides).has(entry.id)) {
-        continue;
-      }
-      assembled.push({
-        scanListId: entry.id,
-        wireName: resolveOverrideWireName(overrides, entry.id, entry.name),
-        memberChannelIds,
-      });
+  for (const entry of sources) {
+    if (isEntityExcluded(overrides, entry.id)) continue;
+    const memberChannelIds = entry.channelIds.filter((id) => exportedChannelIds.has(id));
+    if (memberChannelIds.length === 0 && !overrideByEntityId(overrides).has(entry.id)) {
+      continue;
     }
+    assembled.push({
+      scanListId: entry.id,
+      wireName: resolveOverrideWireName(overrides, entry.id, entry.name),
+      memberChannelIds,
+    });
   }
 
   return assembled;
@@ -449,15 +470,11 @@ export function assemble(
   const channels = assembleChannels(normalizedBuild, library);
   const exportedChannelIds = new Set(channels.map((c) => c.entity.id));
   const zones = assembleZones(normalizedBuild, library, exportedChannelIds);
-  const scanLists = assembleScanLists(normalizedBuild, exportedChannelIds);
+  const scanLists = assembleScanLists(normalizedBuild, library, exportedChannelIds);
   const scanListById = new Map(scanLists.map((list) => [list.scanListId, list]));
   const channelsWithScanLists = channels.map((row) => ({
     ...row,
-    scanListWireName: resolveChannelScanListWireName(
-      row.entity.id,
-      normalizedBuild.channelOverrides,
-      scanListById,
-    ),
+    scanListWireName: resolveChannelScanListWireName(row.entity, scanListById),
     orderOrSlot: overrideOrderOrSlot(normalizedBuild.channelOverrides, row.entity.id),
   }));
 

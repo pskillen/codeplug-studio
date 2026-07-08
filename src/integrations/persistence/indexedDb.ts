@@ -5,6 +5,7 @@ import type {
   Channel,
   DigitalContact,
   RxGroupList,
+  ScanList,
   TalkGroup,
   Zone,
 } from '@core/models/library.ts';
@@ -173,6 +174,16 @@ export class IndexedDbProjectPersistence implements ProjectPersistence {
     return this.listRows<RxGroupList>('rxGroupList', projectId);
   }
 
+  async getScanList(projectId: string, id: string): Promise<ScanList | null> {
+    return this.getRow<ScanList>('scanList', projectId, id);
+  }
+  async putScanList(row: ScanList, expectedRevision: number | null): Promise<PutResult> {
+    return this.putRow('scanList', row, expectedRevision);
+  }
+  async listScanLists(projectId: string): Promise<ScanList[]> {
+    return this.listRows<ScanList>('scanList', projectId);
+  }
+
   async getFormatBuild(projectId: string, id: string): Promise<FormatBuild | null> {
     const row = await this.getRow<FormatBuild>('formatBuild', projectId, id);
     return row ? readFormatBuildRow(row) : null;
@@ -213,6 +224,7 @@ export class IndexedDbProjectPersistence implements ProjectPersistence {
       digitalContacts,
       analogContacts,
       rxGroupLists,
+      scanLists,
       formatBuilds,
     ] = await Promise.all([
       this.listChannels(projectId),
@@ -221,6 +233,7 @@ export class IndexedDbProjectPersistence implements ProjectPersistence {
       this.listDigitalContacts(projectId),
       this.listAnalogContacts(projectId),
       this.listRxGroupLists(projectId),
+      this.listScanLists(projectId),
       this.listFormatBuilds(projectId),
     ]);
     return {
@@ -231,6 +244,7 @@ export class IndexedDbProjectPersistence implements ProjectPersistence {
       digitalContacts,
       analogContacts,
       rxGroupLists,
+      scanLists,
       formatBuilds,
     };
   }
@@ -246,6 +260,7 @@ export class IndexedDbProjectPersistence implements ProjectPersistence {
       { kind: 'digitalContact', rows: seed.digitalContacts ?? [] },
       { kind: 'analogContact', rows: seed.analogContacts ?? [] },
       { kind: 'rxGroupList', rows: seed.rxGroupLists ?? [] },
+      { kind: 'scanList', rows: seed.scanLists ?? [] },
       { kind: 'formatBuild', rows: seed.formatBuilds ?? [] },
     ];
     await new Promise<void>((resolve, reject) => {
@@ -300,6 +315,7 @@ export class IndexedDbProjectPersistence implements ProjectPersistence {
       { kind: 'digitalContact', rows: seed.digitalContacts ?? [] },
       { kind: 'analogContact', rows: seed.analogContacts ?? [] },
       { kind: 'rxGroupList', rows: seed.rxGroupLists ?? [] },
+      { kind: 'scanList', rows: seed.scanLists ?? [] },
       { kind: 'formatBuild', rows: seed.formatBuilds ?? [] },
     ];
     const storeNames = writes.map((w) => STORES[w.kind]);

@@ -99,6 +99,8 @@ export interface Channel extends PersistableRow {
   maidenheadLocator: string | null;
   power: number | null;
   scanInclusion: ScanInclusion;
+  /** Optional FK to library `ScanList` for dedicated-scan-list CPS export. */
+  scanListId?: string | null;
   /** When true, channel is receive-only (no transmit) at export. */
   forbidTransmit: boolean;
   comment: string;
@@ -139,6 +141,11 @@ export interface RxGroupList extends PersistableRow {
   members: RxGroupListMember[];
 }
 
+export interface ScanList extends PersistableRow {
+  name: string;
+  memberChannelIds: string[];
+}
+
 export type ZoneMemberEntry =
   | { kind: 'channel'; channelId: string; includeInScanList?: boolean }
   | { kind: 'zone'; zoneId: string };
@@ -157,5 +164,6 @@ export interface Library {
   talkGroups: TalkGroup[];
   digitalContacts: DigitalContact[];
   rxGroupLists: RxGroupList[];
+  scanLists: ScanList[];
   zones: Zone[];
 }

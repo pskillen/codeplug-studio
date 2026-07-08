@@ -14,6 +14,7 @@ export function assertSeedProjectId(projectId: string, seed: ProjectSeed): void 
     ...(seed.digitalContacts ?? []),
     ...(seed.analogContacts ?? []),
     ...(seed.rxGroupLists ?? []),
+    ...(seed.scanLists ?? []),
     ...(seed.formatBuilds ?? []),
   ];
   for (const row of rows) {
@@ -32,6 +33,7 @@ export function seedFromAggregate(aggregate: ProjectAggregate): ProjectSeed {
     digitalContacts: aggregate.digitalContacts,
     analogContacts: aggregate.analogContacts,
     rxGroupLists: aggregate.rxGroupLists,
+    scanLists: aggregate.scanLists,
     formatBuilds: aggregate.formatBuilds,
   };
 }
@@ -45,6 +47,7 @@ export function aggregateFromSeed(seed: ProjectSeed): ProjectAggregate {
     digitalContacts: seed.digitalContacts ?? [],
     analogContacts: seed.analogContacts ?? [],
     rxGroupLists: seed.rxGroupLists ?? [],
+    scanLists: seed.scanLists ?? [],
     formatBuilds: seed.formatBuilds ?? [],
   };
 }

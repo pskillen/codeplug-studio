@@ -6,6 +6,7 @@ import BandsReferenceSectionNav from '../components/SectionNav/sections/BandsRef
 import MaidenheadReferenceSectionNav from '../components/SectionNav/sections/MaidenheadReferenceSectionNav.tsx';
 import ReferenceSectionNav from '../components/SectionNav/sections/ReferenceSectionNav.tsx';
 import RxGroupListsSectionNav from '../components/SectionNav/sections/RxGroupListsSectionNav.tsx';
+import ScanListsSectionNav from '../components/SectionNav/sections/ScanListsSectionNav.tsx';
 import SettingsSectionNav from '../components/SectionNav/sections/SettingsSectionNav.tsx';
 import TalkGroupsSectionNav from '../components/SectionNav/sections/TalkGroupsSectionNav.tsx';
 import ZonesSectionNav from '../components/SectionNav/sections/ZonesSectionNav.tsx';
@@ -30,6 +31,7 @@ const registry: SectionNavEntry[] = [
   { title: 'Talk groups', prefix: '/library/talk-groups', Component: TalkGroupsSectionNav },
   { title: 'Contacts', prefix: '/library/contacts', Component: ContactsSectionNav },
   { title: 'RX group lists', prefix: '/library/rx-group-lists', Component: RxGroupListsSectionNav },
+  { title: 'Scan lists', prefix: '/library/scan-lists', Component: ScanListsSectionNav },
   { title: 'Library', prefix: '/library', Component: ChannelsSectionNav },
   { title: 'Radio build', prefix: '/builds', Component: BuildsSectionNav },
 ];

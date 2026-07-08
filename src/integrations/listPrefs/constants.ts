@@ -8,4 +8,5 @@ export const LIST_ENTITY_LABELS: Record<string, string> = {
   'digital-contacts': 'digital contacts',
   'analog-contacts': 'analog contacts',
   'rx-group-lists': 'RX group lists',
+  'scan-lists': 'scan lists',
 };

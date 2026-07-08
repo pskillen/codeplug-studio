@@ -25,6 +25,7 @@ export const LIBRARY_KINDS: LibraryKindMeta[] = [
     plural: 'Analog contacts',
   },
   { kind: 'rxGroupList', slug: 'rx-group-lists', label: 'RX group list', plural: 'RX group lists' },
+  { kind: 'scanList', slug: 'scan-lists', label: 'Scan list', plural: 'Scan lists' },
   { kind: 'zone', slug: 'zones', label: 'Zone', plural: 'Zones' },
 ];
 
@@ -52,6 +53,8 @@ export function entitiesForKind(library: Library, kind: LibraryEntityKind): Name
       return library.analogContacts;
     case 'rxGroupList':
       return library.rxGroupLists;
+    case 'scanList':
+      return library.scanLists;
     case 'zone':
       return library.zones;
   }
@@ -83,6 +86,10 @@ export function describeEntity(library: Library, kind: LibraryEntityKind, id: st
     case 'rxGroupList': {
       const r = library.rxGroupLists.find((x) => x.id === id);
       return r ? `${r.members.length} member(s)` : '';
+    }
+    case 'scanList': {
+      const s = library.scanLists.find((x) => x.id === id);
+      return s ? `${s.memberChannelIds.length} channel(s)` : '';
     }
     case 'zone': {
       const z = library.zones.find((x) => x.id === id);

@@ -76,6 +76,7 @@ library:
       projectId: 11111111-1111-4111-8111-111111111111
       revision: 1
       updatedAt: 2026-07-02T10:00:00.000Z
+  scanLists: []
   talkGroups:
     - abbreviation: Sco
       comment: TG fixture
@@ -107,4 +108,4 @@ project:
   revision: 1
   updatedAt: 2026-07-02T10:00:00.000Z
 schemaVersion: 1
-studioSchemaVersion: 9
+studioSchemaVersion: 11

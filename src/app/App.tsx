@@ -12,6 +12,7 @@ import ZonesListPage from './routes/library/lists/ZonesListPage.tsx';
 import TalkGroupsListPage from './routes/library/lists/TalkGroupsListPage.tsx';
 import ContactsListPage from './routes/library/lists/ContactsListPage.tsx';
 import RxGroupListsListPage from './routes/library/lists/RxGroupListsListPage.tsx';
+import ScanListsListPage from './routes/library/lists/ScanListsListPage.tsx';
 import SummaryPage from './routes/SummaryPage.tsx';
 import BandsReferencePage from './routes/reference/BandsReferencePage.tsx';
 import MaidenheadReferencePage from './routes/reference/MaidenheadReferencePage.tsx';
@@ -84,6 +85,7 @@ export const appRouter = createBrowserRouter([
           { path: '/library/talk-groups', element: <TalkGroupsListPage /> },
           { path: '/library/contacts', element: <ContactsListPage /> },
           { path: '/library/rx-group-lists', element: <RxGroupListsListPage /> },
+          { path: '/library/scan-lists', element: <ScanListsListPage /> },
           {
             path: '/library/channels/add-from-ukrepeater',
             element: <AddFromUkRepeaterPage />,

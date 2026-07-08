@@ -15,6 +15,7 @@ import type {
   Library,
   RxGroupList,
   RxGroupListMember,
+  ScanList,
   SsbSideband,
   TalkGroup,
   Zone,
@@ -37,6 +38,8 @@ import {
   libraryEntityIds,
   validateEntityRef,
   validateRxGroupListId,
+  validateScanListId,
+  validateScanListMembers,
   validateZoneMembers,
 } from '@core/domain/validation.ts';
 import { normalizeModeProfile } from '@core/domain/modeProfiles.ts';
@@ -254,6 +257,14 @@ function parseChannel(raw: unknown, index: number): Channel {
         ? false
         : expectBoolean(record.forbidTransmit, `library.channels[${index}].forbidTransmit`),
     comment: expectString(record.comment, `library.channels[${index}].comment`),
+    ...(record.scanListId !== undefined && record.scanListId !== null
+      ? {
+          scanListId: expectNullableString(
+            record.scanListId,
+            `library.channels[${index}].scanListId`,
+          ),
+        }
+      : {}),
     ...(record.abbreviation !== undefined && record.abbreviation !== null
       ? {
           abbreviation: expectString(
@@ -396,6 +407,20 @@ function parseRxGroupList(raw: unknown, index: number): RxGroupList {
   };
 }
 
+function parseScanList(raw: unknown, index: number): ScanList {
+  const record = expectRecord(raw, `library.scanLists[${index}]`);
+  return {
+    ...parsePersistableRow(record, `library.scanLists[${index}]`),
+    name: expectString(record.name, `library.scanLists[${index}].name`),
+    memberChannelIds: expectArray(
+      record.memberChannelIds,
+      `library.scanLists[${index}].memberChannelIds`,
+    ).map((channelId, channelIndex) =>
+      expectString(channelId, `library.scanLists[${index}].memberChannelIds[${channelIndex}]`),
+    ),
+  };
+}
+
 function parseLibrary(raw: unknown, studioSchemaVersion: number): Library {
   const record = expectRecord(raw, 'library');
   const channels = expectArray(record.channels, 'library.channels').map((row, index) =>
@@ -416,8 +441,14 @@ function parseLibrary(raw: unknown, studioSchemaVersion: number): Library {
   const rxGroupLists = expectArray(record.rxGroupLists, 'library.rxGroupLists').map((row, index) =>
     parseRxGroupList(row, index),
   );
+  const scanLists =
+    record.scanLists === undefined || record.scanLists === null
+      ? []
+      : expectArray(record.scanLists, 'library.scanLists').map((row, index) =>
+          parseScanList(row, index),
+        );
 
-  return { channels, zones, talkGroups, digitalContacts, analogContacts, rxGroupLists };
+  return { channels, zones, talkGroups, digitalContacts, analogContacts, rxGroupLists, scanLists };
 }
 
 function parseLegacySelectionArray(raw: unknown, label: string): LegacyEntitySelection[] {
@@ -771,6 +802,13 @@ function validateForeignKeys(library: Library, formatBuilds: FormatBuild[]): voi
   }
 
   for (const channel of library.channels) {
+    if (channel.scanListId) {
+      try {
+        validateScanListId(channel.scanListId, library);
+      } catch (error) {
+        throw new NativeYamlImportError(error instanceof Error ? error.message : String(error));
+      }
+    }
     for (const profile of channel.modeProfiles) {
       if (profile.mode === 'dmr') {
         if (profile.contactRef) {
@@ -807,6 +845,14 @@ function validateForeignKeys(library: Library, formatBuilds: FormatBuild[]): voi
       } catch (error) {
         throw new NativeYamlImportError(error instanceof Error ? error.message : String(error));
       }
+    }
+  }
+
+  for (const list of library.scanLists) {
+    try {
+      validateScanListMembers(list.memberChannelIds, library);
+    } catch (error) {
+      throw new NativeYamlImportError(error instanceof Error ? error.message : String(error));
     }
   }
 
@@ -855,7 +901,7 @@ function validateForeignKeys(library: Library, formatBuilds: FormatBuild[]): voi
       }
     }
 
-    const scanListIds = new Set<string>();
+    const scanListIds = new Set(library.scanLists.map((list) => list.id));
     for (const section of build.layout.sections) {
       if (section.kind === 'scanLists') {
         for (const scanList of section.scanLists) {
@@ -872,7 +918,7 @@ function validateForeignKeys(library: Library, formatBuilds: FormatBuild[]): voi
       }
       if (override.scanListId && !scanListIds.has(override.scanListId)) {
         throw new NativeYamlImportError(
-          `Build channel override scanListId ${override.scanListId} not found in trait layout`,
+          `Build channel override scanListId ${override.scanListId} not found in library scan lists`,
         );
       }
     }
@@ -919,6 +965,8 @@ export function validateDocument(raw: unknown): ProjectAggregate {
   const studioSchemaVersion = document.studioSchemaVersion;
   if (
     studioSchemaVersion !== STUDIO_SCHEMA_VERSION &&
+    studioSchemaVersion !== 10 &&
+    studioSchemaVersion !== 9 &&
     studioSchemaVersion !== 8 &&
     studioSchemaVersion !== 7 &&
     studioSchemaVersion !== 6 &&
@@ -928,7 +976,7 @@ export function validateDocument(raw: unknown): ProjectAggregate {
     studioSchemaVersion !== 2
   ) {
     throw new NativeYamlImportError(
-      `Unsupported studioSchemaVersion: ${String(studioSchemaVersion)} (expected ${STUDIO_SCHEMA_VERSION}, 8, 7, 6, 5, 4, 3, or 2)`,
+      `Unsupported studioSchemaVersion: ${String(studioSchemaVersion)} (expected ${STUDIO_SCHEMA_VERSION}, 10, 9, 8, 7, 6, 5, 4, 3, or 2)`,
     );
   }
 
@@ -946,6 +994,7 @@ export function validateDocument(raw: unknown): ProjectAggregate {
     ...library.digitalContacts,
     ...library.analogContacts,
     ...library.rxGroupLists,
+    ...library.scanLists,
     ...formatBuilds,
   ];
 
@@ -956,6 +1005,7 @@ export function validateDocument(raw: unknown): ProjectAggregate {
   assertUniqueIds(library.digitalContacts, 'library.digitalContacts');
   assertUniqueIds(library.analogContacts, 'library.analogContacts');
   assertUniqueIds(library.rxGroupLists, 'library.rxGroupLists');
+  assertUniqueIds(library.scanLists, 'library.scanLists');
   assertUniqueIds(formatBuilds, 'formatBuilds');
 
   validateForeignKeys(library, formatBuilds);
@@ -968,6 +1018,7 @@ export function validateDocument(raw: unknown): ProjectAggregate {
     digitalContacts: library.digitalContacts,
     analogContacts: library.analogContacts,
     rxGroupLists: library.rxGroupLists,
+    scanLists: library.scanLists,
     formatBuilds,
   });
 }

@@ -11,6 +11,7 @@ export const STORES: Record<EntityKind, string> = {
   digitalContact: 'digitalContacts',
   analogContact: 'analogContacts',
   rxGroupList: 'rxGroupLists',
+  scanList: 'scanLists',
   formatBuild: 'formatBuilds',
 };
 

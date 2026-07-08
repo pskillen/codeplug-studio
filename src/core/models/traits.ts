@@ -2,7 +2,10 @@ export const BuildCapabilityTrait = {
   ZoneGrouping: 'zoneGrouping',
   FlatMemoryList: 'flatMemoryList',
   PerChannelScanFlag: 'perChannelScanFlag',
+  /** Zone-derived scan list synthesis (e.g. DM32 Scan.csv from zone members + default scan inclusion). */
   ScanLists: 'scanLists',
+  /** First-class library scan lists + per-channel scan list FK (e.g. Anytone ScanList.CSV). */
+  DedicatedScanLists: 'dedicatedScanLists',
   ZoneAsScanList: 'zoneAsScanList',
   MultiTalkGroupPerChannel: 'multiTalkGroupPerChannel',
   MxNChannelExpansion: 'mxnChannelExpansion',
@@ -70,10 +73,20 @@ export const TRAIT_PROFILES: Record<string, TraitProfile> = {
     profileId: 'anytone-at-d890uv',
     formatId: 'anytone',
     label: 'Anytone AT-D890UV',
-    traits: [BuildCapabilityTrait.ZoneGrouping, BuildCapabilityTrait.ScanLists],
+    traits: [BuildCapabilityTrait.ZoneGrouping, BuildCapabilityTrait.DedicatedScanLists],
   },
 };
 
 export function traitProfileFor(profileId: string): TraitProfile | undefined {
   return TRAIT_PROFILES[profileId];
+}
+
+export function hasDedicatedScanLists(profileId: string): boolean {
+  const traits = traitProfileFor(profileId)?.traits ?? [];
+  return traits.includes(BuildCapabilityTrait.DedicatedScanLists);
+}
+
+/** Whether the export page should show default scan inclusion (zone-derived / per-channel scan flag semantics). */
+export function showsDefaultScanInclusion(profileId: string): boolean {
+  return !hasDedicatedScanLists(profileId);
 }

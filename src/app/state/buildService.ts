@@ -133,22 +133,6 @@ export class BuildService {
     };
   }
 
-  withChannelScanListId(
-    build: FormatBuild,
-    channelId: string,
-    scanListId: string | undefined,
-  ): FormatBuild {
-    const now = isoNow();
-    return {
-      ...build,
-      channelOverrides: upsertOverride(build.channelOverrides, channelId, {
-        scanListId: scanListId || undefined,
-      }),
-      updatedAt: now,
-      revision: nextRevision(build.revision),
-    };
-  }
-
   withExportInclusionFlags(
     build: FormatBuild,
     flags: Partial<

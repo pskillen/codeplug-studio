@@ -4,6 +4,7 @@ import type {
   Channel,
   DigitalContact,
   RxGroupList,
+  ScanList,
   TalkGroup,
   Zone,
 } from '@core/models/library.ts';
@@ -20,6 +21,7 @@ export type EntityKind =
   | 'digitalContact'
   | 'analogContact'
   | 'rxGroupList'
+  | 'scanList'
   | 'formatBuild';
 
 /** Library entity kinds (everything except project metadata). */
@@ -43,6 +45,7 @@ export interface ProjectSeed {
   digitalContacts?: DigitalContact[];
   analogContacts?: AnalogContact[];
   rxGroupLists?: RxGroupList[];
+  scanLists?: ScanList[];
   formatBuilds?: FormatBuild[];
 }
 
@@ -82,6 +85,10 @@ export interface ProjectPersistence {
   getRxGroupList(projectId: string, id: string): Promise<RxGroupList | null>;
   putRxGroupList(row: RxGroupList, expectedRevision: number | null): Promise<PutResult>;
   listRxGroupLists(projectId: string): Promise<RxGroupList[]>;
+
+  getScanList(projectId: string, id: string): Promise<ScanList | null>;
+  putScanList(row: ScanList, expectedRevision: number | null): Promise<PutResult>;
+  listScanLists(projectId: string): Promise<ScanList[]>;
 
   getFormatBuild(projectId: string, id: string): Promise<FormatBuild | null>;
   putFormatBuild(row: FormatBuild, expectedRevision: number | null): Promise<PutResult>;

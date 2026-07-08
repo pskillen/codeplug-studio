@@ -21,6 +21,7 @@ function lib(zones: Zone[]): Library {
     talkGroups: [],
     digitalContacts: [],
     rxGroupLists: [],
+    scanLists: [],
     zones,
   };
 }

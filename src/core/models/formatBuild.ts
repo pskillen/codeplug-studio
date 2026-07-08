@@ -41,7 +41,7 @@ export interface BuildEntityOverride {
    * Unset → default placement after any explicit slots (library order).
    */
   orderOrSlot?: number;
-  /** Build scan list entry id (`ScanListEntry.id`) for CPS scan list assignment. */
+  /** Legacy import only — hoisted to `Channel.scanListId` on load (schema v11). */
   scanListId?: string;
 }
 

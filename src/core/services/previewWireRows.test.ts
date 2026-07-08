@@ -34,6 +34,7 @@ describe('previewWireRows', () => {
       digitalContacts: aggregate.digitalContacts,
       analogContacts: aggregate.analogContacts,
       rxGroupLists: aggregate.rxGroupLists,
+      scanLists: [],
     };
 
     const rows = previewWireRows(build, library, 'channel');
@@ -63,6 +64,7 @@ describe('previewWireRows', () => {
       digitalContacts: aggregate.digitalContacts,
       analogContacts: aggregate.analogContacts,
       rxGroupLists: aggregate.rxGroupLists,
+      scanLists: [],
     };
 
     const rows = previewWireRows(build, library, 'talkGroup', { shortenNames: false });
@@ -91,6 +93,7 @@ describe('previewWireRows', () => {
       digitalContacts: aggregate.digitalContacts,
       analogContacts: aggregate.analogContacts,
       rxGroupLists: aggregate.rxGroupLists,
+      scanLists: [],
     };
 
     const rows = previewWireRows(build, library, 'talkGroup', {
@@ -121,11 +124,56 @@ describe('previewWireRows', () => {
       digitalContacts: aggregate.digitalContacts,
       analogContacts: aggregate.analogContacts,
       rxGroupLists: aggregate.rxGroupLists,
+      scanLists: [],
     };
 
     const rows = previewWireRows(build, library, 'channel');
     const excluded = rows.find((row) => row.libraryEntityId.endsWith('3333'));
     expect(excluded?.excluded).toBe(true);
+    expect(rows.map((row) => row.libraryEntityId)).toEqual(
+      library.channels.map((channel) => channel.id),
+    );
+  });
+
+  it('keeps anytone channel preview order when a channel is excluded', () => {
+    const projectId = '11111111-1111-4111-8111-111111111111';
+    const ch1 = newChannel(projectId, 'Alpha');
+    const ch2 = newChannel(projectId, 'Bravo');
+    const ch3 = newChannel(projectId, 'Charlie');
+    const zone = {
+      ...newZone(projectId, 'Zone A'),
+      members: [
+        { kind: 'channel' as const, channelId: ch1.id },
+        { kind: 'channel' as const, channelId: ch2.id },
+        { kind: 'channel' as const, channelId: ch3.id },
+      ],
+    };
+    const build = {
+      ...newFormatBuild(projectId, 'anytone-at-d890uv'),
+      layout: {
+        sections: [
+          {
+            kind: 'zoneGrouping' as const,
+            zones: [{ id: zone.id, name: zone.name, channelIds: [ch1.id, ch2.id, ch3.id] }],
+          },
+        ],
+      },
+      channelOverrides: [{ libraryEntityId: ch2.id, excluded: true }],
+    };
+    const library = {
+      channels: [ch1, ch2, ch3],
+      zones: [zone],
+      talkGroups: [],
+      digitalContacts: [],
+      analogContacts: [],
+      rxGroupLists: [],
+      scanLists: [],
+    };
+
+    const rows = previewWireRows(build, library, 'channel');
+    expect(rows.map((row) => row.libraryEntityId)).toEqual([ch1.id, ch2.id, ch3.id]);
+    expect(rows[1]?.excluded).toBe(true);
+    expect(rows[1]?.expansionNote).toBeUndefined();
   });
 
   it('expands multi-mode channels into separate preview rows', () => {
@@ -163,6 +211,7 @@ describe('previewWireRows', () => {
       digitalContacts: aggregate.digitalContacts,
       analogContacts: aggregate.analogContacts,
       rxGroupLists: aggregate.rxGroupLists,
+      scanLists: [],
     };
 
     const rows = previewWireRows(build, library, 'channel', {
@@ -193,6 +242,7 @@ describe('previewWireRows', () => {
       digitalContacts: aggregate.digitalContacts,
       analogContacts: aggregate.analogContacts,
       rxGroupLists: aggregate.rxGroupLists,
+      scanLists: [],
     };
 
     const rows = previewWireRows(build, library, 'channel', {
@@ -217,6 +267,7 @@ describe('previewWireRows', () => {
       digitalContacts: aggregate.digitalContacts,
       analogContacts: aggregate.analogContacts,
       rxGroupLists: aggregate.rxGroupLists,
+      scanLists: [],
     };
 
     const rows = previewWireRows(build, library, 'channel', {
@@ -250,6 +301,7 @@ describe('previewWireRows', () => {
       digitalContacts: aggregate.digitalContacts,
       analogContacts: aggregate.analogContacts,
       rxGroupLists: aggregate.rxGroupLists,
+      scanLists: [],
     };
 
     const rows = previewWireRows(build, library, 'channel', {
@@ -296,6 +348,7 @@ describe('previewWireRows', () => {
       digitalContacts: [],
       analogContacts: [],
       rxGroupLists: [rgl],
+      scanLists: [],
     };
 
     const rows = previewWireRows(build, library, 'channel', { profileId: build.profileId });
@@ -342,6 +395,7 @@ describe('previewWireRows', () => {
       digitalContacts: [],
       analogContacts: [],
       rxGroupLists: [],
+      scanLists: [],
     };
 
     const included = includedPreviewWireRows(build, library, 'channel');
@@ -375,6 +429,7 @@ describe('previewWireRows', () => {
       digitalContacts: [],
       analogContacts: [],
       rxGroupLists: [],
+      scanLists: [],
     };
 
     const included = includedPreviewWireRows(build, library, 'channel');
@@ -412,6 +467,7 @@ describe('previewWireRows', () => {
       digitalContacts: [],
       analogContacts: [],
       rxGroupLists: [],
+      scanLists: [],
     };
 
     const allRows = previewWireRows(build, library, 'channel');
@@ -475,6 +531,7 @@ describe('previewWireRows', () => {
       digitalContacts: [],
       analogContacts: [],
       rxGroupLists: [],
+      scanLists: [],
     };
 
     const allRows = previewWireRows(build, library, 'channel');
@@ -512,6 +569,7 @@ describe('previewWireRows', () => {
       digitalContacts: [],
       analogContacts: [],
       rxGroupLists: [],
+      scanLists: [],
     };
 
     const rows = previewWireRows(build, library, 'zone');
@@ -549,6 +607,7 @@ describe('previewWireRows', () => {
       digitalContacts: [],
       analogContacts: [],
       rxGroupLists: [],
+      scanLists: [],
     };
 
     const row = previewWireRows(build, library, 'zone')[0];
@@ -577,6 +636,7 @@ describe('previewWireRows', () => {
       digitalContacts: [],
       analogContacts: [],
       rxGroupLists: [],
+      scanLists: [],
     };
 
     const row = previewWireRows(build, library, 'zone')[0];
@@ -603,6 +663,7 @@ describe('previewWireRows', () => {
       digitalContacts: [],
       analogContacts: [],
       rxGroupLists: [],
+      scanLists: [],
     };
 
     const row = previewWireRows(build, library, 'zone').find(
@@ -637,6 +698,7 @@ describe('previewWireRows', () => {
       digitalContacts: [],
       analogContacts: [],
       rxGroupLists: [],
+      scanLists: [],
     };
 
     const row = previewWireRows(build, library, 'channel')[0];

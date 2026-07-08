@@ -1,4 +1,10 @@
-import { newChannel, newFormatBuild, newTalkGroup, newZone } from '@core/domain/factories.ts';
+import {
+  newChannel,
+  newFormatBuild,
+  newScanList,
+  newTalkGroup,
+  newZone,
+} from '@core/domain/factories.ts';
 import type { FormatBuild } from '@core/models/formatBuild.ts';
 import type { LibrarySlice } from '@core/services/assemble.ts';
 
@@ -11,6 +17,7 @@ export function minimalAnytoneExportLibrary(): LibrarySlice {
   const tg = newTalkGroup(ANYTONE_GOLDEN_PROJECT_ID, 'TG Alpha', 2355);
   const ch1 = {
     ...newChannel(ANYTONE_GOLDEN_PROJECT_ID, 'Channel 1'),
+    scanListId: ANYTONE_GOLDEN_SCAN_LIST_ID,
     rxFrequency: 438_800_000,
     txFrequency: 434_000_000,
     power: 25,
@@ -48,6 +55,11 @@ export function minimalAnytoneExportLibrary(): LibrarySlice {
       { kind: 'channel' as const, channelId: ch2.id },
     ],
   };
+  const scanList = {
+    ...newScanList(ANYTONE_GOLDEN_PROJECT_ID, 'Zone A SCL'),
+    id: ANYTONE_GOLDEN_SCAN_LIST_ID,
+    memberChannelIds: [ch1.id, ch2.id],
+  };
 
   return {
     channels: [ch1, ch2],
@@ -56,6 +68,7 @@ export function minimalAnytoneExportLibrary(): LibrarySlice {
     digitalContacts: [],
     analogContacts: [],
     rxGroupLists: [],
+    scanLists: [scanList],
   };
 }
 
@@ -72,19 +85,8 @@ export function minimalAnytoneExportBuild(library: LibrarySlice): FormatBuild {
           kind: 'zoneGrouping',
           zones: [{ id: zone.id, name: zone.name, channelIds: [ch1.id, ch2.id] }],
         },
-        {
-          kind: 'scanLists',
-          scanLists: [
-            {
-              id: ANYTONE_GOLDEN_SCAN_LIST_ID,
-              name: 'Zone A SCL',
-              channelIds: [ch1.id, ch2.id],
-            },
-          ],
-        },
       ],
     },
-    channelOverrides: [{ libraryEntityId: ch1.id, scanListId: ANYTONE_GOLDEN_SCAN_LIST_ID }],
     zoneOverrides: [{ libraryEntityId: zone.id, wireName: 'Zone A' }],
   };
 }

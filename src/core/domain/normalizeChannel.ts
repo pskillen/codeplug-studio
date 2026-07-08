@@ -17,6 +17,7 @@ export function normalizeChannel(channel: LegacyChannel): Channel {
   return {
     ...rest,
     scanInclusion: resolveScanInclusion(channel),
+    scanListId: channel.scanListId?.trim() || undefined,
     maidenheadLocator: channel.maidenheadLocator ?? null,
     modeProfiles: dedupeSsbModeProfiles((channel.modeProfiles ?? []).map(normalizeModeProfile)),
   };

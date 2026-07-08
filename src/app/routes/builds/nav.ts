@@ -1,6 +1,6 @@
 import { BuildCapabilityTrait } from '@core/models/traits.ts';
 import type { FormatBuild } from '@core/models/formatBuild.ts';
-import { traitProfileFor } from '@core/models/traits.ts';
+import { hasDedicatedScanLists, traitProfileFor } from '@core/models/traits.ts';
 
 export interface BuildNavItem {
   label: string;
@@ -21,7 +21,7 @@ export function buildNavItems(build: FormatBuild): BuildNavItem[] {
     items.push({ label: 'Zones', path: `${base}/zones` });
   }
 
-  if (traits.has(BuildCapabilityTrait.ScanLists)) {
+  if (hasDedicatedScanLists(build.profileId)) {
     items.push({ label: 'Scan lists', path: `${base}/scan-lists` });
   }
 

@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
-import { newChannel, newFormatBuild, newTalkGroup } from '@core/domain/factories.ts';
+import { newChannel, newFormatBuild, newScanList, newTalkGroup } from '@core/domain/factories.ts';
 import { parseProjectDocument } from '@core/import-export/formats/native-yaml/parse.ts';
 import { assemble } from './assemble.ts';
 
@@ -23,6 +23,7 @@ describe('assemble', () => {
       digitalContacts: aggregate.digitalContacts,
       analogContacts: aggregate.analogContacts,
       rxGroupLists: aggregate.rxGroupLists,
+      scanLists: [],
     };
 
     const projection = assemble(build, library);
@@ -55,6 +56,7 @@ describe('assemble', () => {
       digitalContacts: aggregate.digitalContacts,
       analogContacts: aggregate.analogContacts,
       rxGroupLists: aggregate.rxGroupLists,
+      scanLists: [],
     };
 
     const projection = assemble(build, library, { profileId: 'opengd77-md9600' });
@@ -81,6 +83,7 @@ describe('assemble', () => {
       digitalContacts: aggregate.digitalContacts,
       analogContacts: aggregate.analogContacts,
       rxGroupLists: aggregate.rxGroupLists,
+      scanLists: [],
     };
 
     const projection = assemble(build, library);
@@ -103,6 +106,7 @@ describe('assemble', () => {
       digitalContacts: aggregate.digitalContacts,
       analogContacts: aggregate.analogContacts,
       rxGroupLists: aggregate.rxGroupLists,
+      scanLists: [],
     };
 
     const projection = assemble(build, library);
@@ -123,6 +127,7 @@ describe('assemble', () => {
       digitalContacts: aggregate.digitalContacts,
       analogContacts: aggregate.analogContacts,
       rxGroupLists: aggregate.rxGroupLists,
+      scanLists: [],
     };
 
     const projection = assemble(build, library);
@@ -144,6 +149,7 @@ describe('assemble', () => {
       digitalContacts: aggregate.digitalContacts,
       analogContacts: aggregate.analogContacts,
       rxGroupLists: aggregate.rxGroupLists,
+      scanLists: [],
     };
 
     const projection = assemble(build, library);
@@ -165,6 +171,7 @@ describe('assemble', () => {
       digitalContacts: aggregate.digitalContacts,
       analogContacts: aggregate.analogContacts,
       rxGroupLists: aggregate.rxGroupLists,
+      scanLists: [],
     };
 
     const projection = assemble(build, library);
@@ -188,6 +195,7 @@ describe('assemble', () => {
       digitalContacts: aggregate.digitalContacts,
       analogContacts: aggregate.analogContacts,
       rxGroupLists: aggregate.rxGroupLists,
+      scanLists: [],
     };
 
     const projection = assemble(build, library);
@@ -227,6 +235,7 @@ describe('assemble', () => {
       digitalContacts: [],
       analogContacts: [],
       rxGroupLists: [],
+      scanLists: [],
     };
     const build = {
       id: 'build-1',
@@ -293,6 +302,7 @@ describe('assemble', () => {
       digitalContacts: [],
       analogContacts: [],
       rxGroupLists: [],
+      scanLists: [],
     };
     const build = {
       id: 'build-layout',
@@ -378,6 +388,7 @@ describe('assemble', () => {
       digitalContacts: [],
       analogContacts: [],
       rxGroupLists: [],
+      scanLists: [],
     };
     const build = {
       id: 'build-omit',
@@ -443,6 +454,7 @@ describe('assemble', () => {
       digitalContacts: [],
       analogContacts: [],
       rxGroupLists: [],
+      scanLists: [],
     };
     const build = {
       id: 'build-omit-orphan',
@@ -511,6 +523,7 @@ describe('assemble', () => {
       digitalContacts: [],
       analogContacts: [],
       rxGroupLists: [],
+      scanLists: [],
     };
     const build = {
       id: 'build-force-include',
@@ -565,6 +578,7 @@ describe('assemble', () => {
       digitalContacts: [],
       analogContacts: [],
       rxGroupLists: [],
+      scanLists: [],
     };
     const build = {
       id: 'build-force-include-orphan',
@@ -616,6 +630,7 @@ describe('assemble', () => {
       digitalContacts: [],
       analogContacts: [],
       rxGroupLists: [],
+      scanLists: [],
     };
     const build = {
       id: 'build-excluded-wins',
@@ -670,6 +685,7 @@ describe('assemble', () => {
       digitalContacts: [],
       analogContacts: [],
       rxGroupLists: [],
+      scanLists: [],
     };
     const build = {
       id: 'build-chirp',
@@ -704,27 +720,15 @@ describe('assemble', () => {
 
   it('projects dedicated scan lists and channel scan list wire names', () => {
     const projectId = 'project-1';
-    const ch1 = newChannel(projectId, 'Channel 1');
-    const ch2 = newChannel(projectId, 'Channel 2');
     const scanListId = 'scan-list-1';
-    const build = {
-      ...newFormatBuild('project-1', 'anytone-at-d890uv'),
-      layout: {
-        sections: [
-          {
-            kind: 'scanLists' as const,
-            scanLists: [
-              {
-                id: scanListId,
-                name: 'Zone A SCL',
-                channelIds: [ch1.id, ch2.id],
-              },
-            ],
-          },
-        ],
-      },
-      channelOverrides: [{ libraryEntityId: ch1.id, scanListId }],
+    const ch1 = { ...newChannel(projectId, 'Channel 1'), scanListId };
+    const ch2 = newChannel(projectId, 'Channel 2');
+    const scanList = {
+      ...newScanList(projectId, 'Zone A SCL'),
+      id: scanListId,
+      memberChannelIds: [ch1.id, ch2.id],
     };
+    const build = newFormatBuild('project-1', 'anytone-at-d890uv');
     const library = {
       channels: [ch1, ch2],
       zones: [],
@@ -732,6 +736,7 @@ describe('assemble', () => {
       digitalContacts: [],
       analogContacts: [],
       rxGroupLists: [],
+      scanLists: [scanList],
     };
 
     const projection = assemble(build, library);

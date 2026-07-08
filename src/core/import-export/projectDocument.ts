@@ -5,6 +5,7 @@ import type {
   DigitalContact,
   Library,
   RxGroupList,
+  ScanList,
   TalkGroup,
   Zone,
 } from '@core/models/library.ts';
@@ -38,6 +39,7 @@ export interface ProjectAggregate {
   digitalContacts: DigitalContact[];
   analogContacts: AnalogContact[];
   rxGroupLists: RxGroupList[];
+  scanLists: ScanList[];
   formatBuilds: FormatBuild[];
 }
 
@@ -48,6 +50,7 @@ export function emptyLibrary(): Library {
     talkGroups: [],
     digitalContacts: [],
     rxGroupLists: [],
+    scanLists: [],
     zones: [],
   };
 }
@@ -64,6 +67,7 @@ export function documentFromAggregate(aggregate: ProjectAggregate): StudioProjec
       digitalContacts: aggregate.digitalContacts,
       analogContacts: aggregate.analogContacts,
       rxGroupLists: aggregate.rxGroupLists,
+      scanLists: aggregate.scanLists,
     },
     formatBuilds: aggregate.formatBuilds,
   };
@@ -78,6 +82,7 @@ export function aggregateFromDocument(doc: StudioProjectDocument): ProjectAggreg
     digitalContacts: doc.library.digitalContacts,
     analogContacts: doc.library.analogContacts,
     rxGroupLists: doc.library.rxGroupLists,
+    scanLists: doc.library.scanLists ?? [],
     formatBuilds: doc.formatBuilds,
   };
 }

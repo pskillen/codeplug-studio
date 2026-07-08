@@ -5,7 +5,7 @@ import { resolveEffectiveZoneChannelIds } from './zoneHierarchy.ts';
 
 /** A reference held by one library entity pointing at a target entity. */
 export interface EntityReference {
-  fromKind: 'channel' | 'zone' | 'rxGroupList';
+  fromKind: 'channel' | 'zone' | 'rxGroupList' | 'scanList';
   fromId: string;
   fromName: string;
   /** Human-readable description of how the target is referenced. */
@@ -14,7 +14,7 @@ export interface EntityReference {
 
 /** Target of a reference scan: a library entity addressed by kind + UUID id. */
 export interface ReferenceTarget {
-  kind: EntityRefKind | 'rxGroupList' | 'zone';
+  kind: EntityRefKind | 'rxGroupList' | 'scanList' | 'zone';
   id: string;
 }
 
@@ -69,8 +69,28 @@ export function findReferencesTo(library: Library, target: ReferenceTarget): Ent
     }
   }
 
-  // Channels reference contacts, RX group lists, and talk groups via mode profiles.
+  // Scan lists reference channels via ordered members.
+  for (const scanList of library.scanLists) {
+    if (target.kind === 'channel' && scanList.memberChannelIds.includes(target.id)) {
+      refs.push({
+        fromKind: 'scanList',
+        fromId: scanList.id,
+        fromName: scanList.name,
+        relationship: 'scan list member',
+      });
+    }
+  }
+
+  // Channels reference contacts, RX group lists, talk groups, and scan lists.
   for (const channel of library.channels) {
+    if (target.kind === 'scanList' && channel.scanListId === target.id) {
+      refs.push({
+        fromKind: 'channel',
+        fromId: channel.id,
+        fromName: channel.name,
+        relationship: 'channel scan list',
+      });
+    }
     for (const profile of channel.modeProfiles) {
       if (profile.mode === 'dmr') {
         const refsContact = profile.contactRef !== null && refMatches(profile.contactRef, target);
@@ -109,7 +129,7 @@ export function isReferenced(library: Library, target: ReferenceTarget): boolean
 
 /** A foreign key pointing at an entity id that no longer exists in the library. */
 export interface DanglingReference {
-  fromKind: 'channel' | 'zone' | 'rxGroupList';
+  fromKind: 'channel' | 'zone' | 'rxGroupList' | 'scanList';
   fromId: string;
   fromName: string;
   targetKind: ReferenceTarget['kind'];
@@ -130,6 +150,8 @@ export function findDanglingReferences(library: Library): DanglingReference[] {
 
   const zoneIds = new Set(library.zones.map((z) => z.id));
 
+  const scanListIds = new Set(library.scanLists.map((s) => s.id));
+
   const hasTarget = (target: ReferenceTarget): boolean => {
     switch (target.kind) {
       case 'channel':
@@ -144,6 +166,8 @@ export function findDanglingReferences(library: Library): DanglingReference[] {
         return analogContactIds.has(target.id);
       case 'rxGroupList':
         return rxGroupListIds.has(target.id);
+      case 'scanList':
+        return scanListIds.has(target.id);
     }
   };
 
@@ -196,7 +220,33 @@ export function findDanglingReferences(library: Library): DanglingReference[] {
     }
   }
 
+  for (const list of library.scanLists) {
+    for (const channelId of list.memberChannelIds) {
+      const target: ReferenceTarget = { kind: 'channel', id: channelId };
+      if (!hasTarget(target)) {
+        dangling.push({
+          fromKind: 'scanList',
+          fromId: list.id,
+          fromName: list.name,
+          targetKind: target.kind,
+          targetId: target.id,
+          relationship: 'scan list member',
+        });
+      }
+    }
+  }
+
   for (const channel of library.channels) {
+    if (channel.scanListId && !scanListIds.has(channel.scanListId)) {
+      dangling.push({
+        fromKind: 'channel',
+        fromId: channel.id,
+        fromName: channel.name,
+        targetKind: 'scanList',
+        targetId: channel.scanListId,
+        relationship: 'channel scan list',
+      });
+    }
     for (const profile of dmrProfiles(channel)) {
       if (profile.contactRef && !hasTarget(profile.contactRef)) {
         dangling.push({

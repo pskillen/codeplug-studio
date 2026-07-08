@@ -4,6 +4,7 @@ import type {
   Channel,
   DigitalContact,
   RxGroupList,
+  ScanList,
   TalkGroup,
   Zone,
 } from '@core/models/library.ts';
@@ -45,6 +46,7 @@ export class InMemoryProjectPersistence implements ProjectPersistence {
   private digitalContacts: RowMap<DigitalContact> = new Map();
   private analogContacts: RowMap<AnalogContact> = new Map();
   private rxGroupLists: RowMap<RxGroupList> = new Map();
+  private scanLists: RowMap<ScanList> = new Map();
   private formatBuilds: RowMap<FormatBuild> = new Map();
   private listeners = new Set<PersistenceListener>();
 
@@ -147,6 +149,18 @@ export class InMemoryProjectPersistence implements ProjectPersistence {
     return this.listRows(this.rxGroupLists, projectId);
   }
 
+  async getScanList(projectId: string, id: string): Promise<ScanList | null> {
+    return this.scanLists.get(rowKey(projectId, id)) ?? null;
+  }
+
+  async putScanList(row: ScanList, expectedRevision: number | null): Promise<PutResult> {
+    return this.putRow('scanList', this.scanLists, row, expectedRevision);
+  }
+
+  async listScanLists(projectId: string): Promise<ScanList[]> {
+    return this.listRows(this.scanLists, projectId);
+  }
+
   async getFormatBuild(projectId: string, id: string): Promise<FormatBuild | null> {
     const row = this.formatBuilds.get(rowKey(projectId, id));
     return row ? readFormatBuildRow(row) : null;
@@ -182,6 +196,7 @@ export class InMemoryProjectPersistence implements ProjectPersistence {
       digitalContacts,
       analogContacts,
       rxGroupLists,
+      scanLists,
       formatBuilds,
     ] = await Promise.all([
       this.listChannels(projectId),
@@ -190,6 +205,7 @@ export class InMemoryProjectPersistence implements ProjectPersistence {
       this.listDigitalContacts(projectId),
       this.listAnalogContacts(projectId),
       this.listRxGroupLists(projectId),
+      this.listScanLists(projectId),
       this.listFormatBuilds(projectId),
     ]);
     return {
@@ -200,6 +216,7 @@ export class InMemoryProjectPersistence implements ProjectPersistence {
       digitalContacts,
       analogContacts,
       rxGroupLists,
+      scanLists,
       formatBuilds,
     };
   }
@@ -244,6 +261,9 @@ export class InMemoryProjectPersistence implements ProjectPersistence {
     for (const row of seed.rxGroupLists ?? []) {
       this.rxGroupLists.set(rowKey(row.projectId, row.id), { ...row });
     }
+    for (const row of seed.scanLists ?? []) {
+      this.scanLists.set(rowKey(row.projectId, row.id), { ...row });
+    }
     for (const row of seed.formatBuilds ?? []) {
       this.formatBuilds.set(rowKey(row.projectId, row.id), { ...row });
     }
@@ -258,6 +278,7 @@ export class InMemoryProjectPersistence implements ProjectPersistence {
       this.digitalContacts,
       this.analogContacts,
       this.rxGroupLists,
+      this.scanLists,
       this.formatBuilds,
     ]) {
       for (const [key, row] of [...map.entries()]) {
@@ -306,7 +327,14 @@ export class InMemoryProjectPersistence implements ProjectPersistence {
   private mapForKind(
     kind: EntityKind,
   ): RowMap<
-    Channel | Zone | TalkGroup | DigitalContact | AnalogContact | RxGroupList | FormatBuild
+    | Channel
+    | Zone
+    | TalkGroup
+    | DigitalContact
+    | AnalogContact
+    | RxGroupList
+    | ScanList
+    | FormatBuild
   > | null {
     switch (kind) {
       case 'channel':
@@ -321,6 +349,8 @@ export class InMemoryProjectPersistence implements ProjectPersistence {
         return this.analogContacts;
       case 'rxGroupList':
         return this.rxGroupLists;
+      case 'scanList':
+        return this.scanLists;
       case 'formatBuild':
         return this.formatBuilds;
       case 'project':

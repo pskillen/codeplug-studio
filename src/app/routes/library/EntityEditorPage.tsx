@@ -6,6 +6,7 @@ import { entitiesForKind, kindBySlug } from './registry.ts';
 import { listPathForEditorSlug } from './nav.ts';
 import ChannelEditor from './ChannelEditor.tsx';
 import RxGroupListEditor from './RxGroupListEditor.tsx';
+import ScanListEditor from './ScanListEditor.tsx';
 import ZoneEditor from './ZoneEditor.tsx';
 import { TalkGroupEditor } from './TalkGroupEditor.tsx';
 import { DigitalContactEditor } from './DigitalContactEditor.tsx';
@@ -95,6 +96,14 @@ export default function EntityEditorPage() {
             projectId={projectId}
             library={library}
             entity={entityId ? (library.rxGroupLists.find((r) => r.id === entityId) ?? null) : null}
+          />
+        );
+      case 'scanList':
+        return (
+          <ScanListEditor
+            projectId={projectId}
+            library={library}
+            entity={entityId ? (library.scanLists.find((s) => s.id === entityId) ?? null) : null}
           />
         );
       case 'zone':

@@ -124,6 +124,7 @@ export function libraryAndBuildFromChirpFixture(
       digitalContacts: [],
       analogContacts: [],
       rxGroupLists: [],
+      scanLists: [],
     },
     build,
   };

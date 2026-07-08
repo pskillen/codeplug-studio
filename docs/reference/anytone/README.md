@@ -67,13 +67,13 @@ Cross-cutting rules: [file-format.md](file-format.md).
 
 Evidence from wire layout — code change deferred to scaffold ticket:
 
-| Trait                              | Evidence                                       |
-| ---------------------------------- | ---------------------------------------------- |
-| `zoneGrouping`                     | `DMRZone.CSV` with named members + A/B channel |
-| `scanLists`                        | Dedicated `ScanList.CSV` (not zone-as-scan)    |
-| _(not)_ `zoneAsScanList`           | Scan lists are first-class files               |
-| _(not)_ `multiTalkGroupPerChannel` | Native `DMRReceiveGroupCallList.CSV`           |
-| _(not)_ `mxnChannelExpansion`      | Single TG + RGL per channel row in sample      |
+| Trait                              | Evidence                                                                                           |
+| ---------------------------------- | -------------------------------------------------------------------------------------------------- |
+| `zoneGrouping`                     | `DMRZone.CSV` with named members + A/B channel                                                     |
+| `scanLists`                        | Dedicated `ScanList.CSV` (not zone-as-scan) — shipped as `DedicatedScanLists` + library `ScanList` |
+| _(not)_ `zoneAsScanList`           | Scan lists are first-class files                                                                   |
+| _(not)_ `multiTalkGroupPerChannel` | Native `DMRReceiveGroupCallList.CSV`                                                               |
+| _(not)_ `mxnChannelExpansion`      | Single TG + RGL per channel row in sample                                                          |
 
 Extended banks (AM air, FM, NXDN, APRS) documented separately; export projection / traits TBD — see [anytone-outstanding.md](../../features/import-export/anytone-outstanding.md).
 

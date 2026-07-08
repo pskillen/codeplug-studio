@@ -14,6 +14,7 @@ export function libraryEntityIds(library: Library): {
   digitalContactIds: Set<string>;
   analogContactIds: Set<string>;
   rxGroupListIds: Set<string>;
+  scanListIds: Set<string>;
   zoneIds: Set<string>;
 } {
   return {
@@ -22,6 +23,7 @@ export function libraryEntityIds(library: Library): {
     digitalContactIds: new Set(library.digitalContacts.map((c) => c.id)),
     analogContactIds: new Set(library.analogContacts.map((c) => c.id)),
     rxGroupListIds: new Set(library.rxGroupLists.map((r) => r.id)),
+    scanListIds: new Set(library.scanLists.map((s) => s.id)),
     zoneIds: new Set(library.zones.map((z) => z.id)),
   };
 }
@@ -46,6 +48,22 @@ export function validateRxGroupListId(rxGroupListId: string, library: Library): 
   const ids = libraryEntityIds(library);
   if (!ids.rxGroupListIds.has(rxGroupListId)) {
     throw new Error(`RX group list not found in library: ${rxGroupListId}`);
+  }
+}
+
+export function validateScanListMembers(memberChannelIds: string[], library: Library): void {
+  const ids = libraryEntityIds(library);
+  for (const channelId of memberChannelIds) {
+    if (!ids.channelIds.has(channelId)) {
+      throw new Error(`Scan list member channel not found in library: ${channelId}`);
+    }
+  }
+}
+
+export function validateScanListId(scanListId: string, library: Library): void {
+  const ids = libraryEntityIds(library);
+  if (!ids.scanListIds.has(scanListId)) {
+    throw new Error(`Scan list not found in library: ${scanListId}`);
   }
 }
 

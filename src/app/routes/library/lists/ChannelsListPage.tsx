@@ -29,7 +29,11 @@ import {
   useFilteredChannels,
 } from '../../../hooks/useChannelListFilters.ts';
 import { formatChannelRxTxListCell } from '../../../lib/formatFrequency.ts';
-import { dmrContactDisplayName, dmrRxGroupListName } from '../../../lib/entityRefs.ts';
+import {
+  dmrContactDisplayName,
+  dmrRxGroupListName,
+  channelScanListName,
+} from '../../../lib/entityRefs.ts';
 import { channelModesForFilter } from '../../../lib/channels.ts';
 import { useProjects } from '../../../state/useProjects.ts';
 import { useOperatorPosition } from '../../../state/operatorPosition.tsx';
@@ -163,6 +167,13 @@ export default function ChannelsListPage() {
           ...base,
           render: (ch: Channel) => dmrRxGroupListName(library, ch.id) || '—',
           sortValue: (ch: Channel) => dmrRxGroupListName(library, ch.id),
+        };
+      }
+      if (col.key === 'scanList') {
+        return {
+          ...base,
+          render: (ch: Channel) => channelScanListName(library, ch.id) || '—',
+          sortValue: (ch: Channel) => channelScanListName(library, ch.id),
         };
       }
       if (col.key === 'distance') {

@@ -8,10 +8,10 @@ Tier 3 schema for Codeplug Studio's full-project interchange format. Internal ty
 
 ## Version fields
 
-| Field                 | Type    | Required | Meaning                                                                                                                                                                                                                                                         |
-| --------------------- | ------- | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `schemaVersion`       | `1`     | yes      | Native YAML envelope version. Only `1` is accepted in this release.                                                                                                                                                                                             |
-| `studioSchemaVersion` | integer | yes      | Must equal `STUDIO_SCHEMA_VERSION` in `src/core/models/schemaVersion.ts` (currently `9`). Imports accept `2`–`9`; legacy `scanSkip` on channels migrates to `scanInclusion` on load; legacy `ssb-usb` / `ssb-lsb` mode values migrate to `ssb` + `ssbSideband`. |
+| Field                 | Type    | Required | Meaning                                                                                                                                                                                                                                                                                                                                                                                      |
+| --------------------- | ------- | -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `schemaVersion`       | `1`     | yes      | Native YAML envelope version. Only `1` is accepted in this release.                                                                                                                                                                                                                                                                                                                          |
+| `studioSchemaVersion` | integer | yes      | Must equal `STUDIO_SCHEMA_VERSION` in `src/core/models/schemaVersion.ts` (currently `11`). Imports accept `2`–`11`; v9 files without `library.scanLists` migrate on load; legacy `channelOverrides.scanListId` hoists to `Channel.scanListId`; legacy `scanSkip` on channels migrates to `scanInclusion` on load; legacy `ssb-usb` / `ssb-lsb` mode values migrate to `ssb` + `ssbSideband`. |
 
 Bump `schemaVersion` when the YAML envelope shape changes. Bump `studioSchemaVersion` (constant) when persisted row types change.
 
@@ -81,8 +81,9 @@ CPS format destination keys (e.g. `opengd77`) are reserved for Phase 4+.
 | `digitalContacts` | `DigitalContact[]` |
 | `analogContacts`  | `AnalogContact[]`  |
 | `rxGroupLists`    | `RxGroupList[]`    |
+| `scanLists`       | `ScanList[]`       |
 
-Arrays may be empty. Serialiser emits all six keys.
+Arrays may be empty. Serialiser emits all seven keys.
 
 ### `Channel`
 
@@ -98,6 +99,7 @@ Arrays may be empty. Serialiser emits all six keys.
 | `maidenheadLocator` | string                              | yes      |
 | `power`             | number (0–100)                      | yes      |
 | `scanInclusion`     | `default` \| `skip` \| `alwaysScan` | no       | Legacy `scanSkip` boolean accepted on import (`true`→`skip`, `false`→`default`) |
+| `scanListId`        | string (UUID)                       | yes      | Optional FK to `library.scanLists[].id` — Channel.CSV Scan List column          |
 | `comment`           | string                              | no       |
 | `modeProfiles`      | `ChannelModeProfile[]`              | no       |
 
@@ -142,6 +144,14 @@ DM32 zone export flags (`exportScratchChannel`, `exportScanList`, `scanCarrierFr
 | `name`              | string                                                    |
 | `members`           | `{ ref: EntityRef; timeSlotOverride?: 1 \| 2 \| null }[]` |
 
+### `ScanList`
+
+| Field               | Type       |
+| ------------------- | ---------- |
+| _(persistable row)_ |            |
+| `name`              | string     |
+| `memberChannelIds`  | `string[]` |
+
 ### `EntityRef`
 
 | Field  | Type          | Values                                                    |
@@ -162,6 +172,7 @@ DM32 zone export flags (`exportScratchChannel`, `exportScanList`, `scanCarrierFr
 | `zoneOverrides`              | `BuildEntityOverride[]`          |
 | `talkGroupOverrides`         | `BuildEntityOverride[]`          |
 | `rxGroupListOverrides`       | `BuildEntityOverride[]`          |
+| `scanListOverrides`          | `BuildEntityOverride[]`          |
 | `contactOverrides`           | `BuildEntityOverride[]`          |
 | `exportUnlinkedChannels`     | boolean (optional)               |
 | `exportUnlinkedTalkGroups`   | boolean (optional)               |
@@ -207,6 +218,15 @@ Section discriminant is `kind`:
 | `channelIds` | string[]                  |
 | `scanFlags`  | `Record<string, boolean>` |
 
+**`scanLists`** (legacy layout — import only)
+
+| Field       | Type                         |
+| ----------- | ---------------------------- |
+| `kind`      | `scanLists`                  |
+| `scanLists` | `{ id, name, channelIds }[]` |
+
+Legacy build layout scan lists hoist to `library.scanLists` on import; new projects curate scan lists in the library ([#257](https://github.com/pskillen/codeplug-studio/issues/257)).
+
 ## Serialisation rules (#57)
 
 - Keys sorted alphabetically at each object level for stable diffs
@@ -221,7 +241,7 @@ Import rejects when:
 1. YAML cannot be parsed
 2. Top-level shape is not an object with required keys
 3. `schemaVersion !== 1`
-4. `studioSchemaVersion` not in `2`–`9` (current `STUDIO_SCHEMA_VERSION`)
+4. `studioSchemaVersion` not in `2`–`11` (current `STUDIO_SCHEMA_VERSION`)
 5. Any row has `projectId` ≠ `project.id`
 6. Duplicate `id` within one entity array
 7. Any `EntityRef` or `libraryEntityId` does not resolve
@@ -273,6 +293,7 @@ library:
           bandwidthKHz: null
   digitalContacts: []
   rxGroupLists: []
+  scanLists: []
   talkGroups: []
   zones: []
 formatBuilds:

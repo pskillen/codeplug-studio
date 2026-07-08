@@ -21,11 +21,11 @@ Dedicated scan lists for AT-D890UV — separate from zones (contrast OpenGD77 zo
 
 ## Internal mapping
 
-| Wire             | Internal (target)                         |
-| ---------------- | ----------------------------------------- |
-| `Scan List Name` | Build scan list entry                     |
-| Member names     | Ordered channel refs via UUID at boundary |
-| Timing columns   | Build scan list metadata (TBD)            |
+| Wire             | Internal (target)                                  |
+| ---------------- | -------------------------------------------------- |
+| `Scan List Name` | Library `ScanList` (wire name from build override) |
+| Member names     | Ordered channel refs via UUID at boundary          |
+| Timing columns   | Build scan list metadata (TBD)                     |
 
 ## Related
 
