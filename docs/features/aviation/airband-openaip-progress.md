@@ -11,12 +11,11 @@
 - Slice 2: Core airband channel generation + import plan
 - Slice 3: Settings OpenAIP API key section
 - Slice 4: OpenAIP airport search UI (route, nav, map, batch import)
+- Slice 5: OpenAIP reference + aviation/library feature docs
 
 ## In flight
 
-- Slice 5: reference + feature docs
+- Slice 6: system attributions screen
 
 ## Planned
-
-- System attributions screen
 - Anytone `AMAir.CSV` / `FM.CSV` export partition
