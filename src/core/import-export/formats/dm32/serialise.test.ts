@@ -14,7 +14,7 @@ import {
 import { seedZoneGroupingFromLibrary } from '@core/domain/zoneGroupingLayout.ts';
 import { assemble, type LibrarySlice } from '@core/services/assemble.ts';
 import { serialiseDm32Files } from './serialise.ts';
-import { CHANNEL_COL, ZONE_COL, SCAN_COL } from './columns.ts';
+import { CHANNEL_COL, ZONE_COL, SCAN_COL, RX_GROUP_LIST_COL } from './columns.ts';
 import { parseCsv } from '@core/import-export/csvParse.ts';
 import { minimalDm32Bundle } from '../../../../test/dm32/bundles.ts';
 import {
@@ -186,6 +186,37 @@ describe('DM32 export serialise', () => {
     const files = serialiseDm32Files(assembled, library);
     const rows = parseCsv(files['Channels.csv']);
     expect(rows.length).toBe(3);
+  });
+
+  it('shortens long zone and RX group list names when shortenNames is enabled', () => {
+    const longZoneName = 'GLA GLASGOW TOWER ZONE NAME';
+    const longRglName = 'Scotland West Receive Group List';
+    const channel = fmChannel('GB3DA');
+    const zone = newZone(PROJECT_ID, longZoneName);
+    zone.members = [{ kind: 'channel' as const, channelId: channel.id }];
+    const rgl = newRxGroupList(PROJECT_ID, longRglName);
+    const build = dm32Build();
+    const library: LibrarySlice = {
+      channels: [channel],
+      zones: [zone],
+      talkGroups: [],
+      digitalContacts: [],
+      analogContacts: [],
+      rxGroupLists: [rgl],
+      scanLists: [],
+    };
+    const assembled = assemble(build, library);
+    const files = serialiseDm32Files(assembled, library, {
+      profileId: 'dm32-baofeng-dm32uv',
+      shortenNames: true,
+    });
+    const zoneRows = parseCsv(files['Zones.csv']);
+    const zoneNameIndex = zoneRows[0]!.indexOf(ZONE_COL.name);
+    expect(zoneRows[1]?.[zoneNameIndex]?.length).toBeLessThanOrEqual(16);
+
+    const rglRows = parseCsv(files['RXGroupLists.csv']);
+    const rglNameIndex = rglRows[0]!.indexOf(RX_GROUP_LIST_COL.name);
+    expect(rglRows[1]?.[rglNameIndex]?.length).toBeLessThanOrEqual(16);
   });
 
   it('emits Scan.csv and carrier when zone exportScanList is enabled', () => {
