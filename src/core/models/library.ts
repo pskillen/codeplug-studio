@@ -107,6 +107,8 @@ export interface Channel extends PersistableRow {
   modeProfiles: ChannelModeProfile[];
   /** Optional short qualifier tried first when export wire names exceed profile limits. */
   abbreviation?: string;
+  /** When true, omit from internal Codeplug Studio maps only (not CPS export). */
+  hideFromInternalMap?: boolean;
 }
 
 export interface TalkGroup extends PersistableRow {

@@ -273,6 +273,14 @@ function parseChannel(raw: unknown, index: number): Channel {
           ),
         }
       : {}),
+    ...(record.hideFromInternalMap !== undefined && record.hideFromInternalMap !== null
+      ? {
+          hideFromInternalMap: expectBoolean(
+            record.hideFromInternalMap,
+            `library.channels[${index}].hideFromInternalMap`,
+          ),
+        }
+      : {}),
     modeProfiles: expectArray(record.modeProfiles, `library.channels[${index}].modeProfiles`).map(
       (profile, profileIndex) => parseModeProfile(profile, profileIndex),
     ),

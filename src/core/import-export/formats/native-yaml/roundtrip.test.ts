@@ -12,6 +12,7 @@ import {
   FIXTURE_TIMESTAMP,
   FIXTURE_ZONE_ID,
   glasgowPmrNestedAggregate,
+  fullLibraryAggregate,
   minimalProjectAggregate,
   nestedZonesAggregate,
   projectWithFormatBuildAggregate,
@@ -68,6 +69,16 @@ describe('native-yaml round-trip smoke', () => {
     const pmr = parsed.zones.find((zone) => zone.id === FIXTURE_CHILD_ZONE_ID);
     expect(pmr?.omitFromExport).toBe(true);
     expect(pmr?.name).toBe('PMR446');
+  });
+
+  it('preserves hideFromInternalMap on round-trip', () => {
+    const aggregate = fullLibraryAggregate();
+    const channels = aggregate.channels.map((ch, index) =>
+      index === 0 ? { ...ch, hideFromInternalMap: true } : ch,
+    );
+    const withHidden = { ...aggregate, channels };
+    const parsed = parseProjectDocument(serialiseProject(withHidden));
+    expect(parsed.channels[0]?.hideFromInternalMap).toBe(true);
   });
 
   it('preserves forceInclude on zone overrides round-trip', () => {
