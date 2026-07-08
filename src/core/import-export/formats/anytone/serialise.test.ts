@@ -7,6 +7,7 @@ import {
   newZone,
 } from '@core/domain/factories.ts';
 import { assemble } from '@core/services/assemble.ts';
+import { csvToTable } from '@core/import-export/csvParse.ts';
 import { serialiseAnytoneFiles } from './serialise.ts';
 import { serialiseAnytoneChannelRow } from './channelWire.ts';
 
@@ -139,6 +140,59 @@ describe('anytone serialise', () => {
     expect(assembled.channels.find((c) => c.entity.id === ch1.id)?.scanListWireName).toBe(
       'Zone A SCL',
     );
+  });
+
+  it('shortens long channel names in Channel.CSV export', () => {
+    const tg = newTalkGroup(PROJECT_ID, 'TG Alpha', 2355);
+    const channel = {
+      ...newChannel(PROJECT_ID, 'Very Long Channel Name That Exceeds Limit'),
+      callsign: 'GB3GL',
+      rxFrequency: 438_800_000,
+      txFrequency: 434_000_000,
+      modeProfiles: [
+        {
+          mode: 'dmr' as const,
+          colourCode: 1,
+          timeslot: 2 as const,
+          dmrId: 1234567,
+          contactRef: { kind: 'talkGroup' as const, id: tg.id },
+          rxGroupListId: null,
+        },
+      ],
+    };
+    const zone = {
+      ...newZone(PROJECT_ID, 'Zone A'),
+      members: [{ kind: 'channel' as const, channelId: channel.id }],
+    };
+    const build = {
+      ...newFormatBuild(PROJECT_ID, 'anytone-at-d890uv'),
+      layout: {
+        sections: [
+          {
+            kind: 'zoneGrouping' as const,
+            zones: [{ id: zone.id, name: zone.name, channelIds: [channel.id] }],
+          },
+        ],
+      },
+    };
+    const library = {
+      channels: [channel],
+      zones: [zone],
+      talkGroups: [tg],
+      digitalContacts: [],
+      analogContacts: [],
+      rxGroupLists: [],
+      scanLists: [],
+    };
+
+    const assembled = assemble(build, library);
+    const files = serialiseAnytoneFiles(assembled, library);
+    const table = csvToTable(files['Channel.CSV']);
+    const nameIndex = table.headers.indexOf('Channel Name');
+    const exportedName = table.rows[0]?.[nameIndex] ?? '';
+
+    expect(exportedName.length).toBeLessThanOrEqual(16);
+    expect(exportedName).toBeTruthy();
   });
 
   it('ignores defaultScanInclusion for Scan List column', () => {

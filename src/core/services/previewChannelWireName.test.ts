@@ -48,4 +48,26 @@ describe('previewGeneratedChannelWireName', () => {
     expect(wireName.length).toBeLessThanOrEqual(7);
     expect(wireName).toBeTruthy();
   });
+
+  it('shortens to Anytone AT-D890UV name limit when shortenNames is enabled', () => {
+    const channel = {
+      ...newChannel(projectId, 'Glasgow Scotland West Repeater'),
+      callsign: 'GB3GL',
+      modeProfiles: [
+        {
+          mode: 'dmr' as const,
+          colourCode: 1,
+          timeslot: 2 as const,
+          dmrId: 1234567,
+          contactRef: null,
+          rxGroupListId: null,
+        },
+      ],
+    };
+    const build = newFormatBuild(projectId, 'anytone-at-d890uv');
+
+    const wireName = previewGeneratedChannelWireName(channel, build);
+    expect(wireName.length).toBeLessThanOrEqual(16);
+    expect(wireName).toBeTruthy();
+  });
 });

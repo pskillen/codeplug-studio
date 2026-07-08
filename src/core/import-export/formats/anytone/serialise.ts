@@ -27,6 +27,7 @@ import {
 } from './columns.ts';
 import { formatCsv } from './csvWrite.ts';
 import { serialiseAnytoneChannelRow } from './channelWire.ts';
+import { anytoneChannelWireName } from './exportChannelWire.ts';
 import { channelFrequencyById, rxGroupListMemberNames, wireNameByChannelId } from './listWire.ts';
 import { DEFAULT_ANYTONE_PROFILE_ID, getAnytoneProfile } from './profiles.ts';
 import { partitionAnytoneChannels } from './receiveOnlyBanks.ts';
@@ -66,16 +67,23 @@ function padRow(headers: string[], values: Record<string, string>): string[] {
   return headers.map((header) => values[header] ?? '');
 }
 
-function serialiseChannelsCsv(assembled: AssembledBuild, options?: CpsExportOptions): string {
+function serialiseChannelsCsv(
+  assembled: AssembledBuild,
+  options?: CpsExportOptions,
+  warnings: string[] = [],
+): string {
   const profileId = options?.profileId ?? assembled.profileId ?? DEFAULT_ANYTONE_PROFILE_ID;
   const { dmrChannels } = partitionAnytoneChannels(assembled);
   const ordered = sortReceiveBankChannels(dmrChannels);
+  const reserved = new Set<string>();
+  const wireOptions = { reserved, warnings };
 
   const rows = ordered.map((row, index) => {
     const slot = row.orderOrSlot ?? index + 1;
+    const wireName = anytoneChannelWireName(row, wireOptions, options, profileId);
     return padRow(
       CHANNEL_HEADERS,
-      serialiseAnytoneChannelRow(row, assembled, profileId, slot, options),
+      serialiseAnytoneChannelRow(row, assembled, profileId, slot, options, wireName),
     );
   });
   return formatCsv(CHANNEL_HEADERS, rows);
@@ -269,10 +277,9 @@ export function serialiseAnytoneFiles(
   warnings: string[] = [],
 ): AnytoneExportFiles {
   void library;
-  void warnings;
   const profileId = options?.profileId ?? assembled.profileId ?? DEFAULT_ANYTONE_PROFILE_ID;
   return {
-    'Channel.CSV': serialiseChannelsCsv(assembled, options),
+    'Channel.CSV': serialiseChannelsCsv(assembled, options, warnings),
     'DMRZone.CSV': serialiseZonesCsv(assembled),
     'ScanList.CSV': serialiseScanListsCsv(assembled),
     'DMRTalkGroups.CSV': serialiseTalkGroupsCsv(assembled),
