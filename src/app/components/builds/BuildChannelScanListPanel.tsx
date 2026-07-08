@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Select, Stack, Table, Text } from '@mantine/core';
-import type { FormatBuild } from '@core/models/formatBuild.ts';
-import type { ScanListsLayout } from '@core/models/traitLayout.ts';
+import { Anchor, Select, Stack, Table, Text } from '@mantine/core';
+import { Link } from 'react-router-dom';
 import { channelDisplayLabel } from '@core/domain/channelNaming.ts';
 import { overrideByEntityId } from '@core/domain/formatBuildOverrides.ts';
+import { hasDedicatedScanLists } from '@core/models/traits.ts';
+import { zoneLinkedChannelIds } from '@core/services/assemble.ts';
 import { useBuildLayout } from '../../routes/builds/BuildLayoutContext.tsx';
 import { useProjects } from '../../state/useProjects.ts';
 import { useFormatBuilds } from '../../state/useFormatBuilds.ts';
@@ -13,12 +14,6 @@ import { loadLibrarySlice } from '../../lib/loadLibrarySlice.ts';
 import type { LibrarySlice } from '@core/services/assemble.ts';
 
 const buildService = new BuildService(persistence);
-
-function scanListsSection(build: FormatBuild): ScanListsLayout | undefined {
-  return build.layout.sections.find(
-    (section): section is ScanListsLayout => section.kind === 'scanLists',
-  );
-}
 
 export default function BuildChannelScanListPanel() {
   const { build } = useBuildLayout();
@@ -39,10 +34,7 @@ export default function BuildChannelScanListPanel() {
     };
   }, [activeProjectId, build.updatedAt]);
 
-  const scanLists = useMemo(
-    () => scanListsSection(build)?.scanLists ?? [],
-    [build.layout.sections],
-  );
+  const scanLists = library?.scanLists ?? [];
 
   const scanListOptions = useMemo(
     () => [
@@ -56,6 +48,13 @@ export default function BuildChannelScanListPanel() {
     () => overrideByEntityId(build.channelOverrides),
     [build.channelOverrides],
   );
+
+  const channels = useMemo(() => {
+    if (!library) return [];
+    const linked = zoneLinkedChannelIds(build, library);
+    if (linked.size === 0) return library.channels;
+    return library.channels.filter((channel) => linked.has(channel.id));
+  }, [build, library]);
 
   const assignScanList = useCallback(
     async (channelId: string, scanListId: string | undefined) => {
@@ -78,8 +77,39 @@ export default function BuildChannelScanListPanel() {
     [build, putBuild],
   );
 
-  if (build.formatId !== 'anytone' || !library || library.channels.length === 0) {
+  if (!hasDedicatedScanLists(build.profileId) || !library) {
     return null;
+  }
+
+  if (scanLists.length === 0) {
+    return (
+      <Stack gap="sm">
+        <Text size="sm" fw={500}>
+          Scan list assignment
+        </Text>
+        <Text size="sm" c="dimmed">
+          No library scan lists yet.{' '}
+          <Anchor component={Link} to="/library/scan-lists/new">
+            Create a scan list
+          </Anchor>{' '}
+          first, then assign each channel&apos;s Scan List column here.
+        </Text>
+      </Stack>
+    );
+  }
+
+  if (channels.length === 0) {
+    return (
+      <Stack gap="sm">
+        <Text size="sm" fw={500}>
+          Scan list assignment
+        </Text>
+        <Text size="sm" c="dimmed">
+          No zone-linked channels to assign. Add channels to a zone on the Zones page or enable
+          export of unlinked channels on the Export page.
+        </Text>
+      </Stack>
+    );
   }
 
   return (
@@ -88,7 +118,12 @@ export default function BuildChannelScanListPanel() {
         Scan list assignment
       </Text>
       <Text size="sm" c="dimmed">
-        Maps each channel to a scan list on Channel.CSV. Create lists on the Scan lists page.
+        Maps each channel to a scan list on Channel.CSV. Member channels for ScanList.CSV are managed
+        in{' '}
+        <Anchor component={Link} to="/library/scan-lists">
+          Library → Scan lists
+        </Anchor>
+        .
       </Text>
       {error ? (
         <Text size="sm" c="red">
@@ -103,7 +138,7 @@ export default function BuildChannelScanListPanel() {
           </Table.Tr>
         </Table.Thead>
         <Table.Tbody>
-          {library.channels.map((channel) => (
+          {channels.map((channel) => (
             <Table.Tr key={channel.id}>
               <Table.Td>
                 <Text size="sm">{channelDisplayLabel(channel)}</Text>
@@ -113,7 +148,7 @@ export default function BuildChannelScanListPanel() {
                   size="xs"
                   data={scanListOptions}
                   value={channelOverrides.get(channel.id)?.scanListId ?? ''}
-                  disabled={saving || scanLists.length === 0}
+                  disabled={saving}
                   onChange={(value) =>
                     void assignScanList(channel.id, value && value.length > 0 ? value : undefined)
                   }
