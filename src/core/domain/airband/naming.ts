@@ -1,4 +1,5 @@
 import { bandFromFrequencyMhz } from '../bandCatalog.ts';
+import type { Channel } from '../../models/library.ts';
 import type {
   AirbandAirportInput,
   AirbandGenerateOptions,
@@ -6,6 +7,8 @@ import type {
 } from './types.ts';
 
 const AIRBAND_BAND_ID = 'airband';
+
+const ALL_PREFIX_KINDS: readonly AirbandNamePrefixKind[] = ['iata', 'icao', 'name'];
 
 const PREFIX_FALLBACK_ORDER: Record<AirbandNamePrefixKind, readonly AirbandNamePrefixKind[]> = {
   iata: ['iata', 'icao', 'name'],
@@ -24,6 +27,19 @@ function labelForKind(airport: AirbandAirportInput, kind: AirbandNamePrefixKind)
   }
 }
 
+export function titleCaseWords(value: string): string {
+  return value
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean)
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .join(' ');
+}
+
+function formatLabelForChannelName(label: string, kind: AirbandNamePrefixKind): string {
+  return kind === 'name' ? titleCaseWords(label) : label;
+}
+
 /** Resolve the airport label for channel naming, with fallback when the preferred kind is missing. */
 export function resolveAirportNameLabel(
   airport: AirbandAirportInput,
@@ -40,7 +56,7 @@ export function resolveAirportNameLabel(
 export function airportNameStripTokens(airport: AirbandAirportInput): string[] {
   const seen = new Set<string>();
   const tokens: string[] = [];
-  for (const kind of ['iata', 'icao', 'name'] as const) {
+  for (const kind of ALL_PREFIX_KINDS) {
     const value = labelForKind(airport, kind);
     if (!value) continue;
     const key = value.toLowerCase();
@@ -93,25 +109,63 @@ export function formatAirbandChannelName(
   options: AirbandGenerateOptions = {},
 ): string {
   const kind = options.namePrefixKind ?? 'iata';
-  const label = resolveAirportNameLabel(airport, kind);
-  const serviceLabel = stripLeadingAirportTokens(service, airport);
+  const label = formatLabelForChannelName(resolveAirportNameLabel(airport, kind), kind);
+  const serviceLabel = titleCaseWords(stripLeadingAirportTokens(service, airport));
   const base = `${label} ${serviceLabel}`.trim();
   return applyNamePrefix(base, options.namePrefix);
 }
 
-/** Name before stripping duplicate airport tokens (for import preview). */
-export function previewAirbandChannelNameBeforeStrip(
+/** All plausible imported names for dedupe / existing-channel matching. */
+export function possibleAirbandChannelNames(
   airport: AirbandAirportInput,
   service: string,
-  options: AirbandGenerateOptions = {},
-): string {
-  const kind = options.namePrefixKind ?? 'iata';
-  const label = resolveAirportNameLabel(airport, kind);
-  const base = `${label} ${service.trim()}`.trim();
-  return applyNamePrefix(base, options.namePrefix);
+  options: Pick<AirbandGenerateOptions, 'namePrefix'> = {},
+): string[] {
+  const names = new Set<string>();
+  const trimmedService = service.trim();
+  if (trimmedService) names.add(trimmedService);
+
+  for (const kind of ALL_PREFIX_KINDS) {
+    names.add(formatAirbandChannelName(airport, service, { ...options, namePrefixKind: kind }));
+  }
+
+  return [...names];
 }
 
 export function isCivilAirbandHz(rxFrequencyHz: number): boolean {
   const mhz = rxFrequencyHz / 1_000_000;
   return bandFromFrequencyMhz(mhz)?.id === AIRBAND_BAND_ID;
+}
+
+export function isAirbandSimplexChannel(channel: Channel): boolean {
+  if (channel.rxFrequency == null) return false;
+  if (!channel.modeProfiles.some((profile) => profile.mode === 'am')) return false;
+  return channel.txFrequency == null || channel.rxFrequency === channel.txFrequency;
+}
+
+export function channelsMatchingAirbandFrequency(
+  channels: readonly Channel[],
+  rxFrequencyHz: number,
+): Channel[] {
+  return channels.filter(
+    (channel) => channel.rxFrequency === rxFrequencyHz && isAirbandSimplexChannel(channel),
+  );
+}
+
+export function findExistingAirbandChannelMatch(
+  airport: AirbandAirportInput,
+  service: string,
+  rxFrequencyHz: number,
+  channels: readonly Channel[],
+): Channel | undefined {
+  if (!isCivilAirbandHz(rxFrequencyHz)) return undefined;
+
+  const candidates = channelsMatchingAirbandFrequency(channels, rxFrequencyHz);
+  if (candidates.length === 0) return undefined;
+
+  const possibleNames = new Set(
+    possibleAirbandChannelNames(airport, service).map((name) => name.toLowerCase()),
+  );
+
+  return candidates.find((channel) => possibleNames.has(channel.name.toLowerCase()));
 }

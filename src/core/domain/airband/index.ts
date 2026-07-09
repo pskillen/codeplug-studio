@@ -6,8 +6,12 @@ export type {
 } from './types.ts';
 export { generateChannelsFromAirport, generateChannelsFromAirports } from './generate.ts';
 export {
+  channelsMatchingAirbandFrequency,
+  findExistingAirbandChannelMatch,
   formatAirbandChannelName,
+  isAirbandSimplexChannel,
   isCivilAirbandHz,
-  previewAirbandChannelNameBeforeStrip,
+  possibleAirbandChannelNames,
   resolveAirportNameLabel,
+  titleCaseWords,
 } from './naming.ts';

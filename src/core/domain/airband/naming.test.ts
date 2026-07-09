@@ -1,14 +1,18 @@
 import { describe, expect, it } from 'vitest';
+import { emptyLibrary } from '@core/domain/factories.ts';
 import type { AirbandAirportInput } from './types.ts';
 import {
+  channelsMatchingAirbandFrequency,
+  findExistingAirbandChannelMatch,
   formatAirbandChannelName,
-  previewAirbandChannelNameBeforeStrip,
+  possibleAirbandChannelNames,
   resolveAirportNameLabel,
   stripLeadingAirportTokens,
+  titleCaseWords,
 } from './naming.ts';
 
 const glasgowAirport: AirbandAirportInput = {
-  name: 'Glasgow',
+  name: 'glasgow airport',
   icao: 'EGPF',
   iata: 'GLA',
   location: null,
@@ -22,6 +26,13 @@ const nameOnlyAirport: AirbandAirportInput = {
   location: null,
   frequencies: [],
 };
+
+describe('titleCaseWords', () => {
+  it('title-cases each word', () => {
+    expect(titleCaseWords('tower')).toBe('Tower');
+    expect(titleCaseWords('ground movement')).toBe('Ground Movement');
+  });
+});
 
 describe('resolveAirportNameLabel', () => {
   it('defaults to IATA', () => {
@@ -51,22 +62,24 @@ describe('stripLeadingAirportTokens', () => {
   });
 
   it('strips a leading airport name', () => {
-    expect(stripLeadingAirportTokens('Glasgow Ground', glasgowAirport)).toBe('Ground');
-  });
-
-  it('strips repeated airport tokens', () => {
-    expect(stripLeadingAirportTokens('GLA GLA Tower', glasgowAirport)).toBe('Tower');
+    expect(stripLeadingAirportTokens('glasgow airport Ground', glasgowAirport)).toBe('Ground');
   });
 });
 
 describe('formatAirbandChannelName', () => {
-  it('builds IATA-prefixed names by default', () => {
-    expect(formatAirbandChannelName(glasgowAirport, 'Tower')).toBe('GLA Tower');
+  it('builds IATA-prefixed names with title-cased services', () => {
+    expect(formatAirbandChannelName(glasgowAirport, 'tower')).toBe('GLA Tower');
   });
 
   it('replaces duplicate leading codes before applying the chosen prefix', () => {
-    expect(formatAirbandChannelName(glasgowAirport, 'EGPF Tower', { namePrefixKind: 'iata' })).toBe(
+    expect(formatAirbandChannelName(glasgowAirport, 'EGPF tower', { namePrefixKind: 'iata' })).toBe(
       'GLA Tower',
+    );
+  });
+
+  it('title-cases airport name labels when that prefix is selected', () => {
+    expect(formatAirbandChannelName(glasgowAirport, 'tower', { namePrefixKind: 'name' })).toBe(
+      'Glasgow Airport Tower',
     );
   });
 
@@ -86,12 +99,102 @@ describe('formatAirbandChannelName', () => {
   });
 });
 
-describe('previewAirbandChannelNameBeforeStrip', () => {
-  it('shows the unstripped composite for preview', () => {
+describe('possibleAirbandChannelNames', () => {
+  it('includes each prefix kind and the raw wire label', () => {
+    const names = possibleAirbandChannelNames(glasgowAirport, 'tower');
+    expect(names).toContain('tower');
+    expect(names).toContain('GLA Tower');
+    expect(names).toContain('EGPF Tower');
+    expect(names).toContain('Glasgow Airport Tower');
+  });
+});
+
+describe('findExistingAirbandChannelMatch', () => {
+  it('matches AM simplex channels on frequency and plausible names', () => {
+    const library = emptyLibrary();
+    library.channels.push({
+      id: 'existing',
+      projectId: 'p1',
+      name: 'GLA Tower',
+      callsign: '',
+      rxFrequency: 118_805_000,
+      txFrequency: null,
+      location: null,
+      useLocation: false,
+      maidenheadLocator: null,
+      power: null,
+      forbidTransmit: true,
+      scanInclusion: 'default',
+      comment: '',
+      modeProfiles: [
+        { mode: 'am', squelch: null, rxTone: 'none', txTone: 'none', bandwidthKHz: 12.5 },
+      ],
+      revision: 1,
+      updatedAt: '',
+    });
+
+    const match = findExistingAirbandChannelMatch(
+      glasgowAirport,
+      'tower',
+      118_805_000,
+      library.channels,
+    );
+    expect(match?.id).toBe('existing');
+  });
+
+  it('ignores FM channels on the same frequency', () => {
+    const library = emptyLibrary();
+    library.channels.push({
+      id: 'fm',
+      projectId: 'p1',
+      name: 'GLA Tower',
+      callsign: '',
+      rxFrequency: 118_805_000,
+      txFrequency: 118_805_000,
+      location: null,
+      useLocation: false,
+      maidenheadLocator: null,
+      power: null,
+      forbidTransmit: false,
+      scanInclusion: 'default',
+      comment: '',
+      modeProfiles: [
+        { mode: 'fm', squelch: null, rxTone: 'none', txTone: 'none', bandwidthKHz: 12.5 },
+      ],
+      revision: 1,
+      updatedAt: '',
+    });
+
     expect(
-      previewAirbandChannelNameBeforeStrip(glasgowAirport, 'GLA Tower', {
-        namePrefixKind: 'iata',
-      }),
-    ).toBe('GLA GLA Tower');
+      findExistingAirbandChannelMatch(glasgowAirport, 'tower', 118_805_000, library.channels),
+    ).toBeUndefined();
+  });
+});
+
+describe('channelsMatchingAirbandFrequency', () => {
+  it('includes RX-only AM channels', () => {
+    const library = emptyLibrary();
+    library.channels.push({
+      id: 'rx-only',
+      projectId: 'p1',
+      name: 'GLA Tower',
+      callsign: '',
+      rxFrequency: 118_805_000,
+      txFrequency: null,
+      location: null,
+      useLocation: false,
+      maidenheadLocator: null,
+      power: null,
+      forbidTransmit: true,
+      scanInclusion: 'default',
+      comment: '',
+      modeProfiles: [
+        { mode: 'am', squelch: null, rxTone: 'none', txTone: 'none', bandwidthKHz: 12.5 },
+      ],
+      revision: 1,
+      updatedAt: '',
+    });
+
+    expect(channelsMatchingAirbandFrequency(library.channels, 118_805_000)).toHaveLength(1);
   });
 });

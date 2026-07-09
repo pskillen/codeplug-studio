@@ -136,7 +136,7 @@ describe('buildAirbandImportPlan', () => {
     );
 
     expect(plan.totalChannelsToAdd).toHaveLength(1);
-    expect(plan.totalChannelsToAdd[0]?.name).toContain('ATIS');
+    expect(plan.totalChannelsToAdd[0]?.name).toContain('Atis');
     expect(plan.zoneUpdates).toHaveLength(0);
   });
 

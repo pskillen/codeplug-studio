@@ -26,7 +26,7 @@ export default function AddFromOpenAipPage() {
 - Per-airport **Select all / none** toggles frequencies within that card; airport checkbox selects the whole airport.
 - Per-airport **SplitButton**: primary **Add channels**, menu **Add as zone** (uses shared zone target below).
 - Batch bar: global select all, **Name prefix** selector (IATA / ICAO / airport name; default IATA with fallback), optional **Create zone** with **New zone** (editable name, default `Airband`) or **Existing zone** (`ZoneSelect`), **Add selected**.
-- Frequency rows preview the imported channel name (`before → after · MHz` when stripping applies).
+- Frequency rows preview the imported channel name (`wire label → proposed · MHz`); existing library matches show a link with no checkbox.
 - **Add as zone** and batch **Create zone** append to an existing zone via `zoneUpdates` (deduped members, including library duplicates) or create a new zone.
 
 ## Related

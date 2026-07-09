@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
   Alert,
@@ -25,7 +25,6 @@ import { buildAirbandImportPlan } from '@core/services/airbandImport.ts';
 import {
   formatAirbandChannelName,
   isCivilAirbandHz,
-  previewAirbandChannelNameBeforeStrip,
   type AirbandNamePrefixKind,
 } from '@core/domain/airband/index.ts';
 import { validateZoneMembership } from '@core/domain/validation.ts';
@@ -36,6 +35,7 @@ import {
   airportFrequencyKey,
   airportListingKey,
   airportListingToAirbandInput,
+  buildExistingAirbandChannelIndex,
   formatAirportDistanceKm,
   formatFrequencyMhz,
   parseAirportFrequencyKey,
@@ -124,32 +124,74 @@ function buildSelectionsFromKeys(
     });
 }
 
-function formatFrequencyImportLabel(
+function selectableFrequencyKeys(
   airport: AirportListing,
-  service: string,
-  rxFrequencyHz: number,
-  namePrefixKind: AirbandNamePrefixKind,
-): string {
-  const input = airportListingToAirbandInput(airport);
-  const options = { namePrefixKind };
-  const imported = formatAirbandChannelName(input, service, options);
-  const frequency = formatFrequencyMhz(rxFrequencyHz);
+  existingChannelByKey: ReadonlyMap<string, Channel>,
+): string[] {
+  return frequencyKeysForAirport(airport).filter((key) => !existingChannelByKey.has(key));
+}
 
-  if (!isCivilAirbandHz(rxFrequencyHz)) {
-    return `${service} · ${frequency}`;
-  }
+function FrequencyImportPreview({
+  wireLabel,
+  proposedName,
+  frequencyMhz,
+}: {
+  wireLabel: string;
+  proposedName: string;
+  frequencyMhz: string;
+}) {
+  return (
+    <Group gap="xs" wrap="nowrap" align="flex-start" grow>
+      <Text size="sm" c="dimmed" lineClamp={2} style={{ flex: 1, minWidth: 0 }}>
+        {wireLabel}
+      </Text>
+      <Text size="sm" c="dimmed" aria-hidden>
+        →
+      </Text>
+      <Text size="sm" lineClamp={2} style={{ flex: 1, minWidth: 0 }}>
+        {proposedName} · {frequencyMhz}
+      </Text>
+    </Group>
+  );
+}
 
-  const original = previewAirbandChannelNameBeforeStrip(input, service, options);
-  if (original !== imported) {
-    return `${original} → ${imported} · ${frequency}`;
-  }
-  return `${imported} · ${frequency}`;
+function ExistingFrequencyRow({
+  wireLabel,
+  channel,
+  frequencyMhz,
+}: {
+  wireLabel: string;
+  channel: Channel;
+  frequencyMhz: string;
+}) {
+  return (
+    <Group gap="xs" wrap="nowrap" align="flex-start" grow>
+      <Text size="sm" c="dimmed" lineClamp={2} style={{ flex: 1, minWidth: 0 }}>
+        {wireLabel}
+      </Text>
+      <Text size="sm" c="dimmed" aria-hidden>
+        →
+      </Text>
+      <Group gap={6} wrap="wrap" style={{ flex: 1, minWidth: 0 }}>
+        <Anchor component={Link} to={`/library/channels/${channel.id}`} size="sm">
+          {channel.name}
+        </Anchor>
+        <Text size="sm" c="dimmed">
+          · {frequencyMhz}
+        </Text>
+        <Text size="xs" c="dimmed">
+          In library
+        </Text>
+      </Group>
+    </Group>
+  );
 }
 
 function AirportCard({
   airport,
   referencePoint,
   selectedKeys,
+  existingChannelByKey,
   namePrefixKind,
   onToggleFrequency,
   onToggleAirport,
@@ -162,6 +204,7 @@ function AirportCard({
   airport: AirportListing;
   referencePoint: { lat: number; lon: number } | null;
   selectedKeys: Set<string>;
+  existingChannelByKey: ReadonlyMap<string, Channel>;
   namePrefixKind: AirbandNamePrefixKind;
   onToggleFrequency: (key: string, checked: boolean) => void;
   onToggleAirport: (checked: boolean) => void;
@@ -173,10 +216,11 @@ function AirportCard({
 }) {
   const distance = formatAirportDistanceKm(airport, referencePoint);
   const codes = [airport.icao, airport.iata].filter(Boolean).join(' / ');
-  const frequencyKeys = frequencyKeysForAirport(airport);
-  const selectedCount = frequencyKeys.filter((key) => selectedKeys.has(key)).length;
-  const airportFullySelected = frequencyKeys.length > 0 && selectedCount === frequencyKeys.length;
+  const selectableKeys = selectableFrequencyKeys(airport, existingChannelByKey);
+  const selectedCount = selectableKeys.filter((key) => selectedKeys.has(key)).length;
+  const airportFullySelected = selectableKeys.length > 0 && selectedCount === selectableKeys.length;
   const airportPartiallySelected = selectedCount > 0 && !airportFullySelected;
+  const airbandInput = useMemo(() => airportListingToAirbandInput(airport), [airport]);
 
   return (
     <Card withBorder padding="md" radius="md">
@@ -189,7 +233,7 @@ function AirportCard({
               onChange={(e) => onToggleAirport(e.currentTarget.checked)}
               aria-label={`Select all frequencies for ${airport.name}`}
               mt={4}
-              disabled={frequencyKeys.length === 0}
+              disabled={selectableKeys.length === 0}
             />
             <Stack gap={2}>
               <Text fw={600}>{airport.name}</Text>
@@ -227,19 +271,41 @@ function AirportCard({
             <Stack gap={6}>
               {airport.frequencies.map((freq, index) => {
                 const key = airportFrequencyKey(airport, index);
-                const importLabel = formatFrequencyImportLabel(
-                  airport,
-                  freq.service,
-                  freq.rxFrequencyHz,
+                const frequencyMhz = formatFrequencyMhz(freq.rxFrequencyHz);
+                const existingChannel = existingChannelByKey.get(key);
+
+                if (existingChannel) {
+                  return (
+                    <ExistingFrequencyRow
+                      key={key}
+                      wireLabel={freq.service}
+                      channel={existingChannel}
+                      frequencyMhz={frequencyMhz}
+                    />
+                  );
+                }
+
+                if (!isCivilAirbandHz(freq.rxFrequencyHz)) {
+                  return (
+                    <Text key={key} size="sm" c="dimmed">
+                      {freq.service} · {frequencyMhz} (not civil airband)
+                    </Text>
+                  );
+                }
+
+                const proposedName = formatAirbandChannelName(airbandInput, freq.service, {
                   namePrefixKind,
-                );
+                });
+
                 return (
                   <Checkbox
                     key={key}
                     label={
-                      <Text size="sm" lineClamp={2}>
-                        {importLabel}
-                      </Text>
+                      <FrequencyImportPreview
+                        wireLabel={freq.service}
+                        proposedName={proposedName}
+                        frequencyMhz={frequencyMhz}
+                      />
                     }
                     checked={selectedKeys.has(key)}
                     onChange={(e) => onToggleFrequency(key, e.currentTarget.checked)}
@@ -269,12 +335,26 @@ export default function OpenAipAirportSearch() {
   const [addMessage, setAddMessage] = useState<string | null>(null);
   const [addError, setAddError] = useState<string | null>(null);
 
+  const existingChannelByKey = useMemo(
+    () => buildExistingAirbandChannelIndex(search.airports, library.channels),
+    [search.airports, library.channels],
+  );
+
+  const selectableFrequencyKeysAll = useMemo(
+    () =>
+      search.airports.flatMap((airport) => selectableFrequencyKeys(airport, existingChannelByKey)),
+    [search.airports, existingChannelByKey],
+  );
+
+  useEffect(() => {
+    setSelectedKeys((prev) => {
+      const next = new Set([...prev].filter((key) => !existingChannelByKey.has(key)));
+      return next.size === prev.size ? prev : next;
+    });
+  }, [existingChannelByKey]);
+
   const mapChannels = useMemo(() => mapChannelsFromAirports(search.airports), [search.airports]);
   const kindHint = airportQueryKindHint(search.kind);
-  const allFrequencyKeys = useMemo(
-    () => search.airports.flatMap((airport) => frequencyKeysForAirport(airport)),
-    [search.airports],
-  );
 
   function toggleFrequency(key: string, checked: boolean) {
     setSelectedKeys((prev) => {
@@ -286,7 +366,7 @@ export default function OpenAipAirportSearch() {
   }
 
   function toggleAirportFrequencies(airport: AirportListing, checked: boolean) {
-    const keys = frequencyKeysForAirport(airport);
+    const keys = selectableFrequencyKeys(airport, existingChannelByKey);
     setSelectedKeys((prev) => {
       const next = new Set(prev);
       for (const key of keys) {
@@ -302,7 +382,7 @@ export default function OpenAipAirportSearch() {
       setSelectedKeys(new Set());
       return;
     }
-    setSelectedKeys(new Set(allFrequencyKeys));
+    setSelectedKeys(new Set(selectableFrequencyKeysAll));
   }
 
   async function persistSelections(
@@ -446,9 +526,10 @@ export default function OpenAipAirportSearch() {
   }
 
   const allFrequenciesSelected =
-    allFrequencyKeys.length > 0 && allFrequencyKeys.every((key) => selectedKeys.has(key));
+    selectableFrequencyKeysAll.length > 0 &&
+    selectableFrequencyKeysAll.every((key) => selectedKeys.has(key));
   const someFrequenciesSelected =
-    selectedKeys.size > 0 && selectedKeys.size < allFrequencyKeys.length;
+    selectedKeys.size > 0 && selectedKeys.size < selectableFrequencyKeysAll.length;
 
   return (
     <FormPage
@@ -619,6 +700,7 @@ export default function OpenAipAirportSearch() {
                       airport={airport}
                       referencePoint={search.referencePoint}
                       selectedKeys={selectedKeys}
+                      existingChannelByKey={existingChannelByKey}
                       namePrefixKind={namePrefixKind}
                       onToggleFrequency={toggleFrequency}
                       onToggleAirport={(checked) => toggleAirportFrequencies(airport, checked)}
