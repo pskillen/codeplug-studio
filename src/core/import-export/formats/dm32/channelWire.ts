@@ -41,6 +41,7 @@ export function serialiseDm32ChannelRow(
   talkGroupWireNames: Dm32TalkGroupWireNameMap,
   _options?: CpsExportOptions,
   scanListWire = 'None',
+  enableAutoScan = false,
 ): Record<string, string> {
   const profile = getDm32Profile(profileId);
   const profiles =
@@ -102,7 +103,7 @@ export function serialiseDm32ChannelRow(
     [CHANNEL_COL.forbidTx]: formatDm32FlagWire(sourceChannel.forbidTransmit),
     [CHANNEL_COL.aprsReceive]: '0',
     [CHANNEL_COL.forbidTalkaround]: '0',
-    [CHANNEL_COL.autoScan]: '0',
+    [CHANNEL_COL.autoScan]: enableAutoScan ? '1' : '0',
     [CHANNEL_COL.loneWork]: '0',
     [CHANNEL_COL.emergencyIndicator]: '0',
     [CHANNEL_COL.emergencyAck]: '0',

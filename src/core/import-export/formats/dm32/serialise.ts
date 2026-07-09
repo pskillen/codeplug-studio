@@ -346,6 +346,7 @@ export function serialiseDm32Files(
     const source = channelEntityById.get(row.sourceChannelId);
     if (!source) throw new Error(`Missing source channel ${row.sourceChannelId}`);
     const scanList = scanExport.scanListByChannelWireName.get(row.wireName) ?? 'None';
+    const enableAutoScan = scanList !== 'None' && row.sourceChannelId.startsWith('scan-carrier:');
     return padRow(
       CHANNEL_HEADERS,
       serialiseDm32ChannelRow(
@@ -357,6 +358,7 @@ export function serialiseDm32Files(
         talkGroupWireNames,
         options,
         scanList,
+        enableAutoScan,
       ),
     );
   });

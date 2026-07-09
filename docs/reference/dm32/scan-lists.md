@@ -12,7 +12,7 @@ When a DM32 build zone entry has `exportScanList: true` and the export master to
 1. Emit a `Scan.csv` row named after the zone wire name
 2. Synthesise a scan carrier channel `{zoneName} Scan` (default 145.500 MHz simplex)
 3. Prepend carrier as first zone member in `Zones.csv`
-4. Set channel `Scan List` FK on carrier and scan members
+4. Set channel `Scan List` FK on the scan **carrier** channel only (members keep manual assignment)
 
 Member filter: `includeInScanList !== false` and `Channel.scanSkip !== true`. Cap: **16** members per list (`scanListMembers` profile limit) with export warning.
 

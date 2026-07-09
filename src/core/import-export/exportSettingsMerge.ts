@@ -65,6 +65,9 @@ function applyFormatExportDefaults(defaults: FormatExportDefaults): CpsExportOpt
     ...(defaults.expandRxGroupLists !== undefined
       ? { expandRxGroupLists: defaults.expandRxGroupLists }
       : {}),
+    ...(defaults.exportZoneDerivedScanLists !== undefined
+      ? { exportZoneDerivedScanLists: defaults.exportZoneDerivedScanLists }
+      : {}),
   };
 }
 

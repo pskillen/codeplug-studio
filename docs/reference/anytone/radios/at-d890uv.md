@@ -8,7 +8,8 @@ Provisional limits for variant `anytone-at-d890uv`. Calibrated from wire spike [
 | Label                 | Anytone AT-D890UV   |                                                                     |
 | Max channels          | TBD                 | CPS manual                                                          |
 | Max zone members      | TBD                 | Pipe-separated column capacity                                      |
-| Max scan list members | TBD                 |                                                                     |
+| Max scan lists        | 100 (provisional)   | `profiles.ts` — verify against CPS manual                           |
+| Max scan list members | 100 (provisional)   | `profiles.ts` — verify against CPS manual                           |
 | Max RGL members       | TBD                 |                                                                     |
 | Channel name limit    | 16                  | Fixture + `profiles.ts` (verify against CPS manual)                 |
 | VFO row numbers       | `4001+` (channels)  | Sample fixture                                                      |

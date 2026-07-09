@@ -15,6 +15,7 @@ import {
   resolveEntityWireName,
   resolveRxGroupListWireName,
 } from './wireFormat.ts';
+import { isZoneScanCarrierChannelId } from '@core/import-export/zoneDerivedScanLists/carrier.ts';
 import { DEFAULT_ANYTONE_PROFILE_ID, getAnytoneProfile } from './profiles.ts';
 
 function dmrProfile(channel: Channel): ChannelModeProfileDMR | null {
@@ -132,6 +133,10 @@ export function serialiseAnytoneChannelRow(
 
   if (dmr) {
     values[CHANNEL_COL.dmrMode] = formatAnytoneDmrModeWire(channel);
+  }
+
+  if (isZoneScanCarrierChannelId(channel.id)) {
+    values[CHANNEL_COL.autoScan] = '1';
   }
 
   const rowValues: Record<string, string> = {};

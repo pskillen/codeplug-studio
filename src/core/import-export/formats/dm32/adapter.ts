@@ -20,6 +20,7 @@ export const dm32ExportAdapter: MultiFileExportAdapter = {
     defaultScanInclusion: 'scan',
     expandModes: false,
     expandRxGroupLists: true,
+    exportZoneDerivedScanLists: true,
   },
   fileNames: DM32_EXPORT_FILE_NAMES,
   serialiseFile(assembled, fileName, options?: CpsExportOptions) {

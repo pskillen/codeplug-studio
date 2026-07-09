@@ -8,6 +8,7 @@ export interface AnytoneRadioProfile {
   /** Provisional — verify against CPS manual. */
   maxChannels: number;
   zoneMembers: number;
+  maxScanLists: number;
   scanListMembers: number;
   rxGroupListMembers: number;
   nameLimit: number;
@@ -28,7 +29,8 @@ export const ANYTONE_PROFILES: readonly AnytoneRadioProfile[] = [
     label: 'Anytone AT-D890UV',
     maxChannels: 4000,
     zoneMembers: 64,
-    scanListMembers: 64,
+    maxScanLists: 100,
+    scanListMembers: 100,
     rxGroupListMembers: 32,
     nameLimit: 16,
     powerLadder: AT_D890UV_POWER_LADDER,

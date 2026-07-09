@@ -186,4 +186,51 @@ describe('WirePreviewTable', () => {
 
     expect(screen.getByLabelText('Skip PMR446 from export')).toBeInTheDocument();
   });
+
+  it('shows zone scan header controls when zoneScanContext is provided', () => {
+    const zoneId = 'zone-pmr';
+    renderTable({
+      rows: [{ ...omitZoneRow, libraryEntityId: zoneId, omitFromExport: false }],
+      onExcludedChange: vi.fn(),
+      onWireNameChange: vi.fn(),
+      zoneScanContext: {
+        layout: { kind: 'zoneGrouping', zones: [{ id: zoneId, name: 'PMR446', channelIds: [] }] },
+        zones: [
+          {
+            id: zoneId,
+            projectId: 'p',
+            revision: 1,
+            updatedAt: '',
+            name: 'PMR446',
+            members: [{ kind: 'channel', channelId: 'ch-1' }],
+            comment: '',
+          },
+        ],
+        zoneById: new Map([
+          [
+            zoneId,
+            {
+              id: zoneId,
+              projectId: 'p',
+              revision: 1,
+              updatedAt: '',
+              name: 'PMR446',
+              members: [{ kind: 'channel', channelId: 'ch-1' }],
+              comment: '',
+            },
+          ],
+        ]),
+        channelById: new Map(),
+        isDm32: true,
+        showScanCarrierControls: true,
+        scanListMemberCap: 16,
+        saving: false,
+        onUpdateZoneEntry: vi.fn(),
+        onUpdateMemberScanInclusion: vi.fn(),
+      },
+    });
+
+    expect(screen.getByLabelText('Export as scan list')).toBeInTheDocument();
+    expect(screen.getByText('1 / 1 scan members (cap 16)')).toBeInTheDocument();
+  });
 });

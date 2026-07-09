@@ -262,8 +262,13 @@ describe('DM32 export serialise', () => {
 
     const channelRows = parseCsv(files['Channels.csv']);
     const scanListIndex = channelRows[0]!.indexOf(CHANNEL_COL.scanList);
-    const hasScanFk = channelRows.slice(1).some((row) => row[scanListIndex] === 'Glasgow');
-    expect(hasScanFk).toBe(true);
+    const nameIndex = channelRows[0]!.indexOf(CHANNEL_COL.name);
+    const autoScanIndex = channelRows[0]!.indexOf(CHANNEL_COL.autoScan);
+    const carrierRow = channelRows.find((row) => row[nameIndex]?.endsWith(' Scan'));
+    expect(carrierRow?.[scanListIndex]).toBe('Glasgow');
+    expect(carrierRow?.[autoScanIndex]).toBe('1');
+    const memberRow = channelRows.find((row) => row[nameIndex] === 'Member One');
+    expect(memberRow?.[scanListIndex]).toBe('None');
 
     const zoneRows = parseCsv(files['Zones.csv']);
     const membersIndex = zoneRows[0]!.indexOf(ZONE_COL.members);

@@ -53,6 +53,12 @@ export function collectAnytoneExportWarnings(
     }
   }
 
+  if (assembled.scanLists.length > profile.maxScanLists) {
+    warnings.push(
+      `Scan list count ${assembled.scanLists.length} exceeds profile cap ${profile.maxScanLists}`,
+    );
+  }
+
   for (const row of assembled.talkGroups) {
     if (row.wireName.length > maxNameLength) {
       warnings.push(

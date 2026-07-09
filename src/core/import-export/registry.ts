@@ -93,12 +93,14 @@ const DM32_EXPORT_DEFAULTS: FormatExportDefaults = {
   defaultScanInclusion: 'scan',
   expandModes: false,
   expandRxGroupLists: true,
+  exportZoneDerivedScanLists: true,
 };
 
 const ANYTONE_EXPORT_DEFAULTS: FormatExportDefaults = {
   defaultScanInclusion: 'scan',
   expandModes: false,
   expandRxGroupLists: false,
+  exportZoneDerivedScanLists: false,
 };
 
 const FORMAT_EXPORT_DEFAULTS: Partial<Record<FormatId, FormatExportDefaults>> = {

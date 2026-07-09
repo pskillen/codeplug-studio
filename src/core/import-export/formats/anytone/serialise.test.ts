@@ -261,4 +261,226 @@ describe('anytone serialise', () => {
     expect(table.rows[0]?.[8]).toBe('Private Call');
     expect(table.rows[0]?.[9]).toBe('None');
   });
+
+  it('omits zone-derived ScanList.CSV rows when master toggle is off', () => {
+    const tg = newTalkGroup(PROJECT_ID, 'TG Alpha', 2355);
+    const ch1 = {
+      ...newChannel(PROJECT_ID, 'Channel 1'),
+      rxFrequency: 438_800_000,
+      txFrequency: 434_000_000,
+      modeProfiles: [
+        {
+          mode: 'dmr' as const,
+          colourCode: 1,
+          timeslot: 2 as const,
+          dmrId: 1234567,
+          contactRef: { kind: 'talkGroup' as const, id: tg.id },
+          rxGroupListId: null,
+        },
+      ],
+    };
+    const zone = {
+      ...newZone(PROJECT_ID, 'Zone A'),
+      members: [{ kind: 'channel' as const, channelId: ch1.id }],
+    };
+    const build = {
+      ...newFormatBuild(PROJECT_ID, 'anytone-at-d890uv'),
+      layout: {
+        sections: [
+          {
+            kind: 'zoneGrouping' as const,
+            zones: [
+              {
+                id: zone.id,
+                name: zone.name,
+                channelIds: [ch1.id],
+                exportScanList: true,
+              },
+            ],
+          },
+        ],
+      },
+      zoneOverrides: [{ libraryEntityId: zone.id, wireName: 'Zone A' }],
+    };
+    const library = {
+      channels: [ch1],
+      zones: [zone],
+      talkGroups: [tg],
+      digitalContacts: [],
+      analogContacts: [],
+      rxGroupLists: [],
+      scanLists: [],
+    };
+
+    const assembled = assemble(build, library);
+    const files = serialiseAnytoneFiles(assembled, library, { exportZoneDerivedScanLists: false });
+    const table = csvToTable(files['ScanList.CSV']);
+    expect(table.rows).toHaveLength(0);
+  });
+
+  it('merges zone-derived scan list with library scan list when toggle is on', () => {
+    const tg = newTalkGroup(PROJECT_ID, 'TG Alpha', 2355);
+    const libraryScanListId = 'scan-lib';
+    const ch1 = {
+      ...newChannel(PROJECT_ID, 'Channel 1'),
+      scanListId: libraryScanListId,
+      rxFrequency: 438_800_000,
+      txFrequency: 434_000_000,
+      modeProfiles: [
+        {
+          mode: 'dmr' as const,
+          colourCode: 1,
+          timeslot: 2 as const,
+          dmrId: 1234567,
+          contactRef: { kind: 'talkGroup' as const, id: tg.id },
+          rxGroupListId: null,
+        },
+      ],
+    };
+    const ch2 = {
+      ...newChannel(PROJECT_ID, 'Channel 2'),
+      rxFrequency: 155_000_000,
+      txFrequency: 155_000_000,
+      modeProfiles: [
+        {
+          mode: 'dmr' as const,
+          colourCode: 1,
+          timeslot: 1 as const,
+          dmrId: 1234567,
+          contactRef: { kind: 'talkGroup' as const, id: tg.id },
+          rxGroupListId: null,
+        },
+      ],
+    };
+    const zone = {
+      ...newZone(PROJECT_ID, 'Zone B'),
+      members: [{ kind: 'channel' as const, channelId: ch2.id }],
+    };
+    const scanList = {
+      ...newScanList(PROJECT_ID, 'Library SCL'),
+      id: libraryScanListId,
+      memberChannelIds: [ch1.id],
+    };
+    const build = {
+      ...newFormatBuild(PROJECT_ID, 'anytone-at-d890uv'),
+      layout: {
+        sections: [
+          {
+            kind: 'zoneGrouping' as const,
+            zones: [{ id: zone.id, name: zone.name, channelIds: [ch2.id], exportScanList: true }],
+          },
+        ],
+      },
+      zoneOverrides: [{ libraryEntityId: zone.id, wireName: 'Zone B' }],
+    };
+    const library = {
+      channels: [ch1, ch2],
+      zones: [zone],
+      talkGroups: [tg],
+      digitalContacts: [],
+      analogContacts: [],
+      rxGroupLists: [],
+      scanLists: [scanList],
+    };
+
+    const assembled = assemble(build, library);
+    const files = serialiseAnytoneFiles(assembled, library, { exportZoneDerivedScanLists: true });
+    const scanTable = csvToTable(files['ScanList.CSV']);
+    const channelTable = csvToTable(files['Channel.CSV']);
+
+    expect(scanTable.rows).toHaveLength(2);
+    expect(scanTable.rows[0]?.[1]).toBe('Library SCL');
+    expect(scanTable.rows[1]?.[1]).toBe('Zone B');
+
+    const scanListIndex = channelTable.headers.indexOf('Scan List');
+    const nameIndex = channelTable.headers.indexOf('Channel Name');
+    const autoScanIndex = channelTable.headers.indexOf('Auto Scan');
+    const ch1Row = channelTable.rows.find((row) => row[nameIndex] === 'Channel 1');
+    const ch2Row = channelTable.rows.find((row) => row[nameIndex] === 'Channel 2');
+    const carrierRow = channelTable.rows.find((row) => row[nameIndex]?.endsWith(' Scan'));
+    expect(ch1Row?.[scanListIndex]).toBe('Library SCL');
+    expect(ch2Row?.[scanListIndex]).toBe('None');
+    expect(carrierRow?.[scanListIndex]).toBe('Zone B');
+    expect(carrierRow?.[autoScanIndex]).toBe('1');
+
+    const zoneTable = csvToTable(files['DMRZone.CSV']);
+    const membersIndex = zoneTable.headers.indexOf('Zone Channel Member');
+    expect(zoneTable.rows[0]?.[membersIndex]).toMatch(/ Scan\|/);
+  });
+
+  it('honours includeInScanList when deriving zone scan members', () => {
+    const tg = newTalkGroup(PROJECT_ID, 'TG Alpha', 2355);
+    const ch1 = {
+      ...newChannel(PROJECT_ID, 'Channel 1'),
+      rxFrequency: 438_800_000,
+      txFrequency: 434_000_000,
+      modeProfiles: [
+        {
+          mode: 'dmr' as const,
+          colourCode: 1,
+          timeslot: 2 as const,
+          dmrId: 1234567,
+          contactRef: { kind: 'talkGroup' as const, id: tg.id },
+          rxGroupListId: null,
+        },
+      ],
+    };
+    const ch2 = {
+      ...newChannel(PROJECT_ID, 'Channel 2'),
+      rxFrequency: 155_000_000,
+      txFrequency: 155_000_000,
+      modeProfiles: [
+        {
+          mode: 'dmr' as const,
+          colourCode: 1,
+          timeslot: 1 as const,
+          dmrId: 1234567,
+          contactRef: { kind: 'talkGroup' as const, id: tg.id },
+          rxGroupListId: null,
+        },
+      ],
+    };
+    const zone = {
+      ...newZone(PROJECT_ID, 'Zone A'),
+      members: [
+        { kind: 'channel' as const, channelId: ch1.id },
+        { kind: 'channel' as const, channelId: ch2.id, includeInScanList: false },
+      ],
+    };
+    const build = {
+      ...newFormatBuild(PROJECT_ID, 'anytone-at-d890uv'),
+      layout: {
+        sections: [
+          {
+            kind: 'zoneGrouping' as const,
+            zones: [
+              {
+                id: zone.id,
+                name: zone.name,
+                channelIds: [ch1.id, ch2.id],
+                exportScanList: true,
+              },
+            ],
+          },
+        ],
+      },
+      zoneOverrides: [{ libraryEntityId: zone.id, wireName: 'Zone A' }],
+    };
+    const library = {
+      channels: [ch1, ch2],
+      zones: [zone],
+      talkGroups: [tg],
+      digitalContacts: [],
+      analogContacts: [],
+      rxGroupLists: [],
+      scanLists: [],
+    };
+
+    const assembled = assemble(build, library);
+    const files = serialiseAnytoneFiles(assembled, library, { exportZoneDerivedScanLists: true });
+    const scanTable = csvToTable(files['ScanList.CSV']);
+
+    expect(scanTable.rows).toHaveLength(1);
+    expect(scanTable.rows[0]?.[2]).toBe('Channel 1');
+  });
 });

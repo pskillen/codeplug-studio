@@ -5,6 +5,7 @@ import type { CpsExportOptions } from '@core/import-export/types.ts';
 import { anytoneChannelWireName } from './exportChannelWire.ts';
 import { isAmAirbandBankChannel, isFmBroadcastBankChannel } from './receiveOnlyBanks.ts';
 import { DEFAULT_ANYTONE_PROFILE_ID } from './profiles.ts';
+import { zoneIdFromDerivedScanListId } from './zoneDerivedScanLists.ts';
 
 export const ANYTONE_RECEIVE_BANK_NAME_WIDTH = 16;
 
@@ -93,6 +94,14 @@ export function buildAnytoneExportWireContext(
 
   const scanListWireNames = new Map<string, string>();
   for (const scanList of assembled.scanLists) {
+    const derivedZoneId = zoneIdFromDerivedScanListId(scanList.scanListId);
+    if (derivedZoneId != null) {
+      const zoneWire = zoneWireNames.get(derivedZoneId);
+      if (zoneWire != null) {
+        scanListWireNames.set(scanList.scanListId, zoneWire);
+        continue;
+      }
+    }
     scanListWireNames.set(
       scanList.scanListId,
       applyListWireNameLimits(scanList.wireName, reserved, options, profileId, warnings),
