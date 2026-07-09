@@ -39,6 +39,7 @@ import BuildScanListsWirePage from './routes/builds/wire-preview/BuildScanListsW
 import BuildTalkGroupsWirePage from './routes/builds/wire-preview/BuildTalkGroupsWirePage.tsx';
 import BuildContactsWirePage from './routes/builds/wire-preview/BuildContactsWirePage.tsx';
 import BuildRxGroupListsWirePage from './routes/builds/wire-preview/BuildRxGroupListsWirePage.tsx';
+import BuildAirbandWirePage from './routes/builds/wire-preview/BuildAirbandWirePage.tsx';
 import PrivacyPolicyPage from './routes/legal/PrivacyPolicyPage.tsx';
 import TermsOfUsePage from './routes/legal/TermsOfUsePage.tsx';
 import CookiesPage from './routes/legal/CookiesPage.tsx';
@@ -116,6 +117,7 @@ export const appRouter = createBrowserRouter([
               { path: 'overview', element: <BuildOverviewPage /> },
               { path: 'memories', element: <Navigate to="channels" replace /> },
               { path: 'channels', element: <BuildChannelsWirePage /> },
+              { path: 'airband', element: <BuildAirbandWirePage /> },
               { path: 'zones', element: <BuildZonesWirePage /> },
               { path: 'scan-lists', element: <BuildScanListsWirePage /> },
               { path: 'talk-groups', element: <BuildTalkGroupsWirePage /> },

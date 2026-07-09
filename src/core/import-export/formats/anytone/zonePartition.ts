@@ -1,5 +1,8 @@
+import type { Channel } from '@core/models/library.ts';
 import type { AssembledBuild, AssembledZone } from '@core/services/assemble.ts';
 import { isAmAirbandBankChannel } from './receiveOnlyBanks.ts';
+
+export type AnytoneZoneBankKind = 'dmr' | 'airband' | 'dual';
 
 export interface PartitionedZoneRow {
   zoneId: string;
@@ -29,6 +32,36 @@ function partitionZoneMembers(
   }
 
   return { dmrMembers, amMembers };
+}
+
+export function classifyAnytoneZoneByMembers(
+  memberChannelIds: string[],
+  channelById: Map<string, Channel>,
+): AnytoneZoneBankKind {
+  let hasAirband = false;
+  let hasDmr = false;
+
+  for (const channelId of memberChannelIds) {
+    const channel = channelById.get(channelId);
+    if (!channel) continue;
+    if (isAmAirbandBankChannel(channel)) {
+      hasAirband = true;
+    } else {
+      hasDmr = true;
+    }
+  }
+
+  if (hasAirband && hasDmr) return 'dual';
+  if (hasAirband) return 'airband';
+  return 'dmr';
+}
+
+export function zoneShowsOnAnytoneDmrBank(kind: AnytoneZoneBankKind): boolean {
+  return kind === 'dmr' || kind === 'dual';
+}
+
+export function zoneShowsOnAnytoneAirbandBank(kind: AnytoneZoneBankKind): boolean {
+  return kind === 'airband' || kind === 'dual';
 }
 
 /** Split build zones into DMR-bank and AM airband-bank projections for Anytone export. */

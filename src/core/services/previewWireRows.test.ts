@@ -11,6 +11,7 @@ import {
   newTalkGroup,
   newZone,
 } from '@core/domain/factories.ts';
+import { defaultModeProfile } from '@core/domain/modeProfiles.ts';
 import {
   previewWireRows,
   includedPreviewWireRows,
@@ -780,5 +781,84 @@ describe('previewWireRows', () => {
       expect(zoneRow?.effectiveWireName.length).toBeLessThanOrEqual(16);
       expect(rglRow?.effectiveWireName.length).toBeLessThanOrEqual(16);
     }
+  });
+
+  it('filters Anytone airband channels out of the main Channels preview', () => {
+    const projectId = 'proj-anytone-preview-ch';
+    const dmr = {
+      ...newChannel(projectId, 'DMR 1'),
+      rxFrequency: 430_000_000,
+      txFrequency: 430_000_000,
+      modeProfiles: [defaultModeProfile('dmr')],
+    };
+    const air = {
+      ...newChannel(projectId, 'Tower'),
+      rxFrequency: 118_800_000,
+      txFrequency: null,
+      forbidTransmit: true,
+      modeProfiles: [defaultModeProfile('am')],
+    };
+    const build = { ...newFormatBuild(projectId, 'anytone-at-d890uv'), formatId: 'anytone' };
+    const library = {
+      channels: [dmr, air],
+      zones: [],
+      talkGroups: [],
+      digitalContacts: [],
+      analogContacts: [],
+      rxGroupLists: [],
+      scanLists: [],
+    };
+
+    const mainRows = previewWireRows(build, library, 'channel');
+    expect(mainRows.map((row) => row.displayLabel)).toEqual([expect.stringContaining('DMR 1')]);
+
+    const airRows = previewWireRows(build, library, 'channel', undefined, 'airband');
+    expect(airRows.map((row) => row.displayLabel)).toEqual([expect.stringContaining('Tower')]);
+  });
+
+  it('splits Anytone zones between main Zones and Airband previews', () => {
+    const projectId = 'proj-anytone-preview-zn';
+    const dmr = {
+      ...newChannel(projectId, 'DMR 1'),
+      rxFrequency: 430_000_000,
+      txFrequency: 430_000_000,
+      modeProfiles: [defaultModeProfile('dmr')],
+    };
+    const air = {
+      ...newChannel(projectId, 'Tower'),
+      rxFrequency: 118_800_000,
+      txFrequency: null,
+      forbidTransmit: true,
+      modeProfiles: [defaultModeProfile('am')],
+    };
+    const airOnlyZone = {
+      ...newZone(projectId, 'AM only'),
+      members: [{ kind: 'channel' as const, channelId: air.id }],
+    };
+    const mixedZone = {
+      ...newZone(projectId, 'Mixed'),
+      members: [
+        { kind: 'channel' as const, channelId: dmr.id },
+        { kind: 'channel' as const, channelId: air.id },
+      ],
+    };
+    const build = { ...newFormatBuild(projectId, 'anytone-at-d890uv'), formatId: 'anytone' };
+    const library = {
+      channels: [dmr, air],
+      zones: [airOnlyZone, mixedZone],
+      talkGroups: [],
+      digitalContacts: [],
+      analogContacts: [],
+      rxGroupLists: [],
+      scanLists: [],
+    };
+
+    const mainZoneNames = previewWireRows(build, library, 'zone').map((row) => row.displayLabel);
+    expect(mainZoneNames).toEqual(['Mixed']);
+
+    const airZoneNames = previewWireRows(build, library, 'zone', undefined, 'airband').map(
+      (row) => row.displayLabel,
+    );
+    expect(airZoneNames.sort()).toEqual(['AM only', 'Mixed']);
   });
 });
