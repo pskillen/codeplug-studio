@@ -4,13 +4,9 @@ import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { theme } from '../../theme.ts';
 import ImportYamlIntoActivePanel from './ImportYamlIntoActivePanel.tsx';
 
-const importProjectFromYaml = vi.fn();
-const refreshProjects = vi.fn();
-
-vi.mock('../../services/projectImportExportService.ts', () => ({
-  importProjectFromYaml: (...args: unknown[]) => importProjectFromYaml(...args),
-  exportProjectToYaml: vi.fn(),
-}));
+const confirmOverwrite = vi.fn();
+const handleLocalFile = vi.fn();
+const resetOverwrite = vi.fn();
 
 vi.mock('../../hooks/useGoogleDrive.ts', () => ({
   useGoogleDrive: () => ({
@@ -18,9 +14,26 @@ vi.mock('../../hooks/useGoogleDrive.ts', () => ({
     isConfigured: true,
     sessionExpired: false,
     loading: false,
-    connect: vi.fn(async () => ({ status: 'connected' as const })),
+    connect: vi.fn(),
     withDriveAuthRetry: <T,>(operation: () => Promise<T>) => operation(),
     port: {},
+  }),
+}));
+
+vi.mock('../../hooks/useYamlImportResolver.ts', () => ({
+  useYamlImportResolver: () => ({
+    importing: false,
+    error: null,
+    overwriteOpen: true,
+    overwriteTitle: 'Replace active project?',
+    diffLines: ['Local: 1 channel'],
+    projectName: 'Active project',
+    setOverwriteOpen: vi.fn(),
+    resetOverwrite,
+    confirmOverwrite,
+    handleDriveSelection: vi.fn(),
+    handleLocalFile,
+    handleYamlContent: vi.fn(),
   }),
 }));
 
@@ -38,7 +51,7 @@ vi.mock('../../state/useProjects.ts', () => ({
       notes: '',
       author: '',
     },
-    refreshProjects,
+    refreshProjects: vi.fn(),
     switchProject: vi.fn(),
     projects: [],
     loading: false,
@@ -58,29 +71,26 @@ function renderPanel() {
 
 describe('ImportYamlIntoActivePanel', () => {
   beforeEach(() => {
-    importProjectFromYaml.mockReset();
-    refreshProjects.mockReset();
-    importProjectFromYaml.mockResolvedValue({ projectId: 'proj-1', warnings: [] });
-    refreshProjects.mockResolvedValue(undefined);
+    confirmOverwrite.mockReset();
+    handleLocalFile.mockReset();
   });
 
-  it('does not import until replace is confirmed', async () => {
+  it('routes local file selection through yaml import resolver', async () => {
     renderPanel();
 
     const file = new File(['schemaVersion: 1'], 'backup.yaml', { type: 'application/yaml' });
     const input = document.querySelector('input[type="file"]') as HTMLInputElement;
     fireEvent.change(input, { target: { files: [file] } });
 
-    expect(await screen.findByText(/Replace active project/i)).toBeInTheDocument();
-    expect(importProjectFromYaml).not.toHaveBeenCalled();
-
-    fireEvent.click(screen.getByRole('button', { name: /Replace project/i }));
-
     await waitFor(() => {
-      expect(importProjectFromYaml).toHaveBeenCalledWith('schemaVersion: 1', {
-        kind: 'replaceExisting',
-        projectId: 'proj-1',
-      });
+      expect(handleLocalFile).toHaveBeenCalledWith('backup.yaml', 'schemaVersion: 1');
     });
+  });
+
+  it('confirms overwrite through interchange modal', () => {
+    renderPanel();
+    expect(screen.getByText('Local: 1 channel')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Overwrite local copy' }));
+    expect(confirmOverwrite).toHaveBeenCalledOnce();
   });
 });

@@ -1,44 +1,16 @@
 import { useState } from 'react';
-import { Alert, Button, Modal, Stack, Text } from '@mantine/core';
-import { importProjectFromYaml } from '../../services/projectImportExportService.ts';
+import { Alert, Stack } from '@mantine/core';
+import { useYamlImportResolver } from '../../hooks/useYamlImportResolver.ts';
 import { useProjects } from '../../state/useProjects.ts';
 import DriveBrowserModal from './DriveBrowserModal.tsx';
 import GoogleDriveActionButton from './GoogleDriveActionButton.tsx';
+import InterchangeOverwriteModal from './InterchangeOverwriteModal.tsx';
 import YamlFileDropzone from './YamlFileDropzone.tsx';
 
 export default function ImportYamlIntoActivePanel() {
-  const { activeProjectId, activeProject, refreshProjects } = useProjects();
-  const [error, setError] = useState<string | null>(null);
-  const [importing, setImporting] = useState(false);
-  const [confirmOpen, setConfirmOpen] = useState(false);
-  const [pendingText, setPendingText] = useState<string | null>(null);
+  const { activeProjectId, activeProject } = useProjects();
   const [driveOpen, setDriveOpen] = useState(false);
-
-  async function handleFile(text: string) {
-    setError(null);
-    setPendingText(text);
-    setConfirmOpen(true);
-  }
-
-  async function confirmReplace() {
-    if (!pendingText || !activeProjectId) return;
-    setImporting(true);
-    setError(null);
-    try {
-      await importProjectFromYaml(pendingText, {
-        kind: 'replaceExisting',
-        projectId: activeProjectId,
-      });
-      await refreshProjects();
-      setConfirmOpen(false);
-      setPendingText(null);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
-      setConfirmOpen(false);
-    } finally {
-      setImporting(false);
-    }
-  }
+  const resolver = useYamlImportResolver({ activeProjectId });
 
   if (!activeProjectId || !activeProject) {
     return <Alert color="gray">Select a project before replacing from YAML.</Alert>;
@@ -46,42 +18,33 @@ export default function ImportYamlIntoActivePanel() {
 
   return (
     <Stack gap="sm">
-      <YamlFileDropzone onFileText={handleFile} disabled={importing} />
-      <GoogleDriveActionButton disabled={importing} onClick={() => setDriveOpen(true)}>
+      <YamlFileDropzone
+        onFileText={(text, fileName) => resolver.handleLocalFile(fileName, text)}
+        disabled={resolver.importing}
+      />
+      <GoogleDriveActionButton disabled={resolver.importing} onClick={() => setDriveOpen(true)}>
         Open from Drive
       </GoogleDriveActionButton>
-      {error ? <Alert color="red">{error}</Alert> : null}
+      {resolver.error ? <Alert color="red">{resolver.error}</Alert> : null}
       <DriveBrowserModal
         opened={driveOpen}
         onClose={() => setDriveOpen(false)}
         mode="open"
-        onSelectFile={({ content }) => {
+        onSelectFile={(selection) => {
           setDriveOpen(false);
-          void handleFile(content);
+          resolver.handleDriveSelection(selection);
         }}
         onSaveTarget={() => undefined}
       />
-      <Modal
-        opened={confirmOpen}
-        onClose={() => {
-          if (!importing) {
-            setConfirmOpen(false);
-            setPendingText(null);
-          }
-        }}
-        title="Replace active project?"
-        centered
-      >
-        <Stack gap="md">
-          <Text size="sm">
-            This will permanently replace <strong>{activeProject.name}</strong> with the imported
-            YAML. Library rows and format builds not in the file will be removed.
-          </Text>
-          <Button color="red" loading={importing} onClick={() => void confirmReplace()}>
-            Replace project
-          </Button>
-        </Stack>
-      </Modal>
+      <InterchangeOverwriteModal
+        opened={resolver.overwriteOpen}
+        title={resolver.overwriteTitle}
+        projectName={resolver.projectName || activeProject.name}
+        diffLines={resolver.diffLines}
+        loading={resolver.importing}
+        onClose={() => resolver.resetOverwrite()}
+        onConfirm={() => void resolver.confirmOverwrite()}
+      />
     </Stack>
   );
 }

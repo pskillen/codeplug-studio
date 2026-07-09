@@ -37,6 +37,9 @@ export interface DriveOpenSelection {
   fileId: string;
   fileName: string;
   content: string;
+  modifiedTime?: string;
+  folderId?: string;
+  folderName?: string;
 }
 
 export interface DriveSaveTarget {
@@ -162,7 +165,14 @@ function DriveBrowserBody({
     setError(null);
     try {
       const content = await withDriveAuthRetry(() => port.readFile(file.id));
-      onSelectFile({ fileId: file.id, fileName: file.name, content });
+      onSelectFile({
+        fileId: file.id,
+        fileName: file.name,
+        content,
+        modifiedTime: file.modifiedTime,
+        folderId,
+        folderName: path[path.length - 1]?.name,
+      });
       onClose();
     } catch (err) {
       setError(driveErrorMessage(err));

@@ -1,0 +1,254 @@
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { portableSyncedAt } from '@core/services/interchangeMeta.ts';
+import { buildImportOverwriteDiff } from '../services/yamlImportResolverService.ts';
+import { parseYamlImportPreview } from '../services/yamlImportResolverService.ts';
+import { importProjectFromYaml, recordProjectImportDestination } from '../services/projectImportExportService.ts';
+import { useGoogleDrive } from './useGoogleDrive.ts';
+import { useProjects } from '../state/useProjects.ts';
+import type { DriveOpenSelection } from '../components/import-export/DriveBrowserModal.tsx';
+
+export interface LocalYamlImportSource {
+  kind: 'localFile';
+  fileName: string;
+}
+
+export interface DriveYamlImportSource {
+  kind: 'googleDrive';
+  fileId: string;
+  fileName: string;
+  folderId: string;
+  folderName?: string;
+  modifiedTime?: string;
+}
+
+export type YamlImportSource = LocalYamlImportSource | DriveYamlImportSource;
+
+export interface UseYamlImportResolverOptions {
+  /** When set, imports always target this project (replace-active panel). */
+  activeProjectId?: string | null;
+  onImported?: (projectId: string) => void;
+}
+
+export function useYamlImportResolver(options: UseYamlImportResolverOptions = {}) {
+  const { projects, refreshProjects, switchProject } = useProjects();
+  const [importing, setImporting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [overwriteOpen, setOverwriteOpen] = useState(false);
+  const [overwriteTitle, setOverwriteTitle] = useState('Overwrite local project?');
+  const [overwriteProjectName, setOverwriteProjectName] = useState('');
+  const [diffLines, setDiffLines] = useState<string[]>([]);
+  const pendingRef = useRef<{
+    preview: ReturnType<typeof parseYamlImportPreview>;
+    source: YamlImportSource;
+    targetProjectId: string;
+  } | null>(null);
+
+  const resetOverwrite = useCallback(() => {
+    setOverwriteOpen(false);
+    pendingRef.current = null;
+    setDiffLines([]);
+  }, []);
+
+  async function recordSource(projectId: string, source: YamlImportSource) {
+    if (source.kind === 'localFile') {
+      await recordProjectImportDestination(projectId, {
+        destination: 'localFile',
+        fileName: source.fileName,
+      });
+      return;
+    }
+    await recordProjectImportDestination(projectId, {
+      destination: 'googleDrive',
+      fileName: source.fileName,
+      folderId: source.folderId,
+      folderName: source.folderName,
+      fileId: source.fileId,
+      syncedAt: source.modifiedTime,
+    });
+  }
+
+  async function runImport(
+    yamlText: string,
+    mode: { kind: 'createNew' } | { kind: 'replaceExisting'; projectId: string },
+    source: YamlImportSource,
+  ) {
+    setImporting(true);
+    setError(null);
+    try {
+      const result = await importProjectFromYaml(yamlText, mode);
+      await recordSource(result.projectId, source);
+      await refreshProjects();
+      options.onImported?.(result.projectId);
+      if (mode.kind === 'createNew' || !options.activeProjectId) {
+        switchProject(result.projectId);
+      }
+      resetOverwrite();
+      return result;
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+      throw err;
+    } finally {
+      setImporting(false);
+    }
+  }
+
+  async function handleYamlContent(yamlText: string, source: YamlImportSource) {
+    setError(null);
+    const preview = parseYamlImportPreview(yamlText);
+    const activeId = options.activeProjectId ?? null;
+
+    if (activeId) {
+      if (preview.projectId !== activeId) {
+        setError(
+          `YAML project id (${preview.projectId}) does not match active project (${activeId}).`,
+        );
+        return;
+      }
+      const lines = await buildImportOverwriteDiff(activeId, preview.remoteSummary);
+      pendingRef.current = { preview, source, targetProjectId: activeId };
+      setOverwriteProjectName(preview.projectName);
+      setOverwriteTitle('Replace active project?');
+      setDiffLines(lines);
+      setOverwriteOpen(true);
+      return;
+    }
+
+    const exists = projects.some((project) => project.projectId === preview.projectId);
+    if (exists) {
+      const lines = await buildImportOverwriteDiff(preview.projectId, preview.remoteSummary);
+      pendingRef.current = { preview, source, targetProjectId: preview.projectId };
+      setOverwriteProjectName(preview.projectName);
+      setOverwriteTitle('Overwrite existing project?');
+      setDiffLines(lines);
+      setOverwriteOpen(true);
+      return;
+    }
+
+    await runImport(yamlText, { kind: 'createNew' }, source);
+  }
+
+  async function confirmOverwrite() {
+    const pending = pendingRef.current;
+    if (!pending) return;
+    await runImport(
+      pending.preview.yamlText,
+      { kind: 'replaceExisting', projectId: pending.targetProjectId },
+      pending.source,
+    );
+  }
+
+  function handleDriveSelection(selection: DriveOpenSelection & { folderId?: string; folderName?: string }) {
+    void handleYamlContent(selection.content, {
+      kind: 'googleDrive',
+      fileId: selection.fileId,
+      fileName: selection.fileName,
+      folderId: selection.folderId ?? 'root',
+      folderName: selection.folderName,
+      modifiedTime: selection.modifiedTime,
+    });
+  }
+
+  function handleLocalFile(fileName: string, text: string) {
+    void handleYamlContent(text, { kind: 'localFile', fileName });
+  }
+
+  return {
+    importing,
+    error,
+    overwriteOpen,
+    overwriteTitle,
+    diffLines,
+    projectName: overwriteProjectName,
+    setOverwriteOpen,
+    resetOverwrite,
+    confirmOverwrite,
+    handleDriveSelection,
+    handleLocalFile,
+    handleYamlContent,
+  };
+}
+
+export function useRefreshFromDrivePrompt() {
+  const { activeProject, refreshProjects } = useProjects();
+  const { port, withDriveAuthRetry, connected } = useGoogleDrive();
+  const [bannerOpen, setBannerOpen] = useState(false);
+  const [diffLines, setDiffLines] = useState<string[]>([]);
+  const [remoteYaml, setRemoteYaml] = useState<string | null>(null);
+  const [overwriteOpen, setOverwriteOpen] = useState(false);
+  const [importing, setImporting] = useState(false);
+  const dismissedRef = useRef<Set<string>>(new Set());
+
+  const drive = activeProject?.interchange?.googleDrive;
+  const projectId = activeProject?.projectId;
+
+  const checkRemote = useCallback(async () => {
+    if (!projectId || !drive || !connected) {
+      setBannerOpen(false);
+      return;
+    }
+    if (dismissedRef.current.has(projectId)) {
+      return;
+    }
+    try {
+      const metadata = await withDriveAuthRetry(() => port.getFileMetadata(drive.fileId));
+      const localSyncedAt = portableSyncedAt(activeProject);
+      const remoteTime = metadata.modifiedTime;
+      if (!remoteTime || !localSyncedAt || remoteTime <= localSyncedAt) {
+        setBannerOpen(false);
+        return;
+      }
+      const content = await withDriveAuthRetry(() => port.readFile(drive.fileId));
+      const preview = parseYamlImportPreview(content);
+      const lines = await buildImportOverwriteDiff(projectId, preview.remoteSummary);
+      setDiffLines(lines);
+      setRemoteYaml(content);
+      setBannerOpen(true);
+    } catch {
+      setBannerOpen(false);
+    }
+  }, [activeProject, connected, drive, port, projectId, withDriveAuthRetry]);
+
+  useEffect(() => {
+    void checkRemote();
+  }, [checkRemote]);
+
+  async function confirmRefresh() {
+    if (!projectId || !remoteYaml || !drive) return;
+    setImporting(true);
+    try {
+      await importProjectFromYaml(remoteYaml, { kind: 'replaceExisting', projectId });
+      await recordProjectImportDestination(projectId, {
+        destination: 'googleDrive',
+        fileName: drive.fileName,
+        folderId: drive.folderId,
+        folderName: drive.folderName,
+        fileId: drive.fileId,
+        syncedAt: new Date().toISOString(),
+      });
+      await refreshProjects();
+      setBannerOpen(false);
+      setOverwriteOpen(false);
+    } finally {
+      setImporting(false);
+    }
+  }
+
+  function dismissBanner() {
+    if (projectId) {
+      dismissedRef.current.add(projectId);
+    }
+    setBannerOpen(false);
+  }
+
+  return {
+    bannerOpen,
+    diffLines,
+    overwriteOpen,
+    importing,
+    setOverwriteOpen,
+    dismissBanner,
+    openOverwrite: () => setOverwriteOpen(true),
+    confirmRefresh,
+    projectName: activeProject?.name ?? '',
+  };
+}
