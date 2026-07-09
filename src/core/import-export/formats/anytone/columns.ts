@@ -156,9 +156,15 @@ export const TALK_GROUP_HEADERS: string[] = Object.values(TALK_GROUP_COL);
 
 export const DIGITAL_CONTACT_COL = {
   number: 'No.',
+  radioId: 'Radio ID',
   callsign: 'Callsign',
   name: 'Name',
+  city: 'City',
+  state: 'State',
+  country: 'Country',
+  remarks: 'Remarks',
   callType: 'Call Type',
+  callAlert: 'Call Alert',
 } as const;
 
 export const DIGITAL_CONTACT_HEADERS: string[] = Object.values(DIGITAL_CONTACT_COL);

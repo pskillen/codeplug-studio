@@ -40,6 +40,12 @@ describe('anytone detectKind', () => {
     ).toBe('rxGroupLists');
   });
 
+  it('classifies DMRDigitalContactList.CSV', () => {
+    expect(
+      detectKind('DMRDigitalContactList.CSV', fixtureHeaderRow('DMRDigitalContactList.CSV')),
+    ).toBe('contacts');
+  });
+
   it('classifies RadioIDList.CSV', () => {
     expect(detectKind('RadioIDList.CSV', fixtureHeaderRow('RadioIDList.CSV'))).toBe('radioIds');
   });

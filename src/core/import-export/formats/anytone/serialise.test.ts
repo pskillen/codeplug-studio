@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   newChannel,
+  newDigitalContact,
   newFormatBuild,
   newScanList,
   newTalkGroup,
@@ -218,5 +219,45 @@ describe('anytone serialise', () => {
     );
 
     expect(row['Scan List']).toBe('My List');
+  });
+
+  it('serialises DMRDigitalContactList.CSV with 10-column CPS schema', () => {
+    const contact = newDigitalContact(PROJECT_ID, 'MM0HAM', 1234567);
+    const build = {
+      ...newFormatBuild(PROJECT_ID, 'anytone-at-d890uv'),
+      layout: { sections: [{ kind: 'zoneGrouping' as const, zones: [] }] },
+      contactOverrides: [{ libraryEntityId: contact.id, wireName: 'MM0HAM' }],
+    };
+    const library = {
+      channels: [],
+      zones: [],
+      talkGroups: [],
+      digitalContacts: [contact],
+      analogContacts: [],
+      rxGroupLists: [],
+      scanLists: [],
+    };
+
+    const assembled = assemble(build, library);
+    const files = serialiseAnytoneFiles(assembled, library);
+    const table = csvToTable(files['DMRDigitalContactList.CSV']);
+
+    expect(table.headers).toEqual([
+      'No.',
+      'Radio ID',
+      'Callsign',
+      'Name',
+      'City',
+      'State',
+      'Country',
+      'Remarks',
+      'Call Type',
+      'Call Alert',
+    ]);
+    expect(table.rows).toHaveLength(1);
+    expect(table.rows[0]?.[1]).toBe('1234567');
+    expect(table.rows[0]?.[3]).toBe('MM0HAM');
+    expect(table.rows[0]?.[8]).toBe('Private Call');
+    expect(table.rows[0]?.[9]).toBe('None');
   });
 });

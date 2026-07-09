@@ -30,7 +30,8 @@ Items **skipped**, **incomplete**, or **discovered during execution** — not sc
 
 ## Sample export quirks
 
-- `DMRDigitalContactList.CSV` — header only (no body rows) in operator fixture source.
+- `DMRDigitalContactList.CSV` — one private-contact row in committed fixture (redacted from operator re-export, July 2026).
+- `ScanList.CSV` — two rows in fixture; operator sample uses `Dwell Time[s]` = `3.1` vs Studio export `1.0`.
 - NX contact / talk group / RGL files — header only in operator fixture source; wire docs derived from headers + `Channel.CSV` NXDN tail columns.
 - `AMZone.CSV` — header only in operator fixture source.
 

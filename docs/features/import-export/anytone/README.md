@@ -6,23 +6,25 @@ Product behaviour for Anytone CPS CSV in Codeplug Studio. Wire column tables liv
 
 **Source:** `src/core/import-export/formats/anytone/`
 
-**Progress:** [anytone-progress.md](../anytone-progress.md) · **Outstanding:** [anytone-outstanding.md](../anytone-outstanding.md)
+**Progress:** [anytone-progress.md](../anytone-progress.md) · **Outstanding:** [anytone-outstanding.md](../anytone-outstanding.md)  
+**CSV reconciliation ([#297](https://github.com/pskillen/codeplug-studio/issues/297)):** [csv-reconciliation-progress.md](csv-reconciliation-progress.md) · [gaps](csv-reconciliation-gaps.md) · [outstanding](csv-reconciliation-outstanding.md)
 
 ## Implementation status
 
-| Area                                  | Status  | Notes                                                                                                                                                                |
-| ------------------------------------- | ------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Wire reference + fixtures (AT-D890UV) | Shipped | [#230](https://github.com/pskillen/codeplug-studio/issues/230) — tier-3 docs + `test-data/anytone/at-d890uv/`                                                        |
-| Extended wire (AM/FM/APRS/NXDN)       | Shipped | Wire documented; export deferred — see model gaps below                                                                                                              |
-| Radio variant profile (`at-d890uv`)   | Shipped | [#232](https://github.com/pskillen/codeplug-studio/issues/232) — `profiles.ts`, trait registration                                                                   |
-| Export adapter (DMR MVP)              | Shipped | [#233](https://github.com/pskillen/codeplug-studio/issues/233)                                                                                                       |
-| Build editor + wire preview           | Shipped | [#234](https://github.com/pskillen/codeplug-studio/issues/234)                                                                                                       |
-| Format catalog CPS export             | Shipped | [#235](https://github.com/pskillen/codeplug-studio/issues/235) · conditional AM/FM files in Export UI [#288](https://github.com/pskillen/codeplug-studio/issues/288) |
-| CPS `.LST` manifest (export)          | Shipped | [#289](https://github.com/pskillen/codeplug-studio/issues/289) — Approach A: lists ZIP CSV members only; stem from project name                                      |
-| Directional export tests              | Shipped | [#236](https://github.com/pskillen/codeplug-studio/issues/236)                                                                                                       |
-| Cross-file wire name fidelity         | Shipped | [#292](https://github.com/pskillen/codeplug-studio/issues/292) — shared export wire context; preview + `shortenNames` on all CPS name FKs                            |
-| Library scan lists + dedicated trait  | Shipped | [#257](https://github.com/pskillen/codeplug-studio/issues/257), [#258](https://github.com/pskillen/codeplug-studio/issues/258)                                       |
-| CPS import                            | Planned | [#229](https://github.com/pskillen/codeplug-studio/issues/229) (Phase 7b)                                                                                            |
+| Area                                  | Status      | Notes                                                                                                                                                                |
+| ------------------------------------- | ----------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Wire reference + fixtures (AT-D890UV) | Shipped     | [#230](https://github.com/pskillen/codeplug-studio/issues/230) — tier-3 docs + `test-data/anytone/at-d890uv/`                                                        |
+| Extended wire (AM/FM/APRS/NXDN)       | Shipped     | Wire documented; export deferred — see model gaps below                                                                                                              |
+| Radio variant profile (`at-d890uv`)   | Shipped     | [#232](https://github.com/pskillen/codeplug-studio/issues/232) — `profiles.ts`, trait registration                                                                   |
+| Export adapter (DMR MVP)              | Shipped     | [#233](https://github.com/pskillen/codeplug-studio/issues/233)                                                                                                       |
+| Build editor + wire preview           | Shipped     | [#234](https://github.com/pskillen/codeplug-studio/issues/234)                                                                                                       |
+| Format catalog CPS export             | Shipped     | [#235](https://github.com/pskillen/codeplug-studio/issues/235) · conditional AM/FM files in Export UI [#288](https://github.com/pskillen/codeplug-studio/issues/288) |
+| CPS `.LST` manifest (export)          | Shipped     | [#289](https://github.com/pskillen/codeplug-studio/issues/289) — Approach A: lists ZIP CSV members only; stem from project name                                      |
+| Directional export tests              | Shipped     | [#236](https://github.com/pskillen/codeplug-studio/issues/236)                                                                                                       |
+| Cross-file wire name fidelity         | Shipped     | [#292](https://github.com/pskillen/codeplug-studio/issues/292) — shared export wire context; preview + `shortenNames` on all CPS name FKs                            |
+| Library scan lists + dedicated trait  | Shipped     | [#257](https://github.com/pskillen/codeplug-studio/issues/257), [#258](https://github.com/pskillen/codeplug-studio/issues/258)                                       |
+| CPS wire reconciliation audit         | In progress | [#297](https://github.com/pskillen/codeplug-studio/issues/297) — rich export comparison, enum checklist, `DMRDigitalContactList` fix                                 |
+| CPS import                            | Planned     | [#229](https://github.com/pskillen/codeplug-studio/issues/229) (Phase 7b)                                                                                            |
 
 ## Format identity
 
@@ -78,4 +80,5 @@ Create an `anytone-at-d890uv` build, curate library zones and **scan lists** (`/
 - [builds hub](../../builds/README.md)
 - [data-model](../../data-model/README.md)
 - [adding-a-new-format.md](../adding-a-new-format.md)
+- [csv-reconciliation-gaps.md](csv-reconciliation-gaps.md) — CPS vs Studio wire audit ([#297](https://github.com/pskillen/codeplug-studio/issues/297))
 - [cps-services.md](../cps-services.md)
