@@ -155,6 +155,28 @@ export function syncModeProfiles(
   });
 }
 
+/** Keep `primaryMode` aligned when mode selection changes in CRUD. */
+export function reconcilePrimaryMode(
+  primaryMode: ChannelMode | null,
+  modeProfiles: ChannelModeProfile[],
+): ChannelMode | null {
+  if (modeProfiles.length === 0) return null;
+  if (primaryMode != null && modeProfiles.some((profile) => profile.mode === primaryMode)) {
+    return primaryMode;
+  }
+  return modeProfiles[0]?.mode ?? null;
+}
+
+/** Resolved primary for export — `primaryMode` when valid, else first profile. */
+export function resolveChannelPrimaryMode(channel: Pick<Channel, 'primaryMode' | 'modeProfiles'>): ChannelMode | null {
+  const modes = channel.modeProfiles.map((profile) => profile.mode);
+  if (modes.length === 0) return null;
+  if (channel.primaryMode != null && modes.includes(channel.primaryMode)) {
+    return channel.primaryMode;
+  }
+  return modes[0] ?? null;
+}
+
 export function findModeProfile<M extends ChannelMode>(
   channel: Pick<Channel, 'modeProfiles'>,
   mode: M,

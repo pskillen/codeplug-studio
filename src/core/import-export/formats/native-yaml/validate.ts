@@ -281,6 +281,14 @@ function parseChannel(raw: unknown, index: number): Channel {
           ),
         }
       : {}),
+    ...(record.primaryMode !== undefined && record.primaryMode !== null
+      ? {
+          primaryMode: expectString(
+            record.primaryMode,
+            `library.channels[${index}].primaryMode`,
+          ) as Channel['primaryMode'],
+        }
+      : { primaryMode: null }),
     modeProfiles: expectArray(record.modeProfiles, `library.channels[${index}].modeProfiles`).map(
       (profile, profileIndex) => parseModeProfile(profile, profileIndex),
     ),
@@ -973,6 +981,7 @@ export function validateDocument(raw: unknown): ProjectAggregate {
   const studioSchemaVersion = document.studioSchemaVersion;
   if (
     studioSchemaVersion !== STUDIO_SCHEMA_VERSION &&
+    studioSchemaVersion !== 12 &&
     studioSchemaVersion !== 10 &&
     studioSchemaVersion !== 9 &&
     studioSchemaVersion !== 8 &&
@@ -984,7 +993,7 @@ export function validateDocument(raw: unknown): ProjectAggregate {
     studioSchemaVersion !== 2
   ) {
     throw new NativeYamlImportError(
-      `Unsupported studioSchemaVersion: ${String(studioSchemaVersion)} (expected ${STUDIO_SCHEMA_VERSION}, 10, 9, 8, 7, 6, 5, 4, 3, or 2)`,
+      `Unsupported studioSchemaVersion: ${String(studioSchemaVersion)} (expected ${STUDIO_SCHEMA_VERSION}, 12, 10, 9, 8, 7, 6, 5, 4, 3, or 2)`,
     );
   }
 

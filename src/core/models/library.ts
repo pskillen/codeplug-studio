@@ -1,6 +1,7 @@
 import type { PersistableRow } from './revision.ts';
 import type {
   AnalogChannelMode,
+  ChannelMode,
   ChannelTone,
   DigitalChannelMode,
   DMRTimeSlot,
@@ -104,6 +105,8 @@ export interface Channel extends PersistableRow {
   /** When true, channel is receive-only (no transmit) at export. */
   forbidTransmit: boolean;
   comment: string;
+  /** Primary mode for dual-mode CPS export (Anytone Channel Type, DM32 Fixed Analog/Digital). */
+  primaryMode: ChannelMode | null;
   modeProfiles: ChannelModeProfile[];
   /** Optional short qualifier tried first when export wire names exceed profile limits. */
   abbreviation?: string;
