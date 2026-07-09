@@ -3,24 +3,20 @@ import type { CpsExportOptions } from '@core/import-export/types.ts';
 import { buildScanContext, effectiveScanSkips } from '@core/import-export/scanInclusion/index.ts';
 import type { AssembledBuild, LibrarySlice } from '@core/services/assemble.ts';
 import { layoutEntry, scanMasterEnabled, scanMemberIds } from './members.ts';
+import {
+  DEFAULT_SCAN_CARRIER_HZ,
+  zoneScanCarrierWireName,
+  type SyntheticScanCarrier,
+} from './carrier.ts';
 import type { ExpandedDm32ChannelRow } from '../formats/dm32/channelExpansion.ts';
-import { newChannel } from '@core/domain/factories.ts';
 import { SCAN_COL } from '../formats/dm32/columns.ts';
 import { DEFAULT_DM32_PROFILE_ID, getDm32Profile } from '../formats/dm32/profiles.ts';
-import { applyWireNameLimits } from '../channelExpansion/exportWireNames.ts';
 
-export const DEFAULT_SCAN_CARRIER_HZ = 145_500_000;
+export type { SyntheticScanCarrier } from './carrier.ts';
+export { DEFAULT_SCAN_CARRIER_HZ } from './carrier.ts';
 
 export interface ScanCsvRow {
   values: Record<string, string>;
-}
-
-export interface SyntheticScanCarrier {
-  zoneId: string;
-  zoneName: string;
-  wireName: string;
-  frequencyHz: number;
-  scanListName: string;
 }
 
 export interface ZoneDerivedScanExport {
@@ -53,21 +49,6 @@ function expandedWireNamesForMembers(
     }
   }
   return names;
-}
-
-function shortenCarrierName(
-  zoneName: string,
-  profileId: string,
-  reserved: Set<string>,
-  warnings: string[],
-): string {
-  const base = `${zoneName} Scan`.trim();
-  const stub = {
-    ...newChannel('', base),
-    id: 'carrier',
-    projectId: '',
-  };
-  return applyWireNameLimits(base, stub, reserved, { shortenNames: true }, profileId, warnings);
 }
 
 /** Derive zone-based Scan.csv rows and carrier channels for DM32 export. */
@@ -131,7 +112,7 @@ export function deriveZoneDerivedScanLists(
       );
     }
 
-    const carrierWireName = shortenCarrierName(
+    const carrierWireName = zoneScanCarrierWireName(
       assembledZone.wireName,
       profileId,
       reservedNames,
@@ -150,9 +131,6 @@ export function deriveZoneDerivedScanLists(
     });
     result.carrierPrependByZoneId.set(assembledZone.zoneId, carrierWireName);
 
-    for (const wireName of truncated) {
-      result.scanListByChannelWireName.set(wireName, scanListName);
-    }
     result.scanListByChannelWireName.set(carrierWireName, scanListName);
 
     rowNumber += 1;
