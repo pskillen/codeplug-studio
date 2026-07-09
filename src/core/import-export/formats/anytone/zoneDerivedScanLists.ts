@@ -1,6 +1,11 @@
 import type { CpsExportOptions } from '@core/import-export/types.ts';
 import { buildScanContext, effectiveScanSkips } from '@core/import-export/scanInclusion/index.ts';
 import {
+  DEFAULT_SCAN_CARRIER_HZ,
+  zoneScanCarrierWireName,
+  type SyntheticScanCarrier,
+} from '@core/import-export/zoneDerivedScanLists/carrier.ts';
+import {
   layoutEntry,
   scanMasterEnabled,
   scanMemberIds,
@@ -16,16 +21,22 @@ export function zoneDerivedScanListId(zoneId: string): string {
 
 export interface AnytoneZoneDerivedScanExport {
   scanLists: AssembledScanList[];
+  carriers: SyntheticScanCarrier[];
+  carrierPrependByZoneId: Map<string, string>;
 }
 
-/** Derive zone-based scan lists for Anytone ScanList.CSV (no carrier channel). */
+/** Derive zone-based scan lists and carrier channels for Anytone export. */
 export function deriveAnytoneZoneDerivedScanLists(
   assembled: AssembledBuild,
   library: LibrarySlice,
   options?: CpsExportOptions,
   warnings: string[] = [],
 ): AnytoneZoneDerivedScanExport {
-  const result: AnytoneZoneDerivedScanExport = { scanLists: [] };
+  const result: AnytoneZoneDerivedScanExport = {
+    scanLists: [],
+    carriers: [],
+    carrierPrependByZoneId: new Map(),
+  };
 
   if (!scanMasterEnabled(options)) return result;
 
@@ -43,6 +54,7 @@ export function deriveAnytoneZoneDerivedScanLists(
       : undefined,
     { defaultScanInclusion: 'scan' },
   );
+  const reservedNames = new Set<string>();
 
   for (const assembledZone of assembled.zones) {
     const entry = layoutEntry(layout, assembledZone.zoneId);
@@ -71,11 +83,29 @@ export function deriveAnytoneZoneDerivedScanLists(
       memberIds = memberIds.slice(0, profile.scanListMembers);
     }
 
+    const scanListName = assembledZone.wireName;
+    const carrierWireName = zoneScanCarrierWireName(
+      assembledZone.wireName,
+      profileId,
+      reservedNames,
+      warnings,
+    );
+    reservedNames.add(carrierWireName);
+    const carrierHz = entry.scanCarrierFrequencyHz ?? DEFAULT_SCAN_CARRIER_HZ;
+
     result.scanLists.push({
       scanListId: zoneDerivedScanListId(assembledZone.zoneId),
-      wireName: assembledZone.wireName,
+      wireName: scanListName,
       memberChannelIds: memberIds,
     });
+    result.carriers.push({
+      zoneId: assembledZone.zoneId,
+      zoneName: assembledZone.wireName,
+      wireName: carrierWireName,
+      frequencyHz: carrierHz,
+      scanListName,
+    });
+    result.carrierPrependByZoneId.set(assembledZone.zoneId, carrierWireName);
   }
 
   return result;

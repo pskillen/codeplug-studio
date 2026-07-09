@@ -40,7 +40,10 @@ import {
   buildScanContext,
   resolveEffectiveScanInclusion,
 } from '@core/import-export/scanInclusion/resolve.ts';
-import { prepareAnytoneExportAssembly } from './prepareExportAssembly.ts';
+import {
+  prepareAnytoneExportAssembly,
+  type AnytonePreparedExport,
+} from './prepareExportAssembly.ts';
 
 export type AnytoneExportFiles = Record<AnytoneExportFileName, string>;
 
@@ -87,43 +90,46 @@ function serialiseChannelsCsv(
   return formatCsv(CHANNEL_HEADERS, rows);
 }
 
-function serialiseZonesCsv(assembled: AssembledBuild, context: AnytoneExportWireContext): string {
+function serialiseZonesCsv(
+  assembled: AssembledBuild,
+  context: AnytoneExportWireContext,
+  carrierPrependByZoneId?: Map<string, string>,
+): string {
   const channels = channelFrequencyById(assembled);
   const { dmrZones } = partitionAnytoneZones(assembled);
-  const rows = dmrZones.map((zone, index) =>
-    padRow(ZONE_HEADERS, {
+  const rows = dmrZones.map((zone, index) => {
+    const carrierChannelId = carrierPrependByZoneId?.has(zone.zoneId)
+      ? `scan-carrier:${zone.zoneId}`
+      : undefined;
+    const carrierWireName = carrierChannelId
+      ? carrierPrependByZoneId!.get(zone.zoneId)
+      : undefined;
+
+    let memberNames = zone.memberChannelIds.map((id) => context.memberChannelWireName(id));
+    let memberRx = zone.memberChannelIds.map((id) => channels.get(id)?.rx ?? '0.00000');
+    let memberTx = zone.memberChannelIds.map((id) => channels.get(id)?.tx ?? '0.00000');
+
+    if (carrierWireName && carrierChannelId) {
+      memberNames = [carrierWireName, ...memberNames];
+      memberRx = [channels.get(carrierChannelId)?.rx ?? '0.00000', ...memberRx];
+      memberTx = [channels.get(carrierChannelId)?.tx ?? '0.00000', ...memberTx];
+    }
+
+    return padRow(ZONE_HEADERS, {
       [ZONE_COL.number]: String(index + 1),
       [ZONE_COL.name]: context.zoneWireName(zone.zoneId),
-      [ZONE_COL.members]: zone.memberChannelIds
-        .map((id) => context.memberChannelWireName(id))
-        .join('|'),
-      [ZONE_COL.memberRx]: zone.memberChannelIds
-        .map((id) => channels.get(id)?.rx ?? '0.00000')
-        .join('|'),
-      [ZONE_COL.memberTx]: zone.memberChannelIds
-        .map((id) => channels.get(id)?.tx ?? '0.00000')
-        .join('|'),
-      [ZONE_COL.aChannel]: zone.memberChannelIds[0]
-        ? context.memberChannelWireName(zone.memberChannelIds[0]!)
-        : '',
-      [ZONE_COL.aChannelRx]: zone.memberChannelIds[0]
-        ? (channels.get(zone.memberChannelIds[0]!)?.rx ?? '')
-        : '',
-      [ZONE_COL.aChannelTx]: zone.memberChannelIds[0]
-        ? (channels.get(zone.memberChannelIds[0]!)?.tx ?? '')
-        : '',
-      [ZONE_COL.bChannel]: zone.memberChannelIds[1]
-        ? context.memberChannelWireName(zone.memberChannelIds[1]!)
-        : '',
-      [ZONE_COL.bChannelRx]: zone.memberChannelIds[1]
-        ? (channels.get(zone.memberChannelIds[1]!)?.rx ?? '')
-        : '',
-      [ZONE_COL.bChannelTx]: zone.memberChannelIds[1]
-        ? (channels.get(zone.memberChannelIds[1]!)?.tx ?? '')
-        : '',
+      [ZONE_COL.members]: memberNames.join('|'),
+      [ZONE_COL.memberRx]: memberRx.join('|'),
+      [ZONE_COL.memberTx]: memberTx.join('|'),
+      [ZONE_COL.aChannel]: memberNames[0] ?? '',
+      [ZONE_COL.aChannelRx]: memberRx[0] ?? '',
+      [ZONE_COL.aChannelTx]: memberTx[0] ?? '',
+      [ZONE_COL.bChannel]: memberNames[1] ?? '',
+      [ZONE_COL.bChannelRx]: memberRx[1] ?? '',
+      [ZONE_COL.bChannelTx]: memberTx[1] ?? '',
       [ZONE_COL.zoneHide]: '0',
-    }),
-  );
+    });
+  });
   return formatCsv(ZONE_HEADERS, rows);
 }
 
@@ -311,17 +317,15 @@ export function serialiseAnytoneFiles(
   library: LibrarySlice,
   options?: CpsExportOptions,
   warnings: string[] = [],
-  context?: AnytoneExportWireContext,
+  prepared?: AnytonePreparedExport,
 ): AnytoneExportFiles {
-  const prepared =
-    context != null
-      ? { assembled, context }
-      : prepareAnytoneExportAssembly(assembled, library, options, warnings);
-  const exportAssembly = prepared.assembled;
-  const ctx = prepared.context;
+  const exportPrep =
+    prepared ?? prepareAnytoneExportAssembly(assembled, library, options, warnings);
+  const exportAssembly = exportPrep.assembled;
+  const ctx = exportPrep.context;
   return {
     'Channel.CSV': serialiseChannelsCsv(exportAssembly, ctx, options),
-    'DMRZone.CSV': serialiseZonesCsv(exportAssembly, ctx),
+    'DMRZone.CSV': serialiseZonesCsv(exportAssembly, ctx, exportPrep.carrierPrependByZoneId),
     'ScanList.CSV': serialiseScanListsCsv(exportAssembly, ctx),
     'DMRTalkGroups.CSV': serialiseTalkGroupsCsv(exportAssembly, ctx),
     'DMRDigitalContactList.CSV': serialiseDigitalContactsCsv(exportAssembly, ctx),
@@ -337,20 +341,20 @@ export function serialiseAnytoneFile(
   warnings: string[] = [],
 ): string {
   const prepared = prepareAnytoneExportAssembly(assembled, library, options, warnings);
-  const { assembled: exportAssembly, context } = prepared;
+  const { assembled: exportAssembly } = prepared;
   if (fileName === 'AMAir.CSV') {
-    return serialiseAmAirCsv(exportAssembly, options, warnings, context);
+    return serialiseAmAirCsv(exportAssembly, options, warnings, prepared.context);
   }
   if (fileName === 'FM.CSV') {
-    return serialiseFmBroadcastCsv(exportAssembly, options, warnings, context);
+    return serialiseFmBroadcastCsv(exportAssembly, options, warnings, prepared.context);
   }
   if (fileName === 'AMZone.CSV') {
-    return serialiseAmZonesCsv(exportAssembly, options, warnings, context);
+    return serialiseAmZonesCsv(exportAssembly, options, warnings, prepared.context);
   }
   if (!ANYTONE_EXPORT_FILE_NAMES.includes(fileName as AnytoneExportFileName)) {
     throw new Error(`Unknown Anytone export file: ${fileName}`);
   }
-  const files = serialiseAnytoneFiles(exportAssembly, library, options, warnings, context);
+  const files = serialiseAnytoneFiles(exportAssembly, library, options, warnings, prepared);
   return files[fileName as AnytoneExportFileName];
 }
 

@@ -394,10 +394,18 @@ describe('anytone serialise', () => {
 
     const scanListIndex = channelTable.headers.indexOf('Scan List');
     const nameIndex = channelTable.headers.indexOf('Channel Name');
+    const autoScanIndex = channelTable.headers.indexOf('Auto Scan');
     const ch1Row = channelTable.rows.find((row) => row[nameIndex] === 'Channel 1');
     const ch2Row = channelTable.rows.find((row) => row[nameIndex] === 'Channel 2');
+    const carrierRow = channelTable.rows.find((row) => row[nameIndex]?.endsWith(' Scan'));
     expect(ch1Row?.[scanListIndex]).toBe('Library SCL');
-    expect(ch2Row?.[scanListIndex]).toBe('Zone B 2');
+    expect(ch2Row?.[scanListIndex]).toBe('None');
+    expect(carrierRow?.[scanListIndex]).toBe('Zone B 2');
+    expect(carrierRow?.[autoScanIndex]).toBe('1');
+
+    const zoneTable = csvToTable(files['DMRZone.CSV']);
+    const membersIndex = zoneTable.headers.indexOf('Zone Channel Member');
+    expect(zoneTable.rows[0]?.[membersIndex]).toMatch(/ Scan\|/);
   });
 
   it('honours includeInScanList when deriving zone scan members', () => {

@@ -22,6 +22,7 @@ export const CHANNEL_COL = {
   rxGroupList: 'Receive Group List',
   pttProhibit: 'PTT Prohibit',
   dmrMode: 'DMR MODE',
+  autoScan: 'Auto Scan',
 } as const;
 
 /** Full Channel.CSV header row (AT-D890UV fixture). */
