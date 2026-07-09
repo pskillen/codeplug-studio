@@ -21,6 +21,7 @@ function mockDrivePort(overrides: Partial<GoogleDrivePort> = {}): GoogleDrivePor
     isConnected: () => true,
     getAccountLabel: () => 'user@example.com',
     listChildren: vi.fn(),
+    createFolder: vi.fn(),
     readFile: vi.fn(),
     writeFile: vi.fn(async () => ({
       id: 'file-1',
@@ -35,7 +36,6 @@ function mockDrivePort(overrides: Partial<GoogleDrivePort> = {}): GoogleDrivePor
       mimeType: 'application/yaml',
       modifiedTime: '2026-07-09T14:04:50.000Z',
     })),
-    getUserEmail: vi.fn(),
     ...overrides,
   };
 }
@@ -85,7 +85,7 @@ describe('saveProjectToDriveService', () => {
       port,
       meta.projectId,
       meta.interchange!.googleDrive!,
-      { id: 'file-1', name: 'demo.yaml', mimeType: 'application/yaml' },
+      {},
     );
 
     expect(syncedAt).toBe('2026-07-09T14:05:00.000Z');

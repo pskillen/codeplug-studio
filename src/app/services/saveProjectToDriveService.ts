@@ -10,11 +10,16 @@ export interface SaveProjectToDriveInput {
   drive: GoogleDriveInterchange;
 }
 
+export type DrivePortableSyncTarget = Pick<
+  GoogleDriveInterchange,
+  'fileId' | 'fileName' | 'folderId' | 'folderName'
+>;
+
 /** Align local portable sync time with Drive's authoritative modifiedTime after upload. */
 export async function recordDrivePortableSyncAfterWrite(
   port: GoogleDrivePort,
   projectId: string,
-  drive: GoogleDriveInterchange,
+  drive: DrivePortableSyncTarget,
   writeResult?: Pick<DriveFileMetadata, 'modifiedTime'>,
 ): Promise<string> {
   let syncedAt = writeResult?.modifiedTime;
