@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type ReactNode } from 'react';
+import { useMemo, useState, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import {
   Alert,
@@ -380,12 +380,10 @@ export default function OpenAipAirportSearch() {
     [search.airports, existingChannelByKey],
   );
 
-  useEffect(() => {
-    setSelectedKeys((prev) => {
-      const next = new Set([...prev].filter((key) => !existingChannelByKey.has(key)));
-      return next.size === prev.size ? prev : next;
-    });
-  }, [existingChannelByKey]);
+  const selectableSelectedKeys = useMemo(
+    () => new Set([...selectedKeys].filter((key) => !existingChannelByKey.has(key))),
+    [selectedKeys, existingChannelByKey],
+  );
 
   const mapChannels = useMemo(() => mapChannelsFromAirports(search.airports), [search.airports]);
   const kindHint = airportQueryKindHint(search.kind);
@@ -547,11 +545,11 @@ export default function OpenAipAirportSearch() {
   }
 
   function selectionsForAirport(airport: AirportListing) {
-    return buildSelectionsFromKeys([airport], selectedKeys);
+    return buildSelectionsFromKeys([airport], selectableSelectedKeys);
   }
 
   async function handleAddSelected() {
-    const selections = buildSelectionsFromKeys(search.airports, selectedKeys);
+    const selections = buildSelectionsFromKeys(search.airports, selectableSelectedKeys);
     await handleAddSelections(selections, zoneImportOptions(alsoCreateZone));
   }
 
@@ -561,9 +559,10 @@ export default function OpenAipAirportSearch() {
 
   const allFrequenciesSelected =
     selectableFrequencyKeysAll.length > 0 &&
-    selectableFrequencyKeysAll.every((key) => selectedKeys.has(key));
+    selectableFrequencyKeysAll.every((key) => selectableSelectedKeys.has(key));
   const someFrequenciesSelected =
-    selectedKeys.size > 0 && selectedKeys.size < selectableFrequencyKeysAll.length;
+    selectableSelectedKeys.size > 0 &&
+    selectableSelectedKeys.size < selectableFrequencyKeysAll.length;
 
   return (
     <FormPage
@@ -714,11 +713,11 @@ export default function OpenAipAirportSearch() {
                   </Stack>
                 ) : null}
                 <Button
-                  disabled={selectedKeys.size === 0}
+                  disabled={selectableSelectedKeys.size === 0}
                   loading={adding && addingAirportKey == null}
                   onClick={() => void handleAddSelected()}
                 >
-                  Add selected ({selectedKeys.size})
+                  Add selected ({selectableSelectedKeys.size})
                 </Button>
               </Group>
             </Group>
@@ -733,7 +732,7 @@ export default function OpenAipAirportSearch() {
                       key={key}
                       airport={airport}
                       referencePoint={search.referencePoint}
-                      selectedKeys={selectedKeys}
+                      selectedKeys={selectableSelectedKeys}
                       existingChannelByKey={existingChannelByKey}
                       namePrefixKind={namePrefixKind}
                       onToggleFrequency={toggleFrequency}
