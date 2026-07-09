@@ -65,18 +65,14 @@ export function formatChannelBulkDeleteMessage(outcome: PersistChannelBulkDelete
   const parts: string[] = [];
 
   if (outcome.deletedCount > 0) {
-    parts.push(
-      `Deleted ${outcome.deletedCount} channel${outcome.deletedCount === 1 ? '' : 's'}`,
-    );
+    parts.push(`Deleted ${outcome.deletedCount} channel${outcome.deletedCount === 1 ? '' : 's'}`);
   }
 
   if (outcome.failures.length > 0) {
     const blockedSummary = outcome.failures
       .map((failure) => `${failure.channelName}: ${failure.message}`)
       .join('; ');
-    parts.push(
-      `${outcome.failures.length} not deleted — ${blockedSummary}`,
-    );
+    parts.push(`${outcome.failures.length} not deleted — ${blockedSummary}`);
   }
 
   if (parts.length === 0) {

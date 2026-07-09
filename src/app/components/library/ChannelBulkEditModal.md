@@ -8,16 +8,16 @@ Operators multi-select channels on `/library/channels` and bulk-update common fi
 
 ## Props
 
-| Prop           | Type                                                        | Description                                   |
-| -------------- | ----------------------------------------------------------- | --------------------------------------------- |
-| `opened`       | `boolean`                                                   | Mantine modal open state                      |
-| `onClose`      | `() => void`                                                | Close without persisting                      |
-| `channels`     | `Channel[]`                                                 | Selected channels in table order (2 or more)  |
-| `projectId`    | `string \| null`                                            | Active project for delete                     |
-| `deleteEntity` | `(kind: 'channel', id: string) => Promise<DeleteOutcome>`   | Library delete with integrity                 |
-| `reload`       | `() => Promise<void>`                                       | Refresh library after delete                  |
-| `onApplied`    | `(outcome: PersistChannelBulkEditSuccess) => void`          | Called after a successful apply, before close |
-| `onDeleted`    | `(outcome: PersistChannelBulkDeleteOutcome) => void`        | Called when one or more channels were deleted |
+| Prop           | Type                                                      | Description                                   |
+| -------------- | --------------------------------------------------------- | --------------------------------------------- |
+| `opened`       | `boolean`                                                 | Mantine modal open state                      |
+| `onClose`      | `() => void`                                              | Close without persisting                      |
+| `channels`     | `Channel[]`                                               | Selected channels in table order (2 or more)  |
+| `projectId`    | `string \| null`                                          | Active project for delete                     |
+| `deleteEntity` | `(kind: 'channel', id: string) => Promise<DeleteOutcome>` | Library delete with integrity                 |
+| `reload`       | `() => Promise<void>`                                     | Refresh library after delete                  |
+| `onApplied`    | `(outcome: PersistChannelBulkEditSuccess) => void`        | Called after a successful apply, before close |
+| `onDeleted`    | `(outcome: PersistChannelBulkDeleteOutcome) => void`      | Called when one or more channels were deleted |
 
 ## Usage
 
@@ -40,7 +40,7 @@ const { projectId, deleteEntity, reload } = useLibrary();
     setMessageColor(bulkDeleteAlertColor(outcome));
     setSelectedKeys([]);
   }}
-/>
+/>;
 ```
 
 Single-channel selection is handled by the list page (navigate to the channel editor) — do not open this modal for one channel.

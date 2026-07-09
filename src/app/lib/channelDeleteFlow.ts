@@ -10,9 +10,7 @@ const defaultService = new LibraryService(persistence);
 export type ChannelZoneCascadeMode = 'prompt' | 'auto';
 
 export type ChannelDeleteAttemptResult =
-  | { status: 'deleted' }
-  | { status: 'cancelled' }
-  | { status: 'blocked'; message: string };
+  { status: 'deleted' } | { status: 'cancelled' } | { status: 'blocked'; message: string };
 
 export type ChannelDeleteFlowResult = ChannelDeleteAttemptResult;
 

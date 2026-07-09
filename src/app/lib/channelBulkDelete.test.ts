@@ -160,9 +160,7 @@ describe('formatChannelBulkDeleteMessage', () => {
           },
         ],
       }),
-    ).toBe(
-      '1 not deleted — Listed: Delete blocked — My scan (scan list member).',
-    );
+    ).toBe('1 not deleted — Listed: Delete blocked — My scan (scan list member).');
     expect(
       bulkDeleteAlertColor({
         deletedCount: 0,

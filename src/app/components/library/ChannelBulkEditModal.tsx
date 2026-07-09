@@ -240,8 +240,9 @@ function ChannelBulkEditModalBody({
           Delete {total} channel{total === 1 ? '' : 's'}? This cannot be undone.
         </Text>
         <Text size="sm" c="dimmed">
-          Channels that are only in zones will be removed from those zones first. Channels referenced
-          by scan lists or other entities cannot be deleted until those references are cleared.
+          Channels that are only in zones will be removed from those zones first. Channels
+          referenced by scan lists or other entities cannot be deleted until those references are
+          cleared.
         </Text>
 
         {errorMessage ? <Alert color="red">{errorMessage}</Alert> : null}
@@ -433,7 +434,11 @@ function ChannelBulkEditModalBody({
           <Button variant="default" onClick={onClose} disabled={busy}>
             Cancel
           </Button>
-          <Button onClick={() => void handleApply()} loading={applying} disabled={!hasChanges || busy}>
+          <Button
+            onClick={() => void handleApply()}
+            loading={applying}
+            disabled={!hasChanges || busy}
+          >
             Apply
           </Button>
         </Group>
