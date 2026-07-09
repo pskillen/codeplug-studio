@@ -1,5 +1,9 @@
 import { Stack, Switch, Text } from '@mantine/core';
-import type { BuildExportSettings, FormatBuild } from '@core/models/formatBuild.ts';
+import type {
+  BuildExportSettings,
+  DefaultScanInclusion,
+  FormatBuild,
+} from '@core/models/formatBuild.ts';
 import { showsDefaultScanInclusion } from '@core/models/traits.ts';
 import type { FormatExportDefaults } from '@core/import-export/types.ts';
 import { FieldCard } from '../fields/Fields.tsx';
@@ -14,7 +18,7 @@ export interface ExportBuildSettingsSectionsProps {
   profileNameLimit?: number;
   resolvedSettings: ResolvedBuildExportSettings;
   formatDefaults: FormatExportDefaults;
-  defaultScanValue: string;
+  defaultScanValue: DefaultScanInclusion;
   onExportSettingsPatch: (patch: Partial<BuildExportSettings>) => void;
   onExportInclusionChange: (
     field: 'exportUnlinkedChannels' | 'exportUnlinkedTalkGroups' | 'exportUnlinkedRxGroupLists',
