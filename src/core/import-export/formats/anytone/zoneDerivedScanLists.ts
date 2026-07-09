@@ -19,6 +19,12 @@ export function zoneDerivedScanListId(zoneId: string): string {
   return `${ZONE_DERIVED_SCAN_LIST_ID_PREFIX}${zoneId}`;
 }
 
+export function zoneIdFromDerivedScanListId(scanListId: string): string | undefined {
+  if (!scanListId.startsWith(ZONE_DERIVED_SCAN_LIST_ID_PREFIX)) return undefined;
+  const zoneId = scanListId.slice(ZONE_DERIVED_SCAN_LIST_ID_PREFIX.length);
+  return zoneId.length > 0 ? zoneId : undefined;
+}
+
 export interface AnytoneZoneDerivedScanExport {
   scanLists: AssembledScanList[];
   carriers: SyntheticScanCarrier[];

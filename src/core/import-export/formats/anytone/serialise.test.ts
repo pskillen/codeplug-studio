@@ -390,7 +390,7 @@ describe('anytone serialise', () => {
 
     expect(scanTable.rows).toHaveLength(2);
     expect(scanTable.rows[0]?.[1]).toBe('Library SCL');
-    expect(scanTable.rows[1]?.[1]).toBe('Zone B 2');
+    expect(scanTable.rows[1]?.[1]).toBe('Zone B');
 
     const scanListIndex = channelTable.headers.indexOf('Scan List');
     const nameIndex = channelTable.headers.indexOf('Channel Name');
@@ -400,7 +400,7 @@ describe('anytone serialise', () => {
     const carrierRow = channelTable.rows.find((row) => row[nameIndex]?.endsWith(' Scan'));
     expect(ch1Row?.[scanListIndex]).toBe('Library SCL');
     expect(ch2Row?.[scanListIndex]).toBe('None');
-    expect(carrierRow?.[scanListIndex]).toBe('Zone B 2');
+    expect(carrierRow?.[scanListIndex]).toBe('Zone B');
     expect(carrierRow?.[autoScanIndex]).toBe('1');
 
     const zoneTable = csvToTable(files['DMRZone.CSV']);
