@@ -12,6 +12,18 @@ vi.mock('../../services/projectImportExportService.ts', () => ({
   exportProjectToYaml: vi.fn(),
 }));
 
+vi.mock('../../hooks/useGoogleDrive.ts', () => ({
+  useGoogleDrive: () => ({
+    connected: true,
+    isConfigured: true,
+    sessionExpired: false,
+    loading: false,
+    connect: vi.fn(async () => ({ status: 'connected' as const })),
+    withDriveAuthRetry: <T,>(operation: () => Promise<T>) => operation(),
+    port: {},
+  }),
+}));
+
 vi.mock('../../state/useProjects.ts', () => ({
   useProjects: () => ({
     activeProjectId: 'proj-1',

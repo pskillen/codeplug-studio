@@ -57,6 +57,8 @@ vi.mock('../../hooks/useGoogleDrive.ts', () => ({
   useGoogleDrive: () => ({
     connected: true,
     isConfigured: true,
+    sessionExpired: false,
+    withDriveAuthRetry: <T,>(operation: () => Promise<T>) => operation(),
   }),
 }));
 
