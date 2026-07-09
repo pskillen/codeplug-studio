@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Picker modal for external channel directories — replaces three long section-nav buttons with one **Add from…** entry point.
+Picker modal for channel import sources — built-in channel sets and external directories — behind one **Add from…** section-nav entry.
 
 ## Props
 
@@ -13,7 +13,7 @@ Picker modal for external channel directories — replaces three long section-na
 
 ## Behaviour
 
-- Renders a `BadgeCard` per entry in `CHANNEL_DATA_SOURCES`.
+- Renders a `BadgeCard` per entry in `CHANNEL_ADD_SOURCES` (channel set + external directories).
 - Card click navigates to the directory route and closes the modal.
 
 ## Related
