@@ -24,7 +24,9 @@ export function inferDmrOperatingMode(
 }
 
 /** Explicit DMR profile `dmrMode` wins; otherwise infer from frequencies. */
-export function resolveDmrOperatingMode(channel: Pick<Channel, 'rxFrequency' | 'txFrequency' | 'modeProfiles'>): DmrOperatingMode {
+export function resolveDmrOperatingMode(
+  channel: Pick<Channel, 'rxFrequency' | 'txFrequency' | 'modeProfiles'>,
+): DmrOperatingMode {
   const profile = findDmrProfile(channel);
   if (profile?.dmrMode != null) return profile.dmrMode;
   return inferDmrOperatingMode(channel);

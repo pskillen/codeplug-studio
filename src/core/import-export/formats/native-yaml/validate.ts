@@ -160,7 +160,10 @@ function parseModeProfile(raw: unknown, index: number): ChannelModeProfile {
         mode: 'dmr',
         dmrMode:
           record.dmrMode !== undefined && record.dmrMode !== null
-            ? (expectString(record.dmrMode, `modeProfiles[${index}].dmrMode`) as ChannelModeProfileDMR['dmrMode'])
+            ? (expectString(
+                record.dmrMode,
+                `modeProfiles[${index}].dmrMode`,
+              ) as ChannelModeProfileDMR['dmrMode'])
             : null,
         colourCode: expectNullableNumber(record.colourCode, `modeProfiles[${index}].colourCode`),
         timeslot: parseNullableDmrTimeslot(record.timeslot, `modeProfiles[${index}].timeslot`),

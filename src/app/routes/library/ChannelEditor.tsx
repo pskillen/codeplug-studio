@@ -4,9 +4,19 @@ import { Link, useNavigate } from 'react-router-dom';
 import type { Channel, ChannelModeProfile, Library, ScanInclusion } from '@core/models/library.ts';
 import { reconcileChannelLocation } from '@core/domain/channelLocation.ts';
 import { newChannel } from '@core/domain/factories.ts';
-import { syncModeProfiles, validateModeProfiles, reconcilePrimaryMode, resolveChannelPrimaryMode } from '@core/domain/modeProfiles.ts';
+import {
+  syncModeProfiles,
+  validateModeProfiles,
+  reconcilePrimaryMode,
+  resolveChannelPrimaryMode,
+} from '@core/domain/modeProfiles.ts';
 import type { ChannelMode } from '@core/models/libraryTypes.ts';
-import { GradientSegmentedControl, FormSection, PercentLevelSlider, UnsavedChangesModal } from '../../components/ui/index.ts';
+import {
+  GradientSegmentedControl,
+  FormSection,
+  PercentLevelSlider,
+  UnsavedChangesModal,
+} from '../../components/ui/index.ts';
 import { modeColor, modeLabel, type ChannelMode as UiChannelMode } from '../../lib/channelModes.ts';
 import ForbidTransmitSegment from '../../components/channels/ForbidTransmitSegment.tsx';
 import ScanInclusionSegment from '../../components/channels/ScanInclusionSegment.tsx';

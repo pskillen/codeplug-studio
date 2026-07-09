@@ -142,7 +142,9 @@ function parseOverrideRow(raw: unknown, label: string): BuildEntityOverride {
 export function upsertOverride(
   overrides: BuildEntityOverride[] | undefined,
   entityId: string,
-  patch: Partial<Pick<BuildEntityOverride, 'excluded' | 'forceInclude' | 'wireName' | 'orderOrSlot'>>,
+  patch: Partial<
+    Pick<BuildEntityOverride, 'excluded' | 'forceInclude' | 'wireName' | 'orderOrSlot'>
+  >,
 ): BuildEntityOverride[] {
   const rows = overrides ?? [];
   const index = rows.findIndex((row) => row.libraryEntityId === entityId);

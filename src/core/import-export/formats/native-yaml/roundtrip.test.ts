@@ -120,6 +120,8 @@ describe('native-yaml round-trip smoke', () => {
       scanInclusion: 'default',
       forbidTransmit: false,
       comment: '',
+      primaryMode: null,
+      scanListId: undefined,
       modeProfiles: [
         {
           mode: 'ssb',

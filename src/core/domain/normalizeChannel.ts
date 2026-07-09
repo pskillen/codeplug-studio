@@ -16,9 +16,7 @@ const CHANNEL_MODES = new Set<ChannelMode>([
   'tetra',
 ]);
 
-function normalizePrimaryMode(
-  primaryMode: ChannelMode | null | undefined,
-): ChannelMode | null {
+function normalizePrimaryMode(primaryMode: ChannelMode | null | undefined): ChannelMode | null {
   if (primaryMode == null) return null;
   return CHANNEL_MODES.has(primaryMode) ? primaryMode : null;
 }

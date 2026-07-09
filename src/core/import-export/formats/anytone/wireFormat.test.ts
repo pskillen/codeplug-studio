@@ -1,10 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { newChannel } from '@core/domain/factories.ts';
 import { defaultModeProfile } from '@core/domain/modeProfiles.ts';
-import {
-  formatAnytoneChannelTypeFromChannel,
-  formatAnytoneDmrModeWire,
-} from './wireFormat.ts';
+import { formatAnytoneChannelTypeFromChannel, formatAnytoneDmrModeWire } from './wireFormat.ts';
 
 describe('anytone wireFormat channel mode mapping', () => {
   it('maps single DMR channel to D-Digital', () => {

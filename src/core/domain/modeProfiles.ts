@@ -173,7 +173,9 @@ export function reconcilePrimaryMode(
 }
 
 /** Resolved primary for export — `primaryMode` when valid, else first profile. */
-export function resolveChannelPrimaryMode(channel: Pick<Channel, 'primaryMode' | 'modeProfiles'>): ChannelMode | null {
+export function resolveChannelPrimaryMode(
+  channel: Pick<Channel, 'primaryMode' | 'modeProfiles'>,
+): ChannelMode | null {
   const modes = channel.modeProfiles.map((profile) => profile.mode);
   if (modes.length === 0) return null;
   if (channel.primaryMode != null && modes.includes(channel.primaryMode)) {

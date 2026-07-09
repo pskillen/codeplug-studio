@@ -16,46 +16,46 @@ Tier-3 wire reference. Values **observed** in the operator rich AT-D890UV export
 
 ## `Channel.CSV` (priority — Studio exports)
 
-| Column                         | Status   | Values observed            | Studio default                               | Needs elicitation                                                                         |
-| ------------------------------ | -------- | -------------------------- | -------------------------------------------- | ----------------------------------------------------------------------------------------- |
-| `Channel Type`                 | Observed | `D-Digital`, `A-Analog`, `D+A TX D`, `A+D TX A` | From `modeProfiles` + `primaryMode` | `2` / `3` DCDM not modelled |
-| `Transmit Power`               | Observed | `High`, `Low`, `Turbo`     | `Low` / `High` from `%` ladder               | Full ladder + `Turbo` mapping                                                             |
-| `Band Width`                   | Observed | `12.5K`, `25K`             | From `bandwidthKHz`                          | —                                                                                         |
-| `Contact/Talk Group Call Type` | Observed | `Group Call` only          | From `contactRef` kind                       | `Private Call` on channel row                                                             |
-| `Busy Lock/TX Permit`          | Observed | `Always`, `Off`            | `Always`                                     | Other values?                                                                             |
-| `Squelch Mode`                 | Observed | `Carrier`                  | `Carrier`                                    | Other modes                                                                               |
-| `Optional Signal`              | Observed | `Off`                      | `Off`                                        | DTMF / 5Tone / …                                                                          |
-| `PTT ID`                       | Observed | `Off`                      | `Off`                                        | On + ID refs                                                                              |
-| `Slot`                         | Observed | `1`, `2`                   | From `timeslot`                              | —                                                                                         |
-| `PTT Prohibit`                 | Observed | `Off`, `On`                | `Off`                                        | —                                                                                         |
-| `Reverse`                      | Observed | `Off`                      | `Off`                                        | `On`                                                                                      |
-| `Digital Duplex`               | Observed | `Off`                      | `Off`                                        | `On` / other                                                                              |
-| `Slot Suit`                    | Observed | `Off`                      | `Off`                                        | —                                                                                         |
-| `AES Digital Encryption`       | Observed | `Normal Encryption`        | `Normal Encryption`                          | Other encryption modes                                                                    |
-| `Digital Encryption`           | Observed | `Off`                      | `Off`                                        | On + key refs                                                                             |
-| `Call Confirmation`            | Observed | `Off`                      | `Off`                                        | `On`                                                                                      |
-| `Talk Around(Simplex)`         | Observed | `Off`                      | `Off`                                        | `On`                                                                                      |
-| `Work Alone`                   | Observed | `Off`                      | `Off`                                        | `On`                                                                                      |
-| `Ranging`                      | Observed | `Off`                      | `Off`                                        | `On`                                                                                      |
-| `Idle TX`                      | Observed | `Off`, `On`                | `Off`                                        | —                                                                                         |
-| `APRS RX`                      | Observed | `Off`, `On`                | `Off`                                        | APRS ticket                                                                               |
-| `Analog APRS PTT Mode`         | Observed | `Off`                      | `Off`                                        | —                                                                                         |
-| `Digital APRS PTT Mode`        | Observed | `Off`                      | `Off`                                        | —                                                                                         |
-| `APRS Report Type`             | Observed | `Off`                      | `Off`                                        | Report type strings                                                                       |
-| `SMS Confirmation`             | Observed | `Off`                      | `Off`                                        | `On`                                                                                      |
-| `DMR MODE`                     | Observed | `0`, `1`                   | `0` / `1` from `dmrMode` or RX/TX infer | `2` / `3` (DCDM) deferred |
-| `DataACK Disable`              | Observed | `0`, `1`                   | `0`                                          | Meaning of `1`                                                                            |
-| `Auto Scan`                    | Observed | `0`                        | `0`                                          | `1`                                                                                       |
-| `Ana APRS Mute`                | Observed | `0`                        | `0`                                          | —                                                                                         |
-| `Send Talker Alias DMR/NX`     | Observed | `0`                        | `0`                                          | Non-zero values                                                                           |
-| `ARC4`                         | Observed | `0`                        | `0`                                          | Key index strings                                                                         |
-| `ex_emg_kind`                  | Observed | `0`                        | `0`                                          | Emergency kinds                                                                           |
-| `nxdn_wn`                      | Observed | `0`, `1`                   | `0`                                          | NXDN wide/narrow                                                                          |
-| `NxdnEncry`                    | Observed | `0`                        | `0`                                          | —                                                                                         |
-| `EnRan` / `DeRan`              | Observed | `0`                        | `0`                                          | —                                                                                         |
-| `Scan List`                    | Observed | `None` (+ names when used) | `None` or FK                                 | —                                                                                         |
-| `Receive Group List`           | Observed | `None` + RGL names         | FK / `None`                                  | —                                                                                         |
-| `CTCSS/DCS Decode` / `Encode`  | Observed | `Off`, analog tone strings | Mapped from `rxTone`/`txTone`                | Full DCS set                                                                              |
+| Column                         | Status   | Values observed                                 | Studio default                          | Needs elicitation             |
+| ------------------------------ | -------- | ----------------------------------------------- | --------------------------------------- | ----------------------------- |
+| `Channel Type`                 | Observed | `D-Digital`, `A-Analog`, `D+A TX D`, `A+D TX A` | From `modeProfiles` + `primaryMode`     | `2` / `3` DCDM not modelled   |
+| `Transmit Power`               | Observed | `High`, `Low`, `Turbo`                          | `Low` / `High` from `%` ladder          | Full ladder + `Turbo` mapping |
+| `Band Width`                   | Observed | `12.5K`, `25K`                                  | From `bandwidthKHz`                     | —                             |
+| `Contact/Talk Group Call Type` | Observed | `Group Call` only                               | From `contactRef` kind                  | `Private Call` on channel row |
+| `Busy Lock/TX Permit`          | Observed | `Always`, `Off`                                 | `Always`                                | Other values?                 |
+| `Squelch Mode`                 | Observed | `Carrier`                                       | `Carrier`                               | Other modes                   |
+| `Optional Signal`              | Observed | `Off`                                           | `Off`                                   | DTMF / 5Tone / …              |
+| `PTT ID`                       | Observed | `Off`                                           | `Off`                                   | On + ID refs                  |
+| `Slot`                         | Observed | `1`, `2`                                        | From `timeslot`                         | —                             |
+| `PTT Prohibit`                 | Observed | `Off`, `On`                                     | `Off`                                   | —                             |
+| `Reverse`                      | Observed | `Off`                                           | `Off`                                   | `On`                          |
+| `Digital Duplex`               | Observed | `Off`                                           | `Off`                                   | `On` / other                  |
+| `Slot Suit`                    | Observed | `Off`                                           | `Off`                                   | —                             |
+| `AES Digital Encryption`       | Observed | `Normal Encryption`                             | `Normal Encryption`                     | Other encryption modes        |
+| `Digital Encryption`           | Observed | `Off`                                           | `Off`                                   | On + key refs                 |
+| `Call Confirmation`            | Observed | `Off`                                           | `Off`                                   | `On`                          |
+| `Talk Around(Simplex)`         | Observed | `Off`                                           | `Off`                                   | `On`                          |
+| `Work Alone`                   | Observed | `Off`                                           | `Off`                                   | `On`                          |
+| `Ranging`                      | Observed | `Off`                                           | `Off`                                   | `On`                          |
+| `Idle TX`                      | Observed | `Off`, `On`                                     | `Off`                                   | —                             |
+| `APRS RX`                      | Observed | `Off`, `On`                                     | `Off`                                   | APRS ticket                   |
+| `Analog APRS PTT Mode`         | Observed | `Off`                                           | `Off`                                   | —                             |
+| `Digital APRS PTT Mode`        | Observed | `Off`                                           | `Off`                                   | —                             |
+| `APRS Report Type`             | Observed | `Off`                                           | `Off`                                   | Report type strings           |
+| `SMS Confirmation`             | Observed | `Off`                                           | `Off`                                   | `On`                          |
+| `DMR MODE`                     | Observed | `0`, `1`                                        | `0` / `1` from `dmrMode` or RX/TX infer | `2` / `3` (DCDM) deferred     |
+| `DataACK Disable`              | Observed | `0`, `1`                                        | `0`                                     | Meaning of `1`                |
+| `Auto Scan`                    | Observed | `0`                                             | `0`                                     | `1`                           |
+| `Ana APRS Mute`                | Observed | `0`                                             | `0`                                     | —                             |
+| `Send Talker Alias DMR/NX`     | Observed | `0`                                             | `0`                                     | Non-zero values               |
+| `ARC4`                         | Observed | `0`                                             | `0`                                     | Key index strings             |
+| `ex_emg_kind`                  | Observed | `0`                                             | `0`                                     | Emergency kinds               |
+| `nxdn_wn`                      | Observed | `0`, `1`                                        | `0`                                     | NXDN wide/narrow              |
+| `NxdnEncry`                    | Observed | `0`                                             | `0`                                     | —                             |
+| `EnRan` / `DeRan`              | Observed | `0`                                             | `0`                                     | —                             |
+| `Scan List`                    | Observed | `None` (+ names when used)                      | `None` or FK                            | —                             |
+| `Receive Group List`           | Observed | `None` + RGL names                              | FK / `None`                             | —                             |
+| `CTCSS/DCS Decode` / `Encode`  | Observed | `Off`, analog tone strings                      | Mapped from `rxTone`/`txTone`           | Full DCS set                  |
 
 ---
 
