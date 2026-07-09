@@ -8,9 +8,9 @@ Lets operators configure per-zone scan export flags on the build `ZoneGroupingLa
 
 ## Components
 
-| Export                | Role                                                                                 |
-| --------------------- | ------------------------------------------------------------------------------------ |
-| `ZoneScanRowHeader`   | Collapse header: expand chevron, **Export as scan list** switch, member count badge  |
+| Export                | Role                                                                                                        |
+| --------------------- | ----------------------------------------------------------------------------------------------------------- |
+| `ZoneScanRowHeader`   | Collapse header: expand chevron, **Export as scan list** switch, member count badge                         |
 | `ZoneScanExpandPanel` | Expanded panel: recursive **Include in scan list** toggles; carrier MHz (DM32 + Anytone); DM32-only scratch |
 
 ## Props

@@ -143,10 +143,13 @@ export function ZoneScanExpandPanel({
           const ownerZone = zoneById.get(member.ownerZoneId);
           const label = channel ? channelDisplayLabel(channel) : member.channelId;
           const nested = member.ownerZoneId !== zone.id;
-          const displayLabel =
-            nested && ownerZone ? `${label} (${ownerZone.name})` : label;
+          const displayLabel = nested && ownerZone ? `${label} (${ownerZone.name})` : label;
           return (
-            <Group key={`${member.ownerZoneId}:${member.channelId}`} justify="space-between" wrap="nowrap">
+            <Group
+              key={`${member.ownerZoneId}:${member.channelId}`}
+              justify="space-between"
+              wrap="nowrap"
+            >
               <Text size="sm">{displayLabel}</Text>
               <Switch
                 aria-label={`Include ${displayLabel} in scan list`}
