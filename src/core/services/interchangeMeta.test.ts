@@ -6,6 +6,7 @@ import { minimalProjectAggregate } from '@core/import-export/formats/native-yaml
 import {
   defaultLocalExportFileName,
   recordExportDestination,
+  recordImportDestination,
   suggestExportDestination,
 } from './interchangeMeta.ts';
 
@@ -48,6 +49,22 @@ describe('interchangeMeta', () => {
       exportedAt: expect.any(String),
     });
     expect(suggestExportDestination(updated, 'googleDrive')).toEqual({ fileName: 'demo.yaml' });
+  });
+
+  it('recordImportDestination stores google drive memory with syncedAt', () => {
+    const meta = newProjectMeta('Demo');
+    const updated = recordImportDestination(
+      meta,
+      'googleDrive',
+      {
+        fileName: 'imported.yaml',
+        folderId: 'folder-1',
+        folderName: 'Codeplugs',
+        fileId: 'file-1',
+      },
+      '2026-07-09T12:00:00.000Z',
+    );
+    expect(updated.interchange?.googleDrive?.exportedAt).toBe('2026-07-09T12:00:00.000Z');
   });
 
   it('interchange round-trips localFile through native YAML serialise/parse', () => {

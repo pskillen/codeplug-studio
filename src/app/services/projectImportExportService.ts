@@ -1,3 +1,5 @@
+import type { ExportDestinationKind } from '@core/models/interchange.ts';
+import { recordImportDestination } from '@core/services/interchangeMeta.ts';
 import type { ProjectInterchangePort } from '@core/services/projectInterchangePort.ts';
 import {
   exportProjectYaml,
@@ -35,6 +37,37 @@ export async function exportProjectToYaml(
   options?: ExportProjectYamlOptions,
 ): Promise<ExportProjectYamlResult> {
   return exportProjectYaml(port, projectId, options);
+}
+
+export interface RecordProjectImportDestinationInput {
+  destination: ExportDestinationKind;
+  fileName: string;
+  folderId?: string;
+  folderName?: string;
+  fileId?: string;
+  syncedAt?: string;
+}
+
+export async function recordProjectImportDestination(
+  projectId: string,
+  details: RecordProjectImportDestinationInput,
+): Promise<void> {
+  const seed = await port.loadProjectSeed(projectId);
+  if (!seed) {
+    throw new Error(`Project not found: ${projectId}`);
+  }
+  const updatedMeta = recordImportDestination(
+    seed.meta,
+    details.destination,
+    {
+      fileName: details.fileName,
+      folderId: details.folderId,
+      folderName: details.folderName,
+      fileId: details.fileId,
+    },
+    details.syncedAt,
+  );
+  await port.putProjectMeta(updatedMeta, seed.meta.revision);
 }
 
 /** Test hook — inject an in-memory port without touching IndexedDB. */
