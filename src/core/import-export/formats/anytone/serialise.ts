@@ -6,6 +6,8 @@ import type { AnytoneExportFileName } from './columns.ts';
 import {
   AM_AIR_COL,
   AM_AIR_HEADERS,
+  AM_ZONE_COL,
+  AM_ZONE_HEADERS,
   ANYTONE_AM_AIR_VFO_SLOT,
   ANYTONE_EXPORT_FILE_NAMES,
   ANYTONE_FM_BROADCAST_VFO_SLOT,
@@ -35,6 +37,7 @@ import {
 import { channelFrequencyById, rxGroupListMemberNames } from './listWire.ts';
 import { DEFAULT_ANYTONE_PROFILE_ID, getAnytoneProfile } from './profiles.ts';
 import { partitionAnytoneChannels } from './receiveOnlyBanks.ts';
+import { hasAmZoneExport, partitionAnytoneZones } from './zonePartition.ts';
 import {
   buildScanContext,
   resolveEffectiveScanInclusion,
@@ -87,7 +90,8 @@ function serialiseChannelsCsv(
 
 function serialiseZonesCsv(assembled: AssembledBuild, context: AnytoneExportWireContext): string {
   const channels = channelFrequencyById(assembled);
-  const rows = assembled.zones.map((zone, index) =>
+  const { dmrZones } = partitionAnytoneZones(assembled);
+  const rows = dmrZones.map((zone, index) =>
     padRow(ZONE_HEADERS, {
       [ZONE_COL.number]: String(index + 1),
       [ZONE_COL.name]: context.zoneWireName(zone.zoneId),
@@ -122,6 +126,28 @@ function serialiseZonesCsv(assembled: AssembledBuild, context: AnytoneExportWire
     }),
   );
   return formatCsv(ZONE_HEADERS, rows);
+}
+
+export function serialiseAmZonesCsv(
+  assembled: AssembledBuild,
+  options?: CpsExportOptions,
+  warnings: string[] = [],
+  context?: AnytoneExportWireContext,
+): string {
+  const ctx = context ?? buildAnytoneExportWireContext(assembled, options, warnings);
+  const { amZones } = partitionAnytoneZones(assembled);
+  const rows = amZones.map((zone, index) => {
+    const memberNames = zone.memberChannelIds.map((id) => ctx.receiveBankWireName(id).trim());
+    const aChannel = memberNames[0] ?? '';
+    return padRow(AM_ZONE_HEADERS, {
+      [AM_ZONE_COL.number]: String(index + 1),
+      [AM_ZONE_COL.name]: ctx.zoneWireName(zone.zoneId),
+      [AM_ZONE_COL.members]: memberNames.join('|'),
+      [AM_ZONE_COL.aChannel]: aChannel,
+      [AM_ZONE_COL.scanChannel]: memberNames.join('|'),
+    });
+  });
+  return formatCsv(AM_ZONE_HEADERS, rows);
 }
 
 function serialiseScanListsCsv(
@@ -330,6 +356,10 @@ export function serialiseAnytoneFile(
     void library;
     return serialiseFmBroadcastCsv(assembled, options, warnings, context);
   }
+  if (fileName === 'AMZone.CSV') {
+    void library;
+    return serialiseAmZonesCsv(assembled, options, warnings, context);
+  }
   if (!ANYTONE_EXPORT_FILE_NAMES.includes(fileName as AnytoneExportFileName)) {
     throw new Error(`Unknown Anytone export file: ${fileName}`);
   }
@@ -345,6 +375,9 @@ export function resolveAnytoneExportFileNames(assembled: AssembledBuild): string
   }
   if (partition.fmBroadcastChannels.length > 0) {
     names.push('FM.CSV');
+  }
+  if (hasAmZoneExport(assembled)) {
+    names.push('AMZone.CSV');
   }
   return names;
 }

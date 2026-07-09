@@ -62,6 +62,13 @@ describe('anytone lstManifest', () => {
     expect(serialiseAnytoneLstManifest(exported).split(/\r?\n/)[8]).toBe('27,"AMAir.CSV"');
   });
 
+  it('appends AMZone.CSV at canonical index 30 when present', () => {
+    const exported = [...ANYTONE_EXPORT_FILE_NAMES, 'AMZone.CSV'];
+    const entries = orderExportedFilesForManifest(exported);
+    expect(entries.map((e) => e.index)).toContain(30);
+    expect(serialiseAnytoneLstManifest(exported).split(/\r?\n/)).toContain('30,"AMZone.CSV"');
+  });
+
   it('ignores unknown files and .LST in input', () => {
     const manifest = serialiseAnytoneLstManifest([
       'Channel.CSV',
