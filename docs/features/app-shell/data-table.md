@@ -99,7 +99,7 @@ Never commit operator values from browser storage.
 
 ## Known gaps
 
-- No row selection / bulk actions on entity lists.
+- Row selection and bulk actions ship on the channels list only ([#154](https://github.com/pskillen/codeplug-studio/issues/154), [#207](https://github.com/pskillen/codeplug-studio/issues/207), [#310](https://github.com/pskillen/codeplug-studio/issues/310)); other entity lists have no multi-select yet.
 - Channels optional-column set is a subset of codeplug-tool parity — extend as needed.
 - `mobileColumnPolicy: 'collapse'` is reserved — only `none` is implemented.
 - Section nav name filters for non-channel lists are toolbar-only today (URL still syncs via `useListNameQuery`).
