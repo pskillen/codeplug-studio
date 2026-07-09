@@ -2,7 +2,7 @@
 
 Tier-1 reference for **airport airband monitoring** workflows — searching [OpenAIP](https://www.openaip.net/) for civil aviation frequencies and importing RX-only AM channels into the library, with optional Anytone `AMAir.CSV` export.
 
-**Tracking:** [#262](https://github.com/pskillen/codeplug-studio/issues/262) · [#263](https://github.com/pskillen/codeplug-studio/issues/263) · [#264](https://github.com/pskillen/codeplug-studio/issues/264) · [#267](https://github.com/pskillen/codeplug-studio/issues/267) · [#268](https://github.com/pskillen/codeplug-studio/issues/268) · [progress](airband-openaip-progress.md) · [outstanding](airband-openaip-outstanding.md)
+**Tracking:** [#262](https://github.com/pskillen/codeplug-studio/issues/262) · [#263](https://github.com/pskillen/codeplug-studio/issues/263) · [#264](https://github.com/pskillen/codeplug-studio/issues/264) · [#267](https://github.com/pskillen/codeplug-studio/issues/267) · [#268](https://github.com/pskillen/codeplug-studio/issues/268) · [#284](https://github.com/pskillen/codeplug-studio/issues/284) · [progress](airband-openaip-progress.md) · [outstanding](airband-openaip-outstanding.md)
 
 **Source:** `src/app/routes/library/AddFromOpenAipPage.tsx`, `src/app/components/aviation/`, `src/integrations/aviation/`, `src/core/domain/airband/`
 
@@ -14,6 +14,7 @@ Tier-1 reference for **airport airband monitoring** workflows — searching [Ope
 | -------------------------- | ------- | --------------------------------------------------------------------------------------------- |
 | OpenAIP API client         | Shipped | `src/integrations/aviation/` — [#263](https://github.com/pskillen/codeplug-studio/issues/263) |
 | Airport search UI          | Shipped | `/library/channels/add-from-openaip`                                                          |
+| Import to existing zone    | Shipped | [#284](https://github.com/pskillen/codeplug-studio/issues/284) — append to library zone       |
 | Settings API key           | Shipped | Browser `localStorage` only                                                                   |
 | Core airband generation    | Shipped | `src/core/domain/airband/`                                                                    |
 | System attributions        | Shipped | [#264](https://github.com/pskillen/codeplug-studio/issues/264) — `/attributions`              |
@@ -37,7 +38,7 @@ Tier-1 reference for **airport airband monitoring** workflows — searching [Ope
 | Configure key | Settings → OpenAIP API key ([docs.openaip.net](https://docs.openaip.net/#/))                                       |
 | Search        | ICAO/IATA/name, town geocode, Maidenhead locator, or **Use my location** + radius (km)                             |
 | Review        | Map + per-airport frequency checkboxes; select individual services or whole airports                               |
-| Import        | `buildAirbandImportPlan` → `putChannel` (+ optional single batch `putZone` named by operator, default `Airband`)   |
+| Import        | `buildAirbandImportPlan` → `putChannel`; optional new `putZone` or append to existing zone (`zoneUpdates`)         |
 | Export        | Anytone build with airband channels → `AMAir.CSV` ([#267](https://github.com/pskillen/codeplug-studio/issues/267)) |
 
 **Route:** `/library/channels/add-from-openaip` — section nav **Add from OpenAIP**
