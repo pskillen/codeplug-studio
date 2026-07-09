@@ -150,4 +150,4 @@ Rich export uses named talk groups in `Contact/Talk Group` with matching `Receiv
 - Studio export code: `src/core/import-export/formats/anytone/`
 - Golden fixtures: `test-data/anytone/at-d890uv/`
 - Enum checklist: [enum-verification.md](../../../reference/anytone/enum-verification.md)
-- Follow-up tickets: [tmp/anytone-csv-reconciliation-follow-up-tickets.md](../../../../tmp/anytone-csv-reconciliation-follow-up-tickets.md)
+- Enum checklist: [enum-verification.md](../../../reference/anytone/enum-verification.md)

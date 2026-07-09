@@ -10,7 +10,7 @@
 - [csv-reconciliation-gaps.md](csv-reconciliation-gaps.md) — variance findings vs Studio export
 - [csv-reconciliation-outstanding.md](csv-reconciliation-outstanding.md) — discovered debt / follow-ups
 - Tier-3 enum checklist: [enum-verification.md](../../../reference/anytone/enum-verification.md)
-- Proposed tickets: [tmp/anytone-csv-reconciliation-follow-up-tickets.md](../../../../tmp/anytone-csv-reconciliation-follow-up-tickets.md)
+- Proposed follow-up tickets: see **Outstanding** checkboxes and P0/P1 sections below (local draft also at `tmp/anytone-csv-reconciliation-follow-up-tickets.md`, gitignored)
 
 ---
 
@@ -55,4 +55,4 @@
 ## Next
 
 1. Operator: add ≥1 private contact body row in CPS and re-export for golden fixture ([#297](https://github.com/pskillen/codeplug-studio/issues/297) acceptance)
-2. File GitHub issues from `tmp/anytone-csv-reconciliation-follow-up-tickets.md` for P0/P1 wire gaps (VFO rows, AM zone partition, DMR MODE, …)
+2. File GitHub issues for P0/P1 wire gaps (VFO rows, AM zone partition, DMR MODE, …) — draft in local `tmp/anytone-csv-reconciliation-follow-up-tickets.md`
