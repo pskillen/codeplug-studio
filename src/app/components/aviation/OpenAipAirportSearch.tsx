@@ -9,6 +9,7 @@ import {
   Group,
   NumberInput,
   ScrollArea,
+  SegmentedControl,
   SimpleGrid,
   Stack,
   Text,
@@ -20,6 +21,7 @@ import type { Channel } from '@core/models/library.ts';
 import type { AirportListing } from '@integrations/aviation/index.ts';
 import { airportQueryKindHint } from '@integrations/aviation/index.ts';
 import { buildAirbandImportPlan } from '@core/services/airbandImport.ts';
+import { validateZoneMembership } from '@core/domain/validation.ts';
 import { SETTINGS_OPENAIP_SECTION_ID } from '../../lib/settingsSections.ts';
 import { useOpenAipAirportSearch } from '../../hooks/useOpenAipAirportSearch.ts';
 import { ICON_SIZE_NAV, ICON_STROKE } from '../../lib/iconSizes.ts';
@@ -35,10 +37,34 @@ import { persistence } from '../../state/persistence.ts';
 import { useLibrary } from '../../state/useLibrary.ts';
 import { useProjects } from '../../state/useProjects.ts';
 import UseMyLocationButton from '../UseMyLocationButton/UseMyLocationButton.tsx';
+import ZoneSelect from '../library/ZoneSelect.tsx';
 import { FormPage, PageSection, SplitButton } from '../ui/index.ts';
 import CodeplugMap from '../CodeplugMap/CodeplugMap.tsx';
 
 const DEFAULT_ZONE_NAME = 'Airband';
+
+type ZoneTargetMode = 'new' | 'existing';
+
+interface ZoneImportOptions {
+  alsoCreateZone?: boolean;
+  zoneName?: string;
+  targetZoneId?: string;
+}
+
+function buildZoneImportOptions(
+  alsoCreateZone: boolean,
+  zoneTargetMode: ZoneTargetMode,
+  zoneName: string,
+  existingZoneId: string | null,
+): ZoneImportOptions {
+  if (!alsoCreateZone) return {};
+  if (zoneTargetMode === 'existing') {
+    return existingZoneId
+      ? { alsoCreateZone: true, targetZoneId: existingZoneId }
+      : { alsoCreateZone: true };
+  }
+  return { alsoCreateZone: true, zoneName };
+}
 
 function mapChannelsFromAirports(airports: AirportListing[]): Channel[] {
   return airports
@@ -189,14 +215,17 @@ function AirportCard({
 
 export default function OpenAipAirportSearch() {
   const search = useOpenAipAirportSearch();
-  const { library } = useLibrary();
+  const { library, reload } = useLibrary();
   const { activeProjectId } = useProjects();
   const [selectedKeys, setSelectedKeys] = useState<Set<string>>(new Set());
   const [alsoCreateZone, setAlsoCreateZone] = useState(false);
+  const [zoneTargetMode, setZoneTargetMode] = useState<ZoneTargetMode>('new');
   const [zoneName, setZoneName] = useState(DEFAULT_ZONE_NAME);
+  const [existingZoneId, setExistingZoneId] = useState<string | null>(null);
   const [adding, setAdding] = useState(false);
   const [addingAirportKey, setAddingAirportKey] = useState<string | null>(null);
   const [addMessage, setAddMessage] = useState<string | null>(null);
+  const [addError, setAddError] = useState<string | null>(null);
 
   const mapChannels = useMemo(() => mapChannelsFromAirports(search.airports), [search.airports]);
   const kindHint = airportQueryKindHint(search.kind);
@@ -236,9 +265,14 @@ export default function OpenAipAirportSearch() {
 
   async function persistSelections(
     selections: Array<{ airport: AirportListing; frequencyIndices: number[] }>,
-    options: { alsoCreateZone?: boolean; zoneName?: string },
+    options: ZoneImportOptions,
   ) {
     if (!activeProjectId || selections.length === 0) return;
+
+    if (options.alsoCreateZone && zoneTargetMode === 'existing' && !options.targetZoneId) {
+      setAddError('Choose an existing zone or switch to New zone.');
+      return;
+    }
 
     const plan = buildAirbandImportPlan(
       library,
@@ -248,11 +282,15 @@ export default function OpenAipAirportSearch() {
         frequencyIndices,
       })),
       {
-        alsoCreateZone: options.alsoCreateZone,
-        zoneName: options.zoneName,
+        ...options,
         forbidTransmit: true,
       },
     );
+
+    if (plan.zoneTargetError) {
+      setAddError(plan.zoneTargetError);
+      return;
+    }
 
     for (const channel of plan.totalChannelsToAdd) {
       await persistence.putChannel(channel, null);
@@ -261,17 +299,56 @@ export default function OpenAipAirportSearch() {
       await persistence.putZone(zone, null);
     }
 
+    const libraryWithNewChannels = {
+      ...library,
+      channels: [...library.channels, ...plan.totalChannelsToAdd],
+    };
+
+    for (const update of plan.zoneUpdates) {
+      const zone = library.zones.find((row) => row.id === update.zoneId);
+      if (!zone) continue;
+      const updated = { ...zone, members: update.members };
+      const libraryForValidation = {
+        ...libraryWithNewChannels,
+        zones: library.zones.map((row) => (row.id === update.zoneId ? updated : row)),
+      };
+      validateZoneMembership(update.zoneId, update.members, libraryForValidation);
+      const result = await persistence.putZone(updated, zone.revision);
+      if (!result.ok) {
+        throw new Error(
+          result.reason === 'revision_conflict'
+            ? 'Zone was changed elsewhere. Reload and try again.'
+            : 'Failed to update zone.',
+        );
+      }
+    }
+
+    if (plan.zoneUpdates.length > 0 || plan.zones.length > 0) {
+      await reload();
+    }
+
     const added = plan.totalChannelsToAdd.length;
     const skipped = plan.totalSkipped.length;
-    const zoneSuffix =
-      options.alsoCreateZone && plan.zones.length > 0
-        ? ` and created zone "${plan.zones[0]?.name ?? options.zoneName ?? DEFAULT_ZONE_NAME}"`
-        : '';
-    setAddMessage(
-      added > 0
-        ? `Added ${added} channel${added === 1 ? '' : 's'}${zoneSuffix}${skipped ? ` (${skipped} skipped as duplicates)` : ''}.`
-        : 'No new channels were added.',
-    );
+    let zoneSuffix = '';
+    if (options.alsoCreateZone && plan.zoneUpdates.length > 0) {
+      const targetName =
+        library.zones.find((zone) => zone.id === plan.zoneUpdates[0]?.zoneId)?.name ?? 'zone';
+      zoneSuffix = ` and added to zone "${targetName}"`;
+    } else if (options.alsoCreateZone && plan.zones.length > 0) {
+      zoneSuffix = ` and created zone "${plan.zones[0]?.name ?? options.zoneName ?? DEFAULT_ZONE_NAME}"`;
+    }
+
+    const skippedSuffix = skipped ? ` (${skipped} skipped as duplicates)` : '';
+    if (added > 0 || zoneSuffix) {
+      setAddMessage(
+        added > 0
+          ? `Added ${added} channel${added === 1 ? '' : 's'}${zoneSuffix}${skippedSuffix}.`
+          : `No new channels were added${zoneSuffix}${skippedSuffix}.`,
+      );
+    } else {
+      setAddMessage('No new channels were added.');
+    }
+    setAddError(null);
 
     const importedKeys = new Set(
       selections.flatMap(({ airport, frequencyIndices }) =>
@@ -287,19 +364,26 @@ export default function OpenAipAirportSearch() {
 
   async function handleAddSelections(
     selections: Array<{ airport: AirportListing; frequencyIndices: number[] }>,
-    options: { alsoCreateZone?: boolean; zoneName?: string },
+    options: ZoneImportOptions,
     airportKeyForLoading?: string,
   ) {
     if (selections.length === 0) return;
     setAdding(true);
     if (airportKeyForLoading) setAddingAirportKey(airportKeyForLoading);
     setAddMessage(null);
+    setAddError(null);
     try {
       await persistSelections(selections, options);
+    } catch (err) {
+      setAddError(err instanceof Error ? err.message : 'Import failed. Please try again.');
     } finally {
       setAdding(false);
       setAddingAirportKey(null);
     }
+  }
+
+  function zoneImportOptions(alsoCreateZoneOverride: boolean): ZoneImportOptions {
+    return buildZoneImportOptions(alsoCreateZoneOverride, zoneTargetMode, zoneName, existingZoneId);
   }
 
   function selectionsForAirport(airport: AirportListing) {
@@ -308,10 +392,7 @@ export default function OpenAipAirportSearch() {
 
   async function handleAddSelected() {
     const selections = buildSelectionsFromKeys(search.airports, selectedKeys);
-    await handleAddSelections(selections, {
-      alsoCreateZone,
-      zoneName,
-    });
+    await handleAddSelections(selections, zoneImportOptions(alsoCreateZone));
   }
 
   async function handleUseMyLocation(lat: number, lon: number) {
@@ -386,6 +467,7 @@ export default function OpenAipAirportSearch() {
           ) : null}
 
           {search.error ? <Alert color="red">{search.error}</Alert> : null}
+          {addError ? <Alert color="red">{addError}</Alert> : null}
           {addMessage ? <Alert color="green">{addMessage}</Alert> : null}
         </Stack>
       </PageSection>
@@ -420,13 +502,46 @@ export default function OpenAipAirportSearch() {
                   onChange={(e) => setAlsoCreateZone(e.currentTarget.checked)}
                 />
                 {alsoCreateZone ? (
-                  <TextInput
-                    label="Zone name"
-                    value={zoneName}
-                    onChange={(e) => setZoneName(e.currentTarget.value)}
-                    placeholder={DEFAULT_ZONE_NAME}
-                    style={{ width: 180 }}
-                  />
+                  <Stack gap="xs" maw={280}>
+                    <SegmentedControl
+                      value={zoneTargetMode}
+                      onChange={(value) => setZoneTargetMode(value as ZoneTargetMode)}
+                      data={[
+                        { label: 'New zone', value: 'new' },
+                        {
+                          label: 'Existing zone',
+                          value: 'existing',
+                          disabled: library.zones.length === 0,
+                        },
+                      ]}
+                    />
+                    {zoneTargetMode === 'new' ? (
+                      <TextInput
+                        label="Zone name"
+                        value={zoneName}
+                        onChange={(e) => setZoneName(e.currentTarget.value)}
+                        placeholder={DEFAULT_ZONE_NAME}
+                      />
+                    ) : (
+                      <Stack gap={4}>
+                        <ZoneSelect
+                          label="Zone"
+                          zones={library.zones}
+                          value={existingZoneId}
+                          onChange={setExistingZoneId}
+                        />
+                        {library.zones.length === 0 ? (
+                          <Text size="xs" c="dimmed">
+                            No zones in this project.{' '}
+                            <Anchor component={Link} to="/library/zones" size="xs">
+                              Create a zone
+                            </Anchor>{' '}
+                            first.
+                          </Text>
+                        ) : null}
+                      </Stack>
+                    )}
+                  </Stack>
                 ) : null}
                 <Button
                   disabled={selectedKeys.size === 0}
@@ -455,11 +570,7 @@ export default function OpenAipAirportSearch() {
                       onSelectNoFrequencies={() => toggleAirportFrequencies(airport, false)}
                       onAddChannels={() => void handleAddSelections(airportSelections, {}, key)}
                       onAddAsZone={() =>
-                        void handleAddSelections(
-                          airportSelections,
-                          { alsoCreateZone: true, zoneName },
-                          key,
-                        )
+                        void handleAddSelections(airportSelections, zoneImportOptions(true), key)
                       }
                       adding={adding && addingAirportKey === key}
                     />
