@@ -64,7 +64,24 @@
 
 ---
 
+## Slice 4 — `AMZone.CSV` wire schema ([#316](https://github.com/pskillen/codeplug-studio/issues/316))
+
+**Status:** Complete (docs / fixture; serialiser outstanding on #316)
+
+**Delivered**
+
+- Populated `AMZone.CSV` reverse-engineered from operator `D890 codeplug export` (2 body rows)
+- Confirmed 5-column schema including `No.`; distinct from `DMRZone.CSV`
+- Documented `AMAir.CSV` NUL-in-Name quirk as CPS corruption (do not model)
+- Redacted fixture `test-data/anytone/at-d890uv/AMZone.CSV` + tier-3 [am-air.md](../../../reference/anytone/am-air.md)
+
+**Verify**
+
+- Re-read [am-air.md](../../../reference/anytone/am-air.md) against fixture headers before implementing `serialiseAmZonesCsv`
+
+---
+
 ## Next
 
-1. File GitHub issues for P0/P1 wire gaps (VFO rows, AM zone partition, DMR MODE, …)
+1. Implement #316 AM zone partition serialiser (uses confirmed wire schema)
 2. Manual CPS enum elicitation — [#307](https://github.com/pskillen/codeplug-studio/issues/307) (linked to [#303](https://github.com/pskillen/codeplug-studio/issues/303))

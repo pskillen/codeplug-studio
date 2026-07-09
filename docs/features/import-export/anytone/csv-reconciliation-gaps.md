@@ -14,7 +14,7 @@ Earlier single-build comparison: [tmp/export-variance-report.md](../../../../tmp
 | -------: | ----------------------------------- | ---------------------------------------- | -------------------------------------------------- |
 |   **P0** | `DMRDigitalContactList.CSV` headers | 4 columns                                | 10 columns                                         |
 |   **P0** | `Channel.CSV` VFO rows              | Not emitted                              | Slots `4001`, `4002` required                      |
-|   **P1** | `AMZone.CSV` + airband partition    | Not emitted                              | Separate AM zones; must not mix into `DMRZone.CSV` |
+|   **P1** | `AMZone.CSV` + airband partition    | Not emitted                              | 5-col schema confirmed; partition serialiser [#316](https://github.com/pskillen/codeplug-studio/issues/316) |
 |   **P1** | `DMR MODE` / duplex semantics       | Always `0`                               | Observed `0`/`1`; semantics unclear vs split RX/TX |
 |   **P1** | Channel TX contact source           | Talk group / contact ref only            | Comment: pick from RGL on export                   |
 |   **P2** | 29 CPS sidecar files                | Not in MVP export set                    | Manifest lists 38 files — see inventory below      |
@@ -91,10 +91,12 @@ Studio `serialiseChannelsCsv()` emits programmed slots only. `AMAir.CSV` / `FM.C
 When the radio operates in airband mode, CPS uses a **separate entity set**:
 
 - `AMAir.CSV` — airband channel bank (Studio exports when partition non-empty)
-- `AMZone.CSV` — airband zones (**not exported**)
+- `AMZone.CSV` — airband zones (**not exported**; wire schema confirmed in [#316](https://github.com/pskillen/codeplug-studio/issues/316))
 - `DMRZone.CSV` — must **not** include airband-only members
 
 **Rule (from #297 comment):** If a DMR zone contains any airband channel, emit a dedicated airband zone in `AMZone.CSV` instead of mixing into `DMRZone.CSV`. Omit DMR zones that would contain only airband channels.
+
+**Wire schema (populated CPS sample):** 5 columns — `No.`, `Zone Name`, `Zone Channel Member`, `A Channel`, `Scan Channel ` (trailing space). No RX/TX frequency companions, no B channel, no `Zone Hide`. Member names are trimmed `AMAir.CSV` labels (pipe-separated). Operator rich export had zero airband names in `DMRZone.CSV`. Full table: [am-air.md](../../../reference/anytone/am-air.md).
 
 ---
 
@@ -149,5 +151,4 @@ Rich export uses named talk groups in `Contact/Talk Group` with matching `Receiv
 
 - Studio export code: `src/core/import-export/formats/anytone/`
 - Golden fixtures: `test-data/anytone/at-d890uv/`
-- Enum checklist: [enum-verification.md](../../../reference/anytone/enum-verification.md)
 - Enum checklist: [enum-verification.md](../../../reference/anytone/enum-verification.md)
