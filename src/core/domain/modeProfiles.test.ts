@@ -10,6 +10,8 @@ import {
   findDmrProfile,
   isModeOnlyStub,
   normalizeModeProfile,
+  reconcilePrimaryMode,
+  resolveChannelPrimaryMode,
   syncModeProfiles,
   validateModeProfiles,
 } from './modeProfiles.ts';
@@ -156,5 +158,39 @@ describe('isModeOnlyStub', () => {
   it('detects stub profiles', () => {
     expect(isModeOnlyStub({ mode: 'p25' })).toBe(true);
     expect(isModeOnlyStub(defaultModeProfile('ysf'))).toBe(false);
+  });
+});
+
+describe('reconcilePrimaryMode', () => {
+  it('returns null when no profiles', () => {
+    expect(reconcilePrimaryMode('fm', [])).toBeNull();
+  });
+
+  it('keeps primary when still in profiles', () => {
+    const profiles = [defaultModeProfile('fm'), defaultModeProfile('dmr')];
+    expect(reconcilePrimaryMode('dmr', profiles)).toBe('dmr');
+  });
+
+  it('falls back to first profile when primary removed', () => {
+    const profiles = [defaultModeProfile('dmr')];
+    expect(reconcilePrimaryMode('fm', profiles)).toBe('dmr');
+  });
+});
+
+describe('resolveChannelPrimaryMode', () => {
+  it('uses primaryMode when present in profiles', () => {
+    const channel = {
+      primaryMode: 'dmr' as const,
+      modeProfiles: [defaultModeProfile('fm'), defaultModeProfile('dmr')],
+    };
+    expect(resolveChannelPrimaryMode(channel)).toBe('dmr');
+  });
+
+  it('falls back to first profile when primary not in profiles', () => {
+    const channel = {
+      primaryMode: 'ysf' as const,
+      modeProfiles: [defaultModeProfile('fm'), defaultModeProfile('dmr')],
+    };
+    expect(resolveChannelPrimaryMode(channel)).toBe('fm');
   });
 });

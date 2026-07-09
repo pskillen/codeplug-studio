@@ -1,4 +1,5 @@
 import type { Channel, ChannelMode, Zone } from '../models/library.ts';
+import { resolveChannelPrimaryMode } from './modeProfiles.ts';
 import { resolveEffectiveZoneChannelIds } from './zoneHierarchy.ts';
 import type { LatLon } from './geo.ts';
 import { uniqueLatLon } from './geo.ts';
@@ -39,9 +40,9 @@ export function channelPlottableOnMap(ch: Channel, opts: FilterOptions): boolean
   return channelMapSkipReason(ch, opts) === null;
 }
 
-/** Primary RF mode for map colouring — first profile when multi-mode; null when none. */
+/** Primary RF mode for map colouring — `primaryMode` when set, else first profile. */
 export function primaryMode(channel: Channel): ChannelMode | null {
-  return channel.modeProfiles[0]?.mode ?? null;
+  return resolveChannelPrimaryMode(channel);
 }
 
 /** All RF modes represented on a channel. */

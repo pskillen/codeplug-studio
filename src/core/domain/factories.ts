@@ -100,6 +100,7 @@ export function newChannel(projectId: string, name: string, callsign = ''): Chan
     scanInclusion: 'default',
     forbidTransmit: false,
     comment: '',
+    primaryMode: null,
     modeProfiles: [],
   };
 }

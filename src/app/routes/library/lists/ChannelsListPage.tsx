@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import type { Channel } from '@core/models/library.ts';
 import { zonesWithDirectChannelMember } from '@core/domain/zoneMembership.ts';
 import { applyFilters, channelHasGeolocation } from '@core/domain/mapProjection.ts';
+import { resolveChannelPrimaryMode } from '@core/domain/modeProfiles.ts';
 import { coordsToLocator } from '@core/domain/maidenhead.ts';
 import { haversineDistanceM } from '@core/domain/geoDistance.ts';
 import CodeplugMap from '../../../components/CodeplugMap/CodeplugMap.tsx';
@@ -146,13 +147,17 @@ export default function ChannelsListPage() {
       if (col.key === 'mode') {
         return {
           ...base,
-          render: (ch: Channel) => (
-            <Group gap={4}>
-              {channelModesForFilter(ch).map((mode) => (
-                <ModePill key={mode} mode={mode} size="xs" />
-              ))}
-            </Group>
-          ),
+          render: (ch: Channel) => {
+            const modes = channelModesForFilter(ch);
+            const primary = modes.length > 1 ? resolveChannelPrimaryMode(ch) : null;
+            return (
+              <Group gap={4}>
+                {modes.map((mode) => (
+                  <ModePill key={mode} mode={mode} size="xs" primary={mode === primary} />
+                ))}
+              </Group>
+            );
+          },
           sortValue: (ch: Channel) => channelModesForFilter(ch).join(','),
         };
       }

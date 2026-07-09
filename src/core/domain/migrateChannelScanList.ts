@@ -2,11 +2,16 @@ import type { BuildEntityOverride, FormatBuild } from '@core/models/formatBuild.
 import type { Channel } from '@core/models/library.ts';
 import type { ProjectAggregate } from '@core/import-export/projectDocument.ts';
 
+type LegacyChannelOverride = BuildEntityOverride & { scanListId?: string };
+
+function legacyOverrideScanListId(override: BuildEntityOverride): string | undefined {
+  return (override as LegacyChannelOverride).scanListId?.trim() || undefined;
+}
+
 function stripOverrideScanListId(override: BuildEntityOverride): BuildEntityOverride | null {
-  if (override.scanListId === undefined) return override;
-  const { scanListId: _scanListId, ...rest } = override as BuildEntityOverride & {
-    scanListId?: string;
-  };
+  const legacyId = legacyOverrideScanListId(override);
+  if (!legacyId) return override;
+  const { scanListId: _scanListId, ...rest } = override as LegacyChannelOverride;
   void _scanListId;
   const trimmed = rest as BuildEntityOverride;
   if (
@@ -30,10 +35,10 @@ export function migrateChannelScanListFromBuildOverrides(
   const overrideByChannel = new Map<string, string>();
   for (const build of aggregate.formatBuilds) {
     for (const override of build.channelOverrides) {
-      const legacyId = (override as BuildEntityOverride & { scanListId?: string }).scanListId;
-      if (!legacyId?.trim()) continue;
+      const legacyId = legacyOverrideScanListId(override);
+      if (!legacyId) continue;
       if (!overrideByChannel.has(override.libraryEntityId)) {
-        overrideByChannel.set(override.libraryEntityId, legacyId.trim());
+        overrideByChannel.set(override.libraryEntityId, legacyId);
       }
     }
   }
@@ -56,7 +61,7 @@ export function migrateChannelScanListFromBuildOverrides(
     let buildDirty = false;
     const channelOverrides = build.channelOverrides
       .map((override) => {
-        if (!(override as BuildEntityOverride & { scanListId?: string }).scanListId) {
+        if (!legacyOverrideScanListId(override)) {
           return override;
         }
         buildDirty = true;

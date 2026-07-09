@@ -100,6 +100,8 @@ export function fullLibraryAggregate(): ProjectAggregate {
     scanInclusion: 'default',
     forbidTransmit: false,
     comment: 'Analog FM',
+    primaryMode: null,
+    scanListId: undefined,
     modeProfiles: [
       {
         mode: 'fm',
@@ -124,12 +126,15 @@ export function fullLibraryAggregate(): ProjectAggregate {
     scanInclusion: 'skip',
     forbidTransmit: false,
     comment: '',
+    primaryMode: null,
+    scanListId: undefined,
     modeProfiles: [
       {
         mode: 'dmr',
         colourCode: 1,
         timeslot: 2,
         dmrId: 2351123,
+        dmrMode: null,
         contactRef: { kind: 'digitalContact', id: FIXTURE_DIGITAL_CONTACT_ID },
         rxGroupListId: FIXTURE_RX_LIST_ID,
       },

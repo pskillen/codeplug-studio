@@ -10,6 +10,7 @@ import type {
   ChannelTone,
   SsbSideband,
 } from '../models/libraryTypes.ts';
+import { normalizeDmrModeProfile } from './dmrOperatingMode.ts';
 
 const ANALOG_MODES = new Set<AnalogChannelMode>(['fm', 'am', 'ssb']);
 
@@ -44,6 +45,7 @@ function defaultAnalogProfile(
 function defaultDmrProfile(): ChannelModeProfileDMR {
   return {
     mode: 'dmr',
+    dmrMode: null,
     colourCode: null,
     timeslot: null,
     dmrId: null,
@@ -130,6 +132,9 @@ export function normalizeModeProfile(profile: ChannelModeProfile): ChannelModePr
   ) {
     return normalizeAnalogProfile(profile as ChannelModeProfileAnalog);
   }
+  if (profile.mode === 'dmr') {
+    return normalizeDmrModeProfile(profile as ChannelModeProfileDMR);
+  }
   return profile;
 }
 
@@ -153,6 +158,30 @@ export function syncModeProfiles(
     const found = normalized.find((p) => p.mode === mode);
     return found ?? defaultModeProfile(mode);
   });
+}
+
+/** Keep `primaryMode` aligned when mode selection changes in CRUD. */
+export function reconcilePrimaryMode(
+  primaryMode: ChannelMode | null,
+  modeProfiles: ChannelModeProfile[],
+): ChannelMode | null {
+  if (modeProfiles.length === 0) return null;
+  if (primaryMode != null && modeProfiles.some((profile) => profile.mode === primaryMode)) {
+    return primaryMode;
+  }
+  return modeProfiles[0]?.mode ?? null;
+}
+
+/** Resolved primary for export — `primaryMode` when valid, else first profile. */
+export function resolveChannelPrimaryMode(
+  channel: Pick<Channel, 'primaryMode' | 'modeProfiles'>,
+): ChannelMode | null {
+  const modes = channel.modeProfiles.map((profile) => profile.mode);
+  if (modes.length === 0) return null;
+  if (channel.primaryMode != null && modes.includes(channel.primaryMode)) {
+    return channel.primaryMode;
+  }
+  return modes[0] ?? null;
 }
 
 export function findModeProfile<M extends ChannelMode>(

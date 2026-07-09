@@ -24,6 +24,7 @@ import { isAnalogChannelModeProfile, isModeOnlyStub } from '@core/domain/modePro
 import ModePill from '../pills/ModePill.tsx';
 import { PercentLevelSlider, PillTabs } from '../ui/index.ts';
 import RxGroupListSummary from '../library/RxGroupListSummary.tsx';
+import DmrOperatingModeSegment from './DmrOperatingModeSegment.tsx';
 import {
   BANDWIDTH_KHZ_OPTIONS,
   toneSelectOptions,
@@ -45,12 +46,16 @@ const timeslotSelectData = [
 export interface ChannelModeProfilesEditorProps {
   profiles: ChannelModeProfile[];
   library: Library;
+  rxFrequency: number | null;
+  txFrequency: number | null;
   onChange: (profiles: ChannelModeProfile[]) => void;
 }
 
 export default function ChannelModeProfilesEditor({
   profiles,
   library,
+  rxFrequency,
+  txFrequency,
   onChange,
 }: ChannelModeProfilesEditorProps) {
   const updateProfile = (index: number, patch: Partial<ChannelModeProfile>) => {
@@ -74,6 +79,8 @@ export default function ChannelModeProfilesEditor({
               <DmrPanel
                 profile={profile as ChannelModeProfileDMR}
                 library={library}
+                rxFrequency={rxFrequency}
+                txFrequency={txFrequency}
                 onPatch={(patch) => updateProfile(index, patch)}
               />
             ) : null}
@@ -177,10 +184,14 @@ function AnalogPanel({
 function DmrPanel({
   profile,
   library,
+  rxFrequency,
+  txFrequency,
   onPatch,
 }: {
   profile: ChannelModeProfileDMR;
   library: Library;
+  rxFrequency: number | null;
+  txFrequency: number | null;
   onPatch: (patch: Partial<ChannelModeProfileDMR>) => void;
 }) {
   const contactOptions = [
@@ -200,6 +211,12 @@ function DmrPanel({
 
   return (
     <>
+      <DmrOperatingModeSegment
+        value={profile.dmrMode ?? null}
+        onChange={(dmrMode) => onPatch({ dmrMode })}
+        rxFrequency={rxFrequency}
+        txFrequency={txFrequency}
+      />
       <Group grow>
         <NumberInput
           label="Colour code"

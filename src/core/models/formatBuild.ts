@@ -41,8 +41,6 @@ export interface BuildEntityOverride {
    * Unset → default placement after any explicit slots (library order).
    */
   orderOrSlot?: number;
-  /** Legacy import only — hoisted to `Channel.scanListId` on load (schema v11). */
-  scanListId?: string;
 }
 
 export interface FormatBuild extends PersistableRow {

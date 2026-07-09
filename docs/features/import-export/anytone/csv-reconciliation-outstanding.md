@@ -10,7 +10,8 @@ Items **skipped**, **incomplete**, or **discovered during** [#297](https://githu
 
 - [x] **`DMRDigitalContactList.CSV`** — 10-column schema + serialiser ([#297](https://github.com/pskillen/codeplug-studio/issues/297) slice 2)
 - [ ] **`Channel.CSV` VFO rows** — CPS includes slots `4001` / `4002`; Studio `serialiseChannelsCsv()` does not append them (see gaps doc P0)
-- [ ] **`DMR MODE` column** — Studio always exports `0`; operator comment suggests split-frequency → repeater / simplex → DMO — **contradicts** rich export sample (most repeaters still `0`). Needs CPS enum elicitation ([#297](https://github.com/pskillen/codeplug-studio/issues/297) comment)
+- [x] **`DMR MODE` column** — ~~Studio always exports `0`~~ **Shipped** ([#311](https://github.com/pskillen/codeplug-studio/issues/311)) — `ChannelModeProfileDMR.dmrMode` + RX/TX inference
+- [x] **Dual-mode `Channel Type`** — **Shipped** ([#303](https://github.com/pskillen/codeplug-studio/issues/303)) — `Channel.primaryMode` → `D-Digital` / `A-Analog` / `D+A TX D` / `A+D TX A`
 - [ ] **AM air zone partition** — `AMZone.CSV` + separate zone membership when airband mode active; do not mix airband channels into `DMRZone.CSV` ([#297](https://github.com/pskillen/codeplug-studio/issues/297) comment)
 
 ## Enum / value coverage

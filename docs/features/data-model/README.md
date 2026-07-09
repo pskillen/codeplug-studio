@@ -66,7 +66,7 @@ erDiagram
 
 ## Schema version
 
-`STUDIO_SCHEMA_VERSION = 9` in `src/core/models/schemaVersion.ts`. Bumps when persisted row shapes change.
+`STUDIO_SCHEMA_VERSION = 14` in `src/core/models/schemaVersion.ts`. Bumps when persisted row shapes change.
 
 ## Persistable rows
 

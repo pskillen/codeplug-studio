@@ -1,5 +1,7 @@
-import type { ChannelTone } from '@core/models/library.ts';
+import type { Channel, ChannelTone } from '@core/models/library.ts';
 import type { AssembledBuild } from '@core/services/assemble.ts';
+import { resolveChannelPrimaryMode } from '@core/domain/modeProfiles.ts';
+import { resolveDmrOperatingMode } from '@core/domain/dmrOperatingMode.ts';
 import { anytonePercentToWire } from './profiles.ts';
 
 export function formatAnytoneFrequencyMHz(hz: number | null): string {
@@ -22,6 +24,38 @@ export function formatAnytoneChannelType(mode: string): string {
   if (mode === 'dmr') return 'D-Digital';
   if (mode === 'fm' || mode === 'am') return 'A-Analog';
   return 'D-Digital';
+}
+
+function channelHasAnytoneAnalogProfile(channel: Pick<Channel, 'modeProfiles'>): boolean {
+  return channel.modeProfiles.some((profile) => profile.mode === 'fm' || profile.mode === 'am');
+}
+
+function channelHasDmrProfile(channel: Pick<Channel, 'modeProfiles'>): boolean {
+  return channel.modeProfiles.some((profile) => profile.mode === 'dmr');
+}
+
+/** Map library channel modes + primary to Anytone `Channel Type` wire string. */
+export function formatAnytoneChannelTypeFromChannel(
+  channel: Pick<Channel, 'modeProfiles' | 'primaryMode'>,
+): string {
+  const hasDmr = channelHasDmrProfile(channel);
+  const hasAnalog = channelHasAnytoneAnalogProfile(channel);
+
+  if (hasDmr && hasAnalog) {
+    const primary = resolveChannelPrimaryMode(channel);
+    if (primary === 'fm' || primary === 'am') return 'A+D TX A';
+    return 'D+A TX D';
+  }
+  if (hasDmr) return 'D-Digital';
+  if (hasAnalog) return 'A-Analog';
+  return formatAnytoneChannelType(channel.modeProfiles[0]?.mode ?? 'dmr');
+}
+
+/** Map DMR operating mode to Anytone `DMR MODE` wire digit. */
+export function formatAnytoneDmrModeWire(
+  channel: Pick<Channel, 'rxFrequency' | 'txFrequency' | 'modeProfiles'>,
+): '0' | '1' {
+  return resolveDmrOperatingMode(channel) === 'repeater' ? '1' : '0';
 }
 
 export function formatAnytonePowerWire(profileId: string, percent: number | null): string {

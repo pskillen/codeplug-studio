@@ -129,8 +129,12 @@ function parseOverrideRow(raw: unknown, label: string): BuildEntityOverride {
       result.orderOrSlot = Math.trunc(orderOrSlot);
     }
   }
-  if (record.scanListId !== undefined && record.scanListId !== null && record.scanListId !== '') {
-    result.scanListId = String(record.scanListId);
+  const legacyScanListId =
+    record.scanListId !== undefined && record.scanListId !== null && record.scanListId !== ''
+      ? String(record.scanListId)
+      : undefined;
+  if (legacyScanListId) {
+    (result as { scanListId?: string }).scanListId = legacyScanListId;
   }
   return result;
 }
@@ -139,10 +143,7 @@ export function upsertOverride(
   overrides: BuildEntityOverride[] | undefined,
   entityId: string,
   patch: Partial<
-    Pick<
-      BuildEntityOverride,
-      'excluded' | 'forceInclude' | 'wireName' | 'orderOrSlot' | 'scanListId'
-    >
+    Pick<BuildEntityOverride, 'excluded' | 'forceInclude' | 'wireName' | 'orderOrSlot'>
   >,
 ): BuildEntityOverride[] {
   const rows = overrides ?? [];
@@ -165,19 +166,10 @@ export function upsertOverride(
     }
   }
 
-  if ('scanListId' in patch) {
-    if (patch.scanListId?.trim()) {
-      merged.scanListId = patch.scanListId.trim();
-    } else {
-      delete merged.scanListId;
-    }
-  }
-
   const hasOrderOrSlot =
     merged.orderOrSlot != null && Number.isFinite(merged.orderOrSlot) && merged.orderOrSlot >= 1;
-  const hasScanListId = Boolean(merged.scanListId?.trim());
 
-  if (!hasWireName && !isExcluded && !isForceIncluded && !hasOrderOrSlot && !hasScanListId) {
+  if (!hasWireName && !isExcluded && !isForceIncluded && !hasOrderOrSlot) {
     if (index < 0) return rows;
     return rows.filter((row) => row.libraryEntityId !== entityId);
   }

@@ -225,7 +225,7 @@ Each format build is created from a **trait profile** (`TRAIT_PROFILES` in `src/
 | `chirp-uv5r`                       | `chirp`    | `FlatMemoryList`, `PerChannelScanFlag`                                     |
 | `anytone-at-d890uv`                | `anytone`  | `ZoneGrouping`, `DedicatedScanLists` (library `ScanList` + `ScanList.CSV`) |
 
-**Dedicated scan lists:** formats with a first-class scan-list CPS file (Anytone `ScanList.CSV`) use the `DedicatedScanLists` trait and library `ScanList` entities — not DM32-style zone-derived `ScanLists`. Channel→scan-list assignment is `scanListId` on `channelOverrides`. See [library scan lists](../../features/library/scan-lists.md) and `assemble.ts`.
+**Dedicated scan lists:** formats with a first-class scan-list CPS file (Anytone `ScanList.CSV`) use the `DedicatedScanLists` trait and library `ScanList` entities — not DM32-style zone-derived `ScanLists`. Channel→scan-list assignment is `Channel.scanListId` on the library channel. See [library scan lists](../../features/library/scan-lists.md) and `assemble.ts`.
 
 **Two profile registries** share `profileId` keys where both exist:
 

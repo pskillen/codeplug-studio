@@ -56,6 +56,7 @@ describe('anytone serialise', () => {
     expect(row['Channel Name']).toBe('Channel 1');
     expect(row['Receive Frequency']).toBe('438.80000');
     expect(row['Channel Type']).toBe('D-Digital');
+    expect(row['DMR MODE']).toBe('1');
     expect(row['Transmit Power']).toBe('Low');
     expect(row['Contact/Talk Group']).toBe('TG Alpha');
     expect(row['Scan List']).toBe('Zone A SCL');
