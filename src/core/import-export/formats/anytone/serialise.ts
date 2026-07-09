@@ -183,9 +183,15 @@ function serialiseDigitalContactsCsv(
   const rows = assembled.digitalContacts.map((contact, index) =>
     padRow(DIGITAL_CONTACT_HEADERS, {
       [DIGITAL_CONTACT_COL.number]: String(index + 1),
+      [DIGITAL_CONTACT_COL.radioId]: String(contact.entity.digitalId),
       [DIGITAL_CONTACT_COL.callsign]: '',
       [DIGITAL_CONTACT_COL.name]: context.digitalContactWireName(contact.entity.id),
+      [DIGITAL_CONTACT_COL.city]: '',
+      [DIGITAL_CONTACT_COL.state]: '',
+      [DIGITAL_CONTACT_COL.country]: '',
+      [DIGITAL_CONTACT_COL.remarks]: '',
       [DIGITAL_CONTACT_COL.callType]: 'Private Call',
+      [DIGITAL_CONTACT_COL.callAlert]: 'None',
     }),
   );
   return formatCsv(DIGITAL_CONTACT_HEADERS, rows);
