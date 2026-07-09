@@ -17,7 +17,13 @@ Tabbed editor for per-mode settings on a multi-mode library channel. One tab per
 ```tsx
 import ChannelModeProfilesEditor from '@app/components/channels/ChannelModeProfilesEditor.tsx';
 
-<ChannelModeProfilesEditor profiles={modeProfiles} library={library} onChange={setModeProfiles} />;
+<ChannelModeProfilesEditor
+  profiles={modeProfiles}
+  library={library}
+  rxFrequency={rxHz}
+  txFrequency={txHz}
+  onChange={setModeProfiles}
+/>;
 ```
 
 ## Behaviour

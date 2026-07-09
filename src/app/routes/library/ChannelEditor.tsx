@@ -4,8 +4,10 @@ import { Link, useNavigate } from 'react-router-dom';
 import type { Channel, ChannelModeProfile, Library, ScanInclusion } from '@core/models/library.ts';
 import { reconcileChannelLocation } from '@core/domain/channelLocation.ts';
 import { newChannel } from '@core/domain/factories.ts';
-import { syncModeProfiles, validateModeProfiles } from '@core/domain/modeProfiles.ts';
+import { syncModeProfiles, validateModeProfiles, reconcilePrimaryMode, resolveChannelPrimaryMode } from '@core/domain/modeProfiles.ts';
 import type { ChannelMode } from '@core/models/libraryTypes.ts';
+import { GradientSegmentedControl, FormSection, PercentLevelSlider, UnsavedChangesModal } from '../../components/ui/index.ts';
+import { modeColor, modeLabel, type ChannelMode as UiChannelMode } from '../../lib/channelModes.ts';
 import ForbidTransmitSegment from '../../components/channels/ForbidTransmitSegment.tsx';
 import ScanInclusionSegment from '../../components/channels/ScanInclusionSegment.tsx';
 import ChannelLocationSection, {
@@ -15,12 +17,10 @@ import ChannelLocationSection, {
 import ChannelModeProfilesEditor from '../../components/channels/ChannelModeProfilesEditor.tsx';
 import ChannelModesMultiSelect from '../../components/channels/ChannelModesMultiSelect.tsx';
 import ChannelWireNameExamples from '../../components/channels/ChannelWireNameExamples.tsx';
-import type { ChannelMode as UiChannelMode } from '../../lib/channelModes.ts';
 import RepeaterVerifyPanel from '../../components/repeaters/RepeaterVerifyPanel.tsx';
 import ChannelZoneMembershipSection from '../../components/library/ChannelZoneMembershipSection.tsx';
 import ScanListSummary from '../../components/library/ScanListSummary.tsx';
 import ChannelDeleteButton from '../../components/library/ChannelDeleteButton.tsx';
-import { FormSection, PercentLevelSlider, UnsavedChangesModal } from '../../components/ui/index.ts';
 import { useEntityEditorUnsavedGuard } from '../../hooks/useEntityFormDirty.ts';
 import { hzToMhzString, mhzStringToHz } from '../../lib/units.ts';
 import { persistence } from '../../state/persistence.ts';
@@ -48,6 +48,7 @@ export default function ChannelEditor({
   const [forbidTransmit, setForbidTransmit] = useState(base.forbidTransmit === true);
   const [comment, setComment] = useState(base.comment);
   const [modeProfiles, setModeProfiles] = useState<ChannelModeProfile[]>(base.modeProfiles);
+  const [primaryMode, setPrimaryMode] = useState<ChannelMode | null>(base.primaryMode ?? null);
   const [location, setLocation] = useState<ChannelLocationValues>(() =>
     channelLocationValuesFromChannel(base),
   );
@@ -85,6 +86,7 @@ export default function ChannelEditor({
       useLocation: reconciled.useLocation,
       maidenheadLocator: reconciled.maidenheadLocator,
       modeProfiles,
+      primaryMode: modeProfiles.length > 0 ? reconcilePrimaryMode(primaryMode, modeProfiles) : null,
     };
     if (trimmedAbbrev) {
       row.abbreviation = trimmedAbbrev;
@@ -127,6 +129,7 @@ export default function ChannelEditor({
       maidenheadLocator: source.maidenheadLocator,
       hideFromInternalMap: source.hideFromInternalMap,
       modeProfiles: source.modeProfiles.map((profile) => ({ ...profile })),
+      primaryMode: source.primaryMode ?? null,
     };
     void persistence.putChannel(row, null).then((result) => {
       if (result.ok) navigate(`/library/channels/${row.id}`);
@@ -148,9 +151,13 @@ export default function ChannelEditor({
 
   function handleModesChange(modes: UiChannelMode[]) {
     const coreModes = modes.filter((m): m is ChannelMode => m !== 'other');
-    setModeProfiles(syncModeProfiles(coreModes, modeProfiles));
+    const nextProfiles = syncModeProfiles(coreModes, modeProfiles);
+    setModeProfiles(nextProfiles);
+    setPrimaryMode((prev) => reconcilePrimaryMode(prev, nextProfiles));
   }
 
+  const liveRxHz = mhzStringToHz(rx);
+  const liveTxHz = mhzStringToHz(tx);
   const liveChannel = buildRow();
   const scanListOptions = [
     { value: '', label: 'None' },
@@ -256,11 +263,32 @@ export default function ChannelEditor({
             <FormSection>
               <ChannelModesMultiSelect value={selectedModes} onChange={handleModesChange} />
             </FormSection>
+            <FormSection>
+              <GradientSegmentedControl
+                label="Primary mode"
+                description={
+                  modeProfiles.length === 0
+                    ? 'Select at least one mode to set which mode is primary for dual-mode CPS export.'
+                    : 'Primary mode drives dual-mode Channel Type on Anytone and DM32 export.'
+                }
+                value={resolveChannelPrimaryMode({ primaryMode, modeProfiles }) ?? ''}
+                onChange={(value) => setPrimaryMode(value as ChannelMode)}
+                data={modeProfiles.map((profile) => ({
+                  value: profile.mode,
+                  label: modeLabel(profile.mode),
+                }))}
+                segmentColors={modeProfiles.map((profile) => modeColor(profile.mode))}
+                fullWidth
+                disabled={modeProfiles.length === 0}
+              />
+            </FormSection>
             {modeProfiles.length > 0 ? (
               <FormSection>
                 <ChannelModeProfilesEditor
                   profiles={modeProfiles}
                   library={library}
+                  rxFrequency={liveRxHz}
+                  txFrequency={liveTxHz}
                   onChange={setModeProfiles}
                 />
               </FormSection>
