@@ -2,7 +2,7 @@
 
 Tier-3 wire reference. Values **observed** in the operator rich AT-D890UV export (`D890 codeplug export`, July 2026). A single codeplug rarely contains every enum value — use this list to **manually elicit** missing values in CPS and update wire docs + `channelDefaults.ts` / serialisers.
 
-**Tracking:** [#297](https://github.com/pskillen/codeplug-studio/issues/297) · **Gaps:** [csv-reconciliation-gaps.md](../../features/import-export/anytone/csv-reconciliation-gaps.md)
+**Tracking:** [#297](https://github.com/pskillen/codeplug-studio/issues/297) · **Manual elicitation:** [#307](https://github.com/pskillen/codeplug-studio/issues/307) (coordinates with [#303](https://github.com/pskillen/codeplug-studio/issues/303)) · **Gaps:** [csv-reconciliation-gaps.md](../../features/import-export/anytone/csv-reconciliation-gaps.md)
 
 **Legend**
 
