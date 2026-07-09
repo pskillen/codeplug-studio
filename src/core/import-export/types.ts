@@ -16,6 +16,8 @@ export interface FormatExportDefaults {
   defaultScanInclusion: DefaultScanInclusion;
   expandModes?: boolean;
   expandRxGroupLists?: boolean;
+  /** When false, skip zone-derived scan list synthesis. Format-specific default. */
+  exportZoneDerivedScanLists?: boolean;
 }
 
 export type FormatStatus = 'shipped' | 'planned';

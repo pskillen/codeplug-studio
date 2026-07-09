@@ -21,6 +21,7 @@ export const anytoneExportAdapter: MultiFileExportAdapter = {
     defaultScanInclusion: 'scan',
     expandModes: false,
     expandRxGroupLists: false,
+    exportZoneDerivedScanLists: false,
   },
   fileNames: [...ANYTONE_EXPORT_FILE_NAMES],
   resolveExportFileNames(assembled) {

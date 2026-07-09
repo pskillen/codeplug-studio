@@ -117,10 +117,14 @@ export default function ExportBuildSettingsSections({
             assignment on the Channels page — not export defaults.
           </Text>
         )}
-        {build.formatId === 'dm32' ? (
+        {(build.formatId === 'dm32' || build.formatId === 'anytone') && (
           <Switch
-            label="Export zone-derived scan lists (Scan.csv)"
-            description="Requires per-zone scan export enabled on the Zones page."
+            label={
+              build.formatId === 'dm32'
+                ? 'Export zone-derived scan lists (Scan.csv)'
+                : 'Export zone-derived scan lists (ScanList.CSV)'
+            }
+            description="Requires per-zone Export as scan list on the Zones page. Library scan lists still export when enabled."
             checked={resolvedSettings.exportZoneDerivedScanLists}
             disabled={saving}
             onChange={(event) =>
@@ -129,7 +133,7 @@ export default function ExportBuildSettingsSections({
               })
             }
           />
-        ) : null}
+        )}
       </FieldCard>
     </Stack>
   );

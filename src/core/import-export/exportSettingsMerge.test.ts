@@ -23,4 +23,11 @@ describe('mergeExportOptions', () => {
   it('getFormatExportDefaults returns chirp skip default', () => {
     expect(getFormatExportDefaults('chirp').defaultScanInclusion).toBe('skip');
   });
+
+  it('defaults exportZoneDerivedScanLists on for dm32 and off for anytone', () => {
+    const dm32 = { ...newFormatBuild('proj', 'dm32-baofeng-dm32uv'), exportSettings: {} };
+    const anytone = { ...newFormatBuild('proj', 'anytone-at-d890uv'), exportSettings: {} };
+    expect(mergeExportOptions(dm32).exportZoneDerivedScanLists).toBe(true);
+    expect(mergeExportOptions(anytone).exportZoneDerivedScanLists).toBe(false);
+  });
 });
