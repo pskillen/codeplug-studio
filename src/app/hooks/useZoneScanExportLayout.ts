@@ -8,8 +8,8 @@ import {
   updateZoneGroupingEntry,
 } from '@core/domain/zoneGroupingLayout.ts';
 import { normalizeZoneMemberEntry } from '@core/domain/zoneMembers.ts';
-import { getAnytoneProfile } from '@core/import-export/formats/anytone/profiles.ts';
-import { getDm32Profile } from '@core/import-export/formats/dm32/profiles.ts';
+import { scanListMemberCapForProfile } from '@core/import-export/formatProfiles.ts';
+import type { FormatId } from '@core/import-export/types.ts';
 import type { LibrarySlice } from '@core/services/assemble.ts';
 import { useBuildLayout } from '../routes/builds/BuildLayoutContext.tsx';
 import { useProjects } from '../state/useProjects.ts';
@@ -25,9 +25,7 @@ export function zoneScanExportSupported(build: FormatBuild): boolean {
 }
 
 export function scanListMemberCapForBuild(build: FormatBuild): number {
-  if (build.formatId === 'dm32') return getDm32Profile(build.profileId).scanListMembers;
-  if (build.formatId === 'anytone') return getAnytoneProfile(build.profileId).scanListMembers;
-  return 16;
+  return scanListMemberCapForProfile(build.formatId as FormatId, build.profileId);
 }
 
 export function useZoneScanExportLayout() {

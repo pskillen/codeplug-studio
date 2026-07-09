@@ -1,10 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import type { Zone } from '@core/models/library.ts';
+import type { LibrarySlice } from '@core/services/assemble.ts';
 import { initialRevision } from '@core/models/revision.ts';
-import {
-  seedZoneGroupingFromLibrary,
-  syncZoneGroupingWithLibrary,
-} from './zoneGroupingLayout.ts';
+import { seedZoneGroupingFromLibrary, syncZoneGroupingWithLibrary } from './zoneGroupingLayout.ts';
 
 const PROJECT_ID = '11111111-1111-4111-8111-111111111111';
 const ZONE_A = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
@@ -23,16 +21,28 @@ function zone(id: string, name: string): Zone {
   };
 }
 
+function emptyLibrary(zones: Zone[]): LibrarySlice {
+  return {
+    channels: [],
+    zones,
+    talkGroups: [],
+    digitalContacts: [],
+    analogContacts: [],
+    rxGroupLists: [],
+    scanLists: [],
+  };
+}
+
 describe('syncZoneGroupingWithLibrary', () => {
   it('seeds from library when layout is undefined', () => {
-    const library = { zones: [zone(ZONE_A, 'Alpha'), zone(ZONE_B, 'Beta')] };
+    const library = emptyLibrary([zone(ZONE_A, 'Alpha'), zone(ZONE_B, 'Beta')]);
     const synced = syncZoneGroupingWithLibrary(undefined, library);
     expect(synced.zones.map((entry) => entry.id)).toEqual([ZONE_A, ZONE_B]);
   });
 
   it('adds new library zones and drops removed ones', () => {
-    const library = { zones: [zone(ZONE_A, 'Alpha'), zone(ZONE_B, 'Beta')] };
-    const layout = seedZoneGroupingFromLibrary({ zones: [zone(ZONE_A, 'Alpha')] });
+    const library = emptyLibrary([zone(ZONE_A, 'Alpha'), zone(ZONE_B, 'Beta')]);
+    const layout = seedZoneGroupingFromLibrary(emptyLibrary([zone(ZONE_A, 'Alpha')]));
     layout.zones[0]!.exportScanList = true;
     layout.zones[0]!.scanCarrierFrequencyHz = 430_000_000;
 

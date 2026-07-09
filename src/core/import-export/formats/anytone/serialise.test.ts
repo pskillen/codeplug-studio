@@ -367,9 +367,7 @@ describe('anytone serialise', () => {
         sections: [
           {
             kind: 'zoneGrouping' as const,
-            zones: [
-              { id: zone.id, name: zone.name, channelIds: [ch2.id], exportScanList: true },
-            ],
+            zones: [{ id: zone.id, name: zone.name, channelIds: [ch2.id], exportScanList: true }],
           },
         ],
       },

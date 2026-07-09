@@ -28,8 +28,7 @@ export function resolvedBuildExportSettings(build: FormatBuild): ResolvedBuildEx
       stored.useChannelAbbreviation ?? DEFAULT_BUILD_EXPORT_SETTINGS.useChannelAbbreviation,
     useTalkGroupAbbreviation:
       stored.useTalkGroupAbbreviation ?? DEFAULT_BUILD_EXPORT_SETTINGS.useTalkGroupAbbreviation,
-    exportZoneDerivedScanLists:
-      stored.exportZoneDerivedScanLists ?? exportZoneDerivedDefault,
+    exportZoneDerivedScanLists: stored.exportZoneDerivedScanLists ?? exportZoneDerivedDefault,
     defaultScanInclusion: stored.defaultScanInclusion,
   };
 }

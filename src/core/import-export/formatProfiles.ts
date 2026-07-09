@@ -87,6 +87,17 @@ function anytoneProfileToOption(profile: AnytoneRadioProfile): FormatProfileOpti
   };
 }
 
+/** Scan list member cap for zone-derived scan UI — export boundary only. */
+export function scanListMemberCapForProfile(formatId: FormatId, profileId: string): number {
+  if (formatId === 'dm32') {
+    return getDm32Profile(profileId).scanListMembers;
+  }
+  if (formatId === 'anytone') {
+    return getAnytoneProfile(profileId).scanListMembers;
+  }
+  return 16;
+}
+
 /** Read-only wire-limit summary for build detail UI — export boundary only. */
 export function formatProfileWireHint(formatId: FormatId, profileId: string): string | null {
   if (formatId === 'opengd77') {

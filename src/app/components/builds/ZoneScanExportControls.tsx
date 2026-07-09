@@ -40,7 +40,9 @@ export function ZoneScanRowHeader({
       <ActionIcon
         variant="subtle"
         size="sm"
-        aria-label={expanded ? `Collapse ${zone.name} scan settings` : `Expand ${zone.name} scan settings`}
+        aria-label={
+          expanded ? `Collapse ${zone.name} scan settings` : `Expand ${zone.name} scan settings`
+        }
         onClick={onToggleExpand}
       >
         {expanded ? (
@@ -129,8 +131,12 @@ export function ZoneScanExpandPanel({
         {zone.members
           .map(normalizeZoneMemberEntry)
           .filter(
-            (member): member is Extract<import('@core/models/library.ts').ZoneMemberEntry, { kind: 'channel' }> =>
-              member.kind === 'channel',
+            (
+              member,
+            ): member is Extract<
+              import('@core/models/library.ts').ZoneMemberEntry,
+              { kind: 'channel' }
+            > => member.kind === 'channel',
           )
           .map((member) => {
             const channel = channelById.get(member.channelId);

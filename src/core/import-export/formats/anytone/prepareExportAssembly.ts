@@ -1,4 +1,8 @@
-import type { AssembledBuild, AssembledChannel, AssembledScanList } from '@core/services/assemble.ts';
+import type {
+  AssembledBuild,
+  AssembledChannel,
+  AssembledScanList,
+} from '@core/services/assemble.ts';
 import type { CpsExportOptions } from '@core/import-export/types.ts';
 import type { LibrarySlice } from '@core/services/assemble.ts';
 import {

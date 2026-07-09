@@ -1,8 +1,5 @@
 import type { CpsExportOptions } from '@core/import-export/types.ts';
-import {
-  buildScanContext,
-  effectiveScanSkips,
-} from '@core/import-export/scanInclusion/index.ts';
+import { buildScanContext, effectiveScanSkips } from '@core/import-export/scanInclusion/index.ts';
 import {
   layoutEntry,
   scanMasterEnabled,

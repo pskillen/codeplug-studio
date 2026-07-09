@@ -9,13 +9,12 @@ How zones appear on the CPS wire for builds with the **zone grouping** trait. **
 ## Operator workflow
 
 1. Curate zone membership in **Library → Zones** (including nested zones and optional **Don't export as its own zone** — see [nested-zones.md](../library/nested-zones.md)).
-2. Open **Radio builds → Zones** on the build — wire preview table (include toggle + wire name override). **Anytone:** airband-only zones appear on **Airband**; dual-mode zones appear on both **Zones** and **Airband**.
-3. For **DM32** builds, use the export controls above the table:
+2. Open **Radio builds → Zones** on the build — wire preview table (include toggle + wire name override). **DM32 and Anytone:** expand each zone row for scan export controls — **Export as scan list** and member counts stay visible in the row header; per-member **Include in scan list** toggles live in the expanded panel. **Anytone:** airband-only zones appear on **Airband**; dual-mode zones appear on both **Zones** and **Airband**.
+3. For **DM32** builds, the expanded zone panel also includes:
    - **Export scratch channel** — per-zone flag on `ZoneGroupingLayout` (serialisation deferred; UI persists the preference).
-   - **Export scan list** — when enabled, export emits a zone-derived `Scan.csv` entry (subject to the master toggle on Export).
    - **Scan carrier frequency** — MHz simplex for the `{zoneName} Scan` carrier channel (default 145.500).
-   - **Include in scan list** — per-member toggle on library zone membership (`includeInScanList`; default on). Honoured when `Channel.scanSkip` is not set.
-4. Export from **Export** — `assemble` derives `memberChannelIds` from library membership via `resolveEffectiveZoneChannelIds` (nested zones flattened). Layout `channelIds` reorder ids that appear in both lists; new effective ids append at the end.
+4. Enable **Export zone-derived scan lists** on the build **Export** page when you want zone flags to emit scan lists (DM32 `Scan.csv`, Anytone `ScanList.CSV` alongside library scan lists).
+5. Export from **Export** — `assemble` derives `memberChannelIds` from library membership via `resolveEffectiveZoneChannelIds` (nested zones flattened). Layout `channelIds` reorder ids that appear in both lists; new effective ids append at the end.
 
 A dedicated build zone layout editor (member reorder per zone) is **deferred** — see [#99](https://github.com/pskillen/codeplug-studio/issues/99).
 
