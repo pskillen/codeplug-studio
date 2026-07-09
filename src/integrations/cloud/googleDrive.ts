@@ -1,6 +1,7 @@
 import { createDriveApiClient, type DriveApiClient, driveApi } from './driveApi.ts';
 import {
   clearDriveSession,
+  driveSessionIsValid,
   loadDriveSession,
   saveDriveLastAccount,
   saveDriveSession,
@@ -49,14 +50,6 @@ export interface GoogleDriveDeps {
   loadIdentity: () => Promise<GoogleIdentityClient>;
   fetchImpl: typeof fetch;
   getClientId: () => string;
-}
-
-const TOKEN_REFRESH_BUFFER_MS = 60_000;
-
-function sessionIsValid(session: DriveSession | null): session is DriveSession {
-  if (!session?.accessToken) return false;
-  if (!session.expiresAt) return true;
-  return session.expiresAt - TOKEN_REFRESH_BUFFER_MS > Date.now();
 }
 
 function requireClientId(getClientId: () => string): string {
@@ -118,7 +111,7 @@ export function createGoogleDrivePort(deps?: Partial<GoogleDriveDeps>): GoogleDr
 
   function getValidSession(): DriveSession {
     const session = loadDriveSession();
-    if (!sessionIsValid(session)) {
+    if (!driveSessionIsValid(session)) {
       throw new DriveAuthError();
     }
     return session;
@@ -162,7 +155,7 @@ export function createGoogleDrivePort(deps?: Partial<GoogleDriveDeps>): GoogleDr
     },
 
     isConnected() {
-      return sessionIsValid(loadDriveSession());
+      return driveSessionIsValid(loadDriveSession());
     },
 
     getAccountLabel() {

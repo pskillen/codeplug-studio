@@ -1,6 +1,8 @@
+export { handleDriveAuthFailure, isDriveAuthError } from './driveAuthFailure.ts';
 export {
   clearDriveSession,
   DRIVE_ACCESS_TOKEN_KEY,
+  DRIVE_TOKEN_REFRESH_BUFFER_MS,
   DRIVE_LAST_ACCOUNT_KEY,
   DRIVE_LAST_FOLDER_ID_KEY,
   DRIVE_LAST_FOLDER_PATH_KEY,
@@ -9,7 +11,9 @@ export {
   loadDriveLastAccount,
   loadDriveLastFolderId,
   loadDriveLastFolderPath,
+  driveSessionIsValid,
   loadDriveSession,
+  msUntilDriveSessionExpiry,
   saveDriveLastAccount,
   saveDriveLastFolderId,
   saveDriveLastFolderPath,

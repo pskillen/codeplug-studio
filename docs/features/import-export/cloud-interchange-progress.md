@@ -12,8 +12,8 @@
 
 | Slice | Status | Notes |
 | ----- | ------ | ----- |
-| 0 Branch + progress pair | In progress | |
-| 1 Shared Drive session (#286) | Not started | |
+| 0 Branch + progress pair | Complete | `c80644f` |
+| 1 Shared Drive session (#286) | Complete | |
 | 2 Drive reconnect UX (#286) | Not started | |
 | 3 Interchange import + sync summary (#285) | Not started | |
 | 4 Portable dirty tracking (#285) | Not started | |
