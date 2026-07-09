@@ -50,24 +50,24 @@ Every stored entity includes:
 
 ### `interchange` (`ProjectInterchange`)
 
-Optional export destination memory — omitted when never exported.
+Optional portable destination memory — updated on import **or** export. Omitted when never synced to a file.
 
 **`localFile`**
 
-| Field        | Type              | Required |
-| ------------ | ----------------- | -------- |
-| `fileName`   | string            | yes      |
-| `exportedAt` | string (ISO 8601) | yes      |
+| Field        | Type              | Required | Notes                         |
+| ------------ | ----------------- | -------- | ----------------------------- |
+| `fileName`   | string            | yes      | Last local import/export name |
+| `exportedAt` | string (ISO 8601) | yes      | Last portable sync timestamp  |
 
 **`googleDrive`**
 
-| Field        | Type              | Required |
-| ------------ | ----------------- | -------- |
-| `folderId`   | string            | yes      |
-| `folderName` | string            | no       |
-| `fileId`     | string            | yes      |
-| `fileName`   | string            | yes      |
-| `exportedAt` | string (ISO 8601) | yes      |
+| Field        | Type              | Required | Notes                        |
+| ------------ | ----------------- | -------- | ---------------------------- |
+| `folderId`   | string            | yes      |                              |
+| `folderName` | string            | no       |                              |
+| `fileId`     | string            | yes      |                              |
+| `fileName`   | string            | yes      |                              |
+| `exportedAt` | string (ISO 8601) | yes      | Last portable sync timestamp |
 
 CPS format destination keys (e.g. `opengd77`) are reserved for Phase 4+.
 

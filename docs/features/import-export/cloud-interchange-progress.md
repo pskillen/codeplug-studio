@@ -6,21 +6,29 @@
 
 ## Overall status
 
-**Status:** In progress
+**Status:** Complete (pending merge)
 
 ## Slices
 
-| Slice | Status | Notes |
-| ----- | ------ | ----- |
-| 0 Branch + progress pair | Complete | `c80644f` |
-| 1 Shared Drive session (#286) | Complete | |
-| 2 Drive reconnect UX (#286) | Complete | |
-| 3 Interchange import + sync summary (#285) | Not started | |
-| 4 Portable dirty tracking (#285) | Not started | |
-| 5 ProjectInterchangeBar (#285) | Not started | |
-| 6 Re-import + refresh prompt (#285) | Not started | |
-| 7 Docs + PR | Not started | |
+| Slice                                      | Status   | Notes     |
+| ------------------------------------------ | -------- | --------- |
+| 0 Branch + progress pair                   | Complete | `c80644f` |
+| 1 Shared Drive session (#286)              | Complete | `2ecd295` |
+| 2 Drive reconnect UX (#286)                | Complete | `6c08400` |
+| 3 Interchange import + sync summary (#285) | Complete | `1d95c71` |
+| 4 Portable dirty tracking (#285)           | Complete | `7b54580` |
+| 5 ProjectInterchangeBar (#285)             | Complete | `5079868` |
+| 6 Re-import + refresh prompt (#285)        | Complete | `a24e86b` |
+| 7 Docs + PR                                | Complete |           |
+
+## Shipped
+
+- `DriveSessionProvider` — shared OAuth state, expiry refresh, `withDriveAuthRetry`
+- `DriveSessionBanner`, reconnect CTAs across Drive entry points
+- `ProjectInterchangeBar` — source label, dirty-gated Save to Drive, browser-only warning
+- `recordImportDestination`, `projectSyncSummary`, YAML import resolver with UUID-match overwrite
+- `RefreshFromDriveBanner` on project switch when remote YAML is newer
 
 ## Next
 
-- Slice 0: commit progress pair; Slice 1: DriveSessionProvider
+- Open PR; manual multi-device verify per [google-drive.md](google-drive.md) checklist

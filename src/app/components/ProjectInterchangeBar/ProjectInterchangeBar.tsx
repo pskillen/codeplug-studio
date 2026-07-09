@@ -11,10 +11,11 @@ import BrowserOnlyWarning from './BrowserOnlyWarning.tsx';
 export default function ProjectInterchangeBar() {
   const { activeProjectId, activeProject, refreshProjects } = useProjects();
   const { port, withDriveAuthRetry, loading: driveLoading } = useGoogleDrive();
-  const { dirty, hasPortableDestination, refresh: refreshDirty } = useProjectPortableDirty(
-    activeProjectId,
-    activeProject ?? undefined,
-  );
+  const {
+    dirty,
+    hasPortableDestination,
+    refresh: refreshDirty,
+  } = useProjectPortableDirty(activeProjectId, activeProject ?? undefined);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -31,7 +32,9 @@ export default function ProjectInterchangeBar() {
     setSaving(true);
     setError(null);
     try {
-      await withDriveAuthRetry(() => saveProjectToDrive(port, { projectId: activeProjectId, drive }));
+      await withDriveAuthRetry(() =>
+        saveProjectToDrive(port, { projectId: activeProjectId, drive }),
+      );
       await refreshProjects();
       await refreshDirty();
     } catch (err) {

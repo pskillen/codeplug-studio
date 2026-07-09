@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { newProjectMeta } from '@core/domain/factories.ts';
-import { fullLibraryAggregate, minimalProjectAggregate } from '@core/import-export/formats/native-yaml/testFixtures.ts';
+import {
+  fullLibraryAggregate,
+  minimalProjectAggregate,
+} from '@core/import-export/formats/native-yaml/testFixtures.ts';
 import {
   formatSyncDiffSummary,
   hasPortableInterchange,

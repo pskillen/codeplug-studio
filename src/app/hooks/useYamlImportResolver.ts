@@ -2,7 +2,10 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { portableSyncedAt } from '@core/services/interchangeMeta.ts';
 import { buildImportOverwriteDiff } from '../services/yamlImportResolverService.ts';
 import { parseYamlImportPreview } from '../services/yamlImportResolverService.ts';
-import { importProjectFromYaml, recordProjectImportDestination } from '../services/projectImportExportService.ts';
+import {
+  importProjectFromYaml,
+  recordProjectImportDestination,
+} from '../services/projectImportExportService.ts';
 import { useGoogleDrive } from './useGoogleDrive.ts';
 import { useProjects } from '../state/useProjects.ts';
 import type { DriveOpenSelection } from '../components/import-export/DriveBrowserModal.tsx';
@@ -137,7 +140,9 @@ export function useYamlImportResolver(options: UseYamlImportResolverOptions = {}
     );
   }
 
-  function handleDriveSelection(selection: DriveOpenSelection & { folderId?: string; folderName?: string }) {
+  function handleDriveSelection(
+    selection: DriveOpenSelection & { folderId?: string; folderName?: string },
+  ) {
     void handleYamlContent(selection.content, {
       kind: 'googleDrive',
       fileId: selection.fileId,
@@ -181,36 +186,41 @@ export function useRefreshFromDrivePrompt() {
   const drive = activeProject?.interchange?.googleDrive;
   const projectId = activeProject?.projectId;
 
-  const checkRemote = useCallback(async () => {
-    if (!projectId || !drive || !connected) {
-      setBannerOpen(false);
-      return;
-    }
-    if (dismissedRef.current.has(projectId)) {
-      return;
-    }
-    try {
-      const metadata = await withDriveAuthRetry(() => port.getFileMetadata(drive.fileId));
-      const localSyncedAt = portableSyncedAt(activeProject);
-      const remoteTime = metadata.modifiedTime;
-      if (!remoteTime || !localSyncedAt || remoteTime <= localSyncedAt) {
-        setBannerOpen(false);
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      if (!projectId || !drive || !connected) {
+        if (!cancelled) setBannerOpen(false);
         return;
       }
-      const content = await withDriveAuthRetry(() => port.readFile(drive.fileId));
-      const preview = parseYamlImportPreview(content);
-      const lines = await buildImportOverwriteDiff(projectId, preview.remoteSummary);
-      setDiffLines(lines);
-      setRemoteYaml(content);
-      setBannerOpen(true);
-    } catch {
-      setBannerOpen(false);
-    }
+      if (dismissedRef.current.has(projectId)) {
+        return;
+      }
+      try {
+        const metadata = await withDriveAuthRetry(() => port.getFileMetadata(drive.fileId));
+        if (cancelled) return;
+        const localSyncedAt = portableSyncedAt(activeProject);
+        const remoteTime = metadata.modifiedTime;
+        if (!remoteTime || !localSyncedAt || remoteTime <= localSyncedAt) {
+          if (!cancelled) setBannerOpen(false);
+          return;
+        }
+        const content = await withDriveAuthRetry(() => port.readFile(drive.fileId));
+        if (cancelled) return;
+        const preview = parseYamlImportPreview(content);
+        const lines = await buildImportOverwriteDiff(projectId, preview.remoteSummary);
+        if (cancelled) return;
+        setDiffLines(lines);
+        setRemoteYaml(content);
+        setBannerOpen(true);
+      } catch {
+        if (!cancelled) setBannerOpen(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, [activeProject, connected, drive, port, projectId, withDriveAuthRetry]);
-
-  useEffect(() => {
-    void checkRemote();
-  }, [checkRemote]);
 
   async function confirmRefresh() {
     if (!projectId || !remoteYaml || !drive) return;

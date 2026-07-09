@@ -1,9 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, renderHook } from '@testing-library/react';
 import type { ReactNode } from 'react';
-import DriveSessionProvider, {
-  useDriveSessionContext,
-} from './DriveSessionProvider.tsx';
+import DriveSessionProvider, { useDriveSessionContext } from './DriveSessionProvider.tsx';
 import { clearDriveSession, saveDriveSession } from '@integrations/cloud/drivePrefs.ts';
 import type { GoogleDrivePort } from '@integrations/cloud/index.ts';
 import { DriveAuthError } from '@integrations/cloud/index.ts';

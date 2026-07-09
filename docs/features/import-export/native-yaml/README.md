@@ -19,11 +19,11 @@ IndexedDB remains the live edit store with per-entity revision concurrency. YAML
 
 ## What is in the document
 
-| Section        | Internal type   | Notes                                                       |
-| -------------- | --------------- | ----------------------------------------------------------- |
-| `project`      | `ProjectMeta`   | Operator metadata row; optional `interchange` export memory |
-| `library`      | `Library`       | Channels, zones, contacts, talk groups, RX lists            |
-| `formatBuilds` | `FormatBuild[]` | Per-target builds with selections, overrides, trait layout  |
+| Section        | Internal type   | Notes                                                                     |
+| -------------- | --------------- | ------------------------------------------------------------------------- |
+| `project`      | `ProjectMeta`   | Operator metadata row; optional `interchange` portable destination memory |
+| `library`      | `Library`       | Channels, zones, contacts, talk groups, RX lists                          |
+| `formatBuilds` | `FormatBuild[]` | Per-target builds with selections, overrides, trait layout                |
 
 Envelope fields `schemaVersion` and `studioSchemaVersion` are documented in the tier 3 reference.
 
@@ -71,7 +71,7 @@ loadProjectSeed → ProjectAggregate
   → putProjectMeta when recording destination
 ```
 
-`ProjectMeta.interchange.localFile` and `interchange.googleDrive` remember last export destinations for pre-fill ([#59](https://github.com/pskillen/codeplug-studio/issues/59), [#62](https://github.com/pskillen/codeplug-studio/issues/62)).
+`ProjectMeta.interchange.localFile` and `interchange.googleDrive` remember the last portable destination. `exportedAt` is updated on **import and export** — it is the last successful sync timestamp used for dirty detection ([#285](https://github.com/pskillen/codeplug-studio/issues/285)).
 
 ## Implementation status
 
@@ -82,6 +82,7 @@ loadProjectSeed → ProjectAggregate
 | Import parser + validation (#58) | Shipped — `studioSchemaVersion` 9; legacy SSB modes migrate on load ([#204](https://github.com/pskillen/codeplug-studio/issues/204)) |
 | Services (#59)                   | Shipped                                                                                                                              |
 | Local file UI (#60)              | Shipped                                                                                                                              |
+| App chrome Save + import sync    | Shipped ([#285](https://github.com/pskillen/codeplug-studio/issues/285))                                                             |
 
 ## Testing
 

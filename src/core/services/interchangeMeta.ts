@@ -76,5 +76,7 @@ export function recordImportDestination(
 }
 
 export function portableSyncedAt(meta: ProjectMeta): string | null {
-  return meta.interchange?.googleDrive?.exportedAt ?? meta.interchange?.localFile?.exportedAt ?? null;
+  return (
+    meta.interchange?.googleDrive?.exportedAt ?? meta.interchange?.localFile?.exportedAt ?? null
+  );
 }

@@ -15,12 +15,7 @@ export default function DriveSessionBanner() {
     <Alert color="yellow" title="Google Drive session expired" mb="sm">
       <Group justify="space-between" align="center" wrap="nowrap" gap="sm">
         <span>Reconnect to open or save files on Google Drive.</span>
-        <Button
-          size="xs"
-          variant="light"
-          loading={loading}
-          onClick={() => void connect()}
-        >
+        <Button size="xs" variant="light" loading={loading} onClick={() => void connect()}>
           Reconnect
         </Button>
       </Group>

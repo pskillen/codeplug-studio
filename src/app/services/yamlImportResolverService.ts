@@ -6,7 +6,6 @@ import {
   summariseProjectSeed,
   type ProjectSyncSummary,
 } from '@core/services/projectSyncSummary.ts';
-import { aggregateToSeed } from '@core/services/projectSeedMapping.ts';
 import type { ProjectMeta } from '@core/models/project.ts';
 import { persistence } from '../state/persistence.ts';
 

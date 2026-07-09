@@ -16,11 +16,11 @@ Mounted in `AppLayout` above route content when a project is active.
 
 ## Behaviour
 
-| State | UI |
-| --- | --- |
-| `interchange.googleDrive` | Label + **Save to Drive** (disabled until dirty) |
-| `interchange.localFile` only | Label + link to `/import-export` export |
-| No interchange | `BrowserOnlyWarning` dismissible alert |
+| State                        | UI                                               |
+| ---------------------------- | ------------------------------------------------ |
+| `interchange.googleDrive`    | Label + **Save to Drive** (disabled until dirty) |
+| `interchange.localFile` only | Label + link to `/import-export` export          |
+| No interchange               | `BrowserOnlyWarning` dismissible alert           |
 
 Save uses `saveProjectToDrive` + `withDriveAuthRetry` and refreshes project list + dirty state.
 

@@ -31,9 +31,7 @@ function formatDriveError(err: unknown): string {
 }
 
 export type DriveConnectResult =
-  | { status: 'connected' }
-  | { status: 'cancelled' }
-  | { status: 'failed'; message: string };
+  { status: 'connected' } | { status: 'cancelled' } | { status: 'failed'; message: string };
 
 export interface DriveSessionContextValue {
   port: GoogleDrivePort;
@@ -91,10 +89,12 @@ export default function DriveSessionProvider({
     const msUntilExpiry = msUntilDriveSessionExpiry(session);
     if (msUntilExpiry === null) return;
     if (msUntilExpiry <= 0) {
-      refresh();
-      if (!port.isConnected()) {
-        setSessionExpired(true);
-      }
+      setTimeout(() => {
+        refresh();
+        if (!port.isConnected()) {
+          setSessionExpired(true);
+        }
+      }, 0);
       return;
     }
     expiryTimerRef.current = setTimeout(() => {
@@ -173,10 +173,9 @@ export default function DriveSessionProvider({
   );
 
   useEffect(() => {
-    refresh();
     scheduleExpiryRefresh();
     return clearExpiryTimer;
-  }, [clearExpiryTimer, refresh, scheduleExpiryRefresh]);
+  }, [clearExpiryTimer, scheduleExpiryRefresh]);
 
   useEffect(() => {
     const onFocus = () => {

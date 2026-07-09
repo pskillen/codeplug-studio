@@ -2,8 +2,16 @@ import { Alert, Button, Stack, Text } from '@mantine/core';
 import { useDriveSession } from '../../hooks/useDriveSession.ts';
 
 export default function GoogleDriveConnectSection() {
-  const { connected, accountLabel, loading, error, isConfigured, disconnect, connect, sessionExpired } =
-    useDriveSession();
+  const {
+    connected,
+    accountLabel,
+    loading,
+    error,
+    isConfigured,
+    disconnect,
+    connect,
+    sessionExpired,
+  } = useDriveSession();
 
   const showReconnect = isConfigured && (!connected || sessionExpired);
 
