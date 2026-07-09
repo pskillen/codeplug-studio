@@ -19,14 +19,14 @@ Provisional limits for variant `anytone-at-d890uv`. Calibrated from wire spike [
 
 ## Feature availability
 
-| Feature      | CPS files           | Studio v1 export                                                         |
-| ------------ | ------------------- | ------------------------------------------------------------------------ |
-| DMR channels | `Channel.CSV`, DMR* | Planned ([#233](https://github.com/pskillen/codeplug-studio/issues/233)) |
-| Scan lists   | `ScanList.CSV`      | Planned                                                                  |
-| AM air       | `AMAir.CSV`         | Wire documented; export deferred                                         |
-| Broadcast FM | `FM.CSV`            | Wire documented; export deferred                                         |
-| NXDN         | `NX*.CSV`           | Wire documented; export deferred                                         |
-| APRS         | `APRS.CSV`          | Blocked on internal model                                                |
+| Feature      | CPS files           | Studio v1 export                                                                                                                                                                           |
+| ------------ | ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| DMR channels | `Channel.CSV`, DMR* | Planned ([#233](https://github.com/pskillen/codeplug-studio/issues/233))                                                                                                                   |
+| Scan lists   | `ScanList.CSV`      | Planned                                                                                                                                                                                    |
+| AM air       | `AMAir.CSV`         | Channel bank export shipped ([#267](https://github.com/pskillen/codeplug-studio/issues/267)); `AMZone.CSV` export shipped ([#316](https://github.com/pskillen/codeplug-studio/issues/316)) |
+| Broadcast FM | `FM.CSV`            | Channel bank export shipped ([#268](https://github.com/pskillen/codeplug-studio/issues/268)); `FMZone.CSV` unconfirmed                                                                     |
+| NXDN         | `NX*.CSV`           | Wire documented; export deferred                                                                                                                                                           |
+| APRS         | `APRS.CSV`          | Blocked on internal model                                                                                                                                                                  |
 
 ## Related
 

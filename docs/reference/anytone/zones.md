@@ -34,5 +34,6 @@ Member order in pipe-separated columns must stay aligned on import and export.
 
 ## Related
 
+- [am-air.md](am-air.md) — `AMZone.CSV` (separate 5-column AM-bank schema; do not reuse DMR columns)
 - [scan-lists.md](scan-lists.md)
 - [Build zone grouping feature doc](../../features/builds/zone-grouping.md)

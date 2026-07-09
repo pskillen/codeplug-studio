@@ -10,6 +10,7 @@ import {
   isPreviewRowIncludedInExport,
   overrideFieldForEntityKind,
   previewWireRows,
+  type AnytoneWirePreviewBank,
   type WirePreviewEntityKind,
   type WirePreviewRow,
 } from '@core/services/previewWireRows.ts';
@@ -25,7 +26,10 @@ import { loadLibrarySlice } from '../lib/loadLibrarySlice.ts';
 
 const buildService = new BuildService(persistence);
 
-export function useBuildWirePreview(entityKind: WirePreviewEntityKind) {
+export function useBuildWirePreview(
+  entityKind: WirePreviewEntityKind,
+  anytoneBank: AnytoneWirePreviewBank = 'dmr',
+) {
   const { build } = useBuildLayout();
   const buildRef = useRef(build);
   const saveQueueRef = useRef(Promise.resolve());
@@ -43,8 +47,8 @@ export function useBuildWirePreview(entityKind: WirePreviewEntityKind) {
 
   const allRows = useMemo(() => {
     if (!library) return [];
-    return previewWireRows(build, library, entityKind, exportOptions);
-  }, [build, library, entityKind, exportOptions]);
+    return previewWireRows(build, library, entityKind, exportOptions, anytoneBank);
+  }, [build, library, entityKind, exportOptions, anytoneBank]);
 
   const rows = useMemo(() => {
     if (!hideNotIncludedInExport || !library) return allRows;

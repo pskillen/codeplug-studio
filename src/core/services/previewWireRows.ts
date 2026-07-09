@@ -29,6 +29,12 @@ import type { DMRTimeSlot, EntityRef } from '@core/models/libraryTypes.ts';
 import { directZoneMemberChannelIds, directZoneMemberZoneIds } from '@core/domain/zoneMembers.ts';
 import { isChirpAnalogueExportable } from '@core/import-export/formats/chirp/channelWire.ts';
 import { previewGeneratedChannelWireName } from './previewChannelWireName.ts';
+import { isAmAirbandBankChannel } from '@core/import-export/formats/anytone/receiveOnlyBanks.ts';
+import {
+  classifyAnytoneZoneByMembers,
+  zoneShowsOnAnytoneAirbandBank,
+  zoneShowsOnAnytoneDmrBank,
+} from '@core/import-export/formats/anytone/zonePartition.ts';
 
 export type WirePreviewEntityKind =
   'channel' | 'zone' | 'scanList' | 'talkGroup' | 'contact' | 'rxGroupList';
@@ -43,6 +49,9 @@ export const PREVIEW_ROW_NOT_ANALOGUE_CHIRP_NOTE = 'Not analogue — skipped on 
 
 export const PREVIEW_ROW_OMIT_FROM_EXPORT_NOTE =
   'Not exported as its own zone — channels still export inside parent zones (library setting)';
+
+/** Anytone receive-bank filter for wire preview (DMR vs AM airband). */
+export type AnytoneWirePreviewBank = 'dmr' | 'airband';
 
 /** Optional sub-lines under the display name — expansion context for wire naming. */
 export interface WirePreviewDisplayLine {
@@ -181,6 +190,7 @@ export function previewWireRows(
   library: LibrarySlice,
   entityKind: WirePreviewEntityKind,
   _options?: CpsExportOptions,
+  anytoneBank: AnytoneWirePreviewBank = 'dmr',
 ): WirePreviewRow[] {
   const projection = assemble(build, library, { profileId: _options?.profileId });
 
@@ -314,6 +324,8 @@ export function previewWireRows(
           build.exportUnlinkedChannels === false ? zoneLinkedChannelIds(build, library) : null;
 
         for (const channel of library.channels) {
+          if (anytoneBank === 'dmr' && isAmAirbandBankChannel(channel)) continue;
+          if (anytoneBank === 'airband' && !isAmAirbandBankChannel(channel)) continue;
           const channelOverride = overrideByEntityId(build.channelOverrides)
             .get(channel.id)
             ?.wireName?.trim();
@@ -388,7 +400,22 @@ export function previewWireRows(
       const shortenListNames = formatUsesListNameShortening(build.formatId);
       const reserved = shortenListNames ? new Set<string>() : null;
       const warnings: string[] = [];
-      return library.zones.map((zone) => {
+      const channelById = new Map(library.channels.map((ch) => [ch.id, ch]));
+      const zonesForPreview =
+        build.formatId === 'anytone'
+          ? library.zones.filter((zone) => {
+              const assembledZone = projection.zones.find((row) => row.zoneId === zone.id);
+              const memberIds =
+                assembledZone && assembledZone.memberChannelIds.length > 0
+                  ? assembledZone.memberChannelIds
+                  : directZoneMemberChannelIds(zone);
+              const kind = classifyAnytoneZoneByMembers(memberIds, channelById);
+              return anytoneBank === 'airband'
+                ? zoneShowsOnAnytoneAirbandBank(kind)
+                : zoneShowsOnAnytoneDmrBank(kind);
+            })
+          : library.zones;
+      return zonesForPreview.map((zone) => {
         const omitFromExport = zone.omitFromExport === true;
         const forceInclude = isEntityForceIncluded(build.zoneOverrides, zone.id);
         const zoneDirectMembers = zoneDirectMembersPreview(zone, library);

@@ -24,6 +24,7 @@ Product behaviour for Anytone CPS CSV in Codeplug Studio. Wire column tables liv
 | Cross-file wire name fidelity         | Shipped | [#292](https://github.com/pskillen/codeplug-studio/issues/292) — shared export wire context; preview + `shortenNames` on all CPS name FKs                              |
 | Library scan lists + dedicated trait  | Shipped | [#257](https://github.com/pskillen/codeplug-studio/issues/257), [#258](https://github.com/pskillen/codeplug-studio/issues/258)                                         |
 | Channel Type + DMR MODE export        | Shipped | [#303](https://github.com/pskillen/codeplug-studio/issues/303), [#311](https://github.com/pskillen/codeplug-studio/issues/311) — `primaryMode`, `dmrMode` from library |
+| AM air zone export (`AMZone.CSV`)     | Shipped | [#316](https://github.com/pskillen/codeplug-studio/issues/316) — partition from build zones; Airband build wire preview                                                |
 | CPS import                            | Planned | [#229](https://github.com/pskillen/codeplug-studio/issues/229) (Phase 7b)                                                                                              |
 
 ## Format identity
@@ -61,12 +62,12 @@ Extended banks (AM air, broadcast FM, NXDN, APRS) need export projection or futu
 
 Wire spike mapped CPS files to internal types. Full inventory: [tier-3 README — file inventory](../../../reference/anytone/README.md).
 
-| Area        | Maps today? | Blocker / note                                                                 |
-| ----------- | ----------- | ------------------------------------------------------------------------------ |
-| DMR core    | Yes         | `Channel`, `TalkGroup`, `RxGroupList`, library `ScanList`, build overrides     |
-| AM air / FM | Partial     | Existing `Channel` + `am`/`fm` modes; separate CPS banks — export deferred     |
-| NXDN        | Partial     | `ChannelModeProfileNxdn`, NX parallel files; multi-protocol build TBD          |
-| APRS        | **No**      | New `AprsConfiguration` entity — [aprs.md](../../../reference/anytone/aprs.md) |
+| Area        | Maps today? | Blocker / note                                                                                                                   |
+| ----------- | ----------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| DMR core    | Yes         | `Channel`, `TalkGroup`, `RxGroupList`, library `ScanList`, build overrides                                                       |
+| AM air / FM | Partial     | `AMAir`/`FM` channel banks shipped; `AMZone.CSV` export shipped ([#316](https://github.com/pskillen/codeplug-studio/issues/316)) |
+| NXDN        | Partial     | `ChannelModeProfileNxdn`, NX parallel files; multi-protocol build TBD                                                            |
+| APRS        | **No**      | New `AprsConfiguration` entity — [aprs.md](../../../reference/anytone/aprs.md)                                                   |
 
 Library CRUD does **not** enforce radio caps. Export adapters warn or truncate at the wire boundary only.
 

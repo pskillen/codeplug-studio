@@ -17,6 +17,10 @@ export function buildNavItems(build: FormatBuild): BuildNavItem[] {
 
   items.push({ label: 'Channels', path: `${base}/channels` });
 
+  if (build.formatId === 'anytone') {
+    items.push({ label: 'Airband', path: `${base}/airband` });
+  }
+
   if (traits.has(BuildCapabilityTrait.ZoneGrouping)) {
     items.push({ label: 'Zones', path: `${base}/zones` });
   }

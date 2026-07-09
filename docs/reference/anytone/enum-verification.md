@@ -110,7 +110,7 @@ Tier-3 wire reference. Values **observed** in the operator rich AT-D890UV export
 
 ## `AMZone.CSV`
 
-No enum columns — name/FK columns only. Confirms need for **airband zone export** separate from `DMRZone.CSV`.
+No enum columns — name/FK columns only. Populated body rows confirm a **5-column** schema (`No.`, `Zone Name`, `Zone Channel Member`, `A Channel`, `Scan Channel `) distinct from `DMRZone.CSV`. See [am-air.md](am-air.md). Export partition shipped in [#316](https://github.com/pskillen/codeplug-studio/issues/316).
 
 ---
 

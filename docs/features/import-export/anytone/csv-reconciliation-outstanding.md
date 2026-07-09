@@ -12,7 +12,8 @@ Items **skipped**, **incomplete**, or **discovered during** [#297](https://githu
 - [ ] **`Channel.CSV` VFO rows** — CPS includes slots `4001` / `4002`; Studio `serialiseChannelsCsv()` does not append them (see gaps doc P0)
 - [x] **`DMR MODE` column** — ~~Studio always exports `0`~~ **Shipped** ([#311](https://github.com/pskillen/codeplug-studio/issues/311)) — `ChannelModeProfileDMR.dmrMode` + RX/TX inference
 - [x] **Dual-mode `Channel Type`** — **Shipped** ([#303](https://github.com/pskillen/codeplug-studio/issues/303)) — `Channel.primaryMode` → `D-Digital` / `A-Analog` / `D+A TX D` / `A+D TX A`
-- [ ] **AM air zone partition** — `AMZone.CSV` + separate zone membership when airband mode active; do not mix airband channels into `DMRZone.CSV` ([#297](https://github.com/pskillen/codeplug-studio/issues/297) comment)
+- [x] **`AMZone.CSV` wire schema** — 5-column body-row sample + redacted fixture ([#316](https://github.com/pskillen/codeplug-studio/issues/316))
+- [x] **AM air zone partition serialiser** — emit `AMZone.CSV`; filter airband members out of `DMRZone.CSV` ([#316](https://github.com/pskillen/codeplug-studio/issues/316))
 
 ## Enum / value coverage
 

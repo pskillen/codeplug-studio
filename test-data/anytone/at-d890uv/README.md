@@ -2,7 +2,7 @@
 
 Redacted minimal CPS export for wire-spike tests and documentation ([#230](https://github.com/pskillen/codeplug-studio/issues/230)).
 
-**Provenance:** Derived from operator AT-D890UV CPS export-all; personal identifiers replaced with synthetic values. Private-contact and multi-scan-list body rows added from operator re-export ([#297](https://github.com/pskillen/codeplug-studio/issues/297), July 2026).
+**Provenance:** Derived from operator AT-D890UV CPS export-all; personal identifiers replaced with synthetic values. Private-contact and multi-scan-list body rows added from operator re-export ([#297](https://github.com/pskillen/codeplug-studio/issues/297), July 2026). Populated `AMZone.CSV` body rows from operator re-export ([#316](https://github.com/pskillen/codeplug-studio/issues/316), July 2026).
 
 ## Files
 
@@ -15,7 +15,8 @@ Redacted minimal CPS export for wire-spike tests and documentation ([#230](https
 | `DMRReceiveGroupCallList.CSV` | 1    | RX group list                        |
 | `RadioIDList.CSV`             | 1    | DMR ID label                         |
 | `DMRDigitalContactList.CSV`   | 1    | Private digital contact              |
-| `AMAir.CSV`                   | 2    | AM airband (extended)                |
+| `AMAir.CSV`                   | 2    | AM airband (minimal golden)          |
+| `AMZone.CSV`                  | 2    | AM airband zones (redacted body)     |
 | `FM.CSV`                      | 2    | Broadcast FM (extended)              |
 | `APRS.CSV`                    | 1    | Global APRS config (redacted)        |
 | `NXSetting.CSV`               | 1    | NXDN global settings                 |

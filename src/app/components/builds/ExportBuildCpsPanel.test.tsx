@@ -251,4 +251,46 @@ describe('ExportBuildCpsPanel', () => {
     });
     expect(await screen.findByRole('tab', { name: /AMAir\.CSV/ })).toBeInTheDocument();
   });
+
+  it('shows conditional AMZone.CSV in individual download buttons and preview', async () => {
+    listCpsExportFileNames.mockResolvedValueOnce([
+      'Channel.CSV',
+      'DMRZone.CSV',
+      'ScanList.CSV',
+      'DMRTalkGroups.CSV',
+      'DMRDigitalContactList.CSV',
+      'DMRReceiveGroupCallList.CSV',
+      'RadioIDList.CSV',
+      'AMAir.CSV',
+      'AMZone.CSV',
+    ]);
+    previewCpsExport.mockResolvedValueOnce({
+      files: {
+        'AMZone.CSV':
+          '"No.","Zone Name","Zone Channel Member","A Channel","Scan Channel "\n"1","AM Zone","Tower","Tower","Tower"',
+      },
+      warnings: [],
+      fileNames: ['AMZone.CSV'],
+    });
+
+    const anytoneBuild: FormatBuild = {
+      ...opengd77Build,
+      formatId: 'anytone',
+      profileId: 'anytone-at-d890uv',
+    };
+    render(
+      <MantineProvider>
+        <ExportBuildCpsPanel build={anytoneBuild} />
+      </MantineProvider>,
+    );
+
+    expect(await screen.findByRole('button', { name: 'AMZone.CSV' })).toBeInTheDocument();
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Preview CSV' }));
+    expect(await screen.findByRole('dialog', { name: 'CSV preview' })).toBeInTheDocument();
+    await waitFor(() => {
+      expect(previewCpsExport).toHaveBeenCalled();
+    });
+    expect(await screen.findByRole('tab', { name: /AMZone\.CSV/ })).toBeInTheDocument();
+  });
 });
