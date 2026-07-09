@@ -13,6 +13,7 @@ export default function BuildZonesWirePage() {
           zoneById: zoneScan.zoneById,
           channelById: zoneScan.channelById,
           isDm32: zoneScan.isDm32,
+          showScanCarrierControls: zoneScan.showScanCarrierControls,
           scanListMemberCap: zoneScan.scanListMemberCap,
           saving: zoneScan.saving,
           onUpdateZoneEntry: zoneScan.updateZoneEntry,

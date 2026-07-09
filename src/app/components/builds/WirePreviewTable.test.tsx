@@ -222,6 +222,7 @@ describe('WirePreviewTable', () => {
         ]),
         channelById: new Map(),
         isDm32: true,
+        showScanCarrierControls: true,
         scanListMemberCap: 16,
         saving: false,
         onUpdateZoneEntry: vi.fn(),

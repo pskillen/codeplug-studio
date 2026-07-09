@@ -30,10 +30,15 @@ export interface ZoneScanWirePreviewContext {
   zoneById: Map<string, Zone>;
   channelById: ZoneScanExpandPanelProps['channelById'];
   isDm32: boolean;
+  showScanCarrierControls: boolean;
   scanListMemberCap: number;
   saving: boolean;
   onUpdateZoneEntry: (zoneId: string, patch: Partial<ZoneGroupingZoneEntry>) => void;
-  onUpdateMemberScanInclusion: (zone: Zone, channelId: string, includeInScanList: boolean) => void;
+  onUpdateMemberScanInclusion: (
+    ownerZoneId: string,
+    channelId: string,
+    includeInScanList: boolean,
+  ) => void;
 }
 
 export interface WirePreviewTableProps {
@@ -344,7 +349,7 @@ export default function WirePreviewTable({
                       zones={zoneScanContext.zones}
                       entry={zoneLayoutEntry}
                       scanListMemberCap={zoneScanContext.scanListMemberCap}
-                      isDm32={zoneScanContext.isDm32}
+                      showScanCarrierControls={zoneScanContext.showScanCarrierControls}
                       expanded={zoneExpanded}
                       saving={zoneScanContext.saving}
                       onToggleExpand={() => toggleZoneExpanded(row.libraryEntityId)}
@@ -373,16 +378,18 @@ export default function WirePreviewTable({
                   <Table.Td colSpan={3} p={0}>
                     <ZoneScanExpandPanel
                       zone={zone}
+                      zones={zoneScanContext.zones}
                       entry={zoneLayoutEntry}
                       channelById={zoneScanContext.channelById}
                       isDm32={zoneScanContext.isDm32}
+                      showScanCarrierControls={zoneScanContext.showScanCarrierControls}
                       saving={zoneScanContext.saving}
                       onUpdateZoneEntry={(patch) =>
                         zoneScanContext.onUpdateZoneEntry(row.libraryEntityId, patch)
                       }
-                      onUpdateMemberScanInclusion={(channelId, includeInScanList) =>
+                      onUpdateMemberScanInclusion={(ownerZoneId, channelId, includeInScanList) =>
                         zoneScanContext.onUpdateMemberScanInclusion(
-                          zone,
+                          ownerZoneId,
                           channelId,
                           includeInScanList,
                         )

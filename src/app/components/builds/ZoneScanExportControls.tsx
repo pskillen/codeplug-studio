@@ -2,9 +2,11 @@ import { ActionIcon, Badge, Group, NumberInput, Stack, Switch, Text } from '@man
 import { IconChevronDown, IconChevronRight } from '@tabler/icons-react';
 import type { Zone } from '@core/models/library.ts';
 import type { ZoneGroupingZoneEntry } from '@core/models/traitLayout.ts';
-import { zoneScanMemberCounts } from '@core/import-export/zoneDerivedScanLists/members.ts';
+import {
+  collectZoneScanMemberRefs,
+  zoneScanMemberCounts,
+} from '@core/import-export/zoneDerivedScanLists/members.ts';
 import { channelDisplayLabel } from '@core/domain/channelNaming.ts';
-import { normalizeZoneMemberEntry } from '@core/domain/zoneMembers.ts';
 import { ICON_SIZE_ACTION, ICON_STROKE } from '../../lib/iconSizes.ts';
 
 const DEFAULT_CARRIER_MHZ = 145.5;
@@ -14,7 +16,7 @@ export interface ZoneScanRowHeaderProps {
   zones: Zone[];
   entry: ZoneGroupingZoneEntry | undefined;
   scanListMemberCap: number;
-  isDm32: boolean;
+  showScanCarrierControls: boolean;
   expanded: boolean;
   saving: boolean;
   onToggleExpand: () => void;
@@ -26,7 +28,7 @@ export function ZoneScanRowHeader({
   zones,
   entry,
   scanListMemberCap,
-  isDm32,
+  showScanCarrierControls,
   expanded,
   saving,
   onToggleExpand,
@@ -61,9 +63,9 @@ export function ZoneScanRowHeader({
       <Badge size="sm" variant="light" color={capExceeded ? 'orange' : 'gray'}>
         {included} / {total} scan members (cap {scanListMemberCap})
       </Badge>
-      {isDm32 && entry?.exportScanList ? (
+      {showScanCarrierControls && entry?.exportScanList ? (
         <Text size="xs" c="dimmed">
-          Carrier + Scan.csv when export toggle is on
+          Carrier channel + scan list when export toggle is on
         </Text>
       ) : null}
     </Group>
@@ -72,19 +74,27 @@ export function ZoneScanRowHeader({
 
 export interface ZoneScanExpandPanelProps {
   zone: Zone;
+  zones: Zone[];
   entry: ZoneGroupingZoneEntry | undefined;
   channelById: Map<string, import('@core/models/library.ts').Channel>;
   isDm32: boolean;
+  showScanCarrierControls: boolean;
   saving: boolean;
   onUpdateZoneEntry: (patch: Partial<ZoneGroupingZoneEntry>) => void;
-  onUpdateMemberScanInclusion: (channelId: string, includeInScanList: boolean) => void;
+  onUpdateMemberScanInclusion: (
+    ownerZoneId: string,
+    channelId: string,
+    includeInScanList: boolean,
+  ) => void;
 }
 
 export function ZoneScanExpandPanel({
   zone,
+  zones,
   entry,
   channelById,
   isDm32,
+  showScanCarrierControls,
   saving,
   onUpdateZoneEntry,
   onUpdateMemberScanInclusion,
@@ -93,68 +103,66 @@ export function ZoneScanExpandPanel({
     entry?.scanCarrierFrequencyHz != null
       ? entry.scanCarrierFrequencyHz / 1_000_000
       : DEFAULT_CARRIER_MHZ;
+  const memberRefs = collectZoneScanMemberRefs(zone, zones);
+  const zoneById = new Map(zones.map((row) => [row.id, row]));
 
   return (
     <Stack gap="sm" pl="md" py="xs">
       {isDm32 ? (
-        <>
-          <Switch
-            label="Export scratch channel"
-            description="Deferred on wire — layout flag only until scratch serialise ships."
-            checked={entry?.exportScratchChannel ?? false}
-            disabled={saving}
-            onChange={(event) =>
-              onUpdateZoneEntry({ exportScratchChannel: event.currentTarget.checked })
-            }
-          />
-          {entry?.exportScanList ? (
-            <NumberInput
-              label="Scan carrier (MHz)"
-              value={carrierMhz}
-              decimalScale={3}
-              min={0}
-              disabled={saving}
-              onChange={(value) =>
-                onUpdateZoneEntry({
-                  scanCarrierFrequencyHz:
-                    typeof value === 'number' ? Math.round(value * 1_000_000) : null,
-                })
-              }
-            />
-          ) : null}
-        </>
+        <Switch
+          label="Export scratch channel"
+          description="Deferred on wire — layout flag only until scratch serialise ships."
+          checked={entry?.exportScratchChannel ?? false}
+          disabled={saving}
+          onChange={(event) =>
+            onUpdateZoneEntry({ exportScratchChannel: event.currentTarget.checked })
+          }
+        />
+      ) : null}
+      {showScanCarrierControls && entry?.exportScanList ? (
+        <NumberInput
+          label="Scan carrier (MHz)"
+          value={carrierMhz}
+          decimalScale={3}
+          min={0}
+          disabled={saving}
+          onChange={(value) =>
+            onUpdateZoneEntry({
+              scanCarrierFrequencyHz:
+                typeof value === 'number' ? Math.round(value * 1_000_000) : null,
+            })
+          }
+        />
       ) : null}
       <Stack gap={4}>
         <Text size="sm" fw={500}>
           Include in scan list
         </Text>
-        {zone.members
-          .map(normalizeZoneMemberEntry)
-          .filter(
-            (
-              member,
-            ): member is Extract<
-              import('@core/models/library.ts').ZoneMemberEntry,
-              { kind: 'channel' }
-            > => member.kind === 'channel',
-          )
-          .map((member) => {
-            const channel = channelById.get(member.channelId);
-            const label = channel ? channelDisplayLabel(channel) : member.channelId;
-            return (
-              <Group key={member.channelId} justify="space-between" wrap="nowrap">
-                <Text size="sm">{label}</Text>
-                <Switch
-                  aria-label={`Include ${label} in scan list`}
-                  checked={member.includeInScanList !== false}
-                  disabled={saving}
-                  onChange={(event) =>
-                    onUpdateMemberScanInclusion(member.channelId, event.currentTarget.checked)
-                  }
-                />
-              </Group>
-            );
-          })}
+        {memberRefs.map((member) => {
+          const channel = channelById.get(member.channelId);
+          const ownerZone = zoneById.get(member.ownerZoneId);
+          const label = channel ? channelDisplayLabel(channel) : member.channelId;
+          const nested = member.ownerZoneId !== zone.id;
+          const displayLabel =
+            nested && ownerZone ? `${label} (${ownerZone.name})` : label;
+          return (
+            <Group key={`${member.ownerZoneId}:${member.channelId}`} justify="space-between" wrap="nowrap">
+              <Text size="sm">{displayLabel}</Text>
+              <Switch
+                aria-label={`Include ${displayLabel} in scan list`}
+                checked={member.includeInScanList}
+                disabled={saving}
+                onChange={(event) =>
+                  onUpdateMemberScanInclusion(
+                    member.ownerZoneId,
+                    member.channelId,
+                    event.currentTarget.checked,
+                  )
+                }
+              />
+            </Group>
+          );
+        })}
       </Stack>
     </Stack>
   );

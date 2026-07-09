@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { FormatBuild } from '@core/models/formatBuild.ts';
-import type { Zone, ZoneMemberEntry } from '@core/models/library.ts';
+import type { ZoneMemberEntry } from '@core/models/library.ts';
 import type { ZoneGroupingLayout, ZoneGroupingZoneEntry } from '@core/models/traitLayout.ts';
 import {
   findZoneGroupingSection,
@@ -38,6 +38,7 @@ export function useZoneScanExportLayout() {
 
   const enabled = zoneScanExportSupported(build);
   const isDm32 = build.formatId === 'dm32';
+  const showScanCarrierControls = isDm32 || build.formatId === 'anytone';
   const scanListMemberCap = scanListMemberCapForBuild(build);
 
   useEffect(() => {
@@ -97,8 +98,10 @@ export function useZoneScanExportLayout() {
   );
 
   const updateMemberScanInclusion = useCallback(
-    async (zone: Zone, channelId: string, includeInScanList: boolean) => {
-      if (!activeProjectId) return;
+    async (ownerZoneId: string, channelId: string, includeInScanList: boolean) => {
+      if (!activeProjectId || !library) return;
+      const zone = library.zones.find((row) => row.id === ownerZoneId);
+      if (!zone) return;
       const members: ZoneMemberEntry[] = zone.members.map((raw) => {
         const member = normalizeZoneMemberEntry(raw);
         if (member.kind !== 'channel' || member.channelId !== channelId) return member;
@@ -126,12 +129,13 @@ export function useZoneScanExportLayout() {
         setError('Failed to save zone membership.');
       }
     },
-    [activeProjectId],
+    [activeProjectId, library],
   );
 
   return {
     enabled,
     isDm32,
+    showScanCarrierControls,
     scanListMemberCap,
     layout,
     library,

@@ -53,6 +53,40 @@ export function allZoneScanMemberChannelIds(zone: Zone, zones: Zone[]): string[]
   return walkZoneChannelIds(zone, zonesById, false);
 }
 
+export interface ZoneScanMemberRef {
+  channelId: string;
+  ownerZoneId: string;
+  includeInScanList: boolean;
+}
+
+/** Recursive channel members for scan UI toggles (includes nested zones). */
+export function collectZoneScanMemberRefs(zone: Zone, zones: Zone[]): ZoneScanMemberRef[] {
+  const zonesById = new Map(zones.map((row) => [row.id, row]));
+  const result: ZoneScanMemberRef[] = [];
+  const seen = new Set<string>();
+
+  function walk(current: Zone): void {
+    for (const raw of current.members) {
+      const member = normalizeZoneMemberEntry(raw);
+      if (member.kind === 'channel') {
+        if (seen.has(member.channelId)) continue;
+        seen.add(member.channelId);
+        result.push({
+          channelId: member.channelId,
+          ownerZoneId: current.id,
+          includeInScanList: memberIncludedInScanList(member),
+        });
+        continue;
+      }
+      const child = zonesById.get(member.zoneId);
+      if (child) walk(child);
+    }
+  }
+
+  walk(zone);
+  return result;
+}
+
 export function zoneScanMemberCounts(
   zone: Zone,
   zones: Zone[],
