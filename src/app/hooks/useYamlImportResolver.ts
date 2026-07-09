@@ -1,11 +1,13 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { portableSyncedAt } from '@core/services/interchangeMeta.ts';
+import { isRemotePortableNewer } from '@core/services/projectSyncSummary.ts';
 import { buildImportOverwriteDiff } from '../services/yamlImportResolverService.ts';
 import { parseYamlImportPreview } from '../services/yamlImportResolverService.ts';
 import {
   importProjectFromYaml,
   recordProjectImportDestination,
 } from '../services/projectImportExportService.ts';
+import { persistence } from '../state/persistence.ts';
 import { useGoogleDrive } from './useGoogleDrive.ts';
 import { useProjects } from '../state/useProjects.ts';
 import type { DriveOpenSelection } from '../components/import-export/DriveBrowserModal.tsx';
@@ -199,16 +201,23 @@ export function useRefreshFromDrivePrompt() {
       try {
         const metadata = await withDriveAuthRetry(() => port.getFileMetadata(drive.fileId));
         if (cancelled) return;
-        const localSyncedAt = portableSyncedAt(activeProject);
+        const freshMeta = await persistence.loadProjectMeta(projectId);
+        const localSyncedAt = freshMeta
+          ? portableSyncedAt(freshMeta)
+          : portableSyncedAt(activeProject);
         const remoteTime = metadata.modifiedTime;
-        if (!remoteTime || !localSyncedAt || remoteTime <= localSyncedAt) {
+        if (!isRemotePortableNewer(remoteTime, localSyncedAt)) {
           if (!cancelled) setBannerOpen(false);
           return;
         }
         const content = await withDriveAuthRetry(() => port.readFile(drive.fileId));
         if (cancelled) return;
         const preview = parseYamlImportPreview(content);
-        const lines = await buildImportOverwriteDiff(projectId, preview.remoteSummary);
+        const remoteSummary = {
+          ...preview.remoteSummary,
+          lastModifiedAt: remoteTime ?? preview.remoteSummary.portableSyncedAt,
+        };
+        const lines = await buildImportOverwriteDiff(projectId, remoteSummary);
         if (cancelled) return;
         setDiffLines(lines);
         setRemoteYaml(content);
@@ -227,13 +236,14 @@ export function useRefreshFromDrivePrompt() {
     setImporting(true);
     try {
       await importProjectFromYaml(remoteYaml, { kind: 'replaceExisting', projectId });
+      const metadata = await withDriveAuthRetry(() => port.getFileMetadata(drive.fileId));
       await recordProjectImportDestination(projectId, {
         destination: 'googleDrive',
         fileName: drive.fileName,
         folderId: drive.folderId,
         folderName: drive.folderName,
         fileId: drive.fileId,
-        syncedAt: new Date().toISOString(),
+        syncedAt: metadata.modifiedTime ?? new Date().toISOString(),
       });
       await refreshProjects();
       setBannerOpen(false);

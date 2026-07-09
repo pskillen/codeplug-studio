@@ -120,10 +120,28 @@ export function formatSyncDiffSummary(
 ): string[] {
   return [
     `Local last edited: ${formatTimestamp(local.lastModifiedAt)}`,
-    `Remote last saved: ${formatTimestamp(remote.lastModifiedAt ?? remote.portableSyncedAt)}`,
+    `Remote last saved: ${formatTimestamp(remote.portableSyncedAt ?? remote.lastModifiedAt)}`,
     `Local: ${formatCounts(local.counts)}`,
     `Remote: ${formatCounts(remote.counts)}`,
   ];
+}
+
+/** Buffer for export-then-upload timing and minor Drive clock skew. */
+export const PORTABLE_SYNC_TOLERANCE_MS = 2_000;
+
+export function isRemotePortableNewer(
+  remoteModifiedAt: string | null | undefined,
+  localSyncedAt: string | null | undefined,
+): boolean {
+  if (!remoteModifiedAt || !localSyncedAt) {
+    return false;
+  }
+  const remoteMs = Date.parse(remoteModifiedAt);
+  const localMs = Date.parse(localSyncedAt);
+  if (Number.isNaN(remoteMs) || Number.isNaN(localMs)) {
+    return remoteModifiedAt > localSyncedAt;
+  }
+  return remoteMs > localMs + PORTABLE_SYNC_TOLERANCE_MS;
 }
 
 export function hasPortableInterchange(meta: ProjectMeta): boolean {

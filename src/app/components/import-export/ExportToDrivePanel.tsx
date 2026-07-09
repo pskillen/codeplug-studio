@@ -6,6 +6,7 @@ import {
 } from '@core/services/interchangeMeta.ts';
 import { saveDriveLastFolderId, saveDriveLastFolderPath } from '@integrations/cloud/drivePrefs.ts';
 import { exportProjectToYaml } from '../../services/projectImportExportService.ts';
+import { recordDrivePortableSyncAfterWrite } from '../../services/saveProjectToDriveService.ts';
 import { useGoogleDrive } from '../../hooks/useGoogleDrive.ts';
 import { useProjects } from '../../state/useProjects.ts';
 import DriveBrowserModal, { type DriveSaveTarget } from './DriveBrowserModal.tsx';
@@ -69,13 +70,25 @@ export default function ExportToDrivePanel() {
         content = finalExport.content;
       }
 
-      await withDriveAuthRetry(() =>
+      const writeResult = await withDriveAuthRetry(() =>
         port.writeFile({
           parentId: target.folderId,
           fileName: target.fileName,
           content,
           fileId,
         }),
+      );
+
+      await recordDrivePortableSyncAfterWrite(
+        port,
+        activeProjectId,
+        {
+          fileName: target.fileName,
+          folderId: target.folderId,
+          folderName: target.folderName,
+          fileId: fileId!,
+        },
+        writeResult,
       );
 
       saveDriveLastFolderId(target.folderId);

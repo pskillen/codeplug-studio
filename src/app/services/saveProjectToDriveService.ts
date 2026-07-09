@@ -1,10 +1,39 @@
 import type { GoogleDriveInterchange } from '@core/models/interchange.ts';
-import type { GoogleDrivePort } from '@integrations/cloud/index.ts';
-import { exportProjectToYaml } from './projectImportExportService.ts';
+import type { DriveFileMetadata, GoogleDrivePort } from '@integrations/cloud/index.ts';
+import {
+  exportProjectToYaml,
+  recordProjectImportDestination,
+} from './projectImportExportService.ts';
 
 export interface SaveProjectToDriveInput {
   projectId: string;
   drive: GoogleDriveInterchange;
+}
+
+/** Align local portable sync time with Drive's authoritative modifiedTime after upload. */
+export async function recordDrivePortableSyncAfterWrite(
+  port: GoogleDrivePort,
+  projectId: string,
+  drive: GoogleDriveInterchange,
+  writeResult?: Pick<DriveFileMetadata, 'modifiedTime'>,
+): Promise<string> {
+  let syncedAt = writeResult?.modifiedTime;
+  if (!syncedAt) {
+    const metadata = await port.getFileMetadata(drive.fileId);
+    syncedAt = metadata.modifiedTime;
+  }
+  if (!syncedAt) {
+    syncedAt = new Date().toISOString();
+  }
+  await recordProjectImportDestination(projectId, {
+    destination: 'googleDrive',
+    fileName: drive.fileName,
+    folderId: drive.folderId,
+    folderName: drive.folderName,
+    fileId: drive.fileId,
+    syncedAt,
+  });
+  return syncedAt;
 }
 
 export async function saveProjectToDrive(
@@ -22,10 +51,11 @@ export async function saveProjectToDrive(
     },
   });
 
-  await port.writeFile({
+  const writeResult = await port.writeFile({
     parentId: drive.folderId,
     fileName: drive.fileName,
     content: exportResult.content,
     fileId: drive.fileId,
   });
+  await recordDrivePortableSyncAfterWrite(port, projectId, drive, writeResult);
 }

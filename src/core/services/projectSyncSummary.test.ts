@@ -7,6 +7,7 @@ import {
 import {
   formatSyncDiffSummary,
   hasPortableInterchange,
+  isRemotePortableNewer,
   portableInterchangeLabel,
   summariseProjectAggregate,
 } from './projectSyncSummary.ts';
@@ -45,5 +46,12 @@ describe('projectSyncSummary', () => {
     });
     expect(portableInterchangeLabel(meta)).toBe('Google Drive · demo.yaml');
     expect(hasPortableInterchange(meta)).toBe(true);
+  });
+
+  it('isRemotePortableNewer ignores small export-upload skew', () => {
+    const localSyncedAt = '2026-07-09T14:04:46.000Z';
+    expect(isRemotePortableNewer('2026-07-09T14:04:47.500Z', localSyncedAt)).toBe(false);
+    expect(isRemotePortableNewer('2026-07-09T14:04:49.500Z', localSyncedAt)).toBe(true);
+    expect(isRemotePortableNewer(null, localSyncedAt)).toBe(false);
   });
 });
