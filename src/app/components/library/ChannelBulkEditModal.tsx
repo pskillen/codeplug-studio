@@ -28,13 +28,22 @@ import {
   persistChannelBulkEdit,
   type PersistChannelBulkEditSuccess,
 } from '../../lib/channelBulkEdit.ts';
+import {
+  persistChannelBulkDelete,
+  type PersistChannelBulkDeleteOutcome,
+} from '../../lib/channelBulkDelete.ts';
+import type { DeleteOutcome } from '../../state/libraryService.ts';
 import { persistence } from '../../state/persistence.ts';
 
 export interface ChannelBulkEditModalProps {
   opened: boolean;
   onClose: () => void;
   channels: Channel[];
+  projectId: string | null;
+  deleteEntity: (kind: 'channel', id: string) => Promise<DeleteOutcome>;
+  reload: () => Promise<void>;
   onApplied?: (outcome: PersistChannelBulkEditSuccess) => void;
+  onDeleted?: (outcome: PersistChannelBulkDeleteOutcome) => void;
 }
 
 interface BulkEditFormState {
@@ -58,6 +67,8 @@ const INITIAL_FORM: BulkEditFormState = {
   changeAnalogSquelch: false,
   analogSquelch: null,
 };
+
+type ModalView = 'edit' | 'confirmDelete';
 
 function buildPatchFromForm(form: BulkEditFormState): ChannelBulkEditPatch {
   const patch: ChannelBulkEditPatch = {};
@@ -90,7 +101,11 @@ export default function ChannelBulkEditModal({
   opened,
   onClose,
   channels,
+  projectId,
+  deleteEntity,
+  reload,
   onApplied,
+  onDeleted,
 }: ChannelBulkEditModalProps) {
   const sessionKey = channels.map((channel) => channel.id).join(',');
   const total = channels.length;
@@ -115,8 +130,12 @@ export default function ChannelBulkEditModal({
         <ChannelBulkEditModalBody
           key={sessionKey}
           channels={channels}
+          projectId={projectId}
+          deleteEntity={deleteEntity}
+          reload={reload}
           onClose={onClose}
           onApplied={onApplied}
+          onDeleted={onDeleted}
         />
       ) : null}
     </Modal>
@@ -125,16 +144,26 @@ export default function ChannelBulkEditModal({
 
 function ChannelBulkEditModalBody({
   channels,
+  projectId,
+  deleteEntity,
+  reload,
   onClose,
   onApplied,
+  onDeleted,
 }: {
   channels: Channel[];
+  projectId: string | null;
+  deleteEntity: (kind: 'channel', id: string) => Promise<DeleteOutcome>;
+  reload: () => Promise<void>;
   onClose: () => void;
   onApplied?: (outcome: PersistChannelBulkEditSuccess) => void;
+  onDeleted?: (outcome: PersistChannelBulkDeleteOutcome) => void;
 }) {
+  const [view, setView] = useState<ModalView>('edit');
   const [form, setForm] = useState<BulkEditFormState>(INITIAL_FORM);
   const [showChannelList, setShowChannelList] = useState(false);
   const [applying, setApplying] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const patch = useMemo(() => buildPatchFromForm(form), [form]);
@@ -145,9 +174,11 @@ function ChannelBulkEditModalBody({
   );
   const analogChannelCount = useMemo(() => countChannelsWithAnalogProfile(channels), [channels]);
   const showAnalogSection = analogChannelCount > 0;
+  const busy = applying || deleting;
+  const total = channels.length;
 
   const handleApply = async () => {
-    if (!hasChanges || applying) return;
+    if (!hasChanges || busy) return;
     setApplying(true);
     setErrorMessage(null);
     try {
@@ -167,7 +198,65 @@ function ChannelBulkEditModalBody({
     }
   };
 
-  const total = channels.length;
+  const handleConfirmDelete = async () => {
+    if (!projectId || busy) return;
+    setDeleting(true);
+    setErrorMessage(null);
+    try {
+      const outcome = await persistChannelBulkDelete({
+        projectId,
+        channels,
+        deleteEntity,
+        reload,
+      });
+
+      if (outcome.deletedCount > 0) {
+        onDeleted?.(outcome);
+      }
+
+      if (outcome.failures.length === 0) {
+        onClose();
+        return;
+      }
+
+      if (outcome.deletedCount === 0) {
+        setErrorMessage(
+          outcome.failures.map((failure) => `${failure.channelName}: ${failure.message}`).join(' '),
+        );
+        setView('edit');
+        return;
+      }
+
+      onClose();
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  if (view === 'confirmDelete') {
+    return (
+      <Stack gap="md">
+        <Text>
+          Delete {total} channel{total === 1 ? '' : 's'}? This cannot be undone.
+        </Text>
+        <Text size="sm" c="dimmed">
+          Channels that are only in zones will be removed from those zones first. Channels referenced
+          by scan lists or other entities cannot be deleted until those references are cleared.
+        </Text>
+
+        {errorMessage ? <Alert color="red">{errorMessage}</Alert> : null}
+
+        <Group justify="space-between">
+          <Button variant="default" onClick={() => setView('edit')} disabled={busy}>
+            Back
+          </Button>
+          <Button color="red" onClick={() => void handleConfirmDelete()} loading={deleting}>
+            Delete {total} channel{total === 1 ? '' : 's'}
+          </Button>
+        </Group>
+      </Stack>
+    );
+  }
 
   return (
     <Stack gap="md">
@@ -328,13 +417,26 @@ function ChannelBulkEditModalBody({
 
       {errorMessage ? <Alert color="red">{errorMessage}</Alert> : null}
 
-      <Group justify="flex-end">
-        <Button variant="default" onClick={onClose} disabled={applying}>
-          Cancel
+      <Group justify="space-between">
+        <Button
+          variant="subtle"
+          color="red"
+          onClick={() => {
+            setErrorMessage(null);
+            setView('confirmDelete');
+          }}
+          disabled={busy || !projectId}
+        >
+          Delete {total} channel{total === 1 ? '' : 's'}
         </Button>
-        <Button onClick={() => void handleApply()} loading={applying} disabled={!hasChanges}>
-          Apply
-        </Button>
+        <Group gap="xs">
+          <Button variant="default" onClick={onClose} disabled={busy}>
+            Cancel
+          </Button>
+          <Button onClick={() => void handleApply()} loading={applying} disabled={!hasChanges || busy}>
+            Apply
+          </Button>
+        </Group>
       </Group>
     </Stack>
   );

@@ -43,6 +43,11 @@ import ChannelBulkEditModal from '../../../components/library/ChannelBulkEditMod
 import ChannelListFilters from '../../../components/library/ChannelListFilters.tsx';
 import ChannelZonesListCell from '../../../components/library/ChannelZonesListCell.tsx';
 import {
+  bulkDeleteAlertColor,
+  formatChannelBulkDeleteMessage,
+  type PersistChannelBulkDeleteOutcome,
+} from '../../../lib/channelBulkDelete.ts';
+import {
   formatChannelBulkEditMessage,
   type PersistChannelBulkEditSuccess,
 } from '../../../lib/channelBulkEdit.ts';
@@ -54,7 +59,7 @@ function percentLabel(value: number | null): string {
 
 export default function ChannelsListPage() {
   const navigate = useNavigate();
-  const { library, loading } = useLibrary();
+  const { library, loading, projectId, deleteEntity, reload } = useLibrary();
   const { activeProjectId } = useProjects();
   const { channels, zones } = library;
   const { position, setPosition, clearPosition } = useOperatorPosition();
@@ -64,6 +69,9 @@ export default function ChannelsListPage() {
   const [selectedKeys, setSelectedKeys] = useState<string[]>([]);
   const [bulkEditOpen, setBulkEditOpen] = useState(false);
   const [bulkEditMessage, setBulkEditMessage] = useState<string | null>(null);
+  const [bulkEditMessageColor, setBulkEditMessageColor] = useState<'green' | 'orange' | 'red'>(
+    'green',
+  );
 
   const mapChannels = filtered;
   const { skipped } = applyFilters(filtered, { requireUseLocation: true, skipZero: true });
@@ -271,11 +279,19 @@ export default function ChannelsListPage() {
       return;
     }
     setBulkEditMessage(null);
+    setBulkEditMessageColor('green');
     setBulkEditOpen(true);
   }, [navigate, selectedChannels]);
 
   const handleBulkEditApplied = useCallback((outcome: PersistChannelBulkEditSuccess) => {
     setBulkEditMessage(formatChannelBulkEditMessage(outcome));
+    setBulkEditMessageColor('green');
+    setSelectedKeys([]);
+  }, []);
+
+  const handleBulkDeleted = useCallback((outcome: PersistChannelBulkDeleteOutcome) => {
+    setBulkEditMessage(formatChannelBulkDeleteMessage(outcome));
+    setBulkEditMessageColor(bulkDeleteAlertColor(outcome));
     setSelectedKeys([]);
   }, []);
 
@@ -306,7 +322,11 @@ export default function ChannelsListPage() {
         ) : null}
 
         {bulkEditMessage ? (
-          <Alert color="green" withCloseButton onClose={() => setBulkEditMessage(null)}>
+          <Alert
+            color={bulkEditMessageColor}
+            withCloseButton
+            onClose={() => setBulkEditMessage(null)}
+          >
             {bulkEditMessage}
           </Alert>
         ) : null}
@@ -358,7 +378,11 @@ export default function ChannelsListPage() {
           opened={bulkEditOpen}
           onClose={() => setBulkEditOpen(false)}
           channels={selectedChannels}
+          projectId={projectId}
+          deleteEntity={deleteEntity}
+          reload={reload}
           onApplied={handleBulkEditApplied}
+          onDeleted={handleBulkDeleted}
         />
 
         {skipped.length > 0 ? (
