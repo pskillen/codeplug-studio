@@ -29,7 +29,7 @@ Dedicated scan lists for AT-D890UV — separate from zones (contrast OpenGD77 zo
 
 ### Zone-derived (optional export)
 
-When **Export zone-derived scan lists** is enabled on the build Export page and a zone has **Export as scan list** on `/builds/:id/zones`, export appends additional `ScanList.CSV` rows (zone wire name, no carrier channel). Library `ScanList` rows export first; channel `Scan List` FK prefers library `scanListId`. See [zone-derived-scan-lists.md](../../zone-derived-scan-lists.md).
+When **Export zone-derived scan lists** is enabled on the build Export page and a zone has **Export as scan list** on `/builds/:id/zones`, export appends additional `ScanList.CSV` rows (zone wire name) and synthesises a **carrier channel** (`{zoneName} Scan`) prepended in `DMRZone.CSV` with `Scan List` FK and **Auto Scan** enabled. Library `ScanList` rows export first. Member channels are listed in the scan list but do not receive the zone-derived FK. See [zone-derived-scan-lists.md](../../zone-derived-scan-lists.md).
 
 **Provisional caps (AT-D890UV):** 100 scan lists, 100 members per list — adjust when CPS-confirmed.
 

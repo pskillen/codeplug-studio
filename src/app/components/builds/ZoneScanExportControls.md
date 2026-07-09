@@ -11,7 +11,7 @@ Lets operators configure per-zone scan export flags on the build `ZoneGroupingLa
 | Export                | Role                                                                                 |
 | --------------------- | ------------------------------------------------------------------------------------ |
 | `ZoneScanRowHeader`   | Collapse header: expand chevron, **Export as scan list** switch, member count badge  |
-| `ZoneScanExpandPanel` | Expanded panel: per-member **Include in scan list**; DM32-only scratch + carrier MHz |
+| `ZoneScanExpandPanel` | Expanded panel: recursive **Include in scan list** toggles; carrier MHz (DM32 + Anytone); DM32-only scratch |
 
 ## Props
 
@@ -23,9 +23,9 @@ Layout state is provided by [`useZoneScanExportLayout`](../../../hooks/useZoneSc
 
 - Syncs `ZoneGroupingLayout` with library zones via `syncZoneGroupingWithLibrary`.
 - **Export as scan list** → `buildService.withZoneGroupingSection`.
-- **Include in scan list** → `persistence.putZone` (`ZoneMemberEntry.includeInScanList`).
-- DM32: carrier MHz and scratch flags in expanded panel only.
-- Anytone: scan list + member toggles only (no carrier).
+- **Include in scan list** → `persistence.putZone` on the **owning** library zone (`ZoneMemberEntry.includeInScanList`); nested zone members are listed with `(child zone)` suffix.
+- Carrier MHz when **Export as scan list** is on (DM32 and Anytone).
+- DM32-only: scratch channel flag in expanded panel.
 
 ## Related
 
