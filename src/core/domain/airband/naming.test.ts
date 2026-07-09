@@ -27,6 +27,14 @@ const nameOnlyAirport: AirbandAirportInput = {
   frequencies: [],
 };
 
+const belfastCityAirport: AirbandAirportInput = {
+  name: 'Belfast City',
+  icao: 'EGAC',
+  iata: 'BHD',
+  location: null,
+  frequencies: [],
+};
+
 describe('titleCaseWords', () => {
   it('title-cases each word', () => {
     expect(titleCaseWords('tower')).toBe('Tower');
@@ -64,6 +72,10 @@ describe('stripLeadingAirportTokens', () => {
   it('strips a leading airport name', () => {
     expect(stripLeadingAirportTokens('glasgow airport Ground', glasgowAirport)).toBe('Ground');
   });
+
+  it('strips leading words shared with a multi-word airport name', () => {
+    expect(stripLeadingAirportTokens('Belfast Fire', belfastCityAirport)).toBe('Fire');
+  });
 });
 
 describe('formatAirbandChannelName', () => {
@@ -75,6 +87,12 @@ describe('formatAirbandChannelName', () => {
     expect(formatAirbandChannelName(glasgowAirport, 'EGPF tower', { namePrefixKind: 'iata' })).toBe(
       'GLA Tower',
     );
+  });
+
+  it('drops shared airport-name words before applying the chosen prefix', () => {
+    expect(
+      formatAirbandChannelName(belfastCityAirport, 'Belfast Fire', { namePrefixKind: 'iata' }),
+    ).toBe('BHD Fire');
   });
 
   it('title-cases airport name labels when that prefix is selected', () => {

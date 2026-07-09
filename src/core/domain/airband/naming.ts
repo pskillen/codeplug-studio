@@ -52,6 +52,15 @@ export function resolveAirportNameLabel(
   return airport.name.trim() || 'Airport';
 }
 
+function addStripToken(tokens: string[], seen: Set<string>, token: string): void {
+  const trimmed = token.trim();
+  if (!trimmed) return;
+  const key = trimmed.toLowerCase();
+  if (seen.has(key)) return;
+  seen.add(key);
+  tokens.push(trimmed);
+}
+
 /** All non-empty airport tokens that may appear as a leading prefix on wire service names. */
 export function airportNameStripTokens(airport: AirbandAirportInput): string[] {
   const seen = new Set<string>();
@@ -59,10 +68,10 @@ export function airportNameStripTokens(airport: AirbandAirportInput): string[] {
   for (const kind of ALL_PREFIX_KINDS) {
     const value = labelForKind(airport, kind);
     if (!value) continue;
-    const key = value.toLowerCase();
-    if (seen.has(key)) continue;
-    seen.add(key);
-    tokens.push(value);
+    addStripToken(tokens, seen, value);
+    for (const word of value.trim().split(/\s+/).filter(Boolean)) {
+      addStripToken(tokens, seen, word);
+    }
   }
   return tokens.sort((a, b) => b.length - a.length);
 }
