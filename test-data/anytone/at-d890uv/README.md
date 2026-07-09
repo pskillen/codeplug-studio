@@ -6,23 +6,23 @@ Redacted minimal CPS export for wire-spike tests and documentation ([#230](https
 
 ## Files
 
-| File                          | Rows | Role                          |
-| ----------------------------- | ---- | ----------------------------- |
-| `Channel.CSV`                 | 4    | 2 programmed + 2 VFO          |
-| `DMRZone.CSV`                 | 1    | Zone cross-linked to channels |
+| File                          | Rows | Role                                 |
+| ----------------------------- | ---- | ------------------------------------ |
+| `Channel.CSV`                 | 4    | 2 programmed + 2 VFO                 |
+| `DMRZone.CSV`                 | 1    | Zone cross-linked to channels        |
 | `ScanList.CSV`                | 2    | Scan lists (revert-channel variants) |
-| `DMRTalkGroups.CSV`           | 2    | Talk groups                   |
-| `DMRReceiveGroupCallList.CSV` | 1    | RX group list                 |
-| `RadioIDList.CSV`             | 1    | DMR ID label                  |
-| `DMRDigitalContactList.CSV`   | 1    | Private digital contact       |
-| `AMAir.CSV`                   | 2    | AM airband (extended)         |
-| `FM.CSV`                      | 2    | Broadcast FM (extended)       |
-| `APRS.CSV`                    | 1    | Global APRS config (redacted) |
-| `NXSetting.CSV`               | 1    | NXDN global settings          |
-| `NXTalkGroup.CSV`             | 0    | Header only                   |
-| `NXDigitalContactList.CSV`    | 0    | Header only                   |
-| `NXReceiveGroupCallList.CSV`  | 0    | Header only                   |
-| `meep.LST`                    | 38   | Full export-all manifest ref  |
+| `DMRTalkGroups.CSV`           | 2    | Talk groups                          |
+| `DMRReceiveGroupCallList.CSV` | 1    | RX group list                        |
+| `RadioIDList.CSV`             | 1    | DMR ID label                         |
+| `DMRDigitalContactList.CSV`   | 1    | Private digital contact              |
+| `AMAir.CSV`                   | 2    | AM airband (extended)                |
+| `FM.CSV`                      | 2    | Broadcast FM (extended)              |
+| `APRS.CSV`                    | 1    | Global APRS config (redacted)        |
+| `NXSetting.CSV`               | 1    | NXDN global settings                 |
+| `NXTalkGroup.CSV`             | 0    | Header only                          |
+| `NXDigitalContactList.CSV`    | 0    | Header only                          |
+| `NXReceiveGroupCallList.CSV`  | 0    | Header only                          |
+| `meep.LST`                    | 38   | Full export-all manifest ref         |
 
 ## Redaction
 
