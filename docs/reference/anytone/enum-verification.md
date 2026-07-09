@@ -72,12 +72,14 @@ Tier-3 wire reference. Values **observed** in the operator rich AT-D890UV export
 
 ## `DMRDigitalContactList.CSV`
 
-| Column | Status | Values observed | Studio default (after #297 fix) |
+| Column | Status | Values observed | Studio default |
 | --- | --- | --- | --- |
-| `Call Type` | Needs elicitation | _no body rows_ | `Private Call` |
-| `Call Alert` | Needs elicitation | _no body rows_ | `None` |
+| `Call Type` | Observed | `Private Call` | `Private Call` |
+| `Call Alert` | Observed | `None` | `None` |
+| `Callsign` | Observed | Empty (name-only row) | `''` |
+| `City` … `Remarks` | Observed | Empty | `''` |
 
-**Action:** Operator adds ≥1 private contact in CPS and re-exports.
+**Needs elicitation:** non-`None` `Call Alert` strings; private contact with populated `Callsign` and address fields.
 
 ---
 
@@ -85,12 +87,16 @@ Tier-3 wire reference. Values **observed** in the operator rich AT-D890UV export
 
 | Column | Status | Values observed | Studio default |
 | --- | --- | --- | --- |
-| `Scan Mode` | Needs elicitation | _no body rows_ | `Off` |
-| `Priority Channel Select` | Needs elicitation | _no body rows_ | `Off` |
-| `Revert Channel` | Needs elicitation | _no body rows_ | `Selected + TalkBack` |
-| `Look Back Time A[s]` … `Dwell Time[s]` | Studio default | — | Fixture numerics in `serialise.ts` |
+| `Scan Mode` | Observed | `Off` | `Off` |
+| `Priority Channel Select` | Observed | `Off` | `Off` |
+| `Priority Channel 1` / `2` | Observed | `Off` | `Off` |
+| `Revert Channel` | Observed | `Selected + TalkBack`, `Selected` | `Selected + TalkBack` |
+| `Look Back Time A[s]` | Observed | `2.0` | `2.0` |
+| `Look Back Time B[s]` | Observed | `3.0` | `3.0` |
+| `Dropout Delay Time[s]` | Observed | `3.1` | `3.1` |
+| `Dwell Time[s]` | Observed | `3.1` | `1.0` |
 
-**Action:** Create ≥1 scan list in CPS with varied modes for golden fixture.
+**Needs elicitation:** `Scan Mode` ≠ `Off`; priority channel select enabled; non-`Off` priority channel names.
 
 ---
 

@@ -22,14 +22,14 @@ Referenced from `Channel.CSV` via `Contact/Talk Group` when `Contact/Talk Group 
 
 Private calls → internal `DigitalContact` with `mode: 'dmr'`.
 
-**Fixture:** header-only in committed bundle (operator sample had no body rows).
+**Fixture:** [`test-data/anytone/at-d890uv/DMRDigitalContactList.CSV`](../../../test-data/anytone/at-d890uv/DMRDigitalContactList.CSV) (one redacted private-contact row).
 
 | Header             | Internal field             |
 | ------------------ | -------------------------- |
 | `No.`              | Export index               |
 | `Radio ID`         | `DigitalContact.digitalId` |
-| `Callsign`         | Optional wire label        |
-| `Name`             | `DigitalContact.name`      |
+| `Callsign`         | Optional wire label; CPS may leave empty when only `Name` is set |
+| `Name`             | `DigitalContact.name` / build `wireName` |
 | `City`             | Export default `''` (unmodelled) |
 | `State`            | Export default `''`              |
 | `Country`          | Export default `''`              |
@@ -37,7 +37,18 @@ Private calls → internal `DigitalContact` with `mode: 'dmr'`.
 | `Call Type`        | `Private Call`                   |
 | `Call Alert`       | Export default `None`              |
 
-Unmodelled address columns export empty strings until library CRUD gains contact metadata ([#297](https://github.com/pskillen/codeplug-studio/issues/297)). `Call Alert` enum values need CPS elicitation — see [enum-verification.md](enum-verification.md).
+Unmodelled address columns export empty strings until library CRUD gains contact metadata ([#297](https://github.com/pskillen/codeplug-studio/issues/297)).
+
+### Observed wire values (operator CPS, July 2026)
+
+| Column | Observed | Studio export |
+| --- | --- | --- |
+| `Call Type` | `Private Call` | `Private Call` |
+| `Call Alert` | `None` | `None` |
+| `Callsign` | Empty (name-only contact) | `''` |
+| `City` … `Remarks` | Empty | `''` |
+
+Non-`None` **Call Alert** strings still need CPS elicitation — see [enum-verification.md](enum-verification.md).
 
 ## Namespace
 

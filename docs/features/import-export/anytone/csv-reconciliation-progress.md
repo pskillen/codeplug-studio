@@ -52,7 +52,19 @@
 
 ---
 
+## Slice 3 — CPS fixture rows (private contact + scan lists)
+
+**Status:** Complete
+
+**Delivered**
+
+- Redacted `DMRDigitalContactList.CSV` body row in `test-data/anytone/at-d890uv/`
+- Two-row `ScanList.CSV` fixture documenting `Revert Channel` variants
+- Tier-3 updates: [talk-groups.md](../../../reference/anytone/talk-groups.md), [scan-lists.md](../../../reference/anytone/scan-lists.md), [enum-verification.md](../../../reference/anytone/enum-verification.md)
+
+---
+
 ## Next
 
-1. Operator: add ≥1 private contact body row in CPS and re-export for golden fixture ([#297](https://github.com/pskillen/codeplug-studio/issues/297) acceptance)
-2. File GitHub issues for P0/P1 wire gaps (VFO rows, AM zone partition, DMR MODE, …) — draft in local `tmp/anytone-csv-reconciliation-follow-up-tickets.md`
+1. File GitHub issues for P0/P1 wire gaps (VFO rows, AM zone partition, DMR MODE, …)
+2. Manual CPS enum elicitation — tracking issue TBD under #228

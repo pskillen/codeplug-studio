@@ -15,8 +15,10 @@ Items **skipped**, **incomplete**, or **discovered during** [#297](https://githu
 
 ## Enum / value coverage
 
-- [ ] **Private contact `Call Type` / `Call Alert`** — no body rows in operator export; elicit in CPS ([enum-verification.md](../../../reference/anytone/enum-verification.md))
-- [ ] **`ScanList.CSV` timing enums** — header-only in rich export; Studio hard-codes fixture defaults (`Scan Mode` = `Off`, `Revert Channel` = `Selected + TalkBack`, …)
+- [x] **Private contact `Call Type` / `Call Alert`** — `Private Call` / `None` observed; redacted fixture row committed
+- [ ] **Private contact `Call Alert` variants** — only `None` so far; elicit other values in CPS
+- [x] **`ScanList.CSV` timing / revert enums (partial)** — `Off`, `Selected`, `Selected + TalkBack`, dwell `3.1` observed
+- [ ] **`ScanList.CSV` scan modes** — `Scan Mode` and priority columns still `Off` only in sample
 - [ ] **`Transmit Power` = `Turbo`** — observed in rich export; confirm power ladder mapping in `profiles.ts`
 - [ ] **`OptionalSetting.CSV`** — 199 columns, single row; radio-specific settings candidate for build-scoped model ([#297](https://github.com/pskillen/codeplug-studio/issues/297) comment)
 
@@ -28,8 +30,9 @@ Items **skipped**, **incomplete**, or **discovered during** [#297](https://githu
 
 ## Fixtures / samples
 
-- [ ] **Rich comparison bundle** — commit redacted subset of `D890 codeplug export` once private-contact body row exists (do not commit raw Downloads path)
-- [ ] **`ScanList.CSV` body row** — operator export has 0 scan lists despite scan-capable channels; populate in CPS for enum + golden coverage
+- [x] **Private contact body row** — redacted in `test-data/anytone/at-d890uv/DMRDigitalContactList.CSV`
+- [x] **Scan list body rows** — two rows in `test-data/anytone/at-d890uv/ScanList.CSV` (revert-channel variants)
+- [ ] **Rich comparison bundle** — full 100-channel operator export still local only; do not commit raw Downloads
 
 ## Resolved elsewhere
 

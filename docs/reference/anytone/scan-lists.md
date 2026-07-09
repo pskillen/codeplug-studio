@@ -2,7 +2,7 @@
 
 Dedicated scan lists for AT-D890UV — separate from zones (contrast OpenGD77 zone-as-scan pattern).
 
-**Fixture:** [`test-data/anytone/at-d890uv/ScanList.CSV`](../../../test-data/anytone/at-d890uv/ScanList.CSV)
+**Fixture:** [`test-data/anytone/at-d890uv/ScanList.CSV`](../../../test-data/anytone/at-d890uv/ScanList.CSV) (two rows: minimal + revert-channel variant).
 
 ## Headers
 
@@ -16,7 +16,7 @@ Dedicated scan lists for AT-D890UV — separate from zones (contrast OpenGD77 zo
 | `Scan Mode`                             | Scan mode (`Off`, …)                          |
 | `Priority Channel Select`               | Priority select mode                          |
 | `Priority Channel 1` / `2`              | Priority channel names + freq columns         |
-| `Revert Channel`                        | Revert behaviour (e.g. `Selected + TalkBack`) |
+| `Revert Channel`                        | Revert behaviour                              |
 | `Look Back Time A[s]` … `Dwell Time[s]` | Timing parameters                             |
 
 ## Internal mapping
@@ -26,6 +26,23 @@ Dedicated scan lists for AT-D890UV — separate from zones (contrast OpenGD77 zo
 | `Scan List Name` | Library `ScanList` (wire name from build override) |
 | Member names     | Ordered channel refs via UUID at boundary          |
 | Timing columns   | Build scan list metadata (TBD)                     |
+
+## Observed wire values (operator CPS, July 2026)
+
+Two scan lists in operator re-export; both used `Scan Mode` = `Off` and `Priority Channel Select` = `Off` with no priority channels set.
+
+| Column | Values observed | Studio export default |
+| --- | --- | --- |
+| `Scan Mode` | `Off` | `Off` |
+| `Priority Channel Select` | `Off` | `Off` |
+| `Priority Channel 1` / `2` | `Off` (no priority channel) | `Off` |
+| `Revert Channel` | `Selected + TalkBack`, `Selected` | `Selected + TalkBack` |
+| `Look Back Time A[s]` | `2.0` | `2.0` |
+| `Look Back Time B[s]` | `3.0` | `3.0` |
+| `Dropout Delay Time[s]` | `3.1` | `3.1` |
+| `Dwell Time[s]` | `3.1` | `1.0` |
+
+**Gap:** Studio always exports `Dwell Time[s]` = `1.0` from `serialiseScanListsCsv()`; CPS sample uses `3.1` on both lists. Other scan modes (`Scan Mode` ≠ `Off`, priority channel enabled) still need CPS elicitation — [enum-verification.md](enum-verification.md).
 
 ## Related
 

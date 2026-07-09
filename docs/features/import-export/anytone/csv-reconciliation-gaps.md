@@ -31,8 +31,8 @@ Cross-file name FK issues from the earlier variance report were addressed in [#2
 | CSV files emitted | 7 DMR + `AMAir.CSV` / `FM.CSV` when non-empty | 38 |
 | Manifest | `{project}.LST` in ZIP ([#289](https://github.com/pskillen/codeplug-studio/issues/289)) | `mm9pdy.LST` (38 entries) |
 | `Channel.CSV` rows | Programmed channels only | 100 programmed + 2 VFO (`4001`–`4002`) |
-| `DMRDigitalContactList.CSV` | Header wrong (4 cols) | Header correct (10 cols); 0 body rows |
-| `ScanList.CSV` | Emitted when build has scan lists | 0 body rows in operator export |
+| `DMRDigitalContactList.CSV` | 10-col header + serialised body | 10 cols; 1 private-contact row |
+| `ScanList.CSV` | When build has scan lists | 2 scan lists in operator re-export |
 
 ### Studio MVP files — header comparison
 
@@ -46,7 +46,7 @@ Cross-file name FK issues from the earlier variance report were addressed in [#2
 | `RadioIDList.CSV` | Yes | |
 | `AMAir.CSV` | Yes | |
 | `FM.CSV` | Yes | |
-| **`DMRDigitalContactList.CSV`** | **No** | Studio: `No., Callsign, Name, Call Type` — CPS: 10 columns |
+| **`DMRDigitalContactList.CSV`** | **Yes** (10 cols) | Fixed in #297; fixture has redacted body row |
 
 ### CPS files not in Studio MVP export
 
