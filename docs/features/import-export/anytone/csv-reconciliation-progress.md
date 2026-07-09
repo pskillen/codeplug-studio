@@ -67,4 +67,4 @@
 ## Next
 
 1. File GitHub issues for P0/P1 wire gaps (VFO rows, AM zone partition, DMR MODE, …)
-2. Manual CPS enum elicitation — tracking issue TBD under #228
+2. Manual CPS enum elicitation — [#307](https://github.com/pskillen/codeplug-studio/issues/307) (linked to [#303](https://github.com/pskillen/codeplug-studio/issues/303))
