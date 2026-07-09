@@ -1,4 +1,6 @@
 import type { AirbandAirportInput } from '@core/domain/airband/index.ts';
+import { findExistingAirbandChannelMatch, isCivilAirbandHz } from '@core/domain/airband/index.ts';
+import type { Channel } from '@core/models/library.ts';
 import type { AirportListing } from '@integrations/aviation/index.ts';
 import { haversineDistanceM } from '@core/domain/geoDistance.ts';
 import { hzToMhzString } from '../lib/units.ts';
@@ -51,4 +53,29 @@ export function formatAirportDistanceKm(
 
 export function formatFrequencyMhz(hz: number): string {
   return `${hzToMhzString(hz) ?? '—'} MHz`;
+}
+
+export function buildExistingAirbandChannelIndex(
+  airports: readonly AirportListing[],
+  channels: readonly Channel[],
+): Map<string, Channel> {
+  const index = new Map<string, Channel>();
+
+  for (const airport of airports) {
+    const input = airportListingToAirbandInput(airport);
+    airport.frequencies.forEach((frequency, frequencyIndex) => {
+      if (!isCivilAirbandHz(frequency.rxFrequencyHz)) return;
+      const match = findExistingAirbandChannelMatch(
+        input,
+        frequency.service,
+        frequency.rxFrequencyHz,
+        channels,
+      );
+      if (match) {
+        index.set(airportFrequencyKey(airport, frequencyIndex), match);
+      }
+    });
+  }
+
+  return index;
 }

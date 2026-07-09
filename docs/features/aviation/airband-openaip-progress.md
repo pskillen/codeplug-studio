@@ -1,8 +1,8 @@
 # Airport airband (OpenAIP) — progress
 
-**Tracking:** [#262](https://github.com/pskillen/codeplug-studio/issues/262) · [#263](https://github.com/pskillen/codeplug-studio/issues/263) · [#264](https://github.com/pskillen/codeplug-studio/issues/264) · [#267](https://github.com/pskillen/codeplug-studio/issues/267) · [#268](https://github.com/pskillen/codeplug-studio/issues/268)
+**Tracking:** [#262](https://github.com/pskillen/codeplug-studio/issues/262) · [#263](https://github.com/pskillen/codeplug-studio/issues/263) · [#264](https://github.com/pskillen/codeplug-studio/issues/264) · [#267](https://github.com/pskillen/codeplug-studio/issues/267) · [#268](https://github.com/pskillen/codeplug-studio/issues/268) · [#284](https://github.com/pskillen/codeplug-studio/issues/284)
 
-**Branch:** `262/pskillen/airband-openaip-anytone-export`
+**Branch:** `284/pskillen/openaip-existing-zone-import`
 
 ## Shipped
 
@@ -16,6 +16,7 @@
 - Slice 7: Anytone `AMAir.CSV` export partition
 - Slice 8: Anytone `FM.CSV` export partition
 - Slice 9: CI green — [PR #275](https://github.com/pskillen/codeplug-studio/pull/275)
+- Slice 10: OpenAIP import append to existing zone ([#284](https://github.com/pskillen/codeplug-studio/issues/284))
 
 ## In flight
 

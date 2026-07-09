@@ -1,6 +1,6 @@
 # Curated channel sets
 
-Tier-2 reference for **library channel set** frequency grids — standard inventories operators commonly program. Implementation: `src/core/domain/channelSets/`. UI: **Library → Channels → Add channel set…** (`/library/channels/add-channel-set`).
+Tier-2 reference for **library channel set** frequency grids — standard inventories operators commonly program. Implementation: `src/core/domain/channelSets/`. UI: **Library → Channels → Add from… → Channel set** (`/library/channels/add-channel-set`).
 
 **Disclaimer:** Programming convenience only. Operators remain responsible for licence class, power limits, and transmit restrictions. Not authoritative for on-air operation.
 

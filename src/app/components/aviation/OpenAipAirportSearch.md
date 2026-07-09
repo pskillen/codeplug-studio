@@ -24,8 +24,10 @@ export default function AddFromOpenAipPage() {
 - Supports ICAO/IATA/name, town geocode, Maidenhead locator, and “use my location” with radius.
 - Results: map markers + per-airport cards listing individual frequencies with checkboxes.
 - Per-airport **Select all / none** toggles frequencies within that card; airport checkbox selects the whole airport.
-- Per-airport **SplitButton**: primary **Add channels**, menu **Add as zone** (uses batch zone name field).
-- Batch bar: global select all, optional **Create zone** with editable name (default `Airband`), **Add selected**.
+- Per-airport **SplitButton**: primary **Add channels**, menu **Add as zone** (uses shared zone target below).
+- Batch bar: global select all, **Name prefix** selector (IATA / ICAO / airport name; default IATA with fallback), optional **Create zone** with **New zone** (editable name, default `Airband`) or **Existing zone** (`ZoneSelect`), **Add selected**.
+- Frequency rows preview the imported channel name (`wire label → proposed · MHz`); existing library matches show a link with no checkbox.
+- **Add as zone** and batch **Create zone** append to an existing zone via `zoneUpdates` (deduped members, including library duplicates) or create a new zone.
 
 ## Related
 

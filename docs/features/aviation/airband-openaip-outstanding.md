@@ -7,6 +7,7 @@
 - OpenAIP airport search + import ([#263](https://github.com/pskillen/codeplug-studio/issues/263))
 - System attributions ([#264](https://github.com/pskillen/codeplug-studio/issues/264))
 - Anytone `AMAir.CSV` / `FM.CSV` export ([#267](https://github.com/pskillen/codeplug-studio/issues/267), [#268](https://github.com/pskillen/codeplug-studio/issues/268))
+- OpenAIP import to existing zone ([#284](https://github.com/pskillen/codeplug-studio/issues/284))
 
 ## Deferred (plan out of scope)
 

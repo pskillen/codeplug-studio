@@ -1,5 +1,5 @@
 import type { TablerIcon } from '@tabler/icons-react';
-import { IconAntenna, IconPlane, IconRadio } from '@tabler/icons-react';
+import { IconAntenna, IconPlane, IconPlaylistAdd, IconRadio } from '@tabler/icons-react';
 import type { BadgeCardBadge } from '../components/ui/BadgeCard.tsx';
 
 export interface ChannelDataSource {
@@ -12,6 +12,18 @@ export interface ChannelDataSource {
   Icon: TablerIcon;
 }
 
+export const CHANNEL_SET_SOURCE: ChannelDataSource = {
+  id: 'channel-set',
+  title: 'Channel set',
+  subtitle: 'Built-in grids',
+  description:
+    'Import curated frequency grids such as PMR446, UK CB, and UK simplex calling channels into your library.',
+  path: '/library/channels/add-channel-set',
+  badges: [{ label: 'PMR446' }, { label: 'CB' }, { label: 'Simplex' }],
+  Icon: IconPlaylistAdd,
+};
+
+/** External directory and API sources (ukrepeater, OpenAIP, BrandMeister). */
 export const CHANNEL_DATA_SOURCES: readonly ChannelDataSource[] = [
   {
     id: 'ukrepeater',
@@ -44,3 +56,9 @@ export const CHANNEL_DATA_SOURCES: readonly ChannelDataSource[] = [
     Icon: IconAntenna,
   },
 ] as const;
+
+/** All entries shown in the Library **Add from…** picker modal. */
+export const CHANNEL_ADD_SOURCES: readonly ChannelDataSource[] = [
+  CHANNEL_SET_SOURCE,
+  ...CHANNEL_DATA_SOURCES,
+];

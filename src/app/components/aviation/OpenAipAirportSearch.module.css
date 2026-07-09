@@ -1,0 +1,59 @@
+.frequencyList {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.frequencyRow {
+  display: grid;
+  grid-template-columns: 1.75rem 1fr 1.25rem 1.2fr 5.75rem;
+  column-gap: var(--mantine-spacing-xs);
+  align-items: start;
+}
+
+.checkboxCell {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: 0.125rem;
+}
+
+.checkboxSpacer {
+  width: 1.75rem;
+}
+
+.wireCell,
+.arrowCell,
+.nameCell,
+.mhzCell {
+  font-size: var(--mantine-font-size-sm);
+  line-height: 1.4;
+  min-width: 0;
+}
+
+.wireCell {
+  color: var(--mantine-color-dimmed);
+}
+
+.arrowCell {
+  color: var(--mantine-color-dimmed);
+  text-align: center;
+}
+
+.mhzCell {
+  color: var(--mantine-color-dimmed);
+  white-space: nowrap;
+  text-align: right;
+}
+
+.nameCellStack {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.inLibraryHint {
+  font-size: var(--mantine-font-size-xs);
+  color: var(--mantine-color-dimmed);
+}

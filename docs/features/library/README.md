@@ -106,7 +106,7 @@ Channel editor DMR tab shows `RxGroupListSummary` below the RX group list select
 
 ### Channel sets ([#172](https://github.com/pskillen/codeplug-studio/issues/172))
 
-**Route:** `/library/channels/add-channel-set` — section nav **Add channel set…**
+**Route:** `/library/channels/add-channel-set` — **Add from…** modal → **Channel set** card
 
 Generate curated frequency inventories into the library:
 

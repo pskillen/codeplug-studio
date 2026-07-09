@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import {
   Alert,
@@ -9,6 +9,8 @@ import {
   Group,
   NumberInput,
   ScrollArea,
+  SegmentedControl,
+  Select,
   SimpleGrid,
   Stack,
   Text,
@@ -20,6 +22,12 @@ import type { Channel } from '@core/models/library.ts';
 import type { AirportListing } from '@integrations/aviation/index.ts';
 import { airportQueryKindHint } from '@integrations/aviation/index.ts';
 import { buildAirbandImportPlan } from '@core/services/airbandImport.ts';
+import {
+  formatAirbandChannelName,
+  isCivilAirbandHz,
+  type AirbandNamePrefixKind,
+} from '@core/domain/airband/index.ts';
+import { validateZoneMembership } from '@core/domain/validation.ts';
 import { SETTINGS_OPENAIP_SECTION_ID } from '../../lib/settingsSections.ts';
 import { useOpenAipAirportSearch } from '../../hooks/useOpenAipAirportSearch.ts';
 import { ICON_SIZE_NAV, ICON_STROKE } from '../../lib/iconSizes.ts';
@@ -27,6 +35,7 @@ import {
   airportFrequencyKey,
   airportListingKey,
   airportListingToAirbandInput,
+  buildExistingAirbandChannelIndex,
   formatAirportDistanceKm,
   formatFrequencyMhz,
   parseAirportFrequencyKey,
@@ -35,10 +44,42 @@ import { persistence } from '../../state/persistence.ts';
 import { useLibrary } from '../../state/useLibrary.ts';
 import { useProjects } from '../../state/useProjects.ts';
 import UseMyLocationButton from '../UseMyLocationButton/UseMyLocationButton.tsx';
+import ZoneSelect from '../library/ZoneSelect.tsx';
 import { FormPage, PageSection, SplitButton } from '../ui/index.ts';
 import CodeplugMap from '../CodeplugMap/CodeplugMap.tsx';
+import classes from './OpenAipAirportSearch.module.css';
 
 const DEFAULT_ZONE_NAME = 'Airband';
+
+const NAME_PREFIX_OPTIONS: { value: AirbandNamePrefixKind; label: string }[] = [
+  { value: 'iata', label: 'IATA' },
+  { value: 'icao', label: 'ICAO' },
+  { value: 'name', label: 'Airport name' },
+];
+
+type ZoneTargetMode = 'new' | 'existing';
+
+interface ZoneImportOptions {
+  alsoCreateZone?: boolean;
+  zoneName?: string;
+  targetZoneId?: string;
+  namePrefixKind?: AirbandNamePrefixKind;
+}
+
+function buildZoneImportOptions(
+  alsoCreateZone: boolean,
+  zoneTargetMode: ZoneTargetMode,
+  zoneName: string,
+  existingZoneId: string | null,
+): ZoneImportOptions {
+  if (!alsoCreateZone) return {};
+  if (zoneTargetMode === 'existing') {
+    return existingZoneId
+      ? { alsoCreateZone: true, targetZoneId: existingZoneId }
+      : { alsoCreateZone: true };
+  }
+  return { alsoCreateZone: true, zoneName };
+}
 
 function mapChannelsFromAirports(airports: AirportListing[]): Channel[] {
   return airports
@@ -84,10 +125,104 @@ function buildSelectionsFromKeys(
     });
 }
 
+function selectableFrequencyKeys(
+  airport: AirportListing,
+  existingChannelByKey: ReadonlyMap<string, Channel>,
+): string[] {
+  return frequencyKeysForAirport(airport).filter((key) => !existingChannelByKey.has(key));
+}
+
+function FrequencyRowGrid({
+  checkbox,
+  wireLabel,
+  nameContent,
+  frequencyMhz,
+}: {
+  checkbox: ReactNode;
+  wireLabel: string;
+  nameContent: ReactNode;
+  frequencyMhz: string;
+}) {
+  return (
+    <div className={classes.frequencyRow}>
+      <div className={classes.checkboxCell}>{checkbox}</div>
+      <Text className={classes.wireCell} lineClamp={2}>
+        {wireLabel}
+      </Text>
+      <Text className={classes.arrowCell} aria-hidden>
+        →
+      </Text>
+      <div className={classes.nameCell}>{nameContent}</div>
+      <Text className={classes.mhzCell}>{frequencyMhz}</Text>
+    </div>
+  );
+}
+
+function ImportableFrequencyRow({
+  wireLabel,
+  proposedName,
+  frequencyMhz,
+  checked,
+  onCheckedChange,
+}: {
+  wireLabel: string;
+  proposedName: string;
+  frequencyMhz: string;
+  checked: boolean;
+  onCheckedChange: (checked: boolean) => void;
+}) {
+  return (
+    <FrequencyRowGrid
+      checkbox={
+        <Checkbox
+          checked={checked}
+          onChange={(e) => onCheckedChange(e.currentTarget.checked)}
+          aria-label={`Select ${proposedName}`}
+        />
+      }
+      wireLabel={wireLabel}
+      nameContent={
+        <Text size="sm" lineClamp={2}>
+          {proposedName}
+        </Text>
+      }
+      frequencyMhz={frequencyMhz}
+    />
+  );
+}
+
+function ExistingFrequencyRow({
+  wireLabel,
+  channel,
+  frequencyMhz,
+}: {
+  wireLabel: string;
+  channel: Channel;
+  frequencyMhz: string;
+}) {
+  return (
+    <FrequencyRowGrid
+      checkbox={<span className={classes.checkboxSpacer} aria-hidden />}
+      wireLabel={wireLabel}
+      nameContent={
+        <div className={classes.nameCellStack}>
+          <Anchor component={Link} to={`/library/channels/${channel.id}`} size="sm" lineClamp={2}>
+            {channel.name}
+          </Anchor>
+          <Text className={classes.inLibraryHint}>In library</Text>
+        </div>
+      }
+      frequencyMhz={frequencyMhz}
+    />
+  );
+}
+
 function AirportCard({
   airport,
   referencePoint,
   selectedKeys,
+  existingChannelByKey,
+  namePrefixKind,
   onToggleFrequency,
   onToggleAirport,
   onSelectAllFrequencies,
@@ -99,6 +234,8 @@ function AirportCard({
   airport: AirportListing;
   referencePoint: { lat: number; lon: number } | null;
   selectedKeys: Set<string>;
+  existingChannelByKey: ReadonlyMap<string, Channel>;
+  namePrefixKind: AirbandNamePrefixKind;
   onToggleFrequency: (key: string, checked: boolean) => void;
   onToggleAirport: (checked: boolean) => void;
   onSelectAllFrequencies: () => void;
@@ -109,10 +246,11 @@ function AirportCard({
 }) {
   const distance = formatAirportDistanceKm(airport, referencePoint);
   const codes = [airport.icao, airport.iata].filter(Boolean).join(' / ');
-  const frequencyKeys = frequencyKeysForAirport(airport);
-  const selectedCount = frequencyKeys.filter((key) => selectedKeys.has(key)).length;
-  const airportFullySelected = frequencyKeys.length > 0 && selectedCount === frequencyKeys.length;
+  const selectableKeys = selectableFrequencyKeys(airport, existingChannelByKey);
+  const selectedCount = selectableKeys.filter((key) => selectedKeys.has(key)).length;
+  const airportFullySelected = selectableKeys.length > 0 && selectedCount === selectableKeys.length;
   const airportPartiallySelected = selectedCount > 0 && !airportFullySelected;
+  const airbandInput = useMemo(() => airportListingToAirbandInput(airport), [airport]);
 
   return (
     <Card withBorder padding="md" radius="md">
@@ -125,7 +263,7 @@ function AirportCard({
               onChange={(e) => onToggleAirport(e.currentTarget.checked)}
               aria-label={`Select all frequencies for ${airport.name}`}
               mt={4}
-              disabled={frequencyKeys.length === 0}
+              disabled={selectableKeys.length === 0}
             />
             <Stack gap={2}>
               <Text fw={600}>{airport.name}</Text>
@@ -160,26 +298,55 @@ function AirportCard({
                 Select none
               </Anchor>
             </Text>
-            <Stack gap={6}>
+            <div className={classes.frequencyList}>
               {airport.frequencies.map((freq, index) => {
                 const key = airportFrequencyKey(airport, index);
-                return (
-                  <Checkbox
-                    key={key}
-                    label={
-                      <Group gap="xs" wrap="nowrap">
-                        <Text size="sm">{freq.service}</Text>
-                        <Text size="sm" c="dimmed">
-                          {formatFrequencyMhz(freq.rxFrequencyHz)}
+                const frequencyMhz = formatFrequencyMhz(freq.rxFrequencyHz);
+                const existingChannel = existingChannelByKey.get(key);
+
+                if (existingChannel) {
+                  return (
+                    <ExistingFrequencyRow
+                      key={key}
+                      wireLabel={freq.service}
+                      channel={existingChannel}
+                      frequencyMhz={frequencyMhz}
+                    />
+                  );
+                }
+
+                if (!isCivilAirbandHz(freq.rxFrequencyHz)) {
+                  return (
+                    <FrequencyRowGrid
+                      key={key}
+                      checkbox={<span className={classes.checkboxSpacer} aria-hidden />}
+                      wireLabel={freq.service}
+                      nameContent={
+                        <Text size="sm" c="dimmed" lineClamp={2}>
+                          Not civil airband
                         </Text>
-                      </Group>
-                    }
+                      }
+                      frequencyMhz={frequencyMhz}
+                    />
+                  );
+                }
+
+                const proposedName = formatAirbandChannelName(airbandInput, freq.service, {
+                  namePrefixKind,
+                });
+
+                return (
+                  <ImportableFrequencyRow
+                    key={key}
+                    wireLabel={freq.service}
+                    proposedName={proposedName}
+                    frequencyMhz={frequencyMhz}
                     checked={selectedKeys.has(key)}
-                    onChange={(e) => onToggleFrequency(key, e.currentTarget.checked)}
+                    onCheckedChange={(checked) => onToggleFrequency(key, checked)}
                   />
                 );
               })}
-            </Stack>
+            </div>
           </Stack>
         )}
       </Stack>
@@ -189,21 +356,37 @@ function AirportCard({
 
 export default function OpenAipAirportSearch() {
   const search = useOpenAipAirportSearch();
-  const { library } = useLibrary();
+  const { library, reload } = useLibrary();
   const { activeProjectId } = useProjects();
   const [selectedKeys, setSelectedKeys] = useState<Set<string>>(new Set());
   const [alsoCreateZone, setAlsoCreateZone] = useState(false);
+  const [zoneTargetMode, setZoneTargetMode] = useState<ZoneTargetMode>('new');
   const [zoneName, setZoneName] = useState(DEFAULT_ZONE_NAME);
+  const [existingZoneId, setExistingZoneId] = useState<string | null>(null);
+  const [namePrefixKind, setNamePrefixKind] = useState<AirbandNamePrefixKind>('iata');
   const [adding, setAdding] = useState(false);
   const [addingAirportKey, setAddingAirportKey] = useState<string | null>(null);
   const [addMessage, setAddMessage] = useState<string | null>(null);
+  const [addError, setAddError] = useState<string | null>(null);
+
+  const existingChannelByKey = useMemo(
+    () => buildExistingAirbandChannelIndex(search.airports, library.channels),
+    [search.airports, library.channels],
+  );
+
+  const selectableFrequencyKeysAll = useMemo(
+    () =>
+      search.airports.flatMap((airport) => selectableFrequencyKeys(airport, existingChannelByKey)),
+    [search.airports, existingChannelByKey],
+  );
+
+  const selectableSelectedKeys = useMemo(
+    () => new Set([...selectedKeys].filter((key) => !existingChannelByKey.has(key))),
+    [selectedKeys, existingChannelByKey],
+  );
 
   const mapChannels = useMemo(() => mapChannelsFromAirports(search.airports), [search.airports]);
   const kindHint = airportQueryKindHint(search.kind);
-  const allFrequencyKeys = useMemo(
-    () => search.airports.flatMap((airport) => frequencyKeysForAirport(airport)),
-    [search.airports],
-  );
 
   function toggleFrequency(key: string, checked: boolean) {
     setSelectedKeys((prev) => {
@@ -215,7 +398,7 @@ export default function OpenAipAirportSearch() {
   }
 
   function toggleAirportFrequencies(airport: AirportListing, checked: boolean) {
-    const keys = frequencyKeysForAirport(airport);
+    const keys = selectableFrequencyKeys(airport, existingChannelByKey);
     setSelectedKeys((prev) => {
       const next = new Set(prev);
       for (const key of keys) {
@@ -231,14 +414,19 @@ export default function OpenAipAirportSearch() {
       setSelectedKeys(new Set());
       return;
     }
-    setSelectedKeys(new Set(allFrequencyKeys));
+    setSelectedKeys(new Set(selectableFrequencyKeysAll));
   }
 
   async function persistSelections(
     selections: Array<{ airport: AirportListing; frequencyIndices: number[] }>,
-    options: { alsoCreateZone?: boolean; zoneName?: string },
+    options: ZoneImportOptions,
   ) {
     if (!activeProjectId || selections.length === 0) return;
+
+    if (options.alsoCreateZone && zoneTargetMode === 'existing' && !options.targetZoneId) {
+      setAddError('Choose an existing zone or switch to New zone.');
+      return;
+    }
 
     const plan = buildAirbandImportPlan(
       library,
@@ -248,11 +436,16 @@ export default function OpenAipAirportSearch() {
         frequencyIndices,
       })),
       {
-        alsoCreateZone: options.alsoCreateZone,
-        zoneName: options.zoneName,
+        ...options,
         forbidTransmit: true,
+        namePrefixKind: options.namePrefixKind ?? namePrefixKind,
       },
     );
+
+    if (plan.zoneTargetError) {
+      setAddError(plan.zoneTargetError);
+      return;
+    }
 
     for (const channel of plan.totalChannelsToAdd) {
       await persistence.putChannel(channel, null);
@@ -261,17 +454,56 @@ export default function OpenAipAirportSearch() {
       await persistence.putZone(zone, null);
     }
 
+    const libraryWithNewChannels = {
+      ...library,
+      channels: [...library.channels, ...plan.totalChannelsToAdd],
+    };
+
+    for (const update of plan.zoneUpdates) {
+      const zone = library.zones.find((row) => row.id === update.zoneId);
+      if (!zone) continue;
+      const updated = { ...zone, members: update.members };
+      const libraryForValidation = {
+        ...libraryWithNewChannels,
+        zones: library.zones.map((row) => (row.id === update.zoneId ? updated : row)),
+      };
+      validateZoneMembership(update.zoneId, update.members, libraryForValidation);
+      const result = await persistence.putZone(updated, zone.revision);
+      if (!result.ok) {
+        throw new Error(
+          result.reason === 'revision_conflict'
+            ? 'Zone was changed elsewhere. Reload and try again.'
+            : 'Failed to update zone.',
+        );
+      }
+    }
+
+    if (plan.zoneUpdates.length > 0 || plan.zones.length > 0) {
+      await reload();
+    }
+
     const added = plan.totalChannelsToAdd.length;
     const skipped = plan.totalSkipped.length;
-    const zoneSuffix =
-      options.alsoCreateZone && plan.zones.length > 0
-        ? ` and created zone "${plan.zones[0]?.name ?? options.zoneName ?? DEFAULT_ZONE_NAME}"`
-        : '';
-    setAddMessage(
-      added > 0
-        ? `Added ${added} channel${added === 1 ? '' : 's'}${zoneSuffix}${skipped ? ` (${skipped} skipped as duplicates)` : ''}.`
-        : 'No new channels were added.',
-    );
+    let zoneSuffix = '';
+    if (options.alsoCreateZone && plan.zoneUpdates.length > 0) {
+      const targetName =
+        library.zones.find((zone) => zone.id === plan.zoneUpdates[0]?.zoneId)?.name ?? 'zone';
+      zoneSuffix = ` and added to zone "${targetName}"`;
+    } else if (options.alsoCreateZone && plan.zones.length > 0) {
+      zoneSuffix = ` and created zone "${plan.zones[0]?.name ?? options.zoneName ?? DEFAULT_ZONE_NAME}"`;
+    }
+
+    const skippedSuffix = skipped ? ` (${skipped} skipped as duplicates)` : '';
+    if (added > 0 || zoneSuffix) {
+      setAddMessage(
+        added > 0
+          ? `Added ${added} channel${added === 1 ? '' : 's'}${zoneSuffix}${skippedSuffix}.`
+          : `No new channels were added${zoneSuffix}${skippedSuffix}.`,
+      );
+    } else {
+      setAddMessage('No new channels were added.');
+    }
+    setAddError(null);
 
     const importedKeys = new Set(
       selections.flatMap(({ airport, frequencyIndices }) =>
@@ -287,31 +519,38 @@ export default function OpenAipAirportSearch() {
 
   async function handleAddSelections(
     selections: Array<{ airport: AirportListing; frequencyIndices: number[] }>,
-    options: { alsoCreateZone?: boolean; zoneName?: string },
+    options: ZoneImportOptions,
     airportKeyForLoading?: string,
   ) {
     if (selections.length === 0) return;
     setAdding(true);
     if (airportKeyForLoading) setAddingAirportKey(airportKeyForLoading);
     setAddMessage(null);
+    setAddError(null);
     try {
       await persistSelections(selections, options);
+    } catch (err) {
+      setAddError(err instanceof Error ? err.message : 'Import failed. Please try again.');
     } finally {
       setAdding(false);
       setAddingAirportKey(null);
     }
   }
 
+  function zoneImportOptions(alsoCreateZoneOverride: boolean): ZoneImportOptions {
+    return {
+      ...buildZoneImportOptions(alsoCreateZoneOverride, zoneTargetMode, zoneName, existingZoneId),
+      namePrefixKind,
+    };
+  }
+
   function selectionsForAirport(airport: AirportListing) {
-    return buildSelectionsFromKeys([airport], selectedKeys);
+    return buildSelectionsFromKeys([airport], selectableSelectedKeys);
   }
 
   async function handleAddSelected() {
-    const selections = buildSelectionsFromKeys(search.airports, selectedKeys);
-    await handleAddSelections(selections, {
-      alsoCreateZone,
-      zoneName,
-    });
+    const selections = buildSelectionsFromKeys(search.airports, selectableSelectedKeys);
+    await handleAddSelections(selections, zoneImportOptions(alsoCreateZone));
   }
 
   async function handleUseMyLocation(lat: number, lon: number) {
@@ -319,9 +558,11 @@ export default function OpenAipAirportSearch() {
   }
 
   const allFrequenciesSelected =
-    allFrequencyKeys.length > 0 && allFrequencyKeys.every((key) => selectedKeys.has(key));
+    selectableFrequencyKeysAll.length > 0 &&
+    selectableFrequencyKeysAll.every((key) => selectableSelectedKeys.has(key));
   const someFrequenciesSelected =
-    selectedKeys.size > 0 && selectedKeys.size < allFrequencyKeys.length;
+    selectableSelectedKeys.size > 0 &&
+    selectableSelectedKeys.size < selectableFrequencyKeysAll.length;
 
   return (
     <FormPage
@@ -386,6 +627,7 @@ export default function OpenAipAirportSearch() {
           ) : null}
 
           {search.error ? <Alert color="red">{search.error}</Alert> : null}
+          {addError ? <Alert color="red">{addError}</Alert> : null}
           {addMessage ? <Alert color="green">{addMessage}</Alert> : null}
         </Stack>
       </PageSection>
@@ -414,26 +656,68 @@ export default function OpenAipAirportSearch() {
                 onChange={(e) => toggleAllFrequencies(e.currentTarget.checked)}
               />
               <Group align="flex-end" wrap="wrap">
+                <Select
+                  label="Name prefix"
+                  data={NAME_PREFIX_OPTIONS}
+                  value={namePrefixKind}
+                  onChange={(value) =>
+                    setNamePrefixKind((value as AirbandNamePrefixKind | null) ?? 'iata')
+                  }
+                  style={{ width: 150 }}
+                />
                 <Checkbox
-                  label="Create zone"
+                  label="Add to zone"
                   checked={alsoCreateZone}
                   onChange={(e) => setAlsoCreateZone(e.currentTarget.checked)}
                 />
                 {alsoCreateZone ? (
-                  <TextInput
-                    label="Zone name"
-                    value={zoneName}
-                    onChange={(e) => setZoneName(e.currentTarget.value)}
-                    placeholder={DEFAULT_ZONE_NAME}
-                    style={{ width: 180 }}
-                  />
+                  <Stack gap="xs" maw={280}>
+                    <SegmentedControl
+                      value={zoneTargetMode}
+                      onChange={(value) => setZoneTargetMode(value as ZoneTargetMode)}
+                      data={[
+                        { label: 'New zone', value: 'new' },
+                        {
+                          label: 'Existing zone',
+                          value: 'existing',
+                          disabled: library.zones.length === 0,
+                        },
+                      ]}
+                    />
+                    {zoneTargetMode === 'new' ? (
+                      <TextInput
+                        label="Zone name"
+                        value={zoneName}
+                        onChange={(e) => setZoneName(e.currentTarget.value)}
+                        placeholder={DEFAULT_ZONE_NAME}
+                      />
+                    ) : (
+                      <Stack gap={4}>
+                        <ZoneSelect
+                          label="Zone"
+                          zones={library.zones}
+                          value={existingZoneId}
+                          onChange={setExistingZoneId}
+                        />
+                        {library.zones.length === 0 ? (
+                          <Text size="xs" c="dimmed">
+                            No zones in this project.{' '}
+                            <Anchor component={Link} to="/library/zones" size="xs">
+                              Create a zone
+                            </Anchor>{' '}
+                            first.
+                          </Text>
+                        ) : null}
+                      </Stack>
+                    )}
+                  </Stack>
                 ) : null}
                 <Button
-                  disabled={selectedKeys.size === 0}
+                  disabled={selectableSelectedKeys.size === 0}
                   loading={adding && addingAirportKey == null}
                   onClick={() => void handleAddSelected()}
                 >
-                  Add selected ({selectedKeys.size})
+                  Add selected ({selectableSelectedKeys.size})
                 </Button>
               </Group>
             </Group>
@@ -448,18 +732,16 @@ export default function OpenAipAirportSearch() {
                       key={key}
                       airport={airport}
                       referencePoint={search.referencePoint}
-                      selectedKeys={selectedKeys}
+                      selectedKeys={selectableSelectedKeys}
+                      existingChannelByKey={existingChannelByKey}
+                      namePrefixKind={namePrefixKind}
                       onToggleFrequency={toggleFrequency}
                       onToggleAirport={(checked) => toggleAirportFrequencies(airport, checked)}
                       onSelectAllFrequencies={() => toggleAirportFrequencies(airport, true)}
                       onSelectNoFrequencies={() => toggleAirportFrequencies(airport, false)}
                       onAddChannels={() => void handleAddSelections(airportSelections, {}, key)}
                       onAddAsZone={() =>
-                        void handleAddSelections(
-                          airportSelections,
-                          { alsoCreateZone: true, zoneName },
-                          key,
-                        )
+                        void handleAddSelections(airportSelections, zoneImportOptions(true), key)
                       }
                       adding={adding && addingAirportKey === key}
                     />

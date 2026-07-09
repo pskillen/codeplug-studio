@@ -29,7 +29,19 @@ describe('generateChannelsFromAirport', () => {
     expect(channels[0]?.location).toMatchObject({ lat: 55.8719, lon: -4.433 });
   });
 
-  it('applies name prefix', () => {
+  it('applies name prefix kind and strips duplicate airport tokens', () => {
+    const channels = generateChannelsFromAirport(
+      'p1',
+      {
+        ...glasgowAirport,
+        frequencies: [{ service: 'GLA Tower', rxFrequencyHz: 118_805_000 }],
+      },
+      { namePrefixKind: 'icao' },
+    );
+    expect(channels[0]?.name).toBe('EGPF Tower');
+  });
+
+  it('applies extra literal namePrefix', () => {
     const channels = generateChannelsFromAirport('p1', glasgowAirport, {
       namePrefix: 'AB-',
       frequencyIndices: [0],

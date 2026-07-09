@@ -1,41 +1,13 @@
-import { bandFromFrequencyMhz } from '../bandCatalog.ts';
 import { newChannel } from '../factories.ts';
 import { defaultModeProfile } from '../modeProfiles.ts';
 import type { Channel } from '../../models/library.ts';
 import type { ChannelModeProfileAnalog } from '../../models/library.ts';
 import type { AirbandAirportInput, AirbandGenerateOptions } from './types.ts';
-
-const AIRBAND_BAND_ID = 'airband';
+import { formatAirbandChannelName, isCivilAirbandHz } from './naming.ts';
 
 function amAirbandProfile(bandwidthKHz: number): ChannelModeProfileAnalog {
   const base = defaultModeProfile('am') as ChannelModeProfileAnalog;
   return { ...base, bandwidthKHz };
-}
-
-function applyNamePrefix(name: string, prefix: string | undefined): string {
-  const trimmed = prefix?.trim() ?? '';
-  if (!trimmed) return name;
-  return `${trimmed}${name}`;
-}
-
-function airportCodeLabel(airport: AirbandAirportInput): string {
-  return airport.iata ?? airport.icao ?? airport.name;
-}
-
-function channelNameForFrequency(
-  airport: AirbandAirportInput,
-  service: string,
-  options: AirbandGenerateOptions,
-): string {
-  const code = airportCodeLabel(airport);
-  const base = `${code} ${service}`.trim();
-  return applyNamePrefix(base, options.namePrefix);
-}
-
-function isCivilAirbandHz(rxFrequencyHz: number): boolean {
-  const mhz = rxFrequencyHz / 1_000_000;
-  const band = bandFromFrequencyMhz(mhz);
-  return band?.id === AIRBAND_BAND_ID;
 }
 
 /**
@@ -60,7 +32,7 @@ export function generateChannelsFromAirport(
   for (const freq of frequencies) {
     if (!isCivilAirbandHz(freq.rxFrequencyHz)) continue;
 
-    const name = channelNameForFrequency(airport, freq.service, options);
+    const name = formatAirbandChannelName(airport, freq.service, options);
     const base = newChannel(projectId, name);
     channels.push({
       ...base,
