@@ -2,7 +2,7 @@
 
 Browse Google Drive folders, open native YAML projects, and save exports back to Drive — without leaving the Studio SPA.
 
-**Tracking:** [#61](https://github.com/pskillen/codeplug-studio/issues/61) · [#62](https://github.com/pskillen/codeplug-studio/issues/62) · Epic [#35](https://github.com/pskillen/codeplug-studio/issues/35)
+**Tracking:** [#61](https://github.com/pskillen/codeplug-studio/issues/61) · [#62](https://github.com/pskillen/codeplug-studio/issues/62) · [#285](https://github.com/pskillen/codeplug-studio/issues/285) · [#286](https://github.com/pskillen/codeplug-studio/issues/286) · Epic [#35](https://github.com/pskillen/codeplug-studio/issues/35)
 
 **Source:** `src/integrations/cloud/`, `src/app/components/import-export/`, Settings
 
@@ -59,14 +59,32 @@ Implementation: `src/integrations/cloud/googleDrive.ts`.
 
 ## UI flows
 
-### Settings — status and disconnect
+### Settings — status, reconnect, and disconnect
 
 `/settings` → **Google Drive** section (`GoogleDriveConnectSection`):
 
-- Shows connection status and account email
-- **Disconnect** revokes the token and clears the session
-- When disconnected, copy points operators to **Open from Drive** / **Save to Drive** in the app (connect happens there, not in Settings)
+- Shows connection status and account email when the session is valid
+- **Reconnect** when the OAuth session expired (no Disconnect detour required)
+- **Disconnect** revokes the token and clears the session when connected
+- When disconnected, copy points operators to **Open from Drive** / **Save to Drive** in the app
 - When `VITE_GOOGLE_CLIENT_ID` is unset, shows OAuth setup guidance
+
+### App chrome — portable interchange bar
+
+`ProjectInterchangeBar` (above route content in `AppLayout`):
+
+- Shows **Google Drive · {fileName}** or **Local file · {fileName}** from `ProjectMeta.interchange`
+- **Save to Drive** — enabled when local edits are newer than the last portable sync; overwrites the remembered Drive file
+- Dismissible **browser-only** warning when the project has no interchange destination
+- `RefreshFromDriveBanner` — non-blocking prompt when Drive `modifiedTime` is newer than local `exportedAt`
+
+### Session lifecycle (#286)
+
+`DriveSessionProvider` is the single source of truth for OAuth state:
+
+- Revalidates on window focus and before token expiry
+- `withDriveAuthRetry` clears stale sessions on 401 and reconnects inline
+- `DriveSessionBanner` prompts reconnect app-wide when the session lapsed
 
 ### Drive browser modal
 
@@ -77,10 +95,10 @@ Implementation: `src/integrations/cloud/googleDrive.ts`.
 - **Create folder** in the current directory
 - Persists browse path to localStorage on navigation
 
-| Mode   | Trigger         | Result                                                |
-| ------ | --------------- | ----------------------------------------------------- |
-| `open` | Open from Drive | Reads file → `importProjectFromYaml`                  |
-| `save` | Save to Drive   | Picks folder + filename → upload + record destination |
+| Mode   | Trigger         | Result                                                                             |
+| ------ | --------------- | ---------------------------------------------------------------------------------- |
+| `open` | Open from Drive | Reads file → YAML import resolver (create, overwrite with diff, or replace active) |
+| `save` | Save to Drive   | Picks folder + filename → upload + record destination                              |
 
 ### Export workflow
 
@@ -93,7 +111,10 @@ Implementation: `src/integrations/cloud/googleDrive.ts`.
 
 ### Import workflow
 
-- **Home** import panel and **Import / export** replace panel: **Open from Drive** (`GoogleDriveActionButton`) → select YAML → existing create/replace confirm flow
+- **Home** and **Import / export** panels: **Open from Drive** → select YAML
+- If YAML `project.id` matches an existing IndexedDB project → **overwrite** modal with diff (last saved, entity counts)
+- Otherwise Home uses `createNew`; replace panel requires matching active project id
+- Successful import records `ProjectMeta.interchange` (import source memory)
 
 When Drive is not connected, the button stays visible (greyed). Click runs GIS OAuth, then opens the Drive browser on success.
 
@@ -107,18 +128,22 @@ When OAuth is not configured, click opens `GoogleDriveNotConfiguredModal` with *
 | `GoogleDriveActionButton`       | Open/save CTAs — inline connect, then Drive browser       |
 | `GoogleDriveNotConfiguredModal` | Settings redirect when `VITE_GOOGLE_CLIENT_ID` is missing |
 | `DriveBrowserModal`             | Folder browser when connected                             |
+| `DriveSessionBanner`            | App-wide reconnect prompt when session expired            |
+| `ProjectInterchangeBar`         | Source label + Save to Drive in app chrome                |
+| `RefreshFromDriveBanner`        | Newer remote YAML available — optional refresh            |
+| `InterchangeOverwriteModal`     | UUID-match overwrite with diff summary                    |
 
 ## Error states
 
-| Situation             | UI behaviour                                                               |
-| --------------------- | -------------------------------------------------------------------------- |
-| Not configured        | Drive action buttons greyed; click → modal → Settings (OAuth client setup) |
-| Not connected         | Drive action buttons greyed; click → GIS OAuth → Drive browser on success  |
-| Sign-in cancelled     | No browser open; no error alert                                            |
-| Connect failed        | Inline red alert on the action button                                      |
-| Auth expired          | Treated as not connected — same inline connect on next Drive button click  |
-| Network / API failure | Red alert with Drive error message                                         |
-| Duplicate folder name | Drive API conflict message                                                 |
+| Situation             | UI behaviour                                                                                                                      |
+| --------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| Not configured        | Drive action buttons greyed; click → modal → Settings (OAuth client setup)                                                        |
+| Not connected         | Drive action buttons greyed; click → GIS OAuth → Drive browser on success                                                         |
+| Sign-in cancelled     | No browser open; no error alert                                                                                                   |
+| Connect failed        | Inline red alert on the action button                                                                                             |
+| Auth expired          | Session cleared; greyed CTAs + **Reconnect** inline; `DriveSessionBanner`; Settings **Reconnect** — no manual Disconnect required |
+| Network / API failure | Red alert with Drive error message                                                                                                |
+| Duplicate folder name | Drive API conflict message                                                                                                        |
 
 ## Implementation status
 
@@ -129,13 +154,20 @@ When OAuth is not configured, click opens `GoogleDriveNotConfiguredModal` with *
 | Drive browser modal          | Shipped | [#62](https://github.com/pskillen/codeplug-studio/issues/62)                              |
 | Import / export workflow     | Shipped | [#62](https://github.com/pskillen/codeplug-studio/issues/62)                              |
 | Disconnected Drive CTA UX    | Shipped | [#141](https://github.com/pskillen/codeplug-studio/issues/141) — inline connect on action |
+| Shared session + reconnect   | Shipped | [#286](https://github.com/pskillen/codeplug-studio/issues/286)                            |
+| App chrome Save bar          | Shipped | [#285](https://github.com/pskillen/codeplug-studio/issues/285)                            |
+| UUID-match import overwrite  | Shipped | [#285](https://github.com/pskillen/codeplug-studio/issues/285)                            |
+| Refresh from Drive prompt    | Shipped | [#285](https://github.com/pskillen/codeplug-studio/issues/285)                            |
 
 ## Manual verify checklist
 
 - [ ] Disconnect in Settings with a real OAuth client
 - [ ] Click **Open from Drive** while disconnected → GIS connect → browser opens
 - [ ] Browse folders, create folder, path restored on reopen
-- [ ] Open YAML from Drive → replace active project (or create on Home)
+- [ ] Token expiry greys Drive CTAs without page reload; **Reconnect** restores save/browse
+- [ ] **Save to Drive** in app chrome overwrites remembered file when project is dirty
+- [ ] Open YAML from Drive with matching `project.id` → diff modal → overwrite local
+- [ ] Switch project with newer Drive file → **Refresh from Drive** banner
 - [ ] Save to Drive → re-save defaults to last file; overwrite requires confirm
 - [ ] Export YAML → import on fresh browser → `interchange.googleDrive` preserved in project meta
 - [ ] Debug `/debug/local-storage` masks Drive access token

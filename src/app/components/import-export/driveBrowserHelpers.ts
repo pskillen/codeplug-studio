@@ -1,5 +1,5 @@
 import type { DriveFolderCrumb, DriveListItem } from '@integrations/cloud/index.ts';
-import { DRIVE_ROOT_FOLDER_ID } from '@integrations/cloud/index.ts';
+import { DRIVE_ROOT_FOLDER_ID, isDriveAuthError } from '@integrations/cloud/index.ts';
 
 export interface ResolveInitialBrowseInput {
   interchangeFolderId?: string;
@@ -46,6 +46,9 @@ export function formatBrowsePathLabel(path: DriveFolderCrumb[]): string {
 }
 
 export function driveErrorMessage(err: unknown): string {
+  if (isDriveAuthError(err)) {
+    return 'Google Drive session expired. Reconnect to continue.';
+  }
   if (err instanceof Error) return err.message;
   return String(err);
 }

@@ -64,3 +64,19 @@ export function recordExportDestination(
 
   return { ...meta, interchange };
 }
+
+/** Records portable interchange destination after import (same shape as export). */
+export function recordImportDestination(
+  meta: ProjectMeta,
+  destination: ExportDestinationKind,
+  details: { fileName: string; folderId?: string; folderName?: string; fileId?: string },
+  syncedAt: string = isoNow(),
+): ProjectMeta {
+  return recordExportDestination(meta, destination, details, syncedAt);
+}
+
+export function portableSyncedAt(meta: ProjectMeta): string | null {
+  return (
+    meta.interchange?.googleDrive?.exportedAt ?? meta.interchange?.localFile?.exportedAt ?? null
+  );
+}

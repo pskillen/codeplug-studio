@@ -27,6 +27,21 @@ export interface DriveSession {
   accountEmail?: string;
 }
 
+/** Refresh local session state this many ms before token expiry. */
+export const DRIVE_TOKEN_REFRESH_BUFFER_MS = 60_000;
+
+export function driveSessionIsValid(session: DriveSession | null): session is DriveSession {
+  if (!session?.accessToken) return false;
+  if (!session.expiresAt) return true;
+  return session.expiresAt - DRIVE_TOKEN_REFRESH_BUFFER_MS > Date.now();
+}
+
+/** Milliseconds until session is treated as expired, or null when unknown. */
+export function msUntilDriveSessionExpiry(session: DriveSession | null): number | null {
+  if (!session?.expiresAt) return null;
+  return session.expiresAt - DRIVE_TOKEN_REFRESH_BUFFER_MS - Date.now();
+}
+
 function readItem(key: string): string | null {
   try {
     return globalThis.localStorage?.getItem(key) ?? null;

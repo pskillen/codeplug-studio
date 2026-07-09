@@ -26,9 +26,12 @@ function mockDriveState(
     loading: false,
     error: null,
     isConfigured,
+    sessionExpired: false,
     connect,
     disconnect: vi.fn(),
     refresh: vi.fn(),
+    invalidateSession: vi.fn(),
+    withDriveAuthRetry: async <T,>(operation: () => Promise<T>) => operation(),
   });
 }
 

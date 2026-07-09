@@ -1,8 +1,19 @@
 import { Alert, Button, Stack, Text } from '@mantine/core';
-import { useGoogleDrive } from '../../hooks/useGoogleDrive.ts';
+import { useDriveSession } from '../../hooks/useDriveSession.ts';
 
 export default function GoogleDriveConnectSection() {
-  const { connected, accountLabel, loading, error, isConfigured, disconnect } = useGoogleDrive();
+  const {
+    connected,
+    accountLabel,
+    loading,
+    error,
+    isConfigured,
+    disconnect,
+    connect,
+    sessionExpired,
+  } = useDriveSession();
+
+  const showReconnect = isConfigured && (!connected || sessionExpired);
 
   return (
     <Stack gap="sm">
@@ -16,18 +27,24 @@ export default function GoogleDriveConnectSection() {
           See the build docs for Google Cloud setup.
         </Alert>
       ) : null}
-      {connected ? (
+      {connected && !sessionExpired ? (
         <Text size="sm">
           Connected as <strong>{accountLabel ?? 'Google account'}</strong>
         </Text>
       ) : (
         <Text size="sm" c="dimmed">
-          Not connected — use <strong>Open from Drive</strong> or <strong>Save to Drive</strong>{' '}
-          anywhere in the app to connect.
+          {sessionExpired
+            ? 'Session expired — reconnect to continue using Google Drive.'
+            : 'Not connected — use Open from Drive or Save to Drive anywhere in the app to connect.'}
         </Text>
       )}
       {error ? <Alert color="red">{error}</Alert> : null}
-      {connected ? (
+      {showReconnect ? (
+        <Button variant="light" loading={loading} onClick={() => void connect()}>
+          Reconnect
+        </Button>
+      ) : null}
+      {connected && !sessionExpired ? (
         <Button variant="light" color="red" loading={loading} onClick={() => void disconnect()}>
           Disconnect
         </Button>

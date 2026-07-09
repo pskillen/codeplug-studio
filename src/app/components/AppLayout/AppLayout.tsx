@@ -7,6 +7,9 @@ import SectionNav from '../SectionNav/SectionNav.tsx';
 import AppHeader from '../ui/AppHeader.tsx';
 import BuildFooter from '../BuildFooter/BuildFooter.tsx';
 import CookieConsentBanner from '../CookieConsentBanner/CookieConsentBanner.tsx';
+import DriveSessionBanner from '../import-export/DriveSessionBanner.tsx';
+import ProjectInterchangeBar from '../ProjectInterchangeBar/ProjectInterchangeBar.tsx';
+import RefreshFromDriveBanner from '../ProjectInterchangeBar/RefreshFromDriveBanner.tsx';
 import { usePageAnalytics } from '../../hooks/usePageAnalytics.ts';
 import {
   NAVBAR_WIDTH_WITH_SECONDARY,
@@ -63,6 +66,9 @@ export default function AppLayout() {
           </Box>
         ) : null}
         <CookieConsentBanner />
+        <DriveSessionBanner />
+        <RefreshFromDriveBanner />
+        <ProjectInterchangeBar />
         <Outlet />
         <BuildFooter />
       </AppShell.Main>

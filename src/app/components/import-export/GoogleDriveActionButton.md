@@ -4,7 +4,9 @@ Drive file-action CTA with connection gating — wraps `GoogleDriveButton` for o
 
 ## Purpose
 
-When Google Drive is not connected, the button stays **visible and greyed** but remains clickable. Click runs GIS OAuth via `useGoogleDrive().connect()`, then calls the parent `onClick` (typically opening `DriveBrowserModal`) on success.
+When Google Drive is not connected, the button stays **visible and greyed** but remains clickable. Click runs GIS OAuth via `useDriveSession().connect()`, then calls the parent `onClick` (typically opening `DriveBrowserModal`) on success.
+
+When the session has expired (`sessionExpired`), the button is treated as disconnected even if React state was previously stale.
 
 When OAuth is not configured (`!VITE_GOOGLE_CLIENT_ID`), click opens `GoogleDriveNotConfiguredModal` with a link to **Settings → Google Drive**.
 
@@ -27,7 +29,7 @@ When OAuth is not configured (`!VITE_GOOGLE_CLIENT_ID`), click opens `GoogleDriv
 
 ## Behaviour
 
-- `driveReady = connected && isConfigured` from `useGoogleDrive`
+- `driveReady = connected && isConfigured && !sessionExpired` from `useDriveSession`
 - Not configured: click → `GoogleDriveNotConfiguredModal` → Settings
 - Configured but not connected: click → `connect()` → parent `onClick` on success; cancelled sign-in is silent; other failures show inline `Alert`
 - Ready: delegates `onClick` to parent immediately

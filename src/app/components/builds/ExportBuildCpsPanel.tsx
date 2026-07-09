@@ -41,6 +41,7 @@ import {
   uploadCpsZipToDrive,
 } from '../../services/buildCpsExportService.ts';
 import { useBuildCpsExportFileNames } from '../../hooks/useBuildCpsExportFileNames.ts';
+import { useGoogleDrive } from '../../hooks/useGoogleDrive.ts';
 
 export interface ExportBuildCpsPanelProps {
   build: FormatBuild;
@@ -50,6 +51,7 @@ const buildService = new BuildService(persistence);
 
 export default function ExportBuildCpsPanel({ build }: ExportBuildCpsPanelProps) {
   const { activeProjectId, activeProject } = useProjects();
+  const { withDriveAuthRetry } = useGoogleDrive();
   const { putBuild } = useFormatBuilds();
   const formatEntry = formatCatalogEntry(build.formatId as FormatId);
   const profileLabel = traitProfileFor(build.profileId)?.label ?? build.profileId;
@@ -216,15 +218,17 @@ export default function ExportBuildCpsPanel({ build }: ExportBuildCpsPanelProps)
     setExporting(true);
     setError(null);
     try {
-      const result = await uploadCpsZipToDrive(
-        activeProjectId,
-        build.id,
-        {
-          folderId: target.folderId,
-          fileName: target.fileName,
-          existingFileId: target.existingFileId,
-        },
-        exportOptions,
+      const result = await withDriveAuthRetry(() =>
+        uploadCpsZipToDrive(
+          activeProjectId,
+          build.id,
+          {
+            folderId: target.folderId,
+            fileName: target.fileName,
+            existingFileId: target.existingFileId,
+          },
+          exportOptions,
+        ),
       );
       mergeWarnings(result.warnings);
       saveDriveLastFolderId(target.folderId);

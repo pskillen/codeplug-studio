@@ -28,10 +28,16 @@ export default function GoogleDriveActionButton({
   styles,
   ...props
 }: GoogleDriveActionButtonProps) {
-  const { connected, isConfigured, connect, loading: driveLoading } = useGoogleDrive();
+  const {
+    connected,
+    isConfigured,
+    connect,
+    loading: driveLoading,
+    sessionExpired,
+  } = useGoogleDrive();
   const [notConfiguredOpen, setNotConfiguredOpen] = useState(false);
   const [connectError, setConnectError] = useState<string | null>(null);
-  const driveReady = connected && isConfigured;
+  const driveReady = connected && isConfigured && !sessionExpired;
   const operationBlocked = Boolean(disabled || loading || driveLoading);
 
   async function handleClick() {

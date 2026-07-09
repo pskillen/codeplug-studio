@@ -4,15 +4,17 @@ import {
   defaultLocalExportFileName,
   suggestExportDestination,
 } from '@core/services/interchangeMeta.ts';
-import { googleDrivePort } from '@integrations/cloud/index.ts';
 import { saveDriveLastFolderId, saveDriveLastFolderPath } from '@integrations/cloud/drivePrefs.ts';
 import { exportProjectToYaml } from '../../services/projectImportExportService.ts';
+import { recordDrivePortableSyncAfterWrite } from '../../services/saveProjectToDriveService.ts';
+import { useGoogleDrive } from '../../hooks/useGoogleDrive.ts';
 import { useProjects } from '../../state/useProjects.ts';
 import DriveBrowserModal, { type DriveSaveTarget } from './DriveBrowserModal.tsx';
 import GoogleDriveActionButton from './GoogleDriveActionButton.tsx';
 
 export default function ExportToDrivePanel() {
   const { activeProjectId, activeProject, refreshProjects } = useProjects();
+  const { port, withDriveAuthRetry } = useGoogleDrive();
   const [browserOpen, setBrowserOpen] = useState(false);
   const [overwriteOpen, setOverwriteOpen] = useState(false);
   const [pendingTarget, setPendingTarget] = useState<DriveSaveTarget | null>(null);
@@ -48,11 +50,13 @@ export default function ExportToDrivePanel() {
         const initialExport = await exportProjectToYaml(activeProjectId, {
           fileName: target.fileName,
         });
-        const created = await googleDrivePort.writeFile({
-          parentId: target.folderId,
-          fileName: target.fileName,
-          content: initialExport.content,
-        });
+        const created = await withDriveAuthRetry(() =>
+          port.writeFile({
+            parentId: target.folderId,
+            fileName: target.fileName,
+            content: initialExport.content,
+          }),
+        );
         fileId = created.id;
         const finalExport = await exportProjectToYaml(activeProjectId, {
           fileName: target.fileName,
@@ -66,12 +70,26 @@ export default function ExportToDrivePanel() {
         content = finalExport.content;
       }
 
-      await googleDrivePort.writeFile({
-        parentId: target.folderId,
-        fileName: target.fileName,
-        content,
-        fileId,
-      });
+      const writeResult = await withDriveAuthRetry(() =>
+        port.writeFile({
+          parentId: target.folderId,
+          fileName: target.fileName,
+          content,
+          fileId,
+        }),
+      );
+
+      await recordDrivePortableSyncAfterWrite(
+        port,
+        activeProjectId,
+        {
+          fileName: target.fileName,
+          folderId: target.folderId,
+          folderName: target.folderName,
+          fileId: fileId!,
+        },
+        writeResult,
+      );
 
       saveDriveLastFolderId(target.folderId);
       saveDriveLastFolderPath(target.path);

@@ -30,12 +30,16 @@ import {
   pathUpToIndex,
   resolveInitialBrowseState,
 } from './driveBrowserHelpers.ts';
+import { useDriveSession } from '../../hooks/useDriveSession.ts';
 import GoogleDriveButton from './GoogleDriveButton.tsx';
 
 export interface DriveOpenSelection {
   fileId: string;
   fileName: string;
   content: string;
+  modifiedTime?: string;
+  folderId?: string;
+  folderName?: string;
 }
 
 export interface DriveSaveTarget {
@@ -83,6 +87,7 @@ function DriveBrowserBody({
   onSaveTarget,
   port,
 }: DriveBrowserBodyProps) {
+  const { connected, connect, loading: driveLoading, withDriveAuthRetry } = useDriveSession();
   const initial = resolveInitialBrowseState({
     interchangeFolderId,
     lastFolderId: loadDriveLastFolderId(),
@@ -98,13 +103,13 @@ function DriveBrowserBody({
   const [creatingFolder, setCreatingFolder] = useState(false);
 
   useEffect(() => {
-    if (!port.isConnected()) return;
+    if (!connected || !port.isConnected()) return;
     let cancelled = false;
     const load = async () => {
       setLoading(true);
       setError(null);
       try {
-        const items = await port.listChildren(folderId);
+        const items = await withDriveAuthRetry(() => port.listChildren(folderId));
         if (!cancelled) setChildren(items);
       } catch (err) {
         if (!cancelled) setError(driveErrorMessage(err));
@@ -116,7 +121,7 @@ function DriveBrowserBody({
     return () => {
       cancelled = true;
     };
-  }, [folderId, port]);
+  }, [connected, folderId, port, withDriveAuthRetry]);
 
   function persistBrowseState(nextFolderId: string, nextPath: DriveFolderCrumb[]) {
     saveDriveLastFolderId(nextFolderId);
@@ -144,9 +149,9 @@ function DriveBrowserBody({
     setCreatingFolder(true);
     setError(null);
     try {
-      await port.createFolder(folderId, name);
+      await withDriveAuthRetry(() => port.createFolder(folderId, name));
       setNewFolderName('');
-      const items = await port.listChildren(folderId);
+      const items = await withDriveAuthRetry(() => port.listChildren(folderId));
       setChildren(items);
     } catch (err) {
       setError(driveErrorMessage(err));
@@ -159,8 +164,15 @@ function DriveBrowserBody({
     setLoading(true);
     setError(null);
     try {
-      const content = await port.readFile(file.id);
-      onSelectFile({ fileId: file.id, fileName: file.name, content });
+      const content = await withDriveAuthRetry(() => port.readFile(file.id));
+      onSelectFile({
+        fileId: file.id,
+        fileName: file.name,
+        content,
+        modifiedTime: file.modifiedTime,
+        folderId,
+        folderName: path[path.length - 1]?.name,
+      });
       onClose();
     } catch (err) {
       setError(driveErrorMessage(err));
@@ -194,16 +206,29 @@ function DriveBrowserBody({
 
   return (
     <Stack gap="sm">
-      {!port.isConnected() ? (
-        <Alert color="yellow">Connect Google Drive in Settings before browsing files.</Alert>
+      {!connected ? (
+        <Alert color="yellow">
+          <Stack gap="xs">
+            <Text size="sm">Connect Google Drive to browse files.</Text>
+            <Button size="xs" variant="light" loading={driveLoading} onClick={() => void connect()}>
+              Reconnect
+            </Button>
+          </Stack>
+        </Alert>
       ) : null}
       {error ? (
         <Alert color="red">
           {error}
-          {error.toLowerCase().includes('auth') ? (
-            <Text size="sm" mt="xs">
-              Reconnect from Settings if your session expired.
-            </Text>
+          {error.toLowerCase().includes('session expired') ? (
+            <Button
+              size="xs"
+              variant="light"
+              mt="xs"
+              loading={driveLoading}
+              onClick={() => void connect()}
+            >
+              Reconnect
+            </Button>
           ) : null}
         </Alert>
       ) : null}
