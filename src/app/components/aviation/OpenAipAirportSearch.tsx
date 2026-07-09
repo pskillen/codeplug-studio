@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import {
   Alert,
@@ -47,6 +47,7 @@ import UseMyLocationButton from '../UseMyLocationButton/UseMyLocationButton.tsx'
 import ZoneSelect from '../library/ZoneSelect.tsx';
 import { FormPage, PageSection, SplitButton } from '../ui/index.ts';
 import CodeplugMap from '../CodeplugMap/CodeplugMap.tsx';
+import classes from './OpenAipAirportSearch.module.css';
 
 const DEFAULT_ZONE_NAME = 'Airband';
 
@@ -131,27 +132,62 @@ function selectableFrequencyKeys(
   return frequencyKeysForAirport(airport).filter((key) => !existingChannelByKey.has(key));
 }
 
-function FrequencyImportPreview({
+function FrequencyRowGrid({
+  checkbox,
+  wireLabel,
+  nameContent,
+  frequencyMhz,
+}: {
+  checkbox: ReactNode;
+  wireLabel: string;
+  nameContent: ReactNode;
+  frequencyMhz: string;
+}) {
+  return (
+    <div className={classes.frequencyRow}>
+      <div className={classes.checkboxCell}>{checkbox}</div>
+      <Text className={classes.wireCell} lineClamp={2}>
+        {wireLabel}
+      </Text>
+      <Text className={classes.arrowCell} aria-hidden>
+        →
+      </Text>
+      <div className={classes.nameCell}>{nameContent}</div>
+      <Text className={classes.mhzCell}>{frequencyMhz}</Text>
+    </div>
+  );
+}
+
+function ImportableFrequencyRow({
   wireLabel,
   proposedName,
   frequencyMhz,
+  checked,
+  onCheckedChange,
 }: {
   wireLabel: string;
   proposedName: string;
   frequencyMhz: string;
+  checked: boolean;
+  onCheckedChange: (checked: boolean) => void;
 }) {
   return (
-    <Group gap="xs" wrap="nowrap" align="flex-start" grow>
-      <Text size="sm" c="dimmed" lineClamp={2} style={{ flex: 1, minWidth: 0 }}>
-        {wireLabel}
-      </Text>
-      <Text size="sm" c="dimmed" aria-hidden>
-        →
-      </Text>
-      <Text size="sm" lineClamp={2} style={{ flex: 1, minWidth: 0 }}>
-        {proposedName} · {frequencyMhz}
-      </Text>
-    </Group>
+    <FrequencyRowGrid
+      checkbox={
+        <Checkbox
+          checked={checked}
+          onChange={(e) => onCheckedChange(e.currentTarget.checked)}
+          aria-label={`Select ${proposedName}`}
+        />
+      }
+      wireLabel={wireLabel}
+      nameContent={
+        <Text size="sm" lineClamp={2}>
+          {proposedName}
+        </Text>
+      }
+      frequencyMhz={frequencyMhz}
+    />
   );
 }
 
@@ -165,25 +201,19 @@ function ExistingFrequencyRow({
   frequencyMhz: string;
 }) {
   return (
-    <Group gap="xs" wrap="nowrap" align="flex-start" grow>
-      <Text size="sm" c="dimmed" lineClamp={2} style={{ flex: 1, minWidth: 0 }}>
-        {wireLabel}
-      </Text>
-      <Text size="sm" c="dimmed" aria-hidden>
-        →
-      </Text>
-      <Group gap={6} wrap="wrap" style={{ flex: 1, minWidth: 0 }}>
-        <Anchor component={Link} to={`/library/channels/${channel.id}`} size="sm">
-          {channel.name}
-        </Anchor>
-        <Text size="sm" c="dimmed">
-          · {frequencyMhz}
-        </Text>
-        <Text size="xs" c="dimmed">
-          In library
-        </Text>
-      </Group>
-    </Group>
+    <FrequencyRowGrid
+      checkbox={<span className={classes.checkboxSpacer} aria-hidden />}
+      wireLabel={wireLabel}
+      nameContent={
+        <div className={classes.nameCellStack}>
+          <Anchor component={Link} to={`/library/channels/${channel.id}`} size="sm" lineClamp={2}>
+            {channel.name}
+          </Anchor>
+          <Text className={classes.inLibraryHint}>In library</Text>
+        </div>
+      }
+      frequencyMhz={frequencyMhz}
+    />
   );
 }
 
@@ -268,7 +298,7 @@ function AirportCard({
                 Select none
               </Anchor>
             </Text>
-            <Stack gap={6}>
+            <div className={classes.frequencyList}>
               {airport.frequencies.map((freq, index) => {
                 const key = airportFrequencyKey(airport, index);
                 const frequencyMhz = formatFrequencyMhz(freq.rxFrequencyHz);
@@ -287,9 +317,17 @@ function AirportCard({
 
                 if (!isCivilAirbandHz(freq.rxFrequencyHz)) {
                   return (
-                    <Text key={key} size="sm" c="dimmed">
-                      {freq.service} · {frequencyMhz} (not civil airband)
-                    </Text>
+                    <FrequencyRowGrid
+                      key={key}
+                      checkbox={<span className={classes.checkboxSpacer} aria-hidden />}
+                      wireLabel={freq.service}
+                      nameContent={
+                        <Text size="sm" c="dimmed" lineClamp={2}>
+                          Not civil airband
+                        </Text>
+                      }
+                      frequencyMhz={frequencyMhz}
+                    />
                   );
                 }
 
@@ -298,21 +336,17 @@ function AirportCard({
                 });
 
                 return (
-                  <Checkbox
+                  <ImportableFrequencyRow
                     key={key}
-                    label={
-                      <FrequencyImportPreview
-                        wireLabel={freq.service}
-                        proposedName={proposedName}
-                        frequencyMhz={frequencyMhz}
-                      />
-                    }
+                    wireLabel={freq.service}
+                    proposedName={proposedName}
+                    frequencyMhz={frequencyMhz}
                     checked={selectedKeys.has(key)}
-                    onChange={(e) => onToggleFrequency(key, e.currentTarget.checked)}
+                    onCheckedChange={(checked) => onToggleFrequency(key, checked)}
                   />
                 );
               })}
-            </Stack>
+            </div>
           </Stack>
         )}
       </Stack>
