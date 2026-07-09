@@ -133,6 +133,7 @@ describe('resolveEffectiveExportFileNames', () => {
     expect(names).toEqual([...ANYTONE_EXPORT_FILE_NAMES]);
     expect(names).not.toContain('AMAir.CSV');
     expect(names).not.toContain('FM.CSV');
+    expect(names).not.toContain('AMZone.CSV');
   });
 
   it('appends AMAir.CSV when airband channels are in the build', () => {
@@ -140,6 +141,6 @@ describe('resolveEffectiveExportFileNames', () => {
     const assembled = assemble(build, library);
     const names = resolveEffectiveExportFileNames('anytone', assembled);
 
-    expect(names).toEqual([...ANYTONE_EXPORT_FILE_NAMES, 'AMAir.CSV']);
+    expect(names).toEqual([...ANYTONE_EXPORT_FILE_NAMES, 'AMAir.CSV', 'AMZone.CSV']);
   });
 });
