@@ -497,7 +497,7 @@ export default function OpenAipAirportSearch() {
               />
               <Group align="flex-end" wrap="wrap">
                 <Checkbox
-                  label="Create zone"
+                  label="Add to zone"
                   checked={alsoCreateZone}
                   onChange={(e) => setAlsoCreateZone(e.currentTarget.checked)}
                 />
