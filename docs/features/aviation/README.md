@@ -10,17 +10,17 @@ Tier-1 reference for **airport airband monitoring** workflows — searching [Ope
 
 ## Implementation status
 
-| Area                       | Status      | Notes                                                                                                                |
-| -------------------------- | ----------- | -------------------------------------------------------------------------------------------------------------------- |
-| OpenAIP API client         | Shipped     | `src/integrations/aviation/` — [#263](https://github.com/pskillen/codeplug-studio/issues/263)                       |
-| Airport search UI          | Shipped     | `/library/channels/add-from-openaip`                                                                                 |
-| Import to existing zone    | Shipped     | [#284](https://github.com/pskillen/codeplug-studio/issues/284) — append to library zone                              |
-| Settings API key           | Shipped     | Browser `localStorage` only                                                                                          |
-| Core airband generation    | Shipped     | `src/core/domain/airband/`                                                                                           |
-| System attributions        | Shipped     | [#264](https://github.com/pskillen/codeplug-studio/issues/264) — `/attributions`                                     |
-| Anytone `AMAir.CSV` export | Shipped     | [#267](https://github.com/pskillen/codeplug-studio/issues/267)                                                       |
-| Anytone `AMZone.CSV`       | In progress | Wire schema + fixture ([#316](https://github.com/pskillen/codeplug-studio/issues/316)); export partition outstanding |
-| Anytone `FM.CSV` export    | Shipped     | [#268](https://github.com/pskillen/codeplug-studio/issues/268)                                                       |
+| Area                       | Status  | Notes                                                                                                          |
+| -------------------------- | ------- | -------------------------------------------------------------------------------------------------------------- |
+| OpenAIP API client         | Shipped | `src/integrations/aviation/` — [#263](https://github.com/pskillen/codeplug-studio/issues/263)                  |
+| Airport search UI          | Shipped | `/library/channels/add-from-openaip`                                                                           |
+| Import to existing zone    | Shipped | [#284](https://github.com/pskillen/codeplug-studio/issues/284) — append to library zone                        |
+| Settings API key           | Shipped | Browser `localStorage` only                                                                                    |
+| Core airband generation    | Shipped | `src/core/domain/airband/`                                                                                     |
+| System attributions        | Shipped | [#264](https://github.com/pskillen/codeplug-studio/issues/264) — `/attributions`                               |
+| Anytone `AMAir.CSV` export | Shipped | [#267](https://github.com/pskillen/codeplug-studio/issues/267)                                                 |
+| Anytone `AMZone.CSV`       | Shipped | [#316](https://github.com/pskillen/codeplug-studio/issues/316) — partition export + Airband build wire preview |
+| Anytone `FM.CSV` export    | Shipped | [#268](https://github.com/pskillen/codeplug-studio/issues/268)                                                 |
 
 ## Documentation map
 

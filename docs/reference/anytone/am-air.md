@@ -51,22 +51,22 @@ Analog zone layout for the AM airband bank. Confirmed from a **populated** AT-D8
 
 ### Observed body-row behaviour
 
-| Rule                         | Evidence from operator export                                                                                          |
-| ---------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
-| Member FKs                   | Every `Zone Channel Member` / `A Channel` / `Scan Channel ` token matched an `AMAir.CSV` `Name` after trim (excl. VFO) |
-| No frequency columns         | Unlike `DMRZone.CSV`, members are name-only                                                                            |
-| `A Channel`                  | Always one of the zone members                                                                                         |
-| `Scan Channel `              | Ordered subset of members (not necessarily all); empty not observed                                                    |
-| Airband / DMR partition      | Zero `AMAir` names appeared in `DMRZone.CSV` in the same export                                                        |
-| `FMZone.CSV`                 | Not present in this export (broadcast FM zone partition still unconfirmed)                                             |
+| Rule                    | Evidence from operator export                                                                                          |
+| ----------------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| Member FKs              | Every `Zone Channel Member` / `A Channel` / `Scan Channel ` token matched an `AMAir.CSV` `Name` after trim (excl. VFO) |
+| No frequency columns    | Unlike `DMRZone.CSV`, members are name-only                                                                            |
+| `A Channel`             | Always one of the zone members                                                                                         |
+| `Scan Channel `         | Ordered subset of members (not necessarily all); empty not observed                                                    |
+| Airband / DMR partition | Zero `AMAir` names appeared in `DMRZone.CSV` in the same export                                                        |
+| `FMZone.CSV`            | Not present in this export (broadcast FM zone partition still unconfirmed)                                             |
 
 ### Internal mapping
 
-| Wire                  | Internal (target)                                                                      |
-| --------------------- | -------------------------------------------------------------------------------------- |
-| `Zone Name`           | Build zone entry `wireName` (AM projection)                                            |
-| `Zone Channel Member` | Ordered airband `memberChannelIds` via trimmed name → UUID at boundary                 |
-| `A Channel`           | Format-specific A-side active channel hint                                             |
+| Wire                  | Internal (target)                                                                         |
+| --------------------- | ----------------------------------------------------------------------------------------- |
+| `Zone Name`           | Build zone entry `wireName` (AM projection)                                               |
+| `Zone Channel Member` | Ordered airband `memberChannelIds` via trimmed name → UUID at boundary                    |
+| `A Channel`           | Format-specific A-side active channel hint                                                |
 | `Scan Channel `       | Format-specific scan membership for the AM zone (subset of members) — export defaults TBD |
 
 Maps to **build zone grouping** projected at the Anytone boundary into the AM bank ([#316](https://github.com/pskillen/codeplug-studio/issues/316)). Export must not put airband members into `DMRZone.CSV`.
@@ -77,12 +77,12 @@ Committed `AMZone.CSV` uses **synthetic** zone/channel labels redacted from the 
 
 ## Fidelity
 
-| File         | Direction | Status                                                                                         |
-| ------------ | --------- | ---------------------------------------------------------------------------------------------- |
-| `AMAir.CSV`  | Import    | Planned ([#229](https://github.com/pskillen/codeplug-studio/issues/229))                      |
-| `AMAir.CSV`  | Export    | Shipped ([#267](https://github.com/pskillen/codeplug-studio/issues/267))                       |
-| `AMZone.CSV` | Import    | Planned ([#229](https://github.com/pskillen/codeplug-studio/issues/229))                      |
-| `AMZone.CSV` | Export    | Deferred — wire schema confirmed; partition serialiser tracked in [#316](https://github.com/pskillen/codeplug-studio/issues/316) |
+| File         | Direction | Status                                                                                                                                         |
+| ------------ | --------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| `AMAir.CSV`  | Import    | Planned ([#229](https://github.com/pskillen/codeplug-studio/issues/229))                                                                       |
+| `AMAir.CSV`  | Export    | Shipped ([#267](https://github.com/pskillen/codeplug-studio/issues/267))                                                                       |
+| `AMZone.CSV` | Import    | Planned ([#229](https://github.com/pskillen/codeplug-studio/issues/229))                                                                       |
+| `AMZone.CSV` | Export    | Shipped ([#316](https://github.com/pskillen/codeplug-studio/issues/316)) — partition from build zones; `Scan Channel ` defaults to all members |
 
 ## Related
 

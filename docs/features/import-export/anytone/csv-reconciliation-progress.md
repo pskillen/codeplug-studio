@@ -81,7 +81,19 @@
 
 ---
 
+## Slice 5 — `AMZone.CSV` export partition ([#316](https://github.com/pskillen/codeplug-studio/issues/316))
+
+**Status:** Complete
+
+**Delivered**
+
+- `partitionAnytoneZones` + `serialiseAmZonesCsv` — airband members in `AMZone.CSV` only; filtered from `DMRZone.CSV`
+- Conditional export file list + `.LST` index 30; Export UI individual download + preview
+- Anytone **Airband** build wire-preview route (`/builds/:id/airband`); airband filtered off Channels/Zones
+- Directional tests in `amZoneExport.test.ts`; preview filter tests in `previewWireRows.test.ts`
+
+---
+
 ## Next
 
-1. Implement #316 AM zone partition serialiser (uses confirmed wire schema)
-2. Manual CPS enum elicitation — [#307](https://github.com/pskillen/codeplug-studio/issues/307) (linked to [#303](https://github.com/pskillen/codeplug-studio/issues/303))
+1. Manual CPS enum elicitation — [#307](https://github.com/pskillen/codeplug-studio/issues/307) (linked to [#303](https://github.com/pskillen/codeplug-studio/issues/303))

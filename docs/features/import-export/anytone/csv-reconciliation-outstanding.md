@@ -13,7 +13,7 @@ Items **skipped**, **incomplete**, or **discovered during** [#297](https://githu
 - [x] **`DMR MODE` column** — ~~Studio always exports `0`~~ **Shipped** ([#311](https://github.com/pskillen/codeplug-studio/issues/311)) — `ChannelModeProfileDMR.dmrMode` + RX/TX inference
 - [x] **Dual-mode `Channel Type`** — **Shipped** ([#303](https://github.com/pskillen/codeplug-studio/issues/303)) — `Channel.primaryMode` → `D-Digital` / `A-Analog` / `D+A TX D` / `A+D TX A`
 - [x] **`AMZone.CSV` wire schema** — 5-column body-row sample + redacted fixture ([#316](https://github.com/pskillen/codeplug-studio/issues/316))
-- [ ] **AM air zone partition serialiser** — emit `AMZone.CSV`; filter airband members out of `DMRZone.CSV` ([#316](https://github.com/pskillen/codeplug-studio/issues/316))
+- [x] **AM air zone partition serialiser** — emit `AMZone.CSV`; filter airband members out of `DMRZone.CSV` ([#316](https://github.com/pskillen/codeplug-studio/issues/316))
 
 ## Enum / value coverage
 

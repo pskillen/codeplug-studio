@@ -12,7 +12,7 @@
 ## Deferred (plan out of scope)
 
 - OpenAIP Tiles API map tiles
-- `AMZone.CSV` Anytone export ([#316](https://github.com/pskillen/codeplug-studio/issues/316) — wire schema confirmed; serialiser outstanding)
+- `AMZone.CSV` Anytone export shipped ([#316](https://github.com/pskillen/codeplug-studio/issues/316))
 - `FMZone.CSV` Anytone export (CPS presence unconfirmed in operator sample)
 - Anytone import of `AMAir.CSV` / `FM.CSV` ([#229](https://github.com/pskillen/codeplug-studio/issues/229))
 - Broadcast FM library generation ([#269](https://github.com/pskillen/codeplug-studio/issues/269) / [#270](https://github.com/pskillen/codeplug-studio/issues/270))
