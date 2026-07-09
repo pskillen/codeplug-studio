@@ -122,6 +122,16 @@ export const ZONE_COL = {
 
 export const ZONE_HEADERS: string[] = Object.values(ZONE_COL);
 
+export const AM_ZONE_COL = {
+  number: 'No.',
+  name: 'Zone Name',
+  members: 'Zone Channel Member',
+  aChannel: 'A Channel',
+  scanChannel: 'Scan Channel ',
+} as const;
+
+export const AM_ZONE_HEADERS: string[] = Object.values(AM_ZONE_COL);
+
 export const SCAN_LIST_COL = {
   number: 'No.',
   name: 'Scan List Name',
