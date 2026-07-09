@@ -3,6 +3,7 @@ import { newChannel, newFormatBuild, newZone } from '@core/domain/factories.ts';
 import { defaultModeProfile } from '@core/domain/modeProfiles.ts';
 import { exportBuildAll } from '@core/services/exportBuild.ts';
 import { assemble } from '@core/services/assemble.ts';
+import type { Channel, Zone } from '@core/models/library.ts';
 import type { LibrarySlice } from '@core/services/assemble.ts';
 import type { FormatBuild } from '@core/models/formatBuild.ts';
 import { AM_ZONE_HEADERS } from './columns.ts';
@@ -29,10 +30,7 @@ function airbandChannel(name: string) {
   };
 }
 
-function libraryWithZones(
-  channels: ReturnType<typeof dmrChannel>[],
-  zones: ReturnType<typeof newZone>[],
-): LibrarySlice {
+function libraryWithZones(channels: Channel[], zones: Zone[]): LibrarySlice {
   return {
     channels,
     zones,

@@ -104,22 +104,24 @@ describe('anytone export wire context', () => {
     const rglTable = csvToTable(files['DMRReceiveGroupCallList.CSV']);
     const scanTable = csvToTable(files['ScanList.CSV']);
     const amAirTable = csvToTable(amAirCsv);
+    const amZoneTable = csvToTable(fullExport.files['AMZone.CSV']!);
 
     const channelName = cell(channelTable, 0, 'Channel Name');
     const tgName = cell(tgTable, 0, 'Name');
     const rglContact = cell(rglTable, 0, 'Contact').split('|')[0] ?? '';
     const zoneMembers = cell(zoneTable, 0, 'Zone Channel Member').split('|');
+    const amZoneMembers = cell(amZoneTable, 0, 'Zone Channel Member').split('|');
     const scanMembers = cell(scanTable, 0, 'Scan Channel Member').split('|');
-    const amAirName = cell(amAirTable, 0, 'Name');
+    const amAirName = cell(amAirTable, 0, 'Name').trim();
 
     expect(channelName.length).toBeLessThanOrEqual(16);
     expect(tgName.length).toBeLessThanOrEqual(16);
     expect(rglContact.length).toBeLessThanOrEqual(16);
     expect(tgName).toBe(rglContact);
-    expect(zoneMembers[0]).toBe(channelName);
-    expect(zoneMembers[1]).toBe(amAirName);
+    expect(zoneMembers).toEqual([channelName]);
+    expect(amZoneMembers).toEqual([amAirName]);
     expect(scanMembers[0]).toBe(channelName);
-    expect(amAirName.length).toBe(16);
+    expect(amAirName.length).toBeLessThanOrEqual(16);
   });
 });
 

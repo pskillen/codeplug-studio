@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { newChannel, newFormatBuild, newZone } from '@core/domain/factories.ts';
 import { defaultModeProfile } from '@core/domain/modeProfiles.ts';
 import { assemble } from '@core/services/assemble.ts';
+import type { Channel } from '@core/models/library.ts';
+import type { Zone } from '@core/models/library.ts';
 import type { LibrarySlice } from '@core/services/assemble.ts';
 import type { FormatBuild } from '@core/models/formatBuild.ts';
 import { partitionAnytoneZones } from './zonePartition.ts';
@@ -27,10 +29,7 @@ function airbandChannel(name: string) {
   };
 }
 
-function libraryWithZones(
-  channels: ReturnType<typeof dmrChannel>[],
-  zones: ReturnType<typeof newZone>[],
-): LibrarySlice {
+function libraryWithZones(channels: Channel[], zones: Zone[]): LibrarySlice {
   return {
     channels,
     zones,
