@@ -12,12 +12,29 @@ import {
   UnstyledButton,
 } from '@mantine/core';
 import { IconCheck, IconX } from '@tabler/icons-react';
-import { useEffect, useState } from 'react';
+import { Fragment, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import type { WirePreviewRow } from '@core/services/previewWireRows.ts';
 import { libraryEditPathForWirePreviewRow } from '../../lib/wirePreviewRowLinks.ts';
 import ZoneMemberSummaryBadges from '../library/ZoneMemberSummaryBadges.tsx';
 import { ICON_SIZE_ACTION, ICON_STROKE } from '../../lib/iconSizes.ts';
+import type { ZoneScanExpandPanelProps } from './ZoneScanExportControls.tsx';
+import { ZoneScanExpandPanel, ZoneScanRowHeader } from './ZoneScanExportControls.tsx';
+import type { Zone } from '@core/models/library.ts';
+import type { ZoneGroupingLayout, ZoneGroupingZoneEntry } from '@core/models/traitLayout.ts';
+import { layoutEntry } from '@core/import-export/zoneDerivedScanLists/members.ts';
+
+export interface ZoneScanWirePreviewContext {
+  layout: ZoneGroupingLayout;
+  zones: Zone[];
+  zoneById: Map<string, Zone>;
+  channelById: ZoneScanExpandPanelProps['channelById'];
+  isDm32: boolean;
+  scanListMemberCap: number;
+  saving: boolean;
+  onUpdateZoneEntry: (zoneId: string, patch: Partial<ZoneGroupingZoneEntry>) => void;
+  onUpdateMemberScanInclusion: (zone: Zone, channelId: string, includeInScanList: boolean) => void;
+}
 
 export interface WirePreviewTableProps {
   rows: WirePreviewRow[];
@@ -27,6 +44,7 @@ export interface WirePreviewTableProps {
   onForceIncludeChange?: (row: WirePreviewRow, forceInclude: boolean) => void;
   onWireNameChange: (row: WirePreviewRow, wireName: string) => void;
   onUnsavedChangesChange?: (hasUnsaved: boolean) => void;
+  zoneScanContext?: ZoneScanWirePreviewContext;
 }
 
 function wireNameCommittedValue(row: WirePreviewRow): string {
@@ -249,8 +267,10 @@ export default function WirePreviewTable({
   onForceIncludeChange,
   onWireNameChange,
   onUnsavedChangesChange,
+  zoneScanContext,
 }: WirePreviewTableProps) {
   const [dirtyKeys, setDirtyKeys] = useState<Set<string>>(() => new Set());
+  const [expandedZoneIds, setExpandedZoneIds] = useState<Set<string>>(() => new Set());
 
   useEffect(() => {
     onUnsavedChangesChange?.(dirtyKeys.size > 0);
@@ -263,6 +283,15 @@ export default function WirePreviewTable({
       const next = new Set(prev);
       if (dirty) next.add(key);
       else next.delete(key);
+      return next;
+    });
+  };
+
+  const toggleZoneExpanded = (zoneId: string) => {
+    setExpandedZoneIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(zoneId)) next.delete(zoneId);
+      else next.add(zoneId);
       return next;
     });
   };
@@ -287,30 +316,82 @@ export default function WirePreviewTable({
       <Table.Tbody>
         {rows.map((row) => {
           const effectivelyIncluded = rowEffectivelyIncluded(row);
+          const zone =
+            zoneScanContext && row.entityKind === 'zone'
+              ? zoneScanContext.zoneById.get(row.libraryEntityId)
+              : undefined;
+          const zoneLayoutEntry =
+            zoneScanContext && row.entityKind === 'zone'
+              ? layoutEntry(zoneScanContext.layout, row.libraryEntityId)
+              : undefined;
+          const zoneExpanded = expandedZoneIds.has(row.libraryEntityId);
+
           return (
-            <Table.Tr key={row.key} opacity={effectivelyIncluded ? 1 : 0.55}>
-              <Table.Td>
-                <WirePreviewExportControls
-                  row={row}
-                  onExcludedChange={onExcludedChange}
-                  onForceIncludeChange={onForceIncludeChange}
-                />
-              </Table.Td>
-              <Table.Td>
-                <WirePreviewDisplayCell row={row} />
-              </Table.Td>
-              <Table.Td>
-                <WireNameOverrideInput
-                  key={`${row.key}:${wireNameCommittedValue(row)}`}
-                  row={row}
-                  nameLimit={nameLimit}
-                  excluded={!effectivelyIncluded}
-                  clickableDefaultWireName={clickableDefaultWireName}
-                  onWireNameChange={onWireNameChange}
-                  onDirtyChange={(dirty) => setRowDirty(row.key, dirty)}
-                />
-              </Table.Td>
-            </Table.Tr>
+            <Fragment key={row.key}>
+              <Table.Tr opacity={effectivelyIncluded ? 1 : 0.55}>
+                <Table.Td>
+                  <WirePreviewExportControls
+                    row={row}
+                    onExcludedChange={onExcludedChange}
+                    onForceIncludeChange={onForceIncludeChange}
+                  />
+                </Table.Td>
+                <Table.Td>
+                  <WirePreviewDisplayCell row={row} />
+                  {zone && zoneScanContext ? (
+                    <ZoneScanRowHeader
+                      zone={zone}
+                      zones={zoneScanContext.zones}
+                      entry={zoneLayoutEntry}
+                      scanListMemberCap={zoneScanContext.scanListMemberCap}
+                      isDm32={zoneScanContext.isDm32}
+                      expanded={zoneExpanded}
+                      saving={zoneScanContext.saving}
+                      onToggleExpand={() => toggleZoneExpanded(row.libraryEntityId)}
+                      onExportScanListChange={(enabled) =>
+                        zoneScanContext.onUpdateZoneEntry(row.libraryEntityId, {
+                          exportScanList: enabled,
+                        })
+                      }
+                    />
+                  ) : null}
+                </Table.Td>
+                <Table.Td>
+                  <WireNameOverrideInput
+                    key={`${row.key}:${wireNameCommittedValue(row)}`}
+                    row={row}
+                    nameLimit={nameLimit}
+                    excluded={!effectivelyIncluded}
+                    clickableDefaultWireName={clickableDefaultWireName}
+                    onWireNameChange={onWireNameChange}
+                    onDirtyChange={(dirty) => setRowDirty(row.key, dirty)}
+                  />
+                </Table.Td>
+              </Table.Tr>
+              {zone && zoneScanContext && zoneExpanded ? (
+                <Table.Tr>
+                  <Table.Td colSpan={3} p={0}>
+                    <ZoneScanExpandPanel
+                      zone={zone}
+                      entry={zoneLayoutEntry}
+                      channelById={zoneScanContext.channelById}
+                      isDm32={zoneScanContext.isDm32}
+                      saving={zoneScanContext.saving}
+                      onUpdateZoneEntry={(patch) =>
+                        zoneScanContext.onUpdateZoneEntry(row.libraryEntityId, patch)
+                      }
+                      onUpdateMemberScanInclusion={(channelId, includeInScanList) =>
+                        zoneScanContext.onUpdateMemberScanInclusion(
+                          zone,
+                          channelId,
+                          includeInScanList,
+                        )
+                      }
+                    />
+                  </Table.Td>
+                </Table.Tr>
+              ) : null}
+            </Fragment>
           );
         })}
       </Table.Tbody>

@@ -5,7 +5,9 @@ import { Link } from 'react-router-dom';
 import type { ChannelExportNameMode } from '@core/domain/channelNaming.ts';
 import ExportNameModeSelect from '../../../components/builds/ExportNameModeSelect.tsx';
 import UseLibraryAbbreviationsSwitch from '../../../components/builds/UseLibraryAbbreviationsSwitch.tsx';
-import WirePreviewTable from '../../../components/builds/WirePreviewTable.tsx';
+import WirePreviewTable, {
+  type ZoneScanWirePreviewContext,
+} from '../../../components/builds/WirePreviewTable.tsx';
 import UnsavedChangesModal from '../../../components/ui/UnsavedChangesModal.tsx';
 import { FormPage } from '../../../components/ui/index.ts';
 import { resolvedBuildExportSettings } from '../../../lib/buildExportSettingsUi.ts';
@@ -25,6 +27,7 @@ export interface BuildEntityWirePageProps {
   showLibraryAbbreviations?: boolean;
   clickableDefaultWireName?: boolean;
   beforeTable?: ReactNode;
+  zoneScanContext?: ZoneScanWirePreviewContext;
 }
 
 export default function BuildEntityWirePage({
@@ -35,6 +38,7 @@ export default function BuildEntityWirePage({
   showLibraryAbbreviations = false,
   clickableDefaultWireName = true,
   beforeTable,
+  zoneScanContext,
 }: BuildEntityWirePageProps) {
   const {
     build,
@@ -130,6 +134,7 @@ export default function BuildEntityWirePage({
           onForceIncludeChange={entityKind === 'zone' ? setRowForceIncluded : undefined}
           onWireNameChange={setRowWireName}
           onUnsavedChangesChange={setHasUnsavedWireNames}
+          zoneScanContext={entityKind === 'zone' ? zoneScanContext : undefined}
         />
       </Stack>
       <UnsavedChangesModal
