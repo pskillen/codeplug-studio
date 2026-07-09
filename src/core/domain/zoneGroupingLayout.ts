@@ -20,6 +20,45 @@ export function seedZoneGroupingFromLibrary(library: LibrarySlice): ZoneGrouping
   };
 }
 
+/**
+ * Ensure layout zone entries match the current library inventory.
+ * Preserves export flags and channel order hints for zones that still exist.
+ */
+export function syncZoneGroupingWithLibrary(
+  layout: ZoneGroupingLayout | undefined,
+  library: LibrarySlice,
+): ZoneGroupingLayout {
+  const base = layout ?? seedZoneGroupingFromLibrary(library);
+  const existingById = new Map(base.zones.map((entry) => [entry.id, entry]));
+
+  return {
+    kind: 'zoneGrouping',
+    zones: library.zones.map((zone) => {
+      const existing = existingById.get(zone.id);
+      const effectiveIds = resolveEffectiveZoneChannelIds(zone, library.zones);
+      const channelIds =
+        existing && existing.channelIds.length > 0
+          ? orderChannelIdsByLayoutHint(effectiveIds, existing.channelIds)
+          : effectiveIds;
+
+      if (!existing) {
+        return {
+          id: zone.id,
+          name: zone.name,
+          channelIds,
+        };
+      }
+
+      return {
+        ...existing,
+        id: zone.id,
+        name: zone.name,
+        channelIds,
+      };
+    }),
+  };
+}
+
 /** Apply layout channelIds as an order hint; append effective ids not present in the hint. */
 export function orderChannelIdsByLayoutHint(
   effectiveIds: string[],

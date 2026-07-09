@@ -1,9 +1,8 @@
-import type { Channel, Zone } from '@core/models/library.ts';
-import type { ZoneGroupingLayout, ZoneGroupingZoneEntry } from '@core/models/traitLayout.ts';
+import type { Channel } from '@core/models/library.ts';
 import type { CpsExportOptions } from '@core/import-export/types.ts';
 import { buildScanContext, effectiveScanSkips } from '@core/import-export/scanInclusion/index.ts';
 import type { AssembledBuild, LibrarySlice } from '@core/services/assemble.ts';
-import { memberIncludedInScanList, normalizeZoneMemberEntry } from '@core/domain/zoneMembers.ts';
+import { layoutEntry, scanMasterEnabled, scanMemberIds } from './members.ts';
 import type { ExpandedDm32ChannelRow } from '../formats/dm32/channelExpansion.ts';
 import { newChannel } from '@core/domain/factories.ts';
 import { SCAN_COL } from '../formats/dm32/columns.ts';
@@ -31,41 +30,6 @@ export interface ZoneDerivedScanExport {
   scanListByChannelWireName: Map<string, string>;
   /** Zone id → carrier wire name to prepend in Zones.csv member list. */
   carrierPrependByZoneId: Map<string, string>;
-}
-
-function scanMasterEnabled(options?: CpsExportOptions): boolean {
-  return options?.exportZoneDerivedScanLists !== false;
-}
-
-function layoutEntry(
-  layout: ZoneGroupingLayout | undefined,
-  zoneId: string,
-): ZoneGroupingZoneEntry | undefined {
-  return layout?.zones.find((zone) => zone.id === zoneId);
-}
-
-function scanMemberIds(zone: Zone, zones: Zone[]): string[] {
-  const zonesById = new Map(zones.map((row) => [row.id, row]));
-  const result: string[] = [];
-  const seen = new Set<string>();
-
-  function walk(current: Zone): void {
-    for (const raw of current.members) {
-      const member = normalizeZoneMemberEntry(raw);
-      if (member.kind === 'channel') {
-        if (!memberIncludedInScanList(member)) continue;
-        if (seen.has(member.channelId)) continue;
-        seen.add(member.channelId);
-        result.push(member.channelId);
-        continue;
-      }
-      const child = zonesById.get(member.zoneId);
-      if (child) walk(child);
-    }
-  }
-
-  walk(zone);
-  return result;
 }
 
 function expandedWireNamesForMembers(
