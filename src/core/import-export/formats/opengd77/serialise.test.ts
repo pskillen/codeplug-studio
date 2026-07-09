@@ -4,7 +4,14 @@ import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import type { Channel } from '@core/models/library.ts';
 import type { AssembledBuild } from '@core/services/assemble.ts';
-import { newChannel, newFormatBuild, newTalkGroup } from '@core/domain/factories.ts';
+import {
+  newChannel,
+  newFormatBuild,
+  newTalkGroup,
+  newZone,
+  newRxGroupList,
+  newDigitalContact,
+} from '@core/domain/factories.ts';
 import { parseProjectDocument } from '@core/import-export/formats/native-yaml/parse.ts';
 import {
   FIXTURE_CHANNEL_A_ID,
@@ -18,7 +25,7 @@ import { assemble } from '@core/services/assemble.ts';
 import { exportBuildAll } from '@core/services/exportBuild.ts';
 import { compareCsvRecords } from '../../../../test/csvRecordCompare.ts';
 import { parseCsv } from '@core/import-export/csvParse.ts';
-import { CHANNEL_COL, CONTACT_COL } from './columns.ts';
+import { CHANNEL_COL, CONTACT_COL, RX_GROUP_LIST_COL } from './columns.ts';
 import { serialiseChannels, serialiseOpenGd77Files, serialiseZones } from './serialise.ts';
 import { collectOpenGd77ExportWarnings } from './warnings.ts';
 
@@ -285,7 +292,6 @@ describe('OpenGD77 export serialise', () => {
     const files = serialiseOpenGd77Files(assembled, {
       profileId: 'opengd77-1701',
       shortenNames: true,
-      useTalkGroupAbbreviation: true,
     });
     const rows = parseCsv(files['Contacts.csv']);
     const headers = rows[0]!;
@@ -293,6 +299,49 @@ describe('OpenGD77 export serialise', () => {
     const dataRow = rows.slice(1).find((row) => row[nameIndex] === 'Scot West');
     expect(dataRow).toBeDefined();
     expect(dataRow?.[nameIndex]).toBe('Scot West');
+  });
+
+  it('shortens long zone, RX group list, and contact names when shortenNames is enabled', () => {
+    const longZoneName = 'GLA GLASGOW TOWER ZONE NAME';
+    const longRglName = 'Scotland West Receive Group List';
+    const longContactName = 'Very Long Digital Contact Name';
+    const zone = newZone('proj', longZoneName);
+    const rgl = newRxGroupList('proj', longRglName);
+    const contact = newDigitalContact('proj', longContactName, 1234567);
+    const assembled: AssembledBuild = {
+      buildId: 'build-1',
+      formatId: 'opengd77',
+      profileId: 'opengd77-1701',
+      buildName: 'Test',
+      channels: [],
+      zones: [{ zoneId: zone.id, wireName: longZoneName, memberChannelIds: [] }],
+      talkGroups: [],
+      digitalContacts: [{ entity: contact, wireName: longContactName }],
+      analogContacts: [],
+      rxGroupLists: [{ entity: rgl, wireName: longRglName }],
+      scanLists: [],
+    };
+    const files = serialiseOpenGd77Files(assembled, {
+      profileId: 'opengd77-1701',
+      shortenNames: true,
+    });
+    const zoneRows = parseCsv(files['Zones.csv']);
+    const zoneName = zoneRows[1]?.[0];
+    expect(zoneName).toBeDefined();
+    expect(zoneName!.length).toBeLessThanOrEqual(16);
+
+    const rglRows = parseCsv(files['TG_Lists.csv']);
+    const rglNameIndex = rglRows[0]!.indexOf(RX_GROUP_LIST_COL.name);
+    const rglName = rglRows[1]?.[rglNameIndex];
+    expect(rglName).toBeDefined();
+    expect(rglName!.length).toBeLessThanOrEqual(16);
+
+    const contactRows = parseCsv(files['Contacts.csv']);
+    const contactNameIndex = contactRows[0]!.indexOf(CONTACT_COL.name);
+    const privateContact = contactRows
+      .slice(1)
+      .find((row) => row[contactRows[0]!.indexOf(CONTACT_COL.idType)] === 'Private');
+    expect(privateContact?.[contactNameIndex]?.length).toBeLessThanOrEqual(16);
   });
 
   it('expands multi-mode channels into -F and -D wire rows when expandModes is true', () => {

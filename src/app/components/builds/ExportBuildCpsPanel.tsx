@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Alert, Button, Group, Modal, Stack, Switch, Text } from '@mantine/core';
+import { Alert, Button, Group, Modal, Stack, Text } from '@mantine/core';
 import { IconDownload, IconPackage, IconTable } from '@tabler/icons-react';
 import type { BuildExportSettings, FormatBuild } from '@core/models/formatBuild.ts';
-import { traitProfileFor, showsDefaultScanInclusion } from '@core/models/traits.ts';
+import { traitProfileFor } from '@core/models/traits.ts';
 import {
   formatCatalogEntry,
   getExportAdapter,
@@ -15,9 +15,8 @@ import {
 import { formatProfileWireHint, getFormatProfiles } from '@core/import-export/formatProfiles.ts';
 import type { FormatId } from '@core/import-export/types.ts';
 import { mergeExportOptions } from '@core/services/exportBuild.ts';
-import ExportNameSettingsFields from './ExportNameSettingsFields.tsx';
+import ExportBuildSettingsSections from './ExportBuildSettingsSections.tsx';
 import ProfilePicker from './ProfilePicker.tsx';
-import DefaultScanInclusionSegment from './DefaultScanInclusionSegment.tsx';
 import CpsCsvPreviewModal from './CpsCsvPreviewModal.tsx';
 import { saveDriveLastFolderId, saveDriveLastFolderPath } from '@integrations/cloud/drivePrefs.ts';
 import DriveBrowserModal, { type DriveSaveTarget } from '../import-export/DriveBrowserModal.tsx';
@@ -295,51 +294,19 @@ export default function ExportBuildCpsPanel({ build }: ExportBuildCpsPanelProps)
             is {profileLabel}.
           </Text>
         ) : null}
-        <Stack gap="xs">
-          <Text size="sm" fw={600}>
-            Export name settings
-          </Text>
-          <ExportNameSettingsFields
-            build={build}
-            saving={savingSettings}
-            onPatch={(patch) => void handleExportSettingsPatch(patch)}
-            profileNameLimit={profileNameLimit}
-          />
-        </Stack>
-        <Stack gap="xs">
-          <Text size="sm" fw={600}>
-            Scan export
-          </Text>
-          <DefaultScanInclusionSegment
-            value={defaultScanValue}
-            formatDefault={formatDefaults.defaultScanInclusion}
-            disabled={savingSettings}
-            onChange={(defaultScanInclusion) =>
-              void handleExportSettingsPatch({ defaultScanInclusion })
-            }
-          />
-        </Stack>
-        <Stack gap="xs">
-          <Text size="sm" fw={600}>
-            Export inclusion
-          </Text>
-          <Switch
-            label="Export channels not in the memory list"
-            checked={build.exportUnlinkedChannels !== false}
-            disabled={savingSettings}
-            onChange={(event) =>
-              void handleExportInclusionChange(
-                'exportUnlinkedChannels',
-                event.currentTarget.checked,
-              )
-            }
-          />
-          {settingsError ? (
-            <Text size="sm" c="red">
-              {settingsError}
-            </Text>
-          ) : null}
-        </Stack>
+        <ExportBuildSettingsSections
+          build={build}
+          saving={savingSettings}
+          settingsError={settingsError}
+          profileNameLimit={profileNameLimit}
+          resolvedSettings={resolvedSettings}
+          formatDefaults={formatDefaults}
+          defaultScanValue={defaultScanValue}
+          onExportSettingsPatch={(patch) => void handleExportSettingsPatch(patch)}
+          onExportInclusionChange={(field, checked) =>
+            void handleExportInclusionChange(field, checked)
+          }
+        />
         {!hasChannels ? (
           <Text size="sm" c="dimmed">
             Add channels to the library and memory list before exporting this build.
@@ -421,91 +388,19 @@ export default function ExportBuildCpsPanel({ build }: ExportBuildCpsPanelProps)
           {wireHint}
         </Text>
       ) : null}
-      <Stack gap="xs">
-        <Text size="sm" fw={600}>
-          Export name settings
-        </Text>
-        <ExportNameSettingsFields
-          build={build}
-          saving={savingSettings}
-          onPatch={(patch) => void handleExportSettingsPatch(patch)}
-          profileNameLimit={profileNameLimit}
-          showMultiTalkGroupOptions={build.formatId === 'dm32'}
-        />
-      </Stack>
-      <Stack gap="xs">
-        <Text size="sm" fw={600}>
-          Scan export
-        </Text>
-        {showsDefaultScanInclusion(build.profileId) ? (
-          <DefaultScanInclusionSegment
-            value={defaultScanValue}
-            formatDefault={formatDefaults.defaultScanInclusion}
-            disabled={savingSettings}
-            onChange={(defaultScanInclusion) =>
-              void handleExportSettingsPatch({ defaultScanInclusion })
-            }
-          />
-        ) : (
-          <Text size="sm" c="dimmed">
-            Dedicated scan lists use library membership (Library → Scan lists) and per-channel
-            assignment on the Channels page — not export defaults.
-          </Text>
-        )}
-        {build.formatId === 'dm32' ? (
-          <Switch
-            label="Export zone-derived scan lists (Scan.csv)"
-            description="Requires per-zone scan export enabled on the Zones page."
-            checked={resolvedSettings.exportZoneDerivedScanLists}
-            disabled={savingSettings}
-            onChange={(event) =>
-              void handleExportSettingsPatch({
-                exportZoneDerivedScanLists: event.currentTarget.checked,
-              })
-            }
-          />
-        ) : null}
-      </Stack>
-      <Stack gap="xs">
-        <Text size="sm" fw={600}>
-          Export inclusion
-        </Text>
-        <Switch
-          label="Export channels not linked to a zone"
-          checked={build.exportUnlinkedChannels !== false}
-          disabled={savingSettings}
-          onChange={(event) =>
-            void handleExportInclusionChange('exportUnlinkedChannels', event.currentTarget.checked)
-          }
-        />
-        <Switch
-          label="Export talk groups not referenced by a channel"
-          checked={build.exportUnlinkedTalkGroups !== false}
-          disabled={savingSettings}
-          onChange={(event) =>
-            void handleExportInclusionChange(
-              'exportUnlinkedTalkGroups',
-              event.currentTarget.checked,
-            )
-          }
-        />
-        <Switch
-          label="Export RX group lists not referenced by a channel"
-          checked={build.exportUnlinkedRxGroupLists !== false}
-          disabled={savingSettings}
-          onChange={(event) =>
-            void handleExportInclusionChange(
-              'exportUnlinkedRxGroupLists',
-              event.currentTarget.checked,
-            )
-          }
-        />
-        {settingsError ? (
-          <Text size="sm" c="red">
-            {settingsError}
-          </Text>
-        ) : null}
-      </Stack>
+      <ExportBuildSettingsSections
+        build={build}
+        saving={savingSettings}
+        settingsError={settingsError}
+        profileNameLimit={profileNameLimit}
+        resolvedSettings={resolvedSettings}
+        formatDefaults={formatDefaults}
+        defaultScanValue={defaultScanValue}
+        onExportSettingsPatch={(patch) => void handleExportSettingsPatch(patch)}
+        onExportInclusionChange={(field, checked) =>
+          void handleExportInclusionChange(field, checked)
+        }
+      />
       {!hasChannels ? (
         <Text size="sm" c="dimmed">
           Add channels to the library before exporting this build.

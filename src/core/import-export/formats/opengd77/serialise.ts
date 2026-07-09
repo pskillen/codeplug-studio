@@ -46,6 +46,13 @@ import {
 import { contactRefWireName, rxGroupListWireName } from './exportRefs.ts';
 import { rxGroupListExportMemberNames, zoneExportMemberNames } from './listWire.ts';
 import {
+  buildOpenGd77ListWireMaps,
+  contactExportWireName,
+  rxGroupListExportWireName,
+  zoneExportWireName,
+  type OpenGd77ListWireMaps,
+} from './exportListWire.ts';
+import {
   DEFAULT_OPENGD77_PROFILE_ID,
   getOpenGd77Profile,
   type OpenGd77RadioProfile,
@@ -155,13 +162,20 @@ export function serialiseChannels(assembled: AssembledBuild, options?: CpsExport
   return formatCsv(CHANNEL_HEADERS, rows);
 }
 
-export function serialiseZones(assembled: AssembledBuild, options?: CpsExportOptions): string {
+export function serialiseZones(
+  assembled: AssembledBuild,
+  options?: CpsExportOptions,
+  listWireMaps?: OpenGd77ListWireMaps,
+): string {
   const profile = getOpenGd77Profile(
     options?.profileId ?? assembled.profileId ?? DEFAULT_OPENGD77_PROFILE_ID,
   );
   const memberHeaders = zoneMemberHeaders(profile.zoneMembers);
   const rows = assembled.zones.map((zone) => {
-    const values: Record<string, string> = { 'Zone Name': zone.wireName };
+    const zoneName = listWireMaps
+      ? zoneExportWireName(listWireMaps, zone.zoneId, zone.wireName)
+      : zone.wireName;
+    const values: Record<string, string> = { 'Zone Name': zoneName };
     zoneExportMemberNames(zone, assembled, options).forEach((name, i) => {
       if (i < memberHeaders.length) values[memberHeaders[i]!] = name;
     });
@@ -170,7 +184,10 @@ export function serialiseZones(assembled: AssembledBuild, options?: CpsExportOpt
   return formatCsv(ZONE_HEADERS, rows);
 }
 
-export function serialiseContacts(assembled: AssembledBuild): string {
+export function serialiseContacts(
+  assembled: AssembledBuild,
+  listWireMaps?: OpenGd77ListWireMaps,
+): string {
   const rows: string[][] = [];
 
   for (const tg of assembled.talkGroups) {
@@ -187,7 +204,9 @@ export function serialiseContacts(assembled: AssembledBuild): string {
   for (const contact of assembled.digitalContacts) {
     rows.push(
       padRow(CONTACT_HEADERS, {
-        [CONTACT_COL.name]: contact.wireName,
+        [CONTACT_COL.name]: listWireMaps
+          ? contactExportWireName(listWireMaps, contact.entity.id, contact.wireName)
+          : contact.wireName,
         [CONTACT_COL.id]: String(contact.entity.digitalId),
         [CONTACT_COL.idType]: 'Private',
         [CONTACT_COL.tsOverride]: '',
@@ -198,7 +217,9 @@ export function serialiseContacts(assembled: AssembledBuild): string {
   for (const contact of assembled.analogContacts) {
     rows.push(
       padRow(CONTACT_HEADERS, {
-        [CONTACT_COL.name]: contact.wireName,
+        [CONTACT_COL.name]: listWireMaps
+          ? contactExportWireName(listWireMaps, contact.entity.id, contact.wireName)
+          : contact.wireName,
         [CONTACT_COL.id]: contact.entity.code,
         [CONTACT_COL.idType]: 'Private',
         [CONTACT_COL.tsOverride]: '',
@@ -209,13 +230,20 @@ export function serialiseContacts(assembled: AssembledBuild): string {
   return formatCsv(CONTACT_HEADERS, rows);
 }
 
-export function serialiseRxGroupLists(assembled: AssembledBuild, profileId?: string): string {
+export function serialiseRxGroupLists(
+  assembled: AssembledBuild,
+  profileId?: string,
+  listWireMaps?: OpenGd77ListWireMaps,
+): string {
   const profile = getOpenGd77Profile(
     profileId ?? assembled.profileId ?? DEFAULT_OPENGD77_PROFILE_ID,
   );
   const memberHeaders = rxGroupListMemberHeaders(profile.tgListMembers);
   const rows = assembled.rxGroupLists.map((list) => {
-    const values: Record<string, string> = { [RX_GROUP_LIST_COL.name]: list.wireName };
+    const listName = listWireMaps
+      ? rxGroupListExportWireName(listWireMaps, list.entity.id, list.wireName)
+      : list.wireName;
+    const values: Record<string, string> = { [RX_GROUP_LIST_COL.name]: listName };
     rxGroupListExportMemberNames(assembled, list.entity.id).forEach((name, i) => {
       if (i < memberHeaders.length) values[memberHeaders[i]!] = name;
     });
@@ -242,12 +270,22 @@ export function serialiseOpenGd77Files(
   options?: CpsExportOptions,
 ): OpenGd77ExportFiles {
   const profileId = options?.profileId ?? assembled.profileId ?? DEFAULT_OPENGD77_PROFILE_ID;
-  const exportAssembled = withTalkGroupWireNameLimits(assembled, { ...options, profileId });
+  const warnings: string[] = [];
+  const exportAssembled = withTalkGroupWireNameLimits(
+    assembled,
+    { ...options, profileId },
+    warnings,
+  );
+  const listWireMaps = buildOpenGd77ListWireMaps(
+    exportAssembled,
+    { ...options, profileId },
+    warnings,
+  );
   return {
     'Channels.csv': serialiseChannels(exportAssembled, options),
-    'Zones.csv': serialiseZones(exportAssembled, options),
-    'Contacts.csv': serialiseContacts(exportAssembled),
-    'TG_Lists.csv': serialiseRxGroupLists(exportAssembled, profileId),
+    'Zones.csv': serialiseZones(exportAssembled, options, listWireMaps),
+    'Contacts.csv': serialiseContacts(exportAssembled, listWireMaps),
+    'TG_Lists.csv': serialiseRxGroupLists(exportAssembled, profileId, listWireMaps),
     'DTMF.csv': serialiseDtmfHeaderOnly(),
     'APRS.csv': serialiseAprsHeaderOnly(),
   };

@@ -19,7 +19,7 @@ import { mergeExportOptions } from '@core/services/exportBuild.ts';
 import { previewGeneratedChannelWireName } from '@core/services/previewChannelWireName.ts';
 import DefaultScanInclusionSegment from '../../components/builds/DefaultScanInclusionSegment.tsx';
 import ExportNameModeSelect from '../../components/builds/ExportNameModeSelect.tsx';
-import UseChannelAbbreviationSwitch from '../../components/builds/UseChannelAbbreviationSwitch.tsx';
+import UseLibraryAbbreviationsSwitch from '../../components/builds/UseLibraryAbbreviationsSwitch.tsx';
 import { WireNameOverrideInput } from '../../components/builds/WirePreviewTable.tsx';
 import ScanInclusionSegment from '../../components/channels/ScanInclusionSegment.tsx';
 import UnsavedChangesModal from '../../components/ui/UnsavedChangesModal.tsx';
@@ -265,12 +265,15 @@ export default function BuildFlatMemoryChannelsPage() {
           onChange={(nameModeOverride) => void handleExportSettingsPatch({ nameModeOverride })}
           description="Fallback style for channels without an explicit wire name override on this build."
         />
-        <UseChannelAbbreviationSwitch
+        <UseLibraryAbbreviationsSwitch
           shortenNames={exportSettings.shortenNames}
-          value={exportSettings.useChannelAbbreviation}
+          value={exportSettings.useChannelAbbreviation && exportSettings.useTalkGroupAbbreviation}
           disabled={savingSettings}
-          onChange={(useChannelAbbreviation) =>
-            void handleExportSettingsPatch({ useChannelAbbreviation })
+          onChange={(useLibraryAbbreviations) =>
+            void handleExportSettingsPatch({
+              useChannelAbbreviation: useLibraryAbbreviations,
+              useTalkGroupAbbreviation: useLibraryAbbreviations,
+            })
           }
         />
         <DefaultScanInclusionSegment

@@ -751,4 +751,34 @@ describe('previewWireRows', () => {
     const row = previewWireRows(build, library, 'channel')[0];
     expect(isPreviewRowIncludedInExport(build, library, 'channel', row)).toBe(false);
   });
+
+  it('shortens opengd77 and dm32 zone and RX group list wire names at profile limit', () => {
+    const LONG_ZONE_NAME = 'GLA GLASGOW TOWER ZONE NAME';
+    const LONG_RGL_NAME = 'Scotland West Receive Group List';
+    const zone = { ...newZone('proj-zone-shorten', LONG_ZONE_NAME), members: [] };
+    const rgl = {
+      ...newRxGroupList('proj-zone-shorten', LONG_RGL_NAME),
+      members: [],
+    };
+
+    for (const formatId of ['opengd77-1701', 'dm32-baofeng-dm32uv'] as const) {
+      const build = {
+        ...newFormatBuild('proj-zone-shorten', formatId),
+        exportSettings: { shortenNames: true },
+      };
+      const library = {
+        channels: [],
+        zones: [zone],
+        talkGroups: [],
+        digitalContacts: [],
+        analogContacts: [],
+        rxGroupLists: [rgl],
+        scanLists: [],
+      };
+      const zoneRow = previewWireRows(build, library, 'zone')[0];
+      const rglRow = previewWireRows(build, library, 'rxGroupList')[0];
+      expect(zoneRow?.effectiveWireName.length).toBeLessThanOrEqual(16);
+      expect(rglRow?.effectiveWireName.length).toBeLessThanOrEqual(16);
+    }
+  });
 });

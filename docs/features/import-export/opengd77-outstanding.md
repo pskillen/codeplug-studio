@@ -25,4 +25,4 @@ Shipped on `87/pskil/build-wire-preview`:
 Deferred / follow-on (not blocking merge):
 
 - IndexedDB read-path migration for legacy `*Selections` whitelist rows (YAML import + `assemble` migrate on load)
-- DM32-style multi-talkgroup abbreviation UI (`showMultiTalkGroupOptions`) when that format ships
+- DM32-style multi-talkgroup abbreviation UI (`showMultiTalkGroupOptions`) when that format ships — superseded by unified **Use abbreviations from library** ([#300](https://github.com/pskillen/codeplug-studio/issues/300) / [#301](https://github.com/pskillen/codeplug-studio/issues/301))

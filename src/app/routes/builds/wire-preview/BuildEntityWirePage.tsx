@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import type { ChannelExportNameMode } from '@core/domain/channelNaming.ts';
 import ExportNameModeSelect from '../../../components/builds/ExportNameModeSelect.tsx';
-import UseChannelAbbreviationSwitch from '../../../components/builds/UseChannelAbbreviationSwitch.tsx';
+import UseLibraryAbbreviationsSwitch from '../../../components/builds/UseLibraryAbbreviationsSwitch.tsx';
 import WirePreviewTable from '../../../components/builds/WirePreviewTable.tsx';
 import UnsavedChangesModal from '../../../components/ui/UnsavedChangesModal.tsx';
 import { FormPage } from '../../../components/ui/index.ts';
@@ -22,7 +22,7 @@ export interface BuildEntityWirePageProps {
   entityKind: WirePreviewEntityKind;
   description?: string;
   showExportNameMode?: boolean;
-  showChannelAbbreviation?: boolean;
+  showLibraryAbbreviations?: boolean;
   clickableDefaultWireName?: boolean;
   beforeTable?: ReactNode;
 }
@@ -32,7 +32,7 @@ export default function BuildEntityWirePage({
   entityKind,
   description,
   showExportNameMode = false,
-  showChannelAbbreviation = false,
+  showLibraryAbbreviations = false,
   clickableDefaultWireName = true,
   beforeTable,
 }: BuildEntityWirePageProps) {
@@ -58,6 +58,7 @@ export default function BuildEntityWirePage({
     patch: Partial<{
       nameModeOverride: ChannelExportNameMode;
       useChannelAbbreviation: boolean;
+      useTalkGroupAbbreviation: boolean;
     }>,
   ) {
     void persistBuild((current) => buildService.withExportSettings(current, patch));
@@ -93,11 +94,16 @@ export default function BuildEntityWirePage({
             description="Fallback style for channels without an explicit wire name override on this build."
           />
         ) : null}
-        {showChannelAbbreviation ? (
-          <UseChannelAbbreviationSwitch
+        {showLibraryAbbreviations ? (
+          <UseLibraryAbbreviationsSwitch
             shortenNames={exportSettings.shortenNames}
-            value={exportSettings.useChannelAbbreviation}
-            onChange={(useChannelAbbreviation) => patchExportSettings({ useChannelAbbreviation })}
+            value={exportSettings.useChannelAbbreviation && exportSettings.useTalkGroupAbbreviation}
+            onChange={(useLibraryAbbreviations) =>
+              patchExportSettings({
+                useChannelAbbreviation: useLibraryAbbreviations,
+                useTalkGroupAbbreviation: useLibraryAbbreviations,
+              })
+            }
           />
         ) : null}
         {beforeTable}

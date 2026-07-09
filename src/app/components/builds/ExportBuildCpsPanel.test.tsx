@@ -109,7 +109,7 @@ describe('ExportBuildCpsPanel', () => {
       </MantineProvider>,
     );
 
-    expect(await screen.findByText('Export name settings')).toBeInTheDocument();
+    expect(await screen.findByText('Naming')).toBeInTheDocument();
     expect(screen.getByText('Shorten long names')).toBeInTheDocument();
     expect(screen.getByText('Default scan behaviour')).toBeInTheDocument();
   });
@@ -183,7 +183,7 @@ describe('ExportBuildCpsPanel', () => {
       </MantineProvider>,
     );
 
-    expect(await screen.findByText('Scan export')).toBeInTheDocument();
+    expect(await screen.findByText('Scanning')).toBeInTheDocument();
     expect(screen.queryByText('Default scan behaviour')).not.toBeInTheDocument();
     expect(screen.getByText(/Library → Scan lists/i)).toBeInTheDocument();
   });

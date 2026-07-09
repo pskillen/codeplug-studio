@@ -89,3 +89,16 @@ Import epic [#112](https://github.com/pskillen/codeplug-studio/issues/112) — D
 | Multi-TG wire token          | `fix(multi-tg): omit timeslot from suffix number wire token`      | `suffix_tg_number` uses TG ID only                             |
 | Wire name composition hub    | `docs(builds): add wire name composition reference hub`           | [wire-name-composition.md](../builds/wire-name-composition.md) |
 | Hide toggle filter fix       | `fix(builds): wire preview hide toggle filters per-row inclusion` | `isPreviewRowIncludedInExport`; DM32 orphan rows in preview    |
+
+---
+
+## Post-epic — list name shortening ([#301](https://github.com/pskillen/codeplug-studio/issues/301))
+
+**Status:** Complete  
+**Branch:** `300-301/pskil/list-name-shortening`
+
+| Slice                                  | Notes                                            |
+| -------------------------------------- | ------------------------------------------------ |
+| Zone / RX group list export shortening | `buildListWireNameMap` in `serialise.ts` context |
+| Wire preview                           | Zones and RX group lists at profile `nameLimit`  |
+| Library abbrev UI                      | Unified toggle with OpenGD77 / Anytone / CHIRP   |

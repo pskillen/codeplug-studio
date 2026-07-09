@@ -17,10 +17,10 @@ Empty member cells are unused slots. Trailing empty columns may be omitted on ex
 
 ## Column reference
 
-| Vendor header         | Internal field                         | Required (import) | Import rule                                                      | Export rule                                      | Bidirectional mapping | Notes                                         |
-| --------------------- | -------------------------------------- | ----------------- | ---------------------------------------------------------------- | ------------------------------------------------ | --------------------- | --------------------------------------------- |
-| `Zone Name`           | `Zone.name`                            | **Yes**           | Trim; skip row if empty                                          | As stored                                        | String pass-through   |                                               |
-| `Channel1`…`ChannelN` | `Zone.meta.imported.memberWireNames[]` | No                | Collect non-empty cells in column order; any `Channel\d+` header | Pad into `Channel1`…`ChannelN` up to profile cap | Lossless names        | Also resolved to `memberChannelIds` at import |
+| Vendor header         | Internal field                         | Required (import) | Import rule                                                      | Export rule                                                                             | Bidirectional mapping | Notes                                         |
+| --------------------- | -------------------------------------- | ----------------- | ---------------------------------------------------------------- | --------------------------------------------------------------------------------------- | --------------------- | --------------------------------------------- |
+| `Zone Name`           | `Zone.name`                            | **Yes**           | Trim; skip row if empty                                          | Shortened when export **Shorten long names** is on and name exceeds profile `nameLimit` | String pass-through   |                                               |
+| `Channel1`…`ChannelN` | `Zone.meta.imported.memberWireNames[]` | No                | Collect non-empty cells in column order; any `Channel\d+` header | Pad into `Channel1`…`ChannelN` up to profile cap                                        | Lossless names        | Also resolved to `memberChannelIds` at import |
 
 ## Import resolution
 

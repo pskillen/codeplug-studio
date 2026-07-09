@@ -3,15 +3,13 @@ import type { BuildExportSettings, FormatBuild } from '@core/models/formatBuild.
 import type { ChannelExportNameMode } from '@core/domain/channelNaming.ts';
 import { resolvedBuildExportSettings } from '../../lib/buildExportSettingsUi.ts';
 import ExportNameModeSelect from './ExportNameModeSelect.tsx';
-import UseChannelAbbreviationSwitch from './UseChannelAbbreviationSwitch.tsx';
+import UseLibraryAbbreviationsSwitch from './UseLibraryAbbreviationsSwitch.tsx';
 
 export interface ExportNameSettingsFieldsProps {
   build: FormatBuild;
   onPatch: (patch: Partial<BuildExportSettings>) => void;
   saving?: boolean;
   profileNameLimit?: number;
-  /** RX-list fan-out formats only (e.g. DM32). Hidden on OpenGD77 lean export. */
-  showMultiTalkGroupOptions?: boolean;
 }
 
 export default function ExportNameSettingsFields({
@@ -19,7 +17,6 @@ export default function ExportNameSettingsFields({
   onPatch,
   saving = false,
   profileNameLimit,
-  showMultiTalkGroupOptions = false,
 }: ExportNameSettingsFieldsProps) {
   const settings = resolvedBuildExportSettings(build);
 
@@ -59,20 +56,16 @@ export default function ExportNameSettingsFields({
         onChange={(nameModeOverride) => onPatch({ nameModeOverride })}
         description="Fallback when shortening applies and a channel has no wire name override on this build."
       />
-      {showMultiTalkGroupOptions ? (
-        <Switch
-          label="Use talk group abbreviations"
-          description="Prefer TalkGroup.abbreviation for multi-talkgroup channel suffixes"
-          checked={settings.useTalkGroupAbbreviation}
-          disabled={saving || !settings.shortenNames}
-          onChange={(e) => onPatch({ useTalkGroupAbbreviation: e.currentTarget.checked })}
-        />
-      ) : null}
-      <UseChannelAbbreviationSwitch
+      <UseLibraryAbbreviationsSwitch
         shortenNames={settings.shortenNames}
-        value={settings.useChannelAbbreviation}
+        value={settings.useChannelAbbreviation && settings.useTalkGroupAbbreviation}
         disabled={saving}
-        onChange={(useChannelAbbreviation) => onPatch({ useChannelAbbreviation })}
+        onChange={(useLibraryAbbreviations) =>
+          onPatch({
+            useChannelAbbreviation: useLibraryAbbreviations,
+            useTalkGroupAbbreviation: useLibraryAbbreviations,
+          })
+        }
       />
       <Text size="xs" c="dimmed">
         Saved with this build and included in native YAML export.

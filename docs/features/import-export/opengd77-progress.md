@@ -153,6 +153,20 @@
 
 ---
 
+## List name shortening ([#300](https://github.com/pskillen/codeplug-studio/issues/300))
+
+**Status:** Complete  
+**Branch:** `300-301/pskil/list-name-shortening`
+
+| Slice                            | Status   | Notes                                                  |
+| -------------------------------- | -------- | ------------------------------------------------------ |
+| Shared `applyListWireNameLimits` | Complete | `channelExpansion/listWireNames.ts`; Anytone re-export |
+| Zone / RGL / contact export      | Complete | `exportListWire.ts`, `serialise.ts`                    |
+| Wire preview alignment           | Complete | OpenGD77 + DM32 zones and RX group lists               |
+| Library abbrev toggle            | Complete | **Use abbreviations from library** on all formats      |
+
+---
+
 ## Next
 
 - Phase 4b — OpenGD77 CPS import (Import / export format catalog)

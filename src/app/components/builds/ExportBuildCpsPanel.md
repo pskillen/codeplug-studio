@@ -17,6 +17,7 @@ Per-build CPS export on the Radio builds detail page — per-file CSV downloads,
 - **Individual files** trigger `downloadCpsFile` per **effective** export file list (`listCpsExportFileNames` / `resolveEffectiveExportFileNames`) — not the static adapter `fileNames` when a format appends conditional banks or sidecars (e.g. `.LST`).
 - **Save ZIP to Drive** opens `DriveBrowserModal` in save mode (`saveConflictKind: zip`) and uploads via `uploadCpsZipToDrive`.
 - **Preview CSV** (`variant="outline"`, after Save ZIP to Drive) opens `CpsCsvPreviewModal` — tabbed read-only tables via `previewCpsExport` / `exportBuildAll` (lazy while modal is open). Tab list matches the effective export file set returned by preview.
+- Export settings are grouped in bordered **Inclusion**, **Naming**, and **Scanning** cards (`FieldCard` — Mantine `Paper`, theme-aware).
 - Planned formats (`exportStatus !== 'shipped'`) show a grey alert instead of actions.
 
 ## Usage
