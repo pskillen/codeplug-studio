@@ -16,8 +16,6 @@ import {
   DIGITAL_CONTACT_HEADERS,
   FM_BROADCAST_COL,
   FM_BROADCAST_HEADERS,
-  RADIO_ID_COL,
-  RADIO_ID_HEADERS,
   RX_GROUP_LIST_COL,
   RX_GROUP_LIST_HEADERS,
   SCAN_LIST_COL,
@@ -35,7 +33,7 @@ import {
   type AnytoneExportWireContext,
 } from './exportWireContext.ts';
 import { channelFrequencyById, rxGroupListMemberNames } from './listWire.ts';
-import { DEFAULT_ANYTONE_PROFILE_ID, getAnytoneProfile } from './profiles.ts';
+import { DEFAULT_ANYTONE_PROFILE_ID } from './profiles.ts';
 import { partitionAnytoneChannels } from './receiveOnlyBanks.ts';
 import { hasAmZoneExport, partitionAnytoneZones } from './zonePartition.ts';
 import {
@@ -239,18 +237,6 @@ function serialiseRxGroupListsCsv(
   return formatCsv(RX_GROUP_LIST_HEADERS, rows);
 }
 
-function serialiseRadioIdsCsv(profileId: string): string {
-  const profile = getAnytoneProfile(profileId);
-  const rows = [
-    padRow(RADIO_ID_HEADERS, {
-      [RADIO_ID_COL.number]: '1',
-      [RADIO_ID_COL.radioId]: profile.defaultRadioId,
-      [RADIO_ID_COL.name]: profile.defaultRadioIdLabel,
-    }),
-  ];
-  return formatCsv(RADIO_ID_HEADERS, rows);
-}
-
 export function serialiseAmAirCsv(
   assembled: AssembledBuild,
   options?: CpsExportOptions,
@@ -327,7 +313,6 @@ export function serialiseAnytoneFiles(
   context?: AnytoneExportWireContext,
 ): AnytoneExportFiles {
   void library;
-  const profileId = options?.profileId ?? assembled.profileId ?? DEFAULT_ANYTONE_PROFILE_ID;
   const ctx = context ?? buildAnytoneExportWireContext(assembled, options, warnings);
   return {
     'Channel.CSV': serialiseChannelsCsv(assembled, ctx, options),
@@ -336,7 +321,6 @@ export function serialiseAnytoneFiles(
     'DMRTalkGroups.CSV': serialiseTalkGroupsCsv(assembled, ctx),
     'DMRDigitalContactList.CSV': serialiseDigitalContactsCsv(assembled, ctx),
     'DMRReceiveGroupCallList.CSV': serialiseRxGroupListsCsv(assembled, ctx),
-    'RadioIDList.CSV': serialiseRadioIdsCsv(profileId),
   };
 }
 

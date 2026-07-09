@@ -231,7 +231,7 @@ export const ANYTONE_EXPORT_FILE_NAMES = [
   'DMRTalkGroups.CSV',
   'DMRDigitalContactList.CSV',
   'DMRReceiveGroupCallList.CSV',
-  'RadioIDList.CSV',
+  // RadioIDList.CSV omitted until radio IDs are modelled (#302) — placeholder rows clobber CPS.
 ] as const;
 
 export type AnytoneExportFileName = (typeof ANYTONE_EXPORT_FILE_NAMES)[number];

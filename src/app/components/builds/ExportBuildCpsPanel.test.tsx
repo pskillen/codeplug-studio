@@ -218,7 +218,6 @@ describe('ExportBuildCpsPanel', () => {
       'DMRTalkGroups.CSV',
       'DMRDigitalContactList.CSV',
       'DMRReceiveGroupCallList.CSV',
-      'RadioIDList.CSV',
       'AMAir.CSV',
     ]);
     previewCpsExport.mockResolvedValueOnce({
@@ -260,7 +259,6 @@ describe('ExportBuildCpsPanel', () => {
       'DMRTalkGroups.CSV',
       'DMRDigitalContactList.CSV',
       'DMRReceiveGroupCallList.CSV',
-      'RadioIDList.CSV',
       'AMAir.CSV',
       'AMZone.CSV',
     ]);

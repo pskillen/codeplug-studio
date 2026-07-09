@@ -41,9 +41,8 @@ describe('anytone lstManifest', () => {
     const manifest = serialiseAnytoneLstManifest(exported);
     expect(manifest).toBe(
       [
-        '7',
+        '6',
         '0,"Channel.CSV"',
-        '1,"RadioIDList.CSV"',
         '2,"DMRZone.CSV"',
         '3,"ScanList.CSV"',
         '5,"DMRTalkGroups.CSV"',
@@ -51,6 +50,7 @@ describe('anytone lstManifest', () => {
         '15,"DMRDigitalContactList.CSV"',
       ].join(ANYTONE_CSV_LINE_ENDING) + ANYTONE_CSV_LINE_ENDING,
     );
+    expect(manifest).not.toContain('RadioIDList.CSV');
     expect(manifest).toContain('\r\n');
     expect(manifest.replace(/\r\n/g, '')).not.toContain('\n');
   });
@@ -58,8 +58,8 @@ describe('anytone lstManifest', () => {
   it('appends AMAir.CSV at canonical index 27 when present', () => {
     const exported = [...ANYTONE_EXPORT_FILE_NAMES, 'AMAir.CSV'];
     const entries = orderExportedFilesForManifest(exported);
-    expect(entries.map((e) => e.index)).toEqual([0, 1, 2, 3, 5, 8, 15, 27]);
-    expect(serialiseAnytoneLstManifest(exported).split(/\r?\n/)[8]).toBe('27,"AMAir.CSV"');
+    expect(entries.map((e) => e.index)).toEqual([0, 2, 3, 5, 8, 15, 27]);
+    expect(serialiseAnytoneLstManifest(exported).split(/\r?\n/)[7]).toBe('27,"AMAir.CSV"');
   });
 
   it('appends AMZone.CSV at canonical index 30 when present', () => {
@@ -76,6 +76,7 @@ describe('anytone lstManifest', () => {
       'NotAReal.CSV',
       'RadioIDList.CSV',
     ]);
+    // RadioIDList may appear when explicitly passed (canonical index 1); MVP export omits it (#302).
     expect(manifest).toBe(
       ['2', '0,"Channel.CSV"', '1,"RadioIDList.CSV"'].join(ANYTONE_CSV_LINE_ENDING) +
         ANYTONE_CSV_LINE_ENDING,
