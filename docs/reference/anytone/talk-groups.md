@@ -30,9 +30,14 @@ Private calls → internal `DigitalContact` with `mode: 'dmr'`.
 | `Radio ID`         | `DigitalContact.digitalId` |
 | `Callsign`         | Optional wire label        |
 | `Name`             | `DigitalContact.name`      |
-| `City` … `Remarks` | Contact metadata (TBD)     |
-| `Call Type`        | `Private Call`             |
-| `Call Alert`       | Export constant / TBD      |
+| `City`             | Export default `''` (unmodelled) |
+| `State`            | Export default `''`              |
+| `Country`          | Export default `''`              |
+| `Remarks`          | Export default `''`              |
+| `Call Type`        | `Private Call`                   |
+| `Call Alert`       | Export default `None`              |
+
+Unmodelled address columns export empty strings until library CRUD gains contact metadata ([#297](https://github.com/pskillen/codeplug-studio/issues/297)). `Call Alert` enum values need CPS elicitation — see [enum-verification.md](enum-verification.md).
 
 ## Namespace
 

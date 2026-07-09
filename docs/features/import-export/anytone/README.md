@@ -6,7 +6,8 @@ Product behaviour for Anytone CPS CSV in Codeplug Studio. Wire column tables liv
 
 **Source:** `src/core/import-export/formats/anytone/`
 
-**Progress:** [anytone-progress.md](../anytone-progress.md) · **Outstanding:** [anytone-outstanding.md](../anytone-outstanding.md)
+**Progress:** [anytone-progress.md](../anytone-progress.md) · **Outstanding:** [anytone-outstanding.md](../anytone-outstanding.md)  
+**CSV reconciliation ([#297](https://github.com/pskillen/codeplug-studio/issues/297)):** [csv-reconciliation-progress.md](csv-reconciliation-progress.md) · [gaps](csv-reconciliation-gaps.md) · [outstanding](csv-reconciliation-outstanding.md)
 
 ## Implementation status
 
@@ -22,6 +23,7 @@ Product behaviour for Anytone CPS CSV in Codeplug Studio. Wire column tables liv
 | Directional export tests              | Shipped | [#236](https://github.com/pskillen/codeplug-studio/issues/236)                                                                                                       |
 | Cross-file wire name fidelity         | Shipped | [#292](https://github.com/pskillen/codeplug-studio/issues/292) — shared export wire context; preview + `shortenNames` on all CPS name FKs                            |
 | Library scan lists + dedicated trait  | Shipped | [#257](https://github.com/pskillen/codeplug-studio/issues/257), [#258](https://github.com/pskillen/codeplug-studio/issues/258)                                       |
+| CPS wire reconciliation audit         | In progress | [#297](https://github.com/pskillen/codeplug-studio/issues/297) — rich export comparison, enum checklist, `DMRDigitalContactList` fix                               |
 | CPS import                            | Planned | [#229](https://github.com/pskillen/codeplug-studio/issues/229) (Phase 7b)                                                                                            |
 
 ## Format identity
@@ -78,4 +80,5 @@ Create an `anytone-at-d890uv` build, curate library zones and **scan lists** (`/
 - [builds hub](../../builds/README.md)
 - [data-model](../../data-model/README.md)
 - [adding-a-new-format.md](../adding-a-new-format.md)
+- [csv-reconciliation-gaps.md](csv-reconciliation-gaps.md) — CPS vs Studio wire audit ([#297](https://github.com/pskillen/codeplug-studio/issues/297))
 - [cps-services.md](../cps-services.md)
