@@ -6,7 +6,8 @@ import { CHANNEL_ROW_DEFAULTS } from './channelDefaults.ts';
 import type { AnytoneExportWireContext } from './exportWireContext.ts';
 import {
   formatAnytoneBandwidthKhz,
-  formatAnytoneChannelType,
+  formatAnytoneChannelTypeFromChannel,
+  formatAnytoneDmrModeWire,
   formatAnytoneFrequencyMHz,
   formatAnytonePowerWire,
   formatAnytoneTimeslot,
@@ -107,9 +108,7 @@ export function serialiseAnytoneChannelRow(
     [CHANNEL_COL.name]: context?.channelWireName(channel.id) ?? wireNameOverride ?? row.wireName,
     [CHANNEL_COL.rx]: formatAnytoneFrequencyMHz(channel.rxFrequency),
     [CHANNEL_COL.tx]: formatAnytoneFrequencyMHz(channel.txFrequency),
-    [CHANNEL_COL.channelType]: formatAnytoneChannelType(
-      dmr?.mode ?? channel.modeProfiles[0]?.mode ?? 'dmr',
-    ),
+    [CHANNEL_COL.channelType]: formatAnytoneChannelTypeFromChannel(channel),
     [CHANNEL_COL.power]: formatAnytonePowerWire(profile.id, channel.power),
     [CHANNEL_COL.bandwidth]: formatAnytoneBandwidthKhz(
       analog && 'bandwidthKHz' in analog ? analog.bandwidthKHz : 12.5,
@@ -130,6 +129,10 @@ export function serialiseAnytoneChannelRow(
     [CHANNEL_COL.rxGroupList]: resolveRxGroupListColumn(assembled, context, dmr?.rxGroupListId),
     [CHANNEL_COL.pttProhibit]: channel.forbidTransmit ? 'On' : 'Off',
   };
+
+  if (dmr) {
+    values[CHANNEL_COL.dmrMode] = formatAnytoneDmrModeWire(channel);
+  }
 
   const rowValues: Record<string, string> = {};
   for (const header of CHANNEL_HEADERS) {

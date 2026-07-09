@@ -18,7 +18,7 @@ Tier-3 wire reference. Values **observed** in the operator rich AT-D890UV export
 
 | Column                         | Status   | Values observed            | Studio default                               | Needs elicitation                                                                         |
 | ------------------------------ | -------- | -------------------------- | -------------------------------------------- | ----------------------------------------------------------------------------------------- |
-| `Channel Type`                 | Observed | `D-Digital`, `A-Analog`    | `D-Digital` / `A-Analog` via `wireFormat.ts` | Other types (NXDN-only row?)                                                              |
+| `Channel Type`                 | Observed | `D-Digital`, `A-Analog`, `D+A TX D`, `A+D TX A` | From `modeProfiles` + `primaryMode` | `2` / `3` DCDM not modelled |
 | `Transmit Power`               | Observed | `High`, `Low`, `Turbo`     | `Low` / `High` from `%` ladder               | Full ladder + `Turbo` mapping                                                             |
 | `Band Width`                   | Observed | `12.5K`, `25K`             | From `bandwidthKHz`                          | —                                                                                         |
 | `Contact/Talk Group Call Type` | Observed | `Group Call` only          | From `contactRef` kind                       | `Private Call` on channel row                                                             |
@@ -43,7 +43,7 @@ Tier-3 wire reference. Values **observed** in the operator rich AT-D890UV export
 | `Digital APRS PTT Mode`        | Observed | `Off`                      | `Off`                                        | —                                                                                         |
 | `APRS Report Type`             | Observed | `Off`                      | `Off`                                        | Report type strings                                                                       |
 | `SMS Confirmation`             | Observed | `Off`                      | `Off`                                        | `On`                                                                                      |
-| `DMR MODE`                     | Observed | `0`, `1`                   | `0`                                          | **Full enum** — split-freq repeaters mostly `0` in sample; confirm repeater/DMO semantics |
+| `DMR MODE`                     | Observed | `0`, `1`                   | `0` / `1` from `dmrMode` or RX/TX infer | `2` / `3` (DCDM) deferred |
 | `DataACK Disable`              | Observed | `0`, `1`                   | `0`                                          | Meaning of `1`                                                                            |
 | `Auto Scan`                    | Observed | `0`                        | `0`                                          | `1`                                                                                       |
 | `Ana APRS Mute`                | Observed | `0`                        | `0`                                          | —                                                                                         |

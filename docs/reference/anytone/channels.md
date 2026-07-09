@@ -14,10 +14,21 @@ Primary DMR (and mixed-mode) channel table for AT-D890UV CPS. **76 columns** in 
 
 ## Channel Type (observed)
 
-| Wire           | Target internal mapping (provisional)                      |
-| -------------- | ---------------------------------------------------------- |
-| `D-Digital`    | `modeProfiles: [{ mode: 'dmr', … }]`                       |
-| _(others TBD)_ | Analog / NXDN / mixed types — extend when sample available |
+| Wire           | Internal mapping |
+| -------------- | ---------------- |
+| `D-Digital`    | DMR-only channel |
+| `A-Analog`     | FM/AM-only channel |
+| `D+A TX D`     | FM+DMR dual-mode; primary transmit digital (`Channel.primaryMode` = `dmr`) |
+| `A+D TX A`     | FM+DMR dual-mode; primary transmit analog (`Channel.primaryMode` = `fm` or `am`) |
+
+## DMR MODE (observed)
+
+| Wire | Internal mapping |
+| ---- | ---------------- |
+| `0`  | `ChannelModeProfileDMR.dmrMode` = `dmo-simplex`, or inferred when equal RX/TX |
+| `1`  | `dmrMode` = `repeater`, or inferred when RX ≠ TX |
+
+Values `2` / `3` (DCDM) are not modelled in the library yet.
 
 ## Core columns — DMR mapping
 
@@ -27,7 +38,7 @@ Primary DMR (and mixed-mode) channel table for AT-D890UV CPS. **76 columns** in 
 | `Channel Name`                 | Build `wireName` / `Channel.name`     | Case-sensitive FK                                                                                                                                                          |
 | `Receive Frequency`            | `Channel.rxFrequency`                 | MHz → Hz                                                                                                                                                                   |
 | `Transmit Frequency`           | `Channel.txFrequency`                 | MHz → Hz                                                                                                                                                                   |
-| `Channel Type`                 | `modeProfiles[]`                      | See Channel Type table                                                                                                                                                     |
+| `Channel Type`                 | `modeProfiles[]`, `primaryMode`       | `D-Digital` / `A-Analog` single-mode; `D+A TX D` / `A+D TX A` when FM+DMR dual-mode (primary from `Channel.primaryMode`) |
 | `Transmit Power`               | `Channel.power`                       | `Low` / `High` / … → % ladder (TBD profile)                                                                                                                                |
 | `Band Width`                   | `modeProfiles[].bandwidthKHz`         | `12.5K` → 12.5                                                                                                                                                             |
 | `CTCSS/DCS Decode` / `Encode`  | `rxTone` / `txTone` on analog profile | `Off` when none                                                                                                                                                            |
@@ -40,6 +51,7 @@ Primary DMR (and mixed-mode) channel table for AT-D890UV CPS. **76 columns** in 
 | `Scan List`                    | Build scan list ref                   | Name FK → `ScanList.CSV`; `None`                                                                                                                                           |
 | `Receive Group List`           | `rxGroupListId`                       | Name FK → `DMRReceiveGroupCallList.CSV`                                                                                                                                    |
 | `PTT Prohibit`                 | `forbidTransmit` or export flag       | TBD                                                                                                                                                                        |
+| `DMR MODE`                     | `ChannelModeProfileDMR.dmrMode`      | `0` / `1` — see DMR MODE table; inferred from RX/TX when `dmrMode` unset                                                                                                 |
 
 ## Per-channel APRS columns
 
@@ -51,7 +63,7 @@ See [nxdn.md](nxdn.md) for `nxdn_wn`, `NxdnRpga`, `EnRan`, `DeRan`, `NxdnGroupId
 
 ## Deferred / constant columns (v1 export MVP)
 
-Remaining columns (encryption, MDC, R5 tone, roaming flags, `DMR MODE`, talker alias, compand, …) export as fixture defaults or profile constants until modelled. Document loss in export warnings ([#233](https://github.com/pskillen/codeplug-studio/issues/233)).
+Remaining columns (encryption, MDC, R5 tone, roaming flags, talker alias, compand, …) export as fixture defaults until modelled. `DMR MODE` and `Channel Type` are projected from the library model ([#311](https://github.com/pskillen/codeplug-studio/issues/311), [#303](https://github.com/pskillen/codeplug-studio/issues/303)).
 
 ## Related
 
