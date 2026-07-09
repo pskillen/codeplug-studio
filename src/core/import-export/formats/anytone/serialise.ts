@@ -40,6 +40,7 @@ import {
   buildScanContext,
   resolveEffectiveScanInclusion,
 } from '@core/import-export/scanInclusion/resolve.ts';
+import { prepareAnytoneExportAssembly } from './prepareExportAssembly.ts';
 
 export type AnytoneExportFiles = Record<AnytoneExportFileName, string>;
 
@@ -312,15 +313,19 @@ export function serialiseAnytoneFiles(
   warnings: string[] = [],
   context?: AnytoneExportWireContext,
 ): AnytoneExportFiles {
-  void library;
-  const ctx = context ?? buildAnytoneExportWireContext(assembled, options, warnings);
+  const prepared =
+    context != null
+      ? { assembled, context }
+      : prepareAnytoneExportAssembly(assembled, library, options, warnings);
+  const exportAssembly = prepared.assembled;
+  const ctx = prepared.context;
   return {
-    'Channel.CSV': serialiseChannelsCsv(assembled, ctx, options),
-    'DMRZone.CSV': serialiseZonesCsv(assembled, ctx),
-    'ScanList.CSV': serialiseScanListsCsv(assembled, ctx),
-    'DMRTalkGroups.CSV': serialiseTalkGroupsCsv(assembled, ctx),
-    'DMRDigitalContactList.CSV': serialiseDigitalContactsCsv(assembled, ctx),
-    'DMRReceiveGroupCallList.CSV': serialiseRxGroupListsCsv(assembled, ctx),
+    'Channel.CSV': serialiseChannelsCsv(exportAssembly, ctx, options),
+    'DMRZone.CSV': serialiseZonesCsv(exportAssembly, ctx),
+    'ScanList.CSV': serialiseScanListsCsv(exportAssembly, ctx),
+    'DMRTalkGroups.CSV': serialiseTalkGroupsCsv(exportAssembly, ctx),
+    'DMRDigitalContactList.CSV': serialiseDigitalContactsCsv(exportAssembly, ctx),
+    'DMRReceiveGroupCallList.CSV': serialiseRxGroupListsCsv(exportAssembly, ctx),
   };
 }
 
@@ -331,23 +336,21 @@ export function serialiseAnytoneFile(
   options?: CpsExportOptions,
   warnings: string[] = [],
 ): string {
-  const context = buildAnytoneExportWireContext(assembled, options, warnings);
+  const prepared = prepareAnytoneExportAssembly(assembled, library, options, warnings);
+  const { assembled: exportAssembly, context } = prepared;
   if (fileName === 'AMAir.CSV') {
-    void library;
-    return serialiseAmAirCsv(assembled, options, warnings, context);
+    return serialiseAmAirCsv(exportAssembly, options, warnings, context);
   }
   if (fileName === 'FM.CSV') {
-    void library;
-    return serialiseFmBroadcastCsv(assembled, options, warnings, context);
+    return serialiseFmBroadcastCsv(exportAssembly, options, warnings, context);
   }
   if (fileName === 'AMZone.CSV') {
-    void library;
-    return serialiseAmZonesCsv(assembled, options, warnings, context);
+    return serialiseAmZonesCsv(exportAssembly, options, warnings, context);
   }
   if (!ANYTONE_EXPORT_FILE_NAMES.includes(fileName as AnytoneExportFileName)) {
     throw new Error(`Unknown Anytone export file: ${fileName}`);
   }
-  const files = serialiseAnytoneFiles(assembled, library, options, warnings, context);
+  const files = serialiseAnytoneFiles(exportAssembly, library, options, warnings, context);
   return files[fileName as AnytoneExportFileName];
 }
 
