@@ -33,13 +33,13 @@ Tier-1 reference for **airport airband monitoring** workflows — searching [Ope
 
 ## Workflow
 
-| Step          | Behaviour                                                                                                          |
-| ------------- | ------------------------------------------------------------------------------------------------------------------ |
-| Configure key | Settings → OpenAIP API key ([docs.openaip.net](https://docs.openaip.net/#/))                                       |
-| Search        | ICAO/IATA/name, town geocode, Maidenhead locator, or **Use my location** + radius (km)                             |
-| Review        | Map + per-airport frequency checkboxes; select individual services or whole airports                               |
-| Import        | `buildAirbandImportPlan` → `putChannel`; optional new `putZone` or append to existing zone (`zoneUpdates`)         |
-| Export        | Anytone build with airband channels → `AMAir.CSV` ([#267](https://github.com/pskillen/codeplug-studio/issues/267)) |
+| Step          | Behaviour                                                                                                                                 |
+| ------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| Configure key | Settings → OpenAIP API key ([docs.openaip.net](https://docs.openaip.net/#/))                                                              |
+| Search        | ICAO/IATA/name, town geocode, Maidenhead locator, or **Use my location** + radius (km)                                                    |
+| Review        | Map + per-airport frequency checkboxes; select individual services or whole airports                                                      |
+| Import        | `buildAirbandImportPlan` → `putChannel`; optional zone; channel names use selectable IATA/ICAO/name prefix with duplicate-token stripping |
+| Export        | Anytone build with airband channels → `AMAir.CSV` ([#267](https://github.com/pskillen/codeplug-studio/issues/267))                        |
 
 **Route:** `/library/channels/add-from-openaip` — section nav **Add from OpenAIP**
 
