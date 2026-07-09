@@ -18,3 +18,6 @@ export type ChannelMode = AnalogChannelMode | DigitalChannelMode;
 export type ChannelTone = 'none' | string;
 
 export type DMRTimeSlot = 1 | 2;
+
+/** DMR operating mode — vendor-neutral; mapped to CPS wire at export boundary. */
+export type DmrOperatingMode = 'dmo-simplex' | 'repeater';

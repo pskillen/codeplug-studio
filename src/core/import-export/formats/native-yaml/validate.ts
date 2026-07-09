@@ -9,6 +9,7 @@ import type {
   AnalogContact,
   Channel,
   ChannelModeProfile,
+  ChannelModeProfileDMR,
   ChannelTone,
   DigitalContact,
   EntityRef,
@@ -155,8 +156,12 @@ function parseModeProfile(raw: unknown, index: number): ChannelModeProfile {
     case 'ssb-lsb':
       return parseAnalogModeProfile(record, index, mode);
     case 'dmr':
-      return {
+      return normalizeModeProfile({
         mode: 'dmr',
+        dmrMode:
+          record.dmrMode !== undefined && record.dmrMode !== null
+            ? (expectString(record.dmrMode, `modeProfiles[${index}].dmrMode`) as ChannelModeProfileDMR['dmrMode'])
+            : null,
         colourCode: expectNullableNumber(record.colourCode, `modeProfiles[${index}].colourCode`),
         timeslot: parseNullableDmrTimeslot(record.timeslot, `modeProfiles[${index}].timeslot`),
         dmrId: expectNullableNumber(record.dmrId, `modeProfiles[${index}].dmrId`),
@@ -165,7 +170,7 @@ function parseModeProfile(raw: unknown, index: number): ChannelModeProfile {
           record.rxGroupListId,
           `modeProfiles[${index}].rxGroupListId`,
         ),
-      };
+      });
     case 'dstar':
       return {
         mode: 'dstar',
@@ -932,11 +937,6 @@ function validateForeignKeys(library: Library, formatBuilds: FormatBuild[]): voi
           `Build channel override ${override.libraryEntityId} not found in library`,
         );
       }
-      if (override.scanListId && !scanListIds.has(override.scanListId)) {
-        throw new NativeYamlImportError(
-          `Build channel override scanListId ${override.scanListId} not found in library scan lists`,
-        );
-      }
     }
     for (const override of build.zoneOverrides) {
       if (!ids.zoneIds.has(override.libraryEntityId)) {
@@ -981,6 +981,7 @@ export function validateDocument(raw: unknown): ProjectAggregate {
   const studioSchemaVersion = document.studioSchemaVersion;
   if (
     studioSchemaVersion !== STUDIO_SCHEMA_VERSION &&
+    studioSchemaVersion !== 13 &&
     studioSchemaVersion !== 12 &&
     studioSchemaVersion !== 10 &&
     studioSchemaVersion !== 9 &&
@@ -993,7 +994,7 @@ export function validateDocument(raw: unknown): ProjectAggregate {
     studioSchemaVersion !== 2
   ) {
     throw new NativeYamlImportError(
-      `Unsupported studioSchemaVersion: ${String(studioSchemaVersion)} (expected ${STUDIO_SCHEMA_VERSION}, 12, 10, 9, 8, 7, 6, 5, 4, 3, or 2)`,
+      `Unsupported studioSchemaVersion: ${String(studioSchemaVersion)} (expected ${STUDIO_SCHEMA_VERSION}, 13, 12, 10, 9, 8, 7, 6, 5, 4, 3, or 2)`,
     );
   }
 

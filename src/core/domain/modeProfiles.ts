@@ -10,6 +10,7 @@ import type {
   ChannelTone,
   SsbSideband,
 } from '../models/libraryTypes.ts';
+import { normalizeDmrModeProfile } from './dmrOperatingMode.ts';
 
 const ANALOG_MODES = new Set<AnalogChannelMode>(['fm', 'am', 'ssb']);
 
@@ -44,6 +45,7 @@ function defaultAnalogProfile(
 function defaultDmrProfile(): ChannelModeProfileDMR {
   return {
     mode: 'dmr',
+    dmrMode: null,
     colourCode: null,
     timeslot: null,
     dmrId: null,
@@ -129,6 +131,9 @@ export function normalizeModeProfile(profile: ChannelModeProfile): ChannelModePr
     legacySideband != null
   ) {
     return normalizeAnalogProfile(profile as ChannelModeProfileAnalog);
+  }
+  if (profile.mode === 'dmr') {
+    return normalizeDmrModeProfile(profile as ChannelModeProfileDMR);
   }
   return profile;
 }

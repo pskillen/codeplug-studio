@@ -40,7 +40,7 @@ export function normalizeChannel(channel: LegacyChannel): Channel {
     scanInclusion: resolveScanInclusion(channel),
     scanListId: channel.scanListId?.trim() || undefined,
     maidenheadLocator: channel.maidenheadLocator ?? null,
-    primaryMode: normalizePrimaryMode(channel.primaryMode),
+    primaryMode: normalizePrimaryMode(channel.primaryMode ?? null),
     modeProfiles: dedupeSsbModeProfiles((channel.modeProfiles ?? []).map(normalizeModeProfile)),
   };
 }

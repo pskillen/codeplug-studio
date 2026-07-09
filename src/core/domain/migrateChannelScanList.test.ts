@@ -32,7 +32,12 @@ describe('migrateChannelScanListFromBuildOverrides', () => {
       formatBuilds: [
         {
           ...newFormatBuild(PROJECT_ID, 'anytone-at-d890uv'),
-          channelOverrides: [{ libraryEntityId: CH1_ID, scanListId: SCAN_LIST_ID }],
+          channelOverrides: [
+            { libraryEntityId: CH1_ID, scanListId: SCAN_LIST_ID } as {
+              libraryEntityId: string;
+              scanListId: string;
+            },
+          ],
         },
       ],
     });

@@ -44,7 +44,12 @@ describe('migrateBuildScanListsToLibrary', () => {
               },
             ],
           },
-          channelOverrides: [{ libraryEntityId: 'ch-1', scanListId: SCAN_LIST_ID }],
+          channelOverrides: [
+            { libraryEntityId: 'ch-1', scanListId: SCAN_LIST_ID } as {
+              libraryEntityId: string;
+              scanListId: string;
+            },
+          ],
         },
       ],
     });
@@ -56,6 +61,8 @@ describe('migrateBuildScanListsToLibrary', () => {
       memberChannelIds: ['ch-1', 'ch-2'],
     });
     expect(aggregate.formatBuilds[0]?.layout.sections).toEqual([]);
-    expect(aggregate.formatBuilds[0]?.channelOverrides[0]?.scanListId).toBe(SCAN_LIST_ID);
+    expect(
+      (aggregate.formatBuilds[0]?.channelOverrides[0] as { scanListId?: string }).scanListId,
+    ).toBe(SCAN_LIST_ID);
   });
 });

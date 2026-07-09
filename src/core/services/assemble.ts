@@ -63,7 +63,7 @@ export interface AssembledChannel {
   wireName: string;
   /** Set when the build has an explicit channel wire name override. */
   wireNameOverride?: string;
-  /** CPS scan list wire name from channel override scanListId — `None` when unset. */
+  /** CPS scan list wire name from `Channel.scanListId` — `None` when unset. */
   scanListWireName?: string;
   /** 1-based CPS slot (`No.` column) when build override sets orderOrSlot. */
   orderOrSlot?: number;
