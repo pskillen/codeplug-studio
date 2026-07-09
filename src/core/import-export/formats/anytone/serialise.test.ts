@@ -138,7 +138,7 @@ describe('anytone serialise', () => {
     expect(files['DMRZone.CSV']).toContain('Zone A');
     expect(files['ScanList.CSV']).toContain('Zone A SCL');
     expect(files['DMRTalkGroups.CSV']).toContain('TG Alpha');
-    expect(files['RadioIDList.CSV']).toContain('TEST01');
+    expect(files).not.toHaveProperty('RadioIDList.CSV');
     expect(assembled.channels.find((c) => c.entity.id === ch1.id)?.scanListWireName).toBe(
       'Zone A SCL',
     );

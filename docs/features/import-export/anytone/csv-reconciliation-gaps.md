@@ -36,17 +36,17 @@ Cross-file name FK issues from the earlier variance report were addressed in [#2
 
 ### Studio MVP files — header comparison
 
-| File                            | Header match      | Notes                                        |
-| ------------------------------- | ----------------- | -------------------------------------------- |
-| `Channel.CSV`                   | Yes (77 cols)     | Missing VFO rows; see structural gaps        |
-| `DMRZone.CSV`                   | Yes               |                                              |
-| `ScanList.CSV`                  | Yes               |                                              |
-| `DMRTalkGroups.CSV`             | Yes               |                                              |
-| `DMRReceiveGroupCallList.CSV`   | Yes               |                                              |
-| `RadioIDList.CSV`               | Yes               |                                              |
-| `AMAir.CSV`                     | Yes               |                                              |
-| `FM.CSV`                        | Yes               |                                              |
-| **`DMRDigitalContactList.CSV`** | **Yes** (10 cols) | Fixed in #297; fixture has redacted body row |
+| File                            | Header match                                                              | Notes                                                         |
+| ------------------------------- | ------------------------------------------------------------------------- | ------------------------------------------------------------- |
+| `Channel.CSV`                   | Yes (77 cols)                                                             | Missing VFO rows; see structural gaps                         |
+| `DMRZone.CSV`                   | Yes                                                                       |                                                               |
+| `ScanList.CSV`                  | Yes                                                                       |                                                               |
+| `DMRTalkGroups.CSV`             | Yes                                                                       |                                                               |
+| `DMRReceiveGroupCallList.CSV`   | Yes                                                                       |                                                               |
+| `RadioIDList.CSV`               | **Omit** ([#302](https://github.com/pskillen/codeplug-studio/issues/302)) | Placeholder profile rows clobber CPS; deferred until modelled |
+| `AMAir.CSV`                     | Yes                                                                       |                                                               |
+| `FM.CSV`                        | Yes                                                                       |                                                               |
+| **`DMRDigitalContactList.CSV`** | **Yes** (10 cols)                                                         | Fixed in #297; fixture has redacted body row                  |
 
 ### CPS files not in Studio MVP export
 
