@@ -9,6 +9,10 @@ import { channelDisplayLabel, defaultChannelWireName } from '@core/domain/channe
 import { sanitiseAsciiWireString } from '@core/import-export/sanitiseAsciiWireString.ts';
 import { expandAllDm32ChannelsForExport } from '@core/import-export/formats/dm32/channelExpansion.ts';
 import {
+  expandAllAnytoneChannelsForExport,
+  type ExpandedAnytoneChannelRow,
+} from '@core/import-export/formats/anytone/channelExpansion.ts';
+import {
   expandChannelWireRows,
   modeExportNameSuffix,
 } from '@core/import-export/channelExpansion/multiMode.ts';
@@ -185,6 +189,20 @@ function dm32RxListFanOutDisplayDetails(
   ];
 }
 
+function anytoneExpansionDisplayDetails(
+  channel: Channel,
+  generated: ExpandedAnytoneChannelRow,
+  library: LibrarySlice,
+): WirePreviewDisplayLine[] | undefined {
+  if (generated.rowKind === 'scratch') {
+    return [{ label: 'Row', value: 'Scratch channel' }];
+  }
+  if (generated.rowKind === 'talkGroup') {
+    return dm32RxListFanOutDisplayDetails(channel, generated.txContactRef, library);
+  }
+  return undefined;
+}
+
 export function previewWireRows(
   build: FormatBuild,
   library: LibrarySlice,
@@ -320,12 +338,59 @@ export function previewWireRows(
       }
 
       if (build.formatId === 'anytone') {
+        const assembled = projection;
+        const anytoneOptions = {
+          ..._options,
+          expandModes: false,
+          expandRxGroupLists: _options?.expandRxGroupLists ?? true,
+          exportScratchChannels: _options?.exportScratchChannels ?? true,
+          profileId: _options?.profileId ?? build.profileId,
+        };
+        const expanded = expandAllAnytoneChannelsForExport(
+          assembled,
+          library,
+          anytoneOptions,
+          warnings,
+        );
+        const expandedByChannelId = new Map<string, ExpandedAnytoneChannelRow[]>();
+        for (const generated of expanded) {
+          const list = expandedByChannelId.get(generated.sourceChannelId) ?? [];
+          list.push(generated);
+          expandedByChannelId.set(generated.sourceChannelId, list);
+        }
         const zoneLinkedForPreview =
           build.exportUnlinkedChannels === false ? zoneLinkedChannelIds(build, library) : null;
 
         for (const channel of library.channels) {
           if (anytoneBank === 'dmr' && isAmAirbandBankChannel(channel)) continue;
           if (anytoneBank === 'airband' && !isAmAirbandBankChannel(channel)) continue;
+          const generatedRows = expandedByChannelId.get(channel.id);
+          if (generatedRows) {
+            for (const generated of generatedRows) {
+              const channelOverride = overrideByEntityId(build.channelOverrides)
+                .get(channel.id)
+                ?.wireName?.trim();
+              const keyOverride = overrideByEntityId(build.channelOverrides)
+                .get(generated.key)
+                ?.wireName?.trim();
+              rows.push({
+                key: generated.key,
+                libraryEntityId: channel.id,
+                entityKind: 'channel',
+                displayLabel: channelDisplayLabel(channel),
+                generatedWireName: sanitiseAsciiWireString(generated.wireName),
+                effectiveWireName: sanitiseAsciiWireString(
+                  keyOverride ?? channelOverride ?? generated.wireName,
+                ),
+                hasWireNameOverride: Boolean(keyOverride ?? channelOverride),
+                excluded: isEntityExcluded(build.channelOverrides, channel.id),
+                expansionNote: generated.expansionNote,
+                displayDetails: anytoneExpansionDisplayDetails(channel, generated, library),
+              });
+            }
+            continue;
+          }
+
           const channelOverride = overrideByEntityId(build.channelOverrides)
             .get(channel.id)
             ?.wireName?.trim();

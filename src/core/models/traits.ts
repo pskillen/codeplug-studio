@@ -90,6 +90,11 @@ export function hasDedicatedScanLists(profileId: string): boolean {
   return traits.includes(BuildCapabilityTrait.DedicatedScanLists);
 }
 
+export function hasMxNChannelExpansion(profileId: string): boolean {
+  const traits = traitProfileFor(profileId)?.traits ?? [];
+  return traits.includes(BuildCapabilityTrait.MxNChannelExpansion);
+}
+
 /** Whether the export page should show default scan inclusion (zone-derived / per-channel scan flag semantics). */
 export function showsDefaultScanInclusion(profileId: string): boolean {
   return !hasDedicatedScanLists(profileId);
