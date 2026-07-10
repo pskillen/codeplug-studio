@@ -77,7 +77,7 @@ Pull requests and pushes to `main` run [`.github/workflows/ci.yml`](../../.githu
 
 ## Cloudflare Pages deploy
 
-Deploy workflows call the reusable [`.github/workflows/cloudflare-pages.yaml`](../../.github/workflows/cloudflare-pages.yaml), which runs `npm ci`, `npm run build`, then `wrangler pages deploy dist` to the `codeplug-studio` Cloudflare Pages project.
+Deploy workflows call the reusable [`.github/workflows/cloudflare-pages.yaml`](../../.github/workflows/cloudflare-pages.yaml), which runs `npm ci`, `npm run build`, then `wrangler pages deploy` (project name and static output from [`wrangler.toml`](../../wrangler.toml)) to the `codeplug-studio` Cloudflare Pages project. Pages Functions in [`functions/`](../../functions/) deploy with the same upload on every environment branch (dev / next / staging / prod).
 
 | Workflow                                               | Trigger                | `BUILD_ENV` |
 | ------------------------------------------------------ | ---------------------- | ----------- |
@@ -98,6 +98,20 @@ The app uses `createBrowserRouter` with path URLs (`/library/channels`, not `/#/
 - **Explicit rewrite:** [`public/_redirects`](../../public/_redirects) (`/* /index.html 200`) is copied into `dist/` by Vite and deployed with every build — belt-and-suspenders for all environments (prod, staging, next, dev).
 
 Local check: `npm run build && npm run preview`, then open `/library/channels` or `/debug` directly in the browser.
+
+### Pages Functions (IRTS CORS bridge)
+
+IRTS repeater CSVs are not browser-CORS accessible. Studio ships a public edge proxy:
+
+| Path | Source | Notes |
+| ---- | ------ | ----- |
+| `GET /api/irts/repeaters` | [`functions/api/irts/repeaters.ts`](../../functions/api/irts/repeaters.ts) | Proxies `irts.ie` Anytone CSV; no secrets |
+
+- **Deployed:** bundled with each `wrangler pages deploy` — same commit as the SPA on that CF branch.
+- **Local dev:** Vite proxies `/api/irts/repeaters` to the upstream CSV (`vite.config.ts`); no Wrangler required for day-to-day UI work.
+- **IaC:** [`wrangler.toml`](../../wrangler.toml) is the source of truth for project name and `pages_build_output_dir`. Avoid editing overlapping fields in the Cloudflare dashboard once this file is in use.
+
+Pages Functions are matched before the SPA `_redirects` catch-all; no `_routes.json` is required for `/api/*`.
 
 ### Operator setup (one-time)
 
