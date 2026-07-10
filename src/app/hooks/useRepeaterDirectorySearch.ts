@@ -3,7 +3,9 @@ import type { ChannelMode } from '@core/models/libraryTypes.ts';
 import {
   RepeaterDirectoryError,
   detectQueryKind,
+  fetchIrtsRepeaters,
   searchBrandmeisterByCallsign,
+  searchIrtsCatalogue,
   searchUkRepeaters,
   type QueryKind,
   type RepeaterListing,
@@ -39,21 +41,47 @@ export function useRepeaterDirectorySearch(source: RepeaterSource) {
   const search = useCallback(
     async (queryOverride?: string) => {
       const trimmed = (queryOverride ?? query).trim();
-      if (!trimmed) {
-        setError('Enter a callsign, locator, or town.');
-        return;
-      }
 
       setLoading(true);
       setError(null);
       try {
         if (source === 'brandmeister') {
+          if (!trimmed) {
+            setError('Enter a callsign.');
+            return;
+          }
           const results = await searchBrandmeisterByCallsign(trimmed);
           setKind(null);
           setListings(results);
           if (results.length === 0) {
             setError('No repeaters matched your search on BrandMeister.');
           }
+          return;
+        }
+
+        if (source === 'irts') {
+          await fetchIrtsRepeaters();
+          const results = await searchIrtsCatalogue({
+            query: trimmed || undefined,
+            band: bandFilter ?? undefined,
+            modes: modeFilter.length ? (modeFilter as ChannelMode[]) : undefined,
+          });
+          setKind(null);
+          setListings(results);
+          if (results.length === 0) {
+            const narrow =
+              bandFilter || modeFilter.length ? ' Try clearing band or mode filters.' : '';
+            setError(
+              trimmed
+                ? `No repeaters matched your search in the IRTS catalogue.${narrow}`
+                : `No repeaters in the IRTS catalogue.${narrow}`,
+            );
+          }
+          return;
+        }
+
+        if (!trimmed) {
+          setError('Enter a callsign, locator, or town.');
           return;
         }
 
