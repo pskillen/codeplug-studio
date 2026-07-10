@@ -27,6 +27,7 @@ Product behaviour for Anytone CPS CSV in Codeplug Studio. Wire column tables liv
 | Channel Type + DMR MODE export        | Shipped | [#303](https://github.com/pskillen/codeplug-studio/issues/303), [#311](https://github.com/pskillen/codeplug-studio/issues/311) — `primaryMode`, `dmrMode` from library |
 | AM air zone export (`AMZone.CSV`)     | Shipped | [#316](https://github.com/pskillen/codeplug-studio/issues/316) — partition from build zones; Airband build wire preview                                                |
 | Omit `RadioIDList.CSV` export         | Shipped | [#302](https://github.com/pskillen/codeplug-studio/issues/302) — until radio IDs modelled; avoids CPS clobber                                                          |
+| m×n channel expansion + scratch       | Shipped | [#305](https://github.com/pskillen/codeplug-studio/issues/305), [#325](https://github.com/pskillen/codeplug-studio/issues/325) — opt-in projection; see [export-projections.md](export-projections.md) |
 | CPS import                            | Planned | [#229](https://github.com/pskillen/codeplug-studio/issues/229) (Phase 7b)                                                                                              |
 
 ## Format identity
@@ -55,8 +56,8 @@ Both share profile id **`anytone-at-d890uv`**.
 | `dedicatedScanLists`       | Yes      | Library `ScanList` + `ScanList.CSV`      |
 | `scanLists`                | No       | DM32 zone-derived scan — different trait |
 | `zoneAsScanList`           | No       | Scan lists are first-class files         |
-| `multiTalkGroupPerChannel` | No       | Native `DMRReceiveGroupCallList.CSV`     |
-| `mxnChannelExpansion`      | No       | Single TG + RGL per channel row          |
+| `multiTalkGroupPerChannel` | No       | OpenGD77-style native RGL selection on channel — not AT-D890UV workflow |
+| `mxnChannelExpansion`      | Yes      | Optional export projection — lean row + native RGL still valid when off ([#305](https://github.com/pskillen/codeplug-studio/issues/305)) |
 
 Extended banks (AM air, broadcast FM, NXDN, APRS) need export projection or future traits — see [model gaps](#model-gaps).
 
@@ -76,10 +77,11 @@ Library CRUD does **not** enforce radio caps. Export adapters warn or truncate a
 
 ## Operator lifecycle
 
-Create an `anytone-at-d890uv` build, curate library zones and **scan lists** (`/library/scan-lists`), assign per-channel scan lists on the build **Channels** page, optionally enable **zone-derived scan lists** per zone on **Zones** + Export toggle ([#318](https://github.com/pskillen/codeplug-studio/issues/318)), preview wire rows, and export a CPS CSV ZIP from the build Export page — no DM32-style **Default scan behaviour** control ([#258](https://github.com/pskillen/codeplug-studio/issues/258)). Exported CSV files use **Windows (CRLF) line endings** for AT-D890UV CPS import ([#291](https://github.com/pskillen/codeplug-studio/issues/291)). Cross-file name consistency on export ([#292](https://github.com/pskillen/codeplug-studio/issues/292)). See [operator lifecycle](../workflows/operator-lifecycle.md) and [library scan lists](../../library/scan-lists.md).
+Create an `anytone-at-d890uv` build, curate library zones and **scan lists** (`/library/scan-lists`), assign per-channel scan lists on the build **Channels** page, optionally enable **zone-derived scan lists** per zone on **Zones** + Export toggle ([#318](https://github.com/pskillen/codeplug-studio/issues/318)), optionally enable **m×n channel expansion** and **scratch channels** on Export ([#305](https://github.com/pskillen/codeplug-studio/issues/305), [#325](https://github.com/pskillen/codeplug-studio/issues/325)) — see [export-projections.md](export-projections.md), preview wire rows, and export a CPS CSV ZIP from the build Export page — no DM32-style **Default scan behaviour** control ([#258](https://github.com/pskillen/codeplug-studio/issues/258)). Exported CSV files use **Windows (CRLF) line endings** for AT-D890UV CPS import ([#291](https://github.com/pskillen/codeplug-studio/issues/291)). Cross-file name consistency on export ([#292](https://github.com/pskillen/codeplug-studio/issues/292)). See [operator lifecycle](../workflows/operator-lifecycle.md) and [library scan lists](../../library/scan-lists.md).
 
 ## Related
 
+- [export-projections.md](export-projections.md) — m×n expansion, scratch, zones, scan lists
 - [import-export hub](../README.md)
 - [builds hub](../../builds/README.md)
 - [data-model](../../data-model/README.md)

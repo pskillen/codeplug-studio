@@ -79,12 +79,12 @@
 
 ## Wave 3 — m×n expansion + scratch ([#305](https://github.com/pskillen/codeplug-studio/issues/305), [#325](https://github.com/pskillen/codeplug-studio/issues/325))
 
-**Status:** In progress
+**Status:** Complete
 
-| Slice                      | Status      | Notes                                              |
-| -------------------------- | ----------- | -------------------------------------------------- |
+| Slice                      | Status   | Notes                                              |
+| -------------------------- | -------- | -------------------------------------------------- |
 | Export settings + defaults | Complete | `expandRxGroupLists`, `exportScratchChannels`      |
 | Channel expansion core     | Complete | `anytone/channelExpansion.ts` + timeslot projection |
 | Serialise + zone/scan fan-out | Complete  | Wire context, directional tests                    |
-| Export UI + wire preview   | In progress | Toggles default on; displayDetails                 |
-| Operator projection docs   | Pending     | `export-projections.md`                            |
+| Export UI + wire preview   | Complete | Toggles default on; displayDetails                 |
+| Operator projection docs   | Complete | [export-projections.md](anytone/export-projections.md) |

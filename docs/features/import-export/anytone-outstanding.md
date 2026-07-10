@@ -39,11 +39,9 @@ Items **skipped**, **incomplete**, or **discovered during execution** — not sc
 
 ## Wave 3 — m×n expansion + scratch ([#305](https://github.com/pskillen/codeplug-studio/issues/305), [#325](https://github.com/pskillen/codeplug-studio/issues/325))
 
-- [ ] **m×n channel expansion** — optional export-time fan-out: one `Channel.CSV` row per RX-list member; clear RGL, set contact/TG per row; project timeslot from RGL member override
-- [ ] **Scratch channels** — optional per-repeater companion row when expansion is on; faithful parent projection + `Scratch` in name
-- [ ] **Zone / scan fan-out** — zones and scan lists include all projected wire names for each library channel
-- [ ] **Export toggles** — `expandRxGroupLists` + `exportScratchChannels` on build export settings (both default on)
-- [ ] **Operator docs** — `anytone/export-projections.md` (non-programming mechanics)
+- [x] **m×n channel expansion** — optional export-time fan-out ([#305](https://github.com/pskillen/codeplug-studio/issues/305))
+- [x] **Scratch channels** — per-repeater companion when expansion on ([#325](https://github.com/pskillen/codeplug-studio/issues/325))
+- [x] **Operator docs** — [export-projections.md](anytone/export-projections.md)
 
 ---
 
