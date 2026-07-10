@@ -58,7 +58,21 @@ function dm32Build(): FormatBuild {
   return newFormatBuild(PROJECT_ID, 'dm32-baofeng-dm32uv', 'DM32 test');
 }
 
+function expectCrlfLineEndings(csv: string): void {
+  expect(csv).toContain('\r\n');
+  expect(csv.replace(/\r\n/g, '')).not.toContain('\n');
+}
+
 describe('DM32 export serialise', () => {
+  it('serialises all export files with CRLF line endings', () => {
+    const assembled = assemble(minimalDm32ExportBuild(), minimalDm32ExportLibrary());
+    const files = serialiseDm32Files(assembled, minimalDm32ExportLibrary());
+    for (const fileName of DM32_CORE_EXPORT_FILES) {
+      expectCrlfLineEndings(files[fileName]);
+    }
+    expectCrlfLineEndings(files['Scan.csv']);
+  });
+
   it('serialises a minimal channel to Channels.csv', () => {
     const channel = fmChannel('GB3DA');
     const build = dm32Build();
