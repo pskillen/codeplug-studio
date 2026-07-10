@@ -20,7 +20,8 @@ export const anytoneExportAdapter: MultiFileExportAdapter = {
   defaultExportSettings: {
     defaultScanInclusion: 'scan',
     expandModes: false,
-    expandRxGroupLists: false,
+    expandRxGroupLists: true,
+    exportScratchChannels: true,
     exportZoneDerivedScanLists: false,
   },
   fileNames: [...ANYTONE_EXPORT_FILE_NAMES],

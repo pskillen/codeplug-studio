@@ -73,7 +73,11 @@ export const TRAIT_PROFILES: Record<string, TraitProfile> = {
     profileId: 'anytone-at-d890uv',
     formatId: 'anytone',
     label: 'Anytone AT-D890UV',
-    traits: [BuildCapabilityTrait.ZoneGrouping, BuildCapabilityTrait.DedicatedScanLists],
+    traits: [
+      BuildCapabilityTrait.ZoneGrouping,
+      BuildCapabilityTrait.DedicatedScanLists,
+      BuildCapabilityTrait.MxNChannelExpansion,
+    ],
   },
 };
 

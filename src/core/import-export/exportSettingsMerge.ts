@@ -52,6 +52,9 @@ function storedToCpsOptions(stored: BuildExportSettings): CpsExportOptions {
   if (stored.expandRxGroupListMembers !== undefined) {
     options.expandRxGroupListMembers = stored.expandRxGroupListMembers;
   }
+  if (stored.exportScratchChannels !== undefined) {
+    options.exportScratchChannels = stored.exportScratchChannels;
+  }
   if (stored.defaultScanInclusion !== undefined) {
     options.defaultScanInclusion = stored.defaultScanInclusion;
   }
@@ -67,6 +70,9 @@ function applyFormatExportDefaults(defaults: FormatExportDefaults): CpsExportOpt
       : {}),
     ...(defaults.exportZoneDerivedScanLists !== undefined
       ? { exportZoneDerivedScanLists: defaults.exportZoneDerivedScanLists }
+      : {}),
+    ...(defaults.exportScratchChannels !== undefined
+      ? { exportScratchChannels: defaults.exportScratchChannels }
       : {}),
   };
 }

@@ -18,6 +18,8 @@ export interface FormatExportDefaults {
   expandRxGroupLists?: boolean;
   /** When false, skip zone-derived scan list synthesis. Format-specific default. */
   exportZoneDerivedScanLists?: boolean;
+  /** When true with expandRxGroupLists, emit scratch companion rows. Format-specific default. */
+  exportScratchChannels?: boolean;
 }
 
 export type FormatStatus = 'shipped' | 'planned';
@@ -86,6 +88,8 @@ export interface CpsExportOptions {
   multiTalkGroupExportNameMode?: MultiTalkGroupExportNameMode;
   /** When false, skip zone-derived Scan.csv synthesis on DM32 export. Default true. */
   exportZoneDerivedScanLists?: boolean;
+  /** When true with expandRxGroupLists, emit one scratch companion row per expanded repeater channel. */
+  exportScratchChannels?: boolean;
   /** Resolved default for channels with `scanInclusion: default`. From build or format adapter. */
   defaultScanInclusion?: DefaultScanInclusion;
   /** Project display name — used for Anytone `.LST` manifest filename stem. */
