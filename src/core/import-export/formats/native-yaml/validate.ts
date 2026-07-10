@@ -572,6 +572,12 @@ function parseExportSettings(raw: unknown, label: string): BuildExportSettings |
     }
     settings.expandRxGroupListMembers = value;
   }
+  if (record.exportScratchChannels !== undefined && record.exportScratchChannels !== null) {
+    settings.exportScratchChannels = expectBoolean(
+      record.exportScratchChannels,
+      `${label}.exportScratchChannels`,
+    );
+  }
   return Object.keys(settings).length > 0 ? settings : undefined;
 }
 

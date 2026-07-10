@@ -4,12 +4,13 @@ import type {
   DefaultScanInclusion,
   FormatBuild,
 } from '@core/models/formatBuild.ts';
-import { showsDefaultScanInclusion } from '@core/models/traits.ts';
+import { showsDefaultScanInclusion, hasMxNChannelExpansion } from '@core/models/traits.ts';
 import type { FormatExportDefaults } from '@core/import-export/types.ts';
 import { FieldCard } from '../fields/Fields.tsx';
 import ExportNameSettingsFields from './ExportNameSettingsFields.tsx';
 import DefaultScanInclusionSegment from './DefaultScanInclusionSegment.tsx';
 import type { ResolvedBuildExportSettings } from '../../lib/buildExportSettingsUi.ts';
+import { TRAIT_LABELS } from '../../routes/builds/buildHelpers.ts';
 
 export interface ExportBuildSettingsSectionsProps {
   build: FormatBuild;
@@ -38,6 +39,7 @@ export default function ExportBuildSettingsSections({
   onExportInclusionChange,
 }: ExportBuildSettingsSectionsProps) {
   const isChirp = build.formatId === 'chirp';
+  const showChannelExpansion = hasMxNChannelExpansion(build.profileId);
 
   return (
     <Stack gap="md">
@@ -83,6 +85,35 @@ export default function ExportBuildSettingsSections({
           </Text>
         ) : null}
       </FieldCard>
+
+      {showChannelExpansion ? (
+        <FieldCard
+          title="Channel expansion"
+          description="Export-time projections for digital channels with RX group lists."
+        >
+          <Switch
+            label={TRAIT_LABELS.mxnChannelExpansion}
+            description="Emit one Channel.CSV memory per talk group on each repeater channel's RX group list."
+            checked={resolvedSettings.expandRxGroupLists}
+            disabled={saving}
+            onChange={(event) =>
+              onExportSettingsPatch({
+                expandRxGroupLists: event.currentTarget.checked,
+                ...(event.currentTarget.checked ? {} : { exportScratchChannels: false }),
+              })
+            }
+          />
+          <Switch
+            label="Scratch channels"
+            description="Add one editable parent memory per expanded repeater (name includes Scratch)."
+            checked={resolvedSettings.exportScratchChannels}
+            disabled={saving || !resolvedSettings.expandRxGroupLists}
+            onChange={(event) =>
+              onExportSettingsPatch({ exportScratchChannels: event.currentTarget.checked })
+            }
+          />
+        </FieldCard>
+      ) : null}
 
       <FieldCard
         title="Naming"

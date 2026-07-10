@@ -27,11 +27,16 @@ import {
 } from './columns.ts';
 import { formatCsv } from './csvWrite.ts';
 import { serialiseAnytoneChannelRow } from './channelWire.ts';
+import type { ChannelModeProfileDMR } from '@core/models/library.ts';
 import {
   buildAnytoneExportWireContext,
   padReceiveBankName,
   type AnytoneExportWireContext,
 } from './exportWireContext.ts';
+import {
+  expandAllAnytoneChannelsForExport,
+  type ExpandedAnytoneChannelRow,
+} from './channelExpansion.ts';
 import { channelFrequencyById, rxGroupListMemberNames } from './listWire.ts';
 import { DEFAULT_ANYTONE_PROFILE_ID } from './profiles.ts';
 import { partitionAnytoneChannels } from './receiveOnlyBanks.ts';
@@ -40,6 +45,7 @@ import {
   buildScanContext,
   resolveEffectiveScanInclusion,
 } from '@core/import-export/scanInclusion/resolve.ts';
+import { isZoneScanCarrierChannelId } from '@core/import-export/zoneDerivedScanLists/carrier.ts';
 import {
   prepareAnytoneExportAssembly,
   type AnytonePreparedExport,
@@ -49,6 +55,48 @@ export type AnytoneExportFiles = Record<AnytoneExportFileName, string>;
 
 const AM_AIR_VFO_MHZ = '108.0000';
 const FM_BROADCAST_VFO_MHZ = '88.000';
+
+function anytoneExpansionLibrarySlice(assembled: AssembledBuild): LibrarySlice {
+  return {
+    channels: assembled.channels.map((row) => row.entity),
+    zones: [],
+    talkGroups: assembled.talkGroups.map((row) => row.entity),
+    digitalContacts: assembled.digitalContacts.map((row) => row.entity),
+    analogContacts: assembled.analogContacts.map((row) => row.entity),
+    rxGroupLists: assembled.rxGroupLists.map((row) => row.entity),
+    scanLists: [],
+  };
+}
+
+function fallbackWireContext(
+  assembled: AssembledBuild,
+  options?: CpsExportOptions,
+  warnings: string[] = [],
+): AnytoneExportWireContext {
+  const expandedChannels = expandAllAnytoneChannelsForExport(
+    assembled,
+    anytoneExpansionLibrarySlice(assembled),
+    options,
+    warnings,
+  );
+  return buildAnytoneExportWireContext(assembled, expandedChannels, options, warnings);
+}
+
+function orderedDmrExpandedRows(
+  assembled: AssembledBuild,
+  prepared: AnytonePreparedExport,
+): ExpandedAnytoneChannelRow[] {
+  const { dmrChannels } = partitionAnytoneChannels(assembled);
+  const dmrChannelIds = new Set(dmrChannels.map((row) => row.entity.id));
+  const ordered: ExpandedAnytoneChannelRow[] = [];
+  for (const assembledChannel of assembled.channels) {
+    const channelId = assembledChannel.entity.id;
+    if (!dmrChannelIds.has(channelId) && !isZoneScanCarrierChannelId(channelId)) continue;
+    const expanded = prepared.expansionByChannelId.get(channelId);
+    if (expanded?.length) ordered.push(...expanded);
+  }
+  return ordered;
+}
 
 function formatAmAirMhz(rxHz: number): string {
   return (rxHz / 1_000_000).toFixed(4);
@@ -71,20 +119,28 @@ function padRow(headers: string[], values: Record<string, string>): string[] {
   return headers.map((header) => values[header] ?? '');
 }
 
-function serialiseChannelsCsv(
-  assembled: AssembledBuild,
-  context: AnytoneExportWireContext,
-  options?: CpsExportOptions,
-): string {
+function serialiseChannelsCsv(prepared: AnytonePreparedExport, options?: CpsExportOptions): string {
+  const { assembled, context } = prepared;
   const profileId = options?.profileId ?? assembled.profileId ?? DEFAULT_ANYTONE_PROFILE_ID;
-  const { dmrChannels } = partitionAnytoneChannels(assembled);
-  const ordered = sortReceiveBankChannels(dmrChannels);
+  const channelById = new Map(assembled.channels.map((row) => [row.entity.id, row]));
+  const expandedRows = orderedDmrExpandedRows(assembled, prepared);
 
-  const rows = ordered.map((row, index) => {
-    const slot = row.orderOrSlot ?? index + 1;
+  const rows = expandedRows.map((expandedRow, index) => {
+    const assembledChannel = channelById.get(expandedRow.sourceChannelId);
+    if (!assembledChannel) return padRow(CHANNEL_HEADERS, {});
+    const slot = assembledChannel.orderOrSlot ?? index + 1;
+    const dmrProfile =
+      expandedRow.modeProfile.mode === 'dmr'
+        ? (expandedRow.modeProfile as ChannelModeProfileDMR)
+        : null;
     return padRow(
       CHANNEL_HEADERS,
-      serialiseAnytoneChannelRow(row, assembled, profileId, slot, options, context),
+      serialiseAnytoneChannelRow(assembledChannel, assembled, profileId, slot, options, context, {
+        wireName: expandedRow.wireName,
+        txContactRef: expandedRow.txContactRef,
+        rxGroupListId: expandedRow.rxGroupListId,
+        dmrProfile,
+      }),
     );
   });
   return formatCsv(CHANNEL_HEADERS, rows);
@@ -103,9 +159,19 @@ function serialiseZonesCsv(
       : undefined;
     const carrierWireName = carrierChannelId ? carrierPrependByZoneId!.get(zone.zoneId) : undefined;
 
-    let memberNames = zone.memberChannelIds.map((id) => context.memberChannelWireName(id));
-    let memberRx = zone.memberChannelIds.map((id) => channels.get(id)?.rx ?? '0.00000');
-    let memberTx = zone.memberChannelIds.map((id) => channels.get(id)?.tx ?? '0.00000');
+    let memberNames = zone.memberChannelIds.flatMap((id) => context.memberChannelWireNames(id));
+    let memberRx = zone.memberChannelIds.flatMap((id) => {
+      const expanded = context.expansionByChannelId.get(id);
+      const count = expanded?.length ?? 1;
+      const freq = channels.get(id)?.rx ?? '0.00000';
+      return Array.from({ length: count }, () => freq);
+    });
+    let memberTx = zone.memberChannelIds.flatMap((id) => {
+      const expanded = context.expansionByChannelId.get(id);
+      const count = expanded?.length ?? 1;
+      const freq = channels.get(id)?.tx ?? '0.00000';
+      return Array.from({ length: count }, () => freq);
+    });
 
     if (carrierWireName && carrierChannelId) {
       memberNames = [carrierWireName, ...memberNames];
@@ -137,7 +203,7 @@ export function serialiseAmZonesCsv(
   warnings: string[] = [],
   context?: AnytoneExportWireContext,
 ): string {
-  const ctx = context ?? buildAnytoneExportWireContext(assembled, options, warnings);
+  const ctx = context ?? fallbackWireContext(assembled, options, warnings);
   const { amZones } = partitionAnytoneZones(assembled);
   const rows = amZones.map((zone, index) => {
     const memberNames = zone.memberChannelIds.map((id) => ctx.receiveBankWireName(id).trim());
@@ -163,13 +229,23 @@ function serialiseScanListsCsv(
       [SCAN_LIST_COL.number]: String(index + 1),
       [SCAN_LIST_COL.name]: context.scanListWireName(scanList.scanListId),
       [SCAN_LIST_COL.members]: scanList.memberChannelIds
-        .map((id) => context.memberChannelWireName(id))
+        .flatMap((id) => context.memberChannelWireNames(id))
         .join('|'),
       [SCAN_LIST_COL.memberRx]: scanList.memberChannelIds
-        .map((id) => channels.get(id)?.rx ?? '0.00000')
+        .flatMap((id) => {
+          const expanded = context.expansionByChannelId.get(id);
+          const count = expanded?.length ?? 1;
+          const freq = channels.get(id)?.rx ?? '0.00000';
+          return Array.from({ length: count }, () => freq);
+        })
         .join('|'),
       [SCAN_LIST_COL.memberTx]: scanList.memberChannelIds
-        .map((id) => channels.get(id)?.tx ?? '0.00000')
+        .flatMap((id) => {
+          const expanded = context.expansionByChannelId.get(id);
+          const count = expanded?.length ?? 1;
+          const freq = channels.get(id)?.tx ?? '0.00000';
+          return Array.from({ length: count }, () => freq);
+        })
         .join('|'),
       [SCAN_LIST_COL.scanMode]: 'Off',
       [SCAN_LIST_COL.prioritySelect]: 'Off',
@@ -248,7 +324,7 @@ export function serialiseAmAirCsv(
   warnings: string[] = [],
   context?: AnytoneExportWireContext,
 ): string {
-  const ctx = context ?? buildAnytoneExportWireContext(assembled, options, warnings);
+  const ctx = context ?? fallbackWireContext(assembled, options, warnings);
   const { amAirChannels } = partitionAnytoneChannels(assembled);
   const ordered = sortReceiveBankChannels(amAirChannels);
   const rows: string[][] = ordered.map((row, index) => {
@@ -278,7 +354,7 @@ export function serialiseFmBroadcastCsv(
   warnings: string[] = [],
   context?: AnytoneExportWireContext,
 ): string {
-  const ctx = context ?? buildAnytoneExportWireContext(assembled, options, warnings);
+  const ctx = context ?? fallbackWireContext(assembled, options, warnings);
   const formatDefaults =
     options?.defaultScanInclusion != null
       ? { defaultScanInclusion: options.defaultScanInclusion }
@@ -322,7 +398,7 @@ export function serialiseAnytoneFiles(
   const exportAssembly = exportPrep.assembled;
   const ctx = exportPrep.context;
   return {
-    'Channel.CSV': serialiseChannelsCsv(exportAssembly, ctx, options),
+    'Channel.CSV': serialiseChannelsCsv(exportPrep, options),
     'DMRZone.CSV': serialiseZonesCsv(exportAssembly, ctx, exportPrep.carrierPrependByZoneId),
     'ScanList.CSV': serialiseScanListsCsv(exportAssembly, ctx),
     'DMRTalkGroups.CSV': serialiseTalkGroupsCsv(exportAssembly, ctx),

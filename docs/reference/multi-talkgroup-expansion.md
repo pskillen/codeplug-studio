@@ -1,6 +1,6 @@
 # Multi-talkgroup expansion
 
-Domain rules for expanding one **logical digital channel** (with an RX group list) into multiple export rows — one per talk group (or contact) on the wire. Applies to formats that **do not** support promiscuous RX / RX group lists natively (e.g. Baofeng DM32).
+Domain rules for expanding one **logical digital channel** (with an RX group list) into multiple export rows — one per talk group (or contact) on the wire. Primary consumers: **Baofeng DM32** (default on) and **Anytone AT-D890UV** (optional — lean + native RGL remains valid when off). See [anytone/export-projections.md](../features/import-export/anytone/export-projections.md).
 
 **Not applicable to OpenGD77** — OpenGD77 CPS carries `TG List` and `TG_Lists.csv` natively; lean export (one channel row + list reference) is correct. See [opengd77/multi-talkgroup.md](opengd77/multi-talkgroup.md).
 
@@ -26,7 +26,7 @@ RX group list CRUD is how operators manage the talk group set. See [data-model R
 
 ## When to expand (export)
 
-Enable TG expansion (`ExportOptions.expandRxGroupLists`) only when the **target format cannot represent RGLs** on the wire.
+Enable TG expansion (`ExportOptions.expandRxGroupLists`) when the operator wants **one memory per RX-list member** on export. DM32 defaults **on**; Anytone defaults **on** but lean export (native RGL on each row) is still available when off.
 
 | Condition                                                                | Action                                                      |
 | ------------------------------------------------------------------------ | ----------------------------------------------------------- |

@@ -1,4 +1,5 @@
 import type { Channel, ChannelModeProfileDMR } from '@core/models/library.ts';
+import type { EntityRef } from '@core/models/libraryTypes.ts';
 import type { AssembledBuild, AssembledChannel } from '@core/services/assemble.ts';
 import type { CpsExportOptions } from '@core/import-export/types.ts';
 import { CHANNEL_COL, CHANNEL_HEADERS } from './columns.ts';
@@ -84,6 +85,13 @@ function resolveRxGroupListColumn(
   return resolveRxGroupListWireName(assembled, listId);
 }
 
+export interface AnytoneExpandedChannelProjection {
+  wireName: string;
+  txContactRef: EntityRef | null;
+  rxGroupListId: string | null;
+  dmrProfile: ChannelModeProfileDMR | null;
+}
+
 export function serialiseAnytoneChannelRow(
   row: AssembledChannel,
   assembled: AssembledBuild,
@@ -91,9 +99,10 @@ export function serialiseAnytoneChannelRow(
   slot: number,
   options?: CpsExportOptions,
   contextOrWireName?: AnytoneExportWireContext | string,
+  projection?: AnytoneExpandedChannelProjection,
 ): Record<string, string> {
   const channel = row.entity;
-  const dmr = dmrProfile(channel);
+  const dmr = projection?.dmrProfile ?? dmrProfile(channel);
   const analog = analogProfile(channel);
   const profile = getAnytoneProfile(options?.profileId ?? profileId ?? DEFAULT_ANYTONE_PROFILE_ID);
   const context =
@@ -101,12 +110,19 @@ export function serialiseAnytoneChannelRow(
       ? contextOrWireName
       : undefined;
   const wireNameOverride = typeof contextOrWireName === 'string' ? contextOrWireName : undefined;
-  const contact = resolveContactWireName(assembled, context, dmr?.contactRef ?? null);
+  const contactRef = projection != null ? projection.txContactRef : (dmr?.contactRef ?? null);
+  const contact = resolveContactWireName(assembled, context, contactRef);
+  const rxGroupListId =
+    projection != null ? projection.rxGroupListId : (dmr?.rxGroupListId ?? null);
 
   const values: Record<string, string> = {
     ...CHANNEL_ROW_DEFAULTS,
     [CHANNEL_COL.number]: String(slot),
-    [CHANNEL_COL.name]: context?.channelWireName(channel.id) ?? wireNameOverride ?? row.wireName,
+    [CHANNEL_COL.name]:
+      projection?.wireName ??
+      context?.channelWireName(channel.id) ??
+      wireNameOverride ??
+      row.wireName,
     [CHANNEL_COL.rx]: formatAnytoneFrequencyMHz(channel.rxFrequency),
     [CHANNEL_COL.tx]: formatAnytoneFrequencyMHz(channel.txFrequency),
     [CHANNEL_COL.channelType]: formatAnytoneChannelTypeFromChannel(channel),
@@ -127,7 +143,7 @@ export function serialiseAnytoneChannelRow(
     [CHANNEL_COL.colourCode]: String(dmr?.colourCode ?? 1),
     [CHANNEL_COL.slot]: formatAnytoneTimeslot(dmr?.timeslot ?? null),
     [CHANNEL_COL.scanList]: resolveScanListWireName(channel, row, context),
-    [CHANNEL_COL.rxGroupList]: resolveRxGroupListColumn(assembled, context, dmr?.rxGroupListId),
+    [CHANNEL_COL.rxGroupList]: resolveRxGroupListColumn(assembled, context, rxGroupListId),
     [CHANNEL_COL.pttProhibit]: channel.forbidTransmit ? 'On' : 'Off',
   };
 

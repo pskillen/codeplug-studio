@@ -10,7 +10,8 @@
 ## Overall status
 
 **Status:** Phase 7 export **shipped** ([#228](https://github.com/pskillen/codeplug-studio/issues/228)) — DMR MVP on `anytone-at-d890uv`  
-**Branch:** merged via PR from `228/pskil/anytone-cps-export`
+**In progress:** m×n channel expansion + scratch channels ([#305](https://github.com/pskillen/codeplug-studio/issues/305), [#325](https://github.com/pskillen/codeplug-studio/issues/325))  
+**Branch:** `305/pskil/anytone-mxn-scratch`
 
 | Phase                       | Issue                                                                                                                          | Status   | Notes                                                  |
 | --------------------------- | ------------------------------------------------------------------------------------------------------------------------------ | -------- | ------------------------------------------------------ |
@@ -73,3 +74,17 @@
 | Serialiser FK alignment       | Complete | Channels, zones, scan lists, TGs, RGLs, AMAir/FM receive banks             |
 | Wire preview + export UI copy | Complete | List previews shortened; uses shared **Shorten long names** export setting |
 | Directional tests             | Complete | `exportWireContext.test.ts` cross-file name equality                       |
+
+---
+
+## Wave 3 — m×n expansion + scratch ([#305](https://github.com/pskillen/codeplug-studio/issues/305), [#325](https://github.com/pskillen/codeplug-studio/issues/325))
+
+**Status:** Complete
+
+| Slice                         | Status   | Notes                                                  |
+| ----------------------------- | -------- | ------------------------------------------------------ |
+| Export settings + defaults    | Complete | `expandRxGroupLists`, `exportScratchChannels`          |
+| Channel expansion core        | Complete | `anytone/channelExpansion.ts` + timeslot projection    |
+| Serialise + zone/scan fan-out | Complete | Wire context, directional tests                        |
+| Export UI + wire preview      | Complete | Toggles default on; displayDetails                     |
+| Operator projection docs      | Complete | [export-projections.md](anytone/export-projections.md) |

@@ -99,7 +99,8 @@ const DM32_EXPORT_DEFAULTS: FormatExportDefaults = {
 const ANYTONE_EXPORT_DEFAULTS: FormatExportDefaults = {
   defaultScanInclusion: 'scan',
   expandModes: false,
-  expandRxGroupLists: false,
+  expandRxGroupLists: true,
+  exportScratchChannels: true,
   exportZoneDerivedScanLists: false,
 };
 

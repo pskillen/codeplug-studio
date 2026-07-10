@@ -94,6 +94,8 @@ describe('anytone export wire context', () => {
     const files = serialiseAnytoneFiles(assembled, library, {
       profileId: 'anytone-at-d890uv',
       shortenNames: true,
+      expandRxGroupLists: false,
+      exportScratchChannels: false,
     });
     const fullExport = exportBuildAll({ build, library });
     const amAirCsv = fullExport.files['AMAir.CSV']!;

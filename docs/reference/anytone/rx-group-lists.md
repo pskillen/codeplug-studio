@@ -21,7 +21,7 @@ DMR receive group lists (promiscuous RX) for AT-D890UV.
 | `Contact`           | `RxGroupList.members[]` as talk-group refs         |
 | `Contact TG/DMR ID` | Denormalised IDs on wire; validate against TG rows |
 
-Native RGL file — no m×n channel expansion required (contrast DM32).
+Native RGL file — lean export keeps `Receive Group List` FK on `Channel.CSV`. Optional **m×n channel expansion** ([#305](https://github.com/pskillen/codeplug-studio/issues/305)) clears the FK on expanded TG rows; see [export-projections.md](../../features/import-export/anytone/export-projections.md).
 
 ## Related
 

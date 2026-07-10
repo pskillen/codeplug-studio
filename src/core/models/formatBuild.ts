@@ -23,6 +23,8 @@ export interface BuildExportSettings {
   expandModes?: boolean;
   expandRxGroupLists?: boolean;
   expandRxGroupListMembers?: ExpandRxGroupListMembers;
+  /** When true with expandRxGroupLists, emit one scratch companion row per expanded repeater channel. */
+  exportScratchChannels?: boolean;
 }
 
 /**

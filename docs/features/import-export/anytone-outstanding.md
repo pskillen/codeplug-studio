@@ -37,6 +37,14 @@ Items **skipped**, **incomplete**, or **discovered during execution** — not sc
 
 ---
 
+## Wave 3 — m×n expansion + scratch ([#305](https://github.com/pskillen/codeplug-studio/issues/305), [#325](https://github.com/pskillen/codeplug-studio/issues/325))
+
+- [x] **m×n channel expansion** — optional export-time fan-out ([#305](https://github.com/pskillen/codeplug-studio/issues/305))
+- [x] **Scratch channels** — per-repeater companion when expansion on ([#325](https://github.com/pskillen/codeplug-studio/issues/325))
+- [x] **Operator docs** — [export-projections.md](anytone/export-projections.md)
+
+---
+
 ## Epic deferrals
 
 - [ ] Anytone **import** — epic [#229](https://github.com/pskillen/codeplug-studio/issues/229) (Phase 7b)

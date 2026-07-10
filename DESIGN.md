@@ -34,16 +34,17 @@ Salvage from the old repo: wire-format reference docs, import parsers (simplifie
 
 ## Glossary
 
-| Term                            | Meaning                                                                                                                                                                                  |
-| ------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Project**                     | Named container: metadata + one library + zero or more format builds. Persisted as a unit.                                                                                               |
-| **Library**                     | Master inventory — channels, talk groups, contacts, and shared concepts (e.g. zone _definitions_ where they are radio-agnostic). The operator's single source of truth for RF assets.    |
-| **Format build** (or **build**) | A format-scoped assembly: library selection + **trait-shaped layout** (zones, flat memories, scan lists, …) for one CPS workflow.                                                        |
-| **Build capability trait**      | A behavioural concern radios may or may not support (zone grouping, scan lists, m×n channel expansion, …). Builds and build UI compose from traits; wire adapters map the result to CPS. |
-| **Trait profile**               | The set of traits enabled for a build, usually fixed per format/profile definition — e.g. OpenGD77-1701 vs CHIRP UV-5R.                                                                  |
-| **Format**                      | A wire interchange family at the import/export boundary — e.g. OpenGD77 CSV, DM32 CSV, CHIRP CSV, native YAML. Siblings; none is the internal model.                                     |
-| **Variant / profile**           | Per-radio specialisation _within_ one format — selects trait profile and wire limits at export. Not a separate format.                                                                   |
-| **Codeplug** (export sense)     | The CPS-facing output of a build — files the vendor CPS accepts. Not the primary in-app edit model.                                                                                      |
+| Term                            | Meaning                                                                                                                                                                                                                                           |
+| ------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Project**                     | Named container: metadata + one library + zero or more format builds. Persisted as a unit.                                                                                                                                                        |
+| **Library**                     | Master inventory — channels, talk groups, contacts, and shared concepts (e.g. zone _definitions_ where they are radio-agnostic). The operator's single source of truth for RF assets.                                                             |
+| **Format build** (or **build**) | A format-scoped assembly: library selection + **trait-shaped layout** (zones, flat memories, scan lists, …) for one CPS workflow.                                                                                                                 |
+| **Build capability trait**      | A behavioural concern radios may or may not support (zone grouping, scan lists, m×n channel expansion, …). Builds and build UI compose from traits; wire adapters map the result to CPS.                                                          |
+| **Trait profile**               | The set of traits enabled for a build, usually fixed per format/profile definition — e.g. OpenGD77-1701 vs CHIRP UV-5R.                                                                                                                           |
+| **Format**                      | A wire interchange family at the import/export boundary — e.g. OpenGD77 CSV, DM32 CSV, CHIRP CSV, native YAML. Siblings; none is the internal model.                                                                                              |
+| **Variant / profile**           | Per-radio specialisation _within_ one format — selects trait profile and wire limits at export. Not a separate format.                                                                                                                            |
+| **Codeplug** (export sense)     | The CPS-facing output of a build — files the vendor CPS accepts. Not the primary in-app edit model.                                                                                                                                               |
+| **Scratch channel**             | Export-time companion memory per repeater (library channel): a faithful projection of the parent channel with a `Scratch` name marker so the operator can retune in the field without editing programmed talk-group rows. Not a zone export knob. |
 
 User-facing copy may say "codeplug" when the operator would; internal docs use **library** and **build** for clarity.
 

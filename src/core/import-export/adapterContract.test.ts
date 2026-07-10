@@ -54,7 +54,8 @@ describe('adapter contracts', () => {
     expect(adapter.id).toBe('anytone');
     expect(adapter.defaultExportSettings?.defaultScanInclusion).toBe('scan');
     expect(adapter.defaultExportSettings?.expandModes).toBe(false);
-    expect(adapter.defaultExportSettings?.expandRxGroupLists).toBe(false);
+    expect(adapter.defaultExportSettings?.expandRxGroupLists).toBe(true);
+    expect(adapter.defaultExportSettings?.exportScratchChannels).toBe(true);
     expect(isMultiFileExportAdapter(adapter)).toBe(true);
     if (isMultiFileExportAdapter(adapter)) {
       expect(adapter.delivery).toBe('multi-file');

@@ -73,7 +73,11 @@ export const TRAIT_PROFILES: Record<string, TraitProfile> = {
     profileId: 'anytone-at-d890uv',
     formatId: 'anytone',
     label: 'Anytone AT-D890UV',
-    traits: [BuildCapabilityTrait.ZoneGrouping, BuildCapabilityTrait.DedicatedScanLists],
+    traits: [
+      BuildCapabilityTrait.ZoneGrouping,
+      BuildCapabilityTrait.DedicatedScanLists,
+      BuildCapabilityTrait.MxNChannelExpansion,
+    ],
   },
 };
 
@@ -84,6 +88,11 @@ export function traitProfileFor(profileId: string): TraitProfile | undefined {
 export function hasDedicatedScanLists(profileId: string): boolean {
   const traits = traitProfileFor(profileId)?.traits ?? [];
   return traits.includes(BuildCapabilityTrait.DedicatedScanLists);
+}
+
+export function hasMxNChannelExpansion(profileId: string): boolean {
+  const traits = traitProfileFor(profileId)?.traits ?? [];
+  return traits.includes(BuildCapabilityTrait.MxNChannelExpansion);
 }
 
 /** Whether the export page should show default scan inclusion (zone-derived / per-channel scan flag semantics). */

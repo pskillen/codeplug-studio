@@ -10,6 +10,8 @@ export type ResolvedBuildExportSettings = Required<
     | 'useChannelAbbreviation'
     | 'useTalkGroupAbbreviation'
     | 'exportZoneDerivedScanLists'
+    | 'expandRxGroupLists'
+    | 'exportScratchChannels'
   >
 > &
   Pick<BuildExportSettings, 'maxNameLength' | 'defaultScanInclusion'>;
@@ -20,6 +22,10 @@ export function resolvedBuildExportSettings(build: FormatBuild): ResolvedBuildEx
   const exportZoneDerivedDefault =
     formatDefaults.exportZoneDerivedScanLists ??
     DEFAULT_BUILD_EXPORT_SETTINGS.exportZoneDerivedScanLists;
+  const expandRxGroupListsDefault =
+    formatDefaults.expandRxGroupLists ?? stored.expandRxGroupLists ?? false;
+  const exportScratchChannelsDefault =
+    formatDefaults.exportScratchChannels ?? stored.exportScratchChannels ?? false;
   return {
     shortenNames: stored.shortenNames ?? DEFAULT_BUILD_EXPORT_SETTINGS.shortenNames,
     maxNameLength: stored.maxNameLength ?? null,
@@ -29,6 +35,8 @@ export function resolvedBuildExportSettings(build: FormatBuild): ResolvedBuildEx
     useTalkGroupAbbreviation:
       stored.useTalkGroupAbbreviation ?? DEFAULT_BUILD_EXPORT_SETTINGS.useTalkGroupAbbreviation,
     exportZoneDerivedScanLists: stored.exportZoneDerivedScanLists ?? exportZoneDerivedDefault,
+    expandRxGroupLists: stored.expandRxGroupLists ?? expandRxGroupListsDefault,
+    exportScratchChannels: stored.exportScratchChannels ?? exportScratchChannelsDefault,
     defaultScanInclusion: stored.defaultScanInclusion,
   };
 }
