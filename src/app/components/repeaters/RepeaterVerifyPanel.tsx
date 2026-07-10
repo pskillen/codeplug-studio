@@ -5,9 +5,11 @@ import {
   matchListingForChannel,
   RepeaterDirectoryError,
   searchBrandmeisterByCallsign,
+  searchIrtsByCallsign,
   searchUkRepeatersByCallsign,
   type MapListingOptions,
   type RepeaterListing,
+  type RepeaterSource,
 } from '@integrations/repeaters/index.ts';
 import { PageSection } from '../ui/index.ts';
 import BrandmeisterRxGroupListSyncDialog from './BrandmeisterRxGroupListSyncDialog.tsx';
@@ -20,12 +22,21 @@ export interface RepeaterVerifyPanelProps {
 
 type VerifyIntent = 'repeater' | 'talkGroups';
 
+type VerifySource = Extract<RepeaterSource, 'ukrepeater' | 'brandmeister' | 'irts'>;
+
+const VERIFY_SOURCE_LABEL: Record<VerifySource, string> = {
+  ukrepeater: 'ukrepeater.net',
+  brandmeister: 'BrandMeister',
+  irts: 'IRTS',
+};
+
 function channelHasDmr(channel: Channel): boolean {
   return channel.modeProfiles.some((p) => p.mode === 'dmr');
 }
 
 export default function RepeaterVerifyPanel({ channel, library }: RepeaterVerifyPanelProps) {
   const [ukLoading, setUkLoading] = useState(false);
+  const [irtsLoading, setIrtsLoading] = useState(false);
   const [bmRepeaterLoading, setBmRepeaterLoading] = useState(false);
   const [bmTalkGroupsLoading, setBmTalkGroupsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -64,7 +75,7 @@ export default function RepeaterVerifyPanel({ channel, library }: RepeaterVerify
   }
 
   async function runDirectoryCheck(
-    source: 'ukrepeater' | 'brandmeister',
+    source: VerifySource,
     intent: VerifyIntent,
     setLoading: (value: boolean) => void,
   ) {
@@ -74,12 +85,14 @@ export default function RepeaterVerifyPanel({ channel, library }: RepeaterVerify
     }
     setLoading(true);
     setError(null);
-    const sourceLabel = source === 'ukrepeater' ? 'ukrepeater.net' : 'BrandMeister';
+    const sourceLabel = VERIFY_SOURCE_LABEL[source];
     try {
       const results =
         source === 'brandmeister'
           ? await searchBrandmeisterByCallsign(channel.callsign)
-          : await searchUkRepeatersByCallsign(channel.callsign);
+          : source === 'irts'
+            ? await searchIrtsByCallsign(channel.callsign)
+            : await searchUkRepeatersByCallsign(channel.callsign);
       if (results.length === 0) {
         setError(`No listings found for ${channel.callsign} on ${sourceLabel}.`);
         return;
@@ -129,6 +142,13 @@ export default function RepeaterVerifyPanel({ channel, library }: RepeaterVerify
               onClick={() => void runDirectoryCheck('ukrepeater', 'repeater', setUkLoading)}
             >
               Check ukrepeater.net
+            </Button>
+            <Button
+              variant="light"
+              loading={irtsLoading}
+              onClick={() => void runDirectoryCheck('irts', 'repeater', setIrtsLoading)}
+            >
+              Check IRTS
             </Button>
             {showBrandmeister ? (
               <Button
