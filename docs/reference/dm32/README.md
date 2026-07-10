@@ -21,6 +21,14 @@ Authoritative reference for **Baofeng DM-32UV stock CPS** CSV exports (v1.60+). 
 
 Committed fixture: [`test-data/baofeng-dm32/v1.60/`](../../../test-data/baofeng-dm32/v1.60/).
 
+## Line endings
+
+| Property     | Value                                                                                                       |
+| ------------ | ----------------------------------------------------------------------------------------------------------- |
+| Line endings | **CRLF** on Studio export for all DM32 CSV files; normalise to LF in tests when comparing committed fixtures |
+
+Official Baofeng DM-32UV CPS exports use Windows (CRLF) line endings. Studio DM32 export matches ([#314](https://github.com/pskillen/codeplug-studio/issues/314)). Import parsing accepts both LF and CRLF.
+
 ## Filename quirks
 
 - v1.60 CPS uses **PascalCase** (`Channels.csv`, `Scan.csv`).

@@ -16,6 +16,12 @@ Items **skipped**, **incomplete**, or **discovered during execution** — not th
 
 ---
 
+## Fixed
+
+- [x] **CRLF export line endings** — [#314](https://github.com/pskillen/codeplug-studio/issues/314); Studio DM32 CSV export matches official CPS (Windows CRLF)
+
+---
+
 ## Discovered during execution
 
 - **Empty `Scan.csv` in ZIP** — export always serialises header row; ZIP includes `Scan.csv` even when no zone scan lists emit (omit-from-ZIP polish optional).
