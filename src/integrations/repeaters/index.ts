@@ -15,6 +15,16 @@ export {
 } from './ukrepeater/queryRouter.ts';
 export { searchBrandmeisterByCallsign } from './brandmeisterClient.ts';
 export {
+  clearIrtsCatalogueCache,
+  fetchIrtsRepeaters,
+  filterIrtsListings,
+  IRTS_REPEATERS_API_PATH,
+  parseIrtsAnytoneCsv,
+  searchIrtsByCallsign,
+  searchIrtsCatalogue,
+  type IrtsSearchFilters,
+} from './irtsClient.ts';
+export {
   fetchDeviceTalkGroups,
   fetchResolvedDeviceTalkGroups,
   loadTalkGroupNameMap,

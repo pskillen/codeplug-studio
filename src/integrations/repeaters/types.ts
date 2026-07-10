@@ -1,6 +1,6 @@
 import type { ChannelMode, GeoPoint } from '@core/models/libraryTypes.ts';
 
-export type RepeaterSource = 'ukrepeater' | 'brandmeister';
+export type RepeaterSource = 'ukrepeater' | 'brandmeister' | 'irts';
 
 /**
  * Normalised, vendor-neutral repeater directory result. Each external client
