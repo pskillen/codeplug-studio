@@ -35,6 +35,14 @@ export const ATTRIBUTIONS: AttributionEntry[] = [
     usedIn: ['Add from BrandMeister', 'Channel editor BrandMeister verify'],
   },
   {
+    id: 'irts',
+    name: 'IRTS',
+    description:
+      'Republic of Ireland amateur repeater listings via the IRTS Anytone CSV catalogue (proxied for browser access).',
+    homeUrl: 'https://www.irts.ie/cgi/repeater.cgi',
+    usedIn: ['Add from IRTS', 'Channel editor IRTS verify'],
+  },
+  {
     id: 'mapbox',
     name: 'Mapbox',
     description:

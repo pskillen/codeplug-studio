@@ -1,5 +1,5 @@
 import type { TablerIcon } from '@tabler/icons-react';
-import { IconAntenna, IconPlane, IconPlaylistAdd, IconRadio } from '@tabler/icons-react';
+import { IconAntenna, IconPlane, IconPlaylistAdd, IconRadio, IconTower } from '@tabler/icons-react';
 import type { BadgeCardBadge } from '../components/ui/BadgeCard.tsx';
 
 export interface ChannelDataSource {
@@ -54,6 +54,21 @@ export const CHANNEL_DATA_SOURCES: readonly ChannelDataSource[] = [
     path: '/library/channels/add-from-brandmeister',
     badges: [{ label: 'DMR' }, { label: 'Talk groups' }, { label: 'RX lists' }],
     Icon: IconAntenna,
+  },
+  {
+    id: 'irts',
+    title: 'IRTS',
+    subtitle: 'Ireland repeaters',
+    description:
+      'Browse the IRTS Republic of Ireland repeater catalogue. Import FM and DMR listings by callsign or location.',
+    path: '/library/channels/add-from-irts',
+    badges: [
+      { emoji: '🇮🇪', label: 'Ireland' },
+      { label: 'FM' },
+      { label: 'DMR' },
+      { label: 'Verify' },
+    ],
+    Icon: IconTower,
   },
 ] as const;
 

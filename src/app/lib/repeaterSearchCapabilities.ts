@@ -24,6 +24,18 @@ export function repeaterSearchCapabilities(source: RepeaterSource): RepeaterSear
       locationLabel: 'Town',
     };
   }
+  if (source === 'irts') {
+    return {
+      unifiedQuery: false,
+      bandFilter: true,
+      modeFilter: true,
+      operationalOnly: false,
+      titleCaseNames: true,
+      useMyLocation: false,
+      locatorColumn: false,
+      locationLabel: 'City',
+    };
+  }
   return {
     unifiedQuery: false,
     bandFilter: false,

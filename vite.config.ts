@@ -15,6 +15,15 @@ export default defineConfig(({ mode }) => {
 
   return {
     base: '/',
+    server: {
+      proxy: {
+        '/api/irts/repeaters': {
+          target: 'https://www.irts.ie',
+          changeOrigin: true,
+          rewrite: () => '/dnloads/repeaters_Anytone578.csv',
+        },
+      },
+    },
     plugins: [react()],
     resolve: {
       alias: {

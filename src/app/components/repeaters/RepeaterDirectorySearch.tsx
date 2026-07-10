@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
   Alert,
@@ -58,6 +58,30 @@ const BAND_OPTIONS = [
   { value: '23CM', label: '23 cm' },
 ];
 
+const SOURCE_META: Record<
+  RepeaterSource,
+  { label: string; url: string; attributionSuffix: string }
+> = {
+  ukrepeater: {
+    label: 'ukrepeater.net',
+    url: 'https://ukrepeater.net',
+    attributionSuffix:
+      ' (RSGB ETCC beta API). For amateur programming convenience — not authoritative for emergency operations.',
+  },
+  brandmeister: {
+    label: 'BrandMeister',
+    url: 'https://brandmeister.network',
+    attributionSuffix:
+      '. For amateur programming convenience — not authoritative for emergency operations.',
+  },
+  irts: {
+    label: 'IRTS',
+    url: 'https://www.irts.ie/cgi/repeater.cgi',
+    attributionSuffix:
+      '. For amateur programming convenience — not authoritative for emergency operations.',
+  },
+};
+
 const UK_MODE_FILTER_OPTIONS = modeFilterOptions().filter((o) => o.value !== 'other');
 
 export interface RepeaterDirectorySearchProps {
@@ -110,16 +134,24 @@ export default function RepeaterDirectorySearch({
     useState<BrandMeisterTalkGroupLookupProgress | null>(null);
 
   const isUk = source === 'ukrepeater';
+  const isBrandmeister = source === 'brandmeister';
+  const sourceMeta = SOURCE_META[source];
   const capabilities = repeaterSearchCapabilities(source);
-  const sourceLabel = isUk ? 'ukrepeater.net' : 'BrandMeister';
-  const sourceUrl = isUk ? 'https://ukrepeater.net' : 'https://brandmeister.network';
+  const useTitleCaseNames = capabilities.titleCaseNames && search.titleCaseNames;
+
+  useEffect(() => {
+    if (source !== 'irts') return;
+    void search.search('');
+    // Load ROI catalogue on mount; filters apply on subsequent searches.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [source]);
 
   const mapOptions: MapListingOptions = useMemo(
     () => ({
-      titleCaseText: isUk ? search.titleCaseNames : false,
-      omitComment: !isUk,
+      titleCaseText: useTitleCaseNames,
+      omitComment: isBrandmeister,
     }),
-    [isUk, search.titleCaseNames],
+    [useTitleCaseNames, isBrandmeister],
   );
 
   function existingChannel(listing: RepeaterListing): Channel | null {
@@ -293,13 +325,19 @@ export default function RepeaterDirectorySearch({
     >
       <PageSection
         title="Search"
-        description={`Query ${sourceLabel} and add matches to your library.`}
+        description={`Query ${sourceMeta.label} and add matches to your library.`}
       >
         <Stack gap="sm">
           <Group align="flex-end" wrap="wrap">
             <TextInput
               label="Search"
-              placeholder={capabilities.unifiedQuery ? 'Callsign, locator, or town' : 'e.g. GB3RF'}
+              placeholder={
+                capabilities.unifiedQuery
+                  ? 'Callsign, locator, or town'
+                  : source === 'irts'
+                    ? 'Callsign or location (optional)'
+                    : 'e.g. GB3RF'
+              }
               value={search.query}
               onChange={(e) => search.setQuery(e.currentTarget.value)}
               onKeyDown={(e) => {
@@ -343,7 +381,7 @@ export default function RepeaterDirectorySearch({
                 onChange={(e) => search.setTitleCaseNames(e.currentTarget.checked)}
               />
             ) : null}
-            {!isUk ? (
+            {isBrandmeister ? (
               <Checkbox
                 label="Import talk groups and RX group list"
                 checked={importTalkGroups}
@@ -371,8 +409,8 @@ export default function RepeaterDirectorySearch({
           {search.error ? (
             <Alert color="red">
               {search.error}{' '}
-              <Anchor href={sourceUrl} target="_blank" rel="noopener noreferrer">
-                {sourceLabel}
+              <Anchor href={sourceMeta.url} target="_blank" rel="noopener noreferrer">
+                {sourceMeta.label}
               </Anchor>
             </Alert>
           ) : null}
@@ -464,15 +502,13 @@ export default function RepeaterDirectorySearch({
                           size="xs"
                         />
                       </Table.Td>
-                      <Table.Td>
-                        {displayListingName(listing, isUk && search.titleCaseNames)}
-                      </Table.Td>
+                      <Table.Td>{displayListingName(listing, useTitleCaseNames)}</Table.Td>
                       <Table.Td>
                         <Text
                           size="sm"
                           c={isOperationalStatus(listing.status) ? undefined : 'orange'}
                         >
-                          {displayListingStatus(listing, isUk && search.titleCaseNames)}
+                          {displayListingStatus(listing, useTitleCaseNames)}
                         </Text>
                       </Table.Td>
                       <Table.Td>
@@ -542,12 +578,10 @@ export default function RepeaterDirectorySearch({
 
       <Text size="xs" c="dimmed">
         Data from{' '}
-        <Anchor href={sourceUrl} target="_blank" rel="noopener noreferrer">
-          {sourceLabel}
+        <Anchor href={sourceMeta.url} target="_blank" rel="noopener noreferrer">
+          {sourceMeta.label}
         </Anchor>
-        {isUk
-          ? ' (RSGB ETCC beta API). For amateur programming convenience — not authoritative for emergency operations.'
-          : '. For amateur programming convenience — not authoritative for emergency operations.'}
+        {sourceMeta.attributionSuffix}
       </Text>
 
       {dialogChannel && updateListing ? (

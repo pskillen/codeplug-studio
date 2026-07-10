@@ -75,7 +75,7 @@ jobs:
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          command: pages deploy dist --project-name=${{ env.CF_PAGES_PROJECT_NAME }} --branch=${{ env.CF_PAGES_PRODUCTION_BRANCH }}
+          command: pages deploy --branch=${{ env.CF_PAGES_PRODUCTION_BRANCH }}
 
       - name: Deploy to Cloudflare Pages (preview)
         if: ${{ inputs.cloudflare_branch != '' }}
@@ -83,4 +83,4 @@ jobs:
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          command: pages deploy dist --project-name=${{ env.CF_PAGES_PROJECT_NAME }} --branch=${{ inputs.cloudflare_branch }}
+          command: pages deploy --branch=${{ inputs.cloudflare_branch }}
