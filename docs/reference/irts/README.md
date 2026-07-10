@@ -6,14 +6,14 @@ This is a **remote directory dataset**, not a CPS wire format. HTTP proxy, CSV p
 
 ## Source
 
-| Property | Value |
-| -------- | ----- |
-| Publisher | [IRTS](https://www.irts.ie/) — Irish Radio Transmitters Society |
-| Human listing | `https://www.irts.ie/cgi/repeater.cgi` |
-| Wire file (v1) | `https://www.irts.ie/dnloads/repeaters_Anytone578.csv` |
-| Licence | Free download for amateur programming; attribute IRTS in UI |
+| Property         | Value                                                                                                           |
+| ---------------- | --------------------------------------------------------------------------------------------------------------- |
+| Publisher        | [IRTS](https://www.irts.ie/) — Irish Radio Transmitters Society                                                 |
+| Human listing    | `https://www.irts.ie/cgi/repeater.cgi`                                                                          |
+| Wire file (v1)   | `https://www.irts.ie/dnloads/repeaters_Anytone578.csv`                                                          |
+| Licence          | Free download for amateur programming; attribute IRTS in UI                                                     |
 | Geographic scope | **Republic of Ireland** in CSV (`EI*`, `EJ*` callsigns); NI `GB*` sites on the HTML page are **not** in the CSV |
-| Freshness | Society-maintained; HTML footer shows last update; CSV `Last-Modified` varies |
+| Freshness        | Society-maintained; HTML footer shows last update; CSV `Last-Modified` varies                                   |
 
 Alternate exports (not used in v1 UI): Chirp CSV (`repeaters_chirp.csv`), ICOM IC-9700 band-split CSVs.
 
@@ -23,37 +23,37 @@ IRTS does **not** send `Access-Control-Allow-Origin`. The browser SPA cannot fet
 
 Studio exposes a same-origin Pages Function:
 
-| Property | Value |
-| -------- | ----- |
-| Studio path | `GET /api/irts/repeaters` |
-| Upstream | `https://www.irts.ie/dnloads/repeaters_Anytone578.csv` |
-| Auth | None (public upstream; no operator API key) |
-| Cache | `Cache-Control: public, max-age=3600` |
-| Local dev | Vite `server.proxy` mirrors the path |
+| Property    | Value                                                  |
+| ----------- | ------------------------------------------------------ |
+| Studio path | `GET /api/irts/repeaters`                              |
+| Upstream    | `https://www.irts.ie/dnloads/repeaters_Anytone578.csv` |
+| Auth        | None (public upstream; no operator API key)            |
+| Cache       | `Cache-Control: public, max-age=3600`                  |
+| Local dev   | Vite `server.proxy` mirrors the path                   |
 
 Deployed with the SPA via `wrangler.toml` + `functions/api/irts/repeaters.ts` on every environment (dev / next / staging / prod).
 
 ## Candidates evaluated (spike #273)
 
-| Source | Analogue | Digital | SPA without proxy | Verdict |
-| ------ | -------- | ------- | ----------------- | ------- |
-| **IRTS Anytone CSV** | Yes | DMR (+ limited D-STAR via Chirp only) | No (CORS) | **Primary v1** |
-| BrandMeister | No | DMR only | Yes | Supplement for BM TGs (already shipped) |
-| RepeaterBook `exportROW` | Yes | Yes | No (401 + app token) | Out of scope |
-| RadioID.net | No | DMR/NXDN/P25/D-STAR | No (CORS) | Out of scope |
+| Source                   | Analogue | Digital                               | SPA without proxy    | Verdict                                 |
+| ------------------------ | -------- | ------------------------------------- | -------------------- | --------------------------------------- |
+| **IRTS Anytone CSV**     | Yes      | DMR (+ limited D-STAR via Chirp only) | No (CORS)            | **Primary v1**                          |
+| BrandMeister             | No       | DMR only                              | Yes                  | Supplement for BM TGs (already shipped) |
+| RepeaterBook `exportROW` | Yes      | Yes                                   | No (401 + app token) | Out of scope                            |
+| RadioID.net              | No       | DMR/NXDN/P25/D-STAR                   | No (CORS)            | Out of scope                            |
 
 ## Anytone CSV columns (shipped parse)
 
 Parse by **header name** — do not hard-code column positions.
 
-| Column | Use |
-| ------ | --- |
-| `Channel Name` | Callsign + location label (e.g. `EI7FXD Farmer's`) |
-| `Receive Frequency` | Repeater **output** → `rxFrequencyHz` |
-| `Transmit Frequency` | Repeater **input** → `txFrequencyHz` |
-| `Channel Type` | `A-Analog` → `fm`; `D-Digital` → `dmr` |
-| `CTCSS/DCS Encode` | Analogue TX tone (`Off` → none) |
-| `Color Code` | DMR colour code (1–15) |
+| Column               | Use                                                |
+| -------------------- | -------------------------------------------------- |
+| `Channel Name`       | Callsign + location label (e.g. `EI7FXD Farmer's`) |
+| `Receive Frequency`  | Repeater **output** → `rxFrequencyHz`              |
+| `Transmit Frequency` | Repeater **input** → `txFrequencyHz`               |
+| `Channel Type`       | `A-Analog` → `fm`; `D-Digital` → `dmr`             |
+| `CTCSS/DCS Encode`   | Analogue TX tone (`Off` → none)                    |
+| `Color Code`         | DMR colour code (1–15)                             |
 
 ### Sample rows
 
@@ -66,29 +66,29 @@ EI7PMD Portmarno,439.46250,430.46250,D-Digital,2,Off
 
 ## Normalised listing (`RepeaterListing`)
 
-| Wire / derived | `RepeaterListing` |
-| -------------- | ----------------- |
-| `source` | `'irts'` |
-| `callsign` | Leading token from `Channel Name` |
-| `name` | Remainder of `Channel Name` (location label) |
-| Receive MHz × 1e6 | `rxFrequencyHz` |
-| Transmit MHz × 1e6 | `txFrequencyHz` |
-| Encode tone (analogue) | `toneHz` |
-| `Channel Type` | `modes[]`, `primaryMode`, `colourCode` |
-| `callsign@rxMhz` | `remoteId` |
-| RX frequency | `band` wire label via `bandFromFrequencyMhz` |
-| — | `locator`, `location` null in v1 |
-| — | `status` empty |
+| Wire / derived         | `RepeaterListing`                            |
+| ---------------------- | -------------------------------------------- |
+| `source`               | `'irts'`                                     |
+| `callsign`             | Leading token from `Channel Name`            |
+| `name`                 | Remainder of `Channel Name` (location label) |
+| Receive MHz × 1e6      | `rxFrequencyHz`                              |
+| Transmit MHz × 1e6     | `txFrequencyHz`                              |
+| Encode tone (analogue) | `toneHz`                                     |
+| `Channel Type`         | `modes[]`, `primaryMode`, `colourCode`       |
+| `callsign@rxMhz`       | `remoteId`                                   |
+| RX frequency           | `band` wire label via `bandFromFrequencyMhz` |
+| —                      | `locator`, `location` null in v1             |
+| —                      | `status` empty                               |
 
 Frequency convention matches other repeater directories: `rxFrequencyHz` is what the **radio receives** (repeater output).
 
 ## Client API
 
-| Function | Role |
-| -------- | ---- |
-| `fetchIrtsRepeaters()` | Load full catalogue via `/api/irts/repeaters` |
-| `searchIrtsByCallsign(callsign)` | Filter catalogue for verify |
-| `filterIrtsListings(listings, filters)` | Client-side query / band / mode |
+| Function                                | Role                                          |
+| --------------------------------------- | --------------------------------------------- |
+| `fetchIrtsRepeaters()`                  | Load full catalogue via `/api/irts/repeaters` |
+| `searchIrtsByCallsign(callsign)`        | Filter catalogue for verify                   |
+| `filterIrtsListings(listings, filters)` | Client-side query / band / mode               |
 
 Parser: [`src/integrations/repeaters/irtsClient.ts`](../../../src/integrations/repeaters/irtsClient.ts).
 

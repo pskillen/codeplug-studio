@@ -19,9 +19,9 @@ export default function HelpPage() {
             groups, contacts, RX group lists). Channels and zones include the codeplug map.
           </List.Item>
           <List.Item>
-            <strong>Repeater directories</strong> — add new channels from ukrepeater.net or
-            BrandMeister, or check an existing channel against the directory from the channel
-            editor.
+            <strong>Repeater directories</strong> — add new channels from ukrepeater.net, IRTS
+            (Ireland), or BrandMeister, or check an existing channel against the directory from the
+            channel editor.
           </List.Item>
           <List.Item>
             <strong>Summary</strong> — at-a-glance library inventory, breakdowns, and integrity
@@ -36,7 +36,7 @@ export default function HelpPage() {
             <Anchor component={Link} to="/attributions" size="sm">
               Attributions
             </Anchor>{' '}
-            for OpenAIP, ukrepeater.net, BrandMeister, map tiles, and related credits.
+            for OpenAIP, ukrepeater.net, IRTS, BrandMeister, map tiles, and related credits.
           </Text>
         </Stack>
       </PageSection>

@@ -103,8 +103,8 @@ Local check: `npm run build && npm run preview`, then open `/library/channels` o
 
 IRTS repeater CSVs are not browser-CORS accessible. Studio ships a public edge proxy:
 
-| Path | Source | Notes |
-| ---- | ------ | ----- |
+| Path                      | Source                                                                     | Notes                                     |
+| ------------------------- | -------------------------------------------------------------------------- | ----------------------------------------- |
 | `GET /api/irts/repeaters` | [`functions/api/irts/repeaters.ts`](../../functions/api/irts/repeaters.ts) | Proxies `irts.ie` Anytone CSV; no secrets |
 
 - **Deployed:** bundled with each `wrangler pages deploy` — same commit as the SPA on that CF branch.

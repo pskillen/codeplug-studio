@@ -3,19 +3,18 @@
 **Tracking:** [#273](https://github.com/pskillen/codeplug-studio/issues/273) · parent [#272](https://github.com/pskillen/codeplug-studio/issues/272)  
 **Branch:** `273/pskil/irts-repeater-directory`
 
-## In flight
+## Shipped on branch
 
-| Slice | Status | Notes |
-| ----- | ------ | ----- |
-| 0 Spike + reference doc | In progress | `docs/reference/irts/README.md`, progress pair |
-| 1 CORS bridge | Pending | `wrangler.toml`, Pages Function, Vite proxy |
-| 2 Integration client | Pending | `irtsClient.ts` + tests |
-| 3 Add-from UI | Pending | Route, modal entry, shared search shell |
-| 4 Channel verify | Pending | `RepeaterVerifyPanel` |
-| 5 Feature docs closeout | Pending | Hub README, Help |
-| 6 PR | Pending | |
+| Commit                                                                   | Slice                                                   |
+| ------------------------------------------------------------------------ | ------------------------------------------------------- |
+| `docs(repeaters): add IRTS Ireland spike reference and progress logs`    | Spike doc + progress pair                               |
+| `feat(infra): add IRTS CORS bridge via Pages Function and wrangler.toml` | `wrangler.toml`, Pages Function, Vite proxy, build docs |
+| `feat(integrations): add IRTS Anytone CSV repeater client`               | `irtsClient.ts` + tests                                 |
+| `feat(app): add IRTS repeater directory search and import route`         | Add from IRTS UI + modal entry                          |
+| `feat(app): add Check IRTS verify on channel editor`                     | `RepeaterVerifyPanel`                                   |
+| `docs(repeaters): document shipped IRTS directory workflows`             | Feature hub + Help                                      |
 
-## Verify (when complete)
+## Verify
 
 - `npm run format:check && npm run lint && npm run test && npm run build`
 - Manual: Add from IRTS → filter → add channel; channel editor → Check IRTS

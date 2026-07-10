@@ -100,11 +100,7 @@ export function parseIrtsAnytoneCsv(text: string): RepeaterListing[] {
     const rxFrequencyHz = mhzStringToHz(row[rxIdx]);
     const txFrequencyHz = mhzStringToHz(row[txIdx]);
     const toneHz = parseToneHz(row[encodeIdx]);
-    const modeFields = parseChannelType(
-      row[typeIdx] ?? '',
-      row[ccIdx] ?? '',
-      toneHz,
-    );
+    const modeFields = parseChannelType(row[typeIdx] ?? '', row[ccIdx] ?? '', toneHz);
 
     const rxMhz = rxFrequencyHz != null ? (rxFrequencyHz / 1_000_000).toFixed(5) : 'unknown';
 
@@ -166,7 +162,9 @@ export function clearIrtsCatalogueCache(): void {
   catalogueCache = null;
 }
 
-export async function fetchIrtsRepeaters(options?: { refresh?: boolean }): Promise<RepeaterListing[]> {
+export async function fetchIrtsRepeaters(options?: {
+  refresh?: boolean;
+}): Promise<RepeaterListing[]> {
   if (!options?.refresh && catalogueCache) {
     return catalogueCache;
   }
@@ -181,7 +179,10 @@ export async function fetchIrtsRepeaters(options?: { refresh?: boolean }): Promi
   }
 
   if (!response.ok) {
-    throw new RepeaterDirectoryError(`IRTS repeater listing returned ${response.status}.`, response.status);
+    throw new RepeaterDirectoryError(
+      `IRTS repeater listing returned ${response.status}.`,
+      response.status,
+    );
   }
 
   let text: string;
@@ -203,7 +204,9 @@ export async function searchIrtsByCallsign(callsign: string): Promise<RepeaterLi
   return all.filter((listing) => listing.callsign.toUpperCase() === needle);
 }
 
-export async function searchIrtsCatalogue(filters: IrtsSearchFilters = {}): Promise<RepeaterListing[]> {
+export async function searchIrtsCatalogue(
+  filters: IrtsSearchFilters = {},
+): Promise<RepeaterListing[]> {
   const all = await fetchIrtsRepeaters();
   return filterIrtsListings(all, filters);
 }

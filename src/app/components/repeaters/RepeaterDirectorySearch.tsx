@@ -502,9 +502,7 @@ export default function RepeaterDirectorySearch({
                           size="xs"
                         />
                       </Table.Td>
-                      <Table.Td>
-                        {displayListingName(listing, useTitleCaseNames)}
-                      </Table.Td>
+                      <Table.Td>{displayListingName(listing, useTitleCaseNames)}</Table.Td>
                       <Table.Td>
                         <Text
                           size="sm"

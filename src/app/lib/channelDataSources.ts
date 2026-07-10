@@ -62,7 +62,12 @@ export const CHANNEL_DATA_SOURCES: readonly ChannelDataSource[] = [
     description:
       'Browse the IRTS Republic of Ireland repeater catalogue. Import FM and DMR listings by callsign or location.',
     path: '/library/channels/add-from-irts',
-    badges: [{ emoji: '🇮🇪', label: 'Ireland' }, { label: 'FM' }, { label: 'DMR' }, { label: 'Verify' }],
+    badges: [
+      { emoji: '🇮🇪', label: 'Ireland' },
+      { label: 'FM' },
+      { label: 'DMR' },
+      { label: 'Verify' },
+    ],
     Icon: IconTower,
   },
 ] as const;
