@@ -82,9 +82,8 @@ function memberTimeslotOverride(
   members: Array<{ ref: EntityRef; timeSlotOverride?: DMRTimeSlot | null }>,
   memberRef: EntityRef,
 ): DMRTimeSlot | null | undefined {
-  return members.find(
-    (entry) => entry.ref.kind === memberRef.kind && entry.ref.id === memberRef.id,
-  )?.timeSlotOverride;
+  return members.find((entry) => entry.ref.kind === memberRef.kind && entry.ref.id === memberRef.id)
+    ?.timeSlotOverride;
 }
 
 function scratchWireName(
@@ -101,14 +100,7 @@ function scratchWireName(
     reserved.add(name);
     return name;
   }
-  return applyWireNameLimits(
-    composed,
-    channel,
-    reserved,
-    options,
-    profileId,
-    warnings,
-  );
+  return applyWireNameLimits(composed, channel, reserved, options, profileId, warnings);
 }
 
 function leanRow(
@@ -207,10 +199,7 @@ export function expandAnytoneChannelWireRows(
         key: row.key,
         wireName: row.wireName,
         mode: row.mode,
-        modeProfile: withTimeslot(
-          dmrProfile,
-          memberTimeslotOverride(members, row.memberRef),
-        ),
+        modeProfile: withTimeslot(dmrProfile, memberTimeslotOverride(members, row.memberRef)),
         txContactRef: row.memberRef,
         rxGroupListId: null,
         rowKind: 'talkGroup',

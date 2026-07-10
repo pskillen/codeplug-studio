@@ -119,10 +119,7 @@ function padRow(headers: string[], values: Record<string, string>): string[] {
   return headers.map((header) => values[header] ?? '');
 }
 
-function serialiseChannelsCsv(
-  prepared: AnytonePreparedExport,
-  options?: CpsExportOptions,
-): string {
+function serialiseChannelsCsv(prepared: AnytonePreparedExport, options?: CpsExportOptions): string {
   const { assembled, context } = prepared;
   const profileId = options?.profileId ?? assembled.profileId ?? DEFAULT_ANYTONE_PROFILE_ID;
   const channelById = new Map(assembled.channels.map((row) => [row.entity.id, row]));
@@ -138,20 +135,12 @@ function serialiseChannelsCsv(
         : null;
     return padRow(
       CHANNEL_HEADERS,
-      serialiseAnytoneChannelRow(
-        assembledChannel,
-        assembled,
-        profileId,
-        slot,
-        options,
-        context,
-        {
-          wireName: expandedRow.wireName,
-          txContactRef: expandedRow.txContactRef,
-          rxGroupListId: expandedRow.rxGroupListId,
-          dmrProfile,
-        },
-      ),
+      serialiseAnytoneChannelRow(assembledChannel, assembled, profileId, slot, options, context, {
+        wireName: expandedRow.wireName,
+        txContactRef: expandedRow.txContactRef,
+        rxGroupListId: expandedRow.rxGroupListId,
+        dmrProfile,
+      }),
     );
   });
   return formatCsv(CHANNEL_HEADERS, rows);

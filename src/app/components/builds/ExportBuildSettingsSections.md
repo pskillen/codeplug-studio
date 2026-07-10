@@ -6,17 +6,17 @@ Grouped export preference controls on the build **Export** page: inclusion, chan
 
 ## Props
 
-| Prop | Type | Description |
-| --- | --- | --- |
-| `build` | `FormatBuild` | Active format build |
-| `saving` | `boolean` | Disables controls while persisting |
-| `settingsError` | `string \| null` | Inclusion save error message |
-| `profileNameLimit` | `number?` | Profile wire name cap for naming fields |
-| `resolvedSettings` | `ResolvedBuildExportSettings` | Merged format defaults + stored `exportSettings` |
-| `formatDefaults` | `FormatExportDefaults` | Adapter defaults for scan inclusion hint |
-| `defaultScanValue` | `DefaultScanInclusion` | Effective default scan behaviour |
-| `onExportSettingsPatch` | `(patch) => void` | Persists `build.exportSettings` partial updates |
-| `onExportInclusionChange` | `(field, checked) => void` | Persists unlinked entity inclusion flags |
+| Prop                      | Type                          | Description                                      |
+| ------------------------- | ----------------------------- | ------------------------------------------------ |
+| `build`                   | `FormatBuild`                 | Active format build                              |
+| `saving`                  | `boolean`                     | Disables controls while persisting               |
+| `settingsError`           | `string \| null`              | Inclusion save error message                     |
+| `profileNameLimit`        | `number?`                     | Profile wire name cap for naming fields          |
+| `resolvedSettings`        | `ResolvedBuildExportSettings` | Merged format defaults + stored `exportSettings` |
+| `formatDefaults`          | `FormatExportDefaults`        | Adapter defaults for scan inclusion hint         |
+| `defaultScanValue`        | `DefaultScanInclusion`        | Effective default scan behaviour                 |
+| `onExportSettingsPatch`   | `(patch) => void`             | Persists `build.exportSettings` partial updates  |
+| `onExportInclusionChange` | `(field, checked) => void`    | Persists unlinked entity inclusion flags         |
 
 ## Behaviour
 

@@ -52,15 +52,15 @@ describe('anytone channelExpansion', () => {
     const channel = dmrRepeaterChannel('Glasgow', rgl.id, 1);
     const zone = {
       ...newZone(PROJECT_ID, 'Zone A'),
-      members: [{ channelId: channel.id, includeInScanList: true }],
+      members: [{ kind: 'channel' as const, channelId: channel.id, includeInScanList: true }],
     };
     const build = {
       ...newFormatBuild(PROJECT_ID, 'anytone-at-d890uv'),
       layout: {
         sections: [
           {
-            trait: 'zoneGrouping',
-            zones: [{ zoneId: zone.id, channelIds: [channel.id] }],
+            kind: 'zoneGrouping' as const,
+            zones: [{ id: zone.id, name: zone.name, channelIds: [channel.id] }],
           },
         ],
       },
@@ -90,7 +90,10 @@ describe('anytone channelExpansion', () => {
     );
 
     const slotByTg = new Map(
-      tgRows.map((row) => [row.txContactRef?.id, (row.modeProfile as ChannelModeProfileDMR).timeslot]),
+      tgRows.map((row) => [
+        row.txContactRef?.id,
+        (row.modeProfile as ChannelModeProfileDMR).timeslot,
+      ]),
     );
     expect(slotByTg.get(tg1.id)).toBe(2);
     expect(slotByTg.get(tg2.id)).toBe(1);

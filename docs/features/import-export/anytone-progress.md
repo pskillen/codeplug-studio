@@ -81,10 +81,10 @@
 
 **Status:** Complete
 
-| Slice                      | Status   | Notes                                              |
-| -------------------------- | -------- | -------------------------------------------------- |
-| Export settings + defaults | Complete | `expandRxGroupLists`, `exportScratchChannels`      |
-| Channel expansion core     | Complete | `anytone/channelExpansion.ts` + timeslot projection |
-| Serialise + zone/scan fan-out | Complete  | Wire context, directional tests                    |
-| Export UI + wire preview   | Complete | Toggles default on; displayDetails                 |
-| Operator projection docs   | Complete | [export-projections.md](anytone/export-projections.md) |
+| Slice                         | Status   | Notes                                                  |
+| ----------------------------- | -------- | ------------------------------------------------------ |
+| Export settings + defaults    | Complete | `expandRxGroupLists`, `exportScratchChannels`          |
+| Channel expansion core        | Complete | `anytone/channelExpansion.ts` + timeslot projection    |
+| Serialise + zone/scan fan-out | Complete | Wire context, directional tests                        |
+| Export UI + wire preview      | Complete | Toggles default on; displayDetails                     |
+| Operator projection docs      | Complete | [export-projections.md](anytone/export-projections.md) |

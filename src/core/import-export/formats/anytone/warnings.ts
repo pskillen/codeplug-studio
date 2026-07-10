@@ -2,11 +2,6 @@ import type { AssembledBuild } from '@core/services/assemble.ts';
 import type { CpsExportOptions } from '@core/import-export/types.ts';
 import type { LibrarySlice } from '@core/services/assemble.ts';
 import { getAnytoneProfile } from './profiles.ts';
-
-import type { AssembledBuild } from '@core/services/assemble.ts';
-import type { CpsExportOptions } from '@core/import-export/types.ts';
-import type { LibrarySlice } from '@core/services/assemble.ts';
-import { getAnytoneProfile } from './profiles.ts';
 import {
   anytoneChannelExpansionById,
   expandAllAnytoneChannelsForExport,
@@ -19,12 +14,7 @@ export function collectAnytoneExportWarnings(
 ): string[] {
   const warnings: string[] = [];
   const profile = getAnytoneProfile(options?.profileId ?? assembled.profileId);
-  const expandedChannels = expandAllAnytoneChannelsForExport(
-    assembled,
-    library,
-    options,
-    warnings,
-  );
+  const expandedChannels = expandAllAnytoneChannelsForExport(assembled, library, options, warnings);
   const expansionByChannelId = anytoneChannelExpansionById(expandedChannels);
 
   const maxNameLength = options?.maxNameLength ?? profile.nameLimit;

@@ -8,10 +8,10 @@ Operator guide to **export-time channel projections** on Anytone AT-D890UV build
 
 ## Lean vs expanded export
 
-| Mode | When | Channel.CSV |
-| --- | --- | --- |
-| **Lean** | **m×n channel expansion** off (export panel) | One row per library channel; `Receive Group List` and `Contact/Talk Group` name FKs as programmed |
-| **Expanded** | m×n expansion **on** (default for new builds) | One row per **talk group** on each digital channel's RX group list |
+| Mode         | When                                          | Channel.CSV                                                                                       |
+| ------------ | --------------------------------------------- | ------------------------------------------------------------------------------------------------- |
+| **Lean**     | **m×n channel expansion** off (export panel)  | One row per library channel; `Receive Group List` and `Contact/Talk Group` name FKs as programmed |
+| **Expanded** | m×n expansion **on** (default for new builds) | One row per **talk group** on each digital channel's RX group list                                |
 
 Library data stays the same — projections are applied only when you export.
 

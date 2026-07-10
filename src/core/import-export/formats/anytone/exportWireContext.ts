@@ -6,10 +6,7 @@ import { anytoneChannelWireName } from './exportChannelWire.ts';
 import { isAmAirbandBankChannel, isFmBroadcastBankChannel } from './receiveOnlyBanks.ts';
 import { DEFAULT_ANYTONE_PROFILE_ID } from './profiles.ts';
 import { zoneIdFromDerivedScanListId } from './zoneDerivedScanLists.ts';
-import {
-  anytoneChannelExpansionById,
-  type ExpandedAnytoneChannelRow,
-} from './channelExpansion.ts';
+import { anytoneChannelExpansionById, type ExpandedAnytoneChannelRow } from './channelExpansion.ts';
 
 export const ANYTONE_RECEIVE_BANK_NAME_WIDTH = 16;
 

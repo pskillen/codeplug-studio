@@ -110,8 +110,7 @@ export function serialiseAnytoneChannelRow(
       ? contextOrWireName
       : undefined;
   const wireNameOverride = typeof contextOrWireName === 'string' ? contextOrWireName : undefined;
-  const contactRef =
-    projection != null ? projection.txContactRef : (dmr?.contactRef ?? null);
+  const contactRef = projection != null ? projection.txContactRef : (dmr?.contactRef ?? null);
   const contact = resolveContactWireName(assembled, context, contactRef);
   const rxGroupListId =
     projection != null ? projection.rxGroupListId : (dmr?.rxGroupListId ?? null);
