@@ -83,8 +83,8 @@
 
 | Slice                      | Status      | Notes                                              |
 | -------------------------- | ----------- | -------------------------------------------------- |
-| Export settings + defaults | In progress | `expandRxGroupLists`, `exportScratchChannels`      |
-| Channel expansion core     | Pending     | `anytone/channelExpansion.ts` + timeslot projection |
-| Serialise + zone/scan fan-out | Pending  | Wire context, directional tests                    |
-| Export UI + wire preview   | Pending     | Toggles default on; displayDetails                 |
+| Export settings + defaults | Complete | `expandRxGroupLists`, `exportScratchChannels`      |
+| Channel expansion core     | Complete | `anytone/channelExpansion.ts` + timeslot projection |
+| Serialise + zone/scan fan-out | Complete  | Wire context, directional tests                    |
+| Export UI + wire preview   | In progress | Toggles default on; displayDetails                 |
 | Operator projection docs   | Pending     | `export-projections.md`                            |

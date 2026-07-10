@@ -3,24 +3,40 @@ import type { CpsExportOptions } from '@core/import-export/types.ts';
 import type { LibrarySlice } from '@core/services/assemble.ts';
 import { getAnytoneProfile } from './profiles.ts';
 
+import type { AssembledBuild } from '@core/services/assemble.ts';
+import type { CpsExportOptions } from '@core/import-export/types.ts';
+import type { LibrarySlice } from '@core/services/assemble.ts';
+import { getAnytoneProfile } from './profiles.ts';
+import {
+  anytoneChannelExpansionById,
+  expandAllAnytoneChannelsForExport,
+} from './channelExpansion.ts';
+
 export function collectAnytoneExportWarnings(
   assembled: AssembledBuild,
-  _library: LibrarySlice,
+  library: LibrarySlice,
   options?: CpsExportOptions,
 ): string[] {
   const warnings: string[] = [];
   const profile = getAnytoneProfile(options?.profileId ?? assembled.profileId);
+  const expandedChannels = expandAllAnytoneChannelsForExport(
+    assembled,
+    library,
+    options,
+    warnings,
+  );
+  const expansionByChannelId = anytoneChannelExpansionById(expandedChannels);
 
   const maxNameLength = options?.maxNameLength ?? profile.nameLimit;
 
-  if (assembled.channels.length > profile.maxChannels) {
+  if (expandedChannels.length > profile.maxChannels) {
     warnings.push(
-      `Channel count ${assembled.channels.length} exceeds profile cap ${profile.maxChannels}`,
+      `Channel count ${expandedChannels.length} exceeds profile cap ${profile.maxChannels}`,
     );
   }
 
-  for (const row of assembled.channels) {
-    if (row.wireNameOverride?.trim() && row.wireName.length > maxNameLength) {
+  for (const row of expandedChannels) {
+    if (row.wireName.length > maxNameLength) {
       warnings.push(
         `Channel wire name "${row.wireName}" exceeds ${maxNameLength} characters for ${profile.label}`,
       );
@@ -28,9 +44,13 @@ export function collectAnytoneExportWarnings(
   }
 
   for (const zone of assembled.zones) {
-    if (zone.memberChannelIds.length > profile.zoneMembers) {
+    const expandedMemberCount = zone.memberChannelIds.reduce(
+      (count, channelId) => count + (expansionByChannelId.get(channelId)?.length ?? 1),
+      0,
+    );
+    if (expandedMemberCount > profile.zoneMembers) {
       warnings.push(
-        `Zone "${zone.wireName}" has ${zone.memberChannelIds.length} members (cap ${profile.zoneMembers})`,
+        `Zone "${zone.wireName}" has ${expandedMemberCount} expanded members (cap ${profile.zoneMembers})`,
       );
     }
     if (zone.wireName.length > maxNameLength) {
@@ -41,9 +61,13 @@ export function collectAnytoneExportWarnings(
   }
 
   for (const scanList of assembled.scanLists) {
-    if (scanList.memberChannelIds.length > profile.scanListMembers) {
+    const expandedMemberCount = scanList.memberChannelIds.reduce(
+      (count, channelId) => count + (expansionByChannelId.get(channelId)?.length ?? 1),
+      0,
+    );
+    if (expandedMemberCount > profile.scanListMembers) {
       warnings.push(
-        `Scan list "${scanList.wireName}" has ${scanList.memberChannelIds.length} members (cap ${profile.scanListMembers})`,
+        `Scan list "${scanList.wireName}" has ${expandedMemberCount} expanded members (cap ${profile.scanListMembers})`,
       );
     }
     if (scanList.wireName.length > maxNameLength) {

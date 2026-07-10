@@ -13,6 +13,7 @@ import {
 } from '@core/import-export/channelExpansion/multiMode.ts';
 import { sanitiseAsciiWireString } from '@core/import-export/sanitiseAsciiWireString.ts';
 import { uniqueWireName } from '@core/import-export/channelExpansion/shortenName.ts';
+import { anytoneChannelWireName } from './exportChannelWire.ts';
 
 export type AnytoneChannelRowKind = 'lean' | 'talkGroup' | 'scratch';
 
@@ -179,7 +180,12 @@ export function expandAnytoneChannelWireRows(
   const exportOptions = anytoneExportOptions(assembled, options);
   const profileId = exportOptions.profileId;
   const channel = assembledChannel.entity;
-  const baseWireName = assembledChannel.wireNameOverride ?? assembledChannel.wireName;
+  const siteWireName = anytoneChannelWireName(
+    assembledChannel,
+    { reserved, warnings },
+    exportOptions,
+    profileId,
+  );
   const dmrProfile = channel.modeProfiles.find(isDmrProfile) ?? null;
 
   if (dmrProfile && !shouldSkipRxExpansion(dmrProfile, exportOptions)) {
@@ -189,7 +195,7 @@ export function expandAnytoneChannelWireRows(
         channel,
         members,
         library,
-        baseWireName,
+        siteWireName,
         false,
         exportOptions,
         profileId,
@@ -212,7 +218,7 @@ export function expandAnytoneChannelWireRows(
       }));
       appendScratchRow(
         channel,
-        baseWireName,
+        siteWireName,
         dmrProfile,
         rows,
         exportOptions,
@@ -225,12 +231,30 @@ export function expandAnytoneChannelWireRows(
   }
 
   if (dmrProfile) {
-    return [leanRow(channel, baseWireName, dmrProfile)];
+    return [leanRow(channel, siteWireName, dmrProfile)];
+  }
+
+  const analog = channel.modeProfiles.find(
+    (profile) => profile.mode === 'fm' || profile.mode === 'am',
+  );
+  if (analog) {
+    return [
+      {
+        sourceChannelId: channel.id,
+        key: channel.id,
+        wireName: siteWireName,
+        mode: analog.mode,
+        modeProfile: analog,
+        txContactRef: null,
+        rxGroupListId: null,
+        rowKind: 'lean' as const,
+      },
+    ];
   }
 
   const siteRows = expandChannelWireRows(
     channel,
-    baseWireName,
+    siteWireName,
     false,
     exportOptions,
     profileId,

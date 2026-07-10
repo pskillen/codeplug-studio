@@ -6,6 +6,10 @@ import { anytoneChannelWireName } from './exportChannelWire.ts';
 import { isAmAirbandBankChannel, isFmBroadcastBankChannel } from './receiveOnlyBanks.ts';
 import { DEFAULT_ANYTONE_PROFILE_ID } from './profiles.ts';
 import { zoneIdFromDerivedScanListId } from './zoneDerivedScanLists.ts';
+import {
+  anytoneChannelExpansionById,
+  type ExpandedAnytoneChannelRow,
+} from './channelExpansion.ts';
 
 export const ANYTONE_RECEIVE_BANK_NAME_WIDTH = 16;
 
@@ -26,8 +30,10 @@ export interface AnytoneExportWireContext {
   zoneWireNames: ReadonlyMap<string, string>;
   scanListWireNames: ReadonlyMap<string, string>;
   rxGroupListWireNames: ReadonlyMap<string, string>;
+  expansionByChannelId: ReadonlyMap<string, readonly ExpandedAnytoneChannelRow[]>;
   channelWireName(channelId: string): string;
   memberChannelWireName(channelId: string): string;
+  memberChannelWireNames(channelId: string): readonly string[];
   receiveBankWireName(channelId: string): string;
   talkGroupWireName(talkGroupId: string): string;
   digitalContactWireName(contactId: string): string;
@@ -46,18 +52,30 @@ function channelRowById(
 /** One canonical wire name per entity for a single Anytone export pass. */
 export function buildAnytoneExportWireContext(
   assembled: AssembledBuild,
+  expandedChannels: ExpandedAnytoneChannelRow[],
   options?: CpsExportOptions,
   warnings: string[] = [],
 ): AnytoneExportWireContext {
   const profileId = options?.profileId ?? assembled.profileId ?? DEFAULT_ANYTONE_PROFILE_ID;
   const reserved = new Set<string>();
+  for (const row of expandedChannels) {
+    reserved.add(row.wireName);
+  }
   const wireOptions = { reserved, warnings };
 
+  const expansionByChannelId = anytoneChannelExpansionById(expandedChannels);
+
   const channelWireNames = new Map<string, string>();
-  for (const row of assembled.channels) {
+  for (const row of expandedChannels) {
+    if (!channelWireNames.has(row.sourceChannelId)) {
+      channelWireNames.set(row.sourceChannelId, row.wireName);
+    }
+  }
+  for (const assembledRow of assembled.channels) {
+    if (channelWireNames.has(assembledRow.entity.id)) continue;
     channelWireNames.set(
-      row.entity.id,
-      anytoneChannelWireName(row, wireOptions, options, profileId),
+      assembledRow.entity.id,
+      anytoneChannelWireName(assembledRow, wireOptions, options, profileId),
     );
   }
 
@@ -122,12 +140,21 @@ export function buildAnytoneExportWireContext(
   };
 
   const memberChannelWireName = (channelId: string): string => {
-    const row = channelRowById(assembled, channelId);
-    if (!row) return '';
-    if (isAmAirbandBankChannel(row.entity) || isFmBroadcastBankChannel(row.entity)) {
-      return receiveBankWireName(channelId);
+    const names = memberChannelWireNames(channelId);
+    return names[0] ?? '';
+  };
+
+  const memberChannelWireNames = (channelId: string): string[] => {
+    const expanded = expansionByChannelId.get(channelId);
+    if (expanded && expanded.length > 0) {
+      return expanded.map((row) => row.wireName);
     }
-    return channelWireNames.get(channelId) ?? '';
+    const row = channelRowById(assembled, channelId);
+    if (!row) return [];
+    if (isAmAirbandBankChannel(row.entity) || isFmBroadcastBankChannel(row.entity)) {
+      return [receiveBankWireName(channelId)];
+    }
+    return [channelWireNames.get(channelId) ?? ''];
   };
 
   return {
@@ -137,8 +164,10 @@ export function buildAnytoneExportWireContext(
     zoneWireNames,
     scanListWireNames,
     rxGroupListWireNames,
+    expansionByChannelId,
     channelWireName: (channelId) => channelWireNames.get(channelId) ?? '',
     memberChannelWireName,
+    memberChannelWireNames,
     receiveBankWireName,
     talkGroupWireName: (talkGroupId) => talkGroupWireNames.get(talkGroupId) ?? '',
     digitalContactWireName: (contactId) => digitalContactWireNames.get(contactId) ?? '',

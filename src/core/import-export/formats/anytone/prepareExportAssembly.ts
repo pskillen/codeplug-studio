@@ -8,6 +8,11 @@ import {
   type AnytoneExportWireContext,
 } from './exportWireContext.ts';
 import {
+  expandAllAnytoneChannelsForExport,
+  anytoneChannelExpansionById,
+  type ExpandedAnytoneChannelRow,
+} from './channelExpansion.ts';
+import {
   deriveAnytoneZoneDerivedScanLists,
   zoneDerivedScanListId,
 } from './zoneDerivedScanLists.ts';
@@ -17,6 +22,8 @@ export interface AnytonePreparedExport {
   assembled: AssembledBuild;
   context: AnytoneExportWireContext;
   carrierPrependByZoneId: Map<string, string>;
+  expandedChannels: ExpandedAnytoneChannelRow[];
+  expansionByChannelId: Map<string, ExpandedAnytoneChannelRow[]>;
 }
 
 function carrierChannelEntity(carrier: SyntheticScanCarrier, template: Channel): Channel {
@@ -71,7 +78,15 @@ export function prepareAnytoneExportAssembly(
     scanLists: mergedScanLists,
     channels: [...assembled.channels, ...carrierRows],
   };
-  const context = buildAnytoneExportWireContext(withCarriers, options, warnings);
+
+  const expandedChannels = expandAllAnytoneChannelsForExport(
+    withCarriers,
+    library,
+    options,
+    warnings,
+  );
+  const expansionByChannelId = anytoneChannelExpansionById(expandedChannels);
+  const context = buildAnytoneExportWireContext(withCarriers, expandedChannels, options, warnings);
 
   const carrierChannels = carrierRows.map((row) => {
     const zoneId = row.entity.id.replace('scan-carrier:', '');
@@ -91,6 +106,8 @@ export function prepareAnytoneExportAssembly(
     assembled: exportAssembly,
     context,
     carrierPrependByZoneId: derived.carrierPrependByZoneId,
+    expandedChannels,
+    expansionByChannelId,
   };
 }
 

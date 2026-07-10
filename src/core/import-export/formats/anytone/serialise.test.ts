@@ -3,6 +3,7 @@ import {
   newChannel,
   newDigitalContact,
   newFormatBuild,
+  newRxGroupList,
   newScanList,
   newTalkGroup,
   newZone,
@@ -482,5 +483,86 @@ describe('anytone serialise', () => {
 
     expect(scanTable.rows).toHaveLength(1);
     expect(scanTable.rows[0]?.[2]).toBe('Channel 1');
+  });
+
+  it('expands RX-list channels with scratch and fans out zone members', () => {
+    const tg1 = newTalkGroup(PROJECT_ID, 'Scotland TS2', 950);
+    const tg2 = newTalkGroup(PROJECT_ID, 'Scotland TS1', 951);
+    const rgl = {
+      ...newRxGroupList(PROJECT_ID, 'Scotland'),
+      members: [
+        { ref: { kind: 'talkGroup' as const, id: tg1.id }, timeSlotOverride: 2 as const },
+        { ref: { kind: 'talkGroup' as const, id: tg2.id }, timeSlotOverride: 1 as const },
+      ],
+    };
+    const channel = {
+      ...newChannel(PROJECT_ID, 'Glasgow'),
+      callsign: 'GB7GL',
+      rxFrequency: 438_800_000,
+      txFrequency: 434_000_000,
+      modeProfiles: [
+        {
+          mode: 'dmr' as const,
+          colourCode: 1,
+          timeslot: 1 as const,
+          dmrId: 1234567,
+          contactRef: null,
+          rxGroupListId: rgl.id,
+        },
+      ],
+    };
+    const zone = {
+      ...newZone(PROJECT_ID, 'Zone A'),
+      members: [{ kind: 'channel' as const, channelId: channel.id }],
+    };
+    const build = {
+      ...newFormatBuild(PROJECT_ID, 'anytone-at-d890uv'),
+      layout: {
+        sections: [
+          {
+            kind: 'zoneGrouping' as const,
+            zones: [{ id: zone.id, name: zone.name, channelIds: [channel.id] }],
+          },
+        ],
+      },
+    };
+    const library = {
+      channels: [channel],
+      zones: [zone],
+      talkGroups: [tg1, tg2],
+      digitalContacts: [],
+      analogContacts: [],
+      rxGroupLists: [rgl],
+      scanLists: [],
+    };
+
+    const assembled = assemble(build, library);
+    const files = serialiseAnytoneFiles(assembled, library, {
+      expandRxGroupLists: true,
+      exportScratchChannels: true,
+    });
+    const channelTable = csvToTable(files['Channel.CSV']);
+    const zoneTable = csvToTable(files['DMRZone.CSV']);
+
+    expect(channelTable.rows).toHaveLength(3);
+
+    const slotIndex = channelTable.headers.indexOf('Slot');
+    const rglIndex = channelTable.headers.indexOf('Receive Group List');
+    const contactIndex = channelTable.headers.indexOf('Contact/Talk Group');
+    const tgRows = channelTable.rows.filter((row) => row[rglIndex] === 'None');
+    expect(tgRows).toHaveLength(2);
+    expect(tgRows.map((row) => row[contactIndex])).toEqual(
+      expect.arrayContaining(['Scotland TS2', 'Scotland TS1']),
+    );
+    const slots = tgRows.map((row) => row[slotIndex]);
+    expect(slots).toEqual(expect.arrayContaining(['2', '1']));
+
+    const scratchRow = channelTable.rows.find((row) => row[rglIndex] === 'Scotland');
+    expect(scratchRow).toBeDefined();
+    expect(scratchRow?.[contactIndex]).toBe('');
+
+    const membersIndex = zoneTable.headers.indexOf('Zone Channel Member');
+    const zoneMembers = zoneTable.rows[0]?.[membersIndex]?.split('|') ?? [];
+    expect(zoneMembers).toHaveLength(3);
   });
 });
