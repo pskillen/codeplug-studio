@@ -44,6 +44,7 @@ Salvage from the old repo: wire-format reference docs, import parsers (simplifie
 | **Format**                      | A wire interchange family at the import/export boundary — e.g. OpenGD77 CSV, DM32 CSV, CHIRP CSV, native YAML. Siblings; none is the internal model.                                     |
 | **Variant / profile**           | Per-radio specialisation _within_ one format — selects trait profile and wire limits at export. Not a separate format.                                                                   |
 | **Codeplug** (export sense)     | The CPS-facing output of a build — files the vendor CPS accepts. Not the primary in-app edit model.                                                                                      |
+| **Scratch channel**             | Export-time companion memory per repeater (library channel): a faithful projection of the parent channel with a `Scratch` name marker so the operator can retune in the field without editing programmed talk-group rows. Not a zone export knob. |
 
 User-facing copy may say "codeplug" when the operator would; internal docs use **library** and **build** for clarity.
 
