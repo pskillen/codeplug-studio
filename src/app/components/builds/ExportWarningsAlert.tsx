@@ -1,6 +1,8 @@
 import { Alert, List, Stack, Text } from '@mantine/core';
 import {
   formatExportWarnings,
+  memberCapGroupIntro,
+  memberCapItemLine,
   wireNameShorteningIntro,
   type WireNameShortening,
 } from './formatExportWarnings.ts';
@@ -22,7 +24,7 @@ function shorteningLine(item: WireNameShortening): string {
 export default function ExportWarningsAlert({ warnings }: ExportWarningsAlertProps) {
   if (warnings.length === 0) return null;
 
-  const { general, shortenedGroups } = formatExportWarnings(warnings);
+  const { general, memberCapGroups, shortenedGroups } = formatExportWarnings(warnings);
 
   return (
     <Alert color="yellow" title="Export warnings">
@@ -36,6 +38,23 @@ export default function ExportWarningsAlert({ warnings }: ExportWarningsAlertPro
             ))}
           </Stack>
         ) : null}
+        {memberCapGroups.map((group) => (
+          <Stack key={`${group.kind}-${group.cap}-${group.profileLabel ?? ''}`} gap={4}>
+            <Text size="sm" fw={600}>
+              {group.title}
+            </Text>
+            <Text size="sm">{memberCapGroupIntro(group)}</Text>
+            <List size="sm" spacing={2} withPadding>
+              {group.items.map((item) => (
+                <List.Item key={`${item.label}-${item.count}-${item.truncatedFrom ?? ''}`}>
+                  <Text span size="sm" ff="monospace">
+                    {memberCapItemLine(item, group.kind)}
+                  </Text>
+                </List.Item>
+              ))}
+            </List>
+          </Stack>
+        ))}
         {shortenedGroups.map((group) => (
           <Stack key={`${group.entityKind}-${group.maxLen}-${group.profileLabel ?? ''}`} gap={4}>
             <Text size="sm" fw={600}>
