@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import type { ImportProjectYamlMode } from '@core/services/importProjectYaml.ts';
 import { portableSyncedAt } from '@core/services/interchangeMeta.ts';
 import { isRemotePortableNewer } from '@core/services/projectSyncSummary.ts';
 import { buildImportOverwriteDiff } from '../services/yamlImportResolverService.ts';
@@ -42,6 +43,9 @@ export function useYamlImportResolver(options: UseYamlImportResolverOptions = {}
   const [overwriteTitle, setOverwriteTitle] = useState('Overwrite local project?');
   const [overwriteProjectName, setOverwriteProjectName] = useState('');
   const [diffLines, setDiffLines] = useState<string[]>([]);
+  const [idMismatch, setIdMismatch] = useState(false);
+  const [localProjectId, setLocalProjectId] = useState('');
+  const [remoteProjectId, setRemoteProjectId] = useState('');
   const pendingRef = useRef<{
     preview: ReturnType<typeof parseYamlImportPreview>;
     source: YamlImportSource;
@@ -52,6 +56,10 @@ export function useYamlImportResolver(options: UseYamlImportResolverOptions = {}
     setOverwriteOpen(false);
     pendingRef.current = null;
     setDiffLines([]);
+    setIdMismatch(false);
+    setLocalProjectId('');
+    setRemoteProjectId('');
+    setError(null);
   }, []);
 
   async function recordSource(projectId: string, source: YamlImportSource) {
@@ -74,7 +82,7 @@ export function useYamlImportResolver(options: UseYamlImportResolverOptions = {}
 
   async function runImport(
     yamlText: string,
-    mode: { kind: 'createNew' } | { kind: 'replaceExisting'; projectId: string },
+    mode: ImportProjectYamlMode,
     source: YamlImportSource,
   ) {
     setImporting(true);
@@ -84,7 +92,7 @@ export function useYamlImportResolver(options: UseYamlImportResolverOptions = {}
       await recordSource(result.projectId, source);
       await refreshProjects();
       options.onImported?.(result.projectId);
-      if (mode.kind === 'createNew' || !options.activeProjectId) {
+      if (mode.kind === 'createNew') {
         switchProject(result.projectId);
       }
       resetOverwrite();
@@ -103,14 +111,12 @@ export function useYamlImportResolver(options: UseYamlImportResolverOptions = {}
     const activeId = options.activeProjectId ?? null;
 
     if (activeId) {
-      if (preview.projectId !== activeId) {
-        setError(
-          `YAML project id (${preview.projectId}) does not match active project (${activeId}).`,
-        );
-        return;
-      }
+      const mismatch = preview.projectId !== activeId;
       const lines = await buildImportOverwriteDiff(activeId, preview.remoteSummary);
       pendingRef.current = { preview, source, targetProjectId: activeId };
+      setIdMismatch(mismatch);
+      setLocalProjectId(activeId);
+      setRemoteProjectId(preview.projectId);
       setOverwriteProjectName(preview.projectName);
       setOverwriteTitle('Replace active project?');
       setDiffLines(lines);
@@ -135,11 +141,24 @@ export function useYamlImportResolver(options: UseYamlImportResolverOptions = {}
   async function confirmOverwrite() {
     const pending = pendingRef.current;
     if (!pending) return;
-    await runImport(
-      pending.preview.yamlText,
-      { kind: 'replaceExisting', projectId: pending.targetProjectId },
-      pending.source,
-    );
+    const mode: ImportProjectYamlMode = idMismatch
+      ? { kind: 'adoptRemote', projectId: pending.targetProjectId }
+      : { kind: 'replaceExisting', projectId: pending.targetProjectId };
+    try {
+      await runImport(pending.preview.yamlText, mode, pending.source);
+    } catch {
+      // runImport sets error; keep modal open
+    }
+  }
+
+  async function confirmImportAsNew() {
+    const pending = pendingRef.current;
+    if (!pending) return;
+    try {
+      await runImport(pending.preview.yamlText, { kind: 'createNew' }, pending.source);
+    } catch {
+      // runImport sets error; keep modal open
+    }
   }
 
   function handleDriveSelection(
@@ -166,9 +185,13 @@ export function useYamlImportResolver(options: UseYamlImportResolverOptions = {}
     overwriteTitle,
     diffLines,
     projectName: overwriteProjectName,
+    idMismatch,
+    localProjectId,
+    remoteProjectId,
     setOverwriteOpen,
     resetOverwrite,
     confirmOverwrite,
+    confirmImportAsNew,
     handleDriveSelection,
     handleLocalFile,
     handleYamlContent,

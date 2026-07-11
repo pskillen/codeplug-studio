@@ -25,7 +25,9 @@ export default function ImportYamlIntoActivePanel() {
       <GoogleDriveActionButton disabled={resolver.importing} onClick={() => setDriveOpen(true)}>
         Open from Drive
       </GoogleDriveActionButton>
-      {resolver.error ? <Alert color="red">{resolver.error}</Alert> : null}
+      {resolver.error && !resolver.overwriteOpen ? (
+        <Alert color="red">{resolver.error}</Alert>
+      ) : null}
       <DriveBrowserModal
         opened={driveOpen}
         onClose={() => setDriveOpen(false)}
@@ -42,8 +44,13 @@ export default function ImportYamlIntoActivePanel() {
         projectName={resolver.projectName || activeProject.name}
         diffLines={resolver.diffLines}
         loading={resolver.importing}
+        error={resolver.error}
+        idMismatch={resolver.idMismatch}
+        localProjectId={resolver.localProjectId}
+        remoteProjectId={resolver.remoteProjectId}
         onClose={() => resolver.resetOverwrite()}
         onConfirm={() => void resolver.confirmOverwrite()}
+        onImportAsNew={resolver.idMismatch ? () => void resolver.confirmImportAsNew() : undefined}
       />
     </Stack>
   );
