@@ -2,6 +2,7 @@ import type { ChannelExportNameMode } from '@core/domain/channelNaming.ts';
 import { channelPickForWireExport, composeChannelWireName } from '@core/domain/channelNaming.ts';
 import type { AssembledChannel } from '@core/services/assemble.ts';
 import { applyWireNameLimits } from '@core/import-export/channelExpansion/exportWireNames.ts';
+import { pushWireNameLengthWarning } from '@core/import-export/channelExpansion/wireNameWarning.ts';
 import { sanitiseAsciiWireString } from '@core/import-export/sanitiseAsciiWireString.ts';
 import type { CpsExportOptions } from '@core/import-export/types.ts';
 import { uniqueWireName } from '@core/import-export/channelExpansion/shortenName.ts';
@@ -36,11 +37,14 @@ export function anytoneChannelWireName(
   if (override) {
     const name = sanitiseAsciiWireString(uniqueWireName(override, wireOptions.reserved));
     wireOptions.reserved.add(name);
-    if (name.length > maxNameLength) {
-      warnings.push(
-        `Channel wire name "${name}" exceeds ${maxNameLength} characters for ${getAnytoneProfile(resolvedProfileId).label}`,
-      );
-    }
+    pushWireNameLengthWarning(warnings, {
+      entityKind: 'Channel',
+      original: override,
+      exported: name,
+      maxLen: maxNameLength,
+      profileId: resolvedProfileId,
+      shortenEnabled: false,
+    });
     return name;
   }
 
@@ -56,9 +60,14 @@ export function anytoneChannelWireName(
   if (!shortenNames) {
     const name = sanitiseAsciiWireString(uniqueWireName(base, wireOptions.reserved));
     wireOptions.reserved.add(name);
-    if (name.length > maxNameLength) {
-      warnings.push(`Channel name "${name}" exceeds ${maxNameLength} characters`);
-    }
+    pushWireNameLengthWarning(warnings, {
+      entityKind: 'Channel',
+      original: base,
+      exported: name,
+      maxLen: maxNameLength,
+      profileId: resolvedProfileId,
+      shortenEnabled: false,
+    });
     return name;
   }
 

@@ -6,6 +6,7 @@ import {
   anytoneChannelExpansionById,
   expandAllAnytoneChannelsForExport,
 } from './channelExpansion.ts';
+import { buildAnytoneExportWireContext } from './exportWireContext.ts';
 
 export function collectAnytoneExportWarnings(
   assembled: AssembledBuild,
@@ -17,20 +18,12 @@ export function collectAnytoneExportWarnings(
   const expandedChannels = expandAllAnytoneChannelsForExport(assembled, library, options, warnings);
   const expansionByChannelId = anytoneChannelExpansionById(expandedChannels);
 
-  const maxNameLength = options?.maxNameLength ?? profile.nameLimit;
+  buildAnytoneExportWireContext(assembled, expandedChannels, options, warnings);
 
   if (expandedChannels.length > profile.maxChannels) {
     warnings.push(
       `Channel count ${expandedChannels.length} exceeds profile cap ${profile.maxChannels}`,
     );
-  }
-
-  for (const row of expandedChannels) {
-    if (row.wireName.length > maxNameLength) {
-      warnings.push(
-        `Channel wire name "${row.wireName}" exceeds ${maxNameLength} characters for ${profile.label}`,
-      );
-    }
   }
 
   for (const zone of assembled.zones) {
@@ -41,11 +34,6 @@ export function collectAnytoneExportWarnings(
     if (expandedMemberCount > profile.zoneMembers) {
       warnings.push(
         `Zone "${zone.wireName}" has ${expandedMemberCount} expanded members (cap ${profile.zoneMembers})`,
-      );
-    }
-    if (zone.wireName.length > maxNameLength) {
-      warnings.push(
-        `Zone wire name "${zone.wireName}" exceeds ${maxNameLength} characters for ${profile.label}`,
       );
     }
   }
@@ -60,25 +48,12 @@ export function collectAnytoneExportWarnings(
         `Scan list "${scanList.wireName}" has ${expandedMemberCount} expanded members (cap ${profile.scanListMembers})`,
       );
     }
-    if (scanList.wireName.length > maxNameLength) {
-      warnings.push(
-        `Scan list wire name "${scanList.wireName}" exceeds ${maxNameLength} characters for ${profile.label}`,
-      );
-    }
   }
 
   if (assembled.scanLists.length > profile.maxScanLists) {
     warnings.push(
       `Scan list count ${assembled.scanLists.length} exceeds profile cap ${profile.maxScanLists}`,
     );
-  }
-
-  for (const row of assembled.talkGroups) {
-    if (row.wireName.length > maxNameLength) {
-      warnings.push(
-        `Talk group wire name "${row.wireName}" exceeds ${maxNameLength} characters for ${profile.label}`,
-      );
-    }
   }
 
   return warnings;

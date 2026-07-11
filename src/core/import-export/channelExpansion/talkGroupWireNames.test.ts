@@ -36,9 +36,10 @@ describe('talkGroupWireNames', () => {
     ).toBe('Local');
   });
 
-  it('uses abbreviation when name exceeds profile limit', () => {
+  it('warns when abbreviation shortens an over-limit talk group name', () => {
     const reserved = new Set<string>();
     const tg = { ...newTalkGroup('p', 'Scotland West Region', 23559), abbreviation: 'Scot West' };
+    const warnings: string[] = [];
     expect(
       applyTalkGroupWireNameLimits(
         'Scotland West Region',
@@ -46,9 +47,10 @@ describe('talkGroupWireNames', () => {
         reserved,
         { shortenNames: true, useTalkGroupAbbreviation: true },
         'opengd77-1701',
-        [],
+        warnings,
       ),
     ).toBe('Scot West');
+    expect(warnings[0]).toContain('exported as "Scot West"');
   });
 
   it('shortens when abbreviation is still too long', () => {

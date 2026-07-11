@@ -102,7 +102,11 @@ function buildListWireMaps(
   }
 
   const zoneWireNames = buildListWireNameMap(
-    exportAssembled.zones.map((zone) => ({ id: zone.zoneId, wireName: zone.wireName })),
+    exportAssembled.zones.map((zone) => ({
+      id: zone.zoneId,
+      wireName: zone.wireName,
+      entityKind: 'Zone' as const,
+    })),
     reserved,
     options,
     profileId,
@@ -113,6 +117,7 @@ function buildListWireMaps(
     exportAssembled.rxGroupLists.map((list) => ({
       id: list.entity.id,
       wireName: list.wireName,
+      entityKind: 'RX group list' as const,
     })),
     reserved,
     options,
@@ -123,7 +128,7 @@ function buildListWireMaps(
   return { zoneWireNames, rxGroupListWireNames };
 }
 
-function buildSerialiseContext(
+export function buildSerialiseContext(
   assembled: AssembledBuild,
   library: LibrarySlice,
   options?: CpsExportOptions,

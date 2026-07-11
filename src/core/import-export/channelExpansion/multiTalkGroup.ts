@@ -27,6 +27,7 @@ import {
 } from './multiTalkGroupWireName.ts';
 import { modeExportNameSuffix } from './modeExportSuffix.ts';
 import { finalizeWireName, type TalkGroupMemberSuffixReplacement } from './shortenName.ts';
+import { pushWireNameLengthWarning } from './wireNameWarning.ts';
 import { sanitiseAsciiWireString } from '../sanitiseAsciiWireString.ts';
 
 export interface MultiTalkGroupLibrarySlice {
@@ -166,21 +167,24 @@ export function applyMultiTalkGroupWireNameLimits(
 
   const tgSuffix = talkGroupMemberSuffixForAppend(member, library, options, mode);
 
-  return sanitiseAsciiWireString(
-    finalizeWireName(
-      base,
-      reserved,
-      maxLen,
-      {
-        exportNameMode: pick.exportNameMode,
-        recomposeWithMode: (m) => composeChannelWireName({ ...pick, exportNameMode: m }),
-        recomposeWithChannelAbbreviation,
-        talkGroupMemberSuffix: tgSuffix,
-        fixedSuffix,
-      },
-      warnings,
-    ),
+  const exported = sanitiseAsciiWireString(
+    finalizeWireName(base, reserved, maxLen, {
+      exportNameMode: pick.exportNameMode,
+      recomposeWithMode: (m) => composeChannelWireName({ ...pick, exportNameMode: m }),
+      recomposeWithChannelAbbreviation,
+      talkGroupMemberSuffix: tgSuffix,
+      fixedSuffix,
+    }),
   );
+  pushWireNameLengthWarning(warnings, {
+    entityKind: 'Channel',
+    original: base,
+    exported,
+    maxLen,
+    profileId: profileId ?? options?.profileId,
+    shortenEnabled: true,
+  });
+  return exported;
 }
 
 /** One multi-TG expanded row from a site wire name (post multi-mode suffix) and RX-list member. */

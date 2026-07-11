@@ -2,6 +2,7 @@ import type { CpsExportOptions } from '@core/import-export/types.ts';
 import { resolveMaxNameLength } from './exportWireNames.ts';
 import { finalizeWireName, uniqueWireName } from './shortenName.ts';
 import { sanitiseAsciiWireString } from '../sanitiseAsciiWireString.ts';
+import { pushWireNameLengthWarning, type WireNameEntityKind } from './wireNameWarning.ts';
 
 /** Shorten zone / scan list / RX group list / contact wire names at CPS export. */
 export function applyListWireNameLimits(
@@ -10,27 +11,45 @@ export function applyListWireNameLimits(
   options: CpsExportOptions | undefined,
   profileId: string | undefined,
   warnings: string[],
+  entityKind: WireNameEntityKind = 'Wire name',
 ): string {
   const maxLen = resolveMaxNameLength(profileId ?? options?.profileId, options);
   const shorten = options?.shortenNames !== false;
-  const base = baseWireName.trim();
+  const original = baseWireName.trim();
+  const base = original;
 
   if (!shorten || maxLen == null) {
     const name = sanitiseAsciiWireString(uniqueWireName(base, reserved));
     reserved.add(name);
-    if (maxLen != null && name.length > maxLen) {
-      warnings.push(`Wire name "${name}" exceeds ${maxLen} characters`);
+    if (maxLen != null) {
+      pushWireNameLengthWarning(warnings, {
+        entityKind,
+        original,
+        exported: name,
+        maxLen,
+        profileId: profileId ?? options?.profileId,
+        shortenEnabled: false,
+      });
     }
     return name;
   }
 
-  return sanitiseAsciiWireString(
-    finalizeWireName(base, reserved, maxLen, { allowCallsignSuffixDowngrade: false }, warnings),
+  const exported = sanitiseAsciiWireString(
+    finalizeWireName(base, reserved, maxLen, { allowCallsignSuffixDowngrade: false }),
   );
+  pushWireNameLengthWarning(warnings, {
+    entityKind,
+    original,
+    exported,
+    maxLen,
+    profileId: profileId ?? options?.profileId,
+    shortenEnabled: true,
+  });
+  return exported;
 }
 
 export function buildListWireNameMap(
-  entries: ReadonlyArray<{ id: string; wireName: string }>,
+  entries: ReadonlyArray<{ id: string; wireName: string; entityKind?: WireNameEntityKind }>,
   reserved: Set<string>,
   options: CpsExportOptions | undefined,
   profileId: string | undefined,
@@ -40,7 +59,14 @@ export function buildListWireNameMap(
   for (const entry of entries) {
     map.set(
       entry.id,
-      applyListWireNameLimits(entry.wireName, reserved, options, profileId, warnings),
+      applyListWireNameLimits(
+        entry.wireName,
+        reserved,
+        options,
+        profileId,
+        warnings,
+        entry.entityKind ?? 'Wire name',
+      ),
     );
   }
   return map;
