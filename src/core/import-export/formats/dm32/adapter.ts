@@ -23,9 +23,13 @@ export const dm32ExportAdapter: MultiFileExportAdapter = {
     exportZoneDerivedScanLists: true,
   },
   fileNames: DM32_EXPORT_FILE_NAMES,
+  collectExportWarnings(assembled, options?: CpsExportOptions) {
+    const library = requireLibrary(assembled.library);
+    return collectDm32ExportWarnings(assembled, library, options);
+  },
   serialiseFile(assembled, fileName, options?: CpsExportOptions) {
     const library = requireLibrary(assembled.library);
-    const warnings = collectDm32ExportWarnings(assembled, library, options);
+    const warnings: string[] = [];
     const files = serialiseDm32Files(assembled, library, options, warnings);
     const content = files[fileName as keyof typeof files];
     if (content === undefined) {

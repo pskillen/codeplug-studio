@@ -11,6 +11,7 @@ import {
 } from '@core/domain/channelNaming.ts';
 import { finalizeWireName, uniqueWireName } from './shortenName.ts';
 import { sanitiseAsciiWireString } from '../sanitiseAsciiWireString.ts';
+import { pushWireNameLengthWarning } from './wireNameWarning.ts';
 
 export function resolveMaxNameLength(
   profileId: string | undefined,
@@ -42,12 +43,20 @@ export function applyWireNameLimits(
 ): string {
   const maxLen = resolveMaxNameLength(profileId ?? options?.profileId, options);
   const shorten = options?.shortenNames !== false;
+  const original = baseWireName.trim();
 
   if (!shorten || maxLen == null) {
-    const name = sanitiseAsciiWireString(uniqueWireName(baseWireName, reserved));
+    const name = sanitiseAsciiWireString(uniqueWireName(original, reserved));
     reserved.add(name);
-    if (maxLen != null && name.length > maxLen) {
-      warnings.push(`Channel name "${name}" exceeds ${maxLen} characters`);
+    if (maxLen != null) {
+      pushWireNameLengthWarning(warnings, {
+        entityKind: 'Channel',
+        original,
+        exported: name,
+        maxLen,
+        profileId: profileId ?? options?.profileId,
+        shortenEnabled: false,
+      });
     }
     return name;
   }
@@ -61,17 +70,20 @@ export function applyWireNameLimits(
       ? () => composeChannelWireName({ ...pick, name: abbrev })
       : undefined;
 
-  return sanitiseAsciiWireString(
-    finalizeWireName(
-      baseWireName,
-      reserved,
-      maxLen,
-      {
-        exportNameMode: pick.exportNameMode,
-        recomposeWithMode: (mode) => composeChannelWireName({ ...pick, exportNameMode: mode }),
-        recomposeWithChannelAbbreviation,
-      },
-      warnings,
-    ),
+  const exported = sanitiseAsciiWireString(
+    finalizeWireName(original, reserved, maxLen, {
+      exportNameMode: pick.exportNameMode,
+      recomposeWithMode: (mode) => composeChannelWireName({ ...pick, exportNameMode: mode }),
+      recomposeWithChannelAbbreviation,
+    }),
   );
+  pushWireNameLengthWarning(warnings, {
+    entityKind: 'Channel',
+    original,
+    exported,
+    maxLen,
+    profileId: profileId ?? options?.profileId,
+    shortenEnabled: true,
+  });
+  return exported;
 }

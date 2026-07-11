@@ -1,8 +1,9 @@
-import { Alert, Modal, Stack, Text } from '@mantine/core';
+import { Modal, Stack } from '@mantine/core';
 import type { FormatBuild } from '@core/models/formatBuild.ts';
 import type { CpsExportOptions } from '@core/import-export/types.ts';
 import { useBuildCpsExportPreview } from '../../hooks/useBuildCpsExportPreview.ts';
 import CpsCsvPreview from './CpsCsvPreview.tsx';
+import ExportWarningsAlert from './ExportWarningsAlert.tsx';
 
 export interface CpsCsvPreviewModalProps {
   opened: boolean;
@@ -26,17 +27,7 @@ export default function CpsCsvPreviewModal({
   return (
     <Modal opened={opened} onClose={onClose} title="CSV preview" size="90%" centered>
       <Stack gap="md">
-        {warnings.length > 0 ? (
-          <Alert color="yellow" title="Export warnings">
-            <Stack gap={4}>
-              {warnings.map((warning) => (
-                <Text key={warning} size="sm">
-                  {warning}
-                </Text>
-              ))}
-            </Stack>
-          </Alert>
-        ) : null}
+        <ExportWarningsAlert warnings={warnings} />
         <CpsCsvPreview
           fileNames={fileNames}
           tablesByFile={tablesByFile}

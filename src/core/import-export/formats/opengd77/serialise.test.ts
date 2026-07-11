@@ -257,10 +257,12 @@ describe('OpenGD77 export serialise', () => {
     assembled.channels[0] = {
       ...assembled.channels[0]!,
       wireName: longName,
+      wireNameOverride: longName,
       entity: { ...assembled.channels[0]!.entity, name: longName },
     };
     const warnings = collectOpenGd77ExportWarnings(assembled);
     expect(warnings.length).toBeGreaterThan(0);
+    expect(warnings.some((w) => w.includes('exported as'))).toBe(true);
   });
 
   it('channels CSV is self-consistent when re-exported from same projection', () => {

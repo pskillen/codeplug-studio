@@ -4,6 +4,7 @@ import type { CpsExportOptions } from '@core/import-export/types.ts';
 import { finalizeWireName, uniqueWireName } from './shortenName.ts';
 import { sanitiseAsciiWireString } from '../sanitiseAsciiWireString.ts';
 import { resolveMaxNameLength } from './exportWireNames.ts';
+import { pushWireNameLengthWarning } from './wireNameWarning.ts';
 
 export type TalkGroupWireNameMap = ReadonlyMap<string, string>;
 
@@ -22,13 +23,21 @@ export function applyTalkGroupWireNameLimits(
 ): string {
   const maxLen = resolveMaxNameLength(profileId ?? options?.profileId, options);
   const shorten = options?.shortenNames !== false;
-  let base = baseWireName.trim();
+  const original = baseWireName.trim();
+  let base = original;
 
   if (!shorten || maxLen == null) {
     const name = sanitiseAsciiWireString(uniqueWireName(base, reserved));
     reserved.add(name);
-    if (maxLen != null && name.length > maxLen) {
-      warnings.push(`Talk group name "${name}" exceeds ${maxLen} characters`);
+    if (maxLen != null) {
+      pushWireNameLengthWarning(warnings, {
+        entityKind: 'Talk group',
+        original,
+        exported: name,
+        maxLen,
+        profileId: profileId ?? options?.profileId,
+        shortenEnabled: false,
+      });
     }
     return name;
   }
@@ -38,9 +47,18 @@ export function applyTalkGroupWireNameLimits(
     base = abbrev;
   }
 
-  return sanitiseAsciiWireString(
-    finalizeWireName(base, reserved, maxLen, { allowCallsignSuffixDowngrade: false }, warnings),
+  const exported = sanitiseAsciiWireString(
+    finalizeWireName(base, reserved, maxLen, { allowCallsignSuffixDowngrade: false }),
   );
+  pushWireNameLengthWarning(warnings, {
+    entityKind: 'Talk group',
+    original,
+    exported,
+    maxLen,
+    profileId: profileId ?? options?.profileId,
+    shortenEnabled: true,
+  });
+  return exported;
 }
 
 /** Build stable talk-group id → export wire name map for one export pass. */

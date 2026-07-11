@@ -214,15 +214,13 @@ export function shortenWireName(
 }
 
 /**
- * Shorten, disambiguate against `reserved`, and warn when the final name still exceeds `maxLen`.
- * Reserves the returned name in `reserved` when the set is mutable.
+ * Shorten, disambiguate against `reserved`, and reserve the returned name when the set is mutable.
  */
 export function finalizeWireName(
   base: string,
   reserved: ReadonlySet<string>,
   maxLen: number,
   opts: ShortenWireNameOptions = {},
-  warnings?: string[],
 ): string {
   let name = shortenWireName(base, maxLen, opts);
   const suffixRoom = disambiguationSuffixLength(name, reserved);
@@ -230,9 +228,6 @@ export function finalizeWireName(
     name = shortenWireName(base, Math.max(1, maxLen - suffixRoom), opts);
   }
   name = uniqueWireName(name, reserved);
-  if (name.length > maxLen) {
-    warnings?.push(`Channel name "${name}" exceeds ${maxLen} characters after shortening`);
-  }
   if (reserved instanceof Set) {
     reserved.add(name);
   }

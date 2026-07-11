@@ -18,7 +18,10 @@ import {
 } from '@core/domain/formatBuildOverrides.ts';
 import { defaultChannelWireName } from '@core/domain/channelNaming.ts';
 import { channelInAnyZoneMembership } from '@core/domain/zoneMembership.ts';
-import { resolveEffectiveZoneChannelIds } from '@core/domain/zoneHierarchy.ts';
+import {
+  resolveEffectiveZoneChannelIds,
+  collectZoneFlattenWarnings,
+} from '@core/domain/zoneHierarchy.ts';
 import { orderChannelIdsByLayoutHint } from '@core/domain/zoneGroupingLayout.ts';
 import {
   buildUsesFlatMemoryList,
@@ -449,6 +452,13 @@ export function exportInclusionWarnings(
       warnings.push(`Including ${orphanListCount} RX group list(s) not referenced by a channel`);
     }
   }
+
+  warnings.push(
+    ...collectZoneFlattenWarnings(
+      library.zones,
+      assembled.zones.map((zone) => zone.zoneId),
+    ),
+  );
 
   return warnings;
 }

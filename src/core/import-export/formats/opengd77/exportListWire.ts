@@ -21,7 +21,7 @@ function seedReservedFromChannels(
   for (const row of assembled.channels) {
     const expanded = expandChannelWireRows(
       row.entity,
-      row.wireNameOverride,
+      row.wireNameOverride?.trim() || row.wireName,
       expandModes,
       options,
       profileId,
@@ -48,7 +48,11 @@ export function buildOpenGd77ListWireMaps(
   }
 
   const zoneWireNames = buildListWireNameMap(
-    exportAssembled.zones.map((zone) => ({ id: zone.zoneId, wireName: zone.wireName })),
+    exportAssembled.zones.map((zone) => ({
+      id: zone.zoneId,
+      wireName: zone.wireName,
+      entityKind: 'Zone' as const,
+    })),
     reserved,
     options,
     profileId,
@@ -59,6 +63,7 @@ export function buildOpenGd77ListWireMaps(
     exportAssembled.rxGroupLists.map((list) => ({
       id: list.entity.id,
       wireName: list.wireName,
+      entityKind: 'RX group list' as const,
     })),
     reserved,
     options,
@@ -66,12 +71,20 @@ export function buildOpenGd77ListWireMaps(
     warnings,
   );
 
-  const contactEntries: Array<{ id: string; wireName: string }> = [];
+  const contactEntries: Array<{ id: string; wireName: string; entityKind: 'Contact' }> = [];
   for (const contact of exportAssembled.digitalContacts) {
-    contactEntries.push({ id: contact.entity.id, wireName: contact.wireName });
+    contactEntries.push({
+      id: contact.entity.id,
+      wireName: contact.wireName,
+      entityKind: 'Contact',
+    });
   }
   for (const contact of exportAssembled.analogContacts) {
-    contactEntries.push({ id: contact.entity.id, wireName: contact.wireName });
+    contactEntries.push({
+      id: contact.entity.id,
+      wireName: contact.wireName,
+      entityKind: 'Contact',
+    });
   }
   const contactWireNames = buildListWireNameMap(
     contactEntries,

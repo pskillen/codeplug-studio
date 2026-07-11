@@ -35,7 +35,7 @@ describe('anytoneChannelWireName', () => {
     );
 
     expect(wireName.length).toBeLessThanOrEqual(16);
-    expect(warnings).toHaveLength(0);
+    expect(warnings.some((w) => w.includes('exported as'))).toBe(true);
   });
 
   it('keeps explicit wire overrides verbatim and warns when over limit', () => {
@@ -50,6 +50,7 @@ describe('anytoneChannelWireName', () => {
 
     expect(wireName).toBe(override);
     expect(warnings.some((w) => w.includes('exceeds 16 characters'))).toBe(true);
+    expect(warnings.some((w) => w.includes(override))).toBe(true);
   });
 
   it('matches previewGeneratedChannelWireName for the same channel and build settings', () => {

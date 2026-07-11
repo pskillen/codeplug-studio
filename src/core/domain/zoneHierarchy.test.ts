@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { Library, Zone } from '@core/models/library.ts';
 import { newChannel } from '@core/domain/factories.ts';
 import {
+  flattenZoneMembership,
   resolveEffectiveZoneChannelIds,
   zoneIdsExcludedFromMembership,
   zoneMembershipHasCycle,
@@ -56,6 +57,39 @@ describe('resolveEffectiveZoneChannelIds', () => {
   it('returns empty when child zone is missing', () => {
     const parent = zone('z-p', 'Parent', [{ kind: 'zone', zoneId: 'missing' }]);
     expect(resolveEffectiveZoneChannelIds(parent, [parent])).toEqual([]);
+  });
+});
+
+describe('flattenZoneMembership', () => {
+  it('handles Glasgow ↔ PMR446 mutual nesting with partial flatten and warning', () => {
+    const pmr446 = zone('z-pmr', 'PMR446', [{ kind: 'channel', channelId: 'ch-pmr' }]);
+    const glasgow = zone('z-g', 'Glasgow', [
+      { kind: 'channel', channelId: 'ch-g' },
+      { kind: 'zone', zoneId: 'z-pmr' },
+    ]);
+    pmr446.members = [...pmr446.members, { kind: 'zone', zoneId: 'z-g' }];
+    const lib = library([glasgow, pmr446], ['ch-g', 'ch-pmr']);
+
+    const result = flattenZoneMembership(glasgow, lib.zones);
+    expect(result.channelIds).toEqual(['ch-g', 'ch-pmr']);
+    expect(result.cycleWarnings).toHaveLength(1);
+    expect(result.cycleWarnings[0]).toContain('Glasgow');
+    expect(result.cycleWarnings[0]).toContain('PMR446');
+    expect(result.cycleWarnings[0]).toContain('cycle');
+  });
+
+  it('returns no cycle warnings for acyclic nested hierarchy', () => {
+    const glasgow = zone('z-g', 'Glasgow', [{ kind: 'channel', channelId: 'ch-1' }]);
+    const edinburgh = zone('z-e', 'Edinburgh', [{ kind: 'channel', channelId: 'ch-2' }]);
+    const scotland = zone('z-s', 'Scotland', [
+      { kind: 'zone', zoneId: 'z-g' },
+      { kind: 'channel', channelId: 'ch-1' },
+      { kind: 'zone', zoneId: 'z-e' },
+    ]);
+    const lib = library([glasgow, edinburgh, scotland], ['ch-1', 'ch-2']);
+    const result = flattenZoneMembership(scotland, lib.zones);
+    expect(result.channelIds).toEqual(['ch-1', 'ch-2']);
+    expect(result.cycleWarnings).toEqual([]);
   });
 });
 

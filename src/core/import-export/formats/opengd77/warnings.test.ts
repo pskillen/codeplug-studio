@@ -54,6 +54,7 @@ describe('collectOpenGd77ExportWarnings', () => {
 
     const warnings = collectOpenGd77ExportWarnings(assembled);
     expect(warnings.some((w) => w.includes('ThisNameIsWayTooLong'))).toBe(true);
+    expect(warnings.some((w) => w.includes('exported as'))).toBe(true);
     expect(warnings.some((w) => w.includes('16 characters'))).toBe(true);
   });
 

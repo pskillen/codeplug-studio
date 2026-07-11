@@ -15,6 +15,7 @@ import {
   serialiseAnytoneLstManifest,
 } from '@core/import-export/formats/anytone/lstManifest.ts';
 import { resolveEffectiveExportFileNames } from '@core/import-export/exportFileNames.ts';
+import { dedupeWarnings } from '@core/import-export/dedupeWarnings.ts';
 import type { CpsExportOptions, ExportResult, FormatId } from '@core/import-export/types.ts';
 import {
   assemble,
@@ -110,7 +111,12 @@ export function exportBuildFile({
   }
 
   const result = adapter.serialiseFile(assembled, fileName, exportOptions);
-  return { ...result, assembled };
+  const warnings = dedupeWarnings([
+    ...exportInclusionWarnings(build, library, assembled),
+    ...adapter.collectExportWarnings(assembled, exportOptions),
+    ...result.warnings,
+  ]);
+  return { ...result, warnings, assembled };
 }
 
 /** Serialise all CPS files for a build. */
@@ -132,7 +138,10 @@ export function exportBuildAll({
   }
 
   const files: Record<string, string> = {};
-  const warnings: string[] = [...exportInclusionWarnings(build, library, assembled)];
+  const warnings: string[] = [
+    ...exportInclusionWarnings(build, library, assembled),
+    ...adapter.collectExportWarnings(assembled, exportOptions),
+  ];
 
   const exportFileNames = resolveEffectiveExportFileNames(build.formatId as FormatId, assembled);
 
@@ -144,7 +153,7 @@ export function exportBuildAll({
 
   appendAnytoneLstManifest(build.formatId as FormatId, files, exportFileNames, exportOptions);
 
-  return { assembled, files, warnings };
+  return { assembled, files, warnings: dedupeWarnings(warnings) };
 }
 
 /** Serialise a single CPS file (CHIRP memory CSV). */
@@ -171,7 +180,10 @@ export function exportBuildSingleFile({
   const fileName =
     options?.fileName ?? adapter.defaultFileName(exportOptions.profileId ?? build.profileId);
   const result = adapter.serialise(assembled, exportOptions);
-  const warnings = [...exportInclusionWarnings(build, library, assembled), ...result.warnings];
+  const warnings = dedupeWarnings([
+    ...exportInclusionWarnings(build, library, assembled),
+    ...result.warnings,
+  ]);
 
   return {
     assembled,

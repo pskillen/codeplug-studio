@@ -95,7 +95,7 @@ export function buildAnytoneExportWireContext(
   for (const row of assembled.digitalContacts) {
     digitalContactWireNames.set(
       row.entity.id,
-      applyListWireNameLimits(row.wireName, reserved, options, profileId, warnings),
+      applyListWireNameLimits(row.wireName, reserved, options, profileId, warnings, 'Contact'),
     );
   }
 
@@ -103,7 +103,7 @@ export function buildAnytoneExportWireContext(
   for (const zone of assembled.zones) {
     zoneWireNames.set(
       zone.zoneId,
-      applyListWireNameLimits(zone.wireName, reserved, options, profileId, warnings),
+      applyListWireNameLimits(zone.wireName, reserved, options, profileId, warnings, 'Zone'),
     );
   }
 
@@ -119,7 +119,14 @@ export function buildAnytoneExportWireContext(
     }
     scanListWireNames.set(
       scanList.scanListId,
-      applyListWireNameLimits(scanList.wireName, reserved, options, profileId, warnings),
+      applyListWireNameLimits(
+        scanList.wireName,
+        reserved,
+        options,
+        profileId,
+        warnings,
+        'Scan list',
+      ),
     );
   }
 
@@ -127,7 +134,14 @@ export function buildAnytoneExportWireContext(
   for (const list of assembled.rxGroupLists) {
     rxGroupListWireNames.set(
       list.entity.id,
-      applyListWireNameLimits(list.wireName, reserved, options, profileId, warnings),
+      applyListWireNameLimits(
+        list.wireName,
+        reserved,
+        options,
+        profileId,
+        warnings,
+        'RX group list',
+      ),
     );
   }
 
