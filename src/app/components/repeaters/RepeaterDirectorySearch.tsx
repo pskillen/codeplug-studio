@@ -6,10 +6,11 @@ import {
   Button,
   Checkbox,
   Group,
+  Input,
   Modal,
   MultiSelect,
   ScrollArea,
-  Select,
+  SegmentedControl,
   Stack,
   Switch,
   Table,
@@ -23,6 +24,7 @@ import { toTitleCase } from '@core/domain/titleCase.ts';
 import {
   repeaterListingToChannel,
   type BrandMeisterTalkGroupLookupProgress,
+  type ListingGeometryFilter,
   type MapListingOptions,
   type RepeaterListing,
   type RepeaterSource,
@@ -56,6 +58,12 @@ const BAND_OPTIONS = [
   { value: '4M', label: '4 m' },
   { value: '6M', label: '6 m' },
   { value: '23CM', label: '23 cm' },
+];
+
+const GEOMETRY_FILTER_OPTIONS: { label: string; value: ListingGeometryFilter }[] = [
+  { label: 'All', value: 'all' },
+  { label: 'Simplex', value: 'simplex' },
+  { label: 'Split', value: 'split' },
 ];
 
 const SOURCE_META: Record<
@@ -346,15 +354,25 @@ export default function RepeaterDirectorySearch({
               style={{ flex: 1, minWidth: 200 }}
             />
             {capabilities.bandFilter ? (
-              <Select
+              <MultiSelect
                 label="Band filter"
                 placeholder="Any band"
                 data={BAND_OPTIONS}
                 value={search.bandFilter}
                 onChange={search.setBandFilter}
                 clearable
-                style={{ minWidth: 120 }}
+                style={{ minWidth: 140 }}
               />
+            ) : null}
+            {capabilities.geometryFilter ? (
+              <Input.Wrapper label="Geometry">
+                <SegmentedControl
+                  value={search.geometryFilter}
+                  onChange={(value) => search.setGeometryFilter(value as ListingGeometryFilter)}
+                  data={GEOMETRY_FILTER_OPTIONS}
+                  style={{ minWidth: 200 }}
+                />
+              </Input.Wrapper>
             ) : null}
             {capabilities.modeFilter ? (
               <MultiSelect
