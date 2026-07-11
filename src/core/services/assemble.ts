@@ -18,7 +18,10 @@ import {
 } from '@core/domain/formatBuildOverrides.ts';
 import { defaultChannelWireName } from '@core/domain/channelNaming.ts';
 import { channelInAnyZoneMembership } from '@core/domain/zoneMembership.ts';
-import { resolveEffectiveZoneChannelIds, collectZoneFlattenWarnings } from '@core/domain/zoneHierarchy.ts';
+import {
+  resolveEffectiveZoneChannelIds,
+  collectZoneFlattenWarnings,
+} from '@core/domain/zoneHierarchy.ts';
 import { orderChannelIdsByLayoutHint } from '@core/domain/zoneGroupingLayout.ts';
 import {
   buildUsesFlatMemoryList,

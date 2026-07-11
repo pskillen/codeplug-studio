@@ -5,9 +5,11 @@ import { exportBuildAll } from './exportBuild.ts';
 
 describe('dedupeWarnings', () => {
   it('removes duplicate strings while preserving order', () => {
-    expect(
-      dedupeWarnings(['a', 'b', 'a', 'c', 'b']).map((warning) => warning),
-    ).toEqual(['a', 'b', 'c']);
+    expect(dedupeWarnings(['a', 'b', 'a', 'c', 'b']).map((warning) => warning)).toEqual([
+      'a',
+      'b',
+      'c',
+    ]);
   });
 });
 
