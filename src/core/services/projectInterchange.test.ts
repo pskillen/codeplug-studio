@@ -79,6 +79,25 @@ describe('importProjectYaml', () => {
       importProjectYaml(port, yaml, { kind: 'replaceExisting', projectId: 'other-id' }),
     ).rejects.toThrow(/does not match active project/);
   });
+
+  it('adoptRemote replaces local content while keeping the target project id', async () => {
+    const meta = newProjectMeta('Active');
+    const port = createMockPort({ meta, channels: [newChannel(meta.projectId, 'Old')] });
+    const aggregate = fullLibraryAggregate();
+    const yaml = serialiseProject(aggregate);
+
+    const result = await importProjectYaml(port, yaml, {
+      kind: 'adoptRemote',
+      projectId: meta.projectId,
+    });
+
+    expect(result.projectId).toBe(meta.projectId);
+    const loaded = await port.loadProjectSeed(meta.projectId);
+    expect(loaded?.meta.projectId).toBe(meta.projectId);
+    expect(loaded?.channels?.some((c) => c.name === 'GB3DA Demo')).toBe(true);
+    expect(loaded?.channels?.every((c) => c.projectId === meta.projectId)).toBe(true);
+    expect(loaded?.channels?.some((c) => c.name === 'Old')).toBe(false);
+  });
 });
 
 describe('exportProjectYaml', () => {
