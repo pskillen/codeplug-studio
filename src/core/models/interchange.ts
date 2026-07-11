@@ -11,6 +11,8 @@ export interface GoogleDriveInterchange {
   fileId: string;
   fileName: string;
   exportedAt: string;
+  /** Last known `project.id` in the linked Drive YAML at sync (display/debug). */
+  remoteProjectId?: string;
 }
 
 /**

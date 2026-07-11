@@ -1,8 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import {
-  buildDriveSaveConflict,
-  evaluateDriveSaveConflictKinds,
-} from './driveSaveConflict.ts';
+import { buildDriveSaveConflict, evaluateDriveSaveConflictKinds } from './driveSaveConflict.ts';
 
 describe('evaluateDriveSaveConflictKinds', () => {
   const localProjectId = '11111111-1111-4111-8111-111111111111';

@@ -5,10 +5,7 @@ import {
   type DriveSaveAssessment,
 } from '@core/services/driveSaveConflict.ts';
 import type { GoogleDrivePort } from '@integrations/cloud/index.ts';
-import {
-  buildImportOverwriteDiff,
-  parseYamlImportPreview,
-} from './yamlImportResolverService.ts';
+import { buildImportOverwriteDiff, parseYamlImportPreview } from './yamlImportResolverService.ts';
 
 export interface AssessDriveSaveConflictInput {
   port: GoogleDrivePort;

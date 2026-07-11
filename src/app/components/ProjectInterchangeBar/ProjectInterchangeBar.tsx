@@ -12,10 +12,10 @@ import BrowserOnlyWarning from './BrowserOnlyWarning.tsx';
 export default function ProjectInterchangeBar() {
   const { activeProjectId, activeProject } = useProjects();
   const { loading: driveLoading } = useGoogleDrive();
-  const {
-    dirty,
-    hasPortableDestination,
-  } = useProjectPortableDirty(activeProjectId, activeProject ?? undefined);
+  const { dirty, hasPortableDestination } = useProjectPortableDirty(
+    activeProjectId,
+    activeProject ?? undefined,
+  );
   const {
     saving,
     error,

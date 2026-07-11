@@ -6,7 +6,7 @@ import {
   portableSyncedAt,
   suggestExportDestination,
 } from '@core/services/interchangeMeta.ts';
-import { importProjectFromYaml } from '@core/services/importProjectYaml.ts';
+import { importProjectFromYaml } from '../services/projectImportExportService.ts';
 import { saveDriveLastFolderId, saveDriveLastFolderPath } from '@integrations/cloud/drivePrefs.ts';
 import type { DriveSaveTarget } from '../components/import-export/DriveBrowserModal.tsx';
 import { assessDriveSaveConflict } from '../services/driveSaveConflictService.ts';
@@ -138,9 +138,7 @@ export function useDriveSaveFlow(options: UseDriveSaveFlowOptions = {}) {
         ? ({ kind: 'adoptRemote', projectId } as const)
         : ({ kind: 'replaceExisting', projectId } as const);
       await importProjectFromYaml(conflict.remoteYaml, mode);
-      const metadata = await withDriveAuthRetry(() =>
-        port.getFileMetadata(pendingDrive.fileId),
-      );
+      const metadata = await withDriveAuthRetry(() => port.getFileMetadata(pendingDrive.fileId));
       await recordProjectImportDestination(projectId, {
         destination: 'googleDrive',
         fileName: pendingDrive.fileName,
@@ -148,6 +146,7 @@ export function useDriveSaveFlow(options: UseDriveSaveFlowOptions = {}) {
         folderName: pendingDrive.folderName,
         fileId: pendingDrive.fileId,
         syncedAt: metadata.modifiedTime ?? new Date().toISOString(),
+        remoteProjectId: conflict.remoteProjectId,
       });
       await refreshProjects();
       await refreshDirty();
@@ -199,6 +198,7 @@ export function useDriveSaveFlow(options: UseDriveSaveFlowOptions = {}) {
           fileId: created.id,
         },
         writeResult,
+        projectId,
       );
       saveDriveLastFolderId(target.folderId);
       saveDriveLastFolderPath(target.path);

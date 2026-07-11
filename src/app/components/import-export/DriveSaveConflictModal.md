@@ -24,11 +24,11 @@ Mirrors pull-side [`InterchangeOverwriteModal`](./InterchangeOverwriteModal.tsx)
 
 ## Actions
 
-| Conflict kind | Primary actions |
-| --- | --- |
-| `remoteNewer` | **Refresh from Drive**, **Save anyway**, **Save as new file** |
+| Conflict kind       | Primary actions                                                   |
+| ------------------- | ----------------------------------------------------------------- |
+| `remoteNewer`       | **Refresh from Drive**, **Save anyway**, **Save as new file**     |
 | `projectIdMismatch` | **Save anyway**, **Save as new file** (shows local vs remote ids) |
-| Both | All of the above |
+| Both                | All of the above                                                  |
 
 ## Related
 

@@ -21,7 +21,8 @@ flowchart LR
   end
   subgraph machineA2 [Machine A return]
     R1[Refresh from Drive]
-    R2[Export CPS]
+    R2[Save conflict check]
+    R3[Export CPS]
   end
   IDB[(IndexedDB edit store)]
 
@@ -32,7 +33,8 @@ flowchart LR
   B2 --> YAML
   R1 --> YAML
   R1 --> IDB
-  R2 --> IDB
+  R2 --> YAML
+  R3 --> IDB
 ```
 
 Legacy single-browser flow:
@@ -75,7 +77,7 @@ With an active project, **Library** routes persist channels, zones, contacts, ta
 **App chrome** (`ProjectInterchangeBar`):
 
 - Shows interchange source when `ProjectMeta.interchange` is set
-- **Save to Drive** when the project has a remembered Drive file and local edits are newer than last sync
+- **Save to Drive** when the project has a remembered Drive file and local edits are newer than last sync — pre-save conflict check blocks silent overwrite when another device saved more recently ([#335](https://github.com/pskillen/codeplug-studio/issues/335))
 - Soft warning when the project exists only in this browser
 
 ### 3. Connect Google Drive (optional)
@@ -98,7 +100,7 @@ With an active project, **Library** routes persist channels, zones, contacts, ta
 
 Replace requires the YAML `project.id` to match the active project (replace panel) or offers **overwrite with diff** when opening a YAML whose id already exists (Home / Drive). There is no merge mode for native YAML.
 
-When switching to a project linked to Drive, **Refresh from Drive** compares remote `modifiedTime` and offers a non-blocking overwrite ([#285](https://github.com/pskillen/codeplug-studio/issues/285)).
+When switching to a project linked to Drive, **Refresh from Drive** compares remote `modifiedTime` and offers a non-blocking overwrite ([#285](https://github.com/pskillen/codeplug-studio/issues/285)). **Save to Drive** runs the same comparison before push — Machine A must not silently clobber Machine B's newer YAML ([#335](https://github.com/pskillen/codeplug-studio/issues/335)).
 
 ### 5. Later — CPS build export (Phase 4+)
 

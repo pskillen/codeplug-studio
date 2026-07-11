@@ -23,6 +23,7 @@ export async function recordDrivePortableSyncAfterWrite(
   projectId: string,
   drive: DrivePortableSyncTarget,
   writeResult?: Pick<DriveFileMetadata, 'modifiedTime'>,
+  remoteProjectId?: string,
 ): Promise<string> {
   let syncedAt = writeResult?.modifiedTime;
   if (!syncedAt) {
@@ -39,6 +40,7 @@ export async function recordDrivePortableSyncAfterWrite(
     folderName: drive.folderName,
     fileId: drive.fileId,
     syncedAt,
+    remoteProjectId: remoteProjectId ?? projectId,
   });
   return syncedAt;
 }
@@ -64,7 +66,7 @@ export async function executeSaveProjectToDrive(
     content: exportResult.content,
     fileId: drive.fileId,
   });
-  await recordDrivePortableSyncAfterWrite(port, projectId, drive, writeResult);
+  await recordDrivePortableSyncAfterWrite(port, projectId, drive, writeResult, projectId);
 }
 
 /** @deprecated Use executeSaveProjectToDrive — kept for call sites migrating to conflict-aware flow. */
