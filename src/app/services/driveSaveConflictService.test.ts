@@ -57,11 +57,15 @@ function mockDrivePort(remoteYaml: string, modifiedTime: string): GoogleDrivePor
 
 describe('assessDriveSaveConflict', () => {
   it('returns null when remote is older and project ids match', async () => {
-    const meta = recordExportDestination(newProjectMeta('Fixture project', FIXTURE_PROJECT_ID), 'googleDrive', {
-      fileName: 'demo.yaml',
-      folderId: 'folder-1',
-      fileId: 'file-1',
-    });
+    const meta = recordExportDestination(
+      newProjectMeta('Fixture project', FIXTURE_PROJECT_ID),
+      'googleDrive',
+      {
+        fileName: 'demo.yaml',
+        folderId: 'folder-1',
+        fileId: 'file-1',
+      },
+    );
     await persistence.seedProject({ meta, channels: [] });
 
     const result = await assessDriveSaveConflict({
@@ -75,11 +79,15 @@ describe('assessDriveSaveConflict', () => {
   });
 
   it('returns remoteNewer conflict when Drive modifiedTime is after local sync', async () => {
-    const meta = recordExportDestination(newProjectMeta('Fixture project', FIXTURE_PROJECT_ID), 'googleDrive', {
-      fileName: 'demo.yaml',
-      folderId: 'folder-1',
-      fileId: 'file-1',
-    });
+    const meta = recordExportDestination(
+      newProjectMeta('Fixture project', FIXTURE_PROJECT_ID),
+      'googleDrive',
+      {
+        fileName: 'demo.yaml',
+        folderId: 'folder-1',
+        fileId: 'file-1',
+      },
+    );
     await persistence.seedProject({ meta, channels: [] });
 
     const result = await assessDriveSaveConflict({
@@ -94,11 +102,15 @@ describe('assessDriveSaveConflict', () => {
   });
 
   it('returns projectIdMismatch when remote yaml project id differs', async () => {
-    const meta = recordExportDestination(newProjectMeta('Fixture project', FIXTURE_PROJECT_ID), 'googleDrive', {
-      fileName: 'demo.yaml',
-      folderId: 'folder-1',
-      fileId: 'file-1',
-    });
+    const meta = recordExportDestination(
+      newProjectMeta('Fixture project', FIXTURE_PROJECT_ID),
+      'googleDrive',
+      {
+        fileName: 'demo.yaml',
+        folderId: 'folder-1',
+        fileId: 'file-1',
+      },
+    );
     await persistence.seedProject({ meta, channels: [] });
 
     const result = await assessDriveSaveConflict({
