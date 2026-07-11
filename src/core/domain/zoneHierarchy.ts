@@ -82,6 +82,25 @@ export function resolveEffectiveZoneChannelIds(zone: Zone, zones: Zone[]): strin
   return flattenZoneMembership(zone, zones).channelIds;
 }
 
+/** Cycle warnings from flattening the given root zones (deduped, stable order). */
+export function collectZoneFlattenWarnings(zones: Zone[], zoneIds: Iterable<string>): string[] {
+  const zonesById = zoneMap(zones);
+  const warnings: string[] = [];
+  const seen = new Set<string>();
+
+  for (const zoneId of zoneIds) {
+    const zone = zonesById.get(zoneId);
+    if (!zone) continue;
+    for (const warning of flattenZoneMembership(zone, zones).cycleWarnings) {
+      if (seen.has(warning)) continue;
+      seen.add(warning);
+      warnings.push(warning);
+    }
+  }
+
+  return warnings;
+}
+
 function membersForZone(
   zoneId: string,
   proposedMembers: ZoneMemberEntry[] | null,

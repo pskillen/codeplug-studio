@@ -4,7 +4,8 @@ import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import { newChannel, newFormatBuild, newScanList, newTalkGroup } from '@core/domain/factories.ts';
 import { parseProjectDocument } from '@core/import-export/formats/native-yaml/parse.ts';
-import { assemble } from './assemble.ts';
+import { assemble, exportInclusionWarnings } from './assemble.ts';
+import { exportBuildAll } from './exportBuild.ts';
 
 const fixtureDir = join(
   dirname(fileURLToPath(import.meta.url)),
@@ -748,5 +749,56 @@ describe('assemble', () => {
     const ch2Row = projection.channels.find((row) => row.entity.id === ch2.id);
     expect(ch1Row?.scanListWireName).toBe('Zone A SCL');
     expect(ch2Row?.scanListWireName).toBe('None');
+  });
+
+  it('assembles cyclic nested zones with partial flatten and export warnings', () => {
+    const projectId = 'proj-cycle';
+    const pmrChannel = { ...newChannel(projectId, 'PMR ch'), id: 'ch-pmr' };
+    const glasgowChannel = { ...newChannel(projectId, 'Glasgow ch'), id: 'ch-g' };
+    const pmrZone = {
+      id: 'zone-pmr',
+      projectId,
+      revision: 1,
+      updatedAt: '2026-01-01T00:00:00.000Z',
+      name: 'PMR446',
+      comment: '',
+      members: [
+        { kind: 'channel' as const, channelId: pmrChannel.id },
+        { kind: 'zone' as const, zoneId: 'zone-glasgow' },
+      ],
+    };
+    const glasgowZone = {
+      id: 'zone-glasgow',
+      projectId,
+      revision: 1,
+      updatedAt: '2026-01-01T00:00:00.000Z',
+      name: 'Glasgow',
+      comment: '',
+      members: [
+        { kind: 'channel' as const, channelId: glasgowChannel.id },
+        { kind: 'zone' as const, zoneId: pmrZone.id },
+      ],
+    };
+    const library = {
+      channels: [pmrChannel, glasgowChannel],
+      zones: [glasgowZone, pmrZone],
+      talkGroups: [],
+      digitalContacts: [],
+      analogContacts: [],
+      rxGroupLists: [],
+      scanLists: [],
+    };
+    const build = newFormatBuild(projectId, 'opengd77-1701');
+
+    const projection = assemble(build, library);
+    const glasgow = projection.zones.find((zone) => zone.zoneId === glasgowZone.id);
+    expect(glasgow?.memberChannelIds).toEqual([glasgowChannel.id, pmrChannel.id]);
+
+    const warnings = exportInclusionWarnings(build, library, projection);
+    expect(warnings.some((warning) => warning.includes('cycle'))).toBe(true);
+
+    const exportResult = exportBuildAll({ build, library, fileName: 'Channels.csv' });
+    expect(exportResult.warnings.some((warning) => warning.includes('cycle'))).toBe(true);
+    expect(Object.keys(exportResult.files).length).toBeGreaterThan(0);
   });
 });
