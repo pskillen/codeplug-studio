@@ -7,6 +7,7 @@ import {
   searchBrandmeisterByCallsign,
   searchIrtsCatalogue,
   searchUkRepeaters,
+  type ListingGeometryFilter,
   type QueryKind,
   type RepeaterListing,
   type RepeaterSource,
@@ -17,8 +18,9 @@ import { useMapSettings } from './useMapSettings.ts';
 export interface RepeaterDirectorySearchState {
   query: string;
   operationalOnly: boolean;
-  bandFilter: string | null;
+  bandFilter: string[];
   modeFilter: string[];
+  geometryFilter: ListingGeometryFilter;
   titleCaseNames: boolean;
   loading: boolean;
   error: string | null;
@@ -26,12 +28,26 @@ export interface RepeaterDirectorySearchState {
   listings: RepeaterListing[];
 }
 
+function narrowFilterHint(
+  bandFilter: string[],
+  modeFilter: string[],
+  geometryFilter: ListingGeometryFilter,
+): string {
+  const parts: string[] = [];
+  if (bandFilter.length) parts.push('band');
+  if (modeFilter.length) parts.push('mode');
+  if (geometryFilter !== 'all') parts.push('geometry');
+  if (!parts.length) return '';
+  return ` Try clearing ${parts.join(' or ')} filters.`;
+}
+
 export function useRepeaterDirectorySearch(source: RepeaterSource) {
   const { mapboxToken } = useMapSettings();
   const [query, setQuery] = useState('');
   const [operationalOnly, setOperationalOnly] = useState(true);
-  const [bandFilter, setBandFilter] = useState<string | null>(null);
+  const [bandFilter, setBandFilter] = useState<string[]>([]);
   const [modeFilter, setModeFilter] = useState<string[]>([]);
+  const [geometryFilter, setGeometryFilter] = useState<ListingGeometryFilter>('all');
   const [titleCaseNames, setTitleCaseNames] = useState(true);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -63,14 +79,13 @@ export function useRepeaterDirectorySearch(source: RepeaterSource) {
           await fetchIrtsRepeaters();
           const results = await searchIrtsCatalogue({
             query: trimmed || undefined,
-            band: bandFilter ?? undefined,
+            bands: bandFilter.length ? bandFilter : undefined,
             modes: modeFilter.length ? (modeFilter as ChannelMode[]) : undefined,
           });
           setKind(null);
           setListings(results);
           if (results.length === 0) {
-            const narrow =
-              bandFilter || modeFilter.length ? ' Try clearing band or mode filters.' : '';
+            const narrow = narrowFilterHint(bandFilter, modeFilter, 'all');
             setError(
               trimmed
                 ? `No repeaters matched your search in the IRTS catalogue.${narrow}`
@@ -87,7 +102,7 @@ export function useRepeaterDirectorySearch(source: RepeaterSource) {
 
         if (detectQueryKind(trimmed) === 'band') {
           const bandValue = trimmed.toUpperCase();
-          setBandFilter(bandValue);
+          setBandFilter([bandValue]);
           setKind('band');
           setListings([]);
           const label = bandFromWireLabel(bandValue)?.label ?? bandValue;
@@ -99,7 +114,8 @@ export function useRepeaterDirectorySearch(source: RepeaterSource) {
           trimmed,
           {
             operationalOnly,
-            band: bandFilter ?? undefined,
+            bands: bandFilter.length ? bandFilter : undefined,
+            geometry: geometryFilter,
             modes: modeFilter.length ? (modeFilter as ChannelMode[]) : undefined,
           },
           {
@@ -109,8 +125,7 @@ export function useRepeaterDirectorySearch(source: RepeaterSource) {
         setKind(result.kind);
         setListings(result.listings);
         if (result.listings.length === 0) {
-          const narrow =
-            bandFilter || modeFilter.length ? ' Try clearing band or mode filters.' : '';
+          const narrow = narrowFilterHint(bandFilter, modeFilter, geometryFilter);
           setError(`No repeaters matched your search on ukrepeater.net.${narrow}`);
         }
       } catch (err) {
@@ -123,7 +138,7 @@ export function useRepeaterDirectorySearch(source: RepeaterSource) {
         setLoading(false);
       }
     },
-    [query, operationalOnly, bandFilter, modeFilter, mapboxToken, source],
+    [query, operationalOnly, bandFilter, modeFilter, geometryFilter, mapboxToken, source],
   );
 
   return {
@@ -135,6 +150,8 @@ export function useRepeaterDirectorySearch(source: RepeaterSource) {
     setBandFilter,
     modeFilter,
     setModeFilter,
+    geometryFilter,
+    setGeometryFilter,
     titleCaseNames,
     setTitleCaseNames,
     loading,

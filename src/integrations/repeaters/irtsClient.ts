@@ -127,7 +127,7 @@ export function parseIrtsAnytoneCsv(text: string): RepeaterListing[] {
 
 export interface IrtsSearchFilters {
   query?: string;
-  band?: string;
+  bands?: string[];
   modes?: ChannelMode[];
 }
 
@@ -144,9 +144,9 @@ export function filterIrtsListings(
         listing.name.toUpperCase().includes(needle),
     );
   }
-  if (filters.band?.trim()) {
-    const band = filters.band.trim().toUpperCase();
-    result = result.filter((listing) => listing.band.toUpperCase() === band);
+  if (filters.bands?.length) {
+    const wanted = new Set(filters.bands.map((band) => band.trim().toUpperCase()).filter(Boolean));
+    result = result.filter((listing) => wanted.has(listing.band.toUpperCase()));
   }
   if (filters.modes?.length) {
     const wanted = new Set(filters.modes);

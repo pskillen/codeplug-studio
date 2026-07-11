@@ -4,6 +4,7 @@ export interface RepeaterSearchCapabilities {
   unifiedQuery: boolean;
   bandFilter: boolean;
   modeFilter: boolean;
+  geometryFilter: boolean;
   operationalOnly: boolean;
   titleCaseNames: boolean;
   useMyLocation: boolean;
@@ -17,6 +18,7 @@ export function repeaterSearchCapabilities(source: RepeaterSource): RepeaterSear
       unifiedQuery: true,
       bandFilter: true,
       modeFilter: true,
+      geometryFilter: true,
       operationalOnly: true,
       titleCaseNames: true,
       useMyLocation: true,
@@ -29,6 +31,7 @@ export function repeaterSearchCapabilities(source: RepeaterSource): RepeaterSear
       unifiedQuery: false,
       bandFilter: true,
       modeFilter: true,
+      geometryFilter: false,
       operationalOnly: false,
       titleCaseNames: true,
       useMyLocation: false,
@@ -40,6 +43,7 @@ export function repeaterSearchCapabilities(source: RepeaterSource): RepeaterSear
     unifiedQuery: false,
     bandFilter: false,
     modeFilter: false,
+    geometryFilter: false,
     operationalOnly: false,
     titleCaseNames: false,
     useMyLocation: false,

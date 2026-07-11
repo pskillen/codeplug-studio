@@ -11,6 +11,7 @@ export {
   routeQuery,
   searchUkRepeaters,
   type QueryKind,
+  type ListingGeometryFilter,
   type SearchFilters,
 } from './ukrepeater/queryRouter.ts';
 export { searchBrandmeisterByCallsign } from './brandmeisterClient.ts';
