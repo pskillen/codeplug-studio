@@ -5,31 +5,81 @@ function zoneMap(zones: Zone[]): Map<string, Zone> {
   return new Map(zones.map((zone) => [zone.id, zone]));
 }
 
+export interface ZoneFlattenResult {
+  channelIds: string[];
+  cycleWarnings: string[];
+}
+
+export interface ZoneFlattenOptions {
+  /** When set, only channel members passing this predicate are included. */
+  includeChannel?: (member: Extract<ZoneMemberEntry, { kind: 'channel' }>) => boolean;
+  /** Called for each channel id included in the flatten result (after dedup). */
+  onChannel?: (
+    channelId: string,
+    ownerZoneId: string,
+    member: Extract<ZoneMemberEntry, { kind: 'channel' }>,
+  ) => void;
+}
+
+function cycleWarningMessage(
+  parentZone: Zone,
+  childZoneId: string,
+  zonesById: Map<string, Zone>,
+): string {
+  const child = zonesById.get(childZoneId);
+  const childName = child?.name ?? childZoneId;
+  return `Zone "${parentZone.name}" membership contains a cycle (skipped nested zone "${childName}")`;
+}
+
+/**
+ * Flatten a zone's membership to channel ids in member order.
+ * Child zones are expanded depth-first; duplicate channel ids are skipped (first wins).
+ * Zone→zone cycles on the current path are skipped with a warning (partial flatten).
+ */
+export function flattenZoneMembership(
+  zone: Zone,
+  zones: Zone[],
+  options?: ZoneFlattenOptions,
+): ZoneFlattenResult {
+  const zonesById = zoneMap(zones);
+  const channelIds: string[] = [];
+  const cycleWarnings: string[] = [];
+  const seenChannels = new Set<string>();
+
+  function walk(current: Zone, pathZoneIds: Set<string>): void {
+    for (const raw of current.members) {
+      const member = normalizeZoneMemberEntry(raw);
+      if (member.kind === 'channel') {
+        if (options?.includeChannel && !options.includeChannel(member)) continue;
+        if (seenChannels.has(member.channelId)) continue;
+        seenChannels.add(member.channelId);
+        channelIds.push(member.channelId);
+        options?.onChannel?.(member.channelId, current.id, member);
+        continue;
+      }
+      const childId = member.zoneId;
+      if (pathZoneIds.has(childId)) {
+        cycleWarnings.push(cycleWarningMessage(current, childId, zonesById));
+        continue;
+      }
+      const child = zonesById.get(childId);
+      if (!child) continue;
+      const nextPath = new Set(pathZoneIds);
+      nextPath.add(current.id);
+      walk(child, nextPath);
+    }
+  }
+
+  walk(zone, new Set());
+  return { channelIds, cycleWarnings };
+}
+
 /**
  * Flatten a zone's membership to channel ids in member order.
  * Child zones are expanded depth-first; duplicate channel ids are skipped (first wins).
  */
 export function resolveEffectiveZoneChannelIds(zone: Zone, zones: Zone[]): string[] {
-  const zonesById = zoneMap(zones);
-  const result: string[] = [];
-  const seen = new Set<string>();
-
-  function walk(current: Zone): void {
-    for (const raw of current.members) {
-      const member = normalizeZoneMemberEntry(raw);
-      if (member.kind === 'channel') {
-        if (seen.has(member.channelId)) continue;
-        seen.add(member.channelId);
-        result.push(member.channelId);
-        continue;
-      }
-      const child = zonesById.get(member.zoneId);
-      if (child) walk(child);
-    }
-  }
-
-  walk(zone);
-  return result;
+  return flattenZoneMembership(zone, zones).channelIds;
 }
 
 function membersForZone(
