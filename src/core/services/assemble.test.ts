@@ -797,7 +797,7 @@ describe('assemble', () => {
     const warnings = exportInclusionWarnings(build, library, projection);
     expect(warnings.some((warning) => warning.includes('cycle'))).toBe(true);
 
-    const exportResult = exportBuildAll({ build, library, fileName: 'Channels.csv' });
+    const exportResult = exportBuildAll({ build, library });
     expect(exportResult.warnings.some((warning) => warning.includes('cycle'))).toBe(true);
     expect(Object.keys(exportResult.files).length).toBeGreaterThan(0);
   });

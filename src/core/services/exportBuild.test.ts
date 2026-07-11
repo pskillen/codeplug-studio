@@ -42,7 +42,7 @@ describe('exportBuildAll', () => {
     };
     const longNameWarningPrefix = `Channel wire name "${longName}" exceeds 16 characters`;
 
-    const result = exportBuildAll({ build, library, fileName: 'Channels.csv' });
+    const result = exportBuildAll({ build, library });
 
     expect(Object.keys(result.files).length).toBeGreaterThan(1);
     expect(
@@ -81,7 +81,7 @@ describe('exportBuildAll', () => {
     const build = newFormatBuild(projectId, 'dm32-baofeng-dm32uv');
     const capWarning = 'Zone "Glasgow" has 20 expanded members (scan cap 16)';
 
-    const result = exportBuildAll({ build, library, fileName: 'Channels.csv' });
+    const result = exportBuildAll({ build, library });
 
     expect(Object.keys(result.files).length).toBeGreaterThan(1);
     expect(result.warnings.filter((warning) => warning === capWarning)).toHaveLength(1);
@@ -134,7 +134,7 @@ describe('exportBuildAll', () => {
     };
     const build = newFormatBuild(projectId, 'dm32-baofeng-dm32uv');
 
-    const result = exportBuildAll({ build, library, fileName: 'Channels.csv' });
+    const result = exportBuildAll({ build, library });
 
     expect(result.warnings).toContain('Zone "Glasgow" has 20 expanded members (scan cap 16)');
     expect(result.warnings).toContain('Zone "Edinburgh" has 20 expanded members (scan cap 16)');
