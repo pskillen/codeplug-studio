@@ -17,7 +17,9 @@ None — requires an active project from `useProjects()`.
 ## Behaviour
 
 - Dropzone queues file text; Mantine `Modal` blocks replace until operator confirms
-- `importProjectFromYaml` with `replaceExisting` — YAML `project.id` must match active project
+- `importProjectFromYaml` with `replaceExisting` when YAML `project.id` matches the active project
+- When ids differ, modal offers **Replace local content** (`adoptRemote`) or **Import as new project**
+- Import failures surface in the modal (not console-only)
 - Refreshes project metadata after success
 
 ## Related

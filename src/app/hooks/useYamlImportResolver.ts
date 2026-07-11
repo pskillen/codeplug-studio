@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import type { ImportProjectYamlMode } from '@core/services/importProjectYaml.ts';
 import { portableSyncedAt } from '@core/services/interchangeMeta.ts';
 import { isRemotePortableNewer } from '@core/services/projectSyncSummary.ts';
 import { buildImportOverwriteDiff } from '../services/yamlImportResolverService.ts';
@@ -42,6 +43,9 @@ export function useYamlImportResolver(options: UseYamlImportResolverOptions = {}
   const [overwriteTitle, setOverwriteTitle] = useState('Overwrite local project?');
   const [overwriteProjectName, setOverwriteProjectName] = useState('');
   const [diffLines, setDiffLines] = useState<string[]>([]);
+  const [idMismatch, setIdMismatch] = useState(false);
+  const [localProjectId, setLocalProjectId] = useState('');
+  const [remoteProjectId, setRemoteProjectId] = useState('');
   const pendingRef = useRef<{
     preview: ReturnType<typeof parseYamlImportPreview>;
     source: YamlImportSource;
@@ -52,6 +56,10 @@ export function useYamlImportResolver(options: UseYamlImportResolverOptions = {}
     setOverwriteOpen(false);
     pendingRef.current = null;
     setDiffLines([]);
+    setIdMismatch(false);
+    setLocalProjectId('');
+    setRemoteProjectId('');
+    setError(null);
   }, []);
 
   async function recordSource(projectId: string, source: YamlImportSource) {
@@ -74,7 +82,7 @@ export function useYamlImportResolver(options: UseYamlImportResolverOptions = {}
 
   async function runImport(
     yamlText: string,
-    mode: { kind: 'createNew' } | { kind: 'replaceExisting'; projectId: string },
+    mode: ImportProjectYamlMode,
     source: YamlImportSource,
   ) {
     setImporting(true);
@@ -84,7 +92,7 @@ export function useYamlImportResolver(options: UseYamlImportResolverOptions = {}
       await recordSource(result.projectId, source);
       await refreshProjects();
       options.onImported?.(result.projectId);
-      if (mode.kind === 'createNew' || !options.activeProjectId) {
+      if (mode.kind === 'createNew') {
         switchProject(result.projectId);
       }
       resetOverwrite();
@@ -103,14 +111,12 @@ export function useYamlImportResolver(options: UseYamlImportResolverOptions = {}
     const activeId = options.activeProjectId ?? null;
 
     if (activeId) {
-      if (preview.projectId !== activeId) {
-        setError(
-          `YAML project id (${preview.projectId}) does not match active project (${activeId}).`,
-        );
-        return;
-      }
+      const mismatch = preview.projectId !== activeId;
       const lines = await buildImportOverwriteDiff(activeId, preview.remoteSummary);
       pendingRef.current = { preview, source, targetProjectId: activeId };
+      setIdMismatch(mismatch);
+      setLocalProjectId(activeId);
+      setRemoteProjectId(preview.projectId);
       setOverwriteProjectName(preview.projectName);
       setOverwriteTitle('Replace active project?');
       setDiffLines(lines);
@@ -135,11 +141,24 @@ export function useYamlImportResolver(options: UseYamlImportResolverOptions = {}
   async function confirmOverwrite() {
     const pending = pendingRef.current;
     if (!pending) return;
-    await runImport(
-      pending.preview.yamlText,
-      { kind: 'replaceExisting', projectId: pending.targetProjectId },
-      pending.source,
-    );
+    const mode: ImportProjectYamlMode = idMismatch
+      ? { kind: 'adoptRemote', projectId: pending.targetProjectId }
+      : { kind: 'replaceExisting', projectId: pending.targetProjectId };
+    try {
+      await runImport(pending.preview.yamlText, mode, pending.source);
+    } catch {
+      // runImport sets error; keep modal open
+    }
+  }
+
+  async function confirmImportAsNew() {
+    const pending = pendingRef.current;
+    if (!pending) return;
+    try {
+      await runImport(pending.preview.yamlText, { kind: 'createNew' }, pending.source);
+    } catch {
+      // runImport sets error; keep modal open
+    }
   }
 
   function handleDriveSelection(
@@ -166,9 +185,13 @@ export function useYamlImportResolver(options: UseYamlImportResolverOptions = {}
     overwriteTitle,
     diffLines,
     projectName: overwriteProjectName,
+    idMismatch,
+    localProjectId,
+    remoteProjectId,
     setOverwriteOpen,
     resetOverwrite,
     confirmOverwrite,
+    confirmImportAsNew,
     handleDriveSelection,
     handleLocalFile,
     handleYamlContent,
@@ -176,13 +199,16 @@ export function useYamlImportResolver(options: UseYamlImportResolverOptions = {}
 }
 
 export function useRefreshFromDrivePrompt() {
-  const { activeProject, refreshProjects } = useProjects();
+  const { activeProject, refreshProjects, switchProject } = useProjects();
   const { port, withDriveAuthRetry, connected } = useGoogleDrive();
   const [bannerOpen, setBannerOpen] = useState(false);
   const [diffLines, setDiffLines] = useState<string[]>([]);
   const [remoteYaml, setRemoteYaml] = useState<string | null>(null);
+  const [remoteProjectId, setRemoteProjectId] = useState<string | null>(null);
+  const [idMismatch, setIdMismatch] = useState(false);
   const [overwriteOpen, setOverwriteOpen] = useState(false);
   const [importing, setImporting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const dismissedRef = useRef<Set<string>>(new Set());
 
   const drive = activeProject?.interchange?.googleDrive;
@@ -221,6 +247,9 @@ export function useRefreshFromDrivePrompt() {
         if (cancelled) return;
         setDiffLines(lines);
         setRemoteYaml(content);
+        setRemoteProjectId(preview.projectId);
+        setIdMismatch(preview.projectId !== projectId);
+        setError(null);
         setBannerOpen(true);
       } catch {
         if (!cancelled) setBannerOpen(false);
@@ -231,23 +260,81 @@ export function useRefreshFromDrivePrompt() {
     };
   }, [activeProject, connected, drive, port, projectId, withDriveAuthRetry]);
 
+  async function recordDriveSync() {
+    if (!projectId || !drive) return;
+    const metadata = await withDriveAuthRetry(() => port.getFileMetadata(drive.fileId));
+    await recordProjectImportDestination(projectId, {
+      destination: 'googleDrive',
+      fileName: drive.fileName,
+      folderId: drive.folderId,
+      folderName: drive.folderName,
+      fileId: drive.fileId,
+      syncedAt: metadata.modifiedTime ?? new Date().toISOString(),
+    });
+  }
+
+  async function recordDriveSyncForProject(
+    targetProjectId: string,
+    source: { fileName: string; folderId: string; folderName?: string; fileId: string },
+    syncedAt?: string,
+  ) {
+    await recordProjectImportDestination(targetProjectId, {
+      destination: 'googleDrive',
+      fileName: source.fileName,
+      folderId: source.folderId,
+      folderName: source.folderName,
+      fileId: source.fileId,
+      syncedAt,
+    });
+  }
+
+  function closeRefreshUi() {
+    setBannerOpen(false);
+    setOverwriteOpen(false);
+    setError(null);
+  }
+
   async function confirmRefresh() {
     if (!projectId || !remoteYaml || !drive) return;
     setImporting(true);
+    setError(null);
     try {
-      await importProjectFromYaml(remoteYaml, { kind: 'replaceExisting', projectId });
-      const metadata = await withDriveAuthRetry(() => port.getFileMetadata(drive.fileId));
-      await recordProjectImportDestination(projectId, {
-        destination: 'googleDrive',
-        fileName: drive.fileName,
-        folderId: drive.folderId,
-        folderName: drive.folderName,
-        fileId: drive.fileId,
-        syncedAt: metadata.modifiedTime ?? new Date().toISOString(),
-      });
+      const mode = idMismatch
+        ? ({ kind: 'adoptRemote', projectId } as const)
+        : ({ kind: 'replaceExisting', projectId } as const);
+      await importProjectFromYaml(remoteYaml, mode);
+      await recordDriveSync();
       await refreshProjects();
-      setBannerOpen(false);
-      setOverwriteOpen(false);
+      closeRefreshUi();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setImporting(false);
+    }
+  }
+
+  async function confirmImportAsNew() {
+    if (!remoteYaml || !drive) return;
+    setImporting(true);
+    setError(null);
+    try {
+      const metadata = await withDriveAuthRetry(() => port.getFileMetadata(drive.fileId));
+      const result = await importProjectFromYaml(remoteYaml, { kind: 'createNew' });
+      await recordDriveSyncForProject(
+        result.projectId,
+        {
+          fileName: drive.fileName,
+          folderId: drive.folderId,
+          folderName: drive.folderName,
+          fileId: drive.fileId,
+        },
+        metadata.modifiedTime ?? new Date().toISOString(),
+      );
+      await refreshProjects();
+      switchProject(result.projectId);
+      closeRefreshUi();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
     } finally {
       setImporting(false);
     }
@@ -260,15 +347,31 @@ export function useRefreshFromDrivePrompt() {
     setBannerOpen(false);
   }
 
+  function openOverwrite() {
+    setError(null);
+    setOverwriteOpen(true);
+  }
+
+  function closeOverwrite() {
+    setOverwriteOpen(false);
+    setError(null);
+  }
+
   return {
     bannerOpen,
     diffLines,
     overwriteOpen,
     importing,
+    error,
+    idMismatch,
+    localProjectId: projectId ?? '',
+    remoteProjectId: remoteProjectId ?? '',
     setOverwriteOpen,
     dismissBanner,
-    openOverwrite: () => setOverwriteOpen(true),
+    openOverwrite,
+    closeOverwrite,
     confirmRefresh,
+    confirmImportAsNew,
     projectName: activeProject?.name ?? '',
   };
 }

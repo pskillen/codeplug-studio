@@ -131,19 +131,21 @@ When OAuth is not configured, click opens `GoogleDriveNotConfiguredModal` with *
 | `DriveSessionBanner`            | App-wide reconnect prompt when session expired            |
 | `ProjectInterchangeBar`         | Source label + Save to Drive in app chrome                |
 | `RefreshFromDriveBanner`        | Newer remote YAML available — optional refresh            |
-| `InterchangeOverwriteModal`     | UUID-match overwrite with diff summary                    |
+| `InterchangeOverwriteModal`     | Overwrite / adopt-remote with diff summary                |
 
 ## Error states
 
-| Situation             | UI behaviour                                                                                                                      |
-| --------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
-| Not configured        | Drive action buttons greyed; click → modal → Settings (OAuth client setup)                                                        |
-| Not connected         | Drive action buttons greyed; click → GIS OAuth → Drive browser on success                                                         |
-| Sign-in cancelled     | No browser open; no error alert                                                                                                   |
-| Connect failed        | Inline red alert on the action button                                                                                             |
-| Auth expired          | Session cleared; greyed CTAs + **Reconnect** inline; `DriveSessionBanner`; Settings **Reconnect** — no manual Disconnect required |
-| Network / API failure | Red alert with Drive error message                                                                                                |
-| Duplicate folder name | Drive API conflict message                                                                                                        |
+| Situation                   | UI behaviour                                                                                                                                                                                                     |
+| --------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Not configured              | Drive action buttons greyed; click → modal → Settings (OAuth client setup)                                                                                                                                       |
+| Not connected               | Drive action buttons greyed; click → GIS OAuth → Drive browser on success                                                                                                                                        |
+| Sign-in cancelled           | No browser open; no error alert                                                                                                                                                                                  |
+| Connect failed              | Inline red alert on the action button                                                                                                                                                                            |
+| Auth expired                | Session cleared; greyed CTAs + **Reconnect** inline; `DriveSessionBanner`; Settings **Reconnect** — no manual Disconnect required                                                                                |
+| Network / API failure       | Red alert with Drive error message                                                                                                                                                                               |
+| Duplicate folder name       | Drive API conflict message                                                                                                                                                                                       |
+| Refresh project id mismatch | Yellow **Drive file project mismatch** banner; modal offers **Replace local content** (adopt remote into local id) or **Import as new project** ([#334](https://github.com/pskillen/codeplug-studio/issues/334)) |
+| Refresh import failure      | Red alert in overwrite modal; modal stays open ([#334](https://github.com/pskillen/codeplug-studio/issues/334))                                                                                                  |
 
 ## Implementation status
 
@@ -158,6 +160,7 @@ When OAuth is not configured, click opens `GoogleDriveNotConfiguredModal` with *
 | App chrome Save bar          | Shipped | [#285](https://github.com/pskillen/codeplug-studio/issues/285)                            |
 | UUID-match import overwrite  | Shipped | [#285](https://github.com/pskillen/codeplug-studio/issues/285)                            |
 | Refresh from Drive prompt    | Shipped | [#285](https://github.com/pskillen/codeplug-studio/issues/285)                            |
+| Refresh id-mismatch override | Shipped | [#334](https://github.com/pskillen/codeplug-studio/issues/334)                            |
 
 ## Manual verify checklist
 
@@ -168,6 +171,8 @@ When OAuth is not configured, click opens `GoogleDriveNotConfiguredModal` with *
 - [ ] **Save to Drive** in app chrome overwrites remembered file when project is dirty
 - [ ] Open YAML from Drive with matching `project.id` → diff modal → overwrite local
 - [ ] Switch project with newer Drive file → **Refresh from Drive** banner
+- [ ] Linked Drive file with mismatched `project.id` → mismatch banner → adopt or import as new
+- [ ] Failed refresh import → error shown in modal (not console-only)
 - [ ] Save to Drive → re-save defaults to last file; overwrite requires confirm
 - [ ] Export YAML → import on fresh browser → `interchange.googleDrive` preserved in project meta
 - [ ] Debug `/debug/local-storage` masks Drive access token

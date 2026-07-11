@@ -5,8 +5,33 @@ import { theme } from '../../theme.ts';
 import ImportYamlIntoActivePanel from './ImportYamlIntoActivePanel.tsx';
 
 const confirmOverwrite = vi.fn();
+const confirmImportAsNew = vi.fn();
 const handleLocalFile = vi.fn();
 const resetOverwrite = vi.fn();
+
+function mockResolver(overrides: Record<string, unknown> = {}) {
+  return {
+    importing: false,
+    error: null,
+    overwriteOpen: true,
+    overwriteTitle: 'Replace active project?',
+    diffLines: ['Local: 1 channel'],
+    projectName: 'Active project',
+    idMismatch: false,
+    localProjectId: 'proj-1',
+    remoteProjectId: 'proj-1',
+    setOverwriteOpen: vi.fn(),
+    resetOverwrite,
+    confirmOverwrite,
+    confirmImportAsNew,
+    handleDriveSelection: vi.fn(),
+    handleLocalFile,
+    handleYamlContent: vi.fn(),
+    ...overrides,
+  };
+}
+
+let resolverState = mockResolver();
 
 vi.mock('../../hooks/useGoogleDrive.ts', () => ({
   useGoogleDrive: () => ({
@@ -21,20 +46,7 @@ vi.mock('../../hooks/useGoogleDrive.ts', () => ({
 }));
 
 vi.mock('../../hooks/useYamlImportResolver.ts', () => ({
-  useYamlImportResolver: () => ({
-    importing: false,
-    error: null,
-    overwriteOpen: true,
-    overwriteTitle: 'Replace active project?',
-    diffLines: ['Local: 1 channel'],
-    projectName: 'Active project',
-    setOverwriteOpen: vi.fn(),
-    resetOverwrite,
-    confirmOverwrite,
-    handleDriveSelection: vi.fn(),
-    handleLocalFile,
-    handleYamlContent: vi.fn(),
-  }),
+  useYamlImportResolver: () => resolverState,
 }));
 
 vi.mock('../../state/useProjects.ts', () => ({
@@ -71,7 +83,9 @@ function renderPanel() {
 
 describe('ImportYamlIntoActivePanel', () => {
   beforeEach(() => {
+    resolverState = mockResolver();
     confirmOverwrite.mockReset();
+    confirmImportAsNew.mockReset();
     handleLocalFile.mockReset();
   });
 
@@ -92,5 +106,21 @@ describe('ImportYamlIntoActivePanel', () => {
     expect(screen.getByText('Local: 1 channel')).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Overwrite local copy' }));
     expect(confirmOverwrite).toHaveBeenCalledOnce();
+  });
+
+  it('shows mismatch override actions when project ids differ', () => {
+    resolverState = mockResolver({
+      idMismatch: true,
+      localProjectId: 'proj-1',
+      remoteProjectId: 'remote-proj',
+    });
+    renderPanel();
+
+    expect(screen.getByText(/Local project id: proj-1/)).toBeInTheDocument();
+    expect(screen.getByText(/Remote project id: remote-proj/)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Replace local content' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Import as new project' }));
+    expect(confirmOverwrite).toHaveBeenCalledOnce();
+    expect(confirmImportAsNew).toHaveBeenCalledOnce();
   });
 });

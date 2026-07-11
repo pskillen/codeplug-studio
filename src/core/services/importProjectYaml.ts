@@ -8,7 +8,9 @@ import {
 } from './projectSeedMapping.ts';
 
 export type ImportProjectYamlMode =
-  { kind: 'createNew' } | { kind: 'replaceExisting'; projectId: string };
+  | { kind: 'createNew' }
+  | { kind: 'replaceExisting'; projectId: string }
+  | { kind: 'adoptRemote'; projectId: string };
 
 export interface ImportProjectYamlResult {
   projectId: string;
@@ -34,7 +36,8 @@ export async function importProjectYaml(
   }
 
   const { projectId } = mode;
-  if (seed.meta.projectId !== projectId) {
+
+  if (mode.kind === 'replaceExisting' && seed.meta.projectId !== projectId) {
     throw new Error(
       `YAML project id (${seed.meta.projectId}) does not match active project (${projectId})`,
     );
