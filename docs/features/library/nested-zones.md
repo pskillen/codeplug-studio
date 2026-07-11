@@ -16,7 +16,9 @@ Nesting is **not reconstructed** from flat CPS import — it is created and main
 | -------------------------------- | ------------------------------------------------- | ------------------------------------------- |
 | `ZoneMemberEntry`                | `src/core/models/library.ts`                      | `kind: 'channel'` or `kind: 'zone'` members |
 | `Zone.omitFromExport`            | same                                              | Skip standalone `Zones.csv` row             |
-| `resolveEffectiveZoneChannelIds` | `src/core/domain/zoneHierarchy.ts`                | Flatten to ordered, deduped channel ids     |
+| `flattenZoneMembership`          | `src/core/domain/zoneHierarchy.ts`                | Cycle-safe flatten with warnings            |
+| `resolveEffectiveZoneChannelIds` | same                                              | Flatten to ordered, deduped channel ids     |
+| `collectZoneFlattenWarnings`     | same                                              | Cycle warnings for export                   |
 | `zoneMembershipHasCycle`         | same                                              | Acyclic graph check                         |
 | `validateZoneMembership`         | `src/core/domain/validation.ts`                   | Ref + cycle validation on save              |
 | `assemble`                       | `src/core/services/assemble.ts`                   | Export projection uses effective channels   |
@@ -36,7 +38,8 @@ Nesting is **not reconstructed** from flat CPS import — it is created and main
 
 Rules:
 
-- **Acyclic** — a zone cannot include itself; no cycles through zone→zone refs (validation error in zone editor).
+- **Acyclic** — a zone cannot include itself; no cycles through zone→zone refs (validation error in zone editor on save).
+- **Runtime cycles** — if corrupt or legacy data already contains a cycle, flatten skips the revisiting branch (**partial flatten**), keeps channels collected before the cycle point, and surfaces an export warning ([#187](https://github.com/pskillen/codeplug-studio/issues/187)). Map and CSV preview do not crash.
 - **Dedup** — when flattening, the same channel id appearing via multiple paths is exported once (first occurrence in walk order wins).
 - **Vendor-neutral** — no radio caps in library CRUD; profile overflow **warnings** at export (existing OpenGD77/DM32 warning paths on assembled flat lists).
 - **Library is membership source of truth** — `assemble` always derives zone `memberChannelIds` from live library membership (`resolveEffectiveZoneChannelIds`), even when the build has a persisted `zoneGrouping` section. Layout `channelIds` are an **order hint** only (see [zone-grouping.md](../builds/zone-grouping.md)).
@@ -62,7 +65,8 @@ Rules:
 4. On a format build **Zones** wire-preview page, enable **Force export** for PMR446 — re-export; PMR446 standalone row appears in this build only (library `omitFromExport` unchanged).
 5. With **Omit channels not in a zone** enabled on export, PMR channels remain included (linked via nested flatten).
 6. Attempt `Glasgow` ⊃ `Scotland` while `Scotland` ⊃ `Glasgow` — save blocked with cycle message.
-7. Export/import project YAML — nested members, `omitFromExport`, and `forceInclude` on zone overrides preserved.
+7. If cyclic membership exists in stored data (e.g. manual YAML edit), export and map still load; **Export warnings** list a cycle message and flattened zones use partial membership.
+8. Export/import project YAML — nested members, `omitFromExport`, and `forceInclude` on zone overrides preserved.
 
 ## Related
 
