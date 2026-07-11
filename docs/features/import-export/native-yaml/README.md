@@ -79,7 +79,7 @@ loadProjectSeed → ProjectAggregate
 | -------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
 | Contracts + envelope (#56)       | Shipped                                                                                                                              |
 | Export serialiser (#57)          | Shipped                                                                                                                              |
-| Import parser + validation (#58) | Shipped — `studioSchemaVersion` 9; legacy SSB modes migrate on load ([#204](https://github.com/pskillen/codeplug-studio/issues/204)) |
+| Import parser + validation (#58) | Shipped — `studioSchemaVersion` 9; legacy SSB modes migrate on load ([#204](https://github.com/pskillen/codeplug-studio/issues/204)); composite channel override keys ([#336](https://github.com/pskillen/codeplug-studio/issues/336)) |
 | Services (#59)                   | Shipped                                                                                                                              |
 | Local file UI (#60)              | Shipped                                                                                                                              |
 | App chrome Save + import sync    | Shipped ([#285](https://github.com/pskillen/codeplug-studio/issues/285))                                                             |

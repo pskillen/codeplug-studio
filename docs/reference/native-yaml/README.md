@@ -187,15 +187,25 @@ Legacy `*Selections` arrays migrate to `*Overrides` on import.
 
 ### `BuildEntityOverride`
 
-| Field             | Type    | Notes                                                                    |
-| ----------------- | ------- | ------------------------------------------------------------------------ |
-| `libraryEntityId` | UUID    | Required                                                                 |
+| Field             | Type   | Notes                                                                    |
+| ----------------- | ------ | ------------------------------------------------------------------------ |
+| `libraryEntityId` | string | Required — plain channel UUID, or composite expansion key (see below)   |
 | `excluded`        | boolean | Omit entity from this build's export                                     |
 | `forceInclude`    | boolean | Zone overrides only — export standalone despite library `omitFromExport` |
 | `wireName`        | string  | CPS wire string override                                                 |
 | `orderOrSlot`     | number  | 1-based top-level export position; CHIRP gaps → blank memory slots       |
 
 Sparse storage: omit keys when unset at export.
+
+**Channel override `libraryEntityId` shapes** (build `channelOverrides` only):
+
+| Shape | Example | When used |
+| ----- | ------- | --------- |
+| Plain channel UUID | `22222222-2222-4222-8222-222222222222` | Default wire-name override for the channel |
+| Multi-mode expansion | `{channelId}:-D` | Per-mode row when `exportSettings.expandModes` is true (`-D`, `-F`, `-DS`, …) |
+| Multi-talkgroup expansion | `{channelId}:-D:talkGroup:{talkGroupId}` | Per RX-list member row when multi-talkgroup expansion is active |
+
+Import validates that the underlying channel (and talk group ref, when present) exists in the library. Other override arrays (`zoneOverrides`, `talkGroupOverrides`, …) use plain entity UUIDs only.
 
 ### `TraitLayout`
 
@@ -246,7 +256,7 @@ Import rejects when:
 4. `studioSchemaVersion` not in `2`–`14` (current `STUDIO_SCHEMA_VERSION`)
 5. Any row has `projectId` ≠ `project.id`
 6. Duplicate `id` within one entity array
-7. Any `EntityRef` or `libraryEntityId` does not resolve
+7. Any `EntityRef` or `libraryEntityId` does not resolve (channel overrides accept plain UUIDs or composite expansion keys — see `BuildEntityOverride`)
 8. Zone `members` contain non-channel refs
 9. `TraitLayout` `channelIds` missing from library
 10. DMR `rxGroupListId` missing from library
