@@ -8,6 +8,8 @@ import {
 export interface SaveProjectToDriveInput {
   projectId: string;
   drive: GoogleDriveInterchange;
+  /** Skip pre-save conflict checks — caller already confirmed with the operator. */
+  force?: boolean;
 }
 
 export type DrivePortableSyncTarget = Pick<
@@ -41,7 +43,7 @@ export async function recordDrivePortableSyncAfterWrite(
   return syncedAt;
 }
 
-export async function saveProjectToDrive(
+export async function executeSaveProjectToDrive(
   port: GoogleDrivePort,
   input: SaveProjectToDriveInput,
 ): Promise<void> {
@@ -63,4 +65,12 @@ export async function saveProjectToDrive(
     fileId: drive.fileId,
   });
   await recordDrivePortableSyncAfterWrite(port, projectId, drive, writeResult);
+}
+
+/** @deprecated Use executeSaveProjectToDrive — kept for call sites migrating to conflict-aware flow. */
+export async function saveProjectToDrive(
+  port: GoogleDrivePort,
+  input: SaveProjectToDriveInput,
+): Promise<void> {
+  return executeSaveProjectToDrive(port, input);
 }
