@@ -1,116 +1,54 @@
 import { useState } from 'react';
 import { Alert, Button, Modal, Stack, Text } from '@mantine/core';
-import {
-  defaultLocalExportFileName,
-  suggestExportDestination,
-} from '@core/services/interchangeMeta.ts';
-import { saveDriveLastFolderId, saveDriveLastFolderPath } from '@integrations/cloud/drivePrefs.ts';
-import { exportProjectToYaml } from '../../services/projectImportExportService.ts';
-import { recordDrivePortableSyncAfterWrite } from '../../services/saveProjectToDriveService.ts';
-import { useGoogleDrive } from '../../hooks/useGoogleDrive.ts';
+import { useDriveSaveFlow } from '../../hooks/useDriveSaveFlow.ts';
 import { useProjects } from '../../state/useProjects.ts';
 import DriveBrowserModal, { type DriveSaveTarget } from './DriveBrowserModal.tsx';
+import DriveSaveConflictModal from './DriveSaveConflictModal.tsx';
 import GoogleDriveActionButton from './GoogleDriveActionButton.tsx';
 
 export default function ExportToDrivePanel() {
-  const { activeProjectId, activeProject, refreshProjects } = useProjects();
-  const { port, withDriveAuthRetry } = useGoogleDrive();
+  const { activeProjectId } = useProjects();
   const [browserOpen, setBrowserOpen] = useState(false);
-  const [overwriteOpen, setOverwriteOpen] = useState(false);
+  const [nameCollisionOpen, setNameCollisionOpen] = useState(false);
   const [pendingTarget, setPendingTarget] = useState<DriveSaveTarget | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [saving, setSaving] = useState(false);
 
-  const suggestedFileName = activeProject
-    ? (suggestExportDestination(activeProject, 'googleDrive')?.fileName ??
-      defaultLocalExportFileName(activeProject.name))
-    : '';
-  const interchangeFolderId = activeProject?.interchange?.googleDrive?.folderId;
-
-  async function saveToDrive(target: DriveSaveTarget, existingFileId?: string) {
-    if (!activeProjectId) return;
-    setSaving(true);
-    setError(null);
-    try {
-      let fileId = existingFileId;
-      let content: string;
-
-      if (fileId) {
-        const exportResult = await exportProjectToYaml(activeProjectId, {
-          fileName: target.fileName,
-          recordDestination: 'googleDrive',
-          driveDestination: {
-            folderId: target.folderId,
-            folderName: target.folderName,
-            fileId,
-          },
-        });
-        content = exportResult.content;
-      } else {
-        const initialExport = await exportProjectToYaml(activeProjectId, {
-          fileName: target.fileName,
-        });
-        const created = await withDriveAuthRetry(() =>
-          port.writeFile({
-            parentId: target.folderId,
-            fileName: target.fileName,
-            content: initialExport.content,
-          }),
-        );
-        fileId = created.id;
-        const finalExport = await exportProjectToYaml(activeProjectId, {
-          fileName: target.fileName,
-          recordDestination: 'googleDrive',
-          driveDestination: {
-            folderId: target.folderId,
-            folderName: target.folderName,
-            fileId,
-          },
-        });
-        content = finalExport.content;
-      }
-
-      const writeResult = await withDriveAuthRetry(() =>
-        port.writeFile({
-          parentId: target.folderId,
-          fileName: target.fileName,
-          content,
-          fileId,
-        }),
-      );
-
-      await recordDrivePortableSyncAfterWrite(
-        port,
-        activeProjectId,
-        {
-          fileName: target.fileName,
-          folderId: target.folderId,
-          folderName: target.folderName,
-          fileId: fileId!,
-        },
-        writeResult,
-      );
-
-      saveDriveLastFolderId(target.folderId);
-      saveDriveLastFolderPath(target.path);
-      await refreshProjects();
+  const {
+    saving,
+    error,
+    conflictOpen,
+    conflict,
+    projectName,
+    saveAsBrowserOpen,
+    setSaveAsBrowserOpen,
+    suggestedFileName,
+    interchangeFolderId,
+    startOverwriteToTarget,
+    saveToNewTarget,
+    confirmSaveAnyway,
+    confirmRefreshFromDrive,
+    openSaveAsNew,
+    closeConflict,
+  } = useDriveSaveFlow({
+    onSaved: () => {
       setBrowserOpen(false);
-      setOverwriteOpen(false);
+      setNameCollisionOpen(false);
       setPendingTarget(null);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
-    } finally {
-      setSaving(false);
-    }
-  }
+    },
+  });
 
-  function handleSaveTarget(target: DriveSaveTarget) {
+  async function handleSaveTarget(target: DriveSaveTarget) {
     if (target.existingFileId) {
       setPendingTarget(target);
-      setOverwriteOpen(true);
+      setNameCollisionOpen(true);
       return;
     }
-    void saveToDrive(target);
+    await saveToNewTarget(target);
+  }
+
+  function confirmNameCollisionOverwrite() {
+    if (!pendingTarget?.existingFileId) return;
+    setNameCollisionOpen(false);
+    void startOverwriteToTarget(pendingTarget, pendingTarget.existingFileId);
   }
 
   if (!activeProjectId) {
@@ -119,7 +57,7 @@ export default function ExportToDrivePanel() {
 
   return (
     <Stack gap="sm">
-      {error ? <Alert color="red">{error}</Alert> : null}
+      {error && !conflictOpen ? <Alert color="red">{error}</Alert> : null}
       <GoogleDriveActionButton
         loading={saving}
         disabled={saving}
@@ -137,13 +75,13 @@ export default function ExportToDrivePanel() {
         interchangeFolderId={interchangeFolderId}
         defaultFileName={suggestedFileName}
         onSelectFile={() => undefined}
-        onSaveTarget={handleSaveTarget}
+        onSaveTarget={(target) => void handleSaveTarget(target)}
       />
       <Modal
-        opened={overwriteOpen}
+        opened={nameCollisionOpen}
         onClose={() => {
           if (!saving) {
-            setOverwriteOpen(false);
+            setNameCollisionOpen(false);
             setPendingTarget(null);
           }
         }}
@@ -154,19 +92,36 @@ export default function ExportToDrivePanel() {
           <Text size="sm">
             <strong>{pendingTarget?.fileName}</strong> already exists in this folder. Overwrite it?
           </Text>
-          <Button
-            color="red"
-            loading={saving}
-            onClick={() => {
-              if (pendingTarget?.existingFileId) {
-                void saveToDrive(pendingTarget, pendingTarget.existingFileId);
-              }
-            }}
-          >
+          <Button color="red" loading={saving} onClick={confirmNameCollisionOverwrite}>
             Overwrite
           </Button>
         </Stack>
       </Modal>
+      <DriveSaveConflictModal
+        opened={conflictOpen}
+        projectName={projectName}
+        conflict={conflict}
+        loading={saving}
+        error={error}
+        onClose={closeConflict}
+        onRefreshFromDrive={
+          conflict?.kinds.includes('remoteNewer') ? () => void confirmRefreshFromDrive() : undefined
+        }
+        onSaveAnyway={() => void confirmSaveAnyway()}
+        onSaveAsNew={openSaveAsNew}
+      />
+      <DriveBrowserModal
+        opened={saveAsBrowserOpen}
+        onClose={() => {
+          if (!saving) setSaveAsBrowserOpen(false);
+        }}
+        mode="save"
+        saving={saving}
+        interchangeFolderId={interchangeFolderId}
+        defaultFileName={suggestedFileName}
+        onSelectFile={() => undefined}
+        onSaveTarget={(target) => void saveToNewTarget(target)}
+      />
     </Stack>
   );
 }
