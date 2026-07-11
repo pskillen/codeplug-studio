@@ -18,6 +18,7 @@ import { mergeExportOptions } from '@core/services/exportBuild.ts';
 import ExportBuildSettingsSections from './ExportBuildSettingsSections.tsx';
 import ProfilePicker from './ProfilePicker.tsx';
 import CpsCsvPreviewModal from './CpsCsvPreviewModal.tsx';
+import ExportWarningsAlert from './ExportWarningsAlert.tsx';
 import { saveDriveLastFolderId, saveDriveLastFolderPath } from '@integrations/cloud/drivePrefs.ts';
 import DriveBrowserModal, { type DriveSaveTarget } from '../import-export/DriveBrowserModal.tsx';
 import GoogleDriveActionButton from '../import-export/GoogleDriveActionButton.tsx';
@@ -317,17 +318,7 @@ export default function ExportBuildCpsPanel({ build }: ExportBuildCpsPanelProps)
           </Text>
         ) : null}
         {error ? <Alert color="red">{error}</Alert> : null}
-        {exportWarnings.length > 0 ? (
-          <Alert color="yellow" title="Export warnings">
-            <Stack gap={4}>
-              {exportWarnings.map((warning) => (
-                <Text key={warning} size="sm">
-                  {warning}
-                </Text>
-              ))}
-            </Stack>
-          </Alert>
-        ) : null}
+        {exportWarnings.length > 0 ? <ExportWarningsAlert warnings={exportWarnings} /> : null}
         <Group gap="xs">
           <Button
             leftSection={<IconDownload size={ICON_SIZE_ACTION} stroke={ICON_STROKE} />}
@@ -411,17 +402,7 @@ export default function ExportBuildCpsPanel({ build }: ExportBuildCpsPanelProps)
         </Text>
       ) : null}
       {error ? <Alert color="red">{error}</Alert> : null}
-      {exportWarnings.length > 0 ? (
-        <Alert color="yellow" title="Export warnings">
-          <Stack gap={4}>
-            {exportWarnings.map((warning) => (
-              <Text key={warning} size="sm">
-                {warning}
-              </Text>
-            ))}
-          </Stack>
-        </Alert>
-      ) : null}
+      {exportWarnings.length > 0 ? <ExportWarningsAlert warnings={exportWarnings} /> : null}
       <Group gap="xs">
         <Button
           leftSection={<IconPackage size={ICON_SIZE_ACTION} stroke={ICON_STROKE} />}
