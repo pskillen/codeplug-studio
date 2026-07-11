@@ -28,9 +28,13 @@ export const anytoneExportAdapter: MultiFileExportAdapter = {
   resolveExportFileNames(assembled) {
     return resolveAnytoneExportFileNames(assembled);
   },
+  collectExportWarnings(assembled, options?: CpsExportOptions) {
+    const library = requireLibrary(assembled.library);
+    return collectAnytoneExportWarnings(assembled, library, options);
+  },
   serialiseFile(assembled, fileName, options?: CpsExportOptions) {
     const library = requireLibrary(assembled.library);
-    const warnings = collectAnytoneExportWarnings(assembled, library, options);
+    const warnings: string[] = [];
     const content = serialiseAnytoneFile(assembled, library, fileName, options, warnings);
     return { content, warnings };
   },

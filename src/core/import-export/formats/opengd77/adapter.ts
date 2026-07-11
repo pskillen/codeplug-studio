@@ -23,13 +23,15 @@ export const opengd77ExportAdapter: MultiFileExportAdapter = {
     expandRxGroupLists: false,
   },
   fileNames: OPENGD77_EXPORT_FILE_NAMES,
+  collectExportWarnings(assembled, options?: CpsExportOptions) {
+    return collectOpenGd77ExportWarnings(assembled, options);
+  },
   serialiseFile(assembled, fileName, options?: CpsExportOptions) {
-    const warnings = collectOpenGd77ExportWarnings(assembled, options);
     const files = serialiseOpenGd77Files(assembled, options);
     const content = files[fileName as OpenGd77ExportFileName];
     if (content === undefined) {
       throw new Error(`Unknown OpenGD77 export file: ${fileName}`);
     }
-    return { content, warnings };
+    return { content, warnings: [] };
   },
 };
