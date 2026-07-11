@@ -35,6 +35,7 @@ import type {
   ZoneGroupingLayout,
   ScanListsLayout,
 } from '@core/models/traitLayout.ts';
+import { validateChannelOverrideKey } from '@core/import-export/channelExpansion/channelOverrideKey.ts';
 import {
   libraryEntityIds,
   validateEntityRef,
@@ -941,7 +942,9 @@ function validateForeignKeys(library: Library, formatBuilds: FormatBuild[]): voi
     }
 
     for (const override of build.channelOverrides) {
-      if (!ids.channelIds.has(override.libraryEntityId)) {
+      try {
+        validateChannelOverrideKey(override.libraryEntityId, library);
+      } catch {
         throw new NativeYamlImportError(
           `Build channel override ${override.libraryEntityId} not found in library`,
         );

@@ -1,4 +1,6 @@
 import { describe, expect, it } from 'vitest';
+import { expansionWireKey } from '@core/import-export/channelExpansion/modeExportSuffix.ts';
+import { multiTalkGroupMemberWireKey } from '@core/import-export/channelExpansion/multiTalkGroup.ts';
 import { isSingleFileProjectExportAdapter } from '../../exportAdapter.ts';
 import { isSingleFileProjectImportAdapter } from '../../importAdapter.ts';
 import { getExportAdapter, getImportAdapter } from '../../registry.ts';
@@ -9,6 +11,8 @@ import {
   FIXTURE_CHILD_ZONE_ID,
   FIXTURE_PARENT_ZONE_ID,
   FIXTURE_PROJECT_ID,
+  FIXTURE_CHANNEL_B_ID,
+  FIXTURE_TG_ID,
   FIXTURE_TIMESTAMP,
   FIXTURE_ZONE_ID,
   glasgowPmrNestedAggregate,
@@ -101,6 +105,40 @@ describe('native-yaml round-trip smoke', () => {
       parsedBuild?.zoneOverrides.find((row) => row.libraryEntityId === FIXTURE_ZONE_ID)
         ?.forceInclude,
     ).toBe(true);
+  });
+
+  it('preserves composite channel override keys on round-trip', () => {
+    const aggregate = projectWithFormatBuildAggregate();
+    const build = aggregate.formatBuilds[0]!;
+    const expansionKey = expansionWireKey(FIXTURE_CHANNEL_B_ID, 'dmr');
+    const multiTalkGroupKey = multiTalkGroupMemberWireKey(FIXTURE_CHANNEL_B_ID, 'dmr', {
+      kind: 'talkGroup',
+      id: FIXTURE_TG_ID,
+    });
+    const withCompositeOverrides = {
+      ...aggregate,
+      formatBuilds: [
+        {
+          ...build,
+          exportSettings: { ...build.exportSettings, expandModes: true },
+          channelOverrides: [
+            ...build.channelOverrides,
+            { libraryEntityId: expansionKey, wireName: 'GB7GL-D' },
+            { libraryEntityId: multiTalkGroupKey, wireName: 'GB7GL-Scot' },
+          ],
+        },
+      ],
+    };
+
+    const parsed = parseProjectDocument(serialiseProject(withCompositeOverrides));
+    const parsedBuild = parsed.formatBuilds[0];
+    expect(
+      parsedBuild?.channelOverrides.find((row) => row.libraryEntityId === expansionKey)?.wireName,
+    ).toBe('GB7GL-D');
+    expect(
+      parsedBuild?.channelOverrides.find((row) => row.libraryEntityId === multiTalkGroupKey)
+        ?.wireName,
+    ).toBe('GB7GL-Scot');
   });
 
   it('serialises ssb mode with sideband on round-trip', () => {
