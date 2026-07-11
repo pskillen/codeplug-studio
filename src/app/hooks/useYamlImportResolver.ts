@@ -176,13 +176,16 @@ export function useYamlImportResolver(options: UseYamlImportResolverOptions = {}
 }
 
 export function useRefreshFromDrivePrompt() {
-  const { activeProject, refreshProjects } = useProjects();
+  const { activeProject, refreshProjects, switchProject } = useProjects();
   const { port, withDriveAuthRetry, connected } = useGoogleDrive();
   const [bannerOpen, setBannerOpen] = useState(false);
   const [diffLines, setDiffLines] = useState<string[]>([]);
   const [remoteYaml, setRemoteYaml] = useState<string | null>(null);
+  const [remoteProjectId, setRemoteProjectId] = useState<string | null>(null);
+  const [idMismatch, setIdMismatch] = useState(false);
   const [overwriteOpen, setOverwriteOpen] = useState(false);
   const [importing, setImporting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const dismissedRef = useRef<Set<string>>(new Set());
 
   const drive = activeProject?.interchange?.googleDrive;
@@ -221,6 +224,9 @@ export function useRefreshFromDrivePrompt() {
         if (cancelled) return;
         setDiffLines(lines);
         setRemoteYaml(content);
+        setRemoteProjectId(preview.projectId);
+        setIdMismatch(preview.projectId !== projectId);
+        setError(null);
         setBannerOpen(true);
       } catch {
         if (!cancelled) setBannerOpen(false);
@@ -231,23 +237,81 @@ export function useRefreshFromDrivePrompt() {
     };
   }, [activeProject, connected, drive, port, projectId, withDriveAuthRetry]);
 
+  async function recordDriveSync() {
+    if (!projectId || !drive) return;
+    const metadata = await withDriveAuthRetry(() => port.getFileMetadata(drive.fileId));
+    await recordProjectImportDestination(projectId, {
+      destination: 'googleDrive',
+      fileName: drive.fileName,
+      folderId: drive.folderId,
+      folderName: drive.folderName,
+      fileId: drive.fileId,
+      syncedAt: metadata.modifiedTime ?? new Date().toISOString(),
+    });
+  }
+
+  async function recordDriveSyncForProject(
+    targetProjectId: string,
+    source: { fileName: string; folderId: string; folderName?: string; fileId: string },
+    syncedAt?: string,
+  ) {
+    await recordProjectImportDestination(targetProjectId, {
+      destination: 'googleDrive',
+      fileName: source.fileName,
+      folderId: source.folderId,
+      folderName: source.folderName,
+      fileId: source.fileId,
+      syncedAt,
+    });
+  }
+
+  function closeRefreshUi() {
+    setBannerOpen(false);
+    setOverwriteOpen(false);
+    setError(null);
+  }
+
   async function confirmRefresh() {
     if (!projectId || !remoteYaml || !drive) return;
     setImporting(true);
+    setError(null);
     try {
-      await importProjectFromYaml(remoteYaml, { kind: 'replaceExisting', projectId });
-      const metadata = await withDriveAuthRetry(() => port.getFileMetadata(drive.fileId));
-      await recordProjectImportDestination(projectId, {
-        destination: 'googleDrive',
-        fileName: drive.fileName,
-        folderId: drive.folderId,
-        folderName: drive.folderName,
-        fileId: drive.fileId,
-        syncedAt: metadata.modifiedTime ?? new Date().toISOString(),
-      });
+      const mode = idMismatch
+        ? ({ kind: 'adoptRemote', projectId } as const)
+        : ({ kind: 'replaceExisting', projectId } as const);
+      await importProjectFromYaml(remoteYaml, mode);
+      await recordDriveSync();
       await refreshProjects();
-      setBannerOpen(false);
-      setOverwriteOpen(false);
+      closeRefreshUi();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setImporting(false);
+    }
+  }
+
+  async function confirmImportAsNew() {
+    if (!remoteYaml || !drive) return;
+    setImporting(true);
+    setError(null);
+    try {
+      const metadata = await withDriveAuthRetry(() => port.getFileMetadata(drive.fileId));
+      const result = await importProjectFromYaml(remoteYaml, { kind: 'createNew' });
+      await recordDriveSyncForProject(
+        result.projectId,
+        {
+          fileName: drive.fileName,
+          folderId: drive.folderId,
+          folderName: drive.folderName,
+          fileId: drive.fileId,
+        },
+        metadata.modifiedTime ?? new Date().toISOString(),
+      );
+      await refreshProjects();
+      switchProject(result.projectId);
+      closeRefreshUi();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
     } finally {
       setImporting(false);
     }
@@ -260,15 +324,31 @@ export function useRefreshFromDrivePrompt() {
     setBannerOpen(false);
   }
 
+  function openOverwrite() {
+    setError(null);
+    setOverwriteOpen(true);
+  }
+
+  function closeOverwrite() {
+    setOverwriteOpen(false);
+    setError(null);
+  }
+
   return {
     bannerOpen,
     diffLines,
     overwriteOpen,
     importing,
+    error,
+    idMismatch,
+    localProjectId: projectId ?? '',
+    remoteProjectId: remoteProjectId ?? '',
     setOverwriteOpen,
     dismissBanner,
-    openOverwrite: () => setOverwriteOpen(true),
+    openOverwrite,
+    closeOverwrite,
     confirmRefresh,
+    confirmImportAsNew,
     projectName: activeProject?.name ?? '',
   };
 }

@@ -8,10 +8,15 @@ export default function RefreshFromDriveBanner() {
     diffLines,
     overwriteOpen,
     importing,
-    setOverwriteOpen,
+    error,
+    idMismatch,
+    localProjectId,
+    remoteProjectId,
+    closeOverwrite,
     dismissBanner,
     openOverwrite,
     confirmRefresh,
+    confirmImportAsNew,
     projectName,
   } = useRefreshFromDrivePrompt();
 
@@ -21,9 +26,13 @@ export default function RefreshFromDriveBanner() {
 
   return (
     <>
-      <Alert color="blue" title="Newer copy on Google Drive" mb="sm">
+      <Alert color={idMismatch ? 'yellow' : 'blue'} title={idMismatch ? 'Drive file project mismatch' : 'Newer copy on Google Drive'} mb="sm">
         <Group justify="space-between" align="center" wrap="nowrap" gap="sm">
-          <span>A newer YAML file is available for this project.</span>
+          <span>
+            {idMismatch
+              ? 'A newer YAML file is linked on Drive, but its project id does not match this project.'
+              : 'A newer YAML file is available for this project.'}
+          </span>
           <Group gap="xs">
             <Button size="xs" variant="light" onClick={openOverwrite}>
               Refresh from Drive
@@ -36,12 +45,17 @@ export default function RefreshFromDriveBanner() {
       </Alert>
       <InterchangeOverwriteModal
         opened={overwriteOpen}
-        title="Refresh from Google Drive?"
+        title={idMismatch ? 'Refresh from Google Drive?' : 'Refresh from Google Drive?'}
         projectName={projectName}
         diffLines={diffLines}
         loading={importing}
-        onClose={() => setOverwriteOpen(false)}
+        error={error}
+        idMismatch={idMismatch}
+        localProjectId={localProjectId}
+        remoteProjectId={remoteProjectId}
+        onClose={closeOverwrite}
         onConfirm={() => void confirmRefresh()}
+        onImportAsNew={idMismatch ? () => void confirmImportAsNew() : undefined}
       />
     </>
   );
