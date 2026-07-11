@@ -187,9 +187,9 @@ Legacy `*Selections` arrays migrate to `*Overrides` on import.
 
 ### `BuildEntityOverride`
 
-| Field             | Type   | Notes                                                                    |
-| ----------------- | ------ | ------------------------------------------------------------------------ |
-| `libraryEntityId` | string | Required — plain channel UUID, or composite expansion key (see below)   |
+| Field             | Type    | Notes                                                                    |
+| ----------------- | ------- | ------------------------------------------------------------------------ |
+| `libraryEntityId` | string  | Required — plain channel UUID, or composite expansion key (see below)    |
 | `excluded`        | boolean | Omit entity from this build's export                                     |
 | `forceInclude`    | boolean | Zone overrides only — export standalone despite library `omitFromExport` |
 | `wireName`        | string  | CPS wire string override                                                 |
@@ -199,11 +199,11 @@ Sparse storage: omit keys when unset at export.
 
 **Channel override `libraryEntityId` shapes** (build `channelOverrides` only):
 
-| Shape | Example | When used |
-| ----- | ------- | --------- |
-| Plain channel UUID | `22222222-2222-4222-8222-222222222222` | Default wire-name override for the channel |
-| Multi-mode expansion | `{channelId}:-D` | Per-mode row when `exportSettings.expandModes` is true (`-D`, `-F`, `-DS`, …) |
-| Multi-talkgroup expansion | `{channelId}:-D:talkGroup:{talkGroupId}` | Per RX-list member row when multi-talkgroup expansion is active |
+| Shape                     | Example                                  | When used                                                                     |
+| ------------------------- | ---------------------------------------- | ----------------------------------------------------------------------------- |
+| Plain channel UUID        | `22222222-2222-4222-8222-222222222222`   | Default wire-name override for the channel                                    |
+| Multi-mode expansion      | `{channelId}:-D`                         | Per-mode row when `exportSettings.expandModes` is true (`-D`, `-F`, `-DS`, …) |
+| Multi-talkgroup expansion | `{channelId}:-D:talkGroup:{talkGroupId}` | Per RX-list member row when multi-talkgroup expansion is active               |
 
 Import validates that the underlying channel (and talk group ref, when present) exists in the library. Other override arrays (`zoneOverrides`, `talkGroupOverrides`, …) use plain entity UUIDs only.
 

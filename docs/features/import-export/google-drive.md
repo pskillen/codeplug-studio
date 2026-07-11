@@ -135,17 +135,17 @@ When OAuth is not configured, click opens `GoogleDriveNotConfiguredModal` with *
 
 ## Error states
 
-| Situation             | UI behaviour                                                                                                                      |
-| --------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
-| Not configured        | Drive action buttons greyed; click → modal → Settings (OAuth client setup)                                                        |
-| Not connected         | Drive action buttons greyed; click → GIS OAuth → Drive browser on success                                                         |
-| Sign-in cancelled     | No browser open; no error alert                                                                                                   |
-| Connect failed        | Inline red alert on the action button                                                                                             |
-| Auth expired          | Session cleared; greyed CTAs + **Reconnect** inline; `DriveSessionBanner`; Settings **Reconnect** — no manual Disconnect required |
-| Network / API failure | Red alert with Drive error message                                                                                                |
-| Duplicate folder name | Drive API conflict message                                                                                                        |
+| Situation                   | UI behaviour                                                                                                                                                                                                     |
+| --------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Not configured              | Drive action buttons greyed; click → modal → Settings (OAuth client setup)                                                                                                                                       |
+| Not connected               | Drive action buttons greyed; click → GIS OAuth → Drive browser on success                                                                                                                                        |
+| Sign-in cancelled           | No browser open; no error alert                                                                                                                                                                                  |
+| Connect failed              | Inline red alert on the action button                                                                                                                                                                            |
+| Auth expired                | Session cleared; greyed CTAs + **Reconnect** inline; `DriveSessionBanner`; Settings **Reconnect** — no manual Disconnect required                                                                                |
+| Network / API failure       | Red alert with Drive error message                                                                                                                                                                               |
+| Duplicate folder name       | Drive API conflict message                                                                                                                                                                                       |
 | Refresh project id mismatch | Yellow **Drive file project mismatch** banner; modal offers **Replace local content** (adopt remote into local id) or **Import as new project** ([#334](https://github.com/pskillen/codeplug-studio/issues/334)) |
-| Refresh import failure | Red alert in overwrite modal; modal stays open ([#334](https://github.com/pskillen/codeplug-studio/issues/334))                  |
+| Refresh import failure      | Red alert in overwrite modal; modal stays open ([#334](https://github.com/pskillen/codeplug-studio/issues/334))                                                                                                  |
 
 ## Implementation status
 

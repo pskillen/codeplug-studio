@@ -1,9 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { fullLibraryAggregate } from '../formats/native-yaml/testFixtures.ts';
-import {
-  parseChannelOverrideKey,
-  validateChannelOverrideKey,
-} from './channelOverrideKey.ts';
+import { parseChannelOverrideKey, validateChannelOverrideKey } from './channelOverrideKey.ts';
 import { expansionWireKey } from './modeExportSuffix.ts';
 import { multiTalkGroupMemberWireKey } from './multiTalkGroup.ts';
 import { FIXTURE_CHANNEL_B_ID, FIXTURE_TG_ID } from '../formats/native-yaml/testFixtures.ts';

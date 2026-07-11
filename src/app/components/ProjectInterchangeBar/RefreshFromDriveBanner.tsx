@@ -26,7 +26,11 @@ export default function RefreshFromDriveBanner() {
 
   return (
     <>
-      <Alert color={idMismatch ? 'yellow' : 'blue'} title={idMismatch ? 'Drive file project mismatch' : 'Newer copy on Google Drive'} mb="sm">
+      <Alert
+        color={idMismatch ? 'yellow' : 'blue'}
+        title={idMismatch ? 'Drive file project mismatch' : 'Newer copy on Google Drive'}
+        mb="sm"
+      >
         <Group justify="space-between" align="center" wrap="nowrap" gap="sm">
           <span>
             {idMismatch
