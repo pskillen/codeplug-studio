@@ -22,11 +22,20 @@ export interface QueryRouteResult {
   listings: RepeaterListing[];
 }
 
+export type ListingGeometryFilter = 'simplex' | 'split' | 'all';
+
 export interface SearchFilters {
   operationalOnly?: boolean;
   townSubstring?: string;
-  band?: string;
+  bands?: string[];
+  geometry?: ListingGeometryFilter;
   modes?: ChannelMode[];
+}
+
+function listingIsSimplex(listing: RepeaterListing): boolean {
+  const { rxFrequencyHz, txFrequencyHz } = listing;
+  if (rxFrequencyHz == null || txFrequencyHz == null) return false;
+  return rxFrequencyHz === txFrequencyHz;
 }
 
 export function detectQueryKind(query: string): QueryKind {
@@ -47,9 +56,14 @@ export function filterListings(
   if (filters.operationalOnly) {
     result = result.filter((l) => l.status.toUpperCase() === 'OPERATIONAL');
   }
-  if (filters.band?.trim()) {
-    const band = filters.band.trim().toUpperCase();
-    result = result.filter((l) => l.band.toUpperCase() === band);
+  if (filters.bands?.length) {
+    const wanted = new Set(filters.bands.map((band) => band.trim().toUpperCase()).filter(Boolean));
+    result = result.filter((l) => wanted.has(l.band.toUpperCase()));
+  }
+  if (filters.geometry === 'simplex') {
+    result = result.filter(listingIsSimplex);
+  } else if (filters.geometry === 'split') {
+    result = result.filter((l) => !listingIsSimplex(l));
   }
   if (filters.townSubstring?.trim()) {
     const needle = filters.townSubstring.trim().toUpperCase();

@@ -53,6 +53,15 @@ const dmrListing: RepeaterListing = {
   band: '70CM',
 };
 
+const simplexListing: RepeaterListing = {
+  ...sampleListing,
+  remoteId: '4',
+  callsign: 'GB3SX',
+  name: 'SIMPLEX',
+  rxFrequencyHz: 145_500_000,
+  txFrequencyHz: 145_500_000,
+};
+
 afterEach(() => {
   vi.clearAllMocks();
 });
@@ -89,8 +98,37 @@ describe('filterListings', () => {
   });
 
   it('filters by band', () => {
-    expect(filterListings(listings, { band: '2M' })).toHaveLength(2);
-    expect(filterListings(listings, { band: '70CM' })).toHaveLength(0);
+    expect(filterListings(listings, { bands: ['2M'] })).toHaveLength(2);
+    expect(filterListings(listings, { bands: ['70CM'] })).toHaveLength(0);
+  });
+
+  it('filters by multiple bands with OR semantics', () => {
+    const withDmr = [...listings, dmrListing];
+    expect(filterListings(withDmr, { bands: ['2M', '70CM'] })).toHaveLength(3);
+    expect(filterListings(withDmr, { bands: ['70CM'] })).toHaveLength(1);
+  });
+
+  it('filters by geometry simplex vs split', () => {
+    const withSimplex = [...listings, simplexListing];
+    expect(filterListings(withSimplex, { geometry: 'simplex' })).toHaveLength(1);
+    expect(filterListings(withSimplex, { geometry: 'simplex' })[0]?.callsign).toBe('GB3SX');
+    expect(filterListings(withSimplex, { geometry: 'split' })).toHaveLength(2);
+    expect(filterListings(withSimplex, { geometry: 'all' })).toHaveLength(3);
+  });
+
+  it('excludes null-frequency listings from simplex geometry filter', () => {
+    const nullFreq: RepeaterListing = {
+      ...simplexListing,
+      remoteId: '5',
+      callsign: 'GB3NF',
+      rxFrequencyHz: null,
+      txFrequencyHz: null,
+    };
+    expect(filterListings([nullFreq, simplexListing], { geometry: 'simplex' })).toHaveLength(1);
+    expect(filterListings([nullFreq, simplexListing], { geometry: 'split' })).toHaveLength(1);
+    expect(filterListings([nullFreq, simplexListing], { geometry: 'split' })[0]?.callsign).toBe(
+      'GB3NF',
+    );
   });
 
   it('filters by mode', () => {
@@ -102,8 +140,27 @@ describe('filterListings', () => {
 
   it('filters by band and mode together', () => {
     const withDmr = [...listings, dmrListing];
-    expect(filterListings(withDmr, { band: '70CM', modes: ['dmr'] })).toHaveLength(1);
-    expect(filterListings(withDmr, { band: '2M', modes: ['dmr'] })).toHaveLength(0);
+    expect(filterListings(withDmr, { bands: ['70CM'], modes: ['dmr'] })).toHaveLength(1);
+    expect(filterListings(withDmr, { bands: ['2M'], modes: ['dmr'] })).toHaveLength(0);
+  });
+
+  it('filters by band, geometry, mode, and operational status together', () => {
+    const withDmr = [...listings, dmrListing, simplexListing];
+    expect(
+      filterListings(withDmr, {
+        operationalOnly: true,
+        bands: ['2M'],
+        geometry: 'split',
+        modes: ['fm'],
+      }),
+    ).toHaveLength(1);
+    expect(
+      filterListings(withDmr, {
+        operationalOnly: true,
+        bands: ['2M'],
+        geometry: 'simplex',
+      }),
+    ).toHaveLength(1);
   });
 
   it('filters by mode and operational status', () => {
@@ -164,7 +221,7 @@ describe('searchUkRepeaters', () => {
   it('applies band and mode filters after callsign fetch without band API', async () => {
     const withDmr = [sampleListing, dmrListing];
     vi.mocked(searchUkRepeatersByCallsign).mockResolvedValue(withDmr);
-    const result = await searchUkRepeaters('GB3', { band: '2M', modes: ['dmr'] });
+    const result = await searchUkRepeaters('GB3', { bands: ['2M'], modes: ['dmr'] });
     expect(result.kind).toBe('callsign');
     expect(result.listings).toHaveLength(0);
     expect(searchUkRepeatersByBand).not.toHaveBeenCalled();

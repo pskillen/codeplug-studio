@@ -78,7 +78,8 @@ describe('filterIrtsListings', () => {
   });
 
   it('filters by band and mode', () => {
-    expect(filterIrtsListings(listings, { band: '2M' })).toHaveLength(1);
+    expect(filterIrtsListings(listings, { bands: ['2M'] })).toHaveLength(1);
+    expect(filterIrtsListings(listings, { bands: ['2M', '70CM'] })).toHaveLength(3);
     expect(filterIrtsListings(listings, { modes: ['dmr'] })).toHaveLength(2);
   });
 });
