@@ -74,7 +74,7 @@ Implementation: `src/integrations/cloud/googleDrive.ts`.
 `ProjectInterchangeBar` (above route content in `AppLayout`):
 
 - Shows **Google Drive · {fileName}** or **Local file · {fileName}** from `ProjectMeta.interchange`
-- **Save to Drive** — enabled when local edits are newer than the last portable sync; overwrites the remembered Drive file
+- **Save to Drive** — enabled when local edits are newer than the last portable sync; assesses linked file before overwrite ([#335](https://github.com/pskillen/codeplug-studio/issues/335))
 - Dismissible **browser-only** warning when the project has no interchange destination
 - `RefreshFromDriveBanner` — non-blocking prompt when Drive `modifiedTime` is newer than local `exportedAt`
 
@@ -106,8 +106,9 @@ Implementation: `src/integrations/cloud/googleDrive.ts`.
 
 1. Opens browser at `ProjectMeta.interchange.googleDrive.folderId` or browse prefs
 2. Pre-fills filename from `suggestExportDestination(meta, 'googleDrive')`
-3. If a same-named YAML exists in the folder → **overwrite confirm** modal
-4. On success: writes file, records `ProjectMeta.interchange.googleDrive`, refreshes browse prefs
+3. If a same-named YAML exists in the folder → **overwrite confirm** modal (filename only)
+4. Before overwriting an existing file → **Drive save conflict** modal when remote is newer or `project.id` differs ([#335](https://github.com/pskillen/codeplug-studio/issues/335))
+5. On success: writes file, records `ProjectMeta.interchange.googleDrive`, refreshes browse prefs
 
 ### Import workflow
 
@@ -132,6 +133,7 @@ When OAuth is not configured, click opens `GoogleDriveNotConfiguredModal` with *
 | `ProjectInterchangeBar`         | Source label + Save to Drive in app chrome                |
 | `RefreshFromDriveBanner`        | Newer remote YAML available — optional refresh            |
 | `InterchangeOverwriteModal`     | Overwrite / adopt-remote with diff summary                |
+| `DriveSaveConflictModal`        | Pre-save conflict when remote is newer or id mismatches   |
 
 ## Error states
 
@@ -146,6 +148,9 @@ When OAuth is not configured, click opens `GoogleDriveNotConfiguredModal` with *
 | Duplicate folder name       | Drive API conflict message                                                                                                                                                                                       |
 | Refresh project id mismatch | Yellow **Drive file project mismatch** banner; modal offers **Replace local content** (adopt remote into local id) or **Import as new project** ([#334](https://github.com/pskillen/codeplug-studio/issues/334)) |
 | Refresh import failure      | Red alert in overwrite modal; modal stays open ([#334](https://github.com/pskillen/codeplug-studio/issues/334))                                                                                                  |
+| Save remote newer           | **Drive save conflict** modal before overwrite — **Refresh from Drive**, **Save anyway**, **Save as new file**, or Cancel ([#335](https://github.com/pskillen/codeplug-studio/issues/335))                       |
+| Save project id mismatch    | Same modal — shows local vs remote `project.id` and diff; no silent overwrite of another project's file ([#335](https://github.com/pskillen/codeplug-studio/issues/335))                                         |
+| Save failure                | Red alert in conflict modal or inline on the Save bar                                                                                                                                                            |
 
 ## Implementation status
 
@@ -161,6 +166,7 @@ When OAuth is not configured, click opens `GoogleDriveNotConfiguredModal` with *
 | UUID-match import overwrite  | Shipped | [#285](https://github.com/pskillen/codeplug-studio/issues/285)                            |
 | Refresh from Drive prompt    | Shipped | [#285](https://github.com/pskillen/codeplug-studio/issues/285)                            |
 | Refresh id-mismatch override | Shipped | [#334](https://github.com/pskillen/codeplug-studio/issues/334)                            |
+| Save conflict detection      | Shipped | [#335](https://github.com/pskillen/codeplug-studio/issues/335)                            |
 
 ## Manual verify checklist
 
@@ -173,6 +179,8 @@ When OAuth is not configured, click opens `GoogleDriveNotConfiguredModal` with *
 - [ ] Switch project with newer Drive file → **Refresh from Drive** banner
 - [ ] Linked Drive file with mismatched `project.id` → mismatch banner → adopt or import as new
 - [ ] Failed refresh import → error shown in modal (not console-only)
+- [ ] Machine B saves → Machine A **Save to Drive** → conflict modal (not silent overwrite)
+- [ ] Linked Drive file with mismatched `project.id` → **Save to Drive** → UUID mismatch warning before write
 - [ ] Save to Drive → re-save defaults to last file; overwrite requires confirm
 - [ ] Export YAML → import on fresh browser → `interchange.googleDrive` preserved in project meta
 - [ ] Debug `/debug/local-storage` masks Drive access token

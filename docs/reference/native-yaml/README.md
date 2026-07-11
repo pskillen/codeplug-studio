@@ -61,13 +61,14 @@ Optional portable destination memory — updated on import **or** export. Omitte
 
 **`googleDrive`**
 
-| Field        | Type              | Required | Notes                        |
-| ------------ | ----------------- | -------- | ---------------------------- |
-| `folderId`   | string            | yes      |                              |
-| `folderName` | string            | no       |                              |
-| `fileId`     | string            | yes      |                              |
-| `fileName`   | string            | yes      |                              |
-| `exportedAt` | string (ISO 8601) | yes      | Last portable sync timestamp |
+| Field             | Type              | Required | Notes                                                                        |
+| ----------------- | ----------------- | -------- | ---------------------------------------------------------------------------- |
+| `folderId`        | string            | yes      |                                                                              |
+| `folderName`      | string            | no       |                                                                              |
+| `fileId`          | string            | yes      |                                                                              |
+| `fileName`        | string            | yes      |                                                                              |
+| `exportedAt`      | string (ISO 8601) | yes      | Last portable sync timestamp                                                 |
+| `remoteProjectId` | string            | no       | Last known `project.id` in linked file at sync (IndexedDB only; not in YAML) |
 
 CPS format destination keys (e.g. `opengd77`) are reserved for Phase 4+.
 

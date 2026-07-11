@@ -39,7 +39,13 @@ export function suggestExportDestination(
 export function recordExportDestination(
   meta: ProjectMeta,
   destination: ExportDestinationKind,
-  details: { fileName: string; folderId?: string; folderName?: string; fileId?: string },
+  details: {
+    fileName: string;
+    folderId?: string;
+    folderName?: string;
+    fileId?: string;
+    remoteProjectId?: string;
+  },
   exportedAt: string = isoNow(),
 ): ProjectMeta {
   const interchange: ProjectInterchange = { ...meta.interchange };
@@ -59,6 +65,7 @@ export function recordExportDestination(
       fileId: details.fileId,
       fileName: details.fileName,
       exportedAt,
+      ...(details.remoteProjectId ? { remoteProjectId: details.remoteProjectId } : {}),
     };
   }
 
@@ -69,7 +76,13 @@ export function recordExportDestination(
 export function recordImportDestination(
   meta: ProjectMeta,
   destination: ExportDestinationKind,
-  details: { fileName: string; folderId?: string; folderName?: string; fileId?: string },
+  details: {
+    fileName: string;
+    folderId?: string;
+    folderName?: string;
+    fileId?: string;
+    remoteProjectId?: string;
+  },
   syncedAt: string = isoNow(),
 ): ProjectMeta {
   return recordExportDestination(meta, destination, details, syncedAt);

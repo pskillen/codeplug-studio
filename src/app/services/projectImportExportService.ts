@@ -46,6 +46,7 @@ export interface RecordProjectImportDestinationInput {
   folderName?: string;
   fileId?: string;
   syncedAt?: string;
+  remoteProjectId?: string;
 }
 
 export async function recordProjectImportDestination(
@@ -64,6 +65,7 @@ export async function recordProjectImportDestination(
       folderId: details.folderId,
       folderName: details.folderName,
       fileId: details.fileId,
+      remoteProjectId: details.remoteProjectId,
     },
     details.syncedAt,
   );
