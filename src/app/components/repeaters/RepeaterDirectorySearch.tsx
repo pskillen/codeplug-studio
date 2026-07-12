@@ -22,6 +22,12 @@ import { IconSearch } from '@tabler/icons-react';
 import type { Channel } from '@core/models/library.ts';
 import { coordsToLocator } from '@core/domain/maidenhead.ts';
 import { toTitleCase } from '@core/domain/titleCase.ts';
+import { reverseGeocode, GeocodeError } from '@integrations/geocode/index.ts';
+import {
+  normaliseRepeaterBookCountry,
+  repeaterBookRegionForCountry,
+  REPEATERBOOK_COUNTRY_NAMES,
+} from '@integrations/repeaters/repeaterbook/countryNames.ts';
 import {
   repeaterListingToChannel,
   type BrandMeisterTalkGroupLookupProgress,
@@ -31,6 +37,7 @@ import {
   type RepeaterSource,
 } from '@integrations/repeaters/index.ts';
 import { useRepeaterDirectorySearch } from '../../hooks/useRepeaterDirectorySearch.ts';
+import { useMapSettings } from '../../hooks/useMapSettings.ts';
 import { isSimplex } from '../../lib/channels.ts';
 import { ICON_SIZE_NAV, ICON_STROKE } from '../../lib/iconSizes.ts';
 import { isOperationalStatus, queryKindHint } from '../../lib/repeaters.ts';
@@ -138,6 +145,7 @@ export default function RepeaterDirectorySearch({
   const { activeProjectId } = useProjects();
   const { library } = useLibrary();
   const search = useRepeaterDirectorySearch(source);
+  const { mapboxToken } = useMapSettings();
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [added, setAdded] = useState<Set<string>>(new Set());
   const [addedChannelIds, setAddedChannelIds] = useState<Record<string, string>>({});
@@ -149,6 +157,7 @@ export default function RepeaterDirectorySearch({
   const [adding, setAdding] = useState(false);
   const [tgLookupProgress, setTgLookupProgress] =
     useState<BrandMeisterTalkGroupLookupProgress | null>(null);
+  const [locationHint, setLocationHint] = useState<string | null>(null);
 
   const isUk = source === 'ukrepeater';
   const isBrandmeister = source === 'brandmeister';
@@ -320,6 +329,39 @@ export default function RepeaterDirectorySearch({
 
   async function handleUseMyLocation(lat: number, lon: number) {
     const locator = coordsToLocator(lat, lon, 4);
+    if (isRepeaterbook) {
+      search.setLocatorFilter(locator);
+      setLocationHint(null);
+      try {
+        const reverse = await reverseGeocode(
+          { lat, lon },
+          { mapboxToken: mapboxToken.trim() || undefined },
+        );
+        const country = normaliseRepeaterBookCountry(reverse?.country);
+        if (country) {
+          search.setCountry(country);
+          search.setRegion(repeaterBookRegionForCountry(country));
+          setLocationHint(
+            reverse?.label
+              ? `Near ${reverse.label} — locator filter ${locator}`
+              : `Locator ${locator}`,
+          );
+          await search.search();
+          return;
+        }
+        setLocationHint(
+          `Locator filter set to ${locator}. Pick a country from the list and search again.`,
+        );
+      } catch (err) {
+        setLocationHint(
+          err instanceof GeocodeError
+            ? `${err.message} Locator filter set to ${locator}.`
+            : `Could not look up country. Locator filter set to ${locator}.`,
+        );
+      }
+      return;
+    }
+
     search.setQuery(locator);
     await search.search(locator);
   }
@@ -381,16 +423,38 @@ export default function RepeaterDirectorySearch({
                   style={{ minWidth: 160 }}
                 />
               ) : null}
-              <TextInput
-                label={search.region === 'row' ? 'Country' : 'Country (optional)'}
-                placeholder={
-                  search.region === 'row' ? 'e.g. Switzerland' : 'United States or Canada'
-                }
-                value={search.country}
-                onChange={(e) => search.setCountry(e.currentTarget.value)}
-                style={{ flex: 1, minWidth: 180 }}
-              />
+              {capabilities.countryAutocomplete ? (
+                <Autocomplete
+                  label={search.region === 'row' ? 'Country' : 'Country (optional)'}
+                  placeholder={
+                    search.region === 'row'
+                      ? 'Start typing — e.g. United Kingdom'
+                      : 'United States or Canada'
+                  }
+                  data={[...REPEATERBOOK_COUNTRY_NAMES]}
+                  value={search.country}
+                  onChange={search.setCountry}
+                  limit={20}
+                  style={{ flex: 1, minWidth: 220 }}
+                />
+              ) : (
+                <TextInput
+                  label={search.region === 'row' ? 'Country' : 'Country (optional)'}
+                  placeholder={
+                    search.region === 'row' ? 'e.g. Switzerland' : 'United States or Canada'
+                  }
+                  value={search.country}
+                  onChange={(e) => search.setCountry(e.currentTarget.value)}
+                  style={{ flex: 1, minWidth: 180 }}
+                />
+              )}
             </Group>
+          ) : null}
+
+          {locationHint ? (
+            <Text size="sm" c="dimmed">
+              {locationHint}
+            </Text>
           ) : null}
 
           {capabilities.locatorFilter ? (

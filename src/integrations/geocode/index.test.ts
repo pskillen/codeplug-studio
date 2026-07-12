@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { GeocodeError, geocodeQuery } from './index.ts';
+import { GeocodeError, geocodeQuery, reverseGeocode } from './index.ts';
 
 afterEach(() => {
   vi.restoreAllMocks();
@@ -64,5 +64,32 @@ describe('geocodeQuery', () => {
     await expect(
       geocodeQuery('Glasgow', { provider: 'mapbox', mapboxToken: 'pk.test' }),
     ).rejects.toBeInstanceOf(GeocodeError);
+  });
+});
+
+describe('reverseGeocode', () => {
+  it('returns Photon country on reverse lookup', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({
+          features: [
+            {
+              geometry: { coordinates: [-0.1, 51.5] },
+              properties: {
+                name: 'London',
+                city: 'London',
+                country: 'United Kingdom',
+              },
+            },
+          ],
+        }),
+      }),
+    );
+
+    const result = await reverseGeocode({ lat: 51.5, lon: -0.1 }, { provider: 'photon' });
+    expect(result?.country).toBe('United Kingdom');
+    expect(result?.label).toContain('United Kingdom');
   });
 });
