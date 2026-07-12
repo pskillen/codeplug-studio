@@ -1,9 +1,5 @@
 import { RepeaterDirectoryError, type RepeaterListing } from '../types.ts';
-import {
-  REPEATERBOOK_EXPORT_NA_URL,
-  REPEATERBOOK_EXPORT_ROW_URL,
-  REPEATERBOOK_USER_AGENT,
-} from './constants.ts';
+import { REPEATERBOOK_EXPORT_PROXY_PATH } from './constants.ts';
 import { parseRepeaterBookListings } from './parseListing.ts';
 import {
   readRepeaterBookSessionCache,
@@ -26,6 +22,7 @@ const ERROR_MESSAGES: Record<string, string> = {
   auth_scope_denied: 'RepeaterBook token is not approved for this region — check your scopes.',
   ua_mismatch: 'RepeaterBook rejected the request User-Agent — report this to Codeplug Studio.',
   rate_limited: 'RepeaterBook rate limit reached — wait before searching again.',
+  origin_forbidden: 'Request not allowed from this origin.',
 };
 
 function tokenPrefix(token: string): string {
@@ -74,7 +71,6 @@ export async function fetchRepeaterBookExport(
     response = await fetch(url, {
       headers: {
         'X-RB-App-Token': appToken,
-        'User-Agent': REPEATERBOOK_USER_AGENT,
         Accept: 'application/json',
       },
     });
@@ -82,6 +78,10 @@ export async function fetchRepeaterBookExport(
     throw new RepeaterDirectoryError(
       'Could not reach RepeaterBook — check your network connection.',
     );
+  }
+
+  if (response.status === 403) {
+    throw new RepeaterDirectoryError(ERROR_MESSAGES.origin_forbidden!);
   }
 
   const parsed = (await parseJsonResponse(response)) as RepeaterBookErrorBody & {
@@ -107,14 +107,13 @@ export function buildRepeaterBookExportUrl(
   region: 'na' | 'row',
   params: Record<string, string>,
 ): string {
-  const base = region === 'na' ? REPEATERBOOK_EXPORT_NA_URL : REPEATERBOOK_EXPORT_ROW_URL;
   const search = new URLSearchParams();
+  search.set('region', region);
   for (const [key, value] of Object.entries(params)) {
     const trimmed = value.trim();
     if (trimmed) search.set(key, trimmed);
   }
-  const query = search.toString();
-  return query ? `${base}?${query}` : base;
+  return `${REPEATERBOOK_EXPORT_PROXY_PATH}?${search.toString()}`;
 }
 
 export async function searchRepeaterBookByCallsign(

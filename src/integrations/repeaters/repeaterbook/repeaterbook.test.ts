@@ -7,7 +7,7 @@ import { parseRepeaterBookModes, isRepeaterBookOperational } from './modeMapping
 import { filterRepeaterBookListings } from './queryRouter.ts';
 import { buildRepeaterBookExportUrl, fetchRepeaterBookExport } from './repeaterbookClient.ts';
 import { clearRepeaterBookSessionCache } from './sessionCache.ts';
-import { REPEATERBOOK_USER_AGENT } from './constants.ts';
+import { REPEATERBOOK_EXPORT_PROXY_PATH } from './constants.ts';
 
 const fixtureDir = join(dirname(fileURLToPath(import.meta.url)), '../__fixtures__/repeaterbook');
 
@@ -65,16 +65,18 @@ describe('filterRepeaterBookListings', () => {
 });
 
 describe('buildRepeaterBookExportUrl', () => {
-  it('builds NA state and callsign query', () => {
+  it('builds NA proxy URL with region and state query', () => {
     const url = buildRepeaterBookExportUrl('na', { state_id: '06', callsign: 'W6%' });
-    expect(url).toContain('export.php');
+    expect(url.startsWith(REPEATERBOOK_EXPORT_PROXY_PATH)).toBe(true);
+    expect(url).toContain('region=na');
     expect(url).toContain('state_id=06');
     expect(url).toContain('callsign=W6%25');
   });
 
-  it('builds ROW country query', () => {
+  it('builds ROW proxy URL with region and country query', () => {
     const url = buildRepeaterBookExportUrl('row', { country: 'Switzerland' });
-    expect(url).toContain('exportROW.php');
+    expect(url.startsWith(REPEATERBOOK_EXPORT_PROXY_PATH)).toBe(true);
+    expect(url).toContain('region=row');
     expect(url).toContain('country=Switzerland');
   });
 });
@@ -114,14 +116,24 @@ describe('fetchRepeaterBookExport', () => {
       .mockResolvedValue(new Response(JSON.stringify(body), { status: 200 }));
     vi.stubGlobal('fetch', fetchMock);
 
-    const url = 'https://www.repeaterbook.com/api/export.php?callsign=W6TEST';
+    const url = '/api/repeaterbook/export?region=na&callsign=W6TEST';
     const first = await fetchRepeaterBookExport(url, 'rbuapp_testtoken');
     const second = await fetchRepeaterBookExport(url, 'rbuapp_testtoken');
 
     expect(first).toHaveLength(1);
     expect(second).toHaveLength(1);
     expect(fetchMock).toHaveBeenCalledTimes(1);
-    expect(fetchMock.mock.calls[0]?.[1]?.headers?.['User-Agent']).toBe(REPEATERBOOK_USER_AGENT);
+    expect(fetchMock.mock.calls[0]?.[1]?.headers?.['X-RB-App-Token']).toBe('rbuapp_testtoken');
+    expect(fetchMock.mock.calls[0]?.[1]?.headers?.['User-Agent']).toBeUndefined();
+  });
+
+  it('surfaces origin gate 403', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response('Forbidden', { status: 403 })));
+    await expect(
+      fetchRepeaterBookExport('/api/repeaterbook/export?region=na', 'rbuapp_test'),
+    ).rejects.toMatchObject({
+      message: expect.stringContaining('not allowed from this origin'),
+    });
   });
 
   it('surfaces 429 rate limit', async () => {
