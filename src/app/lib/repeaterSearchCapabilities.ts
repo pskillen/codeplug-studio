@@ -10,6 +10,7 @@ export interface RepeaterSearchCapabilities {
   useMyLocation: boolean;
   locatorColumn: boolean;
   locationLabel: 'Town' | 'City';
+  regionSelector: boolean;
 }
 
 export function repeaterSearchCapabilities(source: RepeaterSource): RepeaterSearchCapabilities {
@@ -24,6 +25,7 @@ export function repeaterSearchCapabilities(source: RepeaterSource): RepeaterSear
       useMyLocation: true,
       locatorColumn: true,
       locationLabel: 'Town',
+      regionSelector: false,
     };
   }
   if (source === 'irts') {
@@ -37,6 +39,21 @@ export function repeaterSearchCapabilities(source: RepeaterSource): RepeaterSear
       useMyLocation: false,
       locatorColumn: false,
       locationLabel: 'City',
+      regionSelector: false,
+    };
+  }
+  if (source === 'repeaterbook') {
+    return {
+      unifiedQuery: false,
+      bandFilter: true,
+      modeFilter: true,
+      geometryFilter: true,
+      operationalOnly: true,
+      titleCaseNames: true,
+      useMyLocation: false,
+      locatorColumn: false,
+      locationLabel: 'City',
+      regionSelector: true,
     };
   }
   return {
@@ -49,5 +66,6 @@ export function repeaterSearchCapabilities(source: RepeaterSource): RepeaterSear
     useMyLocation: false,
     locatorColumn: false,
     locationLabel: 'City',
+    regionSelector: false,
   };
 }

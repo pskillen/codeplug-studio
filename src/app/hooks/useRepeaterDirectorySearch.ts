@@ -6,14 +6,18 @@ import {
   fetchIrtsRepeaters,
   searchBrandmeisterByCallsign,
   searchIrtsCatalogue,
+  searchRepeaterBook,
   searchUkRepeaters,
   type ListingGeometryFilter,
   type QueryKind,
+  type RepeaterBookRegion,
   type RepeaterListing,
   type RepeaterSource,
 } from '@integrations/repeaters/index.ts';
+import { loadRepeaterBookToken } from '@integrations/preferences/index.ts';
 import { bandFromWireLabel } from '../lib/bands.ts';
 import { useMapSettings } from './useMapSettings.ts';
+import { useRepeaterBookSettings } from './useRepeaterBookSettings.ts';
 
 export interface RepeaterDirectorySearchState {
   query: string;
@@ -43,6 +47,7 @@ function narrowFilterHint(
 
 export function useRepeaterDirectorySearch(source: RepeaterSource) {
   const { mapboxToken } = useMapSettings();
+  const { hasToken: hasRepeaterBookToken } = useRepeaterBookSettings();
   const [query, setQuery] = useState('');
   const [operationalOnly, setOperationalOnly] = useState(true);
   const [bandFilter, setBandFilter] = useState<string[]>([]);
@@ -53,6 +58,9 @@ export function useRepeaterDirectorySearch(source: RepeaterSource) {
   const [error, setError] = useState<string | null>(null);
   const [kind, setKind] = useState<QueryKind | null>(null);
   const [listings, setListings] = useState<RepeaterListing[]>([]);
+  const [region, setRegion] = useState<RepeaterBookRegion>('na');
+  const [stateId, setStateId] = useState('');
+  const [country, setCountry] = useState('');
 
   const search = useCallback(
     async (queryOverride?: string) => {
@@ -91,6 +99,36 @@ export function useRepeaterDirectorySearch(source: RepeaterSource) {
                 ? `No repeaters matched your search in the IRTS catalogue.${narrow}`
                 : `No repeaters in the IRTS catalogue.${narrow}`,
             );
+          }
+          return;
+        }
+
+        if (source === 'repeaterbook') {
+          const token = loadRepeaterBookToken();
+          if (!token.trim()) {
+            setError('RepeaterBook token required.');
+            return;
+          }
+          const results = await searchRepeaterBook(
+            {
+              region,
+              token,
+              callsign: trimmed || undefined,
+              stateId: region === 'na' ? stateId : undefined,
+              country: country || undefined,
+            },
+            {
+              operationalOnly,
+              bands: bandFilter.length ? bandFilter : undefined,
+              geometry: geometryFilter,
+              modes: modeFilter.length ? (modeFilter as ChannelMode[]) : undefined,
+            },
+          );
+          setKind(null);
+          setListings(results);
+          if (results.length === 0) {
+            const narrow = narrowFilterHint(bandFilter, modeFilter, geometryFilter);
+            setError(`No repeaters matched your search on RepeaterBook.${narrow}`);
           }
           return;
         }
@@ -138,7 +176,7 @@ export function useRepeaterDirectorySearch(source: RepeaterSource) {
         setLoading(false);
       }
     },
-    [query, operationalOnly, bandFilter, modeFilter, geometryFilter, mapboxToken, source],
+    [query, operationalOnly, bandFilter, modeFilter, geometryFilter, mapboxToken, source, region, stateId, country],
   );
 
   return {
@@ -159,5 +197,12 @@ export function useRepeaterDirectorySearch(source: RepeaterSource) {
     kind,
     listings,
     search,
+    region,
+    setRegion,
+    stateId,
+    setStateId,
+    country,
+    setCountry,
+    hasToken: source === 'repeaterbook' ? hasRepeaterBookToken : true,
   };
 }

@@ -1,6 +1,7 @@
-/** ETCC operational status check (wire string at integration boundary). */
+/** Directory operational status (ETCC, RepeaterBook, …). */
 export function isOperationalStatus(status: string): boolean {
-  return status.trim().toUpperCase() === 'OPERATIONAL';
+  const normalized = status.trim().toUpperCase();
+  return normalized === 'OPERATIONAL' || normalized === 'ON-AIR';
 }
 
 export function queryKindHint(kind: string | null): string | null {

@@ -34,6 +34,7 @@ import { isSimplex } from '../../lib/channels.ts';
 import { ICON_SIZE_NAV, ICON_STROKE } from '../../lib/iconSizes.ts';
 import { isOperationalStatus, queryKindHint } from '../../lib/repeaters.ts';
 import { repeaterSearchCapabilities } from '../../lib/repeaterSearchCapabilities.ts';
+import { SETTINGS_REPEATERBOOK_SECTION_ID } from '../../lib/settingsSections.ts';
 import { modeFilterOptions } from '../../lib/channelModes.ts';
 import { hzToMhzString } from '../../lib/units.ts';
 import { persistence } from '../../state/persistence.ts';
@@ -87,6 +88,12 @@ const SOURCE_META: Record<
     url: 'https://www.irts.ie/cgi/repeater.cgi',
     attributionSuffix:
       '. For amateur programming convenience — not authoritative for emergency operations.',
+  },
+  repeaterbook: {
+    label: 'RepeaterBook',
+    url: 'https://www.repeaterbook.com/',
+    attributionSuffix:
+      ' — data courtesy of RepeaterBook.com. For amateur programming convenience — not a substitute for RepeaterBook search.',
   },
 };
 
@@ -143,6 +150,7 @@ export default function RepeaterDirectorySearch({
 
   const isUk = source === 'ukrepeater';
   const isBrandmeister = source === 'brandmeister';
+  const isRepeaterbook = source === 'repeaterbook';
   const sourceMeta = SOURCE_META[source];
   const capabilities = repeaterSearchCapabilities(source);
   const useTitleCaseNames = capabilities.titleCaseNames && search.titleCaseNames;
@@ -336,6 +344,53 @@ export default function RepeaterDirectorySearch({
         description={`Query ${sourceMeta.label} and add matches to your library.`}
       >
         <Stack gap="sm">
+          {isRepeaterbook && !search.hasToken ? (
+            <Alert color="yellow">
+              RepeaterBook token required.{' '}
+              <Anchor
+                component={Link}
+                to="/settings"
+                state={{ scrollTo: SETTINGS_REPEATERBOOK_SECTION_ID }}
+              >
+                Add your token in Settings
+              </Anchor>
+              .
+            </Alert>
+          ) : null}
+
+          {capabilities.regionSelector ? (
+            <Group align="flex-end" wrap="wrap">
+              <Input.Wrapper label="Region">
+                <SegmentedControl
+                  value={search.region}
+                  onChange={(value) => search.setRegion(value as 'na' | 'row')}
+                  data={[
+                    { label: 'North America', value: 'na' },
+                    { label: 'Rest of world', value: 'row' },
+                  ]}
+                />
+              </Input.Wrapper>
+              {search.region === 'na' ? (
+                <TextInput
+                  label="State ID (FIPS)"
+                  placeholder="e.g. 06 for California"
+                  value={search.stateId}
+                  onChange={(e) => search.setStateId(e.currentTarget.value)}
+                  style={{ minWidth: 160 }}
+                />
+              ) : null}
+              <TextInput
+                label={search.region === 'row' ? 'Country' : 'Country (optional)'}
+                placeholder={
+                  search.region === 'row' ? 'e.g. Switzerland' : 'United States or Canada'
+                }
+                value={search.country}
+                onChange={(e) => search.setCountry(e.currentTarget.value)}
+                style={{ flex: 1, minWidth: 180 }}
+              />
+            </Group>
+          ) : null}
+
           <Group align="flex-end" wrap="wrap">
             <TextInput
               label="Search"
@@ -344,7 +399,9 @@ export default function RepeaterDirectorySearch({
                   ? 'Callsign, locator, or town'
                   : source === 'irts'
                     ? 'Callsign or location (optional)'
-                    : 'e.g. GB3RF'
+                    : isRepeaterbook
+                      ? 'Callsign (optional; % wildcards supported)'
+                      : 'e.g. GB3RF'
               }
               value={search.query}
               onChange={(e) => search.setQuery(e.currentTarget.value)}
@@ -413,6 +470,7 @@ export default function RepeaterDirectorySearch({
               leftSection={<IconSearch size={ICON_SIZE_NAV} stroke={ICON_STROKE} />}
               onClick={() => void search.search()}
               loading={search.loading}
+              disabled={isRepeaterbook && !search.hasToken}
             >
               Search
             </Button>

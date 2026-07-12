@@ -7,6 +7,7 @@ import AddFromUkRepeaterPage from './routes/library/AddFromUkRepeaterPage.tsx';
 import AddFromOpenAipPage from './routes/library/AddFromOpenAipPage.tsx';
 import AddFromBrandmeisterPage from './routes/library/AddFromBrandmeisterPage.tsx';
 import AddFromIrtsPage from './routes/library/AddFromIrtsPage.tsx';
+import AddFromRepeaterBookPage from './routes/library/AddFromRepeaterBookPage.tsx';
 import AddChannelSetPage from './routes/library/AddChannelSetPage.tsx';
 import ZoneFromLocationPage from './routes/library/ZoneFromLocationPage.tsx';
 import ChannelsListPage from './routes/library/lists/ChannelsListPage.tsx';
@@ -106,6 +107,10 @@ export const appRouter = createBrowserRouter([
           {
             path: '/library/channels/add-from-irts',
             element: <AddFromIrtsPage />,
+          },
+          {
+            path: '/library/channels/add-from-repeaterbook',
+            element: <AddFromRepeaterBookPage />,
           },
           {
             path: '/library/channels/add-channel-set',

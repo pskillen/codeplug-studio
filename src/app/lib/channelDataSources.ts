@@ -1,5 +1,5 @@
 import type { TablerIcon } from '@tabler/icons-react';
-import { IconAntenna, IconPlane, IconPlaylistAdd, IconRadio, IconTower } from '@tabler/icons-react';
+import { IconAntenna, IconGlobe, IconPlane, IconPlaylistAdd, IconRadio, IconTower } from '@tabler/icons-react';
 import type { BadgeCardBadge } from '../components/ui/BadgeCard.tsx';
 
 export interface ChannelDataSource {
@@ -54,6 +54,16 @@ export const CHANNEL_DATA_SOURCES: readonly ChannelDataSource[] = [
     path: '/library/channels/add-from-brandmeister',
     badges: [{ label: 'DMR' }, { label: 'Talk groups' }, { label: 'RX lists' }],
     Icon: IconAntenna,
+  },
+  {
+    id: 'repeaterbook',
+    title: 'RepeaterBook',
+    subtitle: 'NA & worldwide',
+    description:
+      'Search RepeaterBook for analogue and digital repeaters by callsign, US/Canada state, or country. Requires your token in Settings.',
+    path: '/library/channels/add-from-repeaterbook',
+    badges: [{ label: 'NA' }, { label: 'ROW' }, { label: 'FM' }, { label: 'DMR' }, { label: 'Verify' }],
+    Icon: IconGlobe,
   },
   {
     id: 'irts',
