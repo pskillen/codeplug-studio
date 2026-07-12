@@ -23,13 +23,14 @@ IRTS does **not** send `Access-Control-Allow-Origin`. The browser SPA cannot fet
 
 Studio exposes a same-origin Pages Function:
 
-| Property    | Value                                                  |
-| ----------- | ------------------------------------------------------ |
-| Studio path | `GET /api/irts/repeaters`                              |
-| Upstream    | `https://www.irts.ie/dnloads/repeaters_Anytone578.csv` |
-| Auth        | None (public upstream; no operator API key)            |
-| Cache       | `Cache-Control: public, max-age=3600`                  |
-| Local dev   | Vite `server.proxy` mirrors the path                   |
+| Property    | Value                                                                                                                                                                                                    |
+| ----------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Studio path | `GET /api/irts/repeaters`                                                                                                                                                                                |
+| Upstream    | `https://www.irts.ie/dnloads/repeaters_Anytone578.csv`                                                                                                                                                   |
+| Auth        | None (public upstream; no operator API key)                                                                                                                                                              |
+| Cache       | `Cache-Control: public, max-age=3600`                                                                                                                                                                    |
+| Origin gate | Shared allowlist with RepeaterBook — deploy hostnames (`codeplug.mm9pdy.net`, `*.codeplug.mm9pdy.net`) and `http://localhost:5173`; see [build docs](../../build/README.md#pages-functions-cors-bridges) |
+| Local dev   | Vite `server.proxy` mirrors the path                                                                                                                                                                     |
 
 Deployed with the SPA via `wrangler.toml` + `functions/api/irts/repeaters.ts` on every environment (dev / next / staging / prod).
 

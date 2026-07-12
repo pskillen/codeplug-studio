@@ -108,9 +108,24 @@ Boolean-ish fields use `"Yes"`/`"No"`, `"1"`/`"0"`, or empty string.
 
 If no digital flag matches, default to `fm` when `FM Analog` is Yes; otherwise first advertised mode.
 
-## CORS
+## CORS bridge (Studio)
 
-Distributed browser app approval implies **browser-direct** `fetch` with token + User-Agent headers. Live verification requires an operator token — see [repeaterbook-outstanding.md](../../features/repeater-directories/repeaterbook-outstanding.md).
+RepeaterBook does **not** expose browser CORS for export endpoints, and browsers cannot set the approved `User-Agent` on `fetch()`. Studio exposes a same-origin Pages Function proxy:
+
+| Property    | Value                                                                                             |
+| ----------- | ------------------------------------------------------------------------------------------------- |
+| Studio path | `GET /api/repeaterbook/export?region=na\|row&…`                                                   |
+| Upstream    | `export.php` (NA) or `exportROW.php` (ROW) on `www.repeaterbook.com`                              |
+| Auth        | Per-user `X-RB-App-Token: rbuapp_…` forwarded browser → function → RepeaterBook only              |
+| User-Agent  | Set server-side in the Pages Function (approved string above)                                     |
+| Origin gate | Shared allowlist with IRTS — see [build docs](../../build/README.md#pages-functions-cors-bridges) |
+| Local dev   | Vite `server.proxy` mirrors the path and injects User-Agent upstream                              |
+
+Deployed with the SPA via `wrangler.toml` + [`functions/api/repeaterbook/export.ts`](../../../functions/api/repeaterbook/export.ts) on every environment (dev / next / staging / prod).
+
+## CORS (upstream)
+
+Distributed-app approval covers programming integration; the edge proxy satisfies browser same-origin policy and User-Agent enforcement without storing operator tokens at the edge.
 
 ## Attribution
 

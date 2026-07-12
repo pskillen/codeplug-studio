@@ -4,8 +4,8 @@ Debt and follow-ups discovered during [#274](https://github.com/pskillen/codeplu
 
 ## Live API spike
 
-- [ ] Confirm browser CORS with operator `rbuapp_` token (distributed-app approval implies direct fetch; verify in devtools on first manual test)
-- [ ] Confirm granted scopes: `api.export` (NA) and/or `api.export_row` (ROW)
+- [x] CORS / User-Agent — same-origin Pages Function proxy (`/api/repeaterbook/export`) with server-side User-Agent; shared origin gate with IRTS
+- [ ] Confirm granted scopes with operator token: `api.export` (NA) and/or `api.export_row` (ROW)
 
 ## Deferred to shared infra
 
