@@ -1,16 +1,21 @@
 import { useMemo, useState } from 'react';
-import { Alert, Button, Checkbox, Group, Modal, Radio, Stack, Text } from '@mantine/core';
+import { Link } from 'react-router-dom';
+import { Alert, Anchor, Button, Checkbox, Group, Modal, Radio, Stack, Text } from '@mantine/core';
 import type { Channel, Library } from '@core/models/library.ts';
 import {
   matchListingForChannel,
   RepeaterDirectoryError,
   searchBrandmeisterByCallsign,
   searchIrtsByCallsign,
+  searchRepeaterBookByCallsignAnyRegion,
   searchUkRepeatersByCallsign,
   type MapListingOptions,
   type RepeaterListing,
   type RepeaterSource,
 } from '@integrations/repeaters/index.ts';
+import { loadRepeaterBookToken } from '@integrations/preferences/index.ts';
+import { SETTINGS_REPEATERBOOK_SECTION_ID } from '../../lib/settingsSections.ts';
+import { useRepeaterBookSettings } from '../../hooks/useRepeaterBookSettings.ts';
 import { PageSection } from '../ui/index.ts';
 import BrandmeisterRxGroupListSyncDialog from './BrandmeisterRxGroupListSyncDialog.tsx';
 import RepeaterListingUpdateDialog from './RepeaterListingUpdateDialog.tsx';
@@ -22,12 +27,13 @@ export interface RepeaterVerifyPanelProps {
 
 type VerifyIntent = 'repeater' | 'talkGroups';
 
-type VerifySource = Extract<RepeaterSource, 'ukrepeater' | 'brandmeister' | 'irts'>;
+type VerifySource = Extract<RepeaterSource, 'ukrepeater' | 'brandmeister' | 'irts' | 'repeaterbook'>;
 
 const VERIFY_SOURCE_LABEL: Record<VerifySource, string> = {
   ukrepeater: 'ukrepeater.net',
   brandmeister: 'BrandMeister',
   irts: 'IRTS',
+  repeaterbook: 'RepeaterBook',
 };
 
 function channelHasDmr(channel: Channel): boolean {
@@ -37,6 +43,7 @@ function channelHasDmr(channel: Channel): boolean {
 export default function RepeaterVerifyPanel({ channel, library }: RepeaterVerifyPanelProps) {
   const [ukLoading, setUkLoading] = useState(false);
   const [irtsLoading, setIrtsLoading] = useState(false);
+  const [rbLoading, setRbLoading] = useState(false);
   const [bmRepeaterLoading, setBmRepeaterLoading] = useState(false);
   const [bmTalkGroupsLoading, setBmTalkGroupsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -48,6 +55,7 @@ export default function RepeaterVerifyPanel({ channel, library }: RepeaterVerify
   const [updateOpen, setUpdateOpen] = useState(false);
   const [rglSyncOpen, setRglSyncOpen] = useState(false);
   const [titleCaseNames, setTitleCaseNames] = useState(true);
+  const { hasToken: hasRepeaterBookToken } = useRepeaterBookSettings();
 
   const showBrandmeister = channelHasDmr(channel);
   const ukMapOptions: MapListingOptions = useMemo(
@@ -87,12 +95,21 @@ export default function RepeaterVerifyPanel({ channel, library }: RepeaterVerify
     setError(null);
     const sourceLabel = VERIFY_SOURCE_LABEL[source];
     try {
+      if (source === 'repeaterbook' && !loadRepeaterBookToken().trim()) {
+        setError('RepeaterBook token required — add your token in Settings.');
+        return;
+      }
       const results =
         source === 'brandmeister'
           ? await searchBrandmeisterByCallsign(channel.callsign)
           : source === 'irts'
             ? await searchIrtsByCallsign(channel.callsign)
-            : await searchUkRepeatersByCallsign(channel.callsign);
+            : source === 'repeaterbook'
+              ? await searchRepeaterBookByCallsignAnyRegion(
+                  channel.callsign,
+                  loadRepeaterBookToken(),
+                )
+              : await searchUkRepeatersByCallsign(channel.callsign);
       if (results.length === 0) {
         setError(`No listings found for ${channel.callsign} on ${sourceLabel}.`);
         return;
@@ -150,6 +167,27 @@ export default function RepeaterVerifyPanel({ channel, library }: RepeaterVerify
             >
               Check IRTS
             </Button>
+            <Button
+              variant="light"
+              loading={rbLoading}
+              disabled={!hasRepeaterBookToken}
+              onClick={() => void runDirectoryCheck('repeaterbook', 'repeater', setRbLoading)}
+            >
+              Check RepeaterBook
+            </Button>
+            {!hasRepeaterBookToken ? (
+              <Text size="sm" c="dimmed">
+                RepeaterBook verify requires a token —{' '}
+                <Anchor
+                  component={Link}
+                  to="/settings"
+                  state={{ scrollTo: SETTINGS_REPEATERBOOK_SECTION_ID }}
+                >
+                  add in Settings
+                </Anchor>
+                .
+              </Text>
+            ) : null}
             {showBrandmeister ? (
               <Button
                 variant="light"
