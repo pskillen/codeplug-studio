@@ -1,4 +1,5 @@
 import { bandFromFrequencyMhz } from '@core/domain/bandCatalog.ts';
+import { coordsToLocator } from '@core/domain/maidenhead.ts';
 import type { RepeaterListing } from '../types.ts';
 import { parseRepeaterBookModes } from './modeMapping.ts';
 
@@ -72,6 +73,8 @@ export function parseRepeaterBookListing(row: Record<string, unknown>): Repeater
   const toneHz = parseToneHz(stringField(row, 'TSQ')) ?? parseToneHz(stringField(row, 'PL'));
   const { modes, primaryMode, colourCode } = parseRepeaterBookModes(row);
 
+  const location = parseLocation(row);
+
   return {
     source: 'repeaterbook',
     remoteId: buildRemoteId(row),
@@ -83,8 +86,8 @@ export function parseRepeaterBookListing(row: Record<string, unknown>): Repeater
     modes,
     primaryMode,
     colourCode,
-    locator: null,
-    location: parseLocation(row),
+    locator: location ? coordsToLocator(location.lat, location.lon, 4) : null,
+    location,
     band: bandWireLabelFromRxHz(rxFrequencyHz),
     status: stringField(row, 'Operational Status') || 'Unknown',
   };

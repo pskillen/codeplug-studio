@@ -8,7 +8,8 @@ export interface RepeaterSearchCapabilities {
   operationalOnly: boolean;
   titleCaseNames: boolean;
   useMyLocation: boolean;
-  locatorColumn: boolean;
+  locatorFilter: boolean;
+  countryAutocomplete: boolean;
   locationLabel: 'Town' | 'City';
   regionSelector: boolean;
 }
@@ -23,7 +24,8 @@ export function repeaterSearchCapabilities(source: RepeaterSource): RepeaterSear
       operationalOnly: true,
       titleCaseNames: true,
       useMyLocation: true,
-      locatorColumn: true,
+      locatorFilter: false,
+      countryAutocomplete: false,
       locationLabel: 'Town',
       regionSelector: false,
     };
@@ -37,7 +39,8 @@ export function repeaterSearchCapabilities(source: RepeaterSource): RepeaterSear
       operationalOnly: false,
       titleCaseNames: true,
       useMyLocation: false,
-      locatorColumn: false,
+      locatorFilter: false,
+      countryAutocomplete: false,
       locationLabel: 'City',
       regionSelector: false,
     };
@@ -50,8 +53,9 @@ export function repeaterSearchCapabilities(source: RepeaterSource): RepeaterSear
       geometryFilter: true,
       operationalOnly: true,
       titleCaseNames: true,
-      useMyLocation: false,
-      locatorColumn: false,
+      useMyLocation: true,
+      locatorFilter: true,
+      countryAutocomplete: true,
       locationLabel: 'City',
       regionSelector: true,
     };
@@ -64,7 +68,8 @@ export function repeaterSearchCapabilities(source: RepeaterSource): RepeaterSear
     operationalOnly: false,
     titleCaseNames: false,
     useMyLocation: false,
-    locatorColumn: false,
+    locatorFilter: false,
+    countryAutocomplete: false,
     locationLabel: 'City',
     regionSelector: false,
   };

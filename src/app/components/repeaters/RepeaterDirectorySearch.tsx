@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import {
   Alert,
   Anchor,
+  Autocomplete,
   Button,
   Checkbox,
   Group,
@@ -40,6 +41,7 @@ import { hzToMhzString } from '../../lib/units.ts';
 import { persistence } from '../../state/persistence.ts';
 import { useLibrary } from '../../state/useLibrary.ts';
 import { useProjects } from '../../state/useProjects.ts';
+import { listingDisplayLocator } from '@integrations/repeaters/listingLocator.ts';
 import UseMyLocationButton from '../UseMyLocationButton/UseMyLocationButton.tsx';
 import { BandPillsForRepeaterListing, ModePillsForRepeaterListing } from '../pills/index.ts';
 import { FormPage, PageSection } from '../ui/index.ts';
@@ -537,7 +539,7 @@ export default function RepeaterDirectorySearch({
                   <Table.Th>Status</Table.Th>
                   <Table.Th>Mode</Table.Th>
                   <Table.Th>Frequencies</Table.Th>
-                  {capabilities.locatorColumn ? <Table.Th>Locator</Table.Th> : null}
+                  <Table.Th>Locator</Table.Th>
                   <Table.Th />
                 </Table.Tr>
               </Table.Thead>
@@ -595,9 +597,7 @@ export default function RepeaterDirectorySearch({
                           {formatListingFrequencies(listing.rxFrequencyHz, listing.txFrequencyHz)}
                         </Text>
                       </Table.Td>
-                      {capabilities.locatorColumn ? (
-                        <Table.Td>{listing.locator ?? '—'}</Table.Td>
-                      ) : null}
+                      <Table.Td>{listingDisplayLocator(listing) ?? '—'}</Table.Td>
                       <Table.Td>
                         {row.existing ? (
                           <Button
