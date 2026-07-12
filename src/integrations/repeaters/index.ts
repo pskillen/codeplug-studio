@@ -61,3 +61,13 @@ export {
   type ChannelDiffRow,
 } from './channelDiff.ts';
 export { matchListingForChannel } from './matchListing.ts';
+export {
+  filterRepeaterBookListings,
+  searchRepeaterBook,
+  searchRepeaterBookByCallsign,
+  searchRepeaterBookByCallsignAnyRegion,
+  type RepeaterBookRegion,
+  type RepeaterBookSearchFilters,
+  type RepeaterBookSearchParams,
+} from './repeaterbook/queryRouter.ts';
+export { clearRepeaterBookSessionCache } from './repeaterbook/sessionCache.ts';
