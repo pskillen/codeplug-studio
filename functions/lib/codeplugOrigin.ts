@@ -67,9 +67,7 @@ export function preflightHeaders(
   return {
     ...corsHeadersForOrigin(origin),
     'Access-Control-Allow-Methods': 'GET, OPTIONS',
-    ...(allowedRequestHeaders
-      ? { 'Access-Control-Allow-Headers': allowedRequestHeaders }
-      : {}),
+    ...(allowedRequestHeaders ? { 'Access-Control-Allow-Headers': allowedRequestHeaders } : {}),
     'Access-Control-Max-Age': '86400',
   };
 }

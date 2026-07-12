@@ -143,12 +143,7 @@ export function useRepeaterDirectorySearch(source: RepeaterSource) {
             ? filterRepeaterBookListings(results, { locatorPrefix: locatorFilter })
             : results;
           if (visible.length === 0) {
-            const narrow = narrowFilterHint(
-              bandFilter,
-              modeFilter,
-              geometryFilter,
-              locatorFilter,
-            );
+            const narrow = narrowFilterHint(bandFilter, modeFilter, geometryFilter, locatorFilter);
             setError(`No repeaters matched your search on RepeaterBook.${narrow}`);
           }
           return;
