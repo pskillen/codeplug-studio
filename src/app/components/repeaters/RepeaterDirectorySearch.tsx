@@ -393,6 +393,17 @@ export default function RepeaterDirectorySearch({
             </Group>
           ) : null}
 
+          {capabilities.locatorFilter ? (
+            <TextInput
+              label="Locator filter"
+              description="Client-side Maidenhead prefix filter (e.g. JO22) to narrow large country result sets."
+              placeholder="e.g. JO22"
+              value={search.locatorFilter}
+              onChange={(e) => search.setLocatorFilter(e.currentTarget.value.toUpperCase())}
+              style={{ maxWidth: 200 }}
+            />
+          ) : null}
+
           <Group align="flex-end" wrap="wrap">
             <TextInput
               label="Search"

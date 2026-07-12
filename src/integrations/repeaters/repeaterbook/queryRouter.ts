@@ -1,5 +1,6 @@
 import type { ChannelMode } from '@core/models/libraryTypes.ts';
 import type { ListingGeometryFilter } from '../ukrepeater/queryRouter.ts';
+import { listingMatchesLocatorPrefix } from '../listingLocator.ts';
 import { RepeaterDirectoryError, type RepeaterListing } from '../types.ts';
 import { isRepeaterBookOperational } from './modeMapping.ts';
 import {
@@ -24,6 +25,7 @@ export interface RepeaterBookSearchFilters {
   bands?: string[];
   geometry?: ListingGeometryFilter;
   modes?: ChannelMode[];
+  locatorPrefix?: string;
 }
 
 function listingIsSimplex(listing: RepeaterListing): boolean {
@@ -52,6 +54,9 @@ export function filterRepeaterBookListings(
   if (filters.modes?.length) {
     const wanted = new Set(filters.modes);
     result = result.filter((l) => l.modes.some((m) => wanted.has(m)));
+  }
+  if (filters.locatorPrefix?.trim()) {
+    result = result.filter((l) => listingMatchesLocatorPrefix(l, filters.locatorPrefix!));
   }
   return result;
 }
