@@ -2,8 +2,20 @@
 import { defineConfig, loadEnv } from 'vite';
 import react from '@vitejs/plugin-react';
 import path from 'node:path';
+import { REPEATERBOOK_USER_AGENT } from './src/integrations/repeaters/repeaterbook/constants';
 
 const isGitHubActions = process.env.GITHUB_ACTIONS === 'true';
+
+function rewriteRepeaterBookExportProxyPath(proxyPath: string): string {
+  const queryStart = proxyPath.indexOf('?');
+  const query = queryStart >= 0 ? proxyPath.slice(queryStart + 1) : '';
+  const params = new URLSearchParams(query);
+  const region = params.get('region');
+  params.delete('region');
+  const upstreamPath = region === 'row' ? '/api/exportROW.php' : '/api/export.php';
+  const rest = params.toString();
+  return rest ? `${upstreamPath}?${rest}` : upstreamPath;
+}
 
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '');
@@ -21,6 +33,20 @@ export default defineConfig(({ mode }) => {
           target: 'https://www.irts.ie',
           changeOrigin: true,
           rewrite: () => '/dnloads/repeaters_Anytone578.csv',
+        },
+        '/api/repeaterbook/export': {
+          target: 'https://www.repeaterbook.com',
+          changeOrigin: true,
+          rewrite: rewriteRepeaterBookExportProxyPath,
+          configure: (proxy) => {
+            proxy.on('proxyReq', (proxyReq, req) => {
+              proxyReq.setHeader('User-Agent', REPEATERBOOK_USER_AGENT);
+              const token = req.headers['x-rb-app-token'];
+              if (typeof token === 'string' && token.trim()) {
+                proxyReq.setHeader('X-RB-App-Token', token);
+              }
+            });
+          },
         },
       },
     },

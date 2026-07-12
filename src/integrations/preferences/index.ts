@@ -9,6 +9,7 @@ import type { MaidenheadGridMode } from '@core/domain/maidenheadGrid.ts';
 export const ACTIVE_PROJECT_KEY = 'codeplug-studio:activeProjectId';
 export const MAPBOX_TOKEN_KEY = 'codeplug-studio:mapboxToken';
 export const OPENAIP_API_KEY = 'codeplug-studio:openaipApiKey';
+export const REPEATERBOOK_TOKEN_KEY = 'codeplug-studio:repeaterbookToken';
 export const MAIDENHEAD_GRID_KEY = 'codeplug-studio:maidenheadGrid';
 export const PREFERENCES_STORAGE_PREFIX = 'codeplug-studio:';
 
@@ -71,6 +72,27 @@ export function saveOpenAipApiKey(apiKey: string): void {
       globalThis.localStorage?.setItem(OPENAIP_API_KEY, trimmed);
     } else {
       globalThis.localStorage?.removeItem(OPENAIP_API_KEY);
+    }
+  } catch {
+    // Ignore write failures.
+  }
+}
+
+export function loadRepeaterBookToken(): string {
+  try {
+    return globalThis.localStorage?.getItem(REPEATERBOOK_TOKEN_KEY) ?? '';
+  } catch {
+    return '';
+  }
+}
+
+export function saveRepeaterBookToken(token: string): void {
+  try {
+    const trimmed = token.trim();
+    if (trimmed) {
+      globalThis.localStorage?.setItem(REPEATERBOOK_TOKEN_KEY, trimmed);
+    } else {
+      globalThis.localStorage?.removeItem(REPEATERBOOK_TOKEN_KEY);
     }
   } catch {
     // Ignore write failures.
