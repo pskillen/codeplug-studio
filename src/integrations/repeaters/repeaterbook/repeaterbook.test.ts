@@ -94,9 +94,11 @@ describe('fetchRepeaterBookExport', () => {
   it('maps auth and rate limit errors', async () => {
     vi.stubGlobal(
       'fetch',
-      vi.fn().mockResolvedValue(
-        new Response(JSON.stringify({ status: 'error', code: 'auth_invalid' }), { status: 401 }),
-      ),
+      vi
+        .fn()
+        .mockResolvedValue(
+          new Response(JSON.stringify({ status: 'error', code: 'auth_invalid' }), { status: 401 }),
+        ),
     );
     await expect(
       fetchRepeaterBookExport('https://example.test', 'rbuapp_test'),
@@ -107,7 +109,9 @@ describe('fetchRepeaterBookExport', () => {
 
   it('uses cache on repeated URL', async () => {
     const body = loadFixture('na-analog-dmr.json');
-    const fetchMock = vi.fn().mockResolvedValue(new Response(JSON.stringify(body), { status: 200 }));
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue(new Response(JSON.stringify(body), { status: 200 }));
     vi.stubGlobal('fetch', fetchMock);
 
     const url = 'https://www.repeaterbook.com/api/export.php?callsign=W6TEST';
@@ -123,9 +127,11 @@ describe('fetchRepeaterBookExport', () => {
   it('surfaces 429 rate limit', async () => {
     vi.stubGlobal(
       'fetch',
-      vi.fn().mockResolvedValue(
-        new Response(JSON.stringify({ status: 'error', code: 'rate_limited' }), { status: 429 }),
-      ),
+      vi
+        .fn()
+        .mockResolvedValue(
+          new Response(JSON.stringify({ status: 'error', code: 'rate_limited' }), { status: 429 }),
+        ),
     );
     await expect(
       fetchRepeaterBookExport('https://example.test', 'rbuapp_test'),

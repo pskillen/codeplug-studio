@@ -27,7 +27,10 @@ export interface RepeaterVerifyPanelProps {
 
 type VerifyIntent = 'repeater' | 'talkGroups';
 
-type VerifySource = Extract<RepeaterSource, 'ukrepeater' | 'brandmeister' | 'irts' | 'repeaterbook'>;
+type VerifySource = Extract<
+  RepeaterSource,
+  'ukrepeater' | 'brandmeister' | 'irts' | 'repeaterbook'
+>;
 
 const VERIFY_SOURCE_LABEL: Record<VerifySource, string> = {
   ukrepeater: 'ukrepeater.net',

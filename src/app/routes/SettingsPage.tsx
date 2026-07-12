@@ -141,8 +141,8 @@ export default function SettingsPage() {
               3. Select <strong>Codeplug Studio</strong> (app ID 103).
             </Text>
             <Text size="sm" c="dimmed">
-              4. Click <strong>Generate token</strong> and copy the full{' '}
-              <code>rbuapp_…</code> value immediately — it is shown only once.
+              4. Click <strong>Generate token</strong> and copy the full <code>rbuapp_…</code> value
+              immediately — it is shown only once.
             </Text>
             <Text size="sm" c="dimmed">
               5. Paste the token below and click Save.

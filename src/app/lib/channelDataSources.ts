@@ -1,5 +1,12 @@
 import type { TablerIcon } from '@tabler/icons-react';
-import { IconAntenna, IconGlobe, IconPlane, IconPlaylistAdd, IconRadio, IconTower } from '@tabler/icons-react';
+import {
+  IconAntenna,
+  IconGlobe,
+  IconPlane,
+  IconPlaylistAdd,
+  IconRadio,
+  IconTower,
+} from '@tabler/icons-react';
 import type { BadgeCardBadge } from '../components/ui/BadgeCard.tsx';
 
 export interface ChannelDataSource {
@@ -62,7 +69,13 @@ export const CHANNEL_DATA_SOURCES: readonly ChannelDataSource[] = [
     description:
       'Search RepeaterBook for analogue and digital repeaters by callsign, US/Canada state, or country. Requires your token in Settings.',
     path: '/library/channels/add-from-repeaterbook',
-    badges: [{ label: 'NA' }, { label: 'ROW' }, { label: 'FM' }, { label: 'DMR' }, { label: 'Verify' }],
+    badges: [
+      { label: 'NA' },
+      { label: 'ROW' },
+      { label: 'FM' },
+      { label: 'DMR' },
+      { label: 'Verify' },
+    ],
     Icon: IconGlobe,
   },
   {

@@ -69,8 +69,7 @@ export function parseRepeaterBookListing(row: Record<string, unknown>): Repeater
 
   const rxFrequencyHz = mhzStringToHz(stringField(row, 'Frequency'));
   const txFrequencyHz = mhzStringToHz(stringField(row, 'Input Freq'));
-  const toneHz =
-    parseToneHz(stringField(row, 'TSQ')) ?? parseToneHz(stringField(row, 'PL'));
+  const toneHz = parseToneHz(stringField(row, 'TSQ')) ?? parseToneHz(stringField(row, 'PL'));
   const { modes, primaryMode, colourCode } = parseRepeaterBookModes(row);
 
   return {

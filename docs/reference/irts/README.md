@@ -35,12 +35,12 @@ Deployed with the SPA via `wrangler.toml` + `functions/api/irts/repeaters.ts` on
 
 ## Candidates evaluated (spike #273)
 
-| Source                   | Analogue | Digital                               | SPA without proxy    | Verdict                                 |
-| ------------------------ | -------- | ------------------------------------- | -------------------- | --------------------------------------- |
-| **IRTS Anytone CSV**     | Yes      | DMR (+ limited D-STAR via Chirp only) | No (CORS)            | **Primary v1**                          |
-| BrandMeister             | No       | DMR only                              | Yes                  | Supplement for BM TGs (already shipped) |
-| RepeaterBook `exportROW` | Yes      | Yes                                   | No (401 + app token) | Out of scope                            |
-| RadioID.net              | No       | DMR/NXDN/P25/D-STAR                   | No (CORS)            | Out of scope                            |
+| Source                   | Analogue | Digital                               | SPA without proxy         | Verdict                                                           |
+| ------------------------ | -------- | ------------------------------------- | ------------------------- | ----------------------------------------------------------------- |
+| **IRTS Anytone CSV**     | Yes      | DMR (+ limited D-STAR via Chirp only) | No (CORS)                 | **Primary v1**                                                    |
+| BrandMeister             | No       | DMR only                              | Yes                       | Supplement for BM TGs (already shipped)                           |
+| RepeaterBook `exportROW` | Yes      | Yes                                   | Browser + `rbuapp_` token | Shipped — see [RepeaterBook reference](../repeaterbook/README.md) |
+| RadioID.net              | No       | DMR/NXDN/P25/D-STAR                   | No (CORS)                 | Out of scope                                                      |
 
 ## Anytone CSV columns (shipped parse)
 

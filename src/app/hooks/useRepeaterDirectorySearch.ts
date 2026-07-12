@@ -176,7 +176,18 @@ export function useRepeaterDirectorySearch(source: RepeaterSource) {
         setLoading(false);
       }
     },
-    [query, operationalOnly, bandFilter, modeFilter, geometryFilter, mapboxToken, source, region, stateId, country],
+    [
+      query,
+      operationalOnly,
+      bandFilter,
+      modeFilter,
+      geometryFilter,
+      mapboxToken,
+      source,
+      region,
+      stateId,
+      country,
+    ],
   );
 
   return {

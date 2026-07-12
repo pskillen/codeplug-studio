@@ -1,8 +1,5 @@
 import { useCallback, useState } from 'react';
-import {
-  loadRepeaterBookToken,
-  saveRepeaterBookToken,
-} from '@integrations/preferences/index.ts';
+import { loadRepeaterBookToken, saveRepeaterBookToken } from '@integrations/preferences/index.ts';
 
 export function useRepeaterBookSettings() {
   const [repeaterBookToken, setRepeaterBookTokenState] = useState(() => loadRepeaterBookToken());

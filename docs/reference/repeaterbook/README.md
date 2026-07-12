@@ -6,22 +6,22 @@ This is a **remote directory API**, not a CPS wire format. HTTP clients and norm
 
 ## Registration
 
-| Property | Value |
-| --- | --- |
-| App name | Codeplug Studio |
-| App ID | `103` |
-| User-Agent (prefix match) | `CodeplugStudio/1.0 (+https://codeplug.mm9pdy.net; mm9pdy@gmail.com)` |
-| Token model | **Distributed** — each user generates `rbuapp_…` from [API Apps](https://www.repeaterbook.com/user/api_apps.php) |
-| Policy | [RepeaterBook API wiki](https://www.repeaterbook.com/wiki/doku.php?id=api) |
+| Property                  | Value                                                                                                            |
+| ------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| App name                  | Codeplug Studio                                                                                                  |
+| App ID                    | `103`                                                                                                            |
+| User-Agent (prefix match) | `CodeplugStudio/1.0 (+https://codeplug.mm9pdy.net; mm9pdy@gmail.com)`                                            |
+| Token model               | **Distributed** — each user generates `rbuapp_…` from [API Apps](https://www.repeaterbook.com/user/api_apps.php) |
+| Policy                    | [RepeaterBook API wiki](https://www.repeaterbook.com/wiki/doku.php?id=api)                                       |
 
 No shared `app_` token in source, build artefacts, or documentation.
 
 ## Authentication
 
-| Header | Value |
-| --- | --- |
-| `X-RB-App-Token` | User's `rbuapp_…` token (preferred) |
-| `User-Agent` | Approved string above — **required**; prefix match enforced |
+| Header           | Value                                                       |
+| ---------------- | ----------------------------------------------------------- |
+| `X-RB-App-Token` | User's `rbuapp_…` token (preferred)                         |
+| `User-Agent`     | Approved string above — **required**; prefix match enforced |
 
 Token stored in browser `localStorage` only (`codeplug-studio:repeaterbookToken`).
 
@@ -35,9 +35,9 @@ Token stored in browser `localStorage` only (`codeplug-studio:repeaterbookToken`
 
 ## Endpoints
 
-| Endpoint | Scope | Base |
-| --- | --- | --- |
-| `export.php` | `api.export` — North America | `https://www.repeaterbook.com/api/export.php` |
+| Endpoint        | Scope                            | Base                                             |
+| --------------- | -------------------------------- | ------------------------------------------------ |
+| `export.php`    | `api.export` — North America     | `https://www.repeaterbook.com/api/export.php`    |
 | `exportROW.php` | `api.export_row` — rest of world | `https://www.repeaterbook.com/api/exportROW.php` |
 
 ### Query parameters
@@ -62,15 +62,15 @@ Success JSON:
 
 Error JSON (HTTP 4xx or `status: "error"`):
 
-| Code | Meaning |
-| --- | --- |
-| `auth_missing` | Token required |
-| `auth_invalid` | Bad token format |
-| `auth_inactive` | Token or app inactive |
-| `auth_revoked` | Token revoked |
-| `auth_scope_denied` | Token lacks endpoint scope |
-| `ua_mismatch` | User-Agent does not match approved policy |
-| `rate_limited` | Too many requests — back off (see [#341](https://github.com/pskillen/codeplug-studio/issues/341)) |
+| Code                | Meaning                                                                                           |
+| ------------------- | ------------------------------------------------------------------------------------------------- |
+| `auth_missing`      | Token required                                                                                    |
+| `auth_invalid`      | Bad token format                                                                                  |
+| `auth_inactive`     | Token or app inactive                                                                             |
+| `auth_revoked`      | Token revoked                                                                                     |
+| `auth_scope_denied` | Token lacks endpoint scope                                                                        |
+| `ua_mismatch`       | User-Agent does not match approved policy                                                         |
+| `rate_limited`      | Too many requests — back off (see [#341](https://github.com/pskillen/codeplug-studio/issues/341)) |
 
 HTTP **429** also indicates rate limiting. v1 surfaces an error; cooperative backoff deferred to shared infra.
 
@@ -78,33 +78,33 @@ HTTP **429** also indicates rate limiting. v1 surfaces an error; cooperative bac
 
 Parse by **field name** — NA and ROW payloads differ slightly (NA may include `County`/`ARES`; ROW may omit `Region`).
 
-| RepeaterBook field | `RepeaterListing` / notes |
-| --- | --- |
-| `State ID` + `Rptr ID` | `remoteId` as `{stateId}:{rptrId}` |
-| `Callsign` | `callsign` |
-| `Nearest City` (+ `Landmark`) | `name` |
-| `Frequency` (MHz string) | `rxFrequencyHz` — repeater **output** (radio RX) |
-| `Input Freq` | `txFrequencyHz` — repeater **input** (radio TX) |
-| `TSQ` / `PL` | `toneHz` — prefer downlink (`TSQ`) CTCSS |
-| `Lat`, `Long` | `location` when parseable |
-| `Operational Status` | `status` (`On-air`, `Off-air`, …) |
-| `Country`, `State` | used for display; band derived from RX MHz |
-| Mode capability flags | `modes[]`, `primaryMode`, `colourCode` — see below |
+| RepeaterBook field            | `RepeaterListing` / notes                          |
+| ----------------------------- | -------------------------------------------------- |
+| `State ID` + `Rptr ID`        | `remoteId` as `{stateId}:{rptrId}`                 |
+| `Callsign`                    | `callsign`                                         |
+| `Nearest City` (+ `Landmark`) | `name`                                             |
+| `Frequency` (MHz string)      | `rxFrequencyHz` — repeater **output** (radio RX)   |
+| `Input Freq`                  | `txFrequencyHz` — repeater **input** (radio TX)    |
+| `TSQ` / `PL`                  | `toneHz` — prefer downlink (`TSQ`) CTCSS           |
+| `Lat`, `Long`                 | `location` when parseable                          |
+| `Operational Status`          | `status` (`On-air`, `Off-air`, …)                  |
+| `Country`, `State`            | used for display; band derived from RX MHz         |
+| Mode capability flags         | `modes[]`, `primaryMode`, `colourCode` — see below |
 
 Boolean-ish fields use `"Yes"`/`"No"`, `"1"`/`"0"`, or empty string.
 
 ### Mode capability flags
 
-| Field | Library mode |
-| --- | --- |
-| `FM Analog` = Yes | `fm` |
-| `DMR` = Yes | `dmr` + `DMR Color Code` |
-| `D-Star` = Yes | `dstar` |
-| `System Fusion` = Yes | `ysf` |
-| `NXDN` = Yes | `nxdn` |
-| `APCO P-25` = Yes | `p25` |
-| `Tetra` = Yes | `tetra` |
-| `M17` = Yes | `m17` |
+| Field                 | Library mode             |
+| --------------------- | ------------------------ |
+| `FM Analog` = Yes     | `fm`                     |
+| `DMR` = Yes           | `dmr` + `DMR Color Code` |
+| `D-Star` = Yes        | `dstar`                  |
+| `System Fusion` = Yes | `ysf`                    |
+| `NXDN` = Yes          | `nxdn`                   |
+| `APCO P-25` = Yes     | `p25`                    |
+| `Tetra` = Yes         | `tetra`                  |
+| `M17` = Yes           | `m17`                    |
 
 If no digital flag matches, default to `fm` when `FM Analog` is Yes; otherwise first advertised mode.
 

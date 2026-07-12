@@ -9,10 +9,10 @@ Debt and follow-ups discovered during [#274](https://github.com/pskillen/codeplu
 
 ## Deferred to shared infra
 
-| # | Ticket | Item |
-| --- | --- | --- |
-| [#73](https://github.com/pskillen/codeplug-studio/issues/73) | SessionStorage cache | Replace v1 in-memory cache with shared module |
-| [#341](https://github.com/pskillen/codeplug-studio/issues/341) | 429 backoff | Cooperative cooldown gate across providers |
+| #                                                              | Ticket               | Item                                          |
+| -------------------------------------------------------------- | -------------------- | --------------------------------------------- |
+| [#73](https://github.com/pskillen/codeplug-studio/issues/73)   | SessionStorage cache | Replace v1 in-memory cache with shared module |
+| [#341](https://github.com/pskillen/codeplug-studio/issues/341) | 429 backoff          | Cooperative cooldown gate across providers    |
 
 ## Feature gaps (not blocking v1)
 
