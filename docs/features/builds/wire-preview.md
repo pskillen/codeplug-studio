@@ -1,10 +1,22 @@
 ## Purpose
 
-Operator workflow for reviewing and shaping CPS wire names before export. Each build entity type has a dedicated sub-route under `/builds/:id/*` with a shared `WirePreviewTable`.
+Operator workflow for reviewing and shaping CPS wire names before export. Each build entity type has a dedicated sub-route under `/builds/:id/*` with a **read-only list** (`WirePreviewDataTable`), a **per-row override modal** (`WirePreviewOverrideModal`), and (for channels) a **bulk-edit** surface for wire names and skip toggles.
 
-**Tracking:** [#87](https://github.com/pskillen/codeplug-studio/issues/87)
+**Tracking:** [#87](https://github.com/pskillen/codeplug-studio/issues/87) · UI rework [#349](https://github.com/pskillen/codeplug-studio/issues/349)
 
-**Code:** `src/core/services/previewWireRows.ts`, `src/app/hooks/useBuildWirePreview.ts`, `src/app/routes/builds/wire-preview/`
+**Code:** `src/core/services/previewWireRows.ts`, `src/app/hooks/useBuildWirePreview.ts`, `src/app/routes/builds/wire-preview/`, `src/app/components/builds/wirePreview/`
+
+## UI surfaces
+
+| Surface       | Component / route                       | Edits                                                                              |
+| ------------- | --------------------------------------- | ---------------------------------------------------------------------------------- |
+| **List**      | `WirePreviewDataTable` on entity routes | Browse, search, sort (UI-only); row click opens modal                              |
+| **Modal**     | `WirePreviewOverrideModal`              | Wire name, skip, force-include; format-specific sections (zone scan, CHIRP scan)   |
+| **Bulk edit** | `/builds/:id/channels/bulk`             | Wire name + skip per channel only; leave-page guard for unapplied wire-name drafts |
+
+`BuildWirePreviewListPage` wraps list + modal for most entity routes. CHIRP flat memory (`BuildFlatMemoryChannelsPage`) uses the same list + modal pattern with an optional reorder column for `orderOrSlot`.
+
+**Sort and filter** on list pages are client-side convenience only — they do **not** change export order. CHIRP memory order is updated only via up/down reorder controls (or library edits), not table sort.
 
 ## Override semantics
 
@@ -31,9 +43,9 @@ Overrides are stored on `FormatBuild` as `channelOverrides`, `zoneOverrides`, `t
 - **key** — stable override id (composite `${channelId}:${modeSuffix}` for multi-mode expansion rows; `${channelId}:${memberKey}` for DM32 RX-list fan-out)
 - **expansionNote** — human-readable note when a row is synthesized (multi-mode suffix, RX-list fan-out, **Not linked to a zone**, **Not exported as its own zone** for library `omitFromExport`, or **Not referenced by exported channels**)
 
-Wire preview pages and the export panel share **`useExportSettings`** (browser `localStorage`) for shortening, name mode, abbreviation toggles, and DM32 zone-derived scan export. Wire name overrides use a local draft with explicit **Apply** and **Revert** actions before persisting (avoids revision races from implicit debounced saves). Navigating away with unapplied drafts opens a confirmation dialog (`useUnsavedNavigationGuard`).
+Wire preview pages and the export panel share **`useExportSettings`** (browser `localStorage`) for shortening, name mode, abbreviation toggles, and DM32 zone-derived scan export. Wire name overrides use a local draft with explicit **Apply** and **Revert** actions in the modal or bulk-edit table (avoids revision races from implicit debounced saves). Only **`/builds/:id/channels/bulk`** uses `useUnsavedNavigationGuard` for unapplied wire-name drafts.
 
-Each entity wire page offers **Hide items not to be included in export** above the table when the library has rows for that entity kind (the toggle stays visible even when filtering hides every row). When enabled, rows are filtered with `isPreviewRowIncludedInExport` (respects per-row skip toggles and **Export inclusion** on `/builds/:id/export` for orphan channels, talk groups, and RX group lists). Zone rows with **Don't export as its own zone** in the library show a **Not exported as zone** badge and a **Force export** switch (per-build `forceInclude` on `zoneOverrides`); when force export is on, an additional **Skip from export** toggle allows build-level exclusion. Other entity rows use a **Skip from export** toggle (`excluded: true` on the matching `*Overrides` array). Precedence: `excluded` wins over `forceInclude`; `forceInclude` overrides library `omitFromExport`. Channel zone linkage uses library `Zone.members` plus build `zoneGrouping` layout — see [wire-name-composition.md](wire-name-composition.md#zone-membership-vs-wire-names). DM32 channel preview lists unlinked library channels (with zone note) so the toggle can reveal them when export inclusion excludes orphans. Contacts not referenced by exported channels are always omitted when the toggle is on.
+Each entity wire page offers **Hide items not to be included in export** above the table when the library has rows for that entity kind (the toggle stays visible even when filtering hides every row). When enabled, rows are filtered with `isPreviewRowIncludedInExport` (respects per-row skip toggles and **Export inclusion** on `/builds/:id/export` for orphan channels, talk groups, and RX group lists). Zone rows with **Don't export as its own zone** in the library show a **Not exported as zone** badge; **Force export** and **Skip from export** are edited in the override modal (`forceInclude` / `excluded` on `zoneOverrides`). Precedence: `excluded` wins over `forceInclude`; `forceInclude` overrides library `omitFromExport`. Channel zone linkage uses library `Zone.members` plus build `zoneGrouping` layout — see [wire-name-composition.md](wire-name-composition.md#zone-membership-vs-wire-names). DM32 channel preview lists unlinked library channels (with zone note) so the toggle can reveal them when export inclusion excludes orphans. Contacts not referenced by exported channels are always omitted when the toggle is on.
 
 ### DM32 channel fan-out
 
@@ -55,14 +67,15 @@ Dual-mode zones appear on both **Zones** (DMR member projection) and **Airband**
 
 ## Routes
 
-| Route                        | Entity kind        | Notes                                                                                                                                                                                                                                                                                                                                                               |
-| ---------------------------- | ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `/builds/:id/channels`       | `channel`          | Export name mode + **Use abbreviations from library** toggle; click default name to store override; multi-mode rows (OpenGD77), RX-list fan-out rows (DM32), or m×n expansion rows (Anytone when enabled); leave-page guard for unapplied drafts. **Anytone:** airband channels appear on **Airband** only (not here).                                              |
-| `/builds/:id/airband`        | `channel` + `zone` | **Anytone only.** AM airband receive channels and zones that export to `AMAir.CSV` / `AMZone.CSV`. Dual-mode zones (DMR + airband members) also appear on **Zones** for the DMR projection.                                                                                                                                                                         |
-| `/builds/:id/zones`          | `zone`             | Click default name to store override; **Not exported as zone** badge when library `omitFromExport` is set; **Force export** per-build override; **N channels** / **M zones** member pills with name tooltips; DM32 builds show zone export trait controls above the table. **Anytone:** airband-only zones appear on **Airband** only; dual-mode zones remain here. |
-| `/builds/:id/talk-groups`    | `talkGroup`        | Unreferenced TGs still listed; click default name to store override                                                                                                                                                                                                                                                                                                 |
-| `/builds/:id/contacts`       | `contact`          | Digital + analog contacts; click default name to store override                                                                                                                                                                                                                                                                                                     |
-| `/builds/:id/rx-group-lists` | `rxGroupList`      | Click default name to store override                                                                                                                                                                                                                                                                                                                                |
+| Route                        | Entity kind        | Notes                                                                                                                                                                                                                                                                                                                         |
+| ---------------------------- | ------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `/builds/:id/channels`       | `channel`          | Read-only list + modal; export name mode + **Use abbreviations from library** on toolbar; link to bulk edit; multi-mode rows (OpenGD77), RX-list fan-out rows (DM32), or m×n expansion rows (Anytone when enabled). **Anytone:** airband channels appear on **Airband** only (not here). CHIRP delegates to flat memory page. |
+| `/builds/:id/channels/bulk`  | `channel`          | Wire name + skip only per row; unsaved navigation guard for wire-name drafts. Shared by OpenGD77, DM32, Anytone DMR, and CHIRP.                                                                                                                                                                                               |
+| `/builds/:id/airband`        | `channel` + `zone` | **Anytone only.** Embedded list + modal sections for AM airband channels and zones (`AMAir.CSV` / `AMZone.CSV`). Dual-mode zones also appear on **Zones** for the DMR projection.                                                                                                                                             |
+| `/builds/:id/zones`          | `zone`             | List + modal; **Not exported as zone** badge when library `omitFromExport` is set; force-export and skip in modal; DM32/Anytone zone-derived scan controls in modal (`ZoneScanOverrideSection`). **Anytone:** airband-only zones appear on **Airband** only; dual-mode zones remain here.                                     |
+| `/builds/:id/talk-groups`    | `talkGroup`        | Unreferenced TGs still listed; overrides in modal                                                                                                                                                                                                                                                                             |
+| `/builds/:id/contacts`       | `contact`          | Digital + analog contacts; overrides in modal                                                                                                                                                                                                                                                                                 |
+| `/builds/:id/rx-group-lists` | `rxGroupList`      | Overrides in modal                                                                                                                                                                                                                                                                                                            |
 
 Secondary nav is trait-gated (`buildNavItems` in `src/app/routes/builds/nav.ts`).
 
@@ -71,5 +84,6 @@ Secondary nav is trait-gated (`buildNavItems` in `src/app/routes/builds/nav.ts`)
 - [wire-name-composition.md](wire-name-composition.md) — traits → fields for generated wire names
 - [zone-grouping.md](zone-grouping.md) — build zone layout editor
 - [name-shortening.md](../import-export/name-shortening.md) — abbreviation pipeline
-- [WirePreviewTable sidecar](../../../src/app/components/builds/WirePreviewTable.md)
+- [WirePreviewDataTable sidecar](../../../src/app/components/builds/wirePreview/WirePreviewDataTable.md)
+- [WirePreviewOverrideModal sidecar](../../../src/app/components/builds/wirePreview/WirePreviewOverrideModal.md)
 - [data-model](../data-model/README.md) — `FormatBuild` overrides

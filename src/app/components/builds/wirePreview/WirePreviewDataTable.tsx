@@ -155,9 +155,7 @@ export default function WirePreviewDataTable({
                         size="sm"
                         aria-label="Move down"
                         disabled={
-                          reorder.disabled ||
-                          index < 0 ||
-                          index >= reorder.orderedKeys.length - 1
+                          reorder.disabled || index < 0 || index >= reorder.orderedKeys.length - 1
                         }
                         onClick={() => reorder.onMove(row.key, 'down')}
                       >
@@ -185,7 +183,11 @@ export default function WirePreviewDataTable({
       totalRowCount={rows.length}
       resultCount={filteredRows.length}
       filteredEmptyMessage="No matching rows"
-      emptyState={<Text c="dimmed" size="sm">{emptyMessage}</Text>}
+      emptyState={
+        <Text c="dimmed" size="sm">
+          {emptyMessage}
+        </Text>
+      }
       caption="Click a row to edit export overrides. Sort and filter affect display only — not export order."
     />
   );

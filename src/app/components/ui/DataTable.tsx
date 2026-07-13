@@ -424,11 +424,7 @@ export default function DataTable<T>({
                     ) : null}
                     {callsignColumn ? (
                       <Table.Td>
-                        <LinkedCell
-                          column={callsignColumn}
-                          row={row}
-                          asLink={!onRowActivate}
-                        />
+                        <LinkedCell column={callsignColumn} row={row} asLink={!onRowActivate} />
                       </Table.Td>
                     ) : null}
                     <Table.Td>

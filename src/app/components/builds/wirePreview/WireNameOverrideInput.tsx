@@ -1,11 +1,4 @@
-import {
-  ActionIcon,
-  Group,
-  Text,
-  TextInput,
-  Tooltip,
-  UnstyledButton,
-} from '@mantine/core';
+import { ActionIcon, Group, Text, TextInput, Tooltip, UnstyledButton } from '@mantine/core';
 import { IconCheck, IconX } from '@tabler/icons-react';
 import { useEffect, useState } from 'react';
 import type { WirePreviewRow } from '@core/services/previewWireRows.ts';

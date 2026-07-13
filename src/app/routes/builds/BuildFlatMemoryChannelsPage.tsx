@@ -205,12 +205,7 @@ export default function BuildFlatMemoryChannelsPage() {
   function setRowExcluded(row: WirePreviewRow, excluded: boolean) {
     const current = buildRef.current;
     void persistBuild(
-      buildService.withEntityExcluded(
-        current,
-        'channelOverrides',
-        row.libraryEntityId,
-        excluded,
-      ),
+      buildService.withEntityExcluded(current, 'channelOverrides', row.libraryEntityId, excluded),
     );
   }
 
@@ -256,9 +251,9 @@ export default function BuildFlatMemoryChannelsPage() {
     >
       <Stack gap="md">
         <Text size="sm" c="dimmed">
-          All analogue FM/AM library channels are included by default. Click a row to edit overrides,
-          or use bulk edit for wire names and skip flags. Location numbers (1…n) follow export order.
-          Digital modes are not exported.
+          All analogue FM/AM library channels are included by default. Click a row to edit
+          overrides, or use bulk edit for wire names and skip flags. Location numbers (1…n) follow
+          export order. Digital modes are not exported.
         </Text>
         <Group>
           <Button
@@ -359,7 +354,9 @@ export default function BuildFlatMemoryChannelsPage() {
             <ChirpChannelScanSection
               channel={selectedChannel}
               saving={saving}
-              onScanChange={(scanInclusion) => void updateChannelScan(selectedChannel, scanInclusion)}
+              onScanChange={(scanInclusion) =>
+                void updateChannelScan(selectedChannel, scanInclusion)
+              }
             />
           ) : null
         }

@@ -28,7 +28,12 @@ export default function BuildZonesWirePage() {
         ) : undefined
       }
       modalExtraSections={(row) => {
-        if (!zoneScan.enabled || !zoneScan.layout || !zoneScan.library || row.entityKind !== 'zone') {
+        if (
+          !zoneScan.enabled ||
+          !zoneScan.layout ||
+          !zoneScan.library ||
+          row.entityKind !== 'zone'
+        ) {
           return null;
         }
         const zone = zoneScan.zoneById.get(row.libraryEntityId);
