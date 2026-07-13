@@ -52,6 +52,10 @@ import {
   formatChannelBulkEditMessage,
   type PersistChannelBulkEditSuccess,
 } from '../../../lib/channelBulkEdit.ts';
+import {
+  channelHasDmrProfile,
+  formatAprsAssignmentSummary,
+} from '../../../lib/aprsBindingHelpers.ts';
 
 function percentLabel(value: number | null): string {
   if (value == null) return '—';
@@ -189,6 +193,20 @@ export default function ChannelsListPage() {
           sortValue: (ch: Channel) => channelScanListName(library, ch.id),
         };
       }
+      if (col.key === 'aprs') {
+        const slots = library.aprsConfiguration?.channelSlots ?? [];
+        return {
+          ...base,
+          render: (ch: Channel) => {
+            if (!channelHasDmrProfile(ch)) return '—';
+            return formatAprsAssignmentSummary(ch.aprs, slots, channels);
+          },
+          sortValue: (ch: Channel) => {
+            if (!channelHasDmrProfile(ch)) return '';
+            return formatAprsAssignmentSummary(ch.aprs, slots, channels);
+          },
+        };
+      }
       if (col.key === 'distance') {
         return {
           ...base,
@@ -228,7 +246,7 @@ export default function ChannelsListPage() {
           ch.location && ch.useLocation ? coordsToLocator(ch.location.lat, ch.location.lon, 6) : '',
       };
     });
-  }, [library, position, zones]);
+  }, [channels, library, position, zones]);
 
   const tableColumns = useMemo((): DataTableColumn<Channel>[] => {
     return [
