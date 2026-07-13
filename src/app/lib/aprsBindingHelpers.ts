@@ -4,10 +4,7 @@ import { CHANNEL_APRS_OFF } from '@core/domain/aprs/defaults.ts';
 import { normalizeOptionalChannelAprs } from '@core/domain/aprs/index.ts';
 import { channelDisplayLabel } from '@core/domain/channelNaming.ts';
 
-export function channelLabelForSlot(
-  slot: AprsChannelSlot,
-  channels: Channel[],
-): string {
+export function channelLabelForSlot(slot: AprsChannelSlot, channels: Channel[]): string {
   if (!slot.channelRef) return 'Current channel';
   const channel = channels.find((c) => c.id === slot.channelRef?.id);
   return channel ? channelDisplayLabel(channel) : 'Missing channel';
@@ -46,11 +43,7 @@ export function normalizeChannelAprsBindingForSave(
   const maxSlots = config?.channelSlots.length ?? 0;
   const normalized = normalizeOptionalChannelAprs(binding, [], maxSlots);
   if (binding?.reportSlotIndex != null && maxSlots > 0 && binding.reportSlotIndex > maxSlots) {
-    return normalizeOptionalChannelAprs(
-      { ...binding, reportSlotIndex: null },
-      [],
-      maxSlots,
-    );
+    return normalizeOptionalChannelAprs({ ...binding, reportSlotIndex: null }, [], maxSlots);
   }
   return normalized;
 }

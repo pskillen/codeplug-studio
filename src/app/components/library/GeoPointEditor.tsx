@@ -73,7 +73,7 @@ export default function GeoPointEditor({
       <Group grow align="flex-start">
         <NumberInput
           label="Latitude"
-          value={lat === '' ? '' : latN ?? ''}
+          value={lat === '' ? '' : (latN ?? '')}
           onChange={(value) => {
             const nextLat = value === '' ? '' : String(value);
             const next = { lat: nextLat, lon, maidenheadLocator };
@@ -88,7 +88,7 @@ export default function GeoPointEditor({
         />
         <NumberInput
           label="Longitude"
-          value={lon === '' ? '' : lonN ?? ''}
+          value={lon === '' ? '' : (lonN ?? '')}
           onChange={(value) => {
             const nextLon = value === '' ? '' : String(value);
             const next = { lat, lon: nextLon, maidenheadLocator };

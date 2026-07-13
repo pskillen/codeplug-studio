@@ -46,7 +46,9 @@ export function applyAprsChannelBulkPatch(
   return {
     receiveEnabled: patch.patchReceiveEnabled ? Boolean(patch.receiveEnabled) : base.receiveEnabled,
     reportType: patch.patchReportType ? (patch.reportType ?? 'off') : base.reportType,
-    digitalPttMode: patch.patchDigitalPttMode ? (patch.digitalPttMode ?? 'off') : base.digitalPttMode,
+    digitalPttMode: patch.patchDigitalPttMode
+      ? (patch.digitalPttMode ?? 'off')
+      : base.digitalPttMode,
     reportSlotIndex: patch.patchReportSlot ? (patch.reportSlotIndex ?? null) : base.reportSlotIndex,
   };
 }

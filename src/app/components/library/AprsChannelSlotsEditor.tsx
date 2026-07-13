@@ -115,7 +115,11 @@ export default function AprsChannelSlotsEditor({
         columns={columns}
         showSearch={false}
         defaultSort={{ columnKey: 'channel', direction: 'asc' }}
-        emptyState={<Text size="sm" c="dimmed">No slots configured.</Text>}
+        emptyState={
+          <Text size="sm" c="dimmed">
+            No slots configured.
+          </Text>
+        }
       />
       <Button
         variant="light"

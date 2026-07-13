@@ -111,9 +111,7 @@ function AprsChannelSlotForm({
             setDraft({
               ...draft,
               channelRef:
-                value && value !== CURRENT_CHANNEL_VALUE
-                  ? { kind: 'channel', id: value }
-                  : null,
+                value && value !== CURRENT_CHANNEL_VALUE ? { kind: 'channel', id: value } : null,
             })
           }
         />

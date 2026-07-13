@@ -26,9 +26,7 @@ export function libraryEntityIds(library: Library): {
     rxGroupListIds: new Set(library.rxGroupLists.map((r) => r.id)),
     scanListIds: new Set(library.scanLists.map((s) => s.id)),
     zoneIds: new Set(library.zones.map((z) => z.id)),
-    aprsConfigurationIds: new Set(
-      library.aprsConfiguration ? [library.aprsConfiguration.id] : [],
-    ),
+    aprsConfigurationIds: new Set(library.aprsConfiguration ? [library.aprsConfiguration.id] : []),
   };
 }
 

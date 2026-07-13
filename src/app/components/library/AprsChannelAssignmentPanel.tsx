@@ -86,17 +86,20 @@ export default function AprsChannelAssignmentPanel({
     [channelSlots],
   );
 
-  const updateBinding = useCallback((channelId: string, binding: ChannelAprsBinding | undefined) => {
-    setDraftById((prev) => {
-      const next = { ...prev };
-      if (binding === undefined) {
-        delete next[channelId];
-      } else {
-        next[channelId] = binding;
-      }
-      return next;
-    });
-  }, []);
+  const updateBinding = useCallback(
+    (channelId: string, binding: ChannelAprsBinding | undefined) => {
+      setDraftById((prev) => {
+        const next = { ...prev };
+        if (binding === undefined) {
+          delete next[channelId];
+        } else {
+          next[channelId] = binding;
+        }
+        return next;
+      });
+    },
+    [],
+  );
 
   const filteredRows = useMemo(() => {
     const needle = search.trim().toLowerCase();
@@ -158,9 +161,7 @@ export default function AprsChannelAssignmentPanel({
                 updateBinding(row.id, {
                   ...binding,
                   reportSlotIndex:
-                    value && value !== APRS_SLOT_NONE_VALUE
-                      ? Number.parseInt(value, 10)
-                      : null,
+                    value && value !== APRS_SLOT_NONE_VALUE ? Number.parseInt(value, 10) : null,
                 })
               }
             />

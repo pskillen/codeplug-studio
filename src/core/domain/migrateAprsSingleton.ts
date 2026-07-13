@@ -129,9 +129,7 @@ export function stripActiveAprsConfigurationId(build: LegacyFormatBuild): Format
   return rest;
 }
 
-export function migrateAprsSingletonFormatBuilds(
-  formatBuilds: LegacyFormatBuild[],
-): FormatBuild[] {
+export function migrateAprsSingletonFormatBuilds(formatBuilds: LegacyFormatBuild[]): FormatBuild[] {
   return formatBuilds.map(stripActiveAprsConfigurationId);
 }
 
@@ -144,8 +142,9 @@ export function migrateAprsSingletonAggregate(aggregate: ProjectAggregate): Proj
     analogContacts: aggregate.analogContacts,
     rxGroupLists: aggregate.rxGroupLists,
     scanLists: aggregate.scanLists,
-    aprsConfigurations: (aggregate as ProjectAggregate & { aprsConfigurations?: AprsConfiguration[] })
-      .aprsConfigurations,
+    aprsConfigurations: (
+      aggregate as ProjectAggregate & { aprsConfigurations?: AprsConfiguration[] }
+    ).aprsConfigurations,
     aprsConfiguration: aggregate.aprsConfiguration,
   };
 
@@ -161,8 +160,6 @@ export function migrateAprsSingletonAggregate(aggregate: ProjectAggregate): Proj
     rxGroupLists: library.rxGroupLists,
     scanLists: library.scanLists,
     aprsConfiguration: library.aprsConfiguration,
-    formatBuilds: migrateAprsSingletonFormatBuilds(
-      aggregate.formatBuilds as LegacyFormatBuild[],
-    ),
+    formatBuilds: migrateAprsSingletonFormatBuilds(aggregate.formatBuilds as LegacyFormatBuild[]),
   };
 }

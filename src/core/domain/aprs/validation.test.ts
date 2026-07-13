@@ -75,8 +75,6 @@ describe('collectAprsValidationWarnings', () => {
       },
     };
     const warnings = collectAprsValidationWarnings({ ...emptyLibrary(), channels: [channel] });
-    expect(warnings.some((w) => w.code === 'channels_have_digital_aprs_without_config')).toBe(
-      true,
-    );
+    expect(warnings.some((w) => w.code === 'channels_have_digital_aprs_without_config')).toBe(true);
   });
 });

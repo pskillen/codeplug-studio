@@ -89,9 +89,7 @@ export default function ChannelAprsBindingSection({
         }
         data={slotOptions}
         disabled={!slotsAvailable}
-        value={
-          value.reportSlotIndex != null ? String(value.reportSlotIndex) : APRS_SLOT_NONE_VALUE
-        }
+        value={value.reportSlotIndex != null ? String(value.reportSlotIndex) : APRS_SLOT_NONE_VALUE}
         onChange={(next) =>
           onChange({
             ...value,
