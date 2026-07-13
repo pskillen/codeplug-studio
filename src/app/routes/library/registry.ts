@@ -26,6 +26,12 @@ export const LIBRARY_KINDS: LibraryKindMeta[] = [
   },
   { kind: 'rxGroupList', slug: 'rx-group-lists', label: 'RX group list', plural: 'RX group lists' },
   { kind: 'scanList', slug: 'scan-lists', label: 'Scan list', plural: 'Scan lists' },
+  {
+    kind: 'aprsConfiguration',
+    slug: 'aprs-configurations',
+    label: 'APRS configuration',
+    plural: 'APRS configurations',
+  },
   { kind: 'zone', slug: 'zones', label: 'Zone', plural: 'Zones' },
 ];
 
@@ -55,6 +61,8 @@ export function entitiesForKind(library: Library, kind: LibraryEntityKind): Name
       return library.rxGroupLists;
     case 'scanList':
       return library.scanLists;
+    case 'aprsConfiguration':
+      return library.aprsConfigurations;
     case 'zone':
       return library.zones;
   }
@@ -90,6 +98,13 @@ export function describeEntity(library: Library, kind: LibraryEntityKind, id: st
     case 'scanList': {
       const s = library.scanLists.find((x) => x.id === id);
       return s ? `${s.memberChannelIds.length} channel(s)` : '';
+    }
+    case 'aprsConfiguration': {
+      const c = library.aprsConfigurations.find((x) => x.id === id);
+      if (!c) return '';
+      const slots = `${c.channelSlots.length} slot(s)`;
+      const position = c.positionSource === 'fixed' ? 'fixed' : 'GPS';
+      return `${slots} · ${position}`;
     }
     case 'zone': {
       const z = library.zones.find((x) => x.id === id);

@@ -51,6 +51,13 @@ export const LIBRARY_NAV: LibraryNavEntry[] = [
     editorSlugs: ['scan-lists'],
     sectionNavTitle: 'Scan lists',
   },
+  {
+    label: 'APRS configuration',
+    plural: 'APRS configurations',
+    listPath: '/library/aprs-configurations',
+    editorSlugs: ['aprs-configurations'],
+    sectionNavTitle: 'APRS configurations',
+  },
 ];
 
 export function listPathForEditorSlug(slug: string): string {

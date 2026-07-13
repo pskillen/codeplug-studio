@@ -8,6 +8,7 @@ import { listPathForEditorSlug } from './nav.ts';
 import ChannelEditor from './ChannelEditor.tsx';
 import RxGroupListEditor from './RxGroupListEditor.tsx';
 import ScanListEditor from './ScanListEditor.tsx';
+import AprsConfigurationEditor from './AprsConfigurationEditor.tsx';
 import ZoneEditor from './ZoneEditor.tsx';
 import { TalkGroupEditor } from './TalkGroupEditor.tsx';
 import { DigitalContactEditor } from './DigitalContactEditor.tsx';
@@ -124,6 +125,18 @@ export default function EntityEditorPage() {
             projectId={projectId}
             library={library}
             entity={entityId ? (library.scanLists.find((s) => s.id === entityId) ?? null) : null}
+          />
+        );
+      case 'aprsConfiguration':
+        return (
+          <AprsConfigurationEditor
+            projectId={projectId}
+            library={library}
+            entity={
+              entityId
+                ? (library.aprsConfigurations.find((c) => c.id === entityId) ?? null)
+                : null
+            }
           />
         );
       case 'zone':
