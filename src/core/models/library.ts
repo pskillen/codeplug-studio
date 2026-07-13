@@ -180,5 +180,5 @@ export interface Library {
   rxGroupLists: RxGroupList[];
   scanLists: ScanList[];
   zones: Zone[];
-  aprsConfigurations: AprsConfiguration[];
+  aprsConfiguration: AprsConfiguration | null;
 }

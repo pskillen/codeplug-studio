@@ -1,10 +1,12 @@
-import type { AprsConfiguration } from '@core/models/aprs.ts';
+import type { AprsConfiguration, ChannelAprsBinding } from '@core/models/aprs.ts';
 import type { Channel, Library } from '@core/models/library.ts';
-import type { FormatBuild } from '@core/models/formatBuild.ts';
-import { libraryEntityIds, validateEntityRef, assertNonEmptyName } from '../validation.ts';
+import { assertNonEmptyName, validateEntityRef } from '../validation.ts';
 
 export interface AprsValidationWarning {
-  code: 'digital_report_on_analog_channel' | 'orphan_report_channel_ref';
+  code:
+    | 'digital_report_on_analog_channel'
+    | 'orphan_report_slot_index'
+    | 'channels_have_digital_aprs_without_config';
   message: string;
   channelId?: string;
   configId?: string;
@@ -14,14 +16,8 @@ function channelHasDmrProfile(channel: Channel): boolean {
   return channel.modeProfiles.some((profile) => profile.mode === 'dmr');
 }
 
-export function validateAprsConfigurationName(config: AprsConfiguration, library: Library): void {
+export function validateAprsConfigurationName(config: AprsConfiguration): void {
   assertNonEmptyName(config.name, 'APRS configuration name');
-  const duplicate = library.aprsConfigurations.some(
-    (row) => row.id !== config.id && row.name.trim() === config.name.trim(),
-  );
-  if (duplicate) {
-    throw new Error(`Duplicate APRS configuration name: ${config.name}`);
-  }
 }
 
 export function validateAprsConfigurationRefs(config: AprsConfiguration, library: Library): void {
@@ -32,30 +28,33 @@ export function validateAprsConfigurationRefs(config: AprsConfiguration, library
   }
 }
 
-export function validateActiveAprsConfigurationId(build: FormatBuild, library: Library): void {
-  const id = build.activeAprsConfigurationId?.trim();
-  if (!id) return;
-  const { aprsConfigurationIds } = libraryEntityIds(library);
-  if (!aprsConfigurationIds.has(id)) {
-    throw new Error(`Active APRS configuration not found in library: ${id}`);
+export function validateChannelAprsBinding(
+  binding: ChannelAprsBinding,
+  config: AprsConfiguration | null,
+): void {
+  if (binding.reportSlotIndex == null) return;
+  const max = config?.channelSlots.length ?? 0;
+  if (binding.reportSlotIndex < 1 || binding.reportSlotIndex > max) {
+    throw new Error(
+      `APRS report slot index ${binding.reportSlotIndex} is out of range (1..${max})`,
+    );
   }
 }
 
-export function validateChannelAprsRefs(channel: Channel, library: Library): void {
-  if (!channel.aprs?.reportChannelRef) return;
-  validateEntityRef(channel.aprs.reportChannelRef, library);
-}
-
-export function collectAprsValidationWarnings(
-  library: Library,
-  activeConfig: AprsConfiguration | null,
-): AprsValidationWarning[] {
+export function collectAprsValidationWarnings(library: Library): AprsValidationWarning[] {
   const warnings: AprsValidationWarning[] = [];
-  const slotChannelIds = new Set(
-    (activeConfig?.channelSlots ?? [])
-      .map((slot) => slot.channelRef?.id)
-      .filter((id): id is string => Boolean(id)),
+  const config = library.aprsConfiguration;
+  const maxSlots = config?.channelSlots.length ?? 0;
+
+  const hasDigitalAprsChannel = library.channels.some(
+    (channel) => channel.aprs?.reportType === 'digital',
   );
+  if (hasDigitalAprsChannel && !config) {
+    warnings.push({
+      code: 'channels_have_digital_aprs_without_config',
+      message: 'One or more channels have digital APRS reporting but no APRS configuration exists',
+    });
+  }
 
   for (const channel of library.channels) {
     if (!channel.aprs) continue;
@@ -66,13 +65,13 @@ export function collectAprsValidationWarnings(
         channelId: channel.id,
       });
     }
-    const reportRef = channel.aprs.reportChannelRef?.id;
-    if (reportRef && activeConfig && slotChannelIds.size > 0 && !slotChannelIds.has(reportRef)) {
+    const slotIndex = channel.aprs.reportSlotIndex;
+    if (slotIndex != null && config && (slotIndex < 1 || slotIndex > maxSlots)) {
       warnings.push({
-        code: 'orphan_report_channel_ref',
-        message: `Channel "${channel.name}" report channel ref is not in active APRS slot channels`,
+        code: 'orphan_report_slot_index',
+        message: `Channel "${channel.name}" report slot index ${slotIndex} is out of range`,
         channelId: channel.id,
-        configId: activeConfig.id,
+        configId: config.id,
       });
     }
   }

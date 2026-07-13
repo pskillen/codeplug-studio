@@ -73,7 +73,7 @@ describe('migrateZoneExportFields', () => {
       analogContacts: [],
       rxGroupLists: [],
       scanLists: [],
-      aprsConfigurations: [],
+      aprsConfiguration: null,
     };
 
     const { library: nextLibrary, formatBuilds } = migrateZoneExportFieldsToBuildLayout(library, [
@@ -100,7 +100,7 @@ describe('migrateZoneExportFields', () => {
       analogContacts: [],
       rxGroupLists: [],
       scanLists: [],
-      aprsConfigurations: [],
+      aprsConfiguration: null,
     };
     const { formatBuilds } = migrateZoneExportFieldsToBuildLayout(library, [
       { ...dm32Build(), profileId: 'dm32-default' },
@@ -128,7 +128,7 @@ describe('migrateZoneExportFields', () => {
       analogContacts: [],
       rxGroupLists: [],
       scanLists: [],
-      aprsConfigurations: [],
+      aprsConfiguration: null,
       formatBuilds: [dm32Build()],
     });
 

@@ -9,7 +9,7 @@ describe('normalizeChannelAprsBinding', () => {
         receiveEnabled: true,
         reportType: 'analog' as never,
         digitalPttMode: 'on',
-        reportChannelRef: null,
+        reportSlotIndex: null,
       },
       warnings,
     );
@@ -24,14 +24,28 @@ describe('normalizeChannelAprsBinding', () => {
         receiveEnabled: false,
         reportType: 'off',
         digitalPttMode: 'off',
-        reportChannelRef: null,
+        reportSlotIndex: null,
       }),
     ).toBeUndefined();
+  });
+
+  it('clamps report slot index to configured slot count', () => {
+    const result = normalizeChannelAprsBinding(
+      {
+        receiveEnabled: true,
+        reportType: 'digital',
+        digitalPttMode: 'on',
+        reportSlotIndex: 3,
+      },
+      [],
+      1,
+    );
+    expect(result?.reportSlotIndex).toBeNull();
   });
 });
 
 describe('normalizeAprsConfiguration', () => {
-  it('trims name and normalizes DMR ids', () => {
+  it('trims name and normalizes slot target ids', () => {
     const config = normalizeAprsConfiguration({
       id: 'cfg-1',
       projectId: 'p1',
@@ -51,12 +65,9 @@ describe('normalizeAprsConfiguration', () => {
           callType: 'group',
         },
       ],
-      defaultDmrId: -1,
-      defaultCallType: 'group',
     });
     expect(config.name).toBe('Home');
     expect(config.comment).toBe('note');
-    expect(config.defaultDmrId).toBeNull();
     expect(config.channelSlots[0]?.targetDmrId).toBe(234999);
   });
 
@@ -74,8 +85,6 @@ describe('normalizeAprsConfiguration', () => {
         positionSource,
         fixedLocation: null,
         channelSlots: [],
-        defaultDmrId: null,
-        defaultCallType: 'group',
       });
       expect(config.positionSource).toBe(positionSource);
     }

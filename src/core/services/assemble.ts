@@ -43,7 +43,7 @@ export interface LibrarySlice {
   analogContacts: AnalogContact[];
   rxGroupLists: RxGroupList[];
   scanLists: ScanList[];
-  aprsConfigurations?: AprsConfiguration[];
+  aprsConfiguration?: AprsConfiguration | null;
 }
 
 export function librarySliceFrom(library: Library): LibrarySlice {
@@ -55,7 +55,7 @@ export function librarySliceFrom(library: Library): LibrarySlice {
     analogContacts: library.analogContacts,
     rxGroupLists: library.rxGroupLists,
     scanLists: library.scanLists,
-    aprsConfigurations: library.aprsConfigurations ?? [],
+    aprsConfiguration: library.aprsConfiguration,
   };
 }
 
@@ -405,39 +405,24 @@ function assembleEntityList<T extends { id: string; name: string }>(
   return assembled;
 }
 
-function resolveActiveAprsConfiguration(
-  build: FormatBuild,
-  library: LibrarySlice,
-): AprsConfiguration | null {
-  const configs = library.aprsConfigurations ?? [];
-  const activeId = build.activeAprsConfigurationId?.trim();
-  if (activeId) {
-    return configs.find((config) => config.id === activeId) ?? null;
-  }
-  return null;
+function resolveAprsConfiguration(library: LibrarySlice): AprsConfiguration | null {
+  return library.aprsConfiguration ?? null;
 }
 
 export function aprsConfigurationWarnings(
-  build: FormatBuild,
+  _build: FormatBuild,
   library: LibrarySlice,
   assembled: AssembledBuild,
 ): string[] {
   const warnings: string[] = [];
-  const configs = library.aprsConfigurations ?? [];
-  if (configs.length === 0) return warnings;
-
-  const activeId = build.activeAprsConfigurationId?.trim();
-  if (!activeId) {
+  const hasDigitalAprsChannel = library.channels.some(
+    (channel) => channel.aprs?.reportType === 'digital',
+  );
+  if (hasDigitalAprsChannel && !assembled.aprsConfiguration) {
     warnings.push(
-      'APRS configurations exist but no activeAprsConfigurationId is set on this build',
+      'One or more channels have digital APRS reporting but no APRS configuration exists in the library',
     );
-    return warnings;
   }
-
-  if (!assembled.aprsConfiguration) {
-    warnings.push(`Active APRS configuration id not found in library: ${activeId}`);
-  }
-
   return warnings;
 }
 
@@ -594,6 +579,6 @@ export function assemble(
       : undefined,
     zoneGrouping: zoneGroupingSections(normalizedBuild)[0],
     scanListsLayout: scanListsSections(normalizedBuild)[0],
-    aprsConfiguration: resolveActiveAprsConfiguration(normalizedBuild, library),
+    aprsConfiguration: resolveAprsConfiguration(library),
   };
 }

@@ -93,15 +93,18 @@ export function findReferencesTo(library: Library, target: ReferenceTarget): Ent
     }
     if (
       target.kind === 'channel' &&
-      channel.aprs?.reportChannelRef?.kind === 'channel' &&
-      channel.aprs.reportChannelRef.id === target.id
+      channel.aprs?.reportSlotIndex != null &&
+      library.aprsConfiguration
     ) {
-      refs.push({
-        fromKind: 'channel',
-        fromId: channel.id,
-        fromName: channel.name,
-        relationship: 'channel APRS report channel',
-      });
+      const slot = library.aprsConfiguration.channelSlots[channel.aprs.reportSlotIndex - 1];
+      if (slot?.channelRef?.id === target.id) {
+        refs.push({
+          fromKind: 'channel',
+          fromId: channel.id,
+          fromName: channel.name,
+          relationship: 'channel APRS report slot channel',
+        });
+      }
     }
     for (const profile of channel.modeProfiles) {
       if (profile.mode === 'dmr') {
@@ -132,14 +135,15 @@ export function findReferencesTo(library: Library, target: ReferenceTarget): Ent
     }
   }
 
-  // APRS configurations reference channels via slot channelRef.
-  for (const config of library.aprsConfigurations) {
-    for (const slot of config.channelSlots) {
+  // APRS configuration references channels via slot channelRef.
+  const aprsConfig = library.aprsConfiguration;
+  if (aprsConfig) {
+    for (const slot of aprsConfig.channelSlots) {
       if (slot.channelRef && refMatches(slot.channelRef, target)) {
         refs.push({
           fromKind: 'aprsConfiguration',
-          fromId: config.id,
-          fromName: config.name,
+          fromId: aprsConfig.id,
+          fromName: aprsConfig.name,
           relationship: 'APRS slot channel',
         });
       }
@@ -195,7 +199,7 @@ export function findDanglingReferences(library: Library): DanglingReference[] {
       case 'scanList':
         return scanListIds.has(target.id);
       case 'aprsConfiguration':
-        return library.aprsConfigurations.some((c) => c.id === target.id);
+        return library.aprsConfiguration?.id === target.id;
     }
   };
 
@@ -275,15 +279,19 @@ export function findDanglingReferences(library: Library): DanglingReference[] {
         relationship: 'channel scan list',
       });
     }
-    if (channel.aprs?.reportChannelRef && !hasTarget(channel.aprs.reportChannelRef)) {
-      dangling.push({
-        fromKind: 'channel',
-        fromId: channel.id,
-        fromName: channel.name,
-        targetKind: channel.aprs.reportChannelRef.kind,
-        targetId: channel.aprs.reportChannelRef.id,
-        relationship: 'channel APRS report channel',
-      });
+    const aprsConfig = library.aprsConfiguration;
+    if (channel.aprs?.reportSlotIndex != null && aprsConfig) {
+      const slot = aprsConfig.channelSlots[channel.aprs.reportSlotIndex - 1];
+      if (slot?.channelRef && !hasTarget(slot.channelRef)) {
+        dangling.push({
+          fromKind: 'channel',
+          fromId: channel.id,
+          fromName: channel.name,
+          targetKind: slot.channelRef.kind,
+          targetId: slot.channelRef.id,
+          relationship: 'channel APRS report slot channel',
+        });
+      }
     }
     for (const profile of dmrProfiles(channel)) {
       if (profile.contactRef && !hasTarget(profile.contactRef)) {
@@ -309,13 +317,14 @@ export function findDanglingReferences(library: Library): DanglingReference[] {
     }
   }
 
-  for (const config of library.aprsConfigurations) {
-    for (const slot of config.channelSlots) {
+  const aprsConfig = library.aprsConfiguration;
+  if (aprsConfig) {
+    for (const slot of aprsConfig.channelSlots) {
       if (slot.channelRef && !hasTarget(slot.channelRef)) {
         dangling.push({
           fromKind: 'aprsConfiguration',
-          fromId: config.id,
-          fromName: config.name,
+          fromId: aprsConfig.id,
+          fromName: aprsConfig.name,
           targetKind: slot.channelRef.kind,
           targetId: slot.channelRef.id,
           relationship: 'APRS slot channel',

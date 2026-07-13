@@ -75,6 +75,18 @@ function normalizeTimeslot(value: DMRTimeSlot | null | undefined): DMRTimeSlot |
   return TIMESLOTS.has(value) ? value : null;
 }
 
+function normalizeReportSlotIndex(
+  value: number | null | undefined,
+  maxSlots: number,
+): number | null {
+  if (value == null || !Number.isFinite(value)) return null;
+  const index = Math.trunc(value);
+  if (index < 1) return null;
+  if (maxSlots === 0) return index;
+  if (index > maxSlots) return null;
+  return index;
+}
+
 export function normalizeAprsChannelSlot(slot: AprsChannelSlot): AprsChannelSlot {
   return {
     channelRef: normalizeChannelRef(slot.channelRef),
@@ -87,19 +99,20 @@ export function normalizeAprsChannelSlot(slot: AprsChannelSlot): AprsChannelSlot
 export function normalizeChannelAprsBinding(
   binding: ChannelAprsBinding | null | undefined,
   warnings: AprsNormalizeWarning[] = [],
+  maxSlots = 0,
 ): ChannelAprsBinding | undefined {
   if (binding == null) return undefined;
   const normalized: ChannelAprsBinding = {
     receiveEnabled: Boolean(binding.receiveEnabled),
     reportType: normalizeReportType(binding.reportType, warnings),
     digitalPttMode: normalizePttMode(binding.digitalPttMode),
-    reportChannelRef: normalizeChannelRef(binding.reportChannelRef),
+    reportSlotIndex: normalizeReportSlotIndex(binding.reportSlotIndex, maxSlots),
   };
   if (
     normalized.receiveEnabled === CHANNEL_APRS_OFF.receiveEnabled &&
     normalized.reportType === CHANNEL_APRS_OFF.reportType &&
     normalized.digitalPttMode === CHANNEL_APRS_OFF.digitalPttMode &&
-    normalized.reportChannelRef == null
+    normalized.reportSlotIndex == null
   ) {
     return undefined;
   }
@@ -109,17 +122,13 @@ export function normalizeChannelAprsBinding(
 export function normalizeOptionalChannelAprs(
   binding: ChannelAprsBinding | null | undefined,
   warnings: AprsNormalizeWarning[] = [],
+  maxSlots = 0,
 ): ChannelAprsBinding | undefined {
-  return normalizeChannelAprsBinding(binding, warnings);
-}
-
-export function normalizeAprsConfigurations(
-  configs: AprsConfiguration[] | undefined,
-): AprsConfiguration[] {
-  return (configs ?? []).map(normalizeAprsConfiguration);
+  return normalizeChannelAprsBinding(binding, warnings, maxSlots);
 }
 
 export function normalizeAprsConfiguration(config: AprsConfiguration): AprsConfiguration {
+  const channelSlots = (config.channelSlots ?? []).map(normalizeAprsChannelSlot);
   return {
     ...config,
     name: config.name.trim(),
@@ -128,8 +137,13 @@ export function normalizeAprsConfiguration(config: AprsConfiguration): AprsConfi
     autoTxIntervalSec: normalizePositiveIntOrNull(config.autoTxIntervalSec),
     positionSource: normalizePositionSource(config.positionSource),
     fixedLocation: config.fixedLocation,
-    channelSlots: (config.channelSlots ?? []).map(normalizeAprsChannelSlot),
-    defaultDmrId: normalizePositiveIntOrNull(config.defaultDmrId),
-    defaultCallType: normalizeSlotCallType(config.defaultCallType),
+    channelSlots,
   };
+}
+
+export function normalizeAprsConfigurationOrNull(
+  config: AprsConfiguration | null | undefined,
+): AprsConfiguration | null {
+  if (config == null) return null;
+  return normalizeAprsConfiguration(config);
 }

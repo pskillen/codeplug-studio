@@ -41,7 +41,7 @@ export interface ProjectAggregate {
   analogContacts: AnalogContact[];
   rxGroupLists: RxGroupList[];
   scanLists: ScanList[];
-  aprsConfigurations: AprsConfiguration[];
+  aprsConfiguration: AprsConfiguration | null;
   formatBuilds: FormatBuild[];
 }
 
@@ -54,7 +54,7 @@ export function emptyLibrary(): Library {
     rxGroupLists: [],
     scanLists: [],
     zones: [],
-    aprsConfigurations: [],
+    aprsConfiguration: null,
   };
 }
 
@@ -71,7 +71,7 @@ export function documentFromAggregate(aggregate: ProjectAggregate): StudioProjec
       analogContacts: aggregate.analogContacts,
       rxGroupLists: aggregate.rxGroupLists,
       scanLists: aggregate.scanLists,
-      aprsConfigurations: aggregate.aprsConfigurations,
+      aprsConfiguration: aggregate.aprsConfiguration,
     },
     formatBuilds: aggregate.formatBuilds,
   };
@@ -87,7 +87,7 @@ export function aggregateFromDocument(doc: StudioProjectDocument): ProjectAggreg
     analogContacts: doc.library.analogContacts,
     rxGroupLists: doc.library.rxGroupLists,
     scanLists: doc.library.scanLists ?? [],
-    aprsConfigurations: doc.library.aprsConfigurations ?? [],
+    aprsConfiguration: doc.library.aprsConfiguration ?? null,
     formatBuilds: doc.formatBuilds,
   };
 }

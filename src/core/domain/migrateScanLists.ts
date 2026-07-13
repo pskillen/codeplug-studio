@@ -79,7 +79,7 @@ export function migrateBuildScanListsToLibrary(aggregate: ProjectAggregate): Pro
     analogContacts: aggregate.analogContacts,
     rxGroupLists: aggregate.rxGroupLists,
     scanLists: [...scanListsById.values()],
-    aprsConfigurations: aggregate.aprsConfigurations ?? [],
+    aprsConfiguration: aggregate.aprsConfiguration ?? null,
   };
 
   return {
