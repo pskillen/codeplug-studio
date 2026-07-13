@@ -57,16 +57,22 @@ erDiagram
   ProjectMeta ||--o{ DigitalContact : rows
   ProjectMeta ||--o{ AnalogContact : rows
   ProjectMeta ||--o{ RxGroupList : rows
+  ProjectMeta ||--o{ AprsConfiguration : rows
   ProjectMeta ||--o{ FormatBuild : rows
   Zone }o--o{ Channel : members
+  Channel ||--o| ChannelAprsBinding : aprs
+  ChannelAprsBinding }o--o| Channel : reportChannelRef
+  AprsConfiguration ||--o{ AprsChannelSlot : channelSlots
+  AprsChannelSlot }o--o| Channel : channelRef
   FormatBuild }o--o{ Channel : channelOverrides
   FormatBuild }o--o{ Zone : zoneOverrides
+  FormatBuild }o--o| AprsConfiguration : activeAprsConfigurationId
   FormatBuild ||--|| TraitLayout : layout
 ```
 
 ## Schema version
 
-`STUDIO_SCHEMA_VERSION = 14` in `src/core/models/schemaVersion.ts`. Bumps when persisted row shapes change.
+`STUDIO_SCHEMA_VERSION = 15` in `src/core/models/schemaVersion.ts`. Bumps when persisted row shapes change. v15 adds digital APRS entities (`AprsConfiguration`, `Channel.aprs`, `FormatBuild.activeAprsConfigurationId`).
 
 ## Persistable rows
 
@@ -97,6 +103,10 @@ Vendor-neutral RF semantics only. UUID `id` FKs; `name` is a **human display lab
 | `DigitalContact` | Digital private call — `mode`, `digitalId`                                                                                                                                      |
 | `AnalogContact`  | Analogue call sign / code                                                                                                                                                       |
 | `RxGroupList`    | Promiscuous RX list — `members` as talk-group `EntityRef[]`                                                                                                                     |
+| `ScanList`       | Dedicated scan list — ordered `memberChannelIds`                                                                                                                                |
+| `AprsConfiguration` | Digital APRS global config — beacon timing, position source, `channelSlots[]`, default DMR target; see [aprs](../aprs/README.md)                                             |
+
+`Channel.aprs` (optional `ChannelAprsBinding`) holds per-channel digital APRS flags when enabled. Omit = APRS off for that channel.
 
 Mode-specific channel fields live on `modeProfiles` entries. Union type `ChannelModeProfile`:
 
@@ -131,6 +141,7 @@ Library CRUD edits this layer only — no radio name-length caps, no format wire
 | `contactOverrides`     | Sparse digital or analogue contact customisation                                          |
 | `rxGroupListOverrides` | Sparse RX group list customisation                                                        |
 | `layout`               | `TraitLayout` — trait-shaped organisation (zone order, flat memories, …)                  |
+| `activeAprsConfigurationId` | Optional — which library `AprsConfiguration` exports as the single global row (Anytone) |
 
 ### Entity overrides (wire names)
 

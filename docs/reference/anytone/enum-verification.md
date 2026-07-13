@@ -38,10 +38,10 @@ Tier-3 wire reference. Values **observed** in the operator rich AT-D890UV export
 | `Work Alone`                   | Observed | `Off`                                           | `Off`                                   | `On`                          |
 | `Ranging`                      | Observed | `Off`                                           | `Off`                                   | `On`                          |
 | `Idle TX`                      | Observed | `Off`, `On`                                     | `Off`                                   | —                             |
-| `APRS RX`                      | Observed | `Off`, `On`                                     | `Off`                                   | APRS ticket                   |
-| `Analog APRS PTT Mode`         | Observed | `Off`                                           | `Off`                                   | —                             |
-| `Digital APRS PTT Mode`        | Observed | `Off`                                           | `Off`                                   | —                             |
-| `APRS Report Type`             | Observed | `Off`                                           | `Off`                                   | Report type strings           |
+| `APRS RX`                      | Observed | `Off`, `On`                                     | `receiveEnabled`                        | Confirmed — [aprs-on-channels.md](aprs-on-channels.md) |
+| `Analog APRS PTT Mode`         | Observed | `Off`, `Start Of Transmission`, `End of Transmission` | always `Off` at export            | Not modelled — analog deferred |
+| `Digital APRS PTT Mode`        | Observed | `Off`, `On`                                     | `digitalPttMode` `off` \| `on`          | Confirmed digital |
+| `APRS Report Type`             | Observed | `Off`, `Analog`, `Digital`                      | `off` \| `digital` only; `Analog` → `off` on import | Confirmed digital |
 | `SMS Confirmation`             | Observed | `Off`                                           | `Off`                                   | `On`                          |
 | `DMR MODE`                     | Observed | `0`, `1`                                        | `0` / `1` from `dmrMode` or RX/TX infer | `2` / `3` (DCDM) deferred     |
 | `DataACK Disable`              | Observed | `0`, `1`                                        | `0`                                     | Meaning of `1`                |
@@ -121,7 +121,7 @@ Elicit when those features are scheduled — not required for DMR MVP reconcilia
 | File                           | Notes                                                                             |
 | ------------------------------ | --------------------------------------------------------------------------------- |
 | `OptionalSetting.CSV`          | ~199 columns; numeric/bit enums — candidate for build-scoped radio settings model |
-| `APRS.CSV`                     | ~184 columns — separate APRS initiative                                           |
+| `APRS.CSV`                     | ~184 columns — modelled subset + `aprsDefaults.ts`; see [aprs.md](aprs.md) and [features/aprs/](../../../features/aprs/README.md) |
 | `NXSetting.CSV`                | NXDN global row                                                                   |
 | `RoamingChannel.CSV`           | `Color Code` / `Slot` = `No Use` in sample                                        |
 | `HotKey_*.CSV`                 | `Mode`: `Call`, `Menu`; …                                                         |

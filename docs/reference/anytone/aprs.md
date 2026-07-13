@@ -6,12 +6,15 @@ Global APRS configuration for AT-D890UV — **one wide data row** (~150 columns)
 
 Per-channel APRS flags on `Channel.CSV`: [aprs-on-channels.md](aprs-on-channels.md).
 
+**Internal model (tier 1):** Digital APRS semantics, entity fields, and export policy are documented in [docs/features/aprs/](../../../features/aprs/README.md) — not duplicated here. This file is the wire column inventory only.
+
 ## Fidelity tier
 
 | Tier             | Status                                                                  |
 | ---------------- | ----------------------------------------------------------------------- |
-| **Not modelled** | No first-class internal entity today                                    |
-| Export v1        | Header-only or fixture-default row (OpenGD77 pattern) until model lands |
+| **Modelled**     | Beacon timing, position source, 8 DMR slots, default DMR target — see tier-1 [aprs](../../../features/aprs/README.md) |
+| **Export v1**    | Modelled columns via [#251](https://github.com/pskillen/codeplug-studio/issues/251); remainder from `aprsDefaults.ts` constants |
+| **Not modelled** | Analog identity/path, RX filters, packet types, tones, extra TX freqs   |
 
 ## Column groups (inventory)
 
@@ -63,39 +66,9 @@ Repeating pattern `channelN`, `slotN`, `Aprs TgN`, `Call TypeN` for N=1…8 — 
 
 `POSITION`, `MIC-E`, `OBJECT`, `ITEM`, `MESSAGE`, `WX REPORT`, `NMEA REPORT`, `STATUS REPORT`, `OTHER` — enable flags for APRS packet types.
 
-## Proposed internal model (follow-up issue)
-
-Not implemented in this wire spike — sketch for tier-1 data-model work:
-
-```typescript
-/** Proposed — not in src/core/models/ today */
-interface AprsConfiguration {
-  id: string;
-  // Scope TBD: library row vs FormatBuild-scoped settings
-  manualTxIntervalSec: number | null;
-  autoTxIntervalSec: number | null;
-  fixedLocation: GeoPoint | null;
-  yourCallsign: string;
-  yourSsid: number | null;
-  tocall: string;
-  digipeaterPath: string;
-  symbolTable: string;
-  mapIcon: string;
-  txFrequencyHz: number | null;
-  channelSlots: AprsChannelSlot[]; // up to 8
-  rxFilters: AprsRxFilter[]; // up to 32
-  packetTypeFlags: Record<string, boolean>;
-}
-```
-
-**Open design questions** (record in [anytone-outstanding.md](../../features/import-export/anytone-outstanding.md)):
-
-- Library-global vs build-scoped configuration
-- Relationship to per-channel APRS columns on `Channel.CSV`
-- Whether APRS shares `TalkGroup` refs for `Aprs TgN` columns
-
 ## Related
 
 - [aprs-on-channels.md](aprs-on-channels.md)
+- [docs/features/aprs/](../../../features/aprs/README.md) — tier-1 digital APRS model
 - [OpenGD77 dtmf-aprs.md](../opengd77/dtmf-aprs.md) — sibling deferred pattern
 - [channels.md](channels.md)

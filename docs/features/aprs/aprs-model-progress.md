@@ -27,6 +27,21 @@
 
 ---
 
+## Slice 1 — Docs
+
+**Status:** Complete
+
+**Delivered**
+
+- `docs/features/aprs/README.md` hub
+- `docs/features/aprs/cross-format-reconciliation.md`
+- `docs/features/data-model/README.md` — APRS entities + schema v15
+- `docs/features/README.md` index row
+- Tier-3 link updates (anytone aprs*, enum-verification)
+- `docs/features/import-export/anytone-outstanding.md` — APRS gap → in progress
+
+---
+
 ## Next
 
-- Slice 1: tier-1 hub, reconciliation doc, data-model README, tier-3 link updates
+- Slice 2: core types + schema v15
