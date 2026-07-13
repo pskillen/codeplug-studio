@@ -1,4 +1,5 @@
 import type { FormatBuild } from '@core/models/formatBuild.ts';
+import type { AprsConfiguration } from '@core/models/aprs.ts';
 import type {
   AnalogContact,
   Channel,
@@ -46,6 +47,7 @@ export interface ProjectSeed {
   analogContacts?: AnalogContact[];
   rxGroupLists?: RxGroupList[];
   scanLists?: ScanList[];
+  aprsConfigurations?: AprsConfiguration[];
   formatBuilds?: FormatBuild[];
 }
 

@@ -8,6 +8,7 @@ export type {
   LocalFileInterchange,
   ProjectInterchange,
 } from './interchange.ts';
+export { type AprsConfiguration, type AprsChannelSlot, type ChannelAprsBinding } from './aprs.ts';
 export {
   type Channel,
   type TalkGroup,
@@ -42,6 +43,10 @@ export {
 export { type FormatBuild, type BuildEntityOverride } from './formatBuild.ts';
 export type {
   AnalogChannelMode,
+  AprsPositionSource,
+  AprsPttMode,
+  AprsReportType,
+  AprsSlotCallType,
   ChannelMode,
   ChannelTone,
   DigitalChannelMode,

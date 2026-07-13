@@ -79,10 +79,11 @@ describe('native-yaml parse', () => {
 
   it('parses hideFromInternalMap when true', () => {
     const aggregate = fullLibraryAggregate();
-    const channel = aggregate.channels[0]!;
     const withHidden = {
       ...aggregate,
-      channels: [{ ...channel, hideFromInternalMap: true }],
+      channels: aggregate.channels.map((ch, index) =>
+        index === 0 ? { ...ch, hideFromInternalMap: true } : ch,
+      ),
     };
     const parsed = parseProjectDocument(serialiseProject(withHidden));
     expect(parsed.channels[0]?.hideFromInternalMap).toBe(true);
@@ -135,6 +136,18 @@ describe('native-yaml validate', () => {
   it('rejects broken build selection FK', () => {
     expect(() => parseProjectDocument(readFixture('broken-fk.yaml'))).toThrow(
       /not found in library/,
+    );
+  });
+
+  it('rejects orphan APRS reportChannelRef', () => {
+    expect(() => parseProjectDocument(readFixture('aprs-broken-fk.yaml'))).toThrow(
+      /not found in library/,
+    );
+  });
+
+  it('rejects orphan activeAprsConfigurationId', () => {
+    expect(() => parseProjectDocument(readFixture('aprs-broken-active-config.yaml'))).toThrow(
+      /Active APRS configuration not found/,
     );
   });
 });

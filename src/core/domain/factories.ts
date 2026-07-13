@@ -24,6 +24,7 @@ export function emptyLibrary(): Library {
     rxGroupLists: [],
     scanLists: [],
     zones: [],
+    aprsConfigurations: [],
   };
 }
 
@@ -179,6 +180,8 @@ export function newScanList(projectId: string, name: string): ScanList {
     memberChannelIds: [],
   };
 }
+
+export { newAprsConfiguration } from './aprs/index.ts';
 
 export function newZone(projectId: string, name: string): Zone {
   const now = isoNow();

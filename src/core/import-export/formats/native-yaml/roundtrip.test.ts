@@ -11,6 +11,7 @@ import {
   FIXTURE_CHILD_ZONE_ID,
   FIXTURE_PARENT_ZONE_ID,
   FIXTURE_PROJECT_ID,
+  FIXTURE_APRS_CONFIG_ID,
   FIXTURE_TG_ID,
   FIXTURE_TIMESTAMP,
   FIXTURE_ZONE_ID,
@@ -178,5 +179,16 @@ describe('native-yaml round-trip smoke', () => {
       mode: 'ssb',
       ssbSideband: 'lsb',
     });
+  });
+
+  it('preserves APRS configuration and channel binding on round-trip', () => {
+    const aggregate = fullLibraryAggregate();
+    const parsed = parseProjectDocument(serialiseProject(aggregate));
+    expect(parsed.aprsConfigurations).toHaveLength(1);
+    expect(parsed.aprsConfigurations[0]?.name).toBe('Home APRS');
+    expect(parsed.channels.find((ch) => ch.id === FIXTURE_CHANNEL_B_ID)?.aprs?.reportType).toBe(
+      'digital',
+    );
+    expect(parsed.aprsConfigurations[0]?.id).toBe(FIXTURE_APRS_CONFIG_ID);
   });
 });

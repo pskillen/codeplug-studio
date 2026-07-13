@@ -29,6 +29,7 @@ function library(zones: Zone[], channelIds: string[] = []): Library {
     digitalContacts: [],
     rxGroupLists: [],
     scanLists: [],
+    aprsConfigurations: [],
     zones,
   };
 }

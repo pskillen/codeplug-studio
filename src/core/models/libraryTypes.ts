@@ -21,3 +21,21 @@ export type DMRTimeSlot = 1 | 2;
 
 /** DMR operating mode — vendor-neutral; mapped to CPS wire at export boundary. */
 export type DmrOperatingMode = 'dmo-simplex' | 'repeater';
+
+/**
+ * Per-channel report selection. Digital APRS only in UI.
+ * Wire `Analog` (Anytone) is not supported — import normalizes to `'off'`.
+ */
+export type AprsReportType = 'off' | 'digital';
+
+/** Digital APRS PTT beacon behaviour — Anytone `Digital APRS PTT Mode`. */
+export type AprsPttMode = 'off' | 'on';
+
+/**
+ * DMR call type for an APRS slot / global target (Anytone `Call TypeN`).
+ * Wire: private = 0, group = 1. (`all call` = 2 exists, DMR-only — deferred.)
+ */
+export type AprsSlotCallType = 'private' | 'group';
+
+/** Beacon position source — Anytone `Fixed Location Beacon` (0 = GPS, 1..8 = fixed). */
+export type AprsPositionSource = 'gps' | 'fixed';

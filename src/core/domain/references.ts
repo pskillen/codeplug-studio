@@ -5,7 +5,7 @@ import { resolveEffectiveZoneChannelIds } from './zoneHierarchy.ts';
 
 /** A reference held by one library entity pointing at a target entity. */
 export interface EntityReference {
-  fromKind: 'channel' | 'zone' | 'rxGroupList' | 'scanList';
+  fromKind: 'channel' | 'zone' | 'rxGroupList' | 'scanList' | 'aprsConfiguration';
   fromId: string;
   fromName: string;
   /** Human-readable description of how the target is referenced. */
@@ -14,7 +14,7 @@ export interface EntityReference {
 
 /** Target of a reference scan: a library entity addressed by kind + UUID id. */
 export interface ReferenceTarget {
-  kind: EntityRefKind | 'rxGroupList' | 'scanList' | 'zone';
+  kind: EntityRefKind | 'rxGroupList' | 'scanList' | 'zone' | 'aprsConfiguration';
   id: string;
 }
 
@@ -81,7 +81,7 @@ export function findReferencesTo(library: Library, target: ReferenceTarget): Ent
     }
   }
 
-  // Channels reference contacts, RX group lists, talk groups, and scan lists.
+  // Channels reference contacts, RX group lists, talk groups, scan lists, and APRS report channels.
   for (const channel of library.channels) {
     if (target.kind === 'scanList' && channel.scanListId === target.id) {
       refs.push({
@@ -89,6 +89,18 @@ export function findReferencesTo(library: Library, target: ReferenceTarget): Ent
         fromId: channel.id,
         fromName: channel.name,
         relationship: 'channel scan list',
+      });
+    }
+    if (
+      target.kind === 'channel' &&
+      channel.aprs?.reportChannelRef?.kind === 'channel' &&
+      channel.aprs.reportChannelRef.id === target.id
+    ) {
+      refs.push({
+        fromKind: 'channel',
+        fromId: channel.id,
+        fromName: channel.name,
+        relationship: 'channel APRS report channel',
       });
     }
     for (const profile of channel.modeProfiles) {
@@ -120,6 +132,20 @@ export function findReferencesTo(library: Library, target: ReferenceTarget): Ent
     }
   }
 
+  // APRS configurations reference channels via slot channelRef.
+  for (const config of library.aprsConfigurations) {
+    for (const slot of config.channelSlots) {
+      if (slot.channelRef && refMatches(slot.channelRef, target)) {
+        refs.push({
+          fromKind: 'aprsConfiguration',
+          fromId: config.id,
+          fromName: config.name,
+          relationship: 'APRS slot channel',
+        });
+      }
+    }
+  }
+
   return refs;
 }
 
@@ -129,7 +155,7 @@ export function isReferenced(library: Library, target: ReferenceTarget): boolean
 
 /** A foreign key pointing at an entity id that no longer exists in the library. */
 export interface DanglingReference {
-  fromKind: 'channel' | 'zone' | 'rxGroupList' | 'scanList';
+  fromKind: 'channel' | 'zone' | 'rxGroupList' | 'scanList' | 'aprsConfiguration';
   fromId: string;
   fromName: string;
   targetKind: ReferenceTarget['kind'];
@@ -168,6 +194,8 @@ export function findDanglingReferences(library: Library): DanglingReference[] {
         return rxGroupListIds.has(target.id);
       case 'scanList':
         return scanListIds.has(target.id);
+      case 'aprsConfiguration':
+        return library.aprsConfigurations.some((c) => c.id === target.id);
     }
   };
 
@@ -247,6 +275,16 @@ export function findDanglingReferences(library: Library): DanglingReference[] {
         relationship: 'channel scan list',
       });
     }
+    if (channel.aprs?.reportChannelRef && !hasTarget(channel.aprs.reportChannelRef)) {
+      dangling.push({
+        fromKind: 'channel',
+        fromId: channel.id,
+        fromName: channel.name,
+        targetKind: channel.aprs.reportChannelRef.kind,
+        targetId: channel.aprs.reportChannelRef.id,
+        relationship: 'channel APRS report channel',
+      });
+    }
     for (const profile of dmrProfiles(channel)) {
       if (profile.contactRef && !hasTarget(profile.contactRef)) {
         dangling.push({
@@ -266,6 +304,21 @@ export function findDanglingReferences(library: Library): DanglingReference[] {
           targetKind: 'rxGroupList',
           targetId: profile.rxGroupListId,
           relationship: 'channel RX group list',
+        });
+      }
+    }
+  }
+
+  for (const config of library.aprsConfigurations) {
+    for (const slot of config.channelSlots) {
+      if (slot.channelRef && !hasTarget(slot.channelRef)) {
+        dangling.push({
+          fromKind: 'aprsConfiguration',
+          fromId: config.id,
+          fromName: config.name,
+          targetKind: slot.channelRef.kind,
+          targetId: slot.channelRef.id,
+          relationship: 'APRS slot channel',
         });
       }
     }

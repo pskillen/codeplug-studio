@@ -8,6 +8,7 @@ import type {
   TalkGroup,
   Zone,
 } from '@core/models/library.ts';
+import type { AprsConfiguration } from '@core/models/aprs.ts';
 import type { ProjectMeta } from '@core/models/project.ts';
 import { initialRevision } from '@core/models/revision.ts';
 
@@ -21,6 +22,7 @@ export const FIXTURE_DIGITAL_CONTACT_ID = '66666666-6666-4666-8666-666666666666'
 export const FIXTURE_ANALOG_CONTACT_ID = '77777777-7777-4777-8777-777777777777';
 export const FIXTURE_RX_LIST_ID = '88888888-8888-4888-8888-888888888888';
 export const FIXTURE_BUILD_ID = '99999999-9999-4999-8999-999999999999';
+export const FIXTURE_APRS_CONFIG_ID = 'dddddddd-dddd-4ddd-8ddd-dddddddddddd';
 export const FIXTURE_CHILD_ZONE_ID = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
 export const FIXTURE_PARENT_ZONE_ID = 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb';
 
@@ -55,6 +57,7 @@ export function minimalProjectAggregate(): ProjectAggregate {
     analogContacts: [],
     rxGroupLists: [],
     scanLists: [],
+    aprsConfigurations: [],
     formatBuilds: [],
   };
 }
@@ -139,6 +142,32 @@ export function fullLibraryAggregate(): ProjectAggregate {
         rxGroupListId: FIXTURE_RX_LIST_ID,
       },
     ],
+    aprs: {
+      receiveEnabled: true,
+      reportType: 'digital',
+      digitalPttMode: 'on',
+      reportChannelRef: { kind: 'channel', id: FIXTURE_CHANNEL_B_ID },
+    },
+  };
+
+  const aprsConfiguration: AprsConfiguration = {
+    ...rowMeta(projectId, FIXTURE_APRS_CONFIG_ID),
+    name: 'Home APRS',
+    comment: 'Fixture APRS',
+    manualTxIntervalSec: null,
+    autoTxIntervalSec: 300,
+    positionSource: 'gps',
+    fixedLocation: null,
+    channelSlots: [
+      {
+        channelRef: { kind: 'channel', id: FIXTURE_CHANNEL_B_ID },
+        timeslot: 1,
+        targetDmrId: 234999,
+        callType: 'group',
+      },
+    ],
+    defaultDmrId: 1,
+    defaultCallType: 'group',
   };
 
   const zone: Zone = {
@@ -163,6 +192,7 @@ export function fullLibraryAggregate(): ProjectAggregate {
     analogContacts: [analogContact],
     rxGroupLists: [rxGroupList],
     scanLists: [],
+    aprsConfigurations: [aprsConfiguration],
     formatBuilds: [],
   };
 }

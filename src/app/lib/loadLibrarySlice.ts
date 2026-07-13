@@ -24,5 +24,6 @@ export async function loadLibrarySlice(
     analogContacts,
     rxGroupLists,
     scanLists,
+    aprsConfigurations: [],
   };
 }
