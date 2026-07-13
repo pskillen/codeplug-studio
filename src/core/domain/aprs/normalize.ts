@@ -100,6 +100,19 @@ export function normalizeChannelAprsBinding(
   return normalized;
 }
 
+export function normalizeOptionalChannelAprs(
+  binding: ChannelAprsBinding | null | undefined,
+  warnings: AprsNormalizeWarning[] = [],
+): ChannelAprsBinding | undefined {
+  return normalizeChannelAprsBinding(binding, warnings);
+}
+
+export function normalizeAprsConfigurations(
+  configs: AprsConfiguration[] | undefined,
+): AprsConfiguration[] {
+  return (configs ?? []).map(normalizeAprsConfiguration);
+}
+
 export function normalizeAprsConfiguration(config: AprsConfiguration): AprsConfiguration {
   return {
     ...config,

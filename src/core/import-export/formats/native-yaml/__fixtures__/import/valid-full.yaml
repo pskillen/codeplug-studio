@@ -8,9 +8,30 @@ library:
       projectId: 11111111-1111-4111-8111-111111111111
       revision: 1
       updatedAt: 2026-07-02T10:00:00.000Z
+  aprsConfigurations:
+    - autoTxIntervalSec: 300
+      channelSlots:
+        - callType: group
+          channelRef:
+            id: 33333333-3333-4333-8333-333333333333
+            kind: channel
+          targetDmrId: 234999
+          timeslot: 1
+      comment: Fixture APRS
+      defaultCallType: group
+      defaultDmrId: 1
+      fixedLocation: null
+      id: dddddddd-dddd-4ddd-8ddd-dddddddddddd
+      manualTxIntervalSec: null
+      name: Home APRS
+      positionSource: gps
+      projectId: 11111111-1111-4111-8111-111111111111
+      revision: 1
+      updatedAt: 2026-07-02T10:00:00.000Z
   channels:
     - callsign: GB3DA
       comment: Analog FM
+      forbidTransmit: false
       id: 22222222-2222-4222-8222-222222222222
       location:
         lat: 55.9533
@@ -24,6 +45,7 @@ library:
           txTone: none
       name: GB3DA Demo
       power: 25
+      primaryMode: null
       projectId: 11111111-1111-4111-8111-111111111111
       revision: 1
       rxFrequency: 430912500
@@ -31,8 +53,16 @@ library:
       txFrequency: 430912500
       updatedAt: 2026-07-02T10:00:00.000Z
       useLocation: true
-    - callsign: GB7GL
+    - aprs:
+        digitalPttMode: on
+        receiveEnabled: true
+        reportChannelRef:
+          id: 33333333-3333-4333-8333-333333333333
+          kind: channel
+        reportType: digital
+      callsign: GB7GL
       comment: ""
+      forbidTransmit: false
       id: 33333333-3333-4333-8333-333333333333
       location: null
       maidenheadLocator: null
@@ -42,11 +72,13 @@ library:
             id: 66666666-6666-4666-8666-666666666666
             kind: digitalContact
           dmrId: 2351123
+          dmrMode: null
           mode: dmr
           rxGroupListId: 88888888-8888-4888-8888-888888888888
           timeslot: 2
       name: DMR Scotland
       power: null
+      primaryMode: null
       projectId: 11111111-1111-4111-8111-111111111111
       revision: 1
       rxFrequency: 439087500
@@ -74,6 +106,7 @@ library:
       projectId: 11111111-1111-4111-8111-111111111111
       revision: 1
       updatedAt: 2026-07-02T10:00:00.000Z
+  scanLists: []
   talkGroups:
     - abbreviation: Sco
       comment: TG fixture
@@ -88,7 +121,7 @@ library:
     - comment: Zone fixture
       id: 44444444-4444-4444-8444-444444444444
       members:
-        - id: 22222222-2222-4222-8222-222222222222
+        - channelId: 22222222-2222-4222-8222-222222222222
           kind: channel
       name: Edinburgh
       projectId: 11111111-1111-4111-8111-111111111111
@@ -105,4 +138,4 @@ project:
   revision: 1
   updatedAt: 2026-07-02T10:00:00.000Z
 schemaVersion: 1
-studioSchemaVersion: 2
+studioSchemaVersion: 15

@@ -66,6 +66,17 @@
 
 ---
 
+## Slice 5 — YAML persistence
+
+**Status:** Complete
+
+**Delivered**
+
+- Native YAML parse/serialise for `aprsConfigurations`, `channel.aprs`, `activeAprsConfigurationId`
+- Fixtures + roundtrip + broken-FK tests
+
+---
+
 ## Next
 
-- Slice 4: assemble APRS projection
+- Slice 6: closeout, CI, PR

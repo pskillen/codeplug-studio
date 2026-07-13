@@ -4,7 +4,18 @@ import type {
   BuildExportSettings,
   FormatBuild,
 } from '@core/models/formatBuild.ts';
-import type { ScanInclusion } from '@core/models/library.ts';
+import type {
+  AprsChannelSlot,
+  AprsConfiguration,
+  ChannelAprsBinding,
+} from '@core/models/aprs.ts';
+import type {
+  AprsPositionSource,
+  AprsPttMode,
+  AprsReportType,
+  AprsSlotCallType,
+  DMRTimeSlot,
+} from '@core/models/libraryTypes.ts';
 import type {
   AnalogContact,
   Channel,
@@ -46,6 +57,12 @@ import {
 } from '@core/domain/validation.ts';
 import { normalizeModeProfile } from '@core/domain/modeProfiles.ts';
 import { normalizeChannel } from '@core/domain/normalizeChannel.ts';
+import {
+  normalizeAprsConfiguration,
+  normalizeAprsConfigurations,
+  normalizeOptionalChannelAprs,
+} from '@core/domain/aprs/index.ts';
+import { validateActiveAprsConfigurationId } from '@core/domain/aprs/validation.ts';
 import { normalizeZoneMemberEntry } from '@core/domain/zoneMembers.ts';
 import { migrateFormatBuild } from '@core/domain/migrateFormatBuild.ts';
 import { migrateProjectAggregate } from '@core/domain/migrateZoneExportFields.ts';
@@ -235,6 +252,117 @@ function parseScanInclusion(record: Record<string, unknown>, label: string): Sca
   return 'default';
 }
 
+const APRS_REPORT_TYPES = ['off', 'digital'] as const;
+const APRS_PTT_MODES = ['off', 'on'] as const;
+const APRS_SLOT_CALL_TYPES = ['private', 'group'] as const;
+const APRS_POSITION_SOURCES = ['gps', 'fixed'] as const;
+
+function parseAprsReportType(raw: unknown, label: string): AprsReportType {
+  const value = expectString(raw, label);
+  if (!(APRS_REPORT_TYPES as readonly string[]).includes(value)) {
+    throw new NativeYamlImportError(`${label} is invalid: ${value}`);
+  }
+  return value as AprsReportType;
+}
+
+function parseAprsPttMode(raw: unknown, label: string): AprsPttMode {
+  const value = expectString(raw, label);
+  if (!(APRS_PTT_MODES as readonly string[]).includes(value)) {
+    throw new NativeYamlImportError(`${label} is invalid: ${value}`);
+  }
+  return value as AprsPttMode;
+}
+
+function parseAprsSlotCallType(raw: unknown, label: string): AprsSlotCallType {
+  const value = expectString(raw, label);
+  if (!(APRS_SLOT_CALL_TYPES as readonly string[]).includes(value)) {
+    throw new NativeYamlImportError(`${label} is invalid: ${value}`);
+  }
+  return value as AprsSlotCallType;
+}
+
+function parseAprsPositionSource(raw: unknown, label: string): AprsPositionSource {
+  const value = expectString(raw, label);
+  if (!(APRS_POSITION_SOURCES as readonly string[]).includes(value)) {
+    throw new NativeYamlImportError(`${label} is invalid: ${value}`);
+  }
+  return value as AprsPositionSource;
+}
+
+function parseNullableChannelEntityRef(raw: unknown, label: string): EntityRef | null {
+  if (raw === undefined || raw === null) return null;
+  const ref = parseEntityRef(raw, label);
+  if (ref.kind !== 'channel') {
+    throw new NativeYamlImportError(`${label}.kind must be channel for APRS refs`);
+  }
+  return ref;
+}
+
+function parseChannelAprsBinding(raw: unknown, label: string): ChannelAprsBinding | undefined {
+  if (raw === undefined || raw === null) return undefined;
+  const record = expectRecord(raw, label);
+  return normalizeOptionalChannelAprs({
+    receiveEnabled: expectBoolean(record.receiveEnabled, `${label}.receiveEnabled`),
+    reportType: parseAprsReportType(record.reportType, `${label}.reportType`),
+    digitalPttMode: parseAprsPttMode(record.digitalPttMode, `${label}.digitalPttMode`),
+    reportChannelRef: parseNullableChannelEntityRef(
+      record.reportChannelRef,
+      `${label}.reportChannelRef`,
+    ),
+  });
+}
+
+function parseAprsChannelSlot(raw: unknown, index: number, configIndex: number): AprsChannelSlot {
+  const label = `library.aprsConfigurations[${configIndex}].channelSlots[${index}]`;
+  const record = expectRecord(raw, label);
+  const timeslotRaw = record.timeslot;
+  let timeslot: DMRTimeSlot | null = null;
+  if (timeslotRaw !== undefined && timeslotRaw !== null) {
+    const slot = expectNumber(timeslotRaw, `${label}.timeslot`);
+    if (slot !== 1 && slot !== 2) {
+      throw new NativeYamlImportError(`${label}.timeslot must be 1 or 2`);
+    }
+    timeslot = slot as DMRTimeSlot;
+  }
+  return {
+    channelRef: parseNullableChannelEntityRef(record.channelRef, `${label}.channelRef`),
+    timeslot,
+    targetDmrId: expectNullableNumber(record.targetDmrId, `${label}.targetDmrId`),
+    callType: parseAprsSlotCallType(record.callType, `${label}.callType`),
+  };
+}
+
+function parseAprsConfiguration(raw: unknown, index: number): AprsConfiguration {
+  const label = `library.aprsConfigurations[${index}]`;
+  const record = expectRecord(raw, label);
+  const fixedLocationRaw = record.fixedLocation;
+  let fixedLocation: AprsConfiguration['fixedLocation'] = null;
+  if (fixedLocationRaw !== undefined && fixedLocationRaw !== null) {
+    const loc = expectRecord(fixedLocationRaw, `${label}.fixedLocation`);
+    fixedLocation = {
+      lat: expectNumber(loc.lat, `${label}.fixedLocation.lat`),
+      lon: expectNumber(loc.lon, `${label}.fixedLocation.lon`),
+    };
+  }
+  return normalizeAprsConfiguration({
+    ...parsePersistableRow(record, label),
+    name: expectString(record.name, `${label}.name`),
+    comment: expectString(record.comment, `${label}.comment`),
+    manualTxIntervalSec: expectNullableNumber(
+      record.manualTxIntervalSec,
+      `${label}.manualTxIntervalSec`,
+    ),
+    autoTxIntervalSec: expectNullableNumber(record.autoTxIntervalSec, `${label}.autoTxIntervalSec`),
+    positionSource: parseAprsPositionSource(record.positionSource, `${label}.positionSource`),
+    fixedLocation,
+    channelSlots: expectArray(record.channelSlots, `${label}.channelSlots`).map((slot, slotIndex) =>
+      parseAprsChannelSlot(slot, slotIndex, index),
+    ),
+    defaultDmrId: expectNullableNumber(record.defaultDmrId, `${label}.defaultDmrId`),
+    defaultCallType: parseAprsSlotCallType(record.defaultCallType, `${label}.defaultCallType`),
+  });
+}
+
 function parseChannel(raw: unknown, index: number): Channel {
   const record = expectRecord(raw, `library.channels[${index}]`);
   const locationRaw = record.location;
@@ -246,6 +374,11 @@ function parseChannel(raw: unknown, index: number): Channel {
       lon: expectNumber(loc.lon, `library.channels[${index}].location.lon`),
     };
   }
+
+  const aprsBinding =
+    record.aprs !== undefined && record.aprs !== null
+      ? parseChannelAprsBinding(record.aprs, `library.channels[${index}].aprs`)
+      : undefined;
 
   return normalizeChannel({
     ...parsePersistableRow(record, `library.channels[${index}]`),
@@ -301,6 +434,7 @@ function parseChannel(raw: unknown, index: number): Channel {
     modeProfiles: expectArray(record.modeProfiles, `library.channels[${index}].modeProfiles`).map(
       (profile, profileIndex) => parseModeProfile(profile, profileIndex),
     ),
+    ...(aprsBinding !== undefined ? { aprs: aprsBinding } : {}),
   });
 }
 
@@ -472,8 +606,25 @@ function parseLibrary(raw: unknown, studioSchemaVersion: number): Library {
       : expectArray(record.scanLists, 'library.scanLists').map((row, index) =>
           parseScanList(row, index),
         );
+  const aprsConfigurations =
+    record.aprsConfigurations === undefined || record.aprsConfigurations === null
+      ? []
+      : normalizeAprsConfigurations(
+          expectArray(record.aprsConfigurations, 'library.aprsConfigurations').map((row, index) =>
+            parseAprsConfiguration(row, index),
+          ),
+        );
 
-  return { channels, zones, talkGroups, digitalContacts, analogContacts, rxGroupLists, scanLists, aprsConfigurations: [] };
+  return {
+    channels,
+    zones,
+    talkGroups,
+    digitalContacts,
+    analogContacts,
+    rxGroupLists,
+    scanLists,
+    aprsConfigurations,
+  };
 }
 
 function parseLegacySelectionArray(raw: unknown, label: string): LegacyEntitySelection[] {
@@ -668,6 +819,14 @@ function parseFormatBuild(raw: unknown, index: number): ParsedFormatBuild {
       : {}),
     ...(record.exportSettings !== undefined && record.exportSettings !== null
       ? { exportSettings: parseExportSettings(record.exportSettings, `${label}.exportSettings`) }
+      : {}),
+    ...(record.activeAprsConfigurationId !== undefined
+      ? {
+          activeAprsConfigurationId: expectNullableString(
+            record.activeAprsConfigurationId,
+            `${label}.activeAprsConfigurationId`,
+          ),
+        }
       : {}),
   };
 
@@ -887,6 +1046,36 @@ function validateForeignKeys(library: Library, formatBuilds: FormatBuild[]): voi
     }
   }
 
+  for (const config of library.aprsConfigurations) {
+    for (const slot of config.channelSlots) {
+      if (slot.channelRef) {
+        try {
+          validateEntityRef(slot.channelRef, library);
+        } catch (error) {
+          throw new NativeYamlImportError(error instanceof Error ? error.message : String(error));
+        }
+      }
+    }
+  }
+
+  for (const channel of library.channels) {
+    if (channel.aprs?.reportChannelRef) {
+      try {
+        validateEntityRef(channel.aprs.reportChannelRef, library);
+      } catch (error) {
+        throw new NativeYamlImportError(error instanceof Error ? error.message : String(error));
+      }
+    }
+  }
+
+  for (const build of formatBuilds) {
+    try {
+      validateActiveAprsConfigurationId(build, library);
+    } catch (error) {
+      throw new NativeYamlImportError(error instanceof Error ? error.message : String(error));
+    }
+  }
+
   for (const build of formatBuilds) {
     for (const section of build.layout.sections) {
       if (section.kind === 'zoneGrouping') {
@@ -1025,6 +1214,7 @@ export function validateDocument(raw: unknown): ProjectAggregate {
     ...library.analogContacts,
     ...library.rxGroupLists,
     ...library.scanLists,
+    ...library.aprsConfigurations,
     ...formatBuilds,
   ];
 
@@ -1036,6 +1226,7 @@ export function validateDocument(raw: unknown): ProjectAggregate {
   assertUniqueIds(library.analogContacts, 'library.analogContacts');
   assertUniqueIds(library.rxGroupLists, 'library.rxGroupLists');
   assertUniqueIds(library.scanLists, 'library.scanLists');
+  assertUniqueIds(library.aprsConfigurations, 'library.aprsConfigurations');
   assertUniqueIds(formatBuilds, 'formatBuilds');
 
   validateForeignKeys(library, formatBuilds);
