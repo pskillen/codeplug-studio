@@ -1,5 +1,5 @@
 import { Anchor } from '@mantine/core';
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { useLibrary } from '../../state/useLibrary.ts';
 import { FormPage } from '../../components/ui/index.ts';
@@ -24,15 +24,21 @@ export default function EntityEditorPage() {
 
   const isNew = id === 'new' || !id;
   const entityId = isNew ? null : (id ?? null);
-  const defaultTitle = meta
-    ? `${isNew ? 'New' : 'Edit'} ${meta.label.toLowerCase()}`
-    : 'Loading…';
+  const defaultTitle = meta ? `${isNew ? 'New' : 'Edit'} ${meta.label.toLowerCase()}` : 'Loading…';
   const pageTitle =
-    meta?.kind === 'channel' &&
-    channelPageTitle != null &&
-    channelPageTitle.entityId === entityId
+    meta?.kind === 'channel' && channelPageTitle != null && channelPageTitle.entityId === entityId
       ? channelPageTitle.title
       : defaultTitle;
+
+  const handleChannelPageTitle = useCallback(
+    (title: string) => {
+      setChannelPageTitle((prev) => {
+        if (prev?.entityId === entityId && prev.title === title) return prev;
+        return { entityId, title };
+      });
+    },
+    [entityId],
+  );
 
   if (!meta) {
     return <NotFound message="Unknown entity type." />;
@@ -76,7 +82,7 @@ export default function EntityEditorPage() {
             projectId={projectId}
             library={library}
             entity={entityId ? (library.channels.find((c) => c.id === entityId) ?? null) : null}
-            onPageTitle={(title) => setChannelPageTitle({ entityId, title })}
+            onPageTitle={handleChannelPageTitle}
           />
         );
       case 'talkGroup':
