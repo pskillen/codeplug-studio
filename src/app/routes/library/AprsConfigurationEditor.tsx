@@ -93,11 +93,11 @@ export default function AprsConfigurationEditor({
 
   return (
     <Stack gap="md" maw={900}>
-      <FieldCard title="Identity" description="Name and beacon comment text.">
+      <FieldCard title="Identity" description="Display name and optional library notes.">
         <TextInput label="Name" value={name} onChange={(e) => setName(e.currentTarget.value)} />
         <Textarea
           label="Comment"
-          description="Beacon comment text exported with APRS position reports."
+          description="Optional internal note. Not exported to CPS wire files."
           value={comment}
           onChange={(e) => setComment(e.currentTarget.value)}
           autosize
