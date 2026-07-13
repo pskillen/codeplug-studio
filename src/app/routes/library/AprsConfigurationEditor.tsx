@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import type { AprsConfiguration } from '@core/models/aprs.ts';
-import type { AprsPositionSource, AprsSlotCallType } from '@core/models/libraryTypes.ts';
+import type { AprsPositionSource } from '@core/models/libraryTypes.ts';
 import type { Library } from '@core/models/library.ts';
 import { newAprsConfiguration } from '@core/domain/factories.ts';
 import { normalizeAprsConfiguration } from '@core/domain/aprs/index.ts';
@@ -24,11 +24,6 @@ const POSITION_SOURCE_OPTIONS = [
   { value: 'allGnss', label: 'All GNSS' },
 ] satisfies { value: AprsPositionSource; label: string }[];
 
-const CALL_TYPE_OPTIONS = [
-  { value: 'group', label: 'Group' },
-  { value: 'private', label: 'Private' },
-] satisfies { value: AprsSlotCallType; label: string }[];
-
 function parseOptionalPositiveInt(value: string | number): number | null {
   if (value === '' || value == null) return null;
   const n = typeof value === 'number' ? value : Number.parseInt(String(value), 10);
@@ -39,10 +34,14 @@ export default function AprsConfigurationEditor({
   projectId,
   entity,
   library,
+  settingsPage = false,
+  mapActive = true,
 }: {
   projectId: string;
   entity: AprsConfiguration | null;
   library: Library;
+  settingsPage?: boolean;
+  mapActive?: boolean;
 }) {
   const base = entity ?? newAprsConfiguration(projectId, '');
   const [name, setName] = useState(base.name);
@@ -58,11 +57,11 @@ export default function AprsConfigurationEditor({
   );
   const [fixedLocator, setFixedLocator] = useState('');
   const [channelSlots, setChannelSlots] = useState(base.channelSlots);
-  const [defaultDmrId, setDefaultDmrId] = useState(base.defaultDmrId);
-  const [defaultCallType, setDefaultCallType] = useState<AprsSlotCallType>(base.defaultCallType);
-  const [activeTab] = useState('configuration');
-  const { save, saving, error } = useEntitySave('aprs-configurations');
+  const { save, saving, error } = useEntitySave('aprs-configuration', {
+    navigateOnSave: !settingsPage,
+  });
   const navigate = useNavigate();
+  const cancelPath = settingsPage ? '/library/aprs-configuration' : '/library/aprs-configuration';
 
   function buildRow(): AprsConfiguration {
     const lat = Number.parseFloat(fixedLat);
@@ -80,8 +79,6 @@ export default function AprsConfigurationEditor({
       positionSource,
       fixedLocation,
       channelSlots,
-      defaultDmrId,
-      defaultCallType,
     });
   }
 
@@ -144,7 +141,7 @@ export default function AprsConfigurationEditor({
             lat={fixedLat}
             lon={fixedLon}
             maidenheadLocator={fixedLocator}
-            mapActive={activeTab === 'configuration'}
+            mapActive={mapActive}
             onChange={({ lat, lon, maidenheadLocator }) => {
               setFixedLat(lat);
               setFixedLon(lon);
@@ -152,25 +149,6 @@ export default function AprsConfigurationEditor({
             }}
           />
         ) : null}
-      </FieldCard>
-
-      <FieldCard title="Default target" description="Global default DMR target when slots omit one.">
-        <SimpleGrid cols={{ base: 1, sm: 2 }}>
-          <NumberInput
-            label="Default DMR ID"
-            value={defaultDmrId ?? ''}
-            onChange={(value) => setDefaultDmrId(parseOptionalPositiveInt(value))}
-            min={1}
-            allowDecimal={false}
-            allowNegative={false}
-          />
-          <Select
-            label="Default call type"
-            data={CALL_TYPE_OPTIONS}
-            value={defaultCallType}
-            onChange={(value) => setDefaultCallType((value as AprsSlotCallType | null) ?? 'group')}
-          />
-        </SimpleGrid>
       </FieldCard>
 
       <FieldCard title="Channel slots" description="DMR channels used for APRS transmission slots.">
@@ -185,14 +163,15 @@ export default function AprsConfigurationEditor({
         saving={saving}
         error={error}
         onSave={handleSave}
-        cancelPath="/library/aprs-configurations"
+        cancelPath={cancelPath}
+        hideCancel={settingsPage}
       />
-      {entity ? (
+      {entity && !settingsPage ? (
         <EntityDeleteButton
           kind="aprsConfiguration"
           entityId={entity.id}
           label={entity.name}
-          onDeleted={() => navigate('/library/aprs-configurations')}
+          onDeleted={() => navigate('/library/aprs-configuration')}
         />
       ) : null}
       <UnsavedChangesModal opened={modalOpen} onStay={stay} onLeave={leave} />

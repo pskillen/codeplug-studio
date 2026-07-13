@@ -28,9 +28,9 @@ export const LIBRARY_KINDS: LibraryKindMeta[] = [
   { kind: 'scanList', slug: 'scan-lists', label: 'Scan list', plural: 'Scan lists' },
   {
     kind: 'aprsConfiguration',
-    slug: 'aprs-configurations',
+    slug: 'aprs-configuration',
     label: 'APRS configuration',
-    plural: 'APRS configurations',
+    plural: 'APRS configuration',
   },
   { kind: 'zone', slug: 'zones', label: 'Zone', plural: 'Zones' },
 ];
@@ -62,7 +62,7 @@ export function entitiesForKind(library: Library, kind: LibraryEntityKind): Name
     case 'scanList':
       return library.scanLists;
     case 'aprsConfiguration':
-      return library.aprsConfigurations;
+      return library.aprsConfiguration ? [library.aprsConfiguration] : [];
     case 'zone':
       return library.zones;
   }
@@ -100,7 +100,7 @@ export function describeEntity(library: Library, kind: LibraryEntityKind, id: st
       return s ? `${s.memberChannelIds.length} channel(s)` : '';
     }
     case 'aprsConfiguration': {
-      const c = library.aprsConfigurations.find((x) => x.id === id);
+      const c = library.aprsConfiguration;
       if (!c) return '';
       const slots = `${c.channelSlots.length} slot(s)`;
       const position = c.positionSource === 'fixed' ? 'fixed' : 'GPS';

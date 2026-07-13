@@ -303,6 +303,7 @@ export default function ChannelEditor({
             <ChannelEditorPanel channel={liveChannel} isNew={!entity} showIdentitySummary>
               <FormSection>
                 <ChannelAprsBindingSection
+                  aprsConfiguration={library.aprsConfiguration}
                   channels={library.channels}
                   value={aprsBinding}
                   onChange={setAprsBinding}

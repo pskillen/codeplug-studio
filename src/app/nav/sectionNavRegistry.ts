@@ -35,8 +35,8 @@ const registry: SectionNavEntry[] = [
   { title: 'RX group lists', prefix: '/library/rx-group-lists', Component: RxGroupListsSectionNav },
   { title: 'Scan lists', prefix: '/library/scan-lists', Component: ScanListsSectionNav },
   {
-    title: 'APRS configurations',
-    prefix: '/library/aprs-configurations',
+    title: 'APRS configuration',
+    prefix: '/library/aprs-configuration',
     Component: AprsConfigurationsSectionNav,
   },
   { title: 'Library', prefix: '/library', Component: ChannelsSectionNav },

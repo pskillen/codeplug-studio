@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest';
 import {
   newAprsConfiguration,
   newChannel,
-  newFormatBuild,
   newProjectMeta,
   newTalkGroup,
   newZone,
@@ -77,22 +76,16 @@ describe('LibraryService', () => {
     expect(await persistence.getZone(projectId, inner.id)).not.toBeNull();
   });
 
-  it('blocks deleting an APRS configuration referenced by a build', async () => {
-    const { persistence, service, projectId } = await setup();
-    const config = newAprsConfiguration(projectId, 'Home APRS');
-    await persistence.putAprsConfiguration(config, null);
-    const build = {
-      ...newFormatBuild(projectId, 'anytone-at-d890uv'),
-      activeAprsConfigurationId: config.id,
-    };
-    await persistence.putFormatBuild(build, null);
+  it('enforces a single APRS configuration per project on put', async () => {
+    const { persistence, projectId } = await setup();
+    const first = newAprsConfiguration(projectId, 'First');
+    const second = newAprsConfiguration(projectId, 'Second');
+    await persistence.putAprsConfiguration(first, null);
+    await persistence.putAprsConfiguration(second, null);
 
-    const outcome = await service.deleteWithIntegrity(projectId, 'aprsConfiguration', config.id);
-    expect(outcome.ok).toBe(false);
-    if (!outcome.ok) {
-      expect(outcome.references[0]?.fromKind).toBe('formatBuild');
-      expect(outcome.references[0]?.relationship).toBe('active APRS configuration');
-    }
-    expect(await persistence.getAprsConfiguration(projectId, config.id)).not.toBeNull();
+    const configs = await persistence.listAprsConfigurations(projectId);
+    expect(configs).toHaveLength(1);
+    expect(configs[0]?.name).toBe('Second');
+    expect(await persistence.getAprsConfiguration(projectId, first.id)).toBeNull();
   });
 });

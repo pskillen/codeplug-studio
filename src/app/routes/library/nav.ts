@@ -53,10 +53,10 @@ export const LIBRARY_NAV: LibraryNavEntry[] = [
   },
   {
     label: 'APRS configuration',
-    plural: 'APRS configurations',
-    listPath: '/library/aprs-configurations',
-    editorSlugs: ['aprs-configurations'],
-    sectionNavTitle: 'APRS configurations',
+    plural: 'APRS configuration',
+    listPath: '/library/aprs-configuration',
+    editorSlugs: ['aprs-configuration'],
+    sectionNavTitle: 'APRS configuration',
   },
 ];
 

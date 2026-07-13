@@ -2,7 +2,6 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Alert, Button, Group, Modal, Stack, Text } from '@mantine/core';
 import { IconDownload, IconPackage, IconTable } from '@tabler/icons-react';
 import type { BuildExportSettings, FormatBuild } from '@core/models/formatBuild.ts';
-import type { AprsConfiguration } from '@core/models/aprs.ts';
 import { traitProfileFor } from '@core/models/traits.ts';
 import {
   formatCatalogEntry,
@@ -17,7 +16,6 @@ import { formatProfileWireHint, getFormatProfiles } from '@core/import-export/fo
 import type { FormatId } from '@core/import-export/types.ts';
 import { mergeExportOptions } from '@core/services/exportBuild.ts';
 import ExportBuildSettingsSections from './ExportBuildSettingsSections.tsx';
-import BuildAprsSettingsSection from './BuildAprsSettingsSection.tsx';
 import ProfilePicker from './ProfilePicker.tsx';
 import CpsCsvPreviewModal from './CpsCsvPreviewModal.tsx';
 import ExportWarningsAlert from './ExportWarningsAlert.tsx';
@@ -63,7 +61,6 @@ export default function ExportBuildCpsPanel({ build }: ExportBuildCpsPanelProps)
   const resolvedSettings = resolvedBuildExportSettings(build);
 
   const [channelCount, setChannelCount] = useState<number | null>(null);
-  const [aprsConfigurations, setAprsConfigurations] = useState<AprsConfiguration[]>([]);
   const [exportWarnings, setExportWarnings] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [exporting, setExporting] = useState(false);
@@ -109,13 +106,9 @@ export default function ExportBuildCpsPanel({ build }: ExportBuildCpsPanelProps)
   useEffect(() => {
     if (!activeProjectId) return;
     let cancelled = false;
-    void Promise.all([
-      persistence.listChannels(activeProjectId),
-      persistence.listAprsConfigurations(activeProjectId),
-    ]).then(([channels, configs]) => {
+    void persistence.listChannels(activeProjectId).then((channels) => {
       if (!cancelled) {
         setChannelCount(channels.length);
-        setAprsConfigurations(configs);
       }
     });
     return () => {
@@ -178,20 +171,6 @@ export default function ExportBuildCpsPanel({ build }: ExportBuildCpsPanelProps)
     }
   }
 
-  async function handleActiveAprsConfigurationChange(configId: string | null) {
-    setSavingSettings(true);
-    setSettingsError(null);
-    const next = buildService.withActiveAprsConfigurationId(build, configId);
-    const result = await putBuild(next, build.revision);
-    setSavingSettings(false);
-    if (!result.ok) {
-      setSettingsError(
-        result.reason === 'revision_conflict'
-          ? 'Build changed elsewhere — reload and try again.'
-          : 'Could not save APRS settings.',
-      );
-    }
-  }
 
   async function handleDownloadSingleFile() {
     if (!activeProjectId) return;
@@ -419,12 +398,6 @@ export default function ExportBuildCpsPanel({ build }: ExportBuildCpsPanelProps)
         onExportInclusionChange={(field, checked) =>
           void handleExportInclusionChange(field, checked)
         }
-      />
-      <BuildAprsSettingsSection
-        build={build}
-        aprsConfigurations={aprsConfigurations}
-        saving={savingSettings}
-        onActiveConfigChange={(id) => void handleActiveAprsConfigurationChange(id)}
       />
       {!hasChannels ? (
         <Text size="sm" c="dimmed">

@@ -1,11 +1,15 @@
 import { useMemo } from 'react';
-import type { ChannelAprsBinding } from '@core/models/aprs.ts';
+import type { AprsConfiguration, ChannelAprsBinding } from '@core/models/aprs.ts';
 import type { AprsPttMode, AprsReportType } from '@core/models/libraryTypes.ts';
 import type { Channel } from '@core/models/library.ts';
-import { CHANNEL_APRS_OFF } from '@core/domain/aprs/defaults.ts';
-import { channelDisplayLabel } from '@core/domain/channelNaming.ts';
 import { Checkbox, Select, Stack, Text } from '@mantine/core';
-import { sortByName } from '../../lib/channels.ts';
+import {
+  APRS_SLOT_NONE_VALUE,
+  aprsSlotSelectOptions,
+  channelAprsBindingFromChannel,
+} from '../../lib/aprsBindingHelpers.ts';
+
+export { channelAprsBindingFromChannel };
 
 const REPORT_TYPE_OPTIONS = [
   { value: 'off', label: 'Off' },
@@ -17,35 +21,26 @@ const PTT_MODE_OPTIONS = [
   { value: 'on', label: 'On' },
 ] satisfies { value: AprsPttMode; label: string }[];
 
-const NONE_CHANNEL_VALUE = '';
-
 export interface ChannelAprsBindingSectionProps {
+  aprsConfiguration: AprsConfiguration | null;
   channels: Channel[];
   value: ChannelAprsBinding;
   onChange: (value: ChannelAprsBinding) => void;
   readOnly?: boolean;
 }
 
-export function channelAprsBindingFromChannel(channel: Channel): ChannelAprsBinding {
-  return channel.aprs ?? { ...CHANNEL_APRS_OFF };
-}
-
 export default function ChannelAprsBindingSection({
+  aprsConfiguration,
   channels,
   value,
   onChange,
   readOnly = false,
 }: ChannelAprsBindingSectionProps) {
-  const channelOptions = useMemo(
-    () => [
-      { value: NONE_CHANNEL_VALUE, label: 'None' },
-      ...sortByName(channels).map((channel) => ({
-        value: channel.id,
-        label: channelDisplayLabel(channel),
-      })),
-    ],
-    [channels],
+  const slotOptions = useMemo(
+    () => aprsSlotSelectOptions(aprsConfiguration?.channelSlots ?? [], channels),
+    [aprsConfiguration?.channelSlots, channels],
   );
+  const slotsAvailable = (aprsConfiguration?.channelSlots.length ?? 0) > 0;
 
   if (readOnly) {
     return (
@@ -86,17 +81,22 @@ export default function ChannelAprsBindingSection({
         }
       />
       <Select
-        label="Report channel"
-        description="Library channel whose APRS slot index is written at export."
-        data={channelOptions}
-        searchable
-        clearable
-        value={value.reportChannelRef?.id ?? NONE_CHANNEL_VALUE}
+        label="Report slot"
+        description={
+          slotsAvailable
+            ? 'APRS configuration slot used for position reports at export.'
+            : 'Add channel slots on the APRS configuration page first.'
+        }
+        data={slotOptions}
+        disabled={!slotsAvailable}
+        value={
+          value.reportSlotIndex != null ? String(value.reportSlotIndex) : APRS_SLOT_NONE_VALUE
+        }
         onChange={(next) =>
           onChange({
             ...value,
-            reportChannelRef:
-              next && next !== NONE_CHANNEL_VALUE ? { kind: 'channel', id: next } : null,
+            reportSlotIndex:
+              next && next !== APRS_SLOT_NONE_VALUE ? Number.parseInt(next, 10) : null,
           })
         }
       />

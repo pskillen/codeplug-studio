@@ -110,7 +110,7 @@ export default function AprsChannelSlotsEditor({
         nameColumn={{
           header: 'Slot',
           getName: (row) => String(row.slotNumber),
-          getPath: () => '/library/aprs-configurations',
+          getPath: () => '/library/aprs-configuration',
         }}
         columns={columns}
         showSearch={false}

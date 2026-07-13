@@ -33,6 +33,6 @@ export async function loadLibrarySlice(
     analogContacts,
     rxGroupLists,
     scanLists,
-    aprsConfigurations,
+    aprsConfiguration: aprsConfigurations[0] ?? null,
   };
 }

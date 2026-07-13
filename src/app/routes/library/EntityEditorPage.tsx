@@ -132,9 +132,7 @@ export default function EntityEditorPage() {
           <AprsConfigurationEditor
             projectId={projectId}
             library={library}
-            entity={
-              entityId ? (library.aprsConfigurations.find((c) => c.id === entityId) ?? null) : null
-            }
+            entity={library.aprsConfiguration}
           />
         );
       case 'zone':
