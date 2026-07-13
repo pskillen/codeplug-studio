@@ -8,11 +8,7 @@ export type {
   LocalFileInterchange,
   ProjectInterchange,
 } from './interchange.ts';
-export {
-  type AprsConfiguration,
-  type AprsChannelSlot,
-  type ChannelAprsBinding,
-} from './aprs.ts';
+export { type AprsConfiguration, type AprsChannelSlot, type ChannelAprsBinding } from './aprs.ts';
 export {
   type Channel,
   type TalkGroup,

@@ -14,7 +14,6 @@ import type {
 import { emptyTraitLayout } from '../models/traitLayout.ts';
 import { initialRevision, isoNow } from '../models/revision.ts';
 import { traitProfileFor } from '../models/traits.ts';
-import { newAprsConfiguration } from './aprs/index.ts';
 
 export function emptyLibrary(): Library {
   return {

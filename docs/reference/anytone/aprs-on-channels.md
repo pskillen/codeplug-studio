@@ -6,12 +6,12 @@ APRS-related columns on `Channel.CSV` (global settings in [aprs.md](aprs.md)).
 
 ## Columns
 
-| Vendor header                 | Internal field (digital) | Notes                  |
-| ----------------------------- | ------------------------ | ---------------------- |
-| `APRS RX`                     | `receiveEnabled`         | `On` / `Off` in sample |
-| `Digital APRS PTT Mode`       | `digitalPttMode`         | `On` / `Off`           |
+| Vendor header                 | Internal field (digital) | Notes                                                            |
+| ----------------------------- | ------------------------ | ---------------------------------------------------------------- |
+| `APRS RX`                     | `receiveEnabled`         | `On` / `Off` in sample                                           |
+| `Digital APRS PTT Mode`       | `digitalPttMode`         | `On` / `Off`                                                     |
 | `APRS Report Type`            | `reportType`             | `Off` / `Digital` only in model; wire `Analog` → `off` on import |
-| `Digital APRS Report Channel` | `reportChannelRef`       | Resolved to 1-based slot index at export |
+| `Digital APRS Report Channel` | `reportChannelRef`       | Resolved to 1-based slot index at export                         |
 
 ## Analog columns (export constants only — not modelled)
 

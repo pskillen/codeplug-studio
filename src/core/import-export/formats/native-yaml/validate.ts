@@ -4,11 +4,7 @@ import type {
   BuildExportSettings,
   FormatBuild,
 } from '@core/models/formatBuild.ts';
-import type {
-  AprsChannelSlot,
-  AprsConfiguration,
-  ChannelAprsBinding,
-} from '@core/models/aprs.ts';
+import type { AprsChannelSlot, AprsConfiguration, ChannelAprsBinding } from '@core/models/aprs.ts';
 import type {
   AprsPositionSource,
   AprsPttMode,
@@ -27,6 +23,7 @@ import type {
   Library,
   RxGroupList,
   RxGroupListMember,
+  ScanInclusion,
   ScanList,
   SsbSideband,
   TalkGroup,
@@ -1182,6 +1179,7 @@ export function validateDocument(raw: unknown): ProjectAggregate {
   const studioSchemaVersion = document.studioSchemaVersion;
   if (
     studioSchemaVersion !== STUDIO_SCHEMA_VERSION &&
+    studioSchemaVersion !== 14 &&
     studioSchemaVersion !== 13 &&
     studioSchemaVersion !== 12 &&
     studioSchemaVersion !== 10 &&
@@ -1195,7 +1193,7 @@ export function validateDocument(raw: unknown): ProjectAggregate {
     studioSchemaVersion !== 2
   ) {
     throw new NativeYamlImportError(
-      `Unsupported studioSchemaVersion: ${String(studioSchemaVersion)} (expected ${STUDIO_SCHEMA_VERSION}, 13, 12, 10, 9, 8, 7, 6, 5, 4, 3, or 2)`,
+      `Unsupported studioSchemaVersion: ${String(studioSchemaVersion)} (expected ${STUDIO_SCHEMA_VERSION}, 14, 13, 12, 10, 9, 8, 7, 6, 5, 4, 3, or 2)`,
     );
   }
 

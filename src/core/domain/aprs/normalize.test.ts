@@ -1,8 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import {
-  normalizeAprsConfiguration,
-  normalizeChannelAprsBinding,
-} from './normalize.ts';
+import { normalizeAprsConfiguration, normalizeChannelAprsBinding } from './normalize.ts';
 
 describe('normalizeChannelAprsBinding', () => {
   it('maps wire Analog report type to off with warning', () => {

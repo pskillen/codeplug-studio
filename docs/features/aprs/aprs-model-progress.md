@@ -10,7 +10,7 @@
 
 ## Overall status
 
-**Status:** In progress
+**Status:** Complete (pending merge)
 
 **Branch:** `249/pskil/aprs-model-foundation`
 
@@ -19,11 +19,6 @@
 ## Slice 0 — Kickoff
 
 **Status:** Complete
-
-**Delivered**
-
-- Branch `249/pskil/aprs-model-foundation` from `origin/main`
-- Progress + outstanding pair under `docs/features/aprs/`
 
 ---
 
@@ -35,10 +30,7 @@
 
 - `docs/features/aprs/README.md` hub
 - `docs/features/aprs/cross-format-reconciliation.md`
-- `docs/features/data-model/README.md` — APRS entities + schema v15
-- `docs/features/README.md` index row
-- Tier-3 link updates (anytone aprs*, enum-verification)
-- `docs/features/import-export/anytone-outstanding.md` — APRS gap → in progress
+- Data-model README + features index + tier-3 link updates
 
 ---
 
@@ -48,9 +40,7 @@
 
 **Delivered**
 
-- `src/core/models/aprs.ts`
-- Library, Channel, FormatBuild extensions; schema v15
-- `ProjectAggregate` / seed wiring for `aprsConfigurations`
+- `src/core/models/aprs.ts`, schema v15, Library/Channel/FormatBuild extensions
 
 ---
 
@@ -60,9 +50,18 @@
 
 **Delivered**
 
-- `src/core/domain/aprs/*` — defaults, normalize, validation, resolveSlotIndex
+- `src/core/domain/aprs/*` — normalize, validation, resolveSlotIndex, defaults
 - Extended `references.ts`, `normalizeChannel.ts`, `factories.ts`
-- Unit tests
+
+---
+
+## Slice 4 — Assemble
+
+**Status:** Complete
+
+**Delivered**
+
+- `assemble()` APRS projection + `aprsConfigurationWarnings`
 
 ---
 
@@ -72,11 +71,16 @@
 
 **Delivered**
 
-- Native YAML parse/serialise for `aprsConfigurations`, `channel.aprs`, `activeAprsConfigurationId`
-- Fixtures + roundtrip + broken-FK tests
+- Native YAML round-trip for APRS entities and broken-FK validation
+
+---
+
+## Verify
+
+- `npm run format:check && npm run lint && npm run test && npm run build`
 
 ---
 
 ## Next
 
-- Slice 6: closeout, CI, PR
+- Merge PR; follow-up: UI [#249](https://github.com/pskillen/codeplug-studio/issues/249), Anytone export [#251](https://github.com/pskillen/codeplug-studio/issues/251), DM32 [#250](https://github.com/pskillen/codeplug-studio/issues/250)

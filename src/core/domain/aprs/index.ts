@@ -8,11 +8,7 @@ import {
   normalizeOptionalChannelAprs,
 } from './normalize.ts';
 
-export {
-  normalizeAprsConfiguration,
-  normalizeAprsConfigurations,
-  normalizeOptionalChannelAprs,
-};
+export { normalizeAprsConfiguration, normalizeAprsConfigurations, normalizeOptionalChannelAprs };
 
 export function newAprsConfiguration(projectId: string, name: string): AprsConfiguration {
   const now = isoNow();

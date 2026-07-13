@@ -1,11 +1,7 @@
 import type { AprsConfiguration } from '@core/models/aprs.ts';
 import type { Channel, Library } from '@core/models/library.ts';
 import type { FormatBuild } from '@core/models/formatBuild.ts';
-import {
-  libraryEntityIds,
-  validateEntityRef,
-  assertNonEmptyName,
-} from '../validation.ts';
+import { libraryEntityIds, validateEntityRef, assertNonEmptyName } from '../validation.ts';
 
 export interface AprsValidationWarning {
   code: 'digital_report_on_analog_channel' | 'orphan_report_channel_ref';
@@ -18,10 +14,7 @@ function channelHasDmrProfile(channel: Channel): boolean {
   return channel.modeProfiles.some((profile) => profile.mode === 'dmr');
 }
 
-export function validateAprsConfigurationName(
-  config: AprsConfiguration,
-  library: Library,
-): void {
+export function validateAprsConfigurationName(config: AprsConfiguration, library: Library): void {
   assertNonEmptyName(config.name, 'APRS configuration name');
   const duplicate = library.aprsConfigurations.some(
     (row) => row.id !== config.id && row.name.trim() === config.name.trim(),
@@ -31,10 +24,7 @@ export function validateAprsConfigurationName(
   }
 }
 
-export function validateAprsConfigurationRefs(
-  config: AprsConfiguration,
-  library: Library,
-): void {
+export function validateAprsConfigurationRefs(config: AprsConfiguration, library: Library): void {
   for (const slot of config.channelSlots) {
     if (slot.channelRef) {
       validateEntityRef(slot.channelRef, library);
@@ -42,10 +32,7 @@ export function validateAprsConfigurationRefs(
   }
 }
 
-export function validateActiveAprsConfigurationId(
-  build: FormatBuild,
-  library: Library,
-): void {
+export function validateActiveAprsConfigurationId(build: FormatBuild, library: Library): void {
   const id = build.activeAprsConfigurationId?.trim();
   if (!id) return;
   const { aprsConfigurationIds } = libraryEntityIds(library);
@@ -80,12 +67,7 @@ export function collectAprsValidationWarnings(
       });
     }
     const reportRef = channel.aprs.reportChannelRef?.id;
-    if (
-      reportRef &&
-      activeConfig &&
-      slotChannelIds.size > 0 &&
-      !slotChannelIds.has(reportRef)
-    ) {
+    if (reportRef && activeConfig && slotChannelIds.size > 0 && !slotChannelIds.has(reportRef)) {
       warnings.push({
         code: 'orphan_report_channel_ref',
         message: `Channel "${channel.name}" report channel ref is not in active APRS slot channels`,

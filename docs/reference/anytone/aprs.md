@@ -10,11 +10,11 @@ Per-channel APRS flags on `Channel.CSV`: [aprs-on-channels.md](aprs-on-channels.
 
 ## Fidelity tier
 
-| Tier             | Status                                                                  |
-| ---------------- | ----------------------------------------------------------------------- |
-| **Modelled**     | Beacon timing, position source, 8 DMR slots, default DMR target — see tier-1 [aprs](../../../features/aprs/README.md) |
+| Tier             | Status                                                                                                                          |
+| ---------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| **Modelled**     | Beacon timing, position source, 8 DMR slots, default DMR target — see tier-1 [aprs](../../../features/aprs/README.md)           |
 | **Export v1**    | Modelled columns via [#251](https://github.com/pskillen/codeplug-studio/issues/251); remainder from `aprsDefaults.ts` constants |
-| **Not modelled** | Analog identity/path, RX filters, packet types, tones, extra TX freqs   |
+| **Not modelled** | Analog identity/path, RX filters, packet types, tones, extra TX freqs                                                           |
 
 ## Column groups (inventory)
 

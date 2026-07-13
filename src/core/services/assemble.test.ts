@@ -834,10 +834,7 @@ describe('assemble', () => {
       aprsConfigurations: [aprsConfig],
     };
 
-    const withActive = assemble(
-      { ...config, activeAprsConfigurationId: aprsConfig.id },
-      library,
-    );
+    const withActive = assemble({ ...config, activeAprsConfigurationId: aprsConfig.id }, library);
     expect(withActive.aprsConfiguration?.id).toBe(aprsConfig.id);
 
     const withoutActive = assemble(config, library);

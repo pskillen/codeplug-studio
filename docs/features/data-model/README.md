@@ -95,16 +95,16 @@ See [storage.md](../../poc-migration/storage.md) — Phase 1 uses in-memory row 
 
 Vendor-neutral RF semantics only. UUID `id` FKs; `name` is a **human display label** — not the CPS wire string for a particular radio.
 
-| Entity           | Notes                                                                                                                                                                           |
-| ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `Channel`        | Frequency (Hz), callsign, power, `location`, `maidenheadLocator`, `useLocation`, `hideFromInternalMap` (app-only map visibility), scan skip, `forbidTransmit`; `modeProfiles[]` |
-| `Zone`           | Inventory grouping — `members` as channel `EntityRef[]`; export flags on the zone row                                                                                           |
-| `TalkGroup`      | Digital group call — `mode`, `digitalId`                                                                                                                                        |
-| `DigitalContact` | Digital private call — `mode`, `digitalId`                                                                                                                                      |
-| `AnalogContact`  | Analogue call sign / code                                                                                                                                                       |
-| `RxGroupList`    | Promiscuous RX list — `members` as talk-group `EntityRef[]`                                                                                                                     |
-| `ScanList`       | Dedicated scan list — ordered `memberChannelIds`                                                                                                                                |
-| `AprsConfiguration` | Digital APRS global config — beacon timing, position source, `channelSlots[]`, default DMR target; see [aprs](../aprs/README.md)                                             |
+| Entity              | Notes                                                                                                                                                                           |
+| ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `Channel`           | Frequency (Hz), callsign, power, `location`, `maidenheadLocator`, `useLocation`, `hideFromInternalMap` (app-only map visibility), scan skip, `forbidTransmit`; `modeProfiles[]` |
+| `Zone`              | Inventory grouping — `members` as channel `EntityRef[]`; export flags on the zone row                                                                                           |
+| `TalkGroup`         | Digital group call — `mode`, `digitalId`                                                                                                                                        |
+| `DigitalContact`    | Digital private call — `mode`, `digitalId`                                                                                                                                      |
+| `AnalogContact`     | Analogue call sign / code                                                                                                                                                       |
+| `RxGroupList`       | Promiscuous RX list — `members` as talk-group `EntityRef[]`                                                                                                                     |
+| `ScanList`          | Dedicated scan list — ordered `memberChannelIds`                                                                                                                                |
+| `AprsConfiguration` | Digital APRS global config — beacon timing, position source, `channelSlots[]`, default DMR target; see [aprs](../aprs/README.md)                                                |
 
 `Channel.aprs` (optional `ChannelAprsBinding`) holds per-channel digital APRS flags when enabled. Omit = APRS off for that channel.
 
@@ -130,18 +130,18 @@ Library CRUD edits this layer only — no radio name-length caps, no format wire
 
 `FormatBuild` — one **persisted** CPS workflow target within a project. Multiple builds can reference the same library entities with different organisation and wire names.
 
-| Field                  | Purpose                                                                                   |
-| ---------------------- | ----------------------------------------------------------------------------------------- |
-| `formatId`             | Wire format family (`opengd77`, `chirp`, `dm32`, …)                                       |
-| `profileId`            | Variant within the format — selects trait profile and wire limits                         |
-| `name`                 | Operator label for this build (e.g. "GD-77 holiday trip")                                 |
-| `channelOverrides`     | Sparse channel customisation — `excluded` omits from build; `wireName` is CPS wire string |
-| `zoneOverrides`        | Sparse zone customisation                                                                 |
-| `talkGroupOverrides`   | Sparse talk group customisation                                                           |
-| `contactOverrides`     | Sparse digital or analogue contact customisation                                          |
-| `rxGroupListOverrides` | Sparse RX group list customisation                                                        |
-| `layout`               | `TraitLayout` — trait-shaped organisation (zone order, flat memories, …)                  |
-| `activeAprsConfigurationId` | Optional — which library `AprsConfiguration` exports as the single global row (Anytone) |
+| Field                       | Purpose                                                                                   |
+| --------------------------- | ----------------------------------------------------------------------------------------- |
+| `formatId`                  | Wire format family (`opengd77`, `chirp`, `dm32`, …)                                       |
+| `profileId`                 | Variant within the format — selects trait profile and wire limits                         |
+| `name`                      | Operator label for this build (e.g. "GD-77 holiday trip")                                 |
+| `channelOverrides`          | Sparse channel customisation — `excluded` omits from build; `wireName` is CPS wire string |
+| `zoneOverrides`             | Sparse zone customisation                                                                 |
+| `talkGroupOverrides`        | Sparse talk group customisation                                                           |
+| `contactOverrides`          | Sparse digital or analogue contact customisation                                          |
+| `rxGroupListOverrides`      | Sparse RX group list customisation                                                        |
+| `layout`                    | `TraitLayout` — trait-shaped organisation (zone order, flat memories, …)                  |
+| `activeAprsConfigurationId` | Optional — which library `AprsConfiguration` exports as the single global row (Anytone)   |
 
 ### Entity overrides (wire names)
 
