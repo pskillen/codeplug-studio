@@ -53,6 +53,21 @@ export class LibraryService {
   ): Promise<DeleteOutcome> {
     const library = await this.loadLibrary(projectId);
     const references = findReferencesTo(library, { kind, id });
+
+    if (kind === 'aprsConfiguration') {
+      const builds = await this.persistence.listFormatBuilds(projectId);
+      for (const build of builds) {
+        if (build.activeAprsConfigurationId === id) {
+          references.push({
+            fromKind: 'formatBuild',
+            fromId: build.id,
+            fromName: build.name,
+            relationship: 'active APRS configuration',
+          });
+        }
+      }
+    }
+
     if (references.length > 0) {
       return { ok: false, references };
     }

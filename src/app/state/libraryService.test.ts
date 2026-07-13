@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { newChannel, newProjectMeta, newTalkGroup, newZone } from '@core/domain/factories.ts';
+import { newAprsConfiguration, newChannel, newFormatBuild, newProjectMeta, newTalkGroup, newZone } from '@core/domain/factories.ts';
 import { InMemoryProjectPersistence } from '@integrations/persistence/index.ts';
 import { LibraryService } from './libraryService.ts';
 
@@ -68,5 +68,24 @@ describe('LibraryService', () => {
       expect(outcome.references[0]?.relationship).toBe('nested zone member');
     }
     expect(await persistence.getZone(projectId, inner.id)).not.toBeNull();
+  });
+
+  it('blocks deleting an APRS configuration referenced by a build', async () => {
+    const { persistence, service, projectId } = await setup();
+    const config = newAprsConfiguration(projectId, 'Home APRS');
+    await persistence.putAprsConfiguration(config, null);
+    const build = {
+      ...newFormatBuild(projectId, 'anytone-at-d890uv'),
+      activeAprsConfigurationId: config.id,
+    };
+    await persistence.putFormatBuild(build, null);
+
+    const outcome = await service.deleteWithIntegrity(projectId, 'aprsConfiguration', config.id);
+    expect(outcome.ok).toBe(false);
+    if (!outcome.ok) {
+      expect(outcome.references[0]?.fromKind).toBe('formatBuild');
+      expect(outcome.references[0]?.relationship).toBe('active APRS configuration');
+    }
+    expect(await persistence.getAprsConfiguration(projectId, config.id)).not.toBeNull();
   });
 });
