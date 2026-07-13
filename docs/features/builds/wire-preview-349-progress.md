@@ -8,6 +8,7 @@
 | Slice | Status | Notes |
 | --- | --- | --- |
 | 1 — DataTable + modal shell | Shipped | `WirePreviewDataTable`, `WirePreviewOverrideModal`, `DataTable.onRowActivate` |
+| 2 — Simple entity list + modal | Shipped | `BuildWirePreviewListPage`; TG, contacts, RGL, scan lists |
 
 ## Verify
 

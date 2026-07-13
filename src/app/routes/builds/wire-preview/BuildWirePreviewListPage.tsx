@@ -1,84 +1,45 @@
 import type { ReactNode } from 'react';
-import { Stack, Switch, Text } from '@mantine/core';
 import { useState } from 'react';
+import { Stack, Switch, Text } from '@mantine/core';
 import { Link } from 'react-router-dom';
 import type { ChannelExportNameMode } from '@core/domain/channelNaming.ts';
-import ExportNameModeSelect from '../../../components/builds/ExportNameModeSelect.tsx';
-import UseLibraryAbbreviationsSwitch from '../../../components/builds/UseLibraryAbbreviationsSwitch.tsx';
-import WirePreviewTable, {
-  type ZoneScanWirePreviewContext,
-} from '../../../components/builds/WirePreviewTable.tsx';
-import UnsavedChangesModal from '../../../components/ui/UnsavedChangesModal.tsx';
-import { FormPage } from '../../../components/ui/index.ts';
-import { resolvedBuildExportSettings } from '../../../lib/buildExportSettingsUi.ts';
-import { useBuildWirePreview } from '../../../hooks/useBuildWirePreview.ts';
-import { useUnsavedNavigationGuard } from '../../../hooks/useUnsavedNavigationGuard.ts';
-import { BuildService } from '../../../state/buildService.ts';
-import { persistence } from '../../../state/persistence.ts';
-import type { WirePreviewEntityKind } from '@core/services/previewWireRows.ts';
-import BuildWirePreviewListPage from './BuildWirePreviewListPage.tsx';
+import type { WirePreviewEntityKind, WirePreviewRow } from '@core/services/previewWireRows.ts';
+import ExportNameModeSelect from '../../components/builds/ExportNameModeSelect.tsx';
+import UseLibraryAbbreviationsSwitch from '../../components/builds/UseLibraryAbbreviationsSwitch.tsx';
+import WirePreviewDataTable from '../../components/builds/wirePreview/WirePreviewDataTable.tsx';
+import WirePreviewOverrideModal from '../../components/builds/wirePreview/WirePreviewOverrideModal.tsx';
+import { FormPage } from '../../components/ui/index.ts';
+import { resolvedBuildExportSettings } from '../../lib/buildExportSettingsUi.ts';
+import { useBuildWirePreview } from '../../hooks/useBuildWirePreview.ts';
+import { BuildService } from '../../state/buildService.ts';
+import { persistence } from '../../state/persistence.ts';
+import type { AnytoneWirePreviewBank } from '@core/services/previewWireRows.ts';
 
 const buildService = new BuildService(persistence);
 
-export interface BuildEntityWirePageProps {
+export interface BuildWirePreviewListPageProps {
   title: string;
   entityKind: WirePreviewEntityKind;
   description?: string;
   showExportNameMode?: boolean;
   showLibraryAbbreviations?: boolean;
-  clickableDefaultWireName?: boolean;
   beforeTable?: ReactNode;
-  zoneScanContext?: ZoneScanWirePreviewContext;
+  headerActions?: ReactNode;
+  anytoneBank?: AnytoneWirePreviewBank;
+  modalExtraSections?: (row: WirePreviewRow) => ReactNode;
 }
 
-/** @deprecated clickableDefaultWireName — overrides edited via modal or bulk edit page */
-export default function BuildEntityWirePage({
+export default function BuildWirePreviewListPage({
   title,
   entityKind,
   description,
   showExportNameMode = false,
   showLibraryAbbreviations = false,
   beforeTable,
-  zoneScanContext,
-}: BuildEntityWirePageProps) {
-  const useLegacyZoneTable = entityKind === 'zone' && zoneScanContext !== undefined;
-
-  if (!useLegacyZoneTable) {
-    return (
-      <BuildWirePreviewListPage
-        title={title}
-        entityKind={entityKind}
-        description={description}
-        showExportNameMode={showExportNameMode}
-        showLibraryAbbreviations={showLibraryAbbreviations}
-        beforeTable={beforeTable}
-      />
-    );
-  }
-
-  return (
-    <LegacyZoneWirePreviewPage
-      title={title}
-      entityKind={entityKind}
-      description={description}
-      showExportNameMode={showExportNameMode}
-      showLibraryAbbreviations={showLibraryAbbreviations}
-      beforeTable={beforeTable}
-      zoneScanContext={zoneScanContext}
-    />
-  );
-}
-
-function LegacyZoneWirePreviewPage({
-  title,
-  entityKind,
-  description,
-  showExportNameMode,
-  showLibraryAbbreviations,
-  beforeTable,
-  zoneScanContext,
-}: Required<Pick<BuildEntityWirePageProps, 'zoneScanContext'>> &
-  Omit<BuildEntityWirePageProps, 'zoneScanContext' | 'clickableDefaultWireName'>) {
+  headerActions,
+  anytoneBank = 'dmr',
+  modalExtraSections,
+}: BuildWirePreviewListPageProps) {
   const {
     build,
     rows,
@@ -92,9 +53,9 @@ function LegacyZoneWirePreviewPage({
     setRowForceIncluded,
     setRowWireName,
     persistBuild,
-  } = useBuildWirePreview(entityKind);
-  const [hasUnsavedWireNames, setHasUnsavedWireNames] = useState(false);
-  const { modalOpen, stay, leave } = useUnsavedNavigationGuard(hasUnsavedWireNames);
+  } = useBuildWirePreview(entityKind, anytoneBank);
+  const [selectedRow, setSelectedRow] = useState<WirePreviewRow | null>(null);
+  const [search, setSearch] = useState('');
   const exportSettings = resolvedBuildExportSettings(build);
 
   function patchExportSettings(
@@ -125,6 +86,7 @@ function LegacyZoneWirePreviewPage({
             {description}
           </Text>
         ) : null}
+        {headerActions}
         {error ? (
           <Text c="red" size="sm">
             {error}
@@ -165,23 +127,24 @@ function LegacyZoneWirePreviewPage({
             </Text>
           </Stack>
         ) : null}
-        <WirePreviewTable
+        <WirePreviewDataTable
           rows={rows}
-          nameLimit={nameLimit}
-          clickableDefaultWireName
-          onExcludedChange={setRowExcluded}
-          onForceIncludeChange={setRowForceIncluded}
-          onWireNameChange={setRowWireName}
-          onUnsavedChangesChange={setHasUnsavedWireNames}
-          zoneScanContext={zoneScanContext}
+          search={search}
+          onSearchChange={setSearch}
+          onRowActivate={setSelectedRow}
         />
       </Stack>
-      <UnsavedChangesModal
-        opened={modalOpen}
-        onStay={stay}
-        onLeave={leave}
-        title="Unsaved wire name changes"
-        message="You have unsaved wire name edits. Leave without saving?"
+      <WirePreviewOverrideModal
+        opened={selectedRow !== null}
+        onClose={() => setSelectedRow(null)}
+        row={selectedRow}
+        build={build}
+        entityKind={entityKind}
+        nameLimit={nameLimit}
+        onExcludedChange={setRowExcluded}
+        onForceIncludeChange={entityKind === 'zone' ? setRowForceIncluded : undefined}
+        onWireNameChange={setRowWireName}
+        extraSections={selectedRow && modalExtraSections ? modalExtraSections(selectedRow) : null}
       />
     </FormPage>
   );

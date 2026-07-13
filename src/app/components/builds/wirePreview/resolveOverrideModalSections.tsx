@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import type { FormatBuild } from '@core/models/formatBuild.ts';
-import type { WirePreviewEntityKind, WirePreviewRow } from '@core/services/previewWireRows.ts';
+import type { WirePreviewEntityKind } from '@core/services/previewWireRows.ts';
 import CommonOverrideSection, {
   type CommonOverrideSectionProps,
 } from './overrideModalSections/CommonOverrideSection.tsx';

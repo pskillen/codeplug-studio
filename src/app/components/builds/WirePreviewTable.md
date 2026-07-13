@@ -1,6 +1,8 @@
 ## Purpose
 
-Shared table for build wire preview pages: per-entity export controls, display label, and wire name override input.
+- Shared table for build wire preview pages: per-entity export controls, display label, and wire name override input.
+
+**Deprecated for list pages** — use `WirePreviewDataTable` + `WirePreviewOverrideModal` for browse UI. This component remains for **zone scan expand rows** (until #349 slice 4) and **channel bulk edit** (wire name + skip only).
 
 ## Props
 
