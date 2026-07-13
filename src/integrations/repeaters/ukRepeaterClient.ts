@@ -1,4 +1,6 @@
 import { locatorToCoords } from '@core/domain/maidenhead.ts';
+import { fetchDirectoryText } from './directoryFetch.ts';
+import { ETCC_CACHE_PREFIX } from './sessionCache.ts';
 import { RepeaterDirectoryError, type RepeaterListing } from './types.ts';
 import { parseUkRepeaterModeCodes } from './ukrepeater/modeCodes.ts';
 
@@ -43,23 +45,20 @@ function normalise(listing: EtccListing): RepeaterListing {
 }
 
 async function fetchListings(path: string): Promise<RepeaterListing[]> {
-  let response: Response;
-  try {
-    response = await fetch(`${ETCC_API_BASE}/${path}`);
-  } catch {
-    throw new RepeaterDirectoryError(
-      'Could not reach ukrepeater.net — check your network connection.',
-    );
+  const url = `${ETCC_API_BASE}/${path}`;
+  const { body, status } = await fetchDirectoryText(url, {
+    provider: 'etcc',
+    cachePrefix: ETCC_CACHE_PREFIX,
+    networkErrorMessage: 'Could not reach ukrepeater.net — check your network connection.',
+  });
+
+  if (status < 200 || status >= 300) {
+    throw new RepeaterDirectoryError(`ukrepeater.net returned ${status}.`, status);
   }
-  if (!response.ok) {
-    throw new RepeaterDirectoryError(
-      `ukrepeater.net returned ${response.status}.`,
-      response.status,
-    );
-  }
+
   let parsed: EtccResponse;
   try {
-    parsed = (await response.json()) as EtccResponse;
+    parsed = JSON.parse(body) as EtccResponse;
   } catch {
     throw new RepeaterDirectoryError('Invalid response from ukrepeater.net.');
   }

@@ -1,7 +1,10 @@
 import type { DMRTimeSlot } from '@core/models/libraryTypes.ts';
+import { fetchDirectoryText } from './directoryFetch.ts';
+import { BRANDMEISTER_CACHE_PREFIX } from './sessionCache.ts';
 import { RepeaterDirectoryError } from './types.ts';
 
 const BRANDMEISTER_API_BASE = 'https://api.brandmeister.network/v2';
+const BRANDMEISTER_NETWORK_ERROR = 'Could not reach BrandMeister — check your network connection.';
 
 /** Raw static talk group row from `GET /device/{id}/talkgroup`. */
 export interface BrandMeisterStaticTalkGroup {
@@ -48,28 +51,31 @@ function parseDigitalId(value: string): number | null {
   return Number.isFinite(id) && id > 0 ? id : null;
 }
 
+async function fetchBrandmeisterText(path: string) {
+  return fetchDirectoryText(`${BRANDMEISTER_API_BASE}${path}`, {
+    provider: 'brandmeister',
+    cachePrefix: BRANDMEISTER_CACHE_PREFIX,
+    networkErrorMessage: BRANDMEISTER_NETWORK_ERROR,
+  });
+}
+
 export async function fetchDeviceTalkGroups(
   deviceId: string,
 ): Promise<BrandMeisterStaticTalkGroup[]> {
-  let response: Response;
-  try {
-    response = await fetch(
-      `${BRANDMEISTER_API_BASE}/device/${encodeURIComponent(deviceId)}/talkgroup`,
-    );
-  } catch {
+  const { body, status } = await fetchBrandmeisterText(
+    `/device/${encodeURIComponent(deviceId)}/talkgroup`,
+  );
+
+  if (status < 200 || status >= 300) {
     throw new RepeaterDirectoryError(
-      'Could not reach BrandMeister — check your network connection.',
+      `BrandMeister talk groups returned ${status}.`,
+      status,
     );
   }
-  if (!response.ok) {
-    throw new RepeaterDirectoryError(
-      `BrandMeister talk groups returned ${response.status}.`,
-      response.status,
-    );
-  }
+
   let parsed: BrandMeisterStaticTalkGroup[];
   try {
-    parsed = (await response.json()) as BrandMeisterStaticTalkGroup[];
+    parsed = JSON.parse(body) as BrandMeisterStaticTalkGroup[];
   } catch {
     throw new RepeaterDirectoryError('Invalid talk group response from BrandMeister.');
   }
@@ -77,23 +83,18 @@ export async function fetchDeviceTalkGroups(
 }
 
 export async function loadTalkGroupNameMap(): Promise<Map<number, string>> {
-  let response: Response;
-  try {
-    response = await fetch(`${BRANDMEISTER_API_BASE}/talkgroup`);
-  } catch {
+  const { body, status } = await fetchBrandmeisterText('/talkgroup');
+
+  if (status < 200 || status >= 300) {
     throw new RepeaterDirectoryError(
-      'Could not reach BrandMeister — check your network connection.',
+      `BrandMeister talk group catalogue returned ${status}.`,
+      status,
     );
   }
-  if (!response.ok) {
-    throw new RepeaterDirectoryError(
-      `BrandMeister talk group catalogue returned ${response.status}.`,
-      response.status,
-    );
-  }
+
   let parsed: Record<string, string>;
   try {
-    parsed = (await response.json()) as Record<string, string>;
+    parsed = JSON.parse(body) as Record<string, string>;
   } catch {
     throw new RepeaterDirectoryError('Invalid talk group catalogue from BrandMeister.');
   }
@@ -108,15 +109,10 @@ export async function loadTalkGroupNameMap(): Promise<Map<number, string>> {
 }
 
 async function fetchTalkGroupDetail(digitalId: number): Promise<string | null> {
-  let response: Response;
   try {
-    response = await fetch(`${BRANDMEISTER_API_BASE}/talkgroup/${digitalId}`);
-  } catch {
-    return null;
-  }
-  if (!response.ok) return null;
-  try {
-    const parsed = (await response.json()) as TalkGroupDetailResponse;
+    const { body, status } = await fetchBrandmeisterText(`/talkgroup/${digitalId}`);
+    if (status < 200 || status >= 300) return null;
+    const parsed = JSON.parse(body) as TalkGroupDetailResponse;
     return parsed.Name?.trim() || null;
   } catch {
     return null;

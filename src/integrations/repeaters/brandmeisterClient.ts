@@ -1,3 +1,5 @@
+import { fetchDirectoryText } from './directoryFetch.ts';
+import { BRANDMEISTER_CACHE_PREFIX } from './sessionCache.ts';
 import { RepeaterDirectoryError, type RepeaterListing } from './types.ts';
 
 const BRANDMEISTER_API_BASE = 'https://api.brandmeister.network/v2';
@@ -47,20 +49,20 @@ function normalise(device: BrandMeisterDevice): RepeaterListing {
 
 export async function searchBrandmeisterByCallsign(callsign: string): Promise<RepeaterListing[]> {
   const q = encodeURIComponent(callsign.trim());
-  let response: Response;
-  try {
-    response = await fetch(`${BRANDMEISTER_API_BASE}/device/byCall?callsign=${q}`);
-  } catch {
-    throw new RepeaterDirectoryError(
-      'Could not reach BrandMeister — check your network connection.',
-    );
+  const url = `${BRANDMEISTER_API_BASE}/device/byCall?callsign=${q}`;
+  const { body, status } = await fetchDirectoryText(url, {
+    provider: 'brandmeister',
+    cachePrefix: BRANDMEISTER_CACHE_PREFIX,
+    networkErrorMessage: 'Could not reach BrandMeister — check your network connection.',
+  });
+
+  if (status < 200 || status >= 300) {
+    throw new RepeaterDirectoryError(`BrandMeister returned ${status}.`, status);
   }
-  if (!response.ok) {
-    throw new RepeaterDirectoryError(`BrandMeister returned ${response.status}.`, response.status);
-  }
+
   let parsed: BrandMeisterDevice[] | BrandMeisterDevice;
   try {
-    parsed = (await response.json()) as BrandMeisterDevice[] | BrandMeisterDevice;
+    parsed = JSON.parse(body) as BrandMeisterDevice[] | BrandMeisterDevice;
   } catch {
     throw new RepeaterDirectoryError('Invalid response from BrandMeister.');
   }

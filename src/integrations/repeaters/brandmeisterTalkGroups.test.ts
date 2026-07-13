@@ -1,5 +1,4 @@
-import { afterEach, describe, expect, it, vi } from 'vitest';
-import { RepeaterDirectoryError } from './types.ts';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   fetchDeviceTalkGroups,
   fetchResolvedDeviceTalkGroups,
@@ -7,6 +6,11 @@ import {
   resolveDeviceTalkGroups,
   resolveTalkGroupName,
 } from './brandmeisterTalkGroups.ts';
+import {
+  setupRepeaterDirectoryTestMocks,
+  teardownRepeaterDirectoryTestMocks,
+} from './testHelpers.ts';
+import { RepeaterDirectoryError } from './types.ts';
 
 const GB7AC_STATIC = [
   { talkgroup: '23559', slot: '1', repeaterid: '234054' },
@@ -22,19 +26,19 @@ function mockFetch(handlers: Record<string, { status: number; body: unknown }>) 
       const path = url.replace('https://api.brandmeister.network/v2', '');
       const handler = handlers[path];
       if (!handler) {
-        return { ok: false, status: 404, json: async () => ({}) };
+        return new Response('{}', { status: 404 });
       }
-      return {
-        ok: handler.status >= 200 && handler.status < 300,
-        status: handler.status,
-        json: async () => handler.body,
-      };
+      return new Response(JSON.stringify(handler.body), { status: handler.status });
     }),
   );
 }
 
+beforeEach(() => {
+  setupRepeaterDirectoryTestMocks();
+});
+
 afterEach(() => {
-  vi.unstubAllGlobals();
+  teardownRepeaterDirectoryTestMocks();
 });
 
 describe('fetchDeviceTalkGroups', () => {
