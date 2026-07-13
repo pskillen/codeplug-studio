@@ -1,4 +1,5 @@
 import type { FormatBuild } from '@core/models/formatBuild.ts';
+import type { AprsConfiguration } from '@core/models/aprs.ts';
 import type {
   AnalogContact,
   Channel,
@@ -40,6 +41,7 @@ export interface ProjectAggregate {
   analogContacts: AnalogContact[];
   rxGroupLists: RxGroupList[];
   scanLists: ScanList[];
+  aprsConfigurations: AprsConfiguration[];
   formatBuilds: FormatBuild[];
 }
 
@@ -52,6 +54,7 @@ export function emptyLibrary(): Library {
     rxGroupLists: [],
     scanLists: [],
     zones: [],
+    aprsConfigurations: [],
   };
 }
 
@@ -68,6 +71,7 @@ export function documentFromAggregate(aggregate: ProjectAggregate): StudioProjec
       analogContacts: aggregate.analogContacts,
       rxGroupLists: aggregate.rxGroupLists,
       scanLists: aggregate.scanLists,
+      aprsConfigurations: aggregate.aprsConfigurations,
     },
     formatBuilds: aggregate.formatBuilds,
   };
@@ -83,6 +87,7 @@ export function aggregateFromDocument(doc: StudioProjectDocument): ProjectAggreg
     analogContacts: doc.library.analogContacts,
     rxGroupLists: doc.library.rxGroupLists,
     scanLists: doc.library.scanLists ?? [],
+    aprsConfigurations: doc.library.aprsConfigurations ?? [],
     formatBuilds: doc.formatBuilds,
   };
 }

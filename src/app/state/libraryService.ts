@@ -38,6 +38,7 @@ export class LibraryService {
       analogContacts,
       rxGroupLists,
       scanLists,
+      aprsConfigurations: [],
     };
   }
 

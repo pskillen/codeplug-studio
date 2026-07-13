@@ -22,6 +22,7 @@ function lib(zones: Zone[]): Library {
     digitalContacts: [],
     rxGroupLists: [],
     scanLists: [],
+    aprsConfigurations: [],
     zones,
   };
 }

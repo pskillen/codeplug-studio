@@ -473,7 +473,7 @@ function parseLibrary(raw: unknown, studioSchemaVersion: number): Library {
           parseScanList(row, index),
         );
 
-  return { channels, zones, talkGroups, digitalContacts, analogContacts, rxGroupLists, scanLists };
+  return { channels, zones, talkGroups, digitalContacts, analogContacts, rxGroupLists, scanLists, aprsConfigurations: [] };
 }
 
 function parseLegacySelectionArray(raw: unknown, label: string): LegacyEntitySelection[] {
@@ -1049,6 +1049,7 @@ export function validateDocument(raw: unknown): ProjectAggregate {
     analogContacts: library.analogContacts,
     rxGroupLists: library.rxGroupLists,
     scanLists: library.scanLists,
+    aprsConfigurations: library.aprsConfigurations,
     formatBuilds,
   });
 }

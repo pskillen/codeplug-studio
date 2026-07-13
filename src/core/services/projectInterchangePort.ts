@@ -8,6 +8,7 @@ import type {
   TalkGroup,
   Zone,
 } from '@core/models/library.ts';
+import type { AprsConfiguration } from '@core/models/aprs.ts';
 import type { ProjectMeta } from '@core/models/project.ts';
 
 export type PutResult =
@@ -23,6 +24,7 @@ export interface ProjectSeed {
   analogContacts?: AnalogContact[];
   rxGroupLists?: RxGroupList[];
   scanLists?: ScanList[];
+  aprsConfigurations?: AprsConfiguration[];
   formatBuilds?: FormatBuild[];
 }
 

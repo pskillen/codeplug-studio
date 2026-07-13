@@ -13,6 +13,7 @@ export function aggregateToSeed(aggregate: ProjectAggregate): ProjectSeed {
     analogContacts: aggregate.analogContacts,
     rxGroupLists: aggregate.rxGroupLists,
     scanLists: aggregate.scanLists,
+    aprsConfigurations: aggregate.aprsConfigurations,
     formatBuilds: aggregate.formatBuilds,
   };
 }
@@ -27,6 +28,7 @@ export function seedToAggregate(seed: ProjectSeed): ProjectAggregate {
     analogContacts: seed.analogContacts ?? [],
     rxGroupLists: seed.rxGroupLists ?? [],
     scanLists: seed.scanLists ?? [],
+    aprsConfigurations: seed.aprsConfigurations ?? [],
     formatBuilds: seed.formatBuilds ?? [],
   });
 }
@@ -46,6 +48,7 @@ export function reassignSeedProjectId(seed: ProjectSeed, projectId: string = new
     analogContacts: withProject(seed.analogContacts),
     rxGroupLists: withProject(seed.rxGroupLists),
     scanLists: withProject(seed.scanLists),
+    aprsConfigurations: withProject(seed.aprsConfigurations),
     formatBuilds: withProject(seed.formatBuilds),
   };
 }
@@ -64,6 +67,7 @@ export function normaliseSeedForProject(seed: ProjectSeed, projectId: string): P
     analogContacts: withProject(seed.analogContacts),
     rxGroupLists: withProject(seed.rxGroupLists),
     scanLists: withProject(seed.scanLists),
+    aprsConfigurations: withProject(seed.aprsConfigurations),
     formatBuilds: withProject(seed.formatBuilds),
   };
 }

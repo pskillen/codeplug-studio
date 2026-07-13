@@ -29,6 +29,7 @@ describe('migrateChannelScanListFromBuildOverrides', () => {
       analogContacts: [],
       rxGroupLists: [],
       scanLists: [],
+      aprsConfigurations: [],
       formatBuilds: [
         {
           ...newFormatBuild(PROJECT_ID, 'anytone-at-d890uv'),

@@ -64,4 +64,6 @@ export interface FormatBuild extends PersistableRow {
   exportUnlinkedRxGroupLists?: boolean;
   /** Export-affecting preferences for this build (name shortening, scan defaults, …). */
   exportSettings?: BuildExportSettings;
+  /** Which library APRS config exports as the single global row (Anytone). Unset → first config or export warning. */
+  activeAprsConfigurationId?: string | null;
 }

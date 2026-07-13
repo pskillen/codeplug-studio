@@ -34,6 +34,7 @@ function library(channels: string[], zones: Zone[]): Library {
     digitalContacts: [],
     rxGroupLists: [],
     scanLists: [],
+    aprsConfigurations: [],
     zones,
   };
 }

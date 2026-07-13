@@ -55,6 +55,7 @@ export function minimalProjectAggregate(): ProjectAggregate {
     analogContacts: [],
     rxGroupLists: [],
     scanLists: [],
+    aprsConfigurations: [],
     formatBuilds: [],
   };
 }
@@ -163,6 +164,7 @@ export function fullLibraryAggregate(): ProjectAggregate {
     analogContacts: [analogContact],
     rxGroupLists: [rxGroupList],
     scanLists: [],
+    aprsConfigurations: [],
     formatBuilds: [],
   };
 }

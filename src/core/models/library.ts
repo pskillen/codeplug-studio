@@ -10,6 +10,7 @@ import type {
   GeoPoint,
   SsbSideband,
 } from './libraryTypes.ts';
+import type { ChannelAprsBinding } from './aprs.ts';
 
 export type {
   ChannelMode,
@@ -114,6 +115,8 @@ export interface Channel extends PersistableRow {
   modeProfiles: ChannelModeProfile[];
   /** Optional short qualifier tried first when export wire names exceed profile limits. */
   abbreviation?: string;
+  /** Optional per-channel digital APRS binding — omit = APRS off for that channel. */
+  aprs?: ChannelAprsBinding;
   /** When true, omit from internal Codeplug Studio maps only (not CPS export). */
   hideFromInternalMap?: boolean;
 }
@@ -167,6 +170,8 @@ export interface Zone extends PersistableRow {
   omitFromExport?: boolean;
 }
 
+import type { AprsConfiguration } from './aprs.ts';
+
 export interface Library {
   channels: Channel[];
   analogContacts: AnalogContact[];
@@ -175,4 +180,5 @@ export interface Library {
   rxGroupLists: RxGroupList[];
   scanLists: ScanList[];
   zones: Zone[];
+  aprsConfigurations: AprsConfiguration[];
 }
