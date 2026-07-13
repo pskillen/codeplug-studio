@@ -67,10 +67,7 @@ export async function fetchDeviceTalkGroups(
   );
 
   if (status < 200 || status >= 300) {
-    throw new RepeaterDirectoryError(
-      `BrandMeister talk groups returned ${status}.`,
-      status,
-    );
+    throw new RepeaterDirectoryError(`BrandMeister talk groups returned ${status}.`, status);
   }
 
   let parsed: BrandMeisterStaticTalkGroup[];

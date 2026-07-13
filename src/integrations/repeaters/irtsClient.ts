@@ -169,15 +169,11 @@ export async function fetchIrtsRepeaters(options?: {
     provider: 'irts',
     cachePrefix: IRTS_CACHE_PREFIX,
     skipCache: options?.refresh === true,
-    networkErrorMessage:
-      'Could not reach IRTS repeater listing — check your network connection.',
+    networkErrorMessage: 'Could not reach IRTS repeater listing — check your network connection.',
   });
 
   if (status < 200 || status >= 300) {
-    throw new RepeaterDirectoryError(
-      `IRTS repeater listing returned ${status}.`,
-      status,
-    );
+    throw new RepeaterDirectoryError(`IRTS repeater listing returned ${status}.`, status);
   }
 
   return parseIrtsAnytoneCsv(body);

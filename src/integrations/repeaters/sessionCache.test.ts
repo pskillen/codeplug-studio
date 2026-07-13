@@ -56,7 +56,10 @@ describe('sessionCache', () => {
 
   it('expires entries after TTL', () => {
     vi.useFakeTimers();
-    const key = directoryCacheKey(BRANDMEISTER_CACHE_PREFIX, 'https://api.brandmeister.network/v2/device/byCall');
+    const key = directoryCacheKey(
+      BRANDMEISTER_CACHE_PREFIX,
+      'https://api.brandmeister.network/v2/device/byCall',
+    );
     writeDirectoryCache(key, '[]');
     vi.advanceTimersByTime(DIRECTORY_CACHE_TTL_MS + 1);
     expect(readDirectoryCache(key)).toBeNull();
@@ -65,7 +68,11 @@ describe('sessionCache', () => {
 
   it('readStaleDirectoryCache returns expired body', () => {
     vi.useFakeTimers();
-    const key = directoryCacheKey(REPEATERBOOK_CACHE_PREFIX, '/api/repeaterbook/export', 'rbuapp_t');
+    const key = directoryCacheKey(
+      REPEATERBOOK_CACHE_PREFIX,
+      '/api/repeaterbook/export',
+      'rbuapp_t',
+    );
     writeDirectoryCache(key, '{"results":[]}');
     vi.advanceTimersByTime(DIRECTORY_CACHE_TTL_MS + 1);
     expect(readStaleDirectoryCache(key)).toBe('{"results":[]}');

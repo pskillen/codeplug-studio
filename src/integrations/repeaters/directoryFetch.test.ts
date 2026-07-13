@@ -136,9 +136,7 @@ describe('directoryFetch', () => {
     vi.setSystemTime(new Date('2026-07-13T12:00:00Z'));
     vi.stubGlobal(
       'fetch',
-      vi.fn().mockResolvedValue(
-        new Response('', { status: 429, headers: { 'Retry-After': '5' } }),
-      ),
+      vi.fn().mockResolvedValue(new Response('', { status: 429, headers: { 'Retry-After': '5' } })),
     );
 
     await expect(

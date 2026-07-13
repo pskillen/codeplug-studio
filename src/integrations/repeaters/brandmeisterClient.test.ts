@@ -71,13 +71,11 @@ describe('searchBrandmeisterByCallsign', () => {
   });
 
   it('reuses session cache on repeated callsign search', async () => {
-    const fetchMock = vi
-      .fn()
-      .mockResolvedValue(
-        new Response(JSON.stringify([{ id: 1, callsign: 'GB7AC', tx: '430', rx: '438' }]), {
-          status: 200,
-        }),
-      );
+    const fetchMock = vi.fn().mockResolvedValue(
+      new Response(JSON.stringify([{ id: 1, callsign: 'GB7AC', tx: '430', rx: '438' }]), {
+        status: 200,
+      }),
+    );
     vi.stubGlobal('fetch', fetchMock);
 
     await searchBrandmeisterByCallsign('GB7AC');

@@ -46,5 +46,8 @@ export function mockJsonFetch(status: number, body: unknown): void {
 }
 
 export function mockTextFetch(status: number, body: string): void {
-  vi.stubGlobal('fetch', vi.fn(async () => new Response(body, { status })));
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(async () => new Response(body, { status })),
+  );
 }

@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { parseRepeaterBookListing, parseRepeaterBookListings } from './parseListing.ts';
 import { parseRepeaterBookModes, isRepeaterBookOperational } from './modeMapping.ts';
 import { filterRepeaterBookListings } from './queryRouter.ts';
