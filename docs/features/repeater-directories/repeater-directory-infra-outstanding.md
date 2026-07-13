@@ -5,7 +5,7 @@ Follow-ups for [#73](https://github.com/pskillen/codeplug-studio/issues/73) and 
 ## In flight
 
 - [x] Shared sessionStorage cache
-- [ ] Rate-limit cooldown module
+- [x] Rate-limit cooldown module
 - [ ] Directory fetch wrapper
 - [ ] Wire all provider clients
 - [ ] Documentation + checklist

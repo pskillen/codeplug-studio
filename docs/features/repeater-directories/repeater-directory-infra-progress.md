@@ -7,3 +7,4 @@ Execution log for [#73](https://github.com/pskillen/codeplug-studio/issues/73) s
 | Commit | Slice |
 | ------ | ----- |
 | `feat(integrations): add shared repeater directory session cache` | Shared sessionStorage cache module |
+| `feat(integrations): add repeater directory rate limit cooldown` | Rate-limit cooldown module |
