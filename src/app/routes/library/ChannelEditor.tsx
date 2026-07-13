@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { Alert, Button, Group, Select, SimpleGrid, Stack, Tabs, TextInput } from '@mantine/core';
 import { Link, useNavigate } from 'react-router-dom';
 import type { Channel, ChannelModeProfile, Library, ScanInclusion } from '@core/models/library.ts';
@@ -20,6 +20,7 @@ import {
 import { modeColor, modeLabel, type ChannelMode as UiChannelMode } from '../../lib/channelModes.ts';
 import ForbidTransmitSegment from '../../components/channels/ForbidTransmitSegment.tsx';
 import ScanInclusionSegment from '../../components/channels/ScanInclusionSegment.tsx';
+import ChannelIdentitySummary from '../../components/channels/ChannelIdentitySummary.tsx';
 import ChannelLocationSection, {
   channelLocationValuesFromChannel,
   type ChannelLocationValues,
@@ -34,16 +35,38 @@ import ChannelDeleteButton from '../../components/library/ChannelDeleteButton.ts
 import { useEntityEditorUnsavedGuard } from '../../hooks/useEntityFormDirty.ts';
 import { hzToMhzString, mhzStringToHz } from '../../lib/units.ts';
 import { persistence } from '../../state/persistence.ts';
+import { channelEditorPageTitle } from './channelEditorPageTitle.ts';
 import { useEntitySave } from './useEntitySave.ts';
+
+function ChannelEditorPanel({
+  showIdentitySummary,
+  channel,
+  isNew,
+  children,
+}: {
+  showIdentitySummary?: boolean;
+  channel: Channel;
+  isNew: boolean;
+  children: ReactNode;
+}) {
+  return (
+    <Stack gap="md">
+      {showIdentitySummary ? <ChannelIdentitySummary channel={channel} isNew={isNew} /> : null}
+      {children}
+    </Stack>
+  );
+}
 
 export default function ChannelEditor({
   projectId,
   entity,
   library,
+  onPageTitle,
 }: {
   projectId: string;
   entity: Channel | null;
   library: Library;
+  onPageTitle?: (title: string) => void;
 }) {
   const base = entity ?? newChannel(projectId, '');
 
@@ -169,6 +192,12 @@ export default function ChannelEditor({
   const liveRxHz = mhzStringToHz(rx);
   const liveTxHz = mhzStringToHz(tx);
   const liveChannel = buildRow();
+  const editorPageTitle = channelEditorPageTitle(!entity, liveChannel);
+
+  useEffect(() => {
+    onPageTitle?.(editorPageTitle);
+  }, [editorPageTitle, onPageTitle]);
+
   const scanListOptions = [
     { value: '', label: 'None' },
     ...library.scanLists.map((list) => ({ value: list.id, label: list.name })),
@@ -230,99 +259,111 @@ export default function ChannelEditor({
         </Tabs.Panel>
 
         <Tabs.Panel value="scanning" pt="md">
-          <Stack gap="lg">
-            <FormSection>
-              <ScanInclusionSegment value={scanInclusion} onChange={setScanInclusion} />
-            </FormSection>
-            <FormSection>
-              <Select
-                label="Scan list"
-                description="Dedicated scan list for CPS export (Channel.CSV Scan List column). List membership is edited under Library → Scan lists."
-                data={scanListOptions}
-                value={scanListId}
-                onChange={(value) => setScanListId(value ?? '')}
-                clearable
-                searchable
-              />
-              <ScanListSummary listId={scanListId || null} library={library} />
-            </FormSection>
-          </Stack>
+          <ChannelEditorPanel channel={liveChannel} isNew={!entity} showIdentitySummary>
+            <Stack gap="lg">
+              <FormSection>
+                <ScanInclusionSegment value={scanInclusion} onChange={setScanInclusion} />
+              </FormSection>
+              <FormSection>
+                <Select
+                  label="Scan list"
+                  description="Dedicated scan list for CPS export (Channel.CSV Scan List column). List membership is edited under Library → Scan lists."
+                  data={scanListOptions}
+                  value={scanListId}
+                  onChange={(value) => setScanListId(value ?? '')}
+                  clearable
+                  searchable
+                />
+                <ScanListSummary listId={scanListId || null} library={library} />
+              </FormSection>
+            </Stack>
+          </ChannelEditorPanel>
         </Tabs.Panel>
 
         <Tabs.Panel value="frequencies" pt="md">
-          <FormSection>
-            <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="sm">
-              <TextInput
-                label="RX frequency (MHz)"
-                value={rx}
-                onChange={(e) => setRx(e.currentTarget.value)}
-              />
-              <TextInput
-                label="TX frequency (MHz)"
-                value={tx}
-                onChange={(e) => setTx(e.currentTarget.value)}
-              />
-            </SimpleGrid>
-            <PercentLevelSlider label="Power" value={power} onChange={setPower} />
-            <ForbidTransmitSegment value={forbidTransmit} onChange={setForbidTransmit} />
-          </FormSection>
+          <ChannelEditorPanel channel={liveChannel} isNew={!entity} showIdentitySummary>
+            <FormSection>
+              <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="sm">
+                <TextInput
+                  label="RX frequency (MHz)"
+                  value={rx}
+                  onChange={(e) => setRx(e.currentTarget.value)}
+                />
+                <TextInput
+                  label="TX frequency (MHz)"
+                  value={tx}
+                  onChange={(e) => setTx(e.currentTarget.value)}
+                />
+              </SimpleGrid>
+              <PercentLevelSlider label="Power" value={power} onChange={setPower} />
+              <ForbidTransmitSegment value={forbidTransmit} onChange={setForbidTransmit} />
+            </FormSection>
+          </ChannelEditorPanel>
         </Tabs.Panel>
 
         <Tabs.Panel value="modes" pt="md">
-          <Stack gap="lg">
-            <FormSection>
-              <ChannelModesMultiSelect value={selectedModes} onChange={handleModesChange} />
-            </FormSection>
-            <FormSection>
-              <GradientSegmentedControl
-                label="Primary mode"
-                description={
-                  modeProfiles.length === 0
-                    ? 'Select at least one mode to set which mode is primary for dual-mode CPS export.'
-                    : 'Primary mode drives dual-mode Channel Type on Anytone and DM32 export.'
-                }
-                value={resolveChannelPrimaryMode({ primaryMode, modeProfiles }) ?? ''}
-                onChange={(value) => setPrimaryMode(value as ChannelMode)}
-                data={modeProfiles.map((profile) => ({
-                  value: profile.mode,
-                  label: modeLabel(profile.mode),
-                }))}
-                segmentColors={modeProfiles.map((profile) => modeColor(profile.mode))}
-                fullWidth
-                disabled={modeProfiles.length === 0}
-              />
-            </FormSection>
-            {modeProfiles.length > 0 ? (
+          <ChannelEditorPanel channel={liveChannel} isNew={!entity} showIdentitySummary>
+            <Stack gap="lg">
               <FormSection>
-                <ChannelModeProfilesEditor
-                  profiles={modeProfiles}
-                  library={library}
-                  rxFrequency={liveRxHz}
-                  txFrequency={liveTxHz}
-                  onChange={setModeProfiles}
+                <ChannelModesMultiSelect value={selectedModes} onChange={handleModesChange} />
+              </FormSection>
+              <FormSection>
+                <GradientSegmentedControl
+                  label="Primary mode"
+                  description={
+                    modeProfiles.length === 0
+                      ? 'Select at least one mode to set which mode is primary for dual-mode CPS export.'
+                      : 'Primary mode drives dual-mode Channel Type on Anytone and DM32 export.'
+                  }
+                  value={resolveChannelPrimaryMode({ primaryMode, modeProfiles }) ?? ''}
+                  onChange={(value) => setPrimaryMode(value as ChannelMode)}
+                  data={modeProfiles.map((profile) => ({
+                    value: profile.mode,
+                    label: modeLabel(profile.mode),
+                  }))}
+                  segmentColors={modeProfiles.map((profile) => modeColor(profile.mode))}
+                  fullWidth
+                  disabled={modeProfiles.length === 0}
                 />
               </FormSection>
-            ) : null}
-          </Stack>
+              {modeProfiles.length > 0 ? (
+                <FormSection>
+                  <ChannelModeProfilesEditor
+                    profiles={modeProfiles}
+                    library={library}
+                    rxFrequency={liveRxHz}
+                    txFrequency={liveTxHz}
+                    onChange={setModeProfiles}
+                  />
+                </FormSection>
+              ) : null}
+            </Stack>
+          </ChannelEditorPanel>
         </Tabs.Panel>
 
         <Tabs.Panel value="location" pt="md">
-          <ChannelLocationSection
-            value={location}
-            onChange={setLocation}
-            mapActive={activeTab === 'location'}
-          />
+          <ChannelEditorPanel channel={liveChannel} isNew={!entity} showIdentitySummary>
+            <ChannelLocationSection
+              value={location}
+              onChange={setLocation}
+              mapActive={activeTab === 'location'}
+            />
+          </ChannelEditorPanel>
         </Tabs.Panel>
 
         {entity ? (
           <Tabs.Panel value="zones" pt="md">
-            <ChannelZoneMembershipSection channelId={entity.id} library={library} />
+            <ChannelEditorPanel channel={liveChannel} isNew={false} showIdentitySummary>
+              <ChannelZoneMembershipSection channelId={entity.id} library={library} />
+            </ChannelEditorPanel>
           </Tabs.Panel>
         ) : null}
 
         {entity ? (
           <Tabs.Panel value="verify" pt="md">
-            <RepeaterVerifyPanel channel={liveChannel} library={library} />
+            <ChannelEditorPanel channel={liveChannel} isNew={false} showIdentitySummary>
+              <RepeaterVerifyPanel channel={liveChannel} library={library} />
+            </ChannelEditorPanel>
           </Tabs.Panel>
         ) : null}
       </Tabs>

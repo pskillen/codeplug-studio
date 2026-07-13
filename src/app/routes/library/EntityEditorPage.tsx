@@ -1,4 +1,5 @@
 import { Anchor } from '@mantine/core';
+import { useCallback, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { useLibrary } from '../../state/useLibrary.ts';
 import { FormPage } from '../../components/ui/index.ts';
@@ -16,6 +17,28 @@ export default function EntityEditorPage() {
   const { kind: slug, id } = useParams();
   const meta = slug ? kindBySlug(slug) : undefined;
   const { library, loading, projectId } = useLibrary();
+  const [channelPageTitle, setChannelPageTitle] = useState<{
+    entityId: string | null;
+    title: string;
+  } | null>(null);
+
+  const isNew = id === 'new' || !id;
+  const entityId = isNew ? null : (id ?? null);
+  const defaultTitle = meta ? `${isNew ? 'New' : 'Edit'} ${meta.label.toLowerCase()}` : 'Loading…';
+  const pageTitle =
+    meta?.kind === 'channel' && channelPageTitle != null && channelPageTitle.entityId === entityId
+      ? channelPageTitle.title
+      : defaultTitle;
+
+  const handleChannelPageTitle = useCallback(
+    (title: string) => {
+      setChannelPageTitle((prev) => {
+        if (prev?.entityId === entityId && prev.title === title) return prev;
+        return { entityId, title };
+      });
+    },
+    [entityId],
+  );
 
   if (!meta) {
     return <NotFound message="Unknown entity type." />;
@@ -29,19 +52,16 @@ export default function EntityEditorPage() {
     );
   }
 
-  const isNew = id === 'new' || !id;
   const exists = isNew || entitiesForKind(library, meta.kind).some((r) => r.id === id);
   if (!exists) {
     return <NotFound message={`${meta.label} not found.`} slug={meta.slug} />;
   }
 
-  const title = `${isNew ? 'New' : 'Edit'} ${meta.label.toLowerCase()}`;
-
   const listPath = listPathForEditorSlug(meta.slug);
 
   return (
     <FormPage
-      title={title}
+      title={pageTitle}
       description={
         <Anchor component={Link} to={listPath} size="sm">
           ← Back to {meta.plural.toLowerCase()}
@@ -54,7 +74,6 @@ export default function EntityEditorPage() {
 
   function renderEditor() {
     if (!projectId) return null;
-    const entityId = isNew ? null : (id ?? null);
     switch (meta!.kind) {
       case 'channel':
         return (
@@ -63,6 +82,7 @@ export default function EntityEditorPage() {
             projectId={projectId}
             library={library}
             entity={entityId ? (library.channels.find((c) => c.id === entityId) ?? null) : null}
+            onPageTitle={handleChannelPageTitle}
           />
         );
       case 'talkGroup':
