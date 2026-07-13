@@ -1,10 +1,10 @@
 # ZoneScanExportControls
 
-Expandable zone scan export controls integrated into the build **Zones** wire preview table.
+Zone scan export controls for **DM32** and **Anytone** builds — used inside the zone override modal (`ZoneScanOverrideSection`).
 
 ## Purpose
 
-Lets operators configure per-zone scan export flags on the build `ZoneGroupingLayout` and per-member scan inclusion on library zones — for **DM32** and **Anytone** builds.
+Lets operators configure per-zone scan export flags on the build `ZoneGroupingLayout` and per-member scan inclusion on library zones.
 
 ## Components
 
@@ -17,7 +17,7 @@ Lets operators configure per-zone scan export flags on the build `ZoneGroupingLa
 
 See `ZoneScanRowHeaderProps` and `ZoneScanExpandPanelProps` in `ZoneScanExportControls.tsx`.
 
-Layout state is provided by [`useZoneScanExportLayout`](../../../hooks/useZoneScanExportLayout.ts) on `BuildZonesWirePage`.
+Layout state is provided by [`useZoneScanExportLayout`](../../../hooks/useZoneScanExportLayout.ts) on `BuildZonesWirePage` and passed into `ZoneScanOverrideSection` in the override modal.
 
 ## Behaviour
 

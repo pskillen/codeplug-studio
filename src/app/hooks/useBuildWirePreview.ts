@@ -30,9 +30,15 @@ export function useBuildWirePreview(
   entityKind: WirePreviewEntityKind,
   anytoneBank: AnytoneWirePreviewBank = 'dmr',
 ) {
-  const { build } = useBuildLayout();
-  const buildRef = useRef(build);
+  const { build: contextBuild } = useBuildLayout();
+  const buildRef = useRef(contextBuild);
   const saveQueueRef = useRef(Promise.resolve());
+  const [savedBuild, setSavedBuild] = useState<FormatBuild | null>(null);
+  const build = useMemo(() => {
+    if (!savedBuild) return contextBuild;
+    if (contextBuild.revision === savedBuild.revision) return contextBuild;
+    return savedBuild;
+  }, [contextBuild, savedBuild]);
 
   useEffect(() => {
     buildRef.current = build;
@@ -105,7 +111,9 @@ export function useBuildWirePreview(
       const result = await buildService.putBuild(next, current.revision);
       setSaving(false);
       if (result.ok) {
-        buildRef.current = { ...next, revision: result.revision };
+        const saved = { ...next, revision: result.revision };
+        buildRef.current = saved;
+        setSavedBuild(saved);
         setError(null);
       } else {
         setError(
