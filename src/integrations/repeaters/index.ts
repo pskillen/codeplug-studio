@@ -70,4 +70,9 @@ export {
   type RepeaterBookSearchFilters,
   type RepeaterBookSearchParams,
 } from './repeaterbook/queryRouter.ts';
-export { clearRepeaterBookSessionCache } from './repeaterbook/sessionCache.ts';
+export {
+  clearDirectoryCache,
+  clearRepeaterBookSessionCache,
+  DIRECTORY_CACHE_TTL_MS,
+  REPEATERBOOK_CACHE_PREFIX,
+} from './sessionCache.ts';

@@ -2,6 +2,8 @@ import { bandFromFrequencyMhz } from '@core/domain/bandCatalog.ts';
 import { csvToTable } from '@core/import-export/csvParse.ts';
 import type { ChannelMode } from '@core/models/libraryTypes.ts';
 import { RepeaterDirectoryError, type RepeaterListing } from './types.ts';
+import { fetchDirectoryText } from './directoryFetch.ts';
+import { clearDirectoryCache, IRTS_CACHE_PREFIX } from './sessionCache.ts';
 
 export const IRTS_REPEATERS_API_PATH = '/api/irts/repeaters';
 
@@ -155,46 +157,26 @@ export function filterIrtsListings(
   return result;
 }
 
-let catalogueCache: RepeaterListing[] | null = null;
-
-/** Clear in-memory catalogue cache (tests). */
+/** Clear session cache for IRTS catalogue (tests). */
 export function clearIrtsCatalogueCache(): void {
-  catalogueCache = null;
+  clearDirectoryCache(IRTS_CACHE_PREFIX);
 }
 
 export async function fetchIrtsRepeaters(options?: {
   refresh?: boolean;
 }): Promise<RepeaterListing[]> {
-  if (!options?.refresh && catalogueCache) {
-    return catalogueCache;
+  const { body, status } = await fetchDirectoryText(IRTS_REPEATERS_API_PATH, {
+    provider: 'irts',
+    cachePrefix: IRTS_CACHE_PREFIX,
+    skipCache: options?.refresh === true,
+    networkErrorMessage: 'Could not reach IRTS repeater listing — check your network connection.',
+  });
+
+  if (status < 200 || status >= 300) {
+    throw new RepeaterDirectoryError(`IRTS repeater listing returned ${status}.`, status);
   }
 
-  let response: Response;
-  try {
-    response = await fetch(IRTS_REPEATERS_API_PATH);
-  } catch {
-    throw new RepeaterDirectoryError(
-      'Could not reach IRTS repeater listing — check your network connection.',
-    );
-  }
-
-  if (!response.ok) {
-    throw new RepeaterDirectoryError(
-      `IRTS repeater listing returned ${response.status}.`,
-      response.status,
-    );
-  }
-
-  let text: string;
-  try {
-    text = await response.text();
-  } catch {
-    throw new RepeaterDirectoryError('Invalid response from IRTS repeater listing.');
-  }
-
-  const listings = parseIrtsAnytoneCsv(text);
-  catalogueCache = listings;
-  return listings;
+  return parseIrtsAnytoneCsv(body);
 }
 
 export async function searchIrtsByCallsign(callsign: string): Promise<RepeaterListing[]> {

@@ -42,13 +42,15 @@ Repeater search is **not** a top-level nav item — it lives under library workf
 | RepeaterBook verify on channel edit | Shipped  | _Check RepeaterBook_ when token configured ([#274](https://github.com/pskillen/codeplug-studio/issues/274))                                                                                                                                                                                                                        |
 | Bulk verify from channel list       | Deferred | [#49](https://github.com/pskillen/codeplug-studio/issues/49) — separate PR                                                                                                                                                                                                                                                         |
 | ETCC keeper endpoint                | Deferred | Not in archive query router                                                                                                                                                                                                                                                                                                        |
-| Offline result cache                | Deferred | In-session only                                                                                                                                                                                                                                                                                                                    |
+| Offline result cache                | Shipped  | sessionStorage TTL ≤5 min; stale fallback on 429 ([#73](https://github.com/pskillen/codeplug-studio/issues/73))                                                                                                                                                                                                                    |
+| Directory rate-limit cooldown       | Shipped  | Per-provider 429 gate; honours `Retry-After`; no auto-retry ([#341](https://github.com/pskillen/codeplug-studio/issues/341))                                                                                                                                                                                                       |
 
 ## Documentation map
 
 | Doc                                                              | Contents                                                                     |
 | ---------------------------------------------------------------- | ---------------------------------------------------------------------------- |
 | This README                                                      | Workflows, boundaries, code anchors                                          |
+| [adding-reference-source.md](adding-reference-source.md)         | Checklist for new directory integrations                                     |
 | [ukrepeater API reference](../../reference/ukrepeater/README.md) | ETCC endpoints, mode flags, field mapping (tier 3)                           |
 | [BrandMeister reference](../../reference/brandmeister/README.md) | v2 device + talk group endpoints, field mapping (tier 3)                     |
 | [IRTS reference](../../reference/irts/README.md)                 | Anytone CSV + CORS proxy, field mapping (tier 3)                             |
@@ -138,6 +140,8 @@ Example: `modeCodes: ["A", "D", "M:1", "F", "P", "N"]` → six profiles on impor
 - HTTP clients in `src/integrations/repeaters/`; **`core` never makes network calls**.
 - Mapping produces vendor-neutral library fields only — no CPS column names in `app/` or `core/`.
 - ukrepeater.net and BrandMeister allow browser CORS; IRTS and RepeaterBook use same-origin Pages Function proxies with a shared origin allowlist (deploy hostnames + `http://localhost:5173` — see [build docs](../../build/README.md#pages-functions-cors-bridges)). RepeaterBook forwards each user's `rbuapp_` token and sets the approved User-Agent server-side. Failures surface as `RepeaterDirectoryError` in the UI.
+- **Session cache:** identical lookup URLs within a tab reuse cached responses for up to five minutes (`fetchDirectoryText` / `fetchCachedText` + `sessionStorage`). Applies to repeater directories and Photon geocode. Reduces duplicate traffic across search, verify, town-based repeater queries, and Maidenhead reference geocode.
+- **Rate limits:** after **429** (or RepeaterBook `rate_limited`), further requests to that provider are blocked for a cooldown window (default 60 s; `Retry-After` when present). No automatic retry — operator must wait and search again. Stale cache may be served on 429 when a prior response exists.
 
 ## Known gaps
 
@@ -145,7 +149,6 @@ Example: `modeCodes: ["A", "D", "M:1", "F", "P", "N"]` → six profiles on impor
 - BrandMeister listings always map to DMR-only profiles.
 - BrandMeister: no locator, band, town, or use-my-location search (API limit — see [BrandMeister reference](../../reference/brandmeister/README.md)).
 - IRTS: no coordinates/locator in Anytone CSV; map empty for IRTS results ([#273](https://github.com/pskillen/codeplug-studio/issues/273) — see [irts-outstanding.md](irts-outstanding.md)).
-- RepeaterBook: sessionStorage cache and 429 backoff deferred ([#73](https://github.com/pskillen/codeplug-studio/issues/73), [#341](https://github.com/pskillen/codeplug-studio/issues/341) — see [repeaterbook-outstanding.md](repeaterbook-outstanding.md)).
 - Bulk directory verify from channel list ([#49](https://github.com/pskillen/codeplug-studio/issues/49)).
 
 ## Manual verify

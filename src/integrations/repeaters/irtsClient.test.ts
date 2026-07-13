@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import {
   clearIrtsCatalogueCache,
   fetchIrtsRepeaters,
@@ -9,24 +9,26 @@ import {
   parseIrtsAnytoneCsv,
   searchIrtsByCallsign,
 } from './irtsClient.ts';
+import {
+  mockTextFetch,
+  setupRepeaterDirectoryTestMocks,
+  teardownRepeaterDirectoryTestMocks,
+} from './testHelpers.ts';
 import { RepeaterDirectoryError } from './types.ts';
 
 const fixtureDir = join(dirname(fileURLToPath(import.meta.url)), '__fixtures__/irts');
 const sampleCsv = readFileSync(join(fixtureDir, 'anytone-sample.csv'), 'utf8');
 
 function mockFetchCsv(status: number, body: string) {
-  vi.stubGlobal(
-    'fetch',
-    vi.fn(async () => ({
-      ok: status >= 200 && status < 300,
-      status,
-      text: async () => body,
-    })),
-  );
+  mockTextFetch(status, body);
 }
 
+beforeEach(() => {
+  setupRepeaterDirectoryTestMocks();
+});
+
 afterEach(() => {
-  vi.unstubAllGlobals();
+  teardownRepeaterDirectoryTestMocks();
   clearIrtsCatalogueCache();
 });
 
@@ -90,7 +92,7 @@ describe('fetchIrtsRepeaters', () => {
     const first = await fetchIrtsRepeaters();
     expect(first).toHaveLength(3);
     const second = await fetchIrtsRepeaters();
-    expect(second).toBe(first);
+    expect(second).toHaveLength(3);
     expect(fetch).toHaveBeenCalledTimes(1);
   });
 

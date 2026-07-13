@@ -1,26 +1,24 @@
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { repeaterListingToChannel } from './mapToChannel.ts';
+import {
+  mockJsonFetch,
+  setupRepeaterDirectoryTestMocks,
+  teardownRepeaterDirectoryTestMocks,
+} from './testHelpers.ts';
 import { RepeaterDirectoryError } from './types.ts';
 import { searchUkRepeatersByCallsign } from './ukRepeaterClient.ts';
 
-function mockFetch(status: number, body: unknown) {
-  vi.stubGlobal(
-    'fetch',
-    vi.fn(async () => ({
-      ok: status >= 200 && status < 300,
-      status,
-      json: async () => body,
-    })),
-  );
-}
+beforeEach(() => {
+  setupRepeaterDirectoryTestMocks();
+});
 
 afterEach(() => {
-  vi.unstubAllGlobals();
+  teardownRepeaterDirectoryTestMocks();
 });
 
 describe('searchUkRepeatersByCallsign', () => {
   it('normalises a GB3DA listing into a RepeaterListing', async () => {
-    mockFetch(200, {
+    mockJsonFetch(200, {
       data: [
         {
           id: 4120,
@@ -53,7 +51,7 @@ describe('searchUkRepeatersByCallsign', () => {
   });
 
   it('parses a DMR listing with colour code', async () => {
-    mockFetch(200, {
+    mockJsonFetch(200, {
       data: [
         {
           id: 1,
@@ -72,14 +70,25 @@ describe('searchUkRepeatersByCallsign', () => {
   });
 
   it('returns an empty array when data is null', async () => {
-    mockFetch(200, { data: null });
+    mockJsonFetch(200, { data: null });
     expect(await searchUkRepeatersByCallsign('zz9zzz')).toEqual([]);
   });
 
   it('throws RepeaterDirectoryError on a non-ok response', async () => {
-    mockFetch(503, {});
+    mockJsonFetch(503, {});
     await expect(searchUkRepeatersByCallsign('gb3da')).rejects.toBeInstanceOf(
       RepeaterDirectoryError,
     );
+  });
+
+  it('reuses session cache on repeated callsign search', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue(new Response(JSON.stringify({ data: [] }), { status: 200 }));
+    vi.stubGlobal('fetch', fetchMock);
+
+    await searchUkRepeatersByCallsign('gb3da');
+    await searchUkRepeatersByCallsign('gb3da');
+    expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 });

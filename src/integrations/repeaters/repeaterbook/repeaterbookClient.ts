@@ -1,11 +1,9 @@
+import { fetchDirectoryText } from '../directoryFetch.ts';
+import { recordRateLimit } from '../rateLimit.ts';
+import { REPEATERBOOK_CACHE_PREFIX } from '../sessionCache.ts';
 import { RepeaterDirectoryError, type RepeaterListing } from '../types.ts';
 import { REPEATERBOOK_EXPORT_PROXY_PATH } from './constants.ts';
 import { parseRepeaterBookListings } from './parseListing.ts';
-import {
-  readRepeaterBookSessionCache,
-  repeaterBookCacheKey,
-  writeRepeaterBookSessionCache,
-} from './sessionCache.ts';
 
 interface RepeaterBookErrorBody {
   status?: string;
@@ -46,12 +44,38 @@ function errorMessageFromBody(body: RepeaterBookErrorBody, status: number): stri
   return `RepeaterBook returned ${status}.`;
 }
 
-async function parseJsonResponse(response: Response): Promise<unknown> {
+function isRepeaterBookRateLimitResponse(_status: number, body: string): boolean {
   try {
-    return await response.json();
+    const parsed = JSON.parse(body) as RepeaterBookErrorBody;
+    const code = parsed.code ?? parsed.error;
+    return code === 'rate_limited';
+  } catch {
+    return false;
+  }
+}
+
+function parseExportBody(body: string): RepeaterListing[] {
+  let parsed: RepeaterBookErrorBody & { results?: unknown[] };
+  try {
+    parsed = JSON.parse(body) as RepeaterBookErrorBody & { results?: unknown[] };
   } catch {
     throw new RepeaterDirectoryError('Invalid response from RepeaterBook.');
   }
+
+  if (parsed.status === 'error') {
+    const code = parsed.code ?? parsed.error;
+    if (code === 'rate_limited') {
+      recordRateLimit('repeaterbook');
+      throw new RepeaterDirectoryError(ERROR_MESSAGES.rate_limited!, 429);
+    }
+    throw new RepeaterDirectoryError(errorMessageFromBody(parsed, 400), 400);
+  }
+
+  if (!Array.isArray(parsed.results)) {
+    throw new RepeaterDirectoryError('Unexpected response from RepeaterBook.');
+  }
+
+  return parseRepeaterBookListings(parsed.results);
 }
 
 export async function fetchRepeaterBookExport(
@@ -59,48 +83,35 @@ export async function fetchRepeaterBookExport(
   token: string,
 ): Promise<RepeaterListing[]> {
   const appToken = requireToken(token);
-  const cacheKey = repeaterBookCacheKey(url, tokenPrefix(appToken));
-  const cached = readRepeaterBookSessionCache(cacheKey);
-  if (cached != null) {
-    const parsed = JSON.parse(cached) as { results?: unknown[] };
-    return parseRepeaterBookListings(parsed.results ?? []);
-  }
-
-  let response: Response;
-  try {
-    response = await fetch(url, {
+  const { body, status } = await fetchDirectoryText(url, {
+    provider: 'repeaterbook',
+    cachePrefix: REPEATERBOOK_CACHE_PREFIX,
+    cacheKeySuffix: tokenPrefix(appToken),
+    init: {
       headers: {
         'X-RB-App-Token': appToken,
         Accept: 'application/json',
       },
-    });
-  } catch {
-    throw new RepeaterDirectoryError(
-      'Could not reach RepeaterBook — check your network connection.',
-    );
-  }
+    },
+    networkErrorMessage: 'Could not reach RepeaterBook — check your network connection.',
+    isRateLimitResponse: isRepeaterBookRateLimitResponse,
+  });
 
-  if (response.status === 403) {
+  if (status === 403) {
     throw new RepeaterDirectoryError(ERROR_MESSAGES.origin_forbidden!);
   }
 
-  const parsed = (await parseJsonResponse(response)) as RepeaterBookErrorBody & {
-    results?: unknown[];
-  };
-
-  if (!response.ok || parsed.status === 'error') {
-    throw new RepeaterDirectoryError(
-      errorMessageFromBody(parsed, response.status),
-      response.status,
-    );
+  if (status < 200 || status >= 300) {
+    let parsed: RepeaterBookErrorBody = {};
+    try {
+      parsed = JSON.parse(body) as RepeaterBookErrorBody;
+    } catch {
+      // use generic message below
+    }
+    throw new RepeaterDirectoryError(errorMessageFromBody(parsed, status), status);
   }
 
-  if (!Array.isArray(parsed.results)) {
-    throw new RepeaterDirectoryError('Unexpected response from RepeaterBook.');
-  }
-
-  writeRepeaterBookSessionCache(cacheKey, JSON.stringify(parsed));
-  return parseRepeaterBookListings(parsed.results);
+  return parseExportBody(body);
 }
 
 export function buildRepeaterBookExportUrl(

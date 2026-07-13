@@ -1,12 +1,16 @@
 import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { parseRepeaterBookListing, parseRepeaterBookListings } from './parseListing.ts';
 import { parseRepeaterBookModes, isRepeaterBookOperational } from './modeMapping.ts';
 import { filterRepeaterBookListings } from './queryRouter.ts';
 import { buildRepeaterBookExportUrl, fetchRepeaterBookExport } from './repeaterbookClient.ts';
-import { clearRepeaterBookSessionCache } from './sessionCache.ts';
+import {
+  setupRepeaterDirectoryTestMocks,
+  teardownRepeaterDirectoryTestMocks,
+} from '../testHelpers.ts';
+import { clearRepeaterBookSessionCache } from '../sessionCache.ts';
 import { REPEATERBOOK_EXPORT_PROXY_PATH } from './constants.ts';
 
 const fixtureDir = join(dirname(fileURLToPath(import.meta.url)), '../__fixtures__/repeaterbook');
@@ -82,8 +86,12 @@ describe('buildRepeaterBookExportUrl', () => {
 });
 
 describe('fetchRepeaterBookExport', () => {
+  beforeEach(() => {
+    setupRepeaterDirectoryTestMocks();
+  });
+
   afterEach(() => {
-    vi.unstubAllGlobals();
+    teardownRepeaterDirectoryTestMocks();
     clearRepeaterBookSessionCache();
   });
 
@@ -151,5 +159,40 @@ describe('fetchRepeaterBookExport', () => {
       message: expect.stringContaining('rate limit'),
       status: 429,
     });
+  });
+
+  it('blocks further requests during cooldown after 429', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi
+        .fn()
+        .mockResolvedValue(
+          new Response(JSON.stringify({ status: 'error', code: 'rate_limited' }), { status: 429 }),
+        ),
+    );
+    const url = '/api/repeaterbook/export?region=na&callsign=W6TEST';
+    await expect(fetchRepeaterBookExport(url, 'rbuapp_testtoken')).rejects.toMatchObject({
+      status: 429,
+    });
+
+    const fetchMock = vi.fn();
+    vi.stubGlobal('fetch', fetchMock);
+    await expect(fetchRepeaterBookExport(url, 'rbuapp_testtoken')).rejects.toMatchObject({
+      status: 429,
+    });
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it('uses separate cache entries when token changes', async () => {
+    const body = loadFixture('na-analog-dmr.json');
+    const fetchMock = vi.fn().mockImplementation(async () => {
+      return new Response(JSON.stringify(body), { status: 200 });
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    const url = '/api/repeaterbook/export?region=na&callsign=W6TEST';
+    await fetchRepeaterBookExport(url, 'rbuapp_AAAAAAAAA');
+    await fetchRepeaterBookExport(url, 'rbuapp_BBBBBBBBB');
+    expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 });

@@ -62,17 +62,17 @@ Success JSON:
 
 Error JSON (HTTP 4xx or `status: "error"`):
 
-| Code                | Meaning                                                                                           |
-| ------------------- | ------------------------------------------------------------------------------------------------- |
-| `auth_missing`      | Token required                                                                                    |
-| `auth_invalid`      | Bad token format                                                                                  |
-| `auth_inactive`     | Token or app inactive                                                                             |
-| `auth_revoked`      | Token revoked                                                                                     |
-| `auth_scope_denied` | Token lacks endpoint scope                                                                        |
-| `ua_mismatch`       | User-Agent does not match approved policy                                                         |
-| `rate_limited`      | Too many requests — back off (see [#341](https://github.com/pskillen/codeplug-studio/issues/341)) |
+| Code                | Meaning                                                                                                                 |
+| ------------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| `auth_missing`      | Token required                                                                                                          |
+| `auth_invalid`      | Bad token format                                                                                                        |
+| `auth_inactive`     | Token or app inactive                                                                                                   |
+| `auth_revoked`      | Token revoked                                                                                                           |
+| `auth_scope_denied` | Token lacks endpoint scope                                                                                              |
+| `ua_mismatch`       | User-Agent does not match approved policy                                                                               |
+| `rate_limited`      | Too many requests — back off immediately ([RepeaterBook API policy](https://www.repeaterbook.com/wiki/doku.php?id=api)) |
 
-HTTP **429** also indicates rate limiting. v1 surfaces an error; cooperative backoff deferred to shared infra.
+HTTP **429** also indicates rate limiting. Studio records a per-provider cooldown (default 60 s; honours `Retry-After`) and blocks further requests until it expires — **no automatic retry**. When a cached response exists, stale data may be served on 429 instead of failing.
 
 ## Listing record → `RepeaterListing`
 
@@ -133,7 +133,7 @@ UI must credit: **Data courtesy of [RepeaterBook.com](https://www.repeaterbook.c
 
 ## Caching
 
-v1 uses a minimal in-memory session cache (5 min TTL) in the integration client. Shared sessionStorage cache tracked in [#73](https://github.com/pskillen/codeplug-studio/issues/73).
+Studio caches export responses in **sessionStorage** for up to **five minutes** per URL and token prefix — minimum necessary per RepeaterBook programming-integration policy. Identical search and verify queries within a tab reuse cached JSON without a second upstream call. See [repeater directories hub](../../features/repeater-directories/README.md) and [adding a reference source](../../features/repeater-directories/adding-reference-source.md).
 
 ## Related
 

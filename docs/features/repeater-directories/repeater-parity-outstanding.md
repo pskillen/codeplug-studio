@@ -9,5 +9,4 @@
 ## Known follow-ups (not blocking this PR)
 
 - ETCC keeper endpoint / `/all/systems`
-- Offline session cache for ETCC results
 - BrandMeister location/bbox search (no public v2 endpoint)

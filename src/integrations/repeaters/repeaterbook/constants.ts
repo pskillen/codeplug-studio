@@ -14,6 +14,3 @@ export const REPEATERBOOK_EXPORT_PROXY_PATH = '/api/repeaterbook/export';
 export const REPEATERBOOK_EXPORT_NA_URL = `${REPEATERBOOK_API_BASE}/export.php`;
 
 export const REPEATERBOOK_EXPORT_ROW_URL = `${REPEATERBOOK_API_BASE}/exportROW.php`;
-
-/** In-memory session cache TTL for RepeaterBook export responses (ms). */
-export const REPEATERBOOK_SESSION_CACHE_TTL_MS = 5 * 60 * 1000;
