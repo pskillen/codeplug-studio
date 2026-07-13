@@ -36,6 +36,7 @@ import BuildLayout from './routes/builds/BuildLayout.tsx';
 import BuildOverviewPage from './routes/builds/BuildOverviewPage.tsx';
 import BuildExportPage from './routes/builds/BuildExportPage.tsx';
 import BuildChannelsWirePage from './routes/builds/wire-preview/BuildChannelsWirePage.tsx';
+import BuildChannelsBulkEditPage from './routes/builds/wire-preview/BuildChannelsBulkEditPage.tsx';
 import BuildZonesWirePage from './routes/builds/wire-preview/BuildZonesWirePage.tsx';
 import BuildScanListsWirePage from './routes/builds/wire-preview/BuildScanListsWirePage.tsx';
 import BuildTalkGroupsWirePage from './routes/builds/wire-preview/BuildTalkGroupsWirePage.tsx';
@@ -126,6 +127,7 @@ export const appRouter = createBrowserRouter([
               { index: true, element: <Navigate to="overview" replace /> },
               { path: 'overview', element: <BuildOverviewPage /> },
               { path: 'memories', element: <Navigate to="channels" replace /> },
+              { path: 'channels/bulk', element: <BuildChannelsBulkEditPage /> },
               { path: 'channels', element: <BuildChannelsWirePage /> },
               { path: 'airband', element: <BuildAirbandWirePage /> },
               { path: 'zones', element: <BuildZonesWirePage /> },

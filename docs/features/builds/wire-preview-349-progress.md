@@ -9,6 +9,7 @@
 | --- | --- | --- |
 | 1 — DataTable + modal shell | Shipped | `WirePreviewDataTable`, `WirePreviewOverrideModal`, `DataTable.onRowActivate` |
 | 2 — Simple entity list + modal | Shipped | `BuildWirePreviewListPage`; TG, contacts, RGL, scan lists |
+| 3 — Channel list + bulk edit | Shipped | `/builds/:id/channels/bulk`, expansion modal context |
 
 ## Verify
 
