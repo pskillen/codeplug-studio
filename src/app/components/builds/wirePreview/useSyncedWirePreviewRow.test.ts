@@ -20,14 +20,23 @@ const expandedRow: WirePreviewRow = {
   displayDetails: [{ label: 'Talk group', value: 'Local 9 (9) · Slot 1' }],
 };
 
+type HookProps = {
+  selectedRowKey: string | null;
+  previewRows: WirePreviewRow[];
+};
+
+function renderSyncedRowHook(initialProps: HookProps) {
+  return renderHook(
+    ({ selectedRowKey, previewRows }) => useSyncedWirePreviewRow(selectedRowKey, previewRows),
+    { initialProps },
+  );
+}
+
 describe('useSyncedWirePreviewRow', () => {
   it('returns fresh row data when preview rows update after persist', () => {
     const rows = [baseRow];
 
-    const { result, rerender } = renderHook(
-      ({ selectedRowKey, previewRows }) => useSyncedWirePreviewRow(selectedRowKey, previewRows),
-      { initialProps: { selectedRowKey: 'ch-1', previewRows: rows } },
-    );
+    const { result, rerender } = renderSyncedRowHook({ selectedRowKey: 'ch-1', previewRows: rows });
 
     expect(result.current?.excluded).toBe(false);
 
@@ -38,10 +47,10 @@ describe('useSyncedWirePreviewRow', () => {
   });
 
   it('clears when selection is cleared', () => {
-    const { result, rerender } = renderHook(
-      ({ selectedRowKey, previewRows }) => useSyncedWirePreviewRow(selectedRowKey, previewRows),
-      { initialProps: { selectedRowKey: 'ch-1', previewRows: [baseRow] } },
-    );
+    const { result, rerender } = renderSyncedRowHook({
+      selectedRowKey: 'ch-1',
+      previewRows: [baseRow],
+    });
 
     rerender({ selectedRowKey: null, previewRows: [baseRow] });
 
@@ -49,15 +58,10 @@ describe('useSyncedWirePreviewRow', () => {
   });
 
   it('falls back to collapsed parent row when expansion key disappears', () => {
-    const { result, rerender } = renderHook(
-      ({ selectedRowKey, previewRows }) => useSyncedWirePreviewRow(selectedRowKey, previewRows),
-      {
-        initialProps: {
-          selectedRowKey: 'ch-1:tg-9',
-          previewRows: [expandedRow],
-        },
-      },
-    );
+    const { result, rerender } = renderSyncedRowHook({
+      selectedRowKey: 'ch-1:tg-9',
+      previewRows: [expandedRow],
+    });
 
     expect(result.current?.key).toBe('ch-1:tg-9');
 
