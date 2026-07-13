@@ -169,7 +169,7 @@ describe('IndexedDbProjectPersistence', () => {
     });
   });
 
-  it('persists aprs configurations and lists them sorted by name', async () => {
+  it('persists a single aprs configuration per project', async () => {
     const store = makeStore();
     const meta = newProjectMeta('Test');
     await store.seedProject({ meta });
@@ -180,7 +180,9 @@ describe('IndexedDbProjectPersistence', () => {
     await store.putAprsConfiguration(alpha, null);
 
     const configs = await store.listAprsConfigurations(meta.projectId);
-    expect(configs.map((c) => c.name)).toEqual(['Alpha', 'Zulu']);
+    expect(configs).toHaveLength(1);
+    expect(configs[0]?.name).toBe('Alpha');
+    expect(await store.getAprsConfiguration(meta.projectId, zulu.id)).toBeNull();
     expect(await store.getAprsConfiguration(meta.projectId, alpha.id)).toMatchObject({
       name: 'Alpha',
     });

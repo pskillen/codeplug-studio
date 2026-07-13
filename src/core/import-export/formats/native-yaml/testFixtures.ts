@@ -57,7 +57,7 @@ export function minimalProjectAggregate(): ProjectAggregate {
     analogContacts: [],
     rxGroupLists: [],
     scanLists: [],
-    aprsConfigurations: [],
+    aprsConfiguration: null,
     formatBuilds: [],
   };
 }
@@ -146,7 +146,7 @@ export function fullLibraryAggregate(): ProjectAggregate {
       receiveEnabled: true,
       reportType: 'digital',
       digitalPttMode: 'on',
-      reportChannelRef: { kind: 'channel', id: FIXTURE_CHANNEL_B_ID },
+      reportSlotIndex: 1,
     },
   };
 
@@ -166,8 +166,6 @@ export function fullLibraryAggregate(): ProjectAggregate {
         callType: 'group',
       },
     ],
-    defaultDmrId: 1,
-    defaultCallType: 'group',
   };
 
   const zone: Zone = {
@@ -192,7 +190,7 @@ export function fullLibraryAggregate(): ProjectAggregate {
     analogContacts: [analogContact],
     rxGroupLists: [rxGroupList],
     scanLists: [],
-    aprsConfigurations: [aprsConfiguration],
+    aprsConfiguration,
     formatBuilds: [],
   };
 }

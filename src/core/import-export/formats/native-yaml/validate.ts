@@ -56,10 +56,11 @@ import { normalizeModeProfile } from '@core/domain/modeProfiles.ts';
 import { normalizeChannel } from '@core/domain/normalizeChannel.ts';
 import {
   normalizeAprsConfiguration,
-  normalizeAprsConfigurations,
+  normalizeAprsConfigurationOrNull,
   normalizeOptionalChannelAprs,
 } from '@core/domain/aprs/index.ts';
-import { validateActiveAprsConfigurationId } from '@core/domain/aprs/validation.ts';
+import { validateChannelAprsBinding } from '@core/domain/aprs/validation.ts';
+import { migrateAprsSingletonLibrary } from '@core/domain/migrateAprsSingleton.ts';
 import { normalizeZoneMemberEntry } from '@core/domain/zoneMembers.ts';
 import { migrateFormatBuild } from '@core/domain/migrateFormatBuild.ts';
 import { migrateProjectAggregate } from '@core/domain/migrateZoneExportFields.ts';
@@ -295,22 +296,38 @@ function parseNullableChannelEntityRef(raw: unknown, label: string): EntityRef |
   return ref;
 }
 
-function parseChannelAprsBinding(raw: unknown, label: string): ChannelAprsBinding | undefined {
+function parseChannelAprsBinding(
+  raw: unknown,
+  label: string,
+  studioSchemaVersion: number,
+): ChannelAprsBinding | undefined {
   if (raw === undefined || raw === null) return undefined;
   const record = expectRecord(raw, label);
-  return normalizeOptionalChannelAprs({
+  const binding = {
     receiveEnabled: expectBoolean(record.receiveEnabled, `${label}.receiveEnabled`),
     reportType: parseAprsReportType(record.reportType, `${label}.reportType`),
     digitalPttMode: parseAprsPttMode(record.digitalPttMode, `${label}.digitalPttMode`),
-    reportChannelRef: parseNullableChannelEntityRef(
-      record.reportChannelRef,
-      `${label}.reportChannelRef`,
-    ),
-  });
+    reportSlotIndex:
+      record.reportSlotIndex !== undefined && record.reportSlotIndex !== null
+        ? expectNullableNumber(record.reportSlotIndex, `${label}.reportSlotIndex`)
+        : null,
+    ...(studioSchemaVersion < STUDIO_SCHEMA_VERSION && record.reportChannelRef !== undefined
+      ? {
+          reportChannelRef: parseNullableChannelEntityRef(
+            record.reportChannelRef,
+            `${label}.reportChannelRef`,
+          ),
+        }
+      : {}),
+  };
+  if (studioSchemaVersion < STUDIO_SCHEMA_VERSION) {
+    return binding as ChannelAprsBinding;
+  }
+  return normalizeOptionalChannelAprs(binding as ChannelAprsBinding);
 }
 
-function parseAprsChannelSlot(raw: unknown, index: number, configIndex: number): AprsChannelSlot {
-  const label = `library.aprsConfigurations[${configIndex}].channelSlots[${index}]`;
+function parseAprsChannelSlot(raw: unknown, index: number, labelPrefix: string): AprsChannelSlot {
+  const label = `${labelPrefix}.channelSlots[${index}]`;
   const record = expectRecord(raw, label);
   const timeslotRaw = record.timeslot;
   let timeslot: DMRTimeSlot | null = null;
@@ -329,8 +346,7 @@ function parseAprsChannelSlot(raw: unknown, index: number, configIndex: number):
   };
 }
 
-function parseAprsConfiguration(raw: unknown, index: number): AprsConfiguration {
-  const label = `library.aprsConfigurations[${index}]`;
+function parseAprsConfiguration(raw: unknown, label: string): AprsConfiguration {
   const record = expectRecord(raw, label);
   const fixedLocationRaw = record.fixedLocation;
   let fixedLocation: AprsConfiguration['fixedLocation'] = null;
@@ -353,14 +369,12 @@ function parseAprsConfiguration(raw: unknown, index: number): AprsConfiguration 
     positionSource: parseAprsPositionSource(record.positionSource, `${label}.positionSource`),
     fixedLocation,
     channelSlots: expectArray(record.channelSlots, `${label}.channelSlots`).map((slot, slotIndex) =>
-      parseAprsChannelSlot(slot, slotIndex, index),
+      parseAprsChannelSlot(slot, slotIndex, label),
     ),
-    defaultDmrId: expectNullableNumber(record.defaultDmrId, `${label}.defaultDmrId`),
-    defaultCallType: parseAprsSlotCallType(record.defaultCallType, `${label}.defaultCallType`),
   });
 }
 
-function parseChannel(raw: unknown, index: number): Channel {
+function parseChannel(raw: unknown, index: number, studioSchemaVersion: number): Channel {
   const record = expectRecord(raw, `library.channels[${index}]`);
   const locationRaw = record.location;
   let location: Channel['location'] = null;
@@ -374,10 +388,10 @@ function parseChannel(raw: unknown, index: number): Channel {
 
   const aprsBinding =
     record.aprs !== undefined && record.aprs !== null
-      ? parseChannelAprsBinding(record.aprs, `library.channels[${index}].aprs`)
+      ? parseChannelAprsBinding(record.aprs, `library.channels[${index}].aprs`, studioSchemaVersion)
       : undefined;
 
-  return normalizeChannel({
+  return {
     ...parsePersistableRow(record, `library.channels[${index}]`),
     name: expectString(record.name, `library.channels[${index}].name`),
     callsign: expectString(record.callsign, `library.channels[${index}].callsign`),
@@ -432,7 +446,7 @@ function parseChannel(raw: unknown, index: number): Channel {
       (profile, profileIndex) => parseModeProfile(profile, profileIndex),
     ),
     ...(aprsBinding !== undefined ? { aprs: aprsBinding } : {}),
-  });
+  };
 }
 
 function parseZone(raw: unknown, index: number, studioSchemaVersion: number): Zone {
@@ -580,7 +594,7 @@ function parseScanList(raw: unknown, index: number): ScanList {
 function parseLibrary(raw: unknown, studioSchemaVersion: number): Library {
   const record = expectRecord(raw, 'library');
   const channels = expectArray(record.channels, 'library.channels').map((row, index) =>
-    parseChannel(row, index),
+    parseChannel(row, index, studioSchemaVersion),
   );
   const zones = expectArray(record.zones, 'library.zones').map((row, index) =>
     parseZone(row, index, studioSchemaVersion),
@@ -603,16 +617,24 @@ function parseLibrary(raw: unknown, studioSchemaVersion: number): Library {
       : expectArray(record.scanLists, 'library.scanLists').map((row, index) =>
           parseScanList(row, index),
         );
-  const aprsConfigurations =
-    record.aprsConfigurations === undefined || record.aprsConfigurations === null
-      ? []
-      : normalizeAprsConfigurations(
-          expectArray(record.aprsConfigurations, 'library.aprsConfigurations').map((row, index) =>
-            parseAprsConfiguration(row, index),
-          ),
-        );
+  const aprsConfiguration =
+    studioSchemaVersion >= STUDIO_SCHEMA_VERSION
+      ? record.aprsConfiguration === undefined || record.aprsConfiguration === null
+        ? null
+        : normalizeAprsConfigurationOrNull(
+            parseAprsConfiguration(record.aprsConfiguration, 'library.aprsConfiguration'),
+          )
+      : null;
+  const legacyAprsConfigurations =
+    studioSchemaVersion < STUDIO_SCHEMA_VERSION &&
+    record.aprsConfigurations !== undefined &&
+    record.aprsConfigurations !== null
+      ? expectArray(record.aprsConfigurations, 'library.aprsConfigurations').map((row, index) =>
+          parseAprsConfiguration(row, `library.aprsConfigurations[${index}]`),
+        )
+      : [];
 
-  return {
+  const parsedLibrary = {
     channels,
     zones,
     talkGroups,
@@ -620,7 +642,14 @@ function parseLibrary(raw: unknown, studioSchemaVersion: number): Library {
     analogContacts,
     rxGroupLists,
     scanLists,
-    aprsConfigurations,
+    aprsConfiguration,
+    aprsConfigurations: legacyAprsConfigurations,
+  };
+
+  const migratedLibrary = migrateAprsSingletonLibrary(parsedLibrary);
+  return {
+    ...migratedLibrary,
+    channels: migratedLibrary.channels.map(normalizeChannel),
   };
 }
 
@@ -816,14 +845,6 @@ function parseFormatBuild(raw: unknown, index: number): ParsedFormatBuild {
       : {}),
     ...(record.exportSettings !== undefined && record.exportSettings !== null
       ? { exportSettings: parseExportSettings(record.exportSettings, `${label}.exportSettings`) }
-      : {}),
-    ...(record.activeAprsConfigurationId !== undefined
-      ? {
-          activeAprsConfigurationId: expectNullableString(
-            record.activeAprsConfigurationId,
-            `${label}.activeAprsConfigurationId`,
-          ),
-        }
       : {}),
   };
 
@@ -1043,8 +1064,8 @@ function validateForeignKeys(library: Library, formatBuilds: FormatBuild[]): voi
     }
   }
 
-  for (const config of library.aprsConfigurations) {
-    for (const slot of config.channelSlots) {
+  if (library.aprsConfiguration) {
+    for (const slot of library.aprsConfiguration.channelSlots) {
       if (slot.channelRef) {
         try {
           validateEntityRef(slot.channelRef, library);
@@ -1056,20 +1077,12 @@ function validateForeignKeys(library: Library, formatBuilds: FormatBuild[]): voi
   }
 
   for (const channel of library.channels) {
-    if (channel.aprs?.reportChannelRef) {
+    if (channel.aprs) {
       try {
-        validateEntityRef(channel.aprs.reportChannelRef, library);
+        validateChannelAprsBinding(channel.aprs, library.aprsConfiguration);
       } catch (error) {
         throw new NativeYamlImportError(error instanceof Error ? error.message : String(error));
       }
-    }
-  }
-
-  for (const build of formatBuilds) {
-    try {
-      validateActiveAprsConfigurationId(build, library);
-    } catch (error) {
-      throw new NativeYamlImportError(error instanceof Error ? error.message : String(error));
     }
   }
 
@@ -1179,6 +1192,7 @@ export function validateDocument(raw: unknown): ProjectAggregate {
   const studioSchemaVersion = document.studioSchemaVersion;
   if (
     studioSchemaVersion !== STUDIO_SCHEMA_VERSION &&
+    studioSchemaVersion !== 16 &&
     studioSchemaVersion !== 15 &&
     studioSchemaVersion !== 14 &&
     studioSchemaVersion !== 13 &&
@@ -1194,7 +1208,7 @@ export function validateDocument(raw: unknown): ProjectAggregate {
     studioSchemaVersion !== 2
   ) {
     throw new NativeYamlImportError(
-      `Unsupported studioSchemaVersion: ${String(studioSchemaVersion)} (expected ${STUDIO_SCHEMA_VERSION}, 15, 14, 13, 12, 10, 9, 8, 7, 6, 5, 4, 3, or 2)`,
+      `Unsupported studioSchemaVersion: ${String(studioSchemaVersion)} (expected ${STUDIO_SCHEMA_VERSION}, 16, 15, 14, 13, 12, 10, 9, 8, 7, 6, 5, 4, 3, or 2)`,
     );
   }
 
@@ -1213,7 +1227,7 @@ export function validateDocument(raw: unknown): ProjectAggregate {
     ...library.analogContacts,
     ...library.rxGroupLists,
     ...library.scanLists,
-    ...library.aprsConfigurations,
+    ...(library.aprsConfiguration ? [library.aprsConfiguration] : []),
     ...formatBuilds,
   ];
 
@@ -1225,7 +1239,9 @@ export function validateDocument(raw: unknown): ProjectAggregate {
   assertUniqueIds(library.analogContacts, 'library.analogContacts');
   assertUniqueIds(library.rxGroupLists, 'library.rxGroupLists');
   assertUniqueIds(library.scanLists, 'library.scanLists');
-  assertUniqueIds(library.aprsConfigurations, 'library.aprsConfigurations');
+  if (library.aprsConfiguration) {
+    assertUniqueIds([library.aprsConfiguration], 'library.aprsConfiguration');
+  }
   assertUniqueIds(formatBuilds, 'formatBuilds');
 
   validateForeignKeys(library, formatBuilds);
@@ -1239,7 +1255,7 @@ export function validateDocument(raw: unknown): ProjectAggregate {
     analogContacts: library.analogContacts,
     rxGroupLists: library.rxGroupLists,
     scanLists: library.scanLists,
-    aprsConfigurations: library.aprsConfigurations,
+    aprsConfiguration: library.aprsConfiguration,
     formatBuilds,
   });
 }

@@ -192,6 +192,12 @@ export class IndexedDbProjectPersistence implements ProjectPersistence {
     row: AprsConfiguration,
     expectedRevision: number | null,
   ): Promise<PutResult> {
+    const existing = await this.listAprsConfigurations(row.projectId);
+    for (const config of existing) {
+      if (config.id !== row.id) {
+        await this.deleteEntity(row.projectId, 'aprsConfiguration', config.id);
+      }
+    }
     return this.putRow('aprsConfiguration', row, expectedRevision);
   }
   async listAprsConfigurations(projectId: string): Promise<AprsConfiguration[]> {
