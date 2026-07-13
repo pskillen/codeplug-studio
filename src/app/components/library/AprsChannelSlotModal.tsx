@@ -6,6 +6,7 @@ import { channelDisplayLabel } from '@core/domain/channelNaming.ts';
 import { Button, Group, Modal, NumberInput, Select, SimpleGrid, Stack } from '@mantine/core';
 import { sortByName } from '../../lib/channels.ts';
 import { channelLabelForSlot } from '../../lib/aprsBindingHelpers.ts';
+import { MODAL_COMBOBOX_Z_INDEX } from '../../theme.ts';
 
 export { channelLabelForSlot };
 
@@ -106,6 +107,7 @@ function AprsChannelSlotForm({
           label="Channel"
           data={channelOptions}
           searchable
+          comboboxProps={{ zIndex: MODAL_COMBOBOX_Z_INDEX }}
           value={draft.channelRef?.id ?? CURRENT_CHANNEL_VALUE}
           onChange={(value) =>
             setDraft({
@@ -118,6 +120,7 @@ function AprsChannelSlotForm({
         <Select
           label="Timeslot"
           data={TIMESLOT_OPTIONS}
+          comboboxProps={{ zIndex: MODAL_COMBOBOX_Z_INDEX }}
           value={draft.timeslot != null ? String(draft.timeslot) : ''}
           onChange={(value) =>
             setDraft({
@@ -139,6 +142,7 @@ function AprsChannelSlotForm({
         <Select
           label="Call type"
           data={CALL_TYPE_OPTIONS}
+          comboboxProps={{ zIndex: MODAL_COMBOBOX_Z_INDEX }}
           value={draft.callType}
           onChange={(value) =>
             setDraft({ ...draft, callType: (value as AprsSlotCallType | null) ?? 'group' })

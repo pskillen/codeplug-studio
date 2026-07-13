@@ -5,6 +5,7 @@ import type { Channel } from '@core/models/library.ts';
 import { CHANNEL_APRS_OFF } from '@core/domain/aprs/defaults.ts';
 import { Button, Checkbox, Group, Modal, Select, Stack, Text } from '@mantine/core';
 import { APRS_SLOT_NONE_VALUE, aprsSlotSelectOptions } from '../../lib/aprsBindingHelpers.ts';
+import { MODAL_COMBOBOX_Z_INDEX } from '../../theme.ts';
 
 const REPORT_TYPE_OPTIONS = [
   { value: 'off', label: 'Off' },
@@ -114,6 +115,7 @@ export default function AprsChannelBulkAssignModal({
         <Select
           data={slotOptions}
           disabled={clearBinding || !patchReportSlot}
+          comboboxProps={{ zIndex: MODAL_COMBOBOX_Z_INDEX }}
           value={reportSlotValue}
           onChange={(value) => setReportSlotValue(value ?? APRS_SLOT_NONE_VALUE)}
         />
@@ -126,6 +128,7 @@ export default function AprsChannelBulkAssignModal({
         <Select
           data={REPORT_TYPE_OPTIONS}
           disabled={clearBinding || !patchReportType}
+          comboboxProps={{ zIndex: MODAL_COMBOBOX_Z_INDEX }}
           value={reportTypeValue}
           onChange={(value) => setReportTypeValue((value as AprsReportType | null) ?? 'off')}
         />
@@ -150,6 +153,7 @@ export default function AprsChannelBulkAssignModal({
         <Select
           data={PTT_MODE_OPTIONS}
           disabled={clearBinding || !patchDigitalPttMode}
+          comboboxProps={{ zIndex: MODAL_COMBOBOX_Z_INDEX }}
           value={digitalPttModeValue}
           onChange={(value) => setDigitalPttModeValue((value as AprsPttMode | null) ?? 'off')}
         />

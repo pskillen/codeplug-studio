@@ -29,6 +29,9 @@ const dark: MantineColorsTuple = [
 /** Above Leaflet map panes (`.leaflet-top` uses z-index 1000). */
 export const MODAL_ABOVE_MAP_Z_INDEX = 1200;
 
+/** Select/Autocomplete dropdowns rendered inside modals. */
+export const MODAL_COMBOBOX_Z_INDEX = MODAL_ABOVE_MAP_Z_INDEX + 100;
+
 export const theme = createTheme({
   primaryColor: 'brand',
   primaryShade: 6,
