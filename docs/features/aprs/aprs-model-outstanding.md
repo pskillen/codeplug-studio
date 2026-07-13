@@ -15,6 +15,10 @@ Items **deferred** or **open** after persistence + UI ([#353](https://github.com
 - [ ] `all call` Call Type (wire `2`) — deferred per design plan
 - [ ] Summary page APRS count — optional nice-to-have
 
+## Refactor follow-ups (optional)
+
+- [ ] Channels list column integration test (optional — covered by `aprsBindingHelpers` unit tests)
+
 ## Open CPS questions (from design plan)
 
 - [ ] Confirm `Digital APRS Report Channel` valid range vs 8 global slots

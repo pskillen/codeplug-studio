@@ -12,59 +12,32 @@
 
 ---
 
-## Slice 1 — IndexedDB persistence
+## Phase 1 — Initial persistence + UI (schema v16)
 
 **Status:** Complete
 
 - Schema v16 + `aprsConfigurations` object store
 - `libraryService` / `loadLibrarySlice` wired
-- Persistence round-trip tests
-
----
-
-## Slice 2 — Library CRUD
-
-**Status:** Complete
-
 - Registry, nav, list page, configuration editor
-
----
-
-## Slice 3 — Slot editor
-
-**Status:** Complete
-
 - `AprsChannelSlotsEditor` + sidecar
-
----
-
-## Slice 4 — Channel APRS tab
-
-**Status:** Complete
-
 - `ChannelAprsBindingSection` on DMR-gated channel editor tab
+- `BuildAprsSettingsSection` on Anytone D890 export panel (removed in refactor)
 
 ---
 
-## Slice 5 — Build active config
+## Phase 2 — Singleton model refactor (schema v17)
 
 **Status:** Complete
 
-- `BuildAprsSettingsSection` on Anytone D890 export panel
-
----
-
-## Slice 6 — Delete guard
-
-**Status:** Complete
-
-- Block APRS config delete when referenced by `FormatBuild.activeAprsConfigurationId`
-
----
-
-## Slice 7 — Docs + PR
-
-**Status:** Complete
+- `Library.aprsConfiguration` singleton (replaces `aprsConfigurations[]`)
+- `ChannelAprsBinding.reportSlotIndex` (replaces `reportChannelRef`)
+- Removed `FormatBuild.activeAprsConfigurationId`, `defaultDmrId`, `defaultCallType`
+- YAML migration v16 → v17
+- `AprsConfigurationPage` at `/library/aprs-configuration` (replaces list page)
+- Slot-based `ChannelAprsBindingSection`
+- **Channel assignments** tab: `AprsChannelAssignmentPanel` + bulk modal
+- Optional **APRS config** column on Channels list
+- Docs + sidecars updated
 
 ---
 

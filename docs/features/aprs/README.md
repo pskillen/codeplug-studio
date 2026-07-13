@@ -1,25 +1,25 @@
 # APRS (digital)
 
-Tier-1 hub for **digital APRS** in Codeplug Studio — vendor-neutral library entities, per-channel bindings, and build-scoped active configuration selection. Wire column mapping lives in per-format tier-3 references; this doc describes internal semantics only.
+Tier-1 hub for **digital APRS** in Codeplug Studio — vendor-neutral library entities, per-channel bindings, and a **singleton** global configuration. Wire column mapping lives in per-format tier-3 references; this doc describes internal semantics only.
 
 **Tracking:** [#353](https://github.com/pskillen/codeplug-studio/issues/353) (persistence) · [#354](https://github.com/pskillen/codeplug-studio/issues/354) (UI) · [#248](https://github.com/pskillen/codeplug-studio/issues/248) (reconciliation) · Epic [#246](https://github.com/pskillen/codeplug-studio/issues/246)
 
 **Progress:** [aprs-model-progress.md](aprs-model-progress.md) · **Outstanding:** [aprs-model-outstanding.md](aprs-model-outstanding.md)
 
-**Components:** [AprsChannelSlotsEditor](../../../src/app/components/library/AprsChannelSlotsEditor.md) · [ChannelAprsBindingSection](../../../src/app/components/library/ChannelAprsBindingSection.md) · [BuildAprsSettingsSection](../../../src/app/components/builds/BuildAprsSettingsSection.md)
+**Components:** [AprsChannelSlotsEditor](../../../src/app/components/library/AprsChannelSlotsEditor.md) · [ChannelAprsBindingSection](../../../src/app/components/library/ChannelAprsBindingSection.md) · [AprsChannelAssignmentPanel](../../../src/app/components/library/AprsChannelAssignmentPanel.md)
 
 ---
 
 ## Scope
 
-| In scope (this epic)                                                                      | Out of scope                                                                                                                                                               |
-| ----------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Digital DMR-over-APRS configuration and per-channel flags                                 | Analog (AX.25) APRS — not modelled; exporters emit off/default constants                                                                                                   |
-| Library `AprsConfiguration[]` + `Channel.aprs?` + `FormatBuild.activeAprsConfigurationId` | OpenGD77 APRS (analog-only) — deferred                                                                                                                                     |
-| Native YAML persistence + domain validation                                               | CPS export serialisation — [#251](https://github.com/pskillen/codeplug-studio/issues/251) (Anytone), [#250](https://github.com/pskillen/codeplug-studio/issues/250) (DM32) |
-| IndexedDB `aprsConfigurations` store (schema v16)                                         |                                                                                                                                                                            |
-| Library list/editor, channel APRS tab, build active-config picker (Anytone D890)          |                                                                                                                                                                            |
-| Cross-format reconciliation doc                                                           |                                                                                                                                                                            |
+| In scope (this epic)                                                                    | Out of scope                                                                                                                                                               |
+| --------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Digital DMR-over-APRS configuration and per-channel flags                               | Analog (AX.25) APRS — not modelled; exporters emit off/default constants                                                                                                   |
+| Library `aprsConfiguration` (singleton) + `Channel.aprs?`                               | OpenGD77 APRS (analog-only) — deferred                                                                                                                                     |
+| Native YAML persistence + domain validation (schema v17)                                | CPS export serialisation — [#251](https://github.com/pskillen/codeplug-studio/issues/251) (Anytone), [#250](https://github.com/pskillen/codeplug-studio/issues/250) (DM32) |
+| IndexedDB `aprsConfigurations` store (one row per project)                              |                                                                                                                                                                            |
+| Library settings page, channel APRS tab, bulk channel assignments, Channels list column |                                                                                                                                                                            |
+| Cross-format reconciliation doc                                                         |                                                                                                                                                                            |
 
 **Analog-off export policy:** Anytone and DM32 analog APRS columns are not operator-editable. Export adapters fill them with fixture constants (`Off`, `0`, …) regardless of stale library data.
 
@@ -27,11 +27,10 @@ Tier-1 hub for **digital APRS** in Codeplug Studio — vendor-neutral library en
 
 ## Entities (summary)
 
-| Entity                      | Layer                       | Role                                                                                                         |
-| --------------------------- | --------------------------- | ------------------------------------------------------------------------------------------------------------ |
-| `AprsConfiguration`         | Library                     | Global digital APRS settings — beacon timing, position source, up to 8 DMR channel slots, default DMR target |
-| `ChannelAprsBinding`        | Library (on `Channel.aprs`) | Per-channel digital flags — receive, report type, PTT mode, report channel ref                               |
-| `activeAprsConfigurationId` | Format build                | Selects which library config serialises as the single global row (Anytone `APRS.CSV`)                        |
+| Entity               | Layer                       | Role                                                                                     |
+| -------------------- | --------------------------- | ---------------------------------------------------------------------------------------- |
+| `AprsConfiguration`  | Library (singleton)         | Global digital APRS settings — beacon timing, position source, up to 8 DMR channel slots |
+| `ChannelAprsBinding` | Library (on `Channel.aprs`) | Per-channel digital flags — receive, report type, PTT mode, `reportSlotIndex` (1-based)  |
 
 Deep field semantics: [data-model README](../data-model/README.md). Cross-format wire shapes: [cross-format-reconciliation.md](cross-format-reconciliation.md).
 
@@ -41,19 +40,32 @@ Deep field semantics: [data-model README](../data-model/README.md). Cross-format
 
 ---
 
+## Editing paths
+
+| Path               | Route / location              | Purpose                                                                                         |
+| ------------------ | ----------------------------- | ----------------------------------------------------------------------------------------------- |
+| **APRS settings**  | `/library/aprs-configuration` | Singleton config editor + **Channel assignments** tab (bulk DMR binding)                        |
+| **Channel editor** | Channel → APRS tab            | Per-channel binding (`ChannelAprsBindingSection`) — DMR channels only                           |
+| **Channels list**  | `/library/channels`           | Optional **APRS config** column (hidden by default) — summary via `formatAprsAssignmentSummary` |
+
+Redirects: `/library/aprs-configurations` → `/library/aprs-configuration`.
+
+---
+
 ## Implementation status
 
-| Area                                                         | Status                                                                   |
-| ------------------------------------------------------------ | ------------------------------------------------------------------------ |
-| Tier-1 + reconciliation docs                                 | Shipped ([#248](https://github.com/pskillen/codeplug-studio/issues/248)) |
-| Core types + schema v15                                      | Shipped ([#249](https://github.com/pskillen/codeplug-studio/issues/249)) |
-| Domain normalize / validation / slot resolver                | Shipped                                                                  |
-| `assemble()` APRS projection                                 | Shipped                                                                  |
-| Native YAML round-trip                                       | Shipped                                                                  |
-| IndexedDB persistence (`aprsConfigurations`, schema v16)     | Shipped ([#353](https://github.com/pskillen/codeplug-studio/issues/353)) |
-| Library/build APRS UI                                        | Shipped ([#354](https://github.com/pskillen/codeplug-studio/issues/354)) |
-| Anytone export (`APRS.CSV`, channel cols, `aprsDefaults.ts`) | Pending — [#251](https://github.com/pskillen/codeplug-studio/issues/251) |
-| DM32 per-channel APRS                                        | Pending — [#250](https://github.com/pskillen/codeplug-studio/issues/250) |
+| Area                                                                   | Status                                                                   |
+| ---------------------------------------------------------------------- | ------------------------------------------------------------------------ |
+| Tier-1 + reconciliation docs                                           | Shipped ([#248](https://github.com/pskillen/codeplug-studio/issues/248)) |
+| Core types + schema v15                                                | Shipped ([#249](https://github.com/pskillen/codeplug-studio/issues/249)) |
+| Domain normalize / validation                                          | Shipped                                                                  |
+| `assemble()` APRS projection                                           | Shipped                                                                  |
+| Native YAML round-trip                                                 | Shipped                                                                  |
+| IndexedDB persistence (`aprsConfigurations`, schema v16)               | Shipped ([#353](https://github.com/pskillen/codeplug-studio/issues/353)) |
+| Singleton model + schema v17 migration                                 | Shipped                                                                  |
+| Library APRS UI (settings page, channel tab, assignments, list column) | Shipped ([#354](https://github.com/pskillen/codeplug-studio/issues/354)) |
+| Anytone export (`APRS.CSV`, channel cols, `aprsDefaults.ts`)           | Pending — [#251](https://github.com/pskillen/codeplug-studio/issues/251) |
+| DM32 per-channel APRS                                                  | Pending — [#250](https://github.com/pskillen/codeplug-studio/issues/250) |
 
 ---
 
