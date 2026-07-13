@@ -42,6 +42,30 @@
 
 ---
 
+## Slice 2 — Core types
+
+**Status:** Complete
+
+**Delivered**
+
+- `src/core/models/aprs.ts`
+- Library, Channel, FormatBuild extensions; schema v15
+- `ProjectAggregate` / seed wiring for `aprsConfigurations`
+
+---
+
+## Slice 3 — Domain
+
+**Status:** Complete
+
+**Delivered**
+
+- `src/core/domain/aprs/*` — defaults, normalize, validation, resolveSlotIndex
+- Extended `references.ts`, `normalizeChannel.ts`, `factories.ts`
+- Unit tests
+
+---
+
 ## Next
 
-- Slice 2: core types + schema v15
+- Slice 4: assemble APRS projection

@@ -2,6 +2,7 @@ import type { Channel, ScanInclusion } from '../models/library.ts';
 import type { ChannelMode } from '../models/libraryTypes.ts';
 import { scanInclusionFromLegacyBoolean } from '@core/import-export/scanInclusion/index.ts';
 import { dedupeSsbModeProfiles, normalizeModeProfile } from './modeProfiles.ts';
+import { normalizeOptionalChannelAprs } from './aprs/index.ts';
 
 const CHANNEL_MODES = new Set<ChannelMode>([
   'fm',
@@ -40,5 +41,6 @@ export function normalizeChannel(channel: LegacyChannel): Channel {
     maidenheadLocator: channel.maidenheadLocator ?? null,
     primaryMode: normalizePrimaryMode(channel.primaryMode ?? null),
     modeProfiles: dedupeSsbModeProfiles((channel.modeProfiles ?? []).map(normalizeModeProfile)),
+    aprs: normalizeOptionalChannelAprs(channel.aprs),
   };
 }
