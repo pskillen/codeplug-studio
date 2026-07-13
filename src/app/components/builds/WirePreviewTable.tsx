@@ -1,29 +1,21 @@
-import {
-  ActionIcon,
-  Anchor,
-  Badge,
-  Group,
-  Stack,
-  Switch,
-  Table,
-  Text,
-  TextInput,
-  Tooltip,
-  UnstyledButton,
-} from '@mantine/core';
-import { IconCheck, IconX } from '@tabler/icons-react';
 import { Fragment, useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Stack, Switch, Table, Text, Tooltip } from '@mantine/core';
 import type { WirePreviewRow } from '@core/services/previewWireRows.ts';
-import { libraryEditPathForWirePreviewRow } from '../../lib/wirePreviewRowLinks.ts';
-import ZoneMemberSummaryBadges from '../library/ZoneMemberSummaryBadges.tsx';
-import { ICON_SIZE_ACTION, ICON_STROKE } from '../../lib/iconSizes.ts';
 import type { ZoneScanExpandPanelProps } from './ZoneScanExportControls.tsx';
 import { ZoneScanExpandPanel, ZoneScanRowHeader } from './ZoneScanExportControls.tsx';
 import type { Zone } from '@core/models/library.ts';
 import type { ZoneGroupingLayout, ZoneGroupingZoneEntry } from '@core/models/traitLayout.ts';
 import { layoutEntry } from '@core/import-export/zoneDerivedScanLists/members.ts';
+import WirePreviewDisplayCell from './wirePreview/WirePreviewDisplayCell.tsx';
+import { WireNameOverrideInput } from './wirePreview/WireNameOverrideInput.tsx';
+import {
+  rowEffectivelyIncluded,
+  wireNameCommittedValue,
+} from './wirePreview/wirePreviewRowUtils.ts';
 
+export { WireNameOverrideInput } from './wirePreview/WireNameOverrideInput.tsx';
+
+/** @deprecated Legacy inline table — retained for unit tests; production uses WirePreviewDataTable. */
 export interface ZoneScanWirePreviewContext {
   layout: ZoneGroupingLayout;
   zones: Zone[];
@@ -50,128 +42,6 @@ export interface WirePreviewTableProps {
   onWireNameChange: (row: WirePreviewRow, wireName: string) => void;
   onUnsavedChangesChange?: (hasUnsaved: boolean) => void;
   zoneScanContext?: ZoneScanWirePreviewContext;
-}
-
-function wireNameCommittedValue(row: WirePreviewRow): string {
-  return row.hasWireNameOverride ? row.effectiveWireName : '';
-}
-
-export function WireNameOverrideInput({
-  row,
-  nameLimit,
-  excluded,
-  clickableDefaultWireName,
-  onWireNameChange,
-  onDirtyChange,
-}: {
-  row: WirePreviewRow;
-  nameLimit?: number;
-  excluded: boolean;
-  clickableDefaultWireName?: boolean;
-  onWireNameChange: (row: WirePreviewRow, wireName: string) => void;
-  onDirtyChange: (dirty: boolean) => void;
-}) {
-  const committed = wireNameCommittedValue(row);
-  const [draft, setDraft] = useState(committed);
-  const dirty = draft !== committed;
-
-  useEffect(() => {
-    onDirtyChange(dirty);
-  }, [dirty, onDirtyChange]);
-
-  const tooLong = nameLimit != null && draft.length > nameLimit;
-
-  const apply = () => {
-    onWireNameChange(row, draft);
-  };
-
-  const revert = () => {
-    setDraft(committed);
-  };
-
-  const applyDefault = () => {
-    setDraft(row.generatedWireName);
-    onWireNameChange(row, row.generatedWireName);
-  };
-
-  return (
-    <>
-      <Group gap="xs" wrap="nowrap" align="flex-start">
-        <TextInput
-          flex={1}
-          size="xs"
-          placeholder={row.generatedWireName}
-          value={draft}
-          onChange={(event) => setDraft(event.currentTarget.value)}
-          onKeyDown={(event) => {
-            if (event.key === 'Enter' && dirty && !tooLong && !excluded) {
-              event.preventDefault();
-              apply();
-            }
-            if (event.key === 'Escape' && dirty) {
-              event.preventDefault();
-              revert();
-            }
-          }}
-          disabled={excluded}
-          error={tooLong ? `Exceeds ${nameLimit} characters` : undefined}
-        />
-        {dirty ? (
-          <Group gap={4} wrap="nowrap">
-            <Tooltip label="Apply wire name">
-              <ActionIcon
-                variant="light"
-                color="green"
-                size="sm"
-                aria-label="Apply wire name"
-                disabled={tooLong || excluded}
-                onClick={apply}
-              >
-                <IconCheck size={ICON_SIZE_ACTION} stroke={ICON_STROKE} />
-              </ActionIcon>
-            </Tooltip>
-            <Tooltip label="Revert wire name">
-              <ActionIcon
-                variant="light"
-                color="gray"
-                size="sm"
-                aria-label="Revert wire name"
-                onClick={revert}
-              >
-                <IconX size={ICON_SIZE_ACTION} stroke={ICON_STROKE} />
-              </ActionIcon>
-            </Tooltip>
-          </Group>
-        ) : null}
-      </Group>
-      <Text size="xs" c="dimmed">
-        Default:{' '}
-        {clickableDefaultWireName ? (
-          <Tooltip label="Store this name as an explicit override">
-            <UnstyledButton
-              component="button"
-              type="button"
-              disabled={excluded}
-              onClick={applyDefault}
-              style={{
-                color: 'var(--mantine-color-dimmed)',
-                textDecoration: 'underline',
-                cursor: excluded ? 'not-allowed' : 'pointer',
-              }}
-            >
-              {row.generatedWireName}
-            </UnstyledButton>
-          </Tooltip>
-        ) : (
-          row.generatedWireName
-        )}
-      </Text>
-    </>
-  );
-}
-
-function rowEffectivelyIncluded(row: WirePreviewRow): boolean {
-  return !row.excluded && (row.forceInclude === true || row.omitFromExport !== true);
 }
 
 function WirePreviewExportControls({
@@ -221,49 +91,7 @@ function WirePreviewExportControls({
   );
 }
 
-function WirePreviewDisplayCell({ row }: { row: WirePreviewRow }) {
-  return (
-    <Stack gap={4}>
-      <Group gap="xs" wrap="wrap" align="center">
-        <Text size="sm">{row.displayLabel}</Text>
-        {row.zoneDirectMembers ? (
-          <Group gap={4} wrap="wrap">
-            <ZoneMemberSummaryBadges
-              channelCount={row.zoneDirectMembers.channelCount}
-              zoneCount={row.zoneDirectMembers.zoneCount}
-              channelNames={row.zoneDirectMembers.channelNames}
-              zoneNames={row.zoneDirectMembers.zoneNames}
-            />
-          </Group>
-        ) : null}
-        {row.omitFromExport ? (
-          <Badge size="xs" variant="light" color="gray">
-            Not exported as zone
-          </Badge>
-        ) : null}
-      </Group>
-      {row.displayDetails?.map((line) => (
-        <Text key={line.label} size="xs" c="dimmed">
-          {line.label}: {line.value}
-        </Text>
-      ))}
-      {row.expansionNote && !row.displayDetails?.length ? (
-        <Text size="xs" c="dimmed">
-          {row.expansionNote}
-        </Text>
-      ) : null}
-      {(() => {
-        const libraryPath = libraryEditPathForWirePreviewRow(row);
-        return libraryPath ? (
-          <Anchor component={Link} to={libraryPath} size="xs">
-            Edit in library
-          </Anchor>
-        ) : null;
-      })()}
-    </Stack>
-  );
-}
-
+/** @deprecated Use WirePreviewDataTable + WirePreviewOverrideModal in production routes. */
 export default function WirePreviewTable({
   rows,
   nameLimit,

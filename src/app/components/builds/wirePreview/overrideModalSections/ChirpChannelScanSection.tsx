@@ -1,6 +1,6 @@
 import { Stack, Text } from '@mantine/core';
 import type { Channel, ScanInclusion } from '@core/models/library.ts';
-import ScanInclusionSegment from '../../channels/ScanInclusionSegment.tsx';
+import ScanInclusionSegment from '../../../channels/ScanInclusionSegment.tsx';
 
 export interface ChirpChannelScanSectionProps {
   channel: Channel;

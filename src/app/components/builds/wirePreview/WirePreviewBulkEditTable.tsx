@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Switch, Table, Text } from '@mantine/core';
 import type { WirePreviewRow } from '@core/services/previewWireRows.ts';
-import { WireNameOverrideInput } from '../WirePreviewTable.tsx';
+import { WireNameOverrideInput } from './WireNameOverrideInput.tsx';
 import { rowEffectivelyIncluded } from './wirePreviewRowUtils.ts';
 import WirePreviewDisplayCell from './WirePreviewDisplayCell.tsx';
 

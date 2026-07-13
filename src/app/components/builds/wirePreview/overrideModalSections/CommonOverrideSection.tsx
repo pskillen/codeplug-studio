@@ -1,6 +1,6 @@
 import { Stack, Switch, Text, Tooltip } from '@mantine/core';
 import type { WirePreviewRow } from '@core/services/previewWireRows.ts';
-import { WireNameOverrideInput } from '../../WirePreviewTable.tsx';
+import { WireNameOverrideInput } from '../WireNameOverrideInput.tsx';
 import { rowEffectivelyIncluded } from '../wirePreviewRowUtils.ts';
 
 export interface CommonOverrideSectionProps {

@@ -3,17 +3,21 @@ import { useState } from 'react';
 import { Stack, Switch, Text } from '@mantine/core';
 import { Link } from 'react-router-dom';
 import type { ChannelExportNameMode } from '@core/domain/channelNaming.ts';
-import type { WirePreviewEntityKind, WirePreviewRow } from '@core/services/previewWireRows.ts';
-import ExportNameModeSelect from '../../components/builds/ExportNameModeSelect.tsx';
-import UseLibraryAbbreviationsSwitch from '../../components/builds/UseLibraryAbbreviationsSwitch.tsx';
-import WirePreviewDataTable from '../../components/builds/wirePreview/WirePreviewDataTable.tsx';
-import WirePreviewOverrideModal from '../../components/builds/wirePreview/WirePreviewOverrideModal.tsx';
-import { FormPage } from '../../components/ui/index.ts';
-import { resolvedBuildExportSettings } from '../../lib/buildExportSettingsUi.ts';
-import { useBuildWirePreview } from '../../hooks/useBuildWirePreview.ts';
-import { BuildService } from '../../state/buildService.ts';
-import { persistence } from '../../state/persistence.ts';
-import type { AnytoneWirePreviewBank } from '@core/services/previewWireRows.ts';
+import type {
+  AnytoneWirePreviewBank,
+  WirePreviewEntityKind,
+  WirePreviewRow,
+} from '@core/services/previewWireRows.ts';
+import ExportNameModeSelect from '../../../components/builds/ExportNameModeSelect.tsx';
+import UseLibraryAbbreviationsSwitch from '../../../components/builds/UseLibraryAbbreviationsSwitch.tsx';
+import WirePreviewDataTable from '../../../components/builds/wirePreview/WirePreviewDataTable.tsx';
+import WirePreviewOverrideModal from '../../../components/builds/wirePreview/WirePreviewOverrideModal.tsx';
+import { FormPage } from '../../../components/ui/index.ts';
+import { resolvedBuildExportSettings } from '../../../lib/buildExportSettingsUi.ts';
+import { useBuildWirePreview } from '../../../hooks/useBuildWirePreview.ts';
+import { BuildService } from '../../../state/buildService.ts';
+import { persistence } from '../../../state/persistence.ts';
+import { useBuildLayout } from '../BuildLayoutContext.tsx';
 
 const buildService = new BuildService(persistence);
 
@@ -27,9 +31,11 @@ export interface BuildWirePreviewListPageProps {
   headerActions?: ReactNode;
   anytoneBank?: AnytoneWirePreviewBank;
   modalExtraSections?: (row: WirePreviewRow) => ReactNode;
+  /** When true, render list content only (no FormPage shell). */
+  embedded?: boolean;
 }
 
-export default function BuildWirePreviewListPage({
+function BuildWirePreviewListContent({
   title,
   entityKind,
   description,
@@ -69,18 +75,13 @@ export default function BuildWirePreviewListPage({
   }
 
   return (
-    <FormPage
-      title={title}
-      description={
-        <Link
-          to={`/builds/${build.id}/overview`}
-          style={{ fontSize: 'var(--mantine-font-size-sm)' }}
-        >
-          ← {build.name}
-        </Link>
-      }
-    >
+    <>
       <Stack gap="md">
+        {title ? (
+          <Text size="lg" fw={600}>
+            {title}
+          </Text>
+        ) : null}
         {description ? (
           <Text size="sm" c="dimmed">
             {description}
@@ -146,6 +147,34 @@ export default function BuildWirePreviewListPage({
         onWireNameChange={setRowWireName}
         extraSections={selectedRow && modalExtraSections ? modalExtraSections(selectedRow) : null}
       />
+    </>
+  );
+}
+
+export default function BuildWirePreviewListPage({
+  embedded,
+  title,
+  ...props
+}: BuildWirePreviewListPageProps) {
+  const { build } = useBuildLayout();
+
+  if (embedded) {
+    return <BuildWirePreviewListContent title={title} {...props} />;
+  }
+
+  return (
+    <FormPage
+      title={title}
+      description={
+        <Link
+          to={`/builds/${build.id}/overview`}
+          style={{ fontSize: 'var(--mantine-font-size-sm)' }}
+        >
+          ← {build.name}
+        </Link>
+      }
+    >
+      <BuildWirePreviewListContent title="" {...props} />
     </FormPage>
   );
 }
