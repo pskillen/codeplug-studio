@@ -1,5 +1,6 @@
 import { STUDIO_SCHEMA_VERSION } from '@core/models/schemaVersion.ts';
 import type { FormatBuild } from '@core/models/formatBuild.ts';
+import type { AprsConfiguration } from '@core/models/aprs.ts';
 import type {
   AnalogContact,
   Channel,
@@ -184,6 +185,25 @@ export class IndexedDbProjectPersistence implements ProjectPersistence {
     return this.listRows<ScanList>('scanList', projectId);
   }
 
+  async getAprsConfiguration(projectId: string, id: string): Promise<AprsConfiguration | null> {
+    return this.getRow<AprsConfiguration>('aprsConfiguration', projectId, id);
+  }
+  async putAprsConfiguration(
+    row: AprsConfiguration,
+    expectedRevision: number | null,
+  ): Promise<PutResult> {
+    const existing = await this.listAprsConfigurations(row.projectId);
+    for (const config of existing) {
+      if (config.id !== row.id) {
+        await this.deleteEntity(row.projectId, 'aprsConfiguration', config.id);
+      }
+    }
+    return this.putRow('aprsConfiguration', row, expectedRevision);
+  }
+  async listAprsConfigurations(projectId: string): Promise<AprsConfiguration[]> {
+    return this.listRows<AprsConfiguration>('aprsConfiguration', projectId);
+  }
+
   async getFormatBuild(projectId: string, id: string): Promise<FormatBuild | null> {
     const row = await this.getRow<FormatBuild>('formatBuild', projectId, id);
     return row ? readFormatBuildRow(row) : null;
@@ -225,6 +245,7 @@ export class IndexedDbProjectPersistence implements ProjectPersistence {
       analogContacts,
       rxGroupLists,
       scanLists,
+      aprsConfigurations,
       formatBuilds,
     ] = await Promise.all([
       this.listChannels(projectId),
@@ -234,6 +255,7 @@ export class IndexedDbProjectPersistence implements ProjectPersistence {
       this.listAnalogContacts(projectId),
       this.listRxGroupLists(projectId),
       this.listScanLists(projectId),
+      this.listAprsConfigurations(projectId),
       this.listFormatBuilds(projectId),
     ]);
     return {
@@ -245,6 +267,7 @@ export class IndexedDbProjectPersistence implements ProjectPersistence {
       analogContacts,
       rxGroupLists,
       scanLists,
+      aprsConfigurations,
       formatBuilds,
     };
   }
@@ -261,6 +284,7 @@ export class IndexedDbProjectPersistence implements ProjectPersistence {
       { kind: 'analogContact', rows: seed.analogContacts ?? [] },
       { kind: 'rxGroupList', rows: seed.rxGroupLists ?? [] },
       { kind: 'scanList', rows: seed.scanLists ?? [] },
+      { kind: 'aprsConfiguration', rows: seed.aprsConfigurations ?? [] },
       { kind: 'formatBuild', rows: seed.formatBuilds ?? [] },
     ];
     await new Promise<void>((resolve, reject) => {
@@ -316,6 +340,7 @@ export class IndexedDbProjectPersistence implements ProjectPersistence {
       { kind: 'analogContact', rows: seed.analogContacts ?? [] },
       { kind: 'rxGroupList', rows: seed.rxGroupLists ?? [] },
       { kind: 'scanList', rows: seed.scanLists ?? [] },
+      { kind: 'aprsConfiguration', rows: seed.aprsConfigurations ?? [] },
       { kind: 'formatBuild', rows: seed.formatBuilds ?? [] },
     ];
     const storeNames = writes.map((w) => STORES[w.kind]);

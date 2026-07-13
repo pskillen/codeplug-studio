@@ -20,16 +20,26 @@ export class LibraryService {
   constructor(private readonly persistence: ProjectPersistence) {}
 
   async loadLibrary(projectId: string): Promise<Library> {
-    const [channels, zones, talkGroups, digitalContacts, analogContacts, rxGroupLists, scanLists] =
-      await Promise.all([
-        this.persistence.listChannels(projectId),
-        this.persistence.listZones(projectId),
-        this.persistence.listTalkGroups(projectId),
-        this.persistence.listDigitalContacts(projectId),
-        this.persistence.listAnalogContacts(projectId),
-        this.persistence.listRxGroupLists(projectId),
-        this.persistence.listScanLists(projectId),
-      ]);
+    const [
+      channels,
+      zones,
+      talkGroups,
+      digitalContacts,
+      analogContacts,
+      rxGroupLists,
+      scanLists,
+      aprsConfigurations,
+    ] = await Promise.all([
+      this.persistence.listChannels(projectId),
+      this.persistence.listZones(projectId),
+      this.persistence.listTalkGroups(projectId),
+      this.persistence.listDigitalContacts(projectId),
+      this.persistence.listAnalogContacts(projectId),
+      this.persistence.listRxGroupLists(projectId),
+      this.persistence.listScanLists(projectId),
+      this.persistence.listAprsConfigurations(projectId),
+    ]);
+    const aprsConfiguration = aprsConfigurations[0] ?? null;
     return {
       channels: channels.map(normalizeChannel),
       zones,
@@ -38,7 +48,7 @@ export class LibraryService {
       analogContacts,
       rxGroupLists,
       scanLists,
-      aprsConfigurations: [],
+      aprsConfiguration,
     };
   }
 
@@ -52,6 +62,7 @@ export class LibraryService {
   ): Promise<DeleteOutcome> {
     const library = await this.loadLibrary(projectId);
     const references = findReferencesTo(library, { kind, id });
+
     if (references.length > 0) {
       return { ok: false, references };
     }

@@ -1,8 +1,10 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { Alert, Button, Group, Select, SimpleGrid, Stack, Tabs, TextInput } from '@mantine/core';
 import { Link, useNavigate } from 'react-router-dom';
+import type { ChannelAprsBinding } from '@core/models/aprs.ts';
 import type { Channel, ChannelModeProfile, Library, ScanInclusion } from '@core/models/library.ts';
 import { reconcileChannelLocation } from '@core/domain/channelLocation.ts';
+import { normalizeOptionalChannelAprs } from '@core/domain/aprs/index.ts';
 import { newChannel } from '@core/domain/factories.ts';
 import {
   syncModeProfiles,
@@ -32,6 +34,10 @@ import RepeaterVerifyPanel from '../../components/repeaters/RepeaterVerifyPanel.
 import ChannelZoneMembershipSection from '../../components/library/ChannelZoneMembershipSection.tsx';
 import ScanListSummary from '../../components/library/ScanListSummary.tsx';
 import ChannelDeleteButton from '../../components/library/ChannelDeleteButton.tsx';
+import ChannelAprsBindingSection, {
+  channelAprsBindingFromChannel,
+} from '../../components/library/ChannelAprsBindingSection.tsx';
+import { isDmrMode } from '../../lib/channelModes.ts';
 import { useEntityEditorUnsavedGuard } from '../../hooks/useEntityFormDirty.ts';
 import { hzToMhzString, mhzStringToHz } from '../../lib/units.ts';
 import { persistence } from '../../state/persistence.ts';
@@ -85,6 +91,9 @@ export default function ChannelEditor({
   const [location, setLocation] = useState<ChannelLocationValues>(() =>
     channelLocationValuesFromChannel(base),
   );
+  const [aprsBinding, setAprsBinding] = useState<ChannelAprsBinding>(() =>
+    channelAprsBindingFromChannel(base),
+  );
   const [activeTab, setActiveTab] = useState('identity');
   const [validationError, setValidationError] = useState<string | null>(null);
 
@@ -92,6 +101,7 @@ export default function ChannelEditor({
   const navigate = useNavigate();
 
   const selectedModes = modeProfiles.map((p) => p.mode as ChannelMode);
+  const hasDmrProfile = modeProfiles.some((profile) => isDmrMode(profile.mode));
 
   function buildRow(): Channel {
     const lat = Number.parseFloat(location.lat);
@@ -137,6 +147,12 @@ export default function ChannelEditor({
     } else {
       delete row.hideFromInternalMap;
     }
+    const normalizedAprs = normalizeOptionalChannelAprs(aprsBinding);
+    if (normalizedAprs) {
+      row.aprs = normalizedAprs;
+    } else {
+      delete row.aprs;
+    }
     return row;
   }
 
@@ -163,6 +179,7 @@ export default function ChannelEditor({
       hideFromInternalMap: source.hideFromInternalMap,
       modeProfiles: source.modeProfiles.map((profile) => ({ ...profile })),
       primaryMode: source.primaryMode ?? null,
+      aprs: source.aprs ? { ...source.aprs } : undefined,
     };
     void persistence.putChannel(row, null).then((result) => {
       if (result.ok) navigate(`/library/channels/${row.id}`);
@@ -219,6 +236,7 @@ export default function ChannelEditor({
           <Tabs.Tab value="frequencies">Frequencies</Tabs.Tab>
           <Tabs.Tab value="modes">Modes</Tabs.Tab>
           <Tabs.Tab value="scanning">Scanning</Tabs.Tab>
+          {hasDmrProfile ? <Tabs.Tab value="aprs">APRS</Tabs.Tab> : null}
           <Tabs.Tab value="location">Location</Tabs.Tab>
           {entity ? <Tabs.Tab value="zones">Zones</Tabs.Tab> : null}
           {entity ? <Tabs.Tab value="verify">Repeater</Tabs.Tab> : null}
@@ -279,6 +297,21 @@ export default function ChannelEditor({
             </Stack>
           </ChannelEditorPanel>
         </Tabs.Panel>
+
+        {hasDmrProfile ? (
+          <Tabs.Panel value="aprs" pt="md">
+            <ChannelEditorPanel channel={liveChannel} isNew={!entity} showIdentitySummary>
+              <FormSection>
+                <ChannelAprsBindingSection
+                  aprsConfiguration={library.aprsConfiguration}
+                  channels={library.channels}
+                  value={aprsBinding}
+                  onChange={setAprsBinding}
+                />
+              </FormSection>
+            </ChannelEditorPanel>
+          </Tabs.Panel>
+        ) : null}
 
         <Tabs.Panel value="frequencies" pt="md">
           <ChannelEditorPanel channel={liveChannel} isNew={!entity} showIdentitySummary>

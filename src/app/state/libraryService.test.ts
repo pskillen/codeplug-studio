@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { newChannel, newProjectMeta, newTalkGroup, newZone } from '@core/domain/factories.ts';
+import {
+  newAprsConfiguration,
+  newChannel,
+  newProjectMeta,
+  newTalkGroup,
+  newZone,
+} from '@core/domain/factories.ts';
 import { InMemoryProjectPersistence } from '@integrations/persistence/index.ts';
 import { LibraryService } from './libraryService.ts';
 
@@ -68,5 +74,18 @@ describe('LibraryService', () => {
       expect(outcome.references[0]?.relationship).toBe('nested zone member');
     }
     expect(await persistence.getZone(projectId, inner.id)).not.toBeNull();
+  });
+
+  it('enforces a single APRS configuration per project on put', async () => {
+    const { persistence, projectId } = await setup();
+    const first = newAprsConfiguration(projectId, 'First');
+    const second = newAprsConfiguration(projectId, 'Second');
+    await persistence.putAprsConfiguration(first, null);
+    await persistence.putAprsConfiguration(second, null);
+
+    const configs = await persistence.listAprsConfigurations(projectId);
+    expect(configs).toHaveLength(1);
+    expect(configs[0]?.name).toBe('Second');
+    expect(await persistence.getAprsConfiguration(projectId, first.id)).toBeNull();
   });
 });

@@ -33,7 +33,7 @@ describe('migrateZoneMemberEntries', () => {
       analogContacts: [],
       rxGroupLists: [],
       scanLists: [],
-      aprsConfigurations: [],
+      aprsConfiguration: null,
       formatBuilds: [],
     } satisfies ProjectAggregate;
 

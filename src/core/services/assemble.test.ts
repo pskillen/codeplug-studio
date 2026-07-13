@@ -802,7 +802,7 @@ describe('assemble', () => {
     expect(Object.keys(exportResult.files).length).toBeGreaterThan(0);
   });
 
-  it('resolves active APRS configuration and warns when unset', () => {
+  it('resolves library APRS configuration and warns when channels need config', () => {
     const projectId = 'p-aprs';
     const config = {
       ...newFormatBuild(projectId, 'anytone-at-d890uv'),
@@ -820,8 +820,6 @@ describe('assemble', () => {
       positionSource: 'gps' as const,
       fixedLocation: null,
       channelSlots: [],
-      defaultDmrId: null,
-      defaultCallType: 'group' as const,
     };
     const library = {
       channels: [],
@@ -831,18 +829,44 @@ describe('assemble', () => {
       analogContacts: [],
       rxGroupLists: [],
       scanLists: [],
-      aprsConfigurations: [aprsConfig],
+      aprsConfiguration: aprsConfig,
     };
 
-    const withActive = assemble({ ...config, activeAprsConfigurationId: aprsConfig.id }, library);
-    expect(withActive.aprsConfiguration?.id).toBe(aprsConfig.id);
+    const assembled = assemble(config, library);
+    expect(assembled.aprsConfiguration?.id).toBe(aprsConfig.id);
 
-    const withoutActive = assemble(config, library);
-    expect(withoutActive.aprsConfiguration).toBeNull();
+    const libraryWithoutConfig = { ...library, aprsConfiguration: null };
+    const channelWithDigitalAprs = {
+      ...newChannel(projectId, 'DMR'),
+      modeProfiles: [
+        {
+          mode: 'dmr' as const,
+          colourCode: 1,
+          timeslot: 1 as const,
+          dmrId: 1,
+          dmrMode: null,
+          contactRef: null,
+          rxGroupListId: null,
+        },
+      ],
+      aprs: {
+        receiveEnabled: true,
+        reportType: 'digital' as const,
+        digitalPttMode: 'on' as const,
+        reportSlotIndex: 1,
+      },
+    } satisfies Parameters<typeof assemble>[1]['channels'][number];
+    const withoutConfig = assemble(config, {
+      ...libraryWithoutConfig,
+      channels: [channelWithDigitalAprs],
+    });
+    expect(withoutConfig.aprsConfiguration).toBeNull();
     expect(
-      exportInclusionWarnings(config, library, withoutActive).some((w) =>
-        w.includes('activeAprsConfigurationId'),
-      ),
+      exportInclusionWarnings(
+        config,
+        { ...libraryWithoutConfig, channels: [channelWithDigitalAprs] },
+        withoutConfig,
+      ).some((w) => w.includes('no APRS configuration')),
     ).toBe(true);
   });
 });

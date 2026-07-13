@@ -12,21 +12,20 @@ Tier-3 column inventories: [Anytone aprs.md](../../reference/anytone/aprs.md), [
 
 | Format                | Global config                        | Per-channel (digital)                                                                                  | Studio mapping                                                                                       |
 | --------------------- | ------------------------------------ | ------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------- |
-| **Anytone AT-D890UV** | Single `APRS.CSV` row (~184 cols)    | `APRS RX`, `APRS Report Type`, `Digital APRS PTT Mode`, `Digital APRS Report Channel` on `Channel.CSV` | `AprsConfiguration` + `Channel.aprs`; build picks `activeAprsConfigurationId`                        |
+| **Anytone AT-D890UV** | Single `APRS.CSV` row (~184 cols)    | `APRS RX`, `APRS Report Type`, `Digital APRS PTT Mode`, `Digital APRS Report Channel` on `Channel.CSV` | Singleton `AprsConfiguration` + `Channel.aprs`                                                       |
 | **DM32**              | None in CPS export                   | `APRS Receive`, `APRS Report Type`, `APRS Report Channel` on channel rows                              | Same `Channel.aprs`; no global file — [#250](https://github.com/pskillen/codeplug-studio/issues/250) |
 | **OpenGD77**          | Multi-row `APRS.csv` (named configs) | `Channels.APRS` name FK                                                                                | **Deferred** — analog-only                                                                           |
 
 ---
 
-## Library vs build scope
+## Library scope
 
-| Concern                                                  | Where it lives                          | Rationale                                    |
-| -------------------------------------------------------- | --------------------------------------- | -------------------------------------------- |
-| Operator-curated APRS settings (timing, slots, position) | `Library.aprsConfigurations[]`          | Curated once like contacts and scan lists    |
-| Which config exports as the single Anytone global row    | `FormatBuild.activeAprsConfigurationId` | CPS allows one `APRS.CSV` row per codeplug   |
-| Per-channel receive/report/PTT                           | `Channel.aprs?`                         | Shared across Anytone digital + DM32 digital |
+| Concern                                                  | Where it lives              | Rationale                                    |
+| -------------------------------------------------------- | --------------------------- | -------------------------------------------- |
+| Operator-curated APRS settings (timing, slots, position) | `Library.aprsConfiguration` | One global config per project                |
+| Per-channel receive/report/PTT                           | `Channel.aprs?`             | Shared across Anytone digital + DM32 digital |
 
-When multiple library configs exist and the build omits `activeAprsConfigurationId`, export should warn and fall back to the first config (export adapter — [#251](https://github.com/pskillen/codeplug-studio/issues/251)).
+Export adapters read the singleton library config when serialising the Anytone `APRS.CSV` row ([#251](https://github.com/pskillen/codeplug-studio/issues/251)).
 
 ---
 
@@ -36,9 +35,9 @@ When multiple library configs exist and the build omits `activeAprsConfiguration
 | ----------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
 | `APRS Report Type` = `Analog` (Anytone)                     | Import maps to `reportType: 'off'` with warning — not stored as analog                                                |
 | Analog PTT modes, digipeater path, RX filters, packet types | Not modelled — `aprsDefaults.ts` constants at export ([#251](https://github.com/pskillen/codeplug-studio/issues/251)) |
-| `Aprs TgN` / `APRS TG` DMR IDs                              | Raw `number` on slot/config — need not exist as library contact                                                       |
+| `Aprs TgN` / `APRS TG` DMR IDs                              | Raw `number` on slot — need not exist as a library contact                                                            |
 | Slot channel binding (`channelN` wire)                      | `EntityRef` kind `channel`; `null` = current channel (wire `0`)                                                       |
-| Report channel index                                        | `reportChannelRef` → resolved to 1-based slot index via `resolveAprsSlotIndex` at export                              |
+| Report channel index                                        | `ChannelAprsBinding.reportSlotIndex` — 1-based index into `AprsConfiguration.channelSlots`                            |
 
 ---
 

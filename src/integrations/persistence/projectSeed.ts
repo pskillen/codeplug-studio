@@ -35,7 +35,7 @@ export function seedFromAggregate(aggregate: ProjectAggregate): ProjectSeed {
     analogContacts: aggregate.analogContacts,
     rxGroupLists: aggregate.rxGroupLists,
     scanLists: aggregate.scanLists,
-    aprsConfigurations: aggregate.aprsConfigurations,
+    aprsConfigurations: aggregate.aprsConfiguration ? [aggregate.aprsConfiguration] : [],
     formatBuilds: aggregate.formatBuilds,
   };
 }
@@ -50,7 +50,7 @@ export function aggregateFromSeed(seed: ProjectSeed): ProjectAggregate {
     analogContacts: seed.analogContacts ?? [],
     rxGroupLists: seed.rxGroupLists ?? [],
     scanLists: seed.scanLists ?? [],
-    aprsConfigurations: seed.aprsConfigurations ?? [],
+    aprsConfiguration: seed.aprsConfigurations?.[0] ?? null,
     formatBuilds: seed.formatBuilds ?? [],
   };
 }

@@ -37,5 +37,5 @@ export type AprsPttMode = 'off' | 'on';
  */
 export type AprsSlotCallType = 'private' | 'group';
 
-/** Beacon position source — Anytone `Fixed Location Beacon` (0 = GPS, 1..8 = fixed). */
-export type AprsPositionSource = 'gps' | 'fixed';
+/** Beacon position source for APRS configuration. */
+export type AprsPositionSource = 'fixed' | 'gps' | 'beidou' | 'galileo' | 'allGnss';

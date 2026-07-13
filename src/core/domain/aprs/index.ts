@@ -2,13 +2,13 @@ import type { AprsConfiguration } from '@core/models/aprs.ts';
 import { newId } from '@core/models/ids.ts';
 import { initialRevision, isoNow } from '@core/models/revision.ts';
 import { defaultAprsConfigurationFields } from './defaults.ts';
-import {
+import { normalizeAprsConfiguration } from './normalize.ts';
+
+export {
   normalizeAprsConfiguration,
-  normalizeAprsConfigurations,
+  normalizeAprsConfigurationOrNull,
   normalizeOptionalChannelAprs,
 } from './normalize.ts';
-
-export { normalizeAprsConfiguration, normalizeAprsConfigurations, normalizeOptionalChannelAprs };
 
 export function newAprsConfiguration(projectId: string, name: string): AprsConfiguration {
   const now = isoNow();

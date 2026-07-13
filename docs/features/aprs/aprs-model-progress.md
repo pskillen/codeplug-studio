@@ -1,10 +1,8 @@
-# APRS model foundation — progress
+# APRS persistence + UI — progress
 
-**Tracking:** [codeplug-studio#249](https://github.com/pskillen/codeplug-studio/issues/249) · [codeplug-studio#248](https://github.com/pskillen/codeplug-studio/issues/248) · Epic [codeplug-studio#246](https://github.com/pskillen/codeplug-studio/issues/246)
+**Tracking:** [#353](https://github.com/pskillen/codeplug-studio/issues/353) · [#354](https://github.com/pskillen/codeplug-studio/issues/354) · Epic [#246](https://github.com/pskillen/codeplug-studio/issues/246)
 
-**Plan:** `.cursor/plans/aprs_model_foundation_dc68cef0.plan.md` · Design: `.cursor/plans/aprs_data_models_cbad15a3.plan.md`
-
-**Branch:** `249/pskil/aprs-model-foundation`
+**Branch:** `353/pskil/aprs-persistence-and-ui`
 
 ---
 
@@ -12,66 +10,34 @@
 
 **Status:** Complete (pending merge)
 
-**Branch:** `249/pskil/aprs-model-foundation`
-
 ---
 
-## Slice 0 — Kickoff
+## Phase 1 — Initial persistence + UI (schema v16)
 
 **Status:** Complete
 
----
-
-## Slice 1 — Docs
-
-**Status:** Complete
-
-**Delivered**
-
-- `docs/features/aprs/README.md` hub
-- `docs/features/aprs/cross-format-reconciliation.md`
-- Data-model README + features index + tier-3 link updates
+- Schema v16 + `aprsConfigurations` object store
+- `libraryService` / `loadLibrarySlice` wired
+- Registry, nav, list page, configuration editor
+- `AprsChannelSlotsEditor` + sidecar
+- `ChannelAprsBindingSection` on DMR-gated channel editor tab
+- `BuildAprsSettingsSection` on Anytone D890 export panel (removed in refactor)
 
 ---
 
-## Slice 2 — Core types
+## Phase 2 — Singleton model refactor (schema v17)
 
 **Status:** Complete
 
-**Delivered**
-
-- `src/core/models/aprs.ts`, schema v15, Library/Channel/FormatBuild extensions
-
----
-
-## Slice 3 — Domain
-
-**Status:** Complete
-
-**Delivered**
-
-- `src/core/domain/aprs/*` — normalize, validation, resolveSlotIndex, defaults
-- Extended `references.ts`, `normalizeChannel.ts`, `factories.ts`
-
----
-
-## Slice 4 — Assemble
-
-**Status:** Complete
-
-**Delivered**
-
-- `assemble()` APRS projection + `aprsConfigurationWarnings`
-
----
-
-## Slice 5 — YAML persistence
-
-**Status:** Complete
-
-**Delivered**
-
-- Native YAML round-trip for APRS entities and broken-FK validation
+- `Library.aprsConfiguration` singleton (replaces `aprsConfigurations[]`)
+- `ChannelAprsBinding.reportSlotIndex` (replaces `reportChannelRef`)
+- Removed `FormatBuild.activeAprsConfigurationId`, `defaultDmrId`, `defaultCallType`
+- YAML migration v16 → v17
+- `AprsConfigurationPage` at `/library/aprs-configuration` (replaces list page)
+- Slot-based `ChannelAprsBindingSection`
+- **Channel assignments** tab: `AprsChannelAssignmentPanel` + bulk modal
+- Optional **APRS config** column on Channels list
+- Docs + sidecars updated
 
 ---
 
@@ -83,4 +49,4 @@
 
 ## Next
 
-- Merge PR; follow-up: UI [#249](https://github.com/pskillen/codeplug-studio/issues/249), Anytone export [#251](https://github.com/pskillen/codeplug-studio/issues/251), DM32 [#250](https://github.com/pskillen/codeplug-studio/issues/250)
+- Anytone export [#251](https://github.com/pskillen/codeplug-studio/issues/251), DM32 [#250](https://github.com/pskillen/codeplug-studio/issues/250)

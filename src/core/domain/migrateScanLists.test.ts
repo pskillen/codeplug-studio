@@ -27,7 +27,7 @@ describe('migrateBuildScanListsToLibrary', () => {
       analogContacts: [],
       rxGroupLists: [],
       scanLists: [],
-      aprsConfigurations: [],
+      aprsConfiguration: null,
       formatBuilds: [
         {
           ...newFormatBuild(PROJECT_ID, 'anytone-at-d890uv'),

@@ -24,7 +24,7 @@ export function emptyLibrary(): Library {
     rxGroupLists: [],
     scanLists: [],
     zones: [],
-    aprsConfigurations: [],
+    aprsConfiguration: null,
   };
 }
 

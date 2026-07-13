@@ -1,4 +1,5 @@
 import type { FormatBuild } from '@core/models/formatBuild.ts';
+import type { AprsConfiguration } from '@core/models/aprs.ts';
 import type {
   AnalogContact,
   Channel,
@@ -47,6 +48,7 @@ export class InMemoryProjectPersistence implements ProjectPersistence {
   private analogContacts: RowMap<AnalogContact> = new Map();
   private rxGroupLists: RowMap<RxGroupList> = new Map();
   private scanLists: RowMap<ScanList> = new Map();
+  private aprsConfigurations: RowMap<AprsConfiguration> = new Map();
   private formatBuilds: RowMap<FormatBuild> = new Map();
   private listeners = new Set<PersistenceListener>();
 
@@ -161,6 +163,27 @@ export class InMemoryProjectPersistence implements ProjectPersistence {
     return this.listRows(this.scanLists, projectId);
   }
 
+  async getAprsConfiguration(projectId: string, id: string): Promise<AprsConfiguration | null> {
+    return this.aprsConfigurations.get(rowKey(projectId, id)) ?? null;
+  }
+
+  async putAprsConfiguration(
+    row: AprsConfiguration,
+    expectedRevision: number | null,
+  ): Promise<PutResult> {
+    const existing = await this.listAprsConfigurations(row.projectId);
+    for (const config of existing) {
+      if (config.id !== row.id) {
+        await this.deleteEntity(row.projectId, 'aprsConfiguration', config.id);
+      }
+    }
+    return this.putRow('aprsConfiguration', this.aprsConfigurations, row, expectedRevision);
+  }
+
+  async listAprsConfigurations(projectId: string): Promise<AprsConfiguration[]> {
+    return this.listRows(this.aprsConfigurations, projectId);
+  }
+
   async getFormatBuild(projectId: string, id: string): Promise<FormatBuild | null> {
     const row = this.formatBuilds.get(rowKey(projectId, id));
     return row ? readFormatBuildRow(row) : null;
@@ -197,6 +220,7 @@ export class InMemoryProjectPersistence implements ProjectPersistence {
       analogContacts,
       rxGroupLists,
       scanLists,
+      aprsConfigurations,
       formatBuilds,
     ] = await Promise.all([
       this.listChannels(projectId),
@@ -206,6 +230,7 @@ export class InMemoryProjectPersistence implements ProjectPersistence {
       this.listAnalogContacts(projectId),
       this.listRxGroupLists(projectId),
       this.listScanLists(projectId),
+      this.listAprsConfigurations(projectId),
       this.listFormatBuilds(projectId),
     ]);
     return {
@@ -217,6 +242,7 @@ export class InMemoryProjectPersistence implements ProjectPersistence {
       analogContacts,
       rxGroupLists,
       scanLists,
+      aprsConfigurations,
       formatBuilds,
     };
   }
@@ -264,6 +290,9 @@ export class InMemoryProjectPersistence implements ProjectPersistence {
     for (const row of seed.scanLists ?? []) {
       this.scanLists.set(rowKey(row.projectId, row.id), { ...row });
     }
+    for (const row of seed.aprsConfigurations ?? []) {
+      this.aprsConfigurations.set(rowKey(row.projectId, row.id), { ...row });
+    }
     for (const row of seed.formatBuilds ?? []) {
       this.formatBuilds.set(rowKey(row.projectId, row.id), { ...row });
     }
@@ -279,6 +308,7 @@ export class InMemoryProjectPersistence implements ProjectPersistence {
       this.analogContacts,
       this.rxGroupLists,
       this.scanLists,
+      this.aprsConfigurations,
       this.formatBuilds,
     ]) {
       for (const [key, row] of [...map.entries()]) {
@@ -334,6 +364,7 @@ export class InMemoryProjectPersistence implements ProjectPersistence {
     | AnalogContact
     | RxGroupList
     | ScanList
+    | AprsConfiguration
     | FormatBuild
   > | null {
     switch (kind) {
@@ -351,6 +382,8 @@ export class InMemoryProjectPersistence implements ProjectPersistence {
         return this.rxGroupLists;
       case 'scanList':
         return this.scanLists;
+      case 'aprsConfiguration':
+        return this.aprsConfigurations;
       case 'formatBuild':
         return this.formatBuilds;
       case 'project':

@@ -28,6 +28,7 @@ export const ANALYTICS_ROUTE_TEMPLATES = [
   '/library/contacts',
   '/library/rx-group-lists',
   '/library/scan-lists',
+  '/library/aprs-configuration',
   '/reference/maidenhead',
   '/reference/bands',
   '/import-export',

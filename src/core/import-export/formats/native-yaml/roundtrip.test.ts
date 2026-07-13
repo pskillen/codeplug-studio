@@ -184,11 +184,10 @@ describe('native-yaml round-trip smoke', () => {
   it('preserves APRS configuration and channel binding on round-trip', () => {
     const aggregate = fullLibraryAggregate();
     const parsed = parseProjectDocument(serialiseProject(aggregate));
-    expect(parsed.aprsConfigurations).toHaveLength(1);
-    expect(parsed.aprsConfigurations[0]?.name).toBe('Home APRS');
+    expect(parsed.aprsConfiguration?.name).toBe('Home APRS');
     expect(parsed.channels.find((ch) => ch.id === FIXTURE_CHANNEL_B_ID)?.aprs?.reportType).toBe(
       'digital',
     );
-    expect(parsed.aprsConfigurations[0]?.id).toBe(FIXTURE_APRS_CONFIG_ID);
+    expect(parsed.aprsConfiguration?.id).toBe(FIXTURE_APRS_CONFIG_ID);
   });
 });

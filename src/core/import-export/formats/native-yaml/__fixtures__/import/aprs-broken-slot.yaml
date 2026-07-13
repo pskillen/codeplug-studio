@@ -1,0 +1,68 @@
+formatBuilds: []
+library:
+  analogContacts: []
+  aprsConfiguration:
+    autoTxIntervalSec: 300
+    channelSlots:
+      - callType: group
+        channelRef:
+          id: 33333333-3333-4333-8333-333333333333
+          kind: channel
+        targetDmrId: 234999
+        timeslot: 1
+    comment: Fixture APRS
+    fixedLocation: null
+    id: dddddddd-dddd-4ddd-8ddd-dddddddddddd
+    manualTxIntervalSec: null
+    name: Home APRS
+    positionSource: gps
+    projectId: 11111111-1111-4111-8111-111111111111
+    revision: 1
+    updatedAt: 2026-07-02T10:00:00.000Z
+  channels:
+    - callsign: GB7GL
+      comment: ""
+      forbidTransmit: false
+      id: 33333333-3333-4333-8333-333333333333
+      location: null
+      maidenheadLocator: null
+      modeProfiles:
+        - colourCode: 1
+          contactRef: null
+          dmrId: 2351123
+          dmrMode: null
+          mode: dmr
+          rxGroupListId: null
+          timeslot: 2
+      name: DMR Scotland
+      power: null
+      primaryMode: null
+      projectId: 11111111-1111-4111-8111-111111111111
+      revision: 1
+      rxFrequency: 439087500
+      scanInclusion: default
+      txFrequency: 430587500
+      updatedAt: 2026-07-02T10:00:00.000Z
+      useLocation: false
+      aprs:
+        digitalPttMode: on
+        receiveEnabled: true
+        reportSlotIndex: 2
+        reportType: digital
+  digitalContacts: []
+  rxGroupLists: []
+  scanLists: []
+  talkGroups: []
+  zones: []
+project:
+  author: test
+  createdAt: 2026-07-02T10:00:00.000Z
+  description: APRS broken slot fixture
+  id: 11111111-1111-4111-8111-111111111111
+  name: Fixture project
+  notes: ""
+  projectId: 11111111-1111-4111-8111-111111111111
+  revision: 1
+  updatedAt: 2026-07-02T10:00:00.000Z
+schemaVersion: 1
+studioSchemaVersion: 17

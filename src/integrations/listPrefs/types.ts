@@ -4,7 +4,8 @@ export type EntityListEntity =
   | 'digital-contacts'
   | 'analog-contacts'
   | 'rx-group-lists'
-  | 'scan-lists';
+  | 'scan-lists'
+  | 'aprs-configurations';
 
 export type ChannelSortMode = 'name' | 'distance';
 

@@ -139,15 +139,9 @@ describe('native-yaml validate', () => {
     );
   });
 
-  it('rejects orphan APRS reportChannelRef', () => {
-    expect(() => parseProjectDocument(readFixture('aprs-broken-fk.yaml'))).toThrow(
-      /not found in library/,
-    );
-  });
-
-  it('rejects orphan activeAprsConfigurationId', () => {
-    expect(() => parseProjectDocument(readFixture('aprs-broken-active-config.yaml'))).toThrow(
-      /Active APRS configuration not found/,
+  it('rejects out-of-range APRS report slot index', () => {
+    expect(() => parseProjectDocument(readFixture('aprs-broken-slot.yaml'))).toThrow(
+      /out of range/,
     );
   });
 });

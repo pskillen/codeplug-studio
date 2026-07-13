@@ -12,6 +12,7 @@ export const STORES: Record<EntityKind, string> = {
   analogContact: 'analogContacts',
   rxGroupList: 'rxGroupLists',
   scanList: 'scanLists',
+  aprsConfiguration: 'aprsConfigurations',
   formatBuild: 'formatBuilds',
 };
 

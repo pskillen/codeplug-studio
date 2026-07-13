@@ -1,4 +1,5 @@
 import type { FormatBuild } from '@core/models/formatBuild.ts';
+import type { AprsConfiguration } from '@core/models/aprs.ts';
 import type { Library, Zone } from '@core/models/library.ts';
 import type { ZoneGroupingZoneEntry } from '@core/models/traitLayout.ts';
 import type { ProjectAggregate } from '@core/import-export/projectDocument.ts';
@@ -11,6 +12,7 @@ import { resolveEffectiveZoneChannelIds } from './zoneHierarchy.ts';
 import { migrateZoneMemberEntries } from './migrateZoneMembers.ts';
 import { migrateBuildScanListsToLibrary } from './migrateScanLists.ts';
 import { migrateChannelScanListFromBuildOverrides } from './migrateChannelScanList.ts';
+import { migrateAprsSingletonAggregate } from './migrateAprsSingleton.ts';
 
 export interface LegacyZoneExportFields {
   exportScratchChannel: boolean;
@@ -136,7 +138,10 @@ export function migrateProjectAggregate(aggregate: ProjectAggregate): ProjectAgg
     analogContacts: withMembers.analogContacts,
     rxGroupLists: withMembers.rxGroupLists,
     scanLists: withMembers.scanLists ?? [],
-    aprsConfigurations: withMembers.aprsConfigurations ?? [],
+    aprsConfiguration:
+      withMembers.aprsConfiguration ??
+      (withMembers as { aprsConfigurations?: AprsConfiguration[] }).aprsConfigurations?.[0] ??
+      null,
   };
 
   const { library: migratedLibrary, formatBuilds } = migrateZoneExportFieldsToBuildLayout(
@@ -144,18 +149,20 @@ export function migrateProjectAggregate(aggregate: ProjectAggregate): ProjectAgg
     withMembers.formatBuilds,
   );
 
-  return migrateChannelScanListFromBuildOverrides(
-    migrateBuildScanListsToLibrary({
-      meta: withMembers.meta,
-      channels: migratedLibrary.channels,
-      zones: migratedLibrary.zones,
-      talkGroups: migratedLibrary.talkGroups,
-      digitalContacts: migratedLibrary.digitalContacts,
-      analogContacts: migratedLibrary.analogContacts,
-      rxGroupLists: migratedLibrary.rxGroupLists,
-      scanLists: migratedLibrary.scanLists,
-      aprsConfigurations: migratedLibrary.aprsConfigurations,
-      formatBuilds,
-    }),
+  return migrateAprsSingletonAggregate(
+    migrateChannelScanListFromBuildOverrides(
+      migrateBuildScanListsToLibrary({
+        meta: withMembers.meta,
+        channels: migratedLibrary.channels,
+        zones: migratedLibrary.zones,
+        talkGroups: migratedLibrary.talkGroups,
+        digitalContacts: migratedLibrary.digitalContacts,
+        analogContacts: migratedLibrary.analogContacts,
+        rxGroupLists: migratedLibrary.rxGroupLists,
+        scanLists: migratedLibrary.scanLists,
+        aprsConfiguration: migratedLibrary.aprsConfiguration,
+        formatBuilds,
+      }),
+    ),
   );
 }

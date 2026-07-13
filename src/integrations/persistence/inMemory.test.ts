@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  newAprsConfiguration,
   newChannel,
   newFormatBuild,
   newProjectMeta,
@@ -87,6 +88,25 @@ describe('InMemoryProjectPersistence', () => {
       { projectId: meta.projectId, kind: 'channel', id: channel.id, op: 'put' },
       { projectId: meta.projectId, kind: 'channel', id: channel.id, op: 'delete' },
     ]);
+  });
+
+  it('persists a single aprs configuration per project', async () => {
+    const store = new InMemoryProjectPersistence();
+    const meta = newProjectMeta('Test');
+    await store.seedProject({ meta });
+
+    const zulu = newAprsConfiguration(meta.projectId, 'Zulu');
+    const alpha = newAprsConfiguration(meta.projectId, 'Alpha');
+    await store.putAprsConfiguration(zulu, null);
+    await store.putAprsConfiguration(alpha, null);
+
+    const configs = await store.listAprsConfigurations(meta.projectId);
+    expect(configs).toHaveLength(1);
+    expect(configs[0]?.name).toBe('Alpha');
+    expect(await store.getAprsConfiguration(meta.projectId, zulu.id)).toBeNull();
+    expect(await store.getAprsConfiguration(meta.projectId, alpha.id)).toMatchObject({
+      name: 'Alpha',
+    });
   });
 
   it('loadProjectSeed returns full aggregate including formatBuilds', async () => {

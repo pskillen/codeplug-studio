@@ -3,32 +3,38 @@ import { emptyLibrary, newAprsConfiguration, newChannel } from '../factories.ts'
 import {
   collectAprsValidationWarnings,
   validateAprsConfigurationName,
-  validateChannelAprsRefs,
+  validateChannelAprsBinding,
 } from './validation.ts';
 
 describe('validateAprsConfigurationName', () => {
-  it('rejects duplicate names', () => {
-    const config = newAprsConfiguration('p1', 'Home');
-    const library = {
-      ...emptyLibrary(),
-      aprsConfigurations: [{ ...config, id: 'other' }],
-    };
-    expect(() => validateAprsConfigurationName(config, library)).toThrow(/Duplicate/);
+  it('rejects empty names', () => {
+    const config = { ...newAprsConfiguration('p1', ''), name: '   ' };
+    expect(() => validateAprsConfigurationName(config)).toThrow(/must not be empty/);
   });
 });
 
-describe('validateChannelAprsRefs', () => {
-  it('rejects orphan report channel ref', () => {
-    const channel = {
-      ...newChannel('p1', 'GB3DA'),
-      aprs: {
-        receiveEnabled: true,
-        reportType: 'digital' as const,
-        digitalPttMode: 'on' as const,
-        reportChannelRef: { kind: 'channel' as const, id: 'missing' },
+describe('validateChannelAprsBinding', () => {
+  it('rejects out-of-range report slot index', () => {
+    const config = newAprsConfiguration('p1', 'Home');
+    config.channelSlots = [
+      {
+        channelRef: null,
+        timeslot: 1,
+        targetDmrId: 1,
+        callType: 'group',
       },
-    };
-    expect(() => validateChannelAprsRefs(channel, emptyLibrary())).toThrow(/not found/);
+    ];
+    expect(() =>
+      validateChannelAprsBinding(
+        {
+          receiveEnabled: true,
+          reportType: 'digital',
+          digitalPttMode: 'on',
+          reportSlotIndex: 2,
+        },
+        config,
+      ),
+    ).toThrow(/out of range/);
   });
 });
 
@@ -40,13 +46,35 @@ describe('collectAprsValidationWarnings', () => {
         receiveEnabled: true,
         reportType: 'digital' as const,
         digitalPttMode: 'off' as const,
-        reportChannelRef: null,
+        reportSlotIndex: null,
       },
     };
-    const warnings = collectAprsValidationWarnings(
-      { ...emptyLibrary(), channels: [channel] },
-      null,
-    );
+    const warnings = collectAprsValidationWarnings({ ...emptyLibrary(), channels: [channel] });
     expect(warnings.some((w) => w.code === 'digital_report_on_analog_channel')).toBe(true);
+  });
+
+  it('warns when digital APRS channels exist without a library config', () => {
+    const channel = {
+      ...newChannel('p1', 'DMR'),
+      modeProfiles: [
+        {
+          mode: 'dmr' as const,
+          colourCode: 1,
+          timeslot: 1 as const,
+          dmrId: 1,
+          dmrMode: null,
+          contactRef: null,
+          rxGroupListId: null,
+        },
+      ],
+      aprs: {
+        receiveEnabled: true,
+        reportType: 'digital' as const,
+        digitalPttMode: 'on' as const,
+        reportSlotIndex: 1,
+      },
+    };
+    const warnings = collectAprsValidationWarnings({ ...emptyLibrary(), channels: [channel] });
+    expect(warnings.some((w) => w.code === 'channels_have_digital_aprs_without_config')).toBe(true);
   });
 });

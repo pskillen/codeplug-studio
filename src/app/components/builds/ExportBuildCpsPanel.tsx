@@ -107,7 +107,9 @@ export default function ExportBuildCpsPanel({ build }: ExportBuildCpsPanelProps)
     if (!activeProjectId) return;
     let cancelled = false;
     void persistence.listChannels(activeProjectId).then((channels) => {
-      if (!cancelled) setChannelCount(channels.length);
+      if (!cancelled) {
+        setChannelCount(channels.length);
+      }
     });
     return () => {
       cancelled = true;
