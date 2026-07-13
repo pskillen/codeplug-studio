@@ -6,17 +6,25 @@ export async function loadLibrarySlice(
   persistence: ProjectPersistence,
   projectId: string,
 ): Promise<LibrarySlice> {
-  const [channels, zones, talkGroups, digitalContacts, analogContacts, rxGroupLists, scanLists, aprsConfigurations] =
-    await Promise.all([
-      persistence.listChannels(projectId),
-      persistence.listZones(projectId),
-      persistence.listTalkGroups(projectId),
-      persistence.listDigitalContacts(projectId),
-      persistence.listAnalogContacts(projectId),
-      persistence.listRxGroupLists(projectId),
-      persistence.listScanLists(projectId),
-      persistence.listAprsConfigurations(projectId),
-    ]);
+  const [
+    channels,
+    zones,
+    talkGroups,
+    digitalContacts,
+    analogContacts,
+    rxGroupLists,
+    scanLists,
+    aprsConfigurations,
+  ] = await Promise.all([
+    persistence.listChannels(projectId),
+    persistence.listZones(projectId),
+    persistence.listTalkGroups(projectId),
+    persistence.listDigitalContacts(projectId),
+    persistence.listAnalogContacts(projectId),
+    persistence.listRxGroupLists(projectId),
+    persistence.listScanLists(projectId),
+    persistence.listAprsConfigurations(projectId),
+  ]);
   return {
     channels,
     zones,

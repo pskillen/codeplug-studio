@@ -46,9 +46,7 @@ export default function BuildAprsSettingsSection({
           searchable
           disabled={saving || aprsConfigurations.length === 0}
           value={build.activeAprsConfigurationId ?? UNSET_VALUE}
-          onChange={(value) =>
-            onActiveConfigChange(value && value !== UNSET_VALUE ? value : null)
-          }
+          onChange={(value) => onActiveConfigChange(value && value !== UNSET_VALUE ? value : null)}
         />
         {aprsConfigurations.length === 0 ? (
           <Text size="sm" c="dimmed">

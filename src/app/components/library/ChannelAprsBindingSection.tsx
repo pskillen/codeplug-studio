@@ -61,14 +61,13 @@ export default function ChannelAprsBindingSection({
   return (
     <Stack gap="md">
       <Text size="sm" c="dimmed">
-        Per-channel digital APRS flags for CPS export. Analog APRS is not modelled in Codeplug Studio.
+        Per-channel digital APRS flags for CPS export. Analog APRS is not modelled in Codeplug
+        Studio.
       </Text>
       <Checkbox
         label="APRS receive enabled"
         checked={value.receiveEnabled}
-        onChange={(event) =>
-          onChange({ ...value, receiveEnabled: event.currentTarget.checked })
-        }
+        onChange={(event) => onChange({ ...value, receiveEnabled: event.currentTarget.checked })}
       />
       <Select
         label="Report type"

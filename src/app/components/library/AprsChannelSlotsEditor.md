@@ -4,11 +4,11 @@ Editable list of digital APRS channel slots on an `AprsConfiguration`. Each slot
 
 ## Props
 
-| Prop       | Type                              | Description                          |
-| ---------- | --------------------------------- | ------------------------------------ |
-| `channels` | `Channel[]`                       | Library channels for the slot picker |
-| `slots`    | `AprsChannelSlot[]`               | Current slot rows                    |
-| `onChange` | `(slots: AprsChannelSlot[]) => void` | Called when slots are edited      |
+| Prop       | Type                                 | Description                          |
+| ---------- | ------------------------------------ | ------------------------------------ |
+| `channels` | `Channel[]`                          | Library channels for the slot picker |
+| `slots`    | `AprsChannelSlot[]`                  | Current slot rows                    |
+| `onChange` | `(slots: AprsChannelSlot[]) => void` | Called when slots are edited         |
 
 ## Usage
 

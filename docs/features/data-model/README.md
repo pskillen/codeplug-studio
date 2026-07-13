@@ -72,7 +72,7 @@ erDiagram
 
 ## Schema version
 
-`STUDIO_SCHEMA_VERSION = 15` in `src/core/models/schemaVersion.ts`. Bumps when persisted row shapes change. v15 adds digital APRS entities (`AprsConfiguration`, `Channel.aprs`, `FormatBuild.activeAprsConfigurationId`).
+`STUDIO_SCHEMA_VERSION = 16` in `src/core/models/schemaVersion.ts`. Bumps when persisted row shapes change. v15 adds digital APRS entities (`AprsConfiguration`, `Channel.aprs`, `FormatBuild.activeAprsConfigurationId`). v16 adds the IndexedDB `aprsConfigurations` object store (library CRUD persistence).
 
 ## Persistable rows
 

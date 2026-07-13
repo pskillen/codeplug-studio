@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { newAprsConfiguration, newChannel, newFormatBuild, newProjectMeta, newTalkGroup, newZone } from '@core/domain/factories.ts';
+import {
+  newAprsConfiguration,
+  newChannel,
+  newFormatBuild,
+  newProjectMeta,
+  newTalkGroup,
+  newZone,
+} from '@core/domain/factories.ts';
 import { InMemoryProjectPersistence } from '@integrations/persistence/index.ts';
 import { LibraryService } from './libraryService.ts';
 

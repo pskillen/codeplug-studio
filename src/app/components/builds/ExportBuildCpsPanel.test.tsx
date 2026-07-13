@@ -71,6 +71,7 @@ vi.mock('../../state/useFormatBuilds.ts', () => ({
 vi.mock('../../state/persistence.ts', () => ({
   persistence: {
     listChannels: vi.fn(async () => [{ id: 'ch-1' }]),
+    listAprsConfigurations: vi.fn(async () => []),
   },
 }));
 

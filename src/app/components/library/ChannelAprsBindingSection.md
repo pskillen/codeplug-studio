@@ -4,23 +4,19 @@ Per-channel digital APRS binding editor (`Channel.aprs`) used on the channel edi
 
 ## Props
 
-| Prop       | Type                              | Description                                      |
-| ---------- | --------------------------------- | ------------------------------------------------ |
-| `channels` | `Channel[]`                       | Library channels for report-channel picker       |
-| `value`    | `ChannelAprsBinding`              | Current binding values                           |
-| `onChange` | `(value: ChannelAprsBinding) => void` | Called when fields change                    |
-| `readOnly` | `boolean`                         | When true, shows off-state hint (non-DMR channels) |
+| Prop       | Type                                  | Description                                        |
+| ---------- | ------------------------------------- | -------------------------------------------------- |
+| `channels` | `Channel[]`                           | Library channels for report-channel picker         |
+| `value`    | `ChannelAprsBinding`                  | Current binding values                             |
+| `onChange` | `(value: ChannelAprsBinding) => void` | Called when fields change                          |
+| `readOnly` | `boolean`                             | When true, shows off-state hint (non-DMR channels) |
 
 ## Usage
 
 ```tsx
 const [aprs, setAprs] = useState(() => channelAprsBindingFromChannel(channel));
 
-<ChannelAprsBindingSection
-  channels={library.channels}
-  value={aprs}
-  onChange={setAprs}
-/>
+<ChannelAprsBindingSection channels={library.channels} value={aprs} onChange={setAprs} />;
 ```
 
 ## Behaviour

@@ -84,7 +84,12 @@ export default function AprsChannelSlotsEditor({
         </Text>
       ) : (
         slots.map((slot, index) => (
-          <Stack key={index} gap="xs" p="sm" style={{ border: '1px solid var(--mantine-color-default-border)', borderRadius: 8 }}>
+          <Stack
+            key={index}
+            gap="xs"
+            p="sm"
+            style={{ border: '1px solid var(--mantine-color-default-border)', borderRadius: 8 }}
+          >
             <Group justify="space-between" align="center">
               <Text size="sm" fw={500}>
                 Slot {index + 1}
@@ -126,7 +131,9 @@ export default function AprsChannelSlotsEditor({
             <NumberInput
               label="Target DMR ID"
               value={slot.targetDmrId ?? ''}
-              onChange={(value) => updateSlot(index, { targetDmrId: parseOptionalPositiveInt(value) })}
+              onChange={(value) =>
+                updateSlot(index, { targetDmrId: parseOptionalPositiveInt(value) })
+              }
               min={1}
               allowDecimal={false}
               allowNegative={false}

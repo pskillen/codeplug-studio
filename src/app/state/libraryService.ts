@@ -20,17 +20,25 @@ export class LibraryService {
   constructor(private readonly persistence: ProjectPersistence) {}
 
   async loadLibrary(projectId: string): Promise<Library> {
-    const [channels, zones, talkGroups, digitalContacts, analogContacts, rxGroupLists, scanLists, aprsConfigurations] =
-      await Promise.all([
-        this.persistence.listChannels(projectId),
-        this.persistence.listZones(projectId),
-        this.persistence.listTalkGroups(projectId),
-        this.persistence.listDigitalContacts(projectId),
-        this.persistence.listAnalogContacts(projectId),
-        this.persistence.listRxGroupLists(projectId),
-        this.persistence.listScanLists(projectId),
-        this.persistence.listAprsConfigurations(projectId),
-      ]);
+    const [
+      channels,
+      zones,
+      talkGroups,
+      digitalContacts,
+      analogContacts,
+      rxGroupLists,
+      scanLists,
+      aprsConfigurations,
+    ] = await Promise.all([
+      this.persistence.listChannels(projectId),
+      this.persistence.listZones(projectId),
+      this.persistence.listTalkGroups(projectId),
+      this.persistence.listDigitalContacts(projectId),
+      this.persistence.listAnalogContacts(projectId),
+      this.persistence.listRxGroupLists(projectId),
+      this.persistence.listScanLists(projectId),
+      this.persistence.listAprsConfigurations(projectId),
+    ]);
     return {
       channels: channels.map(normalizeChannel),
       zones,

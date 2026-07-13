@@ -4,12 +4,12 @@ Build export panel section for choosing `FormatBuild.activeAprsConfigurationId` 
 
 ## Props
 
-| Prop                   | Type                                      | Description                                |
-| ---------------------- | ----------------------------------------- | ------------------------------------------ |
-| `build`                | `FormatBuild`                             | Current build (reads active config id)     |
-| `aprsConfigurations`   | `AprsConfiguration[]`                     | Library configs for the select options     |
-| `saving`               | `boolean`                                 | Disables the select while persisting       |
-| `onActiveConfigChange` | `(configId: string \| null) => void`      | Called when the operator changes selection |
+| Prop                   | Type                                 | Description                                |
+| ---------------------- | ------------------------------------ | ------------------------------------------ |
+| `build`                | `FormatBuild`                        | Current build (reads active config id)     |
+| `aprsConfigurations`   | `AprsConfiguration[]`                | Library configs for the select options     |
+| `saving`               | `boolean`                            | Disables the select while persisting       |
+| `onActiveConfigChange` | `(configId: string \| null) => void` | Called when the operator changes selection |
 
 ## Usage
 
