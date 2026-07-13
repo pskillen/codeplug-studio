@@ -252,7 +252,7 @@ function parseScanInclusion(record: Record<string, unknown>, label: string): Sca
 const APRS_REPORT_TYPES = ['off', 'digital'] as const;
 const APRS_PTT_MODES = ['off', 'on'] as const;
 const APRS_SLOT_CALL_TYPES = ['private', 'group'] as const;
-const APRS_POSITION_SOURCES = ['gps', 'fixed'] as const;
+const APRS_POSITION_SOURCES = ['fixed', 'gps', 'beidou', 'galileo', 'allGnss'] as const;
 
 function parseAprsReportType(raw: unknown, label: string): AprsReportType {
   const value = expectString(raw, label);

@@ -59,4 +59,25 @@ describe('normalizeAprsConfiguration', () => {
     expect(config.defaultDmrId).toBeNull();
     expect(config.channelSlots[0]?.targetDmrId).toBe(234999);
   });
+
+  it('accepts extended position sources', () => {
+    for (const positionSource of ['beidou', 'galileo', 'allGnss'] as const) {
+      const config = normalizeAprsConfiguration({
+        id: 'cfg-1',
+        projectId: 'p1',
+        revision: 1,
+        updatedAt: '2026-01-01T00:00:00.000Z',
+        name: 'Test',
+        comment: '',
+        manualTxIntervalSec: null,
+        autoTxIntervalSec: null,
+        positionSource,
+        fixedLocation: null,
+        channelSlots: [],
+        defaultDmrId: null,
+        defaultCallType: 'group',
+      });
+      expect(config.positionSource).toBe(positionSource);
+    }
+  });
 });

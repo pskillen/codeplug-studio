@@ -4,10 +4,12 @@ import type { AprsPositionSource, AprsSlotCallType } from '@core/models/libraryT
 import type { Library } from '@core/models/library.ts';
 import { newAprsConfiguration } from '@core/domain/factories.ts';
 import { normalizeAprsConfiguration } from '@core/domain/aprs/index.ts';
-import { NumberInput, Select, Stack, TextInput, Textarea } from '@mantine/core';
+import { NumberInput, Select, SimpleGrid, Stack, Textarea, TextInput } from '@mantine/core';
 import { useNavigate } from 'react-router-dom';
 import EntityDeleteButton from '../../components/library/EntityDeleteButton.tsx';
 import AprsChannelSlotsEditor from '../../components/library/AprsChannelSlotsEditor.tsx';
+import GeoPointEditor from '../../components/library/GeoPointEditor.tsx';
+import { FieldCard } from '../../components/fields/Fields.tsx';
 import { UnsavedChangesModal } from '../../components/ui/index.ts';
 import { useEntityEditorUnsavedGuard } from '../../hooks/useEntityFormDirty.ts';
 import { persistence } from '../../state/persistence.ts';
@@ -15,8 +17,11 @@ import { useEntitySave } from './useEntitySave.ts';
 import EditorActions from './EditorActions.tsx';
 
 const POSITION_SOURCE_OPTIONS = [
-  { value: 'gps', label: 'GPS' },
   { value: 'fixed', label: 'Fixed location' },
+  { value: 'gps', label: 'GPS' },
+  { value: 'beidou', label: 'BeiDou' },
+  { value: 'galileo', label: 'Galileo' },
+  { value: 'allGnss', label: 'All GNSS' },
 ] satisfies { value: AprsPositionSource; label: string }[];
 
 const CALL_TYPE_OPTIONS = [
@@ -51,9 +56,11 @@ export default function AprsConfigurationEditor({
   const [fixedLon, setFixedLon] = useState(
     base.fixedLocation?.lon != null ? String(base.fixedLocation.lon) : '',
   );
+  const [fixedLocator, setFixedLocator] = useState('');
   const [channelSlots, setChannelSlots] = useState(base.channelSlots);
   const [defaultDmrId, setDefaultDmrId] = useState(base.defaultDmrId);
   const [defaultCallType, setDefaultCallType] = useState<AprsSlotCallType>(base.defaultCallType);
+  const [activeTab] = useState('configuration');
   const { save, saving, error } = useEntitySave('aprs-configurations');
   const navigate = useNavigate();
 
@@ -89,75 +96,91 @@ export default function AprsConfigurationEditor({
 
   return (
     <Stack gap="md" maw={900}>
-      <TextInput label="Name" value={name} onChange={(e) => setName(e.currentTarget.value)} />
-      <Textarea
-        label="Comment"
-        description="Beacon comment text exported with APRS position reports."
-        value={comment}
-        onChange={(e) => setComment(e.currentTarget.value)}
-        autosize
-        minRows={2}
-      />
-      <NumberInput
-        label="Manual TX interval (seconds)"
-        description="Interval when the operator triggers a manual position report."
-        value={manualTxIntervalSec ?? ''}
-        onChange={(value) => setManualTxIntervalSec(parseOptionalPositiveInt(value))}
-        min={1}
-        allowDecimal={false}
-        allowNegative={false}
-      />
-      <NumberInput
-        label="Auto TX interval (seconds)"
-        description="Automatic position beacon interval."
-        value={autoTxIntervalSec ?? ''}
-        onChange={(value) => setAutoTxIntervalSec(parseOptionalPositiveInt(value))}
-        min={1}
-        allowDecimal={false}
-        allowNegative={false}
-      />
-      <Select
-        label="Position source"
-        data={POSITION_SOURCE_OPTIONS}
-        value={positionSource}
-        onChange={(value) => setPositionSource((value as AprsPositionSource | null) ?? 'gps')}
-      />
-      {positionSource === 'fixed' ? (
-        <Stack gap="xs">
+      <FieldCard title="Identity" description="Name and beacon comment text.">
+        <TextInput label="Name" value={name} onChange={(e) => setName(e.currentTarget.value)} />
+        <Textarea
+          label="Comment"
+          description="Beacon comment text exported with APRS position reports."
+          value={comment}
+          onChange={(e) => setComment(e.currentTarget.value)}
+          autosize
+          minRows={2}
+        />
+      </FieldCard>
+
+      <FieldCard
+        title="Beacon timing"
+        description="Manual and automatic position beacon intervals in seconds."
+      >
+        <SimpleGrid cols={{ base: 1, sm: 2 }}>
           <NumberInput
-            label="Fixed latitude"
-            value={fixedLat === '' ? '' : Number.parseFloat(fixedLat)}
-            onChange={(value) => setFixedLat(value === '' ? '' : String(value))}
-            decimalScale={6}
+            label="Manual TX interval (seconds)"
+            value={manualTxIntervalSec ?? ''}
+            onChange={(value) => setManualTxIntervalSec(parseOptionalPositiveInt(value))}
+            min={1}
+            allowDecimal={false}
+            allowNegative={false}
           />
           <NumberInput
-            label="Fixed longitude"
-            value={fixedLon === '' ? '' : Number.parseFloat(fixedLon)}
-            onChange={(value) => setFixedLon(value === '' ? '' : String(value))}
-            decimalScale={6}
+            label="Auto TX interval (seconds)"
+            value={autoTxIntervalSec ?? ''}
+            onChange={(value) => setAutoTxIntervalSec(parseOptionalPositiveInt(value))}
+            min={1}
+            allowDecimal={false}
+            allowNegative={false}
           />
-        </Stack>
-      ) : null}
-      <NumberInput
-        label="Default DMR ID"
-        description="Global default target (Anytone APRS TG)."
-        value={defaultDmrId ?? ''}
-        onChange={(value) => setDefaultDmrId(parseOptionalPositiveInt(value))}
-        min={1}
-        allowDecimal={false}
-        allowNegative={false}
-      />
-      <Select
-        label="Default call type"
-        data={CALL_TYPE_OPTIONS}
-        value={defaultCallType}
-        onChange={(value) => setDefaultCallType((value as AprsSlotCallType | null) ?? 'group')}
-      />
-      <AprsChannelSlotsEditor
-        channels={library.channels}
-        slots={channelSlots}
-        onChange={setChannelSlots}
-      />
+        </SimpleGrid>
+      </FieldCard>
+
+      <FieldCard title="Position" description="Beacon position source and fixed coordinates.">
+        <Select
+          label="Position source"
+          data={POSITION_SOURCE_OPTIONS}
+          value={positionSource}
+          onChange={(value) => setPositionSource((value as AprsPositionSource | null) ?? 'gps')}
+        />
+        {positionSource === 'fixed' ? (
+          <GeoPointEditor
+            lat={fixedLat}
+            lon={fixedLon}
+            maidenheadLocator={fixedLocator}
+            mapActive={activeTab === 'configuration'}
+            onChange={({ lat, lon, maidenheadLocator }) => {
+              setFixedLat(lat);
+              setFixedLon(lon);
+              setFixedLocator(maidenheadLocator);
+            }}
+          />
+        ) : null}
+      </FieldCard>
+
+      <FieldCard title="Default target" description="Global default DMR target when slots omit one.">
+        <SimpleGrid cols={{ base: 1, sm: 2 }}>
+          <NumberInput
+            label="Default DMR ID"
+            value={defaultDmrId ?? ''}
+            onChange={(value) => setDefaultDmrId(parseOptionalPositiveInt(value))}
+            min={1}
+            allowDecimal={false}
+            allowNegative={false}
+          />
+          <Select
+            label="Default call type"
+            data={CALL_TYPE_OPTIONS}
+            value={defaultCallType}
+            onChange={(value) => setDefaultCallType((value as AprsSlotCallType | null) ?? 'group')}
+          />
+        </SimpleGrid>
+      </FieldCard>
+
+      <FieldCard title="Channel slots" description="DMR channels used for APRS transmission slots.">
+        <AprsChannelSlotsEditor
+          channels={library.channels}
+          slots={channelSlots}
+          onChange={setChannelSlots}
+        />
+      </FieldCard>
+
       <EditorActions
         saving={saving}
         error={error}

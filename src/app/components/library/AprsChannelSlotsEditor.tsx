@@ -1,39 +1,14 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import type { AprsChannelSlot } from '@core/models/aprs.ts';
-import type { AprsSlotCallType, DMRTimeSlot } from '@core/models/libraryTypes.ts';
 import type { Channel } from '@core/models/library.ts';
-import { channelDisplayLabel } from '@core/domain/channelNaming.ts';
-import { ActionIcon, Button, Group, NumberInput, Select, Stack, Text } from '@mantine/core';
-import { IconTrash } from '@tabler/icons-react';
-import { sortByName } from '../../lib/channels.ts';
-
-const CURRENT_CHANNEL_VALUE = '';
-
-const TIMESLOT_OPTIONS = [
-  { value: '', label: 'Unspecified' },
-  { value: '1', label: 'Slot 1' },
-  { value: '2', label: 'Slot 2' },
-] satisfies { value: string; label: string }[];
-
-const CALL_TYPE_OPTIONS = [
-  { value: 'group', label: 'Group' },
-  { value: 'private', label: 'Private' },
-] satisfies { value: AprsSlotCallType; label: string }[];
-
-function emptySlot(): AprsChannelSlot {
-  return {
-    channelRef: null,
-    timeslot: null,
-    targetDmrId: null,
-    callType: 'group',
-  };
-}
-
-function parseOptionalPositiveInt(value: string | number): number | null {
-  if (value === '' || value == null) return null;
-  const n = typeof value === 'number' ? value : Number.parseInt(String(value), 10);
-  return Number.isFinite(n) && n > 0 ? n : null;
-}
+import { ActionIcon, Button, Group, Stack, Text } from '@mantine/core';
+import { IconPencil, IconTrash } from '@tabler/icons-react';
+import { DataTable } from '../ui/index.ts';
+import type { DataTableColumn } from '../ui/DataTable.tsx';
+import AprsChannelSlotModal, {
+  channelLabelForSlot,
+  emptyAprsChannelSlot,
+} from './AprsChannelSlotModal.tsx';
 
 export interface AprsChannelSlotsEditorProps {
   channels: Channel[];
@@ -41,117 +16,127 @@ export interface AprsChannelSlotsEditorProps {
   onChange: (slots: AprsChannelSlot[]) => void;
 }
 
+type SlotRow = AprsChannelSlot & { slotNumber: number };
+
 export default function AprsChannelSlotsEditor({
   channels,
   slots,
   onChange,
 }: AprsChannelSlotsEditorProps) {
-  const channelOptions = useMemo(
-    () => [
-      { value: CURRENT_CHANNEL_VALUE, label: 'Current channel' },
-      ...sortByName(channels).map((channel) => ({
-        value: channel.id,
-        label: channelDisplayLabel(channel),
-      })),
-    ],
-    [channels],
+  const [modalOpen, setModalOpen] = useState(false);
+  const [editIndex, setEditIndex] = useState<number | null>(null);
+
+  const rows = useMemo(
+    (): SlotRow[] => slots.map((slot, index) => ({ ...slot, slotNumber: index + 1 })),
+    [slots],
   );
 
-  function updateSlot(index: number, patch: Partial<AprsChannelSlot>) {
-    onChange(slots.map((slot, i) => (i === index ? { ...slot, ...patch } : slot)));
-  }
+  const columns = useMemo((): DataTableColumn<SlotRow>[] => {
+    return [
+      {
+        key: 'channel',
+        header: 'Channel',
+        render: (row) => channelLabelForSlot(row, channels),
+        sortValue: (row) => channelLabelForSlot(row, channels),
+      },
+      {
+        key: 'timeslot',
+        header: 'Timeslot',
+        render: (row) => (row.timeslot != null ? String(row.timeslot) : '—'),
+        sortValue: (row) => row.timeslot ?? 0,
+      },
+      {
+        key: 'targetDmrId',
+        header: 'Target DMR ID',
+        render: (row) => (row.targetDmrId != null ? String(row.targetDmrId) : '—'),
+        sortValue: (row) => row.targetDmrId ?? 0,
+      },
+      {
+        key: 'callType',
+        header: 'Call type',
+        render: (row) => (row.callType === 'private' ? 'Private' : 'Group'),
+        sortValue: (row) => row.callType,
+      },
+      {
+        key: 'actions',
+        header: '',
+        hideable: false,
+        render: (row) => (
+          <Group gap={4} wrap="nowrap">
+            <ActionIcon
+              variant="subtle"
+              size="sm"
+              aria-label={`Edit slot ${row.slotNumber}`}
+              onClick={() => {
+                setEditIndex(row.slotNumber - 1);
+                setModalOpen(true);
+              }}
+            >
+              <IconPencil size={16} />
+            </ActionIcon>
+            <ActionIcon
+              variant="subtle"
+              color="red"
+              size="sm"
+              aria-label={`Remove slot ${row.slotNumber}`}
+              onClick={() => onChange(slots.filter((_, i) => i !== row.slotNumber - 1))}
+            >
+              <IconTrash size={16} />
+            </ActionIcon>
+          </Group>
+        ),
+      },
+    ];
+  }, [channels, onChange, slots]);
 
-  function removeSlot(index: number) {
-    onChange(slots.filter((_, i) => i !== index));
-  }
-
-  function addSlot() {
-    onChange([...slots, emptySlot()]);
+  function handleSaveSlot(slot: AprsChannelSlot) {
+    if (editIndex == null) {
+      onChange([...slots, slot]);
+      return;
+    }
+    onChange(slots.map((existing, i) => (i === editIndex ? slot : existing)));
   }
 
   return (
     <Stack gap="sm">
-      <Text size="sm" fw={600}>
-        Channel slots
-      </Text>
       <Text size="sm" c="dimmed">
         Digital APRS transmit slots. Export may warn when a radio profile caps slot count; the
         library does not enforce a maximum here.
       </Text>
-      {slots.length === 0 ? (
-        <Text size="sm" c="dimmed">
-          No slots configured.
-        </Text>
-      ) : (
-        slots.map((slot, index) => (
-          <Stack
-            key={index}
-            gap="xs"
-            p="sm"
-            style={{ border: '1px solid var(--mantine-color-default-border)', borderRadius: 8 }}
-          >
-            <Group justify="space-between" align="center">
-              <Text size="sm" fw={500}>
-                Slot {index + 1}
-              </Text>
-              <ActionIcon
-                variant="subtle"
-                color="red"
-                size="sm"
-                aria-label={`Remove slot ${index + 1}`}
-                onClick={() => removeSlot(index)}
-              >
-                <IconTrash size={16} />
-              </ActionIcon>
-            </Group>
-            <Select
-              label="Channel"
-              data={channelOptions}
-              searchable
-              value={slot.channelRef?.id ?? CURRENT_CHANNEL_VALUE}
-              onChange={(value) =>
-                updateSlot(index, {
-                  channelRef:
-                    value && value !== CURRENT_CHANNEL_VALUE
-                      ? { kind: 'channel', id: value }
-                      : null,
-                })
-              }
-            />
-            <Select
-              label="Timeslot"
-              data={TIMESLOT_OPTIONS}
-              value={slot.timeslot != null ? String(slot.timeslot) : ''}
-              onChange={(value) =>
-                updateSlot(index, {
-                  timeslot: value === '1' || value === '2' ? (Number(value) as DMRTimeSlot) : null,
-                })
-              }
-            />
-            <NumberInput
-              label="Target DMR ID"
-              value={slot.targetDmrId ?? ''}
-              onChange={(value) =>
-                updateSlot(index, { targetDmrId: parseOptionalPositiveInt(value) })
-              }
-              min={1}
-              allowDecimal={false}
-              allowNegative={false}
-            />
-            <Select
-              label="Call type"
-              data={CALL_TYPE_OPTIONS}
-              value={slot.callType}
-              onChange={(value) =>
-                updateSlot(index, { callType: (value as AprsSlotCallType | null) ?? 'group' })
-              }
-            />
-          </Stack>
-        ))
-      )}
-      <Button variant="light" onClick={addSlot}>
+      <DataTable
+        variant="list"
+        rows={rows}
+        rowKey={(row) => String(row.slotNumber)}
+        nameColumn={{
+          header: 'Slot',
+          getName: (row) => String(row.slotNumber),
+          getPath: () => '/library/aprs-configurations',
+        }}
+        columns={columns}
+        showSearch={false}
+        defaultSort={{ columnKey: 'channel', direction: 'asc' }}
+        emptyState={<Text size="sm" c="dimmed">No slots configured.</Text>}
+      />
+      <Button
+        variant="light"
+        onClick={() => {
+          setEditIndex(null);
+          setModalOpen(true);
+        }}
+      >
         Add slot
       </Button>
+      <AprsChannelSlotModal
+        opened={modalOpen}
+        title={editIndex == null ? 'Add slot' : `Edit slot ${editIndex + 1}`}
+        channels={channels}
+        initial={editIndex == null ? emptyAprsChannelSlot() : (slots[editIndex] ?? null)}
+        onClose={() => {
+          setModalOpen(false);
+          setEditIndex(null);
+        }}
+        onSave={handleSaveSlot}
+      />
     </Stack>
   );
 }

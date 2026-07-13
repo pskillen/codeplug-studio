@@ -12,7 +12,13 @@ import { CHANNEL_APRS_OFF } from './defaults.ts';
 const REPORT_TYPES = new Set<AprsReportType>(['off', 'digital']);
 const PTT_MODES = new Set<AprsPttMode>(['off', 'on']);
 const SLOT_CALL_TYPES = new Set<AprsSlotCallType>(['private', 'group']);
-const POSITION_SOURCES = new Set<AprsPositionSource>(['gps', 'fixed']);
+const POSITION_SOURCES = new Set<AprsPositionSource>([
+  'fixed',
+  'gps',
+  'beidou',
+  'galileo',
+  'allGnss',
+]);
 const TIMESLOTS = new Set<DMRTimeSlot>([1, 2]);
 
 export interface AprsNormalizeWarning {
