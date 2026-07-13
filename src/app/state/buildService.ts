@@ -163,4 +163,20 @@ export class BuildService {
       revision: nextRevision(build.revision),
     };
   }
+
+  withActiveAprsConfigurationId(build: FormatBuild, id: string | null): FormatBuild {
+    const now = isoNow();
+    const next: FormatBuild = {
+      ...build,
+      updatedAt: now,
+      revision: nextRevision(build.revision),
+    };
+    const trimmed = id?.trim();
+    if (trimmed) {
+      next.activeAprsConfigurationId = trimmed;
+    } else {
+      delete next.activeAprsConfigurationId;
+    }
+    return next;
+  }
 }
