@@ -7,6 +7,7 @@ import { normalizeAprsConfiguration } from '@core/domain/aprs/index.ts';
 import { NumberInput, Select, Stack, TextInput, Textarea } from '@mantine/core';
 import { useNavigate } from 'react-router-dom';
 import EntityDeleteButton from '../../components/library/EntityDeleteButton.tsx';
+import AprsChannelSlotsEditor from '../../components/library/AprsChannelSlotsEditor.tsx';
 import { UnsavedChangesModal } from '../../components/ui/index.ts';
 import { useEntityEditorUnsavedGuard } from '../../hooks/useEntityFormDirty.ts';
 import { persistence } from '../../state/persistence.ts';
@@ -32,6 +33,7 @@ function parseOptionalPositiveInt(value: string | number): number | null {
 export default function AprsConfigurationEditor({
   projectId,
   entity,
+  library,
 }: {
   projectId: string;
   entity: AprsConfiguration | null;
@@ -49,7 +51,7 @@ export default function AprsConfigurationEditor({
   const [fixedLon, setFixedLon] = useState(
     base.fixedLocation?.lon != null ? String(base.fixedLocation.lon) : '',
   );
-  const [channelSlots] = useState(base.channelSlots);
+  const [channelSlots, setChannelSlots] = useState(base.channelSlots);
   const [defaultDmrId, setDefaultDmrId] = useState(base.defaultDmrId);
   const [defaultCallType, setDefaultCallType] = useState<AprsSlotCallType>(base.defaultCallType);
   const { save, saving, error } = useEntitySave('aprs-configurations');
@@ -150,6 +152,11 @@ export default function AprsConfigurationEditor({
         data={CALL_TYPE_OPTIONS}
         value={defaultCallType}
         onChange={(value) => setDefaultCallType((value as AprsSlotCallType | null) ?? 'group')}
+      />
+      <AprsChannelSlotsEditor
+        channels={library.channels}
+        slots={channelSlots}
+        onChange={setChannelSlots}
       />
       <EditorActions
         saving={saving}
