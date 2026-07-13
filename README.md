@@ -1,52 +1,56 @@
 # Codeplug Studio
 
-**Codeplug Studio** is a browser-based designer for amateur radio codeplug layouts. It does not write a radio's binary codeplug or replace vendor CPS.
+**Codeplug Studio** is a browser-based designer for amateur radio codeplug layouts.
 
-Curate a **library** of channels, talk groups, and contacts once, then assemble **format-specific builds** for each radio workflow you use. Export CPS-ready files when you are ready; your vendor CPS still handles flashing.
+Curate your channels, talk groups, and contacts once, then build a version for each radio you program. When you're ready, export the files your radio's own programming software (CPS) already understands. Nothing is uploaded and nothing is flashed here — you do the final step in your CPS, the same as always.
 
-## What it is not
+## What Codeplug Studio is not
 
-- **No binary flash** — Studio designs layouts and exports interchange files; vendor CPS programs the radio.
-- **No CPS replacement** — export is a **projection** from your library and builds. Perfect round-trip is not a goal. See [DESIGN.md](DESIGN.md) for how import and export differ.
+- It doesn't write a radio's binary codeplug or flash anything. Studio designs the layout; your vendor CPS programs the radio.
+- It isn't a replacement for your CPS. Export is a best-effort translation into each format, so a file you export and re-import may not come back identical. See [DESIGN.md](DESIGN.md) for what that means in practice.
 
 ## Try it
 
 | Environment              | URL                                                          |
 | ------------------------ | ------------------------------------------------------------ |
-| **Production**           | [codeplug.mm9pdy.net](https://codeplug.mm9pdy.net)           |
+| **Live**                 | [codeplug.mm9pdy.net](https://codeplug.mm9pdy.net)           |
 | **Next** (tracks `main`) | [next.codeplug.mm9pdy.net](https://next.codeplug.mm9pdy.net) |
 
-Staging and dev preview URLs are listed in [docs/build/README.md](docs/build/README.md).
+Staging and dev preview sites are listed in [docs/build/README.md](docs/build/README.md).
 
-## Capabilities
+## What you can do
 
-- **Library** — channel, talk group, contact, and zone CRUD; nested zones; bulk edit; browser-local IndexedDB persistence.
-- **Format builds** — per-radio workflow: zone grouping, scan lists, wire-name overrides, export shaping, and wire preview before export.
-- **Project interchange** — full-project native YAML import/export; optional Google Drive open/save.
-- **CPS export** — multi-file or single-file CSV bundles for supported formats: OpenGD77, CHIRP, DM32, and Anytone (AT-D890UV). Export always combines library + build state.
-- **CPS import** — native YAML today; vendor CPS import is on the roadmap per format. See [docs/features/import-export/](docs/features/import-export/).
-- **Reference data** — repeater directories (UK Repeater, BrandMeister, IRTS Ireland, RepeaterBook), embedded channel map, amateur band and Maidenhead reference pages, project summary report.
-- **Privacy** — project data, OAuth tokens, and preferences stay in your browser. There is no operator database on the server.
+- **Keep one library.** Maintain a single master list of channels, talk groups, contacts, and zones. Edit them in tables and forms, or see them on a map.
+- **Build for each radio.** Assemble a build per radio and CPS workflow — group channels into zones, set scan lists, and tune the names each radio shows. The same library channel can appear in several builds.
+- **Import and export.** Import a whole project from Studio's own YAML file, and export CPS-ready files for the formats you use: OpenGD77, CHIRP, DM32, and Anytone. Importing directly from vendor CPS files is on the way; for now, native YAML round-trips losslessly.
+- **Pull in repeater data.** Add channels straight from repeater directories — UK Repeater, BrandMeister, IRTS Ireland, and RepeaterBook — and check existing channels against them.
+- **Look things up.** Built-in band and Maidenhead locator references, plus a project summary that flags gaps in your library.
+
+## Privacy
+
+Your projects stay in your browser. There's no account and no server database — nothing leaves your machine unless you choose to save to Google Drive. Map keys and any sign-in tokens are stored locally too.
 
 ## How it works
 
-- **Import-first** — thorough CPS → internal mapping at the wire boundary; well-tested per format.
-- **Export as projection** — serialise library + build to CPS wire values; documented loss is acceptable.
-- **Library, then builds** — one master inventory; each format build assembles what that radio needs.
-- **Vendor-neutral core** — radio caps and column mapping live in import/export adapters only.
+A few principles keep the tool predictable:
 
-Full principles and architecture: [DESIGN.md](DESIGN.md).
+- **Import-first.** Reading existing CPS files accurately is the hard part, so that's where the effort goes.
+- **Export is a projection.** Files come out of your library and builds; where a format can't hold something, we document the loss rather than hide it.
+- **Library first, then builds.** You curate once; each build shapes that library for one radio.
+- **Vendor-neutral core.** Radio limits and column names live only at the import/export edge, never in the library itself.
+
+Full detail and architecture: [DESIGN.md](DESIGN.md).
 
 ## Documentation
 
-| For                              | Start here                                                                                     |
-| -------------------------------- | ---------------------------------------------------------------------------------------------- |
-| Product constitution             | [DESIGN.md](DESIGN.md)                                                                         |
-| Feature behaviour (contributors) | [docs/features/README.md](docs/features/README.md)                                             |
-| Build, deploy, local OAuth       | [docs/build/README.md](docs/build/README.md)                                                   |
-| Agent / contributor workflow     | [AGENTS.md](AGENTS.md)                                                                         |
-| Migration background             | [docs/poc-migration/epic-1-context.md](docs/poc-migration/epic-1-context.md)                   |
-| Operator workflow diagram        | [docs/features/workflows/operator-lifecycle.md](docs/features/workflows/operator-lifecycle.md) |
+| If you want to                 | Start here                                                                                                                   |
+| ------------------------------ | ---------------------------------------------------------------------------------------------------------------------------- |
+| Understand the product design  | [DESIGN.md](DESIGN.md)                                                                                                       |
+| Read how a feature behaves     | [docs/features/README.md](docs/features/README.md)                                                                           |
+| Build, deploy, or set up OAuth | [docs/build/README.md](docs/build/README.md)                                                                                 |
+| Contribute as an agent         | [AGENTS.md](AGENTS.md)                                                                                                       |
+| Write user-facing copy         | [docs/reference/writing-styleguide/help-writing-styleguide.md](docs/reference/writing-styleguide/help-writing-styleguide.md) |
+| See the migration background   | [docs/poc-migration/epic-1-context.md](docs/poc-migration/epic-1-context.md)                                                 |
 
 ## Local development
 
@@ -55,22 +59,24 @@ npm install
 npm run dev
 ```
 
-Open the URL Vite prints (typically `http://localhost:5173/`).
+Open the URL Vite prints (usually `http://localhost:5173/`).
 
 - `npm run lint` — ESLint
 - `npm run test` — Vitest unit tests
-- `npm run build` — typecheck + production bundle
+- `npm run build` — typecheck and production build
 
-Optional local env vars (Google Drive OAuth, analytics): copy [`.env.example`](.env.example) to `.env.local`. Details in [docs/build/README.md](docs/build/README.md).
+For optional Google Drive and analytics keys, copy [`.env.example`](.env.example) to `.env.local`. See [docs/build/README.md](docs/build/README.md) for details.
 
-## Repository
+## Background
 
-This repo supersedes the archived [codeplug-tool](https://github.com/pskillen/codeplug-tool) prototype. Same author; new library + builds architecture and product thesis.
+This repository supersedes the archived [codeplug-tool](https://github.com/pskillen/codeplug-tool) prototype — same author, with a new library-and-builds design.
 
 ## Disclaimer
 
-Frequency and site data loaded from user CSVs or repeater APIs is for amateur programming convenience. It is not authoritative for emergency operations.
+Frequency and site data loaded from your CSV files or repeater APIs is a convenience for amateur programming. It isn't authoritative for emergency operations.
 
-## License
+## Licence
 
-No licence file is committed yet. **License: TBD** — see [#331](https://github.com/pskillen/codeplug-studio/issues/331) / owner follow-up before public redistribution.
+Copyright © Patrick Skillen.
+
+Released under [Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International](https://creativecommons.org/licenses/by-nc-sa/4.0/) (CC BY-NC-SA 4.0). You may use, modify, and share this work for **non-commercial** purposes if you give attribution and license any derivatives on the same terms. See [LICENSE](LICENSE).
