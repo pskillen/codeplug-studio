@@ -7,7 +7,6 @@ import MaidenheadReferenceSectionNav from '../components/SectionNav/sections/Mai
 import ReferenceSectionNav from '../components/SectionNav/sections/ReferenceSectionNav.tsx';
 import RxGroupListsSectionNav from '../components/SectionNav/sections/RxGroupListsSectionNav.tsx';
 import ScanListsSectionNav from '../components/SectionNav/sections/ScanListsSectionNav.tsx';
-import AprsConfigurationsSectionNav from '../components/SectionNav/sections/AprsConfigurationsSectionNav.tsx';
 import SettingsSectionNav from '../components/SectionNav/sections/SettingsSectionNav.tsx';
 import TalkGroupsSectionNav from '../components/SectionNav/sections/TalkGroupsSectionNav.tsx';
 import ZonesSectionNav from '../components/SectionNav/sections/ZonesSectionNav.tsx';
@@ -34,17 +33,18 @@ const registry: SectionNavEntry[] = [
   { title: 'Contacts', prefix: '/library/contacts', Component: ContactsSectionNav },
   { title: 'RX group lists', prefix: '/library/rx-group-lists', Component: RxGroupListsSectionNav },
   { title: 'Scan lists', prefix: '/library/scan-lists', Component: ScanListsSectionNav },
-  {
-    title: 'APRS configuration',
-    prefix: '/library/aprs-configuration',
-    Component: AprsConfigurationsSectionNav,
-  },
   { title: 'Library', prefix: '/library', Component: ChannelsSectionNav },
   { title: 'Radio build', prefix: '/builds', Component: BuildsSectionNav },
 ];
 
 export function resolveSectionNav(pathname: string): SectionNavEntry | null {
   if (pathname === '/builds/new' || pathname === '/builds') {
+    return null;
+  }
+  if (
+    pathname === '/library/aprs-configuration' ||
+    pathname.startsWith('/library/aprs-configuration/')
+  ) {
     return null;
   }
   for (const entry of registry) {
