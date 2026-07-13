@@ -2,10 +2,11 @@ import { RepeaterDirectoryError, type RepeaterListing } from '../types.ts';
 import { REPEATERBOOK_EXPORT_PROXY_PATH } from './constants.ts';
 import { parseRepeaterBookListings } from './parseListing.ts';
 import {
-  readRepeaterBookSessionCache,
-  repeaterBookCacheKey,
-  writeRepeaterBookSessionCache,
-} from './sessionCache.ts';
+  directoryCacheKey,
+  readDirectoryCache,
+  REPEATERBOOK_CACHE_PREFIX,
+  writeDirectoryCache,
+} from '../sessionCache.ts';
 
 interface RepeaterBookErrorBody {
   status?: string;
@@ -59,8 +60,8 @@ export async function fetchRepeaterBookExport(
   token: string,
 ): Promise<RepeaterListing[]> {
   const appToken = requireToken(token);
-  const cacheKey = repeaterBookCacheKey(url, tokenPrefix(appToken));
-  const cached = readRepeaterBookSessionCache(cacheKey);
+  const cacheKey = directoryCacheKey(REPEATERBOOK_CACHE_PREFIX, url, tokenPrefix(appToken));
+  const cached = readDirectoryCache(cacheKey);
   if (cached != null) {
     const parsed = JSON.parse(cached) as { results?: unknown[] };
     return parseRepeaterBookListings(parsed.results ?? []);
@@ -99,7 +100,7 @@ export async function fetchRepeaterBookExport(
     throw new RepeaterDirectoryError('Unexpected response from RepeaterBook.');
   }
 
-  writeRepeaterBookSessionCache(cacheKey, JSON.stringify(parsed));
+  writeDirectoryCache(cacheKey, JSON.stringify(parsed));
   return parseRepeaterBookListings(parsed.results);
 }
 
