@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Button, Group, Stack, Text } from '@mantine/core';
 import { IconPlus } from '@tabler/icons-react';
 import { Link } from 'react-router-dom';
-import type { BuildExportSettings } from '@core/models/formatBuild.ts';
+import type { BuildExportSettings, FormatBuild } from '@core/models/formatBuild.ts';
 import { channelDisplayLabel } from '@core/domain/channelNaming.ts';
 import { isEntityExcluded, overrideByEntityId } from '@core/domain/formatBuildOverrides.ts';
 import {
@@ -23,6 +23,7 @@ import ExportNameModeSelect from '../../components/builds/ExportNameModeSelect.t
 import UseLibraryAbbreviationsSwitch from '../../components/builds/UseLibraryAbbreviationsSwitch.tsx';
 import WirePreviewDataTable from '../../components/builds/wirePreview/WirePreviewDataTable.tsx';
 import WirePreviewOverrideModal from '../../components/builds/wirePreview/WirePreviewOverrideModal.tsx';
+import { useSyncedWirePreviewRow } from '../../components/builds/wirePreview/useSyncedWirePreviewRow.ts';
 import ChirpChannelScanSection from '../../components/builds/wirePreview/overrideModalSections/ChirpChannelScanSection.tsx';
 import { FormPage } from '../../components/ui/index.ts';
 import { ICON_STROKE } from '../../lib/iconSizes.ts';
@@ -61,8 +62,14 @@ function toWirePreviewRow(
 }
 
 export default function BuildFlatMemoryChannelsPage() {
-  const { build } = useBuildLayout();
-  const buildRef = useRef(build);
+  const { build: contextBuild } = useBuildLayout();
+  const buildRef = useRef(contextBuild);
+  const [savedBuild, setSavedBuild] = useState<FormatBuild | null>(null);
+  const build = useMemo(() => {
+    if (!savedBuild) return contextBuild;
+    if (contextBuild.revision === savedBuild.revision) return contextBuild;
+    return savedBuild;
+  }, [contextBuild, savedBuild]);
   const { activeProjectId } = useProjects();
   const { putBuild } = useFormatBuilds();
   const [channels, setChannels] = useState<Channel[]>([]);
@@ -70,7 +77,7 @@ export default function BuildFlatMemoryChannelsPage() {
   const [saving, setSaving] = useState(false);
   const [settingsError, setSettingsError] = useState<string | null>(null);
   const [savingSettings, setSavingSettings] = useState(false);
-  const [selectedRow, setSelectedRow] = useState<WirePreviewRow | null>(null);
+  const [selectedRowKey, setSelectedRowKey] = useState<string | null>(null);
   const [search, setSearch] = useState('');
 
   useEffect(() => {
@@ -128,6 +135,8 @@ export default function BuildFlatMemoryChannelsPage() {
     [memoryChannelIds, channelById, build, exportOptions],
   );
 
+  const activeRow = useSyncedWirePreviewRow(selectedRowKey, previewRows);
+
   const locationByKey = useMemo(
     () => new Map(memoryChannelIds.map((id, index) => [id, index + 1])),
     [memoryChannelIds],
@@ -140,7 +149,11 @@ export default function BuildFlatMemoryChannelsPage() {
       setError(null);
       const result = await putBuild(next, current.revision);
       setSaving(false);
-      if (!result.ok) {
+      if (result.ok) {
+        const saved = { ...next, revision: result.revision };
+        buildRef.current = saved;
+        setSavedBuild(saved);
+      } else {
         setError(
           result.reason === 'revision_conflict'
             ? 'Build changed elsewhere — reload and try again.'
@@ -235,7 +248,7 @@ export default function BuildFlatMemoryChannelsPage() {
     );
   }
 
-  const selectedChannel = selectedRow ? channelById.get(selectedRow.libraryEntityId) : undefined;
+  const selectedChannel = activeRow ? channelById.get(activeRow.libraryEntityId) : undefined;
 
   return (
     <FormPage
@@ -305,7 +318,7 @@ export default function BuildFlatMemoryChannelsPage() {
           rows={previewRows}
           search={search}
           onSearchChange={setSearch}
-          onRowActivate={setSelectedRow}
+          onRowActivate={(row) => setSelectedRowKey(row.key)}
           locationByKey={locationByKey}
           reorder={{
             orderedKeys: memoryChannelIds,
@@ -341,9 +354,9 @@ export default function BuildFlatMemoryChannelsPage() {
         ) : null}
       </Stack>
       <WirePreviewOverrideModal
-        opened={selectedRow !== null}
-        onClose={() => setSelectedRow(null)}
-        row={selectedRow}
+        opened={selectedRowKey !== null}
+        onClose={() => setSelectedRowKey(null)}
+        row={activeRow}
         build={build}
         entityKind="channel"
         nameLimit={nameLimit}

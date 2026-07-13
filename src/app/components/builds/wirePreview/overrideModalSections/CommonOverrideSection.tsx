@@ -60,7 +60,7 @@ export default function CommonOverrideSection({
           Wire name
         </Text>
         <WireNameOverrideInput
-          key={`${row.key}:${row.effectiveWireName}`}
+          key={`${row.key}:${row.hasWireNameOverride}:${row.effectiveWireName}`}
           row={row}
           nameLimit={nameLimit}
           excluded={!effectivelyIncluded}

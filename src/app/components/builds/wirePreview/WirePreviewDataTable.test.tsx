@@ -55,8 +55,28 @@ describe('WirePreviewDataTable', () => {
       </MemoryRouter>,
     );
 
-    const nameCells = screen.getAllByText('GB3DA Demo');
-    fireEvent.click(nameCells[0]!);
+    fireEvent.click(screen.getAllByText('GB3DA Demo')[0]!);
     expect(onRowActivate).toHaveBeenCalledWith(rows[0]);
+  });
+
+  it('shows expansion context in the library name column', () => {
+    const expandedRows: WirePreviewRow[] = [
+      {
+        ...rows[0]!,
+        key: 'ch-1:tg-9',
+        displayDetails: [{ label: 'Talk group', value: 'Local 9 (9) · Slot 1' }],
+      },
+    ];
+    render(
+      <MemoryRouter>
+        <MantineProvider>
+          <WirePreviewDataTable rows={expandedRows} onRowActivate={vi.fn()} />
+        </MantineProvider>
+      </MemoryRouter>,
+    );
+
+    expect(screen.getAllByText('GB3DA Demo').length).toBeGreaterThan(0);
+    expect(screen.getByText(/Talk group: Local 9 \(9\) · Slot 1/)).toBeInTheDocument();
+    expect(screen.queryByText(/Channel:/)).not.toBeInTheDocument();
   });
 });

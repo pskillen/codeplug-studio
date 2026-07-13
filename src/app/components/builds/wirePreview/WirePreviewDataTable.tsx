@@ -3,6 +3,7 @@ import { ActionIcon, Badge, Group, Stack, Text } from '@mantine/core';
 import { IconArrowDown, IconArrowUp } from '@tabler/icons-react';
 import type { WirePreviewRow } from '@core/services/previewWireRows.ts';
 import DataTable, { type DataTableSortState } from '../../ui/DataTable.tsx';
+import WirePreviewListNameCell from './WirePreviewListNameCell.tsx';
 import WirePreviewDisplayCell from './WirePreviewDisplayCell.tsx';
 import { rowEffectivelyIncluded } from './wirePreviewRowUtils.ts';
 import { ICON_SIZE_ACTION, ICON_STROKE } from '../../../lib/iconSizes.ts';
@@ -74,6 +75,7 @@ export default function WirePreviewDataTable({
         getPath: () => '#',
         sortable: true,
         sortValue: (row) => row.displayLabel.toLowerCase(),
+        render: (row) => <WirePreviewListNameCell row={row} />,
       }}
       columns={[
         ...(locationByKey

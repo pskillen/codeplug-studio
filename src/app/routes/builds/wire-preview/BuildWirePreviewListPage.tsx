@@ -12,6 +12,7 @@ import ExportNameModeSelect from '../../../components/builds/ExportNameModeSelec
 import UseLibraryAbbreviationsSwitch from '../../../components/builds/UseLibraryAbbreviationsSwitch.tsx';
 import WirePreviewDataTable from '../../../components/builds/wirePreview/WirePreviewDataTable.tsx';
 import WirePreviewOverrideModal from '../../../components/builds/wirePreview/WirePreviewOverrideModal.tsx';
+import { useSyncedWirePreviewRow } from '../../../components/builds/wirePreview/useSyncedWirePreviewRow.ts';
 import { FormPage } from '../../../components/ui/index.ts';
 import { resolvedBuildExportSettings } from '../../../lib/buildExportSettingsUi.ts';
 import { useBuildWirePreview } from '../../../hooks/useBuildWirePreview.ts';
@@ -49,6 +50,7 @@ function BuildWirePreviewListContent({
   const {
     build,
     rows,
+    allRows,
     hiddenRowCount,
     hideNotIncludedInExport,
     setHideNotIncludedInExport,
@@ -60,7 +62,8 @@ function BuildWirePreviewListContent({
     setRowWireName,
     persistBuild,
   } = useBuildWirePreview(entityKind, anytoneBank);
-  const [selectedRow, setSelectedRow] = useState<WirePreviewRow | null>(null);
+  const [selectedRowKey, setSelectedRowKey] = useState<string | null>(null);
+  const activeRow = useSyncedWirePreviewRow(selectedRowKey, allRows);
   const [search, setSearch] = useState('');
   const exportSettings = resolvedBuildExportSettings(build);
 
@@ -132,20 +135,20 @@ function BuildWirePreviewListContent({
           rows={rows}
           search={search}
           onSearchChange={setSearch}
-          onRowActivate={setSelectedRow}
+          onRowActivate={(row) => setSelectedRowKey(row.key)}
         />
       </Stack>
       <WirePreviewOverrideModal
-        opened={selectedRow !== null}
-        onClose={() => setSelectedRow(null)}
-        row={selectedRow}
+        opened={selectedRowKey !== null}
+        onClose={() => setSelectedRowKey(null)}
+        row={activeRow}
         build={build}
         entityKind={entityKind}
         nameLimit={nameLimit}
         onExcludedChange={setRowExcluded}
         onForceIncludeChange={entityKind === 'zone' ? setRowForceIncluded : undefined}
         onWireNameChange={setRowWireName}
-        extraSections={selectedRow && modalExtraSections ? modalExtraSections(selectedRow) : null}
+        extraSections={activeRow && modalExtraSections ? modalExtraSections(activeRow) : null}
       />
     </>
   );

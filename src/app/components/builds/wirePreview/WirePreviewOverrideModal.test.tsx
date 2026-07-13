@@ -46,4 +46,42 @@ describe('WirePreviewOverrideModal', () => {
     fireEvent.click(screen.getByLabelText('Skip Local 9 from export'));
     expect(onExcludedChange).toHaveBeenCalledWith(row, true);
   });
+
+  it('reflects updated row props after persist', () => {
+    const { rerender } = render(
+      <MemoryRouter>
+        <MantineProvider>
+          <WirePreviewOverrideModal
+            opened
+            onClose={vi.fn()}
+            row={row}
+            build={build}
+            entityKind="talkGroup"
+            onExcludedChange={vi.fn()}
+            onWireNameChange={vi.fn()}
+          />
+        </MantineProvider>
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByLabelText('Skip Local 9 from export')).not.toBeChecked();
+
+    rerender(
+      <MemoryRouter>
+        <MantineProvider>
+          <WirePreviewOverrideModal
+            opened
+            onClose={vi.fn()}
+            row={{ ...row, excluded: true }}
+            build={build}
+            entityKind="talkGroup"
+            onExcludedChange={vi.fn()}
+            onWireNameChange={vi.fn()}
+          />
+        </MantineProvider>
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByLabelText('Skip Local 9 from export')).toBeChecked();
+  });
 });

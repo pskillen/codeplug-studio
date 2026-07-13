@@ -43,6 +43,7 @@ export interface DataTableLinkedColumn<T> {
   getPath: (row: T) => string;
   sortable?: boolean;
   sortValue?: (row: T) => string | number | null;
+  render?: (row: T) => ReactNode;
 }
 
 export type DataTableVariant = 'list' | 'embedded';
@@ -91,6 +92,9 @@ function LinkedCell<T>({
   row: T;
   asLink: boolean;
 }) {
+  if (column.render) {
+    return <>{column.render(row)}</>;
+  }
   const name = column.getName(row);
   if (!asLink) {
     return <Text fw={500}>{name}</Text>;
