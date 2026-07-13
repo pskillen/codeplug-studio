@@ -5,15 +5,15 @@ Checklist for onboarding a new public repeater directory into Codeplug Studio. F
 ## HTTP client
 
 - [ ] Add client under [`src/integrations/repeaters/`](../../../src/integrations/repeaters/) (or a subfolder for wire-specific parsing).
-- [ ] Route every lookup `fetch` through [`fetchDirectoryText`](../../../src/integrations/repeaters/directoryFetch.ts) with a dedicated cache prefix from [`sessionCache.ts`](../../../src/integrations/repeaters/sessionCache.ts).
+- [ ] Route every lookup `fetch` through [`fetchCachedText`](../../../src/integrations/http/cachedFetch.ts) (repeater clients use [`fetchDirectoryText`](../../../src/integrations/repeaters/directoryFetch.ts)) with a dedicated cache prefix from [`sessionCache.ts`](../../../src/integrations/http/sessionCache.ts).
 - [ ] Add tier-3 wire reference under [`docs/reference/<source>/`](../../reference/) — column/field tables stay in format-specific docs only.
 - [ ] Surface failures as [`RepeaterDirectoryError`](../../../src/integrations/repeaters/types.ts); **never** call `fetch` from `src/core/` or `src/app/`.
 
 ## Session cache
 
-- [ ] Assign a provider id in [`rateLimit.ts`](../../../src/integrations/repeaters/rateLimit.ts) if the API can return **429**.
+- [ ] Assign a provider id in [`rateLimit.ts`](../../../src/integrations/http/rateLimit.ts) if the API can return **429**.
 - [ ] Cache key = `{prefix}{fullUrl}` with optional suffix (e.g. RepeaterBook token prefix for shared-machine isolation).
-- [ ] TTL ≤ **5 minutes** (`DIRECTORY_CACHE_TTL_MS`).
+- [ ] TTL ≤ **5 minutes** (`INTEGRATION_CACHE_TTL_MS`).
 - [ ] Swallow `sessionStorage` quota errors — degrade to uncached fetch.
 - [ ] On **429**, shared fetch layer may serve **stale** cache (even past TTL) when a prior response exists; otherwise record cooldown and throw (no automatic retry).
 
@@ -39,7 +39,7 @@ Checklist for onboarding a new public repeater directory into Codeplug Studio. F
 
 - [ ] Add hub row + manual verify steps in [repeater-directories README](README.md).
 - [ ] Add row to [docs/features/README.md](../README.md) if this checklist or hub section is new.
-- [ ] Note Mapbox geocode caching is **out of scope** — geocode tokens use a separate integration.
+- [ ] Note Mapbox geocode caching is **out of scope** — per-user token; Photon/Komoot uses the shared session cache
 
 ## Related
 

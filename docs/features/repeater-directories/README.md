@@ -140,7 +140,7 @@ Example: `modeCodes: ["A", "D", "M:1", "F", "P", "N"]` → six profiles on impor
 - HTTP clients in `src/integrations/repeaters/`; **`core` never makes network calls**.
 - Mapping produces vendor-neutral library fields only — no CPS column names in `app/` or `core/`.
 - ukrepeater.net and BrandMeister allow browser CORS; IRTS and RepeaterBook use same-origin Pages Function proxies with a shared origin allowlist (deploy hostnames + `http://localhost:5173` — see [build docs](../../build/README.md#pages-functions-cors-bridges)). RepeaterBook forwards each user's `rbuapp_` token and sets the approved User-Agent server-side. Failures surface as `RepeaterDirectoryError` in the UI.
-- **Session cache:** identical lookup URLs within a tab reuse cached responses for up to five minutes (`fetchDirectoryText` + `sessionStorage`). Reduces duplicate traffic across search, verify, and BrandMeister TG import.
+- **Session cache:** identical lookup URLs within a tab reuse cached responses for up to five minutes (`fetchDirectoryText` / `fetchCachedText` + `sessionStorage`). Applies to repeater directories and Photon geocode. Reduces duplicate traffic across search, verify, town-based repeater queries, and Maidenhead reference geocode.
 - **Rate limits:** after **429** (or RepeaterBook `rate_limited`), further requests to that provider are blocked for a cooldown window (default 60 s; `Retry-After` when present). No automatic retry — operator must wait and search again. Stale cache may be served on 429 when a prior response exists.
 
 ## Known gaps

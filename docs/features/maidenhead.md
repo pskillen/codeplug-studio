@@ -38,7 +38,7 @@ The [map](map/README.md) plots channels that have a stored location. Operator **
 | `src/core/domain/maidenheadGrid.ts`                      | Grid line/label geometry for map overlay                           |
 | `src/app/routes/reference/MaidenheadReferencePage.tsx`   | Full converter UI                                                  |
 | `src/app/components/MapLocationPicker/`                  | Click/drag map picker                                              |
-| `src/integrations/geocode/`                              | Photon + Mapbox geocode client                                     |
+| `src/integrations/geocode/`                              | Photon + Mapbox geocode client (Photon uses shared session cache)  |
 | `src/integrations/preferences/`                          | Mapbox token in `localStorage`                                     |
 | `src/app/hooks/useMapSettings.ts`                        | Settings ↔ preferences bridge                                      |
 | `src/app/lib/channelLookup.ts`                           | Channel autocomplete helpers                                       |
@@ -57,7 +57,7 @@ The [map](map/README.md) plots channels that have a stored location. Operator **
 - Invalid characters or length → validation message on the converter; `locatorToCoords` returns `null`.
 - Southern/western hemispheres: negative lat/lon handled per standard Maidenhead rules.
 - Precision: 4 = field; 6 = square (~5 km); 8 = subsquare; 10 = cell.
-- Geocode: Photon needs no token; Mapbox requires token in Settings → Map.
+- Geocode: Photon needs no token; repeated town/postcode lookups within a tab reuse a **sessionStorage** cache (≤5 min) and honour Photon **429** cooldown. Mapbox requires token in Settings → Map.
 - Channel picker disabled without an active project; uses UUID `id` refs, not wire names.
 
 ## Manual verify
