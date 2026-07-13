@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { AprsChannelSlot, AprsConfiguration, ChannelAprsBinding } from '@core/models/aprs.ts';
 import type { AprsPttMode, AprsReportType } from '@core/models/libraryTypes.ts';
 import type { Channel } from '@core/models/library.ts';
@@ -11,9 +11,11 @@ import {
   APRS_SLOT_NONE_VALUE,
   aprsSlotSelectOptions,
   channelAprsBindingFromChannel,
+  channelAssignmentsDirty,
   channelHasDmrProfile,
   formatAprsAssignmentSummary,
   normalizeChannelAprsBindingForSave,
+  aprsBindingDraftKey,
 } from '../../lib/aprsBindingHelpers.ts';
 import AprsChannelBulkAssignModal, {
   applyAprsChannelBulkPatch,
@@ -49,6 +51,8 @@ export interface AprsChannelAssignmentPanelProps {
   aprsConfiguration: AprsConfiguration | null;
   channelSlots: AprsChannelSlot[];
   onSaved?: () => Promise<void>;
+  onDirtyChange?: (dirty: boolean) => void;
+  permitNavigationOnce?: () => void;
 }
 
 export default function AprsChannelAssignmentPanel({
@@ -56,6 +60,8 @@ export default function AprsChannelAssignmentPanel({
   aprsConfiguration,
   channelSlots,
   onSaved,
+  onDirtyChange,
+  permitNavigationOnce,
 }: AprsChannelAssignmentPanelProps) {
   const dmrChannels = useMemo(() => channels.filter(channelHasDmrProfile), [channels]);
   const [draftById, setDraftById] = useState<BindingDraftMap>(() => initialDraftMap(channels));
@@ -68,6 +74,27 @@ export default function AprsChannelAssignmentPanel({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
+
+  const channelsRevisionKey = useMemo(
+    () =>
+      channels
+        .map((c) => `${c.id}:${c.revision}:${c.aprs ? aprsBindingDraftKey(c.aprs) : ''}`)
+        .join('|'),
+    [channels],
+  );
+
+  useEffect(() => {
+    setDraftById(initialDraftMap(channels));
+  }, [channelsRevisionKey]);
+
+  const isDirty = useMemo(
+    () => channelAssignmentsDirty(channels, draftById, aprsConfiguration),
+    [channels, draftById, aprsConfiguration],
+  );
+
+  useEffect(() => {
+    onDirtyChange?.(isDirty);
+  }, [isDirty, onDirtyChange]);
 
   const slotOptions = useMemo(
     () => aprsSlotSelectOptions(channelSlots, channels),
@@ -288,6 +315,7 @@ export default function AprsChannelAssignmentPanel({
         updated++;
       }
       setMessage(updated > 0 ? `Saved ${updated} channel assignment(s).` : 'No changes to save.');
+      permitNavigationOnce?.();
       await onSaved?.();
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));

@@ -57,3 +57,20 @@ export function aprsBindingDraftKey(binding: ChannelAprsBinding | undefined): st
     binding.reportSlotIndex ?? '',
   ].join(':');
 }
+
+export function channelAssignmentsDirty(
+  channels: Channel[],
+  draftById: Record<string, ChannelAprsBinding | undefined>,
+  aprsConfiguration: AprsConfiguration | null,
+): boolean {
+  for (const [channelId, draft] of Object.entries(draftById)) {
+    const channel = channels.find((c) => c.id === channelId);
+    if (!channel) continue;
+
+    const normalizedAprs = normalizeChannelAprsBindingForSave(draft, aprsConfiguration);
+    const sameAsLoaded =
+      JSON.stringify(normalizedAprs ?? null) === JSON.stringify(channel.aprs ?? null);
+    if (!sameAsLoaded) return true;
+  }
+  return false;
+}

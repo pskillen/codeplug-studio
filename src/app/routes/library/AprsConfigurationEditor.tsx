@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { AprsConfiguration } from '@core/models/aprs.ts';
 import type { AprsPositionSource } from '@core/models/libraryTypes.ts';
 import type { Library } from '@core/models/library.ts';
@@ -11,7 +11,8 @@ import AprsChannelSlotsEditor from '../../components/library/AprsChannelSlotsEdi
 import GeoPointEditor from '../../components/library/GeoPointEditor.tsx';
 import { FieldCard } from '../../components/fields/Fields.tsx';
 import { UnsavedChangesModal } from '../../components/ui/index.ts';
-import { useEntityEditorUnsavedGuard } from '../../hooks/useEntityFormDirty.ts';
+import { useEntityFormDirty, useFormBaseline } from '../../hooks/useEntityFormDirty.ts';
+import { useUnsavedNavigationGuard } from '../../hooks/useUnsavedNavigationGuard.ts';
 import { persistence } from '../../state/persistence.ts';
 import { useEntitySave } from './useEntitySave.ts';
 import EditorActions from './EditorActions.tsx';
@@ -36,12 +37,16 @@ export default function AprsConfigurationEditor({
   library,
   settingsPage = false,
   mapActive = true,
+  onDirtyChange,
+  permitNavigationOnce: permitNavigationOnceFromParent,
 }: {
   projectId: string;
   entity: AprsConfiguration | null;
   library: Library;
   settingsPage?: boolean;
   mapActive?: boolean;
+  onDirtyChange?: (dirty: boolean) => void;
+  permitNavigationOnce?: () => void;
 }) {
   const base = entity ?? newAprsConfiguration(projectId, '');
   const [name, setName] = useState(base.name);
@@ -82,7 +87,26 @@ export default function AprsConfigurationEditor({
     });
   }
 
-  const { permitNavigationOnce, modalOpen, stay, leave } = useEntityEditorUnsavedGuard(buildRow);
+  const baseline = useFormBaseline(buildRow);
+  const {
+    isDirty,
+    permitNavigationRef,
+    permitNavigationOnce: permitNavigationOnceLocal,
+  } = useEntityFormDirty({ baseline, buildCurrent: buildRow });
+  const { modalOpen, stay, leave } = useUnsavedNavigationGuard(
+    !settingsPage && isDirty,
+    permitNavigationRef,
+  );
+
+  useEffect(() => {
+    if (settingsPage) {
+      onDirtyChange?.(isDirty);
+    }
+  }, [settingsPage, isDirty, onDirtyChange]);
+
+  const permitNavigationOnce = settingsPage
+    ? permitNavigationOnceFromParent
+    : permitNavigationOnceLocal;
 
   function handleSave() {
     const row = buildRow();
@@ -174,7 +198,9 @@ export default function AprsConfigurationEditor({
           onDeleted={() => navigate('/library/aprs-configuration')}
         />
       ) : null}
-      <UnsavedChangesModal opened={modalOpen} onStay={stay} onLeave={leave} />
+      {!settingsPage ? (
+        <UnsavedChangesModal opened={modalOpen} onStay={stay} onLeave={leave} />
+      ) : null}
     </Stack>
   );
 }

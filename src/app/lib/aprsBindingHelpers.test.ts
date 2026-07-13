@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { AprsChannelSlot } from '@core/models/aprs.ts';
 import type { Channel } from '@core/models/library.ts';
-import { formatAprsAssignmentSummary } from './aprsBindingHelpers.ts';
+import { formatAprsAssignmentSummary, channelAssignmentsDirty } from './aprsBindingHelpers.ts';
 
 const channelA: Channel = {
   id: 'ch-a',
@@ -105,5 +105,83 @@ describe('formatAprsAssignmentSummary', () => {
         [channelA],
       ),
     ).toBe('2 · Current channel');
+  });
+});
+
+describe('channelAssignmentsDirty', () => {
+  it('returns false when drafts match persisted bindings', () => {
+    const channels: Channel[] = [
+      {
+        ...channelA,
+        modeProfiles: [
+          {
+            mode: 'dmr',
+            colourCode: 1,
+            timeslot: 1,
+            dmrId: 1,
+            contactRef: null,
+            rxGroupListId: null,
+          },
+        ],
+        aprs: {
+          receiveEnabled: true,
+          reportType: 'digital',
+          digitalPttMode: 'on',
+          reportSlotIndex: 1,
+        },
+      },
+    ];
+    expect(
+      channelAssignmentsDirty(
+        channels,
+        {
+          [channelA.id]: {
+            receiveEnabled: true,
+            reportType: 'digital',
+            digitalPttMode: 'on',
+            reportSlotIndex: 1,
+          },
+        },
+        null,
+      ),
+    ).toBe(false);
+  });
+
+  it('returns true when a draft differs from persisted binding', () => {
+    const channels: Channel[] = [
+      {
+        ...channelA,
+        modeProfiles: [
+          {
+            mode: 'dmr',
+            colourCode: 1,
+            timeslot: 1,
+            dmrId: 1,
+            contactRef: null,
+            rxGroupListId: null,
+          },
+        ],
+        aprs: {
+          receiveEnabled: true,
+          reportType: 'digital',
+          digitalPttMode: 'on',
+          reportSlotIndex: 1,
+        },
+      },
+    ];
+    expect(
+      channelAssignmentsDirty(
+        channels,
+        {
+          [channelA.id]: {
+            receiveEnabled: true,
+            reportType: 'digital',
+            digitalPttMode: 'on',
+            reportSlotIndex: 2,
+          },
+        },
+        null,
+      ),
+    ).toBe(true);
   });
 });
