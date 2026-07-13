@@ -71,6 +71,23 @@ describe('normalizeAprsConfiguration', () => {
     expect(config.channelSlots[0]?.targetDmrId).toBe(234999);
   });
 
+  it('defaults position source to all GNSS when unset', () => {
+    const config = normalizeAprsConfiguration({
+      id: 'cfg-1',
+      projectId: 'p1',
+      revision: 1,
+      updatedAt: '2026-01-01T00:00:00.000Z',
+      name: 'Test',
+      comment: '',
+      manualTxIntervalSec: null,
+      autoTxIntervalSec: null,
+      positionSource: null as never,
+      fixedLocation: null,
+      channelSlots: [],
+    });
+    expect(config.positionSource).toBe('allGnss');
+  });
+
   it('accepts extended position sources', () => {
     for (const positionSource of ['beidou', 'galileo', 'allGnss'] as const) {
       const config = normalizeAprsConfiguration({

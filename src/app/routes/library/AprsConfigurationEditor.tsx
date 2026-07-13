@@ -134,7 +134,7 @@ export default function AprsConfigurationEditor({
           label="Position source"
           data={POSITION_SOURCE_OPTIONS}
           value={positionSource}
-          onChange={(value) => setPositionSource((value as AprsPositionSource | null) ?? 'gps')}
+          onChange={(value) => setPositionSource((value as AprsPositionSource | null) ?? 'allGnss')}
         />
         {positionSource === 'fixed' ? (
           <GeoPointEditor

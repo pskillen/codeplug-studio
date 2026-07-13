@@ -66,8 +66,8 @@ function normalizeSlotCallType(value: AprsSlotCallType | null | undefined): Aprs
 }
 
 function normalizePositionSource(value: AprsPositionSource | null | undefined): AprsPositionSource {
-  if (value == null) return 'gps';
-  return POSITION_SOURCES.has(value) ? value : 'gps';
+  if (value == null) return 'allGnss';
+  return POSITION_SOURCES.has(value) ? value : 'allGnss';
 }
 
 function normalizeTimeslot(value: DMRTimeSlot | null | undefined): DMRTimeSlot | null {

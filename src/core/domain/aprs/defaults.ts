@@ -21,7 +21,7 @@ export function defaultAprsConfigurationFields(): Pick<
     comment: '',
     manualTxIntervalSec: null,
     autoTxIntervalSec: null,
-    positionSource: 'gps' satisfies AprsPositionSource,
+    positionSource: 'allGnss' satisfies AprsPositionSource,
     fixedLocation: null,
     channelSlots: [],
   };
