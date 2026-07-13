@@ -55,7 +55,17 @@ export interface AprsChannelAssignmentPanelProps {
   permitNavigationOnce?: () => void;
 }
 
-export default function AprsChannelAssignmentPanel({
+function channelsRevisionKey(channels: Channel[]): string {
+  return channels
+    .map((c) => `${c.id}:${c.revision}:${c.aprs ? aprsBindingDraftKey(c.aprs) : ''}`)
+    .join('|');
+}
+
+export default function AprsChannelAssignmentPanel(props: AprsChannelAssignmentPanelProps) {
+  return <AprsChannelAssignmentPanelInner key={channelsRevisionKey(props.channels)} {...props} />;
+}
+
+function AprsChannelAssignmentPanelInner({
   channels,
   aprsConfiguration,
   channelSlots,
@@ -74,18 +84,6 @@ export default function AprsChannelAssignmentPanel({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
-
-  const channelsRevisionKey = useMemo(
-    () =>
-      channels
-        .map((c) => `${c.id}:${c.revision}:${c.aprs ? aprsBindingDraftKey(c.aprs) : ''}`)
-        .join('|'),
-    [channels],
-  );
-
-  useEffect(() => {
-    setDraftById(initialDraftMap(channels));
-  }, [channelsRevisionKey]);
 
   const isDirty = useMemo(
     () => channelAssignmentsDirty(channels, draftById, aprsConfiguration),
