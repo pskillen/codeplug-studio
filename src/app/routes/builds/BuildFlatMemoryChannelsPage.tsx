@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ActionIcon, Anchor, Button, Group, Stack, Table, Text } from '@mantine/core';
-import { IconArrowDown, IconArrowUp, IconPlus, IconTrash } from '@tabler/icons-react';
+import { Button, Group, Stack, Text } from '@mantine/core';
+import { IconPlus } from '@tabler/icons-react';
 import { Link } from 'react-router-dom';
 import type { BuildExportSettings } from '@core/models/formatBuild.ts';
 import { channelDisplayLabel } from '@core/domain/channelNaming.ts';
@@ -14,18 +14,18 @@ import { getFormatProfiles } from '@core/import-export/formatProfiles.ts';
 import { getFormatExportDefaults } from '@core/import-export/registry.ts';
 import type { FormatId } from '@core/import-export/types.ts';
 import { sanitiseAsciiWireString } from '@core/import-export/sanitiseAsciiWireString.ts';
-import type { Channel, ScanInclusion } from '@core/models/library.ts';
+import type { Channel } from '@core/models/library.ts';
+import type { WirePreviewRow } from '@core/services/previewWireRows.ts';
 import { mergeExportOptions } from '@core/services/exportBuild.ts';
 import { previewGeneratedChannelWireName } from '@core/services/previewChannelWireName.ts';
 import DefaultScanInclusionSegment from '../../components/builds/DefaultScanInclusionSegment.tsx';
 import ExportNameModeSelect from '../../components/builds/ExportNameModeSelect.tsx';
 import UseLibraryAbbreviationsSwitch from '../../components/builds/UseLibraryAbbreviationsSwitch.tsx';
-import { WireNameOverrideInput } from '../../components/builds/WirePreviewTable.tsx';
-import ScanInclusionSegment from '../../components/channels/ScanInclusionSegment.tsx';
-import UnsavedChangesModal from '../../components/ui/UnsavedChangesModal.tsx';
+import WirePreviewDataTable from '../../components/builds/wirePreview/WirePreviewDataTable.tsx';
+import WirePreviewOverrideModal from '../../components/builds/wirePreview/WirePreviewOverrideModal.tsx';
+import ChirpChannelScanSection from '../../components/builds/wirePreview/overrideModalSections/ChirpChannelScanSection.tsx';
 import { FormPage } from '../../components/ui/index.ts';
-import { useUnsavedNavigationGuard } from '../../hooks/useUnsavedNavigationGuard.ts';
-import { ICON_SIZE_ACTION, ICON_STROKE } from '../../lib/iconSizes.ts';
+import { ICON_STROKE } from '../../lib/iconSizes.ts';
 import { resolvedBuildExportSettings } from '../../lib/buildExportSettingsUi.ts';
 import { useBuildLayout } from './BuildLayoutContext.tsx';
 import { useProjects } from '../../state/useProjects.ts';
@@ -39,6 +39,27 @@ function analogueChannels(channels: Channel[]): Channel[] {
   return channels.filter((channel) => isChirpFlatMemoryChannel(channel));
 }
 
+function toWirePreviewRow(
+  channel: Channel,
+  build: ReturnType<typeof useBuildLayout>['build'],
+  exportOptions: ReturnType<typeof mergeExportOptions>,
+): WirePreviewRow {
+  const channelOverride = overrideByEntityId(build.channelOverrides)
+    .get(channel.id)
+    ?.wireName?.trim();
+  const generatedWireName = previewGeneratedChannelWireName(channel, build, exportOptions);
+  return {
+    key: channel.id,
+    libraryEntityId: channel.id,
+    entityKind: 'channel',
+    displayLabel: channelDisplayLabel(channel),
+    generatedWireName: sanitiseAsciiWireString(generatedWireName),
+    effectiveWireName: sanitiseAsciiWireString(channelOverride ?? generatedWireName),
+    hasWireNameOverride: Boolean(channelOverride),
+    excluded: isEntityExcluded(build.channelOverrides, channel.id),
+  };
+}
+
 export default function BuildFlatMemoryChannelsPage() {
   const { build } = useBuildLayout();
   const buildRef = useRef(build);
@@ -49,9 +70,8 @@ export default function BuildFlatMemoryChannelsPage() {
   const [saving, setSaving] = useState(false);
   const [settingsError, setSettingsError] = useState<string | null>(null);
   const [savingSettings, setSavingSettings] = useState(false);
-  const [dirtyWireNameKeys, setDirtyWireNameKeys] = useState<Set<string>>(() => new Set());
-  const hasUnsavedWireNames = dirtyWireNameKeys.size > 0;
-  const { modalOpen, stay, leave } = useUnsavedNavigationGuard(hasUnsavedWireNames);
+  const [selectedRow, setSelectedRow] = useState<WirePreviewRow | null>(null);
+  const [search, setSearch] = useState('');
 
   useEffect(() => {
     buildRef.current = build;
@@ -99,6 +119,20 @@ export default function BuildFlatMemoryChannelsPage() {
     [build, librarySlice],
   );
 
+  const previewRows = useMemo(
+    () =>
+      memoryChannelIds
+        .map((id) => channelById.get(id))
+        .filter((channel): channel is Channel => channel != null)
+        .map((channel) => toWirePreviewRow(channel, build, exportOptions)),
+    [memoryChannelIds, channelById, build, exportOptions],
+  );
+
+  const locationByKey = useMemo(
+    () => new Map(memoryChannelIds.map((id, index) => [id, index + 1])),
+    [memoryChannelIds],
+  );
+
   const persistBuild = useCallback(
     async (next: typeof build) => {
       const current = buildRef.current;
@@ -140,7 +174,7 @@ export default function BuildFlatMemoryChannelsPage() {
     }
   }
 
-  async function updateChannelScan(channel: Channel, scanInclusion: ScanInclusion) {
+  async function updateChannelScan(channel: Channel, scanInclusion: Channel['scanInclusion']) {
     if (!activeProjectId || channel.scanInclusion === scanInclusion) return;
     setSaving(true);
     setError(null);
@@ -161,51 +195,23 @@ export default function BuildFlatMemoryChannelsPage() {
     );
   }
 
-  function wirePreviewRow(channel: Channel) {
-    const channelOverride = overrideByEntityId(build.channelOverrides)
-      .get(channel.id)
-      ?.wireName?.trim();
-    const generatedWireName = previewGeneratedChannelWireName(channel, build, exportOptions);
-    return {
-      key: channel.id,
-      libraryEntityId: channel.id,
-      entityKind: 'channel' as const,
-      displayLabel: channelDisplayLabel(channel),
-      generatedWireName: sanitiseAsciiWireString(generatedWireName),
-      effectiveWireName: sanitiseAsciiWireString(channelOverride ?? generatedWireName),
-      hasWireNameOverride: Boolean(channelOverride),
-      excluded: false,
-    };
+  function setRowWireName(row: WirePreviewRow, wireName: string) {
+    const current = buildRef.current;
+    void persistBuild(
+      buildService.withWireNameOverride(current, 'channelOverrides', row.libraryEntityId, wireName),
+    );
   }
 
-  function setRowWireName(channel: Channel, wireName: string) {
-    void (async () => {
-      const current = buildRef.current;
-      setSaving(true);
-      setError(null);
-      const next = buildService.withWireNameOverride(
+  function setRowExcluded(row: WirePreviewRow, excluded: boolean) {
+    const current = buildRef.current;
+    void persistBuild(
+      buildService.withEntityExcluded(
         current,
         'channelOverrides',
-        channel.id,
-        wireName,
-      );
-      const result = await putBuild(next, current.revision);
-      setSaving(false);
-      if (result.ok) {
-        setDirtyWireNameKeys((prev) => {
-          if (!prev.has(channel.id)) return prev;
-          const nextKeys = new Set(prev);
-          nextKeys.delete(channel.id);
-          return nextKeys;
-        });
-      } else {
-        setError(
-          result.reason === 'revision_conflict'
-            ? 'Build changed elsewhere — reload and try again.'
-            : 'Could not save wire name override.',
-        );
-      }
-    })();
+        row.libraryEntityId,
+        excluded,
+      ),
+    );
   }
 
   function setChannelOrder(orderedChannelIds: string[]) {
@@ -217,21 +223,14 @@ export default function BuildFlatMemoryChannelsPage() {
     void persistBuild({ ...current, channelOverrides: nextOverrides });
   }
 
-  function moveChannel(channelId: string, direction: 'up' | 'down') {
+  function moveChannel(rowKey: string, direction: 'up' | 'down') {
     const ids = [...memoryChannelIds];
-    const index = ids.indexOf(channelId);
+    const index = ids.indexOf(rowKey);
     if (index < 0) return;
     const target = direction === 'up' ? index - 1 : index + 1;
     if (target < 0 || target >= ids.length) return;
     [ids[index], ids[target]] = [ids[target]!, ids[index]!];
     setChannelOrder(ids);
-  }
-
-  function excludeChannel(channelId: string) {
-    const current = buildRef.current;
-    void persistBuild(
-      buildService.withEntityExcluded(current, 'channelOverrides', channelId, true),
-    );
   }
 
   function includeChannel(channelId: string) {
@@ -240,6 +239,8 @@ export default function BuildFlatMemoryChannelsPage() {
       buildService.withEntityExcluded(current, 'channelOverrides', channelId, false),
     );
   }
+
+  const selectedChannel = selectedRow ? channelById.get(selectedRow.libraryEntityId) : undefined;
 
   return (
     <FormPage
@@ -255,10 +256,20 @@ export default function BuildFlatMemoryChannelsPage() {
     >
       <Stack gap="md">
         <Text size="sm" c="dimmed">
-          All analogue FM/AM library channels are included by default. Remove channels to exclude
-          them from export. Location numbers (1…n) follow export order. Digital modes are not
-          exported.
+          All analogue FM/AM library channels are included by default. Click a row to edit overrides,
+          or use bulk edit for wire names and skip flags. Location numbers (1…n) follow export order.
+          Digital modes are not exported.
         </Text>
+        <Group>
+          <Button
+            component={Link}
+            to={`/builds/${build.id}/channels/bulk`}
+            variant="light"
+            size="compact-sm"
+          >
+            Bulk edit names and skip…
+          </Button>
+        </Group>
         <ExportNameModeSelect
           value={exportSettings.nameModeOverride}
           disabled={savingSettings}
@@ -295,109 +306,18 @@ export default function BuildFlatMemoryChannelsPage() {
           </Text>
         ) : null}
 
-        <Table striped highlightOnHover withTableBorder>
-          <Table.Thead>
-            <Table.Tr>
-              <Table.Th w={72}>Location</Table.Th>
-              <Table.Th>Library name</Table.Th>
-              <Table.Th>Export name</Table.Th>
-              <Table.Th>Scan</Table.Th>
-              <Table.Th w={120}>Order</Table.Th>
-              <Table.Th w={48} />
-            </Table.Tr>
-          </Table.Thead>
-          <Table.Tbody>
-            {memoryChannelIds.map((channelId, index) => {
-              const channel = channelById.get(channelId);
-              const previewRow = channel ? wirePreviewRow(channel) : null;
-              return (
-                <Table.Tr key={channelId}>
-                  <Table.Td>{index + 1}</Table.Td>
-                  <Table.Td>
-                    {channel ? (
-                      <Stack gap={2}>
-                        <Text size="sm">{channelDisplayLabel(channel)}</Text>
-                        <Anchor component={Link} to={`/library/channels/${channel.id}`} size="xs">
-                          Edit in library
-                        </Anchor>
-                      </Stack>
-                    ) : (
-                      <Text size="sm" c="dimmed">
-                        Loading…
-                      </Text>
-                    )}
-                  </Table.Td>
-                  <Table.Td>
-                    {previewRow ? (
-                      <WireNameOverrideInput
-                        key={`${channelId}:${previewRow.effectiveWireName}`}
-                        row={previewRow}
-                        nameLimit={nameLimit}
-                        excluded={false}
-                        clickableDefaultWireName
-                        onWireNameChange={(_row, wireName) => setRowWireName(channel!, wireName)}
-                        onDirtyChange={(dirty) => {
-                          setDirtyWireNameKeys((prev) => {
-                            const has = prev.has(channelId);
-                            if (dirty === has) return prev;
-                            const nextKeys = new Set(prev);
-                            if (dirty) nextKeys.add(channelId);
-                            else nextKeys.delete(channelId);
-                            return nextKeys;
-                          });
-                        }}
-                      />
-                    ) : null}
-                  </Table.Td>
-                  <Table.Td>
-                    {channel ? (
-                      <ScanInclusionSegment
-                        compact
-                        disabled={saving}
-                        value={channel.scanInclusion}
-                        onChange={(scanInclusion) => void updateChannelScan(channel, scanInclusion)}
-                      />
-                    ) : null}
-                  </Table.Td>
-                  <Table.Td>
-                    <Group gap={4}>
-                      <ActionIcon
-                        variant="subtle"
-                        size="sm"
-                        aria-label="Move up"
-                        disabled={saving || index === 0}
-                        onClick={() => moveChannel(channelId, 'up')}
-                      >
-                        <IconArrowUp size={ICON_SIZE_ACTION} stroke={ICON_STROKE} />
-                      </ActionIcon>
-                      <ActionIcon
-                        variant="subtle"
-                        size="sm"
-                        aria-label="Move down"
-                        disabled={saving || index === memoryChannelIds.length - 1}
-                        onClick={() => moveChannel(channelId, 'down')}
-                      >
-                        <IconArrowDown size={ICON_SIZE_ACTION} stroke={ICON_STROKE} />
-                      </ActionIcon>
-                    </Group>
-                  </Table.Td>
-                  <Table.Td>
-                    <ActionIcon
-                      variant="subtle"
-                      color="red"
-                      size="sm"
-                      aria-label="Exclude from export"
-                      disabled={saving}
-                      onClick={() => excludeChannel(channelId)}
-                    >
-                      <IconTrash size={ICON_SIZE_ACTION} stroke={ICON_STROKE} />
-                    </ActionIcon>
-                  </Table.Td>
-                </Table.Tr>
-              );
-            })}
-          </Table.Tbody>
-        </Table>
+        <WirePreviewDataTable
+          rows={previewRows}
+          search={search}
+          onSearchChange={setSearch}
+          onRowActivate={setSelectedRow}
+          locationByKey={locationByKey}
+          reorder={{
+            orderedKeys: memoryChannelIds,
+            onMove: moveChannel,
+            disabled: saving,
+          }}
+        />
 
         {excludedChannelIds.length > 0 ? (
           <Stack gap="xs">
@@ -425,12 +345,24 @@ export default function BuildFlatMemoryChannelsPage() {
           </Stack>
         ) : null}
       </Stack>
-      <UnsavedChangesModal
-        opened={modalOpen}
-        onStay={stay}
-        onLeave={leave}
-        title="Unsaved wire name changes"
-        message="You have unsaved wire name edits. Leave without saving?"
+      <WirePreviewOverrideModal
+        opened={selectedRow !== null}
+        onClose={() => setSelectedRow(null)}
+        row={selectedRow}
+        build={build}
+        entityKind="channel"
+        nameLimit={nameLimit}
+        onExcludedChange={setRowExcluded}
+        onWireNameChange={setRowWireName}
+        extraSections={
+          selectedChannel ? (
+            <ChirpChannelScanSection
+              channel={selectedChannel}
+              saving={saving}
+              onScanChange={(scanInclusion) => void updateChannelScan(selectedChannel, scanInclusion)}
+            />
+          ) : null
+        }
       />
     </FormPage>
   );
