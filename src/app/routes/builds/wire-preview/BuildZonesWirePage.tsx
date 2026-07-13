@@ -1,37 +1,23 @@
 import { Stack, Text } from '@mantine/core';
-import BuildEntityWirePage from './BuildEntityWirePage.tsx';
+import BuildWirePreviewListPage from './BuildWirePreviewListPage.tsx';
 import { useZoneScanExportLayout } from '../../../hooks/useZoneScanExportLayout.ts';
+import ZoneScanOverrideSection from '../../../components/builds/wirePreview/overrideModalSections/ZoneScanOverrideSection.tsx';
+import { layoutEntry } from '@core/import-export/zoneDerivedScanLists/members.ts';
 
 export default function BuildZonesWirePage() {
   const zoneScan = useZoneScanExportLayout();
 
-  const zoneScanContext =
-    zoneScan.enabled && zoneScan.layout && zoneScan.library
-      ? {
-          layout: zoneScan.layout,
-          zones: zoneScan.library.zones,
-          zoneById: zoneScan.zoneById,
-          channelById: zoneScan.channelById,
-          isDm32: zoneScan.isDm32,
-          showScanCarrierControls: zoneScan.showScanCarrierControls,
-          scanListMemberCap: zoneScan.scanListMemberCap,
-          saving: zoneScan.saving,
-          onUpdateZoneEntry: zoneScan.updateZoneEntry,
-          onUpdateMemberScanInclusion: zoneScan.updateMemberScanInclusion,
-        }
-      : undefined;
-
   return (
-    <BuildEntityWirePage
+    <BuildWirePreviewListPage
       title="Zones"
       entityKind="zone"
-      description="Toggle inclusion and override zone wire names for export. Zones with Don't export as its own zone in the library are marked and omitted from Zones.csv."
+      description="Review zone export rows. Click a zone to edit wire name, skip flags, and scan list settings."
       beforeTable={
         zoneScan.enabled ? (
           <Stack gap="xs">
             <Text size="sm" c="dimmed">
-              Expand a zone row to configure scan list membership. Export as scan list persists on
-              this build; member include toggles update library zones (vendor-neutral).
+              Scan list membership is configured per zone in the override modal. Export-as-scan-list
+              persists on this build; member include toggles update library zones.
             </Text>
             {zoneScan.error ? (
               <Text size="sm" c="red">
@@ -41,7 +27,28 @@ export default function BuildZonesWirePage() {
           </Stack>
         ) : undefined
       }
-      zoneScanContext={zoneScanContext}
+      modalExtraSections={(row) => {
+        if (!zoneScan.enabled || !zoneScan.layout || !zoneScan.library || row.entityKind !== 'zone') {
+          return null;
+        }
+        const zone = zoneScan.zoneById.get(row.libraryEntityId);
+        if (!zone) return null;
+        const entry = layoutEntry(zoneScan.layout, row.libraryEntityId);
+        return (
+          <ZoneScanOverrideSection
+            zone={zone}
+            zones={zoneScan.library.zones}
+            entry={entry}
+            channelById={zoneScan.channelById}
+            isDm32={zoneScan.isDm32}
+            showScanCarrierControls={zoneScan.showScanCarrierControls}
+            scanListMemberCap={zoneScan.scanListMemberCap}
+            saving={zoneScan.saving}
+            onUpdateZoneEntry={(patch) => zoneScan.updateZoneEntry(row.libraryEntityId, patch)}
+            onUpdateMemberScanInclusion={zoneScan.updateMemberScanInclusion}
+          />
+        );
+      }}
     />
   );
 }
