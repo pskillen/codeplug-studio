@@ -1,16 +1,5 @@
-import {
-  assertNotRateLimited,
-  parseRetryAfterMs,
-  rateLimitMessage,
-  recordRateLimit,
-  type DirectoryProvider,
-} from './rateLimit.ts';
-import {
-  directoryCacheKey,
-  readDirectoryCache,
-  readStaleDirectoryCache,
-  writeDirectoryCache,
-} from './sessionCache.ts';
+import { fetchCachedText } from '../http/cachedFetch.ts';
+import { rateLimitMessage, type DirectoryProvider } from './rateLimit.ts';
 import { RepeaterDirectoryError } from './types.ts';
 
 export interface DirectoryFetchOptions {
@@ -25,74 +14,17 @@ export interface DirectoryFetchOptions {
   isRateLimitResponse?: (status: number, body: string) => boolean;
 }
 
-export interface DirectoryFetchResult {
-  body: string;
-  status: number;
-  headers: Headers;
-  fromCache: boolean;
-  stale?: boolean;
-}
+export type DirectoryFetchResult = Awaited<ReturnType<typeof fetchCachedText>>;
 
 export async function fetchDirectoryText(
   url: string,
   options: DirectoryFetchOptions,
 ): Promise<DirectoryFetchResult> {
-  const {
+  const { provider, ...rest } = options;
+  return fetchCachedText(url, {
+    ...rest,
     provider,
-    cachePrefix,
-    cacheKeySuffix,
-    init,
-    skipCache = false,
-    networkErrorMessage,
-    isRateLimitResponse,
-  } = options;
-
-  assertNotRateLimited(provider);
-
-  const cacheKey = directoryCacheKey(cachePrefix, url, cacheKeySuffix);
-
-  if (!skipCache) {
-    const cached = readDirectoryCache(cacheKey);
-    if (cached != null) {
-      return { body: cached, status: 200, headers: new Headers(), fromCache: true };
-    }
-  }
-
-  let response: Response;
-  try {
-    response = await fetch(url, init);
-  } catch {
-    throw new RepeaterDirectoryError(networkErrorMessage);
-  }
-
-  const body = await response.text();
-
-  const rateLimited =
-    response.status === 429 || (isRateLimitResponse?.(response.status, body) ?? false);
-
-  if (rateLimited) {
-    recordRateLimit(provider, parseRetryAfterMs(response.headers.get('Retry-After')));
-    const stale = readStaleDirectoryCache(cacheKey);
-    if (stale != null) {
-      return {
-        body: stale,
-        status: 200,
-        headers: new Headers(),
-        fromCache: true,
-        stale: true,
-      };
-    }
-    throw new RepeaterDirectoryError(rateLimitMessage(provider), 429);
-  }
-
-  if (!skipCache && response.ok) {
-    writeDirectoryCache(cacheKey, body);
-  }
-
-  return {
-    body,
-    status: response.status,
-    headers: response.headers,
-    fromCache: false,
-  };
+    rateLimitMessage: rateLimitMessage(provider),
+    createError: (message, status) => new RepeaterDirectoryError(message, status),
+  });
 }
