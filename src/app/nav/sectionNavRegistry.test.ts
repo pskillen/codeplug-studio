@@ -23,8 +23,9 @@ describe('sectionNavRegistry', () => {
     expect(shouldShowSecondaryNav('/builds/new', true)).toBe(false);
   });
 
-  it('hides secondary nav on singleton APRS configuration page', () => {
-    expect(resolveSectionNav('/library/aprs-configuration')).toBeNull();
-    expect(shouldShowSecondaryNav('/library/aprs-configuration', true)).toBe(false);
+  it('shows library secondary nav on APRS configuration page', () => {
+    const entry = resolveSectionNav('/library/aprs-configuration');
+    expect(entry?.title).toBe('APRS configuration');
+    expect(shouldShowSecondaryNav('/library/aprs-configuration', true)).toBe(true);
   });
 });
