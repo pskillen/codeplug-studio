@@ -801,4 +801,51 @@ describe('assemble', () => {
     expect(exportResult.warnings.some((warning) => warning.includes('cycle'))).toBe(true);
     expect(Object.keys(exportResult.files).length).toBeGreaterThan(0);
   });
+
+  it('resolves active APRS configuration and warns when unset', () => {
+    const projectId = 'p-aprs';
+    const config = {
+      ...newFormatBuild(projectId, 'anytone-at-d890uv'),
+      id: 'build-aprs',
+    };
+    const aprsConfig = {
+      id: 'aprs-1',
+      projectId,
+      revision: 1,
+      updatedAt: '2026-01-01T00:00:00.000Z',
+      name: 'Home',
+      comment: '',
+      manualTxIntervalSec: 60,
+      autoTxIntervalSec: 300,
+      positionSource: 'gps' as const,
+      fixedLocation: null,
+      channelSlots: [],
+      defaultDmrId: null,
+      defaultCallType: 'group' as const,
+    };
+    const library = {
+      channels: [],
+      zones: [],
+      talkGroups: [],
+      digitalContacts: [],
+      analogContacts: [],
+      rxGroupLists: [],
+      scanLists: [],
+      aprsConfigurations: [aprsConfig],
+    };
+
+    const withActive = assemble(
+      { ...config, activeAprsConfigurationId: aprsConfig.id },
+      library,
+    );
+    expect(withActive.aprsConfiguration?.id).toBe(aprsConfig.id);
+
+    const withoutActive = assemble(config, library);
+    expect(withoutActive.aprsConfiguration).toBeNull();
+    expect(
+      exportInclusionWarnings(config, library, withoutActive).some((w) =>
+        w.includes('activeAprsConfigurationId'),
+      ),
+    ).toBe(true);
+  });
 });

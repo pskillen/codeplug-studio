@@ -6,7 +6,7 @@ import {
 
 describe('normalizeChannelAprsBinding', () => {
   it('maps wire Analog report type to off with warning', () => {
-    const warnings = [];
+    const warnings: import('./normalize.ts').AprsNormalizeWarning[] = [];
     const result = normalizeChannelAprsBinding(
       {
         receiveEnabled: true,

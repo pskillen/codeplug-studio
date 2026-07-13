@@ -32,6 +32,7 @@ import {
 } from '@core/domain/exportOrderOrSlot.ts';
 import { migrateFormatBuild } from '@core/domain/migrateFormatBuild.ts';
 import type { Library } from '@core/models/library.ts';
+import type { AprsConfiguration } from '@core/models/aprs.ts';
 
 /** Library entities needed for export projection — vendor-neutral slice. */
 export interface LibrarySlice {
@@ -42,6 +43,7 @@ export interface LibrarySlice {
   analogContacts: AnalogContact[];
   rxGroupLists: RxGroupList[];
   scanLists: ScanList[];
+  aprsConfigurations?: AprsConfiguration[];
 }
 
 export function librarySliceFrom(library: Library): LibrarySlice {
@@ -53,6 +55,7 @@ export function librarySliceFrom(library: Library): LibrarySlice {
     analogContacts: library.analogContacts,
     rxGroupLists: library.rxGroupLists,
     scanLists: library.scanLists,
+    aprsConfigurations: library.aprsConfigurations ?? [],
   };
 }
 
@@ -106,6 +109,8 @@ export interface AssembledBuild {
   scanListsLayout?: ScanListsLayout;
   /** CHIRP flat-memory slots (blank slots have `channelId: null`). */
   channelMemorySlots?: ExportMemorySlot[];
+  /** Resolved active APRS config for the single global row; null when none selected. */
+  aprsConfiguration?: AprsConfiguration | null;
 }
 
 export interface AssembleOptions {
@@ -400,6 +405,42 @@ function assembleEntityList<T extends { id: string; name: string }>(
   return assembled;
 }
 
+function resolveActiveAprsConfiguration(
+  build: FormatBuild,
+  library: LibrarySlice,
+): AprsConfiguration | null {
+  const configs = library.aprsConfigurations ?? [];
+  const activeId = build.activeAprsConfigurationId?.trim();
+  if (activeId) {
+    return configs.find((config) => config.id === activeId) ?? null;
+  }
+  return null;
+}
+
+export function aprsConfigurationWarnings(
+  build: FormatBuild,
+  library: LibrarySlice,
+  assembled: AssembledBuild,
+): string[] {
+  const warnings: string[] = [];
+  const configs = library.aprsConfigurations ?? [];
+  if (configs.length === 0) return warnings;
+
+  const activeId = build.activeAprsConfigurationId?.trim();
+  if (!activeId) {
+    warnings.push(
+      'APRS configurations exist but no activeAprsConfigurationId is set on this build',
+    );
+    return warnings;
+  }
+
+  if (!assembled.aprsConfiguration) {
+    warnings.push(`Active APRS configuration id not found in library: ${activeId}`);
+  }
+
+  return warnings;
+}
+
 /** Warnings when orphan library entities are included in export. */
 export function exportInclusionWarnings(
   build: FormatBuild,
@@ -459,6 +500,8 @@ export function exportInclusionWarnings(
       assembled.zones.map((zone) => zone.zoneId),
     ),
   );
+
+  warnings.push(...aprsConfigurationWarnings(build, library, assembled));
 
   return warnings;
 }
@@ -551,5 +594,6 @@ export function assemble(
       : undefined,
     zoneGrouping: zoneGroupingSections(normalizedBuild)[0],
     scanListsLayout: scanListsSections(normalizedBuild)[0],
+    aprsConfiguration: resolveActiveAprsConfiguration(normalizedBuild, library),
   };
 }
