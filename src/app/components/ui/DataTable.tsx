@@ -78,12 +78,26 @@ export interface DataTableProps<T> {
   resultCount?: number;
   /** Extension point for #68 mobile column collapse. Only `none` is implemented. */
   mobileColumnPolicy?: DataTableMobileColumnPolicy;
+  /** When set, rows are clickable and the name column renders as plain text. */
+  onRowActivate?: (row: T) => void;
 }
 
-function LinkedCell<T>({ column, row }: { column: DataTableLinkedColumn<T>; row: T }) {
+function LinkedCell<T>({
+  column,
+  row,
+  asLink,
+}: {
+  column: DataTableLinkedColumn<T>;
+  row: T;
+  asLink: boolean;
+}) {
+  const name = column.getName(row);
+  if (!asLink) {
+    return <Text fw={500}>{name}</Text>;
+  }
   return (
     <Anchor component={Link} to={column.getPath(row)} fw={500}>
-      {column.getName(row)}
+      {name}
     </Anchor>
   );
 }
@@ -158,6 +172,7 @@ export default function DataTable<T>({
   filteredEmptyMessage = 'No matches',
   totalRowCount,
   resultCount,
+  onRowActivate,
 }: DataTableProps<T>) {
   const isList = variant === 'list';
   const showSearchInput = showSearch ?? (isList && onSearchChange !== undefined);
@@ -391,7 +406,12 @@ export default function DataTable<T>({
               sortedRows.map((row) => {
                 const key = rowKey(row);
                 return (
-                  <Table.Tr key={key} data-selected={selectedKeys.includes(key) || undefined}>
+                  <Table.Tr
+                    key={key}
+                    data-selected={selectedKeys.includes(key) || undefined}
+                    onClick={onRowActivate ? () => onRowActivate(row) : undefined}
+                    style={onRowActivate ? { cursor: 'pointer' } : undefined}
+                  >
                     {selectable ? (
                       <Table.Td>
                         <Checkbox
@@ -404,11 +424,15 @@ export default function DataTable<T>({
                     ) : null}
                     {callsignColumn ? (
                       <Table.Td>
-                        <LinkedCell column={callsignColumn} row={row} />
+                        <LinkedCell
+                          column={callsignColumn}
+                          row={row}
+                          asLink={!onRowActivate}
+                        />
                       </Table.Td>
                     ) : null}
                     <Table.Td>
-                      <LinkedCell column={nameColumn} row={row} />
+                      <LinkedCell column={nameColumn} row={row} asLink={!onRowActivate} />
                     </Table.Td>
                     {visibleColumns.map((col) => (
                       <Table.Td key={col.key}>{col.render(row)}</Table.Td>
