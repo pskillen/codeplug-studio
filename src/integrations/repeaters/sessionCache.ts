@@ -31,14 +31,7 @@ export function directoryCacheKey(prefix: string, url: string, suffix?: string):
 export function readDirectoryCache(key: string): string | null {
   const entry = readEntry(key);
   if (!entry) return null;
-  if (Date.now() > entry.expiresAt) {
-    try {
-      sessionStorage.removeItem(key);
-    } catch {
-      // ignore
-    }
-    return null;
-  }
+  if (Date.now() > entry.expiresAt) return null;
   return entry.body;
 }
 
