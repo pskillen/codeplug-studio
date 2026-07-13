@@ -1179,6 +1179,7 @@ export function validateDocument(raw: unknown): ProjectAggregate {
   const studioSchemaVersion = document.studioSchemaVersion;
   if (
     studioSchemaVersion !== STUDIO_SCHEMA_VERSION &&
+    studioSchemaVersion !== 15 &&
     studioSchemaVersion !== 14 &&
     studioSchemaVersion !== 13 &&
     studioSchemaVersion !== 12 &&
@@ -1193,7 +1194,7 @@ export function validateDocument(raw: unknown): ProjectAggregate {
     studioSchemaVersion !== 2
   ) {
     throw new NativeYamlImportError(
-      `Unsupported studioSchemaVersion: ${String(studioSchemaVersion)} (expected ${STUDIO_SCHEMA_VERSION}, 14, 13, 12, 10, 9, 8, 7, 6, 5, 4, 3, or 2)`,
+      `Unsupported studioSchemaVersion: ${String(studioSchemaVersion)} (expected ${STUDIO_SCHEMA_VERSION}, 15, 14, 13, 12, 10, 9, 8, 7, 6, 5, 4, 3, or 2)`,
     );
   }
 

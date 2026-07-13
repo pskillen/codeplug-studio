@@ -23,6 +23,7 @@ export type EntityKind =
   | 'analogContact'
   | 'rxGroupList'
   | 'scanList'
+  | 'aprsConfiguration'
   | 'formatBuild';
 
 /** Library entity kinds (everything except project metadata). */
@@ -91,6 +92,10 @@ export interface ProjectPersistence {
   getScanList(projectId: string, id: string): Promise<ScanList | null>;
   putScanList(row: ScanList, expectedRevision: number | null): Promise<PutResult>;
   listScanLists(projectId: string): Promise<ScanList[]>;
+
+  getAprsConfiguration(projectId: string, id: string): Promise<AprsConfiguration | null>;
+  putAprsConfiguration(row: AprsConfiguration, expectedRevision: number | null): Promise<PutResult>;
+  listAprsConfigurations(projectId: string): Promise<AprsConfiguration[]>;
 
   getFormatBuild(projectId: string, id: string): Promise<FormatBuild | null>;
   putFormatBuild(row: FormatBuild, expectedRevision: number | null): Promise<PutResult>;

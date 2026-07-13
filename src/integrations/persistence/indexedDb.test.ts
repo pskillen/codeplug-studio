@@ -1,6 +1,7 @@
 import 'fake-indexeddb/auto';
 import { afterEach, describe, expect, it } from 'vitest';
 import {
+  newAprsConfiguration,
   newChannel,
   newFormatBuild,
   newProjectMeta,
@@ -165,6 +166,23 @@ describe('IndexedDbProjectPersistence', () => {
       kind: 'channel',
       id: channel.id,
       op: 'put',
+    });
+  });
+
+  it('persists aprs configurations and lists them sorted by name', async () => {
+    const store = makeStore();
+    const meta = newProjectMeta('Test');
+    await store.seedProject({ meta });
+
+    const zulu = newAprsConfiguration(meta.projectId, 'Zulu');
+    const alpha = newAprsConfiguration(meta.projectId, 'Alpha');
+    await store.putAprsConfiguration(zulu, null);
+    await store.putAprsConfiguration(alpha, null);
+
+    const configs = await store.listAprsConfigurations(meta.projectId);
+    expect(configs.map((c) => c.name)).toEqual(['Alpha', 'Zulu']);
+    expect(await store.getAprsConfiguration(meta.projectId, alpha.id)).toMatchObject({
+      name: 'Alpha',
     });
   });
 
