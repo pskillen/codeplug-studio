@@ -174,6 +174,7 @@ Channel DMR profiles reference a **digital contact** and an **RX group list** by
 ### Channel editor ([#16](https://github.com/pskillen/codeplug-studio/issues/16), [#28](https://github.com/pskillen/codeplug-studio/issues/28))
 
 - **Top-level tabs:** Identity, Frequencies, Modes (mode pick + `PillTabs` profiles), **Scanning** (`scanInclusion` + `scanListId`), Location, Zone membership (edit only), Repeater verify (edit only) — reduces scroll on long channel forms.
+- **Identity context:** `FormPage` title reflects live callsign or name on edit (`Edit channel — GB7DC`); `ChannelIdentitySummary` under the tab list on non-identity tabs shows name/callsign, band, mode pills, and RX/TX from draft values ([#283](https://github.com/pskillen/codeplug-studio/issues/283)).
 - **No default mode** on new channels — operator selects modes via card grid (`ChannelModesMultiSelect`); `modeProfiles` starts empty.
 - **Location section:** Maidenhead locator, lat/lon, use-location, map click/drag (`ChannelLocationSection` + `MapLocationPicker`). Map unmounts when another editor tab is active ([#208](https://github.com/pskillen/codeplug-studio/issues/208)). Save reconciles locator ↔ coords via `reconcileChannelLocation` (coordinates win on conflict).
 - **Mode profiles:** tabbed editor per selected mode (`ChannelModeProfilesEditor`); **Primary mode** `GradientSegmentedControl` when multiple modes enabled; DMR panel includes **DMR operating mode** (Auto / DMO / Repeater).

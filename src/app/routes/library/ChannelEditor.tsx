@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Alert, Button, Group, Select, SimpleGrid, Stack, Tabs, TextInput } from '@mantine/core';
 import { Link, useNavigate } from 'react-router-dom';
 import type { Channel, ChannelModeProfile, Library, ScanInclusion } from '@core/models/library.ts';
@@ -20,6 +20,7 @@ import {
 import { modeColor, modeLabel, type ChannelMode as UiChannelMode } from '../../lib/channelModes.ts';
 import ForbidTransmitSegment from '../../components/channels/ForbidTransmitSegment.tsx';
 import ScanInclusionSegment from '../../components/channels/ScanInclusionSegment.tsx';
+import ChannelIdentitySummary from '../../components/channels/ChannelIdentitySummary.tsx';
 import ChannelLocationSection, {
   channelLocationValuesFromChannel,
   type ChannelLocationValues,
@@ -34,16 +35,19 @@ import ChannelDeleteButton from '../../components/library/ChannelDeleteButton.ts
 import { useEntityEditorUnsavedGuard } from '../../hooks/useEntityFormDirty.ts';
 import { hzToMhzString, mhzStringToHz } from '../../lib/units.ts';
 import { persistence } from '../../state/persistence.ts';
+import { channelEditorPageTitle } from './channelEditorPageTitle.ts';
 import { useEntitySave } from './useEntitySave.ts';
 
 export default function ChannelEditor({
   projectId,
   entity,
   library,
+  onPageTitle,
 }: {
   projectId: string;
   entity: Channel | null;
   library: Library;
+  onPageTitle?: (title: string) => void;
 }) {
   const base = entity ?? newChannel(projectId, '');
 
@@ -169,6 +173,12 @@ export default function ChannelEditor({
   const liveRxHz = mhzStringToHz(rx);
   const liveTxHz = mhzStringToHz(tx);
   const liveChannel = buildRow();
+  const editorPageTitle = channelEditorPageTitle(!entity, liveChannel);
+
+  useEffect(() => {
+    onPageTitle?.(editorPageTitle);
+  }, [editorPageTitle, onPageTitle]);
+
   const scanListOptions = [
     { value: '', label: 'None' },
     ...library.scanLists.map((list) => ({ value: list.id, label: list.name })),
@@ -194,6 +204,10 @@ export default function ChannelEditor({
           {entity ? <Tabs.Tab value="zones">Zones</Tabs.Tab> : null}
           {entity ? <Tabs.Tab value="verify">Repeater</Tabs.Tab> : null}
         </Tabs.List>
+
+        {activeTab !== 'identity' ? (
+          <ChannelIdentitySummary channel={liveChannel} isNew={!entity} />
+        ) : null}
 
         <Tabs.Panel value="identity" pt="md">
           <FormSection>
