@@ -1,11 +1,17 @@
 import type { DigitalContact } from '@core/models/library.ts';
+import {
+  DEFAULT_RADIOID_CONTACT_NAME_MODE,
+  radioidListingImportName,
+  type RadioidContactNameMode,
+} from './contactName.ts';
 import type { RadioidDmrUserListing } from './types.ts';
 
-export function radioidListingDisplayName(listing: RadioidDmrUserListing): string {
-  const full = [listing.fname, listing.surname].filter(Boolean).join(' ').trim();
-  if (full) return full;
-  if (listing.name?.trim()) return listing.name.trim();
-  return listing.callsign.trim() || 'Untitled contact';
+/** @deprecated Use radioidListingImportName with an explicit mode. */
+export function radioidListingDisplayName(
+  listing: RadioidDmrUserListing,
+  mode: RadioidContactNameMode = DEFAULT_RADIOID_CONTACT_NAME_MODE,
+): string {
+  return radioidListingImportName(listing, mode);
 }
 
 export type DigitalContactDiffField = 'name' | 'callsign' | 'city' | 'state' | 'country';
@@ -27,9 +33,12 @@ const FIELD_LABELS: Record<DigitalContactDiffField, string> = {
   country: 'Country',
 };
 
-function remoteValues(listing: RadioidDmrUserListing): Record<DigitalContactDiffField, string> {
+function remoteValues(
+  listing: RadioidDmrUserListing,
+  nameMode: RadioidContactNameMode,
+): Record<DigitalContactDiffField, string> {
   return {
-    name: radioidListingDisplayName(listing),
+    name: radioidListingImportName(listing, nameMode),
     callsign: listing.callsign.trim(),
     city: listing.city.trim(),
     state: listing.state.trim(),
@@ -50,9 +59,10 @@ function localValues(contact: DigitalContact): Record<DigitalContactDiffField, s
 export function diffDigitalContactFromListing(
   contact: DigitalContact,
   listing: RadioidDmrUserListing,
+  nameMode: RadioidContactNameMode = DEFAULT_RADIOID_CONTACT_NAME_MODE,
 ): DigitalContactDiffRow[] {
   const local = localValues(contact);
-  const remote = remoteValues(listing);
+  const remote = remoteValues(listing, nameMode);
   const fields: DigitalContactDiffField[] = ['name', 'callsign', 'city', 'state', 'country'];
 
   return fields.map((field) => {
@@ -76,8 +86,9 @@ export function buildDigitalContactPatchFromDiff(
   contact: DigitalContact,
   listing: RadioidDmrUserListing,
   fields: readonly DigitalContactDiffField[],
+  nameMode: RadioidContactNameMode = DEFAULT_RADIOID_CONTACT_NAME_MODE,
 ): DigitalContact {
-  const remote = remoteValues(listing);
+  const remote = remoteValues(listing, nameMode);
   const patch = { ...contact };
   for (const field of fields) {
     patch[field] = remote[field];
@@ -89,9 +100,10 @@ export function buildDigitalContactPatchFromDiff(
 export function applyRadioidListingUpdates(
   contact: DigitalContact,
   listing: RadioidDmrUserListing,
+  nameMode: RadioidContactNameMode = DEFAULT_RADIOID_CONTACT_NAME_MODE,
 ): DigitalContact | null {
-  const rows = diffDigitalContactFromListing(contact, listing);
+  const rows = diffDigitalContactFromListing(contact, listing, nameMode);
   const fields = rows.filter((row) => row.changed).map((row) => row.field);
   if (fields.length === 0) return null;
-  return buildDigitalContactPatchFromDiff(contact, listing, fields);
+  return buildDigitalContactPatchFromDiff(contact, listing, fields, nameMode);
 }

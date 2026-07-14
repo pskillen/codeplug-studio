@@ -8,7 +8,9 @@ import {
   type DigitalContactDiffField,
   type RadioidDmrUserListing,
 } from '@integrations/radioid/index.ts';
+import type { RadioidContactNameMode } from '@integrations/radioid/index.ts';
 import { persistence } from '../../state/persistence.ts';
+import { useRadioidContactNameMode } from '../../hooks/useRadioidContactNameMode.ts';
 
 export interface RadioidContactUpdateDialogProps {
   contact: DigitalContact;
@@ -16,6 +18,8 @@ export interface RadioidContactUpdateDialogProps {
   opened: boolean;
   onClose: () => void;
   onApplied?: () => void;
+  /** When omitted, uses persisted RadioID import name mode. */
+  nameMode?: RadioidContactNameMode;
 }
 
 function RadioidContactUpdateDialogBody({
@@ -23,15 +27,17 @@ function RadioidContactUpdateDialogBody({
   listing,
   onClose,
   onApplied,
+  nameMode,
 }: {
   contact: DigitalContact;
   listing: RadioidDmrUserListing;
   onClose: () => void;
   onApplied?: () => void;
+  nameMode: RadioidContactNameMode;
 }) {
   const diffRows = useMemo(
-    () => diffDigitalContactFromListing(contact, listing),
-    [contact, listing],
+    () => diffDigitalContactFromListing(contact, listing, nameMode),
+    [contact, listing, nameMode],
   );
   const changedRows = useMemo(() => diffRows.filter((r) => r.changed), [diffRows]);
   const [selectedFields, setSelectedFields] = useState<Set<DigitalContactDiffField>>(
@@ -53,7 +59,7 @@ function RadioidContactUpdateDialogBody({
     if (selectedFields.size === 0) return;
     setApplying(true);
     setApplyError(null);
-    const patched = buildDigitalContactPatchFromDiff(contact, listing, [...selectedFields]);
+    const patched = buildDigitalContactPatchFromDiff(contact, listing, [...selectedFields], nameMode);
     const result = await persistence.putDigitalContact(patched, contact.revision);
     setApplying(false);
     if (!result.ok) {
@@ -123,8 +129,11 @@ export default function RadioidContactUpdateDialog({
   opened,
   onClose,
   onApplied,
+  nameMode: nameModeProp,
 }: RadioidContactUpdateDialogProps) {
-  const bodyKey = listing ? `${contact.id}:${listing.id}` : 'none';
+  const { nameMode: persistedNameMode } = useRadioidContactNameMode();
+  const nameMode = nameModeProp ?? persistedNameMode;
+  const bodyKey = listing ? `${contact.id}:${listing.id}:${nameMode}` : 'none';
 
   return (
     <Modal opened={opened} onClose={onClose} title="RadioID.net comparison" size="lg">
@@ -135,6 +144,7 @@ export default function RadioidContactUpdateDialog({
           listing={listing}
           onClose={onClose}
           onApplied={onApplied}
+          nameMode={nameMode}
         />
       ) : null}
     </Modal>

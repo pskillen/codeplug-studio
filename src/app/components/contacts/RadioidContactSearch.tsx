@@ -16,9 +16,10 @@ import { REPEATERBOOK_COUNTRY_NAMES } from '@integrations/repeaters/repeaterbook
 import {
   findDigitalContactByDigitalId,
   mapRadioidUserToDigitalContact,
-  radioidListingDisplayName,
+  radioidListingImportName,
   type RadioidDmrUserListing,
 } from '@integrations/radioid/index.ts';
+import { useRadioidContactNameMode } from '../../hooks/useRadioidContactNameMode.ts';
 import { useRadioidContactSearch } from '../../hooks/useRadioidContactSearch.ts';
 import { ICON_SIZE_NAV, ICON_STROKE } from '../../lib/iconSizes.ts';
 import type { RadioidBulkImportScope } from '../../lib/radioidBulkImport.ts';
@@ -28,6 +29,7 @@ import { useProjects } from '../../state/useProjects.ts';
 import { DataTable, FormPage, PageSection } from '../ui/index.ts';
 import type { DataTableColumn } from '../ui/DataTable.tsx';
 import RadioidContactBulkImportDialog from './RadioidContactBulkImportDialog.tsx';
+import RadioidContactNameModeControl from './RadioidContactNameModeControl.tsx';
 import RadioidContactUpdateDialog from './RadioidContactUpdateDialog.tsx';
 import RadioidContactPreviewDialog from './RadioidContactPreviewDialog.tsx';
 
@@ -50,6 +52,7 @@ export default function RadioidContactSearch() {
     search,
     goToPage,
   } = useRadioidContactSearch();
+  const { nameMode, setNameMode } = useRadioidContactNameMode();
   const [selectedKeys, setSelectedKeys] = useState<string[]>([]);
   const [adding, setAdding] = useState(false);
   const [addMessage, setAddMessage] = useState<string | null>(null);
@@ -101,6 +104,10 @@ export default function RadioidContactSearch() {
   }, [bulkScope, listings, selectedKeys]);
 
   const columns = useMemo((): DataTableColumn<RadioidDmrUserListing>[] => {
+    function listingImportName(row: RadioidDmrUserListing): string {
+      return radioidListingImportName(row, nameMode);
+    }
+
     function existingContact(row: RadioidDmrUserListing): DigitalContact | null {
       return findDigitalContactByDigitalId(library.digitalContacts, row.id);
     }
@@ -141,9 +148,9 @@ export default function RadioidContactSearch() {
       },
       {
         key: 'name',
-        header: 'Name',
-        render: (row) => radioidListingDisplayName(row),
-        sortValue: (row) => radioidListingDisplayName(row),
+        header: 'Import name',
+        render: (row) => listingImportName(row),
+        sortValue: (row) => listingImportName(row),
       },
       {
         key: 'city',
@@ -184,7 +191,7 @@ export default function RadioidContactSearch() {
         },
       },
     ];
-  }, [adding, library.digitalContacts]);
+  }, [adding, library.digitalContacts, nameMode]);
 
   async function addSingleListing(row: RadioidDmrUserListing) {
     if (!activeProjectId || duplicateById.has(row.id)) return;
@@ -192,7 +199,7 @@ export default function RadioidContactSearch() {
     setAdding(true);
     setAddMessage(null);
     try {
-      const contact = mapRadioidUserToDigitalContact(row, activeProjectId);
+      const contact = mapRadioidUserToDigitalContact(row, activeProjectId, nameMode);
       await persistence.putDigitalContact(contact, null);
       await reload();
       setAddMessage('Added 1 digital contact to your library.');
@@ -276,6 +283,10 @@ export default function RadioidContactSearch() {
           </Group>
         </PageSection>
 
+        <PageSection title="Import options">
+          <RadioidContactNameModeControl value={nameMode} onChange={setNameMode} />
+        </PageSection>
+
         {error ? (
           <Alert color="red" title="Search">
             {error}
@@ -313,9 +324,9 @@ export default function RadioidContactSearch() {
               rows={listings}
               rowKey={listingKey}
               nameColumn={{
-                getName: radioidListingDisplayName,
+                getName: (row) => radioidListingImportName(row, nameMode),
                 getPath: () => '#',
-                render: (row) => radioidListingDisplayName(row),
+                render: (row) => radioidListingImportName(row, nameMode),
               }}
               columns={columns}
               selectable
@@ -355,6 +366,7 @@ export default function RadioidContactSearch() {
           totalCount={totalCount}
           projectId={activeProjectId}
           contacts={library.digitalContacts}
+          nameMode={nameMode}
         />
       ) : null}
 
@@ -364,6 +376,7 @@ export default function RadioidContactSearch() {
           listing={updateListing}
           opened={updateOpen}
           onClose={() => setUpdateOpen(false)}
+          nameMode={nameMode}
           onApplied={() => {
             void reload();
             setPreviewOpen(false);

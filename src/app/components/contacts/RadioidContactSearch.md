@@ -21,6 +21,7 @@ export default function AddFromRadioidPage() {
 ## Behaviour
 
 - Filter form (broad → narrow): country autocomplete (RepeaterBook country list), state, city, callsign, DMR ID.
+- **Import name as** control (persisted in `localStorage`): Name, Callsign, or Callsign + name — uses RadioID.net `name` field, not fname/surname.
 - Results `DataTable` with row selection; bulk actions above the table open `RadioidContactBulkImportDialog`:
   - **Add all results** — fetches every paginated page from RadioID.net
   - **Add this page** — current page only

@@ -20,8 +20,9 @@ describe('contactDiff', () => {
     country: 'United States',
   };
 
-  it('builds display name from fname and surname', () => {
-    expect(radioidListingDisplayName(listing)).toBe('Hiram Percy');
+  it('builds display name from RadioID name field by default', () => {
+    expect(radioidListingDisplayName(listing)).toBe('Hiram');
+    expect(radioidListingDisplayName(listing, 'callsign-name')).toBe('W1AW Hiram');
   });
 
   it('diffs changed metadata fields', () => {
@@ -50,7 +51,7 @@ describe('contactDiff', () => {
 
   it('applyRadioidListingUpdates returns null when unchanged', () => {
     const contact = {
-      ...newDigitalContact('p1', 'Hiram Percy', 3109478),
+      ...newDigitalContact('p1', 'Hiram', 3109478),
       callsign: 'W1AW',
       city: 'Newington',
       state: 'Connecticut',
