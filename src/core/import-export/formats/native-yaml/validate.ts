@@ -530,6 +530,11 @@ function parseDigitalContact(raw: unknown, index: number): DigitalContact {
     ) as DigitalContact['mode'],
     name: expectString(record.name, `library.digitalContacts[${index}].name`),
     digitalId: expectNumber(record.digitalId, `library.digitalContacts[${index}].digitalId`),
+    callsign: expectOptionalString(record.callsign, `library.digitalContacts[${index}].callsign`),
+    city: expectOptionalString(record.city, `library.digitalContacts[${index}].city`),
+    state: expectOptionalString(record.state, `library.digitalContacts[${index}].state`),
+    country: expectOptionalString(record.country, `library.digitalContacts[${index}].country`),
+    remarks: expectOptionalString(record.remarks, `library.digitalContacts[${index}].remarks`),
     comment: expectString(record.comment, `library.digitalContacts[${index}].comment`),
   };
 }
