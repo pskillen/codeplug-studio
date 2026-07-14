@@ -140,6 +140,11 @@ export function newDigitalContact(
     mode,
     name,
     digitalId,
+    callsign: '',
+    city: '',
+    state: '',
+    country: '',
+    remarks: '',
     comment: '',
   };
 }

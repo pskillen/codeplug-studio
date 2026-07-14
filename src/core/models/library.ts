@@ -133,6 +133,13 @@ export interface DigitalContact extends PersistableRow {
   mode: DigitalChannelMode;
   name: string;
   digitalId: number;
+  /** Amateur callsign label — distinct from display `name`. */
+  callsign: string;
+  city: string;
+  state: string;
+  country: string;
+  /** Wire-oriented notes (e.g. CPS Remarks); internal notes use `comment`. */
+  remarks: string;
   comment: string;
 }
 

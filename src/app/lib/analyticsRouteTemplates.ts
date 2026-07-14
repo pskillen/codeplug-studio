@@ -9,6 +9,7 @@ export const ANALYTICS_ROUTE_TEMPLATES = [
   '/library/channels/add-from-ukrepeater',
   '/library/channels/add-from-openaip',
   '/library/channels/add-from-brandmeister',
+  '/library/contacts/add-from-radioid',
   '/library/channels/add-channel-set',
   '/library/zones/new-from-location',
   '/builds/:id/overview',

@@ -8,6 +8,7 @@ import AddFromOpenAipPage from './routes/library/AddFromOpenAipPage.tsx';
 import AddFromBrandmeisterPage from './routes/library/AddFromBrandmeisterPage.tsx';
 import AddFromIrtsPage from './routes/library/AddFromIrtsPage.tsx';
 import AddFromRepeaterBookPage from './routes/library/AddFromRepeaterBookPage.tsx';
+import AddFromRadioidPage from './routes/library/AddFromRadioidPage.tsx';
 import AddChannelSetPage from './routes/library/AddChannelSetPage.tsx';
 import ZoneFromLocationPage from './routes/library/ZoneFromLocationPage.tsx';
 import ChannelsListPage from './routes/library/lists/ChannelsListPage.tsx';
@@ -92,6 +93,10 @@ export const appRouter = createBrowserRouter([
           },
           { path: '/library/talk-groups', element: <TalkGroupsListPage /> },
           { path: '/library/contacts', element: <ContactsListPage /> },
+          {
+            path: '/library/contacts/add-from-radioid',
+            element: <AddFromRadioidPage />,
+          },
           { path: '/library/rx-group-lists', element: <RxGroupListsListPage /> },
           { path: '/library/scan-lists', element: <ScanListsListPage /> },
           { path: '/library/aprs-configuration', element: <AprsConfigurationPage /> },

@@ -24,20 +24,20 @@ Private calls → internal `DigitalContact` with `mode: 'dmr'`.
 
 **Fixture:** [`test-data/anytone/at-d890uv/DMRDigitalContactList.CSV`](../../../test-data/anytone/at-d890uv/DMRDigitalContactList.CSV) (one redacted private-contact row).
 
-| Header       | Internal field                                                   |
-| ------------ | ---------------------------------------------------------------- |
-| `No.`        | Export index                                                     |
-| `Radio ID`   | `DigitalContact.digitalId`                                       |
-| `Callsign`   | Optional wire label; CPS may leave empty when only `Name` is set |
-| `Name`       | `DigitalContact.name` / build `wireName`                         |
-| `City`       | Export default `''` (unmodelled)                                 |
-| `State`      | Export default `''`                                              |
-| `Country`    | Export default `''`                                              |
-| `Remarks`    | Export default `''`                                              |
-| `Call Type`  | `Private Call`                                                   |
-| `Call Alert` | Export default `None`                                            |
+| Header       | Internal field                           |
+| ------------ | ---------------------------------------- |
+| `No.`        | Export index                             |
+| `Radio ID`   | `DigitalContact.digitalId`               |
+| `Callsign`   | `DigitalContact.callsign`                |
+| `Name`       | `DigitalContact.name` / build `wireName` |
+| `City`       | `DigitalContact.city`                    |
+| `State`      | `DigitalContact.state`                   |
+| `Country`    | `DigitalContact.country`                 |
+| `Remarks`    | `DigitalContact.remarks`                 |
+| `Call Type`  | `Private Call`                           |
+| `Call Alert` | Export default `None`                    |
 
-Unmodelled address columns export empty strings until library CRUD gains contact metadata ([#297](https://github.com/pskillen/codeplug-studio/issues/297)).
+Unmodelled address columns export empty strings when library fields are unset. `Call Alert` remains export constant `None` until CPS enum elicitation ([#297](https://github.com/pskillen/codeplug-studio/issues/297)).
 
 ### Observed wire values (operator CPS, July 2026)
 

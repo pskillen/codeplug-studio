@@ -66,6 +66,15 @@ export const ATTRIBUTIONS: AttributionEntry[] = [
     usedIn: ['Codeplug map', 'Town geocode fallback', 'Maidenhead reference'],
   },
   {
+    id: 'radioid',
+    name: 'RadioID.net',
+    description:
+      'Worldwide DMR radio ID directory. Requests go through the Studio same-origin proxy; no operator API key required.',
+    homeUrl: 'https://www.radioid.net/',
+    termsUrl: 'https://www.radioid.net/terms_and_conditions_policy',
+    usedIn: ['Add from RadioID.net (Library → Contacts)'],
+  },
+  {
     id: 'google-drive',
     name: 'Google Drive',
     description:

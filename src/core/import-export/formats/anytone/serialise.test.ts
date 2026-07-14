@@ -224,11 +224,18 @@ describe('anytone serialise', () => {
   });
 
   it('serialises DMRDigitalContactList.CSV with 10-column CPS schema', () => {
-    const contact = newDigitalContact(PROJECT_ID, 'MM0HAM', 1234567);
+    const contact = {
+      ...newDigitalContact(PROJECT_ID, 'Hiram Percy', 1234567),
+      callsign: 'W1AW',
+      city: 'Newington',
+      state: 'Connecticut',
+      country: 'United States',
+      remarks: 'ARRL HQ',
+    };
     const build = {
       ...newFormatBuild(PROJECT_ID, 'anytone-at-d890uv'),
       layout: { sections: [{ kind: 'zoneGrouping' as const, zones: [] }] },
-      contactOverrides: [{ libraryEntityId: contact.id, wireName: 'MM0HAM' }],
+      contactOverrides: [{ libraryEntityId: contact.id, wireName: 'W1AW' }],
     };
     const library = {
       channels: [],
@@ -258,7 +265,12 @@ describe('anytone serialise', () => {
     ]);
     expect(table.rows).toHaveLength(1);
     expect(table.rows[0]?.[1]).toBe('1234567');
-    expect(table.rows[0]?.[3]).toBe('MM0HAM');
+    expect(table.rows[0]?.[2]).toBe('W1AW');
+    expect(table.rows[0]?.[3]).toBe('W1AW');
+    expect(table.rows[0]?.[4]).toBe('Newington');
+    expect(table.rows[0]?.[5]).toBe('Connecticut');
+    expect(table.rows[0]?.[6]).toBe('United States');
+    expect(table.rows[0]?.[7]).toBe('ARRL HQ');
     expect(table.rows[0]?.[8]).toBe('Private Call');
     expect(table.rows[0]?.[9]).toBe('None');
   });

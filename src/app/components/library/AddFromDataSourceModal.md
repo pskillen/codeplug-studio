@@ -6,14 +6,15 @@ Picker modal for channel import sources — built-in channel sets and external d
 
 ## Props
 
-| Prop      | Type         | Description      |
-| --------- | ------------ | ---------------- |
-| `opened`  | `boolean`    | Modal visibility |
-| `onClose` | `() => void` | Close handler    |
+| Prop      | Type                           | Description                                 |
+| --------- | ------------------------------ | ------------------------------------------- |
+| `opened`  | `boolean`                      | Modal visibility                            |
+| `onClose` | `() => void`                   | Close handler                               |
+| `sources` | `readonly AddFromDataSource[]` | Optional; defaults to `CHANNEL_ADD_SOURCES` |
 
 ## Behaviour
 
-- Renders a `BadgeCard` per entry in `CHANNEL_ADD_SOURCES` (channel set + external directories).
+- Renders a `BadgeCard` per entry in `sources` (channel or contact directory routes).
 - Card click navigates to the directory route and closes the modal.
 
 ## Related

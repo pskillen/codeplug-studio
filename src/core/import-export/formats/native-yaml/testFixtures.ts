@@ -80,6 +80,11 @@ export function fullLibraryAggregate(): ProjectAggregate {
     mode: 'dmr',
     name: 'MM0HAM',
     digitalId: 1234567,
+    callsign: 'MM0HAM',
+    city: 'Edinburgh',
+    state: 'Scotland',
+    country: 'United Kingdom',
+    remarks: '',
     comment: '',
   };
 

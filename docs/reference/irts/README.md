@@ -41,7 +41,7 @@ Deployed with the SPA via `wrangler.toml` + `functions/api/irts/repeaters.ts` on
 | **IRTS Anytone CSV**     | Yes      | DMR (+ limited D-STAR via Chirp only) | No (CORS)                 | **Primary v1**                                                    |
 | BrandMeister             | No       | DMR only                              | Yes                       | Supplement for BM TGs (already shipped)                           |
 | RepeaterBook `exportROW` | Yes      | Yes                                   | Browser + `rbuapp_` token | Shipped — see [RepeaterBook reference](../repeaterbook/README.md) |
-| RadioID.net              | No       | DMR/NXDN/P25/D-STAR                   | No (CORS)                 | Out of scope                                                      |
+| RadioID.net              | No       | DMR users only                        | No (CORS)                 | **Shipped** — see [radioid reference](../radioid/README.md)       |
 
 ## Anytone CSV columns (shipped parse)
 
