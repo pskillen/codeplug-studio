@@ -54,7 +54,11 @@ export function isEncodableAnytoneAprsAutoTxIntervalSec(seconds: number): boolea
   if (seconds < ANYTONE_APRS_AUTO_TX_INTERVAL_MIN_SEC) return false;
   if (seconds > ANYTONE_APRS_AUTO_TX_INTERVAL_MAX_SEC) return false;
   const k = encodeAnytoneAprsAutoTxIntervalSec(seconds);
-  return k >= 1 && k <= ANYTONE_APRS_AUTO_TX_INTERVAL_MAX_WIRE && decodeAnytoneAprsAutoTxIntervalWire(k) === seconds;
+  return (
+    k >= 1 &&
+    k <= ANYTONE_APRS_AUTO_TX_INTERVAL_MAX_WIRE &&
+    decodeAnytoneAprsAutoTxIntervalWire(k) === seconds
+  );
 }
 
 /** Nearest encodable auto interval in seconds (0 = off). */
@@ -62,10 +66,7 @@ export function snapAnytoneAprsAutoTxIntervalSec(seconds: number | null | undefi
   if (seconds == null || !Number.isFinite(seconds) || seconds <= 0) return 0;
   const s = Math.trunc(seconds);
   if (isEncodableAnytoneAprsAutoTxIntervalSec(s)) return s;
-  const k = Math.max(
-    1,
-    Math.min(ANYTONE_APRS_AUTO_TX_INTERVAL_MAX_WIRE, Math.round(s / 15 - 3)),
-  );
+  const k = Math.max(1, Math.min(ANYTONE_APRS_AUTO_TX_INTERVAL_MAX_WIRE, Math.round(s / 15 - 3)));
   return decodeAnytoneAprsAutoTxIntervalWire(k);
 }
 

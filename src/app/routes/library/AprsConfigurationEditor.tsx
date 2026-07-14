@@ -39,10 +39,7 @@ function parseOptionalAutoTxIntervalSec(value: string | number): number | null {
   if (value === '' || value == null) return null;
   const n = typeof value === 'number' ? value : Number.parseInt(String(value), 10);
   if (!Number.isFinite(n) || n <= 0) return null;
-  const clamped = Math.min(
-    AUTO_TX_INTERVAL_MAX_SEC,
-    Math.max(AUTO_TX_INTERVAL_MIN_SEC, n),
-  );
+  const clamped = Math.min(AUTO_TX_INTERVAL_MAX_SEC, Math.max(AUTO_TX_INTERVAL_MIN_SEC, n));
   const steps = Math.round((clamped - AUTO_TX_INTERVAL_MIN_SEC) / AUTO_TX_INTERVAL_STEP_SEC);
   return AUTO_TX_INTERVAL_MIN_SEC + steps * AUTO_TX_INTERVAL_STEP_SEC;
 }
