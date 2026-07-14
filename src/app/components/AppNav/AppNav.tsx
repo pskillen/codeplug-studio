@@ -33,7 +33,7 @@ export default function AppNav({ onNavClick }: AppNavProps) {
     <Stack gap="md" style={{ height: '100%' }}>
       {hasActiveProject ? (
         <>
-          <ActiveProjectBar />
+          <ActiveProjectBar onNavClick={onNavClick} />
           <SidebarDriveControls />
           {projectNavItems.map((item) => {
             const Icon = item.icon;
