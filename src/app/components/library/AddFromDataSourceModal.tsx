@@ -1,14 +1,23 @@
 import { Modal, SimpleGrid, ThemeIcon } from '@mantine/core';
 import { useNavigate } from 'react-router-dom';
 import BadgeCard from '../ui/BadgeCard.tsx';
-import { CHANNEL_ADD_SOURCES } from '../../lib/channelDataSources.ts';
+import { CHANNEL_ADD_SOURCES, type ChannelDataSource } from '../../lib/channelDataSources.ts';
+import type { ContactDataSource } from '../../lib/contactDataSources.ts';
+
+export type AddFromDataSource = ChannelDataSource | ContactDataSource;
 
 export interface AddFromDataSourceModalProps {
   opened: boolean;
   onClose: () => void;
+  /** Directory sources to list; defaults to channel import sources. */
+  sources?: readonly AddFromDataSource[];
 }
 
-export default function AddFromDataSourceModal({ opened, onClose }: AddFromDataSourceModalProps) {
+export default function AddFromDataSourceModal({
+  opened,
+  onClose,
+  sources = CHANNEL_ADD_SOURCES,
+}: AddFromDataSourceModalProps) {
   const navigate = useNavigate();
 
   function openSource(path: string) {
@@ -19,7 +28,7 @@ export default function AddFromDataSourceModal({ opened, onClose }: AddFromDataS
   return (
     <Modal opened={opened} onClose={onClose} title="Add from…" size="lg" centered>
       <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="md">
-        {CHANNEL_ADD_SOURCES.map((source) => (
+        {sources.map((source) => (
           <BadgeCard
             key={source.id}
             title={source.title}
