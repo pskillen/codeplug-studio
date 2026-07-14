@@ -77,37 +77,36 @@ Pull requests and pushes to `main` run [`.github/workflows/ci.yml`](../../.githu
 
 ## Cursor Approval Agent
 
-PR auto-approval is governed by repository policy files discovered by the [Cursor Approval Agent](https://cursor.com/docs/approval-agents). Bugbot is **not** used — CI green is the primary automated gate.
+PR auto-approval is governed by repository policy files discovered by the [Cursor Approval Agent](https://cursor.com/docs/approval-agents). Bugbot is **not** used. **GitHub CI status is not an approval gate** — branch protection blocks merge when required checks fail, and CI is often still pending when the Approval Agent runs.
 
-| File                                                                                 | Role                                                                                                     |
-| ------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------- |
-| [`APPROVAL_POLICY.md`](../../APPROVAL_POLICY.md)                                     | Default permissive policy (auto-approve when CI passes; architecture red flags escalate to human review) |
-| [`.cursor/approval-policies/ROUTING.md`](../../.cursor/approval-policies/ROUTING.md) | Routes stricter policies for workflows, governance, and boundary rules                                   |
-| [`.github/workflows/APPROVAL_POLICY.md`](../../.github/workflows/APPROVAL_POLICY.md) | Always human review for deploy/CI workflow changes                                                       |
-| [`.cursor/rules/APPROVAL_POLICY.md`](../../.cursor/rules/APPROVAL_POLICY.md)         | Always human review for constitutional `.mdc` boundary rules                                             |
+| File                                                                                 | Role                                                                                                                   |
+| ------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------- |
+| [`APPROVAL_POLICY.md`](../../APPROVAL_POLICY.md)                                     | Default permissive policy (auto-approve when no hard trigger applies; architecture red flags escalate to human review) |
+| [`.cursor/approval-policies/ROUTING.md`](../../.cursor/approval-policies/ROUTING.md) | Routes stricter policies for workflows, governance, and boundary rules                                                 |
+| [`.github/workflows/APPROVAL_POLICY.md`](../../.github/workflows/APPROVAL_POLICY.md) | Always human review for deploy/CI workflow changes                                                                     |
+| [`.cursor/rules/APPROVAL_POLICY.md`](../../.cursor/rules/APPROVAL_POLICY.md)         | Always human review for constitutional `.mdc` boundary rules                                                           |
 
 ### Dashboard setup (one-time)
 
 In the **Approval Agents** dashboard for `pskillen/codeplug-studio`:
 
-| Setting                     | Value                                                                                                                                                                                   |
-| --------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Triggers                    | PR opened + PR pushed/updated                                                                                                                                                           |
-| Use Bugbot Review Context   | **Off**                                                                                                                                                                                 |
-| Use Security Review Context | **Off** (unless Security Agents are enabled later)                                                                                                                                      |
-| Use Risk Score              | **On**                                                                                                                                                                                  |
-| Maximum Risk for Approval   | **Medium** or **High**                                                                                                                                                                  |
-| Primary action              | Approve PR                                                                                                                                                                              |
-| Custom prompt               | Follow repo `APPROVAL_POLICY.md` files. Approve when all required GitHub CI checks succeeded and no stricter nested policy blocks approval. Do not wait for Bugbot — it is not enabled. |
+| Setting                     | Value                                                                                                                                                                                                                           |
+| --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Triggers                    | PR opened + PR pushed/updated                                                                                                                                                                                                   |
+| Use Bugbot Review Context   | **Off**                                                                                                                                                                                                                         |
+| Use Security Review Context | **Off** (unless Security Agents are enabled later)                                                                                                                                                                              |
+| Use Risk Score              | **On**                                                                                                                                                                                                                          |
+| Maximum Risk for Approval   | **Medium** or **High**                                                                                                                                                                                                          |
+| Primary action              | Approve PR                                                                                                                                                                                                                      |
+| Custom prompt               | Follow repo `APPROVAL_POLICY.md` files. Do **not** wait for or require GitHub CI check status. Approve when no stricter nested policy blocks approval and risk is within threshold. Do not wait for Bugbot — it is not enabled. |
 
 ### Post-merge verification
 
 After merging policy files, confirm behaviour manually:
 
-1. Docs-only PR with green CI → should auto-approve.
+1. Docs-only PR with no hard triggers → should auto-approve (even while CI is pending).
 2. PR touching `.github/workflows/ci.yml` → should **not** auto-approve.
 3. PR touching `.cursor/rules/layer-boundaries.mdc` → should **not** auto-approve.
-4. Feature PR with failing CI → should **not** auto-approve.
 
 ## Cloudflare Pages deploy
 
