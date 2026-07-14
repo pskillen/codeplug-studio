@@ -167,6 +167,7 @@ export function serialiseAnytoneChannelRow(
     values[CHANNEL_COL.digitalAprsPtt] = formatAnytoneAprsPttMode(aprs.digitalPttMode);
     values[CHANNEL_COL.aprsReportType] = formatAnytoneAprsReportType(aprs.reportType);
     values[CHANNEL_COL.digitalAprsReportChannel] = formatAnytoneAprsReportChannel(
+      aprs.reportType,
       aprs.reportSlotIndex,
     );
   }
