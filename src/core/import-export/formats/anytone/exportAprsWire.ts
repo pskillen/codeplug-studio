@@ -2,7 +2,6 @@ import type { AprsConfiguration } from '@core/models/aprs.ts';
 import type { AprsChannelSlot } from '@core/models/aprs.ts';
 import type { CpsExportOptions } from '@core/import-export/types.ts';
 import type { AssembledBuild } from '@core/services/assemble.ts';
-import { isZoneScanCarrierChannelId } from '@core/import-export/zoneDerivedScanLists/carrier.ts';
 import { APRS_COL, APRS_HEADERS } from './columns.ts';
 import { APRS_ROW_DEFAULTS } from './aprsDefaults.ts';
 import { formatCsv } from './csvWrite.ts';
@@ -22,17 +21,21 @@ function padRow(headers: string[], values: Record<string, string>): string[] {
   return headers.map((header) => values[header] ?? '');
 }
 
-const SLOT_COLUMN_GROUPS: readonly (readonly [keyof typeof APRS_COL, keyof typeof APRS_COL, keyof typeof APRS_COL, keyof typeof APRS_COL])[] =
-  [
-    ['channel1', 'slot1', 'aprsTg1', 'callType1'],
-    ['channel2', 'slot2', 'aprsTg2', 'callType2'],
-    ['channel3', 'slot3', 'aprsTg3', 'callType3'],
-    ['channel4', 'slot4', 'aprsTg4', 'callType4'],
-    ['channel5', 'slot5', 'aprsTg5', 'callType5'],
-    ['channel6', 'slot6', 'aprsTg6', 'callType6'],
-    ['channel7', 'slot7', 'aprsTg7', 'callType7'],
-    ['channel8', 'slot8', 'aprsTg8', 'callType8'],
-  ] as const;
+const SLOT_COLUMN_GROUPS: readonly (readonly [
+  keyof typeof APRS_COL,
+  keyof typeof APRS_COL,
+  keyof typeof APRS_COL,
+  keyof typeof APRS_COL,
+])[] = [
+  ['channel1', 'slot1', 'aprsTg1', 'callType1'],
+  ['channel2', 'slot2', 'aprsTg2', 'callType2'],
+  ['channel3', 'slot3', 'aprsTg3', 'callType3'],
+  ['channel4', 'slot4', 'aprsTg4', 'callType4'],
+  ['channel5', 'slot5', 'aprsTg5', 'callType5'],
+  ['channel6', 'slot6', 'aprsTg6', 'callType6'],
+  ['channel7', 'slot7', 'aprsTg7', 'callType7'],
+  ['channel8', 'slot8', 'aprsTg8', 'callType8'],
+] as const;
 
 function serialiseAprsSlot(
   slot: AprsChannelSlot | undefined,

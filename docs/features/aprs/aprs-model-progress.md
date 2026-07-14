@@ -41,6 +41,20 @@
 
 ---
 
+## Phase 3 — Anytone export ([#251](https://github.com/pskillen/codeplug-studio/issues/251))
+
+**Status:** Complete
+
+**Branch:** `251/pskil/anytone-aprs-export`
+
+- `aprsDefaults.ts` + `APRS_HEADERS` from AT-D890UV fixture
+- `aprsWireFormat.ts` — model → wire mappers
+- `exportAprsWire.ts` — conditional `APRS.CSV` serialisation
+- `channelWire.ts` — per-channel APRS columns from `Channel.aprs`
+- Directional golden tests (`exportGolden.test.ts`, `__fixtures__/export/APRS.CSV`)
+
+---
+
 ## Verify
 
 - `npm run format:check && npm run lint && npm run test && npm run build`
@@ -49,4 +63,4 @@
 
 ## Next
 
-- Anytone export [#251](https://github.com/pskillen/codeplug-studio/issues/251), DM32 [#250](https://github.com/pskillen/codeplug-studio/issues/250)
+- DM32 per-channel APRS export [#250](https://github.com/pskillen/codeplug-studio/issues/250)

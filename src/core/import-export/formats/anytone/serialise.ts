@@ -33,9 +33,7 @@ import {
   padReceiveBankName,
   type AnytoneExportWireContext,
 } from './exportWireContext.ts';
-import {
-  expandAllAnytoneChannelsForExport,
-} from './channelExpansion.ts';
+import { expandAllAnytoneChannelsForExport } from './channelExpansion.ts';
 import { channelFrequencyById, rxGroupListMemberNames } from './listWire.ts';
 import { DEFAULT_ANYTONE_PROFILE_ID } from './profiles.ts';
 import { partitionAnytoneChannels } from './receiveOnlyBanks.ts';

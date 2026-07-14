@@ -27,7 +27,7 @@ Provisional limits for variant `anytone-at-d890uv`. Calibrated from wire spike [
 | AM air       | `AMAir.CSV`         | Channel bank export shipped ([#267](https://github.com/pskillen/codeplug-studio/issues/267)); `AMZone.CSV` export shipped ([#316](https://github.com/pskillen/codeplug-studio/issues/316)) |
 | Broadcast FM | `FM.CSV`            | Channel bank export shipped ([#268](https://github.com/pskillen/codeplug-studio/issues/268)); `FMZone.CSV` unconfirmed                                                                     |
 | NXDN         | `NX*.CSV`           | Wire documented; export deferred                                                                                                                                                           |
-| APRS         | `APRS.CSV`          | Blocked on internal model                                                                                                                                                                  |
+| APRS         | `APRS.CSV`          | Shipped — conditional when `library.aprsConfiguration` exists ([#251](https://github.com/pskillen/codeplug-studio/issues/251))                                                             |
 
 ## Related
 

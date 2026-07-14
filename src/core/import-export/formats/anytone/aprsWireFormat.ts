@@ -1,4 +1,9 @@
-import type { AprsPttMode, AprsReportType, AprsSlotCallType, DMRTimeSlot } from '@core/models/libraryTypes.ts';
+import type {
+  AprsPttMode,
+  AprsReportType,
+  AprsSlotCallType,
+  DMRTimeSlot,
+} from '@core/models/libraryTypes.ts';
 import type { AprsPositionSource } from '@core/models/libraryTypes.ts';
 import type { GeoPoint } from '@core/models/libraryTypes.ts';
 
@@ -86,7 +91,9 @@ export interface AnytoneAprsPositionWire {
   longitude: AnytoneAprsCoordinateWire;
 }
 
-export function formatAnytoneFixedLocation(location: GeoPoint | null | undefined): AnytoneAprsPositionWire {
+export function formatAnytoneFixedLocation(
+  location: GeoPoint | null | undefined,
+): AnytoneAprsPositionWire {
   if (!location) {
     return {
       fixedLocationBeacon: '0',

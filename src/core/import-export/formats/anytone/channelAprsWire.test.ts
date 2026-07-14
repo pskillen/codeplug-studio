@@ -35,7 +35,15 @@ describe('serialiseAnytoneChannelRow APRS columns', () => {
       },
     };
     const build = newFormatBuild(PROJECT_ID, 'anytone-at-d890uv');
-    const assembled = assemble(build, { channels: [channel], zones: [], talkGroups: [], digitalContacts: [], analogContacts: [], rxGroupLists: [], scanLists: [] });
+    const assembled = assemble(build, {
+      channels: [channel],
+      zones: [],
+      talkGroups: [],
+      digitalContacts: [],
+      analogContacts: [],
+      rxGroupLists: [],
+      scanLists: [],
+    });
     const row = assembled.channels[0]!;
 
     const wire = serialiseAnytoneChannelRow(row, assembled, 'anytone-at-d890uv', 1);
@@ -52,7 +60,15 @@ describe('serialiseAnytoneChannelRow APRS columns', () => {
   it('keeps APRS defaults when channel has no aprs binding', () => {
     const channel = dmrChannel('Plain');
     const build = newFormatBuild(PROJECT_ID, 'anytone-at-d890uv');
-    const assembled = assemble(build, { channels: [channel], zones: [], talkGroups: [], digitalContacts: [], analogContacts: [], rxGroupLists: [], scanLists: [] });
+    const assembled = assemble(build, {
+      channels: [channel],
+      zones: [],
+      talkGroups: [],
+      digitalContacts: [],
+      analogContacts: [],
+      rxGroupLists: [],
+      scanLists: [],
+    });
     const row = assembled.channels[0]!;
 
     const wire = serialiseAnytoneChannelRow(row, assembled, 'anytone-at-d890uv', 1);
