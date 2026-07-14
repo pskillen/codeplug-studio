@@ -13,7 +13,10 @@ export default function AprsConfigurationPage() {
   const [assignmentsDirty, setAssignmentsDirty] = useState(false);
   const [tabModalOpen, setTabModalOpen] = useState(false);
   const [pendingTab, setPendingTab] = useState<string | null>(null);
+  const [editorResetKey, setEditorResetKey] = useState(0);
   const permitNavigationRef = useRef(false);
+
+  const aprsEditorKey = `${library.aprsConfiguration?.id ?? 'new'}:${library.aprsConfiguration?.revision ?? 0}:${editorResetKey}`;
 
   const isDirty = configDirty || assignmentsDirty;
   const {
@@ -43,6 +46,9 @@ export default function AprsConfigurationPage() {
 
   function leaveTab() {
     setTabModalOpen(false);
+    setConfigDirty(false);
+    setAssignmentsDirty(false);
+    setEditorResetKey((key) => key + 1);
     if (pendingTab) {
       setActiveTab(pendingTab);
       setPendingTab(null);
@@ -70,18 +76,21 @@ export default function AprsConfigurationPage() {
 
         <Tabs.Panel value="configuration" pt="md" keepMounted>
           <AprsConfigurationEditor
+            key={`config-${aprsEditorKey}`}
             projectId={projectId}
             library={library}
             entity={library.aprsConfiguration}
             settingsPage
             mapActive={activeTab === 'configuration'}
             onDirtyChange={setConfigDirty}
+            onSaved={reload}
             permitNavigationOnce={permitNavigationOnce}
           />
         </Tabs.Panel>
 
         <Tabs.Panel value="assignments" pt="md" keepMounted>
           <AprsChannelAssignmentPanel
+            key={`assignments-${aprsEditorKey}`}
             projectId={projectId}
             channels={library.channels}
             aprsConfiguration={library.aprsConfiguration}
