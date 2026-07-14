@@ -156,6 +156,7 @@ export default function RadioidContactSearch() {
 
   const selectedListings = listings.filter((row) => selectedKeys.includes(listingKey(row)));
   const addableSelected = selectedListings.filter((row) => !duplicateById.has(row.id));
+  const addableAll = listings.filter((row) => !duplicateById.has(row.id));
 
   return (
     <FormPage
@@ -171,17 +172,6 @@ export default function RadioidContactSearch() {
         </>
       }
       onSubmit={handleSearchSubmit}
-      footer={
-        selectedKeys.length > 0 ? (
-          <Button
-            loading={adding}
-            disabled={addableSelected.length === 0}
-            onClick={() => void addListings(addableSelected)}
-          >
-            Add selected ({addableSelected.length})
-          </Button>
-        ) : undefined
-      }
     >
       <Stack gap="lg">
         <Alert variant="light" color="blue" title="Directory disclaimer">
@@ -247,6 +237,23 @@ export default function RadioidContactSearch() {
 
         {listings.length > 0 ? (
           <PageSection title={`Results (${totalCount})`}>
+            <Group mb="md">
+              <Button
+                loading={adding}
+                disabled={addableAll.length === 0}
+                onClick={() => void addListings(addableAll)}
+              >
+                Add all on this page ({addableAll.length})
+              </Button>
+              <Button
+                variant="light"
+                loading={adding}
+                disabled={addableSelected.length === 0}
+                onClick={() => void addListings(addableSelected)}
+              >
+                Add selected ({addableSelected.length})
+              </Button>
+            </Group>
             <DataTable
               variant="embedded"
               rows={listings}
