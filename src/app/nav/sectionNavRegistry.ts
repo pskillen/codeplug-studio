@@ -31,6 +31,8 @@ const registry: SectionNavEntry[] = [
   { title: 'Channels', prefix: '/library/channels', Component: ChannelsSectionNav },
   { title: 'Zones', prefix: '/library/zones', Component: ZonesSectionNav },
   { title: 'Talk groups', prefix: '/library/talk-groups', Component: TalkGroupsSectionNav },
+  { title: 'Contacts', prefix: '/library/digital-contacts', Component: ContactsSectionNav },
+  { title: 'Contacts', prefix: '/library/analog-contacts', Component: ContactsSectionNav },
   { title: 'Contacts', prefix: '/library/contacts', Component: ContactsSectionNav },
   { title: 'RX group lists', prefix: '/library/rx-group-lists', Component: RxGroupListsSectionNav },
   { title: 'Scan lists', prefix: '/library/scan-lists', Component: ScanListsSectionNav },
