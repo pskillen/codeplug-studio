@@ -12,6 +12,8 @@ export interface AnytoneRadioProfile {
   scanListMembers: number;
   rxGroupListMembers: number;
   nameLimit: number;
+  /** Digital APRS channel slots in `APRS.CSV` (AT-D890UV). */
+  maxAprsSlots: number;
   powerLadder: readonly PowerLadderEntry[];
   /** Default DMR radio ID label when channel omits one. */
   defaultRadioIdLabel: string;
@@ -33,6 +35,7 @@ export const ANYTONE_PROFILES: readonly AnytoneRadioProfile[] = [
     scanListMembers: 100,
     rxGroupListMembers: 32,
     nameLimit: 16,
+    maxAprsSlots: 8,
     powerLadder: AT_D890UV_POWER_LADDER,
     defaultRadioIdLabel: 'TEST01',
     defaultRadioId: '1234567',

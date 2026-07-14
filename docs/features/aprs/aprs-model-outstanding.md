@@ -8,7 +8,7 @@ Items **deferred** or **open** after persistence + UI ([#353](https://github.com
 
 ## Deferred to follow-up tickets
 
-- [ ] Anytone `APRS.CSV` + channel serialisers, `aprsDefaults.ts` — [#251](https://github.com/pskillen/codeplug-studio/issues/251)
+- [x] Anytone `APRS.CSV` + channel serialisers, `aprsDefaults.ts` — [#251](https://github.com/pskillen/codeplug-studio/issues/251)
 - [ ] DM32 per-channel APRS columns — [#250](https://github.com/pskillen/codeplug-studio/issues/250)
 - [ ] OpenGD77 APRS import/export — analog-only; deferred
 - [ ] Analog APRS modelling or UI — export constants only
