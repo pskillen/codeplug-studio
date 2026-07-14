@@ -9,7 +9,7 @@ import {
   composeChannelWireName,
   type ChannelExportNameMode,
 } from '@core/domain/channelNaming.ts';
-import { finalizeWireName, uniqueWireName } from './shortenName.ts';
+import { finalizeWireName, shortenWireName, uniqueWireName } from './shortenName.ts';
 import { sanitiseAsciiWireString } from '../sanitiseAsciiWireString.ts';
 import { pushWireNameLengthWarning } from './wireNameWarning.ts';
 
@@ -40,14 +40,15 @@ export function applyWireNameLimits(
   options: CpsExportOptions | undefined,
   profileId: string | undefined,
   warnings: string[],
+  reserve = true,
 ): string {
   const maxLen = resolveMaxNameLength(profileId ?? options?.profileId, options);
   const shorten = options?.shortenNames !== false;
   const original = baseWireName.trim();
 
   if (!shorten || maxLen == null) {
-    const name = sanitiseAsciiWireString(uniqueWireName(original, reserved));
-    reserved.add(name);
+    const name = sanitiseAsciiWireString(reserve ? uniqueWireName(original, reserved) : original);
+    if (reserve) reserved.add(name);
     if (maxLen != null) {
       pushWireNameLengthWarning(warnings, {
         entityKind: 'Channel',
@@ -70,12 +71,28 @@ export function applyWireNameLimits(
       ? () => composeChannelWireName({ ...pick, name: abbrev })
       : undefined;
 
+  const shortenOpts = {
+    exportNameMode: pick.exportNameMode,
+    recomposeWithMode: (mode: ChannelExportNameMode) =>
+      composeChannelWireName({ ...pick, exportNameMode: mode }),
+    recomposeWithChannelAbbreviation,
+  };
+
+  if (!reserve) {
+    const exported = sanitiseAsciiWireString(shortenWireName(original, maxLen, shortenOpts));
+    pushWireNameLengthWarning(warnings, {
+      entityKind: 'Channel',
+      original,
+      exported,
+      maxLen,
+      profileId: profileId ?? options?.profileId,
+      shortenEnabled: true,
+    });
+    return exported;
+  }
+
   const exported = sanitiseAsciiWireString(
-    finalizeWireName(original, reserved, maxLen, {
-      exportNameMode: pick.exportNameMode,
-      recomposeWithMode: (mode) => composeChannelWireName({ ...pick, exportNameMode: mode }),
-      recomposeWithChannelAbbreviation,
-    }),
+    finalizeWireName(original, reserved, maxLen, shortenOpts),
   );
   pushWireNameLengthWarning(warnings, {
     entityKind: 'Channel',
