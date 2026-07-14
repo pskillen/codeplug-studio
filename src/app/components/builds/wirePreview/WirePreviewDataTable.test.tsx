@@ -4,6 +4,7 @@ import { MantineProvider } from '@mantine/core';
 import { MemoryRouter } from 'react-router-dom';
 import WirePreviewDataTable from './WirePreviewDataTable.tsx';
 import type { WirePreviewRow } from '@core/services/previewWireRows.ts';
+import type { ZoneGroupingLayout } from '@core/models/traitLayout.ts';
 
 const rows: WirePreviewRow[] = [
   {
@@ -78,5 +79,39 @@ describe('WirePreviewDataTable', () => {
     expect(screen.getAllByText('GB3DA Demo').length).toBeGreaterThan(0);
     expect(screen.getByText(/Talk group: Local 9 \(9\) · Slot 1/)).toBeInTheDocument();
     expect(screen.queryByText(/Channel:/)).not.toBeInTheDocument();
+  });
+
+  it('renders export scan list switch for zone rows when zoneScanColumn is set', () => {
+    const zoneRow: WirePreviewRow = {
+      key: 'zone-1',
+      libraryEntityId: 'zone-1',
+      entityKind: 'zone',
+      displayLabel: 'Glasgow',
+      generatedWireName: 'Glasgow',
+      effectiveWireName: 'Glasgow',
+      hasWireNameOverride: false,
+      excluded: false,
+    };
+    const layout: ZoneGroupingLayout = {
+      zones: [{ id: 'zone-1', name: 'Glasgow', channelIds: [], exportScanList: true }],
+    };
+    const onExportScanListChange = vi.fn();
+
+    render(
+      <MemoryRouter>
+        <MantineProvider>
+          <WirePreviewDataTable
+            rows={[zoneRow]}
+            onRowActivate={vi.fn()}
+            zoneScanColumn={{ layout, saving: false, onExportScanListChange }}
+          />
+        </MantineProvider>
+      </MemoryRouter>,
+    );
+
+    const toggle = screen.getByLabelText('Export Glasgow as scan list');
+    expect(toggle).toBeChecked();
+    fireEvent.click(toggle);
+    expect(onExportScanListChange).toHaveBeenCalledWith('zone-1', false);
   });
 });

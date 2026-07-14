@@ -1,7 +1,9 @@
 import { useMemo, useState } from 'react';
-import { ActionIcon, Badge, Group, Stack, Text } from '@mantine/core';
+import { ActionIcon, Badge, Group, Stack, Switch, Text } from '@mantine/core';
 import { IconArrowDown, IconArrowUp } from '@tabler/icons-react';
 import type { WirePreviewRow } from '@core/services/previewWireRows.ts';
+import type { ZoneGroupingLayout } from '@core/models/traitLayout.ts';
+import { layoutEntry } from '@core/import-export/zoneDerivedScanLists/members.ts';
 import DataTable, { type DataTableSortState } from '../../ui/DataTable.tsx';
 import WirePreviewListNameCell from './WirePreviewListNameCell.tsx';
 import WirePreviewDisplayCell from './WirePreviewDisplayCell.tsx';
@@ -14,6 +16,13 @@ export interface WirePreviewReorderConfig {
   disabled?: boolean;
 }
 
+/** DM32 / Anytone zones table — inline export-as-scan-list toggle per zone row. */
+export interface WirePreviewZoneScanColumnConfig {
+  layout: ZoneGroupingLayout;
+  saving: boolean;
+  onExportScanListChange: (zoneId: string, enabled: boolean) => void;
+}
+
 export interface WirePreviewDataTableProps {
   rows: WirePreviewRow[];
   onRowActivate: (row: WirePreviewRow) => void;
@@ -23,6 +32,7 @@ export interface WirePreviewDataTableProps {
   onSortChange?: (state: DataTableSortState | null) => void;
   reorder?: WirePreviewReorderConfig;
   locationByKey?: Map<string, number>;
+  zoneScanColumn?: WirePreviewZoneScanColumnConfig;
   emptyMessage?: string;
 }
 
@@ -47,6 +57,7 @@ export default function WirePreviewDataTable({
   onSortChange,
   reorder,
   locationByKey,
+  zoneScanColumn,
   emptyMessage = 'No library entities of this type yet.',
 }: WirePreviewDataTableProps) {
   const [internalSort, setInternalSort] = useState<DataTableSortState | null>(null);
@@ -109,6 +120,46 @@ export default function WirePreviewDataTable({
             </Stack>
           ),
         },
+        ...(zoneScanColumn
+          ? [
+              {
+                key: 'exportScanList',
+                header: 'Export scan list',
+                sortable: true,
+                sortValue: (row: WirePreviewRow) => {
+                  if (row.entityKind !== 'zone') return '';
+                  const entry = layoutEntry(zoneScanColumn.layout, row.libraryEntityId);
+                  return entry?.exportScanList ? '1' : '0';
+                },
+                render: (row: WirePreviewRow) => {
+                  if (row.entityKind !== 'zone') {
+                    return (
+                      <Text size="sm" c="dimmed">
+                        —
+                      </Text>
+                    );
+                  }
+                  const entry = layoutEntry(zoneScanColumn.layout, row.libraryEntityId);
+                  return (
+                    <Group gap="xs" onClick={(event) => event.stopPropagation()}>
+                      <Switch
+                        size="xs"
+                        aria-label={`Export ${row.displayLabel} as scan list`}
+                        checked={entry?.exportScanList ?? false}
+                        disabled={zoneScanColumn.saving}
+                        onChange={(event) =>
+                          zoneScanColumn.onExportScanListChange(
+                            row.libraryEntityId,
+                            event.currentTarget.checked,
+                          )
+                        }
+                      />
+                    </Group>
+                  );
+                },
+              },
+            ]
+          : []),
         {
           key: 'status',
           header: 'Status',

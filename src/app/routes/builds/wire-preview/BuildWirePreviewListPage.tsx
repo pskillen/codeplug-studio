@@ -11,6 +11,7 @@ import type {
 import ExportNameModeSelect from '../../../components/builds/ExportNameModeSelect.tsx';
 import UseLibraryAbbreviationsSwitch from '../../../components/builds/UseLibraryAbbreviationsSwitch.tsx';
 import WirePreviewDataTable from '../../../components/builds/wirePreview/WirePreviewDataTable.tsx';
+import type { WirePreviewZoneScanColumnConfig } from '../../../components/builds/wirePreview/WirePreviewDataTable.tsx';
 import WirePreviewOverrideModal from '../../../components/builds/wirePreview/WirePreviewOverrideModal.tsx';
 import { useSyncedWirePreviewRow } from '../../../components/builds/wirePreview/useSyncedWirePreviewRow.ts';
 import { FormPage } from '../../../components/ui/index.ts';
@@ -32,6 +33,7 @@ export interface BuildWirePreviewListPageProps {
   headerActions?: ReactNode;
   anytoneBank?: AnytoneWirePreviewBank;
   modalExtraSections?: (row: WirePreviewRow) => ReactNode;
+  zoneScanColumn?: WirePreviewZoneScanColumnConfig;
   /** When true, render list content only (no FormPage shell). */
   embedded?: boolean;
 }
@@ -46,6 +48,7 @@ function BuildWirePreviewListContent({
   headerActions,
   anytoneBank = 'dmr',
   modalExtraSections,
+  zoneScanColumn,
 }: BuildWirePreviewListPageProps) {
   const {
     build,
@@ -136,6 +139,7 @@ function BuildWirePreviewListContent({
           search={search}
           onSearchChange={setSearch}
           onRowActivate={(row) => setSelectedRowKey(row.key)}
+          zoneScanColumn={zoneScanColumn}
         />
       </Stack>
       <WirePreviewOverrideModal

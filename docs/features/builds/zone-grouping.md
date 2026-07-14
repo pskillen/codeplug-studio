@@ -9,7 +9,7 @@ How zones appear on the CPS wire for builds with the **zone grouping** trait. **
 ## Operator workflow
 
 1. Curate zone membership in **Library → Zones** (including nested zones and optional **Don't export as its own zone** — see [nested-zones.md](../library/nested-zones.md)).
-2. Open **Radio builds → Zones** on the build — wire preview table (include toggle + wire name override). **DM32 and Anytone:** expand each zone row for scan export controls — **Export as scan list** and member counts stay visible in the row header; per-member **Include in scan list** toggles live in the expanded panel. **Anytone:** airband-only zones appear on **Airband**; dual-mode zones appear on both **Zones** and **Airband**.
+2. Open **Radio builds → Zones** on the build — wire preview table (include toggle + wire name override). **DM32 and Anytone:** **Export scan list** column toggles zone-derived scan list export; open a row for carrier MHz, member scan counts, and per-member **Include in scan list** toggles. **Anytone:** airband-only zones appear on **Airband**; dual-mode zones appear on both **Zones** and **Airband**.
 3. For **DM32** builds, the expanded zone panel also includes:
    - **Export scratch channel** — per-zone flag on `ZoneGroupingLayout` (serialisation deferred; UI persists the preference).
    - **Scan carrier frequency** — MHz simplex for the `{zoneName} Scan` carrier channel (default 145.500).
