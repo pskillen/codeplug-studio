@@ -21,7 +21,8 @@ None. Rendered as a layout route element; child routes render through `<Outlet /
 
 ## Behaviour
 
-- Primary nav shows **Projects** when no active project; **Library / Summary** when a project is selected.
+- Primary nav shows **Projects** when no active project; **Library / Summary** when a project is selected. `SidebarDriveControls` appears below the active project header when Drive interchange or prior Drive use applies.
+- `DriveRefreshProvider` wraps the shell so sidebar controls and `RefreshFromDriveBanner` share remote-check state.
 - Section nav appears on `/library`, `/help`, `/reference`, `/settings` (and library sub-routes). Channel repeater import actions live in the library section nav.
 - `RequireActiveProject` gates library and summary routes. Legacy `/map` redirects to the library channels map section.
 
