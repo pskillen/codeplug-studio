@@ -24,18 +24,18 @@ Private calls → internal `DigitalContact` with `mode: 'dmr'`.
 
 **Fixture:** [`test-data/anytone/at-d890uv/DMRDigitalContactList.CSV`](../../../test-data/anytone/at-d890uv/DMRDigitalContactList.CSV) (one redacted private-contact row).
 
-| Header       | Internal field                           |
-| ------------ | ---------------------------------------- |
-| `No.`        | Export index                             |
-| `Radio ID`   | `DigitalContact.digitalId`               |
-| `Callsign`   | `DigitalContact.callsign` (always from library) |
+| Header       | Internal field                                                                |
+| ------------ | ----------------------------------------------------------------------------- |
+| `No.`        | Export index                                                                  |
+| `Radio ID`   | `DigitalContact.digitalId`                                                    |
+| `Callsign`   | `DigitalContact.callsign` (always from library)                               |
 | `Name`       | Build export name mode + optional per-contact `wireName` override — see below |
-| `City`       | `DigitalContact.city`                    |
-| `State`      | `DigitalContact.state`                   |
-| `Country`    | `DigitalContact.country`                 |
-| `Remarks`    | `DigitalContact.remarks`                 |
-| `Call Type`  | `Private Call`                           |
-| `Call Alert` | Export default `None`                    |
+| `City`       | `DigitalContact.city`                                                         |
+| `State`      | `DigitalContact.state`                                                        |
+| `Country`    | `DigitalContact.country`                                                      |
+| `Remarks`    | `DigitalContact.remarks`                                                      |
+| `Call Type`  | `Private Call`                                                                |
+| `Call Alert` | Export default `None`                                                         |
 
 Unmodelled address columns export empty strings when library fields are unset. `Call Alert` remains export constant `None` until CPS enum elicitation ([#297](https://github.com/pskillen/codeplug-studio/issues/297)).
 
@@ -54,11 +54,11 @@ Non-`None` **Call Alert** strings still need CPS elicitation — see [enum-verif
 
 Build **Export** and **Contacts** wire pages offer **Contact export name style** (persisted on `exportSettings.digitalContactExportNameMode`):
 
-| Mode            | CPS `Name` source                          |
-| --------------- | ------------------------------------------ |
-| `name` (default)| Library display `name`                     |
-| `callsign`      | Library `callsign`                         |
-| `callsign-name` | `"{callsign} {name}"` when both are set    |
+| Mode             | CPS `Name` source                       |
+| ---------------- | --------------------------------------- |
+| `name` (default) | Library display `name`                  |
+| `callsign`       | Library `callsign`                      |
+| `callsign-name`  | `"{callsign} {name}"` when both are set |
 
 Per-contact **wire name overrides** on the build take precedence. Duplicate contact `Name` values are allowed at export — Studio does not disambiguate with numeric suffixes. `Callsign` is always the library callsign column, independent of the name mode.
 

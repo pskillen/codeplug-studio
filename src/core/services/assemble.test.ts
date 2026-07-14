@@ -2,7 +2,13 @@ import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
-import { newChannel, newDigitalContact, newFormatBuild, newScanList, newTalkGroup } from '@core/domain/factories.ts';
+import {
+  newChannel,
+  newDigitalContact,
+  newFormatBuild,
+  newScanList,
+  newTalkGroup,
+} from '@core/domain/factories.ts';
 import { parseProjectDocument } from '@core/import-export/formats/native-yaml/parse.ts';
 import { assemble, exportInclusionWarnings } from './assemble.ts';
 import { exportBuildAll } from './exportBuild.ts';

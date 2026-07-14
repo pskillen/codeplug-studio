@@ -568,12 +568,7 @@ export function previewWireRows(
         const assembled = projection.digitalContacts.find((row) => row.entity.id === contact.id);
         const baseWireName = resolveDigitalContactExportBaseName(contact, contactOverrides, mode);
         const generatedWireName = shortenContacts
-          ? applyDigitalContactExportWireName(
-              baseWireName,
-              _options,
-              build.profileId,
-              warnings,
-            )
+          ? applyDigitalContactExportWireName(baseWireName, _options, build.profileId, warnings)
           : contact.name;
         rows.push(
           previewRow(
@@ -591,12 +586,7 @@ export function previewWireRows(
         const assembled = projection.analogContacts.find((row) => row.entity.id === contact.id);
         const baseWireName = resolveAnalogContactExportBaseName(contact, contactOverrides);
         const generatedWireName = shortenContacts
-          ? applyDigitalContactExportWireName(
-              baseWireName,
-              _options,
-              build.profileId,
-              warnings,
-            )
+          ? applyDigitalContactExportWireName(baseWireName, _options, build.profileId, warnings)
           : contact.name;
         rows.push(
           previewRow(

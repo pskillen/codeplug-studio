@@ -20,8 +20,7 @@ export default function ExportNameSettingsFields({
   profileNameLimit,
 }: ExportNameSettingsFieldsProps) {
   const settings = resolvedBuildExportSettings(build);
-  const showContactExportNameMode =
-    build.formatId === 'anytone' || build.formatId === 'opengd77';
+  const showContactExportNameMode = build.formatId === 'anytone' || build.formatId === 'opengd77';
 
   return (
     <Stack gap="sm">

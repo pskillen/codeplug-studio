@@ -40,8 +40,18 @@ describe('resolveDigitalContactExportBaseName', () => {
 describe('applyDigitalContactExportWireName', () => {
   it('allows duplicate contact wire names without numeric suffix', () => {
     const warnings: string[] = [];
-    const first = applyDigitalContactExportWireName('John', undefined, 'anytone-at-d890uv', warnings);
-    const second = applyDigitalContactExportWireName('John', undefined, 'anytone-at-d890uv', warnings);
+    const first = applyDigitalContactExportWireName(
+      'John',
+      undefined,
+      'anytone-at-d890uv',
+      warnings,
+    );
+    const second = applyDigitalContactExportWireName(
+      'John',
+      undefined,
+      'anytone-at-d890uv',
+      warnings,
+    );
     expect(first).toBe(second);
     expect(first).not.toMatch(/ 2$/);
   });

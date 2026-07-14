@@ -1,7 +1,8 @@
 import type { DigitalContact } from '@core/models/library.ts';
 import type { BuildEntityOverride } from '@core/models/formatBuild.ts';
 import type { CpsExportOptions } from '@core/import-export/types.ts';
-import { overrideByEntityId } from '@core/domain/formatBuildOverrides.ts';import { resolveMaxNameLength } from './channelExpansion/exportWireNames.ts';
+import { overrideByEntityId } from '@core/domain/formatBuildOverrides.ts';
+import { resolveMaxNameLength } from './channelExpansion/exportWireNames.ts';
 import { sanitiseAsciiWireString } from './sanitiseAsciiWireString.ts';
 import { finalizeWireName } from './channelExpansion/shortenName.ts';
 import { pushWireNameLengthWarning } from './channelExpansion/wireNameWarning.ts';
@@ -27,7 +28,9 @@ export function digitalContactExportNameModeLabel(mode: DigitalContactExportName
   return MODE_LABELS[mode];
 }
 
-export function isDigitalContactExportNameMode(value: string): value is DigitalContactExportNameMode {
+export function isDigitalContactExportNameMode(
+  value: string,
+): value is DigitalContactExportNameMode {
   return (DIGITAL_CONTACT_EXPORT_NAME_MODES as readonly string[]).includes(value);
 }
 
@@ -122,10 +125,7 @@ export function buildDigitalContactExportWireNameMap(
   const map = new Map<string, string>();
   for (const row of contacts) {
     const base = resolveDigitalContactExportBaseName(row.entity, contactOverrides, mode);
-    map.set(
-      row.entity.id,
-      applyDigitalContactExportWireName(base, options, profileId, warnings),
-    );
+    map.set(row.entity.id, applyDigitalContactExportWireName(base, options, profileId, warnings));
   }
   return map;
 }
