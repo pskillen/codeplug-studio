@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Alert, Stack } from '@mantine/core';
+import { runDriveActionWhenReady } from '../../hooks/useDriveActionClick.ts';
 import { useGoogleDrive } from '../../hooks/useGoogleDrive.ts';
 import GoogleDriveButton, { type GoogleDriveButtonProps } from './GoogleDriveButton.tsx';
 import GoogleDriveNotConfiguredModal from './GoogleDriveNotConfiguredModal.tsx';
@@ -44,24 +45,18 @@ export default function GoogleDriveActionButton({
     if (operationBlocked) return;
     setConnectError(null);
 
-    if (!isConfigured) {
-      setNotConfiguredOpen(true);
-      return;
-    }
+    const result = await runDriveActionWhenReady({
+      isConfigured,
+      connected,
+      sessionExpired,
+      connect,
+      onNotConfigured: () => setNotConfiguredOpen(true),
+      action: onClick,
+    });
 
-    if (!connected) {
-      const result = await connect();
-      if (result.status === 'connected') {
-        onClick();
-        return;
-      }
-      if (result.status === 'failed') {
-        setConnectError(result.message);
-      }
-      return;
+    if (!result.ok && result.connectError) {
+      setConnectError(result.connectError);
     }
-
-    onClick();
   }
 
   return (

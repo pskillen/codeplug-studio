@@ -39,6 +39,7 @@ import {
   PillTabs,
   ImageCheckboxGroup,
   SelectedItemList,
+  SoftWarning,
   SplitButton,
 } from '../components/ui/index.ts';
 import ForbidTransmitSegment from '../components/channels/ForbidTransmitSegment.tsx';
@@ -1008,6 +1009,20 @@ export default function StyleguidePage() {
           <BandPillForChannel channel={sampleChannel} />
           <Badge variant="outline">Outline badge</Badge>
         </Group>
+      </PageSection>
+
+      <PageSection
+        title="SoftWarning"
+        description="Theme-aware compact warning panels for sidebar chrome — see src/app/components/ui/SoftWarning.md"
+      >
+        <Stack gap="sm" maw={280}>
+          <SoftWarning title="Browser-only backup" onDismiss={() => undefined}>
+            This project is only stored in this browser — export YAML to back up.
+          </SoftWarning>
+          <SoftWarning tone="danger">
+            Session expired — click Save or Check to reconnect. You can keep working locally.
+          </SoftWarning>
+        </Stack>
       </PageSection>
 
       <PageSection

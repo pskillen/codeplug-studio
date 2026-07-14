@@ -1,5 +1,5 @@
 import { Alert, Button, Group } from '@mantine/core';
-import { useRefreshFromDrivePrompt } from '../../hooks/useYamlImportResolver.ts';
+import { useDriveRefresh } from './DriveRefreshProvider.tsx';
 import InterchangeOverwriteModal from '../import-export/InterchangeOverwriteModal.tsx';
 
 export default function RefreshFromDriveBanner() {
@@ -18,7 +18,7 @@ export default function RefreshFromDriveBanner() {
     confirmRefresh,
     confirmImportAsNew,
     projectName,
-  } = useRefreshFromDrivePrompt();
+  } = useDriveRefresh();
 
   if (!bannerOpen) {
     return null;

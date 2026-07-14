@@ -31,7 +31,7 @@ When OAuth is not configured (`!VITE_GOOGLE_CLIENT_ID`), click opens `GoogleDriv
 
 - `driveReady = connected && isConfigured && !sessionExpired` from `useDriveSession`
 - Not configured: click → `GoogleDriveNotConfiguredModal` → Settings
-- Configured but not connected: click → `connect()` → parent `onClick` on success; cancelled sign-in is silent; other failures show inline `Alert`
+- Configured but not ready (`!connected` or `sessionExpired`): click → `connect()` → parent `onClick` on success; cancelled sign-in is silent; other failures show inline `Alert`
 - Ready: delegates `onClick` to parent immediately
 
 ## Related

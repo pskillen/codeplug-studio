@@ -1,14 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { ImportProjectYamlMode } from '@core/services/importProjectYaml.ts';
-import { portableSyncedAt } from '@core/services/interchangeMeta.ts';
-import { isRemotePortableNewer } from '@core/services/projectSyncSummary.ts';
 import { buildImportOverwriteDiff } from '../services/yamlImportResolverService.ts';
 import { parseYamlImportPreview } from '../services/yamlImportResolverService.ts';
+import { checkDriveRemoteUpdates } from '../services/driveRemoteCheckService.ts';
 import {
   importProjectFromYaml,
   recordProjectImportDestination,
 } from '../services/projectImportExportService.ts';
-import { persistence } from '../state/persistence.ts';
 import { useGoogleDrive } from './useGoogleDrive.ts';
 import { useProjects } from '../state/useProjects.ts';
 import type { DriveOpenSelection } from '../components/import-export/DriveBrowserModal.tsx';
@@ -210,49 +208,55 @@ export function useRefreshFromDrivePrompt() {
   const [idMismatch, setIdMismatch] = useState(false);
   const [overwriteOpen, setOverwriteOpen] = useState(false);
   const [importing, setImporting] = useState(false);
+  const [checking, setChecking] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const dismissedRef = useRef<Set<string>>(new Set());
 
   const drive = activeProject?.interchange?.googleDrive;
   const projectId = activeProject?.projectId;
 
+  const applyRemoteCheckResult = useCallback(
+    (result: Awaited<ReturnType<typeof checkDriveRemoteUpdates>>) => {
+      if (!result.newer) {
+        setBannerOpen(false);
+        return;
+      }
+      setDiffLines(result.diffLines);
+      setRemoteYaml(result.remoteYaml);
+      setRemoteProjectId(result.remoteProjectId);
+      setIdMismatch(result.idMismatch);
+      setError(null);
+      setBannerOpen(true);
+    },
+    [],
+  );
+
+  const runRemoteCheck = useCallback(
+    async (options: { respectDismissed: boolean }) => {
+      if (!projectId || !drive || !connected || !activeProject) {
+        setBannerOpen(false);
+        return;
+      }
+      if (options.respectDismissed && dismissedRef.current.has(projectId)) {
+        return;
+      }
+      const result = await checkDriveRemoteUpdates({
+        projectId,
+        drive,
+        activeProject,
+        port,
+        withDriveAuthRetry,
+      });
+      applyRemoteCheckResult(result);
+    },
+    [activeProject, applyRemoteCheckResult, connected, drive, port, projectId, withDriveAuthRetry],
+  );
+
   useEffect(() => {
     let cancelled = false;
     void (async () => {
-      if (!projectId || !drive || !connected) {
-        if (!cancelled) setBannerOpen(false);
-        return;
-      }
-      if (dismissedRef.current.has(projectId)) {
-        return;
-      }
       try {
-        const metadata = await withDriveAuthRetry(() => port.getFileMetadata(drive.fileId));
-        if (cancelled) return;
-        const freshMeta = await persistence.loadProjectMeta(projectId);
-        const localSyncedAt = freshMeta
-          ? portableSyncedAt(freshMeta)
-          : portableSyncedAt(activeProject);
-        const remoteTime = metadata.modifiedTime;
-        if (!isRemotePortableNewer(remoteTime, localSyncedAt)) {
-          if (!cancelled) setBannerOpen(false);
-          return;
-        }
-        const content = await withDriveAuthRetry(() => port.readFile(drive.fileId));
-        if (cancelled) return;
-        const preview = parseYamlImportPreview(content);
-        const remoteSummary = {
-          ...preview.remoteSummary,
-          lastModifiedAt: remoteTime ?? preview.remoteSummary.portableSyncedAt,
-        };
-        const lines = await buildImportOverwriteDiff(projectId, remoteSummary);
-        if (cancelled) return;
-        setDiffLines(lines);
-        setRemoteYaml(content);
-        setRemoteProjectId(preview.projectId);
-        setIdMismatch(preview.projectId !== projectId);
-        setError(null);
-        setBannerOpen(true);
+        await runRemoteCheck({ respectDismissed: true });
       } catch {
         if (!cancelled) setBannerOpen(false);
       }
@@ -260,7 +264,21 @@ export function useRefreshFromDrivePrompt() {
     return () => {
       cancelled = true;
     };
-  }, [activeProject, connected, drive, port, projectId, withDriveAuthRetry]);
+  }, [runRemoteCheck]);
+
+  const checkNow = useCallback(async () => {
+    if (!projectId || !drive || !connected || !activeProject) {
+      return;
+    }
+    setChecking(true);
+    try {
+      await runRemoteCheck({ respectDismissed: false });
+    } catch {
+      setBannerOpen(false);
+    } finally {
+      setChecking(false);
+    }
+  }, [activeProject, connected, drive, projectId, runRemoteCheck]);
 
   async function recordDriveSync() {
     if (!projectId || !drive) return;
@@ -364,6 +382,7 @@ export function useRefreshFromDrivePrompt() {
     diffLines,
     overwriteOpen,
     importing,
+    checking,
     error,
     idMismatch,
     localProjectId: projectId ?? '',
@@ -374,6 +393,7 @@ export function useRefreshFromDrivePrompt() {
     closeOverwrite,
     confirmRefresh,
     confirmImportAsNew,
+    checkNow,
     projectName: activeProject?.name ?? '',
   };
 }

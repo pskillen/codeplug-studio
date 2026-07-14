@@ -4,7 +4,11 @@ import { useNavigate } from 'react-router-dom';
 import { ICON_SIZE_NAV, ICON_STROKE } from '../../lib/iconSizes.ts';
 import { useProjects } from '../../state/useProjects.ts';
 
-export default function ActiveProjectBar() {
+export interface ActiveProjectBarProps {
+  onNavClick?: () => void;
+}
+
+export default function ActiveProjectBar({ onNavClick }: ActiveProjectBarProps) {
   const navigate = useNavigate();
   const { activeProject } = useProjects();
 
@@ -25,7 +29,10 @@ export default function ActiveProjectBar() {
           size="compact-sm"
           variant="default"
           leftSection={<IconSwitchHorizontal size={ICON_SIZE_NAV} stroke={ICON_STROKE} />}
-          onClick={() => navigate('/')}
+          onClick={() => {
+            onNavClick?.();
+            navigate('/');
+          }}
         >
           Switch
         </Button>

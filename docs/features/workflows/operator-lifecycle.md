@@ -74,11 +74,12 @@ On **Home** (`/`):
 
 With an active project, **Library** routes persist channels, zones, contacts, talk groups, and RX lists per row (`revision` optimistic concurrency). Changes stay in IndexedDB until saved to a portable destination.
 
-**App chrome** (`ProjectInterchangeBar`):
+**Primary sidebar** (`SidebarDriveControls`):
 
 - Shows interchange source when `ProjectMeta.interchange` is set
 - **Save to Drive** when the project has a remembered Drive file and local edits are newer than last sync — pre-save conflict check blocks silent overwrite when another device saved more recently ([#335](https://github.com/pskillen/codeplug-studio/issues/335))
-- Soft warning when the project exists only in this browser
+- **Check Drive** for manual remote-newer detection ([#368](https://github.com/pskillen/codeplug-studio/issues/368))
+- Soft warning when the project exists only in this browser and the operator has used Drive on this browser before
 
 ### 3. Connect Google Drive (optional)
 
@@ -86,7 +87,7 @@ With an active project, **Library** routes persist channels, zones, contacts, ta
 
 - Connect with Google OAuth (requires `VITE_GOOGLE_CLIENT_ID` in local builds)
 - Token and browse path stay in browser localStorage only
-- Expired sessions reconnect inline — Settings **Reconnect**, `DriveSessionBanner`, or any Drive action ([#286](https://github.com/pskillen/codeplug-studio/issues/286))
+- Expired sessions reconnect inline — Settings **Reconnect**, sidebar Save/Check click, or any Drive action ([#286](https://github.com/pskillen/codeplug-studio/issues/286), [#368](https://github.com/pskillen/codeplug-studio/issues/368))
 
 ### 4. Import / export (native YAML)
 
