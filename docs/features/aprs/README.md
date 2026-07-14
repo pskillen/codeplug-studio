@@ -28,10 +28,10 @@ Tier-1 hub for **digital APRS** in Codeplug Studio — vendor-neutral library en
 
 ## Entities (summary)
 
-| Entity               | Layer                       | Role                                                                                     |
-| -------------------- | --------------------------- | ---------------------------------------------------------------------------------------- |
+| Entity               | Layer                       | Role                                                                                                                |
+| -------------------- | --------------------------- | ------------------------------------------------------------------------------------------------------------------- |
 | `AprsConfiguration`  | Library (singleton)         | Global digital APRS settings — beacon timing, position source, up to 8 channel slots (DMR, AM air, or FM broadcast) |
-| `ChannelAprsBinding` | Library (on `Channel.aprs`) | Per-channel digital flags — receive, report type, PTT mode, `reportSlotIndex` (1-based)  |
+| `ChannelAprsBinding` | Library (on `Channel.aprs`) | Per-channel digital flags — receive, report type, PTT mode, `reportSlotIndex` (1-based)                             |
 
 Deep field semantics: [data-model README](../data-model/README.md). Cross-format wire shapes: [cross-format-reconciliation.md](cross-format-reconciliation.md).
 

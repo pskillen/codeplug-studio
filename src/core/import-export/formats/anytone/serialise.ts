@@ -45,7 +45,12 @@ import {
   prepareAnytoneExportAssembly,
   type AnytonePreparedExport,
 } from './prepareExportAssembly.ts';
-import { orderedDmrExpandedRows, orderedAmAirChannels, orderedFmBroadcastChannels, receiveBankChannelSlot } from './exportChannelSlots.ts';
+import {
+  orderedDmrExpandedRows,
+  orderedAmAirChannels,
+  orderedFmBroadcastChannels,
+  receiveBankChannelSlot,
+} from './exportChannelSlots.ts';
 import { hasAnytoneAprsExport, serialiseAprsCsv } from './exportAprsWire.ts';
 
 export type AnytoneExportFiles = Record<AnytoneExportFileName, string>;

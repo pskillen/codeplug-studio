@@ -10,11 +10,11 @@ Per-channel APRS flags on `Channel.CSV`: [aprs-on-channels.md](aprs-on-channels.
 
 ## Fidelity tier
 
-| Tier             | Status                                                                                                                                     |
-| ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| Tier             | Status                                                                                                                                                                                                         |
+| ---------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **Modelled**     | Beacon timing, position source, 8 digital channel slots (any library channel; Anytone maps to correct CPS bank `No.`), DMR timeslot + target ID per slot — see tier-1 [aprs](../../../features/aprs/README.md) |
-| **Export v1**    | Shipped ([#251](https://github.com/pskillen/codeplug-studio/issues/251)) — modelled columns from library; remainder from `aprsDefaults.ts` |
-| **Not modelled** | Analog identity/path, RX filters, packet types, tones, extra TX freqs                                                                      |
+| **Export v1**    | Shipped ([#251](https://github.com/pskillen/codeplug-studio/issues/251)) — modelled columns from library; remainder from `aprsDefaults.ts`                                                                     |
+| **Not modelled** | Analog identity/path, RX filters, packet types, tones, extra TX freqs                                                                                                                                          |
 
 ### Position source wire (export v1)
 
@@ -47,12 +47,12 @@ Per-channel APRS flags on `Channel.CSV`: [aprs-on-channels.md](aprs-on-channels.
 
 Repeating pattern `channelN`, `slotN`, `Aprs TgN`, `Call TypeN` for N=1…8:
 
-| Wire column | Meaning |
-| --- | --- |
-| `channelN` | CPS `No.` for the referenced library channel in its bank file — `Channel.CSV` (DMR / main bank), `AMAir.CSV`, or `FM.CSV`. Wire `0` = current channel. VFO rows (257 / 101) are not bindable. |
-| `slotN` | DMR timeslot (`1` or `2`) for digital APRS transmission |
-| `Aprs TgN` | Target DMR ID (talk group or private) |
-| `Call TypeN` | `0` private / `1` group |
+| Wire column  | Meaning                                                                                                                                                                                       |
+| ------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `channelN`   | CPS `No.` for the referenced library channel in its bank file — `Channel.CSV` (DMR / main bank), `AMAir.CSV`, or `FM.CSV`. Wire `0` = current channel. VFO rows (257 / 101) are not bindable. |
+| `slotN`      | DMR timeslot (`1` or `2`) for digital APRS transmission                                                                                                                                       |
+| `Aprs TgN`   | Target DMR ID (talk group or private)                                                                                                                                                         |
+| `Call TypeN` | `0` private / `1` group                                                                                                                                                                       |
 
 ### Identity and path
 

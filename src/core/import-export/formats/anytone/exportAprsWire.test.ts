@@ -7,10 +7,7 @@ import {
   aprsEnabledAnytoneExportLibrary,
   minimalAnytoneExportBuild,
 } from './exportGoldenFixtures.ts';
-import {
-  buildAnytoneExportChannelSlotById,
-  serialiseAprsCsv,
-} from './exportAprsWire.ts';
+import { buildAnytoneExportChannelSlotById, serialiseAprsCsv } from './exportAprsWire.ts';
 import { prepareAnytoneExportAssembly } from './prepareExportAssembly.ts';
 import { parseCsv } from '@core/import-export/csvParse.ts';
 

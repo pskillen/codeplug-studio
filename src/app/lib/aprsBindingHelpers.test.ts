@@ -1,7 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import type { AprsChannelSlot } from '@core/models/aprs.ts';
 import type { Channel } from '@core/models/library.ts';
-import { formatAprsAssignmentSummary, channelAssignmentsDirty, aprsSlotChannelSelectGroups } from './aprsBindingHelpers.ts';
+import {
+  formatAprsAssignmentSummary,
+  channelAssignmentsDirty,
+  aprsSlotChannelSelectGroups,
+} from './aprsBindingHelpers.ts';
 
 const channelA: Channel = {
   id: 'ch-a',
@@ -212,7 +216,9 @@ describe('aprsSlotChannelSelectGroups', () => {
       rxFrequency: 118_800_000,
       txFrequency: null,
       forbidTransmit: true,
-      modeProfiles: [{ mode: 'am', squelch: null, rxTone: 'none', txTone: 'none', bandwidthKHz: 12.5 }],
+      modeProfiles: [
+        { mode: 'am', squelch: null, rxTone: 'none', txTone: 'none', bandwidthKHz: 12.5 },
+      ],
     };
 
     const groups = aprsSlotChannelSelectGroups([air, dmr]);

@@ -95,10 +95,10 @@
 
 **Status:** Complete
 
-| Slice                         | Status   | Notes                                                                 |
-| ----------------------------- | -------- | --------------------------------------------------------------------- |
-| Shared bank slot numbering    | Complete | `exportChannelSlots.ts` — DMR + receive banks                         |
-| Multi-bank `APRS.CSV` export  | Complete | `buildAnytoneExportChannelSlotById` + export warnings               |
-| Directional tests             | Complete | `exportAprsWire.test.ts`, AM air golden in `exportGolden.test.ts`   |
-| Slot picker UX                | Complete | Grouped channel select by export bank                               |
-| Docs                          | Complete | Tier-1 APRS + tier-3 `aprs.md`                                        |
+| Slice                        | Status   | Notes                                                             |
+| ---------------------------- | -------- | ----------------------------------------------------------------- |
+| Shared bank slot numbering   | Complete | `exportChannelSlots.ts` — DMR + receive banks                     |
+| Multi-bank `APRS.CSV` export | Complete | `buildAnytoneExportChannelSlotById` + export warnings             |
+| Directional tests            | Complete | `exportAprsWire.test.ts`, AM air golden in `exportGolden.test.ts` |
+| Slot picker UX               | Complete | Grouped channel select by export bank                             |
+| Docs                         | Complete | Tier-1 APRS + tier-3 `aprs.md`                                    |
