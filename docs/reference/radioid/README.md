@@ -78,7 +78,7 @@ Additional fields (`lastheard`, `radio_id`, …) are ignored at the integration 
 | ----------------------------------------- | --------------------------- |
 | `id`                                      | `digitalId`                 |
 | `callsign`                                | `callsign`                  |
-| `name` (import mode — see feature hub)    | `name`                      |
+| `fname` + `surname` (fallback `callsign`) | `name`                      |
 | `city`                                    | `city`                      |
 | `state`                                   | `state`                     |
 | `country`                                 | `country`                   |

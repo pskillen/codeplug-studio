@@ -47,7 +47,7 @@ describe('radioid client', () => {
 });
 
 describe('mapRadioidUserToDigitalContact', () => {
-  it('maps RadioID name field in default name mode', () => {
+  it('maps fname and surname to display name with callsign metadata', () => {
     const contact = mapRadioidUserToDigitalContact(
       {
         id: 3109478,
@@ -61,28 +61,10 @@ describe('mapRadioidUserToDigitalContact', () => {
       },
       'project-1',
     );
-    expect(contact.name).toBe('Hiram');
+    expect(contact.name).toBe('Hiram Percy');
     expect(contact.callsign).toBe('W1AW');
     expect(contact.digitalId).toBe(3109478);
     expect(contact.city).toBe('Newington');
-  });
-
-  it('combines callsign and name in callsign-name mode', () => {
-    const contact = mapRadioidUserToDigitalContact(
-      {
-        id: 3109478,
-        callsign: 'W1AW',
-        fname: 'Hiram',
-        surname: 'Percy',
-        name: 'Hiram',
-        city: '',
-        state: '',
-        country: '',
-      },
-      'project-1',
-      'callsign-name',
-    );
-    expect(contact.name).toBe('W1AW Hiram');
   });
 
   it('falls back to callsign when name parts are empty', () => {

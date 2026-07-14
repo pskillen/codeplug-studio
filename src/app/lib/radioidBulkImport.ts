@@ -7,7 +7,6 @@ import {
   searchRadioidDmrUsers,
   type RadioidDmrUserListing,
   type RadioidSearchFilterInput,
-  type RadioidContactNameMode,
 } from '@integrations/radioid/index.ts';
 import type { ProjectPersistence } from '@integrations/persistence/types.ts';
 
@@ -45,7 +44,6 @@ export interface RadioidBulkImportOptions {
   totalPages?: number;
   totalCount?: number;
   persistence: ProjectPersistence;
-  nameMode: RadioidContactNameMode;
   onProgress: (progress: RadioidBulkImportProgress) => void;
   isCancelled?: () => boolean;
 }
@@ -69,15 +67,12 @@ function estimateEtaMs(startedAt: number, processed: number, total: number): num
 async function processListing(
   listing: RadioidDmrUserListing,
   contactByDigitalId: Map<number, DigitalContact>,
-  options: Pick<
-    RadioidBulkImportOptions,
-    'projectId' | 'updateExisting' | 'persistence' | 'nameMode'
-  >,
+  options: Pick<RadioidBulkImportOptions, 'projectId' | 'updateExisting' | 'persistence'>,
 ): Promise<'added' | 'updated' | 'skipped' | 'failed'> {
   const existing = contactByDigitalId.get(listing.id);
   if (existing) {
     if (!options.updateExisting) return 'skipped';
-    const patched = applyRadioidListingUpdates(existing, listing, options.nameMode);
+    const patched = applyRadioidListingUpdates(existing, listing);
     if (!patched) return 'skipped';
     const result = await options.persistence.putDigitalContact(patched, existing.revision);
     if (!result.ok) return 'failed';
@@ -85,7 +80,7 @@ async function processListing(
     return 'updated';
   }
 
-  const contact = mapRadioidUserToDigitalContact(listing, options.projectId, options.nameMode);
+  const contact = mapRadioidUserToDigitalContact(listing, options.projectId);
   const result = await options.persistence.putDigitalContact(contact, null);
   if (!result.ok) return 'failed';
   contactByDigitalId.set(listing.id, { ...contact, revision: result.revision });

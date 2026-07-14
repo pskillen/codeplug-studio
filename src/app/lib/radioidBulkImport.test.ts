@@ -52,7 +52,6 @@ describe('runRadioidBulkImport', () => {
       contacts: [],
       listings: [listing],
       persistence,
-      nameMode: 'callsign',
       onProgress: (p) => progress.push(p.processed),
     });
 
@@ -81,7 +80,6 @@ describe('runRadioidBulkImport', () => {
       contacts: [existing],
       listings: [listing],
       persistence,
-      nameMode: 'callsign',
       onProgress: () => {},
     });
 

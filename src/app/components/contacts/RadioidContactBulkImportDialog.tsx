@@ -1,8 +1,7 @@
 import { useMemo, useRef, useState } from 'react';
 import { Alert, Button, Checkbox, Group, Modal, Progress, Stack, Text } from '@mantine/core';
 import type { DigitalContact } from '@core/models/library.ts';
-import type { RadioidDmrUserListing, RadioidContactNameMode } from '@integrations/radioid/index.ts';
-import { radioidContactNameModeLabel } from '@integrations/radioid/index.ts';
+import type { RadioidDmrUserListing } from '@integrations/radioid/index.ts';
 import type { RadioidSearchFilters } from '../../hooks/useRadioidContactSearch.ts';
 import { persistence } from '../../state/persistence.ts';
 import {
@@ -26,7 +25,6 @@ export interface RadioidContactBulkImportDialogProps {
   totalCount: number;
   projectId: string | null;
   contacts: readonly DigitalContact[];
-  nameMode: RadioidContactNameMode;
 }
 
 type DialogPhase = 'confirm' | 'running' | 'done';
@@ -66,7 +64,6 @@ function RadioidContactBulkImportDialogBody({
   totalCount,
   projectId,
   contacts,
-  nameMode,
   onClose,
   onComplete,
 }: Omit<RadioidContactBulkImportDialogProps, 'opened'>) {
@@ -98,7 +95,6 @@ function RadioidContactBulkImportDialogBody({
       totalPages: scope === 'all' ? totalPages : undefined,
       totalCount: scope === 'all' ? totalCount : listings.length,
       persistence,
-      nameMode,
       onProgress: setProgress,
       isCancelled: () => cancelledRef.current,
     });
@@ -137,10 +133,6 @@ function RadioidContactBulkImportDialogBody({
           </Text>
         ) : null}
         <Stack gap="xs">
-          <Text size="sm">
-            Import name as <strong>{radioidContactNameModeLabel(nameMode)}</strong> (change on the
-            search page).
-          </Text>
           <Text size="sm">
             <strong>{newCount}</strong> new contact{newCount === 1 ? '' : 's'} to add
           </Text>

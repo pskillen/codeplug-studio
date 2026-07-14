@@ -5,14 +5,6 @@ export {
   type RadioidSearchFilterInput,
 } from './buildSearchParams.ts';
 export {
-  DEFAULT_RADIOID_CONTACT_NAME_MODE,
-  isRadioidContactNameMode,
-  radioidContactNameModeLabel,
-  radioidListingImportName,
-  RADIOID_CONTACT_NAME_MODES,
-  type RadioidContactNameMode,
-} from './contactName.ts';
-export {
   applyRadioidListingUpdates,
   buildDigitalContactPatchFromDiff,
   diffDigitalContactFromListing,
