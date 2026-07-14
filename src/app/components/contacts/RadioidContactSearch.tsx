@@ -1,7 +1,8 @@
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Alert, Anchor, Button, Group, Pagination, Stack, Text, TextInput } from '@mantine/core';
+import { Alert, Anchor, Autocomplete, Button, Group, Pagination, Stack, Text, TextInput } from '@mantine/core';
 import { IconSearch } from '@tabler/icons-react';
+import { REPEATERBOOK_COUNTRY_NAMES } from '@integrations/repeaters/repeaterbook/countryNames.ts';
 import {
   findDigitalContactByDigitalId,
   mapRadioidUserToDigitalContact,
@@ -190,10 +191,25 @@ export default function RadioidContactSearch() {
 
         <PageSection title="Search filters">
           <Group grow align="flex-end">
+            <Autocomplete
+              label="Country"
+              placeholder="Start typing — e.g. United Kingdom"
+              data={[...REPEATERBOOK_COUNTRY_NAMES]}
+              value={filters.country}
+              onChange={(value) => updateFilter('country', value)}
+              limit={20}
+            />
             <TextInput
-              label="DMR ID"
-              value={filters.id}
-              onChange={(e) => updateFilter('id', e.currentTarget.value)}
+              label="State / province"
+              value={filters.state}
+              onChange={(e) => updateFilter('state', e.currentTarget.value)}
+              placeholder="Begins with…"
+            />
+            <TextInput
+              label="City"
+              value={filters.city}
+              onChange={(e) => updateFilter('city', e.currentTarget.value)}
+              placeholder="Begins with…"
             />
             <TextInput
               label="Callsign"
@@ -202,19 +218,9 @@ export default function RadioidContactSearch() {
               placeholder="Begins with…"
             />
             <TextInput
-              label="City"
-              value={filters.city}
-              onChange={(e) => updateFilter('city', e.currentTarget.value)}
-            />
-            <TextInput
-              label="State / province"
-              value={filters.state}
-              onChange={(e) => updateFilter('state', e.currentTarget.value)}
-            />
-            <TextInput
-              label="Country"
-              value={filters.country}
-              onChange={(e) => updateFilter('country', e.currentTarget.value)}
+              label="DMR ID"
+              value={filters.id}
+              onChange={(e) => updateFilter('id', e.currentTarget.value)}
             />
           </Group>
           <Group mt="md">
