@@ -1,3 +1,4 @@
+import { newChannel } from '@core/domain/factories.ts';
 import type { Channel } from '@core/models/library.ts';
 import type { AssembledBuild, AssembledChannel, LibrarySlice } from '@core/services/assemble.ts';
 import type { CpsExportOptions } from '@core/import-export/types.ts';
@@ -26,11 +27,11 @@ export interface AnytonePreparedExport {
   expansionByChannelId: Map<string, ExpandedAnytoneChannelRow[]>;
 }
 
-function carrierChannelEntity(carrier: SyntheticScanCarrier, template: Channel): Channel {
+function carrierChannelEntity(carrier: SyntheticScanCarrier, projectId: string): Channel {
+  const baseName = `${carrier.zoneName} Scan`.trim();
   return {
-    ...template,
+    ...newChannel(projectId, baseName, ''),
     id: `scan-carrier:${carrier.zoneId}`,
-    name: carrier.wireName,
     scanListId: null,
     rxFrequency: carrier.frequencyHz,
     txFrequency: carrier.frequencyHz,
@@ -64,14 +65,11 @@ export function prepareAnytoneExportAssembly(
     );
   }
 
-  const templateChannel = library.channels[0] ?? assembled.channels[0]?.entity;
-  const carrierRows: AssembledChannel[] =
-    templateChannel != null
-      ? derived.carriers.map((carrier) => ({
-          entity: carrierChannelEntity(carrier, templateChannel),
-          wireName: carrier.wireName,
-        }))
-      : [];
+  const projectId = assembled.projectId;
+  const carrierRows: AssembledChannel[] = derived.carriers.map((carrier) => ({
+    entity: carrierChannelEntity(carrier, projectId),
+    wireName: carrier.wireName,
+  }));
 
   const withCarriers: AssembledBuild = {
     ...assembled,
@@ -102,10 +100,19 @@ export function prepareAnytoneExportAssembly(
     channels: [...assembled.channels, ...carrierChannels],
   };
 
+  const carrierPrependByZoneId = new Map<string, string>();
+  for (const carrier of derived.carriers) {
+    const carrierId = `scan-carrier:${carrier.zoneId}`;
+    const wireName = context.channelWireName(carrierId);
+    if (wireName) {
+      carrierPrependByZoneId.set(carrier.zoneId, wireName);
+    }
+  }
+
   return {
     assembled: exportAssembly,
     context,
-    carrierPrependByZoneId: derived.carrierPrependByZoneId,
+    carrierPrependByZoneId,
     expandedChannels,
     expansionByChannelId,
   };
