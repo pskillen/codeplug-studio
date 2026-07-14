@@ -1,12 +1,32 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState, type CSSProperties } from 'react';
 import type { AprsChannelSlot, AprsConfiguration, ChannelAprsBinding } from '@core/models/aprs.ts';
 import type { AprsPttMode, AprsReportType } from '@core/models/libraryTypes.ts';
 import type { Channel } from '@core/models/library.ts';
 import { normalizeChannel } from '@core/domain/normalizeChannel.ts';
-import { Alert, Button, Checkbox, Group, Select, Stack, Text, TextInput } from '@mantine/core';
+import {
+  Alert,
+  Button,
+  Checkbox,
+  Group,
+  MultiSelect,
+  Pill,
+  Select,
+  SimpleGrid,
+  Stack,
+  Text,
+  TextInput,
+} from '@mantine/core';
 import { DataTable, GradientSegmentedControl } from '../ui/index.ts';
 import type { DataTableColumn } from '../ui/DataTable.tsx';
 import { DATATABLE_NAME_SORT_KEY } from '../../lib/dataTable/sort.ts';
+import {
+  ALL_BANDS,
+  bandsFromFrequencies,
+  channelMatchesBandFilter,
+  isAmateurBand,
+  type BandDefinition,
+} from '../../lib/bands.ts';
+import BandPill, { BandPillForChannel } from '../pills/BandPill.tsx';
 import {
   APRS_SLOT_NONE_VALUE,
   aprsSlotSelectOptions,
@@ -35,6 +55,24 @@ const PTT_MODE_OPTIONS = [
 ] satisfies { value: AprsPttMode; label: string }[];
 
 type BindingDraftMap = Record<string, ChannelAprsBinding | undefined>;
+
+function bandMultiSelectPillStyle(band: BandDefinition): CSSProperties {
+  if (isAmateurBand(band)) {
+    return { backgroundColor: band.color, color: '#fff' };
+  }
+  return {
+    border: `1px solid ${band.color}`,
+    borderColor: band.color,
+    color: band.color,
+    backgroundColor: `${band.color}18`,
+  };
+}
+
+function channelBandSortKey(channel: Channel): string {
+  return bandsFromFrequencies(channel.rxFrequency, channel.txFrequency)
+    .map((band) => band.label)
+    .join(', ');
+}
 
 function initialDraftMap(channels: Channel[]): BindingDraftMap {
   const map: BindingDraftMap = {};
@@ -82,6 +120,7 @@ function AprsChannelAssignmentPanelInner({
   const [draftById, setDraftById] = useState<BindingDraftMap>(() => initialDraftMap(channels));
   const [selectedKeys, setSelectedKeys] = useState<string[]>([]);
   const [search, setSearch] = useState('');
+  const [bandFilter, setBandFilter] = useState<string[]>([]);
   const [slotFilter, setSlotFilter] = useState<string>('all');
   const [reportTypeFilter, setReportTypeFilter] = useState<string>('all');
   const [receiveFilter, setReceiveFilter] = useState<string>('all');
@@ -116,6 +155,21 @@ function AprsChannelAssignmentPanelInner({
     [channelSlots],
   );
 
+  const bandsById = useMemo(() => new Map(ALL_BANDS.map((band) => [band.id, band])), []);
+
+  const bandFilterOptions = useMemo(() => {
+    const ids = new Set<string>(bandFilter);
+    for (const channel of visibleChannels) {
+      for (const band of bandsFromFrequencies(channel.rxFrequency, channel.txFrequency)) {
+        ids.add(band.id);
+      }
+    }
+    return ALL_BANDS.filter((band) => ids.has(band.id)).map((band) => ({
+      value: band.id,
+      label: band.label,
+    }));
+  }, [visibleChannels, bandFilter]);
+
   const updateBinding = useCallback(
     (channelId: string, binding: ChannelAprsBinding | undefined) => {
       setDraftById((prev) => {
@@ -139,6 +193,9 @@ function AprsChannelAssignmentPanelInner({
         const haystack = `${channel.name} ${channel.callsign}`.toLowerCase();
         if (!haystack.includes(needle)) return false;
       }
+      if (!channelMatchesBandFilter(channel.rxFrequency, channel.txFrequency, bandFilter)) {
+        return false;
+      }
       if (reportTypeFilter !== 'all' && binding.reportType !== reportTypeFilter) return false;
       if (receiveFilter === 'enabled' && !binding.receiveEnabled) return false;
       if (receiveFilter === 'disabled' && binding.receiveEnabled) return false;
@@ -148,10 +205,16 @@ function AprsChannelAssignmentPanelInner({
       }
       return true;
     });
-  }, [visibleChannels, draftById, search, reportTypeFilter, receiveFilter, slotFilter]);
+  }, [visibleChannels, draftById, search, bandFilter, reportTypeFilter, receiveFilter, slotFilter]);
 
   const columns = useMemo((): DataTableColumn<Channel>[] => {
     return [
+      {
+        key: 'band',
+        header: 'Band',
+        sortValue: channelBandSortKey,
+        render: (row) => <BandPillForChannel channel={row} size="xs" />,
+      },
       {
         key: 'reportType',
         header: 'Report type',
@@ -339,7 +402,27 @@ function AprsChannelAssignmentPanelInner({
         Assign digital APRS bindings per channel. Use the channel-type filter to include analog
         channels when needed.
       </Text>
-      <Group grow align="flex-end">
+      <SimpleGrid cols={{ base: 1, xs: 2, sm: 4 }} spacing="sm">
+        <MultiSelect
+          label="Band"
+          data={bandFilterOptions}
+          value={bandFilter}
+          onChange={setBandFilter}
+          clearable
+          renderPill={({ option, onRemove }) => {
+            if (!option) return null;
+            const band = bandsById.get(String(option.value));
+            if (!band) return null;
+            return (
+              <Pill withRemoveButton onRemove={onRemove} style={bandMultiSelectPillStyle(band)}>
+                {band.label}
+              </Pill>
+            );
+          }}
+          renderOption={({ option }) => (
+            <BandPill band={bandsById.get(String(option.value)) ?? null} size="xs" />
+          )}
+        />
         <Select
           label="Report slot"
           data={slotFilterOptions}
@@ -366,7 +449,7 @@ function AprsChannelAssignmentPanelInner({
           value={receiveFilter}
           onChange={(value) => setReceiveFilter(value ?? 'all')}
         />
-      </Group>
+      </SimpleGrid>
       <Group align="flex-end" gap="md" wrap="nowrap">
         <GradientSegmentedControl
           label="Channel type"
