@@ -15,9 +15,7 @@ describe('isDriveReady', () => {
 describe('runDriveActionWhenReady', () => {
   it('runs connect then action when session expired', async () => {
     const action = vi.fn();
-    const connect = vi.fn(
-      async (): Promise<DriveConnectResult> => ({ status: 'connected' }),
-    );
+    const connect = vi.fn(async (): Promise<DriveConnectResult> => ({ status: 'connected' }));
 
     const result = await runDriveActionWhenReady({
       isConfigured: true,

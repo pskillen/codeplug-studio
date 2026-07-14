@@ -8,8 +8,8 @@ Shows the current project label and navigates back to the project picker on **Sw
 
 ## Props
 
-| Prop | Type | Notes |
-| --- | --- | --- |
+| Prop         | Type         | Notes                                                                  |
+| ------------ | ------------ | ---------------------------------------------------------------------- |
 | `onNavClick` | `() => void` | Optional — closes the mobile nav drawer (same as other `AppNav` links) |
 
 ## Usage

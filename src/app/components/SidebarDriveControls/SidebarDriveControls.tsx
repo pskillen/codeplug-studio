@@ -115,7 +115,9 @@ export default function SidebarDriveControls() {
                   aria-label="Save to Drive"
                   loading={saving || saveAction.driveLoading}
                   disabled={saveDisabled}
-                  style={!saveAction.driveReady && !saveDisabled ? disconnectedIconStyle : undefined}
+                  style={
+                    !saveAction.driveReady && !saveDisabled ? disconnectedIconStyle : undefined
+                  }
                   onClick={() => void handleSave()}
                 >
                   <IconDeviceFloppy size={ICON_SIZE_NAV} stroke={ICON_STROKE} />

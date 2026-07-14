@@ -18,15 +18,15 @@ Rendered inside `AppNav` below `ActiveProjectBar` when the project has a Drive l
 
 ## Behaviour
 
-| State | UI |
-| --- | --- |
-| Linked Drive + dirty | Save enabled |
-| Linked Drive + clean | Save disabled |
-| Session expired | Greyed Save/Check, subtle red panel, concise hint; buttons still clickable for reauth |
-| Check Drive | Runs manual remote-newer check via `useDriveRefresh().checkNow()` |
-| Local file only | Export YAML link to `/import-export` |
-| No portable destination + prior Drive use | `BrowserOnlyWarning` (dismissible) |
-| Never connected Drive | Cluster hidden unless project has Drive/local interchange |
+| State                                     | UI                                                                                    |
+| ----------------------------------------- | ------------------------------------------------------------------------------------- |
+| Linked Drive + dirty                      | Save enabled                                                                          |
+| Linked Drive + clean                      | Save disabled                                                                         |
+| Session expired                           | Greyed Save/Check, subtle red panel, concise hint; buttons still clickable for reauth |
+| Check Drive                               | Runs manual remote-newer check via `useDriveRefresh().checkNow()`                     |
+| Local file only                           | Export YAML link to `/import-export`                                                  |
+| No portable destination + prior Drive use | `BrowserOnlyWarning` (dismissible)                                                    |
+| Never connected Drive                     | Cluster hidden unless project has Drive/local interchange                             |
 
 ## Related
 
