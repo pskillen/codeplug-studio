@@ -1,5 +1,4 @@
 import { useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
 import {
   Alert,
   Anchor,
@@ -28,6 +27,7 @@ import { useProjects } from '../../state/useProjects.ts';
 import { DataTable, FormPage, PageSection } from '../ui/index.ts';
 import type { DataTableColumn } from '../ui/DataTable.tsx';
 import RadioidContactUpdateDialog from './RadioidContactUpdateDialog.tsx';
+import RadioidContactPreviewDialog from './RadioidContactPreviewDialog.tsx';
 
 function listingKey(listing: RadioidDmrUserListing): string {
   return String(listing.id);
@@ -54,6 +54,9 @@ export default function RadioidContactSearch() {
   const [updateContact, setUpdateContact] = useState<DigitalContact | null>(null);
   const [updateListing, setUpdateListing] = useState<RadioidDmrUserListing | null>(null);
   const [updateOpen, setUpdateOpen] = useState(false);
+  const [previewContact, setPreviewContact] = useState<DigitalContact | null>(null);
+  const [previewListing, setPreviewListing] = useState<RadioidDmrUserListing | null>(null);
+  const [previewOpen, setPreviewOpen] = useState(false);
 
   const duplicateById = useMemo(() => {
     const map = new Map<number, string>();
@@ -62,6 +65,14 @@ export default function RadioidContactSearch() {
     }
     return map;
   }, [library.digitalContacts]);
+
+  function openPreview(row: RadioidDmrUserListing) {
+    const existing = findDigitalContactByDigitalId(library.digitalContacts, row.id);
+    if (!existing) return;
+    setPreviewContact(existing);
+    setPreviewListing(row);
+    setPreviewOpen(true);
+  }
 
   function openUpdate(row: RadioidDmrUserListing) {
     const existing = findDigitalContactByDigitalId(library.digitalContacts, row.id);
@@ -85,7 +96,12 @@ export default function RadioidContactSearch() {
           const label = row.callsign || '—';
           if (existing) {
             return (
-              <Anchor component={Link} to={`/library/digital-contacts/${existing.id}`} size="sm">
+              <Anchor
+                component="button"
+                type="button"
+                size="sm"
+                onClick={() => openPreview(row)}
+              >
                 {label}
               </Anchor>
             );
@@ -101,7 +117,12 @@ export default function RadioidContactSearch() {
           const existing = existingContact(row);
           if (existing) {
             return (
-              <Anchor component={Link} to={`/library/digital-contacts/${existing.id}`} size="sm">
+              <Anchor
+                component="button"
+                type="button"
+                size="sm"
+                onClick={() => openPreview(row)}
+              >
                 {row.id}
               </Anchor>
             );
@@ -327,9 +348,23 @@ export default function RadioidContactSearch() {
           listing={updateListing}
           opened={updateOpen}
           onClose={() => setUpdateOpen(false)}
-          onApplied={() => void reload()}
+          onApplied={() => {
+            void reload();
+            setPreviewOpen(false);
+          }}
         />
       ) : null}
+
+      <RadioidContactPreviewDialog
+        contact={previewContact}
+        listing={previewListing}
+        opened={previewOpen}
+        onClose={() => setPreviewOpen(false)}
+        onApplied={() => {
+          void reload();
+          setPreviewOpen(false);
+        }}
+      />
     </FormPage>
   );
 }
