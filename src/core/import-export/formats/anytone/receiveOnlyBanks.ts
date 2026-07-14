@@ -58,6 +58,15 @@ export function partitionAnytoneChannels(assembled: AssembledBuild): AnytoneChan
   return { dmrChannels, amAirChannels, fmBroadcastChannels };
 }
 
+export type AnytoneExportChannelBank = 'dmr' | 'amAir' | 'fmBroadcast';
+
+/** Mirrors export bank partition — for UI grouping and docs. */
+export function classifyAnytoneExportChannelBank(channel: Channel): AnytoneExportChannelBank {
+  if (isAmAirbandBankChannel(channel)) return 'amAir';
+  if (isFmBroadcastBankChannel(channel)) return 'fmBroadcast';
+  return 'dmr';
+}
+
 /** @internal exported for tests — primary mode label when debugging partition misses. */
 export function channelPartitionHint(channel: Channel): string {
   return `${primaryMode(channel) ?? 'none'} rx=${channel.rxFrequency ?? 'null'}`;

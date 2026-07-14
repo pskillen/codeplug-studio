@@ -88,3 +88,17 @@
 | Serialise + zone/scan fan-out | Complete | Wire context, directional tests                        |
 | Export UI + wire preview      | Complete | Toggles default on; displayDetails                     |
 | Operator projection docs      | Complete | [export-projections.md](anytone/export-projections.md) |
+
+---
+
+## Wave 8 — APRS analog slot bindings ([#359](https://github.com/pskillen/codeplug-studio/issues/359))
+
+**Status:** Complete
+
+| Slice                        | Status   | Notes                                                             |
+| ---------------------------- | -------- | ----------------------------------------------------------------- |
+| Shared bank slot numbering   | Complete | `exportChannelSlots.ts` — DMR + receive banks                     |
+| Multi-bank `APRS.CSV` export | Complete | `buildAnytoneExportChannelSlotById` + export warnings             |
+| Directional tests            | Complete | `exportAprsWire.test.ts`, AM air golden in `exportGolden.test.ts` |
+| Slot picker UX               | Complete | Grouped channel select by export bank                             |
+| Docs                         | Complete | Tier-1 APRS + tier-3 `aprs.md`                                    |

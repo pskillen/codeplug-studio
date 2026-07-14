@@ -2,13 +2,11 @@ import { useState } from 'react';
 import type { AprsChannelSlot } from '@core/models/aprs.ts';
 import type { AprsSlotCallType, DMRTimeSlot } from '@core/models/libraryTypes.ts';
 import type { Channel } from '@core/models/library.ts';
-import { channelDisplayLabel } from '@core/domain/channelNaming.ts';
 import { Button, Group, Modal, NumberInput, Select, SimpleGrid, Stack } from '@mantine/core';
-import { sortByName } from '../../lib/channels.ts';
-import { channelLabelForSlot } from '../../lib/aprsBindingHelpers.ts';
+import { aprsSlotChannelSelectGroups } from '../../lib/aprsBindingHelpers.ts';
 import { MODAL_COMBOBOX_Z_INDEX } from '../../theme.ts';
 
-export { channelLabelForSlot };
+export { channelLabelForSlot } from '../../lib/aprsBindingHelpers.ts';
 
 const CURRENT_CHANNEL_VALUE = '';
 
@@ -87,13 +85,7 @@ function AprsChannelSlotForm({
 }) {
   const [draft, setDraft] = useState<AprsChannelSlot>(initial ?? emptySlot());
 
-  const channelOptions = [
-    { value: CURRENT_CHANNEL_VALUE, label: 'Current channel' },
-    ...sortByName(channels).map((channel) => ({
-      value: channel.id,
-      label: channelDisplayLabel(channel),
-    })),
-  ];
+  const channelOptions = aprsSlotChannelSelectGroups(channels);
 
   function handleSave() {
     onSave(draft);

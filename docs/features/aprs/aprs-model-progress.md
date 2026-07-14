@@ -20,7 +20,7 @@
 - `libraryService` / `loadLibrarySlice` wired
 - Registry, nav, list page, configuration editor
 - `AprsChannelSlotsEditor` + sidecar
-- `ChannelAprsBindingSection` on DMR-gated channel editor tab
+- `ChannelAprsBindingSection` on channel editor APRS tab (all channels)
 - `BuildAprsSettingsSection` on Anytone D890 export panel (removed in refactor)
 
 ---

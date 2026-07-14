@@ -28,10 +28,10 @@ Tier-1 hub for **digital APRS** in Codeplug Studio — vendor-neutral library en
 
 ## Entities (summary)
 
-| Entity               | Layer                       | Role                                                                                     |
-| -------------------- | --------------------------- | ---------------------------------------------------------------------------------------- |
-| `AprsConfiguration`  | Library (singleton)         | Global digital APRS settings — beacon timing, position source, up to 8 DMR channel slots |
-| `ChannelAprsBinding` | Library (on `Channel.aprs`) | Per-channel digital flags — receive, report type, PTT mode, `reportSlotIndex` (1-based)  |
+| Entity               | Layer                       | Role                                                                                                                |
+| -------------------- | --------------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| `AprsConfiguration`  | Library (singleton)         | Global digital APRS settings — beacon timing, position source, up to 8 channel slots (DMR, AM air, or FM broadcast) |
+| `ChannelAprsBinding` | Library (on `Channel.aprs`) | Per-channel digital flags — receive, report type, PTT mode, `reportSlotIndex` (1-based)                             |
 
 Deep field semantics: [data-model README](../data-model/README.md). Cross-format wire shapes: [cross-format-reconciliation.md](cross-format-reconciliation.md).
 
@@ -43,11 +43,11 @@ Deep field semantics: [data-model README](../data-model/README.md). Cross-format
 
 ## Editing paths
 
-| Path               | Route / location              | Purpose                                                                                         |
-| ------------------ | ----------------------------- | ----------------------------------------------------------------------------------------------- |
-| **APRS settings**  | `/library/aprs-configuration` | Singleton config editor + **Channel assignments** tab (bulk DMR binding)                        |
-| **Channel editor** | Channel → APRS tab            | Per-channel binding (`ChannelAprsBindingSection`) — DMR channels only                           |
-| **Channels list**  | `/library/channels`           | Optional **APRS config** column (hidden by default) — summary via `formatAprsAssignmentSummary` |
+| Path               | Route / location              | Purpose                                                                                                        |
+| ------------------ | ----------------------------- | -------------------------------------------------------------------------------------------------------------- |
+| **APRS settings**  | `/library/aprs-configuration` | Singleton config editor + **Channel assignments** tab (bulk binding; digital / analog / both and band filters) |
+| **Channel editor** | Channel → APRS tab            | Per-channel binding (`ChannelAprsBindingSection`) — all channels (DMR and analog)                              |
+| **Channels list**  | `/library/channels`           | Optional **APRS config** column (hidden by default) — summary via `formatAprsAssignmentSummary`                |
 
 Redirects: `/library/aprs-configurations` → `/library/aprs-configuration`.
 
@@ -66,6 +66,7 @@ Redirects: `/library/aprs-configurations` → `/library/aprs-configuration`.
 | Singleton model + schema v17 migration                                 | Shipped                                                                  |
 | Library APRS UI (settings page, channel tab, assignments, list column) | Shipped ([#354](https://github.com/pskillen/codeplug-studio/issues/354)) |
 | Anytone export (`APRS.CSV`, channel cols, `aprsDefaults.ts`)           | Shipped ([#251](https://github.com/pskillen/codeplug-studio/issues/251)) |
+| Anytone APRS slots on analog channels (AM air / FM broadcast)          | Shipped ([#359](https://github.com/pskillen/codeplug-studio/issues/359)) |
 | DM32 per-channel APRS                                                  | Pending — [#250](https://github.com/pskillen/codeplug-studio/issues/250) |
 
 ---

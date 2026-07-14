@@ -31,26 +31,27 @@ Export adapters read the singleton library config when serialising the Anytone `
 
 ## Digital-only model decisions
 
-| Wire concept                                                | Studio decision                                                                                                       |
-| ----------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
-| `APRS Report Type` = `Analog` (Anytone)                     | Import maps to `reportType: 'off'` with warning — not stored as analog                                                |
-| Analog PTT modes, digipeater path, RX filters, packet types | Not modelled — `aprsDefaults.ts` constants at export ([#251](https://github.com/pskillen/codeplug-studio/issues/251)) |
-| `Aprs TgN` / `APRS TG` DMR IDs                              | Raw `number` on slot — need not exist as a library contact                                                            |
-| Slot channel binding (`channelN` wire)                      | `EntityRef` kind `channel`; `null` = current channel (wire `0`)                                                       |
-| Report channel index                                        | `ChannelAprsBinding.reportSlotIndex` — 1-based index into `AprsConfiguration.channelSlots`                            |
+| Wire concept                                                | Studio decision                                                                                                                                                                                                                                                                  |
+| ----------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `APRS Report Type` = `Analog` (Anytone)                     | Import maps to `reportType: 'off'` with warning — not stored as analog                                                                                                                                                                                                           |
+| Analog PTT modes, digipeater path, RX filters, packet types | Not modelled — `aprsDefaults.ts` constants at export ([#251](https://github.com/pskillen/codeplug-studio/issues/251))                                                                                                                                                            |
+| `Aprs TgN` / `APRS TG` DMR IDs                              | Raw `number` on slot — need not exist as a library contact                                                                                                                                                                                                                       |
+| Slot channel binding (`channelN` wire)                      | `EntityRef` kind `channel`; `null` = current channel (wire `0`). Anytone export resolves `channelN` to `No.` in `Channel.CSV`, `AMAir.CSV`, or `FM.CSV` ([#359](https://github.com/pskillen/codeplug-studio/issues/359)). Non-Anytone formats may not honour analog-bound slots. |
+| Report channel index                                        | `ChannelAprsBinding.reportSlotIndex` — 1-based index into `AprsConfiguration.channelSlots`                                                                                                                                                                                       |
 
 ---
 
 ## Documented export loss (v1)
 
-| Item                                        | Reason                                                         |
-| ------------------------------------------- | -------------------------------------------------------------- |
-| Anytone wire `Analog` report type on import | Normalized to `off`                                            |
-| ~150 unmodelled `APRS.CSV` columns          | Fixture defaults — not operator-editable                       |
-| CPS fixed beacons 2–8                       | One `fixedLocation` in model; wire exports slot `1` when fixed |
-| OpenGD77 `APRS.csv`                         | Deferred                                                       |
-| DM32 analog report channel sentinel `256`   | N/A — digital-only path                                        |
-| `all call` (Call Type = 2)                  | Deferred                                                       |
+| Item                                                | Reason                                                                                                      |
+| --------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| Anytone wire `Analog` report type on import         | Normalized to `off`                                                                                         |
+| ~150 unmodelled `APRS.CSV` columns                  | Fixture defaults — not operator-editable                                                                    |
+| CPS fixed beacons 2–8                               | One `fixedLocation` in model; wire exports slot `1` when fixed                                              |
+| OpenGD77 `APRS.csv`                                 | Deferred                                                                                                    |
+| DM32 analog report channel sentinel `256`           | N/A — digital-only path                                                                                     |
+| Analog-bound APRS slot `channelRef` on DM32 / CHIRP | Not exported — Anytone-only wire semantics ([#359](https://github.com/pskillen/codeplug-studio/issues/359)) |
+| `all call` (Call Type = 2)                          | Deferred                                                                                                    |
 
 ---
 

@@ -1,7 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import type { AprsChannelSlot } from '@core/models/aprs.ts';
 import type { Channel } from '@core/models/library.ts';
-import { formatAprsAssignmentSummary, channelAssignmentsDirty } from './aprsBindingHelpers.ts';
+import {
+  formatAprsAssignmentSummary,
+  channelAssignmentsDirty,
+  aprsSlotChannelSelectGroups,
+  channelMatchesAprsAssignmentModeFilter,
+} from './aprsBindingHelpers.ts';
 
 const channelA: Channel = {
   id: 'ch-a',
@@ -183,5 +188,79 @@ describe('channelAssignmentsDirty', () => {
         null,
       ),
     ).toBe(true);
+  });
+});
+
+describe('aprsSlotChannelSelectGroups', () => {
+  it('groups channels by Anytone export bank', () => {
+    const dmr: Channel = {
+      ...channelA,
+      id: 'ch-dmr',
+      name: 'DMR repeater',
+      rxFrequency: 438_800_000,
+      txFrequency: 434_000_000,
+      modeProfiles: [
+        {
+          mode: 'dmr',
+          colourCode: 1,
+          timeslot: 1,
+          dmrId: 1,
+          contactRef: null,
+          rxGroupListId: null,
+        },
+      ],
+    };
+    const air: Channel = {
+      ...channelA,
+      id: 'ch-air',
+      name: 'Tower',
+      rxFrequency: 118_800_000,
+      txFrequency: null,
+      forbidTransmit: true,
+      modeProfiles: [
+        { mode: 'am', squelch: null, rxTone: 'none', txTone: 'none', bandwidthKHz: 12.5 },
+      ],
+    };
+
+    const groups = aprsSlotChannelSelectGroups([air, dmr]);
+    const labels = groups.map((group) => group.group);
+
+    expect(labels).toContain('Special');
+    expect(labels).toContain('DMR / main bank');
+    expect(labels).toContain('AM air');
+    expect(groups.find((g) => g.group === 'AM air')?.items[0]?.value).toBe('ch-air');
+    expect(groups.find((g) => g.group === 'DMR / main bank')?.items[0]?.value).toBe('ch-dmr');
+  });
+});
+
+describe('channelMatchesAprsAssignmentModeFilter', () => {
+  it('filters digital vs analog channels for assignment table', () => {
+    const digital: Channel = {
+      ...channelA,
+      id: 'ch-dmr',
+      modeProfiles: [
+        {
+          mode: 'dmr',
+          colourCode: 1,
+          timeslot: 1,
+          dmrId: 1,
+          contactRef: null,
+          rxGroupListId: null,
+        },
+      ],
+    };
+    const analog: Channel = {
+      ...channelA,
+      id: 'ch-fm',
+      modeProfiles: [
+        { mode: 'fm', squelch: null, rxTone: 'none', txTone: 'none', bandwidthKHz: 12.5 },
+      ],
+    };
+
+    expect(channelMatchesAprsAssignmentModeFilter(digital, 'digital')).toBe(true);
+    expect(channelMatchesAprsAssignmentModeFilter(digital, 'analog')).toBe(false);
+    expect(channelMatchesAprsAssignmentModeFilter(analog, 'analog')).toBe(true);
+    expect(channelMatchesAprsAssignmentModeFilter(analog, 'digital')).toBe(false);
+    expect(channelMatchesAprsAssignmentModeFilter(analog, 'both')).toBe(true);
   });
 });

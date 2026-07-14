@@ -26,7 +26,6 @@ export interface ChannelAprsBindingSectionProps {
   channels: Channel[];
   value: ChannelAprsBinding;
   onChange: (value: ChannelAprsBinding) => void;
-  readOnly?: boolean;
 }
 
 export default function ChannelAprsBindingSection({
@@ -34,7 +33,6 @@ export default function ChannelAprsBindingSection({
   channels,
   value,
   onChange,
-  readOnly = false,
 }: ChannelAprsBindingSectionProps) {
   const slotOptions = useMemo(
     () => aprsSlotSelectOptions(aprsConfiguration?.channelSlots ?? [], channels),
@@ -42,22 +40,11 @@ export default function ChannelAprsBindingSection({
   );
   const slotsAvailable = (aprsConfiguration?.channelSlots.length ?? 0) > 0;
 
-  if (readOnly) {
-    return (
-      <Stack gap="xs">
-        <Text size="sm" c="dimmed">
-          Digital APRS is available on DMR channels only.
-        </Text>
-        <Text size="sm">Report type: Off</Text>
-      </Stack>
-    );
-  }
-
   return (
     <Stack gap="md">
       <Text size="sm" c="dimmed">
-        Per-channel digital APRS flags for CPS export. Analog APRS is not modelled in Codeplug
-        Studio.
+        Per-channel digital APRS flags for CPS export. Bindings apply to DMR and analog channels on
+        Anytone export; analog AX.25 APRS is not modelled in Codeplug Studio.
       </Text>
       <Checkbox
         label="APRS receive enabled"

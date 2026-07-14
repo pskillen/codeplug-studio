@@ -3,6 +3,7 @@ import { newChannel } from '@core/domain/factories.ts';
 import { defaultModeProfile } from '@core/domain/modeProfiles.ts';
 import type { AssembledChannel } from '@core/services/assemble.ts';
 import {
+  classifyAnytoneExportChannelBank,
   isAmAirbandBankChannel,
   isFmBroadcastBankChannel,
   isReceiveOnlyChannel,
@@ -105,5 +106,33 @@ describe('receiveOnlyBanks', () => {
     expect(partition.amAirChannels).toHaveLength(1);
     expect(partition.fmBroadcastChannels).toHaveLength(1);
     expect(partition.dmrChannels).toHaveLength(1);
+  });
+
+  it('classifyAnytoneExportChannelBank mirrors partition', () => {
+    const airband = {
+      ...newChannel(PROJECT_ID, 'GLA Tower'),
+      rxFrequency: 118_800_000,
+      txFrequency: null,
+      forbidTransmit: true,
+      modeProfiles: [defaultModeProfile('am')],
+    };
+    const broadcast = {
+      ...newChannel(PROJECT_ID, 'FM station 1'),
+      rxFrequency: 99_500_000,
+      txFrequency: null,
+      forbidTransmit: true,
+      modeProfiles: [defaultModeProfile('fm')],
+    };
+    const dmr = {
+      ...newChannel(PROJECT_ID, 'DMR'),
+      rxFrequency: 438_800_000,
+      txFrequency: 434_000_000,
+      forbidTransmit: false,
+      modeProfiles: [defaultModeProfile('dmr')],
+    };
+
+    expect(classifyAnytoneExportChannelBank(airband)).toBe('amAir');
+    expect(classifyAnytoneExportChannelBank(broadcast)).toBe('fmBroadcast');
+    expect(classifyAnytoneExportChannelBank(dmr)).toBe('dmr');
   });
 });

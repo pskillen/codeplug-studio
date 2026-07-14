@@ -4,13 +4,12 @@ Per-channel digital APRS binding editor (`Channel.aprs`) used on the channel edi
 
 ## Props
 
-| Prop                | Type                                  | Description                                        |
-| ------------------- | ------------------------------------- | -------------------------------------------------- |
-| `aprsConfiguration` | `AprsConfiguration \| null`           | Singleton library config (slot picker labels)      |
-| `channels`          | `Channel[]`                           | Library channels for slot label resolution         |
-| `value`             | `ChannelAprsBinding`                  | Current binding values                             |
-| `onChange`          | `(value: ChannelAprsBinding) => void` | Called when fields change                          |
-| `readOnly`          | `boolean`                             | When true, shows off-state hint (non-DMR channels) |
+| Prop                | Type                                  | Description                                   |
+| ------------------- | ------------------------------------- | --------------------------------------------- |
+| `aprsConfiguration` | `AprsConfiguration \| null`           | Singleton library config (slot picker labels) |
+| `channels`          | `Channel[]`                           | Library channels for slot label resolution    |
+| `value`             | `ChannelAprsBinding`                  | Current binding values                        |
+| `onChange`          | `(value: ChannelAprsBinding) => void` | Called when fields change                     |
 
 ## Usage
 
@@ -29,7 +28,7 @@ const [aprs, setAprs] = useState(() => channelAprsBindingFromChannel(channel));
 
 - Maps to `ChannelAprsBinding`: receive, report type (`off` | `digital`), PTT mode, `reportSlotIndex` (1-based into `aprsConfiguration.channelSlots`).
 - Parent `buildRow()` should persist via `normalizeOptionalChannelAprs` so all-off bindings are omitted.
-- Tab is shown only when the channel has a DMR mode profile.
+- Tab is shown on every channel editor (DMR and analog).
 
 ## Related
 
