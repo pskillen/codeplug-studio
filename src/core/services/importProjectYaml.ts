@@ -9,6 +9,7 @@ import {
 
 export type ImportProjectYamlMode =
   | { kind: 'createNew' }
+  | { kind: 'seedPreservingId' }
   | { kind: 'replaceExisting'; projectId: string }
   | { kind: 'adoptRemote'; projectId: string };
 
@@ -33,6 +34,18 @@ export async function importProjectYaml(
     seed = reassignSeedProjectId(seed);
     await port.seedProject(seed);
     return { projectId: seed.meta.projectId, warnings };
+  }
+
+  if (mode.kind === 'seedPreservingId') {
+    const { projectId } = seed.meta;
+    const existing = await port.loadProjectSeed(projectId);
+    if (existing) {
+      throw new Error(
+        `YAML project id (${projectId}) already exists locally — use replaceExisting instead`,
+      );
+    }
+    await port.seedProject(seed);
+    return { projectId, warnings };
   }
 
   const { projectId } = mode;

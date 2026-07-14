@@ -2,7 +2,7 @@
 
 Browse Google Drive folders, open native YAML projects, and save exports back to Drive — without leaving the Studio SPA.
 
-**Tracking:** [#61](https://github.com/pskillen/codeplug-studio/issues/61) · [#62](https://github.com/pskillen/codeplug-studio/issues/62) · [#285](https://github.com/pskillen/codeplug-studio/issues/285) · [#286](https://github.com/pskillen/codeplug-studio/issues/286) · Epic [#35](https://github.com/pskillen/codeplug-studio/issues/35)
+**Tracking:** [#61](https://github.com/pskillen/codeplug-studio/issues/61) · [#62](https://github.com/pskillen/codeplug-studio/issues/62) · [#285](https://github.com/pskillen/codeplug-studio/issues/285) · [#286](https://github.com/pskillen/codeplug-studio/issues/286) · [#361](https://github.com/pskillen/codeplug-studio/issues/361) · Epic [#35](https://github.com/pskillen/codeplug-studio/issues/35)
 
 **Source:** `src/integrations/cloud/`, `src/app/components/import-export/`, Settings
 
@@ -114,8 +114,10 @@ Implementation: `src/integrations/cloud/googleDrive.ts`.
 
 - **Home** and **Import / export** panels: **Open from Drive** → select YAML
 - If YAML `project.id` matches an existing IndexedDB project → **overwrite** modal with diff (last saved, entity counts)
-- Otherwise Home uses `createNew`; replace panel requires matching active project id
-- Successful import records `ProjectMeta.interchange` (import source memory)
+- If YAML `project.id` is **not** in IndexedDB → `seedPreservingId` — seeds with the YAML's portable id ([#361](https://github.com/pskillen/codeplug-studio/issues/361)); same for local file drop on Home
+- **Import as new project** (refresh / mismatch modals only) → `createNew` — fresh UUID by explicit operator choice
+- Replace-active panel requires matching active project id, or offers `adoptRemote` / import-as-new on mismatch ([#334](https://github.com/pskillen/codeplug-studio/issues/334))
+- Successful import records `ProjectMeta.interchange` (import source memory) including `remoteProjectId` when opened from Drive
 
 When Drive is not connected, the button stays visible (greyed). Click runs GIS OAuth, then opens the Drive browser on success.
 
@@ -154,19 +156,20 @@ When OAuth is not configured, click opens `GoogleDriveNotConfiguredModal` with *
 
 ## Implementation status
 
-| Area                         | Status  | Notes                                                                                     |
-| ---------------------------- | ------- | ----------------------------------------------------------------------------------------- |
-| OAuth + Drive API port       | Shipped | [#61](https://github.com/pskillen/codeplug-studio/issues/61)                              |
-| Settings status / disconnect | Shipped | [#62](https://github.com/pskillen/codeplug-studio/issues/62)                              |
-| Drive browser modal          | Shipped | [#62](https://github.com/pskillen/codeplug-studio/issues/62)                              |
-| Import / export workflow     | Shipped | [#62](https://github.com/pskillen/codeplug-studio/issues/62)                              |
-| Disconnected Drive CTA UX    | Shipped | [#141](https://github.com/pskillen/codeplug-studio/issues/141) — inline connect on action |
-| Shared session + reconnect   | Shipped | [#286](https://github.com/pskillen/codeplug-studio/issues/286)                            |
-| App chrome Save bar          | Shipped | [#285](https://github.com/pskillen/codeplug-studio/issues/285)                            |
-| UUID-match import overwrite  | Shipped | [#285](https://github.com/pskillen/codeplug-studio/issues/285)                            |
-| Refresh from Drive prompt    | Shipped | [#285](https://github.com/pskillen/codeplug-studio/issues/285)                            |
-| Refresh id-mismatch override | Shipped | [#334](https://github.com/pskillen/codeplug-studio/issues/334)                            |
-| Save conflict detection      | Shipped | [#335](https://github.com/pskillen/codeplug-studio/issues/335)                            |
+| Area                         | Status  | Notes                                                                                       |
+| ---------------------------- | ------- | ------------------------------------------------------------------------------------------- |
+| OAuth + Drive API port       | Shipped | [#61](https://github.com/pskillen/codeplug-studio/issues/61)                                |
+| Settings status / disconnect | Shipped | [#62](https://github.com/pskillen/codeplug-studio/issues/62)                                |
+| Drive browser modal          | Shipped | [#62](https://github.com/pskillen/codeplug-studio/issues/62)                                |
+| Import / export workflow     | Shipped | [#62](https://github.com/pskillen/codeplug-studio/issues/62)                                |
+| Disconnected Drive CTA UX    | Shipped | [#141](https://github.com/pskillen/codeplug-studio/issues/141) — inline connect on action   |
+| Shared session + reconnect   | Shipped | [#286](https://github.com/pskillen/codeplug-studio/issues/286)                              |
+| App chrome Save bar          | Shipped | [#285](https://github.com/pskillen/codeplug-studio/issues/285)                              |
+| UUID-match import overwrite  | Shipped | [#285](https://github.com/pskillen/codeplug-studio/issues/285)                              |
+| Refresh from Drive prompt    | Shipped | [#285](https://github.com/pskillen/codeplug-studio/issues/285)                              |
+| Refresh id-mismatch override | Shipped | [#334](https://github.com/pskillen/codeplug-studio/issues/334)                              |
+| Save conflict detection      | Shipped | [#335](https://github.com/pskillen/codeplug-studio/issues/335)                              |
+| Portable project id on open  | Shipped | [#361](https://github.com/pskillen/codeplug-studio/issues/361) — `seedPreservingId` default |
 
 ## Manual verify checklist
 
@@ -175,6 +178,7 @@ When OAuth is not configured, click opens `GoogleDriveNotConfiguredModal` with *
 - [ ] Browse folders, create folder, path restored on reopen
 - [ ] Token expiry greys Drive CTAs without page reload; **Reconnect** restores save/browse
 - [ ] **Save to Drive** in app chrome overwrites remembered file when project is dirty
+- [ ] Open YAML from Drive on fresh browser (unknown UUID) → IndexedDB `project.id` matches YAML ([#361](https://github.com/pskillen/codeplug-studio/issues/361))
 - [ ] Open YAML from Drive with matching `project.id` → diff modal → overwrite local
 - [ ] Switch project with newer Drive file → **Refresh from Drive** banner
 - [ ] Linked Drive file with mismatched `project.id` → mismatch banner → adopt or import as new

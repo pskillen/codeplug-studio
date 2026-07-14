@@ -54,6 +54,30 @@ describe('importProjectYaml', () => {
     expect(loaded?.channels?.every((c) => c.projectId === result.projectId)).toBe(true);
   });
 
+  it('seedPreservingId keeps the YAML project id and seeds persistence', async () => {
+    const port = createMockPort();
+    const aggregate = fullLibraryAggregate();
+    const yaml = serialiseProject(aggregate);
+    const sourceProjectId = aggregate.meta.projectId;
+
+    const result = await importProjectYaml(port, yaml, { kind: 'seedPreservingId' });
+
+    expect(result.projectId).toBe(sourceProjectId);
+    const loaded = await port.loadProjectSeed(sourceProjectId);
+    expect(loaded?.meta.projectId).toBe(sourceProjectId);
+    expect(loaded?.channels?.every((c) => c.projectId === sourceProjectId)).toBe(true);
+  });
+
+  it('seedPreservingId rejects when the YAML project id already exists locally', async () => {
+    const aggregate = fullLibraryAggregate();
+    const port = createMockPort(aggregateToSeed(aggregate));
+    const yaml = serialiseProject(aggregate);
+
+    await expect(importProjectYaml(port, yaml, { kind: 'seedPreservingId' })).rejects.toThrow(
+      /already exists locally/,
+    );
+  });
+
   it('replaceExisting replaces rows for the active project id', async () => {
     const meta = newProjectMeta('Active');
     const port = createMockPort({ meta, channels: [newChannel(meta.projectId, 'Old')] });

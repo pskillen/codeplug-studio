@@ -62,7 +62,7 @@ export function useYamlImportResolver(options: UseYamlImportResolverOptions = {}
     setError(null);
   }, []);
 
-  async function recordSource(projectId: string, source: YamlImportSource) {
+  async function recordSource(projectId: string, source: YamlImportSource, yamlProjectId?: string) {
     if (source.kind === 'localFile') {
       await recordProjectImportDestination(projectId, {
         destination: 'localFile',
@@ -77,6 +77,7 @@ export function useYamlImportResolver(options: UseYamlImportResolverOptions = {}
       folderName: source.folderName,
       fileId: source.fileId,
       syncedAt: source.modifiedTime,
+      remoteProjectId: yamlProjectId ?? projectId,
     });
   }
 
@@ -88,11 +89,12 @@ export function useYamlImportResolver(options: UseYamlImportResolverOptions = {}
     setImporting(true);
     setError(null);
     try {
+      const preview = parseYamlImportPreview(yamlText);
       const result = await importProjectFromYaml(yamlText, mode);
-      await recordSource(result.projectId, source);
+      await recordSource(result.projectId, source, preview.projectId);
       await refreshProjects();
       options.onImported?.(result.projectId);
-      if (mode.kind === 'createNew') {
+      if (mode.kind === 'createNew' || mode.kind === 'seedPreservingId') {
         switchProject(result.projectId);
       }
       resetOverwrite();
@@ -135,7 +137,7 @@ export function useYamlImportResolver(options: UseYamlImportResolverOptions = {}
       return;
     }
 
-    await runImport(yamlText, { kind: 'createNew' }, source);
+    await runImport(yamlText, { kind: 'seedPreservingId' }, source);
   }
 
   async function confirmOverwrite() {
