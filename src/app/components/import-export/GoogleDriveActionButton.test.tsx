@@ -18,6 +18,7 @@ function mockDriveState(
   connect: () => Promise<DriveConnectResult> = vi.fn(async (): Promise<DriveConnectResult> => ({
     status: 'connected',
   })),
+  sessionExpired = false,
 ) {
   mockedUseGoogleDrive.mockReturnValue({
     port: {} as never,
@@ -26,7 +27,7 @@ function mockDriveState(
     loading: false,
     error: null,
     isConfigured,
-    sessionExpired: false,
+    sessionExpired,
     connect,
     disconnect: vi.fn(),
     refresh: vi.fn(),
@@ -120,6 +121,26 @@ describe('GoogleDriveActionButton', () => {
 
     expect(onClick).toHaveBeenCalledOnce();
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+  });
+
+  it('connects then runs onClick when session expired but connected', async () => {
+    const onClick = vi.fn();
+    const connect = vi.fn(async () => ({ status: 'connected' as const }));
+    mockDriveState(true, true, connect, true);
+    render(
+      <MemoryRouter>
+        <MantineProvider>
+          <GoogleDriveActionButton onClick={onClick}>Save to Drive</GoogleDriveActionButton>
+        </MantineProvider>
+      </MemoryRouter>,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Save to Drive' }));
+
+    await waitFor(() => {
+      expect(connect).toHaveBeenCalledOnce();
+      expect(onClick).toHaveBeenCalledOnce();
+    });
   });
 
   it('opens not-configured modal when OAuth client is missing', async () => {

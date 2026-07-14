@@ -3,10 +3,10 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import { MantineProvider } from '@mantine/core';
 import RefreshFromDriveBanner from './RefreshFromDriveBanner.tsx';
 
-const mockUseRefreshFromDrivePrompt = vi.fn();
+const mockUseDriveRefresh = vi.fn();
 
-vi.mock('../../hooks/useYamlImportResolver.ts', () => ({
-  useRefreshFromDrivePrompt: () => mockUseRefreshFromDrivePrompt(),
+vi.mock('./DriveRefreshProvider.tsx', () => ({
+  useDriveRefresh: () => mockUseDriveRefresh(),
 }));
 
 function baseHookState(overrides: Record<string, unknown> = {}) {
@@ -31,7 +31,7 @@ function baseHookState(overrides: Record<string, unknown> = {}) {
 
 describe('RefreshFromDriveBanner', () => {
   it('shows standard newer-copy banner when ids match', () => {
-    mockUseRefreshFromDrivePrompt.mockReturnValue(baseHookState());
+    mockUseDriveRefresh.mockReturnValue(baseHookState());
 
     render(
       <MantineProvider>
@@ -44,7 +44,7 @@ describe('RefreshFromDriveBanner', () => {
   });
 
   it('shows mismatch warning when remote project id differs', () => {
-    mockUseRefreshFromDrivePrompt.mockReturnValue(
+    mockUseDriveRefresh.mockReturnValue(
       baseHookState({
         idMismatch: true,
         remoteProjectId: 'remote-id',
@@ -63,7 +63,7 @@ describe('RefreshFromDriveBanner', () => {
 
   it('opens mismatch modal with override actions', () => {
     const openOverwrite = vi.fn();
-    mockUseRefreshFromDrivePrompt.mockReturnValue(
+    mockUseDriveRefresh.mockReturnValue(
       baseHookState({
         idMismatch: true,
         overwriteOpen: true,
@@ -85,7 +85,7 @@ describe('RefreshFromDriveBanner', () => {
 
   it('wires refresh button to open overwrite modal', () => {
     const openOverwrite = vi.fn();
-    mockUseRefreshFromDrivePrompt.mockReturnValue(baseHookState({ openOverwrite }));
+    mockUseDriveRefresh.mockReturnValue(baseHookState({ openOverwrite }));
 
     render(
       <MantineProvider>
