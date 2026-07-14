@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  applyRadioidListingUpdates,
   buildDigitalContactPatchFromDiff,
   diffDigitalContactFromListing,
   diffHasChanges,
@@ -45,5 +46,16 @@ describe('contactDiff', () => {
     expect(patched.city).toBe('Newington');
     expect(patched.state).toBe('Connecticut');
     expect(patched.name).toBe('Old Name');
+  });
+
+  it('applyRadioidListingUpdates returns null when unchanged', () => {
+    const contact = {
+      ...newDigitalContact('p1', 'Hiram Percy', 3109478),
+      callsign: 'W1AW',
+      city: 'Newington',
+      state: 'Connecticut',
+      country: 'United States',
+    };
+    expect(applyRadioidListingUpdates(contact, listing)).toBeNull();
   });
 });

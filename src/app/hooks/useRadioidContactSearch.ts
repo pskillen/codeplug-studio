@@ -1,10 +1,11 @@
 import { useCallback, useState } from 'react';
 import {
+  buildRadioidDmrUserSearchParams,
+  hasRadioidSearchFilters,
   RadioidDirectoryError,
   RADIOID_PROVIDER,
   searchRadioidDmrUsers,
   type RadioidDmrUserListing,
-  type RadioidDmrUserSearchParams,
 } from '@integrations/radioid/index.ts';
 import { isRateLimited } from '@integrations/http/rateLimit.ts';
 import { RADIOID_RATE_LIMIT_MESSAGE } from '@integrations/radioid/constants.ts';
@@ -37,13 +38,8 @@ export function useRadioidContactSearch() {
   const search = useCallback(
     async (pageOverride?: number) => {
       const targetPage = pageOverride ?? page;
-      const trimmedId = filters.id.trim();
-      const trimmedCallsign = filters.callsign.trim();
-      const trimmedCity = filters.city.trim();
-      const trimmedState = filters.state.trim();
-      const trimmedCountry = filters.country.trim();
 
-      if (!trimmedId && !trimmedCallsign && !trimmedCity && !trimmedState && !trimmedCountry) {
+      if (!hasRadioidSearchFilters(filters)) {
         setError('Enter at least one search filter (DMR ID, callsign, city, state, or country).');
         return;
       }
@@ -53,29 +49,10 @@ export function useRadioidContactSearch() {
         return;
       }
 
-      const params: RadioidDmrUserSearchParams = {
-        page: targetPage,
-        per_page: 100,
-      };
-      if (trimmedId) {
-        params.id = trimmedId;
-        params.id_sel = '=';
-      }
-      if (trimmedCallsign) {
-        params.callsign = trimmedCallsign;
-        params.callsign_sel = 'B';
-      }
-      if (trimmedCity) {
-        params.city = trimmedCity;
-        params.city_sel = 'B';
-      }
-      if (trimmedState) {
-        params.state = trimmedState;
-        params.state_sel = 'B';
-      }
-      if (trimmedCountry) {
-        params.country = trimmedCountry;
-        params.country_sel = 'B';
+      const params = buildRadioidDmrUserSearchParams(filters, targetPage);
+      if (!params) {
+        setError('Enter at least one search filter (DMR ID, callsign, city, state, or country).');
+        return;
       }
 
       setLoading(true);

@@ -21,11 +21,13 @@ import {
 } from '@integrations/radioid/index.ts';
 import { useRadioidContactSearch } from '../../hooks/useRadioidContactSearch.ts';
 import { ICON_SIZE_NAV, ICON_STROKE } from '../../lib/iconSizes.ts';
+import type { RadioidBulkImportScope } from '../../lib/radioidBulkImport.ts';
 import { persistence } from '../../state/persistence.ts';
 import { useLibrary } from '../../state/useLibrary.ts';
 import { useProjects } from '../../state/useProjects.ts';
 import { DataTable, FormPage, PageSection } from '../ui/index.ts';
 import type { DataTableColumn } from '../ui/DataTable.tsx';
+import RadioidContactBulkImportDialog from './RadioidContactBulkImportDialog.tsx';
 import RadioidContactUpdateDialog from './RadioidContactUpdateDialog.tsx';
 import RadioidContactPreviewDialog from './RadioidContactPreviewDialog.tsx';
 
@@ -57,6 +59,9 @@ export default function RadioidContactSearch() {
   const [previewContact, setPreviewContact] = useState<DigitalContact | null>(null);
   const [previewListing, setPreviewListing] = useState<RadioidDmrUserListing | null>(null);
   const [previewOpen, setPreviewOpen] = useState(false);
+  const [bulkScope, setBulkScope] = useState<RadioidBulkImportScope | null>(null);
+  const [bulkOpen, setBulkOpen] = useState(false);
+  const [bulkSessionKey, setBulkSessionKey] = useState(0);
 
   const duplicateById = useMemo(() => {
     const map = new Map<number, string>();
@@ -81,6 +86,19 @@ export default function RadioidContactSearch() {
     setUpdateListing(row);
     setUpdateOpen(true);
   }
+
+  function openBulkImport(scope: RadioidBulkImportScope) {
+    setBulkScope(scope);
+    setBulkSessionKey((key) => key + 1);
+    setBulkOpen(true);
+  }
+
+  const bulkListings = useMemo(() => {
+    if (bulkScope === 'selected') {
+      return listings.filter((row) => selectedKeys.includes(listingKey(row)));
+    }
+    return listings;
+  }, [bulkScope, listings, selectedKeys]);
 
   const columns = useMemo((): DataTableColumn<RadioidDmrUserListing>[] => {
     function existingContact(row: RadioidDmrUserListing): DigitalContact | null {
@@ -159,7 +177,7 @@ export default function RadioidContactSearch() {
             );
           }
           return (
-            <Button size="xs" loading={adding} onClick={() => void addListings([row])}>
+            <Button size="xs" loading={adding} onClick={() => void addSingleListing(row)}>
               Add
             </Button>
           );
@@ -168,30 +186,18 @@ export default function RadioidContactSearch() {
     ];
   }, [adding, library.digitalContacts]);
 
-  async function addListings(rows: RadioidDmrUserListing[]) {
-    if (!activeProjectId) return;
-    const toAdd = rows.filter((row) => !duplicateById.has(row.id));
-    if (toAdd.length === 0) {
-      setAddMessage('Selected contacts are already in your library.');
-      return;
-    }
+  async function addSingleListing(row: RadioidDmrUserListing) {
+    if (!activeProjectId || duplicateById.has(row.id)) return;
 
     setAdding(true);
     setAddMessage(null);
     try {
-      for (const row of toAdd) {
-        const contact = mapRadioidUserToDigitalContact(row, activeProjectId);
-        await persistence.putDigitalContact(contact, null);
-      }
+      const contact = mapRadioidUserToDigitalContact(row, activeProjectId);
+      await persistence.putDigitalContact(contact, null);
       await reload();
-      setSelectedKeys([]);
-      setAddMessage(
-        toAdd.length === 1
-          ? 'Added 1 digital contact to your library.'
-          : `Added ${toAdd.length} digital contacts to your library.`,
-      );
+      setAddMessage('Added 1 digital contact to your library.');
     } catch {
-      setAddMessage('Could not save one or more contacts — try again.');
+      setAddMessage('Could not save the contact — try again.');
     } finally {
       setAdding(false);
     }
@@ -203,8 +209,6 @@ export default function RadioidContactSearch() {
   }
 
   const selectedListings = listings.filter((row) => selectedKeys.includes(listingKey(row)));
-  const addableSelected = selectedListings.filter((row) => !duplicateById.has(row.id));
-  const addableAll = listings.filter((row) => !duplicateById.has(row.id));
 
   return (
     <FormPage
@@ -286,20 +290,22 @@ export default function RadioidContactSearch() {
         {listings.length > 0 ? (
           <PageSection title={`Results (${totalCount})`}>
             <Group mb="md">
-              <Button
-                loading={adding}
-                disabled={addableAll.length === 0}
-                onClick={() => void addListings(addableAll)}
-              >
-                Add all on this page ({addableAll.length})
+              <Button disabled={totalCount === 0} onClick={() => openBulkImport('all')}>
+                Add all results ({totalCount})
               </Button>
               <Button
                 variant="light"
-                loading={adding}
-                disabled={addableSelected.length === 0}
-                onClick={() => void addListings(addableSelected)}
+                disabled={listings.length === 0}
+                onClick={() => openBulkImport('page')}
               >
-                Add selected ({addableSelected.length})
+                Add this page ({listings.length})
+              </Button>
+              <Button
+                variant="light"
+                disabled={selectedListings.length === 0}
+                onClick={() => openBulkImport('selected')}
+              >
+                Add selected ({selectedListings.length})
               </Button>
             </Group>
             <DataTable
@@ -331,6 +337,26 @@ export default function RadioidContactSearch() {
           </Text>
         ) : null}
       </Stack>
+
+      {bulkScope ? (
+        <RadioidContactBulkImportDialog
+          opened={bulkOpen}
+          onClose={() => setBulkOpen(false)}
+          onComplete={() => {
+            void reload();
+            setSelectedKeys([]);
+            setAddMessage(null);
+          }}
+          sessionKey={bulkSessionKey}
+          scope={bulkScope}
+          listings={bulkListings}
+          filters={filters}
+          totalPages={totalPages}
+          totalCount={totalCount}
+          projectId={activeProjectId}
+          contacts={library.digitalContacts}
+        />
+      ) : null}
 
       {updateContact && updateListing ? (
         <RadioidContactUpdateDialog

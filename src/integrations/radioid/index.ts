@@ -1,5 +1,11 @@
 export { searchRadioidDmrUsers } from './client.ts';
 export {
+  buildRadioidDmrUserSearchParams,
+  hasRadioidSearchFilters,
+  type RadioidSearchFilterInput,
+} from './buildSearchParams.ts';
+export {
+  applyRadioidListingUpdates,
   buildDigitalContactPatchFromDiff,
   diffDigitalContactFromListing,
   diffHasChanges,

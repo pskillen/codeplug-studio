@@ -84,3 +84,14 @@ export function buildDigitalContactPatchFromDiff(
   }
   return patch;
 }
+
+/** Apply all RadioID.net fields that differ from the library contact. Returns null when unchanged. */
+export function applyRadioidListingUpdates(
+  contact: DigitalContact,
+  listing: RadioidDmrUserListing,
+): DigitalContact | null {
+  const rows = diffDigitalContactFromListing(contact, listing);
+  const fields = rows.filter((row) => row.changed).map((row) => row.field);
+  if (fields.length === 0) return null;
+  return buildDigitalContactPatchFromDiff(contact, listing, fields);
+}
