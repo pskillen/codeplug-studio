@@ -22,6 +22,7 @@ Items **skipped**, **incomplete**, or **discovered during execution** — not sc
 ## Model gaps (discovered during wire spike)
 
 - [x] **APRS export** — `APRS.CSV` + channel APRS columns shipped ([#251](https://github.com/pskillen/codeplug-studio/issues/251)). Tier-1: [aprs/](../aprs/README.md).
+- [x] **APRS slots on analog channels** — `channelN` resolves across `Channel.CSV` / `AMAir.CSV` / `FM.CSV` ([#359](https://github.com/pskillen/codeplug-studio/issues/359)).
 - [ ] **NXDN multi-protocol build** — parallel NX* file set mirrors DMR; may need build trait or export partition beyond DMR-only zone grouping. Wire documented; adapter deferred post-DMR MVP ([#233](https://github.com/pskillen/codeplug-studio/issues/233)).
 - [x] **AM air + broadcast FM export projection** — `AMAir.CSV` / `FM.CSV` partition ([#267](https://github.com/pskillen/codeplug-studio/issues/267), [#268](https://github.com/pskillen/codeplug-studio/issues/268))
 - [x] **Cross-file wire name shortening** — shared export wire context; preview alignment ([#292](https://github.com/pskillen/codeplug-studio/issues/292))

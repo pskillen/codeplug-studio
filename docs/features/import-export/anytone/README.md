@@ -20,7 +20,7 @@ Product behaviour for Anytone CPS CSV in Codeplug Studio. Wire column tables liv
 | Build editor + wire preview           | Shipped | [#234](https://github.com/pskillen/codeplug-studio/issues/234)                                                                                                                                         |
 | Format catalog CPS export             | Shipped | [#235](https://github.com/pskillen/codeplug-studio/issues/235) · conditional AM/FM files in Export UI [#288](https://github.com/pskillen/codeplug-studio/issues/288)                                   |
 | CPS `.LST` manifest (export)          | Shipped | [#289](https://github.com/pskillen/codeplug-studio/issues/289) — Approach A: lists ZIP CSV members only; stem from project name                                                                        |
-| Directional export tests              | Shipped | [#236](https://github.com/pskillen/codeplug-studio/issues/236) · `APRS.CSV` + channel APRS columns ([#251](https://github.com/pskillen/codeplug-studio/issues/251))                                    |
+| Directional export tests              | Shipped | [#236](https://github.com/pskillen/codeplug-studio/issues/236) · `APRS.CSV` + channel APRS columns ([#251](https://github.com/pskillen/codeplug-studio/issues/251)); analog slot `channelN` ([#359](https://github.com/pskillen/codeplug-studio/issues/359)) |
 | Cross-file wire name fidelity         | Shipped | [#292](https://github.com/pskillen/codeplug-studio/issues/292) — shared export wire context; preview + `shortenNames` on all CPS name FKs                                                              |
 | Library scan lists + dedicated trait  | Shipped | [#257](https://github.com/pskillen/codeplug-studio/issues/257), [#258](https://github.com/pskillen/codeplug-studio/issues/258)                                                                         |
 | Zone-derived scan lists (opt-in)      | Shipped | [#318](https://github.com/pskillen/codeplug-studio/issues/318) — merge with library `ScanList.CSV`; master toggle default off                                                                          |
@@ -71,7 +71,7 @@ Wire spike mapped CPS files to internal types. Full inventory: [tier-3 README �
 | Radio IDs   | **No**      | `RadioIDList.CSV` omitted from export ([#302](https://github.com/pskillen/codeplug-studio/issues/302)) — [radio-ids.md](../../../reference/anytone/radio-ids.md) |
 | AM air / FM | Partial     | `AMAir`/`FM` channel banks shipped; `AMZone.CSV` export shipped ([#316](https://github.com/pskillen/codeplug-studio/issues/316))                                 |
 | NXDN        | Partial     | `ChannelModeProfileNxdn`, NX parallel files; multi-protocol build TBD                                                                                            |
-| APRS        | **Yes**     | `AprsConfiguration` + `Channel.aprs` — [aprs.md](../../../reference/anytone/aprs.md) ([#251](https://github.com/pskillen/codeplug-studio/issues/251))            |
+| APRS        | **Yes**     | `AprsConfiguration` + `Channel.aprs` — [aprs.md](../../../reference/anytone/aprs.md) ([#251](https://github.com/pskillen/codeplug-studio/issues/251)); analog slot bindings ([#359](https://github.com/pskillen/codeplug-studio/issues/359))            |
 
 Library CRUD does **not** enforce radio caps. Export adapters warn or truncate at the wire boundary only.
 
