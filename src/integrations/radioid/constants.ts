@@ -1,5 +1,5 @@
 /** Same-origin Pages Function proxy (deployed) or Vite dev proxy (local). */
-export const RADIOID_DMR_USER_PROXY_PATH = '/api/radioid/dmr/user';
+export const RADIOID_DMR_USER_PROXY_PATH = '/api/radioid/dmr/user/';
 
 /** Upstream RadioID.net API — browser uses proxy path. */
 export const RADIOID_DMR_USER_UPSTREAM = 'https://database.radioid.net/api/dmr/user/';

@@ -40,7 +40,7 @@ describe('radioid client', () => {
     expect(result.listings).toHaveLength(1);
     expect(result.listings[0]?.callsign).toBe('W1AW');
     expect(fetch).toHaveBeenCalledWith(
-      expect.stringContaining('/api/radioid/dmr/user?callsign=W1AW&callsign_sel=%3D'),
+      expect.stringContaining('/api/radioid/dmr/user/?callsign=W1AW&callsign_sel=%3D'),
       undefined,
     );
   });
