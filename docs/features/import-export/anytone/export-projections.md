@@ -28,7 +28,7 @@ For each **digital library channel** that has an **RX group list** with talk-gro
 
 Across a build, total expanded rows ≈ **sum of RX-list sizes** for all expanded channels (not a single cartesian grid unless you model many repeater channels separately in the library).
 
-**Toggle:** Build → Export → **m×n channel expansion** (`exportSettings.expandRxGroupLists`).
+**Toggle:** Build → Export → **Channels** → **m×n channel expansion** (`exportSettings.expandRxGroupLists`).
 
 ---
 
@@ -40,7 +40,7 @@ When m×n expansion is on, you can also export **scratch channels** (default **o
 - Faithful copy of the parent channel's frequencies, mode, power, contact, and RX group list — with **Scratch** in the wire name so you can retune in the field without touching programmed TG rows.
 - Scratch is **not** emitted when expansion is off (the lean parent row is already editable).
 
-**Toggle:** Build → Export → **Scratch channels** (`exportSettings.exportScratchChannels`) — only enabled when expansion is on.
+**Toggle:** Build → Export → **Channels** → **Scratch channels** (`exportSettings.exportScratchChannels`) — only enabled when expansion is on.
 
 ---
 

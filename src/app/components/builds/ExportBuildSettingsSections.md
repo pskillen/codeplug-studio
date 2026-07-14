@@ -2,7 +2,10 @@
 
 ## Purpose
 
-Grouped export preference controls on the build **Export** page: inclusion, channel expansion (m×n-capable profiles), naming, and scanning.
+Grouped export preference controls on the build **Export** page.
+
+- **Anytone** builds use entity-based sections (`ExportAnytoneSettingsSections`): Channels, Zones, Scan lists, Talk groups, Contacts, RX group lists.
+- Other formats use inclusion, channel expansion (m×n-capable profiles), naming, and scanning groupings.
 
 ## Props
 
@@ -20,6 +23,7 @@ Grouped export preference controls on the build **Export** page: inclusion, chan
 
 ## Behaviour
 
+- **Anytone** builds render entity-based `FieldCard` sections (Channels, Zones, Scan lists, Talk groups, Contacts, RX group lists) with sub-headings for logical control groups inside Channels.
 - **Channel expansion** appears when the trait profile includes `mxnChannelExpansion` (Anytone AT-D890UV, DM32). Labels use [DESIGN.md — Glossary](../../../DESIGN.md#glossary) terminology (`m×n channel expansion`).
 - **Scratch channels** toggle is enabled only when m×n expansion is on; turning expansion off clears scratch.
 - Zone-derived scan list toggle is shown for DM32 and Anytone builds.
