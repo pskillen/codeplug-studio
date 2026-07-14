@@ -260,6 +260,11 @@ describe('anytone/export golden', () => {
         `records: ${comparison.originalCount} → ${comparison.exportedCount}`,
     ).toBe(true);
     expect(comparison.originalCount).toBe(1);
+
+    const aprsParsed = parseCsv(result.files['APRS.CSV']!);
+    const aprsHeaders = aprsParsed[0]!;
+    const aprsRow = aprsParsed[1]!;
+    expect(aprsRow[aprsHeaders.indexOf('APRS Auto TX Interval[s]')]).toBe('9');
   });
 
   it('APRS-enabled export maps Channel.aprs on Channel.CSV', () => {
