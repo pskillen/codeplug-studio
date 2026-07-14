@@ -7,8 +7,7 @@ import SectionNav from '../SectionNav/SectionNav.tsx';
 import AppHeader from '../ui/AppHeader.tsx';
 import BuildFooter from '../BuildFooter/BuildFooter.tsx';
 import CookieConsentBanner from '../CookieConsentBanner/CookieConsentBanner.tsx';
-import DriveSessionBanner from '../import-export/DriveSessionBanner.tsx';
-import ProjectInterchangeBar from '../ProjectInterchangeBar/ProjectInterchangeBar.tsx';
+import DriveRefreshProvider from '../ProjectInterchangeBar/DriveRefreshProvider.tsx';
 import RefreshFromDriveBanner from '../ProjectInterchangeBar/RefreshFromDriveBanner.tsx';
 import { usePageAnalytics } from '../../hooks/usePageAnalytics.ts';
 import {
@@ -30,48 +29,48 @@ export default function AppLayout() {
   const navbarWidth = showSecondary ? NAVBAR_WIDTH_WITH_SECONDARY : PRIMARY_NAV_WIDTH;
 
   return (
-    <AppShell
-      header={{ height: 56 }}
-      navbar={{
-        width: navbarWidth,
-        breakpoint: 'sm',
-        collapsed: { mobile: !opened },
-      }}
-      padding="md"
-    >
-      <AppShell.Header>
-        <AppHeader opened={opened} onToggle={toggle} />
-      </AppShell.Header>
+    <DriveRefreshProvider>
+      <AppShell
+        header={{ height: 56 }}
+        navbar={{
+          width: navbarWidth,
+          breakpoint: 'sm',
+          collapsed: { mobile: !opened },
+        }}
+        padding="md"
+      >
+        <AppShell.Header>
+          <AppHeader opened={opened} onToggle={toggle} />
+        </AppShell.Header>
 
-      <AppShell.Navbar p={0}>
-        <Group wrap="nowrap" align="stretch" gap={0} style={{ height: '100%' }}>
-          <Box w={PRIMARY_NAV_WIDTH} p="md" style={{ flexShrink: 0 }}>
-            <AppNav onNavClick={close} />
-          </Box>
-          {showSecondary && isDesktopNav ? (
-            <>
-              <Divider orientation="vertical" />
-              <Box w={SECONDARY_NAV_WIDTH} p="md" style={{ flexShrink: 0, overflow: 'hidden' }}>
-                <SectionNav variant="sidebar" />
-              </Box>
-            </>
+        <AppShell.Navbar p={0}>
+          <Group wrap="nowrap" align="stretch" gap={0} style={{ height: '100%' }}>
+            <Box w={PRIMARY_NAV_WIDTH} p="md" style={{ flexShrink: 0 }}>
+              <AppNav onNavClick={close} />
+            </Box>
+            {showSecondary && isDesktopNav ? (
+              <>
+                <Divider orientation="vertical" />
+                <Box w={SECONDARY_NAV_WIDTH} p="md" style={{ flexShrink: 0, overflow: 'hidden' }}>
+                  <SectionNav variant="sidebar" />
+                </Box>
+              </>
+            ) : null}
+          </Group>
+        </AppShell.Navbar>
+
+        <AppShell.Main>
+          {showSecondary && !isDesktopNav ? (
+            <Box mb="md">
+              <SectionNav variant="toolbar" />
+            </Box>
           ) : null}
-        </Group>
-      </AppShell.Navbar>
-
-      <AppShell.Main>
-        {showSecondary && !isDesktopNav ? (
-          <Box mb="md">
-            <SectionNav variant="toolbar" />
-          </Box>
-        ) : null}
-        <CookieConsentBanner />
-        <DriveSessionBanner />
-        <RefreshFromDriveBanner />
-        <ProjectInterchangeBar />
-        <Outlet />
-        <BuildFooter />
-      </AppShell.Main>
-    </AppShell>
+          <CookieConsentBanner />
+          <RefreshFromDriveBanner />
+          <Outlet />
+          <BuildFooter />
+        </AppShell.Main>
+      </AppShell>
+    </DriveRefreshProvider>
   );
 }

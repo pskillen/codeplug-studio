@@ -7,7 +7,6 @@ import {
   importProjectFromYaml,
   recordProjectImportDestination,
 } from '../services/projectImportExportService.ts';
-import { persistence } from '../state/persistence.ts';
 import { useGoogleDrive } from './useGoogleDrive.ts';
 import { useProjects } from '../state/useProjects.ts';
 import type { DriveOpenSelection } from '../components/import-export/DriveBrowserModal.tsx';
