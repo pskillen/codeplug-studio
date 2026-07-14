@@ -31,10 +31,17 @@ Per-channel APRS flags on `Channel.CSV`: [aprs-on-channels.md](aprs-on-channels.
 
 | Columns                    | Purpose (wire)         |
 | -------------------------- | ---------------------- |
-| `Manual TX Interval[s]`    | Manual beacon interval |
-| `APRS Auto TX Interval[s]` | Auto beacon interval   |
+| `Manual TX Interval[s]`    | Manual beacon interval (plain seconds on wire) |
+| `APRS Auto TX Interval[s]` | Auto beacon interval — **wire byte code** `k`, not seconds ([#366](https://github.com/pskillen/codeplug-studio/issues/366)) |
 | `Support For Roaming`      | Roaming enable         |
 | `Fixed Location Beacon`    | Fixed GPS beacon flag  |
+
+#### Timing wire (export v1)
+
+| Column                     | Wire value                                                                 |
+| -------------------------- | -------------------------------------------------------------------------- |
+| `Manual TX Interval[s]`    | Integer seconds (`trunc` of library value; `0` = off)                      |
+| `APRS Auto TX Interval[s]` | Integer code `k` (`0` = off). Encode from library seconds `s`: `k = trunc(s / 15) − 3`. Decode on import: `s = (k + 3) × 15` for `k > 0`. Encodable range **60–3870 s** in **15 s** steps (`k` = 1…255). Example: **180 s** → `k = 9` on wire. |
 
 ### GPS / fixed position
 
