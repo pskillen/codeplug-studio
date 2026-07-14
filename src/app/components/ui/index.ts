@@ -75,4 +75,6 @@ export { default as BadgeCard } from './BadgeCard.tsx';
 export type { BadgeCardBadge, BadgeCardProps } from './BadgeCard.tsx';
 export { default as SplitButton } from './SplitButton.tsx';
 export type { SplitButtonMenuItem, SplitButtonProps } from './SplitButton.tsx';
+export { default as SoftWarning } from './SoftWarning.tsx';
+export type { SoftWarningProps, SoftWarningTone } from './SoftWarning.tsx';
 export * from './tokens.ts';

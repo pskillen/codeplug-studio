@@ -44,6 +44,7 @@ ProjectProvider
 | [BadgeCard](../../src/app/components/ui/BadgeCard.md)                                         | Mantine UI badge feature card                                                               |
 | [AddFromDataSourceModal](../../src/app/components/library/AddFromDataSourceModal.md)          | Channel set + external directory picker modal                                               |
 | [SidebarDriveControls](../../src/app/components/SidebarDriveControls/SidebarDriveControls.md) | Sidebar Save / Check Drive ([#368](https://github.com/pskillen/codeplug-studio/issues/368)) |
+| [SoftWarning](../../src/app/components/ui/SoftWarning.md)                                     | Compact theme-aware warning panel for sidebar chrome                                        |
 | [ActiveProjectBar](../../src/app/components/ActiveProjectBar/ActiveProjectBar.md)             | Active project name + Switch (closes mobile drawer)                                         |
 | [EntityDeleteButton](../../src/app/components/library/EntityDeleteButton.md)                  | Editor footer delete for library entities                                                   |
 | [EntityListDeleteAction](../../src/app/components/library/EntityListDeleteAction.md)          | List row delete trash icon                                                                  |

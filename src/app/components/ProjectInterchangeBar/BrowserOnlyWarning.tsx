@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Alert, CloseButton } from '@mantine/core';
+import SoftWarning from '../ui/SoftWarning.tsx';
 
 const DISMISS_KEY = 'codeplug-studio:browser-only-warning-dismissed';
 
@@ -38,22 +38,14 @@ export default function BrowserOnlyWarning({ projectId }: BrowserOnlyWarningProp
   }
 
   return (
-    <Alert
-      color="yellow"
-      variant="light"
+    <SoftWarning
       title="Browser-only backup"
-      styles={{ root: { flex: 1, minWidth: 0 } }}
+      onDismiss={() => {
+        dismissForSession(projectId);
+        setDismissed(true);
+      }}
     >
-      <CloseButton
-        aria-label="Dismiss warning"
-        size="sm"
-        style={{ position: 'absolute', top: 8, right: 8 }}
-        onClick={() => {
-          dismissForSession(projectId);
-          setDismissed(true);
-        }}
-      />
       This project is only stored in this browser — connect Google Drive or export YAML to back up.
-    </Alert>
+    </SoftWarning>
   );
 }

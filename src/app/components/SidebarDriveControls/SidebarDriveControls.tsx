@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ActionIcon, Anchor, Box, Group, Stack, Text, Tooltip } from '@mantine/core';
+import { ActionIcon, Anchor, Group, Stack, Text, Tooltip } from '@mantine/core';
 import { IconDeviceFloppy, IconRefresh } from '@tabler/icons-react';
 import { Link } from 'react-router-dom';
 import { loadDriveLastAccount } from '@integrations/cloud/drivePrefs.ts';
@@ -15,6 +15,7 @@ import DriveSaveConflictModal from '../import-export/DriveSaveConflictModal.tsx'
 import GoogleDriveNotConfiguredModal from '../import-export/GoogleDriveNotConfiguredModal.tsx';
 import BrowserOnlyWarning from '../ProjectInterchangeBar/BrowserOnlyWarning.tsx';
 import { useDriveRefresh } from '../ProjectInterchangeBar/DriveRefreshProvider.tsx';
+import SoftWarning from '../ui/SoftWarning.tsx';
 
 const disconnectedIconStyle = { opacity: 0.55, cursor: 'pointer' } as const;
 
@@ -82,6 +83,37 @@ export default function SidebarDriveControls() {
     });
   }
 
+  const driveButtons = (
+    <Group gap="xs">
+      <Tooltip label="Save to Drive">
+        <ActionIcon
+          variant="default"
+          size="md"
+          aria-label="Save to Drive"
+          loading={saving || saveAction.driveLoading}
+          disabled={saveDisabled}
+          style={!saveAction.driveReady && !saveDisabled ? disconnectedIconStyle : undefined}
+          onClick={() => void handleSave()}
+        >
+          <IconDeviceFloppy size={ICON_SIZE_NAV} stroke={ICON_STROKE} />
+        </ActionIcon>
+      </Tooltip>
+      <Tooltip label="Check Drive">
+        <ActionIcon
+          variant="default"
+          size="md"
+          aria-label="Check Drive"
+          loading={checking || checkAction.driveLoading}
+          disabled={checkDisabled}
+          style={!checkAction.driveReady && !checkDisabled ? disconnectedIconStyle : undefined}
+          onClick={() => void handleCheck()}
+        >
+          <IconRefresh size={ICON_SIZE_NAV} stroke={ICON_STROKE} />
+        </ActionIcon>
+      </Tooltip>
+    </Group>
+  );
+
   return (
     <>
       <Stack gap="xs">
@@ -91,55 +123,18 @@ export default function SidebarDriveControls() {
           </Text>
         ) : null}
         {drive ? (
-          <Box
-            p={showExpiryHint ? 'xs' : 0}
-            style={
-              showExpiryHint
-                ? {
-                    backgroundColor: 'var(--mantine-color-red-0)',
-                    borderRadius: 'var(--mantine-radius-sm)',
-                  }
-                : undefined
-            }
-          >
-            {showExpiryHint ? (
-              <Text size="xs" c="dimmed" mb="xs">
-                Session expired — click Save or Check to reconnect. You can keep working locally.
-              </Text>
-            ) : null}
-            <Group gap="xs">
-              <Tooltip label="Save to Drive">
-                <ActionIcon
-                  variant="default"
-                  size="md"
-                  aria-label="Save to Drive"
-                  loading={saving || saveAction.driveLoading}
-                  disabled={saveDisabled}
-                  style={
-                    !saveAction.driveReady && !saveDisabled ? disconnectedIconStyle : undefined
-                  }
-                  onClick={() => void handleSave()}
-                >
-                  <IconDeviceFloppy size={ICON_SIZE_NAV} stroke={ICON_STROKE} />
-                </ActionIcon>
-              </Tooltip>
-              <Tooltip label="Check Drive">
-                <ActionIcon
-                  variant="default"
-                  size="md"
-                  aria-label="Check Drive"
-                  loading={checking || checkAction.driveLoading}
-                  disabled={checkDisabled}
-                  style={
-                    !checkAction.driveReady && !checkDisabled ? disconnectedIconStyle : undefined
-                  }
-                  onClick={() => void handleCheck()}
-                >
-                  <IconRefresh size={ICON_SIZE_NAV} stroke={ICON_STROKE} />
-                </ActionIcon>
-              </Tooltip>
-            </Group>
-          </Box>
+          showExpiryHint ? (
+            <SoftWarning tone="danger">
+              <Stack gap="xs">
+                <Text size="xs" c="dimmed">
+                  Session expired — click Save or Check to reconnect. You can keep working locally.
+                </Text>
+                {driveButtons}
+              </Stack>
+            </SoftWarning>
+          ) : (
+            driveButtons
+          )
         ) : null}
         {localFile && !drive ? (
           <Anchor component={Link} to="/import-export" size="xs">

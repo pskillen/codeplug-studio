@@ -1,0 +1,61 @@
+.root {
+  position: relative;
+  border-radius: var(--mantine-radius-sm);
+  padding: var(--mantine-spacing-xs);
+}
+
+.dismissible {
+  padding-right: calc(var(--mantine-spacing-xs) + 1.75rem);
+}
+
+.warning {
+  background-color: light-dark(
+    color-mix(in srgb, var(--mantine-color-yellow-1) 88%, transparent),
+    color-mix(in srgb, var(--mantine-color-yellow-5) 12%, var(--mantine-color-dark-6))
+  );
+  border: 1px solid
+    light-dark(
+      color-mix(in srgb, var(--mantine-color-yellow-4) 45%, transparent),
+      color-mix(in srgb, var(--mantine-color-yellow-4) 32%, transparent)
+    );
+}
+
+.danger {
+  background-color: light-dark(
+    color-mix(in srgb, var(--mantine-color-red-1) 88%, transparent),
+    color-mix(in srgb, var(--mantine-color-red-5) 12%, var(--mantine-color-dark-6))
+  );
+  border: 1px solid
+    light-dark(
+      color-mix(in srgb, var(--mantine-color-red-4) 45%, transparent),
+      color-mix(in srgb, var(--mantine-color-red-4) 32%, transparent)
+    );
+}
+
+.title {
+  color: light-dark(var(--mantine-color-yellow-9), var(--mantine-color-yellow-2));
+  font-size: var(--mantine-font-size-xs);
+  font-weight: 600;
+  line-height: var(--mantine-line-height-xs);
+  margin-bottom: 0.25rem;
+}
+
+.titleDanger {
+  color: light-dark(var(--mantine-color-red-9), var(--mantine-color-red-2));
+  font-size: var(--mantine-font-size-xs);
+  font-weight: 600;
+  line-height: var(--mantine-line-height-xs);
+  margin-bottom: 0.25rem;
+}
+
+.body {
+  color: light-dark(var(--mantine-color-dark-6), var(--mantine-color-dark-1));
+  font-size: var(--mantine-font-size-xs);
+  line-height: var(--mantine-line-height-sm);
+}
+
+.close {
+  position: absolute;
+  top: 0.25rem;
+  right: 0.25rem;
+}
