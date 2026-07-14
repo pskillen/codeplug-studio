@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import {
+  decodeAnytoneAprsAutoTxIntervalWire,
+  encodeAnytoneAprsAutoTxIntervalSec,
+  formatAnytoneAprsAutoTxIntervalWire,
   formatAnytoneAprsCallType,
   formatAnytoneAprsChannelSlot,
   formatAnytoneAprsIntervalSec,
@@ -11,6 +14,8 @@ import {
   formatAnytoneAprsTimeslot,
   formatAnytoneFixedLocation,
   formatAnytonePositionSource,
+  parseAnytoneAprsAutoTxIntervalWire,
+  snapAnytoneAprsAutoTxIntervalSec,
 } from './aprsWireFormat.ts';
 
 describe('anytone aprsWireFormat', () => {
@@ -25,9 +30,9 @@ describe('anytone aprsWireFormat', () => {
     expect(formatAnytoneAprsCallType('group')).toBe('1');
   });
 
-  it('maps intervals, slots, and DMR IDs', () => {
+  it('maps manual intervals, slots, and DMR IDs', () => {
     expect(formatAnytoneAprsIntervalSec(null)).toBe('0');
-    expect(formatAnytoneAprsIntervalSec(9)).toBe('9');
+    expect(formatAnytoneAprsIntervalSec(120)).toBe('120');
     expect(formatAnytoneAprsTimeslot(null)).toBe('0');
     expect(formatAnytoneAprsTimeslot(2)).toBe('2');
     expect(formatAnytoneAprsChannelSlot(null)).toBe('0');
@@ -38,6 +43,29 @@ describe('anytone aprsWireFormat', () => {
     expect(formatAnytoneAprsReportChannel('digital', null)).toBe('1');
     expect(formatAnytoneAprsReportChannel('digital', 2)).toBe('2');
     expect(formatAnytoneAprsReportChannel('off', 2)).toBe('1');
+  });
+
+  it('encodes and decodes auto TX interval wire codes', () => {
+    const roundTripSeconds = [0, 60, 180, 300, 3870];
+    for (const seconds of roundTripSeconds) {
+      const k = encodeAnytoneAprsAutoTxIntervalSec(seconds);
+      expect(decodeAnytoneAprsAutoTxIntervalWire(k)).toBe(seconds);
+      expect(formatAnytoneAprsAutoTxIntervalWire(seconds)).toBe(String(k));
+    }
+
+    expect(encodeAnytoneAprsAutoTxIntervalSec(180)).toBe(9);
+    expect(decodeAnytoneAprsAutoTxIntervalWire(9)).toBe(180);
+    expect(parseAnytoneAprsAutoTxIntervalWire('9')).toBe(180);
+    expect(formatAnytoneAprsAutoTxIntervalWire(null)).toBe('0');
+  });
+
+  it('snaps off-step auto TX intervals and warns', () => {
+    expect(snapAnytoneAprsAutoTxIntervalSec(61)).toBe(60);
+    const warnings: string[] = [];
+    expect(formatAnytoneAprsAutoTxIntervalWire(61, warnings)).toBe('1');
+    expect(warnings).toEqual([
+      'APRS auto TX interval 61s adjusted to 60s for Anytone wire encoding',
+    ]);
   });
 
   it('decomposes fixed latitude and longitude', () => {

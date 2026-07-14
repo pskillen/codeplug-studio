@@ -33,6 +33,62 @@ export function formatAnytoneAprsIntervalSec(seconds: number | null | undefined)
   return String(Math.trunc(seconds));
 }
 
+const ANYTONE_APRS_AUTO_TX_INTERVAL_MIN_SEC = 60;
+const ANYTONE_APRS_AUTO_TX_INTERVAL_MAX_SEC = 3870;
+const ANYTONE_APRS_AUTO_TX_INTERVAL_MAX_WIRE = 255;
+
+/** Wire byte code k for auto TX interval (0 = off). */
+export function encodeAnytoneAprsAutoTxIntervalSec(seconds: number | null | undefined): number {
+  if (seconds == null || !Number.isFinite(seconds) || seconds <= 0) return 0;
+  return Math.trunc(seconds / 15) - 3;
+}
+
+/** Seconds from wire byte code k. */
+export function decodeAnytoneAprsAutoTxIntervalWire(k: number): number {
+  if (!Number.isFinite(k) || k <= 0) return 0;
+  return (Math.trunc(k) + 3) * 15;
+}
+
+export function isEncodableAnytoneAprsAutoTxIntervalSec(seconds: number): boolean {
+  if (seconds <= 0) return true;
+  if (seconds < ANYTONE_APRS_AUTO_TX_INTERVAL_MIN_SEC) return false;
+  if (seconds > ANYTONE_APRS_AUTO_TX_INTERVAL_MAX_SEC) return false;
+  const k = encodeAnytoneAprsAutoTxIntervalSec(seconds);
+  return k >= 1 && k <= ANYTONE_APRS_AUTO_TX_INTERVAL_MAX_WIRE && decodeAnytoneAprsAutoTxIntervalWire(k) === seconds;
+}
+
+/** Nearest encodable auto interval in seconds (0 = off). */
+export function snapAnytoneAprsAutoTxIntervalSec(seconds: number | null | undefined): number {
+  if (seconds == null || !Number.isFinite(seconds) || seconds <= 0) return 0;
+  const s = Math.trunc(seconds);
+  if (isEncodableAnytoneAprsAutoTxIntervalSec(s)) return s;
+  const k = Math.max(
+    1,
+    Math.min(ANYTONE_APRS_AUTO_TX_INTERVAL_MAX_WIRE, Math.round(s / 15 - 3)),
+  );
+  return decodeAnytoneAprsAutoTxIntervalWire(k);
+}
+
+export function formatAnytoneAprsAutoTxIntervalWire(
+  seconds: number | null | undefined,
+  warnings: string[] = [],
+): string {
+  const input = seconds == null || !Number.isFinite(seconds) ? 0 : Math.trunc(seconds);
+  const snapped = snapAnytoneAprsAutoTxIntervalSec(input);
+  if (input !== snapped) {
+    warnings.push(
+      `APRS auto TX interval ${input}s adjusted to ${snapped}s for Anytone wire encoding`,
+    );
+  }
+  return String(encodeAnytoneAprsAutoTxIntervalSec(snapped));
+}
+
+export function parseAnytoneAprsAutoTxIntervalWire(wire: string): number {
+  const k = Number.parseInt(wire.trim(), 10);
+  if (!Number.isFinite(k)) return 0;
+  return decodeAnytoneAprsAutoTxIntervalWire(k);
+}
+
 export function formatAnytoneAprsChannelSlot(channelSlot: number | null | undefined): string {
   if (channelSlot == null || channelSlot <= 0) return '0';
   return String(Math.trunc(channelSlot));
