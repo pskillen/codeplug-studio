@@ -65,7 +65,8 @@ export function prepareAnytoneExportAssembly(
     );
   }
 
-  const projectId = assembled.projectId;
+  const projectId =
+    assembled.channels[0]?.entity.projectId ?? library.channels[0]?.projectId ?? '';
   const carrierRows: AssembledChannel[] = derived.carriers.map((carrier) => ({
     entity: carrierChannelEntity(carrier, projectId),
     wireName: carrier.wireName,
