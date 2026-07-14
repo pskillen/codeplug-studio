@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Button, Group, Stack, Text, TextInput } from '@mantine/core';
 import { Link, useNavigate } from 'react-router-dom';
 import type { DigitalChannelMode, DigitalContact } from '@core/models/library.ts';
@@ -14,6 +14,8 @@ import { parseOptionalInt } from '../../lib/units.ts';
 import { useEntityEditorUnsavedGuard } from '../../hooks/useEntityFormDirty.ts';
 import { persistence } from '../../state/persistence.ts';
 import { useEntitySave } from './useEntitySave.ts';
+import RadioidContactVerifyPanel from '../../components/contacts/RadioidContactVerifyPanel.tsx';
+import { useLibrary } from '../../state/useLibrary.ts';
 
 const MODE_OPTIONS = digitalModeSegmentOptions();
 
@@ -35,7 +37,21 @@ export function DigitalContactEditor({
   const [remarks, setRemarks] = useState(base.remarks);
   const [comment, setComment] = useState(base.comment);
   const { save, saving, error } = useEntitySave('digital-contacts');
+  const { reload } = useLibrary();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!entity) return;
+    setName(entity.name);
+    setMode(entity.mode);
+    setDigitalId(String(entity.digitalId));
+    setCallsign(entity.callsign);
+    setCity(entity.city);
+    setState(entity.state);
+    setCountry(entity.country);
+    setRemarks(entity.remarks);
+    setComment(entity.comment);
+  }, [entity]);
 
   function buildRow(): DigitalContact {
     return {
@@ -113,6 +129,13 @@ export function DigitalContactEditor({
           description="Internal notes — not exported on all formats."
         />
       </FormSection>
+
+      {entity ? (
+        <RadioidContactVerifyPanel
+          contact={entity}
+          onApplied={() => void reload()}
+        />
+      ) : null}
 
       {error ? (
         <Text c="red" size="sm">

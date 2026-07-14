@@ -1,11 +1,23 @@
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Alert, Anchor, Autocomplete, Button, Group, Pagination, Stack, Text, TextInput } from '@mantine/core';
+import {
+  Alert,
+  Anchor,
+  Autocomplete,
+  Button,
+  Group,
+  Pagination,
+  Stack,
+  Text,
+  TextInput,
+} from '@mantine/core';
 import { IconSearch } from '@tabler/icons-react';
+import type { DigitalContact } from '@core/models/library.ts';
 import { REPEATERBOOK_COUNTRY_NAMES } from '@integrations/repeaters/repeaterbook/countryNames.ts';
 import {
   findDigitalContactByDigitalId,
   mapRadioidUserToDigitalContact,
+  radioidListingDisplayName,
   type RadioidDmrUserListing,
 } from '@integrations/radioid/index.ts';
 import { useRadioidContactSearch } from '../../hooks/useRadioidContactSearch.ts';
@@ -15,16 +27,10 @@ import { useLibrary } from '../../state/useLibrary.ts';
 import { useProjects } from '../../state/useProjects.ts';
 import { DataTable, FormPage, PageSection } from '../ui/index.ts';
 import type { DataTableColumn } from '../ui/DataTable.tsx';
+import RadioidContactUpdateDialog from './RadioidContactUpdateDialog.tsx';
 
 function listingKey(listing: RadioidDmrUserListing): string {
   return String(listing.id);
-}
-
-function displayName(listing: RadioidDmrUserListing): string {
-  const full = [listing.fname, listing.surname].filter(Boolean).join(' ').trim();
-  if (full) return full;
-  if (listing.name?.trim()) return listing.name.trim();
-  return listing.callsign || '—';
 }
 
 export default function RadioidContactSearch() {
@@ -45,6 +51,9 @@ export default function RadioidContactSearch() {
   const [selectedKeys, setSelectedKeys] = useState<string[]>([]);
   const [adding, setAdding] = useState(false);
   const [addMessage, setAddMessage] = useState<string | null>(null);
+  const [updateContact, setUpdateContact] = useState<DigitalContact | null>(null);
+  const [updateListing, setUpdateListing] = useState<RadioidDmrUserListing | null>(null);
+  const [updateOpen, setUpdateOpen] = useState(false);
 
   const duplicateById = useMemo(() => {
     const map = new Map<number, string>();
@@ -54,25 +63,58 @@ export default function RadioidContactSearch() {
     return map;
   }, [library.digitalContacts]);
 
+  function openUpdate(row: RadioidDmrUserListing) {
+    const existing = findDigitalContactByDigitalId(library.digitalContacts, row.id);
+    if (!existing) return;
+    setUpdateContact(existing);
+    setUpdateListing(row);
+    setUpdateOpen(true);
+  }
+
   const columns = useMemo((): DataTableColumn<RadioidDmrUserListing>[] => {
+    function existingContact(row: RadioidDmrUserListing): DigitalContact | null {
+      return findDigitalContactByDigitalId(library.digitalContacts, row.id);
+    }
+
     return [
       {
         key: 'callsign',
         header: 'Callsign',
-        render: (row) => row.callsign || '—',
+        render: (row) => {
+          const existing = existingContact(row);
+          const label = row.callsign || '—';
+          if (existing) {
+            return (
+              <Anchor component={Link} to={`/library/digital-contacts/${existing.id}`} size="sm">
+                {label}
+              </Anchor>
+            );
+          }
+          return label;
+        },
         sortValue: (row) => row.callsign,
       },
       {
         key: 'id',
         header: 'DMR ID',
-        render: (row) => row.id,
+        render: (row) => {
+          const existing = existingContact(row);
+          if (existing) {
+            return (
+              <Anchor component={Link} to={`/library/digital-contacts/${existing.id}`} size="sm">
+                {row.id}
+              </Anchor>
+            );
+          }
+          return row.id;
+        },
         sortValue: (row) => row.id,
       },
       {
         key: 'name',
         header: 'Name',
-        render: (row) => displayName(row),
-        sortValue: (row) => displayName(row),
+        render: (row) => radioidListingDisplayName(row),
+        sortValue: (row) => radioidListingDisplayName(row),
       },
       {
         key: 'city',
@@ -97,16 +139,11 @@ export default function RadioidContactSearch() {
         header: '',
         hideable: false,
         render: (row) => {
-          const existing = findDigitalContactByDigitalId(library.digitalContacts, row.id);
+          const existing = existingContact(row);
           if (existing) {
             return (
-              <Button
-                component={Link}
-                to={`/library/digital-contacts/${existing.id}`}
-                variant="light"
-                size="xs"
-              >
-                Open
+              <Button size="xs" variant="outline" onClick={() => openUpdate(row)}>
+                Update
               </Button>
             );
           }
@@ -259,9 +296,9 @@ export default function RadioidContactSearch() {
               rows={listings}
               rowKey={listingKey}
               nameColumn={{
-                getName: displayName,
+                getName: radioidListingDisplayName,
                 getPath: () => '#',
-                render: (row) => displayName(row),
+                render: (row) => radioidListingDisplayName(row),
               }}
               columns={columns}
               selectable
@@ -283,6 +320,16 @@ export default function RadioidContactSearch() {
           </Text>
         ) : null}
       </Stack>
+
+      {updateContact && updateListing ? (
+        <RadioidContactUpdateDialog
+          contact={updateContact}
+          listing={updateListing}
+          opened={updateOpen}
+          onClose={() => setUpdateOpen(false)}
+          onApplied={() => void reload()}
+        />
+      ) : null}
     </FormPage>
   );
 }

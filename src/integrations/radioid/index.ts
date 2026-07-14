@@ -1,5 +1,13 @@
 export { searchRadioidDmrUsers } from './client.ts';
 export {
+  buildDigitalContactPatchFromDiff,
+  diffDigitalContactFromListing,
+  diffHasChanges,
+  radioidListingDisplayName,
+  type DigitalContactDiffField,
+  type DigitalContactDiffRow,
+} from './contactDiff.ts';
+export {
   RADIOID_DMR_USER_PROXY_PATH,
   RADIOID_MAX_PER_PAGE,
   RADIOID_NETWORK_ERROR_MESSAGE,
