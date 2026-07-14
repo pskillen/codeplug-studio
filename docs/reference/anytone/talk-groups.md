@@ -24,18 +24,18 @@ Private calls → internal `DigitalContact` with `mode: 'dmr'`.
 
 **Fixture:** [`test-data/anytone/at-d890uv/DMRDigitalContactList.CSV`](../../../test-data/anytone/at-d890uv/DMRDigitalContactList.CSV) (one redacted private-contact row).
 
-| Header       | Internal field                                                   |
-| ------------ | ---------------------------------------------------------------- |
-| `No.`        | Export index                                                     |
-| `Radio ID`   | `DigitalContact.digitalId`                                       |
-| `Callsign`   | `DigitalContact.callsign`                                        |
-| `Name`       | `DigitalContact.name` / build `wireName`                         |
-| `City`       | `DigitalContact.city`                                            |
-| `State`      | `DigitalContact.state`                                           |
-| `Country`    | `DigitalContact.country`                                         |
-| `Remarks`    | `DigitalContact.remarks`                                         |
-| `Call Type`  | `Private Call`                                                   |
-| `Call Alert` | Export default `None`                                            |
+| Header       | Internal field                           |
+| ------------ | ---------------------------------------- |
+| `No.`        | Export index                             |
+| `Radio ID`   | `DigitalContact.digitalId`               |
+| `Callsign`   | `DigitalContact.callsign`                |
+| `Name`       | `DigitalContact.name` / build `wireName` |
+| `City`       | `DigitalContact.city`                    |
+| `State`      | `DigitalContact.state`                   |
+| `Country`    | `DigitalContact.country`                 |
+| `Remarks`    | `DigitalContact.remarks`                 |
+| `Call Type`  | `Private Call`                           |
+| `Call Alert` | Export default `None`                    |
 
 Unmodelled address columns export empty strings when library fields are unset. `Call Alert` remains export constant `None` until CPS enum elicitation ([#297](https://github.com/pskillen/codeplug-studio/issues/297)).
 

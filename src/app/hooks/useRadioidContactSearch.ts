@@ -43,13 +43,7 @@ export function useRadioidContactSearch() {
       const trimmedState = filters.state.trim();
       const trimmedCountry = filters.country.trim();
 
-      if (
-        !trimmedId &&
-        !trimmedCallsign &&
-        !trimmedCity &&
-        !trimmedState &&
-        !trimmedCountry
-      ) {
+      if (!trimmedId && !trimmedCallsign && !trimmedCity && !trimmedState && !trimmedCountry) {
         setError('Enter at least one search filter (DMR ID, callsign, city, state, or country).');
         return;
       }
@@ -111,13 +105,10 @@ export function useRadioidContactSearch() {
     [filters, page],
   );
 
-  const updateFilter = useCallback(
-    (key: keyof RadioidSearchFilters, value: string) => {
-      setFilters((prev) => ({ ...prev, [key]: value }));
-      setPage(1);
-    },
-    [],
-  );
+  const updateFilter = useCallback((key: keyof RadioidSearchFilters, value: string) => {
+    setFilters((prev) => ({ ...prev, [key]: value }));
+    setPage(1);
+  }, []);
 
   const goToPage = useCallback(
     (nextPage: number) => {

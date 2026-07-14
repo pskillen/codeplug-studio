@@ -1,15 +1,6 @@
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import {
-  Alert,
-  Anchor,
-  Button,
-  Group,
-  Pagination,
-  Stack,
-  Text,
-  TextInput,
-} from '@mantine/core';
+import { Alert, Anchor, Button, Group, Pagination, Stack, Text, TextInput } from '@mantine/core';
 import { IconSearch } from '@tabler/icons-react';
 import {
   findDigitalContactByDigitalId,
@@ -193,8 +184,8 @@ export default function RadioidContactSearch() {
     >
       <Stack gap="lg">
         <Alert variant="light" color="blue" title="Directory disclaimer">
-          RadioID.net listings are community-maintained. Studio stores contacts in your vendor-neutral
-          library; format exports project metadata per build adapter.
+          RadioID.net listings are community-maintained. Studio stores contacts in your
+          vendor-neutral library; format exports project metadata per build adapter.
         </Alert>
 
         <PageSection title="Search filters">

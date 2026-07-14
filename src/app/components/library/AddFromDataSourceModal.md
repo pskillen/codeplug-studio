@@ -6,10 +6,10 @@ Picker modal for channel import sources — built-in channel sets and external d
 
 ## Props
 
-| Prop      | Type         | Description      |
-| --------- | ------------ | ---------------- |
-| `opened`  | `boolean`    | Modal visibility |
-| `onClose` | `() => void` | Close handler    |
+| Prop      | Type                           | Description                                 |
+| --------- | ------------------------------ | ------------------------------------------- |
+| `opened`  | `boolean`                      | Modal visibility                            |
+| `onClose` | `() => void`                   | Close handler                               |
 | `sources` | `readonly AddFromDataSource[]` | Optional; defaults to `CHANNEL_ADD_SOURCES` |
 
 ## Behaviour

@@ -9,6 +9,7 @@ import AddFromBrandmeisterPage from './routes/library/AddFromBrandmeisterPage.ts
 import AddFromIrtsPage from './routes/library/AddFromIrtsPage.tsx';
 import AddFromRepeaterBookPage from './routes/library/AddFromRepeaterBookPage.tsx';
 import AddFromRadioidPage from './routes/library/AddFromRadioidPage.tsx';
+import AddChannelSetPage from './routes/library/AddChannelSetPage.tsx';
 import ZoneFromLocationPage from './routes/library/ZoneFromLocationPage.tsx';
 import ChannelsListPage from './routes/library/lists/ChannelsListPage.tsx';
 import ZonesListPage from './routes/library/lists/ZonesListPage.tsx';

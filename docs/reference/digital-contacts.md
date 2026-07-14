@@ -6,18 +6,18 @@ Format-specific wire mapping lives in per-format references under `docs/referenc
 
 ## Fields
 
-| Field | Type | Semantics |
-| --- | --- | --- |
-| `id` | UUID | Internal FK — relationships use `id`, not `name` or callsign |
-| `mode` | `DigitalChannelMode` | Protocol family (`dmr`, `dstar`, `ysf`, …) |
-| `name` | string | Display / export label (may mirror operator alias or directory full name) |
-| `digitalId` | number | Numeric radio ID on the wire |
-| `callsign` | string | Amateur callsign when known; may differ from `name` |
-| `city` | string | City or locality |
-| `state` | string | State, province, or region |
-| `country` | string | Country name |
-| `remarks` | string | Wire-oriented remarks (CPS Remarks column on some formats) |
-| `comment` | string | Internal operator notes — not exported on all formats |
+| Field       | Type                 | Semantics                                                                 |
+| ----------- | -------------------- | ------------------------------------------------------------------------- |
+| `id`        | UUID                 | Internal FK — relationships use `id`, not `name` or callsign              |
+| `mode`      | `DigitalChannelMode` | Protocol family (`dmr`, `dstar`, `ysf`, …)                                |
+| `name`      | string               | Display / export label (may mirror operator alias or directory full name) |
+| `digitalId` | number               | Numeric radio ID on the wire                                              |
+| `callsign`  | string               | Amateur callsign when known; may differ from `name`                       |
+| `city`      | string               | City or locality                                                          |
+| `state`     | string               | State, province, or region                                                |
+| `country`   | string               | Country name                                                              |
+| `remarks`   | string               | Wire-oriented remarks (CPS Remarks column on some formats)                |
+| `comment`   | string               | Internal operator notes — not exported on all formats                     |
 
 All string metadata fields default to `''` when unset. Legacy library rows without address fields round-trip as empty strings.
 
