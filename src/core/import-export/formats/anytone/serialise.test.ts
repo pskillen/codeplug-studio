@@ -235,7 +235,6 @@ describe('anytone serialise', () => {
     const build = {
       ...newFormatBuild(PROJECT_ID, 'anytone-at-d890uv'),
       layout: { sections: [{ kind: 'zoneGrouping' as const, zones: [] }] },
-      contactOverrides: [{ libraryEntityId: contact.id, wireName: 'W1AW' }],
     };
     const library = {
       channels: [],
@@ -266,7 +265,7 @@ describe('anytone serialise', () => {
     expect(table.rows).toHaveLength(1);
     expect(table.rows[0]?.[1]).toBe('1234567');
     expect(table.rows[0]?.[2]).toBe('W1AW');
-    expect(table.rows[0]?.[3]).toBe('W1AW');
+    expect(table.rows[0]?.[3]).toBe('Hiram Percy');
     expect(table.rows[0]?.[4]).toBe('Newington');
     expect(table.rows[0]?.[5]).toBe('Connecticut');
     expect(table.rows[0]?.[6]).toBe('United States');

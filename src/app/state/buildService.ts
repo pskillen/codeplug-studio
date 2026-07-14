@@ -139,6 +139,7 @@ export class BuildService {
       Pick<
         FormatBuild,
         'exportUnlinkedChannels' | 'exportUnlinkedTalkGroups' | 'exportUnlinkedRxGroupLists'
+        | 'exportUnlinkedDigitalContacts' | 'exportUnlinkedAnalogContacts'
       >
     >,
   ): FormatBuild {

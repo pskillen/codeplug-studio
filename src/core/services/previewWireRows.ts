@@ -648,10 +648,11 @@ export function isPreviewRowIncludedInExport(
     case 'talkGroup':
       if (build.exportUnlinkedTalkGroups !== false) return true;
       return row.expansionNote !== PREVIEW_ROW_NOT_REFERENCED_NOTE;
+    case 'contact':
+      if (build.exportUnlinkedDigitalContacts !== false) return true;
+      return row.expansionNote !== PREVIEW_ROW_NOT_REFERENCED_NOTE;
     case 'rxGroupList':
       if (build.exportUnlinkedRxGroupLists !== false) return true;
-      return row.expansionNote !== PREVIEW_ROW_NOT_REFERENCED_NOTE;
-    case 'contact':
       return row.expansionNote !== PREVIEW_ROW_NOT_REFERENCED_NOTE;
     case 'zone':
       if (row.forceInclude) return true;

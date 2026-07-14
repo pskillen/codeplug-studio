@@ -24,7 +24,7 @@ FormatBuild + library rows
 
 - **Channels** — non-excluded library channels; when `exportUnlinkedChannels` is false, only channels linked in build zone layout or library zones.
 - **Zones** — `layout.sections` zone grouping cross-referenced with library `Zone` rows and `zoneOverrides` wire names; falls back to library zone membership when layout is empty.
-- **Contacts / talk groups / RX lists** — referenced by exported channels (including RX list members); when `exportUnlinkedTalkGroups` / `exportUnlinkedRxGroupLists` are true (default), all non-excluded library rows of that kind are also included.
+- **Contacts / talk groups / RX lists** — referenced by exported channels (including RX list members); when `exportUnlinkedTalkGroups`, `exportUnlinkedRxGroupLists`, `exportUnlinkedDigitalContacts`, or `exportUnlinkedAnalogContacts` are true (default), all non-excluded library rows of that kind are also included.
 
 `exportInclusionWarnings(build, library, assembled)` reports counts when orphan entities are included.
 

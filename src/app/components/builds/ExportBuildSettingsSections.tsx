@@ -22,7 +22,12 @@ export interface ExportBuildSettingsSectionsProps {
   defaultScanValue: DefaultScanInclusion;
   onExportSettingsPatch: (patch: Partial<BuildExportSettings>) => void;
   onExportInclusionChange: (
-    field: 'exportUnlinkedChannels' | 'exportUnlinkedTalkGroups' | 'exportUnlinkedRxGroupLists',
+    field:
+      | 'exportUnlinkedChannels'
+      | 'exportUnlinkedTalkGroups'
+      | 'exportUnlinkedRxGroupLists'
+      | 'exportUnlinkedDigitalContacts'
+      | 'exportUnlinkedAnalogContacts',
     checked: boolean,
   ) => void;
 }
@@ -75,6 +80,22 @@ export default function ExportBuildSettingsSections({
               disabled={saving}
               onChange={(event) =>
                 onExportInclusionChange('exportUnlinkedRxGroupLists', event.currentTarget.checked)
+              }
+            />
+            <Switch
+              label="Export digital contacts not referenced by a channel"
+              checked={build.exportUnlinkedDigitalContacts !== false}
+              disabled={saving}
+              onChange={(event) =>
+                onExportInclusionChange('exportUnlinkedDigitalContacts', event.currentTarget.checked)
+              }
+            />
+            <Switch
+              label="Export analog contacts not referenced by a channel"
+              checked={build.exportUnlinkedAnalogContacts !== false}
+              disabled={saving}
+              onChange={(event) =>
+                onExportInclusionChange('exportUnlinkedAnalogContacts', event.currentTarget.checked)
               }
             />
           </>

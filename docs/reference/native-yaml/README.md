@@ -180,6 +180,8 @@ DM32 zone export flags (`exportScratchChannel`, `exportScanList`, `scanCarrierFr
 | `exportUnlinkedChannels`     | boolean (optional)               |
 | `exportUnlinkedTalkGroups`   | boolean (optional)               |
 | `exportUnlinkedRxGroupLists` | boolean (optional)               |
+| `exportUnlinkedDigitalContacts` | boolean (optional)            |
+| `exportUnlinkedAnalogContacts`  | boolean (optional)            |
 | `exportSettings`             | `BuildExportSettings` (optional) |
 
 `exportSettings` fields: `defaultScanInclusion`, `shortenNames`, `maxNameLength`, `nameModeOverride`, `useChannelAbbreviation`, `useTalkGroupAbbreviation`, `exportZoneDerivedScanLists`, `expandModes`, `expandRxGroupLists`, …

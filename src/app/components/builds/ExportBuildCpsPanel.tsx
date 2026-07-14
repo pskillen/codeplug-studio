@@ -154,7 +154,12 @@ export default function ExportBuildCpsPanel({ build }: ExportBuildCpsPanelProps)
   }
 
   async function handleExportInclusionChange(
-    field: 'exportUnlinkedChannels' | 'exportUnlinkedTalkGroups' | 'exportUnlinkedRxGroupLists',
+    field:
+      | 'exportUnlinkedChannels'
+      | 'exportUnlinkedTalkGroups'
+      | 'exportUnlinkedRxGroupLists'
+      | 'exportUnlinkedDigitalContacts'
+      | 'exportUnlinkedAnalogContacts',
     checked: boolean,
   ) {
     setSavingSettings(true);

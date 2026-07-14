@@ -848,6 +848,24 @@ function parseFormatBuild(raw: unknown, index: number): ParsedFormatBuild {
           ),
         }
       : {}),
+    ...(record.exportUnlinkedDigitalContacts !== undefined &&
+    record.exportUnlinkedDigitalContacts !== null
+      ? {
+          exportUnlinkedDigitalContacts: expectBoolean(
+            record.exportUnlinkedDigitalContacts,
+            `${label}.exportUnlinkedDigitalContacts`,
+          ),
+        }
+      : {}),
+    ...(record.exportUnlinkedAnalogContacts !== undefined &&
+    record.exportUnlinkedAnalogContacts !== null
+      ? {
+          exportUnlinkedAnalogContacts: expectBoolean(
+            record.exportUnlinkedAnalogContacts,
+            `${label}.exportUnlinkedAnalogContacts`,
+          ),
+        }
+      : {}),
     ...(record.exportSettings !== undefined && record.exportSettings !== null
       ? { exportSettings: parseExportSettings(record.exportSettings, `${label}.exportSettings`) }
       : {}),
