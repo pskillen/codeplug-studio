@@ -187,6 +187,122 @@ describe('anytone export wire context', () => {
     expect(scanListName).toBe('Zone Alpha');
     expect(scanListName).not.toMatch(/ 2$/);
   });
+
+  it('zone-derived scan carrier names exist in Channel.CSV without template callsign prefix', () => {
+    const tg = newTalkGroup(PROJECT_ID, 'TG Alpha', 2355);
+    const templateChannel = {
+      ...newChannel(PROJECT_ID, 'GB7EM Aberdeen'),
+      callsign: 'GB7EM',
+      rxFrequency: 145_500_000,
+      txFrequency: 145_500_000,
+      modeProfiles: [
+        {
+          mode: 'dmr' as const,
+          colourCode: 1,
+          timeslot: 1 as const,
+          dmrId: 1234567,
+          contactRef: { kind: 'talkGroup' as const, id: tg.id },
+          rxGroupListId: null,
+        },
+      ],
+    };
+    const glasgowChannel = {
+      ...newChannel(PROJECT_ID, 'Glasgow Chan'),
+      callsign: 'GB7GL',
+      rxFrequency: 438_800_000,
+      txFrequency: 434_000_000,
+      modeProfiles: [
+        {
+          mode: 'dmr' as const,
+          colourCode: 1,
+          timeslot: 1 as const,
+          dmrId: 1234567,
+          contactRef: { kind: 'talkGroup' as const, id: tg.id },
+          rxGroupListId: null,
+        },
+      ],
+    };
+    const edinburghChannel = {
+      ...newChannel(PROJECT_ID, 'Edinburgh Chan'),
+      callsign: 'GB7EM',
+      rxFrequency: 439_000_000,
+      txFrequency: 434_200_000,
+      modeProfiles: [
+        {
+          mode: 'dmr' as const,
+          colourCode: 1,
+          timeslot: 2 as const,
+          dmrId: 1234567,
+          contactRef: { kind: 'talkGroup' as const, id: tg.id },
+          rxGroupListId: null,
+        },
+      ],
+    };
+    const glasgowZone = {
+      ...newZone(PROJECT_ID, 'Glasgow'),
+      members: [{ kind: 'channel' as const, channelId: glasgowChannel.id }],
+    };
+    const edinburghZone = {
+      ...newZone(PROJECT_ID, 'Edinburgh'),
+      members: [{ kind: 'channel' as const, channelId: edinburghChannel.id }],
+    };
+    const build = {
+      ...newFormatBuild(PROJECT_ID, 'anytone-at-d890uv'),
+      layout: {
+        sections: [
+          {
+            kind: 'zoneGrouping' as const,
+            zones: [
+              {
+                id: glasgowZone.id,
+                name: glasgowZone.name,
+                channelIds: [glasgowChannel.id],
+                exportScanList: true,
+              },
+              {
+                id: edinburghZone.id,
+                name: edinburghZone.name,
+                channelIds: [edinburghChannel.id],
+                exportScanList: true,
+              },
+            ],
+          },
+        ],
+      },
+      zoneOverrides: [
+        { libraryEntityId: glasgowZone.id, wireName: 'Glasgow' },
+        { libraryEntityId: edinburghZone.id, wireName: 'Edinburgh' },
+      ],
+    };
+    const library = {
+      channels: [templateChannel, glasgowChannel, edinburghChannel],
+      zones: [glasgowZone, edinburghZone],
+      talkGroups: [tg],
+      digitalContacts: [],
+      analogContacts: [],
+      rxGroupLists: [],
+      scanLists: [],
+    };
+
+    const assembled = assemble(build, library);
+    const files = serialiseAnytoneFiles(assembled, library, {
+      exportZoneDerivedScanLists: true,
+      shortenNames: true,
+    });
+    const channelTable = csvToTable(files['Channel.CSV']);
+    const zoneTable = csvToTable(files['DMRZone.CSV']);
+    const nameIndex = channelTable.headers.indexOf('Channel Name');
+    const channelNames = new Set(channelTable.rows.map((row) => row[nameIndex]?.trim() ?? ''));
+    const membersIndex = zoneTable.headers.indexOf('Zone Channel Member');
+
+    for (const zoneRow of zoneTable.rows) {
+      const members = (zoneRow[membersIndex] ?? '').split('|').filter(Boolean);
+      const carrierName = members[0] ?? '';
+      expect(channelNames.has(carrierName)).toBe(true);
+      expect(carrierName.endsWith(' Scan')).toBe(true);
+      expect(carrierName).not.toMatch(/^GB7EM /);
+    }
+  });
 });
 
 describe('anytone wire preview list limits', () => {
