@@ -5,6 +5,7 @@ import {
   formatAprsAssignmentSummary,
   channelAssignmentsDirty,
   aprsSlotChannelSelectGroups,
+  channelMatchesAprsAssignmentModeFilter,
 } from './aprsBindingHelpers.ts';
 
 const channelA: Channel = {
@@ -229,5 +230,37 @@ describe('aprsSlotChannelSelectGroups', () => {
     expect(labels).toContain('AM air');
     expect(groups.find((g) => g.group === 'AM air')?.items[0]?.value).toBe('ch-air');
     expect(groups.find((g) => g.group === 'DMR / main bank')?.items[0]?.value).toBe('ch-dmr');
+  });
+});
+
+describe('channelMatchesAprsAssignmentModeFilter', () => {
+  it('filters digital vs analog channels for assignment table', () => {
+    const digital: Channel = {
+      ...channelA,
+      id: 'ch-dmr',
+      modeProfiles: [
+        {
+          mode: 'dmr',
+          colourCode: 1,
+          timeslot: 1,
+          dmrId: 1,
+          contactRef: null,
+          rxGroupListId: null,
+        },
+      ],
+    };
+    const analog: Channel = {
+      ...channelA,
+      id: 'ch-fm',
+      modeProfiles: [
+        { mode: 'fm', squelch: null, rxTone: 'none', txTone: 'none', bandwidthKHz: 12.5 },
+      ],
+    };
+
+    expect(channelMatchesAprsAssignmentModeFilter(digital, 'digital')).toBe(true);
+    expect(channelMatchesAprsAssignmentModeFilter(digital, 'analog')).toBe(false);
+    expect(channelMatchesAprsAssignmentModeFilter(analog, 'analog')).toBe(true);
+    expect(channelMatchesAprsAssignmentModeFilter(analog, 'digital')).toBe(false);
+    expect(channelMatchesAprsAssignmentModeFilter(analog, 'both')).toBe(true);
   });
 });

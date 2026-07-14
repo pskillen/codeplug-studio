@@ -18,8 +18,9 @@ Mounted from [AprsConfigurationPage](../../routes/library/AprsConfigurationPage.
 
 ## Behaviour
 
-- Lists **DMR channels only** with inline editors for report type, report slot, receive, and PTT mode.
-- Toolbar filters: report slot, report type, receive; `DataTable` search on name/callsign.
+- Lists library channels with inline editors for report type, report slot, receive, and PTT mode.
+- **Channel type** filter (`Digital` | `Analog` | `Both`) on the search row — digital = DMR profile; analog = no DMR profile.
+- Toolbar filters: report slot, report type, receive; labelled **Search** field filters name/callsign on the same row as channel type.
 - **Bulk set…** opens [AprsChannelBulkAssignModal](./AprsChannelBulkAssignModal.tsx) for selected rows.
 - **Save assignments** persists dirty `Channel.aprs` bindings via `persistence.putChannel`.
 - Slot labels and list column text use [aprsBindingHelpers](../../lib/aprsBindingHelpers.ts).

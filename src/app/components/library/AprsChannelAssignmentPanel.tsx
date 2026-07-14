@@ -3,8 +3,8 @@ import type { AprsChannelSlot, AprsConfiguration, ChannelAprsBinding } from '@co
 import type { AprsPttMode, AprsReportType } from '@core/models/libraryTypes.ts';
 import type { Channel } from '@core/models/library.ts';
 import { normalizeChannel } from '@core/domain/normalizeChannel.ts';
-import { Alert, Button, Checkbox, Group, Select, Stack, Text } from '@mantine/core';
-import { DataTable } from '../ui/index.ts';
+import { Alert, Button, Checkbox, Group, Select, Stack, Text, TextInput } from '@mantine/core';
+import { DataTable, GradientSegmentedControl } from '../ui/index.ts';
 import type { DataTableColumn } from '../ui/DataTable.tsx';
 import { DATATABLE_NAME_SORT_KEY } from '../../lib/dataTable/sort.ts';
 import {
@@ -12,10 +12,11 @@ import {
   aprsSlotSelectOptions,
   channelAprsBindingFromChannel,
   channelAssignmentsDirty,
-  channelHasDmrProfile,
+  channelMatchesAprsAssignmentModeFilter,
   formatAprsAssignmentSummary,
   normalizeChannelAprsBindingForSave,
   aprsBindingDraftKey,
+  type AprsAssignmentModeFilter,
 } from '../../lib/aprsBindingHelpers.ts';
 import AprsChannelBulkAssignModal, {
   applyAprsChannelBulkPatch,
@@ -73,7 +74,11 @@ function AprsChannelAssignmentPanelInner({
   onDirtyChange,
   permitNavigationOnce,
 }: AprsChannelAssignmentPanelProps) {
-  const dmrChannels = useMemo(() => channels.filter(channelHasDmrProfile), [channels]);
+  const [modeFilter, setModeFilter] = useState<AprsAssignmentModeFilter>('both');
+  const visibleChannels = useMemo(
+    () => channels.filter((channel) => channelMatchesAprsAssignmentModeFilter(channel, modeFilter)),
+    [channels, modeFilter],
+  );
   const [draftById, setDraftById] = useState<BindingDraftMap>(() => initialDraftMap(channels));
   const [selectedKeys, setSelectedKeys] = useState<string[]>([]);
   const [search, setSearch] = useState('');
@@ -128,7 +133,7 @@ function AprsChannelAssignmentPanelInner({
 
   const filteredRows = useMemo(() => {
     const needle = search.trim().toLowerCase();
-    return dmrChannels.filter((channel) => {
+    return visibleChannels.filter((channel) => {
       const binding = draftById[channel.id] ?? channelAprsBindingFromChannel(channel);
       if (needle) {
         const haystack = `${channel.name} ${channel.callsign}`.toLowerCase();
@@ -143,7 +148,7 @@ function AprsChannelAssignmentPanelInner({
       }
       return true;
     });
-  }, [dmrChannels, draftById, search, reportTypeFilter, receiveFilter, slotFilter]);
+  }, [visibleChannels, draftById, search, reportTypeFilter, receiveFilter, slotFilter]);
 
   const columns = useMemo((): DataTableColumn<Channel>[] => {
     return [
@@ -322,13 +327,17 @@ function AprsChannelAssignmentPanelInner({
     }
   }
 
-  const nonDmrCount = channels.length - dmrChannels.length;
+  const emptyStateMessage = useMemo(() => {
+    if (modeFilter === 'digital') return 'No digital (DMR) channels match the current filters.';
+    if (modeFilter === 'analog') return 'No analog channels match the current filters.';
+    return 'No channels match the current filters.';
+  }, [modeFilter]);
 
   return (
     <Stack gap="md">
       <Text size="sm" c="dimmed">
-        Assign digital APRS bindings across DMR channels.
-        {nonDmrCount > 0 ? ` ${nonDmrCount} non-DMR channel(s) are hidden.` : null}
+        Assign digital APRS bindings per channel. Use the channel-type filter to include analog
+        channels when needed.
       </Text>
       <Group grow align="flex-end">
         <Select
@@ -358,6 +367,26 @@ function AprsChannelAssignmentPanelInner({
           onChange={(value) => setReceiveFilter(value ?? 'all')}
         />
       </Group>
+      <Group align="flex-end" gap="md" wrap="nowrap">
+        <GradientSegmentedControl
+          label="Channel type"
+          value={modeFilter}
+          onChange={(value) => setModeFilter(value as AprsAssignmentModeFilter)}
+          data={[
+            { value: 'digital', label: 'Digital' },
+            { value: 'analog', label: 'Analog' },
+            { value: 'both', label: 'Both' },
+          ]}
+          scheme="three"
+        />
+        <TextInput
+          label="Search"
+          placeholder="Filter by name or callsign"
+          value={search}
+          onChange={(event) => setSearch(event.currentTarget.value)}
+          style={{ flex: 1, minWidth: 0 }}
+        />
+      </Group>
       <DataTable
         rows={filteredRows}
         rowKey={(row) => row.id}
@@ -376,13 +405,11 @@ function AprsChannelAssignmentPanelInner({
           sortValue: (row) => row.callsign,
         }}
         columns={columns}
-        search={search}
-        onSearchChange={setSearch}
-        searchPlaceholder="Filter by name or callsign"
+        showSearch={false}
         selectable
         selectedKeys={selectedKeys}
         onSelectedKeysChange={setSelectedKeys}
-        emptyState="No DMR channels match the current filters."
+        emptyState={emptyStateMessage}
         defaultSort={{ columnKey: DATATABLE_NAME_SORT_KEY, direction: 'asc' }}
       />
       <Group>

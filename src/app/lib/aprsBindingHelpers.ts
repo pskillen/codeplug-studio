@@ -67,6 +67,17 @@ export function channelHasDmrProfile(channel: Channel): boolean {
   return channel.modeProfiles.some((profile) => profile.mode === 'dmr');
 }
 
+export type AprsAssignmentModeFilter = 'digital' | 'analog' | 'both';
+
+export function channelMatchesAprsAssignmentModeFilter(
+  channel: Channel,
+  filter: AprsAssignmentModeFilter,
+): boolean {
+  if (filter === 'both') return true;
+  const isDigital = channelHasDmrProfile(channel);
+  return filter === 'digital' ? isDigital : !isDigital;
+}
+
 export function normalizeChannelAprsBindingForSave(
   binding: ChannelAprsBinding | undefined,
   config: AprsConfiguration | null,
