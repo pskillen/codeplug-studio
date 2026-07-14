@@ -31,6 +31,22 @@ function parseOptionalPositiveInt(value: string | number): number | null {
   return Number.isFinite(n) && n > 0 ? n : null;
 }
 
+const AUTO_TX_INTERVAL_MIN_SEC = 60;
+const AUTO_TX_INTERVAL_MAX_SEC = 3870;
+const AUTO_TX_INTERVAL_STEP_SEC = 15;
+
+function parseOptionalAutoTxIntervalSec(value: string | number): number | null {
+  if (value === '' || value == null) return null;
+  const n = typeof value === 'number' ? value : Number.parseInt(String(value), 10);
+  if (!Number.isFinite(n) || n <= 0) return null;
+  const clamped = Math.min(
+    AUTO_TX_INTERVAL_MAX_SEC,
+    Math.max(AUTO_TX_INTERVAL_MIN_SEC, n),
+  );
+  const steps = Math.round((clamped - AUTO_TX_INTERVAL_MIN_SEC) / AUTO_TX_INTERVAL_STEP_SEC);
+  return AUTO_TX_INTERVAL_MIN_SEC + steps * AUTO_TX_INTERVAL_STEP_SEC;
+}
+
 export default function AprsConfigurationEditor({
   projectId,
   entity,
@@ -137,7 +153,7 @@ export default function AprsConfigurationEditor({
 
       <FieldCard
         title="Beacon timing"
-        description="Manual and automatic position beacon intervals in seconds."
+        description="Manual interval is plain seconds on export. Auto interval uses 15-second steps from 60 s (Anytone CPS wire encoding)."
       >
         <SimpleGrid cols={{ base: 1, sm: 2 }}>
           <NumberInput
@@ -150,9 +166,12 @@ export default function AprsConfigurationEditor({
           />
           <NumberInput
             label="Auto TX interval (seconds)"
+            description="Leave empty for off. Anytone export encodes valid values to a wire code."
             value={autoTxIntervalSec ?? ''}
-            onChange={(value) => setAutoTxIntervalSec(parseOptionalPositiveInt(value))}
-            min={1}
+            onChange={(value) => setAutoTxIntervalSec(parseOptionalAutoTxIntervalSec(value))}
+            min={AUTO_TX_INTERVAL_MIN_SEC}
+            max={AUTO_TX_INTERVAL_MAX_SEC}
+            step={AUTO_TX_INTERVAL_STEP_SEC}
             allowDecimal={false}
             allowNegative={false}
           />
