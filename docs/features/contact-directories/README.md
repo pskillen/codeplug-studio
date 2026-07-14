@@ -41,7 +41,7 @@ Many CPS suites (OpenGD77, qDMR, …) offer one-click DMR ID import. **Anytone C
 | **Import from RadioID.net** | Library → Contacts → **Add from…** → RadioID.net | Search by country → callsign/ID; bulk **Add all results** (paginated), **Add this page**, or **Add selected** via confirm/progress modal; preview/update when contact already in library |
 | **Update from directory**   | Search results **Update** or contact editor      | Field-level diff vs RadioID.net listing (`RadioidContactUpdateDialog`)                                                                                                                   |
 | **Edit metadata**           | `/library/digital-contacts/:id`                  | Manual CRUD for all enriched fields                                                                                                                                                      |
-| **Export to Anytone**       | Build export                                     | `DMRDigitalContactList.CSV` projects library metadata when present                                                                                                                       |
+| **Export to Anytone**       | Build export                                     | `DMRDigitalContactList.CSV` projects library metadata; **Contact export name style** on Build → Contacts or Export chooses how `Name` is composed (`name`, `callsign`, `callsign-name`) |
 
 ### Routes
 
@@ -52,6 +52,7 @@ Many CPS suites (OpenGD77, qDMR, …) offer one-click DMR ID import. **Anytone C
 - Provider HTTP client in `src/integrations/radioid/` — maps API rows → `DigitalContact` at boundary.
 - CORS bridge: `GET /api/radioid/dmr/user/` (trailing slash required; Pages Function + Vite dev proxy) — see [radioid reference](../../reference/radioid/README.md).
 - UUID `id` FKs internally; wire names only on format build export.
+- **Contact export name style** is an export-time build setting (not import-time): library stores `name` and `callsign` separately; Anytone/OpenGD77 export composes CPS `Name` per `exportSettings.digitalContactExportNameMode`.
 - Duplicate import gate: match on `digitalId` (not display `name`).
 - Session cache (≤5 min) + per-provider rate-limit cooldown after HTTP 429.
 

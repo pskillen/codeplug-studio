@@ -28,8 +28,8 @@ Private calls → internal `DigitalContact` with `mode: 'dmr'`.
 | ------------ | ---------------------------------------- |
 | `No.`        | Export index                             |
 | `Radio ID`   | `DigitalContact.digitalId`               |
-| `Callsign`   | `DigitalContact.callsign`                |
-| `Name`       | `DigitalContact.name` / build `wireName` |
+| `Callsign`   | `DigitalContact.callsign` (always from library) |
+| `Name`       | Build export name mode + optional per-contact `wireName` override — see below |
 | `City`       | `DigitalContact.city`                    |
 | `State`      | `DigitalContact.state`                   |
 | `Country`    | `DigitalContact.country`                 |
@@ -49,6 +49,18 @@ Unmodelled address columns export empty strings when library fields are unset. `
 | `City` … `Remarks` | Empty                     | `''`           |
 
 Non-`None` **Call Alert** strings still need CPS elicitation — see [enum-verification.md](enum-verification.md).
+
+### Export `Name` composition
+
+Build **Export** and **Contacts** wire pages offer **Contact export name style** (persisted on `exportSettings.digitalContactExportNameMode`):
+
+| Mode            | CPS `Name` source                          |
+| --------------- | ------------------------------------------ |
+| `name` (default)| Library display `name`                     |
+| `callsign`      | Library `callsign`                         |
+| `callsign-name` | `"{callsign} {name}"` when both are set    |
+
+Per-contact **wire name overrides** on the build take precedence. Duplicate contact `Name` values are allowed at export — Studio does not disambiguate with numeric suffixes. `Callsign` is always the library callsign column, independent of the name mode.
 
 ## Namespace
 
