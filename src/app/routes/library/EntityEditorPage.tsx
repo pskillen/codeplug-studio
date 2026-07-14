@@ -93,15 +93,18 @@ export default function EntityEditorPage() {
             entity={entityId ? (library.talkGroups.find((t) => t.id === entityId) ?? null) : null}
           />
         );
-      case 'digitalContact':
+      case 'digitalContact': {
+        const digitalEntity = entityId
+          ? (library.digitalContacts.find((c) => c.id === entityId) ?? null)
+          : null;
         return (
           <DigitalContactEditor
+            key={digitalEntity ? `${digitalEntity.id}:${digitalEntity.revision}` : 'new'}
             projectId={projectId}
-            entity={
-              entityId ? (library.digitalContacts.find((c) => c.id === entityId) ?? null) : null
-            }
+            entity={digitalEntity}
           />
         );
+      }
       case 'analogContact':
         return (
           <AnalogContactEditor

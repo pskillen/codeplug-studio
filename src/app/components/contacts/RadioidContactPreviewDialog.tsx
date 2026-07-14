@@ -39,10 +39,12 @@ export default function RadioidContactPreviewDialog({
 
   if (!contact) return null;
 
+  const contactId = contact.id;
+
   function handleOpenEditor() {
     setOpenConfirm(false);
     onClose();
-    navigate(`/library/digital-contacts/${contact.id}`);
+    navigate(`/library/digital-contacts/${contactId}`);
   }
 
   return (

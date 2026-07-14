@@ -1,10 +1,7 @@
 import { useState } from 'react';
-import { Alert, Button, Group, Stack, Text } from '@mantine/core';
+import { Alert, Button, Group, Text } from '@mantine/core';
 import type { DigitalContact } from '@core/models/library.ts';
-import {
-  RadioidDirectoryError,
-  searchRadioidDmrUsers,
-} from '@integrations/radioid/index.ts';
+import { RadioidDirectoryError, searchRadioidDmrUsers } from '@integrations/radioid/index.ts';
 import { FormSection } from '../ui/index.ts';
 import RadioidContactUpdateDialog from './RadioidContactUpdateDialog.tsx';
 
@@ -20,9 +17,9 @@ export default function RadioidContactVerifyPanel({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [updateOpen, setUpdateOpen] = useState(false);
-  const [listing, setListing] = useState<Awaited<
-    ReturnType<typeof searchRadioidDmrUsers>
-  >['listings'][number] | null>(null);
+  const [listing, setListing] = useState<
+    Awaited<ReturnType<typeof searchRadioidDmrUsers>>['listings'][number] | null
+  >(null);
 
   async function handleCheck() {
     setLoading(true);

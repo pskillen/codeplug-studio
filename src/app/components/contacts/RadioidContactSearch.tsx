@@ -96,12 +96,7 @@ export default function RadioidContactSearch() {
           const label = row.callsign || '—';
           if (existing) {
             return (
-              <Anchor
-                component="button"
-                type="button"
-                size="sm"
-                onClick={() => openPreview(row)}
-              >
+              <Anchor component="button" type="button" size="sm" onClick={() => openPreview(row)}>
                 {label}
               </Anchor>
             );
@@ -117,12 +112,7 @@ export default function RadioidContactSearch() {
           const existing = existingContact(row);
           if (existing) {
             return (
-              <Anchor
-                component="button"
-                type="button"
-                size="sm"
-                onClick={() => openPreview(row)}
-              >
+              <Anchor component="button" type="button" size="sm" onClick={() => openPreview(row)}>
                 {row.id}
               </Anchor>
             );

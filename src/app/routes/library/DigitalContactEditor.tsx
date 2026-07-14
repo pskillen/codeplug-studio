@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Button, Group, Stack, Text, TextInput } from '@mantine/core';
 import { Link, useNavigate } from 'react-router-dom';
 import type { DigitalChannelMode, DigitalContact } from '@core/models/library.ts';
@@ -39,19 +39,6 @@ export function DigitalContactEditor({
   const { save, saving, error } = useEntitySave('digital-contacts');
   const { reload } = useLibrary();
   const navigate = useNavigate();
-
-  useEffect(() => {
-    if (!entity) return;
-    setName(entity.name);
-    setMode(entity.mode);
-    setDigitalId(String(entity.digitalId));
-    setCallsign(entity.callsign);
-    setCity(entity.city);
-    setState(entity.state);
-    setCountry(entity.country);
-    setRemarks(entity.remarks);
-    setComment(entity.comment);
-  }, [entity]);
 
   function buildRow(): DigitalContact {
     return {
@@ -131,10 +118,7 @@ export function DigitalContactEditor({
       </FormSection>
 
       {entity ? (
-        <RadioidContactVerifyPanel
-          contact={entity}
-          onApplied={() => void reload()}
-        />
+        <RadioidContactVerifyPanel contact={entity} onApplied={() => void reload()} />
       ) : null}
 
       {error ? (
