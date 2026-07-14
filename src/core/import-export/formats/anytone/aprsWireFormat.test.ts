@@ -34,8 +34,10 @@ describe('anytone aprsWireFormat', () => {
     expect(formatAnytoneAprsChannelSlot(3)).toBe('3');
     expect(formatAnytoneAprsTargetDmrId(null)).toBe('0');
     expect(formatAnytoneAprsTargetDmrId(2355)).toBe('2355');
-    expect(formatAnytoneAprsReportChannel(null)).toBe('1');
-    expect(formatAnytoneAprsReportChannel(2)).toBe('2');
+    expect(formatAnytoneAprsReportChannel('off', null)).toBe('1');
+    expect(formatAnytoneAprsReportChannel('digital', null)).toBe('1');
+    expect(formatAnytoneAprsReportChannel('digital', 2)).toBe('2');
+    expect(formatAnytoneAprsReportChannel('off', 2)).toBe('1');
   });
 
   it('decomposes fixed latitude and longitude', () => {

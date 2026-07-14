@@ -38,6 +38,7 @@ export default function AprsConfigurationEditor({
   settingsPage = false,
   mapActive = true,
   onDirtyChange,
+  onSaved,
   permitNavigationOnce: permitNavigationOnceFromParent,
 }: {
   projectId: string;
@@ -46,6 +47,7 @@ export default function AprsConfigurationEditor({
   settingsPage?: boolean;
   mapActive?: boolean;
   onDirtyChange?: (dirty: boolean) => void;
+  onSaved?: () => Promise<void>;
   permitNavigationOnce?: () => void;
 }) {
   const base = entity ?? newAprsConfiguration(projectId, '');
@@ -108,11 +110,15 @@ export default function AprsConfigurationEditor({
     ? permitNavigationOnceFromParent
     : permitNavigationOnceLocal;
 
-  function handleSave() {
+  async function handleSave() {
     const row = buildRow();
-    void save(() => persistence.putAprsConfiguration(row, entity ? entity.revision : null), {
-      permitNavigation: permitNavigationOnce,
-    });
+    const ok = await save(
+      () => persistence.putAprsConfiguration(row, entity ? entity.revision : null),
+      { permitNavigation: permitNavigationOnce },
+    );
+    if (ok) {
+      await onSaved?.();
+    }
   }
 
   return (

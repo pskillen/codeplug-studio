@@ -57,6 +57,34 @@ describe('serialiseAnytoneChannelRow APRS columns', () => {
     expect(wire['AnaAprsTxPath']).toBe('0');
   });
 
+  it('uses default report channel when digital report is off despite slot index', () => {
+    const channel = {
+      ...dmrChannel('APRS Off'),
+      aprs: {
+        receiveEnabled: true,
+        reportType: 'off' as const,
+        digitalPttMode: 'off' as const,
+        reportSlotIndex: 3,
+      },
+    };
+    const build = newFormatBuild(PROJECT_ID, 'anytone-at-d890uv');
+    const assembled = assemble(build, {
+      channels: [channel],
+      zones: [],
+      talkGroups: [],
+      digitalContacts: [],
+      analogContacts: [],
+      rxGroupLists: [],
+      scanLists: [],
+    });
+    const row = assembled.channels[0]!;
+
+    const wire = serialiseAnytoneChannelRow(row, assembled, 'anytone-at-d890uv', 1);
+
+    expect(wire['APRS Report Type']).toBe('Off');
+    expect(wire['Digital APRS Report Channel']).toBe('1');
+  });
+
   it('keeps APRS defaults when channel has no aprs binding', () => {
     const channel = dmrChannel('Plain');
     const build = newFormatBuild(PROJECT_ID, 'anytone-at-d890uv');

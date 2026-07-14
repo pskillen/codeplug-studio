@@ -1,11 +1,11 @@
 import type {
   AprsPttMode,
+  AprsPositionSource,
   AprsReportType,
   AprsSlotCallType,
   DMRTimeSlot,
+  GeoPoint,
 } from '@core/models/libraryTypes.ts';
-import type { AprsPositionSource } from '@core/models/libraryTypes.ts';
-import type { GeoPoint } from '@core/models/libraryTypes.ts';
 
 export function formatAnytoneAprsOnOff(enabled: boolean): 'On' | 'Off' {
   return enabled ? 'On' : 'Off';
@@ -122,7 +122,12 @@ export function formatAnytonePositionSource(
   };
 }
 
-export function formatAnytoneAprsReportChannel(slotIndex: number | null | undefined): string {
-  if (slotIndex == null || slotIndex < 1) return '1';
+export function formatAnytoneAprsReportChannel(
+  reportType: AprsReportType,
+  slotIndex: number | null | undefined,
+): string {
+  if (reportType !== 'digital' || slotIndex == null || slotIndex < 1) {
+    return '1';
+  }
   return String(Math.trunc(slotIndex));
 }
