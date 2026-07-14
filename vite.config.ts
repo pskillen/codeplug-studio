@@ -48,6 +48,11 @@ export default defineConfig(({ mode }) => {
             });
           },
         },
+        '/api/radioid': {
+          target: 'https://database.radioid.net',
+          changeOrigin: true,
+          rewrite: (path) => path.replace(/^\/api\/radioid/, '/api'),
+        },
       },
     },
     plugins: [react()],
