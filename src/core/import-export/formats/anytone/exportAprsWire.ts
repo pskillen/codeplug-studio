@@ -8,6 +8,7 @@ import { formatCsv } from './csvWrite.ts';
 import type { AnytonePreparedExport } from './prepareExportAssembly.ts';
 import { DEFAULT_ANYTONE_PROFILE_ID, getAnytoneProfile } from './profiles.ts';
 import {
+  formatAnytoneAprsAutoTxIntervalWire,
   formatAnytoneAprsCallType,
   formatAnytoneAprsChannelSlot,
   formatAnytoneAprsIntervalSec,
@@ -129,7 +130,10 @@ export function serialiseAprsCsv(
   const values: Record<string, string> = { ...APRS_ROW_DEFAULTS };
 
   values[APRS_COL.manualTxIntervalSec] = formatAnytoneAprsIntervalSec(config.manualTxIntervalSec);
-  values[APRS_COL.autoTxIntervalSec] = formatAnytoneAprsIntervalSec(config.autoTxIntervalSec);
+  values[APRS_COL.autoTxIntervalSec] = formatAnytoneAprsAutoTxIntervalWire(
+    config.autoTxIntervalSec,
+    warnings,
+  );
   values[APRS_COL.fixedLocationBeacon] = position.fixedLocationBeacon;
   values[APRS_COL.latiDegree] = position.latitude.degrees;
   values[APRS_COL.latiMinInt] = position.latitude.minInt;
