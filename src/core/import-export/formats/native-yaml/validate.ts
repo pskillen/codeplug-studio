@@ -736,6 +736,19 @@ function parseExportSettings(raw: unknown, label: string): BuildExportSettings |
       `${label}.multiTalkGroupExportNameMode`,
     ) as BuildExportSettings['multiTalkGroupExportNameMode'];
   }
+  if (
+    record.digitalContactExportNameMode !== undefined &&
+    record.digitalContactExportNameMode !== null
+  ) {
+    const value = expectString(
+      record.digitalContactExportNameMode,
+      `${label}.digitalContactExportNameMode`,
+    );
+    if (value !== 'name' && value !== 'callsign' && value !== 'callsign-name') {
+      throw new NativeYamlImportError(`${label}.digitalContactExportNameMode is invalid: ${value}`);
+    }
+    settings.digitalContactExportNameMode = value;
+  }
   if (record.expandModes !== undefined && record.expandModes !== null) {
     settings.expandModes = expectBoolean(record.expandModes, `${label}.expandModes`);
   }

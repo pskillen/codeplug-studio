@@ -274,6 +274,42 @@ describe('anytone serialise', () => {
     expect(table.rows[0]?.[9]).toBe('None');
   });
 
+  it('composes contact Name from export name mode and allows duplicate names', () => {
+    const contactA = {
+      ...newDigitalContact(PROJECT_ID, 'Ada', 1001),
+      callsign: 'M7ABC',
+    };
+    const contactB = {
+      ...newDigitalContact(PROJECT_ID, 'Bob', 1002),
+      callsign: 'M7ABC',
+    };
+    const build = {
+      ...newFormatBuild(PROJECT_ID, 'anytone-at-d890uv'),
+      layout: { sections: [{ kind: 'zoneGrouping' as const, zones: [] }] },
+      exportSettings: { digitalContactExportNameMode: 'callsign-name' as const },
+    };
+    const library = {
+      channels: [],
+      zones: [],
+      talkGroups: [],
+      digitalContacts: [contactA, contactB],
+      analogContacts: [],
+      rxGroupLists: [],
+      scanLists: [],
+    };
+
+    const assembled = assemble(build, library);
+    const files = serialiseAnytoneFiles(assembled, library, {
+      digitalContactExportNameMode: 'callsign-name',
+      shortenNames: false,
+    });
+    const table = csvToTable(files['DMRDigitalContactList.CSV']);
+    const nameIndex = table.headers.indexOf('Name');
+
+    expect(table.rows.map((row) => row[nameIndex])).toEqual(['M7ABC Ada', 'M7ABC Bob']);
+    expect(table.rows.every((row) => !/\s2$/.test(row[nameIndex] ?? ''))).toBe(true);
+  });
+
   it('omits zone-derived ScanList.CSV rows when master toggle is off', () => {
     const tg = newTalkGroup(PROJECT_ID, 'TG Alpha', 2355);
     const ch1 = {

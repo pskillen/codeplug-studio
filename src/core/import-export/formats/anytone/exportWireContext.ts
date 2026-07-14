@@ -1,6 +1,11 @@
 import type { AssembledBuild, AssembledChannel } from '@core/services/assemble.ts';
 import { applyTalkGroupWireNameLimits } from '@core/import-export/channelExpansion/talkGroupWireNames.ts';
 import { applyListWireNameLimits } from '@core/import-export/channelExpansion/listWireNames.ts';
+import {
+  applyDigitalContactExportWireName,
+  buildDigitalContactExportWireNameMap,
+  resolveAnalogContactExportBaseName,
+} from '@core/import-export/digitalContactExportName.ts';
 import type { CpsExportOptions } from '@core/import-export/types.ts';
 import { anytoneChannelWireName } from './exportChannelWire.ts';
 import { isAmAirbandBankChannel, isFmBroadcastBankChannel } from './receiveOnlyBanks.ts';
@@ -91,11 +96,18 @@ export function buildAnytoneExportWireContext(
     );
   }
 
-  const digitalContactWireNames = new Map<string, string>();
-  for (const row of assembled.digitalContacts) {
+  const digitalContactWireNames = buildDigitalContactExportWireNameMap(
+    assembled.digitalContacts,
+    options?.contactOverrides,
+    options,
+    profileId,
+    warnings,
+  );
+  for (const row of assembled.analogContacts) {
+    const base = resolveAnalogContactExportBaseName(row.entity, options?.contactOverrides);
     digitalContactWireNames.set(
       row.entity.id,
-      applyListWireNameLimits(row.wireName, reserved, options, profileId, warnings, 'Contact'),
+      applyDigitalContactExportWireName(base, options, profileId, warnings),
     );
   }
 

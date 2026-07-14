@@ -3,6 +3,7 @@ import type { TraitLayout } from './traitLayout.ts';
 import type {
   ExpandRxGroupListMembers,
   MultiTalkGroupExportNameMode,
+  DigitalContactExportNameMode,
 } from '@core/import-export/types.ts';
 import type { ChannelExportNameMode } from './library.ts';
 
@@ -20,6 +21,7 @@ export interface BuildExportSettings {
   useTalkGroupAbbreviation?: boolean;
   exportZoneDerivedScanLists?: boolean;
   multiTalkGroupExportNameMode?: MultiTalkGroupExportNameMode;
+  digitalContactExportNameMode?: DigitalContactExportNameMode;
   expandModes?: boolean;
   expandRxGroupLists?: boolean;
   expandRxGroupListMembers?: ExpandRxGroupListMembers;

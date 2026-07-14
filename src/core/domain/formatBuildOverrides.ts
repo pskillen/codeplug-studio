@@ -16,7 +16,7 @@ export interface LegacyEntitySelection {
 }
 
 export function overrideByEntityId(
-  overrides: BuildEntityOverride[] | undefined,
+  overrides: readonly BuildEntityOverride[] | undefined,
 ): Map<string, BuildEntityOverride> {
   return new Map((overrides ?? []).map((row) => [row.libraryEntityId, row]));
 }
