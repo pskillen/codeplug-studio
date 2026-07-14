@@ -93,6 +93,7 @@ describe('WirePreviewDataTable', () => {
       excluded: false,
     };
     const layout: ZoneGroupingLayout = {
+      kind: 'zoneGrouping',
       zones: [{ id: 'zone-1', name: 'Glasgow', channelIds: [], exportScanList: true }],
     };
     const onExportScanListChange = vi.fn();
