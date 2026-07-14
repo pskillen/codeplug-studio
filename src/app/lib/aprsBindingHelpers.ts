@@ -1,6 +1,6 @@
 import type { AprsChannelSlot, AprsConfiguration, ChannelAprsBinding } from '@core/models/aprs.ts';
 import type { Channel } from '@core/models/library.ts';
-import { classifyAnytoneExportChannelBank } from '@core/import-export/formats/anytone/receiveOnlyBanks.ts';
+import { classifyAnytoneExportChannelBank } from '@core/services/anytoneChannelBanks.ts';
 import { CHANNEL_APRS_OFF } from '@core/domain/aprs/defaults.ts';
 import { normalizeOptionalChannelAprs } from '@core/domain/aprs/index.ts';
 import { channelDisplayLabel } from '@core/domain/channelNaming.ts';
