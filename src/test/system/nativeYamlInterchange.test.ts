@@ -55,6 +55,45 @@ describe('native YAML interchange system', () => {
     expect(reloadedAggregate.meta.name).toBe(parsedFromExport.meta.name);
   });
 
+  it('seedPreservingId import on empty store keeps the YAML project id', async () => {
+    const sourcePersistence = new InMemoryProjectPersistence();
+    const sourceAggregate = projectWithFormatBuildAggregate();
+    await sourcePersistence.seedProject(seedFromAggregate(sourceAggregate));
+    const sourcePort = asInterchangePort(sourcePersistence);
+    const projectId = sourceAggregate.meta.projectId;
+
+    const exported = await exportProjectYaml(sourcePort, projectId);
+
+    const targetPersistence = new InMemoryProjectPersistence();
+    const targetPort = asInterchangePort(targetPersistence);
+    const imported = await importProjectYaml(targetPort, exported.content, {
+      kind: 'seedPreservingId',
+    });
+
+    expect(imported.projectId).toBe(projectId);
+    expect(await targetPersistence.listProjects()).toHaveLength(1);
+    const loaded = await targetPersistence.loadProjectSeed(projectId);
+    expect(loaded?.meta.projectId).toBe(projectId);
+  });
+
+  it('export YAML contains the local project id', async () => {
+    const persistence = new InMemoryProjectPersistence();
+    const sourceAggregate = projectWithFormatBuildAggregate();
+    await persistence.seedProject(seedFromAggregate(sourceAggregate));
+    const port = asInterchangePort(persistence);
+    const projectId = sourceAggregate.meta.projectId;
+
+    const exported = await exportProjectYaml(port, projectId);
+
+    const importAdapter = getImportAdapter('native-yaml');
+    if (!isSingleFileProjectImportAdapter(importAdapter)) {
+      throw new Error('expected single-file import adapter');
+    }
+    const parsed = importAdapter.parseDocument(exported.content).project;
+    expect(parsed.meta.projectId).toBe(projectId);
+    expect(parsed.meta.id).toBe(projectId);
+  });
+
   it('createNew import seeds an isolated project', async () => {
     const persistence = new InMemoryProjectPersistence();
     const existing = projectWithFormatBuildAggregate();
