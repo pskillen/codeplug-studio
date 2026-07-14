@@ -15,7 +15,11 @@ import {
   formatAnytoneAprsTimeslot,
   formatAnytonePositionSource,
 } from './aprsWireFormat.ts';
-import { orderedDmrExpandedRows } from './exportChannelSlots.ts';
+import {
+  resolveAmAirChannelSlotById,
+  resolveDmrChannelSlotById,
+  resolveFmBroadcastChannelSlotById,
+} from './exportChannelSlots.ts';
 
 function padRow(headers: string[], values: Record<string, string>): string[] {
   return headers.map((header) => values[header] ?? '');
@@ -37,9 +41,23 @@ const SLOT_COLUMN_GROUPS: readonly (readonly [
   ['channel8', 'slot8', 'aprsTg8', 'callType8'],
 ] as const;
 
+function mergeChannelSlotMaps(
+  dmr: Map<string, number>,
+  amAir: Map<string, number>,
+  fmBroadcast: Map<string, number>,
+): Map<string, number> {
+  const merged = new Map<string, number>();
+  for (const [id, slot] of dmr) merged.set(id, slot);
+  for (const [id, slot] of amAir) merged.set(id, slot);
+  for (const [id, slot] of fmBroadcast) merged.set(id, slot);
+  return merged;
+}
+
 function serialiseAprsSlot(
   slot: AprsChannelSlot | undefined,
   channelSlotById: Map<string, number>,
+  channelNameById: Map<string, string>,
+  warnings: string[],
 ): Record<string, string> {
   if (!slot) {
     return {
@@ -49,12 +67,26 @@ function serialiseAprsSlot(
       callType: '0',
     };
   }
-  const channelWire =
-    slot.channelRef == null
-      ? '0'
-      : formatAnytoneAprsChannelSlot(channelSlotById.get(slot.channelRef.id) ?? null);
+  if (slot.channelRef == null) {
+    return {
+      channel: '0',
+      slot: formatAnytoneAprsTimeslot(slot.timeslot),
+      aprsTg: formatAnytoneAprsTargetDmrId(slot.targetDmrId),
+      callType: formatAnytoneAprsCallType(slot.callType),
+    };
+  }
+
+  const channelId = slot.channelRef.id;
+  const wireSlot = channelSlotById.get(channelId);
+  if (wireSlot == null) {
+    const label = channelNameById.get(channelId) ?? channelId;
+    warnings.push(
+      `APRS slot references channel "${label}" which is not in this Anytone export (missing from build or unsupported bank); exporting channel wire as 0`,
+    );
+  }
+
   return {
-    channel: channelWire,
+    channel: formatAnytoneAprsChannelSlot(wireSlot ?? null),
     slot: formatAnytoneAprsTimeslot(slot.timeslot),
     aprsTg: formatAnytoneAprsTargetDmrId(slot.targetDmrId),
     callType: formatAnytoneAprsCallType(slot.callType),
@@ -65,19 +97,11 @@ export function buildAnytoneExportChannelSlotById(
   assembled: AssembledBuild,
   prepared: AnytonePreparedExport,
 ): Map<string, number> {
-  const channelById = new Map(assembled.channels.map((row) => [row.entity.id, row]));
-  const expandedRows = orderedDmrExpandedRows(assembled, prepared);
-  const slotById = new Map<string, number>();
-
-  expandedRows.forEach((expandedRow, index) => {
-    const channelId = expandedRow.sourceChannelId;
-    if (slotById.has(channelId)) return;
-    const assembledChannel = channelById.get(channelId);
-    const slot = assembledChannel?.orderOrSlot ?? index + 1;
-    slotById.set(channelId, slot);
-  });
-
-  return slotById;
+  return mergeChannelSlotMaps(
+    resolveDmrChannelSlotById(assembled, prepared),
+    resolveAmAirChannelSlotById(assembled),
+    resolveFmBroadcastChannelSlotById(assembled),
+  );
 }
 
 export function serialiseAprsCsv(
@@ -98,6 +122,9 @@ export function serialiseAprsCsv(
   }
 
   const channelSlotById = buildAnytoneExportChannelSlotById(assembled, prepared);
+  const channelNameById = new Map(
+    assembled.channels.map((row) => [row.entity.id, row.entity.name]),
+  );
   const position = formatAnytonePositionSource(config.positionSource, config.fixedLocation);
   const values: Record<string, string> = { ...APRS_ROW_DEFAULTS };
 
@@ -116,7 +143,12 @@ export function serialiseAprsCsv(
   const exportSlots = slots.slice(0, profile.maxAprsSlots);
   for (let index = 0; index < SLOT_COLUMN_GROUPS.length; index++) {
     const [channelKey, slotKey, aprsTgKey, callTypeKey] = SLOT_COLUMN_GROUPS[index]!;
-    const slotWire = serialiseAprsSlot(exportSlots[index], channelSlotById);
+    const slotWire = serialiseAprsSlot(
+      exportSlots[index],
+      channelSlotById,
+      channelNameById,
+      warnings,
+    );
     values[APRS_COL[channelKey]] = slotWire.channel;
     values[APRS_COL[slotKey]] = slotWire.slot;
     values[APRS_COL[aprsTgKey]] = slotWire.aprsTg;
