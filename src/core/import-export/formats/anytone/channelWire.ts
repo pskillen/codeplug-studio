@@ -6,6 +6,12 @@ import { CHANNEL_COL, CHANNEL_HEADERS } from './columns.ts';
 import { CHANNEL_ROW_DEFAULTS } from './channelDefaults.ts';
 import type { AnytoneExportWireContext } from './exportWireContext.ts';
 import {
+  formatAnytoneAprsOnOff,
+  formatAnytoneAprsPttMode,
+  formatAnytoneAprsReportChannel,
+  formatAnytoneAprsReportType,
+} from './aprsWireFormat.ts';
+import {
   formatAnytoneBandwidthKhz,
   formatAnytoneChannelTypeFromChannel,
   formatAnytoneDmrModeWire,
@@ -153,6 +159,16 @@ export function serialiseAnytoneChannelRow(
 
   if (isZoneScanCarrierChannelId(channel.id)) {
     values[CHANNEL_COL.autoScan] = '1';
+  }
+
+  const aprs = channel.aprs;
+  if (aprs) {
+    values[CHANNEL_COL.aprsRx] = formatAnytoneAprsOnOff(aprs.receiveEnabled);
+    values[CHANNEL_COL.digitalAprsPtt] = formatAnytoneAprsPttMode(aprs.digitalPttMode);
+    values[CHANNEL_COL.aprsReportType] = formatAnytoneAprsReportType(aprs.reportType);
+    values[CHANNEL_COL.digitalAprsReportChannel] = formatAnytoneAprsReportChannel(
+      aprs.reportSlotIndex,
+    );
   }
 
   const rowValues: Record<string, string> = {};

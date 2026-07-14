@@ -23,6 +23,11 @@ export const CHANNEL_COL = {
   pttProhibit: 'PTT Prohibit',
   dmrMode: 'DMR MODE',
   autoScan: 'Auto Scan',
+  aprsRx: 'APRS RX',
+  analogAprsPtt: 'Analog APRS PTT Mode',
+  digitalAprsPtt: 'Digital APRS PTT Mode',
+  aprsReportType: 'APRS Report Type',
+  digitalAprsReportChannel: 'Digital APRS Report Channel',
 } as const;
 
 /** Full Channel.CSV header row (AT-D890UV fixture). */
