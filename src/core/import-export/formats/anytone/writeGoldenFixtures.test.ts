@@ -14,7 +14,7 @@ describe.skip('writeGoldenFixtures', () => {
     const build = minimalAnytoneExportBuild(library);
     const result = exportBuildAll({ build, library });
     mkdirSync(fixtureDir, { recursive: true });
-    for (const name of ['Channel.CSV', 'DMRZone.CSV', 'ScanList.CSV']) {
+    for (const name of ['Channel.CSV', 'DMRZone.CSV', 'ScanList.CSV', 'APRS.CSV']) {
       writeFileSync(join(fixtureDir, name), result.files[name] ?? '', 'utf8');
     }
   });

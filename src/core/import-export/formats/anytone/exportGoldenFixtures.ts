@@ -1,4 +1,5 @@
 import {
+  newAprsConfiguration,
   newChannel,
   newFormatBuild,
   newScanList,
@@ -88,5 +89,41 @@ export function minimalAnytoneExportBuild(library: LibrarySlice): FormatBuild {
       ],
     },
     zoneOverrides: [{ libraryEntityId: zone.id, wireName: 'Zone A' }],
+  };
+}
+
+/** Library + APRS config for directional APRS.CSV golden tests. */
+export function aprsEnabledAnytoneExportLibrary(): LibrarySlice {
+  const base = minimalAnytoneExportLibrary();
+  const ch1 = base.channels[0]!;
+  const aprsConfiguration = {
+    ...newAprsConfiguration(ANYTONE_GOLDEN_PROJECT_ID, 'Golden APRS'),
+    manualTxIntervalSec: 0,
+    autoTxIntervalSec: 9,
+    positionSource: 'allGnss' as const,
+    fixedLocation: null,
+    channelSlots: [
+      {
+        channelRef: { kind: 'channel' as const, id: ch1.id },
+        timeslot: 2 as const,
+        targetDmrId: 2355,
+        callType: 'group' as const,
+      },
+    ],
+  };
+  const ch1WithAprs = {
+    ...ch1,
+    aprs: {
+      receiveEnabled: true,
+      reportType: 'digital' as const,
+      digitalPttMode: 'on' as const,
+      reportSlotIndex: 1,
+    },
+  };
+
+  return {
+    ...base,
+    channels: [ch1WithAprs, base.channels[1]!],
+    aprsConfiguration,
   };
 }
