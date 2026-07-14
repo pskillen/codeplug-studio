@@ -1,5 +1,4 @@
 import type { AssembledBuild } from '@core/services/assemble.ts';
-import type { AssembledChannel } from '@core/services/assemble.ts';
 import type { CpsExportOptions } from '@core/import-export/types.ts';
 import type { LibrarySlice } from '@core/services/assemble.ts';
 import type { AnytoneExportFileName } from './columns.ts';
@@ -46,7 +45,7 @@ import {
   prepareAnytoneExportAssembly,
   type AnytonePreparedExport,
 } from './prepareExportAssembly.ts';
-import { orderedDmrExpandedRows } from './exportChannelSlots.ts';
+import { orderedDmrExpandedRows, orderedAmAirChannels, orderedFmBroadcastChannels, receiveBankChannelSlot } from './exportChannelSlots.ts';
 import { hasAnytoneAprsExport, serialiseAprsCsv } from './exportAprsWire.ts';
 
 export type AnytoneExportFiles = Record<AnytoneExportFileName, string>;
@@ -86,15 +85,6 @@ function formatAmAirMhz(rxHz: number): string {
 
 function formatFmBroadcastMhz(rxHz: number): string {
   return (rxHz / 1_000_000).toFixed(3);
-}
-
-function sortReceiveBankChannels(channels: AssembledChannel[]): AssembledChannel[] {
-  return [...channels].sort((a, b) => {
-    const slotA = a.orderOrSlot ?? Number.MAX_SAFE_INTEGER;
-    const slotB = b.orderOrSlot ?? Number.MAX_SAFE_INTEGER;
-    if (slotA !== slotB) return slotA - slotB;
-    return a.wireName.localeCompare(b.wireName);
-  });
 }
 
 function padRow(headers: string[], values: Record<string, string>): string[] {
@@ -307,10 +297,9 @@ export function serialiseAmAirCsv(
   context?: AnytoneExportWireContext,
 ): string {
   const ctx = context ?? fallbackWireContext(assembled, options, warnings);
-  const { amAirChannels } = partitionAnytoneChannels(assembled);
-  const ordered = sortReceiveBankChannels(amAirChannels);
+  const ordered = orderedAmAirChannels(assembled);
   const rows: string[][] = ordered.map((row, index) => {
-    const slot = row.orderOrSlot ?? index + 1;
+    const slot = receiveBankChannelSlot(row, index);
     const rxHz = row.entity.rxFrequency ?? 0;
     return padRow(AM_AIR_HEADERS, {
       [AM_AIR_COL.number]: String(slot),
@@ -342,10 +331,9 @@ export function serialiseFmBroadcastCsv(
       ? { defaultScanInclusion: options.defaultScanInclusion }
       : undefined;
   const scanContext = buildScanContext(undefined, formatDefaults);
-  const { fmBroadcastChannels } = partitionAnytoneChannels(assembled);
-  const ordered = sortReceiveBankChannels(fmBroadcastChannels);
+  const ordered = orderedFmBroadcastChannels(assembled);
   const rows: string[][] = ordered.map((row, index) => {
-    const slot = row.orderOrSlot ?? index + 1;
+    const slot = receiveBankChannelSlot(row, index);
     const rxHz = row.entity.rxFrequency ?? 0;
     const scan = resolveEffectiveScanInclusion(row.entity, scanContext) === 'skip' ? 'Del' : 'Add';
     return padRow(FM_BROADCAST_HEADERS, {
