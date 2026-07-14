@@ -38,10 +38,25 @@ function DigitalContactsTable({
         sortValue: (c) => c.mode,
       },
       {
+        key: 'callsign',
+        header: 'Callsign',
+        hideable: true,
+        render: (c) => c.callsign || '—',
+        sortValue: (c) => c.callsign || '',
+      },
+      {
         key: 'digitalId',
         header: 'ID',
         render: (c) => c.digitalId,
         sortValue: (c) => c.digitalId,
+      },
+      {
+        key: 'country',
+        header: 'Country',
+        hideable: true,
+        defaultVisible: false,
+        render: (c) => c.country || '—',
+        sortValue: (c) => c.country || '',
       },
       {
         key: 'channels',
