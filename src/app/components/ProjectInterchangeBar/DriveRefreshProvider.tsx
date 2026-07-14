@@ -1,6 +1,5 @@
 import { createContext, useContext, type ReactNode } from 'react';
 import { useRefreshFromDrivePrompt } from '../../hooks/useYamlImportResolver.ts';
-import RefreshFromDriveBanner from './RefreshFromDriveBanner.tsx';
 
 export type DriveRefreshContextValue = ReturnType<typeof useRefreshFromDrivePrompt>;
 
@@ -18,13 +17,9 @@ export interface DriveRefreshProviderProps {
   children: ReactNode;
 }
 
+/** Shared Drive remote-check state for sidebar controls and the refresh banner. */
 export default function DriveRefreshProvider({ children }: DriveRefreshProviderProps) {
   const refresh = useRefreshFromDrivePrompt();
 
-  return (
-    <DriveRefreshContext.Provider value={refresh}>
-      <RefreshFromDriveBanner />
-      {children}
-    </DriveRefreshContext.Provider>
-  );
+  return <DriveRefreshContext.Provider value={refresh}>{children}</DriveRefreshContext.Provider>;
 }

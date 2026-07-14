@@ -7,6 +7,7 @@ import { homeNavItem, projectNavItems } from '../../nav/primaryNavItems.ts';
 import { useLibrary } from '../../state/useLibrary.ts';
 import { useProjects } from '../../state/useProjects.ts';
 import ActiveProjectBar from '../ActiveProjectBar/ActiveProjectBar.tsx';
+import SidebarDriveControls from '../SidebarDriveControls/SidebarDriveControls.tsx';
 
 export interface AppNavProps {
   onNavClick?: () => void;
@@ -33,6 +34,7 @@ export default function AppNav({ onNavClick }: AppNavProps) {
       {hasActiveProject ? (
         <>
           <ActiveProjectBar />
+          <SidebarDriveControls />
           {projectNavItems.map((item) => {
             const Icon = item.icon;
             const count = item.countKey ? library[item.countKey].length : undefined;
