@@ -37,7 +37,6 @@ import ChannelDeleteButton from '../../components/library/ChannelDeleteButton.ts
 import ChannelAprsBindingSection, {
   channelAprsBindingFromChannel,
 } from '../../components/library/ChannelAprsBindingSection.tsx';
-import { isDmrMode } from '../../lib/channelModes.ts';
 import { useEntityEditorUnsavedGuard } from '../../hooks/useEntityFormDirty.ts';
 import { hzToMhzString, mhzStringToHz } from '../../lib/units.ts';
 import { persistence } from '../../state/persistence.ts';
@@ -101,7 +100,6 @@ export default function ChannelEditor({
   const navigate = useNavigate();
 
   const selectedModes = modeProfiles.map((p) => p.mode as ChannelMode);
-  const hasDmrProfile = modeProfiles.some((profile) => isDmrMode(profile.mode));
 
   function buildRow(): Channel {
     const lat = Number.parseFloat(location.lat);
@@ -236,7 +234,7 @@ export default function ChannelEditor({
           <Tabs.Tab value="frequencies">Frequencies</Tabs.Tab>
           <Tabs.Tab value="modes">Modes</Tabs.Tab>
           <Tabs.Tab value="scanning">Scanning</Tabs.Tab>
-          {hasDmrProfile ? <Tabs.Tab value="aprs">APRS</Tabs.Tab> : null}
+          <Tabs.Tab value="aprs">APRS</Tabs.Tab>
           <Tabs.Tab value="location">Location</Tabs.Tab>
           {entity ? <Tabs.Tab value="zones">Zones</Tabs.Tab> : null}
           {entity ? <Tabs.Tab value="verify">Repeater</Tabs.Tab> : null}
@@ -298,20 +296,18 @@ export default function ChannelEditor({
           </ChannelEditorPanel>
         </Tabs.Panel>
 
-        {hasDmrProfile ? (
-          <Tabs.Panel value="aprs" pt="md">
-            <ChannelEditorPanel channel={liveChannel} isNew={!entity} showIdentitySummary>
-              <FormSection>
-                <ChannelAprsBindingSection
-                  aprsConfiguration={library.aprsConfiguration}
-                  channels={library.channels}
-                  value={aprsBinding}
-                  onChange={setAprsBinding}
-                />
-              </FormSection>
-            </ChannelEditorPanel>
-          </Tabs.Panel>
-        ) : null}
+        <Tabs.Panel value="aprs" pt="md">
+          <ChannelEditorPanel channel={liveChannel} isNew={!entity} showIdentitySummary>
+            <FormSection>
+              <ChannelAprsBindingSection
+                aprsConfiguration={library.aprsConfiguration}
+                channels={library.channels}
+                value={aprsBinding}
+                onChange={setAprsBinding}
+              />
+            </FormSection>
+          </ChannelEditorPanel>
+        </Tabs.Panel>
 
         <Tabs.Panel value="frequencies" pt="md">
           <ChannelEditorPanel channel={liveChannel} isNew={!entity} showIdentitySummary>

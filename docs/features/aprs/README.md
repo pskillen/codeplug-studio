@@ -43,11 +43,11 @@ Deep field semantics: [data-model README](../data-model/README.md). Cross-format
 
 ## Editing paths
 
-| Path               | Route / location              | Purpose                                                                                              |
-| ------------------ | ----------------------------- | ---------------------------------------------------------------------------------------------------- |
+| Path               | Route / location              | Purpose                                                                                                        |
+| ------------------ | ----------------------------- | -------------------------------------------------------------------------------------------------------------- |
 | **APRS settings**  | `/library/aprs-configuration` | Singleton config editor + **Channel assignments** tab (bulk binding; digital / analog / both and band filters) |
-| **Channel editor** | Channel → APRS tab            | Per-channel binding (`ChannelAprsBindingSection`) — DMR channels only                                |
-| **Channels list**  | `/library/channels`           | Optional **APRS config** column (hidden by default) — summary via `formatAprsAssignmentSummary`      |
+| **Channel editor** | Channel → APRS tab            | Per-channel binding (`ChannelAprsBindingSection`) — all channels (DMR and analog)                              |
+| **Channels list**  | `/library/channels`           | Optional **APRS config** column (hidden by default) — summary via `formatAprsAssignmentSummary`                |
 
 Redirects: `/library/aprs-configurations` → `/library/aprs-configuration`.
 
