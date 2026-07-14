@@ -9,11 +9,17 @@ Constitution references: [AGENTS.md](AGENTS.md), [DESIGN.md](DESIGN.md),
 
 ## Auto-approve when ALL are true
 
-- All required GitHub CI checks succeeded on the PR head commit:
-  - `check` job: format:check, lint, test, build
-  - `e2e` job: Playwright e2e
 - PR risk is within the dashboard maximum-risk threshold
 - No hard human-review trigger below applies to this PR
+
+## Do not consider GitHub CI checks
+
+**Ignore GitHub Actions CI status** when deciding whether to approve. Do not wait for checks to finish, and do not withhold approval because checks are pending, running, or failed.
+
+- **Merge protection** on `main` already blocks merge when required CI fails.
+- The Approval Agent often runs while CI is still **pending**; treating CI as a gate would block most auto-approvals.
+
+CI still runs on every PR via [`.github/workflows/ci.yml`](.github/workflows/ci.yml) (`format:check`, `lint`, `test`, `build`, `e2e`). That is separate from this approval decision.
 
 ## Do NOT auto-approve — request human review
 
@@ -65,4 +71,4 @@ Per [documentation-deliverables](.cursor/rules/documentation-deliverables.mdc) a
 - Feature behaviour changes should update tier-1 docs under `docs/features/` in the same PR
 - New reusable components under `src/app/components/` should include a sidecar `.md`
 - PR description should include a Documentation checklist (hub/sidecar/index row or N/A)
-- Docs-only PRs are safe to auto-approve when CI passes and scope is clearly documentation
+- Docs-only PRs are safe to auto-approve when scope is clearly documentation and no hard trigger above applies

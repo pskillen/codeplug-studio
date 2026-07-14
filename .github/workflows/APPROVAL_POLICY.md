@@ -16,4 +16,4 @@ These workflows gate deploys to `https://codeplug.mm9pdy.net` and inject build-t
 
 ## Auto-approve
 
-Never auto-approve changes under `.github/workflows/` regardless of CI status on the PR.
+Never auto-approve changes under `.github/workflows/` regardless of GitHub check status on the PR.
