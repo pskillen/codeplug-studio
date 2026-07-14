@@ -46,24 +46,24 @@ Envelope fields `schemaVersion` and `studioSchemaVersion` are documented in the 
 
 `project.id` in native YAML is the **portable project identity** — it should stay stable across Drive open/save and multi-device sync ([#361](https://github.com/pskillen/codeplug-studio/issues/361)).
 
-| Mode                | Behaviour                                                                                                                        |
-| ------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
-| `seedPreservingId`  | YAML `project.id` unused locally → `seedProject` with that id (Home / Drive first open) ([#361](https://github.com/pskillen/codeplug-studio/issues/361)) |
-| `createNew`         | Fresh `projectId` on meta and every row; `seedProject` — **explicit** “Import as new project” only                               |
-| `replaceExisting`   | YAML `project.id` must match active project; `replaceProject` (full wipe)                                                        |
-| `adoptRemote`       | Replace active project content while keeping local `project.id` ([#334](https://github.com/pskillen/codeplug-studio/issues/334)) |
+| Mode               | Behaviour                                                                                                                                                |
+| ------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `seedPreservingId` | YAML `project.id` unused locally → `seedProject` with that id (Home / Drive first open) ([#361](https://github.com/pskillen/codeplug-studio/issues/361)) |
+| `createNew`        | Fresh `projectId` on meta and every row; `seedProject` — **explicit** “Import as new project” only                                                       |
+| `replaceExisting`  | YAML `project.id` must match active project; `replaceProject` (full wipe)                                                                                |
+| `adoptRemote`      | Replace active project content while keeping local `project.id` ([#334](https://github.com/pskillen/codeplug-studio/issues/334))                         |
 
 **Intentional id-change paths:** `createNew` (operator chooses duplicate); `adoptRemote` (local id wins — next Save may rewrite Drive `project.id` to local).
 
-| Entry | Mode | UUID outcome |
-| --- | --- | --- |
-| Home → Open from Drive (unknown UUID) | `seedPreservingId` | Preserved |
-| Home → local file (unknown UUID) | `seedPreservingId` | Preserved |
-| Home → Open from Drive (UUID exists) | `replaceExisting` | Preserved |
-| Replace active (match) | `replaceExisting` | Preserved |
-| Replace active / Refresh (mismatch) → Replace | `adoptRemote` | Local kept |
-| Refresh / modal → Import as new | `createNew` | New (intentional) |
-| Save to Drive | export only | Preserved |
+| Entry                                         | Mode               | UUID outcome      |
+| --------------------------------------------- | ------------------ | ----------------- |
+| Home → Open from Drive (unknown UUID)         | `seedPreservingId` | Preserved         |
+| Home → local file (unknown UUID)              | `seedPreservingId` | Preserved         |
+| Home → Open from Drive (UUID exists)          | `replaceExisting`  | Preserved         |
+| Replace active (match)                        | `replaceExisting`  | Preserved         |
+| Replace active / Refresh (mismatch) → Replace | `adoptRemote`      | Local kept        |
+| Refresh / modal → Import as new               | `createNew`        | New (intentional) |
+| Save to Drive                                 | export only        | Preserved         |
 
 No merge heuristics or CPS `importMerge` — native YAML is model-first replace only.
 
@@ -91,14 +91,14 @@ loadProjectSeed → ProjectAggregate
 
 ## Implementation status
 
-| Slice                            | Status                                                                                                                                                                                                                                 |
-| -------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Contracts + envelope (#56)       | Shipped                                                                                                                                                                                                                                |
-| Export serialiser (#57)          | Shipped                                                                                                                                                                                                                                |
-| Import parser + validation (#58) | Shipped — `studioSchemaVersion` 9; legacy SSB modes migrate on load ([#204](https://github.com/pskillen/codeplug-studio/issues/204)); composite channel override keys ([#336](https://github.com/pskillen/codeplug-studio/issues/336)) |
-| Services (#59)                   | Shipped                                                                                                                                                                                                                                |
-| Local file UI (#60)              | Shipped                                                                                                                                                                                                                                |
-| App chrome Save + import sync    | Shipped ([#285](https://github.com/pskillen/codeplug-studio/issues/285))                                                                                                                                                               |
+| Slice                             | Status                                                                                                                                                                                                                                 |
+| --------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Contracts + envelope (#56)        | Shipped                                                                                                                                                                                                                                |
+| Export serialiser (#57)           | Shipped                                                                                                                                                                                                                                |
+| Import parser + validation (#58)  | Shipped — `studioSchemaVersion` 9; legacy SSB modes migrate on load ([#204](https://github.com/pskillen/codeplug-studio/issues/204)); composite channel override keys ([#336](https://github.com/pskillen/codeplug-studio/issues/336)) |
+| Services (#59)                    | Shipped                                                                                                                                                                                                                                |
+| Local file UI (#60)               | Shipped                                                                                                                                                                                                                                |
+| App chrome Save + import sync     | Shipped ([#285](https://github.com/pskillen/codeplug-studio/issues/285))                                                                                                                                                               |
 | Portable project id on first open | Shipped ([#361](https://github.com/pskillen/codeplug-studio/issues/361)) — `seedPreservingId` for unknown UUID on Home / Drive open                                                                                                    |
 
 ## Testing

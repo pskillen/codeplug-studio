@@ -62,11 +62,7 @@ export function useYamlImportResolver(options: UseYamlImportResolverOptions = {}
     setError(null);
   }, []);
 
-  async function recordSource(
-    projectId: string,
-    source: YamlImportSource,
-    yamlProjectId?: string,
-  ) {
+  async function recordSource(projectId: string, source: YamlImportSource, yamlProjectId?: string) {
     if (source.kind === 'localFile') {
       await recordProjectImportDestination(projectId, {
         destination: 'localFile',
