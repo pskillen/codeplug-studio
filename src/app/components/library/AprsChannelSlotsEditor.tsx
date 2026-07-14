@@ -100,8 +100,9 @@ export default function AprsChannelSlotsEditor({
   return (
     <Stack gap="sm">
       <Text size="sm" c="dimmed">
-        Digital APRS transmit slots. Export may warn when a radio profile caps slot count; the
-        library does not enforce a maximum here.
+        Digital APRS transmit slots. Channels may be DMR, AM air, or FM broadcast — Anytone
+        export maps each to the correct CPS bank. Export may warn when a radio profile caps slot
+        count; the library does not enforce a maximum here.
       </Text>
       <DataTable
         variant="list"

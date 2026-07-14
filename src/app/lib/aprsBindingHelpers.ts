@@ -1,8 +1,39 @@
 import type { AprsChannelSlot, AprsConfiguration, ChannelAprsBinding } from '@core/models/aprs.ts';
 import type { Channel } from '@core/models/library.ts';
+import { classifyAnytoneExportChannelBank } from '@core/import-export/formats/anytone/receiveOnlyBanks.ts';
 import { CHANNEL_APRS_OFF } from '@core/domain/aprs/defaults.ts';
 import { normalizeOptionalChannelAprs } from '@core/domain/aprs/index.ts';
 import { channelDisplayLabel } from '@core/domain/channelNaming.ts';
+import { sortByName } from './channels.ts';
+
+const APRS_SLOT_BANK_GROUP_LABELS = {
+  dmr: 'DMR / main bank',
+  amAir: 'AM air',
+  fmBroadcast: 'FM broadcast',
+} as const;
+
+export function aprsSlotChannelSelectGroups(channels: Channel[]) {
+  const grouped: Record<'dmr' | 'amAir' | 'fmBroadcast', { value: string; label: string }[]> = {
+    dmr: [],
+    amAir: [],
+    fmBroadcast: [],
+  };
+
+  for (const channel of sortByName(channels)) {
+    const bank = classifyAnytoneExportChannelBank(channel);
+    grouped[bank].push({
+      value: channel.id,
+      label: channelDisplayLabel(channel),
+    });
+  }
+
+  return [
+    { group: 'Special', items: [{ value: '', label: 'Current channel' }] },
+    { group: APRS_SLOT_BANK_GROUP_LABELS.dmr, items: grouped.dmr },
+    { group: APRS_SLOT_BANK_GROUP_LABELS.amAir, items: grouped.amAir },
+    { group: APRS_SLOT_BANK_GROUP_LABELS.fmBroadcast, items: grouped.fmBroadcast },
+  ].filter((entry) => entry.group === 'Special' || entry.items.length > 0);
+}
 
 export function channelLabelForSlot(slot: AprsChannelSlot, channels: Channel[]): string {
   if (!slot.channelRef) return 'Current channel';

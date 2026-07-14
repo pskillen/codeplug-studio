@@ -181,7 +181,10 @@ export default function AprsConfigurationEditor({
         ) : null}
       </FieldCard>
 
-      <FieldCard title="Channel slots" description="DMR channels used for APRS transmission slots.">
+      <FieldCard
+        title="Channel slots"
+        description="Digital APRS transmission slots — bind DMR, AM air, or FM broadcast channels."
+      >
         <AprsChannelSlotsEditor
           channels={library.channels}
           slots={channelSlots}
