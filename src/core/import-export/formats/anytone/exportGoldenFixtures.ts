@@ -99,7 +99,7 @@ export function aprsEnabledAnytoneExportLibrary(): LibrarySlice {
   const aprsConfiguration = {
     ...newAprsConfiguration(ANYTONE_GOLDEN_PROJECT_ID, 'Golden APRS'),
     manualTxIntervalSec: 0,
-    autoTxIntervalSec: 9,
+    autoTxIntervalSec: 180,
     positionSource: 'allGnss' as const,
     fixedLocation: null,
     channelSlots: [
@@ -148,7 +148,7 @@ export function aprsAmAirSlotExportLibrary(): LibrarySlice {
   const aprsConfiguration = {
     ...newAprsConfiguration(ANYTONE_GOLDEN_PROJECT_ID, 'Air APRS'),
     manualTxIntervalSec: 0,
-    autoTxIntervalSec: 9,
+    autoTxIntervalSec: 180,
     positionSource: 'allGnss' as const,
     fixedLocation: null,
     channelSlots: [
