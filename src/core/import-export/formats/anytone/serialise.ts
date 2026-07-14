@@ -35,7 +35,6 @@ import {
 } from './exportWireContext.ts';
 import {
   expandAllAnytoneChannelsForExport,
-  type ExpandedAnytoneChannelRow,
 } from './channelExpansion.ts';
 import { channelFrequencyById, rxGroupListMemberNames } from './listWire.ts';
 import { DEFAULT_ANYTONE_PROFILE_ID } from './profiles.ts';
@@ -45,11 +44,12 @@ import {
   buildScanContext,
   resolveEffectiveScanInclusion,
 } from '@core/import-export/scanInclusion/resolve.ts';
-import { isZoneScanCarrierChannelId } from '@core/import-export/zoneDerivedScanLists/carrier.ts';
 import {
   prepareAnytoneExportAssembly,
   type AnytonePreparedExport,
 } from './prepareExportAssembly.ts';
+import { orderedDmrExpandedRows } from './exportChannelSlots.ts';
+import { hasAnytoneAprsExport, serialiseAprsCsv } from './exportAprsWire.ts';
 
 export type AnytoneExportFiles = Record<AnytoneExportFileName, string>;
 
@@ -80,22 +80,6 @@ function fallbackWireContext(
     warnings,
   );
   return buildAnytoneExportWireContext(assembled, expandedChannels, options, warnings);
-}
-
-function orderedDmrExpandedRows(
-  assembled: AssembledBuild,
-  prepared: AnytonePreparedExport,
-): ExpandedAnytoneChannelRow[] {
-  const { dmrChannels } = partitionAnytoneChannels(assembled);
-  const dmrChannelIds = new Set(dmrChannels.map((row) => row.entity.id));
-  const ordered: ExpandedAnytoneChannelRow[] = [];
-  for (const assembledChannel of assembled.channels) {
-    const channelId = assembledChannel.entity.id;
-    if (!dmrChannelIds.has(channelId) && !isZoneScanCarrierChannelId(channelId)) continue;
-    const expanded = prepared.expansionByChannelId.get(channelId);
-    if (expanded?.length) ordered.push(...expanded);
-  }
-  return ordered;
 }
 
 function formatAmAirMhz(rxHz: number): string {
@@ -425,6 +409,13 @@ export function serialiseAnytoneFile(
   if (fileName === 'AMZone.CSV') {
     return serialiseAmZonesCsv(exportAssembly, options, warnings, prepared.context);
   }
+  if (fileName === 'APRS.CSV') {
+    const config = exportAssembly.aprsConfiguration;
+    if (!config) {
+      throw new Error('APRS.CSV requested but no APRS configuration exists on assembled build');
+    }
+    return serialiseAprsCsv(config, exportAssembly, prepared, options, warnings);
+  }
   if (!ANYTONE_EXPORT_FILE_NAMES.includes(fileName as AnytoneExportFileName)) {
     throw new Error(`Unknown Anytone export file: ${fileName}`);
   }
@@ -443,6 +434,9 @@ export function resolveAnytoneExportFileNames(assembled: AssembledBuild): string
   }
   if (hasAmZoneExport(assembled)) {
     names.push('AMZone.CSV');
+  }
+  if (hasAnytoneAprsExport(assembled)) {
+    names.push('APRS.CSV');
   }
   return names;
 }
