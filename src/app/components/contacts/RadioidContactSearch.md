@@ -20,9 +20,11 @@ export default function AddFromRadioidPage() {
 
 ## Behaviour
 
-- Filter form: DMR ID, callsign (begins-with), city, state, country.
-- Results `DataTable` with row selection and per-row **Add** / **Open** (when `digitalId` already in library).
-- Bulk **Add selected** in form footer when rows are checked.
+- Filter form (broad → narrow): country autocomplete (RepeaterBook country list), state, city, callsign, DMR ID.
+- Results `DataTable` with row selection; **Add all on this page** and **Add selected** above the table.
+- Per row: **Add** for new contacts; **Update** opens `RadioidContactUpdateDialog` when `digitalId` already exists.
+- Callsign and DMR ID links open `RadioidContactPreviewDialog` (view-only library record) so search results are preserved.
+- Preview modal: **Update from RadioID.net**, **Open in editor** (warns that search will be lost).
 - Duplicate gate matches on `digitalId` only.
 - Session cache and rate-limit cooldown via `@integrations/radioid` client.
 
@@ -30,3 +32,6 @@ export default function AddFromRadioidPage() {
 
 - [contact directories](../../../docs/features/contact-directories/README.md)
 - [radioid reference](../../../docs/reference/radioid/README.md)
+- [`RadioidContactPreviewDialog`](RadioidContactPreviewDialog.tsx)
+- [`RadioidContactUpdateDialog`](RadioidContactUpdateDialog.tsx)
+- [`RadioidContactVerifyPanel`](RadioidContactVerifyPanel.tsx) — digital contact editor

@@ -23,7 +23,7 @@ Studio exposes a same-origin Pages Function:
 
 | Property    | Value                                                                                    |
 | ----------- | ---------------------------------------------------------------------------------------- |
-| Studio path | `GET /api/radioid/dmr/user`                                                              |
+| Studio path | `GET /api/radioid/dmr/user/` (trailing slash required)                                   |
 | Upstream    | `https://database.radioid.net/api/dmr/user/`                                             |
 | Auth        | None (public upstream)                                                                   |
 | Cache       | `Cache-Control: public, max-age=300`                                                     |

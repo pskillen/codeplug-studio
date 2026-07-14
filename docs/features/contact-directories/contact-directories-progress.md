@@ -1,30 +1,26 @@
 # Contact directories — progress
 
-**Tracking:** [#374](https://github.com/pskillen/codeplug-studio/issues/374) · branch `374/pskil/dmr-contact-directory-import`
+**Tracking:** [#374](https://github.com/pskillen/codeplug-studio/issues/374) · branch `374/pskil/dmr-contact-directory-import` · PR [#380](https://github.com/pskillen/codeplug-studio/pull/380)
 
 ## Status
 
-| Slice                          | Status   | Notes                |
-| ------------------------------ | -------- | -------------------- |
-| DigitalContact model (#377)    | Complete | `2d67104`            |
-| CRUD UI (#378)                 | Complete | `b2cb5d0`            |
-| radioid.net integration (#379) | Complete | `11167dd`            |
-| Add from UI (#379)             | Complete | `910ad7b`            |
-| Anytone export (#376)          | Complete | `716cced`            |
-| Documentation                  | Complete | hub + radioid tier-3 |
+All epic slices shipped on this branch.
 
 ## Shipped in this branch
 
-- Extended `DigitalContact` with callsign, city, state, country, remarks + native YAML round-trip
-- Digital contact editor and list columns for enriched metadata
-- RadioID.net client, Pages Function proxy, Vite dev proxy
-- Library Contacts **Add from…** → radioid search/import UI
-- Anytone `DMRDigitalContactList.CSV` metadata projection
-- Tier-1 [contact-directories README](README.md), tier-3 [radioid reference](../../reference/radioid/README.md)
+- Extended `DigitalContact` metadata + native YAML round-trip ([#377](https://github.com/pskillen/codeplug-studio/issues/377))
+- Digital contact CRUD UI ([#378](https://github.com/pskillen/codeplug-studio/issues/378))
+- RadioID.net integration, CORS proxy, search/import UI ([#379](https://github.com/pskillen/codeplug-studio/issues/379))
+- Country autocomplete, bulk **Add all**, update/compare dialogs, preview modal
+- Contacts section nav on digital/analog editor routes
+- Anytone `DMRDigitalContactList.CSV` metadata export ([#376](https://github.com/pskillen/codeplug-studio/issues/376))
+- Dev proxy trailing-slash fix for RadioID.net 308 redirect
 
 ## Manual verify
 
-1. Library → Contacts → **Add from…** → RadioID.net
-2. Search `callsign=W1AW` (or filter by country)
-3. Add contact; confirm editor shows callsign + address fields
-4. Anytone build export: `DMRDigitalContactList.CSV` has populated metadata columns
+1. Library → Contacts → **Add from…** → RadioID.net — search by country; confirm single same-origin API request (no CORS redirect)
+2. **Add all on this page** / **Add selected** above results table
+3. Click callsign/ID on existing contact → preview modal; **Update from RadioID.net** applies diff
+4. Digital contact editor → **Update from RadioID.net**
+5. `/library/digital-contacts/new` — secondary nav shows Contacts actions (not Channels)
+6. Anytone export — `DMRDigitalContactList.CSV` metadata columns populated
