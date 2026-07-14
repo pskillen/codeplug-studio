@@ -17,6 +17,8 @@ import {
 } from '../../../../test/csvRecordCompare.ts';
 import { parseCsv } from '@core/import-export/csvParse.ts';
 import {
+  aprsAmAirSlotExportBuild,
+  aprsAmAirSlotExportLibrary,
   aprsEnabledAnytoneExportLibrary,
   minimalAnytoneExportBuild,
   minimalAnytoneExportLibrary,
@@ -274,6 +276,29 @@ describe('anytone/export golden', () => {
     expect(ch1![headers.indexOf('APRS Report Type')]).toBe('Digital');
     expect(ch1![headers.indexOf('Digital APRS PTT Mode')]).toBe('On');
     expect(ch1![headers.indexOf('Digital APRS Report Channel')]).toBe('1');
+  });
+
+  it('APRS slot bound to AM air channel exports matching AMAir.CSV No.', () => {
+    const library = aprsAmAirSlotExportLibrary();
+    const build = aprsAmAirSlotExportBuild(library);
+    const result = exportBuildAll({ build, library });
+
+    expect(result.files['AMAir.CSV']).toBeDefined();
+    expect(result.files['APRS.CSV']).toBeDefined();
+    expect(result.files['Channel.CSV']).toBeDefined();
+
+    const amAirParsed = parseCsv(result.files['AMAir.CSV']!);
+    const amAirHeaders = amAirParsed[0]!;
+    const amAirRow = amAirParsed[1]!;
+    const amAirNo = amAirRow[amAirHeaders.indexOf('No.')];
+
+    const aprsParsed = parseCsv(result.files['APRS.CSV']!);
+    const aprsHeaders = aprsParsed[0]!;
+    const aprsRow = aprsParsed[1]!;
+
+    expect(aprsRow[aprsHeaders.indexOf('channel1')]).toBe(amAirNo);
+    expect(aprsRow[aprsHeaders.indexOf('slot1')]).toBe('1');
+    expect(aprsRow[aprsHeaders.indexOf('Aprs Tg1')]).toBe('2355');
   });
 
   it('includes project LST manifest when projectName is set', () => {

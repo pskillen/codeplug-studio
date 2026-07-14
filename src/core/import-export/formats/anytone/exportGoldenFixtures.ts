@@ -127,3 +127,57 @@ export function aprsEnabledAnytoneExportLibrary(): LibrarySlice {
     aprsConfiguration,
   };
 }
+
+/** APRS slot bound to an AM airband channel (receive bank). */
+export function aprsAmAirSlotExportLibrary(): LibrarySlice {
+  const airband = {
+    ...newChannel(ANYTONE_GOLDEN_PROJECT_ID, 'Air station 1'),
+    rxFrequency: 118_800_000,
+    txFrequency: null,
+    forbidTransmit: true,
+    modeProfiles: [
+      {
+        mode: 'am' as const,
+        squelch: null,
+        rxTone: 'none',
+        txTone: 'none',
+        bandwidthKHz: 12.5,
+      },
+    ],
+  };
+  const aprsConfiguration = {
+    ...newAprsConfiguration(ANYTONE_GOLDEN_PROJECT_ID, 'Air APRS'),
+    manualTxIntervalSec: 0,
+    autoTxIntervalSec: 9,
+    positionSource: 'allGnss' as const,
+    fixedLocation: null,
+    channelSlots: [
+      {
+        channelRef: { kind: 'channel' as const, id: airband.id },
+        timeslot: 1 as const,
+        targetDmrId: 2355,
+        callType: 'group' as const,
+      },
+    ],
+  };
+
+  return {
+    channels: [airband],
+    zones: [],
+    talkGroups: [],
+    digitalContacts: [],
+    analogContacts: [],
+    rxGroupLists: [],
+    scanLists: [],
+    aprsConfiguration,
+  };
+}
+
+export function aprsAmAirSlotExportBuild(library: LibrarySlice): FormatBuild {
+  const airband = library.channels[0]!;
+  return {
+    ...newFormatBuild(ANYTONE_GOLDEN_PROJECT_ID, 'anytone-at-d890uv', 'Air APRS export'),
+    layout: { sections: [] },
+    channelOverrides: [{ libraryEntityId: airband.id, wireName: 'Air station 1' }],
+  };
+}
