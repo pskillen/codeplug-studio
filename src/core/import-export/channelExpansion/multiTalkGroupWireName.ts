@@ -55,6 +55,10 @@ function effectiveExportCallsign(
   return '';
 }
 
+function stripDisambiguationSuffix(token: string): string {
+  return token.replace(/\s+\d+$/, '');
+}
+
 function siteCallsignToken(channel: Channel, ctx: MultiTalkGroupWireNameContext): string {
   const picked = channelPickForWireExport(channel, {
     nameModeOverride: ctx.nameModeOverride,
@@ -64,7 +68,7 @@ function siteCallsignToken(channel: Channel, ctx: MultiTalkGroupWireNameContext)
     const { modeTag } = peelModeTag(ctx.siteWireName ?? '');
     return modeTag ? `${callsign}${modeTag}` : callsign;
   }
-  if (ctx.siteWireName) return peelModeTag(ctx.siteWireName).stem;
+  if (ctx.siteWireName) return stripDisambiguationSuffix(peelModeTag(ctx.siteWireName).stem);
   return (picked.name ?? '').trim();
 }
 
@@ -75,12 +79,21 @@ function callsignSuffix(callsign: string): string {
 }
 
 function siteCallsignSuffix(channel: Channel, ctx: MultiTalkGroupWireNameContext): string {
-  const token = siteCallsignToken(channel, ctx);
+  const picked = channelPickForWireExport(channel, {
+    nameModeOverride: ctx.nameModeOverride,
+  });
+  const callsign = effectiveExportCallsign(picked);
+  if (!callsign) {
+    const abbrev = channel.abbreviation?.trim();
+    const name = (picked.name ?? '').trim();
+    return callsignSuffix(abbrev || name);
+  }
+  let token = siteCallsignToken(channel, ctx);
   const { modeTag } = peelModeTag(ctx.siteWireName ?? '');
   if (modeTag && token.endsWith(modeTag)) {
-    return callsignSuffix(token.slice(0, -2));
+    token = token.slice(0, -modeTag.length);
   }
-  return callsignSuffix(token);
+  return callsignSuffix(stripDisambiguationSuffix(token));
 }
 
 function talkGroupNumberToken(tg: TalkGroup): string {

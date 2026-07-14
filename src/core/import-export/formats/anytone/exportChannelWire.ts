@@ -11,6 +11,8 @@ import { DEFAULT_ANYTONE_PROFILE_ID, getAnytoneProfile } from './profiles.ts';
 export interface AnytoneChannelWireOptions {
   reserved: Set<string>;
   warnings?: string[];
+  /** When false, compute the wire name without reserving it (e.g. phantom site label before RX fan-out). */
+  reserve?: boolean;
 }
 
 export function effectiveAnytoneMaxNameLength(
@@ -32,11 +34,14 @@ export function anytoneChannelWireName(
   const maxNameLength = effectiveAnytoneMaxNameLength(exportOptions, resolvedProfileId);
   const shortenNames = exportOptions?.shortenNames !== false;
   const warnings = wireOptions.warnings ?? [];
+  const reserve = wireOptions.reserve !== false;
 
   const override = row.wireNameOverride?.trim();
   if (override) {
-    const name = sanitiseAsciiWireString(uniqueWireName(override, wireOptions.reserved));
-    wireOptions.reserved.add(name);
+    const name = sanitiseAsciiWireString(
+      reserve ? uniqueWireName(override, wireOptions.reserved) : override,
+    );
+    if (reserve) wireOptions.reserved.add(name);
     pushWireNameLengthWarning(warnings, {
       entityKind: 'Channel',
       original: override,
@@ -58,8 +63,10 @@ export function anytoneChannelWireName(
   }
 
   if (!shortenNames) {
-    const name = sanitiseAsciiWireString(uniqueWireName(base, wireOptions.reserved));
-    wireOptions.reserved.add(name);
+    const name = sanitiseAsciiWireString(
+      reserve ? uniqueWireName(base, wireOptions.reserved) : base,
+    );
+    if (reserve) wireOptions.reserved.add(name);
     pushWireNameLengthWarning(warnings, {
       entityKind: 'Channel',
       original: base,
@@ -78,5 +85,6 @@ export function anytoneChannelWireName(
     exportOptions,
     resolvedProfileId,
     warnings,
+    reserve,
   );
 }

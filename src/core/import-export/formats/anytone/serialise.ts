@@ -134,7 +134,9 @@ function serialiseZonesCsv(
     const carrierChannelId = carrierPrependByZoneId?.has(zone.zoneId)
       ? `scan-carrier:${zone.zoneId}`
       : undefined;
-    const carrierWireName = carrierChannelId ? carrierPrependByZoneId!.get(zone.zoneId) : undefined;
+    const carrierWireName = carrierChannelId
+      ? context.channelWireName(carrierChannelId)
+      : undefined;
 
     let memberNames = zone.memberChannelIds.flatMap((id) => context.memberChannelWireNames(id));
     let memberRx = zone.memberChannelIds.flatMap((id) => {

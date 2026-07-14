@@ -64,6 +64,19 @@ describe('composeMultiTalkGroupWireName', () => {
     });
     expect(composed).toBe('GL 950');
   });
+
+  it('derives no-callsign suffix from channel abbreviation, not disambiguated site wire name', () => {
+    const ch = channel({ callsign: '', name: 'Hotspot', abbreviation: 'Hspt' });
+    const tg = talkGroup({ name: 'TG 2357910', digitalId: 2357910 });
+    const member = { kind: 'talkGroup' as const, id: tg.id };
+    const composed = composeMultiTalkGroupWireName(ch, member, 'suffix_tg_number', {
+      talkGroups: [tg],
+      digitalContacts: [],
+      siteWireName: 'Hspt 2',
+    });
+    expect(composed).toBe('PT 2357910');
+    expect(composed).not.toMatch(/^\s+\d/);
+  });
 });
 
 describe('applyMultiTalkGroupWireNameLimits', () => {

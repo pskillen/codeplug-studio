@@ -31,6 +31,7 @@ When scan export is enabled for a zone on **DM32** or **Anytone**:
 - **Scan list name** = zone wire name
 - **Carrier channel** = `{zoneName} Scan` at `scanCarrierFrequencyHz` or **145.500 MHz** simplex
 - Carrier is prepended as the first member in the zone CSV pipe list (`Zones.csv` / `DMRZone.CSV`)
+- Zone-derived `ScanList.CSV` members are **DMR bank channels only** — AMAir/FM receive-bank channels in the zone are excluded (they live in `AMAir.CSV` / `FM.CSV`, not `Channel.CSV`)
 - Only the **carrier channel** receives the zone-derived `Scan List` FK — member channels keep library/manual assignments only (channels can belong to multiple zones; scan lists are per-channel)
 - **Auto Scan** = `1` on the carrier channel (`Channel.CSV` / `Channels.csv`)
 

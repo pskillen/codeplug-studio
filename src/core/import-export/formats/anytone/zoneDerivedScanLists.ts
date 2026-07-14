@@ -5,6 +5,7 @@ import {
   zoneScanCarrierWireName,
   type SyntheticScanCarrier,
 } from '@core/import-export/zoneDerivedScanLists/carrier.ts';
+import { classifyAnytoneExportChannelBank } from './receiveOnlyBanks.ts';
 import {
   layoutEntry,
   scanMasterEnabled,
@@ -72,7 +73,11 @@ export function deriveAnytoneZoneDerivedScanLists(
     let memberIds = scanMemberIds(libraryZone, library.zones).filter((channelId) => {
       if (!exportedChannelIds.has(channelId)) return false;
       const channel = channelById.get(channelId);
-      return channel != null && !effectiveScanSkips(channel, scanContext);
+      return (
+        channel != null &&
+        !effectiveScanSkips(channel, scanContext) &&
+        classifyAnytoneExportChannelBank(channel) === 'dmr'
+      );
     });
 
     if (memberIds.length === 0) {

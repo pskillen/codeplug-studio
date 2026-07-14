@@ -11,13 +11,23 @@ export default function BuildZonesWirePage() {
     <BuildWirePreviewListPage
       title="Zones"
       entityKind="zone"
-      description="Review zone export rows. Click a zone to edit wire name, skip flags, and scan list settings."
+      description="Review zone export rows. Click a zone to edit wire name, skip flags, carrier frequency, and per-member scan inclusion."
+      zoneScanColumn={
+        zoneScan.enabled && zoneScan.layout
+          ? {
+              layout: zoneScan.layout,
+              saving: zoneScan.saving,
+              onExportScanListChange: (zoneId, enabled) =>
+                zoneScan.updateZoneEntry(zoneId, { exportScanList: enabled }),
+            }
+          : undefined
+      }
       beforeTable={
         zoneScan.enabled ? (
           <Stack gap="xs">
             <Text size="sm" c="dimmed">
-              Scan list membership is configured per zone in the override modal. Export-as-scan-list
-              persists on this build; member include toggles update library zones.
+              Use the Export scan list column or the row override modal. Member include toggles and
+              carrier frequency persist on this build; per-member scan flags update library zones.
             </Text>
             {zoneScan.error ? (
               <Text size="sm" c="red">

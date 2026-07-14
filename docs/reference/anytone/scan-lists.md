@@ -31,6 +31,10 @@ Dedicated scan lists for AT-D890UV — separate from zones (contrast OpenGD77 zo
 
 When **Export zone-derived scan lists** is enabled on the build Export page and a zone has **Export as scan list** on `/builds/:id/zones`, export appends additional `ScanList.CSV` rows (zone wire name) and synthesises a **carrier channel** (`{zoneName} Scan`) prepended in `DMRZone.CSV` with `Scan List` FK and **Auto Scan** enabled. Library `ScanList` rows export first. Member channels are listed in the scan list but do not receive the zone-derived FK. See [zone-derived-scan-lists.md](../../zone-derived-scan-lists.md).
 
+**Carrier cross-file naming:** The zone scan carrier is a neutral FM channel (no template callsign). Its `Channel.CSV` **Channel Name** must match the **first** `Zone Channel Member` in `DMRZone.CSV` exactly — Anytone CPS resolves zone members by exact channel name ([#370](https://github.com/pskillen/codeplug-studio/issues/370)). Export derives both from the same wire context; do not prefix the carrier with a repeater callsign from another library channel.
+
+**Scan list members:** `ScanList.CSV` references `Channel.CSV` names only — AMAir/FM receive-bank channels are omitted from zone-derived scan lists even when present in the zone.
+
 **Provisional caps (AT-D890UV):** 100 scan lists, 100 members per list — adjust when CPS-confirmed.
 
 ## Observed wire values (operator CPS, July 2026)

@@ -565,4 +565,80 @@ describe('anytone serialise', () => {
     const zoneMembers = zoneTable.rows[0]?.[membersIndex]?.split('|') ?? [];
     expect(zoneMembers).toHaveLength(3);
   });
+
+  it('omits AMAir receive-bank channels from zone-derived ScanList.CSV members', () => {
+    const tg = newTalkGroup(PROJECT_ID, 'TG Alpha', 2355);
+    const dmr = {
+      ...newChannel(PROJECT_ID, 'GB3AO Aboyne'),
+      rxFrequency: 430_975_000,
+      txFrequency: 438_575_000,
+      modeProfiles: [
+        {
+          mode: 'dmr' as const,
+          colourCode: 1,
+          timeslot: 1 as const,
+          dmrId: 1234567,
+          contactRef: { kind: 'talkGroup' as const, id: tg.id },
+          rxGroupListId: null,
+        },
+      ],
+    };
+    const airband = {
+      ...newChannel(PROJECT_ID, 'Aboyne Info'),
+      rxFrequency: 118_665_000,
+      txFrequency: null,
+      forbidTransmit: true,
+      modeProfiles: [
+        {
+          mode: 'am' as const,
+          squelch: null,
+          rxTone: 'none' as const,
+          txTone: 'none' as const,
+          bandwidthKHz: 8.33,
+        },
+      ],
+    };
+    const zone = {
+      ...newZone(PROJECT_ID, 'Aboyne'),
+      members: [
+        { kind: 'channel' as const, channelId: dmr.id },
+        { kind: 'channel' as const, channelId: airband.id },
+      ],
+    };
+    const build = {
+      ...newFormatBuild(PROJECT_ID, 'anytone-at-d890uv'),
+      layout: {
+        sections: [
+          {
+            kind: 'zoneGrouping' as const,
+            zones: [
+              {
+                id: zone.id,
+                name: zone.name,
+                channelIds: [dmr.id, airband.id],
+                exportScanList: true,
+              },
+            ],
+          },
+        ],
+      },
+    };
+    const library = {
+      channels: [dmr, airband],
+      zones: [zone],
+      talkGroups: [tg],
+      digitalContacts: [],
+      analogContacts: [],
+      rxGroupLists: [],
+      scanLists: [],
+    };
+
+    const assembled = assemble(build, library);
+    const files = serialiseAnytoneFiles(assembled, library, { exportZoneDerivedScanLists: true });
+    const scanTable = csvToTable(files['ScanList.CSV']);
+    const membersIndex = scanTable.headers.indexOf('Scan Channel Member');
+    const members = scanTable.rows[0]?.[membersIndex] ?? '';
+    expect(members).toContain('GB3AO Aboyne');
+    expect(members).not.toContain('Aboyne Info');
+  });
 });

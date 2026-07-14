@@ -172,13 +172,18 @@ export function expandAnytoneChannelWireRows(
   const exportOptions = anytoneExportOptions(assembled, options);
   const profileId = exportOptions.profileId;
   const channel = assembledChannel.entity;
+  const dmrProfile = channel.modeProfiles.find(isDmrProfile) ?? null;
+  const willExpandRx =
+    dmrProfile != null &&
+    !shouldSkipRxExpansion(dmrProfile, exportOptions) &&
+    rxListMembersForChannel(dmrProfile, assembled).length > 0;
+
   const siteWireName = anytoneChannelWireName(
     assembledChannel,
-    { reserved, warnings },
+    { reserved, warnings, reserve: !willExpandRx },
     exportOptions,
     profileId,
   );
-  const dmrProfile = channel.modeProfiles.find(isDmrProfile) ?? null;
 
   if (dmrProfile && !shouldSkipRxExpansion(dmrProfile, exportOptions)) {
     const members = rxListMembersForChannel(dmrProfile, assembled);
