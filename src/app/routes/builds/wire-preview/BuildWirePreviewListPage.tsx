@@ -9,6 +9,8 @@ import type {
   WirePreviewRow,
 } from '@core/services/previewWireRows.ts';
 import ExportNameModeSelect from '../../../components/builds/ExportNameModeSelect.tsx';
+import DigitalContactExportNameModeSelect from '../../../components/builds/DigitalContactExportNameModeSelect.tsx';
+import type { DigitalContactExportNameMode } from '@core/import-export/types.ts';
 import UseLibraryAbbreviationsSwitch from '../../../components/builds/UseLibraryAbbreviationsSwitch.tsx';
 import WirePreviewDataTable from '../../../components/builds/wirePreview/WirePreviewDataTable.tsx';
 import type { WirePreviewZoneScanColumnConfig } from '../../../components/builds/wirePreview/WirePreviewDataTable.tsx';
@@ -28,6 +30,7 @@ export interface BuildWirePreviewListPageProps {
   entityKind: WirePreviewEntityKind;
   description?: string;
   showExportNameMode?: boolean;
+  showDigitalContactExportNameMode?: boolean;
   showLibraryAbbreviations?: boolean;
   beforeTable?: ReactNode;
   headerActions?: ReactNode;
@@ -43,6 +46,7 @@ function BuildWirePreviewListContent({
   entityKind,
   description,
   showExportNameMode = false,
+  showDigitalContactExportNameMode = false,
   showLibraryAbbreviations = false,
   beforeTable,
   headerActions,
@@ -73,6 +77,7 @@ function BuildWirePreviewListContent({
   function patchExportSettings(
     patch: Partial<{
       nameModeOverride: ChannelExportNameMode;
+      digitalContactExportNameMode: DigitalContactExportNameMode;
       useChannelAbbreviation: boolean;
       useTalkGroupAbbreviation: boolean;
     }>,
@@ -104,6 +109,14 @@ function BuildWirePreviewListContent({
             value={exportSettings.nameModeOverride}
             onChange={(nameModeOverride) => patchExportSettings({ nameModeOverride })}
             description="Fallback style for channels without an explicit wire name override on this build."
+          />
+        ) : null}
+        {showDigitalContactExportNameMode ? (
+          <DigitalContactExportNameModeSelect
+            value={exportSettings.digitalContactExportNameMode}
+            onChange={(digitalContactExportNameMode) =>
+              patchExportSettings({ digitalContactExportNameMode })
+            }
           />
         ) : null}
         {showLibraryAbbreviations ? (

@@ -3,6 +3,7 @@ import type { BuildExportSettings, FormatBuild } from '@core/models/formatBuild.
 import type { ChannelExportNameMode } from '@core/domain/channelNaming.ts';
 import { resolvedBuildExportSettings } from '../../lib/buildExportSettingsUi.ts';
 import ExportNameModeSelect from './ExportNameModeSelect.tsx';
+import DigitalContactExportNameModeSelect from './DigitalContactExportNameModeSelect.tsx';
 import UseLibraryAbbreviationsSwitch from './UseLibraryAbbreviationsSwitch.tsx';
 
 export interface ExportNameSettingsFieldsProps {
@@ -19,6 +20,8 @@ export default function ExportNameSettingsFields({
   profileNameLimit,
 }: ExportNameSettingsFieldsProps) {
   const settings = resolvedBuildExportSettings(build);
+  const showContactExportNameMode =
+    build.formatId === 'anytone' || build.formatId === 'opengd77';
 
   return (
     <Stack gap="sm">
@@ -67,6 +70,13 @@ export default function ExportNameSettingsFields({
           })
         }
       />
+      {showContactExportNameMode ? (
+        <DigitalContactExportNameModeSelect
+          value={settings.digitalContactExportNameMode}
+          disabled={saving}
+          onChange={(digitalContactExportNameMode) => onPatch({ digitalContactExportNameMode })}
+        />
+      ) : null}
       <Text size="xs" c="dimmed">
         Saved with this build and included in native YAML export.
       </Text>
