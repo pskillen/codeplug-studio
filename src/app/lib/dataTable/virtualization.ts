@@ -3,7 +3,8 @@ export const VIRTUAL_ROW_THRESHOLD = 75;
 
 export const DEFAULT_LIST_ROW_HEIGHT = 44;
 export const DEFAULT_ACTIVATE_ROW_HEIGHT = 56;
-export const DEFAULT_VIRTUAL_OVERSCAN = 8;
+/** Extra rows rendered above/below the viewport — higher reduces fast-scroll gaps. */
+export const DEFAULT_VIRTUAL_OVERSCAN = 20;
 
 export type DataTableVirtualizeMode = boolean | 'auto';
 

@@ -5,23 +5,23 @@
 
 ## Status
 
-| Slice | Status | Notes |
-| --- | --- | --- |
-| Dependency + spike | Complete | `@tanstack/react-virtual`; Mantine `ScrollArea` viewport as scroll parent |
-| Virtual `DataTable` body | Complete | `virtualize: 'auto'` threshold 75; unit tests + styleguide 250-row demo |
-| Reference count index | Complete | `buildReferenceCountIndex` — contacts + RX group list tables |
-| Contacts QA | Complete (automated) | Unit/build CI green; manual matrix below for operator verify on dev |
-| Rollout smoke | Complete (automated) | Existing `WirePreviewDataTable.test.tsx` + list route tests pass |
-| Documentation | Complete | `data-table.md`, `DataTable.md` sidecar, this file |
+| Slice                    | Status               | Notes                                                                     |
+| ------------------------ | -------------------- | ------------------------------------------------------------------------- |
+| Dependency + spike       | Complete             | `@tanstack/react-virtual`; Mantine `ScrollArea` viewport as scroll parent |
+| Virtual `DataTable` body | Complete             | `virtualize: 'auto'` threshold 75; unit tests + styleguide 250-row demo   |
+| Reference count index    | Complete             | `buildReferenceCountIndex` — contacts + RX group list tables              |
+| Contacts QA              | Complete (automated) | Unit/build CI green; manual matrix below for operator verify on dev       |
+| Rollout smoke            | Complete (automated) | Existing `WirePreviewDataTable.test.tsx` + list route tests pass          |
+| Documentation            | Complete             | `data-table.md`, `DataTable.md` sidecar, this file                        |
 
 ## Shipped code
 
-| Symbol | Path |
-| --- | --- |
-| `DataTable` virtual props | `src/app/components/ui/DataTable.tsx` |
-| `useVirtualDataTableRows` | `src/app/lib/dataTable/useVirtualDataTableRows.ts` |
-| `VIRTUAL_ROW_THRESHOLD` (75) | `src/app/lib/dataTable/virtualization.ts` |
-| `buildReferenceCountIndex` | `src/app/lib/listReferences.ts` |
+| Symbol                       | Path                                               |
+| ---------------------------- | -------------------------------------------------- |
+| `DataTable` virtual props    | `src/app/components/ui/DataTable.tsx`              |
+| `useVirtualDataTableRows`    | `src/app/lib/dataTable/useVirtualDataTableRows.ts` |
+| `VIRTUAL_ROW_THRESHOLD` (75) | `src/app/lib/dataTable/virtualization.ts`          |
+| `buildReferenceCountIndex`   | `src/app/lib/listReferences.ts`                    |
 
 ## Manual verify (operator)
 
@@ -33,14 +33,14 @@
 
 ## Rollout checklist (auto-inherit `virtualize: 'auto'`)
 
-| Route | Verified |
-| --- | --- |
-| `/library/channels` | Unit tests; manual bulk select on dev |
-| `/library/zones` | Auto virtual when ≥75 zones |
-| `/library/talk-groups`, `/library/rx-group-lists`, `/library/scan-lists` | Auto virtual |
-| `/builds/:id/*` wire lists | `WirePreviewDataTable` tests |
-| `/library/contacts/add-from-radioid` | Embedded variant; virtual off below threshold |
-| Debug list pages | Small N — full render |
+| Route                                                                    | Verified                                      |
+| ------------------------------------------------------------------------ | --------------------------------------------- |
+| `/library/channels`                                                      | Unit tests; manual bulk select on dev         |
+| `/library/zones`                                                         | Auto virtual when ≥75 zones                   |
+| `/library/talk-groups`, `/library/rx-group-lists`, `/library/scan-lists` | Auto virtual                                  |
+| `/builds/:id/*` wire lists                                               | `WirePreviewDataTable` tests                  |
+| `/library/contacts/add-from-radioid`                                     | Embedded variant; virtual off below threshold |
+| Debug list pages                                                         | Small N — full render                         |
 
 ## Next
 

@@ -423,6 +423,7 @@ export default function DataTable<T>({
         mah={isList ? '60vh' : '40vh'}
         type="auto"
         offsetScrollbars
+        overscrollBehavior="contain"
         viewportRef={scrollRef}
         data-testid="datatable-scroll"
         data-virtualized={virtualized || undefined}

@@ -10,6 +10,6 @@ _(none)_
 
 ## Closed
 
-| Item | Tracking | Resolution |
-| --- | --- | --- |
+| Item                                                    | Tracking                                                       | Resolution                                                                          |
+| ------------------------------------------------------- | -------------------------------------------------------------- | ----------------------------------------------------------------------------------- |
 | Large contact list performance (Library + Build tables) | [#381](https://github.com/pskillen/codeplug-studio/issues/381) | Shared `DataTable` virtual tbody + memoized reference counts on `/library/contacts` |

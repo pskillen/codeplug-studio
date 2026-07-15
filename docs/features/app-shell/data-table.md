@@ -12,24 +12,24 @@ Ported from [codeplug-tool](https://github.com/pskillen/codeplug-tool) `DataTabl
 
 ## Code anchors
 
-| Symbol                                         | Path                                                     | Role                                                      |
-| ---------------------------------------------- | -------------------------------------------------------- | --------------------------------------------------------- |
+| Symbol                                         | Path                                                     | Role                                                                     |
+| ---------------------------------------------- | -------------------------------------------------------- | ------------------------------------------------------------------------ |
 | `DataTable`                                    | `src/app/components/ui/DataTable.tsx`                    | Mantine `Table` wrapper — sort, search, column visibility, virtual tbody |
-| `DataTable.md`                                 | `src/app/components/ui/DataTable.md`                     | Component sidecar — virtual props                         |
-| `useVirtualDataTableRows`                      | `src/app/lib/dataTable/useVirtualDataTableRows.ts`       | TanStack virtualizer hook for tbody windowing             |
-| `VIRTUAL_ROW_THRESHOLD`                        | `src/app/lib/dataTable/virtualization.ts`              | Auto-enable threshold (75 rows)                           |
-| `useDataTableColumnVisibility`                 | `src/app/hooks/useDataTableColumnVisibility.ts`          | Persist hideable column keys (channels)                   |
-| `useListNameQuery`                             | `src/app/hooks/useListNameQuery.ts`                      | URL + `localStorage` name filter per entity list          |
-| `useDebouncedNameFilter`                       | `src/app/hooks/useDebouncedNameFilter.ts`                | Draft vs committed name search (300 ms)                   |
-| `usePersistedEntityListSort`                   | `src/app/hooks/usePersistedEntityListSort.ts`            | Per-project column sort for entity lists                  |
-| `useChannelListQuery`                          | `src/app/hooks/useChannelListQuery.ts`                   | Channels-only filters (band, mode, distance, …)           |
-| `filterRowsByName`                             | `useListNameQuery.ts`                                    | Client-side name substring filter                         |
-| `referenceCount` / `formatReferenceCount`      | `src/app/lib/listReferences.ts`                          | Reference-count cells; list tables use `buildReferenceCountIndex` |
-| `EntityListDeleteAction`                       | `src/app/components/library/EntityListDeleteAction.tsx`  | Row trash icon — generic delete flow                      |
-| `ChannelListDeleteAction`                      | `src/app/components/library/ChannelListDeleteAction.tsx` | Channels row delete (zone cascade)                        |
-| `sortDataTableRows`, `DATATABLE_NAME_SORT_KEY` | `src/app/lib/dataTable/sort.ts`                          | Sort state helpers                                        |
-| List prefs storage                             | `src/integrations/listPrefs/`                            | `localStorage` keys, load/save/merge                      |
-| List prefs URL sync                            | `src/app/lib/listPrefs/urlSync.ts`                       | URL ↔ prefs mapping (app layer)                           |
+| `DataTable.md`                                 | `src/app/components/ui/DataTable.md`                     | Component sidecar — virtual props                                        |
+| `useVirtualDataTableRows`                      | `src/app/lib/dataTable/useVirtualDataTableRows.ts`       | TanStack virtualizer hook for tbody windowing                            |
+| `VIRTUAL_ROW_THRESHOLD`                        | `src/app/lib/dataTable/virtualization.ts`                | Auto-enable threshold (75 rows)                                          |
+| `useDataTableColumnVisibility`                 | `src/app/hooks/useDataTableColumnVisibility.ts`          | Persist hideable column keys (channels)                                  |
+| `useListNameQuery`                             | `src/app/hooks/useListNameQuery.ts`                      | URL + `localStorage` name filter per entity list                         |
+| `useDebouncedNameFilter`                       | `src/app/hooks/useDebouncedNameFilter.ts`                | Draft vs committed name search (300 ms)                                  |
+| `usePersistedEntityListSort`                   | `src/app/hooks/usePersistedEntityListSort.ts`            | Per-project column sort for entity lists                                 |
+| `useChannelListQuery`                          | `src/app/hooks/useChannelListQuery.ts`                   | Channels-only filters (band, mode, distance, …)                          |
+| `filterRowsByName`                             | `useListNameQuery.ts`                                    | Client-side name substring filter                                        |
+| `referenceCount` / `formatReferenceCount`      | `src/app/lib/listReferences.ts`                          | Reference-count cells; list tables use `buildReferenceCountIndex`        |
+| `EntityListDeleteAction`                       | `src/app/components/library/EntityListDeleteAction.tsx`  | Row trash icon — generic delete flow                                     |
+| `ChannelListDeleteAction`                      | `src/app/components/library/ChannelListDeleteAction.tsx` | Channels row delete (zone cascade)                                       |
+| `sortDataTableRows`, `DATATABLE_NAME_SORT_KEY` | `src/app/lib/dataTable/sort.ts`                          | Sort state helpers                                                       |
+| List prefs storage                             | `src/integrations/listPrefs/`                            | `localStorage` keys, load/save/merge                                     |
+| List prefs URL sync                            | `src/app/lib/listPrefs/urlSync.ts`                       | URL ↔ prefs mapping (app layer)                                          |
 
 Dev demos: `/styleguide` (unlinked).
 
@@ -47,9 +47,9 @@ Dev demos: `/styleguide` (unlinked).
 | `searchPending`             | Show Mantine `Loader` while draft input ≠ committed filter                                     |
 | `columnVisibility*`         | Channels optional columns — **Show/hide cols** opens a modal with checkboxes                   |
 | `toolbar`                   | Actions rendered **below** the table (e.g. **New zone from selected** on channels)             |
-| `virtualize`                | `boolean \| 'auto'` (default `'auto'`) — window tbody when row count ≥ 75                    |
-| `estimatedRowHeight`        | Virtualizer row height estimate (44px list, 56px when `onRowActivate`)                       |
-| `virtualizeOverscan`        | Extra rows rendered outside viewport (default 8)                                             |
+| `virtualize`                | `boolean \| 'auto'` (default `'auto'`) — window tbody when row count ≥ 75                      |
+| `estimatedRowHeight`        | Virtualizer row height estimate (44px list, 56px when `onRowActivate`)                         |
+| `virtualizeOverscan`        | Extra rows rendered outside viewport (default 20)                                              |
 
 List layout: full-width search → result count row (with optional column picker button) → table → footer toolbar.
 
@@ -96,13 +96,13 @@ Never commit operator values from browser storage.
 
 Large libraries (1000+ contacts) stay responsive by rendering only visible tbody rows. All `DataTable` consumers inherit `virtualize: 'auto'` unless overridden.
 
-| Mode | Behaviour |
-| ---- | --------- |
+| Mode               | Behaviour                                                           |
+| ------------------ | ------------------------------------------------------------------- |
 | `'auto'` (default) | Virtualize when `sortedRows.length >= 75` (`VIRTUAL_ROW_THRESHOLD`) |
-| `true` | Always virtualize (non-empty body) |
-| `false` | Legacy full `map` — every row in the DOM |
+| `true`             | Always virtualize (non-empty body)                                  |
+| `false`            | Legacy full `map` — every row in the DOM                            |
 
-- **Scroll container:** Mantine `ScrollArea.Autosize` viewport (`viewportRef`) — not the outer wrapper.
+- **Scroll container:** Mantine `ScrollArea.Autosize` viewport (`viewportRef`) — not the outer wrapper. `overscrollBehavior: contain` keeps wheel/trackpad scroll inside the table.
 - **Sticky header:** `thead` stays outside the virtual window; `.stickyTh` unchanged.
 - **Sort / filter / selection:** Operate on full sorted row set in memory; only visible checkboxes mount.
 - **Wire preview:** `WirePreviewDataTable` inherits taller default estimate via `onRowActivate`.

@@ -8,17 +8,17 @@ Mantine `Table` wrapper with toolbar search, sticky header, optional column visi
 
 ## Props (selected)
 
-| Prop | Type | Notes |
-| --- | --- | --- |
-| `rows` / `rowKey` | `T[]`, `(row) => string` | Full in-memory row set |
-| `nameColumn` | `DataTableLinkedColumn` | Linked name cell (`getName`, `getPath`) |
-| `columns` | `DataTableColumn[]` | Extra columns; `sortValue` when sortable |
-| `variant` | `'list' \| 'embedded'` | List: 60vh scroll; embedded: 40vh |
-| `virtualize` | `boolean \| 'auto'` | Default `'auto'` — window tbody when `rows.length >= 75` |
-| `estimatedRowHeight` | `number` | Virtualizer estimate; default 44px (56px when `onRowActivate` set) |
-| `virtualizeOverscan` | `number` | Extra rows above/below viewport; default 8 |
-| `selectable` / `selectedKeys` | | Bulk selection operates on sorted keys in memory |
-| `onRowActivate` | `(row) => void` | Clickable rows; name column renders as plain text |
+| Prop                          | Type                     | Notes                                                              |
+| ----------------------------- | ------------------------ | ------------------------------------------------------------------ |
+| `rows` / `rowKey`             | `T[]`, `(row) => string` | Full in-memory row set                                             |
+| `nameColumn`                  | `DataTableLinkedColumn`  | Linked name cell (`getName`, `getPath`)                            |
+| `columns`                     | `DataTableColumn[]`      | Extra columns; `sortValue` when sortable                           |
+| `variant`                     | `'list' \| 'embedded'`   | List: 60vh scroll; embedded: 40vh                                  |
+| `virtualize`                  | `boolean \| 'auto'`      | Default `'auto'` — window tbody when `rows.length >= 75`           |
+| `estimatedRowHeight`          | `number`                 | Virtualizer estimate; default 44px (56px when `onRowActivate` set) |
+| `virtualizeOverscan`          | `number`                 | Extra rows above/below viewport; default 20                        |
+| `selectable` / `selectedKeys` |                          | Bulk selection operates on sorted keys in memory                   |
+| `onRowActivate`               | `(row) => void`          | Clickable rows; name column renders as plain text                  |
 
 See [data-table.md](../../../../docs/features/app-shell/data-table.md) for list prefs, hooks, and entity list wiring.
 
@@ -34,7 +34,9 @@ See [data-table.md](../../../../docs/features/app-shell/data-table.md) for list 
     getName: (row) => row.name,
     getPath: (row) => `/library/channels/${row.id}`,
   }}
-  columns={[{ key: 'band', header: 'Band', render: (row) => row.band, sortValue: (row) => row.band }]}
+  columns={[
+    { key: 'band', header: 'Band', render: (row) => row.band, sortValue: (row) => row.band },
+  ]}
   sort={sort}
   onSortChange={setSort}
   search={nameFilterInput}
