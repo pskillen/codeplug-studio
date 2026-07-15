@@ -12,6 +12,9 @@ import type {
 import type { ProjectMeta } from '@core/models/project.ts';
 import { isoNow, nextRevision } from '@core/models/revision.ts';
 import type {
+  BatchPutItemResult,
+  BatchPutResult,
+  DigitalContactPut,
   EntityKind,
   PersistenceChange,
   PersistenceListener,
@@ -51,6 +54,8 @@ export class InMemoryProjectPersistence implements ProjectPersistence {
   private aprsConfigurations: RowMap<AprsConfiguration> = new Map();
   private formatBuilds: RowMap<FormatBuild> = new Map();
   private listeners = new Set<PersistenceListener>();
+  private notificationDepth = 0;
+  private suppressedProjectId: string | null = null;
 
   async listProjects(): Promise<ProjectMeta[]> {
     return [...this.projects.values()].sort((a, b) => a.name.localeCompare(b.name));
@@ -121,6 +126,34 @@ export class InMemoryProjectPersistence implements ProjectPersistence {
     expectedRevision: number | null,
   ): Promise<PutResult> {
     return this.putRow('digitalContact', this.digitalContacts, row, expectedRevision);
+  }
+
+  async putDigitalContactsBatch(puts: DigitalContactPut[]): Promise<BatchPutResult> {
+    const results: BatchPutItemResult[] = [];
+    let anySuccess = false;
+    let projectId: string | null = null;
+    let firstId: string | null = null;
+
+    for (const put of puts) {
+      const outcome = this.putRow(
+        'digitalContact',
+        this.digitalContacts,
+        put.row,
+        put.expectedRevision,
+        { suppressEmit: true },
+      );
+      results.push(outcome);
+      if (outcome.ok) {
+        anySuccess = true;
+        projectId ??= put.row.projectId;
+        firstId ??= put.row.id;
+      }
+    }
+
+    if (anySuccess && projectId && firstId) {
+      this.emit({ projectId, kind: 'digitalContact', id: firstId, op: 'put' });
+    }
+    return { results };
   }
 
   async listDigitalContacts(projectId: string): Promise<DigitalContact[]> {
@@ -259,6 +292,20 @@ export class InMemoryProjectPersistence implements ProjectPersistence {
     this.emit({ projectId: seed.meta.projectId, kind: 'project', id: seed.meta.id, op: 'put' });
   }
 
+  async runWithoutNotifications<T>(fn: () => Promise<T>): Promise<T> {
+    this.notificationDepth += 1;
+    try {
+      return await fn();
+    } finally {
+      this.notificationDepth -= 1;
+      if (this.notificationDepth === 0 && this.suppressedProjectId) {
+        const projectId = this.suppressedProjectId;
+        this.suppressedProjectId = null;
+        this.emitImmediate({ projectId, kind: 'project', id: projectId, op: 'put' });
+      }
+    }
+  }
+
   subscribe(listener: PersistenceListener): () => void {
     this.listeners.add(listener);
     return () => {
@@ -320,6 +367,14 @@ export class InMemoryProjectPersistence implements ProjectPersistence {
   }
 
   private emit(change: PersistenceChange): void {
+    if (this.notificationDepth > 0) {
+      this.suppressedProjectId = change.projectId;
+      return;
+    }
+    this.emitImmediate(change);
+  }
+
+  private emitImmediate(change: PersistenceChange): void {
     for (const listener of this.listeners) {
       listener(change);
     }
@@ -339,6 +394,7 @@ export class InMemoryProjectPersistence implements ProjectPersistence {
     store: RowMap<T>,
     row: T,
     expectedRevision: number | null,
+    options?: { suppressEmit?: boolean },
   ): PutResult {
     const key = rowKey(row.projectId, row.id);
     const stored = store.get(key);
@@ -350,7 +406,9 @@ export class InMemoryProjectPersistence implements ProjectPersistence {
       updatedAt: isoNow(),
     } as T & { updatedAt: string };
     store.set(key, updated);
-    this.emit({ projectId: row.projectId, kind, id: row.id, op: 'put' });
+    if (!options?.suppressEmit) {
+      this.emit({ projectId: row.projectId, kind, id: row.id, op: 'put' });
+    }
     return { ok: true, revision: updated.revision };
   }
 

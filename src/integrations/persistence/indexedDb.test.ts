@@ -3,6 +3,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import {
   newAprsConfiguration,
   newChannel,
+  newDigitalContact,
   newFormatBuild,
   newProjectMeta,
   newTalkGroup,
@@ -217,6 +218,24 @@ describe('IndexedDbProjectPersistence', () => {
     expect(await store.getChannel(meta.projectId, oldChannel.id)).toBeNull();
     expect(await store.getChannel(meta.projectId, newChannelRow.id)).not.toBeNull();
     expect(await store.listChannels(meta.projectId)).toHaveLength(1);
+  });
+
+  it('putDigitalContactsBatch persists rows in one transaction', async () => {
+    const store = makeStore();
+    const meta = newProjectMeta('Test');
+    await store.seedProject({ meta });
+
+    const batch = await store.putDigitalContactsBatch([
+      { row: newDigitalContact(meta.projectId, 'Alpha', 1, 'dmr'), expectedRevision: null },
+      { row: newDigitalContact(meta.projectId, 'Bravo', 2, 'dmr'), expectedRevision: null },
+    ]);
+
+    expect(batch.results).toEqual([
+      { ok: true, revision: 1 },
+      { ok: true, revision: 1 },
+    ]);
+    const contacts = await store.listDigitalContacts(meta.projectId);
+    expect(contacts).toHaveLength(2);
   });
 
   it('delete project cascades all library and build rows', async () => {

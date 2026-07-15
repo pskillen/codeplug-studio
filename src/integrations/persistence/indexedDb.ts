@@ -13,6 +13,9 @@ import type {
 import type { ProjectMeta } from '@core/models/project.ts';
 import { isoNow, nextRevision } from '@core/models/revision.ts';
 import type {
+  BatchPutItemResult,
+  BatchPutResult,
+  DigitalContactPut,
   EntityKind,
   PersistenceChange,
   PersistenceListener,
@@ -53,6 +56,8 @@ export class IndexedDbProjectPersistence implements ProjectPersistence {
   private dbPromise: Promise<IDBDatabase> | null = null;
   private readonly listeners = new Set<PersistenceListener>();
   private readonly channel: BroadcastChannel | null;
+  private notificationDepth = 0;
+  private suppressedProjectId: string | null = null;
 
   constructor(dbName: string = DEFAULT_DB_NAME) {
     this.dbName = dbName;
@@ -150,6 +155,48 @@ export class IndexedDbProjectPersistence implements ProjectPersistence {
     expectedRevision: number | null,
   ): Promise<PutResult> {
     return this.putRow('digitalContact', row, expectedRevision);
+  }
+  async putDigitalContactsBatch(puts: DigitalContactPut[]): Promise<BatchPutResult> {
+    if (puts.length === 0) return { results: [] };
+
+    const db = await this.db();
+    const storeName = STORES.digitalContact;
+    const results: BatchPutItemResult[] = new Array(puts.length);
+    let anySuccess = false;
+    const projectId = puts[0]!.row.projectId;
+    const firstId = puts[0]!.row.id;
+
+    await new Promise<void>((resolve, reject) => {
+      const tx = db.transaction(storeName, 'readwrite');
+      const os = tx.objectStore(storeName);
+
+      for (let i = 0; i < puts.length; i++) {
+        const { row, expectedRevision } = puts[i]!;
+        const getReq = os.get([row.projectId, row.id]);
+        getReq.onsuccess = () => {
+          const stored = getReq.result as DigitalContact | undefined;
+          if (stored && expectedRevision !== null && stored.revision !== expectedRevision) {
+            results[i] = { ok: false, reason: 'revision_conflict' };
+            return;
+          }
+          const revision = stored ? nextRevision(stored.revision) : row.revision;
+          const updated = { ...row, revision, updatedAt: isoNow() };
+          os.put(updated);
+          results[i] = { ok: true, revision };
+          anySuccess = true;
+        };
+        getReq.onerror = () => reject(getReq.error);
+      }
+
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => reject(tx.error);
+      tx.onabort = () => reject(tx.error);
+    });
+
+    if (anySuccess) {
+      this.emit({ projectId, kind: 'digitalContact', id: firstId, op: 'put' });
+    }
+    return { results };
   }
   async listDigitalContacts(projectId: string): Promise<DigitalContact[]> {
     return this.listRows<DigitalContact>('digitalContact', projectId);
@@ -357,6 +404,20 @@ export class IndexedDbProjectPersistence implements ProjectPersistence {
     this.emit({ projectId: meta.projectId, kind: 'project', id: meta.id, op: 'put' });
   }
 
+  async runWithoutNotifications<T>(fn: () => Promise<T>): Promise<T> {
+    this.notificationDepth += 1;
+    try {
+      return await fn();
+    } finally {
+      this.notificationDepth -= 1;
+      if (this.notificationDepth === 0 && this.suppressedProjectId) {
+        const projectId = this.suppressedProjectId;
+        this.suppressedProjectId = null;
+        this.emitImmediate({ projectId, kind: 'project', id: projectId, op: 'put' });
+      }
+    }
+  }
+
   subscribe(listener: PersistenceListener): () => void {
     this.listeners.add(listener);
     return () => {
@@ -449,6 +510,14 @@ export class IndexedDbProjectPersistence implements ProjectPersistence {
   }
 
   private emit(change: PersistenceChange): void {
+    if (this.notificationDepth > 0) {
+      this.suppressedProjectId = change.projectId;
+      return;
+    }
+    this.emitImmediate(change);
+  }
+
+  private emitImmediate(change: PersistenceChange): void {
     this.notifyLocal(change);
     this.channel?.postMessage(change);
   }

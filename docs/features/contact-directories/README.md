@@ -12,15 +12,15 @@ Many CPS suites (OpenGD77, qDMR, …) offer one-click DMR ID import. **Anytone C
 
 ## Implementation status
 
-| Area                                            | Status   | Notes                                                                                                    |
-| ----------------------------------------------- | -------- | -------------------------------------------------------------------------------------------------------- |
-| `DigitalContact` metadata model                 | Shipped  | [#377](https://github.com/pskillen/codeplug-studio/issues/377) — callsign, city, state, country, remarks |
-| Digital contact CRUD UI                         | Shipped  | [#378](https://github.com/pskillen/codeplug-studio/issues/378) — editor + list columns                   |
-| RadioID.net search + import                     | Shipped  | [#379](https://github.com/pskillen/codeplug-studio/issues/379) — bulk add, update/compare, preview modal |
-| RadioID.net update on contact editor            | Shipped  | `RadioidContactVerifyPanel` on digital contact editor                                                    |
-| Anytone `DMRDigitalContactList` metadata export | Shipped  | [#376](https://github.com/pskillen/codeplug-studio/issues/376)                                           |
-| OpenGD77 / DM32 contact metadata export         | Deferred | Separate format tickets; model ready                                                                     |
-| Additional ID providers                         | Deferred | One ticket per source after radioid.net                                                                  |
+| Area                                            | Status   | Notes                                                                                                                                                                                                          |
+| ----------------------------------------------- | -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `DigitalContact` metadata model                 | Shipped  | [#377](https://github.com/pskillen/codeplug-studio/issues/377) — callsign, city, state, country, remarks                                                                                                       |
+| Digital contact CRUD UI                         | Shipped  | [#378](https://github.com/pskillen/codeplug-studio/issues/378) — editor + list columns                                                                                                                         |
+| RadioID.net search + import                     | Shipped  | [#379](https://github.com/pskillen/codeplug-studio/issues/379) — bulk add, update/compare, preview modal; [#385](https://github.com/pskillen/codeplug-studio/issues/385) batched persistence for large imports |
+| RadioID.net update on contact editor            | Shipped  | `RadioidContactVerifyPanel` on digital contact editor                                                                                                                                                          |
+| Anytone `DMRDigitalContactList` metadata export | Shipped  | [#376](https://github.com/pskillen/codeplug-studio/issues/376)                                                                                                                                                 |
+| OpenGD77 / DM32 contact metadata export         | Deferred | Separate format tickets; model ready                                                                                                                                                                           |
+| Additional ID providers                         | Deferred | One ticket per source after radioid.net                                                                                                                                                                        |
 
 ## Documentation map
 
@@ -54,6 +54,7 @@ Many CPS suites (OpenGD77, qDMR, …) offer one-click DMR ID import. **Anytone C
 - UUID `id` FKs internally; wire names only on format build export.
 - **Contact export name style** is an export-time build setting (not import-time): library stores `name` and `callsign` separately; Anytone/OpenGD77 export composes CPS `Name` per `exportSettings.digitalContactExportNameMode`.
 - Duplicate import gate: match on `digitalId` (not display `name`).
+- **Bulk import persistence:** **Add all results** writes contacts in batched IndexedDB transactions (one batch per RadioID.net results page, up to 100 rows) inside `runWithoutNotifications` so the library reloads once when import completes — suitable for country-scale imports (10k+ IDs).
 - Session cache (≤5 min) + per-provider rate-limit cooldown after HTTP 429.
 
 ## Related
