@@ -8,7 +8,7 @@ import {
   type RadioidDmrUserListing,
   type RadioidSearchFilterInput,
 } from '@integrations/radioid/index.ts';
-import type { ProjectPersistence } from '@integrations/persistence/types.ts';
+import type { DigitalContactPut, ProjectPersistence } from '@integrations/persistence/types.ts';
 
 export type RadioidBulkImportScope = 'page' | 'selected' | 'all';
 
@@ -48,6 +48,14 @@ export interface RadioidBulkImportOptions {
   isCancelled?: () => boolean;
 }
 
+type ListingWriteOutcome = 'added' | 'updated';
+
+interface PendingListingWrite {
+  digitalId: number;
+  outcome: ListingWriteOutcome;
+  put: DigitalContactPut;
+}
+
 function contactMapFromLibrary(contacts: readonly DigitalContact[]): Map<number, DigitalContact> {
   const map = new Map<number, DigitalContact>();
   for (const contact of contacts) {
@@ -64,27 +72,29 @@ function estimateEtaMs(startedAt: number, processed: number, total: number): num
   return (total - processed) / rate;
 }
 
-async function processListing(
+function prepareListingWrite(
   listing: RadioidDmrUserListing,
   contactByDigitalId: Map<number, DigitalContact>,
-  options: Pick<RadioidBulkImportOptions, 'projectId' | 'updateExisting' | 'persistence'>,
-): Promise<'added' | 'updated' | 'skipped' | 'failed'> {
+  options: Pick<RadioidBulkImportOptions, 'projectId' | 'updateExisting'>,
+): PendingListingWrite | null {
   const existing = contactByDigitalId.get(listing.id);
   if (existing) {
-    if (!options.updateExisting) return 'skipped';
+    if (!options.updateExisting) return null;
     const patched = applyRadioidListingUpdates(existing, listing);
-    if (!patched) return 'skipped';
-    const result = await options.persistence.putDigitalContact(patched, existing.revision);
-    if (!result.ok) return 'failed';
-    contactByDigitalId.set(listing.id, { ...patched, revision: result.revision });
-    return 'updated';
+    if (!patched) return null;
+    return {
+      digitalId: listing.id,
+      outcome: 'updated',
+      put: { row: patched, expectedRevision: existing.revision },
+    };
   }
 
   const contact = mapRadioidUserToDigitalContact(listing, options.projectId);
-  const result = await options.persistence.putDigitalContact(contact, null);
-  if (!result.ok) return 'failed';
-  contactByDigitalId.set(listing.id, { ...contact, revision: result.revision });
-  return 'added';
+  return {
+    digitalId: listing.id,
+    outcome: 'added',
+    put: { row: contact, expectedRevision: null },
+  };
 }
 
 function reportProgress(
@@ -98,7 +108,34 @@ function reportProgress(
   });
 }
 
+async function persistListingBatch(
+  pending: readonly PendingListingWrite[],
+  contactByDigitalId: Map<number, DigitalContact>,
+  persistence: ProjectPersistence,
+  counts: Pick<RadioidBulkImportResult, 'added' | 'updated' | 'failed'>,
+): Promise<void> {
+  if (pending.length === 0) return;
+
+  const batch = await persistence.putDigitalContactsBatch(pending.map((item) => item.put));
+  for (let i = 0; i < pending.length; i++) {
+    const item = pending[i]!;
+    const result = batch.results[i];
+    if (!result?.ok) {
+      counts.failed += 1;
+      continue;
+    }
+    counts[item.outcome] += 1;
+    contactByDigitalId.set(item.digitalId, { ...item.put.row, revision: result.revision });
+  }
+}
+
 export async function runRadioidBulkImport(
+  options: RadioidBulkImportOptions,
+): Promise<RadioidBulkImportResult> {
+  return options.persistence.runWithoutNotifications(() => runRadioidBulkImportInner(options));
+}
+
+async function runRadioidBulkImportInner(
   options: RadioidBulkImportOptions,
 ): Promise<RadioidBulkImportResult> {
   const startedAt = Date.now();
@@ -115,25 +152,42 @@ export async function runRadioidBulkImport(
     messagePrefix: string,
     pageInfo?: { currentPage: number; totalPages: number },
   ): Promise<boolean> {
+    const pending: PendingListingWrite[] = [];
+
     for (const listing of listings) {
       if (isCancelled()) {
         cancelled = true;
-        return false;
+        break;
       }
 
-      const outcome = await processListing(listing, contactByDigitalId, options);
-      counts[outcome] += 1;
-      processed += 1;
-
-      reportProgress(options.onProgress, startedAt, {
-        processed,
-        total,
-        ...counts,
-        currentPage: pageInfo?.currentPage,
-        totalPages: pageInfo?.totalPages,
-        message: `${messagePrefix} — ${listing.callsign || listing.id}`,
-      });
+      const write = prepareListingWrite(listing, contactByDigitalId, options);
+      if (!write) {
+        counts.skipped += 1;
+        processed += 1;
+        continue;
+      }
+      pending.push(write);
     }
+
+    if (pending.length > 0) {
+      await persistListingBatch(pending, contactByDigitalId, options.persistence, counts);
+      processed += pending.length;
+    }
+
+    if (cancelled) return false;
+
+    const lastListing = listings[listings.length - 1];
+    reportProgress(options.onProgress, startedAt, {
+      processed,
+      total,
+      ...counts,
+      currentPage: pageInfo?.currentPage,
+      totalPages: pageInfo?.totalPages,
+      message: lastListing
+        ? `${messagePrefix} — ${lastListing.callsign || lastListing.id}`
+        : messagePrefix,
+    });
+
     return true;
   }
 
