@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   newAprsConfiguration,
   newChannel,
+  newDigitalContact,
   newFormatBuild,
   newProjectMeta,
   newTalkGroup,
@@ -138,6 +139,89 @@ describe('InMemoryProjectPersistence', () => {
     expect(await store.getChannel(meta.projectId, oldChannel.id)).toBeNull();
     expect(await store.getChannel(meta.projectId, newChannelRow.id)).not.toBeNull();
     expect(await store.listChannels(meta.projectId)).toHaveLength(1);
+  });
+
+  it('putDigitalContactsBatch adds and updates in one notification', async () => {
+    const store = new InMemoryProjectPersistence();
+    const meta = newProjectMeta('Test');
+    await store.seedProject({ meta });
+    const existing = {
+      ...newDigitalContact(meta.projectId, 'Existing', 100, 'dmr'),
+      callsign: 'M0OLD',
+    };
+    await store.putDigitalContact(existing, null);
+
+    const changes: PersistenceChange[] = [];
+    const unsubscribe = store.subscribe((c) => changes.push(c));
+
+    const added = newDigitalContact(meta.projectId, 'New', 200, 'dmr');
+    const updated = { ...existing, city: 'London' };
+    const batch = await store.putDigitalContactsBatch([
+      { row: added, expectedRevision: null },
+      { row: updated, expectedRevision: existing.revision },
+    ]);
+
+    unsubscribe();
+
+    expect(batch.results).toEqual([
+      { ok: true, revision: 1 },
+      { ok: true, revision: 2 },
+    ]);
+    expect(changes).toHaveLength(1);
+    expect(changes[0]).toMatchObject({
+      projectId: meta.projectId,
+      kind: 'digitalContact',
+      op: 'put',
+    });
+
+    const contacts = await store.listDigitalContacts(meta.projectId);
+    expect(contacts).toHaveLength(2);
+    expect(contacts.find((c) => c.digitalId === 200)?.name).toBe('New');
+    expect(contacts.find((c) => c.digitalId === 100)?.city).toBe('London');
+  });
+
+  it('putDigitalContactsBatch continues after revision conflict on one item', async () => {
+    const store = new InMemoryProjectPersistence();
+    const meta = newProjectMeta('Test');
+    await store.seedProject({ meta });
+    const stale = newDigitalContact(meta.projectId, 'Stale', 300, 'dmr');
+    await store.putDigitalContact(stale, null);
+    await store.putDigitalContact({ ...stale, name: 'Bumped' }, stale.revision);
+    const current = (await store.getDigitalContact(meta.projectId, stale.id))!;
+
+    const added = newDigitalContact(meta.projectId, 'Fresh', 400, 'dmr');
+    const batch = await store.putDigitalContactsBatch([
+      { row: { ...stale, name: 'Conflict' }, expectedRevision: 1 },
+      { row: added, expectedRevision: null },
+    ]);
+
+    expect(batch.results[0]).toEqual({ ok: false, reason: 'revision_conflict' });
+    expect(batch.results[1]).toEqual({ ok: true, revision: 1 });
+    expect(await store.listDigitalContacts(meta.projectId)).toHaveLength(2);
+    expect(current.name).toBe('Bumped');
+  });
+
+  it('runWithoutNotifications emits once after nested writes', async () => {
+    const store = new InMemoryProjectPersistence();
+    const meta = newProjectMeta('Test');
+    await store.seedProject({ meta });
+
+    const changes: PersistenceChange[] = [];
+    const unsubscribe = store.subscribe((c) => changes.push(c));
+
+    await store.runWithoutNotifications(async () => {
+      await store.putDigitalContactsBatch([
+        { row: newDigitalContact(meta.projectId, 'One', 1, 'dmr'), expectedRevision: null },
+        { row: newDigitalContact(meta.projectId, 'Two', 2, 'dmr'), expectedRevision: null },
+      ]);
+      await store.putChannel(newChannel(meta.projectId, 'Ch'), null);
+    });
+
+    unsubscribe();
+
+    expect(changes).toEqual([
+      { projectId: meta.projectId, kind: 'project', id: meta.projectId, op: 'put' },
+    ]);
   });
 
   it('delete project cascades all library and build rows', async () => {

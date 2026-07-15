@@ -14,6 +14,18 @@ import type { ProjectMeta } from '@core/models/project.ts';
 export type PutResult =
   { ok: true; revision: number } | { ok: false; reason: 'revision_conflict' | 'not_found' };
 
+export type DigitalContactPut = {
+  row: DigitalContact;
+  expectedRevision: number | null;
+};
+
+export type BatchPutItemResult =
+  { ok: true; revision: number } | { ok: false; reason: 'revision_conflict' | 'not_found' };
+
+export type BatchPutResult = {
+  results: BatchPutItemResult[];
+};
+
 export type EntityKind =
   | 'project'
   | 'channel'
@@ -79,6 +91,7 @@ export interface ProjectPersistence {
 
   getDigitalContact(projectId: string, id: string): Promise<DigitalContact | null>;
   putDigitalContact(row: DigitalContact, expectedRevision: number | null): Promise<PutResult>;
+  putDigitalContactsBatch(puts: DigitalContactPut[]): Promise<BatchPutResult>;
   listDigitalContacts(projectId: string): Promise<DigitalContact[]>;
 
   getAnalogContact(projectId: string, id: string): Promise<AnalogContact | null>;
@@ -105,6 +118,12 @@ export interface ProjectPersistence {
   seedProject(seed: ProjectSeed): Promise<void>;
   loadProjectSeed(projectId: string): Promise<ProjectSeed | null>;
   replaceProject(projectId: string, seed: ProjectSeed): Promise<void>;
+
+  /**
+   * Run writes without per-operation change notifications; emit once when the
+   * outermost nested call completes (if any writes occurred).
+   */
+  runWithoutNotifications<T>(fn: () => Promise<T>): Promise<T>;
 
   /** Subscribe to change notifications. Returns an unsubscribe function. */
   subscribe(listener: PersistenceListener): () => void;

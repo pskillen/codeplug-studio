@@ -1,5 +1,8 @@
 export type {
   PutResult,
+  DigitalContactPut,
+  BatchPutItemResult,
+  BatchPutResult,
   EntityKind,
   LibraryEntityKind,
   PersistenceChange,
