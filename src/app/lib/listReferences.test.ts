@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import type { ChannelModeProfileDMR, ChannelModeProfileNxdn, Library } from '@core/models/library.ts';
+import type {
+  ChannelModeProfileDMR,
+  ChannelModeProfileNxdn,
+  Library,
+} from '@core/models/library.ts';
 import {
   emptyLibrary,
   newAnalogContact,
@@ -45,10 +49,7 @@ function expectIndexMatchesFindReferences(library: Library) {
   }
 
   for (const target of targets) {
-    expect(referenceCountFromIndex(index, target)).toBe(
-      referenceCount(library, target),
-      `target ${target.kind}:${target.id}`,
-    );
+    expect(referenceCountFromIndex(index, target)).toBe(referenceCount(library, target));
   }
 }
 
@@ -95,12 +96,14 @@ describe('buildReferenceCountIndex', () => {
     };
 
     expectIndexMatchesFindReferences(library);
-    expect(findReferencesTo(library, { kind: 'digitalContact', id: digitalContact.id })).toHaveLength(
-      1,
-    );
-    expect(referenceCountFromIndex(buildReferenceCountIndex(library), {
-      kind: 'digitalContact',
-      id: digitalContact.id,
-    })).toBe(1);
+    expect(
+      findReferencesTo(library, { kind: 'digitalContact', id: digitalContact.id }),
+    ).toHaveLength(1);
+    expect(
+      referenceCountFromIndex(buildReferenceCountIndex(library), {
+        kind: 'digitalContact',
+        id: digitalContact.id,
+      }),
+    ).toBe(1);
   });
 });

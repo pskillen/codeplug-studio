@@ -8,7 +8,11 @@ import type { DataTableColumn } from '../../../components/ui/DataTable.tsx';
 import { filterRowsByName, useListNameQuery } from '../../../hooks/useListNameQuery.ts';
 import { usePersistedEntityListSort } from '../../../hooks/usePersistedEntityListSort.ts';
 import { DATATABLE_NAME_SORT_KEY } from '../../../lib/dataTable/sort.ts';
-import { formatReferenceCount, buildReferenceCountIndex, referenceCountFromIndex } from '../../../lib/listReferences.ts';
+import {
+  formatReferenceCount,
+  buildReferenceCountIndex,
+  referenceCountFromIndex,
+} from '../../../lib/listReferences.ts';
 import { useLibrary } from '../../../state/useLibrary.ts';
 
 function DigitalContactsTable({

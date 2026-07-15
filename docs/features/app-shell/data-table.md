@@ -4,7 +4,7 @@ Deep dive for the reusable **`DataTable`** list primitive and the hooks/storage 
 
 See the [app-shell hub](README.md) for routes and section nav. List-route behaviour and per-entity columns are summarised in [library — List routes](../library/README.md#list-routes).
 
-**Tracking:** [#20](https://github.com/pskillen/codeplug-studio/issues/20), [#24](https://github.com/pskillen/codeplug-studio/issues/24), [#51](https://github.com/pskillen/codeplug-studio/issues/51), [#68](https://github.com/pskillen/codeplug-studio/issues/68)
+**Tracking:** [#20](https://github.com/pskillen/codeplug-studio/issues/20), [#24](https://github.com/pskillen/codeplug-studio/issues/24), [#51](https://github.com/pskillen/codeplug-studio/issues/51), [#68](https://github.com/pskillen/codeplug-studio/issues/68), [#381](https://github.com/pskillen/codeplug-studio/issues/381)
 
 ## Purpose
 
@@ -14,14 +14,17 @@ Ported from [codeplug-tool](https://github.com/pskillen/codeplug-tool) `DataTabl
 
 | Symbol                                         | Path                                                     | Role                                                      |
 | ---------------------------------------------- | -------------------------------------------------------- | --------------------------------------------------------- |
-| `DataTable`                                    | `src/app/components/ui/DataTable.tsx`                    | Mantine `Table` wrapper — sort, search, column visibility |
+| `DataTable`                                    | `src/app/components/ui/DataTable.tsx`                    | Mantine `Table` wrapper — sort, search, column visibility, virtual tbody |
+| `DataTable.md`                                 | `src/app/components/ui/DataTable.md`                     | Component sidecar — virtual props                         |
+| `useVirtualDataTableRows`                      | `src/app/lib/dataTable/useVirtualDataTableRows.ts`       | TanStack virtualizer hook for tbody windowing             |
+| `VIRTUAL_ROW_THRESHOLD`                        | `src/app/lib/dataTable/virtualization.ts`              | Auto-enable threshold (75 rows)                           |
 | `useDataTableColumnVisibility`                 | `src/app/hooks/useDataTableColumnVisibility.ts`          | Persist hideable column keys (channels)                   |
 | `useListNameQuery`                             | `src/app/hooks/useListNameQuery.ts`                      | URL + `localStorage` name filter per entity list          |
 | `useDebouncedNameFilter`                       | `src/app/hooks/useDebouncedNameFilter.ts`                | Draft vs committed name search (300 ms)                   |
 | `usePersistedEntityListSort`                   | `src/app/hooks/usePersistedEntityListSort.ts`            | Per-project column sort for entity lists                  |
 | `useChannelListQuery`                          | `src/app/hooks/useChannelListQuery.ts`                   | Channels-only filters (band, mode, distance, …)           |
 | `filterRowsByName`                             | `useListNameQuery.ts`                                    | Client-side name substring filter                         |
-| `referenceCount` / `formatReferenceCount`      | `src/app/lib/listReferences.ts`                          | Reference-count cells via `findReferencesTo` (core)       |
+| `referenceCount` / `formatReferenceCount`      | `src/app/lib/listReferences.ts`                          | Reference-count cells; list tables use `buildReferenceCountIndex` |
 | `EntityListDeleteAction`                       | `src/app/components/library/EntityListDeleteAction.tsx`  | Row trash icon — generic delete flow                      |
 | `ChannelListDeleteAction`                      | `src/app/components/library/ChannelListDeleteAction.tsx` | Channels row delete (zone cascade)                        |
 | `sortDataTableRows`, `DATATABLE_NAME_SORT_KEY` | `src/app/lib/dataTable/sort.ts`                          | Sort state helpers                                        |
@@ -44,6 +47,9 @@ Dev demos: `/styleguide` (unlinked).
 | `searchPending`             | Show Mantine `Loader` while draft input ≠ committed filter                                     |
 | `columnVisibility*`         | Channels optional columns — **Show/hide cols** opens a modal with checkboxes                   |
 | `toolbar`                   | Actions rendered **below** the table (e.g. **New zone from selected** on channels)             |
+| `virtualize`                | `boolean \| 'auto'` (default `'auto'`) — window tbody when row count ≥ 75                    |
+| `estimatedRowHeight`        | Virtualizer row height estimate (44px list, 56px when `onRowActivate`)                       |
+| `virtualizeOverscan`        | Extra rows rendered outside viewport (default 8)                                             |
 
 List layout: full-width search → result count row (with optional column picker button) → table → footer toolbar.
 
@@ -86,9 +92,26 @@ Name filters sync to URL query params when committed; on first visit without URL
 
 Never commit operator values from browser storage.
 
+## Virtual row rendering ([#381](https://github.com/pskillen/codeplug-studio/issues/381))
+
+Large libraries (1000+ contacts) stay responsive by rendering only visible tbody rows. All `DataTable` consumers inherit `virtualize: 'auto'` unless overridden.
+
+| Mode | Behaviour |
+| ---- | --------- |
+| `'auto'` (default) | Virtualize when `sortedRows.length >= 75` (`VIRTUAL_ROW_THRESHOLD`) |
+| `true` | Always virtualize (non-empty body) |
+| `false` | Legacy full `map` — every row in the DOM |
+
+- **Scroll container:** Mantine `ScrollArea.Autosize` viewport (`viewportRef`) — not the outer wrapper.
+- **Sticky header:** `thead` stays outside the virtual window; `.stickyTh` unchanged.
+- **Sort / filter / selection:** Operate on full sorted row set in memory; only visible checkboxes mount.
+- **Wire preview:** `WirePreviewDataTable` inherits taller default estimate via `onRowActivate`.
+
+Progress and rollout checklist: [datatable-virtualization-progress.md](datatable-virtualization-progress.md).
+
 ## Reference-count columns
 
-`listReferences.ts` wraps `findReferencesTo` from `src/core/domain/references.ts` — vendor-neutral UUID targets only. Talk-group “RX lists using” counts RX group list members that reference the talk group (not channel references).
+`listReferences.ts` provides `buildReferenceCountIndex(library)` — a single-pass `Map` keyed `kind:id` for list-table cells. `referenceCount` still wraps `findReferencesTo` for one-off lookups (delete guards). Talk-group “RX lists using” counts RX group list members that reference the talk group (not channel references).
 
 ## Manual verify
 
@@ -96,6 +119,7 @@ Never commit operator values from browser storage.
 2. Filter talk groups by name — type rapidly; input stays responsive; spinner shows briefly; table updates after ~300 ms; URL gains `?q=`; reload — filter persists.
 3. On `/library/contacts`, set digital and analog filters independently — URL shows `dq` and `aq`; each debounces separately.
 4. Channels: list-page filters + `DataTable` search; optional columns hide/show; distance filter requires operator location (**Show my location** below the table).
+5. `/styleguide` → **DataTable — large virtual list** — scroll 250 rows; confirm sticky header.
 
 ## Known gaps
 

@@ -1,8 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import {
-  resolveDataTableVirtualization,
-  VIRTUAL_ROW_THRESHOLD,
-} from './virtualization.ts';
+import { resolveDataTableVirtualization, VIRTUAL_ROW_THRESHOLD } from './virtualization.ts';
 
 describe('resolveDataTableVirtualization', () => {
   it('enables auto mode at the row threshold', () => {
