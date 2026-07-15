@@ -3,7 +3,7 @@ import {
   preflightHeaders,
   rejectResponse,
   resolveAllowedRequestOrigin,
-} from '../../lib/codeplugOrigin.ts';
+} from '../../../lib/codeplugOrigin.ts';
 
 const RADIOID_DMR_USER_UPSTREAM = 'https://database.radioid.net/api/dmr/user/';
 
