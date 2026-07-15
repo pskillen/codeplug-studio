@@ -61,6 +61,12 @@ const COLUMN_PICKER_ROWS = [
   { id: '2', name: 'Bravo', score: 9, note: 'B' },
 ];
 
+const LARGE_VIRTUAL_DEMO_ROWS = Array.from({ length: 250 }, (_, i) => ({
+  id: String(i + 1),
+  name: `Contact ${String(i + 1).padStart(4, '0')}`,
+  score: (i * 13) % 100,
+}));
+
 const sampleChannel = {
   ...newChannel('styleguide', 'Demo FM'),
   rxFrequency: 145_575_000,
@@ -862,6 +868,30 @@ export default function StyleguidePage() {
           search=""
           onSearchChange={() => {}}
           filteredEmptyMessage="No matches for current filter"
+        />
+      </PageSection>
+
+      <PageSection
+        title="DataTable — large virtual list"
+        description="250 rows with virtualize auto (threshold 75). Scroll to confirm sticky header and smooth tbody windowing."
+      >
+        <DataTable
+          variant="list"
+          rows={LARGE_VIRTUAL_DEMO_ROWS}
+          totalRowCount={LARGE_VIRTUAL_DEMO_ROWS.length}
+          rowKey={(row) => row.id}
+          nameColumn={{
+            getName: (row) => row.name,
+            getPath: (row) => `#${row.id}`,
+          }}
+          columns={[
+            {
+              key: 'score',
+              header: 'Score',
+              render: (row) => row.score,
+              sortValue: (row) => row.score,
+            },
+          ]}
         />
       </PageSection>
 

@@ -23,6 +23,8 @@ import {
   sortDataTableRows,
   type DataTableSortState,
 } from '../../lib/dataTable/sort.ts';
+import { useVirtualDataTableRows } from '../../lib/dataTable/useVirtualDataTableRows.ts';
+import type { DataTableVirtualizeMode } from '../../lib/dataTable/virtualization.ts';
 import classes from './DataTable.module.css';
 
 export interface DataTableColumn<T> {
@@ -81,6 +83,11 @@ export interface DataTableProps<T> {
   mobileColumnPolicy?: DataTableMobileColumnPolicy;
   /** When set, rows are clickable and the name column renders as plain text. */
   onRowActivate?: (row: T) => void;
+  /** Window tbody rows when count exceeds threshold. Default `'auto'`. */
+  virtualize?: DataTableVirtualizeMode;
+  /** Estimated row height for the virtualizer (list ~44px, activate rows ~56px). */
+  estimatedRowHeight?: number;
+  virtualizeOverscan?: number;
 }
 
 function LinkedCell<T>({
@@ -177,6 +184,9 @@ export default function DataTable<T>({
   totalRowCount,
   resultCount,
   onRowActivate,
+  virtualize = 'auto',
+  estimatedRowHeight,
+  virtualizeOverscan,
 }: DataTableProps<T>) {
   const isList = variant === 'list';
   const showSearchInput = showSearch ?? (isList && onSearchChange !== undefined);
@@ -310,6 +320,74 @@ export default function DataTable<T>({
     [setVisibleHideableKeys, visibleHideableKeys],
   );
 
+  const { scrollRef, virtualized, virtualRows, paddingTop, paddingBottom } =
+    useVirtualDataTableRows({
+      rowCount: sortedRows.length,
+      virtualize,
+      estimatedRowHeight,
+      virtualizeOverscan,
+      hasRowActivate: onRowActivate !== undefined,
+    });
+
+  const renderDataRow = useCallback(
+    (row: T, reactKey: string) => {
+      const key = rowKey(row);
+      return (
+        <Table.Tr
+          key={reactKey}
+          data-testid="datatable-tbody-row"
+          data-selected={selectedKeys.includes(key) || undefined}
+          onClick={onRowActivate ? () => onRowActivate(row) : undefined}
+          style={onRowActivate ? { cursor: 'pointer' } : undefined}
+        >
+          {selectable ? (
+            <Table.Td>
+              <Checkbox
+                checked={selectedKeys.includes(key)}
+                onChange={() => toggleRow(key)}
+                onClick={(e) => e.stopPropagation()}
+                aria-label={`Select row ${nameColumn.getName(row)}`}
+              />
+            </Table.Td>
+          ) : null}
+          {callsignColumn ? (
+            <Table.Td>
+              <LinkedCell column={callsignColumn} row={row} asLink={!onRowActivate} />
+            </Table.Td>
+          ) : null}
+          <Table.Td>
+            <LinkedCell column={nameColumn} row={row} asLink={!onRowActivate} />
+          </Table.Td>
+          {visibleColumns.map((col) => (
+            <Table.Td key={col.key}>{col.render(row)}</Table.Td>
+          ))}
+        </Table.Tr>
+      );
+    },
+    [
+      rowKey,
+      selectedKeys,
+      onRowActivate,
+      selectable,
+      toggleRow,
+      nameColumn,
+      callsignColumn,
+      visibleColumns,
+    ],
+  );
+
+  const renderVirtualSpacer = (height: number, position: 'top' | 'bottom') => {
+    if (height <= 0) return null;
+    return (
+      <Table.Tr aria-hidden data-testid={`datatable-virtual-spacer-${position}`}>
+        <Table.Td
+          colSpan={leadingColCount}
+          style={{ height, padding: 0, border: 'none', lineHeight: 0 }}
+        />
+      </Table.Tr>
+    );
+  };
+
   return (
     <Stack gap="sm">
       {showSearchInput ? (
@@ -345,7 +423,9 @@ export default function DataTable<T>({
         mah={isList ? '60vh' : '40vh'}
         type="auto"
         offsetScrollbars
+        viewportRef={scrollRef}
         data-testid="datatable-scroll"
+        data-virtualized={virtualized || undefined}
       >
         <Table striped highlightOnHover withTableBorder>
           <Table.Thead data-testid="datatable-thead">
@@ -406,40 +486,17 @@ export default function DataTable<T>({
                   )}
                 </Table.Td>
               </Table.Tr>
+            ) : virtualized ? (
+              <>
+                {renderVirtualSpacer(paddingTop, 'top')}
+                {virtualRows.map((virtualRow) => {
+                  const row = sortedRows[virtualRow.index]!;
+                  return renderDataRow(row, rowKey(row));
+                })}
+                {renderVirtualSpacer(paddingBottom, 'bottom')}
+              </>
             ) : (
-              sortedRows.map((row) => {
-                const key = rowKey(row);
-                return (
-                  <Table.Tr
-                    key={key}
-                    data-selected={selectedKeys.includes(key) || undefined}
-                    onClick={onRowActivate ? () => onRowActivate(row) : undefined}
-                    style={onRowActivate ? { cursor: 'pointer' } : undefined}
-                  >
-                    {selectable ? (
-                      <Table.Td>
-                        <Checkbox
-                          checked={selectedKeys.includes(key)}
-                          onChange={() => toggleRow(key)}
-                          onClick={(e) => e.stopPropagation()}
-                          aria-label={`Select row ${nameColumn.getName(row)}`}
-                        />
-                      </Table.Td>
-                    ) : null}
-                    {callsignColumn ? (
-                      <Table.Td>
-                        <LinkedCell column={callsignColumn} row={row} asLink={!onRowActivate} />
-                      </Table.Td>
-                    ) : null}
-                    <Table.Td>
-                      <LinkedCell column={nameColumn} row={row} asLink={!onRowActivate} />
-                    </Table.Td>
-                    {visibleColumns.map((col) => (
-                      <Table.Td key={col.key}>{col.render(row)}</Table.Td>
-                    ))}
-                  </Table.Tr>
-                );
-              })
+              sortedRows.map((row) => renderDataRow(row, rowKey(row)))
             )}
           </Table.Tbody>
         </Table>
