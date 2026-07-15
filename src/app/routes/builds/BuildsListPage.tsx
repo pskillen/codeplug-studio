@@ -15,12 +15,13 @@ import { useFormatBuilds } from '../../state/useFormatBuilds.ts';
 export default function BuildsListPage() {
   const { builds, loading } = useFormatBuilds();
   const navigate = useNavigate();
-  const [nameFilter, setNameFilter] = useState('');
+  const [committedNameFilter, setCommittedNameFilter] = useState('');
   const {
     nameFilterInput,
+    nameFilter,
     setNameFilter: setNameFilterInput,
     nameFilterPending,
-  } = useDebouncedNameFilter(nameFilter, setNameFilter);
+  } = useDebouncedNameFilter(committedNameFilter, setCommittedNameFilter);
   const [sort, setSort] = useState<DataTableSortState | null>({
     columnKey: DATATABLE_NAME_SORT_KEY,
     direction: 'asc',

@@ -59,7 +59,7 @@ export function useListNameQuery(entity: EntityListEntity): {
     hydratedKey.current = visitKey;
   }, [activeProjectId, entity, location.search, paramKey, setSearchParams]);
 
-  const nameFilter = searchParams.get(paramKey) ?? '';
+  const committedNameFilter = searchParams.get(paramKey) ?? '';
 
   const commitNameFilter = useCallback(
     (value: string) => {
@@ -78,8 +78,8 @@ export function useListNameQuery(entity: EntityListEntity): {
     [activeProjectId, entity, paramKey, setSearchParams],
   );
 
-  const { nameFilterInput, setNameFilter, nameFilterPending } = useDebouncedNameFilter(
-    nameFilter,
+  const { nameFilter, nameFilterInput, setNameFilter, nameFilterPending } = useDebouncedNameFilter(
+    committedNameFilter,
     commitNameFilter,
   );
 
@@ -91,9 +91,19 @@ export function filterRowsByName<T>(
   nameFilter: string,
   getName: (row: T) => string,
 ): T[] {
-  if (!nameFilter) return rows;
-  const lower = nameFilter.toLowerCase();
-  return rows.filter((row) => getName(row).toLowerCase().includes(lower));
+  return filterRowsBySearchFields(rows, nameFilter, [getName]);
+}
+
+export function filterRowsBySearchFields<T>(
+  rows: T[],
+  searchFilter: string,
+  getFields: ((row: T) => string)[],
+): T[] {
+  if (!searchFilter) return rows;
+  const lower = searchFilter.toLowerCase();
+  return rows.filter((row) =>
+    getFields.some((getField) => getField(row).toLowerCase().includes(lower)),
+  );
 }
 
 export function persistEntityListColumnSort(

@@ -66,7 +66,7 @@ Rows link to editors via `nameColumn.getPath`. Optional trailing **actions** col
 | `/library/contacts` (analog)  | `analog-contacts`  | `aq`                | name             | Code, channels using, actions                              |
 | `/library/rx-group-lists`     | `rx-group-lists`   | `q`                 | name             | Members, channels using, actions                           |
 
-Digital and analog contact tables on `/library/contacts` use **separate** URL params (`dq`, `aq`) so filters do not collide.
+Digital and analog contact tables on `/library/contacts` use **separate** URL params (`dq`, `aq`) so filters do not collide. Digital contact search matches **name or callsign**; filtering uses the debounced value (300 ms), not the URL round-trip alone.
 
 ## Debounced name search
 

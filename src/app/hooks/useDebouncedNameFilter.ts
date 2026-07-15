@@ -8,6 +8,8 @@ export function useDebouncedNameFilter(
   committedFilter: string,
   commitFilter: (value: string) => void,
 ): {
+  /** Debounced value — use for table filtering (in sync with settled input). */
+  nameFilter: string;
   nameFilterInput: string;
   setNameFilter: (value: string) => void;
   nameFilterPending: boolean;
@@ -38,8 +40,9 @@ export function useDebouncedNameFilter(
   }, []);
 
   return {
+    nameFilter: debouncedInput,
     nameFilterInput,
     setNameFilter,
-    nameFilterPending: nameFilterInput !== committedFilter,
+    nameFilterPending: nameFilterInput !== debouncedInput,
   };
 }

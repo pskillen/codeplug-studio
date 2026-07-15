@@ -74,7 +74,7 @@ export function useChannelListQuery(): ChannelListQuery {
     hydratedKey.current = visitKey;
   }, [activeProjectId, location.search, setSearchParams]);
 
-  const nameFilter = searchParams.get('q') ?? '';
+  const committedNameFilter = searchParams.get('q') ?? '';
   const sortMode: ChannelSortMode = searchParams.get('sort') === 'distance' ? 'distance' : 'name';
   const bandFilter = useMemo(() => parseCsvParam(searchParams.get('band')), [searchParams]);
   const modeFilter = useMemo(() => parseCsvParam(searchParams.get('mode')), [searchParams]);
@@ -113,8 +113,8 @@ export function useChannelListQuery(): ChannelListQuery {
     [updateParams, persistPrefs],
   );
 
-  const { nameFilterInput, setNameFilter, nameFilterPending } = useDebouncedNameFilter(
-    nameFilter,
+  const { nameFilter, nameFilterInput, setNameFilter, nameFilterPending } = useDebouncedNameFilter(
+    committedNameFilter,
     commitNameFilter,
   );
 

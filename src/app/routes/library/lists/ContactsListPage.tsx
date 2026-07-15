@@ -5,7 +5,11 @@ import EntityListDeleteAction from '../../../components/library/EntityListDelete
 import ModePill from '../../../components/pills/ModePill.tsx';
 import { DataTable, ListPage, PageSection } from '../../../components/ui/index.ts';
 import type { DataTableColumn } from '../../../components/ui/DataTable.tsx';
-import { filterRowsByName, useListNameQuery } from '../../../hooks/useListNameQuery.ts';
+import {
+  filterRowsByName,
+  filterRowsBySearchFields,
+  useListNameQuery,
+} from '../../../hooks/useListNameQuery.ts';
 import { usePersistedEntityListSort } from '../../../hooks/usePersistedEntityListSort.ts';
 import { DATATABLE_NAME_SORT_KEY } from '../../../lib/dataTable/sort.ts';
 import {
@@ -29,7 +33,7 @@ function DigitalContactsTable({
     direction: 'asc',
   });
   const filtered = useMemo(
-    () => filterRowsByName(contacts, nameFilter, (c) => c.name),
+    () => filterRowsBySearchFields(contacts, nameFilter, [(c) => c.name, (c) => c.callsign]),
     [contacts, nameFilter],
   );
   const referenceIndex = useMemo(() => buildReferenceCountIndex(library), [library]);
@@ -98,7 +102,7 @@ function DigitalContactsTable({
       search={nameFilterInput}
       searchPending={nameFilterPending}
       onSearchChange={setNameFilter}
-      searchPlaceholder="Filter name…"
+      searchPlaceholder="Filter name or callsign…"
       sort={sort}
       onSortChange={setSort}
       rowKey={(c) => c.id}
