@@ -8,7 +8,7 @@ import type { DataTableColumn } from '../../../components/ui/DataTable.tsx';
 import { filterRowsByName, useListNameQuery } from '../../../hooks/useListNameQuery.ts';
 import { usePersistedEntityListSort } from '../../../hooks/usePersistedEntityListSort.ts';
 import { DATATABLE_NAME_SORT_KEY } from '../../../lib/dataTable/sort.ts';
-import { formatReferenceCount, referenceCount } from '../../../lib/listReferences.ts';
+import { formatReferenceCount, buildReferenceCountIndex, referenceCountFromIndex } from '../../../lib/listReferences.ts';
 import { useLibrary } from '../../../state/useLibrary.ts';
 
 function DigitalContactsTable({
@@ -28,6 +28,7 @@ function DigitalContactsTable({
     () => filterRowsByName(contacts, nameFilter, (c) => c.name),
     [contacts, nameFilter],
   );
+  const referenceIndex = useMemo(() => buildReferenceCountIndex(library), [library]);
 
   const columns = useMemo((): DataTableColumn<DigitalContact>[] => {
     return [
@@ -62,8 +63,11 @@ function DigitalContactsTable({
         key: 'channels',
         header: 'Channels using',
         render: (c) =>
-          formatReferenceCount(referenceCount(library, { kind: 'digitalContact', id: c.id })),
-        sortValue: (c) => referenceCount(library, { kind: 'digitalContact', id: c.id }),
+          formatReferenceCount(
+            referenceCountFromIndex(referenceIndex, { kind: 'digitalContact', id: c.id }),
+          ),
+        sortValue: (c) =>
+          referenceCountFromIndex(referenceIndex, { kind: 'digitalContact', id: c.id }),
       },
       {
         key: 'comment',
@@ -80,7 +84,7 @@ function DigitalContactsTable({
         ),
       },
     ];
-  }, [library]);
+  }, [referenceIndex]);
 
   return (
     <DataTable
@@ -120,6 +124,7 @@ function AnalogContactsTable({
     () => filterRowsByName(contacts, nameFilter, (c) => c.name),
     [contacts, nameFilter],
   );
+  const referenceIndex = useMemo(() => buildReferenceCountIndex(library), [library]);
 
   const columns = useMemo((): DataTableColumn<AnalogContact>[] => {
     return [
@@ -139,8 +144,11 @@ function AnalogContactsTable({
         key: 'channels',
         header: 'Channels using',
         render: (c) =>
-          formatReferenceCount(referenceCount(library, { kind: 'analogContact', id: c.id })),
-        sortValue: (c) => referenceCount(library, { kind: 'analogContact', id: c.id }),
+          formatReferenceCount(
+            referenceCountFromIndex(referenceIndex, { kind: 'analogContact', id: c.id }),
+          ),
+        sortValue: (c) =>
+          referenceCountFromIndex(referenceIndex, { kind: 'analogContact', id: c.id }),
       },
       {
         key: 'actions',
@@ -151,7 +159,7 @@ function AnalogContactsTable({
         ),
       },
     ];
-  }, [library]);
+  }, [referenceIndex]);
 
   return (
     <DataTable
