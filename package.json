@@ -22,6 +22,7 @@
     "@mantine/core": "^9.4.1",
     "@mantine/hooks": "^9.4.1",
     "@tabler/icons-react": "^3.44.0",
+    "@tanstack/react-virtual": "^3.14.6",
     "@uiw/react-json-view": "^2.0.0-alpha.43",
     "fflate": "^0.8.3",
     "js-yaml": "^5.2.0",
