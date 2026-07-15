@@ -5,10 +5,18 @@ import EntityListDeleteAction from '../../../components/library/EntityListDelete
 import ModePill from '../../../components/pills/ModePill.tsx';
 import { DataTable, ListPage, PageSection } from '../../../components/ui/index.ts';
 import type { DataTableColumn } from '../../../components/ui/DataTable.tsx';
-import { filterRowsByName, useListNameQuery } from '../../../hooks/useListNameQuery.ts';
+import {
+  filterRowsByName,
+  filterRowsBySearchFields,
+  useListNameQuery,
+} from '../../../hooks/useListNameQuery.ts';
 import { usePersistedEntityListSort } from '../../../hooks/usePersistedEntityListSort.ts';
 import { DATATABLE_NAME_SORT_KEY } from '../../../lib/dataTable/sort.ts';
-import { formatReferenceCount, referenceCount } from '../../../lib/listReferences.ts';
+import {
+  formatReferenceCount,
+  buildReferenceCountIndex,
+  referenceCountFromIndex,
+} from '../../../lib/listReferences.ts';
 import { useLibrary } from '../../../state/useLibrary.ts';
 
 function DigitalContactsTable({
@@ -25,9 +33,10 @@ function DigitalContactsTable({
     direction: 'asc',
   });
   const filtered = useMemo(
-    () => filterRowsByName(contacts, nameFilter, (c) => c.name),
+    () => filterRowsBySearchFields(contacts, nameFilter, [(c) => c.name, (c) => c.callsign]),
     [contacts, nameFilter],
   );
+  const referenceIndex = useMemo(() => buildReferenceCountIndex(library), [library]);
 
   const columns = useMemo((): DataTableColumn<DigitalContact>[] => {
     return [
@@ -62,8 +71,11 @@ function DigitalContactsTable({
         key: 'channels',
         header: 'Channels using',
         render: (c) =>
-          formatReferenceCount(referenceCount(library, { kind: 'digitalContact', id: c.id })),
-        sortValue: (c) => referenceCount(library, { kind: 'digitalContact', id: c.id }),
+          formatReferenceCount(
+            referenceCountFromIndex(referenceIndex, { kind: 'digitalContact', id: c.id }),
+          ),
+        sortValue: (c) =>
+          referenceCountFromIndex(referenceIndex, { kind: 'digitalContact', id: c.id }),
       },
       {
         key: 'comment',
@@ -80,7 +92,7 @@ function DigitalContactsTable({
         ),
       },
     ];
-  }, [library]);
+  }, [referenceIndex]);
 
   return (
     <DataTable
@@ -90,7 +102,7 @@ function DigitalContactsTable({
       search={nameFilterInput}
       searchPending={nameFilterPending}
       onSearchChange={setNameFilter}
-      searchPlaceholder="Filter name…"
+      searchPlaceholder="Filter name or callsign…"
       sort={sort}
       onSortChange={setSort}
       rowKey={(c) => c.id}
@@ -120,6 +132,7 @@ function AnalogContactsTable({
     () => filterRowsByName(contacts, nameFilter, (c) => c.name),
     [contacts, nameFilter],
   );
+  const referenceIndex = useMemo(() => buildReferenceCountIndex(library), [library]);
 
   const columns = useMemo((): DataTableColumn<AnalogContact>[] => {
     return [
@@ -139,8 +152,11 @@ function AnalogContactsTable({
         key: 'channels',
         header: 'Channels using',
         render: (c) =>
-          formatReferenceCount(referenceCount(library, { kind: 'analogContact', id: c.id })),
-        sortValue: (c) => referenceCount(library, { kind: 'analogContact', id: c.id }),
+          formatReferenceCount(
+            referenceCountFromIndex(referenceIndex, { kind: 'analogContact', id: c.id }),
+          ),
+        sortValue: (c) =>
+          referenceCountFromIndex(referenceIndex, { kind: 'analogContact', id: c.id }),
       },
       {
         key: 'actions',
@@ -151,7 +167,7 @@ function AnalogContactsTable({
         ),
       },
     ];
-  }, [library]);
+  }, [referenceIndex]);
 
   return (
     <DataTable

@@ -29,6 +29,7 @@ describe('useDebouncedNameFilter', () => {
       vi.advanceTimersByTime(LIST_NAME_FILTER_DEBOUNCE_MS);
     });
     expect(commit).toHaveBeenCalledWith('hel');
+    expect(result.current.nameFilter).toBe('hel');
 
     rerender({ committed: 'hel' });
     expect(result.current.nameFilterPending).toBe(false);

@@ -34,7 +34,7 @@ ProjectProvider
 
 | Doc                                                                                           | Contents                                                                                    |
 | --------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------- |
-| [data-table.md](data-table.md)                                                                | `DataTable`, list prefs, entity list hooks                                                  |
+| [data-table.md](data-table.md)                                                                | `DataTable`, list prefs, entity list hooks, virtualization                                  |
 | [alerts.md](alerts.md)                                                                        | Mantine `Alert` colour conventions                                                          |
 | [GradientSegmentedControl](../../src/app/components/ui/GradientSegmentedControl.md)           | Per-segment indicator colours with fade on change                                           |
 | [SelectedItemList](../../src/app/components/ui/SelectedItemList.md)                           | Ordered selected-member list shell                                                          |
@@ -50,6 +50,8 @@ ProjectProvider
 | [EntityListDeleteAction](../../src/app/components/library/EntityListDeleteAction.md)          | List row delete trash icon                                                                  |
 | [library-routes-progress.md](library-routes-progress.md)                                      | Library routes initiative — shipped slices                                                  |
 | [library-routes-outstanding.md](library-routes-outstanding.md)                                | Deferred debt from library routes PR                                                        |
+| [datatable-virtualization-progress.md](datatable-virtualization-progress.md)                  | [#381](https://github.com/pskillen/codeplug-studio/issues/381) virtual tbody rollout        |
+| [DataTable.md](../../src/app/components/ui/DataTable.md)                                      | List primitive sidecar — virtual props                                                      |
 | [library/README.md](../library/README.md)                                                     | Library CRUD and list routes                                                                |
 | [map/README.md](../map/README.md)                                                             | Embedded channel map                                                                        |
 

@@ -7,7 +7,11 @@ import type { DataTableColumn } from '../../../components/ui/DataTable.tsx';
 import { filterRowsByName, useListNameQuery } from '../../../hooks/useListNameQuery.ts';
 import { usePersistedEntityListSort } from '../../../hooks/usePersistedEntityListSort.ts';
 import { DATATABLE_NAME_SORT_KEY } from '../../../lib/dataTable/sort.ts';
-import { formatReferenceCount, referenceCount } from '../../../lib/listReferences.ts';
+import {
+  formatReferenceCount,
+  buildReferenceCountIndex,
+  referenceCountFromIndex,
+} from '../../../lib/listReferences.ts';
 import { useLibrary } from '../../../state/useLibrary.ts';
 
 export default function RxGroupListsListPage() {
@@ -23,6 +27,7 @@ export default function RxGroupListsListPage() {
     () => filterRowsByName(rxGroupLists, nameFilter, (r) => r.name),
     [rxGroupLists, nameFilter],
   );
+  const referenceIndex = useMemo(() => buildReferenceCountIndex(library), [library]);
 
   const columns = useMemo((): DataTableColumn<RxGroupList>[] => {
     return [
@@ -36,8 +41,11 @@ export default function RxGroupListsListPage() {
         key: 'channels',
         header: 'Channels using',
         render: (r) =>
-          formatReferenceCount(referenceCount(library, { kind: 'rxGroupList', id: r.id })),
-        sortValue: (r) => referenceCount(library, { kind: 'rxGroupList', id: r.id }),
+          formatReferenceCount(
+            referenceCountFromIndex(referenceIndex, { kind: 'rxGroupList', id: r.id }),
+          ),
+        sortValue: (r) =>
+          referenceCountFromIndex(referenceIndex, { kind: 'rxGroupList', id: r.id }),
       },
       {
         key: 'actions',
@@ -46,7 +54,7 @@ export default function RxGroupListsListPage() {
         render: (r) => <EntityListDeleteAction kind="rxGroupList" entityId={r.id} label={r.name} />,
       },
     ];
-  }, [library]);
+  }, [referenceIndex]);
 
   if (loading) {
     return (
