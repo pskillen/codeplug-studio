@@ -1,5 +1,8 @@
 import { DEFAULT_CHANNEL_EXPORT_NAME_MODE } from '@core/domain/channelNaming.ts';
-import { DEFAULT_MULTI_TG_EXPORT_NAME_MODE } from '@core/import-export/types.ts';
+import {
+  DEFAULT_DIGITAL_CONTACT_EXPORT_NAME_MODE,
+  DEFAULT_MULTI_TG_EXPORT_NAME_MODE,
+} from '@core/import-export/types.ts';
 import type { BuildExportSettings } from '@core/models/formatBuild.ts';
 import type { FormatBuild } from '@core/models/formatBuild.ts';
 import type { CpsExportOptions, FormatExportDefaults } from '@core/import-export/types.ts';
@@ -14,6 +17,7 @@ export const DEFAULT_BUILD_EXPORT_SETTINGS: Required<
     | 'useTalkGroupAbbreviation'
     | 'exportZoneDerivedScanLists'
     | 'multiTalkGroupExportNameMode'
+    | 'digitalContactExportNameMode'
     | 'expandRxGroupListMembers'
   >
 > = {
@@ -23,6 +27,7 @@ export const DEFAULT_BUILD_EXPORT_SETTINGS: Required<
   useTalkGroupAbbreviation: true,
   exportZoneDerivedScanLists: true,
   multiTalkGroupExportNameMode: DEFAULT_MULTI_TG_EXPORT_NAME_MODE,
+  digitalContactExportNameMode: DEFAULT_DIGITAL_CONTACT_EXPORT_NAME_MODE,
   expandRxGroupListMembers: 'all',
 };
 
@@ -44,6 +49,9 @@ function storedToCpsOptions(stored: BuildExportSettings): CpsExportOptions {
   }
   if (stored.multiTalkGroupExportNameMode !== undefined) {
     options.multiTalkGroupExportNameMode = stored.multiTalkGroupExportNameMode;
+  }
+  if (stored.digitalContactExportNameMode !== undefined) {
+    options.digitalContactExportNameMode = stored.digitalContactExportNameMode;
   }
   if (stored.expandModes !== undefined) options.expandModes = stored.expandModes;
   if (stored.expandRxGroupLists !== undefined) {
@@ -91,10 +99,12 @@ export function mergeExportOptions(
     useTalkGroupAbbreviation: DEFAULT_BUILD_EXPORT_SETTINGS.useTalkGroupAbbreviation,
     exportZoneDerivedScanLists: DEFAULT_BUILD_EXPORT_SETTINGS.exportZoneDerivedScanLists,
     multiTalkGroupExportNameMode: DEFAULT_BUILD_EXPORT_SETTINGS.multiTalkGroupExportNameMode,
+    digitalContactExportNameMode: DEFAULT_BUILD_EXPORT_SETTINGS.digitalContactExportNameMode,
     expandRxGroupListMembers: DEFAULT_BUILD_EXPORT_SETTINGS.expandRxGroupListMembers,
     ...applyFormatExportDefaults(formatDefaults),
     ...storedToCpsOptions(stored),
     ...options,
     profileId: options?.profileId ?? build.profileId,
+    contactOverrides: options?.contactOverrides ?? build.contactOverrides,
   };
 }

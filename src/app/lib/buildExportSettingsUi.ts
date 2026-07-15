@@ -1,6 +1,8 @@
 import { DEFAULT_BUILD_EXPORT_SETTINGS } from '@core/import-export/exportSettingsMerge.ts';
+import { DEFAULT_DIGITAL_CONTACT_EXPORT_NAME_MODE } from '@core/import-export/types.ts';
 import { getFormatExportDefaults } from '@core/import-export/registry.ts';
 import type { BuildExportSettings, FormatBuild } from '@core/models/formatBuild.ts';
+import type { DigitalContactExportNameMode } from '@core/import-export/types.ts';
 
 export type ResolvedBuildExportSettings = Required<
   Pick<
@@ -12,6 +14,7 @@ export type ResolvedBuildExportSettings = Required<
     | 'exportZoneDerivedScanLists'
     | 'expandRxGroupLists'
     | 'exportScratchChannels'
+    | 'digitalContactExportNameMode'
   >
 > &
   Pick<BuildExportSettings, 'maxNameLength' | 'defaultScanInclusion'>;
@@ -37,6 +40,10 @@ export function resolvedBuildExportSettings(build: FormatBuild): ResolvedBuildEx
     exportZoneDerivedScanLists: stored.exportZoneDerivedScanLists ?? exportZoneDerivedDefault,
     expandRxGroupLists: stored.expandRxGroupLists ?? expandRxGroupListsDefault,
     exportScratchChannels: stored.exportScratchChannels ?? exportScratchChannelsDefault,
+    digitalContactExportNameMode:
+      stored.digitalContactExportNameMode ?? DEFAULT_DIGITAL_CONTACT_EXPORT_NAME_MODE,
     defaultScanInclusion: stored.defaultScanInclusion,
   };
 }
+
+export type { DigitalContactExportNameMode };

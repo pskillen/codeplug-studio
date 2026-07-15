@@ -6,6 +6,7 @@ export interface BuildEntityWirePageProps {
   entityKind: import('@core/services/previewWireRows.ts').WirePreviewEntityKind;
   description?: string;
   showExportNameMode?: boolean;
+  showDigitalContactExportNameMode?: boolean;
   showLibraryAbbreviations?: boolean;
   /** @deprecated Overrides edited via modal or bulk edit */
   clickableDefaultWireName?: boolean;

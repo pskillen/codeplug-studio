@@ -164,23 +164,25 @@ DM32 zone export flags (`exportScratchChannel`, `exportScanList`, `scanCarrierFr
 
 ## `formatBuilds[]`
 
-| Field                        | Type                             |
-| ---------------------------- | -------------------------------- |
-| _(persistable row)_          |                                  |
-| `formatId`                   | string                           |
-| `profileId`                  | string                           |
-| `name`                       | string                           |
-| `layout`                     | `TraitLayout`                    |
-| `channelOverrides`           | `BuildEntityOverride[]`          |
-| `zoneOverrides`              | `BuildEntityOverride[]`          |
-| `talkGroupOverrides`         | `BuildEntityOverride[]`          |
-| `rxGroupListOverrides`       | `BuildEntityOverride[]`          |
-| `scanListOverrides`          | `BuildEntityOverride[]`          |
-| `contactOverrides`           | `BuildEntityOverride[]`          |
-| `exportUnlinkedChannels`     | boolean (optional)               |
-| `exportUnlinkedTalkGroups`   | boolean (optional)               |
-| `exportUnlinkedRxGroupLists` | boolean (optional)               |
-| `exportSettings`             | `BuildExportSettings` (optional) |
+| Field                           | Type                             |
+| ------------------------------- | -------------------------------- |
+| _(persistable row)_             |                                  |
+| `formatId`                      | string                           |
+| `profileId`                     | string                           |
+| `name`                          | string                           |
+| `layout`                        | `TraitLayout`                    |
+| `channelOverrides`              | `BuildEntityOverride[]`          |
+| `zoneOverrides`                 | `BuildEntityOverride[]`          |
+| `talkGroupOverrides`            | `BuildEntityOverride[]`          |
+| `rxGroupListOverrides`          | `BuildEntityOverride[]`          |
+| `scanListOverrides`             | `BuildEntityOverride[]`          |
+| `contactOverrides`              | `BuildEntityOverride[]`          |
+| `exportUnlinkedChannels`        | boolean (optional)               |
+| `exportUnlinkedTalkGroups`      | boolean (optional)               |
+| `exportUnlinkedRxGroupLists`    | boolean (optional)               |
+| `exportUnlinkedDigitalContacts` | boolean (optional)               |
+| `exportUnlinkedAnalogContacts`  | boolean (optional)               |
+| `exportSettings`                | `BuildExportSettings` (optional) |
 
 `exportSettings` fields: `defaultScanInclusion`, `shortenNames`, `maxNameLength`, `nameModeOverride`, `useChannelAbbreviation`, `useTalkGroupAbbreviation`, `exportZoneDerivedScanLists`, `expandModes`, `expandRxGroupLists`, …
 

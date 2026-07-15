@@ -235,7 +235,6 @@ describe('anytone serialise', () => {
     const build = {
       ...newFormatBuild(PROJECT_ID, 'anytone-at-d890uv'),
       layout: { sections: [{ kind: 'zoneGrouping' as const, zones: [] }] },
-      contactOverrides: [{ libraryEntityId: contact.id, wireName: 'W1AW' }],
     };
     const library = {
       channels: [],
@@ -266,13 +265,49 @@ describe('anytone serialise', () => {
     expect(table.rows).toHaveLength(1);
     expect(table.rows[0]?.[1]).toBe('1234567');
     expect(table.rows[0]?.[2]).toBe('W1AW');
-    expect(table.rows[0]?.[3]).toBe('W1AW');
+    expect(table.rows[0]?.[3]).toBe('Hiram Percy');
     expect(table.rows[0]?.[4]).toBe('Newington');
     expect(table.rows[0]?.[5]).toBe('Connecticut');
     expect(table.rows[0]?.[6]).toBe('United States');
     expect(table.rows[0]?.[7]).toBe('ARRL HQ');
     expect(table.rows[0]?.[8]).toBe('Private Call');
     expect(table.rows[0]?.[9]).toBe('None');
+  });
+
+  it('composes contact Name from export name mode and allows duplicate names', () => {
+    const contactA = {
+      ...newDigitalContact(PROJECT_ID, 'Ada', 1001),
+      callsign: 'M7ABC',
+    };
+    const contactB = {
+      ...newDigitalContact(PROJECT_ID, 'Bob', 1002),
+      callsign: 'M7ABC',
+    };
+    const build = {
+      ...newFormatBuild(PROJECT_ID, 'anytone-at-d890uv'),
+      layout: { sections: [{ kind: 'zoneGrouping' as const, zones: [] }] },
+      exportSettings: { digitalContactExportNameMode: 'callsign-name' as const },
+    };
+    const library = {
+      channels: [],
+      zones: [],
+      talkGroups: [],
+      digitalContacts: [contactA, contactB],
+      analogContacts: [],
+      rxGroupLists: [],
+      scanLists: [],
+    };
+
+    const assembled = assemble(build, library);
+    const files = serialiseAnytoneFiles(assembled, library, {
+      digitalContactExportNameMode: 'callsign-name',
+      shortenNames: false,
+    });
+    const table = csvToTable(files['DMRDigitalContactList.CSV']);
+    const nameIndex = table.headers.indexOf('Name');
+
+    expect(table.rows.map((row) => row[nameIndex])).toEqual(['M7ABC Ada', 'M7ABC Bob']);
+    expect(table.rows.every((row) => !/\s2$/.test(row[nameIndex] ?? ''))).toBe(true);
   });
 
   it('omits zone-derived ScanList.CSV rows when master toggle is off', () => {

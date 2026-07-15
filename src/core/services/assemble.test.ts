@@ -2,7 +2,13 @@ import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
-import { newChannel, newFormatBuild, newScanList, newTalkGroup } from '@core/domain/factories.ts';
+import {
+  newChannel,
+  newDigitalContact,
+  newFormatBuild,
+  newScanList,
+  newTalkGroup,
+} from '@core/domain/factories.ts';
 import { parseProjectDocument } from '@core/import-export/formats/native-yaml/parse.ts';
 import { assemble, exportInclusionWarnings } from './assemble.ts';
 import { exportBuildAll } from './exportBuild.ts';
@@ -178,6 +184,45 @@ describe('assemble', () => {
     const projection = assemble(build, library);
     expect(projection.talkGroups.map((row) => row.entity.id)).not.toContain(orphanTalkGroup.id);
     expect(projection.talkGroups).toHaveLength(1);
+  });
+
+  it('includes unlinked digital contacts when exportUnlinkedDigitalContacts is true (default)', () => {
+    const projectId = 'proj-orphan-contact';
+    const orphanContact = newDigitalContact(projectId, 'Orphan User', 9999999);
+    const build = newFormatBuild(projectId, 'anytone-at-d890uv');
+    const library = {
+      channels: [],
+      zones: [],
+      talkGroups: [],
+      digitalContacts: [orphanContact],
+      analogContacts: [],
+      rxGroupLists: [],
+      scanLists: [],
+    };
+
+    const projection = assemble(build, library);
+    expect(projection.digitalContacts.map((row) => row.entity.id)).toContain(orphanContact.id);
+  });
+
+  it('excludes unlinked digital contacts when exportUnlinkedDigitalContacts is false', () => {
+    const projectId = 'proj-orphan-contact-off';
+    const orphanContact = newDigitalContact(projectId, 'Orphan User', 9999999);
+    const build = {
+      ...newFormatBuild(projectId, 'anytone-at-d890uv'),
+      exportUnlinkedDigitalContacts: false,
+    };
+    const library = {
+      channels: [],
+      zones: [],
+      talkGroups: [],
+      digitalContacts: [orphanContact],
+      analogContacts: [],
+      rxGroupLists: [],
+      scanLists: [],
+    };
+
+    const projection = assemble(build, library);
+    expect(projection.digitalContacts.map((row) => row.entity.id)).not.toContain(orphanContact.id);
   });
 
   it('excludes unzoned channels when exportUnlinkedChannels is false', () => {

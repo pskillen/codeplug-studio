@@ -8,6 +8,7 @@ import { showsDefaultScanInclusion, hasMxNChannelExpansion } from '@core/models/
 import type { FormatExportDefaults } from '@core/import-export/types.ts';
 import { FieldCard } from '../fields/Fields.tsx';
 import ExportNameSettingsFields from './ExportNameSettingsFields.tsx';
+import ExportAnytoneSettingsSections from './ExportAnytoneSettingsSections.tsx';
 import DefaultScanInclusionSegment from './DefaultScanInclusionSegment.tsx';
 import type { ResolvedBuildExportSettings } from '../../lib/buildExportSettingsUi.ts';
 import { TRAIT_LABELS } from '../../routes/builds/buildHelpers.ts';
@@ -22,7 +23,12 @@ export interface ExportBuildSettingsSectionsProps {
   defaultScanValue: DefaultScanInclusion;
   onExportSettingsPatch: (patch: Partial<BuildExportSettings>) => void;
   onExportInclusionChange: (
-    field: 'exportUnlinkedChannels' | 'exportUnlinkedTalkGroups' | 'exportUnlinkedRxGroupLists',
+    field:
+      | 'exportUnlinkedChannels'
+      | 'exportUnlinkedTalkGroups'
+      | 'exportUnlinkedRxGroupLists'
+      | 'exportUnlinkedDigitalContacts'
+      | 'exportUnlinkedAnalogContacts',
     checked: boolean,
   ) => void;
 }
@@ -38,6 +44,20 @@ export default function ExportBuildSettingsSections({
   onExportSettingsPatch,
   onExportInclusionChange,
 }: ExportBuildSettingsSectionsProps) {
+  if (build.formatId === 'anytone') {
+    return (
+      <ExportAnytoneSettingsSections
+        build={build}
+        saving={saving}
+        settingsError={settingsError}
+        profileNameLimit={profileNameLimit}
+        resolvedSettings={resolvedSettings}
+        onExportSettingsPatch={onExportSettingsPatch}
+        onExportInclusionChange={onExportInclusionChange}
+      />
+    );
+  }
+
   const isChirp = build.formatId === 'chirp';
   const showChannelExpansion = hasMxNChannelExpansion(build.profileId);
 
@@ -75,6 +95,25 @@ export default function ExportBuildSettingsSections({
               disabled={saving}
               onChange={(event) =>
                 onExportInclusionChange('exportUnlinkedRxGroupLists', event.currentTarget.checked)
+              }
+            />
+            <Switch
+              label="Export digital contacts not referenced by a channel"
+              checked={build.exportUnlinkedDigitalContacts !== false}
+              disabled={saving}
+              onChange={(event) =>
+                onExportInclusionChange(
+                  'exportUnlinkedDigitalContacts',
+                  event.currentTarget.checked,
+                )
+              }
+            />
+            <Switch
+              label="Export analog contacts not referenced by a channel"
+              checked={build.exportUnlinkedAnalogContacts !== false}
+              disabled={saving}
+              onChange={(event) =>
+                onExportInclusionChange('exportUnlinkedAnalogContacts', event.currentTarget.checked)
               }
             />
           </>

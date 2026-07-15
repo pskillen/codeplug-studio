@@ -138,7 +138,11 @@ export class BuildService {
     flags: Partial<
       Pick<
         FormatBuild,
-        'exportUnlinkedChannels' | 'exportUnlinkedTalkGroups' | 'exportUnlinkedRxGroupLists'
+        | 'exportUnlinkedChannels'
+        | 'exportUnlinkedTalkGroups'
+        | 'exportUnlinkedRxGroupLists'
+        | 'exportUnlinkedDigitalContacts'
+        | 'exportUnlinkedAnalogContacts'
       >
     >,
   ): FormatBuild {

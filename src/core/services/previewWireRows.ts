@@ -22,6 +22,11 @@ import {
   formatUsesListNameShortening,
 } from '@core/import-export/channelExpansion/listWireNames.ts';
 import {
+  applyDigitalContactExportWireName,
+  resolveAnalogContactExportBaseName,
+  resolveDigitalContactExportBaseName,
+} from '@core/import-export/digitalContactExportName.ts';
+import {
   assemble,
   channelInAnyZoneMembership,
   zoneLinkedChannelIds,
@@ -554,18 +559,17 @@ export function previewWireRows(
       });
     }
     case 'contact': {
-      const shortenListNames = formatUsesListNameShortening(build.formatId);
       const shortenContacts = build.formatId === 'anytone' || build.formatId === 'opengd77';
-      const reserved = shortenContacts ? new Set<string>() : null;
+      const mode = _options?.digitalContactExportNameMode ?? 'name';
+      const contactOverrides = _options?.contactOverrides ?? build.contactOverrides;
       const warnings: string[] = [];
       const rows: WirePreviewRow[] = [];
       for (const contact of library.digitalContacts) {
         const assembled = projection.digitalContacts.find((row) => row.entity.id === contact.id);
-        const baseWireName = assembled?.wireName ?? contact.name;
-        const generatedWireName =
-          shortenContacts && shortenListNames
-            ? applyListWireNameLimits(baseWireName, reserved!, _options, build.profileId, warnings)
-            : contact.name;
+        const baseWireName = resolveDigitalContactExportBaseName(contact, contactOverrides, mode);
+        const generatedWireName = shortenContacts
+          ? applyDigitalContactExportWireName(baseWireName, _options, build.profileId, warnings)
+          : contact.name;
         rows.push(
           previewRow(
             contact.id,
@@ -580,11 +584,10 @@ export function previewWireRows(
       }
       for (const contact of library.analogContacts) {
         const assembled = projection.analogContacts.find((row) => row.entity.id === contact.id);
-        const baseWireName = assembled?.wireName ?? contact.name;
-        const generatedWireName =
-          shortenContacts && shortenListNames
-            ? applyListWireNameLimits(baseWireName, reserved!, _options, build.profileId, warnings)
-            : contact.name;
+        const baseWireName = resolveAnalogContactExportBaseName(contact, contactOverrides);
+        const generatedWireName = shortenContacts
+          ? applyDigitalContactExportWireName(baseWireName, _options, build.profileId, warnings)
+          : contact.name;
         rows.push(
           previewRow(
             contact.id,
@@ -648,10 +651,11 @@ export function isPreviewRowIncludedInExport(
     case 'talkGroup':
       if (build.exportUnlinkedTalkGroups !== false) return true;
       return row.expansionNote !== PREVIEW_ROW_NOT_REFERENCED_NOTE;
+    case 'contact':
+      if (build.exportUnlinkedDigitalContacts !== false) return true;
+      return row.expansionNote !== PREVIEW_ROW_NOT_REFERENCED_NOTE;
     case 'rxGroupList':
       if (build.exportUnlinkedRxGroupLists !== false) return true;
-      return row.expansionNote !== PREVIEW_ROW_NOT_REFERENCED_NOTE;
-    case 'contact':
       return row.expansionNote !== PREVIEW_ROW_NOT_REFERENCED_NOTE;
     case 'zone':
       if (row.forceInclude) return true;

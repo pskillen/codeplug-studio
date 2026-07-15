@@ -81,11 +81,13 @@ YAML import/export includes `formatBuilds[]` in the project document.
 
 Per-build toggles on `FormatBuild` (default **on**) control whether orphan library entities are included in CPS export:
 
-| Field                        | When enabled (default)                               |
-| ---------------------------- | ---------------------------------------------------- |
-| `exportUnlinkedChannels`     | Channels not in any zone member list                 |
-| `exportUnlinkedTalkGroups`   | Talk groups not referenced by an exported channel    |
-| `exportUnlinkedRxGroupLists` | RX group lists not referenced by an exported channel |
+| Field                           | When enabled (default)                                 |
+| ------------------------------- | ------------------------------------------------------ |
+| `exportUnlinkedChannels`        | Channels not in any zone member list                   |
+| `exportUnlinkedTalkGroups`      | Talk groups not referenced by an exported channel      |
+| `exportUnlinkedRxGroupLists`    | RX group lists not referenced by an exported channel   |
+| `exportUnlinkedDigitalContacts` | Digital contacts not referenced by an exported channel |
+| `exportUnlinkedAnalogContacts`  | Analog contacts not referenced by an exported channel  |
 
 Switches on `/builds/:id/export` persist to the build row. Wire preview `includedPreviewWireRows` honours the same flags.
 

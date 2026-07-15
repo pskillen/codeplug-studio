@@ -2,6 +2,11 @@ import type { AssembledBuild } from '@core/services/assemble.ts';
 import type { CpsExportOptions } from '@core/import-export/types.ts';
 import { expandChannelWireRows } from '@core/import-export/channelExpansion/multiMode.ts';
 import { buildListWireNameMap } from '@core/import-export/channelExpansion/listWireNames.ts';
+import {
+  applyDigitalContactExportWireName,
+  buildDigitalContactExportWireNameMap,
+  resolveAnalogContactExportBaseName,
+} from '@core/import-export/digitalContactExportName.ts';
 import { DEFAULT_OPENGD77_PROFILE_ID } from './profiles.ts';
 
 export interface OpenGd77ListWireMaps {
@@ -71,28 +76,20 @@ export function buildOpenGd77ListWireMaps(
     warnings,
   );
 
-  const contactEntries: Array<{ id: string; wireName: string; entityKind: 'Contact' }> = [];
-  for (const contact of exportAssembled.digitalContacts) {
-    contactEntries.push({
-      id: contact.entity.id,
-      wireName: contact.wireName,
-      entityKind: 'Contact',
-    });
-  }
-  for (const contact of exportAssembled.analogContacts) {
-    contactEntries.push({
-      id: contact.entity.id,
-      wireName: contact.wireName,
-      entityKind: 'Contact',
-    });
-  }
-  const contactWireNames = buildListWireNameMap(
-    contactEntries,
-    reserved,
+  const contactWireNames = buildDigitalContactExportWireNameMap(
+    exportAssembled.digitalContacts,
+    options?.contactOverrides,
     options,
     profileId,
     warnings,
   );
+  for (const contact of exportAssembled.analogContacts) {
+    const base = resolveAnalogContactExportBaseName(contact.entity, options?.contactOverrides);
+    contactWireNames.set(
+      contact.entity.id,
+      applyDigitalContactExportWireName(base, options, profileId, warnings),
+    );
+  }
 
   return { zoneWireNames, rxGroupListWireNames, contactWireNames };
 }

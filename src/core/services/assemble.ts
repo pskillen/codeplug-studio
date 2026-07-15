@@ -289,6 +289,8 @@ function withExportInclusionDefaults(build: FormatBuild): FormatBuild {
     exportUnlinkedChannels: build.exportUnlinkedChannels ?? true,
     exportUnlinkedTalkGroups: build.exportUnlinkedTalkGroups ?? true,
     exportUnlinkedRxGroupLists: build.exportUnlinkedRxGroupLists ?? true,
+    exportUnlinkedDigitalContacts: build.exportUnlinkedDigitalContacts ?? true,
+    exportUnlinkedAnalogContacts: build.exportUnlinkedAnalogContacts ?? true,
   };
 }
 
@@ -479,6 +481,28 @@ export function exportInclusionWarnings(
     }
   }
 
+  if (normalized.exportUnlinkedDigitalContacts !== false) {
+    const orphanContactCount = assembled.digitalContacts.filter(
+      (row) => !refs.digitalContactIds.has(row.entity.id),
+    ).length;
+    if (orphanContactCount > 0) {
+      warnings.push(
+        `Including ${orphanContactCount} digital contact(s) not referenced by a channel`,
+      );
+    }
+  }
+
+  if (normalized.exportUnlinkedAnalogContacts !== false) {
+    const orphanContactCount = assembled.analogContacts.filter(
+      (row) => !refs.analogContactIds.has(row.entity.id),
+    ).length;
+    if (orphanContactCount > 0) {
+      warnings.push(
+        `Including ${orphanContactCount} analog contact(s) not referenced by a channel`,
+      );
+    }
+  }
+
   warnings.push(
     ...collectZoneFlattenWarnings(
       library.zones,
@@ -560,13 +584,13 @@ export function assemble(
       normalizedBuild.contactOverrides,
       library.digitalContacts,
       digitalContactIds,
-      false,
+      normalizedBuild.exportUnlinkedDigitalContacts !== false,
     ),
     analogContacts: assembleEntityList(
       normalizedBuild.contactOverrides,
       library.analogContacts,
       analogContactIds,
-      false,
+      normalizedBuild.exportUnlinkedAnalogContacts !== false,
     ),
     rxGroupLists: assembleEntityList(
       normalizedBuild.rxGroupListOverrides,

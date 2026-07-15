@@ -3,6 +3,7 @@ import type { TraitLayout } from './traitLayout.ts';
 import type {
   ExpandRxGroupListMembers,
   MultiTalkGroupExportNameMode,
+  DigitalContactExportNameMode,
 } from '@core/import-export/types.ts';
 import type { ChannelExportNameMode } from './library.ts';
 
@@ -20,6 +21,7 @@ export interface BuildExportSettings {
   useTalkGroupAbbreviation?: boolean;
   exportZoneDerivedScanLists?: boolean;
   multiTalkGroupExportNameMode?: MultiTalkGroupExportNameMode;
+  digitalContactExportNameMode?: DigitalContactExportNameMode;
   expandModes?: boolean;
   expandRxGroupLists?: boolean;
   expandRxGroupListMembers?: ExpandRxGroupListMembers;
@@ -62,6 +64,10 @@ export interface FormatBuild extends PersistableRow {
   exportUnlinkedTalkGroups?: boolean;
   /** Include RX group lists not referenced by exported channels. Default true. */
   exportUnlinkedRxGroupLists?: boolean;
+  /** Include digital contacts not referenced by exported channels. Default true. */
+  exportUnlinkedDigitalContacts?: boolean;
+  /** Include analog contacts not referenced by exported channels. Default true. */
+  exportUnlinkedAnalogContacts?: boolean;
   /** Export-affecting preferences for this build (name shortening, scan defaults, …). */
   exportSettings?: BuildExportSettings;
 }

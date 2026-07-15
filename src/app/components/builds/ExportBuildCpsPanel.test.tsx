@@ -186,9 +186,10 @@ describe('ExportBuildCpsPanel', () => {
       </MantineProvider>,
     );
 
-    expect(await screen.findByText('Scanning')).toBeInTheDocument();
+    expect(await screen.findByText('Scan lists')).toBeInTheDocument();
     expect(screen.queryByText('Default scan behaviour')).not.toBeInTheDocument();
     expect(screen.getByText(/Library → Scan lists/i)).toBeInTheDocument();
+    expect(screen.getByText(/Export zone-derived scan lists/i)).toBeInTheDocument();
   });
 
   it('opens CSV preview modal with per-file tabs after Preview CSV', async () => {

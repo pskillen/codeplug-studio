@@ -80,6 +80,8 @@ export function newFormatBuild(projectId: string, profileId: string, name?: stri
     exportUnlinkedChannels: true,
     exportUnlinkedTalkGroups: true,
     exportUnlinkedRxGroupLists: true,
+    exportUnlinkedDigitalContacts: true,
+    exportUnlinkedAnalogContacts: true,
   };
 }
 

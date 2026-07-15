@@ -144,6 +144,8 @@ export function normalizeFormatBuildFields(build: LegacyFormatBuild): FormatBuil
     exportUnlinkedChannels: build.exportUnlinkedChannels ?? true,
     exportUnlinkedTalkGroups: build.exportUnlinkedTalkGroups ?? true,
     exportUnlinkedRxGroupLists: build.exportUnlinkedRxGroupLists ?? true,
+    exportUnlinkedDigitalContacts: build.exportUnlinkedDigitalContacts ?? true,
+    exportUnlinkedAnalogContacts: build.exportUnlinkedAnalogContacts ?? true,
   };
   return migrateFlatMemoryLayoutOrderOnly(normalized);
 }

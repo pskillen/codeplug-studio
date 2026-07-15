@@ -1,11 +1,19 @@
 import type { DefaultScanInclusion } from '@core/models/formatBuild.ts';
 import type { MultiTalkGroupExportNameMode } from './channelExpansion/multiTalkGroupWireName.ts';
+import type { DigitalContactExportNameMode } from './digitalContactExportName.ts';
 
 /** Canonical format ids — shared by registry and future UI. */
 export type FormatId = 'native-yaml' | 'opengd77' | 'chirp' | 'dm32' | 'anytone' | 'qdmr';
 
 export type { MultiTalkGroupExportNameMode } from './channelExpansion/multiTalkGroupWireName.ts';
 export { DEFAULT_MULTI_TG_EXPORT_NAME_MODE } from './channelExpansion/multiTalkGroupWireName.ts';
+export type { DigitalContactExportNameMode } from './digitalContactExportName.ts';
+export {
+  DEFAULT_DIGITAL_CONTACT_EXPORT_NAME_MODE,
+  DIGITAL_CONTACT_EXPORT_NAME_MODES,
+  digitalContactExportNameModeLabel,
+  isDigitalContactExportNameMode,
+} from './digitalContactExportName.ts';
 
 export type { DefaultScanInclusion } from '@core/models/formatBuild.ts';
 
@@ -86,6 +94,10 @@ export interface CpsExportOptions {
   expandRxGroupListMembers?: ExpandRxGroupListMembers;
   /** How multi-TG expanded rows compose wire names. Default `callsign_tg_abbrev`. */
   multiTalkGroupExportNameMode?: MultiTalkGroupExportNameMode;
+  /** How digital contact CPS `Name` is composed from library fields. Default `name`. */
+  digitalContactExportNameMode?: DigitalContactExportNameMode;
+  /** Build contact overrides — used to honour per-contact wire name overrides at export. */
+  contactOverrides?: readonly import('@core/models/formatBuild.ts').BuildEntityOverride[];
   /** When false, skip zone-derived Scan.csv synthesis on DM32 export. Default true. */
   exportZoneDerivedScanLists?: boolean;
   /** When true with expandRxGroupLists, emit one scratch companion row per expanded repeater channel. */
