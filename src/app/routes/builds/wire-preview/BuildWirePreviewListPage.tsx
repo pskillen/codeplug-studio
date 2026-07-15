@@ -149,6 +149,7 @@ function BuildWirePreviewListContent({
         ) : null}
         <WirePreviewDataTable
           rows={rows}
+          entityKind={entityKind}
           search={search}
           onSearchChange={setSearch}
           onRowActivate={(row) => setSelectedRowKey(row.key)}

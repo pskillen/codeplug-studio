@@ -18,7 +18,7 @@ Operator workflow for reviewing and shaping CPS wire names before export. Each b
 
 **Sort and filter** on list pages are client-side convenience only — they do **not** change export order. CHIRP memory order is updated only via up/down reorder controls (or library edits), not table sort.
 
-Large contact builds inherit shared [`DataTable`](../../src/app/components/ui/DataTable.md) virtual tbody rendering (`virtualize: 'auto'`, threshold 75 rows) for responsive scrolling.
+Build **contacts** wire preview debounces toolbar search (300 ms), matches **library name or callsign**, and shows a **Callsign** column for digital contacts. Large contact builds inherit shared [`DataTable`](../../src/app/components/ui/DataTable.md) virtual tbody rendering (`virtualize: 'auto'`, threshold 75 rows) for responsive scrolling.
 
 ## Override semantics
 

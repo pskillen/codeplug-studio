@@ -95,6 +95,8 @@ export interface WirePreviewRow {
   forceInclude?: boolean;
   /** Direct library zone members — zones wire preview only. */
   zoneDirectMembers?: WirePreviewZoneDirectMembers;
+  /** Digital contact callsign from library — contact wire preview search/column. */
+  libraryCallsign?: string;
 }
 
 export function overrideFieldForEntityKind(entityKind: WirePreviewEntityKind): OverrideField {
@@ -139,6 +141,7 @@ function previewRow(
   overrides: FormatBuild[OverrideField],
   expansionNote?: string,
   displayDetails?: WirePreviewDisplayLine[],
+  libraryCallsign?: string,
 ): WirePreviewRow {
   const override = overrideByEntityId(overrides).get(key);
   const excluded = override?.excluded === true;
@@ -155,6 +158,7 @@ function previewRow(
     excluded,
     expansionNote,
     displayDetails,
+    libraryCallsign,
   };
 }
 
@@ -579,6 +583,8 @@ export function previewWireRows(
             generatedWireName,
             build.contactOverrides,
             assembled ? undefined : PREVIEW_ROW_NOT_REFERENCED_NOTE,
+            undefined,
+            contact.callsign,
           ),
         );
       }

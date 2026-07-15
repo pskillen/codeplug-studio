@@ -1,9 +1,11 @@
 import { useMemo, useState } from 'react';
+import { useDebouncedValue } from '@mantine/hooks';
 import { ActionIcon, Badge, Group, Stack, Switch, Text } from '@mantine/core';
 import { IconArrowDown, IconArrowUp } from '@tabler/icons-react';
-import type { WirePreviewRow } from '@core/services/previewWireRows.ts';
+import type { WirePreviewEntityKind, WirePreviewRow } from '@core/services/previewWireRows.ts';
 import type { ZoneGroupingLayout } from '@core/models/traitLayout.ts';
 import { layoutEntry } from '@core/import-export/zoneDerivedScanLists/members.ts';
+import { LIST_NAME_FILTER_DEBOUNCE_MS } from '@integrations/listPrefs/index.ts';
 import DataTable, { type DataTableSortState } from '../../ui/DataTable.tsx';
 import WirePreviewListNameCell from './WirePreviewListNameCell.tsx';
 import WirePreviewDisplayCell from './WirePreviewDisplayCell.tsx';
@@ -26,6 +28,7 @@ export interface WirePreviewZoneScanColumnConfig {
 export interface WirePreviewDataTableProps {
   rows: WirePreviewRow[];
   onRowActivate: (row: WirePreviewRow) => void;
+  entityKind?: WirePreviewEntityKind;
   search?: string;
   onSearchChange?: (value: string) => void;
   sort?: DataTableSortState | null;
@@ -39,6 +42,7 @@ export interface WirePreviewDataTableProps {
 function rowSearchText(row: WirePreviewRow): string {
   return [
     row.displayLabel,
+    row.libraryCallsign ?? '',
     row.generatedWireName,
     row.effectiveWireName,
     row.expansionNote ?? '',
@@ -51,7 +55,8 @@ function rowSearchText(row: WirePreviewRow): string {
 export default function WirePreviewDataTable({
   rows,
   onRowActivate,
-  search,
+  entityKind,
+  search = '',
   onSearchChange,
   sort,
   onSortChange,
@@ -63,12 +68,13 @@ export default function WirePreviewDataTable({
   const [internalSort, setInternalSort] = useState<DataTableSortState | null>(null);
   const effectiveSort = sort !== undefined ? sort : internalSort;
   const setSort = onSortChange ?? setInternalSort;
+  const [debouncedSearch] = useDebouncedValue(search, LIST_NAME_FILTER_DEBOUNCE_MS);
 
   const filteredRows = useMemo(() => {
-    const q = search?.trim().toLowerCase();
+    const q = debouncedSearch?.trim().toLowerCase();
     if (!q) return rows;
     return rows.filter((row) => rowSearchText(row).includes(q));
-  }, [rows, search]);
+  }, [rows, debouncedSearch]);
 
   const reorderIndexByKey = useMemo(() => {
     if (!reorder) return new Map<string, number>();
@@ -98,6 +104,19 @@ export default function WirePreviewDataTable({
                 sortValue: (row: WirePreviewRow) => locationByKey.get(row.key) ?? 0,
                 render: (row: WirePreviewRow) => (
                   <Text size="sm">{locationByKey.get(row.key) ?? '—'}</Text>
+                ),
+              },
+            ]
+          : []),
+        ...(entityKind === 'contact'
+          ? [
+              {
+                key: 'callsign',
+                header: 'Callsign',
+                sortable: true,
+                sortValue: (row: WirePreviewRow) => row.libraryCallsign?.toLowerCase() ?? '',
+                render: (row: WirePreviewRow) => (
+                  <Text size="sm">{row.libraryCallsign?.trim() || '—'}</Text>
                 ),
               },
             ]
@@ -232,7 +251,10 @@ export default function WirePreviewDataTable({
       onSortChange={setSort}
       search={search}
       onSearchChange={onSearchChange}
-      searchPlaceholder="Filter preview rows…"
+      searchPending={search !== debouncedSearch}
+      searchPlaceholder={
+        entityKind === 'contact' ? 'Filter name or callsign…' : 'Filter preview rows…'
+      }
       totalRowCount={rows.length}
       resultCount={filteredRows.length}
       filteredEmptyMessage="No matching rows"
