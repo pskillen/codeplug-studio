@@ -72,6 +72,8 @@ When `Channel Type` indicates NXDN operation, map to `ChannelModeProfileNxdn` (`
 | Import    | Planned ([#229](https://github.com/pskillen/codeplug-studio/issues/229)) |
 | Export    | Deferred post-DMR MVP                                                    |
 
+**Wire elicitation:** D890 NXDN column/enum gap analysis is deferred until NXDN export is scheduled under epic [#247](https://github.com/pskillen/codeplug-studio/issues/247) (repeat the [#357](https://github.com/pskillen/codeplug-studio/issues/357) worksheet for the NX\* set).
+
 ## Related
 
 - [channels.md](channels.md)

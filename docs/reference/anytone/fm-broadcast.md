@@ -10,8 +10,10 @@ Separate **broadcast FM receive memory bank** for AT-D890UV.
 | ---------------- | -------------------------------------------- |
 | `No.`            | Slot index; VFO at `101` in sample           |
 | `Frequency[MHz]` | Receive frequency (MHz, 3 decimal in sample) |
-| `Scan`           | Scan list participation (`Add` / `Del`)      |
+| `Scan`           | Scan participation — confirmed `Add` / `Del` (include / exclude) |
 | `Name`           | Wire label                                   |
+
+There is **no `FMZone.CSV`** on AT-D890UV.
 
 ## Internal model mapping
 
@@ -19,7 +21,7 @@ Separate **broadcast FM receive memory bank** for AT-D890UV.
 | ---------------- | ------------------------------------------------------ | ------------------------------------------------------------------------ |
 | `Frequency[MHz]` | `Channel.rxFrequency` (Hz)                             | **Maps today**                                                           |
 | `Name`           | `Channel.name` / build `wireName`                      | **Maps today**                                                           |
-| `No.`            | `channelOverrides.orderOrSlot` in FM bank              | VFO at fixed high slot (`101` in sample)                                 |
+| `No.`            | `channelOverrides.orderOrSlot` in FM bank              | VFO at fixed high slot (`101` in sample) — optional; CPS may correct     |
 | `Scan`           | `Channel.scanInclusion` + build `defaultScanInclusion` | **Maps today** — `Add` when effective inclusion is scan, `Del` when skip |
 | _(implicit)_     | `modeProfiles: [{ mode: 'fm', … }]`                    | **Maps today**                                                           |
 | _(implicit)_     | `forbidTransmit: true`                                 | **Maps today**                                                           |

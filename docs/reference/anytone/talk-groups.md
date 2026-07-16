@@ -14,9 +14,9 @@ Group calls → internal `TalkGroup` with `mode: 'dmr'`.
 | `Radio ID`   | `TalkGroup.digitalId`               |
 | `Name`       | `TalkGroup.name` / build `wireName` |
 | `Call Type`  | `Group Call` for talk groups        |
-| `Call Alert` | Export constant / TBD               |
+| `Call Alert` | Export constant `None` (`Online alert` observed; not modelled) |
 
-Referenced from `Channel.CSV` via `Contact/Talk Group` when `Contact/Talk Group Call Type` is `Group Call`.
+Referenced from `Channel.CSV` via `Contact/Talk Group` when `Contact/Talk Group Call Type` is `Group Call`. Address columns (`Callsign`, City, …) do **not** apply at talk-group level.
 
 ## DMRDigitalContactList.CSV
 
@@ -35,20 +35,18 @@ Private calls → internal `DigitalContact` with `mode: 'dmr'`.
 | `Country`    | `DigitalContact.country`                                                      |
 | `Remarks`    | `DigitalContact.remarks`                                                      |
 | `Call Type`  | `Private Call`                                                                |
-| `Call Alert` | Export default `None`                                                         |
+| `Call Alert` | Export default `None` (`None` / `Online alert` confirmed; not modelled)       |
 
-Unmodelled address columns export empty strings when library fields are unset. `Call Alert` remains export constant `None` until CPS enum elicitation ([#297](https://github.com/pskillen/codeplug-studio/issues/297)).
+Address columns (`Callsign`, City, State, Country, Remarks) apply to **digital contacts only**. Empty library fields export as empty strings. `Call Alert` stays export constant `None` — not relevant for Studio modelling ([#357](https://github.com/pskillen/codeplug-studio/issues/357)).
 
-### Observed wire values (operator CPS, July 2026)
+### Observed wire values (operator CPS + elicitation, July 2026)
 
-| Column             | Observed                  | Studio export  |
-| ------------------ | ------------------------- | -------------- |
-| `Call Type`        | `Private Call`            | `Private Call` |
-| `Call Alert`       | `None`                    | `None`         |
-| `Callsign`         | Empty (name-only contact) | `''`           |
-| `City` … `Remarks` | Empty                     | `''`           |
-
-Non-`None` **Call Alert** strings still need CPS elicitation — see [enum-verification.md](enum-verification.md).
+| Column             | Observed                         | Studio export  |
+| ------------------ | -------------------------------- | -------------- |
+| `Call Type`        | `Private Call`                   | `Private Call` |
+| `Call Alert`       | `None`, `Online alert`           | `None`         |
+| `Callsign`         | Empty or populated               | Library field  |
+| `City` … `Remarks` | Empty or populated address book  | Library fields |
 
 ### Export `Name` composition
 

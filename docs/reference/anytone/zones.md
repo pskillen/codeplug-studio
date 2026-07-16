@@ -19,7 +19,7 @@ DMR zone layout for AT-D890UV. Maps to **build zone grouping** trait layout — 
 | `B Channel`                        | B-side active channel name                            |
 | `B Channel RX Frequency`           | B-side RX MHz                                         |
 | `B Channel TX Frequency`           | B-side TX MHz                                         |
-| `Zone Hide `                       | Hide zone flag (`0` / `1`) — trailing space in header |
+| `Zone Hide `                       | Hide zone on radio UI (`0` / `1`) — trailing space in header |
 
 ## Internal mapping
 
@@ -27,10 +27,12 @@ DMR zone layout for AT-D890UV. Maps to **build zone grouping** trait layout — 
 | ------------------------- | ------------------------------------------------------ |
 | `Zone Name`               | Build zone entry `wireName`                            |
 | `Zone Channel Member`     | Ordered `memberChannelIds` via name → UUID at boundary |
-| A/B channel + frequencies | Format-specific active-channel hints for CPS           |
-| `Zone Hide `              | Build layout export flag (TBD)                         |
+| A/B channel + frequencies | Default channels when selecting the zone on A or B VFO (independent). Export guidance: both → zone-derived scan carrier if enabled, else first member |
+| `Zone Hide `              | `1` hides the zone on the radio UI (useful for master codeplugs). **Not modelled** — Studio always exports `0` |
 
 Member order in pipe-separated columns must stay aligned on import and export.
+
+**`FMZone.CSV`:** does **not** exist on AT-D890UV — broadcast FM has no zone file ([#357](https://github.com/pskillen/codeplug-studio/issues/357)).
 
 ## Related
 
