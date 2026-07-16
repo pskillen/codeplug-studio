@@ -18,6 +18,7 @@ export const CHANNEL_COL = {
   radioId: 'Radio ID',
   busyLockTxPermit: 'Busy Lock/TX Permit',
   colourCode: 'RX Color Code',
+  txcc: 'txcc',
   slot: 'Slot',
   scanList: 'Scan List',
   rxGroupList: 'Receive Group List',
