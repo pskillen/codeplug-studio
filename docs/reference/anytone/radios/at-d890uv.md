@@ -12,21 +12,30 @@ Provisional limits for variant `anytone-at-d890uv`. Calibrated from wire spike [
 | Max scan list members | 100 (provisional)   | `profiles.ts` — verify against CPS manual                           |
 | Max RGL members       | TBD                 |                                                                     |
 | Channel name limit    | 16                  | Fixture + `profiles.ts` (verify against CPS manual)                 |
-| VFO row numbers       | `4001+` (channels)  | Sample fixture                                                      |
+| VFO row numbers       | `4001`/`4002` (CPS) | CPS appends on import — Studio need not emit ([#357](https://github.com/pskillen/codeplug-studio/issues/357)) |
 
 ## Power ladder
 
-`Transmit Power` values observed: `Low`, `High`. Map to internal `power` percentage at export boundary — ladder TBD in `profiles.ts` ([#232](https://github.com/pskillen/codeplug-studio/issues/232)).
+Confirmed AT-D890UV `Transmit Power` wire values and approximate output ([#357](https://github.com/pskillen/codeplug-studio/issues/357)):
+
+| Wire    | Approx. power                         |
+| ------- | ------------------------------------- |
+| `Low`   | 0.2 W                                 |
+| `Mid`   | 2.5 W                                 |
+| `High`  | 5 W                                   |
+| `Turbo` | 7 W VHF / 6 W UHF                     |
+
+Map to internal `power` percentage at the export boundary in `profiles.ts`. Studio today only ladders `Low` / `High` — Mid/Turbo follow-up under Phase 7 export ([#228](https://github.com/pskillen/codeplug-studio/issues/228)).
 
 ## Feature availability
 
 | Feature      | CPS files           | Studio v1 export                                                                                                                                                                           |
 | ------------ | ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| DMR channels | `Channel.CSV`, DMR* | Planned ([#233](https://github.com/pskillen/codeplug-studio/issues/233))                                                                                                                   |
-| Scan lists   | `ScanList.CSV`      | Planned                                                                                                                                                                                    |
+| DMR channels | `Channel.CSV`, DMR* | Shipped ([#233](https://github.com/pskillen/codeplug-studio/issues/233))                                                                                                                   |
+| Scan lists   | `ScanList.CSV`      | Shipped                                                                                                                                                                                    |
 | AM air       | `AMAir.CSV`         | Channel bank export shipped ([#267](https://github.com/pskillen/codeplug-studio/issues/267)); `AMZone.CSV` export shipped ([#316](https://github.com/pskillen/codeplug-studio/issues/316)) |
-| Broadcast FM | `FM.CSV`            | Channel bank export shipped ([#268](https://github.com/pskillen/codeplug-studio/issues/268)); `FMZone.CSV` unconfirmed                                                                     |
-| NXDN         | `NX*.CSV`           | Wire documented; export deferred                                                                                                                                                           |
+| Broadcast FM | `FM.CSV`            | Channel bank export shipped ([#268](https://github.com/pskillen/codeplug-studio/issues/268)); **no `FMZone.CSV` on D890**                                                                  |
+| NXDN         | `NX*.CSV`           | Wire documented; export deferred ([#247](https://github.com/pskillen/codeplug-studio/issues/247))                                                                                          |
 | APRS         | `APRS.CSV`          | Shipped — conditional when `library.aprsConfiguration` exists ([#251](https://github.com/pskillen/codeplug-studio/issues/251))                                                             |
 
 ## Related
