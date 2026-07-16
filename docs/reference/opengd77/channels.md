@@ -35,7 +35,7 @@ All other columns are optional at import — missing headers yield empty values.
 | `TX Tone`         | `Channel.txTone`                         | No                | Wire → tone enum                                            | Mode-aware — see below                                                   | Lossless              |                                                                        |
 | `Squelch`         | `Channel.squelch`                        | No                | Wire → percent                                              | Mode-aware — see below                                                   | Lossless              | See [power-squelch.md](power-squelch.md)                               |
 | `Power`           | `Channel.power`                          | No                | Wire → percent                                              | Percent → wire                                                           | Lossless              | See [power-squelch.md](power-squelch.md)                               |
-| `Rx Only`         | `Channel.forbidTransmit`                 | No                | `Yes`/`No` → boolean                                        | `wireYesNo`                                                              | Lossless boolean      |                                                                        |
+| `Rx Only`         | `forbidTransmit` cascade                 | No                | `Yes`/`No` → boolean                                        | `effectiveForbidTransmit` + `channelBehaviourContext` → `wireYesNo`      | Lossless boolean      | See [behavioural defaults cascade](#behavioural-defaults-cascade)      |
 | `Zone Skip`       | `Channel.opengd77Extras['Zone Skip']`    | No                | Trim → opengd77Extras                                       | From opengd77Extras                                                      | opengd77Extras        | Not mapped to `scanSkip`                                               |
 | `All Skip`        | `Channel.scanInclusion`                  | No                | `Yes` → `skip`; `No` → `default` or `alwaysScan`            | Resolved via `scanInclusion` + build/format default → `wireYesNo`        | Tri-state + default   | Global scan skip                                                       |
 | `TOT`             | `Channel.transmitTimeout`                | No                | Parse seconds                                               | As integer string                                                        | Lossless              | `0` = off; CPS step 15 (0–495)                                         |
@@ -43,13 +43,22 @@ All other columns are optional at import — missing headers yield empty values.
 | `No Beep`         | `Channel.opengd77Extras['No Beep']`      | No                | Trim → opengd77Extras                                       | From opengd77Extras                                                      | opengd77Extras        |                                                                        |
 | `No Eco`          | `Channel.opengd77Extras['No Eco']`       | No                | Trim → opengd77Extras                                       | From opengd77Extras                                                      | opengd77Extras        |                                                                        |
 | `APRS`            | `Channel.aprsConfigName`                 | No                | Trim                                                        | As stored                                                                | String pass-through   | FK → APRS.csv                                                          |
+| `Latitude`        | `Channel.location.lat`                   | **Column required** | Parse float                                               | String from location                                                     | Lossless when valid   | Pair with longitude                                                    |
+| `Longitude`       | `Channel.location.lon`                   | **Column required** | Parse float                                               | String from location                                                     | Lossless when valid   |                                                                        |
+| `Use Location`    | `Channel.useLocation`                    | No                | `Yes` → `true`                                              | `wireYesNo(useLocation)`                                                 | Lossless boolean      |                                                                        |
 
-### TX Admit
+### TX Admit / Busy Lock
 
-OpenGD77 `Channels.csv` has **no TX Admit column**. The internal `Channel.txAdmit` enum is retained for cross-format projects (e.g. imported from DM-32) but is **not serialised** on OpenGD77 export.
-| `Latitude` | `Channel.location.lat` | **Column required** | Parse float | String from location | Lossless when valid | Pair with longitude |
-| `Longitude` | `Channel.location.lon` | **Column required** | Parse float | String from location | Lossless when valid | |
-| `Use Location` | `Channel.useLocation` | No | `Yes` → `true` | `wireYesNo(useLocation)` | Lossless boolean | |
+OpenGD77 `Channels.csv` has **no TX Admit or Busy Lock column**. Resolved `txPermit` from the [behavioural defaults cascade](../channel-behavioural-defaults.md) is **not serialised** on OpenGD77 export (export loss). Legacy `Channel.txAdmit` from cross-format imports is also omitted on export.
+
+### Behavioural defaults cascade
+
+| Cascade field       | OpenGD77 wire                        | Export                                                              |
+| ------------------- | ------------------------------------ | ------------------------------------------------------------------- |
+| `forbidTransmit`    | `Rx Only`                            | Shipped via cascade                                                 |
+| `txPermit`          | _(none)_                             | Loss — no Busy Lock / TX Admit column                               |
+| `sendTalkerAlias`   | _(none)_                             | Loss — no talker-alias column (TS1/TS2 talkaround cells unrelated) |
+| `analogSquelchMode` | _(none — distinct from `Squelch` %)_ | Loss — `Squelch` is level percent only                              |
 
 `Channel Name` maps to split internal fields on import and is **composed on export** from `callsign`, `name`, and the operator's default export name style (see [name-shortening](../../features/import-export/name-shortening.md)). Split rules: [channel-name-parsing](../../features/channel-name-parsing.md).
 
