@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Alert, Button, Checkbox, Group, Modal, Stack, Text } from '@mantine/core';
 import type { DeleteAllDigitalContactsResult } from '../../state/libraryService.ts';
 
@@ -10,22 +10,14 @@ export interface DeleteAllDigitalContactsDialogProps {
   onConfirm: () => Promise<DeleteAllDigitalContactsResult>;
 }
 
-export default function DeleteAllDigitalContactsDialog({
-  opened,
-  onClose,
+function DeleteAllDigitalContactsDialogBody({
   contactCount,
+  onClose,
   onConfirm,
-}: DeleteAllDigitalContactsDialogProps) {
+}: Omit<DeleteAllDigitalContactsDialogProps, 'opened'>) {
   const [confirmed, setConfirmed] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (!opened) return;
-    setConfirmed(false);
-    setDeleting(false);
-    setErrorMessage(null);
-  }, [opened]);
 
   const handleDelete = async () => {
     setDeleting(true);
@@ -34,54 +26,73 @@ export default function DeleteAllDigitalContactsDialog({
       await onConfirm();
       onClose();
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : 'Failed to delete digital contacts.');
+      setErrorMessage(
+        error instanceof Error ? error.message : 'Failed to delete digital contacts.',
+      );
     } finally {
       setDeleting(false);
     }
   };
 
   return (
+    <Stack gap="md">
+      <Text>
+        Permanently delete {contactCount} digital contact{contactCount === 1 ? '' : 's'} from this
+        project? This cannot be undone.
+      </Text>
+      <Text size="sm" c="dimmed">
+        Channel DMR contact references and digital members of RX group lists will be cleared. Analog
+        contacts are not affected.
+      </Text>
+
+      <Checkbox
+        checked={confirmed}
+        onChange={(event) => setConfirmed(event.currentTarget.checked)}
+        disabled={deleting}
+        label="I understand this permanently deletes all digital contacts in this project"
+      />
+
+      {errorMessage ? <Alert color="red">{errorMessage}</Alert> : null}
+
+      <Group justify="flex-end">
+        <Button variant="default" onClick={onClose} disabled={deleting}>
+          Cancel
+        </Button>
+        <Button
+          color="red"
+          onClick={() => void handleDelete()}
+          disabled={!confirmed}
+          loading={deleting}
+        >
+          Delete all
+        </Button>
+      </Group>
+    </Stack>
+  );
+}
+
+export default function DeleteAllDigitalContactsDialog({
+  opened,
+  onClose,
+  contactCount,
+  onConfirm,
+}: DeleteAllDigitalContactsDialogProps) {
+  return (
     <Modal
       opened={opened}
-      onClose={() => {
-        if (!deleting) onClose();
-      }}
+      onClose={onClose}
       title="Delete all digital contacts"
       centered
+      closeOnClickOutside={false}
+      closeOnEscape={true}
     >
-      <Stack gap="md">
-        <Text>
-          Permanently delete {contactCount} digital contact{contactCount === 1 ? '' : 's'} from this
-          project? This cannot be undone.
-        </Text>
-        <Text size="sm" c="dimmed">
-          Channel DMR contact references and digital members of RX group lists will be cleared.
-          Analog contacts are not affected.
-        </Text>
-
-        <Checkbox
-          checked={confirmed}
-          onChange={(event) => setConfirmed(event.currentTarget.checked)}
-          disabled={deleting}
-          label="I understand this permanently deletes all digital contacts in this project"
+      {opened ? (
+        <DeleteAllDigitalContactsDialogBody
+          contactCount={contactCount}
+          onClose={onClose}
+          onConfirm={onConfirm}
         />
-
-        {errorMessage ? <Alert color="red">{errorMessage}</Alert> : null}
-
-        <Group justify="flex-end">
-          <Button variant="default" onClick={onClose} disabled={deleting}>
-            Cancel
-          </Button>
-          <Button
-            color="red"
-            onClick={() => void handleDelete()}
-            disabled={!confirmed}
-            loading={deleting}
-          >
-            Delete all
-          </Button>
-        </Group>
-      </Stack>
+      ) : null}
     </Modal>
   );
 }

@@ -25,7 +25,7 @@ Tier-1 reference for editing the vendor-neutral **library** — the per-project 
 | Channel sets                              | Shipped ([#172](https://github.com/pskillen/codeplug-studio/issues/172))                                                                 | Optional zone on import                                                                                                                                                        |
 | OpenAIP airband import                    | Shipped ([#263](https://github.com/pskillen/codeplug-studio/issues/263))                                                                 | `/library/channels/add-from-openaip` — see [aviation](../aviation/README.md)                                                                                                   |
 | Digital contact metadata + radioid import | Shipped ([#374](https://github.com/pskillen/codeplug-studio/issues/374))                                                                 | Enriched `DigitalContact` CRUD; `/library/contacts/add-from-radioid` — see [contact-directories](../contact-directories/README.md)                                             |
-| Delete all digital contacts               | Shipped ([#427](https://github.com/pskillen/codeplug-studio/issues/427))                                                                 | Library → Contacts toolbar; checkbox-gated modal; cascade-clears channel/`RX` refs then IDB partition clear                                                                  |
+| Delete all digital contacts               | Shipped ([#427](https://github.com/pskillen/codeplug-studio/issues/427))                                                                 | Library → Contacts toolbar; checkbox-gated modal; cascade-clears channel/`RX` refs then IDB partition clear                                                                    |
 
 ## Documentation map
 
@@ -54,7 +54,7 @@ Tier-1 reference for editing the vendor-neutral **library** — the per-project 
 | `/library/channels/defaults` | Library-wide channel behavioural defaults (TX deny, TX permit, talker alias, analog squelch) — nested under Channels in section nav               | No  |
 | `/library/zones`             | `DataTable` — members, comment, delete row action; operator location + map below table                                                            | Yes |
 | `/library/talk-groups`       | `DataTable` — mode, ID, optional Abbrev, channels/RX lists using, comment, delete row action                                                      | No  |
-| `/library/contacts`          | Two `DataTable` sections: digital + analog (separate `dq` / `aq` filters); digital toolbar **Delete all**; per-row delete each                     | No  |
+| `/library/contacts`          | Two `DataTable` sections: digital + analog (separate `dq` / `aq` filters); digital toolbar **Delete all**; per-row delete each                    | No  |
 | `/library/rx-group-lists`    | `DataTable` — members, channels using, delete row action                                                                                          | No  |
 | `/library/scan-lists`        | `DataTable` — member count, channels-using ref count, delete row action                                                                           | No  |
 

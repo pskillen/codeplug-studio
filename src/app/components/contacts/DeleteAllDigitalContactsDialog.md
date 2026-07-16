@@ -6,12 +6,12 @@ Double-confirm modal for wiping every digital contact in the active project — 
 
 ## Props
 
-| Prop           | Type                                                      | Description                                      |
-| -------------- | --------------------------------------------------------- | ------------------------------------------------ |
-| `opened`       | `boolean`                                                 | Modal visibility                                 |
-| `onClose`      | `() => void`                                              | Dismiss handler (ignored while delete is running) |
-| `contactCount` | `number`                                                  | Approximate count shown in the warning copy      |
-| `onConfirm`    | `() => Promise<DeleteAllDigitalContactsResult>`           | Cascade wipe (channels / RX lists / builds + IDB clear) |
+| Prop           | Type                                            | Description                                             |
+| -------------- | ----------------------------------------------- | ------------------------------------------------------- |
+| `opened`       | `boolean`                                       | Modal visibility                                        |
+| `onClose`      | `() => void`                                    | Dismiss handler (ignored while delete is running)       |
+| `contactCount` | `number`                                        | Approximate count shown in the warning copy             |
+| `onConfirm`    | `() => Promise<DeleteAllDigitalContactsResult>` | Cascade wipe (channels / RX lists / builds + IDB clear) |
 
 ## Behaviour
 

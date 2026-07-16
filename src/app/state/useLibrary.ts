@@ -73,19 +73,20 @@ export function useLibrary(): UseLibraryResult {
     [activeProjectId, reload],
   );
 
-  const deleteAllDigitalContacts = useCallback(async (): Promise<DeleteAllDigitalContactsResult> => {
-    if (!activeProjectId) {
-      return {
-        deletedCount: 0,
-        clearedChannelRefs: 0,
-        clearedRxMembers: 0,
-        prunedBuildOverrides: 0,
-      };
-    }
-    const outcome = await serviceRef.current!.deleteAllDigitalContacts(activeProjectId);
-    await reload();
-    return outcome;
-  }, [activeProjectId, reload]);
+  const deleteAllDigitalContacts =
+    useCallback(async (): Promise<DeleteAllDigitalContactsResult> => {
+      if (!activeProjectId) {
+        return {
+          deletedCount: 0,
+          clearedChannelRefs: 0,
+          clearedRxMembers: 0,
+          prunedBuildOverrides: 0,
+        };
+      }
+      const outcome = await serviceRef.current!.deleteAllDigitalContacts(activeProjectId);
+      await reload();
+      return outcome;
+    }, [activeProjectId, reload]);
 
   return useMemo(
     () => ({
