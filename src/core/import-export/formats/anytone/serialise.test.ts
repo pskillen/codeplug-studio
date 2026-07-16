@@ -61,6 +61,8 @@ describe('anytone serialise', () => {
     expect(row['Busy Lock/TX Permit']).toBe('ChannelFree');
     expect(row['DMR MODE']).toBe('1');
     expect(row['Transmit Power']).toBe('Low');
+    expect(row['Call Confirmation']).toBe('On');
+    expect(row['SMS Confirmation']).toBe('On');
     expect(row['Contact/Talk Group']).toBe('TG Alpha');
     expect(row['Scan List']).toBe('Zone A SCL');
   });
