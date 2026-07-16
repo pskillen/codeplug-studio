@@ -148,7 +148,9 @@ export function serialiseAnytoneChannelRow(
     [CHANNEL_COL.contactCallType]: contact.callType,
     [CHANNEL_COL.contactTgId]: contact.digitalId,
     [CHANNEL_COL.radioId]: profile.defaultRadioIdLabel,
+    // Library has a single colourCode; Anytone wire is split RX/TX — keep equal (#415).
     [CHANNEL_COL.colourCode]: String(dmr?.colourCode ?? 1),
+    [CHANNEL_COL.txcc]: String(dmr?.colourCode ?? 1),
     [CHANNEL_COL.slot]: formatAnytoneTimeslot(dmr?.timeslot ?? null),
     [CHANNEL_COL.scanList]: resolveScanListWireName(channel, row, context),
     [CHANNEL_COL.rxGroupList]: resolveRxGroupListColumn(assembled, context, rxGroupListId),

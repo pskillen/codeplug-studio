@@ -65,6 +65,48 @@ describe('anytone serialise', () => {
     expect(row['SMS Confirmation']).toBe('On');
     expect(row['Contact/Talk Group']).toBe('TG Alpha');
     expect(row['Scan List']).toBe('Zone A SCL');
+    expect(row['RX Color Code']).toBe('1');
+    expect(row.txcc).toBe('1');
+  });
+
+  it('sets txcc equal to RX Color Code when library colour code is not 1', () => {
+    const channel = {
+      ...newChannel(PROJECT_ID, 'GB7GL'),
+      rxFrequency: 439_487_500,
+      txFrequency: 430_487_500,
+      modeProfiles: [
+        {
+          mode: 'dmr' as const,
+          colourCode: 7,
+          timeslot: 1 as const,
+          dmrId: 1234567,
+          contactRef: null,
+          rxGroupListId: null,
+        },
+      ],
+    };
+
+    const row = serialiseAnytoneChannelRow(
+      { entity: channel, wireName: 'GB7GL' },
+      {
+        buildId: 'b1',
+        formatId: 'anytone',
+        profileId: 'anytone-at-d890uv',
+        buildName: 'Test',
+        channels: [{ entity: channel, wireName: 'GB7GL' }],
+        zones: [],
+        scanLists: [],
+        talkGroups: [],
+        digitalContacts: [],
+        analogContacts: [],
+        rxGroupLists: [],
+      },
+      'anytone-at-d890uv',
+      1,
+    );
+
+    expect(row['RX Color Code']).toBe('7');
+    expect(row.txcc).toBe('7');
   });
 
   it('serialises Transmit Power Mid and Turbo from percent', () => {
