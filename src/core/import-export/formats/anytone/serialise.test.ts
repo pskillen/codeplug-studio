@@ -57,10 +57,49 @@ describe('anytone serialise', () => {
     expect(row['Channel Name']).toBe('Channel 1');
     expect(row['Receive Frequency']).toBe('438.80000');
     expect(row['Channel Type']).toBe('D-Digital');
+    expect(row['Busy Lock/TX Permit']).toBe('ChannelFree');
     expect(row['DMR MODE']).toBe('1');
     expect(row['Transmit Power']).toBe('Low');
     expect(row['Contact/Talk Group']).toBe('TG Alpha');
     expect(row['Scan List']).toBe('Zone A SCL');
+  });
+
+  it('serialises Channel Free Busy Lock for FM channels', () => {
+    const channel = {
+      ...newChannel(PROJECT_ID, 'Analog 1'),
+      rxFrequency: 145_500_000,
+      txFrequency: 145_500_000,
+      modeProfiles: [
+        {
+          mode: 'fm' as const,
+          bandwidthKHz: 12.5,
+          rxTone: 'none' as const,
+          txTone: 'none' as const,
+        },
+      ],
+    };
+
+    const row = serialiseAnytoneChannelRow(
+      { entity: channel, wireName: 'Analog 1' },
+      {
+        buildId: 'b1',
+        formatId: 'anytone',
+        profileId: 'anytone-at-d890uv',
+        buildName: 'Test',
+        channels: [{ entity: channel, wireName: 'Analog 1' }],
+        zones: [],
+        scanLists: [],
+        talkGroups: [],
+        digitalContacts: [],
+        analogContacts: [],
+        rxGroupLists: [],
+      },
+      'anytone-at-d890uv',
+      1,
+    );
+
+    expect(row['Channel Type']).toBe('A-Analog');
+    expect(row['Busy Lock/TX Permit']).toBe('Channel Free');
   });
 
   it('serialises MVP file bundle from assembled build', () => {

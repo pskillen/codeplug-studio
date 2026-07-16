@@ -51,6 +51,20 @@ export function formatAnytoneChannelTypeFromChannel(
   return formatAnytoneChannelType(channel.modeProfiles[0]?.mode ?? 'dmr');
 }
 
+/**
+ * Provisional `Busy Lock/TX Permit` until a library field lands (#396 / #388).
+ * Analog TX primary → `Channel Free`; digital TX primary → `ChannelFree`.
+ */
+export function formatAnytoneBusyLockTxPermit(
+  channel: Pick<Channel, 'modeProfiles' | 'primaryMode'>,
+): 'Channel Free' | 'ChannelFree' {
+  const channelType = formatAnytoneChannelTypeFromChannel(channel);
+  if (channelType === 'A-Analog' || channelType === 'A+D TX A') {
+    return 'Channel Free';
+  }
+  return 'ChannelFree';
+}
+
 /** Map DMR operating mode to Anytone `DMR MODE` wire digit. */
 export function formatAnytoneDmrModeWire(
   channel: Pick<Channel, 'rxFrequency' | 'txFrequency' | 'modeProfiles'>,
