@@ -4,7 +4,7 @@
 
 ## Status
 
-Format wire mapper PRs complete for all four adapters ([#432](https://github.com/pskillen/codeplug-studio/pull/432)–[#435](https://github.com/pskillen/codeplug-studio/pull/435) pending merge).
+CHIRP mapper merged ([#435](https://github.com/pskillen/codeplug-studio/pull/435)). OpenGD77 [#434](https://github.com/pskillen/codeplug-studio/pull/434) in progress; Anytone [#432](https://github.com/pskillen/codeplug-studio/pull/432) and DM32 [#433](https://github.com/pskillen/codeplug-studio/pull/433) PR open.
 
 ## Format export mappers
 
@@ -13,7 +13,7 @@ Format wire mapper PRs complete for all four adapters ([#432](https://github.com
 | Anytone Busy Lock / Talker Alias / Squelch | #422   | #432 | PR open |
 | DM32 TX Admit / RX Squelch Mode            | #423   | #433 | PR open |
 | OpenGD77 forbid + loss docs                | #424   | #434 | PR open |
-| CHIRP forbid + loss docs                   | #425   | #435 | PR open |
+| CHIRP forbid + loss docs                   | #425   | #435 | Merged  |
 
 ## Shipped (pre-export)
 
