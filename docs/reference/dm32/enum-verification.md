@@ -8,6 +8,20 @@ Fill this in while driving **official Baofeng DM-32UV CPS v1.60**. For each row:
 **Headers / adapter:** [`columns.ts`](../../../src/core/import-export/formats/dm32/columns.ts)  
 **Committed sample:** [`test-data/baofeng-dm32/v1.60/`](../../../test-data/baofeng-dm32/v1.60/)
 
+### Follow-up tickets (filed from #404)
+
+| Area | Issue |
+| --- | --- |
+| Tier-3 docs drift | [#444](https://github.com/pskillen/codeplug-studio/issues/444) |
+| APRS channel columns from model | [#250](https://github.com/pskillen/codeplug-studio/issues/250) (epic [#246](https://github.com/pskillen/codeplug-studio/issues/246); updated, not new) |
+| TX Admit full CPS enum | [#445](https://github.com/pskillen/codeplug-studio/issues/445) |
+| Remove personal DMR ID profile default | [#446](https://github.com/pskillen/codeplug-studio/issues/446) |
+| Scan.csv synthesised constants | [#447](https://github.com/pskillen/codeplug-studio/issues/447) |
+| Contacts.csv metadata export | [#448](https://github.com/pskillen/codeplug-studio/issues/448) |
+| Richer v1.60 fixture rows | [#449](https://github.com/pskillen/codeplug-studio/issues/449) |
+| RX Squelch Mode Carrier vs Carrier/CTC | [#450](https://github.com/pskillen/codeplug-studio/issues/450) |
+| Fixed Analog Channel Type | [#451](https://github.com/pskillen/codeplug-studio/issues/451) |
+
 ### How to use
 
 1. Prefer a scratch codeplug (or a copy of the v1.60 fixture imported into CPS).
