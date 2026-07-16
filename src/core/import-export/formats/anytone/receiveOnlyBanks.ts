@@ -1,4 +1,5 @@
 import { bandFromFrequencyMhz } from '@core/domain/bandCatalog.ts';
+import { effectiveForbidTransmit } from '@core/import-export/channelBehaviourDefaults/index.ts';
 import type { Channel } from '@core/models/library.ts';
 import type { AssembledBuild, AssembledChannel } from '@core/services/assemble.ts';
 
@@ -8,7 +9,7 @@ const FM_BROADCAST_BAND_ID = 'fm-broadcast';
 export function isReceiveOnlyChannel(
   channel: Pick<Channel, 'forbidTransmit' | 'txFrequency'>,
 ): boolean {
-  return channel.forbidTransmit || channel.txFrequency == null;
+  return effectiveForbidTransmit(channel) || channel.txFrequency == null;
 }
 
 function primaryMode(channel: Channel): string | null {

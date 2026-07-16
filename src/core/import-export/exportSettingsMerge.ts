@@ -1,3 +1,4 @@
+import { buildChannelBehaviourContext } from '@core/import-export/channelBehaviourDefaults/index.ts';
 import { DEFAULT_CHANNEL_EXPORT_NAME_MODE } from '@core/domain/channelNaming.ts';
 import {
   DEFAULT_DIGITAL_CONTACT_EXPORT_NAME_MODE,
@@ -6,6 +7,7 @@ import {
 import type { BuildExportSettings } from '@core/models/formatBuild.ts';
 import type { FormatBuild } from '@core/models/formatBuild.ts';
 import type { CpsExportOptions, FormatExportDefaults } from '@core/import-export/types.ts';
+import type { LibrarySlice } from '@core/services/assemble.ts';
 import { getFormatExportDefaults } from '@core/import-export/registry.ts';
 
 export const DEFAULT_BUILD_EXPORT_SETTINGS: Required<
@@ -89,6 +91,7 @@ function applyFormatExportDefaults(defaults: FormatExportDefaults): CpsExportOpt
 export function mergeExportOptions(
   build: FormatBuild,
   options?: CpsExportOptions,
+  library?: Pick<LibrarySlice, 'channelDefaults'>,
 ): CpsExportOptions {
   const formatDefaults = getFormatExportDefaults(build.formatId);
   const stored = build.exportSettings ?? {};
@@ -103,6 +106,10 @@ export function mergeExportOptions(
     expandRxGroupListMembers: DEFAULT_BUILD_EXPORT_SETTINGS.expandRxGroupListMembers,
     ...applyFormatExportDefaults(formatDefaults),
     ...storedToCpsOptions(stored),
+    channelBehaviourContext: buildChannelBehaviourContext(
+      library?.channelDefaults,
+      stored,
+    ),
     ...options,
     profileId: options?.profileId ?? build.profileId,
     contactOverrides: options?.contactOverrides ?? build.contactOverrides,

@@ -74,7 +74,7 @@ export function listExportBuildFileNames({
   library,
   options,
 }: Omit<ExportBuildParams, 'fileName'>): readonly string[] {
-  const exportOptions = mergeExportOptions(build, options);
+  const exportOptions = mergeExportOptions(build, options, library);
   const projection = assemble(build, library, { profileId: exportOptions.profileId });
   const assembled = {
     ...projection,
@@ -92,7 +92,7 @@ export function exportBuildFile({
   fileName,
   options,
 }: ExportBuildParams): ExportResult & { content: string; assembled: AssembledBuild } {
-  const exportOptions = mergeExportOptions(build, options);
+  const exportOptions = mergeExportOptions(build, options, library);
   const projection = assemble(build, library, { profileId: exportOptions.profileId });
   const assembled = {
     ...projection,
@@ -125,7 +125,7 @@ export function exportBuildAll({
   library,
   options,
 }: Omit<ExportBuildParams, 'fileName'>): ExportBuildAllResult {
-  const exportOptions = mergeExportOptions(build, options);
+  const exportOptions = mergeExportOptions(build, options, library);
   const projection = assemble(build, library, { profileId: exportOptions.profileId });
   const assembled = {
     ...projection,
@@ -165,7 +165,7 @@ export function exportBuildSingleFile({
   fileName: string;
   content: string;
 } {
-  const exportOptions = mergeExportOptions(build, options);
+  const exportOptions = mergeExportOptions(build, options, library);
   const projection = assemble(build, library, { profileId: exportOptions.profileId });
   const assembled = {
     ...projection,

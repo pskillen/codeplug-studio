@@ -1,3 +1,4 @@
+import { effectiveForbidTransmit } from '@core/import-export/channelBehaviourDefaults/index.ts';
 import type { ChannelExportNameMode } from '@core/domain/channelNaming.ts';
 import { channelPickForWireExport, composeChannelWireName } from '@core/domain/channelNaming.ts';
 import type { AssembledChannel } from '@core/services/assemble.ts';
@@ -117,7 +118,7 @@ export function channelToChirpRow(
   const { duplex, offsetMhz } = deriveChirpDuplexAndOffset(
     channel.rxFrequency,
     channel.txFrequency,
-    channel.forbidTransmit,
+    effectiveForbidTransmit(channel, exportOptions?.channelBehaviourContext),
   );
   const tones = formatChirpToneColumns(analogue.rxTone, analogue.txTone);
   const skip = formatChirpSkipColumn(resolveEffectiveScanInclusion(channel, scanContext));
