@@ -13,10 +13,10 @@ Dedicated scan lists for AT-D890UV — separate from zones (contrast OpenGD77 zo
 | `Scan Channel Member`                   | Pipe-separated channel names           |
 | `Scan Channel Member RX Frequency`      | Pipe-separated RX MHz                  |
 | `Scan Channel Member TX Frequency`      | Pipe-separated TX MHz                  |
-| `Scan Mode`                             | Scan mode (`Off`, …)                   |
+| `Scan Mode`                             | Scan resume mode (`Off`, `TO`, `CO`, `SE`, …) |
 | `Priority Channel Select`               | Priority select mode                   |
 | `Priority Channel 1` / `2`              | Priority channel names + freq columns  |
-| `Revert Channel`                        | Revert behaviour                       |
+| `Revert Channel`                        | Revert / PTT behaviour                 |
 | `Look Back Time A[s]` … `Dwell Time[s]` | Timing parameters                      |
 
 ## Internal mapping
@@ -37,24 +37,46 @@ When **Export zone-derived scan lists** is enabled on the build Export page and 
 
 **Provisional caps (AT-D890UV):** 100 scan lists, 100 members per list — adjust when CPS-confirmed.
 
-## Observed wire values (operator CPS, July 2026)
+## AnyTone scan settings — terminology map
 
-Two scan lists in operator re-export; both used `Scan Mode` = `Off` and `Priority Channel Select` = `Off` with no priority channels set.
+Anytone CPS uses vendor-specific labels. Map to industry terms when documenting library concepts (wire strings stay here).
 
-| Column                     | Values observed                   | Studio export default |
-| -------------------------- | --------------------------------- | --------------------- |
-| `Scan Mode`                | `Off`                             | `Off`                 |
-| `Priority Channel Select`  | `Off`                             | `Off`                 |
-| `Priority Channel 1` / `2` | `Off` (no priority channel)       | `Off`                 |
-| `Revert Channel`           | `Selected + TalkBack`, `Selected` | `Selected + TalkBack` |
-| `Look Back Time A[s]`      | `2.0`                             | `2.0`                 |
-| `Look Back Time B[s]`      | `3.0`                             | `3.0`                 |
-| `Dropout Delay Time[s]`    | `3.1`                             | `3.1`                 |
-| `Dwell Time[s]`            | `3.1`                             | `1.0`                 |
+| AnyTone CPS / CSV term   | Industry term              | Practice meaning                                                                                                                                                                                                                                                                                                                                          | Confidence        |
+| ------------------------ | -------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------- |
+| `Scan Mode`              | Scan resume mode           | Rule for how/when the radio leaves an active channel                                                                                                                                                                                                                                                                                                      | High              |
+| `Scan Mode` → `TO`       | Time-operated resume       | Linger ~5–6 s typical then resume scanning even if signal remains                                                                                                                                                                                                                                                                                         | High              |
+| `Scan Mode` → `CO`       | Carrier-operated resume    | Stay while signal present; resume after drop                                                                                                                                                                                                                                                                                                              | High              |
+| `Scan Mode` → `SE`       | Search / stop-on-signal    | Stop on found channel; scanning paused until user restarts (Scan key / channel change)                                                                                                                                                                                                                                                                    | High              |
+| `Look Back Time A`       | Priority sample interval 1 | How often Priority Channel 1 is re-checked while scanning others                                                                                                                                                                                                                                                                                          | High              |
+| `Look Back Time B`       | Priority sample interval 2 | Commonly Priority Channel 2 sample interval; AnyTone notes sometimes describe a narrower “busy but tone mismatch” case                                                                                                                                                                                                                                    | Medium            |
+| `Dropout Delay Time`     | Post-reply hang time       | Per AnyTone CPS docs: after you reply to a received signal (PTT), scanning resumes after this delay. Community sources sometimes treat it as generic post-signal hang — **contested**                                                                                                                                                                      | Low / contested   |
+| `Dwell Time`             | Post-transmit hang time    | Per AnyTone CPS docs: after you PTT on an idle/scanning channel (not in reply), scanning resumes after this delay. Some community sources invert this with Dropout Delay — **contested**                                                                                                                                                                   | Low / contested   |
 
-**Gap:** Studio always exports `Dwell Time[s]` = `1.0` from `serialiseScanListsCsv()`; CPS sample uses `3.1` on both lists. Other scan modes (`Scan Mode` ≠ `Off`, priority channel enabled) still need CPS elicitation — [enum-verification.md](enum-verification.md).
+### Field bounds (D878 memory map / same radio family)
+
+| Column                  | Bound      |
+| ----------------------- | ---------- |
+| `Look Back Time A/B`    | 0.5–5.0 s  |
+| `Dropout Delay Time`    | 0.1–5.0 s  |
+| `Dwell Time`            | 0.1–5.0 s  |
+
+## Observed wire values (operator CPS + elicitation, July 2026)
+
+| Column                     | Values observed / confirmed                                                         | Studio export default |
+| -------------------------- | ----------------------------------------------------------------------------------- | --------------------- |
+| `Scan Mode`                | `Off`; resume modes `TO`, `CO`, `SE`                                                | `Off`                 |
+| `Priority Channel Select`  | `Off` (+ enabled when priority used)                                                | `Off`                 |
+| `Priority Channel 1` / `2` | `Off` or channel name                                                               | `Off`                 |
+| `Revert Channel`           | `Selected` — PTT on selected (scan carrier); `Selected + TalkBack` — PTT on selected if no signal, else on signal channel; `Last Called`; `Last Used` | `Selected + TalkBack` |
+| `Look Back Time A[s]`      | Priority sample A                                                                   | `2.0`                 |
+| `Look Back Time B[s]`      | Priority sample B                                                                   | `3.0`                 |
+| `Dropout Delay Time[s]`    | 0.1–5.0 s                                                                           | `3.1`                 |
+| `Dwell Time[s]`            | 0.1–5.0 s                                                                           | `1.0`                 |
+
+**Gap:** Studio always exports `Dwell Time[s]` = `1.0` from `serialiseScanListsCsv()`; CPS samples also use `3.1`. Timing defaults and Scan Mode modelling are follow-up work — [enum-verification.md](enum-verification.md).
 
 ## Related
 
 - [channels.md](channels.md) — `Scan List` FK
 - [zones.md](zones.md)
+- [Library scan lists](../../features/library/scan-lists.md) — vendor-neutral concepts
