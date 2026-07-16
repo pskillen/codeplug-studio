@@ -23,12 +23,12 @@ DMR zone layout for AT-D890UV. Maps to **build zone grouping** trait layout — 
 
 ## Internal mapping
 
-| Wire                      | Internal (target)                                                                                                                                     |
-| ------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `Zone Name`               | Build zone entry `wireName`                                                                                                                           |
-| `Zone Channel Member`     | Ordered `memberChannelIds` via name → UUID at boundary                                                                                                |
-| A/B channel + frequencies | Default channels when selecting the zone on A or B VFO (independent). Export guidance: both → zone-derived scan carrier if enabled, else first member |
-| `Zone Hide `              | `1` hides the zone on the radio UI (useful for master codeplugs). **Not modelled** — Studio always exports `0`                                        |
+| Wire                      | Internal (target)                                                                                                                                                                                                                                                                                                |
+| ------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `Zone Name`               | Build zone entry `wireName`                                                                                                                                                                                                                                                                                      |
+| `Zone Channel Member`     | Ordered `memberChannelIds` via name → UUID at boundary                                                                                                                                                                                                                                                           |
+| A/B channel + frequencies | Default channels when selecting the zone on A or B VFO (independent). Export: `A Channel` = first member name (`memberNames[0]`), `B Channel` = second (`memberNames[1]`) when present. When zone-derived scan prepends a carrier channel, that carrier is first — so A is the carrier and B is the next member. |
+| `Zone Hide `              | `1` hides the zone on the radio UI (useful for master codeplugs). **Not modelled** — Studio always exports `0`                                                                                                                                                                                                   |
 
 Member order in pipe-separated columns must stay aligned on import and export.
 

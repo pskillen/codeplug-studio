@@ -1,6 +1,6 @@
 # Anytone — APRS (`APRS.CSV`)
 
-Global APRS configuration for AT-D890UV — **one wide data row** (~150 columns), unlike OpenGD77 named configs in a multi-row `APRS.csv`.
+Global APRS configuration for AT-D890UV — **one wide data row** (176 columns), unlike OpenGD77 named configs in a multi-row `APRS.csv`.
 
 **Fixture:** [`test-data/anytone/at-d890uv/APRS.CSV`](../../../test-data/anytone/at-d890uv/APRS.CSV) (redacted)
 
@@ -73,13 +73,13 @@ Repeating pattern `channelN`, `slotN`, `Aprs TgN`, `Call TypeN` for N=1…8:
 
 ### RF and TX
 
-| Columns                                  | Purpose                                        |
-| ---------------------------------------- | ---------------------------------------------- |
-| `Transmission Frequency [MHz]`           | APRS TX frequency                              |
-| `Transmit Delay[ms]`, `Prewave Time[ms]` | Timing                                         |
-| `Send Sub Tone`, `CTCSS`, `DCS`          | Tone settings                                  |
-| `Transmit Power`                         | Power level                                    |
-| `Transmission Frequency"0` … `"7`        | Additional TX freq slots (quoted header names) |
+| Columns                                  | Purpose                                                                                                                                          |
+| ---------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `Transmission Frequency [MHz]`           | APRS TX frequency                                                                                                                                |
+| `Transmit Delay[ms]`, `Prewave Time[ms]` | Timing                                                                                                                                           |
+| `Send Sub Tone`, `CTCSS`, `DCS`          | Tone settings                                                                                                                                    |
+| `Transmit Power`                         | Power level                                                                                                                                      |
+| `Transmission Frequency0` … `7`          | Additional TX freq slots. Some older CPS samples show broken quoting (`Transmission Frequency"N`); Studio emits clean `Transmission FrequencyN`. |
 
 ### RX filters (×32)
 

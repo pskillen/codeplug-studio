@@ -14,7 +14,7 @@ Wire format for the CPS **project manifest** sidecar shipped with AT-D890UV expo
 
 ## Line format
 
-Text file, UTF-8, one record per line, `LF` line endings.
+Text file, UTF-8, one record per line. Studio export uses **CRLF** line endings (same as `.CSV` — see [file-format.md](file-format.md)); committed fixtures may use LF and are normalised in tests.
 
 | Line  | Content                                                  |
 | ----- | -------------------------------------------------------- |

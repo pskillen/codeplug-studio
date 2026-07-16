@@ -1,2 +1,2 @@
 "No.","Scan List Name","Scan Channel Member","Scan Channel Member RX Frequency","Scan Channel Member TX Frequency","Scan Mode","Priority Channel Select","Priority Channel 1","Priority Channel 1 RX Frequency","Priority Channel 1 TX Frequency","Priority Channel 2","Priority Channel 2 RX Frequency","Priority Channel 2 TX Frequency","Revert Channel","Look Back Time A[s]","Look Back Time B[s]","Dropout Delay Time[s]","Dwell Time[s]"
-"1","Zone A SCL","Channel 1|Channel 2","438.80000|155.00000","434.00000|155.00000","Off","Off","Off","","","Off","","","Selected + TalkBack","2.0","3.0","3.1","1.0"
+"1","Zone A SCL","Channel 1|Channel 2","438.80000|155.00000","434.00000|155.00000","Off","Off","Off","","","Off","","","Selected + TalkBack","5.0","5.0","5.0","5.0"

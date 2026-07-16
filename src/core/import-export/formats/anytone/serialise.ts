@@ -235,10 +235,10 @@ function serialiseScanListsCsv(
       [SCAN_LIST_COL.priority2Rx]: '',
       [SCAN_LIST_COL.priority2Tx]: '',
       [SCAN_LIST_COL.revertChannel]: 'Selected + TalkBack',
-      [SCAN_LIST_COL.lookBackA]: '2.0',
-      [SCAN_LIST_COL.lookBackB]: '3.0',
-      [SCAN_LIST_COL.dropoutDelay]: '3.1',
-      [SCAN_LIST_COL.dwellTime]: '1.0',
+      [SCAN_LIST_COL.lookBackA]: '5.0',
+      [SCAN_LIST_COL.lookBackB]: '5.0',
+      [SCAN_LIST_COL.dropoutDelay]: '5.0',
+      [SCAN_LIST_COL.dwellTime]: '5.0',
     }),
   );
   return formatCsv(SCAN_LIST_HEADERS, rows);

@@ -68,12 +68,12 @@ Anytone CPS uses vendor-specific labels. Map to industry terms when documenting 
 | `Priority Channel Select`  | `Off` (+ enabled when priority used)                                                                                                                  | `Off`                 |
 | `Priority Channel 1` / `2` | `Off` or channel name                                                                                                                                 | `Off`                 |
 | `Revert Channel`           | `Selected` — PTT on selected (scan carrier); `Selected + TalkBack` — PTT on selected if no signal, else on signal channel; `Last Called`; `Last Used` | `Selected + TalkBack` |
-| `Look Back Time A[s]`      | Priority sample A                                                                                                                                     | `2.0`                 |
-| `Look Back Time B[s]`      | Priority sample B                                                                                                                                     | `3.0`                 |
-| `Dropout Delay Time[s]`    | 0.1–5.0 s                                                                                                                                             | `3.1`                 |
-| `Dwell Time[s]`            | 0.1–5.0 s                                                                                                                                             | `1.0`                 |
+| `Look Back Time A[s]`      | Priority sample A                                                                                                                                     | `5.0`                 |
+| `Look Back Time B[s]`      | Priority sample B                                                                                                                                     | `5.0`                 |
+| `Dropout Delay Time[s]`    | 0.1–5.0 s                                                                                                                                             | `5.0`                 |
+| `Dwell Time[s]`            | 0.1–5.0 s                                                                                                                                             | `5.0`                 |
 
-**Gap:** Studio always exports `Dwell Time[s]` = `1.0` from `serialiseScanListsCsv()`; CPS samples also use `3.1`. Timing defaults and Scan Mode modelling are follow-up work — [enum-verification.md](enum-verification.md).
+Studio export sets all four timing columns to **`5.0`** (upper bound of the CPS range) from `serialiseScanListsCsv()` — [#402](https://github.com/pskillen/codeplug-studio/issues/402). Operator CPS fixtures may still show other values (`1.0` / `3.1`). Scan Mode / priority / Revert remain fixed MVP constants — modelling readiness tracked under [#393](https://github.com/pskillen/codeplug-studio/issues/393).
 
 ## Related
 
