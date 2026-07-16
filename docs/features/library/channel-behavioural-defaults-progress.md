@@ -6,7 +6,7 @@
 
 ## Status
 
-Pre-export layers in progress on branch `388/pskil/channel-behavioural-defaults`.
+Pre-export layers shipped in one PR. Format wire mappers remain on [#422](https://github.com/pskillen/codeplug-studio/issues/422)–[#425](https://github.com/pskillen/codeplug-studio/issues/425).
 
 ## Shipped
 
@@ -16,4 +16,10 @@ Pre-export layers in progress on branch `388/pskil/channel-behavioural-defaults`
 | Core cascade foundation (#419) | Complete | Schema v18, resolve helpers, persistence |
 | Docs pattern (#419) | Complete | `docs/reference/channel-behavioural-defaults.md` |
 | Forbid TX export bridge | Complete | DM32, OpenGD77, Anytone, CHIRP |
-| Library fields + Channel defaults UI (#398) | In progress | |
+| Library fields + Channel defaults UI (#398) | Complete | `/library/channels/defaults`, Behaviour tab, bulk edit |
+| Build export overrides (#420) | Complete | Export panel optional overrides |
+| Export resolution summary (#421) | Complete | `/builds/:id/export-resolution` |
+
+## Next
+
+- Format adapter wire mapping ([#422](https://github.com/pskillen/codeplug-studio/issues/422)–[#425](https://github.com/pskillen/codeplug-studio/issues/425))

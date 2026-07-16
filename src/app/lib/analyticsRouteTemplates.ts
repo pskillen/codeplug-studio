@@ -21,6 +21,7 @@ export const ANALYTICS_ROUTE_TEMPLATES = [
   '/builds/:id/scan-lists',
   '/builds/:id/rx-group-lists',
   '/builds/:id/export',
+  '/builds/:id/export-resolution',
   '/debug/indexed-db',
   '/debug/local-storage',
   '/library/:kind/:id',
