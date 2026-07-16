@@ -38,14 +38,14 @@ Wire ladder (AT-D890UV): `Low` / `Mid` / `High` / `Turbo`. Watt mapping and Stud
 
 ## Busy Lock / TX Permit
 
-Mode-aware CPS enums ([#357](https://github.com/pskillen/codeplug-studio/issues/357)):
+Mode-aware CPS enums ([#357](https://github.com/pskillen/codeplug-studio/issues/357)). Export maps resolved `txPermit` from the [behavioural defaults cascade](../channel-behavioural-defaults.md) (library → channel → build):
 
-| Channel Type (TX primary)         | Allowed wire values (CPS)                                          | Studio export today                                  |
-| --------------------------------- | ------------------------------------------------------------------ | ---------------------------------------------------- |
-| Analog (`A-Analog`, `A+D TX A`)   | `Off`, `Different CDT`, `Channel Free`                             | Always `Channel Free`                                |
-| Digital (`D-Digital`, `D+A TX D`) | `Always`, `ChannelFree`, `Different Color Code`, `Same Color Code` | Always `ChannelFree` (`Off` is not valid on digital) |
+| Resolved `txPermit` | Analog TX primary (`A-Analog`, `A+D TX A`) | Digital TX primary (`D-Digital`, `D+A TX D`) |
+| ------------------- | ------------------------------------------ | -------------------------------------------- |
+| `busyLock`          | `Channel Free`                             | `ChannelFree`                                |
+| `permitAlways`      | `Off`                                      | `Always`                                     |
 
-No library field yet — configurable values land with [#388](https://github.com/pskillen/codeplug-studio/issues/388) / [#396](https://github.com/pskillen/codeplug-studio/issues/396). Until then export is a fixed provisional default (not stash-and-replay).
+CPS-only variants (`Different CDT`, colour-code admits) are **not** modelled in the library.
 
 ## Core columns — DMR mapping
 
@@ -63,8 +63,8 @@ No library field yet — configurable values land with [#388](https://github.com
 | `Contact/Talk Group Call Type` | Ref kind hint                         | `Group Call` / `Private Call` / `All Call` (All Call not modelled)                                                                                                         |
 | `Contact/Talk Group TG/DMR ID` | `TalkGroup.digitalId` / contact ID    | Denormalised on wire                                                                                                                                                       |
 | `Radio ID`                     | DMR ID label                          | Name FK → `RadioIDList.CSV`; list file omitted from export ([#302](https://github.com/pskillen/codeplug-studio/issues/302)); channel column still uses profile placeholder |
-| `Busy Lock/TX Permit`          | _(not modelled)_                      | Provisional export default — see [Busy Lock / TX Permit](#busy-lock--tx-permit)                                                                                            |
-| `Squelch Mode`                 | Derived from analog `rxTone`          | `CTCSS/DCS` when RX tone set; else `Carrier` ([#394](https://github.com/pskillen/codeplug-studio/issues/394))                                                              |
+| `Busy Lock/TX Permit`          | `txPermit` cascade                    | Resolved `busyLock` / `permitAlways` — see [Busy Lock / TX Permit](#busy-lock--tx-permit)                                                                                  |
+| `Squelch Mode`                 | `analogSquelchMode` on analog profile | `carrier` → `Carrier`; `tone` → `CTCSS/DCS` via cascade                                                                                                                    |
 | `RX Color Code`                | `colourCode`                          |                                                                                                                                                                            |
 | `Slot`                         | `timeslot`                            | `1` / `2`                                                                                                                                                                  |
 | `Scan List`                    | Build scan list ref                   | Name FK → `ScanList.CSV`; `None`                                                                                                                                           |
@@ -74,7 +74,7 @@ No library field yet — configurable values land with [#388](https://github.com
 | `DMR MODE`                     | `ChannelModeProfileDMR.dmrMode`       | `0` / `1` — see DMR MODE table; inferred from RX/TX when `dmrMode` unset                                                                                                   |
 | `DataACK Disable`              | Unmodelled                            | `1` = ignore confirmation requests from repeater for incoming calls/SMS                                                                                                    |
 | `Auto Scan`                    | Zone-scan carrier only today          | `1` on synthesised zone-scan carriers; reserve for future library setting                                                                                                  |
-| `Send Talker Alias DMR/NX`     | Unmodelled (planned)                  | `0` / `1` — prefer default toward On                                                                                                                                       |
+| `Send Talker Alias DMR/NX`     | `sendTalkerAlias` on DMR profile      | `on` → `1`, `off` → `0`; `tx_talkalaes` kept in sync                                                                                                                       |
 | `txcc`                         | Same as `RX Color Code`               | Split RX/TX colour code not supported — export writes both from library `colourCode` ([#415](https://github.com/pskillen/codeplug-studio/issues/415))                      |
 
 ## `Idle TX` vs `idle_tx`
@@ -103,7 +103,7 @@ Export as fixture defaults / skip (amateur product) — full checklist: [enum-ve
 - `compand` (possible future analog flag)
 - Professional: `tx_int`, `ex_emg_kind`, …
 
-`DMR MODE` and `Channel Type` are projected from the library model ([#311](https://github.com/pskillen/codeplug-studio/issues/311), [#303](https://github.com/pskillen/codeplug-studio/issues/303)). `Busy Lock/TX Permit` uses a fixed mode-aware provisional default ([#396](https://github.com/pskillen/codeplug-studio/issues/396)).
+`DMR MODE` and `Channel Type` are projected from the library model ([#311](https://github.com/pskillen/codeplug-studio/issues/311), [#303](https://github.com/pskillen/codeplug-studio/issues/303)). Busy Lock, Talker Alias, and Squelch Mode export from the behavioural cascade ([#422](https://github.com/pskillen/codeplug-studio/issues/422)).
 
 ## Related
 

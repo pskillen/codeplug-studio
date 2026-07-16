@@ -1,5 +1,14 @@
 import type { Channel, ChannelTone } from '@core/models/library.ts';
 import type { AssembledBuild } from '@core/services/assemble.ts';
+import type {
+  AnalogSquelchMode,
+  SendTalkerAliasMode,
+  TxPermitMode,
+} from '@core/models/channelBehaviourDefaults.ts';
+import {
+  type ChannelBehaviourContext,
+  resolveEffectiveTxPermit,
+} from '@core/import-export/channelBehaviourDefaults/index.ts';
 import { resolveChannelPrimaryMode } from '@core/domain/modeProfiles.ts';
 import { resolveDmrOperatingMode } from '@core/domain/dmrOperatingMode.ts';
 import { anytonePercentToWire } from './profiles.ts';
@@ -21,12 +30,22 @@ export function formatAnytoneToneWire(tone: ChannelTone | undefined): string {
 }
 
 /**
- * Derive `Squelch Mode` from analog RX tone (#394).
- * `CTCSS/DCS` when RX tone is set; otherwise `Carrier` (digital-only / no tone).
+ * Map resolved analog squelch mode to Anytone `Squelch Mode` wire string.
  */
+export function formatAnytoneSquelchModeFromResolved(
+  mode: AnalogSquelchMode,
+): 'Carrier' | 'CTCSS/DCS' {
+  return mode === 'tone' ? 'CTCSS/DCS' : 'Carrier';
+}
+
+/** @deprecated Use `formatAnytoneSquelchModeFromResolved` with cascade resolution. */
 export function formatAnytoneSquelchMode(rxTone: ChannelTone | undefined): 'Carrier' | 'CTCSS/DCS' {
   if (!rxTone || rxTone === 'none') return 'Carrier';
   return 'CTCSS/DCS';
+}
+
+export function formatAnytoneTalkerAliasWire(mode: SendTalkerAliasMode): '0' | '1' {
+  return mode === 'on' ? '1' : '0';
 }
 
 export function formatAnytoneChannelType(mode: string): string {
@@ -60,18 +79,40 @@ export function formatAnytoneChannelTypeFromChannel(
   return formatAnytoneChannelType(channel.modeProfiles[0]?.mode ?? 'dmr');
 }
 
+export type AnytoneBusyLockWire = 'Channel Free' | 'ChannelFree' | 'Off' | 'Always';
+
+function isAnytoneAnalogTxPrimary(channelType: string): boolean {
+  return channelType === 'A-Analog' || channelType === 'A+D TX A';
+}
+
 /**
- * Provisional `Busy Lock/TX Permit` until a library field lands (#396 / #388).
- * Analog TX primary → `Channel Free`; digital TX primary → `ChannelFree`.
+ * Map resolved `txPermit` + TX-primary channel type to `Busy Lock/TX Permit` wire.
+ * CPS-only variants (`Different CDT`, colour-code admits) are intentionally unmodelled.
  */
 export function formatAnytoneBusyLockTxPermit(
-  channel: Pick<Channel, 'modeProfiles' | 'primaryMode'>,
-): 'Channel Free' | 'ChannelFree' {
+  channel: Pick<Channel, 'modeProfiles' | 'primaryMode' | 'txPermit'>,
+  context?: ChannelBehaviourContext,
+): AnytoneBusyLockWire {
+  const txPermit = resolveEffectiveTxPermit(channel, context);
   const channelType = formatAnytoneChannelTypeFromChannel(channel);
-  if (channelType === 'A-Analog' || channelType === 'A+D TX A') {
-    return 'Channel Free';
+  const analogTx = isAnytoneAnalogTxPrimary(channelType);
+
+  if (txPermit === 'busyLock') {
+    return analogTx ? 'Channel Free' : 'ChannelFree';
   }
-  return 'ChannelFree';
+  return analogTx ? 'Off' : 'Always';
+}
+
+/** @internal — test helper for mapping table assertions. */
+export function formatAnytoneBusyLockFromTxPermit(
+  txPermit: TxPermitMode,
+  channelType: string,
+): AnytoneBusyLockWire {
+  const analogTx = isAnytoneAnalogTxPrimary(channelType);
+  if (txPermit === 'busyLock') {
+    return analogTx ? 'Channel Free' : 'ChannelFree';
+  }
+  return analogTx ? 'Off' : 'Always';
 }
 
 /** Map DMR operating mode to Anytone `DMR MODE` wire digit. */

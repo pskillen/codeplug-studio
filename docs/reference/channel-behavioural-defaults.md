@@ -2,7 +2,7 @@
 
 Tier-2 reference for how Codeplug Studio models **library-wide channel behavioural defaults**, per-channel overrides, and per-build export overrides — and how they resolve before CPS export.
 
-Format wire mapping for each field is deferred to per-format tickets ([#422](https://github.com/pskillen/codeplug-studio/issues/422)–[#425](https://github.com/pskillen/codeplug-studio/issues/425)). Feature hub: [library](../features/library/README.md).
+Format wire mapping for each field is tracked per format ([#422](https://github.com/pskillen/codeplug-studio/issues/422)–[#425](https://github.com/pskillen/codeplug-studio/issues/425)). Feature hub: [library](../features/library/README.md).
 
 ## Cascade layers
 
