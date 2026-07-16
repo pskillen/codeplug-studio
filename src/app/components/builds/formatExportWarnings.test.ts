@@ -6,15 +6,20 @@ import {
 } from './formatExportWarnings.ts';
 
 describe('formatExportWarnings', () => {
-  it('keeps non wire-name warnings in general', () => {
+  it('groups unlinked inclusion warnings separately from other general lines', () => {
     const result = formatExportWarnings([
       'Including 21 channel(s) not linked to a zone',
       'Including 10 talk group(s) not referenced by a channel',
+      'Build exceeded profile channel cap',
     ]);
-    expect(result.general).toEqual([
-      'Including 21 channel(s) not linked to a zone',
-      'Including 10 talk group(s) not referenced by a channel',
-    ]);
+    expect(result.unlinkedGroup).toEqual({
+      title: 'Export unlinked items',
+      items: [
+        'Including 21 channel(s) not linked to a zone',
+        'Including 10 talk group(s) not referenced by a channel',
+      ],
+    });
+    expect(result.general).toEqual(['Build exceeded profile channel cap']);
     expect(result.memberCapGroups).toEqual([]);
     expect(result.shortenedGroups).toEqual([]);
   });
@@ -28,6 +33,7 @@ describe('formatExportWarnings', () => {
     ]);
 
     expect(result.general).toEqual([]);
+    expect(result.unlinkedGroup).toBeNull();
     expect(result.memberCapGroups).toHaveLength(2);
     expect(result.memberCapGroups[0]?.title).toBe('Zones over scan member cap');
     expect(result.memberCapGroups[0]?.items).toEqual([
@@ -49,6 +55,7 @@ describe('formatExportWarnings', () => {
     ]);
 
     expect(result.general).toEqual([]);
+    expect(result.unlinkedGroup).toBeNull();
     expect(result.shortenedGroups).toHaveLength(2);
     expect(result.shortenedGroups[0]?.title).toBe('Channel names shortened');
     expect(result.shortenedGroups[0]?.items).toEqual([
