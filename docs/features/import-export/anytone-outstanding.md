@@ -53,7 +53,7 @@ Docs + tickets phase shipped (adapter code deferred to child issues):
 - [x] Tier-3 enum checklist + entity wire docs updated from CPS elicitation
 - [x] VFO rows — Studio need not emit (CPS adds on import); supersedes intent of [#375](https://github.com/pskillen/codeplug-studio/issues/375)
 - [x] [#391](https://github.com/pskillen/codeplug-studio/issues/391) — power ladder Mid + Turbo
-- [ ] [#392](https://github.com/pskillen/codeplug-studio/issues/392) — Call Confirmation / SMS Confirmation defaults On
+- [x] [#392](https://github.com/pskillen/codeplug-studio/issues/392) — Call Confirmation / SMS Confirmation defaults On
 - [ ] [#393](https://github.com/pskillen/codeplug-studio/issues/393) — ScanList timing defaults + Scan Mode readiness
 - [ ] [#394](https://github.com/pskillen/codeplug-studio/issues/394) — Squelch Mode from RX tone
 - [ ] [#395](https://github.com/pskillen/codeplug-studio/issues/395) — Slot Suit export
