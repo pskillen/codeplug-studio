@@ -24,9 +24,9 @@ Committed fixture: [`test-data/baofeng-dm32/v1.60/`](../../../test-data/baofeng-
 
 ## Wire elicitation
 
-Human-led CPS v1.60 column/enum elicitation (supersedes [#356](https://github.com/pskillen/codeplug-studio/issues/356)): [#404](https://github.com/pskillen/codeplug-studio/issues/404). Worksheet lands as [`enum-verification.md`](enum-verification.md) on the `#404` branch until that PR merges — use the issue for status meanwhile.
+Human-led CPS v1.60 column/enum elicitation (supersedes [#356](https://github.com/pskillen/codeplug-studio/issues/356)): [#404](https://github.com/pskillen/codeplug-studio/issues/404) · worksheet [enum-verification.md](enum-verification.md).
 
-Docs drift vs shipped export tracked in [#444](https://github.com/pskillen/codeplug-studio/issues/444) (this update).
+Tier-3 docs drift vs shipped export was fixed in [#444](https://github.com/pskillen/codeplug-studio/issues/444) / PR [#453](https://github.com/pskillen/codeplug-studio/pull/453).
 
 ## Line endings
 
@@ -73,4 +73,5 @@ Structural rules enforced by `cps-verify` for profile `dm32-baofeng-dm32uv` ([wi
 
 - [Data model](../../features/data-model/README.md)
 - [Multi-talkgroup expansion](../multi-talkgroup-expansion.md)
+- [enum-verification.md](enum-verification.md) — human CPS elicitation worksheet ([#404](https://github.com/pskillen/codeplug-studio/issues/404))
 - [OpenGD77 reference](../opengd77/README.md) — sibling format
