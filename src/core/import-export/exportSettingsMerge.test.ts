@@ -1,8 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { getFormatExportDefaults } from './registry.ts';
-import { mergeExportOptions } from '@core/services/exportBuild.ts';
 import { newFormatBuild } from '@core/domain/factories.ts';
 import type { FormatBuild } from '@core/models/formatBuild.ts';
+import type { LibrarySlice } from '@core/services/assemble.ts';
+import { getFormatExportDefaults } from './registry.ts';
+import { mergeExportOptions } from '@core/import-export/exportSettingsMerge.ts';
+import { DEFAULT_CHANNEL_BEHAVIOUR_DEFAULTS } from '@core/models/channelBehaviourDefaults.ts';
+import { effectiveForbidTransmit } from './channelBehaviourDefaults/resolve.ts';
 
 describe('mergeExportOptions', () => {
   const build: FormatBuild = {
@@ -18,6 +21,17 @@ describe('mergeExportOptions', () => {
     expect(options.shortenNames).toBe(false);
     expect(options.defaultScanInclusion).toBe('skip');
     expect(options.expandModes).toBe(true);
+  });
+
+  it('keeps library channel defaults when runtime options carry a stale context', () => {
+    const library: Pick<LibrarySlice, 'channelDefaults'> = {
+      channelDefaults: { ...DEFAULT_CHANNEL_BEHAVIOUR_DEFAULTS, forbidTransmit: true },
+    };
+    const stale = mergeExportOptions(build);
+    const merged = mergeExportOptions(build, stale, library);
+    expect(
+      effectiveForbidTransmit({ forbidTransmit: 'default' }, merged.channelBehaviourContext),
+    ).toBe(true);
   });
 
   it('getFormatExportDefaults returns chirp skip default', () => {

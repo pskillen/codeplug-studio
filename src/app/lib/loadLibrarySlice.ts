@@ -1,3 +1,4 @@
+import { normalizeChannelBehaviourDefaults } from '@core/domain/normalizeChannelBehaviourDefaults.ts';
 import type { LibrarySlice } from '@core/services/assemble.ts';
 import type { ProjectPersistence } from '@integrations/persistence/index.ts';
 
@@ -7,6 +8,7 @@ export async function loadLibrarySlice(
   projectId: string,
 ): Promise<LibrarySlice> {
   const [
+    meta,
     channels,
     zones,
     talkGroups,
@@ -16,6 +18,7 @@ export async function loadLibrarySlice(
     scanLists,
     aprsConfigurations,
   ] = await Promise.all([
+    persistence.loadProjectMeta(projectId),
     persistence.listChannels(projectId),
     persistence.listZones(projectId),
     persistence.listTalkGroups(projectId),
@@ -34,5 +37,6 @@ export async function loadLibrarySlice(
     rxGroupLists,
     scanLists,
     aprsConfiguration: aprsConfigurations[0] ?? null,
+    channelDefaults: normalizeChannelBehaviourDefaults(meta?.channelDefaults),
   };
 }

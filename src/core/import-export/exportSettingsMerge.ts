@@ -106,9 +106,9 @@ export function mergeExportOptions(
     expandRxGroupListMembers: DEFAULT_BUILD_EXPORT_SETTINGS.expandRxGroupListMembers,
     ...applyFormatExportDefaults(formatDefaults),
     ...storedToCpsOptions(stored),
-    channelBehaviourContext: buildChannelBehaviourContext(library?.channelDefaults, stored),
     ...options,
     profileId: options?.profileId ?? build.profileId,
     contactOverrides: options?.contactOverrides ?? build.contactOverrides,
+    channelBehaviourContext: buildChannelBehaviourContext(library?.channelDefaults, stored),
   };
 }
