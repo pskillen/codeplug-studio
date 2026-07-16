@@ -76,7 +76,7 @@ export function deriveAnytoneZoneDerivedScanLists(
       return (
         channel != null &&
         !effectiveScanSkips(channel, scanContext) &&
-        classifyAnytoneExportChannelBank(channel) === 'dmr'
+        classifyAnytoneExportChannelBank(channel, options?.channelBehaviourContext) === 'dmr'
       );
     });
 

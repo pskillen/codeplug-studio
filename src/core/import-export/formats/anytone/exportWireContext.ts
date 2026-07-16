@@ -174,7 +174,10 @@ export function buildAnytoneExportWireContext(
     }
     const row = channelRowById(assembled, channelId);
     if (!row) return [];
-    if (isAmAirbandBankChannel(row.entity) || isFmBroadcastBankChannel(row.entity)) {
+    if (
+      isAmAirbandBankChannel(row.entity, options?.channelBehaviourContext) ||
+      isFmBroadcastBankChannel(row.entity, options?.channelBehaviourContext)
+    ) {
       return [receiveBankWireName(channelId)];
     }
     return [channelWireNames.get(channelId) ?? ''];

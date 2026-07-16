@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest';
 import type { Channel } from '@core/models/library.ts';
 import { newChannel } from '@core/domain/factories.ts';
 import { defaultModeProfile } from '@core/domain/modeProfiles.ts';
+import { buildChannelBehaviourContext } from '@core/import-export/channelBehaviourDefaults/resolve.ts';
+import { DEFAULT_CHANNEL_BEHAVIOUR_DEFAULTS } from '@core/models/channelBehaviourDefaults.ts';
 import type { AssembledChannel } from '@core/services/assemble.ts';
 import {
   classifyAnytoneExportChannelBank,
@@ -40,6 +42,16 @@ describe('receiveOnlyBanks', () => {
     expect(isReceiveOnlyChannel({ forbidTransmit: 'default', txFrequency: 434_000_000 })).toBe(
       false,
     );
+  });
+
+  it('isReceiveOnlyChannel respects library default forbid via context', () => {
+    const context = buildChannelBehaviourContext({
+      ...DEFAULT_CHANNEL_BEHAVIOUR_DEFAULTS,
+      forbidTransmit: true,
+    });
+    expect(
+      isReceiveOnlyChannel({ forbidTransmit: 'default', txFrequency: 434_000_000 }, context),
+    ).toBe(true);
   });
 
   it('classifies AM airband vs ham FM vs DMR', () => {

@@ -1,3 +1,4 @@
+import type { ChannelBehaviourContext } from '@core/import-export/channelBehaviourDefaults/resolve.ts';
 import type { AssembledBuild } from '@core/services/assemble.ts';
 import type { CpsExportOptions } from '@core/import-export/types.ts';
 import type { LibrarySlice } from '@core/services/assemble.ts';
@@ -100,7 +101,11 @@ function serialiseChannelsCsv(prepared: AnytonePreparedExport, options?: CpsExpo
   const { assembled, context } = prepared;
   const profileId = options?.profileId ?? assembled.profileId ?? DEFAULT_ANYTONE_PROFILE_ID;
   const channelById = new Map(assembled.channels.map((row) => [row.entity.id, row]));
-  const expandedRows = orderedDmrExpandedRows(assembled, prepared);
+  const expandedRows = orderedDmrExpandedRows(
+    assembled,
+    prepared,
+    options?.channelBehaviourContext,
+  );
 
   const rows = expandedRows.map((expandedRow, index) => {
     const assembledChannel = channelById.get(expandedRow.sourceChannelId);
@@ -127,9 +132,10 @@ function serialiseZonesCsv(
   assembled: AssembledBuild,
   context: AnytoneExportWireContext,
   carrierPrependByZoneId?: Map<string, string>,
+  behaviourContext?: ChannelBehaviourContext,
 ): string {
   const channels = channelFrequencyById(assembled);
-  const { dmrZones } = partitionAnytoneZones(assembled);
+  const { dmrZones } = partitionAnytoneZones(assembled, behaviourContext);
   const rows = dmrZones.map((zone, index) => {
     const carrierChannelId = carrierPrependByZoneId?.has(zone.zoneId)
       ? `scan-carrier:${zone.zoneId}`
@@ -183,7 +189,7 @@ export function serialiseAmZonesCsv(
   context?: AnytoneExportWireContext,
 ): string {
   const ctx = context ?? fallbackWireContext(assembled, options, warnings);
-  const { amZones } = partitionAnytoneZones(assembled);
+  const { amZones } = partitionAnytoneZones(assembled, options?.channelBehaviourContext);
   const rows = amZones.map((zone, index) => {
     const memberNames = zone.memberChannelIds.map((id) => ctx.receiveBankWireName(id).trim());
     const aChannel = memberNames[0] ?? '';
@@ -304,7 +310,7 @@ export function serialiseAmAirCsv(
   context?: AnytoneExportWireContext,
 ): string {
   const ctx = context ?? fallbackWireContext(assembled, options, warnings);
-  const ordered = orderedAmAirChannels(assembled);
+  const ordered = orderedAmAirChannels(assembled, options?.channelBehaviourContext);
   const rows: string[][] = ordered.map((row, index) => {
     const slot = receiveBankChannelSlot(row, index);
     const rxHz = row.entity.rxFrequency ?? 0;
@@ -338,7 +344,7 @@ export function serialiseFmBroadcastCsv(
       ? { defaultScanInclusion: options.defaultScanInclusion }
       : undefined;
   const scanContext = buildScanContext(undefined, formatDefaults);
-  const ordered = orderedFmBroadcastChannels(assembled);
+  const ordered = orderedFmBroadcastChannels(assembled, options?.channelBehaviourContext);
   const rows: string[][] = ordered.map((row, index) => {
     const slot = receiveBankChannelSlot(row, index);
     const rxHz = row.entity.rxFrequency ?? 0;
@@ -376,7 +382,12 @@ export function serialiseAnytoneFiles(
   const ctx = exportPrep.context;
   return {
     'Channel.CSV': serialiseChannelsCsv(exportPrep, options),
-    'DMRZone.CSV': serialiseZonesCsv(exportAssembly, ctx, exportPrep.carrierPrependByZoneId),
+    'DMRZone.CSV': serialiseZonesCsv(
+      exportAssembly,
+      ctx,
+      exportPrep.carrierPrependByZoneId,
+      options?.channelBehaviourContext,
+    ),
     'ScanList.CSV': serialiseScanListsCsv(exportAssembly, ctx),
     'DMRTalkGroups.CSV': serialiseTalkGroupsCsv(exportAssembly, ctx),
     'DMRDigitalContactList.CSV': serialiseDigitalContactsCsv(exportAssembly, ctx),
@@ -416,8 +427,12 @@ export function serialiseAnytoneFile(
   return files[fileName as AnytoneExportFileName];
 }
 
-export function resolveAnytoneExportFileNames(assembled: AssembledBuild): string[] {
-  const partition = partitionAnytoneChannels(assembled);
+export function resolveAnytoneExportFileNames(
+  assembled: AssembledBuild,
+  options?: CpsExportOptions,
+): string[] {
+  const context = options?.channelBehaviourContext;
+  const partition = partitionAnytoneChannels(assembled, context);
   const names: string[] = [...ANYTONE_EXPORT_FILE_NAMES];
   if (partition.amAirChannels.length > 0) {
     names.push('AMAir.CSV');
@@ -425,7 +440,7 @@ export function resolveAnytoneExportFileNames(assembled: AssembledBuild): string
   if (partition.fmBroadcastChannels.length > 0) {
     names.push('FM.CSV');
   }
-  if (hasAmZoneExport(assembled)) {
+  if (hasAmZoneExport(assembled, context)) {
     names.push('AMZone.CSV');
   }
   if (hasAnytoneAprsExport(assembled)) {

@@ -1,3 +1,4 @@
+import type { ChannelBehaviourContext } from '@core/import-export/channelBehaviourDefaults/index.ts';
 import type { AssembledBuild, AssembledChannel } from '@core/services/assemble.ts';
 import type { ExpandedAnytoneChannelRow } from './channelExpansion.ts';
 import { isZoneScanCarrierChannelId } from '@core/import-export/zoneDerivedScanLists/carrier.ts';
@@ -8,8 +9,9 @@ import { partitionAnytoneChannels } from './receiveOnlyBanks.ts';
 export function orderedDmrExpandedRows(
   assembled: AssembledBuild,
   prepared: AnytonePreparedExport,
+  context?: ChannelBehaviourContext,
 ): ExpandedAnytoneChannelRow[] {
-  const { dmrChannels } = partitionAnytoneChannels(assembled);
+  const { dmrChannels } = partitionAnytoneChannels(assembled, context);
   const dmrChannelIds = new Set(dmrChannels.map((row) => row.entity.id));
   const ordered: ExpandedAnytoneChannelRow[] = [];
   for (const assembledChannel of assembled.channels) {
@@ -42,13 +44,19 @@ function buildSlotByIdFromOrdered(ordered: AssembledChannel[]): Map<string, numb
   return slotById;
 }
 
-export function orderedAmAirChannels(assembled: AssembledBuild): AssembledChannel[] {
-  const { amAirChannels } = partitionAnytoneChannels(assembled);
+export function orderedAmAirChannels(
+  assembled: AssembledBuild,
+  context?: ChannelBehaviourContext,
+): AssembledChannel[] {
+  const { amAirChannels } = partitionAnytoneChannels(assembled, context);
   return sortReceiveBankChannels(amAirChannels);
 }
 
-export function orderedFmBroadcastChannels(assembled: AssembledBuild): AssembledChannel[] {
-  const { fmBroadcastChannels } = partitionAnytoneChannels(assembled);
+export function orderedFmBroadcastChannels(
+  assembled: AssembledBuild,
+  context?: ChannelBehaviourContext,
+): AssembledChannel[] {
+  const { fmBroadcastChannels } = partitionAnytoneChannels(assembled, context);
   return sortReceiveBankChannels(fmBroadcastChannels);
 }
 
@@ -56,9 +64,10 @@ export function orderedFmBroadcastChannels(assembled: AssembledBuild): Assembled
 export function resolveDmrChannelSlotById(
   assembled: AssembledBuild,
   prepared: AnytonePreparedExport,
+  context?: ChannelBehaviourContext,
 ): Map<string, number> {
   const channelById = new Map(assembled.channels.map((row) => [row.entity.id, row]));
-  const expandedRows = orderedDmrExpandedRows(assembled, prepared);
+  const expandedRows = orderedDmrExpandedRows(assembled, prepared, context);
   const slotById = new Map<string, number>();
 
   expandedRows.forEach((expandedRow, index) => {
@@ -73,11 +82,17 @@ export function resolveDmrChannelSlotById(
 }
 
 /** AMAir.CSV `No.` index by library channel id (programmed rows only; VFO excluded). */
-export function resolveAmAirChannelSlotById(assembled: AssembledBuild): Map<string, number> {
-  return buildSlotByIdFromOrdered(orderedAmAirChannels(assembled));
+export function resolveAmAirChannelSlotById(
+  assembled: AssembledBuild,
+  context?: ChannelBehaviourContext,
+): Map<string, number> {
+  return buildSlotByIdFromOrdered(orderedAmAirChannels(assembled, context));
 }
 
 /** FM.CSV `No.` index by library channel id (programmed rows only; VFO excluded). */
-export function resolveFmBroadcastChannelSlotById(assembled: AssembledBuild): Map<string, number> {
-  return buildSlotByIdFromOrdered(orderedFmBroadcastChannels(assembled));
+export function resolveFmBroadcastChannelSlotById(
+  assembled: AssembledBuild,
+  context?: ChannelBehaviourContext,
+): Map<string, number> {
+  return buildSlotByIdFromOrdered(orderedFmBroadcastChannels(assembled, context));
 }

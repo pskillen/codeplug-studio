@@ -1,3 +1,4 @@
+import type { ChannelBehaviourContext } from '@core/import-export/channelBehaviourDefaults/resolve.ts';
 import type { AprsConfiguration } from '@core/models/aprs.ts';
 import type { AprsChannelSlot } from '@core/models/aprs.ts';
 import type { CpsExportOptions } from '@core/import-export/types.ts';
@@ -97,11 +98,12 @@ function serialiseAprsSlot(
 export function buildAnytoneExportChannelSlotById(
   assembled: AssembledBuild,
   prepared: AnytonePreparedExport,
+  context?: ChannelBehaviourContext,
 ): Map<string, number> {
   return mergeChannelSlotMaps(
-    resolveDmrChannelSlotById(assembled, prepared),
-    resolveAmAirChannelSlotById(assembled),
-    resolveFmBroadcastChannelSlotById(assembled),
+    resolveDmrChannelSlotById(assembled, prepared, context),
+    resolveAmAirChannelSlotById(assembled, context),
+    resolveFmBroadcastChannelSlotById(assembled, context),
   );
 }
 
@@ -122,7 +124,11 @@ export function serialiseAprsCsv(
     );
   }
 
-  const channelSlotById = buildAnytoneExportChannelSlotById(assembled, prepared);
+  const channelSlotById = buildAnytoneExportChannelSlotById(
+    assembled,
+    prepared,
+    options?.channelBehaviourContext,
+  );
   const channelNameById = new Map(
     assembled.channels.map((row) => [row.entity.id, row.entity.name]),
   );

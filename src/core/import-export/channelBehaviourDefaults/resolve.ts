@@ -1,3 +1,4 @@
+import type { CpsExportOptions } from '@core/import-export/types.ts';
 import type { BuildExportSettings } from '@core/models/formatBuild.ts';
 import type {
   AnalogSquelchMode,
@@ -173,6 +174,18 @@ export function resolveAnalogSquelchModeWithLayer(
   const override = profile.analogSquelchMode ?? 'default';
   const layer = resolveLayerForOverride(override, build, library.analogSquelchMode, value);
   return { value, layer };
+}
+
+/** Prefer merged export options; fall back to library defaults on the assembled slice. */
+export function resolveChannelBehaviourContextForExport(
+  assembled: { library?: { channelDefaults?: ChannelBehaviourDefaults } },
+  options?: Pick<CpsExportOptions, 'channelBehaviourContext'>,
+): ChannelBehaviourContext | undefined {
+  if (options?.channelBehaviourContext) return options.channelBehaviourContext;
+  if (assembled.library?.channelDefaults !== undefined) {
+    return buildChannelBehaviourContext(assembled.library.channelDefaults);
+  }
+  return undefined;
 }
 
 export function buildChannelBehaviourContext(
