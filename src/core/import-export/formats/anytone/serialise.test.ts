@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import type { Channel, ChannelModeProfileAnalog, ChannelModeProfileDMR } from '@core/models/library.ts';
+import type {
+  Channel,
+  ChannelModeProfileAnalog,
+  ChannelModeProfileDMR,
+} from '@core/models/library.ts';
 import {
   newChannel,
   newDigitalContact,
