@@ -5,6 +5,7 @@ import {
   formatAnytoneBusyLockTxPermit,
   formatAnytoneChannelTypeFromChannel,
   formatAnytoneDmrModeWire,
+  formatAnytoneSquelchMode,
 } from './wireFormat.ts';
 
 describe('anytone wireFormat channel mode mapping', () => {
@@ -98,5 +99,12 @@ describe('anytone wireFormat channel mode mapping', () => {
       modeProfiles: [{ ...defaultModeProfile('dmr'), dmrMode: 'repeater' as const }],
     };
     expect(formatAnytoneDmrModeWire(channel)).toBe('1');
+  });
+
+  it('maps Squelch Mode from RX tone', () => {
+    expect(formatAnytoneSquelchMode(undefined)).toBe('Carrier');
+    expect(formatAnytoneSquelchMode('none')).toBe('Carrier');
+    expect(formatAnytoneSquelchMode('88.5')).toBe('CTCSS/DCS');
+    expect(formatAnytoneSquelchMode('D023N')).toBe('CTCSS/DCS');
   });
 });

@@ -18,6 +18,7 @@ import {
   formatAnytoneDmrModeWire,
   formatAnytoneFrequencyMHz,
   formatAnytonePowerWire,
+  formatAnytoneSquelchMode,
   formatAnytoneTimeslot,
   formatAnytoneToneWire,
   resolveEntityWireName,
@@ -121,6 +122,7 @@ export function serialiseAnytoneChannelRow(
   const contact = resolveContactWireName(assembled, context, contactRef);
   const rxGroupListId =
     projection != null ? projection.rxGroupListId : (dmr?.rxGroupListId ?? null);
+  const rxTone = analog && 'rxTone' in analog ? analog.rxTone : undefined;
 
   const values: Record<string, string> = {
     ...CHANNEL_ROW_DEFAULTS,
@@ -134,13 +136,12 @@ export function serialiseAnytoneChannelRow(
     [CHANNEL_COL.tx]: formatAnytoneFrequencyMHz(channel.txFrequency),
     [CHANNEL_COL.channelType]: formatAnytoneChannelTypeFromChannel(channel),
     [CHANNEL_COL.busyLockTxPermit]: formatAnytoneBusyLockTxPermit(channel),
+    [CHANNEL_COL.squelchMode]: formatAnytoneSquelchMode(rxTone),
     [CHANNEL_COL.power]: formatAnytonePowerWire(profile.id, channel.power),
     [CHANNEL_COL.bandwidth]: formatAnytoneBandwidthKhz(
       analog && 'bandwidthKHz' in analog ? analog.bandwidthKHz : 12.5,
     ),
-    [CHANNEL_COL.rxTone]: formatAnytoneToneWire(
-      analog && 'rxTone' in analog ? analog.rxTone : undefined,
-    ),
+    [CHANNEL_COL.rxTone]: formatAnytoneToneWire(rxTone),
     [CHANNEL_COL.txTone]: formatAnytoneToneWire(
       analog && 'txTone' in analog ? analog.txTone : undefined,
     ),

@@ -20,6 +20,15 @@ export function formatAnytoneToneWire(tone: ChannelTone | undefined): string {
   return String(tone);
 }
 
+/**
+ * Derive `Squelch Mode` from analog RX tone (#394).
+ * `CTCSS/DCS` when RX tone is set; otherwise `Carrier` (digital-only / no tone).
+ */
+export function formatAnytoneSquelchMode(rxTone: ChannelTone | undefined): 'Carrier' | 'CTCSS/DCS' {
+  if (!rxTone || rxTone === 'none') return 'Carrier';
+  return 'CTCSS/DCS';
+}
+
 export function formatAnytoneChannelType(mode: string): string {
   if (mode === 'dmr') return 'D-Digital';
   if (mode === 'fm' || mode === 'am') return 'A-Analog';

@@ -17,6 +17,7 @@ export const CHANNEL_COL = {
   contactTgId: 'Contact/Talk Group TG/DMR ID',
   radioId: 'Radio ID',
   busyLockTxPermit: 'Busy Lock/TX Permit',
+  squelchMode: 'Squelch Mode',
   colourCode: 'RX Color Code',
   txcc: 'txcc',
   slot: 'Slot',
