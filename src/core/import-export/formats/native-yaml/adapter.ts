@@ -1,5 +1,7 @@
 import type { SingleFileProjectImportAdapter } from '../../importAdapter.ts';
 import type { SingleFileProjectExportAdapter } from '../../exportAdapter.ts';
+import { collectAprsValidationWarnings } from '@core/domain/aprs/validation.ts';
+import { documentFromAggregate } from '../../projectDocument.ts';
 import { parseProjectDocument } from './parse.ts';
 import { serialiseProject } from './serialise.ts';
 
@@ -13,7 +15,10 @@ export const nativeYamlImportAdapter = {
   },
   parseDocument(text: string) {
     const project = parseProjectDocument(text);
-    return { project, warnings: [] };
+    const warnings = collectAprsValidationWarnings(documentFromAggregate(project).library).map(
+      (warning) => warning.message,
+    );
+    return { project, warnings };
   },
 } satisfies SingleFileProjectImportAdapter;
 

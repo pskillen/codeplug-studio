@@ -1,4 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
+import { readFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { newProjectMeta } from '@core/domain/factories.ts';
 import { recordExportDestination } from '@core/services/interchangeMeta.ts';
 import type { GoogleDrivePort } from '@integrations/cloud/index.ts';
@@ -34,6 +37,14 @@ library:
   scanLists: []
 formatBuilds: []
 `;
+
+const orphanAprsRemoteYaml = readFileSync(
+  join(
+    dirname(fileURLToPath(import.meta.url)),
+    '../../core/import-export/formats/native-yaml/__fixtures__/import/aprs-empty-slots-orphan.yaml',
+  ),
+  'utf8',
+);
 
 function mockDrivePort(remoteYaml: string, modifiedTime: string): GoogleDrivePort {
   return {
@@ -121,5 +132,27 @@ describe('assessDriveSaveConflict', () => {
     });
 
     expect(result.conflict?.kinds).toEqual(['projectIdMismatch']);
+  });
+
+  it('does not throw when remote YAML has orphan APRS reportSlotIndex', async () => {
+    const meta = recordExportDestination(
+      newProjectMeta('Fixture project', FIXTURE_PROJECT_ID),
+      'googleDrive',
+      {
+        fileName: 'demo.yaml',
+        folderId: 'folder-1',
+        fileId: 'file-1',
+      },
+    );
+    await persistence.seedProject({ meta, channels: [] });
+
+    const result = await assessDriveSaveConflict({
+      port: mockDrivePort(orphanAprsRemoteYaml, '2026-07-09T09:00:00.000Z'),
+      localProjectId: meta.projectId,
+      localSyncedAt: '2026-07-09T10:00:00.000Z',
+      drive: { fileId: 'file-1' },
+    });
+
+    expect(result.conflict).toBeNull();
   });
 });

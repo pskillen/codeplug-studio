@@ -77,5 +77,39 @@ describe('collectAprsValidationWarnings', () => {
     };
     const warnings = collectAprsValidationWarnings({ ...emptyLibrary(), channels: [channel] });
     expect(warnings.some((w) => w.code === 'channels_have_digital_aprs_without_config')).toBe(true);
+    expect(warnings.some((w) => w.code === 'orphan_report_slot_index')).toBe(true);
+  });
+
+  it('warns when report slot index references an empty slot list', () => {
+    const config = { ...newAprsConfiguration('p1', 'Home'), channelSlots: [] };
+    const channel: Channel = {
+      ...newChannel('p1', 'DMR'),
+      modeProfiles: [
+        {
+          mode: 'dmr' as const,
+          colourCode: 1,
+          timeslot: 1 as const,
+          dmrId: 1,
+          dmrMode: null,
+          contactRef: null,
+          rxGroupListId: null,
+        },
+      ],
+      aprs: {
+        receiveEnabled: true,
+        reportType: 'digital' as const,
+        digitalPttMode: 'on' as const,
+        reportSlotIndex: 1,
+      },
+    };
+    const warnings = collectAprsValidationWarnings({
+      ...emptyLibrary(),
+      channels: [channel],
+      aprsConfiguration: config,
+    });
+    expect(warnings.some((w) => w.code === 'orphan_report_slot_index')).toBe(true);
+    expect(warnings.find((w) => w.code === 'orphan_report_slot_index')?.message).toMatch(
+      /1\.\.0/,
+    );
   });
 });

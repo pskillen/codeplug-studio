@@ -139,10 +139,23 @@ describe('native-yaml validate', () => {
     );
   });
 
-  it('rejects out-of-range APRS report slot index', () => {
-    expect(() => parseProjectDocument(readFixture('aprs-broken-slot.yaml'))).toThrow(
-      /out of range/,
-    );
+  it('soft-warns out-of-range APRS report slot index instead of hard-failing', () => {
+    const project = parseProjectDocument(readFixture('aprs-broken-slot.yaml'));
+    expect(project.channels[0]?.aprs?.reportSlotIndex).toBe(2);
+    expect(project.aprsConfiguration?.channelSlots).toHaveLength(1);
+  });
+
+  it('parses empty APRS slots with orphan reportSlotIndex (Drive conflict preview)', () => {
+    const project = parseProjectDocument(readFixture('aprs-empty-slots-orphan.yaml'));
+    expect(project.channels[0]?.aprs?.reportSlotIndex).toBe(1);
+    expect(project.aprsConfiguration?.channelSlots).toHaveLength(0);
+  });
+
+  it('keeps schema v17 singleton aprsConfiguration (Current Channel slot)', () => {
+    const project = parseProjectDocument(readFixture('aprs-schema17-singleton.yaml'));
+    expect(project.aprsConfiguration?.channelSlots).toHaveLength(1);
+    expect(project.aprsConfiguration?.channelSlots[0]?.channelRef).toBeNull();
+    expect(project.channels[0]?.aprs?.reportSlotIndex).toBe(1);
   });
 });
 
