@@ -2,28 +2,28 @@
 
 Provisional limits for variant `anytone-at-d890uv`. Calibrated from wire spike [#230](https://github.com/pskillen/codeplug-studio/issues/230); **verify against CPS manual** before enforcing in export adapter ([#233](https://github.com/pskillen/codeplug-studio/issues/233)).
 
-| Property              | Value (provisional) | Source                                                              |
-| --------------------- | ------------------- | ------------------------------------------------------------------- |
-| `profileId`           | `anytone-at-d890uv` | Epic [#228](https://github.com/pskillen/codeplug-studio/issues/228) |
-| Label                 | Anytone AT-D890UV   |                                                                     |
-| Max channels          | TBD                 | CPS manual                                                          |
-| Max zone members      | TBD                 | Pipe-separated column capacity                                      |
-| Max scan lists        | 100 (provisional)   | `profiles.ts` — verify against CPS manual                           |
-| Max scan list members | 100 (provisional)   | `profiles.ts` — verify against CPS manual                           |
-| Max RGL members       | TBD                 |                                                                     |
-| Channel name limit    | 16                  | Fixture + `profiles.ts` (verify against CPS manual)                 |
+| Property              | Value (provisional) | Source                                                                                                        |
+| --------------------- | ------------------- | ------------------------------------------------------------------------------------------------------------- |
+| `profileId`           | `anytone-at-d890uv` | Epic [#228](https://github.com/pskillen/codeplug-studio/issues/228)                                           |
+| Label                 | Anytone AT-D890UV   |                                                                                                               |
+| Max channels          | TBD                 | CPS manual                                                                                                    |
+| Max zone members      | TBD                 | Pipe-separated column capacity                                                                                |
+| Max scan lists        | 100 (provisional)   | `profiles.ts` — verify against CPS manual                                                                     |
+| Max scan list members | 100 (provisional)   | `profiles.ts` — verify against CPS manual                                                                     |
+| Max RGL members       | TBD                 |                                                                                                               |
+| Channel name limit    | 16                  | Fixture + `profiles.ts` (verify against CPS manual)                                                           |
 | VFO row numbers       | `4001`/`4002` (CPS) | CPS appends on import — Studio need not emit ([#357](https://github.com/pskillen/codeplug-studio/issues/357)) |
 
 ## Power ladder
 
 Confirmed AT-D890UV `Transmit Power` wire values and approximate output ([#357](https://github.com/pskillen/codeplug-studio/issues/357)):
 
-| Wire    | Approx. power                         |
-| ------- | ------------------------------------- |
-| `Low`   | 0.2 W                                 |
-| `Mid`   | 2.5 W                                 |
-| `High`  | 5 W                                   |
-| `Turbo` | 7 W VHF / 6 W UHF                     |
+| Wire    | Approx. power     |
+| ------- | ----------------- |
+| `Low`   | 0.2 W             |
+| `Mid`   | 2.5 W             |
+| `High`  | 5 W               |
+| `Turbo` | 7 W VHF / 6 W UHF |
 
 Map to internal `power` percentage at the export boundary in `profiles.ts`. Studio today only ladders `Low` / `High` — Mid/Turbo follow-up under Phase 7 export ([#228](https://github.com/pskillen/codeplug-studio/issues/228)).
 

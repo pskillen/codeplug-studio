@@ -41,12 +41,12 @@ When **Shorten long names** is enabled on a build (default), Studio shortens CPS
 
 ## Row numbering (`No.`)
 
-| File            | Programmed rows     | VFO / special rows                                                                 |
-| --------------- | ------------------- | ---------------------------------------------------------------------------------- |
+| File            | Programmed rows     | VFO / special rows                                                                                                                                            |
+| --------------- | ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `Channel.CSV`   | Low `No.` (1, 2, …) | Official CPS may append VFO at `4001`, `4002` — **Studio need not emit**; CPS adds on import ([#357](https://github.com/pskillen/codeplug-studio/issues/357)) |
-| `AMAir.CSV`     | Low `No.`           | VFO at `257` in sample (optional; CPS may correct)                                 |
-| `FM.CSV`        | Low `No.`           | VFO at `101` in sample (optional; CPS may correct)                                 |
-| Zones, scan, TG | Sequential from 1   | —                                                                                  |
+| `AMAir.CSV`     | Low `No.`           | VFO at `257` in sample (optional; CPS may correct)                                                                                                            |
+| `FM.CSV`        | Low `No.`           | VFO at `101` in sample (optional; CPS may correct)                                                                                                            |
+| Zones, scan, TG | Sequential from 1   | —                                                                                                                                                             |
 
 Scan list timing enums and AnyTone terminology: [scan-lists.md](scan-lists.md).
 

@@ -62,12 +62,12 @@ Analog zone layout for the AM airband bank. Confirmed from a **populated** AT-D8
 
 ### Internal mapping
 
-| Wire                  | Internal (target)                                                                         |
-| --------------------- | ----------------------------------------------------------------------------------------- |
-| `Zone Name`           | Build zone entry `wireName` (AM projection)                                               |
-| `Zone Channel Member` | Ordered airband `memberChannelIds` via trimmed name → UUID at boundary                    |
-| `A Channel`           | Format-specific A-side active channel hint                                                |
-| `Scan Channel `       | Zone members minus channels with scan-skip — export may default to all members today      |
+| Wire                  | Internal (target)                                                                    |
+| --------------------- | ------------------------------------------------------------------------------------ |
+| `Zone Name`           | Build zone entry `wireName` (AM projection)                                          |
+| `Zone Channel Member` | Ordered airband `memberChannelIds` via trimmed name → UUID at boundary               |
+| `A Channel`           | Format-specific A-side active channel hint                                           |
+| `Scan Channel `       | Zone members minus channels with scan-skip — export may default to all members today |
 
 Maps to **build zone grouping** projected at the Anytone boundary into the AM bank ([#316](https://github.com/pskillen/codeplug-studio/issues/316)). Export must not put airband members into `DMRZone.CSV`.
 

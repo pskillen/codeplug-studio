@@ -6,12 +6,12 @@ Separate **broadcast FM receive memory bank** for AT-D890UV.
 
 ## Headers
 
-| Header           | Purpose                                      |
-| ---------------- | -------------------------------------------- |
-| `No.`            | Slot index; VFO at `101` in sample           |
-| `Frequency[MHz]` | Receive frequency (MHz, 3 decimal in sample) |
+| Header           | Purpose                                                          |
+| ---------------- | ---------------------------------------------------------------- |
+| `No.`            | Slot index; VFO at `101` in sample                               |
+| `Frequency[MHz]` | Receive frequency (MHz, 3 decimal in sample)                     |
 | `Scan`           | Scan participation — confirmed `Add` / `Del` (include / exclude) |
-| `Name`           | Wire label                                   |
+| `Name`           | Wire label                                                       |
 
 There is **no `FMZone.CSV`** on AT-D890UV.
 

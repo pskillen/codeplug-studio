@@ -25,12 +25,12 @@ DCDM (double-capacity digital mode) is **not** a channel type — it appears on 
 
 ## DMR MODE (observed)
 
-| Wire | Meaning (CPS)                         | Internal mapping                                                              |
-| ---- | ------------------------------------- | ----------------------------------------------------------------------------- |
-| `0`  | DMO / simplex                         | `ChannelModeProfileDMR.dmrMode` = `dmo-simplex`, or inferred when equal RX/TX |
-| `1`  | Repeater                              | `dmrMode` = `repeater`, or inferred when RX ≠ TX                              |
-| `2`  | DCDM Double Slot                      | **Not exported** — document only                                              |
-| `3`  | DCDM TS split                         | **Not exported** — document only                                              |
+| Wire | Meaning (CPS)    | Internal mapping                                                              |
+| ---- | ---------------- | ----------------------------------------------------------------------------- |
+| `0`  | DMO / simplex    | `ChannelModeProfileDMR.dmrMode` = `dmo-simplex`, or inferred when equal RX/TX |
+| `1`  | Repeater         | `dmrMode` = `repeater`, or inferred when RX ≠ TX                              |
+| `2`  | DCDM Double Slot | **Not exported** — document only                                              |
+| `3`  | DCDM TS split    | **Not exported** — document only                                              |
 
 ## Transmit Power
 
@@ -79,9 +79,9 @@ No library field yet — configurable values land with [#388](https://github.com
 
 ## `Idle TX` vs `idle_tx`
 
-| Wire column | Meaning                                                                 | Studio |
-| ----------- | ----------------------------------------------------------------------- | ------ |
-| `Idle TX`   | Appears unused in CPS v1.60 / FW v1.05                                  | Always emit `Off` |
+| Wire column | Meaning                                                               | Studio                                      |
+| ----------- | --------------------------------------------------------------------- | ------------------------------------------- |
+| `Idle TX`   | Appears unused in CPS v1.60 / FW v1.05                                | Always emit `Off`                           |
 | `idle_tx`   | CPS UI label “Idle TX”: if programmed TS occupied, TX on the other TS | Always `0` — Anytone-specific; not modelled |
 
 ## Per-channel APRS columns

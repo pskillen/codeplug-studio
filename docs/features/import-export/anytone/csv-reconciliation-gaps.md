@@ -10,17 +10,17 @@ Earlier single-build comparison: [tmp/export-variance-report.md](../../../../tmp
 
 ## Executive summary
 
-| Priority | Gap                                 | Status after [#357](https://github.com/pskillen/codeplug-studio/issues/357) |
-| -------: | ----------------------------------- | --------------------------------------------------------------------------- |
-|   **P0** | `DMRDigitalContactList.CSV` headers | **Fixed** ([#297](https://github.com/pskillen/codeplug-studio/issues/297)) — 10 columns |
-|   **—**  | `Channel.CSV` VFO rows `4001`/`4002` | **Non-issue** — CPS adds VFO rows on import; Studio need not emit |
-|   **P1** | `AMZone.CSV` + airband partition    | **Shipped** ([#316](https://github.com/pskillen/codeplug-studio/issues/316)) |
-|   **P1** | `DMR MODE` / duplex                 | **Shipped** `0`/`1` ([#311](https://github.com/pskillen/codeplug-studio/issues/311)); `2`/`3` DCDM documented, unsupported export |
-|   **P1** | Channel TX contact from RGL         | **Open question** — operator unsure; leave in outstanding, no ticket yet |
-|   **P2** | Power ladder Mid / Turbo            | Documented; adapter ticket under [#228](https://github.com/pskillen/codeplug-studio/issues/228) |
-|   **P2** | ScanList timing / Scan Mode         | Documented; serialiser defaults still `Dwell`=`1.0` — ticket under #228 |
-|   **P2** | Enum / constant tail columns        | Elicited — see [enum-verification.md](../../../reference/anytone/enum-verification.md) |
-|   **P2** | Sidecar CPS files                   | Skip / future epics (OptionalSetting, HotKey, roaming, NXDN) |
+| Priority | Gap                                  | Status after [#357](https://github.com/pskillen/codeplug-studio/issues/357)                                                       |
+| -------: | ------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------- |
+|   **P0** | `DMRDigitalContactList.CSV` headers  | **Fixed** ([#297](https://github.com/pskillen/codeplug-studio/issues/297)) — 10 columns                                           |
+|    **—** | `Channel.CSV` VFO rows `4001`/`4002` | **Non-issue** — CPS adds VFO rows on import; Studio need not emit                                                                 |
+|   **P1** | `AMZone.CSV` + airband partition     | **Shipped** ([#316](https://github.com/pskillen/codeplug-studio/issues/316))                                                      |
+|   **P1** | `DMR MODE` / duplex                  | **Shipped** `0`/`1` ([#311](https://github.com/pskillen/codeplug-studio/issues/311)); `2`/`3` DCDM documented, unsupported export |
+|   **P1** | Channel TX contact from RGL          | **Open question** — operator unsure; leave in outstanding, no ticket yet                                                          |
+|   **P2** | Power ladder Mid / Turbo             | Documented; adapter ticket under [#228](https://github.com/pskillen/codeplug-studio/issues/228)                                   |
+|   **P2** | ScanList timing / Scan Mode          | Documented; serialiser defaults still `Dwell`=`1.0` — ticket under #228                                                           |
+|   **P2** | Enum / constant tail columns         | Elicited — see [enum-verification.md](../../../reference/anytone/enum-verification.md)                                            |
+|   **P2** | Sidecar CPS files                    | Skip / future epics (OptionalSetting, HotKey, roaming, NXDN)                                                                      |
 
 Cross-file name FK issues from the earlier variance report were addressed in [#292](https://github.com/pskillen/codeplug-studio/issues/292).
 
@@ -92,11 +92,11 @@ Earlier comment suggested exporting TX contact from RGL membership. Operator eli
 
 ## P2 — Power / scan / defaults
 
-| Topic | Docs | Code |
-| ----- | ---- | ---- |
-| Power Mid / Turbo + watts | [at-d890uv.md](../../../reference/anytone/radios/at-d890uv.md) | Ticket under #228 |
-| Scan Mode / Revert / timing | [scan-lists.md](../../../reference/anytone/scan-lists.md) | Ticket under #228 (`Dwell` still `1.0`) |
-| Busy Lock, Slot Suit, talker alias, … | [enum-verification.md](../../../reference/anytone/enum-verification.md) | Library cascade epic + export tickets |
+| Topic                                 | Docs                                                                    | Code                                    |
+| ------------------------------------- | ----------------------------------------------------------------------- | --------------------------------------- |
+| Power Mid / Turbo + watts             | [at-d890uv.md](../../../reference/anytone/radios/at-d890uv.md)          | Ticket under #228                       |
+| Scan Mode / Revert / timing           | [scan-lists.md](../../../reference/anytone/scan-lists.md)               | Ticket under #228 (`Dwell` still `1.0`) |
+| Busy Lock, Slot Suit, talker alias, … | [enum-verification.md](../../../reference/anytone/enum-verification.md) | Library cascade epic + export tickets   |
 
 ---
 
@@ -113,15 +113,15 @@ Earlier comment suggested exporting TX contact from RGL membership. Operator eli
 
 ## Non-issues (confirmed)
 
-| Check                                           | Result                                   |
-| ----------------------------------------------- | ---------------------------------------- |
-| `Channel.CSV` column count                      | 77 on every row                          |
-| Quoting                                         | All fields double-quoted                 |
-| UTF-8 BOM                                       | None                                     |
-| Core DMR file headers                           | Match fixtures                           |
-| Line endings in operator export                 | CRLF (Studio export also CRLF post-#291) |
-| Emitting Channel VFO rows                       | Not required                             |
-| `FMZone.CSV`                                    | Does not exist on D890                   |
+| Check                           | Result                                   |
+| ------------------------------- | ---------------------------------------- |
+| `Channel.CSV` column count      | 77 on every row                          |
+| Quoting                         | All fields double-quoted                 |
+| UTF-8 BOM                       | None                                     |
+| Core DMR file headers           | Match fixtures                           |
+| Line endings in operator export | CRLF (Studio export also CRLF post-#291) |
+| Emitting Channel VFO rows       | Not required                             |
+| `FMZone.CSV`                    | Does not exist on D890                   |
 
 ---
 

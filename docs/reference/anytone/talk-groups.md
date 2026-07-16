@@ -8,12 +8,12 @@ Group calls → internal `TalkGroup` with `mode: 'dmr'`.
 
 **Fixture:** [`test-data/anytone/at-d890uv/DMRTalkGroups.CSV`](../../../test-data/anytone/at-d890uv/DMRTalkGroups.CSV)
 
-| Header       | Internal field                      |
-| ------------ | ----------------------------------- |
-| `No.`        | Export index                        |
-| `Radio ID`   | `TalkGroup.digitalId`               |
-| `Name`       | `TalkGroup.name` / build `wireName` |
-| `Call Type`  | `Group Call` for talk groups        |
+| Header       | Internal field                                                 |
+| ------------ | -------------------------------------------------------------- |
+| `No.`        | Export index                                                   |
+| `Radio ID`   | `TalkGroup.digitalId`                                          |
+| `Name`       | `TalkGroup.name` / build `wireName`                            |
+| `Call Type`  | `Group Call` for talk groups                                   |
 | `Call Alert` | Export constant `None` (`Online alert` observed; not modelled) |
 
 Referenced from `Channel.CSV` via `Contact/Talk Group` when `Contact/Talk Group Call Type` is `Group Call`. Address columns (`Callsign`, City, …) do **not** apply at talk-group level.
@@ -41,12 +41,12 @@ Address columns (`Callsign`, City, State, Country, Remarks) apply to **digital c
 
 ### Observed wire values (operator CPS + elicitation, July 2026)
 
-| Column             | Observed                         | Studio export  |
-| ------------------ | -------------------------------- | -------------- |
-| `Call Type`        | `Private Call`                   | `Private Call` |
-| `Call Alert`       | `None`, `Online alert`           | `None`         |
-| `Callsign`         | Empty or populated               | Library field  |
-| `City` … `Remarks` | Empty or populated address book  | Library fields |
+| Column             | Observed                        | Studio export  |
+| ------------------ | ------------------------------- | -------------- |
+| `Call Type`        | `Private Call`                  | `Private Call` |
+| `Call Alert`       | `None`, `Online alert`          | `None`         |
+| `Callsign`         | Empty or populated              | Library field  |
+| `City` … `Remarks` | Empty or populated address book | Library fields |
 
 ### Export `Name` composition
 
