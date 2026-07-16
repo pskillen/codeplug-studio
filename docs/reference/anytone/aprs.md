@@ -79,7 +79,7 @@ Repeating pattern `channelN`, `slotN`, `Aprs TgN`, `Call TypeN` for N=1…8:
 | `Transmit Delay[ms]`, `Prewave Time[ms]` | Timing                                         |
 | `Send Sub Tone`, `CTCSS`, `DCS`          | Tone settings                                  |
 | `Transmit Power`                         | Power level                                    |
-| `Transmission Frequency"0` … `"7`        | Additional TX freq slots (quoted header names) |
+| `Transmission Frequency0` … `7`          | Additional TX freq slots. Some older CPS samples show broken quoting (`Transmission Frequency"N`); Studio emits clean `Transmission FrequencyN`. |
 
 ### RX filters (×32)
 

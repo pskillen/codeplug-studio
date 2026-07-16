@@ -442,14 +442,14 @@ export const APRS_HEADERS: string[] = [
   'NMEA REPORT',
   'STATUS REPORT',
   'OTHER',
-  'Transmission Frequency"0',
-  'Transmission Frequency"1',
-  'Transmission Frequency"2',
-  'Transmission Frequency"3',
-  'Transmission Frequency"4',
-  'Transmission Frequency"5',
-  'Transmission Frequency"6',
-  'Transmission Frequency"7',
+  'Transmission Frequency0',
+  'Transmission Frequency1',
+  'Transmission Frequency2',
+  'Transmission Frequency3',
+  'Transmission Frequency4',
+  'Transmission Frequency5',
+  'Transmission Frequency6',
+  'Transmission Frequency7',
 ];
 
 /** VFO sentinel slots in receive-only banks (AT-D890UV fixtures). */
