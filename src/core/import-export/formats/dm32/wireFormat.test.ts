@@ -1,8 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import {
-  formatDm32RxSquelchModeWire,
-  formatDm32TxAdmitWire,
-} from './wireFormat.ts';
+import { formatDm32RxSquelchModeWire, formatDm32TxAdmitWire } from './wireFormat.ts';
 
 describe('dm32 wireFormat behavioural mapping', () => {
   it('maps txPermit to TX Admit wire', () => {
