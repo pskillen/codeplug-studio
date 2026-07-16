@@ -36,6 +36,7 @@ Tier-1 reference for editing the vendor-neutral **library** — the per-project 
 | [channel-sets-progress.md](channel-sets-progress.md)                            | Channel sets initiative ([#172](https://github.com/pskillen/codeplug-studio/issues/172))        |
 | [rx-group-list-member-picker.md](rx-group-list-member-picker.md)                | Two-list RX group list member editor                                                            |
 | [scan-lists.md](scan-lists.md)                                                  | Library scan lists ([#257](https://github.com/pskillen/codeplug-studio/issues/257))             |
+| [channel-behavioural-defaults-progress.md](channel-behavioural-defaults-progress.md) | Epic [#388](https://github.com/pskillen/codeplug-studio/issues/388) cascade — progress / [outstanding](channel-behavioural-defaults-outstanding.md) |
 | [aviation](../aviation/README.md)                                               | OpenAIP airport airband import ([#263](https://github.com/pskillen/codeplug-studio/issues/263)) |
 | [contact-directories](../contact-directories/README.md)                         | RadioID.net DMR contact import ([#374](https://github.com/pskillen/codeplug-studio/issues/374)) |
 | [app-shell/data-table.md](../app-shell/data-table.md)                           | Shared `DataTable` and list prefs                                                               |
