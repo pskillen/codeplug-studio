@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import type { Channel, ChannelModeProfileDMR } from '@core/models/library.ts';
 import { newChannel } from '@core/domain/factories.ts';
 import { defaultModeProfile } from '@core/domain/modeProfiles.ts';
 import {
@@ -10,7 +11,7 @@ import {
 
 describe('anytone wireFormat channel mode mapping', () => {
   it('maps single DMR channel to D-Digital', () => {
-    const channel = {
+    const channel: Channel = {
       ...newChannel('p', 'Test'),
       modeProfiles: [defaultModeProfile('dmr')],
     };
@@ -18,7 +19,7 @@ describe('anytone wireFormat channel mode mapping', () => {
   });
 
   it('maps single FM channel to A-Analog', () => {
-    const channel = {
+    const channel: Channel = {
       ...newChannel('p', 'Test'),
       modeProfiles: [defaultModeProfile('fm')],
     };
@@ -26,7 +27,7 @@ describe('anytone wireFormat channel mode mapping', () => {
   });
 
   it('maps dual-mode with primary DMR to D+A TX D', () => {
-    const channel = {
+    const channel: Channel = {
       ...newChannel('p', 'Test'),
       primaryMode: 'dmr' as const,
       modeProfiles: [defaultModeProfile('fm'), defaultModeProfile('dmr')],
@@ -35,7 +36,7 @@ describe('anytone wireFormat channel mode mapping', () => {
   });
 
   it('maps dual-mode with primary FM to A+D TX A', () => {
-    const channel = {
+    const channel: Channel = {
       ...newChannel('p', 'Test'),
       primaryMode: 'fm' as const,
       modeProfiles: [defaultModeProfile('fm'), defaultModeProfile('dmr')],
@@ -44,11 +45,11 @@ describe('anytone wireFormat channel mode mapping', () => {
   });
 
   it('exports ChannelFree Busy Lock for digital TX primary', () => {
-    const digital = {
+    const digital: Channel = {
       ...newChannel('p', 'Test'),
       modeProfiles: [defaultModeProfile('dmr')],
     };
-    const dualDigitalTx = {
+    const dualDigitalTx: Channel = {
       ...newChannel('p', 'Test'),
       primaryMode: 'dmr' as const,
       modeProfiles: [defaultModeProfile('fm'), defaultModeProfile('dmr')],
@@ -58,11 +59,11 @@ describe('anytone wireFormat channel mode mapping', () => {
   });
 
   it('exports Channel Free Busy Lock for analog TX primary', () => {
-    const analog = {
+    const analog: Channel = {
       ...newChannel('p', 'Test'),
       modeProfiles: [defaultModeProfile('fm')],
     };
-    const dualAnalogTx = {
+    const dualAnalogTx: Channel = {
       ...newChannel('p', 'Test'),
       primaryMode: 'fm' as const,
       modeProfiles: [defaultModeProfile('fm'), defaultModeProfile('dmr')],
@@ -72,7 +73,7 @@ describe('anytone wireFormat channel mode mapping', () => {
   });
 
   it('maps split frequencies to repeater DMR MODE wire 1', () => {
-    const channel = {
+    const channel: Channel = {
       ...newChannel('p', 'Test'),
       rxFrequency: 438_800_000,
       txFrequency: 434_000_000,
@@ -82,7 +83,7 @@ describe('anytone wireFormat channel mode mapping', () => {
   });
 
   it('maps simplex frequencies to DMO DMR MODE wire 0', () => {
-    const channel = {
+    const channel: Channel = {
       ...newChannel('p', 'Test'),
       rxFrequency: 145_000_000,
       txFrequency: 145_000_000,
@@ -92,11 +93,11 @@ describe('anytone wireFormat channel mode mapping', () => {
   });
 
   it('uses explicit profile dmrMode over frequency inference', () => {
-    const channel = {
+    const channel: Channel = {
       ...newChannel('p', 'Test'),
       rxFrequency: 145_000_000,
       txFrequency: 145_000_000,
-      modeProfiles: [{ ...defaultModeProfile('dmr'), dmrMode: 'repeater' as const }],
+      modeProfiles: [{ ...(defaultModeProfile('dmr') as ChannelModeProfileDMR), dmrMode: 'repeater' }],
     };
     expect(formatAnytoneDmrModeWire(channel)).toBe('1');
   });

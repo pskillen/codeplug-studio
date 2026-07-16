@@ -22,7 +22,9 @@ export function generateChannelsFromSet(
   options: ChannelSetGenerateOptions = {},
 ): Channel[] {
   const def = channelSetDefinition(setId);
-  const forbidTransmit = options.forbidTransmit ?? def.defaultForbidTransmit;
+  const forbidTransmitOverride = (options.forbidTransmit ?? def.defaultForbidTransmit)
+    ? 'forbid'
+    : 'default';
   const power = options.power !== undefined ? options.power : null;
   const bandwidthKHz = options.bandwidthKHz ?? def.defaultBandwidthKHz;
   const modeProfiles = [fmNfmProfile(bandwidthKHz)];
@@ -35,7 +37,7 @@ export function generateChannelsFromSet(
       rxFrequency: template.rxFrequencyHz,
       txFrequency: template.txFrequencyHz,
       power,
-      forbidTransmit,
+      forbidTransmit: forbidTransmitOverride,
       modeProfiles,
     };
   });

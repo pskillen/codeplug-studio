@@ -17,10 +17,10 @@ function channelWithProfiles(name: string, modeProfiles: ChannelModeProfile[]): 
 
 describe('applyChannelBulkPatch', () => {
   it('applies only enabled channel-level keys', () => {
-    const channel = {
+    const channel: Channel = {
       ...newChannel(projectId, 'Local'),
       scanInclusion: 'default' as const,
-      forbidTransmit: false,
+      forbidTransmit: 'default' as const,
       power: 50,
     };
 
@@ -31,7 +31,7 @@ describe('applyChannelBulkPatch', () => {
 
     expect(patched.scanInclusion).toBe('skip');
     expect(patched.power).toBe(75);
-    expect(patched.forbidTransmit).toBe(false);
+    expect(patched.forbidTransmit).toBe('default');
   });
 
   it('updates squelch on all analog profiles', () => {
@@ -61,7 +61,7 @@ describe('applyChannelBulkPatch', () => {
 
 describe('channelBulkEditWouldChange', () => {
   it('returns false when values already match', () => {
-    const channel = {
+    const channel: Channel = {
       ...newChannel(projectId, 'Local'),
       scanInclusion: 'skip' as const,
       power: 50,

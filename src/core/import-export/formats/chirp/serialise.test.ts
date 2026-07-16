@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import type { Channel } from '@core/models/library.ts';
 import { newChannel } from '@core/domain/factories.ts';
 import type { AssembledBuild } from '@core/services/assemble.ts';
 import { serialiseChirpCsv } from './serialise.ts';
@@ -7,7 +8,7 @@ const projectId = '11111111-1111-4111-8111-111111111111';
 
 describe('chirp/serialise', () => {
   it('serialises memory slot order with location indices', () => {
-    const ch1 = {
+    const ch1: Channel = {
       ...newChannel(projectId, 'First'),
       id: 'ch-1',
       rxFrequency: 145_500_000,
@@ -22,7 +23,7 @@ describe('chirp/serialise', () => {
         },
       ],
     };
-    const ch2 = {
+    const ch2: Channel = {
       ...newChannel(projectId, 'Second'),
       id: 'ch-2',
       rxFrequency: 433_500_000,
@@ -67,7 +68,7 @@ describe('chirp/serialise', () => {
   });
 
   it('emits blank rows for empty memory slots', () => {
-    const ch1 = {
+    const ch1: Channel = {
       ...newChannel(projectId, 'First'),
       id: 'ch-1',
       rxFrequency: 145_500_000,
@@ -111,7 +112,7 @@ describe('chirp/serialise', () => {
   });
 
   it('skips digital-only channels with warning', () => {
-    const dmr = {
+    const dmr: Channel = {
       ...newChannel(projectId, 'DMR'),
       id: 'ch-dmr',
       modeProfiles: [

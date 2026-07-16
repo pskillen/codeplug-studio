@@ -18,7 +18,7 @@ export function generateChannelsFromAirport(
   airport: AirbandAirportInput,
   options: AirbandGenerateOptions = {},
 ): Channel[] {
-  const forbidTransmit = options.forbidTransmit ?? true;
+  const forbidTransmitOverride = (options.forbidTransmit ?? true) ? 'forbid' : 'default';
   const power = options.power !== undefined ? options.power : null;
   const bandwidthKHz = options.bandwidthKHz ?? 12.5;
   const modeProfiles = [amAirbandProfile(bandwidthKHz)];
@@ -39,7 +39,7 @@ export function generateChannelsFromAirport(
       rxFrequency: freq.rxFrequencyHz,
       txFrequency: null,
       power,
-      forbidTransmit,
+      forbidTransmit: forbidTransmitOverride,
       modeProfiles,
       ...(airport.location
         ? {

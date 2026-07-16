@@ -1,56 +1,32 @@
 import { describe, expect, it } from 'vitest';
-import { emptyLibrary, newZone } from '@core/domain/factories.ts';
+import type { Channel } from '@core/models/library.ts';
+import { emptyLibrary, newChannel, newZone } from '@core/domain/factories.ts';
 import { buildAirbandImportPlan, channelIdsForZoneMembership } from './airbandImport.ts';
+
+function airbandChannel(id: string, name = 'GLA Tower'): Channel {
+  return {
+    ...newChannel('p1', name),
+    id,
+    rxFrequency: 118_805_000,
+    txFrequency: null,
+    forbidTransmit: 'forbid',
+    modeProfiles: [
+      { mode: 'am', squelch: null, rxTone: 'none', txTone: 'none', bandwidthKHz: 12.5 },
+    ],
+  };
+}
 
 describe('channelIdsForZoneMembership', () => {
   it('includes existing library id for skipped duplicate by rx hz', () => {
     const library = emptyLibrary();
-    library.channels.push({
-      id: 'existing',
-      projectId: 'p1',
-      name: 'GLA Tower',
-      callsign: '',
-      rxFrequency: 118_805_000,
-      txFrequency: null,
-      location: null,
-      useLocation: false,
-      maidenheadLocator: null,
-      power: null,
-      forbidTransmit: true,
-      scanInclusion: 'default',
-      comment: '',
-      modeProfiles: [
-        { mode: 'am', squelch: null, rxTone: 'none', txTone: 'none', bandwidthKHz: 12.5 },
-      ],
-      revision: 1,
-      updatedAt: '',
-    });
+    library.channels.push(airbandChannel('existing'));
 
     const ids = channelIdsForZoneMembership(
       library,
       [],
       [
         {
-          channel: {
-            id: 'throwaway',
-            projectId: 'p1',
-            name: 'GLA Tower',
-            callsign: '',
-            rxFrequency: 118_805_000,
-            txFrequency: null,
-            location: null,
-            useLocation: false,
-            maidenheadLocator: null,
-            power: null,
-            forbidTransmit: true,
-            scanInclusion: 'default',
-            comment: '',
-            modeProfiles: [
-              { mode: 'am', squelch: null, rxTone: 'none', txTone: 'none', bandwidthKHz: 12.5 },
-            ],
-            revision: 1,
-            updatedAt: '',
-          },
+          channel: airbandChannel('throwaway'),
           reason: 'rx_hz',
         },
       ],
@@ -63,26 +39,7 @@ describe('channelIdsForZoneMembership', () => {
 describe('buildAirbandImportPlan', () => {
   it('dedupes and creates optional batch zone with default name', () => {
     const library = emptyLibrary();
-    library.channels.push({
-      id: 'existing',
-      projectId: 'p1',
-      name: 'GLA Tower',
-      callsign: '',
-      rxFrequency: 118_805_000,
-      txFrequency: null,
-      location: null,
-      useLocation: false,
-      maidenheadLocator: null,
-      power: null,
-      forbidTransmit: true,
-      scanInclusion: 'default',
-      comment: '',
-      modeProfiles: [
-        { mode: 'am', squelch: null, rxTone: 'none', txTone: 'none', bandwidthKHz: 12.5 },
-      ],
-      revision: 1,
-      updatedAt: '',
-    });
+    library.channels.push(airbandChannel('existing'));
 
     const plan = buildAirbandImportPlan(
       library,
@@ -208,26 +165,7 @@ describe('buildAirbandImportPlan', () => {
 
   it('appends skipped duplicate channels to existing zone by library id', () => {
     const library = emptyLibrary();
-    library.channels.push({
-      id: 'existing',
-      projectId: 'p1',
-      name: 'GLA Tower',
-      callsign: '',
-      rxFrequency: 118_805_000,
-      txFrequency: null,
-      location: null,
-      useLocation: false,
-      maidenheadLocator: null,
-      power: null,
-      forbidTransmit: true,
-      scanInclusion: 'default',
-      comment: '',
-      modeProfiles: [
-        { mode: 'am', squelch: null, rxTone: 'none', txTone: 'none', bandwidthKHz: 12.5 },
-      ],
-      revision: 1,
-      updatedAt: '',
-    });
+    library.channels.push(airbandChannel('existing'));
     const airband = { ...newZone('p1', 'Airband'), id: 'zone-airband' };
     library.zones.push(airband);
 

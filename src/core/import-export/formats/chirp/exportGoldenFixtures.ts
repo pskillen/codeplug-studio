@@ -1,3 +1,5 @@
+import { forbidTransmitFromLegacyBoolean } from '@core/import-export/channelBehaviourDefaults/resolve.ts';
+import { DEFAULT_CHANNEL_BEHAVIOUR_OVERRIDES } from '@core/models/channelBehaviourDefaults.ts';
 import { parseCsv } from '@core/import-export/csvParse.ts';
 import type { FormatBuild } from '@core/models/formatBuild.ts';
 import type { Channel, ChannelModeProfileAnalog } from '@core/models/library.ts';
@@ -88,7 +90,8 @@ export function libraryAndBuildFromChirpFixture(
       maidenheadLocator: null,
       power: parseChirpPowerWire(cell(row, idx.power), profileId),
       scanInclusion: scanInclusionFromChirpSkipColumn(cell(row, idx.skip)),
-      forbidTransmit,
+      ...DEFAULT_CHANNEL_BEHAVIOUR_OVERRIDES,
+      forbidTransmit: forbidTransmitFromLegacyBoolean(forbidTransmit),
       comment: '',
       modeProfiles: [modeProfile],
     });

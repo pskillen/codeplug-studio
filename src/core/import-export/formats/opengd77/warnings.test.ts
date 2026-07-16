@@ -1,27 +1,11 @@
 import { describe, expect, it } from 'vitest';
+import { newChannel } from '@core/domain/factories.ts';
 import type { Channel } from '@core/models/library.ts';
 import type { AssembledBuild } from '@core/services/assemble.ts';
 import { collectOpenGd77ExportWarnings } from './warnings.ts';
 
 function stubChannel(name: string): Channel {
-  return {
-    id: 'ch-1',
-    projectId: 'p1',
-    name,
-    revision: 1,
-    updatedAt: '2026-01-01T00:00:00.000Z',
-    callsign: '',
-    rxFrequency: null,
-    txFrequency: null,
-    location: null,
-    useLocation: false,
-    maidenheadLocator: null,
-    power: null,
-    scanInclusion: 'default',
-    forbidTransmit: false,
-    comment: '',
-    modeProfiles: [],
-  };
+  return { ...newChannel('p1', name), id: 'ch-1' };
 }
 
 function minimalAssembled(overrides: Partial<AssembledBuild> = {}): AssembledBuild {

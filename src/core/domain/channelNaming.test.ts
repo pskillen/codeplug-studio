@@ -1,26 +1,10 @@
 import { describe, expect, it } from 'vitest';
+import { newChannel } from './factories.ts';
 import { composeChannelWireName, defaultChannelWireName } from './channelNaming.ts';
 import type { Channel } from '@core/models/library.ts';
 
 function channel(partial: Partial<Channel> & Pick<Channel, 'name'>): Channel {
-  return {
-    id: 'ch-1',
-    projectId: 'p1',
-    revision: 1,
-    updatedAt: '2026-01-01T00:00:00.000Z',
-    callsign: '',
-    rxFrequency: null,
-    txFrequency: null,
-    location: null,
-    useLocation: false,
-    maidenheadLocator: null,
-    power: null,
-    scanInclusion: 'default',
-    forbidTransmit: false,
-    comment: '',
-    modeProfiles: [],
-    ...partial,
-  };
+  return { ...newChannel('p1', partial.name), ...partial };
 }
 
 describe('defaultChannelWireName', () => {

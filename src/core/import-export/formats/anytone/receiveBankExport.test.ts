@@ -1,4 +1,5 @@
 import { readFileSync } from 'node:fs';
+import type { Channel } from '@core/models/library.ts';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
@@ -25,11 +26,11 @@ const wireFixtureDir = join(
 );
 
 function airbandLibrary(): LibrarySlice {
-  const airband = {
+  const airband: Channel = {
     ...newChannel(ANYTONE_GOLDEN_PROJECT_ID, 'Air station 1'),
     rxFrequency: 118_800_000,
     txFrequency: null,
-    forbidTransmit: true,
+    forbidTransmit: 'forbid',
     modeProfiles: [defaultModeProfile('am')],
   };
   return {
@@ -52,11 +53,11 @@ function airbandBuild(library: LibrarySlice): FormatBuild {
 }
 
 function fmBroadcastLibrary(scanInclusion: 'default' | 'skip' = 'default'): LibrarySlice {
-  const fm = {
+  const fm: Channel = {
     ...newChannel(ANYTONE_GOLDEN_PROJECT_ID, 'FM station 1'),
     rxFrequency: 99_500_000,
     txFrequency: null,
-    forbidTransmit: true,
+    forbidTransmit: 'forbid',
     scanInclusion,
     modeProfiles: [defaultModeProfile('fm')],
   };
@@ -117,11 +118,11 @@ describe('anytone/receive bank export', () => {
     const result = exportBuildAll({ build, library });
     expect(result.files['FM.CSV']).toBeDefined();
 
-    const hamFm = {
+    const hamFm: Channel = {
       ...newChannel(ANYTONE_GOLDEN_PROJECT_ID, '2m FM'),
       rxFrequency: 145_500_000,
       txFrequency: null,
-      forbidTransmit: true,
+      forbidTransmit: 'forbid',
       modeProfiles: [defaultModeProfile('fm')],
     };
     const mixedLibrary: LibrarySlice = {

@@ -1,24 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import type { Channel } from '@core/models/library.ts';
+import { newChannel } from '@core/domain/factories.ts';
 import { expandChannelWireRows } from './multiMode.ts';
 
 function multiModeChannel(): Channel {
   return {
-    id: 'ch-1',
-    projectId: 'p1',
-    revision: 1,
-    updatedAt: '2026-01-01T00:00:00.000Z',
-    name: 'Glasgow',
-    callsign: 'GB7GL',
+    ...newChannel('p1', 'Glasgow', 'GB7GL'),
     rxFrequency: 430000000,
     txFrequency: 430000000,
-    location: null,
-    useLocation: false,
-    maidenheadLocator: null,
-    power: null,
-    scanInclusion: 'default',
-    forbidTransmit: false,
-    comment: '',
     modeProfiles: [
       { mode: 'fm', squelch: 50, rxTone: 'none', txTone: 'none', bandwidthKHz: 12.5 },
       {

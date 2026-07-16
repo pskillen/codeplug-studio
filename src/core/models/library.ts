@@ -10,6 +10,13 @@ import type {
   GeoPoint,
   SsbSideband,
 } from './libraryTypes.ts';
+import type {
+  AnalogSquelchModeOverride,
+  ChannelBehaviourDefaults,
+  ForbidTransmitOverride,
+  SendTalkerAliasOverride,
+  TxPermitOverride,
+} from './channelBehaviourDefaults.ts';
 import type { ChannelAprsBinding } from './aprs.ts';
 
 export type {
@@ -107,8 +114,14 @@ export interface Channel extends PersistableRow {
   scanInclusion: ScanInclusion;
   /** Optional FK to library `ScanList` for dedicated-scan-list CPS export. */
   scanListId?: string | null;
-  /** When true, channel is receive-only (no transmit) at export. */
-  forbidTransmit: boolean;
+  /** TX deny override — `default` defers to library + build cascade. */
+  forbidTransmit: ForbidTransmitOverride;
+  /** Busy lock / TX permit override. */
+  txPermit: TxPermitOverride;
+  /** Send talker alias override (DMR/NXDN). */
+  sendTalkerAlias: SendTalkerAliasOverride;
+  /** Analog squelch mode override. */
+  analogSquelchMode: AnalogSquelchModeOverride;
   comment: string;
   /** Primary mode for dual-mode CPS export (Anytone Channel Type, DM32 Fixed Analog/Digital). */
   primaryMode?: ChannelMode | null;
@@ -188,4 +201,6 @@ export interface Library {
   scanLists: ScanList[];
   zones: Zone[];
   aprsConfiguration: AprsConfiguration | null;
+  /** Library-wide channel behavioural defaults (also persisted on project meta). */
+  channelDefaults: ChannelBehaviourDefaults;
 }

@@ -1,4 +1,5 @@
 import type { Channel, ChannelModeProfileAnalog, ScanInclusion } from '../models/library.ts';
+import type { ForbidTransmitOverride } from '../models/channelBehaviourDefaults.ts';
 import {
   channelHasAnalogProfile,
   isAnalogChannelModeProfile,
@@ -7,7 +8,7 @@ import {
 
 export type ChannelBulkEditPatch = {
   scanInclusion?: ScanInclusion;
-  forbidTransmit?: boolean;
+  forbidTransmit?: ForbidTransmitOverride;
   /** `null` = radio default (no fixed level). */
   power?: number | null;
   /** `null` = open / radio-default squelch on analog profiles. */

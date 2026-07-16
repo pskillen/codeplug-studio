@@ -39,7 +39,10 @@ function previewChannel(callsign: string): Channel {
     maidenheadLocator: null,
     power: null,
     scanInclusion: 'default',
-    forbidTransmit: false,
+    forbidTransmit: 'default',
+    txPermit: 'default',
+    sendTalkerAlias: 'default',
+    analogSquelchMode: 'default',
     comment: '',
     modeProfiles: [
       {

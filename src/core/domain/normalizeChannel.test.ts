@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import type { Channel } from '@core/models/library.ts';
 import { newChannel } from './factories.ts';
 import { normalizeChannel } from './normalizeChannel.ts';
 import { defaultModeProfile } from './modeProfiles.ts';
@@ -13,7 +14,7 @@ describe('normalizeChannel', () => {
   });
 
   it('preserves valid primaryMode', () => {
-    const channel = {
+    const channel: Channel = {
       ...newChannel('proj', 'Test'),
       modeProfiles: [defaultModeProfile('fm'), defaultModeProfile('dmr')],
       primaryMode: 'dmr' as const,
@@ -22,7 +23,7 @@ describe('normalizeChannel', () => {
   });
 
   it('clears invalid primaryMode wire values', () => {
-    const channel = {
+    const channel: Channel = {
       ...newChannel('proj', 'Test'),
       modeProfiles: [defaultModeProfile('fm')],
       primaryMode: 'not-a-mode' as never,

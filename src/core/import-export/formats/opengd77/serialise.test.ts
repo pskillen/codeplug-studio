@@ -77,7 +77,7 @@ describe('OpenGD77 export serialise', () => {
   }
 
   it('defaults analogue bandwidth to 12.5 kHz when unset', () => {
-    const channel = {
+    const channel: Channel = {
       ...newChannel('proj', 'FM Default'),
       rxFrequency: 145_750_000,
       txFrequency: 145_150_000,
@@ -96,7 +96,7 @@ describe('OpenGD77 export serialise', () => {
   });
 
   it('exports explicit analogue bandwidth unchanged', () => {
-    const channel = {
+    const channel: Channel = {
       ...newChannel('proj', 'FM Wide'),
       rxFrequency: 145_750_000,
       txFrequency: 145_150_000,
@@ -115,7 +115,7 @@ describe('OpenGD77 export serialise', () => {
   });
 
   it('leaves bandwidth empty for digital-only rows', () => {
-    const channel = {
+    const channel: Channel = {
       ...newChannel('proj', 'DMR Only'),
       rxFrequency: 430_850_000,
       txFrequency: 438_450_000,
@@ -135,11 +135,11 @@ describe('OpenGD77 export serialise', () => {
   });
 
   it('maps forbidTransmit to Rx Only column', () => {
-    const channel = {
+    const channel: Channel = {
       ...newChannel('proj', 'RX Only Site'),
       rxFrequency: 145_750_000,
       txFrequency: 145_150_000,
-      forbidTransmit: true,
+      forbidTransmit: 'forbid',
       modeProfiles: [
         {
           mode: 'fm' as const,

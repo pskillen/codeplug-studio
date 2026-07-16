@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import type { Channel } from '@core/models/library.ts';
 import { newChannel } from '@core/domain/factories.ts';
 import type { AssembledChannel } from '@core/services/assemble.ts';
 import { channelToChirpRow, type ChirpChannelWireOptions } from './exportChannelWire.ts';
@@ -14,7 +15,7 @@ function testWireOptions(): ChirpChannelWireOptions {
 }
 
 function assembledChannel(patch: Partial<ReturnType<typeof newChannel>>): AssembledChannel {
-  const entity = {
+  const entity: Channel = {
     ...newChannel(projectId, 'Test'),
     modeProfiles: [
       {
@@ -37,7 +38,7 @@ describe('chirp/exportChannelWire', () => {
         name: 'Simplex',
         rxFrequency: 145_500_000,
         txFrequency: 145_500_000,
-        forbidTransmit: false,
+        forbidTransmit: 'default',
       }),
       1,
       'chirp-uv5r',
@@ -54,7 +55,7 @@ describe('chirp/exportChannelWire', () => {
         name: 'Listen only',
         rxFrequency: 145_500_000,
         txFrequency: 145_500_000,
-        forbidTransmit: true,
+        forbidTransmit: 'forbid',
       }),
       2,
       'chirp-uv5r',
@@ -73,7 +74,7 @@ describe('chirp/exportChannelWire', () => {
         callsign: 'GB7AC',
         rxFrequency: 145_500_000,
         txFrequency: 145_500_000,
-        forbidTransmit: false,
+        forbidTransmit: 'default',
       }),
       3,
       'chirp-uv5r',

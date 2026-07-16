@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import type { Channel } from '@core/models/library.ts';
 import { newChannel, newFormatBuild, newTalkGroup, newZone } from '@core/domain/factories.ts';
 import { assemble } from '@core/services/assemble.ts';
 import { resolveEffectiveExportFileNames } from './exportFileNames.ts';
@@ -8,7 +9,7 @@ const PROJECT_ID = '11111111-1111-4111-8111-111111111111';
 
 function anytoneLibraryWithAirband() {
   const tg = newTalkGroup(PROJECT_ID, 'TG Alpha', 2355);
-  const dmrChannel = {
+  const dmrChannel: Channel = {
     ...newChannel(PROJECT_ID, 'DMR 1'),
     rxFrequency: 438_800_000,
     txFrequency: 434_000_000,
@@ -23,9 +24,9 @@ function anytoneLibraryWithAirband() {
       },
     ],
   };
-  const airChannel = {
+  const airChannel: Channel = {
     ...newChannel(PROJECT_ID, 'Tower'),
-    forbidTransmit: true,
+    forbidTransmit: 'forbid',
     txFrequency: null,
     rxFrequency: 118_800_000,
     modeProfiles: [
@@ -88,7 +89,7 @@ describe('resolveEffectiveExportFileNames', () => {
 
   it('omits Anytone conditional receive banks when not in build', () => {
     const tg = newTalkGroup(PROJECT_ID, 'TG Alpha', 2355);
-    const channel = {
+    const channel: Channel = {
       ...newChannel(PROJECT_ID, 'DMR 1'),
       rxFrequency: 438_800_000,
       txFrequency: 434_000_000,

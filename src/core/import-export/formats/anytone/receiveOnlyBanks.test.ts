@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import type { Channel } from '@core/models/library.ts';
 import { newChannel } from '@core/domain/factories.ts';
 import { defaultModeProfile } from '@core/domain/modeProfiles.ts';
 import type { AssembledChannel } from '@core/services/assemble.ts';
@@ -34,38 +35,38 @@ function emptyAssembled(channels: AssembledChannel[]) {
 
 describe('receiveOnlyBanks', () => {
   it('isReceiveOnlyChannel is true when forbidTransmit or null TX', () => {
-    expect(isReceiveOnlyChannel({ forbidTransmit: true, txFrequency: 434_000_000 })).toBe(true);
-    expect(isReceiveOnlyChannel({ forbidTransmit: false, txFrequency: null })).toBe(true);
-    expect(isReceiveOnlyChannel({ forbidTransmit: false, txFrequency: 434_000_000 })).toBe(false);
+    expect(isReceiveOnlyChannel({ forbidTransmit: 'forbid', txFrequency: 434_000_000 })).toBe(true);
+    expect(isReceiveOnlyChannel({ forbidTransmit: 'default', txFrequency: null })).toBe(true);
+    expect(isReceiveOnlyChannel({ forbidTransmit: 'default', txFrequency: 434_000_000 })).toBe(false);
   });
 
   it('classifies AM airband vs ham FM vs DMR', () => {
-    const airband = {
+    const airband: Channel = {
       ...newChannel(PROJECT_ID, 'GLA Tower'),
       rxFrequency: 118_800_000,
       txFrequency: null,
-      forbidTransmit: true,
+      forbidTransmit: 'forbid',
       modeProfiles: [defaultModeProfile('am')],
     };
-    const broadcast = {
+    const broadcast: Channel = {
       ...newChannel(PROJECT_ID, 'FM station 1'),
       rxFrequency: 99_500_000,
       txFrequency: null,
-      forbidTransmit: true,
+      forbidTransmit: 'forbid',
       modeProfiles: [defaultModeProfile('fm')],
     };
-    const hamFm = {
+    const hamFm: Channel = {
       ...newChannel(PROJECT_ID, '2m FM'),
       rxFrequency: 145_500_000,
       txFrequency: null,
-      forbidTransmit: true,
+      forbidTransmit: 'forbid',
       modeProfiles: [defaultModeProfile('fm')],
     };
-    const dmr = {
+    const dmr: Channel = {
       ...newChannel(PROJECT_ID, 'DMR'),
       rxFrequency: 438_800_000,
       txFrequency: 434_000_000,
-      forbidTransmit: false,
+      forbidTransmit: 'default',
       modeProfiles: [defaultModeProfile('dmr')],
     };
 
@@ -77,25 +78,25 @@ describe('receiveOnlyBanks', () => {
   });
 
   it('partitionAnytoneChannels routes channels to correct banks', () => {
-    const airband = {
+    const airband: Channel = {
       ...newChannel(PROJECT_ID, 'GLA Tower'),
       rxFrequency: 118_800_000,
       txFrequency: null,
-      forbidTransmit: true,
+      forbidTransmit: 'forbid',
       modeProfiles: [defaultModeProfile('am')],
     };
-    const broadcast = {
+    const broadcast: Channel = {
       ...newChannel(PROJECT_ID, 'FM station 1'),
       rxFrequency: 99_500_000,
       txFrequency: null,
-      forbidTransmit: true,
+      forbidTransmit: 'forbid',
       modeProfiles: [defaultModeProfile('fm')],
     };
-    const dmr = {
+    const dmr: Channel = {
       ...newChannel(PROJECT_ID, 'DMR'),
       rxFrequency: 438_800_000,
       txFrequency: 434_000_000,
-      forbidTransmit: false,
+      forbidTransmit: 'default',
       modeProfiles: [defaultModeProfile('dmr')],
     };
 
@@ -109,25 +110,25 @@ describe('receiveOnlyBanks', () => {
   });
 
   it('classifyAnytoneExportChannelBank mirrors partition', () => {
-    const airband = {
+    const airband: Channel = {
       ...newChannel(PROJECT_ID, 'GLA Tower'),
       rxFrequency: 118_800_000,
       txFrequency: null,
-      forbidTransmit: true,
+      forbidTransmit: 'forbid',
       modeProfiles: [defaultModeProfile('am')],
     };
-    const broadcast = {
+    const broadcast: Channel = {
       ...newChannel(PROJECT_ID, 'FM station 1'),
       rxFrequency: 99_500_000,
       txFrequency: null,
-      forbidTransmit: true,
+      forbidTransmit: 'forbid',
       modeProfiles: [defaultModeProfile('fm')],
     };
-    const dmr = {
+    const dmr: Channel = {
       ...newChannel(PROJECT_ID, 'DMR'),
       rxFrequency: 438_800_000,
       txFrequency: 434_000_000,
-      forbidTransmit: false,
+      forbidTransmit: 'default',
       modeProfiles: [defaultModeProfile('dmr')],
     };
 

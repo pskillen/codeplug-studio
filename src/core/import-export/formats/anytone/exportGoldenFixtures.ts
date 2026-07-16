@@ -6,6 +6,7 @@ import {
   newTalkGroup,
   newZone,
 } from '@core/domain/factories.ts';
+import type { Channel } from '@core/models/library.ts';
 import type { FormatBuild } from '@core/models/formatBuild.ts';
 import type { LibrarySlice } from '@core/services/assemble.ts';
 
@@ -130,11 +131,11 @@ export function aprsEnabledAnytoneExportLibrary(): LibrarySlice {
 
 /** APRS slot bound to an AM airband channel (receive bank). */
 export function aprsAmAirSlotExportLibrary(): LibrarySlice {
-  const airband = {
+  const airband: Channel = {
     ...newChannel(ANYTONE_GOLDEN_PROJECT_ID, 'Air station 1'),
     rxFrequency: 118_800_000,
     txFrequency: null,
-    forbidTransmit: true,
+    forbidTransmit: 'forbid',
     modeProfiles: [
       {
         mode: 'am' as const,

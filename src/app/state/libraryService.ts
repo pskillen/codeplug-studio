@@ -1,5 +1,6 @@
 import type { Library } from '@core/models/library.ts';
 import { normalizeChannel } from '@core/domain/normalizeChannel.ts';
+import { normalizeChannelBehaviourDefaults } from '@core/domain/normalizeChannelBehaviourDefaults.ts';
 import { findReferencesTo, type EntityReference } from '@core/domain/references.ts';
 import {
   removeChannelsFromZoneMembers,
@@ -21,6 +22,7 @@ export class LibraryService {
 
   async loadLibrary(projectId: string): Promise<Library> {
     const [
+      meta,
       channels,
       zones,
       talkGroups,
@@ -30,6 +32,7 @@ export class LibraryService {
       scanLists,
       aprsConfigurations,
     ] = await Promise.all([
+      this.persistence.loadProjectMeta(projectId),
       this.persistence.listChannels(projectId),
       this.persistence.listZones(projectId),
       this.persistence.listTalkGroups(projectId),
@@ -40,6 +43,7 @@ export class LibraryService {
       this.persistence.listAprsConfigurations(projectId),
     ]);
     const aprsConfiguration = aprsConfigurations[0] ?? null;
+    const channelDefaults = normalizeChannelBehaviourDefaults(meta?.channelDefaults);
     return {
       channels: channels.map(normalizeChannel),
       zones,
@@ -49,6 +53,7 @@ export class LibraryService {
       rxGroupLists,
       scanLists,
       aprsConfiguration,
+      channelDefaults,
     };
   }
 

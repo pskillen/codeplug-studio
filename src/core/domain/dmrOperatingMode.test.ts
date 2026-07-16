@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import type { Channel, ChannelModeProfileDMR } from '../models/library.ts';
 import { newChannel } from './factories.ts';
 import { defaultModeProfile } from './modeProfiles.ts';
 import {
@@ -16,7 +17,7 @@ describe('dmrOperatingMode', () => {
   });
 
   it('infers simplex when RX equals TX', () => {
-    const channel = {
+    const channel: Channel = {
       ...newChannel('proj', 'Test'),
       rxFrequency: 145_000_000,
       txFrequency: 145_000_000,
@@ -25,7 +26,7 @@ describe('dmrOperatingMode', () => {
   });
 
   it('infers repeater when RX differs from TX', () => {
-    const channel = {
+    const channel: Channel = {
       ...newChannel('proj', 'Test'),
       rxFrequency: 145_600_000,
       txFrequency: 145_000_000,
@@ -39,11 +40,11 @@ describe('dmrOperatingMode', () => {
   });
 
   it('uses explicit profile dmrMode over inference', () => {
-    const channel = {
+    const channel: Channel = {
       ...newChannel('proj', 'Test'),
       rxFrequency: 145_000_000,
       txFrequency: 145_000_000,
-      modeProfiles: [{ ...defaultModeProfile('dmr'), dmrMode: 'repeater' as const }],
+      modeProfiles: [{ ...(defaultModeProfile('dmr') as ChannelModeProfileDMR), dmrMode: 'repeater' }],
     };
     expect(resolveDmrOperatingMode(channel)).toBe('repeater');
   });

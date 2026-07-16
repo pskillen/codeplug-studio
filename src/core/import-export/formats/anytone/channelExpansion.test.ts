@@ -7,7 +7,7 @@ import {
   newZone,
 } from '@core/domain/factories.ts';
 import { assemble } from '@core/services/assemble.ts';
-import type { ChannelModeProfileDMR } from '@core/models/library.ts';
+import type { Channel, ChannelModeProfileDMR } from '@core/models/library.ts';
 import {
   expandAllAnytoneChannelsForExport,
   expandAnytoneChannelWireRows,
@@ -168,7 +168,7 @@ describe('anytone channelExpansion', () => {
   });
 
   it('RX-expanded hotspot uses Hspt prefix without phantom disambiguation', () => {
-    const hsptOccupier = {
+    const hsptOccupier: Channel = {
       ...newChannel(PROJECT_ID, 'Hspt'),
       rxFrequency: 145_500_000,
       txFrequency: 145_500_000,
@@ -191,7 +191,7 @@ describe('anytone channelExpansion', () => {
         { ref: { kind: 'talkGroup' as const, id: tg2357910.id } },
       ],
     };
-    const hotspot = {
+    const hotspot: Channel = {
       ...newChannel(PROJECT_ID, 'Hotspot'),
       abbreviation: 'Hspt',
       callsign: '',
