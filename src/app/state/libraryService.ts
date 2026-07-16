@@ -11,6 +11,13 @@ import type { LibraryEntityKind, ProjectPersistence } from '@integrations/persis
 
 export type DeleteOutcome = { ok: true } | { ok: false; references: EntityReference[] };
 
+export type DeleteAllDigitalContactsResult = {
+  deletedCount: number;
+  clearedChannelRefs: number;
+  clearedRxMembers: number;
+  prunedBuildOverrides: number;
+};
+
 /**
  * App-layer service orchestrating library persistence over the
  * {@link ProjectPersistence} port with `core` referential-integrity rules.
@@ -73,6 +80,99 @@ export class LibraryService {
     }
     await this.persistence.deleteEntity(projectId, kind, id);
     return { ok: true };
+  }
+
+  /**
+   * Wipe every digital contact for a project. Unlike single-row delete, this
+   * cascade-clears channel `contactRef`s and RX-list members that point at
+   * digital contacts, then clears the contact store without loading all
+   * contact rows into an aggregate `Library`.
+   */
+  async deleteAllDigitalContacts(projectId: string): Promise<DeleteAllDigitalContactsResult> {
+    return this.persistence.runWithoutNotifications(async () => {
+      let clearedChannelRefs = 0;
+      const channels = await this.persistence.listChannels(projectId);
+      for (const channel of channels) {
+        let changed = false;
+        const modeProfiles = channel.modeProfiles.map((profile) => {
+          if (profile.mode === 'dmr' && profile.contactRef?.kind === 'digitalContact') {
+            clearedChannelRefs += 1;
+            changed = true;
+            return { ...profile, contactRef: null };
+          }
+          return profile;
+        });
+        if (!changed) continue;
+        const result = await this.persistence.putChannel(
+          { ...channel, modeProfiles },
+          channel.revision,
+        );
+        if (!result.ok) {
+          throw new Error(
+            result.reason === 'revision_conflict'
+              ? 'A channel was changed elsewhere. Reload and try again.'
+              : 'Failed to clear channel contact references.',
+          );
+        }
+      }
+
+      let clearedRxMembers = 0;
+      const rxGroupLists = await this.persistence.listRxGroupLists(projectId);
+      for (const list of rxGroupLists) {
+        const nextMembers = list.members.filter((member) => {
+          if (member.ref.kind === 'digitalContact') {
+            clearedRxMembers += 1;
+            return false;
+          }
+          return true;
+        });
+        if (nextMembers.length === list.members.length) continue;
+        const result = await this.persistence.putRxGroupList(
+          { ...list, members: nextMembers },
+          list.revision,
+        );
+        if (!result.ok) {
+          throw new Error(
+            result.reason === 'revision_conflict'
+              ? 'An RX group list was changed elsewhere. Reload and try again.'
+              : 'Failed to clear RX group list contact members.',
+          );
+        }
+      }
+
+      let prunedBuildOverrides = 0;
+      const analogIds = new Set(
+        (await this.persistence.listAnalogContacts(projectId)).map((contact) => contact.id),
+      );
+      const builds = await this.persistence.listFormatBuilds(projectId);
+      for (const build of builds) {
+        const nextOverrides = build.contactOverrides.filter((override) =>
+          analogIds.has(override.libraryEntityId),
+        );
+        const pruned = build.contactOverrides.length - nextOverrides.length;
+        if (pruned === 0) continue;
+        prunedBuildOverrides += pruned;
+        const result = await this.persistence.putFormatBuild(
+          { ...build, contactOverrides: nextOverrides },
+          build.revision,
+        );
+        if (!result.ok) {
+          throw new Error(
+            result.reason === 'revision_conflict'
+              ? 'A format build was changed elsewhere. Reload and try again.'
+              : 'Failed to prune contact overrides on format builds.',
+          );
+        }
+      }
+
+      const { deletedCount } = await this.persistence.deleteDigitalContactsForProject(projectId);
+      return {
+        deletedCount,
+        clearedChannelRefs,
+        clearedRxMembers,
+        prunedBuildOverrides,
+      };
+    });
   }
 
   /** Remove a channel from every zone that lists it as a direct member. */

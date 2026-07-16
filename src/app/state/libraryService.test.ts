@@ -1,11 +1,16 @@
 import { describe, expect, it } from 'vitest';
 import {
+  newAnalogContact,
   newAprsConfiguration,
   newChannel,
+  newDigitalContact,
+  newFormatBuild,
   newProjectMeta,
+  newRxGroupList,
   newTalkGroup,
   newZone,
 } from '@core/domain/factories.ts';
+import type { ChannelModeProfileDMR } from '@core/models/library.ts';
 import { InMemoryProjectPersistence } from '@integrations/persistence/index.ts';
 import { LibraryService } from './libraryService.ts';
 
@@ -14,6 +19,17 @@ async function setup() {
   const meta = newProjectMeta('Test');
   await persistence.seedProject({ meta });
   return { persistence, service: new LibraryService(persistence), projectId: meta.projectId };
+}
+
+function dmrProfile(contactId: string): ChannelModeProfileDMR {
+  return {
+    mode: 'dmr',
+    colourCode: 1,
+    timeslot: 1,
+    dmrId: null,
+    contactRef: { kind: 'digitalContact', id: contactId },
+    rxGroupListId: null,
+  };
 }
 
 describe('LibraryService', () => {
@@ -87,5 +103,69 @@ describe('LibraryService', () => {
     expect(configs).toHaveLength(1);
     expect(configs[0]?.name).toBe('Second');
     expect(await persistence.getAprsConfiguration(projectId, first.id)).toBeNull();
+  });
+
+  it('deleteAllDigitalContacts clears contacts and cascade-nullifies refs', async () => {
+    const { persistence, service, projectId } = await setup();
+    const contact = newDigitalContact(projectId, 'Alpha', 123, 'dmr');
+    const analog = newAnalogContact(projectId, 'DTMF', '1234');
+    const talkGroup = newTalkGroup(projectId, 'World', 91);
+    const channel = {
+      ...newChannel(projectId, 'Local'),
+      modeProfiles: [dmrProfile(contact.id)],
+    };
+    const rxList = {
+      ...newRxGroupList(projectId, 'Group'),
+      members: [
+        { ref: { kind: 'digitalContact' as const, id: contact.id } },
+        { ref: { kind: 'talkGroup' as const, id: talkGroup.id } },
+      ],
+    };
+    const build = {
+      ...newFormatBuild(projectId, 'opengd77-1701'),
+      contactOverrides: [
+        { libraryEntityId: contact.id, wireName: 'WireA' },
+        { libraryEntityId: analog.id, wireName: 'WireAnalog' },
+      ],
+    };
+    await persistence.putDigitalContact(contact, null);
+    await persistence.putAnalogContact(analog, null);
+    await persistence.putTalkGroup(talkGroup, null);
+    await persistence.putChannel(channel, null);
+    await persistence.putRxGroupList(rxList, null);
+    await persistence.putFormatBuild(build, null);
+
+    const outcome = await service.deleteAllDigitalContacts(projectId);
+
+    expect(outcome).toEqual({
+      deletedCount: 1,
+      clearedChannelRefs: 1,
+      clearedRxMembers: 1,
+      prunedBuildOverrides: 1,
+    });
+    expect(await persistence.listDigitalContacts(projectId)).toHaveLength(0);
+    expect(await persistence.listAnalogContacts(projectId)).toHaveLength(1);
+
+    const updatedChannel = await persistence.getChannel(projectId, channel.id);
+    const dmr = updatedChannel?.modeProfiles.find((p) => p.mode === 'dmr');
+    expect(dmr && dmr.mode === 'dmr' ? dmr.contactRef : 'missing').toBeNull();
+
+    const updatedRx = await persistence.getRxGroupList(projectId, rxList.id);
+    expect(updatedRx?.members).toEqual([{ ref: { kind: 'talkGroup', id: talkGroup.id } }]);
+
+    const updatedBuild = await persistence.getFormatBuild(projectId, build.id);
+    expect(updatedBuild?.contactOverrides).toEqual([
+      { libraryEntityId: analog.id, wireName: 'WireAnalog' },
+    ]);
+  });
+
+  it('deleteAllDigitalContacts is a no-op when the directory is empty', async () => {
+    const { service, projectId } = await setup();
+    expect(await service.deleteAllDigitalContacts(projectId)).toEqual({
+      deletedCount: 0,
+      clearedChannelRefs: 0,
+      clearedRxMembers: 0,
+      prunedBuildOverrides: 0,
+    });
   });
 });
