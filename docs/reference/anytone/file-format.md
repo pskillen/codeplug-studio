@@ -21,7 +21,8 @@ Studio export wraps every field in double quotes. Embedded `"` characters in wir
 | Context                         | Wire format                                         | Internal                          |
 | ------------------------------- | --------------------------------------------------- | --------------------------------- |
 | `Channel.CSV` RX/TX             | MHz, five decimal places (`438.80000`)              | Hz (`rxFrequency`, `txFrequency`) |
-| `AMAir.CSV` / `FM.CSV`          | MHz, four decimal places (`118.8000`, `99.500`)     | Hz                                |
+| `AMAir.CSV`                     | MHz, four decimal places (`118.8000`)               | Hz                                |
+| `FM.CSV`                        | MHz, three decimal places (`99.500`)                | Hz                                |
 | Zone / scan member freq columns | MHz, five decimal places, pipe-aligned with members | Hz (export denormalisation)       |
 
 ## Foreign keys

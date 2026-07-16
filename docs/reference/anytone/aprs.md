@@ -1,6 +1,6 @@
 # Anytone — APRS (`APRS.CSV`)
 
-Global APRS configuration for AT-D890UV — **one wide data row** (~150 columns), unlike OpenGD77 named configs in a multi-row `APRS.csv`.
+Global APRS configuration for AT-D890UV — **one wide data row** (176 columns), unlike OpenGD77 named configs in a multi-row `APRS.csv`.
 
 **Fixture:** [`test-data/anytone/at-d890uv/APRS.CSV`](../../../test-data/anytone/at-d890uv/APRS.CSV) (redacted)
 

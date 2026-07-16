@@ -1,6 +1,6 @@
 # Anytone CPS CSV reference
 
-> **Studio status:** Wire reference from operator AT-D890UV CPS export (Phase 7 wire spike [#230](https://github.com/pskillen/codeplug-studio/issues/230)); import/export adapters planned under `src/core/import-export/formats/anytone/`.
+> **Studio status:** Wire reference from operator AT-D890UV CPS export (Phase 7 wire spike [#230](https://github.com/pskillen/codeplug-studio/issues/230)). Export adapter shipped under `src/core/import-export/formats/anytone/` ([#228](https://github.com/pskillen/codeplug-studio/issues/228)); import deferred to [#229](https://github.com/pskillen/codeplug-studio/issues/229). Code ↔ docs mop-up: [#402](https://github.com/pskillen/codeplug-studio/issues/402).
 
 Authoritative reference for **Anytone Customer Programming Software (CPS) CSV** exports — one wire format among several at the import/export boundary (siblings: OpenGD77, DM32, CHIRP, …).
 
@@ -21,7 +21,7 @@ Committed fixture: [`test-data/anytone/at-d890uv/`](../../../test-data/anytone/a
 
 | File                                    | Reference                              | Model mapping        | Import (target) | Export (target)  | Notes                                                                                                                                   |
 | --------------------------------------- | -------------------------------------- | -------------------- | --------------- | ---------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
-| `Channel.CSV`                           | [channels.md](channels.md)             | **Modelled**         | Yes             | Yes              | DMR/mixed modes; 76 columns                                                                                                             |
+| `Channel.CSV`                           | [channels.md](channels.md)             | **Modelled**         | Yes             | Yes              | DMR/mixed modes; 77 columns                                                                                                             |
 | `DMRZone.CSV`                           | [zones.md](zones.md)                   | **Build layout**     | Yes             | Yes              | Zone grouping trait                                                                                                                     |
 | `ScanList.CSV`                          | [scan-lists.md](scan-lists.md)         | **Build layout**     | Yes             | Yes              | Dedicated scan lists                                                                                                                    |
 | `DMRTalkGroups.CSV`                     | [talk-groups.md](talk-groups.md)       | **Modelled**         | Yes             | Yes              | `TalkGroup` (`mode: dmr`)                                                                                                               |
@@ -30,8 +30,8 @@ Committed fixture: [`test-data/anytone/at-d890uv/`](../../../test-data/anytone/a
 | `RadioIDList.CSV`                       | [radio-ids.md](radio-ids.md)           | **Unmodelled**       | Yes             | **Omit**         | Export omitted until radio IDs modelled ([#302](https://github.com/pskillen/codeplug-studio/issues/302)) — placeholder rows clobber CPS |
 | `AMAir.CSV`                             | [am-air.md](am-air.md)                 | Maps to `Channel`    | Planned         | Yes              | AM airband receive bank ([#267](https://github.com/pskillen/codeplug-studio/issues/267))                                                |
 | `AMZone.CSV`                            | [am-air.md](am-air.md)                 | Maps to build layout | Planned         | Shipped          | Partitioned from build zones ([#316](https://github.com/pskillen/codeplug-studio/issues/316))                                           |
-| `FM.CSV`                                | [fm-broadcast.md](fm-broadcast.md)     | Maps to `Channel`    | Planned         | Deferred         | Broadcast FM receive bank                                                                                                               |
-| `APRS.CSV`                              | [aprs.md](aprs.md)                     | `AprsConfiguration`  | Shipped         | Model + defaults | Global APRS config (~176 columns); export v1 modelled subset ([#251](https://github.com/pskillen/codeplug-studio/issues/251))           |
+| `FM.CSV`                                | [fm-broadcast.md](fm-broadcast.md)     | Maps to `Channel`    | Planned         | Yes (when non-empty) | Broadcast FM receive bank ([#268](https://github.com/pskillen/codeplug-studio/issues/268)); **no `FMZone.CSV` on D890**              |
+| `APRS.CSV`                              | [aprs.md](aprs.md)                     | `AprsConfiguration`  | Shipped         | Model + defaults | Global APRS config (176 columns); export v1 modelled subset ([#251](https://github.com/pskillen/codeplug-studio/issues/251))            |
 | `NXTalkGroup.CSV`                       | [nxdn.md](nxdn.md)                     | Maps partially       | Planned         | Deferred         | NXDN talk groups                                                                                                                        |
 | `NXDigitalContactList.CSV`              | [nxdn.md](nxdn.md)                     | Maps partially       | Planned         | Deferred         | NXDN contacts                                                                                                                           |
 | `NXReceiveGroupCallList.CSV`            | [nxdn.md](nxdn.md)                     | Maps partially       | Planned         | Deferred         | NXDN RX group lists                                                                                                                     |
@@ -75,7 +75,7 @@ Evidence from wire layout — code change deferred to scaffold ticket:
 | _(not)_ `multiTalkGroupPerChannel` | Native `DMRReceiveGroupCallList.CSV`                                                               |
 | _(not)_ `mxnChannelExpansion`      | Single TG + RGL per channel row in sample                                                          |
 
-Extended banks (AM air, FM, NXDN, APRS) documented separately; export projection / traits TBD — see [anytone-outstanding.md](../../features/import-export/anytone-outstanding.md).
+Extended banks: AM air / broadcast FM / APRS export shipped when applicable; NXDN deferred — see [anytone-outstanding.md](../../features/import-export/anytone-outstanding.md).
 
 ## Classification (`detectKind` — target for import #229)
 
