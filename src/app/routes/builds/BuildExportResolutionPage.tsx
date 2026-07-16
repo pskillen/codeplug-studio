@@ -16,6 +16,7 @@ import type {
   TxPermitMode,
 } from '@core/models/channelBehaviourDefaults.ts';
 import { findAnalogProfile, findDmrProfile } from '@core/domain/modeProfiles.ts';
+import { assemble, librarySliceFrom } from '@core/services/assemble.ts';
 import { FormPage } from '../../components/ui/index.ts';
 import {
   analogSquelchModeLabel,
@@ -32,6 +33,13 @@ export default function BuildExportResolutionPage() {
   const { library, loading } = useLibrary();
   const [filter, setFilter] = useState('');
 
+  const librarySlice = useMemo(() => librarySliceFrom(library), [library]);
+
+  const exportedChannelIds = useMemo(() => {
+    const assembled = assemble(build, librarySlice);
+    return new Set(assembled.channels.map((row) => row.entity.id));
+  }, [build, librarySlice]);
+
   const context = useMemo(
     () => buildChannelBehaviourContext(library.channelDefaults, build.exportSettings),
     [library.channelDefaults, build.exportSettings],
@@ -39,6 +47,7 @@ export default function BuildExportResolutionPage() {
 
   const rows = useMemo(() => {
     return [...library.channels]
+      .filter((channel) => exportedChannelIds.has(channel.id))
       .sort((a, b) => {
         const call = a.callsign.localeCompare(b.callsign);
         if (call !== 0) return call;
@@ -65,7 +74,7 @@ export default function BuildExportResolutionPage() {
           squelch,
         };
       });
-  }, [library.channels, context]);
+  }, [library.channels, context, exportedChannelIds]);
 
   const filteredRows = useMemo(() => {
     const needle = filter.trim().toLowerCase();
@@ -89,9 +98,10 @@ export default function BuildExportResolutionPage() {
       title="Export resolution"
       description={
         <Text size="sm" component="span">
-          Effective behavioural values for each library channel on this build, and which cascade
-          layer wins. Talker alias uses the DMR profile; analog squelch mode uses the first analog
-          profile. <Link to={`/builds/${build.id}/export`}>Edit build overrides on Export</Link>
+          Effective behavioural values for channels included in this build&apos;s export projection,
+          and which cascade layer wins. Talker alias uses the DMR profile; analog squelch mode uses
+          the first analog profile.{' '}
+          <Link to={`/builds/${build.id}/export`}>Edit build overrides on Export</Link>
           {' · '}
           <Link to="/library/channels/defaults">Library channel defaults</Link>
         </Text>
@@ -99,7 +109,7 @@ export default function BuildExportResolutionPage() {
     >
       {rows.length === 0 ? (
         <Text size="sm" c="dimmed">
-          No channels in the library yet.
+          No channels are included in this build&apos;s export projection yet.
         </Text>
       ) : (
         <Stack gap="md">

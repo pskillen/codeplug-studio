@@ -13,8 +13,7 @@ import {
   isSingleFileCpsExportAdapter,
 } from '@core/import-export/exportAdapter.ts';
 import { formatProfileWireHint, getFormatProfiles } from '@core/import-export/formatProfiles.ts';
-import type { FormatId } from '@core/import-export/types.ts';
-import { mergeExportOptions } from '@core/services/exportBuild.ts';
+import type { CpsExportOptions, FormatId } from '@core/import-export/types.ts';
 import ExportBuildSettingsSections from './ExportBuildSettingsSections.tsx';
 import ProfilePicker from './ProfilePicker.tsx';
 import CpsCsvPreviewModal from './CpsCsvPreviewModal.tsx';
@@ -84,18 +83,17 @@ export default function ExportBuildCpsPanel({ build }: ExportBuildCpsPanelProps)
     return options.find((option) => option.profileId === profileId)?.nameLimit;
   }, [build.formatId, build.profileId, exportProfileId]);
 
-  const exportOptions = useMemo(
-    () =>
-      mergeExportOptions(build, {
-        profileId: exportProfileId,
-        fileName:
-          build.formatId === 'chirp'
-            ? defaultCpsSingleFileName(build.formatId as FormatId, exportProfileId)
-            : undefined,
-      }),
-    [build, exportProfileId],
+  const runtimeExportOverrides = useMemo(
+    (): CpsExportOptions => ({
+      profileId: exportProfileId,
+      fileName:
+        build.formatId === 'chirp'
+          ? defaultCpsSingleFileName(build.formatId as FormatId, exportProfileId)
+          : undefined,
+    }),
+    [build.formatId, exportProfileId],
   );
-  const exportFileNames = useBuildCpsExportFileNames(build, exportOptions);
+  const exportFileNames = useBuildCpsExportFileNames(build, runtimeExportOverrides);
   const hasChannels = Boolean(activeProjectId) && (channelCount ?? 0) > 0;
   const exportShipped = formatEntry?.exportStatus === 'shipped';
   const interchangeFolderId = activeProject?.interchange?.googleDrive?.folderId;
@@ -181,7 +179,7 @@ export default function ExportBuildCpsPanel({ build }: ExportBuildCpsPanelProps)
     setExporting(true);
     setError(null);
     try {
-      const result = await downloadCpsSingleFile(activeProjectId, build.id, exportOptions);
+      const result = await downloadCpsSingleFile(activeProjectId, build.id, runtimeExportOverrides);
       mergeWarnings(result.warnings);
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
@@ -195,7 +193,12 @@ export default function ExportBuildCpsPanel({ build }: ExportBuildCpsPanelProps)
     setExporting(true);
     setError(null);
     try {
-      const result = await downloadCpsFile(activeProjectId, build.id, fileName, exportOptions);
+      const result = await downloadCpsFile(
+        activeProjectId,
+        build.id,
+        fileName,
+        runtimeExportOverrides,
+      );
       mergeWarnings(result.warnings);
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
@@ -210,7 +213,7 @@ export default function ExportBuildCpsPanel({ build }: ExportBuildCpsPanelProps)
     setError(null);
     try {
       const result = await downloadCpsZip(activeProjectId, build.id, {
-        ...exportOptions,
+        ...runtimeExportOverrides,
         fileName: suggestedZipName,
       });
       mergeWarnings(result.warnings);
@@ -235,7 +238,7 @@ export default function ExportBuildCpsPanel({ build }: ExportBuildCpsPanelProps)
             fileName: target.fileName,
             existingFileId: target.existingFileId,
           },
-          exportOptions,
+          runtimeExportOverrides,
         ),
       );
       mergeWarnings(result.warnings);
@@ -356,7 +359,7 @@ export default function ExportBuildCpsPanel({ build }: ExportBuildCpsPanelProps)
           opened={previewOpen}
           onClose={() => setPreviewOpen(false)}
           build={build}
-          exportOptions={exportOptions}
+          exportOptions={runtimeExportOverrides}
         />
       </Stack>
     );
@@ -473,7 +476,7 @@ export default function ExportBuildCpsPanel({ build }: ExportBuildCpsPanelProps)
         opened={previewOpen}
         onClose={() => setPreviewOpen(false)}
         build={build}
-        exportOptions={exportOptions}
+        exportOptions={runtimeExportOverrides}
       />
       <Modal
         opened={overwriteOpen}

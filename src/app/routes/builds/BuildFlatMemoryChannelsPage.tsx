@@ -17,6 +17,8 @@ import { sanitiseAsciiWireString } from '@core/import-export/sanitiseAsciiWireSt
 import type { Channel } from '@core/models/library.ts';
 import type { WirePreviewRow } from '@core/services/previewWireRows.ts';
 import { mergeExportOptions } from '@core/services/exportBuild.ts';
+import { loadLibrarySlice } from '../../lib/loadLibrarySlice.ts';
+import type { LibrarySlice } from '@core/services/assemble.ts';
 import { previewGeneratedChannelWireName } from '@core/services/previewChannelWireName.ts';
 import DefaultScanInclusionSegment from '../../components/builds/DefaultScanInclusionSegment.tsx';
 import ExportNameModeSelect from '../../components/builds/ExportNameModeSelect.tsx';
@@ -72,7 +74,15 @@ export default function BuildFlatMemoryChannelsPage() {
   }, [contextBuild, savedBuild]);
   const { activeProjectId } = useProjects();
   const { putBuild } = useFormatBuilds();
-  const [channels, setChannels] = useState<Channel[]>([]);
+  const [librarySlice, setLibrarySlice] = useState<LibrarySlice>({
+    channels: [],
+    zones: [],
+    talkGroups: [],
+    digitalContacts: [],
+    analogContacts: [],
+    rxGroupLists: [],
+    scanLists: [],
+  });
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [settingsError, setSettingsError] = useState<string | null>(null);
@@ -84,7 +94,10 @@ export default function BuildFlatMemoryChannelsPage() {
     buildRef.current = build;
   }, [build]);
 
-  const exportOptions = useMemo(() => mergeExportOptions(build), [build]);
+  const exportOptions = useMemo(
+    () => mergeExportOptions(build, undefined, librarySlice),
+    [build, librarySlice],
+  );
   const exportSettings = resolvedBuildExportSettings(build);
   const formatDefaults = getFormatExportDefaults(build.formatId);
   const defaultScanValue =
@@ -98,26 +111,17 @@ export default function BuildFlatMemoryChannelsPage() {
   useEffect(() => {
     if (!activeProjectId) return;
     let cancelled = false;
-    void persistence.listChannels(activeProjectId).then((rows) => {
-      if (!cancelled) setChannels(rows);
+    void loadLibrarySlice(persistence, activeProjectId).then((slice) => {
+      if (!cancelled) {
+        setLibrarySlice(slice);
+      }
     });
     return () => {
       cancelled = true;
     };
   }, [activeProjectId, build.id]);
 
-  const librarySlice = useMemo(
-    () => ({
-      channels,
-      zones: [],
-      talkGroups: [],
-      digitalContacts: [],
-      analogContacts: [],
-      rxGroupLists: [],
-      scanLists: [],
-    }),
-    [channels],
-  );
+  const channels = librarySlice.channels;
 
   const channelById = useMemo(() => new Map(channels.map((ch) => [ch.id, ch])), [channels]);
 
@@ -201,11 +205,12 @@ export default function BuildFlatMemoryChannelsPage() {
       );
       return;
     }
-    setChannels((prev) =>
-      prev.map((row) =>
+    setLibrarySlice((prev) => ({
+      ...prev,
+      channels: prev.channels.map((row) =>
         row.id === channel.id ? { ...row, scanInclusion, revision: result.revision! } : row,
       ),
-    );
+    }));
   }
 
   function setRowWireName(row: WirePreviewRow, wireName: string) {
