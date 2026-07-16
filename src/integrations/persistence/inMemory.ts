@@ -156,6 +156,20 @@ export class InMemoryProjectPersistence implements ProjectPersistence {
     return { results };
   }
 
+  async deleteDigitalContactsForProject(projectId: string): Promise<{ deletedCount: number }> {
+    let deletedCount = 0;
+    for (const [key, row] of [...this.digitalContacts.entries()]) {
+      if (row.projectId === projectId) {
+        this.digitalContacts.delete(key);
+        deletedCount += 1;
+      }
+    }
+    if (deletedCount > 0) {
+      this.emit({ projectId, kind: 'digitalContact', id: projectId, op: 'delete' });
+    }
+    return { deletedCount };
+  }
+
   async listDigitalContacts(projectId: string): Promise<DigitalContact[]> {
     return this.listRows(this.digitalContacts, projectId);
   }

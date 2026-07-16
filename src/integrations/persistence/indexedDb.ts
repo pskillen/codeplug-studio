@@ -198,6 +198,34 @@ export class IndexedDbProjectPersistence implements ProjectPersistence {
     }
     return { results };
   }
+  async deleteDigitalContactsForProject(projectId: string): Promise<{ deletedCount: number }> {
+    const db = await this.db();
+    const storeName = STORES.digitalContact;
+    let deletedCount = 0;
+
+    await new Promise<void>((resolve, reject) => {
+      const tx = db.transaction(storeName, 'readwrite');
+      const os = tx.objectStore(storeName);
+      const req = os.index('byProject').openKeyCursor(IDBKeyRange.only(projectId));
+      req.onsuccess = () => {
+        const cursor = req.result;
+        if (cursor) {
+          os.delete(cursor.primaryKey);
+          deletedCount += 1;
+          cursor.continue();
+        }
+      };
+      req.onerror = () => reject(req.error);
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => reject(tx.error);
+      tx.onabort = () => reject(tx.error);
+    });
+
+    if (deletedCount > 0) {
+      this.emit({ projectId, kind: 'digitalContact', id: projectId, op: 'delete' });
+    }
+    return { deletedCount };
+  }
   async listDigitalContacts(projectId: string): Promise<DigitalContact[]> {
     return this.listRows<DigitalContact>('digitalContact', projectId);
   }

@@ -238,6 +238,31 @@ describe('IndexedDbProjectPersistence', () => {
     expect(contacts).toHaveLength(2);
   });
 
+  it('deleteDigitalContactsForProject clears the project partition', async () => {
+    const store = makeStore();
+    const meta = newProjectMeta('Test');
+    const other = newProjectMeta('Other');
+    await store.seedProject({ meta });
+    await store.seedProject({ meta: other });
+    await store.putDigitalContactsBatch([
+      { row: newDigitalContact(meta.projectId, 'Alpha', 1, 'dmr'), expectedRevision: null },
+      { row: newDigitalContact(meta.projectId, 'Bravo', 2, 'dmr'), expectedRevision: null },
+      { row: newDigitalContact(other.projectId, 'Keep', 3, 'dmr'), expectedRevision: null },
+    ]);
+
+    const changes: PersistenceChange[] = [];
+    const unsubscribe = store.subscribe((c) => changes.push(c));
+    const result = await store.deleteDigitalContactsForProject(meta.projectId);
+    unsubscribe();
+
+    expect(result.deletedCount).toBe(2);
+    expect(await store.listDigitalContacts(meta.projectId)).toHaveLength(0);
+    expect(await store.listDigitalContacts(other.projectId)).toHaveLength(1);
+    expect(changes).toEqual([
+      { projectId: meta.projectId, kind: 'digitalContact', id: meta.projectId, op: 'delete' },
+    ]);
+  });
+
   it('delete project cascades all library and build rows', async () => {
     const store = makeStore();
     const meta = newProjectMeta('Test');
