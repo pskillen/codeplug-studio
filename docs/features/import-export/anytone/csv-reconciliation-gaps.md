@@ -17,7 +17,7 @@ Earlier single-build comparison: [tmp/export-variance-report.md](../../../../tmp
 |   **P1** | `AMZone.CSV` + airband partition     | **Shipped** ([#316](https://github.com/pskillen/codeplug-studio/issues/316))                                                      |
 |   **P1** | `DMR MODE` / duplex                  | **Shipped** `0`/`1` ([#311](https://github.com/pskillen/codeplug-studio/issues/311)); `2`/`3` DCDM documented, unsupported export |
 |   **P1** | Channel TX contact from RGL          | **Open question** — operator unsure; leave in outstanding, no ticket yet                                                          |
-|   **P2** | Power ladder Mid / Turbo             | Documented; adapter ticket under [#228](https://github.com/pskillen/codeplug-studio/issues/228)                                   |
+|   **P2** | Power ladder Mid / Turbo             | Shipped ([#391](https://github.com/pskillen/codeplug-studio/issues/391))                                                          |
 |   **P2** | ScanList timing / Scan Mode          | Documented; serialiser defaults still `Dwell`=`1.0` — ticket under #228                                                           |
 |   **P2** | Enum / constant tail columns         | Elicited — see [enum-verification.md](../../../reference/anytone/enum-verification.md)                                            |
 |   **P2** | Sidecar CPS files                    | Skip / future epics (OptionalSetting, HotKey, roaming, NXDN)                                                                      |
