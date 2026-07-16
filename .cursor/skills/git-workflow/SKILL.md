@@ -117,8 +117,9 @@ When the **Shell** tool runs `git`:
 
 5. **Commits:**
 
-   **Plan execution** (active `.cursor/plans/` file, user said "execute/continue the plan",
-   or multi-slice work with commit checkpoints):
+   **Plan execution or drive-by ticket** — active `.cursor/plans/` file, user said
+   "execute/continue the plan", multi-slice work with commit checkpoints, or user invoked
+   `@drive-by-ticket` ([drive-by-ticket](../drive-by-ticket/SKILL.md)):
    - Commit at every **commit checkpoint** before starting the next slice.
    - Run `git status -sb` — working tree must be clean before the next slice.
    - Commit little and often; committing is not cheap to skip but cheap to do.

@@ -69,6 +69,7 @@ Follow [`.cursor/skills/git-workflow/SKILL.md`](.cursor/skills/git-workflow/SKIL
 ## Plans and feature docs
 
 - Plan from GitHub issues: [make-a-plan](.cursor/skills/make-a-plan/SKILL.md).
+- Ship a ticket without a plan: paste `#N` + title and `@drive-by-ticket` — [drive-by-ticket](.cursor/skills/drive-by-ticket/SKILL.md).
 - Feature documentation: [feature-docs](.cursor/skills/feature-docs/SKILL.md).
 - Multi-commit work: [progress-tracking](.cursor/skills/progress-tracking/SKILL.md) under `docs/poc-migration/` or `docs/features/`.
 

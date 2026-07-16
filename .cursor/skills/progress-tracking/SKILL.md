@@ -1,17 +1,32 @@
 ---
 name: progress-tracking
 description: >-
-  Maintains progress and outstanding markdown logs for multi-step codeplug-studio
-  plans and features. Use when executing a Cursor plan, a multi-commit feature,
-  or when the user asks to update progress/outstanding docs, hand off between
-  agents, or before opening a PR for a larger initiative.
+  Maintains progress and outstanding markdown logs for multi-session
+  codeplug-studio work (multi-plan, multi-agent, multi-day, or multi-PR). Use
+  when handoff or future continuation is likely, or when the user asks to update
+  progress/outstanding docs. Skip for small single-phase tickets.
 ---
 
 # Progress tracking (codeplug-studio)
 
-Persistent **progress** and **outstanding** files preserve execution state when context is lost, agents switch, or work spans multiple PRs. Use for non-trivial scope (multi-commit, new feature area, or high coordination risk).
+Persistent **progress** and **outstanding** files preserve execution state when context is lost across **multi-plan**, **multi-agent**, **multi-day**, or **multi-PR** work. They are a handoff aid — not a ritual for every ticket.
 
-Skip for single-commit fixes with no plan.
+---
+
+## When to use vs skip
+
+| Use progress + outstanding | Skip |
+|----------------------------|------|
+| Epic / migration / new feature area | Small single-phase ticket (one PR, one session) |
+| Work likely to span multiple plans, agents, or days | Drive-by or plan that finishes in one sitting |
+| Multi-PR initiative or high coordination / handoff risk | Single-commit or few-file fix |
+| User asks for progress files, or files already exist for this initiative | No handoff risk and no future continuation expected |
+
+**Default for small work:** skip. Do **not** create empty progress/outstanding pairs “just in case.”
+
+**Create when future context is likely needed** — even mid-flight, if a small ticket grows into multi-session work, start the pair then and link it from the plan or issue.
+
+[make-a-plan](../make-a-plan/SKILL.md) and [drive-by-ticket](../drive-by-ticket/SKILL.md) follow this same gate.
 
 ---
 
@@ -42,11 +57,12 @@ Add a row to [docs/features/README.md](../../../docs/features/README.md) when cr
 
 ## When to read and update
 
-### At plan start (required for tracked initiatives)
+### At plan / drive-by start (only when this skill applies)
 
 1. Read linked **progress** and **outstanding** files if they exist.
-2. If missing, create both from the templates below.
-3. In the Cursor plan, add a **Progress tracking** section pointing at both files.
+2. If this initiative needs tracking and files are missing, create both from the templates below.
+3. In the Cursor plan (or drive-by notes), add a **Progress tracking** section pointing at both files.
+4. If the ticket is small/single-phase, omit the section and do not create files.
 
 ### During execution (at logical breakpoints)
 
@@ -62,15 +78,14 @@ Update **outstanding** when:
 - You discover a bug, doc error, or CPS quirk during the work.
 - Local verification is blocked on something outside the current PR.
 
-**Cadence:**
+**Cadence** (only when files exist for this initiative):
 
-| Plan size | Typical updates |
-|-----------|-----------------|
-| Small (1 PR, few files) | Once before opening PR |
-| Medium (2–4 commits) | After each user-visible slice; before PR |
-| Large / phased | Per phase + before each PR |
+| Initiative size | Typical updates |
+|-----------------|-----------------|
+| Medium (handoff risk, 2–4 commits across sessions) | After each user-visible slice; before PR |
+| Large / phased / multi-PR | Per phase + before each PR |
 
-**Always update progress before opening a PR** for initiatives that use this skill.
+**Always update progress before opening a PR** when this initiative uses progress files. Small tickets with no progress files skip this step.
 
 **Before opening a PR:** confirm documentation deliverables per [documentation-deliverables.mdc](../rules/documentation-deliverables.mdc) (feature hub, sidecars, index row) — same PR as the code unless the plan explicitly split docs-only commits.
 
@@ -174,5 +189,6 @@ When a plan depends on another initiative, note **Prerequisite:** with link to t
 
 - Copying the plan's full todo list into outstanding.
 - Marking slices "done" in progress without PR/commit evidence.
-- Creating phase files for a single small ticket.
+- Creating progress/outstanding files for a small single-phase ticket.
+- Skipping progress files when multi-plan / multi-agent / multi-day continuation is likely.
 - Letting progress go stale across PRs without a **Next** section.

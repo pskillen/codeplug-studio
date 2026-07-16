@@ -93,7 +93,7 @@ Use this template. Adapt sections to scope; omit what does not apply.
 
 ## Progress tracking
 
-<Only for non-trivial / multi-commit work — see section 3 below.>
+<Only when multi-plan / multi-agent / multi-day / multi-PR handoff is likely — see section 3. Otherwise omit or note N/A.>
 
 ## Approach
 
@@ -137,9 +137,17 @@ Use this template. Adapt sections to scope; omit what does not apply.
 
 ## 3. Progress tracking (when to include)
 
-Include a **Progress tracking** section when work is **non-trivial** (epic, new feature area, or spans more than one PR).
+Progress/outstanding files exist to carry context across **multi-plan**, **multi-agent**, **multi-day**, or **multi-PR** work. Follow [progress-tracking](.cursor/skills/progress-tracking/SKILL.md).
 
-Follow [progress-tracking](.cursor/skills/progress-tracking/SKILL.md):
+| Include Progress tracking section + create files | Skip |
+|--------------------------------------------------|------|
+| Epic, migration, new feature area | Small single-phase plan (one PR, one session) |
+| Likely multi-plan / multi-agent / multi-day handoff | Drive-by-sized scope that finishes in one sitting |
+| Multi-PR or high coordination risk | Few-file fix with no future continuation expected |
+
+**Default for small plans: skip.** Do not create empty progress/outstanding pairs. If scope grows mid-execution, start the pair then.
+
+When required, include:
 
 ```markdown
 ## Progress tracking
@@ -152,9 +160,7 @@ Read and update (per [progress-tracking](.cursor/skills/progress-tracking/SKILL.
 Create both at plan kickoff if missing. Update at each commit checkpoint and before opening a PR.
 ```
 
-Skip progress files for single-commit fixes with no handoff risk.
-
----
+When skipped, omit the section entirely (or note `Progress tracking: N/A — small single-phase`).
 
 ## 4. Git workflow — mandatory plan section
 
@@ -208,7 +214,8 @@ Use the right skill:
 | Situation | Skill / action |
 |-----------|----------------|
 | New or changed feature behaviour | [feature-docs](.cursor/skills/feature-docs/SKILL.md) — update hub README, deep dives, `docs/features/README.md` index |
-| Multi-step / multi-PR execution | [progress-tracking](.cursor/skills/progress-tracking/SKILL.md) — progress + outstanding pair |
+| Multi-plan / multi-agent / multi-day / multi-PR (handoff likely) | [progress-tracking](.cursor/skills/progress-tracking/SKILL.md) — progress + outstanding pair |
+| Small single-phase ticket | No progress files — feature docs / sidecars still apply when behaviour changes |
 | New shared component under `src/app/` | Add a **sidecar markdown** `<ComponentName>.md` in the same directory |
 
 ### Component sidecar pattern
@@ -236,9 +243,9 @@ Sidecars are for contributors and agents; feature docs under `docs/features/` re
 
 | Scope | Slices | Progress files | PRs |
 |-------|--------|----------------|-----|
-| Single-file fix | 1 | Skip | 1 |
-| Small feature (2–4 files) | 2–3 with checkpoints | Optional | 1 |
-| New feature area / migration | Phases with checkpoint per phase | Required | 1 per phase or one if small |
+| Single-file / small single-phase | 1–3 | **Skip** | 1 |
+| Small feature, one session, one PR | 2–3 with checkpoints | **Skip** unless handoff risk appears | 1 |
+| New feature area / migration / multi-day | Phases with checkpoint per phase | **Required** | 1 per phase or one if small |
 
 Each slice should be **completable and committable in one session**. If a slice feels too large, split it and add a checkpoint between sub-slices.
 
@@ -259,7 +266,7 @@ Each slice should be **completable and committable in one session**. If a slice 
 - "Commit everything at the end before PR."
 - Copying the full plan todo list into `*-outstanding.md`.
 - Skipping component sidecars for new shared components.
-- Creating progress files for a one-line fix.
+- Creating progress files for a one-line fix or small single-phase plan.
 - Baking radio profile caps into library mutations, validation, or CRUD UI.
 - Planning round-trip system tests as the primary quality gate.
 - Planning `OPENGD77_MAX_*` constants for library/core work without an explicit export-only slice.
