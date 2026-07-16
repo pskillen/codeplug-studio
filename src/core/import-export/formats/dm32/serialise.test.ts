@@ -120,6 +120,40 @@ describe('DM32 export serialise', () => {
     expect(rows[1]?.[forbidIndex]).toBe('1');
   });
 
+  it('maps resolved txPermit and analog squelch mode on export', () => {
+    const channel = fmChannel('Cascade', {
+      txPermit: 'busyLock',
+      modeProfiles: [
+        {
+          mode: 'fm',
+          squelch: 50,
+          rxTone: 'none',
+          txTone: 'none',
+          bandwidthKHz: 12.5,
+          analogSquelchMode: 'tone',
+        },
+      ],
+    });
+    const build = dm32Build();
+    const library: LibrarySlice = {
+      channels: [channel],
+      zones: [],
+      talkGroups: [],
+      digitalContacts: [],
+      analogContacts: [],
+      rxGroupLists: [],
+      scanLists: [],
+    };
+    const assembled = assemble(build, library);
+    const files = serialiseDm32Files(assembled, library);
+    const rows = parseCsv(files['Channels.csv']);
+    const headers = rows[0]!;
+    const txAdmitIndex = headers.indexOf(CHANNEL_COL.txAdmit);
+    const squelchModeIndex = headers.indexOf(CHANNEL_COL.rxSquelchMode);
+    expect(rows[1]?.[txAdmitIndex]).toBe('Channel Idle');
+    expect(rows[1]?.[squelchModeIndex]).toBe('Carrier/CTC');
+  });
+
   it('serialises zones with pipe-separated member names', () => {
     const channel = fmChannel('Test Chan');
     const zone = newZone(PROJECT_ID, 'My Zone');

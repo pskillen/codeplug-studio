@@ -1,5 +1,6 @@
 import type { ChannelTone, DMRTimeSlot } from '@core/models/libraryTypes.ts';
 import type { ChannelMode, ChannelModeProfile } from '@core/models/library.ts';
+import type { AnalogSquelchMode, TxPermitMode } from '@core/models/channelBehaviourDefaults.ts';
 import {
   DEFAULT_DM32_PROFILE_ID,
   dm32PercentToSquelchWire,
@@ -69,6 +70,10 @@ export function formatDm32SquelchWire(
   return dm32PercentToSquelchWire(profileId, percent);
 }
 
-export function formatDm32TxAdmitWire(): string {
-  return 'Channel Idle';
+export function formatDm32TxAdmitWire(txPermit: TxPermitMode): string {
+  return txPermit === 'busyLock' ? 'Channel Idle' : 'Allow TX';
+}
+
+export function formatDm32RxSquelchModeWire(mode: AnalogSquelchMode): string {
+  return mode === 'tone' ? 'Carrier/CTC' : 'Carrier';
 }

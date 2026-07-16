@@ -1,4 +1,8 @@
 import { effectiveForbidTransmit } from '@core/import-export/channelBehaviourDefaults/index.ts';
+import {
+  resolveEffectiveAnalogSquelchMode,
+  resolveEffectiveTxPermit,
+} from '@core/import-export/channelBehaviourDefaults/resolve.ts';
 import type {
   Channel,
   ChannelModeProfile,
@@ -19,6 +23,7 @@ import {
   formatDm32TimeslotWire,
   formatDm32ToneWire,
   formatDm32TxAdmitWire,
+  formatDm32RxSquelchModeWire,
 } from './wireFormat.ts';
 import { dm32ContactRefWireName, dm32RxGroupListWireName } from './exportRefs.ts';
 import type { ExpandedDm32ChannelRow } from './channelExpansion.ts';
@@ -81,6 +86,12 @@ export function serialiseDm32ChannelRow(
 
   const analogTone = isAnalogProfile(toneProfile) ? toneProfile : fmProfile;
   const aprsChannel = isAnalogMode(row.mode) || nativeDual ? '256' : '1';
+  const behaviourContext = options?.channelBehaviourContext;
+  const squelchProfile =
+    analogTone ??
+    (fmProfile != null
+      ? fmProfile
+      : ({ analogSquelchMode: 'default' } as ChannelModeProfileAnalog));
 
   return {
     [CHANNEL_COL.number]: String(rowNumber),
@@ -93,7 +104,9 @@ export function serialiseDm32ChannelRow(
       isAnalogProfile(toneProfile) ? toneProfile.bandwidthKHz : (fmProfile?.bandwidthKHz ?? null),
     ),
     [CHANNEL_COL.scanList]: scanListWire,
-    [CHANNEL_COL.txAdmit]: formatDm32TxAdmitWire(),
+    [CHANNEL_COL.txAdmit]: formatDm32TxAdmitWire(
+      resolveEffectiveTxPermit(sourceChannel, behaviourContext),
+    ),
     [CHANNEL_COL.emergencySystem]: 'None',
     [CHANNEL_COL.squelch]: formatDm32SquelchWire(
       isAnalogProfile(toneProfile) ? toneProfile.squelch : (fmProfile?.squelch ?? null),
@@ -131,7 +144,9 @@ export function serialiseDm32ChannelRow(
     [CHANNEL_COL.rxTone]: formatDm32ToneWire(analogTone?.rxTone ?? 'none'),
     [CHANNEL_COL.txTone]: formatDm32ToneWire(analogTone?.txTone ?? 'none'),
     [CHANNEL_COL.scramble]: 'None',
-    [CHANNEL_COL.rxSquelchMode]: 'Carrier/CTC',
+    [CHANNEL_COL.rxSquelchMode]: formatDm32RxSquelchModeWire(
+      resolveEffectiveAnalogSquelchMode(squelchProfile, behaviourContext),
+    ),
     [CHANNEL_COL.signalingType]: 'None',
     [CHANNEL_COL.pttId]: 'OFF',
     [CHANNEL_COL.vox]: '0',
