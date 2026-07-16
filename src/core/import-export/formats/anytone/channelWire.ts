@@ -1,4 +1,8 @@
-import type { Channel, ChannelModeProfileDMR } from '@core/models/library.ts';
+import type {
+  Channel,
+  ChannelModeProfileAnalog,
+  ChannelModeProfileDMR,
+} from '@core/models/library.ts';
 import {
   effectiveForbidTransmit,
   resolveEffectiveAnalogSquelchMode,
@@ -40,8 +44,11 @@ function dmrProfile(channel: Channel): ChannelModeProfileDMR | null {
   return profile ?? null;
 }
 
-function analogProfile(channel: Channel) {
-  return channel.modeProfiles.find((row) => row.mode === 'fm' || row.mode === 'am') ?? null;
+function analogProfile(channel: Channel): ChannelModeProfileAnalog | null {
+  const profile = channel.modeProfiles.find(
+    (row): row is ChannelModeProfileAnalog => row.mode === 'fm' || row.mode === 'am',
+  );
+  return profile ?? null;
 }
 
 function resolveContactWireName(
