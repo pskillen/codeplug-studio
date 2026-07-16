@@ -2,15 +2,16 @@
 name: drive-by-ticket
 description: >-
   Execute a GitHub issue end-to-end in codeplug-studio without writing a Cursor
-  plan: branch, implement in atomic commits, document, open PR, and babysit CI
-  until green. Use when the user pastes an issue number/title with @drive-by-ticket,
-  or asks to ship a ticket directly.
+  plan: branch, implement in atomic commits, document, and open a PR. Run local
+  gates so CI is reasonably likely to pass; do not wait for remote CI before
+  returning. Use when the user pastes an issue number/title with
+  @drive-by-ticket, or asks to ship a ticket directly.
 disable-model-invocation: true
 ---
 
 # Drive-by ticket (codeplug-studio)
 
-Ship a GitHub issue as a **merge-ready PR with green CI** — no Cursor plan file, no plan mode.
+Ship a GitHub issue as a **PR opened after local confidence checks** — no Cursor plan file, no plan mode. Do **not** babysit remote CI to green before handing back.
 
 **Invocation:** paste issue number + title, then `@drive-by-ticket` and submit.
 
@@ -37,7 +38,7 @@ Repo: `pskillen/codeplug-studio`. Use **`user-github`** MCP for issues and PRs �
 | Branch + atomic commits | At execution | Yes |
 | Docs + progress files | At execution | Feature docs always when needed; progress only if handoff likely |
 | Open PR | At execution | Yes |
-| Babysit CI to green | Implicit | **Required exit criterion** |
+| Babysit CI to green | Optional follow-up | **No** — return after PR open; user asks if CI fails |
 
 Work breakdown stays **in conversation** (TodoWrite or a short mental slice list). Do not create plan files.
 
@@ -48,12 +49,11 @@ Work breakdown stays **in conversation** (TodoWrite or a short mental slice list
 Done when **all** are true:
 
 1. Branch pushed; PR open in `pskillen/codeplug-studio` with `Closes #N`.
-2. Local gate passed: `npm run format:check && npm run lint && npm run test && npm run build` (when `package.json` exists).
-3. PR CI **green** — all required check runs succeeded (`pull_request_read` `method: get_check_runs`).
-4. No unresolved review threads that require code changes (Bugbot or human).
-5. Documentation deliverables satisfied per [documentation-deliverables.mdc](../rules/documentation-deliverables.mdc).
+2. Local gate passed (when `package.json` exists and the change touches code): `npm run format:check && npm run lint && npm run test && npm run build` — enough that CI is **reasonably likely** to pass. Docs/rules-only changes: skip inapplicable npm scripts.
+3. No known unresolved review threads from this session that require code changes before handoff (if reviews already exist).
+4. Documentation deliverables satisfied per [documentation-deliverables.mdc](../rules/documentation-deliverables.mdc).
 
-Return the **PR URL** to the user when finished.
+**Do not** wait for PR check runs to go green before returning. Return the **PR URL** as soon as the exit criterion above is met. Assume the user will ask for a follow-up if CI fails.
 
 ---
 
@@ -159,14 +159,16 @@ Docs are their own slice with their own commit checkpoint when non-trivial.
 
 ## 5. Pre-PR local gate
 
-Before push:
+Before push, be **reasonably confident** CI will pass:
 
 1. `npm run format` — commit Prettier fixes (`chore: format` or fold into last slice).
-2. `npm run format:check && npm run lint && npm run test && npm run build`.
+2. When applicable: `npm run format:check && npm run lint && npm run test && npm run build`.
 3. `npm run dev` — smoke affected route(s) when behaviour changed.
 4. Import/export work: per-direction mapping tests per [DESIGN.md — Testing](../../../DESIGN.md#testing).
 5. Confirm no secrets or personal CPS files staged.
 6. If this initiative uses progress files, update them with branch name and verify steps.
+
+Docs/skills/rules-only PRs: skip npm scripts that do not apply; still push only when the diff is coherent and reviewable.
 
 ---
 
@@ -176,23 +178,20 @@ Before push:
 2. `create_pull_request` in `pskillen/codeplug-studio`.
 3. Body — use [git-workflow PR template](../git-workflow/SKILL.md#6-pull-requests); include `Closes #N`.
 4. `add_issue_comment` on the issue with PR link (optional but helpful).
+5. Return the **PR URL** — **do not** poll check runs or block on green CI.
 
 ---
 
-## 7. Babysit until green
+## 7. After handoff (only if the user asks)
 
-Do not hand off after opening the PR. Loop until the exit criterion is met.
+Do **not** enter a CI babysit loop by default. If the user reports red CI or asks to fix checks:
 
-1. **CI:** `pull_request_read` (`method: get_check_runs`, `method: get_status`). If failing:
-   - Reproduce locally when possible.
-   - Fix within PR scope; push; re-check.
-   - If branch may be behind `main`, `update_pull_request_branch` then re-check.
-   - Never weaken CI config just to pass.
-   - For opaque CI failures, use **ci-investigator** subagent on the failing check.
-2. **Comments:** `get_review_comments` — filter unresolved threads. Fix valid Bugbot/human findings; reply when disagreeing.
-3. **Conflicts:** resolve intelligently; if intent conflicts with `main`, ask the user.
-
-Push scoped fixes and re-watch until **mergeable + green + comments triaged**.
+1. **CI:** `pull_request_read` (`method: get_check_runs`, `method: get_status`). Reproduce locally when possible; fix within PR scope; push.
+2. If branch may be behind `main`, `update_pull_request_branch` then re-check.
+3. Never weaken CI config just to pass.
+4. For opaque CI failures, use **ci-investigator** subagent on the failing check.
+5. **Comments:** `get_review_comments` — fix valid Bugbot/human findings; reply when disagreeing.
+6. **Conflicts:** resolve intelligently; if intent conflicts with `main`, ask the user.
 
 ---
 
@@ -204,7 +203,8 @@ Push scoped fixes and re-watch until **mergeable + green + comments triaged**.
 - Executing from issue title alone without `issue_read` and code exploration.
 - One giant commit before PR.
 - Deferring tier-1 docs to a follow-up PR for the same behaviour.
-- Stopping after PR open with red CI.
+- Waiting on remote CI before returning the PR URL after a solid local gate.
+- Pushing without running the applicable local format / lint / test / build checks when code changed.
 - Baking radio profile caps into library mutations or CRUD UI.
 - Using `gh` CLI (not available).
 
@@ -218,8 +218,8 @@ User: #N Title + @drive-by-ticket
   → branch {N}/{author}/{slug}
   → slices with atomic commits
   → docs in same PR
-  → local format:check + lint + test + build
+  → local format:check + lint + test + build (as applicable)
   → push + create_pull_request (Closes #N)
-  → babysit CI + comments until green
-  → return PR URL
+  → return PR URL (do not wait for CI)
+  → fix CI only if user asks
 ```
