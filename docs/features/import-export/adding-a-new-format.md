@@ -78,6 +78,7 @@ Full export path: [cps-services.md](cps-services.md).
 | Format-only zone flags                          | `ZoneGroupingLayout` on build               | DM32 `exportScanList`, `scanCarrierFrequencyHz`                    |
 | Per-member scan list filter                     | Library `ZoneMemberEntry.includeInScanList` | DM32 zone-derived scan only                                        |
 | Channel scan inclusion                          | Library `Channel.scanInclusion`             | Tri-state; see [scan-inclusion](../../reference/scan-inclusion.md) |
+| Channel behavioural defaults                    | Library `Channel` + `Library.channelDefaults` | Cascade; see [channel-behavioural-defaults](../../reference/channel-behavioural-defaults.md) |
 | Export-affecting prefs                          | `FormatBuild.exportSettings`                | Name shortening, default scan behaviour, DM32 scan master          |
 | Format scan default                             | Adapter `defaultExportSettings`             | e.g. CHIRP `skip`, OpenGD77/DM32 `scan`                            |
 
@@ -182,6 +183,14 @@ Register defaults on the export adapter and in `getFormatExportDefaults()` for p
 - [ ] Wire serialiser through shared scan helpers in `src/core/import-export/scanInclusion/`
 - [ ] Export panel: `DefaultScanInclusionSegment` for build override
 - [ ] Directional mapper tests for wire column ↔ `scanInclusion`
+
+**Channel behavioural defaults:** library `Library.channelDefaults` + per-channel overrides + optional build `exportSettings` defaults. Resolve at serialise with `resolveEffective*()` from `src/core/import-export/channelBehaviourDefaults/` — use internal enums only in library UI; map wire strings in the format adapter. See [channel-behavioural-defaults](../../reference/channel-behavioural-defaults.md).
+
+- [ ] Pass `channelBehaviourContext` via `mergeExportOptions(build, options, library)` (or equivalent) into serialisers
+- [ ] Map resolved values to CPS columns in the format adapter (not in core/UI)
+- [ ] Build export panel: override segments for each cascaded field your format supports
+- [ ] Directional mapper tests for wire column ↔ resolved effective value
+- [ ] Document lossy mapping in `docs/reference/<format>/`
 
 ### Import adapter contract
 

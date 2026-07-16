@@ -71,7 +71,7 @@ erDiagram
 
 ## Schema version
 
-`STUDIO_SCHEMA_VERSION = 17` in `src/core/models/schemaVersion.ts`. Bumps when persisted row shapes change. v15 adds digital APRS entities (`AprsConfiguration`, `Channel.aprs`). v16 adds the IndexedDB `aprsConfigurations` object store. v17 migrates to a **singleton** `Library.aprsConfiguration`, replaces `ChannelAprsBinding.reportChannelRef` with `reportSlotIndex`, and removes `FormatBuild.activeAprsConfigurationId`.
+`STUDIO_SCHEMA_VERSION = 18` in `src/core/models/schemaVersion.ts`. Bumps when persisted row shapes change. v15 adds digital APRS entities (`AprsConfiguration`, `Channel.aprs`). v16 adds the IndexedDB `aprsConfigurations` object store. v17 migrates to a **singleton** `Library.aprsConfiguration`, replaces `ChannelAprsBinding.reportChannelRef` with `reportSlotIndex`, and removes `FormatBuild.activeAprsConfigurationId`. v18 adds `Library.channelDefaults` / `ProjectMeta.channelDefaults`, tri-state `Channel.forbidTransmit`, and per-channel behavioural override fields (`txPermit`, `sendTalkerAlias`, `analogSquelchMode`).
 
 ## Persistable rows
 
