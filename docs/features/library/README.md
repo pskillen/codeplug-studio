@@ -25,6 +25,7 @@ Tier-1 reference for editing the vendor-neutral **library** — the per-project 
 | Channel sets                              | Shipped ([#172](https://github.com/pskillen/codeplug-studio/issues/172))                                                                 | Optional zone on import                                                                                                                                                        |
 | OpenAIP airband import                    | Shipped ([#263](https://github.com/pskillen/codeplug-studio/issues/263))                                                                 | `/library/channels/add-from-openaip` — see [aviation](../aviation/README.md)                                                                                                   |
 | Digital contact metadata + radioid import | Shipped ([#374](https://github.com/pskillen/codeplug-studio/issues/374))                                                                 | Enriched `DigitalContact` CRUD; `/library/contacts/add-from-radioid` — see [contact-directories](../contact-directories/README.md)                                             |
+| Delete all digital contacts               | Shipped ([#427](https://github.com/pskillen/codeplug-studio/issues/427))                                                                 | Library → Contacts toolbar; checkbox-gated modal; cascade-clears channel/`RX` refs then IDB partition clear                                                                  |
 
 ## Documentation map
 
@@ -53,7 +54,7 @@ Tier-1 reference for editing the vendor-neutral **library** — the per-project 
 | `/library/channels/defaults` | Library-wide channel behavioural defaults (TX deny, TX permit, talker alias, analog squelch) — nested under Channels in section nav               | No  |
 | `/library/zones`             | `DataTable` — members, comment, delete row action; operator location + map below table                                                            | Yes |
 | `/library/talk-groups`       | `DataTable` — mode, ID, optional Abbrev, channels/RX lists using, comment, delete row action                                                      | No  |
-| `/library/contacts`          | Two `DataTable` sections: digital contacts + analog contacts (separate `dq` / `aq` URL filters), delete row action each                           | No  |
+| `/library/contacts`          | Two `DataTable` sections: digital + analog (separate `dq` / `aq` filters); digital toolbar **Delete all**; per-row delete each                     | No  |
 | `/library/rx-group-lists`    | `DataTable` — members, channels using, delete row action                                                                                          | No  |
 | `/library/scan-lists`        | `DataTable` — member count, channels-using ref count, delete row action                                                                           | No  |
 
@@ -83,6 +84,8 @@ The zone editor map uses **Draw this zone** / **Draw other zones** controls: the
 Digital and analog contacts remain separate models and editor slugs (`digital-contacts`, `analog-contacts`); the combined `/library/contacts` list page is a UX grouping only. Each section has its own `DataTable`, name filter (`dq` / `aq` URL params), and persisted column sort.
 
 Digital contacts support enriched metadata (callsign, city, state, country, remarks) in the editor ([#377](https://github.com/pskillen/codeplug-studio/issues/377)). **Add from…** opens the contact directory picker; RadioID.net is the first shipped source ([#379](https://github.com/pskillen/codeplug-studio/issues/379)).
+
+**Delete all** ([#427](https://github.com/pskillen/codeplug-studio/issues/427)) — digital section toolbar only (disabled at 0). Flow: button → modal → required confirmation checkbox → Delete. Cascade-nullifies channel DMR `contactRef`s and strips digital members from RX group lists, prunes digital rows from build `contactOverrides`, then clears the IndexedDB `digitalContacts` partition without loading every contact row just to delete. Analog contacts are unchanged. Sidecar: `DeleteAllDigitalContactsDialog.md`.
 
 ### Zone from location ([#181](https://github.com/pskillen/codeplug-studio/issues/181))
 
@@ -217,8 +220,8 @@ delete → LibraryService.deleteWithIntegrity → findReferencesTo (core)
 ```
 
 - **Optimistic concurrency:** editors save with the loaded `revision`; a stale write returns `revision_conflict` and the editor shows a reload-and-retry message.
-- **Referential integrity:** deletes are **blocked** when another entity still references the target (e.g. a zone listing a channel, an RX group list listing a talk group, a channel mode profile pointing at a contact / RX list / talk group, a parent zone nesting a child zone). The block lists the referencing entities.
-- **Delete UI ([#202](https://github.com/pskillen/codeplug-studio/issues/202), [#310](https://github.com/pskillen/codeplug-studio/issues/310)):** every saved entity has a **Delete** button on its editor (`EntityDeleteButton`; channels use `ChannelDeleteButton` for zone cascade). List pages add a trash **actions** column (`EntityListDeleteAction`; channels use `ChannelListDeleteAction`). Flow: `runEntityDeleteFlow` → `useLibrary().deleteEntity` → `LibraryService.deleteWithIntegrity`. Channel delete may offer remove-from-zones cascade when blocked only by zone membership. **Bulk delete** from the channels list bulk-edit modal uses `persistChannelBulkDelete` with the same integrity rules and one confirmation for the whole selection.
+- **Referential integrity:** single-entity deletes are **blocked** when another entity still references the target (e.g. a zone listing a channel, an RX group list listing a talk group, a channel mode profile pointing at a contact / RX list / talk group, a parent zone nesting a child zone). The block lists the referencing entities. **Exception:** **Delete all digital contacts** cascade-clears inbound refs first (`LibraryService.deleteAllDigitalContacts`) — it does not use the per-row block path.
+- **Delete UI ([#202](https://github.com/pskillen/codeplug-studio/issues/202), [#310](https://github.com/pskillen/codeplug-studio/issues/310), [#427](https://github.com/pskillen/codeplug-studio/issues/427)):** every saved entity has a **Delete** button on its editor (`EntityDeleteButton`; channels use `ChannelDeleteButton` for zone cascade). List pages add a trash **actions** column (`EntityListDeleteAction`; channels use `ChannelListDeleteAction`). Flow: `runEntityDeleteFlow` → `useLibrary().deleteEntity` → `LibraryService.deleteWithIntegrity`. Channel delete may offer remove-from-zones cascade when blocked only by zone membership. **Bulk delete** from the channels list bulk-edit modal uses `persistChannelBulkDelete` with the same integrity rules and one confirmation for the whole selection. **Delete all digital contacts** uses `DeleteAllDigitalContactsDialog` (checkbox gate) → `useLibrary().deleteAllDigitalContacts`.
 
 ## Boundaries
 
