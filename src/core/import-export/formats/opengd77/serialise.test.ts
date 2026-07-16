@@ -23,6 +23,8 @@ import {
 } from '@core/import-export/formats/native-yaml/testFixtures.ts';
 import { assemble } from '@core/services/assemble.ts';
 import { exportBuildAll } from '@core/services/exportBuild.ts';
+import { buildChannelBehaviourContext } from '@core/import-export/channelBehaviourDefaults/resolve.ts';
+import { DEFAULT_CHANNEL_BEHAVIOUR_DEFAULTS } from '@core/models/channelBehaviourDefaults.ts';
 import { compareCsvRecords } from '../../../../test/csvRecordCompare.ts';
 import { parseCsv } from '@core/import-export/csvParse.ts';
 import { CHANNEL_COL, CONTACT_COL, RX_GROUP_LIST_COL } from './columns.ts';
@@ -157,6 +159,34 @@ describe('OpenGD77 export serialise', () => {
     const nameIndex = headers.indexOf(CHANNEL_COL.name);
     const dataRow = rows.slice(1).find((row) => row[nameIndex] === 'RX Only Site');
     expect(dataRow?.[rxOnlyIndex]).toBe('Yes');
+  });
+
+  it('maps library default forbidTransmit when channel override is default', () => {
+    const channel: Channel = {
+      ...newChannel('proj', 'Library RX default'),
+      rxFrequency: 145_750_000,
+      txFrequency: 145_150_000,
+      forbidTransmit: 'default',
+      modeProfiles: [
+        {
+          mode: 'fm' as const,
+          squelch: null,
+          rxTone: 'none' as const,
+          txTone: 'none' as const,
+          bandwidthKHz: null,
+        },
+      ],
+    };
+    const csv = serialiseChannels(minimalAssembled(channel), {
+      channelBehaviourContext: buildChannelBehaviourContext({
+        ...DEFAULT_CHANNEL_BEHAVIOUR_DEFAULTS,
+        forbidTransmit: true,
+      }),
+    });
+    const rows = parseCsv(csv);
+    const headers = rows[0]!;
+    const rxOnlyIndex = headers.indexOf(CHANNEL_COL.rxOnly);
+    expect(rows[1]?.[rxOnlyIndex]).toBe('Yes');
   });
 
   it('serialises channel wire names from assemble projection', () => {

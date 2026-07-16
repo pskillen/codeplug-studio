@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest';
 import type { Channel } from '@core/models/library.ts';
 import { newChannel } from '@core/domain/factories.ts';
 import type { AssembledChannel } from '@core/services/assemble.ts';
+import { buildChannelBehaviourContext } from '@core/import-export/channelBehaviourDefaults/resolve.ts';
+import { DEFAULT_CHANNEL_BEHAVIOUR_DEFAULTS } from '@core/models/channelBehaviourDefaults.ts';
 import { channelToChirpRow, type ChirpChannelWireOptions } from './exportChannelWire.ts';
 
 const projectId = '11111111-1111-4111-8111-111111111111';
@@ -61,6 +63,29 @@ describe('chirp/exportChannelWire', () => {
       'chirp-uv5r',
       testWireOptions(),
       { formatDefault: 'skip' },
+    );
+    expect(row[3]).toBe('off');
+    expect(row[4]).toBe('0.000000');
+  });
+
+  it('exports off duplex when library default forbids transmit', () => {
+    const row = channelToChirpRow(
+      assembledChannel({
+        name: 'Library listen only',
+        rxFrequency: 145_500_000,
+        txFrequency: 145_500_000,
+        forbidTransmit: 'default',
+      }),
+      2,
+      'chirp-uv5r',
+      testWireOptions(),
+      { formatDefault: 'skip' },
+      {
+        channelBehaviourContext: buildChannelBehaviourContext({
+          ...DEFAULT_CHANNEL_BEHAVIOUR_DEFAULTS,
+          forbidTransmit: true,
+        }),
+      },
     );
     expect(row[3]).toBe('off');
     expect(row[4]).toBe('0.000000');

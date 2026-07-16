@@ -28,6 +28,8 @@ import {
   formatDm32BundleCompareFailure,
 } from '../../../../test/dm32CsvCompare.ts';
 import { exportBuildAll } from '@core/services/exportBuild.ts';
+import { buildChannelBehaviourContext } from '@core/import-export/channelBehaviourDefaults/resolve.ts';
+import { DEFAULT_CHANNEL_BEHAVIOUR_DEFAULTS } from '@core/models/channelBehaviourDefaults.ts';
 import {
   FIXTURE_CHANNEL_A_ID,
   FIXTURE_CHANNEL_B_ID,
@@ -91,6 +93,31 @@ describe('DM32 export serialise', () => {
     const headers = rows[0]!;
     const nameIndex = headers.indexOf(CHANNEL_COL.name);
     expect(rows[1]?.[nameIndex]).toBe('GB3DA');
+  });
+
+  it('maps library default forbidTransmit when channel override is default', () => {
+    const channel = fmChannel('Listen', { forbidTransmit: 'default' });
+    const build = dm32Build();
+    const library: LibrarySlice = {
+      channels: [channel],
+      zones: [],
+      talkGroups: [],
+      digitalContacts: [],
+      analogContacts: [],
+      rxGroupLists: [],
+      scanLists: [],
+    };
+    const assembled = assemble(build, library);
+    const files = serialiseDm32Files(assembled, library, {
+      channelBehaviourContext: buildChannelBehaviourContext({
+        ...DEFAULT_CHANNEL_BEHAVIOUR_DEFAULTS,
+        forbidTransmit: true,
+      }),
+    });
+    const rows = parseCsv(files['Channels.csv']);
+    const headers = rows[0]!;
+    const forbidIndex = headers.indexOf(CHANNEL_COL.forbidTx);
+    expect(rows[1]?.[forbidIndex]).toBe('1');
   });
 
   it('serialises zones with pipe-separated member names', () => {
