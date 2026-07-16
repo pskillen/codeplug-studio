@@ -180,6 +180,29 @@ describe('InMemoryProjectPersistence', () => {
     expect(contacts.find((c) => c.digitalId === 100)?.city).toBe('London');
   });
 
+  it('deleteDigitalContactsForProject clears only that project', async () => {
+    const store = new InMemoryProjectPersistence();
+    const meta = newProjectMeta('Test');
+    const other = newProjectMeta('Other');
+    await store.seedProject({ meta });
+    await store.seedProject({ meta: other });
+    await store.putDigitalContact(newDigitalContact(meta.projectId, 'Alpha', 1, 'dmr'), null);
+    await store.putDigitalContact(newDigitalContact(meta.projectId, 'Bravo', 2, 'dmr'), null);
+    await store.putDigitalContact(newDigitalContact(other.projectId, 'Keep', 3, 'dmr'), null);
+
+    const changes: PersistenceChange[] = [];
+    const unsubscribe = store.subscribe((c) => changes.push(c));
+    const result = await store.deleteDigitalContactsForProject(meta.projectId);
+    unsubscribe();
+
+    expect(result.deletedCount).toBe(2);
+    expect(await store.listDigitalContacts(meta.projectId)).toHaveLength(0);
+    expect(await store.listDigitalContacts(other.projectId)).toHaveLength(1);
+    expect(changes).toEqual([
+      { projectId: meta.projectId, kind: 'digitalContact', id: meta.projectId, op: 'delete' },
+    ]);
+  });
+
   it('putDigitalContactsBatch continues after revision conflict on one item', async () => {
     const store = new InMemoryProjectPersistence();
     const meta = newProjectMeta('Test');

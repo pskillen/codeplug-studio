@@ -92,6 +92,12 @@ export interface ProjectPersistence {
   getDigitalContact(projectId: string, id: string): Promise<DigitalContact | null>;
   putDigitalContact(row: DigitalContact, expectedRevision: number | null): Promise<PutResult>;
   putDigitalContactsBatch(puts: DigitalContactPut[]): Promise<BatchPutResult>;
+  /**
+   * Delete every digital contact for a project via the store index (no full-row
+   * hydrate). Returns how many rows were removed. Emits one delete notification
+   * when at least one row was deleted.
+   */
+  deleteDigitalContactsForProject(projectId: string): Promise<{ deletedCount: number }>;
   listDigitalContacts(projectId: string): Promise<DigitalContact[]>;
 
   getAnalogContact(projectId: string, id: string): Promise<AnalogContact | null>;
