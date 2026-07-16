@@ -184,6 +184,38 @@ describe('anytone serialise', () => {
 
     expect(row['Channel Type']).toBe('A-Analog');
     expect(row['Busy Lock/TX Permit']).toBe('Channel Free');
+    expect(row['Squelch Mode']).toBe('Carrier');
+  });
+
+  it('serialises Squelch Mode CTCSS/DCS when analog RX tone is set', () => {
+    const channel = {
+      ...newChannel(PROJECT_ID, 'Tone Ch'),
+      rxFrequency: 145_500_000,
+      txFrequency: 145_500_000,
+      modeProfiles: [{ ...defaultModeProfile('fm'), rxTone: '88.5' }],
+    };
+
+    const row = serialiseAnytoneChannelRow(
+      { entity: channel, wireName: 'Tone Ch' },
+      {
+        buildId: 'b1',
+        formatId: 'anytone',
+        profileId: 'anytone-at-d890uv',
+        buildName: 'Test',
+        channels: [{ entity: channel, wireName: 'Tone Ch' }],
+        zones: [],
+        scanLists: [],
+        talkGroups: [],
+        digitalContacts: [],
+        analogContacts: [],
+        rxGroupLists: [],
+      },
+      'anytone-at-d890uv',
+      1,
+    );
+
+    expect(row['CTCSS/DCS Decode']).toBe('88.5');
+    expect(row['Squelch Mode']).toBe('CTCSS/DCS');
   });
 
   it('serialises MVP file bundle from assembled build', () => {
