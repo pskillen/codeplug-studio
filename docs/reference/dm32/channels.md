@@ -34,7 +34,7 @@ Some CPS builds spell analogue `Anlaog` — accept on import; export uses fixtur
 | `Power`                                  | `power`                               | Wire → % via ladder            | % → `High`/`Middle`/`Low`                           | Yes                                |                                              |
 | `Band Width`                             | `bandwidthKHz`                        | `12.5KHz` → 12.5; `25KHz` → 25 | Reverse                                             | Yes                                |                                              |
 | `Scan List`                              | —                                     | **Ignored**                    | `None`                                              | **Lossy** — archive reference #125 |                                              |
-| `TX Admit`                               | `txAdmit`                             | Wire → enum                    | Enum → wire                                         | Yes                                | See mapping table below                      |
+| `TX Admit`                               | `txPermit` cascade                    | Wire → enum                    | Resolved `txPermit` → wire                          | Partial                            | `busyLock` → `Channel Idle`; `permitAlways` → `Allow TX` |
 | `Emergency System`                       | —                                     | Ignored                        | `None`                                              | Constant default                   |                                              |
 | `Squelch Level`                          | `squelch`                             | 0–9 → % via ladder             | % → 0–9; `null` → `1` on analog rows only, else `0` | Yes                                |                                              |
 | `APRS Report Type`                       | `aprsReportType`                      | Trim                           | As stored                                           | Yes                                | `Off` / `Digital`                            |
@@ -52,15 +52,33 @@ Some CPS builds spell analogue `Anlaog` — accept on import; export uses fixtur
 | `Private Confirm` / `Short Data Confirm` | —                                     | Ignored                        | `0`                                                 | Constant                           |                                              |
 | `DMR ID`                                 | —                                     | **Ignored**                    | Fixture default `Paddy MM7IGV`                      | **Lossy**                          | Accepted gap                                 |
 | `CTC/DCS Decode` / `Encode`              | `rxTone` / `txTone`                   | Wire → tone                    | Tone → wire                                         | Yes                                | `None` when off                              |
-| `Scramble` … `PTT ID Display`            | —                                     | Ignored                        | Fixture defaults                                    | Constant                           |                                              |
+| `Scramble` … `PTT ID Display`            | —                                     | Ignored                        | Fixture defaults                                    | Constant                           | `RX Squelch Mode` from `analogSquelchMode` cascade on export |
 
 ### TX Admit mapping
 
-| Internal `txAdmit`         | DM-32 `TX Admit` wire |
-| -------------------------- | --------------------- |
-| `channel_idle`             | `Channel Idle`        |
-| `allow_tx`                 | `Allow TX`            |
-| _(unknown wire on import)_ | → `channel_idle`      |
+Maps resolved `txPermit` from the [behavioural defaults cascade](../channel-behavioural-defaults.md) (library → channel → build):
+
+| Resolved `txPermit` | DM-32 `TX Admit` wire |
+| ------------------- | --------------------- |
+| `busyLock`          | `Channel Idle`        |
+| `permitAlways`      | `Allow TX`            |
+
+Legacy import wires map unknown values to `channel_idle` (`Channel Idle`) until import-side cascade lands.
+
+### RX Squelch Mode mapping
+
+Maps resolved `analogSquelchMode` on the analog profile (or library default for digital-only rows):
+
+| Resolved `analogSquelchMode` | `RX Squelch Mode` wire |
+| ---------------------------- | ---------------------- |
+| `carrier`                    | `Carrier`              |
+| `tone`                       | `Carrier/CTC`          |
+
+### Export loss
+
+| Internal field      | DM-32 wire | Notes                          |
+| ------------------- | ---------- | ------------------------------ |
+| `sendTalkerAlias`   | _(none)_   | No talker-alias column on wire |
 
 `Channel Name` maps to split internal fields on import and is **composed on export**. Split rules: [channel-name-parsing](../../features/channel-name-parsing.md).
 

@@ -4,13 +4,13 @@
 
 ## Status
 
-CHIRP and OpenGD77 mappers merged ([#435](https://github.com/pskillen/codeplug-studio/pull/435), [#434](https://github.com/pskillen/codeplug-studio/pull/434)). Anytone [#432](https://github.com/pskillen/codeplug-studio/pull/432) and DM32 [#433](https://github.com/pskillen/codeplug-studio/pull/433) PR open.
+Anytone, CHIRP, and OpenGD77 mappers merged ([#432](https://github.com/pskillen/codeplug-studio/pull/432), [#435](https://github.com/pskillen/codeplug-studio/pull/435), [#434](https://github.com/pskillen/codeplug-studio/pull/434)). DM32 [#433](https://github.com/pskillen/codeplug-studio/pull/433) PR open.
 
 ## Format export mappers
 
 | Slice                                      | Ticket | PR   | Status  |
 | ------------------------------------------ | ------ | ---- | ------- |
-| Anytone Busy Lock / Talker Alias / Squelch | #422   | #432 | PR open |
+| Anytone Busy Lock / Talker Alias / Squelch | #422   | #432 | Merged  |
 | DM32 TX Admit / RX Squelch Mode            | #423   | #433 | PR open |
 | OpenGD77 forbid + loss docs                | #424   | #434 | Merged  |
 | CHIRP forbid + loss docs                   | #425   | #435 | Merged  |
