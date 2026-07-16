@@ -1,5 +1,10 @@
 import type { Channel, ChannelModeProfileAnalog, ScanInclusion } from '../models/library.ts';
-import type { ForbidTransmitOverride } from '../models/channelBehaviourDefaults.ts';
+import type {
+  AnalogSquelchModeOverride,
+  ForbidTransmitOverride,
+  SendTalkerAliasOverride,
+  TxPermitOverride,
+} from '../models/channelBehaviourDefaults.ts';
 import {
   channelHasAnalogProfile,
   isAnalogChannelModeProfile,
@@ -9,6 +14,9 @@ import {
 export type ChannelBulkEditPatch = {
   scanInclusion?: ScanInclusion;
   forbidTransmit?: ForbidTransmitOverride;
+  txPermit?: TxPermitOverride;
+  sendTalkerAlias?: SendTalkerAliasOverride;
+  analogSquelchMode?: AnalogSquelchModeOverride;
   /** `null` = radio default (no fixed level). */
   power?: number | null;
   /** `null` = open / radio-default squelch on analog profiles. */
@@ -32,6 +40,9 @@ export type ChannelBulkEditImpact = Partial<
 const CHANNEL_LEVEL_KEYS = new Set<ChannelBulkEditPatchKey>([
   'scanInclusion',
   'forbidTransmit',
+  'txPermit',
+  'sendTalkerAlias',
+  'analogSquelchMode',
   'power',
 ]);
 
@@ -47,6 +58,15 @@ export function applyChannelBulkPatch(channel: Channel, patch: ChannelBulkEditPa
   }
   if ('forbidTransmit' in patch) {
     result = { ...result, forbidTransmit: patch.forbidTransmit! };
+  }
+  if ('txPermit' in patch) {
+    result = { ...result, txPermit: patch.txPermit! };
+  }
+  if ('sendTalkerAlias' in patch) {
+    result = { ...result, sendTalkerAlias: patch.sendTalkerAlias! };
+  }
+  if ('analogSquelchMode' in patch) {
+    result = { ...result, analogSquelchMode: patch.analogSquelchMode! };
   }
   if ('power' in patch) {
     result = { ...result, power: patch.power ?? null };
@@ -68,6 +88,15 @@ export function channelBulkEditWouldChange(channel: Channel, patch: ChannelBulkE
     return true;
   }
   if ('forbidTransmit' in patch && channel.forbidTransmit !== patch.forbidTransmit) {
+    return true;
+  }
+  if ('txPermit' in patch && channel.txPermit !== patch.txPermit) {
+    return true;
+  }
+  if ('sendTalkerAlias' in patch && channel.sendTalkerAlias !== patch.sendTalkerAlias) {
+    return true;
+  }
+  if ('analogSquelchMode' in patch && channel.analogSquelchMode !== patch.analogSquelchMode) {
     return true;
   }
   if ('power' in patch && channel.power !== (patch.power ?? null)) {

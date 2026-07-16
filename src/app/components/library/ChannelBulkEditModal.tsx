@@ -14,6 +14,12 @@ import {
   UnstyledButton,
 } from '@mantine/core';
 import { IconChevronDown, IconChevronRight } from '@tabler/icons-react';
+import type {
+  AnalogSquelchModeOverride,
+  ForbidTransmitOverride,
+  SendTalkerAliasOverride,
+  TxPermitOverride,
+} from '@core/models/channelBehaviourDefaults.ts';
 import type { Channel, ScanInclusion } from '@core/models/library.ts';
 import {
   analyzeChannelBulkEditImpact,
@@ -21,6 +27,9 @@ import {
   type ChannelBulkEditPatch,
 } from '@core/domain/channelBulkEdit.ts';
 import ForbidTransmitSegment from '../channels/ForbidTransmitSegment.tsx';
+import TxPermitSegment from '../channels/TxPermitSegment.tsx';
+import SendTalkerAliasSegment from '../channels/SendTalkerAliasSegment.tsx';
+import AnalogSquelchModeSegment from '../channels/AnalogSquelchModeSegment.tsx';
 import ScanInclusionSegment from '../channels/ScanInclusionSegment.tsx';
 import { PercentLevelSlider } from '../ui/index.ts';
 import { ICON_SIZE_NAV, ICON_STROKE } from '../../lib/iconSizes.ts';
@@ -50,7 +59,13 @@ interface BulkEditFormState {
   changeScanInclusion: boolean;
   scanInclusion: ScanInclusion;
   changeForbidTransmit: boolean;
-  forbidTransmit: boolean;
+  forbidTransmit: ForbidTransmitOverride;
+  changeTxPermit: boolean;
+  txPermit: TxPermitOverride;
+  changeSendTalkerAlias: boolean;
+  sendTalkerAlias: SendTalkerAliasOverride;
+  changeAnalogSquelchMode: boolean;
+  analogSquelchMode: AnalogSquelchModeOverride;
   changePower: boolean;
   power: number | null;
   changeAnalogSquelch: boolean;
@@ -61,7 +76,13 @@ const INITIAL_FORM: BulkEditFormState = {
   changeScanInclusion: false,
   scanInclusion: 'default',
   changeForbidTransmit: false,
-  forbidTransmit: false,
+  forbidTransmit: 'default',
+  changeTxPermit: false,
+  txPermit: 'default',
+  changeSendTalkerAlias: false,
+  sendTalkerAlias: 'default',
+  changeAnalogSquelchMode: false,
+  analogSquelchMode: 'default',
   changePower: false,
   power: null,
   changeAnalogSquelch: false,
@@ -77,6 +98,15 @@ function buildPatchFromForm(form: BulkEditFormState): ChannelBulkEditPatch {
   }
   if (form.changeForbidTransmit) {
     patch.forbidTransmit = form.forbidTransmit;
+  }
+  if (form.changeTxPermit) {
+    patch.txPermit = form.txPermit;
+  }
+  if (form.changeSendTalkerAlias) {
+    patch.sendTalkerAlias = form.sendTalkerAlias;
+  }
+  if (form.changeAnalogSquelchMode) {
+    patch.analogSquelchMode = form.analogSquelchMode;
   }
   if (form.changePower) {
     patch.power = form.power;
@@ -336,6 +366,75 @@ function ChannelBulkEditModalBody({
         {form.changeForbidTransmit && impact.forbidTransmit ? (
           <Text size="xs" c="dimmed">
             {channelLevelImpactText(impact.forbidTransmit.appliesTo)}
+          </Text>
+        ) : null}
+
+        <Checkbox
+          label="Change TX permit"
+          checked={form.changeTxPermit}
+          onChange={(e) => {
+            const checked = e.currentTarget.checked;
+            setForm((prev) => ({ ...prev, changeTxPermit: checked }));
+          }}
+        />
+        <fieldset
+          disabled={!form.changeTxPermit}
+          style={{ border: 0, padding: 0, margin: 0, minWidth: 0 }}
+        >
+          <TxPermitSegment
+            value={form.txPermit}
+            onChange={(txPermit) => setForm((prev) => ({ ...prev, txPermit }))}
+          />
+        </fieldset>
+        {form.changeTxPermit && impact.txPermit ? (
+          <Text size="xs" c="dimmed">
+            {channelLevelImpactText(impact.txPermit.appliesTo)}
+          </Text>
+        ) : null}
+
+        <Checkbox
+          label="Change send talker alias"
+          checked={form.changeSendTalkerAlias}
+          onChange={(e) => {
+            const checked = e.currentTarget.checked;
+            setForm((prev) => ({ ...prev, changeSendTalkerAlias: checked }));
+          }}
+        />
+        <fieldset
+          disabled={!form.changeSendTalkerAlias}
+          style={{ border: 0, padding: 0, margin: 0, minWidth: 0 }}
+        >
+          <SendTalkerAliasSegment
+            value={form.sendTalkerAlias}
+            onChange={(sendTalkerAlias) => setForm((prev) => ({ ...prev, sendTalkerAlias }))}
+          />
+        </fieldset>
+        {form.changeSendTalkerAlias && impact.sendTalkerAlias ? (
+          <Text size="xs" c="dimmed">
+            {channelLevelImpactText(impact.sendTalkerAlias.appliesTo)}
+          </Text>
+        ) : null}
+
+        <Checkbox
+          label="Change analog squelch mode"
+          checked={form.changeAnalogSquelchMode}
+          onChange={(e) => {
+            const checked = e.currentTarget.checked;
+            setForm((prev) => ({ ...prev, changeAnalogSquelchMode: checked }));
+          }}
+        />
+        <fieldset
+          disabled={!form.changeAnalogSquelchMode}
+          style={{ border: 0, padding: 0, margin: 0, minWidth: 0 }}
+        >
+          <AnalogSquelchModeSegment
+            value={form.analogSquelchMode}
+            onChange={(analogSquelchMode) => setForm((prev) => ({ ...prev, analogSquelchMode }))}
+          />
+        </fieldset>
+        {form.changeAnalogSquelchMode && impact.analogSquelchMode ? (
+          <Text size="xs" c="dimmed">
+            {channelLevelImpactText(impact.analogSquelchMode.appliesTo)}
           </Text>
         ) : null}
 

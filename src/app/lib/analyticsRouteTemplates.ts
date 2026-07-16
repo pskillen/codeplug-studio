@@ -11,6 +11,7 @@ export const ANALYTICS_ROUTE_TEMPLATES = [
   '/library/channels/add-from-brandmeister',
   '/library/contacts/add-from-radioid',
   '/library/channels/add-channel-set',
+  '/library/channels/defaults',
   '/library/zones/new-from-location',
   '/builds/:id/overview',
   '/builds/:id/channels',

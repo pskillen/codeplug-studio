@@ -6,20 +6,14 @@
 
 ## Status
 
-In progress — pre-export layers (one PR).
+Pre-export layers in progress on branch `388/pskil/channel-behavioural-defaults`.
 
 ## Shipped
 
 | Slice | Status | Notes |
 | --- | --- | --- |
 | Progress tracking | Complete | This file + outstanding sibling |
-| Core cascade foundation (#419) | Pending | |
-| Docs pattern (#419) | Pending | |
-| Forbid TX export bridge | Pending | |
-| Library fields + Channel defaults UI (#398) | Pending | |
-| Build export overrides (#420) | Pending | |
-| Export resolution summary (#421) | Pending | |
-
-## Next
-
-- Core types + resolve helpers (schema v18)
+| Core cascade foundation (#419) | Complete | Schema v18, resolve helpers, persistence |
+| Docs pattern (#419) | Complete | `docs/reference/channel-behavioural-defaults.md` |
+| Forbid TX export bridge | Complete | DM32, OpenGD77, Anytone, CHIRP |
+| Library fields + Channel defaults UI (#398) | In progress | |

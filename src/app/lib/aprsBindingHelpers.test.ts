@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { AprsChannelSlot } from '@core/models/aprs.ts';
 import type { Channel } from '@core/models/library.ts';
+import { newChannel } from '@core/domain/factories.ts';
 import {
   formatAprsAssignmentSummary,
   channelAssignmentsDirty,
@@ -8,25 +9,7 @@ import {
   channelMatchesAprsAssignmentModeFilter,
 } from './aprsBindingHelpers.ts';
 
-const channelA: Channel = {
-  id: 'ch-a',
-  projectId: 'p1',
-  revision: 1,
-  updatedAt: '2026-01-01T00:00:00.000Z',
-  name: 'GB7AC',
-  callsign: 'GB7AC',
-  rxFrequency: null,
-  txFrequency: null,
-  location: null,
-  useLocation: false,
-  maidenheadLocator: null,
-  power: null,
-  scanInclusion: 'default',
-  forbidTransmit: false,
-  comment: '',
-  primaryMode: null,
-  modeProfiles: [],
-};
+const channelA: Channel = { ...newChannel('p1', 'GB7AC', 'GB7AC'), id: 'ch-a' };
 
 const channelB: Channel = {
   ...channelA,
@@ -216,7 +199,7 @@ describe('aprsSlotChannelSelectGroups', () => {
       name: 'Tower',
       rxFrequency: 118_800_000,
       txFrequency: null,
-      forbidTransmit: true,
+      forbidTransmit: 'forbid',
       modeProfiles: [
         { mode: 'am', squelch: null, rxTone: 'none', txTone: 'none', bandwidthKHz: 12.5 },
       ],

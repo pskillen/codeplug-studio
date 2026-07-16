@@ -2,6 +2,12 @@ import { useEffect, useState, type ReactNode } from 'react';
 import { Alert, Button, Group, Select, SimpleGrid, Stack, Tabs, TextInput } from '@mantine/core';
 import { Link, useNavigate } from 'react-router-dom';
 import type { ChannelAprsBinding } from '@core/models/aprs.ts';
+import type {
+  AnalogSquelchModeOverride,
+  ForbidTransmitOverride,
+  SendTalkerAliasOverride,
+  TxPermitOverride,
+} from '@core/models/channelBehaviourDefaults.ts';
 import type { Channel, ChannelModeProfile, Library, ScanInclusion } from '@core/models/library.ts';
 import { reconcileChannelLocation } from '@core/domain/channelLocation.ts';
 import { normalizeOptionalChannelAprs } from '@core/domain/aprs/index.ts';
@@ -21,6 +27,9 @@ import {
 } from '../../components/ui/index.ts';
 import { modeColor, modeLabel, type ChannelMode as UiChannelMode } from '../../lib/channelModes.ts';
 import ForbidTransmitSegment from '../../components/channels/ForbidTransmitSegment.tsx';
+import TxPermitSegment from '../../components/channels/TxPermitSegment.tsx';
+import SendTalkerAliasSegment from '../../components/channels/SendTalkerAliasSegment.tsx';
+import AnalogSquelchModeSegment from '../../components/channels/AnalogSquelchModeSegment.tsx';
 import ScanInclusionSegment from '../../components/channels/ScanInclusionSegment.tsx';
 import ChannelIdentitySummary from '../../components/channels/ChannelIdentitySummary.tsx';
 import ChannelLocationSection, {
@@ -83,7 +92,14 @@ export default function ChannelEditor({
   const [power, setPower] = useState<number | null>(base.power);
   const [scanInclusion, setScanInclusion] = useState<ScanInclusion>(base.scanInclusion);
   const [scanListId, setScanListId] = useState(base.scanListId ?? '');
-  const [forbidTransmit, setForbidTransmit] = useState(base.forbidTransmit === true);
+  const [forbidTransmit, setForbidTransmit] = useState<ForbidTransmitOverride>(base.forbidTransmit);
+  const [txPermit, setTxPermit] = useState<TxPermitOverride>(base.txPermit);
+  const [sendTalkerAlias, setSendTalkerAlias] = useState<SendTalkerAliasOverride>(
+    base.sendTalkerAlias,
+  );
+  const [analogSquelchMode, setAnalogSquelchMode] = useState<AnalogSquelchModeOverride>(
+    base.analogSquelchMode,
+  );
   const [comment, setComment] = useState(base.comment);
   const [modeProfiles, setModeProfiles] = useState<ChannelModeProfile[]>(base.modeProfiles);
   const [primaryMode, setPrimaryMode] = useState<ChannelMode | null>(base.primaryMode ?? null);
@@ -122,6 +138,9 @@ export default function ChannelEditor({
       power,
       scanInclusion,
       forbidTransmit,
+      txPermit,
+      sendTalkerAlias,
+      analogSquelchMode,
       comment,
       location: reconciled.location,
       useLocation: reconciled.useLocation,
@@ -170,6 +189,9 @@ export default function ChannelEditor({
       scanInclusion: source.scanInclusion,
       scanListId: source.scanListId,
       forbidTransmit: source.forbidTransmit,
+      txPermit: source.txPermit,
+      sendTalkerAlias: source.sendTalkerAlias,
+      analogSquelchMode: source.analogSquelchMode,
       comment: source.comment,
       location: source.location,
       useLocation: source.useLocation,
@@ -232,6 +254,7 @@ export default function ChannelEditor({
         <Tabs.List>
           <Tabs.Tab value="identity">Identity</Tabs.Tab>
           <Tabs.Tab value="frequencies">Frequencies</Tabs.Tab>
+          <Tabs.Tab value="behaviour">Behaviour</Tabs.Tab>
           <Tabs.Tab value="modes">Modes</Tabs.Tab>
           <Tabs.Tab value="scanning">Scanning</Tabs.Tab>
           <Tabs.Tab value="aprs">APRS</Tabs.Tab>
@@ -325,7 +348,20 @@ export default function ChannelEditor({
                 />
               </SimpleGrid>
               <PercentLevelSlider label="Power" value={power} onChange={setPower} />
+            </FormSection>
+          </ChannelEditorPanel>
+        </Tabs.Panel>
+
+        <Tabs.Panel value="behaviour" pt="md">
+          <ChannelEditorPanel channel={liveChannel} isNew={!entity} showIdentitySummary>
+            <FormSection>
               <ForbidTransmitSegment value={forbidTransmit} onChange={setForbidTransmit} />
+              <TxPermitSegment value={txPermit} onChange={setTxPermit} />
+              <SendTalkerAliasSegment value={sendTalkerAlias} onChange={setSendTalkerAlias} />
+              <AnalogSquelchModeSegment
+                value={analogSquelchMode}
+                onChange={setAnalogSquelchMode}
+              />
             </FormSection>
           </ChannelEditorPanel>
         </Tabs.Panel>

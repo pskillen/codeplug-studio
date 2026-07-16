@@ -2,20 +2,40 @@ import { NavLink, Stack } from '@mantine/core';
 import { Link, useLocation } from 'react-router-dom';
 import { LIBRARY_NAV } from '../../../routes/library/nav.ts';
 
+const CHANNEL_DEFAULTS_PATH = '/library/channels/defaults';
+
 export default function LibraryNavLinks() {
   const location = useLocation();
 
   return (
     <Stack gap={4}>
-      {LIBRARY_NAV.map((entry) => (
-        <NavLink
-          key={entry.listPath}
-          component={Link}
-          to={entry.listPath}
-          label={entry.plural}
-          active={location.pathname.startsWith(entry.listPath)}
-        />
-      ))}
+      {LIBRARY_NAV.map((entry) => {
+        const isChannels = entry.listPath === '/library/channels';
+        const channelsActive =
+          location.pathname === entry.listPath ||
+          location.pathname.startsWith(`${entry.listPath}/`) ||
+          location.pathname === CHANNEL_DEFAULTS_PATH;
+
+        return (
+          <Stack key={entry.listPath} gap={2}>
+            <NavLink
+              component={Link}
+              to={entry.listPath}
+              label={entry.plural}
+              active={isChannels ? channelsActive : location.pathname.startsWith(entry.listPath)}
+            />
+            {isChannels ? (
+              <NavLink
+                component={Link}
+                to={CHANNEL_DEFAULTS_PATH}
+                label="Channel defaults"
+                active={location.pathname === CHANNEL_DEFAULTS_PATH}
+                styles={{ root: { paddingLeft: 'var(--mantine-spacing-md)' } }}
+              />
+            ) : null}
+          </Stack>
+        );
+      })}
     </Stack>
   );
 }
