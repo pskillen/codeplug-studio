@@ -109,10 +109,10 @@
 
 **Status:** Complete
 
-| Slice                         | Status   | Notes                                                                 |
-| ----------------------------- | -------- | --------------------------------------------------------------------- |
-| Inventory / cross-cutting docs | Complete | Channel 77 cols, FM shipped, LST CRLF, FM decimals, APRS 176 cols   |
+| Slice                           | Status   | Notes                                                               |
+| ------------------------------- | -------- | ------------------------------------------------------------------- |
+| Inventory / cross-cutting docs  | Complete | Channel 77 cols, FM shipped, LST CRLF, FM decimals, APRS 176 cols   |
 | Entity / profile clarifications | Complete | Zone A/B, `reportSlotIndex`, `at-d890uv.md` caps from `profiles.ts` |
-| Outstanding / reconciliation  | Complete | Link mop-up; leave `#393` / `#398` adapter gaps on child tickets      |
+| Outstanding / reconciliation    | Complete | Link mop-up; leave `#393` / `#398` adapter gaps on child tickets    |
 
 **Verify:** Spot-check `docs/reference/anytone/README.md` inventory against `ANYTONE_EXPORT_FILE_NAMES` + conditional banks.
