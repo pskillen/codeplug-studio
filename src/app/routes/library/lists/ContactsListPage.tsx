@@ -1,6 +1,7 @@
-import { useMemo } from 'react';
-import { Stack, Text } from '@mantine/core';
+import { useMemo, useState } from 'react';
+import { Button, Group, Stack, Text } from '@mantine/core';
 import type { AnalogContact, DigitalContact } from '@core/models/library.ts';
+import DeleteAllDigitalContactsDialog from '../../../components/contacts/DeleteAllDigitalContactsDialog.tsx';
 import EntityListDeleteAction from '../../../components/library/EntityListDeleteAction.tsx';
 import ModePill from '../../../components/pills/ModePill.tsx';
 import { DataTable, ListPage, PageSection } from '../../../components/ui/index.ts';
@@ -22,9 +23,11 @@ import { useLibrary } from '../../../state/useLibrary.ts';
 function DigitalContactsTable({
   contacts,
   library,
+  onDeleteAll,
 }: {
   contacts: DigitalContact[];
   library: ReturnType<typeof useLibrary>['library'];
+  onDeleteAll: () => void;
 }) {
   const { nameFilter, nameFilterInput, nameFilterPending, setNameFilter } =
     useListNameQuery('digital-contacts');
@@ -111,6 +114,19 @@ function DigitalContactsTable({
         getPath: (c) => `/library/digital-contacts/${c.id}`,
       }}
       columns={columns}
+      toolbar={
+        <Group gap="xs">
+          <Button
+            variant="light"
+            color="red"
+            size="compact-sm"
+            disabled={contacts.length === 0}
+            onClick={onDeleteAll}
+          >
+            Delete all
+          </Button>
+        </Group>
+      }
     />
   );
 }
@@ -191,7 +207,8 @@ function AnalogContactsTable({
 }
 
 export default function ContactsListPage() {
-  const { library, loading } = useLibrary();
+  const { library, loading, deleteAllDigitalContacts } = useLibrary();
+  const [deleteAllOpen, setDeleteAllOpen] = useState(false);
 
   if (loading) {
     return (
@@ -205,13 +222,24 @@ export default function ContactsListPage() {
     <ListPage title="Contacts" description="Digital and analog contacts in one inventory.">
       <Stack gap="lg">
         <PageSection title={`Digital contacts (${library.digitalContacts.length})`}>
-          <DigitalContactsTable contacts={library.digitalContacts} library={library} />
+          <DigitalContactsTable
+            contacts={library.digitalContacts}
+            library={library}
+            onDeleteAll={() => setDeleteAllOpen(true)}
+          />
         </PageSection>
 
         <PageSection title={`Analog contacts (${library.analogContacts.length})`}>
           <AnalogContactsTable contacts={library.analogContacts} library={library} />
         </PageSection>
       </Stack>
+
+      <DeleteAllDigitalContactsDialog
+        opened={deleteAllOpen}
+        onClose={() => setDeleteAllOpen(false)}
+        contactCount={library.digitalContacts.length}
+        onConfirm={deleteAllDigitalContacts}
+      />
     </ListPage>
   );
 }
