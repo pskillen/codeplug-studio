@@ -73,7 +73,7 @@ Passed to exporters via `CpsExportOptions.channelBehaviourContext` (`mergeExport
 ## UI
 
 - **Channel defaults** — `/library/channels/defaults` (nested under Channels)
-- **Channel editor** — Behaviour overrides per channel
+- **Channel editor** — Frequencies tab (transmit, TX permit); Modes tab (talker alias when digital; squelch mode on analog profiles)
 - **Build export** — optional default override segments
 - **Export resolution** — read-only audit of effective values + winning layer per build
 

@@ -25,11 +25,15 @@ import {
   PercentLevelSlider,
   UnsavedChangesModal,
 } from '../../components/ui/index.ts';
-import { modeColor, modeLabel, type ChannelMode as UiChannelMode } from '../../lib/channelModes.ts';
+import {
+  modeColor,
+  modeLabel,
+  isDigitalMode,
+  type ChannelMode as UiChannelMode,
+} from '../../lib/channelModes.ts';
 import ForbidTransmitSegment from '../../components/channels/ForbidTransmitSegment.tsx';
 import TxPermitSegment from '../../components/channels/TxPermitSegment.tsx';
 import SendTalkerAliasSegment from '../../components/channels/SendTalkerAliasSegment.tsx';
-import AnalogSquelchModeSegment from '../../components/channels/AnalogSquelchModeSegment.tsx';
 import ScanInclusionSegment from '../../components/channels/ScanInclusionSegment.tsx';
 import ChannelIdentitySummary from '../../components/channels/ChannelIdentitySummary.tsx';
 import ChannelLocationSection, {
@@ -254,7 +258,6 @@ export default function ChannelEditor({
         <Tabs.List>
           <Tabs.Tab value="identity">Identity</Tabs.Tab>
           <Tabs.Tab value="frequencies">Frequencies</Tabs.Tab>
-          <Tabs.Tab value="behaviour">Behaviour</Tabs.Tab>
           <Tabs.Tab value="modes">Modes</Tabs.Tab>
           <Tabs.Tab value="scanning">Scanning</Tabs.Tab>
           <Tabs.Tab value="aprs">APRS</Tabs.Tab>
@@ -348,17 +351,8 @@ export default function ChannelEditor({
                 />
               </SimpleGrid>
               <PercentLevelSlider label="Power" value={power} onChange={setPower} />
-            </FormSection>
-          </ChannelEditorPanel>
-        </Tabs.Panel>
-
-        <Tabs.Panel value="behaviour" pt="md">
-          <ChannelEditorPanel channel={liveChannel} isNew={!entity} showIdentitySummary>
-            <FormSection>
               <ForbidTransmitSegment value={forbidTransmit} onChange={setForbidTransmit} />
               <TxPermitSegment value={txPermit} onChange={setTxPermit} />
-              <SendTalkerAliasSegment value={sendTalkerAlias} onChange={setSendTalkerAlias} />
-              <AnalogSquelchModeSegment value={analogSquelchMode} onChange={setAnalogSquelchMode} />
             </FormSection>
           </ChannelEditorPanel>
         </Tabs.Panel>
@@ -388,6 +382,11 @@ export default function ChannelEditor({
                   disabled={modeProfiles.length === 0}
                 />
               </FormSection>
+              {modeProfiles.some((profile) => isDigitalMode(profile.mode)) ? (
+                <FormSection>
+                  <SendTalkerAliasSegment value={sendTalkerAlias} onChange={setSendTalkerAlias} />
+                </FormSection>
+              ) : null}
               {modeProfiles.length > 0 ? (
                 <FormSection>
                   <ChannelModeProfilesEditor
@@ -395,6 +394,8 @@ export default function ChannelEditor({
                     library={library}
                     rxFrequency={liveRxHz}
                     txFrequency={liveTxHz}
+                    analogSquelchMode={analogSquelchMode}
+                    onAnalogSquelchModeChange={setAnalogSquelchMode}
                     onChange={setModeProfiles}
                   />
                 </FormSection>
