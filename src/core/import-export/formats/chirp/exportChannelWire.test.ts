@@ -91,6 +91,24 @@ describe('chirp/exportChannelWire', () => {
     expect(row[4]).toBe('0.000000');
   });
 
+  it('does not map txPermit to Duplex (busy lock is not on CHIRP wire)', () => {
+    const row = channelToChirpRow(
+      assembledChannel({
+        name: 'Busy lock FM',
+        rxFrequency: 145_500_000,
+        txFrequency: 145_500_000,
+        txPermit: 'busyLock',
+        forbidTransmit: 'default',
+      }),
+      4,
+      'chirp-uv5r',
+      testWireOptions(),
+      { formatDefault: 'skip' },
+    );
+    expect(row[3]).toBe('');
+    expect(row[4]).toBe('0.000000');
+  });
+
   it('uses channel abbreviation for export wire name when enabled', () => {
     const row = channelToChirpRow(
       assembledChannel({
