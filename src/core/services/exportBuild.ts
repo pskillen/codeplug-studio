@@ -74,14 +74,18 @@ export function listExportBuildFileNames({
   library,
   options,
 }: Omit<ExportBuildParams, 'fileName'>): readonly string[] {
-  const exportOptions = mergeExportOptions(build, options);
+  const exportOptions = mergeExportOptions(build, options, library);
   const projection = assemble(build, library, { profileId: exportOptions.profileId });
   const assembled = {
     ...projection,
     library,
     zoneGrouping: findZoneGroupingSection(build),
   };
-  const csvFileNames = resolveEffectiveExportFileNames(build.formatId as FormatId, assembled);
+  const csvFileNames = resolveEffectiveExportFileNames(
+    build.formatId as FormatId,
+    assembled,
+    exportOptions,
+  );
   return listCsvAndSidecarFileNames(build.formatId as FormatId, csvFileNames, exportOptions);
 }
 
@@ -92,7 +96,7 @@ export function exportBuildFile({
   fileName,
   options,
 }: ExportBuildParams): ExportResult & { content: string; assembled: AssembledBuild } {
-  const exportOptions = mergeExportOptions(build, options);
+  const exportOptions = mergeExportOptions(build, options, library);
   const projection = assemble(build, library, { profileId: exportOptions.profileId });
   const assembled = {
     ...projection,
@@ -105,7 +109,11 @@ export function exportBuildFile({
   }
 
   if (build.formatId === 'anytone' && isAnytoneLstFileName(fileName, exportOptions.projectName)) {
-    const csvFileNames = resolveEffectiveExportFileNames(build.formatId as FormatId, assembled);
+    const csvFileNames = resolveEffectiveExportFileNames(
+      build.formatId as FormatId,
+      assembled,
+      exportOptions,
+    );
     const content = serialiseAnytoneLstManifest(csvFileNames);
     return { content, warnings: [], assembled };
   }
@@ -125,7 +133,7 @@ export function exportBuildAll({
   library,
   options,
 }: Omit<ExportBuildParams, 'fileName'>): ExportBuildAllResult {
-  const exportOptions = mergeExportOptions(build, options);
+  const exportOptions = mergeExportOptions(build, options, library);
   const projection = assemble(build, library, { profileId: exportOptions.profileId });
   const assembled = {
     ...projection,
@@ -143,7 +151,11 @@ export function exportBuildAll({
     ...adapter.collectExportWarnings(assembled, exportOptions),
   ];
 
-  const exportFileNames = resolveEffectiveExportFileNames(build.formatId as FormatId, assembled);
+  const exportFileNames = resolveEffectiveExportFileNames(
+    build.formatId as FormatId,
+    assembled,
+    exportOptions,
+  );
 
   for (const name of exportFileNames) {
     const result = adapter.serialiseFile(assembled, name, exportOptions);
@@ -165,7 +177,7 @@ export function exportBuildSingleFile({
   fileName: string;
   content: string;
 } {
-  const exportOptions = mergeExportOptions(build, options);
+  const exportOptions = mergeExportOptions(build, options, library);
   const projection = assemble(build, library, { profileId: exportOptions.profileId });
   const assembled = {
     ...projection,

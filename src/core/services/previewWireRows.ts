@@ -370,9 +370,12 @@ export function previewWireRows(
         const zoneLinkedForPreview =
           build.exportUnlinkedChannels === false ? zoneLinkedChannelIds(build, library) : null;
 
+        const behaviourContext = _options?.channelBehaviourContext;
+
         for (const channel of library.channels) {
-          if (anytoneBank === 'dmr' && isAmAirbandBankChannel(channel)) continue;
-          if (anytoneBank === 'airband' && !isAmAirbandBankChannel(channel)) continue;
+          if (anytoneBank === 'dmr' && isAmAirbandBankChannel(channel, behaviourContext)) continue;
+          if (anytoneBank === 'airband' && !isAmAirbandBankChannel(channel, behaviourContext))
+            continue;
           const generatedRows = expandedByChannelId.get(channel.id);
           if (generatedRows) {
             for (const generated of generatedRows) {
@@ -483,7 +486,11 @@ export function previewWireRows(
                 assembledZone && assembledZone.memberChannelIds.length > 0
                   ? assembledZone.memberChannelIds
                   : directZoneMemberChannelIds(zone);
-              const kind = classifyAnytoneZoneByMembers(memberIds, channelById);
+              const kind = classifyAnytoneZoneByMembers(
+                memberIds,
+                channelById,
+                _options?.channelBehaviourContext,
+              );
               return anytoneBank === 'airband'
                 ? zoneShowsOnAnytoneAirbandBank(kind)
                 : zoneShowsOnAnytoneDmrBank(kind);

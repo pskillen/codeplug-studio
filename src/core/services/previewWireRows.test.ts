@@ -179,7 +179,7 @@ describe('previewWireRows', () => {
 
   it('shortens anytone channel wire names at profile name limit without explicit maxNameLength', () => {
     const projectId = '11111111-1111-4111-8111-111111111111';
-    const channel = {
+    const channel: Channel = {
       ...newChannel(projectId, 'Very Long Channel Name That Exceeds Limit'),
       callsign: 'GB3GL',
       rxFrequency: 438_800_000,
@@ -414,11 +414,11 @@ describe('previewWireRows', () => {
 
   it('keeps library-zoned channels when exportUnlinkedChannels is false', () => {
     const projectId = 'proj-zone-link';
-    const zonedChannel = {
+    const zonedChannel: Channel = {
       ...newChannel(projectId, 'Zoned', 'GB3ZZ'),
       id: 'ch-zoned',
     };
-    const orphanChannel = {
+    const orphanChannel: Channel = {
       ...newChannel(projectId, 'Orphan', 'GB9YY'),
       id: 'ch-orphan',
     };
@@ -452,7 +452,7 @@ describe('previewWireRows', () => {
 
   it('keeps library-zoned channels with legacy zone member refs when exportUnlinkedChannels is false', () => {
     const projectId = 'proj-legacy-zone';
-    const zonedChannel = {
+    const zonedChannel: Channel = {
       ...newChannel(projectId, 'Legacy zoned', 'GB3ZZ'),
       id: 'ch-legacy-zoned',
     };
@@ -486,11 +486,11 @@ describe('previewWireRows', () => {
 
   it('wire preview hide toggle shows orphan channels when off and hides when on', () => {
     const projectId = 'proj-hide-toggle';
-    const zonedChannel = {
+    const zonedChannel: Channel = {
       ...newChannel(projectId, 'Zoned', 'GB3ZZ'),
       id: 'ch-zoned',
     };
-    const orphanChannel = {
+    const orphanChannel: Channel = {
       ...newChannel(projectId, 'Orphan', 'GB9YY'),
       id: 'ch-orphan',
     };
@@ -532,7 +532,7 @@ describe('previewWireRows', () => {
 
   it('lists unlinked DM32 channels in preview so hide toggle can reveal them', () => {
     const projectId = 'proj-dm32-orphan';
-    const zonedChannel = {
+    const zonedChannel: Channel = {
       ...newChannel(projectId, 'Zoned', 'GB3ZZ'),
       id: 'ch-zoned',
       modeProfiles: [
@@ -545,7 +545,7 @@ describe('previewWireRows', () => {
         },
       ],
     };
-    const orphanChannel = {
+    const orphanChannel: Channel = {
       ...newChannel(projectId, 'Orphan', 'GB9YY'),
       id: 'ch-orphan',
       modeProfiles: [
@@ -591,7 +591,7 @@ describe('previewWireRows', () => {
 
   it('marks zones with omitFromExport and excludes them from export preview', () => {
     const projectId = 'proj-omit-zone-preview';
-    const pmrChannel = {
+    const pmrChannel: Channel = {
       ...newChannel(projectId, 'PMR', 'GB3PMR'),
       id: 'ch-pmr',
     };
@@ -633,7 +633,7 @@ describe('previewWireRows', () => {
 
   it('includes omitFromExport zone in preview when forceInclude override is set', () => {
     const projectId = 'proj-force-include-preview';
-    const pmrChannel = {
+    const pmrChannel: Channel = {
       ...newChannel(projectId, 'PMR', 'GB3PMR'),
       id: 'ch-pmr',
     };
@@ -785,17 +785,17 @@ describe('previewWireRows', () => {
 
   it('filters Anytone airband channels out of the main Channels preview', () => {
     const projectId = 'proj-anytone-preview-ch';
-    const dmr = {
+    const dmr: Channel = {
       ...newChannel(projectId, 'DMR 1'),
       rxFrequency: 430_000_000,
       txFrequency: 430_000_000,
       modeProfiles: [defaultModeProfile('dmr')],
     };
-    const air = {
+    const air: Channel = {
       ...newChannel(projectId, 'Tower'),
       rxFrequency: 118_800_000,
       txFrequency: null,
-      forbidTransmit: true,
+      forbidTransmit: 'forbid',
       modeProfiles: [defaultModeProfile('am')],
     };
     const build = { ...newFormatBuild(projectId, 'anytone-at-d890uv'), formatId: 'anytone' };
@@ -818,17 +818,17 @@ describe('previewWireRows', () => {
 
   it('splits Anytone zones between main Zones and Airband previews', () => {
     const projectId = 'proj-anytone-preview-zn';
-    const dmr = {
+    const dmr: Channel = {
       ...newChannel(projectId, 'DMR 1'),
       rxFrequency: 430_000_000,
       txFrequency: 430_000_000,
       modeProfiles: [defaultModeProfile('dmr')],
     };
-    const air = {
+    const air: Channel = {
       ...newChannel(projectId, 'Tower'),
       rxFrequency: 118_800_000,
       txFrequency: null,
-      forbidTransmit: true,
+      forbidTransmit: 'forbid',
       modeProfiles: [defaultModeProfile('am')],
     };
     const airOnlyZone = {

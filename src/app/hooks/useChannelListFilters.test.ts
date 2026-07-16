@@ -4,27 +4,16 @@ import type {
   ChannelModeProfileAnalog,
   ChannelModeProfileDMR,
 } from '@core/models/library.ts';
+import { newChannel } from '@core/domain/factories.ts';
 import { defaultModeProfile } from '@core/domain/modeProfiles.ts';
 import { filterChannelsForList } from './useChannelListFilters.ts';
 
 function makeChannel(overrides: Partial<Channel> = {}): Channel {
   const fm = defaultModeProfile('fm') as ChannelModeProfileAnalog;
   return {
-    id: 'ch-1',
-    projectId: 'p1',
-    revision: 1,
-    updatedAt: '2026-01-01T00:00:00.000Z',
-    name: 'Test',
-    callsign: 'GB3TEST',
+    ...newChannel('p1', 'Test', 'GB3TEST'),
     rxFrequency: 145_000_000,
     txFrequency: 145_000_000,
-    location: null,
-    useLocation: false,
-    maidenheadLocator: null,
-    power: null,
-    scanInclusion: 'default',
-    forbidTransmit: false,
-    comment: '',
     modeProfiles: [fm],
     ...overrides,
   };

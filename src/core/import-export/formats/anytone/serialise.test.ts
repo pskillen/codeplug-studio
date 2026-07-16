@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import type { Channel, ChannelModeProfileAnalog } from '@core/models/library.ts';
 import {
   newChannel,
   newDigitalContact,
@@ -19,7 +20,7 @@ const PROJECT_ID = '11111111-1111-4111-8111-111111111111';
 describe('anytone serialise', () => {
   it('serialises DMR channel core columns', () => {
     const tg = newTalkGroup(PROJECT_ID, 'TG Alpha', 2355);
-    const channel = {
+    const channel: Channel = {
       ...newChannel(PROJECT_ID, 'Channel 1'),
       rxFrequency: 438_800_000,
       txFrequency: 434_000_000,
@@ -70,7 +71,7 @@ describe('anytone serialise', () => {
   });
 
   it('sets txcc equal to RX Color Code when library colour code is not 1', () => {
-    const channel = {
+    const channel: Channel = {
       ...newChannel(PROJECT_ID, 'GB7GL'),
       rxFrequency: 439_487_500,
       txFrequency: 430_487_500,
@@ -110,7 +111,7 @@ describe('anytone serialise', () => {
   });
 
   it('serialises Transmit Power Mid and Turbo from percent', () => {
-    const base = {
+    const base: Channel = {
       ...newChannel(PROJECT_ID, 'Power Ch'),
       rxFrequency: 145_500_000,
       txFrequency: 145_500_000,
@@ -156,7 +157,7 @@ describe('anytone serialise', () => {
   });
 
   it('serialises Channel Free Busy Lock for FM channels', () => {
-    const channel = {
+    const channel: Channel = {
       ...newChannel(PROJECT_ID, 'Analog 1'),
       rxFrequency: 145_500_000,
       txFrequency: 145_500_000,
@@ -188,11 +189,11 @@ describe('anytone serialise', () => {
   });
 
   it('serialises Squelch Mode CTCSS/DCS when analog RX tone is set', () => {
-    const channel = {
+    const channel: Channel = {
       ...newChannel(PROJECT_ID, 'Tone Ch'),
       rxFrequency: 145_500_000,
       txFrequency: 145_500_000,
-      modeProfiles: [{ ...defaultModeProfile('fm'), rxTone: '88.5' }],
+      modeProfiles: [{ ...(defaultModeProfile('fm') as ChannelModeProfileAnalog), rxTone: '88.5' }],
     };
 
     const row = serialiseAnytoneChannelRow(
@@ -221,7 +222,7 @@ describe('anytone serialise', () => {
   it('serialises MVP file bundle from assembled build', () => {
     const tg = newTalkGroup(PROJECT_ID, 'TG Alpha', 2355);
     const scanListId = 'scan-1';
-    const ch1 = {
+    const ch1: Channel = {
       ...newChannel(PROJECT_ID, 'Channel 1'),
       scanListId,
       rxFrequency: 438_800_000,
@@ -237,7 +238,7 @@ describe('anytone serialise', () => {
         },
       ],
     };
-    const ch2 = {
+    const ch2: Channel = {
       ...newChannel(PROJECT_ID, 'Channel 2'),
       rxFrequency: 155_000_000,
       txFrequency: 155_000_000,
@@ -302,7 +303,7 @@ describe('anytone serialise', () => {
 
   it('shortens long channel names in Channel.CSV export', () => {
     const tg = newTalkGroup(PROJECT_ID, 'TG Alpha', 2355);
-    const channel = {
+    const channel: Channel = {
       ...newChannel(PROJECT_ID, 'Very Long Channel Name That Exceeds Limit'),
       callsign: 'GB3GL',
       rxFrequency: 438_800_000,
@@ -467,7 +468,7 @@ describe('anytone serialise', () => {
 
   it('omits zone-derived ScanList.CSV rows when master toggle is off', () => {
     const tg = newTalkGroup(PROJECT_ID, 'TG Alpha', 2355);
-    const ch1 = {
+    const ch1: Channel = {
       ...newChannel(PROJECT_ID, 'Channel 1'),
       rxFrequency: 438_800_000,
       txFrequency: 434_000_000,
@@ -524,7 +525,7 @@ describe('anytone serialise', () => {
   it('merges zone-derived scan list with library scan list when toggle is on', () => {
     const tg = newTalkGroup(PROJECT_ID, 'TG Alpha', 2355);
     const libraryScanListId = 'scan-lib';
-    const ch1 = {
+    const ch1: Channel = {
       ...newChannel(PROJECT_ID, 'Channel 1'),
       scanListId: libraryScanListId,
       rxFrequency: 438_800_000,
@@ -540,7 +541,7 @@ describe('anytone serialise', () => {
         },
       ],
     };
-    const ch2 = {
+    const ch2: Channel = {
       ...newChannel(PROJECT_ID, 'Channel 2'),
       rxFrequency: 155_000_000,
       txFrequency: 155_000_000,
@@ -613,7 +614,7 @@ describe('anytone serialise', () => {
 
   it('honours includeInScanList when deriving zone scan members', () => {
     const tg = newTalkGroup(PROJECT_ID, 'TG Alpha', 2355);
-    const ch1 = {
+    const ch1: Channel = {
       ...newChannel(PROJECT_ID, 'Channel 1'),
       rxFrequency: 438_800_000,
       txFrequency: 434_000_000,
@@ -628,7 +629,7 @@ describe('anytone serialise', () => {
         },
       ],
     };
-    const ch2 = {
+    const ch2: Channel = {
       ...newChannel(PROJECT_ID, 'Channel 2'),
       rxFrequency: 155_000_000,
       txFrequency: 155_000_000,
@@ -697,7 +698,7 @@ describe('anytone serialise', () => {
         { ref: { kind: 'talkGroup' as const, id: tg2.id }, timeSlotOverride: 1 as const },
       ],
     };
-    const channel = {
+    const channel: Channel = {
       ...newChannel(PROJECT_ID, 'Glasgow'),
       callsign: 'GB7GL',
       rxFrequency: 438_800_000,
@@ -770,7 +771,7 @@ describe('anytone serialise', () => {
 
   it('omits AMAir receive-bank channels from zone-derived ScanList.CSV members', () => {
     const tg = newTalkGroup(PROJECT_ID, 'TG Alpha', 2355);
-    const dmr = {
+    const dmr: Channel = {
       ...newChannel(PROJECT_ID, 'GB3AO Aboyne'),
       rxFrequency: 430_975_000,
       txFrequency: 438_575_000,
@@ -785,11 +786,11 @@ describe('anytone serialise', () => {
         },
       ],
     };
-    const airband = {
+    const airband: Channel = {
       ...newChannel(PROJECT_ID, 'Aboyne Info'),
       rxFrequency: 118_665_000,
       txFrequency: null,
-      forbidTransmit: true,
+      forbidTransmit: 'forbid',
       modeProfiles: [
         {
           mode: 'am' as const,

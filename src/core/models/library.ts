@@ -10,6 +10,13 @@ import type {
   GeoPoint,
   SsbSideband,
 } from './libraryTypes.ts';
+import type {
+  AnalogSquelchModeOverride,
+  ChannelBehaviourDefaults,
+  ForbidTransmitOverride,
+  SendTalkerAliasOverride,
+  TxPermitOverride,
+} from './channelBehaviourDefaults.ts';
 import type { ChannelAprsBinding } from './aprs.ts';
 
 export type {
@@ -38,6 +45,8 @@ export interface ChannelModeProfileAnalog {
   bandwidthKHz: number | null;
   /** USB vs LSB when `mode === 'ssb'`; defaults to `usb` when omitted. */
   ssbSideband?: SsbSideband;
+  /** Carrier vs tone squelch — `default` defers to library + build cascade. */
+  analogSquelchMode?: AnalogSquelchModeOverride;
 }
 
 export interface ChannelModeProfileDMR {
@@ -49,6 +58,8 @@ export interface ChannelModeProfileDMR {
   dmrId: number | null;
   contactRef: EntityRef | null;
   rxGroupListId: string | null;
+  /** Send talker alias — `default` defers to library + build cascade. */
+  sendTalkerAlias?: SendTalkerAliasOverride;
 }
 
 export interface ChannelModeProfileDstar {
@@ -107,8 +118,10 @@ export interface Channel extends PersistableRow {
   scanInclusion: ScanInclusion;
   /** Optional FK to library `ScanList` for dedicated-scan-list CPS export. */
   scanListId?: string | null;
-  /** When true, channel is receive-only (no transmit) at export. */
-  forbidTransmit: boolean;
+  /** TX deny override — `default` defers to library + build cascade. */
+  forbidTransmit: ForbidTransmitOverride;
+  /** Busy lock / TX permit override. */
+  txPermit: TxPermitOverride;
   comment: string;
   /** Primary mode for dual-mode CPS export (Anytone Channel Type, DM32 Fixed Analog/Digital). */
   primaryMode?: ChannelMode | null;
@@ -188,4 +201,6 @@ export interface Library {
   scanLists: ScanList[];
   zones: Zone[];
   aprsConfiguration: AprsConfiguration | null;
+  /** Library-wide channel behavioural defaults (also persisted on project meta). */
+  channelDefaults: ChannelBehaviourDefaults;
 }

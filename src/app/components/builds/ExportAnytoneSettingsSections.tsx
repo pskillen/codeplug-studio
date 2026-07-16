@@ -4,6 +4,7 @@ import { FieldCard } from '../fields/Fields.tsx';
 import ExportNameModeSelect from './ExportNameModeSelect.tsx';
 import DigitalContactExportNameModeSelect from './DigitalContactExportNameModeSelect.tsx';
 import ExportSettingsSubheading from './ExportSettingsSubheading.tsx';
+import ChannelBehaviourExportOverrides from './ChannelBehaviourExportOverrides.tsx';
 import { TRAIT_LABELS } from '../../routes/builds/buildHelpers.ts';
 import type { ExportBuildSettingsSectionsProps } from './ExportBuildSettingsSections.tsx';
 
@@ -125,6 +126,17 @@ export default function ExportAnytoneSettingsSections({
             />
           </>
         ) : null}
+      </FieldCard>
+
+      <FieldCard
+        title="Channel behaviour"
+        description="Optional build overrides for library behavioural defaults. When set, these win at export."
+      >
+        <ChannelBehaviourExportOverrides
+          exportSettings={build.exportSettings}
+          disabled={saving}
+          onPatch={onExportSettingsPatch}
+        />
       </FieldCard>
 
       <FieldCard

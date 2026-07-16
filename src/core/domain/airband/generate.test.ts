@@ -22,7 +22,7 @@ describe('generateChannelsFromAirport', () => {
       name: 'GLA Tower',
       rxFrequency: 118_805_000,
       txFrequency: null,
-      forbidTransmit: true,
+      forbidTransmit: 'forbid',
       power: null,
     });
     expect(channels[0]?.modeProfiles[0]?.mode).toBe('am');

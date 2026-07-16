@@ -1,4 +1,5 @@
 import type { Channel, ChannelModeProfileDMR } from '@core/models/library.ts';
+import { effectiveForbidTransmit } from '@core/import-export/channelBehaviourDefaults/index.ts';
 import type { EntityRef } from '@core/models/libraryTypes.ts';
 import type { AssembledBuild, AssembledChannel } from '@core/services/assemble.ts';
 import type { CpsExportOptions } from '@core/import-export/types.ts';
@@ -155,7 +156,9 @@ export function serialiseAnytoneChannelRow(
     [CHANNEL_COL.slot]: formatAnytoneTimeslot(dmr?.timeslot ?? null),
     [CHANNEL_COL.scanList]: resolveScanListWireName(channel, row, context),
     [CHANNEL_COL.rxGroupList]: resolveRxGroupListColumn(assembled, context, rxGroupListId),
-    [CHANNEL_COL.pttProhibit]: channel.forbidTransmit ? 'On' : 'Off',
+    [CHANNEL_COL.pttProhibit]: effectiveForbidTransmit(channel, options?.channelBehaviourContext)
+      ? 'On'
+      : 'Off',
   };
 
   if (dmr) {

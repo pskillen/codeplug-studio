@@ -38,7 +38,7 @@ export interface MultiFileExportAdapter extends BaseExportAdapter {
   readonly delivery: 'multi-file';
   readonly fileNames: readonly string[];
   /** When set, overrides static `fileNames` per assembled build (e.g. conditional receive banks). */
-  resolveExportFileNames?(assembled: AssembledBuild): readonly string[];
+  resolveExportFileNames?(assembled: AssembledBuild, options?: CpsExportOptions): readonly string[];
   /** Build-wide export warnings (profile caps, wire name limits, …). */
   collectExportWarnings(assembled: AssembledBuild, options?: CpsExportOptions): string[];
   serialiseFile(

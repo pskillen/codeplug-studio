@@ -1,4 +1,6 @@
 import { describe, expect, it } from 'vitest';
+import { DEFAULT_CHANNEL_BEHAVIOUR_DEFAULTS } from '@core/models/channelBehaviourDefaults.ts';
+import type { Channel } from '@core/models/library.ts';
 import { defaultModeProfile } from '@core/domain/modeProfiles.ts';
 import { newAprsConfiguration, newChannel, newFormatBuild } from '@core/domain/factories.ts';
 import { assemble } from '@core/services/assemble.ts';
@@ -13,32 +15,32 @@ import { parseCsv } from '@core/import-export/csvParse.ts';
 
 const PROJECT_ID = ANYTONE_GOLDEN_PROJECT_ID;
 
-function airbandChannel(name = 'Air station 1') {
+function airbandChannel(name = 'Air station 1'): Channel {
   return {
     ...newChannel(PROJECT_ID, name),
     rxFrequency: 118_800_000,
     txFrequency: null,
-    forbidTransmit: true,
+    forbidTransmit: 'forbid',
     modeProfiles: [defaultModeProfile('am')],
   };
 }
 
-function fmBroadcastChannel(name = 'FM station 1') {
+function fmBroadcastChannel(name = 'FM station 1'): Channel {
   return {
     ...newChannel(PROJECT_ID, name),
     rxFrequency: 99_500_000,
     txFrequency: null,
-    forbidTransmit: true,
+    forbidTransmit: 'forbid',
     modeProfiles: [defaultModeProfile('fm')],
   };
 }
 
-function mainBankAnalogFm(name = 'Analog FM') {
+function mainBankAnalogFm(name = 'Analog FM'): Channel {
   return {
     ...newChannel(PROJECT_ID, name),
     rxFrequency: 145_500_000,
     txFrequency: 145_500_000,
-    forbidTransmit: false,
+    forbidTransmit: 'default',
     modeProfiles: [defaultModeProfile('fm')],
   };
 }
@@ -65,6 +67,7 @@ describe('buildAnytoneExportChannelSlotById', () => {
       analogContacts: [],
       rxGroupLists: [],
       scanLists: [],
+      channelDefaults: { ...DEFAULT_CHANNEL_BEHAVIOUR_DEFAULTS },
       aprsConfiguration: newAprsConfiguration(PROJECT_ID, 'APRS'),
     };
     const build = {
@@ -88,6 +91,7 @@ describe('buildAnytoneExportChannelSlotById', () => {
       analogContacts: [],
       rxGroupLists: [],
       scanLists: [],
+      channelDefaults: { ...DEFAULT_CHANNEL_BEHAVIOUR_DEFAULTS },
       aprsConfiguration: newAprsConfiguration(PROJECT_ID, 'APRS'),
     };
     const build = {
@@ -111,6 +115,7 @@ describe('buildAnytoneExportChannelSlotById', () => {
       analogContacts: [],
       rxGroupLists: [],
       scanLists: [],
+      channelDefaults: { ...DEFAULT_CHANNEL_BEHAVIOUR_DEFAULTS },
       aprsConfiguration: newAprsConfiguration(PROJECT_ID, 'APRS'),
     };
     const build = {
@@ -154,6 +159,7 @@ describe('serialiseAprsCsv analog slot binding', () => {
       analogContacts: [],
       rxGroupLists: [],
       scanLists: [],
+      channelDefaults: { ...DEFAULT_CHANNEL_BEHAVIOUR_DEFAULTS },
       aprsConfiguration: config,
     };
     const build = {

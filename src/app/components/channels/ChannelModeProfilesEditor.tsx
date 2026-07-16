@@ -24,6 +24,8 @@ import { isAnalogChannelModeProfile, isModeOnlyStub } from '@core/domain/modePro
 import ModePill from '../pills/ModePill.tsx';
 import { PercentLevelSlider, PillTabs } from '../ui/index.ts';
 import RxGroupListSummary from '../library/RxGroupListSummary.tsx';
+import AnalogSquelchModeSegment from './AnalogSquelchModeSegment.tsx';
+import SendTalkerAliasSegment from './SendTalkerAliasSegment.tsx';
 import DmrOperatingModeSegment from './DmrOperatingModeSegment.tsx';
 import {
   BANDWIDTH_KHZ_OPTIONS,
@@ -177,6 +179,10 @@ function AnalogPanel({
         onChange={(v) => onPatch({ squelch: v })}
         zeroLabel="Open (0%)"
       />
+      <AnalogSquelchModeSegment
+        value={profile.analogSquelchMode ?? 'default'}
+        onChange={(analogSquelchMode) => onPatch({ analogSquelchMode })}
+      />
     </>
   );
 }
@@ -274,6 +280,10 @@ function DmrPanel({
         clearable
       />
       <RxGroupListSummary listId={profile.rxGroupListId} library={library} />
+      <SendTalkerAliasSegment
+        value={profile.sendTalkerAlias ?? 'default'}
+        onChange={(sendTalkerAlias) => onPatch({ sendTalkerAlias })}
+      />
     </>
   );
 }

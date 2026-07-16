@@ -6,6 +6,12 @@ import type {
   DigitalContactExportNameMode,
 } from '@core/import-export/types.ts';
 import type { ChannelExportNameMode } from './library.ts';
+import type {
+  AnalogSquelchMode,
+  EffectiveForbidTransmit,
+  SendTalkerAliasMode,
+  TxPermitMode,
+} from './channelBehaviourDefaults.ts';
 
 /** How channels with `scanInclusion: default` serialise when build omits an override. */
 export type DefaultScanInclusion = 'skip' | 'scan';
@@ -27,6 +33,14 @@ export interface BuildExportSettings {
   expandRxGroupListMembers?: ExpandRxGroupListMembers;
   /** When true with expandRxGroupLists, emit one scratch companion row per expanded repeater channel. */
   exportScratchChannels?: boolean;
+  /** Build override: effective TX deny when set (wins over library + channel). */
+  defaultForbidTransmit?: EffectiveForbidTransmit;
+  /** Build override: TX permit mode when set. */
+  defaultTxPermit?: TxPermitMode;
+  /** Build override: send talker alias when set. */
+  defaultSendTalkerAlias?: SendTalkerAliasMode;
+  /** Build override: analog squelch mode when set. */
+  defaultAnalogSquelchMode?: AnalogSquelchMode;
 }
 
 /**

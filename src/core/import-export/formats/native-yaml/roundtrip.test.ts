@@ -22,6 +22,7 @@ import {
   projectWithFormatBuildAggregate,
 } from './testFixtures.ts';
 import type { Channel } from '@core/models/library.ts';
+import { newChannel } from '@core/domain/factories.ts';
 import { initialRevision } from '@core/models/revision.ts';
 
 describe('native-yaml round-trip smoke', () => {
@@ -143,23 +144,12 @@ describe('native-yaml round-trip smoke', () => {
 
   it('serialises ssb mode with sideband on round-trip', () => {
     const ssbChannel: Channel = {
+      ...newChannel(FIXTURE_PROJECT_ID, 'HF SSB', 'G0SSB'),
       id: 'cccccccc-cccc-4ccc-8ccc-cccccccccccc',
-      projectId: FIXTURE_PROJECT_ID,
       revision: initialRevision(),
       updatedAt: FIXTURE_TIMESTAMP,
-      name: 'HF SSB',
-      callsign: 'G0SSB',
       rxFrequency: 14200000,
       txFrequency: 14200000,
-      location: null,
-      useLocation: false,
-      maidenheadLocator: null,
-      power: null,
-      scanInclusion: 'default',
-      forbidTransmit: false,
-      comment: '',
-      primaryMode: null,
-      scanListId: undefined,
       modeProfiles: [
         {
           mode: 'ssb',

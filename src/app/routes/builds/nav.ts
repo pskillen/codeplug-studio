@@ -38,6 +38,7 @@ export function buildNavItems(build: FormatBuild): BuildNavItem[] {
   }
 
   items.push({ label: 'Export', path: `${base}/export` });
+  items.push({ label: 'Export resolution', path: `${base}/export-resolution` });
 
   return items;
 }

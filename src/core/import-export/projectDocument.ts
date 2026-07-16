@@ -11,6 +11,9 @@ import type {
   Zone,
 } from '@core/models/library.ts';
 import type { ProjectMeta } from '@core/models/project.ts';
+import type { ChannelBehaviourDefaults } from '@core/models/channelBehaviourDefaults.ts';
+import { DEFAULT_CHANNEL_BEHAVIOUR_DEFAULTS } from '@core/models/channelBehaviourDefaults.ts';
+import { normalizeChannelBehaviourDefaults } from '@core/domain/normalizeChannelBehaviourDefaults.ts';
 import { STUDIO_SCHEMA_VERSION } from '@core/models/schemaVersion.ts';
 
 /** Native YAML wire format version — bump when envelope shape changes. */
@@ -34,6 +37,8 @@ export interface StudioProjectDocument {
  */
 export interface ProjectAggregate {
   meta: ProjectMeta;
+  /** Mirrored from meta for assemble/export convenience. */
+  channelDefaults?: ChannelBehaviourDefaults;
   channels: Channel[];
   zones: Zone[];
   talkGroups: TalkGroup[];
@@ -55,6 +60,7 @@ export function emptyLibrary(): Library {
     scanLists: [],
     zones: [],
     aprsConfiguration: null,
+    channelDefaults: { ...DEFAULT_CHANNEL_BEHAVIOUR_DEFAULTS },
   };
 }
 
@@ -72,14 +78,21 @@ export function documentFromAggregate(aggregate: ProjectAggregate): StudioProjec
       rxGroupLists: aggregate.rxGroupLists,
       scanLists: aggregate.scanLists,
       aprsConfiguration: aggregate.aprsConfiguration,
+      channelDefaults: normalizeChannelBehaviourDefaults(
+        aggregate.meta.channelDefaults ?? aggregate.channelDefaults,
+      ),
     },
     formatBuilds: aggregate.formatBuilds,
   };
 }
 
 export function aggregateFromDocument(doc: StudioProjectDocument): ProjectAggregate {
+  const channelDefaults = normalizeChannelBehaviourDefaults(
+    doc.library.channelDefaults ?? doc.project.channelDefaults,
+  );
   return {
-    meta: doc.project,
+    meta: { ...doc.project, channelDefaults },
+    channelDefaults,
     channels: doc.library.channels,
     zones: doc.library.zones,
     talkGroups: doc.library.talkGroups,

@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import type { Channel } from '@core/models/library.ts';
 import { defaultModeProfile } from '@core/domain/modeProfiles.ts';
 import {
   newChannel,
@@ -33,7 +34,7 @@ describe('anytone export wire context', () => {
       ...newRxGroupList(PROJECT_ID, LONG_RGL_NAME),
       members: [{ ref: { kind: 'talkGroup' as const, id: tg.id } }],
     };
-    const dmrChannel = {
+    const dmrChannel: Channel = {
       ...newChannel(PROJECT_ID, LONG_CHANNEL_NAME),
       rxFrequency: 438_800_000,
       txFrequency: 434_000_000,
@@ -48,11 +49,11 @@ describe('anytone export wire context', () => {
         },
       ],
     };
-    const airChannel = {
+    const airChannel: Channel = {
       ...newChannel(PROJECT_ID, LONG_AIR_NAME),
       rxFrequency: 118_800_000,
       txFrequency: null,
-      forbidTransmit: true,
+      forbidTransmit: 'forbid',
       modeProfiles: [defaultModeProfile('am')],
     };
     const scanListId = 'scan-long';
@@ -128,7 +129,7 @@ describe('anytone export wire context', () => {
 
   it('zone-derived scan list wire name matches zone wire name', () => {
     const tg = newTalkGroup(PROJECT_ID, 'TG Alpha', 2355);
-    const ch = {
+    const ch: Channel = {
       ...newChannel(PROJECT_ID, 'Channel 1'),
       rxFrequency: 438_800_000,
       txFrequency: 434_000_000,
@@ -190,7 +191,7 @@ describe('anytone export wire context', () => {
 
   it('zone-derived scan carrier names exist in Channel.CSV without template callsign prefix', () => {
     const tg = newTalkGroup(PROJECT_ID, 'TG Alpha', 2355);
-    const templateChannel = {
+    const templateChannel: Channel = {
       ...newChannel(PROJECT_ID, 'GB7EM Aberdeen'),
       callsign: 'GB7EM',
       rxFrequency: 145_500_000,
@@ -206,7 +207,7 @@ describe('anytone export wire context', () => {
         },
       ],
     };
-    const glasgowChannel = {
+    const glasgowChannel: Channel = {
       ...newChannel(PROJECT_ID, 'Glasgow Chan'),
       callsign: 'GB7GL',
       rxFrequency: 438_800_000,
@@ -222,7 +223,7 @@ describe('anytone export wire context', () => {
         },
       ],
     };
-    const edinburghChannel = {
+    const edinburghChannel: Channel = {
       ...newChannel(PROJECT_ID, 'Edinburgh Chan'),
       callsign: 'GB7EM',
       rxFrequency: 439_000_000,
@@ -312,7 +313,7 @@ describe('anytone wire preview list limits', () => {
       ...newRxGroupList(PROJECT_ID, LONG_RGL_NAME),
       members: [{ ref: { kind: 'talkGroup' as const, id: tg.id } }],
     };
-    const channel = {
+    const channel: Channel = {
       ...newChannel(PROJECT_ID, LONG_CHANNEL_NAME),
       rxFrequency: 438_800_000,
       txFrequency: 434_000_000,

@@ -39,7 +39,8 @@ function previewChannel(callsign: string): Channel {
     maidenheadLocator: null,
     power: null,
     scanInclusion: 'default',
-    forbidTransmit: false,
+    forbidTransmit: 'default',
+    txPermit: 'default',
     comment: '',
     modeProfiles: [
       {
@@ -49,6 +50,7 @@ function previewChannel(callsign: string): Channel {
         dmrId: null,
         contactRef: null,
         rxGroupListId: null,
+        sendTalkerAlias: 'default',
       },
     ],
   };

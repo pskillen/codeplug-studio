@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import type { Channel } from '@core/models/library.ts';
 import { emptyLibrary, newAprsConfiguration, newChannel } from '../factories.ts';
 import {
   collectAprsValidationWarnings,
@@ -40,7 +41,7 @@ describe('validateChannelAprsBinding', () => {
 
 describe('collectAprsValidationWarnings', () => {
   it('warns when digital report on analog-only channel', () => {
-    const channel = {
+    const channel: Channel = {
       ...newChannel('p1', 'FM only'),
       aprs: {
         receiveEnabled: true,
@@ -54,7 +55,7 @@ describe('collectAprsValidationWarnings', () => {
   });
 
   it('warns when digital APRS channels exist without a library config', () => {
-    const channel = {
+    const channel: Channel = {
       ...newChannel('p1', 'DMR'),
       modeProfiles: [
         {

@@ -1,4 +1,13 @@
+import { forbidTransmitFromLegacyBoolean } from '@core/import-export/channelBehaviourDefaults/resolve.ts';
 import { scanInclusionFromLegacyBoolean } from '@core/import-export/scanInclusion/index.ts';
+import { normalizeChannelBehaviourDefaults } from '@core/domain/normalizeChannelBehaviourDefaults.ts';
+import type {
+  AnalogSquelchModeOverride,
+  ChannelBehaviourDefaults,
+  ForbidTransmitOverride,
+  SendTalkerAliasOverride,
+  TxPermitOverride,
+} from '@core/models/channelBehaviourDefaults.ts';
 import type {
   BuildEntityOverride,
   BuildExportSettings,
@@ -153,6 +162,10 @@ function parseAnalogModeProfile(
       'none',
     ) as ChannelTone,
     bandwidthKHz: expectNullableNumber(record.bandwidthKHz, `modeProfiles[${index}].bandwidthKHz`),
+    analogSquelchMode: parseAnalogSquelchModeOverride(
+      record.analogSquelchMode,
+      `modeProfiles[${index}].analogSquelchMode`,
+    ),
     ...(record.ssbSideband !== undefined && record.ssbSideband !== null
       ? { ssbSideband: parseSsbSideband(record.ssbSideband, index) }
       : {}),
@@ -188,6 +201,10 @@ function parseModeProfile(raw: unknown, index: number): ChannelModeProfile {
         rxGroupListId: expectNullableString(
           record.rxGroupListId,
           `modeProfiles[${index}].rxGroupListId`,
+        ),
+        sendTalkerAlias: parseSendTalkerAliasOverride(
+          record.sendTalkerAlias,
+          `modeProfiles[${index}].sendTalkerAlias`,
         ),
       });
     case 'dstar':
@@ -248,6 +265,71 @@ function parseScanInclusion(record: Record<string, unknown>, label: string): Sca
     return scanInclusionFromLegacyBoolean(expectBoolean(record.scanSkip, `${label}.scanSkip`));
   }
   return 'default';
+}
+
+function parseEnumField<T extends string>(raw: unknown, label: string, allowed: readonly T[]): T {
+  const value = expectString(raw, label);
+  if (!(allowed as readonly string[]).includes(value)) {
+    throw new NativeYamlImportError(`${label} is invalid: ${value}`);
+  }
+  return value as T;
+}
+
+function parseForbidTransmitField(raw: unknown, label: string): ForbidTransmitOverride {
+  if (raw === undefined || raw === null) return 'default';
+  if (typeof raw === 'boolean') return forbidTransmitFromLegacyBoolean(raw);
+  return parseEnumField(raw, label, ['default', 'allow', 'forbid'] as const);
+}
+
+function parseTxPermitOverride(raw: unknown, label: string): TxPermitOverride {
+  if (raw === undefined || raw === null) return 'default';
+  return parseEnumField(raw, label, ['default', 'permitAlways', 'busyLock'] as const);
+}
+
+function parseSendTalkerAliasOverride(raw: unknown, label: string): SendTalkerAliasOverride {
+  if (raw === undefined || raw === null) return 'default';
+  return parseEnumField(raw, label, ['default', 'on', 'off'] as const);
+}
+
+function parseAnalogSquelchModeOverride(raw: unknown, label: string): AnalogSquelchModeOverride {
+  if (raw === undefined || raw === null) return 'default';
+  return parseEnumField(raw, label, ['default', 'carrier', 'tone'] as const);
+}
+
+function parseChannelBehaviourDefaults(raw: unknown, label: string): ChannelBehaviourDefaults {
+  const record = expectRecord(raw, label);
+  return normalizeChannelBehaviourDefaults({
+    ...(record.forbidTransmit === undefined || record.forbidTransmit === null
+      ? {}
+      : {
+          forbidTransmit: expectBoolean(record.forbidTransmit, `${label}.forbidTransmit`),
+        }),
+    ...(record.txPermit === undefined || record.txPermit === null
+      ? {}
+      : {
+          txPermit: parseEnumField(record.txPermit, `${label}.txPermit`, [
+            'permitAlways',
+            'busyLock',
+          ] as const),
+        }),
+    ...(record.sendTalkerAlias === undefined || record.sendTalkerAlias === null
+      ? {}
+      : {
+          sendTalkerAlias: parseEnumField(record.sendTalkerAlias, `${label}.sendTalkerAlias`, [
+            'on',
+            'off',
+          ] as const),
+        }),
+    ...(record.analogSquelchMode === undefined || record.analogSquelchMode === null
+      ? {}
+      : {
+          analogSquelchMode: parseEnumField(
+            record.analogSquelchMode,
+            `${label}.analogSquelchMode`,
+            ['carrier', 'tone'] as const,
+          ),
+        }),
+  });
 }
 
 const APRS_REPORT_TYPES = ['off', 'digital'] as const;
@@ -405,10 +487,11 @@ function parseChannel(raw: unknown, index: number, studioSchemaVersion: number):
     ),
     power: expectNullableNumber(record.power, `library.channels[${index}].power`),
     scanInclusion: parseScanInclusion(record, `library.channels[${index}]`),
-    forbidTransmit:
-      record.forbidTransmit === undefined || record.forbidTransmit === null
-        ? false
-        : expectBoolean(record.forbidTransmit, `library.channels[${index}].forbidTransmit`),
+    forbidTransmit: parseForbidTransmitField(
+      record.forbidTransmit,
+      `library.channels[${index}].forbidTransmit`,
+    ),
+    txPermit: parseTxPermitOverride(record.txPermit, `library.channels[${index}].txPermit`),
     comment: expectString(record.comment, `library.channels[${index}].comment`),
     ...(record.scanListId !== undefined && record.scanListId !== null
       ? {
@@ -446,7 +529,25 @@ function parseChannel(raw: unknown, index: number, studioSchemaVersion: number):
       (profile, profileIndex) => parseModeProfile(profile, profileIndex),
     ),
     ...(aprsBinding !== undefined ? { aprs: aprsBinding } : {}),
-  };
+    // Legacy channel-level behavioural fields — migrated onto mode profiles by normalizeChannel
+    // after APRS singleton migration (do not normalize here or reportChannelRef is lost).
+    ...(record.sendTalkerAlias !== undefined && record.sendTalkerAlias !== null
+      ? {
+          sendTalkerAlias: parseSendTalkerAliasOverride(
+            record.sendTalkerAlias,
+            `library.channels[${index}].sendTalkerAlias`,
+          ),
+        }
+      : {}),
+    ...(record.analogSquelchMode !== undefined && record.analogSquelchMode !== null
+      ? {
+          analogSquelchMode: parseAnalogSquelchModeOverride(
+            record.analogSquelchMode,
+            `library.channels[${index}].analogSquelchMode`,
+          ),
+        }
+      : {}),
+  } as Channel;
 }
 
 function parseZone(raw: unknown, index: number, studioSchemaVersion: number): Zone {
@@ -651,9 +752,17 @@ function parseLibrary(raw: unknown, studioSchemaVersion: number): Library {
     aprsConfigurations: legacyAprsConfigurations,
   };
 
-  const migratedLibrary = migrateAprsSingletonLibrary(parsedLibrary);
+  const migratedLibrary = migrateAprsSingletonLibrary({
+    ...parsedLibrary,
+    channelDefaults: normalizeChannelBehaviourDefaults(),
+  });
+  const channelDefaults =
+    record.channelDefaults === undefined || record.channelDefaults === null
+      ? normalizeChannelBehaviourDefaults()
+      : parseChannelBehaviourDefaults(record.channelDefaults, 'library.channelDefaults');
   return {
     ...migratedLibrary,
+    channelDefaults,
     channels: migratedLibrary.channels.map(normalizeChannel),
   };
 }
@@ -772,6 +881,33 @@ function parseExportSettings(raw: unknown, label: string): BuildExportSettings |
     settings.exportScratchChannels = expectBoolean(
       record.exportScratchChannels,
       `${label}.exportScratchChannels`,
+    );
+  }
+  if (record.defaultForbidTransmit !== undefined && record.defaultForbidTransmit !== null) {
+    settings.defaultForbidTransmit = parseEnumField(
+      record.defaultForbidTransmit,
+      `${label}.defaultForbidTransmit`,
+      ['allow', 'forbid'] as const,
+    );
+  }
+  if (record.defaultTxPermit !== undefined && record.defaultTxPermit !== null) {
+    settings.defaultTxPermit = parseEnumField(record.defaultTxPermit, `${label}.defaultTxPermit`, [
+      'permitAlways',
+      'busyLock',
+    ] as const);
+  }
+  if (record.defaultSendTalkerAlias !== undefined && record.defaultSendTalkerAlias !== null) {
+    settings.defaultSendTalkerAlias = parseEnumField(
+      record.defaultSendTalkerAlias,
+      `${label}.defaultSendTalkerAlias`,
+      ['on', 'off'] as const,
+    );
+  }
+  if (record.defaultAnalogSquelchMode !== undefined && record.defaultAnalogSquelchMode !== null) {
+    settings.defaultAnalogSquelchMode = parseEnumField(
+      record.defaultAnalogSquelchMode,
+      `${label}.defaultAnalogSquelchMode`,
+      ['carrier', 'tone'] as const,
     );
   }
   return Object.keys(settings).length > 0 ? settings : undefined;
@@ -1021,6 +1157,14 @@ function parseProjectMeta(raw: unknown): ProjectMeta {
     author: expectString(record.author, 'project.author'),
     createdAt: expectString(record.createdAt, 'project.createdAt'),
     ...(interchange !== undefined ? { interchange } : {}),
+    ...(record.channelDefaults !== undefined && record.channelDefaults !== null
+      ? {
+          channelDefaults: parseChannelBehaviourDefaults(
+            record.channelDefaults,
+            'project.channelDefaults',
+          ),
+        }
+      : {}),
   };
 }
 
@@ -1228,6 +1372,7 @@ export function validateDocument(raw: unknown): ProjectAggregate {
   const studioSchemaVersion = document.studioSchemaVersion;
   if (
     studioSchemaVersion !== STUDIO_SCHEMA_VERSION &&
+    studioSchemaVersion !== 17 &&
     studioSchemaVersion !== 16 &&
     studioSchemaVersion !== 15 &&
     studioSchemaVersion !== 14 &&
@@ -1244,7 +1389,7 @@ export function validateDocument(raw: unknown): ProjectAggregate {
     studioSchemaVersion !== 2
   ) {
     throw new NativeYamlImportError(
-      `Unsupported studioSchemaVersion: ${String(studioSchemaVersion)} (expected ${STUDIO_SCHEMA_VERSION}, 16, 15, 14, 13, 12, 10, 9, 8, 7, 6, 5, 4, 3, or 2)`,
+      `Unsupported studioSchemaVersion: ${String(studioSchemaVersion)} (expected ${STUDIO_SCHEMA_VERSION}, 17, 16, 15, 14, 13, 12, 10, 9, 8, 7, 6, 5, 4, 3, or 2)`,
     );
   }
 
@@ -1282,8 +1427,13 @@ export function validateDocument(raw: unknown): ProjectAggregate {
 
   validateForeignKeys(library, formatBuilds);
 
+  const channelDefaults = normalizeChannelBehaviourDefaults(
+    library.channelDefaults ?? project.channelDefaults,
+  );
+
   return migrateProjectAggregate({
-    meta: project,
+    meta: { ...project, channelDefaults },
+    channelDefaults,
     channels: library.channels,
     zones: library.zones,
     talkGroups: library.talkGroups,

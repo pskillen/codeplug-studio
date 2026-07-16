@@ -1,3 +1,4 @@
+import { DEFAULT_CHANNEL_BEHAVIOUR_DEFAULTS } from '@core/models/channelBehaviourDefaults.ts';
 import type { ProjectAggregate } from '../../projectDocument.ts';
 import type { FormatBuild } from '@core/models/formatBuild.ts';
 import type {
@@ -48,8 +49,9 @@ export function fixtureProjectMeta(): ProjectMeta {
 
 export function minimalProjectAggregate(): ProjectAggregate {
   const meta = fixtureProjectMeta();
+  const channelDefaults = { ...DEFAULT_CHANNEL_BEHAVIOUR_DEFAULTS };
   return {
-    meta,
+    meta: { ...meta, channelDefaults },
     channels: [],
     zones: [],
     talkGroups: [],
@@ -57,6 +59,7 @@ export function minimalProjectAggregate(): ProjectAggregate {
     analogContacts: [],
     rxGroupLists: [],
     scanLists: [],
+    channelDefaults,
     aprsConfiguration: null,
     formatBuilds: [],
   };
@@ -106,7 +109,8 @@ export function fullLibraryAggregate(): ProjectAggregate {
     maidenheadLocator: 'IO85vs',
     power: 25,
     scanInclusion: 'default',
-    forbidTransmit: false,
+    forbidTransmit: 'default',
+    txPermit: 'default',
     comment: 'Analog FM',
     primaryMode: null,
     scanListId: undefined,
@@ -117,6 +121,7 @@ export function fullLibraryAggregate(): ProjectAggregate {
         rxTone: '88.5',
         txTone: 'none',
         bandwidthKHz: 12.5,
+        analogSquelchMode: 'default',
       },
     ],
   };
@@ -132,7 +137,8 @@ export function fullLibraryAggregate(): ProjectAggregate {
     maidenheadLocator: null,
     power: null,
     scanInclusion: 'skip',
-    forbidTransmit: false,
+    forbidTransmit: 'default',
+    txPermit: 'default',
     comment: '',
     primaryMode: null,
     scanListId: undefined,
@@ -145,6 +151,7 @@ export function fullLibraryAggregate(): ProjectAggregate {
         dmrMode: null,
         contactRef: { kind: 'digitalContact', id: FIXTURE_DIGITAL_CONTACT_ID },
         rxGroupListId: FIXTURE_RX_LIST_ID,
+        sendTalkerAlias: 'default',
       },
     ],
     aprs: {
@@ -186,8 +193,10 @@ export function fullLibraryAggregate(): ProjectAggregate {
     members: [{ ref: { kind: 'talkGroup', id: FIXTURE_TG_ID }, timeSlotOverride: 2 }],
   };
 
+  const channelDefaults = { ...DEFAULT_CHANNEL_BEHAVIOUR_DEFAULTS };
+
   return {
-    meta,
+    meta: { ...meta, channelDefaults },
     channels: [channelA, channelB],
     zones: [zone],
     talkGroups: [talkGroup],
@@ -195,6 +204,7 @@ export function fullLibraryAggregate(): ProjectAggregate {
     analogContacts: [analogContact],
     rxGroupLists: [rxGroupList],
     scanLists: [],
+    channelDefaults,
     aprsConfiguration,
     formatBuilds: [],
   };

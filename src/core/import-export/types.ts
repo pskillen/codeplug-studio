@@ -1,3 +1,4 @@
+import type { ChannelBehaviourContext } from './channelBehaviourDefaults/resolve.ts';
 import type { DefaultScanInclusion } from '@core/models/formatBuild.ts';
 import type { MultiTalkGroupExportNameMode } from './channelExpansion/multiTalkGroupWireName.ts';
 import type { DigitalContactExportNameMode } from './digitalContactExportName.ts';
@@ -104,6 +105,8 @@ export interface CpsExportOptions {
   exportScratchChannels?: boolean;
   /** Resolved default for channels with `scanInclusion: default`. From build or format adapter. */
   defaultScanInclusion?: DefaultScanInclusion;
+  /** Library + build cascade for channel behavioural defaults at export. */
+  channelBehaviourContext?: ChannelBehaviourContext;
   /** Project display name — used for Anytone `.LST` manifest filename stem. */
   projectName?: string;
 }

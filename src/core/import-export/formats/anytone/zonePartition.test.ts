@@ -10,7 +10,7 @@ import { partitionAnytoneZones } from './zonePartition.ts';
 
 const PROJECT_ID = 'proj-zone-partition';
 
-function dmrChannel(name: string) {
+function dmrChannel(name: string): Channel {
   return {
     ...newChannel(PROJECT_ID, name),
     rxFrequency: 430_000_000,
@@ -19,12 +19,12 @@ function dmrChannel(name: string) {
   };
 }
 
-function airbandChannel(name: string) {
+function airbandChannel(name: string): Channel {
   return {
     ...newChannel(PROJECT_ID, name),
     rxFrequency: 118_800_000,
     txFrequency: null,
-    forbidTransmit: true,
+    forbidTransmit: 'forbid',
     modeProfiles: [defaultModeProfile('am')],
   };
 }

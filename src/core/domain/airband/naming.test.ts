@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { emptyLibrary } from '@core/domain/factories.ts';
+import { emptyLibrary, newChannel } from '@core/domain/factories.ts';
 import type { AirbandAirportInput } from './types.ts';
 import {
   channelsMatchingAirbandFrequency,
@@ -130,25 +130,16 @@ describe('possibleAirbandChannelNames', () => {
 describe('findExistingAirbandChannelMatch', () => {
   it('matches AM simplex channels on frequency and plausible names', () => {
     const library = emptyLibrary();
+    const existing = newChannel('p1', 'GLA Tower');
     library.channels.push({
+      ...existing,
       id: 'existing',
-      projectId: 'p1',
-      name: 'GLA Tower',
-      callsign: '',
       rxFrequency: 118_805_000,
       txFrequency: null,
-      location: null,
-      useLocation: false,
-      maidenheadLocator: null,
-      power: null,
-      forbidTransmit: true,
-      scanInclusion: 'default',
-      comment: '',
+      forbidTransmit: 'forbid',
       modeProfiles: [
         { mode: 'am', squelch: null, rxTone: 'none', txTone: 'none', bandwidthKHz: 12.5 },
       ],
-      revision: 1,
-      updatedAt: '',
     });
 
     const match = findExistingAirbandChannelMatch(
@@ -163,24 +154,13 @@ describe('findExistingAirbandChannelMatch', () => {
   it('ignores FM channels on the same frequency', () => {
     const library = emptyLibrary();
     library.channels.push({
+      ...newChannel('p1', 'GLA Tower'),
       id: 'fm',
-      projectId: 'p1',
-      name: 'GLA Tower',
-      callsign: '',
       rxFrequency: 118_805_000,
       txFrequency: 118_805_000,
-      location: null,
-      useLocation: false,
-      maidenheadLocator: null,
-      power: null,
-      forbidTransmit: false,
-      scanInclusion: 'default',
-      comment: '',
       modeProfiles: [
         { mode: 'fm', squelch: null, rxTone: 'none', txTone: 'none', bandwidthKHz: 12.5 },
       ],
-      revision: 1,
-      updatedAt: '',
     });
 
     expect(
@@ -193,24 +173,14 @@ describe('channelsMatchingAirbandFrequency', () => {
   it('includes RX-only AM channels', () => {
     const library = emptyLibrary();
     library.channels.push({
+      ...newChannel('p1', 'GLA Tower'),
       id: 'rx-only',
-      projectId: 'p1',
-      name: 'GLA Tower',
-      callsign: '',
       rxFrequency: 118_805_000,
       txFrequency: null,
-      location: null,
-      useLocation: false,
-      maidenheadLocator: null,
-      power: null,
-      forbidTransmit: true,
-      scanInclusion: 'default',
-      comment: '',
+      forbidTransmit: 'forbid',
       modeProfiles: [
         { mode: 'am', squelch: null, rxTone: 'none', txTone: 'none', bandwidthKHz: 12.5 },
       ],
-      revision: 1,
-      updatedAt: '',
     });
 
     expect(channelsMatchingAirbandFrequency(library.channels, 118_805_000)).toHaveLength(1);

@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { emptyLibrary } from '@core/domain/factories.ts';
 import { fullLibraryAggregate } from '../formats/native-yaml/testFixtures.ts';
 import { parseChannelOverrideKey, validateChannelOverrideKey } from './channelOverrideKey.ts';
 import { expansionWireKey } from './modeExportSuffix.ts';
@@ -47,7 +48,18 @@ describe('parseChannelOverrideKey', () => {
 });
 
 describe('validateChannelOverrideKey', () => {
-  const library = fullLibraryAggregate();
+  const aggregate = fullLibraryAggregate();
+  const library = {
+    ...emptyLibrary(),
+    channels: aggregate.channels,
+    zones: aggregate.zones,
+    talkGroups: aggregate.talkGroups,
+    digitalContacts: aggregate.digitalContacts,
+    analogContacts: aggregate.analogContacts,
+    rxGroupLists: aggregate.rxGroupLists,
+    scanLists: aggregate.scanLists,
+    aprsConfiguration: aggregate.aprsConfiguration,
+  };
 
   it('accepts plain and composite keys that resolve', () => {
     validateChannelOverrideKey(FIXTURE_CHANNEL_B_ID, library);

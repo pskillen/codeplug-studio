@@ -1,6 +1,7 @@
 import { newId } from '../models/ids.ts';
 import type { BuildEntityOverride, FormatBuild } from '../models/index.ts';
 import type { ProjectMeta } from '../models/project.ts';
+import { DEFAULT_CHANNEL_BEHAVIOUR_DEFAULTS } from '../models/channelBehaviourDefaults.ts';
 import type {
   AnalogContact,
   Channel,
@@ -25,6 +26,7 @@ export function emptyLibrary(): Library {
     scanLists: [],
     zones: [],
     aprsConfiguration: null,
+    channelDefaults: { ...DEFAULT_CHANNEL_BEHAVIOUR_DEFAULTS },
   };
 }
 
@@ -101,7 +103,8 @@ export function newChannel(projectId: string, name: string, callsign = ''): Chan
     maidenheadLocator: null,
     power: null,
     scanInclusion: 'default',
-    forbidTransmit: false,
+    forbidTransmit: 'default',
+    txPermit: 'default',
     comment: '',
     primaryMode: null,
     modeProfiles: [],

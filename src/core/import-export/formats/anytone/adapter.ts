@@ -25,8 +25,8 @@ export const anytoneExportAdapter: MultiFileExportAdapter = {
     exportZoneDerivedScanLists: false,
   },
   fileNames: [...ANYTONE_EXPORT_FILE_NAMES],
-  resolveExportFileNames(assembled) {
-    return resolveAnytoneExportFileNames(assembled);
+  resolveExportFileNames(assembled, options) {
+    return resolveAnytoneExportFileNames(assembled, options);
   },
   collectExportWarnings(assembled, options?: CpsExportOptions) {
     const library = requireLibrary(assembled.library);

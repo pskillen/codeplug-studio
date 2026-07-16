@@ -1,4 +1,5 @@
 import { readFileSync } from 'node:fs';
+import type { Channel } from '@core/models/library.ts';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
@@ -10,6 +11,7 @@ import {
   newTalkGroup,
 } from '@core/domain/factories.ts';
 import { parseProjectDocument } from '@core/import-export/formats/native-yaml/parse.ts';
+import { DEFAULT_CHANNEL_BEHAVIOUR_DEFAULTS } from '@core/models/channelBehaviourDefaults.ts';
 import { assemble, exportInclusionWarnings } from './assemble.ts';
 import { exportBuildAll } from './exportBuild.ts';
 
@@ -252,7 +254,7 @@ describe('assemble', () => {
 
   it('flattens nested library zones into assembled member channel ids', () => {
     const projectId = 'proj-nested';
-    const child = {
+    const child: Channel = {
       ...newChannel(projectId, 'Child ch'),
       id: 'ch-child',
     };
@@ -312,11 +314,11 @@ describe('assemble', () => {
 
   it('flattens nested zones when build has stale zoneGrouping channelIds', () => {
     const projectId = 'proj-nested-layout';
-    const child = {
+    const child: Channel = {
       ...newChannel(projectId, 'PMR ch'),
       id: 'ch-pmr',
     };
-    const direct = {
+    const direct: Channel = {
       ...newChannel(projectId, 'Glasgow ch'),
       id: 'ch-glasgow',
     };
@@ -397,11 +399,11 @@ describe('assemble', () => {
 
   it('omits nested-only zones from export but flattens into parent', () => {
     const projectId = 'proj-omit';
-    const pmr = {
+    const pmr: Channel = {
       ...newChannel(projectId, 'PMR ch'),
       id: 'ch-pmr',
     };
-    const glasgowCh = {
+    const glasgowCh: Channel = {
       ...newChannel(projectId, 'Glasgow ch'),
       id: 'ch-glasgow',
     };
@@ -466,11 +468,11 @@ describe('assemble', () => {
 
   it('excludes channels from standalone omitFromExport zones not nested in a parent', () => {
     const projectId = 'proj-omit-orphan';
-    const pmr = {
+    const pmr: Channel = {
       ...newChannel(projectId, 'PMR ch'),
       id: 'ch-pmr',
     };
-    const other = {
+    const other: Channel = {
       ...newChannel(projectId, 'Other ch'),
       id: 'ch-other',
     };
@@ -532,11 +534,11 @@ describe('assemble', () => {
 
   it('exports nested omitFromExport zone when forceInclude override is set', () => {
     const projectId = 'proj-force-include-nested';
-    const pmr = {
+    const pmr: Channel = {
       ...newChannel(projectId, 'PMR ch'),
       id: 'ch-pmr',
     };
-    const glasgowCh = {
+    const glasgowCh: Channel = {
       ...newChannel(projectId, 'Glasgow ch'),
       id: 'ch-glasgow',
     };
@@ -603,7 +605,7 @@ describe('assemble', () => {
 
   it('exports channels from standalone omitFromExport zone when forceInclude is set', () => {
     const projectId = 'proj-force-include-orphan';
-    const pmr = {
+    const pmr: Channel = {
       ...newChannel(projectId, 'PMR ch'),
       id: 'ch-pmr',
     };
@@ -655,7 +657,7 @@ describe('assemble', () => {
 
   it('excluded override wins over forceInclude on zones', () => {
     const projectId = 'proj-excluded-wins';
-    const pmr = {
+    const pmr: Channel = {
       ...newChannel(projectId, 'PMR ch'),
       id: 'ch-pmr',
     };
@@ -714,12 +716,12 @@ describe('assemble', () => {
       squelch: null,
       bandwidthKHz: 12.5,
     };
-    const ch1 = {
+    const ch1: Channel = {
       ...newChannel(projectId, 'VHF'),
       id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
       modeProfiles: [fmProfile],
     };
-    const ch2 = {
+    const ch2: Channel = {
       ...newChannel(projectId, 'UHF'),
       id: 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',
       modeProfiles: [fmProfile],
@@ -874,6 +876,7 @@ describe('assemble', () => {
       analogContacts: [],
       rxGroupLists: [],
       scanLists: [],
+      channelDefaults: { ...DEFAULT_CHANNEL_BEHAVIOUR_DEFAULTS },
       aprsConfiguration: aprsConfig,
     };
 
@@ -881,7 +884,7 @@ describe('assemble', () => {
     expect(assembled.aprsConfiguration?.id).toBe(aprsConfig.id);
 
     const libraryWithoutConfig = { ...library, aprsConfiguration: null };
-    const channelWithDigitalAprs = {
+    const channelWithDigitalAprs: Channel = {
       ...newChannel(projectId, 'DMR'),
       modeProfiles: [
         {

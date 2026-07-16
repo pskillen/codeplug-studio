@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import type { Channel } from '@core/models/library.ts';
 import { defaultModeProfile } from '@core/domain/modeProfiles.ts';
 import { emptyLibrary, newChannel, newTalkGroup, newZone } from './factories.ts';
 import { summariseLibrary } from './summary.ts';
@@ -12,7 +13,7 @@ const projectId = 'p1';
 
 describe('summariseLibrary', () => {
   it('counts entities and groups channels by mode and band', () => {
-    const fm = {
+    const fm: Channel = {
       ...newChannel(projectId, 'FM 2m'),
       rxFrequency: 145_500_000,
       modeProfiles: [defaultModeProfile('fm') as ChannelModeProfileAnalog],
@@ -25,7 +26,7 @@ describe('summariseLibrary', () => {
       contactRef: null,
       rxGroupListId: null,
     };
-    const dmr = {
+    const dmr: Channel = {
       ...newChannel(projectId, 'DMR 70cm'),
       rxFrequency: 439_000_000,
       modeProfiles: [dmrProfile],

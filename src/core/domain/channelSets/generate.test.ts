@@ -9,7 +9,7 @@ describe('generateChannelsFromSet', () => {
   it('generates PMR446 with forbidTransmit default', () => {
     const channels = generateChannelsFromSet(PROJECT_ID, 'pmr446');
     expect(channels).toHaveLength(16);
-    expect(channels.every((ch) => ch.forbidTransmit)).toBe(true);
+    expect(channels.every((ch) => ch.forbidTransmit === 'forbid')).toBe(true);
     expect(channels[0]?.modeProfiles[0]).toMatchObject({
       mode: 'fm',
       bandwidthKHz: 12.5,
@@ -25,7 +25,7 @@ describe('generateChannelsFromSet', () => {
     });
     expect(channels[0]?.name).toBe('TEST-V16');
     expect(channels[0]?.power).toBe(25);
-    expect(channels[0]?.forbidTransmit).toBe(true);
+    expect(channels[0]?.forbidTransmit).toBe('forbid');
     expect(channels[0]?.rxFrequency).toBe(channels[0]?.txFrequency);
     expect(channels[0]?.modeProfiles[0]).toMatchObject({ bandwidthKHz: 25 });
   });

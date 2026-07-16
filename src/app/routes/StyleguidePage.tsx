@@ -18,6 +18,7 @@ import { useDisclosure } from '@mantine/hooks';
 import { IconGripVertical, IconTrash, IconX } from '@tabler/icons-react';
 import { Link } from 'react-router-dom';
 import { useMemo, useState } from 'react';
+import type { ForbidTransmitOverride } from '@core/models/channelBehaviourDefaults.ts';
 import { newChannel } from '@core/domain/factories.ts';
 import { UK_BANDS } from '../lib/bands.ts';
 import { BandPill, BandPillForChannel, ModePill } from '../components/pills/index.ts';
@@ -98,7 +99,7 @@ function PercentLevelSliderDemo({
 }
 
 function ForbidTransmitSegmentDemo() {
-  const [forbidTransmit, setForbidTransmit] = useState(false);
+  const [forbidTransmit, setForbidTransmit] = useState<ForbidTransmitOverride>('default');
   return <ForbidTransmitSegment value={forbidTransmit} onChange={setForbidTransmit} />;
 }
 

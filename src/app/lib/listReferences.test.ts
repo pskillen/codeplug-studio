@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type {
+  Channel,
   ChannelModeProfileDMR,
   ChannelModeProfileNxdn,
   Library,
@@ -77,7 +78,7 @@ describe('buildReferenceCountIndex', () => {
       unitId: null,
       talkGroupRef: { kind: 'talkGroup', id: talkGroup.id },
     };
-    const channel = {
+    const channel: Channel = {
       ...newChannel(projectId, 'DMR ch'),
       modeProfiles: [dmrProfile, nxdnProfile],
     };

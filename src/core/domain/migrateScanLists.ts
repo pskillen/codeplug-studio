@@ -1,3 +1,4 @@
+import { normalizeChannelBehaviourDefaults } from './normalizeChannelBehaviourDefaults.ts';
 import type { ProjectAggregate } from '@core/import-export/projectDocument.ts';
 import type { Library, ScanList } from '@core/models/library.ts';
 import type { FormatBuild } from '@core/models/formatBuild.ts';
@@ -80,6 +81,9 @@ export function migrateBuildScanListsToLibrary(aggregate: ProjectAggregate): Pro
     rxGroupLists: aggregate.rxGroupLists,
     scanLists: [...scanListsById.values()],
     aprsConfiguration: aggregate.aprsConfiguration ?? null,
+    channelDefaults: normalizeChannelBehaviourDefaults(
+      aggregate.channelDefaults ?? aggregate.meta.channelDefaults,
+    ),
   };
 
   return {

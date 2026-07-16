@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import type { Channel } from '@core/models/library.ts';
 import { newChannel } from '@core/domain/factories.ts';
 import { newFormatBuild } from '@core/domain/factories.ts';
 import {
@@ -86,7 +87,7 @@ describe('exportOrderOrSlot', () => {
 
   it('omits excluded and digital channels', () => {
     const analogue = fmChannel('ch-fm', 'FM');
-    const digital = {
+    const digital: Channel = {
       ...newChannel(projectId, 'DMR'),
       id: 'ch-dmr',
       modeProfiles: [

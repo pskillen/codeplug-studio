@@ -20,12 +20,12 @@ function dmrChannel(name: string) {
   };
 }
 
-function airbandChannel(name: string) {
+function airbandChannel(name: string): Channel {
   return {
     ...newChannel(PROJECT_ID, name),
     rxFrequency: 118_800_000,
     txFrequency: null,
-    forbidTransmit: true,
+    forbidTransmit: 'forbid',
     modeProfiles: [defaultModeProfile('am')],
   };
 }

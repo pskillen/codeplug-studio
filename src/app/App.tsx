@@ -18,6 +18,7 @@ import ContactsListPage from './routes/library/lists/ContactsListPage.tsx';
 import RxGroupListsListPage from './routes/library/lists/RxGroupListsListPage.tsx';
 import ScanListsListPage from './routes/library/lists/ScanListsListPage.tsx';
 import AprsConfigurationPage from './routes/library/AprsConfigurationPage.tsx';
+import ChannelDefaultsPage from './routes/library/ChannelDefaultsPage.tsx';
 import SummaryPage from './routes/SummaryPage.tsx';
 import BandsReferencePage from './routes/reference/BandsReferencePage.tsx';
 import MaidenheadReferencePage from './routes/reference/MaidenheadReferencePage.tsx';
@@ -37,6 +38,7 @@ import NewBuildPage from './routes/builds/NewBuildPage.tsx';
 import BuildLayout from './routes/builds/BuildLayout.tsx';
 import BuildOverviewPage from './routes/builds/BuildOverviewPage.tsx';
 import BuildExportPage from './routes/builds/BuildExportPage.tsx';
+import BuildExportResolutionPage from './routes/builds/BuildExportResolutionPage.tsx';
 import BuildChannelsWirePage from './routes/builds/wire-preview/BuildChannelsWirePage.tsx';
 import BuildChannelsBulkEditPage from './routes/builds/wire-preview/BuildChannelsBulkEditPage.tsx';
 import BuildZonesWirePage from './routes/builds/wire-preview/BuildZonesWirePage.tsx';
@@ -86,6 +88,7 @@ export const appRouter = createBrowserRouter([
         children: [
           { path: '/library', element: <Navigate to="/library/channels" replace /> },
           { path: '/library/channels', element: <ChannelsListPage /> },
+          { path: '/library/channels/defaults', element: <ChannelDefaultsPage /> },
           { path: '/library/zones', element: <ZonesListPage /> },
           {
             path: '/library/zones/new-from-location',
@@ -151,6 +154,7 @@ export const appRouter = createBrowserRouter([
               { path: 'contacts', element: <BuildContactsWirePage /> },
               { path: 'rx-group-lists', element: <BuildRxGroupListsWirePage /> },
               { path: 'export', element: <BuildExportPage /> },
+              { path: 'export-resolution', element: <BuildExportResolutionPage /> },
             ],
           },
           { path: '/import-export', element: <ImportExportPage /> },

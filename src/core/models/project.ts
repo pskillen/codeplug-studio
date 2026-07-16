@@ -1,5 +1,6 @@
 import type { PersistableRow } from './revision.ts';
 import type { ProjectInterchange } from './interchange.ts';
+import type { ChannelBehaviourDefaults } from './channelBehaviourDefaults.ts';
 
 export interface ProjectMeta extends PersistableRow {
   name: string;
@@ -8,4 +9,6 @@ export interface ProjectMeta extends PersistableRow {
   author: string;
   createdAt: string;
   interchange?: ProjectInterchange;
+  /** Persisted library channel behavioural defaults (mirrored on `Library.channelDefaults`). */
+  channelDefaults?: ChannelBehaviourDefaults;
 }

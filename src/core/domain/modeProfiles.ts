@@ -4,6 +4,7 @@ import type {
   ChannelModeProfileAnalog,
   ChannelModeProfileDMR,
 } from '../models/library.ts';
+import { DEFAULT_MODE_PROFILE_BEHAVIOUR_OVERRIDES } from '../models/channelBehaviourDefaults.ts';
 import type {
   AnalogChannelMode,
   ChannelMode,
@@ -38,6 +39,7 @@ function defaultAnalogProfile(
     rxTone: tone,
     txTone: tone,
     bandwidthKHz: null,
+    analogSquelchMode: DEFAULT_MODE_PROFILE_BEHAVIOUR_OVERRIDES.analogSquelchMode,
     ...(mode === 'ssb' ? { ssbSideband } : {}),
   };
 }
@@ -51,6 +53,7 @@ function defaultDmrProfile(): ChannelModeProfileDMR {
     dmrId: null,
     contactRef: null,
     rxGroupListId: null,
+    sendTalkerAlias: DEFAULT_MODE_PROFILE_BEHAVIOUR_OVERRIDES.sendTalkerAlias,
   };
 }
 
@@ -111,6 +114,8 @@ function normalizeAnalogProfile(
     rxTone: profile.rxTone ?? 'none',
     txTone: profile.txTone ?? 'none',
     bandwidthKHz: profile.bandwidthKHz ?? null,
+    analogSquelchMode:
+      profile.analogSquelchMode ?? DEFAULT_MODE_PROFILE_BEHAVIOUR_OVERRIDES.analogSquelchMode,
     ...(mode === 'ssb' ? { ssbSideband } : {}),
   };
 }
@@ -223,6 +228,20 @@ export function patchAllAnalogProfiles(
   return channel.modeProfiles.map((profile) =>
     isAnalogChannelModeProfile(profile) ? { ...profile, ...patch } : profile,
   );
+}
+
+/** Patch every DMR mode profile on a channel — does not add or remove profiles. */
+export function patchAllDmrProfiles(
+  channel: Pick<Channel, 'modeProfiles'>,
+  patch: Partial<ChannelModeProfileDMR>,
+): ChannelModeProfile[] {
+  return channel.modeProfiles.map((profile) =>
+    profile.mode === 'dmr' ? { ...profile, ...patch } : profile,
+  );
+}
+
+export function channelHasDmrProfile(channel: Pick<Channel, 'modeProfiles'>): boolean {
+  return channel.modeProfiles.some((profile) => profile.mode === 'dmr');
 }
 
 export function validateModeProfiles(profiles: ChannelModeProfile[]): string[] {

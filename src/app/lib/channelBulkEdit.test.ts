@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import type { Channel } from '@core/models/library.ts';
 import { newChannel, newProjectMeta } from '@core/domain/factories.ts';
 import { defaultModeProfile } from '@core/domain/modeProfiles.ts';
 import { InMemoryProjectPersistence } from '@integrations/persistence/inMemory.ts';
@@ -8,11 +9,11 @@ describe('persistChannelBulkEdit', () => {
   it('updates channels that would change and skips no-ops', async () => {
     const store = new InMemoryProjectPersistence();
     const meta = newProjectMeta('Test');
-    const unchanged = {
+    const unchanged: Channel = {
       ...newChannel(meta.projectId, 'Same'),
       scanInclusion: 'skip' as const,
     };
-    const toUpdate = {
+    const toUpdate: Channel = {
       ...newChannel(meta.projectId, 'Update me'),
       scanInclusion: 'default' as const,
     };
@@ -42,7 +43,7 @@ describe('persistChannelBulkEdit', () => {
     const outcome = await persistChannelBulkEdit({
       persistence: store,
       channels: [first, second],
-      patch: { forbidTransmit: true },
+      patch: { forbidTransmit: 'forbid' },
     });
 
     expect(outcome.ok).toBe(false);
@@ -55,7 +56,7 @@ describe('persistChannelBulkEdit', () => {
   it('patches analog squelch on channels with analog profiles', async () => {
     const store = new InMemoryProjectPersistence();
     const meta = newProjectMeta('Test');
-    const fm = {
+    const fm: Channel = {
       ...newChannel(meta.projectId, 'FM'),
       modeProfiles: [defaultModeProfile('fm')],
     };

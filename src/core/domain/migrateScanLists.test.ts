@@ -27,6 +27,12 @@ describe('migrateBuildScanListsToLibrary', () => {
       analogContacts: [],
       rxGroupLists: [],
       scanLists: [],
+      channelDefaults: {
+        forbidTransmit: false,
+        txPermit: 'permitAlways',
+        sendTalkerAlias: 'on',
+        analogSquelchMode: 'carrier',
+      },
       aprsConfiguration: null,
       formatBuilds: [
         {

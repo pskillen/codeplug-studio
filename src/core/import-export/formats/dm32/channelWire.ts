@@ -1,3 +1,4 @@
+import { effectiveForbidTransmit } from '@core/import-export/channelBehaviourDefaults/index.ts';
 import type {
   Channel,
   ChannelModeProfile,
@@ -39,7 +40,7 @@ export function serialiseDm32ChannelRow(
   profileId: string,
   rowNumber: number,
   talkGroupWireNames: Dm32TalkGroupWireNameMap,
-  _options?: CpsExportOptions,
+  options?: CpsExportOptions,
   scanListWire = 'None',
   enableAutoScan = false,
 ): Record<string, string> {
@@ -100,7 +101,9 @@ export function serialiseDm32ChannelRow(
       { isAnalog: isAnalogMode(row.mode) },
     ),
     [CHANNEL_COL.aprsReportType]: 'Off',
-    [CHANNEL_COL.forbidTx]: formatDm32FlagWire(sourceChannel.forbidTransmit),
+    [CHANNEL_COL.forbidTx]: formatDm32FlagWire(
+      effectiveForbidTransmit(sourceChannel, options?.channelBehaviourContext),
+    ),
     [CHANNEL_COL.aprsReceive]: '0',
     [CHANNEL_COL.forbidTalkaround]: '0',
     [CHANNEL_COL.autoScan]: enableAutoScan ? '1' : '0',

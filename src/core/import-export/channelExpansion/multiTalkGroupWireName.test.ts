@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { Channel, DigitalContact, TalkGroup } from '@core/models/library.ts';
+import { newChannel } from '@core/domain/factories.ts';
 import {
   composeMultiTalkGroupWireName,
   multiTalkGroupProtectedSuffix,
@@ -7,23 +8,7 @@ import {
 import { applyMultiTalkGroupWireNameLimits } from './multiTalkGroup.ts';
 
 function channel(partial: Partial<Channel> & Pick<Channel, 'name' | 'callsign'>): Channel {
-  return {
-    id: 'ch-1',
-    projectId: 'p1',
-    revision: 1,
-    updatedAt: '2026-01-01T00:00:00.000Z',
-    rxFrequency: null,
-    txFrequency: null,
-    location: null,
-    useLocation: false,
-    maidenheadLocator: null,
-    power: null,
-    scanInclusion: 'default',
-    forbidTransmit: false,
-    comment: '',
-    modeProfiles: [],
-    ...partial,
-  };
+  return { ...newChannel('p1', partial.name, partial.callsign), ...partial };
 }
 
 function talkGroup(partial: Partial<TalkGroup> & Pick<TalkGroup, 'name' | 'digitalId'>): TalkGroup {

@@ -49,7 +49,10 @@ export function useBuildWirePreview(
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [hideNotIncludedInExport, setHideNotIncludedInExport] = useState(false);
-  const exportOptions = useMemo(() => mergeExportOptions(build), [build]);
+  const exportOptions = useMemo(
+    () => mergeExportOptions(build, undefined, library ?? undefined),
+    [build, library],
+  );
 
   const allRows = useMemo(() => {
     if (!library) return [];

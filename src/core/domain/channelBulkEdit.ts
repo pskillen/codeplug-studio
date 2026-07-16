@@ -1,13 +1,26 @@
 import type { Channel, ChannelModeProfileAnalog, ScanInclusion } from '../models/library.ts';
+import type {
+  AnalogSquelchModeOverride,
+  ForbidTransmitOverride,
+  SendTalkerAliasOverride,
+  TxPermitOverride,
+} from '../models/channelBehaviourDefaults.ts';
 import {
   channelHasAnalogProfile,
+  channelHasDmrProfile,
   isAnalogChannelModeProfile,
   patchAllAnalogProfiles,
+  patchAllDmrProfiles,
 } from './modeProfiles.ts';
 
 export type ChannelBulkEditPatch = {
   scanInclusion?: ScanInclusion;
-  forbidTransmit?: boolean;
+  forbidTransmit?: ForbidTransmitOverride;
+  txPermit?: TxPermitOverride;
+  /** Applied to every DMR mode profile on the channel. */
+  sendTalkerAlias?: SendTalkerAliasOverride;
+  /** Applied to every analog mode profile on the channel. */
+  analogSquelchMode?: AnalogSquelchModeOverride;
   /** `null` = radio default (no fixed level). */
   power?: number | null;
   /** `null` = open / radio-default squelch on analog profiles. */
@@ -16,7 +29,7 @@ export type ChannelBulkEditPatch = {
 
 export type ChannelBulkEditPatchKey = keyof ChannelBulkEditPatch;
 
-export type ChannelBulkEditSkipReason = 'no_analog_profile';
+export type ChannelBulkEditSkipReason = 'no_analog_profile' | 'no_dmr_profile';
 
 export interface ChannelBulkEditFieldImpact {
   appliesTo: number;
@@ -31,11 +44,16 @@ export type ChannelBulkEditImpact = Partial<
 const CHANNEL_LEVEL_KEYS = new Set<ChannelBulkEditPatchKey>([
   'scanInclusion',
   'forbidTransmit',
+  'txPermit',
   'power',
 ]);
 
 export function countChannelsWithAnalogProfile(channels: readonly Channel[]): number {
   return channels.filter(channelHasAnalogProfile).length;
+}
+
+export function countChannelsWithDmrProfile(channels: readonly Channel[]): number {
+  return channels.filter(channelHasDmrProfile).length;
 }
 
 export function applyChannelBulkPatch(channel: Channel, patch: ChannelBulkEditPatch): Channel {
@@ -46,6 +64,25 @@ export function applyChannelBulkPatch(channel: Channel, patch: ChannelBulkEditPa
   }
   if ('forbidTransmit' in patch) {
     result = { ...result, forbidTransmit: patch.forbidTransmit! };
+  }
+  if ('txPermit' in patch) {
+    result = { ...result, txPermit: patch.txPermit! };
+  }
+  if ('sendTalkerAlias' in patch) {
+    result = {
+      ...result,
+      modeProfiles: patchAllDmrProfiles(result, {
+        sendTalkerAlias: patch.sendTalkerAlias!,
+      }),
+    };
+  }
+  if ('analogSquelchMode' in patch) {
+    result = {
+      ...result,
+      modeProfiles: patchAllAnalogProfiles(result, {
+        analogSquelchMode: patch.analogSquelchMode!,
+      }),
+    };
   }
   if ('power' in patch) {
     result = { ...result, power: patch.power ?? null };
@@ -68,6 +105,23 @@ export function channelBulkEditWouldChange(channel: Channel, patch: ChannelBulkE
   }
   if ('forbidTransmit' in patch && channel.forbidTransmit !== patch.forbidTransmit) {
     return true;
+  }
+  if ('txPermit' in patch && channel.txPermit !== patch.txPermit) {
+    return true;
+  }
+  if ('sendTalkerAlias' in patch) {
+    if (!channelHasDmrProfile(channel)) return false;
+    return channel.modeProfiles.some(
+      (profile) => profile.mode === 'dmr' && profile.sendTalkerAlias !== patch.sendTalkerAlias,
+    );
+  }
+  if ('analogSquelchMode' in patch) {
+    if (!channelHasAnalogProfile(channel)) return false;
+    return channel.modeProfiles.some(
+      (profile) =>
+        isAnalogChannelModeProfile(profile) &&
+        profile.analogSquelchMode !== patch.analogSquelchMode,
+    );
   }
   if ('power' in patch && channel.power !== (patch.power ?? null)) {
     return true;
@@ -92,12 +146,21 @@ export function analyzeChannelBulkEditImpact(
   const impact: ChannelBulkEditImpact = {};
 
   for (const key of Object.keys(patch) as ChannelBulkEditPatchKey[]) {
-    if (key === 'analogSquelch') {
+    if (key === 'analogSquelch' || key === 'analogSquelchMode') {
       const appliesTo = countChannelsWithAnalogProfile(channels);
-      impact.analogSquelch = {
+      impact[key] = {
         appliesTo,
         skipped: total - appliesTo,
         skipReason: total - appliesTo > 0 ? 'no_analog_profile' : undefined,
+      };
+      continue;
+    }
+    if (key === 'sendTalkerAlias') {
+      const appliesTo = countChannelsWithDmrProfile(channels);
+      impact.sendTalkerAlias = {
+        appliesTo,
+        skipped: total - appliesTo,
+        skipReason: total - appliesTo > 0 ? 'no_dmr_profile' : undefined,
       };
       continue;
     }

@@ -1,24 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import type { Channel } from '@core/models/library.ts';
 import type { RepeaterListing } from '@integrations/repeaters/types.ts';
+import { newChannel } from '@core/domain/factories.ts';
 import { buildRepeaterDirectoryRows } from './repeaterDirectoryRows.ts';
 
 const baseChannel: Channel = {
+  ...newChannel('p1', 'Danbury', 'GB3DA'),
   id: 'ch-1',
-  projectId: 'p1',
-  revision: 1,
-  updatedAt: '2026-01-01T00:00:00.000Z',
-  name: 'Danbury',
-  callsign: 'GB3DA',
   rxFrequency: 145_725_000,
   txFrequency: 145_125_000,
-  comment: '',
-  power: null,
-  scanInclusion: 'default',
-  forbidTransmit: false,
-  useLocation: false,
-  location: null,
-  maidenheadLocator: null,
   modeProfiles: [{ mode: 'fm', rxTone: 'none', txTone: 'none', squelch: null, bandwidthKHz: null }],
 };
 

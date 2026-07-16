@@ -26,17 +26,23 @@ library:
     projectId: 11111111-1111-4111-8111-111111111111
     revision: 1
     updatedAt: 2026-07-02T10:00:00.000Z
+  channelDefaults:
+    analogSquelchMode: carrier
+    forbidTransmit: false
+    sendTalkerAlias: on
+    txPermit: permitAlways
   channels:
     - callsign: GB3DA
       comment: Analog FM
-      forbidTransmit: false
+      forbidTransmit: default
       id: 22222222-2222-4222-8222-222222222222
       location:
         lat: 55.9533
         lon: -3.1883
       maidenheadLocator: IO85vs
       modeProfiles:
-        - bandwidthKHz: 12.5
+        - analogSquelchMode: default
+          bandwidthKHz: 12.5
           mode: fm
           rxTone: "88.5"
           squelch: 50
@@ -49,6 +55,7 @@ library:
       rxFrequency: 430912500
       scanInclusion: default
       txFrequency: 430912500
+      txPermit: default
       updatedAt: 2026-07-02T10:00:00.000Z
       useLocation: true
     - aprs:
@@ -58,7 +65,7 @@ library:
         reportType: digital
       callsign: GB7GL
       comment: ""
-      forbidTransmit: false
+      forbidTransmit: default
       id: 33333333-3333-4333-8333-333333333333
       location: null
       maidenheadLocator: null
@@ -71,6 +78,7 @@ library:
           dmrMode: null
           mode: dmr
           rxGroupListId: 88888888-8888-4888-8888-888888888888
+          sendTalkerAlias: default
           timeslot: 2
       name: DMR Scotland
       power: null
@@ -80,6 +88,7 @@ library:
       rxFrequency: 439087500
       scanInclusion: skip
       txFrequency: 430587500
+      txPermit: default
       updatedAt: 2026-07-02T10:00:00.000Z
       useLocation: false
   digitalContacts:
@@ -130,6 +139,11 @@ library:
       updatedAt: 2026-07-02T10:00:00.000Z
 project:
   author: test
+  channelDefaults:
+    analogSquelchMode: carrier
+    forbidTransmit: false
+    sendTalkerAlias: on
+    txPermit: permitAlways
   createdAt: 2026-07-02T10:00:00.000Z
   description: Export golden fixture
   id: 11111111-1111-4111-8111-111111111111
@@ -139,4 +153,4 @@ project:
   revision: 1
   updatedAt: 2026-07-02T10:00:00.000Z
 schemaVersion: 1
-studioSchemaVersion: 17
+studioSchemaVersion: 18

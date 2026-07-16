@@ -2,6 +2,10 @@ import { useEffect, useState, type ReactNode } from 'react';
 import { Alert, Button, Group, Select, SimpleGrid, Stack, Tabs, TextInput } from '@mantine/core';
 import { Link, useNavigate } from 'react-router-dom';
 import type { ChannelAprsBinding } from '@core/models/aprs.ts';
+import type {
+  ForbidTransmitOverride,
+  TxPermitOverride,
+} from '@core/models/channelBehaviourDefaults.ts';
 import type { Channel, ChannelModeProfile, Library, ScanInclusion } from '@core/models/library.ts';
 import { reconcileChannelLocation } from '@core/domain/channelLocation.ts';
 import { normalizeOptionalChannelAprs } from '@core/domain/aprs/index.ts';
@@ -21,6 +25,7 @@ import {
 } from '../../components/ui/index.ts';
 import { modeColor, modeLabel, type ChannelMode as UiChannelMode } from '../../lib/channelModes.ts';
 import ForbidTransmitSegment from '../../components/channels/ForbidTransmitSegment.tsx';
+import TxPermitSegment from '../../components/channels/TxPermitSegment.tsx';
 import ScanInclusionSegment from '../../components/channels/ScanInclusionSegment.tsx';
 import ChannelIdentitySummary from '../../components/channels/ChannelIdentitySummary.tsx';
 import ChannelLocationSection, {
@@ -83,7 +88,8 @@ export default function ChannelEditor({
   const [power, setPower] = useState<number | null>(base.power);
   const [scanInclusion, setScanInclusion] = useState<ScanInclusion>(base.scanInclusion);
   const [scanListId, setScanListId] = useState(base.scanListId ?? '');
-  const [forbidTransmit, setForbidTransmit] = useState(base.forbidTransmit === true);
+  const [forbidTransmit, setForbidTransmit] = useState<ForbidTransmitOverride>(base.forbidTransmit);
+  const [txPermit, setTxPermit] = useState<TxPermitOverride>(base.txPermit);
   const [comment, setComment] = useState(base.comment);
   const [modeProfiles, setModeProfiles] = useState<ChannelModeProfile[]>(base.modeProfiles);
   const [primaryMode, setPrimaryMode] = useState<ChannelMode | null>(base.primaryMode ?? null);
@@ -122,6 +128,7 @@ export default function ChannelEditor({
       power,
       scanInclusion,
       forbidTransmit,
+      txPermit,
       comment,
       location: reconciled.location,
       useLocation: reconciled.useLocation,
@@ -170,6 +177,7 @@ export default function ChannelEditor({
       scanInclusion: source.scanInclusion,
       scanListId: source.scanListId,
       forbidTransmit: source.forbidTransmit,
+      txPermit: source.txPermit,
       comment: source.comment,
       location: source.location,
       useLocation: source.useLocation,
@@ -326,6 +334,7 @@ export default function ChannelEditor({
               </SimpleGrid>
               <PercentLevelSlider label="Power" value={power} onChange={setPower} />
               <ForbidTransmitSegment value={forbidTransmit} onChange={setForbidTransmit} />
+              <TxPermitSegment value={txPermit} onChange={setTxPermit} />
             </FormSection>
           </ChannelEditorPanel>
         </Tabs.Panel>
