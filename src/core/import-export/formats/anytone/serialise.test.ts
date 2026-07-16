@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { Channel, ChannelModeProfileAnalog } from '@core/models/library.ts';
+import type { Channel, ChannelModeProfileAnalog, ChannelModeProfileDMR } from '@core/models/library.ts';
 import {
   newChannel,
   newDigitalContact,
@@ -14,6 +14,9 @@ import { assemble } from '@core/services/assemble.ts';
 import { csvToTable } from '@core/import-export/csvParse.ts';
 import { serialiseAnytoneFiles } from './serialise.ts';
 import { serialiseAnytoneChannelRow } from './channelWire.ts';
+import { partitionAnytoneChannels } from './receiveOnlyBanks.ts';
+import { buildChannelBehaviourContext } from '@core/import-export/channelBehaviourDefaults/resolve.ts';
+import { DEFAULT_CHANNEL_BEHAVIOUR_DEFAULTS } from '@core/models/channelBehaviourDefaults.ts';
 
 const PROJECT_ID = '11111111-1111-4111-8111-111111111111';
 
@@ -59,7 +62,9 @@ describe('anytone serialise', () => {
     expect(row['Channel Name']).toBe('Channel 1');
     expect(row['Receive Frequency']).toBe('438.80000');
     expect(row['Channel Type']).toBe('D-Digital');
-    expect(row['Busy Lock/TX Permit']).toBe('ChannelFree');
+    expect(row['Busy Lock/TX Permit']).toBe('Always');
+    expect(row['Send Talker Alias DMR/NX']).toBe('1');
+    expect(row.tx_talkalaes).toBe('1');
     expect(row['DMR MODE']).toBe('1');
     expect(row['Transmit Power']).toBe('Low');
     expect(row['Call Confirmation']).toBe('On');
@@ -184,16 +189,150 @@ describe('anytone serialise', () => {
     );
 
     expect(row['Channel Type']).toBe('A-Analog');
-    expect(row['Busy Lock/TX Permit']).toBe('Channel Free');
+    expect(row['Busy Lock/TX Permit']).toBe('Off');
     expect(row['Squelch Mode']).toBe('Carrier');
   });
 
-  it('serialises Squelch Mode CTCSS/DCS when analog RX tone is set', () => {
+  it('serialises behavioural cascade for Busy Lock, Talker Alias, and Squelch Mode', () => {
+    const dmrProfile: ChannelModeProfileDMR = {
+      ...(defaultModeProfile('dmr') as ChannelModeProfileDMR),
+      sendTalkerAlias: 'off',
+    };
+    const analogProfile: ChannelModeProfileAnalog = {
+      ...(defaultModeProfile('fm') as ChannelModeProfileAnalog),
+      analogSquelchMode: 'tone',
+      rxTone: 'none',
+    };
+    const dmrChannel: Channel = {
+      ...newChannel(PROJECT_ID, 'DMR Busy'),
+      txPermit: 'busyLock',
+      modeProfiles: [dmrProfile],
+      rxFrequency: 438_800_000,
+      txFrequency: 434_000_000,
+    };
+    const analogChannel: Channel = {
+      ...newChannel(PROJECT_ID, 'FM Tone'),
+      txPermit: 'busyLock',
+      modeProfiles: [analogProfile],
+      rxFrequency: 145_500_000,
+      txFrequency: 145_500_000,
+    };
+    const assembleCtx = {
+      buildId: 'b1',
+      formatId: 'anytone',
+      profileId: 'anytone-at-d890uv',
+      buildName: 'Test',
+      channels: [],
+      zones: [],
+      scanLists: [],
+      talkGroups: [],
+      digitalContacts: [],
+      analogContacts: [],
+      rxGroupLists: [],
+    };
+
+    const dmrRow = serialiseAnytoneChannelRow(
+      { entity: dmrChannel, wireName: 'DMR Busy' },
+      assembleCtx,
+      'anytone-at-d890uv',
+      1,
+    );
+    expect(dmrRow['Busy Lock/TX Permit']).toBe('ChannelFree');
+    expect(dmrRow['Send Talker Alias DMR/NX']).toBe('0');
+    expect(dmrRow.tx_talkalaes).toBe('0');
+
+    const analogRow = serialiseAnytoneChannelRow(
+      { entity: analogChannel, wireName: 'FM Tone' },
+      assembleCtx,
+      'anytone-at-d890uv',
+      2,
+    );
+    expect(analogRow['Busy Lock/TX Permit']).toBe('Channel Free');
+    expect(analogRow['Squelch Mode']).toBe('CTCSS/DCS');
+  });
+
+  it('routes library-default forbid channels to receive-only banks', () => {
+    const tg = newTalkGroup(PROJECT_ID, 'TG Alpha', 2355);
+    const dmr: Channel = {
+      ...newChannel(PROJECT_ID, 'GB3AO'),
+      rxFrequency: 430_975_000,
+      txFrequency: 438_575_000,
+      forbidTransmit: 'default',
+      modeProfiles: [
+        {
+          mode: 'dmr' as const,
+          colourCode: 1,
+          timeslot: 1 as const,
+          dmrId: 1234567,
+          contactRef: { kind: 'talkGroup' as const, id: tg.id },
+          rxGroupListId: null,
+        },
+      ],
+    };
+    const airband: Channel = {
+      ...newChannel(PROJECT_ID, 'Aboyne Info'),
+      rxFrequency: 118_665_000,
+      txFrequency: 430_975_000,
+      forbidTransmit: 'default',
+      modeProfiles: [
+        {
+          mode: 'am' as const,
+          squelch: null,
+          rxTone: 'none' as const,
+          txTone: 'none' as const,
+          bandwidthKHz: 8.33,
+        },
+      ],
+    };
+    const zone = {
+      ...newZone(PROJECT_ID, 'Aboyne'),
+      members: [
+        { kind: 'channel' as const, channelId: dmr.id },
+        { kind: 'channel' as const, channelId: airband.id },
+      ],
+    };
+    const build = {
+      ...newFormatBuild(PROJECT_ID, 'anytone-at-d890uv'),
+      layout: {
+        sections: [
+          {
+            kind: 'zoneGrouping' as const,
+            zones: [{ id: zone.id, name: zone.name, channelIds: [dmr.id, airband.id] }],
+          },
+        ],
+      },
+    };
+    const library = {
+      channels: [dmr, airband],
+      zones: [zone],
+      talkGroups: [tg],
+      digitalContacts: [],
+      analogContacts: [],
+      rxGroupLists: [],
+      scanLists: [],
+      channelDefaults: { ...DEFAULT_CHANNEL_BEHAVIOUR_DEFAULTS, forbidTransmit: true },
+    };
+
+    const assembled = assemble(build, library);
+    const context = buildChannelBehaviourContext(library.channelDefaults);
+    const partition = partitionAnytoneChannels(assembled, context);
+
+    expect(partition.dmrChannels.map((row) => row.wireName)).toContain('GB3AO');
+    expect(partition.amAirChannels.map((row) => row.wireName)).toContain('Aboyne Info');
+  });
+
+  it('serialises Squelch Mode CTCSS/DCS when analog squelch mode is tone', () => {
     const channel: Channel = {
       ...newChannel(PROJECT_ID, 'Tone Ch'),
       rxFrequency: 145_500_000,
       txFrequency: 145_500_000,
-      modeProfiles: [{ ...(defaultModeProfile('fm') as ChannelModeProfileAnalog), rxTone: '88.5' }],
+      modeProfiles: [
+        {
+          ...(defaultModeProfile('fm') as ChannelModeProfileAnalog),
+          analogSquelchMode: 'tone',
+          rxTone: '88.5',
+        },
+      ],
     };
 
     const row = serialiseAnytoneChannelRow(

@@ -3,10 +3,12 @@ import type { Channel, ChannelModeProfileDMR } from '@core/models/library.ts';
 import { newChannel } from '@core/domain/factories.ts';
 import { defaultModeProfile } from '@core/domain/modeProfiles.ts';
 import {
+  formatAnytoneBusyLockFromTxPermit,
   formatAnytoneBusyLockTxPermit,
   formatAnytoneChannelTypeFromChannel,
   formatAnytoneDmrModeWire,
-  formatAnytoneSquelchMode,
+  formatAnytoneSquelchModeFromResolved,
+  formatAnytoneTalkerAliasWire,
 } from './wireFormat.ts';
 
 describe('anytone wireFormat channel mode mapping', () => {
@@ -44,32 +46,30 @@ describe('anytone wireFormat channel mode mapping', () => {
     expect(formatAnytoneChannelTypeFromChannel(channel)).toBe('A+D TX A');
   });
 
-  it('exports ChannelFree Busy Lock for digital TX primary', () => {
+  it('maps Busy Lock for digital TX primary', () => {
+    expect(formatAnytoneBusyLockFromTxPermit('busyLock', 'D-Digital')).toBe('ChannelFree');
+    expect(formatAnytoneBusyLockFromTxPermit('busyLock', 'D+A TX D')).toBe('ChannelFree');
+  });
+
+  it('maps Busy Lock for analog TX primary', () => {
+    expect(formatAnytoneBusyLockFromTxPermit('busyLock', 'A-Analog')).toBe('Channel Free');
+    expect(formatAnytoneBusyLockFromTxPermit('busyLock', 'A+D TX A')).toBe('Channel Free');
+  });
+
+  it('maps permitAlways for digital TX primary', () => {
     const digital: Channel = {
       ...newChannel('p', 'Test'),
       modeProfiles: [defaultModeProfile('dmr')],
     };
-    const dualDigitalTx: Channel = {
-      ...newChannel('p', 'Test'),
-      primaryMode: 'dmr' as const,
-      modeProfiles: [defaultModeProfile('fm'), defaultModeProfile('dmr')],
-    };
-    expect(formatAnytoneBusyLockTxPermit(digital)).toBe('ChannelFree');
-    expect(formatAnytoneBusyLockTxPermit(dualDigitalTx)).toBe('ChannelFree');
+    expect(formatAnytoneBusyLockTxPermit(digital)).toBe('Always');
   });
 
-  it('exports Channel Free Busy Lock for analog TX primary', () => {
+  it('maps permitAlways for analog TX primary', () => {
     const analog: Channel = {
       ...newChannel('p', 'Test'),
       modeProfiles: [defaultModeProfile('fm')],
     };
-    const dualAnalogTx: Channel = {
-      ...newChannel('p', 'Test'),
-      primaryMode: 'fm' as const,
-      modeProfiles: [defaultModeProfile('fm'), defaultModeProfile('dmr')],
-    };
-    expect(formatAnytoneBusyLockTxPermit(analog)).toBe('Channel Free');
-    expect(formatAnytoneBusyLockTxPermit(dualAnalogTx)).toBe('Channel Free');
+    expect(formatAnytoneBusyLockTxPermit(analog)).toBe('Off');
   });
 
   it('maps split frequencies to repeater DMR MODE wire 1', () => {
@@ -104,10 +104,13 @@ describe('anytone wireFormat channel mode mapping', () => {
     expect(formatAnytoneDmrModeWire(channel)).toBe('1');
   });
 
-  it('maps Squelch Mode from RX tone', () => {
-    expect(formatAnytoneSquelchMode(undefined)).toBe('Carrier');
-    expect(formatAnytoneSquelchMode('none')).toBe('Carrier');
-    expect(formatAnytoneSquelchMode('88.5')).toBe('CTCSS/DCS');
-    expect(formatAnytoneSquelchMode('D023N')).toBe('CTCSS/DCS');
+  it('maps resolved squelch mode to wire', () => {
+    expect(formatAnytoneSquelchModeFromResolved('carrier')).toBe('Carrier');
+    expect(formatAnytoneSquelchModeFromResolved('tone')).toBe('CTCSS/DCS');
+  });
+
+  it('maps talker alias mode to wire digit', () => {
+    expect(formatAnytoneTalkerAliasWire('on')).toBe('1');
+    expect(formatAnytoneTalkerAliasWire('off')).toBe('0');
   });
 });

@@ -1,5 +1,9 @@
 import type { Channel, ChannelModeProfileDMR } from '@core/models/library.ts';
-import { effectiveForbidTransmit } from '@core/import-export/channelBehaviourDefaults/index.ts';
+import {
+  effectiveForbidTransmit,
+  resolveEffectiveAnalogSquelchMode,
+  resolveEffectiveSendTalkerAlias,
+} from '@core/import-export/channelBehaviourDefaults/index.ts';
 import type { EntityRef } from '@core/models/libraryTypes.ts';
 import type { AssembledBuild, AssembledChannel } from '@core/services/assemble.ts';
 import type { CpsExportOptions } from '@core/import-export/types.ts';
@@ -19,7 +23,8 @@ import {
   formatAnytoneDmrModeWire,
   formatAnytoneFrequencyMHz,
   formatAnytonePowerWire,
-  formatAnytoneSquelchMode,
+  formatAnytoneSquelchModeFromResolved,
+  formatAnytoneTalkerAliasWire,
   formatAnytoneTimeslot,
   formatAnytoneToneWire,
   resolveEntityWireName,
@@ -124,6 +129,11 @@ export function serialiseAnytoneChannelRow(
   const rxGroupListId =
     projection != null ? projection.rxGroupListId : (dmr?.rxGroupListId ?? null);
   const rxTone = analog && 'rxTone' in analog ? analog.rxTone : undefined;
+  const behaviourContext = options?.channelBehaviourContext;
+  const talkerAliasWire =
+    dmr != null
+      ? formatAnytoneTalkerAliasWire(resolveEffectiveSendTalkerAlias(dmr, behaviourContext))
+      : undefined;
 
   const values: Record<string, string> = {
     ...CHANNEL_ROW_DEFAULTS,
@@ -136,8 +146,13 @@ export function serialiseAnytoneChannelRow(
     [CHANNEL_COL.rx]: formatAnytoneFrequencyMHz(channel.rxFrequency),
     [CHANNEL_COL.tx]: formatAnytoneFrequencyMHz(channel.txFrequency),
     [CHANNEL_COL.channelType]: formatAnytoneChannelTypeFromChannel(channel),
-    [CHANNEL_COL.busyLockTxPermit]: formatAnytoneBusyLockTxPermit(channel),
-    [CHANNEL_COL.squelchMode]: formatAnytoneSquelchMode(rxTone),
+    [CHANNEL_COL.busyLockTxPermit]: formatAnytoneBusyLockTxPermit(channel, behaviourContext),
+    [CHANNEL_COL.squelchMode]:
+      analog != null
+        ? formatAnytoneSquelchModeFromResolved(
+            resolveEffectiveAnalogSquelchMode(analog, behaviourContext),
+          )
+        : (CHANNEL_ROW_DEFAULTS[CHANNEL_COL.squelchMode] ?? 'Carrier'),
     [CHANNEL_COL.power]: formatAnytonePowerWire(profile.id, channel.power),
     [CHANNEL_COL.bandwidth]: formatAnytoneBandwidthKhz(
       analog && 'bandwidthKHz' in analog ? analog.bandwidthKHz : 12.5,
@@ -163,6 +178,10 @@ export function serialiseAnytoneChannelRow(
 
   if (dmr) {
     values[CHANNEL_COL.dmrMode] = formatAnytoneDmrModeWire(channel);
+    if (talkerAliasWire != null) {
+      values['Send Talker Alias DMR/NX'] = talkerAliasWire;
+      values.tx_talkalaes = talkerAliasWire;
+    }
   }
 
   if (isZoneScanCarrierChannelId(channel.id)) {
