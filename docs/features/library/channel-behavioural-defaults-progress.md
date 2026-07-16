@@ -8,12 +8,12 @@ Format wire mapper PRs complete for all four adapters ([#432](https://github.com
 
 ## Format export mappers
 
-| Slice                                      | Ticket | PR   | Status   |
-| ------------------------------------------ | ------ | ---- | -------- |
-| Anytone Busy Lock / Talker Alias / Squelch | #422   | #432 | PR open  |
-| DM32 TX Admit / RX Squelch Mode            | #423   | #433 | PR open  |
-| OpenGD77 forbid + loss docs                | #424   | #434 | PR open  |
-| CHIRP forbid + loss docs                   | #425   | #435 | PR open  |
+| Slice                                      | Ticket | PR   | Status  |
+| ------------------------------------------ | ------ | ---- | ------- |
+| Anytone Busy Lock / Talker Alias / Squelch | #422   | #432 | PR open |
+| DM32 TX Admit / RX Squelch Mode            | #423   | #433 | PR open |
+| OpenGD77 forbid + loss docs                | #424   | #434 | PR open |
+| CHIRP forbid + loss docs                   | #425   | #435 | PR open |
 
 ## Shipped (pre-export)
 

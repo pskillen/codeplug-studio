@@ -63,12 +63,12 @@ Passed to exporters via `CpsExportOptions.channelBehaviourContext` (`mergeExport
 
 ## Export status (shipped vs deferred)
 
-| Field                 | Resolve helpers | CPS wire (format adapters)                                                                 |
-| --------------------- | --------------- | ------------------------------------------------------------------------------------------ |
-| TX deny               | Shipped         | Shipped (DM32, OpenGD77, Anytone, CHIRP forbid paths)                                     |
-| Busy Lock / TX Permit | Shipped         | Shipped Anytone + DM32 `TX Admit`; export loss OpenGD77/CHIRP                              |
-| Send Talker Alias     | Shipped         | Shipped Anytone; export loss DM32/OpenGD77/CHIRP                                           |
-| Analog Squelch Mode   | Shipped         | Shipped Anytone + DM32 `RX Squelch Mode`; export loss OpenGD77/CHIRP                       |
+| Field                 | Resolve helpers | CPS wire (format adapters)                                           |
+| --------------------- | --------------- | -------------------------------------------------------------------- |
+| TX deny               | Shipped         | Shipped (DM32, OpenGD77, Anytone, CHIRP forbid paths)                |
+| Busy Lock / TX Permit | Shipped         | Shipped Anytone + DM32 `TX Admit`; export loss OpenGD77/CHIRP        |
+| Send Talker Alias     | Shipped         | Shipped Anytone; export loss DM32/OpenGD77/CHIRP                     |
+| Analog Squelch Mode   | Shipped         | Shipped Anytone + DM32 `RX Squelch Mode`; export loss OpenGD77/CHIRP |
 
 ## Orthogonal: scan inclusion
 
