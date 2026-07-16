@@ -58,16 +58,16 @@ Analog zone layout for the AM airband bank. Confirmed from a **populated** AT-D8
 | `A Channel`             | Always one of the zone members                                                                                         |
 | `Scan Channel `         | Ordered subset of members (not necessarily all); empty not observed                                                    |
 | Airband / DMR partition | Zero `AMAir` names appeared in `DMRZone.CSV` in the same export                                                        |
-| `FMZone.CSV`            | Not present in this export (broadcast FM zone partition still unconfirmed)                                             |
+| `FMZone.CSV`            | **Does not exist** on AT-D890UV                                                                                        |
 
 ### Internal mapping
 
-| Wire                  | Internal (target)                                                                         |
-| --------------------- | ----------------------------------------------------------------------------------------- |
-| `Zone Name`           | Build zone entry `wireName` (AM projection)                                               |
-| `Zone Channel Member` | Ordered airband `memberChannelIds` via trimmed name → UUID at boundary                    |
-| `A Channel`           | Format-specific A-side active channel hint                                                |
-| `Scan Channel `       | Format-specific scan membership for the AM zone (subset of members) — export defaults TBD |
+| Wire                  | Internal (target)                                                                    |
+| --------------------- | ------------------------------------------------------------------------------------ |
+| `Zone Name`           | Build zone entry `wireName` (AM projection)                                          |
+| `Zone Channel Member` | Ordered airband `memberChannelIds` via trimmed name → UUID at boundary               |
+| `A Channel`           | Format-specific A-side active channel hint                                           |
+| `Scan Channel `       | Zone members minus channels with scan-skip — export may default to all members today |
 
 Maps to **build zone grouping** projected at the Anytone boundary into the AM bank ([#316](https://github.com/pskillen/codeplug-studio/issues/316)). Export must not put airband members into `DMRZone.CSV`.
 

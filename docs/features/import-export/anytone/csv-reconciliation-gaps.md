@@ -1,24 +1,26 @@
 # Anytone CSV reconciliation — gaps
 
-Variance report: **Codeplug Studio** Anytone export adapter vs **operator AT-D890UV CPS export-all** (`D890 codeplug export`, 2026-07).
+Variance report: **Codeplug Studio** Anytone export adapter vs **operator AT-D890UV CPS export-all** (`D890 codeplug export`, 2026-07), updated after wire gap elicitation ([#357](https://github.com/pskillen/codeplug-studio/issues/357)).
 
 Earlier single-build comparison: [tmp/export-variance-report.md](../../../../tmp/export-variance-report.md) (Studio export vs minimal official sample).
 
-**Purpose:** Track wire-format mismatches for [#297](https://github.com/pskillen/codeplug-studio/issues/297). Tier-3 column detail stays in [docs/reference/anytone/](../../../reference/anytone/README.md).
+**Purpose:** Track wire-format mismatches. Tier-3 column detail stays in [docs/reference/anytone/](../../../reference/anytone/README.md) — especially [enum-verification.md](../../../reference/anytone/enum-verification.md).
 
 ---
 
 ## Executive summary
 
-| Priority | Gap                                 | Studio today                                                             | CPS / fixture                                          |
-| -------: | ----------------------------------- | ------------------------------------------------------------------------ | ------------------------------------------------------ |
-|   **P0** | `DMRDigitalContactList.CSV` headers | 4 columns                                                                | 10 columns                                             |
-|   **P0** | `Channel.CSV` VFO rows              | Not emitted                                                              | Slots `4001`, `4002` required                          |
-|   **P1** | `AMZone.CSV` + airband partition    | Shipped ([#316](https://github.com/pskillen/codeplug-studio/issues/316)) | Separate AM zones; airband filtered from `DMRZone.CSV` |
-|   **P1** | `DMR MODE` / duplex semantics       | Always `0`                                                               | Observed `0`/`1`; semantics unclear vs split RX/TX     |
-|   **P1** | Channel TX contact source           | Talk group / contact ref only                                            | Comment: pick from RGL on export                       |
-|   **P2** | 29 CPS sidecar files                | Not in MVP export set                                                    | Manifest lists 38 files — see inventory below          |
-|   **P2** | Enum value coverage                 | Partial defaults in `channelDefaults.ts`                                 | Rich export does not exercise all enum paths           |
+| Priority | Gap                                  | Status after [#357](https://github.com/pskillen/codeplug-studio/issues/357)                                                       |
+| -------: | ------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------- |
+|   **P0** | `DMRDigitalContactList.CSV` headers  | **Fixed** ([#297](https://github.com/pskillen/codeplug-studio/issues/297)) — 10 columns                                           |
+|    **—** | `Channel.CSV` VFO rows `4001`/`4002` | **Non-issue** — CPS adds VFO rows on import; Studio need not emit                                                                 |
+|   **P1** | `AMZone.CSV` + airband partition     | **Shipped** ([#316](https://github.com/pskillen/codeplug-studio/issues/316))                                                      |
+|   **P1** | `DMR MODE` / duplex                  | **Shipped** `0`/`1` ([#311](https://github.com/pskillen/codeplug-studio/issues/311)); `2`/`3` DCDM documented, unsupported export |
+|   **P1** | Channel TX contact from RGL          | **Open question** — operator unsure; leave in outstanding, no ticket yet                                                          |
+|   **P2** | Power ladder Mid / Turbo             | Documented; adapter ticket under [#228](https://github.com/pskillen/codeplug-studio/issues/228)                                   |
+|   **P2** | ScanList timing / Scan Mode          | Documented; serialiser defaults still `Dwell`=`1.0` — ticket under #228                                                           |
+|   **P2** | Enum / constant tail columns         | Elicited — see [enum-verification.md](../../../reference/anytone/enum-verification.md)                                            |
+|   **P2** | Sidecar CPS files                    | Skip / future epics (OptionalSetting, HotKey, roaming, NXDN)                                                                      |
 
 Cross-file name FK issues from the earlier variance report were addressed in [#292](https://github.com/pskillen/codeplug-studio/issues/292).
 
@@ -38,7 +40,7 @@ Cross-file name FK issues from the earlier variance report were addressed in [#2
 
 | File                            | Header match                                                              | Notes                                                         |
 | ------------------------------- | ------------------------------------------------------------------------- | ------------------------------------------------------------- |
-| `Channel.CSV`                   | Yes (77 cols)                                                             | Missing VFO rows; see structural gaps                         |
+| `Channel.CSV`                   | Yes (77 cols)                                                             | VFO rows optional — CPS-managed                               |
 | `DMRZone.CSV`                   | Yes                                                                       |                                                               |
 | `ScanList.CSV`                  | Yes                                                                       |                                                               |
 | `DMRTalkGroups.CSV`             | Yes                                                                       |                                                               |
@@ -50,77 +52,51 @@ Cross-file name FK issues from the earlier variance report were addressed in [#2
 
 ### CPS files not in Studio MVP export
 
-`OptionalSetting.CSV`, `APRS.CSV`, `AMZone.CSV`, encryption/hotkey/roaming/NXDN sidecars, tone encode tables, repeater whitelists, `PrefabricatedSMS.CSV`, `AnalogAddressBook.CSV`, `AutoRepeaterOffsetFrequencys.CSV`, `GPSRoaming.CSV`, `AlertTone.CSV`, `MDC1200*`, `NXStateMSG.CSV`, … — full list in [tier-3 README — file inventory](../../../reference/anytone/README.md).
+`OptionalSetting.CSV`, encryption/hotkey/roaming/NXDN sidecars, tone encode tables, … — inventory and skip notes in [tier-3 README](../../../reference/anytone/README.md). `APRS.CSV` / `AMZone.CSV` shipped when applicable.
 
 ---
 
-## P0 — `DMRDigitalContactList.CSV`
+## Closed — `Channel.CSV` VFO rows (was P0)
 
-|              | Studio (bug)                          | CPS / `test-data/anytone/at-d890uv/`                                                             |
-| ------------ | ------------------------------------- | ------------------------------------------------------------------------------------------------ |
-| Column count | 4                                     | 10                                                                                               |
-| Header       | `"No.","Callsign","Name","Call Type"` | `"No.","Radio ID","Callsign","Name","City","State","Country","Remarks","Call Type","Call Alert"` |
-
-**Code:** `DIGITAL_CONTACT_COL` in `columns.ts`; `serialiseDigitalContactsCsv()` in `serialise.ts`.
-
-**Docs:** [talk-groups.md](../../../reference/anytone/talk-groups.md) already documents 10 columns — implementation drift.
-
-**Impact:** CPS may reject or skip file on import even when body is empty.
-
-**Fix (slice 2):** Align headers; map `digitalId` → `Radio ID`, wire name → `Name`; export defaults for `City`/`State`/`Country`/`Remarks`/`Call Alert` until library models address book fields.
+Official CPS appends slots `4001` / `4002` (VFO A/B). **Studio need not emit them** — CPS adds VFO rows on import ([#357](https://github.com/pskillen/codeplug-studio/issues/357)). See [channels.md](../../../reference/anytone/channels.md) and [file-format.md](../../../reference/anytone/file-format.md).
 
 ---
 
-## P0 — `Channel.CSV` VFO rows
+## Closed — `DMRDigitalContactList.CSV` (was P0)
 
-Official CPS and rich operator export append fixed high-slot VFO placeholders:
-
-|  `No.` | `Channel Name` (sample) |
-| -----: | ----------------------- |
-| `4001` | Channel VFO A           |
-| `4002` | Channel VFO B           |
-
-Studio `serialiseChannelsCsv()` emits programmed slots only. `AMAir.CSV` / `FM.CSV` already append bank VFO rows (`257`, `101`).
-
-**Impact:** Likely channel import failure or missing VFO semantics.
+10-column schema aligned in [#297](https://github.com/pskillen/codeplug-studio/issues/297). Address columns are digital-contact library fields; `Call Alert` remains export default `None` (`Online alert` observed, not modelled).
 
 ---
 
 ## P1 — Airband mode partition
 
-When the radio operates in airband mode, CPS uses a **separate entity set**:
-
-- `AMAir.CSV` — airband channel bank (Studio exports when partition non-empty)
-- `AMZone.CSV` — airband zones (shipped [#316](https://github.com/pskillen/codeplug-studio/issues/316))
-- `DMRZone.CSV` — must **not** include airband-only members
-
-**Rule (from #297 comment):** If a DMR zone contains any airband channel, emit a dedicated airband zone in `AMZone.CSV` instead of mixing into `DMRZone.CSV`. Omit DMR zones that would contain only airband channels.
-
-**Wire schema (populated CPS sample):** 5 columns — `No.`, `Zone Name`, `Zone Channel Member`, `A Channel`, `Scan Channel ` (trailing space). No RX/TX frequency companions, no B channel, no `Zone Hide`. Member names are trimmed `AMAir.CSV` labels (pipe-separated). Operator rich export had zero airband names in `DMRZone.CSV`. Full table: [am-air.md](../../../reference/anytone/am-air.md).
+**Shipped** ([#316](https://github.com/pskillen/codeplug-studio/issues/316)). Wire: [am-air.md](../../../reference/anytone/am-air.md). **`FMZone.CSV` does not exist on D890.**
 
 ---
 
 ## P1 — `DMR MODE` and duplex
 
-| Column                 | Studio default             | Rich export observed                                          |
-| ---------------------- | -------------------------- | ------------------------------------------------------------- |
-| `DMR MODE`             | `0` (`channelDefaults.ts`) | `0` (most DMR rows) and `1` (3 rows: hotspot + both VFO rows) |
-| `Digital Duplex`       | `Off`                      | `Off` throughout sample                                       |
-| `Talk Around(Simplex)` | `Off`                      | `Off` throughout sample                                       |
-
-**Operator intent (#297 comment):** map split RX/TX → repeater mode, equal RX/TX → DMO/simplex.
-
-**Sample contradiction:** 20 digital repeater channels (split frequencies) still have `DMR MODE` = `0`. Do **not** implement mapping from comment alone — elicit full enum in CPS ([enum-verification.md](../../../reference/anytone/enum-verification.md)).
+| Column                 | Studio today                         | Confirmed ([#357](https://github.com/pskillen/codeplug-studio/issues/357)) |
+| ---------------------- | ------------------------------------ | -------------------------------------------------------------------------- |
+| `DMR MODE`             | `0`/`1` from `dmrMode` / RX–TX infer | `0`=simplex, `1`=repeater; `2`/`3`=DCDM variants — **not exported**        |
+| `Digital Duplex`       | `Off`                                | Still unknown in CPS UI — leave Needs elicitation                          |
+| `Talk Around(Simplex)` | `Off`                                | Not modelled (skip)                                                        |
 
 ---
 
-## P1 — Channel contact / RGL export
+## Open — Channel contact / RGL export
 
-Rich export uses named talk groups in `Contact/Talk Group` with matching `Receive Group List` names. Studio maps `contactRef` from the DMR mode profile.
+Earlier comment suggested exporting TX contact from RGL membership. Operator elicitation did **not** confirm the requirement — leave as open question in [csv-reconciliation-outstanding.md](csv-reconciliation-outstanding.md); no implementation ticket yet.
 
-**Gap (#297 comment):** export TX contact from RGL membership when configured, rather than defaulting to Local 9 / first TG.
+---
 
-**Related columns:** `Send Talker Alias DMR/NX`, `APRS RX` — mostly `0`/`Off` in sample; APRS tracked separately.
+## P2 — Power / scan / defaults
+
+| Topic                                 | Docs                                                                    | Code                                    |
+| ------------------------------------- | ----------------------------------------------------------------------- | --------------------------------------- |
+| Power Mid / Turbo + watts             | [at-d890uv.md](../../../reference/anytone/radios/at-d890uv.md)          | Ticket under #228                       |
+| Scan Mode / Revert / timing           | [scan-lists.md](../../../reference/anytone/scan-lists.md)               | Ticket under #228 (`Dwell` still `1.0`) |
+| Busy Lock, Slot Suit, talker alias, … | [enum-verification.md](../../../reference/anytone/enum-verification.md) | Library cascade epic + export tickets   |
 
 ---
 
@@ -129,21 +105,23 @@ Rich export uses named talk groups in `Contact/Talk Group` with matching `Receiv
 | Tier                       | Files / columns                                                                                                           |
 | -------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
 | **Bidirectional (target)** | DMR core columns documented in [channels.md](../../../reference/anytone/channels.md), talk groups, RGL, zones, scan lists |
-| **Export default**         | Unmodelled `Channel.CSV` tail (`channelDefaults.ts`); digital contact address columns                                     |
-| **Header-only**            | CPS tables Studio skips until modelled (`OptionalSetting.CSV`, encryption, …)                                             |
+| **Export default**         | Unmodelled `Channel.CSV` tail (`channelDefaults.ts`); confirmation / talker-alias defaults                                |
+| **Header-only / Skip**     | OptionalSetting, HotKey, encryption, roaming (future epics)                                                               |
 | **Skip**                   | Import not in scope [#229](https://github.com/pskillen/codeplug-studio/issues/229)                                        |
 
 ---
 
-## Non-issues (confirmed in rich export)
+## Non-issues (confirmed)
 
-| Check                                           | Result                                   |
-| ----------------------------------------------- | ---------------------------------------- |
-| `Channel.CSV` column count                      | 77 on every row                          |
-| Quoting                                         | All fields double-quoted                 |
-| UTF-8 BOM                                       | None                                     |
-| Core DMR file headers (except digital contacts) | Match fixtures                           |
-| Line endings in operator export                 | CRLF (Studio export also CRLF post-#291) |
+| Check                           | Result                                   |
+| ------------------------------- | ---------------------------------------- |
+| `Channel.CSV` column count      | 77 on every row                          |
+| Quoting                         | All fields double-quoted                 |
+| UTF-8 BOM                       | None                                     |
+| Core DMR file headers           | Match fixtures                           |
+| Line endings in operator export | CRLF (Studio export also CRLF post-#291) |
+| Emitting Channel VFO rows       | Not required                             |
+| `FMZone.CSV`                    | Does not exist on D890                   |
 
 ---
 

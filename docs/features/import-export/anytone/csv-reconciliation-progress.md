@@ -96,4 +96,22 @@
 
 ## Next
 
-1. Manual CPS enum elicitation — [#307](https://github.com/pskillen/codeplug-studio/issues/307) (linked to [#303](https://github.com/pskillen/codeplug-studio/issues/303))
+1. ~~Manual CPS enum elicitation — [#307](https://github.com/pskillen/codeplug-studio/issues/307)~~ → absorbed by [#357](https://github.com/pskillen/codeplug-studio/issues/357) (docs + tickets; code deferred to child issues under [#228](https://github.com/pskillen/codeplug-studio/issues/228))
+
+---
+
+## Slice 6 — Wire gap analysis docs ([#357](https://github.com/pskillen/codeplug-studio/issues/357))
+
+**Status:** Complete (docs + tickets phase)
+
+**Branch:** `357/pskil/wire-gap-docs-tickets`
+
+**Delivered**
+
+- Tier-3 updates: [enum-verification.md](../../../reference/anytone/enum-verification.md), [channels.md](../../../reference/anytone/channels.md), [scan-lists.md](../../../reference/anytone/scan-lists.md), contacts/zones/banks, [at-d890uv.md](../../../reference/anytone/radios/at-d890uv.md)
+- VFO emit requirement closed as non-issue; power / scan / Busy Lock semantics documented
+- Feature hubs + gaps/outstanding synced; child tickets/epics filed under #228 / #147 / #1 / #247
+
+**Verify**
+
+- Re-read enum-verification against CPS when implementing Mid/Turbo power or ScanList defaults

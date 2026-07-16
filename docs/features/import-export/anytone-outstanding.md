@@ -46,11 +46,35 @@ Items **skipped**, **incomplete**, or **discovered during execution** — not sc
 
 ---
 
+## Wire gap analysis ([#357](https://github.com/pskillen/codeplug-studio/issues/357))
+
+Docs + tickets phase shipped (adapter code deferred to child issues):
+
+- [x] Tier-3 enum checklist + entity wire docs updated from CPS elicitation
+- [x] VFO rows — Studio need not emit (CPS adds on import); supersedes intent of [#375](https://github.com/pskillen/codeplug-studio/issues/375)
+- [ ] [#391](https://github.com/pskillen/codeplug-studio/issues/391) — power ladder Mid + Turbo
+- [ ] [#392](https://github.com/pskillen/codeplug-studio/issues/392) — Call Confirmation / SMS Confirmation defaults On
+- [ ] [#393](https://github.com/pskillen/codeplug-studio/issues/393) — ScanList timing defaults + Scan Mode readiness
+- [ ] [#394](https://github.com/pskillen/codeplug-studio/issues/394) — Squelch Mode from RX tone
+- [ ] [#395](https://github.com/pskillen/codeplug-studio/issues/395) — Slot Suit export
+- [ ] [#396](https://github.com/pskillen/codeplug-studio/issues/396) — Busy Lock/TX Permit mode-aware export
+- [ ] [#388](https://github.com/pskillen/codeplug-studio/issues/388) — Epic: library defaults / override cascade (under [#147](https://github.com/pskillen/codeplug-studio/issues/147))
+- [ ] [#397](https://github.com/pskillen/codeplug-studio/issues/397) — operator radio ID list
+- [ ] [#398](https://github.com/pskillen/codeplug-studio/issues/398) — Send Talker Alias tri-state
+- [ ] [#399](https://github.com/pskillen/codeplug-studio/issues/399) — analog compander flag (under [#179](https://github.com/pskillen/codeplug-studio/issues/179))
+- [ ] [#389](https://github.com/pskillen/codeplug-studio/issues/389) — Epic: analog FM ident tones (under [#1](https://github.com/pskillen/codeplug-studio/issues/1))
+- [ ] [#390](https://github.com/pskillen/codeplug-studio/issues/390) — Epic: DMR roaming (under [#1](https://github.com/pskillen/codeplug-studio/issues/1))
+- [ ] [#400](https://github.com/pskillen/codeplug-studio/issues/400) — NXDN wire elicitation (under [#247](https://github.com/pskillen/codeplug-studio/issues/247))
+
+---
+
 ## Epic deferrals
 
 - [ ] Anytone **import** — epic [#229](https://github.com/pskillen/codeplug-studio/issues/229) (Phase 7b)
 - [ ] Sibling variants (AT-D878UV, AT-D578UV, …)
-- [ ] Encryption, hotkeys, roaming, `OptionalSetting.CSV`, DTMF/MDC deep wire (inventory only in tier-3 README)
+- [ ] Encryption, hotkeys, `OptionalSetting.CSV` — skip (not a full CPS)
+- [ ] DMR roaming / GPS roaming files — [#390](https://github.com/pskillen/codeplug-studio/issues/390)
+- [ ] Analog FM ident tones (DTMF / 2Tone / 5Tone) — [#389](https://github.com/pskillen/codeplug-studio/issues/389)
 
 ---
 
