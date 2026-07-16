@@ -46,11 +46,26 @@ Items **skipped**, **incomplete**, or **discovered during execution** — not sc
 
 ---
 
+## Wire gap analysis ([#357](https://github.com/pskillen/codeplug-studio/issues/357))
+
+Docs + tickets phase shipped (adapter code deferred to a later plan / child issues):
+
+- [x] Tier-3 enum checklist + entity wire docs updated from CPS elicitation
+- [x] VFO rows — Studio need not emit (CPS adds on import)
+- [ ] Child tickets under [#228](https://github.com/pskillen/codeplug-studio/issues/228) — power ladder Mid/Turbo, ScanList defaults, Squelch Mode, Slot Suit / Busy Lock export (links filled when filed)
+- [ ] Library defaults / override cascade epic under [#147](https://github.com/pskillen/codeplug-studio/issues/147)
+- [ ] Analog FM ident tones + DMR roaming epics under [#1](https://github.com/pskillen/codeplug-studio/issues/1)
+- [ ] NXDN wire elicitation ticket under [#247](https://github.com/pskillen/codeplug-studio/issues/247)
+
+---
+
 ## Epic deferrals
 
 - [ ] Anytone **import** — epic [#229](https://github.com/pskillen/codeplug-studio/issues/229) (Phase 7b)
 - [ ] Sibling variants (AT-D878UV, AT-D578UV, …)
-- [ ] Encryption, hotkeys, roaming, `OptionalSetting.CSV`, DTMF/MDC deep wire (inventory only in tier-3 README)
+- [ ] Encryption, hotkeys, `OptionalSetting.CSV` — skip (not a full CPS)
+- [ ] DMR roaming / GPS roaming files — future epic under [#1](https://github.com/pskillen/codeplug-studio/issues/1)
+- [ ] Analog FM ident tones (DTMF / 2Tone / 5Tone) — future epic under [#1](https://github.com/pskillen/codeplug-studio/issues/1)
 
 ---
 

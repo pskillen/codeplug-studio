@@ -57,6 +57,10 @@ Projects with build-scoped `ScanListsLayout` sections hoist entries into `librar
 3. Anytone build → export ZIP — `Channel.CSV` `Scan List` and `ScanList.CSV` align.
 4. Export page — no **Default scan behaviour** segment; dedicated-scan copy instead ([#258](https://github.com/pskillen/codeplug-studio/issues/258)).
 
+## Scan resume and hang-time concepts
+
+Library scan lists today model **membership and naming** only. CPS formats may also expose scan **resume mode** (time-operated, carrier-operated, search/stop) and **hang-time / priority sample** intervals. Those are format-specific wire columns — do not bake vendor labels into the library entity. For Anytone AT-D890UV terminology and contested Dropout vs Dwell semantics, see the tier-3 [scan-lists translation map](../../reference/anytone/scan-lists.md).
+
 ## Related
 
 - [library/README.md](README.md) · [rx-group-list-member-picker.md](rx-group-list-member-picker.md)
