@@ -8,6 +8,7 @@ import {
   newTalkGroup,
   newZone,
 } from '@core/domain/factories.ts';
+import { defaultModeProfile } from '@core/domain/modeProfiles.ts';
 import { assemble } from '@core/services/assemble.ts';
 import { csvToTable } from '@core/import-export/csvParse.ts';
 import { serialiseAnytoneFiles } from './serialise.ts';
@@ -69,14 +70,7 @@ describe('anytone serialise', () => {
       ...newChannel(PROJECT_ID, 'Analog 1'),
       rxFrequency: 145_500_000,
       txFrequency: 145_500_000,
-      modeProfiles: [
-        {
-          mode: 'fm' as const,
-          bandwidthKHz: 12.5,
-          rxTone: 'none' as const,
-          txTone: 'none' as const,
-        },
-      ],
+      modeProfiles: [defaultModeProfile('fm')],
     };
 
     const row = serialiseAnytoneChannelRow(
