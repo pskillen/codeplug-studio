@@ -1,6 +1,6 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Loader, Table, Text } from '@mantine/core';
+import { Loader, Stack, Table, Text, TextInput } from '@mantine/core';
 import {
   buildChannelBehaviourContext,
   resolveAnalogSquelchModeWithLayer,
@@ -30,6 +30,7 @@ import { useBuildLayout } from './BuildLayoutContext.tsx';
 export default function BuildExportResolutionPage() {
   const { build } = useBuildLayout();
   const { library, loading } = useLibrary();
+  const [filter, setFilter] = useState('');
 
   const context = useMemo(
     () => buildChannelBehaviourContext(library.channelDefaults, build.exportSettings),
@@ -38,7 +39,11 @@ export default function BuildExportResolutionPage() {
 
   const rows = useMemo(() => {
     return [...library.channels]
-      .sort((a, b) => a.name.localeCompare(b.name))
+      .sort((a, b) => {
+        const call = a.callsign.localeCompare(b.callsign);
+        if (call !== 0) return call;
+        return a.name.localeCompare(b.name);
+      })
       .map((channel) => {
         const forbid = resolveForbidTransmitWithLayer(channel, context);
         const txPermit = resolveTxPermitWithLayer(channel, context);
@@ -52,7 +57,8 @@ export default function BuildExportResolutionPage() {
           : null;
         return {
           id: channel.id,
-          name: channel.name || 'Untitled',
+          callsign: channel.callsign.trim(),
+          name: channel.name.trim() || 'Untitled',
           forbid: forbid as ResolvedBehaviourField<EffectiveForbidTransmit>,
           txPermit: txPermit as ResolvedBehaviourField<TxPermitMode>,
           talkerAlias,
@@ -60,6 +66,15 @@ export default function BuildExportResolutionPage() {
         };
       });
   }, [library.channels, context]);
+
+  const filteredRows = useMemo(() => {
+    const needle = filter.trim().toLowerCase();
+    if (!needle) return rows;
+    return rows.filter(
+      (row) =>
+        row.name.toLowerCase().includes(needle) || row.callsign.toLowerCase().includes(needle),
+    );
+  }, [rows, filter]);
 
   if (loading) {
     return (
@@ -87,66 +102,83 @@ export default function BuildExportResolutionPage() {
           No channels in the library yet.
         </Text>
       ) : (
-        <Table.ScrollContainer minWidth={900}>
-          <Table striped highlightOnHover>
-            <Table.Thead>
-              <Table.Tr>
-                <Table.Th>Channel</Table.Th>
-                <Table.Th>Transmit</Table.Th>
-                <Table.Th>TX permit</Table.Th>
-                <Table.Th>Talker alias (DMR)</Table.Th>
-                <Table.Th>Analog squelch</Table.Th>
-              </Table.Tr>
-            </Table.Thead>
-            <Table.Tbody>
-              {rows.map((row) => (
-                <Table.Tr key={row.id}>
-                  <Table.Td>{row.name}</Table.Td>
-                  <Table.Td>
-                    {forbidTransmitLabel(row.forbid.value)}
-                    <Text size="xs" c="dimmed">
-                      {layerLabel(row.forbid.layer)}
-                    </Text>
-                  </Table.Td>
-                  <Table.Td>
-                    {txPermitLabel(row.txPermit.value)}
-                    <Text size="xs" c="dimmed">
-                      {layerLabel(row.txPermit.layer)}
-                    </Text>
-                  </Table.Td>
-                  <Table.Td>
-                    {row.talkerAlias ? (
-                      <>
-                        {sendTalkerAliasLabel(row.talkerAlias.value)}
+        <Stack gap="md">
+          <TextInput
+            label="Filter"
+            placeholder="Filter by callsign or name"
+            value={filter}
+            onChange={(event) => setFilter(event.currentTarget.value)}
+            maw={360}
+          />
+          {filteredRows.length === 0 ? (
+            <Text size="sm" c="dimmed">
+              No channels match this filter.
+            </Text>
+          ) : (
+            <Table.ScrollContainer minWidth={960}>
+              <Table striped highlightOnHover>
+                <Table.Thead>
+                  <Table.Tr>
+                    <Table.Th>Callsign</Table.Th>
+                    <Table.Th>Name</Table.Th>
+                    <Table.Th>Transmit</Table.Th>
+                    <Table.Th>TX permit</Table.Th>
+                    <Table.Th>Talker alias (DMR)</Table.Th>
+                    <Table.Th>Analog squelch</Table.Th>
+                  </Table.Tr>
+                </Table.Thead>
+                <Table.Tbody>
+                  {filteredRows.map((row) => (
+                    <Table.Tr key={row.id}>
+                      <Table.Td>{row.callsign || '—'}</Table.Td>
+                      <Table.Td>{row.name}</Table.Td>
+                      <Table.Td>
+                        {forbidTransmitLabel(row.forbid.value)}
                         <Text size="xs" c="dimmed">
-                          {layerLabel(row.talkerAlias.layer)}
+                          {layerLabel(row.forbid.layer)}
                         </Text>
-                      </>
-                    ) : (
-                      <Text size="sm" c="dimmed">
-                        —
-                      </Text>
-                    )}
-                  </Table.Td>
-                  <Table.Td>
-                    {row.squelch ? (
-                      <>
-                        {analogSquelchModeLabel(row.squelch.value)}
+                      </Table.Td>
+                      <Table.Td>
+                        {txPermitLabel(row.txPermit.value)}
                         <Text size="xs" c="dimmed">
-                          {layerLabel(row.squelch.layer)}
+                          {layerLabel(row.txPermit.layer)}
                         </Text>
-                      </>
-                    ) : (
-                      <Text size="sm" c="dimmed">
-                        —
-                      </Text>
-                    )}
-                  </Table.Td>
-                </Table.Tr>
-              ))}
-            </Table.Tbody>
-          </Table>
-        </Table.ScrollContainer>
+                      </Table.Td>
+                      <Table.Td>
+                        {row.talkerAlias ? (
+                          <>
+                            {sendTalkerAliasLabel(row.talkerAlias.value)}
+                            <Text size="xs" c="dimmed">
+                              {layerLabel(row.talkerAlias.layer)}
+                            </Text>
+                          </>
+                        ) : (
+                          <Text size="sm" c="dimmed">
+                            —
+                          </Text>
+                        )}
+                      </Table.Td>
+                      <Table.Td>
+                        {row.squelch ? (
+                          <>
+                            {analogSquelchModeLabel(row.squelch.value)}
+                            <Text size="xs" c="dimmed">
+                              {layerLabel(row.squelch.layer)}
+                            </Text>
+                          </>
+                        ) : (
+                          <Text size="sm" c="dimmed">
+                            —
+                          </Text>
+                        )}
+                      </Table.Td>
+                    </Table.Tr>
+                  ))}
+                </Table.Tbody>
+              </Table>
+            </Table.ScrollContainer>
+          )}
+        </Stack>
       )}
     </FormPage>
   );
