@@ -108,8 +108,6 @@ describe('collectAprsValidationWarnings', () => {
       aprsConfiguration: config,
     });
     expect(warnings.some((w) => w.code === 'orphan_report_slot_index')).toBe(true);
-    expect(warnings.find((w) => w.code === 'orphan_report_slot_index')?.message).toMatch(
-      /1\.\.0/,
-    );
+    expect(warnings.find((w) => w.code === 'orphan_report_slot_index')?.message).toMatch(/1\.\.0/);
   });
 });
