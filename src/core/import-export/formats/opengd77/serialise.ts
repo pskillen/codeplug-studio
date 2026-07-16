@@ -110,7 +110,9 @@ function channelRowValues(
     [CHANNEL_COL.txTone]: formatOpenGd77ToneWire(mode, analog?.txTone ?? null),
     [CHANNEL_COL.squelch]: formatOpenGd77SquelchWire(mode, analog?.squelch ?? null),
     [CHANNEL_COL.power]: formatOpenGd77PowerWire(channel.power, profile.id),
-    [CHANNEL_COL.rxOnly]: wireYesNo(effectiveForbidTransmit(channel, options?.channelBehaviourContext)),
+    [CHANNEL_COL.rxOnly]: wireYesNo(
+      effectiveForbidTransmit(channel, options?.channelBehaviourContext),
+    ),
     [CHANNEL_COL.allSkip]: wireYesNo(formatOpenGd77AllSkip(effectiveScan)),
     [CHANNEL_COL.tot]: formatOpenGd77TransmitTimeoutWire(null),
     [CHANNEL_COL.vox]: wireVoxEnabled(false),

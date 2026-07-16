@@ -259,11 +259,7 @@ function parseScanInclusion(record: Record<string, unknown>, label: string): Sca
   return 'default';
 }
 
-function parseEnumField<T extends string>(
-  raw: unknown,
-  label: string,
-  allowed: readonly T[],
-): T {
+function parseEnumField<T extends string>(raw: unknown, label: string, allowed: readonly T[]): T {
   const value = expectString(raw, label);
   if (!(allowed as readonly string[]).includes(value)) {
     throw new NativeYamlImportError(`${label} is invalid: ${value}`);
@@ -877,11 +873,10 @@ function parseExportSettings(raw: unknown, label: string): BuildExportSettings |
     );
   }
   if (record.defaultTxPermit !== undefined && record.defaultTxPermit !== null) {
-    settings.defaultTxPermit = parseEnumField(
-      record.defaultTxPermit,
-      `${label}.defaultTxPermit`,
-      ['permitAlways', 'busyLock'] as const,
-    );
+    settings.defaultTxPermit = parseEnumField(record.defaultTxPermit, `${label}.defaultTxPermit`, [
+      'permitAlways',
+      'busyLock',
+    ] as const);
   }
   if (record.defaultSendTalkerAlias !== undefined && record.defaultSendTalkerAlias !== null) {
     settings.defaultSendTalkerAlias = parseEnumField(

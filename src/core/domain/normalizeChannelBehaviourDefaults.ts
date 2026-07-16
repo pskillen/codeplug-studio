@@ -9,8 +9,7 @@ export function normalizeChannelBehaviourDefaults(
   return {
     forbidTransmit: defaults.forbidTransmit ?? DEFAULT_CHANNEL_BEHAVIOUR_DEFAULTS.forbidTransmit,
     txPermit: defaults.txPermit ?? DEFAULT_CHANNEL_BEHAVIOUR_DEFAULTS.txPermit,
-    sendTalkerAlias:
-      defaults.sendTalkerAlias ?? DEFAULT_CHANNEL_BEHAVIOUR_DEFAULTS.sendTalkerAlias,
+    sendTalkerAlias: defaults.sendTalkerAlias ?? DEFAULT_CHANNEL_BEHAVIOUR_DEFAULTS.sendTalkerAlias,
     analogSquelchMode:
       defaults.analogSquelchMode ?? DEFAULT_CHANNEL_BEHAVIOUR_DEFAULTS.analogSquelchMode,
   };

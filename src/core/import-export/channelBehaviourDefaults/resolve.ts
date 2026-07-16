@@ -155,7 +155,12 @@ export function resolveSendTalkerAliasWithLayer(
   const library = libraryBehaviourDefaults(context?.libraryDefaults);
   const build = context?.buildOverrides?.defaultSendTalkerAlias;
   const value = resolveEffectiveSendTalkerAlias(channel, context);
-  const layer = resolveLayerForOverride(channel.sendTalkerAlias, build, library.sendTalkerAlias, value);
+  const layer = resolveLayerForOverride(
+    channel.sendTalkerAlias,
+    build,
+    library.sendTalkerAlias,
+    value,
+  );
   return { value, layer };
 }
 

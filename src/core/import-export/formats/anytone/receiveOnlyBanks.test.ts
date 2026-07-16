@@ -37,7 +37,9 @@ describe('receiveOnlyBanks', () => {
   it('isReceiveOnlyChannel is true when forbidTransmit or null TX', () => {
     expect(isReceiveOnlyChannel({ forbidTransmit: 'forbid', txFrequency: 434_000_000 })).toBe(true);
     expect(isReceiveOnlyChannel({ forbidTransmit: 'default', txFrequency: null })).toBe(true);
-    expect(isReceiveOnlyChannel({ forbidTransmit: 'default', txFrequency: 434_000_000 })).toBe(false);
+    expect(isReceiveOnlyChannel({ forbidTransmit: 'default', txFrequency: 434_000_000 })).toBe(
+      false,
+    );
   });
 
   it('classifies AM airband vs ham FM vs DMR', () => {

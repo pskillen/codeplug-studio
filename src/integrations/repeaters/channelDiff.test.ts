@@ -32,7 +32,9 @@ function baseChannel(overrides: Partial<Channel> = {}): Channel {
     location: io91wm,
     useLocation: true,
     maidenheadLocator: 'IO91WM',
-    modeProfiles: [{ mode: 'fm', rxTone: 'none', txTone: 'none', squelch: null, bandwidthKHz: null }],
+    modeProfiles: [
+      { mode: 'fm', rxTone: 'none', txTone: 'none', squelch: null, bandwidthKHz: null },
+    ],
     ...overrides,
   };
 }

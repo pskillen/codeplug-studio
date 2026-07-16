@@ -22,9 +22,8 @@ export function generateChannelsFromSet(
   options: ChannelSetGenerateOptions = {},
 ): Channel[] {
   const def = channelSetDefinition(setId);
-  const forbidTransmitOverride = (options.forbidTransmit ?? def.defaultForbidTransmit)
-    ? 'forbid'
-    : 'default';
+  const forbidTransmitOverride =
+    (options.forbidTransmit ?? def.defaultForbidTransmit) ? 'forbid' : 'default';
   const power = options.power !== undefined ? options.power : null;
   const bandwidthKHz = options.bandwidthKHz ?? def.defaultBandwidthKHz;
   const modeProfiles = [fmNfmProfile(bandwidthKHz)];

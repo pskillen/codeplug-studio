@@ -358,10 +358,7 @@ export default function ChannelEditor({
               <ForbidTransmitSegment value={forbidTransmit} onChange={setForbidTransmit} />
               <TxPermitSegment value={txPermit} onChange={setTxPermit} />
               <SendTalkerAliasSegment value={sendTalkerAlias} onChange={setSendTalkerAlias} />
-              <AnalogSquelchModeSegment
-                value={analogSquelchMode}
-                onChange={setAnalogSquelchMode}
-              />
+              <AnalogSquelchModeSegment value={analogSquelchMode} onChange={setAnalogSquelchMode} />
             </FormSection>
           </ChannelEditorPanel>
         </Tabs.Panel>

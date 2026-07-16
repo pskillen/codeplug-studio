@@ -61,8 +61,7 @@ export default function BuildExportResolutionPage() {
       description={
         <Text size="sm" component="span">
           Effective behavioural values for each library channel on this build, and which cascade
-          layer wins.{' '}
-          <Link to={`/builds/${build.id}/export`}>Edit build overrides on Export</Link>
+          layer wins. <Link to={`/builds/${build.id}/export`}>Edit build overrides on Export</Link>
           {' · '}
           <Link to="/library/channels/defaults">Library channel defaults</Link>
         </Text>

@@ -29,7 +29,12 @@ function library(zones: Zone[], channelIds: string[] = []): Library {
     digitalContacts: [],
     rxGroupLists: [],
     scanLists: [],
-    channelDefaults: { forbidTransmit: false, txPermit: 'permitAlways', sendTalkerAlias: 'on', analogSquelchMode: 'carrier' },
+    channelDefaults: {
+      forbidTransmit: false,
+      txPermit: 'permitAlways',
+      sendTalkerAlias: 'on',
+      analogSquelchMode: 'carrier',
+    },
     aprsConfiguration: null,
     zones,
   };

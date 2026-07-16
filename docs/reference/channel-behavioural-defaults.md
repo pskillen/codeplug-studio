@@ -26,23 +26,23 @@ Implementation: `src/core/import-export/channelBehaviourDefaults/resolve.ts`.
 
 `ChannelBehaviourDefaults` on `Library.channelDefaults` (required; factory-filled):
 
-| Field               | Type                         | Factory default   |
-| ------------------- | ---------------------------- | --------------- |
+| Field               | Type                         | Factory default    |
+| ------------------- | ---------------------------- | ------------------ |
 | `forbidTransmit`    | `boolean`                    | `false` (allow TX) |
-| `txPermit`          | `permitAlways` \| `busyLock` | `permitAlways`  |
-| `sendTalkerAlias`   | `on` \| `off`                | `on`            |
-| `analogSquelchMode` | `carrier` \| `tone`          | `carrier`       |
+| `txPermit`          | `permitAlways` \| `busyLock` | `permitAlways`     |
+| `sendTalkerAlias`   | `on` \| `off`                | `on`               |
+| `analogSquelchMode` | `carrier` \| `tone`          | `carrier`          |
 
 Native YAML: `library.channelDefaults` and mirrored `project.channelDefaults`. Schema **v18**.
 
 ## Channel overrides
 
-| Field               | Override type                                      | `default` meaning              |
-| ------------------- | -------------------------------------------------- | ------------------------------ |
-| `forbidTransmit`    | `default` \| `allow` \| `forbid`                   | Use cascade                    |
-| `txPermit`          | `default` \| `permitAlways` \| `busyLock`          | Use cascade                    |
-| `sendTalkerAlias`   | `default` \| `on` \| `off`                         | Use cascade                    |
-| `analogSquelchMode` | `default` \| `carrier` \| `tone`                   | Use cascade                    |
+| Field               | Override type                             | `default` meaning |
+| ------------------- | ----------------------------------------- | ----------------- |
+| `forbidTransmit`    | `default` \| `allow` \| `forbid`          | Use cascade       |
+| `txPermit`          | `default` \| `permitAlways` \| `busyLock` | Use cascade       |
+| `sendTalkerAlias`   | `default` \| `on` \| `off`                | Use cascade       |
+| `analogSquelchMode` | `default` \| `carrier` \| `tone`          | Use cascade       |
 
 Legacy `forbidTransmit: boolean` on import migrates: `true` → `forbid`, `false` → `default`.
 
@@ -59,12 +59,12 @@ Passed to exporters via `CpsExportOptions.channelBehaviourContext` (`mergeExport
 
 ## Export status (shipped vs deferred)
 
-| Field               | Resolve helpers | CPS wire (format adapters)      |
-| ------------------- | --------------- | ------------------------------- |
-| TX deny             | Shipped         | Shipped (DM32, OpenGD77, Anytone, CHIRP forbid paths) |
-| Busy Lock / TX Permit | Shipped       | Deferred (#422–#425)            |
-| Send Talker Alias   | Shipped         | Deferred                        |
-| Analog Squelch Mode | Shipped         | Deferred                        |
+| Field                 | Resolve helpers | CPS wire (format adapters)                            |
+| --------------------- | --------------- | ----------------------------------------------------- |
+| TX deny               | Shipped         | Shipped (DM32, OpenGD77, Anytone, CHIRP forbid paths) |
+| Busy Lock / TX Permit | Shipped         | Deferred (#422–#425)                                  |
+| Send Talker Alias     | Shipped         | Deferred                                              |
+| Analog Squelch Mode   | Shipped         | Deferred                                              |
 
 ## Orthogonal: scan inclusion
 

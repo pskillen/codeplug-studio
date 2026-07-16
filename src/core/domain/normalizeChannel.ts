@@ -25,7 +25,10 @@ function normalizePrimaryMode(primaryMode: ChannelMode | null | undefined): Chan
   return CHANNEL_MODES.has(primaryMode) ? primaryMode : null;
 }
 
-type LegacyChannel = Channel & { scanSkip?: boolean; forbidTransmit?: boolean | ForbidTransmitOverride };
+type LegacyChannel = Channel & {
+  scanSkip?: boolean;
+  forbidTransmit?: boolean | ForbidTransmitOverride;
+};
 
 function resolveScanInclusion(channel: LegacyChannel): ScanInclusion {
   if (channel.scanInclusion != null) return channel.scanInclusion;

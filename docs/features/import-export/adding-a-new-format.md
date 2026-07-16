@@ -67,20 +67,20 @@ Full export path: [cps-services.md](cps-services.md).
 
 ### Library vs build vs format
 
-| Concern                                         | Layer                                       | Examples                                                           |
-| ----------------------------------------------- | ------------------------------------------- | ------------------------------------------------------------------ |
-| RF semantics (frequency, mode, TG ref)          | Library `Channel`, `TalkGroup`, …           | Shared across all builds                                           |
-| Which entities participate + wire names         | `FormatBuild` selections + `overrides.name` | Per-build CPS labels                                               |
-| Organisation (zones, scan lists, flat memories) | `FormatBuild.layout` (trait-shaped)         | OpenGD77 zones vs CHIRP flat list                                  |
-| Zone membership (channels + nested zones)       | Library `Zone.members`                      | `kind: 'channel'` / `kind: 'zone'`                                 |
-| Omit standalone zone row on export              | Library `Zone.omitFromExport`               | Nested building blocks                                             |
-| Per-build zone wire name / exclude              | `FormatBuild.zoneOverrides`                 | `excluded`, `wireName`                                             |
-| Format-only zone flags                          | `ZoneGroupingLayout` on build               | DM32 `exportScanList`, `scanCarrierFrequencyHz`                    |
-| Per-member scan list filter                     | Library `ZoneMemberEntry.includeInScanList` | DM32 zone-derived scan only                                        |
-| Channel scan inclusion                          | Library `Channel.scanInclusion`             | Tri-state; see [scan-inclusion](../../reference/scan-inclusion.md) |
+| Concern                                         | Layer                                         | Examples                                                                                     |
+| ----------------------------------------------- | --------------------------------------------- | -------------------------------------------------------------------------------------------- |
+| RF semantics (frequency, mode, TG ref)          | Library `Channel`, `TalkGroup`, …             | Shared across all builds                                                                     |
+| Which entities participate + wire names         | `FormatBuild` selections + `overrides.name`   | Per-build CPS labels                                                                         |
+| Organisation (zones, scan lists, flat memories) | `FormatBuild.layout` (trait-shaped)           | OpenGD77 zones vs CHIRP flat list                                                            |
+| Zone membership (channels + nested zones)       | Library `Zone.members`                        | `kind: 'channel'` / `kind: 'zone'`                                                           |
+| Omit standalone zone row on export              | Library `Zone.omitFromExport`                 | Nested building blocks                                                                       |
+| Per-build zone wire name / exclude              | `FormatBuild.zoneOverrides`                   | `excluded`, `wireName`                                                                       |
+| Format-only zone flags                          | `ZoneGroupingLayout` on build                 | DM32 `exportScanList`, `scanCarrierFrequencyHz`                                              |
+| Per-member scan list filter                     | Library `ZoneMemberEntry.includeInScanList`   | DM32 zone-derived scan only                                                                  |
+| Channel scan inclusion                          | Library `Channel.scanInclusion`               | Tri-state; see [scan-inclusion](../../reference/scan-inclusion.md)                           |
 | Channel behavioural defaults                    | Library `Channel` + `Library.channelDefaults` | Cascade; see [channel-behavioural-defaults](../../reference/channel-behavioural-defaults.md) |
-| Export-affecting prefs                          | `FormatBuild.exportSettings`                | Name shortening, default scan behaviour, DM32 scan master          |
-| Format scan default                             | Adapter `defaultExportSettings`             | e.g. CHIRP `skip`, OpenGD77/DM32 `scan`                            |
+| Export-affecting prefs                          | `FormatBuild.exportSettings`                  | Name shortening, default scan behaviour, DM32 scan master                                    |
+| Format scan default                             | Adapter `defaultExportSettings`               | e.g. CHIRP `skip`, OpenGD77/DM32 `scan`                                                      |
 
 **Rule for serialisers:** consume `AssembledBuild` — especially `zones[].memberChannelIds` (flat UUID lists). Do **not** re-walk library nesting or `ZoneGroupingLayout.channelIds` as membership source of truth; `assemble` already flattened effective membership.
 

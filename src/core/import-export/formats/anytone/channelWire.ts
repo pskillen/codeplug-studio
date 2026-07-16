@@ -156,7 +156,9 @@ export function serialiseAnytoneChannelRow(
     [CHANNEL_COL.slot]: formatAnytoneTimeslot(dmr?.timeslot ?? null),
     [CHANNEL_COL.scanList]: resolveScanListWireName(channel, row, context),
     [CHANNEL_COL.rxGroupList]: resolveRxGroupListColumn(assembled, context, rxGroupListId),
-    [CHANNEL_COL.pttProhibit]: effectiveForbidTransmit(channel, options?.channelBehaviourContext) ? 'On' : 'Off',
+    [CHANNEL_COL.pttProhibit]: effectiveForbidTransmit(channel, options?.channelBehaviourContext)
+      ? 'On'
+      : 'Off',
   };
 
   if (dmr) {

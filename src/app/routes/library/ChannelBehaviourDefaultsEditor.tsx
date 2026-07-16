@@ -44,8 +44,11 @@ export default function ChannelBehaviourDefaultsEditor({
   }
 
   const baseline = useFormBaseline(buildDefaults);
-  const { isDirty, permitNavigationRef, permitNavigationOnce: permitNavigationOnceLocal } =
-    useEntityFormDirty({ baseline, buildCurrent: buildDefaults });
+  const {
+    isDirty,
+    permitNavigationRef,
+    permitNavigationOnce: permitNavigationOnceLocal,
+  } = useEntityFormDirty({ baseline, buildCurrent: buildDefaults });
 
   useEffect(() => {
     onDirtyChange?.(isDirty);
@@ -125,11 +128,7 @@ export default function ChannelBehaviourDefaultsEditor({
 
       <EditorActions saving={saving} error={null} onSave={() => void handleSave()} hideCancel />
 
-      <UnsavedChangesModal
-        opened={routeModalOpen}
-        onStay={routeStay}
-        onLeave={routeLeave}
-      />
+      <UnsavedChangesModal opened={routeModalOpen} onStay={routeStay} onLeave={routeLeave} />
     </Stack>
   );
 }

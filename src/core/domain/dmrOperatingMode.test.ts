@@ -44,7 +44,9 @@ describe('dmrOperatingMode', () => {
       ...newChannel('proj', 'Test'),
       rxFrequency: 145_000_000,
       txFrequency: 145_000_000,
-      modeProfiles: [{ ...(defaultModeProfile('dmr') as ChannelModeProfileDMR), dmrMode: 'repeater' }],
+      modeProfiles: [
+        { ...(defaultModeProfile('dmr') as ChannelModeProfileDMR), dmrMode: 'repeater' },
+      ],
     };
     expect(resolveDmrOperatingMode(channel)).toBe('repeater');
   });

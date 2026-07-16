@@ -44,8 +44,12 @@ describe('channelBehaviourDefaults resolve', () => {
       { ...DEFAULT_CHANNEL_BEHAVIOUR_DEFAULTS, forbidTransmit: true },
       { defaultForbidTransmit: 'allow' },
     );
-    expect(resolveEffectiveForbidTransmit(channel({ forbidTransmit: 'default' }), ctx)).toBe('allow');
-    expect(resolveEffectiveForbidTransmit(channel({ forbidTransmit: 'forbid' }), ctx)).toBe('allow');
+    expect(resolveEffectiveForbidTransmit(channel({ forbidTransmit: 'default' }), ctx)).toBe(
+      'allow',
+    );
+    expect(resolveEffectiveForbidTransmit(channel({ forbidTransmit: 'forbid' }), ctx)).toBe(
+      'allow',
+    );
     expect(
       resolveEffectiveForbidTransmit(
         channel({ forbidTransmit: 'forbid' }),
@@ -64,14 +68,19 @@ describe('channelBehaviourDefaults resolve', () => {
     });
     expect(resolveEffectiveTxPermit(channel({}), ctx)).toBe('busyLock');
     expect(resolveEffectiveSendTalkerAlias(channel({}), ctx)).toBe('on');
-    expect(resolveEffectiveTxPermit(channel({ txPermit: 'permitAlways' }), ctx)).toBe('permitAlways');
+    expect(resolveEffectiveTxPermit(channel({ txPermit: 'permitAlways' }), ctx)).toBe(
+      'permitAlways',
+    );
   });
 
   it('reports winning layer for forbid transmit', () => {
     expect(
       resolveForbidTransmitWithLayer(
         channel({ forbidTransmit: 'default' }),
-        buildChannelBehaviourContext({ ...DEFAULT_CHANNEL_BEHAVIOUR_DEFAULTS, forbidTransmit: true }),
+        buildChannelBehaviourContext({
+          ...DEFAULT_CHANNEL_BEHAVIOUR_DEFAULTS,
+          forbidTransmit: true,
+        }),
       ),
     ).toEqual({ value: 'forbid', layer: 'library' });
     expect(resolveForbidTransmitWithLayer(channel({ forbidTransmit: 'allow' }))).toEqual({
