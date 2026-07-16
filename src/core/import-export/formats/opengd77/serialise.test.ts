@@ -189,6 +189,31 @@ describe('OpenGD77 export serialise', () => {
     expect(rows[1]?.[rxOnlyIndex]).toBe('Yes');
   });
 
+  it('does not export txPermit on wire (no Busy Lock column)', () => {
+    const channel: Channel = {
+      ...newChannel('proj', 'Busy lock channel'),
+      rxFrequency: 145_750_000,
+      txFrequency: 145_150_000,
+      txPermit: 'busyLock',
+      modeProfiles: [
+        {
+          mode: 'fm' as const,
+          squelch: null,
+          rxTone: 'none' as const,
+          txTone: 'none' as const,
+          bandwidthKHz: null,
+        },
+      ],
+    };
+    const csv = serialiseChannels(minimalAssembled(channel));
+    const rows = parseCsv(csv);
+    const headers = rows[0]!;
+    expect(headers).not.toContain('TX Admit');
+    expect(headers).not.toContain('Busy Lock');
+    const rxOnlyIndex = headers.indexOf(CHANNEL_COL.rxOnly);
+    expect(rows[1]?.[rxOnlyIndex]).toBe('No');
+  });
+
   it('serialises channel wire names from assemble projection', () => {
     const assembled = loadAssembled();
     const csv = serialiseChannels(assembled);
