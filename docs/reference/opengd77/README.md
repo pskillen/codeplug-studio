@@ -60,18 +60,19 @@ See [file-format.md](file-format.md) for header-name parsing, case-sensitive for
 
 ## Documentation map
 
-| Doc                                      | Purpose                                                                                            |
-| ---------------------------------------- | -------------------------------------------------------------------------------------------------- |
-| [file-format.md](file-format.md)         | Cross-cutting wire rules                                                                           |
-| [channels.md](channels.md)               | `Channels.csv` columns                                                                             |
-| [power-squelch.md](power-squelch.md)     | Power and squelch wire mapping                                                                     |
-| [zones.md](zones.md)                     | `Zones.csv` columns                                                                                |
-| [contacts.md](contacts.md)               | `Contacts.csv` columns                                                                             |
-| [tg-lists.md](tg-lists.md)               | `TG_Lists.csv` columns                                                                             |
-| [dtmf-aprs.md](dtmf-aprs.md)             | Deferred files + radio availability                                                                |
-| [multi-talkgroup.md](multi-talkgroup.md) | N/A — native RGL; see [multi-talkgroup-expansion.md](../../reference/multi-talkgroup-expansion.md) |
-| [multi-mode.md](multi-mode.md)           | Multi-mode channel expansion (archive reference #46)                                               |
-| [radios/README.md](radios/README.md)     | Radio profile concept and index                                                                    |
+| Doc                                              | Purpose                                                                                            |
+| ------------------------------------------------ | -------------------------------------------------------------------------------------------------- |
+| [file-format.md](file-format.md)                 | Cross-cutting wire rules                                                                           |
+| [channels.md](channels.md)                       | `Channels.csv` columns                                                                             |
+| [power-squelch.md](power-squelch.md)             | Power and squelch wire mapping                                                                     |
+| [zones.md](zones.md)                             | `Zones.csv` columns                                                                                |
+| [contacts.md](contacts.md)                       | `Contacts.csv` columns                                                                             |
+| [tg-lists.md](tg-lists.md)                       | `TG_Lists.csv` columns                                                                             |
+| [dtmf-aprs.md](dtmf-aprs.md)                     | Deferred files + radio availability                                                                |
+| [enum-verification.md](enum-verification.md)     | Human CPS elicitation worksheet (enums, ladders, ranges) — [#403](https://github.com/pskillen/codeplug-studio/issues/403) |
+| [multi-talkgroup.md](multi-talkgroup.md)         | N/A — native RGL; see [multi-talkgroup-expansion.md](../../reference/multi-talkgroup-expansion.md) |
+| [multi-mode.md](multi-mode.md)                   | Multi-mode channel expansion (archive reference #46)                                               |
+| [radios/README.md](radios/README.md)             | Radio profile concept and index                                                                    |
 
 ## Sources
 
