@@ -23,6 +23,7 @@ Editable list of digital APRS channel slots on an `AprsConfiguration`. Slots are
 ## Behaviour
 
 - **Current channel** maps to `channelRef: null`.
+- Default table sort is **slot number ascending** (1-based index).
 - Channel picker groups options by Anytone export bank: **DMR / main bank**, **AM air**, **FM broadcast** (see `aprsSlotChannelSelectGroups`).
 - Analog receive-bank channels are valid slot bindings; Anytone export resolves `APRS.CSV` `channelN` from the matching bank `No.` column.
 - No radio-specific slot cap in the UI; export warnings handle profile limits.
