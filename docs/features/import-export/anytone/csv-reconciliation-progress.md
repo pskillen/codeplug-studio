@@ -16,7 +16,7 @@
 
 ## Overall status
 
-**Status:** In progress
+**Status:** Complete for variance tracking — remaining adapter defaults tracked under [#393](https://github.com/pskillen/codeplug-studio/issues/393) / [#398](https://github.com/pskillen/codeplug-studio/issues/398) and wire-gap children. Mop-up [#402](https://github.com/pskillen/codeplug-studio/issues/402).
 
 ---
 
@@ -115,3 +115,20 @@
 **Verify**
 
 - Re-read enum-verification against CPS when implementing Mid/Turbo power or ScanList defaults
+
+---
+
+## Slice 5 — Code ↔ docs mop-up ([#402](https://github.com/pskillen/codeplug-studio/issues/402))
+
+**Status:** Complete
+
+**Delivered**
+
+- Walked Studio-emitted Anytone files vs hand-reviewed tier-3 docs
+- Corrected inventory/doc drift (README, file-format, LST, APRS count, zones A/B, profile caps)
+- Remaining mismatches already ticketed (`#393` Dwell, `#398` talker alias); no new child tickets
+- Synced [csv-reconciliation-gaps.md](csv-reconciliation-gaps.md) / outstanding + [anytone-outstanding.md](../anytone-outstanding.md)
+
+**Verify**
+
+- Checklist in gaps doc / issue #402 AC; adapter default gaps stay on `#393` / `#398`

@@ -57,14 +57,15 @@ Docs + tickets phase shipped (adapter code deferred to child issues):
 - [ ] [#393](https://github.com/pskillen/codeplug-studio/issues/393) — ScanList timing defaults + Scan Mode readiness
 - [x] [#394](https://github.com/pskillen/codeplug-studio/issues/394) — Squelch Mode from RX tone
 - [ ] [#395](https://github.com/pskillen/codeplug-studio/issues/395) — Slot Suit export
-- [ ] [#396](https://github.com/pskillen/codeplug-studio/issues/396) — Busy Lock/TX Permit mode-aware export
+- [x] [#396](https://github.com/pskillen/codeplug-studio/issues/396) — Busy Lock/TX Permit **provisional** mode-aware export constants (`Channel Free` / `ChannelFree`); full library field remains under [#388](https://github.com/pskillen/codeplug-studio/issues/388)
 - [ ] [#388](https://github.com/pskillen/codeplug-studio/issues/388) — Epic: library defaults / override cascade (under [#147](https://github.com/pskillen/codeplug-studio/issues/147))
 - [ ] [#397](https://github.com/pskillen/codeplug-studio/issues/397) — operator radio ID list
-- [ ] [#398](https://github.com/pskillen/codeplug-studio/issues/398) — Send Talker Alias tri-state
+- [ ] [#398](https://github.com/pskillen/codeplug-studio/issues/398) — Send Talker Alias tri-state (export default still `0`; docs prefer `1`)
 - [ ] [#399](https://github.com/pskillen/codeplug-studio/issues/399) — analog compander flag (under [#179](https://github.com/pskillen/codeplug-studio/issues/179))
 - [ ] [#389](https://github.com/pskillen/codeplug-studio/issues/389) — Epic: analog FM ident tones (under [#1](https://github.com/pskillen/codeplug-studio/issues/1))
 - [ ] [#390](https://github.com/pskillen/codeplug-studio/issues/390) — Epic: DMR roaming (under [#1](https://github.com/pskillen/codeplug-studio/issues/1))
 - [ ] [#400](https://github.com/pskillen/codeplug-studio/issues/400) — NXDN wire elicitation (under [#247](https://github.com/pskillen/codeplug-studio/issues/247))
+- [x] [#402](https://github.com/pskillen/codeplug-studio/issues/402) — code ↔ wire docs mop-up (inventory/doc drift fixed; remaining gaps on child tickets above)
 
 ---
 

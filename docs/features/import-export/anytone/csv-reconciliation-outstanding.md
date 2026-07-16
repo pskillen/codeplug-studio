@@ -18,16 +18,17 @@ Items **skipped**, **incomplete**, or **discovered during** [#297](https://githu
 ## Enum / value coverage
 
 - [x] **Call Alert** — `None` / `Online alert` confirmed; not modelled (export `None`)
-- [x] **`ScanList.CSV` Scan Mode / Revert / timing** — documented in [scan-lists.md](../../../reference/anytone/scan-lists.md); Studio `Dwell` still `1.0` — code ticket under #228
-- [x] **`Transmit Power` Mid / Turbo** — documented; code ticket under #228
+- [x] **`ScanList.CSV` Scan Mode / Revert / timing** — documented in [scan-lists.md](../../../reference/anytone/scan-lists.md); Studio `Dwell` still `1.0` — [#393](https://github.com/pskillen/codeplug-studio/issues/393)
+- [x] **`Transmit Power` Mid / Turbo** — documented + shipped ([#391](https://github.com/pskillen/codeplug-studio/issues/391))
 - [x] **Busy Lock / Slot Suit / DataACK / talker alias / …** — documented in [enum-verification.md](../../../reference/anytone/enum-verification.md); library + export tickets (see anytone-outstanding)
 - [ ] **`Digital Duplex`** — not found in CPS UI; leave Needs elicitation
 - [x] **`OptionalSetting.CSV`** — skip (not a full Anytone CPS)
+- [x] **Code ↔ docs mop-up** — inventory/defaults checklist ([#402](https://github.com/pskillen/codeplug-studio/issues/402)); remaining adapter gaps stay on child tickets
 
 ## Channel export behaviour
 
 - [ ] **TX contact from RGL** — open question (operator unsure); no ticket
-- [x] **Send Talker Alias DMR/NX** — confirmed `0`/`1`; library field ticket (cascade epic)
+- [x] **Send Talker Alias DMR/NX** — confirmed `0`/`1`; default still `0` (prefer `1`) — [#398](https://github.com/pskillen/codeplug-studio/issues/398)
 - [x] **APRS RX** — shipped separately ([#251](https://github.com/pskillen/codeplug-studio/issues/251))
 
 ## Fixtures / samples
@@ -42,3 +43,4 @@ Items **skipped**, **incomplete**, or **discovered during** [#297](https://githu
 - [x] CRLF line endings — [#291](https://github.com/pskillen/codeplug-studio/issues/291) / [#296](https://github.com/pskillen/codeplug-studio/pull/296)
 - [x] CPS `.LST` manifest on ZIP export — [#289](https://github.com/pskillen/codeplug-studio/issues/289)
 - [x] Wire gap docs merge — [#357](https://github.com/pskillen/codeplug-studio/issues/357)
+- [x] Export code ↔ wire docs mop-up — [#402](https://github.com/pskillen/codeplug-studio/issues/402)

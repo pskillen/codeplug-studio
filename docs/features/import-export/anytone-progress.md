@@ -9,9 +9,9 @@
 
 ## Overall status
 
-**Status:** Phase 7 export **shipped** ([#228](https://github.com/pskillen/codeplug-studio/issues/228)) — DMR MVP on `anytone-at-d890uv`  
-**In progress:** m×n channel expansion + scratch channels ([#305](https://github.com/pskillen/codeplug-studio/issues/305), [#325](https://github.com/pskillen/codeplug-studio/issues/325))  
-**Branch:** `305/pskil/anytone-mxn-scratch`
+**Status:** Phase 7 export **shipped** ([#228](https://github.com/pskillen/codeplug-studio/issues/228)) — DMR MVP + banks/APRS on `anytone-at-d890uv`  
+**Latest mop-up:** code ↔ wire docs reconciliation ([#402](https://github.com/pskillen/codeplug-studio/issues/402))  
+**Branch:** `402/pskil/anytone-export-docs-mop-up`
 
 | Phase                       | Issue                                                                                                                          | Status   | Notes                                                  |
 | --------------------------- | ------------------------------------------------------------------------------------------------------------------------------ | -------- | ------------------------------------------------------ |
@@ -102,3 +102,17 @@
 | Directional tests            | Complete | `exportAprsWire.test.ts`, AM air golden in `exportGolden.test.ts` |
 | Slot picker UX               | Complete | Grouped channel select by export bank                             |
 | Docs                         | Complete | Tier-1 APRS + tier-3 `aprs.md`                                    |
+
+---
+
+## Wave 9 — export code ↔ wire docs mop-up ([#402](https://github.com/pskillen/codeplug-studio/issues/402))
+
+**Status:** Complete
+
+| Slice                         | Status   | Notes                                                                 |
+| ----------------------------- | -------- | --------------------------------------------------------------------- |
+| Inventory / cross-cutting docs | Complete | Channel 77 cols, FM shipped, LST CRLF, FM decimals, APRS 176 cols   |
+| Entity / profile clarifications | Complete | Zone A/B, `reportSlotIndex`, `at-d890uv.md` caps from `profiles.ts` |
+| Outstanding / reconciliation  | Complete | Link mop-up; leave `#393` / `#398` adapter gaps on child tickets      |
+
+**Verify:** Spot-check `docs/reference/anytone/README.md` inventory against `ANYTONE_EXPORT_FILE_NAMES` + conditional banks.
