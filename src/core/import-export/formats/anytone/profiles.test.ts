@@ -23,8 +23,8 @@ describe('anytone profiles', () => {
     expect(anytonePercentToWire('anytone-at-d890uv', 25)).toBe('Low');
   });
 
-  it('maps nearest percent and null to High', () => {
-    expect(anytonePercentToWire('anytone-at-d890uv', null)).toBe('High');
+  it('maps nearest percent and null to Turbo', () => {
+    expect(anytonePercentToWire('anytone-at-d890uv', null)).toBe('Turbo');
     expect(anytonePercentToWire('anytone-at-d890uv', 5)).toBe('Low');
     expect(anytonePercentToWire('anytone-at-d890uv', 40)).toBe('Mid');
     expect(anytonePercentToWire('anytone-at-d890uv', 63)).toBe('High');

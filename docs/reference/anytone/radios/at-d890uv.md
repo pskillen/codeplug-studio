@@ -25,7 +25,7 @@ Confirmed AT-D890UV `Transmit Power` wire values and approximate output ([#357](
 | `High`  | 5 W               | 75                   |
 | `Turbo` | 7 W VHF / 6 W UHF | 100                  |
 
-Map at the export boundary in `profiles.ts` (`AT_D890UV_POWER_LADDER`). Watts are informational; `%` steps are discrete UI/export buckets (not exact watt ratios). `null` power → `High`. Ladder order keeps **High first** so the null default is High, not Turbo.
+Map at the export boundary in `profiles.ts` (`AT_D890UV_POWER_LADDER`). Watts are informational; `%` steps are discrete UI/export buckets (not exact watt ratios). `null` power → `Turbo`. Ladder order keeps **Turbo first** so the null default is Turbo.
 
 ## Feature availability
 

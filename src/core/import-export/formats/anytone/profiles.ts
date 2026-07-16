@@ -20,10 +20,10 @@ export interface AnytoneRadioProfile {
   defaultRadioId: string;
 }
 
-/** AT-D890UV Transmit Power — High first so null → High (not Turbo). */
+/** AT-D890UV Transmit Power — Turbo first so null → Turbo. */
 const AT_D890UV_POWER_LADDER: readonly PowerLadderEntry[] = [
-  { percent: 75, wire: 'High' },
   { percent: 100, wire: 'Turbo' },
+  { percent: 75, wire: 'High' },
   { percent: 50, wire: 'Mid' },
   { percent: 25, wire: 'Low' },
 ];
