@@ -1,14 +1,21 @@
 # Channel behavioural defaults — progress
 
-**Tracking:** Epic [#388](https://github.com/pskillen/codeplug-studio/issues/388) · [#419](https://github.com/pskillen/codeplug-studio/issues/419), [#398](https://github.com/pskillen/codeplug-studio/issues/398), [#420](https://github.com/pskillen/codeplug-studio/issues/420), [#421](https://github.com/pskillen/codeplug-studio/issues/421)
-
-**Branch:** `388/pskil/channel-behavioural-defaults`
+**Tracking:** Epic [#388](https://github.com/pskillen/codeplug-studio/issues/388) · format export [#422](https://github.com/pskillen/codeplug-studio/issues/422)–[#425](https://github.com/pskillen/codeplug-studio/issues/425)
 
 ## Status
 
-Pre-export layers shipped in one PR. Format wire mappers remain on [#422](https://github.com/pskillen/codeplug-studio/issues/422)–[#425](https://github.com/pskillen/codeplug-studio/issues/425).
+Format wire mapper PRs complete for all four adapters ([#432](https://github.com/pskillen/codeplug-studio/pull/432)–[#435](https://github.com/pskillen/codeplug-studio/pull/435) pending merge).
 
-## Shipped
+## Format export mappers
+
+| Slice                                      | Ticket | PR   | Status   |
+| ------------------------------------------ | ------ | ---- | -------- |
+| Anytone Busy Lock / Talker Alias / Squelch | #422   | #432 | PR open  |
+| DM32 TX Admit / RX Squelch Mode            | #423   | #433 | PR open  |
+| OpenGD77 forbid + loss docs                | #424   | #434 | PR open  |
+| CHIRP forbid + loss docs                   | #425   | #435 | PR open  |
+
+## Shipped (pre-export)
 
 | Slice                                       | Status   | Notes                                                                                     |
 | ------------------------------------------- | -------- | ----------------------------------------------------------------------------------------- |
@@ -19,7 +26,3 @@ Pre-export layers shipped in one PR. Format wire mappers remain on [#422](https:
 | Library fields + Channel defaults UI (#398) | Complete | `/library/channels/defaults`; talker alias on DMR profile; squelch mode on analog profile |
 | Build export overrides (#420)               | Complete | Export panel optional overrides                                                           |
 | Export resolution summary (#421)            | Complete | `/builds/:id/export-resolution`                                                           |
-
-## Next
-
-- Format adapter wire mapping ([#422](https://github.com/pskillen/codeplug-studio/issues/422)–[#425](https://github.com/pskillen/codeplug-studio/issues/425))

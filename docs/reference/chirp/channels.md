@@ -23,7 +23,7 @@ Parse by **header name**, not column index.
 | `Location`                                         | —                               | ignored                            | 1-based export index                                                          | Excluded from bidirectional mapping compare                  |
 | `Name`                                             | composed wire name              | trim; skip empty                   | `composeChannelWireName(callsign, name, export name mode setting)`            | Case-sensitive                                               |
 | `Frequency`                                        | `rxFrequency`                   | MHz → Hz                           | Hz → MHz (6 dp)                                                               |                                                              |
-| `Duplex`+`Offset`                                  | `txFrequency`, `forbidTransmit` | see duplex table                   | inverse                                                                       | `off` = TX disabled (`forbidTransmit`)                       |
+| `Duplex`+`Offset`                                  | `forbidTransmit` cascade        | see duplex table                   | `effectiveForbidTransmit` + context → `deriveChirpDuplexAndOffset`              | `off` = TX disabled via cascade                              |
 | `Tone`                                             | derived                         | see tone table                     | from `rxTone`/`txTone`                                                        |                                                              |
 | `rToneFreq`                                        | `txTone` (`Tone` mode)          | see tone table                     | see tone table                                                                | Default `88.5` when unused                                   |
 | `cToneFreq`                                        | `rxTone`/`txTone` (`TSQL`)      | see tone table                     | see tone table                                                                | Default `88.5` when unused                                   |
@@ -50,7 +50,18 @@ CHIRP `Name` is the composed wire name (`composeChannelWireName`). Profile `name
 | `-`      | Negative split | TX = RX − offset                |
 | `off`    | TX disabled    | TX = RX, `forbidTransmit=true`  |
 
-Export uses `deriveChirpDuplexAndOffset(rxFrequency, txFrequency, forbidTransmit)` — the inverse of import. **Lossy:** zero-offset `+`/`-` (offset 0, TX = RX) collapse to simplex in the model and export with an empty `Duplex` column; CHIRP files that used `+`/`-` with offset `0` will not bidirectional mapping that wire literally.
+Export uses `deriveChirpDuplexAndOffset(rxFrequency, txFrequency, effectiveForbidTransmit)` with `channelBehaviourContext` — the inverse of import. **Lossy:** zero-offset `+`/`-` (offset 0, TX = RX) collapse to simplex in the model and export with an empty `Duplex` column; CHIRP files that used `+`/`-` with offset `0` will not bidirectional mapping that wire literally.
+
+## Behavioural defaults cascade
+
+| Cascade field       | CHIRP wire              | Export                                      |
+| ------------------- | ----------------------- | ------------------------------------------- |
+| `forbidTransmit`    | `Duplex` = `off`        | Shipped via cascade                         |
+| `txPermit`          | _(none)_                | Loss — no Busy Lock / TX Admit column        |
+| `sendTalkerAlias`   | _(none)_                | Loss — no DMR talker-alias column           |
+| `analogSquelchMode` | _(none)_                | Loss — tone mode is from `rxTone`/`txTone` only |
+
+See [channel-behavioural-defaults.md](../channel-behavioural-defaults.md).
 
 ## Tones
 
