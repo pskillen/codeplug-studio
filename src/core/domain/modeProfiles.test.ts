@@ -108,6 +108,7 @@ describe('syncModeProfiles', () => {
       rxTone: '88.5',
       txTone: '88.5',
       bandwidthKHz: 12.5,
+      analogSquelchMode: 'default',
     };
     const synced = syncModeProfiles(['fm', 'dmr'], [fm]);
     expect(synced).toHaveLength(2);

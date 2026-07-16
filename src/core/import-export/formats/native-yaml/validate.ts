@@ -162,6 +162,10 @@ function parseAnalogModeProfile(
       'none',
     ) as ChannelTone,
     bandwidthKHz: expectNullableNumber(record.bandwidthKHz, `modeProfiles[${index}].bandwidthKHz`),
+    analogSquelchMode: parseAnalogSquelchModeOverride(
+      record.analogSquelchMode,
+      `modeProfiles[${index}].analogSquelchMode`,
+    ),
     ...(record.ssbSideband !== undefined && record.ssbSideband !== null
       ? { ssbSideband: parseSsbSideband(record.ssbSideband, index) }
       : {}),
@@ -197,6 +201,10 @@ function parseModeProfile(raw: unknown, index: number): ChannelModeProfile {
         rxGroupListId: expectNullableString(
           record.rxGroupListId,
           `modeProfiles[${index}].rxGroupListId`,
+        ),
+        sendTalkerAlias: parseSendTalkerAliasOverride(
+          record.sendTalkerAlias,
+          `modeProfiles[${index}].sendTalkerAlias`,
         ),
       });
     case 'dstar':
@@ -484,14 +492,6 @@ function parseChannel(raw: unknown, index: number, studioSchemaVersion: number):
       `library.channels[${index}].forbidTransmit`,
     ),
     txPermit: parseTxPermitOverride(record.txPermit, `library.channels[${index}].txPermit`),
-    sendTalkerAlias: parseSendTalkerAliasOverride(
-      record.sendTalkerAlias,
-      `library.channels[${index}].sendTalkerAlias`,
-    ),
-    analogSquelchMode: parseAnalogSquelchModeOverride(
-      record.analogSquelchMode,
-      `library.channels[${index}].analogSquelchMode`,
-    ),
     comment: expectString(record.comment, `library.channels[${index}].comment`),
     ...(record.scanListId !== undefined && record.scanListId !== null
       ? {
@@ -529,7 +529,25 @@ function parseChannel(raw: unknown, index: number, studioSchemaVersion: number):
       (profile, profileIndex) => parseModeProfile(profile, profileIndex),
     ),
     ...(aprsBinding !== undefined ? { aprs: aprsBinding } : {}),
-  };
+    // Legacy channel-level behavioural fields — migrated onto mode profiles by normalizeChannel
+    // after APRS singleton migration (do not normalize here or reportChannelRef is lost).
+    ...(record.sendTalkerAlias !== undefined && record.sendTalkerAlias !== null
+      ? {
+          sendTalkerAlias: parseSendTalkerAliasOverride(
+            record.sendTalkerAlias,
+            `library.channels[${index}].sendTalkerAlias`,
+          ),
+        }
+      : {}),
+    ...(record.analogSquelchMode !== undefined && record.analogSquelchMode !== null
+      ? {
+          analogSquelchMode: parseAnalogSquelchModeOverride(
+            record.analogSquelchMode,
+            `library.channels[${index}].analogSquelchMode`,
+          ),
+        }
+      : {}),
+  } as Channel;
 }
 
 function parseZone(raw: unknown, index: number, studioSchemaVersion: number): Zone {

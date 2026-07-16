@@ -7,8 +7,15 @@ import type {
   SendTalkerAliasMode,
   TxPermitMode,
 } from '@core/models/channelBehaviourDefaults.ts';
-import { DEFAULT_CHANNEL_BEHAVIOUR_DEFAULTS } from '@core/models/channelBehaviourDefaults.ts';
-import type { Channel } from '@core/models/library.ts';
+import {
+  DEFAULT_CHANNEL_BEHAVIOUR_DEFAULTS,
+  DEFAULT_CHANNEL_BEHAVIOUR_OVERRIDES,
+} from '@core/models/channelBehaviourDefaults.ts';
+import type {
+  Channel,
+  ChannelModeProfileAnalog,
+  ChannelModeProfileDMR,
+} from '@core/models/library.ts';
 
 export type BehaviourResolutionLayer = 'library' | 'channel' | 'build';
 
@@ -28,10 +35,7 @@ export interface ChannelBehaviourContext {
   >;
 }
 
-type ChannelBehaviourPick = Pick<
-  Channel,
-  'forbidTransmit' | 'txPermit' | 'sendTalkerAlias' | 'analogSquelchMode'
->;
+type ChannelBehaviourPick = Pick<Channel, 'forbidTransmit' | 'txPermit'>;
 
 export function libraryBehaviourDefaults(
   defaults?: ChannelBehaviourDefaults | null,
@@ -76,13 +80,14 @@ export function resolveEffectiveTxPermit(
 }
 
 export function resolveEffectiveSendTalkerAlias(
-  channel: Pick<Channel, 'sendTalkerAlias'>,
+  profile: Pick<ChannelModeProfileDMR, 'sendTalkerAlias'>,
   context?: ChannelBehaviourContext,
 ): SendTalkerAliasMode {
   const library = libraryBehaviourDefaults(context?.libraryDefaults);
   let value = library.sendTalkerAlias;
-  if (channel.sendTalkerAlias !== 'default') {
-    value = channel.sendTalkerAlias;
+  const override = profile.sendTalkerAlias ?? 'default';
+  if (override !== 'default') {
+    value = override;
   }
   const build = context?.buildOverrides?.defaultSendTalkerAlias;
   if (build !== undefined) {
@@ -92,13 +97,14 @@ export function resolveEffectiveSendTalkerAlias(
 }
 
 export function resolveEffectiveAnalogSquelchMode(
-  channel: Pick<Channel, 'analogSquelchMode'>,
+  profile: Pick<ChannelModeProfileAnalog, 'analogSquelchMode'>,
   context?: ChannelBehaviourContext,
 ): AnalogSquelchMode {
   const library = libraryBehaviourDefaults(context?.libraryDefaults);
   let value = library.analogSquelchMode;
-  if (channel.analogSquelchMode !== 'default') {
-    value = channel.analogSquelchMode;
+  const override = profile.analogSquelchMode ?? 'default';
+  if (override !== 'default') {
+    value = override;
   }
   const build = context?.buildOverrides?.defaultAnalogSquelchMode;
   if (build !== undefined) {
@@ -108,13 +114,13 @@ export function resolveEffectiveAnalogSquelchMode(
 }
 
 function resolveLayerForOverride<T extends string>(
-  channelValue: T,
+  overrideValue: T,
   buildValue: T | undefined,
   libraryValue: T,
   effective: T,
 ): BehaviourResolutionLayer {
   if (buildValue !== undefined && effective === buildValue) return 'build';
-  if (channelValue !== 'default' && effective === channelValue) return 'channel';
+  if (overrideValue !== 'default' && effective === overrideValue) return 'channel';
   if (effective === libraryValue) return 'library';
   return 'build';
 }
@@ -123,8 +129,6 @@ export function resolveForbidTransmitWithLayer(
   channel: Pick<Channel, 'forbidTransmit'>,
   context?: ChannelBehaviourContext,
 ): ResolvedBehaviourField<EffectiveForbidTransmit> {
-  const library = libraryBehaviourDefaults(context?.libraryDefaults);
-  const libraryEffective: EffectiveForbidTransmit = library.forbidTransmit ? 'forbid' : 'allow';
   const build = context?.buildOverrides?.defaultForbidTransmit;
   const value = resolveEffectiveForbidTransmit(channel, context);
   const layer =
@@ -133,7 +137,6 @@ export function resolveForbidTransmitWithLayer(
       : channel.forbidTransmit !== 'default' && value === channel.forbidTransmit
         ? 'channel'
         : 'library';
-  void libraryEffective;
   return { value, layer };
 }
 
@@ -149,34 +152,26 @@ export function resolveTxPermitWithLayer(
 }
 
 export function resolveSendTalkerAliasWithLayer(
-  channel: Pick<Channel, 'sendTalkerAlias'>,
+  profile: Pick<ChannelModeProfileDMR, 'sendTalkerAlias'>,
   context?: ChannelBehaviourContext,
 ): ResolvedBehaviourField<SendTalkerAliasMode> {
   const library = libraryBehaviourDefaults(context?.libraryDefaults);
   const build = context?.buildOverrides?.defaultSendTalkerAlias;
-  const value = resolveEffectiveSendTalkerAlias(channel, context);
-  const layer = resolveLayerForOverride(
-    channel.sendTalkerAlias,
-    build,
-    library.sendTalkerAlias,
-    value,
-  );
+  const value = resolveEffectiveSendTalkerAlias(profile, context);
+  const override = profile.sendTalkerAlias ?? 'default';
+  const layer = resolveLayerForOverride(override, build, library.sendTalkerAlias, value);
   return { value, layer };
 }
 
 export function resolveAnalogSquelchModeWithLayer(
-  channel: Pick<Channel, 'analogSquelchMode'>,
+  profile: Pick<ChannelModeProfileAnalog, 'analogSquelchMode'>,
   context?: ChannelBehaviourContext,
 ): ResolvedBehaviourField<AnalogSquelchMode> {
   const library = libraryBehaviourDefaults(context?.libraryDefaults);
   const build = context?.buildOverrides?.defaultAnalogSquelchMode;
-  const value = resolveEffectiveAnalogSquelchMode(channel, context);
-  const layer = resolveLayerForOverride(
-    channel.analogSquelchMode,
-    build,
-    library.analogSquelchMode,
-    value,
-  );
+  const value = resolveEffectiveAnalogSquelchMode(profile, context);
+  const override = profile.analogSquelchMode ?? 'default';
+  const layer = resolveLayerForOverride(override, build, library.analogSquelchMode, value);
   return { value, layer };
 }
 
@@ -205,10 +200,5 @@ export function effectiveForbidTransmit(
 }
 
 export function defaultChannelBehaviourOverrides(): ChannelBehaviourPick {
-  return {
-    forbidTransmit: 'default',
-    txPermit: 'default',
-    sendTalkerAlias: 'default',
-    analogSquelchMode: 'default',
-  };
+  return { ...DEFAULT_CHANNEL_BEHAVIOUR_OVERRIDES };
 }

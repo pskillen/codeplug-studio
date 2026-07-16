@@ -21,11 +21,11 @@ import type {
   Library,
 } from '@core/models/library.ts';
 import { isAnalogChannelModeProfile, isModeOnlyStub } from '@core/domain/modeProfiles.ts';
-import type { AnalogSquelchModeOverride } from '@core/models/channelBehaviourDefaults.ts';
 import ModePill from '../pills/ModePill.tsx';
 import { PercentLevelSlider, PillTabs } from '../ui/index.ts';
 import RxGroupListSummary from '../library/RxGroupListSummary.tsx';
 import AnalogSquelchModeSegment from './AnalogSquelchModeSegment.tsx';
+import SendTalkerAliasSegment from './SendTalkerAliasSegment.tsx';
 import DmrOperatingModeSegment from './DmrOperatingModeSegment.tsx';
 import {
   BANDWIDTH_KHZ_OPTIONS,
@@ -50,8 +50,6 @@ export interface ChannelModeProfilesEditorProps {
   library: Library;
   rxFrequency: number | null;
   txFrequency: number | null;
-  analogSquelchMode?: AnalogSquelchModeOverride;
-  onAnalogSquelchModeChange?: (value: AnalogSquelchModeOverride) => void;
   onChange: (profiles: ChannelModeProfile[]) => void;
 }
 
@@ -60,8 +58,6 @@ export default function ChannelModeProfilesEditor({
   library,
   rxFrequency,
   txFrequency,
-  analogSquelchMode,
-  onAnalogSquelchModeChange,
   onChange,
 }: ChannelModeProfilesEditorProps) {
   const updateProfile = (index: number, patch: Partial<ChannelModeProfile>) => {
@@ -79,12 +75,7 @@ export default function ChannelModeProfilesEditor({
         panel: (
           <Stack gap="sm">
             {isAnalogChannelModeProfile(profile) ? (
-              <AnalogPanel
-                profile={profile}
-                analogSquelchMode={analogSquelchMode}
-                onAnalogSquelchModeChange={onAnalogSquelchModeChange}
-                onPatch={(patch) => updateProfile(index, patch)}
-              />
+              <AnalogPanel profile={profile} onPatch={(patch) => updateProfile(index, patch)} />
             ) : null}
             {isDmrMode(profile.mode) ? (
               <DmrPanel
@@ -140,13 +131,9 @@ export default function ChannelModeProfilesEditor({
 
 function AnalogPanel({
   profile,
-  analogSquelchMode,
-  onAnalogSquelchModeChange,
   onPatch,
 }: {
   profile: ChannelModeProfileAnalog;
-  analogSquelchMode?: AnalogSquelchModeOverride;
-  onAnalogSquelchModeChange?: (value: AnalogSquelchModeOverride) => void;
   onPatch: (patch: Partial<ChannelModeProfileAnalog>) => void;
 }) {
   return (
@@ -192,9 +179,10 @@ function AnalogPanel({
         onChange={(v) => onPatch({ squelch: v })}
         zeroLabel="Open (0%)"
       />
-      {analogSquelchMode !== undefined && onAnalogSquelchModeChange ? (
-        <AnalogSquelchModeSegment value={analogSquelchMode} onChange={onAnalogSquelchModeChange} />
-      ) : null}
+      <AnalogSquelchModeSegment
+        value={profile.analogSquelchMode ?? 'default'}
+        onChange={(analogSquelchMode) => onPatch({ analogSquelchMode })}
+      />
     </>
   );
 }
@@ -292,6 +280,10 @@ function DmrPanel({
         clearable
       />
       <RxGroupListSummary listId={profile.rxGroupListId} library={library} />
+      <SendTalkerAliasSegment
+        value={profile.sendTalkerAlias ?? 'default'}
+        onChange={(sendTalkerAlias) => onPatch({ sendTalkerAlias })}
+      />
     </>
   );
 }

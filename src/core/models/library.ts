@@ -45,6 +45,8 @@ export interface ChannelModeProfileAnalog {
   bandwidthKHz: number | null;
   /** USB vs LSB when `mode === 'ssb'`; defaults to `usb` when omitted. */
   ssbSideband?: SsbSideband;
+  /** Carrier vs tone squelch — `default` defers to library + build cascade. */
+  analogSquelchMode?: AnalogSquelchModeOverride;
 }
 
 export interface ChannelModeProfileDMR {
@@ -56,6 +58,8 @@ export interface ChannelModeProfileDMR {
   dmrId: number | null;
   contactRef: EntityRef | null;
   rxGroupListId: string | null;
+  /** Send talker alias — `default` defers to library + build cascade. */
+  sendTalkerAlias?: SendTalkerAliasOverride;
 }
 
 export interface ChannelModeProfileDstar {
@@ -118,10 +122,6 @@ export interface Channel extends PersistableRow {
   forbidTransmit: ForbidTransmitOverride;
   /** Busy lock / TX permit override. */
   txPermit: TxPermitOverride;
-  /** Send talker alias override (DMR/NXDN). */
-  sendTalkerAlias: SendTalkerAliasOverride;
-  /** Analog squelch mode override. */
-  analogSquelchMode: AnalogSquelchModeOverride;
   comment: string;
   /** Primary mode for dual-mode CPS export (Anytone Channel Type, DM32 Fixed Analog/Digital). */
   primaryMode?: ChannelMode | null;

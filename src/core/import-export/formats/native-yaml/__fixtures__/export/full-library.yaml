@@ -32,8 +32,7 @@ library:
     sendTalkerAlias: on
     txPermit: permitAlways
   channels:
-    - analogSquelchMode: default
-      callsign: GB3DA
+    - callsign: GB3DA
       comment: Analog FM
       forbidTransmit: default
       id: 22222222-2222-4222-8222-222222222222
@@ -42,7 +41,8 @@ library:
         lon: -3.1883
       maidenheadLocator: IO85vs
       modeProfiles:
-        - bandwidthKHz: 12.5
+        - analogSquelchMode: default
+          bandwidthKHz: 12.5
           mode: fm
           rxTone: "88.5"
           squelch: 50
@@ -54,13 +54,11 @@ library:
       revision: 1
       rxFrequency: 430912500
       scanInclusion: default
-      sendTalkerAlias: default
       txFrequency: 430912500
       txPermit: default
       updatedAt: 2026-07-02T10:00:00.000Z
       useLocation: true
-    - analogSquelchMode: default
-      aprs:
+    - aprs:
         digitalPttMode: on
         receiveEnabled: true
         reportSlotIndex: 1
@@ -80,6 +78,7 @@ library:
           dmrMode: null
           mode: dmr
           rxGroupListId: 88888888-8888-4888-8888-888888888888
+          sendTalkerAlias: default
           timeslot: 2
       name: DMR Scotland
       power: null
@@ -88,7 +87,6 @@ library:
       revision: 1
       rxFrequency: 439087500
       scanInclusion: skip
-      sendTalkerAlias: default
       txFrequency: 430587500
       txPermit: default
       updatedAt: 2026-07-02T10:00:00.000Z

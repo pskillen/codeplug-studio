@@ -10,15 +10,15 @@ Pre-export layers shipped in one PR. Format wire mappers remain on [#422](https:
 
 ## Shipped
 
-| Slice                                       | Status   | Notes                                                                      |
-| ------------------------------------------- | -------- | -------------------------------------------------------------------------- |
-| Progress tracking                           | Complete | This file + outstanding sibling                                            |
-| Core cascade foundation (#419)              | Complete | Schema v18, resolve helpers, persistence                                   |
-| Docs pattern (#419)                         | Complete | `docs/reference/channel-behavioural-defaults.md`                           |
-| Forbid TX export bridge                     | Complete | DM32, OpenGD77, Anytone, CHIRP                                             |
-| Library fields + Channel defaults UI (#398) | Complete | `/library/channels/defaults`; Frequencies + Modes tab overrides, bulk edit |
-| Build export overrides (#420)               | Complete | Export panel optional overrides                                            |
-| Export resolution summary (#421)            | Complete | `/builds/:id/export-resolution`                                            |
+| Slice                                       | Status   | Notes                                                                                     |
+| ------------------------------------------- | -------- | ----------------------------------------------------------------------------------------- |
+| Progress tracking                           | Complete | This file + outstanding sibling                                                           |
+| Core cascade foundation (#419)              | Complete | Schema v18, resolve helpers, persistence                                                  |
+| Docs pattern (#419)                         | Complete | `docs/reference/channel-behavioural-defaults.md`                                          |
+| Forbid TX export bridge                     | Complete | DM32, OpenGD77, Anytone, CHIRP                                                            |
+| Library fields + Channel defaults UI (#398) | Complete | `/library/channels/defaults`; talker alias on DMR profile; squelch mode on analog profile |
+| Build export overrides (#420)               | Complete | Export panel optional overrides                                                           |
+| Export resolution summary (#421)            | Complete | `/builds/:id/export-resolution`                                                           |
 
 ## Next
 

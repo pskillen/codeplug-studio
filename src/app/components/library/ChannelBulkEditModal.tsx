@@ -127,6 +127,12 @@ function analogImpactText(appliesTo: number, skipped: number, total: number): st
   return `${base}. ${skipped} channel${skipped === 1 ? '' : 's'} have no analog mode and will be skipped`;
 }
 
+function dmrImpactText(appliesTo: number, skipped: number, total: number): string {
+  const base = `Applies to ${appliesTo} of ${total} selected channel${total === 1 ? '' : 's'}`;
+  if (skipped <= 0) return base;
+  return `${base}. ${skipped} channel${skipped === 1 ? '' : 's'} have no DMR mode and will be skipped`;
+}
+
 export default function ChannelBulkEditModal({
   opened,
   onClose,
@@ -411,7 +417,7 @@ function ChannelBulkEditModalBody({
         </fieldset>
         {form.changeSendTalkerAlias && impact.sendTalkerAlias ? (
           <Text size="xs" c="dimmed">
-            {channelLevelImpactText(impact.sendTalkerAlias.appliesTo)}
+            {dmrImpactText(impact.sendTalkerAlias.appliesTo, impact.sendTalkerAlias.skipped, total)}
           </Text>
         ) : null}
 
@@ -434,7 +440,11 @@ function ChannelBulkEditModalBody({
         </fieldset>
         {form.changeAnalogSquelchMode && impact.analogSquelchMode ? (
           <Text size="xs" c="dimmed">
-            {channelLevelImpactText(impact.analogSquelchMode.appliesTo)}
+            {analogImpactText(
+              impact.analogSquelchMode.appliesTo,
+              impact.analogSquelchMode.skipped,
+              total,
+            )}
           </Text>
         ) : null}
 

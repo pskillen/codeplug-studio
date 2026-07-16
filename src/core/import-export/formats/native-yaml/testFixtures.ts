@@ -111,8 +111,6 @@ export function fullLibraryAggregate(): ProjectAggregate {
     scanInclusion: 'default',
     forbidTransmit: 'default',
     txPermit: 'default',
-    sendTalkerAlias: 'default',
-    analogSquelchMode: 'default',
     comment: 'Analog FM',
     primaryMode: null,
     scanListId: undefined,
@@ -123,6 +121,7 @@ export function fullLibraryAggregate(): ProjectAggregate {
         rxTone: '88.5',
         txTone: 'none',
         bandwidthKHz: 12.5,
+        analogSquelchMode: 'default',
       },
     ],
   };
@@ -140,8 +139,6 @@ export function fullLibraryAggregate(): ProjectAggregate {
     scanInclusion: 'skip',
     forbidTransmit: 'default',
     txPermit: 'default',
-    sendTalkerAlias: 'default',
-    analogSquelchMode: 'default',
     comment: '',
     primaryMode: null,
     scanListId: undefined,
@@ -154,6 +151,7 @@ export function fullLibraryAggregate(): ProjectAggregate {
         dmrMode: null,
         contactRef: { kind: 'digitalContact', id: FIXTURE_DIGITAL_CONTACT_ID },
         rxGroupListId: FIXTURE_RX_LIST_ID,
+        sendTalkerAlias: 'default',
       },
     ],
     aprs: {

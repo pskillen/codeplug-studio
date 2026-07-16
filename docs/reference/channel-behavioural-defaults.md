@@ -14,13 +14,15 @@ Precedence (later wins when set):
 
 ```text
 Library.channelDefaults
-  → Channel override (or `default`)
+  → Channel / mode-profile override (or `default`)
   → Build.exportSettings override (when set)
   → resolveEffective*()
   → export serialiser / resolution summary UI
 ```
 
-Implementation: `src/core/import-export/channelBehaviourDefaults/resolve.ts`.
+- TX deny and TX permit resolve against **channel** fields.
+- Talker alias resolves against the **DMR mode profile**.
+- Analog squelch mode resolves against each **analog mode profile**.
 
 ## Library defaults
 
@@ -35,16 +37,18 @@ Implementation: `src/core/import-export/channelBehaviourDefaults/resolve.ts`.
 
 Native YAML: `library.channelDefaults` and mirrored `project.channelDefaults`. Schema **v18**.
 
-## Channel overrides
+## Channel / mode-profile overrides
 
-| Field               | Override type                             | `default` meaning |
-| ------------------- | ----------------------------------------- | ----------------- |
-| `forbidTransmit`    | `default` \| `allow` \| `forbid`          | Use cascade       |
-| `txPermit`          | `default` \| `permitAlways` \| `busyLock` | Use cascade       |
-| `sendTalkerAlias`   | `default` \| `on` \| `off`                | Use cascade       |
-| `analogSquelchMode` | `default` \| `carrier` \| `tone`          | Use cascade       |
+| Field               | Where                      | Override type                             | `default` meaning |
+| ------------------- | -------------------------- | ----------------------------------------- | ----------------- |
+| `forbidTransmit`    | `Channel`                  | `default` \| `allow` \| `forbid`          | Use cascade       |
+| `txPermit`          | `Channel`                  | `default` \| `permitAlways` \| `busyLock` | Use cascade       |
+| `sendTalkerAlias`   | `ChannelModeProfileDMR`    | `default` \| `on` \| `off`                | Use cascade       |
+| `analogSquelchMode` | `ChannelModeProfileAnalog` | `default` \| `carrier` \| `tone`          | Use cascade       |
 
 Legacy `forbidTransmit: boolean` on import migrates: `true` → `forbid`, `false` → `default`.
+
+Legacy channel-level `sendTalkerAlias` / `analogSquelchMode` migrate onto DMR / analog mode profiles at read time.
 
 ## Build export overrides
 
@@ -73,7 +77,7 @@ Passed to exporters via `CpsExportOptions.channelBehaviourContext` (`mergeExport
 ## UI
 
 - **Channel defaults** — `/library/channels/defaults` (nested under Channels)
-- **Channel editor** — Frequencies tab (transmit, TX permit); Modes tab (talker alias when digital; squelch mode on analog profiles)
+- **Channel editor** — Frequencies tab (transmit, TX permit); Modes → DMR subtab (talker alias); Modes → analog subtab (squelch mode)
 - **Build export** — optional default override segments
 - **Export resolution** — read-only audit of effective values + winning layer per build
 

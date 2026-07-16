@@ -3,9 +3,7 @@ import { Alert, Button, Group, Select, SimpleGrid, Stack, Tabs, TextInput } from
 import { Link, useNavigate } from 'react-router-dom';
 import type { ChannelAprsBinding } from '@core/models/aprs.ts';
 import type {
-  AnalogSquelchModeOverride,
   ForbidTransmitOverride,
-  SendTalkerAliasOverride,
   TxPermitOverride,
 } from '@core/models/channelBehaviourDefaults.ts';
 import type { Channel, ChannelModeProfile, Library, ScanInclusion } from '@core/models/library.ts';
@@ -25,15 +23,9 @@ import {
   PercentLevelSlider,
   UnsavedChangesModal,
 } from '../../components/ui/index.ts';
-import {
-  modeColor,
-  modeLabel,
-  isDigitalMode,
-  type ChannelMode as UiChannelMode,
-} from '../../lib/channelModes.ts';
+import { modeColor, modeLabel, type ChannelMode as UiChannelMode } from '../../lib/channelModes.ts';
 import ForbidTransmitSegment from '../../components/channels/ForbidTransmitSegment.tsx';
 import TxPermitSegment from '../../components/channels/TxPermitSegment.tsx';
-import SendTalkerAliasSegment from '../../components/channels/SendTalkerAliasSegment.tsx';
 import ScanInclusionSegment from '../../components/channels/ScanInclusionSegment.tsx';
 import ChannelIdentitySummary from '../../components/channels/ChannelIdentitySummary.tsx';
 import ChannelLocationSection, {
@@ -98,12 +90,6 @@ export default function ChannelEditor({
   const [scanListId, setScanListId] = useState(base.scanListId ?? '');
   const [forbidTransmit, setForbidTransmit] = useState<ForbidTransmitOverride>(base.forbidTransmit);
   const [txPermit, setTxPermit] = useState<TxPermitOverride>(base.txPermit);
-  const [sendTalkerAlias, setSendTalkerAlias] = useState<SendTalkerAliasOverride>(
-    base.sendTalkerAlias,
-  );
-  const [analogSquelchMode, setAnalogSquelchMode] = useState<AnalogSquelchModeOverride>(
-    base.analogSquelchMode,
-  );
   const [comment, setComment] = useState(base.comment);
   const [modeProfiles, setModeProfiles] = useState<ChannelModeProfile[]>(base.modeProfiles);
   const [primaryMode, setPrimaryMode] = useState<ChannelMode | null>(base.primaryMode ?? null);
@@ -143,8 +129,6 @@ export default function ChannelEditor({
       scanInclusion,
       forbidTransmit,
       txPermit,
-      sendTalkerAlias,
-      analogSquelchMode,
       comment,
       location: reconciled.location,
       useLocation: reconciled.useLocation,
@@ -194,8 +178,6 @@ export default function ChannelEditor({
       scanListId: source.scanListId,
       forbidTransmit: source.forbidTransmit,
       txPermit: source.txPermit,
-      sendTalkerAlias: source.sendTalkerAlias,
-      analogSquelchMode: source.analogSquelchMode,
       comment: source.comment,
       location: source.location,
       useLocation: source.useLocation,
@@ -382,11 +364,6 @@ export default function ChannelEditor({
                   disabled={modeProfiles.length === 0}
                 />
               </FormSection>
-              {modeProfiles.some((profile) => isDigitalMode(profile.mode)) ? (
-                <FormSection>
-                  <SendTalkerAliasSegment value={sendTalkerAlias} onChange={setSendTalkerAlias} />
-                </FormSection>
-              ) : null}
               {modeProfiles.length > 0 ? (
                 <FormSection>
                   <ChannelModeProfilesEditor
@@ -394,8 +371,6 @@ export default function ChannelEditor({
                     library={library}
                     rxFrequency={liveRxHz}
                     txFrequency={liveTxHz}
-                    analogSquelchMode={analogSquelchMode}
-                    onAnalogSquelchModeChange={setAnalogSquelchMode}
                     onChange={setModeProfiles}
                   />
                 </FormSection>

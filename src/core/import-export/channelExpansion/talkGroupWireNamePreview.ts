@@ -41,8 +41,6 @@ function previewChannel(callsign: string): Channel {
     scanInclusion: 'default',
     forbidTransmit: 'default',
     txPermit: 'default',
-    sendTalkerAlias: 'default',
-    analogSquelchMode: 'default',
     comment: '',
     modeProfiles: [
       {
@@ -52,6 +50,7 @@ function previewChannel(callsign: string): Channel {
         dmrId: null,
         contactRef: null,
         rxGroupListId: null,
+        sendTalkerAlias: 'default',
       },
     ],
   };

@@ -36,6 +36,10 @@ export const DEFAULT_CHANNEL_BEHAVIOUR_DEFAULTS: ChannelBehaviourDefaults = {
 export const DEFAULT_CHANNEL_BEHAVIOUR_OVERRIDES = {
   forbidTransmit: 'default' as ForbidTransmitOverride,
   txPermit: 'default' as TxPermitOverride,
+};
+
+/** Default mode-profile behavioural overrides. */
+export const DEFAULT_MODE_PROFILE_BEHAVIOUR_OVERRIDES = {
   sendTalkerAlias: 'default' as SendTalkerAliasOverride,
   analogSquelchMode: 'default' as AnalogSquelchModeOverride,
 };

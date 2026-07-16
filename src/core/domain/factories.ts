@@ -105,8 +105,6 @@ export function newChannel(projectId: string, name: string, callsign = ''): Chan
     scanInclusion: 'default',
     forbidTransmit: 'default',
     txPermit: 'default',
-    sendTalkerAlias: 'default',
-    analogSquelchMode: 'default',
     comment: '',
     primaryMode: null,
     modeProfiles: [],

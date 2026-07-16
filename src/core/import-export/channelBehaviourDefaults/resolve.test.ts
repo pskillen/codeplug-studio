@@ -67,10 +67,11 @@ describe('channelBehaviourDefaults resolve', () => {
       sendTalkerAlias: 'on',
     });
     expect(resolveEffectiveTxPermit(channel({}), ctx)).toBe('busyLock');
-    expect(resolveEffectiveSendTalkerAlias(channel({}), ctx)).toBe('on');
+    expect(resolveEffectiveSendTalkerAlias({ sendTalkerAlias: 'default' }, ctx)).toBe('on');
     expect(resolveEffectiveTxPermit(channel({ txPermit: 'permitAlways' }), ctx)).toBe(
       'permitAlways',
     );
+    expect(resolveEffectiveSendTalkerAlias({ sendTalkerAlias: 'off' }, ctx)).toBe('off');
   });
 
   it('reports winning layer for forbid transmit', () => {

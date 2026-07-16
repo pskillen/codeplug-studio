@@ -7,7 +7,15 @@ import {
   resolveForbidTransmitWithLayer,
   resolveSendTalkerAliasWithLayer,
   resolveTxPermitWithLayer,
+  type ResolvedBehaviourField,
 } from '@core/import-export/channelBehaviourDefaults/resolve.ts';
+import type {
+  AnalogSquelchMode,
+  EffectiveForbidTransmit,
+  SendTalkerAliasMode,
+  TxPermitMode,
+} from '@core/models/channelBehaviourDefaults.ts';
+import { findAnalogProfile, findDmrProfile } from '@core/domain/modeProfiles.ts';
 import { FormPage } from '../../components/ui/index.ts';
 import {
   analogSquelchModeLabel,
@@ -34,13 +42,19 @@ export default function BuildExportResolutionPage() {
       .map((channel) => {
         const forbid = resolveForbidTransmitWithLayer(channel, context);
         const txPermit = resolveTxPermitWithLayer(channel, context);
-        const talkerAlias = resolveSendTalkerAliasWithLayer(channel, context);
-        const squelch = resolveAnalogSquelchModeWithLayer(channel, context);
+        const dmr = findDmrProfile(channel);
+        const analog = findAnalogProfile(channel);
+        const talkerAlias: ResolvedBehaviourField<SendTalkerAliasMode> | null = dmr
+          ? resolveSendTalkerAliasWithLayer(dmr, context)
+          : null;
+        const squelch: ResolvedBehaviourField<AnalogSquelchMode> | null = analog
+          ? resolveAnalogSquelchModeWithLayer(analog, context)
+          : null;
         return {
           id: channel.id,
           name: channel.name || 'Untitled',
-          forbid,
-          txPermit,
+          forbid: forbid as ResolvedBehaviourField<EffectiveForbidTransmit>,
+          txPermit: txPermit as ResolvedBehaviourField<TxPermitMode>,
           talkerAlias,
           squelch,
         };
@@ -61,7 +75,8 @@ export default function BuildExportResolutionPage() {
       description={
         <Text size="sm" component="span">
           Effective behavioural values for each library channel on this build, and which cascade
-          layer wins. <Link to={`/builds/${build.id}/export`}>Edit build overrides on Export</Link>
+          layer wins. Talker alias uses the DMR profile; analog squelch mode uses the first analog
+          profile. <Link to={`/builds/${build.id}/export`}>Edit build overrides on Export</Link>
           {' · '}
           <Link to="/library/channels/defaults">Library channel defaults</Link>
         </Text>
@@ -79,7 +94,7 @@ export default function BuildExportResolutionPage() {
                 <Table.Th>Channel</Table.Th>
                 <Table.Th>Transmit</Table.Th>
                 <Table.Th>TX permit</Table.Th>
-                <Table.Th>Talker alias</Table.Th>
+                <Table.Th>Talker alias (DMR)</Table.Th>
                 <Table.Th>Analog squelch</Table.Th>
               </Table.Tr>
             </Table.Thead>
@@ -100,16 +115,32 @@ export default function BuildExportResolutionPage() {
                     </Text>
                   </Table.Td>
                   <Table.Td>
-                    {sendTalkerAliasLabel(row.talkerAlias.value)}
-                    <Text size="xs" c="dimmed">
-                      {layerLabel(row.talkerAlias.layer)}
-                    </Text>
+                    {row.talkerAlias ? (
+                      <>
+                        {sendTalkerAliasLabel(row.talkerAlias.value)}
+                        <Text size="xs" c="dimmed">
+                          {layerLabel(row.talkerAlias.layer)}
+                        </Text>
+                      </>
+                    ) : (
+                      <Text size="sm" c="dimmed">
+                        —
+                      </Text>
+                    )}
                   </Table.Td>
                   <Table.Td>
-                    {analogSquelchModeLabel(row.squelch.value)}
-                    <Text size="xs" c="dimmed">
-                      {layerLabel(row.squelch.layer)}
-                    </Text>
+                    {row.squelch ? (
+                      <>
+                        {analogSquelchModeLabel(row.squelch.value)}
+                        <Text size="xs" c="dimmed">
+                          {layerLabel(row.squelch.layer)}
+                        </Text>
+                      </>
+                    ) : (
+                      <Text size="sm" c="dimmed">
+                        —
+                      </Text>
+                    )}
                   </Table.Td>
                 </Table.Tr>
               ))}

@@ -1,5 +1,6 @@
 import type { Channel, ChannelModeProfileDMR } from '../models/library.ts';
 import type { DmrOperatingMode } from '../models/libraryTypes.ts';
+import { DEFAULT_MODE_PROFILE_BEHAVIOUR_OVERRIDES } from '../models/channelBehaviourDefaults.ts';
 import { findDmrProfile } from './modeProfiles.ts';
 
 const DMR_OPERATING_MODES = new Set<DmrOperatingMode>(['dmo-simplex', 'repeater']);
@@ -36,5 +37,7 @@ export function normalizeDmrModeProfile(profile: ChannelModeProfileDMR): Channel
   return {
     ...profile,
     dmrMode: normalizeDmrOperatingMode(profile.dmrMode ?? null),
+    sendTalkerAlias:
+      profile.sendTalkerAlias ?? DEFAULT_MODE_PROFILE_BEHAVIOUR_OVERRIDES.sendTalkerAlias,
   };
 }
