@@ -13,6 +13,7 @@ import {
 } from './aprsWireFormat.ts';
 import {
   formatAnytoneBandwidthKhz,
+  formatAnytoneBusyLockTxPermit,
   formatAnytoneChannelTypeFromChannel,
   formatAnytoneDmrModeWire,
   formatAnytoneFrequencyMHz,
@@ -132,6 +133,7 @@ export function serialiseAnytoneChannelRow(
     [CHANNEL_COL.rx]: formatAnytoneFrequencyMHz(channel.rxFrequency),
     [CHANNEL_COL.tx]: formatAnytoneFrequencyMHz(channel.txFrequency),
     [CHANNEL_COL.channelType]: formatAnytoneChannelTypeFromChannel(channel),
+    [CHANNEL_COL.busyLockTxPermit]: formatAnytoneBusyLockTxPermit(channel),
     [CHANNEL_COL.power]: formatAnytonePowerWire(profile.id, channel.power),
     [CHANNEL_COL.bandwidth]: formatAnytoneBandwidthKhz(
       analog && 'bandwidthKHz' in analog ? analog.bandwidthKHz : 12.5,

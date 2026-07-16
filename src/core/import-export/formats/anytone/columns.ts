@@ -16,6 +16,7 @@ export const CHANNEL_COL = {
   contactCallType: 'Contact/Talk Group Call Type',
   contactTgId: 'Contact/Talk Group TG/DMR ID',
   radioId: 'Radio ID',
+  busyLockTxPermit: 'Busy Lock/TX Permit',
   colourCode: 'RX Color Code',
   slot: 'Slot',
   scanList: 'Scan List',

@@ -1,7 +1,6 @@
 /** Default cell values for unmodelled Channel.CSV columns (fixture row 2). */
 
 export const CHANNEL_ROW_DEFAULTS: Record<string, string> = {
-  'Busy Lock/TX Permit': 'Always',
   'Squelch Mode': 'Carrier',
   'Optional Signal': 'Off',
   'DTMF ID': '1',

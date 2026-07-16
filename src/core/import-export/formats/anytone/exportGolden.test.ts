@@ -45,7 +45,6 @@ export function assertUniversallyQuotedCsv(text: string): void {
  */
 const CHANNEL_EXCLUDE_COLUMNS = [
   'No.',
-  'Busy Lock/TX Permit',
   'Squelch Mode',
   'Optional Signal',
   'DTMF ID',
