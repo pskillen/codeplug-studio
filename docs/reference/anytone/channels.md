@@ -30,6 +30,17 @@ Primary DMR (and mixed-mode) channel table for AT-D890UV CPS. **76 columns** in 
 
 Values `2` / `3` (DCDM) are not modelled in the library yet.
 
+## Busy Lock / TX Permit
+
+Mode-aware CPS enums ([#357](https://github.com/pskillen/codeplug-studio/issues/357)):
+
+| Channel Type (TX primary) | Allowed wire values (CPS)                                              | Studio export today                                      |
+| ------------------------- | ---------------------------------------------------------------------- | -------------------------------------------------------- |
+| Analog (`A-Analog`, `A+D TX A`) | `Off`, `Different CDT`, `Channel Free`                           | Always `Channel Free`                                    |
+| Digital (`D-Digital`, `D+A TX D`) | `Always`, `ChannelFree`, `Different Color Code`, `Same Color Code` | Always `ChannelFree` (`Off` is not valid on digital) |
+
+No library field yet — configurable values land with [#388](https://github.com/pskillen/codeplug-studio/issues/388) / [#396](https://github.com/pskillen/codeplug-studio/issues/396). Until then export is a fixed provisional default (not stash-and-replay).
+
 ## Core columns — DMR mapping
 
 | Vendor header                  | Internal field / location             | Notes                                                                                                                                                                      |
@@ -46,6 +57,7 @@ Values `2` / `3` (DCDM) are not modelled in the library yet.
 | `Contact/Talk Group Call Type` | Ref kind hint                         | `Group Call` / `Private Call`                                                                                                                                              |
 | `Contact/Talk Group TG/DMR ID` | `TalkGroup.digitalId` / contact ID    | Denormalised on wire                                                                                                                                                       |
 | `Radio ID`                     | DMR ID label                          | Name FK → `RadioIDList.CSV`; list file omitted from export ([#302](https://github.com/pskillen/codeplug-studio/issues/302)); channel column still uses profile placeholder |
+| `Busy Lock/TX Permit`          | *(not modelled)*                      | Provisional export default — see [Busy Lock / TX Permit](#busy-lock--tx-permit)                                                                                            |
 | `RX Color Code`                | `colourCode`                          |                                                                                                                                                                            |
 | `Slot`                         | `timeslot`                            | `1` / `2`                                                                                                                                                                  |
 | `Scan List`                    | Build scan list ref                   | Name FK → `ScanList.CSV`; `None`                                                                                                                                           |
@@ -63,7 +75,7 @@ See [nxdn.md](nxdn.md) for `nxdn_wn`, `NxdnRpga`, `EnRan`, `DeRan`, `NxdnGroupId
 
 ## Deferred / constant columns (v1 export MVP)
 
-Remaining columns (encryption, MDC, R5 tone, roaming flags, talker alias, compand, …) export as fixture defaults until modelled. `DMR MODE` and `Channel Type` are projected from the library model ([#311](https://github.com/pskillen/codeplug-studio/issues/311), [#303](https://github.com/pskillen/codeplug-studio/issues/303)).
+Remaining columns (encryption, MDC, R5 tone, roaming flags, talker alias, compand, …) export as fixture defaults until modelled. `DMR MODE` and `Channel Type` are projected from the library model ([#311](https://github.com/pskillen/codeplug-studio/issues/311), [#303](https://github.com/pskillen/codeplug-studio/issues/303)). `Busy Lock/TX Permit` uses a fixed mode-aware provisional default ([#396](https://github.com/pskillen/codeplug-studio/issues/396)).
 
 ## Related
 
