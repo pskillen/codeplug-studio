@@ -49,7 +49,17 @@ Deep field semantics: [data-model README](../data-model/README.md). Cross-format
 | **Channel editor** | Channel → APRS tab            | Per-channel binding (`ChannelAprsBindingSection`) — all channels (DMR and analog)                              |
 | **Channels list**  | `/library/channels`           | Optional **APRS config** column (hidden by default) — summary via `formatAprsAssignmentSummary`                |
 
+**Slots table:** default sort is slot number ascending (1-based). Slot 1 may be **Current Channel** (`channelRef: null`).
+
 Redirects: `/library/aprs-configurations` → `/library/aprs-configuration`.
+
+---
+
+## Native YAML / Drive interchange
+
+- Singleton `library.aprsConfiguration` is parsed for `studioSchemaVersion` **≥ 17** (not only the current schema). A v17 file with slots must not lose them when the app is on v18+.
+- Out-of-range `Channel.aprs.reportSlotIndex` (including when `channelSlots` is empty) is a **soft warning** on import/preview — it must not hard-fail Drive save conflict assessment ([#430](https://github.com/pskillen/codeplug-studio/issues/430)).
+- Current Channel slots remain valid; channels may reference them via `reportSlotIndex`.
 
 ---
 
@@ -67,6 +77,7 @@ Redirects: `/library/aprs-configurations` → `/library/aprs-configuration`.
 | Library APRS UI (settings page, channel tab, assignments, list column) | Shipped ([#354](https://github.com/pskillen/codeplug-studio/issues/354)) |
 | Anytone export (`APRS.CSV`, channel cols, `aprsDefaults.ts`)           | Shipped ([#251](https://github.com/pskillen/codeplug-studio/issues/251)) |
 | Anytone APRS slots on analog channels (AM air / FM broadcast)          | Shipped ([#359](https://github.com/pskillen/codeplug-studio/issues/359)) |
+| Native YAML v17 singleton parse + orphan slot soft-warn                | Shipped ([#430](https://github.com/pskillen/codeplug-studio/issues/430)) |
 | DM32 per-channel APRS                                                  | Pending — [#250](https://github.com/pskillen/codeplug-studio/issues/250) |
 
 ---
