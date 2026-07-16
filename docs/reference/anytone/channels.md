@@ -75,7 +75,7 @@ No library field yet — configurable values land with [#388](https://github.com
 | `DataACK Disable`              | Unmodelled                            | `1` = ignore confirmation requests from repeater for incoming calls/SMS                                                                                                    |
 | `Auto Scan`                    | Zone-scan carrier only today          | `1` on synthesised zone-scan carriers; reserve for future library setting                                                                                                  |
 | `Send Talker Alias DMR/NX`     | Unmodelled (planned)                  | `0` / `1` — prefer default toward On                                                                                                                                       |
-| `txcc`                         | Same as `RX Color Code`               | Split RX/TX colour code not supported — keep equal to library colour code                                                                                                  |
+| `txcc`                         | Same as `RX Color Code`               | Split RX/TX colour code not supported — export writes both from library `colourCode` ([#415](https://github.com/pskillen/codeplug-studio/issues/415)) |
 
 ## `Idle TX` vs `idle_tx`
 
