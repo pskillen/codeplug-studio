@@ -32,7 +32,7 @@ Items **skipped**, **incomplete**, or **discovered during execution** — not sc
 ## Sample export quirks
 
 - `DMRDigitalContactList.CSV` — one private-contact row in committed fixture (redacted from operator re-export, July 2026).
-- `ScanList.CSV` — two rows in fixture; operator sample uses `Dwell Time[s]` = `3.1` vs Studio export `1.0`.
+- `ScanList.CSV` — two rows in fixture (operator CPS timing samples). Studio export timing defaults are all `5.0` ([#402](https://github.com/pskillen/codeplug-studio/issues/402)).
 - NX contact / talk group / RGL files — header only in operator fixture source; wire docs derived from headers + `Channel.CSV` NXDN tail columns.
 - `AMZone.CSV` — two redacted body rows in fixture; export partition shipped ([#316](https://github.com/pskillen/codeplug-studio/issues/316)).
 
@@ -54,18 +54,19 @@ Docs + tickets phase shipped (adapter code deferred to child issues):
 - [x] VFO rows — Studio need not emit (CPS adds on import); supersedes intent of [#375](https://github.com/pskillen/codeplug-studio/issues/375)
 - [x] [#391](https://github.com/pskillen/codeplug-studio/issues/391) — power ladder Mid + Turbo
 - [x] [#392](https://github.com/pskillen/codeplug-studio/issues/392) — Call Confirmation / SMS Confirmation defaults On
-- [ ] [#393](https://github.com/pskillen/codeplug-studio/issues/393) — ScanList timing defaults + Scan Mode readiness
+- [ ] [#393](https://github.com/pskillen/codeplug-studio/issues/393) — ScanList **Scan Mode** readiness (timing defaults set to `5.0` in [#402](https://github.com/pskillen/codeplug-studio/issues/402))
 - [x] [#394](https://github.com/pskillen/codeplug-studio/issues/394) — Squelch Mode from RX tone
 - [ ] [#395](https://github.com/pskillen/codeplug-studio/issues/395) — Slot Suit export
 - [x] [#396](https://github.com/pskillen/codeplug-studio/issues/396) — Busy Lock/TX Permit **provisional** mode-aware export constants (`Channel Free` / `ChannelFree`); full library field remains under [#388](https://github.com/pskillen/codeplug-studio/issues/388)
 - [ ] [#388](https://github.com/pskillen/codeplug-studio/issues/388) — Epic: library defaults / override cascade (under [#147](https://github.com/pskillen/codeplug-studio/issues/147))
 - [ ] [#397](https://github.com/pskillen/codeplug-studio/issues/397) — operator radio ID list
-- [ ] [#398](https://github.com/pskillen/codeplug-studio/issues/398) — Send Talker Alias tri-state (export default still `0`; docs prefer `1`)
+- [ ] [#398](https://github.com/pskillen/codeplug-studio/issues/398) — Send Talker Alias tri-state (export default still `0`; docs prefer `1` — no rush)
 - [ ] [#399](https://github.com/pskillen/codeplug-studio/issues/399) — analog compander flag (under [#179](https://github.com/pskillen/codeplug-studio/issues/179))
 - [ ] [#389](https://github.com/pskillen/codeplug-studio/issues/389) — Epic: analog FM ident tones (under [#1](https://github.com/pskillen/codeplug-studio/issues/1))
 - [ ] [#390](https://github.com/pskillen/codeplug-studio/issues/390) — Epic: DMR roaming (under [#1](https://github.com/pskillen/codeplug-studio/issues/1))
 - [ ] [#400](https://github.com/pskillen/codeplug-studio/issues/400) — NXDN wire elicitation (under [#247](https://github.com/pskillen/codeplug-studio/issues/247))
-- [x] [#402](https://github.com/pskillen/codeplug-studio/issues/402) — code ↔ wire docs mop-up (inventory/doc drift fixed; remaining gaps on child tickets above)
+- [x] [#402](https://github.com/pskillen/codeplug-studio/issues/402) — code ↔ wire docs mop-up
+- [ ] [#418](https://github.com/pskillen/codeplug-studio/issues/418) — exclude FM broadcast channels from `DMRZone.CSV`
 
 ---
 

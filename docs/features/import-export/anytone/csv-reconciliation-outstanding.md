@@ -18,12 +18,12 @@ Items **skipped**, **incomplete**, or **discovered during** [#297](https://githu
 ## Enum / value coverage
 
 - [x] **Call Alert** — `None` / `Online alert` confirmed; not modelled (export `None`)
-- [x] **`ScanList.CSV` Scan Mode / Revert / timing** — documented in [scan-lists.md](../../../reference/anytone/scan-lists.md); Studio `Dwell` still `1.0` — [#393](https://github.com/pskillen/codeplug-studio/issues/393)
+- [x] **`ScanList.CSV` Scan Mode / Revert / timing** — documented; Studio timing defaults all `5.0` ([#402](https://github.com/pskillen/codeplug-studio/issues/402)); Scan Mode modelling readiness remains [#393](https://github.com/pskillen/codeplug-studio/issues/393)
 - [x] **`Transmit Power` Mid / Turbo** — documented + shipped ([#391](https://github.com/pskillen/codeplug-studio/issues/391))
 - [x] **Busy Lock / Slot Suit / DataACK / talker alias / …** — documented in [enum-verification.md](../../../reference/anytone/enum-verification.md); library + export tickets (see anytone-outstanding)
 - [ ] **`Digital Duplex`** — not found in CPS UI; leave Needs elicitation
 - [x] **`OptionalSetting.CSV`** — skip (not a full Anytone CPS)
-- [x] **Code ↔ docs mop-up** — inventory/defaults checklist ([#402](https://github.com/pskillen/codeplug-studio/issues/402)); remaining adapter gaps stay on child tickets
+- [x] **Code ↔ docs mop-up** — inventory/defaults checklist ([#402](https://github.com/pskillen/codeplug-studio/issues/402)); FM-in-DMRZone filed as [#418](https://github.com/pskillen/codeplug-studio/issues/418)
 
 ## Channel export behaviour
 

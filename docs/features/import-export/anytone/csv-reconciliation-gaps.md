@@ -18,7 +18,7 @@ Earlier single-build comparison: [tmp/export-variance-report.md](../../../../tmp
 |   **P1** | `DMR MODE` / duplex                  | **Shipped** `0`/`1` ([#311](https://github.com/pskillen/codeplug-studio/issues/311)); `2`/`3` DCDM documented, unsupported export |
 |   **P1** | Channel TX contact from RGL          | **Open question** — operator unsure; leave in outstanding, no ticket yet                                                          |
 |   **P2** | Power ladder Mid / Turbo             | **Shipped** ([#391](https://github.com/pskillen/codeplug-studio/issues/391))                                                          |
-|   **P2** | ScanList timing / Scan Mode          | Documented; serialiser defaults still `Dwell`=`1.0` — [#393](https://github.com/pskillen/codeplug-studio/issues/393)                  |
+|   **P2** | ScanList timing / Scan Mode          | Timing defaults → all `5.0` in [#402](https://github.com/pskillen/codeplug-studio/issues/402); Scan Mode readiness remains [#393](https://github.com/pskillen/codeplug-studio/issues/393) |
 |   **P2** | Enum / constant tail columns         | Elicited — see [enum-verification.md](../../../reference/anytone/enum-verification.md)                                            |
 |   **P2** | Sidecar CPS files                    | Skip / future epics (OptionalSetting, HotKey, roaming, NXDN)                                                                      |
 |   **—**  | Inventory / doc drift vs adapter     | Corrected in [#402](https://github.com/pskillen/codeplug-studio/issues/402) mop-up                                                |
@@ -96,9 +96,10 @@ Earlier comment suggested exporting TX contact from RGL membership. Operator eli
 | Topic                                 | Docs                                                                    | Code                                                                                          |
 | ------------------------------------- | ----------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
 | Power Mid / Turbo + watts             | [at-d890uv.md](../../../reference/anytone/radios/at-d890uv.md)          | **Shipped** ([#391](https://github.com/pskillen/codeplug-studio/issues/391))                  |
-| Scan Mode / Revert / timing           | [scan-lists.md](../../../reference/anytone/scan-lists.md)               | `Dwell` still `1.0` — [#393](https://github.com/pskillen/codeplug-studio/issues/393)          |
+| Scan Mode / Revert / timing           | [scan-lists.md](../../../reference/anytone/scan-lists.md)               | Timing → all `5.0` ([#402](https://github.com/pskillen/codeplug-studio/issues/402)); Scan Mode readiness [#393](https://github.com/pskillen/codeplug-studio/issues/393) |
 | Busy Lock provisional constants       | [enum-verification.md](../../../reference/anytone/enum-verification.md) | Mode-aware export constants shipped; full library field via [#388](https://github.com/pskillen/codeplug-studio/issues/388) / [#396](https://github.com/pskillen/codeplug-studio/issues/396) |
 | Slot Suit / talker alias / …          | [enum-verification.md](../../../reference/anytone/enum-verification.md) | [#395](https://github.com/pskillen/codeplug-studio/issues/395), [#398](https://github.com/pskillen/codeplug-studio/issues/398) |
+| FM bank members in `DMRZone.CSV`      | [fm-broadcast.md](../../../reference/anytone/fm-broadcast.md) / zones   | [#418](https://github.com/pskillen/codeplug-studio/issues/418) |
 
 ---
 

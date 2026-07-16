@@ -99,10 +99,10 @@ Official CPS exports append `Channel.CSV` slots `4001` / `4002` (VFO A/B). **Stu
 | `Priority Channel Select`  | Observed | `Off` (+ enabled variants when priority used)                                         | `Off`                 |
 | `Priority Channel 1` / `2` | Observed | `Off` or channel name                                                                 | `Off`                 |
 | `Revert Channel`           | Observed | `Selected`, `Selected + TalkBack`, `Last Called`, `Last Used`                         | `Selected + TalkBack` |
-| `Look Back Time A[s]`      | Observed | Priority sample interval 1; bound **0.5–5.0** s                                       | `2.0`                 |
-| `Look Back Time B[s]`      | Observed | Priority sample interval 2; bound **0.5–5.0** s                                       | `3.0`                 |
-| `Dropout Delay Time[s]`    | Observed | Post-reply hang (CPS docs); bound **0.1–5.0** s — semantics contested                 | `3.1`                 |
-| `Dwell Time[s]`            | Observed | Post-transmit hang (CPS docs); bound **0.1–5.0** s — semantics contested              | `1.0` (mismatch)      |
+| `Look Back Time A[s]`      | Observed | Priority sample interval 1; bound **0.5–5.0** s                                       | `5.0`                 |
+| `Look Back Time B[s]`      | Observed | Priority sample interval 2; bound **0.5–5.0** s                                       | `5.0`                 |
+| `Dropout Delay Time[s]`    | Observed | Post-reply hang (CPS docs); bound **0.1–5.0** s — semantics contested                 | `5.0`                 |
+| `Dwell Time[s]`            | Observed | Post-transmit hang (CPS docs); bound **0.1–5.0** s — semantics contested              | `5.0`                 |
 
 Terminology map (vendor → industry): [scan-lists.md](scan-lists.md).
 
