@@ -24,43 +24,61 @@ Some CPS builds spell analogue `Anlaog` — accept on import; export uses fixtur
 
 ## Column reference
 
-| Vendor header                            | Internal field                        | Import                         | Export                                              | Bidirectional mapping              | Notes                                        |
-| ---------------------------------------- | ------------------------------------- | ------------------------------ | --------------------------------------------------- | ---------------------------------- | -------------------------------------------- |
-| `No.`                                    | _(export only)_                       | Ignored                        | Sequential `1…n`                                    | **Excluded**                       |                                              |
-| `Channel Name`                           | `Channel.name`                        | Trim                           | As stored                                           | Yes                                | Case-sensitive FK                            |
-| `Channel Type`                           | `mode` / `multiMode` / `modeProfiles` | See above                      | From profiles                                       | Yes                                |                                              |
-| `RX Frequency[MHz]`                      | `rxFrequency`                         | MHz → Hz                       | Hz → MHz (5 dp)                                     | Yes                                |                                              |
-| `TX Frequency[MHz]`                      | `txFrequency`                         | MHz → Hz; empty → `null`       | Hz → MHz or empty                                   | Yes                                | RX-only airband                              |
-| `Power`                                  | `power`                               | Wire → % via ladder            | % → `High`/`Middle`/`Low`                           | Yes                                |                                              |
-| `Band Width`                             | `bandwidthKHz`                        | `12.5KHz` → 12.5; `25KHz` → 25 | Reverse                                             | Yes                                |                                              |
-| `Scan List`                              | —                                     | **Ignored**                    | `None`                                              | **Lossy** — archive reference #125 |                                              |
-| `TX Admit`                               | `txAdmit`                             | Wire → enum                    | Enum → wire                                         | Yes                                | See mapping table below                      |
-| `Emergency System`                       | —                                     | Ignored                        | `None`                                              | Constant default                   |                                              |
-| `Squelch Level`                          | `squelch`                             | 0–9 → % via ladder             | % → 0–9; `null` → `1` on analog rows only, else `0` | Yes                                |                                              |
-| `APRS Report Type`                       | `aprsReportType`                      | Trim                           | As stored                                           | Yes                                | `Off` / `Digital`                            |
-| `Forbid TX`                              | `forbidTransmit`                      | 0/1                            | 0/1                                                 | Yes                                | Receive-only when `1`                        |
-| `APRS Receive`                           | `aprsReceiveEnabled`                  | 0/1                            | 0/1                                                 | Yes                                |                                              |
-| `Forbid Talkaround`                      | `forbidTalkaround`                    | 0/1                            | 0/1                                                 | Yes                                |                                              |
-| `Auto Scan` … `Digital APRS PTT Mode`    | —                                     | Ignored                        | Fixture defaults (`0`)                              | Constant                           |                                              |
-| `TX Contact`                             | `contactRef`                          | Name → ref                     | Ref → name or `None`                                | Yes                                | FK → Talkgroups / Contacts                   |
-| `RX Group List`                          | `rxGroupListId`                       | Name or `ALL` → ref            | Ref → name; `ALL` sentinel                          | Yes                                | See [multi-talkgroup.md](multi-talkgroup.md) |
-| `Color Code`                             | `colourCode`                          | Parse int                      | As string                                           | Yes                                | `0` analogue                                 |
-| `Time Slot`                              | `timeslot`                            | `Slot 1`/`Slot 2` → 1/2        | Reverse                                             | Yes                                |                                              |
-| `Encryption` / `Encryption ID`           | —                                     | Ignored                        | `0` / `None`                                        | Constant                           |                                              |
-| `APRS Report Channel`                    | `aprsReportChannel`                   | Parse int                      | As string                                           | Yes                                | `1` digital; `256` analogue default          |
-| `Direct Dual Mode`                       | `directDualMode`                      | 0/1                            | 0/1                                                 | Yes                                |                                              |
-| `Private Confirm` / `Short Data Confirm` | —                                     | Ignored                        | `0`                                                 | Constant                           |                                              |
-| `DMR ID`                                 | —                                     | **Ignored**                    | Fixture default `Paddy MM7IGV`                      | **Lossy**                          | Accepted gap                                 |
-| `CTC/DCS Decode` / `Encode`              | `rxTone` / `txTone`                   | Wire → tone                    | Tone → wire                                         | Yes                                | `None` when off                              |
-| `Scramble` … `PTT ID Display`            | —                                     | Ignored                        | Fixture defaults                                    | Constant                           |                                              |
+| Vendor header                            | Internal field                        | Import                         | Export                                              | Bidirectional mapping              | Notes                                                        |
+| ---------------------------------------- | ------------------------------------- | ------------------------------ | --------------------------------------------------- | ---------------------------------- | ------------------------------------------------------------ |
+| `No.`                                    | _(export only)_                       | Ignored                        | Sequential `1…n`                                    | **Excluded**                       |                                                              |
+| `Channel Name`                           | `Channel.name`                        | Trim                           | As stored                                           | Yes                                | Case-sensitive FK                                            |
+| `Channel Type`                           | `mode` / `multiMode` / `modeProfiles` | See above                      | From profiles                                       | Yes                                |                                                              |
+| `RX Frequency[MHz]`                      | `rxFrequency`                         | MHz → Hz                       | Hz → MHz (5 dp)                                     | Yes                                |                                                              |
+| `TX Frequency[MHz]`                      | `txFrequency`                         | MHz → Hz; empty → `null`       | Hz → MHz or empty                                   | Yes                                | RX-only airband                                              |
+| `Power`                                  | `power`                               | Wire → % via ladder            | % → `High`/`Middle`/`Low`                           | Yes                                |                                                              |
+| `Band Width`                             | `bandwidthKHz`                        | `12.5KHz` → 12.5; `25KHz` → 25 | Reverse                                             | Yes                                |                                                              |
+| `Scan List`                              | —                                     | **Ignored**                    | `None`                                              | **Lossy** — archive reference #125 |                                                              |
+| `TX Admit`                               | `txPermit` cascade                    | Wire → enum                    | Resolved `txPermit` → wire                          | Partial                            | `busyLock` → `Channel Idle`; `permitAlways` → `Allow TX`     |
+| `Emergency System`                       | —                                     | Ignored                        | `None`                                              | Constant default                   |                                                              |
+| `Squelch Level`                          | `squelch`                             | 0–9 → % via ladder             | % → 0–9; `null` → `1` on analog rows only, else `0` | Yes                                |                                                              |
+| `APRS Report Type`                       | `aprsReportType`                      | Trim                           | As stored                                           | Yes                                | `Off` / `Digital`                                            |
+| `Forbid TX`                              | `forbidTransmit`                      | 0/1                            | 0/1                                                 | Yes                                | Receive-only when `1`                                        |
+| `APRS Receive`                           | `aprsReceiveEnabled`                  | 0/1                            | 0/1                                                 | Yes                                |                                                              |
+| `Forbid Talkaround`                      | `forbidTalkaround`                    | 0/1                            | 0/1                                                 | Yes                                |                                                              |
+| `Auto Scan` … `Digital APRS PTT Mode`    | —                                     | Ignored                        | Fixture defaults (`0`)                              | Constant                           |                                                              |
+| `TX Contact`                             | `contactRef`                          | Name → ref                     | Ref → name or `None`                                | Yes                                | FK → Talkgroups / Contacts                                   |
+| `RX Group List`                          | `rxGroupListId`                       | Name or `ALL` → ref            | Ref → name; `ALL` sentinel                          | Yes                                | See [multi-talkgroup.md](multi-talkgroup.md)                 |
+| `Color Code`                             | `colourCode`                          | Parse int                      | As string                                           | Yes                                | `0` analogue                                                 |
+| `Time Slot`                              | `timeslot`                            | `Slot 1`/`Slot 2` → 1/2        | Reverse                                             | Yes                                |                                                              |
+| `Encryption` / `Encryption ID`           | —                                     | Ignored                        | `0` / `None`                                        | Constant                           |                                                              |
+| `APRS Report Channel`                    | `aprsReportChannel`                   | Parse int                      | As string                                           | Yes                                | `1` digital; `256` analogue default                          |
+| `Direct Dual Mode`                       | `directDualMode`                      | 0/1                            | 0/1                                                 | Yes                                |                                                              |
+| `Private Confirm` / `Short Data Confirm` | —                                     | Ignored                        | `0`                                                 | Constant                           |                                                              |
+| `DMR ID`                                 | —                                     | **Ignored**                    | Fixture default `Paddy MM7IGV`                      | **Lossy**                          | Accepted gap                                                 |
+| `CTC/DCS Decode` / `Encode`              | `rxTone` / `txTone`                   | Wire → tone                    | Tone → wire                                         | Yes                                | `None` when off                                              |
+| `Scramble` … `PTT ID Display`            | —                                     | Ignored                        | Fixture defaults                                    | Constant                           | `RX Squelch Mode` from `analogSquelchMode` cascade on export |
 
 ### TX Admit mapping
 
-| Internal `txAdmit`         | DM-32 `TX Admit` wire |
-| -------------------------- | --------------------- |
-| `channel_idle`             | `Channel Idle`        |
-| `allow_tx`                 | `Allow TX`            |
-| _(unknown wire on import)_ | → `channel_idle`      |
+Maps resolved `txPermit` from the [behavioural defaults cascade](../channel-behavioural-defaults.md) (library → channel → build):
+
+| Resolved `txPermit` | DM-32 `TX Admit` wire |
+| ------------------- | --------------------- |
+| `busyLock`          | `Channel Idle`        |
+| `permitAlways`      | `Allow TX`            |
+
+Legacy import wires map unknown values to `channel_idle` (`Channel Idle`) until import-side cascade lands.
+
+### RX Squelch Mode mapping
+
+Maps resolved `analogSquelchMode` on the analog profile (or library default for digital-only rows):
+
+| Resolved `analogSquelchMode` | `RX Squelch Mode` wire |
+| ---------------------------- | ---------------------- |
+| `carrier`                    | `Carrier`              |
+| `tone`                       | `Carrier/CTC`          |
+
+### Export loss
+
+| Internal field    | DM-32 wire | Notes                          |
+| ----------------- | ---------- | ------------------------------ |
+| `sendTalkerAlias` | _(none)_   | No talker-alias column on wire |
 
 `Channel Name` maps to split internal fields on import and is **composed on export**. Split rules: [channel-name-parsing](../../features/channel-name-parsing.md).
 
