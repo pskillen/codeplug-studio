@@ -6,11 +6,11 @@ Renders CPS export warning strings from `exportBuildAll` in a scannable, foldabl
 
 Groups related warnings and collapses each group by default (expandable accordion) so large exports stay usable:
 
-| Group | Contents |
-| --- | --- |
-| **Export unlinked items** | Orphan inclusion lines (channels not in a zone, TGs / RGLs / contacts not referenced) |
-| **Member-cap groups** | Zone / scan list / RX list member cap and truncation warnings |
-| **Shortened names** | One section per entity kind (channels, talk groups, zones, contacts, …) with `original → exported` lines |
+| Group                     | Contents                                                                                                 |
+| ------------------------- | -------------------------------------------------------------------------------------------------------- |
+| **Export unlinked items** | Orphan inclusion lines (channels not in a zone, TGs / RGLs / contacts not referenced)                    |
+| **Member-cap groups**     | Zone / scan list / RX list member cap and truncation warnings                                            |
+| **Shortened names**       | One section per entity kind (channels, talk groups, zones, contacts, …) with `original → exported` lines |
 
 Other warnings (build-level caps, cycles, …) stay as plain messages above the accordion.
 

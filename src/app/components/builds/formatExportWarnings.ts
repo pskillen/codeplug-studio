@@ -345,9 +345,7 @@ export function formatExportWarnings(warnings: string[]): FormattedExportWarning
     });
 
   const unlinkedGroup: UnlinkedExportGroup | null =
-    unlinkedItems.length > 0
-      ? { title: UNLINKED_GROUP_TITLE, items: unlinkedItems }
-      : null;
+    unlinkedItems.length > 0 ? { title: UNLINKED_GROUP_TITLE, items: unlinkedItems } : null;
 
   return { general, unlinkedGroup, memberCapGroups, shortenedGroups };
 }
