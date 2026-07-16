@@ -10,6 +10,7 @@ import { FieldCard } from '../fields/Fields.tsx';
 import ExportNameSettingsFields from './ExportNameSettingsFields.tsx';
 import ExportAnytoneSettingsSections from './ExportAnytoneSettingsSections.tsx';
 import DefaultScanInclusionSegment from './DefaultScanInclusionSegment.tsx';
+import ChannelBehaviourExportOverrides from './ChannelBehaviourExportOverrides.tsx';
 import type { ResolvedBuildExportSettings } from '../../lib/buildExportSettingsUi.ts';
 import { TRAIT_LABELS } from '../../routes/builds/buildHelpers.ts';
 
@@ -204,6 +205,17 @@ export default function ExportBuildSettingsSections({
             }
           />
         )}
+      </FieldCard>
+
+      <FieldCard
+        title="Channel behaviour"
+        description="Optional build overrides for library behavioural defaults. When set, these win over library defaults and per-channel overrides at export."
+      >
+        <ChannelBehaviourExportOverrides
+          exportSettings={build.exportSettings}
+          disabled={saving}
+          onPatch={onExportSettingsPatch}
+        />
       </FieldCard>
     </Stack>
   );
