@@ -68,7 +68,6 @@ import {
   normalizeAprsConfigurationOrNull,
   normalizeOptionalChannelAprs,
 } from '@core/domain/aprs/index.ts';
-import { validateChannelAprsBinding } from '@core/domain/aprs/validation.ts';
 import { migrateAprsSingletonLibrary } from '@core/domain/migrateAprsSingleton.ts';
 import { normalizeZoneMemberEntry } from '@core/domain/zoneMembers.ts';
 import { migrateFormatBuild } from '@core/domain/migrateFormatBuild.ts';
@@ -723,8 +722,11 @@ function parseLibrary(raw: unknown, studioSchemaVersion: number): Library {
       : expectArray(record.scanLists, 'library.scanLists').map((row, index) =>
           parseScanList(row, index),
         );
+  // Singleton `aprsConfiguration` landed in schema v17. Compare against that floor — not
+  // `STUDIO_SCHEMA_VERSION` — so v17 YAML keeps its slots after later schema bumps (v18+).
+  const APRS_SINGLETON_MIN_SCHEMA = 17;
   const aprsConfiguration =
-    studioSchemaVersion >= STUDIO_SCHEMA_VERSION
+    studioSchemaVersion >= APRS_SINGLETON_MIN_SCHEMA
       ? record.aprsConfiguration === undefined || record.aprsConfiguration === null
         ? null
         : normalizeAprsConfigurationOrNull(
@@ -732,7 +734,7 @@ function parseLibrary(raw: unknown, studioSchemaVersion: number): Library {
           )
       : null;
   const legacyAprsConfigurations =
-    studioSchemaVersion < STUDIO_SCHEMA_VERSION &&
+    studioSchemaVersion < APRS_SINGLETON_MIN_SCHEMA &&
     record.aprsConfigurations !== undefined &&
     record.aprsConfigurations !== null
       ? expectArray(record.aprsConfigurations, 'library.aprsConfigurations').map((row, index) =>
@@ -1256,15 +1258,9 @@ function validateForeignKeys(library: Library, formatBuilds: FormatBuild[]): voi
     }
   }
 
-  for (const channel of library.channels) {
-    if (channel.aprs) {
-      try {
-        validateChannelAprsBinding(channel.aprs, library.aprsConfiguration);
-      } catch (error) {
-        throw new NativeYamlImportError(error instanceof Error ? error.message : String(error));
-      }
-    }
-  }
+  // Orphan / out-of-range Channel.aprs.reportSlotIndex is a soft warning — hard-failing
+  // here blocks Drive conflict preview and overwrite of a healthy local project when the
+  // remote YAML has empty slots or a missing config. See collectAprsValidationWarnings.
 
   for (const build of formatBuilds) {
     for (const section of build.layout.sections) {

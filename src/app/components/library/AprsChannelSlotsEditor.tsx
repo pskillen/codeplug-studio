@@ -5,6 +5,7 @@ import { ActionIcon, Button, Group, Stack, Text } from '@mantine/core';
 import { IconPencil, IconTrash } from '@tabler/icons-react';
 import { DataTable } from '../ui/index.ts';
 import type { DataTableColumn } from '../ui/DataTable.tsx';
+import { DATATABLE_NAME_SORT_KEY } from '../../lib/dataTable/sort.ts';
 import AprsChannelSlotModal, {
   channelLabelForSlot,
   emptyAprsChannelSlot,
@@ -112,10 +113,11 @@ export default function AprsChannelSlotsEditor({
           header: 'Slot',
           getName: (row) => String(row.slotNumber),
           getPath: () => '/library/aprs-configuration',
+          sortValue: (row) => row.slotNumber,
         }}
         columns={columns}
         showSearch={false}
-        defaultSort={{ columnKey: 'channel', direction: 'asc' }}
+        defaultSort={{ columnKey: DATATABLE_NAME_SORT_KEY, direction: 'asc' }}
         emptyState={
           <Text size="sm" c="dimmed">
             No slots configured.

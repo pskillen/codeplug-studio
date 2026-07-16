@@ -66,12 +66,12 @@ export function collectAprsValidationWarnings(library: Library): AprsValidationW
       });
     }
     const slotIndex = channel.aprs.reportSlotIndex;
-    if (slotIndex != null && config && (slotIndex < 1 || slotIndex > maxSlots)) {
+    if (slotIndex != null && (slotIndex < 1 || slotIndex > maxSlots)) {
       warnings.push({
         code: 'orphan_report_slot_index',
-        message: `Channel "${channel.name}" report slot index ${slotIndex} is out of range`,
+        message: `Channel "${channel.name}" report slot index ${slotIndex} is out of range (1..${maxSlots})`,
         channelId: channel.id,
-        configId: config.id,
+        configId: config?.id,
       });
     }
   }
