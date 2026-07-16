@@ -35,11 +35,24 @@ export interface MemberCapGroup {
   items: MemberCapItem[];
 }
 
+export interface UnlinkedExportGroup {
+  title: string;
+  items: string[];
+}
+
 export interface FormattedExportWarnings {
+  /** Warnings that are not folded into a named group (caps, cycles, etc.). */
   general: string[];
+  /** Orphan / unlinked inclusion lines — folded as one accordion section. */
+  unlinkedGroup: UnlinkedExportGroup | null;
   memberCapGroups: MemberCapGroup[];
   shortenedGroups: WireNameShorteningGroup[];
 }
+
+const UNLINKED_EXPORT_RE =
+  /^Including \d+ (?:channel|talk group|RX group list|digital contact|analog contact)\(s\) not (?:linked to a zone|referenced by a channel)$/;
+
+const UNLINKED_GROUP_TITLE = 'Export unlinked items';
 
 const SHORTENED_EXPORTED_RE =
   /^(.+?) wire name "(.+)" exceeds (\d+) characters(?: for (.+?))?; exported as "(.+)"$/;
@@ -168,10 +181,16 @@ function addMemberCapItem(
 /** Split raw export warning strings into grouped presentation sections. */
 export function formatExportWarnings(warnings: string[]): FormattedExportWarnings {
   const general: string[] = [];
+  const unlinkedItems: string[] = [];
   const shortenedGroupsMap = new Map<string, WireNameShorteningGroup>();
   const memberCapGroupsMap = new Map<string, MemberCapGroup>();
 
   for (const warning of warnings) {
+    if (UNLINKED_EXPORT_RE.test(warning)) {
+      unlinkedItems.push(warning);
+      continue;
+    }
+
     const zoneScanCap = warning.match(ZONE_EXPANDED_SCAN_CAP_RE);
     if (zoneScanCap) {
       const [, label, countText, capText] = zoneScanCap;
@@ -325,7 +344,10 @@ export function formatExportWarnings(warnings: string[]): FormattedExportWarning
       return (a.profileLabel ?? '').localeCompare(b.profileLabel ?? '');
     });
 
-  return { general, memberCapGroups, shortenedGroups };
+  const unlinkedGroup: UnlinkedExportGroup | null =
+    unlinkedItems.length > 0 ? { title: UNLINKED_GROUP_TITLE, items: unlinkedItems } : null;
+
+  return { general, unlinkedGroup, memberCapGroups, shortenedGroups };
 }
 
 export function wireNameShorteningIntro(group: WireNameShorteningGroup): string {
