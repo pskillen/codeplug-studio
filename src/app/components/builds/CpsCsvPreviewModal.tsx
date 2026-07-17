@@ -18,7 +18,7 @@ export default function CpsCsvPreviewModal({
   build,
   exportOptions,
 }: CpsCsvPreviewModalProps) {
-  const { fileNames, tablesByFile, warnings, loading, error } = useBuildCpsExportPreview({
+  const { fileNames, tablesByFile, textByFile, warnings, loading, error } = useBuildCpsExportPreview({
     build,
     exportOptions,
     enabled: opened,
@@ -31,6 +31,7 @@ export default function CpsCsvPreviewModal({
         <CpsCsvPreview
           fileNames={fileNames}
           tablesByFile={tablesByFile}
+          textByFile={textByFile}
           loading={loading}
           error={error}
         />

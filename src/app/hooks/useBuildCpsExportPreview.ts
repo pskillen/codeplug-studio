@@ -38,6 +38,10 @@ function staticPreviewFileNames(build: FormatBuild, exportOptions: CpsExportOpti
   }
 }
 
+export function isCsvPreviewFileName(fileName: string): boolean {
+  return fileName.toLowerCase().endsWith('.csv');
+}
+
 export function useBuildCpsExportPreview({
   build,
   exportOptions,
@@ -123,14 +127,26 @@ export function useBuildCpsExportPreview({
     if (!files) return {} as Record<string, CsvTable>;
     const tables: Record<string, CsvTable> = {};
     for (const [name, content] of Object.entries(files)) {
+      if (!isCsvPreviewFileName(name)) continue;
       tables[name] = csvToTable(content);
     }
     return tables;
   }, [files]);
 
+  const textByFile = useMemo(() => {
+    if (!files) return {} as Record<string, string>;
+    const text: Record<string, string> = {};
+    for (const [name, content] of Object.entries(files)) {
+      if (isCsvPreviewFileName(name)) continue;
+      text[name] = content;
+    }
+    return text;
+  }, [files]);
+
   return {
     fileNames,
     tablesByFile,
+    textByFile,
     warnings,
     loading,
     error,

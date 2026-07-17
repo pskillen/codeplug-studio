@@ -77,4 +77,20 @@ describe('CpsCsvPreview', () => {
 
     expect(screen.getByText(/Generating export preview/)).toBeInTheDocument();
   });
+
+  it('renders non-CSV files as raw text', () => {
+    render(
+      <MantineProvider>
+        <CpsCsvPreview
+          fileNames={['APRS.md']}
+          tablesByFile={{}}
+          textByFile={{ 'APRS.md': '# DM-32 APRS setup\n\nCall type: Group' }}
+        />
+      </MantineProvider>,
+    );
+
+    expect(screen.getByRole('tab', { name: /APRS\.md/ })).toBeInTheDocument();
+    expect(screen.getByText(/DM-32 APRS setup/)).toBeInTheDocument();
+    expect(screen.getByText(/Call type: Group/)).toBeInTheDocument();
+  });
 });
