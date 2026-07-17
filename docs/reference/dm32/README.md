@@ -8,18 +8,24 @@ Authoritative reference for **Baofeng DM-32UV stock CPS** CSV exports (v1.60+). 
 
 ## File inventory (v1.60)
 
-| File               | Reference                              | #67 import | #67 export | Modelled                                   |
-| ------------------ | -------------------------------------- | ---------- | ---------- | ------------------------------------------ |
-| `Channels.csv`     | [channels.md](channels.md)             | Yes        | Yes        | `Channel[]` (`multiMode` / `modeProfiles`) |
-| `Zones.csv`        | [zones.md](zones.md)                   | Yes        | Yes        | Build **zone grouping** trait layout       |
-| `Talkgroups.csv`   | [talkgroups.md](talkgroups.md)         | Yes        | Yes        | `TalkGroup[]`                              |
-| `Contacts.csv`     | [contacts.md](contacts.md)             | Yes        | Yes        | `Contact[]` (`signalingMode: dmr`)         |
-| `RXGroupLists.csv` | [rx-group-lists.md](rx-group-lists.md) | Yes        | Yes        | `RxGroupList[]`                            |
-| `DTMFContacts.csv` | [dtmf-contacts.md](dtmf-contacts.md)   | Yes        | Yes        | `Contact[]` (`signalingMode: dtmf`)        |
-| `Scan.csv`         | [scan-lists.md](scan-lists.md)         | **Skip**   | **Skip**   | Deferred — archive reference #125          |
-| `DMR-ID.csv`       | —                                      | **Skip**   | **Skip**   | Accepted gap                               |
+| File               | Reference                              | Studio import                                                          | Studio export          | Modelled                                                                                        |
+| ------------------ | -------------------------------------- | ---------------------------------------------------------------------- | ---------------------- | ----------------------------------------------------------------------------------------------- |
+| `Channels.csv`     | [channels.md](channels.md)             | Planned [#112](https://github.com/pskillen/codeplug-studio/issues/112) | Yes                    | `Channel[]` (`modeProfiles`)                                                                    |
+| `Zones.csv`        | [zones.md](zones.md)                   | Planned [#112](https://github.com/pskillen/codeplug-studio/issues/112) | Yes                    | Build **zone grouping** trait layout                                                            |
+| `Talkgroups.csv`   | [talkgroups.md](talkgroups.md)         | Planned [#112](https://github.com/pskillen/codeplug-studio/issues/112) | Yes                    | `TalkGroup[]`                                                                                   |
+| `Contacts.csv`     | [contacts.md](contacts.md)             | Planned [#112](https://github.com/pskillen/codeplug-studio/issues/112) | Yes                    | `DigitalContact[]`                                                                              |
+| `RXGroupLists.csv` | [rx-group-lists.md](rx-group-lists.md) | Planned [#112](https://github.com/pskillen/codeplug-studio/issues/112) | Yes                    | `RxGroupList[]`                                                                                 |
+| `DTMFContacts.csv` | [dtmf-contacts.md](dtmf-contacts.md)   | Planned [#112](https://github.com/pskillen/codeplug-studio/issues/112) | Yes                    | `AnalogContact[]`                                                                               |
+| `Scan.csv`         | [scan-lists.md](scan-lists.md)         | **Skip**                                                               | **Yes** (zone-derived) | Export synthesis from zone layout — [zone-derived-scan-lists.md](../zone-derived-scan-lists.md) |
+| `DMR-ID.csv`       | —                                      | **Skip**                                                               | **Skip**               | Accepted gap                                                                                    |
 
 Committed fixture: [`test-data/baofeng-dm32/v1.60/`](../../../test-data/baofeng-dm32/v1.60/).
+
+## Wire elicitation
+
+Human-led CPS v1.60 column/enum elicitation (supersedes [#356](https://github.com/pskillen/codeplug-studio/issues/356)): [#404](https://github.com/pskillen/codeplug-studio/issues/404). Worksheet lands as [`enum-verification.md`](enum-verification.md) on the `#404` branch until that PR merges — use the issue for status meanwhile.
+
+Docs drift vs shipped export tracked in [#444](https://github.com/pskillen/codeplug-studio/issues/444) (this update).
 
 ## Line endings
 

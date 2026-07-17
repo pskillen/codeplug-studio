@@ -14,7 +14,9 @@ When a DM32 build zone entry has `exportScanList: true` and the export master to
 3. Prepend carrier as first zone member in `Zones.csv`
 4. Set channel `Scan List` FK on the scan **carrier** channel only (members keep manual assignment)
 
-Member filter: `includeInScanList !== false` and `Channel.scanSkip !== true`. Cap: **16** members per list (`scanListMembers` profile limit) with export warning.
+Member filter: zone-member `includeInScanList` cascade and channel `scanInclusion` (via `effectiveScanSkips`) — see [zone-derived-scan-lists.md](../zone-derived-scan-lists.md). Cap: **16** members per list (`scanListMembers` profile limit) with export warning.
+
+Synthesised timing / mode columns below are Studio defaults until CPS elicitation ([#447](https://github.com/pskillen/codeplug-studio/issues/447)).
 
 ## Wire columns (`Scan.csv`)
 
@@ -32,7 +34,7 @@ Member filter: `includeInScanList !== false` and `Channel.scanSkip !== true`. Ca
 
 ## Import
 
-**Not shipped** — Phase 5b or later. Import skips `Scan.csv`; channel `Scan List` column ignored on import.
+**Not shipped** — Phase 5b or later ([#112](https://github.com/pskillen/codeplug-studio/issues/112)). Import skips `Scan.csv`; channel `Scan List` column ignored on import.
 
 ## Related
 
