@@ -34,11 +34,11 @@ Implementation: `src/core/import-export/scanInclusion/resolve.ts`.
 
 ## Orthogonal concepts
 
-| Field                                             | Layer                      | Concern                                                |
-| ------------------------------------------------- | -------------------------- | ------------------------------------------------------ |
-| `ZoneMemberEntry.includeInScanList`               | Library zone membership    | DM32 zone-derived scan list membership filter          |
-| `FormatBuild.exportSettings.defaultScanInclusion` | Build                      | Default for `scanInclusion: default` channels          |
-| `FlatMemoryLayout.scanFlags`                      | Build layout (CHIRP trait) | **Deprecated** — superseded by library `scanInclusion` |
+| Field                                             | Layer                                 | Concern                                                          |
+| ------------------------------------------------- | ------------------------------------- | ---------------------------------------------------------------- |
+| Zone-derived scan membership cascade              | Library / member / build / projection | See [zone-behavioural-defaults.md](zone-behavioural-defaults.md) |
+| `FormatBuild.exportSettings.defaultScanInclusion` | Build                                 | Default for `scanInclusion: default` channels                    |
+| `FlatMemoryLayout.scanFlags`                      | Build layout (CHIRP trait)            | **Deprecated** — superseded by library `scanInclusion`           |
 
 ## UI
 

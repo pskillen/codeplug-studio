@@ -8,13 +8,13 @@ Edits `IncludeInZoneDerivedScanListOverride` on zone members, or the library boo
 
 ## Props
 
-| Prop | Type | Description |
-| --- | --- | --- |
-| `value` | `default` \| `include` \| `skip` | Current override |
-| `onChange` | `(value) => void` | Updates |
-| `includeDefault` | `boolean` | When false, Default option omitted (library defaults page) |
-| `compact` | `boolean` | Row layout |
-| `disabled` | `boolean` | Disable control |
+| Prop             | Type                             | Description                                                |
+| ---------------- | -------------------------------- | ---------------------------------------------------------- |
+| `value`          | `default` \| `include` \| `skip` | Current override                                           |
+| `onChange`       | `(value) => void`                | Updates                                                    |
+| `includeDefault` | `boolean`                        | When false, Default option omitted (library defaults page) |
+| `compact`        | `boolean`                        | Row layout                                                 |
+| `disabled`       | `boolean`                        | Disable control                                            |
 
 ## Related
 

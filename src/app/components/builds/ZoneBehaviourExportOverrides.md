@@ -8,11 +8,11 @@ Optional build-wide override of library `zoneDefaults.includeInZoneDerivedScanLi
 
 ## Props
 
-| Prop | Type | Description |
-| --- | --- | --- |
-| `exportSettings` | `BuildExportSettings \| undefined` | Current build settings |
-| `disabled` | `boolean` | Disable controls |
-| `onPatch` | `(patch) => void` | Merge into export settings |
+| Prop             | Type                               | Description                |
+| ---------------- | ---------------------------------- | -------------------------- |
+| `exportSettings` | `BuildExportSettings \| undefined` | Current build settings     |
+| `disabled`       | `boolean`                          | Disable controls           |
+| `onPatch`        | `(patch) => void`                  | Merge into export settings |
 
 ## Related
 
