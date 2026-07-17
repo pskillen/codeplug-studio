@@ -12,7 +12,7 @@
 
 **Branch:** `460/pskil/list-kit-styleguide`
 
-**PR:** (opening)
+**PR:** https://github.com/pskillen/codeplug-studio/pull/461
 
 ---
 
