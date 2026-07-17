@@ -15,7 +15,7 @@ Product-level overview of how Codeplug Studio projects **library + build** into 
 
 | File               | Source                                                                                                                                    |
 | ------------------ | ----------------------------------------------------------------------------------------------------------------------------------------- |
-| `Channels.csv`     | Expanded channel rows (RX-list fan-out; `expandModes: false`)                                                                             |
+| `Channels.csv`     | Expanded channel rows (RX-list fan-out; optional scratch companion; `expandModes: false`)                                                 |
 | `Zones.csv`        | Assembled zones; member names match expanded channel wire names                                                                           |
 | `Talkgroups.csv`   | Assembled talk groups with profile name limits                                                                                            |
 | `Contacts.csv`     | Digital contacts — `city`/`state`/`country`/`remarks` → City/Province/Country/Remark; Type=`Private Call`; Alert Call=`0`; Repeater empty |
@@ -25,12 +25,13 @@ Product-level overview of how Codeplug Studio projects **library + build** into 
 
 ## Expansion rules (DM32-specific)
 
-| Option                       | Value   | Effect                                                                 |
-| ---------------------------- | ------- | ---------------------------------------------------------------------- |
-| `expandModes`                | `false` | Multi-mode channels stay on one row (`Fixed Analog` / `Fixed Digital`) |
-| `expandRxGroupLists`         | `true`  | One channel row per RX-list member                                     |
-| `skipExpandWhenTxContactSet` | `true`  | Skip fan-out when channel has both TX contact and RX list              |
-| Non-expandable lists         | `ALL`   | Native CPS list — no fan-out                                           |
+| Option                       | Value   | Effect                                                                                       |
+| ---------------------------- | ------- | -------------------------------------------------------------------------------------------- |
+| `expandModes`                | `false` | Multi-mode channels stay on one row (`Fixed Analog` / `Fixed Digital`)                       |
+| `expandRxGroupLists`         | `true`  | One channel row per RX-list member                                                           |
+| `exportScratchChannels`      | `true`  | One scratch companion per expanded repeater ([export-projections.md](export-projections.md)) |
+| `skipExpandWhenTxContactSet` | `true`  | Skip fan-out when channel has both TX contact and RX list                                    |
+| Non-expandable lists         | `ALL`   | Native CPS list — no fan-out                                                                 |
 
 ## Documented loss
 

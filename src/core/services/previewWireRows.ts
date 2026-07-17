@@ -7,7 +7,10 @@ import {
 } from '@core/domain/formatBuildOverrides.ts';
 import { channelDisplayLabel, defaultChannelWireName } from '@core/domain/channelNaming.ts';
 import { sanitiseAsciiWireString } from '@core/import-export/sanitiseAsciiWireString.ts';
-import { expandAllDm32ChannelsForExport } from '@core/import-export/formats/dm32/channelExpansion.ts';
+import {
+  expandAllDm32ChannelsForExport,
+  type ExpandedDm32ChannelRow,
+} from '@core/import-export/formats/dm32/channelExpansion.ts';
 import {
   expandAllAnytoneChannelsForExport,
   type ExpandedAnytoneChannelRow,
@@ -198,6 +201,20 @@ function dm32RxListFanOutDisplayDetails(
   ];
 }
 
+function dm32ExpansionDisplayDetails(
+  channel: Channel,
+  generated: ExpandedDm32ChannelRow,
+  library: LibrarySlice,
+): WirePreviewDisplayLine[] | undefined {
+  if (generated.rowKind === 'scratch') {
+    return [{ label: 'Row', value: 'Scratch channel' }];
+  }
+  if (generated.rowKind === 'talkGroup') {
+    return dm32RxListFanOutDisplayDetails(channel, generated.txContactRef, library);
+  }
+  return undefined;
+}
+
 function anytoneExpansionDisplayDetails(
   channel: Channel,
   generated: ExpandedAnytoneChannelRow,
@@ -316,9 +333,7 @@ export function previewWireRows(
                 hasWireNameOverride: Boolean(keyOverride ?? channelOverride),
                 excluded: isEntityExcluded(build.channelOverrides, channel.id),
                 expansionNote: generated.expansionNote,
-                displayDetails: generated.expansionNote
-                  ? dm32RxListFanOutDisplayDetails(channel, generated.txContactRef, library)
-                  : undefined,
+                displayDetails: dm32ExpansionDisplayDetails(channel, generated, library),
               });
             }
             continue;

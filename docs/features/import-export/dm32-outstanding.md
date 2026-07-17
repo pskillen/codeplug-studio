@@ -11,7 +11,6 @@ Items **skipped**, **incomplete**, or **discovered during execution** — not th
 - [ ] DM32 **import** — epic [#112](https://github.com/pskillen/codeplug-studio/issues/112) (Phase 5b)
 - [ ] Manual `ScanList` entity CRUD and scan import round-trip
 - [ ] `DMR-ID.csv` export — accepted lossy gap (profile default label only)
-- [ ] `exportScratchChannel` serialisation — UI persists layout flag; wire deferred
 - [ ] Full v1.60 fixture row compare — awaits import adapter; header parity + minimal golden bundle shipped in [#122](https://github.com/pskillen/codeplug-studio/issues/122)
 
 ---
@@ -19,6 +18,7 @@ Items **skipped**, **incomplete**, or **discovered during execution** — not th
 ## Fixed
 
 - [x] **CRLF export line endings** — [#314](https://github.com/pskillen/codeplug-studio/issues/314); Studio DM32 CSV export matches official CPS (Windows CRLF)
+- [x] **Per-repeater scratch channel export** — [#140](https://github.com/pskillen/codeplug-studio/issues/140); build `exportScratchChannels` (zone layout flag deprecated)
 
 ---
 

@@ -400,7 +400,9 @@ describe('previewWireRows', () => {
     };
 
     const rows = previewWireRows(build, library, 'channel', { profileId: build.profileId });
-    const fanOutRows = rows.filter((row) => row.displayDetails?.length);
+    const fanOutRows = rows.filter((row) =>
+      row.displayDetails?.some((line) => line.label === 'Talk group'),
+    );
     expect(fanOutRows).toHaveLength(2);
     expect(fanOutRows[0]?.displayDetails).toEqual([
       { label: 'Channel', value: 'GB7GL Repeater' },
@@ -410,6 +412,11 @@ describe('previewWireRows', () => {
       { label: 'Channel', value: 'GB7GL Repeater' },
       { label: 'Talk group', value: 'Local (9) · Slot 1' },
     ]);
+    const scratchRows = rows.filter((row) =>
+      row.displayDetails?.some((line) => line.value === 'Scratch channel'),
+    );
+    expect(scratchRows).toHaveLength(1);
+    expect(scratchRows[0]?.expansionNote).toBe('Scratch channel');
   });
 
   it('keeps library-zoned channels when exportUnlinkedChannels is false', () => {

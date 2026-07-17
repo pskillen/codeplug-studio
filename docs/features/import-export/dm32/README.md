@@ -22,6 +22,7 @@ Product behaviour for Baofeng DM-32UV CPS CSV export in Codeplug Studio. Wire co
 | Export UI + wire preview        | Shipped | [#119](https://github.com/pskillen/codeplug-studio/issues/119) — multi-TG options, scan toggle, hide filter, fan-out display details          |
 | Directional export tests        | Shipped | [#122](https://github.com/pskillen/codeplug-studio/issues/122) — [mapping-tests.md](../../../build/testing/mapping-tests.md)                  |
 | Contacts.csv metadata           | Shipped | [#448](https://github.com/pskillen/codeplug-studio/issues/448) — City/Province/Country/Remark from `DigitalContact`                           |
+| Per-repeater scratch channels   | Shipped | [#140](https://github.com/pskillen/codeplug-studio/issues/140) — [export-projections.md](export-projections.md)                               |
 | CRLF export line endings        | Shipped | [#314](https://github.com/pskillen/codeplug-studio/issues/314) — Windows CPS import compatibility                                             |
 | CPS import                      | Planned | [#112](https://github.com/pskillen/codeplug-studio/issues/112)                                                                                |
 
@@ -53,19 +54,19 @@ See [name-shortening.md](../name-shortening.md) and [dm32/multi-talkgroup.md](..
 
 ## Zone export knobs (build layout)
 
-DM32 scratch channel, scan-list export, and scan carrier frequency live on **`FormatBuild.layout`** zone grouping entries (`exportScratchChannel`, `exportScanList`, `scanCarrierFrequencyHz`) — not on library zones ([#104](https://github.com/pskillen/codeplug-studio/issues/104)). Per-member scan inclusion is vendor-neutral on library `Zone.members` (`includeInScanList`). Operator workflow: [zone-grouping.md](../../builds/zone-grouping.md).
+DM32 scan-list export and scan carrier frequency live on **`FormatBuild.layout`** zone grouping entries (`exportScanList`, `scanCarrierFrequencyHz`) — not on library zones ([#104](https://github.com/pskillen/codeplug-studio/issues/104)). Per-member scan inclusion is vendor-neutral on library `Zone.members` (`includeInScanList`). Scratch companions use build **`exportSettings.exportScratchChannels`** ([#140](https://github.com/pskillen/codeplug-studio/issues/140)) — see [export-projections.md](export-projections.md). Operator workflow: [zone-grouping.md](../../builds/zone-grouping.md).
 
 ## Deferrals
 
-| Item                             | Tracking                                                                |
-| -------------------------------- | ----------------------------------------------------------------------- |
-| `Scan.csv` import                | [#112](https://github.com/pskillen/codeplug-studio/issues/112) or later |
-| `DMR-ID.csv` / channel `DMR ID`  | Accepted lossy gap — profile default label on export                    |
-| `exportScratchChannel` serialise | UI flag only until wire behaviour ships                                 |
-| Manual scan-list CRUD            | Future                                                                  |
+| Item                            | Tracking                                                                |
+| ------------------------------- | ----------------------------------------------------------------------- |
+| `Scan.csv` import               | [#112](https://github.com/pskillen/codeplug-studio/issues/112) or later |
+| `DMR-ID.csv` / channel `DMR ID` | Accepted lossy gap — profile default label on export                    |
+| Manual scan-list CRUD           | Future                                                                  |
 
 ## Related
 
+- [export-projections.md](export-projections.md) — m×n + scratch
 - [import-export hub](../README.md)
 - [builds hub](../../builds/README.md)
 - [data-model](../../data-model/README.md)

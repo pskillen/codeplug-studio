@@ -10,17 +10,16 @@ How zones appear on the CPS wire for builds with the **zone grouping** trait. **
 
 1. Curate zone membership in **Library → Zones** (including nested zones and optional **Don't export as its own zone** — see [nested-zones.md](../library/nested-zones.md)).
 2. Open **Radio builds → Zones** on the build — wire preview table (include toggle + wire name override). **DM32 and Anytone:** **Export scan list** column toggles zone-derived scan list export; open a row for carrier MHz, member scan counts, and per-member **Include in scan list** toggles (build projection — does not mutate library zones). **Anytone:** airband-only zones appear on **Airband**; dual-mode zones appear on both **Zones** and **Airband**.
-3. For **DM32** builds, the expanded zone panel also includes:
-   - **Export scratch channel** — per-zone flag on `ZoneGroupingLayout` (serialisation deferred; UI persists the preference).
-   - **Scan carrier frequency** — MHz simplex for the `{zoneName} Scan` carrier channel (default 145.500).
+3. For **DM32** / **Anytone** builds with scan export on, the expanded zone panel includes **Scan carrier frequency** — MHz simplex for the `{zoneName} Scan` carrier channel (default 145.500).
 4. Optionally set library **Zone defaults** (`/library/zones/defaults`) and per-member tri-state overrides on the zone editor.
 5. Enable **Export zone-derived scan lists** on the build **Export** page when you want zone flags to emit scan lists (DM32 `Scan.csv`, Anytone `ScanList.CSV` alongside library scan lists). Optional build-wide membership default override lives there too.
-6. Audit winning layers on **Export resolution → Zones**.
-7. Export from **Export** — `assemble` derives `memberChannelIds` from library membership via `resolveEffectiveZoneChannelIds` (nested zones flattened). Layout `channelIds` reorder ids that appear in both lists; new effective ids append at the end.
+6. **Scratch channels** (DM32 and Anytone) are a build Export → Channels toggle (`exportSettings.exportScratchChannels`), not a per-zone flag — see [dm32/export-projections.md](../import-export/dm32/export-projections.md).
+7. Audit winning layers on **Export resolution → Zones**.
+8. Export from **Export** — `assemble` derives `memberChannelIds` from library membership via `resolveEffectiveZoneChannelIds` (nested zones flattened). Layout `channelIds` reorder ids that appear in both lists; new effective ids append at the end.
 
 A dedicated build zone layout editor (member reorder per zone) is **deferred** — see [#99](https://github.com/pskillen/codeplug-studio/issues/99).
 
-**DM32 export knobs** (`exportScratchChannel`, `exportScanList`, `scanCarrierFrequencyHz`) persist on `ZoneGroupingLayout` zone entries ([#104](https://github.com/pskillen/codeplug-studio/issues/104)). Per-member scan inclusion is vendor-neutral on library `Zone.members`.
+**DM32 / Anytone zone layout knobs** (`exportScanList`, `scanCarrierFrequencyHz`) persist on `ZoneGroupingLayout` zone entries. Legacy `exportScratchChannel` on zone entries is ignored (scratch moved to build export settings in [#140](https://github.com/pskillen/codeplug-studio/issues/140)). Per-member scan inclusion is vendor-neutral on library `Zone.members` / layout projection.
 
 ## Related
 

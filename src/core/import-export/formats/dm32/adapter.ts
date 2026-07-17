@@ -20,6 +20,7 @@ export const dm32ExportAdapter: MultiFileExportAdapter = {
     defaultScanInclusion: 'scan',
     expandModes: false,
     expandRxGroupLists: true,
+    exportScratchChannels: true,
     exportZoneDerivedScanLists: true,
   },
   fileNames: DM32_EXPORT_FILE_NAMES,

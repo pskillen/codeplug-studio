@@ -296,9 +296,77 @@ describe('DM32 export serialise', () => {
       scanLists: [],
     };
     const assembled = assemble(build, library);
-    const files = serialiseDm32Files(assembled, library);
+    const files = serialiseDm32Files(assembled, library, { exportScratchChannels: false });
     const rows = parseCsv(files['Channels.csv']);
     expect(rows.length).toBe(3);
+  });
+
+  it('expands RX group list with one scratch companion when enabled', () => {
+    const tg1 = newTalkGroup(PROJECT_ID, 'Worldwide', 1);
+    const tg2 = newTalkGroup(PROJECT_ID, 'Local', 2);
+    const channel: Channel = {
+      ...newChannel(PROJECT_ID, 'GB7RR'),
+      rxFrequency: 430_000_000,
+      txFrequency: 430_000_000,
+      modeProfiles: [
+        {
+          mode: 'dmr',
+          colourCode: 1,
+          timeslot: 1,
+          dmrId: null,
+          contactRef: null,
+          rxGroupListId: 'rgl-1',
+        },
+      ],
+    };
+    const zone = newZone(PROJECT_ID, 'Zone A');
+    zone.members = [{ kind: 'channel' as const, channelId: channel.id }];
+    const build = dm32Build();
+    const layout = seedZoneGroupingFromLibrary({
+      channels: [channel],
+      zones: [zone],
+      talkGroups: [tg1, tg2],
+      digitalContacts: [],
+      analogContacts: [],
+      rxGroupLists: [],
+      scanLists: [],
+    });
+    build.layout = { sections: [layout] };
+    const library: LibrarySlice = {
+      channels: [channel],
+      talkGroups: [tg1, tg2],
+      digitalContacts: [],
+      analogContacts: [],
+      rxGroupLists: [
+        {
+          ...newRxGroupList(PROJECT_ID, 'My RGL'),
+          id: 'rgl-1',
+          members: [
+            { ref: { kind: 'talkGroup', id: tg1.id } },
+            { ref: { kind: 'talkGroup', id: tg2.id } },
+          ],
+        },
+      ],
+      zones: [zone],
+      scanLists: [],
+    };
+    const assembled = assemble(build, library);
+    const files = serialiseDm32Files(assembled, library, { exportScratchChannels: true });
+    const channelRows = parseCsv(files['Channels.csv']);
+    // header + 2 TG rows + 1 scratch
+    expect(channelRows.length).toBe(4);
+    const nameIndex = channelRows[0]!.indexOf(CHANNEL_COL.name);
+    const rglIndex = channelRows[0]!.indexOf(CHANNEL_COL.rxGroupList);
+    const contactIndex = channelRows[0]!.indexOf(CHANNEL_COL.txContact);
+    const scratchRow = channelRows.find((row) => row[nameIndex]?.includes('Scratch'));
+    expect(scratchRow).toBeDefined();
+    expect(scratchRow?.[rglIndex]).toBe('My RGL');
+    expect(scratchRow?.[contactIndex]).toBe('None');
+
+    const zoneRows = parseCsv(files['Zones.csv']);
+    const membersIndex = zoneRows[0]!.indexOf(ZONE_COL.members);
+    const members = zoneRows[1]?.[membersIndex]?.split('|') ?? [];
+    expect(members).toHaveLength(3);
   });
 
   it('shortens long zone and RX group list names when shortenNames is enabled', () => {
