@@ -12,7 +12,7 @@
 
 **Branch:** `460/pskil/list-kit-adoption`
 
-**PR:** _(opened at Slice 6)_
+**PR:** [#464](https://github.com/pskillen/codeplug-studio/pull/464)
 
 **Prerequisites on main:** [#461](https://github.com/pskillen/codeplug-studio/pull/461) kit + styleguide; [#463](https://github.com/pskillen/codeplug-studio/pull/463) export-ordering toolkit + C drag.
 
