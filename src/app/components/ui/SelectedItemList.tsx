@@ -1,5 +1,5 @@
-import { Group, ScrollArea, Stack, Text, TextInput } from '@mantine/core';
-import type { ReactNode } from 'react';
+import { Button, Group, ScrollArea, Stack, Text, TextInput } from '@mantine/core';
+import { Fragment, useEffect, type ReactNode } from 'react';
 
 export interface SelectedItemListFilterProps {
   value: string;
@@ -27,6 +27,20 @@ export interface SelectedItemListProps<TKey extends string = string> {
   emptyMessage?: string;
   maxHeight?: number;
   toolbar?: ReactNode;
+  /** When set, shows built-in Move up / Move down for the current selection. */
+  onMoveSelected?: (direction: 'up' | 'down') => void;
+  /** When set, shows built-in Remove selected. */
+  onRemoveSelected?: () => void;
+  /** Hint beside built-in reorder controls (default Alt+↑/↓ text when move is enabled). */
+  reorderHint?: ReactNode;
+  /**
+   * When true (default if `onMoveSelected` is set), Alt+ArrowUp/Down calls `onMoveSelected`.
+   * Ignored when `onMoveSelected` is absent.
+   */
+  enableReorderHotkeys?: boolean;
+  /** Optional disable flags for built-in move buttons. */
+  canMoveUp?: boolean;
+  canMoveDown?: boolean;
 }
 
 export default function SelectedItemList<TKey extends string>({
@@ -41,8 +55,39 @@ export default function SelectedItemList<TKey extends string>({
   emptyMessage = 'No items',
   maxHeight = 360,
   toolbar,
+  onMoveSelected,
+  onRemoveSelected,
+  reorderHint,
+  enableReorderHotkeys,
+  canMoveUp = true,
+  canMoveDown = true,
 }: SelectedItemListProps<TKey>) {
   const selectedSet = new Set(selectedKeys);
+  const hotkeysEnabled = onMoveSelected != null && (enableReorderHotkeys ?? true);
+  const showBuiltinReorder = onMoveSelected != null || onRemoveSelected != null;
+  const defaultHint =
+    onMoveSelected != null ? (
+      <Text size="xs" c="dimmed">
+        Alt+↑ / Alt+↓ reorders selection
+      </Text>
+    ) : null;
+  const hint = reorderHint !== undefined ? reorderHint : defaultHint;
+
+  useEffect(() => {
+    if (!hotkeysEnabled || !onMoveSelected) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (!event.altKey) return;
+      if (event.key === 'ArrowUp') {
+        event.preventDefault();
+        onMoveSelected('up');
+      } else if (event.key === 'ArrowDown') {
+        event.preventDefault();
+        onMoveSelected('down');
+      }
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [hotkeysEnabled, onMoveSelected]);
 
   return (
     <Stack gap="xs">
@@ -76,17 +121,58 @@ export default function SelectedItemList<TKey extends string>({
               {emptyMessage}
             </Text>
           ) : (
-            itemKeys.map((itemKey) =>
-              renderItem({
-                itemKey,
-                selected: selectedSet.has(itemKey),
-                onToggleSelect: () => onToggleSelect(itemKey),
-                onRemove: () => onRemove(itemKey),
-              }),
-            )
+            itemKeys.map((itemKey) => (
+              <Fragment key={itemKey}>
+                {renderItem({
+                  itemKey,
+                  selected: selectedSet.has(itemKey),
+                  onToggleSelect: () => onToggleSelect(itemKey),
+                  onRemove: () => onRemove(itemKey),
+                })}
+              </Fragment>
+            ))
           )}
         </Stack>
       </ScrollArea.Autosize>
+
+      {showBuiltinReorder ? (
+        <Group gap="xs">
+          {onMoveSelected ? (
+            <>
+              <Button
+                type="button"
+                variant="default"
+                size="compact-sm"
+                onClick={() => onMoveSelected('up')}
+                disabled={!selectedKeys.length || !canMoveUp}
+              >
+                Move up
+              </Button>
+              <Button
+                type="button"
+                variant="default"
+                size="compact-sm"
+                onClick={() => onMoveSelected('down')}
+                disabled={!selectedKeys.length || !canMoveDown}
+              >
+                Move down
+              </Button>
+            </>
+          ) : null}
+          {onRemoveSelected ? (
+            <Button
+              type="button"
+              variant="light"
+              size="compact-sm"
+              onClick={onRemoveSelected}
+              disabled={!selectedKeys.length}
+            >
+              Remove selected
+            </Button>
+          ) : null}
+          {hint}
+        </Group>
+      ) : null}
 
       {toolbar}
     </Stack>

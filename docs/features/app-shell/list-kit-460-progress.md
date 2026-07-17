@@ -62,6 +62,23 @@
 
 ---
 
+## Slice 4–6: B + C kit + membership styleguide
+
+**Status:** Complete
+
+**Delivered**
+
+- `SelectedItemList` built-in move/remove/hotkeys
+- `AvailableItemPicker` description + `sectionToolbar`
+- `/styleguide/membership` paired + standalone demos
+- Sidecars + unit tests
+
+**Verify**
+
+- SelectedItemList + DataTable tests pass; build green
+
+---
+
 ## Next
 
-- Slice 4: SelectedItemList move/remove/hotkeys
+- Slice 7: docs polish + PR (Addresses #460)

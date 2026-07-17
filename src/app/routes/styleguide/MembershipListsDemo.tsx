@@ -329,42 +329,31 @@ function MembershipListsDemo() {
           );
         }}
         toolbar={
-          <Group gap="xs">
-            <Button
-              type="button"
-              variant="default"
-              size="compact-sm"
-              onClick={() => moveSelected('up')}
-              disabled={!canMoveUp}
-            >
-              Move up
-            </Button>
-            <Button
-              type="button"
-              variant="default"
-              size="compact-sm"
-              onClick={() => moveSelected('down')}
-              disabled={!canMoveDown}
-            >
-              Move down
-            </Button>
-            <Button
-              variant="light"
-              size="compact-sm"
-              disabled={!listSelection.length}
-              onClick={removeSelectedBulk}
-            >
-              Remove selected
-            </Button>
-            <Text size="xs" c="dimmed">
-              Reorder demo — zone editor also supports Alt+↑/↓
-            </Text>
-          </Group>
+          <Button
+            type="button"
+            variant="default"
+            size="compact-sm"
+            onClick={() =>
+              setSelectedKeys((prev) =>
+                [...prev].sort((a, b) =>
+                  MEMBERSHIP_DEMO_CATALOG[a].label.localeCompare(MEMBERSHIP_DEMO_CATALOG[b].label),
+                ),
+              )
+            }
+            disabled={!selectedKeys.length}
+          >
+            Sort by name (demo)
+          </Button>
         }
+        onMoveSelected={moveSelected}
+        onRemoveSelected={removeSelectedBulk}
+        canMoveUp={canMoveUp}
+        canMoveDown={canMoveDown}
       />
 
       <AvailableItemPicker
         title="Other channels & zones"
+        description="Sparse pool — stage candidates then Add selected (role B)."
         filter={{
           value: poolFilter,
           onChange: setPoolFilter,
@@ -382,6 +371,17 @@ function MembershipListsDemo() {
                 prev.includes(key) ? prev.filter((x) => x !== key) : [...prev, key],
               ),
             emptyMessage: 'No channels available',
+            sectionToolbar: (
+              <Button
+                type="button"
+                variant="subtle"
+                size="compact-xs"
+                disabled={!poolChannels.length}
+                onClick={() => setPoolChannelPick([...poolChannels])}
+              >
+                Select all
+              </Button>
+            ),
             renderItem: ({ itemKey, checked, onToggle }) => {
               const entry = MEMBERSHIP_DEMO_CATALOG[itemKey];
               if (entry.kind !== 'channel') return null;
