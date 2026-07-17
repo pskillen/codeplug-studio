@@ -24,12 +24,13 @@ Ordered channel membership for a library [`ScanList`](../../../../docs/features/
 
 ## Behaviour
 
-- **In list** — `SelectedItemList` with Move up / Move down / Remove selected; uses `reorderScanListMembers` from core.
-- **Add** — MultiSelect of channels not already members; appends in selection order.
-- Display sort of the add pool does not change export order.
+- **In list** — `SelectedItemList` reorder mode: drag handles, built-in Move up / Move down / Remove selected / Alt+↑/↓; `reorderScanListMembers` from core. Sort… in toolbar.
+- **Add** — `AvailableItemPicker` (role B) of channels not already members; Add selected appends in stage order.
+- Display filter of the add pool does not change export order.
 
 ## Related
 
 - [scan-lists.md](../../../../docs/features/library/scan-lists.md)
 - [SelectedItemList.md](../ui/SelectedItemList.md)
+- [AvailableItemPicker.md](../ui/AvailableItemPicker.md)
 - [`reorderScanListMembers`](../../../../src/core/domain/membershipOrder.ts)

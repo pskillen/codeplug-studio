@@ -1,7 +1,6 @@
 import {
   ActionIcon,
   Badge,
-  Button,
   Checkbox,
   Group,
   Paper,
@@ -251,18 +250,6 @@ export default function ZoneMemberEditor({
     [members, onChange],
   );
 
-  useEffect(() => {
-    function onKeyDown(event: KeyboardEvent) {
-      if (!event.altKey || (event.key !== 'ArrowUp' && event.key !== 'ArrowDown')) return;
-      const target = event.target as HTMLElement | null;
-      if (target?.closest('input, textarea, select, [contenteditable]')) return;
-      event.preventDefault();
-      moveSelected(event.key === 'ArrowUp' ? 'up' : 'down');
-    }
-    window.addEventListener('keydown', onKeyDown);
-    return () => window.removeEventListener('keydown', onKeyDown);
-  }, [moveSelected]);
-
   return (
     <Stack gap="lg">
       <SelectedItemList
@@ -286,6 +273,17 @@ export default function ZoneMemberEditor({
           onChange(reorderMembersByKeys(members, nextKeys));
         }}
         reorderDisabled={inZoneFilter.trim().length > 0}
+        onMoveSelected={moveSelected}
+        onRemoveSelected={removeSelected}
+        canMoveUp={canMoveUp}
+        canMoveDown={canMoveDown}
+        reorderHint={
+          <Text size="xs" c="dimmed">
+            {inZoneFilter.trim()
+              ? 'Clear filter to drag-reorder'
+              : 'Drag handles reorder · Alt+↑/↓ moves selection'}
+          </Text>
+        }
         renderItem={({ itemKey, selected, onToggleSelect, onRemove, dragHandle }) => (
           <InZoneMemberRow
             key={itemKey}
@@ -301,46 +299,12 @@ export default function ZoneMemberEditor({
           />
         )}
         toolbar={
-          <Group gap="xs">
-            <MembershipSortMenu
-              disabled={!members.length}
-              onSort={(mode) =>
-                onChange(sortZoneMembersByMode(members, channelsById, zonesById, mode))
-              }
-            />
-            <Button
-              type="button"
-              variant="default"
-              size="compact-sm"
-              onClick={() => moveSelected('up')}
-              disabled={!canMoveUp}
-            >
-              Move up
-            </Button>
-            <Button
-              type="button"
-              variant="default"
-              size="compact-sm"
-              onClick={() => moveSelected('down')}
-              disabled={!canMoveDown}
-            >
-              Move down
-            </Button>
-            <Button
-              type="button"
-              variant="light"
-              size="compact-sm"
-              onClick={removeSelected}
-              disabled={!inZoneSelected.length}
-            >
-              Remove selected
-            </Button>
-            <Text size="xs" c="dimmed">
-              {inZoneFilter.trim()
-                ? 'Clear filter to drag-reorder'
-                : 'Drag handles reorder · Alt+↑/↓ moves selection'}
-            </Text>
-          </Group>
+          <MembershipSortMenu
+            disabled={!members.length}
+            onSort={(mode) =>
+              onChange(sortZoneMembersByMode(members, channelsById, zonesById, mode))
+            }
+          />
         }
       />
 

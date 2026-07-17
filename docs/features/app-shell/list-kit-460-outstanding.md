@@ -8,9 +8,9 @@ Items **skipped**, **incomplete**, or **discovered during execution** — not th
 
 ## Adoption (in progress on `460/pskil/list-kit-adoption`)
 
+- [x] Refactor `ZoneMemberEditor` onto C built-in move/remove/hotkey props (keep drag + Sort…)
+- [x] `ScanListMemberEditor` → `AvailableItemPicker` (B) + C builtins
 - [ ] Migrate production library/build/import tables to A/B/C/D kit
-- [ ] Refactor `ZoneMemberEditor` onto C built-in move/remove/hotkey props (keep drag + Sort…)
-- [ ] `ScanListMemberEditor` → `AvailableItemPicker` (B) + C builtins
 - [ ] Contacts digital `scale="extreme"` + hideable column storage
 - [ ] `RepeaterDirectorySearch` / `ChannelSetPicker` / `WirePreviewBulkEditTable` → `DataTable`
 - [ ] `WirePreviewDataTable` `reorderMode` when reorder config present; delete deprecated `WirePreviewTable`

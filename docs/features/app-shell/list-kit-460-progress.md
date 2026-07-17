@@ -46,7 +46,18 @@ Shipped in #461 / #463 — not re-done on this branch.
 
 ### Slice 1: Membership B+C unify
 
-**Status:** Pending
+**Status:** Complete
+
+**Delivered**
+
+- `ZoneMemberEditor` → C built-in move/remove/hotkeys; Sort… in toolbar; drag kept
+- `ScanListMemberEditor` → `AvailableItemPicker` (B) + C builtins; drag kept
+- `ZoneMemberOrderSection` parity confirmed (already on C props + drag)
+- Sidecars + zone-member-picker / scan-lists docs
+
+**Verify**
+
+- Zone/scan editors: drag, Move, Alt arrows, Sort…; Scan add via B
 
 ### Slice 2: Contacts D
 
