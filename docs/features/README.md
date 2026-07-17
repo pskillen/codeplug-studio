@@ -40,8 +40,7 @@ Domain-neutral amateur-radio facts (tier 2) and per-format CPS wire tables (tier
 | ----------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
 | UK bands and receive services | [reference/bands.md](../reference/bands.md)                                                                                                         |
 | Channel modes                 | [reference/channel-modes.md](../reference/channel-modes.md)                                                                                         |
-| Display conventions           | [reference/display-conventions.md](../reference/display-conventions.md)                                                                             |
-| UI interaction styleguide     | [reference/styleguide/](../reference/styleguide/) — list kit roles, Sort… / reorder, page chrome ([#465](https://github.com/pskillen/codeplug-studio/issues/465)) |
+| UI interaction styleguide     | [reference/styleguide/](../reference/styleguide/) — list kit, Sort… / reorder, [display](../reference/styleguide/display.md) ([#465](https://github.com/pskillen/codeplug-studio/issues/465)) |
 | Help writing styleguide       | [reference/writing-styleguide/help-writing-styleguide.md](../reference/writing-styleguide/help-writing-styleguide.md)                                 |
 | Callsigns                     | [reference/callsigns.md](../reference/callsigns.md)                                                                                                 |
 | Multi-talkgroup expansion     | [reference/multi-talkgroup-expansion.md](../reference/multi-talkgroup-expansion.md)                                                                 |

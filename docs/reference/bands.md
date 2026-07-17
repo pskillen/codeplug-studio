@@ -17,7 +17,7 @@ NoV extensions (4 m 70.5–71.5, 2 m 146–147): inherit parent amateur band col
 
 **One colour per band.** Adjacent bands must be obviously different at a glance. Amateur bands use the existing palette. Non-amateur services use distinct hues — broadcast LW must **not** reuse amateur 136 kHz violet.
 
-Non-amateur pills render with an outline style in the UI when band pills ship (see [display-conventions.md](./display-conventions.md)).
+Non-amateur pills render with an outline style in the UI when band pills ship (see [styleguide display conventions](./styleguide/display.md)).
 
 ## Categories
 
@@ -104,7 +104,7 @@ Coarse UK-oriented receive ranges. SW uses **gap segments** between amateur HF a
 
 ## Related
 
-- [Display conventions](./display-conventions.md) — band pill rendering
+- [Display conventions](./styleguide/display.md) — band pill rendering
 - [library feature](../features/library/README.md)
 - [Data model](../features/data-model/README.md)
 - [report](../features/report/README.md) — band breakdowns on `/summary`

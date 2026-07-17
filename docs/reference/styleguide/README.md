@@ -2,7 +2,7 @@
 
 Contributor and agent reference for **how we build UI** in Codeplug Studio — which shell to pick, how ordering and Sort… work, and the chrome conventions that keep library, builds, and import pickers coherent.
 
-This is **not** user-facing help copy. For wording aimed at operators, use [help writing styleguide](../writing-styleguide/help-writing-styleguide.md). For value formatting (frequencies, pills, icons), use [display conventions](../display-conventions.md).
+This is **not** user-facing help copy. For wording aimed at operators, use [help writing styleguide](../writing-styleguide/help-writing-styleguide.md). For value formatting (frequencies, pills, icons), see [display.md](display.md) in this folder.
 
 **Tracking:** [#465](https://github.com/pskillen/codeplug-studio/issues/465) · Parent [#52](https://github.com/pskillen/codeplug-studio/issues/52)  
 **Interactive demos:** `/styleguide/*` (dev-only, unlinked) — visual catalogue; this doc is the written contract.
@@ -13,6 +13,7 @@ This is **not** user-facing help copy. For wording aimed at operators, use [help
 - Choosing between raw Mantine `Table` and kit shells
 - Placing **Sort…**, reorder arrows, or drag handles
 - Naming page titles, back links, or remove vs delete actions
+- Formatting **frequencies**, **band/mode pills**, or **icons** — [display.md](display.md)
 
 ## Doc map
 
@@ -20,9 +21,9 @@ This is **not** user-facing help copy. For wording aimed at operators, use [help
 | --- | --- |
 | This README | UI categories, decision tree, chrome conventions, specialised outliers |
 | [lists-and-ordering.md](lists-and-ordering.md) | Roles A/B/C/D, `reorderMode` / `storedOrder`, permanent Sort…, gold references |
+| [display.md](display.md) | Frequencies, bands, modes, icons, two-section nav |
 | [list-kit-roles.md](../../features/app-shell/list-kit-roles.md) | Surface → role inventory (tier 1 feature deep dive) |
 | [data-table.md](../../features/app-shell/data-table.md) | DataTable props, list prefs, virtualisation |
-| [display-conventions.md](../display-conventions.md) | Frequencies, bands, modes, icon sizes |
 | [help writing styleguide](../writing-styleguide/help-writing-styleguide.md) | Operator-facing prose |
 
 ## Common UI categories
@@ -117,6 +118,8 @@ When a find-in-list or name filter is active, **disable reorder** (drag, arrows,
 | `PageSection` | Grouped blocks inside forms |
 | Section nav | Per-area secondary nav — registry titles should match list page titles |
 
+Layout of primary + section nav: [display.md — Two-section navigation](display.md#two-section-navigation).
+
 New reusable pieces under `src/app/components/` need a sidecar `.md` and preferably a `/styleguide` demo ([#199](https://github.com/pskillen/codeplug-studio/issues/199) pattern).
 
 ## Specialised outliers (keep specialised)
@@ -139,5 +142,6 @@ UI conventions live in `src/app/` and this reference. Do not push vendor CPS col
 ## Related
 
 - Interactive kit: `/styleguide`, `/styleguide/data-table`, `/styleguide/membership`, `/styleguide/layout`, `/styleguide/controls`
+- [display.md](display.md) — frequencies, pills, icons, nav chrome
 - App shell hub: [docs/features/app-shell/README.md](../../features/app-shell/README.md)
 - Alerts colours: [alerts.md](../../features/app-shell/alerts.md)
