@@ -1,7 +1,12 @@
 import type { MultiFileExportAdapter } from '@core/import-export/exportAdapter.ts';
 import type { CpsExportOptions } from '@core/import-export/types.ts';
 import type { LibrarySlice } from '@core/services/assemble.ts';
-import { serialiseDm32Files, DM32_EXPORT_FILE_NAMES } from './serialise.ts';
+import {
+  serialiseDm32Files,
+  resolveDm32ExportFileNames,
+  DM32_EXPORT_FILE_NAMES,
+} from './serialise.ts';
+import { DM32_APRS_GUIDE_FILE_NAME } from './aprsGuide.ts';
 import { collectDm32ExportWarnings } from './warnings.ts';
 
 function requireLibrary(library: LibrarySlice | undefined): LibrarySlice {
@@ -24,6 +29,9 @@ export const dm32ExportAdapter: MultiFileExportAdapter = {
     exportZoneDerivedScanLists: true,
   },
   fileNames: DM32_EXPORT_FILE_NAMES,
+  resolveExportFileNames(assembled) {
+    return resolveDm32ExportFileNames(assembled);
+  },
   collectExportWarnings(assembled, options?: CpsExportOptions) {
     const library = requireLibrary(assembled.library);
     return collectDm32ExportWarnings(assembled, library, options);
@@ -40,4 +48,4 @@ export const dm32ExportAdapter: MultiFileExportAdapter = {
   },
 };
 
-export { DM32_EXPORT_FILE_NAMES };
+export { DM32_EXPORT_FILE_NAMES, DM32_APRS_GUIDE_FILE_NAME };

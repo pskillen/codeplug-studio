@@ -23,6 +23,11 @@ import {
   type Dm32ExportFileName,
 } from './columns.ts';
 import {
+  buildDm32AprsGuide,
+  DM32_APRS_GUIDE_FILE_NAME,
+  hasDm32AprsGuide,
+} from './aprsGuide.ts';
+import {
   expandAllDm32ChannelsForExport,
   expandDm32ZoneMemberWireNames,
   dm32ChannelExpansionById,
@@ -33,7 +38,9 @@ import { buildDm32TalkGroupWireNameMap, rxGroupListExportMemberNames } from './l
 import { DEFAULT_DM32_PROFILE_ID } from './profiles.ts';
 import type { SyntheticScanCarrier } from '@core/import-export/zoneDerivedScanLists/derive.ts';
 
-export type Dm32ExportFiles = Record<Dm32ExportFileName, string>;
+export type Dm32ExportFiles = Record<Dm32ExportFileName, string> & {
+  [DM32_APRS_GUIDE_FILE_NAME]?: string;
+};
 
 function padRow(headers: string[], values: Record<string, string>): string[] {
   return headers.map((h) => values[h] ?? '');
@@ -385,7 +392,7 @@ export function serialiseDm32Files(
     });
   });
 
-  return {
+  const files: Dm32ExportFiles = {
     'Channels.csv': formatCsv(CHANNEL_HEADERS, channelRows),
     'Zones.csv': formatCsv(ZONE_HEADERS, zoneRows),
     'Talkgroups.csv': serialiseTalkGroups(exportAssembled, options, ctxWarnings),
@@ -394,6 +401,21 @@ export function serialiseDm32Files(
     'DTMFContacts.csv': serialiseDtmfContacts(exportAssembled),
     'Scan.csv': serialiseScanCsv(scanExport),
   };
+
+  const aprsGuide = buildDm32AprsGuide(exportAssembled);
+  if (aprsGuide) {
+    files[DM32_APRS_GUIDE_FILE_NAME] = aprsGuide.markdown;
+  }
+
+  return files;
 }
 
-export { DM32_EXPORT_FILE_NAMES };
+export function resolveDm32ExportFileNames(assembled: AssembledBuild): string[] {
+  const names: string[] = [...DM32_EXPORT_FILE_NAMES];
+  if (hasDm32AprsGuide(assembled)) {
+    names.push(DM32_APRS_GUIDE_FILE_NAME);
+  }
+  return names;
+}
+
+export { DM32_EXPORT_FILE_NAMES, DM32_APRS_GUIDE_FILE_NAME };
