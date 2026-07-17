@@ -8,9 +8,11 @@
 
 ## Overall status
 
-**Status:** In progress
+**Status:** Complete (pending merge) — kit + styleguide; adoption deferred
 
 **Branch:** `460/pskil/list-kit-styleguide`
+
+**PR:** (opening)
 
 ---
 

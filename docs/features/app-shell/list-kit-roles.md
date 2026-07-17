@@ -97,6 +97,6 @@ Dev-only (unlinked from product nav):
 | Area                | Status              | Notes                                                          |
 | ------------------- | ------------------- | -------------------------------------------------------------- |
 | Role map doc        | Shipped (this page) |                                                                |
-| Styleguide split    | In progress         | [#460](https://github.com/pskillen/codeplug-studio/issues/460) |
-| Kit API A/B/C/D     | In progress         |                                                                |
-| Production adoption | Deferred            | See outstanding                                                |
+| Styleguide split    | Shipped             | `/styleguide/*` nested hub                                     |
+| Kit API A/B/C/D     | Shipped             | `orderMode`, `scale`, B/C move/remove props                    |
+| Production adoption | Deferred            | See [outstanding](list-kit-460-outstanding.md)                 |
