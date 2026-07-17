@@ -101,13 +101,15 @@ Large libraries (1000+ contacts) stay responsive by rendering only visible tbody
 | `'auto'` (default) | Virtualize when `sortedRows.length >= 75` (`VIRTUAL_ROW_THRESHOLD`) |
 | `true`             | Always virtualize (non-empty body)                                  |
 | `false`            | Legacy full `map` — every row in the DOM                            |
+| `scale="extreme"`  | Forces virtualisation on (role **D**) — same look as A; cheap cells |
 
 - **Scroll container:** Mantine `ScrollArea.Autosize` viewport (`viewportRef`) — not the outer wrapper. `overscrollBehavior: contain` keeps wheel/trackpad scroll inside the table.
 - **Sticky header:** `thead` stays outside the virtual window; `.stickyTh` unchanged.
 - **Sort / filter / selection:** Operate on full sorted row set in memory; only visible checkboxes mount.
+- **Order mode:** `orderMode` disables column-sort headers and keeps the order of `rows` (Zones export-order pattern).
 - **Wire preview:** `WirePreviewDataTable` inherits taller default estimate via `onRowActivate`.
 
-Progress and rollout checklist: [datatable-virtualization-progress.md](datatable-virtualization-progress.md).
+Progress and rollout checklist: [datatable-virtualization-progress.md](datatable-virtualization-progress.md). Role map: [list-kit-roles.md](list-kit-roles.md).
 
 ## Reference-count columns
 
@@ -119,7 +121,7 @@ Progress and rollout checklist: [datatable-virtualization-progress.md](datatable
 2. Filter talk groups by name — type rapidly; input stays responsive; spinner shows briefly; table updates after ~300 ms; URL gains `?q=`; reload — filter persists.
 3. On `/library/contacts`, set digital and analog filters independently — URL shows `dq` and `aq`; each debounces separately.
 4. Channels: list-page filters + `DataTable` search; optional columns hide/show; distance filter requires operator location (**Show my location** below the table).
-5. `/styleguide` → **DataTable — large virtual list** — scroll 250 rows; confirm sticky header.
+5. `/styleguide/data-table` — virtual list, orderMode, and extreme (10k) demos; confirm sticky header.
 
 ## Known gaps
 

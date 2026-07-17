@@ -83,6 +83,16 @@ export interface DataTableProps<T> {
   mobileColumnPolicy?: DataTableMobileColumnPolicy;
   /** When set, rows are clickable and the name column renders as plain text. */
   onRowActivate?: (row: T) => void;
+  /**
+   * When true, column headers are not sortable and rows keep the order of `rows`
+   * (Zones list / export-order pattern). Consumers own up/down reorder columns.
+   */
+  orderMode?: boolean;
+  /**
+   * `'extreme'` forces windowed virtualisation on (role D). Prefer cheap cells —
+   * plain text, no per-row heavy work or rich editors.
+   */
+  scale?: 'default' | 'extreme';
   /** Window tbody rows when count exceeds threshold. Default `'auto'`. */
   virtualize?: DataTableVirtualizeMode;
   /** Estimated row height for the virtualizer (list ~44px, activate rows ~56px). */
@@ -184,6 +194,8 @@ export default function DataTable<T>({
   totalRowCount,
   resultCount,
   onRowActivate,
+  orderMode = false,
+  scale = 'default',
   virtualize = 'auto',
   estimatedRowHeight,
   virtualizeOverscan,
@@ -191,6 +203,8 @@ export default function DataTable<T>({
   const isList = variant === 'list';
   const showSearchInput = showSearch ?? (isList && onSearchChange !== undefined);
   const selectable = selectableProp ?? false;
+  const effectiveVirtualize: DataTableVirtualizeMode = scale === 'extreme' ? true : virtualize;
+  const sortingEnabled = !orderMode;
 
   const hideableDefs = useMemo(
     () =>
@@ -243,6 +257,7 @@ export default function DataTable<T>({
 
   const handleSort = useCallback(
     (columnKey: string) => {
+      if (!sortingEnabled) return;
       const next = nextSortState(sortState, columnKey);
       if (onSortChange) {
         onSortChange(next);
@@ -250,7 +265,7 @@ export default function DataTable<T>({
         setInternalSort(next);
       }
     },
-    [sortState, onSortChange],
+    [sortingEnabled, sortState, onSortChange],
   );
 
   const sortCtx = useMemo(
@@ -259,8 +274,8 @@ export default function DataTable<T>({
   );
 
   const sortedRows = useMemo(
-    () => sortDataTableRows(rows, sortState, sortCtx),
-    [rows, sortState, sortCtx],
+    () => (orderMode ? rows : sortDataTableRows(rows, sortState, sortCtx)),
+    [orderMode, rows, sortState, sortCtx],
   );
 
   const [internalSelected, setInternalSelected] = useState<string[]>([]);
@@ -323,7 +338,7 @@ export default function DataTable<T>({
   const { scrollRef, virtualized, virtualRows, paddingTop, paddingBottom } =
     useVirtualDataTableRows({
       rowCount: sortedRows.length,
-      virtualize,
+      virtualize: effectiveVirtualize,
       estimatedRowHeight,
       virtualizeOverscan,
       hasRowActivate: onRowActivate !== undefined,
@@ -446,7 +461,7 @@ export default function DataTable<T>({
                   <SortableHeader
                     label={callsignColumn.header ?? 'Callsign'}
                     columnKey={DATATABLE_CALLSIGN_SORT_KEY}
-                    sortable={callsignColumn.sortable !== false}
+                    sortable={sortingEnabled && callsignColumn.sortable !== false}
                     sortState={sortState}
                     onSort={handleSort}
                   />
@@ -456,7 +471,7 @@ export default function DataTable<T>({
                 <SortableHeader
                   label={nameColumn.header ?? 'Name'}
                   columnKey={DATATABLE_NAME_SORT_KEY}
-                  sortable={nameColumn.sortable !== false}
+                  sortable={sortingEnabled && nameColumn.sortable !== false}
                   sortState={sortState}
                   onSort={handleSort}
                 />
@@ -466,7 +481,7 @@ export default function DataTable<T>({
                   <SortableHeader
                     label={col.header}
                     columnKey={col.key}
-                    sortable={col.sortable !== false && !!col.sortValue}
+                    sortable={sortingEnabled && col.sortable !== false && !!col.sortValue}
                     sortState={sortState}
                     onSort={handleSort}
                   />

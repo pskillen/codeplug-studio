@@ -149,3 +149,28 @@ describe('DataTable virtualization', () => {
     });
   });
 });
+
+describe('DataTable orderMode and scale', () => {
+  beforeEach(() => {
+    mockScrollViewport();
+  });
+
+  it('keeps row order and disables sort buttons when orderMode is true', () => {
+    const rows = makeRows(5);
+    const { container } = renderTable(rows, {
+      orderMode: true,
+      sort: { columnKey: DATATABLE_NAME_SORT_KEY, direction: 'desc' },
+    });
+
+    expect(within(container).queryByRole('button', { name: 'Name' })).toBeNull();
+    const bodyRows = screen.getAllByTestId('datatable-tbody-row');
+    expect(bodyRows[0]).toHaveTextContent('Row 001');
+    expect(bodyRows[4]).toHaveTextContent('Row 005');
+  });
+
+  it('forces virtualization when scale is extreme even below auto threshold', () => {
+    renderTable(makeRows(20), { scale: 'extreme', virtualize: 'auto' });
+    const scroll = screen.getByTestId('datatable-scroll');
+    expect(scroll).toHaveAttribute('data-virtualized', 'true');
+  });
+});

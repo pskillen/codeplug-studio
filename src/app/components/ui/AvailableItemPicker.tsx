@@ -22,10 +22,13 @@ export interface AvailableItemPickerSection<TKey extends string = string> {
   onToggleSelect: (key: TKey) => void;
   renderItem: (props: AvailableItemPickerRenderProps<TKey>) => ReactNode;
   emptyMessage?: string;
+  /** Optional actions beside the section title (e.g. Select all filtered). */
+  sectionToolbar?: ReactNode;
 }
 
 export interface AvailableItemPickerProps<TKey extends string = string> {
   title: ReactNode;
+  description?: ReactNode;
   filter?: AvailableItemPickerFilterProps;
   sections: readonly AvailableItemPickerSection<TKey>[];
   maxHeight?: number;
@@ -37,6 +40,7 @@ export interface AvailableItemPickerProps<TKey extends string = string> {
 
 export default function AvailableItemPicker<TKey extends string>({
   title,
+  description,
   filter,
   sections,
   maxHeight = 280,
@@ -50,9 +54,16 @@ export default function AvailableItemPicker<TKey extends string>({
   return (
     <Stack gap="xs">
       <Group justify="space-between" align="flex-end" wrap="wrap">
-        <Text size="sm" fw={600}>
-          {title}
-        </Text>
+        <Stack gap={4}>
+          <Text size="sm" fw={600}>
+            {title}
+          </Text>
+          {description ? (
+            <Text size="sm" c="dimmed">
+              {description}
+            </Text>
+          ) : null}
+        </Stack>
         {filter ? (
           <TextInput
             placeholder={filter.placeholder ?? 'Filter…'}
@@ -71,9 +82,12 @@ export default function AvailableItemPicker<TKey extends string>({
             const selectedSet = new Set(section.selectedKeys);
             return (
               <Stack key={section.id} gap={4}>
-                <Text size="xs" fw={500} c="dimmed" tt="uppercase">
-                  {section.title}
-                </Text>
+                <Group justify="space-between" align="center" wrap="wrap" gap="xs">
+                  <Text size="xs" fw={500} c="dimmed" tt="uppercase">
+                    {section.title}
+                  </Text>
+                  {section.sectionToolbar}
+                </Group>
                 {section.itemKeys.length === 0 ? (
                   <Text size="sm" c="dimmed" p="xs">
                     {section.emptyMessage ?? 'Nothing available'}
