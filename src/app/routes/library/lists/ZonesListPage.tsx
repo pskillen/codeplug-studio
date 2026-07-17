@@ -10,9 +10,11 @@ import {
   reorderZoneIds,
   sortZonesByExportOrder,
 } from '@core/domain/zoneOrder.ts';
+import { sortZonesByName } from '@core/domain/membershipSort.ts';
 import CodeplugMap from '../../../components/CodeplugMap/CodeplugMap.tsx';
 import UseMyLocationButton from '../../../components/UseMyLocationButton/UseMyLocationButton.tsx';
 import EntityListDeleteAction from '../../../components/library/EntityListDeleteAction.tsx';
+import MembershipSortMenu from '../../../components/library/MembershipSortMenu.tsx';
 import { DataTable, ListPage } from '../../../components/ui/index.ts';
 import type { DataTableColumn } from '../../../components/ui/DataTable.tsx';
 import { filterRowsByName, useListNameQuery } from '../../../hooks/useListNameQuery.ts';
@@ -39,14 +41,8 @@ export default function ZonesListPage() {
   const filterActive = nameFilter.trim().length > 0;
   const { skipped: mapSkipped } = applyFilters(channels, DEFAULT_MAP_FILTER_OPTS);
 
-  const moveZone = useCallback(
-    async (zoneId: string, direction: 'up' | 'down') => {
-      if (filterActive || savingOrder) return;
-      const orderedIds = orderedZones.map((zone) => zone.id);
-      const nextIds = reorderZoneIds(orderedIds, new Set([zoneId]), direction);
-      if (nextIds.every((id, index) => id === orderedIds[index])) return;
-
-      const nextZones = applyDenseZoneOrders(zones, nextIds);
+  const persistZoneOrders = useCallback(
+    async (nextZones: Zone[]) => {
       setSavingOrder(true);
       setOrderError(null);
       try {
@@ -69,8 +65,24 @@ export default function ZonesListPage() {
         setSavingOrder(false);
       }
     },
-    [filterActive, orderedZones, reload, savingOrder, zones],
+    [reload, zones],
   );
+
+  const moveZone = useCallback(
+    async (zoneId: string, direction: 'up' | 'down') => {
+      if (filterActive || savingOrder) return;
+      const orderedIds = orderedZones.map((zone) => zone.id);
+      const nextIds = reorderZoneIds(orderedIds, new Set([zoneId]), direction);
+      if (nextIds.every((id, index) => id === orderedIds[index])) return;
+      await persistZoneOrders(applyDenseZoneOrders(zones, nextIds));
+    },
+    [filterActive, orderedZones, persistZoneOrders, savingOrder, zones],
+  );
+
+  const sortZonesAlphabetically = useCallback(async () => {
+    if (filterActive || savingOrder || !zones.length) return;
+    await persistZoneOrders(sortZonesByName(zones));
+  }, [filterActive, persistZoneOrders, savingOrder, zones]);
 
   const columns = useMemo((): DataTableColumn<Zone>[] => {
     return [
@@ -177,6 +189,14 @@ export default function ZonesListPage() {
             {orderError}
           </Text>
         ) : null}
+        <Group>
+          <MembershipSortMenu
+            modes={['name']}
+            disabled={filterActive || savingOrder || !zones.length}
+            onSort={() => void sortZonesAlphabetically()}
+            label="Sort zones…"
+          />
+        </Group>
         <DataTable
           variant="list"
           rows={filtered}

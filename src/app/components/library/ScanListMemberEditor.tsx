@@ -14,6 +14,8 @@ import type { Channel } from '@core/models/library.ts';
 import { channelDisplayLabel } from '@core/domain/channelNaming.ts';
 import { reorderScanListMembers } from '@core/domain/membershipOrder.ts';
 import SelectedItemList from '../ui/SelectedItemList.tsx';
+import MembershipSortMenu from './MembershipSortMenu.tsx';
+import { sortChannelIdsByMode } from '@core/domain/membershipSort.ts';
 import { sortByName } from '../../lib/channels.ts';
 import { ICON_STROKE } from '../../lib/iconSizes.ts';
 
@@ -121,6 +123,10 @@ export default function ScanListMemberEditor({
         }}
         toolbar={
           <Group gap="xs">
+            <MembershipSortMenu
+              disabled={!memberChannelIds.length}
+              onSort={(mode) => onChange(sortChannelIdsByMode(memberChannelIds, channelsById, mode))}
+            />
             <Button
               type="button"
               variant="default"

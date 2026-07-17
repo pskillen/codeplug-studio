@@ -14,35 +14,28 @@
 
 ---
 
-## Slice 0 — Kickoff
+## Slice 0–2
 
-**Status:** Complete
-
----
-
-## Slice 1 — Core `Zone.order` + membership helpers + cascade
-
-**Status:** Complete
+**Status:** Complete (see prior commits)
 
 ---
 
-## Slice 2 — Library UI (zones + scan lists)
+## Slice 3 — Library Sort… (#155)
 
 **Status:** Complete
 
 **Delivered**
 
-- `ZonesListPage` — export-order column with Move up/down → dense `Zone.order`
-- `ScanListMemberEditor` — SelectedItemList + Move up/down; sidecar + scan-lists docs
-- Library hub route row updated
+- `membershipSort.ts` — one-shot sort helpers + confirm message
+- `MembershipSortMenu` + wiring on zones list, zone members, scan lists, RGLs
+- Follow-up [#457](https://github.com/pskillen/codeplug-studio/issues/457) for build/export-level sorting
 
 **Verify**
 
-- `/library/zones` reorder (no name filter)
-- `/library/scan-lists/:id` member Move up/down + save
+- Sort… confirm then rewrite order on library editors
 
 ---
 
 ## Next
 
-- Slice 3: Library Sort… (#155) with confirm; open follow-up issue
+- Slice 4: Build zone member reorder + zone `orderOrSlot` override UI

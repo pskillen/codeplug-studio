@@ -29,6 +29,11 @@ import {
   timeslotSegmentValue,
 } from '../../lib/rxGroupListMembers.ts';
 import { reorderRxGroupListMembers } from '@core/domain/membershipOrder.ts';
+import {
+  sortRxGroupListMembersByMode,
+  type MembershipSortMode,
+} from '@core/domain/membershipSort.ts';
+import MembershipSortMenu from './MembershipSortMenu.tsx';
 
 export interface RxGroupListMemberPickerProps {
   talkGroups: TalkGroup[];
@@ -290,6 +295,19 @@ export default function RxGroupListMemberPicker({
     );
   };
 
+  const talkGroupsById = useMemo(
+    () => new Map(talkGroups.map((row) => [row.id, row])),
+    [talkGroups],
+  );
+  const digitalContactsById = useMemo(
+    () => new Map(digitalContacts.map((row) => [row.id, row])),
+    [digitalContacts],
+  );
+
+  const applySort = (mode: MembershipSortMode) => {
+    onChange(sortRxGroupListMembersByMode(members, talkGroupsById, digitalContactsById, mode));
+  };
+
   const canMoveUp = inListSelected.some((key) => {
     const index = members.findIndex((member) => entityRefKey(member.ref) === key);
     return index > 0;
@@ -388,6 +406,11 @@ export default function RxGroupListMemberPicker({
             />
           </ScrollArea>
           <Group gap="xs">
+            <MembershipSortMenu
+              modes={['name', 'callsign']}
+              disabled={!members.length}
+              onSort={applySort}
+            />
             <Button
               type="button"
               variant="default"

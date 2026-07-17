@@ -6,6 +6,6 @@ Items **skipped**, **incomplete**, or **discovered during execution** — not th
 
 ---
 
-## Follow-ups (planned at kickoff)
+## Follow-ups
 
-- [ ] Open follow-up issue for build/export-level sorting when closing #155 (Slice 3)
+- [x] Open follow-up issue for build/export-level sorting — [#457](https://github.com/pskillen/codeplug-studio/issues/457)
