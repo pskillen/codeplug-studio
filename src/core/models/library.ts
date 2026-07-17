@@ -17,6 +17,10 @@ import type {
   SendTalkerAliasOverride,
   TxPermitOverride,
 } from './channelBehaviourDefaults.ts';
+import type {
+  IncludeInZoneDerivedScanListOverride,
+  ZoneBehaviourDefaults,
+} from './zoneBehaviourDefaults.ts';
 import type { ChannelAprsBinding } from './aprs.ts';
 
 export type {
@@ -179,7 +183,12 @@ export interface ScanList extends PersistableRow {
 }
 
 export type ZoneMemberEntry =
-  | { kind: 'channel'; channelId: string; includeInScanList?: boolean }
+  | {
+      kind: 'channel';
+      channelId: string;
+      /** Tri-state: omit/`default` defers to zone behavioural cascade. */
+      includeInScanList?: IncludeInZoneDerivedScanListOverride;
+    }
   | { kind: 'zone'; zoneId: string };
 
 export interface Zone extends PersistableRow {
@@ -203,4 +212,6 @@ export interface Library {
   aprsConfiguration: AprsConfiguration | null;
   /** Library-wide channel behavioural defaults (also persisted on project meta). */
   channelDefaults: ChannelBehaviourDefaults;
+  /** Library-wide zone behavioural defaults (also persisted on project meta). */
+  zoneDefaults: ZoneBehaviourDefaults;
 }

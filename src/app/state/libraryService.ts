@@ -1,6 +1,7 @@
 import type { Library } from '@core/models/library.ts';
 import { normalizeChannel } from '@core/domain/normalizeChannel.ts';
 import { normalizeChannelBehaviourDefaults } from '@core/domain/normalizeChannelBehaviourDefaults.ts';
+import { normalizeZoneBehaviourDefaults } from '@core/domain/normalizeZoneBehaviourDefaults.ts';
 import { findReferencesTo, type EntityReference } from '@core/domain/references.ts';
 import {
   removeChannelsFromZoneMembers,
@@ -51,6 +52,7 @@ export class LibraryService {
     ]);
     const aprsConfiguration = aprsConfigurations[0] ?? null;
     const channelDefaults = normalizeChannelBehaviourDefaults(meta?.channelDefaults);
+    const zoneDefaults = normalizeZoneBehaviourDefaults(meta?.zoneDefaults);
     return {
       channels: channels.map(normalizeChannel),
       zones,
@@ -61,6 +63,7 @@ export class LibraryService {
       scanLists,
       aprsConfiguration,
       channelDefaults,
+      zoneDefaults,
     };
   }
 

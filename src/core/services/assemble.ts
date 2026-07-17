@@ -34,6 +34,7 @@ import { migrateFormatBuild } from '@core/domain/migrateFormatBuild.ts';
 import type { Library } from '@core/models/library.ts';
 import type { AprsConfiguration } from '@core/models/aprs.ts';
 import type { ChannelBehaviourDefaults } from '@core/models/channelBehaviourDefaults.ts';
+import type { ZoneBehaviourDefaults } from '@core/models/zoneBehaviourDefaults.ts';
 
 /** Library entities needed for export projection — vendor-neutral slice. */
 export interface LibrarySlice {
@@ -46,6 +47,7 @@ export interface LibrarySlice {
   scanLists: ScanList[];
   aprsConfiguration?: AprsConfiguration | null;
   channelDefaults?: ChannelBehaviourDefaults;
+  zoneDefaults?: ZoneBehaviourDefaults;
 }
 
 export function librarySliceFrom(library: Library): LibrarySlice {
@@ -59,6 +61,7 @@ export function librarySliceFrom(library: Library): LibrarySlice {
     scanLists: library.scanLists,
     aprsConfiguration: library.aprsConfiguration,
     channelDefaults: library.channelDefaults,
+    zoneDefaults: library.zoneDefaults,
   };
 }
 

@@ -41,6 +41,11 @@ export interface BuildExportSettings {
   defaultSendTalkerAlias?: SendTalkerAliasMode;
   /** Build override: analog squelch mode when set. */
   defaultAnalogSquelchMode?: AnalogSquelchMode;
+  /**
+   * Build override: default zone-derived scan membership when member override is `default`
+   * (wins over library zoneDefaults when set).
+   */
+  defaultIncludeInZoneDerivedScanList?: boolean;
 }
 
 /**

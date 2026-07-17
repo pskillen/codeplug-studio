@@ -9,6 +9,11 @@ export interface ZoneGroupingZoneEntry {
   /** DM32 build export: synthesise scan list + carrier when enabled. */
   exportScanList?: boolean;
   scanCarrierFrequencyHz?: number | null;
+  /**
+   * Per-channel include/skip for this exported zone's derived scan list.
+   * Build-scoped; does not mutate library zone membership.
+   */
+  scanMemberInclusion?: Record<string, 'include' | 'skip'>;
 }
 
 export interface ZoneGroupingLayout {

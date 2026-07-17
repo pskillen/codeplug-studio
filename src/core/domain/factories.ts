@@ -2,6 +2,7 @@ import { newId } from '../models/ids.ts';
 import type { BuildEntityOverride, FormatBuild } from '../models/index.ts';
 import type { ProjectMeta } from '../models/project.ts';
 import { DEFAULT_CHANNEL_BEHAVIOUR_DEFAULTS } from '../models/channelBehaviourDefaults.ts';
+import { DEFAULT_ZONE_BEHAVIOUR_DEFAULTS } from '../models/zoneBehaviourDefaults.ts';
 import type {
   AnalogContact,
   Channel,
@@ -27,6 +28,7 @@ export function emptyLibrary(): Library {
     zones: [],
     aprsConfiguration: null,
     channelDefaults: { ...DEFAULT_CHANNEL_BEHAVIOUR_DEFAULTS },
+    zoneDefaults: { ...DEFAULT_ZONE_BEHAVIOUR_DEFAULTS },
   };
 }
 

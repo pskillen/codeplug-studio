@@ -70,7 +70,10 @@ export function deriveAnytoneZoneDerivedScanLists(
     const libraryZone = zoneById.get(assembledZone.zoneId);
     if (!libraryZone) continue;
 
-    let memberIds = scanMemberIds(libraryZone, library.zones).filter((channelId) => {
+    let memberIds = scanMemberIds(libraryZone, library.zones, {
+      context: options?.zoneBehaviourContext,
+      layoutEntry: entry,
+    }).filter((channelId) => {
       if (!exportedChannelIds.has(channelId)) return false;
       const channel = channelById.get(channelId);
       return (

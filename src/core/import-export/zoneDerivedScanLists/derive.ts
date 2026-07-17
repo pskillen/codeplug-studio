@@ -85,7 +85,10 @@ export function deriveZoneDerivedScanLists(
     const libraryZone = zoneById.get(assembledZone.zoneId);
     if (!libraryZone) continue;
 
-    const memberIds = scanMemberIds(libraryZone, library.zones);
+    const memberIds = scanMemberIds(libraryZone, library.zones, {
+      context: options?.zoneBehaviourContext,
+      layoutEntry: entry,
+    });
     const memberWireNames = expandedWireNamesForMembers(
       memberIds,
       channelById,

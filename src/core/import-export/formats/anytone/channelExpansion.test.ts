@@ -52,7 +52,7 @@ describe('anytone channelExpansion', () => {
     const channel = dmrRepeaterChannel('Glasgow', rgl.id, 1);
     const zone = {
       ...newZone(PROJECT_ID, 'Zone A'),
-      members: [{ kind: 'channel' as const, channelId: channel.id, includeInScanList: true }],
+      members: [{ kind: 'channel' as const, channelId: channel.id }],
     };
     const build = {
       ...newFormatBuild(PROJECT_ID, 'anytone-at-d890uv'),

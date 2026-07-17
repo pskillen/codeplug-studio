@@ -1,4 +1,5 @@
 import type { ChannelBehaviourContext } from './channelBehaviourDefaults/resolve.ts';
+import type { ZoneBehaviourContext } from './zoneBehaviourDefaults/resolve.ts';
 import type { DefaultScanInclusion } from '@core/models/formatBuild.ts';
 import type { MultiTalkGroupExportNameMode } from './channelExpansion/multiTalkGroupWireName.ts';
 import type { DigitalContactExportNameMode } from './digitalContactExportName.ts';
@@ -107,6 +108,8 @@ export interface CpsExportOptions {
   defaultScanInclusion?: DefaultScanInclusion;
   /** Library + build cascade for channel behavioural defaults at export. */
   channelBehaviourContext?: ChannelBehaviourContext;
+  /** Library + build cascade for zone behavioural defaults at export. */
+  zoneBehaviourContext?: ZoneBehaviourContext;
   /** Project display name — used for Anytone `.LST` manifest filename stem. */
   projectName?: string;
 }

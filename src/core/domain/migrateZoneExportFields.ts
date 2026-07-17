@@ -14,6 +14,7 @@ import { migrateBuildScanListsToLibrary } from './migrateScanLists.ts';
 import { migrateChannelScanListFromBuildOverrides } from './migrateChannelScanList.ts';
 import { migrateAprsSingletonAggregate } from './migrateAprsSingleton.ts';
 import { normalizeChannelBehaviourDefaults } from './normalizeChannelBehaviourDefaults.ts';
+import { normalizeZoneBehaviourDefaults } from './normalizeZoneBehaviourDefaults.ts';
 
 export interface LegacyZoneExportFields {
   exportScratchChannel: boolean;
@@ -146,6 +147,9 @@ export function migrateProjectAggregate(aggregate: ProjectAggregate): ProjectAgg
     channelDefaults: normalizeChannelBehaviourDefaults(
       withMembers.channelDefaults ?? withMembers.meta.channelDefaults,
     ),
+    zoneDefaults: normalizeZoneBehaviourDefaults(
+      withMembers.zoneDefaults ?? withMembers.meta.zoneDefaults,
+    ),
   };
 
   const { library: migratedLibrary, formatBuilds } = migrateZoneExportFieldsToBuildLayout(
@@ -166,6 +170,7 @@ export function migrateProjectAggregate(aggregate: ProjectAggregate): ProjectAgg
         scanLists: migratedLibrary.scanLists,
         aprsConfiguration: migratedLibrary.aprsConfiguration,
         channelDefaults: migratedLibrary.channelDefaults,
+        zoneDefaults: migratedLibrary.zoneDefaults,
         formatBuilds,
       }),
     ),

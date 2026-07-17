@@ -13,7 +13,10 @@ import type {
 import type { ProjectMeta } from '@core/models/project.ts';
 import type { ChannelBehaviourDefaults } from '@core/models/channelBehaviourDefaults.ts';
 import { DEFAULT_CHANNEL_BEHAVIOUR_DEFAULTS } from '@core/models/channelBehaviourDefaults.ts';
+import type { ZoneBehaviourDefaults } from '@core/models/zoneBehaviourDefaults.ts';
+import { DEFAULT_ZONE_BEHAVIOUR_DEFAULTS } from '@core/models/zoneBehaviourDefaults.ts';
 import { normalizeChannelBehaviourDefaults } from '@core/domain/normalizeChannelBehaviourDefaults.ts';
+import { normalizeZoneBehaviourDefaults } from '@core/domain/normalizeZoneBehaviourDefaults.ts';
 import { STUDIO_SCHEMA_VERSION } from '@core/models/schemaVersion.ts';
 
 /** Native YAML wire format version — bump when envelope shape changes. */
@@ -39,6 +42,8 @@ export interface ProjectAggregate {
   meta: ProjectMeta;
   /** Mirrored from meta for assemble/export convenience. */
   channelDefaults?: ChannelBehaviourDefaults;
+  /** Mirrored from meta for assemble/export convenience. */
+  zoneDefaults?: ZoneBehaviourDefaults;
   channels: Channel[];
   zones: Zone[];
   talkGroups: TalkGroup[];
@@ -61,6 +66,7 @@ export function emptyLibrary(): Library {
     zones: [],
     aprsConfiguration: null,
     channelDefaults: { ...DEFAULT_CHANNEL_BEHAVIOUR_DEFAULTS },
+    zoneDefaults: { ...DEFAULT_ZONE_BEHAVIOUR_DEFAULTS },
   };
 }
 
@@ -81,6 +87,9 @@ export function documentFromAggregate(aggregate: ProjectAggregate): StudioProjec
       channelDefaults: normalizeChannelBehaviourDefaults(
         aggregate.meta.channelDefaults ?? aggregate.channelDefaults,
       ),
+      zoneDefaults: normalizeZoneBehaviourDefaults(
+        aggregate.meta.zoneDefaults ?? aggregate.zoneDefaults,
+      ),
     },
     formatBuilds: aggregate.formatBuilds,
   };
@@ -90,9 +99,13 @@ export function aggregateFromDocument(doc: StudioProjectDocument): ProjectAggreg
   const channelDefaults = normalizeChannelBehaviourDefaults(
     doc.library.channelDefaults ?? doc.project.channelDefaults,
   );
+  const zoneDefaults = normalizeZoneBehaviourDefaults(
+    doc.library.zoneDefaults ?? doc.project.zoneDefaults,
+  );
   return {
-    meta: { ...doc.project, channelDefaults },
+    meta: { ...doc.project, channelDefaults, zoneDefaults },
     channelDefaults,
+    zoneDefaults,
     channels: doc.library.channels,
     zones: doc.library.zones,
     talkGroups: doc.library.talkGroups,
