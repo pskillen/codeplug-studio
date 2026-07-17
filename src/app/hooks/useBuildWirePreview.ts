@@ -18,6 +18,7 @@ import { traitProfileFor } from '@core/models/traits.ts';
 import { getFormatProfiles } from '@core/import-export/formatProfiles.ts';
 import type { FormatId } from '@core/import-export/types.ts';
 import { mergeExportOptions } from '@core/services/exportBuild.ts';
+import { applyDenseOrderOrSlots } from '@core/domain/exportOrderOrSlot.ts';
 import { useBuildLayout } from '../routes/builds/BuildLayoutContext.tsx';
 import { useProjects } from '../state/useProjects.ts';
 import { persistence } from '../state/persistence.ts';
@@ -176,6 +177,30 @@ export function useBuildWirePreview(
     [entityKind, persistBuild],
   );
 
+  const setEntityOrder = useCallback(
+    (orderedEntityIds: string[]) => {
+      const field = overrideFieldForEntityKind(entityKind);
+      void persistBuild((current) => ({
+        ...current,
+        [field]: applyDenseOrderOrSlots(current[field], orderedEntityIds),
+      }));
+    },
+    [entityKind, persistBuild],
+  );
+
+  const moveEntity = useCallback(
+    (rowKey: string, direction: 'up' | 'down') => {
+      const ids = allRows.map((row) => row.key);
+      const index = ids.indexOf(rowKey);
+      if (index < 0) return;
+      const target = direction === 'up' ? index - 1 : index + 1;
+      if (target < 0 || target >= ids.length) return;
+      [ids[index], ids[target]] = [ids[target]!, ids[index]!];
+      setEntityOrder(ids);
+    },
+    [allRows, setEntityOrder],
+  );
+
   return {
     build,
     rows,
@@ -191,6 +216,8 @@ export function useBuildWirePreview(
     setRowExcluded,
     setRowForceIncluded,
     setRowWireName,
+    setEntityOrder,
+    moveEntity,
     persistBuild,
   };
 }
