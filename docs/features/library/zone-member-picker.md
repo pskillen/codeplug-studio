@@ -39,7 +39,7 @@ Sidecars: `ZoneMemberEditor.md`, `ChannelZoneMembershipSection.md`.
 | Add selected           | Appends checked rows from the other pool                                  |
 | Move up / down         | Reorders selected in-zone members as a block; **Alt+↑ / Alt+↓** shortcuts |
 | Remove                 | Per-row ✕ or bulk **Remove selected**                                     |
-| Include in scan list   | Per direct channel member — `includeInScanList` (default true)            |
+| Zone-derived scan membership | Per direct channel member — tri-state `includeInScanList` (`default` / `include` / `skip`) |
 | Hide filtered from map | Separate checkboxes for each pool                                         |
 
 **Available zones** excludes the zone being edited, its descendant zones (would create a cycle), and zones already in the member list.

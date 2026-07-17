@@ -22,7 +22,8 @@ import {
   reorderZoneMembers,
   setChannelMemberIncludeInScanList,
 } from '@core/domain/zoneMembership.ts';
-import { memberIncludedInScanList } from '@core/domain/zoneMembers.ts';
+import type { IncludeInZoneDerivedScanListOverride } from '@core/models/zoneBehaviourDefaults.ts';
+import IncludeInZoneDerivedScanListSegment from '../zones/IncludeInZoneDerivedScanListSegment.tsx';
 import { BandPillForChannel } from '../pills/BandPill.tsx';
 import ModePill from '../pills/ModePill.tsx';
 import AvailableItemPicker from '../ui/AvailableItemPicker.tsx';
@@ -239,7 +240,7 @@ export default function ZoneMemberEditor({
   });
 
   const handleIncludeInScanList = useCallback(
-    (channelId: string, include: boolean) => {
+    (channelId: string, include: IncludeInZoneDerivedScanListOverride) => {
       onChange(setChannelMemberIncludeInScanList(members, channelId, include));
     },
     [members, onChange],
@@ -420,7 +421,10 @@ function InZoneMemberRow({
   selected: boolean;
   onToggleSelect: () => void;
   onRemove: () => void;
-  onIncludeInScanListChange: (channelId: string, include: boolean) => void;
+  onIncludeInScanListChange: (
+    channelId: string,
+    include: IncludeInZoneDerivedScanListOverride,
+  ) => void;
 }) {
   const entry = member ? member : entryFromMemberKey(memberKey);
 
@@ -472,7 +476,7 @@ function InZoneMemberRow({
 
   const channel = channelsById.get(entry.channelId);
   if (!channel) return null;
-  const includeInScan = memberIncludedInScanList(entry);
+  const memberOverride = entry.includeInScanList ?? 'default';
 
   return (
     <Paper withBorder p="xs" radius="sm">
@@ -511,17 +515,18 @@ function InZoneMemberRow({
             <Text size="xs" c="dimmed">
               {formatChannelRxTxListCell(channel.rxFrequency, channel.txFrequency) || '—'}
             </Text>
+            <Tooltip label="Include this channel in zone-derived scan lists at export">
+              <div>
+                <IncludeInZoneDerivedScanListSegment
+                  value={memberOverride}
+                  onChange={(next) => onIncludeInScanListChange(channel.id, next)}
+                  compact
+                />
+              </div>
+            </Tooltip>
           </Stack>
         </Group>
         <Group gap="xs" wrap="nowrap" align="center">
-          <Tooltip label="Include this channel in zone-derived scan lists at export">
-            <Checkbox
-              label="Scan list"
-              size="xs"
-              checked={includeInScan}
-              onChange={(e) => onIncludeInScanListChange(channel.id, e.currentTarget.checked)}
-            />
-          </Tooltip>
           <Text component={Link} to={`/library/channels/${channel.id}`} size="xs">
             Open
           </Text>

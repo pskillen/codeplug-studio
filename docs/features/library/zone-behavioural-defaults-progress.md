@@ -14,7 +14,7 @@ In progress — zone-derived scan membership cascade (library defaults → membe
 | --- | --- | --- |
 | Progress tracking | Complete | This file + outstanding sibling |
 | Core model + resolve | Complete | Schema v19, `ZoneBehaviourDefaults`, tri-state member, layout projection, resolve helpers |
-| Library Zone defaults UI | Pending | `/library/zones/defaults` |
+| Library Zone defaults UI | Complete | `/library/zones/defaults`; ZoneMemberEditor tri-state |
 | Build projection UI | Pending | Stop `putZone` for scan toggles |
 | Export resolution Zones tab | Pending | Channels / Zones tabs |
 | Docs | Pending | Tier-1/2 + checklist |
