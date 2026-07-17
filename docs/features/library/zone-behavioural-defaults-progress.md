@@ -21,4 +21,4 @@ Complete (pending merge) — zone-derived scan membership cascade shipped on bra
 
 ## Next
 
-- Open PR `Closes #443`
+- PR opened — merge when CI is green
