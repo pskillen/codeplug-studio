@@ -10,17 +10,19 @@ Fill this in while driving **official Baofeng DM-32UV CPS v1.60**. For each row:
 
 ### Follow-up tickets (filed from #404)
 
-| Area | Issue |
-| --- | --- |
-| Tier-3 docs drift | [#444](https://github.com/pskillen/codeplug-studio/issues/444) |
-| APRS channel columns from model | [#250](https://github.com/pskillen/codeplug-studio/issues/250) (epic [#246](https://github.com/pskillen/codeplug-studio/issues/246); updated, not new) |
-| TX Admit full CPS enum | [#445](https://github.com/pskillen/codeplug-studio/issues/445) |
-| Remove personal DMR ID profile default | [#446](https://github.com/pskillen/codeplug-studio/issues/446) |
-| Scan.csv synthesised constants | [#447](https://github.com/pskillen/codeplug-studio/issues/447) |
-| Contacts.csv metadata export | [#448](https://github.com/pskillen/codeplug-studio/issues/448) |
-| Richer v1.60 fixture rows | [#449](https://github.com/pskillen/codeplug-studio/issues/449) |
-| RX Squelch Mode Carrier vs Carrier/CTC | [#450](https://github.com/pskillen/codeplug-studio/issues/450) |
-| Fixed Analog Channel Type | [#451](https://github.com/pskillen/codeplug-studio/issues/451) |
+| Area | Issue | Status |
+| --- | --- | --- |
+| Tier-3 docs drift | [#444](https://github.com/pskillen/codeplug-studio/issues/444) | **Done** — PR [#453](https://github.com/pskillen/codeplug-studio/pull/453) |
+| APRS channel columns from model | [#250](https://github.com/pskillen/codeplug-studio/issues/250) (epic [#246](https://github.com/pskillen/codeplug-studio/issues/246); updated, not new) | Open |
+| TX Admit full CPS enum | [#445](https://github.com/pskillen/codeplug-studio/issues/445) | Open — cascade maps `busyLock`/`permitAlways` only (PR [#433](https://github.com/pskillen/codeplug-studio/pull/433)); elicit remaining CPS values |
+| Remove personal DMR ID profile default | [#446](https://github.com/pskillen/codeplug-studio/issues/446) | Open |
+| Scan.csv synthesised constants | [#447](https://github.com/pskillen/codeplug-studio/issues/447) | Open |
+| Contacts.csv metadata export | [#448](https://github.com/pskillen/codeplug-studio/issues/448) | **Done** — PR [#454](https://github.com/pskillen/codeplug-studio/pull/454); `Alert Call`/`Type`/`Repeater` still elicit |
+| Richer v1.60 fixture rows | [#449](https://github.com/pskillen/codeplug-studio/issues/449) | Open |
+| RX Squelch Mode Carrier vs Carrier/CTC | [#450](https://github.com/pskillen/codeplug-studio/issues/450) | Open — cascade maps both wires; fixture still only `Carrier/CTC` |
+| Fixed Analog Channel Type | [#451](https://github.com/pskillen/codeplug-studio/issues/451) | Open |
+
+Related (not filed from #404): per-repeater scratch export [#140](https://github.com/pskillen/codeplug-studio/issues/140) **done** (PR [#455](https://github.com/pskillen/codeplug-studio/pull/455)).
 
 ### How to use
 
@@ -54,7 +56,7 @@ Fill this in while driving **official Baofeng DM-32UV CPS v1.60**. For each row:
 | `Channels.csv` | RF channels (40 cols) | Full serialise + many constants | **Yes — priority** |
 | `Zones.csv` | Zone membership (pipe members) | Full | Light |
 | `Talkgroups.csv` | Group (+ some private) TGs | Full | **Yes** (Type enum) |
-| `Contacts.csv` | DMR private contacts | Full (metadata empty) | **Yes** |
+| `Contacts.csv` | DMR private contacts | Full (City/Province/Country/Remark from model; Type/`Alert Call`/`Repeater` constants) | **Yes** |
 | `RXGroupLists.csv` | RX group lists | Full | Light |
 | `DTMFContacts.csv` | Analog DTMF contacts | Full | **Yes** |
 | `Scan.csv` | Scan lists | Zone-derived synthesis + constants | **Yes** |
@@ -92,11 +94,11 @@ No.,Channel Name,Channel Type,RX Frequency[MHz],TX Frequency[MHz],Power,Band Wid
 | `Power` | `Channel.power` | `High`/`Middle`/`Low` → 100/50/20 | | | | See power ladder |
 | `Band Width` | analog `bandwidthKHz` | `12.5KHz` \| `25KHz` | | | | Exact casing |
 | `Scan List` | Zone-derived / manual | `None` or scan name | | | | FK → Scan.csv |
-| `TX Admit` | `txPermit` cascade | Fixture: `Channel Idle`, `Allow TX` | | | | **Full dropdown** |
+| `TX Admit` | `txPermit` cascade | Fixture: `Channel Idle`, `Allow TX` | | | | Partial map shipped; **full dropdown** → [#445](https://github.com/pskillen/codeplug-studio/issues/445) |
 | `Emergency System` | —(constant) | Studio/`None` | | | | Other names? |
 | `Squelch Level` | analog `squelch` | `0`–`9`; analog null→`1` | | | | See squelch ladder |
 | `APRS Report Type` | `Channel.aprs` / —(Studio always `Off`) | Fixture: `Off`, `Digital` | | | | Analog option? |
-| `Forbid TX` | `forbidTransmit` cascade | `0` \| `1` | | | | |
+| `Forbid TX` | `forbidTransmit` cascade | `0` \| `1` | | | | Cascade shipped (PR [#433](https://github.com/pskillen/codeplug-studio/pull/433)) |
 | `APRS Receive` | `Channel.aprs.receiveEnabled`? / —(Studio `0`) | Fixture `0`,`1` | | | | |
 | `Forbid Talkaround` | —(Studio `0`) | Fixture `0`,`1` | | | | |
 | `Auto Scan` | Scan carrier only → `1` else `0` | Fixture only `0` | | | | |
@@ -119,7 +121,7 @@ No.,Channel Name,Channel Type,RX Frequency[MHz],TX Frequency[MHz],Power,Band Wid
 | `CTC/DCS Decode` | analog `rxTone` | `None` \| CTCSS \| DCS? | | | | DCS form |
 | `CTC/DCS Encode` | analog `txTone` | same | | | | |
 | `Scramble` | —(Studio `None`) | `None` | | | | |
-| `RX Squelch Mode` | `analogSquelchMode` cascade | `Carrier` \| `Carrier/CTC` | | | | Fixture only Carrier/CTC |
+| `RX Squelch Mode` | `analogSquelchMode` cascade | `Carrier` \| `Carrier/CTC` | | | | Cascade maps both; confirm CPS → [#450](https://github.com/pskillen/codeplug-studio/issues/450) |
 | `Signaling Type` | —(Studio `None`) | `None` | | | | |
 | `PTT ID` | —(Studio `OFF`) | `OFF` | | | | Casing |
 | `VOX Function` | —(Studio `0`) | `0` | | | | |
@@ -246,12 +248,12 @@ No.,Channel Name,Channel Type,RX Frequency[MHz],TX Frequency[MHz],Power,Band Wid
 | --- | --- | --- | --- | --- | --- | --- |
 | `No.` | — | Sequential | | | | |
 | `ID` | `DigitalContact.digitalId` | DMR ID | | | | |
-| `Repeater` | —(Studio empty) | | | | | |
+| `Repeater` | —(Studio empty) | | | | | Still unmodelled after [#448](https://github.com/pskillen/codeplug-studio/issues/448) |
 | `Name` | `DigitalContact.name` | | | | | |
-| `City` | `DigitalContact.city` (unused on export) | | | | | |
-| `Province` | `DigitalContact.state`? | | | | | |
-| `Country` | `DigitalContact.country` | | | | | |
-| `Remark` | `DigitalContact.remarks` | | | | | |
+| `City` | `DigitalContact.city` | Exported | | | | Shipped [#448](https://github.com/pskillen/codeplug-studio/issues/448) |
+| `Province` | `DigitalContact.state` | Exported as `Province` | | | | |
+| `Country` | `DigitalContact.country` | Exported | | | | |
+| `Remark` | `DigitalContact.remarks` | Exported (`comment` is separate) | | | | |
 | `Type` | —(Studio always `Private Call`) | | | | | Other types? |
 | `Alert Call` | —(Studio `0`) | Fixture `0` | | | | Non-zero values? |
 
