@@ -413,9 +413,7 @@ export default function ExportBuildCpsPanel({ build }: ExportBuildCpsPanelProps)
         </Text>
       ) : null}
       {error ? <Alert color="red">{error}</Alert> : null}
-      {build.formatId === 'dm32' ? (
-        <Dm32AprsSetupAlert exportFileNames={exportFileNames} />
-      ) : null}
+      {build.formatId === 'dm32' ? <Dm32AprsSetupAlert exportFileNames={exportFileNames} /> : null}
       {exportWarnings.length > 0 ? <ExportWarningsAlert warnings={exportWarnings} /> : null}
       <Group gap="xs">
         <Button

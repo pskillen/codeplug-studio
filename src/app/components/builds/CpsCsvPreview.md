@@ -11,13 +11,13 @@ Read-only tabbed table preview of CPS CSV export files.
 
 ## Props — `CpsCsvPreview`
 
-| Prop           | Type                       | Description                                          |
-| -------------- | -------------------------- | ---------------------------------------------------- |
-| `fileNames`    | `readonly string[]`        | Tab order (from format adapter)                      |
-| `tablesByFile` | `Record<string, CsvTable>` | Parsed headers + rows per CSV file                   |
-| `textByFile`   | `Record<string, string>`   | Raw text for non-CSV files (e.g. DM32 `APRS.md`)     |
-| `loading`      | `boolean`                  | Show spinner while serialising                       |
-| `error`        | `string \| null`           | Export/preview failure message                       |
+| Prop           | Type                       | Description                                      |
+| -------------- | -------------------------- | ------------------------------------------------ |
+| `fileNames`    | `readonly string[]`        | Tab order (from format adapter)                  |
+| `tablesByFile` | `Record<string, CsvTable>` | Parsed headers + rows per CSV file               |
+| `textByFile`   | `Record<string, string>`   | Raw text for non-CSV files (e.g. DM32 `APRS.md`) |
+| `loading`      | `boolean`                  | Show spinner while serialising                   |
+| `error`        | `string \| null`           | Export/preview failure message                   |
 
 ## Usage
 

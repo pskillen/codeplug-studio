@@ -2,7 +2,9 @@ import type { ChannelAprsBinding } from '@core/models/aprs.ts';
 import type { AprsPttMode, AprsReportType, ChannelMode } from '@core/models/libraryTypes.ts';
 import { isAnalogMode } from './channelModes.ts';
 
-export function formatDm32AprsReportType(reportType: AprsReportType | undefined): 'Off' | 'Digital' {
+export function formatDm32AprsReportType(
+  reportType: AprsReportType | undefined,
+): 'Off' | 'Digital' {
   return reportType === 'digital' ? 'Digital' : 'Off';
 }
 

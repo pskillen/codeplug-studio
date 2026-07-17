@@ -22,11 +22,7 @@ import {
   ZONE_HEADERS,
   type Dm32ExportFileName,
 } from './columns.ts';
-import {
-  buildDm32AprsGuide,
-  DM32_APRS_GUIDE_FILE_NAME,
-  hasDm32AprsGuide,
-} from './aprsGuide.ts';
+import { buildDm32AprsGuide, DM32_APRS_GUIDE_FILE_NAME, hasDm32AprsGuide } from './aprsGuide.ts';
 import {
   expandAllDm32ChannelsForExport,
   expandDm32ZoneMemberWireNames,

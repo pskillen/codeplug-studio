@@ -8,8 +8,8 @@ Baofeng DM-32UV CPS v1.60 has no `APRS.csv`. Operators must set global APRS fiel
 
 ## Props
 
-| Prop             | Type                 | Description                                      |
-| ---------------- | -------------------- | ------------------------------------------------ |
+| Prop              | Type                | Description                                     |
+| ----------------- | ------------------- | ----------------------------------------------- |
 | `exportFileNames` | `readonly string[]` | Resolved export file list for the current build |
 
 ## Usage

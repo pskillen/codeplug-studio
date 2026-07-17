@@ -2,11 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { Channel } from '@core/models/library.ts';
 import { newAprsConfiguration, newChannel, newFormatBuild } from '@core/domain/factories.ts';
 import { assemble, type LibrarySlice } from '@core/services/assemble.ts';
-import {
-  buildDm32AprsGuide,
-  DM32_APRS_GUIDE_FILE_NAME,
-  DM32_APRS_GUIDE_TIP,
-} from './aprsGuide.ts';
+import { buildDm32AprsGuide, DM32_APRS_GUIDE_FILE_NAME, DM32_APRS_GUIDE_TIP } from './aprsGuide.ts';
 import { resolveDm32ExportFileNames, serialiseDm32Files } from './serialise.ts';
 import { collectDm32ExportWarnings } from './warnings.ts';
 import { DM32_EXPORT_FILE_NAMES } from './columns.ts';

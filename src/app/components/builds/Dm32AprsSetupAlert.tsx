@@ -27,8 +27,11 @@ export default function Dm32AprsSetupAlert({ exportFileNames }: Dm32AprsSetupAle
         <List.Item>Report channels 1–8 (channel names)</List.Item>
       </List>
       <Text size="sm" mt="xs">
-        Suggested values are in <Text span fw={600}>{DM32_APRS_GUIDE_FILE_NAME}</Text> inside the
-        export ZIP (also visible in Preview).
+        Suggested values are in{' '}
+        <Text span fw={600}>
+          {DM32_APRS_GUIDE_FILE_NAME}
+        </Text>{' '}
+        inside the export ZIP (also visible in Preview).
       </Text>
     </Alert>
   );

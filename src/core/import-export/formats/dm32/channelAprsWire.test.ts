@@ -6,10 +6,7 @@ import { CHANNEL_COL } from './columns.ts';
 import { expandAllDm32ChannelsForExport } from './channelExpansion.ts';
 import { serialiseDm32ChannelRow } from './channelWire.ts';
 import { buildDm32TalkGroupWireNameMap } from './talkGroupWire.ts';
-import {
-  dm32ChannelAprsWireCells,
-  formatDm32AprsReportChannelWire,
-} from './aprsWireFormat.ts';
+import { dm32ChannelAprsWireCells, formatDm32AprsReportChannelWire } from './aprsWireFormat.ts';
 
 const PROJECT_ID = '11111111-1111-4111-8111-111111111111';
 
