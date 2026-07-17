@@ -12,20 +12,21 @@ Application code lives under `src/core/`, `src/integrations/`, and `src/app/` wi
 
 ## Repository layout
 
-| Path                  | Role                                                     |
-| --------------------- | -------------------------------------------------------- |
-| `README.md`           | User-facing overview                                     |
-| `DESIGN.md`           | Living product and architecture constitution             |
-| `AGENTS.md`           | This file — agent workflow index                         |
-| `docs/poc-migration/` | Epic 1 migration context, progress logs                  |
-| `docs/features/`      | Tier 1 — library, builds, traits, product behaviour      |
-| `docs/reference/`     | Tier 2 (domain) + Tier 3 (per-format wire tables)        |
-| `docs/build/`         | CI, Pages, [testing](docs/build/testing/README.md)       |
-| `src/core/`           | Models, domain, import/export, services — **no React**   |
-| `src/integrations/`   | Browser I/O: persistence, cloud, repeater APIs           |
-| `src/app/`            | React routes, features, components, thin state           |
-| `.cursor/rules/`      | File-scoped editor rules (+ always-applied deliverables) |
-| `.cursor/skills/`     | Agent skills — git workflow, plans, docs, progress       |
+| Path                         | Role                                                                                            |
+| ---------------------------- | ----------------------------------------------------------------------------------------------- |
+| `README.md`                  | User-facing overview                                                                            |
+| `DESIGN.md`                  | Living product and architecture constitution                                                    |
+| `AGENTS.md`                  | This file — agent workflow index                                                                |
+| `docs/poc-migration/`        | Epic 1 migration context, progress logs                                                         |
+| `docs/features/`             | Tier 1 — library, builds, traits, product behaviour                                             |
+| `docs/reference/`            | Tier 2 (domain) + Tier 3 (per-format wire tables)                                               |
+| `docs/reference/styleguide/` | UI interaction conventions (list kit, Sort…, chrome) — [styleguide](docs/reference/styleguide/) |
+| `docs/build/`                | CI, Pages, [testing](docs/build/testing/README.md)                                              |
+| `src/core/`                  | Models, domain, import/export, services — **no React**                                          |
+| `src/integrations/`          | Browser I/O: persistence, cloud, repeater APIs                                                  |
+| `src/app/`                   | React routes, features, components, thin state                                                  |
+| `.cursor/rules/`             | File-scoped editor rules (+ always-applied deliverables)                                        |
+| `.cursor/skills/`            | Agent skills — git workflow, plans, docs, progress                                              |
 
 **Dependency rule:** `app` → `core`; `integrations` → `core`. Never `core` → `app`.
 
@@ -55,6 +56,7 @@ The **library** and domain layer are **vendor-neutral**. Radio caps, column name
 6. **Privacy** — operator data and tokens stay in browser storage only; never in the repo.
 7. **Docs ship with behaviour** — tier-1 feature hubs, component sidecars, and index rows in the same PR as the code ([documentation-deliverables.mdc](.cursor/rules/documentation-deliverables.mdc), [feature-docs](.cursor/skills/feature-docs/SKILL.md)).
 8. **New CPS format** — follow [adding-a-new-format.md](docs/features/import-export/adding-a-new-format.md) for adapter, trait, test, and UI checklist.
+9. **UI rework** — follow [docs/reference/styleguide/](docs/reference/styleguide/) for list shells, Sort… / reorder, and chrome conventions (interactive demos at `/styleguide`).
 
 ## Git workflow
 

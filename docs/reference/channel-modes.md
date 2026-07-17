@@ -53,6 +53,6 @@ A logical library channel carries zero or more `ChannelModeProfile` entries (e.g
 
 ## Related
 
-- [Display conventions](./display-conventions.md)
+- [Display conventions](./styleguide/display.md)
 - [Data model](../features/data-model/README.md)
 - [library](../features/library/README.md)
