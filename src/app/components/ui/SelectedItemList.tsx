@@ -258,6 +258,8 @@ export default function SelectedItemList<TKey extends string>({
         ) : null}
       </Group>
 
+      {toolbar ? <Group>{toolbar}</Group> : null}
+
       <ScrollArea.Autosize mah={maxHeight} type="auto" offsetScrollbars>
         {listBody}
       </ScrollArea.Autosize>
@@ -302,8 +304,6 @@ export default function SelectedItemList<TKey extends string>({
       ) : hint && onReorder != null ? (
         <Group gap="xs">{hint}</Group>
       ) : null}
-
-      {toolbar}
     </Stack>
   );
 }

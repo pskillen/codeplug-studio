@@ -20,7 +20,7 @@ Role **C** lives in **reorder mode**: display order is the agreed/export members
 | `renderItem`                | `(ctx) => ReactNode`                             | Row content; receives `dragHandle` for {@link SelectedItemDragHandle} |
 | `emptyMessage`              | `string`                                         | Shown when `itemKeys` is empty                                        |
 | `maxHeight`                 | `number`                                         | `ScrollArea` max height (default 360)                                 |
-| `toolbar`                   | `ReactNode`                                      | Extra actions below built-in controls (e.g. sort menu)                |
+| `toolbar`                   | `ReactNode`                                      | Extra actions above the list body (e.g. **Sort channels…**)           |
 | `onMoveSelected`            | `(direction: 'up' \| 'down') => void`            | Built-in Move up / Move down                                          |
 | `onRemoveSelected`          | `() => void`                                     | Built-in Remove selected                                              |
 | `onReorder`                 | `(orderedKeys: TKey[]) => void`                  | Drag-and-drop; receives full `itemKeys` after drop                    |

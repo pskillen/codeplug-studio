@@ -58,14 +58,14 @@ export default function RxGroupListsListPage() {
 
   if (loading) {
     return (
-      <ListPage title="RX group lists">
+      <ListPage title="Receive Group Lists">
         <Text>Loading library…</Text>
       </ListPage>
     );
   }
 
   return (
-    <ListPage title="RX group lists">
+    <ListPage title="Receive Group Lists">
       <DataTable
         variant="list"
         rows={filtered}

@@ -133,6 +133,7 @@ export default function ScanListMemberEditor({
         toolbar={
           <MembershipSortMenu
             disabled={!memberChannelIds.length}
+            label="Sort channels…"
             onSort={(mode) => onChange(sortChannelIdsByMode(memberChannelIds, channelsById, mode))}
           />
         }

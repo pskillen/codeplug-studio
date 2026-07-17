@@ -34,7 +34,11 @@ const registry: SectionNavEntry[] = [
   { title: 'Contacts', prefix: '/library/digital-contacts', Component: ContactsSectionNav },
   { title: 'Contacts', prefix: '/library/analog-contacts', Component: ContactsSectionNav },
   { title: 'Contacts', prefix: '/library/contacts', Component: ContactsSectionNav },
-  { title: 'RX group lists', prefix: '/library/rx-group-lists', Component: RxGroupListsSectionNav },
+  {
+    title: 'Receive Group Lists',
+    prefix: '/library/rx-group-lists',
+    Component: RxGroupListsSectionNav,
+  },
   { title: 'Scan lists', prefix: '/library/scan-lists', Component: ScanListsSectionNav },
   {
     title: 'APRS configuration',

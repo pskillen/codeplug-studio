@@ -38,11 +38,11 @@ export const LIBRARY_NAV: LibraryNavEntry[] = [
     sectionNavTitle: 'Contacts',
   },
   {
-    label: 'RX group list',
-    plural: 'RX group lists',
+    label: 'Receive Group List',
+    plural: 'Receive Group Lists',
     listPath: '/library/rx-group-lists',
     editorSlugs: ['rx-group-lists'],
-    sectionNavTitle: 'RX group lists',
+    sectionNavTitle: 'Receive Group Lists',
   },
   {
     label: 'Scan list',

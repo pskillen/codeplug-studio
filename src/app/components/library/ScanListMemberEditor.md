@@ -24,7 +24,7 @@ Ordered channel membership for a library [`ScanList`](../../../../docs/features/
 
 ## Behaviour
 
-- **In list** — `SelectedItemList` reorder mode: drag handles, built-in Move up / Move down / Remove selected / Alt+↑/↓; `reorderScanListMembers` from core. Sort… in toolbar.
+- **In list** — `SelectedItemList` reorder mode: drag handles, built-in Move up / Move down / Remove selected / Alt+↑/↓; `reorderScanListMembers` from core. **Sort channels…** above the member list.
 - **Add** — `AvailableItemPicker` (role B) of channels not already members; Add selected appends in stage order.
 - Display filter of the add pool does not change export order.
 

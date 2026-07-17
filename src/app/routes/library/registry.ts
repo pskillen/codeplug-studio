@@ -24,7 +24,12 @@ export const LIBRARY_KINDS: LibraryKindMeta[] = [
     label: 'Analog contact',
     plural: 'Analog contacts',
   },
-  { kind: 'rxGroupList', slug: 'rx-group-lists', label: 'RX group list', plural: 'RX group lists' },
+  {
+    kind: 'rxGroupList',
+    slug: 'rx-group-lists',
+    label: 'Receive Group List',
+    plural: 'Receive Group Lists',
+  },
   { kind: 'scanList', slug: 'scan-lists', label: 'Scan list', plural: 'Scan lists' },
   {
     kind: 'aprsConfiguration',

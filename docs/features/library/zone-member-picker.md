@@ -38,7 +38,7 @@ Sidecars: `ZoneMemberEditor.md`, `ChannelZoneMembershipSection.md`.
 | Other pool filter            | Filters available channels and zones                                                                                                                         |
 | Add selected                 | Appends checked rows from the other pool                                                                                                                     |
 | Move up / down / drag        | Reorders selected in-zone members; drag handles when filter clear; **Alt+↑ / Alt+↓** via kit                                                                 |
-| Sort…                        | One-shot rewrite of membership order (name / callsign / duplex / band / mode) after confirm — [#456](https://github.com/pskillen/codeplug-studio/issues/456) |
+| Sort channels…               | One-shot rewrite of membership order (name / callsign / duplex / band / mode) after confirm — [#456](https://github.com/pskillen/codeplug-studio/issues/456) |
 | Remove                       | Per-row ✕ or bulk **Remove selected** (kit built-in)                                                                                                         |
 | Zone-derived scan membership | Per direct channel member — tri-state `includeInScanList` (`default` / `include` / `skip`)                                                                   |
 | Hide filtered from map       | Separate checkboxes for each pool                                                                                                                            |

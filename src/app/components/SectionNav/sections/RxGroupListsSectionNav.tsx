@@ -6,7 +6,7 @@ export default function RxGroupListsSectionNav(props: SectionNavProps) {
     <EntityListSectionNav
       {...props}
       newPath="/library/rx-group-lists/new"
-      newLabel="New RX group list"
+      newLabel="New Receive Group List"
     />
   );
 }
