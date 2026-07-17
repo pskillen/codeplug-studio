@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import {
   Badge,
+  Code,
   Group,
   Loader,
   ScrollArea,
@@ -13,11 +14,14 @@ import {
 } from '@mantine/core';
 import { IconChevronDown, IconChevronUp, IconSelector } from '@tabler/icons-react';
 import type { CsvTable } from '@core/import-export/csvParse.ts';
+import { isCsvPreviewFileName } from '../../hooks/useBuildCpsExportPreview.ts';
 import { projectCsvTableRows, type CsvPreviewSortState } from './csvPreviewTable.ts';
 
 export interface CpsCsvPreviewProps {
   fileNames: readonly string[];
   tablesByFile: Record<string, CsvTable>;
+  /** Non-CSV export files (e.g. APRS.md) shown as raw text. */
+  textByFile?: Record<string, string>;
   loading?: boolean;
   error?: string | null;
 }
@@ -148,6 +152,7 @@ function CsvFileTable({ table }: { table: CsvTable }) {
 export default function CpsCsvPreview({
   fileNames,
   tablesByFile,
+  textByFile = {},
   loading = false,
   error = null,
 }: CpsCsvPreviewProps) {
@@ -184,14 +189,21 @@ export default function CpsCsvPreview({
     <Tabs defaultValue={defaultTab} keepMounted={false}>
       <Tabs.List>
         {fileNames.map((fileName) => {
-          const rowCount = tablesByFile[fileName]?.rows.length ?? 0;
+          const isCsv = isCsvPreviewFileName(fileName);
+          const rowCount = isCsv ? (tablesByFile[fileName]?.rows.length ?? 0) : null;
           return (
             <Tabs.Tab key={fileName} value={fileName}>
               <Group gap={6} wrap="nowrap">
                 {fileName}
-                <Badge size="xs" variant="light">
-                  {rowCount}
-                </Badge>
+                {rowCount != null ? (
+                  <Badge size="xs" variant="light">
+                    {rowCount}
+                  </Badge>
+                ) : (
+                  <Badge size="xs" variant="outline">
+                    text
+                  </Badge>
+                )}
               </Group>
             </Tabs.Tab>
           );
@@ -200,7 +212,15 @@ export default function CpsCsvPreview({
 
       {fileNames.map((fileName) => (
         <Tabs.Panel key={fileName} value={fileName} pt="md">
-          <CsvFileTable table={tablesByFile[fileName] ?? { headers: [], rows: [] }} />
+          {isCsvPreviewFileName(fileName) ? (
+            <CsvFileTable table={tablesByFile[fileName] ?? { headers: [], rows: [] }} />
+          ) : (
+            <ScrollArea.Autosize mah="60vh" type="auto" offsetScrollbars>
+              <Code block style={{ whiteSpace: 'pre-wrap' }}>
+                {textByFile[fileName] ?? ''}
+              </Code>
+            </ScrollArea.Autosize>
+          )}
         </Tabs.Panel>
       ))}
     </Tabs>

@@ -55,6 +55,19 @@
 
 ---
 
+## Wave — DM32 APRS export ([#250](https://github.com/pskillen/codeplug-studio/issues/250))
+
+**Status:** Complete on `250/pskil/dm32-aprs-export`
+
+| Item                         | Status   | Notes                                      |
+| ---------------------------- | -------- | ------------------------------------------ |
+| Channel APRS columns         | Complete | `aprsWireFormat.ts` + `channelWire.ts`     |
+| `APRS.md` guide              | Complete | Conditional ZIP file + divergence warnings |
+| Export UI tip + text preview | Complete | `Dm32AprsSetupAlert`, non-CSV preview tabs |
+| Tier-1 / tier-3 docs         | Complete | `docs/reference/dm32/aprs.md`              |
+
+---
+
 ## Verify
 
 - `npm run format:check && npm run lint && npm run test && npm run build`
@@ -63,4 +76,4 @@
 
 ## Next
 
-- DM32 per-channel APRS export [#250](https://github.com/pskillen/codeplug-studio/issues/250)
+- OpenGD77 APRS (deferred)

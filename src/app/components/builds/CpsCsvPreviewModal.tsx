@@ -18,11 +18,12 @@ export default function CpsCsvPreviewModal({
   build,
   exportOptions,
 }: CpsCsvPreviewModalProps) {
-  const { fileNames, tablesByFile, warnings, loading, error } = useBuildCpsExportPreview({
-    build,
-    exportOptions,
-    enabled: opened,
-  });
+  const { fileNames, tablesByFile, textByFile, warnings, loading, error } =
+    useBuildCpsExportPreview({
+      build,
+      exportOptions,
+      enabled: opened,
+    });
 
   return (
     <Modal opened={opened} onClose={onClose} title="CSV preview" size="90%" centered>
@@ -31,6 +32,7 @@ export default function CpsCsvPreviewModal({
         <CpsCsvPreview
           fileNames={fileNames}
           tablesByFile={tablesByFile}
+          textByFile={textByFile}
           loading={loading}
           error={error}
         />

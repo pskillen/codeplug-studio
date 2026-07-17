@@ -2,6 +2,7 @@ import type { AssembledBuild } from '@core/services/assemble.ts';
 import type { CpsExportOptions } from '@core/import-export/types.ts';
 import type { LibrarySlice } from '@core/services/assemble.ts';
 import { expandDm32ZoneMemberWireNames } from './channelExpansion.ts';
+import { collectDm32AprsGuideWarnings } from './aprsGuide.ts';
 import { buildSerialiseContext } from './serialise.ts';
 import { DEFAULT_DM32_PROFILE_ID, getDm32Profile } from './profiles.ts';
 
@@ -39,6 +40,8 @@ export function collectDm32ExportWarnings(
       );
     }
   }
+
+  warnings.push(...collectDm32AprsGuideWarnings(assembled));
 
   return warnings;
 }
