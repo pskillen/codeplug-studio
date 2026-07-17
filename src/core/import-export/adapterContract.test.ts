@@ -41,6 +41,7 @@ describe('adapter contracts', () => {
     const adapter = getExportAdapter('dm32');
     expect(adapter.id).toBe('dm32');
     expect(adapter.defaultExportSettings?.defaultScanInclusion).toBe('scan');
+    expect(adapter.defaultExportSettings?.exportScratchChannels).toBe(true);
     expect(isMultiFileExportAdapter(adapter)).toBe(true);
     if (isMultiFileExportAdapter(adapter)) {
       expect(adapter.delivery).toBe('multi-file');

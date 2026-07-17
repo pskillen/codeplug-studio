@@ -2,6 +2,7 @@ import type { Channel, ChannelModeProfile, ChannelModeProfileDMR } from '@core/m
 import type { EntityRef, ChannelMode } from '@core/models/libraryTypes.ts';
 import type { CpsExportOptions } from '@core/import-export/types.ts';
 import type { AssembledBuild } from '@core/services/assemble.ts';
+import { applyWireNameLimits } from '@core/import-export/channelExpansion/exportWireNames.ts';
 import {
   expandMultiTalkGroupMemberWireRows,
   type MultiTalkGroupLibrarySlice,
@@ -10,8 +11,12 @@ import {
   expandChannelWireRows,
   type ExpandedChannelWireRow,
 } from '@core/import-export/channelExpansion/multiMode.ts';
+import { sanitiseAsciiWireString } from '@core/import-export/sanitiseAsciiWireString.ts';
+import { uniqueWireName } from '@core/import-export/channelExpansion/shortenName.ts';
 import { isAnalogMode, isDmrMode } from './channelModes.ts';
 import { DM32_NON_EXPANDABLE_RX_GROUP_LISTS } from './columns.ts';
+
+export type Dm32ChannelRowKind = 'lean' | 'talkGroup' | 'scratch';
 
 export interface ExpandedDm32ChannelRow {
   sourceChannelId: string;
@@ -22,6 +27,7 @@ export interface ExpandedDm32ChannelRow {
   /** TX contact for this row — member ref when RX-list expanded. */
   txContactRef: EntityRef | null;
   rxGroupListId: string | null;
+  rowKind: Dm32ChannelRowKind;
   expansionNote?: string;
 }
 
@@ -46,6 +52,7 @@ function dualModeRow(
     modeProfile: dmrProfile,
     txContactRef: dmrProfile.contactRef,
     rxGroupListId: dmrProfile.rxGroupListId,
+    rowKind: 'lean',
   };
 }
 
@@ -58,6 +65,7 @@ function dm32ExportOptions(
     profileId: options?.profileId ?? assembled.profileId,
     expandModes: false,
     expandRxGroupLists: options?.expandRxGroupLists ?? true,
+    exportScratchChannels: options?.exportScratchChannels ?? true,
   };
 }
 
@@ -92,6 +100,50 @@ function shouldSkipRxExpansion(
   return false;
 }
 
+function scratchWireName(
+  channel: Channel,
+  baseWireName: string,
+  reserved: Set<string>,
+  options: CpsExportOptions,
+  profileId: string | undefined,
+  warnings: string[],
+): string {
+  const composed = `${baseWireName} Scratch`;
+  if (options.shortenNames === false) {
+    const name = sanitiseAsciiWireString(uniqueWireName(composed, reserved));
+    reserved.add(name);
+    return name;
+  }
+  return applyWireNameLimits(composed, channel, reserved, options, profileId, warnings);
+}
+
+function appendScratchRow(
+  channel: Channel,
+  baseWireName: string,
+  dmrProfile: ChannelModeProfileDMR,
+  rows: ExpandedDm32ChannelRow[],
+  exportOptions: CpsExportOptions,
+  profileId: string | undefined,
+  reserved: Set<string>,
+  warnings: string[],
+): void {
+  if (exportOptions.exportScratchChannels === false) return;
+  const hasTalkGroupRows = rows.some((row) => row.rowKind === 'talkGroup');
+  if (!hasTalkGroupRows) return;
+
+  rows.push({
+    sourceChannelId: channel.id,
+    key: `${channel.id}:scratch`,
+    wireName: scratchWireName(channel, baseWireName, reserved, exportOptions, profileId, warnings),
+    mode: dmrProfile.mode,
+    modeProfile: dmrProfile,
+    txContactRef: dmrProfile.contactRef,
+    rxGroupListId: dmrProfile.rxGroupListId,
+    rowKind: 'scratch',
+    expansionNote: 'Scratch channel',
+  });
+}
+
 function toDm32Rows(siteRows: ExpandedChannelWireRow[]): ExpandedDm32ChannelRow[] {
   return siteRows.map((row) => ({
     sourceChannelId: row.sourceChannelId,
@@ -101,10 +153,11 @@ function toDm32Rows(siteRows: ExpandedChannelWireRow[]): ExpandedDm32ChannelRow[
     modeProfile: row.modeProfile,
     txContactRef: isDmrProfile(row.modeProfile) ? row.modeProfile.contactRef : null,
     rxGroupListId: isDmrProfile(row.modeProfile) ? row.modeProfile.rxGroupListId : null,
+    rowKind: 'lean' as const,
   }));
 }
 
-/** Expand one channel into export wire rows (RX-list fan-out when enabled). */
+/** Expand one channel into export wire rows (RX-list fan-out + optional scratch). */
 export function expandDm32ChannelWireRows(
   assembledChannel: AssembledBuild['channels'][number],
   assembled: AssembledBuild,
@@ -121,7 +174,7 @@ export function expandDm32ChannelWireRows(
 
   if (!shouldSkipRxExpansion(dmrProfile, exportOptions)) {
     const members = rxListMembersForChannel(channel, dmrProfile, assembled);
-    if (members.length > 0) {
+    if (members.length > 0 && dmrProfile) {
       const expanded = expandMultiTalkGroupMemberWireRows(
         channel,
         members,
@@ -133,7 +186,7 @@ export function expandDm32ChannelWireRows(
         reserved,
         warnings,
       );
-      return expanded.map((row) => ({
+      const rows: ExpandedDm32ChannelRow[] = expanded.map((row) => ({
         sourceChannelId: row.sourceChannelId,
         key: row.key,
         wireName: row.wireName,
@@ -141,8 +194,20 @@ export function expandDm32ChannelWireRows(
         modeProfile: row.modeProfile,
         txContactRef: row.memberRef,
         rxGroupListId: null,
+        rowKind: 'talkGroup' as const,
         expansionNote: row.expansionNote,
       }));
+      appendScratchRow(
+        channel,
+        baseWireName,
+        dmrProfile,
+        rows,
+        exportOptions,
+        profileId,
+        reserved,
+        warnings,
+      );
+      return rows;
     }
   }
 
