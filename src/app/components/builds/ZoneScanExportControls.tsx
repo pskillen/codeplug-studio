@@ -2,6 +2,7 @@ import { ActionIcon, Badge, Group, NumberInput, Stack, Switch, Text } from '@man
 import { IconChevronDown, IconChevronRight } from '@tabler/icons-react';
 import type { Zone } from '@core/models/library.ts';
 import type { ZoneGroupingZoneEntry } from '@core/models/traitLayout.ts';
+import type { ZoneBehaviourContext } from '@core/import-export/zoneBehaviourDefaults/index.ts';
 import {
   collectZoneScanMemberRefs,
   zoneScanMemberCounts,
@@ -15,6 +16,7 @@ export interface ZoneScanRowHeaderProps {
   zone: Zone;
   zones: Zone[];
   entry: ZoneGroupingZoneEntry | undefined;
+  zoneBehaviourContext?: ZoneBehaviourContext;
   scanListMemberCap: number;
   showScanCarrierControls: boolean;
   expanded: boolean;
@@ -27,6 +29,7 @@ export function ZoneScanRowHeader({
   zone,
   zones,
   entry,
+  zoneBehaviourContext,
   scanListMemberCap,
   showScanCarrierControls,
   expanded,
@@ -34,7 +37,10 @@ export function ZoneScanRowHeader({
   onToggleExpand,
   onExportScanListChange,
 }: ZoneScanRowHeaderProps) {
-  const { included, total } = zoneScanMemberCounts(zone, zones);
+  const { included, total } = zoneScanMemberCounts(zone, zones, {
+    context: zoneBehaviourContext,
+    layoutEntry: entry,
+  });
   const capExceeded = included > scanListMemberCap;
 
   return (
@@ -76,13 +82,15 @@ export interface ZoneScanExpandPanelProps {
   zone: Zone;
   zones: Zone[];
   entry: ZoneGroupingZoneEntry | undefined;
+  zoneBehaviourContext?: ZoneBehaviourContext;
   channelById: Map<string, import('@core/models/library.ts').Channel>;
   isDm32: boolean;
   showScanCarrierControls: boolean;
   saving: boolean;
   onUpdateZoneEntry: (patch: Partial<ZoneGroupingZoneEntry>) => void;
+  /** Updates build layout projection for this exported zone — not library membership. */
   onUpdateMemberScanInclusion: (
-    ownerZoneId: string,
+    exportedZoneId: string,
     channelId: string,
     includeInScanList: boolean,
   ) => void;
@@ -92,6 +100,7 @@ export function ZoneScanExpandPanel({
   zone,
   zones,
   entry,
+  zoneBehaviourContext,
   channelById,
   isDm32,
   showScanCarrierControls,
@@ -103,7 +112,10 @@ export function ZoneScanExpandPanel({
     entry?.scanCarrierFrequencyHz != null
       ? entry.scanCarrierFrequencyHz / 1_000_000
       : DEFAULT_CARRIER_MHZ;
-  const memberRefs = collectZoneScanMemberRefs(zone, zones);
+  const memberRefs = collectZoneScanMemberRefs(zone, zones, {
+    context: zoneBehaviourContext,
+    layoutEntry: entry,
+  });
   const zoneById = new Map(zones.map((row) => [row.id, row]));
 
   return (
@@ -138,6 +150,9 @@ export function ZoneScanExpandPanel({
         <Text size="sm" fw={500}>
           Include in scan list
         </Text>
+        <Text size="xs" c="dimmed">
+          Changes apply to this radio build only (exported zone projection).
+        </Text>
         {memberRefs.map((member) => {
           const channel = channelById.get(member.channelId);
           const ownerZone = zoneById.get(member.ownerZoneId);
@@ -156,11 +171,7 @@ export function ZoneScanExpandPanel({
                 checked={member.includeInScanList}
                 disabled={saving}
                 onChange={(event) =>
-                  onUpdateMemberScanInclusion(
-                    member.ownerZoneId,
-                    member.channelId,
-                    event.currentTarget.checked,
-                  )
+                  onUpdateMemberScanInclusion(zone.id, member.channelId, event.currentTarget.checked)
                 }
               />
             </Group>

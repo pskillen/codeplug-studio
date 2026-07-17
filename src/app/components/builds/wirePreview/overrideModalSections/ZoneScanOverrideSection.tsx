@@ -12,6 +12,7 @@ export interface ZoneScanOverrideSectionProps {
   zones: Zone[];
   entry: ZoneGroupingZoneEntry | undefined;
   channelById: ZoneScanExpandPanelProps['channelById'];
+  zoneBehaviourContext?: ZoneScanExpandPanelProps['zoneBehaviourContext'];
   isDm32: boolean;
   showScanCarrierControls: boolean;
   scanListMemberCap: number;
@@ -25,6 +26,7 @@ export default function ZoneScanOverrideSection({
   zones,
   entry,
   channelById,
+  zoneBehaviourContext,
   isDm32,
   showScanCarrierControls,
   scanListMemberCap,
@@ -32,7 +34,10 @@ export default function ZoneScanOverrideSection({
   onUpdateZoneEntry,
   onUpdateMemberScanInclusion,
 }: ZoneScanOverrideSectionProps) {
-  const { included, total } = zoneScanMemberCounts(zone, zones);
+  const { included, total } = zoneScanMemberCounts(zone, zones, {
+    context: zoneBehaviourContext,
+    layoutEntry: entry,
+  });
   const capExceeded = included > scanListMemberCap;
 
   return (
@@ -57,6 +62,7 @@ export default function ZoneScanOverrideSection({
           zone={zone}
           zones={zones}
           entry={entry}
+          zoneBehaviourContext={zoneBehaviourContext}
           channelById={channelById}
           isDm32={isDm32}
           showScanCarrierControls={showScanCarrierControls}

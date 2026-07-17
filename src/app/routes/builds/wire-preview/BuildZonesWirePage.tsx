@@ -26,8 +26,8 @@ export default function BuildZonesWirePage() {
         zoneScan.enabled ? (
           <Stack gap="xs">
             <Text size="sm" c="dimmed">
-              Use the Export scan list column or the row override modal. Member include toggles and
-              carrier frequency persist on this build; per-member scan flags update library zones.
+              Use the Export scan list column or the row override modal. Member include toggles
+              persist on this build&apos;s zone projection (not library zones).
             </Text>
             {zoneScan.error ? (
               <Text size="sm" c="red">
@@ -55,6 +55,7 @@ export default function BuildZonesWirePage() {
             zones={zoneScan.library.zones}
             entry={entry}
             channelById={zoneScan.channelById}
+            zoneBehaviourContext={zoneScan.zoneBehaviourContext}
             isDm32={zoneScan.isDm32}
             showScanCarrierControls={zoneScan.showScanCarrierControls}
             scanListMemberCap={zoneScan.scanListMemberCap}

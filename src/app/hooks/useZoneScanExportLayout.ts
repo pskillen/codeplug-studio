@@ -1,15 +1,14 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { FormatBuild } from '@core/models/formatBuild.ts';
-import type { ZoneMemberEntry } from '@core/models/library.ts';
 import type { ZoneGroupingLayout, ZoneGroupingZoneEntry } from '@core/models/traitLayout.ts';
 import {
   findZoneGroupingSection,
   syncZoneGroupingWithLibrary,
   updateZoneGroupingEntry,
 } from '@core/domain/zoneGroupingLayout.ts';
-import { normalizeZoneMemberEntry } from '@core/domain/zoneMembers.ts';
 import { scanListMemberCapForProfile } from '@core/import-export/formatProfiles.ts';
 import type { FormatId } from '@core/import-export/types.ts';
+import { buildZoneBehaviourContext } from '@core/import-export/zoneBehaviourDefaults/index.ts';
 import type { LibrarySlice } from '@core/services/assemble.ts';
 import { useBuildLayout } from '../routes/builds/BuildLayoutContext.tsx';
 import { useProjects } from '../state/useProjects.ts';
@@ -58,6 +57,11 @@ export function useZoneScanExportLayout() {
     return syncZoneGroupingWithLibrary(existing, library);
   }, [build, library, enabled]);
 
+  const zoneBehaviourContext = useMemo(
+    () => buildZoneBehaviourContext(library?.zoneDefaults, build.exportSettings),
+    [library?.zoneDefaults, build.exportSettings],
+  );
+
   const zoneById = useMemo(
     () => new Map((library?.zones ?? []).map((zone) => [zone.id, zone])),
     [library],
@@ -97,39 +101,25 @@ export function useZoneScanExportLayout() {
     [layout, persistLayout],
   );
 
+  /** Persist per-exported-zone projection skip/include — does not mutate library zones. */
   const updateMemberScanInclusion = useCallback(
-    async (ownerZoneId: string, channelId: string, includeInScanList: boolean) => {
-      if (!activeProjectId || !library) return;
-      const zone = library.zones.find((row) => row.id === ownerZoneId);
-      if (!zone) return;
-      const members: ZoneMemberEntry[] = zone.members.map((raw) => {
-        const member = normalizeZoneMemberEntry(raw);
-        if (member.kind !== 'channel' || member.channelId !== channelId) return member;
-        return {
-          ...member,
-          includeInScanList: includeInScanList ? undefined : false,
-        };
-      });
-      setSaving(true);
-      const result = await persistence.putZone({ ...zone, members }, zone.revision);
-      setSaving(false);
-      if (result.ok) {
-        setLibrary((prev) =>
-          prev
-            ? {
-                ...prev,
-                zones: prev.zones.map((row) =>
-                  row.id === zone.id ? { ...zone, members, revision: result.revision } : row,
-                ),
-              }
-            : prev,
-        );
-        setError(null);
+    (exportedZoneId: string, channelId: string, includeInScanList: boolean) => {
+      if (!layout) return;
+      const entry = layout.zones.find((zone) => zone.id === exportedZoneId);
+      const nextInclusion = { ...(entry?.scanMemberInclusion ?? {}) };
+      if (includeInScanList) {
+        // Explicit include only needed when clearing a prior skip; omit = cascade default.
+        delete nextInclusion[channelId];
       } else {
-        setError('Failed to save zone membership.');
+        nextInclusion[channelId] = 'skip';
       }
+      const scanMemberInclusion =
+        Object.keys(nextInclusion).length > 0 ? nextInclusion : undefined;
+      void persistLayout(
+        updateZoneGroupingEntry(layout, exportedZoneId, { scanMemberInclusion }),
+      );
     },
-    [activeProjectId, library],
+    [layout, persistLayout],
   );
 
   return {
@@ -141,6 +131,7 @@ export function useZoneScanExportLayout() {
     library,
     zoneById,
     channelById,
+    zoneBehaviourContext,
     saving,
     error,
     updateZoneEntry,

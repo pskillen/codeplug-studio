@@ -50,7 +50,7 @@ export default function IncludeInZoneDerivedScanListSegment({
       value={resolved}
       onChange={(next) => onChange(next as IncludeInZoneDerivedScanListOverride)}
       data={[...data]}
-      scheme={includeDefault ? 'three' : 'two'}
+      scheme={includeDefault ? 'three' : 'onOff'}
       fullWidth={!compact}
       size={compact ? 'xs' : undefined}
       disabled={disabled}

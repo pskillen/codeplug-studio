@@ -4,7 +4,7 @@ Zone scan export controls for **DM32** and **Anytone** builds — used inside th
 
 ## Purpose
 
-Lets operators configure per-zone scan export flags on the build `ZoneGroupingLayout` and per-member scan inclusion on library zones.
+Lets operators configure per-zone scan export flags on the build `ZoneGroupingLayout` and per-member scan inclusion on the **exported zone projection** (`scanMemberInclusion`).
 
 ## Components
 
@@ -23,7 +23,7 @@ Layout state is provided by [`useZoneScanExportLayout`](../../../hooks/useZoneSc
 
 - Syncs `ZoneGroupingLayout` with library zones via `syncZoneGroupingWithLibrary`.
 - **Export as scan list** → `buildService.withZoneGroupingSection`.
-- **Include in scan list** → `persistence.putZone` on the **owning** library zone (`ZoneMemberEntry.includeInScanList`); nested zone members are listed with `(child zone)` suffix.
+- **Include in scan list** → `ZoneGroupingZoneEntry.scanMemberInclusion` on the **exported** zone (build-scoped). Nested members listed with `(child zone)` suffix; toggles do not rewrite the child library zone.
 - Carrier MHz when **Export as scan list** is on (DM32 and Anytone).
 - DM32-only: scratch channel flag in expanded panel.
 
@@ -31,3 +31,4 @@ Layout state is provided by [`useZoneScanExportLayout`](../../../hooks/useZoneSc
 
 - [zone-grouping.md](../../../../docs/features/builds/zone-grouping.md)
 - [zone-derived-scan-lists.md](../../../../docs/reference/zone-derived-scan-lists.md)
+- [ZoneBehaviourExportOverrides](./ZoneBehaviourExportOverrides.md)
