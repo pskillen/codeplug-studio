@@ -10,10 +10,10 @@ Items **skipped**, **incomplete**, or **discovered during execution** — not th
 
 - [x] Refactor `ZoneMemberEditor` onto C built-in move/remove/hotkey props (keep drag + Sort…)
 - [x] `ScanListMemberEditor` → `AvailableItemPicker` (B) + C builtins
-- [ ] Migrate production library/build/import tables to A/B/C/D kit
+- [x] Migrate production library/build/import tables to A/B/C/D kit (in-scope surfaces)
 - [x] Contacts digital `scale="extreme"` + hideable column storage
-- [ ] `RepeaterDirectorySearch` / `ChannelSetPicker` / `WirePreviewBulkEditTable` → `DataTable`
-- [ ] `WirePreviewDataTable` `reorderMode` when reorder config present; delete deprecated `WirePreviewTable`
+- [x] `RepeaterDirectorySearch` / `ChannelSetPicker` / `WirePreviewBulkEditTable` → `DataTable`
+- [x] `WirePreviewDataTable` `reorderMode` when reorder config present; delete deprecated `WirePreviewTable`
 
 ## Deferred / not planned this PR
 

@@ -77,11 +77,14 @@ Shipped in #461 / #463 — not re-done on this branch.
 
 ### Slice 4–5: Channel set + wire raw Tables
 
-**Status:** Slice 4 complete; Slice 5 pending
+**Status:** Complete
 
-**Delivered (Slice 4)**
+**Delivered**
 
 - `ChannelSetPicker` preview → embedded `DataTable`
+- `WirePreviewBulkEditTable` → embedded `DataTable`
+- `WirePreviewDataTable` `reorderMode` when `reorder` config present
+- Deleted deprecated `WirePreviewTable`; tests moved to bulk-edit / override modal / `ZoneScanRowHeader`
 
 ### Slice 6: Docs + PR
 
@@ -91,4 +94,4 @@ Shipped in #461 / #463 — not re-done on this branch.
 
 ## Next
 
-- Slice 5: WirePreviewBulkEditTable → DataTable; WirePreviewDataTable `reorderMode`; delete deprecated WirePreviewTable
+- Slice 6: Docs status; clear outstanding; local gate; PR Closes/Addresses #460

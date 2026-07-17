@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
-import { Switch, Table, Text } from '@mantine/core';
+import { Switch, Text } from '@mantine/core';
 import type { WirePreviewRow } from '@core/services/previewWireRows.ts';
+import DataTable, { type DataTableColumn } from '../../ui/DataTable.tsx';
 import { WireNameOverrideInput } from './WireNameOverrideInput.tsx';
 import { rowEffectivelyIncluded } from './wirePreviewRowUtils.ts';
 import WirePreviewDisplayCell from './WirePreviewDisplayCell.tsx';
@@ -37,6 +38,42 @@ export default function WirePreviewBulkEditTable({
     });
   };
 
+  const columns: DataTableColumn<WirePreviewRow>[] = [
+    {
+      key: 'skip',
+      header: 'Skip from export',
+      hideable: false,
+      render: (row) => (
+        <Switch
+          size="xs"
+          label="Skip from export"
+          checked={row.excluded}
+          onChange={(event) => onExcludedChange(row, event.currentTarget.checked)}
+          aria-label={`Skip ${row.displayLabel} from export`}
+        />
+      ),
+    },
+    {
+      key: 'exportName',
+      header: 'Export name',
+      hideable: false,
+      render: (row) => {
+        const effectivelyIncluded = rowEffectivelyIncluded(row);
+        return (
+          <WireNameOverrideInput
+            key={`${row.key}:${row.hasWireNameOverride ? row.effectiveWireName : ''}`}
+            row={row}
+            nameLimit={nameLimit}
+            excluded={!effectivelyIncluded}
+            clickableDefaultWireName
+            onWireNameChange={onWireNameChange}
+            onDirtyChange={(dirty) => setRowDirty(row.key, dirty)}
+          />
+        );
+      },
+    },
+  ];
+
   if (rows.length === 0) {
     return (
       <Text c="dimmed" size="sm">
@@ -46,46 +83,18 @@ export default function WirePreviewBulkEditTable({
   }
 
   return (
-    <Table striped highlightOnHover withTableBorder>
-      <Table.Thead>
-        <Table.Tr>
-          <Table.Th>Skip from export</Table.Th>
-          <Table.Th>Library name</Table.Th>
-          <Table.Th>Export name</Table.Th>
-        </Table.Tr>
-      </Table.Thead>
-      <Table.Tbody>
-        {rows.map((row) => {
-          const effectivelyIncluded = rowEffectivelyIncluded(row);
-          return (
-            <Table.Tr key={row.key} opacity={effectivelyIncluded ? 1 : 0.55}>
-              <Table.Td>
-                <Switch
-                  size="xs"
-                  label="Skip from export"
-                  checked={row.excluded}
-                  onChange={(event) => onExcludedChange(row, event.currentTarget.checked)}
-                  aria-label={`Skip ${row.displayLabel} from export`}
-                />
-              </Table.Td>
-              <Table.Td>
-                <WirePreviewDisplayCell row={row} />
-              </Table.Td>
-              <Table.Td>
-                <WireNameOverrideInput
-                  key={`${row.key}:${row.hasWireNameOverride ? row.effectiveWireName : ''}`}
-                  row={row}
-                  nameLimit={nameLimit}
-                  excluded={!effectivelyIncluded}
-                  clickableDefaultWireName
-                  onWireNameChange={onWireNameChange}
-                  onDirtyChange={(dirty) => setRowDirty(row.key, dirty)}
-                />
-              </Table.Td>
-            </Table.Tr>
-          );
-        })}
-      </Table.Tbody>
-    </Table>
+    <DataTable
+      variant="embedded"
+      rows={rows}
+      rowKey={(row) => row.key}
+      showSearch={false}
+      nameColumn={{
+        header: 'Library name',
+        getName: (row) => row.displayLabel,
+        getPath: () => '#',
+        render: (row) => <WirePreviewDisplayCell row={row} />,
+      }}
+      columns={columns}
+    />
   );
 }

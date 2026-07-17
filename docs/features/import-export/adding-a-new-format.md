@@ -431,7 +431,8 @@ Studio surfaces formats in **three places**: project interchange (`/import-expor
 | ------------ | ------------------------ | -------------------------------------------------------------------------------------------------------------------- |
 | Preview hook | `useBuildWirePreview.ts` | Loads library + applies export settings                                                                              |
 | Row builder  | `previewWireRows.ts`     | **Must mirror export** — expansion helpers or `previewGeneratedChannelWireName`; never raw `assemble.wireName` alone |
-| Table        | `WirePreviewTable.tsx`   | Override editing, fan-out display                                                                                    |
+| List         | `WirePreviewDataTable.tsx` | Browse + row modal; `reorderMode` when order arrows present                                                          |
+| Bulk edit    | `WirePreviewBulkEditTable.tsx` | Channel wire name + skip (`DataTable`)                                                                            |
 
 - [ ] Add or extend format branch in `previewWireRows.ts` when expansion differs from OpenGD77 defaults
 - [ ] Wire name overrides from `FormatBuild` reflected in preview rows

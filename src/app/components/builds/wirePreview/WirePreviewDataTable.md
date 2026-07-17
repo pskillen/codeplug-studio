@@ -14,7 +14,7 @@ Read-only wire preview list for build entity routes. Shows library label, genera
 | `onSearchChange` | `(value) => void` (optional)      | Search input handler                                                |
 | `sort`           | `DataTableSortState` (optional)   | Controlled sort state                                               |
 | `onSortChange`   | `(state) => void` (optional)      | Sort change handler                                                 |
-| `reorder`        | `WirePreviewReorderConfig` (opt.) | Up/down column for `orderOrSlot` (CHIRP flat memory)                |
+| `reorder`        | `WirePreviewReorderConfig` (opt.) | Enables **`reorderMode`** + up/down column for `orderOrSlot`        |
 | `locationByKey`  | `Map<string, number>` (optional)  | CHIRP memory `Location` column                                      |
 | `zoneScanColumn` | `WirePreviewZoneScanColumnConfig` | DM32 / Anytone **Zones** route — per-row export-as-scan-list switch |
 | `emptyMessage`   | `string` (optional)               | Shown when `rows` is empty                                          |
@@ -22,9 +22,9 @@ Read-only wire preview list for build entity routes. Shows library label, genera
 ## Behaviour
 
 - **No per-row inputs** — overrides are edited in the modal (or channel bulk-edit route), except **Export scan list** on DM32 / Anytone zone rows when `zoneScanColumn` is set.
-- **Search and sort** are UI-only; they do **not** persist to export order or `orderOrSlot`.
+- **Search and sort** are UI-only when not in reorder mode; they do **not** persist to export order or `orderOrSlot`.
+- When **`reorder`** is set, the table runs in **`reorderMode`** (locked to `rows` order; column sorts off). Up/down `ActionIcon`s call `onMove`; clicks stop propagation so they do not open the modal.
 - **Export status badges** — skip, force-export, library omit, expansion notes via `rowEffectivelyIncluded`.
-- **Reorder** — when `reorder` is set, up/down `ActionIcon`s call `onMove`; clicks stop propagation so they do not open the modal.
 
 ## Related
 

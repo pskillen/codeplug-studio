@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { MantineProvider } from '@mantine/core';
 import { MemoryRouter } from 'react-router-dom';
-import WirePreviewTable from './WirePreviewTable.tsx';
+import WirePreviewBulkEditTable from './WirePreviewBulkEditTable.tsx';
 import type { WirePreviewRow } from '@core/services/previewWireRows.ts';
 
 const rows: WirePreviewRow[] = [
@@ -29,25 +29,12 @@ const rows: WirePreviewRow[] = [
   },
 ];
 
-const omitZoneRow: WirePreviewRow = {
-  key: 'zone-pmr',
-  libraryEntityId: 'zone-pmr',
-  entityKind: 'zone',
-  displayLabel: 'PMR446',
-  generatedWireName: 'PMR446',
-  effectiveWireName: 'PMR446',
-  hasWireNameOverride: false,
-  excluded: false,
-  omitFromExport: true,
-  forceInclude: false,
-};
-
-describe('WirePreviewTable', () => {
-  function renderTable(props: ComponentProps<typeof WirePreviewTable>) {
+describe('WirePreviewBulkEditTable', () => {
+  function renderTable(props: ComponentProps<typeof WirePreviewBulkEditTable>) {
     return render(
       <MemoryRouter>
         <MantineProvider>
-          <WirePreviewTable {...props} />
+          <WirePreviewBulkEditTable {...props} />
         </MantineProvider>
       </MemoryRouter>,
     );
@@ -62,7 +49,7 @@ describe('WirePreviewTable', () => {
     });
 
     expect(screen.getByText('Skip from export', { selector: 'th' })).toBeInTheDocument();
-    expect(screen.getByText('GB3DA Demo')).toBeInTheDocument();
+    expect(screen.getAllByText('GB3DA Demo').length).toBeGreaterThan(0);
     expect(screen.getByText('Excluded channel')).toBeInTheDocument();
     expect(screen.getByLabelText('Skip GB3DA Demo from export')).not.toBeChecked();
     expect(screen.getByLabelText('Skip Excluded channel from export')).toBeChecked();
@@ -129,7 +116,6 @@ describe('WirePreviewTable', () => {
     const onWireNameChange = vi.fn();
     renderTable({
       rows,
-      clickableDefaultWireName: true,
       onExcludedChange: vi.fn(),
       onWireNameChange,
     });
@@ -157,79 +143,5 @@ describe('WirePreviewTable', () => {
 
     fireEvent.click(screen.getByLabelText('Revert wire name'));
     expect(onUnsavedChangesChange).toHaveBeenLastCalledWith(false);
-  });
-
-  it('shows force export control for omitFromExport zones when handler provided', () => {
-    const onForceIncludeChange = vi.fn();
-    renderTable({
-      rows: [omitZoneRow],
-      onExcludedChange: vi.fn(),
-      onForceIncludeChange,
-      onWireNameChange: vi.fn(),
-    });
-
-    expect(screen.getByLabelText('Force export PMR446 as its own zone')).toBeInTheDocument();
-    expect(screen.getByText('Not exported as zone')).toBeInTheDocument();
-    expect(screen.queryByLabelText('Skip PMR446 from export')).not.toBeInTheDocument();
-
-    fireEvent.click(screen.getByLabelText('Force export PMR446 as its own zone'));
-    expect(onForceIncludeChange).toHaveBeenCalledWith(omitZoneRow, true);
-  });
-
-  it('shows skip toggle when omit zone is force-included', () => {
-    renderTable({
-      rows: [{ ...omitZoneRow, forceInclude: true }],
-      onExcludedChange: vi.fn(),
-      onForceIncludeChange: vi.fn(),
-      onWireNameChange: vi.fn(),
-    });
-
-    expect(screen.getByLabelText('Skip PMR446 from export')).toBeInTheDocument();
-  });
-
-  it('shows zone scan header controls when zoneScanContext is provided', () => {
-    const zoneId = 'zone-pmr';
-    renderTable({
-      rows: [{ ...omitZoneRow, libraryEntityId: zoneId, omitFromExport: false }],
-      onExcludedChange: vi.fn(),
-      onWireNameChange: vi.fn(),
-      zoneScanContext: {
-        layout: { kind: 'zoneGrouping', zones: [{ id: zoneId, name: 'PMR446', channelIds: [] }] },
-        zones: [
-          {
-            id: zoneId,
-            projectId: 'p',
-            revision: 1,
-            updatedAt: '',
-            name: 'PMR446',
-            members: [{ kind: 'channel', channelId: 'ch-1' }],
-            comment: '',
-          },
-        ],
-        zoneById: new Map([
-          [
-            zoneId,
-            {
-              id: zoneId,
-              projectId: 'p',
-              revision: 1,
-              updatedAt: '',
-              name: 'PMR446',
-              members: [{ kind: 'channel', channelId: 'ch-1' }],
-              comment: '',
-            },
-          ],
-        ]),
-        channelById: new Map(),
-        showScanCarrierControls: true,
-        scanListMemberCap: 16,
-        saving: false,
-        onUpdateZoneEntry: vi.fn(),
-        onUpdateMemberScanInclusion: vi.fn(),
-      },
-    });
-
-    expect(screen.getByLabelText('Export as scan list')).toBeInTheDocument();
-    expect(screen.getByText('1 / 1 scan members (cap 16)')).toBeInTheDocument();
   });
 });
