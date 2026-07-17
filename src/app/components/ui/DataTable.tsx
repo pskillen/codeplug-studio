@@ -181,7 +181,9 @@ function SortableHeader({
   return (
     <button
       type="button"
-      className={elevated ? `${classes.sortButton} ${classes.sortButtonElevated}` : classes.sortButton}
+      className={
+        elevated ? `${classes.sortButton} ${classes.sortButtonElevated}` : classes.sortButton
+      }
       onClick={() => onSort(columnKey)}
       aria-sort={active ? (sortState.direction === 'asc' ? 'ascending' : 'descending') : 'none'}
     >
@@ -254,8 +256,7 @@ export default function DataTable<T>({
     ? (storedOrderConfig.columnKey ?? DATATABLE_STORED_ORDER_SORT_KEY)
     : undefined;
   const storedOrderLabel = storedOrderConfig?.label ?? 'Export order';
-  const storedOrderRestoreLabel =
-    storedOrderConfig?.restoreLabel ?? 'Return to export order';
+  const storedOrderRestoreLabel = storedOrderConfig?.restoreLabel ?? 'Return to export order';
   const storedOrderDefault: DataTableSortState | undefined = storedOrderColumnKey
     ? { columnKey: storedOrderColumnKey, direction: 'asc' }
     : undefined;
@@ -352,12 +353,10 @@ export default function DataTable<T>({
   );
 
   const showRestoreStoredOrder =
-    sortingEnabled &&
-    !!storedOrderColumnKey &&
-    !isStoredOrderSort(sortState, storedOrderColumnKey);
+    sortingEnabled && !!storedOrderColumnKey && !isStoredOrderSort(sortState, storedOrderColumnKey);
 
-  const hasStoredOrderColumn = !!storedOrderColumnKey &&
-    visibleColumns.some((col) => col.key === storedOrderColumnKey);
+  const hasStoredOrderColumn =
+    !!storedOrderColumnKey && visibleColumns.some((col) => col.key === storedOrderColumnKey);
   /** Leading header when stored order has no matching data column. */
   const showLeadingStoredOrderSort =
     sortingEnabled && !!storedOrderColumnKey && !hasStoredOrderColumn;
@@ -595,8 +594,7 @@ export default function DataTable<T>({
                 />
               </Table.Th>
               {visibleColumns.map((col) => {
-                const isStoredOrderCol =
-                  !!storedOrderColumnKey && col.key === storedOrderColumnKey;
+                const isStoredOrderCol = !!storedOrderColumnKey && col.key === storedOrderColumnKey;
                 const columnSortable =
                   sortingEnabled &&
                   (isStoredOrderCol || (col.sortable !== false && !!col.sortValue));

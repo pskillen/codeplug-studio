@@ -94,9 +94,9 @@ Dev-only (unlinked from product nav):
 
 ## Implementation status
 
-| Area                | Status              | Notes                                          |
-| ------------------- | ------------------- | ---------------------------------------------- |
-| Role map doc        | Shipped (this page) |                                                |
-| Styleguide split    | Shipped             | `/styleguide/*` nested hub                     |
+| Area                | Status              | Notes                                                      |
+| ------------------- | ------------------- | ---------------------------------------------------------- |
+| Role map doc        | Shipped (this page) |                                                            |
+| Styleguide split    | Shipped             | `/styleguide/*` nested hub                                 |
 | Kit API A/B/C/D     | Shipped             | `orderMode`, `storedOrder`, `scale`, B/C move/remove props |
-| Production adoption | Deferred            | See [outstanding](list-kit-460-outstanding.md) |
+| Production adoption | Deferred            | See [outstanding](list-kit-460-outstanding.md)             |

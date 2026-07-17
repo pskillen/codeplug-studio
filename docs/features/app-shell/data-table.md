@@ -12,24 +12,24 @@ Ported from [codeplug-tool](https://github.com/pskillen/codeplug-tool) `DataTabl
 
 ## Code anchors
 
-| Symbol                                         | Path                                                     | Role                                                                     |
-| ---------------------------------------------- | -------------------------------------------------------- | ------------------------------------------------------------------------ |
-| `DataTable`                                    | `src/app/components/ui/DataTable.tsx`                    | Mantine `Table` wrapper — sort, search, column visibility, virtual tbody |
-| `DataTable.md`                                 | `src/app/components/ui/DataTable.md`                     | Component sidecar — virtual props                                        |
-| `useVirtualDataTableRows`                      | `src/app/lib/dataTable/useVirtualDataTableRows.ts`       | TanStack virtualizer hook for tbody windowing                            |
-| `VIRTUAL_ROW_THRESHOLD`                        | `src/app/lib/dataTable/virtualization.ts`                | Auto-enable threshold (75 rows)                                          |
-| `useDataTableColumnVisibility`                 | `src/app/hooks/useDataTableColumnVisibility.ts`          | Persist hideable column keys (channels)                                  |
-| `useListNameQuery`                             | `src/app/hooks/useListNameQuery.ts`                      | URL + `localStorage` name filter per entity list                         |
-| `useDebouncedNameFilter`                       | `src/app/hooks/useDebouncedNameFilter.ts`                | Draft vs committed name search (300 ms)                                  |
-| `usePersistedEntityListSort`                   | `src/app/hooks/usePersistedEntityListSort.ts`            | Per-project column sort for entity lists                                 |
-| `useChannelListQuery`                          | `src/app/hooks/useChannelListQuery.ts`                   | Channels-only filters (band, mode, distance, …)                          |
-| `filterRowsByName`                             | `useListNameQuery.ts`                                    | Client-side name substring filter                                        |
-| `referenceCount` / `formatReferenceCount`      | `src/app/lib/listReferences.ts`                          | Reference-count cells; list tables use `buildReferenceCountIndex`        |
-| `EntityListDeleteAction`                       | `src/app/components/library/EntityListDeleteAction.tsx`  | Row trash icon — generic delete flow                                     |
-| `ChannelListDeleteAction`                      | `src/app/components/library/ChannelListDeleteAction.tsx` | Channels row delete (zone cascade)                                       |
-| `sortDataTableRows`, `DATATABLE_*_SORT_KEY`, `isStoredOrderSort` | `src/app/lib/dataTable/sort.ts`                            | Sort state helpers; stored/export-order key |
-| List prefs storage                             | `src/integrations/listPrefs/`                            | `localStorage` keys, load/save/merge                                     |
-| List prefs URL sync                            | `src/app/lib/listPrefs/urlSync.ts`                       | URL ↔ prefs mapping (app layer)                                          |
+| Symbol                                                           | Path                                                     | Role                                                                     |
+| ---------------------------------------------------------------- | -------------------------------------------------------- | ------------------------------------------------------------------------ |
+| `DataTable`                                                      | `src/app/components/ui/DataTable.tsx`                    | Mantine `Table` wrapper — sort, search, column visibility, virtual tbody |
+| `DataTable.md`                                                   | `src/app/components/ui/DataTable.md`                     | Component sidecar — virtual props                                        |
+| `useVirtualDataTableRows`                                        | `src/app/lib/dataTable/useVirtualDataTableRows.ts`       | TanStack virtualizer hook for tbody windowing                            |
+| `VIRTUAL_ROW_THRESHOLD`                                          | `src/app/lib/dataTable/virtualization.ts`                | Auto-enable threshold (75 rows)                                          |
+| `useDataTableColumnVisibility`                                   | `src/app/hooks/useDataTableColumnVisibility.ts`          | Persist hideable column keys (channels)                                  |
+| `useListNameQuery`                                               | `src/app/hooks/useListNameQuery.ts`                      | URL + `localStorage` name filter per entity list                         |
+| `useDebouncedNameFilter`                                         | `src/app/hooks/useDebouncedNameFilter.ts`                | Draft vs committed name search (300 ms)                                  |
+| `usePersistedEntityListSort`                                     | `src/app/hooks/usePersistedEntityListSort.ts`            | Per-project column sort for entity lists                                 |
+| `useChannelListQuery`                                            | `src/app/hooks/useChannelListQuery.ts`                   | Channels-only filters (band, mode, distance, …)                          |
+| `filterRowsByName`                                               | `useListNameQuery.ts`                                    | Client-side name substring filter                                        |
+| `referenceCount` / `formatReferenceCount`                        | `src/app/lib/listReferences.ts`                          | Reference-count cells; list tables use `buildReferenceCountIndex`        |
+| `EntityListDeleteAction`                                         | `src/app/components/library/EntityListDeleteAction.tsx`  | Row trash icon — generic delete flow                                     |
+| `ChannelListDeleteAction`                                        | `src/app/components/library/ChannelListDeleteAction.tsx` | Channels row delete (zone cascade)                                       |
+| `sortDataTableRows`, `DATATABLE_*_SORT_KEY`, `isStoredOrderSort` | `src/app/lib/dataTable/sort.ts`                          | Sort state helpers; stored/export-order key                              |
+| List prefs storage                                               | `src/integrations/listPrefs/`                            | `localStorage` keys, load/save/merge                                     |
+| List prefs URL sync                                              | `src/app/lib/listPrefs/urlSync.ts`                       | URL ↔ prefs mapping (app layer)                                          |
 
 Dev demos: `/styleguide` (unlinked).
 
@@ -59,14 +59,14 @@ Rows link to editors via `nameColumn.getPath`. Optional trailing **actions** col
 
 ## Entity list pages
 
-| Route                         | `EntityListEntity` | URL name param      | Default sort key | Notable columns                                            |
-| ----------------------------- | ------------------ | ------------------- | ---------------- | ---------------------------------------------------------- |
-| `/library/channels`           | _(channels prefs)_ | `q` (+ band/mode/…) | name or distance | See [channels list](../library/README.md#channels-list-24) |
-| `/library/zones`              | `zones`            | `q`                 | export order (`storedOrder`) | Export order (reorder), members, comment, actions  |
-| `/library/talk-groups`        | `talk-groups`      | `q`                 | name             | Mode, ID, channels/RX lists using, comment, actions        |
-| `/library/contacts` (digital) | `digital-contacts` | `dq`                | name             | Mode, ID, channels using, actions                          |
-| `/library/contacts` (analog)  | `analog-contacts`  | `aq`                | name             | Code, channels using, actions                              |
-| `/library/rx-group-lists`     | `rx-group-lists`   | `q`                 | name             | Members, channels using, actions                           |
+| Route                         | `EntityListEntity` | URL name param      | Default sort key             | Notable columns                                            |
+| ----------------------------- | ------------------ | ------------------- | ---------------------------- | ---------------------------------------------------------- |
+| `/library/channels`           | _(channels prefs)_ | `q` (+ band/mode/…) | name or distance             | See [channels list](../library/README.md#channels-list-24) |
+| `/library/zones`              | `zones`            | `q`                 | export order (`storedOrder`) | Export order (reorder), members, comment, actions          |
+| `/library/talk-groups`        | `talk-groups`      | `q`                 | name                         | Mode, ID, channels/RX lists using, comment, actions        |
+| `/library/contacts` (digital) | `digital-contacts` | `dq`                | name                         | Mode, ID, channels using, actions                          |
+| `/library/contacts` (analog)  | `analog-contacts`  | `aq`                | name                         | Code, channels using, actions                              |
+| `/library/rx-group-lists`     | `rx-group-lists`   | `q`                 | name                         | Members, channels using, actions                           |
 
 Digital and analog contact tables on `/library/contacts` use **separate** URL params (`dq`, `aq`) so filters do not collide. Digital contact search matches **name or callsign**; filtering uses the debounced value (300 ms), not the URL round-trip alone.
 

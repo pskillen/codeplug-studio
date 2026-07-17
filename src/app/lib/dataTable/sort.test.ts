@@ -69,9 +69,9 @@ describe('isStoredOrderSort', () => {
   });
 
   it('matches the configured column key', () => {
-    expect(
-      isStoredOrderSort({ columnKey: 'exportOrder', direction: 'asc' }, 'exportOrder'),
-    ).toBe(true);
+    expect(isStoredOrderSort({ columnKey: 'exportOrder', direction: 'asc' }, 'exportOrder')).toBe(
+      true,
+    );
     expect(
       isStoredOrderSort({ columnKey: DATATABLE_NAME_SORT_KEY, direction: 'asc' }, 'exportOrder'),
     ).toBe(false);

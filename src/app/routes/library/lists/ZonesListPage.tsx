@@ -125,9 +125,7 @@ export default function ZonesListPage() {
                   variant="subtle"
                   size="sm"
                   aria-label={`Move ${z.name} down`}
-                  disabled={
-                    reorderDisabled || index < 0 || index >= orderedZones.length - 1
-                  }
+                  disabled={reorderDisabled || index < 0 || index >= orderedZones.length - 1}
                   onClick={(event) => {
                     event.stopPropagation();
                     void moveZone(z.id, 'down');
@@ -185,10 +183,10 @@ export default function ZonesListPage() {
     <ListPage title="Zones">
       <Stack gap="lg">
         <Text size="sm" c="dimmed">
-          Default view is library export order (`Zone.order`). Sort by other columns to browse;
-          use Return to export order (or the Export order header) to restore. Arrows reorder only
-          while export order is active and the name filter is clear. Sort zones… overwrites stored
-          order permanently.
+          Default view is library export order (`Zone.order`). Sort by other columns to browse; use
+          Return to export order (or the Export order header) to restore. Arrows reorder only while
+          export order is active and the name filter is clear. Sort zones… overwrites stored order
+          permanently.
         </Text>
         {filterActive ? (
           <Text size="sm" c="orange">
