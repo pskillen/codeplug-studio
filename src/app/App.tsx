@@ -26,7 +26,11 @@ import MaidenheadReferencePage from './routes/reference/MaidenheadReferencePage.
 import ReferenceIndexPage from './routes/reference/ReferenceIndexPage.tsx';
 import SettingsPage from './routes/SettingsPage.tsx';
 import HelpPage from './routes/HelpPage.tsx';
-import StyleguidePage from './routes/StyleguidePage.tsx';
+import StyleguideIndexPage from './routes/styleguide/StyleguideIndexPage.tsx';
+import StyleguideLayoutPage from './routes/styleguide/StyleguideLayoutPage.tsx';
+import StyleguideDataTablePage from './routes/styleguide/StyleguideDataTablePage.tsx';
+import StyleguideMembershipPage from './routes/styleguide/StyleguideMembershipPage.tsx';
+import StyleguideControlsPage from './routes/styleguide/StyleguideControlsPage.tsx';
 import DebugIndexPage from './routes/debug/DebugIndexPage.tsx';
 import DebugIndexedDbPage from './routes/debug/DebugIndexedDbPage.tsx';
 import DebugIndexedDbStorePage from './routes/debug/DebugIndexedDbStorePage.tsx';
@@ -71,7 +75,11 @@ export const appRouter = createBrowserRouter([
       { path: '/reference', element: <ReferenceIndexPage /> },
       { path: '/reference/maidenhead', element: <MaidenheadReferencePage /> },
       { path: '/reference/bands', element: <BandsReferencePage /> },
-      { path: '/styleguide', element: <StyleguidePage /> },
+      { path: '/styleguide', element: <StyleguideIndexPage /> },
+      { path: '/styleguide/layout', element: <StyleguideLayoutPage /> },
+      { path: '/styleguide/data-table', element: <StyleguideDataTablePage /> },
+      { path: '/styleguide/membership', element: <StyleguideMembershipPage /> },
+      { path: '/styleguide/controls', element: <StyleguideControlsPage /> },
       { path: '/debug', element: <DebugIndexPage /> },
       { path: '/debug/indexed-db', element: <DebugIndexedDbPage /> },
       { path: '/debug/indexed-db/:storeName', element: <DebugIndexedDbStorePage /> },

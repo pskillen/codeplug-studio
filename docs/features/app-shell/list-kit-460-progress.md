@@ -30,6 +30,22 @@
 
 ---
 
+## Slice 1: Styleguide nested routes
+
+**Status:** Complete
+
+**Delivered**
+
+- `/styleguide` index + `/layout`, `/data-table`, `/membership`, `/controls`
+- Fixtures and demos under `src/app/routes/styleguide/`
+- Removed monolith `StyleguidePage.tsx`
+
+**Verify**
+
+- Nested routes compile; old single-page demos still present
+
+---
+
 ## Next
 
-- Slice 1: chop styleguide into nested routes
+- Slice 2: DataTable `orderMode` + complete A demos
