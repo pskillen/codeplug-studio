@@ -113,11 +113,8 @@ export function useZoneScanExportLayout() {
       } else {
         nextInclusion[channelId] = 'skip';
       }
-      const scanMemberInclusion =
-        Object.keys(nextInclusion).length > 0 ? nextInclusion : undefined;
-      void persistLayout(
-        updateZoneGroupingEntry(layout, exportedZoneId, { scanMemberInclusion }),
-      );
+      const scanMemberInclusion = Object.keys(nextInclusion).length > 0 ? nextInclusion : undefined;
+      void persistLayout(updateZoneGroupingEntry(layout, exportedZoneId, { scanMemberInclusion }));
     },
     [layout, persistLayout],
   );

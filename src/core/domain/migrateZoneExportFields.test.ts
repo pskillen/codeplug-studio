@@ -79,6 +79,7 @@ describe('migrateZoneExportFields', () => {
         sendTalkerAlias: 'on',
         analogSquelchMode: 'carrier',
       },
+      zoneDefaults: { includeInZoneDerivedScanList: true },
       aprsConfiguration: null,
     };
 
@@ -112,6 +113,7 @@ describe('migrateZoneExportFields', () => {
         sendTalkerAlias: 'on',
         analogSquelchMode: 'carrier',
       },
+      zoneDefaults: { includeInZoneDerivedScanList: true },
       aprsConfiguration: null,
     };
     const { formatBuilds } = migrateZoneExportFieldsToBuildLayout(library, [

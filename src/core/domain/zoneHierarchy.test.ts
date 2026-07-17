@@ -35,6 +35,7 @@ function library(zones: Zone[], channelIds: string[] = []): Library {
       sendTalkerAlias: 'on',
       analogSquelchMode: 'carrier',
     },
+    zoneDefaults: { includeInZoneDerivedScanList: true },
     aprsConfiguration: null,
     zones,
   };

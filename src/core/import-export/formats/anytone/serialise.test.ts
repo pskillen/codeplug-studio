@@ -791,7 +791,11 @@ describe('anytone serialise', () => {
       ...newZone(PROJECT_ID, 'Zone A'),
       members: [
         { kind: 'channel' as const, channelId: ch1.id },
-        { kind: 'channel' as const, channelId: ch2.id, includeInScanList: 'skip' },
+        {
+          kind: 'channel' as const,
+          channelId: ch2.id,
+          includeInScanList: 'skip' as const,
+        },
       ],
     };
     const build = {

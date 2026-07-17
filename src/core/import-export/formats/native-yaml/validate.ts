@@ -1057,10 +1057,7 @@ function parseFormatBuild(raw: unknown, index: number): ParsedFormatBuild {
   return { build, legacy };
 }
 
-function parseScanMemberInclusion(
-  raw: unknown,
-  label: string,
-): Record<string, 'include' | 'skip'> {
+function parseScanMemberInclusion(raw: unknown, label: string): Record<string, 'include' | 'skip'> {
   const record = expectRecord(raw, label);
   const result: Record<string, 'include' | 'skip'> = {};
   for (const [channelId, value] of Object.entries(record)) {
@@ -1487,9 +1484,7 @@ export function validateDocument(raw: unknown): ProjectAggregate {
   const channelDefaults = normalizeChannelBehaviourDefaults(
     library.channelDefaults ?? project.channelDefaults,
   );
-  const zoneDefaults = normalizeZoneBehaviourDefaults(
-    library.zoneDefaults ?? project.zoneDefaults,
-  );
+  const zoneDefaults = normalizeZoneBehaviourDefaults(library.zoneDefaults ?? project.zoneDefaults);
 
   return migrateProjectAggregate({
     meta: { ...project, channelDefaults, zoneDefaults },

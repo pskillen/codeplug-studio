@@ -29,7 +29,11 @@ export default function LibraryNavLinks() {
               to={entry.listPath}
               label={entry.plural}
               active={
-                isChannels ? channelsActive : isZones ? zonesActive : location.pathname.startsWith(entry.listPath)
+                isChannels
+                  ? channelsActive
+                  : isZones
+                    ? zonesActive
+                    : location.pathname.startsWith(entry.listPath)
               }
             />
             {isChannels ? (

@@ -171,7 +171,11 @@ export function ZoneScanExpandPanel({
                 checked={member.includeInScanList}
                 disabled={saving}
                 onChange={(event) =>
-                  onUpdateMemberScanInclusion(zone.id, member.channelId, event.currentTarget.checked)
+                  onUpdateMemberScanInclusion(
+                    zone.id,
+                    member.channelId,
+                    event.currentTarget.checked,
+                  )
                 }
               />
             </Group>

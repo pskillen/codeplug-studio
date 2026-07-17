@@ -179,8 +179,7 @@ export default function BuildExportResolutionPage() {
       description={
         <Text size="sm" component="span">
           Effective behavioural values for this build&apos;s export projection, and which cascade
-          layer wins.{' '}
-          <Link to={`/builds/${build.id}/export`}>Edit build overrides on Export</Link>
+          layer wins. <Link to={`/builds/${build.id}/export`}>Edit build overrides on Export</Link>
           {' · '}
           <Link to="/library/channels/defaults">Channel defaults</Link>
           {' · '}
@@ -202,7 +201,8 @@ export default function BuildExportResolutionPage() {
           ) : (
             <Stack gap="md">
               <Text size="sm" c="dimmed">
-                Talker alias uses the DMR profile; analog squelch mode uses the first analog profile.
+                Talker alias uses the DMR profile; analog squelch mode uses the first analog
+                profile.
               </Text>
               <TextInput
                 label="Filter"

@@ -91,7 +91,13 @@ export default function ZoneBehaviourDefaultsEditor({
         />
       </FormSection>
       {error ? <Alert color="red">{error}</Alert> : null}
-      <EditorActions dirty={isDirty} saving={saving} onSave={() => void handleSave()} />
+      <EditorActions
+        saving={saving}
+        error={null}
+        onSave={() => void handleSave()}
+        hideCancel
+        cancelPath="/library/zones"
+      />
       <UnsavedChangesModal opened={routeModalOpen} onStay={routeStay} onLeave={routeLeave} />
     </Stack>
   );
