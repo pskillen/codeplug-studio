@@ -1,4 +1,5 @@
 import type { FormatBuild } from '@core/models/formatBuild.ts';
+import type { Zone } from '@core/models/library.ts';
 import type { ZoneGroupingLayout, ZoneGroupingZoneEntry } from '@core/models/traitLayout.ts';
 import type { LibrarySlice } from '@core/services/assemble.ts';
 import { resolveEffectiveZoneChannelIds } from '@core/domain/zoneHierarchy.ts';
@@ -115,4 +116,41 @@ export function updateZoneChannelIds(
     ...section,
     zones: section.zones.map((zone) => (zone.id === zoneId ? { ...zone, channelIds } : zone)),
   };
+}
+
+function channelIdSequencesEqual(a: readonly string[], b: readonly string[]): boolean {
+  if (a.length !== b.length) return false;
+  return a.every((id, index) => id === b[index]);
+}
+
+/**
+ * True when layout `channelIds` reorders members relative to library effective membership order.
+ * Empty / missing hints are not overrides (assemble falls back to effective ids).
+ */
+export function isZoneMemberOrderOverridden(
+  zone: Zone,
+  zones: Zone[],
+  layoutChannelIds: string[] | undefined,
+): boolean {
+  const effective = resolveEffectiveZoneChannelIds(zone, zones);
+  if (!layoutChannelIds?.length) return false;
+  const ordered = orderChannelIdsByLayoutHint(effective, layoutChannelIds);
+  return !channelIdSequencesEqual(ordered, effective);
+}
+
+/** Write layout `channelIds` back to library-derived effective membership order. */
+export function resetZoneMemberOrderToLibrary(
+  section: ZoneGroupingLayout,
+  zone: Zone,
+  zones: Zone[],
+): ZoneGroupingLayout {
+  return updateZoneChannelIds(section, zone.id, resolveEffectiveZoneChannelIds(zone, zones));
+}
+
+/** Confirm copy for clearing a zone member export-order hint. */
+export function zoneMemberOrderResetConfirmMessage(): string {
+  return (
+    'Reset member export order to the library default?\n\n' +
+    'This clears the build order hint for this zone. Restoring the previous order requires manual reorder.'
+  );
 }

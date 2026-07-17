@@ -5,6 +5,8 @@ import { newFormatBuild } from '@core/domain/factories.ts';
 import {
   applyDenseChannelOrderOrSlots,
   chirpMemoryChannelIds,
+  clearAllOrderOrSlots,
+  hasAnyOrderOrSlotOverride,
   migrateFlatMemoryLayoutToOrderOrSlot,
   resolveChirpChannelMemorySlots,
 } from './exportOrderOrSlot.ts';
@@ -140,5 +142,22 @@ describe('exportOrderOrSlot', () => {
     expect(migrated.channelOverrides.find((row) => row.libraryEntityId === 'ch-3')?.excluded).toBe(
       true,
     );
+  });
+
+  it('detects and clears orderOrSlot overrides', () => {
+    expect(hasAnyOrderOrSlotOverride([])).toBe(false);
+    expect(hasAnyOrderOrSlotOverride([{ libraryEntityId: 'a', wireName: 'A' }])).toBe(false);
+    expect(hasAnyOrderOrSlotOverride([{ libraryEntityId: 'a', orderOrSlot: 1 }])).toBe(true);
+
+    const cleared = clearAllOrderOrSlots([
+      { libraryEntityId: 'a', orderOrSlot: 1 },
+      { libraryEntityId: 'b', wireName: 'B', orderOrSlot: 2 },
+      { libraryEntityId: 'c', excluded: true },
+    ]);
+    expect(cleared).toEqual([
+      { libraryEntityId: 'b', wireName: 'B' },
+      { libraryEntityId: 'c', excluded: true },
+    ]);
+    expect(hasAnyOrderOrSlotOverride(cleared)).toBe(false);
   });
 });
