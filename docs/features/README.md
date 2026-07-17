@@ -36,20 +36,20 @@ Agent skills for documentation and execution tracking:
 
 Domain-neutral amateur-radio facts (tier 2) and per-format CPS wire tables (tier 3). Full tree ported from the [codeplug-tool](https://github.com/pskillen/codeplug-tool) archive; import/export adapters ship in later phases.
 
-| Topic                         | Docs                                                                                                                                                |
-| ----------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
-| UK bands and receive services | [reference/bands.md](../reference/bands.md)                                                                                                         |
-| Channel modes                 | [reference/channel-modes.md](../reference/channel-modes.md)                                                                                         |
+| Topic                         | Docs                                                                                                                                                                                          |
+| ----------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| UK bands and receive services | [reference/bands.md](../reference/bands.md)                                                                                                                                                   |
+| Channel modes                 | [reference/channel-modes.md](../reference/channel-modes.md)                                                                                                                                   |
 | UI interaction styleguide     | [reference/styleguide/](../reference/styleguide/) — list kit, Sort… / reorder, [display](../reference/styleguide/display.md) ([#465](https://github.com/pskillen/codeplug-studio/issues/465)) |
-| Help writing styleguide       | [reference/writing-styleguide/help-writing-styleguide.md](../reference/writing-styleguide/help-writing-styleguide.md)                                 |
-| Callsigns                     | [reference/callsigns.md](../reference/callsigns.md)                                                                                                 |
-| Multi-talkgroup expansion     | [reference/multi-talkgroup-expansion.md](../reference/multi-talkgroup-expansion.md)                                                                 |
-| UK Repeater API               | [reference/ukrepeater/](../reference/ukrepeater/README.md)                                                                                          |
-| IRTS Ireland repeater CSV     | [reference/irts/](../reference/irts/README.md)                                                                                                      |
-| OpenAIP Core API              | [reference/openaip/](../reference/openaip/README.md)                                                                                                |
-| OpenGD77 CPS CSV              | [reference/opengd77/](../reference/opengd77/README.md) — generic wire format + per-radio [variant profiles](../reference/opengd77/radios/README.md) |
-| CHIRP CSV (analogue FM/AM)    | [reference/chirp/](../reference/chirp/README.md)                                                                                                    |
-| DM32 CSV                      | [reference/dm32/](../reference/dm32/README.md)                                                                                                      |
-| Anytone CPS CSV               | [reference/anytone/](../reference/anytone/README.md) — AT-D890UV wire spike; [variant profile](../reference/anytone/radios/at-d890uv.md)            |
+| Help writing styleguide       | [reference/writing-styleguide/help-writing-styleguide.md](../reference/writing-styleguide/help-writing-styleguide.md)                                                                         |
+| Callsigns                     | [reference/callsigns.md](../reference/callsigns.md)                                                                                                                                           |
+| Multi-talkgroup expansion     | [reference/multi-talkgroup-expansion.md](../reference/multi-talkgroup-expansion.md)                                                                                                           |
+| UK Repeater API               | [reference/ukrepeater/](../reference/ukrepeater/README.md)                                                                                                                                    |
+| IRTS Ireland repeater CSV     | [reference/irts/](../reference/irts/README.md)                                                                                                                                                |
+| OpenAIP Core API              | [reference/openaip/](../reference/openaip/README.md)                                                                                                                                          |
+| OpenGD77 CPS CSV              | [reference/opengd77/](../reference/opengd77/README.md) — generic wire format + per-radio [variant profiles](../reference/opengd77/radios/README.md)                                           |
+| CHIRP CSV (analogue FM/AM)    | [reference/chirp/](../reference/chirp/README.md)                                                                                                                                              |
+| DM32 CSV                      | [reference/dm32/](../reference/dm32/README.md)                                                                                                                                                |
+| Anytone CPS CSV               | [reference/anytone/](../reference/anytone/README.md) — AT-D890UV wire spike; [variant profile](../reference/anytone/radios/at-d890uv.md)                                                      |
 
 Add a row when a new feature folder ships. Reference trees are **per format** (OpenGD77, DM32, CHIRP, …); OpenGD77 is the first documented, not the internal model default.

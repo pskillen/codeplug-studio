@@ -17,29 +17,29 @@ This is **not** user-facing help copy. For wording aimed at operators, use [help
 
 ## Doc map
 
-| Doc | Contents |
-| --- | --- |
-| This README | UI categories, decision tree, chrome conventions, specialised outliers |
-| [lists-and-ordering.md](lists-and-ordering.md) | Roles A/B/C/D, `reorderMode` / `storedOrder`, permanent Sort…, gold references |
-| [display.md](display.md) | Frequencies, bands, modes, icons, two-section nav |
-| [list-kit-roles.md](../../features/app-shell/list-kit-roles.md) | Surface → role inventory (tier 1 feature deep dive) |
-| [data-table.md](../../features/app-shell/data-table.md) | DataTable props, list prefs, virtualisation |
-| [help writing styleguide](../writing-styleguide/help-writing-styleguide.md) | Operator-facing prose |
+| Doc                                                                         | Contents                                                                       |
+| --------------------------------------------------------------------------- | ------------------------------------------------------------------------------ |
+| This README                                                                 | UI categories, decision tree, chrome conventions, specialised outliers         |
+| [lists-and-ordering.md](lists-and-ordering.md)                              | Roles A/B/C/D, `reorderMode` / `storedOrder`, permanent Sort…, gold references |
+| [display.md](display.md)                                                    | Frequencies, bands, modes, icons, two-section nav                              |
+| [list-kit-roles.md](../../features/app-shell/list-kit-roles.md)             | Surface → role inventory (tier 1 feature deep dive)                            |
+| [data-table.md](../../features/app-shell/data-table.md)                     | DataTable props, list prefs, virtualisation                                    |
+| [help writing styleguide](../writing-styleguide/help-writing-styleguide.md) | Operator-facing prose                                                          |
 
 ## Common UI categories
 
 Name the job first, then pick a shell.
 
-| Category | Job | Typical shell | Gold reference |
-| --- | --- | --- | --- |
-| **Entity inventory** | Browse / filter / open library or build entities | **A** — `DataTable` `variant="list"` | Library → Channels |
-| **Extreme inventory** | Same look as A; very large N | **D** — `DataTable` `scale="extreme"` | Library → Contacts (digital) |
-| **Agreed-order inventory** | List’s job is export / model order | **A** + `reorderMode` (+ arrows / Sort…) | Library → Zones |
-| **Membership pair** | Curate ordered members of a container | **B** + **C** — `AvailableItemPicker` + `SelectedItemList` | Zones → Edit members |
-| **Embedded inventory** | Compact table inside a form / wizard | **A** — `DataTable` `variant="embedded"` | Channel set preview; repeater results |
-| **Entity form** | Create / edit one entity | `FormPage` + `PageSection` | Channel / zone editors |
-| **List page chrome** | Title + intro + table | `ListPage` | Entity list routes |
-| **Specialised** | Diff matrices, CPS spreadsheets, config grids | Keep custom — document why | Field-diff; export resolution; CPS CSV |
+| Category                   | Job                                              | Typical shell                                              | Gold reference                         |
+| -------------------------- | ------------------------------------------------ | ---------------------------------------------------------- | -------------------------------------- |
+| **Entity inventory**       | Browse / filter / open library or build entities | **A** — `DataTable` `variant="list"`                       | Library → Channels                     |
+| **Extreme inventory**      | Same look as A; very large N                     | **D** — `DataTable` `scale="extreme"`                      | Library → Contacts (digital)           |
+| **Agreed-order inventory** | List’s job is export / model order               | **A** + `reorderMode` (+ arrows / Sort…)                   | Library → Zones                        |
+| **Membership pair**        | Curate ordered members of a container            | **B** + **C** — `AvailableItemPicker` + `SelectedItemList` | Zones → Edit members                   |
+| **Embedded inventory**     | Compact table inside a form / wizard             | **A** — `DataTable` `variant="embedded"`                   | Channel set preview; repeater results  |
+| **Entity form**            | Create / edit one entity                         | `FormPage` + `PageSection`                                 | Channel / zone editors                 |
+| **List page chrome**       | Title + intro + table                            | `ListPage`                                                 | Entity list routes                     |
+| **Specialised**            | Diff matrices, CPS spreadsheets, config grids    | Keep custom — document why                                 | Field-diff; export resolution; CPS CSV |
 
 Do **not** invent a fifth list look-and-feel for ordinary inventory. Prefer kit shells.
 
@@ -71,22 +71,22 @@ Details and prop names: [lists-and-ordering.md](lists-and-ordering.md).
 
 ### Permanent Sort…
 
-| Rule | Detail |
-| --- | --- |
-| **Control** | `MembershipSortMenu` — confirm dialog; **rewrites** model order |
-| **Label** | Name the noun: **Sort zones…**, **Sort channels…** — not bare **Sort…** when the entity is clear |
-| **Placement (list pages)** | Left-aligned `Group` **above** the `DataTable` (see Zones list) |
+| Rule                         | Detail                                                                                                  |
+| ---------------------------- | ------------------------------------------------------------------------------------------------------- |
+| **Control**                  | `MembershipSortMenu` — confirm dialog; **rewrites** model order                                         |
+| **Label**                    | Name the noun: **Sort zones…**, **Sort channels…** — not bare **Sort…** when the entity is clear        |
+| **Placement (list pages)**   | Left-aligned `Group` **above** the `DataTable` (see Zones list)                                         |
 | **Placement (membership C)** | `SelectedItemList` `toolbar` — rendered **above** the scroll body (same visual band as Zones list Sort) |
-| **Not** | Temporary browse sort; do not invent per-page sort chrome |
+| **Not**                      | Temporary browse sort; do not invent per-page sort chrome                                               |
 
 Permanent Sort… is distinct from DataTable column headers (browse) and from `storedOrder` restore (hybrid browse).
 
 ### Remove from list vs delete entity
 
-| Action | Icon | Style | When |
-| --- | --- | --- | --- |
+| Action                     | Icon        | Style                                                      | When                                                       |
+| -------------------------- | ----------- | ---------------------------------------------------------- | ---------------------------------------------------------- |
 | **Remove from membership** | `IconTrash` | `ActionIcon` `subtle` / `red` / `sm`, size `ICON_SIZE_NAV` | Zone / scan member rows — leaves the entity in the library |
-| **Delete entity** | `IconTrash` | Same ActionIcon styling via `EntityListDeleteAction` | Library list rows — deletes the entity (confirm flow) |
+| **Delete entity**          | `IconTrash` | Same ActionIcon styling via `EntityListDeleteAction`       | Library list rows — deletes the entity (confirm flow)      |
 
 Prefer trash over `IconX` for membership remove so chrome matches entity lists. Aria / tooltip should say **Remove from …**, not **Delete**, when the entity survives.
 
@@ -111,12 +111,12 @@ When a find-in-list or name filter is active, **disable reorder** (drag, arrows,
 
 ## Page shells
 
-| Shell | Use |
-| --- | --- |
-| `ListPage` | Top-level entity inventories |
-| `FormPage` | Entity create/edit; description slot often holds **← Back to …** |
-| `PageSection` | Grouped blocks inside forms |
-| Section nav | Per-area secondary nav — registry titles should match list page titles |
+| Shell         | Use                                                                    |
+| ------------- | ---------------------------------------------------------------------- |
+| `ListPage`    | Top-level entity inventories                                           |
+| `FormPage`    | Entity create/edit; description slot often holds **← Back to …**       |
+| `PageSection` | Grouped blocks inside forms                                            |
+| Section nav   | Per-area secondary nav — registry titles should match list page titles |
 
 Layout of primary + section nav: [display.md — Two-section navigation](display.md#two-section-navigation).
 
