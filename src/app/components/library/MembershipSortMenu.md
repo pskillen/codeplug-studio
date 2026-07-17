@@ -6,12 +6,12 @@ One-shot **Sort…** menu for library membership / zone order. Confirms before c
 
 ## Props
 
-| Prop       | Type                         | Description                                      |
-| ---------- | ---------------------------- | ------------------------------------------------ |
-| `modes`    | `MembershipSortMode[]`       | Optional subset (default: name/callsign/duplex/band/mode) |
-| `disabled` | `boolean`                    | Disable the menu trigger                         |
-| `onSort`   | `(mode) => void`             | Called after confirm                             |
-| `label`    | `string`                     | Button label (default `Sort…`)                   |
+| Prop       | Type                   | Description                                               |
+| ---------- | ---------------------- | --------------------------------------------------------- |
+| `modes`    | `MembershipSortMode[]` | Optional subset (default: name/callsign/duplex/band/mode) |
+| `disabled` | `boolean`              | Disable the menu trigger                                  |
+| `onSort`   | `(mode) => void`       | Called after confirm                                      |
+| `label`    | `string`               | Button label (default `Sort…`)                            |
 
 ## Behaviour
 

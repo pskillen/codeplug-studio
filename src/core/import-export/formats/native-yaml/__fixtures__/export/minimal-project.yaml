@@ -33,4 +33,4 @@ project:
   zoneDefaults:
     includeInZoneDerivedScanList: true
 schemaVersion: 1
-studioSchemaVersion: 19
+studioSchemaVersion: 20

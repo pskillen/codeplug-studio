@@ -2,7 +2,7 @@
 
 Deep dive for **`RxGroupListMemberPicker`** — the two-list membership editor used on the RX group list form.
 
-**Tracking:** [#107](https://github.com/pskillen/codeplug-studio/issues/107) · [#108](https://github.com/pskillen/codeplug-studio/issues/108)
+**Tracking:** [#107](https://github.com/pskillen/codeplug-studio/issues/107) · [#108](https://github.com/pskillen/codeplug-studio/issues/108) · ordering [#456](https://github.com/pskillen/codeplug-studio/issues/456)
 
 ## Purpose
 
@@ -18,13 +18,14 @@ Replaces checkbox-only RX group list membership with available ↔ in-list lists
 
 ## Behaviour
 
-| Control            | Effect                                                                               |
-| ------------------ | ------------------------------------------------------------------------------------ |
-| Available search   | Filters talk groups and digital contacts not yet in the list (name or digital ID)    |
-| In-list search     | Filters current members                                                              |
-| Add / Remove       | Moves selected rows between lists                                                    |
-| Move up / down     | Reorders selected in-list members as a block                                         |
-| Timeslot (in-list) | `Auto` / `TS1` / `TS2` segmented control on DMR talk groups and DMR digital contacts |
+| Control            | Effect                                                                                                              |
+| ------------------ | ------------------------------------------------------------------------------------------------------------------- |
+| Available search   | Filters talk groups and digital contacts not yet in the list (name or digital ID)                                   |
+| In-list search     | Filters current members                                                                                             |
+| Add / Remove       | Moves selected rows between lists                                                                                   |
+| Move up / down     | Reorders selected in-list members as a block                                                                        |
+| Sort…              | One-shot rewrite by name or callsign after confirm ([#456](https://github.com/pskillen/codeplug-studio/issues/456)) |
+| Timeslot (in-list) | `Auto` / `TS1` / `TS2` segmented control on DMR talk groups and DMR digital contacts                                |
 
 `Auto` omits `timeSlotOverride` (unset). `TS1` / `TS2` store typed `1` / `2` on the membership row — vendor-neutral; CPS wire mapping is deferred to format export.
 

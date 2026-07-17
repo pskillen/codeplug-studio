@@ -1,10 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { newChannel, newZone } from '@core/domain/factories.ts';
-import {
-  sortChannelIdsByMode,
-  sortZoneMembersByMode,
-  sortZonesByName,
-} from './membershipSort.ts';
+import { sortChannelIdsByMode, sortZoneMembersByMode, sortZonesByName } from './membershipSort.ts';
 
 describe('membershipSort', () => {
   const projectId = '11111111-1111-4111-8111-111111111111';

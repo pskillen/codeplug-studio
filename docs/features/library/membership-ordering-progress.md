@@ -8,34 +8,30 @@
 
 ## Overall status
 
-**Status:** In progress
+**Status:** Complete (pending merge)
 
 **Branch:** `456/pskil/membership-ordering`
 
 ---
 
-## Slice 0–2
-
-**Status:** Complete (see prior commits)
-
----
-
-## Slice 3 — Library Sort… (#155)
+## Slices 0–5
 
 **Status:** Complete
 
 **Delivered**
 
-- `membershipSort.ts` — one-shot sort helpers + confirm message
-- `MembershipSortMenu` + wiring on zones list, zone members, scan lists, RGLs
-- Follow-up [#457](https://github.com/pskillen/codeplug-studio/issues/457) for build/export-level sorting
+- Schema v20 `Zone.order`; assemble cascade; membership helpers
+- Library UI: zone list reorder, scan-list member reorder, Sort… menus
+- Build UI: zone `orderOrSlot` reorder + member order modal
+- Tier-1 docs; follow-up [#457](https://github.com/pskillen/codeplug-studio/issues/457)
 
 **Verify**
 
-- Sort… confirm then rewrite order on library editors
+- `npm run format:check && npm run lint && npm run test && npm run build`
+- Manual: library zones / members / scan / RGL Sort…; build Zones reorder
 
 ---
 
 ## Next
 
-- Slice 4: Build zone member reorder + zone `orderOrSlot` override UI
+- Open PR (`Closes #456` · `Closes #155`)

@@ -352,9 +352,7 @@ function assembleZones(
     const layoutEntry = layoutEntryById.get(libraryZone.id);
     const effectiveIds = resolveEffectiveZoneChannelIds(libraryZone, library.zones);
     const memberChannelIds = (
-      layoutEntry
-        ? orderChannelIdsByLayoutHint(effectiveIds, layoutEntry.channelIds)
-        : effectiveIds
+      layoutEntry ? orderChannelIdsByLayoutHint(effectiveIds, layoutEntry.channelIds) : effectiveIds
     ).filter((id) => exportedChannelIds.has(id));
     if (memberChannelIds.length === 0 && !overrideByEntityId(overrides).has(libraryZone.id)) {
       continue;

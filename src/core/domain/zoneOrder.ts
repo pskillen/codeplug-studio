@@ -42,7 +42,8 @@ export function applyDenseZoneOrders(zones: Zone[], orderedZoneIds: string[]): Z
     const nextOrder = orderById.get(zone.id);
     if (nextOrder == null) {
       if (zone.order == null) return zone;
-      const { order: _removed, ...rest } = zone;
+      const rest = { ...zone };
+      delete rest.order;
       return rest;
     }
     if (zone.order === nextOrder) return zone;

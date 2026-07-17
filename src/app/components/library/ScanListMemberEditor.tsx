@@ -125,7 +125,9 @@ export default function ScanListMemberEditor({
           <Group gap="xs">
             <MembershipSortMenu
               disabled={!memberChannelIds.length}
-              onSort={(mode) => onChange(sortChannelIdsByMode(memberChannelIds, channelsById, mode))}
+              onSort={(mode) =>
+                onChange(sortChannelIdsByMode(memberChannelIds, channelsById, mode))
+              }
             />
             <Button
               type="button"

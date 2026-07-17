@@ -295,7 +295,9 @@ export default function ZoneMemberEditor({
           <Group gap="xs">
             <MembershipSortMenu
               disabled={!members.length}
-              onSort={(mode) => onChange(sortZoneMembersByMode(members, channelsById, zonesById, mode))}
+              onSort={(mode) =>
+                onChange(sortZoneMembersByMode(members, channelsById, zonesById, mode))
+              }
             />
             <Button
               type="button"

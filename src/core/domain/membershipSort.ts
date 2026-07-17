@@ -41,7 +41,10 @@ function channelSortTuple(channel: Channel, mode: MembershipSortMode): (string |
       return [call ? 0 : 1, call.toLocaleLowerCase(), name.toLocaleLowerCase()];
     }
     case 'duplex':
-      return [isSimplex(channel.rxFrequency, channel.txFrequency) ? 0 : 1, name.toLocaleLowerCase()];
+      return [
+        isSimplex(channel.rxFrequency, channel.txFrequency) ? 0 : 1,
+        name.toLocaleLowerCase(),
+      ];
     case 'band': {
       const band = bandForFrequencyHz(channel.rxFrequency);
       return [band?.startHz ?? Number.MAX_SAFE_INTEGER, name.toLocaleLowerCase()];
@@ -155,7 +158,10 @@ export function sortRxGroupListMembersByMode(
 /** Apply dense Zone.order after sorting zones by name (only `name` mode is meaningful). */
 export function sortZonesByName(zones: Zone[]): Zone[] {
   const ordered = [...zones].sort((a, b) => a.name.localeCompare(b.name));
-  return applyDenseZoneOrders(zones, ordered.map((z) => z.id));
+  return applyDenseZoneOrders(
+    zones,
+    ordered.map((z) => z.id),
+  );
 }
 
 export function membershipSortConfirmMessage(mode: MembershipSortMode): string {

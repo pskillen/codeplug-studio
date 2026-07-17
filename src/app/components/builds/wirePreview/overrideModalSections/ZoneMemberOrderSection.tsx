@@ -1,5 +1,5 @@
 import { Button, Checkbox, Group, Stack, Text } from '@mantine/core';
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import type { Channel, Zone } from '@core/models/library.ts';
 import type { ZoneGroupingZoneEntry } from '@core/models/traitLayout.ts';
 import { resolveEffectiveZoneChannelIds } from '@core/domain/zoneHierarchy.ts';
@@ -27,12 +27,12 @@ export default function ZoneMemberOrderSection({
 }: ZoneMemberOrderSectionProps) {
   const [selected, setSelected] = useState<string[]>([]);
 
-  const orderedIds = useMemo(() => {
+  const orderedIds = (() => {
     const effective = resolveEffectiveZoneChannelIds(zone, zones);
     return entry?.channelIds?.length
       ? orderChannelIdsByLayoutHint(effective, entry.channelIds)
       : effective;
-  }, [entry?.channelIds, zone, zones]);
+  })();
 
   const moveSelected = (direction: 'up' | 'down') => {
     if (!selected.length) return;

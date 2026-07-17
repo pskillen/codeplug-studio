@@ -6,11 +6,11 @@ Ordered channel membership for a library [`ScanList`](../../../../docs/features/
 
 ## Props
 
-| Prop               | Type                         | Description                          |
-| ------------------ | ---------------------------- | ------------------------------------ |
-| `channels`         | `Channel[]`                  | Library channels for labels / add pool |
-| `memberChannelIds` | `string[]`                   | Ordered UUID FKs (export order)      |
-| `onChange`         | `(ids: string[]) => void`    | Replace membership array             |
+| Prop               | Type                      | Description                            |
+| ------------------ | ------------------------- | -------------------------------------- |
+| `channels`         | `Channel[]`               | Library channels for labels / add pool |
+| `memberChannelIds` | `string[]`                | Ordered UUID FKs (export order)        |
+| `onChange`         | `(ids: string[]) => void` | Replace membership array               |
 
 ## Usage
 

@@ -2,7 +2,7 @@
 
 Deep dive for **`ZoneMemberEditor`** — the vertical stacked membership editor on the zone form.
 
-**Tracking:** [#25](https://github.com/pskillen/codeplug-studio/issues/25), nested zones [#157](https://github.com/pskillen/codeplug-studio/issues/157), revision-2 [#180](https://github.com/pskillen/codeplug-studio/issues/180)
+**Tracking:** [#25](https://github.com/pskillen/codeplug-studio/issues/25), nested zones [#157](https://github.com/pskillen/codeplug-studio/issues/157), revision-2 [#180](https://github.com/pskillen/codeplug-studio/issues/180), ordering [#456](https://github.com/pskillen/codeplug-studio/issues/456)
 
 > **Supersedes** the legacy side-by-side two-list `ZoneMemberPicker` layout (component file retained as a re-export shim).
 
@@ -32,15 +32,16 @@ Sidecars: `ZoneMemberEditor.md`, `ChannelZoneMembershipSection.md`.
 
 ## Behaviour
 
-| Control                      | Effect                                                                                     |
-| ---------------------------- | ------------------------------------------------------------------------------------------ |
-| In-zone filter               | Filters current members (channel name/callsign or zone name)                               |
-| Other pool filter            | Filters available channels and zones                                                       |
-| Add selected                 | Appends checked rows from the other pool                                                   |
-| Move up / down               | Reorders selected in-zone members as a block; **Alt+↑ / Alt+↓** shortcuts                  |
-| Remove                       | Per-row ✕ or bulk **Remove selected**                                                      |
-| Zone-derived scan membership | Per direct channel member — tri-state `includeInScanList` (`default` / `include` / `skip`) |
-| Hide filtered from map       | Separate checkboxes for each pool                                                          |
+| Control                      | Effect                                                                                                                                                       |
+| ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| In-zone filter               | Filters current members (channel name/callsign or zone name)                                                                                                 |
+| Other pool filter            | Filters available channels and zones                                                                                                                         |
+| Add selected                 | Appends checked rows from the other pool                                                                                                                     |
+| Move up / down               | Reorders selected in-zone members as a block; **Alt+↑ / Alt+↓** shortcuts                                                                                    |
+| Sort…                        | One-shot rewrite of membership order (name / callsign / duplex / band / mode) after confirm — [#456](https://github.com/pskillen/codeplug-studio/issues/456) |
+| Remove                       | Per-row ✕ or bulk **Remove selected**                                                                                                                        |
+| Zone-derived scan membership | Per direct channel member — tri-state `includeInScanList` (`default` / `include` / `skip`)                                                                   |
+| Hide filtered from map       | Separate checkboxes for each pool                                                                                                                            |
 
 **Available zones** excludes the zone being edited, its descendant zones (would create a cycle), and zones already in the member list.
 
