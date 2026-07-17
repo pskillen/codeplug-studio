@@ -11,3 +11,4 @@ Items **skipped**, **incomplete**, or **discovered during execution** — not th
 - [ ] Migrate production library/build/import tables to A/B/C/D kit (follow-up plan)
 - [ ] Refactor `ZoneMemberEditor` onto new C move/remove/hotkey props
 - [ ] Contacts `scale="extreme"` + cheap-cell / indexed search for ~200k
+- [ ] Membership editors (`SelectedItemList`): temporary display sort + restore to export order (DataTable `storedOrder` shipped for Zones in #462)
