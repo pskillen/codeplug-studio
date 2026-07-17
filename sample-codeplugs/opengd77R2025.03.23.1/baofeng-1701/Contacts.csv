@@ -1,0 +1,56 @@
+Contact Name,ID,ID Type,TS Override
+Asia M.E 94 T1,94,Group,1
+Asia M.E 94 T2,94,Group,2
+Europe 92 T1,92,Group,1
+Europe 92 T2,92,Group,2
+Hubnet,23526,Group,Disabled
+Extd Freedom Net,23525,Group,Disabled
+Local 9,9,Group,Disabled
+N America 93 T1,93,Group,1
+N America 93 T2,93,Group,2
+Parrot 9990,9990,Private,Disabled
+Raynet UK TS1,23531,Group,1
+Scot Chat 0 TS1,23550,Group,1
+Scot Chat 0 TS2,23550,Group,2
+Scot Multi TS1,23551,Group,1
+Scot Multi TS2,23551,Group,2
+Scot East TS2,23557,Group,2
+Scot North TS1,23558,Group,1
+Scot North TS2,23558,Group,2
+Scot West TS1,23559,Group,1
+Scot West TS2,23559,Group,2
+Scotland TS1,2355,Group,1
+Scotland TS2,2355,Group,2
+UK Calling TS1,235,Group,1
+UK Chat TS1,2350,Group,1
+World 91 TS1,91,Group,1
+World 91 TS2,91,Group,2
+Disconnect TS1,4000,Private,1
+Disconnect TS2,4000,Private,2
+BM APRS UK,234999,Group,Disabled
+Scot East TS1,23557,Group,1
+GB7PA local,234136,Group,2
+GB7EC Local T2,235419,Group,2
+Atlan. Canada T1,30205,Group,1
+GB7SS Local T2,235405,Group,2
+GB7YC Local T2,234169,Group,2
+GB3HL Local T2,234143,Group,2
+Ulster T1,27253,Group,1
+Aust. & N/Z T1,95,Group,1
+Ireland wide 272,272,Group,Disabled
+IE calling 2722,2722,Group,Disabled
+Ireland 1 / 2721,2721,Group,Disabled
+Bdg IE-YSF 2354,2354,Group,Disabled
+PAPA SoCal,31077,Group,Disabled
+Kansas City,313136,Group,Disabled
+Mothership TGIF,31665,Group,Disabled
+UK Multi DvP T1,23556,Group,1
+UK Multi DvP T2,23556,Group,2
+GB7EC Local T1,235419,Group,1
+FIRE 901,901,Group,1
+Local 99,99,Group,Disabled
+Local 1,1,Group,Disabled
+Iceland T1,274,Group,1
+Australia T2,505,Group,2
+Aus. Victoria T2,5053,Group,2
+London T2,2358,Group,2

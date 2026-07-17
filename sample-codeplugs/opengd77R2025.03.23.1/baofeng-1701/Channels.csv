@@ -1,0 +1,200 @@
+Channel Number,Channel Name,Channel Type,Rx Frequency,Tx Frequency,Bandwidth (kHz),Colour Code,Timeslot,Contact,TG List,DMR ID,TS1_TA_Tx,TS2_TA_Tx ID,RX Tone,TX Tone,Squelch,Power,Rx Only,Zone Skip,All Skip,TOT,VOX,No Beep,No Eco,APRS,Latitude,Longitude,Use Location
+1,GB3CS Motherwell,Analogue,	145.75000,	145.15000,12.5,,,,,,,,None,103.5,75%,Master,No,No,No,0,Off,No,No,None,55.789,-3.989,Yes
+2,GB3DV Bradford,Digital,	439.70000,	430.70000,,2,1,Local 9,None,None,Off,Off,,,,Master,No,No,No,0,Off,No,No,APRSFM,53.8,-1.7,Yes
+3,GB3FE Stirling,Analogue,	145.66250,	145.06250,12.5,,,,,,,,None,103.5,Disabled,Master,No,No,No,0,Off,No,No,None,56.107,-3.846,Yes
+4,GB3GL Glasgow,Analogue,	430.90000,	438.50000,12.5,,,,,,,,None,103.5,Disabled,Master,No,No,No,0,Off,No,No,None,55.85,-4.1031,Yes
+5,GB3HJ Harrogate,Analogue,	433.02500,	434.62500,12.5,,,,,,,,None,118.8,Disabled,Master,No,No,No,0,Off,No,No,None,54.0647,-1.6543,Yes
+6,GB3KE Glasgow,Analogue,	145.68750,	145.08750,12.5,,,,,,,,None,103.5,60%,Master,No,Yes,No,0,Off,No,No,None,55.9153,-4.3077,Yes
+7,GB3KV Kilsyth,Analogue,	430.97500,	438.57500,12.5,,,,,,,,None,103.5,Disabled,Master,No,No,No,0,Off,No,No,None,55.9975,-4.0381,Yes
+8,GB3KW Glasgow,Analogue,	430.82500,	438.42500,12.5,,,,,,,,None,103.5,Disabled,Master,No,Yes,No,0,Off,No,No,None,55.9153,-4.3077,Yes
+9,GB3PA Paisley,Analogue,	145.62500,	145.02500,12.5,,,,,,,,None,103.5,Disabled,Master,No,No,No,0,Off,No,No,None,55.9132,-4.5913,Yes
+10,GB3WF Otley,Analogue,	433.35000,	434.95000,12.5,,,,,,,,None,82.5,Disabled,Master,No,No,No,0,Off,No,No,None,53.8918,-1.688,Yes
+11,GB7AC Largs DMR,Digital,	430.95000,	438.55000,,3,1,None,GB7AC,None,Off,Off,,,,Master,No,No,No,0,Off,No,No,APRSFM,55.8,-4.9,Yes
+12,GB7AC Largs FM,Analogue,	430.95000,	438.55000,12.5,,,,,,,,None,103.5,Disabled,Master,No,No,No,0,Off,No,No,None,55.8,-4.9,Yes
+13,GB7DA Airdrie,Digital,	145.77500,	145.17500,,1,2,Scotland TS2,None,None,Off,Off,,,,Master,No,No,No,0,Off,No,No,None,55.8854,-3.993,Yes
+14,GB7DB Dunbar,Digital,	145.75000,	145.15000,,5,2,None,GB7DB,None,Off,Off,,,,Master,No,No,No,0,Off,No,No,APRSFM,55.9931,-2.5094,Yes
+15,GB7GG Airdrie,Digital,	439.62500,	430.62500,,1,2,Scotland TS2,None,None,Off,Off,,,,Master,No,No,No,0,Off,No,No,None,55.8854,-3.993,Yes
+16,GB7GL Glasgow,Digital,	430.85000,	438.45000,,7,2,None,GB7GL,None,Off,Off,,,,Master,No,No,No,0,Off,No,No,APRSFM,55.85,-4.1031,Yes
+17,GB7GX P'pan DMR,Digital,	439.36250,	430.36250,,1,1,Scotland TS2,None,None,Off,Off,,,,Master,No,No,No,0,Off,No,No,None,55.9554,-2.9957,Yes
+18,GB7GX P'pan FM,Analogue,	439.36250,	430.36250,12.5,,,,,,,,None,103.5,Disabled,Master,No,No,No,0,Off,No,No,None,55.9554,-2.9957,Yes
+19,GB7II Inverness,Digital,	439.45000,	430.45000,,3,2,None,GB7II,None,Off,Off,,,,Master,No,No,No,0,Off,No,No,APRSFM,57.4771,-4.2591,Yes
+20,GB7LE Leeds,Digital,	439.66250,	430.66250,,2,2,Local 9,None,None,Off,Off,,,,Master,No,No,No,0,Off,No,No,None,53.8507,-1.5349,Yes
+21,GB7MM Nairn,Digital,	439.75000,	430.75000,,5,1,Local 9,None,None,Off,Off,,,,Master,No,No,No,0,Off,No,No,None,57.5788,-3.8957,Yes
+22,GB7PA Paisley,Digital,	439.52500,	430.52500,,1,2,None,GB7PA,None,Off,Off,,,,Master,No,No,No,0,Off,No,No,None,55.9132,-4.5913,Yes
+23,GB7SM St Mon FM,Analogue,	439.58750,	430.58750,12.5,,,,,,,,None,103.5,Disabled,Master,No,No,No,0,Off,No,No,None,0,0,No
+24,GB7SM St.Monans,Digital,	439.58750,	430.58750,,1,1,Scotland TS2,None,None,Off,Off,,,,Master,No,No,No,0,Off,No,No,None,0,0,No
+25,GB7SS Lossie,Digital,	439.58750,	430.58750,,1,1,None,GB7SS,None,Off,Off,,,,Master,No,No,No,0,Off,No,No,APRSFM,57.7235,-3.3447,Yes
+26,GB7YC York,Digital,	433.13750,	438.13750,,9,2,None,GB7YC,None,Off,Off,,,,Master,No,No,No,0,Off,No,No,APRSFM,53.9649,-1.0661,Yes
+27,Hotspot,Digital,	438.80000,	434.00000,,1,2,None,Hotspot,None,Off,Off,,,,P2,No,No,No,0,Off,No,No,APRSFM,55.8241,-4.1206,Yes
+28,ISS UHF,Analogue,	437.80000,	433.52500,12.5,,,,,,,,None,None,Disabled,Master,Yes,No,No,0,Off,No,No,None,0,0,No
+29,ISS VHF,Analogue,	145.80000,	438.48750,12.5,,,,,,,,None,None,Disabled,Master,Yes,No,No,0,Off,No,No,None,0,0,No
+30,MB6BS Carrbridge,Digital,	144.81250,	144.81250,,3,2,Local 9,None,None,Off,Off,,,,Master,No,No,No,0,Off,No,No,None,57.2806,-3.8124,Yes
+31,MB6CY Clydebank,Digital,	144.87500,	144.87500,,2,2,Local 9,None,None,Off,Off,,,,Master,No,No,No,0,Off,No,No,None,55.9036,-4.3909,Yes
+32,MB6FU Nairn,Digital,	144.83750,	144.83750,,7,2,Local 9,None,None,Off,Off,,,,Master,No,No,No,0,Off,No,No,None,57.5788,-3.8957,Yes
+33,UK Calling UHF,Analogue,	433.50000,	433.50000,12.5,,,,,,,,None,None,Disabled,Master,No,No,No,0,Off,No,No,None,0,0,No
+34,UK Calling VHF,Analogue,	145.50000,	145.50000,12.5,,,,,,,,None,None,Disabled,Master,No,No,No,0,Off,No,No,None,0,0,No
+35,PMR446-1,Analogue,	446.00625,	446.00625,12.5,,,,,,,,None,None,Disabled,P2,No,No,No,0,Off,No,No,None,0,0,No
+36,PMR446-2,Analogue,	446.01875,	446.01875,12.5,,,,,,,,None,None,Disabled,P2,No,No,No,0,Off,No,No,None,0,0,No
+37,PMR446-3,Analogue,	446.03125,	446.03125,12.5,,,,,,,,None,None,Disabled,P2,No,No,No,0,Off,No,No,None,0,0,No
+38,PMR446-4,Analogue,	446.04375,	446.04375,12.5,,,,,,,,None,None,70%,P2,No,No,No,0,Off,No,No,None,0,0,No
+39,PMR446-5,Analogue,	446.05625,	446.05625,12.5,,,,,,,,None,None,Disabled,P2,No,No,No,0,Off,No,No,None,0,0,No
+40,PMR446-6,Analogue,	446.06875,	446.06875,12.5,,,,,,,,None,None,Disabled,P2,No,No,No,0,Off,No,No,None,0,0,No
+41,PMR446-7,Analogue,	446.08125,	446.08125,12.5,,,,,,,,None,None,Disabled,P2,No,No,No,0,Off,No,No,None,0,0,No
+42,PMR446-8,Analogue,	446.09375,	446.09375,12.5,,,,,,,,None,None,Disabled,P2,No,No,No,0,Off,No,No,None,0,0,No
+43,PMR446-9,Analogue,	446.10625,	446.10625,12.5,,,,,,,,None,None,70%,P2,No,No,No,0,Off,No,No,None,0,0,No
+44,PMR446-10,Analogue,	446.11875,	446.11875,12.5,,,,,,,,None,None,Disabled,P2,No,No,No,0,Off,No,No,None,0,0,No
+45,PMR446-11,Analogue,	446.13125,	446.13125,12.5,,,,,,,,None,None,Disabled,P2,No,No,No,0,Off,No,No,None,0,0,No
+46,PMR446-12,Analogue,	446.14375,	446.14375,12.5,,,,,,,,None,None,Disabled,P2,No,No,No,0,Off,No,No,None,0,0,No
+47,PMR446-13,Analogue,	446.15625,	446.15625,12.5,,,,,,,,None,None,Disabled,P2,No,No,No,0,Off,No,No,None,0,0,No
+48,PMR446-14,Analogue,	446.16875,	446.16875,12.5,,,,,,,,None,None,Disabled,P2,No,No,No,0,Off,No,No,None,0,0,No
+49,PMR446-15,Analogue,	446.18125,	446.18125,12.5,,,,,,,,None,None,Disabled,P2,No,No,No,0,Off,No,No,None,0,0,No
+50,PMR446-16,Analogue,	446.19375,	446.19375,12.5,,,,,,,,None,None,Disabled,P2,No,No,No,0,Off,No,No,None,0,0,No
+51,GB7EE Edinburgh,Digital,	430.92500,	438.52500,,1,1,None,GB7EE,None,Off,Off,,,,Master,No,No,No,0,Off,No,No,APRSFM,55.9333,-3.2137,Yes
+52,GB7EU Edinburgh,Analogue,	430.83750,	439.43750,12.5,,,,,,,,None,94.8,Disabled,Master,No,No,No,0,Off,No,No,None,55.94,-3.21,Yes
+53,GB3ED Edinburgh,Analogue,	430.88750,	438.48750,12.5,,,,,,,,None,94.8,Disabled,Master,No,No,No,0,Off,No,No,None,55.9335,-3.2133,Yes
+54,Ru PMR 5-13,Analogue,	446.05625,	446.05625,12.5,,,,,,,,103.5,103.5,Disabled,P2,No,No,No,0,Off,No,No,None,0,0,No
+55,GB3OH L'gow FM,Analogue,	430.95000,	438.55000,12.5,,,,,,,,94.8,94.8,Disabled,Master,No,No,No,0,Off,No,No,None,55.997,-3.646,Yes
+56,GB3OH L'gow DMR,Digital,	430.95000,	438.55000,,1,1,None,GB3OH,None,Off,Off,,,,Master,No,No,No,0,Off,No,No,APRSFM,55.996,-3.646,Yes
+57,GB7LL K'ross FM,Analogue,	430.91250,	438.51250,12.5,,,,,,,,None,94.8,Disabled,Master,No,No,No,0,Off,No,No,None,56.201,-3.421,Yes
+58,GB7FE Stirling,Digital,	439.47500,	430.47500,,1,1,None,GB7FE,None,Off,Off,,,,Master,No,No,No,0,Off,No,No,APRSFM,56.107,-3.846,Yes
+59,GB7LL K'ross DMR,Digital,	430.91250,	438.51250,,1,1,None,GB7LL,None,Off,Off,,,,Master,No,No,No,0,Off,No,No,APRSFM,56.201,-3.421,Yes
+60,GB3PR Perth,Analogue,	145.67500,	145.07500,12.5,,,,,,,,94.8,94.8,Disabled,Master,No,No,No,0,Off,No,No,None,56.3725,-3.4551,Yes
+61,GB7LV Broxburn,Digital,	145.61250,	145.01250,,1,1,None,None,None,Off,Off,,,,Master,No,No,No,0,Off,No,No,None,55.9318,-3.4675,Yes
+62,GB7CB Livingston,Digital,	439.71250,	430.71250,,4,1,None,GB7CB,None,Off,Off,,,,Master,No,No,No,0,Off,No,No,APRSFM,55.8827,-3.5156,Yes
+63,GB7BG Bathgate,Digital,	439.66250,	430.66250,,1,1,None,GB7BG,None,Off,Off,,,,Master,No,No,No,0,Off,No,No,APRSFM,55.904,-3.645,Yes
+64,GB3UL Belfast,Analogue,	433.05000,	433.65000,12.5,,,,,,,,None,110.9,Disabled,Master,No,No,No,0,Off,No,No,None,54.62,-5.82,Yes
+65,GB7ZT Ball'trae,Digital,	439.40000,	430.40000,,9,1,None,GB7ZT,None,Off,Off,,,,Master,No,No,No,0,Off,No,No,None,55.1,-5.03,Yes
+66,GB3HL Leslie FM,Analogue,	430.88750,	438.48750,12.5,,,,,,,,None,67.0,Disabled,Master,No,No,No,0,Off,No,No,None,57.3,-2.7,Yes
+67,GB3GN Banchory,Analogue,	145.77500,	145.17500,12.5,,,,,,,,None,67.0,Disabled,Master,No,No,No,0,Off,No,No,None,57.0179,-2.3591,Yes
+68,GB3HL Leslie DMR,Digital,	430.88750,	438.48750,,1,1,None,GB3HL,None,Off,Off,,,,Master,No,No,No,0,Off,No,No,APRSFM,57.3,-2.7,Yes
+69,GB7EM Aberdeen,Digital,	439.42500,	430.42500,,11,2,None,GB7EM,None,Off,Off,,,,Master,No,No,No,0,Off,No,No,APRSFM,57.1335,-2.123,Yes
+70,GB7KV Kemnay,Digital,	430.81250,	438.41250,,5,2,Local 9,None,None,Off,Off,,,,Master,No,No,No,0,Off,No,No,None,57.2399,-2.4471,Yes
+71,GB7GD Aberdeen,Digital,	145.68750,	145.08750,,1,1,Local 9,None,None,Off,Off,,,,Master,No,No,No,0,Off,No,No,None,57.153,-2.183,Yes
+72,GB3AG Angus,Analogue,	145.72500,	145.12500,12.5,,,,,,,,None,94.8,Disabled,Master,No,No,No,0,Off,No,No,None,56.553,-2.774,Yes
+73,GB3DD Dundee,Analogue,	433.25000,	434.85000,12.5,,,,,,,,None,94.8,Disabled,Master,No,No,No,0,Off,No,No,None,56.505,-2.966,Yes
+74,GB3DM Dumbarton,Analogue,	430.92500,	438.52500,12.5,,,,,,,,103.5,103.5,10%,Master,No,No,No,0,Off,No,No,None,55.9687,-4.5833,Yes
+75,GB3WA Dalry,Analogue,	430.87500,	438.47500,12.5,,,,,,,,None,103.5,Disabled,Master,No,No,No,0,Off,No,No,None,55.7294,-4.7629,Yes
+76,APRS FM,Analogue,	144.80000,	144.80000,12.5,,,,,,,,None,None,Disabled,Master,No,Yes,Yes,0,Off,Yes,No,APRSFM,55.789,-3.989,Yes
+77,GB3PU Perth,Analogue,	433.00000,	434.60000,12.5,,,,,,,,94.8,94.8,Disabled,Master,No,No,No,0,Off,No,No,None,56.3725,-3.4551,Yes
+78,GB7EF Ladyba. FM,Analogue,	439.45000,	430.45000,12.5,,,,,,,,103.5,103.5,Disabled,Master,No,No,No,0,Off,No,No,None,56.3,-3.2,Yes
+79,GB7DM M'fieth FM,Analogue,	439.75000,	430.75000,12.5,,,,,,,,103.5,103.5,Disabled,Master,No,No,No,0,Off,No,No,None,56.4826,-2.8356,Yes
+80,GB7DM M'feith DM,Digital,	439.75000,	430.75000,,1,1,Local 9,None,None,Off,Off,,,,Master,No,No,No,0,Off,No,No,None,56.4826,-2.8356,Yes
+81,VHF V16 / S08,Analogue,	145.20000,	145.20000,12.5,,,,,,,,None,None,Disabled,Master,No,No,No,0,Off,No,No,None,55.789,-3.989,No
+82,VHF V17,Analogue,	145.21250,	145.21250,12.5,,,,,,,,None,None,Disabled,Master,No,No,No,0,Off,No,No,None,0,0,No
+83,VHF V18 / S09,Analogue,	145.22500,	145.22500,12.5,,,,,,,,None,None,Disabled,Master,No,No,No,0,Off,No,No,None,0,0,No
+84,VHF V19,Analogue,	145.23750,	145.23750,12.5,,,,,,,,None,None,Disabled,Master,No,No,No,0,Off,No,No,None,0,0,No
+85,VHF V20 / S10,Analogue,	145.25000,	145.25000,12.5,,,,,,,,None,None,Disabled,Master,No,No,No,0,Off,No,No,None,0,0,No
+86,VHF V21,Analogue,	145.26250,	145.26250,12.5,,,,,,,,None,None,Disabled,Master,No,No,No,0,Off,No,No,None,0,0,No
+87,VHF V22 / S11,Analogue,	145.27500,	145.27500,12.5,,,,,,,,None,None,Disabled,Master,No,No,No,0,Off,No,No,None,0,0,No
+88,VHF V23,Analogue,	145.28750,	145.28750,12.5,,,,,,,,None,None,Disabled,Master,No,No,No,0,Off,No,No,None,0,0,No
+89,VHF V24 / S12,Analogue,	145.30000,	145.30000,12.5,,,,,,,,None,None,Disabled,Master,No,No,No,0,Off,No,No,None,0,0,No
+90,VHF V25,Analogue,	145.31250,	145.31250,12.5,,,,,,,,None,None,Disabled,Master,No,No,No,0,Off,No,No,None,0,0,No
+91,VHF V26 / S13,Analogue,	145.32500,	145.32500,12.5,,,,,,,,None,None,Disabled,Master,No,No,No,0,Off,No,No,None,0,0,No
+92,VHF V27,Analogue,	145.33750,	145.33750,12.5,,,,,,,,None,None,Disabled,Master,No,No,No,0,Off,No,No,None,0,0,No
+93,VHF V28 / S14,Analogue,	145.35000,	145.35000,12.5,,,,,,,,None,None,Disabled,Master,No,No,No,0,Off,No,No,None,0,0,No
+94,VHF V29,Analogue,	145.36250,	145.36250,12.5,,,,,,,,None,None,Disabled,Master,No,No,No,0,Off,No,No,None,0,0,No
+95,VHF V30 / S15,Analogue,	145.37500,	145.37500,12.5,,,,,,,,None,None,Disabled,Master,No,No,No,0,Off,No,No,None,0,0,No
+96,VHF V31,Analogue,	145.38750,	145.38750,12.5,,,,,,,,None,None,Disabled,Master,No,No,No,0,Off,No,No,None,0,0,No
+97,VHF V32 / S16,Analogue,	145.40000,	145.40000,12.5,,,,,,,,None,None,Disabled,Master,No,No,No,0,Off,No,No,None,0,0,No
+98,VHF V33,Analogue,	145.41250,	145.41250,12.5,,,,,,,,None,None,Disabled,Master,No,No,No,0,Off,No,No,None,0,0,No
+99,VHF V34 / S17,Analogue,	145.42500,	145.42500,12.5,,,,,,,,None,None,Disabled,Master,No,No,No,0,Off,No,No,None,0,0,No
+100,VHF V35,Analogue,	145.43750,	145.43750,12.5,,,,,,,,None,None,Disabled,Master,No,No,No,0,Off,No,No,None,0,0,No
+101,VHF V36 / S18,Analogue,	145.45000,	145.45000,12.5,,,,,,,,None,None,Disabled,Master,No,No,No,0,Off,No,No,None,0,0,No
+102,VHF V37,Analogue,	145.46250,	145.46250,12.5,,,,,,,,None,None,Disabled,Master,No,No,No,0,Off,No,No,None,0,0,No
+103,VHF V38 / S19,Analogue,	145.47500,	145.47500,12.5,,,,,,,,None,None,Disabled,Master,No,No,No,0,Off,No,No,None,0,0,No
+104,VHF V39,Analogue,	145.48750,	145.48750,12.5,,,,,,,,None,None,Disabled,Master,No,No,No,0,Off,No,No,None,0,0,No
+105,VHF V40 / S20,Analogue,	145.50000,	145.50000,12.5,,,,,,,,None,None,Disabled,Master,No,No,No,0,Off,No,No,None,0,0,No
+106,VHF V41,Analogue,	145.51250,	145.51250,12.5,,,,,,,,None,None,Disabled,Master,No,No,No,0,Off,No,No,None,0,0,No
+107,VHF V42 / S21,Analogue,	145.52500,	145.52500,12.5,,,,,,,,None,None,Disabled,Master,No,No,No,0,Off,No,No,None,0,0,No
+108,VHF V43,Analogue,	145.53750,	145.53750,12.5,,,,,,,,None,None,Disabled,Master,No,No,No,0,Off,No,No,None,0,0,No
+109,VHF V44 / S22,Analogue,	145.55000,	145.55000,12.5,,,,,,,,None,None,Disabled,Master,No,No,No,0,Off,No,No,None,0,0,No
+110,VHF V45,Analogue,	145.56250,	145.56250,12.5,,,,,,,,None,None,Disabled,Master,No,No,No,0,Off,No,No,None,0,0,No
+111,VHF V46 / S23,Analogue,	145.57500,	145.57500,12.5,,,,,,,,None,None,Disabled,Master,No,No,No,0,Off,No,No,None,0,0,No
+112,UHF U16 / S08,Analogue,	433.40000,	433.40000,12.5,,,,,,,,None,None,Disabled,Master,No,No,No,0,Off,No,No,None,0,0,No
+113,UHF U17,Analogue,	433.41250,	433.41250,12.5,,,,,,,,None,None,Disabled,Master,No,No,No,0,Off,No,No,None,0,0,No
+114,UHF U18 / S09,Analogue,	433.42500,	433.42500,12.5,,,,,,,,None,None,Disabled,Master,No,No,No,0,Off,No,No,None,0,0,No
+115,UHF U19,Analogue,	433.43750,	433.43750,12.5,,,,,,,,None,None,Disabled,Master,No,No,No,0,Off,No,No,None,0,0,No
+116,UHF U20 / S10,Analogue,	433.45000,	433.45000,12.5,,,,,,,,None,None,Disabled,Master,No,No,No,0,Off,No,No,None,0,0,No
+117,UHF U21,Analogue,	433.46250,	433.46250,12.5,,,,,,,,None,None,Disabled,Master,No,No,No,0,Off,No,No,None,0,0,No
+118,UHF U22 / S11,Analogue,	433.47500,	433.47500,12.5,,,,,,,,None,None,Disabled,Master,No,No,No,0,Off,No,No,None,0,0,No
+119,UHF U23,Analogue,	433.48750,	433.48750,12.5,,,,,,,,None,None,Disabled,Master,No,No,No,0,Off,No,No,None,0,0,No
+120,UHF U24 / S12,Analogue,	433.50000,	433.50000,12.5,,,,,,,,None,None,Disabled,Master,No,No,No,0,Off,No,No,None,0,0,No
+121,UHF U25,Analogue,	433.51250,	433.51250,12.5,,,,,,,,None,None,Disabled,Master,No,No,No,0,Off,No,No,None,0,0,No
+122,UHF U26 / S13,Analogue,	433.52500,	433.52500,12.5,,,,,,,,None,None,Disabled,Master,No,No,No,0,Off,No,No,None,0,0,No
+123,UHF U27,Analogue,	433.53750,	433.53750,12.5,,,,,,,,None,None,Disabled,Master,No,No,No,0,Off,No,No,None,0,0,No
+124,UHF U28 / S14,Analogue,	433.55000,	433.55000,12.5,,,,,,,,None,None,Disabled,Master,No,No,No,0,Off,No,No,None,0,0,No
+125,UHF U29,Analogue,	433.56250,	433.56250,12.5,,,,,,,,None,None,Disabled,Master,No,No,No,0,Off,No,No,None,0,0,No
+126,UHF U30 / S15,Analogue,	433.57500,	433.57500,12.5,,,,,,,,None,None,Disabled,Master,No,No,No,0,Off,No,No,None,0,0,No
+127,UHF U31,Analogue,	433.58750,	433.58750,12.5,,,,,,,,None,None,Disabled,Master,No,No,No,0,Off,No,No,None,0,0,No
+128,UHF U32 / S16,Analogue,	433.60000,	433.60000,12.5,,,,,,,,None,None,Disabled,Master,No,No,No,0,Off,No,No,None,0,0,No
+129,UHF U33,Analogue,	433.61250,	433.61250,12.5,,,,,,,,None,None,Disabled,Master,No,No,No,0,Off,No,No,None,0,0,No
+130,UHF U34 / S17,Analogue,	433.62500,	433.62500,12.5,,,,,,,,None,None,Disabled,Master,No,No,No,0,Off,No,No,None,0,0,No
+131,UHF U35,Analogue,	433.63750,	433.63750,12.5,,,,,,,,None,None,Disabled,Master,No,No,No,0,Off,No,No,None,0,0,No
+132,UHF U36 / S18,Analogue,	433.65000,	433.65000,12.5,,,,,,,,None,None,Disabled,Master,No,No,No,0,Off,No,No,None,0,0,No
+133,UHF U37,Analogue,	433.66250,	433.66250,12.5,,,,,,,,None,None,Disabled,Master,No,No,No,0,Off,No,No,None,0,0,No
+134,UHF U38 / S19,Analogue,	433.67500,	433.67500,12.5,,,,,,,,None,None,Disabled,Master,No,No,No,0,Off,No,No,None,0,0,No
+135,UHF U39,Analogue,	433.68750,	433.68750,12.5,,,,,,,,None,None,Disabled,Master,No,No,No,0,Off,No,No,None,0,0,No
+136,UHF U40 / S20,Analogue,	433.70000,	433.70000,12.5,,,,,,,,None,None,Disabled,Master,No,No,No,0,Off,No,No,None,0,0,No
+137,UHF U41,Analogue,	433.71250,	433.71250,12.5,,,,,,,,None,None,Disabled,Master,No,No,No,0,Off,No,No,None,0,0,No
+138,UHF U42 / S21,Analogue,	433.72500,	433.72500,12.5,,,,,,,,None,None,Disabled,Master,No,No,No,0,Off,No,No,None,0,0,No
+139,UHF U43,Analogue,	433.73750,	433.73750,12.5,,,,,,,,None,None,Disabled,Master,No,No,No,0,Off,No,No,None,0,0,No
+140,UHF U44 / S22,Analogue,	433.75000,	433.75000,12.5,,,,,,,,None,None,Disabled,Master,No,No,No,0,Off,No,No,None,0,0,No
+141,UHF U45,Analogue,	433.76250,	433.76250,12.5,,,,,,,,None,None,Disabled,Master,No,No,No,0,Off,No,No,None,0,0,No
+142,UHF U46 / S23,Analogue,	433.77500,	433.77500,12.5,,,,,,,,None,None,Disabled,Master,No,No,No,0,Off,No,No,None,0,0,No
+143,GB7EF L'bank DMR,Digital,	439.45000,	430.45000,,1,1,Scotland TS2,None,None,Off,Off,,,,Master,No,No,No,0,Off,No,No,None,56.3,-3.2,Yes
+144,GB7DE K'way FM,Analogue,	145.63750,	145.03750,12.5,,,,,,,,94.8,94.8,Disabled,Master,No,No,No,0,Off,No,No,None,56.2,-3.1,Yes
+145,GB7DE K'way DMR,Digital,	145.63750,	145.03750,,1,1,None,GB7DE,None,Off,Off,,,,Master,No,No,No,0,Off,No,No,None,56.2,-3.1,Yes
+146,GB7XG G'roth FM,Analogue,	430.87500,	438.47500,12.5,,,,,,,,103.5,103.5,Disabled,Master,No,No,No,0,Off,No,No,None,56.2,-3.2,Yes
+147,GB7XG G'roth DMR,Digital,	430.87500,	438.47500,,1,1,None,GB7XG,None,Off,Off,,,,Master,No,No,No,0,Off,No,No,None,56.2,-3.2,Yes
+148,GB3FF Upp. Largo,Analogue,	145.60000,	145.00000,12.5,,,,,,,,None,103.5,Disabled,Master,No,No,No,0,Off,No,No,None,56.2,-2.9,Yes
+149,GB7HI Lisburn,Digital,	439.53750,	430.53750,,1,1,None,Scotland,None,Off,Off,,,,Master,No,No,No,0,Off,No,No,None,54.55,-6.08,Yes
+150,GB3AO Aboyne,Analogue,	430.97500,	438.57500,12.5,,,,,,,,None,67.0,Disabled,Master,No,No,No,0,Off,No,No,None,57.1,-2.9,Yes
+151,MB7IOR Aboyne,Analogue,	145.22500,	145.22500,12.5,,,,,,,,None,None,Disabled,Master,No,No,No,0,Off,No,No,None,57.1,-2.9,Yes
+152,FIRE Gen Inciden,Digital,	457.03750,	457.03750,,1,1,FIRE 901,None,None,Off,Off,,,,Master,Yes,No,No,0,Off,No,No,None,0,0,No
+153,FIRE Repeaters/P,Digital,	462.58750,	457.03750,,2,1,FIRE 901,None,None,Off,Off,,,,Master,Yes,No,No,0,Off,No,No,None,0,0,No
+154,FIRE Breath Comm,Digital,	457.48750,	380.00000,,3,1,FIRE 901,None,None,Off,Off,,,,Master,Yes,No,No,0,Off,No,No,None,0,0,No
+155,FIRE Cmd Sppt,Digital,	457.18750,	127.00000,,4,1,FIRE 901,None,None,Off,Off,,,,Master,Yes,No,No,0,Off,No,No,None,0,0,No
+156,FIRE Fixed Rptr.,Digital,	462.63750,	380.00000,,5,1,FIRE 901,None,None,Off,Off,,,,Master,Yes,No,No,0,Off,No,No,None,0,0,No
+157,FIRE Breath func,Digital,	457.23750,	127.00000,,6,1,FIRE 901,None,None,Off,Off,,,,Master,Yes,No,No,0,Off,No,No,None,0,0,No
+158,FIRE Serv Def'd,Digital,	450.10000,	127.00000,,7,1,FIRE 901,None,None,Off,Off,,,,Master,Yes,No,No,0,Off,No,No,None,0,0,No
+159,FIRE Inc Def'd,Digital,	464.10000,	380.00000,,8,1,FIRE 901,None,None,Off,Off,,,,Master,Yes,No,No,0,Off,No,No,None,0,0,No
+160,FIRE Gen Inc-F,Analogue,	457.03750,	457.03750,12.5,,,,,,,,None,None,Disabled,Master,Yes,No,No,0,Off,No,No,None,0,0,No
+161,FIRE Repeaters-F,Analogue,	462.58750,	462.58750,12.5,,,,,,,,None,None,Disabled,Master,Yes,No,No,0,Off,No,No,None,0,0,No
+162,FIRE Breathing-F,Analogue,	457.48750,	457.48750,12.5,,,,,,,,None,None,Disabled,Master,Yes,No,No,0,Off,No,No,None,0,0,No
+163,FIRE Cmd Supp-F,Analogue,	457.18750,	457.18750,12.5,,,,,,,,None,None,Disabled,Master,Yes,No,No,0,Off,No,No,None,0,0,No
+164,FIRE Fix Rptr-F,Analogue,	462.63750,	462.63750,12.5,,,,,,,,None,None,Disabled,Master,Yes,No,No,0,Off,No,No,None,0,0,No
+165,FIRE Breath Fn-F,Analogue,	457.23750,	457.23750,12.5,,,,,,,,None,None,Disabled,Master,Yes,No,No,0,Off,No,No,None,0,0,No
+166,FIRE Srv Def-F,Analogue,	450.10000,	450.10000,12.5,,,,,,,,None,None,Disabled,Master,Yes,No,No,0,Off,No,No,None,0,0,No
+167,FIRE Inc Def-F,Analogue,	464.10000,	464.10000,12.5,,,,,,,,None,None,Disabled,Master,Yes,No,No,0,Off,No,No,None,0,0,No
+168,DMR Simplex 1,Digital,	144.61250,	144.61250,,1,1,Local 9,None,None,Off,Off,,,,Master,No,No,No,0,Off,No,No,None,0,0,No
+169,DMR Simplex 2,Digital,	145.37500,	145.37500,,1,1,Local 99,None,None,Off,Off,,,,Master,No,No,No,0,Off,No,No,None,0,0,No
+170,DMR Simplex 3,Digital,	433.45000,	433.45000,,1,1,Local 99,None,None,Off,Off,,,,Master,No,No,No,0,Off,No,No,None,0,0,No
+171,DMR Simplex 4,Digital,	438.61250,	438.61250,,1,1,Local 9,None,None,Off,Off,,,,Master,No,No,No,0,Off,No,No,None,0,0,No
+172,MB7IKB East Kilb,Analogue,	430.02500,	430.02500,12.5,,,,,,,,None,103.5,Disabled,Master,No,No,No,0,Off,No,No,None,55.75,-4.2295,Yes
+173,MB7IOH Houston,Analogue,	430.02500,	430.02500,12.5,,,,,,,,None,103.5,Disabled,Master,No,No,No,0,Off,No,No,None,55.859,-4.5323,Yes
+174,MB6HO Houston,Digital,	144.90000,	144.90000,,3,1,Local 9,None,None,Off,Off,,,,Master,No,No,No,0,Off,No,No,None,55.859,-4.5323,Yes
+175,MB7IDQ Alex'ria,Analogue,	430.01250,	430.01250,12.5,,,,,,,,None,103.5,Disabled,Master,No,No,No,0,Off,No,No,None,55.9718,-4.5529,Yes
+176,MB7IBH Alex'ria,Analogue,	145.33750,	145.33750,12.5,,,,,,,,None,103.5,Disabled,Master,No,No,No,0,Off,No,No,None,55.9718,-4.5529,Yes
+177,SAR Hailing-F,Analogue,	156.12500,	156.12500,12.5,,,,,,,,None,103.5,Disabled,Master,Yes,No,No,0,Off,No,No,None,0,0,No
+178,SARDA Analog,Analogue,	158.64375,	158.64375,12.5,,,,,,,,None,103.5,Disabled,Master,Yes,No,No,0,Off,No,No,None,0,0,No
+179,SAR MRC 623,Analogue,	160.71875,	160.71875,12.5,,,,,,,,None,103.5,Disabled,Master,Yes,No,No,0,Off,No,No,None,0,0,No
+180,SAR MRC 624,Analogue,	160.73125,	160.73125,12.5,,,,,,,,None,None,Disabled,Master,Yes,No,No,0,Off,No,No,None,0,0,No
+181,SAR DG1 General,Digital,	155.78125,	155.78125,,3,1,None,Scot SAR,None,Off,Off,,,,Master,Yes,No,No,0,Off,No,No,None,0,0,No
+182,SAR DG2 General,Digital,	155.79375,	155.79375,,3,1,None,Scot SAR,None,Off,Off,,,,Master,Yes,No,No,0,Off,No,No,None,0,0,No
+183,SAR DG3,Digital,	155.80625,	155.80625,,3,1,None,Scot SAR,None,Off,Off,,,,Master,Yes,No,No,0,Off,No,No,None,0,0,No
+184,SAR DG4,Digital,	155.83125,	155.83125,,3,1,None,Scot SAR,None,Off,Off,,,,Master,Yes,No,No,0,Off,No,No,None,0,0,No
+185,SARDA Digital,Digital,	158.64375,	158.64375,,3,1,None,Scot SAR,None,Off,Off,,,,Master,Yes,No,No,0,Off,No,No,None,0,0,No
+186,SAR SMR Rpt,Digital,	155.35000,	147.47500,,3,2,None,Scot SAR,None,Off,Off,,,,Master,Yes,No,No,0,Off,No,No,None,0,0,No
+187,GB3RK Belfast,Analogue,	438.38750,	430.78750,12.5,,,,,,,,None,88.5,Disabled,Master,No,No,No,0,Off,No,No,None,54.57,-6,Yes
+188,GB3MT M'felt,Analogue,	145.65000,	145.05000,12.5,,,,,,,,None,110.9,Disabled,Master,No,No,No,0,Off,No,No,None,54.75,-6.6,Yes
+189,GB7UL C'fergus,Digital,	439.52500,	430.52500,,1,1,Ulster T1,None,None,Off,Off,,,,Master,No,No,No,0,Off,No,No,None,54.72,-5.93,Yes
+190,GB3NI Belfast,Analogue,	145.72500,	145.12500,12.5,,,,,,,,None,110.9,Disabled,Master,No,No,No,0,Off,No,No,None,54.6,-5.93,Yes
+191,GB7RG Stranr'r-D,Digital,	430.93750,	438.53750,,5,1,None,GB7RG,None,Off,Off,,,,Master,No,No,No,0,Off,No,No,None,54.9,-5.05,Yes
+192,GB7RG Stran'r-F,Analogue,	430.93750,	438.53750,12.5,,,,,,,,None,103.5,Disabled,Master,No,No,No,0,Off,No,No,None,54.9,-5.05,Yes
+193,GB3DX Derry,Analogue,	433.30000,	434.90000,12.5,,,,,,,,None,110.9,Disabled,Master,No,No,No,0,Off,No,No,None,55.02,-7.32,Yes
+194,GB3DG N. Stewart,Analogue,	145.77500,	145.17500,12.5,,,,,,,,None,103.5,Disabled,Master,No,No,No,0,Off,No,No,None,54.87,-4.18,Yes
+195,GB7DG Ppatrick-F,Analogue,	430.90000,	438.50000,12.5,,,,,,,,None,None,Disabled,Master,No,No,No,0,Off,No,No,None,54.69,-4.89,Yes
+196,GB7DG Ppatrick-D,Digital,	430.90000,	438.50000,,7,1,None,GB7DG,None,Off,Off,,,,Master,No,No,No,0,Off,No,No,None,54.69,-4.89,Yes
+197,GB7BR Ramsey IoM,Digital,	430.92500,	438.52500,,3,1,Scotland TS1,None,None,Off,Off,,,,Master,No,No,No,0,Off,No,No,None,54.38,-4.57,Yes
+198,GB3GD S'fell IoM,Analogue,	145.62500,	145.02500,12.5,,,,,,,,None,110.9,Disabled,Master,No,No,No,0,Off,No,No,None,54.26,-4.48,Yes
+199,GB3LY Limavady,Analogue,	145.60000,	145.00000,12.5,,,,,,,,None,110.9,Disabled,Master,No,No,No,0,Off,No,No,None,55.11,-6.89,Yes

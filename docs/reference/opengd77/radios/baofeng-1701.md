@@ -7,8 +7,8 @@ Radio profile for the **Baofeng DM-1701** (also sold as **Retevis RT-84**) runni
 ## Sources
 
 - [G4EML CSV Export and Import Features (PDF)](https://www.opengd77.com/downloads/PC_CPS/Latest/OpenGD77_CPS_CSV%20Features.pdf)
+- Committed sample (unedited CPS R2025.03.23.1): [`sample-codeplugs/opengd77R2025.03.23.1/baofeng-1701/`](../../../../sample-codeplugs/opengd77R2025.03.23.1/baofeng-1701/)
 - Operator layout conventions in `dmr-programming` [1701 codeplug CSV skill](file:///Users/patricks/git_personal/dmr-programming/.cursor/skills/1701-codeplug-csv/SKILL.md)
-- Sample exports: `1701/opengd77-cps-export/` in `dmr-programming` repo
 - Shipped adapter: [`columns.ts`](../../../../src/core/import-export/formats/opengd77/columns.ts) — `zoneMemberHeaders(80)`, `rxGroupListMemberHeaders(32)`
 
 ## Capacity and cardinality

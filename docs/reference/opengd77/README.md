@@ -30,6 +30,14 @@ OpenGD77 CPS exports up to six CSV files. Keep all files in one folder — lists
 
 Typical export filenames: `Channels.csv`, `Zones.csv`, `Contacts.csv`, `TG_Lists.csv`. Delimiter and decimal separator follow host OS locale (`,` or `;`; `.` or `,` in frequencies).
 
+## Sample CPS export
+
+Unadulterated OpenGD77 CPS **R2025.03.23.1** export (Baofeng 1701 profile):
+
+[`sample-codeplugs/opengd77R2025.03.23.1/baofeng-1701/`](../../../sample-codeplugs/opengd77R2025.03.23.1/baofeng-1701/)
+
+Use this for wire elicitation and docs ground truth. Prefer it over `test-data/` when checking real CPS cell text — committed test fixtures may have been edited. Not full enum coverage; see the sample README for caveats.
+
 ## Cross-cutting rules
 
 See [file-format.md](file-format.md) for header-name parsing, case-sensitive foreign keys, `vendorExtras`, import/export fidelity tiers, and locale quirks.
@@ -80,6 +88,7 @@ See [file-format.md](file-format.md) for header-name parsing, case-sensitive for
 | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------ |
 | [G4EML CSV Export and Import Features (PDF)](https://www.opengd77.com/downloads/PC_CPS/Latest/OpenGD77_CPS_CSV%20Features.pdf)                                     | Primary upstream column semantics and CPS limits |
 | [G4EML CSV Features (HTML mirror)](https://www.lyonscomputer.com.au/Radio-Transceivers/Radioddity/GD77/2025-Codeplug-Build/OpenGD77_CPS_CSV_Features-Updated.html) | Same content, searchable                         |
+| [`sample-codeplugs/opengd77R2025.03.23.1/baofeng-1701/`](../../../sample-codeplugs/opengd77R2025.03.23.1/baofeng-1701/)                                           | Unedited CPS R2025.03.23.1 export (1701)         |
 | [`src/core/import-export/formats/opengd77/columns.ts`](../../../src/core/import-export/formats/opengd77/columns.ts)                                                | Canonical headers in shipped adapter             |
 | [qDMR OpenGD77Codeplug](https://static.dm3mat.de/qdmr/libdmrconf/classOpenGD77Codeplug.html)                                                                       | Secondary limits reference                       |
 

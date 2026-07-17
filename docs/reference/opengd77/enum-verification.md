@@ -4,14 +4,15 @@ Fill this in while driving **official OpenGD77 CPS** (Baofeng 1701 / RT-84 profi
 
 **Tracking:** [#403](https://github.com/pskillen/codeplug-studio/issues/403) · Parent [#36](https://github.com/pskillen/codeplug-studio/issues/36)  
 **Gap notes:** [`tmp/opengd77-wire-docs-issues.md`](../../../tmp/opengd77-wire-docs-issues.md) (local working notes; gitignored)  
-**Headers / adapter:** [`columns.ts`](../../../src/core/import-export/formats/opengd77/columns.ts)
+**Headers / adapter:** [`columns.ts`](../../../src/core/import-export/formats/opengd77/columns.ts)  
+**Sample CPS export (unedited):** [`sample-codeplugs/opengd77R2025.03.23.1/baofeng-1701/`](../../../sample-codeplugs/opengd77R2025.03.23.1/baofeng-1701/) — OpenGD77 CPS R2025.03.23.1 · Baofeng 1701. Prefer this over `test-data/` for observed wire strings.
 
 ### Follow-up tickets (filed from #403)
 
 | Area | Issue | Status |
 | --- | --- | --- |
 | Tier-3 docs drift (power table, channels.md, G4EML caveats, …) | [#436](https://github.com/pskillen/codeplug-studio/issues/436) | Open — includes correcting `channels.md` TOT/VOX claims vs adapter hardcodes |
-| Redacted 1701 CPS fixture under `test-data/` | [#437](https://github.com/pskillen/codeplug-studio/issues/437) | Open |
+| Redacted / synthetic 1701 fixture under `test-data/` (tests) | [#437](https://github.com/pskillen/codeplug-studio/issues/437) | Open — wire ground truth sample already in `sample-codeplugs/opengd77R2025.03.23.1/baofeng-1701/` |
 | CPS-safe defaults for unmodelled channel columns | [#438](https://github.com/pskillen/codeplug-studio/issues/438) | Open |
 | Squelch wire map (`Disabled` / `Open` / `Closed` / `Master` / `%`) | [#439](https://github.com/pskillen/codeplug-studio/issues/439) | Open |
 | Power ladder + user-power (`+W-` / `-W+`) | [#440](https://github.com/pskillen/codeplug-studio/issues/440) | Open |
