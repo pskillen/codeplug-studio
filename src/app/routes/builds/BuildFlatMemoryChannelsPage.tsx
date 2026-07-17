@@ -8,6 +8,9 @@ import { isEntityExcluded, overrideByEntityId } from '@core/domain/formatBuildOv
 import {
   applyDenseChannelOrderOrSlots,
   chirpMemoryChannelIds,
+  clearAllOrderOrSlots,
+  exportOrderResetConfirmMessage,
+  hasAnyOrderOrSlotOverride,
   isChirpFlatMemoryChannel,
 } from '@core/domain/exportOrderOrSlot.ts';
 import { getFormatProfiles } from '@core/import-export/formatProfiles.ts';
@@ -23,6 +26,7 @@ import { previewGeneratedChannelWireName } from '@core/services/previewChannelWi
 import DefaultScanInclusionSegment from '../../components/builds/DefaultScanInclusionSegment.tsx';
 import ExportNameModeSelect from '../../components/builds/ExportNameModeSelect.tsx';
 import UseLibraryAbbreviationsSwitch from '../../components/builds/UseLibraryAbbreviationsSwitch.tsx';
+import ExportOrderOverrideBanner from '../../components/builds/wirePreview/ExportOrderOverrideBanner.tsx';
 import WirePreviewDataTable from '../../components/builds/wirePreview/WirePreviewDataTable.tsx';
 import WirePreviewOverrideModal from '../../components/builds/wirePreview/WirePreviewOverrideModal.tsx';
 import { useSyncedWirePreviewRow } from '../../components/builds/wirePreview/useSyncedWirePreviewRow.ts';
@@ -236,6 +240,15 @@ export default function BuildFlatMemoryChannelsPage() {
     void persistBuild({ ...current, channelOverrides: nextOverrides });
   }
 
+  function clearChannelOrderOverrides() {
+    if (!window.confirm(exportOrderResetConfirmMessage())) return;
+    const current = buildRef.current;
+    void persistBuild({
+      ...current,
+      channelOverrides: clearAllOrderOrSlots(current.channelOverrides),
+    });
+  }
+
   function moveChannel(rowKey: string, direction: 'up' | 'down') {
     const ids = [...memoryChannelIds];
     const index = ids.indexOf(rowKey);
@@ -254,6 +267,7 @@ export default function BuildFlatMemoryChannelsPage() {
   }
 
   const selectedChannel = activeRow ? channelById.get(activeRow.libraryEntityId) : undefined;
+  const channelOrderOverridden = hasAnyOrderOrSlotOverride(build.channelOverrides);
 
   return (
     <FormPage
@@ -318,6 +332,13 @@ export default function BuildFlatMemoryChannelsPage() {
             {error}
           </Text>
         ) : null}
+
+        <ExportOrderOverrideBanner
+          visible={channelOrderOverridden}
+          disabled={saving}
+          onReset={clearChannelOrderOverrides}
+          message="Memory location order on this build differs from the library default. Reset clears channel orderOrSlot overrides."
+        />
 
         <WirePreviewDataTable
           rows={previewRows}
