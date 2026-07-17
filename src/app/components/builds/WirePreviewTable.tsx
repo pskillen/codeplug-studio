@@ -22,7 +22,6 @@ export interface ZoneScanWirePreviewContext {
   zoneById: Map<string, Zone>;
   channelById: ZoneScanExpandPanelProps['channelById'];
   zoneBehaviourContext?: ZoneScanExpandPanelProps['zoneBehaviourContext'];
-  isDm32: boolean;
   showScanCarrierControls: boolean;
   scanListMemberCap: number;
   saving: boolean;
@@ -212,7 +211,6 @@ export default function WirePreviewTable({
                       entry={zoneLayoutEntry}
                       zoneBehaviourContext={zoneScanContext.zoneBehaviourContext}
                       channelById={zoneScanContext.channelById}
-                      isDm32={zoneScanContext.isDm32}
                       showScanCarrierControls={zoneScanContext.showScanCarrierControls}
                       saving={zoneScanContext.saving}
                       onUpdateZoneEntry={(patch) =>

@@ -36,8 +36,7 @@ export function useZoneScanExportLayout() {
   const [saving, setSaving] = useState(false);
 
   const enabled = zoneScanExportSupported(build);
-  const isDm32 = build.formatId === 'dm32';
-  const showScanCarrierControls = isDm32 || build.formatId === 'anytone';
+  const showScanCarrierControls = build.formatId === 'dm32' || build.formatId === 'anytone';
   const scanListMemberCap = scanListMemberCapForBuild(build);
 
   useEffect(() => {
@@ -121,7 +120,6 @@ export function useZoneScanExportLayout() {
 
   return {
     enabled,
-    isDm32,
     showScanCarrierControls,
     scanListMemberCap,
     layout,

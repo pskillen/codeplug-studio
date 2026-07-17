@@ -56,7 +56,6 @@ export default function BuildZonesWirePage() {
             entry={entry}
             channelById={zoneScan.channelById}
             zoneBehaviourContext={zoneScan.zoneBehaviourContext}
-            isDm32={zoneScan.isDm32}
             showScanCarrierControls={zoneScan.showScanCarrierControls}
             scanListMemberCap={zoneScan.scanListMemberCap}
             saving={zoneScan.saving}

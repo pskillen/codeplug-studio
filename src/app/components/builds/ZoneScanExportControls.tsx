@@ -84,7 +84,6 @@ export interface ZoneScanExpandPanelProps {
   entry: ZoneGroupingZoneEntry | undefined;
   zoneBehaviourContext?: ZoneBehaviourContext;
   channelById: Map<string, import('@core/models/library.ts').Channel>;
-  isDm32: boolean;
   showScanCarrierControls: boolean;
   saving: boolean;
   onUpdateZoneEntry: (patch: Partial<ZoneGroupingZoneEntry>) => void;
@@ -102,7 +101,6 @@ export function ZoneScanExpandPanel({
   entry,
   zoneBehaviourContext,
   channelById,
-  isDm32,
   showScanCarrierControls,
   saving,
   onUpdateZoneEntry,
@@ -120,17 +118,6 @@ export function ZoneScanExpandPanel({
 
   return (
     <Stack gap="sm" pl="md" py="xs">
-      {isDm32 ? (
-        <Switch
-          label="Export scratch channel"
-          description="Deferred on wire — layout flag only until scratch serialise ships."
-          checked={entry?.exportScratchChannel ?? false}
-          disabled={saving}
-          onChange={(event) =>
-            onUpdateZoneEntry({ exportScratchChannel: event.currentTarget.checked })
-          }
-        />
-      ) : null}
       {showScanCarrierControls && entry?.exportScanList ? (
         <NumberInput
           label="Scan carrier (MHz)"
