@@ -8,15 +8,17 @@ Fill this in while driving **official OpenGD77 CPS** (Baofeng 1701 / RT-84 profi
 
 ### Follow-up tickets (filed from #403)
 
-| Area | Issue |
-| --- | --- |
-| Tier-3 docs drift (power table, channels.md, G4EML caveats, …) | [#436](https://github.com/pskillen/codeplug-studio/issues/436) |
-| Redacted 1701 CPS fixture under `test-data/` | [#437](https://github.com/pskillen/codeplug-studio/issues/437) |
-| CPS-safe defaults for unmodelled channel columns | [#438](https://github.com/pskillen/codeplug-studio/issues/438) |
-| Squelch wire map (`Disabled` / `Open` / `Closed` / `Master` / `%`) | [#439](https://github.com/pskillen/codeplug-studio/issues/439) |
-| Power ladder + user-power (`+W-` / `-W+`) | [#440](https://github.com/pskillen/codeplug-studio/issues/440) |
-| Validate MD-9600 power ladder | [#441](https://github.com/pskillen/codeplug-studio/issues/441) |
-| OpenGD77 `APRS.csv` body + `Channels.APRS` FK | [#442](https://github.com/pskillen/codeplug-studio/issues/442) (parent [#246](https://github.com/pskillen/codeplug-studio/issues/246)) |
+| Area | Issue | Status |
+| --- | --- | --- |
+| Tier-3 docs drift (power table, channels.md, G4EML caveats, …) | [#436](https://github.com/pskillen/codeplug-studio/issues/436) | Open — includes correcting `channels.md` TOT/VOX claims vs adapter hardcodes |
+| Redacted 1701 CPS fixture under `test-data/` | [#437](https://github.com/pskillen/codeplug-studio/issues/437) | Open |
+| CPS-safe defaults for unmodelled channel columns | [#438](https://github.com/pskillen/codeplug-studio/issues/438) | Open |
+| Squelch wire map (`Disabled` / `Open` / `Closed` / `Master` / `%`) | [#439](https://github.com/pskillen/codeplug-studio/issues/439) | Open |
+| Power ladder + user-power (`+W-` / `-W+`) | [#440](https://github.com/pskillen/codeplug-studio/issues/440) | Open |
+| Validate MD-9600 power ladder | [#441](https://github.com/pskillen/codeplug-studio/issues/441) | Open |
+| OpenGD77 `APRS.csv` body + `Channels.APRS` FK | [#442](https://github.com/pskillen/codeplug-studio/issues/442) (parent [#246](https://github.com/pskillen/codeplug-studio/issues/246)) | Open |
+
+Related (not filed from #403): behavioural cascade on `Rx Only` / `All Skip` [#424](https://github.com/pskillen/codeplug-studio/issues/424) **done** (docs PR [#434](https://github.com/pskillen/codeplug-studio/pull/434)); `txPermit` has no OpenGD77 column (export loss).
 
 Fill this worksheet first for high-priority enums; then land results into tier-3 docs and the tickets above.
 
@@ -98,14 +100,14 @@ Channel Number,Channel Name,Channel Type,Rx Frequency,Tx Frequency,Bandwidth (kH
 | `TX Tone` | `ChannelModeProfileAnalog.txTone` | same | | | | |
 | `Squelch` | `ChannelModeProfileAnalog.squelch` | `Disabled` \| `Open` \| `Closed` \| `nn%`; User Guide also **Master** | | | | 5% steps? Master wire? → [#439](https://github.com/pskillen/codeplug-studio/issues/439) |
 | `Power` | `Channel.power` (% ↔ P-ladder) | `Master` \| `P1`…`P9` \| `+W-` or `-W+` | | | | See power ladder below → [#440](https://github.com/pskillen/codeplug-studio/issues/440) |
-| `Rx Only` | `Channel.forbidTransmit` (+ behaviour cascade) | `Yes` \| `No` | | | | |
-| `Zone Skip` | —(unmodelled) | `Yes` \| `No` | | | | vs `All Skip` → defaults [#438](https://github.com/pskillen/codeplug-studio/issues/438) |
-| `All Skip` | `Channel.scanInclusion` (+ build default) | `Yes` \| `No` | | | | Global scan skip |
-| `TOT` | —(unmodelled; Studio exports empty) | 0–495 step 15; `0` = off | | | | |
-| `VOX` | —(unmodelled; Studio exports `Off`) | `Off` \| `On` | | | | |
-| `No Beep` | —(unmodelled) | `Yes` \| `No` | | | | → [#438](https://github.com/pskillen/codeplug-studio/issues/438) |
-| `No Eco` | —(unmodelled) | `Yes` \| `No` | | | | → [#438](https://github.com/pskillen/codeplug-studio/issues/438) |
-| `APRS` | —(unmodelled OpenGD77 name FK; not `Channel.aprs` digital binding) | `None` \| APRS config name | | | | FK → `APRS.csv` → [#442](https://github.com/pskillen/codeplug-studio/issues/442) |
+| `Rx Only` | `forbidTransmit` cascade | `Yes` \| `No` | | | | Cascade shipped [#424](https://github.com/pskillen/codeplug-studio/issues/424) |
+| `Zone Skip` | —(unmodelled; Studio exports empty) | `Yes` \| `No` | | | | vs `All Skip` → defaults [#438](https://github.com/pskillen/codeplug-studio/issues/438) |
+| `All Skip` | `scanInclusion` cascade | `Yes` \| `No` | | | | Cascade shipped [#424](https://github.com/pskillen/codeplug-studio/issues/424) |
+| `TOT` | `Channel.transmitTimeout` (adapter still hardcodes null → empty) | 0–495 step 15; `0` = off | | | | Tier-3 overclaims model map — [#436](https://github.com/pskillen/codeplug-studio/issues/436) |
+| `VOX` | `Channel.voxEnabled` (adapter still hardcodes `Off`) | `Off` \| `On` | | | | Same docs/adapter drift — [#436](https://github.com/pskillen/codeplug-studio/issues/436) |
+| `No Beep` | —(unmodelled; Studio exports empty) | `Yes` \| `No` | | | | → [#438](https://github.com/pskillen/codeplug-studio/issues/438) |
+| `No Eco` | —(unmodelled; Studio exports empty) | `Yes` \| `No` | | | | → [#438](https://github.com/pskillen/codeplug-studio/issues/438) |
+| `APRS` | —(Studio exports empty; not `Channel.aprs` digital binding) | `None` \| APRS config name | | | | FK → `APRS.csv` → [#442](https://github.com/pskillen/codeplug-studio/issues/442) |
 | `Latitude` | `Channel.location.lat` | decimal degrees | | | | |
 | `Longitude` | `Channel.location.lon` | decimal degrees | | | | |
 | `Use Location` | `Channel.useLocation` | `Yes` \| `No` | | | | Missing from G4EML PDF |
