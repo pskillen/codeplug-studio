@@ -7,7 +7,10 @@ import {
 } from '@core/domain/formatBuildOverrides.ts';
 import { channelDisplayLabel, defaultChannelWireName } from '@core/domain/channelNaming.ts';
 import { sanitiseAsciiWireString } from '@core/import-export/sanitiseAsciiWireString.ts';
-import { expandAllDm32ChannelsForExport, type ExpandedDm32ChannelRow } from '@core/import-export/formats/dm32/channelExpansion.ts';
+import {
+  expandAllDm32ChannelsForExport,
+  type ExpandedDm32ChannelRow,
+} from '@core/import-export/formats/dm32/channelExpansion.ts';
 import {
   expandAllAnytoneChannelsForExport,
   type ExpandedAnytoneChannelRow,

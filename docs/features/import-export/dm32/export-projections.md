@@ -8,9 +8,9 @@ Operator guide to **export-time channel projections** on Baofeng DM-32UV builds.
 
 ## Lean vs expanded export
 
-| Mode         | When                                         | Channels.csv                                                                                    |
-| ------------ | -------------------------------------------- | ----------------------------------------------------------------------------------------------- |
-| **Lean**     | **m×n channel expansion** off (export panel) | One row per library channel; TX Contact + RX Group List as programmed                           |
+| Mode         | When                                         | Channels.csv                                                                                                                    |
+| ------------ | -------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| **Lean**     | **m×n channel expansion** off (export panel) | One row per library channel; TX Contact + RX Group List as programmed                                                           |
 | **Expanded** | m×n expansion **on** (default)               | One row per **talk group** on each digital channel's RX group list (skipped when TX contact + RGL both set, or list name `ALL`) |
 
 ---

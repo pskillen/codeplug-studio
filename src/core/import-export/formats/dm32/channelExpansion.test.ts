@@ -7,17 +7,11 @@ import {
 } from '@core/domain/factories.ts';
 import { assemble } from '@core/services/assemble.ts';
 import type { ChannelModeProfileDMR } from '@core/models/library.ts';
-import {
-  expandAllDm32ChannelsForExport,
-  expandDm32ChannelWireRows,
-} from './channelExpansion.ts';
+import { expandAllDm32ChannelsForExport, expandDm32ChannelWireRows } from './channelExpansion.ts';
 
 const PROJECT_ID = '11111111-1111-4111-8111-111111111111';
 
-function dmrRepeaterChannel(
-  name: string,
-  rxGroupListId: string,
-): ReturnType<typeof newChannel> {
+function dmrRepeaterChannel(name: string, rxGroupListId: string): ReturnType<typeof newChannel> {
   return {
     ...newChannel(PROJECT_ID, name),
     rxFrequency: 438_800_000,

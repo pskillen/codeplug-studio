@@ -22,7 +22,7 @@ Product behaviour for Baofeng DM-32UV CPS CSV export in Codeplug Studio. Wire co
 | Export UI + wire preview        | Shipped | [#119](https://github.com/pskillen/codeplug-studio/issues/119) — multi-TG options, scan toggle, hide filter, fan-out display details          |
 | Directional export tests        | Shipped | [#122](https://github.com/pskillen/codeplug-studio/issues/122) — [mapping-tests.md](../../../build/testing/mapping-tests.md)                  |
 | Contacts.csv metadata           | Shipped | [#448](https://github.com/pskillen/codeplug-studio/issues/448) — City/Province/Country/Remark from `DigitalContact`                           |
-| Per-repeater scratch channels   | Shipped | [#140](https://github.com/pskillen/codeplug-studio/issues/140) — [export-projections.md](export-projections.md)                                |
+| Per-repeater scratch channels   | Shipped | [#140](https://github.com/pskillen/codeplug-studio/issues/140) — [export-projections.md](export-projections.md)                               |
 | CRLF export line endings        | Shipped | [#314](https://github.com/pskillen/codeplug-studio/issues/314) — Windows CPS import compatibility                                             |
 | CPS import                      | Planned | [#112](https://github.com/pskillen/codeplug-studio/issues/112)                                                                                |
 
@@ -58,11 +58,11 @@ DM32 scan-list export and scan carrier frequency live on **`FormatBuild.layout`*
 
 ## Deferrals
 
-| Item                             | Tracking                                                                |
-| -------------------------------- | ----------------------------------------------------------------------- |
-| `Scan.csv` import                | [#112](https://github.com/pskillen/codeplug-studio/issues/112) or later |
-| `DMR-ID.csv` / channel `DMR ID`  | Accepted lossy gap — profile default label on export                    |
-| Manual scan-list CRUD            | Future                                                                  |
+| Item                            | Tracking                                                                |
+| ------------------------------- | ----------------------------------------------------------------------- |
+| `Scan.csv` import               | [#112](https://github.com/pskillen/codeplug-studio/issues/112) or later |
+| `DMR-ID.csv` / channel `DMR ID` | Accepted lossy gap — profile default label on export                    |
+| Manual scan-list CRUD           | Future                                                                  |
 
 ## Related
 
