@@ -14,9 +14,9 @@ Operator workflow for reviewing and shaping CPS wire names before export. Each b
 | **Modal**     | `WirePreviewOverrideModal`              | Wire name, skip, force-include; format-specific sections (zone scan, CHIRP scan)   |
 | **Bulk edit** | `/builds/:id/channels/bulk`             | Wire name + skip per channel only; leave-page guard for unapplied wire-name drafts |
 
-`BuildWirePreviewListPage` wraps list + modal for most entity routes. CHIRP flat memory (`BuildFlatMemoryChannelsPage`) uses the same list + modal pattern with an optional reorder column for `orderOrSlot`.
+`BuildWirePreviewListPage` wraps list + modal for most entity routes. **Zones** and CHIRP flat memory use an optional reorder column for `orderOrSlot`. Zone row modals include **member export order** (layout `channelIds` hints).
 
-**Sort and filter** on list pages are client-side convenience only — they do **not** change export order. CHIRP memory order is updated only via up/down reorder controls (or library edits), not table sort.
+**Sort and filter** on list pages are client-side convenience only — they do **not** change export order. CHIRP memory order and zone `orderOrSlot` are updated only via up/down reorder controls (or library edits), not table sort. Reorder is disabled while search or “hide not included” filters are active on the zones page.
 
 Build **contacts** wire preview debounces toolbar search (300 ms), matches **library name or callsign**, and shows a **Callsign** column for digital contacts. Large contact builds inherit shared [`DataTable`](../../src/app/components/ui/DataTable.md) virtual tbody rendering (`virtualize: 'auto'`, threshold 75 rows) for responsive scrolling.
 
@@ -24,13 +24,13 @@ Build **contacts** wire preview debounces toolbar search (300 ms), matches **lib
 
 Build overrides use **sparse opt-out** storage (`BuildEntityOverride`):
 
-| Field            | Meaning                                                                         |
-| ---------------- | ------------------------------------------------------------------------------- |
-| _(no row)_       | Entity is **included**; wire name is generated from library fields              |
-| `excluded: true` | Omit from export projection                                                     |
-| `forceInclude`   | Zone overrides only — export standalone zone despite library `omitFromExport`   |
-| `wireName`       | Override the generated CPS name                                                 |
-| `orderOrSlot`    | 1-based top-level export position (CHIRP memory `Location`; gaps → blank slots) |
+| Field            | Meaning                                                                                                   |
+| ---------------- | --------------------------------------------------------------------------------------------------------- |
+| _(no row)_       | Entity is **included**; wire name is generated from library fields                                        |
+| `excluded: true` | Omit from export projection                                                                               |
+| `forceInclude`   | Zone overrides only — export standalone zone despite library `omitFromExport`                             |
+| `wireName`       | Override the generated CPS name                                                                           |
+| `orderOrSlot`    | 1-based top-level export position (CHIRP memory `Location`; zone list order; gaps → blank slots on CHIRP) |
 
 Overrides are stored on `FormatBuild` as `channelOverrides`, `zoneOverrides`, `talkGroupOverrides`, `contactOverrides`, and `rxGroupListOverrides` (`studioSchemaVersion: 3`).
 

@@ -31,6 +31,7 @@ import {
   type ExportMemorySlot,
 } from '@core/domain/exportOrderOrSlot.ts';
 import { migrateFormatBuild } from '@core/domain/migrateFormatBuild.ts';
+import { sortZonesByExportOrder } from '@core/domain/zoneOrder.ts';
 import type { Library } from '@core/models/library.ts';
 import type { AprsConfiguration } from '@core/models/aprs.ts';
 import type { ChannelBehaviourDefaults } from '@core/models/channelBehaviourDefaults.ts';
@@ -333,50 +334,36 @@ function assembleZones(
   library: LibrarySlice,
   exportedChannelIds: Set<string>,
 ): AssembledZone[] {
-  const zonesById = zoneMap(library);
   const overrides = build.zoneOverrides;
   const sections = zoneGroupingSections(build);
+  const layoutEntryById = new Map(
+    sections.flatMap((section) => section.zones.map((entry) => [entry.id, entry] as const)),
+  );
 
-  if (sections.length > 0) {
-    const assembled: AssembledZone[] = [];
-    for (const section of sections) {
-      for (const zoneEntry of section.zones) {
-        if (isEntityExcluded(overrides, zoneEntry.id)) continue;
-        const libraryZone = zonesById.get(zoneEntry.id);
-        if (!libraryZone || !zoneExportsStandalone(libraryZone, overrides)) continue;
-        const effectiveIds = resolveEffectiveZoneChannelIds(libraryZone, library.zones);
-        const memberChannelIds = orderChannelIdsByLayoutHint(
-          effectiveIds,
-          zoneEntry.channelIds,
-        ).filter((id) => exportedChannelIds.has(id));
-        if (memberChannelIds.length === 0 && !overrideByEntityId(overrides).has(zoneEntry.id)) {
-          continue;
-        }
-        assembled.push({
-          zoneId: zoneEntry.id,
-          wireName: resolveOverrideWireName(overrides, zoneEntry.id, libraryZone.name),
-          memberChannelIds,
-        });
-      }
-    }
-    return assembled;
-  }
-
-  return library.zones
-    .filter(
+  const candidates = sortZonesByExportOrder(
+    library.zones.filter(
       (zone) => !isEntityExcluded(overrides, zone.id) && zoneExportsStandalone(zone, overrides),
-    )
-    .map((zone) => {
-      const memberChannelIds = resolveEffectiveZoneChannelIds(zone, library.zones).filter((id) =>
-        exportedChannelIds.has(id),
-      );
-      return {
-        zoneId: zone.id,
-        wireName: resolveOverrideWireName(overrides, zone.id, zone.name),
-        memberChannelIds,
-      };
-    })
-    .filter((z) => z.memberChannelIds.length > 0 || overrideByEntityId(overrides).has(z.zoneId));
+    ),
+    overrides,
+  );
+
+  const assembled: AssembledZone[] = [];
+  for (const libraryZone of candidates) {
+    const layoutEntry = layoutEntryById.get(libraryZone.id);
+    const effectiveIds = resolveEffectiveZoneChannelIds(libraryZone, library.zones);
+    const memberChannelIds = (
+      layoutEntry ? orderChannelIdsByLayoutHint(effectiveIds, layoutEntry.channelIds) : effectiveIds
+    ).filter((id) => exportedChannelIds.has(id));
+    if (memberChannelIds.length === 0 && !overrideByEntityId(overrides).has(libraryZone.id)) {
+      continue;
+    }
+    assembled.push({
+      zoneId: libraryZone.id,
+      wireName: resolveOverrideWireName(overrides, libraryZone.id, libraryZone.name),
+      memberChannelIds,
+    });
+  }
+  return assembled;
 }
 
 function assembleEntityList<T extends { id: string; name: string }>(

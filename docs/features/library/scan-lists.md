@@ -52,7 +52,7 @@ Projects with build-scoped `ScanListsLayout` sections hoist entries into `librar
 
 ## Manual verify
 
-1. `/library/scan-lists` → create list, add channels, reorder — save and reopen; order matches.
+1. `/library/scan-lists` → create list, add channels, **Move up/down** reorder — save and reopen; order matches.
 2. Channel editor **Scanning** tab — set scan inclusion + scan list; list page optional **Scan list** column.
 3. Anytone build → export ZIP — `Channel.CSV` `Scan List` and `ScanList.CSV` align.
 4. Export page — no **Default scan behaviour** segment; dedicated-scan copy instead ([#258](https://github.com/pskillen/codeplug-studio/issues/258)).

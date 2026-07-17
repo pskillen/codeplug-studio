@@ -2,6 +2,7 @@ import type { FormatBuild } from '@core/models/formatBuild.ts';
 import type { ZoneGroupingLayout, ZoneGroupingZoneEntry } from '@core/models/traitLayout.ts';
 import type { LibrarySlice } from '@core/services/assemble.ts';
 import { resolveEffectiveZoneChannelIds } from '@core/domain/zoneHierarchy.ts';
+import { sortZonesByExportOrder } from '@core/domain/zoneOrder.ts';
 
 export function findZoneGroupingSection(build: FormatBuild): ZoneGroupingLayout | undefined {
   return build.layout.sections.find((s): s is ZoneGroupingLayout => s.kind === 'zoneGrouping');
@@ -9,9 +10,10 @@ export function findZoneGroupingSection(build: FormatBuild): ZoneGroupingLayout 
 
 /** Seed export layout from library zone membership when build has no zone grouping section. */
 export function seedZoneGroupingFromLibrary(library: LibrarySlice): ZoneGroupingLayout {
+  const zones = sortZonesByExportOrder(library.zones);
   return {
     kind: 'zoneGrouping',
-    zones: library.zones.map((zone) => ({
+    zones: zones.map((zone) => ({
       id: zone.id,
       name: zone.name,
       // Snapshot for member order hints and DM32 flags — assemble re-derives membership from library.
@@ -21,7 +23,7 @@ export function seedZoneGroupingFromLibrary(library: LibrarySlice): ZoneGrouping
 }
 
 /**
- * Ensure layout zone entries match the current library inventory.
+ * Ensure layout zone entries match the current library inventory (library zone order).
  * Preserves export flags and channel order hints for zones that still exist.
  */
 export function syncZoneGroupingWithLibrary(
@@ -30,10 +32,11 @@ export function syncZoneGroupingWithLibrary(
 ): ZoneGroupingLayout {
   const base = layout ?? seedZoneGroupingFromLibrary(library);
   const existingById = new Map(base.zones.map((entry) => [entry.id, entry]));
+  const zones = sortZonesByExportOrder(library.zones);
 
   return {
     kind: 'zoneGrouping',
-    zones: library.zones.map((zone) => {
+    zones: zones.map((zone) => {
       const existing = existingById.get(zone.id);
       const effectiveIds = resolveEffectiveZoneChannelIds(zone, library.zones);
       const channelIds =

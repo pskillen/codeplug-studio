@@ -28,6 +28,8 @@ import { BandPillForChannel } from '../pills/BandPill.tsx';
 import ModePill from '../pills/ModePill.tsx';
 import AvailableItemPicker from '../ui/AvailableItemPicker.tsx';
 import SelectedItemList from '../ui/SelectedItemList.tsx';
+import MembershipSortMenu from './MembershipSortMenu.tsx';
+import { sortZoneMembersByMode } from '@core/domain/membershipSort.ts';
 import { channelModesForFilter, sortByName } from '../../lib/channels.ts';
 import { formatChannelRxTxListCell } from '../../lib/formatFrequency.ts';
 import { ICON_STROKE } from '../../lib/iconSizes.ts';
@@ -291,6 +293,12 @@ export default function ZoneMemberEditor({
         )}
         toolbar={
           <Group gap="xs">
+            <MembershipSortMenu
+              disabled={!members.length}
+              onSort={(mode) =>
+                onChange(sortZoneMembersByMode(members, channelsById, zonesById, mode))
+              }
+            />
             <Button
               type="button"
               variant="default"

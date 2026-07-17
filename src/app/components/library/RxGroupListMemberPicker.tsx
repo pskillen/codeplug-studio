@@ -28,6 +28,12 @@ import {
   memberSupportsTimeSlotOverride,
   timeslotSegmentValue,
 } from '../../lib/rxGroupListMembers.ts';
+import { reorderRxGroupListMembers } from '@core/domain/membershipOrder.ts';
+import {
+  sortRxGroupListMembersByMode,
+  type MembershipSortMode,
+} from '@core/domain/membershipSort.ts';
+import MembershipSortMenu from './MembershipSortMenu.tsx';
 
 export interface RxGroupListMemberPickerProps {
   talkGroups: TalkGroup[];
@@ -44,34 +50,13 @@ interface MemberOption {
   key: string;
 }
 
+/** @deprecated Prefer `reorderRxGroupListMembers` from `@core/domain/membershipOrder`. */
 export function moveSelectedMemberBlock(
   members: RxGroupListMember[],
   selected: Set<string>,
   direction: 'up' | 'down',
 ): RxGroupListMember[] {
-  const next = [...members];
-  const indices = next
-    .map((member, index) => ({ key: entityRefKey(member.ref), index }))
-    .filter(({ key }) => selected.has(key))
-    .map(({ index }) => index);
-
-  if (direction === 'up') {
-    for (const index of indices.sort((a, b) => a - b)) {
-      if (index === 0) continue;
-      const above = index - 1;
-      if (selected.has(entityRefKey(next[above]!.ref))) continue;
-      [next[above], next[index]] = [next[index]!, next[above]!];
-    }
-  } else {
-    for (const index of indices.sort((a, b) => b - a)) {
-      if (index >= next.length - 1) continue;
-      const below = index + 1;
-      if (selected.has(entityRefKey(next[below]!.ref))) continue;
-      [next[below], next[index]] = [next[index]!, next[below]!];
-    }
-  }
-
-  return next;
+  return reorderRxGroupListMembers(members, selected, direction);
 }
 
 function memberOptions(talkGroups: TalkGroup[], digitalContacts: DigitalContact[]): MemberOption[] {
@@ -310,6 +295,19 @@ export default function RxGroupListMemberPicker({
     );
   };
 
+  const talkGroupsById = useMemo(
+    () => new Map(talkGroups.map((row) => [row.id, row])),
+    [talkGroups],
+  );
+  const digitalContactsById = useMemo(
+    () => new Map(digitalContacts.map((row) => [row.id, row])),
+    [digitalContacts],
+  );
+
+  const applySort = (mode: MembershipSortMode) => {
+    onChange(sortRxGroupListMembersByMode(members, talkGroupsById, digitalContactsById, mode));
+  };
+
   const canMoveUp = inListSelected.some((key) => {
     const index = members.findIndex((member) => entityRefKey(member.ref) === key);
     return index > 0;
@@ -408,6 +406,11 @@ export default function RxGroupListMemberPicker({
             />
           </ScrollArea>
           <Group gap="xs">
+            <MembershipSortMenu
+              modes={['name', 'callsign']}
+              disabled={!members.length}
+              onSort={applySort}
+            />
             <Button
               type="button"
               variant="default"

@@ -68,11 +68,14 @@ function BuildWirePreviewListContent({
     setRowForceIncluded,
     setRowWireName,
     persistBuild,
+    moveEntity,
+    saving,
   } = useBuildWirePreview(entityKind, anytoneBank);
   const [selectedRowKey, setSelectedRowKey] = useState<string | null>(null);
   const activeRow = useSyncedWirePreviewRow(selectedRowKey, allRows);
   const [search, setSearch] = useState('');
   const exportSettings = resolvedBuildExportSettings(build);
+  const zoneReorderEnabled = entityKind === 'zone';
 
   function patchExportSettings(
     patch: Partial<{
@@ -154,6 +157,15 @@ function BuildWirePreviewListContent({
           onSearchChange={setSearch}
           onRowActivate={(row) => setSelectedRowKey(row.key)}
           zoneScanColumn={zoneScanColumn}
+          reorder={
+            zoneReorderEnabled
+              ? {
+                  orderedKeys: allRows.map((row) => row.key),
+                  onMove: moveEntity,
+                  disabled: saving || hideNotIncludedInExport || search.trim().length > 0,
+                }
+              : undefined
+          }
         />
       </Stack>
       <WirePreviewOverrideModal

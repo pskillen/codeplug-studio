@@ -2,6 +2,7 @@ import { Stack, Text } from '@mantine/core';
 import BuildWirePreviewListPage from './BuildWirePreviewListPage.tsx';
 import { useZoneScanExportLayout } from '../../../hooks/useZoneScanExportLayout.ts';
 import ZoneScanOverrideSection from '../../../components/builds/wirePreview/overrideModalSections/ZoneScanOverrideSection.tsx';
+import ZoneMemberOrderSection from '../../../components/builds/wirePreview/overrideModalSections/ZoneMemberOrderSection.tsx';
 import { layoutEntry } from '@core/import-export/zoneDerivedScanLists/members.ts';
 
 export default function BuildZonesWirePage() {
@@ -11,7 +12,7 @@ export default function BuildZonesWirePage() {
     <BuildWirePreviewListPage
       title="Zones"
       entityKind="zone"
-      description="Review zone export rows. Click a zone to edit wire name, skip flags, carrier frequency, and per-member scan inclusion."
+      description="Review zone export rows and order. Click a zone to edit wire name, member export order, skip flags, and scan options. Use the reorder column to set build orderOrSlot (overrides library Zone.order)."
       zoneScanColumn={
         zoneScan.enabled && zoneScan.layout
           ? {
@@ -23,12 +24,18 @@ export default function BuildZonesWirePage() {
           : undefined
       }
       beforeTable={
-        zoneScan.enabled ? (
+        zoneScan.layoutSupported ? (
           <Stack gap="xs">
             <Text size="sm" c="dimmed">
-              Use the Export scan list column or the row override modal. Member include toggles
-              persist on this build&apos;s zone projection (not library zones).
+              Top-level zone order uses build overrides when set; otherwise library{' '}
+              <code>Zone.order</code>. Member order overrides live in the row modal.
             </Text>
+            {zoneScan.enabled ? (
+              <Text size="sm" c="dimmed">
+                Use the Export scan list column or the row override modal. Member include toggles
+                persist on this build&apos;s zone projection (not library zones).
+              </Text>
+            ) : null}
             {zoneScan.error ? (
               <Text size="sm" c="red">
                 {zoneScan.error}
@@ -38,30 +45,40 @@ export default function BuildZonesWirePage() {
         ) : undefined
       }
       modalExtraSections={(row) => {
-        if (
-          !zoneScan.enabled ||
-          !zoneScan.layout ||
-          !zoneScan.library ||
-          row.entityKind !== 'zone'
-        ) {
+        if (!zoneScan.layoutSupported || !zoneScan.layout || !zoneScan.library) {
           return null;
         }
+        if (row.entityKind !== 'zone') return null;
         const zone = zoneScan.zoneById.get(row.libraryEntityId);
         if (!zone) return null;
         const entry = layoutEntry(zoneScan.layout, row.libraryEntityId);
         return (
-          <ZoneScanOverrideSection
-            zone={zone}
-            zones={zoneScan.library.zones}
-            entry={entry}
-            channelById={zoneScan.channelById}
-            zoneBehaviourContext={zoneScan.zoneBehaviourContext}
-            showScanCarrierControls={zoneScan.showScanCarrierControls}
-            scanListMemberCap={zoneScan.scanListMemberCap}
-            saving={zoneScan.saving}
-            onUpdateZoneEntry={(patch) => zoneScan.updateZoneEntry(row.libraryEntityId, patch)}
-            onUpdateMemberScanInclusion={zoneScan.updateMemberScanInclusion}
-          />
+          <Stack gap="lg">
+            <ZoneMemberOrderSection
+              zone={zone}
+              zones={zoneScan.library.zones}
+              entry={entry}
+              channelById={zoneScan.channelById}
+              saving={zoneScan.saving}
+              onSetChannelIds={(channelIds) =>
+                zoneScan.setZoneMemberChannelIds(row.libraryEntityId, channelIds)
+              }
+            />
+            {zoneScan.enabled ? (
+              <ZoneScanOverrideSection
+                zone={zone}
+                zones={zoneScan.library.zones}
+                entry={entry}
+                channelById={zoneScan.channelById}
+                zoneBehaviourContext={zoneScan.zoneBehaviourContext}
+                showScanCarrierControls={zoneScan.showScanCarrierControls}
+                scanListMemberCap={zoneScan.scanListMemberCap}
+                saving={zoneScan.saving}
+                onUpdateZoneEntry={(patch) => zoneScan.updateZoneEntry(row.libraryEntityId, patch)}
+                onUpdateMemberScanInclusion={zoneScan.updateMemberScanInclusion}
+              />
+            ) : null}
+          </Stack>
         );
       }}
     />

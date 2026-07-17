@@ -107,15 +107,23 @@ export function applyDenseChannelOrderOrSlots(
   overrides: BuildEntityOverride[],
   orderedChannelIds: string[],
 ): BuildEntityOverride[] {
-  const ordered = new Set(orderedChannelIds);
+  return applyDenseOrderOrSlots(overrides, orderedChannelIds);
+}
+
+/** Persist dense 1…n `orderOrSlot` for any entity override list. */
+export function applyDenseOrderOrSlots(
+  overrides: BuildEntityOverride[],
+  orderedEntityIds: string[],
+): BuildEntityOverride[] {
+  const ordered = new Set(orderedEntityIds);
   let next = overrides;
   for (const row of overrides) {
     if (!ordered.has(row.libraryEntityId) && row.orderOrSlot != null) {
       next = upsertOverride(next, row.libraryEntityId, { orderOrSlot: undefined });
     }
   }
-  for (let index = 0; index < orderedChannelIds.length; index++) {
-    next = upsertOverride(next, orderedChannelIds[index]!, { orderOrSlot: index + 1 });
+  for (let index = 0; index < orderedEntityIds.length; index++) {
+    next = upsertOverride(next, orderedEntityIds[index]!, { orderOrSlot: index + 1 });
   }
   return next;
 }

@@ -197,6 +197,11 @@ export interface Zone extends PersistableRow {
   comment: string;
   /** When true, zone is omitted from Zones.csv but still flattens into parent zones. */
   omitFromExport?: boolean;
+  /**
+   * 1-based library export order among top-level zones (Zones.csv row order baseline).
+   * Unset → stable name fallback at assemble. Build `zoneOverrides.orderOrSlot` wins when set.
+   */
+  order?: number;
 }
 
 import type { AprsConfiguration } from './aprs.ts';

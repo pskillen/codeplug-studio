@@ -1,39 +1,136 @@
-import { Badge, Button, Group, Stack, Text } from '@mantine/core';
-import { useMemo } from 'react';
+import { ActionIcon, Badge, Button, Group, Stack, Text, Tooltip } from '@mantine/core';
+import { IconArrowDown, IconArrowUp } from '@tabler/icons-react';
+import { useCallback, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type { Zone } from '@core/models/library.ts';
 import { formatZoneDirectMemberSummary } from '@core/domain/zoneMembers.ts';
 import { applyFilters, DEFAULT_MAP_FILTER_OPTS } from '@core/domain/mapProjection.ts';
+import {
+  applyDenseZoneOrders,
+  reorderZoneIds,
+  sortZonesByExportOrder,
+} from '@core/domain/zoneOrder.ts';
+import { sortZonesByName } from '@core/domain/membershipSort.ts';
 import CodeplugMap from '../../../components/CodeplugMap/CodeplugMap.tsx';
 import UseMyLocationButton from '../../../components/UseMyLocationButton/UseMyLocationButton.tsx';
 import EntityListDeleteAction from '../../../components/library/EntityListDeleteAction.tsx';
+import MembershipSortMenu from '../../../components/library/MembershipSortMenu.tsx';
 import { DataTable, ListPage } from '../../../components/ui/index.ts';
 import type { DataTableColumn } from '../../../components/ui/DataTable.tsx';
 import { filterRowsByName, useListNameQuery } from '../../../hooks/useListNameQuery.ts';
-import { usePersistedEntityListSort } from '../../../hooks/usePersistedEntityListSort.ts';
-import { DATATABLE_NAME_SORT_KEY } from '../../../lib/dataTable/sort.ts';
+import { ICON_STROKE } from '../../../lib/iconSizes.ts';
 import { useOperatorPosition } from '../../../state/operatorPosition.tsx';
+import { persistence } from '../../../state/persistence.ts';
 import { useLibrary } from '../../../state/useLibrary.ts';
 
 export default function ZonesListPage() {
-  const { library, loading } = useLibrary();
+  const { library, loading, reload } = useLibrary();
   const navigate = useNavigate();
   const { channels, zones } = library;
   const { position, setPosition, clearPosition } = useOperatorPosition();
   const { nameFilter, nameFilterInput, nameFilterPending, setNameFilter } =
     useListNameQuery('zones');
-  const [sort, setSort] = usePersistedEntityListSort('zones', {
-    columnKey: DATATABLE_NAME_SORT_KEY,
-    direction: 'asc',
-  });
+  const [savingOrder, setSavingOrder] = useState(false);
+  const [orderError, setOrderError] = useState<string | null>(null);
+
+  const orderedZones = useMemo(() => sortZonesByExportOrder(zones), [zones]);
   const filtered = useMemo(
-    () => filterRowsByName(zones, nameFilter, (z) => z.name),
-    [zones, nameFilter],
+    () => filterRowsByName(orderedZones, nameFilter, (z) => z.name),
+    [orderedZones, nameFilter],
   );
+  const filterActive = nameFilter.trim().length > 0;
   const { skipped: mapSkipped } = applyFilters(channels, DEFAULT_MAP_FILTER_OPTS);
+
+  const persistZoneOrders = useCallback(
+    async (nextZones: Zone[]) => {
+      setSavingOrder(true);
+      setOrderError(null);
+      try {
+        for (const zone of nextZones) {
+          const prev = zones.find((row) => row.id === zone.id);
+          if (!prev || prev.order === zone.order) continue;
+          const result = await persistence.putZone(zone, prev.revision);
+          if (!result.ok) {
+            throw new Error(
+              result.reason === 'revision_conflict'
+                ? 'Zone was updated elsewhere — reload and try again'
+                : 'Failed to save zone order',
+            );
+          }
+        }
+        await reload();
+      } catch (err) {
+        setOrderError(err instanceof Error ? err.message : 'Failed to save zone order');
+      } finally {
+        setSavingOrder(false);
+      }
+    },
+    [reload, zones],
+  );
+
+  const moveZone = useCallback(
+    async (zoneId: string, direction: 'up' | 'down') => {
+      if (filterActive || savingOrder) return;
+      const orderedIds = orderedZones.map((zone) => zone.id);
+      const nextIds = reorderZoneIds(orderedIds, new Set([zoneId]), direction);
+      if (nextIds.every((id, index) => id === orderedIds[index])) return;
+      await persistZoneOrders(applyDenseZoneOrders(zones, nextIds));
+    },
+    [filterActive, orderedZones, persistZoneOrders, savingOrder, zones],
+  );
+
+  const sortZonesAlphabetically = useCallback(async () => {
+    if (filterActive || savingOrder || !zones.length) return;
+    await persistZoneOrders(sortZonesByName(zones));
+  }, [filterActive, persistZoneOrders, savingOrder, zones]);
 
   const columns = useMemo((): DataTableColumn<Zone>[] => {
     return [
+      {
+        key: 'exportOrder',
+        header: 'Export order',
+        hideable: false,
+        render: (z) => {
+          const index = orderedZones.findIndex((row) => row.id === z.id);
+          return (
+            <Group gap={4} wrap="nowrap">
+              <Text size="sm" c="dimmed" w={28}>
+                {z.order ?? '—'}
+              </Text>
+              <Tooltip label="Move up">
+                <ActionIcon
+                  variant="subtle"
+                  size="sm"
+                  aria-label={`Move ${z.name} up`}
+                  disabled={filterActive || savingOrder || index <= 0}
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    void moveZone(z.id, 'up');
+                  }}
+                >
+                  <IconArrowUp size={14} stroke={ICON_STROKE} />
+                </ActionIcon>
+              </Tooltip>
+              <Tooltip label="Move down">
+                <ActionIcon
+                  variant="subtle"
+                  size="sm"
+                  aria-label={`Move ${z.name} down`}
+                  disabled={
+                    filterActive || savingOrder || index < 0 || index >= orderedZones.length - 1
+                  }
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    void moveZone(z.id, 'down');
+                  }}
+                >
+                  <IconArrowDown size={14} stroke={ICON_STROKE} />
+                </ActionIcon>
+              </Tooltip>
+            </Group>
+          );
+        },
+      },
       {
         key: 'members',
         header: 'Members',
@@ -65,7 +162,7 @@ export default function ZonesListPage() {
         render: (z) => <EntityListDeleteAction kind="zone" entityId={z.id} label={z.name} />,
       },
     ];
-  }, []);
+  }, [filterActive, moveZone, orderedZones, savingOrder]);
 
   if (loading) {
     return (
@@ -78,6 +175,28 @@ export default function ZonesListPage() {
   return (
     <ListPage title="Zones">
       <Stack gap="lg">
+        <Text size="sm" c="dimmed">
+          Rows are listed in library export order (`Zone.order`). Use the arrows to reorder — table
+          column sort is not used on this page. Clear the name filter to enable reorder.
+        </Text>
+        {filterActive ? (
+          <Text size="sm" c="orange">
+            Reorder is disabled while a name filter is active.
+          </Text>
+        ) : null}
+        {orderError ? (
+          <Text size="sm" c="red">
+            {orderError}
+          </Text>
+        ) : null}
+        <Group>
+          <MembershipSortMenu
+            modes={['name']}
+            disabled={filterActive || savingOrder || !zones.length}
+            onSort={() => void sortZonesAlphabetically()}
+            label="Sort zones…"
+          />
+        </Group>
         <DataTable
           variant="list"
           rows={filtered}
@@ -86,8 +205,6 @@ export default function ZonesListPage() {
           searchPending={nameFilterPending}
           onSearchChange={setNameFilter}
           searchPlaceholder="Filter name…"
-          sort={sort}
-          onSortChange={setSort}
           rowKey={(z) => z.id}
           nameColumn={{
             getName: (z) => z.name,

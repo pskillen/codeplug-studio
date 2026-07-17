@@ -583,6 +583,19 @@ function parseZone(raw: unknown, index: number, studioSchemaVersion: number): Zo
           ),
         }
       : {}),
+    ...(record.order !== undefined && record.order !== null
+      ? {
+          order: (() => {
+            const order = expectNumber(record.order, `library.zones[${index}].order`);
+            if (!Number.isFinite(order) || order < 1) {
+              throw new NativeYamlImportError(
+                `library.zones[${index}].order must be a finite number >= 1`,
+              );
+            }
+            return Math.trunc(order);
+          })(),
+        }
+      : {}),
   };
 
   if (studioSchemaVersion >= STUDIO_SCHEMA_VERSION) {
@@ -1425,6 +1438,7 @@ export function validateDocument(raw: unknown): ProjectAggregate {
   const studioSchemaVersion = document.studioSchemaVersion;
   if (
     studioSchemaVersion !== STUDIO_SCHEMA_VERSION &&
+    studioSchemaVersion !== 19 &&
     studioSchemaVersion !== 18 &&
     studioSchemaVersion !== 17 &&
     studioSchemaVersion !== 16 &&
@@ -1443,7 +1457,7 @@ export function validateDocument(raw: unknown): ProjectAggregate {
     studioSchemaVersion !== 2
   ) {
     throw new NativeYamlImportError(
-      `Unsupported studioSchemaVersion: ${String(studioSchemaVersion)} (expected ${STUDIO_SCHEMA_VERSION}, 18, 17, 16, 15, 14, 13, 12, 10, 9, 8, 7, 6, 5, 4, 3, or 2)`,
+      `Unsupported studioSchemaVersion: ${String(studioSchemaVersion)} (expected ${STUDIO_SCHEMA_VERSION}, 19, 18, 17, 16, 15, 14, 13, 12, 10, 9, 8, 7, 6, 5, 4, 3, or 2)`,
     );
   }
 

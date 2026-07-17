@@ -117,6 +117,7 @@ Mode profile discriminant is `mode`. DMR profiles may include `dmrMode: dmo-simp
 | `members`           | `ZoneMemberEntry[]` | `kind: channel` (`channelId`, optional `includeInScanList`: `default`\|`include`\|`skip`) or `kind: zone` (`zoneId`) |
 | `comment`           | string              |                                                                                                                      |
 | `omitFromExport`    | boolean             | optional; when `true`, zone omitted from `Zones.csv` export row (nested flatten into parents still applies)          |
+| `order`             | integer             | optional; 1-based library baseline for top-level zone export order (build `zoneOverrides.orderOrSlot` wins when set) |
 
 DM32 zone export flags (`exportScanList`, `scanCarrierFrequencyHz`) live on **`zoneGrouping` layout zone entries**, not on library zones (schema v4+). Legacy `exportScratchChannel` on zone entries is accepted on import but ignored on export — use build `exportSettings.exportScratchChannels` ([#140](https://github.com/pskillen/codeplug-studio/issues/140)).
 
