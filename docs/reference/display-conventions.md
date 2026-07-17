@@ -74,3 +74,5 @@ Registry: `src/app/nav/sectionNavRegistry.ts` maps pathname prefixes to section 
 ## Related
 
 - [app-shell](../features/app-shell/README.md)
+- [UI interaction styleguide](./styleguide/README.md) — which list shell, Sort…, reorder chrome
+- [Help writing styleguide](./writing-styleguide/help-writing-styleguide.md) — operator-facing copy

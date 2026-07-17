@@ -36,6 +36,7 @@ ProjectProvider
 | --------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
 | [data-table.md](data-table.md)                                                                | `DataTable`, list prefs, entity list hooks, virtualization                                    |
 | [list-kit-roles.md](list-kit-roles.md)                                                        | Four-role list kit (A/B/C/D) — [#460](https://github.com/pskillen/codeplug-studio/issues/460) |
+| [UI interaction styleguide](../../reference/styleguide/)                                      | Written conventions for agents — [#465](https://github.com/pskillen/codeplug-studio/issues/465) |
 | [list-kit-460-progress.md](list-kit-460-progress.md)                                          | List kit + styleguide initiative — shipped slices                                             |
 | [list-kit-460-outstanding.md](list-kit-460-outstanding.md)                                    | Deferred adoption / debt from list kit work                                                   |
 | [alerts.md](alerts.md)                                                                        | Mantine `Alert` colour conventions                                                            |
@@ -58,7 +59,7 @@ ProjectProvider
 | [library/README.md](../library/README.md)                                                     | Library CRUD and list routes                                                                  |
 | [map/README.md](../map/README.md)                                                             | Embedded channel map                                                                          |
 
-UI primitives live in `src/app/components/ui/` (ported from codeplug-tool). Reusable list infrastructure is documented in [data-table.md](data-table.md) and [list-kit-roles.md](list-kit-roles.md). Inline feedback uses Mantine `Alert` — see [alerts.md](alerts.md). Dev styleguide: `/styleguide` and nested pages (unlinked).
+UI primitives live in `src/app/components/ui/` (ported from codeplug-tool). Reusable list infrastructure is documented in [data-table.md](data-table.md) and [list-kit-roles.md](list-kit-roles.md). Written interaction conventions (which shell, Sort…, reorder): [UI interaction styleguide](../../reference/styleguide/). Inline feedback uses Mantine `Alert` — see [alerts.md](alerts.md). Dev styleguide: `/styleguide` and nested pages (unlinked).
 
 ## Routes
 

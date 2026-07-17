@@ -1,6 +1,6 @@
 # List kit roles
 
-Deep dive for the four-role list kit: entity inventory, member picker, membership list, and extreme-scale inventory. Kit + styleguide land under [#460](https://github.com/pskillen/codeplug-studio/issues/460); production adoption is a follow-up on the same ticket.
+Deep dive for the four-role list kit: entity inventory, member picker, membership list, and extreme-scale inventory. Kit + interactive styleguide land under [#460](https://github.com/pskillen/codeplug-studio/issues/460); **written** interaction conventions live in [UI interaction styleguide](../../reference/styleguide/) ([#465](https://github.com/pskillen/codeplug-studio/issues/465)).
 
 **Parent:** [#52](https://github.com/pskillen/codeplug-studio/issues/52) Phase 2b UI improvements  
 **Related:** [#199](https://github.com/pskillen/codeplug-studio/issues/199) styleguide kit · [#381](https://github.com/pskillen/codeplug-studio/issues/381) virtualisation · superseded sketch [#459](https://github.com/pskillen/codeplug-studio/issues/459)
@@ -82,7 +82,9 @@ See also [data-table.md](data-table.md) for list prefs and virtualisation detail
 
 ## Styleguide
 
-Dev-only (unlinked from product nav):
+**Written conventions (agents):** [docs/reference/styleguide/](../../reference/styleguide/) — categories, decision tree, Sort… / reorder, chrome.
+
+Dev-only interactive demos (unlinked from product nav):
 
 | Path                     | Contents                          |
 | ------------------------ | --------------------------------- |

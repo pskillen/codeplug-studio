@@ -2,6 +2,8 @@
 
 Used by agents and humans writing **user-facing copy** for Codeplug Studio: long-form help pages, inline hints, field descriptions, tooltips, empty states, and error and warning messages. It also steers user-facing prose in the [README](../../../README.md).
 
+For **which UI shell to build** (lists, Sort…, membership), see the [UI interaction styleguide](../styleguide/README.md) — complementary, not a substitute.
+
 This guide governs **wording**. It does not change _where_ content lives — documentation tiers and vendor boundaries still apply (see [Boundaries](#boundaries)).
 
 Ported from the archived [codeplug-tool](https://github.com/pskillen/codeplug-tool) prototype and adapted for Studio's library + builds model.
