@@ -18,7 +18,7 @@ Product-level overview of how Codeplug Studio projects **library + build** into 
 | `Channels.csv`     | Expanded channel rows (RX-list fan-out; `expandModes: false`)       |
 | `Zones.csv`        | Assembled zones; member names match expanded channel wire names     |
 | `Talkgroups.csv`   | Assembled talk groups with profile name limits                      |
-| `Contacts.csv`     | Digital contacts (private call wire shape)                          |
+| `Contacts.csv`     | Digital contacts — `city`/`state`/`country`/`remarks` → City/Province/Country/Remark; Type=`Private Call`; Alert Call=`0`; Repeater empty |
 | `RXGroupLists.csv` | Assembled RX group lists                                            |
 | `DTMFContacts.csv` | Analog contacts                                                     |
 | `Scan.csv`         | Zone-derived scan synthesis ([#129](../../issues/129)) when enabled |
