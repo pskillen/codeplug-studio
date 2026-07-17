@@ -21,8 +21,10 @@ emitScan(zone) = layout.exportScanList === true
 
 A channel is included in a zone-derived scan list when:
 
-1. `ZoneMemberEntry.includeInScanList !== false`, and
-2. `effectiveScanSkips(channel, exportOptions)` — honours `scanInclusion` tri-state + build `defaultScanInclusion`
+1. `resolveEffectiveIncludeInZoneDerivedScanList` for the **exported** zone is `include` — cascade: library `zoneDefaults` → member `includeInScanList` → build `defaultIncludeInZoneDerivedScanList` → layout `scanMemberInclusion` (see [zone-behavioural-defaults.md](zone-behavioural-defaults.md)), and
+2. `effectiveScanSkips(channel, exportOptions)` — honours channel `scanInclusion` tri-state + build `defaultScanInclusion`
+
+Nested parent/child projections are independent — skip on a parent export does not rewrite the child zone.
 
 ## Scan carrier (DM32 and Anytone)
 

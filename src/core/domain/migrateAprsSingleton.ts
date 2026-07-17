@@ -4,6 +4,7 @@ import type { Library } from '@core/models/library.ts';
 import type { EntityRef } from '@core/models/libraryTypes.ts';
 import type { ProjectAggregate } from '@core/import-export/projectDocument.ts';
 import { normalizeChannelBehaviourDefaults } from './normalizeChannelBehaviourDefaults.ts';
+import { normalizeZoneBehaviourDefaults } from './normalizeZoneBehaviourDefaults.ts';
 import { normalizeAprsConfiguration, normalizeAprsConfigurationOrNull } from './aprs/normalize.ts';
 
 type LegacyAprsConfiguration = AprsConfiguration & {
@@ -122,6 +123,7 @@ export function migrateAprsSingletonLibrary(library: LegacyLibrary): Library {
     scanLists: library.scanLists,
     aprsConfiguration,
     channelDefaults: normalizeChannelBehaviourDefaults(library.channelDefaults),
+    zoneDefaults: normalizeZoneBehaviourDefaults(library.zoneDefaults),
   };
 }
 
@@ -151,6 +153,9 @@ export function migrateAprsSingletonAggregate(aggregate: ProjectAggregate): Proj
     channelDefaults: normalizeChannelBehaviourDefaults(
       aggregate.channelDefaults ?? aggregate.meta.channelDefaults,
     ),
+    zoneDefaults: normalizeZoneBehaviourDefaults(
+      aggregate.zoneDefaults ?? aggregate.meta.zoneDefaults,
+    ),
   };
 
   const library = migrateAprsSingletonLibrary(legacyLibrary);
@@ -166,6 +171,7 @@ export function migrateAprsSingletonAggregate(aggregate: ProjectAggregate): Proj
     scanLists: library.scanLists,
     aprsConfiguration: library.aprsConfiguration,
     channelDefaults: library.channelDefaults,
+    zoneDefaults: library.zoneDefaults,
     formatBuilds: migrateAprsSingletonFormatBuilds(aggregate.formatBuilds as LegacyFormatBuild[]),
   };
 }

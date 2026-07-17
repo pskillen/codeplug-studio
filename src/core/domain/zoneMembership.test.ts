@@ -40,6 +40,7 @@ function library(channels: string[], zones: Zone[]): Library {
       sendTalkerAlias: 'on',
       analogSquelchMode: 'carrier',
     },
+    zoneDefaults: { includeInZoneDerivedScanList: true },
     aprsConfiguration: null,
     zones,
   };
@@ -155,7 +156,7 @@ describe('setChannelMemberIncludeInScanList', () => {
   it('sets and clears includeInScanList on channel members', () => {
     const members = [{ kind: 'channel' as const, channelId: 'ch-1' }];
     const excluded = setChannelMemberIncludeInScanList(members, 'ch-1', false);
-    expect(excluded[0]).toEqual({ kind: 'channel', channelId: 'ch-1', includeInScanList: false });
+    expect(excluded[0]).toEqual({ kind: 'channel', channelId: 'ch-1', includeInScanList: 'skip' });
 
     const restored = setChannelMemberIncludeInScanList(excluded, 'ch-1', true);
     expect(restored[0]).toEqual({ kind: 'channel', channelId: 'ch-1' });

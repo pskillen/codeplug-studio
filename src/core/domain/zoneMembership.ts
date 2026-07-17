@@ -1,4 +1,5 @@
 import type { Channel, Library, Zone, ZoneMemberEntry } from '@core/models/library.ts';
+import type { IncludeInZoneDerivedScanListOverride } from '@core/models/zoneBehaviourDefaults.ts';
 import { directZoneMemberChannelIds, normalizeZoneMemberEntry } from './zoneMembers.ts';
 import { resolveEffectiveZoneChannelIds } from './zoneHierarchy.ts';
 
@@ -229,17 +230,23 @@ export function directZoneChannelMembersInOrder(zone: Zone): Channel['id'][] {
 export function setChannelMemberIncludeInScanList(
   members: ZoneMemberEntry[],
   channelId: string,
-  includeInScanList: boolean,
+  includeInScanList: IncludeInZoneDerivedScanListOverride | boolean,
 ): ZoneMemberEntry[] {
   let changed = false;
+  const override: IncludeInZoneDerivedScanListOverride =
+    typeof includeInScanList === 'boolean'
+      ? includeInScanList
+        ? 'default'
+        : 'skip'
+      : includeInScanList;
   const next = members.map((raw) => {
     const member = normalizeZoneMemberEntry(raw);
     if (member.kind !== 'channel' || member.channelId !== channelId) return raw;
     changed = true;
-    if (includeInScanList) {
+    if (override === 'default') {
       return { kind: 'channel' as const, channelId: member.channelId };
     }
-    return { ...member, includeInScanList: false };
+    return { kind: 'channel' as const, channelId: member.channelId, includeInScanList: override };
   });
   return changed ? next : members;
 }

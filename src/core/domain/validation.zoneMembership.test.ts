@@ -28,6 +28,7 @@ function lib(zones: Zone[]): Library {
       sendTalkerAlias: 'on',
       analogSquelchMode: 'carrier',
     },
+    zoneDefaults: { includeInZoneDerivedScanList: true },
     aprsConfiguration: null,
     zones,
   };

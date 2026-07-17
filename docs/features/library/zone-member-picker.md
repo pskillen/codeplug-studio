@@ -32,15 +32,15 @@ Sidecars: `ZoneMemberEditor.md`, `ChannelZoneMembershipSection.md`.
 
 ## Behaviour
 
-| Control                | Effect                                                                    |
-| ---------------------- | ------------------------------------------------------------------------- |
-| In-zone filter         | Filters current members (channel name/callsign or zone name)              |
-| Other pool filter      | Filters available channels and zones                                      |
-| Add selected           | Appends checked rows from the other pool                                  |
-| Move up / down         | Reorders selected in-zone members as a block; **Alt+↑ / Alt+↓** shortcuts |
-| Remove                 | Per-row ✕ or bulk **Remove selected**                                     |
-| Include in scan list   | Per direct channel member — `includeInScanList` (default true)            |
-| Hide filtered from map | Separate checkboxes for each pool                                         |
+| Control                      | Effect                                                                                     |
+| ---------------------------- | ------------------------------------------------------------------------------------------ |
+| In-zone filter               | Filters current members (channel name/callsign or zone name)                               |
+| Other pool filter            | Filters available channels and zones                                                       |
+| Add selected                 | Appends checked rows from the other pool                                                   |
+| Move up / down               | Reorders selected in-zone members as a block; **Alt+↑ / Alt+↓** shortcuts                  |
+| Remove                       | Per-row ✕ or bulk **Remove selected**                                                      |
+| Zone-derived scan membership | Per direct channel member — tri-state `includeInScanList` (`default` / `include` / `skip`) |
+| Hide filtered from map       | Separate checkboxes for each pool                                                          |
 
 **Available zones** excludes the zone being edited, its descendant zones (would create a cycle), and zones already in the member list.
 

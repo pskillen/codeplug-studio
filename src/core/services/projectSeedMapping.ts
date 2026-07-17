@@ -1,6 +1,7 @@
 import type { ProjectAggregate } from '@core/import-export/projectDocument.ts';
 import { migrateProjectAggregate } from '@core/domain/migrateZoneExportFields.ts';
 import { normalizeChannelBehaviourDefaults } from '@core/domain/normalizeChannelBehaviourDefaults.ts';
+import { normalizeZoneBehaviourDefaults } from '@core/domain/normalizeZoneBehaviourDefaults.ts';
 import { newId } from '@core/models/ids.ts';
 import type { ProjectSeed } from './projectInterchangePort.ts';
 
@@ -21,9 +22,11 @@ export function aggregateToSeed(aggregate: ProjectAggregate): ProjectSeed {
 
 export function seedToAggregate(seed: ProjectSeed): ProjectAggregate {
   const channelDefaults = normalizeChannelBehaviourDefaults(seed.meta.channelDefaults);
+  const zoneDefaults = normalizeZoneBehaviourDefaults(seed.meta.zoneDefaults);
   return migrateProjectAggregate({
-    meta: { ...seed.meta, channelDefaults },
+    meta: { ...seed.meta, channelDefaults, zoneDefaults },
     channelDefaults,
+    zoneDefaults,
     channels: seed.channels ?? [],
     zones: seed.zones ?? [],
     talkGroups: seed.talkGroups ?? [],

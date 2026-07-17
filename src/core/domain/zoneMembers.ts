@@ -1,5 +1,7 @@
 import type { Zone, ZoneMemberEntry } from '@core/models/library.ts';
+import type { IncludeInZoneDerivedScanListOverride } from '@core/models/zoneBehaviourDefaults.ts';
 import type { EntityRef } from '@core/models/libraryTypes.ts';
+import { normalizeIncludeInScanListOverride } from '@core/import-export/zoneBehaviourDefaults/resolve.ts';
 
 /** Legacy v4 shape — `{ kind: 'channel', id }`. */
 function isLegacyZoneMember(member: unknown): member is EntityRef {
@@ -14,8 +16,15 @@ function isLegacyZoneMember(member: unknown): member is EntityRef {
 
 function isLegacyChannelMember(
   raw: unknown,
-): raw is { channelId: string; includeInScanList?: boolean } {
+): raw is { channelId: string; includeInScanList?: unknown } {
   return typeof raw === 'object' && raw != null && 'channelId' in raw && !('kind' in raw);
+}
+
+function sparseIncludeInScanList(
+  value: IncludeInZoneDerivedScanListOverride,
+): { includeInScanList: IncludeInZoneDerivedScanListOverride } | Record<string, never> {
+  if (value === 'default') return {};
+  return { includeInScanList: value };
 }
 
 export function normalizeZoneMemberEntry(raw: unknown): ZoneMemberEntry {
@@ -23,23 +32,25 @@ export function normalizeZoneMemberEntry(raw: unknown): ZoneMemberEntry {
     return { kind: 'channel', channelId: raw.id };
   }
   if (typeof raw === 'object' && raw != null && 'kind' in raw) {
-    const record = raw as ZoneMemberEntry;
+    const record = raw as ZoneMemberEntry & { includeInScanList?: unknown };
     if (record.kind === 'zone') {
       return { kind: 'zone', zoneId: String(record.zoneId) };
     }
     if (record.kind === 'channel') {
+      const override = normalizeIncludeInScanListOverride(record.includeInScanList);
       return {
         kind: 'channel',
         channelId: String(record.channelId),
-        ...(record.includeInScanList === false ? { includeInScanList: false } : {}),
+        ...sparseIncludeInScanList(override),
       };
     }
   }
   if (isLegacyChannelMember(raw)) {
+    const override = normalizeIncludeInScanListOverride(raw.includeInScanList);
     return {
       kind: 'channel',
       channelId: String(raw.channelId),
-      ...(raw.includeInScanList === false ? { includeInScanList: false } : {}),
+      ...sparseIncludeInScanList(override),
     };
   }
   throw new Error('Invalid zone member entry');
@@ -72,9 +83,13 @@ export function zoneMemberEntityRefs(zone: Zone): EntityRef[] {
   return directZoneMemberChannelIds(zone).map((id) => ({ kind: 'channel', id }));
 }
 
+/**
+ * Legacy helper: true unless member override is explicitly `skip`.
+ * Prefer `effectiveIncludeInZoneDerivedScanList` when cascade context is available.
+ */
 export function memberIncludedInScanList(member: ZoneMemberEntry): boolean {
   if (member.kind !== 'channel') return true;
-  return member.includeInScanList !== false;
+  return (member.includeInScanList ?? 'default') !== 'skip';
 }
 
 function pluralCount(count: number, singular: string, plural: string): string {

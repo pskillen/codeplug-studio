@@ -1,4 +1,5 @@
 import { normalizeChannelBehaviourDefaults } from '@core/domain/normalizeChannelBehaviourDefaults.ts';
+import { normalizeZoneBehaviourDefaults } from '@core/domain/normalizeZoneBehaviourDefaults.ts';
 import type { LibrarySlice } from '@core/services/assemble.ts';
 import type { ProjectPersistence } from '@integrations/persistence/index.ts';
 
@@ -38,5 +39,6 @@ export async function loadLibrarySlice(
     scanLists,
     aprsConfiguration: aprsConfigurations[0] ?? null,
     channelDefaults: normalizeChannelBehaviourDefaults(meta?.channelDefaults),
+    zoneDefaults: normalizeZoneBehaviourDefaults(meta?.zoneDefaults),
   };
 }

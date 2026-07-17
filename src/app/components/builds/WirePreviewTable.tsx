@@ -21,13 +21,14 @@ export interface ZoneScanWirePreviewContext {
   zones: Zone[];
   zoneById: Map<string, Zone>;
   channelById: ZoneScanExpandPanelProps['channelById'];
+  zoneBehaviourContext?: ZoneScanExpandPanelProps['zoneBehaviourContext'];
   isDm32: boolean;
   showScanCarrierControls: boolean;
   scanListMemberCap: number;
   saving: boolean;
   onUpdateZoneEntry: (zoneId: string, patch: Partial<ZoneGroupingZoneEntry>) => void;
   onUpdateMemberScanInclusion: (
-    ownerZoneId: string,
+    exportedZoneId: string,
     channelId: string,
     includeInScanList: boolean,
   ) => void;
@@ -176,6 +177,7 @@ export default function WirePreviewTable({
                       zone={zone}
                       zones={zoneScanContext.zones}
                       entry={zoneLayoutEntry}
+                      zoneBehaviourContext={zoneScanContext.zoneBehaviourContext}
                       scanListMemberCap={zoneScanContext.scanListMemberCap}
                       showScanCarrierControls={zoneScanContext.showScanCarrierControls}
                       expanded={zoneExpanded}
@@ -208,6 +210,7 @@ export default function WirePreviewTable({
                       zone={zone}
                       zones={zoneScanContext.zones}
                       entry={zoneLayoutEntry}
+                      zoneBehaviourContext={zoneScanContext.zoneBehaviourContext}
                       channelById={zoneScanContext.channelById}
                       isDm32={zoneScanContext.isDm32}
                       showScanCarrierControls={zoneScanContext.showScanCarrierControls}
@@ -215,9 +218,9 @@ export default function WirePreviewTable({
                       onUpdateZoneEntry={(patch) =>
                         zoneScanContext.onUpdateZoneEntry(row.libraryEntityId, patch)
                       }
-                      onUpdateMemberScanInclusion={(ownerZoneId, channelId, includeInScanList) =>
+                      onUpdateMemberScanInclusion={(exportedZoneId, channelId, includeInScanList) =>
                         zoneScanContext.onUpdateMemberScanInclusion(
-                          ownerZoneId,
+                          exportedZoneId,
                           channelId,
                           includeInScanList,
                         )

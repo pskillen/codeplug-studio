@@ -110,13 +110,13 @@ Mode profile discriminant is `mode`. DMR profiles may include `dmrMode: dmo-simp
 
 ### `Zone`
 
-| Field               | Type                | Notes                                                                                                       |
-| ------------------- | ------------------- | ----------------------------------------------------------------------------------------------------------- |
-| _(persistable row)_ |                     |                                                                                                             |
-| `name`              | string              |                                                                                                             |
-| `members`           | `ZoneMemberEntry[]` | `kind: channel` (`channelId`, optional `includeInScanList`) or `kind: zone` (`zoneId`)                      |
-| `comment`           | string              |                                                                                                             |
-| `omitFromExport`    | boolean             | optional; when `true`, zone omitted from `Zones.csv` export row (nested flatten into parents still applies) |
+| Field               | Type                | Notes                                                                                                                |
+| ------------------- | ------------------- | -------------------------------------------------------------------------------------------------------------------- |
+| _(persistable row)_ |                     |                                                                                                                      |
+| `name`              | string              |                                                                                                                      |
+| `members`           | `ZoneMemberEntry[]` | `kind: channel` (`channelId`, optional `includeInScanList`: `default`\|`include`\|`skip`) or `kind: zone` (`zoneId`) |
+| `comment`           | string              |                                                                                                                      |
+| `omitFromExport`    | boolean             | optional; when `true`, zone omitted from `Zones.csv` export row (nested flatten into parents still applies)          |
 
 DM32 zone export flags (`exportScratchChannel`, `exportScanList`, `scanCarrierFrequencyHz`) live on **`zoneGrouping` layout zone entries**, not on library zones (schema v4+).
 

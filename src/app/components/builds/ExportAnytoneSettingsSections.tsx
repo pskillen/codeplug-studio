@@ -5,6 +5,7 @@ import ExportNameModeSelect from './ExportNameModeSelect.tsx';
 import DigitalContactExportNameModeSelect from './DigitalContactExportNameModeSelect.tsx';
 import ExportSettingsSubheading from './ExportSettingsSubheading.tsx';
 import ChannelBehaviourExportOverrides from './ChannelBehaviourExportOverrides.tsx';
+import ZoneBehaviourExportOverrides from './ZoneBehaviourExportOverrides.tsx';
 import { TRAIT_LABELS } from '../../routes/builds/buildHelpers.ts';
 import type { ExportBuildSettingsSectionsProps } from './ExportBuildSettingsSections.tsx';
 
@@ -163,6 +164,11 @@ export default function ExportAnytoneSettingsSections({
               exportZoneDerivedScanLists: event.currentTarget.checked,
             })
           }
+        />
+        <ZoneBehaviourExportOverrides
+          exportSettings={build.exportSettings}
+          disabled={saving}
+          onPatch={onExportSettingsPatch}
         />
         <Text size="sm" c="dimmed">
           Library scan list membership is edited under Library → Scan lists. Per-channel scan list

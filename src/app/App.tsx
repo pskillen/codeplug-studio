@@ -19,6 +19,7 @@ import RxGroupListsListPage from './routes/library/lists/RxGroupListsListPage.ts
 import ScanListsListPage from './routes/library/lists/ScanListsListPage.tsx';
 import AprsConfigurationPage from './routes/library/AprsConfigurationPage.tsx';
 import ChannelDefaultsPage from './routes/library/ChannelDefaultsPage.tsx';
+import ZoneDefaultsPage from './routes/library/ZoneDefaultsPage.tsx';
 import SummaryPage from './routes/SummaryPage.tsx';
 import BandsReferencePage from './routes/reference/BandsReferencePage.tsx';
 import MaidenheadReferencePage from './routes/reference/MaidenheadReferencePage.tsx';
@@ -89,6 +90,7 @@ export const appRouter = createBrowserRouter([
           { path: '/library', element: <Navigate to="/library/channels" replace /> },
           { path: '/library/channels', element: <ChannelsListPage /> },
           { path: '/library/channels/defaults', element: <ChannelDefaultsPage /> },
+          { path: '/library/zones/defaults', element: <ZoneDefaultsPage /> },
           { path: '/library/zones', element: <ZonesListPage /> },
           {
             path: '/library/zones/new-from-location',

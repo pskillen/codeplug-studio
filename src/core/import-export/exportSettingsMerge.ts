@@ -1,4 +1,5 @@
 import { buildChannelBehaviourContext } from '@core/import-export/channelBehaviourDefaults/index.ts';
+import { buildZoneBehaviourContext } from '@core/import-export/zoneBehaviourDefaults/index.ts';
 import { DEFAULT_CHANNEL_EXPORT_NAME_MODE } from '@core/domain/channelNaming.ts';
 import {
   DEFAULT_DIGITAL_CONTACT_EXPORT_NAME_MODE,
@@ -91,7 +92,7 @@ function applyFormatExportDefaults(defaults: FormatExportDefaults): CpsExportOpt
 export function mergeExportOptions(
   build: FormatBuild,
   options?: CpsExportOptions,
-  library?: Pick<LibrarySlice, 'channelDefaults'>,
+  library?: Pick<LibrarySlice, 'channelDefaults' | 'zoneDefaults'>,
 ): CpsExportOptions {
   const formatDefaults = getFormatExportDefaults(build.formatId);
   const stored = build.exportSettings ?? {};
@@ -110,5 +111,6 @@ export function mergeExportOptions(
     profileId: options?.profileId ?? build.profileId,
     contactOverrides: options?.contactOverrides ?? build.contactOverrides,
     channelBehaviourContext: buildChannelBehaviourContext(library?.channelDefaults, stored),
+    zoneBehaviourContext: buildZoneBehaviourContext(library?.zoneDefaults, stored),
   };
 }

@@ -1,4 +1,5 @@
 import { DEFAULT_CHANNEL_BEHAVIOUR_DEFAULTS } from '@core/models/channelBehaviourDefaults.ts';
+import { DEFAULT_ZONE_BEHAVIOUR_DEFAULTS } from '@core/models/zoneBehaviourDefaults.ts';
 import type { ProjectAggregate } from '../../projectDocument.ts';
 import type { FormatBuild } from '@core/models/formatBuild.ts';
 import type {
@@ -50,8 +51,9 @@ export function fixtureProjectMeta(): ProjectMeta {
 export function minimalProjectAggregate(): ProjectAggregate {
   const meta = fixtureProjectMeta();
   const channelDefaults = { ...DEFAULT_CHANNEL_BEHAVIOUR_DEFAULTS };
+  const zoneDefaults = { ...DEFAULT_ZONE_BEHAVIOUR_DEFAULTS };
   return {
-    meta: { ...meta, channelDefaults },
+    meta: { ...meta, channelDefaults, zoneDefaults },
     channels: [],
     zones: [],
     talkGroups: [],
@@ -60,6 +62,7 @@ export function minimalProjectAggregate(): ProjectAggregate {
     rxGroupLists: [],
     scanLists: [],
     channelDefaults,
+    zoneDefaults,
     aprsConfiguration: null,
     formatBuilds: [],
   };
@@ -194,9 +197,10 @@ export function fullLibraryAggregate(): ProjectAggregate {
   };
 
   const channelDefaults = { ...DEFAULT_CHANNEL_BEHAVIOUR_DEFAULTS };
+  const zoneDefaults = { ...DEFAULT_ZONE_BEHAVIOUR_DEFAULTS };
 
   return {
-    meta: { ...meta, channelDefaults },
+    meta: { ...meta, channelDefaults, zoneDefaults },
     channels: [channelA, channelB],
     zones: [zone],
     talkGroups: [talkGroup],
@@ -205,6 +209,7 @@ export function fullLibraryAggregate(): ProjectAggregate {
     rxGroupLists: [rxGroupList],
     scanLists: [],
     channelDefaults,
+    zoneDefaults,
     aprsConfiguration,
     formatBuilds: [],
   };

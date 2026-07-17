@@ -11,6 +11,7 @@ import ExportNameSettingsFields from './ExportNameSettingsFields.tsx';
 import ExportAnytoneSettingsSections from './ExportAnytoneSettingsSections.tsx';
 import DefaultScanInclusionSegment from './DefaultScanInclusionSegment.tsx';
 import ChannelBehaviourExportOverrides from './ChannelBehaviourExportOverrides.tsx';
+import ZoneBehaviourExportOverrides from './ZoneBehaviourExportOverrides.tsx';
 import type { ResolvedBuildExportSettings } from '../../lib/buildExportSettingsUi.ts';
 import { TRAIT_LABELS } from '../../routes/builds/buildHelpers.ts';
 
@@ -189,21 +190,28 @@ export default function ExportBuildSettingsSections({
           </Text>
         )}
         {(build.formatId === 'dm32' || build.formatId === 'anytone') && (
-          <Switch
-            label={
-              build.formatId === 'dm32'
-                ? 'Export zone-derived scan lists (Scan.csv)'
-                : 'Export zone-derived scan lists (ScanList.CSV)'
-            }
-            description="Requires per-zone Export as scan list on the Zones page. Library scan lists still export when enabled."
-            checked={resolvedSettings.exportZoneDerivedScanLists}
-            disabled={saving}
-            onChange={(event) =>
-              onExportSettingsPatch({
-                exportZoneDerivedScanLists: event.currentTarget.checked,
-              })
-            }
-          />
+          <>
+            <Switch
+              label={
+                build.formatId === 'dm32'
+                  ? 'Export zone-derived scan lists (Scan.csv)'
+                  : 'Export zone-derived scan lists (ScanList.CSV)'
+              }
+              description="Requires per-zone Export as scan list on the Zones page. Library scan lists still export when enabled."
+              checked={resolvedSettings.exportZoneDerivedScanLists}
+              disabled={saving}
+              onChange={(event) =>
+                onExportSettingsPatch({
+                  exportZoneDerivedScanLists: event.currentTarget.checked,
+                })
+              }
+            />
+            <ZoneBehaviourExportOverrides
+              exportSettings={build.exportSettings}
+              disabled={saving}
+              onPatch={onExportSettingsPatch}
+            />
+          </>
         )}
       </FieldCard>
 

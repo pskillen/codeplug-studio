@@ -1,6 +1,7 @@
 import { forbidTransmitFromLegacyBoolean } from '@core/import-export/channelBehaviourDefaults/resolve.ts';
 import { scanInclusionFromLegacyBoolean } from '@core/import-export/scanInclusion/index.ts';
 import { normalizeChannelBehaviourDefaults } from '@core/domain/normalizeChannelBehaviourDefaults.ts';
+import { normalizeZoneBehaviourDefaults } from '@core/domain/normalizeZoneBehaviourDefaults.ts';
 import type {
   AnalogSquelchModeOverride,
   ChannelBehaviourDefaults,
@@ -8,6 +9,7 @@ import type {
   SendTalkerAliasOverride,
   TxPermitOverride,
 } from '@core/models/channelBehaviourDefaults.ts';
+import type { ZoneBehaviourDefaults } from '@core/models/zoneBehaviourDefaults.ts';
 import type {
   BuildEntityOverride,
   BuildExportSettings,
@@ -326,6 +328,21 @@ function parseChannelBehaviourDefaults(raw: unknown, label: string): ChannelBeha
             record.analogSquelchMode,
             `${label}.analogSquelchMode`,
             ['carrier', 'tone'] as const,
+          ),
+        }),
+  });
+}
+
+function parseZoneBehaviourDefaults(raw: unknown, label: string): ZoneBehaviourDefaults {
+  const record = expectRecord(raw, label);
+  return normalizeZoneBehaviourDefaults({
+    ...(record.includeInZoneDerivedScanList === undefined ||
+    record.includeInZoneDerivedScanList === null
+      ? {}
+      : {
+          includeInZoneDerivedScanList: expectBoolean(
+            record.includeInZoneDerivedScanList,
+            `${label}.includeInZoneDerivedScanList`,
           ),
         }),
   });
@@ -757,14 +774,20 @@ function parseLibrary(raw: unknown, studioSchemaVersion: number): Library {
   const migratedLibrary = migrateAprsSingletonLibrary({
     ...parsedLibrary,
     channelDefaults: normalizeChannelBehaviourDefaults(),
+    zoneDefaults: normalizeZoneBehaviourDefaults(),
   });
   const channelDefaults =
     record.channelDefaults === undefined || record.channelDefaults === null
       ? normalizeChannelBehaviourDefaults()
       : parseChannelBehaviourDefaults(record.channelDefaults, 'library.channelDefaults');
+  const zoneDefaults =
+    record.zoneDefaults === undefined || record.zoneDefaults === null
+      ? normalizeZoneBehaviourDefaults()
+      : parseZoneBehaviourDefaults(record.zoneDefaults, 'library.zoneDefaults');
   return {
     ...migratedLibrary,
     channelDefaults,
+    zoneDefaults,
     channels: migratedLibrary.channels.map(normalizeChannel),
   };
 }
@@ -912,6 +935,15 @@ function parseExportSettings(raw: unknown, label: string): BuildExportSettings |
       ['carrier', 'tone'] as const,
     );
   }
+  if (
+    record.defaultIncludeInZoneDerivedScanList !== undefined &&
+    record.defaultIncludeInZoneDerivedScanList !== null
+  ) {
+    settings.defaultIncludeInZoneDerivedScanList = expectBoolean(
+      record.defaultIncludeInZoneDerivedScanList,
+      `${label}.defaultIncludeInZoneDerivedScanList`,
+    );
+  }
   return Object.keys(settings).length > 0 ? settings : undefined;
 }
 
@@ -1025,6 +1057,18 @@ function parseFormatBuild(raw: unknown, index: number): ParsedFormatBuild {
   return { build, legacy };
 }
 
+function parseScanMemberInclusion(raw: unknown, label: string): Record<string, 'include' | 'skip'> {
+  const record = expectRecord(raw, label);
+  const result: Record<string, 'include' | 'skip'> = {};
+  for (const [channelId, value] of Object.entries(record)) {
+    result[channelId] = parseEnumField(value, `${label}.${channelId}`, [
+      'include',
+      'skip',
+    ] as const);
+  }
+  return result;
+}
+
 function parseTraitSection(raw: unknown, index: number): TraitLayoutSection {
   const record = expectRecord(raw, `layout.sections[${index}]`);
   const kind = expectString(record.kind, `layout.sections[${index}].kind`);
@@ -1065,6 +1109,14 @@ function parseTraitSection(raw: unknown, index: number): TraitLayoutSection {
                 scanCarrierFrequencyHz: expectNullableNumber(
                   zone.scanCarrierFrequencyHz,
                   `layout.sections[${index}].zones[${zoneIndex}].scanCarrierFrequencyHz`,
+                ),
+              }
+            : {}),
+          ...(zone.scanMemberInclusion !== undefined && zone.scanMemberInclusion !== null
+            ? {
+                scanMemberInclusion: parseScanMemberInclusion(
+                  zone.scanMemberInclusion,
+                  `layout.sections[${index}].zones[${zoneIndex}].scanMemberInclusion`,
                 ),
               }
             : {}),
@@ -1165,6 +1217,11 @@ function parseProjectMeta(raw: unknown): ProjectMeta {
             record.channelDefaults,
             'project.channelDefaults',
           ),
+        }
+      : {}),
+    ...(record.zoneDefaults !== undefined && record.zoneDefaults !== null
+      ? {
+          zoneDefaults: parseZoneBehaviourDefaults(record.zoneDefaults, 'project.zoneDefaults'),
         }
       : {}),
   };
@@ -1368,6 +1425,7 @@ export function validateDocument(raw: unknown): ProjectAggregate {
   const studioSchemaVersion = document.studioSchemaVersion;
   if (
     studioSchemaVersion !== STUDIO_SCHEMA_VERSION &&
+    studioSchemaVersion !== 18 &&
     studioSchemaVersion !== 17 &&
     studioSchemaVersion !== 16 &&
     studioSchemaVersion !== 15 &&
@@ -1385,7 +1443,7 @@ export function validateDocument(raw: unknown): ProjectAggregate {
     studioSchemaVersion !== 2
   ) {
     throw new NativeYamlImportError(
-      `Unsupported studioSchemaVersion: ${String(studioSchemaVersion)} (expected ${STUDIO_SCHEMA_VERSION}, 17, 16, 15, 14, 13, 12, 10, 9, 8, 7, 6, 5, 4, 3, or 2)`,
+      `Unsupported studioSchemaVersion: ${String(studioSchemaVersion)} (expected ${STUDIO_SCHEMA_VERSION}, 18, 17, 16, 15, 14, 13, 12, 10, 9, 8, 7, 6, 5, 4, 3, or 2)`,
     );
   }
 
@@ -1426,10 +1484,12 @@ export function validateDocument(raw: unknown): ProjectAggregate {
   const channelDefaults = normalizeChannelBehaviourDefaults(
     library.channelDefaults ?? project.channelDefaults,
   );
+  const zoneDefaults = normalizeZoneBehaviourDefaults(library.zoneDefaults ?? project.zoneDefaults);
 
   return migrateProjectAggregate({
-    meta: { ...project, channelDefaults },
+    meta: { ...project, channelDefaults, zoneDefaults },
     channelDefaults,
+    zoneDefaults,
     channels: library.channels,
     zones: library.zones,
     talkGroups: library.talkGroups,
