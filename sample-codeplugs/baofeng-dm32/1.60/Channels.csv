@@ -1,0 +1,377 @@
+No.,Channel Name,Channel Type,RX Frequency[MHz],TX Frequency[MHz],Power,Band Width,Scan List,TX Admit,Emergency System,Squelch Level,APRS Report Type,Forbid TX,APRS Receive,Forbid Talkaround,Auto Scan,Lone Work,Emergency Indicator,Emergency ACK,Analog APRS PTT Mode,Digital APRS PTT Mode,TX Contact,RX Group List,Color Code,Time Slot,Encryption,Encryption ID,APRS Report Channel,Direct Dual Mode,Private Confirm,Short Data Confirm,DMR ID,CTC/DCS Decode,CTC/DCS Encode,Scramble,RX Squelch Mode,Signaling Type,PTT ID,VOX Function,PTT ID Display
+1,GB3CS Motherwell,Analog,145.75000,145.15000,High,12.5KHz,None,Channel Idle,None,3,Off,0,1,0,0,0,0,0,0,0,None,None,0,Slot 1,0,None,1,0,0,0,Paddy MM9DY,103.5,None,None,Carrier/CTC,None,OFF,0,0
+2,GB3DV Bradford,Digital,439.70000,430.70000,High,12.5KHz,None,Channel Idle,None,1,Digital,0,1,0,0,0,0,0,0,0,Asia M.E 94,None,2,Slot 1,0,None,1,0,0,0,Paddy MM9DY,None,None,None,Carrier/CTC,None,OFF,0,0
+3,GB3FE Sterling,Analog,145.66250,145.06250,High,12.5KHz,None,Channel Idle,None,1,Off,0,1,0,0,0,0,0,0,0,None,None,0,Slot 1,0,None,1,0,0,0,Paddy MM9DY,103.5,None,None,Carrier/CTC,None,OFF,0,0
+4,GB3GL Glasgow,Analog,430.90000,438.50000,High,12.5KHz,None,Channel Idle,None,1,Off,0,1,0,0,0,0,0,0,0,None,None,0,Slot 1,0,None,1,0,0,0,Paddy MM9DY,103.5,None,None,Carrier/CTC,None,OFF,0,0
+5,GB3HJ Harrogate,Analog,433.02500,434.62500,High,12.5KHz,None,Channel Idle,None,1,Off,0,1,0,0,0,0,0,0,0,None,None,0,Slot 1,0,None,1,0,0,0,Paddy MM9DY,118.8,None,None,Carrier/CTC,None,OFF,0,0
+6,GB3KE Glasgow,Analog,145.68750,145.08750,High,12.5KHz,None,Channel Idle,None,1,Off,0,1,0,0,0,0,0,0,0,None,None,0,Slot 1,0,None,1,0,0,0,Paddy MM9DY,103.5,None,None,Carrier/CTC,None,OFF,0,0
+7,GB3KV Kilsyth,Analog,430.97500,438.57500,High,12.5KHz,None,Channel Idle,None,1,Off,0,1,0,0,0,0,0,0,0,None,None,0,Slot 1,0,None,1,0,0,0,Paddy MM9DY,103.5,None,None,Carrier/CTC,None,OFF,0,0
+8,GB3KW Glasgow,Analog,430.82500,438.42500,High,12.5KHz,None,Channel Idle,None,1,Off,0,1,0,0,0,0,0,0,0,None,None,0,Slot 1,0,None,1,0,0,0,Paddy MM9DY,103.5,None,None,Carrier/CTC,None,OFF,0,0
+9,GB3PA Paisley,Analog,145.62500,145.02500,High,12.5KHz,None,Channel Idle,None,1,Off,0,1,0,0,0,0,0,0,0,None,None,0,Slot 1,0,None,1,0,0,0,Paddy MM9DY,103.5,None,None,Carrier/CTC,None,OFF,0,0
+10,GB3WF Otley,Analog,433.35000,434.95000,High,12.5KHz,None,Channel Idle,None,1,Off,0,1,0,0,0,0,0,0,0,None,None,0,Slot 1,0,None,1,0,0,0,Paddy MM9DY,82.5,None,None,Carrier/CTC,None,OFF,0,0
+11,GB7AC T1,Digital,430.95000,438.55000,High,12.5KHz,None,Channel Idle,None,1,Digital,0,1,0,0,0,0,0,0,0,None,ALL,3,Slot 1,0,None,1,0,0,0,Paddy MM9DY,None,None,None,Carrier/CTC,None,OFF,0,0
+12,GB7AC T2,Digital,430.95000,438.55000,High,12.5KHz,None,Channel Idle,None,1,Digital,0,1,0,0,0,0,0,0,0,Asia M.E 94,ALL,3,Slot 2,0,None,1,0,0,0,Paddy MM9DY,None,None,None,Carrier/CTC,None,OFF,0,0
+13,GB7AC SWest,Digital,430.95000,438.55000,High,12.5KHz,None,Channel Idle,None,1,Digital,0,1,0,0,0,0,0,0,0,Disconnect,None,3,Slot 1,0,None,1,0,0,0,Paddy MM9DY,None,None,None,Carrier/CTC,None,OFF,0,0
+14,GB7AC Scot Multi,Digital,430.95000,438.55000,High,12.5KHz,None,Channel Idle,None,1,Digital,0,1,0,0,0,0,0,0,0,None,None,3,Slot 2,0,None,1,0,0,0,Paddy MM9DY,None,None,None,Carrier/CTC,None,OFF,0,0
+15,GB7AC Scotland,Digital,430.95000,438.55000,High,12.5KHz,None,Channel Idle,None,1,Digital,0,1,0,0,0,0,0,0,0,Scot Multi 23551,None,3,Slot 2,0,None,1,0,0,0,Paddy MM9DY,None,None,None,Carrier/CTC,None,OFF,0,0
+16,GB7AC Scot Chat0,Digital,430.95000,438.55000,High,12.5KHz,None,Channel Idle,None,1,Digital,0,1,0,0,0,0,0,0,0,BM Scotland,None,3,Slot 2,0,None,1,0,0,0,Paddy MM9DY,None,None,None,Carrier/CTC,None,OFF,0,0
+17,GB7AC GB7EC Loca,Digital,430.95000,438.55000,High,12.5KHz,None,Channel Idle,None,1,Digital,0,1,0,0,0,0,0,0,0,None,None,3,Slot 2,0,None,1,0,0,0,Paddy MM9DY,None,None,None,Carrier/CTC,None,OFF,0,0
+18,GB7AC Largs FM,Fixed Analog,430.95000,438.55000,High,12.5KHz,None,Channel Idle,None,1,Off,0,1,0,0,0,0,0,0,0,None,None,3,Slot 1,0,None,1,0,0,0,Paddy MM9DY,103.5,None,None,Carrier/CTC,None,OFF,0,0
+19,GB7DA Airdrie,Digital,145.77500,145.17500,High,12.5KHz,None,Channel Idle,None,1,Off,0,1,0,0,0,0,0,0,0,Scot Multi 23551,None,1,Slot 2,0,None,1,0,0,0,Paddy MM9DY,None,None,None,Carrier/CTC,None,OFF,0,0
+20,GB7DB T1,Digital,145.75000,145.15000,High,12.5KHz,None,Channel Idle,None,1,Digital,0,1,0,0,0,0,0,0,0,None,ALL,5,Slot 1,0,None,1,0,0,0,Paddy MM9DY,None,None,None,Carrier/CTC,None,OFF,0,0
+21,GB7DB T2,Digital,145.75000,145.15000,High,12.5KHz,None,Channel Idle,None,1,Digital,0,1,0,0,0,0,0,0,0,Asia M.E 94,ALL,5,Slot 2,0,None,1,0,0,0,Paddy MM9DY,None,None,None,Carrier/CTC,None,OFF,0,0
+22,GB7DB SWest,Digital,145.75000,145.15000,High,12.5KHz,None,Channel Idle,None,1,Digital,0,1,0,0,0,0,0,0,0,Disconnect,None,5,Slot 1,0,None,1,0,0,0,Paddy MM9DY,None,None,None,Carrier/CTC,None,OFF,0,0
+23,GB7DB Scot Multi,Digital,145.75000,145.15000,High,12.5KHz,None,Channel Idle,None,1,Digital,0,1,0,0,0,0,0,0,0,None,None,5,Slot 1,0,None,1,0,0,0,Paddy MM9DY,None,None,None,Carrier/CTC,None,OFF,0,0
+24,GB7DB Scotland,Digital,145.75000,145.15000,High,12.5KHz,None,Channel Idle,None,1,Digital,0,1,0,0,0,0,0,0,0,Scot Multi 23551,None,5,Slot 2,0,None,1,0,0,0,Paddy MM9DY,None,None,None,Carrier/CTC,None,OFF,0,0
+25,GB7DB Atlan. Can,Digital,145.75000,145.15000,High,12.5KHz,None,Channel Idle,None,1,Digital,0,1,0,0,0,0,0,0,0,None,None,5,Slot 1,0,None,1,0,0,0,Paddy MM9DY,None,None,None,Carrier/CTC,None,OFF,0,0
+26,GB7GG Airdire,Digital,439.62500,430.62500,High,12.5KHz,None,Channel Idle,None,1,Off,0,1,0,0,0,0,0,0,0,Scot Multi 23551,None,1,Slot 2,0,None,1,0,0,0,Paddy MM9DY,None,None,None,Carrier/CTC,None,OFF,0,0
+27,GB7GL T1,Digital,430.85000,438.45000,High,12.5KHz,None,Channel Idle,None,1,Digital,0,1,0,0,0,0,0,0,0,None,ALL,7,Slot 1,0,None,1,0,0,0,Paddy MM9DY,None,None,None,Carrier/CTC,None,OFF,0,0
+28,GB7GL T2,Digital,430.85000,438.45000,High,12.5KHz,None,Channel Idle,None,1,Digital,0,1,0,0,0,0,0,0,0,Asia M.E 94,ALL,7,Slot 2,0,None,1,0,0,0,Paddy MM9DY,None,None,None,Carrier/CTC,None,OFF,0,0
+29,GB7GL Scotland,Digital,430.85000,438.45000,High,12.5KHz,None,Channel Idle,None,1,Digital,0,1,0,0,0,0,0,0,0,Scot Multi 23551,None,7,Slot 2,0,None,1,0,0,0,Paddy MM9DY,None,None,None,Carrier/CTC,None,OFF,0,0
+30,GB7GL Scot West,Digital,430.85000,438.45000,High,12.5KHz,None,Channel Idle,None,1,Digital,0,1,0,0,0,0,0,0,0,Disconnect,None,7,Slot 1,0,None,1,0,0,0,Paddy MM9DY,None,None,None,Carrier/CTC,None,OFF,0,0
+31,GB7GL Scot Multi,Digital,430.85000,438.45000,High,12.5KHz,None,Channel Idle,None,1,Digital,0,1,0,0,0,0,0,0,0,None,None,7,Slot 2,0,None,1,0,0,0,Paddy MM9DY,None,None,None,Carrier/CTC,None,OFF,0,0
+32,GB7GL Scot Chat0,Digital,430.85000,438.45000,High,12.5KHz,None,Channel Idle,None,1,Digital,0,1,0,0,0,0,0,0,0,BM Scotland,None,7,Slot 2,0,None,1,0,0,0,Paddy MM9DY,None,None,None,Carrier/CTC,None,OFF,0,0
+33,GB7GX P'pan DMR,Digital,439.36250,430.36250,High,12.5KHz,None,Channel Idle,None,1,Off,0,1,0,0,0,0,0,0,0,Scot Multi 23551,None,1,Slot 1,0,None,1,0,0,0,Paddy MM9DY,None,None,None,Carrier/CTC,None,OFF,0,0
+34,GB7GX P'pan FM,Fixed Analog,439.36250,430.36250,High,12.5KHz,None,Channel Idle,None,1,Off,0,1,0,0,0,0,0,0,0,Scot Multi 23551,None,1,Slot 1,0,None,1,0,0,0,Paddy MM9DY,103.5,None,None,Carrier/CTC,None,OFF,0,0
+35,GB7II T1,Digital,439.45000,430.45000,High,12.5KHz,None,Channel Idle,None,1,Digital,0,1,0,0,0,0,0,0,0,None,ALL,3,Slot 1,0,None,1,0,0,0,Paddy MM9DY,None,None,None,Carrier/CTC,None,OFF,0,0
+36,GB7II T2,Digital,439.45000,430.45000,High,12.5KHz,None,Channel Idle,None,1,Digital,0,1,0,0,0,0,0,0,0,Asia M.E 94,ALL,3,Slot 2,0,None,1,0,0,0,Paddy MM9DY,None,None,None,Carrier/CTC,None,OFF,0,0
+37,GB7II SNorth,Digital,439.45000,430.45000,High,12.5KHz,None,Channel Idle,None,1,Digital,0,1,0,0,0,0,0,0,0,Worldwide 91,None,3,Slot 1,0,None,1,0,0,0,Paddy MM9DY,None,None,None,Carrier/CTC,None,OFF,0,0
+38,GB7II Scotland,Digital,439.45000,430.45000,High,12.5KHz,None,Channel Idle,None,1,Digital,0,1,0,0,0,0,0,0,0,Scot Multi 23551,None,3,Slot 2,0,None,1,0,0,0,Paddy MM9DY,None,None,None,Carrier/CTC,None,OFF,0,0
+39,GB7LE Leeds,Digital,439.66250,430.66250,High,12.5KHz,None,Channel Idle,None,1,Off,0,1,0,0,0,0,0,0,0,Asia M.E 94,None,2,Slot 2,0,None,1,0,0,0,Paddy MM9DY,None,None,None,Carrier/CTC,None,OFF,0,0
+40,GB7MM Nairn,Digital,439.75000,430.75000,High,12.5KHz,None,Channel Idle,None,1,Off,0,1,0,0,0,0,0,0,0,Asia M.E 94,None,5,Slot 1,0,None,1,0,0,0,Paddy MM9DY,None,None,None,Carrier/CTC,None,OFF,0,0
+41,GB7PA T1,Digital,439.52500,430.52500,High,12.5KHz,None,Channel Idle,None,1,Digital,0,1,0,0,0,0,0,0,0,None,ALL,1,Slot 1,0,None,1,0,0,0,Paddy MM9DY,None,None,None,Carrier/CTC,None,OFF,0,0
+42,GB7PA T2,Digital,439.52500,430.52500,High,12.5KHz,None,Channel Idle,None,1,Digital,0,1,0,0,0,0,0,0,0,Asia M.E 94,ALL,1,Slot 2,0,None,1,0,0,0,Paddy MM9DY,None,None,None,Carrier/CTC,None,OFF,0,0
+43,GB7PA Scot West,Digital,439.52500,430.52500,High,12.5KHz,None,Channel Idle,None,1,Digital,0,1,0,0,0,0,0,0,0,Disconnect,None,1,Slot 1,0,None,1,0,0,0,Paddy MM9DY,None,None,None,Carrier/CTC,None,OFF,0,0
+44,GB7PA Scotland,Digital,439.52500,430.52500,High,12.5KHz,None,Channel Idle,None,1,Digital,0,1,0,0,0,0,0,0,0,Scot Multi 23551,None,1,Slot 2,0,None,1,0,0,0,Paddy MM9DY,None,None,None,Carrier/CTC,None,OFF,0,0
+45,GB7PA Scot Multi,Digital,439.52500,430.52500,High,12.5KHz,None,Channel Idle,None,1,Digital,0,1,0,0,0,0,0,0,0,None,None,1,Slot 2,0,None,1,0,0,0,Paddy MM9DY,None,None,None,Carrier/CTC,None,OFF,0,0
+46,GB7PA Local,Digital,439.52500,430.52500,High,12.5KHz,None,Channel Idle,None,1,Digital,0,1,0,0,0,0,0,0,0,None,None,1,Slot 2,0,None,1,0,0,0,Paddy MM9DY,None,None,None,Carrier/CTC,None,OFF,0,0
+47,GB7SM St Mon FM,Fixed Analog,439.58750,430.58750,High,12.5KHz,None,Channel Idle,None,1,Off,0,1,0,0,0,0,0,0,0,Scot Multi 23551,None,1,Slot 1,0,None,1,0,0,0,Paddy MM9DY,103.5,None,None,Carrier/CTC,None,OFF,0,0
+48,GB7SM St.Monans,Digital,439.58750,430.58750,High,12.5KHz,None,Channel Idle,None,1,Off,0,1,0,0,0,0,0,0,0,Scot Multi 23551,None,1,Slot 1,0,None,1,0,0,0,Paddy MM9DY,None,None,None,Carrier/CTC,None,OFF,0,0
+49,GB7SS T1,Digital,439.58750,430.58750,High,12.5KHz,None,Channel Idle,None,1,Digital,0,1,0,0,0,0,0,0,0,None,ALL,1,Slot 1,0,None,1,0,0,0,Paddy MM9DY,None,None,None,Carrier/CTC,None,OFF,0,0
+50,GB7SS T2,Digital,439.58750,430.58750,High,12.5KHz,None,Channel Idle,None,1,Digital,0,1,0,0,0,0,0,0,0,Asia M.E 94,ALL,1,Slot 2,0,None,1,0,0,0,Paddy MM9DY,None,None,None,Carrier/CTC,None,OFF,0,0
+51,GB7SS SNorth,Digital,439.58750,430.58750,High,12.5KHz,None,Channel Idle,None,1,Digital,0,1,0,0,0,0,0,0,0,Worldwide 91,None,1,Slot 1,0,None,1,0,0,0,Paddy MM9DY,None,None,None,Carrier/CTC,None,OFF,0,0
+52,GB7SS GB7SS Loca,Digital,439.58750,430.58750,High,12.5KHz,None,Channel Idle,None,1,Digital,0,1,0,0,0,0,0,0,0,None,None,1,Slot 2,0,None,1,0,0,0,Paddy MM9DY,None,None,None,Carrier/CTC,None,OFF,0,0
+53,GB7YC T1,Digital,433.13750,438.13750,High,12.5KHz,None,Channel Idle,None,1,Digital,0,1,0,0,0,0,0,0,0,None,ALL,9,Slot 1,0,None,1,0,0,0,Paddy MM9DY,None,None,None,Carrier/CTC,None,OFF,0,0
+54,GB7YC T2,Digital,433.13750,438.13750,High,12.5KHz,None,Channel Idle,None,1,Digital,0,1,0,0,0,0,0,0,0,Asia M.E 94,ALL,9,Slot 2,0,None,1,0,0,0,Paddy MM9DY,None,None,None,Carrier/CTC,None,OFF,0,0
+55,GB7YC GB7YC Loca,Digital,433.13750,438.13750,High,12.5KHz,None,Channel Idle,None,1,Digital,0,1,0,0,0,0,0,0,0,None,None,9,Slot 2,0,None,1,0,0,0,Paddy MM9DY,None,None,None,Carrier/CTC,None,OFF,0,0
+56,Hotspot TS1,Digital,438.80000,434.00000,Low,12.5KHz,None,Channel Idle,None,1,Digital,0,1,0,0,0,0,0,0,0,None,ALL,1,Slot 1,0,None,1,0,0,0,Paddy MM9DY,None,None,None,Carrier/CTC,None,OFF,0,0
+57,Hotspot TS2,Digital,438.80000,434.00000,Low,12.5KHz,None,Channel Idle,None,1,Digital,0,1,0,0,0,0,0,0,0,Asia M.E 94,ALL,1,Slot 2,0,None,1,0,0,0,Paddy MM9DY,None,None,None,Carrier/CTC,None,OFF,0,0
+58,HS Scot 2355,Digital,438.80000,434.00000,Low,12.5KHz,None,Channel Idle,None,1,Digital,0,1,0,0,0,0,0,0,0,Scot Multi 23551,None,1,Slot 2,0,None,1,0,0,0,Paddy MM9DY,None,None,None,Carrier/CTC,None,OFF,0,0
+59,HS Scot Multi,Digital,438.80000,434.00000,Low,12.5KHz,None,Channel Idle,None,1,Digital,0,1,0,0,0,0,0,0,0,None,None,1,Slot 2,0,None,1,0,0,0,Paddy MM9DY,None,None,None,Carrier/CTC,None,OFF,0,0
+60,HS Scot West,Digital,438.80000,434.00000,Low,12.5KHz,None,Channel Idle,None,1,Digital,0,1,0,0,0,0,0,0,0,Disconnect,None,1,Slot 1,0,None,1,0,0,0,Paddy MM9DY,None,None,None,Carrier/CTC,None,OFF,0,0
+61,HS Scot 23550,Digital,438.80000,434.00000,Low,12.5KHz,None,Channel Idle,None,1,Digital,0,1,0,0,0,0,0,0,0,BM Scotland,None,1,Slot 1,0,None,1,0,0,0,Paddy MM9DY,None,None,None,Carrier/CTC,None,OFF,0,0
+62,HS MM7IGV,Digital,438.80000,434.00000,Low,12.5KHz,None,Channel Idle,None,1,Digital,0,1,0,0,0,0,0,0,0,None,None,1,Slot 1,0,None,1,0,0,0,Paddy MM9DY,None,None,None,Carrier/CTC,None,OFF,0,0
+63,HS GB7EC,Digital,438.80000,434.00000,Low,12.5KHz,None,Channel Idle,None,1,Digital,0,1,0,0,0,0,0,0,0,None,None,1,Slot 1,0,None,1,0,0,0,Paddy MM9DY,None,None,None,Carrier/CTC,None,OFF,0,0
+64,ISS UHF,Analog,437.80000,433.52500,High,12.5KHz,None,Channel Idle,None,1,Off,1,1,0,0,0,0,0,0,0,None,None,0,Slot 1,0,None,1,0,0,0,Paddy MM9DY,None,None,None,Carrier/CTC,None,OFF,0,0
+65,ISS VHF,Analog,145.80000,438.48750,High,12.5KHz,None,Channel Idle,None,1,Off,1,1,0,0,0,0,0,0,0,None,None,0,Slot 1,0,None,1,0,0,0,Paddy MM9DY,None,None,None,Carrier/CTC,None,OFF,0,0
+66,MB6BS Carrbridge,Digital,144.81250,144.81250,High,12.5KHz,None,Channel Idle,None,1,Off,0,1,0,0,0,0,0,0,0,Asia M.E 94,None,3,Slot 2,0,None,1,0,0,0,Paddy MM9DY,None,None,None,Carrier/CTC,None,OFF,0,0
+67,MB6CY Clydebank,Digital,144.87500,144.87500,High,12.5KHz,None,Channel Idle,None,1,Off,0,1,0,0,0,0,0,0,0,Asia M.E 94,None,2,Slot 2,0,None,1,0,0,0,Paddy MM9DY,None,None,None,Carrier/CTC,None,OFF,0,0
+68,MB6FU Nairn,Digital,144.83750,144.83750,High,12.5KHz,None,Channel Idle,None,1,Off,0,1,0,0,0,0,0,0,0,Asia M.E 94,None,7,Slot 2,0,None,1,0,0,0,Paddy MM9DY,None,None,None,Carrier/CTC,None,OFF,0,0
+69,UK Calling UHF,Analog,433.50000,433.50000,High,12.5KHz,None,Channel Idle,None,1,Off,0,1,0,0,0,0,0,0,0,None,None,0,Slot 1,0,None,1,0,0,0,Paddy MM9DY,None,None,None,Carrier/CTC,None,OFF,0,0
+70,UK Calling VHF,Analog,145.50000,145.50000,High,12.5KHz,None,Channel Idle,None,1,Off,0,1,0,0,0,0,0,0,0,None,None,0,Slot 1,0,None,1,0,0,0,Paddy MM9DY,None,None,None,Carrier/CTC,None,OFF,0,0
+71,PMR446-1,Analog,446.00625,446.00625,Low,12.5KHz,None,Channel Idle,None,1,Off,0,1,0,0,0,0,0,0,0,None,None,0,Slot 1,0,None,1,0,0,0,Paddy MM9DY,None,None,None,Carrier/CTC,None,OFF,0,0
+72,PMR446-2,Analog,446.01875,446.01875,Low,12.5KHz,None,Channel Idle,None,1,Off,0,1,0,0,0,0,0,0,0,None,None,0,Slot 1,0,None,1,0,0,0,Paddy MM9DY,None,None,None,Carrier/CTC,None,OFF,0,0
+73,PMR446-3,Analog,446.03125,446.03125,Low,12.5KHz,None,Channel Idle,None,1,Off,0,1,0,0,0,0,0,0,0,None,None,0,Slot 1,0,None,1,0,0,0,Paddy MM9DY,None,None,None,Carrier/CTC,None,OFF,0,0
+74,PMR446-4,Analog,446.04375,446.04375,Low,12.5KHz,None,Channel Idle,None,2,Off,0,1,0,0,0,0,0,0,0,None,None,0,Slot 1,0,None,1,0,0,0,Paddy MM9DY,None,None,None,Carrier/CTC,None,OFF,0,0
+75,PMR446-5,Analog,446.05625,446.05625,Low,12.5KHz,None,Channel Idle,None,1,Off,0,1,0,0,0,0,0,0,0,None,None,0,Slot 1,0,None,1,0,0,0,Paddy MM9DY,None,None,None,Carrier/CTC,None,OFF,0,0
+76,PMR446-6,Analog,446.06875,446.06875,Low,12.5KHz,None,Channel Idle,None,1,Off,0,1,0,0,0,0,0,0,0,None,None,0,Slot 1,0,None,1,0,0,0,Paddy MM9DY,None,None,None,Carrier/CTC,None,OFF,0,0
+77,PMR446-7,Analog,446.08125,446.08125,Low,12.5KHz,None,Channel Idle,None,1,Off,0,1,0,0,0,0,0,0,0,None,None,0,Slot 1,0,None,1,0,0,0,Paddy MM9DY,None,None,None,Carrier/CTC,None,OFF,0,0
+78,PMR446-8,Analog,446.09375,446.09375,Low,12.5KHz,None,Channel Idle,None,1,Off,0,1,0,0,0,0,0,0,0,None,None,0,Slot 1,0,None,1,0,0,0,Paddy MM9DY,None,None,None,Carrier/CTC,None,OFF,0,0
+79,PMR446-9,Analog,446.10625,446.10625,Low,12.5KHz,None,Channel Idle,None,2,Off,0,1,0,0,0,0,0,0,0,None,None,0,Slot 1,0,None,1,0,0,0,Paddy MM9DY,None,None,None,Carrier/CTC,None,OFF,0,0
+80,PMR446-10,Analog,446.11875,446.11875,Low,12.5KHz,None,Channel Idle,None,1,Off,0,1,0,0,0,0,0,0,0,None,None,0,Slot 1,0,None,1,0,0,0,Paddy MM9DY,None,None,None,Carrier/CTC,None,OFF,0,0
+81,PMR446-11,Analog,446.13125,446.13125,Low,12.5KHz,None,Channel Idle,None,1,Off,0,1,0,0,0,0,0,0,0,None,None,0,Slot 1,0,None,1,0,0,0,Paddy MM9DY,None,None,None,Carrier/CTC,None,OFF,0,0
+82,PMR446-12,Analog,446.14375,446.14375,Low,12.5KHz,None,Channel Idle,None,1,Off,0,1,0,0,0,0,0,0,0,None,None,0,Slot 1,0,None,1,0,0,0,Paddy MM9DY,None,None,None,Carrier/CTC,None,OFF,0,0
+83,PMR446-13,Analog,446.15625,446.15625,Low,12.5KHz,None,Channel Idle,None,1,Off,0,1,0,0,0,0,0,0,0,None,None,0,Slot 1,0,None,1,0,0,0,Paddy MM9DY,None,None,None,Carrier/CTC,None,OFF,0,0
+84,PMR446-14,Analog,446.16875,446.16875,Low,12.5KHz,None,Channel Idle,None,1,Off,0,1,0,0,0,0,0,0,0,None,None,0,Slot 1,0,None,1,0,0,0,Paddy MM9DY,None,None,None,Carrier/CTC,None,OFF,0,0
+85,PMR446-15,Analog,446.18125,446.18125,Low,12.5KHz,None,Channel Idle,None,1,Off,0,1,0,0,0,0,0,0,0,None,None,0,Slot 1,0,None,1,0,0,0,Paddy MM9DY,None,None,None,Carrier/CTC,None,OFF,0,0
+86,PMR446-16,Analog,446.19375,446.19375,Low,12.5KHz,None,Channel Idle,None,1,Off,0,1,0,0,0,0,0,0,0,None,None,0,Slot 1,0,None,1,0,0,0,Paddy MM9DY,None,None,None,Carrier/CTC,None,OFF,0,0
+87,GB7EE T1,Digital,430.92500,438.52500,High,12.5KHz,None,Channel Idle,None,1,Digital,0,1,0,0,0,0,0,0,0,None,ALL,1,Slot 1,0,None,1,0,0,0,Paddy MM9DY,None,None,None,Carrier/CTC,None,OFF,0,0
+88,GB7EE T2,Digital,430.92500,438.52500,High,12.5KHz,None,Channel Idle,None,1,Digital,0,1,0,0,0,0,0,0,0,Asia M.E 94,ALL,1,Slot 2,0,None,1,0,0,0,Paddy MM9DY,None,None,None,Carrier/CTC,None,OFF,0,0
+89,GB7EE Scot Multi,Digital,430.92500,438.52500,High,12.5KHz,None,Channel Idle,None,1,Digital,0,1,0,0,0,0,0,0,0,None,None,1,Slot 1,0,None,1,0,0,0,Paddy MM9DY,None,None,None,Carrier/CTC,None,OFF,0,0
+90,GB7EE SWest,Digital,430.92500,438.52500,High,12.5KHz,None,Channel Idle,None,1,Digital,0,1,0,0,0,0,0,0,0,Disconnect,None,1,Slot 1,0,None,1,0,0,0,Paddy MM9DY,None,None,None,Carrier/CTC,None,OFF,0,0
+91,GB7EE Scotland,Digital,430.92500,438.52500,High,12.5KHz,None,Channel Idle,None,1,Digital,0,1,0,0,0,0,0,0,0,Scot Multi 23551,None,1,Slot 2,0,None,1,0,0,0,Paddy MM9DY,None,None,None,Carrier/CTC,None,OFF,0,0
+92,GB7EU Edin FM,Fixed Analog,430.83750,439.43750,High,12.5KHz,None,Channel Idle,None,1,Off,0,1,0,0,0,0,0,0,0,None,None,11,Slot 1,0,None,1,0,0,0,Paddy MM9DY,94.8,None,None,Carrier/CTC,None,OFF,0,0
+93,GB3ED Edinburgh,Analog,430.88750,438.48750,High,12.5KHz,None,Channel Idle,None,1,Off,0,1,0,0,0,0,0,0,0,None,None,0,Slot 1,0,None,1,0,0,0,Paddy MM9DY,94.8,None,None,Carrier/CTC,None,OFF,0,0
+94,Ru PMR 5-13,Analog,446.05625,446.05625,Low,12.5KHz,None,Channel Idle,None,1,Off,0,1,0,0,0,0,0,0,0,None,None,0,Slot 1,0,None,1,0,0,0,Îmv,103.5,103.5,None,Carrier/CTC,None,OFF,0,0
+95,GB3OH L'gow FM,Fixed Analog,430.95000,438.55000,High,12.5KHz,None,Channel Idle,None,1,Off,0,1,0,0,0,0,0,0,0,None,None,1,Slot 1,0,None,1,0,0,0,Îmv,94.8,94.8,None,Carrier/CTC,None,OFF,0,0
+96,GB3OH T1,Digital,430.95000,438.55000,High,12.5KHz,None,Channel Idle,None,1,Digital,0,1,0,0,0,0,0,0,0,None,ALL,1,Slot 1,0,None,1,0,0,0,Îmv,None,None,None,Carrier/CTC,None,OFF,0,0
+97,GB3OH T2,Digital,430.95000,438.55000,High,12.5KHz,None,Channel Idle,None,1,Digital,0,1,0,0,0,0,0,0,0,Asia M.E 94,ALL,1,Slot 2,0,None,1,0,0,0,Îmv,None,None,None,Carrier/CTC,None,OFF,0,0
+98,GB3OH Scotland,Digital,430.95000,438.55000,High,12.5KHz,None,Channel Idle,None,1,Digital,0,1,0,0,0,0,0,0,0,Scot Multi 23551,None,1,Slot 1,0,None,1,0,0,0,Îmv,None,None,None,Carrier/CTC,None,OFF,0,0
+99,GB3OH SWest,Digital,430.95000,438.55000,High,12.5KHz,None,Channel Idle,None,1,Digital,0,1,0,0,0,0,0,0,0,Disconnect,None,1,Slot 1,0,None,1,0,0,0,Îmv,None,None,None,Carrier/CTC,None,OFF,0,0
+100,GB3OH Scot Multi,Digital,430.95000,438.55000,High,12.5KHz,None,Channel Idle,None,1,Digital,0,1,0,0,0,0,0,0,0,None,None,1,Slot 2,0,None,1,0,0,0,Îmv,None,None,None,Carrier/CTC,None,OFF,0,0
+101,GB7LL K'ross FM,Fixed Analog,430.91250,438.51250,High,12.5KHz,None,Channel Idle,None,1,Off,0,1,0,0,0,0,0,0,0,None,None,1,Slot 1,0,None,1,0,0,0,Îmv,94.8,None,None,Carrier/CTC,None,OFF,0,0
+102,GB7FE T1,Digital,439.47500,430.47500,High,12.5KHz,None,Channel Idle,None,1,Digital,0,1,0,0,0,0,0,0,0,None,ALL,1,Slot 1,0,None,1,0,0,0,Îmv,None,None,None,Carrier/CTC,None,OFF,0,0
+103,GB7FE T2,Digital,439.47500,430.47500,High,12.5KHz,None,Channel Idle,None,1,Digital,0,1,0,0,0,0,0,0,0,Asia M.E 94,ALL,1,Slot 2,0,None,1,0,0,0,Îmv,None,None,None,Carrier/CTC,None,OFF,0,0
+104,GB7FE Scot Multi,Digital,439.47500,430.47500,High,12.5KHz,None,Channel Idle,None,1,Digital,0,1,0,0,0,0,0,0,0,None,None,1,Slot 1,0,None,1,0,0,0,Îmv,None,None,None,Carrier/CTC,None,OFF,0,0
+105,GB7FE Scotland,Digital,439.47500,430.47500,High,12.5KHz,None,Channel Idle,None,1,Digital,0,1,0,0,0,0,0,0,0,Scot Multi 23551,None,1,Slot 2,0,None,1,0,0,0,Îmv,None,None,None,Carrier/CTC,None,OFF,0,0
+106,GB7LL T1,Digital,430.91250,438.51250,High,12.5KHz,None,Channel Idle,None,1,Digital,0,1,0,0,0,0,0,0,0,None,ALL,1,Slot 1,0,None,1,0,0,0,Îmv,None,None,None,Carrier/CTC,None,OFF,0,0
+107,GB7LL T2,Digital,430.91250,438.51250,High,12.5KHz,None,Channel Idle,None,1,Digital,0,1,0,0,0,0,0,0,0,Asia M.E 94,ALL,1,Slot 2,0,None,1,0,0,0,Îmv,None,None,None,Carrier/CTC,None,OFF,0,0
+108,GB7LL Scotland,Digital,430.91250,438.51250,High,12.5KHz,None,Channel Idle,None,1,Digital,0,1,0,0,0,0,0,0,0,Scot Multi 23551,None,1,Slot 2,0,None,1,0,0,0,Îmv,None,None,None,Carrier/CTC,None,OFF,0,0
+109,GB7LL Scot Chat0,Digital,430.91250,438.51250,High,12.5KHz,None,Channel Idle,None,1,Digital,0,1,0,0,0,0,0,0,0,BM Scotland,None,1,Slot 1,0,None,1,0,0,0,Îmv,None,None,None,Carrier/CTC,None,OFF,0,0
+110,GB7LL Scot Multi,Digital,430.91250,438.51250,High,12.5KHz,None,Channel Idle,None,1,Digital,0,1,0,0,0,0,0,0,0,None,None,1,Slot 1,0,None,1,0,0,0,Îmv,None,None,None,Carrier/CTC,None,OFF,0,0
+111,GB7LL SEast,Digital,430.91250,438.51250,High,12.5KHz,None,Channel Idle,None,1,Digital,0,1,0,0,0,0,0,0,0,UK Wide,None,1,Slot 1,0,None,1,0,0,0,Îmv,None,None,None,Carrier/CTC,None,OFF,0,0
+112,GB7LL SWest,Digital,430.91250,438.51250,High,12.5KHz,None,Channel Idle,None,1,Digital,0,1,0,0,0,0,0,0,0,Disconnect,None,1,Slot 1,0,None,1,0,0,0,Îmv,None,None,None,Carrier/CTC,None,OFF,0,0
+113,GB7LL UK Calling,Digital,430.91250,438.51250,High,12.5KHz,None,Channel Idle,None,1,Digital,0,1,0,0,0,0,0,0,0,Parrot 9990,None,1,Slot 1,0,None,1,0,0,0,Îmv,None,None,None,Carrier/CTC,None,OFF,0,0
+114,GB7LL UK Wide,Digital,430.91250,438.51250,High,12.5KHz,None,Channel Idle,None,1,Digital,0,1,0,0,0,0,0,0,0,Raynet UK,None,1,Slot 1,0,None,1,0,0,0,Îmv,None,None,None,Carrier/CTC,None,OFF,0,0
+115,GB3PR Perth,Analog,145.67500,145.07500,High,12.5KHz,None,Channel Idle,None,1,Off,0,1,0,0,0,0,0,0,0,None,None,0,Slot 1,0,None,1,0,0,0,Îmv,94.8,94.8,None,Carrier/CTC,None,OFF,0,0
+116,GB7LV Broxburn,Digital,145.61250,145.01250,High,12.5KHz,None,Channel Idle,None,1,Off,0,1,0,0,0,0,0,0,0,None,None,1,Slot 1,0,None,1,0,0,0,Îmv,None,None,None,Carrier/CTC,None,OFF,0,0
+117,GB7CB T1,Digital,439.71250,430.71250,High,12.5KHz,None,Channel Idle,None,1,Digital,0,1,0,0,0,0,0,0,0,None,ALL,4,Slot 1,0,None,1,0,0,0,Îmv,None,None,None,Carrier/CTC,None,OFF,0,0
+118,GB7CB T2,Digital,439.71250,430.71250,High,12.5KHz,None,Channel Idle,None,1,Digital,0,1,0,0,0,0,0,0,0,Asia M.E 94,ALL,4,Slot 2,0,None,1,0,0,0,Îmv,None,None,None,Carrier/CTC,None,OFF,0,0
+119,GB7CB Scot Chat0,Digital,439.71250,430.71250,High,12.5KHz,None,Channel Idle,None,1,Digital,0,1,0,0,0,0,0,0,0,BM Scotland,None,4,Slot 1,0,None,1,0,0,0,Îmv,None,None,None,Carrier/CTC,None,OFF,0,0
+120,GB7CB Scot Multi,Digital,439.71250,430.71250,High,12.5KHz,None,Channel Idle,None,1,Digital,0,1,0,0,0,0,0,0,0,None,None,4,Slot 1,0,None,1,0,0,0,Îmv,None,None,None,Carrier/CTC,None,OFF,0,0
+121,GB7CB Scotland,Digital,439.71250,430.71250,High,12.5KHz,None,Channel Idle,None,1,Digital,0,1,0,0,0,0,0,0,0,Scot Multi 23551,None,4,Slot 2,0,None,1,0,0,0,Îmv,None,None,None,Carrier/CTC,None,OFF,0,0
+122,GB7CB SWest,Digital,439.71250,430.71250,High,12.5KHz,None,Channel Idle,None,1,Digital,0,1,0,0,0,0,0,0,0,Disconnect,None,4,Slot 2,0,None,1,0,0,0,Îmv,None,None,None,Carrier/CTC,None,OFF,0,0
+123,GB7CB SEast,Digital,439.71250,430.71250,High,12.5KHz,None,Channel Idle,None,1,Digital,0,1,0,0,0,0,0,0,0,UK Wide,None,4,Slot 2,0,None,1,0,0,0,Îmv,None,None,None,Carrier/CTC,None,OFF,0,0
+124,GB7BG T1,Digital,439.66250,430.66250,High,12.5KHz,None,Channel Idle,None,1,Digital,0,1,0,0,0,0,0,0,0,None,ALL,1,Slot 1,0,None,1,0,0,0,Îmv,None,None,None,Carrier/CTC,None,OFF,0,0
+125,GB7BG T2,Digital,439.66250,430.66250,High,12.5KHz,None,Channel Idle,None,1,Digital,0,1,0,0,0,0,0,0,0,Asia M.E 94,ALL,1,Slot 2,0,None,1,0,0,0,Îmv,None,None,None,Carrier/CTC,None,OFF,0,0
+126,GB7BG Scot Multi,Digital,439.66250,430.66250,High,12.5KHz,None,Channel Idle,None,1,Digital,0,1,0,0,0,0,0,0,0,None,None,1,Slot 1,0,None,1,0,0,0,Îmv,None,None,None,Carrier/CTC,None,OFF,0,0
+127,GB7BG Scotland,Digital,439.66250,430.66250,High,12.5KHz,None,Channel Idle,None,1,Digital,0,1,0,0,0,0,0,0,0,Scot Multi 23551,None,1,Slot 2,0,None,1,0,0,0,Îmv,None,None,None,Carrier/CTC,None,OFF,0,0
+128,GB7EU T1,Digital,430.83750,564.00000,High,12.5KHz,None,Channel Idle,None,1,Digital,0,1,0,0,0,0,0,0,0,None,ALL,11,Slot 1,0,None,1,0,0,0,Îmv,None,None,None,Carrier/CTC,None,OFF,0,0
+129,GB7EU T2,Digital,430.83750,564.00000,High,12.5KHz,None,Channel Idle,None,1,Digital,0,1,0,0,0,0,0,0,0,Asia M.E 94,ALL,11,Slot 2,0,None,1,0,0,0,Îmv,None,None,None,Carrier/CTC,None,OFF,0,0
+130,GB7EU Scotland,Digital,430.83750,564.00000,High,12.5KHz,None,Channel Idle,None,1,Digital,0,1,0,0,0,0,0,0,0,Scot Multi 23551,None,11,Slot 1,0,None,1,0,0,0,Îmv,None,None,None,Carrier/CTC,None,OFF,0,0
+131,GB7EU Scot Chat0,Digital,430.83750,564.00000,High,12.5KHz,None,Channel Idle,None,1,Digital,0,1,0,0,0,0,0,0,0,BM Scotland,None,11,Slot 1,0,None,1,0,0,0,Îmv,None,None,None,Carrier/CTC,None,OFF,0,0
+132,GB7EU Scot Multi,Digital,430.83750,564.00000,High,12.5KHz,None,Channel Idle,None,1,Digital,0,1,0,0,0,0,0,0,0,None,None,11,Slot 1,0,None,1,0,0,0,Îmv,None,None,None,Carrier/CTC,None,OFF,0,0
+133,GB7EU SEast,Digital,430.83750,564.00000,High,12.5KHz,None,Channel Idle,None,1,Digital,0,1,0,0,0,0,0,0,0,UK Wide,None,11,Slot 2,0,None,1,0,0,0,Îmv,None,None,None,Carrier/CTC,None,OFF,0,0
+134,GB7EU SWest,Digital,430.83750,564.00000,High,12.5KHz,None,Channel Idle,None,1,Digital,0,1,0,0,0,0,0,0,0,Disconnect,None,11,Slot 1,0,None,1,0,0,0,Îmv,None,None,None,Carrier/CTC,None,OFF,0,0
+135,GB7EU SNorth,Digital,430.83750,564.00000,High,12.5KHz,None,Channel Idle,None,1,Digital,0,1,0,0,0,0,0,0,0,Worldwide 91,None,11,Slot 1,0,None,1,0,0,0,Îmv,None,None,None,Carrier/CTC,None,OFF,0,0
+136,GB3AC Largs,Analog,430.97500,438.57500,High,12.5KHz,None,Channel Idle,None,1,Off,0,1,0,0,0,0,0,0,0,None,None,0,Slot 1,0,None,1,0,0,0,Îmv,94.8,None,None,Carrier/CTC,None,OFF,0,0
+137,GB3HL Leslie FM,Fixed Analog,430.88750,438.48750,High,12.5KHz,None,Channel Idle,None,1,Off,0,1,0,0,0,0,0,0,0,None,None,1,Slot 1,0,None,1,0,0,0,Îmv,67.0,None,None,Carrier/CTC,None,OFF,0,0
+138,GB3GN Banchory,Analog,145.77500,145.17500,High,12.5KHz,None,Channel Idle,None,1,Off,0,1,0,0,0,0,0,0,0,None,None,0,Slot 1,0,None,1,0,0,0,Îmv,67.0,None,None,Carrier/CTC,None,OFF,0,0
+139,GB3HL T1,Digital,127.00000,127.00000,High,12.5KHz,None,Channel Idle,None,1,Digital,0,1,0,0,0,0,0,0,0,None,ALL,1,Slot 1,0,None,1,0,0,0,Îmv,None,None,None,Carrier/CTC,None,OFF,0,0
+140,GB3HL T2,Digital,127.00000,127.00000,High,12.5KHz,None,Channel Idle,None,1,Digital,0,1,0,0,0,0,0,0,0,Asia M.E 94,ALL,1,Slot 2,0,None,1,0,0,0,Îmv,None,None,None,Carrier/CTC,None,OFF,0,0
+141,GB3HL SNorth,Digital,127.00000,127.00000,High,12.5KHz,None,Channel Idle,None,1,Digital,0,1,0,0,0,0,0,0,0,Worldwide 91,None,1,Slot 1,0,None,1,0,0,0,Îmv,None,None,None,Carrier/CTC,None,OFF,0,0
+142,GB3HL SWest,Digital,127.00000,127.00000,High,12.5KHz,None,Channel Idle,None,1,Digital,0,1,0,0,0,0,0,0,0,Disconnect,None,1,Slot 2,0,None,1,0,0,0,Îmv,None,None,None,Carrier/CTC,None,OFF,0,0
+143,GB3HL GB3HL Loca,Digital,127.00000,127.00000,High,12.5KHz,None,Channel Idle,None,1,Digital,0,1,0,0,0,0,0,0,0,None,None,1,Slot 2,0,None,1,0,0,0,Îmv,None,None,None,Carrier/CTC,None,OFF,0,0
+144,GB7EM T1,Digital,430.92500,438.52500,High,12.5KHz,None,Channel Idle,None,1,Digital,0,1,0,0,0,0,0,0,0,None,ALL,11,Slot 1,0,None,1,0,0,0,Îmv,None,None,None,Carrier/CTC,None,OFF,0,0
+145,GB7EM T2,Digital,430.92500,438.52500,High,12.5KHz,None,Channel Idle,None,1,Digital,0,1,0,0,0,0,0,0,0,Asia M.E 94,ALL,11,Slot 2,0,None,1,0,0,0,Îmv,None,None,None,Carrier/CTC,None,OFF,0,0
+146,GB7EM Scot Multi,Digital,430.92500,438.52500,High,12.5KHz,None,Channel Idle,None,1,Digital,0,1,0,0,0,0,0,0,0,None,None,11,Slot 1,0,None,1,0,0,0,Îmv,None,None,None,Carrier/CTC,None,OFF,0,0
+147,GB7EM GB7EC Loca,Digital,430.92500,438.52500,High,12.5KHz,None,Channel Idle,None,1,Digital,0,1,0,0,0,0,0,0,0,None,None,11,Slot 2,0,None,1,0,0,0,Îmv,None,None,None,Carrier/CTC,None,OFF,0,0
+148,GB7EM Scotland,Digital,430.92500,438.52500,High,12.5KHz,None,Channel Idle,None,1,Digital,0,1,0,0,0,0,0,0,0,Scot Multi 23551,None,11,Slot 2,0,None,1,0,0,0,Îmv,None,None,None,Carrier/CTC,None,OFF,0,0
+149,GB7KV Kemnay,Digital,430.81250,438.41250,High,12.5KHz,None,Channel Idle,None,1,Off,0,1,0,0,0,0,0,0,0,Asia M.E 94,None,5,Slot 2,0,None,1,0,0,0,Îmv,None,None,None,Carrier/CTC,None,OFF,0,0
+150,GB7GD Aberdeen,Digital,145.68750,145.08750,High,12.5KHz,None,Channel Idle,None,1,Off,0,1,0,0,0,0,0,0,0,Asia M.E 94,None,1,Slot 1,0,None,1,0,0,0,Îmv,None,None,None,Carrier/CTC,None,OFF,0,0
+151,GB3AG Angus,Analog,145.72500,145.12500,High,12.5KHz,None,Channel Idle,None,1,Off,0,1,0,0,0,0,0,0,0,None,None,0,Slot 1,0,None,1,0,0,0,Îmv,94.8,None,None,Carrier/CTC,None,OFF,0,0
+152,GB3DD Dundee,Analog,433.25000,434.85000,High,12.5KHz,None,Channel Idle,None,1,Off,0,1,0,0,0,0,0,0,0,None,None,0,Slot 1,0,None,1,0,0,0,Îmv,94.8,None,None,Carrier/CTC,None,OFF,0,0
+153,GB3DM Dumbarton,Analog,430.92500,438.52500,High,12.5KHz,None,Channel Idle,None,0,Off,0,1,0,0,0,0,0,0,0,None,None,0,Slot 1,0,None,1,0,0,0,Îmv,103.5,103.5,None,Carrier/CTC,None,OFF,0,0
+154,GB3WA Dalry,Analog,430.87500,438.47500,High,12.5KHz,None,Channel Idle,None,1,Off,0,1,0,0,0,0,0,0,0,None,None,0,Slot 1,0,None,1,0,0,0,Îmv,103.5,None,None,Carrier/CTC,None,OFF,0,0
+155,APRS FM,Analog,144.80000,144.80000,High,12.5KHz,None,Channel Idle,None,1,Off,0,1,0,0,0,0,0,0,0,None,None,0,Slot 1,0,None,1,0,0,0,Îmv,None,None,None,Carrier/CTC,None,OFF,0,0
+156,GB3PU Perth,Analog,433.00000,434.60000,High,12.5KHz,None,Channel Idle,None,1,Off,0,1,0,0,0,0,0,0,0,None,None,0,Slot 1,0,None,1,0,0,0,Îmv,94.8,94.8,None,Carrier/CTC,None,OFF,0,0
+157,GB7EF Ladyba. FM,Analog,439.45000,430.45000,High,12.5KHz,None,Channel Idle,None,1,Off,0,1,0,0,0,0,0,0,0,None,None,0,Slot 1,0,None,1,0,0,0,Îmv,103.5,103.5,None,Carrier/CTC,None,OFF,0,0
+158,GB7DM M'fieth FM,Fixed Analog,439.75000,430.75000,High,12.5KHz,None,Channel Idle,None,1,Off,0,1,0,0,0,0,0,0,0,Asia M.E 94,None,1,Slot 1,0,None,1,0,0,0,Îmv,103.5,103.5,None,Carrier/CTC,None,OFF,0,0
+159,GB7DM M'feith DM,Digital,439.75000,430.75000,High,12.5KHz,None,Channel Idle,None,1,Off,0,1,0,0,0,0,0,0,0,Asia M.E 94,None,1,Slot 1,0,None,1,0,0,0,Îmv,None,None,None,Carrier/CTC,None,OFF,0,0
+160,VHF V16 / S08,Analog,145.20000,145.20000,High,12.5KHz,None,Channel Idle,None,1,Off,0,1,0,0,0,0,0,0,0,None,None,0,Slot 1,0,None,1,0,0,0,Îmv,None,None,None,Carrier/CTC,None,OFF,0,0
+161,VHF V17,Analog,145.21250,145.21250,High,12.5KHz,None,Channel Idle,None,1,Off,0,1,0,0,0,0,0,0,0,None,None,0,Slot 1,0,None,1,0,0,0,Îmv,None,None,None,Carrier/CTC,None,OFF,0,0
+162,VHF V18 / S09,Analog,145.22500,145.22500,High,12.5KHz,None,Channel Idle,None,1,Off,0,1,0,0,0,0,0,0,0,None,None,0,Slot 1,0,None,1,0,0,0,Îmv,None,None,None,Carrier/CTC,None,OFF,0,0
+163,VHF V19,Analog,145.23750,145.23750,High,12.5KHz,None,Channel Idle,None,1,Off,0,1,0,0,0,0,0,0,0,None,None,0,Slot 1,0,None,1,0,0,0,Îmv,None,None,None,Carrier/CTC,None,OFF,0,0
+164,VHF V20 / S10,Analog,145.25000,145.25000,High,12.5KHz,None,Channel Idle,None,1,Off,0,1,0,0,0,0,0,0,0,None,None,0,Slot 1,0,None,1,0,0,0,Îmv,None,None,None,Carrier/CTC,None,OFF,0,0
+165,VHF V21,Analog,145.26250,145.26250,High,12.5KHz,None,Channel Idle,None,1,Off,0,1,0,0,0,0,0,0,0,None,None,0,Slot 1,0,None,1,0,0,0,Îmv,None,None,None,Carrier/CTC,None,OFF,0,0
+166,VHF V22 / S11,Analog,145.27500,145.27500,High,12.5KHz,None,Channel Idle,None,1,Off,0,1,0,0,0,0,0,0,0,None,None,0,Slot 1,0,None,1,0,0,0,Îmv,None,None,None,Carrier/CTC,None,OFF,0,0
+167,VHF V23,Analog,145.28750,145.28750,High,12.5KHz,None,Channel Idle,None,1,Off,0,1,0,0,0,0,0,0,0,None,None,0,Slot 1,0,None,1,0,0,0,Îmv,None,None,None,Carrier/CTC,None,OFF,0,0
+168,VHF V24 / S12,Analog,145.30000,145.30000,High,12.5KHz,None,Channel Idle,None,1,Off,0,1,0,0,0,0,0,0,0,None,None,0,Slot 1,0,None,1,0,0,0,Îmv,None,None,None,Carrier/CTC,None,OFF,0,0
+169,VHF V25,Analog,145.31250,145.31250,High,12.5KHz,None,Channel Idle,None,1,Off,0,1,0,0,0,0,0,0,0,None,None,0,Slot 1,0,None,1,0,0,0,Îmv,None,None,None,Carrier/CTC,None,OFF,0,0
+170,VHF V26 / S13,Analog,145.32500,145.32500,High,12.5KHz,None,Channel Idle,None,1,Off,0,1,0,0,0,0,0,0,0,None,None,0,Slot 1,0,None,1,0,0,0,Îmv,None,None,None,Carrier/CTC,None,OFF,0,0
+171,VHF V27,Analog,145.33750,145.33750,High,12.5KHz,None,Channel Idle,None,1,Off,0,1,0,0,0,0,0,0,0,None,None,0,Slot 1,0,None,1,0,0,0,Îmv,None,None,None,Carrier/CTC,None,OFF,0,0
+172,VHF V28 / S14,Analog,145.35000,145.35000,High,12.5KHz,None,Channel Idle,None,1,Off,0,1,0,0,0,0,0,0,0,None,None,0,Slot 1,0,None,1,0,0,0,Îmv,None,None,None,Carrier/CTC,None,OFF,0,0
+173,VHF V29,Analog,145.36250,145.36250,High,12.5KHz,None,Channel Idle,None,1,Off,0,1,0,0,0,0,0,0,0,None,None,0,Slot 1,0,None,1,0,0,0,Îmv,None,None,None,Carrier/CTC,None,OFF,0,0
+174,VHF V30 / S15,Analog,145.37500,145.37500,High,12.5KHz,None,Channel Idle,None,1,Off,0,1,0,0,0,0,0,0,0,None,None,0,Slot 1,0,None,1,0,0,0,Îmv,None,None,None,Carrier/CTC,None,OFF,0,0
+175,VHF V31,Analog,145.38750,145.38750,High,12.5KHz,None,Channel Idle,None,1,Off,0,1,0,0,0,0,0,0,0,None,None,0,Slot 1,0,None,1,0,0,0,Îmv,None,None,None,Carrier/CTC,None,OFF,0,0
+176,VHF V32 / S16,Analog,145.40000,145.40000,High,12.5KHz,None,Channel Idle,None,1,Off,0,1,0,0,0,0,0,0,0,None,None,0,Slot 1,0,None,1,0,0,0,Îmv,None,None,None,Carrier/CTC,None,OFF,0,0
+177,VHF V33,Analog,145.41250,145.41250,High,12.5KHz,None,Channel Idle,None,1,Off,0,1,0,0,0,0,0,0,0,None,None,0,Slot 1,0,None,1,0,0,0,Îmv,None,None,None,Carrier/CTC,None,OFF,0,0
+178,VHF V34 / S17,Analog,145.42500,145.42500,High,12.5KHz,None,Channel Idle,None,1,Off,0,1,0,0,0,0,0,0,0,None,None,0,Slot 1,0,None,1,0,0,0,Îmv,None,None,None,Carrier/CTC,None,OFF,0,0
+179,VHF V35,Analog,145.43750,145.43750,High,12.5KHz,None,Channel Idle,None,1,Off,0,1,0,0,0,0,0,0,0,None,None,0,Slot 1,0,None,1,0,0,0,Îmv,None,None,None,Carrier/CTC,None,OFF,0,0
+180,VHF V36 / S18,Analog,145.45000,145.45000,High,12.5KHz,None,Channel Idle,None,1,Off,0,1,0,0,0,0,0,0,0,None,None,0,Slot 1,0,None,1,0,0,0,Îmv,None,None,None,Carrier/CTC,None,OFF,0,0
+181,VHF V37,Analog,145.46250,145.46250,High,12.5KHz,None,Channel Idle,None,1,Off,0,1,0,0,0,0,0,0,0,None,None,0,Slot 1,0,None,1,0,0,0,Îmv,None,None,None,Carrier/CTC,None,OFF,0,0
+182,VHF V38 / S19,Analog,145.47500,145.47500,High,12.5KHz,None,Channel Idle,None,1,Off,0,1,0,0,0,0,0,0,0,None,None,0,Slot 1,0,None,1,0,0,0,Îmv,None,None,None,Carrier/CTC,None,OFF,0,0
+183,VHF V39,Analog,145.48750,145.48750,High,12.5KHz,None,Channel Idle,None,1,Off,0,1,0,0,0,0,0,0,0,None,None,0,Slot 1,0,None,1,0,0,0,Îmv,None,None,None,Carrier/CTC,None,OFF,0,0
+184,VHF V40 / S20,Analog,145.50000,145.50000,High,12.5KHz,None,Channel Idle,None,1,Off,0,1,0,0,0,0,0,0,0,None,None,0,Slot 1,0,None,1,0,0,0,Îmv,None,None,None,Carrier/CTC,None,OFF,0,0
+185,VHF V41,Analog,145.51250,145.51250,High,12.5KHz,None,Channel Idle,None,1,Off,0,1,0,0,0,0,0,0,0,None,None,0,Slot 1,0,None,1,0,0,0,Îmv,None,None,None,Carrier/CTC,None,OFF,0,0
+186,VHF V42 / S21,Analog,145.52500,145.52500,High,12.5KHz,None,Channel Idle,None,1,Off,0,1,0,0,0,0,0,0,0,None,None,0,Slot 1,0,None,1,0,0,0,Îmv,None,None,None,Carrier/CTC,None,OFF,0,0
+187,VHF V43,Analog,145.53750,145.53750,High,12.5KHz,None,Channel Idle,None,1,Off,0,1,0,0,0,0,0,0,0,None,None,0,Slot 1,0,None,1,0,0,0,Îmv,None,None,None,Carrier/CTC,None,OFF,0,0
+188,VHF V44 / S22,Analog,145.55000,145.55000,High,12.5KHz,None,Channel Idle,None,1,Off,0,1,0,0,0,0,0,0,0,None,None,0,Slot 1,0,None,1,0,0,0,Îmv,None,None,None,Carrier/CTC,None,OFF,0,0
+189,VHF V45,Analog,145.56250,145.56250,High,12.5KHz,None,Channel Idle,None,1,Off,0,1,0,0,0,0,0,0,0,None,None,0,Slot 1,0,None,1,0,0,0,Îmv,None,None,None,Carrier/CTC,None,OFF,0,0
+190,VHF V46 / S23,Analog,145.57500,145.57500,High,12.5KHz,None,Channel Idle,None,1,Off,0,1,0,0,0,0,0,0,0,None,None,0,Slot 1,0,None,1,0,0,0,Îmv,None,None,None,Carrier/CTC,None,OFF,0,0
+191,UHF U16 / S08,Analog,433.40000,433.40000,High,12.5KHz,None,Channel Idle,None,1,Off,0,1,0,0,0,0,0,0,0,None,None,0,Slot 1,0,None,1,0,0,0,Îmv,None,None,None,Carrier/CTC,None,OFF,0,0
+192,UHF U17,Analog,433.41250,433.41250,High,12.5KHz,None,Channel Idle,None,1,Off,0,1,0,0,0,0,0,0,0,None,None,0,Slot 1,0,None,1,0,0,0,Îmv,None,None,None,Carrier/CTC,None,OFF,0,0
+193,UHF U18 / S09,Analog,433.42500,433.42500,High,12.5KHz,None,Channel Idle,None,1,Off,0,1,0,0,0,0,0,0,0,None,None,0,Slot 1,0,None,1,0,0,0,Îmv,None,None,None,Carrier/CTC,None,OFF,0,0
+194,UHF U19,Analog,433.43750,433.43750,High,12.5KHz,None,Channel Idle,None,1,Off,0,1,0,0,0,0,0,0,0,None,None,0,Slot 1,0,None,1,0,0,0,Îmv,None,None,None,Carrier/CTC,None,OFF,0,0
+195,UHF U20 / S10,Analog,433.45000,433.45000,High,12.5KHz,None,Channel Idle,None,1,Off,0,1,0,0,0,0,0,0,0,None,None,0,Slot 1,0,None,1,0,0,0,Îmv,None,None,None,Carrier/CTC,None,OFF,0,0
+196,UHF U21,Analog,433.46250,433.46250,High,12.5KHz,None,Channel Idle,None,1,Off,0,1,0,0,0,0,0,0,0,None,None,0,Slot 1,0,None,1,0,0,0,Îmv,None,None,None,Carrier/CTC,None,OFF,0,0
+197,UHF U22 / S11,Analog,433.47500,433.47500,High,12.5KHz,None,Channel Idle,None,1,Off,0,1,0,0,0,0,0,0,0,None,None,0,Slot 1,0,None,1,0,0,0,Îmv,None,None,None,Carrier/CTC,None,OFF,0,0
+198,UHF U23,Analog,433.48750,433.48750,High,12.5KHz,None,Channel Idle,None,1,Off,0,1,0,0,0,0,0,0,0,None,None,0,Slot 1,0,None,1,0,0,0,Îmv,None,None,None,Carrier/CTC,None,OFF,0,0
+199,UHF U24 / S12,Analog,433.50000,433.50000,High,12.5KHz,None,Channel Idle,None,1,Off,0,1,0,0,0,0,0,0,0,None,None,0,Slot 1,0,None,1,0,0,0,Îmv,None,None,None,Carrier/CTC,None,OFF,0,0
+200,UHF U25,Analog,433.51250,433.51250,High,12.5KHz,None,Channel Idle,None,1,Off,0,1,0,0,0,0,0,0,0,None,None,0,Slot 1,0,None,1,0,0,0,Îmv,None,None,None,Carrier/CTC,None,OFF,0,0
+201,UHF U26 / S13,Analog,433.52500,433.52500,High,12.5KHz,None,Channel Idle,None,1,Off,0,1,0,0,0,0,0,0,0,None,None,0,Slot 1,0,None,1,0,0,0,Îmv,None,None,None,Carrier/CTC,None,OFF,0,0
+202,UHF U27,Analog,433.53750,433.53750,High,12.5KHz,None,Channel Idle,None,1,Off,0,1,0,0,0,0,0,0,0,None,None,0,Slot 1,0,None,1,0,0,0,Îmv,None,None,None,Carrier/CTC,None,OFF,0,0
+203,UHF U28 / S14,Analog,433.55000,433.55000,High,12.5KHz,None,Channel Idle,None,1,Off,0,1,0,0,0,0,0,0,0,None,None,0,Slot 1,0,None,1,0,0,0,Îmv,None,None,None,Carrier/CTC,None,OFF,0,0
+204,UHF U29,Analog,433.56250,433.56250,High,12.5KHz,None,Channel Idle,None,1,Off,0,1,0,0,0,0,0,0,0,None,None,0,Slot 1,0,None,1,0,0,0,Îmv,None,None,None,Carrier/CTC,None,OFF,0,0
+205,UHF U30 / S15,Analog,433.57500,433.57500,High,12.5KHz,None,Channel Idle,None,1,Off,0,1,0,0,0,0,0,0,0,None,None,0,Slot 1,0,None,1,0,0,0,Îmv,None,None,None,Carrier/CTC,None,OFF,0,0
+206,UHF U31,Analog,433.58750,433.58750,High,12.5KHz,None,Channel Idle,None,1,Off,0,1,0,0,0,0,0,0,0,None,None,0,Slot 1,0,None,1,0,0,0,Îmv,None,None,None,Carrier/CTC,None,OFF,0,0
+207,UHF U32 / S16,Analog,433.60000,433.60000,High,12.5KHz,None,Channel Idle,None,1,Off,0,1,0,0,0,0,0,0,0,None,None,0,Slot 1,0,None,1,0,0,0,Îmv,None,None,None,Carrier/CTC,None,OFF,0,0
+208,UHF U33,Analog,433.61250,433.61250,High,12.5KHz,None,Channel Idle,None,1,Off,0,1,0,0,0,0,0,0,0,None,None,0,Slot 1,0,None,1,0,0,0,Îmv,None,None,None,Carrier/CTC,None,OFF,0,0
+209,UHF U34 / S17,Analog,433.62500,433.62500,High,12.5KHz,None,Channel Idle,None,1,Off,0,1,0,0,0,0,0,0,0,None,None,0,Slot 1,0,None,1,0,0,0,Îmv,None,None,None,Carrier/CTC,None,OFF,0,0
+210,UHF U35,Analog,433.63750,433.63750,High,12.5KHz,None,Channel Idle,None,1,Off,0,1,0,0,0,0,0,0,0,None,None,0,Slot 1,0,None,1,0,0,0,Îmv,None,None,None,Carrier/CTC,None,OFF,0,0
+211,UHF U36 / S18,Analog,433.65000,433.65000,High,12.5KHz,None,Channel Idle,None,1,Off,0,1,0,0,0,0,0,0,0,None,None,0,Slot 1,0,None,1,0,0,0,Îmv,None,None,None,Carrier/CTC,None,OFF,0,0
+212,UHF U37,Analog,433.66250,433.66250,High,12.5KHz,None,Channel Idle,None,1,Off,0,1,0,0,0,0,0,0,0,None,None,0,Slot 1,0,None,1,0,0,0,Îmv,None,None,None,Carrier/CTC,None,OFF,0,0
+213,UHF U38 / S19,Analog,433.67500,433.67500,High,12.5KHz,None,Channel Idle,None,1,Off,0,1,0,0,0,0,0,0,0,None,None,0,Slot 1,0,None,1,0,0,0,Îmv,None,None,None,Carrier/CTC,None,OFF,0,0
+214,UHF U39,Analog,433.68750,433.68750,High,12.5KHz,None,Channel Idle,None,1,Off,0,1,0,0,0,0,0,0,0,None,None,0,Slot 1,0,None,1,0,0,0,Îmv,None,None,None,Carrier/CTC,None,OFF,0,0
+215,UHF U40 / S20,Analog,433.70000,433.70000,High,12.5KHz,None,Channel Idle,None,1,Off,0,1,0,0,0,0,0,0,0,None,None,0,Slot 1,0,None,1,0,0,0,Îmv,None,None,None,Carrier/CTC,None,OFF,0,0
+216,UHF U41,Analog,433.71250,433.71250,High,12.5KHz,None,Channel Idle,None,1,Off,0,1,0,0,0,0,0,0,0,None,None,0,Slot 1,0,None,1,0,0,0,Îmv,None,None,None,Carrier/CTC,None,OFF,0,0
+217,UHF U42 / S21,Analog,433.72500,433.72500,High,12.5KHz,None,Channel Idle,None,1,Off,0,1,0,0,0,0,0,0,0,None,None,0,Slot 1,0,None,1,0,0,0,Îmv,None,None,None,Carrier/CTC,None,OFF,0,0
+218,UHF U43,Analog,433.73750,433.73750,High,12.5KHz,None,Channel Idle,None,1,Off,0,1,0,0,0,0,0,0,0,None,None,0,Slot 1,0,None,1,0,0,0,Îmv,None,None,None,Carrier/CTC,None,OFF,0,0
+219,UHF U44 / S22,Analog,433.75000,433.75000,High,12.5KHz,None,Channel Idle,None,1,Off,0,1,0,0,0,0,0,0,0,None,None,0,Slot 1,0,None,1,0,0,0,Îmv,None,None,None,Carrier/CTC,None,OFF,0,0
+220,UHF U45,Analog,433.76250,433.76250,High,12.5KHz,None,Channel Idle,None,1,Off,0,1,0,0,0,0,0,0,0,None,None,0,Slot 1,0,None,1,0,0,0,Îmv,None,None,None,Carrier/CTC,None,OFF,0,0
+221,UHF U46 / S23,Analog,433.77500,433.77500,High,12.5KHz,None,Channel Idle,None,1,Off,0,1,0,0,0,0,0,0,0,None,None,0,Slot 1,0,None,1,0,0,0,Îmv,None,None,None,Carrier/CTC,None,OFF,0,0
+222,GB7EF L'bank DMR,Digital,439.45000,430.45000,High,12.5KHz,None,Channel Idle,None,1,Off,0,1,0,0,0,0,0,0,0,Scot Multi 23551,None,1,Slot 1,0,None,1,0,0,0,Îmv,None,None,None,Carrier/CTC,None,OFF,0,0
+223,GB7DE K'way FM,Fixed Analog,145.63750,145.03750,High,12.5KHz,None,Channel Idle,None,1,Off,0,1,0,0,0,0,0,0,0,None,None,1,Slot 1,0,None,1,0,0,0,Îmv,94.8,94.8,None,Carrier/CTC,None,OFF,0,0
+224,GB7DE T1,Digital,145.63750,145.03750,High,12.5KHz,None,Channel Idle,None,1,Digital,0,1,0,0,0,0,0,0,0,None,ALL,1,Slot 1,0,None,1,0,0,0,Îmv,None,None,None,Carrier/CTC,None,OFF,0,0
+225,GB7DE T2,Digital,145.63750,145.03750,High,12.5KHz,None,Channel Idle,None,1,Digital,0,1,0,0,0,0,0,0,0,Asia M.E 94,ALL,1,Slot 2,0,None,1,0,0,0,Îmv,None,None,None,Carrier/CTC,None,OFF,0,0
+226,GB7DE SWest,Digital,145.63750,145.03750,High,12.5KHz,None,Channel Idle,None,1,Digital,0,1,0,0,0,0,0,0,0,Disconnect,None,1,Slot 1,0,None,1,0,0,0,Îmv,None,None,None,Carrier/CTC,None,OFF,0,0
+227,GB7DE Scot Multi,Digital,145.63750,145.03750,High,12.5KHz,None,Channel Idle,None,1,Digital,0,1,0,0,0,0,0,0,0,None,None,1,Slot 1,0,None,1,0,0,0,Îmv,None,None,None,Carrier/CTC,None,OFF,0,0
+228,GB7DE Scotland,Digital,145.63750,145.03750,High,12.5KHz,None,Channel Idle,None,1,Digital,0,1,0,0,0,0,0,0,0,Scot Multi 23551,None,1,Slot 2,0,None,1,0,0,0,Îmv,None,None,None,Carrier/CTC,None,OFF,0,0
+229,GB7XG G'roth FM,Fixed Analog,430.87500,438.47500,High,12.5KHz,None,Channel Idle,None,1,Off,0,1,0,0,0,0,0,0,0,None,None,1,Slot 1,0,None,1,0,0,0,Îmv,103.5,103.5,None,Carrier/CTC,None,OFF,0,0
+230,GB7XG T1,Digital,430.87500,438.47500,High,12.5KHz,None,Channel Idle,None,1,Digital,0,1,0,0,0,0,0,0,0,None,ALL,1,Slot 1,0,None,1,0,0,0,Îmv,None,None,None,Carrier/CTC,None,OFF,0,0
+231,GB7XG T2,Digital,430.87500,438.47500,High,12.5KHz,None,Channel Idle,None,1,Digital,0,1,0,0,0,0,0,0,0,Asia M.E 94,ALL,1,Slot 2,0,None,1,0,0,0,Îmv,None,None,None,Carrier/CTC,None,OFF,0,0
+232,GB7XG UK Multi D,Digital,430.87500,438.47500,High,12.5KHz,None,Channel Idle,None,1,Digital,0,1,0,0,0,0,0,0,0,None,None,1,Slot 2,0,None,1,0,0,0,Îmv,None,None,None,Carrier/CTC,None,OFF,0,0
+233,GB3FF Upp. Largo,Analog,145.60000,145.00000,High,12.5KHz,None,Channel Idle,None,1,Off,0,1,0,0,0,0,0,0,0,None,None,0,Slot 1,0,None,1,0,0,0,Îmv,103.5,None,None,Carrier/CTC,None,OFF,0,0
+234,GB3AO Aboyne,Analog,430.97500,438.57500,High,12.5KHz,None,Channel Idle,None,1,Off,0,1,0,0,0,0,0,0,0,None,None,0,Slot 1,0,None,1,0,0,0,Îmv,67.0,None,None,Carrier/CTC,None,OFF,0,0
+235,MB7IOR Aboyne,Analog,145.22500,145.22500,High,12.5KHz,None,Channel Idle,None,1,Off,0,1,0,0,0,0,0,0,0,None,None,0,Slot 1,0,None,1,0,0,0,Îmv,None,None,None,Carrier/CTC,None,OFF,0,0
+236,FIRE Gen Inciden,Digital,457.03750,457.03750,High,12.5KHz,None,Channel Idle,None,1,Off,0,1,0,0,0,0,0,0,0,None,None,1,Slot 1,0,None,1,0,0,0,Îmv,None,None,None,Carrier/CTC,None,OFF,0,0
+237,FIRE Repeaters/P,Digital,462.58750,457.03750,High,12.5KHz,None,Channel Idle,None,1,Off,0,1,0,0,0,0,0,0,0,None,None,2,Slot 1,0,None,1,0,0,0,Îmv,None,None,None,Carrier/CTC,None,OFF,0,0
+238,FIRE Breath Comm,Digital,457.48750,380.00000,High,12.5KHz,None,Channel Idle,None,1,Off,0,1,0,0,0,0,0,0,0,None,None,3,Slot 1,0,None,1,0,0,0,Îmv,None,None,None,Carrier/CTC,None,OFF,0,0
+239,FIRE Cmd Sppt,Digital,457.18750,127.00000,High,12.5KHz,None,Channel Idle,None,1,Off,0,1,0,0,0,0,0,0,0,None,None,4,Slot 1,0,None,1,0,0,0,Îmv,None,None,None,Carrier/CTC,None,OFF,0,0
+240,FIRE Fixed Rptr.,Digital,462.63750,380.00000,High,12.5KHz,None,Channel Idle,None,1,Off,0,1,0,0,0,0,0,0,0,None,None,5,Slot 1,0,None,1,0,0,0,Îmv,None,None,None,Carrier/CTC,None,OFF,0,0
+241,FIRE Breath func,Digital,457.23750,127.00000,High,12.5KHz,None,Channel Idle,None,1,Off,0,1,0,0,0,0,0,0,0,None,None,6,Slot 1,0,None,1,0,0,0,Îmv,None,None,None,Carrier/CTC,None,OFF,0,0
+242,FIRE Serv Def'd,Digital,450.10000,127.00000,High,12.5KHz,None,Channel Idle,None,1,Off,0,1,0,0,0,0,0,0,0,None,None,7,Slot 1,0,None,1,0,0,0,Îmv,None,None,None,Carrier/CTC,None,OFF,0,0
+243,FIRE Inc Def'd,Digital,464.10000,380.00000,High,12.5KHz,None,Channel Idle,None,1,Off,0,1,0,0,0,0,0,0,0,None,None,8,Slot 1,0,None,1,0,0,0,Îmv,None,None,None,Carrier/CTC,None,OFF,0,0
+244,FIRE Gen Inc-F,Fixed Analog,457.03750,457.03750,High,12.5KHz,None,Channel Idle,None,1,Off,1,1,0,0,0,0,0,0,0,None,None,1,Slot 1,0,None,1,0,0,0,Îmv,None,None,None,Carrier/CTC,None,OFF,0,0
+245,FIRE Repeaters-F,Fixed Analog,462.58750,462.58750,High,12.5KHz,None,Channel Idle,None,1,Off,1,1,0,0,0,0,0,0,0,None,None,2,Slot 1,0,None,1,0,0,0,Îmv,None,None,None,Carrier/CTC,None,OFF,0,0
+246,FIRE Breathing-F,Fixed Analog,457.48750,457.48750,High,12.5KHz,None,Channel Idle,None,1,Off,1,1,0,0,0,0,0,0,0,None,None,3,Slot 1,0,None,1,0,0,0,Îmv,None,None,None,Carrier/CTC,None,OFF,0,0
+247,FIRE Cmd Supp-F,Fixed Analog,457.18750,457.18750,High,12.5KHz,None,Channel Idle,None,1,Off,1,1,0,0,0,0,0,0,0,None,None,4,Slot 1,0,None,1,0,0,0,Îmv,None,None,None,Carrier/CTC,None,OFF,0,0
+248,FIRE Fix Rptr-F,Fixed Analog,462.63750,462.63750,High,12.5KHz,None,Channel Idle,None,1,Off,1,1,0,0,0,0,0,0,0,None,None,5,Slot 1,0,None,1,0,0,0,Îmv,None,None,None,Carrier/CTC,None,OFF,0,0
+249,FIRE Breath Fn-F,Fixed Analog,457.23750,457.23750,High,12.5KHz,None,Channel Idle,None,1,Off,1,1,0,0,0,0,0,0,0,None,None,6,Slot 1,0,None,1,0,0,0,Îmv,None,None,None,Carrier/CTC,None,OFF,0,0
+250,FIRE Srv Def-F,Fixed Analog,450.10000,450.10000,High,12.5KHz,None,Channel Idle,None,1,Off,1,1,0,0,0,0,0,0,0,None,None,7,Slot 1,0,None,1,0,0,0,Îmv,None,None,None,Carrier/CTC,None,OFF,0,0
+251,FIRE Inc Def-F,Fixed Analog,464.10000,464.10000,High,12.5KHz,None,Channel Idle,None,1,Off,1,1,0,0,0,0,0,0,0,None,None,8,Slot 1,0,None,1,0,0,0,Îmv,None,None,None,Carrier/CTC,None,OFF,0,0
+252,DMR Simplex 1,Digital,144.61250,144.61250,High,12.5KHz,None,Channel Idle,None,1,Off,0,1,0,0,0,0,0,0,0,Asia M.E 94,None,1,Slot 1,0,None,1,0,0,0,Îmv,None,None,None,Carrier/CTC,None,OFF,0,0
+253,DMR Simplex 2,Digital,145.37500,145.37500,High,12.5KHz,None,Channel Idle,None,1,Off,0,1,0,0,0,0,0,0,0,None,None,1,Slot 1,0,None,1,0,0,0,Îmv,None,None,None,Carrier/CTC,None,OFF,0,0
+254,DMR Simplex 3,Digital,433.45000,433.45000,High,12.5KHz,None,Channel Idle,None,1,Off,0,1,0,0,0,0,0,0,0,None,None,1,Slot 1,0,None,1,0,0,0,Îmv,None,None,None,Carrier/CTC,None,OFF,0,0
+255,DMR Simplex 4,Digital,438.61250,438.61250,High,12.5KHz,None,Channel Idle,None,1,Off,0,1,0,0,0,0,0,0,0,Asia M.E 94,None,1,Slot 1,0,None,1,0,0,0,Paddy MM9DY,None,None,None,Carrier/CTC,None,OFF,0,0
+256,MB7IKB East Kilb,Analog,430.02500,430.02500,High,12.5KHz,None,Channel Idle,None,1,Off,0,1,0,0,0,0,0,0,0,None,None,0,Slot 1,0,None,1,0,0,0,Paddy MM9DY,103.5,None,None,Carrier/CTC,None,OFF,0,0
+257,MB7IOH Houston,Analog,430.02500,430.02500,High,12.5KHz,None,Channel Idle,None,1,Off,0,1,0,0,0,0,0,0,0,None,None,0,Slot 1,0,None,1,0,0,0,Paddy MM9DY,103.5,None,None,Carrier/CTC,None,OFF,0,0
+258,MB6HO Houston,Digital,144.90000,144.90000,High,12.5KHz,None,Channel Idle,None,1,Off,0,1,0,0,0,0,0,0,0,Asia M.E 94,None,3,Slot 1,0,None,1,0,0,0,Paddy MM9DY,None,None,None,Carrier/CTC,None,OFF,0,0
+259,MB7IDQ Alex'ria,Analog,430.01250,430.01250,High,12.5KHz,None,Channel Idle,None,1,Off,0,1,0,0,0,0,0,0,0,None,None,0,Slot 1,0,None,1,0,0,0,Paddy MM9DY,103.5,None,None,Carrier/CTC,None,OFF,0,0
+260,MB7IBH Alex'ria,Analog,145.33750,145.33750,High,12.5KHz,None,Channel Idle,None,1,Off,0,1,0,0,0,0,0,0,0,None,None,0,Slot 1,0,None,1,0,0,0,Paddy MM9DY,103.5,None,None,Carrier/CTC,None,OFF,0,0
+261,SAR Hailing-F,Analog,156.12500,156.12500,High,12.5KHz,None,Channel Idle,None,1,Off,1,1,0,0,0,0,0,0,0,None,None,0,Slot 1,0,None,1,0,0,0,Paddy MM9DY,103.5,None,None,Carrier/CTC,None,OFF,0,0
+262,SARDA Analog,Fixed Analog,158.64375,158.64375,High,12.5KHz,None,Channel Idle,None,1,Off,1,1,0,0,0,0,0,0,0,None,None,3,Slot 1,0,None,1,0,0,0,Paddy MM9DY,103.5,None,None,Carrier/CTC,None,OFF,0,0
+263,SAR MRC 623,Analog,160.71875,160.71875,High,12.5KHz,None,Channel Idle,None,1,Off,1,1,0,0,0,0,0,0,0,None,None,0,Slot 1,0,None,1,0,0,0,Paddy MM9DY,103.5,None,None,Carrier/CTC,None,OFF,0,0
+264,SAR MRC 624,Analog,160.73125,160.73125,High,12.5KHz,None,Channel Idle,None,1,Off,1,1,0,0,0,0,0,0,0,None,None,0,Slot 1,0,None,1,0,0,0,Paddy MM9DY,None,None,None,Carrier/CTC,None,OFF,0,0
+265,SAR DG1 T1,Digital,155.78125,155.78125,High,12.5KHz,None,Channel Idle,None,1,Digital,0,1,0,0,0,0,0,0,0,None,ALL,3,Slot 1,0,None,1,0,0,0,Paddy MM9DY,None,None,None,Carrier/CTC,None,OFF,0,0
+266,SAR DG1 T2,Digital,155.78125,155.78125,High,12.5KHz,None,Channel Idle,None,1,Digital,0,1,0,0,0,0,0,0,0,Asia M.E 94,ALL,3,Slot 2,0,None,1,0,0,0,Paddy MM9DY,None,None,None,Carrier/CTC,None,OFF,0,0
+267,SAR DG1 Local,Digital,155.78125,155.78125,High,12.5KHz,None,Channel Idle,None,1,Digital,0,1,0,0,0,0,0,0,0,Asia M.E 94,None,3,Slot 2,0,None,1,0,0,0,Paddy MM9DY,None,None,None,Carrier/CTC,None,OFF,0,0
+268,SAR DG1 Local 1,Digital,155.78125,155.78125,High,12.5KHz,None,Channel Idle,None,1,Digital,0,1,0,0,0,0,0,0,0,None,None,3,Slot 2,0,None,1,0,0,0,Paddy MM9DY,None,None,None,Carrier/CTC,None,OFF,0,0
+269,SAR DG2 T1,Digital,155.79375,155.79375,High,12.5KHz,None,Channel Idle,None,1,Digital,0,1,0,0,0,0,0,0,0,None,ALL,3,Slot 1,0,None,1,0,0,0,Paddy MM9DY,None,None,None,Carrier/CTC,None,OFF,0,0
+270,SAR DG2 T2,Digital,155.79375,155.79375,High,12.5KHz,None,Channel Idle,None,1,Digital,0,1,0,0,0,0,0,0,0,Asia M.E 94,ALL,3,Slot 2,0,None,1,0,0,0,Paddy MM9DY,None,None,None,Carrier/CTC,None,OFF,0,0
+271,SAR DG2 Local,Digital,155.79375,155.79375,High,12.5KHz,None,Channel Idle,None,1,Digital,0,1,0,0,0,0,0,0,0,Asia M.E 94,None,3,Slot 2,0,None,1,0,0,0,Paddy MM9DY,None,None,None,Carrier/CTC,None,OFF,0,0
+272,SAR DG2 Local 1,Digital,155.79375,155.79375,High,12.5KHz,None,Channel Idle,None,1,Digital,0,1,0,0,0,0,0,0,0,None,None,3,Slot 2,0,None,1,0,0,0,Paddy MM9DY,None,None,None,Carrier/CTC,None,OFF,0,0
+273,SAR DG3 T1,Digital,155.80625,155.80625,High,12.5KHz,None,Channel Idle,None,1,Digital,0,1,0,0,0,0,0,0,0,None,ALL,3,Slot 1,0,None,1,0,0,0,Paddy MM9DY,None,None,None,Carrier/CTC,None,OFF,0,0
+274,SAR DG3 T2,Digital,155.80625,155.80625,High,12.5KHz,None,Channel Idle,None,1,Digital,0,1,0,0,0,0,0,0,0,Asia M.E 94,ALL,3,Slot 2,0,None,1,0,0,0,Paddy MM9DY,None,None,None,Carrier/CTC,None,OFF,0,0
+275,SAR DG3 Local,Digital,155.80625,155.80625,High,12.5KHz,None,Channel Idle,None,1,Digital,0,1,0,0,0,0,0,0,0,Asia M.E 94,None,3,Slot 2,0,None,1,0,0,0,Paddy MM9DY,None,None,None,Carrier/CTC,None,OFF,0,0
+276,SAR DG3 Local 1,Digital,155.80625,155.80625,High,12.5KHz,None,Channel Idle,None,1,Digital,0,1,0,0,0,0,0,0,0,None,None,3,Slot 2,0,None,1,0,0,0,Paddy MM9DY,None,None,None,Carrier/CTC,None,OFF,0,0
+277,SAR DG4 T1,Digital,155.83125,155.83125,High,12.5KHz,None,Channel Idle,None,1,Digital,0,1,0,0,0,0,0,0,0,None,ALL,3,Slot 1,0,None,1,0,0,0,Paddy MM9DY,None,None,None,Carrier/CTC,None,OFF,0,0
+278,SAR DG4 T2,Digital,155.83125,155.83125,High,12.5KHz,None,Channel Idle,None,1,Digital,0,1,0,0,0,0,0,0,0,Asia M.E 94,ALL,3,Slot 2,0,None,1,0,0,0,Paddy MM9DY,None,None,None,Carrier/CTC,None,OFF,0,0
+279,SAR DG4 Local,Digital,155.83125,155.83125,High,12.5KHz,None,Channel Idle,None,1,Digital,0,1,0,0,0,0,0,0,0,Asia M.E 94,None,3,Slot 2,0,None,1,0,0,0,Paddy MM9DY,None,None,None,Carrier/CTC,None,OFF,0,0
+280,SAR DG4 Local 1,Digital,155.83125,155.83125,High,12.5KHz,None,Channel Idle,None,1,Digital,0,1,0,0,0,0,0,0,0,None,None,3,Slot 2,0,None,1,0,0,0,Paddy MM9DY,None,None,None,Carrier/CTC,None,OFF,0,0
+281,SARDA DMR T1,Digital,158.64375,158.64375,High,12.5KHz,None,Channel Idle,None,1,Digital,0,1,0,0,0,0,0,0,0,None,ALL,3,Slot 1,0,None,1,0,0,0,Paddy MM9DY,None,None,None,Carrier/CTC,None,OFF,0,0
+282,SARDA DMR T2,Digital,158.64375,158.64375,High,12.5KHz,None,Channel Idle,None,1,Digital,0,1,0,0,0,0,0,0,0,Asia M.E 94,ALL,3,Slot 2,0,None,1,0,0,0,Paddy MM9DY,None,None,None,Carrier/CTC,None,OFF,0,0
+283,SARDA DMR Local,Digital,158.64375,158.64375,High,12.5KHz,None,Channel Idle,None,1,Digital,0,1,0,0,0,0,0,0,0,Asia M.E 94,None,3,Slot 2,0,None,1,0,0,0,Paddy MM9DY,None,None,None,Carrier/CTC,None,OFF,0,0
+284,SAR SMR Rpt T1,Digital,155.35000,147.47500,High,12.5KHz,None,Channel Idle,None,1,Digital,0,1,0,0,0,0,0,0,0,None,ALL,3,Slot 1,0,None,1,0,0,0,Paddy MM9DY,None,None,None,Carrier/CTC,None,OFF,0,0
+285,SAR SMR Rpt T2,Digital,155.35000,147.47500,High,12.5KHz,None,Channel Idle,None,1,Digital,0,1,0,0,0,0,0,0,0,Asia M.E 94,ALL,3,Slot 2,0,None,1,0,0,0,Paddy MM9DY,None,None,None,Carrier/CTC,None,OFF,0,0
+286,SAR SMR Rpt Loca,Digital,155.35000,147.47500,High,12.5KHz,None,Channel Idle,None,1,Digital,0,1,0,0,0,0,0,0,0,Asia M.E 94,None,3,Slot 2,0,None,1,0,0,0,Paddy MM9DY,None,None,None,Carrier/CTC,None,OFF,0,0
+287,EDI Approach,Analog,121.20500,,Low,12.5KHz,None,Channel Idle,None,1,Off,1,1,0,0,0,0,0,0,0,Asia M.E 94,None,0,Slot 1,0,None,1,0,0,0,Paddy MM9DY,None,None,None,Carrier/CTC,None,OFF,0,0
+288,EDI Tower,Analog,118.70500,,Low,12.5KHz,None,Channel Idle,None,1,Off,1,1,0,0,0,0,0,0,0,Asia M.E 94,None,0,Slot 1,0,None,1,0,0,0,Paddy MM9DY,None,None,None,Carrier/CTC,None,OFF,0,0
+289,EDI Ground,Analog,121.75500,,Low,12.5KHz,None,Channel Idle,None,1,Off,1,1,0,0,0,0,0,0,0,Asia M.E 94,None,0,Slot 1,0,None,1,0,0,0,Paddy MM9DY,None,None,None,Carrier/CTC,None,OFF,0,0
+290,EDI ATIS,Analog,131.35500,,Low,12.5KHz,None,Channel Idle,None,1,Off,1,1,0,0,0,0,0,0,0,Asia M.E 94,None,0,Slot 1,0,None,1,0,0,0,Paddy MM9DY,None,None,None,Carrier/CTC,None,OFF,0,0
+291,EDI Director,Analog,128.98000,,Low,12.5KHz,None,Channel Idle,None,1,Off,1,1,0,0,0,0,0,0,0,Asia M.E 94,None,0,Slot 1,0,None,1,0,0,0,Paddy MM9DY,None,None,None,Carrier/CTC,None,OFF,0,0
+292,Cumbernauld,Analog,120.60500,,Low,12.5KHz,None,Channel Idle,None,1,Off,1,1,0,0,0,0,0,0,0,Asia M.E 94,None,0,Slot 1,0,None,1,0,0,0,Paddy MM9DY,None,None,None,Carrier/CTC,None,OFF,0,0
+293,Tay East,Analog,124.50000,,Low,12.5KHz,None,Channel Idle,None,1,Off,1,1,0,0,0,0,0,0,0,Asia M.E 94,None,0,Slot 1,0,None,1,0,0,0,Paddy MM9DY,None,None,None,Carrier/CTC,None,OFF,0,0
+294,Montrose S,Analog,126.92500,,Low,12.5KHz,None,Channel Idle,None,1,Off,1,1,0,0,0,0,0,0,0,Asia M.E 94,None,0,Slot 1,0,None,1,0,0,0,Paddy MM9DY,None,None,None,Carrier/CTC,None,OFF,0,0
+295,Deancross N,Analog,135.85000,,Low,12.5KHz,None,Channel Idle,None,1,Off,1,1,0,0,0,0,0,0,0,Asia M.E 94,None,0,Slot 1,0,None,1,0,0,0,Paddy MM9DY,None,None,None,Carrier/CTC,None,OFF,0,0
+296,GLA Approach,Analog,119.10000,,Low,12.5KHz,None,Channel Idle,None,1,Off,1,1,0,0,0,0,0,0,0,Asia M.E 94,None,0,Slot 1,0,None,1,0,0,0,Paddy MM9DY,None,None,None,Carrier/CTC,None,OFF,0,0
+297,GLA Tower,Analog,118.80500,,Low,12.5KHz,None,Channel Idle,None,1,Off,1,1,0,0,0,0,0,0,0,Asia M.E 94,None,0,Slot 1,0,None,1,0,0,0,Paddy MM9DY,None,None,None,Carrier/CTC,None,OFF,0,0
+298,GLA Ground,Analog,121.70500,,Low,12.5KHz,None,Channel Idle,None,1,Off,1,1,0,0,0,0,0,0,0,Asia M.E 94,None,0,Slot 1,0,None,1,0,0,0,Paddy MM9DY,None,None,None,Carrier/CTC,None,OFF,0,0
+299,GLA ATIS,Analog,129.57500,,Low,12.5KHz,None,Channel Idle,None,1,Off,1,1,0,0,0,0,0,0,0,Asia M.E 94,None,0,Slot 1,0,None,1,0,0,0,Paddy MM9DY,None,None,None,Carrier/CTC,None,OFF,0,0
+300,GLA Director,Analog,128.75500,,Low,12.5KHz,None,Channel Idle,None,1,Off,1,1,0,0,0,0,0,0,0,Asia M.E 94,None,0,Slot 1,0,None,1,0,0,0,Paddy MM9DY,None,None,None,Carrier/CTC,None,OFF,0,0
+301,GLA Standby,Analog,125.25000,,Low,12.5KHz,None,Channel Idle,None,1,Off,1,1,0,0,0,0,0,0,0,Asia M.E 94,None,0,Slot 1,0,None,1,0,0,0,Paddy MM9DY,None,None,None,Carrier/CTC,None,OFF,0,0
+302,PIK Approach,Analog,129.45000,,Low,12.5KHz,None,Channel Idle,None,1,Off,1,1,0,0,0,0,0,0,0,Asia M.E 94,None,0,Slot 1,0,None,1,0,0,0,Paddy MM9DY,None,None,None,Carrier/CTC,None,OFF,0,0
+303,PIK Tower,Analog,118.15000,,Low,12.5KHz,None,Channel Idle,None,1,Off,1,1,0,0,0,0,0,0,0,Asia M.E 94,None,0,Slot 1,0,None,1,0,0,0,Paddy MM9DY,None,None,None,Carrier/CTC,None,OFF,0,0
+304,PIK ATIS,Analog,121.12500,,Low,12.5KHz,None,Channel Idle,None,1,Off,1,1,0,0,0,0,0,0,0,Asia M.E 94,None,0,Slot 1,0,None,1,0,0,0,Paddy MM9DY,None,None,None,Carrier/CTC,None,OFF,0,0
+305,PIK Standby,Analog,121.50000,,Low,12.5KHz,None,Channel Idle,None,1,Off,1,1,0,0,0,0,0,0,0,Asia M.E 94,None,0,Slot 1,0,None,1,0,0,0,Paddy MM9DY,None,None,None,Carrier/CTC,None,OFF,0,0
+306,West Coast,Analog,127.27500,,Low,12.5KHz,None,Channel Idle,None,1,Off,1,1,0,0,0,0,0,0,0,Asia M.E 94,None,0,Slot 1,0,None,1,0,0,0,Paddy MM9DY,None,None,None,Carrier/CTC,None,OFF,0,0
+307,Galloway N,Analog,121.37500,,Low,12.5KHz,None,Channel Idle,None,1,Off,1,1,0,0,0,0,0,0,0,Asia M.E 94,None,0,Slot 1,0,None,1,0,0,0,Paddy MM9DY,None,None,None,Carrier/CTC,None,OFF,0,0
+308,Galloway S,Analog,124.82500,,Low,12.5KHz,None,Channel Idle,None,1,Off,1,1,0,0,0,0,0,0,0,Asia M.E 94,None,0,Slot 1,0,None,1,0,0,0,Paddy MM9DY,None,None,None,Carrier/CTC,None,OFF,0,0
+309,Talla S,Analog,126.30000,,Low,12.5KHz,None,Channel Idle,None,1,Off,1,1,0,0,0,0,0,0,0,Asia M.E 94,None,0,Slot 1,0,None,1,0,0,0,Paddy MM9DY,None,None,None,Carrier/CTC,None,OFF,0,0
+310,ABZ Approach,Analog,119.05500,,Low,12.5KHz,None,Channel Idle,None,1,Off,1,1,0,0,0,0,0,0,0,Asia M.E 94,None,0,Slot 1,0,None,1,0,0,0,Paddy MM9DY,None,None,None,Carrier/CTC,None,OFF,0,0
+311,ABZ Tower,Analog,118.10500,,Low,12.5KHz,None,Channel Idle,None,1,Off,1,1,0,0,0,0,0,0,0,Asia M.E 94,None,0,Slot 1,0,None,1,0,0,0,Paddy MM9DY,None,None,None,Carrier/CTC,None,OFF,0,0
+312,ABZ Ground,Analog,121.70500,,Low,12.5KHz,None,Channel Idle,None,1,Off,1,1,0,0,0,0,0,0,0,Asia M.E 94,None,0,Slot 1,0,None,1,0,0,0,Paddy MM9DY,None,None,None,Carrier/CTC,None,OFF,0,0
+313,ABZ ATIS,Analog,121.85500,,Low,12.5KHz,None,Channel Idle,None,1,Off,1,1,0,0,0,0,0,0,0,Asia M.E 94,None,0,Slot 1,0,None,1,0,0,0,Paddy MM9DY,None,None,None,Carrier/CTC,None,OFF,0,0
+314,ABZ Director,Analog,128.30500,,Low,12.5KHz,None,Channel Idle,None,1,Off,1,1,0,0,0,0,0,0,0,Asia M.E 94,None,0,Slot 1,0,None,1,0,0,0,Paddy MM9DY,None,None,None,Carrier/CTC,None,OFF,0,0
+315,INV Approach,Analog,122.60500,,Low,12.5KHz,None,Channel Idle,None,1,Off,1,1,0,0,0,0,0,0,0,Asia M.E 94,None,0,Slot 1,0,None,1,0,0,0,Paddy MM9DY,None,None,None,Carrier/CTC,None,OFF,0,0
+316,INV Tower,Analog,118.40500,,Low,12.5KHz,None,Channel Idle,None,1,Off,1,1,0,0,0,0,0,0,0,Asia M.E 94,None,0,Slot 1,0,None,1,0,0,0,Paddy MM9DY,None,None,None,Carrier/CTC,None,OFF,0,0
+317,INV ATIS,Analog,109.20000,,Low,12.5KHz,None,Channel Idle,None,1,Off,1,1,0,0,0,0,0,0,0,Asia M.E 94,None,0,Slot 1,0,None,1,0,0,0,Paddy MM9DY,None,None,None,Carrier/CTC,None,OFF,0,0
+318,Moray,Analog,134.85000,,Low,12.5KHz,None,Channel Idle,None,1,Off,1,1,0,0,0,0,0,0,0,Asia M.E 94,None,0,Slot 1,0,None,1,0,0,0,Paddy MM9DY,None,None,None,Carrier/CTC,None,OFF,0,0
+319,Hebrides,Analog,133.67500,,Low,12.5KHz,None,Channel Idle,None,1,Off,1,1,0,0,0,0,0,0,0,Asia M.E 94,None,0,Slot 1,0,None,1,0,0,0,Paddy MM9DY,None,None,None,Carrier/CTC,None,OFF,0,0
+320,BFS Approach,Analog,131.12500,,Low,12.5KHz,None,Channel Idle,None,1,Off,1,1,0,0,0,0,0,0,0,Asia M.E 94,None,0,Slot 1,0,None,1,0,0,0,Paddy MM9DY,None,None,None,Carrier/CTC,None,OFF,0,0
+321,BFS Tower,Analog,118.30000,,Low,12.5KHz,None,Channel Idle,None,1,Off,1,1,0,0,0,0,0,0,0,Asia M.E 94,None,0,Slot 1,0,None,1,0,0,0,Paddy MM9DY,None,None,None,Carrier/CTC,None,OFF,0,0
+322,BFS Ground,Analog,121.75000,,Low,12.5KHz,None,Channel Idle,None,1,Off,1,1,0,0,0,0,0,0,0,Asia M.E 94,None,0,Slot 1,0,None,1,0,0,0,Paddy MM9DY,None,None,None,Carrier/CTC,None,OFF,0,0
+323,BFS ATIS,Analog,126.13000,,Low,12.5KHz,None,Channel Idle,None,1,Off,1,1,0,0,0,0,0,0,0,Asia M.E 94,None,0,Slot 1,0,None,1,0,0,0,Paddy MM9DY,None,None,None,Carrier/CTC,None,OFF,0,0
+324,EGAC Approach,Analog,130.85000,,Low,12.5KHz,None,Channel Idle,None,1,Off,1,1,0,0,0,0,0,0,0,Asia M.E 94,None,0,Slot 1,0,None,1,0,0,0,Paddy MM9DY,None,None,None,Carrier/CTC,None,OFF,0,0
+325,EGAC Tower,Analog,122.82500,,Low,12.5KHz,None,Channel Idle,None,1,Off,1,1,0,0,0,0,0,0,0,Asia M.E 94,None,0,Slot 1,0,None,1,0,0,0,Paddy MM9DY,None,None,None,Carrier/CTC,None,OFF,0,0
+326,EGAC ATIS,Analog,136.62500,,Low,12.5KHz,None,Channel Idle,None,1,Off,1,1,0,0,0,0,0,0,0,Asia M.E 94,None,0,Slot 1,0,None,1,0,0,0,Paddy MM9DY,None,None,None,Carrier/CTC,None,OFF,0,0
+327,Scot FIS,Analog,119.87500,,Low,12.5KHz,None,Channel Idle,None,1,Off,1,1,0,0,0,0,0,0,0,Asia M.E 94,None,0,Slot 1,0,None,1,0,0,0,Paddy MM9DY,None,None,None,Carrier/CTC,None,OFF,0,0
+328,UK SAR Common,Analog,123.10000,123.10000,Low,12.5KHz,None,Allow TX,None,3,Off,0,1,0,0,0,0,0,0,0,Asia M.E 94,None,0,Slot 1,0,None,1,0,0,0,Paddy MM9DY,None,None,None,Carrier/CTC,None,OFF,0,0
+329,SAR Dist/OS,Analog,129.90000,129.90000,Low,12.5KHz,None,Allow TX,None,3,Off,0,1,0,0,0,0,0,0,0,Asia M.E 94,None,0,Slot 1,0,None,1,0,0,0,Paddy MM9DY,None,None,None,Carrier/CTC,None,OFF,0,0
+330,GA Pilot chat,Analog,123.45000,123.45000,Low,12.5KHz,None,Allow TX,None,3,Off,0,1,0,0,0,0,0,0,0,Asia M.E 94,None,0,Slot 1,0,None,1,0,0,0,Paddy MM9DY,None,None,None,Carrier/CTC,None,OFF,0,0
+331,Air Train Op1,Analog,130.55500,130.55500,Low,12.5KHz,None,Allow TX,None,3,Off,0,1,0,0,0,0,0,0,0,Asia M.E 94,None,0,Slot 1,0,None,1,0,0,0,Paddy MM9DY,None,None,None,Carrier/CTC,None,OFF,0,0
+332,Air Train Op2,Analog,131.40500,131.40500,Low,12.5KHz,None,Allow TX,None,3,Off,0,1,0,0,0,0,0,0,0,Asia M.E 94,None,0,Slot 1,0,None,1,0,0,0,Paddy MM9DY,None,None,None,Carrier/CTC,None,OFF,0,0
+333,Emergency,Analog,121.50000,,Low,12.5KHz,None,Channel Idle,None,1,Off,1,1,0,0,0,0,0,0,0,Asia M.E 94,None,0,Slot 1,0,None,1,0,0,0,Paddy MM9DY,None,None,None,Carrier/CTC,None,OFF,0,0
+334,Police Air-Gnd,Analog,465.88750,400.00000,Low,12.5KHz,None,Allow TX,None,1,Off,1,1,0,0,0,0,0,0,0,Asia M.E 94,None,0,Slot 1,0,None,1,0,0,0,Paddy MM9DY,None,None,None,Carrier/CTC,None,OFF,0,0
+335,RAYNET 2m,Analog,144.62500,144.62500,High,12.5KHz,None,Channel Idle,None,1,Off,0,1,0,0,0,0,0,0,0,Asia M.E 94,None,0,Slot 1,0,None,1,0,0,0,Paddy MM9DY,None,None,None,Carrier/CTC,None,OFF,0,0
+336,RAYNET 2m alt,Analog,144.67500,144.67500,High,12.5KHz,None,Channel Idle,None,1,Off,0,1,0,0,0,0,0,0,0,Asia M.E 94,None,0,Slot 1,0,None,1,0,0,0,Paddy MM9DY,None,None,None,Carrier/CTC,None,OFF,0,0
+337,RAYNET 2m inc,Analog,145.22500,145.22500,High,12.5KHz,None,Channel Idle,None,1,Off,0,1,0,0,0,0,0,0,0,Asia M.E 94,None,0,Slot 1,0,None,1,0,0,0,Paddy MM9DY,None,None,None,Carrier/CTC,None,OFF,0,0
+338,RAYNET 70cm,Analog,433.70000,433.70000,High,12.5KHz,None,Channel Idle,None,1,Off,0,1,0,0,0,0,0,0,0,Asia M.E 94,None,0,Slot 1,0,None,1,0,0,0,Paddy MM9DY,None,None,None,Carrier/CTC,None,OFF,0,0
+339,RAYNET 70cm Rpt,Analog,438.40000,430.80000,High,12.5KHz,None,Channel Idle,None,1,Off,0,1,0,0,0,0,0,0,0,Asia M.E 94,None,0,Slot 1,0,None,1,0,0,0,Paddy MM9DY,None,None,None,Carrier/CTC,None,OFF,0,0
+340,RAYNET 2m DMR,Digital,144.62500,144.62500,High,12.5KHz,None,Channel Idle,None,1,Off,0,1,0,0,0,0,0,0,0,Scot. North,None,1,Slot 1,0,None,1,0,0,0,Paddy MM9DY,None,None,None,Carrier/CTC,None,OFF,0,0
+341,GB7AC scratch,Digital,430.95000,438.55000,High,12.5KHz,None,Channel Idle,None,1,Off,0,1,0,0,0,0,0,0,0,None,None,3,Slot 1,0,None,1,0,0,0,Paddy MM9DY,None,None,None,Carrier/CTC,None,OFF,0,0
+342,GB7DB scratch,Digital,145.75000,145.15000,High,12.5KHz,None,Channel Idle,None,1,Off,0,1,0,0,0,0,0,0,0,None,None,5,Slot 1,0,None,1,0,0,0,Paddy MM9DY,None,None,None,Carrier/CTC,None,OFF,0,0
+343,GB7GL scratch,Digital,430.85000,438.45000,High,12.5KHz,None,Channel Idle,None,1,Off,0,1,0,0,0,0,0,0,0,None,None,7,Slot 1,0,None,1,0,0,0,Paddy MM9DY,None,None,None,Carrier/CTC,None,OFF,0,0
+344,GB7II scratch,Digital,439.45000,430.45000,High,12.5KHz,None,Channel Idle,None,1,Off,0,1,0,0,0,0,0,0,0,None,None,3,Slot 1,0,None,1,0,0,0,Paddy MM9DY,None,None,None,Carrier/CTC,None,OFF,0,0
+345,GB7PA scratch,Digital,439.52500,430.52500,High,12.5KHz,None,Channel Idle,None,1,Off,0,1,0,0,0,0,0,0,0,None,None,1,Slot 1,0,None,1,0,0,0,Paddy MM9DY,None,None,None,Carrier/CTC,None,OFF,0,0
+346,GB7SS scratch,Digital,439.58750,430.58750,High,12.5KHz,None,Channel Idle,None,1,Off,0,1,0,0,0,0,0,0,0,None,None,1,Slot 1,0,None,1,0,0,0,Paddy MM9DY,None,None,None,Carrier/CTC,None,OFF,0,0
+347,GB7YC scratch,Digital,433.13750,438.13750,High,12.5KHz,None,Channel Idle,None,1,Off,0,1,0,0,0,0,0,0,0,None,None,9,Slot 1,0,None,1,0,0,0,Paddy MM9DY,None,None,None,Carrier/CTC,None,OFF,0,0
+348,GB7EE scratch,Digital,430.92500,438.52500,High,12.5KHz,None,Channel Idle,None,1,Off,0,1,0,0,0,0,0,0,0,None,None,1,Slot 1,0,None,1,0,0,0,Paddy MM9DY,None,None,None,Carrier/CTC,None,OFF,0,0
+349,GB3OH scratch,Digital,430.95000,438.55000,High,12.5KHz,None,Channel Idle,None,1,Off,0,1,0,0,0,0,0,0,0,None,None,1,Slot 1,0,None,1,0,0,0,Paddy MM9DY,None,None,None,Carrier/CTC,None,OFF,0,0
+350,GB7FE scratch,Digital,439.47500,430.47500,High,12.5KHz,None,Channel Idle,None,1,Off,0,1,0,0,0,0,0,0,0,None,None,1,Slot 1,0,None,1,0,0,0,Paddy MM9DY,None,None,None,Carrier/CTC,None,OFF,0,0
+351,GB7LL scratch,Digital,430.91250,438.51250,High,12.5KHz,None,Channel Idle,None,1,Off,0,1,0,0,0,0,0,0,0,None,None,1,Slot 1,0,None,1,0,0,0,Paddy MM9DY,None,None,None,Carrier/CTC,None,OFF,0,0
+352,GB7CB scratch,Digital,439.71250,430.71250,High,12.5KHz,None,Channel Idle,None,1,Off,0,1,0,0,0,0,0,0,0,None,None,4,Slot 1,0,None,1,0,0,0,Paddy MM9DY,None,None,None,Carrier/CTC,None,OFF,0,0
+353,GB7BG scratch,Digital,439.66250,430.66250,High,12.5KHz,None,Channel Idle,None,1,Off,0,1,0,0,0,0,0,0,0,None,None,1,Slot 1,0,None,1,0,0,0,Paddy MM9DY,None,None,None,Carrier/CTC,None,OFF,0,0
+354,GB7EU scratch,Digital,430.83750,564.00000,High,12.5KHz,None,Channel Idle,None,1,Off,0,1,0,0,0,0,0,0,0,None,None,11,Slot 1,0,None,1,0,0,0,Paddy MM9DY,None,None,None,Carrier/CTC,None,OFF,0,0
+355,GB3HL scratch,Digital,127.00000,127.00000,High,12.5KHz,None,Channel Idle,None,1,Off,0,1,0,0,0,0,0,0,0,None,None,1,Slot 1,0,None,1,0,0,0,Paddy MM9DY,None,None,None,Carrier/CTC,None,OFF,0,0
+356,GB7EM scratch,Digital,430.92500,438.52500,High,12.5KHz,None,Channel Idle,None,1,Off,0,1,0,0,0,0,0,0,0,None,None,11,Slot 1,0,None,1,0,0,0,Paddy MM9DY,None,None,None,Carrier/CTC,None,OFF,0,0
+357,GB7DE scratch,Digital,145.63750,145.03750,High,12.5KHz,None,Channel Idle,None,1,Off,0,1,0,0,0,0,0,0,0,None,None,1,Slot 1,0,None,1,0,0,0,Paddy MM9DY,None,None,None,Carrier/CTC,None,OFF,0,0
+358,GB7XG scratch,Digital,430.87500,438.47500,High,12.5KHz,None,Channel Idle,None,1,Off,0,1,0,0,0,0,0,0,0,None,None,1,Slot 1,0,None,1,0,0,0,Paddy MM9DY,None,None,None,Carrier/CTC,None,OFF,0,0
+359,Hotspot scratch,Digital,438.80000,434.00000,Low,12.5KHz,None,Channel Idle,None,1,Off,0,1,0,0,0,0,0,0,0,None,None,1,Slot 1,0,None,1,0,0,0,Paddy MM9DY,None,None,None,Carrier/CTC,None,OFF,0,0
+360,Home shack,Analog,145.50000,145.50000,High,12.5KHz,None,Channel Idle,None,1,Off,0,1,0,0,0,0,0,0,0,None,None,0,Slot 1,0,None,1,0,0,0,Paddy MM9DY,None,None,None,Carrier/CTC,None,OFF,0,0
+361,Morning walk,Analog,145.50000,145.50000,High,12.5KHz,None,Channel Idle,None,1,Off,0,1,0,0,0,0,0,0,0,None,None,0,Slot 1,0,None,1,0,0,0,Paddy MM9DY,None,None,None,Carrier/CTC,None,OFF,0,0
+362,Glasgow,Analog,145.50000,145.50000,High,12.5KHz,None,Channel Idle,None,1,Off,0,1,0,0,0,0,0,0,0,None,None,0,Slot 1,0,None,1,0,0,0,Paddy MM9DY,None,None,None,Carrier/CTC,None,OFF,0,0
+363,Glasgow Ext,Analog,145.50000,145.50000,High,12.5KHz,None,Channel Idle,None,1,Off,0,1,0,0,0,0,0,0,0,None,None,0,Slot 1,0,None,1,0,0,0,Paddy MM9DY,None,None,None,Carrier/CTC,None,OFF,0,0
+364,Gla-Edi,Analog,145.50000,145.50000,High,12.5KHz,None,Channel Idle,None,1,Off,0,1,0,0,0,0,0,0,0,None,None,0,Slot 1,0,None,1,0,0,0,Paddy MM9DY,None,None,None,Carrier/CTC,None,OFF,0,0
+365,Edinburgh,Analog,145.50000,145.50000,High,12.5KHz,None,Channel Idle,None,1,Off,0,1,0,0,0,0,0,0,0,None,None,0,Slot 1,0,None,1,0,0,0,Paddy MM9DY,None,None,None,Carrier/CTC,None,OFF,0,0
+366,Alloa,Analog,145.50000,145.50000,High,12.5KHz,None,Channel Idle,None,1,Off,0,1,0,0,0,0,0,0,0,None,None,0,Slot 1,0,None,1,0,0,0,Paddy MM9DY,None,None,None,Carrier/CTC,None,OFF,0,0
+367,Aberdeen,Analog,145.50000,145.50000,High,12.5KHz,None,Channel Idle,None,1,Off,0,1,0,0,0,0,0,0,0,None,None,0,Slot 1,0,None,1,0,0,0,Paddy MM9DY,None,None,None,Carrier/CTC,None,OFF,0,0
+368,N. Berwick,Analog,145.50000,145.50000,High,12.5KHz,None,Channel Idle,None,1,Off,0,1,0,0,0,0,0,0,0,None,None,0,Slot 1,0,None,1,0,0,0,Paddy MM9DY,None,None,None,Carrier/CTC,None,OFF,0,0
+369,Aboyne,Analog,145.50000,145.50000,High,12.5KHz,None,Channel Idle,None,1,Off,0,1,0,0,0,0,0,0,0,None,None,0,Slot 1,0,None,1,0,0,0,Paddy MM9DY,None,None,None,Carrier/CTC,None,OFF,0,0
+370,Perth,Analog,145.50000,145.50000,High,12.5KHz,None,Channel Idle,None,1,Off,0,1,0,0,0,0,0,0,0,None,None,0,Slot 1,0,None,1,0,0,0,Paddy MM9DY,None,None,None,Carrier/CTC,None,OFF,0,0
+371,Dundee,Analog,145.50000,145.50000,High,12.5KHz,None,Channel Idle,None,1,Off,0,1,0,0,0,0,0,0,0,None,None,0,Slot 1,0,None,1,0,0,0,Paddy MM9DY,None,None,None,Carrier/CTC,None,OFF,0,0
+372,Monimail,Analog,145.50000,145.50000,High,12.5KHz,None,Channel Idle,None,1,Off,0,1,0,0,0,0,0,0,0,None,None,0,Slot 1,0,None,1,0,0,0,Paddy MM9DY,None,None,None,Carrier/CTC,None,OFF,0,0
+373,Airband East,Analog,145.50000,145.50000,High,12.5KHz,None,Channel Idle,None,1,Off,0,1,0,0,0,0,0,0,0,None,None,0,Slot 1,0,None,1,0,0,0,Paddy MM9DY,None,None,None,Carrier/CTC,None,OFF,0,0
+374,Airband West,Analog,145.50000,145.50000,High,12.5KHz,None,Channel Idle,None,1,Off,0,1,0,0,0,0,0,0,0,None,None,0,Slot 1,0,None,1,0,0,0,Paddy MM9DY,None,None,None,Carrier/CTC,None,OFF,0,0
+375,Airband North,Analog,145.50000,145.50000,High,12.5KHz,None,Channel Idle,None,1,Off,0,1,0,0,0,0,0,0,0,None,None,0,Slot 1,0,None,1,0,0,0,Paddy MM9DY,None,None,None,Carrier/CTC,None,OFF,0,0
+376,Airband N Irelan,Analog,145.50000,145.50000,High,12.5KHz,None,Channel Idle,None,1,Off,0,1,0,0,0,0,0,0,0,None,None,0,Slot 1,0,None,1,0,0,0,Paddy MM9DY,None,None,None,Carrier/CTC,None,OFF,0,0

@@ -6,7 +6,8 @@ Fill this in while driving **official Baofeng DM-32UV CPS v1.60**. For each row:
 **Supersedes:** [#356](https://github.com/pskillen/codeplug-studio/issues/356)  
 **Gap notes:** [`tmp/dm32-wire-docs-issues.md`](../../../tmp/dm32-wire-docs-issues.md) (local; gitignored)  
 **Headers / adapter:** [`columns.ts`](../../../src/core/import-export/formats/dm32/columns.ts)  
-**Committed sample:** [`test-data/baofeng-dm32/v1.60/`](../../../test-data/baofeng-dm32/v1.60/)
+**Canonical CPS sample:** [`sample-codeplugs/baofeng-dm32/1.60/`](../../../sample-codeplugs/baofeng-dm32/1.60/) (unadulterated v1.60 export)  
+**Test fixture (may differ):** [`test-data/baofeng-dm32/v1.60/`](../../../test-data/baofeng-dm32/v1.60/)
 
 ### Follow-up tickets (filed from #404)
 
@@ -51,18 +52,20 @@ Related (not filed from #404): per-repeater scratch export [#140](https://github
 
 ## Export file set
 
+Studio export / historical docs use the left-hand names. Official CPS v1.60 filenames in the [canonical sample](../../../sample-codeplugs/baofeng-dm32/1.60/) are noted in parentheses where they differ.
+
 | File | Role | Studio export today | Elicit? |
 | --- | --- | --- | --- |
 | `Channels.csv` | RF channels (40 cols) | Full serialise + many constants | **Yes — priority** |
 | `Zones.csv` | Zone membership (pipe members) | Full | Light |
-| `Talkgroups.csv` | Group (+ some private) TGs | Full | **Yes** (Type enum) |
-| `Contacts.csv` | DMR private contacts | Full (City/Province/Country/Remark from model; Type/`Alert Call`/`Repeater` constants) | **Yes** |
-| `RXGroupLists.csv` | RX group lists | Full | Light |
-| `DTMFContacts.csv` | Analog DTMF contacts | Full | **Yes** |
-| `Scan.csv` | Scan lists | Zone-derived synthesis + constants | **Yes** |
+| `Talkgroups.csv` (`TalkGroups.csv` in CPS) | Group (+ some private) TGs | Full | **Yes** (Type enum) |
+| `Contacts.csv` (`DigitalContacts.csv` in CPS) | DMR private contacts | Full (City/Province/Country/Remark from model; Type/`Alert Call`/`Repeater` constants) | **Yes** |
+| `RXGroupLists.csv` (`RxGroupLists.csv` in CPS) | RX group lists | Full | Light |
+| `DTMFContacts.csv` (`AnalogContacts.csv` in CPS) | Analog DTMF contacts | Full | **Yes** |
+| `Scan.csv` (`ScanList.csv` in CPS) | Scan lists | Zone-derived synthesis + constants | **Yes** |
 | `DMR-ID.csv` | Radio ID table | **Not exported** (accepted gap) | Inventory only |
 
-Official CPS uses **CRLF** and PascalCase filenames. Studio export matches CRLF ([#314](https://github.com/pskillen/codeplug-studio/issues/314)).
+Official CPS uses **CRLF** and the CPS filenames above. Studio export matches CRLF ([#314](https://github.com/pskillen/codeplug-studio/issues/314)); filename alignment is part of [#404](https://github.com/pskillen/codeplug-studio/issues/404).
 
 **Locale / session (fill once):**
 

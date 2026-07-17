@@ -1,0 +1,16 @@
+No.,Scan Name,CTC Scan Mode,Scan Tx Mode,Hang Time,Priority Channel 1,Priority Channel 2,Designed Channel,Priority Sweep Time,Talkback,Channel Members
+1,Morning wal,Detection CTC,Current Channel,3.0,None,None,Hotspot TS1,500,0,Hotspot TS1|Hotspot TS2|GB3GL Glasgow|GB3CS Motherwell|GB3PA Paisley|GB3DM Dumbarton|Ru PMR 5-13|UK Calling UHF|UK Calling VHF|DMR Simplex 1|DMR Simplex 2|DMR Simplex 3|DMR Simplex 4|
+2,Glasgow,Detection CTC,Last Actived Channel,5.0,None,None,Hotspot TS1,500,0,Hotspot TS1|Hotspot TS2|GB7GL T1|GB7GL T2|GB3GL Glasgow|GB3CS Motherwell|GB3DM Dumbarton|GB3PA Paisley|Ru PMR 5-13|UK Calling VHF|DMR Simplex 1|DMR Simplex 2|
+3,Home Shack,Detection CTC,Last Actived Channel,5.0,None,None,Hotspot TS1,500,0,Hotspot TS1Hotspot TS2|GB7GL T1|GB7GL T2|GB7PA T1|GB7PA T2|GB3GL Glasgow|GB3CS Motherwell|GB3KE Glasgow|
+4,	,Not Detection CTC,Current Channel,0.5,None,None,Hotspot TS1,500,0,Hotspot TS1|Hotspot TS2|GB7GL T1|GB7GL T2|GB7PA T1
+5,	,Not Detection CTC,Current Channel,0.5,None,None,Hotspot TS1,500,0,Hotspot TS1|Hotspot TS2|GB7EE T1|GB7EE T2|GB7CB T1
+6,	,Not Detection CTC,Current Channel,0.5,None,None,Hotspot TS1,500,0,Hotspot TS1|Hotspot TS2|GB7FE T1|GB7FE T2|GB3OH T1
+7,	,Not Detection CTC,Current Channel,0.5,None,None,Hotspot TS1,500,0,Hotspot TS1|Hotspot TS2|GB7EM T1|GB7EM T2|GB7GD Aberdeen|GB3GN Banchory|UK Calling UHF|UK Calling VHF|
+8,	,Not Detection CTC,Current Channel,0.0,None,None,GB7DB T1,500,0,GB7DB T1|GB7DB T2|GB7SM St Mon FM|GB7SM St.Monans|GB7GX P'pan FM|GB7GX P'pan DMR|
+9,	,Not Detection CTC,Current Channel,0.0,None,None,Hotspot TS1,500,0,Hotspot TS1|Hotspot TS2|GB3HL T1|GB3HL T2|GB3AO Aboyne|MB7IOR Aboyne|GB3GN Banchory|GB3HL Leslie FM|UK Calling VHF|Ru PMR 5-13|VHF V40 / S20|
+10,	,Not Detection CTC,Current Channel,0.0,None,None,GB3PR Perth,500,0,GB3PR Perth|GB3PU Perth|GB7EF Ladyba. FM|GB7LL K'ross FM|GB7LL T1|GB7LL T2|UK Calling VHF|Ru PMR 5-13|
+11,	,Not Detection CTC,Current Channel,0.0,None,None,GB3DD Dundee,500,0,GB3DD Dundee|GB7DM M'fieth FM|GB7DM M'feith DM|GB3AG Angus|GB7EF Ladyba. FM|UK Calling VHF|Ru PMR 5-13|
+12,	,Not Detection CTC,Current Channel,0.0,None,None,EDI Approach,500,0,EDI Approach|EDI Tower|EDI Ground|EDI ATIS|EDI Director
+13,	,Not Detection CTC,Current Channel,0.0,None,None,GLA Approach,500,0,GLA Approach|GLA Tower|GLA Ground|GLA ATIS|PIK Approach
+14,	,Not Detection CTC,Current Channel,0.0,None,None,ABZ Approach,500,0,ABZ Approach|ABZ Tower|ABZ Ground|ABZ ATIS|INV Approach
+15,	,Not Detection CTC,Current Channel,0.0,None,None,BFS Approach,500,0,BFS Approach|BFS Tower|BFS Ground|BFS ATIS|EGAC Approach|EGAC Tower|EGAC ATIS|Scot FIS|UK SAR Common|SAR Dist/OS|Emergency|GA Pilot chat|Air Train Op1|Air Train Op2|Police Air-Gnd|

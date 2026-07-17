@@ -20,7 +20,9 @@ Authoritative reference for **Baofeng DM-32UV stock CPS** CSV exports (v1.60+). 
 | `APRS.md`          | [aprs.md](aprs.md)                     | N/A                                                                    | **Yes** (when config)  | Operator CPS setup guide — no CPS `APRS.csv` ([#250](https://github.com/pskillen/codeplug-studio/issues/250)) |
 | `DMR-ID.csv`       | —                                      | **Skip**                                                               | **Skip**               | Accepted gap                                                                                                  |
 
-Committed fixture: [`test-data/baofeng-dm32/v1.60/`](../../../test-data/baofeng-dm32/v1.60/).
+**Canonical CPS sample (unadulterated):** [`sample-codeplugs/baofeng-dm32/1.60/`](../../../sample-codeplugs/baofeng-dm32/1.60/) — working v1.60 codeplug for wire elicitation ([#404](https://github.com/pskillen/codeplug-studio/issues/404)). Prefer this over fixture trees when checking CPS-truth filenames and cells.
+
+**Test fixture (may be trimmed / renamed for tests):** [`test-data/baofeng-dm32/v1.60/`](../../../test-data/baofeng-dm32/v1.60/).
 
 ## Wire elicitation
 
@@ -38,7 +40,23 @@ Official Baofeng DM-32UV CPS exports use Windows (CRLF) line endings. Studio DM3
 
 ## Filename quirks
 
-- v1.60 CPS uses **PascalCase** (`Channels.csv`, `Scan.csv`).
+Observed filenames from official CPS v1.60 in [`sample-codeplugs/baofeng-dm32/1.60/`](../../../sample-codeplugs/baofeng-dm32/1.60/):
+
+| CPS export (canonical sample) | Names used historically in Studio docs / `test-data/` |
+| ----------------------------- | ----------------------------------------------------- |
+| `Channels.csv`                | `Channels.csv`                                        |
+| `Zones.csv`                   | `Zones.csv`                                           |
+| `TalkGroups.csv`              | `Talkgroups.csv`                                      |
+| `DigitalContacts.csv`         | `Contacts.csv`                                        |
+| `AnalogContacts.csv`          | `DTMFContacts.csv`                                    |
+| `RxGroupLists.csv`            | `RXGroupLists.csv`                                    |
+| `ScanList.csv`                | `Scan.csv`                                            |
+| `DMR-ID.csv`                  | `DMR-ID.csv`                                          |
+
+Entity docs and Studio export filenames still largely follow the historical column; reconcile against the sample during [#404](https://github.com/pskillen/codeplug-studio/issues/404).
+
+Also:
+
 - Operator-repo exports may use lowercase (`channels.csv`, `scanlist.csv`).
 - Some CPS builds save `channels.csv.csv` — rename to `channels.csv` before import.
 
