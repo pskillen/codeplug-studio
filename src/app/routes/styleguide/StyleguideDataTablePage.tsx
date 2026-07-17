@@ -287,7 +287,7 @@ export default function StyleguideDataTablePage() {
 
       <PageSection
         title="DataTable — orderMode + reorder column"
-        description="Column sort disabled; arrows mutate display order (Zones list pattern)."
+        description="Lock-only: column sort disabled; arrows mutate display order."
       >
         <DataTable
           variant="list"
@@ -308,6 +308,62 @@ export default function StyleguideDataTablePage() {
                 const index = orderRows.findIndex((r) => r.id === row.id);
                 return (
                   <Group gap={4} wrap="nowrap">
+                    <ActionIcon
+                      variant="subtle"
+                      size="sm"
+                      aria-label={`Move ${row.name} up`}
+                      disabled={index <= 0}
+                      onClick={() => moveOrderRow(row.id, 'up')}
+                    >
+                      <IconArrowUp size={14} stroke={ICON_STROKE} />
+                    </ActionIcon>
+                    <ActionIcon
+                      variant="subtle"
+                      size="sm"
+                      aria-label={`Move ${row.name} down`}
+                      disabled={index < 0 || index >= orderRows.length - 1}
+                      onClick={() => moveOrderRow(row.id, 'down')}
+                    >
+                      <IconArrowDown size={14} stroke={ICON_STROKE} />
+                    </ActionIcon>
+                  </Group>
+                );
+              },
+            },
+          ]}
+        />
+      </PageSection>
+
+      <PageSection
+        title="DataTable — storedOrder (Zones pattern)"
+        description="Default export order with elevated Export order header. Sort by Name to browse; Return to export order restores agreed order."
+      >
+        <DataTable
+          variant="list"
+          storedOrder={{
+            columnKey: 'exportOrder',
+            label: 'Export order',
+            restoreLabel: 'Return to export order',
+          }}
+          rows={orderRows}
+          totalRowCount={orderRows.length}
+          rowKey={(row) => row.id}
+          nameColumn={{
+            getName: (row) => row.name,
+            getPath: (row) => `#${row.id}`,
+          }}
+          columns={[
+            {
+              key: 'exportOrder',
+              header: 'Export order',
+              hideable: false,
+              render: (row) => {
+                const index = orderRows.findIndex((r) => r.id === row.id);
+                return (
+                  <Group gap={4} wrap="nowrap">
+                    <Text size="sm" c="dimmed" w={20}>
+                      {index + 1}
+                    </Text>
                     <ActionIcon
                       variant="subtle"
                       size="sm"
