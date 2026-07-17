@@ -46,6 +46,22 @@
 
 ---
 
+## Slice 2–3: DataTable A + D
+
+**Status:** Complete
+
+**Delivered**
+
+- `orderMode` and `scale="extreme"` on `DataTable`
+- Styleguide `/styleguide/data-table` full A demos + 10k extreme demo
+- Sidecar + `data-table.md` + unit tests
+
+**Verify**
+
+- `vitest` DataTable tests pass
+
+---
+
 ## Next
 
-- Slice 2: DataTable `orderMode` + complete A demos
+- Slice 4: SelectedItemList move/remove/hotkeys
