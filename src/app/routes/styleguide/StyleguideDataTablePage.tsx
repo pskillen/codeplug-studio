@@ -286,12 +286,12 @@ export default function StyleguideDataTablePage() {
       </PageSection>
 
       <PageSection
-        title="DataTable — orderMode + reorder column"
-        description="Lock-only: column sort disabled; arrows mutate display order."
+        title="DataTable — reorderMode + reorder column"
+        description="Reorder mode (Zones): column sort locked; arrows mutate export order. Sort… permanently rewrites order."
       >
         <DataTable
           variant="list"
-          orderMode
+          reorderMode
           rows={orderRows}
           totalRowCount={orderRows.length}
           rowKey={(row) => row.id}
@@ -335,8 +335,8 @@ export default function StyleguideDataTablePage() {
       </PageSection>
 
       <PageSection
-        title="DataTable — storedOrder (Zones pattern)"
-        description="Default export order with elevated Export order header. Sort by Name to browse; Return to export order restores agreed order."
+        title="DataTable — storedOrder (hybrid browse)"
+        description="Optional hybrid: default export order with elevated header; temporary Name sort + Return to export order. Prefer reorderMode when the list’s only job is agreed order."
       >
         <DataTable
           variant="list"

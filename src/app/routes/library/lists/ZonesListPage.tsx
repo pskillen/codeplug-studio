@@ -18,13 +18,10 @@ import MembershipSortMenu from '../../../components/library/MembershipSortMenu.t
 import { DataTable, ListPage } from '../../../components/ui/index.ts';
 import type { DataTableColumn } from '../../../components/ui/DataTable.tsx';
 import { filterRowsByName, useListNameQuery } from '../../../hooks/useListNameQuery.ts';
-import { isStoredOrderSort, type DataTableSortState } from '../../../lib/dataTable/sort.ts';
 import { ICON_STROKE } from '../../../lib/iconSizes.ts';
 import { useOperatorPosition } from '../../../state/operatorPosition.tsx';
 import { persistence } from '../../../state/persistence.ts';
 import { useLibrary } from '../../../state/useLibrary.ts';
-
-const ZONES_STORED_ORDER_KEY = 'exportOrder';
 
 export default function ZonesListPage() {
   const { library, loading, reload } = useLibrary();
@@ -35,10 +32,6 @@ export default function ZonesListPage() {
     useListNameQuery('zones');
   const [savingOrder, setSavingOrder] = useState(false);
   const [orderError, setOrderError] = useState<string | null>(null);
-  const [sort, setSort] = useState<DataTableSortState | null>({
-    columnKey: ZONES_STORED_ORDER_KEY,
-    direction: 'asc',
-  });
 
   const orderedZones = useMemo(() => sortZonesByExportOrder(zones), [zones]);
   const filtered = useMemo(
@@ -46,8 +39,7 @@ export default function ZonesListPage() {
     [orderedZones, nameFilter],
   );
   const filterActive = nameFilter.trim().length > 0;
-  const inStoredOrder = isStoredOrderSort(sort, ZONES_STORED_ORDER_KEY);
-  const reorderDisabled = filterActive || !inStoredOrder || savingOrder;
+  const reorderDisabled = filterActive || savingOrder;
   const { skipped: mapSkipped } = applyFilters(channels, DEFAULT_MAP_FILTER_OPTS);
 
   const persistZoneOrders = useCallback(
@@ -154,13 +146,11 @@ export default function ZonesListPage() {
             </Group>
           );
         },
-        sortValue: (z) => z.members.length,
       },
       {
         key: 'comment',
         header: 'Comment',
         render: (z) => z.comment || '—',
-        sortValue: (z) => z.comment || '',
       },
       {
         key: 'actions',
@@ -183,19 +173,13 @@ export default function ZonesListPage() {
     <ListPage title="Zones">
       <Stack gap="lg">
         <Text size="sm" c="dimmed">
-          Default view is library export order (`Zone.order`). Sort by other columns to browse; use
-          Return to export order (or the Export order header) to restore. Arrows reorder only while
-          export order is active and the name filter is clear. Sort zones… overwrites stored order
-          permanently.
+          Reorder mode: rows stay in library export order (`Zone.order`). Use arrows to reorder
+          (name filter must be clear). Sort zones… permanently rewrites order — it is not a browse
+          sort.
         </Text>
         {filterActive ? (
           <Text size="sm" c="orange">
             Reorder is disabled while a name filter is active.
-          </Text>
-        ) : null}
-        {!filterActive && !inStoredOrder ? (
-          <Text size="sm" c="orange">
-            Reorder is disabled while the table is sorted away from export order.
           </Text>
         ) : null}
         {orderError ? (
@@ -213,6 +197,7 @@ export default function ZonesListPage() {
         </Group>
         <DataTable
           variant="list"
+          reorderMode
           rows={filtered}
           totalRowCount={zones.length}
           search={nameFilterInput}
@@ -225,13 +210,6 @@ export default function ZonesListPage() {
             getPath: (z) => `/library/zones/${z.id}`,
           }}
           columns={columns}
-          sort={sort}
-          onSortChange={setSort}
-          storedOrder={{
-            columnKey: ZONES_STORED_ORDER_KEY,
-            label: 'Export order',
-            restoreLabel: 'Return to export order',
-          }}
         />
 
         {position ? (

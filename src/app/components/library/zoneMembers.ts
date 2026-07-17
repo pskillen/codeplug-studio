@@ -25,6 +25,20 @@ export function membersFromMemberKeys(keys: ZonePickerMemberKey[]): ZoneMemberEn
   return keys.map((key) => entryFromMemberKey(key));
 }
 
+/** Reorder existing members to match `nextKeys`, preserving per-member fields. */
+export function reorderMembersByKeys(
+  members: ZoneMemberEntry[],
+  nextKeys: ZonePickerMemberKey[],
+): ZoneMemberEntry[] {
+  const byKey = new Map(members.map((member) => [memberKeyFromEntry(member), member]));
+  const next: ZoneMemberEntry[] = [];
+  for (const key of nextKeys) {
+    const member = byKey.get(key);
+    if (member) next.push(member);
+  }
+  return next;
+}
+
 /** Map ordered picker channel ids to zone member entries. */
 export function zoneMembersFromSelectedIds(selectedIds: string[]): ZoneMemberEntry[] {
   return selectedIds.map((channelId) => ({ kind: 'channel' as const, channelId }));
