@@ -13,6 +13,7 @@ import { useCallback, useMemo, useState } from 'react';
 import type { Channel } from '@core/models/library.ts';
 import { channelDisplayLabel } from '@core/domain/channelNaming.ts';
 import { reorderScanListMembers } from '@core/domain/membershipOrder.ts';
+import SelectedItemDragHandle from '../ui/SelectedItemDragHandle.tsx';
 import SelectedItemList from '../ui/SelectedItemList.tsx';
 import MembershipSortMenu from './MembershipSortMenu.tsx';
 import { sortChannelIdsByMode } from '@core/domain/membershipSort.ts';
@@ -97,11 +98,13 @@ export default function ScanListMemberEditor({
         onToggleSelect={toggleSelect}
         onRemove={(id) => removeIds([id])}
         emptyMessage="No channels in scan list"
-        renderItem={({ itemKey, selected: rowSelected, onToggleSelect, onRemove }) => {
+        onReorder={onChange}
+        renderItem={({ itemKey, selected: rowSelected, onToggleSelect, onRemove, dragHandle }) => {
           const channel = channelsById.get(itemKey);
           return (
             <Group key={itemKey} gap="xs" wrap="nowrap" align="flex-start">
               <Checkbox checked={rowSelected} onChange={onToggleSelect} aria-label="Select" />
+              <SelectedItemDragHandle dragHandle={dragHandle} />
               <Stack gap={2} style={{ flex: 1, minWidth: 0 }}>
                 <Text size="sm" fw={500} truncate>
                   {channel ? channelDisplayLabel(channel) : itemKey}
@@ -150,13 +153,15 @@ export default function ScanListMemberEditor({
             <Button
               type="button"
               variant="light"
-              color="red"
               size="compact-sm"
               onClick={() => removeIds(selected)}
               disabled={!selected.length}
             >
               Remove selected
             </Button>
+            <Text size="xs" c="dimmed">
+              Drag handles reorder · Alt+↑/↓ moves selection
+            </Text>
           </Group>
         }
       />

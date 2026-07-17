@@ -286,12 +286,12 @@ export default function StyleguideDataTablePage() {
       </PageSection>
 
       <PageSection
-        title="DataTable — orderMode + reorder column"
-        description="Column sort disabled; arrows mutate display order (Zones list pattern)."
+        title="DataTable — reorderMode + reorder column"
+        description="Reorder mode (Zones): column sort locked; arrows mutate export order. Sort… permanently rewrites order."
       >
         <DataTable
           variant="list"
-          orderMode
+          reorderMode
           rows={orderRows}
           totalRowCount={orderRows.length}
           rowKey={(row) => row.id}
@@ -308,6 +308,62 @@ export default function StyleguideDataTablePage() {
                 const index = orderRows.findIndex((r) => r.id === row.id);
                 return (
                   <Group gap={4} wrap="nowrap">
+                    <ActionIcon
+                      variant="subtle"
+                      size="sm"
+                      aria-label={`Move ${row.name} up`}
+                      disabled={index <= 0}
+                      onClick={() => moveOrderRow(row.id, 'up')}
+                    >
+                      <IconArrowUp size={14} stroke={ICON_STROKE} />
+                    </ActionIcon>
+                    <ActionIcon
+                      variant="subtle"
+                      size="sm"
+                      aria-label={`Move ${row.name} down`}
+                      disabled={index < 0 || index >= orderRows.length - 1}
+                      onClick={() => moveOrderRow(row.id, 'down')}
+                    >
+                      <IconArrowDown size={14} stroke={ICON_STROKE} />
+                    </ActionIcon>
+                  </Group>
+                );
+              },
+            },
+          ]}
+        />
+      </PageSection>
+
+      <PageSection
+        title="DataTable — storedOrder (hybrid browse)"
+        description="Optional hybrid: default export order with elevated header; temporary Name sort + Return to export order. Prefer reorderMode when the list’s only job is agreed order."
+      >
+        <DataTable
+          variant="list"
+          storedOrder={{
+            columnKey: 'exportOrder',
+            label: 'Export order',
+            restoreLabel: 'Return to export order',
+          }}
+          rows={orderRows}
+          totalRowCount={orderRows.length}
+          rowKey={(row) => row.id}
+          nameColumn={{
+            getName: (row) => row.name,
+            getPath: (row) => `#${row.id}`,
+          }}
+          columns={[
+            {
+              key: 'exportOrder',
+              header: 'Export order',
+              hideable: false,
+              render: (row) => {
+                const index = orderRows.findIndex((r) => r.id === row.id);
+                return (
+                  <Group gap={4} wrap="nowrap">
+                    <Text size="sm" c="dimmed" w={20}>
+                      {index + 1}
+                    </Text>
                     <ActionIcon
                       variant="subtle"
                       size="sm"

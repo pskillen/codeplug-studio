@@ -9,7 +9,7 @@ import {
   Text,
   Tooltip,
 } from '@mantine/core';
-import { IconGripVertical, IconX } from '@tabler/icons-react';
+import { IconX } from '@tabler/icons-react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import type { Channel, Zone, ZoneMemberEntry } from '@core/models/library.ts';
@@ -27,6 +27,8 @@ import IncludeInZoneDerivedScanListSegment from '../zones/IncludeInZoneDerivedSc
 import { BandPillForChannel } from '../pills/BandPill.tsx';
 import ModePill from '../pills/ModePill.tsx';
 import AvailableItemPicker from '../ui/AvailableItemPicker.tsx';
+import type { SelectedItemDragHandleProps } from '../ui/SelectedItemDragHandle.tsx';
+import SelectedItemDragHandle from '../ui/SelectedItemDragHandle.tsx';
 import SelectedItemList from '../ui/SelectedItemList.tsx';
 import MembershipSortMenu from './MembershipSortMenu.tsx';
 import { sortZoneMembersByMode } from '@core/domain/membershipSort.ts';
@@ -43,6 +45,7 @@ import {
   memberKeyFromEntry,
   memberKeysFromMembers,
   membersFromMemberKeys,
+  reorderMembersByKeys,
   type ZonePickerMemberKey,
 } from './zoneMembers.ts';
 
@@ -278,7 +281,12 @@ export default function ZoneMemberEditor({
         onToggleSelect={toggleInZone}
         onRemove={(key) => removeKeys([key])}
         emptyMessage="No members in zone"
-        renderItem={({ itemKey, selected, onToggleSelect, onRemove }) => (
+        onReorder={(nextKeys) => {
+          if (nextKeys.length !== members.length) return;
+          onChange(reorderMembersByKeys(members, nextKeys));
+        }}
+        reorderDisabled={inZoneFilter.trim().length > 0}
+        renderItem={({ itemKey, selected, onToggleSelect, onRemove, dragHandle }) => (
           <InZoneMemberRow
             key={itemKey}
             memberKey={itemKey}
@@ -288,6 +296,7 @@ export default function ZoneMemberEditor({
             selected={selected}
             onToggleSelect={onToggleSelect}
             onRemove={onRemove}
+            dragHandle={dragHandle}
             onIncludeInScanListChange={handleIncludeInScanList}
           />
         )}
@@ -327,7 +336,9 @@ export default function ZoneMemberEditor({
               Remove selected
             </Button>
             <Text size="xs" c="dimmed">
-              Alt+↑ / Alt+↓ reorders selection
+              {inZoneFilter.trim()
+                ? 'Clear filter to drag-reorder'
+                : 'Drag handles reorder · Alt+↑/↓ moves selection'}
             </Text>
           </Group>
         }
@@ -420,6 +431,7 @@ function InZoneMemberRow({
   selected,
   onToggleSelect,
   onRemove,
+  dragHandle,
   onIncludeInScanListChange,
 }: {
   memberKey: ZonePickerMemberKey;
@@ -429,6 +441,7 @@ function InZoneMemberRow({
   selected: boolean;
   onToggleSelect: () => void;
   onRemove: () => void;
+  dragHandle: SelectedItemDragHandleProps | null;
   onIncludeInScanListChange: (
     channelId: string,
     include: IncludeInZoneDerivedScanListOverride,
@@ -449,11 +462,7 @@ function InZoneMemberRow({
               onChange={onToggleSelect}
               aria-label={`Select ${zone.name}`}
             />
-            <IconGripVertical
-              size={14}
-              stroke={ICON_STROKE}
-              style={{ opacity: 0.35, flexShrink: 0 }}
-            />
+            <SelectedItemDragHandle dragHandle={dragHandle} />
             <Stack gap={0} style={{ minWidth: 0 }}>
               <Text size="sm" fw={500} truncate>
                 Zone: {zone.name}
@@ -495,11 +504,7 @@ function InZoneMemberRow({
             onChange={onToggleSelect}
             aria-label={`Select ${channelDisplayLabel(channel)}`}
           />
-          <IconGripVertical
-            size={14}
-            stroke={ICON_STROKE}
-            style={{ opacity: 0.35, flexShrink: 0 }}
-          />
+          <SelectedItemDragHandle dragHandle={dragHandle} />
           <Stack gap={4} style={{ minWidth: 0, flex: 1 }}>
             <Group gap="xs" wrap="wrap">
               <Text size="sm" fw={500}>

@@ -39,6 +39,7 @@ export default function ZonesListPage() {
     [orderedZones, nameFilter],
   );
   const filterActive = nameFilter.trim().length > 0;
+  const reorderDisabled = filterActive || savingOrder;
   const { skipped: mapSkipped } = applyFilters(channels, DEFAULT_MAP_FILTER_OPTS);
 
   const persistZoneOrders = useCallback(
@@ -70,13 +71,13 @@ export default function ZonesListPage() {
 
   const moveZone = useCallback(
     async (zoneId: string, direction: 'up' | 'down') => {
-      if (filterActive || savingOrder) return;
+      if (reorderDisabled) return;
       const orderedIds = orderedZones.map((zone) => zone.id);
       const nextIds = reorderZoneIds(orderedIds, new Set([zoneId]), direction);
       if (nextIds.every((id, index) => id === orderedIds[index])) return;
       await persistZoneOrders(applyDenseZoneOrders(zones, nextIds));
     },
-    [filterActive, orderedZones, persistZoneOrders, savingOrder, zones],
+    [orderedZones, persistZoneOrders, reorderDisabled, zones],
   );
 
   const sortZonesAlphabetically = useCallback(async () => {
@@ -102,7 +103,7 @@ export default function ZonesListPage() {
                   variant="subtle"
                   size="sm"
                   aria-label={`Move ${z.name} up`}
-                  disabled={filterActive || savingOrder || index <= 0}
+                  disabled={reorderDisabled || index <= 0}
                   onClick={(event) => {
                     event.stopPropagation();
                     void moveZone(z.id, 'up');
@@ -116,9 +117,7 @@ export default function ZonesListPage() {
                   variant="subtle"
                   size="sm"
                   aria-label={`Move ${z.name} down`}
-                  disabled={
-                    filterActive || savingOrder || index < 0 || index >= orderedZones.length - 1
-                  }
+                  disabled={reorderDisabled || index < 0 || index >= orderedZones.length - 1}
                   onClick={(event) => {
                     event.stopPropagation();
                     void moveZone(z.id, 'down');
@@ -147,13 +146,11 @@ export default function ZonesListPage() {
             </Group>
           );
         },
-        sortValue: (z) => z.members.length,
       },
       {
         key: 'comment',
         header: 'Comment',
         render: (z) => z.comment || '—',
-        sortValue: (z) => z.comment || '',
       },
       {
         key: 'actions',
@@ -162,7 +159,7 @@ export default function ZonesListPage() {
         render: (z) => <EntityListDeleteAction kind="zone" entityId={z.id} label={z.name} />,
       },
     ];
-  }, [filterActive, moveZone, orderedZones, savingOrder]);
+  }, [moveZone, orderedZones, reorderDisabled]);
 
   if (loading) {
     return (
@@ -176,8 +173,9 @@ export default function ZonesListPage() {
     <ListPage title="Zones">
       <Stack gap="lg">
         <Text size="sm" c="dimmed">
-          Rows are listed in library export order (`Zone.order`). Use the arrows to reorder — table
-          column sort is not used on this page. Clear the name filter to enable reorder.
+          Reorder mode: rows stay in library export order (`Zone.order`). Use arrows to reorder
+          (name filter must be clear). Sort zones… permanently rewrites order — it is not a browse
+          sort.
         </Text>
         {filterActive ? (
           <Text size="sm" c="orange">
@@ -199,6 +197,7 @@ export default function ZonesListPage() {
         </Group>
         <DataTable
           variant="list"
+          reorderMode
           rows={filtered}
           totalRowCount={zones.length}
           search={nameFilterInput}

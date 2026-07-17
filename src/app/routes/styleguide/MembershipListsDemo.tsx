@@ -9,13 +9,17 @@ import {
   Text,
   Tooltip,
 } from '@mantine/core';
-import { IconGripVertical, IconX } from '@tabler/icons-react';
+import { IconX } from '@tabler/icons-react';
 import { useState } from 'react';
 import { UK_BANDS } from '../../lib/bands.ts';
 import { BandPill, ModePill } from '../../components/pills/index.ts';
 import type { ChannelMode } from '../../lib/channelModes.ts';
 import { ICON_STROKE } from '../../lib/iconSizes.ts';
-import { AvailableItemPicker, SelectedItemList } from '../../components/ui/index.ts';
+import {
+  AvailableItemPicker,
+  SelectedItemDragHandle,
+  SelectedItemList,
+} from '../../components/ui/index.ts';
 
 const MEMBERSHIP_DEMO_CATALOG = {
   alpha: {
@@ -201,7 +205,13 @@ function MembershipListsDemo() {
           setListSelection((prev) => prev.filter((x) => x !== key));
         }}
         emptyMessage="No members in zone"
-        renderItem={({ itemKey, selected, onToggleSelect, onRemove }) => {
+        onReorder={setSelectedKeys}
+        reorderDisabled={selectedFilter.trim().length > 0}
+        onMoveSelected={moveSelected}
+        onRemoveSelected={removeSelectedBulk}
+        canMoveUp={canMoveUp}
+        canMoveDown={canMoveDown}
+        renderItem={({ itemKey, selected, onToggleSelect, onRemove, dragHandle }) => {
           const entry = MEMBERSHIP_DEMO_CATALOG[itemKey];
 
           if (entry.kind === 'zone') {
@@ -214,11 +224,7 @@ function MembershipListsDemo() {
                       onChange={onToggleSelect}
                       aria-label={`Select ${entry.label}`}
                     />
-                    <IconGripVertical
-                      size={14}
-                      stroke={ICON_STROKE}
-                      style={{ opacity: 0.35, flexShrink: 0 }}
-                    />
+                    <SelectedItemDragHandle dragHandle={dragHandle} />
                     <Stack gap={0} style={{ minWidth: 0 }}>
                       <Text size="sm" fw={500} truncate>
                         Zone: {entry.label}
@@ -258,11 +264,7 @@ function MembershipListsDemo() {
                     onChange={onToggleSelect}
                     aria-label={`Select ${entry.label}`}
                   />
-                  <IconGripVertical
-                    size={14}
-                    stroke={ICON_STROKE}
-                    style={{ opacity: 0.35, flexShrink: 0 }}
-                  />
+                  <SelectedItemDragHandle dragHandle={dragHandle} />
                   <Stack gap={4} style={{ minWidth: 0, flex: 1 }}>
                     <Group gap="xs" wrap="wrap">
                       <Text size="sm" fw={500}>
@@ -345,10 +347,6 @@ function MembershipListsDemo() {
             Sort by name (demo)
           </Button>
         }
-        onMoveSelected={moveSelected}
-        onRemoveSelected={removeSelectedBulk}
-        canMoveUp={canMoveUp}
-        canMoveDown={canMoveDown}
       />
 
       <AvailableItemPicker

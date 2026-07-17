@@ -150,7 +150,7 @@ describe('DataTable virtualization', () => {
   });
 });
 
-describe('DataTable orderMode and scale', () => {
+describe('DataTable orderMode, storedOrder, and scale', () => {
   beforeEach(() => {
     mockScrollViewport();
   });
@@ -166,6 +166,36 @@ describe('DataTable orderMode and scale', () => {
     const bodyRows = screen.getAllByTestId('datatable-tbody-row');
     expect(bodyRows[0]).toHaveTextContent('Row 001');
     expect(bodyRows[4]).toHaveTextContent('Row 005');
+  });
+
+  it('defaults to stored order and shows restore when sorted by name', () => {
+    const rows = makeRows(5);
+    renderTable(rows, {
+      storedOrder: {
+        columnKey: 'score',
+        label: 'Export order',
+        restoreLabel: 'Return to export order',
+      },
+      columns: [
+        {
+          key: 'score',
+          header: 'Export order',
+          render: (row) => row.score,
+        },
+      ],
+    });
+
+    expect(screen.queryByRole('button', { name: 'Return to export order' })).toBeNull();
+    expect(screen.getAllByTestId('datatable-tbody-row')[0]).toHaveTextContent('Row 001');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Name' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Name' }));
+    expect(screen.getByRole('button', { name: 'Return to export order' })).toBeInTheDocument();
+    expect(screen.getAllByTestId('datatable-tbody-row')[0]).toHaveTextContent('Row 005');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Return to export order' }));
+    expect(screen.queryByRole('button', { name: 'Return to export order' })).toBeNull();
+    expect(screen.getAllByTestId('datatable-tbody-row')[0]).toHaveTextContent('Row 001');
   });
 
   it('forces virtualization when scale is extreme even below auto threshold', () => {

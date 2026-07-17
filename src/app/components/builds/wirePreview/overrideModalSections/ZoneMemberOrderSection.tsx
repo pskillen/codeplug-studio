@@ -1,4 +1,4 @@
-import { Button, Checkbox, Group, Stack, Text } from '@mantine/core';
+import { Checkbox, Group, Stack, Text } from '@mantine/core';
 import { useState } from 'react';
 import type { Channel, Zone } from '@core/models/library.ts';
 import type { ZoneGroupingZoneEntry } from '@core/models/traitLayout.ts';
@@ -6,6 +6,7 @@ import { resolveEffectiveZoneChannelIds } from '@core/domain/zoneHierarchy.ts';
 import { orderChannelIdsByLayoutHint } from '@core/domain/zoneGroupingLayout.ts';
 import { reorderScanListMembers } from '@core/domain/membershipOrder.ts';
 import { channelDisplayLabel } from '@core/domain/channelNaming.ts';
+import SelectedItemDragHandle from '../../../ui/SelectedItemDragHandle.tsx';
 import SelectedItemList from '../../../ui/SelectedItemList.tsx';
 
 export interface ZoneMemberOrderSectionProps {
@@ -65,39 +66,23 @@ export default function ZoneMemberOrderSection({
         }
         onRemove={() => undefined}
         emptyMessage="No channels in this zone"
-        renderItem={({ itemKey, selected: rowSelected, onToggleSelect }) => {
+        onReorder={onSetChannelIds}
+        reorderDisabled={saving}
+        onMoveSelected={moveSelected}
+        canMoveUp={!saving && canMoveUp}
+        canMoveDown={!saving && canMoveDown}
+        renderItem={({ itemKey, selected: rowSelected, onToggleSelect, dragHandle }) => {
           const channel = channelById.get(itemKey);
           return (
             <Group key={itemKey} gap="xs" wrap="nowrap">
               <Checkbox checked={rowSelected} onChange={onToggleSelect} aria-label="Select" />
+              <SelectedItemDragHandle dragHandle={dragHandle} />
               <Text size="sm" truncate>
                 {channel ? channelDisplayLabel(channel) : itemKey}
               </Text>
             </Group>
           );
         }}
-        toolbar={
-          <Group gap="xs">
-            <Button
-              type="button"
-              variant="default"
-              size="compact-sm"
-              disabled={saving || !canMoveUp}
-              onClick={() => moveSelected('up')}
-            >
-              Move up
-            </Button>
-            <Button
-              type="button"
-              variant="default"
-              size="compact-sm"
-              disabled={saving || !canMoveDown}
-              onClick={() => moveSelected('down')}
-            >
-              Move down
-            </Button>
-          </Group>
-        }
       />
     </Stack>
   );
