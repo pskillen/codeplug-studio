@@ -9,7 +9,7 @@ How zones appear on the CPS wire for builds with the **zone grouping** trait. **
 ## Operator workflow
 
 1. Curate zone membership and **top-level zone export order** in **Library → Zones** (`Zone.order` via Move up/down or Sort…). Nested zones and optional **Don't export as its own zone** — see [nested-zones.md](../library/nested-zones.md).
-2. Open **Radio builds → Zones** on the build — wire preview table (include toggle + wire name override + **reorder column** for `zoneOverrides.orderOrSlot`). Open a row for **member export order** (layout `channelIds` hint), wire name, and (DM32/Anytone) scan options.
+2. Open **Radio builds → Zones** on the build — wire preview table (include toggle + wire name override + **reorder column** for `zoneOverrides.orderOrSlot`). When order is overridden, a yellow banner offers **Reset to library order** (confirm). Open a row for **member export order** (layout `channelIds` hint — same banner when hint ≠ library membership order), wire name, and (DM32/Anytone) scan options.
 3. For **DM32** / **Anytone** builds with scan export on, the expanded zone panel includes **Scan carrier frequency** — MHz simplex for the `{zoneName} Scan` carrier channel (default 145.500).
 4. Optionally set library **Zone defaults** (`/library/zones/defaults`) and per-member tri-state overrides on the zone editor.
 5. Enable **Export zone-derived scan lists** on the build **Export** page when you want zone flags to emit scan lists (DM32 `Scan.csv`, Anytone `ScanList.CSV` alongside library scan lists). Optional build-wide membership default override lives there too.

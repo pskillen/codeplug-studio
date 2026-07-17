@@ -30,6 +30,7 @@ Prefer these names in code and docs.
 | **Drag**                              | C `onReorder` + `SelectedItemDragHandle` | Yes             | Membership lists; `reorderDisabled` while filtered                                         |
 | **`MembershipSortMenu`**              | Above list / C toolbar                   | Yes (confirm)   | Permanent rewrite by name / callsign / …                                                   |
 | **`storedOrder`**                     | `DataTable`                              | No — display    | Hybrid: temporary natural sorts + **Return to export order**                               |
+| **Reset to library order**            | Wire preview banner                      | Yes (confirm)   | Clear build `orderOrSlot` / zone member layout hint — **not** `storedOrder` restore        |
 | **Column sorts**                      | `DataTable` browse                       | No — prefs only | Ordinary A lists without agreed order                                                      |
 
 ### Rules
@@ -39,11 +40,13 @@ Prefer these names in code and docs.
 3. **Do not invent per-page sort chrome.** Use kit props and `MembershipSortMenu`.
 4. **Filter disables reorder.** Clear messaging when arrows / drag / Sort are blocked.
 5. **DataTable row drag in `reorderMode`** is still a kit gap — Zones keep arrow columns for now.
+6. **Build order reset ≠ browse restore.** Clearing `orderOrSlot` / member layout hints is permanent (confirm). DataTable **Return to export order** only undoes temporary column sorts.
 
 ### Mental model
 
 ```text
 reorderMode / C drag / Sort…  →  mutate Zone.order / membership arrays / orderOrSlot
+Reset to library order        →  clear build order overrides (confirm; permanent)
 storedOrder + restore         →  UI-only browse, then return to export order
 column sorts                  →  persisted prefs, no model rewrite
 ```

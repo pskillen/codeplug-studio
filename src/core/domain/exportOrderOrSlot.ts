@@ -129,9 +129,7 @@ export function applyDenseOrderOrSlots(
 }
 
 /** True when any override row carries a finite 1-based `orderOrSlot`. */
-export function hasAnyOrderOrSlotOverride(
-  overrides: BuildEntityOverride[] | undefined,
-): boolean {
+export function hasAnyOrderOrSlotOverride(overrides: BuildEntityOverride[] | undefined): boolean {
   return (overrides ?? []).some((row) => {
     const value = row.orderOrSlot;
     return value != null && Number.isFinite(value) && value >= 1;

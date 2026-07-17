@@ -6,12 +6,12 @@ Shows a clear list- or section-level signal that **build export order** differs 
 
 ## Props
 
-| Prop | Type | Notes |
-| --- | --- | --- |
-| `visible` | `boolean` | When false, renders nothing |
-| `disabled` | `boolean?` | Disables the reset button (e.g. while saving) |
-| `onReset` | `() => void` | Caller must confirm (`window.confirm`) then clear overrides |
-| `message` | `string?` | Optional body copy override |
+| Prop       | Type         | Notes                                                       |
+| ---------- | ------------ | ----------------------------------------------------------- |
+| `visible`  | `boolean`    | When false, renders nothing                                 |
+| `disabled` | `boolean?`   | Disables the reset button (e.g. while saving)               |
+| `onReset`  | `() => void` | Caller must confirm (`window.confirm`) then clear overrides |
+| `message`  | `string?`    | Optional body copy override                                 |
 
 ## Behaviour
 

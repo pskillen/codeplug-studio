@@ -1,4 +1,4 @@
-import { Alert, Button, Group } from '@mantine/core';
+import { Alert, Button, Group, Text } from '@mantine/core';
 
 export interface ExportOrderOverrideBannerProps {
   /** When false, renders nothing. */
@@ -27,8 +27,16 @@ export default function ExportOrderOverrideBanner({
   return (
     <Alert color="yellow" title="Build order overridden">
       <Group justify="space-between" align="flex-start" gap="md" wrap="wrap">
-        <span>{message}</span>
-        <Button size="compact-sm" variant="light" color="yellow" disabled={disabled} onClick={onReset}>
+        <Text size="sm" style={{ flex: 1, minWidth: 200 }}>
+          {message}
+        </Text>
+        <Button
+          size="compact-sm"
+          variant="light"
+          color="yellow"
+          disabled={disabled}
+          onClick={onReset}
+        >
           Reset to library order
         </Button>
       </Group>

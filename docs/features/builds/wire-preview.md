@@ -16,6 +16,8 @@ Operator workflow for reviewing and shaping CPS wire names before export. Each b
 
 `BuildWirePreviewListPage` wraps list + modal for most entity routes. **Zones** and CHIRP flat memory use **`reorderMode`** with an order column for `orderOrSlot`. Zone row modals include **member export order** (layout `channelIds` hints).
 
+When build `orderOrSlot` (or zone member layout order) differs from the library default, an **`ExportOrderOverrideBanner`** appears with **Reset to library order** (confirmed via `window.confirm`, same seriousness as permanent Sort…). Reset clears densified `orderOrSlot` on the list, or writes zone member `channelIds` back to `resolveEffectiveZoneChannelIds`. This is **not** DataTable `storedOrder` “Return to export order” (display-only).
+
 **Sort and filter** on list pages are client-side convenience only — they do **not** change export order. CHIRP memory order and zone `orderOrSlot` are updated only via up/down reorder controls (or library edits), not table sort. Reorder is disabled while search or “hide not included” filters are active on the zones page.
 
 Build **contacts** wire preview debounces toolbar search (300 ms), matches **library name or callsign**, and shows a **Callsign** column for digital contacts. Large contact builds inherit shared [`DataTable`](../../src/app/components/ui/DataTable.md) virtual tbody rendering (`virtualize: 'auto'`, threshold 75 rows) for responsive scrolling.
@@ -24,13 +26,13 @@ Build **contacts** wire preview debounces toolbar search (300 ms), matches **lib
 
 Build overrides use **sparse opt-out** storage (`BuildEntityOverride`):
 
-| Field            | Meaning                                                                                                   |
-| ---------------- | --------------------------------------------------------------------------------------------------------- |
-| _(no row)_       | Entity is **included**; wire name is generated from library fields                                        |
-| `excluded: true` | Omit from export projection                                                                               |
-| `forceInclude`   | Zone overrides only — export standalone zone despite library `omitFromExport`                             |
-| `wireName`       | Override the generated CPS name                                                                           |
-| `orderOrSlot`    | 1-based top-level export position (CHIRP memory `Location`; zone list order; gaps → blank slots on CHIRP) |
+| Field            | Meaning                                                                                                                                                                                                        |
+| ---------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| _(no row)_       | Entity is **included**; wire name is generated from library fields                                                                                                                                             |
+| `excluded: true` | Omit from export projection                                                                                                                                                                                    |
+| `forceInclude`   | Zone overrides only — export standalone zone despite library `omitFromExport`                                                                                                                                  |
+| `wireName`       | Override the generated CPS name                                                                                                                                                                                |
+| `orderOrSlot`    | 1-based top-level export position (CHIRP memory `Location`; zone list order; gaps → blank slots on CHIRP). First reorder densifies `1…n`; **Reset to library order** clears all densified slots for that list. |
 
 Overrides are stored on `FormatBuild` as `channelOverrides`, `zoneOverrides`, `talkGroupOverrides`, `contactOverrides`, and `rxGroupListOverrides` (`studioSchemaVersion: 3`).
 
