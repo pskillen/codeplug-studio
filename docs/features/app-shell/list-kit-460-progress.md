@@ -8,11 +8,11 @@
 
 ## Overall status
 
-**Status:** In progress — production adoption
+**Status:** Complete — production adoption shipped for in-scope surfaces
 
 **Branch:** `460/pskil/list-kit-adoption`
 
-**PR:** _(open at Slice 6)_
+**PR:** _(opened at Slice 6)_
 
 **Prerequisites on main:** [#461](https://github.com/pskillen/codeplug-studio/pull/461) kit + styleguide; [#463](https://github.com/pskillen/codeplug-studio/pull/463) export-ordering toolkit + C drag.
 
@@ -88,10 +88,16 @@ Shipped in #461 / #463 — not re-done on this branch.
 
 ### Slice 6: Docs + PR
 
-**Status:** Pending
+**Status:** Complete
+
+**Delivered**
+
+- list-kit-roles status: Production adoption shipped; surface map updated for wire / repeater / channel-set
+- Outstanding adoption boxes cleared; deferred kit gaps remain listed
+- Local gate + PR
 
 ---
 
 ## Next
 
-- Slice 6: Docs status; clear outstanding; local gate; PR Closes/Addresses #460
+- Merge PR; follow-ups: DataTable row drag in `reorderMode`; RGL → SelectedItemList (if scheduled)

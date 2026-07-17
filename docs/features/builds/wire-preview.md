@@ -8,11 +8,11 @@ Operator workflow for reviewing and shaping CPS wire names before export. Each b
 
 ## UI surfaces
 
-| Surface       | Component / route                       | Edits                                                                              |
-| ------------- | --------------------------------------- | ---------------------------------------------------------------------------------- |
+| Surface       | Component / route                       | Edits                                                                                               |
+| ------------- | --------------------------------------- | --------------------------------------------------------------------------------------------------- |
 | **List**      | `WirePreviewDataTable` on entity routes | Browse, search; **`reorderMode`** + order arrows when reorder config present; row click opens modal |
-| **Modal**     | `WirePreviewOverrideModal`              | Wire name, skip, force-include; format-specific sections (zone scan, CHIRP scan)                   |
-| **Bulk edit** | `/builds/:id/channels/bulk`             | Embedded `DataTable` — wire name + skip per channel; leave-page guard for unapplied drafts         |
+| **Modal**     | `WirePreviewOverrideModal`              | Wire name, skip, force-include; format-specific sections (zone scan, CHIRP scan)                    |
+| **Bulk edit** | `/builds/:id/channels/bulk`             | Embedded `DataTable` — wire name + skip per channel; leave-page guard for unapplied drafts          |
 
 `BuildWirePreviewListPage` wraps list + modal for most entity routes. **Zones** and CHIRP flat memory use **`reorderMode`** with an order column for `orderOrSlot`. Zone row modals include **member export order** (layout `channelIds` hints).
 

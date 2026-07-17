@@ -1,13 +1,4 @@
-import {
-  ActionIcon,
-  Badge,
-  Checkbox,
-  Group,
-  Paper,
-  Stack,
-  Text,
-  Tooltip,
-} from '@mantine/core';
+import { ActionIcon, Badge, Checkbox, Group, Paper, Stack, Text, Tooltip } from '@mantine/core';
 import { IconX } from '@tabler/icons-react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
