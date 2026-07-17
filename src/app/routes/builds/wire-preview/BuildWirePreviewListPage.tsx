@@ -1,8 +1,12 @@
 import type { ReactNode } from 'react';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Stack, Switch, Text } from '@mantine/core';
 import { Link } from 'react-router-dom';
 import type { ChannelExportNameMode } from '@core/domain/channelNaming.ts';
+import {
+  exportOrderResetConfirmMessage,
+  hasAnyOrderOrSlotOverride,
+} from '@core/domain/exportOrderOrSlot.ts';
 import type {
   AnytoneWirePreviewBank,
   WirePreviewEntityKind,
@@ -12,6 +16,7 @@ import ExportNameModeSelect from '../../../components/builds/ExportNameModeSelec
 import DigitalContactExportNameModeSelect from '../../../components/builds/DigitalContactExportNameModeSelect.tsx';
 import type { DigitalContactExportNameMode } from '@core/import-export/types.ts';
 import UseLibraryAbbreviationsSwitch from '../../../components/builds/UseLibraryAbbreviationsSwitch.tsx';
+import ExportOrderOverrideBanner from '../../../components/builds/wirePreview/ExportOrderOverrideBanner.tsx';
 import WirePreviewDataTable from '../../../components/builds/wirePreview/WirePreviewDataTable.tsx';
 import type { WirePreviewZoneScanColumnConfig } from '../../../components/builds/wirePreview/WirePreviewDataTable.tsx';
 import WirePreviewOverrideModal from '../../../components/builds/wirePreview/WirePreviewOverrideModal.tsx';
@@ -69,6 +74,7 @@ function BuildWirePreviewListContent({
     setRowWireName,
     persistBuild,
     moveEntity,
+    clearEntityOrderOverrides,
     saving,
   } = useBuildWirePreview(entityKind, anytoneBank);
   const [selectedRowKey, setSelectedRowKey] = useState<string | null>(null);
@@ -76,6 +82,15 @@ function BuildWirePreviewListContent({
   const [search, setSearch] = useState('');
   const exportSettings = resolvedBuildExportSettings(build);
   const zoneReorderEnabled = entityKind === 'zone';
+  const zoneOrderOverridden = useMemo(
+    () => zoneReorderEnabled && hasAnyOrderOrSlotOverride(build.zoneOverrides),
+    [zoneReorderEnabled, build.zoneOverrides],
+  );
+
+  function handleResetZoneOrder() {
+    if (!window.confirm(exportOrderResetConfirmMessage())) return;
+    clearEntityOrderOverrides();
+  }
 
   function patchExportSettings(
     patch: Partial<{
@@ -135,6 +150,11 @@ function BuildWirePreviewListContent({
           />
         ) : null}
         {beforeTable}
+        <ExportOrderOverrideBanner
+          visible={zoneOrderOverridden}
+          disabled={saving}
+          onReset={handleResetZoneOrder}
+        />
         {hasWirePreviewEntities ? (
           <Stack gap={4}>
             <Switch

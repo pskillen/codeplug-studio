@@ -18,7 +18,7 @@ import { traitProfileFor } from '@core/models/traits.ts';
 import { getFormatProfiles } from '@core/import-export/formatProfiles.ts';
 import type { FormatId } from '@core/import-export/types.ts';
 import { mergeExportOptions } from '@core/services/exportBuild.ts';
-import { applyDenseOrderOrSlots } from '@core/domain/exportOrderOrSlot.ts';
+import { applyDenseOrderOrSlots, clearAllOrderOrSlots } from '@core/domain/exportOrderOrSlot.ts';
 import { useBuildLayout } from '../routes/builds/BuildLayoutContext.tsx';
 import { useProjects } from '../state/useProjects.ts';
 import { persistence } from '../state/persistence.ts';
@@ -188,6 +188,14 @@ export function useBuildWirePreview(
     [entityKind, persistBuild],
   );
 
+  const clearEntityOrderOverrides = useCallback(() => {
+    const field = overrideFieldForEntityKind(entityKind);
+    void persistBuild((current) => ({
+      ...current,
+      [field]: clearAllOrderOrSlots(current[field]),
+    }));
+  }, [entityKind, persistBuild]);
+
   const moveEntity = useCallback(
     (rowKey: string, direction: 'up' | 'down') => {
       const ids = allRows.map((row) => row.key);
@@ -217,6 +225,7 @@ export function useBuildWirePreview(
     setRowForceIncluded,
     setRowWireName,
     setEntityOrder,
+    clearEntityOrderOverrides,
     moveEntity,
     persistBuild,
   };
