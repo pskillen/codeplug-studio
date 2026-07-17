@@ -61,9 +61,21 @@ Shipped in #461 / #463 — not re-done on this branch.
 
 ### Slice 2: Contacts D
 
-**Status:** Pending
+**Status:** Complete
 
-### Slice 3–5: Raw Table → DataTable
+**Delivered**
+
+- Digital contacts `scale="extreme"` + `entityListColumnsKey` hideable cols
+
+### Slice 3: RepeaterDirectorySearch → DataTable
+
+**Status:** Complete
+
+**Delivered**
+
+- Results raw `Table` → embedded `DataTable` (role A); custom select column (existing rows not selectable)
+
+### Slice 4–5: Channel set + wire raw Tables
 
 **Status:** Pending
 
@@ -75,4 +87,4 @@ Shipped in #461 / #463 — not re-done on this branch.
 
 ## Next
 
-- Slice 1: ZoneMemberEditor C builtins; ScanList AvailableItemPicker; wire order section parity
+- Slice 4: ChannelSetPicker → embedded DataTable

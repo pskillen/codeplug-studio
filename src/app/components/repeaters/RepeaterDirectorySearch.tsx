@@ -10,11 +10,9 @@ import {
   Input,
   Modal,
   MultiSelect,
-  ScrollArea,
   SegmentedControl,
   Stack,
   Switch,
-  Table,
   Text,
   TextInput,
 } from '@mantine/core';
@@ -51,7 +49,8 @@ import { useProjects } from '../../state/useProjects.ts';
 import { listingDisplayLocator } from '@integrations/repeaters/listingLocator.ts';
 import UseMyLocationButton from '../UseMyLocationButton/UseMyLocationButton.tsx';
 import { BandPillsForRepeaterListing, ModePillsForRepeaterListing } from '../pills/index.ts';
-import { FormPage, PageSection } from '../ui/index.ts';
+import { FormPage, PageSection, DataTable } from '../ui/index.ts';
+import type { DataTableColumn } from '../ui/DataTable.tsx';
 import CodeplugMap from '../CodeplugMap/CodeplugMap.tsx';
 import { findChannelByCallsign } from './findChannelByCallsign.ts';
 import { buildRepeaterDirectoryRows } from './repeaterDirectoryRows.ts';
@@ -236,6 +235,122 @@ export default function RepeaterDirectorySearch({
     const keys = rows.filter((r) => !r.existing).map((r) => r.key);
     setSelected(new Set(keys));
   }
+
+  const addableRows = useMemo(() => rows.filter((r) => !r.existing), [rows]);
+  const allAddableSelected =
+    addableRows.length > 0 && addableRows.every((r) => selected.has(r.key));
+  const someAddableSelected = selected.size > 0 && !allAddableSelected;
+
+  const resultColumns = useMemo((): DataTableColumn<(typeof rows)[number]>[] => {
+    return [
+      {
+        key: 'select',
+        header: '',
+        hideable: false,
+        render: (row) => (
+          <Checkbox
+            checked={selected.has(row.key)}
+            disabled={Boolean(row.existing)}
+            onChange={(e) => toggleRow(row.key, e.currentTarget.checked)}
+            aria-label={`Select ${row.listing.callsign}`}
+          />
+        ),
+      },
+      {
+        key: 'band',
+        header: 'Band',
+        render: (row) => (
+          <BandPillsForRepeaterListing
+            rxFrequencyHz={row.listing.rxFrequencyHz}
+            txFrequencyHz={row.listing.txFrequencyHz}
+            wireBand={row.listing.band}
+            size="xs"
+          />
+        ),
+      },
+      {
+        key: 'location',
+        header: capabilities.locationLabel,
+        render: (row) => displayListingName(row.listing, useTitleCaseNames),
+      },
+      {
+        key: 'status',
+        header: 'Status',
+        render: (row) => (
+          <Text size="sm" c={isOperationalStatus(row.listing.status) ? undefined : 'orange'}>
+            {displayListingStatus(row.listing, useTitleCaseNames)}
+          </Text>
+        ),
+      },
+      {
+        key: 'mode',
+        header: 'Mode',
+        render: (row) => <ModePillsForRepeaterListing modes={row.listing.modes} size="xs" />,
+      },
+      {
+        key: 'frequencies',
+        header: 'Frequencies',
+        render: (row) => (
+          <Text size="sm">
+            {formatListingFrequencies(row.listing.rxFrequencyHz, row.listing.txFrequencyHz)}
+          </Text>
+        ),
+      },
+      {
+        key: 'locator',
+        header: 'Locator',
+        render: (row) => listingDisplayLocator(row.listing) ?? '—',
+      },
+      {
+        key: 'actions',
+        header: '',
+        hideable: false,
+        render: (row) => {
+          const { listing } = row;
+          const isAdded = added.has(row.key);
+          const libraryChannelId = libraryChannelIdForRow(row);
+          if (row.existing) {
+            return (
+              <Button size="compact-sm" variant="outline" onClick={() => openUpdate(listing)}>
+                Update existing
+              </Button>
+            );
+          }
+          if (isAdded && libraryChannelId) {
+            return (
+              <Button
+                size="compact-sm"
+                variant="light"
+                component={Link}
+                to={`/library/channels/${libraryChannelId}`}
+              >
+                Open channel
+              </Button>
+            );
+          }
+          return (
+            <Button
+              size="compact-sm"
+              variant={isAdded ? 'light' : 'filled'}
+              disabled={isAdded || adding}
+              loading={adding}
+              onClick={() => void handleAdd(listing)}
+            >
+              {isAdded ? 'Added' : 'Add to library'}
+            </Button>
+          );
+        },
+      },
+    ];
+  }, [
+    selected,
+    added,
+    addedChannelIds,
+    adding,
+    capabilities.locationLabel,
+    useTitleCaseNames,
+    rows,
+  ]);
 
   async function handleAdd(listing: RepeaterListing) {
     if (!activeProjectId) return;
@@ -590,140 +705,57 @@ export default function RepeaterDirectorySearch({
               </Text>
             ) : null}
           </Stack>
-          <ScrollArea>
-            <Table highlightOnHover>
-              <Table.Thead>
-                <Table.Tr>
-                  <Table.Th>
-                    <Checkbox
-                      aria-label="Select all addable"
-                      checked={
-                        rows.filter((r) => !r.existing).length > 0 &&
-                        rows.filter((r) => !r.existing).every((r) => selected.has(r.key))
-                      }
-                      indeterminate={
-                        selected.size > 0 &&
-                        !rows.filter((r) => !r.existing).every((r) => selected.has(r.key))
-                      }
-                      onChange={(e) => toggleAll(e.currentTarget.checked)}
-                    />
-                  </Table.Th>
-                  <Table.Th>Callsign</Table.Th>
-                  <Table.Th>Band</Table.Th>
-                  <Table.Th>{capabilities.locationLabel}</Table.Th>
-                  <Table.Th>Status</Table.Th>
-                  <Table.Th>Mode</Table.Th>
-                  <Table.Th>Frequencies</Table.Th>
-                  <Table.Th>Locator</Table.Th>
-                  <Table.Th />
-                </Table.Tr>
-              </Table.Thead>
-              <Table.Tbody>
-                {rows.map((row) => {
-                  const { listing } = row;
-                  const isAdded = added.has(row.key);
-                  const disabled = Boolean(row.existing);
-                  const libraryChannelId = libraryChannelIdForRow(row);
+          <DataTable
+            variant="embedded"
+            rows={rows}
+            rowKey={(row) => row.key}
+            showSearch={false}
+            nameColumn={{
+              header: 'Callsign',
+              getName: (row) => row.listing.callsign,
+              getPath: (row) => {
+                const id = libraryChannelIdForRow(row);
+                return id ? `/library/channels/${id}` : '#';
+              },
+              render: (row) => {
+                const id = libraryChannelIdForRow(row);
+                if (id) {
                   return (
-                    <Table.Tr key={row.key} opacity={disabled ? 0.6 : 1}>
-                      <Table.Td>
-                        <Checkbox
-                          checked={selected.has(row.key)}
-                          disabled={disabled}
-                          onChange={(e) => toggleRow(row.key, e.currentTarget.checked)}
-                          aria-label={`Select ${listing.callsign}`}
-                        />
-                      </Table.Td>
-                      <Table.Td>
-                        {libraryChannelId ? (
-                          <Anchor
-                            component={Link}
-                            to={`/library/channels/${libraryChannelId}`}
-                            fw={600}
-                          >
-                            {listing.callsign}
-                          </Anchor>
-                        ) : (
-                          <Text fw={600}>{listing.callsign}</Text>
-                        )}
-                      </Table.Td>
-                      <Table.Td>
-                        <BandPillsForRepeaterListing
-                          rxFrequencyHz={listing.rxFrequencyHz}
-                          txFrequencyHz={listing.txFrequencyHz}
-                          wireBand={listing.band}
-                          size="xs"
-                        />
-                      </Table.Td>
-                      <Table.Td>{displayListingName(listing, useTitleCaseNames)}</Table.Td>
-                      <Table.Td>
-                        <Text
-                          size="sm"
-                          c={isOperationalStatus(listing.status) ? undefined : 'orange'}
-                        >
-                          {displayListingStatus(listing, useTitleCaseNames)}
-                        </Text>
-                      </Table.Td>
-                      <Table.Td>
-                        <ModePillsForRepeaterListing modes={listing.modes} size="xs" />
-                      </Table.Td>
-                      <Table.Td>
-                        <Text size="sm">
-                          {formatListingFrequencies(listing.rxFrequencyHz, listing.txFrequencyHz)}
-                        </Text>
-                      </Table.Td>
-                      <Table.Td>{listingDisplayLocator(listing) ?? '—'}</Table.Td>
-                      <Table.Td>
-                        {row.existing ? (
-                          <Button
-                            size="compact-sm"
-                            variant="outline"
-                            onClick={() => openUpdate(listing)}
-                          >
-                            Update existing
-                          </Button>
-                        ) : isAdded && libraryChannelId ? (
-                          <Button
-                            size="compact-sm"
-                            variant="light"
-                            component={Link}
-                            to={`/library/channels/${libraryChannelId}`}
-                          >
-                            Open channel
-                          </Button>
-                        ) : (
-                          <Button
-                            size="compact-sm"
-                            variant={isAdded ? 'light' : 'filled'}
-                            disabled={isAdded || adding}
-                            loading={adding}
-                            onClick={() => void handleAdd(listing)}
-                          >
-                            {isAdded ? 'Added' : 'Add to library'}
-                          </Button>
-                        )}
-                      </Table.Td>
-                    </Table.Tr>
+                    <Anchor component={Link} to={`/library/channels/${id}`} fw={600}>
+                      {row.listing.callsign}
+                    </Anchor>
                   );
-                })}
-              </Table.Tbody>
-            </Table>
-          </ScrollArea>
-
-          <Group justify="space-between" mt="md">
-            <Button
-              disabled={selected.size === 0 || adding}
-              loading={adding}
-              onClick={() => void handleAddSelected()}
-            >
-              Add selected ({selected.size})
-            </Button>
-            {added.size > 0 ? (
-              <Button variant="light" onClick={() => navigate('/library/channels')}>
-                View library
-              </Button>
-            ) : null}
-          </Group>
+                }
+                return <Text fw={600}>{row.listing.callsign}</Text>;
+              },
+            }}
+            columns={resultColumns}
+            toolbar={
+              <Group justify="space-between" wrap="wrap" gap="sm">
+                <Group gap="sm">
+                  <Checkbox
+                    aria-label="Select all addable"
+                    checked={allAddableSelected}
+                    indeterminate={someAddableSelected}
+                    disabled={addableRows.length === 0}
+                    onChange={(e) => toggleAll(e.currentTarget.checked)}
+                  />
+                  <Button
+                    disabled={selected.size === 0 || adding}
+                    loading={adding}
+                    onClick={() => void handleAddSelected()}
+                  >
+                    Add selected ({selected.size})
+                  </Button>
+                </Group>
+                {added.size > 0 ? (
+                  <Button variant="light" onClick={() => navigate('/library/channels')}>
+                    View library
+                  </Button>
+                ) : null}
+              </Group>
+            }
+          />
         </PageSection>
       ) : null}
 
