@@ -82,8 +82,15 @@ function SortableSelectedItem<TKey extends string>({
   dragDisabled: boolean;
   children: (dragHandle: SelectedItemDragHandleProps | null) => ReactNode;
 }) {
-  const { attributes, listeners, setNodeRef, setActivatorNodeRef, transform, transition, isDragging } =
-    useSortable({ id: itemKey, disabled: dragDisabled });
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    setActivatorNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: itemKey, disabled: dragDisabled });
 
   const style: CSSProperties = {
     transform: CSS.Transform.toString(transform),
@@ -103,7 +110,12 @@ function SortableSelectedItem<TKey extends string>({
       };
 
   return (
-    <div ref={setNodeRef} style={style} data-testid="selected-item-row" data-dragging={isDragging || undefined}>
+    <div
+      ref={setNodeRef}
+      style={style}
+      data-testid="selected-item-row"
+      data-dragging={isDragging || undefined}
+    >
       {children(dragHandle)}
     </div>
   );

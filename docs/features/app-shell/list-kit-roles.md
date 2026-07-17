@@ -15,7 +15,7 @@ Not one mega-table. Specialised shells share filter / selection / reorder vocabu
 | ----- | ----------------- | --------------------------------------------------------------------------- | -------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
 | **A** | Entity list       | [`DataTable`](../../src/app/components/ui/DataTable.md)                     | High (hundreds–thousands)        | First-class entity inventory — filter, sort, persist prefs, multi-select, row/bulk actions, rich columns, virtualise |
 | **B** | Member picker     | [`AvailableItemPicker`](../../src/app/components/ui/AvailableItemPicker.md) | High (pool minus members)        | Stage candidates to add — sparse rows, filter, multi-select → add; no edit/delete/reorder of candidates              |
-| **C** | Membership list   | [`SelectedItemList`](../../src/app/components/ui/SelectedItemList.md)       | Low (typically &lt;100)          | **Reorder mode** — drag handles, move up/down, remove; permanent Sort… only; find-in-list filter |
+| **C** | Membership list   | [`SelectedItemList`](../../src/app/components/ui/SelectedItemList.md)       | Low (typically &lt;100)          | **Reorder mode** — drag handles, move up/down, remove; permanent Sort… only; find-in-list filter                     |
 | **D** | Extreme inventory | `DataTable` with `scale="extreme"`                                          | Very high (up to ~200k contacts) | Same **look** as A; harder **perf contract** (always-on virtualise, cheap cells)                                     |
 
 ```text
@@ -94,9 +94,9 @@ Dev-only (unlinked from product nav):
 
 ## Implementation status
 
-| Area                | Status              | Notes                                                      |
-| ------------------- | ------------------- | ---------------------------------------------------------- |
-| Role map doc        | Shipped (this page) |                                                            |
-| Styleguide split    | Shipped             | `/styleguide/*` nested hub                                 |
+| Area                | Status              | Notes                                                                 |
+| ------------------- | ------------------- | --------------------------------------------------------------------- |
+| Role map doc        | Shipped (this page) |                                                                       |
+| Styleguide split    | Shipped             | `/styleguide/*` nested hub                                            |
 | Kit API A/B/C/D     | Shipped             | `reorderMode`/`orderMode`, `storedOrder`, C drag `onReorder`, `scale` |
-| Production adoption | Deferred            | See [outstanding](list-kit-460-outstanding.md)             |
+| Production adoption | Deferred            | See [outstanding](list-kit-460-outstanding.md)                        |

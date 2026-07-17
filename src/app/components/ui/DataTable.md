@@ -10,26 +10,26 @@ See [list-kit-roles.md](../../../../docs/features/app-shell/list-kit-roles.md).
 
 ## Props
 
-| Prop                                                                                | Type                     | Notes                                                                                                  |
-| ----------------------------------------------------------------------------------- | ------------------------ | ------------------------------------------------------------------------------------------------------ |
-| `rows` / `rowKey`                                                                   | `T[]`, `(row) => string` | Full in-memory row set                                                                                 |
-| `nameColumn`                                                                        | `DataTableLinkedColumn`  | Linked name (`getName`, `getPath`, optional `render`, `sortable`, `sortValue`, `header`)               |
-| `callsignColumn?`                                                                   | `DataTableLinkedColumn`  | Optional second linked column                                                                          |
-| `columns`                                                                           | `DataTableColumn[]`      | Extra columns (`key`, `header`, `render`, `sortable?`, `sortValue?`, `hideable?`, `defaultVisible?`)   |
-| `variant`                                                                           | `'list' \| 'embedded'`   | List: 60vh scroll; embedded: 40vh                                                                      |
-| `sort` / `onSortChange` / `defaultSort`                                             |                          | Controlled / uncontrolled sort                                                                         |
-| `search` / `searchPending` / `onSearchChange` / `searchPlaceholder` / `showSearch`  |                          | Toolbar filter + debounce spinner                                                                      |
-| `columnVisibility*` / storage key / load                                            |                          | Hideable column modal                                                                                  |
-| `selectable` / `selectedKeys` / `onSelectedKeysChange`                              |                          | Multi-select (select-all = all sorted keys)                                                            |
-| `toolbar`                                                                           | `ReactNode`              | Footer bulk actions                                                                                    |
-| `emptyState` / `filteredEmptyMessage` / `totalRowCount` / `resultCount` / `caption` |                          | Empty + count chrome                                                                                   |
-| `onRowActivate`                                                                     | `(row) => void`          | Clickable rows; name as plain text                                                                     |
-| `orderMode`                                                                         | `boolean`                | Lock: disable column sort; keep `rows` order                                                           |
-| `storedOrder`                                                                       | `boolean \| config`      | First-class export/agreed order: default `rows` order, allow other sorts, restore control when drifted |
-| `scale`                                                                             | `'default' \| 'extreme'` | `'extreme'` forces virtualisation on (role D); use cheap cells                                         |
-| `virtualize`                                                                        | `boolean \| 'auto'`      | Default `'auto'` — window tbody when `rows.length >= 75`                                               |
-| `estimatedRowHeight` / `virtualizeOverscan`                                         | `number`                 | Virtualizer tuning                                                                                     |
-| `mobileColumnPolicy`                                                                | `'none' \| 'collapse'`   | Stub — only `none` implemented                                                                         |
+| Prop                                                                                | Type                     | Notes                                                                                                |
+| ----------------------------------------------------------------------------------- | ------------------------ | ---------------------------------------------------------------------------------------------------- |
+| `rows` / `rowKey`                                                                   | `T[]`, `(row) => string` | Full in-memory row set                                                                               |
+| `nameColumn`                                                                        | `DataTableLinkedColumn`  | Linked name (`getName`, `getPath`, optional `render`, `sortable`, `sortValue`, `header`)             |
+| `callsignColumn?`                                                                   | `DataTableLinkedColumn`  | Optional second linked column                                                                        |
+| `columns`                                                                           | `DataTableColumn[]`      | Extra columns (`key`, `header`, `render`, `sortable?`, `sortValue?`, `hideable?`, `defaultVisible?`) |
+| `variant`                                                                           | `'list' \| 'embedded'`   | List: 60vh scroll; embedded: 40vh                                                                    |
+| `sort` / `onSortChange` / `defaultSort`                                             |                          | Controlled / uncontrolled sort                                                                       |
+| `search` / `searchPending` / `onSearchChange` / `searchPlaceholder` / `showSearch`  |                          | Toolbar filter + debounce spinner                                                                    |
+| `columnVisibility*` / storage key / load                                            |                          | Hideable column modal                                                                                |
+| `selectable` / `selectedKeys` / `onSelectedKeysChange`                              |                          | Multi-select (select-all = all sorted keys)                                                          |
+| `toolbar`                                                                           | `ReactNode`              | Footer bulk actions                                                                                  |
+| `emptyState` / `filteredEmptyMessage` / `totalRowCount` / `resultCount` / `caption` |                          | Empty + count chrome                                                                                 |
+| `onRowActivate`                                                                     | `(row) => void`          | Clickable rows; name as plain text                                                                   |
+| `orderMode` / `reorderMode`                                                         | `boolean`                | Lock: disable column sort; keep `rows` order (`reorderMode` preferred)                               |
+| `storedOrder`                                                                       | `boolean \| config`      | Hybrid: default `rows` order, allow other sorts, restore when drifted                                |
+| `scale`                                                                             | `'default' \| 'extreme'` | `'extreme'` forces virtualisation on (role D); use cheap cells                                       |
+| `virtualize`                                                                        | `boolean \| 'auto'`      | Default `'auto'` — window tbody when `rows.length >= 75`                                             |
+| `estimatedRowHeight` / `virtualizeOverscan`                                         | `number`                 | Virtualizer tuning                                                                                   |
+| `mobileColumnPolicy`                                                                | `'none' \| 'collapse'`   | Stub — only `none` implemented                                                                       |
 
 ## Usage
 
@@ -55,7 +55,13 @@ See [list-kit-roles.md](../../../../docs/features/app-shell/list-kit-roles.md).
 
 Large lists inherit `virtualize="auto"`. Pass `scale="extreme"` for always-on windowing (contacts-scale).
 
-Export-order lists (Zones):
+Export-order lists that should **only** mutate agreed order (Zones):
+
+```tsx
+<DataTable reorderMode rows={ordered} /* reorder column + Sort… outside */ />
+```
+
+Hybrid browse + restore (optional):
 
 ```tsx
 <DataTable
@@ -69,13 +75,13 @@ Export-order lists (Zones):
 />
 ```
 
-Use `orderMode` only when temporary natural sorts must stay disabled.
+Prefer `reorderMode` when the list’s only job is agreed/export order. `storedOrder` is for hybrid browse + restore.
 
 ## Behaviour
 
 - **Sort** — client-side via `sortDataTableRows`; thead stays outside the virtual window. Disabled in `orderMode`.
-- **Stored order** — when `storedOrder` is set, sorting by the configured key keeps `rows` (asc) or reverses them (desc). The matching column header uses elevated weight. A gray **Return to export order** (or custom) button appears above the table when another sort is active. Distinct from MembershipSortMenu, which overwrites model order.
-- **Order mode** — headers are plain text; display order is `rows` as passed (no restore control).
+- **Stored order** — when `storedOrder` is set (and not reorder-locked), sorting by the configured key keeps `rows` (asc) or reverses them (desc). Elevated header + restore button when drifted. Distinct from MembershipSortMenu.
+- **Reorder mode** — `reorderMode` / `orderMode`: headers are plain text; display order is `rows` as passed (Zones default).
 - **Extreme scale** — forces virtualisation regardless of row count; prefer plain-text cells.
 - **Scroll parent** — Mantine `ScrollArea.Autosize` viewport is the virtualizer scroll element; sticky `.stickyTh` header remains in `thead`.
 - **Virtual tbody** — spacer rows pad top/bottom; only visible rows (+ overscan) mount as `Table.Tr`.

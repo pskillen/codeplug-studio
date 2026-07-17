@@ -8,26 +8,26 @@ Role **C** lives in **reorder mode**: display order is the agreed/export members
 
 ## Props
 
-| Prop                        | Type                                             | Description                                                                 |
-| --------------------------- | ------------------------------------------------ | --------------------------------------------------------------------------- |
-| `title`                     | `ReactNode`                                      | Panel heading                                                               |
-| `description`               | `ReactNode`                                      | Optional subtitle (counts, hints)                                           |
-| `filter`                    | `{ value, onChange, placeholder?, aria-label? }` | Optional find-in-list filter                                                |
-| `itemKeys`                  | `readonly TKey[]`                                | Ordered item keys to render                                                 |
-| `selectedKeys`              | `readonly TKey[]`                                | Keys checked for bulk toolbar actions                                       |
-| `onToggleSelect`            | `(key: TKey) => void`                            | Toggle row selection                                                        |
-| `onRemove`                  | `(key: TKey) => void`                            | Remove one row                                                              |
-| `renderItem`                | `(ctx) => ReactNode`                             | Row content; receives `dragHandle` for {@link SelectedItemDragHandle}       |
-| `emptyMessage`              | `string`                                         | Shown when `itemKeys` is empty                                              |
-| `maxHeight`                 | `number`                                         | `ScrollArea` max height (default 360)                                       |
-| `toolbar`                   | `ReactNode`                                      | Extra actions below built-in controls (e.g. sort menu)                      |
-| `onMoveSelected`            | `(direction: 'up' \| 'down') => void`            | Built-in Move up / Move down                                                |
-| `onRemoveSelected`          | `() => void`                                     | Built-in Remove selected                                                    |
-| `onReorder`                 | `(orderedKeys: TKey[]) => void`                  | Drag-and-drop; receives full `itemKeys` after drop                          |
-| `reorderDisabled`           | `boolean`                                        | Disable drag (e.g. while find-in-list filter is active)                     |
-| `canMoveUp` / `canMoveDown` | `boolean`                                        | Disable edge move buttons (default true)                                    |
-| `reorderHint`               | `ReactNode`                                      | Override default Alt+↑/↓ / drag hint                                        |
-| `enableReorderHotkeys`      | `boolean`                                        | Alt+ArrowUp/Down → `onMoveSelected` (default true when move set)            |
+| Prop                        | Type                                             | Description                                                           |
+| --------------------------- | ------------------------------------------------ | --------------------------------------------------------------------- |
+| `title`                     | `ReactNode`                                      | Panel heading                                                         |
+| `description`               | `ReactNode`                                      | Optional subtitle (counts, hints)                                     |
+| `filter`                    | `{ value, onChange, placeholder?, aria-label? }` | Optional find-in-list filter                                          |
+| `itemKeys`                  | `readonly TKey[]`                                | Ordered item keys to render                                           |
+| `selectedKeys`              | `readonly TKey[]`                                | Keys checked for bulk toolbar actions                                 |
+| `onToggleSelect`            | `(key: TKey) => void`                            | Toggle row selection                                                  |
+| `onRemove`                  | `(key: TKey) => void`                            | Remove one row                                                        |
+| `renderItem`                | `(ctx) => ReactNode`                             | Row content; receives `dragHandle` for {@link SelectedItemDragHandle} |
+| `emptyMessage`              | `string`                                         | Shown when `itemKeys` is empty                                        |
+| `maxHeight`                 | `number`                                         | `ScrollArea` max height (default 360)                                 |
+| `toolbar`                   | `ReactNode`                                      | Extra actions below built-in controls (e.g. sort menu)                |
+| `onMoveSelected`            | `(direction: 'up' \| 'down') => void`            | Built-in Move up / Move down                                          |
+| `onRemoveSelected`          | `() => void`                                     | Built-in Remove selected                                              |
+| `onReorder`                 | `(orderedKeys: TKey[]) => void`                  | Drag-and-drop; receives full `itemKeys` after drop                    |
+| `reorderDisabled`           | `boolean`                                        | Disable drag (e.g. while find-in-list filter is active)               |
+| `canMoveUp` / `canMoveDown` | `boolean`                                        | Disable edge move buttons (default true)                              |
+| `reorderHint`               | `ReactNode`                                      | Override default Alt+↑/↓ / drag hint                                  |
+| `enableReorderHotkeys`      | `boolean`                                        | Alt+ArrowUp/Down → `onMoveSelected` (default true when move set)      |
 
 ## Usage
 

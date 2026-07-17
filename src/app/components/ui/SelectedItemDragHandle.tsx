@@ -10,8 +10,11 @@ export interface SelectedItemDragHandleProps {
 }
 
 /**
- * Grip control for role-C membership rows. Pass `dragHandle` from
+ * Grip button for role-C membership rows. Pass `dragHandle` from
  * {@link SelectedItemList} `renderItem` when `onReorder` is enabled.
+ *
+ * dnd-kit activator ref + listeners are intentional render props — not React
+ * state refs read during render.
  */
 export default function SelectedItemDragHandle({
   dragHandle,
@@ -31,13 +34,15 @@ export default function SelectedItemDragHandle({
     );
   }
 
+  const { setActivatorNodeRef, attributes, listeners, disabled } = dragHandle;
+
   return (
     <button
       type="button"
-      ref={dragHandle.setActivatorNodeRef}
-      {...dragHandle.attributes}
-      {...dragHandle.listeners}
-      disabled={dragHandle.disabled}
+      ref={setActivatorNodeRef}
+      {...attributes}
+      {...listeners}
+      disabled={disabled}
       aria-label={label}
       style={{
         display: 'inline-flex',
@@ -48,10 +53,10 @@ export default function SelectedItemDragHandle({
         border: 'none',
         background: 'transparent',
         color: 'inherit',
-        cursor: dragHandle.disabled ? 'not-allowed' : 'grab',
+        cursor: disabled ? 'not-allowed' : 'grab',
         flexShrink: 0,
         touchAction: 'none',
-        opacity: dragHandle.disabled ? 0.35 : 0.7,
+        opacity: disabled ? 0.35 : 0.7,
       }}
     >
       <IconGripVertical size={14} stroke={ICON_STROKE} />
