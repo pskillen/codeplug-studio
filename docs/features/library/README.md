@@ -131,7 +131,7 @@ Generate curated frequency inventories into the library:
 | UK UHF simplex (U272–U288 or legacy SU16–SU32) | 17       | Pick naming scheme       |
 | UK CB / EU CEPT CB                             | 40 each  |                          |
 
-Workflow: pick set → preview table (per-channel checkboxes, dedup status) → optional power, **bandwidth** (12.5 or 25 kHz), forbid-TX, name prefix, **also create zone** → bulk `putChannel` (+ optional `putZone`). Duplicate RX frequencies in the library are skipped.
+Workflow: pick set → preview `DataTable` (per-channel checkboxes, dedup status) → optional power, **bandwidth** (12.5 or 25 kHz), forbid-TX, name prefix, **also create zone** → bulk `putChannel` (+ optional `putZone`). Duplicate RX frequencies in the library are skipped.
 
 - Core: `src/core/domain/channelSets/`, `src/core/services/channelSetImport.ts`
 - UI: `ChannelSetPicker` — sidecar `src/app/components/channelSets/ChannelSetPicker.md`

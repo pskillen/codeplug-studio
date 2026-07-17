@@ -77,7 +77,11 @@ Shipped in #461 / #463 — not re-done on this branch.
 
 ### Slice 4–5: Channel set + wire raw Tables
 
-**Status:** Pending
+**Status:** Slice 4 complete; Slice 5 pending
+
+**Delivered (Slice 4)**
+
+- `ChannelSetPicker` preview → embedded `DataTable`
 
 ### Slice 6: Docs + PR
 
@@ -87,4 +91,4 @@ Shipped in #461 / #463 — not re-done on this branch.
 
 ## Next
 
-- Slice 4: ChannelSetPicker → embedded DataTable
+- Slice 5: WirePreviewBulkEditTable → DataTable; WirePreviewDataTable `reorderMode`; delete deprecated WirePreviewTable
