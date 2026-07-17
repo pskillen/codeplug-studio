@@ -53,7 +53,7 @@ Tier-1 reference for editing the vendor-neutral **library** — the per-project 
 | ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- | --- |
 | `/library/channels`          | `DataTable` — sortable columns, **Zones** column, delete row action, toolbar search, hideable optional columns, URL + `localStorage` filter prefs | Yes |
 | `/library/channels/defaults` | Library-wide channel behavioural defaults (TX deny, TX permit, talker alias, analog squelch) — nested under Channels in section nav               | No  |
-| `/library/zones`             | `DataTable` — members, comment, delete row action; operator location + map below table                                                            | Yes |
+| `/library/zones`             | `DataTable` — export-order column (Move up/down → `Zone.order`), members, comment, delete; operator location + map | Yes |
 | `/library/talk-groups`       | `DataTable` — mode, ID, optional Abbrev, channels/RX lists using, comment, delete row action                                                      | No  |
 | `/library/contacts`          | Two `DataTable` sections: digital + analog (separate `dq` / `aq` filters); digital toolbar **Delete all**; per-row delete each                    | No  |
 | `/library/rx-group-lists`    | `DataTable` — members, channels using, delete row action                                                                                          | No  |

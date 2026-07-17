@@ -18,32 +18,31 @@
 
 **Status:** Complete
 
-**Delivered**
-
-- Progress / outstanding pair created
-- Plan linked from #456; #155 reinterpretation noted
-
 ---
 
 ## Slice 1 — Core `Zone.order` + membership helpers + cascade
 
 **Status:** Complete
 
+---
+
+## Slice 2 — Library UI (zones + scan lists)
+
+**Status:** Complete
+
 **Delivered**
 
-- `Zone.order` (schema v20); native-YAML parse; data-model + native-yaml docs
-- `zoneOrder.ts` / `membershipOrder.ts` — sort, dense apply, reorder helpers
-- `assembleZones` sorts by build `orderOrSlot` → `Zone.order` → name
-- `syncZoneGroupingWithLibrary` / seed use library zone order
-- `applyDenseOrderOrSlots` generalised from channel helper
-- Unit tests in `zoneOrder.test.ts`
+- `ZonesListPage` — export-order column with Move up/down → dense `Zone.order`
+- `ScanListMemberEditor` — SelectedItemList + Move up/down; sidecar + scan-lists docs
+- Library hub route row updated
 
 **Verify**
 
-- `npm run test -- --run src/core/domain/zoneOrder.test.ts src/core/services/assemble.test.ts`
+- `/library/zones` reorder (no name filter)
+- `/library/scan-lists/:id` member Move up/down + save
 
 ---
 
 ## Next
 
-- Slice 2: Library UI — top-level zone reorder + scan-list member reorder
+- Slice 3: Library Sort… (#155) with confirm; open follow-up issue
