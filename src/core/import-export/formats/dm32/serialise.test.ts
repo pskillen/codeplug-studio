@@ -6,6 +6,7 @@ import type { Channel } from '@core/models/library.ts';
 import type { FormatBuild } from '@core/models/formatBuild.ts';
 import {
   newChannel,
+  newDigitalContact,
   newFormatBuild,
   newRxGroupList,
   newTalkGroup,
@@ -14,7 +15,7 @@ import {
 import { seedZoneGroupingFromLibrary } from '@core/domain/zoneGroupingLayout.ts';
 import { assemble, type LibrarySlice } from '@core/services/assemble.ts';
 import { serialiseDm32Files } from './serialise.ts';
-import { CHANNEL_COL, ZONE_COL, SCAN_COL, RX_GROUP_LIST_COL } from './columns.ts';
+import { CHANNEL_COL, ZONE_COL, SCAN_COL, RX_GROUP_LIST_COL, CONTACT_COL } from './columns.ts';
 import { parseCsv } from '@core/import-export/csvParse.ts';
 import { minimalDm32Bundle } from '../../../../test/dm32/bundles.ts';
 import {
@@ -93,6 +94,43 @@ describe('DM32 export serialise', () => {
     const headers = rows[0]!;
     const nameIndex = headers.indexOf(CHANNEL_COL.name);
     expect(rows[1]?.[nameIndex]).toBe('GB3DA');
+  });
+
+  it('exports Contacts.csv metadata from DigitalContact fields', () => {
+    const contact = {
+      ...newDigitalContact(PROJECT_ID, 'W1AW', 1_234_567),
+      id: 'dc-w1aw',
+      callsign: 'W1AW',
+      city: 'Newington',
+      state: 'Connecticut',
+      country: 'USA',
+      remarks: 'ARRL HQ',
+    };
+    const build = dm32Build();
+    build.contactOverrides = [{ libraryEntityId: contact.id }];
+    const library: LibrarySlice = {
+      channels: [],
+      zones: [],
+      talkGroups: [],
+      digitalContacts: [contact],
+      analogContacts: [],
+      rxGroupLists: [],
+      scanLists: [],
+    };
+    const assembled = assemble(build, library);
+    const files = serialiseDm32Files(assembled, library);
+    const rows = parseCsv(files['Contacts.csv']);
+    const headers = rows[0]!;
+    const row = rows[1]!;
+    expect(row[headers.indexOf(CONTACT_COL.id)]).toBe('1234567');
+    expect(row[headers.indexOf(CONTACT_COL.name)]).toBe('W1AW');
+    expect(row[headers.indexOf(CONTACT_COL.city)]).toBe('Newington');
+    expect(row[headers.indexOf(CONTACT_COL.province)]).toBe('Connecticut');
+    expect(row[headers.indexOf(CONTACT_COL.country)]).toBe('USA');
+    expect(row[headers.indexOf(CONTACT_COL.remark)]).toBe('ARRL HQ');
+    expect(row[headers.indexOf(CONTACT_COL.repeater)]).toBe('');
+    expect(row[headers.indexOf(CONTACT_COL.type)]).toBe('Private Call');
+    expect(row[headers.indexOf(CONTACT_COL.alertCall)]).toBe('0');
   });
 
   it('maps library default forbidTransmit when channel override is default', () => {

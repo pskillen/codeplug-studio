@@ -239,13 +239,16 @@ export function serialiseDmrContacts(assembled: AssembledBuild): string {
     padRow(CONTACT_HEADERS, {
       [CONTACT_COL.number]: String(i + 1),
       [CONTACT_COL.id]: String(contact.entity.digitalId),
+      // Unmodelled — always empty (Studio does not use CPS Repeater on contacts).
       [CONTACT_COL.repeater]: '',
       [CONTACT_COL.name]: contact.wireName,
-      [CONTACT_COL.city]: '',
-      [CONTACT_COL.province]: '',
-      [CONTACT_COL.country]: '',
-      [CONTACT_COL.remark]: '',
+      [CONTACT_COL.city]: contact.entity.city,
+      [CONTACT_COL.province]: contact.entity.state,
+      [CONTACT_COL.country]: contact.entity.country,
+      [CONTACT_COL.remark]: contact.entity.remarks,
+      // Private-call file — Group Call lives in Talkgroups.csv.
       [CONTACT_COL.type]: 'Private Call',
+      // Alert Call unused in Studio — always off.
       [CONTACT_COL.alertCall]: '0',
     }),
   );
