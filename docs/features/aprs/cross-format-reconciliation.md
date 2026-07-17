@@ -10,11 +10,11 @@ Tier-3 column inventories: [Anytone aprs.md](../../reference/anytone/aprs.md), [
 
 ## Global vs per-channel
 
-| Format                | Global config                        | Per-channel (digital)                                                                                  | Studio mapping                                                                                       |
-| --------------------- | ------------------------------------ | ------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------- |
-| **Anytone AT-D890UV** | Single `APRS.CSV` row (~184 cols)    | `APRS RX`, `APRS Report Type`, `Digital APRS PTT Mode`, `Digital APRS Report Channel` on `Channel.CSV` | Singleton `AprsConfiguration` + `Channel.aprs`                                                       |
-| **DM32**              | None in CPS export                   | `APRS Receive`, `APRS Report Type`, `APRS Report Channel` on channel rows                              | Same `Channel.aprs`; no global file — [#250](https://github.com/pskillen/codeplug-studio/issues/250) |
-| **OpenGD77**          | Multi-row `APRS.csv` (named configs) | `Channels.APRS` name FK                                                                                | **Deferred** — analog-only                                                                           |
+| Format                | Global config                        | Per-channel (digital)                                                                                  | Studio mapping                                                                                                  |
+| --------------------- | ------------------------------------ | ------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------- |
+| **Anytone AT-D890UV** | Single `APRS.CSV` row (~184 cols)    | `APRS RX`, `APRS Report Type`, `Digital APRS PTT Mode`, `Digital APRS Report Channel` on `Channel.CSV` | Singleton `AprsConfiguration` + `Channel.aprs`                                                                  |
+| **DM32**              | None — Studio emits `APRS.md` guide  | `APRS Receive`, `APRS Report Type`, `APRS Report Channel`, Digital PTT on channel rows                 | Same `Channel.aprs`; global settings via guide ([#250](https://github.com/pskillen/codeplug-studio/issues/250)) |
+| **OpenGD77**          | Multi-row `APRS.csv` (named configs) | `Channels.APRS` name FK                                                                                | **Deferred** — analog-only                                                                                      |
 
 ---
 
@@ -44,15 +44,16 @@ Export adapters read the singleton library config when serialising the Anytone `
 
 ## Documented export loss (v1)
 
-| Item                                                | Reason                                                                                                      |
-| --------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
-| Anytone wire `Analog` report type on import         | Normalized to `off`                                                                                         |
-| ~150 unmodelled `APRS.CSV` columns                  | Fixture defaults — not operator-editable                                                                    |
-| CPS fixed beacons 2–8                               | One `fixedLocation` in model; wire exports slot `1` when fixed                                              |
-| OpenGD77 `APRS.csv`                                 | Deferred                                                                                                    |
-| DM32 analog report channel sentinel `256`           | N/A — digital-only path                                                                                     |
-| Analog-bound APRS slot `channelRef` on DM32 / CHIRP | Not exported — Anytone-only wire semantics ([#359](https://github.com/pskillen/codeplug-studio/issues/359)) |
-| `all call` (Call Type = 2)                          | Deferred                                                                                                    |
+| Item                                                | Reason                                                                                                                                            |
+| --------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Anytone wire `Analog` report type on import         | Normalized to `off`                                                                                                                               |
+| ~150 unmodelled `APRS.CSV` columns                  | Fixture defaults — not operator-editable                                                                                                          |
+| CPS fixed beacons 2–8                               | One `fixedLocation` in model; wire exports slot `1` when fixed                                                                                    |
+| OpenGD77 `APRS.csv`                                 | Deferred                                                                                                                                          |
+| DM32 analog report channel sentinel `256`           | Off-placeholder on analog rows without digital reporting                                                                                          |
+| Analog-bound APRS slot `channelRef` on DM32 / CHIRP | Wire names listed in `APRS.md` for DM32; Anytone uses `APRS.CSV` ([#359](https://github.com/pskillen/codeplug-studio/issues/359))                 |
+| DM32 single CPS call type / upload number           | Library keeps per-slot values; export warns + guide uses first contributing slot ([#250](https://github.com/pskillen/codeplug-studio/issues/250)) |
+| `all call` (Call Type = 2)                          | Deferred                                                                                                                                          |
 
 ---
 
