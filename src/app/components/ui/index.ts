@@ -57,6 +57,8 @@ export type {
   SelectedItemListProps,
   SelectedItemListRenderProps,
 } from './SelectedItemList.tsx';
+export { default as SelectedItemDragHandle } from './SelectedItemDragHandle.tsx';
+export type { SelectedItemDragHandleProps } from './SelectedItemDragHandle.tsx';
 export { default as AvailableItemPicker } from './AvailableItemPicker.tsx';
 export type {
   AvailableItemPickerFilterProps,

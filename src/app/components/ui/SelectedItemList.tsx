@@ -1,5 +1,23 @@
+import {
+  DndContext,
+  KeyboardSensor,
+  PointerSensor,
+  closestCenter,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  SortableContext,
+  arrayMove,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 import { Button, Group, ScrollArea, Stack, Text, TextInput } from '@mantine/core';
-import { Fragment, useEffect, type ReactNode } from 'react';
+import { Fragment, useCallback, useEffect, type CSSProperties, type ReactNode } from 'react';
+import type { SelectedItemDragHandleProps } from './SelectedItemDragHandle.tsx';
 
 export interface SelectedItemListFilterProps {
   value: string;
@@ -13,6 +31,11 @@ export interface SelectedItemListRenderProps<TKey extends string> {
   selected: boolean;
   onToggleSelect: () => void;
   onRemove: () => void;
+  /**
+   * When {@link SelectedItemListProps.onReorder} is set, wire this to
+   * {@link SelectedItemDragHandle}. `null` when drag is disabled (e.g. filter active).
+   */
+  dragHandle: SelectedItemDragHandleProps | null;
 }
 
 export interface SelectedItemListProps<TKey extends string = string> {
@@ -31,6 +54,13 @@ export interface SelectedItemListProps<TKey extends string = string> {
   onMoveSelected?: (direction: 'up' | 'down') => void;
   /** When set, shows built-in Remove selected. */
   onRemoveSelected?: () => void;
+  /**
+   * Drag-and-drop reorder (role C reorder mode). Receives the full `itemKeys`
+   * array after a drop. Disabled when `reorderDisabled` is true.
+   */
+  onReorder?: (orderedKeys: TKey[]) => void;
+  /** Disable drag handles (e.g. while a find-in-list filter is active). */
+  reorderDisabled?: boolean;
   /** Hint beside built-in reorder controls (default Alt+↑/↓ text when move is enabled). */
   reorderHint?: ReactNode;
   /**
@@ -41,6 +71,42 @@ export interface SelectedItemListProps<TKey extends string = string> {
   /** Optional disable flags for built-in move buttons. */
   canMoveUp?: boolean;
   canMoveDown?: boolean;
+}
+
+function SortableSelectedItem<TKey extends string>({
+  itemKey,
+  dragDisabled,
+  children,
+}: {
+  itemKey: TKey;
+  dragDisabled: boolean;
+  children: (dragHandle: SelectedItemDragHandleProps | null) => ReactNode;
+}) {
+  const { attributes, listeners, setNodeRef, setActivatorNodeRef, transform, transition, isDragging } =
+    useSortable({ id: itemKey, disabled: dragDisabled });
+
+  const style: CSSProperties = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.65 : 1,
+    position: 'relative',
+    zIndex: isDragging ? 1 : undefined,
+  };
+
+  const dragHandle: SelectedItemDragHandleProps | null = dragDisabled
+    ? null
+    : {
+        setActivatorNodeRef,
+        attributes,
+        listeners,
+        disabled: false,
+      };
+
+  return (
+    <div ref={setNodeRef} style={style} data-testid="selected-item-row" data-dragging={isDragging || undefined}>
+      {children(dragHandle)}
+    </div>
+  );
 }
 
 export default function SelectedItemList<TKey extends string>({
@@ -57,6 +123,8 @@ export default function SelectedItemList<TKey extends string>({
   toolbar,
   onMoveSelected,
   onRemoveSelected,
+  onReorder,
+  reorderDisabled = false,
   reorderHint,
   enableReorderHotkeys,
   canMoveUp = true,
@@ -65,13 +133,36 @@ export default function SelectedItemList<TKey extends string>({
   const selectedSet = new Set(selectedKeys);
   const hotkeysEnabled = onMoveSelected != null && (enableReorderHotkeys ?? true);
   const showBuiltinReorder = onMoveSelected != null || onRemoveSelected != null;
+  const dragEnabled = onReorder != null && !reorderDisabled;
   const defaultHint =
-    onMoveSelected != null ? (
+    onMoveSelected != null || onReorder != null ? (
       <Text size="xs" c="dimmed">
-        Alt+↑ / Alt+↓ reorders selection
+        {onReorder != null && !reorderDisabled
+          ? 'Drag handles reorder · Alt+↑/↓ moves selection'
+          : onMoveSelected != null
+            ? 'Alt+↑ / Alt+↓ reorders selection'
+            : 'Clear filter to drag-reorder'}
       </Text>
     ) : null;
   const hint = reorderHint !== undefined ? reorderHint : defaultHint;
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  );
+
+  const handleDragEnd = useCallback(
+    (event: DragEndEvent) => {
+      if (!onReorder || reorderDisabled) return;
+      const { active, over } = event;
+      if (!over || active.id === over.id) return;
+      const oldIndex = itemKeys.indexOf(active.id as TKey);
+      const newIndex = itemKeys.indexOf(over.id as TKey);
+      if (oldIndex < 0 || newIndex < 0) return;
+      onReorder(arrayMove([...itemKeys], oldIndex, newIndex));
+    },
+    [itemKeys, onReorder, reorderDisabled],
+  );
 
   useEffect(() => {
     if (!hotkeysEnabled || !onMoveSelected) return;
@@ -88,6 +179,47 @@ export default function SelectedItemList<TKey extends string>({
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
   }, [hotkeysEnabled, onMoveSelected]);
+
+  const listBody =
+    itemKeys.length === 0 ? (
+      <Text size="sm" c="dimmed" p="xs">
+        {emptyMessage}
+      </Text>
+    ) : dragEnabled ? (
+      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+        <SortableContext items={[...itemKeys]} strategy={verticalListSortingStrategy}>
+          <Stack gap={6}>
+            {itemKeys.map((itemKey) => (
+              <SortableSelectedItem key={itemKey} itemKey={itemKey} dragDisabled={false}>
+                {(dragHandle) =>
+                  renderItem({
+                    itemKey,
+                    selected: selectedSet.has(itemKey),
+                    onToggleSelect: () => onToggleSelect(itemKey),
+                    onRemove: () => onRemove(itemKey),
+                    dragHandle,
+                  })
+                }
+              </SortableSelectedItem>
+            ))}
+          </Stack>
+        </SortableContext>
+      </DndContext>
+    ) : (
+      <Stack gap={6}>
+        {itemKeys.map((itemKey) => (
+          <Fragment key={itemKey}>
+            {renderItem({
+              itemKey,
+              selected: selectedSet.has(itemKey),
+              onToggleSelect: () => onToggleSelect(itemKey),
+              onRemove: () => onRemove(itemKey),
+              dragHandle: null,
+            })}
+          </Fragment>
+        ))}
+      </Stack>
+    );
 
   return (
     <Stack gap="xs">
@@ -115,24 +247,7 @@ export default function SelectedItemList<TKey extends string>({
       </Group>
 
       <ScrollArea.Autosize mah={maxHeight} type="auto" offsetScrollbars>
-        <Stack gap={6}>
-          {itemKeys.length === 0 ? (
-            <Text size="sm" c="dimmed" p="xs">
-              {emptyMessage}
-            </Text>
-          ) : (
-            itemKeys.map((itemKey) => (
-              <Fragment key={itemKey}>
-                {renderItem({
-                  itemKey,
-                  selected: selectedSet.has(itemKey),
-                  onToggleSelect: () => onToggleSelect(itemKey),
-                  onRemove: () => onRemove(itemKey),
-                })}
-              </Fragment>
-            ))
-          )}
-        </Stack>
+        {listBody}
       </ScrollArea.Autosize>
 
       {showBuiltinReorder ? (
@@ -172,6 +287,8 @@ export default function SelectedItemList<TKey extends string>({
           ) : null}
           {hint}
         </Group>
+      ) : hint && onReorder != null ? (
+        <Group gap="xs">{hint}</Group>
       ) : null}
 
       {toolbar}

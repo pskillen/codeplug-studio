@@ -106,14 +106,21 @@ export interface DataTableProps<T> {
   onRowActivate?: (row: T) => void;
   /**
    * When true, column headers are not sortable and rows keep the order of `rows`
-   * (lock-only pattern). Prefer {@link storedOrder} when temporary natural sorts
-   * should be allowed with a restore control.
+   * (lock-only pattern). Prefer {@link reorderMode} as the public name for
+   * export-order lists; this alias remains for existing callers.
    */
   orderMode?: boolean;
   /**
+   * Reorder mode: display stays on agreed/`rows` order; mutate via consumer
+   * reorder controls (arrows / drag). Column sorts stay off. Distinct from
+   * {@link storedOrder}, which allows temporary natural sorts + restore.
+   * Equivalent to {@link orderMode}.
+   */
+  reorderMode?: boolean;
+  /**
    * First-class stored/export-order sort: default to `rows` order, allow other
    * column sorts, show a subtle restore control when drifted. Ignored when
-   * `orderMode` is true.
+   * `orderMode` / `reorderMode` is true.
    */
   storedOrder?: boolean | DataTableStoredOrderConfig;
   /**
@@ -236,6 +243,7 @@ export default function DataTable<T>({
   resultCount,
   onRowActivate,
   orderMode = false,
+  reorderMode = false,
   storedOrder,
   scale = 'default',
   virtualize = 'auto',
@@ -246,11 +254,12 @@ export default function DataTable<T>({
   const showSearchInput = showSearch ?? (isList && onSearchChange !== undefined);
   const selectable = selectableProp ?? false;
   const effectiveVirtualize: DataTableVirtualizeMode = scale === 'extreme' ? true : virtualize;
-  const sortingEnabled = !orderMode;
+  const orderLocked = orderMode || reorderMode;
+  const sortingEnabled = !orderLocked;
 
   const storedOrderConfig = useMemo(
-    () => (orderMode ? null : resolveStoredOrderConfig(storedOrder)),
-    [orderMode, storedOrder],
+    () => (orderLocked ? null : resolveStoredOrderConfig(storedOrder)),
+    [orderLocked, storedOrder],
   );
   const storedOrderColumnKey = storedOrderConfig
     ? (storedOrderConfig.columnKey ?? DATATABLE_STORED_ORDER_SORT_KEY)
@@ -348,8 +357,8 @@ export default function DataTable<T>({
   );
 
   const sortedRows = useMemo(
-    () => (orderMode ? rows : sortDataTableRows(rows, sortState, sortCtx)),
-    [orderMode, rows, sortState, sortCtx],
+    () => (orderLocked ? rows : sortDataTableRows(rows, sortState, sortCtx)),
+    [orderLocked, rows, sortState, sortCtx],
   );
 
   const showRestoreStoredOrder =
