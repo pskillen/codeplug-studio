@@ -23,6 +23,15 @@
   color: var(--mantine-color-brand-filled);
 }
 
+.sortButtonElevated {
+  font-weight: 600;
+}
+
+.sortLabelElevated {
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+
 .sortIcon {
   flex-shrink: 0;
   opacity: 0.45;

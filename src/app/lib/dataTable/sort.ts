@@ -9,11 +9,15 @@ export interface DataTableSortState {
 
 export const DATATABLE_NAME_SORT_KEY = '__name__';
 export const DATATABLE_CALLSIGN_SORT_KEY = '__callsign__';
+/** Display sort that preserves `rows` order (export / agreed membership order). */
+export const DATATABLE_STORED_ORDER_SORT_KEY = '__storedOrder__';
 
 export interface DataTableSortContext<T> {
   columns: DataTableColumn<T>[];
   callsignColumn?: DataTableLinkedColumn<T>;
   nameColumn: DataTableLinkedColumn<T>;
+  /** When set, sorting by this key keeps (or reverses) `rows` without field compare. */
+  storedOrderColumnKey?: string;
 }
 
 function getSortValueForKey<T>(
@@ -34,6 +38,15 @@ function getSortValueForKey<T>(
   return col.sortValue(row);
 }
 
+export function isStoredOrderSort(
+  sortState: DataTableSortState | null | undefined,
+  storedOrderColumnKey: string | undefined,
+): boolean {
+  if (!storedOrderColumnKey) return false;
+  if (!sortState) return true;
+  return sortState.columnKey === storedOrderColumnKey;
+}
+
 function compareSortValues(a: string | number | null, b: string | number | null): number {
   const aNull = a === null || a === undefined || a === '';
   const bNull = b === null || b === undefined || b === '';
@@ -51,6 +64,11 @@ export function sortDataTableRows<T>(
 ): T[] {
   if (!sortState) return rows;
   const { columnKey, direction } = sortState;
+
+  if (ctx.storedOrderColumnKey && columnKey === ctx.storedOrderColumnKey) {
+    return direction === 'desc' ? [...rows].reverse() : rows;
+  }
+
   const multiplier = direction === 'asc' ? 1 : -1;
 
   return [...rows].sort((rowA, rowB) => {

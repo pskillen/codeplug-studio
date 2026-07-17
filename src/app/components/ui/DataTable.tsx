@@ -11,7 +11,7 @@ import {
   Text,
   TextInput,
 } from '@mantine/core';
-import { IconChevronDown, IconChevronUp, IconSelector } from '@tabler/icons-react';
+import { IconChevronDown, IconChevronUp, IconRestore, IconSelector } from '@tabler/icons-react';
 import { Link } from 'react-router-dom';
 import { useCallback, useMemo, useState, type ReactNode } from 'react';
 import EmptyState from './EmptyState.tsx';
@@ -19,12 +19,15 @@ import { useDataTableColumnVisibility } from '../../hooks/useDataTableColumnVisi
 import {
   DATATABLE_CALLSIGN_SORT_KEY,
   DATATABLE_NAME_SORT_KEY,
+  DATATABLE_STORED_ORDER_SORT_KEY,
+  isStoredOrderSort,
   nextSortState,
   sortDataTableRows,
   type DataTableSortState,
 } from '../../lib/dataTable/sort.ts';
 import { useVirtualDataTableRows } from '../../lib/dataTable/useVirtualDataTableRows.ts';
 import type { DataTableVirtualizeMode } from '../../lib/dataTable/virtualization.ts';
+import { ICON_STROKE } from '../../lib/iconSizes.ts';
 import classes from './DataTable.module.css';
 
 export interface DataTableColumn<T> {
@@ -49,6 +52,24 @@ export interface DataTableLinkedColumn<T> {
 }
 
 export type DataTableVariant = 'list' | 'embedded';
+
+/**
+ * Agreed / export order as a first-class display sort.
+ * When active, rows keep the order of `rows` (asc) or reverse (desc).
+ * A subtle restore control appears when the table is sorted by another column.
+ */
+export interface DataTableStoredOrderConfig {
+  /**
+   * Column key used in sort state. Prefer the export-order column’s `key`
+   * (e.g. `'exportOrder'`) so that header participates; otherwise
+   * {@link DATATABLE_STORED_ORDER_SORT_KEY}.
+   */
+  columnKey?: string;
+  /** Label for restore control and elevated header weight. Default `'Export order'`. */
+  label?: string;
+  /** Restore button label when drifted. Default `'Return to export order'`. */
+  restoreLabel?: string;
+}
 
 export interface DataTableProps<T> {
   rows: T[];
@@ -85,9 +106,16 @@ export interface DataTableProps<T> {
   onRowActivate?: (row: T) => void;
   /**
    * When true, column headers are not sortable and rows keep the order of `rows`
-   * (Zones list / export-order pattern). Consumers own up/down reorder columns.
+   * (lock-only pattern). Prefer {@link storedOrder} when temporary natural sorts
+   * should be allowed with a restore control.
    */
   orderMode?: boolean;
+  /**
+   * First-class stored/export-order sort: default to `rows` order, allow other
+   * column sorts, show a subtle restore control when drifted. Ignored when
+   * `orderMode` is true.
+   */
+  storedOrder?: boolean | DataTableStoredOrderConfig;
   /**
    * `'extreme'` forces windowed virtualisation on (role D). Prefer cheap cells —
    * plain text, no per-row heavy work or rich editors.
@@ -129,15 +157,18 @@ function SortableHeader({
   sortable,
   sortState,
   onSort,
+  elevated = false,
 }: {
   label: string;
   columnKey: string;
   sortable: boolean;
   sortState: DataTableSortState | null;
   onSort: (key: string) => void;
+  /** Slightly higher visual weight (stored/export order). */
+  elevated?: boolean;
 }) {
   if (!sortable) {
-    return <>{label}</>;
+    return elevated ? <span className={classes.sortLabelElevated}>{label}</span> : <>{label}</>;
   }
 
   const active = sortState?.columnKey === columnKey;
@@ -150,11 +181,11 @@ function SortableHeader({
   return (
     <button
       type="button"
-      className={classes.sortButton}
+      className={elevated ? `${classes.sortButton} ${classes.sortButtonElevated}` : classes.sortButton}
       onClick={() => onSort(columnKey)}
       aria-sort={active ? (sortState.direction === 'asc' ? 'ascending' : 'descending') : 'none'}
     >
-      <span>{label}</span>
+      <span className={elevated ? classes.sortLabelElevated : undefined}>{label}</span>
       <Icon
         size={14}
         stroke={1.5}
@@ -163,6 +194,14 @@ function SortableHeader({
       />
     </button>
   );
+}
+
+function resolveStoredOrderConfig(
+  storedOrder: boolean | DataTableStoredOrderConfig | undefined,
+): DataTableStoredOrderConfig | null {
+  if (!storedOrder) return null;
+  if (storedOrder === true) return {};
+  return storedOrder;
 }
 
 export default function DataTable<T>({
@@ -195,6 +234,7 @@ export default function DataTable<T>({
   resultCount,
   onRowActivate,
   orderMode = false,
+  storedOrder,
   scale = 'default',
   virtualize = 'auto',
   estimatedRowHeight,
@@ -205,6 +245,21 @@ export default function DataTable<T>({
   const selectable = selectableProp ?? false;
   const effectiveVirtualize: DataTableVirtualizeMode = scale === 'extreme' ? true : virtualize;
   const sortingEnabled = !orderMode;
+
+  const storedOrderConfig = useMemo(
+    () => (orderMode ? null : resolveStoredOrderConfig(storedOrder)),
+    [orderMode, storedOrder],
+  );
+  const storedOrderColumnKey = storedOrderConfig
+    ? (storedOrderConfig.columnKey ?? DATATABLE_STORED_ORDER_SORT_KEY)
+    : undefined;
+  const storedOrderLabel = storedOrderConfig?.label ?? 'Export order';
+  const storedOrderRestoreLabel =
+    storedOrderConfig?.restoreLabel ?? 'Return to export order';
+  const storedOrderDefault: DataTableSortState | undefined = storedOrderColumnKey
+    ? { columnKey: storedOrderColumnKey, direction: 'asc' }
+    : undefined;
+  const effectiveDefaultSort = defaultSort ?? storedOrderDefault;
 
   const hideableDefs = useMemo(
     () =>
@@ -252,31 +307,60 @@ export default function DataTable<T>({
     );
   }, [columns, hideableDefs, visibleHideableKeys]);
 
-  const [internalSort, setInternalSort] = useState<DataTableSortState | null>(defaultSort ?? null);
+  const [internalSort, setInternalSort] = useState<DataTableSortState | null>(
+    effectiveDefaultSort ?? null,
+  );
   const sortState = controlledSort !== undefined ? controlledSort : internalSort;
 
-  const handleSort = useCallback(
-    (columnKey: string) => {
-      if (!sortingEnabled) return;
-      const next = nextSortState(sortState, columnKey);
+  const applySort = useCallback(
+    (next: DataTableSortState | null) => {
       if (onSortChange) {
         onSortChange(next);
       } else {
         setInternalSort(next);
       }
     },
-    [sortingEnabled, sortState, onSortChange],
+    [onSortChange],
   );
 
+  const handleSort = useCallback(
+    (columnKey: string) => {
+      if (!sortingEnabled) return;
+      applySort(nextSortState(sortState, columnKey));
+    },
+    [sortingEnabled, sortState, applySort],
+  );
+
+  const restoreStoredOrder = useCallback(() => {
+    if (!storedOrderColumnKey) return;
+    applySort({ columnKey: storedOrderColumnKey, direction: 'asc' });
+  }, [applySort, storedOrderColumnKey]);
+
   const sortCtx = useMemo(
-    () => ({ columns: visibleColumns, callsignColumn, nameColumn }),
-    [visibleColumns, callsignColumn, nameColumn],
+    () => ({
+      columns: visibleColumns,
+      callsignColumn,
+      nameColumn,
+      storedOrderColumnKey,
+    }),
+    [visibleColumns, callsignColumn, nameColumn, storedOrderColumnKey],
   );
 
   const sortedRows = useMemo(
     () => (orderMode ? rows : sortDataTableRows(rows, sortState, sortCtx)),
     [orderMode, rows, sortState, sortCtx],
   );
+
+  const showRestoreStoredOrder =
+    sortingEnabled &&
+    !!storedOrderColumnKey &&
+    !isStoredOrderSort(sortState, storedOrderColumnKey);
+
+  const hasStoredOrderColumn = !!storedOrderColumnKey &&
+    visibleColumns.some((col) => col.key === storedOrderColumnKey);
+  /** Leading header when stored order has no matching data column. */
+  const showLeadingStoredOrderSort =
+    sortingEnabled && !!storedOrderColumnKey && !hasStoredOrderColumn;
 
   const [internalSelected, setInternalSelected] = useState<string[]>([]);
   const selectedKeys = controlledSelectedKeys ?? internalSelected;
@@ -307,7 +391,11 @@ export default function DataTable<T>({
   );
 
   const leadingColCount =
-    (selectable ? 1 : 0) + (callsignColumn ? 1 : 0) + 1 + visibleColumns.length;
+    (selectable ? 1 : 0) +
+    (showLeadingStoredOrderSort ? 1 : 0) +
+    (callsignColumn ? 1 : 0) +
+    1 +
+    visibleColumns.length;
   const defaultEmpty = <EmptyState message="No items" />;
   const displayCount = resultCount ?? sortedRows.length;
 
@@ -318,11 +406,10 @@ export default function DataTable<T>({
   const [columnModalOpen, setColumnModalOpen] = useState(false);
 
   const showMetaRow =
-    isList &&
-    (showSearchInput ||
-      showColumnPicker ||
-      totalRowCount !== undefined ||
-      resultCount !== undefined);
+    showSearchInput ||
+    showColumnPicker ||
+    showRestoreStoredOrder ||
+    (isList && (totalRowCount !== undefined || resultCount !== undefined));
 
   const toggleHideableColumn = useCallback(
     (key: string, checked: boolean) => {
@@ -365,6 +452,7 @@ export default function DataTable<T>({
               />
             </Table.Td>
           ) : null}
+          {showLeadingStoredOrderSort ? <Table.Td /> : null}
           {callsignColumn ? (
             <Table.Td>
               <LinkedCell column={callsignColumn} row={row} asLink={!onRowActivate} />
@@ -385,6 +473,7 @@ export default function DataTable<T>({
       onRowActivate,
       selectable,
       toggleRow,
+      showLeadingStoredOrderSort,
       nameColumn,
       callsignColumn,
       visibleColumns,
@@ -417,10 +506,27 @@ export default function DataTable<T>({
       ) : null}
 
       {showMetaRow ? (
-        <Group justify="space-between" align="center" wrap="nowrap" gap="sm">
-          <Text size="sm" c="dimmed">
-            {displayCount} result{displayCount === 1 ? '' : 's'}
-          </Text>
+        <Group justify="space-between" align="center" wrap="wrap" gap="sm">
+          <Group gap="sm" align="center" wrap="wrap">
+            {isList || totalRowCount !== undefined || resultCount !== undefined ? (
+              <Text size="sm" c="dimmed">
+                {displayCount} result{displayCount === 1 ? '' : 's'}
+              </Text>
+            ) : null}
+            {showRestoreStoredOrder ? (
+              <Button
+                type="button"
+                variant="light"
+                color="gray"
+                size="compact-sm"
+                leftSection={<IconRestore size={14} stroke={ICON_STROKE} />}
+                onClick={restoreStoredOrder}
+                aria-label={storedOrderRestoreLabel}
+              >
+                {storedOrderRestoreLabel}
+              </Button>
+            ) : null}
+          </Group>
           {showColumnPicker ? (
             <Button
               variant="subtle"
@@ -456,6 +562,18 @@ export default function DataTable<T>({
                   />
                 </Table.Th>
               ) : null}
+              {showLeadingStoredOrderSort && storedOrderColumnKey ? (
+                <Table.Th className={classes.stickyTh}>
+                  <SortableHeader
+                    label={storedOrderLabel}
+                    columnKey={storedOrderColumnKey}
+                    sortable
+                    sortState={sortState}
+                    onSort={handleSort}
+                    elevated
+                  />
+                </Table.Th>
+              ) : null}
               {callsignColumn ? (
                 <Table.Th className={classes.stickyTh}>
                   <SortableHeader
@@ -476,17 +594,25 @@ export default function DataTable<T>({
                   onSort={handleSort}
                 />
               </Table.Th>
-              {visibleColumns.map((col) => (
-                <Table.Th key={col.key} className={classes.stickyTh}>
-                  <SortableHeader
-                    label={col.header}
-                    columnKey={col.key}
-                    sortable={sortingEnabled && col.sortable !== false && !!col.sortValue}
-                    sortState={sortState}
-                    onSort={handleSort}
-                  />
-                </Table.Th>
-              ))}
+              {visibleColumns.map((col) => {
+                const isStoredOrderCol =
+                  !!storedOrderColumnKey && col.key === storedOrderColumnKey;
+                const columnSortable =
+                  sortingEnabled &&
+                  (isStoredOrderCol || (col.sortable !== false && !!col.sortValue));
+                return (
+                  <Table.Th key={col.key} className={classes.stickyTh}>
+                    <SortableHeader
+                      label={col.header}
+                      columnKey={col.key}
+                      sortable={columnSortable}
+                      sortState={sortState}
+                      onSort={handleSort}
+                      elevated={isStoredOrderCol}
+                    />
+                  </Table.Th>
+                );
+              })}
             </Table.Tr>
           </Table.Thead>
           <Table.Tbody>

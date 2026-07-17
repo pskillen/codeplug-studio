@@ -24,6 +24,7 @@ export type {
   DataTableLinkedColumn,
   DataTableProps,
   DataTableSortState,
+  DataTableStoredOrderConfig,
   DataTableVariant,
 } from './DataTable.tsx';
 export { default as PercentLevelSlider } from './PercentLevelSlider.tsx';
