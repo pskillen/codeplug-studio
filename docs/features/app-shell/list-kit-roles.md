@@ -41,7 +41,7 @@ Also fold charms from Zones list (order-mode honesty) and wire-preview lists (de
 | ID      | Surface                    | Role                                |
 | ------- | -------------------------- | ----------------------------------- |
 | L1      | Channels list              | **A**                               |
-| L2      | Zones list                 | **A** (+ order mode)                |
+| L2      | Zones list                 | **A** + `reorderMode`               |
 | L3      | Talk groups list           | **A**                               |
 | L4      | Contacts — digital         | **D**                               |
 | L5      | Contacts — analog          | **A**                               |
@@ -99,4 +99,4 @@ Dev-only (unlinked from product nav):
 | Role map doc        | Shipped (this page) |                                                                       |
 | Styleguide split    | Shipped             | `/styleguide/*` nested hub                                            |
 | Kit API A/B/C/D     | Shipped             | `reorderMode`/`orderMode`, `storedOrder`, C drag `onReorder`, `scale` |
-| Production adoption | Deferred            | See [outstanding](list-kit-460-outstanding.md)                        |
+| Production adoption | In progress         | Branch `460/pskil/list-kit-adoption`; see [progress](list-kit-460-progress.md) |
