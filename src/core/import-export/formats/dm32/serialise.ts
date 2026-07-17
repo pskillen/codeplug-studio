@@ -67,6 +67,7 @@ function carrierExpandedRow(carrier: SyntheticScanCarrier): ExpandedDm32ChannelR
     },
     txContactRef: null,
     rxGroupListId: null,
+    rowKind: 'lean',
   };
 }
 
