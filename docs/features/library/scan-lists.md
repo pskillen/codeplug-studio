@@ -42,7 +42,7 @@ Relationships use UUID `id` fields only — never wire names as internal FKs.
 | `migrateBuildScanListsToLibrary` | `src/core/domain/migrateScanLists.ts`                        | Hoist legacy `ScanListsLayout`       |
 | `ScanListsListPage`              | `src/app/routes/library/ScanListsListPage.tsx`               | List route                           |
 | `ScanListEditor`                 | `src/app/routes/library/ScanListEditor.tsx`                  | Name + members                       |
-| `ScanListMemberEditor`           | `src/app/components/library/ScanListMemberEditor.tsx`        | Channel member picker                |
+| `ScanListMemberEditor`           | `src/app/components/library/ScanListMemberEditor.tsx`        | C list + B AvailableItemPicker       |
 | `BuildScanListLibraryGuidance`   | `src/app/components/builds/BuildScanListLibraryGuidance.tsx` | Build scan lists page → library link |
 | `ScanListSummary`                | `src/app/components/library/ScanListSummary.tsx`             | Channel editor scan list preview     |
 

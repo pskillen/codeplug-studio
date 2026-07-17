@@ -173,9 +173,9 @@ export default function ZonesListPage() {
     <ListPage title="Zones">
       <Stack gap="lg">
         <Text size="sm" c="dimmed">
-          Reorder mode: rows stay in library export order (`Zone.order`). Use arrows to reorder
-          (name filter must be clear). Sort zones… permanently rewrites order — it is not a browse
-          sort.
+          Zones appear on your radio in this order. Use the arrows to rearrange them (clear the name
+          filter first). <strong>Sort zones…</strong> rewrites the list permanently by name — it is
+          not a temporary browse sort.
         </Text>
         {filterActive ? (
           <Text size="sm" c="orange">

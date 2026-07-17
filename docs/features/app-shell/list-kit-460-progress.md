@@ -1,86 +1,103 @@
 # List kit roles (#460) — progress
 
-**Tracking:** [codeplug-studio#460](https://github.com/pskillen/codeplug-studio/issues/460)
-**Plan:** List kit + styleguide (#460)
-**Branch:** `460/pskil/list-kit-styleguide`
+**Tracking:** [codeplug-studio#460](https://github.com/pskillen/codeplug-studio/issues/460)  
+**Plan:** List kit adoption (#460)  
+**Branch:** `460/pskil/list-kit-adoption`
 
 ---
 
 ## Overall status
 
-**Status:** Complete (pending merge) — kit + styleguide; adoption deferred
+**Status:** Complete — production adoption shipped for in-scope surfaces
 
-**Branch:** `460/pskil/list-kit-styleguide`
+**Branch:** `460/pskil/list-kit-adoption`
 
-**PR:** https://github.com/pskillen/codeplug-studio/pull/461
+**PR:** [#464](https://github.com/pskillen/codeplug-studio/pull/464)
+
+**Prerequisites on main:** [#461](https://github.com/pskillen/codeplug-studio/pull/461) kit + styleguide; [#463](https://github.com/pskillen/codeplug-studio/pull/463) export-ordering toolkit + C drag.
 
 ---
 
-## Slice 0: Role map docs
+## Kit + styleguide (complete)
+
+Shipped in #461 / #463 — not re-done on this branch.
+
+- A/B/C/D kit APIs, nested `/styleguide/*`
+- Export ordering: `reorderMode`, `storedOrder`, `SelectedItemList` `onReorder` + drag, `MembershipSortMenu`
+- Zones list already on `reorderMode`; zone/scan/wire-preview C drag wired
+
+---
+
+## Adoption
+
+### Slice 0: Branch + progress
 
 **Status:** Complete
 
 **Delivered**
 
-- `docs/features/app-shell/list-kit-roles.md` — A/B/C/D + surface map
-- Progress / outstanding pair
-- App-shell README documentation map rows
+- Branch from post-#463 `main`
+- Progress / outstanding adoption section + toolkit note
+- list-kit-roles Zones surface → **A + reorderMode**
 
 **Verify**
 
-- Role map linked from app-shell hub
+- Docs reflect toolkit shipped; adoption in progress
 
----
-
-## Slice 1: Styleguide nested routes
+### Slice 1: Membership B+C unify
 
 **Status:** Complete
 
 **Delivered**
 
-- `/styleguide` index + `/layout`, `/data-table`, `/membership`, `/controls`
-- Fixtures and demos under `src/app/routes/styleguide/`
-- Removed monolith `StyleguidePage.tsx`
+- `ZoneMemberEditor` → C built-in move/remove/hotkeys; Sort… in toolbar; drag kept
+- `ScanListMemberEditor` → `AvailableItemPicker` (B) + C builtins; drag kept
+- `ZoneMemberOrderSection` parity confirmed (already on C props + drag)
+- Sidecars + zone-member-picker / scan-lists docs
 
 **Verify**
 
-- Nested routes compile; old single-page demos still present
+- Zone/scan editors: drag, Move, Alt arrows, Sort…; Scan add via B
 
----
-
-## Slice 2–3: DataTable A + D
+### Slice 2: Contacts D
 
 **Status:** Complete
 
 **Delivered**
 
-- `orderMode` and `scale="extreme"` on `DataTable`
-- Styleguide `/styleguide/data-table` full A demos + 10k extreme demo
-- Sidecar + `data-table.md` + unit tests
+- Digital contacts `scale="extreme"` + `entityListColumnsKey` hideable cols
 
-**Verify**
-
-- `vitest` DataTable tests pass
-
----
-
-## Slice 4–6: B + C kit + membership styleguide
+### Slice 3: RepeaterDirectorySearch → DataTable
 
 **Status:** Complete
 
 **Delivered**
 
-- `SelectedItemList` built-in move/remove/hotkeys
-- `AvailableItemPicker` description + `sectionToolbar`
-- `/styleguide/membership` paired + standalone demos
-- Sidecars + unit tests
+- Results raw `Table` → embedded `DataTable` (role A); custom select column (existing rows not selectable)
 
-**Verify**
+### Slice 4–5: Channel set + wire raw Tables
 
-- SelectedItemList + DataTable tests pass; build green
+**Status:** Complete
+
+**Delivered**
+
+- `ChannelSetPicker` preview → embedded `DataTable`
+- `WirePreviewBulkEditTable` → embedded `DataTable`
+- `WirePreviewDataTable` `reorderMode` when `reorder` config present
+- Deleted deprecated `WirePreviewTable`; tests moved to bulk-edit / override modal / `ZoneScanRowHeader`
+
+### Slice 6: Docs + PR
+
+**Status:** Complete
+
+**Delivered**
+
+- list-kit-roles status: Production adoption shipped; surface map updated for wire / repeater / channel-set
+- Outstanding adoption boxes cleared; deferred kit gaps remain listed
+- Local gate + PR
 
 ---
 
 ## Next
 
-- Slice 7: docs polish + PR (Addresses #460)
+- Merge PR; follow-ups: DataTable row drag in `reorderMode`; RGL → SelectedItemList (if scheduled)

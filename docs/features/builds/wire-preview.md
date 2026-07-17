@@ -8,13 +8,13 @@ Operator workflow for reviewing and shaping CPS wire names before export. Each b
 
 ## UI surfaces
 
-| Surface       | Component / route                       | Edits                                                                              |
-| ------------- | --------------------------------------- | ---------------------------------------------------------------------------------- |
-| **List**      | `WirePreviewDataTable` on entity routes | Browse, search, sort (UI-only); row click opens modal                              |
-| **Modal**     | `WirePreviewOverrideModal`              | Wire name, skip, force-include; format-specific sections (zone scan, CHIRP scan)   |
-| **Bulk edit** | `/builds/:id/channels/bulk`             | Wire name + skip per channel only; leave-page guard for unapplied wire-name drafts |
+| Surface       | Component / route                       | Edits                                                                                               |
+| ------------- | --------------------------------------- | --------------------------------------------------------------------------------------------------- |
+| **List**      | `WirePreviewDataTable` on entity routes | Browse, search; **`reorderMode`** + order arrows when reorder config present; row click opens modal |
+| **Modal**     | `WirePreviewOverrideModal`              | Wire name, skip, force-include; format-specific sections (zone scan, CHIRP scan)                    |
+| **Bulk edit** | `/builds/:id/channels/bulk`             | Embedded `DataTable` — wire name + skip per channel; leave-page guard for unapplied drafts          |
 
-`BuildWirePreviewListPage` wraps list + modal for most entity routes. **Zones** and CHIRP flat memory use an optional reorder column for `orderOrSlot`. Zone row modals include **member export order** (layout `channelIds` hints).
+`BuildWirePreviewListPage` wraps list + modal for most entity routes. **Zones** and CHIRP flat memory use **`reorderMode`** with an order column for `orderOrSlot`. Zone row modals include **member export order** (layout `channelIds` hints).
 
 **Sort and filter** on list pages are client-side convenience only — they do **not** change export order. CHIRP memory order and zone `orderOrSlot` are updated only via up/down reorder controls (or library edits), not table sort. Reorder is disabled while search or “hide not included” filters are active on the zones page.
 

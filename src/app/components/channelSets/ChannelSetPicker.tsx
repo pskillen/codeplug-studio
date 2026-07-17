@@ -6,11 +6,9 @@ import {
   Checkbox,
   Group,
   NumberInput,
-  ScrollArea,
   Select,
   Stack,
   Switch,
-  Table,
   Text,
   TextInput,
 } from '@mantine/core';
@@ -24,7 +22,8 @@ import type { ChannelSetId } from '@core/domain/channelSets/types.ts';
 import { channelSetDefinition } from '@core/domain/channelSets/definitions.ts';
 import { buildChannelSetImportPlan } from '@core/services/channelSetImport.ts';
 import ModePill from '../pills/ModePill.tsx';
-import { FormPage, PageSection } from '../ui/index.ts';
+import { FormPage, PageSection, DataTable } from '../ui/index.ts';
+import type { DataTableColumn } from '../ui/DataTable.tsx';
 import { hzToMhzString } from '../../lib/units.ts';
 import { ICON_SIZE_NAV, ICON_STROKE } from '../../lib/iconSizes.ts';
 import { persistence } from '../../state/persistence.ts';
@@ -163,6 +162,44 @@ export default function ChannelSetPicker() {
   const allSelectableChecked =
     selectableCount > 0 &&
     previewRows.filter((r) => r.status === 'add').every((r) => selectedIndices.has(r.index));
+  const someSelectableSelected = addCount > 0 && addCount < selectableCount;
+
+  const previewColumns = useMemo((): DataTableColumn<PreviewRow>[] => {
+    return [
+      {
+        key: 'select',
+        header: '',
+        hideable: false,
+        render: (row) => (
+          <Checkbox
+            aria-label={`Include ${row.name}`}
+            checked={selectedIndices.has(row.index)}
+            disabled={row.status !== 'add'}
+            onChange={(e) => toggleIndex(row.index, e.currentTarget.checked)}
+          />
+        ),
+      },
+      {
+        key: 'rxTx',
+        header: 'RX / TX (MHz)',
+        render: (row) => formatFrequencyCell(row.rxHz, row.txHz),
+      },
+      {
+        key: 'mode',
+        header: 'Mode',
+        render: (row) => <ModePill mode={row.mode as 'fm'} size="xs" />,
+      },
+      {
+        key: 'status',
+        header: 'Status',
+        render: (row) => (
+          <Text size="sm" c={row.status === 'add' ? undefined : 'dimmed'}>
+            {previewStatusLabel(row.status)}
+          </Text>
+        ),
+      },
+    ];
+  }, [selectedIndices]);
 
   async function handleAdd() {
     if (!activeProjectId || addCount === 0) return;
@@ -292,51 +329,33 @@ export default function ChannelSetPicker() {
         </PageSection>
 
         <PageSection title={`Preview (${previewRows.length} channels)`}>
-          <ScrollArea.Autosize mah={400}>
-            <Table striped highlightOnHover withTableBorder>
-              <Table.Thead>
-                <Table.Tr>
-                  <Table.Th>
-                    <Checkbox
-                      aria-label="Select all addable channels"
-                      checked={allSelectableChecked}
-                      indeterminate={addCount > 0 && addCount < selectableCount}
-                      onChange={(e) => toggleAllSelectable(e.currentTarget.checked)}
-                      disabled={selectableCount === 0}
-                    />
-                  </Table.Th>
-                  <Table.Th>Name</Table.Th>
-                  <Table.Th>RX / TX (MHz)</Table.Th>
-                  <Table.Th>Mode</Table.Th>
-                  <Table.Th>Status</Table.Th>
-                </Table.Tr>
-              </Table.Thead>
-              <Table.Tbody>
-                {previewRows.map((row) => (
-                  <Table.Tr key={`${row.name}-${row.rxHz}`}>
-                    <Table.Td>
-                      <Checkbox
-                        aria-label={`Include ${row.name}`}
-                        checked={selectedIndices.has(row.index)}
-                        disabled={row.status !== 'add'}
-                        onChange={(e) => toggleIndex(row.index, e.currentTarget.checked)}
-                      />
-                    </Table.Td>
-                    <Table.Td>{row.name}</Table.Td>
-                    <Table.Td>{formatFrequencyCell(row.rxHz, row.txHz)}</Table.Td>
-                    <Table.Td>
-                      <ModePill mode={row.mode as 'fm'} size="xs" />
-                    </Table.Td>
-                    <Table.Td>
-                      <Text size="sm" c={row.status === 'add' ? undefined : 'dimmed'}>
-                        {previewStatusLabel(row.status)}
-                      </Text>
-                    </Table.Td>
-                  </Table.Tr>
-                ))}
-              </Table.Tbody>
-            </Table>
-          </ScrollArea.Autosize>
+          <DataTable
+            variant="embedded"
+            rows={previewRows}
+            rowKey={(row) => `${row.name}-${row.rxHz}`}
+            showSearch={false}
+            nameColumn={{
+              header: 'Name',
+              getName: (row) => row.name,
+              getPath: () => '#',
+              render: (row) => row.name,
+            }}
+            columns={previewColumns}
+            toolbar={
+              <Group gap="sm">
+                <Checkbox
+                  aria-label="Select all addable channels"
+                  checked={allSelectableChecked}
+                  indeterminate={someSelectableSelected}
+                  onChange={(e) => toggleAllSelectable(e.currentTarget.checked)}
+                  disabled={selectableCount === 0}
+                />
+                <Text size="sm" c="dimmed">
+                  {addCount} selected to add
+                </Text>
+              </Group>
+            }
+          />
         </PageSection>
 
         <Group>

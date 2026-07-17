@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { Button, Group, Stack, Text } from '@mantine/core';
 import type { AnalogContact, DigitalContact } from '@core/models/library.ts';
+import { entityListColumnsKey } from '@integrations/listPrefs/keys.ts';
 import DeleteAllDigitalContactsDialog from '../../../components/contacts/DeleteAllDigitalContactsDialog.tsx';
 import EntityListDeleteAction from '../../../components/library/EntityListDeleteAction.tsx';
 import ModePill from '../../../components/pills/ModePill.tsx';
@@ -19,6 +20,7 @@ import {
   referenceCountFromIndex,
 } from '../../../lib/listReferences.ts';
 import { useLibrary } from '../../../state/useLibrary.ts';
+import { useProjects } from '../../../state/useProjects.ts';
 
 function DigitalContactsTable({
   contacts,
@@ -29,6 +31,7 @@ function DigitalContactsTable({
   library: ReturnType<typeof useLibrary>['library'];
   onDeleteAll: () => void;
 }) {
+  const { activeProjectId } = useProjects();
   const { nameFilter, nameFilterInput, nameFilterPending, setNameFilter } =
     useListNameQuery('digital-contacts');
   const [sort, setSort] = usePersistedEntityListSort('digital-contacts', {
@@ -40,6 +43,9 @@ function DigitalContactsTable({
     [contacts, nameFilter],
   );
   const referenceIndex = useMemo(() => buildReferenceCountIndex(library), [library]);
+  const columnStorageKey = activeProjectId
+    ? entityListColumnsKey('digital-contacts', activeProjectId)
+    : undefined;
 
   const columns = useMemo((): DataTableColumn<DigitalContact>[] => {
     return [
@@ -73,6 +79,7 @@ function DigitalContactsTable({
       {
         key: 'channels',
         header: 'Channels using',
+        hideable: true,
         render: (c) =>
           formatReferenceCount(
             referenceCountFromIndex(referenceIndex, { kind: 'digitalContact', id: c.id }),
@@ -83,6 +90,8 @@ function DigitalContactsTable({
       {
         key: 'comment',
         header: 'Comment',
+        hideable: true,
+        defaultVisible: false,
         render: (c) => c.comment || '—',
         sortValue: (c) => c.comment || '',
       },
@@ -100,6 +109,7 @@ function DigitalContactsTable({
   return (
     <DataTable
       variant="list"
+      scale="extreme"
       rows={filtered}
       totalRowCount={contacts.length}
       search={nameFilterInput}
@@ -114,6 +124,7 @@ function DigitalContactsTable({
         getPath: (c) => `/library/digital-contacts/${c.id}`,
       }}
       columns={columns}
+      columnVisibilityStorageKey={columnStorageKey}
       toolbar={
         <Group gap="xs">
           <Button

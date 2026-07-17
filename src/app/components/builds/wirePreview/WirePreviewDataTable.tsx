@@ -86,6 +86,7 @@ export default function WirePreviewDataTable({
       rows={filteredRows}
       rowKey={(row) => row.key}
       onRowActivate={onRowActivate}
+      reorderMode={Boolean(reorder)}
       nameColumn={{
         header: 'Library name',
         getName: (row) => row.displayLabel,
@@ -263,7 +264,11 @@ export default function WirePreviewDataTable({
           {emptyMessage}
         </Text>
       }
-      caption="Click a row to edit export overrides. Sort and filter affect display only — not export order."
+      caption={
+        reorder
+          ? 'Click a row to edit export overrides. Order arrows mutate export order; filter disables reorder.'
+          : 'Click a row to edit export overrides. Sort and filter affect display only — not export order.'
+      }
     />
   );
 }

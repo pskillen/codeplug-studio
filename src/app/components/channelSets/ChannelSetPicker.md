@@ -23,7 +23,7 @@ Routed at `/library/channels/add-channel-set` via `AddChannelSetPage`.
 ## Behaviour
 
 - Set selector lists all v1 channel sets with channel counts
-- Live preview table: per-channel checkbox (default on), name, frequency (`<MHz> simplex` for simplex rows; RX/TX column reserved for future split channels), mode, dedup status
+- Live preview **`DataTable`** (role A embedded): per-channel checkbox (default on; skip rows disabled), name, frequency (`<MHz> simplex` for simplex rows; RX/TX column reserved for future split channels), mode, dedup status; select-all in toolbar
 - Options: name prefix, power %, **bandwidth** (12.5 or 25 kHz), forbid transmit, optional zone
 - Persists via `persistChannelSetImport` → `putChannel` loop and optional `putZone`
 - Navigates to channels list or new zone on success

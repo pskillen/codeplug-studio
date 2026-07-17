@@ -25,7 +25,11 @@ export default function EntityEditorPage() {
 
   const isNew = id === 'new' || !id;
   const entityId = isNew ? null : (id ?? null);
-  const defaultTitle = meta ? `${isNew ? 'New' : 'Edit'} ${meta.label.toLowerCase()}` : 'Loading…';
+  const defaultTitle = meta
+    ? meta.kind === 'rxGroupList'
+      ? `${isNew ? 'New' : 'Edit'} Receive Group List`
+      : `${isNew ? 'New' : 'Edit'} ${meta.label.toLowerCase()}`
+    : 'Loading…';
   const pageTitle =
     meta?.kind === 'channel' && channelPageTitle != null && channelPageTitle.entityId === entityId
       ? channelPageTitle.title
@@ -65,7 +69,8 @@ export default function EntityEditorPage() {
       title={pageTitle}
       description={
         <Anchor component={Link} to={listPath} size="sm">
-          ← Back to {meta.plural.toLowerCase()}
+          ← Back to{' '}
+          {meta.kind === 'rxGroupList' ? 'Receive Group Lists' : meta.plural.toLowerCase()}
         </Anchor>
       }
     >

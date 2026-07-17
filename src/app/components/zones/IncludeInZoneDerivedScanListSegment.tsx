@@ -8,6 +8,8 @@ export interface IncludeInZoneDerivedScanListSegmentProps {
   includeDefault?: boolean;
   compact?: boolean;
   disabled?: boolean;
+  /** Override the field label (ignored when `compact` and no override). */
+  label?: string;
 }
 
 const WITH_DEFAULT = [
@@ -27,6 +29,7 @@ export default function IncludeInZoneDerivedScanListSegment({
   includeDefault = true,
   compact = false,
   disabled = false,
+  label,
 }: IncludeInZoneDerivedScanListSegmentProps) {
   const data = includeDefault ? WITH_DEFAULT : WITHOUT_DEFAULT;
   const resolved = includeDefault
@@ -37,9 +40,11 @@ export default function IncludeInZoneDerivedScanListSegment({
         ? 'skip'
         : 'include';
 
+  const resolvedLabel = label ?? (compact ? undefined : 'Zone-derived scan list');
+
   return (
     <GradientSegmentedControl
-      label={compact ? undefined : 'Zone-derived scan list'}
+      label={resolvedLabel}
       description={
         compact
           ? undefined

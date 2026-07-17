@@ -1,18 +1,10 @@
-import {
-  ActionIcon,
-  Button,
-  Checkbox,
-  Group,
-  MultiSelect,
-  Stack,
-  Text,
-  Tooltip,
-} from '@mantine/core';
+import { ActionIcon, Checkbox, Group, Stack, Text, Tooltip } from '@mantine/core';
 import { IconX } from '@tabler/icons-react';
 import { useCallback, useMemo, useState } from 'react';
 import type { Channel } from '@core/models/library.ts';
 import { channelDisplayLabel } from '@core/domain/channelNaming.ts';
 import { reorderScanListMembers } from '@core/domain/membershipOrder.ts';
+import AvailableItemPicker from '../ui/AvailableItemPicker.tsx';
 import SelectedItemDragHandle from '../ui/SelectedItemDragHandle.tsx';
 import SelectedItemList from '../ui/SelectedItemList.tsx';
 import MembershipSortMenu from './MembershipSortMenu.tsx';
@@ -26,30 +18,41 @@ export interface ScanListMemberEditorProps {
   onChange: (memberChannelIds: string[]) => void;
 }
 
+function channelMatchesFilter(channel: Channel, filterLower: string): boolean {
+  if (!filterLower) return true;
+  return channelDisplayLabel(channel).toLowerCase().includes(filterLower);
+}
+
 export default function ScanListMemberEditor({
   channels,
   memberChannelIds,
   onChange,
 }: ScanListMemberEditorProps) {
   const [selected, setSelected] = useState<string[]>([]);
-  const [addValue, setAddValue] = useState<string[]>([]);
+  const [availableFilter, setAvailableFilter] = useState('');
+  const [availableSelected, setAvailableSelected] = useState<string[]>([]);
 
   const channelsById = useMemo(() => new Map(channels.map((ch) => [ch.id, ch])), [channels]);
   const memberSet = useMemo(() => new Set(memberChannelIds), [memberChannelIds]);
+  const availableFilterLower = availableFilter.trim().toLowerCase();
 
-  const addOptions = useMemo(
+  const availableChannels = useMemo(
     () =>
-      sortByName(channels)
-        .filter((channel) => !memberSet.has(channel.id))
-        .map((channel) => ({
-          value: channel.id,
-          label: channelDisplayLabel(channel),
-        })),
-    [channels, memberSet],
+      sortByName(channels).filter(
+        (channel) =>
+          !memberSet.has(channel.id) && channelMatchesFilter(channel, availableFilterLower),
+      ),
+    [channels, memberSet, availableFilterLower],
   );
 
   const toggleSelect = useCallback((channelId: string) => {
     setSelected((prev) =>
+      prev.includes(channelId) ? prev.filter((id) => id !== channelId) : [...prev, channelId],
+    );
+  }, []);
+
+  const toggleAvailable = useCallback((channelId: string) => {
+    setAvailableSelected((prev) =>
       prev.includes(channelId) ? prev.filter((id) => id !== channelId) : [...prev, channelId],
     );
   }, []);
@@ -72,13 +75,12 @@ export default function ScanListMemberEditor({
     [memberChannelIds, onChange, selected],
   );
 
-  const addChannels = useCallback(() => {
-    if (!addValue.length) return;
-    const toAdd = addValue.filter((id) => !memberSet.has(id));
+  const addSelected = useCallback(() => {
+    const toAdd = availableSelected.filter((id) => !memberSet.has(id));
     if (!toAdd.length) return;
     onChange([...memberChannelIds, ...toAdd]);
-    setAddValue([]);
-  }, [addValue, memberChannelIds, memberSet, onChange]);
+    setAvailableSelected([]);
+  }, [availableSelected, memberChannelIds, memberSet, onChange]);
 
   const canMoveUp = selected.some((id) => memberChannelIds.indexOf(id) > 0);
   const canMoveDown = selected.some((id) => {
@@ -99,6 +101,10 @@ export default function ScanListMemberEditor({
         onRemove={(id) => removeIds([id])}
         emptyMessage="No channels in scan list"
         onReorder={onChange}
+        onMoveSelected={moveSelected}
+        onRemoveSelected={() => removeIds(selected)}
+        canMoveUp={canMoveUp}
+        canMoveDown={canMoveDown}
         renderItem={({ itemKey, selected: rowSelected, onToggleSelect, onRemove, dragHandle }) => {
           const channel = channelsById.get(itemKey);
           return (
@@ -125,67 +131,52 @@ export default function ScanListMemberEditor({
           );
         }}
         toolbar={
-          <Group gap="xs">
-            <MembershipSortMenu
-              disabled={!memberChannelIds.length}
-              onSort={(mode) =>
-                onChange(sortChannelIdsByMode(memberChannelIds, channelsById, mode))
-              }
-            />
-            <Button
-              type="button"
-              variant="default"
-              size="compact-sm"
-              onClick={() => moveSelected('up')}
-              disabled={!canMoveUp}
-            >
-              Move up
-            </Button>
-            <Button
-              type="button"
-              variant="default"
-              size="compact-sm"
-              onClick={() => moveSelected('down')}
-              disabled={!canMoveDown}
-            >
-              Move down
-            </Button>
-            <Button
-              type="button"
-              variant="light"
-              size="compact-sm"
-              onClick={() => removeIds(selected)}
-              disabled={!selected.length}
-            >
-              Remove selected
-            </Button>
-            <Text size="xs" c="dimmed">
-              Drag handles reorder · Alt+↑/↓ moves selection
-            </Text>
-          </Group>
+          <MembershipSortMenu
+            disabled={!memberChannelIds.length}
+            label="Sort channels…"
+            onSort={(mode) => onChange(sortChannelIdsByMode(memberChannelIds, channelsById, mode))}
+          />
         }
       />
 
-      <Stack gap="xs">
-        <Text size="sm" fw={600}>
-          Add channels
-        </Text>
-        <Group align="flex-end" gap="xs" wrap="nowrap">
-          <MultiSelect
-            style={{ flex: 1 }}
-            label="Available channels"
-            data={addOptions}
-            value={addValue}
-            searchable
-            clearable
-            onChange={setAddValue}
-            placeholder="Select channels to add…"
-          />
-          <Button type="button" onClick={addChannels} disabled={!addValue.length}>
-            Add
-          </Button>
-        </Group>
-      </Stack>
+      <AvailableItemPicker
+        title="Other channels"
+        description="Stage channels to add to this scan list"
+        filter={{
+          value: availableFilter,
+          onChange: setAvailableFilter,
+          placeholder: 'Filter…',
+          'aria-label': 'Filter available channels',
+        }}
+        sections={[
+          {
+            id: 'channels',
+            title: 'Channels',
+            itemKeys: availableChannels.map((channel) => channel.id),
+            selectedKeys: availableSelected,
+            onToggleSelect: toggleAvailable,
+            emptyMessage: 'No channels available',
+            renderItem: ({ itemKey, checked, onToggle }) => {
+              const channel = channelsById.get(itemKey);
+              if (!channel) return null;
+              return (
+                <Group key={itemKey} gap="xs" wrap="nowrap">
+                  <Checkbox
+                    checked={checked}
+                    onChange={onToggle}
+                    aria-label={`Select ${channelDisplayLabel(channel)}`}
+                  />
+                  <Text size="sm" truncate>
+                    {channelDisplayLabel(channel)}
+                  </Text>
+                </Group>
+              );
+            },
+          },
+        ]}
+        onAddSelected={addSelected}
+        addDisabled={!availableSelected.length}
+      />
     </Stack>
   );
 }

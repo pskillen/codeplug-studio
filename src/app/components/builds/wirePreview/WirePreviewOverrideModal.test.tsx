@@ -84,4 +84,75 @@ describe('WirePreviewOverrideModal', () => {
 
     expect(screen.getByLabelText('Skip Local 9 from export')).toBeChecked();
   });
+
+  it('shows force export control for omitFromExport zones when handler provided', () => {
+    const omitZoneRow: WirePreviewRow = {
+      key: 'zone-pmr',
+      libraryEntityId: 'zone-pmr',
+      entityKind: 'zone',
+      displayLabel: 'PMR446',
+      generatedWireName: 'PMR446',
+      effectiveWireName: 'PMR446',
+      hasWireNameOverride: false,
+      excluded: false,
+      omitFromExport: true,
+      forceInclude: false,
+    };
+    const onForceIncludeChange = vi.fn();
+    render(
+      <MemoryRouter>
+        <MantineProvider>
+          <WirePreviewOverrideModal
+            opened
+            onClose={vi.fn()}
+            row={omitZoneRow}
+            build={build}
+            entityKind="zone"
+            onExcludedChange={vi.fn()}
+            onForceIncludeChange={onForceIncludeChange}
+            onWireNameChange={vi.fn()}
+          />
+        </MantineProvider>
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByLabelText('Force export PMR446 as its own zone')).toBeInTheDocument();
+    expect(screen.queryByLabelText('Skip PMR446 from export')).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByLabelText('Force export PMR446 as its own zone'));
+    expect(onForceIncludeChange).toHaveBeenCalledWith(omitZoneRow, true);
+  });
+
+  it('shows skip toggle when omit zone is force-included', () => {
+    const omitZoneRow: WirePreviewRow = {
+      key: 'zone-pmr',
+      libraryEntityId: 'zone-pmr',
+      entityKind: 'zone',
+      displayLabel: 'PMR446',
+      generatedWireName: 'PMR446',
+      effectiveWireName: 'PMR446',
+      hasWireNameOverride: false,
+      excluded: false,
+      omitFromExport: true,
+      forceInclude: true,
+    };
+    render(
+      <MemoryRouter>
+        <MantineProvider>
+          <WirePreviewOverrideModal
+            opened
+            onClose={vi.fn()}
+            row={omitZoneRow}
+            build={build}
+            entityKind="zone"
+            onExcludedChange={vi.fn()}
+            onForceIncludeChange={vi.fn()}
+            onWireNameChange={vi.fn()}
+          />
+        </MantineProvider>
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByLabelText('Skip PMR446 from export')).toBeInTheDocument();
+  });
 });

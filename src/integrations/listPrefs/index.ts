@@ -3,6 +3,7 @@ export {
   channelListColumnsKey,
   channelListColumnsSchemaKey,
   channelListPrefsKey,
+  entityListColumnsKey,
   entityListPrefsKey,
   LIST_PREFS_STORAGE_PREFIX,
 } from './keys.ts';

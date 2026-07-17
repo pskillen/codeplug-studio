@@ -1,15 +1,5 @@
-import {
-  ActionIcon,
-  Badge,
-  Button,
-  Checkbox,
-  Group,
-  Paper,
-  Stack,
-  Text,
-  Tooltip,
-} from '@mantine/core';
-import { IconX } from '@tabler/icons-react';
+import { ActionIcon, Badge, Checkbox, Group, Paper, Stack, Text, Tooltip } from '@mantine/core';
+import { IconTrash } from '@tabler/icons-react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import type { Channel, Zone, ZoneMemberEntry } from '@core/models/library.ts';
@@ -34,7 +24,7 @@ import MembershipSortMenu from './MembershipSortMenu.tsx';
 import { sortZoneMembersByMode } from '@core/domain/membershipSort.ts';
 import { channelModesForFilter, sortByName } from '../../lib/channels.ts';
 import { formatChannelRxTxListCell } from '../../lib/formatFrequency.ts';
-import { ICON_STROKE } from '../../lib/iconSizes.ts';
+import { ICON_SIZE_NAV, ICON_STROKE } from '../../lib/iconSizes.ts';
 import {
   channelMatchesZoneMemberFilter,
   computeZoneMemberPickerMapFilters,
@@ -251,18 +241,6 @@ export default function ZoneMemberEditor({
     [members, onChange],
   );
 
-  useEffect(() => {
-    function onKeyDown(event: KeyboardEvent) {
-      if (!event.altKey || (event.key !== 'ArrowUp' && event.key !== 'ArrowDown')) return;
-      const target = event.target as HTMLElement | null;
-      if (target?.closest('input, textarea, select, [contenteditable]')) return;
-      event.preventDefault();
-      moveSelected(event.key === 'ArrowUp' ? 'up' : 'down');
-    }
-    window.addEventListener('keydown', onKeyDown);
-    return () => window.removeEventListener('keydown', onKeyDown);
-  }, [moveSelected]);
-
   return (
     <Stack gap="lg">
       <SelectedItemList
@@ -286,6 +264,17 @@ export default function ZoneMemberEditor({
           onChange(reorderMembersByKeys(members, nextKeys));
         }}
         reorderDisabled={inZoneFilter.trim().length > 0}
+        onMoveSelected={moveSelected}
+        onRemoveSelected={removeSelected}
+        canMoveUp={canMoveUp}
+        canMoveDown={canMoveDown}
+        reorderHint={
+          <Text size="xs" c="dimmed">
+            {inZoneFilter.trim()
+              ? 'Clear filter to drag-reorder'
+              : 'Drag handles reorder · Alt+↑/↓ moves selection'}
+          </Text>
+        }
         renderItem={({ itemKey, selected, onToggleSelect, onRemove, dragHandle }) => (
           <InZoneMemberRow
             key={itemKey}
@@ -301,46 +290,13 @@ export default function ZoneMemberEditor({
           />
         )}
         toolbar={
-          <Group gap="xs">
-            <MembershipSortMenu
-              disabled={!members.length}
-              onSort={(mode) =>
-                onChange(sortZoneMembersByMode(members, channelsById, zonesById, mode))
-              }
-            />
-            <Button
-              type="button"
-              variant="default"
-              size="compact-sm"
-              onClick={() => moveSelected('up')}
-              disabled={!canMoveUp}
-            >
-              Move up
-            </Button>
-            <Button
-              type="button"
-              variant="default"
-              size="compact-sm"
-              onClick={() => moveSelected('down')}
-              disabled={!canMoveDown}
-            >
-              Move down
-            </Button>
-            <Button
-              type="button"
-              variant="light"
-              size="compact-sm"
-              onClick={removeSelected}
-              disabled={!inZoneSelected.length}
-            >
-              Remove selected
-            </Button>
-            <Text size="xs" c="dimmed">
-              {inZoneFilter.trim()
-                ? 'Clear filter to drag-reorder'
-                : 'Drag handles reorder · Alt+↑/↓ moves selection'}
-            </Text>
-          </Group>
+          <MembershipSortMenu
+            disabled={!members.length}
+            label="Sort channels…"
+            onSort={(mode) =>
+              onChange(sortZoneMembersByMode(members, channelsById, zonesById, mode))
+            }
+          />
         }
       />
 
@@ -476,15 +432,17 @@ function InZoneMemberRow({
             <Text component={Link} to={`/library/zones/${zone.id}`} size="xs">
               Open zone
             </Text>
-            <ActionIcon
-              variant="subtle"
-              color="red"
-              size="sm"
-              onClick={onRemove}
-              aria-label="Remove"
-            >
-              <IconX size={14} stroke={ICON_STROKE} />
-            </ActionIcon>
+            <Tooltip label="Remove from zone">
+              <ActionIcon
+                variant="subtle"
+                color="red"
+                size="sm"
+                onClick={onRemove}
+                aria-label={`Remove ${zone.name} from zone`}
+              >
+                <IconTrash size={ICON_SIZE_NAV} stroke={ICON_STROKE} />
+              </ActionIcon>
+            </Tooltip>
           </Group>
         </Group>
       </Paper>
@@ -528,24 +486,35 @@ function InZoneMemberRow({
             <Text size="xs" c="dimmed">
               {formatChannelRxTxListCell(channel.rxFrequency, channel.txFrequency) || '—'}
             </Text>
-            <Tooltip label="Include this channel in zone-derived scan lists at export">
-              <div>
-                <IncludeInZoneDerivedScanListSegment
-                  value={memberOverride}
-                  onChange={(next) => onIncludeInScanListChange(channel.id, next)}
-                  compact
-                />
-              </div>
-            </Tooltip>
           </Stack>
         </Group>
-        <Group gap="xs" wrap="nowrap" align="center">
-          <Text component={Link} to={`/library/channels/${channel.id}`} size="xs">
-            Open
-          </Text>
-          <ActionIcon variant="subtle" color="red" size="sm" onClick={onRemove} aria-label="Remove">
-            <IconX size={14} stroke={ICON_STROKE} />
-          </ActionIcon>
+        <Group gap="sm" wrap="nowrap" align="flex-start">
+          <Tooltip label="Include this channel in zone-derived scan lists at export">
+            <div>
+              <IncludeInZoneDerivedScanListSegment
+                value={memberOverride}
+                onChange={(next) => onIncludeInScanListChange(channel.id, next)}
+                compact
+                label="Include in scan list"
+              />
+            </div>
+          </Tooltip>
+          <Group gap="xs" wrap="nowrap" align="center" mt={4}>
+            <Text component={Link} to={`/library/channels/${channel.id}`} size="xs">
+              Open
+            </Text>
+            <Tooltip label="Remove from zone">
+              <ActionIcon
+                variant="subtle"
+                color="red"
+                size="sm"
+                onClick={onRemove}
+                aria-label={`Remove ${channelDisplayLabel(channel)} from zone`}
+              >
+                <IconTrash size={ICON_SIZE_NAV} stroke={ICON_STROKE} />
+              </ActionIcon>
+            </Tooltip>
+          </Group>
         </Group>
       </Group>
     </Paper>

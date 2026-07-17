@@ -10,6 +10,10 @@ export function entityListPrefsKey(entity: EntityListEntity, projectId: string):
   return `${APP_PREFIX}${entity}.${projectId}`;
 }
 
+export function entityListColumnsKey(entity: EntityListEntity, projectId: string): string {
+  return `${APP_PREFIX}${entity}.${projectId}.columns`;
+}
+
 export function channelListColumnsKey(projectId: string): string {
   return `${APP_PREFIX}channels.${projectId}.columns`;
 }
