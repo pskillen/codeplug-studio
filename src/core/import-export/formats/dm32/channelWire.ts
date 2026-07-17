@@ -25,6 +25,7 @@ import {
   formatDm32TxAdmitWire,
   formatDm32RxSquelchModeWire,
 } from './wireFormat.ts';
+import { dm32ChannelAprsWireCells } from './aprsWireFormat.ts';
 import { dm32ContactRefWireName, dm32RxGroupListWireName } from './exportRefs.ts';
 import type { ExpandedDm32ChannelRow } from './channelExpansion.ts';
 import { DEFAULT_DM32_PROFILE_ID, getDm32Profile } from './profiles.ts';
@@ -85,7 +86,7 @@ export function serialiseDm32ChannelRow(
       : null;
 
   const analogTone = isAnalogProfile(toneProfile) ? toneProfile : fmProfile;
-  const aprsChannel = isAnalogMode(row.mode) || nativeDual ? '256' : '1';
+  const aprsCells = dm32ChannelAprsWireCells(sourceChannel.aprs, row.mode);
   const behaviourContext = options?.channelBehaviourContext;
   const squelchProfile =
     analogTone ??
@@ -113,18 +114,18 @@ export function serialiseDm32ChannelRow(
       profileId,
       { isAnalog: isAnalogMode(row.mode) },
     ),
-    [CHANNEL_COL.aprsReportType]: 'Off',
+    [CHANNEL_COL.aprsReportType]: aprsCells.aprsReportType,
     [CHANNEL_COL.forbidTx]: formatDm32FlagWire(
       effectiveForbidTransmit(sourceChannel, options?.channelBehaviourContext),
     ),
-    [CHANNEL_COL.aprsReceive]: '0',
+    [CHANNEL_COL.aprsReceive]: aprsCells.aprsReceive,
     [CHANNEL_COL.forbidTalkaround]: '0',
     [CHANNEL_COL.autoScan]: enableAutoScan ? '1' : '0',
     [CHANNEL_COL.loneWork]: '0',
     [CHANNEL_COL.emergencyIndicator]: '0',
     [CHANNEL_COL.emergencyAck]: '0',
-    [CHANNEL_COL.analogAprsPtt]: '0',
-    [CHANNEL_COL.digitalAprsPtt]: '0',
+    [CHANNEL_COL.analogAprsPtt]: aprsCells.analogAprsPtt,
+    [CHANNEL_COL.digitalAprsPtt]: aprsCells.digitalAprsPtt,
     [CHANNEL_COL.txContact]: dm32ContactRefWireName(
       assembled,
       row.txContactRef,
@@ -136,7 +137,7 @@ export function serialiseDm32ChannelRow(
     [CHANNEL_COL.timeslot]: formatDm32TimeslotWire(dmrSource?.timeslot ?? null),
     [CHANNEL_COL.encryption]: '0',
     [CHANNEL_COL.encryptionId]: 'None',
-    [CHANNEL_COL.aprsReportChannel]: aprsChannel,
+    [CHANNEL_COL.aprsReportChannel]: aprsCells.aprsReportChannel,
     [CHANNEL_COL.directDualMode]: '0',
     [CHANNEL_COL.privateConfirm]: '0',
     [CHANNEL_COL.shortDataConfirm]: '0',
