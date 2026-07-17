@@ -20,7 +20,7 @@ Authoritative reference for **Baofeng DM-32UV stock CPS** CSV exports (v1.60+). 
 | `APRS.md`          | [aprs.md](aprs.md)                     | N/A                                                                    | **Yes** (when config)  | Operator CPS setup guide — no CPS `APRS.csv` ([#250](https://github.com/pskillen/codeplug-studio/issues/250)) |
 | `DMR-ID.csv`       | —                                      | **Skip**                                                               | **Skip**               | Accepted gap                                                                                                  |
 
-**Canonical CPS sample (unadulterated):** [`sample-codeplugs/baofeng-dm32/1.60/`](../../../sample-codeplugs/baofeng-dm32/1.60/) — working v1.60 codeplug for wire elicitation ([#404](https://github.com/pskillen/codeplug-studio/issues/404)). Prefer this over fixture trees when checking CPS-truth filenames and cells.
+**Canonical CPS sample (unadulterated):** [`sample-codeplugs/baofeng-dm32/1.60/`](../../../sample-codeplugs/baofeng-dm32/1.60/) — working v1.60 codeplug for wire elicitation ([#404](https://github.com/pskillen/codeplug-studio/issues/404)). Prefer this over fixture trees when checking CPS-truth column headers and cell values.
 
 **Test fixture (may be trimmed / renamed for tests):** [`test-data/baofeng-dm32/v1.60/`](../../../test-data/baofeng-dm32/v1.60/).
 
@@ -38,27 +38,16 @@ Tier-3 docs drift vs shipped export was fixed in [#444](https://github.com/pskil
 
 Official Baofeng DM-32UV CPS exports use Windows (CRLF) line endings. Studio DM32 export matches ([#314](https://github.com/pskillen/codeplug-studio/issues/314)). Import parsing accepts both LF and CRLF.
 
-## Filename quirks
+## Filenames
 
-Observed filenames from official CPS v1.60 in [`sample-codeplugs/baofeng-dm32/1.60/`](../../../sample-codeplugs/baofeng-dm32/1.60/):
+DM-32UV CPS import/export is **manual, per file**, with **no fixed default filenames** — the operator picks paths when saving or loading each CSV. Filename spelling drift between a given CPS save dialog, Studio ZIP members, docs, and `test-data/` is therefore **inconsequential** as long as names stay clear (e.g. channels vs zones vs talk groups). Wire truth is **headers and cell values**, not the on-disk basename.
 
-| CPS export (canonical sample) | Names used historically in Studio docs / `test-data/` |
-| ----------------------------- | ----------------------------------------------------- |
-| `Channels.csv`                | `Channels.csv`                                        |
-| `Zones.csv`                   | `Zones.csv`                                           |
-| `TalkGroups.csv`              | `Talkgroups.csv`                                      |
-| `DigitalContacts.csv`         | `Contacts.csv`                                        |
-| `AnalogContacts.csv`          | `DTMFContacts.csv`                                    |
-| `RxGroupLists.csv`            | `RXGroupLists.csv`                                    |
-| `ScanList.csv`                | `Scan.csv`                                            |
-| `DMR-ID.csv`                  | `DMR-ID.csv`                                          |
-
-Entity docs and Studio export filenames still largely follow the historical column; reconcile against the sample during [#404](https://github.com/pskillen/codeplug-studio/issues/404).
+Example names from the [canonical sample](../../../sample-codeplugs/baofeng-dm32/1.60/) (one operator’s CPS save choices): `Channels.csv`, `Zones.csv`, `TalkGroups.csv`, `DigitalContacts.csv`, `AnalogContacts.csv`, `RxGroupLists.csv`, `ScanList.csv`, `DMR-ID.csv`. Studio docs and export often use close variants (`Talkgroups.csv`, `Contacts.csv`, `DTMFContacts.csv`, `RXGroupLists.csv`, `Scan.csv`) — treat them as labels for the same file roles.
 
 Also:
 
 - Operator-repo exports may use lowercase (`channels.csv`, `scanlist.csv`).
-- Some CPS builds save `channels.csv.csv` — rename to `channels.csv` before import.
+- Some CPS builds save `channels.csv.csv` — rename before import if needed.
 
 ## Foreign keys (name-based at wire edge)
 

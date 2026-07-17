@@ -2,24 +2,24 @@
 
 Unadulterated CSV bundle exported from **official Baofeng DM-32UV CPS v1.60**. Not edited for tests.
 
-**Purpose:** Canonical wire-shape reference for [#404](https://github.com/pskillen/codeplug-studio/issues/404) elicitation and adapter gap analysis. Prefer this over `test-data/baofeng-dm32/v1.60/`, which may have been trimmed or renamed for fixtures.
+**Purpose:** Canonical wire-shape reference (headers / cells) for [#404](https://github.com/pskillen/codeplug-studio/issues/404) elicitation and adapter gap analysis. Prefer this over `test-data/baofeng-dm32/v1.60/`, which may have been trimmed or edited for fixtures.
 
 **Not for:** Automated golden tests (use `test-data/` / format `__fixtures__/` for minimal synthetic rows).
 
-## Files (as exported by CPS)
+## Files (as saved from CPS)
 
-| File | Notes |
-| --- | --- |
-| `Channels.csv` | ~376 channels; Windows/legacy encoding on some name cells |
-| `Zones.csv` | |
-| `TalkGroups.csv` | CPS spelling (capital **G**) |
-| `DigitalContacts.csv` | Private DMR contacts |
-| `AnalogContacts.csv` | Analog / DTMF-style contacts |
-| `RxGroupLists.csv` | CPS spelling (`Rx…`) |
-| `ScanList.csv` | Scan lists |
-| `DMR-ID.csv` | Radio ID table |
+DM-32UV CPS import/export is **manual, per file**, with **no fixed default names**. Filenames here are whatever this operator chose in the save dialog; close variants in Studio docs / `test-data/` (`Talkgroups.csv`, `Contacts.csv`, …) label the same roles. Wire truth is **headers and cells**, not the basename.
 
-These **CPS filenames differ** from names historically used in Studio docs and `test-data/` (`Talkgroups.csv`, `Contacts.csv`, `DTMFContacts.csv`, `RXGroupLists.csv`, `Scan.csv`). Treat this directory as the CPS-truth filenames until docs/adapters are reconciled.
+| File                  | Role                                                                |
+| --------------------- | ------------------------------------------------------------------- |
+| `Channels.csv`        | RF channels (~376 rows; Windows/legacy encoding on some name cells) |
+| `Zones.csv`           | Zones                                                               |
+| `TalkGroups.csv`      | Talk groups                                                         |
+| `DigitalContacts.csv` | Private DMR contacts                                                |
+| `AnalogContacts.csv`  | Analog / DTMF-style contacts                                        |
+| `RxGroupLists.csv`    | RX group lists                                                      |
+| `ScanList.csv`        | Scan lists                                                          |
+| `DMR-ID.csv`          | Radio ID table                                                      |
 
 ## Provenance
 
