@@ -21,14 +21,29 @@
 **Delivered**
 
 - Progress / outstanding pair created
-- Plan linked from #456; #155 reinterpretation noted (library one-shot Sort…, not persisted export settings)
+- Plan linked from #456; #155 reinterpretation noted
+
+---
+
+## Slice 1 — Core `Zone.order` + membership helpers + cascade
+
+**Status:** Complete
+
+**Delivered**
+
+- `Zone.order` (schema v20); native-YAML parse; data-model + native-yaml docs
+- `zoneOrder.ts` / `membershipOrder.ts` — sort, dense apply, reorder helpers
+- `assembleZones` sorts by build `orderOrSlot` → `Zone.order` → name
+- `syncZoneGroupingWithLibrary` / seed use library zone order
+- `applyDenseOrderOrSlots` generalised from channel helper
+- Unit tests in `zoneOrder.test.ts`
 
 **Verify**
 
-- Files under `docs/features/library/membership-ordering-*.md`
+- `npm run test -- --run src/core/domain/zoneOrder.test.ts src/core/services/assemble.test.ts`
 
 ---
 
 ## Next
 
-- Slice 1: `Zone.order` + membership helpers + assemble cascade
+- Slice 2: Library UI — top-level zone reorder + scan-list member reorder
