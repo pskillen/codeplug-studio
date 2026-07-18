@@ -215,6 +215,9 @@ export function shortenWireName(
 
 /**
  * Shorten, disambiguate against `reserved`, and reserve the returned name when the set is mutable.
+ *
+ * Leaves room for ` 2`, ` 3`, … / ` 10` disambiguation so the final name never exceeds `maxLen`
+ * (CHIRP UV-5R is 7 characters — without this, `PMR44` + ` 10` becomes an 8-character overflow).
  */
 export function finalizeWireName(
   base: string,
@@ -222,12 +225,31 @@ export function finalizeWireName(
   maxLen: number,
   opts: ShortenWireNameOptions = {},
 ): string {
-  let name = shortenWireName(base, maxLen, opts);
-  const suffixRoom = disambiguationSuffixLength(name, reserved);
-  if (suffixRoom > 0 && name.length + suffixRoom > maxLen) {
-    name = shortenWireName(base, Math.max(1, maxLen - suffixRoom), opts);
+  let name = '';
+  for (let suffixBudget = 0; suffixBudget <= maxLen; suffixBudget++) {
+    const stemBudget = Math.max(1, maxLen - suffixBudget);
+    let stem = shortenWireName(base, stemBudget, opts);
+    if (stem.length > stemBudget) {
+      stem = stem.slice(0, stemBudget);
+    }
+    const needed = disambiguationSuffixLength(stem, reserved);
+    if (needed > suffixBudget) {
+      continue;
+    }
+    const candidate = uniqueWireName(stem, reserved);
+    if (candidate.length <= maxLen) {
+      name = candidate;
+      break;
+    }
   }
-  name = uniqueWireName(name, reserved);
+
+  if (!name) {
+    // Exhausted budgets — hard-truncate stem so uniquify can still fit.
+    const stemBudget = Math.max(1, maxLen - 3);
+    const stem = shortenWireName(base, stemBudget, opts).slice(0, stemBudget) || 'X';
+    name = uniqueWireName(stem, reserved).slice(0, maxLen);
+  }
+
   if (reserved instanceof Set) {
     reserved.add(name);
   }
