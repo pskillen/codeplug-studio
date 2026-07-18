@@ -3,11 +3,16 @@ import { useState } from 'react';
 import type { Channel, Zone } from '@core/models/library.ts';
 import type { ZoneGroupingZoneEntry } from '@core/models/traitLayout.ts';
 import { resolveEffectiveZoneChannelIds } from '@core/domain/zoneHierarchy.ts';
-import { orderChannelIdsByLayoutHint } from '@core/domain/zoneGroupingLayout.ts';
+import {
+  isZoneMemberOrderOverridden,
+  orderChannelIdsByLayoutHint,
+  zoneMemberOrderResetConfirmMessage,
+} from '@core/domain/zoneGroupingLayout.ts';
 import { reorderScanListMembers } from '@core/domain/membershipOrder.ts';
 import { channelDisplayLabel } from '@core/domain/channelNaming.ts';
 import SelectedItemDragHandle from '../../../ui/SelectedItemDragHandle.tsx';
 import SelectedItemList from '../../../ui/SelectedItemList.tsx';
+import ExportOrderOverrideBanner from '../ExportOrderOverrideBanner.tsx';
 
 export interface ZoneMemberOrderSectionProps {
   zone: Zone;
@@ -28,12 +33,11 @@ export default function ZoneMemberOrderSection({
 }: ZoneMemberOrderSectionProps) {
   const [selected, setSelected] = useState<string[]>([]);
 
-  const orderedIds = (() => {
-    const effective = resolveEffectiveZoneChannelIds(zone, zones);
-    return entry?.channelIds?.length
-      ? orderChannelIdsByLayoutHint(effective, entry.channelIds)
-      : effective;
-  })();
+  const effective = resolveEffectiveZoneChannelIds(zone, zones);
+  const orderedIds = entry?.channelIds?.length
+    ? orderChannelIdsByLayoutHint(effective, entry.channelIds)
+    : effective;
+  const orderOverridden = isZoneMemberOrderOverridden(zone, zones, entry?.channelIds);
 
   const moveSelected = (direction: 'up' | 'down') => {
     if (!selected.length) return;
@@ -46,6 +50,11 @@ export default function ZoneMemberOrderSection({
     return index >= 0 && index < orderedIds.length - 1;
   });
 
+  function handleResetOrder() {
+    if (!window.confirm(zoneMemberOrderResetConfirmMessage())) return;
+    onSetChannelIds(effective);
+  }
+
   return (
     <Stack gap="xs">
       <Text size="sm" fw={600}>
@@ -54,6 +63,12 @@ export default function ZoneMemberOrderSection({
       <Text size="sm" c="dimmed">
         Build override for channel order inside this zone. Does not change the library zone.
       </Text>
+      <ExportOrderOverrideBanner
+        visible={orderOverridden}
+        disabled={saving}
+        onReset={handleResetOrder}
+        message="Member export order on this build differs from the library zone membership order."
+      />
       <SelectedItemList
         title="Channels (export order)"
         description={`${orderedIds.length} channel${orderedIds.length === 1 ? '' : 's'}`}

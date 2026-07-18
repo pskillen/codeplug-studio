@@ -128,6 +128,37 @@ export function applyDenseOrderOrSlots(
   return next;
 }
 
+/** True when any override row carries a finite 1-based `orderOrSlot`. */
+export function hasAnyOrderOrSlotOverride(overrides: BuildEntityOverride[] | undefined): boolean {
+  return (overrides ?? []).some((row) => {
+    const value = row.orderOrSlot;
+    return value != null && Number.isFinite(value) && value >= 1;
+  });
+}
+
+/**
+ * Clear `orderOrSlot` on every override row.
+ * Empty rows (no other fields) are dropped by {@link upsertOverride}.
+ */
+export function clearAllOrderOrSlots(
+  overrides: BuildEntityOverride[] | undefined,
+): BuildEntityOverride[] {
+  let next = overrides ?? [];
+  for (const row of overrides ?? []) {
+    if (row.orderOrSlot == null) continue;
+    next = upsertOverride(next, row.libraryEntityId, { orderOrSlot: undefined });
+  }
+  return next;
+}
+
+/** Confirm copy for clearing build export-order overrides (permanent, like Sort…). */
+export function exportOrderResetConfirmMessage(): string {
+  return (
+    'Reset export order to the library default?\n\n' +
+    'This clears build order overrides. Restoring the previous build order requires manual reorder.'
+  );
+}
+
 /** Order-only migration when library is unavailable (IndexedDB read). */
 export function migrateFlatMemoryLayoutOrderOnly(build: FormatBuild): FormatBuild {
   const flatMemory = findFlatMemorySection(build);
