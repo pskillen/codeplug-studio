@@ -30,7 +30,13 @@ import {
   OPENGD77_PROFILES,
   getOpenGd77Profile,
 } from '../../../../src/core/import-export/formats/opengd77/profiles.ts';
-import type { BundleFile, FormatVerifier, VerifyDiagnostic } from '../../types.ts';
+import type {
+  BundleFile,
+  CheckOutcome,
+  FormatVerifier,
+  VerifyDiagnostic,
+} from '../../types.ts';
+import { checkOutcome, flattenOutcomes } from '../../types.ts';
 import { checkForeignKey, checkNameLength } from '../../rules/foreignKeys.ts';
 import { checkExactHeaders } from '../../rules/headers.ts';
 import { checkLfLineEndings } from '../../rules/lfLineEndings.ts';
@@ -75,21 +81,6 @@ function headerSpecFor(fileName: string): string[] | undefined {
   return key ? HEADER_SPECS[key] : undefined;
 }
 
-function verifyPhysical(file: BundleFile): VerifyDiagnostic[] {
-  if (!file.name.toLowerCase().endsWith('.csv')) return [];
-  return [
-    ...checkLfLineEndings(file.name, file.text),
-    ...checkSelectiveQuoting(file.name, file.text),
-  ];
-}
-
-function verifyHeaders(file: BundleFile): VerifyDiagnostic[] {
-  const expected = headerSpecFor(file.name);
-  if (!expected) return [];
-  const table = csvToTable(file.text);
-  return checkExactHeaders(file.name, table.headers, expected);
-}
-
 function countFilledMembers(headers: string[], row: string[], memberHeaders: string[]): number {
   let count = 0;
   for (const h of memberHeaders) {
@@ -98,11 +89,49 @@ function countFilledMembers(headers: string[], row: string[], memberHeaders: str
   return count;
 }
 
-function verifyCrossFile(
+function pushPhysicalOutcomes(file: BundleFile, outcomes: CheckOutcome[]): void {
+  if (!file.name.toLowerCase().endsWith('.csv')) return;
+  outcomes.push(
+    checkOutcome(
+      {
+        id: `physical.${file.name}.line-endings`,
+        rule: 'line-endings',
+        label: `${file.name} LF line endings`,
+      },
+      checkLfLineEndings(file.name, file.text),
+    ),
+    checkOutcome(
+      {
+        id: `physical.${file.name}.quoting`,
+        rule: 'quoting',
+        label: `${file.name} selective quoting`,
+      },
+      checkSelectiveQuoting(file.name, file.text),
+    ),
+  );
+}
+
+function pushHeaderOutcome(file: BundleFile, outcomes: CheckOutcome[]): void {
+  const expected = headerSpecFor(file.name);
+  if (!expected) return;
+  const table = csvToTable(file.text);
+  outcomes.push(
+    checkOutcome(
+      {
+        id: `headers.${file.name}`,
+        rule: 'headers',
+        label: `${file.name} exact headers`,
+      },
+      checkExactHeaders(file.name, table.headers, expected),
+    ),
+  );
+}
+
+function pushCrossFileOutcomes(
   files: BundleFile[],
   profile: ReturnType<typeof getOpenGd77Profile>,
-): VerifyDiagnostic[] {
-  const diagnostics: VerifyDiagnostic[] = [];
+  outcomes: CheckOutcome[],
+): void {
   const channels = findFile(files, 'Channels.csv');
   const zones = findFile(files, 'Zones.csv');
   const contacts = findFile(files, 'Contacts.csv');
@@ -127,13 +156,16 @@ function verifyCrossFile(
   const tgMemberCols = rxGroupListMemberHeaders(profile.tgListMembers);
 
   if (channelTable && channels) {
+    const nameLen: VerifyDiagnostic[] = [];
+    const fkContact: VerifyDiagnostic[] = [];
+    const fkTgList: VerifyDiagnostic[] = [];
     channelTable.rows.forEach((row, idx) => {
       const rowNum = idx + 1;
       const name = cell(channelTable.headers, row, CHANNEL_COL.name);
-      diagnostics.push(
+      nameLen.push(
         ...checkNameLength(channels.name, CHANNEL_COL.name, rowNum, name, profile.nameLimit),
       );
-      diagnostics.push(
+      fkContact.push(
         ...checkForeignKey({
           file: channels.name,
           column: CHANNEL_COL.contact,
@@ -143,7 +175,7 @@ function verifyCrossFile(
           sentinels: FK_SENTINELS,
         }),
       );
-      diagnostics.push(
+      fkTgList.push(
         ...checkForeignKey({
           file: channels.name,
           column: CHANNEL_COL.tgList,
@@ -154,15 +186,43 @@ function verifyCrossFile(
         }),
       );
     });
+    outcomes.push(
+      checkOutcome(
+        {
+          id: 'name-length.Channels.csv',
+          rule: 'name-length',
+          label: 'Channel name length',
+        },
+        nameLen,
+      ),
+      checkOutcome(
+        {
+          id: 'fk.channel.contact',
+          rule: 'foreign-key',
+          label: 'Channel → contact FK',
+        },
+        fkContact,
+      ),
+      checkOutcome(
+        {
+          id: 'fk.channel.tgList',
+          rule: 'foreign-key',
+          label: 'Channel → TG list FK',
+        },
+        fkTgList,
+      ),
+    );
   }
 
   if (zones) {
     const table = csvToTable(zones.text);
+    const cardinality: VerifyDiagnostic[] = [];
+    const fkMembers: VerifyDiagnostic[] = [];
     table.rows.forEach((row, idx) => {
       const rowNum = idx + 1;
       const filled = countFilledMembers(table.headers, row, zoneMemberCols);
       if (filled > profile.zoneMembers) {
-        diagnostics.push({
+        cardinality.push({
           rule: 'cardinality',
           file: zones.name,
           row: rowNum,
@@ -170,7 +230,7 @@ function verifyCrossFile(
         });
       }
       for (const col of zoneMemberCols) {
-        diagnostics.push(
+        fkMembers.push(
           ...checkForeignKey({
             file: zones.name,
             column: col,
@@ -182,14 +242,34 @@ function verifyCrossFile(
         );
       }
     });
+    outcomes.push(
+      checkOutcome(
+        {
+          id: 'cardinality.zone.members',
+          rule: 'cardinality',
+          label: 'Zone member cardinality',
+        },
+        cardinality,
+      ),
+      checkOutcome(
+        {
+          id: 'fk.zone.members',
+          rule: 'foreign-key',
+          label: 'Zone members → channel FK',
+        },
+        fkMembers,
+      ),
+    );
   }
 
   if (tgLists && tgTable) {
+    const cardinality: VerifyDiagnostic[] = [];
+    const fkMembers: VerifyDiagnostic[] = [];
     tgTable.rows.forEach((row, idx) => {
       const rowNum = idx + 1;
       const filled = countFilledMembers(tgTable.headers, row, tgMemberCols);
       if (filled > profile.tgListMembers) {
-        diagnostics.push({
+        cardinality.push({
           rule: 'cardinality',
           file: tgLists.name,
           row: rowNum,
@@ -197,7 +277,7 @@ function verifyCrossFile(
         });
       }
       for (const col of tgMemberCols) {
-        diagnostics.push(
+        fkMembers.push(
           ...checkForeignKey({
             file: tgLists.name,
             column: col,
@@ -209,38 +289,71 @@ function verifyCrossFile(
         );
       }
     });
+    outcomes.push(
+      checkOutcome(
+        {
+          id: 'cardinality.tgList.members',
+          rule: 'cardinality',
+          label: 'TG list member cardinality',
+        },
+        cardinality,
+      ),
+      checkOutcome(
+        {
+          id: 'fk.tgList.members',
+          rule: 'foreign-key',
+          label: 'TG list members → contact FK',
+        },
+        fkMembers,
+      ),
+    );
   }
-
-  return diagnostics;
 }
 
-function verifyRequiredFiles(files: BundleFile[]): VerifyDiagnostic[] {
+function pushRequiredFileOutcomes(files: BundleFile[], outcomes: CheckOutcome[]): void {
   const names = new Set(files.map((f) => f.name.toLowerCase()));
-  if (![...names].includes('channels.csv')) return [];
-  const diagnostics: VerifyDiagnostic[] = [];
+  if (![...names].includes('channels.csv')) return;
+
+  const coreMissing: VerifyDiagnostic[] = [];
   for (const required of REQUIRED_CORE) {
     if (![...names].includes(required.toLowerCase())) {
-      diagnostics.push({
+      coreMissing.push({
         rule: 'required-files',
         message: `Missing required file ${required} for OpenGD77 full bundle verification.`,
       });
     }
   }
-  return diagnostics;
+  outcomes.push(
+    checkOutcome(
+      {
+        id: 'required.core-files',
+        rule: 'required-files',
+        label: 'Required OpenGD77 core CSV files',
+      },
+      coreMissing,
+    ),
+  );
+}
+
+export function verifyOpenGd77Detailed(
+  files: BundleFile[],
+  profileId: string,
+): CheckOutcome[] {
+  const profile = getOpenGd77Profile(profileId);
+  const outcomes: CheckOutcome[] = [];
+  for (const file of files) {
+    pushPhysicalOutcomes(file, outcomes);
+    if (file.name.toLowerCase().endsWith('.csv')) {
+      pushHeaderOutcome(file, outcomes);
+    }
+  }
+  pushCrossFileOutcomes(files, profile, outcomes);
+  pushRequiredFileOutcomes(files, outcomes);
+  return outcomes;
 }
 
 export function verifyOpenGd77(files: BundleFile[], profileId: string): VerifyDiagnostic[] {
-  const profile = getOpenGd77Profile(profileId);
-  const diagnostics: VerifyDiagnostic[] = [];
-  for (const file of files) {
-    diagnostics.push(...verifyPhysical(file));
-    if (file.name.toLowerCase().endsWith('.csv')) {
-      diagnostics.push(...verifyHeaders(file));
-    }
-  }
-  diagnostics.push(...verifyCrossFile(files, profile));
-  diagnostics.push(...verifyRequiredFiles(files));
-  return diagnostics;
+  return flattenOutcomes(verifyOpenGd77Detailed(files, profileId));
 }
 
 export const opengd77Verifier: FormatVerifier = {
@@ -248,5 +361,6 @@ export const opengd77Verifier: FormatVerifier = {
   label: 'OpenGD77 CPS CSV',
   defaultProfileId: DEFAULT_OPENGD77_PROFILE_ID,
   supportedProfileIds: OPENGD77_PROFILES.map((p) => p.id),
+  verifyDetailed: verifyOpenGd77Detailed,
   verify: verifyOpenGd77,
 };
