@@ -40,7 +40,7 @@ export default function RxGroupListEditor({
   }
 
   return (
-    <Stack gap="md" maw={900}>
+    <Stack gap="md" maw={960}>
       <TextInput label="Name" value={name} onChange={(e) => setName(e.currentTarget.value)} />
       <RxGroupListMemberPicker
         talkGroups={library.talkGroups}
