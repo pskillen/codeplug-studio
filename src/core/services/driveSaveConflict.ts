@@ -1,4 +1,4 @@
-import { isRemotePortableNewer } from './projectSyncSummary.ts';
+import { isRemotePortableNewer, type ProjectSyncDiff } from './projectSyncSummary.ts';
 
 export type DriveSaveConflictKind = 'remoteNewer' | 'projectIdMismatch';
 
@@ -8,7 +8,7 @@ export interface DriveSaveConflict {
   remoteProjectId: string;
   remoteModifiedAt: string;
   localSyncedAt: string | null;
-  diffLines: string[];
+  diff: ProjectSyncDiff;
   remoteYaml: string;
 }
 

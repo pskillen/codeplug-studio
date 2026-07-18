@@ -5,6 +5,7 @@ import {
   minimalProjectAggregate,
 } from '@core/import-export/formats/native-yaml/testFixtures.ts';
 import {
+  buildProjectSyncDiff,
   formatSyncDiffSummary,
   hasPortableInterchange,
   isRemotePortableNewer,
@@ -14,14 +15,18 @@ import {
 import { recordImportDestination } from './interchangeMeta.ts';
 
 describe('projectSyncSummary', () => {
-  it('summarises entity counts from aggregate', () => {
+  it('summarises entity counts from aggregate including APRS', () => {
     const aggregate = fullLibraryAggregate();
     const summary = summariseProjectAggregate(aggregate);
     expect(summary.counts.channels).toBeGreaterThan(0);
+    expect(summary.counts.digitalContacts).toBe(1);
+    expect(summary.counts.analogContacts).toBe(1);
+    expect(summary.counts.rxGroupLists).toBe(1);
+    expect(summary.counts.aprsConfigurations).toBe(1);
     expect(summary.projectId).toBe(aggregate.meta.projectId);
   });
 
-  it('formatSyncDiffSummary compares local and remote', () => {
+  it('buildProjectSyncDiff includes all count rows and timestamp newer sides', () => {
     const aggregate = minimalProjectAggregate();
     const local = summariseProjectAggregate(aggregate);
     const remote = summariseProjectAggregate({
@@ -33,9 +38,24 @@ describe('projectSyncSummary', () => {
       }),
       channels: [...aggregate.channels, { ...aggregate.channels[0]!, id: 'ch-2', name: 'Two' }],
     });
-    const lines = formatSyncDiffSummary(local, remote);
-    expect(lines.some((line) => line.startsWith('Local last edited:'))).toBe(true);
-    expect(lines.some((line) => line.startsWith('Remote last saved:'))).toBe(true);
+    const diff = buildProjectSyncDiff(local, remote);
+    expect(diff.timestamps).toHaveLength(2);
+    expect(diff.counts.map((row) => row.key)).toEqual([
+      'channels',
+      'zones',
+      'talkGroups',
+      'digitalContacts',
+      'analogContacts',
+      'rxGroupLists',
+      'scanLists',
+      'aprsConfigurations',
+      'formatBuilds',
+    ]);
+    const channels = diff.counts.find((row) => row.key === 'channels');
+    expect(channels?.delta).toBe(1);
+    expect(formatSyncDiffSummary(local, remote).some((line) => line.includes('Channels:'))).toBe(
+      true,
+    );
   });
 
   it('portableInterchangeLabel prefers google drive', () => {
