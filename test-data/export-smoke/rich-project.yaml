@@ -1,0 +1,5495 @@
+formatBuilds:
+  - channelOverrides:
+      - libraryEntityId: ca70ca22-179f-4442-8824-0894f3c764c6:-D:talkGroup:f7c35ef0-86ac-4908-a53e-6ad79092fc46
+        wireName: Hspt MM9PDY TG
+      - libraryEntityId: ca70ca22-179f-4442-8824-0894f3c764c6:-D:talkGroup:dc74e45d-11a0-4786-b5c5-baeecca3b4c5
+        wireName: Hspt Scot Chat
+      - libraryEntityId: ca70ca22-179f-4442-8824-0894f3c764c6:-D:talkGroup:e4ceac7d-d163-495d-a39c-cba3aef5c52d
+        wireName: Hspt Scot Mult
+      - libraryEntityId: ca70ca22-179f-4442-8824-0894f3c764c6:-D:talkGroup:8c4ddb48-fb84-4e4d-9387-046f4c2932d2
+        wireName: Hspt Scotland
+      - excluded: true
+        libraryEntityId: 3219abdc-e64c-4bff-a5d7-7d69963b83d8
+      - libraryEntityId: ca70ca22-179f-4442-8824-0894f3c764c6:-D:talkGroup:5b6778fb-a0f9-4088-8e0c-2c89e518cac4
+        wireName: Hspt Scot West
+      - excluded: true
+        libraryEntityId: bf4a02c4-20c7-4a79-a502-8911bfaba4e3
+      - excluded: true
+        libraryEntityId: 881719e5-04b9-4ef0-a7cc-0775a45e1533
+      - excluded: true
+        libraryEntityId: 5268c7cb-2abd-440f-ba06-955eb8e58db9
+    contactOverrides: []
+    exportSettings:
+      exportZoneDerivedScanLists: true
+      maxNameLength: null
+      nameModeOverride: callsign_name
+      shortenNames: true
+      useChannelAbbreviation: true
+      useTalkGroupAbbreviation: true
+    exportUnlinkedAnalogContacts: true
+    exportUnlinkedChannels: true
+    exportUnlinkedDigitalContacts: true
+    exportUnlinkedRxGroupLists: true
+    exportUnlinkedTalkGroups: true
+    formatId: anytone
+    id: 436617a3-217a-4866-a249-319f492c6b28
+    layout:
+      sections:
+        - kind: zoneGrouping
+          zones:
+            - channelIds:
+                - 3b631c77-1d8e-4ac4-b8c6-edbb4571b5f1
+                - 7302e505-1f0e-456e-954c-3a0e55f89bf1
+                - abfc26c9-44ca-4a72-89a9-716e2fb8b872
+                - 8928d8ed-9c96-477c-8358-859a968e05bf
+                - b9e5e9f0-2958-4321-b9d8-ba8eca4f64d1
+                - 41b8a368-a823-4006-9c8b-88011b48f551
+                - 4b983368-1d35-46cc-bb76-152a91a0f311
+                - 0aafa779-acc4-4b14-ac55-cfa3a5a241a1
+                - 6d9cb486-4c95-4d19-a2ae-1cf3dc68c4e6
+                - 26c20999-beb8-4dc7-8545-ee3d97cd86e1
+                - 4b644bf4-fa40-42ef-aee6-f7c56cd5d84c
+                - 21399ab7-d7bb-451f-9f92-775638dd2bba
+              exportScanList: true
+              id: 3265622f-cea2-46b2-9d17-b4d543e4d874
+              name: Aberdeen
+            - channelIds:
+                - f6381b6c-7da1-4774-a800-ec33605c266b
+                - 394e36f6-b04c-4e3c-8c8c-a71221dc50b3
+                - 35b330af-23a9-48bf-89c2-655279a134a0
+                - 3cfbaaa5-c470-44c8-8fc6-99533c930789
+                - 560af276-dd29-48a2-8fb6-f268bd7ec285
+              id: 4501b9e2-dc29-4a44-bd4c-c0f736e91f25
+              name: Aberdn Airband
+            - channelIds:
+                - 70bad150-2d11-4706-a3db-57175d068313
+                - ca70ca22-179f-4442-8824-0894f3c764c6
+                - abfc26c9-44ca-4a72-89a9-716e2fb8b872
+                - 8928d8ed-9c96-477c-8358-859a968e05bf
+                - b9e5e9f0-2958-4321-b9d8-ba8eca4f64d1
+                - 41b8a368-a823-4006-9c8b-88011b48f551
+                - 4b983368-1d35-46cc-bb76-152a91a0f311
+                - 0aafa779-acc4-4b14-ac55-cfa3a5a241a1
+                - 6d9cb486-4c95-4d19-a2ae-1cf3dc68c4e6
+                - 26c20999-beb8-4dc7-8545-ee3d97cd86e1
+                - 4b644bf4-fa40-42ef-aee6-f7c56cd5d84c
+                - 21399ab7-d7bb-451f-9f92-775638dd2bba
+              exportScanList: true
+              id: dbff7ef8-215a-4b01-ae84-f7fe78be4022
+              name: Aboyne
+            - channelIds:
+                - 6c7bc1cc-1b52-445a-a72e-43aaf212f47b
+                - 1c99ded1-50f5-4b57-bad3-e335d06531a2
+                - 35053ef7-560e-402f-829b-b8484f4efbf5
+                - 211c5132-bac9-4257-8f58-0637808f1dba
+                - a557d38c-2d9c-4a18-bc60-0354b4ee2cdf
+                - 2cc9e394-2f5b-4b23-a3dc-9420c6aa6b4c
+                - abfc26c9-44ca-4a72-89a9-716e2fb8b872
+                - 8928d8ed-9c96-477c-8358-859a968e05bf
+                - b9e5e9f0-2958-4321-b9d8-ba8eca4f64d1
+                - 41b8a368-a823-4006-9c8b-88011b48f551
+                - 4b983368-1d35-46cc-bb76-152a91a0f311
+                - 0aafa779-acc4-4b14-ac55-cfa3a5a241a1
+                - 6d9cb486-4c95-4d19-a2ae-1cf3dc68c4e6
+                - 26c20999-beb8-4dc7-8545-ee3d97cd86e1
+                - 4b644bf4-fa40-42ef-aee6-f7c56cd5d84c
+                - 21399ab7-d7bb-451f-9f92-775638dd2bba
+              exportScanList: true
+              id: 9a78b0b4-388a-4dbe-8bc7-8f2223ffb8be
+              name: Dundee
+            - channelIds:
+                - 041595cf-144f-4505-8d7f-11d4172d7854
+                - 206d71b7-b445-4abc-bdcc-7d49a0a8e835
+                - 6f55c822-1f91-448b-aafe-e0da3a94e1e3
+                - 2d61c26c-7eb2-4c9a-8062-7dc8b12c08d0
+                - 6f0bd721-0fbc-4966-ad82-21bee7cb01b0
+                - 0424b169-1fd7-45f0-b2ac-7be8d0c293c6
+                - d27479d4-bef9-442d-9e58-8a4f43a8cfd7
+                - 24cca1c9-df68-4b56-bd6a-23d2a56d1ab9
+                - f50b3ba9-66a9-4ec7-86b6-6feab5be7515
+              id: 41707a0a-964e-4062-8909-2db7afdd3750
+              name: Edin Airband
+            - channelIds:
+                - 6290f8fd-0501-4597-93f5-d8e8e4c944fc
+                - abbe01e6-035c-4776-aad1-9626a1d2c2c9
+                - a23a4363-f653-4bc4-8c6e-13756bda0a97
+                - 881719e5-04b9-4ef0-a7cc-0775a45e1533
+                - 86880ca2-4a23-476a-b0d0-7bc72658598b
+                - 09baf926-3d27-4f45-b6f3-87c5e3b6943a
+                - 4f4d1310-4da9-4053-b7a1-df47d00bcfb0
+                - d33c7c26-3b49-423e-ac7f-f23f0ec53522
+                - abfc26c9-44ca-4a72-89a9-716e2fb8b872
+                - 8928d8ed-9c96-477c-8358-859a968e05bf
+                - b9e5e9f0-2958-4321-b9d8-ba8eca4f64d1
+                - 41b8a368-a823-4006-9c8b-88011b48f551
+                - 4b983368-1d35-46cc-bb76-152a91a0f311
+                - 0aafa779-acc4-4b14-ac55-cfa3a5a241a1
+                - 6d9cb486-4c95-4d19-a2ae-1cf3dc68c4e6
+                - 26c20999-beb8-4dc7-8545-ee3d97cd86e1
+                - 4b644bf4-fa40-42ef-aee6-f7c56cd5d84c
+                - 21399ab7-d7bb-451f-9f92-775638dd2bba
+              exportScanList: true
+              id: b66aae38-4ba1-4055-a8bf-ea0aeece0839
+              name: Edinburgh
+            - channelIds:
+                - 38f23e93-aa3e-4ca0-ad40-513930eeb3f2
+                - 7a1ffb31-75ab-49f4-8862-588babb16229
+                - 34a70d64-0044-4678-9783-5ec4dd2b0b1c
+                - 833f26c1-1a08-4295-8e8e-8bdad8a67580
+                - ba83c50d-ea62-4e8f-b3c5-73fd2d77c9ba
+                - 29b766f5-8f13-4545-9cba-69cf7469976c
+                - ae96efa5-8a48-4edc-86af-25deb080e1c5
+                - b39fdcc7-79d8-47ab-80bd-266deea94142
+                - 2e9f785f-a0db-40ef-b46b-348b3238d0a7
+                - fddbb856-fe0b-4f2d-8520-cddeeaee47fd
+                - c402e4c4-3079-4609-abe2-9501b6d4b9d6
+                - abfc26c9-44ca-4a72-89a9-716e2fb8b872
+                - 8928d8ed-9c96-477c-8358-859a968e05bf
+                - b9e5e9f0-2958-4321-b9d8-ba8eca4f64d1
+                - 41b8a368-a823-4006-9c8b-88011b48f551
+                - 4b983368-1d35-46cc-bb76-152a91a0f311
+                - 0aafa779-acc4-4b14-ac55-cfa3a5a241a1
+                - 6d9cb486-4c95-4d19-a2ae-1cf3dc68c4e6
+                - 26c20999-beb8-4dc7-8545-ee3d97cd86e1
+                - 4b644bf4-fa40-42ef-aee6-f7c56cd5d84c
+                - 21399ab7-d7bb-451f-9f92-775638dd2bba
+              exportScanList: true
+              id: 8925c989-552e-4abf-8e89-59ab46d553af
+              name: Glasgow
+            - channelIds:
+                - eb2be667-3e6a-423f-a518-8938021cae3b
+                - b29a77ae-d883-4ec7-99cd-c5d0a637ed2a
+                - e0a2d306-8f22-4a93-a65f-c5dd0be317c7
+                - 38fec83d-de58-4df7-922d-0a6be65033e1
+                - bc176d8c-e690-4fe5-bb11-d8dbbc3e35c8
+                - df79c9f5-00d3-47d4-b8de-367a84a26aa6
+                - 23739a7a-f56f-4fce-9b5e-4c81bac90104
+                - 10423cd0-2ef4-4f92-bf92-2f802e23f98e
+                - 968ea37c-1bfb-4baa-9b3a-e717d37d1433
+                - e3e123ce-4e44-435b-89f3-c38fc435ec42
+              id: fdb6effe-cdb6-4aa9-b8f6-10fd0afe5256
+              name: Glasgow Airband
+            - channelIds:
+                - ca70ca22-179f-4442-8824-0894f3c764c6
+                - 7a1ffb31-75ab-49f4-8862-588babb16229
+                - 29b766f5-8f13-4545-9cba-69cf7469976c
+                - 34a70d64-0044-4678-9783-5ec4dd2b0b1c
+                - c402e4c4-3079-4609-abe2-9501b6d4b9d6
+                - 833f26c1-1a08-4295-8e8e-8bdad8a67580
+                - abfc26c9-44ca-4a72-89a9-716e2fb8b872
+                - 8928d8ed-9c96-477c-8358-859a968e05bf
+                - b9e5e9f0-2958-4321-b9d8-ba8eca4f64d1
+                - 41b8a368-a823-4006-9c8b-88011b48f551
+                - 4b983368-1d35-46cc-bb76-152a91a0f311
+                - 0aafa779-acc4-4b14-ac55-cfa3a5a241a1
+                - 6d9cb486-4c95-4d19-a2ae-1cf3dc68c4e6
+                - 26c20999-beb8-4dc7-8545-ee3d97cd86e1
+                - 4b644bf4-fa40-42ef-aee6-f7c56cd5d84c
+                - 21399ab7-d7bb-451f-9f92-775638dd2bba
+              exportScanList: true
+              id: 82265ffb-a90a-46a9-9401-1520af568ee9
+              name: Home Shack
+            - channelIds:
+                - ca70ca22-179f-4442-8824-0894f3c764c6
+                - 38f23e93-aa3e-4ca0-ad40-513930eeb3f2
+                - 7a1ffb31-75ab-49f4-8862-588babb16229
+                - 34a70d64-0044-4678-9783-5ec4dd2b0b1c
+                - 833f26c1-1a08-4295-8e8e-8bdad8a67580
+                - ba83c50d-ea62-4e8f-b3c5-73fd2d77c9ba
+                - 29b766f5-8f13-4545-9cba-69cf7469976c
+                - fddbb856-fe0b-4f2d-8520-cddeeaee47fd
+                - c402e4c4-3079-4609-abe2-9501b6d4b9d6
+                - abfc26c9-44ca-4a72-89a9-716e2fb8b872
+                - 8928d8ed-9c96-477c-8358-859a968e05bf
+                - b9e5e9f0-2958-4321-b9d8-ba8eca4f64d1
+                - 41b8a368-a823-4006-9c8b-88011b48f551
+                - 4b983368-1d35-46cc-bb76-152a91a0f311
+                - 0aafa779-acc4-4b14-ac55-cfa3a5a241a1
+                - 6d9cb486-4c95-4d19-a2ae-1cf3dc68c4e6
+                - 26c20999-beb8-4dc7-8545-ee3d97cd86e1
+                - 4b644bf4-fa40-42ef-aee6-f7c56cd5d84c
+                - 21399ab7-d7bb-451f-9f92-775638dd2bba
+              exportScanList: true
+              id: 5133f2fe-41a4-4c5f-a5e7-a056c1e172ba
+              name: Morning Walk
+            - channelIds:
+                - 211c5132-bac9-4257-8f58-0637808f1dba
+                - a557d38c-2d9c-4a18-bc60-0354b4ee2cdf
+                - 2cc9e394-2f5b-4b23-a3dc-9420c6aa6b4c
+                - 6c7bc1cc-1b52-445a-a72e-43aaf212f47b
+                - 1c99ded1-50f5-4b57-bad3-e335d06531a2
+                - abfc26c9-44ca-4a72-89a9-716e2fb8b872
+                - 8928d8ed-9c96-477c-8358-859a968e05bf
+                - b9e5e9f0-2958-4321-b9d8-ba8eca4f64d1
+                - 41b8a368-a823-4006-9c8b-88011b48f551
+                - 4b983368-1d35-46cc-bb76-152a91a0f311
+                - 0aafa779-acc4-4b14-ac55-cfa3a5a241a1
+                - 6d9cb486-4c95-4d19-a2ae-1cf3dc68c4e6
+                - 26c20999-beb8-4dc7-8545-ee3d97cd86e1
+                - 4b644bf4-fa40-42ef-aee6-f7c56cd5d84c
+                - 21399ab7-d7bb-451f-9f92-775638dd2bba
+              exportScanList: true
+              id: c5844927-de71-426e-b2c0-418776b2d135
+              name: Perth
+            - channelIds:
+                - 6f13aa05-b011-4d0c-bd9c-b19c56716fc6
+                - a6559d4b-d9b2-448b-971b-f38034147527
+                - 704a87cf-d610-4bbf-af78-1c29e9aa5a97
+                - 78852154-fb9f-4f16-870a-020f468341db
+                - c6973b7f-fedd-49b6-8a16-ec19643d2590
+                - 9da78b52-c0fb-4dce-b054-470d4bc7b4af
+                - 8710cf64-fd67-47ee-88d8-9d26cbdaf5ad
+                - 28e21d75-ca0d-4f20-855c-cf38e10e8f18
+                - f75317fa-810c-47c1-92c9-28aefbaac829
+                - e7d4448d-7e2d-4219-a71a-9c11f0f080d2
+                - c7f95831-de0c-4ce9-aa08-dd2743e4ab9e
+                - 124ea979-df82-4c4e-8963-61309dbbc265
+                - dc318f4c-686a-4efa-9729-450eff32b71e
+                - 8208716b-34e2-45f5-a0df-21818c84ca27
+                - f9c60e6a-e443-408f-a2b7-a20ee881a347
+                - 598eac81-060d-480b-b97d-b6382f19d68d
+              exportScanList: true
+              id: f0b8cbd5-7b10-4cfd-8ccc-833be4b3d9b9
+              name: PMR-446
+            - channelIds:
+                - abfc26c9-44ca-4a72-89a9-716e2fb8b872
+                - 8928d8ed-9c96-477c-8358-859a968e05bf
+                - b9e5e9f0-2958-4321-b9d8-ba8eca4f64d1
+                - 41b8a368-a823-4006-9c8b-88011b48f551
+                - 4b983368-1d35-46cc-bb76-152a91a0f311
+                - 0aafa779-acc4-4b14-ac55-cfa3a5a241a1
+                - 6d9cb486-4c95-4d19-a2ae-1cf3dc68c4e6
+                - 26c20999-beb8-4dc7-8545-ee3d97cd86e1
+                - 4b644bf4-fa40-42ef-aee6-f7c56cd5d84c
+                - 21399ab7-d7bb-451f-9f92-775638dd2bba
+              id: a3dd95b6-5274-48d4-9d58-2516d20aac51
+              name: Simplex scan channels
+            - channelIds:
+                - 4e745f41-9a2e-4f55-bec0-5a497c7c0738
+                - ab6751ae-d76c-46aa-9fb6-6ec1713a3535
+                - 32a743bd-5276-440d-8e70-190dc169a475
+                - 6b60edf0-d045-4008-859b-c0b7fa5c1eab
+                - 86a5be84-397d-4914-9ef9-917bfa5f1160
+                - e39e8c04-014d-4ec3-a567-5a0143055f78
+                - b0996ee3-b2f7-4c18-83aa-1f278636e9f3
+                - 4d1c1716-8473-4dad-86bf-89124a23a784
+                - 4b983368-1d35-46cc-bb76-152a91a0f311
+                - 7faf28c4-a13b-4186-9741-4155e4c2358c
+                - 91eab4e1-22ab-4a87-a003-ac8ac8b91cdd
+                - 383eba32-4f3e-4f2a-ba95-ae1383bacbab
+                - 5fbb58d9-a807-4d8e-b9ed-debc86c58c89
+                - 1f56ca78-895e-4510-a5ca-70f8d057ab2c
+                - 2fb66912-0bff-4e0a-9687-03fa7be58b1c
+                - 55b5403a-be69-4648-8da8-64ad3710b3d1
+                - 583dba48-4632-424e-ab84-5ec80a56c199
+              exportScanList: true
+              id: a9834106-11a0-4f59-9458-cc56b4095c42
+              name: UK UHF simplex
+            - channelIds:
+                - 65432461-b2fa-48a1-9fa6-eadd6ae763f9
+                - 5292da72-926f-451f-af2d-a81eee6abd35
+                - 1a31d271-eae4-43a5-9045-a718f95c926c
+                - efb34289-df3a-45a4-8c8f-1cfae6f667c9
+                - 715d5008-1d25-4c98-bfe3-3320be02fd94
+                - e9fbfc42-7675-45fa-be19-8fda1bacbd70
+                - f85beb5c-0e18-405d-876e-66bafa114c76
+                - e2d7c249-24b4-4a3e-bf3c-c033fb2531c4
+                - acbc4a97-13a2-4a50-a137-71fab903c490
+                - adeb0130-c699-45e4-b579-635bd31f0c71
+                - 0aafa779-acc4-4b14-ac55-cfa3a5a241a1
+                - 6d9cb486-4c95-4d19-a2ae-1cf3dc68c4e6
+                - 26c20999-beb8-4dc7-8545-ee3d97cd86e1
+                - 4b644bf4-fa40-42ef-aee6-f7c56cd5d84c
+                - 21399ab7-d7bb-451f-9f92-775638dd2bba
+                - abedcfec-bab5-452d-aca2-950aba2be269
+              exportScanList: true
+              id: cd2a1e8a-d503-485c-bc07-1b37932201c3
+              name: UK VHF simplex
+    name: Anytone AT-D890UV
+    profileId: anytone-at-d890uv
+    projectId: 9734dab8-f8b8-4c81-84eb-a0c2d3479f21
+    revision: 91
+    rxGroupListOverrides: []
+    scanListOverrides: []
+    talkGroupOverrides: []
+    updatedAt: 2026-07-17T20:20:55.713Z
+    zoneOverrides:
+      - libraryEntityId: dbff7ef8-215a-4b01-ae84-f7fe78be4022
+        orderOrSlot: 1
+      - libraryEntityId: 3265622f-cea2-46b2-9d17-b4d543e4d874
+        orderOrSlot: 2
+      - libraryEntityId: 9a78b0b4-388a-4dbe-8bc7-8f2223ffb8be
+        orderOrSlot: 3
+      - libraryEntityId: b66aae38-4ba1-4055-a8bf-ea0aeece0839
+        orderOrSlot: 4
+      - libraryEntityId: 8925c989-552e-4abf-8e89-59ab46d553af
+        orderOrSlot: 5
+      - libraryEntityId: 82265ffb-a90a-46a9-9401-1520af568ee9
+        orderOrSlot: 6
+      - libraryEntityId: 5133f2fe-41a4-4c5f-a5e7-a056c1e172ba
+        orderOrSlot: 7
+      - libraryEntityId: c5844927-de71-426e-b2c0-418776b2d135
+        orderOrSlot: 8
+      - libraryEntityId: f0b8cbd5-7b10-4cfd-8ccc-833be4b3d9b9
+        orderOrSlot: 9
+      - libraryEntityId: a3dd95b6-5274-48d4-9d58-2516d20aac51
+        orderOrSlot: 10
+      - libraryEntityId: a9834106-11a0-4f59-9458-cc56b4095c42
+        orderOrSlot: 11
+      - libraryEntityId: cd2a1e8a-d503-485c-bc07-1b37932201c3
+        orderOrSlot: 12
+  - channelOverrides: []
+    contactOverrides: []
+    exportSettings:
+      exportZoneDerivedScanLists: true
+      maxNameLength: null
+      nameModeOverride: callsign_name
+      shortenNames: true
+      useChannelAbbreviation: true
+      useTalkGroupAbbreviation: false
+    exportUnlinkedAnalogContacts: true
+    exportUnlinkedChannels: true
+    exportUnlinkedDigitalContacts: true
+    exportUnlinkedRxGroupLists: true
+    exportUnlinkedTalkGroups: true
+    formatId: opengd77
+    id: afba4ef7-8dae-4ed5-8956-5bf03ea4b951
+    layout:
+      sections:
+        - kind: zoneGrouping
+          zones:
+            - channelIds:
+                - 38f23e93-aa3e-4ca0-ad40-513930eeb3f2
+                - 7a1ffb31-75ab-49f4-8862-588babb16229
+                - 34a70d64-0044-4678-9783-5ec4dd2b0b1c
+                - 833f26c1-1a08-4295-8e8e-8bdad8a67580
+              id: 8925c989-552e-4abf-8e89-59ab46d553af
+              name: Glasgow
+    name: Baofeng 1701 / Retevis RT-84
+    profileId: opengd77-1701
+    projectId: 9734dab8-f8b8-4c81-84eb-a0c2d3479f21
+    revision: 796
+    rxGroupListOverrides: []
+    scanListOverrides: []
+    talkGroupOverrides: []
+    updatedAt: 2026-07-16T22:59:05.537Z
+    zoneOverrides: []
+  - channelOverrides: []
+    contactOverrides: []
+    exportSettings:
+      exportZoneDerivedScanLists: true
+      maxNameLength: null
+      nameModeOverride: callsign_name
+      shortenNames: true
+      useChannelAbbreviation: true
+      useTalkGroupAbbreviation: false
+    exportUnlinkedAnalogContacts: true
+    exportUnlinkedChannels: false
+    exportUnlinkedDigitalContacts: true
+    exportUnlinkedRxGroupLists: false
+    exportUnlinkedTalkGroups: false
+    formatId: dm32
+    id: a1468012-adde-46cd-8853-32a1217ba23f
+    layout:
+      sections:
+        - kind: zoneGrouping
+          zones:
+            - channelIds:
+                - ca70ca22-179f-4442-8824-0894f3c764c6
+                - 7a1ffb31-75ab-49f4-8862-588babb16229
+                - 29b766f5-8f13-4545-9cba-69cf7469976c
+                - 34a70d64-0044-4678-9783-5ec4dd2b0b1c
+                - c402e4c4-3079-4609-abe2-9501b6d4b9d6
+                - 833f26c1-1a08-4295-8e8e-8bdad8a67580
+                - abfc26c9-44ca-4a72-89a9-716e2fb8b872
+                - 8928d8ed-9c96-477c-8358-859a968e05bf
+                - b9e5e9f0-2958-4321-b9d8-ba8eca4f64d1
+                - 41b8a368-a823-4006-9c8b-88011b48f551
+                - 4b983368-1d35-46cc-bb76-152a91a0f311
+                - 0aafa779-acc4-4b14-ac55-cfa3a5a241a1
+                - 6d9cb486-4c95-4d19-a2ae-1cf3dc68c4e6
+                - 26c20999-beb8-4dc7-8545-ee3d97cd86e1
+                - 4b644bf4-fa40-42ef-aee6-f7c56cd5d84c
+                - 21399ab7-d7bb-451f-9f92-775638dd2bba
+              exportScanList: true
+              id: 82265ffb-a90a-46a9-9401-1520af568ee9
+              name: Home Shack
+            - channelIds:
+                - ca70ca22-179f-4442-8824-0894f3c764c6
+                - 38f23e93-aa3e-4ca0-ad40-513930eeb3f2
+                - 7a1ffb31-75ab-49f4-8862-588babb16229
+                - 34a70d64-0044-4678-9783-5ec4dd2b0b1c
+                - 833f26c1-1a08-4295-8e8e-8bdad8a67580
+                - ba83c50d-ea62-4e8f-b3c5-73fd2d77c9ba
+                - 29b766f5-8f13-4545-9cba-69cf7469976c
+                - fddbb856-fe0b-4f2d-8520-cddeeaee47fd
+                - c402e4c4-3079-4609-abe2-9501b6d4b9d6
+                - abfc26c9-44ca-4a72-89a9-716e2fb8b872
+                - 8928d8ed-9c96-477c-8358-859a968e05bf
+                - b9e5e9f0-2958-4321-b9d8-ba8eca4f64d1
+                - 41b8a368-a823-4006-9c8b-88011b48f551
+                - 4b983368-1d35-46cc-bb76-152a91a0f311
+                - 0aafa779-acc4-4b14-ac55-cfa3a5a241a1
+                - 6d9cb486-4c95-4d19-a2ae-1cf3dc68c4e6
+                - 26c20999-beb8-4dc7-8545-ee3d97cd86e1
+                - 4b644bf4-fa40-42ef-aee6-f7c56cd5d84c
+                - 21399ab7-d7bb-451f-9f92-775638dd2bba
+              exportScanList: true
+              id: 5133f2fe-41a4-4c5f-a5e7-a056c1e172ba
+              name: Morning Walk
+            - channelIds:
+                - 38f23e93-aa3e-4ca0-ad40-513930eeb3f2
+                - 7a1ffb31-75ab-49f4-8862-588babb16229
+                - 34a70d64-0044-4678-9783-5ec4dd2b0b1c
+                - 833f26c1-1a08-4295-8e8e-8bdad8a67580
+                - ba83c50d-ea62-4e8f-b3c5-73fd2d77c9ba
+                - 29b766f5-8f13-4545-9cba-69cf7469976c
+                - ae96efa5-8a48-4edc-86af-25deb080e1c5
+                - b39fdcc7-79d8-47ab-80bd-266deea94142
+                - 2e9f785f-a0db-40ef-b46b-348b3238d0a7
+                - fddbb856-fe0b-4f2d-8520-cddeeaee47fd
+                - c402e4c4-3079-4609-abe2-9501b6d4b9d6
+                - abfc26c9-44ca-4a72-89a9-716e2fb8b872
+                - 8928d8ed-9c96-477c-8358-859a968e05bf
+                - b9e5e9f0-2958-4321-b9d8-ba8eca4f64d1
+                - 41b8a368-a823-4006-9c8b-88011b48f551
+                - 4b983368-1d35-46cc-bb76-152a91a0f311
+                - 0aafa779-acc4-4b14-ac55-cfa3a5a241a1
+                - 6d9cb486-4c95-4d19-a2ae-1cf3dc68c4e6
+                - 26c20999-beb8-4dc7-8545-ee3d97cd86e1
+                - 4b644bf4-fa40-42ef-aee6-f7c56cd5d84c
+                - 21399ab7-d7bb-451f-9f92-775638dd2bba
+              exportScanList: true
+              exportScratchChannel: false
+              id: 8925c989-552e-4abf-8e89-59ab46d553af
+              name: Glasgow
+              scanCarrierFrequencyHz: null
+            - channelIds:
+                - 6290f8fd-0501-4597-93f5-d8e8e4c944fc
+                - abbe01e6-035c-4776-aad1-9626a1d2c2c9
+                - a23a4363-f653-4bc4-8c6e-13756bda0a97
+                - 881719e5-04b9-4ef0-a7cc-0775a45e1533
+                - 86880ca2-4a23-476a-b0d0-7bc72658598b
+                - 09baf926-3d27-4f45-b6f3-87c5e3b6943a
+                - 4f4d1310-4da9-4053-b7a1-df47d00bcfb0
+                - d33c7c26-3b49-423e-ac7f-f23f0ec53522
+                - abfc26c9-44ca-4a72-89a9-716e2fb8b872
+                - 8928d8ed-9c96-477c-8358-859a968e05bf
+                - b9e5e9f0-2958-4321-b9d8-ba8eca4f64d1
+                - 41b8a368-a823-4006-9c8b-88011b48f551
+                - 4b983368-1d35-46cc-bb76-152a91a0f311
+                - 0aafa779-acc4-4b14-ac55-cfa3a5a241a1
+                - 6d9cb486-4c95-4d19-a2ae-1cf3dc68c4e6
+                - 26c20999-beb8-4dc7-8545-ee3d97cd86e1
+                - 4b644bf4-fa40-42ef-aee6-f7c56cd5d84c
+                - 21399ab7-d7bb-451f-9f92-775638dd2bba
+              exportScanList: true
+              id: b66aae38-4ba1-4055-a8bf-ea0aeece0839
+              name: Edinburgh
+            - channelIds:
+                - 6c7bc1cc-1b52-445a-a72e-43aaf212f47b
+                - 1c99ded1-50f5-4b57-bad3-e335d06531a2
+                - 35053ef7-560e-402f-829b-b8484f4efbf5
+                - 211c5132-bac9-4257-8f58-0637808f1dba
+                - a557d38c-2d9c-4a18-bc60-0354b4ee2cdf
+                - 2cc9e394-2f5b-4b23-a3dc-9420c6aa6b4c
+                - abfc26c9-44ca-4a72-89a9-716e2fb8b872
+                - 8928d8ed-9c96-477c-8358-859a968e05bf
+                - b9e5e9f0-2958-4321-b9d8-ba8eca4f64d1
+                - 41b8a368-a823-4006-9c8b-88011b48f551
+                - 4b983368-1d35-46cc-bb76-152a91a0f311
+                - 0aafa779-acc4-4b14-ac55-cfa3a5a241a1
+                - 6d9cb486-4c95-4d19-a2ae-1cf3dc68c4e6
+                - 26c20999-beb8-4dc7-8545-ee3d97cd86e1
+                - 4b644bf4-fa40-42ef-aee6-f7c56cd5d84c
+                - 21399ab7-d7bb-451f-9f92-775638dd2bba
+              exportScanList: true
+              id: 9a78b0b4-388a-4dbe-8bc7-8f2223ffb8be
+              name: Dundee
+            - channelIds:
+                - 211c5132-bac9-4257-8f58-0637808f1dba
+                - a557d38c-2d9c-4a18-bc60-0354b4ee2cdf
+                - 2cc9e394-2f5b-4b23-a3dc-9420c6aa6b4c
+                - 6c7bc1cc-1b52-445a-a72e-43aaf212f47b
+                - 1c99ded1-50f5-4b57-bad3-e335d06531a2
+                - abfc26c9-44ca-4a72-89a9-716e2fb8b872
+                - 8928d8ed-9c96-477c-8358-859a968e05bf
+                - b9e5e9f0-2958-4321-b9d8-ba8eca4f64d1
+                - 41b8a368-a823-4006-9c8b-88011b48f551
+                - 4b983368-1d35-46cc-bb76-152a91a0f311
+                - 0aafa779-acc4-4b14-ac55-cfa3a5a241a1
+                - 6d9cb486-4c95-4d19-a2ae-1cf3dc68c4e6
+                - 26c20999-beb8-4dc7-8545-ee3d97cd86e1
+                - 4b644bf4-fa40-42ef-aee6-f7c56cd5d84c
+                - 21399ab7-d7bb-451f-9f92-775638dd2bba
+              exportScanList: true
+              id: c5844927-de71-426e-b2c0-418776b2d135
+              name: Perth
+            - channelIds:
+                - 70bad150-2d11-4706-a3db-57175d068313
+                - ca70ca22-179f-4442-8824-0894f3c764c6
+                - 0aafa779-acc4-4b14-ac55-cfa3a5a241a1
+                - 6d9cb486-4c95-4d19-a2ae-1cf3dc68c4e6
+                - 26c20999-beb8-4dc7-8545-ee3d97cd86e1
+                - 4b644bf4-fa40-42ef-aee6-f7c56cd5d84c
+                - 21399ab7-d7bb-451f-9f92-775638dd2bba
+                - 4b983368-1d35-46cc-bb76-152a91a0f311
+                - abfc26c9-44ca-4a72-89a9-716e2fb8b872
+                - 8928d8ed-9c96-477c-8358-859a968e05bf
+                - b9e5e9f0-2958-4321-b9d8-ba8eca4f64d1
+                - 41b8a368-a823-4006-9c8b-88011b48f551
+              exportScanList: true
+              id: dbff7ef8-215a-4b01-ae84-f7fe78be4022
+              name: Aboyne
+            - channelIds:
+                - 3b631c77-1d8e-4ac4-b8c6-edbb4571b5f1
+                - 7302e505-1f0e-456e-954c-3a0e55f89bf1
+                - 0aafa779-acc4-4b14-ac55-cfa3a5a241a1
+                - 6d9cb486-4c95-4d19-a2ae-1cf3dc68c4e6
+                - 26c20999-beb8-4dc7-8545-ee3d97cd86e1
+                - 4b644bf4-fa40-42ef-aee6-f7c56cd5d84c
+                - 21399ab7-d7bb-451f-9f92-775638dd2bba
+                - 4b983368-1d35-46cc-bb76-152a91a0f311
+                - abfc26c9-44ca-4a72-89a9-716e2fb8b872
+                - 8928d8ed-9c96-477c-8358-859a968e05bf
+                - b9e5e9f0-2958-4321-b9d8-ba8eca4f64d1
+                - 41b8a368-a823-4006-9c8b-88011b48f551
+              exportScanList: true
+              id: 3265622f-cea2-46b2-9d17-b4d543e4d874
+              name: Aberdeen
+            - channelIds:
+                - eb2be667-3e6a-423f-a518-8938021cae3b
+                - b29a77ae-d883-4ec7-99cd-c5d0a637ed2a
+                - e0a2d306-8f22-4a93-a65f-c5dd0be317c7
+                - 38fec83d-de58-4df7-922d-0a6be65033e1
+                - bc176d8c-e690-4fe5-bb11-d8dbbc3e35c8
+                - df79c9f5-00d3-47d4-b8de-367a84a26aa6
+                - 23739a7a-f56f-4fce-9b5e-4c81bac90104
+                - 10423cd0-2ef4-4f92-bf92-2f802e23f98e
+                - 968ea37c-1bfb-4baa-9b3a-e717d37d1433
+                - e3e123ce-4e44-435b-89f3-c38fc435ec42
+              exportScanList: true
+              id: fdb6effe-cdb6-4aa9-b8f6-10fd0afe5256
+              name: Glasgow Airband
+            - channelIds:
+                - 041595cf-144f-4505-8d7f-11d4172d7854
+                - 206d71b7-b445-4abc-bdcc-7d49a0a8e835
+                - 6f55c822-1f91-448b-aafe-e0da3a94e1e3
+                - 2d61c26c-7eb2-4c9a-8062-7dc8b12c08d0
+                - 6f0bd721-0fbc-4966-ad82-21bee7cb01b0
+                - 0424b169-1fd7-45f0-b2ac-7be8d0c293c6
+                - d27479d4-bef9-442d-9e58-8a4f43a8cfd7
+                - 24cca1c9-df68-4b56-bd6a-23d2a56d1ab9
+                - f50b3ba9-66a9-4ec7-86b6-6feab5be7515
+              exportScanList: true
+              id: 41707a0a-964e-4062-8909-2db7afdd3750
+              name: Edin Airband
+            - channelIds:
+                - f6381b6c-7da1-4774-a800-ec33605c266b
+                - 394e36f6-b04c-4e3c-8c8c-a71221dc50b3
+                - 35b330af-23a9-48bf-89c2-655279a134a0
+                - 3cfbaaa5-c470-44c8-8fc6-99533c930789
+                - 560af276-dd29-48a2-8fb6-f268bd7ec285
+              exportScanList: true
+              id: 4501b9e2-dc29-4a44-bd4c-c0f736e91f25
+              name: Aberdn Airband
+            - channelIds:
+                - 6f13aa05-b011-4d0c-bd9c-b19c56716fc6
+                - a6559d4b-d9b2-448b-971b-f38034147527
+                - 704a87cf-d610-4bbf-af78-1c29e9aa5a97
+                - 78852154-fb9f-4f16-870a-020f468341db
+                - c6973b7f-fedd-49b6-8a16-ec19643d2590
+                - 9da78b52-c0fb-4dce-b054-470d4bc7b4af
+                - 8710cf64-fd67-47ee-88d8-9d26cbdaf5ad
+                - 28e21d75-ca0d-4f20-855c-cf38e10e8f18
+                - f75317fa-810c-47c1-92c9-28aefbaac829
+                - e7d4448d-7e2d-4219-a71a-9c11f0f080d2
+                - c7f95831-de0c-4ce9-aa08-dd2743e4ab9e
+                - 124ea979-df82-4c4e-8963-61309dbbc265
+                - dc318f4c-686a-4efa-9729-450eff32b71e
+                - 8208716b-34e2-45f5-a0df-21818c84ca27
+                - f9c60e6a-e443-408f-a2b7-a20ee881a347
+                - 598eac81-060d-480b-b97d-b6382f19d68d
+              id: f0b8cbd5-7b10-4cfd-8ccc-833be4b3d9b9
+              name: PMR-446
+            - channelIds:
+                - abfc26c9-44ca-4a72-89a9-716e2fb8b872
+                - 8928d8ed-9c96-477c-8358-859a968e05bf
+                - b9e5e9f0-2958-4321-b9d8-ba8eca4f64d1
+                - 41b8a368-a823-4006-9c8b-88011b48f551
+                - 4b983368-1d35-46cc-bb76-152a91a0f311
+                - 0aafa779-acc4-4b14-ac55-cfa3a5a241a1
+                - 6d9cb486-4c95-4d19-a2ae-1cf3dc68c4e6
+                - 26c20999-beb8-4dc7-8545-ee3d97cd86e1
+                - 4b644bf4-fa40-42ef-aee6-f7c56cd5d84c
+                - 21399ab7-d7bb-451f-9f92-775638dd2bba
+              id: a3dd95b6-5274-48d4-9d58-2516d20aac51
+              name: Simplex scan channels
+            - channelIds:
+                - 4e745f41-9a2e-4f55-bec0-5a497c7c0738
+                - ab6751ae-d76c-46aa-9fb6-6ec1713a3535
+                - 32a743bd-5276-440d-8e70-190dc169a475
+                - 6b60edf0-d045-4008-859b-c0b7fa5c1eab
+                - 86a5be84-397d-4914-9ef9-917bfa5f1160
+                - e39e8c04-014d-4ec3-a567-5a0143055f78
+                - b0996ee3-b2f7-4c18-83aa-1f278636e9f3
+                - 4d1c1716-8473-4dad-86bf-89124a23a784
+                - 4b983368-1d35-46cc-bb76-152a91a0f311
+                - 7faf28c4-a13b-4186-9741-4155e4c2358c
+                - 91eab4e1-22ab-4a87-a003-ac8ac8b91cdd
+                - 383eba32-4f3e-4f2a-ba95-ae1383bacbab
+                - 5fbb58d9-a807-4d8e-b9ed-debc86c58c89
+                - 1f56ca78-895e-4510-a5ca-70f8d057ab2c
+                - 2fb66912-0bff-4e0a-9687-03fa7be58b1c
+                - 55b5403a-be69-4648-8da8-64ad3710b3d1
+                - 583dba48-4632-424e-ab84-5ec80a56c199
+              id: a9834106-11a0-4f59-9458-cc56b4095c42
+              name: UK UHF simplex
+            - channelIds:
+                - 65432461-b2fa-48a1-9fa6-eadd6ae763f9
+                - 5292da72-926f-451f-af2d-a81eee6abd35
+                - 1a31d271-eae4-43a5-9045-a718f95c926c
+                - efb34289-df3a-45a4-8c8f-1cfae6f667c9
+                - 715d5008-1d25-4c98-bfe3-3320be02fd94
+                - e9fbfc42-7675-45fa-be19-8fda1bacbd70
+                - f85beb5c-0e18-405d-876e-66bafa114c76
+                - e2d7c249-24b4-4a3e-bf3c-c033fb2531c4
+                - acbc4a97-13a2-4a50-a137-71fab903c490
+                - adeb0130-c699-45e4-b579-635bd31f0c71
+                - 0aafa779-acc4-4b14-ac55-cfa3a5a241a1
+                - 6d9cb486-4c95-4d19-a2ae-1cf3dc68c4e6
+                - 26c20999-beb8-4dc7-8545-ee3d97cd86e1
+                - 4b644bf4-fa40-42ef-aee6-f7c56cd5d84c
+                - 21399ab7-d7bb-451f-9f92-775638dd2bba
+                - abedcfec-bab5-452d-aca2-950aba2be269
+              id: cd2a1e8a-d503-485c-bc07-1b37932201c3
+              name: UK VHF simplex
+    name: Baofeng DM-32UV
+    profileId: dm32-baofeng-dm32uv
+    projectId: 9734dab8-f8b8-4c81-84eb-a0c2d3479f21
+    revision: 37
+    rxGroupListOverrides: []
+    scanListOverrides: []
+    talkGroupOverrides: []
+    updatedAt: 2026-07-17T22:18:57.868Z
+    zoneOverrides:
+      - libraryEntityId: 4501b9e2-dc29-4a44-bd4c-c0f736e91f25
+        wireName: Aberdeen Air
+  - channelOverrides: []
+    contactOverrides: []
+    exportSettings:
+      exportZoneDerivedScanLists: true
+      maxNameLength: null
+      nameModeOverride: callsign_name
+      shortenNames: true
+      useChannelAbbreviation: true
+      useTalkGroupAbbreviation: false
+    exportUnlinkedAnalogContacts: true
+    exportUnlinkedChannels: true
+    exportUnlinkedDigitalContacts: true
+    exportUnlinkedRxGroupLists: true
+    exportUnlinkedTalkGroups: true
+    formatId: chirp
+    id: 5cb69ea9-7fda-44dd-b4a5-42aa96244c3a
+    layout:
+      sections: []
+    name: CHIRP UV-5R
+    profileId: chirp-uv5r
+    projectId: 9734dab8-f8b8-4c81-84eb-a0c2d3479f21
+    revision: 2
+    rxGroupListOverrides: []
+    scanListOverrides: []
+    talkGroupOverrides: []
+    updatedAt: 2026-07-16T21:22:09.556Z
+    zoneOverrides: []
+library:
+  analogContacts: []
+  aprsConfiguration:
+    autoTxIntervalSec: 300
+    channelSlots:
+      - callType: private
+        channelRef: null
+        targetDmrId: 234999
+        timeslot: null
+      - callType: private
+        channelRef:
+          id: ba83c50d-ea62-4e8f-b3c5-73fd2d77c9ba
+          kind: channel
+        targetDmrId: 234999
+        timeslot: null
+      - callType: private
+        channelRef:
+          id: 6290f8fd-0501-4597-93f5-d8e8e4c944fc
+          kind: channel
+        targetDmrId: 234999
+        timeslot: null
+      - callType: private
+        channelRef:
+          id: fddbb856-fe0b-4f2d-8520-cddeeaee47fd
+          kind: channel
+        targetDmrId: 234999
+        timeslot: null
+      - callType: private
+        channelRef:
+          id: 2cc9e394-2f5b-4b23-a3dc-9420c6aa6b4c
+          kind: channel
+        targetDmrId: 234999
+        timeslot: null
+      - callType: private
+        channelRef:
+          id: 56024c1f-f989-4abe-bd4e-05437b3238a7
+          kind: channel
+        targetDmrId: 234999
+        timeslot: null
+    comment: ''
+    fixedLocation: null
+    id: 8d6dac5c-e4bf-450f-ba97-24565fc08388
+    manualTxIntervalSec: 300
+    name: Default config
+    positionSource: allGnss
+    projectId: 9734dab8-f8b8-4c81-84eb-a0c2d3479f21
+    revision: 13
+    updatedAt: 2026-07-16T22:14:34.033Z
+  channelDefaults:
+    analogSquelchMode: carrier
+    forbidTransmit: false
+    sendTalkerAlias: on
+    txPermit: permitAlways
+  channels:
+    - aprs:
+        digitalPttMode: off
+        receiveEnabled: true
+        reportSlotIndex: 1
+        reportType: digital
+      callsign: GB7EM
+      comment: Aberdeen — Operational
+      forbidTransmit: default
+      id: 3b631c77-1d8e-4ac4-b8c6-edbb4571b5f1
+      location:
+        lat: 57.14583333333334
+        lon: -2.125
+      maidenheadLocator: IO87WD
+      modeProfiles:
+        - colourCode: 11
+          contactRef: null
+          dmrId: null
+          dmrMode: null
+          mode: dmr
+          rxGroupListId: null
+          sendTalkerAlias: default
+          timeslot: null
+      name: Aberdeen
+      power: null
+      primaryMode: null
+      projectId: 9734dab8-f8b8-4c81-84eb-a0c2d3479f21
+      revision: 2
+      rxFrequency: 439425000
+      scanInclusion: default
+      txFrequency: 430425000
+      txPermit: default
+      updatedAt: 2026-07-13T22:45:08.419Z
+      useLocation: true
+    - aprs:
+        digitalPttMode: off
+        receiveEnabled: true
+        reportSlotIndex: 1
+        reportType: digital
+      callsign: GB7GD
+      comment: Aberdeen — Operational
+      forbidTransmit: default
+      id: 7302e505-1f0e-456e-954c-3a0e55f89bf1
+      location:
+        lat: 57.1875
+        lon: -2.125
+      maidenheadLocator: IO87WE
+      modeProfiles:
+        - colourCode: 1
+          contactRef: null
+          dmrId: null
+          dmrMode: null
+          mode: dmr
+          rxGroupListId: null
+          sendTalkerAlias: default
+          timeslot: null
+        - mode: dstar
+          rpt1Call: ''
+          rpt2Call: ''
+          urCall: CQCQCQ
+        - dgId: null
+          mode: ysf
+          wiresDtmfId: ''
+      name: Aberdeen
+      power: null
+      primaryMode: null
+      projectId: 9734dab8-f8b8-4c81-84eb-a0c2d3479f21
+      revision: 2
+      rxFrequency: 145687500
+      scanInclusion: default
+      txFrequency: 145087500
+      txPermit: default
+      updatedAt: 2026-07-13T22:45:08.498Z
+      useLocation: true
+    - callsign: ''
+      comment: ''
+      forbidTransmit: forbid
+      id: 394e36f6-b04c-4e3c-8c8c-a71221dc50b3
+      location:
+        lat: 57.2025
+        lon: -2.1980555555556
+      maidenheadLocator: null
+      modeProfiles:
+        - analogSquelchMode: default
+          bandwidthKHz: 12.5
+          mode: am
+          rxTone: none
+          squelch: null
+          txTone: none
+      name: Aberdeen Approach
+      power: null
+      primaryMode: null
+      projectId: 9734dab8-f8b8-4c81-84eb-a0c2d3479f21
+      revision: 1
+      rxFrequency: 119055000
+      scanInclusion: default
+      txFrequency: null
+      txPermit: default
+      updatedAt: 2026-07-09T15:21:47.811Z
+      useLocation: true
+    - callsign: ''
+      comment: ''
+      forbidTransmit: forbid
+      id: 35b330af-23a9-48bf-89c2-655279a134a0
+      location:
+        lat: 57.2025
+        lon: -2.1980555555556
+      maidenheadLocator: null
+      modeProfiles:
+        - analogSquelchMode: default
+          bandwidthKHz: 12.5
+          mode: am
+          rxTone: none
+          squelch: null
+          txTone: none
+      name: Aberdeen Director
+      power: null
+      primaryMode: null
+      projectId: 9734dab8-f8b8-4c81-84eb-a0c2d3479f21
+      revision: 1
+      rxFrequency: 128305000
+      scanInclusion: default
+      txFrequency: null
+      txPermit: default
+      updatedAt: 2026-07-09T15:21:47.835Z
+      useLocation: true
+    - callsign: ''
+      comment: ''
+      forbidTransmit: forbid
+      id: 560af276-dd29-48a2-8fb6-f268bd7ec285
+      location:
+        lat: 57.2025
+        lon: -2.1980555555556
+      maidenheadLocator: null
+      modeProfiles:
+        - analogSquelchMode: default
+          bandwidthKHz: 12.5
+          mode: am
+          rxTone: none
+          squelch: null
+          txTone: none
+      name: Aberdeen Information
+      power: null
+      primaryMode: null
+      projectId: 9734dab8-f8b8-4c81-84eb-a0c2d3479f21
+      revision: 1
+      rxFrequency: 121855000
+      scanInclusion: default
+      txFrequency: null
+      txPermit: default
+      updatedAt: 2026-07-09T15:21:47.873Z
+      useLocation: true
+    - callsign: ''
+      comment: ''
+      forbidTransmit: forbid
+      id: 3cfbaaa5-c470-44c8-8fc6-99533c930789
+      location:
+        lat: 57.2025
+        lon: -2.1980555555556
+      maidenheadLocator: null
+      modeProfiles:
+        - analogSquelchMode: default
+          bandwidthKHz: 12.5
+          mode: am
+          rxTone: none
+          squelch: null
+          txTone: none
+      name: Aberdeen Tower
+      power: null
+      primaryMode: null
+      projectId: 9734dab8-f8b8-4c81-84eb-a0c2d3479f21
+      revision: 1
+      rxFrequency: 118105000
+      scanInclusion: default
+      txFrequency: null
+      txPermit: default
+      updatedAt: 2026-07-09T15:21:47.856Z
+      useLocation: true
+    - aprs:
+        digitalPttMode: off
+        receiveEnabled: true
+        reportSlotIndex: null
+        reportType: off
+      callsign: GB3AO
+      comment: Aboyne — Operational
+      forbidTransmit: default
+      id: 70bad150-2d11-4706-a3db-57175d068313
+      location:
+        lat: 57.0625
+        lon: -2.791666666666657
+      maidenheadLocator: IO87OB
+      modeProfiles:
+        - analogSquelchMode: default
+          bandwidthKHz: null
+          mode: fm
+          rxTone: '67'
+          squelch: null
+          txTone: '67'
+      name: Aboyne
+      power: null
+      primaryMode: fm
+      projectId: 9734dab8-f8b8-4c81-84eb-a0c2d3479f21
+      revision: 3
+      rxFrequency: 430975000
+      scanInclusion: default
+      txFrequency: 438575000
+      txPermit: default
+      updatedAt: 2026-07-14T12:58:22.942Z
+      useLocation: true
+    - callsign: ''
+      comment: ''
+      forbidTransmit: forbid
+      id: f6381b6c-7da1-4774-a800-ec33605c266b
+      location:
+        lat: 57.07527777777778
+        lon: -2.8402777777777777
+      maidenheadLocator: IO87NB
+      modeProfiles:
+        - analogSquelchMode: default
+          bandwidthKHz: 12.5
+          mode: am
+          rxTone: none
+          squelch: null
+          txTone: none
+      name: Aboyne Info
+      power: null
+      primaryMode: am
+      projectId: 9734dab8-f8b8-4c81-84eb-a0c2d3479f21
+      revision: 2
+      rxFrequency: 118665000
+      scanInclusion: default
+      txFrequency: null
+      txPermit: default
+      updatedAt: 2026-07-14T18:55:31.150Z
+      useLocation: true
+    - aprs:
+        digitalPttMode: off
+        receiveEnabled: true
+        reportSlotIndex: null
+        reportType: off
+      callsign: GB3AG
+      comment: Angus — Operational
+      forbidTransmit: default
+      id: 35053ef7-560e-402f-829b-b8484f4efbf5
+      location:
+        lat: 56.5625
+        lon: -2.791666666666657
+      maidenheadLocator: IO86ON
+      modeProfiles:
+        - analogSquelchMode: default
+          bandwidthKHz: null
+          mode: fm
+          rxTone: '94.8'
+          squelch: null
+          txTone: '94.8'
+        - dgId: null
+          mode: ysf
+          wiresDtmfId: ''
+      name: Angus
+      power: null
+      primaryMode: null
+      projectId: 9734dab8-f8b8-4c81-84eb-a0c2d3479f21
+      revision: 2
+      rxFrequency: 145725000
+      scanInclusion: default
+      txFrequency: 145125000
+      txPermit: default
+      updatedAt: 2026-07-14T12:58:24.380Z
+      useLocation: true
+    - callsign: ''
+      comment: ''
+      forbidTransmit: forbid
+      id: f50b3ba9-66a9-4ec7-86b6-6feab5be7515
+      location:
+        lat: 56.217719283328336
+        lon: -3.459890446044824
+      maidenheadLocator: null
+      modeProfiles:
+        - analogSquelchMode: default
+          bandwidthKHz: 12.5
+          mode: am
+          rxTone: none
+          squelch: null
+          txTone: none
+      name: Balado Leuchars Radar
+      power: null
+      primaryMode: null
+      projectId: 9734dab8-f8b8-4c81-84eb-a0c2d3479f21
+      revision: 1
+      rxFrequency: 126500000
+      scanInclusion: default
+      txFrequency: null
+      txPermit: default
+      updatedAt: 2026-07-09T15:21:19.646Z
+      useLocation: true
+    - callsign: ''
+      comment: ''
+      forbidTransmit: forbid
+      id: 24cca1c9-df68-4b56-bd6a-23d2a56d1ab9
+      location:
+        lat: 56.217719283328336
+        lon: -3.459890446044824
+      maidenheadLocator: null
+      modeProfiles:
+        - analogSquelchMode: default
+          bandwidthKHz: 12.5
+          mode: am
+          rxTone: none
+          squelch: null
+          txTone: none
+      name: Balado Radio
+      power: null
+      primaryMode: null
+      projectId: 9734dab8-f8b8-4c81-84eb-a0c2d3479f21
+      revision: 1
+      rxFrequency: 118605000
+      scanInclusion: default
+      txFrequency: null
+      txPermit: default
+      updatedAt: 2026-07-09T15:21:19.622Z
+      useLocation: true
+    - aprs:
+        digitalPttMode: off
+        receiveEnabled: true
+        reportSlotIndex: 1
+        reportType: digital
+      callsign: GB7ZT
+      comment: Ballantrae — Operational
+      forbidTransmit: default
+      id: bf4a02c4-20c7-4a79-a502-8911bfaba4e3
+      location:
+        lat: 55.1013
+        lon: -5.0082
+      maidenheadLocator: IO75LC
+      modeProfiles:
+        - colourCode: 9
+          contactRef: null
+          dmrId: null
+          dmrMode: null
+          mode: dmr
+          rxGroupListId: 9d61664e-3844-43ca-8a86-6e89c533cfd8
+          sendTalkerAlias: default
+          timeslot: null
+      name: Ballantrae
+      power: null
+      primaryMode: null
+      projectId: 9734dab8-f8b8-4c81-84eb-a0c2d3479f21
+      revision: 8
+      rxFrequency: 439400000
+      scanInclusion: default
+      txFrequency: 430400000
+      txPermit: default
+      updatedAt: 2026-07-13T22:45:08.600Z
+      useLocation: true
+    - aprs:
+        digitalPttMode: off
+        receiveEnabled: true
+        reportSlotIndex: 1
+        reportType: digital
+      callsign: GB7BG
+      comment: Bathgate — Operational
+      forbidTransmit: default
+      id: 881719e5-04b9-4ef0-a7cc-0775a45e1533
+      location:
+        lat: 55.9105
+        lon: -3.6433
+      maidenheadLocator: IO85EV
+      modeProfiles:
+        - colourCode: 1
+          contactRef: null
+          dmrId: null
+          dmrMode: null
+          mode: dmr
+          rxGroupListId: 5d0e6210-69f0-41c9-85cd-1f4141b66ae4
+          sendTalkerAlias: default
+          timeslot: null
+      name: Bathgate
+      power: null
+      primaryMode: null
+      projectId: 9734dab8-f8b8-4c81-84eb-a0c2d3479f21
+      revision: 5
+      rxFrequency: 439662500
+      scanInclusion: default
+      txFrequency: 430662500
+      txPermit: default
+      updatedAt: 2026-07-13T22:45:08.695Z
+      useLocation: true
+    - aprs:
+        digitalPttMode: off
+        receiveEnabled: true
+        reportSlotIndex: 6
+        reportType: digital
+      callsign: GB3UL
+      comment: Belfast  N.I. — Operational
+      forbidTransmit: default
+      id: 4cdae05f-39a3-4cec-8e3e-40f0a9fd4f49
+      location:
+        lat: 54.60416666666666
+        lon: -5.791666666666657
+      maidenheadLocator: IO74CO
+      modeProfiles:
+        - analogSquelchMode: default
+          bandwidthKHz: null
+          mode: fm
+          rxTone: '110.9'
+          squelch: null
+          txTone: '110.9'
+      name: Belfast
+      power: null
+      primaryMode: null
+      projectId: 9734dab8-f8b8-4c81-84eb-a0c2d3479f21
+      revision: 3
+      rxFrequency: 433050000
+      scanInclusion: default
+      txFrequency: 434650000
+      txPermit: default
+      updatedAt: 2026-07-14T12:57:32.158Z
+      useLocation: true
+    - aprs:
+        digitalPttMode: off
+        receiveEnabled: true
+        reportSlotIndex: 6
+        reportType: digital
+      callsign: GB3NI
+      comment: Belfast  N.I. — Operational
+      forbidTransmit: default
+      id: 5268c7cb-2abd-440f-ba06-955eb8e58db9
+      location:
+        lat: 54.60416666666666
+        lon: -5.791666666666657
+      maidenheadLocator: IO74CO
+      modeProfiles:
+        - analogSquelchMode: default
+          bandwidthKHz: null
+          mode: fm
+          rxTone: '110.9'
+          squelch: null
+          txTone: '110.9'
+      name: Belfast
+      power: null
+      primaryMode: null
+      projectId: 9734dab8-f8b8-4c81-84eb-a0c2d3479f21
+      revision: 3
+      rxFrequency: 145725000
+      scanInclusion: default
+      txFrequency: 145125000
+      txPermit: default
+      updatedAt: 2026-07-14T12:57:33.654Z
+      useLocation: true
+    - aprs:
+        digitalPttMode: off
+        receiveEnabled: true
+        reportSlotIndex: 6
+        reportType: digital
+      callsign: GB3RK
+      comment: Belfast — Operational
+      forbidTransmit: default
+      id: a8218e2c-671e-4af6-88e6-45cae3253c02
+      location:
+        lat: 54.5625
+        lon: -5.958333333333343
+      maidenheadLocator: IO74AN
+      modeProfiles:
+        - analogSquelchMode: default
+          bandwidthKHz: null
+          mode: fm
+          rxTone: '88.5'
+          squelch: null
+          txTone: '88.5'
+      name: Belfast
+      power: null
+      primaryMode: null
+      projectId: 9734dab8-f8b8-4c81-84eb-a0c2d3479f21
+      revision: 2
+      rxFrequency: 438387500
+      scanInclusion: default
+      txFrequency: 430787500
+      txPermit: default
+      updatedAt: 2026-07-14T12:57:35.047Z
+      useLocation: true
+    - aprs:
+        digitalPttMode: off
+        receiveEnabled: true
+        reportSlotIndex: 1
+        reportType: digital
+      callsign: GB7LV
+      comment: Broxburn — Operational
+      forbidTransmit: default
+      id: a23a4363-f653-4bc4-8c6e-13756bda0a97
+      location:
+        lat: 55.9375
+        lon: -3.458333333333343
+      maidenheadLocator: IO85GW
+      modeProfiles:
+        - analogSquelchMode: default
+          bandwidthKHz: null
+          mode: fm
+          rxTone: '94.8'
+          squelch: null
+          txTone: '94.8'
+        - colourCode: 1
+          contactRef: null
+          dmrId: null
+          dmrMode: null
+          mode: dmr
+          rxGroupListId: null
+          sendTalkerAlias: default
+          timeslot: null
+        - mode: dstar
+          rpt1Call: ''
+          rpt2Call: ''
+          urCall: CQCQCQ
+        - dgId: null
+          mode: ysf
+          wiresDtmfId: ''
+      name: Broxburn
+      power: null
+      primaryMode: null
+      projectId: 9734dab8-f8b8-4c81-84eb-a0c2d3479f21
+      revision: 2
+      rxFrequency: 145612500
+      scanInclusion: default
+      txFrequency: 145012500
+      txPermit: default
+      updatedAt: 2026-07-13T22:45:08.792Z
+      useLocation: true
+    - aprs:
+        digitalPttMode: off
+        receiveEnabled: true
+        reportSlotIndex: 1
+        reportType: digital
+      callsign: GB7UL
+      comment: Carrickfergus — Operational
+      forbidTransmit: default
+      id: 7551af65-98ec-4f91-b887-aada61e409ec
+      location:
+        lat: 54.5
+        lon: -5
+      maidenheadLocator: IO74
+      modeProfiles:
+        - colourCode: 1
+          contactRef: null
+          dmrId: null
+          dmrMode: null
+          mode: dmr
+          rxGroupListId: null
+          sendTalkerAlias: default
+          timeslot: null
+      name: Carrickfergus
+      power: null
+      primaryMode: null
+      projectId: 9734dab8-f8b8-4c81-84eb-a0c2d3479f21
+      revision: 2
+      rxFrequency: 439525000
+      scanInclusion: default
+      txFrequency: 430525000
+      txPermit: default
+      updatedAt: 2026-07-13T22:45:08.898Z
+      useLocation: true
+    - aprs:
+        digitalPttMode: off
+        receiveEnabled: true
+        reportSlotIndex: 1
+        reportType: digital
+      callsign: MB6CY
+      comment: Clydebank — Operational
+      forbidTransmit: default
+      id: 907af03e-dca6-4bf3-9422-cc497ec59659
+      location:
+        lat: 55.89583333333334
+        lon: -4.375
+      maidenheadLocator: IO75TV
+      modeProfiles:
+        - colourCode: 2
+          contactRef: null
+          dmrId: null
+          dmrMode: null
+          mode: dmr
+          rxGroupListId: null
+          sendTalkerAlias: default
+          timeslot: null
+        - dgId: null
+          mode: ysf
+          wiresDtmfId: ''
+      name: Clydebank
+      power: null
+      primaryMode: null
+      projectId: 9734dab8-f8b8-4c81-84eb-a0c2d3479f21
+      revision: 4
+      rxFrequency: 144875000
+      scanInclusion: default
+      txFrequency: 144875000
+      txPermit: default
+      updatedAt: 2026-07-13T22:45:08.926Z
+      useLocation: true
+    - callsign: ''
+      comment: ''
+      forbidTransmit: forbid
+      id: bc176d8c-e690-4fe5-bb11-d8dbbc3e35c8
+      location:
+        lat: 55.974722222222
+        lon: -3.9755555555556
+      maidenheadLocator: null
+      modeProfiles:
+        - analogSquelchMode: default
+          bandwidthKHz: 12.5
+          mode: am
+          rxTone: none
+          squelch: null
+          txTone: none
+      name: Cumbernauld Radio
+      power: null
+      primaryMode: null
+      projectId: 9734dab8-f8b8-4c81-84eb-a0c2d3479f21
+      revision: 1
+      rxFrequency: 120605000
+      scanInclusion: default
+      txFrequency: null
+      txPermit: default
+      updatedAt: 2026-07-09T15:20:25.972Z
+      useLocation: true
+    - aprs:
+        digitalPttMode: off
+        receiveEnabled: true
+        reportSlotIndex: 2
+        reportType: digital
+      callsign: GB3AY
+      comment: Dalry — Not Operational
+      forbidTransmit: default
+      id: 38f23e93-aa3e-4ca0-ad40-513930eeb3f2
+      location:
+        lat: 55.72916666666666
+        lon: -4.791666666666657
+      maidenheadLocator: null
+      modeProfiles:
+        - analogSquelchMode: default
+          bandwidthKHz: null
+          mode: fm
+          rxTone: '103.5'
+          squelch: null
+          txTone: '103.5'
+      name: Dalry
+      power: null
+      primaryMode: null
+      projectId: 9734dab8-f8b8-4c81-84eb-a0c2d3479f21
+      revision: 4
+      rxFrequency: 145650000
+      scanInclusion: default
+      txFrequency: 145050000
+      txPermit: default
+      updatedAt: 2026-07-14T12:58:25.917Z
+      useLocation: true
+    - aprs:
+        digitalPttMode: off
+        receiveEnabled: true
+        reportSlotIndex: 2
+        reportType: digital
+      callsign: GB3WA
+      comment: Dalry — Operational
+      forbidTransmit: default
+      id: 833f26c1-1a08-4295-8e8e-8bdad8a67580
+      location:
+        lat: 55.72916666666666
+        lon: -4.791666666666657
+      maidenheadLocator: null
+      modeProfiles:
+        - analogSquelchMode: default
+          bandwidthKHz: null
+          mode: fm
+          rxTone: '103.5'
+          squelch: null
+          txTone: '103.5'
+      name: Dalry
+      power: null
+      primaryMode: null
+      projectId: 9734dab8-f8b8-4c81-84eb-a0c2d3479f21
+      revision: 4
+      rxFrequency: 430875000
+      scanInclusion: default
+      txFrequency: 438475000
+      txPermit: default
+      updatedAt: 2026-07-14T12:58:27.723Z
+      useLocation: true
+    - aprs:
+        digitalPttMode: off
+        receiveEnabled: true
+        reportSlotIndex: 5
+        reportType: digital
+      callsign: GB3DX
+      comment: Derry/Londonderry — Operational
+      forbidTransmit: default
+      id: e0ddea64-611e-40fc-a3de-f8bba9f8de86
+      location:
+        lat: 55.02083333333334
+        lon: -7.375
+      maidenheadLocator: IO65HA
+      modeProfiles:
+        - analogSquelchMode: default
+          bandwidthKHz: null
+          mode: fm
+          rxTone: '110.9'
+          squelch: null
+          txTone: '110.9'
+      name: Derry
+      power: null
+      primaryMode: null
+      projectId: 9734dab8-f8b8-4c81-84eb-a0c2d3479f21
+      revision: 3
+      rxFrequency: 433300000
+      scanInclusion: default
+      txFrequency: 434900000
+      txPermit: default
+      updatedAt: 2026-07-14T12:53:50.946Z
+      useLocation: true
+    - aprs:
+        digitalPttMode: off
+        receiveEnabled: true
+        reportSlotIndex: 2
+        reportType: digital
+      callsign: ''
+      comment: ''
+      forbidTransmit: default
+      id: abfc26c9-44ca-4a72-89a9-716e2fb8b872
+      location: null
+      maidenheadLocator: null
+      modeProfiles:
+        - colourCode: 1
+          contactRef:
+            id: 92cfa90c-dd0e-4ea7-8131-3ebceb469a9d
+            kind: talkGroup
+          dmrId: null
+          dmrMode: null
+          mode: dmr
+          rxGroupListId: null
+          sendTalkerAlias: default
+          timeslot: 1
+      name: DMR Simplex 1
+      power: null
+      primaryMode: null
+      projectId: 9734dab8-f8b8-4c81-84eb-a0c2d3479f21
+      revision: 3
+      rxFrequency: 144612500
+      scanInclusion: default
+      txFrequency: 144612500
+      txPermit: default
+      updatedAt: 2026-07-14T07:30:27.383Z
+      useLocation: false
+    - aprs:
+        digitalPttMode: off
+        receiveEnabled: true
+        reportSlotIndex: 2
+        reportType: digital
+      callsign: ''
+      comment: ''
+      forbidTransmit: default
+      id: 8928d8ed-9c96-477c-8358-859a968e05bf
+      location: null
+      maidenheadLocator: null
+      modeProfiles:
+        - colourCode: 1
+          contactRef:
+            id: a3df7512-6ec1-42ba-a1a3-979a9ad3a3ab
+            kind: talkGroup
+          dmrId: null
+          dmrMode: null
+          mode: dmr
+          rxGroupListId: null
+          sendTalkerAlias: default
+          timeslot: 1
+      name: DMR Simplex 2
+      power: null
+      primaryMode: null
+      projectId: 9734dab8-f8b8-4c81-84eb-a0c2d3479f21
+      revision: 3
+      rxFrequency: 145375000
+      scanInclusion: default
+      txFrequency: 145375000
+      txPermit: default
+      updatedAt: 2026-07-14T07:30:27.663Z
+      useLocation: false
+    - aprs:
+        digitalPttMode: off
+        receiveEnabled: true
+        reportSlotIndex: 2
+        reportType: digital
+      callsign: ''
+      comment: ''
+      forbidTransmit: default
+      id: b9e5e9f0-2958-4321-b9d8-ba8eca4f64d1
+      location: null
+      maidenheadLocator: null
+      modeProfiles:
+        - colourCode: 1
+          contactRef:
+            id: a3df7512-6ec1-42ba-a1a3-979a9ad3a3ab
+            kind: talkGroup
+          dmrId: null
+          dmrMode: null
+          mode: dmr
+          rxGroupListId: null
+          sendTalkerAlias: default
+          timeslot: 1
+      name: DMR Simplex 3
+      power: null
+      primaryMode: null
+      projectId: 9734dab8-f8b8-4c81-84eb-a0c2d3479f21
+      revision: 3
+      rxFrequency: 433450000
+      scanInclusion: default
+      txFrequency: 433450000
+      txPermit: default
+      updatedAt: 2026-07-14T07:30:27.929Z
+      useLocation: false
+    - aprs:
+        digitalPttMode: off
+        receiveEnabled: true
+        reportSlotIndex: 2
+        reportType: digital
+      callsign: ''
+      comment: ''
+      forbidTransmit: default
+      id: 41b8a368-a823-4006-9c8b-88011b48f551
+      location: null
+      maidenheadLocator: null
+      modeProfiles:
+        - colourCode: 1
+          contactRef:
+            id: 92cfa90c-dd0e-4ea7-8131-3ebceb469a9d
+            kind: talkGroup
+          dmrId: null
+          dmrMode: null
+          mode: dmr
+          rxGroupListId: null
+          sendTalkerAlias: default
+          timeslot: 1
+      name: DMR Simplex 4
+      power: null
+      primaryMode: null
+      projectId: 9734dab8-f8b8-4c81-84eb-a0c2d3479f21
+      revision: 3
+      rxFrequency: 438612500
+      scanInclusion: default
+      txFrequency: 438612500
+      txPermit: default
+      updatedAt: 2026-07-14T07:30:28.199Z
+      useLocation: false
+    - aprs:
+        digitalPttMode: off
+        receiveEnabled: true
+        reportSlotIndex: 2
+        reportType: digital
+      callsign: GB3DM
+      comment: Dumbarton — Operational
+      forbidTransmit: default
+      id: c402e4c4-3079-4609-abe2-9501b6d4b9d6
+      location:
+        lat: 55.97916666666666
+        lon: -4.625
+      maidenheadLocator: IO75QX
+      modeProfiles:
+        - analogSquelchMode: default
+          bandwidthKHz: null
+          mode: fm
+          rxTone: '103.5'
+          squelch: null
+          txTone: '103.5'
+        - mode: dstar
+          rpt1Call: ''
+          rpt2Call: ''
+          urCall: CQCQCQ
+        - dgId: null
+          mode: ysf
+          wiresDtmfId: ''
+      name: Dumbarton
+      power: null
+      primaryMode: null
+      projectId: 9734dab8-f8b8-4c81-84eb-a0c2d3479f21
+      revision: 4
+      rxFrequency: 430925000
+      scanInclusion: default
+      txFrequency: 438525000
+      txPermit: default
+      updatedAt: 2026-07-14T12:58:29.143Z
+      useLocation: true
+    - aprs:
+        digitalPttMode: off
+        receiveEnabled: true
+        reportSlotIndex: 1
+        reportType: digital
+      callsign: GB7DB
+      comment: Dunbar — Operational
+      forbidTransmit: default
+      id: 0353714f-4129-4988-bf4c-2fc4e5b931ee
+      location:
+        lat: 55.97916666666666
+        lon: -2.541666666666657
+      maidenheadLocator: IO85RX
+      modeProfiles:
+        - colourCode: 5
+          contactRef: null
+          dmrId: null
+          dmrMode: null
+          mode: dmr
+          rxGroupListId: null
+          sendTalkerAlias: default
+          timeslot: null
+      name: Dunbar
+      power: null
+      primaryMode: null
+      projectId: 9734dab8-f8b8-4c81-84eb-a0c2d3479f21
+      revision: 2
+      rxFrequency: 145750000
+      scanInclusion: default
+      txFrequency: 145150000
+      txPermit: default
+      updatedAt: 2026-07-13T22:45:09.533Z
+      useLocation: true
+    - aprs:
+        digitalPttMode: off
+        receiveEnabled: true
+        reportSlotIndex: 5
+        reportType: digital
+      callsign: GB3DD
+      comment: Dundee — Operational
+      forbidTransmit: default
+      id: 1c99ded1-50f5-4b57-bad3-e335d06531a2
+      location:
+        lat: 56.52083333333334
+        lon: -2.958333333333343
+      maidenheadLocator: IO86MM
+      modeProfiles:
+        - analogSquelchMode: default
+          bandwidthKHz: null
+          mode: fm
+          rxTone: '94.8'
+          squelch: null
+          txTone: '94.8'
+        - dgId: null
+          mode: ysf
+          wiresDtmfId: ''
+      name: Dundee
+      power: null
+      primaryMode: fm
+      projectId: 9734dab8-f8b8-4c81-84eb-a0c2d3479f21
+      revision: 3
+      rxFrequency: 433250000
+      scanInclusion: default
+      txFrequency: 434850000
+      txPermit: default
+      updatedAt: 2026-07-14T12:54:11.561Z
+      useLocation: true
+    - aprs:
+        digitalPttMode: off
+        receiveEnabled: true
+        reportSlotIndex: 3
+        reportType: digital
+      callsign: GB3ED
+      comment: Edinburgh — Operational
+      forbidTransmit: default
+      id: 09baf926-3d27-4f45-b6f3-87c5e3b6943a
+      location:
+        lat: 55.9375
+        lon: -3.208333333333343
+      maidenheadLocator: IO85JW
+      modeProfiles:
+        - analogSquelchMode: default
+          bandwidthKHz: null
+          mode: fm
+          rxTone: '94.8'
+          squelch: null
+          txTone: '94.8'
+        - mode: nxdn
+          rxRan: null
+          talkGroupRef: null
+          txRan: null
+          unitId: null
+      name: Edinburgh
+      power: null
+      primaryMode: null
+      projectId: 9734dab8-f8b8-4c81-84eb-a0c2d3479f21
+      revision: 2
+      rxFrequency: 430887500
+      scanInclusion: default
+      txFrequency: 438487500
+      txPermit: default
+      updatedAt: 2026-07-14T12:50:46.271Z
+      useLocation: true
+    - aprs:
+        digitalPttMode: off
+        receiveEnabled: true
+        reportSlotIndex: 1
+        reportType: digital
+      callsign: GB7KN
+      comment: Edinburgh — Operational
+      forbidTransmit: default
+      id: 4f4d1310-4da9-4053-b7a1-df47d00bcfb0
+      location:
+        lat: 55.9
+        lon: -3.4
+      maidenheadLocator: IO85HV
+      modeProfiles:
+        - colourCode: 1
+          contactRef: null
+          dmrId: null
+          dmrMode: null
+          mode: dmr
+          rxGroupListId: null
+          sendTalkerAlias: default
+          timeslot: null
+        - mode: dstar
+          rpt1Call: ''
+          rpt2Call: ''
+          urCall: CQCQCQ
+        - dgId: null
+          mode: ysf
+          wiresDtmfId: ''
+      name: Edinburgh
+      power: null
+      primaryMode: null
+      projectId: 9734dab8-f8b8-4c81-84eb-a0c2d3479f21
+      revision: 3
+      rxFrequency: 439437500
+      scanInclusion: default
+      txFrequency: 430437500
+      txPermit: default
+      updatedAt: 2026-07-13T22:45:09.630Z
+      useLocation: true
+    - aprs:
+        digitalPttMode: off
+        receiveEnabled: true
+        reportSlotIndex: 1
+        reportType: digital
+      callsign: GB7EE
+      comment: Edinburgh — Operational
+      forbidTransmit: default
+      id: 6290f8fd-0501-4597-93f5-d8e8e4c944fc
+      location:
+        lat: 55.93373
+        lon: -3.21278
+      maidenheadLocator: IO85JW
+      modeProfiles:
+        - colourCode: 1
+          contactRef: null
+          dmrId: null
+          dmrMode: null
+          mode: dmr
+          rxGroupListId: ca8d2ac1-ed69-46ad-98eb-d1635e811eec
+          sendTalkerAlias: default
+          timeslot: null
+      name: Edinburgh
+      power: null
+      primaryMode: null
+      projectId: 9734dab8-f8b8-4c81-84eb-a0c2d3479f21
+      revision: 4
+      rxFrequency: 430925000
+      scanInclusion: default
+      txFrequency: 438525000
+      txPermit: default
+      updatedAt: 2026-07-13T22:45:09.722Z
+      useLocation: true
+    - aprs:
+        digitalPttMode: off
+        receiveEnabled: true
+        reportSlotIndex: 3
+        reportType: digital
+      callsign: GB7EU
+      comment: Edinburgh — Operational
+      forbidTransmit: default
+      id: d33c7c26-3b49-423e-ac7f-f23f0ec53522
+      location:
+        lat: 55.9375
+        lon: -3.208333333333343
+      maidenheadLocator: IO85JW
+      modeProfiles:
+        - analogSquelchMode: default
+          bandwidthKHz: null
+          mode: fm
+          rxTone: '94.8'
+          squelch: null
+          txTone: '94.8'
+        - mode: nxdn
+          rxRan: null
+          talkGroupRef: null
+          txRan: null
+          unitId: null
+      name: Edinburgh
+      power: null
+      primaryMode: null
+      projectId: 9734dab8-f8b8-4c81-84eb-a0c2d3479f21
+      revision: 2
+      rxFrequency: 430837500
+      scanInclusion: default
+      txFrequency: 438437500
+      txPermit: default
+      updatedAt: 2026-07-14T12:50:48.078Z
+      useLocation: true
+    - callsign: ''
+      comment: ''
+      forbidTransmit: forbid
+      id: 041595cf-144f-4505-8d7f-11d4172d7854
+      location:
+        lat: 55.95
+        lon: -3.3725
+      maidenheadLocator: null
+      modeProfiles:
+        - analogSquelchMode: default
+          bandwidthKHz: 12.5
+          mode: am
+          rxTone: none
+          squelch: null
+          txTone: none
+      name: Edinburgh Approach
+      power: null
+      primaryMode: null
+      projectId: 9734dab8-f8b8-4c81-84eb-a0c2d3479f21
+      revision: 1
+      rxFrequency: 121205000
+      scanInclusion: default
+      txFrequency: null
+      txPermit: default
+      updatedAt: 2026-07-09T15:21:19.432Z
+      useLocation: true
+    - callsign: ''
+      comment: ''
+      forbidTransmit: forbid
+      id: 206d71b7-b445-4abc-bdcc-7d49a0a8e835
+      location:
+        lat: 55.95
+        lon: -3.3725
+      maidenheadLocator: null
+      modeProfiles:
+        - analogSquelchMode: default
+          bandwidthKHz: 12.5
+          mode: am
+          rxTone: none
+          squelch: null
+          txTone: none
+      name: Edinburgh Delivery
+      power: null
+      primaryMode: null
+      projectId: 9734dab8-f8b8-4c81-84eb-a0c2d3479f21
+      revision: 1
+      rxFrequency: 121980000
+      scanInclusion: default
+      txFrequency: null
+      txPermit: default
+      updatedAt: 2026-07-09T15:21:19.472Z
+      useLocation: true
+    - callsign: ''
+      comment: ''
+      forbidTransmit: forbid
+      id: 6f0bd721-0fbc-4966-ad82-21bee7cb01b0
+      location:
+        lat: 55.95
+        lon: -3.3725
+      maidenheadLocator: null
+      modeProfiles:
+        - analogSquelchMode: default
+          bandwidthKHz: 12.5
+          mode: am
+          rxTone: none
+          squelch: null
+          txTone: none
+      name: Edinburgh Ground
+      power: null
+      primaryMode: null
+      projectId: 9734dab8-f8b8-4c81-84eb-a0c2d3479f21
+      revision: 1
+      rxFrequency: 121755000
+      scanInclusion: default
+      txFrequency: null
+      txPermit: default
+      updatedAt: 2026-07-09T15:21:19.545Z
+      useLocation: true
+    - callsign: ''
+      comment: ''
+      forbidTransmit: forbid
+      id: 6f55c822-1f91-448b-aafe-e0da3a94e1e3
+      location:
+        lat: 55.95
+        lon: -3.3725
+      maidenheadLocator: null
+      modeProfiles:
+        - analogSquelchMode: default
+          bandwidthKHz: 12.5
+          mode: am
+          rxTone: none
+          squelch: null
+          txTone: none
+      name: Edinburgh Radar
+      power: null
+      primaryMode: null
+      projectId: 9734dab8-f8b8-4c81-84eb-a0c2d3479f21
+      revision: 1
+      rxFrequency: 128980000
+      scanInclusion: default
+      txFrequency: null
+      txPermit: default
+      updatedAt: 2026-07-09T15:21:19.496Z
+      useLocation: true
+    - callsign: ''
+      comment: ''
+      forbidTransmit: forbid
+      id: 0424b169-1fd7-45f0-b2ac-7be8d0c293c6
+      location:
+        lat: 55.95
+        lon: -3.3725
+      maidenheadLocator: null
+      modeProfiles:
+        - analogSquelchMode: default
+          bandwidthKHz: 12.5
+          mode: am
+          rxTone: none
+          squelch: null
+          txTone: none
+      name: Edinburgh Terminal Info
+      power: null
+      primaryMode: null
+      projectId: 9734dab8-f8b8-4c81-84eb-a0c2d3479f21
+      revision: 1
+      rxFrequency: 131355000
+      scanInclusion: default
+      txFrequency: null
+      txPermit: default
+      updatedAt: 2026-07-09T15:21:19.573Z
+      useLocation: true
+    - callsign: ''
+      comment: ''
+      forbidTransmit: forbid
+      id: 2d61c26c-7eb2-4c9a-8062-7dc8b12c08d0
+      location:
+        lat: 55.95
+        lon: -3.3725
+      maidenheadLocator: null
+      modeProfiles:
+        - analogSquelchMode: default
+          bandwidthKHz: 12.5
+          mode: am
+          rxTone: none
+          squelch: null
+          txTone: none
+      name: Edinburgh Tower
+      power: null
+      primaryMode: null
+      projectId: 9734dab8-f8b8-4c81-84eb-a0c2d3479f21
+      revision: 1
+      rxFrequency: 118705000
+      scanInclusion: default
+      txFrequency: null
+      txPermit: default
+      updatedAt: 2026-07-09T15:21:19.523Z
+      useLocation: true
+    - aprs:
+        digitalPttMode: off
+        receiveEnabled: true
+        reportSlotIndex: null
+        reportType: off
+      callsign: GB3CP
+      comment: Fermanagh — Operational
+      forbidTransmit: default
+      id: 17de3875-94a5-49d6-ae08-d52f39aac00d
+      location:
+        lat: 54.35416666666666
+        lon: -7.541666666666657
+      maidenheadLocator: IO64FI
+      modeProfiles:
+        - analogSquelchMode: default
+          bandwidthKHz: null
+          mode: fm
+          rxTone: '110.9'
+          squelch: null
+          txTone: '110.9'
+      name: Fermanagh
+      power: null
+      primaryMode: null
+      projectId: 9734dab8-f8b8-4c81-84eb-a0c2d3479f21
+      revision: 2
+      rxFrequency: 145737500
+      scanInclusion: default
+      txFrequency: 145137500
+      txPermit: default
+      updatedAt: 2026-07-14T12:58:30.575Z
+      useLocation: true
+    - callsign: ''
+      comment: ''
+      forbidTransmit: forbid
+      id: d27479d4-bef9-442d-9e58-8a4f43a8cfd7
+      location:
+        lat: 56.183
+        lon: -3.22
+      maidenheadLocator: null
+      modeProfiles:
+        - analogSquelchMode: default
+          bandwidthKHz: 12.5
+          mode: am
+          rxTone: none
+          squelch: null
+          txTone: none
+      name: Fife Radio
+      power: null
+      primaryMode: null
+      projectId: 9734dab8-f8b8-4c81-84eb-a0c2d3479f21
+      revision: 1
+      rxFrequency: 130455000
+      scanInclusion: default
+      txFrequency: null
+      txPermit: default
+      updatedAt: 2026-07-09T15:21:19.597Z
+      useLocation: true
+    - aprs:
+        digitalPttMode: off
+        receiveEnabled: true
+        reportSlotIndex: 2
+        reportType: digital
+      callsign: GB3GL
+      comment: Glasgow — Operational
+      forbidTransmit: default
+      id: 7a1ffb31-75ab-49f4-8862-588babb16229
+      location:
+        lat: 55.85416666666666
+        lon: -4.125
+      maidenheadLocator: IO75WU
+      modeProfiles:
+        - analogSquelchMode: default
+          bandwidthKHz: null
+          mode: fm
+          rxTone: '103.5'
+          squelch: null
+          txTone: '103.5'
+        - dgId: null
+          mode: ysf
+          wiresDtmfId: ''
+      name: Glasgow
+      power: null
+      primaryMode: null
+      projectId: 9734dab8-f8b8-4c81-84eb-a0c2d3479f21
+      revision: 4
+      rxFrequency: 430900000
+      scanInclusion: default
+      txFrequency: 438500000
+      txPermit: default
+      updatedAt: 2026-07-14T12:47:17.237Z
+      useLocation: true
+    - aprs:
+        digitalPttMode: off
+        receiveEnabled: true
+        reportSlotIndex: 2
+        reportType: digital
+      callsign: GB3KE
+      comment: Glasgow — Operational
+      forbidTransmit: default
+      id: ae96efa5-8a48-4edc-86af-25deb080e1c5
+      location:
+        lat: 55.89583333333334
+        lon: -4.291666666666657
+      maidenheadLocator: IO75UV
+      modeProfiles:
+        - analogSquelchMode: default
+          bandwidthKHz: null
+          mode: fm
+          rxTone: '103.5'
+          squelch: null
+          txTone: '103.5'
+        - dgId: null
+          mode: ysf
+          wiresDtmfId: ''
+      name: Glasgow
+      power: null
+      primaryMode: null
+      projectId: 9734dab8-f8b8-4c81-84eb-a0c2d3479f21
+      revision: 2
+      rxFrequency: 145687500
+      scanInclusion: default
+      txFrequency: 145087500
+      txPermit: default
+      updatedAt: 2026-07-14T12:47:17.264Z
+      useLocation: true
+    - aprs:
+        digitalPttMode: off
+        receiveEnabled: true
+        reportSlotIndex: 2
+        reportType: digital
+      callsign: GB3KW
+      comment: Glasgow — Operational
+      forbidTransmit: default
+      id: b39fdcc7-79d8-47ab-80bd-266deea94142
+      location:
+        lat: 55.89583333333334
+        lon: -4.291666666666657
+      maidenheadLocator: IO75UV
+      modeProfiles:
+        - analogSquelchMode: default
+          bandwidthKHz: null
+          mode: fm
+          rxTone: '103.5'
+          squelch: null
+          txTone: '103.5'
+        - dgId: null
+          mode: ysf
+          wiresDtmfId: ''
+      name: Glasgow
+      power: null
+      primaryMode: null
+      projectId: 9734dab8-f8b8-4c81-84eb-a0c2d3479f21
+      revision: 2
+      rxFrequency: 430825000
+      scanInclusion: default
+      txFrequency: 438425000
+      txPermit: default
+      updatedAt: 2026-07-14T12:47:17.298Z
+      useLocation: true
+    - aprs:
+        digitalPttMode: off
+        receiveEnabled: true
+        reportSlotIndex: 2
+        reportType: digital
+      callsign: GB7GL
+      comment: Glasgow — Operational
+      forbidTransmit: default
+      id: ba83c50d-ea62-4e8f-b3c5-73fd2d77c9ba
+      location:
+        lat: 55.89234
+        lon: -4.21592
+      maidenheadLocator: IO75VV
+      modeProfiles:
+        - colourCode: 7
+          contactRef: null
+          dmrId: null
+          dmrMode: null
+          mode: dmr
+          rxGroupListId: f2abcfce-1ae4-4203-abc7-7c2955604999
+          sendTalkerAlias: default
+          timeslot: null
+      name: Glasgow
+      power: null
+      primaryMode: null
+      projectId: 9734dab8-f8b8-4c81-84eb-a0c2d3479f21
+      revision: 8
+      rxFrequency: 430850000
+      scanInclusion: default
+      txFrequency: 438450000
+      txPermit: default
+      updatedAt: 2026-07-14T07:30:28.477Z
+      useLocation: true
+    - callsign: ''
+      comment: ''
+      forbidTransmit: forbid
+      id: e0a2d306-8f22-4a93-a65f-c5dd0be317c7
+      location:
+        lat: 55.872
+        lon: -4.433
+      maidenheadLocator: null
+      modeProfiles:
+        - analogSquelchMode: default
+          bandwidthKHz: 12.5
+          mode: am
+          rxTone: none
+          squelch: null
+          txTone: none
+      name: Glasgow Approach
+      power: null
+      primaryMode: null
+      projectId: 9734dab8-f8b8-4c81-84eb-a0c2d3479f21
+      revision: 1
+      rxFrequency: 128755000
+      scanInclusion: default
+      txFrequency: null
+      txPermit: default
+      updatedAt: 2026-07-09T15:20:25.931Z
+      useLocation: true
+    - callsign: ''
+      comment: ''
+      forbidTransmit: forbid
+      id: b29a77ae-d883-4ec7-99cd-c5d0a637ed2a
+      location:
+        lat: 55.872
+        lon: -4.433
+      maidenheadLocator: null
+      modeProfiles:
+        - analogSquelchMode: default
+          bandwidthKHz: 12.5
+          mode: am
+          rxTone: none
+          squelch: null
+          txTone: none
+      name: Glasgow Ground
+      power: null
+      primaryMode: null
+      projectId: 9734dab8-f8b8-4c81-84eb-a0c2d3479f21
+      revision: 1
+      rxFrequency: 121705000
+      scanInclusion: default
+      txFrequency: null
+      txPermit: default
+      updatedAt: 2026-07-09T15:20:25.902Z
+      useLocation: true
+    - callsign: ''
+      comment: ''
+      forbidTransmit: forbid
+      id: 38fec83d-de58-4df7-922d-0a6be65033e1
+      location:
+        lat: 55.872
+        lon: -4.433
+      maidenheadLocator: null
+      modeProfiles:
+        - analogSquelchMode: default
+          bandwidthKHz: 12.5
+          mode: am
+          rxTone: none
+          squelch: null
+          txTone: none
+      name: Glasgow Info
+      power: null
+      primaryMode: null
+      projectId: 9734dab8-f8b8-4c81-84eb-a0c2d3479f21
+      revision: 1
+      rxFrequency: 129575000
+      scanInclusion: default
+      txFrequency: null
+      txPermit: default
+      updatedAt: 2026-07-09T15:20:25.956Z
+      useLocation: true
+    - callsign: ''
+      comment: ''
+      forbidTransmit: forbid
+      id: eb2be667-3e6a-423f-a518-8938021cae3b
+      location:
+        lat: 55.872
+        lon: -4.433
+      maidenheadLocator: null
+      modeProfiles:
+        - analogSquelchMode: default
+          bandwidthKHz: 12.5
+          mode: am
+          rxTone: none
+          squelch: null
+          txTone: none
+      name: Glasgow Tower
+      power: null
+      primaryMode: null
+      projectId: 9734dab8-f8b8-4c81-84eb-a0c2d3479f21
+      revision: 1
+      rxFrequency: 118805000
+      scanInclusion: default
+      txFrequency: null
+      txPermit: default
+      updatedAt: 2026-07-09T15:20:25.871Z
+      useLocation: true
+    - abbreviation: Hspt
+      aprs:
+        digitalPttMode: off
+        receiveEnabled: true
+        reportSlotIndex: 1
+        reportType: digital
+      callsign: ''
+      comment: ''
+      forbidTransmit: default
+      hideFromInternalMap: true
+      id: ca70ca22-179f-4442-8824-0894f3c764c6
+      location:
+        lat: 55.8125
+        lon: -4.125
+      maidenheadLocator: IO75WT
+      modeProfiles:
+        - colourCode: 1
+          contactRef: null
+          dmrId: null
+          dmrMode: null
+          mode: dmr
+          rxGroupListId: e26cd27d-5464-4adc-9453-be64fcc6ab6d
+          sendTalkerAlias: default
+          timeslot: null
+      name: Hotspot
+      power: 10
+      primaryMode: dmr
+      projectId: 9734dab8-f8b8-4c81-84eb-a0c2d3479f21
+      revision: 9
+      rxFrequency: 438800000
+      scanInclusion: default
+      txFrequency: 434000000
+      txPermit: default
+      updatedAt: 2026-07-14T15:23:01.749Z
+      useLocation: true
+    - aprs:
+        digitalPttMode: off
+        receiveEnabled: true
+        reportSlotIndex: 1
+        reportType: digital
+      callsign: GB7IR
+      comment: Irvine — Operational
+      forbidTransmit: default
+      id: 3219abdc-e64c-4bff-a5d7-7d69963b83d8
+      location:
+        lat: 55.614
+        lon: -4.62917
+      maidenheadLocator: IO75QO
+      modeProfiles:
+        - colourCode: 6
+          contactRef: null
+          dmrId: null
+          dmrMode: null
+          mode: dmr
+          rxGroupListId: 9db1ba5b-e93a-4df0-9261-d5530c322f96
+          sendTalkerAlias: default
+          timeslot: null
+      name: Irvine
+      power: null
+      primaryMode: null
+      projectId: 9734dab8-f8b8-4c81-84eb-a0c2d3479f21
+      revision: 5
+      rxFrequency: 430912500
+      scanInclusion: default
+      txFrequency: 438512500
+      txPermit: default
+      updatedAt: 2026-07-13T22:45:10.077Z
+      useLocation: true
+    - aprs:
+        digitalPttMode: off
+        receiveEnabled: true
+        reportSlotIndex: 2
+        reportType: digital
+      callsign: GB3KV
+      comment: Kilsyth — Operational
+      forbidTransmit: default
+      id: 2e9f785f-a0db-40ef-b46b-348b3238d0a7
+      location:
+        lat: 55.97916666666666
+        lon: -4.041666666666657
+      maidenheadLocator: IO75XX
+      modeProfiles:
+        - analogSquelchMode: default
+          bandwidthKHz: null
+          mode: fm
+          rxTone: '103.5'
+          squelch: null
+          txTone: '103.5'
+      name: Kilsyth
+      power: null
+      primaryMode: null
+      projectId: 9734dab8-f8b8-4c81-84eb-a0c2d3479f21
+      revision: 4
+      rxFrequency: 430975000
+      scanInclusion: default
+      txFrequency: 438575000
+      txPermit: default
+      updatedAt: 2026-07-14T12:47:17.331Z
+      useLocation: true
+    - aprs:
+        digitalPttMode: off
+        receiveEnabled: true
+        reportSlotIndex: 1
+        reportType: digital
+      callsign: GB7LL
+      comment: Kinross — Operational
+      forbidTransmit: default
+      id: 2cc9e394-2f5b-4b23-a3dc-9420c6aa6b4c
+      location:
+        lat: 56.22291666666666
+        lon: -3.379166666666663
+      maidenheadLocator: IO86HF
+      modeProfiles:
+        - colourCode: 1
+          contactRef: null
+          dmrId: null
+          dmrMode: null
+          mode: dmr
+          rxGroupListId: 4c5d569b-4856-4bbf-bf95-cd19596be389
+          sendTalkerAlias: default
+          timeslot: null
+      name: Kinross
+      power: null
+      primaryMode: null
+      projectId: 9734dab8-f8b8-4c81-84eb-a0c2d3479f21
+      revision: 5
+      rxFrequency: 430912500
+      scanInclusion: default
+      txFrequency: 438512500
+      txPermit: default
+      updatedAt: 2026-07-13T22:45:10.178Z
+      useLocation: true
+    - aprs:
+        digitalPttMode: off
+        receiveEnabled: true
+        reportSlotIndex: 1
+        reportType: digital
+      callsign: GB7AC
+      comment: Largs — On-Air
+      forbidTransmit: default
+      id: 6735fba2-cebf-4922-b388-e5e3e0f56575
+      location:
+        lat: 55.8
+        lon: -4.9
+      maidenheadLocator: IO75NT
+      modeProfiles:
+        - analogSquelchMode: default
+          bandwidthKHz: null
+          mode: fm
+          rxTone: '103.5'
+          squelch: null
+          txTone: '103.5'
+        - colourCode: 3
+          contactRef: null
+          dmrId: null
+          dmrMode: null
+          mode: dmr
+          rxGroupListId: accf8b4b-2ba5-49ce-921d-81f4458d0589
+          sendTalkerAlias: default
+          timeslot: null
+      name: Largs
+      power: null
+      primaryMode: fm
+      projectId: 9734dab8-f8b8-4c81-84eb-a0c2d3479f21
+      revision: 4
+      rxFrequency: 430950000
+      scanInclusion: default
+      txFrequency: 438550000
+      txPermit: default
+      updatedAt: 2026-07-13T22:45:10.277Z
+      useLocation: true
+    - aprs:
+        digitalPttMode: off
+        receiveEnabled: true
+        reportSlotIndex: null
+        reportType: off
+      callsign: GB3LY
+      comment: Limavady — Operational
+      forbidTransmit: default
+      id: 54292429-85b3-4b56-abc2-f2957c3eb04b
+      location:
+        lat: 55.10416666666666
+        lon: -6.875
+      maidenheadLocator: IO65NC
+      modeProfiles:
+        - analogSquelchMode: default
+          bandwidthKHz: null
+          mode: fm
+          rxTone: '110.9'
+          squelch: null
+          txTone: '110.9'
+      name: Limavady
+      power: null
+      primaryMode: null
+      projectId: 9734dab8-f8b8-4c81-84eb-a0c2d3479f21
+      revision: 2
+      rxFrequency: 145600000
+      scanInclusion: default
+      txFrequency: 145000000
+      txPermit: default
+      updatedAt: 2026-07-14T12:58:32.353Z
+      useLocation: true
+    - aprs:
+        digitalPttMode: off
+        receiveEnabled: true
+        reportSlotIndex: 1
+        reportType: digital
+      callsign: GB3OH
+      comment: Linlithgow — Operational
+      forbidTransmit: default
+      id: 86880ca2-4a23-476a-b0d0-7bc72658598b
+      location:
+        lat: 55.97916666666666
+        lon: -3.625
+      maidenheadLocator: IO85EX
+      modeProfiles:
+        - analogSquelchMode: default
+          bandwidthKHz: null
+          mode: fm
+          rxTone: '94.8'
+          squelch: null
+          txTone: '94.8'
+        - colourCode: 1
+          contactRef: null
+          dmrId: null
+          dmrMode: null
+          mode: dmr
+          rxGroupListId: null
+          sendTalkerAlias: default
+          timeslot: null
+      name: Linlithgow
+      power: null
+      primaryMode: null
+      projectId: 9734dab8-f8b8-4c81-84eb-a0c2d3479f21
+      revision: 2
+      rxFrequency: 430950000
+      scanInclusion: default
+      txFrequency: 438550000
+      txPermit: default
+      updatedAt: 2026-07-13T22:45:10.377Z
+      useLocation: true
+    - aprs:
+        digitalPttMode: off
+        receiveEnabled: true
+        reportSlotIndex: 1
+        reportType: digital
+      callsign: GB7HI
+      comment: Lisburn — Operational
+      forbidTransmit: default
+      id: 56024c1f-f989-4abe-bd4e-05437b3238a7
+      location:
+        lat: 54.5625
+        lon: -6.041666666666657
+      maidenheadLocator: IO64XN
+      modeProfiles:
+        - colourCode: 1
+          contactRef: null
+          dmrId: null
+          dmrMode: null
+          mode: dmr
+          rxGroupListId: null
+          sendTalkerAlias: default
+          timeslot: null
+        - mode: dstar
+          rpt1Call: ''
+          rpt2Call: ''
+          urCall: CQCQCQ
+        - dgId: null
+          mode: ysf
+          wiresDtmfId: ''
+      name: Lisburn
+      power: null
+      primaryMode: null
+      projectId: 9734dab8-f8b8-4c81-84eb-a0c2d3479f21
+      revision: 5
+      rxFrequency: 439537500
+      scanInclusion: default
+      txFrequency: 430537500
+      txPermit: default
+      updatedAt: 2026-07-13T22:45:10.496Z
+      useLocation: true
+    - aprs:
+        digitalPttMode: off
+        receiveEnabled: true
+        reportSlotIndex: 1
+        reportType: digital
+      callsign: GB7CB
+      comment: Livingston — Operational
+      forbidTransmit: default
+      id: abbe01e6-035c-4776-aad1-9626a1d2c2c9
+      location:
+        lat: 55.87443
+        lon: -3.51754
+      maidenheadLocator: IO85FU
+      modeProfiles:
+        - colourCode: 4
+          contactRef: null
+          dmrId: null
+          dmrMode: null
+          mode: dmr
+          rxGroupListId: 6e1d5479-3990-449a-9002-c4c6adb278d0
+          sendTalkerAlias: default
+          timeslot: null
+      name: Livingston
+      power: null
+      primaryMode: null
+      projectId: 9734dab8-f8b8-4c81-84eb-a0c2d3479f21
+      revision: 5
+      rxFrequency: 439712500
+      scanInclusion: default
+      txFrequency: 430712500
+      txPermit: default
+      updatedAt: 2026-07-13T22:45:10.589Z
+      useLocation: true
+    - abbreviation: M'flt
+      aprs:
+        digitalPttMode: off
+        receiveEnabled: true
+        reportSlotIndex: null
+        reportType: off
+      callsign: GB3MT
+      comment: Magherafelt — Operational
+      forbidTransmit: default
+      id: b9d0d28f-36a2-45fd-bb18-3e05313db8a4
+      location:
+        lat: 54.77083333333334
+        lon: -6.625
+      maidenheadLocator: IO64QS
+      modeProfiles:
+        - analogSquelchMode: default
+          bandwidthKHz: null
+          mode: fm
+          rxTone: '110.9'
+          squelch: null
+          txTone: '110.9'
+      name: Magherafelt
+      power: null
+      primaryMode: null
+      projectId: 9734dab8-f8b8-4c81-84eb-a0c2d3479f21
+      revision: 5
+      rxFrequency: 145650000
+      scanInclusion: default
+      txFrequency: 145050000
+      txPermit: default
+      updatedAt: 2026-07-14T12:58:33.806Z
+      useLocation: true
+    - abbreviation: Mag'flt
+      aprs:
+        digitalPttMode: off
+        receiveEnabled: true
+        reportSlotIndex: 1
+        reportType: digital
+      callsign: GB7MF
+      comment: Magherafelt — Operational
+      forbidTransmit: default
+      id: de0eff2e-f9e9-410c-a11a-0c34c75c795b
+      location:
+        lat: 54.72916666666666
+        lon: -6.625
+      maidenheadLocator: IO64QR
+      modeProfiles:
+        - colourCode: 3
+          contactRef: null
+          dmrId: null
+          dmrMode: null
+          mode: dmr
+          rxGroupListId: null
+          sendTalkerAlias: default
+          timeslot: null
+        - mode: dstar
+          rpt1Call: ''
+          rpt2Call: ''
+          urCall: CQCQCQ
+        - dgId: null
+          mode: ysf
+          wiresDtmfId: ''
+      name: Magherafelt
+      power: null
+      primaryMode: null
+      projectId: 9734dab8-f8b8-4c81-84eb-a0c2d3479f21
+      revision: 4
+      rxFrequency: 439675000
+      scanInclusion: default
+      txFrequency: 430675000
+      txPermit: default
+      updatedAt: 2026-07-13T22:45:10.685Z
+      useLocation: true
+    - aprs:
+        digitalPttMode: off
+        receiveEnabled: true
+        reportSlotIndex: 2
+        reportType: digital
+      callsign: GB3CS
+      comment: Motherwell — Operational
+      forbidTransmit: default
+      id: 29b766f5-8f13-4545-9cba-69cf7469976c
+      location:
+        lat: 55.82291666666666
+        lon: -3.95416666666668
+      maidenheadLocator: IO85AT02
+      modeProfiles:
+        - analogSquelchMode: default
+          bandwidthKHz: null
+          mode: fm
+          rxTone: '103.5'
+          squelch: null
+          txTone: '103.5'
+      name: Motherwell
+      power: null
+      primaryMode: null
+      projectId: 9734dab8-f8b8-4c81-84eb-a0c2d3479f21
+      revision: 5
+      rxFrequency: 145750000
+      scanInclusion: default
+      txFrequency: 145150000
+      txPermit: default
+      updatedAt: 2026-07-14T12:58:35.234Z
+      useLocation: true
+    - aprs:
+        digitalPttMode: off
+        receiveEnabled: true
+        reportSlotIndex: null
+        reportType: off
+      callsign: GB3WT
+      comment: Omagh — Operational
+      forbidTransmit: default
+      id: 1d6772b5-a496-42f7-95fb-3139e8fc4def
+      location:
+        lat: 54.6875
+        lon: -7.208333333333343
+      maidenheadLocator: IO64JQ
+      modeProfiles:
+        - analogSquelchMode: default
+          bandwidthKHz: null
+          mode: fm
+          rxTone: '110.9'
+          squelch: null
+          txTone: '110.9'
+      name: Omagh
+      power: null
+      primaryMode: null
+      projectId: 9734dab8-f8b8-4c81-84eb-a0c2d3479f21
+      revision: 2
+      rxFrequency: 145775000
+      scanInclusion: default
+      txFrequency: 145175000
+      txPermit: default
+      updatedAt: 2026-07-14T12:58:36.641Z
+      useLocation: true
+    - aprs:
+        digitalPttMode: off
+        receiveEnabled: true
+        reportSlotIndex: 1
+        reportType: digital
+      callsign: GB3OM
+      comment: Omagh — Operational
+      forbidTransmit: default
+      id: 5d8c1909-be88-4f5f-9106-b9205c1d81bb
+      location:
+        lat: 54.6875
+        lon: -7.208333333333343
+      maidenheadLocator: IO64JQ
+      modeProfiles:
+        - analogSquelchMode: default
+          bandwidthKHz: null
+          mode: fm
+          rxTone: '110.9'
+          squelch: null
+          txTone: '110.9'
+        - colourCode: 1
+          contactRef: null
+          dmrId: null
+          dmrMode: null
+          mode: dmr
+          rxGroupListId: null
+          sendTalkerAlias: default
+          timeslot: null
+      name: Omagh
+      power: null
+      primaryMode: null
+      projectId: 9734dab8-f8b8-4c81-84eb-a0c2d3479f21
+      revision: 4
+      rxFrequency: 430950000
+      scanInclusion: default
+      txFrequency: 438550000
+      txPermit: default
+      updatedAt: 2026-07-13T22:45:10.783Z
+      useLocation: true
+    - aprs:
+        digitalPttMode: off
+        receiveEnabled: true
+        reportSlotIndex: 1
+        reportType: digital
+      callsign: GB7WT
+      comment: Omagh — Operational
+      forbidTransmit: default
+      id: beaa422d-62eb-4d70-bafc-af9b4ecb749f
+      location:
+        lat: 54.60416666666666
+        lon: -7.291666666666657
+      maidenheadLocator: IO64IO
+      modeProfiles:
+        - colourCode: 1
+          contactRef: null
+          dmrId: null
+          dmrMode: null
+          mode: dmr
+          rxGroupListId: 312d37e3-bfeb-4a7d-a89a-238907c8ac84
+          sendTalkerAlias: default
+          timeslot: null
+        - mode: dstar
+          rpt1Call: ''
+          rpt2Call: ''
+          urCall: CQCQCQ
+        - dgId: null
+          mode: ysf
+          wiresDtmfId: ''
+      name: Omagh
+      power: null
+      primaryMode: null
+      projectId: 9734dab8-f8b8-4c81-84eb-a0c2d3479f21
+      revision: 3
+      rxFrequency: 439600000
+      scanInclusion: default
+      txFrequency: 430600000
+      txPermit: default
+      updatedAt: 2026-07-13T22:45:10.877Z
+      useLocation: true
+    - aprs:
+        digitalPttMode: off
+        receiveEnabled: true
+        reportSlotIndex: 4
+        reportType: digital
+      callsign: GB3PA
+      comment: Paisley — Operational
+      forbidTransmit: default
+      id: 34a70d64-0044-4678-9783-5ec4dd2b0b1c
+      location:
+        lat: 55.9132
+        lon: -4.5913
+      maidenheadLocator: IO75QV
+      modeProfiles:
+        - analogSquelchMode: default
+          bandwidthKHz: null
+          mode: fm
+          rxTone: '103.5'
+          squelch: null
+          txTone: '103.5'
+      name: Paisley
+      power: null
+      primaryMode: null
+      projectId: 9734dab8-f8b8-4c81-84eb-a0c2d3479f21
+      revision: 7
+      rxFrequency: 145625000
+      scanInclusion: default
+      txFrequency: 145025000
+      txPermit: default
+      updatedAt: 2026-07-14T12:58:38.144Z
+      useLocation: true
+    - aprs:
+        digitalPttMode: off
+        receiveEnabled: true
+        reportSlotIndex: 1
+        reportType: digital
+      callsign: GB7PA
+      comment: Paisley — Operational
+      forbidTransmit: default
+      id: fddbb856-fe0b-4f2d-8520-cddeeaee47fd
+      location:
+        lat: 55.85024
+        lon: -4.45739
+      maidenheadLocator: IO75SU
+      modeProfiles:
+        - colourCode: 1
+          contactRef: null
+          dmrId: null
+          dmrMode: null
+          mode: dmr
+          rxGroupListId: d4139849-eed0-4483-9238-ddbd97562a11
+          sendTalkerAlias: default
+          timeslot: null
+      name: Paisley
+      power: null
+      primaryMode: null
+      projectId: 9734dab8-f8b8-4c81-84eb-a0c2d3479f21
+      revision: 7
+      rxFrequency: 439525000
+      scanInclusion: default
+      txFrequency: 430525000
+      txPermit: default
+      updatedAt: 2026-07-13T22:45:10.970Z
+      useLocation: true
+    - aprs:
+        digitalPttMode: off
+        receiveEnabled: true
+        reportSlotIndex: 5
+        reportType: digital
+      callsign: GB3PU
+      comment: Perth — Operational
+      forbidTransmit: default
+      id: 211c5132-bac9-4257-8f58-0637808f1dba
+      location:
+        lat: 56.35416666666666
+        lon: -3.458333333333343
+      maidenheadLocator: IO86GI
+      modeProfiles:
+        - analogSquelchMode: default
+          bandwidthKHz: null
+          mode: fm
+          rxTone: '94.8'
+          squelch: null
+          txTone: '94.8'
+        - dgId: null
+          mode: ysf
+          wiresDtmfId: ''
+      name: Perth
+      power: null
+      primaryMode: null
+      projectId: 9734dab8-f8b8-4c81-84eb-a0c2d3479f21
+      revision: 2
+      rxFrequency: 433000000
+      scanInclusion: default
+      txFrequency: 434600000
+      txPermit: default
+      updatedAt: 2026-07-14T12:53:54.395Z
+      useLocation: true
+    - aprs:
+        digitalPttMode: off
+        receiveEnabled: true
+        reportSlotIndex: 5
+        reportType: digital
+      callsign: GB3PR
+      comment: Perth — Operational
+      forbidTransmit: default
+      id: a557d38c-2d9c-4a18-bc60-0354b4ee2cdf
+      location:
+        lat: 56.35416666666666
+        lon: -3.458333333333343
+      maidenheadLocator: IO86GI
+      modeProfiles:
+        - analogSquelchMode: default
+          bandwidthKHz: null
+          mode: fm
+          rxTone: '94.8'
+          squelch: null
+          txTone: '94.8'
+        - dgId: null
+          mode: ysf
+          wiresDtmfId: ''
+      name: Perth
+      power: null
+      primaryMode: null
+      projectId: 9734dab8-f8b8-4c81-84eb-a0c2d3479f21
+      revision: 2
+      rxFrequency: 145675000
+      scanInclusion: default
+      txFrequency: 145075000
+      txPermit: default
+      updatedAt: 2026-07-14T12:53:54.599Z
+      useLocation: true
+    - callsign: ''
+      comment: ''
+      forbidTransmit: forbid
+      id: 6f13aa05-b011-4d0c-bd9c-b19c56716fc6
+      location: null
+      maidenheadLocator: null
+      modeProfiles:
+        - analogSquelchMode: default
+          bandwidthKHz: 12.5
+          mode: fm
+          rxTone: none
+          squelch: null
+          txTone: none
+      name: PMR446-1
+      power: 10
+      primaryMode: null
+      projectId: 9734dab8-f8b8-4c81-84eb-a0c2d3479f21
+      revision: 1
+      rxFrequency: 446006250
+      scanInclusion: default
+      txFrequency: 446006250
+      txPermit: default
+      updatedAt: 2026-07-06T12:10:19.138Z
+      useLocation: false
+    - callsign: ''
+      comment: ''
+      forbidTransmit: forbid
+      id: e7d4448d-7e2d-4219-a71a-9c11f0f080d2
+      location: null
+      maidenheadLocator: null
+      modeProfiles:
+        - analogSquelchMode: default
+          bandwidthKHz: 12.5
+          mode: fm
+          rxTone: none
+          squelch: null
+          txTone: none
+      name: PMR446-10
+      power: 10
+      primaryMode: null
+      projectId: 9734dab8-f8b8-4c81-84eb-a0c2d3479f21
+      revision: 1
+      rxFrequency: 446118750
+      scanInclusion: default
+      txFrequency: 446118750
+      txPermit: default
+      updatedAt: 2026-07-06T12:10:19.251Z
+      useLocation: false
+    - callsign: ''
+      comment: ''
+      forbidTransmit: forbid
+      id: c7f95831-de0c-4ce9-aa08-dd2743e4ab9e
+      location: null
+      maidenheadLocator: null
+      modeProfiles:
+        - analogSquelchMode: default
+          bandwidthKHz: 12.5
+          mode: fm
+          rxTone: none
+          squelch: null
+          txTone: none
+      name: PMR446-11
+      power: 10
+      primaryMode: null
+      projectId: 9734dab8-f8b8-4c81-84eb-a0c2d3479f21
+      revision: 1
+      rxFrequency: 446131250
+      scanInclusion: default
+      txFrequency: 446131250
+      txPermit: default
+      updatedAt: 2026-07-06T12:10:19.261Z
+      useLocation: false
+    - callsign: ''
+      comment: ''
+      forbidTransmit: forbid
+      id: 124ea979-df82-4c4e-8963-61309dbbc265
+      location: null
+      maidenheadLocator: null
+      modeProfiles:
+        - analogSquelchMode: default
+          bandwidthKHz: 12.5
+          mode: fm
+          rxTone: none
+          squelch: null
+          txTone: none
+      name: PMR446-12
+      power: 10
+      primaryMode: null
+      projectId: 9734dab8-f8b8-4c81-84eb-a0c2d3479f21
+      revision: 1
+      rxFrequency: 446143750
+      scanInclusion: default
+      txFrequency: 446143750
+      txPermit: default
+      updatedAt: 2026-07-06T12:10:19.271Z
+      useLocation: false
+    - callsign: ''
+      comment: ''
+      forbidTransmit: forbid
+      id: dc318f4c-686a-4efa-9729-450eff32b71e
+      location: null
+      maidenheadLocator: null
+      modeProfiles:
+        - analogSquelchMode: default
+          bandwidthKHz: 12.5
+          mode: fm
+          rxTone: none
+          squelch: null
+          txTone: none
+      name: PMR446-13
+      power: 10
+      primaryMode: null
+      projectId: 9734dab8-f8b8-4c81-84eb-a0c2d3479f21
+      revision: 1
+      rxFrequency: 446156250
+      scanInclusion: default
+      txFrequency: 446156250
+      txPermit: default
+      updatedAt: 2026-07-06T12:10:19.280Z
+      useLocation: false
+    - callsign: ''
+      comment: ''
+      forbidTransmit: forbid
+      id: 8208716b-34e2-45f5-a0df-21818c84ca27
+      location: null
+      maidenheadLocator: null
+      modeProfiles:
+        - analogSquelchMode: default
+          bandwidthKHz: 12.5
+          mode: fm
+          rxTone: none
+          squelch: null
+          txTone: none
+      name: PMR446-14
+      power: 10
+      primaryMode: null
+      projectId: 9734dab8-f8b8-4c81-84eb-a0c2d3479f21
+      revision: 1
+      rxFrequency: 446168750
+      scanInclusion: default
+      txFrequency: 446168750
+      txPermit: default
+      updatedAt: 2026-07-06T12:10:19.293Z
+      useLocation: false
+    - callsign: ''
+      comment: ''
+      forbidTransmit: forbid
+      id: f9c60e6a-e443-408f-a2b7-a20ee881a347
+      location: null
+      maidenheadLocator: null
+      modeProfiles:
+        - analogSquelchMode: default
+          bandwidthKHz: 12.5
+          mode: fm
+          rxTone: none
+          squelch: null
+          txTone: none
+      name: PMR446-15
+      power: 10
+      primaryMode: null
+      projectId: 9734dab8-f8b8-4c81-84eb-a0c2d3479f21
+      revision: 1
+      rxFrequency: 446181250
+      scanInclusion: default
+      txFrequency: 446181250
+      txPermit: default
+      updatedAt: 2026-07-06T12:10:19.301Z
+      useLocation: false
+    - callsign: ''
+      comment: ''
+      forbidTransmit: forbid
+      id: 598eac81-060d-480b-b97d-b6382f19d68d
+      location: null
+      maidenheadLocator: null
+      modeProfiles:
+        - analogSquelchMode: default
+          bandwidthKHz: 12.5
+          mode: fm
+          rxTone: none
+          squelch: null
+          txTone: none
+      name: PMR446-16
+      power: 10
+      primaryMode: null
+      projectId: 9734dab8-f8b8-4c81-84eb-a0c2d3479f21
+      revision: 1
+      rxFrequency: 446193750
+      scanInclusion: default
+      txFrequency: 446193750
+      txPermit: default
+      updatedAt: 2026-07-06T12:10:19.306Z
+      useLocation: false
+    - callsign: ''
+      comment: ''
+      forbidTransmit: forbid
+      id: a6559d4b-d9b2-448b-971b-f38034147527
+      location: null
+      maidenheadLocator: null
+      modeProfiles:
+        - analogSquelchMode: default
+          bandwidthKHz: 12.5
+          mode: fm
+          rxTone: none
+          squelch: null
+          txTone: none
+      name: PMR446-2
+      power: 10
+      primaryMode: null
+      projectId: 9734dab8-f8b8-4c81-84eb-a0c2d3479f21
+      revision: 1
+      rxFrequency: 446018750
+      scanInclusion: default
+      txFrequency: 446018750
+      txPermit: default
+      updatedAt: 2026-07-06T12:10:19.152Z
+      useLocation: false
+    - callsign: ''
+      comment: ''
+      forbidTransmit: forbid
+      id: 704a87cf-d610-4bbf-af78-1c29e9aa5a97
+      location: null
+      maidenheadLocator: null
+      modeProfiles:
+        - analogSquelchMode: default
+          bandwidthKHz: 12.5
+          mode: fm
+          rxTone: none
+          squelch: null
+          txTone: none
+      name: PMR446-3
+      power: 10
+      primaryMode: null
+      projectId: 9734dab8-f8b8-4c81-84eb-a0c2d3479f21
+      revision: 1
+      rxFrequency: 446031250
+      scanInclusion: default
+      txFrequency: 446031250
+      txPermit: default
+      updatedAt: 2026-07-06T12:10:19.165Z
+      useLocation: false
+    - callsign: ''
+      comment: ''
+      forbidTransmit: forbid
+      id: 78852154-fb9f-4f16-870a-020f468341db
+      location: null
+      maidenheadLocator: null
+      modeProfiles:
+        - analogSquelchMode: default
+          bandwidthKHz: 12.5
+          mode: fm
+          rxTone: none
+          squelch: null
+          txTone: none
+      name: PMR446-4
+      power: 10
+      primaryMode: null
+      projectId: 9734dab8-f8b8-4c81-84eb-a0c2d3479f21
+      revision: 1
+      rxFrequency: 446043750
+      scanInclusion: default
+      txFrequency: 446043750
+      txPermit: default
+      updatedAt: 2026-07-06T12:10:19.178Z
+      useLocation: false
+    - callsign: ''
+      comment: ''
+      forbidTransmit: forbid
+      id: c6973b7f-fedd-49b6-8a16-ec19643d2590
+      location: null
+      maidenheadLocator: null
+      modeProfiles:
+        - analogSquelchMode: default
+          bandwidthKHz: 12.5
+          mode: fm
+          rxTone: none
+          squelch: null
+          txTone: none
+      name: PMR446-5
+      power: 10
+      primaryMode: null
+      projectId: 9734dab8-f8b8-4c81-84eb-a0c2d3479f21
+      revision: 1
+      rxFrequency: 446056250
+      scanInclusion: default
+      txFrequency: 446056250
+      txPermit: default
+      updatedAt: 2026-07-06T12:10:19.193Z
+      useLocation: false
+    - callsign: ''
+      comment: ''
+      forbidTransmit: forbid
+      id: 9da78b52-c0fb-4dce-b054-470d4bc7b4af
+      location: null
+      maidenheadLocator: null
+      modeProfiles:
+        - analogSquelchMode: default
+          bandwidthKHz: 12.5
+          mode: fm
+          rxTone: none
+          squelch: null
+          txTone: none
+      name: PMR446-6
+      power: 10
+      primaryMode: null
+      projectId: 9734dab8-f8b8-4c81-84eb-a0c2d3479f21
+      revision: 1
+      rxFrequency: 446068750
+      scanInclusion: default
+      txFrequency: 446068750
+      txPermit: default
+      updatedAt: 2026-07-06T12:10:19.205Z
+      useLocation: false
+    - callsign: ''
+      comment: ''
+      forbidTransmit: forbid
+      id: 8710cf64-fd67-47ee-88d8-9d26cbdaf5ad
+      location: null
+      maidenheadLocator: null
+      modeProfiles:
+        - analogSquelchMode: default
+          bandwidthKHz: 12.5
+          mode: fm
+          rxTone: none
+          squelch: null
+          txTone: none
+      name: PMR446-7
+      power: 10
+      primaryMode: null
+      projectId: 9734dab8-f8b8-4c81-84eb-a0c2d3479f21
+      revision: 1
+      rxFrequency: 446081250
+      scanInclusion: default
+      txFrequency: 446081250
+      txPermit: default
+      updatedAt: 2026-07-06T12:10:19.218Z
+      useLocation: false
+    - callsign: ''
+      comment: ''
+      forbidTransmit: forbid
+      id: 28e21d75-ca0d-4f20-855c-cf38e10e8f18
+      location: null
+      maidenheadLocator: null
+      modeProfiles:
+        - analogSquelchMode: default
+          bandwidthKHz: 12.5
+          mode: fm
+          rxTone: none
+          squelch: null
+          txTone: none
+      name: PMR446-8
+      power: 10
+      primaryMode: null
+      projectId: 9734dab8-f8b8-4c81-84eb-a0c2d3479f21
+      revision: 1
+      rxFrequency: 446093750
+      scanInclusion: default
+      txFrequency: 446093750
+      txPermit: default
+      updatedAt: 2026-07-06T12:10:19.232Z
+      useLocation: false
+    - callsign: ''
+      comment: ''
+      forbidTransmit: forbid
+      id: f75317fa-810c-47c1-92c9-28aefbaac829
+      location: null
+      maidenheadLocator: null
+      modeProfiles:
+        - analogSquelchMode: default
+          bandwidthKHz: 12.5
+          mode: fm
+          rxTone: none
+          squelch: null
+          txTone: none
+      name: PMR446-9
+      power: 10
+      primaryMode: null
+      projectId: 9734dab8-f8b8-4c81-84eb-a0c2d3479f21
+      revision: 1
+      rxFrequency: 446106250
+      scanInclusion: default
+      txFrequency: 446106250
+      txPermit: default
+      updatedAt: 2026-07-06T12:10:19.242Z
+      useLocation: false
+    - callsign: ''
+      comment: ''
+      forbidTransmit: forbid
+      id: 10423cd0-2ef4-4f92-bf92-2f802e23f98e
+      location:
+        lat: 55.509444444444
+        lon: -4.5944444444444
+      maidenheadLocator: null
+      modeProfiles:
+        - analogSquelchMode: default
+          bandwidthKHz: 12.5
+          mode: am
+          rxTone: none
+          squelch: null
+          txTone: none
+      name: Prestwick Approach
+      power: null
+      primaryMode: null
+      projectId: 9734dab8-f8b8-4c81-84eb-a0c2d3479f21
+      revision: 1
+      rxFrequency: 129450000
+      scanInclusion: default
+      txFrequency: null
+      txPermit: default
+      updatedAt: 2026-07-09T15:20:26.038Z
+      useLocation: true
+    - callsign: ''
+      comment: ''
+      forbidTransmit: forbid
+      id: e3e123ce-4e44-435b-89f3-c38fc435ec42
+      location:
+        lat: 55.509444444444
+        lon: -4.5944444444444
+      maidenheadLocator: null
+      modeProfiles:
+        - analogSquelchMode: default
+          bandwidthKHz: 12.5
+          mode: am
+          rxTone: none
+          squelch: null
+          txTone: none
+      name: Prestwick Information
+      power: null
+      primaryMode: null
+      projectId: 9734dab8-f8b8-4c81-84eb-a0c2d3479f21
+      revision: 1
+      rxFrequency: 121130000
+      scanInclusion: default
+      txFrequency: null
+      txPermit: default
+      updatedAt: 2026-07-09T15:20:26.077Z
+      useLocation: true
+    - callsign: ''
+      comment: ''
+      forbidTransmit: forbid
+      id: 968ea37c-1bfb-4baa-9b3a-e717d37d1433
+      location:
+        lat: 55.509444444444
+        lon: -4.5944444444444
+      maidenheadLocator: null
+      modeProfiles:
+        - analogSquelchMode: default
+          bandwidthKHz: 12.5
+          mode: am
+          rxTone: none
+          squelch: null
+          txTone: none
+      name: Prestwick Radar
+      power: null
+      primaryMode: null
+      projectId: 9734dab8-f8b8-4c81-84eb-a0c2d3479f21
+      revision: 1
+      rxFrequency: 124630000
+      scanInclusion: default
+      txFrequency: null
+      txPermit: default
+      updatedAt: 2026-07-09T15:20:26.057Z
+      useLocation: true
+    - callsign: ''
+      comment: ''
+      forbidTransmit: forbid
+      id: 23739a7a-f56f-4fce-9b5e-4c81bac90104
+      location:
+        lat: 55.509444444444
+        lon: -4.5944444444444
+      maidenheadLocator: null
+      modeProfiles:
+        - analogSquelchMode: default
+          bandwidthKHz: 12.5
+          mode: am
+          rxTone: none
+          squelch: null
+          txTone: none
+      name: Prestwick Tower
+      power: null
+      primaryMode: null
+      projectId: 9734dab8-f8b8-4c81-84eb-a0c2d3479f21
+      revision: 1
+      rxFrequency: 127155000
+      scanInclusion: default
+      txFrequency: null
+      txPermit: default
+      updatedAt: 2026-07-09T15:20:26.014Z
+      useLocation: true
+    - aprs:
+        digitalPttMode: off
+        receiveEnabled: false
+        reportSlotIndex: 1
+        reportType: digital
+      callsign: GB3FE
+      comment: Stirling — Operational
+      forbidTransmit: default
+      id: c51e2f22-5afc-4760-9503-08961416afbd
+      location:
+        lat: 56.10416666666666
+        lon: -3.875
+      maidenheadLocator: IO86BC
+      modeProfiles:
+        - analogSquelchMode: default
+          bandwidthKHz: null
+          mode: fm
+          rxTone: '103.5'
+          squelch: null
+          txTone: '103.5'
+      name: Stirling
+      power: null
+      primaryMode: null
+      projectId: 9734dab8-f8b8-4c81-84eb-a0c2d3479f21
+      revision: 4
+      rxFrequency: 145662500
+      scanInclusion: default
+      txFrequency: 145062500
+      txPermit: default
+      updatedAt: 2026-07-14T12:57:39.697Z
+      useLocation: true
+    - aprs:
+        digitalPttMode: off
+        receiveEnabled: true
+        reportSlotIndex: 1
+        reportType: digital
+      callsign: GB7FE
+      comment: Stirling — Operational
+      forbidTransmit: default
+      id: e4020406-b132-46fa-bb3f-7ee1037647f2
+      location:
+        lat: 56.10416666666666
+        lon: -3.875
+      maidenheadLocator: IO86BC
+      modeProfiles:
+        - colourCode: 1
+          contactRef: null
+          dmrId: null
+          dmrMode: null
+          mode: dmr
+          rxGroupListId: c58fb8f0-ef6b-429e-976b-11be361e3650
+          sendTalkerAlias: default
+          timeslot: null
+      name: Stirling
+      power: null
+      primaryMode: null
+      projectId: 9734dab8-f8b8-4c81-84eb-a0c2d3479f21
+      revision: 4
+      rxFrequency: 439475000
+      scanInclusion: default
+      txFrequency: 430475000
+      txPermit: default
+      updatedAt: 2026-07-13T22:45:11.072Z
+      useLocation: true
+    - aprs:
+        digitalPttMode: off
+        receiveEnabled: true
+        reportSlotIndex: 1
+        reportType: digital
+      callsign: GB7RG
+      comment: Stranraer — Operational
+      forbidTransmit: default
+      id: 34864f08-cf65-4b1c-906b-78c0410ed564
+      location:
+        lat: 54.89583333333334
+        lon: -5.041666666666657
+      maidenheadLocator: IO74LV
+      modeProfiles:
+        - analogSquelchMode: default
+          bandwidthKHz: null
+          mode: fm
+          rxTone: '103.5'
+          squelch: null
+          txTone: '103.5'
+        - colourCode: 5
+          contactRef: null
+          dmrId: null
+          dmrMode: null
+          mode: dmr
+          rxGroupListId: null
+          sendTalkerAlias: default
+          timeslot: null
+      name: Stranraer
+      power: null
+      primaryMode: null
+      projectId: 9734dab8-f8b8-4c81-84eb-a0c2d3479f21
+      revision: 2
+      rxFrequency: 430937500
+      scanInclusion: default
+      txFrequency: 438537500
+      txPermit: default
+      updatedAt: 2026-07-13T22:45:11.194Z
+      useLocation: true
+    - callsign: ''
+      comment: ''
+      forbidTransmit: forbid
+      id: df79c9f5-00d3-47d4-b8de-367a84a26aa6
+      location:
+        lat: 55.68
+        lon: -4.1133333333333
+      maidenheadLocator: null
+      modeProfiles:
+        - analogSquelchMode: default
+          bandwidthKHz: 12.5
+          mode: am
+          rxTone: none
+          squelch: null
+          txTone: none
+      name: Strathaven Info
+      power: null
+      primaryMode: null
+      projectId: 9734dab8-f8b8-4c81-84eb-a0c2d3479f21
+      revision: 1
+      rxFrequency: 135475000
+      scanInclusion: default
+      txFrequency: null
+      txPermit: default
+      updatedAt: 2026-07-09T15:20:25.996Z
+      useLocation: true
+    - aprs:
+        digitalPttMode: off
+        receiveEnabled: true
+        reportSlotIndex: 1
+        reportType: digital
+      callsign: GB7HB
+      comment: Tandragee — Operational
+      forbidTransmit: default
+      id: c94df136-81d2-490e-98b8-241314d57441
+      location:
+        lat: 54.5
+        lon: -7
+      maidenheadLocator: IO64
+      modeProfiles:
+        - colourCode: 1
+          contactRef: null
+          dmrId: null
+          dmrMode: null
+          mode: dmr
+          rxGroupListId: null
+          sendTalkerAlias: default
+          timeslot: null
+        - mode: dstar
+          rpt1Call: ''
+          rpt2Call: ''
+          urCall: CQCQCQ
+        - dgId: null
+          mode: ysf
+          wiresDtmfId: ''
+      name: Tandragee
+      power: null
+      primaryMode: null
+      projectId: 9734dab8-f8b8-4c81-84eb-a0c2d3479f21
+      revision: 2
+      rxFrequency: 439625000
+      scanInclusion: default
+      txFrequency: 430625000
+      txPermit: default
+      updatedAt: 2026-07-13T22:45:11.308Z
+      useLocation: true
+    - callsign: ''
+      comment: ''
+      forbidTransmit: default
+      id: 4e745f41-9a2e-4f55-bec0-5a497c7c0738
+      location: null
+      maidenheadLocator: null
+      modeProfiles:
+        - analogSquelchMode: default
+          bandwidthKHz: 12.5
+          mode: fm
+          rxTone: none
+          squelch: null
+          txTone: none
+      name: UHF-SU16
+      power: null
+      primaryMode: null
+      projectId: 9734dab8-f8b8-4c81-84eb-a0c2d3479f21
+      revision: 1
+      rxFrequency: 433400000
+      scanInclusion: default
+      txFrequency: 433400000
+      txPermit: default
+      updatedAt: 2026-07-06T12:11:19.427Z
+      useLocation: false
+    - callsign: ''
+      comment: ''
+      forbidTransmit: default
+      id: ab6751ae-d76c-46aa-9fb6-6ec1713a3535
+      location: null
+      maidenheadLocator: null
+      modeProfiles:
+        - analogSquelchMode: default
+          bandwidthKHz: 12.5
+          mode: fm
+          rxTone: none
+          squelch: null
+          txTone: none
+      name: UHF-SU17
+      power: null
+      primaryMode: null
+      projectId: 9734dab8-f8b8-4c81-84eb-a0c2d3479f21
+      revision: 1
+      rxFrequency: 433412500
+      scanInclusion: default
+      txFrequency: 433412500
+      txPermit: default
+      updatedAt: 2026-07-06T12:11:19.446Z
+      useLocation: false
+    - callsign: ''
+      comment: ''
+      forbidTransmit: default
+      id: 32a743bd-5276-440d-8e70-190dc169a475
+      location: null
+      maidenheadLocator: null
+      modeProfiles:
+        - analogSquelchMode: default
+          bandwidthKHz: 12.5
+          mode: fm
+          rxTone: none
+          squelch: null
+          txTone: none
+      name: UHF-SU18
+      power: null
+      primaryMode: null
+      projectId: 9734dab8-f8b8-4c81-84eb-a0c2d3479f21
+      revision: 1
+      rxFrequency: 433425000
+      scanInclusion: default
+      txFrequency: 433425000
+      txPermit: default
+      updatedAt: 2026-07-06T12:11:19.458Z
+      useLocation: false
+    - callsign: ''
+      comment: ''
+      forbidTransmit: default
+      id: 6b60edf0-d045-4008-859b-c0b7fa5c1eab
+      location: null
+      maidenheadLocator: null
+      modeProfiles:
+        - analogSquelchMode: default
+          bandwidthKHz: 12.5
+          mode: fm
+          rxTone: none
+          squelch: null
+          txTone: none
+      name: UHF-SU19
+      power: null
+      primaryMode: null
+      projectId: 9734dab8-f8b8-4c81-84eb-a0c2d3479f21
+      revision: 1
+      rxFrequency: 433437500
+      scanInclusion: default
+      txFrequency: 433437500
+      txPermit: default
+      updatedAt: 2026-07-06T12:11:19.474Z
+      useLocation: false
+    - callsign: ''
+      comment: ''
+      forbidTransmit: default
+      id: 86a5be84-397d-4914-9ef9-917bfa5f1160
+      location: null
+      maidenheadLocator: null
+      modeProfiles:
+        - analogSquelchMode: default
+          bandwidthKHz: 12.5
+          mode: fm
+          rxTone: none
+          squelch: null
+          txTone: none
+      name: UHF-SU20
+      power: null
+      primaryMode: null
+      projectId: 9734dab8-f8b8-4c81-84eb-a0c2d3479f21
+      revision: 1
+      rxFrequency: 433450000
+      scanInclusion: default
+      txFrequency: 433450000
+      txPermit: default
+      updatedAt: 2026-07-06T12:11:19.489Z
+      useLocation: false
+    - callsign: ''
+      comment: ''
+      forbidTransmit: default
+      id: e39e8c04-014d-4ec3-a567-5a0143055f78
+      location: null
+      maidenheadLocator: null
+      modeProfiles:
+        - analogSquelchMode: default
+          bandwidthKHz: 12.5
+          mode: fm
+          rxTone: none
+          squelch: null
+          txTone: none
+      name: UHF-SU21
+      power: null
+      primaryMode: null
+      projectId: 9734dab8-f8b8-4c81-84eb-a0c2d3479f21
+      revision: 1
+      rxFrequency: 433462500
+      scanInclusion: default
+      txFrequency: 433462500
+      txPermit: default
+      updatedAt: 2026-07-06T12:11:19.498Z
+      useLocation: false
+    - callsign: ''
+      comment: ''
+      forbidTransmit: default
+      id: b0996ee3-b2f7-4c18-83aa-1f278636e9f3
+      location: null
+      maidenheadLocator: null
+      modeProfiles:
+        - analogSquelchMode: default
+          bandwidthKHz: 12.5
+          mode: fm
+          rxTone: none
+          squelch: null
+          txTone: none
+      name: UHF-SU22
+      power: null
+      primaryMode: null
+      projectId: 9734dab8-f8b8-4c81-84eb-a0c2d3479f21
+      revision: 1
+      rxFrequency: 433475000
+      scanInclusion: default
+      txFrequency: 433475000
+      txPermit: default
+      updatedAt: 2026-07-06T12:11:19.509Z
+      useLocation: false
+    - callsign: ''
+      comment: ''
+      forbidTransmit: default
+      id: 4d1c1716-8473-4dad-86bf-89124a23a784
+      location: null
+      maidenheadLocator: null
+      modeProfiles:
+        - analogSquelchMode: default
+          bandwidthKHz: 12.5
+          mode: fm
+          rxTone: none
+          squelch: null
+          txTone: none
+      name: UHF-SU23
+      power: null
+      primaryMode: null
+      projectId: 9734dab8-f8b8-4c81-84eb-a0c2d3479f21
+      revision: 1
+      rxFrequency: 433487500
+      scanInclusion: default
+      txFrequency: 433487500
+      txPermit: default
+      updatedAt: 2026-07-06T12:11:19.517Z
+      useLocation: false
+    - callsign: ''
+      comment: ''
+      forbidTransmit: default
+      id: 4b983368-1d35-46cc-bb76-152a91a0f311
+      location: null
+      maidenheadLocator: null
+      modeProfiles:
+        - analogSquelchMode: default
+          bandwidthKHz: 12.5
+          mode: fm
+          rxTone: none
+          squelch: null
+          txTone: none
+      name: UHF-SU24
+      power: null
+      primaryMode: null
+      projectId: 9734dab8-f8b8-4c81-84eb-a0c2d3479f21
+      revision: 1
+      rxFrequency: 433500000
+      scanInclusion: default
+      txFrequency: 433500000
+      txPermit: default
+      updatedAt: 2026-07-06T12:11:19.525Z
+      useLocation: false
+    - callsign: ''
+      comment: ''
+      forbidTransmit: default
+      id: 7faf28c4-a13b-4186-9741-4155e4c2358c
+      location: null
+      maidenheadLocator: null
+      modeProfiles:
+        - analogSquelchMode: default
+          bandwidthKHz: 12.5
+          mode: fm
+          rxTone: none
+          squelch: null
+          txTone: none
+      name: UHF-SU25
+      power: null
+      primaryMode: null
+      projectId: 9734dab8-f8b8-4c81-84eb-a0c2d3479f21
+      revision: 1
+      rxFrequency: 433512500
+      scanInclusion: default
+      txFrequency: 433512500
+      txPermit: default
+      updatedAt: 2026-07-06T12:11:19.536Z
+      useLocation: false
+    - callsign: ''
+      comment: ''
+      forbidTransmit: default
+      id: 91eab4e1-22ab-4a87-a003-ac8ac8b91cdd
+      location: null
+      maidenheadLocator: null
+      modeProfiles:
+        - analogSquelchMode: default
+          bandwidthKHz: 12.5
+          mode: fm
+          rxTone: none
+          squelch: null
+          txTone: none
+      name: UHF-SU26
+      power: null
+      primaryMode: null
+      projectId: 9734dab8-f8b8-4c81-84eb-a0c2d3479f21
+      revision: 1
+      rxFrequency: 433525000
+      scanInclusion: default
+      txFrequency: 433525000
+      txPermit: default
+      updatedAt: 2026-07-06T12:11:19.544Z
+      useLocation: false
+    - callsign: ''
+      comment: ''
+      forbidTransmit: default
+      id: 383eba32-4f3e-4f2a-ba95-ae1383bacbab
+      location: null
+      maidenheadLocator: null
+      modeProfiles:
+        - analogSquelchMode: default
+          bandwidthKHz: 12.5
+          mode: fm
+          rxTone: none
+          squelch: null
+          txTone: none
+      name: UHF-SU27
+      power: null
+      primaryMode: null
+      projectId: 9734dab8-f8b8-4c81-84eb-a0c2d3479f21
+      revision: 1
+      rxFrequency: 433537500
+      scanInclusion: default
+      txFrequency: 433537500
+      txPermit: default
+      updatedAt: 2026-07-06T12:11:19.552Z
+      useLocation: false
+    - callsign: ''
+      comment: ''
+      forbidTransmit: default
+      id: 5fbb58d9-a807-4d8e-b9ed-debc86c58c89
+      location: null
+      maidenheadLocator: null
+      modeProfiles:
+        - analogSquelchMode: default
+          bandwidthKHz: 12.5
+          mode: fm
+          rxTone: none
+          squelch: null
+          txTone: none
+      name: UHF-SU28
+      power: null
+      primaryMode: null
+      projectId: 9734dab8-f8b8-4c81-84eb-a0c2d3479f21
+      revision: 1
+      rxFrequency: 433550000
+      scanInclusion: default
+      txFrequency: 433550000
+      txPermit: default
+      updatedAt: 2026-07-06T12:11:19.562Z
+      useLocation: false
+    - callsign: ''
+      comment: ''
+      forbidTransmit: default
+      id: 1f56ca78-895e-4510-a5ca-70f8d057ab2c
+      location: null
+      maidenheadLocator: null
+      modeProfiles:
+        - analogSquelchMode: default
+          bandwidthKHz: 12.5
+          mode: fm
+          rxTone: none
+          squelch: null
+          txTone: none
+      name: UHF-SU29
+      power: null
+      primaryMode: null
+      projectId: 9734dab8-f8b8-4c81-84eb-a0c2d3479f21
+      revision: 1
+      rxFrequency: 433562500
+      scanInclusion: default
+      txFrequency: 433562500
+      txPermit: default
+      updatedAt: 2026-07-06T12:11:19.570Z
+      useLocation: false
+    - callsign: ''
+      comment: ''
+      forbidTransmit: default
+      id: 2fb66912-0bff-4e0a-9687-03fa7be58b1c
+      location: null
+      maidenheadLocator: null
+      modeProfiles:
+        - analogSquelchMode: default
+          bandwidthKHz: 12.5
+          mode: fm
+          rxTone: none
+          squelch: null
+          txTone: none
+      name: UHF-SU30
+      power: null
+      primaryMode: null
+      projectId: 9734dab8-f8b8-4c81-84eb-a0c2d3479f21
+      revision: 1
+      rxFrequency: 433575000
+      scanInclusion: default
+      txFrequency: 433575000
+      txPermit: default
+      updatedAt: 2026-07-06T12:11:19.577Z
+      useLocation: false
+    - callsign: ''
+      comment: ''
+      forbidTransmit: default
+      id: 55b5403a-be69-4648-8da8-64ad3710b3d1
+      location: null
+      maidenheadLocator: null
+      modeProfiles:
+        - analogSquelchMode: default
+          bandwidthKHz: 12.5
+          mode: fm
+          rxTone: none
+          squelch: null
+          txTone: none
+      name: UHF-SU31
+      power: null
+      primaryMode: null
+      projectId: 9734dab8-f8b8-4c81-84eb-a0c2d3479f21
+      revision: 1
+      rxFrequency: 433587500
+      scanInclusion: default
+      txFrequency: 433587500
+      txPermit: default
+      updatedAt: 2026-07-06T12:11:19.587Z
+      useLocation: false
+    - callsign: ''
+      comment: ''
+      forbidTransmit: default
+      id: 583dba48-4632-424e-ab84-5ec80a56c199
+      location: null
+      maidenheadLocator: null
+      modeProfiles:
+        - analogSquelchMode: default
+          bandwidthKHz: 12.5
+          mode: fm
+          rxTone: none
+          squelch: null
+          txTone: none
+      name: UHF-SU32
+      power: null
+      primaryMode: null
+      projectId: 9734dab8-f8b8-4c81-84eb-a0c2d3479f21
+      revision: 1
+      rxFrequency: 433600000
+      scanInclusion: default
+      txFrequency: 433600000
+      txPermit: default
+      updatedAt: 2026-07-06T12:11:19.595Z
+      useLocation: false
+    - aprs:
+        digitalPttMode: off
+        receiveEnabled: true
+        reportSlotIndex: 5
+        reportType: digital
+      callsign: GB3FF
+      comment: Upper Largo — Operational
+      forbidTransmit: default
+      id: 6c7bc1cc-1b52-445a-a72e-43aaf212f47b
+      location:
+        lat: 56.5
+        lon: -3
+      maidenheadLocator: IO86
+      modeProfiles:
+        - analogSquelchMode: default
+          bandwidthKHz: null
+          mode: fm
+          rxTone: '103.5'
+          squelch: null
+          txTone: '103.5'
+      name: Upper Largo
+      power: null
+      primaryMode: null
+      projectId: 9734dab8-f8b8-4c81-84eb-a0c2d3479f21
+      revision: 2
+      rxFrequency: 145600000
+      scanInclusion: default
+      txFrequency: 145000000
+      txPermit: default
+      updatedAt: 2026-07-14T12:53:59.413Z
+      useLocation: true
+    - callsign: ''
+      comment: ''
+      forbidTransmit: default
+      id: 65432461-b2fa-48a1-9fa6-eadd6ae763f9
+      location: null
+      maidenheadLocator: null
+      modeProfiles:
+        - analogSquelchMode: default
+          bandwidthKHz: 12.5
+          mode: fm
+          rxTone: none
+          squelch: null
+          txTone: none
+      name: VHF-S08
+      power: null
+      primaryMode: null
+      projectId: 9734dab8-f8b8-4c81-84eb-a0c2d3479f21
+      revision: 1
+      rxFrequency: 145200000
+      scanInclusion: default
+      txFrequency: 145200000
+      txPermit: default
+      updatedAt: 2026-07-06T12:10:59.969Z
+      useLocation: false
+    - callsign: ''
+      comment: ''
+      forbidTransmit: default
+      id: 5292da72-926f-451f-af2d-a81eee6abd35
+      location: null
+      maidenheadLocator: null
+      modeProfiles:
+        - analogSquelchMode: default
+          bandwidthKHz: 12.5
+          mode: fm
+          rxTone: none
+          squelch: null
+          txTone: none
+      name: VHF-S09
+      power: null
+      primaryMode: null
+      projectId: 9734dab8-f8b8-4c81-84eb-a0c2d3479f21
+      revision: 1
+      rxFrequency: 145225000
+      scanInclusion: default
+      txFrequency: 145225000
+      txPermit: default
+      updatedAt: 2026-07-06T12:10:59.986Z
+      useLocation: false
+    - callsign: ''
+      comment: ''
+      forbidTransmit: default
+      id: 1a31d271-eae4-43a5-9045-a718f95c926c
+      location: null
+      maidenheadLocator: null
+      modeProfiles:
+        - analogSquelchMode: default
+          bandwidthKHz: 12.5
+          mode: fm
+          rxTone: none
+          squelch: null
+          txTone: none
+      name: VHF-S10
+      power: null
+      primaryMode: null
+      projectId: 9734dab8-f8b8-4c81-84eb-a0c2d3479f21
+      revision: 1
+      rxFrequency: 145250000
+      scanInclusion: default
+      txFrequency: 145250000
+      txPermit: default
+      updatedAt: 2026-07-06T12:10:59.995Z
+      useLocation: false
+    - callsign: ''
+      comment: ''
+      forbidTransmit: default
+      id: efb34289-df3a-45a4-8c8f-1cfae6f667c9
+      location: null
+      maidenheadLocator: null
+      modeProfiles:
+        - analogSquelchMode: default
+          bandwidthKHz: 12.5
+          mode: fm
+          rxTone: none
+          squelch: null
+          txTone: none
+      name: VHF-S11
+      power: null
+      primaryMode: null
+      projectId: 9734dab8-f8b8-4c81-84eb-a0c2d3479f21
+      revision: 1
+      rxFrequency: 145275000
+      scanInclusion: default
+      txFrequency: 145275000
+      txPermit: default
+      updatedAt: 2026-07-06T12:11:00.001Z
+      useLocation: false
+    - callsign: ''
+      comment: ''
+      forbidTransmit: default
+      id: 715d5008-1d25-4c98-bfe3-3320be02fd94
+      location: null
+      maidenheadLocator: null
+      modeProfiles:
+        - analogSquelchMode: default
+          bandwidthKHz: 12.5
+          mode: fm
+          rxTone: none
+          squelch: null
+          txTone: none
+      name: VHF-S12
+      power: null
+      primaryMode: null
+      projectId: 9734dab8-f8b8-4c81-84eb-a0c2d3479f21
+      revision: 1
+      rxFrequency: 145300000
+      scanInclusion: default
+      txFrequency: 145300000
+      txPermit: default
+      updatedAt: 2026-07-06T12:11:00.020Z
+      useLocation: false
+    - callsign: ''
+      comment: ''
+      forbidTransmit: default
+      id: e9fbfc42-7675-45fa-be19-8fda1bacbd70
+      location: null
+      maidenheadLocator: null
+      modeProfiles:
+        - analogSquelchMode: default
+          bandwidthKHz: 12.5
+          mode: fm
+          rxTone: none
+          squelch: null
+          txTone: none
+      name: VHF-S13
+      power: null
+      primaryMode: null
+      projectId: 9734dab8-f8b8-4c81-84eb-a0c2d3479f21
+      revision: 1
+      rxFrequency: 145325000
+      scanInclusion: default
+      txFrequency: 145325000
+      txPermit: default
+      updatedAt: 2026-07-06T12:11:00.028Z
+      useLocation: false
+    - callsign: ''
+      comment: ''
+      forbidTransmit: default
+      id: f85beb5c-0e18-405d-876e-66bafa114c76
+      location: null
+      maidenheadLocator: null
+      modeProfiles:
+        - analogSquelchMode: default
+          bandwidthKHz: 12.5
+          mode: fm
+          rxTone: none
+          squelch: null
+          txTone: none
+      name: VHF-S14
+      power: null
+      primaryMode: null
+      projectId: 9734dab8-f8b8-4c81-84eb-a0c2d3479f21
+      revision: 1
+      rxFrequency: 145350000
+      scanInclusion: default
+      txFrequency: 145350000
+      txPermit: default
+      updatedAt: 2026-07-06T12:11:00.034Z
+      useLocation: false
+    - callsign: ''
+      comment: ''
+      forbidTransmit: default
+      id: e2d7c249-24b4-4a3e-bf3c-c033fb2531c4
+      location: null
+      maidenheadLocator: null
+      modeProfiles:
+        - analogSquelchMode: default
+          bandwidthKHz: 12.5
+          mode: fm
+          rxTone: none
+          squelch: null
+          txTone: none
+      name: VHF-S15
+      power: null
+      primaryMode: null
+      projectId: 9734dab8-f8b8-4c81-84eb-a0c2d3479f21
+      revision: 1
+      rxFrequency: 145375000
+      scanInclusion: default
+      txFrequency: 145375000
+      txPermit: default
+      updatedAt: 2026-07-06T12:11:00.046Z
+      useLocation: false
+    - callsign: ''
+      comment: ''
+      forbidTransmit: default
+      id: acbc4a97-13a2-4a50-a137-71fab903c490
+      location: null
+      maidenheadLocator: null
+      modeProfiles:
+        - analogSquelchMode: default
+          bandwidthKHz: 12.5
+          mode: fm
+          rxTone: none
+          squelch: null
+          txTone: none
+      name: VHF-S16
+      power: null
+      primaryMode: null
+      projectId: 9734dab8-f8b8-4c81-84eb-a0c2d3479f21
+      revision: 1
+      rxFrequency: 145400000
+      scanInclusion: default
+      txFrequency: 145400000
+      txPermit: default
+      updatedAt: 2026-07-06T12:11:00.054Z
+      useLocation: false
+    - callsign: ''
+      comment: ''
+      forbidTransmit: default
+      id: adeb0130-c699-45e4-b579-635bd31f0c71
+      location: null
+      maidenheadLocator: null
+      modeProfiles:
+        - analogSquelchMode: default
+          bandwidthKHz: 12.5
+          mode: fm
+          rxTone: none
+          squelch: null
+          txTone: none
+      name: VHF-S17
+      power: null
+      primaryMode: null
+      projectId: 9734dab8-f8b8-4c81-84eb-a0c2d3479f21
+      revision: 1
+      rxFrequency: 145425000
+      scanInclusion: default
+      txFrequency: 145425000
+      txPermit: default
+      updatedAt: 2026-07-06T12:11:00.066Z
+      useLocation: false
+    - callsign: ''
+      comment: ''
+      forbidTransmit: default
+      id: 0aafa779-acc4-4b14-ac55-cfa3a5a241a1
+      location: null
+      maidenheadLocator: null
+      modeProfiles:
+        - analogSquelchMode: default
+          bandwidthKHz: 12.5
+          mode: fm
+          rxTone: none
+          squelch: null
+          txTone: none
+      name: VHF-S18
+      power: null
+      primaryMode: null
+      projectId: 9734dab8-f8b8-4c81-84eb-a0c2d3479f21
+      revision: 1
+      rxFrequency: 145450000
+      scanInclusion: default
+      txFrequency: 145450000
+      txPermit: default
+      updatedAt: 2026-07-06T12:11:00.078Z
+      useLocation: false
+    - callsign: ''
+      comment: ''
+      forbidTransmit: default
+      id: 6d9cb486-4c95-4d19-a2ae-1cf3dc68c4e6
+      location: null
+      maidenheadLocator: null
+      modeProfiles:
+        - analogSquelchMode: default
+          bandwidthKHz: 12.5
+          mode: fm
+          rxTone: none
+          squelch: null
+          txTone: none
+      name: VHF-S19
+      power: null
+      primaryMode: null
+      projectId: 9734dab8-f8b8-4c81-84eb-a0c2d3479f21
+      revision: 1
+      rxFrequency: 145475000
+      scanInclusion: default
+      txFrequency: 145475000
+      txPermit: default
+      updatedAt: 2026-07-06T12:11:00.086Z
+      useLocation: false
+    - callsign: ''
+      comment: ''
+      forbidTransmit: default
+      id: 26c20999-beb8-4dc7-8545-ee3d97cd86e1
+      location: null
+      maidenheadLocator: null
+      modeProfiles:
+        - analogSquelchMode: default
+          bandwidthKHz: 12.5
+          mode: fm
+          rxTone: none
+          squelch: null
+          txTone: none
+      name: VHF-S20
+      power: null
+      primaryMode: null
+      projectId: 9734dab8-f8b8-4c81-84eb-a0c2d3479f21
+      revision: 1
+      rxFrequency: 145500000
+      scanInclusion: default
+      txFrequency: 145500000
+      txPermit: default
+      updatedAt: 2026-07-06T12:11:00.096Z
+      useLocation: false
+    - callsign: ''
+      comment: ''
+      forbidTransmit: default
+      id: 4b644bf4-fa40-42ef-aee6-f7c56cd5d84c
+      location: null
+      maidenheadLocator: null
+      modeProfiles:
+        - analogSquelchMode: default
+          bandwidthKHz: 12.5
+          mode: fm
+          rxTone: none
+          squelch: null
+          txTone: none
+      name: VHF-S21
+      power: null
+      primaryMode: null
+      projectId: 9734dab8-f8b8-4c81-84eb-a0c2d3479f21
+      revision: 1
+      rxFrequency: 145525000
+      scanInclusion: default
+      txFrequency: 145525000
+      txPermit: default
+      updatedAt: 2026-07-06T12:11:00.102Z
+      useLocation: false
+    - callsign: ''
+      comment: ''
+      forbidTransmit: default
+      id: 21399ab7-d7bb-451f-9f92-775638dd2bba
+      location: null
+      maidenheadLocator: null
+      modeProfiles:
+        - analogSquelchMode: default
+          bandwidthKHz: 12.5
+          mode: fm
+          rxTone: none
+          squelch: null
+          txTone: none
+      name: VHF-S22
+      power: null
+      primaryMode: null
+      projectId: 9734dab8-f8b8-4c81-84eb-a0c2d3479f21
+      revision: 1
+      rxFrequency: 145550000
+      scanInclusion: default
+      txFrequency: 145550000
+      txPermit: default
+      updatedAt: 2026-07-06T12:11:00.110Z
+      useLocation: false
+    - callsign: ''
+      comment: ''
+      forbidTransmit: default
+      id: abedcfec-bab5-452d-aca2-950aba2be269
+      location: null
+      maidenheadLocator: null
+      modeProfiles:
+        - analogSquelchMode: default
+          bandwidthKHz: 12.5
+          mode: fm
+          rxTone: none
+          squelch: null
+          txTone: none
+      name: VHF-S23
+      power: null
+      primaryMode: null
+      projectId: 9734dab8-f8b8-4c81-84eb-a0c2d3479f21
+      revision: 1
+      rxFrequency: 145575000
+      scanInclusion: default
+      txFrequency: 145575000
+      txPermit: default
+      updatedAt: 2026-07-06T12:11:00.120Z
+      useLocation: false
+  digitalContacts: []
+  rxGroupLists:
+    - id: accf8b4b-2ba5-49ce-921d-81f4458d0589
+      members:
+        - ref:
+            id: 5b6778fb-a0f9-4088-8e0c-2c89e518cac4
+            kind: talkGroup
+          timeSlotOverride: 1
+        - ref:
+            id: e4ceac7d-d163-495d-a39c-cba3aef5c52d
+            kind: talkGroup
+          timeSlotOverride: 2
+        - ref:
+            id: 8c4ddb48-fb84-4e4d-9387-046f4c2932d2
+            kind: talkGroup
+          timeSlotOverride: 2
+        - ref:
+            id: ac25d68b-a0a2-455c-83ce-641da169847d
+            kind: talkGroup
+          timeSlotOverride: 2
+      name: GB7AC
+      projectId: 9734dab8-f8b8-4c81-84eb-a0c2d3479f21
+      revision: 1
+      updatedAt: 2026-07-12T11:10:03.071Z
+    - id: 5d0e6210-69f0-41c9-85cd-1f4141b66ae4
+      members:
+        - ref:
+            id: 8c4ddb48-fb84-4e4d-9387-046f4c2932d2
+            kind: talkGroup
+          timeSlotOverride: 2
+        - ref:
+            id: dc74e45d-11a0-4786-b5c5-baeecca3b4c5
+            kind: talkGroup
+          timeSlotOverride: 1
+      name: GB7BG
+      projectId: 9734dab8-f8b8-4c81-84eb-a0c2d3479f21
+      revision: 1
+      updatedAt: 2026-07-06T12:22:35.848Z
+    - id: 6e1d5479-3990-449a-9002-c4c6adb278d0
+      members:
+        - ref:
+            id: 8c4ddb48-fb84-4e4d-9387-046f4c2932d2
+            kind: talkGroup
+          timeSlotOverride: 2
+        - ref:
+            id: dc74e45d-11a0-4786-b5c5-baeecca3b4c5
+            kind: talkGroup
+          timeSlotOverride: 1
+      name: GB7CB
+      projectId: 9734dab8-f8b8-4c81-84eb-a0c2d3479f21
+      revision: 1
+      updatedAt: 2026-07-06T12:22:57.429Z
+    - id: ca8d2ac1-ed69-46ad-98eb-d1635e811eec
+      members:
+        - ref:
+            id: 8c4ddb48-fb84-4e4d-9387-046f4c2932d2
+            kind: talkGroup
+        - ref:
+            id: 5b6778fb-a0f9-4088-8e0c-2c89e518cac4
+            kind: talkGroup
+        - ref:
+            id: e4ceac7d-d163-495d-a39c-cba3aef5c52d
+            kind: talkGroup
+        - ref:
+            id: aace1bae-76ec-423c-b023-a713f07b6b08
+            kind: talkGroup
+      name: GB7EE
+      projectId: 9734dab8-f8b8-4c81-84eb-a0c2d3479f21
+      revision: 2
+      updatedAt: 2026-07-02T18:53:33.865Z
+    - id: c58fb8f0-ef6b-429e-976b-11be361e3650
+      members:
+        - ref:
+            id: b9d41597-e57a-40f6-9072-2959929cf719
+            kind: talkGroup
+          timeSlotOverride: 2
+        - ref:
+            id: 5b6778fb-a0f9-4088-8e0c-2c89e518cac4
+            kind: talkGroup
+          timeSlotOverride: 1
+        - ref:
+            id: e4ceac7d-d163-495d-a39c-cba3aef5c52d
+            kind: talkGroup
+          timeSlotOverride: 1
+      name: GB7FE
+      projectId: 9734dab8-f8b8-4c81-84eb-a0c2d3479f21
+      revision: 1
+      updatedAt: 2026-07-06T12:18:06.198Z
+    - id: f2abcfce-1ae4-4203-abc7-7c2955604999
+      members:
+        - ref:
+            id: e4ceac7d-d163-495d-a39c-cba3aef5c52d
+            kind: talkGroup
+          timeSlotOverride: 2
+        - ref:
+            id: 5b6778fb-a0f9-4088-8e0c-2c89e518cac4
+            kind: talkGroup
+          timeSlotOverride: 1
+        - ref:
+            id: 8c4ddb48-fb84-4e4d-9387-046f4c2932d2
+            kind: talkGroup
+          timeSlotOverride: 2
+        - ref:
+            id: 3c531f34-66d5-4e26-ba82-4b0f5555a42c
+            kind: talkGroup
+          timeSlotOverride: 2
+      name: GB7GL
+      projectId: 9734dab8-f8b8-4c81-84eb-a0c2d3479f21
+      revision: 3
+      updatedAt: 2026-07-02T20:18:43.338Z
+    - id: 9db1ba5b-e93a-4df0-9261-d5530c322f96
+      members:
+        - ref:
+            id: 8c4ddb48-fb84-4e4d-9387-046f4c2932d2
+            kind: talkGroup
+        - ref:
+            id: dc74e45d-11a0-4786-b5c5-baeecca3b4c5
+            kind: talkGroup
+        - ref:
+            id: 5b6778fb-a0f9-4088-8e0c-2c89e518cac4
+            kind: talkGroup
+        - ref:
+            id: ac25d68b-a0a2-455c-83ce-641da169847d
+            kind: talkGroup
+        - ref:
+            id: e4ceac7d-d163-495d-a39c-cba3aef5c52d
+            kind: talkGroup
+      name: GB7IR
+      projectId: 9734dab8-f8b8-4c81-84eb-a0c2d3479f21
+      revision: 2
+      updatedAt: 2026-07-02T18:55:14.201Z
+    - id: 4c5d569b-4856-4bbf-bf95-cd19596be389
+      members:
+        - ref:
+            id: 8c4ddb48-fb84-4e4d-9387-046f4c2932d2
+            kind: talkGroup
+          timeSlotOverride: 2
+        - ref:
+            id: dc74e45d-11a0-4786-b5c5-baeecca3b4c5
+            kind: talkGroup
+          timeSlotOverride: 1
+        - ref:
+            id: b339a409-9e72-4ad8-994c-25e056587fec
+            kind: talkGroup
+          timeSlotOverride: 1
+        - ref:
+            id: c43eadc1-e422-4ba6-b5b5-e6b755c002ae
+            kind: talkGroup
+          timeSlotOverride: 1
+        - ref:
+            id: 5b6778fb-a0f9-4088-8e0c-2c89e518cac4
+            kind: talkGroup
+          timeSlotOverride: 1
+        - ref:
+            id: e4ceac7d-d163-495d-a39c-cba3aef5c52d
+            kind: talkGroup
+          timeSlotOverride: 1
+        - ref:
+            id: 100ff384-d9c7-45e6-a467-178eec79fe2c
+            kind: talkGroup
+          timeSlotOverride: 1
+        - ref:
+            id: 3863801c-ce61-4718-8ee2-54d7c47f1220
+            kind: talkGroup
+          timeSlotOverride: 2
+        - ref:
+            id: ab047c80-5338-4280-872d-9d5fefa92284
+            kind: talkGroup
+          timeSlotOverride: 1
+        - ref:
+            id: d2787244-566e-461e-82fb-d9a9c564498a
+            kind: talkGroup
+          timeSlotOverride: 1
+        - ref:
+            id: ef07a7f9-d4f8-4106-ba86-e86064a01200
+            kind: talkGroup
+          timeSlotOverride: 1
+        - ref:
+            id: 2d83d262-6af2-487e-83c0-572e213de4fb
+            kind: talkGroup
+          timeSlotOverride: 1
+        - ref:
+            id: f629f3a7-fd5f-4bfd-a0e3-6bd9cb8631fa
+            kind: talkGroup
+          timeSlotOverride: 1
+        - ref:
+            id: 4ddce789-f294-4086-9cd4-a639a6dd3743
+            kind: talkGroup
+          timeSlotOverride: 1
+      name: GB7LL
+      projectId: 9734dab8-f8b8-4c81-84eb-a0c2d3479f21
+      revision: 1
+      updatedAt: 2026-07-06T12:18:35.517Z
+    - id: d4139849-eed0-4483-9238-ddbd97562a11
+      members:
+        - ref:
+            id: 8c4ddb48-fb84-4e4d-9387-046f4c2932d2
+            kind: talkGroup
+        - ref:
+            id: 5b6778fb-a0f9-4088-8e0c-2c89e518cac4
+            kind: talkGroup
+        - ref:
+            id: 59fa24aa-8add-4cca-8ed2-45245f419535
+            kind: talkGroup
+        - ref:
+            id: e4ceac7d-d163-495d-a39c-cba3aef5c52d
+            kind: talkGroup
+      name: GB7PA
+      projectId: 9734dab8-f8b8-4c81-84eb-a0c2d3479f21
+      revision: 2
+      updatedAt: 2026-07-02T18:55:18.077Z
+    - id: 312d37e3-bfeb-4a7d-a89a-238907c8ac84
+      members:
+        - ref:
+            id: 41c3368b-b7b1-4d1b-8d31-10985da01bef
+            kind: talkGroup
+        - ref:
+            id: efbd2854-6760-447f-b4a8-340280c17de8
+            kind: talkGroup
+        - ref:
+            id: fac0214b-912e-4c5b-8b2e-b88361ee6b46
+            kind: talkGroup
+        - ref:
+            id: cb60bb00-7114-4917-bbf0-5a02d561d004
+            kind: talkGroup
+        - ref:
+            id: 8b40a2d4-f66d-439a-81f3-747e4d6f479e
+            kind: talkGroup
+      name: GB7WT
+      projectId: 9734dab8-f8b8-4c81-84eb-a0c2d3479f21
+      revision: 2
+      updatedAt: 2026-07-02T18:55:21.113Z
+    - id: 9d61664e-3844-43ca-8a86-6e89c533cfd8
+      members:
+        - ref:
+            id: 5b6778fb-a0f9-4088-8e0c-2c89e518cac4
+            kind: talkGroup
+          timeSlotOverride: 1
+        - ref:
+            id: ac25d68b-a0a2-455c-83ce-641da169847d
+            kind: talkGroup
+          timeSlotOverride: 2
+        - ref:
+            id: e4ceac7d-d163-495d-a39c-cba3aef5c52d
+            kind: talkGroup
+          timeSlotOverride: 1
+        - ref:
+            id: 8c4ddb48-fb84-4e4d-9387-046f4c2932d2
+            kind: talkGroup
+          timeSlotOverride: 2
+        - ref:
+            id: d8bacb40-8f49-4624-9f2f-1006d2e0046d
+            kind: talkGroup
+          timeSlotOverride: 1
+        - ref:
+            id: e660d89f-bd2a-4ed0-919c-c90a89f6e9a7
+            kind: talkGroup
+          timeSlotOverride: 1
+        - ref:
+            id: 1093f497-bb61-4c9b-baee-65113fc8ffb3
+            kind: talkGroup
+          timeSlotOverride: 1
+        - ref:
+            id: f46e8ab8-f684-4a93-bf17-04b4fede9fde
+            kind: talkGroup
+          timeSlotOverride: 2
+        - ref:
+            id: 97e7d37b-9517-48f2-a837-2f20d01174fc
+            kind: talkGroup
+          timeSlotOverride: 2
+        - ref:
+            id: dcd85dad-bf88-4ff9-92b1-b4559a6286b6
+            kind: talkGroup
+          timeSlotOverride: 2
+        - ref:
+            id: ad58bb9b-add5-46ad-81ff-f0481cc96e45
+            kind: talkGroup
+          timeSlotOverride: 1
+      name: GB7ZT
+      projectId: 9734dab8-f8b8-4c81-84eb-a0c2d3479f21
+      revision: 3
+      updatedAt: 2026-07-02T20:17:47.937Z
+    - id: e26cd27d-5464-4adc-9453-be64fcc6ab6d
+      members:
+        - ref:
+            id: 8c4ddb48-fb84-4e4d-9387-046f4c2932d2
+            kind: talkGroup
+          timeSlotOverride: 2
+        - ref:
+            id: e4ceac7d-d163-495d-a39c-cba3aef5c52d
+            kind: talkGroup
+          timeSlotOverride: 2
+        - ref:
+            id: 5b6778fb-a0f9-4088-8e0c-2c89e518cac4
+            kind: talkGroup
+          timeSlotOverride: 1
+        - ref:
+            id: dc74e45d-11a0-4786-b5c5-baeecca3b4c5
+            kind: talkGroup
+          timeSlotOverride: 1
+        - ref:
+            id: f7c35ef0-86ac-4908-a53e-6ad79092fc46
+            kind: talkGroup
+          timeSlotOverride: 1
+      name: Hotspot
+      projectId: 9734dab8-f8b8-4c81-84eb-a0c2d3479f21
+      revision: 3
+      updatedAt: 2026-07-02T21:15:16.002Z
+  scanLists:
+    - id: 662d8ddf-37a1-4d79-8886-2c3051236690
+      memberChannelIds:
+        - 41b8a368-a823-4006-9c8b-88011b48f551
+        - 394e36f6-b04c-4e3c-8c8c-a71221dc50b3
+        - 35b330af-23a9-48bf-89c2-655279a134a0
+        - 560af276-dd29-48a2-8fb6-f268bd7ec285
+        - 3cfbaaa5-c470-44c8-8fc6-99533c930789
+        - c402e4c4-3079-4609-abe2-9501b6d4b9d6
+        - 4f4d1310-4da9-4053-b7a1-df47d00bcfb0
+        - 6290f8fd-0501-4597-93f5-d8e8e4c944fc
+        - 206d71b7-b445-4abc-bdcc-7d49a0a8e835
+      name: Meep
+      projectId: 9734dab8-f8b8-4c81-84eb-a0c2d3479f21
+      revision: 2
+      updatedAt: 2026-07-17T19:35:23.941Z
+  talkGroups:
+    - abbreviation: Atl. Can.
+      comment: ''
+      digitalId: 30205
+      id: d8bacb40-8f49-4624-9f2f-1006d2e0046d
+      mode: dmr
+      name: Atlantic Canada
+      projectId: 9734dab8-f8b8-4c81-84eb-a0c2d3479f21
+      revision: 2
+      updatedAt: 2026-07-06T12:18:58.547Z
+    - abbreviation: Aust
+      comment: ''
+      digitalId: 505
+      id: f46e8ab8-f684-4a93-bf17-04b4fede9fde
+      mode: dmr
+      name: Australia
+      projectId: 9734dab8-f8b8-4c81-84eb-a0c2d3479f21
+      revision: 2
+      updatedAt: 2026-07-06T12:19:03.130Z
+    - abbreviation: Aus. Vict.
+      comment: ''
+      digitalId: 5053
+      id: 97e7d37b-9517-48f2-a837-2f20d01174fc
+      mode: dmr
+      name: Australia Victoria
+      projectId: 9734dab8-f8b8-4c81-84eb-a0c2d3479f21
+      revision: 2
+      updatedAt: 2026-07-06T12:19:07.447Z
+    - abbreviation: Aus+NZ
+      comment: ''
+      digitalId: 95
+      id: e660d89f-bd2a-4ed0-919c-c90a89f6e9a7
+      mode: dmr
+      name: Australia, New Zealand
+      projectId: 9734dab8-f8b8-4c81-84eb-a0c2d3479f21
+      revision: 2
+      updatedAt: 2026-07-06T12:19:14.436Z
+    - comment: ''
+      digitalId: 2724
+      id: 41c3368b-b7b1-4d1b-8d31-10985da01bef
+      mode: dmr
+      name: Bridge to YSF-IE
+      projectId: 9734dab8-f8b8-4c81-84eb-a0c2d3479f21
+      revision: 1
+      updatedAt: 2026-07-02T10:26:41.592Z
+    - comment: ''
+      digitalId: 27255
+      id: efbd2854-6760-447f-b4a8-340280c17de8
+      mode: dmr
+      name: Galway Digital Radio Group
+      projectId: 9734dab8-f8b8-4c81-84eb-a0c2d3479f21
+      revision: 1
+      updatedAt: 2026-07-02T10:26:41.632Z
+    - comment: ''
+      digitalId: 274
+      id: 1093f497-bb61-4c9b-baee-65113fc8ffb3
+      mode: dmr
+      name: Iceland
+      projectId: 9734dab8-f8b8-4c81-84eb-a0c2d3479f21
+      revision: 1
+      updatedAt: 2026-07-02T07:37:07.342Z
+    - abbreviation: Irl Call
+      comment: ''
+      digitalId: 2722
+      id: fac0214b-912e-4c5b-8b2e-b88361ee6b46
+      mode: dmr
+      name: IE Calling
+      projectId: 9734dab8-f8b8-4c81-84eb-a0c2d3479f21
+      revision: 2
+      updatedAt: 2026-07-06T12:19:56.184Z
+    - abbreviation: Irl
+      comment: ''
+      digitalId: 2354
+      id: cb60bb00-7114-4917-bbf0-5a02d561d004
+      mode: dmr
+      name: Ireland
+      projectId: 9734dab8-f8b8-4c81-84eb-a0c2d3479f21
+      revision: 2
+      updatedAt: 2026-07-06T12:19:47.616Z
+    - comment: ''
+      digitalId: 9
+      id: 92cfa90c-dd0e-4ea7-8131-3ebceb469a9d
+      mode: dmr
+      name: Local 9
+      projectId: 9734dab8-f8b8-4c81-84eb-a0c2d3479f21
+      revision: 1
+      updatedAt: 2026-07-08T11:40:51.623Z
+    - comment: ''
+      digitalId: 99
+      id: a3df7512-6ec1-42ba-a1a3-979a9ad3a3ab
+      mode: dmr
+      name: Local 99
+      projectId: 9734dab8-f8b8-4c81-84eb-a0c2d3479f21
+      revision: 1
+      updatedAt: 2026-07-08T11:41:01.864Z
+    - comment: ''
+      digitalId: 2358
+      id: dcd85dad-bf88-4ff9-92b1-b4559a6286b6
+      mode: dmr
+      name: London
+      projectId: 9734dab8-f8b8-4c81-84eb-a0c2d3479f21
+      revision: 1
+      updatedAt: 2026-07-02T07:37:07.427Z
+    - comment: ''
+      digitalId: 2357910
+      id: f7c35ef0-86ac-4908-a53e-6ad79092fc46
+      mode: dmr
+      name: MM9PDY
+      projectId: 9734dab8-f8b8-4c81-84eb-a0c2d3479f21
+      revision: 2
+      updatedAt: 2026-07-14T20:35:57.516Z
+    - comment: ''
+      digitalId: 23531
+      id: 8b40a2d4-f66d-439a-81f3-747e4d6f479e
+      mode: dmr
+      name: RAYNET UK
+      projectId: 9734dab8-f8b8-4c81-84eb-a0c2d3479f21
+      revision: 1
+      updatedAt: 2026-07-02T10:26:41.688Z
+    - comment: ''
+      digitalId: 2355
+      id: 8c4ddb48-fb84-4e4d-9387-046f4c2932d2
+      mode: dmr
+      name: Scotland
+      projectId: 9734dab8-f8b8-4c81-84eb-a0c2d3479f21
+      revision: 1
+      updatedAt: 2026-07-02T07:37:07.230Z
+    - abbreviation: Sco Chat
+      comment: ''
+      digitalId: 23550
+      id: dc74e45d-11a0-4786-b5c5-baeecca3b4c5
+      mode: dmr
+      name: Scotland Chat
+      projectId: 9734dab8-f8b8-4c81-84eb-a0c2d3479f21
+      revision: 2
+      updatedAt: 2026-07-06T12:20:19.920Z
+    - abbreviation: Sco East
+      comment: ''
+      digitalId: 23557
+      id: b339a409-9e72-4ad8-994c-25e056587fec
+      mode: dmr
+      name: Scotland East
+      projectId: 9734dab8-f8b8-4c81-84eb-a0c2d3479f21
+      revision: 2
+      updatedAt: 2026-07-06T12:20:28.945Z
+    - abbreviation: Sco H&I
+      comment: ''
+      digitalId: 23558
+      id: c43eadc1-e422-4ba6-b5b5-e6b755c002ae
+      mode: dmr
+      name: Scotland Highland & Islands
+      projectId: 9734dab8-f8b8-4c81-84eb-a0c2d3479f21
+      revision: 2
+      updatedAt: 2026-07-06T12:20:37.730Z
+    - abbreviation: Sco Mult
+      comment: ''
+      digitalId: 23551
+      id: e4ceac7d-d163-495d-a39c-cba3aef5c52d
+      mode: dmr
+      name: Scotland Multi
+      projectId: 9734dab8-f8b8-4c81-84eb-a0c2d3479f21
+      revision: 3
+      updatedAt: 2026-07-06T12:20:46.844Z
+    - abbreviation: Sco West
+      comment: ''
+      digitalId: 23559
+      id: 5b6778fb-a0f9-4088-8e0c-2c89e518cac4
+      mode: dmr
+      name: Scotland West
+      projectId: 9734dab8-f8b8-4c81-84eb-a0c2d3479f21
+      revision: 2
+      updatedAt: 2026-07-06T12:20:50.769Z
+    - comment: ''
+      digitalId: 234136
+      id: 59fa24aa-8add-4cca-8ed2-45245f419535
+      mode: dmr
+      name: TG 234136
+      projectId: 9734dab8-f8b8-4c81-84eb-a0c2d3479f21
+      revision: 1
+      updatedAt: 2026-07-02T07:46:48.026Z
+    - comment: ''
+      digitalId: 234140
+      id: ac25d68b-a0a2-455c-83ce-641da169847d
+      mode: dmr
+      name: TG 234140
+      projectId: 9734dab8-f8b8-4c81-84eb-a0c2d3479f21
+      revision: 1
+      updatedAt: 2026-07-02T07:37:07.167Z
+    - comment: ''
+      digitalId: 234173
+      id: 3863801c-ce61-4718-8ee2-54d7c47f1220
+      mode: dmr
+      name: TG 234173
+      projectId: 9734dab8-f8b8-4c81-84eb-a0c2d3479f21
+      revision: 1
+      updatedAt: 2026-07-06T12:18:35.149Z
+    - comment: ''
+      digitalId: 235419
+      id: d2787244-566e-461e-82fb-d9a9c564498a
+      mode: dmr
+      name: TG 235419
+      projectId: 9734dab8-f8b8-4c81-84eb-a0c2d3479f21
+      revision: 1
+      updatedAt: 2026-07-06T12:18:35.195Z
+    - comment: ''
+      digitalId: 23552
+      id: aace1bae-76ec-423c-b023-a713f07b6b08
+      mode: dmr
+      name: TG 23552
+      projectId: 9734dab8-f8b8-4c81-84eb-a0c2d3479f21
+      revision: 1
+      updatedAt: 2026-07-02T08:27:33.340Z
+    - comment: ''
+      digitalId: 23555
+      id: 3c531f34-66d5-4e26-ba82-4b0f5555a42c
+      mode: dmr
+      name: TG 23555
+      projectId: 9734dab8-f8b8-4c81-84eb-a0c2d3479f21
+      revision: 1
+      updatedAt: 2026-07-02T10:23:15.891Z
+    - comment: ''
+      digitalId: 23556
+      id: ab047c80-5338-4280-872d-9d5fefa92284
+      mode: dmr
+      name: TG 23556
+      projectId: 9734dab8-f8b8-4c81-84eb-a0c2d3479f21
+      revision: 1
+      updatedAt: 2026-07-06T12:18:35.182Z
+    - comment: ''
+      digitalId: 2356984
+      id: b9d41597-e57a-40f6-9072-2959929cf719
+      mode: dmr
+      name: TG 2356984
+      projectId: 9734dab8-f8b8-4c81-84eb-a0c2d3479f21
+      revision: 1
+      updatedAt: 2026-07-06T12:18:06.164Z
+    - comment: ''
+      digitalId: 235
+      id: 100ff384-d9c7-45e6-a467-178eec79fe2c
+      mode: dmr
+      name: UK Call
+      projectId: 9734dab8-f8b8-4c81-84eb-a0c2d3479f21
+      revision: 2
+      updatedAt: 2026-07-06T12:21:12.315Z
+    - comment: ''
+      digitalId: 2350
+      id: ef07a7f9-d4f8-4106-ba86-e86064a01200
+      mode: dmr
+      name: UK Wide
+      projectId: 9734dab8-f8b8-4c81-84eb-a0c2d3479f21
+      revision: 2
+      updatedAt: 2026-07-06T12:21:25.875Z
+    - comment: ''
+      digitalId: 2351
+      id: 2d83d262-6af2-487e-83c0-572e213de4fb
+      mode: dmr
+      name: UKChat 1
+      projectId: 9734dab8-f8b8-4c81-84eb-a0c2d3479f21
+      revision: 2
+      updatedAt: 2026-07-06T12:19:24.520Z
+    - comment: ''
+      digitalId: 2352
+      id: f629f3a7-fd5f-4bfd-a0e3-6bd9cb8631fa
+      mode: dmr
+      name: UKChat 2
+      projectId: 9734dab8-f8b8-4c81-84eb-a0c2d3479f21
+      revision: 2
+      updatedAt: 2026-07-06T12:19:29.097Z
+    - comment: ''
+      digitalId: 2353
+      id: 4ddce789-f294-4086-9cd4-a639a6dd3743
+      mode: dmr
+      name: UKChat 3
+      projectId: 9734dab8-f8b8-4c81-84eb-a0c2d3479f21
+      revision: 2
+      updatedAt: 2026-07-06T12:19:32.221Z
+    - comment: ''
+      digitalId: 27253
+      id: ad58bb9b-add5-46ad-81ff-f0481cc96e45
+      mode: dmr
+      name: Ulster
+      projectId: 9734dab8-f8b8-4c81-84eb-a0c2d3479f21
+      revision: 1
+      updatedAt: 2026-07-02T07:37:07.452Z
+  zoneDefaults:
+    includeInZoneDerivedScanList: true
+  zones:
+    - comment: ''
+      id: 3265622f-cea2-46b2-9d17-b4d543e4d874
+      members:
+        - channelId: 3b631c77-1d8e-4ac4-b8c6-edbb4571b5f1
+          kind: channel
+        - channelId: 7302e505-1f0e-456e-954c-3a0e55f89bf1
+          kind: channel
+        - kind: zone
+          zoneId: a3dd95b6-5274-48d4-9d58-2516d20aac51
+      name: Aberdeen
+      order: 8
+      projectId: 9734dab8-f8b8-4c81-84eb-a0c2d3479f21
+      revision: 11
+      updatedAt: 2026-07-17T13:29:05.158Z
+    - comment: ''
+      id: 4501b9e2-dc29-4a44-bd4c-c0f736e91f25
+      members:
+        - channelId: f6381b6c-7da1-4774-a800-ec33605c266b
+          kind: channel
+        - channelId: 394e36f6-b04c-4e3c-8c8c-a71221dc50b3
+          kind: channel
+        - channelId: 35b330af-23a9-48bf-89c2-655279a134a0
+          kind: channel
+        - channelId: 3cfbaaa5-c470-44c8-8fc6-99533c930789
+          kind: channel
+        - channelId: 560af276-dd29-48a2-8fb6-f268bd7ec285
+          kind: channel
+      name: Aberdn Airband
+      order: 11
+      projectId: 9734dab8-f8b8-4c81-84eb-a0c2d3479f21
+      revision: 11
+      updatedAt: 2026-07-17T13:29:12.822Z
+    - comment: ''
+      id: dbff7ef8-215a-4b01-ae84-f7fe78be4022
+      members:
+        - channelId: 70bad150-2d11-4706-a3db-57175d068313
+          kind: channel
+        - channelId: ca70ca22-179f-4442-8824-0894f3c764c6
+          includeInScanList: skip
+          kind: channel
+        - kind: zone
+          zoneId: a3dd95b6-5274-48d4-9d58-2516d20aac51
+      name: Aboyne
+      order: 7
+      projectId: 9734dab8-f8b8-4c81-84eb-a0c2d3479f21
+      revision: 16
+      updatedAt: 2026-07-17T13:29:05.216Z
+    - comment: ''
+      id: 9a78b0b4-388a-4dbe-8bc7-8f2223ffb8be
+      members:
+        - channelId: 6c7bc1cc-1b52-445a-a72e-43aaf212f47b
+          kind: channel
+        - channelId: 1c99ded1-50f5-4b57-bad3-e335d06531a2
+          kind: channel
+        - channelId: 35053ef7-560e-402f-829b-b8484f4efbf5
+          kind: channel
+        - channelId: 211c5132-bac9-4257-8f58-0637808f1dba
+          kind: channel
+        - channelId: a557d38c-2d9c-4a18-bc60-0354b4ee2cdf
+          kind: channel
+        - channelId: 2cc9e394-2f5b-4b23-a3dc-9420c6aa6b4c
+          kind: channel
+        - kind: zone
+          zoneId: a3dd95b6-5274-48d4-9d58-2516d20aac51
+      name: Dundee
+      order: 5
+      projectId: 9734dab8-f8b8-4c81-84eb-a0c2d3479f21
+      revision: 10
+      updatedAt: 2026-07-17T13:28:52.722Z
+    - comment: ''
+      id: 41707a0a-964e-4062-8909-2db7afdd3750
+      members:
+        - channelId: 041595cf-144f-4505-8d7f-11d4172d7854
+          kind: channel
+        - channelId: 206d71b7-b445-4abc-bdcc-7d49a0a8e835
+          kind: channel
+        - channelId: 6f55c822-1f91-448b-aafe-e0da3a94e1e3
+          kind: channel
+        - channelId: 2d61c26c-7eb2-4c9a-8062-7dc8b12c08d0
+          kind: channel
+        - channelId: 6f0bd721-0fbc-4966-ad82-21bee7cb01b0
+          kind: channel
+        - channelId: 0424b169-1fd7-45f0-b2ac-7be8d0c293c6
+          kind: channel
+        - channelId: d27479d4-bef9-442d-9e58-8a4f43a8cfd7
+          kind: channel
+        - channelId: 24cca1c9-df68-4b56-bd6a-23d2a56d1ab9
+          kind: channel
+        - channelId: f50b3ba9-66a9-4ec7-86b6-6feab5be7515
+          kind: channel
+      name: Edin Airband
+      order: 10
+      projectId: 9734dab8-f8b8-4c81-84eb-a0c2d3479f21
+      revision: 9
+      updatedAt: 2026-07-17T13:29:12.879Z
+    - comment: ''
+      id: b66aae38-4ba1-4055-a8bf-ea0aeece0839
+      members:
+        - channelId: 6290f8fd-0501-4597-93f5-d8e8e4c944fc
+          kind: channel
+        - channelId: abbe01e6-035c-4776-aad1-9626a1d2c2c9
+          kind: channel
+        - channelId: a23a4363-f653-4bc4-8c6e-13756bda0a97
+          kind: channel
+        - channelId: 881719e5-04b9-4ef0-a7cc-0775a45e1533
+          kind: channel
+        - channelId: 86880ca2-4a23-476a-b0d0-7bc72658598b
+          kind: channel
+        - channelId: 09baf926-3d27-4f45-b6f3-87c5e3b6943a
+          kind: channel
+        - channelId: 4f4d1310-4da9-4053-b7a1-df47d00bcfb0
+          kind: channel
+        - channelId: d33c7c26-3b49-423e-ac7f-f23f0ec53522
+          kind: channel
+        - kind: zone
+          zoneId: a3dd95b6-5274-48d4-9d58-2516d20aac51
+      name: Edinburgh
+      order: 4
+      projectId: 9734dab8-f8b8-4c81-84eb-a0c2d3479f21
+      revision: 36
+      updatedAt: 2026-07-17T13:28:48.443Z
+    - comment: ''
+      id: 8925c989-552e-4abf-8e89-59ab46d553af
+      members:
+        - channelId: 38f23e93-aa3e-4ca0-ad40-513930eeb3f2
+          kind: channel
+        - channelId: 7a1ffb31-75ab-49f4-8862-588babb16229
+          kind: channel
+        - channelId: 34a70d64-0044-4678-9783-5ec4dd2b0b1c
+          kind: channel
+        - channelId: 833f26c1-1a08-4295-8e8e-8bdad8a67580
+          kind: channel
+        - channelId: ba83c50d-ea62-4e8f-b3c5-73fd2d77c9ba
+          kind: channel
+        - channelId: 29b766f5-8f13-4545-9cba-69cf7469976c
+          kind: channel
+        - channelId: ae96efa5-8a48-4edc-86af-25deb080e1c5
+          kind: channel
+        - channelId: b39fdcc7-79d8-47ab-80bd-266deea94142
+          includeInScanList: skip
+          kind: channel
+        - channelId: 2e9f785f-a0db-40ef-b46b-348b3238d0a7
+          includeInScanList: skip
+          kind: channel
+        - channelId: fddbb856-fe0b-4f2d-8520-cddeeaee47fd
+          kind: channel
+        - channelId: c402e4c4-3079-4609-abe2-9501b6d4b9d6
+          kind: channel
+        - kind: zone
+          zoneId: a3dd95b6-5274-48d4-9d58-2516d20aac51
+      name: Glasgow
+      order: 3
+      projectId: 9734dab8-f8b8-4c81-84eb-a0c2d3479f21
+      revision: 18
+      updatedAt: 2026-07-17T13:28:40.983Z
+    - comment: ''
+      id: fdb6effe-cdb6-4aa9-b8f6-10fd0afe5256
+      members:
+        - channelId: eb2be667-3e6a-423f-a518-8938021cae3b
+          kind: channel
+        - channelId: b29a77ae-d883-4ec7-99cd-c5d0a637ed2a
+          kind: channel
+        - channelId: e0a2d306-8f22-4a93-a65f-c5dd0be317c7
+          kind: channel
+        - channelId: 38fec83d-de58-4df7-922d-0a6be65033e1
+          kind: channel
+        - channelId: bc176d8c-e690-4fe5-bb11-d8dbbc3e35c8
+          kind: channel
+        - channelId: df79c9f5-00d3-47d4-b8de-367a84a26aa6
+          kind: channel
+        - channelId: 23739a7a-f56f-4fce-9b5e-4c81bac90104
+          kind: channel
+        - channelId: 10423cd0-2ef4-4f92-bf92-2f802e23f98e
+          kind: channel
+        - channelId: 968ea37c-1bfb-4baa-9b3a-e717d37d1433
+          kind: channel
+        - channelId: e3e123ce-4e44-435b-89f3-c38fc435ec42
+          kind: channel
+      name: Glasgow Airband
+      order: 9
+      projectId: 9734dab8-f8b8-4c81-84eb-a0c2d3479f21
+      revision: 6
+      updatedAt: 2026-07-17T13:29:09.580Z
+    - comment: ''
+      id: 82265ffb-a90a-46a9-9401-1520af568ee9
+      members:
+        - channelId: ca70ca22-179f-4442-8824-0894f3c764c6
+          kind: channel
+        - channelId: 7a1ffb31-75ab-49f4-8862-588babb16229
+          kind: channel
+        - channelId: 29b766f5-8f13-4545-9cba-69cf7469976c
+          kind: channel
+        - channelId: 34a70d64-0044-4678-9783-5ec4dd2b0b1c
+          kind: channel
+        - channelId: c402e4c4-3079-4609-abe2-9501b6d4b9d6
+          kind: channel
+        - channelId: 833f26c1-1a08-4295-8e8e-8bdad8a67580
+          kind: channel
+        - kind: zone
+          zoneId: a3dd95b6-5274-48d4-9d58-2516d20aac51
+      name: Home Shack
+      order: 1
+      projectId: 9734dab8-f8b8-4c81-84eb-a0c2d3479f21
+      revision: 12
+      updatedAt: 2026-07-17T19:12:56.565Z
+    - comment: ''
+      id: 5133f2fe-41a4-4c5f-a5e7-a056c1e172ba
+      members:
+        - channelId: ca70ca22-179f-4442-8824-0894f3c764c6
+          kind: channel
+        - channelId: 38f23e93-aa3e-4ca0-ad40-513930eeb3f2
+          kind: channel
+        - channelId: 7a1ffb31-75ab-49f4-8862-588babb16229
+          kind: channel
+        - channelId: 34a70d64-0044-4678-9783-5ec4dd2b0b1c
+          kind: channel
+        - channelId: 833f26c1-1a08-4295-8e8e-8bdad8a67580
+          kind: channel
+        - channelId: ba83c50d-ea62-4e8f-b3c5-73fd2d77c9ba
+          kind: channel
+        - channelId: 29b766f5-8f13-4545-9cba-69cf7469976c
+          kind: channel
+        - channelId: fddbb856-fe0b-4f2d-8520-cddeeaee47fd
+          kind: channel
+        - channelId: c402e4c4-3079-4609-abe2-9501b6d4b9d6
+          kind: channel
+        - kind: zone
+          zoneId: a3dd95b6-5274-48d4-9d58-2516d20aac51
+      name: Morning Walk
+      order: 2
+      projectId: 9734dab8-f8b8-4c81-84eb-a0c2d3479f21
+      revision: 16
+      updatedAt: 2026-07-17T19:12:56.633Z
+    - comment: ''
+      id: c5844927-de71-426e-b2c0-418776b2d135
+      members:
+        - channelId: 211c5132-bac9-4257-8f58-0637808f1dba
+          kind: channel
+        - channelId: a557d38c-2d9c-4a18-bc60-0354b4ee2cdf
+          kind: channel
+        - channelId: 2cc9e394-2f5b-4b23-a3dc-9420c6aa6b4c
+          kind: channel
+        - channelId: 6c7bc1cc-1b52-445a-a72e-43aaf212f47b
+          kind: channel
+        - channelId: 1c99ded1-50f5-4b57-bad3-e335d06531a2
+          kind: channel
+        - kind: zone
+          zoneId: a3dd95b6-5274-48d4-9d58-2516d20aac51
+      name: Perth
+      order: 6
+      projectId: 9734dab8-f8b8-4c81-84eb-a0c2d3479f21
+      revision: 9
+      updatedAt: 2026-07-17T13:29:01.611Z
+    - comment: ''
+      id: f0b8cbd5-7b10-4cfd-8ccc-833be4b3d9b9
+      members:
+        - channelId: 6f13aa05-b011-4d0c-bd9c-b19c56716fc6
+          kind: channel
+        - channelId: a6559d4b-d9b2-448b-971b-f38034147527
+          kind: channel
+        - channelId: 704a87cf-d610-4bbf-af78-1c29e9aa5a97
+          kind: channel
+        - channelId: 78852154-fb9f-4f16-870a-020f468341db
+          kind: channel
+        - channelId: c6973b7f-fedd-49b6-8a16-ec19643d2590
+          kind: channel
+        - channelId: 9da78b52-c0fb-4dce-b054-470d4bc7b4af
+          kind: channel
+        - channelId: 8710cf64-fd67-47ee-88d8-9d26cbdaf5ad
+          kind: channel
+        - channelId: 28e21d75-ca0d-4f20-855c-cf38e10e8f18
+          kind: channel
+        - channelId: f75317fa-810c-47c1-92c9-28aefbaac829
+          kind: channel
+        - channelId: e7d4448d-7e2d-4219-a71a-9c11f0f080d2
+          kind: channel
+        - channelId: c7f95831-de0c-4ce9-aa08-dd2743e4ab9e
+          kind: channel
+        - channelId: 124ea979-df82-4c4e-8963-61309dbbc265
+          kind: channel
+        - channelId: dc318f4c-686a-4efa-9729-450eff32b71e
+          kind: channel
+        - channelId: 8208716b-34e2-45f5-a0df-21818c84ca27
+          kind: channel
+        - channelId: f9c60e6a-e443-408f-a2b7-a20ee881a347
+          kind: channel
+        - channelId: 598eac81-060d-480b-b97d-b6382f19d68d
+          kind: channel
+      name: PMR-446
+      order: 12
+      projectId: 9734dab8-f8b8-4c81-84eb-a0c2d3479f21
+      revision: 3
+      updatedAt: 2026-07-17T13:27:47.684Z
+    - comment: ''
+      id: a3dd95b6-5274-48d4-9d58-2516d20aac51
+      members:
+        - channelId: 0aafa779-acc4-4b14-ac55-cfa3a5a241a1
+          kind: channel
+        - channelId: 6d9cb486-4c95-4d19-a2ae-1cf3dc68c4e6
+          kind: channel
+        - channelId: 26c20999-beb8-4dc7-8545-ee3d97cd86e1
+          kind: channel
+        - channelId: 4b644bf4-fa40-42ef-aee6-f7c56cd5d84c
+          kind: channel
+        - channelId: 21399ab7-d7bb-451f-9f92-775638dd2bba
+          kind: channel
+        - channelId: 4b983368-1d35-46cc-bb76-152a91a0f311
+          includeInScanList: skip
+          kind: channel
+        - channelId: abfc26c9-44ca-4a72-89a9-716e2fb8b872
+          includeInScanList: skip
+          kind: channel
+        - channelId: 8928d8ed-9c96-477c-8358-859a968e05bf
+          includeInScanList: skip
+          kind: channel
+        - channelId: b9e5e9f0-2958-4321-b9d8-ba8eca4f64d1
+          includeInScanList: skip
+          kind: channel
+        - channelId: 41b8a368-a823-4006-9c8b-88011b48f551
+          includeInScanList: skip
+          kind: channel
+      name: Simplex scan channels
+      omitFromExport: true
+      order: 13
+      projectId: 9734dab8-f8b8-4c81-84eb-a0c2d3479f21
+      revision: 12
+      updatedAt: 2026-07-17T15:04:05.307Z
+    - comment: ''
+      id: a9834106-11a0-4f59-9458-cc56b4095c42
+      members:
+        - channelId: 4e745f41-9a2e-4f55-bec0-5a497c7c0738
+          kind: channel
+        - channelId: ab6751ae-d76c-46aa-9fb6-6ec1713a3535
+          kind: channel
+        - channelId: 32a743bd-5276-440d-8e70-190dc169a475
+          kind: channel
+        - channelId: 6b60edf0-d045-4008-859b-c0b7fa5c1eab
+          kind: channel
+        - channelId: 86a5be84-397d-4914-9ef9-917bfa5f1160
+          kind: channel
+        - channelId: e39e8c04-014d-4ec3-a567-5a0143055f78
+          kind: channel
+        - channelId: b0996ee3-b2f7-4c18-83aa-1f278636e9f3
+          kind: channel
+        - channelId: 4d1c1716-8473-4dad-86bf-89124a23a784
+          kind: channel
+        - channelId: 4b983368-1d35-46cc-bb76-152a91a0f311
+          kind: channel
+        - channelId: 7faf28c4-a13b-4186-9741-4155e4c2358c
+          kind: channel
+        - channelId: 91eab4e1-22ab-4a87-a003-ac8ac8b91cdd
+          kind: channel
+        - channelId: 383eba32-4f3e-4f2a-ba95-ae1383bacbab
+          kind: channel
+        - channelId: 5fbb58d9-a807-4d8e-b9ed-debc86c58c89
+          kind: channel
+        - channelId: 1f56ca78-895e-4510-a5ca-70f8d057ab2c
+          kind: channel
+        - channelId: 2fb66912-0bff-4e0a-9687-03fa7be58b1c
+          kind: channel
+        - channelId: 55b5403a-be69-4648-8da8-64ad3710b3d1
+          kind: channel
+        - channelId: 583dba48-4632-424e-ab84-5ec80a56c199
+          kind: channel
+      name: UK UHF simplex
+      order: 14
+      projectId: 9734dab8-f8b8-4c81-84eb-a0c2d3479f21
+      revision: 5
+      updatedAt: 2026-07-17T13:27:47.773Z
+    - comment: ''
+      id: cd2a1e8a-d503-485c-bc07-1b37932201c3
+      members:
+        - channelId: 65432461-b2fa-48a1-9fa6-eadd6ae763f9
+          kind: channel
+        - channelId: 5292da72-926f-451f-af2d-a81eee6abd35
+          kind: channel
+        - channelId: 1a31d271-eae4-43a5-9045-a718f95c926c
+          kind: channel
+        - channelId: efb34289-df3a-45a4-8c8f-1cfae6f667c9
+          kind: channel
+        - channelId: 715d5008-1d25-4c98-bfe3-3320be02fd94
+          kind: channel
+        - channelId: e9fbfc42-7675-45fa-be19-8fda1bacbd70
+          kind: channel
+        - channelId: f85beb5c-0e18-405d-876e-66bafa114c76
+          kind: channel
+        - channelId: e2d7c249-24b4-4a3e-bf3c-c033fb2531c4
+          kind: channel
+        - channelId: acbc4a97-13a2-4a50-a137-71fab903c490
+          kind: channel
+        - channelId: adeb0130-c699-45e4-b579-635bd31f0c71
+          kind: channel
+        - channelId: 0aafa779-acc4-4b14-ac55-cfa3a5a241a1
+          kind: channel
+        - channelId: 6d9cb486-4c95-4d19-a2ae-1cf3dc68c4e6
+          kind: channel
+        - channelId: 26c20999-beb8-4dc7-8545-ee3d97cd86e1
+          kind: channel
+        - channelId: 4b644bf4-fa40-42ef-aee6-f7c56cd5d84c
+          kind: channel
+        - channelId: 21399ab7-d7bb-451f-9f92-775638dd2bba
+          kind: channel
+        - channelId: abedcfec-bab5-452d-aca2-950aba2be269
+          kind: channel
+      name: UK VHF simplex
+      order: 15
+      projectId: 9734dab8-f8b8-4c81-84eb-a0c2d3479f21
+      revision: 5
+      updatedAt: 2026-07-17T13:27:47.816Z
+project:
+  author: ''
+  channelDefaults:
+    analogSquelchMode: carrier
+    forbidTransmit: false
+    sendTalkerAlias: on
+    txPermit: permitAlways
+  createdAt: 2026-07-01T08:22:16.945Z
+  description: ''
+  id: 9734dab8-f8b8-4c81-84eb-a0c2d3479f21
+  interchange:
+    googleDrive:
+      exportedAt: 2026-07-18T05:53:04.990Z
+      fileId: 1kukWbCSSeHsFgfx23Wy5mL-899cgLnD_
+      fileName: MM9PDY-July-2026.yaml
+      folderId: 1UML5pomw8XbgYnTAXiQ0sXL6Xg9d6TA3
+      folderName: MM9PDY Codeplug tool
+      remoteProjectId: 9734dab8-f8b8-4c81-84eb-a0c2d3479f21
+    localFile:
+      exportedAt: 2026-07-18T22:11:48.773Z
+      fileName: MM9PDY-July-2026.yaml
+  name: MM9PDY July 2026
+  notes: ''
+  projectId: 9734dab8-f8b8-4c81-84eb-a0c2d3479f21
+  revision: 51
+  updatedAt: 2026-07-18T05:53:06.512Z
+  zoneDefaults:
+    includeInZoneDerivedScanList: true
+schemaVersion: 1
+studioSchemaVersion: 20
