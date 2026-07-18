@@ -51,7 +51,7 @@ flowchart TB
 | All Vitest  | `npm test`                                           | Colocated `src/**/*.test.ts(x)`                                                                                                  |
 | Watch       | `npm run test:watch`                                 | Same, interactive                                                                                                                |
 | Wire verify | `npm run test:cps-verify`                            | External CPS wire-shape suite under `cps-verify/` ([wire-verification.md](wire-verification.md))                                 |
-| CLI verify  | `npm run verify:codeplug -- --format anytone <path>` | Same verifier as CLI against a dir/ZIP                                                                                           |
+| CLI verify  | `npm run verify:codeplug -- --format anytone [--profile …] <path>` | Same verifier as CLI against a dir/ZIP (also `dm32`, `opengd77`, `chirp`) |
 | Coverage    | —                                                    | **Planned** — not in `package.json` yet                                                                                          |
 | System      | —                                                    | **Planned** — no `src/test/system/` yet                                                                                          |
 | E2e         | `npm run test:e2e`                                   | Playwright — cookie consent smoke shipped ([#176](https://github.com/pskillen/codeplug-studio/issues/176)); see [e2e.md](e2e.md) |

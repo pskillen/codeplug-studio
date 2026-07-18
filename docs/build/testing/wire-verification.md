@@ -50,9 +50,9 @@ cps-verify/
 | Format | Profile (default) | Status | Notes |
 | --- | --- | --- | --- |
 | `anytone` | `anytone-at-d890uv` | Shipped | Universal quoting + CRLF |
-| `dm32` | `dm32-baofeng-dm32uv` | In progress on #483 | Selective quoting + CRLF |
-| `opengd77` | `opengd77-1701` | In progress on #483 | Selective quoting + LF |
-| `chirp` | `chirp-uv5r` | In progress on #483 | Single CSV; LF |
+| `dm32` | `dm32-baofeng-dm32uv` | Shipped | Selective quoting + CRLF |
+| `opengd77` | `opengd77-1701` | Shipped | Selective quoting + LF |
+| `chirp` | `chirp-uv5r` | Shipped | Single CSV; selective quoting + LF |
 
 ## Adding a format / profile plugin
 

@@ -7,8 +7,7 @@
 
 ## Overall status
 
-**Status:** In progress
-
+**Status:** Complete (pending merge)
 **Branch:** `480/patricks/cps-wire-verify`
 
 ---
@@ -31,18 +30,32 @@
 
 ---
 
-## Profile-scoped layout
+## Profile-scoped layout + sync contract
 
-**Status:** In progress
+**Status:** Complete
 
 **Delivered**
 
 - Fixture paths `fixtures/<formatId>/<profileId>/…`
 - `--profile` CLI option with format defaults
+- Docs↔suite sync contract in [wire-verification.md](wire-verification.md)
 
 ---
 
-## Next
+## DM32 / OpenGD77-1701 / CHIRP-uv5r
 
-- Docs↔suite sync contract
-- DM32 / OpenGD77-1701 / CHIRP-uv5r plugins
+**Status:** Complete (pending merge)
+
+**Delivered**
+
+- Tier-3 Wire verification sections + plugins + fixtures + Vitest for:
+  - `dm32` / `dm32-baofeng-dm32uv` (CRLF)
+  - `opengd77` / `opengd77-1701` (LF, synthesized good bundle)
+  - `chirp` / `chirp-uv5r` (LF; good sample truncated names from CHIRP golden to Studio `nameLimit`)
+
+**Verify**
+
+- `npm run test:cps-verify`
+- `npm run verify:codeplug -- --format dm32 cps-verify/fixtures/dm32/dm32-baofeng-dm32uv/good`
+- `npm run verify:codeplug -- --format opengd77 cps-verify/fixtures/opengd77/opengd77-1701/good`
+- `npm run verify:codeplug -- --format chirp cps-verify/fixtures/chirp/chirp-uv5r/good`
