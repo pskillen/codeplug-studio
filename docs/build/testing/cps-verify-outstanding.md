@@ -2,7 +2,7 @@
 
 Items **skipped**, **incomplete**, or **discovered during execution** — not the plan's future phases.
 
-**Tracking:** [codeplug-studio#480](https://github.com/pskillen/codeplug-studio/issues/480)
+**Tracking:** [codeplug-studio#480](https://github.com/pskillen/codeplug-studio/issues/480) · [codeplug-studio#481](https://github.com/pskillen/codeplug-studio/issues/481)
 
 ---
 
@@ -11,4 +11,9 @@ Items **skipped**, **incomplete**, or **discovered during execution** — not th
 - [ ] Automated CI check that every enforced rule cites a tier-3 path (stretch)
 - [ ] OpenGD77 MD9600 / CHIRP UV-21 / RT95 profile plugins (layout ready)
 - [ ] [#484](https://github.com/pskillen/codeplug-studio/issues/484) AM-in-ScanList verifier rule (with export fix)
-- [ ] [#481](https://github.com/pskillen/codeplug-studio/issues/481) / [#482](https://github.com/pskillen/codeplug-studio/issues/482)
+
+## Next wire-verify track
+
+- [x] [#481](https://github.com/pskillen/codeplug-studio/issues/481) export YAML → verify smoke (this branch)
+- [ ] [#482](https://github.com/pskillen/codeplug-studio/issues/482) content projection suite
+- [ ] Optional: cull or shrink baked `cps-verify/fixtures/**/good` once export-smoke is trusted

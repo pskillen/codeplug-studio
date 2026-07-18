@@ -1,14 +1,14 @@
 # CPS wire verify — progress
 
-**Tracking:** [codeplug-studio#480](https://github.com/pskillen/codeplug-studio/issues/480) · [PR #483](https://github.com/pskillen/codeplug-studio/pull/483)
-**Branch:** `480/patricks/cps-wire-verify`
+**Tracking:** [codeplug-studio#480](https://github.com/pskillen/codeplug-studio/issues/480) · [codeplug-studio#481](https://github.com/pskillen/codeplug-studio/issues/481)
+**Branch:** `481/patricks/export-smoke-verify` (export smoke); #480 merged via prior PR
 
 ---
 
 ## Overall status
 
-**Status:** Complete (pending merge)
-**Branch:** `480/patricks/cps-wire-verify`
+**Status:** #480 complete · #481 in progress
+**Branch:** `481/patricks/export-smoke-verify`
 
 ---
 
@@ -59,3 +59,20 @@
 - `npm run verify:codeplug -- --format dm32 cps-verify/fixtures/dm32/dm32-baofeng-dm32uv/good`
 - `npm run verify:codeplug -- --format opengd77 cps-verify/fixtures/opengd77/opengd77-1701/good`
 - `npm run verify:codeplug -- --format chirp cps-verify/fixtures/chirp/chirp-uv5r/good`
+
+---
+
+## Export smoke (#481)
+
+**Status:** Complete (this branch)
+
+**Delivered**
+
+- Native YAML fixture: `test-data/export-smoke/rich-project.yaml` (library + four profile builds)
+- Vitest harness: `cps-verify/tests/export-smoke.test.ts` — `parseProjectDocument` → `exportBuildZip` / `exportBuildSingleFile` → `verifyCodeplug`
+- Runs inside existing `npm run test:cps-verify` / Dorny JUnit CI step
+- `finalizeWireName` fix so CHIRP double-digit uniquify stays within `nameLimit`
+
+**Verify**
+
+- `npm run test:cps-verify` (includes `export-smoke.test.ts`)
