@@ -72,10 +72,7 @@ export interface FormatVerifier {
 }
 
 /** Build a {@link CheckOutcome}, tagging each diagnostic with `check.id`. */
-export function checkOutcome(
-  check: VerifyCheck,
-  diagnostics: VerifyDiagnostic[],
-): CheckOutcome {
+export function checkOutcome(check: VerifyCheck, diagnostics: VerifyDiagnostic[]): CheckOutcome {
   const tagged = diagnostics.map((d) => ({ ...d, check: check.id }));
   return {
     check,

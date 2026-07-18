@@ -30,12 +30,7 @@ import {
   OPENGD77_PROFILES,
   getOpenGd77Profile,
 } from '../../../../src/core/import-export/formats/opengd77/profiles.ts';
-import type {
-  BundleFile,
-  CheckOutcome,
-  FormatVerifier,
-  VerifyDiagnostic,
-} from '../../types.ts';
+import type { BundleFile, CheckOutcome, FormatVerifier, VerifyDiagnostic } from '../../types.ts';
 import { checkOutcome, flattenOutcomes } from '../../types.ts';
 import { checkForeignKey, checkNameLength } from '../../rules/foreignKeys.ts';
 import { checkExactHeaders } from '../../rules/headers.ts';
@@ -335,10 +330,7 @@ function pushRequiredFileOutcomes(files: BundleFile[], outcomes: CheckOutcome[])
   );
 }
 
-export function verifyOpenGd77Detailed(
-  files: BundleFile[],
-  profileId: string,
-): CheckOutcome[] {
+export function verifyOpenGd77Detailed(files: BundleFile[], profileId: string): CheckOutcome[] {
   const profile = getOpenGd77Profile(profileId);
   const outcomes: CheckOutcome[] = [];
   for (const file of files) {

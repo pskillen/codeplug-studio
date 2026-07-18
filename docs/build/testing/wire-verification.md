@@ -56,12 +56,12 @@ Good fixtures and export-smoke register **one Vitest case per named check** ([#4
 
 Plugins implement `verifyDetailed(files, profileId) → CheckOutcome[]`. Each outcome is a check that **actually ran** (file present / applicable):
 
-| Field | Role |
-| --- | --- |
-| `check.id` | Stable id for Vitest/JUnit titles (e.g. `physical.Channel.CSV.line-endings`) |
-| `check.rule` | Rule taxonomy (`line-endings`, `foreign-key`, …) — used by bad fixtures |
-| `check.label` | Short human label |
-| `diagnostics` | Failures for that check (empty = pass) |
+| Field         | Role                                                                         |
+| ------------- | ---------------------------------------------------------------------------- |
+| `check.id`    | Stable id for Vitest/JUnit titles (e.g. `physical.Channel.CSV.line-endings`) |
+| `check.rule`  | Rule taxonomy (`line-endings`, `foreign-key`, …) — used by bad fixtures      |
+| `check.label` | Short human label                                                            |
+| `diagnostics` | Failures for that check (empty = pass)                                       |
 
 `verify()` / CLI flatten outcomes for exit-code compatibility. CLI prints `PASS`/`FAIL` per check via `formatVerifyDetailedResult`.
 

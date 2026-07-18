@@ -40,12 +40,7 @@ import {
   ANYTONE_PROFILES,
 } from '../../../../src/core/import-export/formats/anytone/profiles.ts';
 
-import type {
-  BundleFile,
-  CheckOutcome,
-  FormatVerifier,
-  VerifyDiagnostic,
-} from '../../types.ts';
+import type { BundleFile, CheckOutcome, FormatVerifier, VerifyDiagnostic } from '../../types.ts';
 import { checkOutcome, flattenOutcomes } from '../../types.ts';
 import { checkCardinality, checkForeignKey, checkNameLength } from '../../rules/foreignKeys.ts';
 import { checkExactHeaders } from '../../rules/headers.ts';
@@ -562,10 +557,7 @@ export function parseLstEntries(text: string): string[] {
   return entries;
 }
 
-export function verifyAnytoneDetailed(
-  files: BundleFile[],
-  profileId: string,
-): CheckOutcome[] {
+export function verifyAnytoneDetailed(files: BundleFile[], profileId: string): CheckOutcome[] {
   const profile = getAnytoneProfile(profileId);
   const outcomes: CheckOutcome[] = [];
   for (const file of files) {

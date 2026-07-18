@@ -34,10 +34,7 @@ function unknownFormatResult(format: string): VerifyDetailedResult {
   };
 }
 
-function unknownProfileResult(
-  format: string,
-  profileId: string,
-): VerifyDetailedResult {
+function unknownProfileResult(format: string, profileId: string): VerifyDetailedResult {
   const known = listProfilesForFormat(format).join(', ');
   const diagnostics = [
     {
@@ -62,9 +59,7 @@ function unknownProfileResult(
 }
 
 /** Verify a CPS directory or ZIP; returns one outcome per named check that ran. */
-export async function verifyCodeplugDetailed(
-  opts: VerifyOptions,
-): Promise<VerifyDetailedResult> {
+export async function verifyCodeplugDetailed(opts: VerifyOptions): Promise<VerifyDetailedResult> {
   const verifier = getVerifier(opts.format);
   if (!verifier) {
     return unknownFormatResult(opts.format);

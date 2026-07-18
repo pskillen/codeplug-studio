@@ -31,12 +31,7 @@ import {
   DM32_PROFILES,
   getDm32Profile,
 } from '../../../../src/core/import-export/formats/dm32/profiles.ts';
-import type {
-  BundleFile,
-  CheckOutcome,
-  FormatVerifier,
-  VerifyDiagnostic,
-} from '../../types.ts';
+import type { BundleFile, CheckOutcome, FormatVerifier, VerifyDiagnostic } from '../../types.ts';
 import { checkOutcome, flattenOutcomes } from '../../types.ts';
 import { checkCardinality, checkForeignKey, checkNameLength } from '../../rules/foreignKeys.ts';
 import { checkExactHeaders } from '../../rules/headers.ts';
@@ -389,10 +384,7 @@ function pushRequiredFileOutcomes(files: BundleFile[], outcomes: CheckOutcome[])
   );
 }
 
-export function verifyDm32Detailed(
-  files: BundleFile[],
-  profileId: string,
-): CheckOutcome[] {
+export function verifyDm32Detailed(files: BundleFile[], profileId: string): CheckOutcome[] {
   const profile = getDm32Profile(profileId);
   const outcomes: CheckOutcome[] = [];
   for (const file of files) {

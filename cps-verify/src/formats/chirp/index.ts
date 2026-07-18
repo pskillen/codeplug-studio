@@ -14,12 +14,7 @@ import {
   DEFAULT_CHIRP_PROFILE_ID,
   getChirpProfile,
 } from '../../../../src/core/import-export/formats/chirp/profiles.ts';
-import type {
-  BundleFile,
-  CheckOutcome,
-  FormatVerifier,
-  VerifyDiagnostic,
-} from '../../types.ts';
+import type { BundleFile, CheckOutcome, FormatVerifier, VerifyDiagnostic } from '../../types.ts';
 import { checkOutcome, flattenOutcomes } from '../../types.ts';
 import { checkNameLength } from '../../rules/foreignKeys.ts';
 import { checkExactHeaders } from '../../rules/headers.ts';
@@ -109,10 +104,7 @@ function pushCsvContentOutcomes(
   );
 }
 
-export function verifyChirpDetailed(
-  files: BundleFile[],
-  profileId: string,
-): CheckOutcome[] {
+export function verifyChirpDetailed(files: BundleFile[], profileId: string): CheckOutcome[] {
   const profile = getChirpProfile(profileId);
   const csvFiles = files.filter((f) => isCsv(f.name));
   const outcomes: CheckOutcome[] = [];
