@@ -7,6 +7,7 @@ import {
 import {
   buildProjectSyncDiff,
   formatSyncDiffSummary,
+  formatSyncTimestamp,
   hasPortableInterchange,
   isRemotePortableNewer,
   portableInterchangeLabel,
@@ -73,5 +74,22 @@ describe('projectSyncSummary', () => {
     expect(isRemotePortableNewer('2026-07-09T14:04:47.500Z', localSyncedAt)).toBe(false);
     expect(isRemotePortableNewer('2026-07-09T14:04:49.500Z', localSyncedAt)).toBe(true);
     expect(isRemotePortableNewer(null, localSyncedAt)).toBe(false);
+  });
+
+  it('formatSyncTimestamp uses 24-hour clock and locale-aware date order', () => {
+    const formatted = formatSyncTimestamp('2026-07-09T15:04:00.000Z', 'en-GB');
+    expect(formatted).toMatch(/09\/07\/2026/);
+    expect(formatted).toMatch(/\b1[456]:04\b/); // UTC→BST may shift hour; still 24h
+    expect(formatted).not.toMatch(/AM|PM/i);
+  });
+
+  it('buildProjectSyncDiff labels Drive/file save instead of portable sync jargon', () => {
+    const aggregate = minimalProjectAggregate();
+    const summary = summariseProjectAggregate(aggregate);
+    const diff = buildProjectSyncDiff(summary, summary);
+    expect(diff.timestamps.map((row) => row.label)).toEqual([
+      'Last edited',
+      'Last Drive or file save',
+    ]);
   });
 });

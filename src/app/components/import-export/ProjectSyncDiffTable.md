@@ -4,7 +4,7 @@ Tabular local-vs-remote summary for portable YAML overwrite and Drive save-confl
 
 ## Purpose
 
-Shows every portable child-item count plus last-edited / last-synced timestamps so operators can judge which copy is newer before overwrite or force-save.
+Shows every portable child-item count plus **Last edited** / **Last Drive or file save** timestamps so operators can judge which copy is newer before overwrite or force-save.
 
 ## Props
 
@@ -14,7 +14,9 @@ Shows every portable child-item count plus last-edited / last-synced timestamps 
 
 ## Behaviour
 
-- Columns: **Metric**, **Local**, **Remote**, **Δ**
+- Short caption explains the two timestamp rows in plain language
+- Columns: **Compare**, **Local**, **Remote**, **Δ**
+- Timestamps use the browser locale with a 24-hour clock (en-GB / dd/mm/yyyy fallback)
 - Timestamp rows highlight the newer side; Δ shows `local newer` / `remote newer` / `same`
 - Count rows include channels, zones, talk groups, digital/analog contacts, RX group lists, scan lists, APRS configurations, and format builds
 - Non-zero count deltas are emphasised (teal for remote higher, orange for remote lower)

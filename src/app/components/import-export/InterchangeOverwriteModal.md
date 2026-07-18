@@ -23,7 +23,7 @@ Confirm dialog before replacing a local project with remote native YAML (Drive r
 
 - **Matching ids:** single red **Overwrite local copy** button.
 - **Mismatched ids:** shows both project ids, **Replace local content** (adopt remote into local id) and **Import as new project**.
-- Diff table shows last edited / last portable sync plus all portable entity counts (channels, zones, talk groups, contacts, RX lists, scan lists, APRS, builds).
+- Diff table shows **Last edited** / **Last Drive or file save** plus all portable entity counts (channels, zones, talk groups, contacts, RX lists, scan lists, APRS, builds).
 - Import errors render in a red alert above the actions; the modal stays open.
 
 ## Related

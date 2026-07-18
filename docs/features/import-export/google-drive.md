@@ -116,7 +116,7 @@ Implementation: `src/integrations/cloud/googleDrive.ts`.
 ### Import workflow
 
 - **Home** and **Import / export** panels: **Open from Drive** → select YAML
-- If YAML `project.id` matches an existing IndexedDB project → **overwrite** modal with a left/right **diff table** (last edited / last portable sync, all entity counts including APRS)
+- If YAML `project.id` matches an existing IndexedDB project → **overwrite** modal with a left/right **diff table** (**Last edited** / **Last Drive or file save**, all entity counts including APRS)
 - If YAML `project.id` is **not** in IndexedDB → `seedPreservingId` — seeds with the YAML's portable id ([#361](https://github.com/pskillen/codeplug-studio/issues/361)); same for local file drop on Home
 - **Import as new project** (refresh / mismatch modals only) → `createNew` — fresh UUID by explicit operator choice
 - Replace-active panel requires matching active project id, or offers `adoptRemote` / import-as-new on mismatch ([#334](https://github.com/pskillen/codeplug-studio/issues/334))

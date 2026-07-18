@@ -21,7 +21,9 @@ describe('ProjectSyncDiffTable', () => {
       </MantineProvider>,
     );
 
-    expect(screen.getByText('Last edited')).toBeInTheDocument();
+    expect(screen.getAllByText('Last edited').length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText('Last Drive or file save').length).toBeGreaterThanOrEqual(1);
+    expect(screen.getByText(/when channels, zones, or other items changed/i)).toBeInTheDocument();
     expect(screen.getByText('Channels')).toBeInTheDocument();
     expect(screen.getByText('APRS configurations')).toBeInTheDocument();
     expect(screen.getByText('+2')).toBeInTheDocument();

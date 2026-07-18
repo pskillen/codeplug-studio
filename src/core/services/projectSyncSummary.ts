@@ -173,11 +173,25 @@ export function compareSyncTimestamps(
   return localMs > remoteMs ? 'local' : 'remote';
 }
 
-export function formatSyncTimestamp(iso: string | null): string {
+/** Day/month/year + 24-hour clock. Uses the browser locale when possible; falls back to en-GB (dd/mm/yyyy). */
+const SYNC_TIMESTAMP_FORMAT: Intl.DateTimeFormatOptions = {
+  day: '2-digit',
+  month: '2-digit',
+  year: 'numeric',
+  hour: '2-digit',
+  minute: '2-digit',
+  hourCycle: 'h23',
+};
+
+export function formatSyncTimestamp(iso: string | null, locale?: string): string {
   if (!iso) return '—';
   const date = new Date(iso);
   if (Number.isNaN(date.getTime())) return iso;
-  return date.toLocaleString();
+  try {
+    return new Intl.DateTimeFormat(locale ?? undefined, SYNC_TIMESTAMP_FORMAT).format(date);
+  } catch {
+    return new Intl.DateTimeFormat('en-GB', SYNC_TIMESTAMP_FORMAT).format(date);
+  }
 }
 
 export function formatSyncDelta(delta: number): string {
@@ -199,7 +213,7 @@ export function buildProjectSyncDiff(
     },
     {
       key: 'lastSynced',
-      label: 'Last portable sync',
+      label: 'Last Drive or file save',
       local: local.portableSyncedAt,
       remote: remote.portableSyncedAt,
       newerSide: compareSyncTimestamps(local.portableSyncedAt, remote.portableSyncedAt),
