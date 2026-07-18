@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { newChannel, newZone } from '@core/domain/factories.ts';
-import { sortChannelIdsByMode, sortZoneMembersByMode, sortZonesByName } from './membershipSort.ts';
+import { newChannel, newDigitalContact, newTalkGroup, newZone } from '@core/domain/factories.ts';
+import {
+  sortChannelIdsByMode,
+  sortRxGroupListMembersByMode,
+  sortZoneMembersByMode,
+  sortZonesByName,
+} from './membershipSort.ts';
 
 describe('membershipSort', () => {
   const projectId = '11111111-1111-4111-8111-111111111111';
@@ -60,5 +65,52 @@ describe('membershipSort', () => {
     const next = sortZonesByName(zones);
     expect(next.find((z) => z.id === 'a')?.order).toBe(1);
     expect(next.find((z) => z.id === 'z')?.order).toBe(2);
+  });
+
+  it('sorts RGL members by name and preserves timeSlotOverride', () => {
+    const tgA = { ...newTalkGroup(projectId, 'Zulu', 1), id: 'tg-a' };
+    const tgB = { ...newTalkGroup(projectId, 'Alpha', 2), id: 'tg-b' };
+    const members = [
+      { ref: { kind: 'talkGroup' as const, id: tgA.id }, timeSlotOverride: 2 as const },
+      { ref: { kind: 'talkGroup' as const, id: tgB.id } },
+    ];
+    const next = sortRxGroupListMembersByMode(
+      members,
+      new Map([
+        [tgA.id, tgA],
+        [tgB.id, tgB],
+      ]),
+      new Map(),
+      'name',
+    );
+    expect(next.map((m) => m.ref.id)).toEqual([tgB.id, tgA.id]);
+    expect(next[1]?.timeSlotOverride).toBe(2);
+  });
+
+  it('sorts RGL members by digital contact callsign when mode is callsign', () => {
+    const dcZ = {
+      ...newDigitalContact(projectId, 'Contact Z', 100),
+      id: 'dc-z',
+      callsign: 'ZZ9ZZ',
+    };
+    const dcA = {
+      ...newDigitalContact(projectId, 'Contact A', 101),
+      id: 'dc-a',
+      callsign: 'AA1AA',
+    };
+    const members = [
+      { ref: { kind: 'digitalContact' as const, id: dcZ.id } },
+      { ref: { kind: 'digitalContact' as const, id: dcA.id } },
+    ];
+    const next = sortRxGroupListMembersByMode(
+      members,
+      new Map(),
+      new Map([
+        [dcZ.id, dcZ],
+        [dcA.id, dcA],
+      ]),
+      'callsign',
+    );
+    expect(next.map((m) => m.ref.id)).toEqual([dcA.id, dcZ.id]);
   });
 });
