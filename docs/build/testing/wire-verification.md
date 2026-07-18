@@ -1,52 +1,66 @@
 # CPS wire verification
 
-External **wire-shape** checks for CPS CSV bundles (directory or ZIP). Complements directional mapping/golden tests: this suite proves mechanical CPS rules (quoting, CRLF, headers, name FKs, cardinality, required files), not semantic projection equality.
+External **wire-shape** checks for CPS CSV bundles (directory or ZIP). Complements directional mapping/golden tests: this suite proves mechanical CPS rules (line endings, quoting, headers, name FKs, cardinality, required files), not semantic projection equality.
 
-**Tracking:** [#480](https://github.com/pskillen/codeplug-studio/issues/480) (parent [Epic #161](https://github.com/pskillen/codeplug-studio/issues/161)). CI export-smoke that runs export → verify is [#481](https://github.com/pskillen/codeplug-studio/issues/481).
+**Tracking:** [#480](https://github.com/pskillen/codeplug-studio/issues/480) (parent [Epic #161](https://github.com/pskillen/codeplug-studio/issues/161)). Progress: [cps-verify-progress.md](cps-verify-progress.md). CI export-smoke is [#481](https://github.com/pskillen/codeplug-studio/issues/481).
 
-## Why
+## Terminology
 
-Golden and adapter tests can miss defects that CPS rejects on radio write (e.g. wrong line endings, dangling zone members, over-limit lists). The verifier reads CPS files the same way an operator would hand them to CPS.
+| Term | Field | Examples |
+| --- | --- | --- |
+| **Format** | `formatId` | `anytone`, `dm32`, `opengd77`, `chirp` |
+| **Variant / profile** | `profileId` | `anytone-at-d890uv`, `dm32-baofeng-dm32uv`, `opengd77-1701`, `chirp-uv5r` |
+
+Fixtures and plugins are **profile-scoped** so sibling radios (e.g. future AT-D878) do not collide.
+
+## Docs ↔ suite sync contract
+
+1. **Tier-3 is canon** — every rule `cps-verify` enforces must appear under `docs/reference/<format>/` (and `radios/` for caps).
+2. Each format plugin module header **lists every tier-3 path** it enforces.
+3. Changing wire rules, caps, quoting, or line endings → update **docs and** `cps-verify` rules/fixtures/tests in the **same PR**.
+4. Fixture endings match documented Studio export: Anytone/DM32 **CRLF**; OpenGD77/CHIRP **LF**.
 
 ## Layout
 
 ```text
 cps-verify/
-  src/           # shared load/report/rules + format plugins
-  fixtures/      # CRLF good samples + crafted bad snippets
-  tests/         # Vitest suite (separate from npm test)
+  src/
+    formats/<formatId>/     # plugin + default profile
+    rules/                  # shared engines
+  fixtures/<formatId>/<profileId>/{good,bad/...}
+  tests/
   vitest.config.ts
 ```
 
-Tier-3 docs remain the canon. The Anytone plugin header lists every `docs/reference/anytone/` source it enforces.
-
 ## npm scripts
 
-| Script | Command                                                          | Role                                      |
-| ------ | ---------------------------------------------------------------- | ----------------------------------------- |
-| CLI    | `npm run verify:codeplug -- --format anytone path/to/dir-or-zip` | Operator / local check; exit 0 on success |
-| Vitest | `npm run test:cps-verify`                                        | Fixture-driven suite; JUnit in CI         |
+| Script | Command | Role |
+| --- | --- | --- |
+| CLI | `npm run verify:codeplug -- --format anytone [--profile anytone-at-d890uv] path` | Operator / local check |
+| Vitest | `npm run test:cps-verify` | Fixture-driven suite; JUnit in CI |
 
-`npm test` does **not** include `cps-verify/` (excluded in root Vite config).
+`npm test` does **not** include `cps-verify/`.
 
 ## CI
 
-[`.github/workflows/ci.yml`](../../../.github/workflows/ci.yml) runs `npm run test:cps-verify` and publishes results with [dorny/test-reporter](https://github.com/dorny/test-reporter) as **CPS wire verify** (`test-results/cps-verify-junit.xml`).
+[`.github/workflows/ci.yml`](../../../.github/workflows/ci.yml) runs `npm run test:cps-verify` and publishes **CPS wire verify** via Dorny (`test-results/cps-verify-junit.xml`).
 
-## Formats
+## Formats / profiles
 
-| Format id               | Status  | Notes                                                                                        |
-| ----------------------- | ------- | -------------------------------------------------------------------------------------------- |
-| `anytone`               | Shipped | AT-D890UV structural rules from [docs/reference/anytone/](../../reference/anytone/README.md) |
-| OpenGD77 / DM32 / CHIRP | Not yet | Register a plugin under `cps-verify/src/formats/`                                            |
+| Format | Profile (default) | Status | Notes |
+| --- | --- | --- | --- |
+| `anytone` | `anytone-at-d890uv` | Shipped | Universal quoting + CRLF |
+| `dm32` | `dm32-baofeng-dm32uv` | In progress on #483 | Selective quoting + CRLF |
+| `opengd77` | `opengd77-1701` | In progress on #483 | Selective quoting + LF |
+| `chirp` | `chirp-uv5r` | In progress on #483 | Single CSV; LF |
 
-## Adding a format plugin
+## Adding a format / profile plugin
 
-1. Gap-fill tier-3 docs under `docs/reference/<format>/` for every rule you will enforce.
-2. Add `cps-verify/src/formats/<format>/` with a module comment listing those doc paths.
+1. Gap-fill tier-3 **Wire verification** under `docs/reference/<format>/`.
+2. Add `cps-verify/src/formats/<formatId>/` with SOURCES header.
 3. Register in `cps-verify/src/formats/registry.ts`.
-4. Add `cps-verify/fixtures/<format>/good` (CRLF) and crafted `bad/` cases.
-5. Add Vitest coverage under `cps-verify/tests/`.
+4. Add `fixtures/<formatId>/<profileId>/good` + crafted `bad/`.
+5. Add Vitest under `cps-verify/tests/`.
 
 ## Related
 
