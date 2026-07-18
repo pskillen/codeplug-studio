@@ -17,7 +17,7 @@ export default function ZoneDefaultsPage() {
   return (
     <FormPage
       title="Zone defaults"
-      description="Library-wide behavioural defaults for zones. Per-member and per-build overrides take precedence when set."
+      description="Choose whether zone members are included in or excluded from zone-derived scan lists by default. Per-member and per-build overrides still win when set."
     >
       <ZoneBehaviourDefaultsEditor
         projectId={projectId}
