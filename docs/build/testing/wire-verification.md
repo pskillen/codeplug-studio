@@ -62,11 +62,11 @@ test-data/export-smoke/rich-project.yaml
   → verifyCodeplug
 ```
 
-| Piece | Path |
-| --- | --- |
+| Piece               | Path                                                                                            |
+| ------------------- | ----------------------------------------------------------------------------------------------- |
 | Native YAML fixture | [`test-data/export-smoke/rich-project.yaml`](../../../test-data/export-smoke/rich-project.yaml) |
-| Harness | [`cps-verify/tests/export-smoke.test.ts`](../../../cps-verify/tests/export-smoke.test.ts) |
-| Profiles | `anytone-at-d890uv`, `dm32-baofeng-dm32uv`, `opengd77-1701`, `chirp-uv5r` |
+| Harness             | [`cps-verify/tests/export-smoke.test.ts`](../../../cps-verify/tests/export-smoke.test.ts)       |
+| Profiles            | `anytone-at-d890uv`, `dm32-baofeng-dm32uv`, `opengd77-1701`, `chirp-uv5r`                       |
 
 Same core serialisation as UI **Download ZIP** (`exportBuildZip`); IndexedDB and browser download are not involved. Multi-file formats verify the **ZIP** so packaging is exercised.
 

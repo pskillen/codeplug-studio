@@ -4,20 +4,20 @@ Committed **native project YAML** used by the CPS wire export smoke ([#481](http
 
 ## Files
 
-| File | Role |
-| --- | --- |
+| File                | Role                                                                       |
+| ------------------- | -------------------------------------------------------------------------- |
 | `rich-project.yaml` | Representative library + format builds for each verifier-supported profile |
 
 ## Profiles under smoke
 
 The fixture’s `formatBuilds[]` must include:
 
-| `formatId` | `profileId` |
-| --- | --- |
-| `anytone` | `anytone-at-d890uv` |
-| `dm32` | `dm32-baofeng-dm32uv` |
-| `opengd77` | `opengd77-1701` |
-| `chirp` | `chirp-uv5r` |
+| `formatId` | `profileId`           |
+| ---------- | --------------------- |
+| `anytone`  | `anytone-at-d890uv`   |
+| `dm32`     | `dm32-baofeng-dm32uv` |
+| `opengd77` | `opengd77-1701`       |
+| `chirp`    | `chirp-uv5r`          |
 
 ## Privacy
 
