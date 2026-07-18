@@ -107,7 +107,13 @@ export default function ScanListMemberEditor({
           onRemoveSelected={() => removeIds(selected)}
           canMoveUp={canMoveUp}
           canMoveDown={canMoveDown}
-          renderItem={({ itemKey, selected: rowSelected, onToggleSelect, onRemove, dragHandle }) => {
+          renderItem={({
+            itemKey,
+            selected: rowSelected,
+            onToggleSelect,
+            onRemove,
+            dragHandle,
+          }) => {
             const channel = channelsById.get(itemKey);
             return (
               <Group key={itemKey} gap="xs" wrap="nowrap" align="flex-start">
@@ -136,7 +142,9 @@ export default function ScanListMemberEditor({
             <MembershipSortMenu
               disabled={!memberChannelIds.length}
               label="Sort channels…"
-              onSort={(mode) => onChange(sortChannelIdsByMode(memberChannelIds, channelsById, mode))}
+              onSort={(mode) =>
+                onChange(sortChannelIdsByMode(memberChannelIds, channelsById, mode))
+              }
             />
           }
         />
