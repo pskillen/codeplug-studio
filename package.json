@@ -14,9 +14,11 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "test": "vitest run",
+    "test:cps-verify": "vitest run --config cps-verify/vitest.config.ts",
     "test:e2e": "playwright test",
     "test:system": "vitest run src/test/system",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "verify:codeplug": "node --experimental-strip-types cps-verify/src/cli.ts"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
