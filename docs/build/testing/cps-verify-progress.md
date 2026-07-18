@@ -1,21 +1,20 @@
 # CPS wire verify — progress
 
-**Tracking:** [codeplug-studio#480](https://github.com/pskillen/codeplug-studio/issues/480) · [codeplug-studio#481](https://github.com/pskillen/codeplug-studio/issues/481)
-**Branch:** `481/patricks/export-smoke-verify` (export smoke); #480 merged via prior PR
+**Tracking:** [codeplug-studio#480](https://github.com/pskillen/codeplug-studio/issues/480) · [codeplug-studio#481](https://github.com/pskillen/codeplug-studio/issues/481) · [codeplug-studio#491](https://github.com/pskillen/codeplug-studio/issues/491)
+**Branch:** `491/patricks/cps-verify-granular-report`
 
 ---
 
 ## Overall status
 
-**Status:** #480 complete · #481 PR open
-**Branch:** `481/patricks/export-smoke-verify`
-**PR:** [#489](https://github.com/pskillen/codeplug-studio/pull/489)
+**Status:** #480/#481 complete on main · #491 in progress
+**Branch:** `491/patricks/cps-verify-granular-report`
 
 ---
 
 ## Anytone AT-D890UV (v1)
 
-**Status:** Complete (pending merge)
+**Status:** Complete
 **PR:** [#483](https://github.com/pskillen/codeplug-studio/pull/483)
 
 **Delivered**
@@ -45,7 +44,7 @@
 
 ## DM32 / OpenGD77-1701 / CHIRP-uv5r
 
-**Status:** Complete (pending merge)
+**Status:** Complete
 
 **Delivered**
 
@@ -65,15 +64,32 @@
 
 ## Export smoke (#481)
 
-**Status:** Complete (this branch)
+**Status:** Complete (merged [#489](https://github.com/pskillen/codeplug-studio/pull/489))
 
 **Delivered**
 
 - Native YAML fixture: `test-data/export-smoke/rich-project.yaml` (library + four profile builds)
-- Vitest harness: `cps-verify/tests/export-smoke.test.ts` — `parseProjectDocument` → `exportBuildZip` / `exportBuildSingleFile` → `verifyCodeplug`
+- Vitest harness: `cps-verify/tests/export-smoke.test.ts` — `parseProjectDocument` → `exportBuildZip` / `exportBuildSingleFile` → verify
 - Runs inside existing `npm run test:cps-verify` / Dorny JUnit CI step
 - `finalizeWireName` fix so CHIRP double-digit uniquify stays within `nameLimit`
 
 **Verify**
 
 - `npm run test:cps-verify` (includes `export-smoke.test.ts`)
+
+---
+
+## Granular Dorny report (#491)
+
+**Status:** Complete (this branch)
+
+**Delivered**
+
+- `VerifyCheck` / `CheckOutcome` / `verifyDetailed` / `verifyCodeplugDetailed`
+- All four format plugins emit named check outcomes (only checks that ran)
+- Export-smoke + good fixtures: `itEachCheckOutcome` → one Vitest/JUnit row per check (~212 cases)
+- CLI prints PASS/FAIL per check
+
+**Verify**
+
+- `npm run test:cps-verify` — expect many named cases under each profile describe
