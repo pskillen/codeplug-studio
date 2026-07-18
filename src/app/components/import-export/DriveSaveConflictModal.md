@@ -6,6 +6,8 @@ Blocking confirmation before **Save to Drive** overwrites a linked YAML when the
 
 Mirrors pull-side [`InterchangeOverwriteModal`](./InterchangeOverwriteModal.tsx) for the push direction ([#335](https://github.com/pskillen/codeplug-studio/issues/335)).
 
+Shows the same [`ProjectSyncDiffTable`](./ProjectSyncDiffTable.tsx) as overwrite/refresh so operators can compare local vs remote counts and timestamps before **Save anyway**.
+
 ## Usage
 
 ```tsx

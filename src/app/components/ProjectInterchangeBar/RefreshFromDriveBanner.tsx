@@ -5,7 +5,7 @@ import InterchangeOverwriteModal from '../import-export/InterchangeOverwriteModa
 export default function RefreshFromDriveBanner() {
   const {
     bannerOpen,
-    diffLines,
+    diff,
     overwriteOpen,
     importing,
     error,
@@ -51,7 +51,7 @@ export default function RefreshFromDriveBanner() {
         opened={overwriteOpen}
         title={idMismatch ? 'Refresh from Google Drive?' : 'Refresh from Google Drive?'}
         projectName={projectName}
-        diffLines={diffLines}
+        diff={diff}
         loading={importing}
         error={error}
         idMismatch={idMismatch}

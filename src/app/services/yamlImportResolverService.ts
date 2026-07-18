@@ -1,9 +1,10 @@
 import { getImportAdapter } from '@core/import-export/registry.ts';
 import { isSingleFileProjectImportAdapter } from '@core/import-export/importAdapter.ts';
 import {
-  formatSyncDiffSummary,
+  buildProjectSyncDiff,
   summariseProjectAggregate,
   summariseProjectSeed,
+  type ProjectSyncDiff,
   type ProjectSyncSummary,
 } from '@core/services/projectSyncSummary.ts';
 import type { ProjectMeta } from '@core/models/project.ts';
@@ -38,13 +39,13 @@ export async function findExistingProjectMeta(projectId: string): Promise<Projec
 export async function buildImportOverwriteDiff(
   projectId: string,
   remoteSummary: ProjectSyncSummary,
-): Promise<string[]> {
+): Promise<ProjectSyncDiff> {
   const seed = await persistence.loadProjectSeed(projectId);
   if (!seed) {
-    return formatSyncDiffSummary(remoteSummary, remoteSummary);
+    return buildProjectSyncDiff(remoteSummary, remoteSummary);
   }
   const localSummary = summariseProjectSeed(seed);
-  return formatSyncDiffSummary(localSummary, remoteSummary);
+  return buildProjectSyncDiff(localSummary, remoteSummary);
 }
 
 export function projectExistsInList(projectId: string, projects: ProjectMeta[]): boolean {

@@ -109,7 +109,7 @@ describe('assessDriveSaveConflict', () => {
     });
 
     expect(result.conflict?.kinds).toEqual(['remoteNewer']);
-    expect(result.conflict?.diffLines.length).toBeGreaterThan(0);
+    expect(result.conflict?.diff.counts.length).toBeGreaterThan(0);
   });
 
   it('returns projectIdMismatch when remote yaml project id differs', async () => {

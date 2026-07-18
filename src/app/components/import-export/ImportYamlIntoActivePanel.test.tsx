@@ -3,6 +3,7 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { theme } from '../../theme.ts';
 import ImportYamlIntoActivePanel from './ImportYamlIntoActivePanel.tsx';
+import { testProjectSyncDiff } from './testProjectSyncDiff.ts';
 
 const confirmOverwrite = vi.fn();
 const confirmImportAsNew = vi.fn();
@@ -15,7 +16,7 @@ function mockResolver(overrides: Record<string, unknown> = {}) {
     error: null,
     overwriteOpen: true,
     overwriteTitle: 'Replace active project?',
-    diffLines: ['Local: 1 channel'],
+    diff: testProjectSyncDiff({}, { counts: { channels: 1 } }),
     projectName: 'Active project',
     idMismatch: false,
     localProjectId: 'proj-1',
@@ -103,7 +104,7 @@ describe('ImportYamlIntoActivePanel', () => {
 
   it('confirms overwrite through interchange modal', () => {
     renderPanel();
-    expect(screen.getByText('Local: 1 channel')).toBeInTheDocument();
+    expect(screen.getByText('Channels')).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Overwrite local copy' }));
     expect(confirmOverwrite).toHaveBeenCalledOnce();
   });

@@ -1,5 +1,6 @@
 import { Button, Modal, Stack, Text, Alert } from '@mantine/core';
 import type { DriveSaveConflict } from '@core/services/driveSaveConflict.ts';
+import ProjectSyncDiffTable from './ProjectSyncDiffTable.tsx';
 
 export interface DriveSaveConflictModalProps {
   opened: boolean;
@@ -45,7 +46,7 @@ export default function DriveSaveConflictModal({
   }
 
   return (
-    <Modal opened={opened} onClose={onClose} title={title} centered>
+    <Modal opened={opened} onClose={onClose} title={title} centered size="lg">
       <Stack gap="md">
         {remoteNewer ? (
           <Text size="sm">
@@ -74,15 +75,7 @@ export default function DriveSaveConflictModal({
             </Stack>
           </>
         ) : null}
-        {conflict?.diffLines.length ? (
-          <Stack gap={4}>
-            {conflict.diffLines.map((line) => (
-              <Text key={line} size="sm" c="dimmed">
-                {line}
-              </Text>
-            ))}
-          </Stack>
-        ) : null}
+        {conflict?.diff ? <ProjectSyncDiffTable diff={conflict.diff} /> : null}
         {error ? (
           <Alert color="red" title="Save failed">
             {error}

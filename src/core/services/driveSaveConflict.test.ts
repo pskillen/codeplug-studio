@@ -1,5 +1,29 @@
 import { describe, expect, it } from 'vitest';
 import { buildDriveSaveConflict, evaluateDriveSaveConflictKinds } from './driveSaveConflict.ts';
+import { buildProjectSyncDiff, type ProjectSyncSummary } from './projectSyncSummary.ts';
+
+function summary(overrides: Partial<ProjectSyncSummary> = {}): ProjectSyncSummary {
+  return {
+    projectId: 'a',
+    projectName: 'Demo',
+    lastModifiedAt: 't0',
+    portableSyncedAt: 't0',
+    counts: {
+      channels: 0,
+      zones: 0,
+      talkGroups: 0,
+      digitalContacts: 0,
+      analogContacts: 0,
+      rxGroupLists: 0,
+      scanLists: 0,
+      aprsConfigurations: 0,
+      formatBuilds: 0,
+    },
+    ...overrides,
+  };
+}
+
+const emptyDiff = buildProjectSyncDiff(summary(), summary());
 
 describe('evaluateDriveSaveConflictKinds', () => {
   const localProjectId = '11111111-1111-4111-8111-111111111111';
@@ -59,7 +83,7 @@ describe('buildDriveSaveConflict', () => {
         remoteProjectId: 'b',
         remoteModifiedAt: 't1',
         localSyncedAt: 't0',
-        diffLines: [],
+        diff: emptyDiff,
         remoteYaml: '',
       }),
     ).toBeNull();
@@ -72,7 +96,7 @@ describe('buildDriveSaveConflict', () => {
         remoteProjectId: 'a',
         remoteModifiedAt: 't1',
         localSyncedAt: 't0',
-        diffLines: ['line'],
+        diff: emptyDiff,
         remoteYaml: 'yaml',
       }),
     ).toEqual({
@@ -81,7 +105,7 @@ describe('buildDriveSaveConflict', () => {
       remoteProjectId: 'a',
       remoteModifiedAt: 't1',
       localSyncedAt: 't0',
-      diffLines: ['line'],
+      diff: emptyDiff,
       remoteYaml: 'yaml',
     });
   });

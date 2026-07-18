@@ -3,6 +3,7 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import { MantineProvider } from '@mantine/core';
 import type { DriveSaveConflict } from '@core/services/driveSaveConflict.ts';
 import DriveSaveConflictModal from './DriveSaveConflictModal.tsx';
+import { testProjectSyncDiff } from './testProjectSyncDiff.ts';
 
 const baseConflict: DriveSaveConflict = {
   kinds: ['remoteNewer'],
@@ -10,7 +11,7 @@ const baseConflict: DriveSaveConflict = {
   remoteProjectId: 'local-id',
   remoteModifiedAt: '2026-07-09T12:00:00.000Z',
   localSyncedAt: '2026-07-09T10:00:00.000Z',
-  diffLines: ['Remote: 3 channels'],
+  diff: testProjectSyncDiff({}, { counts: { channels: 3 } }),
   remoteYaml: 'yaml',
 };
 
@@ -48,6 +49,7 @@ describe('DriveSaveConflictModal', () => {
     expect(screen.getByRole('button', { name: 'Refresh from Drive' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Save anyway' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Save as new file' })).toBeInTheDocument();
+    expect(screen.getByText('Channels')).toBeInTheDocument();
   });
 
   it('hides refresh when only project id mismatches', () => {
