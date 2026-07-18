@@ -42,7 +42,7 @@ export default function ImportYamlIntoActivePanel() {
         opened={resolver.overwriteOpen}
         title={resolver.overwriteTitle}
         projectName={resolver.projectName || activeProject.name}
-        diffLines={resolver.diffLines}
+        diff={resolver.diff}
         loading={resolver.importing}
         error={resolver.error}
         idMismatch={resolver.idMismatch}

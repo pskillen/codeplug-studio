@@ -1,14 +1,17 @@
 import type { GoogleDriveInterchange } from '@core/models/interchange.ts';
 import type { ProjectMeta } from '@core/models/project.ts';
 import { portableSyncedAt } from '@core/services/interchangeMeta.ts';
-import { isRemotePortableNewer } from '@core/services/projectSyncSummary.ts';
+import {
+  isRemotePortableNewer,
+  type ProjectSyncDiff,
+} from '@core/services/projectSyncSummary.ts';
 import type { GoogleDrivePort } from '@integrations/cloud/googleDrive.ts';
 import { persistence } from '../state/persistence.ts';
 import { buildImportOverwriteDiff, parseYamlImportPreview } from './yamlImportResolverService.ts';
 
 export interface DriveRemoteCheckNewer {
   newer: true;
-  diffLines: string[];
+  diff: ProjectSyncDiff;
   remoteYaml: string;
   remoteProjectId: string;
   idMismatch: boolean;
@@ -48,10 +51,10 @@ export async function checkDriveRemoteUpdates({
     ...preview.remoteSummary,
     lastModifiedAt: remoteTime ?? preview.remoteSummary.portableSyncedAt,
   };
-  const lines = await buildImportOverwriteDiff(projectId, remoteSummary);
+  const diff = await buildImportOverwriteDiff(projectId, remoteSummary);
   return {
     newer: true,
-    diffLines: lines,
+    diff,
     remoteYaml: content,
     remoteProjectId: preview.projectId,
     idMismatch: preview.projectId !== projectId,

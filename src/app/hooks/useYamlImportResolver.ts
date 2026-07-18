@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { ImportProjectYamlMode } from '@core/services/importProjectYaml.ts';
+import type { ProjectSyncDiff } from '@core/services/projectSyncSummary.ts';
 import { buildImportOverwriteDiff } from '../services/yamlImportResolverService.ts';
 import { parseYamlImportPreview } from '../services/yamlImportResolverService.ts';
 import { checkDriveRemoteUpdates } from '../services/driveRemoteCheckService.ts';
@@ -40,7 +41,7 @@ export function useYamlImportResolver(options: UseYamlImportResolverOptions = {}
   const [overwriteOpen, setOverwriteOpen] = useState(false);
   const [overwriteTitle, setOverwriteTitle] = useState('Overwrite local project?');
   const [overwriteProjectName, setOverwriteProjectName] = useState('');
-  const [diffLines, setDiffLines] = useState<string[]>([]);
+  const [diff, setDiff] = useState<ProjectSyncDiff | null>(null);
   const [idMismatch, setIdMismatch] = useState(false);
   const [localProjectId, setLocalProjectId] = useState('');
   const [remoteProjectId, setRemoteProjectId] = useState('');
@@ -53,7 +54,7 @@ export function useYamlImportResolver(options: UseYamlImportResolverOptions = {}
   const resetOverwrite = useCallback(() => {
     setOverwriteOpen(false);
     pendingRef.current = null;
-    setDiffLines([]);
+    setDiff(null);
     setIdMismatch(false);
     setLocalProjectId('');
     setRemoteProjectId('');
@@ -112,25 +113,25 @@ export function useYamlImportResolver(options: UseYamlImportResolverOptions = {}
 
     if (activeId) {
       const mismatch = preview.projectId !== activeId;
-      const lines = await buildImportOverwriteDiff(activeId, preview.remoteSummary);
+      const nextDiff = await buildImportOverwriteDiff(activeId, preview.remoteSummary);
       pendingRef.current = { preview, source, targetProjectId: activeId };
       setIdMismatch(mismatch);
       setLocalProjectId(activeId);
       setRemoteProjectId(preview.projectId);
       setOverwriteProjectName(preview.projectName);
       setOverwriteTitle('Replace active project?');
-      setDiffLines(lines);
+      setDiff(nextDiff);
       setOverwriteOpen(true);
       return;
     }
 
     const exists = projects.some((project) => project.projectId === preview.projectId);
     if (exists) {
-      const lines = await buildImportOverwriteDiff(preview.projectId, preview.remoteSummary);
+      const nextDiff = await buildImportOverwriteDiff(preview.projectId, preview.remoteSummary);
       pendingRef.current = { preview, source, targetProjectId: preview.projectId };
       setOverwriteProjectName(preview.projectName);
       setOverwriteTitle('Overwrite existing project?');
-      setDiffLines(lines);
+      setDiff(nextDiff);
       setOverwriteOpen(true);
       return;
     }
@@ -183,7 +184,7 @@ export function useYamlImportResolver(options: UseYamlImportResolverOptions = {}
     error,
     overwriteOpen,
     overwriteTitle,
-    diffLines,
+    diff,
     projectName: overwriteProjectName,
     idMismatch,
     localProjectId,
@@ -202,7 +203,7 @@ export function useRefreshFromDrivePrompt() {
   const { activeProject, refreshProjects, switchProject } = useProjects();
   const { port, withDriveAuthRetry, connected } = useGoogleDrive();
   const [bannerOpen, setBannerOpen] = useState(false);
-  const [diffLines, setDiffLines] = useState<string[]>([]);
+  const [diff, setDiff] = useState<ProjectSyncDiff | null>(null);
   const [remoteYaml, setRemoteYaml] = useState<string | null>(null);
   const [remoteProjectId, setRemoteProjectId] = useState<string | null>(null);
   const [idMismatch, setIdMismatch] = useState(false);
@@ -221,7 +222,7 @@ export function useRefreshFromDrivePrompt() {
         setBannerOpen(false);
         return;
       }
-      setDiffLines(result.diffLines);
+      setDiff(result.diff);
       setRemoteYaml(result.remoteYaml);
       setRemoteProjectId(result.remoteProjectId);
       setIdMismatch(result.idMismatch);
@@ -379,7 +380,7 @@ export function useRefreshFromDrivePrompt() {
 
   return {
     bannerOpen,
-    diffLines,
+    diff,
     overwriteOpen,
     importing,
     checking,

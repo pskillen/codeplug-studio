@@ -1,10 +1,12 @@
 import { Button, Modal, Stack, Text, Alert } from '@mantine/core';
+import type { ProjectSyncDiff } from '@core/services/projectSyncSummary.ts';
+import ProjectSyncDiffTable from './ProjectSyncDiffTable.tsx';
 
 export interface InterchangeOverwriteModalProps {
   opened: boolean;
   title: string;
   projectName: string;
-  diffLines: string[];
+  diff: ProjectSyncDiff | null;
   loading?: boolean;
   error?: string | null;
   idMismatch?: boolean;
@@ -19,7 +21,7 @@ export default function InterchangeOverwriteModal({
   opened,
   title,
   projectName,
-  diffLines,
+  diff,
   loading = false,
   error = null,
   idMismatch = false,
@@ -30,7 +32,7 @@ export default function InterchangeOverwriteModal({
   onImportAsNew,
 }: InterchangeOverwriteModalProps) {
   return (
-    <Modal opened={opened} onClose={onClose} title={title} centered>
+    <Modal opened={opened} onClose={onClose} title={title} centered size="lg">
       <Stack gap="md">
         {idMismatch ? (
           <>
@@ -56,13 +58,7 @@ export default function InterchangeOverwriteModal({
             Overwrite local copy of <strong>{projectName}</strong> with the remote YAML file?
           </Text>
         )}
-        <Stack gap={4}>
-          {diffLines.map((line) => (
-            <Text key={line} size="sm" c="dimmed">
-              {line}
-            </Text>
-          ))}
-        </Stack>
+        {diff ? <ProjectSyncDiffTable diff={diff} /> : null}
         {error ? (
           <Alert color="red" title="Import failed">
             {error}

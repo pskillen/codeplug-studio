@@ -28,7 +28,7 @@ export async function assessDriveSaveConflict(
     remoteProjectId: preview.projectId,
     remoteModifiedAt,
   });
-  const diffLines = await buildImportOverwriteDiff(localProjectId, {
+  const diff = await buildImportOverwriteDiff(localProjectId, {
     ...preview.remoteSummary,
     lastModifiedAt: remoteModifiedAt || preview.remoteSummary.portableSyncedAt,
   });
@@ -37,7 +37,7 @@ export async function assessDriveSaveConflict(
     remoteProjectId: preview.projectId,
     remoteModifiedAt,
     localSyncedAt: localSyncedAt ?? null,
-    diffLines,
+    diff,
     remoteYaml,
   });
   return { conflict };

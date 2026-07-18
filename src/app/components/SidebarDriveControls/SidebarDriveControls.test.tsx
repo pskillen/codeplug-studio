@@ -63,7 +63,7 @@ vi.mock('../../hooks/useDriveActionClick.ts', () => ({
 vi.mock('../../hooks/useYamlImportResolver.ts', () => ({
   useRefreshFromDrivePrompt: () => ({
     bannerOpen: false,
-    diffLines: [],
+    diff: null,
     overwriteOpen: false,
     importing: false,
     checking: false,

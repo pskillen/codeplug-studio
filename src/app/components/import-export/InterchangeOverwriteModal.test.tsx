@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { MantineProvider } from '@mantine/core';
 import InterchangeOverwriteModal from './InterchangeOverwriteModal.tsx';
+import { testProjectSyncDiff } from './testProjectSyncDiff.ts';
 
 function renderModal(props: Partial<React.ComponentProps<typeof InterchangeOverwriteModal>> = {}) {
   const onClose = vi.fn();
@@ -14,7 +15,7 @@ function renderModal(props: Partial<React.ComponentProps<typeof InterchangeOverw
         opened
         title="Refresh from Google Drive?"
         projectName="Demo"
-        diffLines={['Remote: 3 channels']}
+        diff={testProjectSyncDiff({}, { counts: { channels: 3 } })}
         onClose={onClose}
         onConfirm={onConfirm}
         {...props}
@@ -31,6 +32,7 @@ describe('InterchangeOverwriteModal', () => {
 
     expect(screen.getByRole('button', { name: 'Overwrite local copy' })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Import as new project' })).not.toBeInTheDocument();
+    expect(screen.getByText('Channels')).toBeInTheDocument();
   });
 
   it('shows mismatch override actions when project ids differ', () => {

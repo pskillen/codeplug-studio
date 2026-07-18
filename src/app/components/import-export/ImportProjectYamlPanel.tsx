@@ -38,7 +38,7 @@ export default function ImportProjectYamlPanel() {
         opened={resolver.overwriteOpen}
         title={resolver.overwriteTitle}
         projectName={resolver.projectName}
-        diffLines={resolver.diffLines}
+        diff={resolver.diff}
         loading={resolver.importing}
         onClose={() => resolver.resetOverwrite()}
         onConfirm={() => void resolver.confirmOverwrite()}

@@ -12,7 +12,7 @@ vi.mock('./DriveRefreshProvider.tsx', () => ({
 function baseHookState(overrides: Record<string, unknown> = {}) {
   return {
     bannerOpen: true,
-    diffLines: ['Remote: 3 channels'],
+    diff: null,
     overwriteOpen: false,
     importing: false,
     error: null,

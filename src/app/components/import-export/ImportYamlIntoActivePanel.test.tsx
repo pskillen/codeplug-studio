@@ -15,7 +15,7 @@ function mockResolver(overrides: Record<string, unknown> = {}) {
     error: null,
     overwriteOpen: true,
     overwriteTitle: 'Replace active project?',
-    diffLines: ['Local: 1 channel'],
+    diff: null,
     projectName: 'Active project',
     idMismatch: false,
     localProjectId: 'proj-1',
