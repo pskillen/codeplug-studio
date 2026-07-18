@@ -67,8 +67,8 @@ CPS-only variants (`Different CDT`, colour-code admits) are **not** modelled in 
 | `Squelch Mode`                 | `analogSquelchMode` on analog profile | `carrier` → `Carrier`; `tone` → `CTCSS/DCS` via cascade                                                                                                                    |
 | `RX Color Code`                | `colourCode`                          |                                                                                                                                                                            |
 | `Slot`                         | `timeslot`                            | `1` / `2`                                                                                                                                                                  |
-| `Scan List`                    | Build scan list ref                   | Name FK → `ScanList.CSV`; `None`                                                                                                                                           |
-| `Receive Group List`           | `rxGroupListId`                       | Name FK → `DMRReceiveGroupCallList.CSV`                                                                                                                                    |
+| `Scan List`                    | Build scan list ref                   | Name FK → `ScanList.CSV`; sentinel `None`                                                                                                                                  |
+| `Receive Group List`           | `rxGroupListId`                       | Name FK → `DMRReceiveGroupCallList.CSV`; sentinel `None`                                                                                                                   |
 | `PTT Prohibit`                 | `forbidTransmit`                      | `On` / `Off`                                                                                                                                                               |
 | `Slot Suit`                    | Unmodelled (planned)                  | `On` = listen both slots; TX on heard slot (simplex) or programmed slot (repeater)                                                                                         |
 | `DMR MODE`                     | `ChannelModeProfileDMR.dmrMode`       | `0` / `1` — see DMR MODE table; inferred from RX/TX when `dmrMode` unset                                                                                                   |
@@ -105,6 +105,15 @@ Export as fixture defaults / skip (amateur product) — full checklist: [enum-ve
 
 `DMR MODE` and `Channel Type` are projected from the library model ([#311](https://github.com/pskillen/codeplug-studio/issues/311), [#303](https://github.com/pskillen/codeplug-studio/issues/303)). Busy Lock, Talker Alias, and Squelch Mode export from the behavioural cascade ([#422](https://github.com/pskillen/codeplug-studio/issues/422)).
 
+## Wire rules
+
+| Rule                  | Detail                                                              |
+| --------------------- | ------------------------------------------------------------------- |
+| Name length           | `Channel Name` ≤ profile limit (16 on AT-D890UV)                    |
+| Scan List FK          | Must match `ScanList.CSV` `Scan List Name` or sentinel `None`       |
+| Receive Group List FK | Must match `Group Name` or sentinel `None`                          |
+| Contact/Talk Group FK | Must match talk-group or digital-contact `Name` when not a sentinel |
+
 ## Related
 
 - [zones.md](zones.md)
@@ -113,3 +122,4 @@ Export as fixture defaults / skip (amateur product) — full checklist: [enum-ve
 - [rx-group-lists.md](rx-group-lists.md)
 - [radio-ids.md](radio-ids.md)
 - [enum-verification.md](enum-verification.md)
+- [file-format.md](file-format.md)

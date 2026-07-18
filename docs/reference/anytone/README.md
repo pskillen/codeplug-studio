@@ -61,7 +61,7 @@ Committed fixture: [`test-data/anytone/at-d890uv/`](../../../test-data/anytone/a
 | `TalkGroupWhitelist(Repeater).CSV`      | —                                      | Skip                 | Skip            | Skip                 | Repeater whitelist                                                                                                                      |
 | `meep.LST`                              | [lst-manifest.md](lst-manifest.md)     | Skip                 | Skip            | **Yes**              | CPS manifest sidecar — export only; lists ZIP CSV members                                                                               |
 
-Cross-cutting rules: [file-format.md](file-format.md). Enum elicitation checklist: [enum-verification.md](enum-verification.md) ([#357](https://github.com/pskillen/codeplug-studio/issues/357); absorbs [#307](https://github.com/pskillen/codeplug-studio/issues/307)).
+Cross-cutting rules: [file-format.md](file-format.md). Enum elicitation checklist: [enum-verification.md](enum-verification.md) ([#357](https://github.com/pskillen/codeplug-studio/issues/357); absorbs [#307](https://github.com/pskillen/codeplug-studio/issues/307)). External wire-shape verifier: [wire-verification.md](../../build/testing/wire-verification.md) ([#480](https://github.com/pskillen/codeplug-studio/issues/480)).
 
 ## Trait profile recommendation (for #232)
 

@@ -35,7 +35,15 @@ When **Export zone-derived scan lists** is enabled on the build Export page and 
 
 **Scan list members:** `ScanList.CSV` references `Channel.CSV` names only — AMAir/FM receive-bank channels are omitted from zone-derived scan lists even when present in the zone.
 
-**Provisional caps (AT-D890UV):** 100 scan lists, 100 members per list — adjust when CPS-confirmed.
+**Provisional caps (AT-D890UV):** 100 scan lists, 100 members per list — adjust when CPS-confirmed. External wire verifier enforces **100 members** per `Scan Channel Member` list.
+
+## Wire rules
+
+| Rule              | Detail                                                            |
+| ----------------- | ----------------------------------------------------------------- |
+| Member FKs        | Each `Scan Channel Member` name must exist in `Channel.CSV`       |
+| Channel → scan FK | `Channel.CSV` `Scan List` must match a `Scan List Name` or `None` |
+| Name length       | `Scan List Name` ≤ profile name limit (16 on AT-D890UV)           |
 
 ## AnyTone scan settings — terminology map
 
