@@ -1,5 +1,5 @@
-import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
+import { unzipSync } from 'fflate';
+import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
@@ -7,7 +7,9 @@ import { parseProjectDocument } from '@core/import-export/formats/native-yaml/pa
 import type { ProjectAggregate } from '@core/import-export/projectDocument.ts';
 import { exportBuildSingleFile, exportBuildZip } from '@core/services/exportBuild.ts';
 import type { LibrarySlice } from '@core/services/assemble.ts';
-import { verifyCodeplug } from '../src/verify.ts';
+import { getVerifier } from '../src/formats/registry.ts';
+import type { BundleFile, CheckOutcome } from '../src/types.ts';
+import { itEachCheckOutcome } from './assertCheckOutcomes.ts';
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const fixturePath = path.join(repoRoot, 'test-data/export-smoke/rich-project.yaml');
@@ -39,6 +41,46 @@ function loadSmokeProject(): ProjectAggregate {
   return parseProjectDocument(readFileSync(fixturePath, 'utf8'));
 }
 
+function zipToBundleFiles(zip: Uint8Array): BundleFile[] {
+  const unzipped = unzipSync(zip);
+  const files: BundleFile[] = [];
+  for (const [entryPath, data] of Object.entries(unzipped)) {
+    if (entryPath.endsWith('/')) continue;
+    const name = path.posix.basename(entryPath);
+    files.push({
+      path: entryPath.replace(/\\/g, '/'),
+      name,
+      text: new TextDecoder('utf8').decode(data),
+    });
+  }
+  return files;
+}
+
+function exportSmokeOutcomes(formatId: string, profileId: string): CheckOutcome[] {
+  const project = loadSmokeProject();
+  const build = project.formatBuilds.find((b) => b.profileId === profileId);
+  if (!build) {
+    throw new Error(`Missing formatBuild for ${profileId}`);
+  }
+  const library = libraryFromAggregate(project);
+  const options = { projectName: project.meta.name?.trim() || undefined };
+  const verifier = getVerifier(formatId);
+  if (!verifier) {
+    throw new Error(`No verifier for ${formatId}`);
+  }
+
+  if (formatId === 'chirp') {
+    const result = exportBuildSingleFile({ build, library, options });
+    const files: BundleFile[] = [
+      { path: result.fileName, name: result.fileName, text: result.content },
+    ];
+    return verifier.verifyDetailed(files, profileId);
+  }
+
+  const result = exportBuildZip({ build, library, options });
+  return verifier.verifyDetailed(zipToBundleFiles(result.zip), profileId);
+}
+
 describe('export-smoke: YAML → export → verify wire-valid', () => {
   it('fixture includes every smoke profile', () => {
     const project = loadSmokeProject();
@@ -48,37 +90,9 @@ describe('export-smoke: YAML → export → verify wire-valid', () => {
     }
   });
 
-  it.each(SMOKE_PROFILES)(
-    'exports $profileId and verifies wire-valid',
-    async ({ formatId, profileId }) => {
-      const project = loadSmokeProject();
-      const build = project.formatBuilds.find((b) => b.profileId === profileId);
-      expect(build, `formatBuild ${profileId}`).toBeDefined();
-      const library = libraryFromAggregate(project);
-      const options = {
-        projectName: project.meta.name?.trim() || undefined,
-      };
-
-      const dir = mkdtempSync(path.join(tmpdir(), `cps-export-smoke-${profileId}-`));
-
-      let verifyPath: string;
-      if (formatId === 'chirp') {
-        const result = exportBuildSingleFile({ build: build!, library, options });
-        verifyPath = path.join(dir, result.fileName);
-        writeFileSync(verifyPath, result.content, 'utf8');
-      } else {
-        const result = exportBuildZip({ build: build!, library, options });
-        verifyPath = path.join(dir, `${profileId}.zip`);
-        writeFileSync(verifyPath, result.zip);
-      }
-
-      const verified = await verifyCodeplug({
-        format: formatId,
-        profile: profileId,
-        path: verifyPath,
-      });
-      expect(verified.diagnostics, JSON.stringify(verified.diagnostics, null, 2)).toEqual([]);
-      expect(verified.ok).toBe(true);
-    },
-  );
+  for (const { formatId, profileId } of SMOKE_PROFILES) {
+    describe(profileId, () => {
+      itEachCheckOutcome(exportSmokeOutcomes(formatId, profileId));
+    });
+  }
 });
