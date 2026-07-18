@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { shortenWireName } from './shortenName.ts';
+import { finalizeWireName, shortenWireName } from './shortenName.ts';
 import { composeChannelWireName } from '@core/domain/channelNaming.ts';
 import { channelWireNamePreviewExamples } from './channelWireNamePreview.ts';
 
@@ -55,6 +55,27 @@ describe('shortenWireName channel abbreviation', () => {
     });
     expect(shortened).toBe('GB7AC Largs SW1');
     expect(shortened.length).toBeLessThanOrEqual(20);
+  });
+});
+
+describe('finalizeWireName', () => {
+  it('keeps double-digit disambiguation within maxLen (CHIRP 7)', () => {
+    const reserved = new Set<string>(['PMR44']);
+    for (let n = 2; n <= 9; n++) {
+      reserved.add(`PMR44 ${n}`);
+    }
+    const name = finalizeWireName('PMR446 Channel Ten', reserved, 7);
+    expect(name.length).toBeLessThanOrEqual(7);
+    expect(reserved.has(name)).toBe(true);
+  });
+
+  it('fits many colliding stems on a 7-char limit', () => {
+    const reserved = new Set<string>();
+    for (let i = 0; i < 20; i++) {
+      const name = finalizeWireName('PMR446 Shared', reserved, 7);
+      expect(name.length).toBeLessThanOrEqual(7);
+    }
+    expect(reserved.size).toBe(20);
   });
 });
 

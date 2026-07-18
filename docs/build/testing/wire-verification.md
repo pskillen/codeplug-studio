@@ -2,7 +2,7 @@
 
 External **wire-shape** checks for CPS CSV bundles (directory or ZIP). Complements directional mapping/golden tests: this suite proves mechanical CPS rules (line endings, quoting, headers, name FKs, cardinality, required files), not semantic projection equality.
 
-**Tracking:** [#480](https://github.com/pskillen/codeplug-studio/issues/480) (parent [Epic #161](https://github.com/pskillen/codeplug-studio/issues/161)). Progress: [cps-verify-progress.md](cps-verify-progress.md). CI export-smoke is [#481](https://github.com/pskillen/codeplug-studio/issues/481).
+**Tracking:** [#480](https://github.com/pskillen/codeplug-studio/issues/480) verifier · [#481](https://github.com/pskillen/codeplug-studio/issues/481) export smoke (parent [Epic #161](https://github.com/pskillen/codeplug-studio/issues/161)). Progress: [cps-verify-progress.md](cps-verify-progress.md).
 
 ## Terminology
 
@@ -44,6 +44,31 @@ cps-verify/
 ## CI
 
 [`.github/workflows/ci.yml`](../../../.github/workflows/ci.yml) runs `npm run test:cps-verify` and publishes **CPS wire verify** via Dorny (`test-results/cps-verify-junit.xml`).
+
+That Vitest run includes:
+
+1. Baked `fixtures/<format>/<profile>/{good,bad}` shape checks
+2. **Export smoke** ([#481](https://github.com/pskillen/codeplug-studio/issues/481)) — see below
+
+## Export smoke (YAML → ZIP → verify)
+
+Proves Studio’s real export packaging path produces **wire-valid** CPS for each verifier-supported profile. Shape-only — not content projection ([#482](https://github.com/pskillen/codeplug-studio/issues/482)).
+
+```text
+test-data/export-smoke/rich-project.yaml
+  → parseProjectDocument
+  → exportBuildZip (multi-file) or exportBuildSingleFile (CHIRP)
+  → write temp ZIP/CSV
+  → verifyCodeplug
+```
+
+| Piece               | Path                                                                                            |
+| ------------------- | ----------------------------------------------------------------------------------------------- |
+| Native YAML fixture | [`test-data/export-smoke/rich-project.yaml`](../../../test-data/export-smoke/rich-project.yaml) |
+| Harness             | [`cps-verify/tests/export-smoke.test.ts`](../../../cps-verify/tests/export-smoke.test.ts)       |
+| Profiles            | `anytone-at-d890uv`, `dm32-baofeng-dm32uv`, `opengd77-1701`, `chirp-uv5r`                       |
+
+Same core serialisation as UI **Download ZIP** (`exportBuildZip`); IndexedDB and browser download are not involved. Multi-file formats verify the **ZIP** so packaging is exercised.
 
 ## Formats / profiles
 
