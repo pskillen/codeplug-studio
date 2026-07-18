@@ -1,10 +1,7 @@
 import type { GoogleDriveInterchange } from '@core/models/interchange.ts';
 import type { ProjectMeta } from '@core/models/project.ts';
 import { portableSyncedAt } from '@core/services/interchangeMeta.ts';
-import {
-  isRemotePortableNewer,
-  type ProjectSyncDiff,
-} from '@core/services/projectSyncSummary.ts';
+import { isRemotePortableNewer, type ProjectSyncDiff } from '@core/services/projectSyncSummary.ts';
 import type { GoogleDrivePort } from '@integrations/cloud/googleDrive.ts';
 import { persistence } from '../state/persistence.ts';
 import { buildImportOverwriteDiff, parseYamlImportPreview } from './yamlImportResolverService.ts';

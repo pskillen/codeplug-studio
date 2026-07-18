@@ -232,7 +232,9 @@ export function formatSyncDiffSummary(
       `${row.label}: local ${formatSyncTimestamp(row.local)}, remote ${formatSyncTimestamp(row.remote)}`,
   );
   for (const row of diff.counts) {
-    lines.push(`${row.label}: local ${row.local}, remote ${row.remote} (${formatSyncDelta(row.delta)})`);
+    lines.push(
+      `${row.label}: local ${row.local}, remote ${row.remote} (${formatSyncDelta(row.delta)})`,
+    );
   }
   return lines;
 }

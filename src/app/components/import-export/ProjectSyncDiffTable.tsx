@@ -17,13 +17,7 @@ function newerHint(side: ProjectSyncNewerSide): string | null {
   return null;
 }
 
-function TimestampCell({
-  value,
-  highlight,
-}: {
-  value: string | null;
-  highlight: boolean;
-}) {
+function TimestampCell({ value, highlight }: { value: string | null; highlight: boolean }) {
   return (
     <Text size="sm" fw={highlight ? 600 : undefined} c={highlight ? undefined : 'dimmed'}>
       {formatSyncTimestamp(value)}

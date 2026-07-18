@@ -128,18 +128,18 @@ When OAuth is not configured, click opens `GoogleDriveNotConfiguredModal` with *
 
 ## Components
 
-| Component                       | Role                                                                                                     |
-| ------------------------------- | -------------------------------------------------------------------------------------------------------- |
-| `GoogleDriveButton`             | Presentational CTA styling                                                                               |
-| `GoogleDriveActionButton`       | Open/save CTAs — inline connect, then Drive browser                                                      |
-| `GoogleDriveNotConfiguredModal` | Settings redirect when `VITE_GOOGLE_CLIENT_ID` is missing                                                |
-| `DriveBrowserModal`             | Folder browser when connected                                                                            |
-| `SidebarDriveControls`          | Sidebar Save / Check Drive icon buttons ([#368](https://github.com/pskillen/codeplug-studio/issues/368)) |
-| `DriveRefreshProvider`          | Shared remote-check state for sidebar + refresh banner                                                   |
-| `RefreshFromDriveBanner`        | Newer remote YAML available — optional refresh                                                           |
+| Component                       | Role                                                                                                                        |
+| ------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
+| `GoogleDriveButton`             | Presentational CTA styling                                                                                                  |
+| `GoogleDriveActionButton`       | Open/save CTAs — inline connect, then Drive browser                                                                         |
+| `GoogleDriveNotConfiguredModal` | Settings redirect when `VITE_GOOGLE_CLIENT_ID` is missing                                                                   |
+| `DriveBrowserModal`             | Folder browser when connected                                                                                               |
+| `SidebarDriveControls`          | Sidebar Save / Check Drive icon buttons ([#368](https://github.com/pskillen/codeplug-studio/issues/368))                    |
+| `DriveRefreshProvider`          | Shared remote-check state for sidebar + refresh banner                                                                      |
+| `RefreshFromDriveBanner`        | Newer remote YAML available — optional refresh                                                                              |
 | `InterchangeOverwriteModal`     | Overwrite / adopt-remote with tabular local vs remote diff ([#477](https://github.com/pskillen/codeplug-studio/issues/477)) |
-| `DriveSaveConflictModal`        | Pre-save conflict when remote is newer or id mismatches                                                  |
-| `ProjectSyncDiffTable`          | Shared Metric / Local / Remote / Δ table for overwrite and save conflict                                 |
+| `DriveSaveConflictModal`        | Pre-save conflict when remote is newer or id mismatches                                                                     |
+| `ProjectSyncDiffTable`          | Shared Metric / Local / Remote / Δ table for overwrite and save conflict                                                    |
 
 ## Error states
 
@@ -160,22 +160,22 @@ When OAuth is not configured, click opens `GoogleDriveNotConfiguredModal` with *
 
 ## Implementation status
 
-| Area                         | Status  | Notes                                                                                       |
-| ---------------------------- | ------- | ------------------------------------------------------------------------------------------- |
-| OAuth + Drive API port       | Shipped | [#61](https://github.com/pskillen/codeplug-studio/issues/61)                                |
-| Settings status / disconnect | Shipped | [#62](https://github.com/pskillen/codeplug-studio/issues/62)                                |
-| Drive browser modal          | Shipped | [#62](https://github.com/pskillen/codeplug-studio/issues/62)                                |
-| Import / export workflow     | Shipped | [#62](https://github.com/pskillen/codeplug-studio/issues/62)                                |
-| Disconnected Drive CTA UX    | Shipped | [#141](https://github.com/pskillen/codeplug-studio/issues/141) — inline connect on action   |
-| Shared session + reconnect   | Shipped | [#286](https://github.com/pskillen/codeplug-studio/issues/286)                              |
-| App chrome Save bar          | Shipped | [#285](https://github.com/pskillen/codeplug-studio/issues/285)                              |
-| UUID-match import overwrite  | Shipped | [#285](https://github.com/pskillen/codeplug-studio/issues/285)                              |
-| Refresh from Drive prompt    | Shipped | [#285](https://github.com/pskillen/codeplug-studio/issues/285)                              |
-| Refresh id-mismatch override | Shipped | [#334](https://github.com/pskillen/codeplug-studio/issues/334)                              |
-| Save conflict detection      | Shipped | [#335](https://github.com/pskillen/codeplug-studio/issues/335)                              |
+| Area                              | Status  | Notes                                                                                            |
+| --------------------------------- | ------- | ------------------------------------------------------------------------------------------------ |
+| OAuth + Drive API port            | Shipped | [#61](https://github.com/pskillen/codeplug-studio/issues/61)                                     |
+| Settings status / disconnect      | Shipped | [#62](https://github.com/pskillen/codeplug-studio/issues/62)                                     |
+| Drive browser modal               | Shipped | [#62](https://github.com/pskillen/codeplug-studio/issues/62)                                     |
+| Import / export workflow          | Shipped | [#62](https://github.com/pskillen/codeplug-studio/issues/62)                                     |
+| Disconnected Drive CTA UX         | Shipped | [#141](https://github.com/pskillen/codeplug-studio/issues/141) — inline connect on action        |
+| Shared session + reconnect        | Shipped | [#286](https://github.com/pskillen/codeplug-studio/issues/286)                                   |
+| App chrome Save bar               | Shipped | [#285](https://github.com/pskillen/codeplug-studio/issues/285)                                   |
+| UUID-match import overwrite       | Shipped | [#285](https://github.com/pskillen/codeplug-studio/issues/285)                                   |
+| Refresh from Drive prompt         | Shipped | [#285](https://github.com/pskillen/codeplug-studio/issues/285)                                   |
+| Refresh id-mismatch override      | Shipped | [#334](https://github.com/pskillen/codeplug-studio/issues/334)                                   |
+| Save conflict detection           | Shipped | [#335](https://github.com/pskillen/codeplug-studio/issues/335)                                   |
 | Tabular overwrite / conflict diff | Shipped | [#477](https://github.com/pskillen/codeplug-studio/issues/477) — full entity counts + timestamps |
-| Portable project id on open  | Shipped | [#361](https://github.com/pskillen/codeplug-studio/issues/361) — `seedPreservingId` default |
-| Sidebar Drive controls       | Shipped | [#368](https://github.com/pskillen/codeplug-studio/issues/368) — Save/Check in primary nav  |
+| Portable project id on open       | Shipped | [#361](https://github.com/pskillen/codeplug-studio/issues/361) — `seedPreservingId` default      |
+| Sidebar Drive controls            | Shipped | [#368](https://github.com/pskillen/codeplug-studio/issues/368) — Save/Check in primary nav       |
 
 ## Manual verify checklist
 

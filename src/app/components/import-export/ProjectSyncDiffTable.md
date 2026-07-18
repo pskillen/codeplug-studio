@@ -8,8 +8,8 @@ Shows every portable child-item count plus last-edited / last-synced timestamps 
 
 ## Props
 
-| Prop   | Type              | Notes                                      |
-| ------ | ----------------- | ------------------------------------------ |
+| Prop   | Type              | Notes                                          |
+| ------ | ----------------- | ---------------------------------------------- |
 | `diff` | `ProjectSyncDiff` | From `buildImportOverwriteDiff` / core summary |
 
 ## Behaviour
