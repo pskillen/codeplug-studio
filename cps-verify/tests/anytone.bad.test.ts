@@ -4,8 +4,7 @@ import { describe, expect, it } from 'vitest';
 import { verifyCodeplug } from '../src/verify.ts';
 
 const root = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
-const bad = (name: string) =>
-  path.join(root, 'fixtures/anytone/anytone-at-d890uv/bad', name);
+const bad = (name: string) => path.join(root, 'fixtures/anytone/anytone-at-d890uv/bad', name);
 
 describe('anytone-at-d890uv bad fixtures', () => {
   it('fails on LF-only line endings', async () => {

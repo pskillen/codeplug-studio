@@ -6,9 +6,9 @@ External **wire-shape** checks for CPS CSV bundles (directory or ZIP). Complemen
 
 ## Terminology
 
-| Term | Field | Examples |
-| --- | --- | --- |
-| **Format** | `formatId` | `anytone`, `dm32`, `opengd77`, `chirp` |
+| Term                  | Field       | Examples                                                                  |
+| --------------------- | ----------- | ------------------------------------------------------------------------- |
+| **Format**            | `formatId`  | `anytone`, `dm32`, `opengd77`, `chirp`                                    |
 | **Variant / profile** | `profileId` | `anytone-at-d890uv`, `dm32-baofeng-dm32uv`, `opengd77-1701`, `chirp-uv5r` |
 
 Fixtures and plugins are **profile-scoped** so sibling radios (e.g. future AT-D878) do not collide.
@@ -34,10 +34,10 @@ cps-verify/
 
 ## npm scripts
 
-| Script | Command | Role |
-| --- | --- | --- |
-| CLI | `npm run verify:codeplug -- --format anytone [--profile anytone-at-d890uv] path` | Operator / local check |
-| Vitest | `npm run test:cps-verify` | Fixture-driven suite; JUnit in CI |
+| Script | Command                                                                          | Role                              |
+| ------ | -------------------------------------------------------------------------------- | --------------------------------- |
+| CLI    | `npm run verify:codeplug -- --format anytone [--profile anytone-at-d890uv] path` | Operator / local check            |
+| Vitest | `npm run test:cps-verify`                                                        | Fixture-driven suite; JUnit in CI |
 
 `npm test` does **not** include `cps-verify/`.
 
@@ -47,12 +47,12 @@ cps-verify/
 
 ## Formats / profiles
 
-| Format | Profile (default) | Status | Notes |
-| --- | --- | --- | --- |
-| `anytone` | `anytone-at-d890uv` | Shipped | Universal quoting + CRLF |
-| `dm32` | `dm32-baofeng-dm32uv` | Shipped | Selective quoting + CRLF |
-| `opengd77` | `opengd77-1701` | Shipped | Selective quoting + LF |
-| `chirp` | `chirp-uv5r` | Shipped | Single CSV; selective quoting + LF |
+| Format     | Profile (default)     | Status  | Notes                              |
+| ---------- | --------------------- | ------- | ---------------------------------- |
+| `anytone`  | `anytone-at-d890uv`   | Shipped | Universal quoting + CRLF           |
+| `dm32`     | `dm32-baofeng-dm32uv` | Shipped | Selective quoting + CRLF           |
+| `opengd77` | `opengd77-1701`       | Shipped | Selective quoting + LF             |
+| `chirp`    | `chirp-uv5r`          | Shipped | Single CSV; selective quoting + LF |
 
 ## Adding a format / profile plugin
 

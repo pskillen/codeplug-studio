@@ -32,11 +32,7 @@ import {
   getDm32Profile,
 } from '../../../../src/core/import-export/formats/dm32/profiles.ts';
 import type { BundleFile, FormatVerifier, VerifyDiagnostic } from '../../types.ts';
-import {
-  checkCardinality,
-  checkForeignKey,
-  checkNameLength,
-} from '../../rules/foreignKeys.ts';
+import { checkCardinality, checkForeignKey, checkNameLength } from '../../rules/foreignKeys.ts';
 import { checkExactHeaders } from '../../rules/headers.ts';
 import { checkCrlfLineEndings } from '../../rules/lineEndings.ts';
 import { checkSelectiveQuoting } from '../../rules/selectiveQuoting.ts';

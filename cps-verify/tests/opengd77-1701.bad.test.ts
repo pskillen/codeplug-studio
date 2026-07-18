@@ -4,8 +4,7 @@ import { describe, expect, it } from 'vitest';
 import { verifyCodeplug } from '../src/verify.ts';
 
 const root = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
-const bad = (name: string) =>
-  path.join(root, 'fixtures/opengd77/opengd77-1701/bad', name);
+const bad = (name: string) => path.join(root, 'fixtures/opengd77/opengd77-1701/bad', name);
 
 describe('opengd77-1701 bad fixtures', () => {
   it('fails on CRLF line endings (Studio requires LF)', async () => {

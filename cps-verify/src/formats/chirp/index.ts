@@ -52,9 +52,7 @@ function verifyCsvContent(
   if (nameIdx >= 0) {
     table.rows.forEach((row, idx) => {
       const name = row[nameIdx] ?? '';
-      diagnostics.push(
-        ...checkNameLength(file.name, 'Name', idx + 1, name, profile.nameLimit),
-      );
+      diagnostics.push(...checkNameLength(file.name, 'Name', idx + 1, name, profile.nameLimit));
     });
   }
 
