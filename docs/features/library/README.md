@@ -106,7 +106,7 @@ Core selection: `selectChannelsWithinRadius` in `src/core/domain/proximityZone.t
 
 ### RX group list member picker ([#107](https://github.com/pskillen/codeplug-studio/issues/107), [#108](https://github.com/pskillen/codeplug-studio/issues/108))
 
-RX group list editor uses `RxGroupListMemberPicker` — same interaction pattern as zones, with a unified talk-group + digital-contact pool. Per-member `timeSlotOverride` (`Auto` / `TS1` / `TS2`) is editable on the in-list side for DMR members. See [rx-group-list-member-picker.md](rx-group-list-member-picker.md).
+RX group list editor uses `RxGroupListMemberPicker` — **B+C** membership (`AvailableItemPicker` + `SelectedItemList`), same pattern as zones and scan lists. Talk groups and digital contacts are separate B sections. Per-member `timeSlotOverride` (`Auto` / `TS1` / `TS2`) is editable on C rows for DMR members. See [rx-group-list-member-picker.md](rx-group-list-member-picker.md).
 
 ### Scan lists ([#257](https://github.com/pskillen/codeplug-studio/issues/257))
 

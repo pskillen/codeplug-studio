@@ -1,9 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { RxGroupListMember } from '@core/models/library.ts';
-import {
-  reorderRxGroupListMembers,
-  rxGroupListMemberKey,
-} from '@core/domain/membershipOrder.ts';
+import { reorderRxGroupListMembers, rxGroupListMemberKey } from '@core/domain/membershipOrder.ts';
 import { reorderRxGroupListMembersByKeys } from './RxGroupListMemberPicker.tsx';
 
 function member(kind: 'talkGroup' | 'digitalContact', id: string): RxGroupListMember {

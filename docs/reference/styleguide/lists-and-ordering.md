@@ -66,29 +66,29 @@ Name column: linked identity. Trailing actions: delete via `EntityListDeleteActi
 
 ## Membership (B + C)
 
-| Piece                     | Pattern                                                                                       |
-| ------------------------- | --------------------------------------------------------------------------------------------- |
-| **C title / description** | “In this zone”, count + “export order”                                                        |
-| **C filter**              | Find-in-list only; disables drag when non-empty                                               |
-| **C toolbar**             | **Sort channels…** (or equivalent) above the list body                                        |
-| **C builtins**            | `onMoveSelected`, `onRemoveSelected`, `canMove*`, Alt+↑/↓                                     |
-| **C drag**                | `onReorder` + `SelectedItemDragHandle` in `renderItem`                                        |
-| **B**                     | Sparse rows; multi-select → add; no reorder of candidates                                     |
-| **Pair layout**           | Vertical stack: C then B (Zones / Scan) — preferred over side-by-side dual lists for new work |
+| Piece                     | Pattern                                                                                                             |
+| ------------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| **C title / description** | “In this zone”, count + “export order”                                                                              |
+| **C filter**              | Find-in-list only; disables drag when non-empty                                                                     |
+| **C toolbar**             | **Sort channels…** (or equivalent) above the list body                                                              |
+| **C builtins**            | `onMoveSelected`, `onRemoveSelected`, `canMove*`, Alt+↑/↓                                                           |
+| **C drag**                | `onReorder` + `SelectedItemDragHandle` in `renderItem`                                                              |
+| **B**                     | Sparse rows; multi-select → add; no reorder of candidates                                                           |
+| **Pair layout**           | Vertical stack: C then B (Zones / Scan / Receive Group Lists) — preferred over side-by-side dual lists for new work |
 
-RX group list member picker is still a specialised dual-list; migrating to B+C is deferred ([list-kit outstanding](../../features/app-shell/list-kit-460-outstanding.md)).
+Gold: Zones → Edit, Scan list edit, Receive Group List edit (`RxGroupListMemberPicker`).
 
 ## Naming catalogue
 
-| Control / concept              | Canonical label / name               | Notes                                  |
-| ------------------------------ | ------------------------------------ | -------------------------------------- |
-| Permanent membership sort      | **Sort channels…** / **Sort zones…** | Ellipsis; confirm overwrites order     |
-| Zones list intro               | Operator-facing order explanation    | No `Zone.order` in UI copy             |
-| Include-in-scan on zone member | **Include in scan list**             | Labelled; prefer RHS of row            |
-| Membership remove              | Tooltip **Remove from zone** (etc.)  | Trash icon                             |
-| Entity delete                  | **Delete …** via list action         | Same trash chrome; different semantics |
-| Receive Group Lists            | Full phrase in titles / nav          | Not “RX group lists” in page chrome    |
-| Reorder disabled hint          | Plain language                       | “Clear filter to drag-reorder”         |
+| Control / concept              | Canonical label / name                                   | Notes                                  |
+| ------------------------------ | -------------------------------------------------------- | -------------------------------------- |
+| Permanent membership sort      | **Sort channels…** / **Sort zones…** / **Sort members…** | Ellipsis; confirm overwrites order     |
+| Zones list intro               | Operator-facing order explanation                        | No `Zone.order` in UI copy             |
+| Include-in-scan on zone member | **Include in scan list**                                 | Labelled; prefer RHS of row            |
+| Membership remove              | Tooltip **Remove from zone** (etc.)                      | Trash icon                             |
+| Entity delete                  | **Delete …** via list action                             | Same trash chrome; different semantics |
+| Receive Group Lists            | Full phrase in titles / nav                              | Not “RX group lists” in page chrome    |
+| Reorder disabled hint          | Plain language                                           | “Clear filter to drag-reorder”         |
 
 ## Checklist for a new list surface
 

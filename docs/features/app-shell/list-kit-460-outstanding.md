@@ -19,5 +19,5 @@ Items **skipped**, **incomplete**, or **discovered during execution** — not th
 
 - Membership editors temporary display sort — **not planned**; role C stays reorder-mode only (drag shipped in #463). DataTable `storedOrder` remains for hybrid browse lists if needed.
 - DataTable row drag handles in `reorderMode` (Zones still uses arrow buttons)
-- `RxGroupListMemberPicker` → `SelectedItemList` (later; not Wave 1)
+- ~~`RxGroupListMemberPicker` → `SelectedItemList`~~ — shipped in [#470](https://github.com/pskillen/codeplug-studio/issues/470)
 - Indexed search / paging for true ~200k contacts (document only; D path is virtualise + cheap cells)

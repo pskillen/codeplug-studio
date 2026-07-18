@@ -38,35 +38,36 @@ Also fold charms from Zones list (order-mode honesty) and wire-preview lists (de
 
 ## Surface → role map
 
-| ID      | Surface                    | Role                                            |
-| ------- | -------------------------- | ----------------------------------------------- |
-| L1      | Channels list              | **A**                                           |
-| L2      | Zones list                 | **A** + `reorderMode`                           |
-| L3      | Talk groups list           | **A**                                           |
-| L4      | Contacts — digital         | **D**                                           |
-| L5      | Contacts — analog          | **A**                                           |
-| L6      | RX group lists             | **A**                                           |
-| L7      | Scan lists                 | **A**                                           |
-| L8      | Zone from location preview | **A** (embedded)                                |
-| L9      | APRS channel slots         | **C**-ish / embedded **A**                      |
-| L10     | APRS channel assignment    | **A** (external filter)                         |
-| B1      | Builds list                | **A**                                           |
-| B2–B3   | Wire preview / flat memory | **A** + `reorderMode` when order arrows present |
-| B4      | Channels bulk wire edit    | **A** (embedded)                                |
-| B5      | Export resolution          | **Specialised** (config matrix)                 |
-| B6      | CPS CSV preview            | **Specialised** (wire spreadsheet)              |
-| I1      | RadioID contact search     | **A** (+ API pagination sibling)                |
-| I2 / I4 | Field-diff update dialogs  | **Specialised** (diff table)                    |
-| I3      | Repeater directory search  | **A** (embedded; custom select for existing)    |
-| I5      | BrandMeister RX sync       | **Specialised** (review dialog)                 |
-| I6      | Channel set picker         | **A** (embedded)                                |
-| I7      | OpenAIP airport search     | Out of kit (nested custom lists)                |
-| R1      | Band plan                  | **Specialised** (static reference)              |
-| R2      | Summary counts             | Ignore                                          |
-| E1      | Scan / RX summaries        | Low priority read-only                          |
-| E2      | Zone / scan pick + members | **B** + **C**                                   |
-| D1      | Debug storage tables       | **A** consumers                                 |
-| S1      | Styleguide                 | Demos for A/B/C/D                               |
+| ID      | Surface                          | Role                                            |
+| ------- | -------------------------------- | ----------------------------------------------- |
+| L1      | Channels list                    | **A**                                           |
+| L2      | Zones list                       | **A** + `reorderMode`                           |
+| L3      | Talk groups list                 | **A**                                           |
+| L4      | Contacts — digital               | **D**                                           |
+| L5      | Contacts — analog                | **A**                                           |
+| L6      | RX group lists                   | **A**                                           |
+| L6e     | RX group list edit members       | **B** + **C** (`RxGroupListMemberPicker`)       |
+| L7      | Scan lists                       | **A**                                           |
+| L8      | Zone from location preview       | **A** (embedded)                                |
+| L9      | APRS channel slots               | **C**-ish / embedded **A**                      |
+| L10     | APRS channel assignment          | **A** (external filter)                         |
+| B1      | Builds list                      | **A**                                           |
+| B2–B3   | Wire preview / flat memory       | **A** + `reorderMode` when order arrows present |
+| B4      | Channels bulk wire edit          | **A** (embedded)                                |
+| B5      | Export resolution                | **Specialised** (config matrix)                 |
+| B6      | CPS CSV preview                  | **Specialised** (wire spreadsheet)              |
+| I1      | RadioID contact search           | **A** (+ API pagination sibling)                |
+| I2 / I4 | Field-diff update dialogs        | **Specialised** (diff table)                    |
+| I3      | Repeater directory search        | **A** (embedded; custom select for existing)    |
+| I5      | BrandMeister RX sync             | **Specialised** (review dialog)                 |
+| I6      | Channel set picker               | **A** (embedded)                                |
+| I7      | OpenAIP airport search           | Out of kit (nested custom lists)                |
+| R1      | Band plan                        | **Specialised** (static reference)              |
+| R2      | Summary counts                   | Ignore                                          |
+| E1      | Scan / RX summaries              | Low priority read-only                          |
+| E2      | Zone / scan / RGL pick + members | **B** + **C**                                   |
+| D1      | Debug storage tables             | **A** consumers                                 |
+| S1      | Styleguide                       | Demos for A/B/C/D                               |
 
 ## Code anchors
 

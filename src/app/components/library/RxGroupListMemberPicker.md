@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Two-list editor for RX group list membership — talk groups and digital contacts with export order, filters, and per-member DMR timeslot override.
+B+C membership editor for Receive Group Lists — ordered members (**C** `SelectedItemList`) above the add pool (**B** `AvailableItemPicker`), with export order, filters, permanent Sort…, and per-member DMR timeslot override in C row chrome.
 
 ## Props
 
@@ -30,11 +30,13 @@ import RxGroupListMemberPicker from '@app/components/library/RxGroupListMemberPi
 
 ## Behaviour
 
-- Unified available pool sorted by name; kind badges distinguish talk groups from digital contacts.
-- In-list panel shows `SegmentedControl` (`Auto` / `TS1` / `TS2`) only for DMR-relevant members.
-- Selection and reorder use `entityRefKey(ref)` — slot changes do not alter row identity.
+- Vertical stack: **In this list** (C) then **Other talk groups & contacts** (B), each in `PageSection`.
+- B sections: Talk groups and Digital contacts (kind badges).
+- C rows: drag handle, builtins, `SegmentedControl` (`Auto` / `TS1` / `TS2`) for DMR-relevant members, per-row remove.
+- Reorder uses `rxGroupListMemberKey` / `reorderRxGroupListMembersByKeys` so `timeSlotOverride` survives drag.
+- Find-in-list filter on C sets `reorderDisabled` (same as Zones).
 
 ## Related
 
 - [docs/features/library/rx-group-list-member-picker.md](../../../docs/features/library/rx-group-list-member-picker.md)
-- [#107](https://github.com/pskillen/codeplug-studio/issues/107) · [#108](https://github.com/pskillen/codeplug-studio/issues/108)
+- [#107](https://github.com/pskillen/codeplug-studio/issues/107) · [#108](https://github.com/pskillen/codeplug-studio/issues/108) · [#470](https://github.com/pskillen/codeplug-studio/issues/470)

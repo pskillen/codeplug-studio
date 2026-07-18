@@ -1,4 +1,13 @@
-import { ActionIcon, Badge, Checkbox, Group, SegmentedControl, Stack, Text, Tooltip } from '@mantine/core';
+import {
+  ActionIcon,
+  Badge,
+  Checkbox,
+  Group,
+  SegmentedControl,
+  Stack,
+  Text,
+  Tooltip,
+} from '@mantine/core';
 import { IconTrash } from '@tabler/icons-react';
 import { useCallback, useMemo, useState } from 'react';
 import type {
@@ -8,10 +17,7 @@ import type {
   RxGroupListMember,
   TalkGroup,
 } from '@core/models/library.ts';
-import {
-  reorderRxGroupListMembers,
-  rxGroupListMemberKey,
-} from '@core/domain/membershipOrder.ts';
+import { reorderRxGroupListMembers, rxGroupListMemberKey } from '@core/domain/membershipOrder.ts';
 import { sortRxGroupListMembersByMode } from '@core/domain/membershipSort.ts';
 import { sortByName } from '../../lib/channels.ts';
 import { ICON_STROKE } from '../../lib/iconSizes.ts';
@@ -194,14 +200,7 @@ export default function RxGroupListMemberPicker({
     onChange([...members, ...toAdd]);
     setAvailableTgSelected([]);
     setAvailableDcSelected([]);
-  }, [
-    availableDcSelected,
-    availableTgSelected,
-    members,
-    onChange,
-    optionByKey,
-    selectedRefKeys,
-  ]);
+  }, [availableDcSelected, availableTgSelected, members, onChange, optionByKey, selectedRefKeys]);
 
   const setMemberTimeslot = useCallback(
     (refKey: string, value: string) => {
