@@ -1,19 +1,19 @@
 # Anytone AT-D890UV — radio profile
 
-Provisional limits for variant `anytone-at-d890uv`. Values mirror `profiles.ts` (`ANYTONE_PROFILES`); still verify against CPS manual before treating as hard radio caps. Caps are enforced at **export** (warnings / truncation where implemented) — never in library CRUD.
+Provisional limits for variant `anytone-at-d890uv`. Values mirror `profiles.ts` (`ANYTONE_PROFILES`); still verify against CPS manual before treating as hard radio caps. Caps are enforced at **export** (warnings / truncation where implemented) — never in library CRUD. The external CPS wire verifier ([#480](https://github.com/pskillen/codeplug-studio/issues/480)) also checks these limits on wire files.
 
-| Property              | Value (provisional) | Source                                                                                                        |
-| --------------------- | ------------------- | ------------------------------------------------------------------------------------------------------------- |
-| `profileId`           | `anytone-at-d890uv` | Epic [#228](https://github.com/pskillen/codeplug-studio/issues/228)                                           |
-| Label                 | Anytone AT-D890UV   |                                                                                                               |
-| Max channels          | 4000                | `profiles.ts` — warned on export; not truncated                                                               |
-| Max zone members      | 64                  | `profiles.ts` — warned on export                                                                              |
-| Max scan lists        | 100                 | `profiles.ts` — verify against CPS manual                                                                     |
-| Max scan list members | 100                 | `profiles.ts` — verify against CPS manual                                                                     |
-| Max RGL members       | 32                  | `profiles.ts` — hardcoded; not yet warned/truncated on Anytone export                                         |
-| Channel name limit    | 16                  | Fixture + `profiles.ts` (verify against CPS manual)                                                           |
-| Max APRS slots        | 8                   | `profiles.ts` / [aprs.md](../aprs.md)                                                                         |
-| VFO row numbers       | `4001`/`4002` (CPS) | CPS appends on import — Studio need not emit ([#357](https://github.com/pskillen/codeplug-studio/issues/357)) |
+| Property              | Value (provisional) | Source                                                                                                        | Wire verification                           |
+| --------------------- | ------------------- | ------------------------------------------------------------------------------------------------------------- | ------------------------------------------- |
+| `profileId`           | `anytone-at-d890uv` | Epic [#228](https://github.com/pskillen/codeplug-studio/issues/228)                                           | —                                           |
+| Label                 | Anytone AT-D890UV   |                                                                                                               | —                                           |
+| Max channels          | 4000                | `profiles.ts` — warned on export; not truncated                                                               | Not hard-failed by verifier v1              |
+| Max zone members      | 64                  | `profiles.ts` — warned on export                                                                              | `DMRZone.CSV` pipe members ≤ 64             |
+| Max scan lists        | 100                 | `profiles.ts` — verify against CPS manual                                                                     | Not hard-failed by verifier v1              |
+| Max scan list members | 100                 | `profiles.ts` — verify against CPS manual                                                                     | `ScanList.CSV` pipe members ≤ 100           |
+| Max RGL members       | 32                  | `profiles.ts` — hardcoded; not yet warned/truncated on Anytone export                                         | `DMRReceiveGroupCallList.CSV` contacts ≤ 32 |
+| Channel name limit    | 16                  | Fixture + `profiles.ts` (verify against CPS manual)                                                           | Channel / zone / scan wire names ≤ 16       |
+| Max APRS slots        | 8                   | `profiles.ts` / [aprs.md](../aprs.md)                                                                         | —                                           |
+| VFO row numbers       | `4001`/`4002` (CPS) | CPS appends on import — Studio need not emit ([#357](https://github.com/pskillen/codeplug-studio/issues/357)) | —                                           |
 
 ## Transmit Power
 

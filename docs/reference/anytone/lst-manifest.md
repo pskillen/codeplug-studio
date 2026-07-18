@@ -85,6 +85,14 @@ Indices match operator `export-all` fixture `meep.LST`.
 - Serialiser: `src/core/import-export/formats/anytone/lstManifest.ts`
 - Wired from `exportBuildAll` when `CpsExportOptions.projectName` is set
 
+## Wire verification
+
+| Rule         | Detail                                                                  |
+| ------------ | ----------------------------------------------------------------------- |
+| Line endings | CRLF (same as CSV)                                                      |
+| Presence     | Full bundles that include `Channel.CSV` should include a `.LST` sidecar |
+| Members      | Every `index,"File.CSV"` entry must name a CSV present in the bundle    |
+
 ## Related
 
 - [README — file inventory](README.md)

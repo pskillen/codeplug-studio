@@ -11,3 +11,6 @@
 *.woff binary
 *.woff2 binary
 *.zip binary
+
+# CPS wire-verify fixtures must keep exact bytes (CRLF good samples vs LF bad samples).
+cps-verify/fixtures/** -text

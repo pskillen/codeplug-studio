@@ -1,5 +1,7 @@
 # Private operator codeplugs (shared samples live in sample-exports/)
 fixtures/
+!cps-verify/fixtures/
+!cps-verify/fixtures/**
 local/
 
 # Secrets and local env

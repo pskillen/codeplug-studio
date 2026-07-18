@@ -16,6 +16,8 @@ Cross-cutting rules for AT-D890UV CPS CSV exports. Per-entity columns live in si
 
 Studio export wraps every field in double quotes. Embedded `"` characters in wire values are **stripped** on export (`Foo "bar"` → `"Foo bar"`) — not RFC 4180 `""` escaping. Anytone CPS does not reliably escape quotes on import or export; stripping avoids malformed cells. Library model values are unchanged; loss is documented at the export boundary only. Unlikely in practice for channel or list names.
 
+**Wire verification:** External verifier (`cps-verify`, [#480](https://github.com/pskillen/codeplug-studio/issues/480)) requires universal double-quoting on every `.CSV` field and rejects embedded `"` inside field bodies. Committed mapping fixtures under `test-data/` may use LF; verifier good samples under `cps-verify/fixtures/` must use **CRLF**.
+
 ## Frequencies
 
 | Context                         | Wire format                                         | Internal                          |
@@ -39,6 +41,12 @@ Lists cross-reference each other by **exact name match** (case-sensitive) at the
 Internal model uses UUID `id` FKs; name resolution belongs in import/export adapters only.
 
 When **Shorten long names** is enabled on a build (default), Studio shortens CPS name columns to the radio profile limit at export. Anytone requires one canonical string per entity across all CSV files in a single export pass ([#292](https://github.com/pskillen/codeplug-studio/issues/292)).
+
+**Wire verification:** Name FKs must resolve to a row in the target table (or a documented sentinel). Pipe-separated member lists must not exceed radio profile caps — see [radios/at-d890uv.md](radios/at-d890uv.md).
+
+## Headers
+
+Modelled export files use an **exact** header set and column order (as in `columns.ts` / entity docs). CPS is strict about column identity; reordering or dropping modelled headers is a wire defect.
 
 ## Row numbering (`No.`)
 
@@ -64,7 +72,22 @@ Scan list timing enums and AnyTone terminology: [scan-lists.md](scan-lists.md).
 
 Unlike OpenGD77 (OS-locale delimiter quirks), the AT-D890UV sample uses comma delimiter and `.` decimal separator throughout. Re-verify if operator reports locale-variant exports.
 
+## Wire verification
+
+Structural / mechanical rules enforced by the external verifier ([docs/build/testing/wire-verification.md](../../build/testing/wire-verification.md)):
+
+| Rule           | Expectation                                                                                   |
+| -------------- | --------------------------------------------------------------------------------------------- |
+| Line endings   | CRLF on `.CSV` and `.LST`                                                                     |
+| Quoting        | Every CSV field double-quoted                                                                 |
+| Escaping       | No embedded `"` inside field bodies                                                           |
+| Headers        | Exact modelled column set + order when the file is present                                    |
+| Foreign keys   | Cross-file name refs resolve; `None` / `Off` / empty are sentinels where documented           |
+| Cardinality    | Zone / scan / RGL member counts and name lengths within [AT-D890UV caps](radios/at-d890uv.md) |
+| Required files | Core DMR tables + `.LST` when validating a full bundle that includes `Channel.CSV`            |
+
 ## Related
 
 - [README — file inventory](README.md)
 - [channels.md](channels.md)
+- [lst-manifest.md](lst-manifest.md)

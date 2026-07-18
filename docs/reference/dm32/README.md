@@ -56,6 +56,19 @@ Official Baofeng DM-32UV CPS exports use Windows (CRLF) line endings. Studio DM3
 
 Per-radio limits and wire ladders: [`radios/baofeng-dm32uv.md`](radios/baofeng-dm32uv.md).
 
+## Wire verification
+
+Structural rules enforced by `cps-verify` for profile `dm32-baofeng-dm32uv` ([wire-verification.md](../../build/testing/wire-verification.md)):
+
+| Rule           | Expectation                                                                                            |
+| -------------- | ------------------------------------------------------------------------------------------------------ |
+| Line endings   | **CRLF** on Studio export CSV                                                                          |
+| Quoting        | Selective RFC 4180 (quote fields that contain comma, quote, or newline)                                |
+| Headers        | Exact modelled column set + order when the file is present                                             |
+| Foreign keys   | Name refs per table above; `ALL` / empty sentinels where documented                                    |
+| Cardinality    | RGL members ≤ 32; scan members ≤ 16; channel name ≤ 16 ([baofeng-dm32uv.md](radios/baofeng-dm32uv.md)) |
+| Required files | Core set when `Channels.csv` present: Zones, Talkgroups, RXGroupLists, Scan                            |
+
 ## Related
 
 - [Data model](../../features/data-model/README.md)

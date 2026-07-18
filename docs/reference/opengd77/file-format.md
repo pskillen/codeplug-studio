@@ -67,6 +67,21 @@ Per G4EML CPS documentation and forum guidance:
 
 Our browser parser accepts standard comma-separated CSV as exported by the CPS on typical UK/US locales.
 
+**Studio export / `cps-verify`:** Codeplug Studio writes OpenGD77 CSV with **LF** line endings and **selective RFC 4180 quoting** (`escapeCsvField` — quote only when the field contains comma, quote, or newline). The wire verifier for Studio-oriented checks requires **LF** (not CRLF) for this format.
+
+## Wire verification
+
+Structural rules enforced by `cps-verify` for profile `opengd77-1701` ([wire-verification.md](../../build/testing/wire-verification.md)):
+
+| Rule           | Expectation                                                                                                                                  |
+| -------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| Line endings   | **LF** (Studio export)                                                                                                                       |
+| Quoting        | Selective RFC 4180                                                                                                                           |
+| Headers        | Exact modelled column set + order when the file is present (`Channels`, `Zones`, `Contacts`, `TG_Lists`; DTMF/APRS header-only when present) |
+| Foreign keys   | Name refs per table above; empty / `None` / `Off` sentinels                                                                                  |
+| Cardinality    | Zone members ≤ 80; TG list members ≤ 32; channel name ≤ 16 ([baofeng-1701.md](radios/baofeng-1701.md))                                       |
+| Required files | Core set when `Channels.csv` present: Zones, Contacts, TG_Lists                                                                              |
+
 ## Export-time radio profiles
 
 Cardinality limits (max channels, zone member slots, TG list member slots, name display length) and feature availability (APRS configs, DTMF, airband) **diverge by radio or radio family**. These belong in [radio profiles](radios/README.md), not in generic column tables.

@@ -34,6 +34,15 @@ Member order in pipe-separated columns must stay aligned on import and export.
 
 **`FMZone.CSV`:** does **not** exist on AT-D890UV — broadcast FM has no zone file ([#357](https://github.com/pskillen/codeplug-studio/issues/357)).
 
+## Wire rules
+
+| Rule            | Detail                                                                                                                 |
+| --------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| Member FKs      | Each `Zone Channel Member` name must exist as `Channel.CSV` `Channel Name` (or `AMAir.CSV` `Name` when AM zones apply) |
+| A/B channel FKs | `A Channel` / `B Channel` must resolve or use a documented sentinel                                                    |
+| Cardinality     | At most **64** members per zone ([at-d890uv.md](radios/at-d890uv.md))                                                  |
+| Name length     | `Zone Name` ≤ profile name limit (16 on AT-D890UV)                                                                     |
+
 ## Related
 
 - [am-air.md](am-air.md) — `AMZone.CSV` (separate 5-column AM-bank schema; do not reuse DMR columns)

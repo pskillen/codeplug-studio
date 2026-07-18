@@ -12,6 +12,10 @@
 | Channel name     | 7 chars | Name shortening at export boundary                                       |
 | Modes            | NFM, AM | Skip non-FM/AM internal modes with warning                               |
 
+## Wire verification
+
+`cps-verify` profile `chirp-uv5r` enforces the memory-slot and name-length caps above, plus LF / selective quoting / exact headers documented in [CHIRP README — Wire verification](../README.md#wire-verification).
+
 ## Power ladder (wire → percent)
 
 Percent = watts ÷ 5 W max. `null` internal percent exports as high (`5.0W`).

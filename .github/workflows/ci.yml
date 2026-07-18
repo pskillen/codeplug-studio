@@ -47,6 +47,20 @@ jobs:
           list-tests: all
           report-title: Test results
 
+      - name: CPS wire verify
+        run: npm run test:cps-verify
+
+      - name: CPS wire verify report
+        uses: dorny/test-reporter@v3
+        if: ${{ !cancelled() }}
+        with:
+          name: CPS wire verify
+          path: test-results/cps-verify-junit.xml
+          reporter: java-junit
+          list-suites: all
+          list-tests: all
+          report-title: CPS wire verify results
+
       - name: Upload test results
         uses: actions/upload-artifact@v7
         if: ${{ !cancelled() }}

@@ -1,0 +1,3 @@
+Channel Number,Channel Name,Channel Type,Rx Frequency,Tx Frequency,Bandwidth (kHz),Colour Code,Timeslot,Contact,TG List,DMR ID,TS1_TA_Tx,TS2_TA_Tx ID,RX Tone,TX Tone,Squelch,Power,Rx Only,Zone Skip,All Skip,TOT,VOX,No Beep,No Eco,APRS,Latitude,Longitude,Use Location
+1,Local VHF,Analogue,145.500000,145.500000,25,0,1,None,None,None,,,None,None,Disabled,Master,No,No,No,0,Off,No,No,None,0,0,No
+2,BM Local,Digital,145.500000,145.500000,25,1,1,TG91,UK,None,,,None,None,Disabled,Master,No,No,No,0,Off,No,No,None,0,0,No

@@ -24,6 +24,10 @@ Radio profile for the **Baofeng DM-1701** (also sold as **Retevis RT-84**) runni
 | Colour code          | 0–15                    | G4EML CPS               | Digital channels                                     |
 | Append CSV renumber  | Ignores channel numbers | G4EML CPS               | Append mode compacts and renumbers sequentially      |
 
+## Wire verification
+
+`cps-verify` profile `opengd77-1701` enforces the cardinality and name-length caps in the table above, plus LF / selective quoting / header / FK rules documented in [file-format.md — Wire verification](../file-format.md#wire-verification).
+
 ## Feature availability
 
 | Feature                   | 1701 support          | App modelling    | Notes                                                                     |

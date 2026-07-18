@@ -73,7 +73,7 @@ export default defineConfig(({ mode }) => {
       globals: true,
       passWithNoTests: true,
       pool: 'threads',
-      exclude: ['**/node_modules/**', 'e2e/**'],
+      exclude: ['**/node_modules/**', 'e2e/**', 'cps-verify/**'],
       reporters: isGitHubActions
         ? ['default', ['junit', { outputFile: 'test-results/junit.xml', addFileAttribute: true }]]
         : ['default'],

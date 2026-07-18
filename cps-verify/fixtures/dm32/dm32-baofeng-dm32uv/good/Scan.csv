@@ -1,0 +1,3 @@
+No.,Scan Name,CTC Scan Mode,Scan Tx Mode,Hang Time,Priority Channel 1,Priority Channel 2,Designed Channel,Priority Sweep Time,Talkback,Channel Members
+1,Airband oth,Detection CTC,Current Channel,3.0,None,None,GB3GL Glasgow,1100,1,SAR Dist/OS|GA Pilot chat|Air Train Op1|Air Train Op2|Police Air-Gnd|GB7GL T1|GB7GL T2|
+2,Glasgow,Detection CTC,Last Actived Channel,5.0,None,None,GB3GL Glasgow,500,0,GB3GL Glasgow|GB3CS Motherwell|GB7DA Airdrie|GB7GG Airdire|GB3KE Glasgow|GB3KW Glasgow|GB3KV Kilsyth|GB3PA Paisley|

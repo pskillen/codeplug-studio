@@ -23,6 +23,14 @@ DMR receive group lists (promiscuous RX) for AT-D890UV.
 
 Native RGL file — lean export keeps `Receive Group List` FK on `Channel.CSV`. Optional **m×n channel expansion** ([#305](https://github.com/pskillen/codeplug-studio/issues/305)) clears the FK on expanded TG rows; see [export-projections.md](../../features/import-export/anytone/export-projections.md).
 
+## Wire rules
+
+| Rule            | Detail                                                                          |
+| --------------- | ------------------------------------------------------------------------------- |
+| FK from channel | `Channel.CSV` `Receive Group List` must match a `Group Name` or `None`          |
+| Contact members | `Contact` pipe-separated talk-group **names** must exist in `DMRTalkGroups.CSV` |
+| Cardinality     | At most **32** contacts per RGL ([at-d890uv.md](radios/at-d890uv.md))           |
+
 ## Related
 
 - [talk-groups.md](talk-groups.md)

@@ -1,0 +1,4 @@
+Location,Name,Frequency,Duplex,Offset,Tone,rToneFreq,cToneFreq,DtcsCode,DtcsPolarity,RxDtcsCode,CrossMode,Mode,TStep,Skip,Power,Comment,URCALL,RPT1CALL,RPT2CALL
+1,UK Call,145.500000,,0.000000,,88.5,88.5,023,NN,023,Tone->Tone,NFM,5.00,,5.0W,,,,
+2,UK Call,433.500000,,0.000000,,88.5,88.5,023,NN,023,Tone->Tone,NFM,5.00,,5.0W,,,,
+4,Ruaridh,446.056250,,0.000000,TSQL,88.5,103.5,023,NN,023,Tone->Tone,NFM,5.00,,1.0W,,,,
