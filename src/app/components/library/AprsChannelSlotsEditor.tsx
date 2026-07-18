@@ -114,6 +114,12 @@ export default function AprsChannelSlotsEditor({
           getName: (row) => String(row.slotNumber),
           getPath: () => '/library/aprs-configuration',
           sortValue: (row) => row.slotNumber,
+          // Plain text — slot numbers are not navigable (self-link was misleading).
+          render: (row) => (
+            <Text fw={500} component="span">
+              {row.slotNumber}
+            </Text>
+          ),
         }}
         columns={columns}
         showSearch={false}

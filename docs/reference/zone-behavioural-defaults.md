@@ -66,7 +66,7 @@ Build → Zones UI writes here only (does not call `putZone`). Clearing a skip r
 
 ## UI
 
-- **Zone defaults** — `/library/zones/defaults` (nested under Zones)
+- **Zone defaults** — `/library/zones/defaults` (nested under Zones). Operator copy frames the library boolean as default **include** vs **exclude** for zone-derived scan lists (field remains `includeInZoneDerivedScanList`).
 - **Zone editor** — tri-state member control on `ZoneMemberEditor`
 - **Build Zones** — per-exported-zone include switches (projection)
 - **Build Export** — optional zone membership default override

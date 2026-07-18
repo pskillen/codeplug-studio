@@ -83,8 +83,8 @@ export default function ZoneBehaviourDefaultsEditor({
     <Stack gap="md" maw={640}>
       <FormSection>
         <Switch
-          label="Include zone members in zone-derived scan lists"
-          description="Library default for formats that synthesise scan lists from zones (e.g. DM32, Anytone). Per-member and per-build overrides take precedence when set."
+          label="Include members in zone-derived scan lists by default"
+          description="On = include; off = exclude. Used when a build makes scan lists from zones (for example DM32 or Anytone). You can still override this for individual members or on a build."
           checked={includeInZoneDerivedScanList}
           onChange={(event) => setIncludeInZoneDerivedScanList(event.currentTarget.checked)}
           disabled={saving}

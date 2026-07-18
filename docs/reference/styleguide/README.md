@@ -111,12 +111,14 @@ When a find-in-list or name filter is active, **disable reorder** (drag, arrows,
 
 ## Page shells
 
-| Shell         | Use                                                                    |
-| ------------- | ---------------------------------------------------------------------- |
-| `ListPage`    | Top-level entity inventories                                           |
-| `FormPage`    | Entity create/edit; description slot often holds **← Back to …**       |
-| `PageSection` | Grouped blocks inside forms                                            |
-| Section nav   | Per-area secondary nav — registry titles should match list page titles |
+| Shell         | Use                                                                                |
+| ------------- | ---------------------------------------------------------------------------------- |
+| `ListPage`    | Top-level entity inventories                                                       |
+| `FormPage`    | Entity create/edit; description slot often holds **← Back to …**                   |
+| `PageSection` | Grouped blocks inside forms **and** list pages when a secondary job needs a border |
+| Section nav   | Per-area secondary nav — registry titles should match list page titles             |
+
+**Maps and membership:** Put map + location controls in a titled `PageSection` (e.g. **Map**) below the primary `DataTable` / form — do not leave them loose in the same stack as the table so chrome bleeds across jobs. On B+C membership editors, wrap **In this…** (C) and **Other…** (B) each in `PageSection` so the two pools read as distinct blocks. Gold: Library → Channels / Zones lists; Zones → Edit (Members + Map); Scan list edit.
 
 Layout of primary + section nav: [display.md — Two-section navigation](display.md#two-section-navigation).
 

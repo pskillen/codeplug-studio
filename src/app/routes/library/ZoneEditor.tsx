@@ -11,7 +11,7 @@ import {
 import { resolveEffectiveZoneChannelIds } from '@core/domain/zoneHierarchy.ts';
 import { validateZoneMembership } from '@core/domain/validation.ts';
 import CodeplugMap from '../../components/CodeplugMap/CodeplugMap.tsx';
-import { FormSection, UnsavedChangesModal } from '../../components/ui/index.ts';
+import { FormSection, PageSection, UnsavedChangesModal } from '../../components/ui/index.ts';
 import { useEntityEditorUnsavedGuard } from '../../hooks/useEntityFormDirty.ts';
 import ZoneMemberEditor, {
   type ZoneMemberEditorMapFilters,
@@ -178,6 +178,9 @@ export default function ZoneEditor({
         {library.channels.length === 0 ? (
           <Link to="/library/channels/new">Add a channel</Link>
         ) : null}
+      </FormSection>
+
+      <PageSection title="Map">
         <CodeplugMap
           channels={channelsForMap}
           zones={zonesForMap}
@@ -195,7 +198,7 @@ export default function ZoneEditor({
             (missing coordinates, Use Location = No, or 0,0).
           </Text>
         ) : null}
-      </FormSection>
+      </PageSection>
 
       <EditorActions
         saving={saving}

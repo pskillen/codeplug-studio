@@ -20,6 +20,7 @@ import AvailableItemPicker from '../ui/AvailableItemPicker.tsx';
 import type { SelectedItemDragHandleProps } from '../ui/SelectedItemDragHandle.tsx';
 import SelectedItemDragHandle from '../ui/SelectedItemDragHandle.tsx';
 import SelectedItemList from '../ui/SelectedItemList.tsx';
+import { PageSection } from '../ui/index.ts';
 import MembershipSortMenu from './MembershipSortMenu.tsx';
 import { sortZoneMembersByMode } from '@core/domain/membershipSort.ts';
 import { channelModesForFilter, sortByName } from '../../lib/channels.ts';
@@ -243,138 +244,142 @@ export default function ZoneMemberEditor({
 
   return (
     <Stack gap="lg">
-      <SelectedItemList
-        title="In this zone"
-        description={`${members.length} direct member${members.length === 1 ? '' : 's'}${
-          editingZoneId ? ` · ${effectiveChannelCount} channels effective` : ''
-        } — export order`}
-        filter={{
-          value: inZoneFilter,
-          onChange: setInZoneFilter,
-          placeholder: 'Filter members…',
-          'aria-label': 'Filter in-zone members',
-        }}
-        itemKeys={filteredInZoneKeys}
-        selectedKeys={inZoneSelected}
-        onToggleSelect={toggleInZone}
-        onRemove={(key) => removeKeys([key])}
-        emptyMessage="No members in zone"
-        onReorder={(nextKeys) => {
-          if (nextKeys.length !== members.length) return;
-          onChange(reorderMembersByKeys(members, nextKeys));
-        }}
-        reorderDisabled={inZoneFilter.trim().length > 0}
-        onMoveSelected={moveSelected}
-        onRemoveSelected={removeSelected}
-        canMoveUp={canMoveUp}
-        canMoveDown={canMoveDown}
-        reorderHint={
-          <Text size="xs" c="dimmed">
-            {inZoneFilter.trim()
-              ? 'Clear filter to drag-reorder'
-              : 'Drag handles reorder · Alt+↑/↓ moves selection'}
-          </Text>
-        }
-        renderItem={({ itemKey, selected, onToggleSelect, onRemove, dragHandle }) => (
-          <InZoneMemberRow
-            key={itemKey}
-            memberKey={itemKey}
-            member={members.find((m) => memberKeyFromEntry(m) === itemKey)}
-            channelsById={channelsById}
-            zones={zones}
-            selected={selected}
-            onToggleSelect={onToggleSelect}
-            onRemove={onRemove}
-            dragHandle={dragHandle}
-            onIncludeInScanListChange={handleIncludeInScanList}
-          />
-        )}
-        toolbar={
-          <MembershipSortMenu
-            disabled={!members.length}
-            label="Sort channels…"
-            onSort={(mode) =>
-              onChange(sortZoneMembersByMode(members, channelsById, zonesById, mode))
-            }
-          />
-        }
-      />
+      <PageSection>
+        <SelectedItemList
+          title="In this zone"
+          description={`${members.length} direct member${members.length === 1 ? '' : 's'}${
+            editingZoneId ? ` · ${effectiveChannelCount} channels effective` : ''
+          } — export order`}
+          filter={{
+            value: inZoneFilter,
+            onChange: setInZoneFilter,
+            placeholder: 'Filter members…',
+            'aria-label': 'Filter in-zone members',
+          }}
+          itemKeys={filteredInZoneKeys}
+          selectedKeys={inZoneSelected}
+          onToggleSelect={toggleInZone}
+          onRemove={(key) => removeKeys([key])}
+          emptyMessage="No members in zone"
+          onReorder={(nextKeys) => {
+            if (nextKeys.length !== members.length) return;
+            onChange(reorderMembersByKeys(members, nextKeys));
+          }}
+          reorderDisabled={inZoneFilter.trim().length > 0}
+          onMoveSelected={moveSelected}
+          onRemoveSelected={removeSelected}
+          canMoveUp={canMoveUp}
+          canMoveDown={canMoveDown}
+          reorderHint={
+            <Text size="xs" c="dimmed">
+              {inZoneFilter.trim()
+                ? 'Clear filter to drag-reorder'
+                : 'Drag handles reorder · Alt+↑/↓ moves selection'}
+            </Text>
+          }
+          renderItem={({ itemKey, selected, onToggleSelect, onRemove, dragHandle }) => (
+            <InZoneMemberRow
+              key={itemKey}
+              memberKey={itemKey}
+              member={members.find((m) => memberKeyFromEntry(m) === itemKey)}
+              channelsById={channelsById}
+              zones={zones}
+              selected={selected}
+              onToggleSelect={onToggleSelect}
+              onRemove={onRemove}
+              dragHandle={dragHandle}
+              onIncludeInScanListChange={handleIncludeInScanList}
+            />
+          )}
+          toolbar={
+            <MembershipSortMenu
+              disabled={!members.length}
+              label="Sort channels…"
+              onSort={(mode) =>
+                onChange(sortZoneMembersByMode(members, channelsById, zonesById, mode))
+              }
+            />
+          }
+        />
+      </PageSection>
 
-      <AvailableItemPicker
-        title="Other channels & zones"
-        filter={{
-          value: availableFilter,
-          onChange: setAvailableFilter,
-          placeholder: 'Filter…',
-          'aria-label': 'Filter available channels and zones',
-        }}
-        sections={[
-          {
-            id: 'channels',
-            title: 'Channels',
-            itemKeys: availableChannels.map((ch) => ch.id),
-            selectedKeys: availableChannelSelected,
-            onToggleSelect: (id) =>
-              setAvailableChannelSelected((prev) =>
-                prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
-              ),
-            emptyMessage: 'No channels available',
-            renderItem: ({ itemKey, checked, onToggle }) => {
-              const channel = channelsById.get(itemKey);
-              if (!channel) return null;
-              return (
-                <AvailableChannelRow
-                  key={itemKey}
-                  channel={channel}
-                  checked={checked}
-                  onToggle={onToggle}
-                />
-              );
+      <PageSection>
+        <AvailableItemPicker
+          title="Other channels & zones"
+          filter={{
+            value: availableFilter,
+            onChange: setAvailableFilter,
+            placeholder: 'Filter…',
+            'aria-label': 'Filter available channels and zones',
+          }}
+          sections={[
+            {
+              id: 'channels',
+              title: 'Channels',
+              itemKeys: availableChannels.map((ch) => ch.id),
+              selectedKeys: availableChannelSelected,
+              onToggleSelect: (id) =>
+                setAvailableChannelSelected((prev) =>
+                  prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
+                ),
+              emptyMessage: 'No channels available',
+              renderItem: ({ itemKey, checked, onToggle }) => {
+                const channel = channelsById.get(itemKey);
+                if (!channel) return null;
+                return (
+                  <AvailableChannelRow
+                    key={itemKey}
+                    channel={channel}
+                    checked={checked}
+                    onToggle={onToggle}
+                  />
+                );
+              },
             },
-          },
-          {
-            id: 'zones',
-            title: 'Zones',
-            itemKeys: availableZones.map((zone) => zone.id),
-            selectedKeys: availableZoneSelected,
-            onToggleSelect: (id) =>
-              setAvailableZoneSelected((prev) =>
-                prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
-              ),
-            emptyMessage: 'No zones available',
-            renderItem: ({ itemKey, checked, onToggle }) => {
-              const zone = zonesById.get(itemKey);
-              if (!zone) return null;
-              return (
-                <Checkbox
-                  key={itemKey}
-                  label={`Zone: ${zone.name}`}
-                  checked={checked}
-                  onChange={onToggle}
-                />
-              );
+            {
+              id: 'zones',
+              title: 'Zones',
+              itemKeys: availableZones.map((zone) => zone.id),
+              selectedKeys: availableZoneSelected,
+              onToggleSelect: (id) =>
+                setAvailableZoneSelected((prev) =>
+                  prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
+                ),
+              emptyMessage: 'No zones available',
+              renderItem: ({ itemKey, checked, onToggle }) => {
+                const zone = zonesById.get(itemKey);
+                if (!zone) return null;
+                return (
+                  <Checkbox
+                    key={itemKey}
+                    label={`Zone: ${zone.name}`}
+                    checked={checked}
+                    onChange={onToggle}
+                  />
+                );
+              },
             },
-          },
-        ]}
-        onAddSelected={addSelected}
-        addDisabled={!availableChannelSelected.length && !availableZoneSelected.length}
-        footer={
-          <>
-            <Checkbox
-              label="Hide filtered entries from map"
-              checked={hideAvailableFilteredFromMap}
-              disabled={!availableFilterLower}
-              onChange={(e) => setHideAvailableFilteredFromMap(e.currentTarget.checked)}
-            />
-            <Checkbox
-              label="Hide filtered in-zone members from map"
-              checked={hideInZoneFilteredFromMap}
-              disabled={!inZoneFilterLower}
-              onChange={(e) => setHideInZoneFilteredFromMap(e.currentTarget.checked)}
-            />
-          </>
-        }
-      />
+          ]}
+          onAddSelected={addSelected}
+          addDisabled={!availableChannelSelected.length && !availableZoneSelected.length}
+          footer={
+            <>
+              <Checkbox
+                label="Hide filtered entries from map"
+                checked={hideAvailableFilteredFromMap}
+                disabled={!availableFilterLower}
+                onChange={(e) => setHideAvailableFilteredFromMap(e.currentTarget.checked)}
+              />
+              <Checkbox
+                label="Hide filtered in-zone members from map"
+                checked={hideInZoneFilteredFromMap}
+                disabled={!inZoneFilterLower}
+                onChange={(e) => setHideInZoneFilteredFromMap(e.currentTarget.checked)}
+              />
+            </>
+          }
+        />
+      </PageSection>
     </Stack>
   );
 }
