@@ -52,6 +52,19 @@ No zones, contacts, talk groups, or RX group lists in CHIRP analogue exports.
 | **Error**            | Recognised file fails parse (empty CSV, unparseable row)      |
 | **Rejected (batch)** | Mixed CHIRP + OpenGD77 files when a single format is selected |
 
+## Wire verification
+
+Structural rules enforced by `cps-verify` for profile `chirp-uv5r` ([wire-verification.md](../../build/testing/wire-verification.md)):
+
+| Rule | Expectation |
+| --- | --- |
+| Line endings | **LF** (Studio export via OpenGD77-style `csvWrite`) |
+| Quoting | Selective RFC 4180 |
+| Headers | Exact `CHIRP_HEADERS` set + order |
+| Foreign keys | None (flat memory list) |
+| Cardinality | Row count ≤ `maxMemorySlots` (128); channel `Name` ≤ `nameLimit` (7) — [chirp-uv5r.md](radios/chirp-uv5r.md) |
+| Files | Single `.csv` (any basename) |
+
 ## DMR columns on analogue exports
 
 `URCALL`, `RPT1CALL`, `RPT2CALL`, `DVCODE` are part of the CHIRP wire schema for digital-capable radios. On analogue FM exports in our fixtures they are **empty**. Import ignores them; export leaves them blank.
