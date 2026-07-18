@@ -34,15 +34,17 @@ import {
   ZONE_COL,
   ZONE_HEADERS,
 } from '../../../../src/core/import-export/formats/anytone/columns.ts';
-import { getAnytoneProfile } from '../../../../src/core/import-export/formats/anytone/profiles.ts';
+import {
+  DEFAULT_ANYTONE_PROFILE_ID,
+  getAnytoneProfile,
+  ANYTONE_PROFILES,
+} from '../../../../src/core/import-export/formats/anytone/profiles.ts';
 
 import type { BundleFile, FormatVerifier, VerifyDiagnostic } from '../../types.ts';
 import { checkCardinality, checkForeignKey, checkNameLength } from '../../rules/foreignKeys.ts';
 import { checkExactHeaders } from '../../rules/headers.ts';
 import { checkCrlfLineEndings } from '../../rules/lineEndings.ts';
 import { checkUniversalQuoting } from '../../rules/quoting.ts';
-
-const PROFILE = getAnytoneProfile('anytone-at-d890uv');
 
 /** Modelled export files that get exact header checks when present. */
 const HEADER_SPECS: Record<string, string[]> = {
@@ -109,7 +111,10 @@ function verifyHeaders(file: BundleFile): VerifyDiagnostic[] {
   return checkExactHeaders(file.name, table.headers, expected);
 }
 
-function verifyCrossFile(files: BundleFile[]): VerifyDiagnostic[] {
+function verifyCrossFile(
+  files: BundleFile[],
+  profile: ReturnType<typeof getAnytoneProfile>,
+): VerifyDiagnostic[] {
   const diagnostics: VerifyDiagnostic[] = [];
   const channelFile = findFile(files, 'Channel.CSV');
   const zoneFile = findFile(files, 'DMRZone.CSV');
@@ -161,7 +166,7 @@ function verifyCrossFile(files: BundleFile[]): VerifyDiagnostic[] {
       const rowNum = idx + 1;
       const name = cell(table.headers, row, CHANNEL_COL.name);
       diagnostics.push(
-        ...checkNameLength(channelFile.name, CHANNEL_COL.name, rowNum, name, PROFILE.nameLimit),
+        ...checkNameLength(channelFile.name, CHANNEL_COL.name, rowNum, name, profile.nameLimit),
       );
       diagnostics.push(
         ...checkForeignKey({
@@ -205,7 +210,7 @@ function verifyCrossFile(files: BundleFile[]): VerifyDiagnostic[] {
       const rowNum = idx + 1;
       const zoneName = cell(table.headers, row, ZONE_COL.name);
       diagnostics.push(
-        ...checkNameLength(zoneFile.name, ZONE_COL.name, rowNum, zoneName, PROFILE.nameLimit),
+        ...checkNameLength(zoneFile.name, ZONE_COL.name, rowNum, zoneName, profile.nameLimit),
       );
       const members = cell(table.headers, row, ZONE_COL.members);
       diagnostics.push(
@@ -214,7 +219,7 @@ function verifyCrossFile(files: BundleFile[]): VerifyDiagnostic[] {
           ZONE_COL.members,
           rowNum,
           members,
-          PROFILE.zoneMembers,
+          profile.zoneMembers,
           'Zone',
         ),
       );
@@ -250,7 +255,7 @@ function verifyCrossFile(files: BundleFile[]): VerifyDiagnostic[] {
       const rowNum = idx + 1;
       const scanName = cell(table.headers, row, SCAN_LIST_COL.name);
       diagnostics.push(
-        ...checkNameLength(scanFile.name, SCAN_LIST_COL.name, rowNum, scanName, PROFILE.nameLimit),
+        ...checkNameLength(scanFile.name, SCAN_LIST_COL.name, rowNum, scanName, profile.nameLimit),
       );
       const members = cell(table.headers, row, SCAN_LIST_COL.members);
       diagnostics.push(
@@ -259,7 +264,7 @@ function verifyCrossFile(files: BundleFile[]): VerifyDiagnostic[] {
           SCAN_LIST_COL.members,
           rowNum,
           members,
-          PROFILE.scanListMembers,
+          profile.scanListMembers,
           'Scan list',
         ),
       );
@@ -288,7 +293,7 @@ function verifyCrossFile(files: BundleFile[]): VerifyDiagnostic[] {
           RX_GROUP_LIST_COL.contacts,
           rowNum,
           contacts,
-          PROFILE.rxGroupListMembers,
+          profile.rxGroupListMembers,
           'RX group list',
         ),
       );
@@ -378,7 +383,8 @@ export function parseLstEntries(text: string): string[] {
   return entries;
 }
 
-export function verifyAnytone(files: BundleFile[]): VerifyDiagnostic[] {
+export function verifyAnytone(files: BundleFile[], profileId: string): VerifyDiagnostic[] {
+  const profile = getAnytoneProfile(profileId);
   const diagnostics: VerifyDiagnostic[] = [];
   for (const file of files) {
     diagnostics.push(...verifyPhysical(file));
@@ -386,13 +392,15 @@ export function verifyAnytone(files: BundleFile[]): VerifyDiagnostic[] {
       diagnostics.push(...verifyHeaders(file));
     }
   }
-  diagnostics.push(...verifyCrossFile(files));
+  diagnostics.push(...verifyCrossFile(files, profile));
   diagnostics.push(...verifyRequiredFiles(files));
   return diagnostics;
 }
 
 export const anytoneVerifier: FormatVerifier = {
   id: 'anytone',
-  label: 'Anytone CPS CSV (AT-D890UV)',
+  label: 'Anytone CPS CSV',
+  defaultProfileId: DEFAULT_ANYTONE_PROFILE_ID,
+  supportedProfileIds: ANYTONE_PROFILES.map((p) => p.id),
   verify: verifyAnytone,
 };

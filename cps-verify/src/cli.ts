@@ -1,26 +1,30 @@
 #!/usr/bin/env node
 /**
- * CLI: npm run verify:codeplug -- --format anytone path/to/dir-or-zip
+ * CLI: npm run verify:codeplug -- --format anytone [--profile anytone-at-d890uv] path/to/dir-or-zip
  */
 import { formatVerifyResult } from './report.ts';
-import { listVerifierIds, verifyCodeplug } from './verify.ts';
+import { listProfilesForFormat, listVerifierIds, verifyCodeplug } from './verify.ts';
 
 function printUsage(): void {
   const formats = listVerifierIds().join(', ') || '(none registered)';
-  console.error(`Usage: npm run verify:codeplug -- --format <id> <path>
+  console.error(`Usage: npm run verify:codeplug -- --format <id> [--profile <id>] <path>
 
 Verify a CPS CSV directory or ZIP against wire-shape rules from tier-3 docs.
 
 Options:
-  --format <id>   Format plugin id (known: ${formats})
-  -h, --help      Show this help
+  --format <id>    Format plugin id (known: ${formats})
+  --profile <id>   Radio profile within the format (default: format default)
+  -h, --help       Show this help
 
 Exit codes: 0 = ok, 1 = diagnostics or usage error.
 `);
 }
 
-function parseArgs(argv: string[]): { format: string; path: string } | 'help' | 'error' {
+function parseArgs(
+  argv: string[],
+): { format: string; profile?: string; path: string } | 'help' | 'error' {
   let format = '';
+  let profile = '';
   let pathArg = '';
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i]!;
@@ -33,6 +37,14 @@ function parseArgs(argv: string[]): { format: string; path: string } | 'help' | 
       format = a.slice('--format='.length);
       continue;
     }
+    if (a === '--profile') {
+      profile = argv[++i] ?? '';
+      continue;
+    }
+    if (a.startsWith('--profile=')) {
+      profile = a.slice('--profile='.length);
+      continue;
+    }
     if (a.startsWith('-')) {
       console.error(`Unknown option: ${a}`);
       return 'error';
@@ -43,8 +55,16 @@ function parseArgs(argv: string[]): { format: string; path: string } | 'help' | 
       return 'error';
     }
   }
-  if (!format || !pathArg) return 'error';
-  return { format, path: pathArg };
+  if (!format || !pathArg) {
+    if (format) {
+      const profiles = listProfilesForFormat(format);
+      if (profiles.length) {
+        console.error(`Profiles for ${format}: ${profiles.join(', ')}`);
+      }
+    }
+    return 'error';
+  }
+  return { format, profile: profile || undefined, path: pathArg };
 }
 
 async function main(): Promise<void> {

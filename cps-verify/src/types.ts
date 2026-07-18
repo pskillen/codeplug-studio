@@ -23,13 +23,19 @@ export interface BundleFile {
 
 export interface VerifyResult {
   format: string;
+  profile: string;
   diagnostics: VerifyDiagnostic[];
   ok: boolean;
 }
 
 export interface FormatVerifier {
+  /** formatId (e.g. `anytone`, `dm32`). */
   id: string;
   /** Human label for CLI help. */
   label: string;
-  verify(files: BundleFile[]): VerifyDiagnostic[];
+  /** Default profileId when CLI omits --profile. */
+  defaultProfileId: string;
+  /** Profiles this plugin can verify. */
+  supportedProfileIds: readonly string[];
+  verify(files: BundleFile[], profileId: string): VerifyDiagnostic[];
 }

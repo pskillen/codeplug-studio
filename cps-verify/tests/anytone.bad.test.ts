@@ -4,9 +4,10 @@ import { describe, expect, it } from 'vitest';
 import { verifyCodeplug } from '../src/verify.ts';
 
 const root = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
-const bad = (name: string) => path.join(root, 'fixtures/anytone/bad', name);
+const bad = (name: string) =>
+  path.join(root, 'fixtures/anytone/anytone-at-d890uv/bad', name);
 
-describe('anytone bad fixtures', () => {
+describe('anytone-at-d890uv bad fixtures', () => {
   it('fails on LF-only line endings', async () => {
     const result = await verifyCodeplug({ format: 'anytone', path: bad('lf-endings') });
     expect(result.ok).toBe(false);

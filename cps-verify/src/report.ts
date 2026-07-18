@@ -15,7 +15,7 @@ export function formatDiagnostics(diagnostics: VerifyDiagnostic[]): string {
 }
 
 export function formatVerifyResult(result: VerifyResult): string {
-  const header = `format=${result.format} ok=${result.ok} diagnostics=${result.diagnostics.length}`;
+  const header = `format=${result.format} profile=${result.profile} ok=${result.ok} diagnostics=${result.diagnostics.length}`;
   if (result.diagnostics.length === 0) return header;
   return `${header}\n${formatDiagnostics(result.diagnostics)}`;
 }
