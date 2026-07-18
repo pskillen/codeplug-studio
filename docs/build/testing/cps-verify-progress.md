@@ -7,8 +7,9 @@
 
 ## Overall status
 
-**Status:** #480 complete · #481 in progress
+**Status:** #480 complete · #481 PR open
 **Branch:** `481/patricks/export-smoke-verify`
+**PR:** [#489](https://github.com/pskillen/codeplug-studio/pull/489)
 
 ---
 
