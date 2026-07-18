@@ -2,7 +2,7 @@
 
 Items **skipped**, **incomplete**, or **discovered during execution** — not the plan's future phases.
 
-**Tracking:** [codeplug-studio#480](https://github.com/pskillen/codeplug-studio/issues/480) · [codeplug-studio#481](https://github.com/pskillen/codeplug-studio/issues/481)
+**Tracking:** [codeplug-studio#480](https://github.com/pskillen/codeplug-studio/issues/480) · [codeplug-studio#481](https://github.com/pskillen/codeplug-studio/issues/481) · [codeplug-studio#491](https://github.com/pskillen/codeplug-studio/issues/491)
 
 ---
 
@@ -14,6 +14,7 @@ Items **skipped**, **incomplete**, or **discovered during execution** — not th
 
 ## Next wire-verify track
 
-- [x] [#481](https://github.com/pskillen/codeplug-studio/issues/481) export YAML → verify smoke (this branch)
+- [x] [#481](https://github.com/pskillen/codeplug-studio/issues/481) export YAML → verify smoke
+- [x] [#491](https://github.com/pskillen/codeplug-studio/issues/491) granular cps-verify Dorny report (this branch)
 - [ ] [#482](https://github.com/pskillen/codeplug-studio/issues/482) content projection suite
 - [ ] Optional: cull or shrink baked `cps-verify/fixtures/**/good` once export-smoke is trusted

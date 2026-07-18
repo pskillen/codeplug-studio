@@ -2,7 +2,7 @@
 
 External **wire-shape** checks for CPS CSV bundles (directory or ZIP). Complements directional mapping/golden tests: this suite proves mechanical CPS rules (line endings, quoting, headers, name FKs, cardinality, required files), not semantic projection equality.
 
-**Tracking:** [#480](https://github.com/pskillen/codeplug-studio/issues/480) verifier · [#481](https://github.com/pskillen/codeplug-studio/issues/481) export smoke (parent [Epic #161](https://github.com/pskillen/codeplug-studio/issues/161)). Progress: [cps-verify-progress.md](cps-verify-progress.md).
+**Tracking:** [#480](https://github.com/pskillen/codeplug-studio/issues/480) verifier · [#481](https://github.com/pskillen/codeplug-studio/issues/481) export smoke · [#491](https://github.com/pskillen/codeplug-studio/issues/491) granular Dorny report (parent [Epic #161](https://github.com/pskillen/codeplug-studio/issues/161)). Progress: [cps-verify-progress.md](cps-verify-progress.md).
 
 ## Terminology
 
@@ -50,6 +50,23 @@ That Vitest run includes:
 1. Baked `fixtures/<format>/<profile>/{good,bad}` shape checks
 2. **Export smoke** ([#481](https://github.com/pskillen/codeplug-studio/issues/481)) — see below
 
+Good fixtures and export-smoke register **one Vitest case per named check** ([#491](https://github.com/pskillen/codeplug-studio/issues/491)) so Dorny lists e.g. `headers.Channel.CSV`, `fk.zone.members`, not a single profile-level pass.
+
+## Check outcomes (granular reporting)
+
+Plugins implement `verifyDetailed(files, profileId) → CheckOutcome[]`. Each outcome is a check that **actually ran** (file present / applicable):
+
+| Field         | Role                                                                         |
+| ------------- | ---------------------------------------------------------------------------- |
+| `check.id`    | Stable id for Vitest/JUnit titles (e.g. `physical.Channel.CSV.line-endings`) |
+| `check.rule`  | Rule taxonomy (`line-endings`, `foreign-key`, …) — used by bad fixtures      |
+| `check.label` | Short human label                                                            |
+| `diagnostics` | Failures for that check (empty = pass)                                       |
+
+`verify()` / CLI flatten outcomes for exit-code compatibility. CLI prints `PASS`/`FAIL` per check via `formatVerifyDetailedResult`.
+
+**Adding a check:** when you add a wire rule, emit a new `checkOutcome({ id, rule, label }, diagnostics)` from the format plugin — the next `test:cps-verify` run surfaces it as its own Dorny row automatically.
+
 ## Export smoke (YAML → ZIP → verify)
 
 Proves Studio’s real export packaging path produces **wire-valid** CPS for each verifier-supported profile. Shape-only — not content projection ([#482](https://github.com/pskillen/codeplug-studio/issues/482)).
@@ -58,8 +75,8 @@ Proves Studio’s real export packaging path produces **wire-valid** CPS for eac
 test-data/export-smoke/rich-project.yaml
   → parseProjectDocument
   → exportBuildZip (multi-file) or exportBuildSingleFile (CHIRP)
-  → write temp ZIP/CSV
-  → verifyCodeplug
+  → verifyDetailed (in-memory ZIP/CSV)
+  → it.each(CheckOutcome)
 ```
 
 | Piece               | Path                                                                                            |
@@ -68,7 +85,7 @@ test-data/export-smoke/rich-project.yaml
 | Harness             | [`cps-verify/tests/export-smoke.test.ts`](../../../cps-verify/tests/export-smoke.test.ts)       |
 | Profiles            | `anytone-at-d890uv`, `dm32-baofeng-dm32uv`, `opengd77-1701`, `chirp-uv5r`                       |
 
-Same core serialisation as UI **Download ZIP** (`exportBuildZip`); IndexedDB and browser download are not involved. Multi-file formats verify the **ZIP** so packaging is exercised.
+Same core serialisation as UI **Download ZIP** (`exportBuildZip`); IndexedDB and browser download are not involved. Multi-file formats unzip in-memory so ZIP packaging is exercised.
 
 ## Formats / profiles
 
@@ -85,7 +102,7 @@ Same core serialisation as UI **Download ZIP** (`exportBuildZip`); IndexedDB and
 2. Add `cps-verify/src/formats/<formatId>/` with SOURCES header.
 3. Register in `cps-verify/src/formats/registry.ts`.
 4. Add `fixtures/<formatId>/<profileId>/good` + crafted `bad/`.
-5. Add Vitest under `cps-verify/tests/`.
+5. Add Vitest under `cps-verify/tests/` using `itEachCheckOutcome` for good paths.
 
 ## Related
 

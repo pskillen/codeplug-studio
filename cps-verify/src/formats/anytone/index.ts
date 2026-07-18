@@ -40,7 +40,8 @@ import {
   ANYTONE_PROFILES,
 } from '../../../../src/core/import-export/formats/anytone/profiles.ts';
 
-import type { BundleFile, FormatVerifier, VerifyDiagnostic } from '../../types.ts';
+import type { BundleFile, CheckOutcome, FormatVerifier, VerifyDiagnostic } from '../../types.ts';
+import { checkOutcome, flattenOutcomes } from '../../types.ts';
 import { checkCardinality, checkForeignKey, checkNameLength } from '../../rules/foreignKeys.ts';
 import { checkExactHeaders } from '../../rules/headers.ts';
 import { checkCrlfLineEndings } from '../../rules/lineEndings.ts';
@@ -94,28 +95,53 @@ function isCsvOrLst(name: string): boolean {
   return upper.endsWith('.CSV') || upper.endsWith('.LST');
 }
 
-function verifyPhysical(file: BundleFile): VerifyDiagnostic[] {
-  if (!isCsvOrLst(file.name)) return [];
-  return [
-    ...checkCrlfLineEndings(file.name, file.text),
-    ...(file.name.toUpperCase().endsWith('.CSV')
-      ? checkUniversalQuoting(file.name, file.text)
-      : []),
-  ];
+function pushPhysicalOutcomes(file: BundleFile, outcomes: CheckOutcome[]): void {
+  if (!isCsvOrLst(file.name)) return;
+  outcomes.push(
+    checkOutcome(
+      {
+        id: `physical.${file.name}.line-endings`,
+        rule: 'line-endings',
+        label: `${file.name} CRLF line endings`,
+      },
+      checkCrlfLineEndings(file.name, file.text),
+    ),
+  );
+  if (file.name.toUpperCase().endsWith('.CSV')) {
+    outcomes.push(
+      checkOutcome(
+        {
+          id: `physical.${file.name}.quoting`,
+          rule: 'quoting',
+          label: `${file.name} universal quoting`,
+        },
+        checkUniversalQuoting(file.name, file.text),
+      ),
+    );
+  }
 }
 
-function verifyHeaders(file: BundleFile): VerifyDiagnostic[] {
+function pushHeaderOutcome(file: BundleFile, outcomes: CheckOutcome[]): void {
   const expected = HEADER_SPECS[file.name];
-  if (!expected) return [];
+  if (!expected) return;
   const table = csvToTable(file.text);
-  return checkExactHeaders(file.name, table.headers, expected);
+  outcomes.push(
+    checkOutcome(
+      {
+        id: `headers.${file.name}`,
+        rule: 'headers',
+        label: `${file.name} exact headers`,
+      },
+      checkExactHeaders(file.name, table.headers, expected),
+    ),
+  );
 }
 
-function verifyCrossFile(
+function pushCrossFileOutcomes(
   files: BundleFile[],
   profile: ReturnType<typeof getAnytoneProfile>,
-): VerifyDiagnostic[] {
-  const diagnostics: VerifyDiagnostic[] = [];
+  outcomes: CheckOutcome[],
+): void {
   const channelFile = findFile(files, 'Channel.CSV');
   const zoneFile = findFile(files, 'DMRZone.CSV');
   const scanFile = findFile(files, 'ScanList.CSV');
@@ -162,13 +188,17 @@ function verifyCrossFile(
 
   if (channelFile) {
     const table = csvToTable(channelFile.text);
+    const nameLen: VerifyDiagnostic[] = [];
+    const fkScan: VerifyDiagnostic[] = [];
+    const fkRgl: VerifyDiagnostic[] = [];
+    const fkContact: VerifyDiagnostic[] = [];
     table.rows.forEach((row, idx) => {
       const rowNum = idx + 1;
       const name = cell(table.headers, row, CHANNEL_COL.name);
-      diagnostics.push(
+      nameLen.push(
         ...checkNameLength(channelFile.name, CHANNEL_COL.name, rowNum, name, profile.nameLimit),
       );
-      diagnostics.push(
+      fkScan.push(
         ...checkForeignKey({
           file: channelFile.name,
           column: CHANNEL_COL.scanList,
@@ -178,7 +208,7 @@ function verifyCrossFile(
           sentinels: new Set(['None', 'Off', '']),
         }),
       );
-      diagnostics.push(
+      fkRgl.push(
         ...checkForeignKey({
           file: channelFile.name,
           column: CHANNEL_COL.rxGroupList,
@@ -190,7 +220,7 @@ function verifyCrossFile(
       );
       const contact = cell(table.headers, row, CHANNEL_COL.contactTalkGroup);
       if (contact && contact !== 'None' && contact !== 'Off') {
-        diagnostics.push(
+        fkContact.push(
           ...checkForeignKey({
             file: channelFile.name,
             column: CHANNEL_COL.contactTalkGroup,
@@ -202,18 +232,56 @@ function verifyCrossFile(
         );
       }
     });
+    outcomes.push(
+      checkOutcome(
+        {
+          id: 'name-length.Channel.CSV',
+          rule: 'name-length',
+          label: 'Channel name length',
+        },
+        nameLen,
+      ),
+      checkOutcome(
+        {
+          id: 'fk.channel.scanList',
+          rule: 'foreign-key',
+          label: 'Channel → ScanList FK',
+        },
+        fkScan,
+      ),
+      checkOutcome(
+        {
+          id: 'fk.channel.rxGroupList',
+          rule: 'foreign-key',
+          label: 'Channel → RX group list FK',
+        },
+        fkRgl,
+      ),
+      checkOutcome(
+        {
+          id: 'fk.channel.contactTalkGroup',
+          rule: 'foreign-key',
+          label: 'Channel → contact/TG FK',
+        },
+        fkContact,
+      ),
+    );
   }
 
   if (zoneFile) {
     const table = csvToTable(zoneFile.text);
+    const nameLen: VerifyDiagnostic[] = [];
+    const cardinality: VerifyDiagnostic[] = [];
+    const fkMembers: VerifyDiagnostic[] = [];
+    const fkAb: VerifyDiagnostic[] = [];
     table.rows.forEach((row, idx) => {
       const rowNum = idx + 1;
       const zoneName = cell(table.headers, row, ZONE_COL.name);
-      diagnostics.push(
+      nameLen.push(
         ...checkNameLength(zoneFile.name, ZONE_COL.name, rowNum, zoneName, profile.nameLimit),
       );
       const members = cell(table.headers, row, ZONE_COL.members);
-      diagnostics.push(
+      cardinality.push(
         ...checkCardinality(
           zoneFile.name,
           ZONE_COL.members,
@@ -223,7 +291,7 @@ function verifyCrossFile(
           'Zone',
         ),
       );
-      diagnostics.push(
+      fkMembers.push(
         ...checkForeignKey({
           file: zoneFile.name,
           column: ZONE_COL.members,
@@ -235,7 +303,7 @@ function verifyCrossFile(
         }),
       );
       for (const col of [ZONE_COL.aChannel, ZONE_COL.bChannel] as const) {
-        diagnostics.push(
+        fkAb.push(
           ...checkForeignKey({
             file: zoneFile.name,
             column: col,
@@ -247,18 +315,47 @@ function verifyCrossFile(
         );
       }
     });
+    outcomes.push(
+      checkOutcome(
+        { id: 'name-length.DMRZone.CSV', rule: 'name-length', label: 'Zone name length' },
+        nameLen,
+      ),
+      checkOutcome(
+        {
+          id: 'cardinality.zone.members',
+          rule: 'cardinality',
+          label: 'Zone member cardinality',
+        },
+        cardinality,
+      ),
+      checkOutcome(
+        { id: 'fk.zone.members', rule: 'foreign-key', label: 'Zone members → channel FK' },
+        fkMembers,
+      ),
+      checkOutcome(
+        {
+          id: 'fk.zone.abChannel',
+          rule: 'foreign-key',
+          label: 'Zone A/B channel → channel FK',
+        },
+        fkAb,
+      ),
+    );
   }
 
   if (scanFile) {
     const table = csvToTable(scanFile.text);
+    const nameLen: VerifyDiagnostic[] = [];
+    const cardinality: VerifyDiagnostic[] = [];
+    const fkMembers: VerifyDiagnostic[] = [];
     table.rows.forEach((row, idx) => {
       const rowNum = idx + 1;
       const scanName = cell(table.headers, row, SCAN_LIST_COL.name);
-      diagnostics.push(
+      nameLen.push(
         ...checkNameLength(scanFile.name, SCAN_LIST_COL.name, rowNum, scanName, profile.nameLimit),
       );
       const members = cell(table.headers, row, SCAN_LIST_COL.members);
-      diagnostics.push(
+      cardinality.push(
         ...checkCardinality(
           scanFile.name,
           SCAN_LIST_COL.members,
@@ -268,7 +365,7 @@ function verifyCrossFile(
           'Scan list',
         ),
       );
-      diagnostics.push(
+      fkMembers.push(
         ...checkForeignKey({
           file: scanFile.name,
           column: SCAN_LIST_COL.members,
@@ -280,14 +377,42 @@ function verifyCrossFile(
         }),
       );
     });
+    outcomes.push(
+      checkOutcome(
+        {
+          id: 'name-length.ScanList.CSV',
+          rule: 'name-length',
+          label: 'Scan list name length',
+        },
+        nameLen,
+      ),
+      checkOutcome(
+        {
+          id: 'cardinality.scan.members',
+          rule: 'cardinality',
+          label: 'Scan list member cardinality',
+        },
+        cardinality,
+      ),
+      checkOutcome(
+        {
+          id: 'fk.scan.members',
+          rule: 'foreign-key',
+          label: 'Scan list members → channel FK',
+        },
+        fkMembers,
+      ),
+    );
   }
 
   if (rglFile) {
     const table = csvToTable(rglFile.text);
+    const cardinality: VerifyDiagnostic[] = [];
+    const fkContacts: VerifyDiagnostic[] = [];
     table.rows.forEach((row, idx) => {
       const rowNum = idx + 1;
       const contacts = cell(table.headers, row, RX_GROUP_LIST_COL.contacts);
-      diagnostics.push(
+      cardinality.push(
         ...checkCardinality(
           rglFile.name,
           RX_GROUP_LIST_COL.contacts,
@@ -297,7 +422,7 @@ function verifyCrossFile(
           'RX group list',
         ),
       );
-      diagnostics.push(
+      fkContacts.push(
         ...checkForeignKey({
           file: rglFile.name,
           column: RX_GROUP_LIST_COL.contacts,
@@ -309,40 +434,80 @@ function verifyCrossFile(
         }),
       );
     });
+    outcomes.push(
+      checkOutcome(
+        {
+          id: 'cardinality.rxGroup.contacts',
+          rule: 'cardinality',
+          label: 'RX group list contact cardinality',
+        },
+        cardinality,
+      ),
+      checkOutcome(
+        {
+          id: 'fk.rxGroup.contacts',
+          rule: 'foreign-key',
+          label: 'RX group contacts → TG FK',
+        },
+        fkContacts,
+      ),
+    );
   }
-
-  return diagnostics;
 }
 
-function verifyRequiredFiles(files: BundleFile[]): VerifyDiagnostic[] {
+function pushRequiredFileOutcomes(files: BundleFile[], outcomes: CheckOutcome[]): void {
   const names = new Set(files.map((f) => f.name));
   // Only enforce full-bundle required set when Channel.CSV is present (partial snippets skip)
-  if (!names.has('Channel.CSV')) return [];
-  const diagnostics: VerifyDiagnostic[] = [];
+  if (!names.has('Channel.CSV')) return;
+
+  const coreMissing: VerifyDiagnostic[] = [];
   for (const required of REQUIRED_FULL_BUNDLE_FILES) {
     if (!names.has(required)) {
-      diagnostics.push({
+      coreMissing.push({
         rule: 'required-files',
         message: `Missing required file ${required} for Anytone full bundle verification.`,
       });
     }
   }
-  // LST: if any .LST present, or if validating a "full" bundle with all core CSVs, prefer a manifest
+  outcomes.push(
+    checkOutcome(
+      {
+        id: 'required.core-files',
+        rule: 'required-files',
+        label: 'Required Anytone core CSV files',
+      },
+      coreMissing,
+    ),
+  );
+
   const hasLst = [...names].some((n) => n.toUpperCase().endsWith('.LST'));
   const hasAllCore = REQUIRED_FULL_BUNDLE_FILES.every((n) => names.has(n));
+  const lstPresence: VerifyDiagnostic[] = [];
   if (hasAllCore && !hasLst) {
-    diagnostics.push({
+    lstPresence.push({
       rule: 'required-files',
       message: 'Full Anytone bundle should include a .LST manifest sidecar.',
     });
   }
+  outcomes.push(
+    checkOutcome(
+      {
+        id: 'required.lst-manifest',
+        rule: 'required-files',
+        label: 'Anytone .LST manifest present',
+      },
+      lstPresence,
+    ),
+  );
+
   if (hasLst) {
     const lst = files.find((f) => f.name.toUpperCase().endsWith('.LST'));
+    const lstEntries: VerifyDiagnostic[] = [];
     if (lst) {
       const listed = parseLstEntries(lst.text);
       for (const entry of listed) {
         if (!names.has(entry)) {
-          diagnostics.push({
+          lstEntries.push({
             rule: 'required-files',
             file: lst.name,
             message: `LST lists ${JSON.stringify(entry)} but file is not in the bundle.`,
@@ -350,8 +515,17 @@ function verifyRequiredFiles(files: BundleFile[]): VerifyDiagnostic[] {
         }
       }
     }
+    outcomes.push(
+      checkOutcome(
+        {
+          id: 'required.lst-entries',
+          rule: 'required-files',
+          label: 'Anytone .LST entries resolve',
+        },
+        lstEntries,
+      ),
+    );
   }
-  return diagnostics;
 }
 
 /**
@@ -383,18 +557,22 @@ export function parseLstEntries(text: string): string[] {
   return entries;
 }
 
-export function verifyAnytone(files: BundleFile[], profileId: string): VerifyDiagnostic[] {
+export function verifyAnytoneDetailed(files: BundleFile[], profileId: string): CheckOutcome[] {
   const profile = getAnytoneProfile(profileId);
-  const diagnostics: VerifyDiagnostic[] = [];
+  const outcomes: CheckOutcome[] = [];
   for (const file of files) {
-    diagnostics.push(...verifyPhysical(file));
+    pushPhysicalOutcomes(file, outcomes);
     if (file.name.toUpperCase().endsWith('.CSV')) {
-      diagnostics.push(...verifyHeaders(file));
+      pushHeaderOutcome(file, outcomes);
     }
   }
-  diagnostics.push(...verifyCrossFile(files, profile));
-  diagnostics.push(...verifyRequiredFiles(files));
-  return diagnostics;
+  pushCrossFileOutcomes(files, profile, outcomes);
+  pushRequiredFileOutcomes(files, outcomes);
+  return outcomes;
+}
+
+export function verifyAnytone(files: BundleFile[], profileId: string): VerifyDiagnostic[] {
+  return flattenOutcomes(verifyAnytoneDetailed(files, profileId));
 }
 
 export const anytoneVerifier: FormatVerifier = {
@@ -402,5 +580,6 @@ export const anytoneVerifier: FormatVerifier = {
   label: 'Anytone CPS CSV',
   defaultProfileId: DEFAULT_ANYTONE_PROFILE_ID,
   supportedProfileIds: ANYTONE_PROFILES.map((p) => p.id),
+  verifyDetailed: verifyAnytoneDetailed,
   verify: verifyAnytone,
 };

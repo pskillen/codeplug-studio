@@ -31,7 +31,8 @@ import {
   DM32_PROFILES,
   getDm32Profile,
 } from '../../../../src/core/import-export/formats/dm32/profiles.ts';
-import type { BundleFile, FormatVerifier, VerifyDiagnostic } from '../../types.ts';
+import type { BundleFile, CheckOutcome, FormatVerifier, VerifyDiagnostic } from '../../types.ts';
+import { checkOutcome, flattenOutcomes } from '../../types.ts';
 import { checkCardinality, checkForeignKey, checkNameLength } from '../../rules/foreignKeys.ts';
 import { checkExactHeaders } from '../../rules/headers.ts';
 import { checkCrlfLineEndings } from '../../rules/lineEndings.ts';
@@ -74,32 +75,55 @@ function nameSet(headers: string[], rows: string[][], column: string): Set<strin
   return set;
 }
 
-function verifyPhysical(file: BundleFile): VerifyDiagnostic[] {
-  if (!file.name.toLowerCase().endsWith('.csv')) return [];
-  return [
-    ...checkCrlfLineEndings(file.name, file.text),
-    ...checkSelectiveQuoting(file.name, file.text),
-  ];
-}
-
 function headerSpecFor(fileName: string): string[] | undefined {
   if (HEADER_SPECS[fileName]) return HEADER_SPECS[fileName];
   const key = Object.keys(HEADER_SPECS).find((k) => k.toLowerCase() === fileName.toLowerCase());
   return key ? HEADER_SPECS[key] : undefined;
 }
 
-function verifyHeaders(file: BundleFile): VerifyDiagnostic[] {
-  const expected = headerSpecFor(file.name);
-  if (!expected) return [];
-  const table = csvToTable(file.text);
-  return checkExactHeaders(file.name, table.headers, expected);
+function pushPhysicalOutcomes(file: BundleFile, outcomes: CheckOutcome[]): void {
+  if (!file.name.toLowerCase().endsWith('.csv')) return;
+  outcomes.push(
+    checkOutcome(
+      {
+        id: `physical.${file.name}.line-endings`,
+        rule: 'line-endings',
+        label: `${file.name} CRLF line endings`,
+      },
+      checkCrlfLineEndings(file.name, file.text),
+    ),
+    checkOutcome(
+      {
+        id: `physical.${file.name}.quoting`,
+        rule: 'quoting',
+        label: `${file.name} selective quoting`,
+      },
+      checkSelectiveQuoting(file.name, file.text),
+    ),
+  );
 }
 
-function verifyCrossFile(
+function pushHeaderOutcome(file: BundleFile, outcomes: CheckOutcome[]): void {
+  const expected = headerSpecFor(file.name);
+  if (!expected) return;
+  const table = csvToTable(file.text);
+  outcomes.push(
+    checkOutcome(
+      {
+        id: `headers.${file.name}`,
+        rule: 'headers',
+        label: `${file.name} exact headers`,
+      },
+      checkExactHeaders(file.name, table.headers, expected),
+    ),
+  );
+}
+
+function pushCrossFileOutcomes(
   files: BundleFile[],
   profile: ReturnType<typeof getDm32Profile>,
-): VerifyDiagnostic[] {
-  const diagnostics: VerifyDiagnostic[] = [];
+  outcomes: CheckOutcome[],
+): void {
   const channels = findFile(files, 'Channels.csv');
   const zones = findFile(files, 'Zones.csv');
   const talkgroups = findFile(files, 'Talkgroups.csv');
@@ -135,13 +159,17 @@ function verifyCrossFile(
     : new Set<string>();
 
   if (channelTable && channels) {
+    const nameLen: VerifyDiagnostic[] = [];
+    const fkTxContact: VerifyDiagnostic[] = [];
+    const fkRxGroup: VerifyDiagnostic[] = [];
+    const fkScanList: VerifyDiagnostic[] = [];
     channelTable.rows.forEach((row, idx) => {
       const rowNum = idx + 1;
       const name = cell(channelTable.headers, row, CHANNEL_COL.name);
-      diagnostics.push(
+      nameLen.push(
         ...checkNameLength(channels.name, CHANNEL_COL.name, rowNum, name, profile.nameLimit),
       );
-      diagnostics.push(
+      fkTxContact.push(
         ...checkForeignKey({
           file: channels.name,
           column: CHANNEL_COL.txContact,
@@ -151,7 +179,7 @@ function verifyCrossFile(
           sentinels: new Set(['', 'None', 'Off']),
         }),
       );
-      diagnostics.push(
+      fkRxGroup.push(
         ...checkForeignKey({
           file: channels.name,
           column: CHANNEL_COL.rxGroupList,
@@ -161,7 +189,7 @@ function verifyCrossFile(
           sentinels: new Set(['', 'ALL', 'None', 'Off']),
         }),
       );
-      diagnostics.push(
+      fkScanList.push(
         ...checkForeignKey({
           file: channels.name,
           column: CHANNEL_COL.scanList,
@@ -172,14 +200,49 @@ function verifyCrossFile(
         }),
       );
     });
+    outcomes.push(
+      checkOutcome(
+        {
+          id: 'name-length.Channels.csv',
+          rule: 'name-length',
+          label: 'Channel name length',
+        },
+        nameLen,
+      ),
+      checkOutcome(
+        {
+          id: 'fk.channel.txContact',
+          rule: 'foreign-key',
+          label: 'Channel → TX contact/TG FK',
+        },
+        fkTxContact,
+      ),
+      checkOutcome(
+        {
+          id: 'fk.channel.rxGroupList',
+          rule: 'foreign-key',
+          label: 'Channel → RX group list FK',
+        },
+        fkRxGroup,
+      ),
+      checkOutcome(
+        {
+          id: 'fk.channel.scanList',
+          rule: 'foreign-key',
+          label: 'Channel → Scan list FK',
+        },
+        fkScanList,
+      ),
+    );
   }
 
   if (zones) {
     const table = csvToTable(zones.text);
+    const fkMembers: VerifyDiagnostic[] = [];
     table.rows.forEach((row, idx) => {
       const rowNum = idx + 1;
       const members = cell(table.headers, row, ZONE_COL.members);
-      diagnostics.push(
+      fkMembers.push(
         ...checkForeignKey({
           file: zones.name,
           column: ZONE_COL.members,
@@ -191,13 +254,21 @@ function verifyCrossFile(
         }),
       );
     });
+    outcomes.push(
+      checkOutcome(
+        { id: 'fk.zone.members', rule: 'foreign-key', label: 'Zone members → channel FK' },
+        fkMembers,
+      ),
+    );
   }
 
   if (rgls && rglTable) {
+    const cardinality: VerifyDiagnostic[] = [];
+    const fkMembers: VerifyDiagnostic[] = [];
     rglTable.rows.forEach((row, idx) => {
       const rowNum = idx + 1;
       const members = cell(rglTable.headers, row, RX_GROUP_LIST_COL.members);
-      diagnostics.push(
+      cardinality.push(
         ...checkCardinality(
           rgls.name,
           RX_GROUP_LIST_COL.members,
@@ -207,7 +278,7 @@ function verifyCrossFile(
           'RX group list',
         ),
       );
-      diagnostics.push(
+      fkMembers.push(
         ...checkForeignKey({
           file: rgls.name,
           column: RX_GROUP_LIST_COL.members,
@@ -219,13 +290,33 @@ function verifyCrossFile(
         }),
       );
     });
+    outcomes.push(
+      checkOutcome(
+        {
+          id: 'cardinality.rxGroup.members',
+          rule: 'cardinality',
+          label: 'RX group list member cardinality',
+        },
+        cardinality,
+      ),
+      checkOutcome(
+        {
+          id: 'fk.rxGroup.members',
+          rule: 'foreign-key',
+          label: 'RX group members → contact/TG FK',
+        },
+        fkMembers,
+      ),
+    );
   }
 
   if (scan && scanTable) {
+    const cardinality: VerifyDiagnostic[] = [];
+    const fkMembers: VerifyDiagnostic[] = [];
     scanTable.rows.forEach((row, idx) => {
       const rowNum = idx + 1;
       const members = cell(scanTable.headers, row, SCAN_COL.channelMembers);
-      diagnostics.push(
+      cardinality.push(
         ...checkCardinality(
           scan.name,
           SCAN_COL.channelMembers,
@@ -235,7 +326,7 @@ function verifyCrossFile(
           'Scan list',
         ),
       );
-      diagnostics.push(
+      fkMembers.push(
         ...checkForeignKey({
           file: scan.name,
           column: SCAN_COL.channelMembers,
@@ -247,38 +338,68 @@ function verifyCrossFile(
         }),
       );
     });
+    outcomes.push(
+      checkOutcome(
+        {
+          id: 'cardinality.scan.members',
+          rule: 'cardinality',
+          label: 'Scan list member cardinality',
+        },
+        cardinality,
+      ),
+      checkOutcome(
+        {
+          id: 'fk.scan.members',
+          rule: 'foreign-key',
+          label: 'Scan list members → channel FK',
+        },
+        fkMembers,
+      ),
+    );
   }
-
-  return diagnostics;
 }
 
-function verifyRequiredFiles(files: BundleFile[]): VerifyDiagnostic[] {
+function pushRequiredFileOutcomes(files: BundleFile[], outcomes: CheckOutcome[]): void {
   const names = new Set(files.map((f) => f.name.toLowerCase()));
-  if (![...names].some((n) => n === 'channels.csv')) return [];
-  const diagnostics: VerifyDiagnostic[] = [];
+  if (![...names].some((n) => n === 'channels.csv')) return;
+
+  const coreMissing: VerifyDiagnostic[] = [];
   for (const required of REQUIRED_CORE) {
     if (![...names].includes(required.toLowerCase())) {
-      diagnostics.push({
+      coreMissing.push({
         rule: 'required-files',
         message: `Missing required file ${required} for DM32 full bundle verification.`,
       });
     }
   }
-  return diagnostics;
+  outcomes.push(
+    checkOutcome(
+      {
+        id: 'required.core-files',
+        rule: 'required-files',
+        label: 'Required DM32 core CSV files',
+      },
+      coreMissing,
+    ),
+  );
+}
+
+export function verifyDm32Detailed(files: BundleFile[], profileId: string): CheckOutcome[] {
+  const profile = getDm32Profile(profileId);
+  const outcomes: CheckOutcome[] = [];
+  for (const file of files) {
+    pushPhysicalOutcomes(file, outcomes);
+    if (file.name.toLowerCase().endsWith('.csv')) {
+      pushHeaderOutcome(file, outcomes);
+    }
+  }
+  pushCrossFileOutcomes(files, profile, outcomes);
+  pushRequiredFileOutcomes(files, outcomes);
+  return outcomes;
 }
 
 export function verifyDm32(files: BundleFile[], profileId: string): VerifyDiagnostic[] {
-  const profile = getDm32Profile(profileId);
-  const diagnostics: VerifyDiagnostic[] = [];
-  for (const file of files) {
-    diagnostics.push(...verifyPhysical(file));
-    if (file.name.toLowerCase().endsWith('.csv')) {
-      diagnostics.push(...verifyHeaders(file));
-    }
-  }
-  diagnostics.push(...verifyCrossFile(files, profile));
-  diagnostics.push(...verifyRequiredFiles(files));
-  return diagnostics;
+  return flattenOutcomes(verifyDm32Detailed(files, profileId));
 }
 
 export const dm32Verifier: FormatVerifier = {
@@ -286,5 +407,6 @@ export const dm32Verifier: FormatVerifier = {
   label: 'Baofeng DM32 CPS CSV',
   defaultProfileId: DEFAULT_DM32_PROFILE_ID,
   supportedProfileIds: DM32_PROFILES.map((p) => p.id),
+  verifyDetailed: verifyDm32Detailed,
   verify: verifyDm32,
 };

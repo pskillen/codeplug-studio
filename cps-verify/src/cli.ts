@@ -2,8 +2,8 @@
 /**
  * CLI: npm run verify:codeplug -- --format anytone [--profile anytone-at-d890uv] path/to/dir-or-zip
  */
-import { formatVerifyResult } from './report.ts';
-import { listProfilesForFormat, listVerifierIds, verifyCodeplug } from './verify.ts';
+import { formatVerifyDetailedResult } from './report.ts';
+import { listProfilesForFormat, listVerifierIds, verifyCodeplugDetailed } from './verify.ts';
 
 function printUsage(): void {
   const formats = listVerifierIds().join(', ') || '(none registered)';
@@ -78,8 +78,8 @@ async function main(): Promise<void> {
     process.exit(1);
   }
   try {
-    const result = await verifyCodeplug(parsed);
-    const out = formatVerifyResult(result);
+    const result = await verifyCodeplugDetailed(parsed);
+    const out = formatVerifyDetailedResult(result);
     if (result.ok) {
       console.log(out);
       process.exit(0);
