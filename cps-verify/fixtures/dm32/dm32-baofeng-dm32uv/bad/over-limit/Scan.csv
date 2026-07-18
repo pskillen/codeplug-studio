@@ -1,0 +1,2 @@
+No.,Scan Name,CTC Scan Mode,Scan Tx Mode,Hang Time,Priority Channel 1,Priority Channel 2,Designed Channel,Priority Sweep Time,Talkback,Channel Members
+1,OverLimit,Detection CTC,Current Channel,3.0,None,None,None,1100,1,GB3CS Motherwell|GB3FE Stirling|GB7FE Stirling|GB3GL Glasgow|GB3KE Glasgow|GB3KV Kilsyth|GB3OH Linlithgow|GB3KW Glasgow|GB3PA Paisley|GB7DA Airdrie|GB7DB Dunbar|GB7GG Airdire|GB7GL T1|GB7GL T2|GB7GL Scot Chat|GB7GL Scot West|GB7GL Scotland

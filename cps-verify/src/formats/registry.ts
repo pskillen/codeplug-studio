@@ -1,7 +1,8 @@
 import { anytoneVerifier } from './anytone/index.ts';
+import { dm32Verifier } from './dm32/index.ts';
 import type { FormatVerifier } from '../types.ts';
 
-const VERIFIERS: FormatVerifier[] = [anytoneVerifier];
+const VERIFIERS: FormatVerifier[] = [anytoneVerifier, dm32Verifier];
 
 export function getVerifier(formatId: string): FormatVerifier | undefined {
   return VERIFIERS.find((v) => v.id === formatId);
