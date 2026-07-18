@@ -1,9 +1,15 @@
 import { anytoneVerifier } from './anytone/index.ts';
+import { chirpVerifier } from './chirp/index.ts';
 import { dm32Verifier } from './dm32/index.ts';
 import { opengd77Verifier } from './opengd77/index.ts';
 import type { FormatVerifier } from '../types.ts';
 
-const VERIFIERS: FormatVerifier[] = [anytoneVerifier, dm32Verifier, opengd77Verifier];
+const VERIFIERS: FormatVerifier[] = [
+  anytoneVerifier,
+  dm32Verifier,
+  opengd77Verifier,
+  chirpVerifier,
+];
 
 export function getVerifier(formatId: string): FormatVerifier | undefined {
   return VERIFIERS.find((v) => v.id === formatId);
