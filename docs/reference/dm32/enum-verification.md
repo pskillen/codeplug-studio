@@ -14,7 +14,7 @@ Fill this in while driving **official Baofeng DM-32UV CPS v1.60**. For each row:
 | Area                                   | Issue                                                                                                                                                  | Status                                                                                                                                            |
 | -------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Tier-3 docs drift                      | [#444](https://github.com/pskillen/codeplug-studio/issues/444)                                                                                         | **Done** — PR [#453](https://github.com/pskillen/codeplug-studio/pull/453)                                                                        |
-| APRS channel columns from model        | [#250](https://github.com/pskillen/codeplug-studio/issues/250) (epic [#246](https://github.com/pskillen/codeplug-studio/issues/246); updated, not new) | Open                                                                                                                                              |
+| APRS channel columns from model        | [#250](https://github.com/pskillen/codeplug-studio/issues/250) (epic [#246](https://github.com/pskillen/codeplug-studio/issues/246); updated, not new) | **Done** — PR [#473](https://github.com/pskillen/codeplug-studio/pull/473); still elicit edge enums in §1f |
 | TX Admit full CPS enum                 | [#445](https://github.com/pskillen/codeplug-studio/issues/445)                                                                                         | Open — cascade maps `busyLock`/`permitAlways` only (PR [#433](https://github.com/pskillen/codeplug-studio/pull/433)); elicit remaining CPS values |
 | Remove personal DMR ID profile default | [#446](https://github.com/pskillen/codeplug-studio/issues/446)                                                                                         | Open                                                                                                                                              |
 | Scan.csv synthesised constants         | [#447](https://github.com/pskillen/codeplug-studio/issues/447)                                                                                         | Open                                                                                                                                              |
@@ -23,7 +23,15 @@ Fill this in while driving **official Baofeng DM-32UV CPS v1.60**. For each row:
 | RX Squelch Mode Carrier vs Carrier/CTC | [#450](https://github.com/pskillen/codeplug-studio/issues/450)                                                                                         | Open — cascade maps both wires; fixture still only `Carrier/CTC`                                                                                  |
 | Fixed Analog Channel Type              | [#451](https://github.com/pskillen/codeplug-studio/issues/451)                                                                                         | Open                                                                                                                                              |
 
-Related (not filed from #404): per-repeater scratch export [#140](https://github.com/pskillen/codeplug-studio/issues/140) **done** (PR [#455](https://github.com/pskillen/codeplug-studio/pull/455)).
+Related (not filed from #404):
+
+| Area | Issue | Status |
+| --- | --- | --- |
+| Per-repeater scratch export | [#140](https://github.com/pskillen/codeplug-studio/issues/140) | **Done** — PR [#455](https://github.com/pskillen/codeplug-studio/pull/455) |
+| Scan names empty/garbled after CPS import | [#478](https://github.com/pskillen/codeplug-studio/issues/478) | Open — round-trip investigation |
+| Scan Name ≤13 chars (not profile 16) | [#485](https://github.com/pskillen/codeplug-studio/issues/485) | Open |
+| Scan CSV member cap 15 (16th = current channel) | [#486](https://github.com/pskillen/codeplug-studio/issues/486) | Open — docs/profile still say 16 |
+| Trailing `\|` on Scan.csv Channel Members | [#487](https://github.com/pskillen/codeplug-studio/issues/487) | Open — sample has terminator; Studio does not |
 
 ### How to use
 
@@ -100,23 +108,23 @@ No.,Channel Name,Channel Type,RX Frequency[MHz],TX Frequency[MHz],Power,Band Wid
 | `TX Admit`              | `txPermit` cascade                                    | Fixture: `Channel Idle`, `Allow TX`                                              |                |                      |                       | Partial map shipped; **full dropdown** → [#445](https://github.com/pskillen/codeplug-studio/issues/445) |
 | `Emergency System`      | —(constant)                                           | Studio/`None`                                                                    |                |                      |                       | Other names?                                                                                            |
 | `Squelch Level`         | analog `squelch`                                      | `0`–`9`; analog null→`1`                                                         |                |                      |                       | See squelch ladder                                                                                      |
-| `APRS Report Type`      | `Channel.aprs` / —(Studio always `Off`)               | Fixture: `Off`, `Digital`                                                        |                |                      |                       | Analog option?                                                                                          |
+| `APRS Report Type`      | `Channel.aprs.reportType`                             | `Off` / `Digital`                                                                |                |                      |                       | Shipped [#250](https://github.com/pskillen/codeplug-studio/issues/250); Analog wire?                    |
 | `Forbid TX`             | `forbidTransmit` cascade                              | `0` \| `1`                                                                       |                |                      |                       | Cascade shipped (PR [#433](https://github.com/pskillen/codeplug-studio/pull/433))                       |
-| `APRS Receive`          | `Channel.aprs.receiveEnabled`? / —(Studio `0`)        | Fixture `0`,`1`                                                                  |                |                      |                       |                                                                                                         |
+| `APRS Receive`          | `Channel.aprs.receiveEnabled`                         | `0`/`1`                                                                          |                |                      |                       | Shipped [#250](https://github.com/pskillen/codeplug-studio/issues/250)                                  |
 | `Forbid Talkaround`     | —(Studio `0`)                                         | Fixture `0`,`1`                                                                  |                |                      |                       |                                                                                                         |
 | `Auto Scan`             | Scan carrier only → `1` else `0`                      | Fixture only `0`                                                                 |                |                      |                       |                                                                                                         |
 | `Lone Work`             | —(Studio `0`)                                         | `0`                                                                              |                |                      |                       |                                                                                                         |
 | `Emergency Indicator`   | —(Studio `0`)                                         | `0`                                                                              |                |                      |                       |                                                                                                         |
 | `Emergency ACK`         | —(Studio `0`)                                         | `0`                                                                              |                |                      |                       |                                                                                                         |
-| `Analog APRS PTT Mode`  | —(Studio `0`)                                         | `0`                                                                              |                |                      |                       | Enum codes?                                                                                             |
-| `Digital APRS PTT Mode` | —(Studio `0`)                                         | `0`                                                                              |                |                      |                       |                                                                                                         |
+| `Analog APRS PTT Mode`  | —(constant `0`)                                       | `0`                                                                              |                |                      |                       | No analog APRS hardware                                                                                 |
+| `Digital APRS PTT Mode` | `Channel.aprs.digitalPttMode`                         | `0`/`1`                                                                          |                |                      |                       | Shipped [#250](https://github.com/pskillen/codeplug-studio/issues/250)                                  |
 | `TX Contact`            | DMR `contactRef` → wire name                          | name \| `None`                                                                   |                |                      |                       | FK Talkgroups/Contacts                                                                                  |
 | `RX Group List`         | DMR `rxGroupListId`                                   | name \| `None` \| `ALL`                                                          |                |                      |                       |                                                                                                         |
 | `Color Code`            | DMR `colourCode`                                      | 0–15; `0` on analog                                                              |                |                      |                       |                                                                                                         |
 | `Time Slot`             | DMR `timeslot`                                        | `Slot 1` \| `Slot 2`                                                             |                |                      |                       |                                                                                                         |
 | `Encryption`            | —(Studio `0`)                                         | `0`                                                                              |                |                      |                       | Skip amateur?                                                                                           |
 | `Encryption ID`         | —(Studio `None`)                                      | `None`                                                                           |                |                      |                       |                                                                                                         |
-| `APRS Report Channel`   | —(Studio `256`/`1`)                                   | Fixture `256`,`1`                                                                |                |                      |                       | Meaning of 256?                                                                                         |
+| `APRS Report Channel`   | `Channel.aprs.reportSlotIndex`                        | Digital → slot/`1`; else analog `256` / digital `1`                              |                |                      |                       | Shipped [#250](https://github.com/pskillen/codeplug-studio/issues/250); meaning of 256?                 |
 | `Direct Dual Mode`      | —(Studio `0`)                                         | Fixture `0`,`1`                                                                  |                |                      |                       |                                                                                                         |
 | `Private Confirm`       | —(Studio `0`)                                         | `0`                                                                              |                |                      |                       |                                                                                                         |
 | `Short Data Confirm`    | —(Studio `0`)                                         | `0`                                                                              |                |                      |                       |                                                                                                         |
@@ -295,7 +303,7 @@ Studio **synthesises** rows from zones when zone-derived scan export is on. Stil
 | Wire field            | Studio export today    | Hint from fixture      | CPS UI | Observed values | Range / format | Notes            |
 | --------------------- | ---------------------- | ---------------------- | ------ | --------------- | -------------- | ---------------- |
 | `No.`                 | Sequential             |                        |        |                 |                |                  |
-| `Scan Name`           | Zone wire name         |                        |        |                 |                |                  |
+| `Scan Name`           | Zone wire name         |                        |        |                 | ≤13?           | Profile uses 16 — CPS scan field is 13 → [#485](https://github.com/pskillen/codeplug-studio/issues/485) |
 | `CTC Scan Mode`       | `Detection CTC`        | same                   |        |                 |                | Other modes?     |
 | `Scan Tx Mode`        | `Last Actived Channel` | also `Current Channel` |        |                 |                | Typo “Actived”?  |
 | `Hang Time`           | `5.0`                  | `3.0`, `5.0`           |        |                 |                | Step / unit      |
@@ -304,7 +312,7 @@ Studio **synthesises** rows from zones when zone-derived scan export is on. Stil
 | `Designed Channel`    | Carrier wire name      | Channel name           |        |                 |                |                  |
 | `Priority Sweep Time` | `500`                  | `500`, `1100`          |        |                 |                | Units ms?        |
 | `Talkback`            | `0`                    | `0`, `1`               |        |                 |                |                  |
-| `Channel Members`     | Pipe-separated (≤16)   | trailing `\|`          |        |                 |                | Cap 16           |
+| `Channel Members`     | Pipe-separated (Studio ≤16, no trailing `\|`) | sample ends with `\|` |        |                 | ≤15 named?     | Cap/terminator → [#486](https://github.com/pskillen/codeplug-studio/issues/486) · [#487](https://github.com/pskillen/codeplug-studio/issues/487) |
 
 ---
 
@@ -327,14 +335,16 @@ Inventory for documentation / future only.
 
 ## Cross-cutting
 
-| Topic                               | Hint                            | Observed                     |
-| ----------------------------------- | ------------------------------- | ---------------------------- |
-| Pipe `                              | ` member lists — trailing pipe? | Fixture often ends with `\|` |     |
-| Case-sensitive name FKs             | Yes                             |                              |
-| `None` vs empty                     | Mode-dependent                  |                              |
-| Max channel name length             | ~16                             |                              |
-| Max zone / TG / contact name length |                                 |                              |
-| Colour code 0 on digital allowed?   |                                 |                              |
+| Topic                               | Hint                            | Observed |
+| ----------------------------------- | ------------------------------- | -------- |
+| Pipe `\|` member lists — trailing pipe? | Sample often ends with `\|`; Studio scan export does not → [#487](https://github.com/pskillen/codeplug-studio/issues/487) | |
+| Case-sensitive name FKs             | Yes                             |          |
+| `None` vs empty                     | Mode-dependent                  |          |
+| Max channel name length             | ~16                             |          |
+| Max scan list name length           | CPS **13** (not profile 16) → [#485](https://github.com/pskillen/codeplug-studio/issues/485) | |
+| Max zone / TG / contact name length |                                 |          |
+| Scan CSV named members              | CPS retains **15**; 16th = current channel → [#486](https://github.com/pskillen/codeplug-studio/issues/486) | |
+| Colour code 0 on digital allowed?   |                                 |          |
 
 ---
 
