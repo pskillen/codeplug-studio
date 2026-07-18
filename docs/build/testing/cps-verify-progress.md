@@ -7,8 +7,9 @@
 
 ## Overall status
 
-**Status:** #480/#481 complete on main · #491 in progress
+**Status:** #480/#481 complete on main · #491 PR open
 **Branch:** `491/patricks/cps-verify-granular-report`
+**PR:** [#492](https://github.com/pskillen/codeplug-studio/pull/492)
 
 ---
 
