@@ -15,7 +15,7 @@ import CodeplugMap from '../../../components/CodeplugMap/CodeplugMap.tsx';
 import UseMyLocationButton from '../../../components/UseMyLocationButton/UseMyLocationButton.tsx';
 import EntityListDeleteAction from '../../../components/library/EntityListDeleteAction.tsx';
 import MembershipSortMenu from '../../../components/library/MembershipSortMenu.tsx';
-import { DataTable, ListPage } from '../../../components/ui/index.ts';
+import { DataTable, ListPage, PageSection } from '../../../components/ui/index.ts';
 import type { DataTableColumn } from '../../../components/ui/DataTable.tsx';
 import { filterRowsByName, useListNameQuery } from '../../../hooks/useListNameQuery.ts';
 import { ICON_STROKE } from '../../../lib/iconSizes.ts';
@@ -212,41 +212,43 @@ export default function ZonesListPage() {
           columns={columns}
         />
 
-        {position ? (
-          <Group gap="sm" align="center">
-            {position.accuracyMeters != null && Number.isFinite(position.accuracyMeters) ? (
-              <Text size="sm" c="dimmed">
-                My location accuracy ±{Math.round(position.accuracyMeters)} m
-              </Text>
-            ) : null}
-            <Button variant="subtle" size="compact-sm" onClick={clearPosition}>
-              Clear my location
-            </Button>
-          </Group>
-        ) : (
-          <UseMyLocationButton
-            label="Show my location"
-            onLocation={(lat, lon, accuracyMeters) =>
-              setPosition({ lat, lon, accuracyMeters: accuracyMeters ?? null })
-            }
-          />
-        )}
+        <PageSection title="Map">
+          {position ? (
+            <Group gap="sm" align="center">
+              {position.accuracyMeters != null && Number.isFinite(position.accuracyMeters) ? (
+                <Text size="sm" c="dimmed">
+                  My location accuracy ±{Math.round(position.accuracyMeters)} m
+                </Text>
+              ) : null}
+              <Button variant="subtle" size="compact-sm" onClick={clearPosition}>
+                Clear my location
+              </Button>
+            </Group>
+          ) : (
+            <UseMyLocationButton
+              label="Show my location"
+              onLocation={(lat, lon, accuracyMeters) =>
+                setPosition({ lat, lon, accuracyMeters: accuracyMeters ?? null })
+              }
+            />
+          )}
 
-        <CodeplugMap
-          channels={channels}
-          zones={zones}
-          allChannels={channels}
-          height={420}
-          operatorPosition={position}
-          onChannelClick={(id) => navigate(`/library/channels/${id}`)}
-          onZoneClick={(id) => navigate(`/library/zones/${id}`)}
-        />
-        {mapSkipped.length > 0 ? (
-          <Text size="sm" c="dimmed">
-            {mapSkipped.length} channel{mapSkipped.length === 1 ? '' : 's'} not shown on map
-            (missing coordinates, Use Location = No, or 0,0).
-          </Text>
-        ) : null}
+          <CodeplugMap
+            channels={channels}
+            zones={zones}
+            allChannels={channels}
+            height={420}
+            operatorPosition={position}
+            onChannelClick={(id) => navigate(`/library/channels/${id}`)}
+            onZoneClick={(id) => navigate(`/library/zones/${id}`)}
+          />
+          {mapSkipped.length > 0 ? (
+            <Text size="sm" c="dimmed">
+              {mapSkipped.length} channel{mapSkipped.length === 1 ? '' : 's'} not shown on map
+              (missing coordinates, Use Location = No, or 0,0).
+            </Text>
+          ) : null}
+        </PageSection>
       </Stack>
     </ListPage>
   );
