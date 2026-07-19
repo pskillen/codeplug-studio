@@ -26,6 +26,7 @@ import {
 import { modeColor, modeLabel, type ChannelMode as UiChannelMode } from '../../lib/channelModes.ts';
 import ForbidTransmitSegment from '../../components/channels/ForbidTransmitSegment.tsx';
 import TxPermitSegment from '../../components/channels/TxPermitSegment.tsx';
+import TxOffsetControls from '../../components/channels/TxOffsetControls.tsx';
 import ScanInclusionSegment from '../../components/channels/ScanInclusionSegment.tsx';
 import ChannelIdentitySummary from '../../components/channels/ChannelIdentitySummary.tsx';
 import ChannelLocationSection, {
@@ -333,6 +334,11 @@ export default function ChannelEditor({
                   onChange={(e) => setTx(e.currentTarget.value)}
                 />
               </SimpleGrid>
+              <TxOffsetControls
+                rxFrequencyHz={liveRxHz}
+                txFrequencyHz={liveTxHz}
+                onTxFrequencyChange={setTx}
+              />
               <PercentLevelSlider label="Power" value={power} onChange={setPower} />
               <PowerLadderHints power={power} />
               <ForbidTransmitSegment value={forbidTransmit} onChange={setForbidTransmit} />
