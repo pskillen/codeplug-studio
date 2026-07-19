@@ -49,8 +49,7 @@ export default function WirePreviewOverrideModal({
     onWireNameChange,
   });
 
-  const useZoneTabs =
-    entityKind === 'zone' && (membersSection != null || scanSection != null);
+  const useZoneTabs = entityKind === 'zone' && (membersSection != null || scanSection != null);
 
   const libraryHeader = (
     <Stack gap={4}>

@@ -31,12 +31,12 @@ Per-row override editor for wire preview list pages. Mantine `Modal` with common
 
 Route composition (not the registry):
 
-| Content                   | Where                                                              |
-| ------------------------- | ------------------------------------------------------------------ |
-| Zone member export order  | `BuildZonesWirePage` → `membersSection` (Members tab)              |
-| Zone-derived scan export  | `BuildZonesWirePage` → `scanSection` (Scan tab; trait-gated)       |
-| CHIRP per-channel scan    | Flat-memory channel page → `extraSections`                         |
-| Channel expansion context | Channels wire page → `extraSections`                               |
+| Content                   | Where                                                        |
+| ------------------------- | ------------------------------------------------------------ |
+| Zone member export order  | `BuildZonesWirePage` → `membersSection` (Members tab)        |
+| Zone-derived scan export  | `BuildZonesWirePage` → `scanSection` (Scan tab; trait-gated) |
+| CHIRP per-channel scan    | Flat-memory channel page → `extraSections`                   |
+| Channel expansion context | Channels wire page → `extraSections`                         |
 
 ## Behaviour
 

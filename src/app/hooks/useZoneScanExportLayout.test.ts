@@ -1,9 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { FormatBuild } from '@core/models/formatBuild.ts';
-import {
-  zoneGroupingLayoutSupported,
-  zoneScanExportSupported,
-} from './useZoneScanExportLayout.ts';
+import { zoneGroupingLayoutSupported, zoneScanExportSupported } from './useZoneScanExportLayout.ts';
 
 function buildStub(profileId: string, formatId: string): FormatBuild {
   return {
@@ -14,13 +11,13 @@ function buildStub(profileId: string, formatId: string): FormatBuild {
     profileId,
     revision: 1,
     updatedAt: '2026-01-01T00:00:00.000Z',
-    channelSelections: {},
-    talkGroupSelections: {},
-    contactSelections: {},
-    rxGroupListSelections: {},
-    zoneSelections: {},
-    scanListSelections: {},
     layout: { sections: [] },
+    channelOverrides: [],
+    zoneOverrides: [],
+    scanListOverrides: [],
+    talkGroupOverrides: [],
+    rxGroupListOverrides: [],
+    contactOverrides: [],
   } as FormatBuild;
 }
 
