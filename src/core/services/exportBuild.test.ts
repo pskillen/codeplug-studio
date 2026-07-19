@@ -79,7 +79,7 @@ describe('exportBuildAll', () => {
       scanLists: [],
     };
     const build = newFormatBuild(projectId, 'dm32-baofeng-dm32uv');
-    const capWarning = 'Zone "Glasgow" has 20 expanded members (scan cap 16)';
+    const capWarning = 'Zone "Glasgow" has 20 expanded members (scan cap 15)';
 
     const result = exportBuildAll({ build, library });
 
@@ -136,7 +136,7 @@ describe('exportBuildAll', () => {
 
     const result = exportBuildAll({ build, library });
 
-    expect(result.warnings).toContain('Zone "Glasgow" has 20 expanded members (scan cap 16)');
-    expect(result.warnings).toContain('Zone "Edinburgh" has 20 expanded members (scan cap 16)');
+    expect(result.warnings).toContain('Zone "Glasgow" has 20 expanded members (scan cap 15)');
+    expect(result.warnings).toContain('Zone "Edinburgh" has 20 expanded members (scan cap 15)');
   });
 });

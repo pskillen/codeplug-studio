@@ -457,7 +457,9 @@ describe('DM32 export serialise', () => {
   });
 
   it('truncates zone-derived scan lists to 15 named members with a warning', () => {
-    const channels = Array.from({ length: 16 }, (_, i) => fmChannel(`Mem ${String(i + 1).padStart(2, '0')}`));
+    const channels = Array.from({ length: 16 }, (_, i) =>
+      fmChannel(`Mem ${String(i + 1).padStart(2, '0')}`),
+    );
     const zone = newZone(PROJECT_ID, 'Busy Zone');
     zone.members = channels.map((channel) => ({
       kind: 'channel' as const,

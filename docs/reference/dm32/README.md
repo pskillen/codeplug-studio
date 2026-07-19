@@ -60,14 +60,14 @@ Per-radio limits and wire ladders: [`radios/baofeng-dm32uv.md`](radios/baofeng-d
 
 Structural rules enforced by `cps-verify` for profile `dm32-baofeng-dm32uv` ([wire-verification.md](../../build/testing/wire-verification.md)):
 
-| Rule           | Expectation                                                                                            |
-| -------------- | ------------------------------------------------------------------------------------------------------ |
-| Line endings   | **CRLF** on Studio export CSV                                                                          |
-| Quoting        | Selective RFC 4180 (quote fields that contain comma, quote, or newline)                                |
-| Headers        | Exact modelled column set + order when the file is present                                             |
-| Foreign keys   | Name refs per table above; `ALL` / empty sentinels where documented                                    |
+| Rule           | Expectation                                                                                                                 |
+| -------------- | --------------------------------------------------------------------------------------------------------------------------- |
+| Line endings   | **CRLF** on Studio export CSV                                                                                               |
+| Quoting        | Selective RFC 4180 (quote fields that contain comma, quote, or newline)                                                     |
+| Headers        | Exact modelled column set + order when the file is present                                                                  |
+| Foreign keys   | Name refs per table above; `ALL` / empty sentinels where documented                                                         |
 | Cardinality    | RGL members ≤ 32; scan members ≤ 15; channel/zone name ≤ 16; Scan Name ≤ 13 ([baofeng-dm32uv.md](radios/baofeng-dm32uv.md)) |
-| Required files | Core set when `Channels.csv` present: Zones, Talkgroups, RXGroupLists, Scan                            |
+| Required files | Core set when `Channels.csv` present: Zones, Talkgroups, RXGroupLists, Scan                                                 |
 
 ## Related
 

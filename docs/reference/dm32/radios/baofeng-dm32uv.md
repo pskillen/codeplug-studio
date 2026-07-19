@@ -6,13 +6,13 @@ Stock CPS v1.60 calibration for import/export ladders and caps.
 
 ## Capacity (provisional)
 
-| Entity                | Cap                                                                                                                                  |
-| --------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
-| Channels              | ~1000                                                                                                                                |
-| Zone members          | No hard export cap in #67                                                                                                            |
-| RX group list members | 32                                                                                                                                   |
-| Scan list members     | **15** named CSV members (CPS “16” includes implicit current channel; [#486](https://github.com/pskillen/codeplug-studio/issues/486)) |
-| General wire names    | **16** (`nameLimit` — channels, zones, RX lists, …)                                                                                  |
+| Entity                | Cap                                                                                                                                              |
+| --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Channels              | ~1000                                                                                                                                            |
+| Zone members          | No hard export cap in #67                                                                                                                        |
+| RX group list members | 32                                                                                                                                               |
+| Scan list members     | **15** named CSV members (CPS “16” includes implicit current channel; [#486](https://github.com/pskillen/codeplug-studio/issues/486))            |
+| General wire names    | **16** (`nameLimit` — channels, zones, RX lists, …)                                                                                              |
 | Scan list names       | **13** (`scanListNameLimit` — `Scan.csv` `Scan Name` and channel `Scan List` FK; [#485](https://github.com/pskillen/codeplug-studio/issues/485)) |
 
 ## Power ladder

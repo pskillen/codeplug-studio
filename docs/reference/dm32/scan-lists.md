@@ -20,16 +20,16 @@ Synthesised timing / mode columns below are Studio defaults until CPS elicitatio
 
 ## Wire columns (`Scan.csv`)
 
-| Column                 | Export value                               |
-| ---------------------- | ------------------------------------------ |
-| `Scan Name`            | Zone wire name, shortened to ≤**13** when name shortening is on (`scanListNameLimit`; not general `nameLimit` 16) |
-| `CTC Scan Mode`        | `Detection CTC`                            |
-| `Scan Tx Mode`         | `Last Actived Channel`                     |
-| `Hang Time`            | `5.0`                                      |
-| `Priority Channel 1/2` | `None`                                     |
-| `Designed Channel`     | Carrier wire name                          |
-| `Priority Sweep Time`  | `500`                                      |
-| `Talkback`             | `0`                                        |
+| Column                 | Export value                                                                                                                      |
+| ---------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| `Scan Name`            | Zone wire name, shortened to ≤**13** when name shortening is on (`scanListNameLimit`; not general `nameLimit` 16)                 |
+| `CTC Scan Mode`        | `Detection CTC`                                                                                                                   |
+| `Scan Tx Mode`         | `Last Actived Channel`                                                                                                            |
+| `Hang Time`            | `5.0`                                                                                                                             |
+| `Priority Channel 1/2` | `None`                                                                                                                            |
+| `Designed Channel`     | Carrier wire name                                                                                                                 |
+| `Priority Sweep Time`  | `500`                                                                                                                             |
+| `Talkback`             | `0`                                                                                                                               |
 | `Channel Members`      | Pipe-separated expanded channel wire names, **with a trailing `\|`** (CPS wire style; Zones.csv does **not** use a trailing pipe) |
 
 ## Import

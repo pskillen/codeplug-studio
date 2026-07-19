@@ -110,8 +110,8 @@ Import epic [#112](https://github.com/pskillen/codeplug-studio/issues/112) — D
 **Status:** In flight  
 **Branch:** `485/pskil/dm32-scan-wire-fixes`
 
-| Issue | Fix | Notes |
-| --- | --- | --- |
-| [#486](https://github.com/pskillen/codeplug-studio/issues/486) | `scanListMembers: 15` | CPS “16” includes implicit current channel |
-| [#487](https://github.com/pskillen/codeplug-studio/issues/487) | Trailing `\|` on Scan `Channel Members` | Zones remain without trailing pipe |
-| [#485](https://github.com/pskillen/codeplug-studio/issues/485) | `scanListNameLimit: 13` | Scan Name + carrier `Scan List` FK; general `nameLimit` stays 16 |
+| Issue                                                          | Fix                                     | Notes                                                            |
+| -------------------------------------------------------------- | --------------------------------------- | ---------------------------------------------------------------- |
+| [#486](https://github.com/pskillen/codeplug-studio/issues/486) | `scanListMembers: 15`                   | CPS “16” includes implicit current channel                       |
+| [#487](https://github.com/pskillen/codeplug-studio/issues/487) | Trailing `\|` on Scan `Channel Members` | Zones remain without trailing pipe                               |
+| [#485](https://github.com/pskillen/codeplug-studio/issues/485) | `scanListNameLimit: 13`                 | Scan Name + carrier `Scan List` FK; general `nameLimit` stays 16 |
