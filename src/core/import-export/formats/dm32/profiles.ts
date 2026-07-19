@@ -11,6 +11,8 @@ export interface Dm32RadioProfile {
   scanListMembers: number;
   /** Default max channel wire name length (LCD limit). */
   nameLimit: number;
+  /** Max `Scan.csv` Scan Name length (stricter than `nameLimit` on DM-32UV). */
+  scanListNameLimit: number;
   powerLadder: readonly PowerLadderEntry[];
   squelchLadder: readonly PowerLadderEntry[];
   /** Lossy default for channel `DMR ID` column on export. */
@@ -36,6 +38,7 @@ export const DM32_PROFILES: readonly Dm32RadioProfile[] = [
     rxGroupListMembers: 32,
     scanListMembers: 15,
     nameLimit: 16,
+    scanListNameLimit: 13,
     powerLadder: DM32_POWER_LADDER,
     squelchLadder: DM32_SQUELCH_LADDER,
     defaultDmrIdLabel: 'Paddy MM7IGV',

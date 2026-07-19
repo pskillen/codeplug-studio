@@ -11,6 +11,7 @@ import {
 import type { ExpandedDm32ChannelRow } from '../formats/dm32/channelExpansion.ts';
 import { SCAN_COL } from '../formats/dm32/columns.ts';
 import { DEFAULT_DM32_PROFILE_ID, getDm32Profile } from '../formats/dm32/profiles.ts';
+import { applyListWireNameLimits } from '../channelExpansion/listWireNames.ts';
 
 export type { SyntheticScanCarrier } from './carrier.ts';
 export { DEFAULT_SCAN_CARRIER_HZ } from './carrier.ts';
@@ -103,7 +104,15 @@ export function deriveZoneDerivedScanLists(
       continue;
     }
 
-    const scanListName = assembledZone.wireName;
+    const scanListName = applyListWireNameLimits(
+      assembledZone.wireName,
+      reservedNames,
+      options,
+      profileId,
+      warnings,
+      'Scan list',
+      profile.scanListNameLimit,
+    );
     const truncated =
       memberWireNames.length > profile.scanListMembers
         ? memberWireNames.slice(0, profile.scanListMembers)
