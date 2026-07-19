@@ -37,6 +37,7 @@ import ChannelModesMultiSelect from '../../components/channels/ChannelModesMulti
 import ChannelWireNameExamples from '../../components/channels/ChannelWireNameExamples.tsx';
 import RepeaterVerifyPanel from '../../components/repeaters/RepeaterVerifyPanel.tsx';
 import ChannelZoneMembershipSection from '../../components/library/ChannelZoneMembershipSection.tsx';
+import PowerLadderHints from '../../components/library/PowerLadderHints.tsx';
 import ScanListSummary from '../../components/library/ScanListSummary.tsx';
 import ChannelDeleteButton from '../../components/library/ChannelDeleteButton.tsx';
 import ChannelAprsBindingSection, {
@@ -333,6 +334,7 @@ export default function ChannelEditor({
                 />
               </SimpleGrid>
               <PercentLevelSlider label="Power" value={power} onChange={setPower} />
+              <PowerLadderHints power={power} />
               <ForbidTransmitSegment value={forbidTransmit} onChange={setForbidTransmit} />
               <TxPermitSegment value={txPermit} onChange={setTxPermit} />
             </FormSection>
