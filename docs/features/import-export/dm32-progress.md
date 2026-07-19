@@ -102,3 +102,16 @@ Import epic [#112](https://github.com/pskillen/codeplug-studio/issues/112) — D
 | Zone / RX group list export shortening | `buildListWireNameMap` in `serialise.ts` context |
 | Wire preview                           | Zones and RX group lists at profile `nameLimit`  |
 | Library abbrev UI                      | Unified toggle with OpenGD77 / Anytone / CHIRP   |
+
+---
+
+## Post-epic — Scan.csv wire fixes ([#485](https://github.com/pskillen/codeplug-studio/issues/485)–[#487](https://github.com/pskillen/codeplug-studio/issues/487))
+
+**Status:** In flight  
+**Branch:** `485/pskil/dm32-scan-wire-fixes`
+
+| Issue | Fix | Notes |
+| --- | --- | --- |
+| [#486](https://github.com/pskillen/codeplug-studio/issues/486) | `scanListMembers: 15` | CPS “16” includes implicit current channel |
+| [#487](https://github.com/pskillen/codeplug-studio/issues/487) | Trailing `\|` on Scan `Channel Members` | Zones remain without trailing pipe |
+| [#485](https://github.com/pskillen/codeplug-studio/issues/485) | `scanListNameLimit: 13` | Scan Name + carrier `Scan List` FK; general `nameLimit` stays 16 |

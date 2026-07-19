@@ -26,6 +26,7 @@ Items **skipped**, **incomplete**, or **discovered during execution** — not th
 
 - **Empty `Scan.csv` in ZIP** — export always serialises header row; ZIP includes `Scan.csv` even when no zone scan lists emit (omit-from-ZIP polish optional).
 - **Unlinked contacts** — `Contacts.csv` / `DTMFContacts.csv` only include library entities referenced by channels (or forced via build `contactOverrides`).
+- **RX group trailing `|`** — canonical CPS `RXGroupLists.csv` `Contact Members` ends with `|` (same as Scan); Studio RX export still uses plain `join('|')`. Left out of [#487](https://github.com/pskillen/codeplug-studio/issues/487) (Scan-only). File a follow-up if CPS import is sensitive.
 
 ---
 
