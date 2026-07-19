@@ -15,27 +15,27 @@ export interface OpenGd77RadioProfile {
 }
 
 const OPENGD77_1701_LADDER: readonly PowerLadderEntry[] = [
-  { percent: 100, wire: 'P9' },
-  { percent: 80, wire: 'P8' },
-  { percent: 60, wire: 'P7' },
-  { percent: 40, wire: 'P6' },
-  { percent: 20, wire: 'P5' },
-  { percent: 15, wire: 'P4' },
-  { percent: 10, wire: 'P3' },
-  { percent: 5, wire: 'P2' },
-  { percent: 1, wire: 'P1' },
+  { percent: 100, wire: 'P9', approxWatts: '5 W' },
+  { percent: 80, wire: 'P8', approxWatts: '4 W' },
+  { percent: 60, wire: 'P7', approxWatts: '3 W' },
+  { percent: 40, wire: 'P6', approxWatts: '2 W' },
+  { percent: 20, wire: 'P5', approxWatts: '1 W' },
+  { percent: 15, wire: 'P4', approxWatts: '750 mW' },
+  { percent: 10, wire: 'P3', approxWatts: '500 mW' },
+  { percent: 5, wire: 'P2', approxWatts: '250 mW' },
+  { percent: 1, wire: 'P1', approxWatts: '50 mW' },
 ];
 
 /** Provisional — confirm against CPS export. */
 const OPENGD77_MD9600_LADDER: readonly PowerLadderEntry[] = [
-  { percent: 100, wire: 'P8' },
-  { percent: 60, wire: 'P7' },
-  { percent: 40, wire: 'P6' },
-  { percent: 20, wire: 'P5' },
-  { percent: 8, wire: 'P4' },
-  { percent: 4, wire: 'P3' },
-  { percent: 2, wire: 'P2' },
-  { percent: 1, wire: 'P1' },
+  { percent: 100, wire: 'P8', approxWatts: '40–50 W' },
+  { percent: 60, wire: 'P7', approxWatts: '25 W' },
+  { percent: 40, wire: 'P6', approxWatts: '10 W' },
+  { percent: 20, wire: 'P5', approxWatts: '5 W' },
+  { percent: 8, wire: 'P4', approxWatts: '2 W' },
+  { percent: 4, wire: 'P3', approxWatts: '1 W' },
+  { percent: 2, wire: 'P2', approxWatts: '500 mW' },
+  { percent: 1, wire: 'P1', approxWatts: '100 mW' },
 ];
 
 export const OPENGD77_PROFILES: readonly OpenGd77RadioProfile[] = [
