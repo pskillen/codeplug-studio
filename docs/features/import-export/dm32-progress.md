@@ -107,7 +107,7 @@ Import epic [#112](https://github.com/pskillen/codeplug-studio/issues/112) — D
 
 ## Post-epic — Scan.csv wire fixes ([#485](https://github.com/pskillen/codeplug-studio/issues/485)–[#487](https://github.com/pskillen/codeplug-studio/issues/487))
 
-**Status:** In flight  
+**Status:** Complete  
 **Branch:** `485/pskil/dm32-scan-wire-fixes`
 
 | Issue                                                          | Fix                                     | Notes                                                            |
