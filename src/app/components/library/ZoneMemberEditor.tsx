@@ -30,6 +30,7 @@ import { ICON_SIZE_NAV, ICON_STROKE } from '../../lib/iconSizes.ts';
 import {
   channelMatchesZoneMemberFilter,
   computeZoneMemberPickerMapFilters,
+  zoneMembershipExclusionLabel,
   type ZoneMemberPickerMapFilters,
 } from './zoneMemberPickerUtils.ts';
 import {
@@ -47,6 +48,7 @@ export type { ZoneMemberPickerMapFilters } from './zoneMemberPickerUtils.ts';
 export {
   channelMatchesZoneMemberFilter,
   computeZoneMemberPickerMapFilters,
+  zoneMembershipExclusionLabel,
 } from './zoneMemberPickerUtils.ts';
 
 export interface ZoneMemberEditorProps {
@@ -61,18 +63,6 @@ export interface ZoneMemberEditorProps {
 function zoneMatchesFilter(zone: Zone, filterLower: string): boolean {
   if (!filterLower) return true;
   return zone.name.toLowerCase().includes(filterLower);
-}
-
-/** Operator-facing label for why a zone cannot be added as a nested member. */
-export function zoneMembershipExclusionLabel(reason: ZoneMembershipExclusionReason): string {
-  switch (reason) {
-    case 'self':
-      return 'This zone';
-    case 'descendant':
-      return 'Already nested under this zone';
-    case 'cycle':
-      return 'Would create a cycle';
-  }
 }
 
 export default function ZoneMemberEditor({
@@ -190,9 +180,10 @@ export default function ZoneMemberEditor({
     onMapFiltersChange?.(mapFilters);
   }, [mapFilters, onMapFiltersChange]);
 
-  useEffect(() => {
-    setAvailableZoneSelected((prev) => prev.filter((id) => !exclusionReasons.has(id)));
-  }, [exclusionReasons]);
+  const selectableZoneSelected = useMemo(
+    () => availableZoneSelected.filter((id) => !exclusionReasons.has(id)),
+    [availableZoneSelected, exclusionReasons],
+  );
 
   const setMembersFromKeys = useCallback(
     (keys: ZonePickerMemberKey[]) => {
@@ -210,9 +201,7 @@ export default function ZoneMemberEditor({
   const addSelected = useCallback(() => {
     const toAdd: ZonePickerMemberKey[] = [
       ...availableChannelSelected.map((id) => `channel:${id}` as const),
-      ...availableZoneSelected
-        .filter((id) => !exclusionReasons.has(id))
-        .map((id) => `zone:${id}` as const),
+      ...selectableZoneSelected.map((id) => `zone:${id}` as const),
     ].filter((key) => !memberKeySet.has(key));
     if (!toAdd.length) return;
     setMembersFromKeys([...memberKeys, ...toAdd]);
@@ -220,8 +209,7 @@ export default function ZoneMemberEditor({
     setAvailableZoneSelected([]);
   }, [
     availableChannelSelected,
-    availableZoneSelected,
-    exclusionReasons,
+    selectableZoneSelected,
     memberKeySet,
     memberKeys,
     setMembersFromKeys,
@@ -360,7 +348,7 @@ export default function ZoneMemberEditor({
               id: 'zones',
               title: 'Zones',
               itemKeys: availableZones.map((zone) => zone.id),
-              selectedKeys: availableZoneSelected,
+              selectedKeys: selectableZoneSelected,
               onToggleSelect: (id) => {
                 if (exclusionReasons.has(id)) return;
                 setAvailableZoneSelected((prev) =>
@@ -385,7 +373,7 @@ export default function ZoneMemberEditor({
             },
           ]}
           onAddSelected={addSelected}
-          addDisabled={!availableChannelSelected.length && !availableZoneSelected.length}
+          addDisabled={!availableChannelSelected.length && !selectableZoneSelected.length}
           footer={
             <>
               <Checkbox

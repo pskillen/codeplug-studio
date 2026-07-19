@@ -12,18 +12,18 @@ Nesting is **not reconstructed** from flat CPS import — it is created and main
 
 ## Code anchors
 
-| Symbol                           | Path                                              | Role                                        |
-| -------------------------------- | ------------------------------------------------- | ------------------------------------------- |
-| `ZoneMemberEntry`                | `src/core/models/library.ts`                      | `kind: 'channel'` or `kind: 'zone'` members |
-| `Zone.omitFromExport`            | same                                              | Skip standalone `Zones.csv` row             |
-| `flattenZoneMembership`          | `src/core/domain/zoneHierarchy.ts`                | Cycle-safe flatten with warnings            |
-| `resolveEffectiveZoneChannelIds` | same                                              | Flatten to ordered, deduped channel ids     |
-| `collectZoneFlattenWarnings`     | same                                              | Cycle warnings for export                   |
-| `zoneMembershipHasCycle`         | same                                              | Acyclic graph check                         |
-| `zoneMembershipExclusionReasons` | same                                              | Self / descendant / cycle-closer reasons    |
-| `validateZoneMembership`         | `src/core/domain/validation.ts`                   | Ref + cycle validation on save              |
-| `assemble`                       | `src/core/services/assemble.ts`                   | Export projection uses effective channels   |
-| `orderChannelIdsByLayoutHint`    | `src/core/domain/zoneGroupingLayout.ts`           | Optional member order from build layout     |
+| Symbol                           | Path                                              | Role                                           |
+| -------------------------------- | ------------------------------------------------- | ---------------------------------------------- |
+| `ZoneMemberEntry`                | `src/core/models/library.ts`                      | `kind: 'channel'` or `kind: 'zone'` members    |
+| `Zone.omitFromExport`            | same                                              | Skip standalone `Zones.csv` row                |
+| `flattenZoneMembership`          | `src/core/domain/zoneHierarchy.ts`                | Cycle-safe flatten with warnings               |
+| `resolveEffectiveZoneChannelIds` | same                                              | Flatten to ordered, deduped channel ids        |
+| `collectZoneFlattenWarnings`     | same                                              | Cycle warnings for export                      |
+| `zoneMembershipHasCycle`         | same                                              | Acyclic graph check                            |
+| `zoneMembershipExclusionReasons` | same                                              | Self / descendant / cycle-closer reasons       |
+| `validateZoneMembership`         | `src/core/domain/validation.ts`                   | Ref + cycle validation on save                 |
+| `assemble`                       | `src/core/services/assemble.ts`                   | Export projection uses effective channels      |
+| `orderChannelIdsByLayoutHint`    | `src/core/domain/zoneGroupingLayout.ts`           | Optional member order from build layout        |
 | `ZoneMemberEditor`               | `src/app/components/library/ZoneMemberEditor.tsx` | Channels + zones pools (blocked rows labelled) |
 
 ## Model semantics

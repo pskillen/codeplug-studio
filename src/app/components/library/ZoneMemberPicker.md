@@ -8,14 +8,14 @@ Edits ordered `Zone.members` on the zone form: available ↔ in-zone shuttle for
 
 ## Props
 
-| Prop                 | Type                | Description                                                          |
-| -------------------- | ------------------- | -------------------------------------------------------------------- |
-| `channels`           | `Channel[]`         | Library channel pool                                                 |
-| `zones`              | `Zone[]`            | Library zone pool (for nested membership)                            |
+| Prop                 | Type                | Description                                                                                             |
+| -------------------- | ------------------- | ------------------------------------------------------------------------------------------------------- |
+| `channels`           | `Channel[]`         | Library channel pool                                                                                    |
+| `zones`              | `Zone[]`            | Library zone pool (for nested membership)                                                               |
 | `editingZoneId`      | `string \| null`    | Current zone id — blocks self, descendants, and cycle-closers in the available pool (greyed + labelled) |
-| `members`            | `ZoneMemberEntry[]` | Current membership (controlled)                                      |
-| `onChange`           | `(members) => void` | Updated membership in export order                                   |
-| `onMapFiltersChange` | optional            | Map preview filter callback                                          |
+| `members`            | `ZoneMemberEntry[]` | Current membership (controlled)                                                                         |
+| `onChange`           | `(members) => void` | Updated membership in export order                                                                      |
+| `onMapFiltersChange` | optional            | Map preview filter callback                                                                             |
 
 ## Usage
 
