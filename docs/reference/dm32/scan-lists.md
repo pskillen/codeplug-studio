@@ -14,7 +14,7 @@ When a DM32 build zone entry has `exportScanList: true` and the export master to
 3. Prepend carrier as first zone member in `Zones.csv`
 4. Set channel `Scan List` FK on the scan **carrier** channel only (members keep manual assignment)
 
-Member filter: zone-member `includeInScanList` cascade and channel `scanInclusion` (via `effectiveScanSkips`) — see [zone-derived-scan-lists.md](../zone-derived-scan-lists.md). Cap: **16** members per list (`scanListMembers` profile limit) with export warning.
+Member filter: zone-member `includeInScanList` cascade and channel `scanInclusion` (via `effectiveScanSkips`) — see [zone-derived-scan-lists.md](../zone-derived-scan-lists.md). Cap: **15** named CSV members per list (`scanListMembers` profile limit) with export warning. CPS UI/marketing “16 channels per scan list” includes an implicit current-channel slot that is **not** written as an explicit `Channel Members` entry ([#486](https://github.com/pskillen/codeplug-studio/issues/486)).
 
 Synthesised timing / mode columns below are Studio defaults until CPS elicitation ([#447](https://github.com/pskillen/codeplug-studio/issues/447)).
 

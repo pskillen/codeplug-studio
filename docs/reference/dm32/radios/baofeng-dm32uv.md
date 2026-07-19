@@ -11,7 +11,7 @@ Stock CPS v1.60 calibration for import/export ladders and caps.
 | Channels              | ~1000                                  |
 | Zone members          | No hard export cap in #67              |
 | RX group list members | 32                                     |
-| Scan list members     | 16 _(deferred archive reference #125)_ |
+| Scan list members     | **15** named CSV members (CPS “16” includes implicit current channel; [#486](https://github.com/pskillen/codeplug-studio/issues/486)) |
 
 ## Power ladder
 
