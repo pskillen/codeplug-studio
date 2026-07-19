@@ -6,27 +6,27 @@ Embeddable Leaflet map for plotting library channels and zone hull overlays insi
 
 ## Props
 
-| Prop                  | Type                                                 | Default      | Notes                                                                    |
-| --------------------- | ---------------------------------------------------- | ------------ | ------------------------------------------------------------------------ |
-| `channels`            | `Channel[]`                                          | —            | Channels to plot as markers (after internal filters)                     |
-| `zones`               | `Zone[]`                                             | `[]`         | Zones to draw hulls for when “Draw zones” is on                          |
-| `allChannels`         | `Channel[]`                                          | `channels`   | Full channel list for resolving zone member coords                       |
-| `height`              | `number \| string`                                   | `400`        | Map container height (px or CSS value)                                   |
-| `showControls`        | `boolean`                                            | `true`       | Show [`MapControls`](MapControls.tsx) above the map                      |
-| `defaultShowLabels`   | `boolean`                                            | `false`      | Initial state for full-name marker labels                                |
-| `defaultShowZones`    | `boolean`                                            | `true`       | Initial state for zone hull visibility (standard mode)                   |
-| `mapControlMode`      | `'standard' \| 'zoneEmphasis' \| 'zoneFromLocation'` | `'standard'` | Toolbar checkboxes — see below                                           |
-| `emphasisZoneId`      | `string \| null`                                     | `null`       | Zone hull drawn in full colour (zone editor)                             |
-| `provisionalZone`     | `{ channelIds, label? } \| null`                     | `null`       | Dashed hull preview for zone-from-location workflow                      |
-| `highlightChannelId`  | `string`                                             | —            | Emphasise one channel marker                                             |
-| `operatorPosition`    | `{ lat, lon } \| null`                               | `null`       | Session operator position — blue **You** marker; included in auto bounds |
-| `referencePosition`   | `{ lat, lon } \| null`                               | `null`       | Proximity centre pin (red **Centre**) and radius circle anchor           |
-| `referenceRadiusM`    | `number \| null`                                     | `null`       | Draw great-circle radius circle around `referencePosition` (metres)      |
+| Prop                  | Type                                                 | Default      | Notes                                                                                                                                                                |
+| --------------------- | ---------------------------------------------------- | ------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `channels`            | `Channel[]`                                          | —            | Channels to plot as markers (after internal filters)                                                                                                                 |
+| `zones`               | `Zone[]`                                             | `[]`         | Zones to draw hulls for when “Draw zones” is on                                                                                                                      |
+| `allChannels`         | `Channel[]`                                          | `channels`   | Full channel list for resolving zone member coords                                                                                                                   |
+| `height`              | `number \| string`                                   | `400`        | Map container height (px or CSS value)                                                                                                                               |
+| `showControls`        | `boolean`                                            | `true`       | Show [`MapControls`](MapControls.tsx) above the map                                                                                                                  |
+| `defaultShowLabels`   | `boolean`                                            | `false`      | Initial state for full-name marker labels                                                                                                                            |
+| `defaultShowZones`    | `boolean`                                            | `true`       | Initial state for zone hull visibility (standard mode)                                                                                                               |
+| `mapControlMode`      | `'standard' \| 'zoneEmphasis' \| 'zoneFromLocation'` | `'standard'` | Toolbar checkboxes — see below                                                                                                                                       |
+| `emphasisZoneId`      | `string \| null`                                     | `null`       | Zone hull drawn in full colour (zone editor)                                                                                                                         |
+| `provisionalZone`     | `{ channelIds, label? } \| null`                     | `null`       | Dashed hull preview for zone-from-location workflow                                                                                                                  |
+| `highlightChannelId`  | `string`                                             | —            | Emphasise one channel marker                                                                                                                                         |
+| `operatorPosition`    | `{ lat, lon } \| null`                               | `null`       | Session operator position — blue **You** marker; included in auto bounds                                                                                             |
+| `referencePosition`   | `{ lat, lon } \| null`                               | `null`       | Proximity centre pin (red **Centre**) and radius circle anchor                                                                                                       |
+| `referenceRadiusM`    | `number \| null`                                     | `null`       | Draw great-circle radius circle around `referencePosition` (metres)                                                                                                  |
 | `dimmedChannelIds`    | `string[]`                                           | `[]`         | Per-channel lower opacity; co-located stacks dim only when **every** channel in the group is listed ([#469](https://github.com/pskillen/codeplug-studio/issues/469)) |
-| `fitBoundsChannelIds` | `string[]`                                           | —            | Limit auto-fit bounds to these channel markers (+ emphasis hull)         |
-| `onMapClick`          | `(lat, lon) => void`                                 | —            | Set reference position by clicking the map                               |
-| `onChannelClick`      | `(id: string) => void`                               | —            | Marker popup “Edit channel” action                                       |
-| `onZoneClick`         | `(id: string) => void`                               | —            | Zone popup “Edit zone” action                                            |
+| `fitBoundsChannelIds` | `string[]`                                           | —            | Limit auto-fit bounds to these channel markers (+ emphasis hull)                                                                                                     |
+| `onMapClick`          | `(lat, lon) => void`                                 | —            | Set reference position by clicking the map                                                                                                                           |
+| `onChannelClick`      | `(id: string) => void`                               | —            | Marker popup “Edit channel” action                                                                                                                                   |
+| `onZoneClick`         | `(id: string) => void`                               | —            | Zone popup “Edit zone” action                                                                                                                                        |
 
 ## Usage
 
