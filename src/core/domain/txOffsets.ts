@@ -21,11 +21,7 @@ const SIMPLEX: TxOffsetOption = { label: 'Simplex', offsetMhz: 0 };
  */
 export const TX_OFFSETS_BY_BAND_ID: Readonly<Record<string, readonly TxOffsetOption[]>> = {
   '2m': [SIMPLEX, { label: '−0.6 MHz', offsetMhz: -0.6 }],
-  '70cm': [
-    SIMPLEX,
-    { label: '+7.6 MHz', offsetMhz: 7.6 },
-    { label: '+9.0 MHz', offsetMhz: 9.0 },
-  ],
+  '70cm': [SIMPLEX, { label: '+7.6 MHz', offsetMhz: 7.6 }, { label: '+9.0 MHz', offsetMhz: 9.0 }],
 };
 
 const DEFAULT_OFFSETS: readonly TxOffsetOption[] = [SIMPLEX];
@@ -72,9 +68,6 @@ export function txOffsetsForFrequencyHz(rxFrequencyHz: number | null): readonly 
 }
 
 /** Apply offset to RX Hz → TX Hz (rounded to integer Hz). */
-export function txFrequencyHzFromOffset(
-  rxFrequencyHz: number,
-  offsetMhz: number,
-): number {
+export function txFrequencyHzFromOffset(rxFrequencyHz: number, offsetMhz: number): number {
   return Math.round(rxFrequencyHz + offsetMhz * 1_000_000);
 }

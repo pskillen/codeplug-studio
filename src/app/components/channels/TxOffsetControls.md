@@ -8,20 +8,16 @@ Shows the live RX/TX offset (`===` or `+/- MHz`) and band-appropriate quick butt
 
 ## Props
 
-| Prop                 | Type                         | Description                          |
-| -------------------- | ---------------------------- | ------------------------------------ |
-| `rxFrequencyHz`      | `number \| null`             | Live RX frequency (Hz)               |
-| `txFrequencyHz`      | `number \| null`             | Live TX frequency (Hz)               |
-| `onTxFrequencyChange`| `(txMhzString: string) => void` | Sets TX form field (MHz string)   |
+| Prop                  | Type                            | Description                     |
+| --------------------- | ------------------------------- | ------------------------------- |
+| `rxFrequencyHz`       | `number \| null`                | Live RX frequency (Hz)          |
+| `txFrequencyHz`       | `number \| null`                | Live TX frequency (Hz)          |
+| `onTxFrequencyChange` | `(txMhzString: string) => void` | Sets TX form field (MHz string) |
 
 ## Usage
 
 ```tsx
-<TxOffsetControls
-  rxFrequencyHz={liveRxHz}
-  txFrequencyHz={liveTxHz}
-  onTxFrequencyChange={setTx}
-/>
+<TxOffsetControls rxFrequencyHz={liveRxHz} txFrequencyHz={liveTxHz} onTxFrequencyChange={setTx} />
 ```
 
 ## Behaviour
