@@ -149,7 +149,7 @@ export function deriveZoneDerivedScanLists(
         [SCAN_COL.designedChannel]: carrierWireName,
         [SCAN_COL.prioritySweepTime]: '500',
         [SCAN_COL.talkback]: '0',
-        [SCAN_COL.channelMembers]: truncated.join('|'),
+        [SCAN_COL.channelMembers]: truncated.join('|') + '|',
       },
     });
   }
