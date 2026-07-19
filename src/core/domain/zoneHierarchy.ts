@@ -141,30 +141,58 @@ export function zoneMembershipHasCycle(
   return visit(rootZoneId, new Set());
 }
 
-/** Zone ids that must not be offered as members when editing zoneId (self + descendants). */
+/** Why a zone cannot be added as a nested member while editing another zone. */
+export type ZoneMembershipExclusionReason = 'self' | 'descendant' | 'cycle';
+
+/**
+ * Zone ids that must not be added as members when editing `zoneId`, with reason codes
+ * for UI labelling (self, already nested descendant, or would close a cycle).
+ */
+export function zoneMembershipExclusionReasons(
+  zoneId: string,
+  zones: Zone[],
+  proposedRootMembers?: ZoneMemberEntry[],
+): Map<string, ZoneMembershipExclusionReason> {
+  const zonesById = zoneMap(zones);
+  const reasons = new Map<string, ZoneMembershipExclusionReason>();
+  reasons.set(zoneId, 'self');
+
+  const rootMembers =
+    proposedRootMembers != null
+      ? proposedRootMembers.map((member) => normalizeZoneMemberEntry(member))
+      : (zonesById.get(zoneId)?.members.map((member) => normalizeZoneMemberEntry(member)) ?? []);
+
+  function walkDescendants(currentId: string): void {
+    const members =
+      currentId === zoneId
+        ? rootMembers
+        : (zonesById.get(currentId)?.members.map((member) => normalizeZoneMemberEntry(member)) ??
+          []);
+    for (const member of members) {
+      if (member.kind !== 'zone' || reasons.has(member.zoneId)) continue;
+      reasons.set(member.zoneId, 'descendant');
+      walkDescendants(member.zoneId);
+    }
+  }
+
+  walkDescendants(zoneId);
+
+  for (const candidate of zones) {
+    if (reasons.has(candidate.id)) continue;
+    const proposed = [...rootMembers, { kind: 'zone' as const, zoneId: candidate.id }];
+    if (zoneMembershipHasCycle(zoneId, proposed, zones)) {
+      reasons.set(candidate.id, 'cycle');
+    }
+  }
+
+  return reasons;
+}
+
+/** Zone ids that must not be offered as selectable members when editing zoneId. */
 export function zoneIdsExcludedFromMembership(
   zoneId: string,
   zones: Zone[],
   proposedRootMembers?: ZoneMemberEntry[],
 ): Set<string> {
-  const zonesById = zoneMap(zones);
-  const excluded = new Set<string>([zoneId]);
-
-  function walk(currentId: string): void {
-    const zone = zonesById.get(currentId);
-    if (!zone) return;
-    const members =
-      currentId === zoneId && proposedRootMembers != null
-        ? proposedRootMembers.map((member) => normalizeZoneMemberEntry(member))
-        : zone.members.map((member) => normalizeZoneMemberEntry(member));
-    for (const member of members) {
-      if (member.kind === 'zone' && !excluded.has(member.zoneId)) {
-        excluded.add(member.zoneId);
-        walk(member.zoneId);
-      }
-    }
-  }
-
-  walk(zoneId);
-  return excluded;
+  return new Set(zoneMembershipExclusionReasons(zoneId, zones, proposedRootMembers).keys());
 }

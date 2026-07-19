@@ -35,6 +35,7 @@ Manages **In this zone** members (export order) and **Other channels & zones** a
 - Composes [`SelectedItemList`](../ui/SelectedItemList.md) (in-zone list) and [`AvailableItemPicker`](../ui/AvailableItemPicker.md) (add pool) with domain-specific row renderers.
 - **In this zone:** rich channel rows (freq, mode pills, scan skip badge, labelled include-in-scan control on the right); nested zone rows with effective counts; **reorder mode** — drag handles, built-in Move up/down / Remove selected / Alt+↑/↓; **Sort channels…** above the member list (permanent rewrite).
 - **Other channels & zones:** filter, multi-select add, hide-from-map checkboxes.
+- **Blocked nested zones** stay visible in the available pool (not hidden): self, descendants of the current membership, and zones that would close a cycle are greyed out with a reason badge (`This zone` / `Already nested under this zone` / `Would create a cycle`) and cannot be selected or added. Save still validates via `validateZoneMembership`.
 - Map filters via `computeZoneMemberPickerMapFilters` in `zoneMemberPickerUtils.ts`.
 
 ## Related

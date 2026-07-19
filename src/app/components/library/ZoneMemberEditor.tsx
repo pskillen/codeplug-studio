@@ -6,7 +6,8 @@ import type { Channel, Zone, ZoneMemberEntry } from '@core/models/library.ts';
 import { channelDisplayLabel } from '@core/domain/channelNaming.ts';
 import {
   resolveEffectiveZoneChannelIds,
-  zoneIdsExcludedFromMembership,
+  zoneMembershipExclusionReasons,
+  type ZoneMembershipExclusionReason,
 } from '@core/domain/zoneHierarchy.ts';
 import {
   reorderZoneMembers,
@@ -29,6 +30,7 @@ import { ICON_SIZE_NAV, ICON_STROKE } from '../../lib/iconSizes.ts';
 import {
   channelMatchesZoneMemberFilter,
   computeZoneMemberPickerMapFilters,
+  zoneMembershipExclusionLabel,
   type ZoneMemberPickerMapFilters,
 } from './zoneMemberPickerUtils.ts';
 import {
@@ -46,6 +48,7 @@ export type { ZoneMemberPickerMapFilters } from './zoneMemberPickerUtils.ts';
 export {
   channelMatchesZoneMemberFilter,
   computeZoneMemberPickerMapFilters,
+  zoneMembershipExclusionLabel,
 } from './zoneMemberPickerUtils.ts';
 
 export interface ZoneMemberEditorProps {
@@ -106,11 +109,11 @@ export default function ZoneMemberEditor({
     return ids;
   }, [members]);
 
-  const excludedZoneIds = useMemo(
+  const exclusionReasons = useMemo(
     () =>
       editingZoneId
-        ? zoneIdsExcludedFromMembership(editingZoneId, zones, members)
-        : new Set<string>(),
+        ? zoneMembershipExclusionReasons(editingZoneId, zones, members)
+        : new Map<string, ZoneMembershipExclusionReason>(),
     [editingZoneId, zones, members],
   );
 
@@ -136,17 +139,17 @@ export default function ZoneMemberEditor({
     [channels, memberKeySet, availableFilterLower],
   );
 
+  /** Non-member zones shown in the add pool (includes blocked/greyed cycle-closers). */
   const availableZones = useMemo(
     () =>
       [...zones]
         .sort((a, b) => a.name.localeCompare(b.name))
         .filter(
           (zone) =>
-            !excludedZoneIds.has(zone.id) &&
             !memberKeySet.has(`zone:${zone.id}`) &&
             (!availableFilterLower || zoneMatchesFilter(zone, availableFilterLower)),
         ),
-    [zones, excludedZoneIds, memberKeySet, availableFilterLower],
+    [zones, memberKeySet, availableFilterLower],
   );
 
   const mapFilters = useMemo(
@@ -177,6 +180,11 @@ export default function ZoneMemberEditor({
     onMapFiltersChange?.(mapFilters);
   }, [mapFilters, onMapFiltersChange]);
 
+  const selectableZoneSelected = useMemo(
+    () => availableZoneSelected.filter((id) => !exclusionReasons.has(id)),
+    [availableZoneSelected, exclusionReasons],
+  );
+
   const setMembersFromKeys = useCallback(
     (keys: ZonePickerMemberKey[]) => {
       onChange(membersFromMemberKeys(keys));
@@ -193,7 +201,7 @@ export default function ZoneMemberEditor({
   const addSelected = useCallback(() => {
     const toAdd: ZonePickerMemberKey[] = [
       ...availableChannelSelected.map((id) => `channel:${id}` as const),
-      ...availableZoneSelected.map((id) => `zone:${id}` as const),
+      ...selectableZoneSelected.map((id) => `zone:${id}` as const),
     ].filter((key) => !memberKeySet.has(key));
     if (!toAdd.length) return;
     setMembersFromKeys([...memberKeys, ...toAdd]);
@@ -201,7 +209,7 @@ export default function ZoneMemberEditor({
     setAvailableZoneSelected([]);
   }, [
     availableChannelSelected,
-    availableZoneSelected,
+    selectableZoneSelected,
     memberKeySet,
     memberKeys,
     setMembersFromKeys,
@@ -340,28 +348,32 @@ export default function ZoneMemberEditor({
               id: 'zones',
               title: 'Zones',
               itemKeys: availableZones.map((zone) => zone.id),
-              selectedKeys: availableZoneSelected,
-              onToggleSelect: (id) =>
+              selectedKeys: selectableZoneSelected,
+              onToggleSelect: (id) => {
+                if (exclusionReasons.has(id)) return;
                 setAvailableZoneSelected((prev) =>
                   prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
-                ),
+                );
+              },
               emptyMessage: 'No zones available',
               renderItem: ({ itemKey, checked, onToggle }) => {
                 const zone = zonesById.get(itemKey);
                 if (!zone) return null;
+                const reason = exclusionReasons.get(zone.id);
                 return (
-                  <Checkbox
+                  <AvailableZoneRow
                     key={itemKey}
-                    label={`Zone: ${zone.name}`}
+                    zone={zone}
                     checked={checked}
-                    onChange={onToggle}
+                    onToggle={onToggle}
+                    blockedReason={reason}
                   />
                 );
               },
             },
           ]}
           onAddSelected={addSelected}
-          addDisabled={!availableChannelSelected.length && !availableZoneSelected.length}
+          addDisabled={!availableChannelSelected.length && !selectableZoneSelected.length}
           footer={
             <>
               <Checkbox
@@ -553,6 +565,42 @@ function AvailableChannelRow({
         .map((mode) => (
           <ModePill key={mode} mode={mode} size="xs" />
         ))}
+    </Group>
+  );
+}
+
+function AvailableZoneRow({
+  zone,
+  checked,
+  onToggle,
+  blockedReason,
+}: {
+  zone: Zone;
+  checked: boolean;
+  onToggle: () => void;
+  blockedReason?: ZoneMembershipExclusionReason;
+}) {
+  const blocked = blockedReason != null;
+  return (
+    <Group gap="sm" wrap="nowrap" opacity={blocked ? 0.55 : 1}>
+      <Checkbox
+        checked={checked}
+        disabled={blocked}
+        onChange={onToggle}
+        aria-label={
+          blocked
+            ? `Zone ${zone.name} unavailable: ${zoneMembershipExclusionLabel(blockedReason)}`
+            : `Select zone ${zone.name}`
+        }
+      />
+      <Text size="sm" style={{ flex: 1, minWidth: 0 }} truncate c={blocked ? 'dimmed' : undefined}>
+        Zone: {zone.name}
+      </Text>
+      {blocked ? (
+        <Badge size="xs" variant="light" color="gray">
+          {zoneMembershipExclusionLabel(blockedReason)}
+        </Badge>
+      ) : null}
     </Group>
   );
 }

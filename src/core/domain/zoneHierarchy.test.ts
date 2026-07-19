@@ -5,6 +5,7 @@ import {
   flattenZoneMembership,
   resolveEffectiveZoneChannelIds,
   zoneIdsExcludedFromMembership,
+  zoneMembershipExclusionReasons,
   zoneMembershipHasCycle,
 } from './zoneHierarchy.ts';
 import { directZoneMemberChannelIds } from './zoneMembers.ts';
@@ -122,12 +123,51 @@ describe('zoneMembershipHasCycle', () => {
   });
 });
 
-describe('zoneIdsExcludedFromMembership', () => {
-  it('includes self and descendant zones', () => {
+describe('zoneMembershipExclusionReasons', () => {
+  it('marks self and descendants', () => {
     const child = zone('z-c', 'Child', []);
     const parent = zone('z-p', 'Parent', [{ kind: 'zone', zoneId: 'z-c' }]);
     const lib = library([child, parent]);
-    expect(zoneIdsExcludedFromMembership('z-p', lib.zones)).toEqual(new Set(['z-p', 'z-c']));
+    const reasons = zoneMembershipExclusionReasons('z-p', lib.zones);
+    expect(reasons.get('z-p')).toBe('self');
+    expect(reasons.get('z-c')).toBe('descendant');
+  });
+
+  it('uses proposed root members when editing', () => {
+    const child = zone('z-c', 'Child', []);
+    const parent = zone('z-p', 'Parent', [{ kind: 'zone', zoneId: 'z-c' }]);
+    const lib = library([child, parent]);
+    const reasons = zoneMembershipExclusionReasons('z-p', lib.zones, []);
+    expect(reasons.get('z-p')).toBe('self');
+    expect(reasons.has('z-c')).toBe(false);
+  });
+
+  it('marks ancestor that would close a cycle (Scotland ⊃ Glasgow)', () => {
+    const glasgow = zone('z-g', 'Glasgow', [{ kind: 'channel', channelId: 'ch-1' }]);
+    const scotland = zone('z-s', 'Scotland', [{ kind: 'zone', zoneId: 'z-g' }]);
+    const lib = library([glasgow, scotland], ['ch-1']);
+    const reasons = zoneMembershipExclusionReasons('z-g', lib.zones, glasgow.members);
+    expect(reasons.get('z-g')).toBe('self');
+    expect(reasons.get('z-s')).toBe('cycle');
+  });
+
+  it('marks mutual nest peer as cycle when staging A⊃B while B⊃A', () => {
+    const a = zone('z-a', 'A', [{ kind: 'zone', zoneId: 'z-b' }]);
+    const b = zone('z-b', 'B', [{ kind: 'zone', zoneId: 'z-a' }]);
+    const lib = library([a, b]);
+    const reasons = zoneMembershipExclusionReasons('z-a', lib.zones, []);
+    expect(reasons.get('z-a')).toBe('self');
+    expect(reasons.get('z-b')).toBe('cycle');
+  });
+});
+
+describe('zoneIdsExcludedFromMembership', () => {
+  it('includes self, descendants, and cycle-closers', () => {
+    const glasgow = zone('z-g', 'Glasgow', [{ kind: 'channel', channelId: 'ch-1' }]);
+    const scotland = zone('z-s', 'Scotland', [{ kind: 'zone', zoneId: 'z-g' }]);
+    const other = zone('z-o', 'Other', []);
+    const lib = library([glasgow, scotland, other], ['ch-1']);
+    expect(zoneIdsExcludedFromMembership('z-g', lib.zones)).toEqual(new Set(['z-g', 'z-s']));
   });
 
   it('uses proposed root members when editing', () => {

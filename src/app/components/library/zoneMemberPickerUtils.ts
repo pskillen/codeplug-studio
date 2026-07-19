@@ -1,5 +1,8 @@
 import type { Channel, Zone, ZoneMemberEntry } from '@core/models/library.ts';
-import { resolveEffectiveZoneChannelIds } from '@core/domain/zoneHierarchy.ts';
+import {
+  resolveEffectiveZoneChannelIds,
+  type ZoneMembershipExclusionReason,
+} from '@core/domain/zoneHierarchy.ts';
 import { entryFromMemberKey, memberKeysFromMembers } from './zoneMembers.ts';
 
 export interface ZoneMemberPickerMapFilters {
@@ -7,6 +10,18 @@ export interface ZoneMemberPickerMapFilters {
   hiddenMarkerChannelIds: string[];
   /** Omit from zone hull preview (in-zone members only) */
   hiddenZoneMemberIds: string[];
+}
+
+/** Operator-facing label for why a zone cannot be added as a nested member. */
+export function zoneMembershipExclusionLabel(reason: ZoneMembershipExclusionReason): string {
+  switch (reason) {
+    case 'self':
+      return 'This zone';
+    case 'descendant':
+      return 'Already nested under this zone';
+    case 'cycle':
+      return 'Would create a cycle';
+  }
 }
 
 /** Case-insensitive match on channel name or callsign. */
