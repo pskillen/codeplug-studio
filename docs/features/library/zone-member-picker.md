@@ -2,7 +2,7 @@
 
 Deep dive for **`ZoneMemberEditor`** — the vertical stacked membership editor on the zone form.
 
-**Tracking:** [#25](https://github.com/pskillen/codeplug-studio/issues/25), nested zones [#157](https://github.com/pskillen/codeplug-studio/issues/157), revision-2 [#180](https://github.com/pskillen/codeplug-studio/issues/180), ordering [#456](https://github.com/pskillen/codeplug-studio/issues/456)
+**Tracking:** [#25](https://github.com/pskillen/codeplug-studio/issues/25), nested zones [#157](https://github.com/pskillen/codeplug-studio/issues/157), revision-2 [#180](https://github.com/pskillen/codeplug-studio/issues/180), ordering [#456](https://github.com/pskillen/codeplug-studio/issues/456), cycle UI [#188](https://github.com/pskillen/codeplug-studio/issues/188)
 
 > **Supersedes** the legacy side-by-side two-list `ZoneMemberPicker` layout (component file retained as a re-export shim).
 
@@ -21,6 +21,7 @@ The zone editor embeds **`CodeplugMap`** below the editor so hull geometry updat
 
 | Symbol                         | Path                                                          | Role                         |
 | ------------------------------ | ------------------------------------------------------------- | ---------------------------- |
+| `zoneMembershipExclusionReasons` | `src/core/domain/zoneHierarchy.ts`                                | Self / descendant / cycle reasons |
 | `ZoneMemberEditor`             | `src/app/components/library/ZoneMemberEditor.tsx`             | Vertical stacked UI          |
 | `SelectedItemList`             | `src/app/components/ui/SelectedItemList.tsx`                  | Generic selected-member list |
 | `AvailableItemPicker`          | `src/app/components/ui/AvailableItemPicker.tsx`               | Generic pool picker          |
@@ -43,7 +44,7 @@ Sidecars: `ZoneMemberEditor.md`, `ChannelZoneMembershipSection.md`.
 | Zone-derived scan membership | Per direct channel member — tri-state `includeInScanList` (`default` / `include` / `skip`)                                                                   |
 | Hide filtered from map       | Separate checkboxes for each pool                                                                                                                            |
 
-**Available zones** excludes the zone being edited, its descendant zones (would create a cycle), and zones already in the member list.
+**Available zones** keep the zone being edited, its descendants under the current membership, and cycle-closing candidates **visible** in the pool — greyed out with a reason badge (`This zone` / `Already nested under this zone` / `Would create a cycle`) and not selectable for add ([#188](https://github.com/pskillen/codeplug-studio/issues/188)). Zones already in the member list appear only on the in-zone side. Save still runs `validateZoneMembership` as a backstop.
 
 Channel rows show callsign/name, RX/TX, mode pills, scan-skip badge. Zone rows show effective channel count and link to the nested zone editor.
 
@@ -62,6 +63,7 @@ Channel rows show callsign/name, RX/TX, mode pills, scan-skip badge. Zone rows s
 3. Channel editor → zone membership section → add/remove zone — list updates without saving channel fields.
 4. Channels list → **Zones** column badges; delete icon with zone cascade confirm.
 5. Channels list → select rows → **New zone from selected** — zone editor opens pre-filled ([#154](https://github.com/pskillen/codeplug-studio/issues/154)).
+6. With `Scotland` ⊃ `Glasgow`, edit Glasgow — Scotland is greyed with **Would create a cycle** and cannot be added.
 
 ## Related
 

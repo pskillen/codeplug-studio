@@ -2,7 +2,7 @@
 
 Deep dive for **hierarchical zone membership** — library zones that include other zones as members, flattened at export.
 
-**Tracking:** [#157](https://github.com/pskillen/codeplug-studio/issues/157) · Epic [#179](https://github.com/pskillen/codeplug-studio/issues/179)
+**Tracking:** [#157](https://github.com/pskillen/codeplug-studio/issues/157) · Epic [#179](https://github.com/pskillen/codeplug-studio/issues/179) · UI cycle prevention [#188](https://github.com/pskillen/codeplug-studio/issues/188)
 
 ## Purpose
 
@@ -20,10 +20,11 @@ Nesting is **not reconstructed** from flat CPS import — it is created and main
 | `resolveEffectiveZoneChannelIds` | same                                              | Flatten to ordered, deduped channel ids     |
 | `collectZoneFlattenWarnings`     | same                                              | Cycle warnings for export                   |
 | `zoneMembershipHasCycle`         | same                                              | Acyclic graph check                         |
+| `zoneMembershipExclusionReasons` | same                                              | Self / descendant / cycle-closer reasons    |
 | `validateZoneMembership`         | `src/core/domain/validation.ts`                   | Ref + cycle validation on save              |
 | `assemble`                       | `src/core/services/assemble.ts`                   | Export projection uses effective channels   |
 | `orderChannelIdsByLayoutHint`    | `src/core/domain/zoneGroupingLayout.ts`           | Optional member order from build layout     |
-| `ZoneMemberPicker`               | `src/app/components/library/ZoneMemberPicker.tsx` | Channels + zones pools                      |
+| `ZoneMemberEditor`               | `src/app/components/library/ZoneMemberEditor.tsx` | Channels + zones pools (blocked rows labelled) |
 
 ## Model semantics
 
@@ -38,7 +39,7 @@ Nesting is **not reconstructed** from flat CPS import — it is created and main
 
 Rules:
 
-- **Acyclic** — a zone cannot include itself; no cycles through zone→zone refs (validation error in zone editor on save).
+- **Acyclic** — a zone cannot include itself; no cycles through zone→zone refs. The zone member editor **blocks** self, descendants, and cycle-closing candidates in the available pool (rows stay visible, greyed, with a reason badge — [#188](https://github.com/pskillen/codeplug-studio/issues/188)). Save still runs `validateZoneMembership` as a persistence backstop.
 - **Runtime cycles** — if corrupt or legacy data already contains a cycle, flatten skips the revisiting branch (**partial flatten**), keeps channels collected before the cycle point, and surfaces an export warning ([#187](https://github.com/pskillen/codeplug-studio/issues/187)). Map and CSV preview do not crash.
 - **Dedup** — when flattening, the same channel id appearing via multiple paths is exported once (first occurrence in walk order wins).
 - **Vendor-neutral** — no radio caps in library CRUD; profile overflow **warnings** at export (existing OpenGD77/DM32 warning paths on assembled flat lists).
@@ -64,7 +65,7 @@ Rules:
 3. Enable **Don't export as its own zone** on PMR446 — re-export; PMR446 row absent; Glasgow row still includes PMR channels.
 4. On a format build **Zones** wire-preview page, enable **Force export** for PMR446 — re-export; PMR446 standalone row appears in this build only (library `omitFromExport` unchanged).
 5. With **Omit channels not in a zone** enabled on export, PMR channels remain included (linked via nested flatten).
-6. Attempt `Glasgow` ⊃ `Scotland` while `Scotland` ⊃ `Glasgow` — save blocked with cycle message.
+6. Attempt `Glasgow` ⊃ `Scotland` while `Scotland` ⊃ `Glasgow` — Scotland appears in the available pool greyed with **Would create a cycle**; cannot be selected or added; save still blocked with cycle message if membership is forced.
 7. If cyclic membership exists in stored data (e.g. manual YAML edit), export and map still load; **Export warnings** list a cycle message and flattened zones use partial membership.
 8. Export/import project YAML — nested members, `omitFromExport`, and `forceInclude` on zone overrides preserved.
 
