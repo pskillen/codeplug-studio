@@ -43,10 +43,6 @@ export default function HomePage() {
         </form>
       </PageSection>
 
-      <PageSection title="Import from YAML">
-        <ImportProjectYamlPanel />
-      </PageSection>
-
       {loading ? (
         <Text>Loading projects…</Text>
       ) : projects.length === 0 ? (
@@ -119,6 +115,10 @@ export default function HomePage() {
           </Stack>
         </PageSection>
       )}
+
+      <PageSection title="Import from YAML">
+        <ImportProjectYamlPanel />
+      </PageSection>
     </ListPage>
   );
 }
