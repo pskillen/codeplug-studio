@@ -38,9 +38,11 @@ Both use profile id **`dm32-baofeng-dm32uv`**.
 
 ## Radio profile (tier 1 summary)
 
-| Profile               | Label           | Channel cap | RX list members | Scan list members | Name limit |
-| --------------------- | --------------- | ----------- | --------------- | ----------------- | ---------- |
-| `dm32-baofeng-dm32uv` | Baofeng DM-32UV | 1000        | 32              | 16                | 16         |
+| Profile               | Label           | Channel cap | RX list members | Scan list members | Name limit | Scan Name limit |
+| --------------------- | --------------- | ----------- | --------------- | ----------------- | ---------- | --------------- |
+| `dm32-baofeng-dm32uv` | Baofeng DM-32UV | 1000        | 32              | 15                | 16         | 13              |
+
+Scan list CSV members are capped at **15** named entries (CPS “16” includes an implicit current-channel slot). General LCD/`nameLimit` remains **16**; `Scan.csv` `Scan Name` (and matching channel `Scan List` FKs) use **`scanListNameLimit` 13** — see [scan-lists.md](../../../reference/dm32/scan-lists.md).
 
 Per-radio wire detail: [docs/reference/dm32/radios/](../../../reference/dm32/radios/README.md).
 

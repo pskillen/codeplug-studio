@@ -456,6 +456,166 @@ describe('DM32 export serialise', () => {
     expect(zoneRows[1]?.[membersIndex]).toMatch(/^Glasgow Scan\|/);
   });
 
+  it('truncates zone-derived scan lists to 15 named members with a warning', () => {
+    const channels = Array.from({ length: 16 }, (_, i) =>
+      fmChannel(`Mem ${String(i + 1).padStart(2, '0')}`),
+    );
+    const zone = newZone(PROJECT_ID, 'Busy Zone');
+    zone.members = channels.map((channel) => ({
+      kind: 'channel' as const,
+      channelId: channel.id,
+    }));
+    const build = dm32Build();
+    const layout = seedZoneGroupingFromLibrary({
+      channels,
+      zones: [zone],
+      talkGroups: [],
+      digitalContacts: [],
+      analogContacts: [],
+      rxGroupLists: [],
+      scanLists: [],
+    });
+    layout.zones[0] = {
+      ...layout.zones[0]!,
+      exportScanList: true,
+      scanCarrierFrequencyHz: 145_500_000,
+    };
+    build.layout = { sections: [layout] };
+
+    const library: LibrarySlice = {
+      channels,
+      zones: [zone],
+      talkGroups: [],
+      digitalContacts: [],
+      analogContacts: [],
+      rxGroupLists: [],
+      scanLists: [],
+    };
+    const assembled = {
+      ...assemble(build, library),
+      library,
+      zoneGrouping: layout,
+    };
+    const warnings: string[] = [];
+    const files = serialiseDm32Files(assembled, library, undefined, warnings);
+    const scanRows = parseCsv(files['Scan.csv']);
+    const membersIndex = scanRows[0]!.indexOf(SCAN_COL.channelMembers);
+    const membersCell = scanRows[1]?.[membersIndex] ?? '';
+    const emittedNames = membersCell.split('|').filter((name) => name.length > 0);
+    expect(emittedNames).toHaveLength(15);
+    expect(emittedNames[0]).toBe('Mem 01');
+    expect(emittedNames[14]).toBe('Mem 15');
+    expect(membersCell.endsWith('|')).toBe(true);
+    expect(warnings.some((w) => /scan list truncated from 16 to 15 members/.test(w))).toBe(true);
+  });
+
+  it('emits a trailing pipe on Scan.csv Channel Members', () => {
+    const channel = fmChannel('Member One');
+    const zone = newZone(PROJECT_ID, 'Glasgow');
+    zone.members = [{ kind: 'channel' as const, channelId: channel.id }];
+    const build = dm32Build();
+    const layout = seedZoneGroupingFromLibrary({
+      channels: [channel],
+      zones: [zone],
+      talkGroups: [],
+      digitalContacts: [],
+      analogContacts: [],
+      rxGroupLists: [],
+      scanLists: [],
+    });
+    layout.zones[0] = {
+      ...layout.zones[0]!,
+      exportScanList: true,
+      scanCarrierFrequencyHz: 145_500_000,
+    };
+    build.layout = { sections: [layout] };
+
+    const library: LibrarySlice = {
+      channels: [channel],
+      zones: [zone],
+      talkGroups: [],
+      digitalContacts: [],
+      analogContacts: [],
+      rxGroupLists: [],
+      scanLists: [],
+    };
+    const assembled = {
+      ...assemble(build, library),
+      library,
+      zoneGrouping: layout,
+    };
+    const files = serialiseDm32Files(assembled, library);
+    const scanRows = parseCsv(files['Scan.csv']);
+    const membersIndex = scanRows[0]!.indexOf(SCAN_COL.channelMembers);
+    const membersCell = scanRows[1]?.[membersIndex] ?? '';
+    expect(membersCell).toBe('Member One|');
+  });
+
+  it('shortens Scan Name and matching Scan List FK to 13 characters', () => {
+    const channel = fmChannel('Member One');
+    const zone = newZone(PROJECT_ID, 'Glasgow Airband');
+    zone.members = [{ kind: 'channel' as const, channelId: channel.id }];
+    const build = dm32Build();
+    const layout = seedZoneGroupingFromLibrary({
+      channels: [channel],
+      zones: [zone],
+      talkGroups: [],
+      digitalContacts: [],
+      analogContacts: [],
+      rxGroupLists: [],
+      scanLists: [],
+    });
+    layout.zones[0] = {
+      ...layout.zones[0]!,
+      exportScanList: true,
+      scanCarrierFrequencyHz: 145_500_000,
+    };
+    build.layout = { sections: [layout] };
+
+    const library: LibrarySlice = {
+      channels: [channel],
+      zones: [zone],
+      talkGroups: [],
+      digitalContacts: [],
+      analogContacts: [],
+      rxGroupLists: [],
+      scanLists: [],
+    };
+    const assembled = {
+      ...assemble(build, library),
+      library,
+      zoneGrouping: layout,
+    };
+    const warnings: string[] = [];
+    const files = serialiseDm32Files(
+      assembled,
+      library,
+      { profileId: 'dm32-baofeng-dm32uv', shortenNames: true },
+      warnings,
+    );
+    const scanRows = parseCsv(files['Scan.csv']);
+    const scanNameIndex = scanRows[0]!.indexOf(SCAN_COL.name);
+    const scanName = scanRows[1]?.[scanNameIndex] ?? '';
+    expect(scanName.length).toBeLessThanOrEqual(13);
+    expect(scanName.length).toBeLessThan('Glasgow Airband'.length);
+
+    const channelRows = parseCsv(files['Channels.csv']);
+    const scanListIndex = channelRows[0]!.indexOf(CHANNEL_COL.scanList);
+    const autoScanIndex = channelRows[0]!.indexOf(CHANNEL_COL.autoScan);
+    const carrierRow = channelRows.find(
+      (row) => row[scanListIndex] === scanName && row[autoScanIndex] === '1',
+    );
+    expect(carrierRow).toBeDefined();
+    expect(carrierRow?.[scanListIndex]).toBe(scanName);
+    expect(warnings.some((w) => /Scan list wire name "Glasgow Airband" exceeds 13/.test(w))).toBe(
+      true,
+    );
+
+    const zoneRows = parseCsv(files['Zones.csv']);
+    const zoneNameIndex = zoneRows[0]!.indexOf(ZONE_COL.name);
+    expect(zoneRows[1]?.[zoneNameIndex]).toBe('Glasgow Airband');
+  });
+
   /**
    * Excluded from row compare: No., Scan List (zone-derived), DMR ID (radio label).
    * See docs/reference/dm32/channels.md and export-mapping.md.
