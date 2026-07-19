@@ -24,6 +24,7 @@ import {
   channelPlottableOnMap,
   dominantMode,
   groupByCoords,
+  groupIsDimmed,
   markerDotSizePx,
   markerLabel,
   primaryMode,
@@ -755,7 +756,7 @@ export default function CodeplugMap({
               const position: LatLon = [ch.location!.lat, ch.location!.lon];
               const highlighted =
                 highlightChannelId != null && group.some((c) => c.id === highlightChannelId);
-              const dimmed = group.some((c) => dimmedIdSet.has(c.id));
+              const dimmed = groupIsDimmed(group, dimmedIdSet);
 
               return (
                 <Marker

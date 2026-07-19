@@ -5,6 +5,7 @@ import {
   applyFilters,
   dominantMode,
   groupByCoords,
+  groupIsDimmed,
   markerDotSizePx,
   markerLabel,
   zoneGeolocatedPoints,
@@ -121,6 +122,29 @@ describe('dominantMode', () => {
     };
 
     expect(dominantMode([fm, dmr1, dmr2])).toBe('dmr');
+  });
+});
+
+describe('groupIsDimmed', () => {
+  it('is true when every channel in the group is dimmed', () => {
+    const a = { ...locatedChannel('A', 56.5, -4.0), id: 'a' };
+    const b = { ...locatedChannel('B', 56.5, -4.0), id: 'b' };
+    expect(groupIsDimmed([a, b], new Set(['a', 'b']))).toBe(true);
+  });
+
+  it('is false for mixed in/out stacks', () => {
+    const a = { ...locatedChannel('A', 56.5, -4.0), id: 'a' };
+    const b = { ...locatedChannel('B', 56.5, -4.0), id: 'b' };
+    expect(groupIsDimmed([a, b], new Set(['b']))).toBe(false);
+  });
+
+  it('is false when no channels are dimmed', () => {
+    const a = { ...locatedChannel('A', 56.5, -4.0), id: 'a' };
+    expect(groupIsDimmed([a], new Set())).toBe(false);
+  });
+
+  it('is false for an empty group', () => {
+    expect(groupIsDimmed([], new Set(['a']))).toBe(false);
   });
 });
 

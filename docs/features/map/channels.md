@@ -13,6 +13,7 @@ See the [map hub](README.md) for overall placement. This layer reads the **inter
 | `buildChannelById`                             | same                                             | Plotted channels indexed by `id`              |
 | `primaryMode` / `dominantMode` / `markerLabel` | same                                             | Marker colour mode and label text             |
 | `markerDotSizePx`                              | same                                             | Dot diameter from co-located stack count      |
+| `groupIsDimmed`                                | same                                             | Dim stack only when every channel is dimmed   |
 | `CodeplugMap`                                  | `src/app/components/CodeplugMap/CodeplugMap.tsx` | react-leaflet markers + popups                |
 | `modeColor`                                    | `src/app/lib/channelModes.ts`                    | Mode → hex colour (app layer only)            |
 
@@ -51,6 +52,8 @@ Skipped channels are summarised below the map on the channels and zones list rou
 ### Co-located merge
 
 `groupByCoords(..., true)` groups channels whose lat/lon match at five decimal places. One marker is drawn; the label shows `callsign +N` for merged groups. Dot diameter grows with stack size (`markerDotSizePx`: +4 px per extra channel, capped at 34 px). Marker colour uses `dominantMode` (most common `modeProfiles[0].mode` in the group).
+
+When `dimmedChannelIds` is set (e.g. zone editor non-members), a co-located stack is faded only if **every** channel in the group is dimmed (`groupIsDimmed`). Mixed in/out stacks stay full opacity so an in-zone member is not visually treated as absent ([#469](https://github.com/pskillen/codeplug-studio/issues/469)).
 
 ### Hover tooltips
 
