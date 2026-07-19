@@ -104,6 +104,7 @@ Coarse UK-oriented receive ranges. SW uses **gap segments** between amateur HF a
 
 ## Related
 
+- [TX offsets](./tx-offsets.md) — common repeater / duplex quick offsets by band
 - [Display conventions](./styleguide/display.md) — band pill rendering
 - [library feature](../features/library/README.md)
 - [Data model](../features/data-model/README.md)

@@ -67,15 +67,16 @@ export function channelMatchesBandFilter(
   return bandsFromFrequencies(rxFrequency, txFrequency).some((b) => bandIds.includes(b.id));
 }
 
-export function frequencyOffsetMhz(
-  rxFrequency: number | null,
-  txFrequency: number | null,
-): number | null {
-  const rx = frequencyHzToMhz(rxFrequency);
-  const tx = frequencyHzToMhz(txFrequency);
-  if (rx == null || tx == null) return null;
-  return tx - rx;
-}
+export {
+  frequencyOffsetMhz,
+  formatOffsetMhz,
+  offsetsMatch,
+  txFrequencyHzFromOffset,
+  txOffsetsForFrequencyHz,
+  TX_OFFSET_MATCH_EPSILON_MHZ,
+  TX_OFFSETS_BY_BAND_ID,
+  type TxOffsetOption,
+} from '@core/domain/txOffsets.ts';
 
 export function bandsFromFrequenciesHz(
   rxFrequencyHz: number | null,
