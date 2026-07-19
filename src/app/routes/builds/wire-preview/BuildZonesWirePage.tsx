@@ -4,9 +4,21 @@ import { useZoneScanExportLayout } from '../../../hooks/useZoneScanExportLayout.
 import ZoneScanOverrideSection from '../../../components/builds/wirePreview/overrideModalSections/ZoneScanOverrideSection.tsx';
 import ZoneMemberOrderSection from '../../../components/builds/wirePreview/overrideModalSections/ZoneMemberOrderSection.tsx';
 import { layoutEntry } from '@core/import-export/zoneDerivedScanLists/members.ts';
+import type { WirePreviewRow } from '@core/services/previewWireRows.ts';
 
 export default function BuildZonesWirePage() {
   const zoneScan = useZoneScanExportLayout();
+
+  const zoneModalContext = (row: WirePreviewRow) => {
+    if (!zoneScan.layoutSupported || !zoneScan.layout || !zoneScan.library) {
+      return null;
+    }
+    if (row.entityKind !== 'zone') return null;
+    const zone = zoneScan.zoneById.get(row.libraryEntityId);
+    if (!zone) return null;
+    const entry = layoutEntry(zoneScan.layout, row.libraryEntityId);
+    return { zone, entry };
+  };
 
   return (
     <BuildWirePreviewListPage
@@ -44,41 +56,39 @@ export default function BuildZonesWirePage() {
           </Stack>
         ) : undefined
       }
-      modalExtraSections={(row) => {
-        if (!zoneScan.layoutSupported || !zoneScan.layout || !zoneScan.library) {
-          return null;
-        }
-        if (row.entityKind !== 'zone') return null;
-        const zone = zoneScan.zoneById.get(row.libraryEntityId);
-        if (!zone) return null;
-        const entry = layoutEntry(zoneScan.layout, row.libraryEntityId);
+      modalMembersSection={(row) => {
+        const ctx = zoneModalContext(row);
+        if (!ctx || !zoneScan.library) return null;
         return (
-          <Stack gap="lg">
-            <ZoneMemberOrderSection
-              zone={zone}
-              zones={zoneScan.library.zones}
-              entry={entry}
-              channelById={zoneScan.channelById}
-              saving={zoneScan.saving}
-              onSetChannelIds={(channelIds) =>
-                zoneScan.setZoneMemberChannelIds(row.libraryEntityId, channelIds)
-              }
-            />
-            {zoneScan.enabled ? (
-              <ZoneScanOverrideSection
-                zone={zone}
-                zones={zoneScan.library.zones}
-                entry={entry}
-                channelById={zoneScan.channelById}
-                zoneBehaviourContext={zoneScan.zoneBehaviourContext}
-                showScanCarrierControls={zoneScan.showScanCarrierControls}
-                scanListMemberCap={zoneScan.scanListMemberCap}
-                saving={zoneScan.saving}
-                onUpdateZoneEntry={(patch) => zoneScan.updateZoneEntry(row.libraryEntityId, patch)}
-                onUpdateMemberScanInclusion={zoneScan.updateMemberScanInclusion}
-              />
-            ) : null}
-          </Stack>
+          <ZoneMemberOrderSection
+            zone={ctx.zone}
+            zones={zoneScan.library.zones}
+            entry={ctx.entry}
+            channelById={zoneScan.channelById}
+            saving={zoneScan.saving}
+            onSetChannelIds={(channelIds) =>
+              zoneScan.setZoneMemberChannelIds(row.libraryEntityId, channelIds)
+            }
+          />
+        );
+      }}
+      modalScanSection={(row) => {
+        if (!zoneScan.enabled) return null;
+        const ctx = zoneModalContext(row);
+        if (!ctx || !zoneScan.library) return null;
+        return (
+          <ZoneScanOverrideSection
+            zone={ctx.zone}
+            zones={zoneScan.library.zones}
+            entry={ctx.entry}
+            channelById={zoneScan.channelById}
+            zoneBehaviourContext={zoneScan.zoneBehaviourContext}
+            showScanCarrierControls={zoneScan.showScanCarrierControls}
+            scanListMemberCap={zoneScan.scanListMemberCap}
+            saving={zoneScan.saving}
+            onUpdateZoneEntry={(patch) => zoneScan.updateZoneEntry(row.libraryEntityId, patch)}
+            onUpdateMemberScanInclusion={zoneScan.updateMemberScanInclusion}
+          />
         );
       }}
     />

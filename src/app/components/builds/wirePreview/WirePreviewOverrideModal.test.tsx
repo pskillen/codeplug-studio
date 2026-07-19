@@ -155,4 +155,74 @@ describe('WirePreviewOverrideModal', () => {
 
     expect(screen.getByLabelText('Skip PMR446 from export')).toBeInTheDocument();
   });
+
+  it('tabs Export / Members / Scan when zone sections are provided', () => {
+    const zoneRow: WirePreviewRow = {
+      key: 'zone-1',
+      libraryEntityId: 'zone-1',
+      entityKind: 'zone',
+      displayLabel: 'Glasgow',
+      generatedWireName: 'Glasgow',
+      effectiveWireName: 'Glasgow',
+      hasWireNameOverride: false,
+      excluded: false,
+    };
+    render(
+      <MemoryRouter>
+        <MantineProvider>
+          <WirePreviewOverrideModal
+            opened
+            onClose={vi.fn()}
+            row={zoneRow}
+            build={build}
+            entityKind="zone"
+            onExcludedChange={vi.fn()}
+            onWireNameChange={vi.fn()}
+            membersSection={<div>Members content</div>}
+            scanSection={<div>Scan content</div>}
+          />
+        </MantineProvider>
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByRole('tab', { name: 'Export' })).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: 'Members' })).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: 'Scan' })).toBeInTheDocument();
+    expect(screen.getByText('Members content')).not.toBeVisible();
+    fireEvent.click(screen.getByRole('tab', { name: 'Members' }));
+    expect(screen.getByText('Members content')).toBeVisible();
+  });
+
+  it('omits Scan tab when only membersSection is provided', () => {
+    const zoneRow: WirePreviewRow = {
+      key: 'zone-1',
+      libraryEntityId: 'zone-1',
+      entityKind: 'zone',
+      displayLabel: 'Glasgow',
+      generatedWireName: 'Glasgow',
+      effectiveWireName: 'Glasgow',
+      hasWireNameOverride: false,
+      excluded: false,
+    };
+    render(
+      <MemoryRouter>
+        <MantineProvider>
+          <WirePreviewOverrideModal
+            opened
+            onClose={vi.fn()}
+            row={zoneRow}
+            build={build}
+            entityKind="zone"
+            onExcludedChange={vi.fn()}
+            onWireNameChange={vi.fn()}
+            membersSection={<div>Members only</div>}
+          />
+        </MantineProvider>
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByRole('tab', { name: 'Export' })).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: 'Members' })).toBeInTheDocument();
+    expect(screen.queryByRole('tab', { name: 'Scan' })).not.toBeInTheDocument();
+  });
 });

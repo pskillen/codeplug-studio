@@ -22,7 +22,12 @@ import { loadLibrarySlice } from '../lib/loadLibrarySlice.ts';
 const buildService = new BuildService(persistence);
 
 export function zoneScanExportSupported(build: FormatBuild): boolean {
-  return build.formatId === 'dm32' || build.formatId === 'anytone';
+  const traits = traitProfileFor(build.profileId)?.traits ?? [];
+  return (
+    traits.includes(BuildCapabilityTrait.ZoneGrouping) &&
+    (traits.includes(BuildCapabilityTrait.ScanLists) ||
+      traits.includes(BuildCapabilityTrait.DedicatedScanLists))
+  );
 }
 
 export function zoneGroupingLayoutSupported(build: FormatBuild): boolean {
@@ -44,7 +49,7 @@ export function useZoneScanExportLayout() {
 
   const layoutSupported = zoneGroupingLayoutSupported(build);
   const enabled = zoneScanExportSupported(build);
-  const showScanCarrierControls = build.formatId === 'dm32' || build.formatId === 'anytone';
+  const showScanCarrierControls = enabled;
   const scanListMemberCap = scanListMemberCapForBuild(build);
 
   useEffect(() => {

@@ -41,6 +41,10 @@ export interface BuildWirePreviewListPageProps {
   headerActions?: ReactNode;
   anytoneBank?: AnytoneWirePreviewBank;
   modalExtraSections?: (row: WirePreviewRow) => ReactNode;
+  /** Zone override modal Members tab content. */
+  modalMembersSection?: (row: WirePreviewRow) => ReactNode;
+  /** Zone override modal Scan tab content (trait-gated by caller). */
+  modalScanSection?: (row: WirePreviewRow) => ReactNode;
   zoneScanColumn?: WirePreviewZoneScanColumnConfig;
   /** When true, render list content only (no FormPage shell). */
   embedded?: boolean;
@@ -57,6 +61,8 @@ function BuildWirePreviewListContent({
   headerActions,
   anytoneBank = 'dmr',
   modalExtraSections,
+  modalMembersSection,
+  modalScanSection,
   zoneScanColumn,
 }: BuildWirePreviewListPageProps) {
   const {
@@ -199,6 +205,8 @@ function BuildWirePreviewListContent({
         onForceIncludeChange={entityKind === 'zone' ? setRowForceIncluded : undefined}
         onWireNameChange={setRowWireName}
         extraSections={activeRow && modalExtraSections ? modalExtraSections(activeRow) : null}
+        membersSection={activeRow && modalMembersSection ? modalMembersSection(activeRow) : null}
+        scanSection={activeRow && modalScanSection ? modalScanSection(activeRow) : null}
       />
     </>
   );
