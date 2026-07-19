@@ -1,6 +1,8 @@
 # Epic 1 context — migration from codeplug-tool to Codeplug Studio
 
-**Purpose:** Background for any agent working on the greenfield migration. Captures motivations, product thesis, and architectural intent from planning discussions. **Not** a task checklist — see [Epic #1](https://github.com/pskillen/codeplug-studio/issues/1) and [DESIGN.md](../../DESIGN.md) for deliverables and the living constitution.
+> **Status:** Milestone 1 complete. Active development hub is **[Milestone 2: post-MVP (#495)](https://github.com/pskillen/codeplug-studio/issues/495)**. [Epic #1](https://github.com/pskillen/codeplug-studio/issues/1) remains as the closed Milestone 1 archive (Phase and heavy format epics with closed-ticket history). This document is historical migration context — not the active backlog index.
+
+**Purpose:** Background for any agent working on the greenfield migration. Captures motivations, product thesis, and architectural intent from planning discussions. **Not** a task checklist — see [#495](https://github.com/pskillen/codeplug-studio/issues/495) for active workstreams and [DESIGN.md](../../DESIGN.md) for the living constitution.
 
 **Repos:**
 
