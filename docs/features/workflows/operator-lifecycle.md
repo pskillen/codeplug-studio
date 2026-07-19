@@ -67,8 +67,11 @@ flowchart LR
 On **Home** (`/`):
 
 - **New project** — blank `ProjectMeta` + empty library seeded in IndexedDB; becomes the active project.
-- **Your projects** — switch, rename, or delete. Delete cascades all library and format-build rows for that `projectId`.
-- **Import from YAML** — `createNew` mode: parse native YAML (local file or **Open from Drive**), assign a fresh `projectId`, seed persistence, switch active, navigate to `/summary`.
+- **Your projects** — switch, rename, or delete. Delete cascades all library and format-build rows for that `projectId`. When there are no projects yet, an inline **getting-started** guide appears here instead ([#345](https://github.com/pskillen/codeplug-studio/issues/345)).
+- **Import from YAML** — below the projects list (or empty guide); `createNew` mode: parse native YAML (local file or **Open from Drive**), assign a fresh `projectId`, seed persistence, switch active, navigate to `/summary`.
+- **Quick start** — page action opens the same guide in a voluntary modal (also available from **Help**).
+
+See [onboarding](../onboarding/README.md).
 
 ### 2. Edit in the library
 

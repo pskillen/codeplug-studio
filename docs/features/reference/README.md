@@ -27,4 +27,4 @@ Reference routes are **not** behind `RequireActiveProject`. Section nav uses rou
 
 ## Related
 
-- [app-shell](../app-shell/README.md) · [maidenhead](../maidenhead.md) · [bands reference](../../reference/bands.md)
+- [app-shell](../app-shell/README.md) · [onboarding](../onboarding/README.md) · [maidenhead](../maidenhead.md) · [bands reference](../../reference/bands.md)

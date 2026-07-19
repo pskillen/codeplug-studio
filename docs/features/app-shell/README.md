@@ -49,6 +49,7 @@ ProjectProvider
 | [AddFromDataSourceModal](../../src/app/components/library/AddFromDataSourceModal.md)          | Channel set + external directory picker modal                                                   |
 | [SidebarDriveControls](../../src/app/components/SidebarDriveControls/SidebarDriveControls.md) | Sidebar Save / Check Drive ([#368](https://github.com/pskillen/codeplug-studio/issues/368))     |
 | [SoftWarning](../../src/app/components/ui/SoftWarning.md)                                     | Compact theme-aware warning panel for sidebar chrome                                            |
+| [GettingStartedContent](../../src/app/components/onboarding/GettingStartedContent.md)         | Empty-state + Quick start guide ([#345](https://github.com/pskillen/codeplug-studio/issues/345)) |
 | [ActiveProjectBar](../../src/app/components/ActiveProjectBar/ActiveProjectBar.md)             | Active project name + Switch (closes mobile drawer)                                             |
 | [EntityDeleteButton](../../src/app/components/library/EntityDeleteButton.md)                  | Editor footer delete for library entities                                                       |
 | [EntityListDeleteAction](../../src/app/components/library/EntityListDeleteAction.md)          | List row delete trash icon                                                                      |
@@ -65,7 +66,7 @@ UI primitives live in `src/app/components/ui/` (ported from codeplug-tool). Reus
 
 | Path                                          | Surface                 | Status                                                                                                                                                                   |
 | --------------------------------------------- | ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `/`                                           | Projects                | Lifecycle UI (create/switch/rename/delete) + **Import from YAML** ([#60](https://github.com/pskillen/codeplug-studio/issues/60))                                         |
+| `/`                                           | Projects                | Lifecycle UI (create/switch/rename/delete) + empty-state getting-started ([#345](https://github.com/pskillen/codeplug-studio/issues/345)) + **Import from YAML** below the list ([#60](https://github.com/pskillen/codeplug-studio/issues/60)) |
 | `/library`                                    | _(redirect)_            | → `/library/channels`                                                                                                                                                    |
 | `/library/channels`                           | Channels list           | DataTable + filters + map — [#20](https://github.com/pskillen/codeplug-studio/issues/20), [#24](https://github.com/pskillen/codeplug-studio/issues/24)                   |
 | `/library/zones`                              | Zones list              | DataTable + map — [#20](https://github.com/pskillen/codeplug-studio/issues/20)                                                                                           |
@@ -91,7 +92,7 @@ UI primitives live in `src/app/components/ui/` (ported from codeplug-tool). Reus
 | `/debug/indexed-db/:storeName/:projectId/:id` | IndexedDB row viewer    | JSON tree + Copy YAML                                                                                                                                                    |
 | `/debug/local-storage`                        | LocalStorage keys       | Known keys + `codeplug-studio:` / `mm9pdy-codeplug-studio.` prefix scan                                                                                                  |
 | `/debug/local-storage/:storageKey`            | LocalStorage viewer     | Parsed JSON (tokens masked)                                                                                                                                              |
-| `/help`                                       | Help                    | Workflow overview + GitHub Issues guidance ([#70](https://github.com/pskillen/codeplug-studio/issues/70))                                                                |
+| `/help`                                       | Help                    | Workflow overview + Quick start ([#345](https://github.com/pskillen/codeplug-studio/issues/345)) + GitHub Issues guidance ([#70](https://github.com/pskillen/codeplug-studio/issues/70)) |
 | `/attributions`                               | Attributions            | External data source credits ([#264](https://github.com/pskillen/codeplug-studio/issues/264))                                                                            |
 | `/privacy`                                    | Privacy policy          | Browser-local data + optional analytics summary ([#96](https://github.com/pskillen/codeplug-studio/issues/96))                                                           |
 | `/terms`                                      | Terms of use            | Hobby-tool disclaimer ([#96](https://github.com/pskillen/codeplug-studio/issues/96))                                                                                     |
@@ -116,6 +117,8 @@ State flows through a thin app-state adapter, `ProjectStore` (`src/app/state/pro
 | Rename    | Loads meta, `putProjectMeta` with optimistic revision                             |
 | Delete    | Cascades all project, library, and format-build rows; clears active id if deleted |
 
+**Home (`/`) section order:** **New project** → **Your projects** (or inline getting-started when the list is empty) → **Import from YAML**. **Quick start** in the page actions opens the same guide in a voluntary modal — see [onboarding](../onboarding/README.md).
+
 ## Persistence note
 
 Projects and library rows persist durably in the browser via IndexedDB (Ticket [#9](https://github.com/pskillen/codeplug-studio/issues/9)): one row per entity, optimistic `revision` concurrency, and `BroadcastChannel` cross-tab notifications. A shared singleton (`src/app/state/persistence.ts`) backs the whole app. See [storage.md](../../poc-migration/storage.md) and [library](../library/README.md).
@@ -128,7 +131,7 @@ Every routed page renders [`BuildFooter`](../../../src/app/components/BuildFoote
 
 A [`CookieConsentBanner`](../../../src/app/components/CookieConsentBanner/CookieConsentBanner.tsx) is mounted in [`AppLayout`](../../../src/app/components/AppLayout/AppLayout.tsx) above the outlet on first visit until the operator accepts or declines analytics cookies. See [analytics](../analytics/README.md).
 
-The **Help** route adds a **Feedback** section with the same repo/issues URLs and short guidance for filing GitHub Issues.
+The **Help** route adds a **Getting started** section (Quick start modal), workflow overview (library → builds → export, **Add from…**, Reference tools), and a **Feedback** section with the same repo/issues URLs and short guidance for filing GitHub Issues.
 
 | Area                  | Status  | Notes                                                                                                                      |
 | --------------------- | ------- | -------------------------------------------------------------------------------------------------------------------------- |
@@ -144,6 +147,7 @@ The **Help** route adds a **Feedback** section with the same repo/issues URLs an
 ## Related
 
 - [data-table.md](data-table.md) · [library-routes-progress.md](library-routes-progress.md) · [library-routes-outstanding.md](library-routes-outstanding.md)
+- [onboarding](../onboarding/README.md)
 - [AppLayout sidecar](../../../src/app/components/AppLayout/AppLayout.md)
 - [BuildFooter sidecar](../../../src/app/components/BuildFooter/BuildFooter.md)
 - [data-model](../data-model/README.md)
