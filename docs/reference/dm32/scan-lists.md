@@ -30,7 +30,7 @@ Synthesised timing / mode columns below are Studio defaults until CPS elicitatio
 | `Designed Channel`     | Carrier wire name                          |
 | `Priority Sweep Time`  | `500`                                      |
 | `Talkback`             | `0`                                        |
-| `Channel Members`      | Pipe-separated expanded channel wire names |
+| `Channel Members`      | Pipe-separated expanded channel wire names, **with a trailing `\|`** (CPS wire style; Zones.csv does **not** use a trailing pipe) |
 
 ## Import
 
