@@ -54,7 +54,7 @@ Channel rows show callsign/name, RX/TX, mode pills, scan-skip badge. Zone rows s
 
 ## Map preview
 
-`ZoneEditor` builds a `previewZone` from unsaved form state and passes it to `CodeplugMap`. Hull shape uses `resolveEffectiveZoneChannelIds` — nested zone members contribute their descendant channels. Non-member geolocated channels are dimmed.
+`ZoneEditor` builds a `previewZone` from unsaved form state and passes it to `CodeplugMap`. Hull shape uses `resolveEffectiveZoneChannelIds` — nested zone members contribute their descendant channels. Non-member geolocated channels are dimmed; co-located stacks that also include an in-zone member stay full opacity ([#469](https://github.com/pskillen/codeplug-studio/issues/469)).
 
 ## Manual verify
 

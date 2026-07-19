@@ -45,6 +45,8 @@ Used on the zone editor and **zone from location** page.
 
 **Proximity preview** (zone from location): `referencePosition` + `referenceRadiusM` draw a centre pin and radius circle; `dimmedChannelIds` lowers marker opacity for channels outside the radius.
 
+**Zone editor:** non-member geolocated channels are listed in `dimmedChannelIds`. Co-located stacks that mix in-zone and out-of-zone channels stay full opacity — dim only when the whole stack is out of zone ([#469](https://github.com/pskillen/codeplug-studio/issues/469); see [channels.md](channels.md)).
+
 The fixed coordinate filters (`useLocation`, skip `0,0`) apply to hull points the same way as markers.
 
 ## Behaviour
