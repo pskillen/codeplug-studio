@@ -22,10 +22,10 @@ export interface AnytoneRadioProfile {
 
 /** AT-D890UV Transmit Power — Turbo first so null → Turbo. */
 const AT_D890UV_POWER_LADDER: readonly PowerLadderEntry[] = [
-  { percent: 100, wire: 'Turbo' },
-  { percent: 75, wire: 'High' },
-  { percent: 50, wire: 'Mid' },
-  { percent: 25, wire: 'Low' },
+  { percent: 100, wire: 'Turbo', approxWatts: '7 W VHF / 6 W UHF' },
+  { percent: 75, wire: 'High', approxWatts: '5 W' },
+  { percent: 50, wire: 'Mid', approxWatts: '2.5 W' },
+  { percent: 25, wire: 'Low', approxWatts: '0.2 W' },
 ];
 
 export const ANYTONE_PROFILES: readonly AnytoneRadioProfile[] = [

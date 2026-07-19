@@ -14,18 +14,18 @@ export interface ChirpRadioProfile {
 }
 
 const UV5R_LADDER: readonly PowerLadderEntry[] = [
-  { percent: 100, wire: '5.0W' },
-  { percent: 20, wire: '1.0W' },
+  { percent: 100, wire: '5.0W', approxWatts: '5 W' },
+  { percent: 20, wire: '1.0W', approxWatts: '1 W' },
 ];
 
 const UV21_LADDER: readonly PowerLadderEntry[] = [
-  { percent: 83, wire: '5.0W' },
-  { percent: 17, wire: '1.0W' },
+  { percent: 83, wire: '5.0W', approxWatts: '5 W' },
+  { percent: 17, wire: '1.0W', approxWatts: '1 W' },
 ];
 
 const RT95_LADDER: readonly PowerLadderEntry[] = [
-  { percent: 100, wire: '25W' },
-  { percent: 40, wire: '10W' },
+  { percent: 100, wire: '25W', approxWatts: '25 W' },
+  { percent: 40, wire: '10W', approxWatts: '10 W' },
 ];
 
 export const CHIRP_PROFILES: readonly ChirpRadioProfile[] = [
