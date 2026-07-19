@@ -7,6 +7,7 @@ export interface Dm32RadioProfile {
   label: string;
   maxChannels: number;
   rxGroupListMembers: number;
+  /** Named CSV members; CPS “16” includes an implicit current-channel slot. */
   scanListMembers: number;
   /** Default max channel wire name length (LCD limit). */
   nameLimit: number;
@@ -33,7 +34,7 @@ export const DM32_PROFILES: readonly Dm32RadioProfile[] = [
     label: 'Baofeng DM-32UV',
     maxChannels: 1000,
     rxGroupListMembers: 32,
-    scanListMembers: 16,
+    scanListMembers: 15,
     nameLimit: 16,
     powerLadder: DM32_POWER_LADDER,
     squelchLadder: DM32_SQUELCH_LADDER,

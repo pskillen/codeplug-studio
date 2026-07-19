@@ -456,6 +456,56 @@ describe('DM32 export serialise', () => {
     expect(zoneRows[1]?.[membersIndex]).toMatch(/^Glasgow Scan\|/);
   });
 
+  it('truncates zone-derived scan lists to 15 named members with a warning', () => {
+    const channels = Array.from({ length: 16 }, (_, i) => fmChannel(`Mem ${String(i + 1).padStart(2, '0')}`));
+    const zone = newZone(PROJECT_ID, 'Busy Zone');
+    zone.members = channels.map((channel) => ({
+      kind: 'channel' as const,
+      channelId: channel.id,
+    }));
+    const build = dm32Build();
+    const layout = seedZoneGroupingFromLibrary({
+      channels,
+      zones: [zone],
+      talkGroups: [],
+      digitalContacts: [],
+      analogContacts: [],
+      rxGroupLists: [],
+      scanLists: [],
+    });
+    layout.zones[0] = {
+      ...layout.zones[0]!,
+      exportScanList: true,
+      scanCarrierFrequencyHz: 145_500_000,
+    };
+    build.layout = { sections: [layout] };
+
+    const library: LibrarySlice = {
+      channels,
+      zones: [zone],
+      talkGroups: [],
+      digitalContacts: [],
+      analogContacts: [],
+      rxGroupLists: [],
+      scanLists: [],
+    };
+    const assembled = {
+      ...assemble(build, library),
+      library,
+      zoneGrouping: layout,
+    };
+    const warnings: string[] = [];
+    const files = serialiseDm32Files(assembled, library, undefined, warnings);
+    const scanRows = parseCsv(files['Scan.csv']);
+    const membersIndex = scanRows[0]!.indexOf(SCAN_COL.channelMembers);
+    const membersCell = scanRows[1]?.[membersIndex] ?? '';
+    const emittedNames = membersCell.split('|').filter((name) => name.length > 0);
+    expect(emittedNames).toHaveLength(15);
+    expect(emittedNames[0]).toBe('Mem 01');
+    expect(emittedNames[14]).toBe('Mem 15');
+    expect(warnings.some((w) => /scan list truncated from 16 to 15 members/.test(w))).toBe(true);
+  });
+
   /**
    * Excluded from row compare: No., Scan List (zone-derived), DMR ID (radio label).
    * See docs/reference/dm32/channels.md and export-mapping.md.
