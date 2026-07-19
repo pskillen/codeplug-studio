@@ -107,6 +107,14 @@ export function dominantMode(group: Channel[]): ChannelMode | null {
   return best;
 }
 
+/**
+ * Whether a co-located marker stack should render dimmed.
+ * Dim only when every channel in the group is dimmed — mixed in/out stacks stay full opacity.
+ */
+export function groupIsDimmed(group: Channel[], dimmedIds: ReadonlySet<string>): boolean {
+  return group.length > 0 && group.every((c) => dimmedIds.has(c.id));
+}
+
 export function applyFilters(
   channels: Channel[],
   { requireUseLocation, skipZero }: FilterOptions,
