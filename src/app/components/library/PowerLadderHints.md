@@ -8,9 +8,9 @@ Shows how the current library `Channel.power` percent (or `null` radio default) 
 
 ## Props
 
-| Prop    | Type             | Description                                      |
-| ------- | ---------------- | ------------------------------------------------ |
-| `power` | `number \| null` | Live channel power percent from the edit form    |
+| Prop    | Type             | Description                                   |
+| ------- | ---------------- | --------------------------------------------- |
+| `power` | `number \| null` | Live channel power percent from the edit form |
 
 ## Usage
 

@@ -37,9 +37,7 @@ describe('resolvePowerLadderProfileKeys', () => {
 
 describe('listPowerLadderHints', () => {
   it('maps null power to OpenGD77 Master / radio default', () => {
-    const rows = listPowerLadderHints(null, [
-      { formatId: 'opengd77', profileId: 'opengd77-1701' },
-    ]);
+    const rows = listPowerLadderHints(null, [{ formatId: 'opengd77', profileId: 'opengd77-1701' }]);
     expect(rows).toHaveLength(1);
     expect(rows[0]).toMatchObject({
       wire: 'Master',
@@ -60,9 +58,7 @@ describe('listPowerLadderHints', () => {
   });
 
   it('maps nearest OpenGD77 step for in-between percent', () => {
-    const rows = listPowerLadderHints(55, [
-      { formatId: 'opengd77', profileId: 'opengd77-1701' },
-    ]);
+    const rows = listPowerLadderHints(55, [{ formatId: 'opengd77', profileId: 'opengd77-1701' }]);
     expect(rows[0]?.wire).toBe('P7');
     expect(rows[0]?.approxWatts).toBe('3 W');
   });

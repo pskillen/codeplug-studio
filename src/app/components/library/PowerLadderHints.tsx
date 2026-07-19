@@ -31,10 +31,7 @@ export default function PowerLadderHints({ power }: PowerLadderHintsProps) {
     }));
   }, [builds]);
 
-  const rows = useMemo(
-    () => listPowerLadderHints(power, buildProfiles),
-    [power, buildProfiles],
-  );
+  const rows = useMemo(() => listPowerLadderHints(power, buildProfiles), [power, buildProfiles]);
 
   if (rows.length === 0) return null;
 

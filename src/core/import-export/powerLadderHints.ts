@@ -7,10 +7,7 @@ import type { FormatId } from './types.ts';
 import { formatCatalog } from './registry.ts';
 import { getFormatProfiles } from './formatProfiles.ts';
 import { nearestLadderEntry } from './profileLadder.ts';
-import {
-  getOpenGd77Profile,
-  opengd77PercentToWire,
-} from './formats/opengd77/profiles.ts';
+import { getOpenGd77Profile, opengd77PercentToWire } from './formats/opengd77/profiles.ts';
 import { getDm32Profile, dm32PercentToWire } from './formats/dm32/profiles.ts';
 import { getChirpProfile, chirpPercentToWire } from './formats/chirp/profiles.ts';
 import { getAnytoneProfile, anytonePercentToWire } from './formats/anytone/profiles.ts';
@@ -32,12 +29,7 @@ export interface PowerLadderHintRow {
   isRadioDefault: boolean;
 }
 
-const FORMATS_WITH_POWER_LADDERS: readonly FormatId[] = [
-  'opengd77',
-  'dm32',
-  'chirp',
-  'anytone',
-];
+const FORMATS_WITH_POWER_LADDERS: readonly FormatId[] = ['opengd77', 'dm32', 'chirp', 'anytone'];
 
 /** All shipped CPS profiles that expose a power ladder. */
 export function listShippedPowerLadderProfiles(): PowerLadderProfileKey[] {
