@@ -21,9 +21,9 @@ export default function HelpPage() {
       >
         <PageSection title="Getting started">
           <Text size="sm">
-            Use <strong>Quick start</strong> for the library → builds → export path, directories under{' '}
-            <strong>Add from…</strong>, and how Studio differs from a typical CPS. When you have no
-            projects yet, the same guide also appears on the{' '}
+            Use <strong>Quick start</strong> for the library → builds → export path, directories
+            under <strong>Add from…</strong>, and how Studio differs from a typical CPS. When you
+            have no projects yet, the same guide also appears on the{' '}
             <Anchor component={Link} to="/" size="sm">
               Projects
             </Anchor>{' '}
@@ -38,12 +38,13 @@ export default function HelpPage() {
             </List.Item>
             <List.Item>
               <strong>Library</strong> — channels, zones, talk groups, contacts, RX group lists, and
-              scan lists. Prefer <strong>Channels</strong> → <strong>Add from…</strong> (ukrepeater.net,
-              RepeaterBook, BrandMeister, curated sets, and more) over typing every channel by hand.
+              scan lists. Prefer <strong>Channels</strong> → <strong>Add from…</strong>{' '}
+              (ukrepeater.net, RepeaterBook, BrandMeister, curated sets, and more) over typing every
+              channel by hand.
             </List.Item>
             <List.Item>
-              <strong>Format builds</strong> — assemble a build for your radio, then export files for
-              your vendor CPS to flash.
+              <strong>Format builds</strong> — assemble a build for your radio, then export files
+              for your vendor CPS to flash.
             </List.Item>
             <List.Item>
               <strong>Summary</strong> — at-a-glance library inventory, breakdowns, and integrity
@@ -81,8 +82,8 @@ export default function HelpPage() {
               <Anchor href={GITHUB_ISSUES_URL} target="_blank" rel="noreferrer">
                 GitHub Issues
               </Anchor>{' '}
-              for bug reports and feature requests. Include steps to reproduce, what you expected, and
-              which page you were on.
+              for bug reports and feature requests. Include steps to reproduce, what you expected,
+              and which page you were on.
             </Text>
             <Text size="sm">
               <Anchor href={GITHUB_REPO_URL} target="_blank" rel="noreferrer">

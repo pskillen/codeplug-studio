@@ -15,11 +15,7 @@ export interface GettingStartedFlowProps {
 
 export default function GettingStartedFlow({ steps, ariaLabel }: GettingStartedFlowProps) {
   return (
-    <Box
-      component="ol"
-      aria-label={ariaLabel}
-      style={{ listStyle: 'none', margin: 0, padding: 0 }}
-    >
+    <Box component="ol" aria-label={ariaLabel} style={{ listStyle: 'none', margin: 0, padding: 0 }}>
       <Stack gap="xs">
         {steps.map((step, index) => {
           const isLast = index === steps.length - 1;

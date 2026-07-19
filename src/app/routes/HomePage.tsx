@@ -3,10 +3,7 @@ import { Badge, Button, Group, Stack, Text, TextInput } from '@mantine/core';
 import { useProjects } from '../state/useProjects.ts';
 import { ListPage, PageSection } from '../components/ui/index.ts';
 import ImportProjectYamlPanel from '../components/import-export/ImportProjectYamlPanel.tsx';
-import {
-  GettingStartedContent,
-  GettingStartedModal,
-} from '../components/onboarding/index.ts';
+import { GettingStartedContent, GettingStartedModal } from '../components/onboarding/index.ts';
 
 export default function HomePage() {
   const {

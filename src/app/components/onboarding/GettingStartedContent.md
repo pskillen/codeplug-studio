@@ -8,13 +8,13 @@ Explain the library → builds → export path, steer operators to **Add from…
 
 ## Props
 
-| Component | Prop | Type | Notes |
-| --- | --- | --- | --- |
-| `GettingStartedContent` | _(none)_ | — | Self-contained copy |
-| `GettingStartedFlow` | `steps` | `{ title, detail }[]` | Numbered accessible list |
-| `GettingStartedFlow` | `ariaLabel` | `string` | Label for the `<ol>` |
-| `GettingStartedModal` | `opened` | `boolean` | Controlled visibility |
-| `GettingStartedModal` | `onClose` | `() => void` | Dismiss handler |
+| Component               | Prop        | Type                  | Notes                    |
+| ----------------------- | ----------- | --------------------- | ------------------------ |
+| `GettingStartedContent` | _(none)_    | —                     | Self-contained copy      |
+| `GettingStartedFlow`    | `steps`     | `{ title, detail }[]` | Numbered accessible list |
+| `GettingStartedFlow`    | `ariaLabel` | `string`              | Label for the `<ol>`     |
+| `GettingStartedModal`   | `opened`    | `boolean`             | Controlled visibility    |
+| `GettingStartedModal`   | `onClose`   | `() => void`          | Dismiss handler          |
 
 ## Usage
 

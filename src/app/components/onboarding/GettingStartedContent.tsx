@@ -5,8 +5,7 @@ import GettingStartedFlow from './GettingStartedFlow.tsx';
 const MAIN_STEPS = [
   {
     title: 'Create a project',
-    detail:
-      'Use New project above, or Import from YAML below if you already have a Studio backup.',
+    detail: 'Use New project above, or Import from YAML below if you already have a Studio backup.',
   },
   {
     title: 'Fill your library',
@@ -47,9 +46,9 @@ export default function GettingStartedContent() {
         <Title order={3}>Getting started</Title>
         <Text size="sm">
           A <strong>project</strong> holds your <strong>library</strong> — the master inventory of
-          channels, talk groups, contacts, and lists — and one or more <strong>format builds</strong>{' '}
-          that organise that library for a specific radio workflow. You curate once, then export into
-          your CPS to flash.
+          channels, talk groups, contacts, and lists — and one or more{' '}
+          <strong>format builds</strong> that organise that library for a specific radio workflow.
+          You curate once, then export into your CPS to flash.
         </Text>
         <Text size="sm" c="dimmed">
           Your projects stay in this browser unless you save a YAML backup or use Google Drive.
@@ -90,9 +89,7 @@ export default function GettingStartedContent() {
 
       <Stack gap="sm">
         <Title order={4}>Optional DMR shortcut</Title>
-        <Text size="sm">
-          Useful when you run DMR. Skip this if you only need FM or analogue.
-        </Text>
+        <Text size="sm">Useful when you run DMR. Skip this if you only need FM or analogue.</Text>
         <GettingStartedFlow steps={DMR_STEPS} ariaLabel="Optional DMR shortcut steps" />
       </Stack>
 

@@ -14,19 +14,19 @@ User-facing copy follows the [help writing styleguide](../../reference/writing-s
 
 ## Implementation status
 
-| Area | Status | Notes |
-| --- | --- | --- |
-| Home section order | Shipped | New project → projects / empty guide → Import from YAML |
-| Inline empty-state guide | Shipped | When `!loading && projects.length === 0` |
-| Quick start modal | Shipped | Home + Help header actions; operator-opened only |
-| Getting-started copy | Shipped | Directories-first fill, optional DMR shortcut, CPS differences, Reference footer |
-| Help workflow alignment | Shipped | Builds + Add from… + Reference links |
+| Area                     | Status  | Notes                                                                            |
+| ------------------------ | ------- | -------------------------------------------------------------------------------- |
+| Home section order       | Shipped | New project → projects / empty guide → Import from YAML                          |
+| Inline empty-state guide | Shipped | When `!loading && projects.length === 0`                                         |
+| Quick start modal        | Shipped | Home + Help header actions; operator-opened only                                 |
+| Getting-started copy     | Shipped | Directories-first fill, optional DMR shortcut, CPS differences, Reference footer |
+| Help workflow alignment  | Shipped | Builds + Add from… + Reference links                                             |
 
 ## When the guide shows
 
-| Surface | Condition |
-| --- | --- |
-| Inline on `/` | Zero projects after list load |
+| Surface                    | Condition                                                      |
+| -------------------------- | -------------------------------------------------------------- |
+| Inline on `/`              | Zero projects after list load                                  |
 | Modal from **Quick start** | Always available on Projects and Help when the operator clicks |
 
 Once at least one project exists, the inline panel is hidden; **Quick start** remains.
@@ -41,25 +41,25 @@ Once at least one project exists, the inline panel is hidden; **Quick start** re
 
 ## Documentation map
 
-| Doc | Contents |
-| --- | --- |
-| [GettingStartedContent.md](../../../src/app/components/onboarding/GettingStartedContent.md) | Component sidecar |
-| [app-shell](../app-shell/README.md) | Home route + project lifecycle shell |
-| [operator lifecycle](../workflows/operator-lifecycle.md) | Create / import / edit flow |
-| [repeater-directories](../repeater-directories/README.md) | Add from… directory behaviour |
-| [multi-talkgroup expansion](../../reference/multi-talkgroup-expansion.md) | Export-time RGL expansion (contributor) |
-| [zone-derived scan lists](../../reference/zone-derived-scan-lists.md) | Zone → scan projection (contributor) |
-| [reference tools](../reference/README.md) | Band plan + Maidenhead routes |
+| Doc                                                                                         | Contents                                |
+| ------------------------------------------------------------------------------------------- | --------------------------------------- |
+| [GettingStartedContent.md](../../../src/app/components/onboarding/GettingStartedContent.md) | Component sidecar                       |
+| [app-shell](../app-shell/README.md)                                                         | Home route + project lifecycle shell    |
+| [operator lifecycle](../workflows/operator-lifecycle.md)                                    | Create / import / edit flow             |
+| [repeater-directories](../repeater-directories/README.md)                                   | Add from… directory behaviour           |
+| [multi-talkgroup expansion](../../reference/multi-talkgroup-expansion.md)                   | Export-time RGL expansion (contributor) |
+| [zone-derived scan lists](../../reference/zone-derived-scan-lists.md)                       | Zone → scan projection (contributor)    |
+| [reference tools](../reference/README.md)                                                   | Band plan + Maidenhead routes           |
 
 ## Code anchors
 
-| Path | Role |
-| --- | --- |
-| `src/app/components/onboarding/GettingStartedContent.tsx` | Shared guide body |
-| `src/app/components/onboarding/GettingStartedFlow.tsx` | Accessible numbered step list |
-| `src/app/components/onboarding/GettingStartedModal.tsx` | Voluntary modal shell |
-| `src/app/routes/HomePage.tsx` | Inline empty state + Quick start |
-| `src/app/routes/HelpPage.tsx` | Getting started section + Quick start |
+| Path                                                      | Role                                  |
+| --------------------------------------------------------- | ------------------------------------- |
+| `src/app/components/onboarding/GettingStartedContent.tsx` | Shared guide body                     |
+| `src/app/components/onboarding/GettingStartedFlow.tsx`    | Accessible numbered step list         |
+| `src/app/components/onboarding/GettingStartedModal.tsx`   | Voluntary modal shell                 |
+| `src/app/routes/HomePage.tsx`                             | Inline empty state + Quick start      |
+| `src/app/routes/HelpPage.tsx`                             | Getting started section + Quick start |
 
 ## Boundaries
 
