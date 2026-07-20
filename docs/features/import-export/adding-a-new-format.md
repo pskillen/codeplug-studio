@@ -12,7 +12,7 @@ The internal [library + format build model](../data-model/README.md) is the hub 
 | DM32 CSV     | Planned | Shipped | `src/core/import-export/formats/dm32/`                                                                           |
 | CHIRP CSV    | Planned | Shipped | `src/core/import-export/formats/chirp/`                                                                          |
 | Anytone CPS  | Planned | Shipped | `src/core/import-export/formats/anytone/`                                                                        |
-| NeonPlug ZIP | Planned | Planned | `src/core/import-export/formats/neonplug/` (epic [#536](https://github.com/pskillen/codeplug-studio/issues/536)) |
+| NeonPlug ZIP | Planned | Planned | `src/core/import-export/formats/neonplug/` (scaffold shipped [#538](https://github.com/pskillen/codeplug-studio/issues/538); epic [#536](https://github.com/pskillen/codeplug-studio/issues/536)) |
 | Native YAML  | Shipped | Shipped | `src/core/import-export/formats/native-yaml/`                                                                    |
 
 ---
@@ -237,6 +237,8 @@ Each format build is created from a **trait profile** (`TRAIT_PROFILES` in `src/
 | `dm32-baofeng-dm32uv`              | `dm32`     | `ZoneGrouping`, `ScanLists`, `MxNChannelExpansion`                         |
 | `chirp-uv5r`                       | `chirp`    | `FlatMemoryList`, `PerChannelScanFlag`                                     |
 | `anytone-at-d890uv`                | `anytone`  | `ZoneGrouping`, `DedicatedScanLists` (library `ScanList` + `ScanList.CSV`) |
+| `neonplug-dm32uv`                  | `neonplug` | `ZoneGrouping`, `ScanLists`                                                |
+| `neonplug-uv5rmini`                | `neonplug` | `FlatMemoryList`, `PerChannelScanFlag`                                     |
 
 **Dedicated scan lists:** formats with a first-class scan-list CPS file (Anytone `ScanList.CSV`) use the `DedicatedScanLists` trait and library `ScanList` entities — not DM32-style zone-derived `ScanLists`. Channel→scan-list assignment is `Channel.scanListId` on the library channel. See [library scan lists](../../features/library/scan-lists.md) and `assemble.ts`.
 

@@ -1,10 +1,10 @@
 # NeonPlug interchange reference
 
-> **Studio status:** Wire reference only. Import/export adapters are planned under epic [#536](https://github.com/pskillen/codeplug-studio/issues/536). No `src/core/import-export/formats/neonplug/` yet.
+> **Studio status:** Format scaffold shipped (`FormatId`, catalog, profiles, traits — [#538](https://github.com/pskillen/codeplug-studio/issues/538)). Import/export adapters remain planned under epic [#536](https://github.com/pskillen/codeplug-studio/issues/536). Profiles live in `src/core/import-export/formats/neonplug/profiles.ts`.
 
 Authoritative reference for **NeonPlug** `.neonplug` files — the backup / interchange format used by [NeonPlug](https://github.com/infamy/NeonPlug) ([neonplug.app](https://neonplug.app)). One wire format among several at Studio’s import/export boundary (siblings: DM32 CSV, CHIRP CSV, OpenGD77, Anytone, native YAML).
 
-**Tracking:** [#537](https://github.com/pskillen/codeplug-studio/issues/537) (this reference) · epic [#536](https://github.com/pskillen/codeplug-studio/issues/536)
+**Tracking:** [#537](https://github.com/pskillen/codeplug-studio/issues/537) (this reference) · scaffold [#538](https://github.com/pskillen/codeplug-studio/issues/538) · epic [#536](https://github.com/pskillen/codeplug-studio/issues/536)
 
 ## What a `.neonplug` file is
 
@@ -66,14 +66,14 @@ NeonPlug uses **1-based channel numbers** and **list indexes** — not names and
 
 On **import**, Studio must allocate UUID `id` FKs and drop NeonPlug numbers as relationship keys. On **export**, assign stable channel numbers from assemble order / profile rules.
 
-## Proposed Studio profiles
+## Studio profiles
 
-| NeonPlug radio    | Proposed `profileId` | Closest existing traits                                 |
-| ----------------- | -------------------- | ------------------------------------------------------- |
-| DM-32UV / DP570UV | `neonplug-dm32uv`    | Zone grouping + zone-derived scan lists (like DM32 CSV) |
-| UV5R-Mini         | `neonplug-uv5rmini`  | Flat memory + per-channel scan flag (like CHIRP UV-5R)  |
+| NeonPlug radio    | Studio `profileId`   | Traits                                                      |
+| ----------------- | -------------------- | ----------------------------------------------------------- |
+| DM-32UV / DP570UV | `neonplug-dm32uv`    | Zone grouping + zone-derived scan lists (like DM32 CSV)     |
+| UV5R-Mini         | `neonplug-uv5rmini`  | Flat memory + per-channel scan flag (like CHIRP UV-5R)      |
 
-Per-radio notes: [`radios/`](radios/README.md).
+Per-radio notes and caps: [`radios/`](radios/README.md). DM-32UV caps match DM32 CPS; UV5R-Mini uses NeonPlug binary **999** / **12** (not CHIRP CSV **128** / **7**).
 
 **Out of scope for epic #536:** Yaesu FT-65 / FT-4 / FT-25 (NeonPlug supports them; no Studio pathway yet).
 
@@ -93,7 +93,7 @@ Detail: [radio-info-and-settings.md](radio-info-and-settings.md).
 ## Related
 
 - Epic: [#536](https://github.com/pskillen/codeplug-studio/issues/536)
-- Feature hub (planned): [import-export/neonplug](../../features/import-export/neonplug/README.md)
+- Feature hub: [import-export/neonplug](../../features/import-export/neonplug/README.md)
 - Sibling wires: [DM32 CSV](../dm32/README.md), [CHIRP CSV](../chirp/README.md)
 - [Data model](../../features/data-model/README.md)
 - [Adding a new format](../../features/import-export/adding-a-new-format.md)

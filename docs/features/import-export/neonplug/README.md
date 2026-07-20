@@ -2,16 +2,16 @@
 
 Product behaviour for NeonPlug `.neonplug` files in Codeplug Studio. Wire tables live in the tier-3 [NeonPlug reference](../../../reference/neonplug/README.md).
 
-**Tracking:** Epic [#536](https://github.com/pskillen/codeplug-studio/issues/536) · wire reference [#537](https://github.com/pskillen/codeplug-studio/issues/537)
+**Tracking:** Epic [#536](https://github.com/pskillen/codeplug-studio/issues/536) · scaffold [#538](https://github.com/pskillen/codeplug-studio/issues/538) · wire reference [#537](https://github.com/pskillen/codeplug-studio/issues/537)
 
-**Source (planned):** `src/core/import-export/formats/neonplug/`
+**Source:** `src/core/import-export/formats/neonplug/` (profiles + traits shipped; adapters planned)
 
 ## Implementation status
 
 | Area                                                      | Status  | Notes                                                                                                                         |
 | --------------------------------------------------------- | ------- | ----------------------------------------------------------------------------------------------------------------------------- |
 | Wire reference                                            | Shipped | [reference/neonplug/](../../../reference/neonplug/README.md) — [#537](https://github.com/pskillen/codeplug-studio/issues/537) |
-| Format scaffold (`FormatId`, catalog, traits)             | Planned | [#538](https://github.com/pskillen/codeplug-studio/issues/538)                                                                |
+| Format scaffold (`FormatId`, catalog, traits)             | Shipped | [#538](https://github.com/pskillen/codeplug-studio/issues/538) — `neonplug` in catalog; profiles + `TRAIT_PROFILES`           |
 | Export channels + `.neonplug` ZIP                         | Planned | [#539](https://github.com/pskillen/codeplug-studio/issues/539)                                                                |
 | Export zones / scan / contacts / RX groups (DM32 profile) | Planned | [#540](https://github.com/pskillen/codeplug-studio/issues/540)                                                                |
 | UV5R-Mini profile export                                  | Planned | [#541](https://github.com/pskillen/codeplug-studio/issues/541)                                                                |
@@ -24,18 +24,25 @@ Product behaviour for NeonPlug `.neonplug` files in Codeplug Studio. Wire tables
 
 Studio already exports **DM-32** via CPS CSV and **UV-5R Mini** via CHIRP CSV. NeonPlug’s preferred pathway is a single `.neonplug` ZIP containing `codeplug.json`, then in-browser radio write over Web Serial / BLE. That interchange is a sibling CPS format — same library, new format builds — not a projection bolted onto the CSV adapters.
 
-## Proposed profiles
+## Profiles
 
-| Profile id          | Label              | Traits (planned)                    |
-| ------------------- | ------------------ | ----------------------------------- |
-| `neonplug-dm32uv`   | Baofeng DM-32UV    | Zone grouping + scan lists          |
-| `neonplug-uv5rmini` | Baofeng UV-5R Mini | Flat memory + per-channel scan flag |
+| Profile id          | Label                         | Traits                                          | Caps note                                                                                          |
+| ------------------- | ----------------------------- | ----------------------------------------------- | -------------------------------------------------------------------------------------------------- |
+| `neonplug-dm32uv`   | Baofeng DM-32UV (NeonPlug)    | Zone grouping + zone-derived scan lists         | Same numeric caps as DM32 CPS `dm32-baofeng-dm32uv`                                                |
+| `neonplug-uv5rmini` | Baofeng UV-5R Mini (NeonPlug) | Flat memory + per-channel scan flag             | NeonPlug binary **999** memories / **12**-char names — not CHIRP CSV **128** / **7** (sibling path) |
+
+## Export delivery (decided for #539)
+
+1. Adapter serialises `codeplug.json` as a **string**.
+2. `exportBuild` (or sibling) wraps that string in a JSZip → `.neonplug` binary download.
+
+See [file-format.md](../../../reference/neonplug/file-format.md). Adapters are not registered until #539+.
 
 ## Operator workflow (planned)
 
 1. Curate channels (and DMR entities) in the **library**.
-2. Create a **NeonPlug build** for the target radio profile.
-3. Export a `.neonplug` file from the build export page.
+2. Create a **NeonPlug build** for the target radio profile (available now via `/builds/new`).
+3. Export a `.neonplug` file from the build export page (after #539–#542).
 4. Open [neonplug.app](https://neonplug.app) → import the file → write to radio.
 
 ## Related

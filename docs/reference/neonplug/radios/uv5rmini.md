@@ -2,9 +2,9 @@
 
 Profile notes for analogue NeonPlug exports targeting UV5R-Mini.
 
-**Proposed Studio ids:** format `neonplug`, profile `neonplug-uv5rmini`
+**Studio ids:** format `neonplug`, profile `neonplug-uv5rmini` (`src/core/import-export/formats/neonplug/profiles.ts`)
 
-**NeonPlug ground truth:** [`src/radios/uv5rmini/`](https://github.com/infamy/NeonPlug/tree/main/src/radios/uv5rmini) — especially [`channelMapping.ts`](https://github.com/infamy/NeonPlug/blob/main/src/radios/uv5rmini/channelMapping.ts)
+**NeonPlug ground truth:** [`src/radios/uv5rmini/`](https://github.com/infamy/NeonPlug/tree/main/src/radios/uv5rmini) — especially [`channelMapping.ts`](https://github.com/infamy/NeonPlug/blob/main/src/radios/uv5rmini/channelMapping.ts) and [`BAOFENG_CHANNEL_COUNT`](https://github.com/infamy/NeonPlug/blob/main/src/radios/uv5rmini/constants.ts)
 
 ## Expected `CodeplugData` surface
 
@@ -31,19 +31,22 @@ Other Channel fields are filled with defaults on read-back into the shared model
 
 ## Trait alignment (Studio)
 
-Same idea as CHIRP UV-5R:
+Same idea as CHIRP UV-5R (traits only):
 
 - Flat memory list
 - Per-channel scan flag (`scanAdd` ↔ `scanInclusion`)
 
-## Cardinality hints
+## Export caps (Studio profile)
 
-| Limit                | Notes                                                               |
-| -------------------- | ------------------------------------------------------------------- |
-| Memory slots         | Confirm against NeonPlug UV5R capabilities (CHIRP profile uses 128) |
-| Name length on radio | NeonPlug UV5R write slices name to **12** bytes                     |
+NeonPlug **binary** pathway — intentionally different from CHIRP CSV UV-5R:
 
-Export warnings should use the Studio radio profile constants once `#538` lands — not hard-coded in library UI.
+| Cap | NeonPlug `neonplug-uv5rmini` | CHIRP `chirp-uv5r` (sibling) |
+| --- | --- | --- |
+| Memory / channels | **999** | 128 |
+| Channel name | **12** | 7 |
+| Zone / digital organisation | N/A | N/A |
+
+Export warnings use these Studio radio profile constants — not hard-coded in library UI.
 
 ## Related
 
