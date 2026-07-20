@@ -293,4 +293,25 @@ describe('ExportBuildCpsPanel', () => {
     });
     expect(await screen.findByRole('tab', { name: /AMZone\.CSV/ })).toBeInTheDocument();
   });
+
+  it('renders NeonPlug merge-first export with greenfield secondary path', async () => {
+    const neonBuild: FormatBuild = {
+      ...opengd77Build,
+      formatId: 'neonplug',
+      profileId: 'neonplug-dm32uv',
+      name: 'Neon DM32',
+    };
+    render(
+      <MantineProvider>
+        <ExportBuildCpsPanel build={neonBuild} />
+      </MantineProvider>,
+    );
+
+    expect(await screen.findByText('Merge into radio-read base')).toBeInTheDocument();
+    const mergeButton = screen.getByRole('button', { name: 'Download for radio write' });
+    expect(mergeButton).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Download greenfield .neonplug' })).not.toBeDisabled();
+    expect(screen.queryByRole('button', { name: 'Preview CSV' })).not.toBeInTheDocument();
+    expect(screen.getByText(/not safe to write back/i)).toBeInTheDocument();
+  });
 });
