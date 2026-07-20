@@ -267,5 +267,6 @@ These are for Phase 1 modelling and UX iteration — not blockers for constituti
 | ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | 2026-06-29 | Initial context dump from migration planning sessions                                                                                                                           |
 | 2026-06-29 | Link to [storage.md](storage.md) persistence planning notes                                                                                                                     |
-| 2026-06-29 | Phase 0 complete — [epic-1-progress.md](epic-1-progress.md), [epic-1-gaps.md](epic-1-gaps.md)                                                                                   |
+| 2026-06-29 | Phase 0 complete — [epic-1-progress.md](epic-1-progress.md) (gaps file later retired in [#294](https://github.com/pskillen/codeplug-studio/issues/294))                        |
+| 2026-07-20 | `epic-1-gaps.md` retired; progress reduced to Milestone 1 archive stub — active work under [#495](https://github.com/pskillen/codeplug-studio/issues/495)                     |
 | 2026-07-02 | **Resolved:** Native YAML serialises full project (`ProjectMeta` + library + `formatBuilds[]`) as interchange — see [native-yaml reference](../reference/native-yaml/README.md) |
