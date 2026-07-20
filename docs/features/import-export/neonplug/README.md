@@ -26,10 +26,10 @@ Studio already exports **DM-32** via CPS CSV and **UV-5R Mini** via CHIRP CSV. N
 
 ## Profiles
 
-| Profile id          | Label                         | Traits                                          | Caps note                                                                                          |
-| ------------------- | ----------------------------- | ----------------------------------------------- | -------------------------------------------------------------------------------------------------- |
-| `neonplug-dm32uv`   | Baofeng DM-32UV (NeonPlug)    | Zone grouping + zone-derived scan lists         | Same numeric caps as DM32 CPS `dm32-baofeng-dm32uv`                                                |
-| `neonplug-uv5rmini` | Baofeng UV-5R Mini (NeonPlug) | Flat memory + per-channel scan flag             | NeonPlug binary **999** memories / **12**-char names — not CHIRP CSV **128** / **7** (sibling path) |
+| Profile id          | Label                         | Traits                                  | Caps note                                                                                           |
+| ------------------- | ----------------------------- | --------------------------------------- | --------------------------------------------------------------------------------------------------- |
+| `neonplug-dm32uv`   | Baofeng DM-32UV (NeonPlug)    | Zone grouping + zone-derived scan lists | Same numeric caps as DM32 CPS `dm32-baofeng-dm32uv`                                                 |
+| `neonplug-uv5rmini` | Baofeng UV-5R Mini (NeonPlug) | Flat memory + per-channel scan flag     | NeonPlug binary **999** memories / **12**-char names — not CHIRP CSV **128** / **7** (sibling path) |
 
 ## Export delivery (decided for #539)
 

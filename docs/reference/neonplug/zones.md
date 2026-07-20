@@ -6,11 +6,11 @@ Wire shape for `codeplug.json` → `zones[]`.
 
 ## Fields
 
-| Field      | Type       | Notes                                                       |
-| ---------- | ---------- | ----------------------------------------------------------- |
-| `id`       | string     | UI id (generated in NeonPlug if missing on import)          |
+| Field      | Type       | Notes                                                                                                                                                                     |
+| ---------- | ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `id`       | string     | UI id (generated in NeonPlug if missing on import)                                                                                                                        |
 | `name`     | string     | Zone name — NeonPlug source comments say **max 10** on radio; Studio DM32UV / NeonPlug DM32UV **profiles** use `nameLimit` **16** (radio-confirmed, shared with DM32 CPS) |
-| `channels` | `number[]` | Member **channel numbers** (see [channels.md](channels.md)) |
+| `channels` | `number[]` | Member **channel numbers** (see [channels.md](channels.md))                                                                                                               |
 
 ## FK rules
 

@@ -40,11 +40,11 @@ Same idea as CHIRP UV-5R (traits only):
 
 NeonPlug **binary** pathway — intentionally different from CHIRP CSV UV-5R:
 
-| Cap | NeonPlug `neonplug-uv5rmini` | CHIRP `chirp-uv5r` (sibling) |
-| --- | --- | --- |
-| Memory / channels | **999** | 128 |
-| Channel name | **12** | 7 |
-| Zone / digital organisation | N/A | N/A |
+| Cap                         | NeonPlug `neonplug-uv5rmini` | CHIRP `chirp-uv5r` (sibling) |
+| --------------------------- | ---------------------------- | ---------------------------- |
+| Memory / channels           | **999**                      | 128                          |
+| Channel name                | **12**                       | 7                            |
+| Zone / digital organisation | N/A                          | N/A                          |
 
 Export warnings use these Studio radio profile constants — not hard-coded in library UI.
 

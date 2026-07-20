@@ -10,10 +10,7 @@ import { getAnytoneProfile } from './formats/anytone/profiles.ts';
 import { getChirpProfile } from './formats/chirp/profiles.ts';
 import { getDm32Profile } from './formats/dm32/profiles.ts';
 import { getOpenGd77Profile } from './formats/opengd77/profiles.ts';
-import {
-  getNeonplugProfile,
-  isNeonplugDm32uvProfile,
-} from './formats/neonplug/profiles.ts';
+import { getNeonplugProfile, isNeonplugDm32uvProfile } from './formats/neonplug/profiles.ts';
 
 /** Known number, unknown blank, or not applicable to this radio workflow. */
 export type ExportLimitValue = number | null | 'not_used';

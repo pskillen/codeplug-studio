@@ -31,20 +31,20 @@ Reuse concepts already used by DM32 CSV:
 
 Identical to DM32 CPS `dm32-baofeng-dm32uv` — NeonPlug `LIMITS` backported into both profiles. Sync test in `formats/neonplug/profiles.test.ts` prevents drift.
 
-| Cap | Value |
-| --- | --- |
-| `maxChannels` | 4000 |
-| `maxZones` | 250 |
-| `zoneMembers` | 64 |
-| `maxScanLists` | 32 |
-| `scanListMembers` | 15 |
-| `maxRxGroupLists` | 32 |
-| `rxGroupListMembers` | 32 |
-| `maxContacts` | 250 |
-| `maxTalkGroups` | 800 |
-| Channel / zone / contact / talk-group name | 16 |
-| Scan list name | 10 |
-| RX group list name | 10 |
+| Cap                                        | Value |
+| ------------------------------------------ | ----- |
+| `maxChannels`                              | 4000  |
+| `maxZones`                                 | 250   |
+| `zoneMembers`                              | 64    |
+| `maxScanLists`                             | 32    |
+| `scanListMembers`                          | 15    |
+| `maxRxGroupLists`                          | 32    |
+| `rxGroupListMembers`                       | 32    |
+| `maxContacts`                              | 250   |
+| `maxTalkGroups`                            | 800   |
+| Channel / zone / contact / talk-group name | 16    |
+| Scan list name                             | 10    |
+| RX group list name                         | 10    |
 
 Do **not** bake these into library CRUD — export warnings and Radio characteristics only.
 
