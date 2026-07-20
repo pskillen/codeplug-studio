@@ -3,6 +3,7 @@ import { opengd77ExportAdapter } from './formats/opengd77/adapter.ts';
 import { dm32ExportAdapter } from './formats/dm32/adapter.ts';
 import { chirpExportAdapter } from './formats/chirp/adapter.ts';
 import { anytoneExportAdapter } from './formats/anytone/adapter.ts';
+import { neonplugExportAdapter } from './formats/neonplug/adapter.ts';
 import type { ExportAdapter } from './exportAdapter.ts';
 import type { ImportAdapter } from './importAdapter.ts';
 import type { FormatCatalogEntry, FormatExportDefaults, FormatId } from './types.ts';
@@ -49,7 +50,7 @@ export const formatCatalog: readonly FormatCatalogEntry[] = [
     id: 'neonplug',
     label: 'NeonPlug',
     importStatus: 'planned',
-    exportStatus: 'planned',
+    exportStatus: 'shipped',
     issue: '536',
   },
 ];
@@ -62,6 +63,7 @@ export const exportAdapters: readonly ExportAdapter[] = [
   dm32ExportAdapter,
   chirpExportAdapter,
   anytoneExportAdapter,
+  neonplugExportAdapter,
 ];
 
 export function getImportAdapter(id: FormatId): ImportAdapter {
