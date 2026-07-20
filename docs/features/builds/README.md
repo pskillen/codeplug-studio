@@ -15,7 +15,7 @@ The library holds RF semantics once. Each radio/CPS family expects different org
 1. Curate channels, zones, and contacts in **Library**.
 2. Open **Radio builds** (sidebar) → **New build**.
 3. Pick a CPS format (OpenGD77, CHIRP, …) and a **profile** (trait + wire variant).
-4. Review the build overview — edit profile and capability traits.
+4. Review the build overview — edit profile; open **Radio characteristics** for organisation, export limits, and power ladders.
 5. Shape wire names and zone layout on entity sub-routes — see [wire-preview.md](wire-preview.md).
 6. Export CPS files from **Export** — see [name-shortening.md](../import-export/name-shortening.md) for export name settings.
 
@@ -30,7 +30,8 @@ Native YAML remains **project interchange** (library + all builds). It is not cr
 | `/builds`                       | List builds for the active project                                   |
 | `/builds/new`                   | Create build — format → profile → name                               |
 | `/builds/:id`                   | Redirect → overview                                                  |
-| `/builds/:id/overview`          | Identity, target profile, capability traits                          |
+| `/builds/:id/overview`          | Identity, target profile, organisation badges                        |
+| `/builds/:id/characteristics`   | Read-only radio characteristics — organisation, export limits, ladders |
 | `/builds/:id/channels`          | Wire preview — channels (list + modal)                               |
 | `/builds/:id/channels/bulk`     | Wire preview — channel bulk edit                                     |
 | `/builds/:id/zones`             | Wire preview — zones                                                 |
@@ -79,6 +80,7 @@ YAML import/export includes `formatBuilds[]` in the project document.
 | Export inclusion flags       | Shipped | [#103](https://github.com/pskillen/codeplug-studio/issues/103) — orphan channels/TGs/RGLs on `FormatBuild` + export UI                                                                                                                                                                                                                                                       |
 | Channel behaviour overrides  | Shipped | [#420](https://github.com/pskillen/codeplug-studio/issues/420) — optional build `exportSettings` overrides on Export panel                                                                                                                                                                                                                                                   |
 | Export resolution summary    | Shipped | [#421](https://github.com/pskillen/codeplug-studio/issues/421) / [#443](https://github.com/pskillen/codeplug-studio/issues/443) — Channels + Zones tabs; zone-derived scan membership cascade                                                                                                                                                                                |
+| Radio characteristics        | Shipped | [#515](https://github.com/pskillen/codeplug-studio/issues/515) — `/builds/:id/characteristics`; copy in `buildCapabilityCopy.ts`; limits via `getProfileExportLimits` (blanks for unmodelled caps)                                                                                                                                                                          |
 
 ## Export inclusion flags
 
