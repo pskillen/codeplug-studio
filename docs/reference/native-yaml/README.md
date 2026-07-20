@@ -188,7 +188,7 @@ DM32 zone export flags (`exportScanList`, `scanCarrierFrequencyHz`) live on **`z
 
 `exportSettings` fields: `defaultScanInclusion`, `shortenNames`, `maxNameLength`, `nameModeOverride`, `useChannelAbbreviation`, `useTalkGroupAbbreviation`, `exportZoneDerivedScanLists`, `expandModes`, `expandRxGroupLists`, …
 
-`cpsWireHydration` is a labelled escape hatch for unmodelled CPS donor/retain bags used at merge export (`formatId` discriminant + opaque `retain`). NeonPlug bags use `formatId: neonplug` — see [neonplug/merge.md](../neonplug/merge.md). Not wire-stash for modelled library entities.
+`cpsWireHydration` is a labelled escape hatch for unmodelled CPS donor/retain bags used at merge export (`formatId` discriminant + opaque `retain`). NeonPlug bags use `formatId: neonplug` — see [neonplug/merge.md](../neonplug/merge.md). Not wire-stash for modelled library entities. **Required interchange behaviour:** when present on a build, native YAML export must emit it and import must restore it on the corresponding `formatBuilds[]` row.
 
 Legacy `*Selections` arrays migrate to `*Overrides` on import.
 

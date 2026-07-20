@@ -23,7 +23,7 @@ Channels are not slot-patched against unused base channel numbers — Studio rep
 ## Donor sources (priority)
 
 1. **Session upload** — `baseNeonplugBytes` on this export call (overrides stored bag).
-2. **Build hydration** — DM32UV persists retain slices on `FormatBuild.cpsWireHydration` after a successful upload; merge uses that when no session file is supplied.
+2. **Build hydration** — DM32UV persists retain slices on `FormatBuild.cpsWireHydration` after a successful upload; merge uses that when no session file is supplied. The bag is part of the build row and **round-trips with native YAML** project export/import.
 3. **Neither** — greenfield path (no merge).
 
 Encryption key material may be present in the retained bag for merge fidelity; the read-only NeonPlug settings UI shows **counts only**, never key bytes.

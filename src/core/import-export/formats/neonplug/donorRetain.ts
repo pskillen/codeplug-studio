@@ -21,7 +21,8 @@ export type NeonplugDonorRetainSlices = Pick<
 
 /**
  * NeonPlug hydration bag for {@link FormatBuild.cpsWireHydration}.
- * Browser storage only — never commit operator settings into the repo.
+ * Persisted on the build and round-trips with native YAML project files.
+ * Do not commit personal operator projects (or their retain bags) into the Studio repo.
  */
 export interface NeonplugDonorBag extends CpsWireHydrationBase {
   formatId: 'neonplug';

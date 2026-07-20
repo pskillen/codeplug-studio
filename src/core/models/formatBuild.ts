@@ -92,7 +92,8 @@ export interface FormatBuild extends PersistableRow {
   exportSettings?: BuildExportSettings;
   /**
    * Format-scoped CPS wire hydration (unmodelled donor/retain bags for merge export).
-   * Not library entities; not wire-stash for modelled channels. Browser storage only.
+   * Not library entities; not wire-stash for modelled channels.
+   * Persisted with the build and included in native YAML project interchange.
    * Narrow by `formatId` (e.g. `neonplug` → NeonplugDonorBag in formats/neonplug).
    */
   cpsWireHydration?: CpsWireHydration;

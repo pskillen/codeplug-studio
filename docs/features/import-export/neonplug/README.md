@@ -53,7 +53,7 @@ See [file-format.md](../../../reference/neonplug/file-format.md) and [merge.md](
 5. Later exports reuse the stored donor; replace or clear from Export, or inspect on **NeonPlug settings**.
 6. Import the merged file in NeonPlug → write to the radio.
 
-**Privacy:** donor settings live in browser storage (IndexedDB / native YAML export of the project) only — never in the Studio repo.
+**Persistence:** donor retain slices live on `FormatBuild.cpsWireHydration` — IndexedDB with the project, and **included** when the operator exports/imports native YAML (Drive or download). Do not commit personal project YAML into the Studio repo.
 
 **Secondary:** **Download greenfield `.neonplug`** for browsing / debug only — it omits radio settings and is **not safe to write back** without a donor merge.
 

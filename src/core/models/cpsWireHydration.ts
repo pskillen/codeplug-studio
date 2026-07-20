@@ -3,7 +3,8 @@
  *
  * Formats may persist unmodelled donor/retain slices here so merge export can
  * rehydrate radio-safe output without stashing modelled wire into the library.
- * Not library entities; not relationship keys. Browser storage only.
+ * Persisted on the format build (IndexedDB) and round-trips with native YAML
+ * project export/import. Not library entities; not relationship keys.
  */
 
 /** Shared capture metadata for any format's hydration bag. */
