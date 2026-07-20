@@ -9,21 +9,21 @@ zone name length confirmed on radio hardware.
 
 ## Capacity
 
-| Entity                | Cap                                                                                                                                              |
-| --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Channels              | **4000**                                                                                                                                         |
-| Zones                 | **250**                                                                                                                                          |
-| Zone members          | **64** (distinct from scan-list member cap)                                                                                                      |
-| Scan lists            | **32**                                                                                                                                           |
-| Scan list members     | **15** named CSV members (CPS “16” includes implicit current channel; [#486](https://github.com/pskillen/codeplug-studio/issues/486))            |
-| RX group lists        | **32**                                                                                                                                           |
-| RX group list members | **32**                                                                                                                                           |
-| Contacts              | **250**                                                                                                                                          |
-| Talk groups           | **800**                                                                                                                                          |
-| Channel / zone names  | **16** (`nameLimit` — channel LCD + radio-confirmed zone)                                                                                        |
-| Contact / TG names    | **16** (`nameLimit`)                                                                                                                             |
-| Scan list names       | **10** (`scanListNameLimit` — conservative; CPS official 11, NeonPlug radio field 10)                                                            |
-| RX group list names   | **10** (`rxGroupListNameLimit` — NeonPlug RXGroup 11-byte null-terminated field)                                                                 |
+| Entity                | Cap                                                                                                                                   |
+| --------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| Channels              | **4000**                                                                                                                              |
+| Zones                 | **250**                                                                                                                               |
+| Zone members          | **64** (distinct from scan-list member cap)                                                                                           |
+| Scan lists            | **32**                                                                                                                                |
+| Scan list members     | **15** named CSV members (CPS “16” includes implicit current channel; [#486](https://github.com/pskillen/codeplug-studio/issues/486)) |
+| RX group lists        | **32**                                                                                                                                |
+| RX group list members | **32**                                                                                                                                |
+| Contacts              | **250**                                                                                                                               |
+| Talk groups           | **800**                                                                                                                               |
+| Channel / zone names  | **16** (`nameLimit` — channel LCD + radio-confirmed zone)                                                                             |
+| Contact / TG names    | **16** (`nameLimit`)                                                                                                                  |
+| Scan list names       | **10** (`scanListNameLimit` — conservative; CPS official 11, NeonPlug radio field 10)                                                 |
+| RX group list names   | **10** (`rxGroupListNameLimit` — NeonPlug RXGroup 11-byte null-terminated field)                                                      |
 
 Zone-derived scan lists synthesise at most **15** named members even when a zone has up to **64** members — intentional export loss; see [scan-lists.md](../scan-lists.md).
 
