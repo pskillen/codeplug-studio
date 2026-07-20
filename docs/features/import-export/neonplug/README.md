@@ -2,7 +2,7 @@
 
 Product behaviour for NeonPlug `.neonplug` files in Codeplug Studio. Wire tables live in the tier-3 [NeonPlug reference](../../../reference/neonplug/README.md).
 
-**Tracking:** Epic [#536](https://github.com/pskillen/codeplug-studio/issues/536) · scaffold [#538](https://github.com/pskillen/codeplug-studio/issues/538) · channels + ZIP [#539](https://github.com/pskillen/codeplug-studio/issues/539) · org entities [#540](https://github.com/pskillen/codeplug-studio/issues/540) · wire reference [#537](https://github.com/pskillen/codeplug-studio/issues/537)
+**Tracking:** Epic [#536](https://github.com/pskillen/codeplug-studio/issues/536) · scaffold [#538](https://github.com/pskillen/codeplug-studio/issues/538) · channels + ZIP [#539](https://github.com/pskillen/codeplug-studio/issues/539) · org entities [#540](https://github.com/pskillen/codeplug-studio/issues/540) · merge-into-base [#551](https://github.com/pskillen/codeplug-studio/issues/551) · export UI [#542](https://github.com/pskillen/codeplug-studio/issues/542) · wire reference [#537](https://github.com/pskillen/codeplug-studio/issues/537)
 
 **Source:** `src/core/import-export/formats/neonplug/` (profiles, export adapter, `.neonplug` ZIP packaging)
 
@@ -13,9 +13,10 @@ Product behaviour for NeonPlug `.neonplug` files in Codeplug Studio. Wire tables
 | Wire reference                                            | Shipped | [reference/neonplug/](../../../reference/neonplug/README.md) — [#537](https://github.com/pskillen/codeplug-studio/issues/537) |
 | Format scaffold (`FormatId`, catalog, traits)             | Shipped | [#538](https://github.com/pskillen/codeplug-studio/issues/538) — `neonplug` in catalog; profiles + `TRAIT_PROFILES`           |
 | Export channels + `.neonplug` ZIP                         | Shipped | [#539](https://github.com/pskillen/codeplug-studio/issues/539) — `assemble` → `codeplug.json` → fflate ZIP                    |
-| Export zones / scan / contacts / RX groups (DM32 profile) | Shipped | [#540](https://github.com/pskillen/codeplug-studio/issues/540) — org arrays + channel FKs; `radioIds[]` omitted               |
+| Export zones / scan / contacts / RX groups (DM32 profile) | Shipped | [#540](https://github.com/pskillen/codeplug-studio/issues/540) — org arrays + channel FKs; `radioIds[]` omitted on greenfield |
+| Merge into radio-read base                                | Shipped | [#551](https://github.com/pskillen/codeplug-studio/issues/551) — retain settings / `radioIds`; see [merge.md](../../../reference/neonplug/merge.md) |
+| Build UI + export download                                | Shipped | [#542](https://github.com/pskillen/codeplug-studio/issues/542) — merge-first + secondary greenfield                           |
 | UV5R-Mini profile export                                  | Planned | [#541](https://github.com/pskillen/codeplug-studio/issues/541) — channel path shipped in #539; polish / gaps remain           |
-| Build UI + export download                                | Planned | [#542](https://github.com/pskillen/codeplug-studio/issues/542)                                                                |
 | Import parse → library + build                            | Planned | [#543](https://github.com/pskillen/codeplug-studio/issues/543)                                                                |
 | Import dropzone                                           | Planned | [#544](https://github.com/pskillen/codeplug-studio/issues/544)                                                                |
 | 1-click handoff to neonplug.app                           | Stretch | [#545](https://github.com/pskillen/codeplug-studio/issues/545)                                                                |
@@ -35,21 +36,26 @@ Studio already exports **DM-32** via CPS CSV and **UV-5R Mini** via CHIRP CSV. N
 
 1. Adapter serialises `codeplug.json` as a **string** (`multi-file` with one entry).
 2. `exportBuildZip` wraps that string with **fflate** (`buildNeonplugZip`) → `.neonplug` binary.
+3. Optional **donor** bytes: parse → `mergeNeonplugCodeplug` → re-ZIP (merge-first / radio-write path).
 
-**DM32UV:** channels plus zones, zone-derived scan lists, contacts (talk groups then digital contacts), and RX groups; channel `contactId` / `rxGroupListId` / `scanListId` wired. `radioIds[]` and `quickContacts[]` stay empty (no operator DMR-ID list in the library). **UV5R-Mini:** channels only (org arrays empty). Download UI is [#542](https://github.com/pskillen/codeplug-studio/issues/542).
+**DM32UV:** channels plus zones, zone-derived scan lists, contacts (talk groups then digital contacts), and RX groups; channel `contactId` / `rxGroupListId` / `scanListId` wired. **Greenfield** leaves `radioIds[]` and ancillaries empty. **Merge** retains donor `radioIds`, `radioSettings`, and other unmodelled keys. **UV5R-Mini:** channels only on greenfield (org arrays empty).
 
-See [file-format.md](../../../reference/neonplug/file-format.md).
+See [file-format.md](../../../reference/neonplug/file-format.md) and [merge.md](../../../reference/neonplug/merge.md).
 
-## Operator workflow (planned)
+## Operator workflow
 
 1. Curate channels (and DMR entities) in the **library**.
-2. Create a **NeonPlug build** for the target radio profile (available now via `/builds/new`).
-3. Export a `.neonplug` file from the build export page (after #542 wires download).
-4. Open [neonplug.app](https://neonplug.app) → import the file → write to radio.
+2. Create a **NeonPlug build** for the target radio profile (`/builds/new`).
+3. In NeonPlug, **read from the radio** and export a donor `.neonplug`.
+4. On the build export page, upload the donor → **Download for radio write** (or save the merge to Drive).
+5. Import the merged file in NeonPlug → write to the radio.
+
+**Secondary:** **Download greenfield `.neonplug`** for browsing / debug only — it omits radio settings and is **not safe to write back** without a donor merge.
 
 ## Related
 
 - [import-export hub](../README.md)
 - [NeonPlug wire reference](../../../reference/neonplug/README.md)
+- [Merge policy](../../../reference/neonplug/merge.md)
 - Sibling formats: [DM32](../dm32/README.md), [CHIRP](../chirp/README.md)
 - External: [NeonPlug](https://github.com/infamy/NeonPlug) · [neonplug.app](https://neonplug.app)
