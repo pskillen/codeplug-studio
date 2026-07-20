@@ -39,6 +39,30 @@ Persistent **progress** and **outstanding** files preserve execution state when 
 
 **Outstanding is not a second plan.** Scheduled-but-not-started work stays in the Cursor plan or GitHub issue. Move an item to outstanding only when execution revealed it.
 
+Every open `- [ ]` in outstanding **must** link a GitHub issue number (or be closed / moved to a hub “Known deferrals” note). Do not leave orphan checkboxes.
+
+---
+
+## When to retire / delete
+
+Progress/outstanding pairs are **temporary handoff aids**. After the initiative ships, prefer GitHub issues + the feature hub status table — not perpetual markdown logs.
+
+| Retire (delete pair) when | Keep when |
+| --- | --- |
+| Overall status is **Complete** and remaining work is tracked as GitHub issues under the correct epic | Multi-session work is still active (in-flight PR / next slice this week) |
+| Feature hub implementation-status table is accurate | Outstanding still has open items that are **not yet** filed as issues — **file issues first**, then delete or thin |
+| Hub doc map points at live deep-dives / epics, not the progress files | Operator or agent still needs the thin outstanding pointer list (rare; keep **outstanding only**, drop progress) |
+
+**Retirement steps**
+
+1. File or link GitHub issues for every remaining actionable outstanding item (parent = Milestone 2 epic under [#495](https://github.com/pskillen/codeplug-studio/issues/495)).
+2. Update the feature hub: status table + doc map — one line “Shipped — see #NNN” instead of progress links.
+3. Delete `*-progress.md` and usually `*-outstanding.md`. If a short outstanding pointer list is still useful, rewrite it so every checkbox links an issue.
+4. Grep for broken links to the deleted filenames.
+5. Do **not** leave stale verify checklists unchecked in progress files after merge — tick them, remove the checklist, or delete the file.
+
+**Do not** create an “archive” folder of old progress logs. History lives in git.
+
 ---
 
 ## Where files live
@@ -151,10 +175,12 @@ Items **skipped**, **incomplete**, or **discovered during execution** — not th
 
 ## <area>
 
-- [ ] …
+- [ ] … — [#NNN](https://github.com/pskillen/codeplug-studio/issues/NNN)
 - [x] … (closed when fixed; brief note or PR link)
 
 ```
+
+Every open checkbox needs an issue link. If there is no issue yet, create one under the parent epic before leaving the checkbox.
 
 ---
 
@@ -192,3 +218,6 @@ When a plan depends on another initiative, note **Prerequisite:** with link to t
 - Creating progress/outstanding files for a small single-phase ticket.
 - Skipping progress files when multi-plan / multi-agent / multi-day continuation is likely.
 - Letting progress go stale across PRs without a **Next** section.
+- Leaving unchecked verify checklists in progress after the feature shipped.
+- Keeping completed pairs forever when GitHub issues already track the debt.
+- Open outstanding checkboxes with no GitHub issue number.
