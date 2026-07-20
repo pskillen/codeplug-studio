@@ -6,6 +6,7 @@ import type { LibrarySlice } from '@core/services/assemble.ts';
 import { exportBuildZip } from './exportBuild.ts';
 import type { NeonplugCodeplugData } from '@core/import-export/formats/neonplug/wireTypes.ts';
 import { NEONPLUG_JSON_FILE_NAME } from '@core/import-export/formats/neonplug/serialise.ts';
+import { buildNeonplugZip } from '@core/import-export/formats/neonplug/packageZip.ts';
 
 const projectId = 'proj-neonplug-export';
 
@@ -125,5 +126,47 @@ describe('exportBuildZip neonplug', () => {
       { number: 2, name: 'Second' },
       { number: 5, name: 'First' },
     ]);
+  });
+
+  it('merges Studio projection into a donor .neonplug base', () => {
+    const chFm = fmChannel('ch-fm', 'GB3AO', 145_600_000);
+    const build = newFormatBuild(projectId, 'neonplug-dm32uv', 'Neon DM32');
+    const baseBody = JSON.stringify({
+      version: '1.0.0',
+      exportDate: '2020-01-01T00:00:00.000Z',
+      channels: [{ number: 99, name: 'OLD' }],
+      zones: [{ number: 1, name: 'OldZone', channelNumbers: [99] }],
+      scanLists: [],
+      contacts: [],
+      rxGroups: [],
+      radioIds: [{ index: 0, dmrId: '2345678', name: 'Op' }],
+      quickContacts: [{ index: 1 }],
+      messages: ['Keep me'],
+      digitalEmergencies: [],
+      analogEmergencies: [],
+      encryptionKeys: [],
+      digitalEmergencyConfig: { countIndex: 2 },
+      radioSettings: { powerOnDisplayLine1: 'RADIO' },
+      radioInfo: { model: 'DP570UV', firmware: 'donor-fw' },
+    });
+    const baseNeonplugBytes = buildNeonplugZip({ [NEONPLUG_JSON_FILE_NAME]: baseBody });
+
+    const { zip, warnings } = exportBuildZip({
+      build,
+      library: libraryOf(chFm),
+      options: { shortenNames: false },
+      baseNeonplugBytes,
+    });
+
+    const data = parseZip(zip);
+    expect(data.radioSettings).toEqual({ powerOnDisplayLine1: 'RADIO' });
+    expect(data.radioIds).toEqual([{ index: 0, dmrId: '2345678', name: 'Op' }]);
+    expect(data.messages).toEqual(['Keep me']);
+    expect(data.radioInfo.firmware).toBe('donor-fw');
+    expect(data.channels).toHaveLength(1);
+    expect(data.channels[0]?.name).toBe('GB3AO');
+    expect(data.zones).toEqual([]);
+    expect(data.exportDate).not.toBe('2020-01-01T00:00:00.000Z');
+    expect(warnings.every((w) => !/UV5R-Mini/.test(w))).toBe(true);
   });
 });

@@ -11,6 +11,12 @@ import { buildDm32Zip } from '@core/import-export/formats/dm32/packageZip.ts';
 import { buildAnytoneZip } from '@core/import-export/formats/anytone/packageZip.ts';
 import { buildNeonplugZip } from '@core/import-export/formats/neonplug/packageZip.ts';
 import {
+  mergeNeonplugCodeplug,
+  parseNeonplugCodeplugJson,
+  parseNeonplugZip,
+} from '@core/import-export/formats/neonplug/merge.ts';
+import { NEONPLUG_JSON_FILE_NAME } from '@core/import-export/formats/neonplug/serialise.ts';
+import {
   anytoneLstFileName,
   isAnytoneLstFileName,
   serialiseAnytoneLstManifest,
@@ -30,6 +36,11 @@ export interface ExportBuildParams {
   library: LibrarySlice;
   fileName: string;
   options?: CpsExportOptions;
+}
+
+/** Optional donor `.neonplug` bytes for merge-into-base NeonPlug export. */
+export interface ExportBuildZipParams extends Omit<ExportBuildParams, 'fileName'> {
+  baseNeonplugBytes?: Uint8Array;
 }
 
 export interface ExportBuildAllResult {
@@ -212,8 +223,32 @@ export function exportBuildZip({
   build,
   library,
   options,
-}: Omit<ExportBuildParams, 'fileName'>): ExportBuildAllResult & { zip: Uint8Array } {
+  baseNeonplugBytes,
+}: ExportBuildZipParams): ExportBuildAllResult & { zip: Uint8Array } {
   const result = exportBuildAll({ build, library, options });
+
+  if (build.formatId === 'neonplug' && baseNeonplugBytes) {
+    const projectedJson = result.files[NEONPLUG_JSON_FILE_NAME];
+    if (projectedJson == null) {
+      throw new Error(`NeonPlug export missing ${NEONPLUG_JSON_FILE_NAME}`);
+    }
+    const projected = parseNeonplugCodeplugJson(JSON.parse(projectedJson) as unknown);
+    const { data: base, warnings: parseWarnings } = parseNeonplugZip(baseNeonplugBytes);
+    const { data: merged, warnings: mergeWarnings } = mergeNeonplugCodeplug(base, projected, {
+      expectedRadioModel: projected.radioInfo.model || undefined,
+    });
+    const files = {
+      ...result.files,
+      [NEONPLUG_JSON_FILE_NAME]: JSON.stringify(merged),
+    };
+    return {
+      ...result,
+      files,
+      warnings: dedupeWarnings([...result.warnings, ...parseWarnings, ...mergeWarnings]),
+      zip: buildNeonplugZip(files),
+    };
+  }
+
   const zip =
     build.formatId === 'neonplug'
       ? buildNeonplugZip(result.files)
