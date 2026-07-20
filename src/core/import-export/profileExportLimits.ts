@@ -10,6 +10,7 @@ import { getAnytoneProfile } from './formats/anytone/profiles.ts';
 import { getChirpProfile } from './formats/chirp/profiles.ts';
 import { getDm32Profile } from './formats/dm32/profiles.ts';
 import { getOpenGd77Profile } from './formats/opengd77/profiles.ts';
+import { getNeonplugProfile, isNeonplugDm32uvProfile } from './formats/neonplug/profiles.ts';
 
 /** Known number, unknown blank, or not applicable to this radio workflow. */
 export type ExportLimitValue = number | null | 'not_used';
@@ -177,6 +178,56 @@ export function getProfileExportLimits(
 
     if (formatId === 'chirp') {
       const profile = getChirpProfile(profileId);
+      return {
+        formatId,
+        profileId: profile.id,
+        profileLabel: profile.label,
+        maxChannels: profile.maxMemorySlots,
+        maxZones: 'not_used',
+        maxScanLists: 'not_used',
+        maxRxGroupLists: 'not_used',
+        maxContacts: 'not_used',
+        maxTalkGroups: 'not_used',
+        zoneMembers: 'not_used',
+        scanListMembers: 'not_used',
+        rxGroupListMembers: 'not_used',
+        nameLengthChannel: profile.nameLimit,
+        nameLengthZone: 'not_used',
+        nameLengthContact: 'not_used',
+        nameLengthTalkGroup: 'not_used',
+        nameLengthScanList: 'not_used',
+        nameLengthRxGroupList: 'not_used',
+        powerLadder: profile.powerLadder,
+        siblingLadders: [],
+      };
+    }
+
+    if (formatId === 'neonplug') {
+      const profile = getNeonplugProfile(profileId);
+      if (isNeonplugDm32uvProfile(profile)) {
+        return blankDigitalOrganisation({
+          formatId,
+          profileId: profile.id,
+          profileLabel: profile.label,
+          maxChannels: profile.maxChannels,
+          nameLengthChannel: profile.nameLimit,
+          powerLadder: profile.powerLadder,
+          siblingLadders: [{ label: 'Squelch', entries: profile.squelchLadder }],
+          maxZones: profile.maxZones,
+          maxScanLists: profile.maxScanLists,
+          maxRxGroupLists: profile.maxRxGroupLists,
+          maxContacts: profile.maxContacts,
+          maxTalkGroups: profile.maxTalkGroups,
+          zoneMembers: profile.zoneMembers,
+          scanListMembers: profile.scanListMembers,
+          rxGroupListMembers: profile.rxGroupListMembers,
+          nameLengthZone: profile.nameLimit,
+          nameLengthContact: profile.nameLimit,
+          nameLengthTalkGroup: profile.nameLimit,
+          nameLengthScanList: profile.scanListNameLimit,
+          nameLengthRxGroupList: profile.rxGroupListNameLimit,
+        });
+      }
       return {
         formatId,
         profileId: profile.id,

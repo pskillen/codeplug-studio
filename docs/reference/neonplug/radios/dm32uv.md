@@ -2,7 +2,7 @@
 
 Profile notes for digital NeonPlug exports targeting DM-32 family radios.
 
-**Proposed Studio ids:** format `neonplug`, profile `neonplug-dm32uv`
+**Studio ids:** format `neonplug`, profile `neonplug-dm32uv` (`src/core/import-export/formats/neonplug/profiles.ts`)
 
 **NeonPlug ground truth:** [`src/radios/dm32uv/`](https://github.com/infamy/NeonPlug/tree/main/src/radios/dm32uv), Channel/Zone/ScanList models under `src/models/`
 
@@ -25,23 +25,30 @@ Reuse concepts already used by DM32 CSV:
 
 - Zone grouping
 - Zone-derived or projected scan lists
-- Multi-talkgroup / m×n expansion decisions deferred to export options (same product questions as DM32)
+- Multi-talkgroup / m×n expansion deferred (same product questions as DM32; not enabled on this NeonPlug profile yet)
 
-## Cardinality hints (from NeonPlug model comments)
+## Export caps (Studio profile)
 
-| Limit                       | Value (wire comments) |
-| --------------------------- | --------------------- |
-| Channel number range        | 1–4000                |
-| Channel name                | max 16 chars          |
-| Zone name                   | max 10 chars          |
-| Scan list name              | max 10 chars          |
-| Scan list members           | ≤ 15                  |
-| RX group talk-group members | ≤ 32                  |
-| Contacts book               | ids 1–250             |
+Identical to DM32 CPS `dm32-baofeng-dm32uv` — NeonPlug `LIMITS` backported into both profiles. Sync test in `formats/neonplug/profiles.test.ts` prevents drift.
 
-Confirm against NeonPlug capabilities / radio constants when implementing export warnings — do **not** bake these into library CRUD.
+| Cap                                        | Value |
+| ------------------------------------------ | ----- |
+| `maxChannels`                              | 4000  |
+| `maxZones`                                 | 250   |
+| `zoneMembers`                              | 64    |
+| `maxScanLists`                             | 32    |
+| `scanListMembers`                          | 15    |
+| `maxRxGroupLists`                          | 32    |
+| `rxGroupListMembers`                       | 32    |
+| `maxContacts`                              | 250   |
+| `maxTalkGroups`                            | 800   |
+| Channel / zone / contact / talk-group name | 16    |
+| Scan list name                             | 10    |
+| RX group list name                         | 10    |
+
+Do **not** bake these into library CRUD — export warnings and Radio characteristics only.
 
 ## Related
 
-- Sibling CPS CSV: [DM32 reference](../../dm32/README.md) — different wire; similar radio target
+- Sibling CPS CSV (same radio caps, different wire): [DM32 baofeng-dm32uv](../../dm32/radios/baofeng-dm32uv.md)
 - [channels.md](../channels.md), [zones.md](../zones.md)

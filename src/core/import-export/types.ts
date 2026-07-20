@@ -5,7 +5,8 @@ import type { MultiTalkGroupExportNameMode } from './channelExpansion/multiTalkG
 import type { DigitalContactExportNameMode } from './digitalContactExportName.ts';
 
 /** Canonical format ids — shared by registry and future UI. */
-export type FormatId = 'native-yaml' | 'opengd77' | 'chirp' | 'dm32' | 'anytone' | 'qdmr';
+export type FormatId =
+  'native-yaml' | 'opengd77' | 'chirp' | 'dm32' | 'anytone' | 'qdmr' | 'neonplug';
 
 export type { MultiTalkGroupExportNameMode } from './channelExpansion/multiTalkGroupWireName.ts';
 export { DEFAULT_MULTI_TG_EXPORT_NAME_MODE } from './channelExpansion/multiTalkGroupWireName.ts';

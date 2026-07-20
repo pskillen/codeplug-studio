@@ -48,13 +48,32 @@ describe('trait profiles', () => {
     expect(profile?.traits).not.toContain(BuildCapabilityTrait.DedicatedScanLists);
   });
 
+  it('registers neonplug-dm32uv with zone grouping and zone-derived scan lists', () => {
+    const profile = traitProfileFor('neonplug-dm32uv');
+    expect(profile?.formatId).toBe('neonplug');
+    expect(profile?.traits).toContain(BuildCapabilityTrait.ZoneGrouping);
+    expect(profile?.traits).toContain(BuildCapabilityTrait.ScanLists);
+    expect(profile?.traits).not.toContain(BuildCapabilityTrait.MxNChannelExpansion);
+    expect(profile?.traits).not.toContain(BuildCapabilityTrait.DedicatedScanLists);
+  });
+
+  it('registers neonplug-uv5rmini with flat memory traits', () => {
+    const profile = traitProfileFor('neonplug-uv5rmini');
+    expect(profile?.formatId).toBe('neonplug');
+    expect(profile?.traits).toContain(BuildCapabilityTrait.FlatMemoryList);
+    expect(profile?.traits).toContain(BuildCapabilityTrait.PerChannelScanFlag);
+  });
+
   it('distinguishes dedicated vs zone-derived scan list semantics', () => {
     expect(hasDedicatedScanLists('anytone-at-d890uv')).toBe(true);
     expect(hasDedicatedScanLists('dm32-baofeng-dm32uv')).toBe(false);
+    expect(hasDedicatedScanLists('neonplug-dm32uv')).toBe(false);
     expect(showsDefaultScanInclusion('anytone-at-d890uv')).toBe(false);
     expect(showsDefaultScanInclusion('dm32-baofeng-dm32uv')).toBe(true);
     expect(showsDefaultScanInclusion('opengd77-1701')).toBe(true);
     expect(showsDefaultScanInclusion('chirp-uv5r')).toBe(true);
+    expect(showsDefaultScanInclusion('neonplug-dm32uv')).toBe(true);
+    expect(showsDefaultScanInclusion('neonplug-uv5rmini')).toBe(true);
   });
 
   it('has stable profile keys', () => {
@@ -64,6 +83,8 @@ describe('trait profiles', () => {
       'chirp-uv21',
       'chirp-uv5r',
       'dm32-baofeng-dm32uv',
+      'neonplug-dm32uv',
+      'neonplug-uv5rmini',
       'opengd77-1701',
       'opengd77-md9600',
     ]);
@@ -84,6 +105,16 @@ describe('factories', () => {
     expect(build.formatId).toBe('opengd77');
     expect(build.profileId).toBe('opengd77-1701');
     expect(build.layout.sections).toEqual([]);
+  });
+
+  it('creates NeonPlug format builds from trait profiles', () => {
+    const projectId = newProjectMeta('P').id;
+    const dm32uv = newFormatBuild(projectId, 'neonplug-dm32uv');
+    expect(dm32uv.formatId).toBe('neonplug');
+    expect(dm32uv.profileId).toBe('neonplug-dm32uv');
+    const uv5r = newFormatBuild(projectId, 'neonplug-uv5rmini');
+    expect(uv5r.formatId).toBe('neonplug');
+    expect(uv5r.profileId).toBe('neonplug-uv5rmini');
   });
 
   it('rejects unknown profile', () => {

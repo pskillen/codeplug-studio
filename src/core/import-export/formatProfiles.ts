@@ -15,6 +15,12 @@ import {
   getAnytoneProfile,
   type AnytoneRadioProfile,
 } from './formats/anytone/profiles.ts';
+import {
+  NEONPLUG_PROFILES,
+  getNeonplugProfile,
+  isNeonplugDm32uvProfile,
+  type NeonplugRadioProfile,
+} from './formats/neonplug/profiles.ts';
 
 export interface FormatProfileOption {
   profileId: string;
@@ -30,6 +36,7 @@ export function getFormatProfiles(formatId: 'opengd77'): FormatProfileOption[];
 export function getFormatProfiles(formatId: 'dm32'): FormatProfileOption[];
 export function getFormatProfiles(formatId: 'chirp'): FormatProfileOption[];
 export function getFormatProfiles(formatId: 'anytone'): FormatProfileOption[];
+export function getFormatProfiles(formatId: 'neonplug'): FormatProfileOption[];
 export function getFormatProfiles(formatId: FormatId): FormatProfileOption[];
 export function getFormatProfiles(formatId: FormatId): FormatProfileOption[] {
   if (formatId === 'opengd77') {
@@ -43,6 +50,9 @@ export function getFormatProfiles(formatId: FormatId): FormatProfileOption[] {
   }
   if (formatId === 'anytone') {
     return ANYTONE_PROFILES.map(anytoneProfileToOption);
+  }
+  if (formatId === 'neonplug') {
+    return NEONPLUG_PROFILES.map(neonplugProfileToOption);
   }
   return [];
 }
@@ -87,6 +97,25 @@ function anytoneProfileToOption(profile: AnytoneRadioProfile): FormatProfileOpti
   };
 }
 
+function neonplugProfileToOption(profile: NeonplugRadioProfile): FormatProfileOption {
+  if (isNeonplugDm32uvProfile(profile)) {
+    return {
+      profileId: profile.id,
+      label: profile.label,
+      formatId: 'neonplug',
+      nameLimit: profile.nameLimit,
+      maxChannels: profile.maxChannels,
+    };
+  }
+  return {
+    profileId: profile.id,
+    label: profile.label,
+    formatId: 'neonplug',
+    nameLimit: profile.nameLimit,
+    maxChannels: profile.maxMemorySlots,
+  };
+}
+
 /** Scan list member cap for zone-derived scan UI — export boundary only. */
 export function scanListMemberCapForProfile(formatId: FormatId, profileId: string): number {
   if (formatId === 'dm32') {
@@ -94,6 +123,10 @@ export function scanListMemberCapForProfile(formatId: FormatId, profileId: strin
   }
   if (formatId === 'anytone') {
     return getAnytoneProfile(profileId).scanListMembers;
+  }
+  if (formatId === 'neonplug') {
+    const profile = getNeonplugProfile(profileId);
+    if (isNeonplugDm32uvProfile(profile)) return profile.scanListMembers;
   }
   return 16;
 }
@@ -128,6 +161,17 @@ export function formatProfileWireHint(formatId: FormatId, profileId: string): st
     try {
       const profile = getAnytoneProfile(profileId);
       return `${profile.nameLimit}-char wire names · ${profile.maxChannels} channels max · ${profile.scanListMembers} scan members`;
+    } catch {
+      return null;
+    }
+  }
+  if (formatId === 'neonplug') {
+    try {
+      const profile = getNeonplugProfile(profileId);
+      if (isNeonplugDm32uvProfile(profile)) {
+        return `${profile.nameLimit}-char wire names · ${profile.maxChannels} channels max · ${profile.rxGroupListMembers} RX list members · ${profile.scanListMembers} scan members`;
+      }
+      return `${profile.nameLimit}-char wire names · ${profile.maxMemorySlots} memory slots`;
     } catch {
       return null;
     }

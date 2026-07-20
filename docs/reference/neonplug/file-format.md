@@ -55,9 +55,13 @@ Import must reconstruct typed arrays if needed; export must emit number arrays (
 
 ## Delivery note for Studio adapters
 
-Today’s CPS adapters return **string** content (`single-file-cps` / `multi-file`). NeonPlug needs a **binary ZIP**. Options for later scaffold tickets:
+Today’s CPS adapters return **string** content (`single-file-cps` / `multi-file`). NeonPlug needs a **binary ZIP**.
 
-1. Serialise JSON string, wrap to ZIP in `exportBuild` / a new delivery variant.
-2. Add a binary CPS delivery type that returns `Blob` / `Uint8Array`.
+**Decided for Studio (#538 / implement in #539):**
+
+1. Serialise `codeplug.json` as a **string** in the NeonPlug adapter.
+2. Wrap that string to ZIP in `exportBuild` / a delivery helper (JSZip entry `codeplug.json`).
+
+Option 2 (a binary CPS delivery type returning `Blob` / `Uint8Array`) is deferred unless #539 finds string + wrap insufficient.
 
 Wire truth remains: one ZIP entry named `codeplug.json`.

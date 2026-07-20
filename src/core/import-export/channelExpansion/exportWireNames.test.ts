@@ -13,6 +13,11 @@ describe('resolveMaxNameLength', () => {
     expect(resolveMaxNameLength('anytone-at-d890uv')).toBe(16);
   });
 
+  it('resolves NeonPlug profile name limits by prefix', () => {
+    expect(resolveMaxNameLength('neonplug-dm32uv')).toBe(16);
+    expect(resolveMaxNameLength('neonplug-uv5rmini')).toBe(12);
+  });
+
   it('returns undefined for unknown profile ids', () => {
     expect(resolveMaxNameLength('unknown-profile')).toBeUndefined();
   });
