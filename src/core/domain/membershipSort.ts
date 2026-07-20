@@ -170,3 +170,12 @@ export function membershipSortConfirmMessage(mode: MembershipSortMode): string {
     'This overwrites the current order. Restoring it requires manual reorder or another Sort.'
   );
 }
+
+/** Confirm copy for build/export one-shot Sort… (does not rewrite the library). */
+export function buildExportSortConfirmMessage(mode: MembershipSortMode): string {
+  return (
+    `Sort this build’s export order by “${MEMBERSHIP_SORT_MODE_LABELS[mode]}”?\n\n` +
+    'This only changes this radio build. Your library order stays the same. ' +
+    'Existing build order overrides for this list will be replaced.'
+  );
+}

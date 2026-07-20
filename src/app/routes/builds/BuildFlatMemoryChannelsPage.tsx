@@ -17,6 +17,11 @@ import {
   hasAnyOrderOrSlotOverride,
   isChirpFlatMemoryChannel,
 } from '@core/domain/exportOrderOrSlot.ts';
+import {
+  buildExportSortConfirmMessage,
+  sortChannelIdsByMode,
+  type MembershipSortMode,
+} from '@core/domain/membershipSort.ts';
 import { getFormatProfiles } from '@core/import-export/formatProfiles.ts';
 import { getFormatExportDefaults } from '@core/import-export/registry.ts';
 import type { FormatId } from '@core/import-export/types.ts';
@@ -31,6 +36,7 @@ import DefaultScanInclusionSegment from '../../components/builds/DefaultScanIncl
 import BuildEntityExportSettingsCard, {
   ChannelsBulkEditAction,
 } from '../../components/builds/BuildEntityExportSettingsCard.tsx';
+import MembershipSortMenu from '../../components/library/MembershipSortMenu.tsx';
 import ExportOrderOverrideBanner from '../../components/builds/wirePreview/ExportOrderOverrideBanner.tsx';
 import WirePreviewDataTable from '../../components/builds/wirePreview/WirePreviewDataTable.tsx';
 import WirePreviewOverrideModal from '../../components/builds/wirePreview/WirePreviewOverrideModal.tsx';
@@ -265,6 +271,10 @@ export default function BuildFlatMemoryChannelsPage() {
     setChannelOrder(ids);
   }
 
+  function handleSortChannelsForBuild(mode: MembershipSortMode) {
+    setChannelOrder(sortChannelIdsByMode(memoryChannelIds, channelById, mode));
+  }
+
   function includeChannel(channelId: string) {
     const current = buildRef.current;
     void persistBuild(
@@ -323,6 +333,18 @@ export default function BuildFlatMemoryChannelsPage() {
             {error}
           </Text>
         ) : null}
+
+        <Group gap="sm" align="center">
+          <MembershipSortMenu
+            label="Sort channels…"
+            disabled={saving || memoryChannelIds.length < 2}
+            confirmMessage={buildExportSortConfirmMessage}
+            onSort={handleSortChannelsForBuild}
+          />
+          <Text size="xs" c="dimmed">
+            Sorts this build’s memory locations only — not your library.
+          </Text>
+        </Group>
 
         <ExportOrderOverrideBanner
           visible={channelOrderOverridden}

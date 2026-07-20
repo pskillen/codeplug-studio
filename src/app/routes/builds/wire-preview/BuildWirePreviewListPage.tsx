@@ -1,18 +1,23 @@
 import type { ReactNode } from 'react';
 import { useMemo, useState } from 'react';
-import { Stack, Switch, Text } from '@mantine/core';
+import { Stack, Switch, Text, Group } from '@mantine/core';
 import { Link } from 'react-router-dom';
 import type { ChannelExportNameMode } from '@core/domain/channelNaming.ts';
 import {
   exportOrderResetConfirmMessage,
   hasAnyOrderOrSlotOverride,
 } from '@core/domain/exportOrderOrSlot.ts';
+import {
+  buildExportSortConfirmMessage,
+  type MembershipSortMode,
+} from '@core/domain/membershipSort.ts';
 import type { DigitalContactExportNameMode } from '@core/import-export/types.ts';
 import type {
   AnytoneWirePreviewBank,
   WirePreviewEntityKind,
   WirePreviewRow,
 } from '@core/services/previewWireRows.ts';
+import MembershipSortMenu from '../../../components/library/MembershipSortMenu.tsx';
 import ExportOrderOverrideBanner from '../../../components/builds/wirePreview/ExportOrderOverrideBanner.tsx';
 import WirePreviewDataTable from '../../../components/builds/wirePreview/WirePreviewDataTable.tsx';
 import type { WirePreviewZoneScanColumnConfig } from '../../../components/builds/wirePreview/WirePreviewDataTable.tsx';
@@ -81,6 +86,7 @@ function BuildWirePreviewListContent({
     persistBuild,
     moveEntity,
     clearEntityOrderOverrides,
+    setEntityOrder,
     saving,
   } = useBuildWirePreview(entityKind, anytoneBank);
   const [selectedRowKey, setSelectedRowKey] = useState<string | null>(null);
@@ -97,6 +103,15 @@ function BuildWirePreviewListContent({
     if (!window.confirm(exportOrderResetConfirmMessage())) return;
     clearEntityOrderOverrides();
   }
+
+  function handleSortZonesForBuild(_mode: MembershipSortMode) {
+    const orderedIds = [...allRows]
+      .sort((a, b) => a.displayLabel.localeCompare(b.displayLabel))
+      .map((row) => row.key);
+    setEntityOrder(orderedIds);
+  }
+
+  const zoneReorderBlocked = saving || hideNotIncludedInExport || search.trim().length > 0;
 
   function patchExportSettings(
     patch: Partial<{
@@ -156,6 +171,26 @@ function BuildWirePreviewListContent({
           headerActions
         )}
         {beforeTable}
+        {zoneReorderEnabled ? (
+          <Group gap="sm" align="center">
+            <MembershipSortMenu
+              label="Sort zones…"
+              modes={['name']}
+              disabled={zoneReorderBlocked}
+              confirmMessage={buildExportSortConfirmMessage}
+              onSort={handleSortZonesForBuild}
+            />
+            {zoneReorderBlocked ? (
+              <Text size="xs" c="dimmed">
+                Clear search and show all zones to sort or reorder.
+              </Text>
+            ) : (
+              <Text size="xs" c="dimmed">
+                Sorts this build’s zone export order only — not your library.
+              </Text>
+            )}
+          </Group>
+        ) : null}
         <ExportOrderOverrideBanner
           visible={zoneOrderOverridden}
           disabled={saving}
@@ -193,7 +228,7 @@ function BuildWirePreviewListContent({
               ? {
                   orderedKeys: allRows.map((row) => row.key),
                   onMove: moveEntity,
-                  disabled: saving || hideNotIncludedInExport || search.trim().length > 0,
+                  disabled: zoneReorderBlocked,
                 }
               : undefined
           }

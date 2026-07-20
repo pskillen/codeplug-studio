@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { newChannel, newDigitalContact, newTalkGroup, newZone } from '@core/domain/factories.ts';
 import {
+  buildExportSortConfirmMessage,
   sortChannelIdsByMode,
   sortRxGroupListMembersByMode,
   sortZoneMembersByMode,
@@ -112,5 +113,11 @@ describe('membershipSort', () => {
       'callsign',
     );
     expect(next.map((m) => m.ref.id)).toEqual([dcA.id, dcZ.id]);
+  });
+
+  it('buildExportSortConfirmMessage mentions build-only scope', () => {
+    const message = buildExportSortConfirmMessage('name');
+    expect(message).toContain('this radio build');
+    expect(message).toContain('library order stays the same');
   });
 });

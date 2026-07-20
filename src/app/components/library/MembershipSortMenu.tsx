@@ -13,6 +13,8 @@ export interface MembershipSortMenuProps {
   disabled?: boolean;
   onSort: (mode: MembershipSortMode) => void;
   label?: string;
+  /** Override confirm dialog body (default: library membershipSortConfirmMessage). */
+  confirmMessage?: (mode: MembershipSortMode) => string;
 }
 
 const DEFAULT_MODES: MembershipSortMode[] = ['name', 'callsign', 'duplex', 'band', 'mode'];
@@ -22,9 +24,10 @@ export default function MembershipSortMenu({
   disabled,
   onSort,
   label = 'Sort…',
+  confirmMessage = membershipSortConfirmMessage,
 }: MembershipSortMenuProps) {
   const requestSort = (mode: MembershipSortMode) => {
-    if (!window.confirm(membershipSortConfirmMessage(mode))) return;
+    if (!window.confirm(confirmMessage(mode))) return;
     onSort(mode);
   };
 
