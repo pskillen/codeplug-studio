@@ -46,6 +46,7 @@ describe('neonplug/donorRetain', () => {
       capturedAt: '2026-07-20T18:00:00.000Z',
     });
 
+    expect(bag.formatId).toBe('neonplug');
     expect(bag.sourceFileName).toBe('radio.neonplug');
     expect(bag.capturedAt).toBe('2026-07-20T18:00:00.000Z');
     expect(bag.retain.radioIds).toEqual(data.radioIds);

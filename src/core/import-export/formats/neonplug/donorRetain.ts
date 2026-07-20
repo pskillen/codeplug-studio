@@ -1,3 +1,4 @@
+import type { CpsWireHydrationBase } from '@core/models/cpsWireHydration.ts';
 import { NEONPLUG_CODEPLUG_VERSION } from './serialise.ts';
 import type {
   NeonplugCodeplugData,
@@ -23,16 +24,19 @@ export type NeonplugDonorRetainSlices = Pick<
 >;
 
 /**
- * Build-persisted NeonPlug donor bag (`FormatBuild.neonplugDonor`).
+ * NeonPlug hydration bag for {@link FormatBuild.cpsWireHydration}.
  * Browser storage only — never commit operator settings into the repo.
  */
-export interface NeonplugDonorBag {
-  /** Original upload file name when known. */
-  sourceFileName?: string;
-  /** ISO timestamp when the retain bag was captured. */
-  capturedAt: string;
-  /** Unmodelled CodeplugData slices for merge. */
+export interface NeonplugDonorBag extends CpsWireHydrationBase {
+  formatId: 'neonplug';
   retain: NeonplugDonorRetainSlices;
+}
+
+/** Narrow a generic hydration bag to NeonPlug donor retain. */
+export function isNeonplugDonorBag(value: unknown): value is NeonplugDonorBag {
+  if (value == null || typeof value !== 'object' || Array.isArray(value)) return false;
+  const record = value as Record<string, unknown>;
+  return record.formatId === 'neonplug' && record.retain != null && typeof record.retain === 'object';
 }
 
 /** Read-only summary for inspect UI — never includes encryption key material. */
@@ -57,6 +61,7 @@ export function extractNeonplugDonorRetain(
   meta?: { sourceFileName?: string; capturedAt?: string },
 ): NeonplugDonorBag {
   return {
+    formatId: 'neonplug',
     sourceFileName: meta?.sourceFileName,
     capturedAt: meta?.capturedAt ?? new Date().toISOString(),
     retain: {
