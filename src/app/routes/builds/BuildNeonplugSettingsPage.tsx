@@ -3,7 +3,7 @@ import { Stack, Table, Text } from '@mantine/core';
 import {
   isNeonplugDonorBag,
   summariseNeonplugDonorRetain,
-} from '@core/import-export/formats/neonplug/donorRetain.ts';
+} from '../../services/buildCpsExportService.ts';
 import { FormPage, FormSection } from '../../components/ui/index.ts';
 import { useBuildLayout } from './BuildLayoutContext.tsx';
 

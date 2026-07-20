@@ -8,7 +8,6 @@ import {
   exportBuildSingleFile,
   exportBuildZip,
   listExportBuildFileNames,
-  validateNeonplugDonorBase,
 } from '@core/services/exportBuild.ts';
 import type { ProjectPersistence } from '@integrations/persistence/index.ts';
 import { downloadTextFile, downloadZip } from '@integrations/download/browserDownload.ts';
@@ -165,7 +164,14 @@ export type CpsZipExportOptions = CpsExportOptions & {
   baseNeonplugBytes?: Uint8Array;
 };
 
-export { validateNeonplugDonorBase };
+export {
+  extractNeonplugDonorFromZip,
+  isNeonplugDonorBag,
+  summariseNeonplugDonorRetain,
+  validateNeonplugDonorBase,
+  type NeonplugDonorBag,
+  type NeonplugDonorRetainSummary,
+} from '@core/services/exportBuild.ts';
 
 /** Download all CPS CSV files for a build as a ZIP archive. */
 export async function downloadCpsZip(

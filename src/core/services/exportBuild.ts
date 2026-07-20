@@ -11,8 +11,12 @@ import { buildDm32Zip } from '@core/import-export/formats/dm32/packageZip.ts';
 import { buildAnytoneZip } from '@core/import-export/formats/anytone/packageZip.ts';
 import { buildNeonplugZip } from '@core/import-export/formats/neonplug/packageZip.ts';
 import {
+  extractNeonplugDonorRetain,
   isNeonplugDonorBag,
   neonplugDonorRetainAsMergeBase,
+  summariseNeonplugDonorRetain,
+  type NeonplugDonorBag,
+  type NeonplugDonorRetainSummary,
 } from '@core/import-export/formats/neonplug/donorRetain.ts';
 import {
   mergeNeonplugCodeplug,
@@ -64,6 +68,22 @@ export function validateNeonplugDonorBase(
   }
   return { warnings };
 }
+
+/** Extract NeonPlug retain bag from donor ZIP bytes for build `cpsWireHydration`. */
+export function extractNeonplugDonorFromZip(
+  bytes: Uint8Array,
+  meta?: { sourceFileName?: string; capturedAt?: string },
+): NeonplugDonorBag {
+  const { data } = parseNeonplugZip(bytes);
+  return extractNeonplugDonorRetain(data, meta);
+}
+
+export {
+  isNeonplugDonorBag,
+  summariseNeonplugDonorRetain,
+  type NeonplugDonorBag,
+  type NeonplugDonorRetainSummary,
+};
 
 export interface ExportBuildAllResult {
   assembled: AssembledBuild;

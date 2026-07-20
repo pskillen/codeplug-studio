@@ -187,11 +187,12 @@ export class BuildService {
   /** Clear stored CPS wire hydration bag. */
   clearCpsWireHydration(build: FormatBuild): FormatBuild {
     const now = isoNow();
-    const { cpsWireHydration: _removed, ...rest } = build;
-    return {
-      ...rest,
+    const next: FormatBuild = {
+      ...build,
       updatedAt: now,
       revision: nextRevision(build.revision),
     };
+    delete next.cpsWireHydration;
+    return next;
   }
 }

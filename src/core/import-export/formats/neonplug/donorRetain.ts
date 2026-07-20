@@ -1,10 +1,6 @@
 import type { CpsWireHydrationBase } from '@core/models/cpsWireHydration.ts';
 import { NEONPLUG_CODEPLUG_VERSION } from './serialise.ts';
-import type {
-  NeonplugCodeplugData,
-  NeonplugRadioId,
-  NeonplugRadioInfo,
-} from './wireTypes.ts';
+import type { NeonplugCodeplugData, NeonplugRadioId, NeonplugRadioInfo } from './wireTypes.ts';
 
 /**
  * Opaque NeonPlug donor slices retained on merge — export-boundary escape hatch only.
@@ -36,7 +32,9 @@ export interface NeonplugDonorBag extends CpsWireHydrationBase {
 export function isNeonplugDonorBag(value: unknown): value is NeonplugDonorBag {
   if (value == null || typeof value !== 'object' || Array.isArray(value)) return false;
   const record = value as Record<string, unknown>;
-  return record.formatId === 'neonplug' && record.retain != null && typeof record.retain === 'object';
+  return (
+    record.formatId === 'neonplug' && record.retain != null && typeof record.retain === 'object'
+  );
 }
 
 /** Read-only summary for inspect UI — never includes encryption key material. */

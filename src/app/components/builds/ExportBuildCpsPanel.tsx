@@ -1,11 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Alert, Button, Group, Modal, Stack, Text } from '@mantine/core';
 import { IconDownload, IconPackage, IconTable } from '@tabler/icons-react';
-import {
-  extractNeonplugDonorRetain,
-  isNeonplugDonorBag,
-} from '@core/import-export/formats/neonplug/donorRetain.ts';
-import { parseNeonplugZip } from '@core/import-export/formats/neonplug/merge.ts';
 import type { BuildExportSettings, FormatBuild } from '@core/models/formatBuild.ts';
 import { traitProfileFor } from '@core/models/traits.ts';
 import {
@@ -44,6 +39,8 @@ import {
   downloadCpsFile,
   downloadCpsSingleFile,
   downloadCpsZip,
+  extractNeonplugDonorFromZip,
+  isNeonplugDonorBag,
   uploadCpsZipToDrive,
   validateNeonplugDonorBase,
 } from '../../services/buildCpsExportService.ts';
@@ -295,8 +292,7 @@ export default function ExportBuildCpsPanel({ build }: ExportBuildCpsPanelProps)
       setNeonplugBaseFileName(file.name);
 
       if (persistNeonplugDonor) {
-        const { data } = parseNeonplugZip(bytes);
-        const bag = extractNeonplugDonorRetain(data, { sourceFileName: file.name });
+        const bag = extractNeonplugDonorFromZip(bytes, { sourceFileName: file.name });
         setSavingSettings(true);
         setSettingsError(null);
         const next = buildService.withCpsWireHydration(build, bag);
@@ -573,8 +569,8 @@ export default function ExportBuildCpsPanel({ build }: ExportBuildCpsPanelProps)
             </Group>
             {persistNeonplugDonor ? (
               <Text size="sm" c="dimmed">
-                Donor settings are saved on this build for repeat exports. Upload once, then download
-                for radio write without re-selecting the file.
+                Donor settings are saved on this build for repeat exports. Upload once, then
+                download for radio write without re-selecting the file.
               </Text>
             ) : null}
             {neonplugBaseError ? <Alert color="red">{neonplugBaseError}</Alert> : null}
