@@ -15,6 +15,7 @@ export const ANALYTICS_ROUTE_TEMPLATES = [
   '/library/zones/defaults',
   '/library/zones/new-from-location',
   '/builds/:id/overview',
+  '/builds/:id/characteristics',
   '/builds/:id/channels',
   '/builds/:id/zones',
   '/builds/:id/talk-groups',

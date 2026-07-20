@@ -44,12 +44,5 @@ export function buildHasLayoutData(build: FormatBuild): boolean {
   );
 }
 
-export const TRAIT_LABELS: Record<string, string> = {
-  zoneGrouping: 'Zone grouping',
-  flatMemoryList: 'Flat memory list',
-  perChannelScanFlag: 'Per-channel scan flag',
-  scanLists: 'Scan lists',
-  zoneAsScanList: 'Zone as scan list',
-  multiTalkGroupPerChannel: 'Multi talk group per channel',
-  mxnChannelExpansion: 'm×n channel expansion',
-};
+/** Re-export — shared source is `src/app/lib/buildCapabilityCopy.ts`. */
+export { TRAIT_LABELS } from '../../lib/buildCapabilityCopy.ts';
