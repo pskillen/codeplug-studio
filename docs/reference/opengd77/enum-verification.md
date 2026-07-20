@@ -16,7 +16,7 @@ Fill this in while driving **official OpenGD77 CPS** (Baofeng 1701 / RT-84 profi
 | CPS-safe defaults for unmodelled channel columns | [#438](https://github.com/pskillen/codeplug-studio/issues/438) | Open |
 | Squelch wire map (`Disabled` / `Open` / `Closed` / `Master` / `%`) | [#439](https://github.com/pskillen/codeplug-studio/issues/439) | Open |
 | Power ladder + user-power (`+W-` / `-W+`) | [#440](https://github.com/pskillen/codeplug-studio/issues/440) | Open |
-| Validate MD-9600 power ladder | [#441](https://github.com/pskillen/codeplug-studio/issues/441) | Open |
+| Validate MD-9600 power ladder | [#441](https://github.com/pskillen/codeplug-studio/issues/441) | **Done** — PR [#521](https://github.com/pskillen/codeplug-studio/pull/521); User Power `+W-` still unmodelled |
 | OpenGD77 `APRS.csv` body + `Channels.APRS` FK | [#442](https://github.com/pskillen/codeplug-studio/issues/442) (parent [#246](https://github.com/pskillen/codeplug-studio/issues/246)) | Open |
 
 Related (not filed from #403): behavioural cascade on `Rx Only` / `All Skip` [#424](https://github.com/pskillen/codeplug-studio/issues/424) **done** (docs PR [#434](https://github.com/pskillen/codeplug-studio/pull/434)); `txPermit` has no OpenGD77 column (export loss).
