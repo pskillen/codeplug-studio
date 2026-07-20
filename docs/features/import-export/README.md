@@ -31,6 +31,7 @@ IndexedDB remains the **edit store**; YAML and Drive are portable layers on top 
 | CHIRP CSV export                                        | Shipped | Epic [#504](https://github.com/pskillen/codeplug-studio/issues/504) — [chirp/README.md](chirp/README.md); import [#222](https://github.com/pskillen/codeplug-studio/issues/222)–[#226](https://github.com/pskillen/codeplug-studio/issues/226)                        |
 | DM32 CSV export                                         | Shipped | Epic [#503](https://github.com/pskillen/codeplug-studio/issues/503) — [dm32/README.md](dm32/README.md); import [#124](https://github.com/pskillen/codeplug-studio/issues/124)–[#128](https://github.com/pskillen/codeplug-studio/issues/128)                          |
 | Anytone CPS export                                      | Shipped | Epic [#505](https://github.com/pskillen/codeplug-studio/issues/505) — AT-D890UV DMR MVP; [anytone/README.md](anytone/README.md); import [#238](https://github.com/pskillen/codeplug-studio/issues/238)–[#242](https://github.com/pskillen/codeplug-studio/issues/242) |
+| NeonPlug `.neonplug`                                    | Planned | Epic [#536](https://github.com/pskillen/codeplug-studio/issues/536) — wire reference [#537](https://github.com/pskillen/codeplug-studio/issues/537); [neonplug/README.md](neonplug/README.md)                                                                       |
 | qDMR YAML                                               | Planned | Out of Phase 3 scope                                                                                                                                                                                                                                                  |
 
 ## Architecture
@@ -66,6 +67,7 @@ Routes and UI call **application services** (`importProjectYaml`, `exportProject
 | `chirp`       | Planned | Shipped | Single-file memory CSV     |
 | `dm32`        | Planned | Shipped | Multi-file CSV             |
 | `anytone`     | Planned | Shipped | Multi-file CSV             |
+| `neonplug`    | Planned | Planned | Single ZIP (`.neonplug`)   |
 | `qdmr`        | Planned | Planned | YAML (vendor)              |
 
 Wire mapping for CPS formats lives in `docs/reference/<format>/` — not here.
@@ -104,9 +106,11 @@ Optional deep link: `?format=opengd77` highlights the matching catalog card (`us
 | [anytone/csv-reconciliation-gaps.md](anytone/csv-reconciliation-gaps.md)       | CSV variance history ([#297](https://github.com/pskillen/codeplug-studio/issues/297))                                                                                                                              |
 | [../../reference/anytone/README.md](../../reference/anytone/README.md)         | Tier 3 — Anytone wire tables                                                                                                                                                                                       |
 | [../../reference/dm32/README.md](../../reference/dm32/README.md)               | Tier 3 — DM32 wire tables                                                                                                                                                                                          |
+| [neonplug/README.md](neonplug/README.md)                                       | NeonPlug product hub (planned adapters)                                                                                                                                                                            |
+| [../../reference/neonplug/README.md](../../reference/neonplug/README.md)       | Tier 3 — NeonPlug `.neonplug` / `codeplug.json`                                                                                                                                                                    |
 | [../../reference/native-yaml/README.md](../../reference/native-yaml/README.md) | Tier 3 — YAML field tables and example document                                                                                                                                                                    |
 
-Format epics under [#298](https://github.com/pskillen/codeplug-studio/issues/298): [#502](https://github.com/pskillen/codeplug-studio/issues/502)–[#505](https://github.com/pskillen/codeplug-studio/issues/505). Cloud interchange: [#499](https://github.com/pskillen/codeplug-studio/issues/499).
+Format epics under [#298](https://github.com/pskillen/codeplug-studio/issues/298): [#502](https://github.com/pskillen/codeplug-studio/issues/502)–[#505](https://github.com/pskillen/codeplug-studio/issues/505), [#536](https://github.com/pskillen/codeplug-studio/issues/536) (NeonPlug). Cloud interchange: [#499](https://github.com/pskillen/codeplug-studio/issues/499).
 
 ## Related
 
