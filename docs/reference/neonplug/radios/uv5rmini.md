@@ -8,14 +8,14 @@ Profile notes for analogue NeonPlug exports targeting UV5R-Mini.
 
 ## Expected `CodeplugData` surface
 
-| Array / field     | Typical use                                                 |
-| ----------------- | ----------------------------------------------------------- |
-| `channels`        | Analogue-only Channel objects (`mode: 'Analog'`)            |
-| `zones`           | Usually `[]`                                                |
-| `scanLists`       | Usually `[]` — use channel `scanAdd`                        |
-| `contacts` / RX / radioIds | Usually `[]`                                       |
-| `radioInfo.model` | `"UV5R-Mini"` (confirm against a live export)               |
-| `radioSettings`   | May include UV5R-specific `radioSpecific` bag — **lossy**   |
+| Array / field              | Typical use                                               |
+| -------------------------- | --------------------------------------------------------- |
+| `channels`                 | Analogue-only Channel objects (`mode: 'Analog'`)          |
+| `zones`                    | Usually `[]`                                              |
+| `scanLists`                | Usually `[]` — use channel `scanAdd`                      |
+| `contacts` / RX / radioIds | Usually `[]`                                              |
+| `radioInfo.model`          | `"UV5R-Mini"` (confirm against a live export)             |
+| `radioSettings`            | May include UV5R-specific `radioSpecific` bag — **lossy** |
 
 ## Fields that matter on write (NeonPlug mapping)
 
@@ -38,10 +38,10 @@ Same idea as CHIRP UV-5R:
 
 ## Cardinality hints
 
-| Limit              | Notes                                              |
-| ------------------ | -------------------------------------------------- |
-| Memory slots       | Confirm against NeonPlug UV5R capabilities (CHIRP profile uses 128) |
-| Name length on radio | NeonPlug UV5R write slices name to **12** bytes  |
+| Limit                | Notes                                                               |
+| -------------------- | ------------------------------------------------------------------- |
+| Memory slots         | Confirm against NeonPlug UV5R capabilities (CHIRP profile uses 128) |
+| Name length on radio | NeonPlug UV5R write slices name to **12** bytes                     |
 
 Export warnings should use the Studio radio profile constants once `#538` lands — not hard-coded in library UI.
 

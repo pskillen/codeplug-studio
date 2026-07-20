@@ -31,23 +31,23 @@ Large DM32-oriented settings bag (display, GPS, buttons, APRS position, embedded
 
 ## Deferred arrays / objects
 
-| Key                       | Ground truth                                                                 | M1 export | Import |
-| ------------------------- | ---------------------------------------------------------------------------- | --------- | ------ |
-| `messages`                | Quick text messages                                                          | `[]`      | Skip / lossy |
-| `digitalEmergencies`      | [DigitalEmergency.ts](https://github.com/infamy/NeonPlug/blob/main/src/models/DigitalEmergency.ts) | `[]` | Skip |
-| `digitalEmergencyConfig`  | placeholder object                                                           | `null`    | Skip |
-| `analogEmergencies`       | Analog emergency systems                                                     | `[]`      | Skip |
-| `encryptionKeys`          | [EncryptionKey.ts](https://github.com/infamy/NeonPlug/blob/main/src/models/EncryptionKey.ts) — includes key material | `[]` | **Do not** persist keys into library |
+| Key                      | Ground truth                                                                                                         | M1 export | Import                               |
+| ------------------------ | -------------------------------------------------------------------------------------------------------------------- | --------- | ------------------------------------ |
+| `messages`               | Quick text messages                                                                                                  | `[]`      | Skip / lossy                         |
+| `digitalEmergencies`     | [DigitalEmergency.ts](https://github.com/infamy/NeonPlug/blob/main/src/models/DigitalEmergency.ts)                   | `[]`      | Skip                                 |
+| `digitalEmergencyConfig` | placeholder object                                                                                                   | `null`    | Skip                                 |
+| `analogEmergencies`      | Analog emergency systems                                                                                             | `[]`      | Skip                                 |
+| `encryptionKeys`         | [EncryptionKey.ts](https://github.com/infamy/NeonPlug/blob/main/src/models/EncryptionKey.ts) — includes key material | `[]`      | **Do not** persist keys into library |
 
 ## Loss table (operator-facing summary)
 
-| NeonPlug content           | Re-import after Studio export (planned)      |
-| -------------------------- | -------------------------------------------- |
+| NeonPlug content                               | Re-import after Studio export (planned)  |
+| ---------------------------------------------- | ---------------------------------------- |
 | Channels / zones / scan / contacts / RX groups | Intended fidelity within modelled fields |
-| Radio settings / VFOs      | Lost                                         |
-| Emergencies                | Lost                                         |
-| Encryption keys            | Lost (intentional)                           |
-| Quick contacts `rawData`   | Lost                                         |
-| Unknown channel bitfields  | Lost (defaults on export)                    |
+| Radio settings / VFOs                          | Lost                                     |
+| Emergencies                                    | Lost                                     |
+| Encryption keys                                | Lost (intentional)                       |
+| Quick contacts `rawData`                       | Lost                                     |
+| Unknown channel bitfields                      | Lost (defaults on export)                |
 
 Document any additional loss discovered while implementing [#539](https://github.com/pskillen/codeplug-studio/issues/539)–[#543](https://github.com/pskillen/codeplug-studio/issues/543) here.

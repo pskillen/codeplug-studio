@@ -8,15 +8,15 @@ Profile notes for digital NeonPlug exports targeting DM-32 family radios.
 
 ## Expected `CodeplugData` surface
 
-| Array / field        | Typical use                                              |
-| -------------------- | -------------------------------------------------------- |
-| `channels`           | Full analogue + digital Channel objects                  |
-| `zones`              | Named zones with channel-number members                  |
-| `scanLists`          | Up to 15 members; priority / hang fields                 |
-| `contacts`           | Contact book                                             |
-| `rxGroups`           | RX group lists                                           |
-| `radioIds`           | Operator DMR ID list                                     |
-| `radioInfo.model`    | e.g. `DP570UV` / DM32 family string from NeonPlug        |
+| Array / field                     | Typical use                                          |
+| --------------------------------- | ---------------------------------------------------- |
+| `channels`                        | Full analogue + digital Channel objects              |
+| `zones`                           | Named zones with channel-number members              |
+| `scanLists`                       | Up to 15 members; priority / hang fields             |
+| `contacts`                        | Contact book                                         |
+| `rxGroups`                        | RX group lists                                       |
+| `radioIds`                        | Operator DMR ID list                                 |
+| `radioInfo.model`                 | e.g. `DP570UV` / DM32 family string from NeonPlug    |
 | Settings / emergency / encryption | Present in NeonPlug backups; **lossy** for Studio M1 |
 
 ## Trait alignment (Studio)
@@ -29,15 +29,15 @@ Reuse concepts already used by DM32 CSV:
 
 ## Cardinality hints (from NeonPlug model comments)
 
-| Limit                         | Value (wire comments)        |
-| ----------------------------- | ---------------------------- |
-| Channel number range          | 1–4000                       |
-| Channel name                  | max 16 chars                 |
-| Zone name                     | max 10 chars                 |
-| Scan list name                | max 10 chars                 |
-| Scan list members             | ≤ 15                         |
-| RX group talk-group members   | ≤ 32                         |
-| Contacts book                 | ids 1–250                    |
+| Limit                       | Value (wire comments) |
+| --------------------------- | --------------------- |
+| Channel number range        | 1–4000                |
+| Channel name                | max 16 chars          |
+| Zone name                   | max 10 chars          |
+| Scan list name              | max 10 chars          |
+| Scan list members           | ≤ 15                  |
+| RX group talk-group members | ≤ 32                  |
+| Contacts book               | ids 1–250             |
 
 Confirm against NeonPlug capabilities / radio constants when implementing export warnings — do **not** bake these into library CRUD.
 

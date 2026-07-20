@@ -6,14 +6,14 @@ The internal [library + format build model](../data-model/README.md) is the hub 
 
 **Reference implementations today:**
 
-| Format           | Import  | Export  | Adapter path                                  |
-| ---------------- | ------- | ------- | --------------------------------------------- |
-| OpenGD77 CSV     | Planned | Shipped | `src/core/import-export/formats/opengd77/`    |
-| DM32 CSV         | Planned | Shipped | `src/core/import-export/formats/dm32/`        |
-| CHIRP CSV        | Planned | Shipped | `src/core/import-export/formats/chirp/`       |
-| Anytone CPS      | Planned | Shipped | `src/core/import-export/formats/anytone/`     |
-| NeonPlug ZIP     | Planned | Planned | `src/core/import-export/formats/neonplug/` (epic [#536](https://github.com/pskillen/codeplug-studio/issues/536)) |
-| Native YAML      | Shipped | Shipped | `src/core/import-export/formats/native-yaml/` |
+| Format       | Import  | Export  | Adapter path                                                                                                     |
+| ------------ | ------- | ------- | ---------------------------------------------------------------------------------------------------------------- |
+| OpenGD77 CSV | Planned | Shipped | `src/core/import-export/formats/opengd77/`                                                                       |
+| DM32 CSV     | Planned | Shipped | `src/core/import-export/formats/dm32/`                                                                           |
+| CHIRP CSV    | Planned | Shipped | `src/core/import-export/formats/chirp/`                                                                          |
+| Anytone CPS  | Planned | Shipped | `src/core/import-export/formats/anytone/`                                                                        |
+| NeonPlug ZIP | Planned | Planned | `src/core/import-export/formats/neonplug/` (epic [#536](https://github.com/pskillen/codeplug-studio/issues/536)) |
+| Native YAML  | Shipped | Shipped | `src/core/import-export/formats/native-yaml/`                                                                    |
 
 ---
 

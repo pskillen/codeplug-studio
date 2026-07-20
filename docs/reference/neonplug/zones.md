@@ -6,10 +6,10 @@ Wire shape for `codeplug.json` → `zones[]`.
 
 ## Fields
 
-| Field      | Type       | Notes                                                      |
-| ---------- | ---------- | ---------------------------------------------------------- |
-| `id`       | string     | UI id (generated in NeonPlug if missing on import)         |
-| `name`     | string     | Zone name — NeonPlug comments: **max 10** chars on radio   |
+| Field      | Type       | Notes                                                       |
+| ---------- | ---------- | ----------------------------------------------------------- |
+| `id`       | string     | UI id (generated in NeonPlug if missing on import)          |
+| `name`     | string     | Zone name — NeonPlug comments: **max 10** chars on radio    |
 | `channels` | `number[]` | Member **channel numbers** (see [channels.md](channels.md)) |
 
 ## FK rules
@@ -20,11 +20,11 @@ Wire shape for `codeplug.json` → `zones[]`.
 
 ## Studio mapping sketch
 
-| NeonPlug              | Studio                                                |
-| --------------------- | ----------------------------------------------------- |
-| Zone row              | Build **zone grouping** trait layout + library `Zone` |
-| `channels` numbers    | Resolve to `memberChannelIds` UUIDs on import         |
-| `name`                | Library zone name / build `zoneOverrides.wireName`    |
-| `id`                  | Discard — allocate Studio UUID                        |
+| NeonPlug           | Studio                                                |
+| ------------------ | ----------------------------------------------------- |
+| Zone row           | Build **zone grouping** trait layout + library `Zone` |
+| `channels` numbers | Resolve to `memberChannelIds` UUIDs on import         |
+| `name`             | Library zone name / build `zoneOverrides.wireName`    |
+| `id`               | Discard — allocate Studio UUID                        |
 
 UV5R-Mini / analogue-only pathways typically leave `zones` empty.

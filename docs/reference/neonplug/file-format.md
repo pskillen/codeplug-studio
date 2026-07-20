@@ -11,14 +11,14 @@ codeplug-export-<timestamp>.neonplug   (ZIP)
 └── codeplug.json                      (single required entry)
 ```
 
-| Rule                         | Detail                                                                 |
-| ---------------------------- | ---------------------------------------------------------------------- |
-| MIME                         | `application/zip`                                                      |
-| Compression                  | DEFLATE (NeonPlug uses level 6)                                        |
-| Required entry name          | Exactly `codeplug.json`                                                |
-| Missing `codeplug.json`      | Invalid — NeonPlug throws; Studio import should **error**              |
-| Extra ZIP entries            | Not used by NeonPlug today; Studio should ignore unknown entries       |
-| Pretty-print                 | NeonPlug writes compact JSON (`JSON.stringify(..., null, 0)`)          |
+| Rule                    | Detail                                                           |
+| ----------------------- | ---------------------------------------------------------------- |
+| MIME                    | `application/zip`                                                |
+| Compression             | DEFLATE (NeonPlug uses level 6)                                  |
+| Required entry name     | Exactly `codeplug.json`                                          |
+| Missing `codeplug.json` | Invalid — NeonPlug throws; Studio import should **error**        |
+| Extra ZIP entries       | Not used by NeonPlug today; Studio should ignore unknown entries |
+| Pretty-print            | NeonPlug writes compact JSON (`JSON.stringify(..., null, 0)`)    |
 
 Suggested Studio download name: `{build-or-project}-export-{ISO-ish}.neonplug` (exact pattern deferred to export UI).
 
@@ -26,10 +26,10 @@ Suggested Studio download name: `{build-or-project}-export-{ISO-ish}.neonplug` (
 
 Top-level `codeplug.json` always includes entity arrays plus:
 
-| Field         | Type   | Required | Notes                                      |
-| ------------- | ------ | -------- | ------------------------------------------ |
-| `version`     | string | yes      | Currently `"1.0.0"` (`CODEPLUG_VERSION`)   |
-| `exportDate`  | string | yes      | ISO 8601                                   |
+| Field        | Type   | Required | Notes                                    |
+| ------------ | ------ | -------- | ---------------------------------------- |
+| `version`    | string | yes      | Currently `"1.0.0"` (`CODEPLUG_VERSION`) |
+| `exportDate` | string | yes      | ISO 8601                                 |
 
 Studio export should set both. Import should accept unknown future `version` values with a warning until a breaking schema appears (document when NeonPlug bumps).
 
@@ -37,10 +37,10 @@ Studio export should set both. Import should accept unknown future `version` val
 
 Some entities store `Uint8Array` in NeonPlug’s in-memory model. On disk they are **JSON number arrays**:
 
-| Entity          | Field          | On-disk form   |
-| --------------- | -------------- | -------------- |
-| `radioIds[]`    | `dmrIdBytes`   | `number[]`     |
-| `quickContacts[]` | `rawData`    | `number[]`     |
+| Entity            | Field        | On-disk form |
+| ----------------- | ------------ | ------------ |
+| `radioIds[]`      | `dmrIdBytes` | `number[]`   |
+| `quickContacts[]` | `rawData`    | `number[]`   |
 
 Import must reconstruct typed arrays if needed; export must emit number arrays (not base64).
 

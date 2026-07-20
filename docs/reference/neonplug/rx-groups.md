@@ -6,15 +6,15 @@ Wire shape for `codeplug.json` → `rxGroups[]`.
 
 ## Fields
 
-| Field              | Type       | Notes                                              |
-| ------------------ | ---------- | -------------------------------------------------- |
-| `index`            | number     | 0-based list index                                 |
-| `name`             | string     | Max **10** chars (11 bytes null-terminated)        |
-| `bitmask`          | number     | 32-bit active-groups bitmask (header)              |
-| `statusFlag`       | number     | Unused in “new format” per NeonPlug comments       |
-| `entryFlag`        | number     | Comments: always `0x01`                            |
-| `validationFlag`   | number     | Unused in new format                               |
-| `talkGroupIndices` | `number[]` | Up to **32** DMR / talk-group numbers              |
+| Field              | Type       | Notes                                        |
+| ------------------ | ---------- | -------------------------------------------- |
+| `index`            | number     | 0-based list index                           |
+| `name`             | string     | Max **10** chars (11 bytes null-terminated)  |
+| `bitmask`          | number     | 32-bit active-groups bitmask (header)        |
+| `statusFlag`       | number     | Unused in “new format” per NeonPlug comments |
+| `entryFlag`        | number     | Comments: always `0x01`                      |
+| `validationFlag`   | number     | Unused in new format                         |
+| `talkGroupIndices` | `number[]` | Up to **32** DMR / talk-group numbers        |
 
 ## FK rules
 
@@ -23,10 +23,10 @@ Wire shape for `codeplug.json` → `rxGroups[]`.
 
 ## Studio mapping sketch
 
-| NeonPlug                 | Studio                         |
-| ------------------------ | ------------------------------ |
-| RX group row             | `RxGroupList`                  |
-| `talkGroupIndices`       | UUID talk-group member refs    |
-| `bitmask` / flags        | Lossy unless needed for write  |
+| NeonPlug           | Studio                        |
+| ------------------ | ----------------------------- |
+| RX group row       | `RxGroupList`                 |
+| `talkGroupIndices` | UUID talk-group member refs   |
+| `bitmask` / flags  | Lossy unless needed for write |
 
 UV5R-Mini / analogue exports: leave `rxGroups` as `[]`.
