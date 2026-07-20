@@ -28,4 +28,4 @@ Informational preview of how a talk group name or abbreviation appears on **mult
 
 - [library README](../../../../docs/features/library/README.md)
 - [name-shortening.md](../../../../docs/features/import-export/name-shortening.md)
-- [dm32-progress.md](../../../../docs/features/import-export/dm32-progress.md)
+- [dm32 hub](../../../../docs/features/import-export/dm32/README.md) · epic [#503](https://github.com/pskillen/codeplug-studio/issues/503)
