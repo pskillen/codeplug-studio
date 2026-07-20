@@ -1,26 +1,22 @@
 # APRS — outstanding
 
-Items **deferred** or **open** after persistence + UI ([#353](https://github.com/pskillen/codeplug-studio/issues/353), [#354](https://github.com/pskillen/codeplug-studio/issues/354)).
-
-**Tracking:** Epic [#246](https://github.com/pskillen/codeplug-studio/issues/246)
+Debt after digital APRS model + UI. Active epic: [#501](https://github.com/pskillen/codeplug-studio/issues/501) (supersedes M1 [#246](https://github.com/pskillen/codeplug-studio/issues/246)).
 
 ---
 
-## Deferred to follow-up tickets
+## Open (issue-tracked)
 
-- [x] Anytone `APRS.CSV` + channel serialisers, `aprsDefaults.ts` — [#251](https://github.com/pskillen/codeplug-studio/issues/251)
-- [x] Drive save / YAML parse dropping v17 singleton slots + orphan `reportSlotIndex` hard-fail — [#430](https://github.com/pskillen/codeplug-studio/issues/430)
-- [x] DM32 per-channel APRS columns + `APRS.md` guide — [#250](https://github.com/pskillen/codeplug-studio/issues/250)
-- [ ] OpenGD77 APRS import/export — analog-only; deferred
-- [ ] Analog APRS modelling or UI — export constants only
-- [ ] `all call` Call Type (wire `2`) — deferred per design plan
-- [ ] Summary page APRS count — optional nice-to-have
+- [ ] OpenGD77 APRS export (analog named configs) — [#442](https://github.com/pskillen/codeplug-studio/issues/442)
+- [ ] Analog APRS modelling / UI — paired with [#442](https://github.com/pskillen/codeplug-studio/issues/442) / epic [#501](https://github.com/pskillen/codeplug-studio/issues/501)
+- [ ] Call Type **all-call** (wire `2`) — [#530](https://github.com/pskillen/codeplug-studio/issues/530)
 
-## Refactor follow-ups (optional)
+## Known deferrals (hub notes only)
 
-- [ ] Channels list column integration test (optional — covered by `aprsBindingHelpers` unit tests)
+- Summary page APRS count — optional under [#344](https://github.com/pskillen/codeplug-studio/issues/344)
+- CPS research: Digital APRS Report Channel range vs 8 slots; unnumbered Call Type column — fold into tier-3 when elicited
 
-## Open CPS questions (from design plan)
+## Shipped
 
-- [ ] Confirm `Digital APRS Report Channel` valid range vs 8 global slots
-- [ ] Confirm semantics of unnumbered `Call Type` column in `APRS.CSV`
+- [x] Anytone `APRS.CSV` — [#251](https://github.com/pskillen/codeplug-studio/issues/251)
+- [x] DM32 per-channel APRS — [#250](https://github.com/pskillen/codeplug-studio/issues/250)
+- [x] Drive/YAML v17 singleton slots — [#430](https://github.com/pskillen/codeplug-studio/issues/430)

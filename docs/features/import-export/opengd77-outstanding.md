@@ -1,28 +1,18 @@
 # OpenGD77 CSV — outstanding
 
-Items **skipped**, **incomplete**, or **discovered during execution** — not the plan's future phases.
-
-**Tracking:** [#36](https://github.com/pskillen/codeplug-studio/issues/36) · branch `87/pskil/build-wire-preview`
+Active debt under epic [#502](https://github.com/pskillen/codeplug-studio/issues/502) (supersedes M1 [#36](https://github.com/pskillen/codeplug-studio/issues/36) / [#93](https://github.com/pskillen/codeplug-studio/issues/93)).
 
 ---
 
-## Pre-existing model debt
+## Open
 
-- [ ] ~~Library `Zone` carries OpenGD77-shaped export fields~~ — moved to `ZoneGroupingLayout` on DM32 builds ([#104](https://github.com/pskillen/codeplug-studio/issues/104))
-- [ ] **Model review** — [#99](https://github.com/pskillen/codeplug-studio/issues/99) audit `FormatBuild`, `ZoneGroupingLayout`, trait flags, and composite expansion override keys after wire-preview ship
+- [ ] **Model review** — [#99](https://github.com/pskillen/codeplug-studio/issues/99) (parent [#496](https://github.com/pskillen/codeplug-studio/issues/496)) — `FormatBuild`, trait layout, composite override keys, IndexedDB legacy `*Selections`
+- [ ] **CPS import** — [#522](https://github.com/pskillen/codeplug-studio/issues/522) parse · [#523](https://github.com/pskillen/codeplug-studio/issues/523) adapter · [#524](https://github.com/pskillen/codeplug-studio/issues/524) UI · [#525](https://github.com/pskillen/codeplug-studio/issues/525) tests · [#526](https://github.com/pskillen/codeplug-studio/issues/526) docs
+- [ ] Remove dead `FlatMemoryLayout.scanFlags` — [#529](https://github.com/pskillen/codeplug-studio/issues/529) (related model hygiene)
 
----
+## Done
 
-## Wire preview scope ([#87](https://github.com/pskillen/codeplug-studio/issues/87) / [#89](https://github.com/pskillen/codeplug-studio/issues/89) / [#90](https://github.com/pskillen/codeplug-studio/issues/90))
+- [x] Library `Zone` OpenGD77 export fields → `ZoneGroupingLayout` ([#104](https://github.com/pskillen/codeplug-studio/issues/104))
+- [x] Wire preview / export shaping ([#87](https://github.com/pskillen/codeplug-studio/issues/87)–[#91](https://github.com/pskillen/codeplug-studio/issues/91))
 
-Shipped on `87/pskil/build-wire-preview`:
-
-- Build sub-routes with `WirePreviewTable` and sparse `*Overrides`
-- Zone grouping layout editor on `/builds/:id/zones`
-- Multi-mode `-F`/`-D` expansion at preview + export
-- Export name shortening + `ExportNameSettingsFields` on export page
-
-Deferred / follow-on (not blocking merge):
-
-- IndexedDB read-path migration for legacy `*Selections` whitelist rows (YAML import + `assemble` migrate on load)
-- DM32-style multi-talkgroup abbreviation UI (`showMultiTalkGroupOptions`) when that format ships — superseded by unified **Use abbreviations from library** ([#300](https://github.com/pskillen/codeplug-studio/issues/300) / [#301](https://github.com/pskillen/codeplug-studio/issues/301))
+Export wire fidelity children live under [#502](https://github.com/pskillen/codeplug-studio/issues/502) (e.g. [#403](https://github.com/pskillen/codeplug-studio/issues/403), [#436](https://github.com/pskillen/codeplug-studio/issues/436)–[#440](https://github.com/pskillen/codeplug-studio/issues/440)).
