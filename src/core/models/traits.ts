@@ -79,6 +79,18 @@ export const TRAIT_PROFILES: Record<string, TraitProfile> = {
       BuildCapabilityTrait.MxNChannelExpansion,
     ],
   },
+  'neonplug-dm32uv': {
+    profileId: 'neonplug-dm32uv',
+    formatId: 'neonplug',
+    label: 'Baofeng DM-32UV (NeonPlug)',
+    traits: [BuildCapabilityTrait.ZoneGrouping, BuildCapabilityTrait.ScanLists],
+  },
+  'neonplug-uv5rmini': {
+    profileId: 'neonplug-uv5rmini',
+    formatId: 'neonplug',
+    label: 'Baofeng UV-5R Mini (NeonPlug)',
+    traits: [BuildCapabilityTrait.FlatMemoryList, BuildCapabilityTrait.PerChannelScanFlag],
+  },
 };
 
 export function traitProfileFor(profileId: string): TraitProfile | undefined {
