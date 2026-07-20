@@ -13,20 +13,27 @@
 
 ## Power ladder (P-index → percent)
 
-Source: MD-9600 radio menu levels (operator elicitation). Fixed steps map to CPS `P1`…`P9` (lowest → highest). `Master` is radio default (`power: null`). Menu also shows `+W-`; CPS wire for that entry is unknown and not mapped.
+Source: MD-9600 radio menu levels (operator elicitation). Fixed steps map to CPS `P1`…`P9` (lowest → highest). `Master` is radio default (`power: null`).
 
-| Wire     | Approx. watts (menu) | Percent |
-| -------- | -------------------- | ------- |
-| `P9`     | 40 W (VHF + UHF)     | 100     |
-| `P8`     | 25 W                 | 63      |
-| `P7`     | 10 W                 | 25      |
-| `P6`     | 5 W                  | 13      |
-| `P5`     | 1 W                  | 5       |
-| `P4`     | 750 mW               | 4       |
-| `P3`     | 500 mW               | 3       |
-| `P2`     | 250 mW               | 2       |
-| `P1`     | 100 mW               | 1       |
-| `Master` | radio default        | `null`  |
+### `+W-` (User Power) — not modelled in Studio
+
+The radio menu also offers **`+W-`**. That selects **User Power** from **Options → Radio Options → User Power**: a raw ADC voltage that drives the power amplifier (PA), not a wattage step on the P-index ladder.
+
+Studio does **not** model User Power / `+W-`. Library `power` and OpenGD77 export only use `Master` and `P1`…`P9`. Operators who need custom PA drive set it on the radio (or in CPS radio options), not in Studio.
+
+| Wire     | Approx. watts (menu)                 | Percent |
+| -------- | ------------------------------------ | ------- |
+| `P9`     | 40 W (VHF + UHF)                     | 100     |
+| `P8`     | 25 W                                 | 63      |
+| `P7`     | 10 W                                 | 25      |
+| `P6`     | 5 W                                  | 13      |
+| `P5`     | 1 W                                  | 5       |
+| `P4`     | 750 mW                               | 4       |
+| `P3`     | 500 mW                               | 3       |
+| `P2`     | 250 mW                               | 2       |
+| `P1`     | 100 mW                               | 1       |
+| `Master` | radio default                        | `null`  |
+| `+W-`    | User Power (ADC → PA); not in Studio | —       |
 
 Implementation: `OPENGD77_MD9600_LADDER` in [`profiles.ts`](../../../../src/core/import-export/formats/opengd77/profiles.ts).
 
