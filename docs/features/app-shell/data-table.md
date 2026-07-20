@@ -112,7 +112,7 @@ Large libraries (1000+ contacts) stay responsive by rendering only visible tbody
 - **Order mode:** `orderMode` disables column-sort headers and keeps the order of `rows` (lock-only).
 - **Wire preview:** `WirePreviewDataTable` inherits taller default estimate via `onRowActivate`.
 
-Progress and rollout checklist: [datatable-virtualization-progress.md](datatable-virtualization-progress.md). Role map: [list-kit-roles.md](list-kit-roles.md).
+Virtualisation shipped ([#381](https://github.com/pskillen/codeplug-studio/issues/381)). Role map: [list-kit-roles.md](list-kit-roles.md).
 
 ## Reference-count columns
 
@@ -136,5 +136,5 @@ Progress and rollout checklist: [datatable-virtualization-progress.md](datatable
 ## Related
 
 - [library/README.md](../library/README.md) · [zone-member-picker.md](../library/zone-member-picker.md)
-- [library-routes-progress.md](library-routes-progress.md)
+- [list-kit-roles.md](list-kit-roles.md)
 - [map](../map/README.md) — map embed on channels/zones list routes

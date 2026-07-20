@@ -27,27 +27,26 @@ Tier-1 reference for editing the vendor-neutral **library** — the per-project 
 | OpenAIP airband import                    | Shipped ([#263](https://github.com/pskillen/codeplug-studio/issues/263))                                                                 | `/library/channels/add-from-openaip` — see [aviation](../aviation/README.md)                                                                                                   |
 | Digital contact metadata + radioid import | Shipped ([#374](https://github.com/pskillen/codeplug-studio/issues/374))                                                                 | Enriched `DigitalContact` CRUD; `/library/contacts/add-from-radioid` — see [contact-directories](../contact-directories/README.md)                                             |
 | Delete all digital contacts               | Shipped ([#427](https://github.com/pskillen/codeplug-studio/issues/427))                                                                 | Library → Contacts toolbar; checkbox-gated modal; cascade-clears channel/`RX` refs then IDB partition clear                                                                    |
-| Membership / zone export order            | Shipped ([#456](https://github.com/pskillen/codeplug-studio/issues/456))                                                                 | `Zone.order` + membership arrays; Sort… confirm; build `orderOrSlot` / layout hints — see [membership-ordering-progress.md](membership-ordering-progress.md)                   |
+| Membership / zone export order            | Shipped ([#456](https://github.com/pskillen/codeplug-studio/issues/456))                                                                 | `Zone.order` + membership arrays; Sort… confirm; build `orderOrSlot` / layout hints                                                                                            |
 | Channel Power approx watts hint           | Shipped ([#414](https://github.com/pskillen/codeplug-studio/issues/414))                                                                 | Frequencies tab — informational ladder projection; `Channel.power` stays percent-only                                                                                          |
 | Channel TX offset quick buttons           | Shipped ([#156](https://github.com/pskillen/codeplug-studio/issues/156))                                                                 | Frequencies tab — offset display + band quick buttons; see [tx-offsets.md](../../reference/tx-offsets.md)                                                                      |
 
 ## Documentation map
 
-| Doc                                                                                  | Contents                                                                                                                                            |
-| ------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------- |
-| [mode-profiles-progress.md](mode-profiles-progress.md)                               | Multi-mode editor initiative progress                                                                                                               |
-| [membership-ordering-progress.md](membership-ordering-progress.md)                   | Zone.order + membership Sort… / build overrides ([#456](https://github.com/pskillen/codeplug-studio/issues/456))                                    |
-| [zone-member-picker.md](zone-member-picker.md)                                       | Vertical zone member editor ([#180](https://github.com/pskillen/codeplug-studio/issues/180))                                                        |
-| [library-zones-revision-2-progress.md](library-zones-revision-2-progress.md)         | Revision-2 zone management progress                                                                                                                 |
-| [nested-zones.md](nested-zones.md)                                                   | Hierarchical zones; flatten at export                                                                                                               |
-| [channel-sets-progress.md](channel-sets-progress.md)                                 | Channel sets initiative ([#172](https://github.com/pskillen/codeplug-studio/issues/172))                                                            |
-| [rx-group-list-member-picker.md](rx-group-list-member-picker.md)                     | Two-list RX group list member editor                                                                                                                |
-| [scan-lists.md](scan-lists.md)                                                       | Library scan lists ([#257](https://github.com/pskillen/codeplug-studio/issues/257))                                                                 |
-| [channel-behavioural-defaults-progress.md](channel-behavioural-defaults-progress.md) | Epic [#388](https://github.com/pskillen/codeplug-studio/issues/388) cascade — progress / [outstanding](channel-behavioural-defaults-outstanding.md) |
-| [aviation](../aviation/README.md)                                                    | OpenAIP airport airband import ([#263](https://github.com/pskillen/codeplug-studio/issues/263))                                                     |
-| [contact-directories](../contact-directories/README.md)                              | RadioID.net DMR contact import ([#374](https://github.com/pskillen/codeplug-studio/issues/374))                                                     |
-| [app-shell/data-table.md](../app-shell/data-table.md)                                | Shared `DataTable` and list prefs                                                                                                                   |
-| [app-shell/library-routes-progress.md](../app-shell/library-routes-progress.md)      | List routes initiative progress                                                                                                                     |
+| Doc                                                                      | Contents                                                                                                        |
+| ------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------- |
+| [zone-member-picker.md](zone-member-picker.md)                           | Vertical zone member editor ([#180](https://github.com/pskillen/codeplug-studio/issues/180))                    |
+| [nested-zones.md](nested-zones.md)                                       | Hierarchical zones; flatten at export                                                                           |
+| [rx-group-list-member-picker.md](rx-group-list-member-picker.md)         | Two-list RX group list member editor                                                                            |
+| [scan-lists.md](scan-lists.md)                                           | Library scan lists ([#257](https://github.com/pskillen/codeplug-studio/issues/257))                             |
+| [aviation](../aviation/README.md)                                        | OpenAIP airport airband import ([#263](https://github.com/pskillen/codeplug-studio/issues/263))                 |
+| [contact-directories](../contact-directories/README.md)                  | RadioID.net DMR contact import ([#374](https://github.com/pskillen/codeplug-studio/issues/374))                 |
+| [app-shell/data-table.md](../app-shell/data-table.md)                    | Shared `DataTable` and list prefs                                                                               |
+| [channel-behavioural-defaults](../../reference/channel-behavioural-defaults.md) | Epic [#388](https://github.com/pskillen/codeplug-studio/issues/388) cascade — tier-2 reference           |
+| [zone-behavioural-defaults](../../reference/zone-behavioural-defaults.md) | Zone defaults ([#443](https://github.com/pskillen/codeplug-studio/issues/443))                                |
+| [channel-sets](../../reference/channel-sets.md)                          | Static channel sets ([#172](https://github.com/pskillen/codeplug-studio/issues/172); epic [#281](https://github.com/pskillen/codeplug-studio/issues/281)) |
+
+Shipped initiatives (mode profiles, membership order, zones revision-2, library routes): see GitHub issues cited in the status table — progress/outstanding logs retired in [#294](https://github.com/pskillen/codeplug-studio/issues/294).
 
 ## List routes
 
@@ -152,7 +151,7 @@ Search [OpenAIP](https://www.openaip.net/) for airport frequencies and import RX
 
 Core: `src/core/domain/airband/`, `src/core/services/airbandImport.ts`. Integration: `src/integrations/aviation/`. UI: `OpenAipAirportSearch` — sidecar `src/app/components/aviation/OpenAipAirportSearch.md`. Reference: [openaip](../../reference/openaip/README.md). Feature hub: [aviation](../aviation/README.md).
 
-Airband is **not** a static channel set — see [channel-sets-outstanding.md](channel-sets-outstanding.md).
+Airband is **not** a static channel set — see [aviation](../aviation/README.md) and channel-sets epic [#281](https://github.com/pskillen/codeplug-studio/issues/281).
 
 ## Editor routes
 
@@ -242,7 +241,6 @@ The library holds RF facts you curate once (frequency, mode, contact refs, human
 ## Related
 
 - [app-shell/data-table.md](../app-shell/data-table.md) · [zone-member-picker.md](zone-member-picker.md) · [rx-group-list-member-picker.md](rx-group-list-member-picker.md)
-- [app-shell/library-routes-progress.md](../app-shell/library-routes-progress.md) · [app-shell/library-routes-outstanding.md](../app-shell/library-routes-outstanding.md)
 - [map](../map/README.md) — maps on channels/zones list routes + Summary overview
 - [data-model](../data-model/README.md) · [app-shell](../app-shell/README.md)
 - [storage.md](../../poc-migration/storage.md) — persistence design

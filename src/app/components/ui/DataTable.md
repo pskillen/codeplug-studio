@@ -94,4 +94,4 @@ Implementation: `useVirtualDataTableRows` in `src/app/lib/dataTable/`, constants
 
 - [data-table.md](../../../../docs/features/app-shell/data-table.md)
 - [list-kit-roles.md](../../../../docs/features/app-shell/list-kit-roles.md)
-- [datatable-virtualization-progress.md](../../../../docs/features/app-shell/datatable-virtualization-progress.md)
+- Virtualisation: [#381](https://github.com/pskillen/codeplug-studio/issues/381)

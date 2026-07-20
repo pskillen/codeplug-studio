@@ -68,4 +68,4 @@ Channel rows show callsign/name, RX/TX, mode pills, scan-skip badge. Zone rows s
 ## Related
 
 - [library/README.md](README.md) · [nested-zones.md](nested-zones.md) · [map/zones.md](../map/zones.md)
-- [library-zones-revision-2-progress.md](library-zones-revision-2-progress.md)
+- Zone management: [#179](https://github.com/pskillen/codeplug-studio/issues/179) / [#180](https://github.com/pskillen/codeplug-studio/issues/180)
