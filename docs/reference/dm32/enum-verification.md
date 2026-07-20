@@ -29,9 +29,9 @@ Related (not filed from #404):
 | --- | --- | --- |
 | Per-repeater scratch export | [#140](https://github.com/pskillen/codeplug-studio/issues/140) | **Done** — PR [#455](https://github.com/pskillen/codeplug-studio/pull/455) |
 | Scan names empty/garbled after CPS import | [#478](https://github.com/pskillen/codeplug-studio/issues/478) | Open — round-trip investigation |
-| Scan Name ≤13 chars (not profile 16) | [#485](https://github.com/pskillen/codeplug-studio/issues/485) | Open |
-| Scan CSV member cap 15 (16th = current channel) | [#486](https://github.com/pskillen/codeplug-studio/issues/486) | Open — docs/profile still say 16 |
-| Trailing `\|` on Scan.csv Channel Members | [#487](https://github.com/pskillen/codeplug-studio/issues/487) | Open — sample has terminator; Studio does not |
+| Scan Name ≤13 chars (not profile 16) | [#485](https://github.com/pskillen/codeplug-studio/issues/485) | **Done** — PR [#494](https://github.com/pskillen/codeplug-studio/pull/494) (`scanListNameLimit: 13`) |
+| Scan CSV member cap 15 (16th = current channel) | [#486](https://github.com/pskillen/codeplug-studio/issues/486) | **Done** — PR [#494](https://github.com/pskillen/codeplug-studio/pull/494) |
+| Trailing `\|` on Scan.csv Channel Members | [#487](https://github.com/pskillen/codeplug-studio/issues/487) | **Done** — PR [#494](https://github.com/pskillen/codeplug-studio/pull/494); Zones.csv still no trailing pipe |
 
 ### How to use
 
@@ -227,7 +227,7 @@ No.,Channel Name,Channel Type,RX Frequency[MHz],TX Frequency[MHz],Power,Band Wid
 | ----------------- | --------------------------------- | ---------- | ----------------------------------- | -------- | -------------- | ----- |
 | `No.`             | —                                 | Sequential |                                     |          |                |       |
 | `Zone Name`       | Zone / build wire name            | ~16        |                                     |          |                |       |
-| `Channel Members` | Zone members → channel wire names | Pipe `     | `separated; trailing`\|` in fixture |          |                |       | Exact separator |
+| `Channel Members` | Zone members → channel wire names | Pipe `\|` separated; **no** trailing `\|` (unlike Scan.csv) | | | | Exact separator |
 
 | Question                | Observed |
 | ----------------------- | -------- |
@@ -303,7 +303,7 @@ Studio **synthesises** rows from zones when zone-derived scan export is on. Stil
 | Wire field            | Studio export today    | Hint from fixture      | CPS UI | Observed values | Range / format | Notes            |
 | --------------------- | ---------------------- | ---------------------- | ------ | --------------- | -------------- | ---------------- |
 | `No.`                 | Sequential             |                        |        |                 |                |                  |
-| `Scan Name`           | Zone wire name         |                        |        |                 | ≤13?           | Profile uses 16 — CPS scan field is 13 → [#485](https://github.com/pskillen/codeplug-studio/issues/485) |
+| `Scan Name`           | Zone wire name ≤`scanListNameLimit` (13) |                        |        |                 | ≤13            | Shipped [#485](https://github.com/pskillen/codeplug-studio/issues/485) |
 | `CTC Scan Mode`       | `Detection CTC`        | same                   |        |                 |                | Other modes?     |
 | `Scan Tx Mode`        | `Last Actived Channel` | also `Current Channel` |        |                 |                | Typo “Actived”?  |
 | `Hang Time`           | `5.0`                  | `3.0`, `5.0`           |        |                 |                | Step / unit      |
@@ -312,7 +312,7 @@ Studio **synthesises** rows from zones when zone-derived scan export is on. Stil
 | `Designed Channel`    | Carrier wire name      | Channel name           |        |                 |                |                  |
 | `Priority Sweep Time` | `500`                  | `500`, `1100`          |        |                 |                | Units ms?        |
 | `Talkback`            | `0`                    | `0`, `1`               |        |                 |                |                  |
-| `Channel Members`     | Pipe-separated (Studio ≤16, no trailing `\|`) | sample ends with `\|` |        |                 | ≤15 named?     | Cap/terminator → [#486](https://github.com/pskillen/codeplug-studio/issues/486) · [#487](https://github.com/pskillen/codeplug-studio/issues/487) |
+| `Channel Members`     | Pipe-separated ≤15 + trailing `\|` | sample ends with `\|` |        |                 | ≤15 named      | Cap/terminator shipped [#486](https://github.com/pskillen/codeplug-studio/issues/486) · [#487](https://github.com/pskillen/codeplug-studio/issues/487) |
 
 ---
 
@@ -337,13 +337,13 @@ Inventory for documentation / future only.
 
 | Topic                               | Hint                            | Observed |
 | ----------------------------------- | ------------------------------- | -------- |
-| Pipe `\|` member lists — trailing pipe? | Sample often ends with `\|`; Studio scan export does not → [#487](https://github.com/pskillen/codeplug-studio/issues/487) | |
+| Pipe `\|` member lists — trailing pipe? | Scan.csv **yes** (shipped); Zones.csv **no** | |
 | Case-sensitive name FKs             | Yes                             |          |
 | `None` vs empty                     | Mode-dependent                  |          |
 | Max channel name length             | ~16                             |          |
-| Max scan list name length           | CPS **13** (not profile 16) → [#485](https://github.com/pskillen/codeplug-studio/issues/485) | |
+| Max scan list name length           | **13** (`scanListNameLimit`) — shipped [#485](https://github.com/pskillen/codeplug-studio/issues/485) | |
 | Max zone / TG / contact name length |                                 |          |
-| Scan CSV named members              | CPS retains **15**; 16th = current channel → [#486](https://github.com/pskillen/codeplug-studio/issues/486) | |
+| Scan CSV named members              | **15** (16th = implicit current channel) — shipped [#486](https://github.com/pskillen/codeplug-studio/issues/486) | |
 | Colour code 0 on digital allowed?   |                                 |          |
 
 ---
