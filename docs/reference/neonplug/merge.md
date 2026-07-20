@@ -2,9 +2,9 @@
 
 Merge Studio’s projected `CodeplugData` into a **radio-read donor** `.neonplug` so operators can write back without wiping radio settings.
 
-**Code:** `parseNeonplugZip` / `mergeNeonplugCodeplug` in `src/core/import-export/formats/neonplug/merge.ts`; wired via `exportBuildZip({ baseNeonplugBytes })`.
+**Code:** `parseNeonplugZip` / `mergeNeonplugCodeplug` in `src/core/import-export/formats/neonplug/merge.ts`; donor retain helpers in `donorRetain.ts`; wired via `exportBuildZip({ baseNeonplugBytes })` or `FormatBuild.cpsWireHydration` (`formatId: neonplug`).
 
-**Not** library persistence — opaque donor bags stay at the export boundary only (no wire-stash into Studio entities).
+**Not** library modelling — opaque retain bags are a labelled export-boundary escape hatch (`CpsWireHydration` / NeonPlug `NeonplugDonorBag`). Modelled channels/zones/contacts still serialise from the Studio model (no wire-stash replay). Product workflow: [neonplug feature hub](../../features/import-export/neonplug/README.md).
 
 ## Policy
 
@@ -20,6 +20,14 @@ Merge Studio’s projected `CodeplugData` into a **radio-read donor** `.neonplug
 
 Channels are not slot-patched against unused base channel numbers — Studio replaces the full `channels[]` array.
 
+## Donor sources (priority)
+
+1. **Session upload** — `baseNeonplugBytes` on this export call (overrides stored bag).
+2. **Build hydration** — DM32UV persists retain slices on `FormatBuild.cpsWireHydration` after a successful upload; merge uses that when no session file is supplied.
+3. **Neither** — greenfield path (no merge).
+
+Encryption key material may be present in the retained bag for merge fidelity; the read-only NeonPlug settings UI shows **counts only**, never key bytes.
+
 ## Warnings
 
 - Non-fatal if donor `radioInfo.model` disagrees with the Studio profile’s expected model (`DP570UV` / `UV5R-Mini`).
@@ -27,9 +35,9 @@ Channels are not slot-patched against unused base channel numbers — Studio rep
 
 ## Greenfield vs merge
 
-| Path                      | Settings / `radioIds` / ancillaries | Safe to write to radio? |
-| ------------------------- | ----------------------------------- | ----------------------- |
-| **Merge** (upload donor)  | Retained from donor                 | Yes (intended path)     |
-| **Greenfield** (no donor) | Empty / `null` as on M1 serialise   | **No** — browse only    |
+| Path                                      | Settings / `radioIds` / ancillaries | Safe to write to radio? |
+| ----------------------------------------- | ----------------------------------- | ----------------------- |
+| **Merge** (upload or stored DM32UV donor) | Retained from donor                 | Yes (intended path)     |
+| **Greenfield** (no donor)                 | Empty / `null` as on M1 serialise   | **No** — browse only    |
 
 See [radio-info-and-settings.md](radio-info-and-settings.md) loss table.

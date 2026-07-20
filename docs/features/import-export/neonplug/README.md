@@ -2,7 +2,7 @@
 
 Product behaviour for NeonPlug `.neonplug` files in Codeplug Studio. Wire tables live in the tier-3 [NeonPlug reference](../../../reference/neonplug/README.md).
 
-**Tracking:** Epic [#536](https://github.com/pskillen/codeplug-studio/issues/536) · scaffold [#538](https://github.com/pskillen/codeplug-studio/issues/538) · channels + ZIP [#539](https://github.com/pskillen/codeplug-studio/issues/539) · org entities [#540](https://github.com/pskillen/codeplug-studio/issues/540) · merge-into-base [#551](https://github.com/pskillen/codeplug-studio/issues/551) · export UI [#542](https://github.com/pskillen/codeplug-studio/issues/542) · wire reference [#537](https://github.com/pskillen/codeplug-studio/issues/537)
+**Tracking:** Epic [#536](https://github.com/pskillen/codeplug-studio/issues/536) · scaffold [#538](https://github.com/pskillen/codeplug-studio/issues/538) · channels + ZIP [#539](https://github.com/pskillen/codeplug-studio/issues/539) · org entities [#540](https://github.com/pskillen/codeplug-studio/issues/540) · merge-into-base [#551](https://github.com/pskillen/codeplug-studio/issues/551) · donor persist + settings view [#552](https://github.com/pskillen/codeplug-studio/issues/552) · export UI [#542](https://github.com/pskillen/codeplug-studio/issues/542) · wire reference [#537](https://github.com/pskillen/codeplug-studio/issues/537)
 
 **Source:** `src/core/import-export/formats/neonplug/` (profiles, export adapter, `.neonplug` ZIP packaging)
 
@@ -16,7 +16,9 @@ Product behaviour for NeonPlug `.neonplug` files in Codeplug Studio. Wire tables
 | Export zones / scan / contacts / RX groups (DM32 profile) | Shipped | [#540](https://github.com/pskillen/codeplug-studio/issues/540) — org arrays + channel FKs; `radioIds[]` omitted on greenfield                       |
 | Merge into radio-read base                                | Shipped | [#551](https://github.com/pskillen/codeplug-studio/issues/551) — retain settings / `radioIds`; see [merge.md](../../../reference/neonplug/merge.md) |
 | Build UI + export download                                | Shipped | [#542](https://github.com/pskillen/codeplug-studio/issues/542) — merge-first + secondary greenfield                                                 |
+| DM32UV donor persist + read-only settings                 | Shipped | [#552](https://github.com/pskillen/codeplug-studio/issues/552) — `FormatBuild.cpsWireHydration`; NeonPlug settings nav                              |
 | UV5R-Mini profile export                                  | Planned | [#541](https://github.com/pskillen/codeplug-studio/issues/541) — channel path shipped in #539; polish / gaps remain                                 |
+| UV5R donor persist / settings view                        | Planned | [#554](https://github.com/pskillen/codeplug-studio/issues/554)                                                                                      |
 | Import parse → library + build                            | Planned | [#543](https://github.com/pskillen/codeplug-studio/issues/543)                                                                                      |
 | Import dropzone                                           | Planned | [#544](https://github.com/pskillen/codeplug-studio/issues/544)                                                                                      |
 | 1-click handoff to neonplug.app                           | Stretch | [#545](https://github.com/pskillen/codeplug-studio/issues/545)                                                                                      |
@@ -36,9 +38,9 @@ Studio already exports **DM-32** via CPS CSV and **UV-5R Mini** via CHIRP CSV. N
 
 1. Adapter serialises `codeplug.json` as a **string** (`multi-file` with one entry).
 2. `exportBuildZip` wraps that string with **fflate** (`buildNeonplugZip`) → `.neonplug` binary.
-3. Optional **donor** bytes: parse → `mergeNeonplugCodeplug` → re-ZIP (merge-first / radio-write path).
+3. Optional **donor**: session upload bytes **or** (DM32UV) build-stored `cpsWireHydration` → `mergeNeonplugCodeplug` → re-ZIP (merge-first / radio-write path).
 
-**DM32UV:** channels plus zones, zone-derived scan lists, contacts (talk groups then digital contacts), and RX groups; channel `contactId` / `rxGroupListId` / `scanListId` wired. **Greenfield** leaves `radioIds[]` and ancillaries empty. **Merge** retains donor `radioIds`, `radioSettings`, and other unmodelled keys. **UV5R-Mini:** channels only on greenfield (org arrays empty).
+**DM32UV:** channels plus zones, zone-derived scan lists, contacts (talk groups then digital contacts), and RX groups; channel `contactId` / `rxGroupListId` / `scanListId` wired. **Greenfield** leaves `radioIds[]` and ancillaries empty. **Merge** retains donor `radioIds`, `radioSettings`, and other unmodelled keys. On DM32UV, a successful donor upload also persists those retain slices on the format build so repeat exports do not require re-upload. **UV5R-Mini:** channels only on greenfield (org arrays empty); donor remains session-only until [#554](https://github.com/pskillen/codeplug-studio/issues/554).
 
 See [file-format.md](../../../reference/neonplug/file-format.md) and [merge.md](../../../reference/neonplug/merge.md).
 
@@ -47,8 +49,11 @@ See [file-format.md](../../../reference/neonplug/file-format.md) and [merge.md](
 1. Curate channels (and DMR entities) in the **library**.
 2. Create a **NeonPlug build** for the target radio profile (`/builds/new`).
 3. In NeonPlug, **read from the radio** and export a donor `.neonplug`.
-4. On the build export page, upload the donor → **Download for radio write** (or save the merge to Drive).
-5. Import the merged file in NeonPlug → write to the radio.
+4. On the build export page, upload the donor once (DM32UV saves it on the build) → **Download for radio write** (or save the merge to Drive).
+5. Later exports reuse the stored donor; replace or clear from Export, or inspect on **NeonPlug settings**.
+6. Import the merged file in NeonPlug → write to the radio.
+
+**Privacy:** donor settings live in browser storage (IndexedDB / native YAML export of the project) only — never in the Studio repo.
 
 **Secondary:** **Download greenfield `.neonplug`** for browsing / debug only — it omits radio settings and is **not safe to write back** without a donor merge.
 
