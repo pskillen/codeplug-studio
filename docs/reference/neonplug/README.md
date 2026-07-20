@@ -32,13 +32,13 @@ NeonPlug is MIT-licensed. Studio docs cite field names and enums from that sourc
 
 ## Entity inventory (`codeplug.json`)
 
-| JSON key                 | Reference                                                | Studio modelling                            | Notes                                 |
-| ------------------------ | -------------------------------------------------------- | ------------------------------------------- | ------------------------------------- |
-| `channels`               | [channels.md](channels.md)                               | `Channel[]`                                 | Shared Channel shape across radios    |
-| `zones`                  | [zones.md](zones.md)                                     | Build **zone grouping** trait layout        | Channel **numbers**, not UUIDs        |
-| `scanLists`              | [scan-lists.md](scan-lists.md)                           | Zone-derived scan projection (DM32UV)       | Channel **numbers**; no carriers      |
-| `contacts`               | [contacts.md](contacts.md)                               | `TalkGroup[]` then `DigitalContact[]`       | Single NeonPlug contact book          |
-| `rxGroups`               | [rx-groups.md](rx-groups.md)                             | `RxGroupList[]`                             | `talkGroupIndices` = DMR IDs          |
+| JSON key                 | Reference                                                | Studio modelling                                   | Notes                                 |
+| ------------------------ | -------------------------------------------------------- | -------------------------------------------------- | ------------------------------------- |
+| `channels`               | [channels.md](channels.md)                               | `Channel[]`                                        | Shared Channel shape across radios    |
+| `zones`                  | [zones.md](zones.md)                                     | Build **zone grouping** trait layout               | Channel **numbers**, not UUIDs        |
+| `scanLists`              | [scan-lists.md](scan-lists.md)                           | Zone-derived scan projection (DM32UV)              | Channel **numbers**; no carriers      |
+| `contacts`               | [contacts.md](contacts.md)                               | `TalkGroup[]` then `DigitalContact[]`              | Single NeonPlug contact book          |
+| `rxGroups`               | [rx-groups.md](rx-groups.md)                             | `RxGroupList[]`                                    | `talkGroupIndices` = DMR IDs          |
 | `radioIds`               | [contacts.md](contacts.md#dmr-radio-ids)                 | **Omit** on greenfield (`[]`); **retain** on merge | No operator DMR-ID list in library    |
 | `quickContacts`          | [contacts.md](contacts.md#quick-contacts)                | **Omit** on greenfield; **retain** on merge        | Radio talk-group table with raw bytes |
 | `radioInfo`              | [radio-info-and-settings.md](radio-info-and-settings.md) | Profile stub on greenfield; **retain** on merge    | Model string selects radio pathway    |
@@ -48,7 +48,7 @@ NeonPlug is MIT-licensed. Studio docs cite field names and enums from that sourc
 | `digitalEmergencyConfig` | [radio-info-and-settings.md](radio-info-and-settings.md) | `null` on greenfield; **retain** on merge          |                                       |
 | `analogEmergencies`      | [radio-info-and-settings.md](radio-info-and-settings.md) | Empty on greenfield; **retain** on merge           |                                       |
 | `encryptionKeys`         | [radio-info-and-settings.md](radio-info-and-settings.md) | Empty on greenfield; **retain** on merge           | Do not stash secrets in library       |
-| `exportDate` / `version` | [file-format.md](file-format.md)                         | Envelope only                               |                                       |
+| `exportDate` / `version` | [file-format.md](file-format.md)                         | Envelope only                                      |                                       |
 
 ## Foreign keys (wire edge)
 

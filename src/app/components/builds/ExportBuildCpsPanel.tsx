@@ -14,8 +14,6 @@ import {
 } from '@core/import-export/exportAdapter.ts';
 import { formatProfileWireHint, getFormatProfiles } from '@core/import-export/formatProfiles.ts';
 import type { CpsExportOptions, FormatId } from '@core/import-export/types.ts';
-import { parseNeonplugZip } from '@core/import-export/formats/neonplug/merge.ts';
-import { neonplugRadioModelForProfile } from '@core/import-export/formats/neonplug/serialise.ts';
 import ExportBuildSettingsSections from './ExportBuildSettingsSections.tsx';
 import ProfilePicker from './ProfilePicker.tsx';
 import CpsCsvPreviewModal from './CpsCsvPreviewModal.tsx';
@@ -42,6 +40,7 @@ import {
   downloadCpsSingleFile,
   downloadCpsZip,
   uploadCpsZipToDrive,
+  validateNeonplugDonorBase,
 } from '../../services/buildCpsExportService.ts';
 import { useBuildCpsExportFileNames } from '../../hooks/useBuildCpsExportFileNames.ts';
 import { useGoogleDrive } from '../../hooks/useGoogleDrive.ts';
@@ -277,14 +276,8 @@ export default function ExportBuildCpsPanel({ build }: ExportBuildCpsPanelProps)
     }
     try {
       const bytes = new Uint8Array(await file.arrayBuffer());
-      const { data, warnings } = parseNeonplugZip(bytes);
+      const { warnings } = validateNeonplugDonorBase(bytes, build.profileId);
       mergeWarnings(warnings);
-      const expected = neonplugRadioModelForProfile(build.profileId);
-      if (data.radioInfo.model && data.radioInfo.model !== expected) {
-        mergeWarnings([
-          `Donor radioInfo.model is "${data.radioInfo.model}" but this build targets "${expected}"`,
-        ]);
-      }
       setNeonplugBaseBytes(bytes);
       setNeonplugBaseFileName(file.name);
     } catch (err) {

@@ -15,7 +15,10 @@ import {
   parseNeonplugCodeplugJson,
   parseNeonplugZip,
 } from '@core/import-export/formats/neonplug/merge.ts';
-import { NEONPLUG_JSON_FILE_NAME } from '@core/import-export/formats/neonplug/serialise.ts';
+import {
+  NEONPLUG_JSON_FILE_NAME,
+  neonplugRadioModelForProfile,
+} from '@core/import-export/formats/neonplug/serialise.ts';
 import {
   anytoneLstFileName,
   isAnytoneLstFileName,
@@ -41,6 +44,21 @@ export interface ExportBuildParams {
 /** Optional donor `.neonplug` bytes for merge-into-base NeonPlug export. */
 export interface ExportBuildZipParams extends Omit<ExportBuildParams, 'fileName'> {
   baseNeonplugBytes?: Uint8Array;
+}
+
+/** Parse a donor `.neonplug` and warn on profile model mismatch (export UI). */
+export function validateNeonplugDonorBase(
+  bytes: Uint8Array,
+  profileId: string,
+): { warnings: string[] } {
+  const { data, warnings } = parseNeonplugZip(bytes);
+  const expected = neonplugRadioModelForProfile(profileId);
+  if (data.radioInfo.model && data.radioInfo.model !== expected) {
+    warnings.push(
+      `Donor radioInfo.model is "${data.radioInfo.model}" but this build targets "${expected}"`,
+    );
+  }
+  return { warnings };
 }
 
 export interface ExportBuildAllResult {

@@ -41,16 +41,16 @@ Large DM32-oriented settings bag (display, GPS, buttons, APRS position, embedded
 
 ## Loss table (operator-facing summary)
 
-| NeonPlug content                    | After **greenfield** Studio export | After **merge-into-base** export      |
-| ----------------------------------- | ---------------------------------- | ------------------------------------- |
-| Channels (modelled RF fields)       | Studio projection                  | Studio projection (full replace)      |
-| Zones / scan / contacts / RX groups | Filled on DM32UV (#540); UV5R empty | Studio projection                     |
-| Channel contact / RX / scan indexes | Wired on DM32UV (#540); `0` on UV5R | From Studio projection                |
-| Operator `radioIds`                 | Empty                              | **Retained** from donor               |
-| Radio settings / VFOs               | Lost                               | **Retained** from donor               |
-| Emergencies / messages / quick contacts | Lost                           | **Retained** from donor               |
-| Encryption keys                     | Lost (intentional on greenfield)   | Opaque retain from donor (not library) |
-| Unknown channel bitfields           | Lost (defaults on export)          | Lost (Studio channels overwrite)      |
-| Scan CTC / hang / priority          | Defaults only (lossy)              | Defaults on Studio scan lists         |
+| NeonPlug content                        | After **greenfield** Studio export  | After **merge-into-base** export       |
+| --------------------------------------- | ----------------------------------- | -------------------------------------- |
+| Channels (modelled RF fields)           | Studio projection                   | Studio projection (full replace)       |
+| Zones / scan / contacts / RX groups     | Filled on DM32UV (#540); UV5R empty | Studio projection                      |
+| Channel contact / RX / scan indexes     | Wired on DM32UV (#540); `0` on UV5R | From Studio projection                 |
+| Operator `radioIds`                     | Empty                               | **Retained** from donor                |
+| Radio settings / VFOs                   | Lost                                | **Retained** from donor                |
+| Emergencies / messages / quick contacts | Lost                                | **Retained** from donor                |
+| Encryption keys                         | Lost (intentional on greenfield)    | Opaque retain from donor (not library) |
+| Unknown channel bitfields               | Lost (defaults on export)           | Lost (Studio channels overwrite)       |
+| Scan CTC / hang / priority              | Defaults only (lossy)               | Defaults on Studio scan lists          |
 
 Merge policy detail: [merge.md](merge.md). Document any additional loss discovered while implementing [#541](https://github.com/pskillen/codeplug-studio/issues/541)–[#543](https://github.com/pskillen/codeplug-studio/issues/543) here.

@@ -51,8 +51,7 @@ export function parseNeonplugCodeplugJson(raw: unknown): NeonplugCodeplugData {
 
   return {
     version: typeof raw.version === 'string' ? raw.version : NEONPLUG_CODEPLUG_VERSION,
-    exportDate:
-      typeof raw.exportDate === 'string' ? raw.exportDate : new Date().toISOString(),
+    exportDate: typeof raw.exportDate === 'string' ? raw.exportDate : new Date().toISOString(),
     channels: asArray(raw.channels) as NeonplugCodeplugData['channels'],
     zones: asArray(raw.zones) as NeonplugCodeplugData['zones'],
     scanLists: asArray(raw.scanLists) as NeonplugCodeplugData['scanLists'],
