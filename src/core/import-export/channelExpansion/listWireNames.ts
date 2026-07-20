@@ -12,7 +12,7 @@ export function applyListWireNameLimits(
   profileId: string | undefined,
   warnings: string[],
   entityKind: WireNameEntityKind = 'Wire name',
-  /** Override profile `nameLimit` (e.g. DM32 Scan Name ≤13). */
+  /** Override profile `nameLimit` (e.g. DM32 Scan Name ≤10). */
   maxLenOverride?: number,
 ): string {
   const maxLen = maxLenOverride ?? resolveMaxNameLength(profileId ?? options?.profileId, options);

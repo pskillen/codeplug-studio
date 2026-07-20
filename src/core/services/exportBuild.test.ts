@@ -53,7 +53,7 @@ describe('exportBuildAll', () => {
 
   it('returns each build-wide DM32 zone cap warning once across all CSV files', () => {
     const projectId = 'proj-dm32-warn-dedup';
-    const channels = Array.from({ length: 20 }, (_, index) => ({
+    const channels = Array.from({ length: 65 }, (_, index) => ({
       ...newChannel(projectId, `Channel ${index + 1}`),
       id: `ch-${index + 1}`,
     }));
@@ -79,7 +79,7 @@ describe('exportBuildAll', () => {
       scanLists: [],
     };
     const build = newFormatBuild(projectId, 'dm32-baofeng-dm32uv');
-    const capWarning = 'Zone "Glasgow" has 20 expanded members (scan cap 15)';
+    const capWarning = 'Zone "Glasgow" has 65 expanded members (cap 64)';
 
     const result = exportBuildAll({ build, library });
 
@@ -96,7 +96,7 @@ describe('exportBuildAll', () => {
       updatedAt: '2026-01-01T00:00:00.000Z',
       name: 'Glasgow',
       comment: '',
-      members: Array.from({ length: 20 }, (_, index) => ({
+      members: Array.from({ length: 65 }, (_, index) => ({
         kind: 'channel' as const,
         channelId: `ch-a-${index + 1}`,
       })),
@@ -108,17 +108,17 @@ describe('exportBuildAll', () => {
       updatedAt: '2026-01-01T00:00:00.000Z',
       name: 'Edinburgh',
       comment: '',
-      members: Array.from({ length: 20 }, (_, index) => ({
+      members: Array.from({ length: 65 }, (_, index) => ({
         kind: 'channel' as const,
         channelId: `ch-b-${index + 1}`,
       })),
     };
     const channels = [
-      ...Array.from({ length: 20 }, (_, index) => ({
+      ...Array.from({ length: 65 }, (_, index) => ({
         ...newChannel(projectId, `Glasgow ${index + 1}`),
         id: `ch-a-${index + 1}`,
       })),
-      ...Array.from({ length: 20 }, (_, index) => ({
+      ...Array.from({ length: 65 }, (_, index) => ({
         ...newChannel(projectId, `Edinburgh ${index + 1}`),
         id: `ch-b-${index + 1}`,
       })),
@@ -136,7 +136,7 @@ describe('exportBuildAll', () => {
 
     const result = exportBuildAll({ build, library });
 
-    expect(result.warnings).toContain('Zone "Glasgow" has 20 expanded members (scan cap 15)');
-    expect(result.warnings).toContain('Zone "Edinburgh" has 20 expanded members (scan cap 15)');
+    expect(result.warnings).toContain('Zone "Glasgow" has 65 expanded members (cap 64)');
+    expect(result.warnings).toContain('Zone "Edinburgh" has 65 expanded members (cap 64)');
   });
 });

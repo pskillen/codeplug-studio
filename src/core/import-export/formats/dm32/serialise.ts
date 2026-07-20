@@ -3,7 +3,10 @@ import type { AssembledBuild } from '@core/services/assemble.ts';
 import type { CpsExportOptions } from '@core/import-export/types.ts';
 import type { LibrarySlice } from '@core/services/assemble.ts';
 import { withTalkGroupWireNameLimits } from '@core/import-export/channelExpansion/talkGroupWireNames.ts';
-import { buildListWireNameMap } from '@core/import-export/channelExpansion/listWireNames.ts';
+import {
+  applyListWireNameLimits,
+  buildListWireNameMap,
+} from '@core/import-export/channelExpansion/listWireNames.ts';
 import { deriveZoneDerivedScanLists } from '@core/import-export/zoneDerivedScanLists/derive.ts';
 import { formatCsv } from './csvWrite.ts';
 import {
@@ -31,7 +34,7 @@ import {
 } from './channelExpansion.ts';
 import { serialiseDm32ChannelRow } from './channelWire.ts';
 import { buildDm32TalkGroupWireNameMap, rxGroupListExportMemberNames } from './listWire.ts';
-import { DEFAULT_DM32_PROFILE_ID } from './profiles.ts';
+import { DEFAULT_DM32_PROFILE_ID, getDm32Profile } from './profiles.ts';
 import type { SyntheticScanCarrier } from '@core/import-export/zoneDerivedScanLists/derive.ts';
 
 export type Dm32ExportFiles = Record<Dm32ExportFileName, string> & {
@@ -117,17 +120,22 @@ function buildListWireMaps(
     warnings,
   );
 
-  const rxGroupListWireNames = buildListWireNameMap(
-    exportAssembled.rxGroupLists.map((list) => ({
-      id: list.entity.id,
-      wireName: list.wireName,
-      entityKind: 'RX group list' as const,
-    })),
-    reserved,
-    options,
-    profileId,
-    warnings,
-  );
+  const rxGroupListNameLimit = getDm32Profile(profileId).rxGroupListNameLimit;
+  const rxGroupListWireNames = new Map<string, string>();
+  for (const list of exportAssembled.rxGroupLists) {
+    rxGroupListWireNames.set(
+      list.entity.id,
+      applyListWireNameLimits(
+        list.wireName,
+        reserved,
+        options,
+        profileId,
+        warnings,
+        'RX group list',
+        rxGroupListNameLimit,
+      ),
+    );
+  }
 
   return { zoneWireNames, rxGroupListWireNames };
 }

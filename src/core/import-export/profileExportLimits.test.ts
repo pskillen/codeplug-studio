@@ -17,16 +17,24 @@ describe('getProfileExportLimits', () => {
     expect(limits!.siblingLadders).toEqual([]);
   });
 
-  it('maps DM32 scan caps, scan name length, and squelch ladder', () => {
+  it('maps DM32 entity caps, member caps, name lengths, and squelch ladder', () => {
     const limits = getProfileExportLimits('dm32', 'dm32-baofeng-dm32uv');
     expect(limits).not.toBeNull();
-    expect(limits!.maxChannels).toBe(1000);
+    expect(limits!.maxChannels).toBe(4000);
+    expect(limits!.maxZones).toBe(250);
+    expect(limits!.maxScanLists).toBe(32);
+    expect(limits!.maxRxGroupLists).toBe(32);
+    expect(limits!.maxContacts).toBe(250);
+    expect(limits!.maxTalkGroups).toBe(800);
+    expect(limits!.zoneMembers).toBe(64);
     expect(limits!.scanListMembers).toBe(15);
     expect(limits!.rxGroupListMembers).toBe(32);
-    expect(limits!.nameLengthScanList).toBe(13);
-    expect(limits!.zoneMembers).toBeNull();
-    expect(limits!.maxZones).toBeNull();
-    expect(limits!.maxScanLists).toBeNull();
+    expect(limits!.nameLengthChannel).toBe(16);
+    expect(limits!.nameLengthZone).toBe(16);
+    expect(limits!.nameLengthContact).toBe(16);
+    expect(limits!.nameLengthTalkGroup).toBe(16);
+    expect(limits!.nameLengthScanList).toBe(10);
+    expect(limits!.nameLengthRxGroupList).toBe(10);
     expect(limits!.siblingLadders).toHaveLength(1);
     expect(limits!.siblingLadders[0]?.label).toBe('Squelch');
   });

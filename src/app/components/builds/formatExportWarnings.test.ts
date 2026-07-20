@@ -24,26 +24,26 @@ describe('formatExportWarnings', () => {
     expect(result.shortenedGroups).toEqual([]);
   });
 
-  it('groups zone scan cap and scan list truncation warnings', () => {
+  it('groups zone member cap and scan list truncation warnings', () => {
     const result = formatExportWarnings([
-      'Zone "Edinburgh" has 28 expanded members (scan cap 16)',
-      'Zone "Glasgow" has 32 expanded members (scan cap 16)',
-      'Zone "Edinburgh" scan list truncated from 23 to 16 members',
-      'Zone "Glasgow" scan list truncated from 30 to 16 members',
+      'Zone "Edinburgh" has 70 expanded members (cap 64)',
+      'Zone "Glasgow" has 80 expanded members (cap 64)',
+      'Zone "Edinburgh" scan list truncated from 23 to 15 members',
+      'Zone "Glasgow" scan list truncated from 30 to 15 members',
     ]);
 
     expect(result.general).toEqual([]);
     expect(result.unlinkedGroup).toBeNull();
     expect(result.memberCapGroups).toHaveLength(2);
-    expect(result.memberCapGroups[0]?.title).toBe('Zones over scan member cap');
+    expect(result.memberCapGroups[0]?.title).toBe('Zones over member cap');
     expect(result.memberCapGroups[0]?.items).toEqual([
-      { label: 'Edinburgh', count: 28, cap: 16 },
-      { label: 'Glasgow', count: 32, cap: 16 },
+      { label: 'Edinburgh', count: 70, cap: 64 },
+      { label: 'Glasgow', count: 80, cap: 64 },
     ]);
     expect(result.memberCapGroups[1]?.title).toBe('Zone scan lists truncated');
     expect(result.memberCapGroups[1]?.items).toEqual([
-      { label: 'Edinburgh', count: 16, cap: 16, truncatedFrom: 23 },
-      { label: 'Glasgow', count: 16, cap: 16, truncatedFrom: 30 },
+      { label: 'Edinburgh', count: 15, cap: 15, truncatedFrom: 23 },
+      { label: 'Glasgow', count: 15, cap: 15, truncatedFrom: 30 },
     ]);
   });
 
