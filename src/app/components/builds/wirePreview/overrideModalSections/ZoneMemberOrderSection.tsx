@@ -9,7 +9,13 @@ import {
   zoneMemberOrderResetConfirmMessage,
 } from '@core/domain/zoneGroupingLayout.ts';
 import { reorderScanListMembers } from '@core/domain/membershipOrder.ts';
+import {
+  buildExportSortConfirmMessage,
+  sortChannelIdsByMode,
+  type MembershipSortMode,
+} from '@core/domain/membershipSort.ts';
 import { channelDisplayLabel } from '@core/domain/channelNaming.ts';
+import MembershipSortMenu from '../../../library/MembershipSortMenu.tsx';
 import SelectedItemDragHandle from '../../../ui/SelectedItemDragHandle.tsx';
 import SelectedItemList from '../../../ui/SelectedItemList.tsx';
 import SelectedItemRowMoveButtons from '../../../ui/SelectedItemRowMoveButtons.tsx';
@@ -60,6 +66,10 @@ export default function ZoneMemberOrderSection({
     onSetChannelIds(effective);
   }
 
+  function handleSortMembers(mode: MembershipSortMode) {
+    onSetChannelIds(sortChannelIdsByMode(orderedIds, channelById, mode));
+  }
+
   return (
     <Stack gap="xs">
       <Text size="sm" fw={600}>
@@ -92,6 +102,14 @@ export default function ZoneMemberOrderSection({
         onMoveItem={moveItem}
         canMoveUp={!saving && canMoveUp}
         canMoveDown={!saving && canMoveDown}
+        toolbar={
+          <MembershipSortMenu
+            label="Sort channels…"
+            disabled={saving || orderedIds.length < 2}
+            confirmMessage={buildExportSortConfirmMessage}
+            onSort={handleSortMembers}
+          />
+        }
         renderItem={({ itemKey, selected: rowSelected, onToggleSelect, dragHandle, rowMove }) => {
           const channel = channelById.get(itemKey);
           return (

@@ -17,6 +17,11 @@ import {
   hasAnyOrderOrSlotOverride,
   isChirpFlatMemoryChannel,
 } from '@core/domain/exportOrderOrSlot.ts';
+import {
+  buildExportSortConfirmMessage,
+  sortChannelIdsByMode,
+  type MembershipSortMode,
+} from '@core/domain/membershipSort.ts';
 import { getFormatProfiles } from '@core/import-export/formatProfiles.ts';
 import { getFormatExportDefaults } from '@core/import-export/registry.ts';
 import type { FormatId } from '@core/import-export/types.ts';
@@ -25,11 +30,14 @@ import type { Channel } from '@core/models/library.ts';
 import type { WirePreviewRow } from '@core/services/previewWireRows.ts';
 import { mergeExportOptions } from '@core/services/exportBuild.ts';
 import { loadLibrarySlice } from '../../lib/loadLibrarySlice.ts';
+import { resolveOptimisticBuild } from '../../lib/resolveOptimisticBuild.ts';
 import type { LibrarySlice } from '@core/services/assemble.ts';
 import { previewGeneratedChannelWireName } from '@core/services/previewChannelWireName.ts';
 import DefaultScanInclusionSegment from '../../components/builds/DefaultScanInclusionSegment.tsx';
-import ExportNameModeSelect from '../../components/builds/ExportNameModeSelect.tsx';
-import UseLibraryAbbreviationsSwitch from '../../components/builds/UseLibraryAbbreviationsSwitch.tsx';
+import BuildEntityExportSettingsCard, {
+  ChannelsBulkEditAction,
+} from '../../components/builds/BuildEntityExportSettingsCard.tsx';
+import MembershipSortMenu from '../../components/library/MembershipSortMenu.tsx';
 import ExportOrderOverrideBanner from '../../components/builds/wirePreview/ExportOrderOverrideBanner.tsx';
 import WirePreviewDataTable from '../../components/builds/wirePreview/WirePreviewDataTable.tsx';
 import WirePreviewOverrideModal from '../../components/builds/wirePreview/WirePreviewOverrideModal.tsx';
@@ -76,11 +84,7 @@ export default function BuildFlatMemoryChannelsPage() {
   const { build: contextBuild } = useBuildLayout();
   const buildRef = useRef(contextBuild);
   const [savedBuild, setSavedBuild] = useState<FormatBuild | null>(null);
-  const build = useMemo(() => {
-    if (!savedBuild) return contextBuild;
-    if (contextBuild.revision === savedBuild.revision) return contextBuild;
-    return savedBuild;
-  }, [contextBuild, savedBuild]);
+  const build = resolveOptimisticBuild(contextBuild, savedBuild);
   const { activeProjectId } = useProjects();
   const { putBuild } = useFormatBuilds();
   const [librarySlice, setLibrarySlice] = useState<LibrarySlice>({
@@ -264,6 +268,10 @@ export default function BuildFlatMemoryChannelsPage() {
     setChannelOrder(ids);
   }
 
+  function handleSortChannelsForBuild(mode: MembershipSortMode) {
+    setChannelOrder(sortChannelIdsByMode(memoryChannelIds, channelById, mode));
+  }
+
   function includeChannel(channelId: string) {
     const current = buildRef.current;
     void persistBuild(
@@ -289,35 +297,20 @@ export default function BuildFlatMemoryChannelsPage() {
       <Stack gap="md">
         <Text size="sm" c="dimmed">
           All analogue FM/AM library channels are included by default. Click a row to edit
-          overrides, or use bulk edit for wire names and skip flags. Location numbers (1…n) follow
-          export order. Digital modes are not exported.
+          overrides. Location numbers (1…n) follow export order. Digital modes are not exported.
         </Text>
-        <Group>
-          <Button
-            component={Link}
-            to={`/builds/${build.id}/channels/bulk`}
-            variant="light"
-            size="compact-sm"
-          >
-            Bulk edit names and skip…
-          </Button>
-        </Group>
-        <ExportNameModeSelect
-          value={exportSettings.nameModeOverride}
-          disabled={savingSettings}
-          onChange={(nameModeOverride) => void handleExportSettingsPatch({ nameModeOverride })}
-          description="Fallback style for channels without an explicit wire name override on this build."
-        />
-        <UseLibraryAbbreviationsSwitch
-          shortenNames={exportSettings.shortenNames}
-          value={exportSettings.useChannelAbbreviation && exportSettings.useTalkGroupAbbreviation}
-          disabled={savingSettings}
-          onChange={(useLibraryAbbreviations) =>
-            void handleExportSettingsPatch({
-              useChannelAbbreviation: useLibraryAbbreviations,
-              useTalkGroupAbbreviation: useLibraryAbbreviations,
-            })
+        <BuildEntityExportSettingsCard
+          build={build}
+          entityKind="channel"
+          saving={savingSettings}
+          exportSettings={exportSettings}
+          showExportNameMode
+          showLibraryAbbreviations
+          onExportSettingsPatch={(patch) => void handleExportSettingsPatch(patch)}
+          onExportInclusionChange={(field, checked) =>
+            void handleExportSettingsPatch({ [field]: checked })
           }
+          actions={<ChannelsBulkEditAction buildId={build.id} />}
         />
         <DefaultScanInclusionSegment
           value={defaultScanValue}
@@ -338,6 +331,18 @@ export default function BuildFlatMemoryChannelsPage() {
           </Text>
         ) : null}
 
+        <Group gap="sm" align="center">
+          <MembershipSortMenu
+            label="Sort channels…"
+            disabled={saving || memoryChannelIds.length < 2}
+            confirmMessage={buildExportSortConfirmMessage}
+            onSort={handleSortChannelsForBuild}
+          />
+          <Text size="xs" c="dimmed">
+            Sorts this build’s memory locations only — not your library.
+          </Text>
+        </Group>
+
         <ExportOrderOverrideBanner
           visible={channelOrderOverridden}
           disabled={saving}
@@ -351,6 +356,10 @@ export default function BuildFlatMemoryChannelsPage() {
           onSearchChange={setSearch}
           onRowActivate={(row) => setSelectedRowKey(row.key)}
           locationByKey={locationByKey}
+          inclusionColumn={{
+            saving,
+            onExcludedChange: setRowExcluded,
+          }}
           reorder={{
             orderedKeys: memoryChannelIds,
             onMove: moveChannel,

@@ -1,26 +1,31 @@
 import type { ReactNode } from 'react';
 import { useMemo, useState } from 'react';
-import { Stack, Switch, Text } from '@mantine/core';
+import { Stack, Switch, Text, Group } from '@mantine/core';
 import { Link } from 'react-router-dom';
 import type { ChannelExportNameMode } from '@core/domain/channelNaming.ts';
 import {
   exportOrderResetConfirmMessage,
   hasAnyOrderOrSlotOverride,
 } from '@core/domain/exportOrderOrSlot.ts';
+import {
+  buildExportSortConfirmMessage,
+  type MembershipSortMode,
+} from '@core/domain/membershipSort.ts';
+import type { DigitalContactExportNameMode } from '@core/import-export/types.ts';
 import type {
   AnytoneWirePreviewBank,
   WirePreviewEntityKind,
   WirePreviewRow,
 } from '@core/services/previewWireRows.ts';
-import ExportNameModeSelect from '../../../components/builds/ExportNameModeSelect.tsx';
-import DigitalContactExportNameModeSelect from '../../../components/builds/DigitalContactExportNameModeSelect.tsx';
-import type { DigitalContactExportNameMode } from '@core/import-export/types.ts';
-import UseLibraryAbbreviationsSwitch from '../../../components/builds/UseLibraryAbbreviationsSwitch.tsx';
+import MembershipSortMenu from '../../../components/library/MembershipSortMenu.tsx';
 import ExportOrderOverrideBanner from '../../../components/builds/wirePreview/ExportOrderOverrideBanner.tsx';
 import WirePreviewDataTable from '../../../components/builds/wirePreview/WirePreviewDataTable.tsx';
 import type { WirePreviewZoneScanColumnConfig } from '../../../components/builds/wirePreview/WirePreviewDataTable.tsx';
 import WirePreviewOverrideModal from '../../../components/builds/wirePreview/WirePreviewOverrideModal.tsx';
 import { useSyncedWirePreviewRow } from '../../../components/builds/wirePreview/useSyncedWirePreviewRow.ts';
+import BuildEntityExportSettingsCard, {
+  type BuildEntityInclusionField,
+} from '../../../components/builds/BuildEntityExportSettingsCard.tsx';
 import { FormPage } from '../../../components/ui/index.ts';
 import { resolvedBuildExportSettings } from '../../../lib/buildExportSettingsUi.ts';
 import { useBuildWirePreview } from '../../../hooks/useBuildWirePreview.ts';
@@ -81,6 +86,7 @@ function BuildWirePreviewListContent({
     persistBuild,
     moveEntity,
     clearEntityOrderOverrides,
+    setEntityOrder,
     saving,
   } = useBuildWirePreview(entityKind, anytoneBank);
   const [selectedRowKey, setSelectedRowKey] = useState<string | null>(null);
@@ -98,6 +104,16 @@ function BuildWirePreviewListContent({
     clearEntityOrderOverrides();
   }
 
+  function handleSortZonesForBuild(mode: MembershipSortMode) {
+    if (mode !== 'name') return;
+    const orderedIds = [...allRows]
+      .sort((a, b) => a.displayLabel.localeCompare(b.displayLabel))
+      .map((row) => row.key);
+    setEntityOrder(orderedIds);
+  }
+
+  const zoneReorderBlocked = saving || hideNotIncludedInExport || search.trim().length > 0;
+
   function patchExportSettings(
     patch: Partial<{
       nameModeOverride: ChannelExportNameMode;
@@ -108,6 +124,18 @@ function BuildWirePreviewListContent({
   ) {
     void persistBuild((current) => buildService.withExportSettings(current, patch));
   }
+
+  function patchExportInclusion(field: BuildEntityInclusionField, checked: boolean) {
+    void persistBuild((current) =>
+      buildService.withExportInclusionFlags(current, { [field]: checked }),
+    );
+  }
+
+  const showEntitySettingsCard =
+    entityKind === 'channel' ||
+    entityKind === 'talkGroup' ||
+    entityKind === 'contact' ||
+    entityKind === 'rxGroupList';
 
   return (
     <>
@@ -122,40 +150,48 @@ function BuildWirePreviewListContent({
             {description}
           </Text>
         ) : null}
-        {headerActions}
         {error ? (
           <Text c="red" size="sm">
             {error}
           </Text>
         ) : null}
-        {showExportNameMode ? (
-          <ExportNameModeSelect
-            value={exportSettings.nameModeOverride}
-            onChange={(nameModeOverride) => patchExportSettings({ nameModeOverride })}
-            description="Fallback style for channels without an explicit wire name override on this build."
+        {showEntitySettingsCard ? (
+          <BuildEntityExportSettingsCard
+            build={build}
+            entityKind={entityKind}
+            saving={saving}
+            exportSettings={exportSettings}
+            showExportNameMode={showExportNameMode}
+            showDigitalContactExportNameMode={showDigitalContactExportNameMode}
+            showLibraryAbbreviations={showLibraryAbbreviations}
+            onExportSettingsPatch={patchExportSettings}
+            onExportInclusionChange={patchExportInclusion}
+            actions={headerActions}
           />
-        ) : null}
-        {showDigitalContactExportNameMode ? (
-          <DigitalContactExportNameModeSelect
-            value={exportSettings.digitalContactExportNameMode}
-            onChange={(digitalContactExportNameMode) =>
-              patchExportSettings({ digitalContactExportNameMode })
-            }
-          />
-        ) : null}
-        {showLibraryAbbreviations ? (
-          <UseLibraryAbbreviationsSwitch
-            shortenNames={exportSettings.shortenNames}
-            value={exportSettings.useChannelAbbreviation && exportSettings.useTalkGroupAbbreviation}
-            onChange={(useLibraryAbbreviations) =>
-              patchExportSettings({
-                useChannelAbbreviation: useLibraryAbbreviations,
-                useTalkGroupAbbreviation: useLibraryAbbreviations,
-              })
-            }
-          />
-        ) : null}
+        ) : (
+          headerActions
+        )}
         {beforeTable}
+        {zoneReorderEnabled ? (
+          <Group gap="sm" align="center">
+            <MembershipSortMenu
+              label="Sort zones…"
+              modes={['name']}
+              disabled={zoneReorderBlocked}
+              confirmMessage={buildExportSortConfirmMessage}
+              onSort={handleSortZonesForBuild}
+            />
+            {zoneReorderBlocked ? (
+              <Text size="xs" c="dimmed">
+                Clear search and show all zones to sort or reorder.
+              </Text>
+            ) : (
+              <Text size="xs" c="dimmed">
+                Sorts this build’s zone export order only — not your library.
+              </Text>
+            )}
+          </Group>
+        ) : null}
         <ExportOrderOverrideBanner
           visible={zoneOrderOverridden}
           disabled={saving}
@@ -183,12 +219,17 @@ function BuildWirePreviewListContent({
           onSearchChange={setSearch}
           onRowActivate={(row) => setSelectedRowKey(row.key)}
           zoneScanColumn={zoneScanColumn}
+          inclusionColumn={{
+            saving,
+            onExcludedChange: setRowExcluded,
+            onForceIncludeChange: entityKind === 'zone' ? setRowForceIncluded : undefined,
+          }}
           reorder={
             zoneReorderEnabled
               ? {
                   orderedKeys: allRows.map((row) => row.key),
                   onMove: moveEntity,
-                  disabled: saving || hideNotIncludedInExport || search.trim().length > 0,
+                  disabled: zoneReorderBlocked,
                 }
               : undefined
           }

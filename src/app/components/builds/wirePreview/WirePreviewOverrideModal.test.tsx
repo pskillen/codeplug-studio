@@ -125,7 +125,7 @@ describe('WirePreviewOverrideModal', () => {
     expect(onForceIncludeChange).toHaveBeenCalledWith(omitZoneRow, true);
   });
 
-  it('shows skip toggle when omit zone is force-included', () => {
+  it('does not show skip when omit zone is force-included', () => {
     const omitZoneRow: WirePreviewRow = {
       key: 'zone-pmr',
       libraryEntityId: 'zone-pmr',
@@ -156,7 +156,8 @@ describe('WirePreviewOverrideModal', () => {
       </MemoryRouter>,
     );
 
-    expect(screen.getByLabelText('Skip PMR446 from export')).toBeInTheDocument();
+    expect(screen.getByLabelText('Force export PMR446 as its own zone')).toBeChecked();
+    expect(screen.queryByLabelText('Skip PMR446 from export')).not.toBeInTheDocument();
   });
 
   it('tabs Export / Members / Scan when zone sections are provided', () => {

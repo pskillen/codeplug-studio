@@ -88,7 +88,11 @@ export class BuildService {
     const now = isoNow();
     return {
       ...build,
-      [field]: upsertOverride(build[field], libraryEntityId, { forceInclude }),
+      [field]: upsertOverride(build[field], libraryEntityId, {
+        forceInclude,
+        // Force and skip are mutually exclusive in the UI for library-omit zones.
+        ...(forceInclude ? { excluded: false } : {}),
+      }),
       updatedAt: now,
       revision: nextRevision(build.revision),
     };

@@ -32,7 +32,7 @@ const rows: WirePreviewRow[] = [
 ];
 
 describe('WirePreviewDataTable', () => {
-  it('renders read-only status badges without per-row inputs', () => {
+  it('renders read-only status badges without per-row inputs by default', () => {
     render(
       <MemoryRouter>
         <MantineProvider>
@@ -46,6 +46,91 @@ describe('WirePreviewDataTable', () => {
     expect(screen.queryByLabelText('Skip GB3DA Demo from export')).not.toBeInTheDocument();
     expect(screen.queryByRole('textbox')).not.toBeInTheDocument();
     expect(screen.getAllByText('Skipped').length).toBeGreaterThan(0);
+  });
+
+  it('renders Skip from export when inclusionColumn is set', () => {
+    const onExcludedChange = vi.fn();
+    render(
+      <MemoryRouter>
+        <MantineProvider>
+          <WirePreviewDataTable
+            rows={rows}
+            onRowActivate={vi.fn()}
+            inclusionColumn={{ onExcludedChange }}
+          />
+        </MantineProvider>
+      </MemoryRouter>,
+    );
+
+    const skip = screen.getByLabelText('Skip GB3DA Demo from export');
+    fireEvent.click(skip);
+    expect(onExcludedChange).toHaveBeenCalledWith(rows[0], true);
+  });
+
+  it('renders Force export for library omit zones without Skip', () => {
+    const onExcludedChange = vi.fn();
+    const onForceIncludeChange = vi.fn();
+    const zoneRow: WirePreviewRow = {
+      key: 'zone-1',
+      libraryEntityId: 'zone-1',
+      entityKind: 'zone',
+      displayLabel: 'Nested',
+      generatedWireName: 'Nested',
+      effectiveWireName: 'Nested',
+      hasWireNameOverride: false,
+      hasOrderOrSlotOverride: false,
+      omitFromExport: true,
+      forceInclude: true,
+      excluded: false,
+    };
+    render(
+      <MemoryRouter>
+        <MantineProvider>
+          <WirePreviewDataTable
+            rows={[zoneRow]}
+            onRowActivate={vi.fn()}
+            inclusionColumn={{ onExcludedChange, onForceIncludeChange }}
+          />
+        </MantineProvider>
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByLabelText('Force export Nested as its own zone')).toBeChecked();
+    expect(screen.queryByLabelText('Skip Nested from export')).not.toBeInTheDocument();
+  });
+
+  it('renders Force export for library omit zones', () => {
+    const onExcludedChange = vi.fn();
+    const onForceIncludeChange = vi.fn();
+    const zoneRow: WirePreviewRow = {
+      key: 'zone-1',
+      libraryEntityId: 'zone-1',
+      entityKind: 'zone',
+      displayLabel: 'Nested',
+      generatedWireName: 'Nested',
+      effectiveWireName: 'Nested',
+      hasWireNameOverride: false,
+      hasOrderOrSlotOverride: false,
+      omitFromExport: true,
+      forceInclude: false,
+      excluded: false,
+    };
+    render(
+      <MemoryRouter>
+        <MantineProvider>
+          <WirePreviewDataTable
+            rows={[zoneRow]}
+            onRowActivate={vi.fn()}
+            inclusionColumn={{ onExcludedChange, onForceIncludeChange }}
+          />
+        </MantineProvider>
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByLabelText('Force export Nested as its own zone')).toBeInTheDocument();
+    expect(screen.queryByLabelText('Skip Nested from export')).not.toBeInTheDocument();
+    fireEvent.click(screen.getByLabelText('Force export Nested as its own zone'));
+    expect(onForceIncludeChange).toHaveBeenCalledWith(zoneRow, true);
   });
 
   it('calls onRowActivate when a row is clicked', () => {
