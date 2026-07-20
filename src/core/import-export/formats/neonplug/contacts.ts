@@ -35,13 +35,6 @@ export function serialiseNeonplugContacts(
   const reserved = new Set<string>();
   const max = profile.maxContacts;
 
-  const total = assembled.talkGroups.length + assembled.digitalContacts.length;
-  if (total > max) {
-    warnings.push(
-      `Build has ${total} talk group(s)/contact(s); only ${max} export to NeonPlug contacts book (${profile.label})`,
-    );
-  }
-
   for (const row of assembled.talkGroups) {
     if (contacts.length >= max) break;
     const id = contacts.length + 1;

@@ -42,7 +42,7 @@ function assembledDm32(channels: Channel[]): AssembledBuild {
 }
 
 describe('neonplug/serialise', () => {
-  it('assigns sequential channel numbers for DM32UV and stubs sibling arrays', () => {
+  it('assigns sequential channel numbers for DM32UV with empty org arrays when unused', () => {
     const ch1 = fmChannel('ch-1', 'Alpha', 145_500_000);
     const ch2 = fmChannel('ch-2', 'Bravo', 433_500_000);
     const { data, content, warnings } = serialiseNeonplugCodeplug(assembledDm32([ch1, ch2]), {

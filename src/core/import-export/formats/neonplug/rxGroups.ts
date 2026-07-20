@@ -27,12 +27,6 @@ export function serialiseNeonplugRxGroups(
     assembled.talkGroups.map((row) => [row.entity.id, row.entity.digitalId] as const),
   );
 
-  if (assembled.rxGroupLists.length > profile.maxRxGroupLists) {
-    warnings.push(
-      `Build has ${assembled.rxGroupLists.length} RX group list(s); only ${profile.maxRxGroupLists} export to NeonPlug (${profile.label})`,
-    );
-  }
-
   for (const row of assembled.rxGroupLists) {
     if (rxGroups.length >= profile.maxRxGroupLists) break;
 

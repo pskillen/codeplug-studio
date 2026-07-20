@@ -19,12 +19,6 @@ export function serialiseNeonplugZones(
   const zones: NeonplugZone[] = [];
   const reserved = new Set<string>();
 
-  if (assembled.zones.length > profile.maxZones) {
-    warnings.push(
-      `Build has ${assembled.zones.length} zone(s); only ${profile.maxZones} export to NeonPlug (${profile.label})`,
-    );
-  }
-
   for (const zone of assembled.zones) {
     if (zones.length >= profile.maxZones) break;
 
