@@ -39,6 +39,8 @@ import {
   downloadCpsFile,
   downloadCpsSingleFile,
   downloadCpsZip,
+  extractNeonplugDonorFromZip,
+  isNeonplugDonorBag,
   uploadCpsZipToDrive,
   validateNeonplugDonorBase,
 } from '../../services/buildCpsExportService.ts';
@@ -105,6 +107,14 @@ export default function ExportBuildCpsPanel({ build }: ExportBuildCpsPanelProps)
   const interchangeFolderId = activeProject?.interchange?.googleDrive?.folderId;
   const suggestedZipName = defaultCpsZipFileName(build.name, build.formatId as FormatId);
   const isNeonplug = build.formatId === 'neonplug';
+  /** Persist donor retain on the build (DM32UV only; UV5R stays session-only until #554). */
+  const persistNeonplugDonor = build.profileId === 'neonplug-dm32uv';
+  const storedNeonplugDonor = persistNeonplugDonor
+    ? isNeonplugDonorBag(build.cpsWireHydration)
+      ? build.cpsWireHydration
+      : null
+    : null;
+  const hasNeonplugMergeDonor = Boolean(neonplugBaseBytes) || Boolean(storedNeonplugDonor);
   const archiveDownloadLabel = isNeonplug ? 'Download .neonplug' : 'Download ZIP';
   const archiveDriveLabel = isNeonplug ? 'Save .neonplug to Drive' : 'Save ZIP to Drive';
   const defaultScanValue =
@@ -280,10 +290,48 @@ export default function ExportBuildCpsPanel({ build }: ExportBuildCpsPanelProps)
       mergeWarnings(warnings);
       setNeonplugBaseBytes(bytes);
       setNeonplugBaseFileName(file.name);
+
+      if (persistNeonplugDonor) {
+        const bag = extractNeonplugDonorFromZip(bytes, { sourceFileName: file.name });
+        setSavingSettings(true);
+        setSettingsError(null);
+        const next = buildService.withCpsWireHydration(build, bag);
+        const result = await putBuild(next, build.revision);
+        if (!result.ok) {
+          setSettingsError(
+            result.reason === 'revision_conflict'
+              ? 'Build changed elsewhere — reload and try again.'
+              : 'Could not save donor settings on this build.',
+          );
+        }
+        setSavingSettings(false);
+      }
     } catch (err) {
       setNeonplugBaseBytes(null);
       setNeonplugBaseFileName(null);
       setNeonplugBaseError(err instanceof Error ? err.message : String(err));
+      setSavingSettings(false);
+    }
+  }
+
+  async function handleClearStoredNeonplugDonor() {
+    if (!persistNeonplugDonor || !storedNeonplugDonor) return;
+    setSavingSettings(true);
+    setSettingsError(null);
+    setNeonplugBaseBytes(null);
+    setNeonplugBaseFileName(null);
+    try {
+      const next = buildService.clearCpsWireHydration(build);
+      const result = await putBuild(next, build.revision);
+      if (!result.ok) {
+        setSettingsError(
+          result.reason === 'revision_conflict'
+            ? 'Build changed elsewhere — reload and try again.'
+            : 'Could not clear donor settings.',
+        );
+      }
+    } finally {
+      setSavingSettings(false);
     }
   }
 
@@ -484,30 +532,60 @@ export default function ExportBuildCpsPanel({ build }: ExportBuildCpsPanelProps)
               <Button
                 variant="light"
                 size="sm"
-                disabled={exporting}
+                disabled={exporting || savingSettings}
                 onClick={() => neonplugBaseInputRef.current?.click()}
               >
-                {neonplugBaseFileName ? 'Change donor .neonplug' : 'Upload donor .neonplug'}
+                {neonplugBaseFileName || storedNeonplugDonor
+                  ? 'Replace donor .neonplug'
+                  : 'Upload donor .neonplug'}
               </Button>
               {neonplugBaseFileName ? (
                 <Text size="sm" c="dimmed">
-                  {neonplugBaseFileName}
+                  Session: {neonplugBaseFileName}
+                </Text>
+              ) : storedNeonplugDonor ? (
+                <Text size="sm" c="dimmed">
+                  Stored
+                  {storedNeonplugDonor.sourceFileName
+                    ? `: ${storedNeonplugDonor.sourceFileName}`
+                    : ' on this build'}
+                  {storedNeonplugDonor.capturedAt
+                    ? ` (${new Date(storedNeonplugDonor.capturedAt).toLocaleString()})`
+                    : ''}
                 </Text>
               ) : null}
+              {persistNeonplugDonor && storedNeonplugDonor ? (
+                <Button
+                  variant="subtle"
+                  color="red"
+                  size="compact-sm"
+                  disabled={exporting || savingSettings}
+                  loading={savingSettings}
+                  onClick={() => void handleClearStoredNeonplugDonor()}
+                >
+                  Clear stored donor
+                </Button>
+              ) : null}
             </Group>
+            {persistNeonplugDonor ? (
+              <Text size="sm" c="dimmed">
+                Donor settings are saved on this build for repeat exports. Upload once, then
+                download for radio write without re-selecting the file.
+              </Text>
+            ) : null}
             {neonplugBaseError ? <Alert color="red">{neonplugBaseError}</Alert> : null}
             <Group gap="xs">
               <Button
                 leftSection={<IconPackage size={ICON_SIZE_ACTION} stroke={ICON_STROKE} />}
                 variant="filled"
-                disabled={!hasChannels || !neonplugBaseBytes || exporting}
+                disabled={!hasChannels || !hasNeonplugMergeDonor || exporting}
                 loading={exporting}
                 onClick={() => void handleDownloadZip(neonplugBaseBytes ?? undefined)}
               >
                 Download for radio write
               </Button>
               <GoogleDriveActionButton
-                disabled={!hasChannels || !neonplugBaseBytes || exporting}
+                disabled={!hasChannels || !hasNeonplugMergeDonor || exporting}
                 loading={exporting}
                 onClick={() => setDriveBrowserOpen(true)}
               >

@@ -34,17 +34,21 @@ const {
   listCpsExportFileNames: vi.fn(async () => ['Channels.csv', 'Zones.csv']),
 }));
 
-vi.mock('../../services/buildCpsExportService.ts', () => ({
-  defaultCpsSingleFileName: () => 'Baofeng_UV-5R Mini_export.csv',
-  defaultCpsZipFileName: () => 'demo-opengd77.zip',
-  downloadCpsFile,
-  downloadCpsSingleFile,
-  downloadCpsZip,
-  previewCpsExport,
-  previewCpsSingleFile,
-  listCpsExportFileNames,
-  uploadCpsZipToDrive: vi.fn(),
-}));
+vi.mock('../../services/buildCpsExportService.ts', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../services/buildCpsExportService.ts')>();
+  return {
+    ...actual,
+    defaultCpsSingleFileName: () => 'Baofeng_UV-5R Mini_export.csv',
+    defaultCpsZipFileName: () => 'demo-opengd77.zip',
+    downloadCpsFile,
+    downloadCpsSingleFile,
+    downloadCpsZip,
+    previewCpsExport,
+    previewCpsSingleFile,
+    listCpsExportFileNames,
+    uploadCpsZipToDrive: vi.fn(),
+  };
+});
 
 vi.mock('../../state/useProjects.ts', () => ({
   useProjects: () => ({
@@ -315,5 +319,42 @@ describe('ExportBuildCpsPanel', () => {
     ).not.toBeDisabled();
     expect(screen.queryByRole('button', { name: 'Preview CSV' })).not.toBeInTheDocument();
     expect(screen.getByText(/not safe to write back/i)).toBeInTheDocument();
+    expect(screen.getByText(/saved on this build/i)).toBeInTheDocument();
+  });
+
+  it('enables radio-write download when DM32UV build has stored cpsWireHydration', async () => {
+    const neonBuild: FormatBuild = {
+      ...opengd77Build,
+      formatId: 'neonplug',
+      profileId: 'neonplug-dm32uv',
+      name: 'Neon DM32',
+      cpsWireHydration: {
+        formatId: 'neonplug',
+        sourceFileName: 'radio.neonplug',
+        capturedAt: '2026-07-20T12:00:00.000Z',
+        retain: {
+          radioIds: [],
+          quickContacts: [],
+          messages: [],
+          digitalEmergencies: [],
+          analogEmergencies: [],
+          encryptionKeys: [],
+          digitalEmergencyConfig: null,
+          radioSettings: { powerOnDisplayLine1: 'X' },
+          radioInfo: { model: 'DP570UV' },
+        },
+      },
+    };
+    render(
+      <MantineProvider>
+        <ExportBuildCpsPanel build={neonBuild} />
+      </MantineProvider>,
+    );
+
+    expect(
+      await screen.findByRole('button', { name: 'Download for radio write' }),
+    ).not.toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Clear stored donor' })).toBeInTheDocument();
+    expect(screen.getByText(/Stored: radio\.neonplug/)).toBeInTheDocument();
   });
 });

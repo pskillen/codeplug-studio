@@ -43,6 +43,10 @@ export function buildNavItems(build: FormatBuild): BuildNavItem[] {
   items.push({ label: 'Export', path: `${base}/export` });
   items.push({ label: 'Export resolution', path: `${base}/export-resolution` });
 
+  if (build.profileId === 'neonplug-dm32uv') {
+    items.push({ label: 'NeonPlug settings', path: `${base}/neonplug-settings` });
+  }
+
   return items;
 }
 

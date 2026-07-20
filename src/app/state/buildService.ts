@@ -1,8 +1,9 @@
-import type { FormatBuild, BuildExportSettings } from '@core/models/formatBuild.ts';
-import type { ScanListsLayout, ZoneGroupingLayout } from '@core/models/traitLayout.ts';
 import { newFormatBuild } from '@core/domain/factories.ts';
 import { type OverrideField, upsertOverride } from '@core/domain/formatBuildOverrides.ts';
+import type { CpsWireHydration } from '@core/models/cpsWireHydration.ts';
+import type { FormatBuild, BuildExportSettings } from '@core/models/formatBuild.ts';
 import { isoNow, nextRevision } from '@core/models/revision.ts';
+import type { ScanListsLayout, ZoneGroupingLayout } from '@core/models/traitLayout.ts';
 import type { PutResult } from '@integrations/persistence/index.ts';
 import type { ProjectPersistence } from '@integrations/persistence/index.ts';
 
@@ -170,5 +171,28 @@ export class BuildService {
       updatedAt: now,
       revision: nextRevision(build.revision),
     };
+  }
+
+  /** Persist or replace format-scoped CPS wire hydration on the build. */
+  withCpsWireHydration(build: FormatBuild, hydration: CpsWireHydration): FormatBuild {
+    const now = isoNow();
+    return {
+      ...build,
+      cpsWireHydration: hydration,
+      updatedAt: now,
+      revision: nextRevision(build.revision),
+    };
+  }
+
+  /** Clear stored CPS wire hydration bag. */
+  clearCpsWireHydration(build: FormatBuild): FormatBuild {
+    const now = isoNow();
+    const next: FormatBuild = {
+      ...build,
+      updatedAt: now,
+      revision: nextRevision(build.revision),
+    };
+    delete next.cpsWireHydration;
+    return next;
   }
 }

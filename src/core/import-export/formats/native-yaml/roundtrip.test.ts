@@ -108,6 +108,47 @@ describe('native-yaml round-trip smoke', () => {
     ).toBe(true);
   });
 
+  it('preserves cpsWireHydration on format build round-trip', () => {
+    const aggregate = projectWithFormatBuildAggregate();
+    const build = aggregate.formatBuilds[0]!;
+    const withHydration = {
+      ...aggregate,
+      formatBuilds: [
+        {
+          ...build,
+          cpsWireHydration: {
+            formatId: 'neonplug' as const,
+            sourceFileName: 'radio.neonplug',
+            capturedAt: '2026-07-20T12:00:00.000Z',
+            retain: {
+              radioIds: [
+                {
+                  index: 0,
+                  dmrId: '2350001',
+                  dmrIdValue: 2350001,
+                  dmrIdBytes: [1, 0, 0],
+                  name: 'Op',
+                },
+              ],
+              quickContacts: [],
+              messages: [{ text: 'CQ' }],
+              digitalEmergencies: [],
+              analogEmergencies: [],
+              encryptionKeys: [{ id: 1, key: 'SECRET' }],
+              digitalEmergencyConfig: { countIndex: 2 },
+              radioSettings: { powerOnDisplayLine1: 'KEEP', beep: true },
+              radioInfo: { model: 'DP570UV', firmware: '1.0' },
+            },
+          },
+        },
+      ],
+    };
+    const parsed = parseProjectDocument(serialiseProject(withHydration));
+    expect(parsed.formatBuilds[0]?.cpsWireHydration).toEqual(
+      withHydration.formatBuilds[0]!.cpsWireHydration,
+    );
+  });
+
   it('preserves composite channel override keys on round-trip', () => {
     const aggregate = projectWithFormatBuildAggregate();
     const build = aggregate.formatBuilds[0]!;

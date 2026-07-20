@@ -169,4 +169,39 @@ describe('exportBuildZip neonplug', () => {
     expect(data.exportDate).not.toBe('2020-01-01T00:00:00.000Z');
     expect(warnings.every((w) => !/UV5R-Mini/.test(w))).toBe(true);
   });
+
+  it('merges using build.cpsWireHydration when no session donor bytes', () => {
+    const chFm = fmChannel('ch-fm', 'GB3AO', 145_600_000);
+    const build = {
+      ...newFormatBuild(projectId, 'neonplug-dm32uv', 'Neon DM32'),
+      cpsWireHydration: {
+        formatId: 'neonplug' as const,
+        sourceFileName: 'radio.neonplug',
+        capturedAt: '2026-07-20T12:00:00.000Z',
+        retain: {
+          radioIds: [{ index: 0, dmrId: '111', dmrIdValue: 111, dmrIdBytes: [111], name: 'Me' }],
+          quickContacts: [],
+          messages: ['stored'],
+          digitalEmergencies: [],
+          analogEmergencies: [],
+          encryptionKeys: [],
+          digitalEmergencyConfig: null,
+          radioSettings: { powerOnDisplayLine1: 'STORED' },
+          radioInfo: { model: 'DP570UV', firmware: 'hydrated' },
+        },
+      },
+    };
+
+    const { zip } = exportBuildZip({
+      build,
+      library: libraryOf(chFm),
+      options: { shortenNames: false },
+    });
+
+    const data = parseZip(zip);
+    expect(data.radioSettings).toEqual({ powerOnDisplayLine1: 'STORED' });
+    expect(data.messages).toEqual(['stored']);
+    expect(data.radioInfo.firmware).toBe('hydrated');
+    expect(data.channels[0]?.name).toBe('GB3AO');
+  });
 });

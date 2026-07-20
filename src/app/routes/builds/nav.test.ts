@@ -17,8 +17,14 @@ describe('buildNavItems', () => {
     expect(labels.indexOf('Airband')).toBeGreaterThan(labels.indexOf('Channels'));
   });
 
-  it('omits Airband for non-Anytone builds', () => {
-    const build = { ...newFormatBuild('proj', 'opengd77-1701'), formatId: 'opengd77' };
-    expect(buildNavItems(build).map((item) => item.label)).not.toContain('Airband');
+  it('includes NeonPlug settings for DM32UV NeonPlug builds', () => {
+    const build = { ...newFormatBuild('proj', 'neonplug-dm32uv'), formatId: 'neonplug' };
+    const labels = buildNavItems(build).map((item) => item.label);
+    expect(labels).toContain('NeonPlug settings');
+  });
+
+  it('omits NeonPlug settings for UV5R NeonPlug builds', () => {
+    const build = { ...newFormatBuild('proj', 'neonplug-uv5rmini'), formatId: 'neonplug' };
+    expect(buildNavItems(build).map((item) => item.label)).not.toContain('NeonPlug settings');
   });
 });

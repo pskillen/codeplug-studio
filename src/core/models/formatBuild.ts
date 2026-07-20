@@ -1,17 +1,18 @@
-import type { PersistableRow } from './revision.ts';
-import type { TraitLayout } from './traitLayout.ts';
 import type {
   ExpandRxGroupListMembers,
   MultiTalkGroupExportNameMode,
   DigitalContactExportNameMode,
 } from '@core/import-export/types.ts';
-import type { ChannelExportNameMode } from './library.ts';
 import type {
   AnalogSquelchMode,
   EffectiveForbidTransmit,
   SendTalkerAliasMode,
   TxPermitMode,
 } from './channelBehaviourDefaults.ts';
+import type { CpsWireHydration } from './cpsWireHydration.ts';
+import type { ChannelExportNameMode } from './library.ts';
+import type { PersistableRow } from './revision.ts';
+import type { TraitLayout } from './traitLayout.ts';
 
 /** How channels with `scanInclusion: default` serialise when build omits an override. */
 export type DefaultScanInclusion = 'skip' | 'scan';
@@ -89,4 +90,11 @@ export interface FormatBuild extends PersistableRow {
   exportUnlinkedAnalogContacts?: boolean;
   /** Export-affecting preferences for this build (name shortening, scan defaults, …). */
   exportSettings?: BuildExportSettings;
+  /**
+   * Format-scoped CPS wire hydration (unmodelled donor/retain bags for merge export).
+   * Not library entities; not wire-stash for modelled channels.
+   * Persisted with the build and included in native YAML project interchange.
+   * Narrow by `formatId` (e.g. `neonplug` → NeonplugDonorBag in formats/neonplug).
+   */
+  cpsWireHydration?: CpsWireHydration;
 }

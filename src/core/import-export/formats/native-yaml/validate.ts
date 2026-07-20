@@ -10,6 +10,9 @@ import type {
   TxPermitOverride,
 } from '@core/models/channelBehaviourDefaults.ts';
 import type { ZoneBehaviourDefaults } from '@core/models/zoneBehaviourDefaults.ts';
+import { extractNeonplugDonorRetain } from '@core/import-export/formats/neonplug/donorRetain.ts';
+import { parseNeonplugCodeplugJson } from '@core/import-export/formats/neonplug/merge.ts';
+import type { CpsWireHydration } from '@core/models/cpsWireHydration.ts';
 import type {
   BuildEntityOverride,
   BuildExportSettings,
@@ -830,6 +833,44 @@ function parseOverrideField(
   return [];
 }
 
+function parseCpsWireHydration(raw: unknown, label: string): CpsWireHydration {
+  const record = expectRecord(raw, label);
+  const formatId = expectString(record.formatId, `${label}.formatId`);
+  const capturedAt = expectString(record.capturedAt, `${label}.capturedAt`);
+  const sourceFileName =
+    record.sourceFileName !== undefined && record.sourceFileName !== null
+      ? expectString(record.sourceFileName, `${label}.sourceFileName`)
+      : undefined;
+
+  if (formatId === 'neonplug') {
+    const retainRaw = expectRecord(record.retain, `${label}.retain`);
+    try {
+      const data = parseNeonplugCodeplugJson({
+        version: '1.0.0',
+        exportDate: capturedAt,
+        channels: [],
+        zones: [],
+        scanLists: [],
+        contacts: [],
+        rxGroups: [],
+        ...retainRaw,
+      });
+      return extractNeonplugDonorRetain(data, { sourceFileName, capturedAt });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      throw new NativeYamlImportError(`${label}.retain is invalid: ${message}`);
+    }
+  }
+
+  // Unknown format families: keep opaque retain for forward compatibility.
+  return {
+    formatId,
+    capturedAt,
+    ...(sourceFileName !== undefined ? { sourceFileName } : {}),
+    retain: record.retain ?? null,
+  };
+}
+
 function parseExportSettings(raw: unknown, label: string): BuildExportSettings | undefined {
   if (raw === undefined || raw === null) return undefined;
   const record = expectRecord(raw, label);
@@ -1064,6 +1105,14 @@ function parseFormatBuild(raw: unknown, index: number): ParsedFormatBuild {
       : {}),
     ...(record.exportSettings !== undefined && record.exportSettings !== null
       ? { exportSettings: parseExportSettings(record.exportSettings, `${label}.exportSettings`) }
+      : {}),
+    ...(record.cpsWireHydration !== undefined && record.cpsWireHydration !== null
+      ? {
+          cpsWireHydration: parseCpsWireHydration(
+            record.cpsWireHydration,
+            `${label}.cpsWireHydration`,
+          ),
+        }
       : {}),
   };
 
@@ -1438,6 +1487,7 @@ export function validateDocument(raw: unknown): ProjectAggregate {
   const studioSchemaVersion = document.studioSchemaVersion;
   if (
     studioSchemaVersion !== STUDIO_SCHEMA_VERSION &&
+    studioSchemaVersion !== 20 &&
     studioSchemaVersion !== 19 &&
     studioSchemaVersion !== 18 &&
     studioSchemaVersion !== 17 &&
@@ -1457,7 +1507,7 @@ export function validateDocument(raw: unknown): ProjectAggregate {
     studioSchemaVersion !== 2
   ) {
     throw new NativeYamlImportError(
-      `Unsupported studioSchemaVersion: ${String(studioSchemaVersion)} (expected ${STUDIO_SCHEMA_VERSION}, 19, 18, 17, 16, 15, 14, 13, 12, 10, 9, 8, 7, 6, 5, 4, 3, or 2)`,
+      `Unsupported studioSchemaVersion: ${String(studioSchemaVersion)} (expected ${STUDIO_SCHEMA_VERSION}, 20, 19, 18, 17, 16, 15, 14, 13, 12, 10, 9, 8, 7, 6, 5, 4, 3, or 2)`,
     );
   }
 
