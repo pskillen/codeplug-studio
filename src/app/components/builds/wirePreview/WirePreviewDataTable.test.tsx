@@ -119,7 +119,32 @@ describe('WirePreviewDataTable', () => {
     expect(onExportScanListChange).toHaveBeenCalledWith('zone-1', false);
   });
 
-  it('shows Custom order badge when reorder is enabled and orderOrSlot is overridden', () => {
+  it('shows Custom member order badge when zone member layout order is overridden', () => {
+    const zoneRow: WirePreviewRow = {
+      key: 'zone-1',
+      libraryEntityId: 'zone-1',
+      entityKind: 'zone',
+      displayLabel: 'Glasgow',
+      generatedWireName: 'Glasgow',
+      effectiveWireName: 'Glasgow',
+      hasWireNameOverride: false,
+      hasOrderOrSlotOverride: false,
+      hasMemberOrderOverride: true,
+      excluded: false,
+    };
+
+    render(
+      <MemoryRouter>
+        <MantineProvider>
+          <WirePreviewDataTable rows={[zoneRow]} onRowActivate={vi.fn()} />
+        </MantineProvider>
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByText('Custom member order')).toBeInTheDocument();
+  });
+
+  it('does not show Custom member order for zone list orderOrSlot alone', () => {
     const zoneRow: WirePreviewRow = {
       key: 'zone-1',
       libraryEntityId: 'zone-1',
@@ -129,6 +154,7 @@ describe('WirePreviewDataTable', () => {
       effectiveWireName: 'Glasgow',
       hasWireNameOverride: false,
       hasOrderOrSlotOverride: true,
+      hasMemberOrderOverride: false,
       excluded: false,
     };
 
@@ -147,6 +173,7 @@ describe('WirePreviewDataTable', () => {
       </MemoryRouter>,
     );
 
-    expect(screen.getByText('Custom order')).toBeInTheDocument();
+    expect(screen.queryByText('Custom member order')).not.toBeInTheDocument();
+    expect(screen.queryByText('Custom order')).not.toBeInTheDocument();
   });
 });

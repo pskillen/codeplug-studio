@@ -28,12 +28,12 @@
 
 ## Custom order indicator
 
-**Status:** Complete
+**Status:** Complete (corrected)
 
 **Delivered**
 
-- `WirePreviewRow.hasOrderOrSlotOverride`
-- **Custom order** yellow badge on reorder-enabled wire tables (Build → Zones)
+- `WirePreviewRow.hasMemberOrderOverride` from layout `channelIds` vs library membership
+- **Custom member order** yellow badge on Build → Zones (not zone-list `orderOrSlot`)
 
 ---
 

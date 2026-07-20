@@ -902,5 +902,51 @@ describe('previewWireRows', () => {
     expect(
       previewWireRows(build, library, 'zone').map((row) => row.hasOrderOrSlotOverride),
     ).toEqual([true, true, true]);
+    expect(
+      previewWireRows(build, library, 'zone').every((row) => row.hasMemberOrderOverride !== true),
+    ).toBe(true);
+  });
+
+  it('flags hasMemberOrderOverride when layout channelIds reorder zone members', () => {
+    const projectId = 'proj-zone-member-order';
+    const ch1 = newChannel(projectId, 'One');
+    const ch2 = newChannel(projectId, 'Two');
+    const zone = {
+      ...newZone(projectId, 'Local'),
+      members: [
+        { kind: 'channel' as const, channelId: ch1.id },
+        { kind: 'channel' as const, channelId: ch2.id },
+      ],
+    };
+    const build = {
+      ...newFormatBuild(projectId, 'opengd77-1701'),
+      layout: {
+        sections: [
+          {
+            kind: 'zoneGrouping' as const,
+            zones: [
+              {
+                id: zone.id,
+                name: zone.name,
+                channelIds: [ch2.id, ch1.id],
+              },
+            ],
+          },
+        ],
+      },
+    };
+    const library = {
+      channels: [ch1, ch2],
+      zones: [zone],
+      talkGroups: [],
+      digitalContacts: [],
+      analogContacts: [],
+      rxGroupLists: [],
+      scanLists: [],
+    };
+
+    const row = previewWireRows(build, library, 'zone')[0];
+    expect(row?.hasMemberOrderOverride).toBe(true);
+    expect(row?.hasOrderOrSlotOverride).toBe(false);
   });
 });

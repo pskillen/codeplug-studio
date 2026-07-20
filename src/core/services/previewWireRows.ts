@@ -41,6 +41,10 @@ import type { Channel, ChannelModeProfileDMR, Zone } from '@core/models/library.
 import type { DMRTimeSlot, EntityRef } from '@core/models/libraryTypes.ts';
 import { directZoneMemberChannelIds, directZoneMemberZoneIds } from '@core/domain/zoneMembers.ts';
 import { sortZonesByExportOrder } from '@core/domain/zoneOrder.ts';
+import {
+  findZoneGroupingSection,
+  isZoneMemberOrderOverridden,
+} from '@core/domain/zoneGroupingLayout.ts';
 import { isChirpAnalogueExportable } from '@core/import-export/formats/chirp/channelWire.ts';
 import { previewGeneratedChannelWireName } from './previewChannelWireName.ts';
 import { isAmAirbandBankChannel } from '@core/import-export/formats/anytone/receiveOnlyBanks.ts';
@@ -93,6 +97,11 @@ export interface WirePreviewRow {
   hasWireNameOverride: boolean;
   /** True when the build stores a densified `orderOrSlot` for this row key. */
   hasOrderOrSlotOverride: boolean;
+  /**
+   * Zones only — true when build layout `channelIds` reorders members relative to
+   * library effective membership order.
+   */
+  hasMemberOrderOverride?: boolean;
   excluded: boolean;
   expansionNote?: string;
   displayDetails?: WirePreviewDisplayLine[];
@@ -528,6 +537,7 @@ export function previewWireRows(
             })
           : library.zones;
       const zonesForPreview = sortZonesByExportOrder(zonesForBank, build.zoneOverrides);
+      const zoneGrouping = findZoneGroupingSection(build);
       return zonesForPreview.map((zone) => {
         const omitFromExport = zone.omitFromExport === true;
         const forceInclude = isEntityForceIncluded(build.zoneOverrides, zone.id);
@@ -537,6 +547,7 @@ export function previewWireRows(
         const generatedWireName = shortenListNames
           ? applyListWireNameLimits(baseWireName, reserved!, _options, build.profileId, warnings)
           : zone.name;
+        const layoutEntry = zoneGrouping?.zones.find((entry) => entry.id === zone.id);
         return {
           ...previewRow(
             zone.id,
@@ -550,6 +561,11 @@ export function previewWireRows(
           omitFromExport,
           forceInclude,
           zoneDirectMembers,
+          hasMemberOrderOverride: isZoneMemberOrderOverridden(
+            zone,
+            library.zones,
+            layoutEntry?.channelIds,
+          ),
         };
       });
     }
