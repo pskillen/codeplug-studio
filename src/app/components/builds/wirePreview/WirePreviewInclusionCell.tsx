@@ -11,6 +11,7 @@ export interface WirePreviewInclusionCellProps {
 /**
  * Dense list control for build export include/skip.
  * Library nested-only zones get **Force export** (red when on); other rows get **Skip from export**.
+ * Force-export rows do not show Skip — turn force off to honour the library omit.
  */
 export default function WirePreviewInclusionCell({
   row,
@@ -35,16 +36,6 @@ export default function WirePreviewInclusionCell({
             aria-label={`Force export ${row.displayLabel} as its own zone`}
           />
         </Tooltip>
-        {row.forceInclude ? (
-          <Switch
-            size="xs"
-            label="Skip"
-            checked={row.excluded}
-            disabled={disabled}
-            onChange={(event) => onExcludedChange(row, event.currentTarget.checked)}
-            aria-label={`Skip ${row.displayLabel} from export`}
-          />
-        ) : null}
       </Group>
     );
   }

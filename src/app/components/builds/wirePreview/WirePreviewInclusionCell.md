@@ -16,7 +16,7 @@ Inline Skip / Force export control for wire-preview entity lists.
 ## Behaviour
 
 - Default: **Skip from export** switch.
-- Zones with library `omitFromExport` and a force handler: **Force export** (red when on); **Skip** only when force is on.
+- Zones with library `omitFromExport` and a force handler: **Force export** only (red when on). Turn force off to honour the library omit — no separate Skip.
 - Clicks stop propagation so the row modal still opens from other cells.
 
 ## Related

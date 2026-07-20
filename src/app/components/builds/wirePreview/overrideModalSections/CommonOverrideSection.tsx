@@ -29,24 +29,15 @@ export default function CommonOverrideSection({
         Export overrides
       </Text>
       {skippedByLibrary && showForceInclude && onForceIncludeChange ? (
-        <Stack gap="sm">
-          <Tooltip label="Export this zone as its own row in this build, despite the library setting">
-            <Switch
-              label="Force export"
-              checked={row.forceInclude === true}
-              onChange={(event) => onForceIncludeChange(row, event.currentTarget.checked)}
-              aria-label={`Force export ${row.displayLabel} as its own zone`}
-            />
-          </Tooltip>
-          {row.forceInclude ? (
-            <Switch
-              label="Skip from export"
-              checked={row.excluded}
-              onChange={(event) => onExcludedChange(row, event.currentTarget.checked)}
-              aria-label={`Skip ${row.displayLabel} from export`}
-            />
-          ) : null}
-        </Stack>
+        <Tooltip label="Export this zone as its own row in this build, despite the library setting">
+          <Switch
+            label="Force export"
+            color="red"
+            checked={row.forceInclude === true}
+            onChange={(event) => onForceIncludeChange(row, event.currentTarget.checked)}
+            aria-label={`Force export ${row.displayLabel} as its own zone`}
+          />
+        </Tooltip>
       ) : (
         <Switch
           label="Skip from export"

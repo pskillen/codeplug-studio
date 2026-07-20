@@ -67,6 +67,38 @@ describe('WirePreviewDataTable', () => {
     expect(onExcludedChange).toHaveBeenCalledWith(rows[0], true);
   });
 
+  it('renders Force export for library omit zones without Skip', () => {
+    const onExcludedChange = vi.fn();
+    const onForceIncludeChange = vi.fn();
+    const zoneRow: WirePreviewRow = {
+      key: 'zone-1',
+      libraryEntityId: 'zone-1',
+      entityKind: 'zone',
+      displayLabel: 'Nested',
+      generatedWireName: 'Nested',
+      effectiveWireName: 'Nested',
+      hasWireNameOverride: false,
+      hasOrderOrSlotOverride: false,
+      omitFromExport: true,
+      forceInclude: true,
+      excluded: false,
+    };
+    render(
+      <MemoryRouter>
+        <MantineProvider>
+          <WirePreviewDataTable
+            rows={[zoneRow]}
+            onRowActivate={vi.fn()}
+            inclusionColumn={{ onExcludedChange, onForceIncludeChange }}
+          />
+        </MantineProvider>
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByLabelText('Force export Nested as its own zone')).toBeChecked();
+    expect(screen.queryByLabelText('Skip Nested from export')).not.toBeInTheDocument();
+  });
+
   it('renders Force export for library omit zones', () => {
     const onExcludedChange = vi.fn();
     const onForceIncludeChange = vi.fn();
