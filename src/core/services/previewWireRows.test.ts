@@ -892,17 +892,15 @@ describe('previewWireRows', () => {
       scanLists: [],
     };
 
-    const libraryOrder = previewWireRows(
-      { ...build, zoneOverrides: [] },
-      library,
-      'zone',
-    ).map((row) => row.displayLabel);
+    const libraryOrder = previewWireRows({ ...build, zoneOverrides: [] }, library, 'zone').map(
+      (row) => row.displayLabel,
+    );
     expect(libraryOrder).toEqual(['Alpha', 'Bravo', 'Charlie']);
 
     const overrideOrder = previewWireRows(build, library, 'zone').map((row) => row.displayLabel);
     expect(overrideOrder).toEqual(['Charlie', 'Alpha', 'Bravo']);
-    expect(previewWireRows(build, library, 'zone').map((row) => row.hasOrderOrSlotOverride)).toEqual(
-      [true, true, true],
-    );
+    expect(
+      previewWireRows(build, library, 'zone').map((row) => row.hasOrderOrSlotOverride),
+    ).toEqual([true, true, true]);
   });
 });

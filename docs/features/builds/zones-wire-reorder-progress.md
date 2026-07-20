@@ -8,7 +8,7 @@
 
 ## Overall status
 
-**Status:** In progress
+**Status:** Complete (pending merge)
 
 **Branch:** `468/pskil/zones-wire-reorder`
 
@@ -34,12 +34,30 @@
 - `WirePreviewRow.hasOrderOrSlotOverride`
 - **Custom order** yellow badge on reorder-enabled wire tables (Build → Zones)
 
-**Verify**
+---
 
-- `WirePreviewDataTable` test: shows Custom order badge when reorder + override
+## Members per-row arrows + styleguide
+
+**Status:** Complete
+
+**Delivered**
+
+- `SelectedItemList.onMoveItem` + `SelectedItemRowMoveButtons`
+- Styleguide lists-and-ordering + membership demo
+- Build → Zones → Members tab wired
+
+---
+
+## Documentation
+
+**Status:** Complete
+
+**Delivered**
+
+- `docs/features/builds/wire-preview.md`, `zone-grouping.md`
 
 ---
 
 ## Next
 
-- Slice 3: Members tab per-row up/down + styleguide
+- Open PR (`Closes #468`); companion work remains on #457 plan

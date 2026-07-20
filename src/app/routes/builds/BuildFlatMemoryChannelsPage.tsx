@@ -4,7 +4,11 @@ import { IconPlus } from '@tabler/icons-react';
 import { Link } from 'react-router-dom';
 import type { BuildExportSettings, FormatBuild } from '@core/models/formatBuild.ts';
 import { channelDisplayLabel } from '@core/domain/channelNaming.ts';
-import { isEntityExcluded, overrideByEntityId, overrideOrderOrSlot } from '@core/domain/formatBuildOverrides.ts';
+import {
+  isEntityExcluded,
+  overrideByEntityId,
+  overrideOrderOrSlot,
+} from '@core/domain/formatBuildOverrides.ts';
 import {
   applyDenseChannelOrderOrSlots,
   chirpMemoryChannelIds,

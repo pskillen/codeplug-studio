@@ -23,16 +23,16 @@ Gold references: Channels (A), Zone member editor (B+C), digital Contacts (D), Z
 
 Prefer these names in code and docs.
 
-| Tool                                  | Where                                    | Mutates model?  | Use when                                                                                   |
-| ------------------------------------- | ---------------------------------------- | --------------- | ------------------------------------------------------------------------------------------ |
-| **`reorderMode`** (alias `orderMode`) | `DataTable`                              | No by itself    | List’s **only** job is agreed/export order (Zones; wire preview when order arrows present) |
-| **Arrows / Move**                     | Consumer column or C builtins            | Yes             | Reorder one step; disable while filter active                                              |
-| **Per-row arrows (C)**                | `onMoveItem` + `SelectedItemRowMoveButtons` | Yes          | Role C when selection Move alone is easy to miss (e.g. build zone Members)                 |
-| **Drag**                              | C `onReorder` + `SelectedItemDragHandle` | Yes             | Membership lists; `reorderDisabled` while filtered                                         |
-| **`MembershipSortMenu`**              | Above list / C toolbar                   | Yes (confirm)   | Permanent rewrite by name / callsign / …                                                   |
-| **`storedOrder`**                     | `DataTable`                              | No — display    | Hybrid: temporary natural sorts + **Return to export order**                               |
-| **Reset to library order**            | Wire preview banner                      | Yes (confirm)   | Clear build `orderOrSlot` / zone member layout hint — **not** `storedOrder` restore        |
-| **Column sorts**                      | `DataTable` browse                       | No — prefs only | Ordinary A lists without agreed order                                                      |
+| Tool                                  | Where                                       | Mutates model?  | Use when                                                                                   |
+| ------------------------------------- | ------------------------------------------- | --------------- | ------------------------------------------------------------------------------------------ |
+| **`reorderMode`** (alias `orderMode`) | `DataTable`                                 | No by itself    | List’s **only** job is agreed/export order (Zones; wire preview when order arrows present) |
+| **Arrows / Move**                     | Consumer column or C builtins               | Yes             | Reorder one step; disable while filter active                                              |
+| **Per-row arrows (C)**                | `onMoveItem` + `SelectedItemRowMoveButtons` | Yes             | Role C when selection Move alone is easy to miss (e.g. build zone Members)                 |
+| **Drag**                              | C `onReorder` + `SelectedItemDragHandle`    | Yes             | Membership lists; `reorderDisabled` while filtered                                         |
+| **`MembershipSortMenu`**              | Above list / C toolbar                      | Yes (confirm)   | Permanent rewrite by name / callsign / …                                                   |
+| **`storedOrder`**                     | `DataTable`                                 | No — display    | Hybrid: temporary natural sorts + **Return to export order**                               |
+| **Reset to library order**            | Wire preview banner                         | Yes (confirm)   | Clear build `orderOrSlot` / zone member layout hint — **not** `storedOrder` restore        |
+| **Column sorts**                      | `DataTable` browse                          | No — prefs only | Ordinary A lists without agreed order                                                      |
 
 ### Rules
 
@@ -74,7 +74,7 @@ Name column: linked identity. Trailing actions: delete via `EntityListDeleteActi
 | **C filter**              | Find-in-list only; disables drag when non-empty                                                                     |
 | **C toolbar**             | **Sort channels…** (or equivalent) above the list body                                                              |
 | **C builtins**            | `onMoveSelected`, `onRemoveSelected`, `canMove*`, Alt+↑/↓                                                           |
-| **C per-row arrows**      | `onMoveItem` + `SelectedItemRowMoveButtons` in `renderItem` (optional; gold: build zone Members)                  |
+| **C per-row arrows**      | `onMoveItem` + `SelectedItemRowMoveButtons` in `renderItem` (optional; gold: build zone Members)                    |
 | **C drag**                | `onReorder` + `SelectedItemDragHandle` in `renderItem`                                                              |
 | **B**                     | Sparse rows; multi-select → add; no reorder of candidates                                                           |
 | **Pair layout**           | Vertical stack: C then B (Zones / Scan / Receive Group Lists) — preferred over side-by-side dual lists for new work |
@@ -105,12 +105,12 @@ Gold: Zones → Edit, Scan list edit, Receive Group List edit (`RxGroupListMembe
 
 ## Related code
 
-| Symbol                   | Path                                                |
-| ------------------------ | --------------------------------------------------- |
-| `DataTable`              | `src/app/components/ui/DataTable.tsx`               |
-| `AvailableItemPicker`    | `src/app/components/ui/AvailableItemPicker.tsx`     |
-| `SelectedItemList`       | `src/app/components/ui/SelectedItemList.tsx`        |
-| `SelectedItemDragHandle` | `src/app/components/ui/SelectedItemDragHandle.tsx`  |
+| Symbol                       | Path                                                   |
+| ---------------------------- | ------------------------------------------------------ |
+| `DataTable`                  | `src/app/components/ui/DataTable.tsx`                  |
+| `AvailableItemPicker`        | `src/app/components/ui/AvailableItemPicker.tsx`        |
+| `SelectedItemList`           | `src/app/components/ui/SelectedItemList.tsx`           |
+| `SelectedItemDragHandle`     | `src/app/components/ui/SelectedItemDragHandle.tsx`     |
 | `SelectedItemRowMoveButtons` | `src/app/components/ui/SelectedItemRowMoveButtons.tsx` |
-| `MembershipSortMenu`     | `src/app/components/library/MembershipSortMenu.tsx` |
-| List prefs               | `src/integrations/listPrefs/`                       |
+| `MembershipSortMenu`         | `src/app/components/library/MembershipSortMenu.tsx`    |
+| List prefs                   | `src/integrations/listPrefs/`                          |

@@ -177,7 +177,7 @@ function MembershipListsDemo() {
     });
   };
 
-  const moveItem = (key: string, direction: 'up' | 'down') => {
+  const moveItem = (key: MembershipDemoKey, direction: 'up' | 'down') => {
     setSelectedKeys((prev) => {
       const next = [...prev];
       const index = next.indexOf(key);

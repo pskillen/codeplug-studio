@@ -340,7 +340,8 @@ export function previewWireRows(
                   keyOverride ?? channelOverride ?? generated.wireName,
                 ),
                 hasWireNameOverride: Boolean(keyOverride ?? channelOverride),
-                hasOrderOrSlotOverride: overrideOrderOrSlot(build.channelOverrides, channel.id) != null,
+                hasOrderOrSlotOverride:
+                  overrideOrderOrSlot(build.channelOverrides, channel.id) != null,
                 excluded: isEntityExcluded(build.channelOverrides, channel.id),
                 expansionNote: generated.expansionNote,
                 displayDetails: dm32ExpansionDisplayDetails(channel, generated, library),
@@ -421,7 +422,8 @@ export function previewWireRows(
                   keyOverride ?? channelOverride ?? generated.wireName,
                 ),
                 hasWireNameOverride: Boolean(keyOverride ?? channelOverride),
-                hasOrderOrSlotOverride: overrideOrderOrSlot(build.channelOverrides, channel.id) != null,
+                hasOrderOrSlotOverride:
+                  overrideOrderOrSlot(build.channelOverrides, channel.id) != null,
                 excluded: isEntityExcluded(build.channelOverrides, channel.id),
                 expansionNote: generated.expansionNote,
                 displayDetails: anytoneExpansionDisplayDetails(channel, generated, library),
@@ -489,6 +491,7 @@ export function previewWireRows(
               keyOverride ?? channelOverride ?? generatedWireName,
             ),
             hasWireNameOverride,
+            hasOrderOrSlotOverride: overrideOrderOrSlot(build.channelOverrides, channel.id) != null,
             excluded,
             expansionNote:
               generatedExpansions.length > 1

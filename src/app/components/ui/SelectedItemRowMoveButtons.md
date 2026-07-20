@@ -6,19 +6,16 @@ Per-row up/down `ActionIcon`s for role **C** membership lists. Complements drag 
 
 ## Props
 
-| Prop        | Type                          | Description                                      |
-| ----------- | ----------------------------- | ------------------------------------------------ |
+| Prop        | Type                               | Description                                        |
+| ----------- | ---------------------------------- | -------------------------------------------------- |
 | `rowMove`   | `SelectedItemRowMoveProps \| null` | From `SelectedItemList` `renderItem`; `null` hides |
-| `upLabel`   | `string` (optional)           | Aria label (default **Move up**)                 |
-| `downLabel` | `string` (optional)           | Aria label (default **Move down**)               |
+| `upLabel`   | `string` (optional)                | Aria label (default **Move up**)                   |
+| `downLabel` | `string` (optional)                | Aria label (default **Move down**)                 |
 
 ## Usage
 
 ```tsx
-import {
-  SelectedItemList,
-  SelectedItemRowMoveButtons,
-} from '@app/components/ui/index.ts';
+import { SelectedItemList, SelectedItemRowMoveButtons } from '@app/components/ui/index.ts';
 
 <SelectedItemList
   onMoveItem={(key, direction) => moveOne(key, direction)}
