@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Scrollable list of **selected** items (role **C**) with optional filter, multi-select, per-row remove, drag-and-drop reorder, built-in bulk reorder/remove, and a toolbar slot. Used for ordered membership UIs (zone members, scan lists, RX list members).
+Scrollable list of **selected** items (role **C**) with optional filter, multi-select, per-row remove, drag-and-drop reorder, per-row up/down arrows, built-in bulk reorder/remove, and a toolbar slot. Used for ordered membership UIs (zone members, scan lists, RX list members).
 
 Role **C** lives in **reorder mode**: display order is the agreed/export membership order. Permanent **Sort…** (MembershipSortMenu) rewrites that order; there is no temporary column sort.
 
@@ -17,22 +17,27 @@ Role **C** lives in **reorder mode**: display order is the agreed/export members
 | `selectedKeys`              | `readonly TKey[]`                                | Keys checked for bulk toolbar actions                                 |
 | `onToggleSelect`            | `(key: TKey) => void`                            | Toggle row selection                                                  |
 | `onRemove`                  | `(key: TKey) => void`                            | Remove one row                                                        |
-| `renderItem`                | `(ctx) => ReactNode`                             | Row content; receives `dragHandle` for {@link SelectedItemDragHandle} |
+| `renderItem`                | `(ctx) => ReactNode`                             | Row content; receives `dragHandle` and `rowMove`                      |
 | `emptyMessage`              | `string`                                         | Shown when `itemKeys` is empty                                        |
 | `maxHeight`                 | `number`                                         | `ScrollArea` max height (default 360)                                 |
 | `toolbar`                   | `ReactNode`                                      | Extra actions above the list body (e.g. **Sort channels…**)           |
 | `onMoveSelected`            | `(direction: 'up' \| 'down') => void`            | Built-in Move up / Move down                                          |
+| `onMoveItem`                | `(key, direction) => void`                       | Enables `rowMove` for {@link SelectedItemRowMoveButtons}              |
 | `onRemoveSelected`          | `() => void`                                     | Built-in Remove selected                                              |
 | `onReorder`                 | `(orderedKeys: TKey[]) => void`                  | Drag-and-drop; receives full `itemKeys` after drop                    |
-| `reorderDisabled`           | `boolean`                                        | Disable drag (e.g. while find-in-list filter is active)               |
+| `reorderDisabled`           | `boolean`                                        | Disable drag and per-row arrows (e.g. while find-in-list filter is active) |
 | `canMoveUp` / `canMoveDown` | `boolean`                                        | Disable edge move buttons (default true)                              |
-| `reorderHint`               | `ReactNode`                                      | Override default Alt+↑/↓ / drag hint                                  |
+| `reorderHint`               | `ReactNode`                                      | Override default Alt+↑/↓ / drag / row-arrow hint                      |
 | `enableReorderHotkeys`      | `boolean`                                        | Alt+ArrowUp/Down → `onMoveSelected` (default true when move set)      |
 
 ## Usage
 
 ```tsx
-import { SelectedItemDragHandle, SelectedItemList } from '@app/components/ui/index.ts';
+import {
+  SelectedItemDragHandle,
+  SelectedItemList,
+  SelectedItemRowMoveButtons,
+} from '@app/components/ui/index.ts';
 
 <SelectedItemList
   title="In this zone"
@@ -42,13 +47,15 @@ import { SelectedItemDragHandle, SelectedItemList } from '@app/components/ui/ind
   onToggleSelect={toggle}
   onRemove={remove}
   onReorder={setKeys}
+  onMoveItem={(key, direction) => moveOne(key, direction)}
   reorderDisabled={filterActive}
   onMoveSelected={move}
   onRemoveSelected={removeBulk}
-  renderItem={({ itemKey, selected, onToggleSelect, onRemove, dragHandle }) => (
+  renderItem={({ itemKey, selected, onToggleSelect, onRemove, dragHandle, rowMove }) => (
     <MyRow
       key={itemKey}
       dragHandle={<SelectedItemDragHandle dragHandle={dragHandle} />}
+      rowMove={<SelectedItemRowMoveButtons rowMove={rowMove} />}
       ...
     />
   )}
@@ -57,16 +64,19 @@ import { SelectedItemDragHandle, SelectedItemList } from '@app/components/ui/ind
 
 ## Behaviour
 
-- **Reorder mode** — `itemKeys` order is the source of truth; drag + Move up/down mutate it.
+- **Reorder mode** — `itemKeys` order is the source of truth; drag + Move up/down + per-row arrows mutate it.
 - Drag is off when `reorderDisabled` or `onReorder` is absent (decorative grip via `SelectedItemDragHandle` with `null`).
-- Prefer disabling drag while a find-in-list filter is active so drops cannot drop filtered-out members.
-- Hotkeys listen on `window` while the component is mounted (Alt+Arrow).
+- Per-row arrows are off when `reorderDisabled` or `onMoveItem` is absent (`rowMove` is `null`).
+- Prefer disabling reorder while a find-in-list filter is active so drops cannot drop filtered-out members.
+- Hotkeys listen on `window` while the component is mounted (Alt+Arrow) for selection Move.
 - Dense membership property editors stay in `renderItem` (N is typically &lt;100).
 
 ## Related
 
 - [SelectedItemDragHandle](./SelectedItemDragHandle.tsx) — grip button
+- [SelectedItemRowMoveButtons](./SelectedItemRowMoveButtons.md) — per-row arrows
 - [AvailableItemPicker](./AvailableItemPicker.md) — paired pool picker (role B)
 - [list-kit-roles.md](../../../../docs/features/app-shell/list-kit-roles.md)
 - [zone-member-picker.md](../../../../docs/features/library/zone-member-picker.md)
+- [lists-and-ordering.md](../../../../docs/reference/styleguide/lists-and-ordering.md)
 - Dev demos: `/styleguide/membership`

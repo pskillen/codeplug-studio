@@ -59,6 +59,8 @@ export type {
 } from './SelectedItemList.tsx';
 export { default as SelectedItemDragHandle } from './SelectedItemDragHandle.tsx';
 export type { SelectedItemDragHandleProps } from './SelectedItemDragHandle.tsx';
+export { default as SelectedItemRowMoveButtons } from './SelectedItemRowMoveButtons.tsx';
+export type { SelectedItemRowMoveProps } from './SelectedItemRowMoveButtons.tsx';
 export { default as AvailableItemPicker } from './AvailableItemPicker.tsx';
 export type {
   AvailableItemPickerFilterProps,

@@ -18,6 +18,7 @@ import { CSS } from '@dnd-kit/utilities';
 import { Button, Group, ScrollArea, Stack, Text, TextInput } from '@mantine/core';
 import { Fragment, useCallback, useEffect, type CSSProperties, type ReactNode } from 'react';
 import type { SelectedItemDragHandleProps } from './SelectedItemDragHandle.tsx';
+import type { SelectedItemRowMoveProps } from './SelectedItemRowMoveButtons.tsx';
 
 export interface SelectedItemListFilterProps {
   value: string;
@@ -36,6 +37,11 @@ export interface SelectedItemListRenderProps<TKey extends string> {
    * {@link SelectedItemDragHandle}. `null` when drag is disabled (e.g. filter active).
    */
   dragHandle: SelectedItemDragHandleProps | null;
+  /**
+   * When {@link SelectedItemListProps.onMoveItem} is set, wire this to
+   * {@link SelectedItemRowMoveButtons}. `null` when move is disabled.
+   */
+  rowMove: SelectedItemRowMoveProps | null;
 }
 
 export interface SelectedItemListProps<TKey extends string = string> {
@@ -52,6 +58,11 @@ export interface SelectedItemListProps<TKey extends string = string> {
   toolbar?: ReactNode;
   /** When set, shows built-in Move up / Move down for the current selection. */
   onMoveSelected?: (direction: 'up' | 'down') => void;
+  /**
+   * When set, `renderItem` receives `rowMove` for per-row up/down arrows
+   * ({@link SelectedItemRowMoveButtons}). Disabled while `reorderDisabled`.
+   */
+  onMoveItem?: (key: TKey, direction: 'up' | 'down') => void;
   /** When set, shows built-in Remove selected. */
   onRemoveSelected?: () => void;
   /**
@@ -134,6 +145,7 @@ export default function SelectedItemList<TKey extends string>({
   maxHeight = 360,
   toolbar,
   onMoveSelected,
+  onMoveItem,
   onRemoveSelected,
   onReorder,
   reorderDisabled = false,
@@ -146,14 +158,23 @@ export default function SelectedItemList<TKey extends string>({
   const hotkeysEnabled = onMoveSelected != null && (enableReorderHotkeys ?? true);
   const showBuiltinReorder = onMoveSelected != null || onRemoveSelected != null;
   const dragEnabled = onReorder != null && !reorderDisabled;
+  const rowMoveEnabled = onMoveItem != null && !reorderDisabled;
   const defaultHint =
-    onMoveSelected != null || onReorder != null ? (
+    onMoveSelected != null || onReorder != null || onMoveItem != null ? (
       <Text size="xs" c="dimmed">
-        {onReorder != null && !reorderDisabled
-          ? 'Drag handles reorder · Alt+↑/↓ moves selection'
-          : onMoveSelected != null
-            ? 'Alt+↑ / Alt+↓ reorders selection'
-            : 'Clear filter to drag-reorder'}
+        {reorderDisabled
+          ? 'Clear filter to reorder'
+          : onReorder != null && rowMoveEnabled
+            ? 'Drag handles or row arrows reorder · Alt+↑/↓ moves selection'
+            : onReorder != null
+              ? 'Drag handles reorder · Alt+↑/↓ moves selection'
+              : rowMoveEnabled && onMoveSelected != null
+                ? 'Row arrows reorder · Alt+↑/↓ moves selection'
+                : rowMoveEnabled
+                  ? 'Row arrows reorder one channel at a time'
+                  : onMoveSelected != null
+                    ? 'Alt+↑ / Alt+↓ reorders selection'
+                    : 'Clear filter to reorder'}
       </Text>
     ) : null;
   const hint = reorderHint !== undefined ? reorderHint : defaultHint;
@@ -174,6 +195,20 @@ export default function SelectedItemList<TKey extends string>({
       onReorder(arrayMove([...itemKeys], oldIndex, newIndex));
     },
     [itemKeys, onReorder, reorderDisabled],
+  );
+
+  const rowMoveFor = useCallback(
+    (itemKey: TKey): SelectedItemRowMoveProps | null => {
+      if (!rowMoveEnabled || !onMoveItem) return null;
+      const index = itemKeys.indexOf(itemKey);
+      return {
+        canMoveUp: index > 0,
+        canMoveDown: index >= 0 && index < itemKeys.length - 1,
+        onMoveUp: () => onMoveItem(itemKey, 'up'),
+        onMoveDown: () => onMoveItem(itemKey, 'down'),
+      };
+    },
+    [itemKeys, onMoveItem, rowMoveEnabled],
   );
 
   useEffect(() => {
@@ -210,6 +245,7 @@ export default function SelectedItemList<TKey extends string>({
                     onToggleSelect: () => onToggleSelect(itemKey),
                     onRemove: () => onRemove(itemKey),
                     dragHandle,
+                    rowMove: rowMoveFor(itemKey),
                   })
                 }
               </SortableSelectedItem>
@@ -227,6 +263,7 @@ export default function SelectedItemList<TKey extends string>({
               onToggleSelect: () => onToggleSelect(itemKey),
               onRemove: () => onRemove(itemKey),
               dragHandle: null,
+              rowMove: rowMoveFor(itemKey),
             })}
           </Fragment>
         ))}
@@ -301,7 +338,7 @@ export default function SelectedItemList<TKey extends string>({
           ) : null}
           {hint}
         </Group>
-      ) : hint && onReorder != null ? (
+      ) : hint && (onReorder != null || onMoveItem != null) ? (
         <Group gap="xs">{hint}</Group>
       ) : null}
     </Stack>

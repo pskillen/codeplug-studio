@@ -19,6 +19,7 @@ import {
   AvailableItemPicker,
   SelectedItemDragHandle,
   SelectedItemList,
+  SelectedItemRowMoveButtons,
 } from '../../components/ui/index.ts';
 
 const MEMBERSHIP_DEMO_CATALOG = {
@@ -176,6 +177,18 @@ function MembershipListsDemo() {
     });
   };
 
+  const moveItem = (key: string, direction: 'up' | 'down') => {
+    setSelectedKeys((prev) => {
+      const next = [...prev];
+      const index = next.indexOf(key);
+      if (index < 0) return prev;
+      const swapWith = direction === 'up' ? index - 1 : index + 1;
+      if (swapWith < 0 || swapWith >= next.length) return prev;
+      [next[index], next[swapWith]] = [next[swapWith]!, next[index]!];
+      return next;
+    });
+  };
+
   const canMoveUp = listSelection.some((key) => selectedKeys.indexOf(key) > 0);
   const canMoveDown = listSelection.some((key) => {
     const index = selectedKeys.indexOf(key);
@@ -208,10 +221,11 @@ function MembershipListsDemo() {
         onReorder={setSelectedKeys}
         reorderDisabled={selectedFilter.trim().length > 0}
         onMoveSelected={moveSelected}
+        onMoveItem={moveItem}
         onRemoveSelected={removeSelectedBulk}
         canMoveUp={canMoveUp}
         canMoveDown={canMoveDown}
-        renderItem={({ itemKey, selected, onToggleSelect, onRemove, dragHandle }) => {
+        renderItem={({ itemKey, selected, onToggleSelect, onRemove, dragHandle, rowMove }) => {
           const entry = MEMBERSHIP_DEMO_CATALOG[itemKey];
 
           if (entry.kind === 'zone') {
@@ -235,6 +249,11 @@ function MembershipListsDemo() {
                     </Stack>
                   </Group>
                   <Group gap="xs" wrap="nowrap">
+                    <SelectedItemRowMoveButtons
+                      rowMove={rowMove}
+                      upLabel={`Move ${entry.label} up`}
+                      downLabel={`Move ${entry.label} down`}
+                    />
                     <Text size="xs" c="brand">
                       Open zone
                     </Text>
@@ -300,6 +319,11 @@ function MembershipListsDemo() {
                   </Stack>
                 </Group>
                 <Group gap="xs" wrap="nowrap" align="center">
+                  <SelectedItemRowMoveButtons
+                    rowMove={rowMove}
+                    upLabel={`Move ${entry.label} up`}
+                    downLabel={`Move ${entry.label} down`}
+                  />
                   <Tooltip label="Include in zone-derived scan lists at export">
                     <Checkbox
                       label="Scan list"

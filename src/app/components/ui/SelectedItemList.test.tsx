@@ -57,4 +57,45 @@ describe('SelectedItemList', () => {
     fireEvent.keyDown(window, { key: 'ArrowDown', altKey: true });
     expect(onMoveSelected).toHaveBeenCalledWith('down');
   });
+
+  it('calls onMoveItem from per-row move buttons via render props', () => {
+    const onMoveItem = vi.fn();
+    render(
+      <MantineProvider>
+        <SelectedItemList
+          title="Members"
+          itemKeys={['a', 'b', 'c']}
+          selectedKeys={[]}
+          onToggleSelect={() => undefined}
+          onRemove={() => undefined}
+          onMoveItem={onMoveItem}
+          renderItem={({ itemKey, rowMove }) => (
+            <div key={itemKey}>
+              <span>{itemKey}</span>
+              {rowMove ? (
+                <>
+                  <button type="button" onClick={rowMove.onMoveUp} disabled={!rowMove.canMoveUp}>
+                    Up {itemKey}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={rowMove.onMoveDown}
+                    disabled={!rowMove.canMoveDown}
+                  >
+                    Down {itemKey}
+                  </button>
+                </>
+              ) : null}
+            </div>
+          )}
+        />
+      </MantineProvider>,
+    );
+
+    expect(screen.getByRole('button', { name: 'Up a' })).toBeDisabled();
+    fireEvent.click(screen.getByRole('button', { name: 'Down a' }));
+    expect(onMoveItem).toHaveBeenCalledWith('a', 'down');
+    fireEvent.click(screen.getByRole('button', { name: 'Up b' }));
+    expect(onMoveItem).toHaveBeenCalledWith('b', 'up');
+  });
 });

@@ -17,7 +17,7 @@ A  Entity list
 D  Extreme inventory (A’s face, harder guts)
 ```
 
-Gold references: Channels (A), Zone member editor (B+C), digital Contacts (D), Zones list (A + `reorderMode`).
+Gold references: Channels (A), Zone member editor (B+C), digital Contacts (D), Zones list (A + `reorderMode`), Build → Zones → Members tab (C with per-row arrows).
 
 ## Ordering toolkit
 
@@ -27,6 +27,7 @@ Prefer these names in code and docs.
 | ------------------------------------- | ---------------------------------------- | --------------- | ------------------------------------------------------------------------------------------ |
 | **`reorderMode`** (alias `orderMode`) | `DataTable`                              | No by itself    | List’s **only** job is agreed/export order (Zones; wire preview when order arrows present) |
 | **Arrows / Move**                     | Consumer column or C builtins            | Yes             | Reorder one step; disable while filter active                                              |
+| **Per-row arrows (C)**                | `onMoveItem` + `SelectedItemRowMoveButtons` | Yes          | Role C when selection Move alone is easy to miss (e.g. build zone Members)                 |
 | **Drag**                              | C `onReorder` + `SelectedItemDragHandle` | Yes             | Membership lists; `reorderDisabled` while filtered                                         |
 | **`MembershipSortMenu`**              | Above list / C toolbar                   | Yes (confirm)   | Permanent rewrite by name / callsign / …                                                   |
 | **`storedOrder`**                     | `DataTable`                              | No — display    | Hybrid: temporary natural sorts + **Return to export order**                               |
@@ -41,6 +42,7 @@ Prefer these names in code and docs.
 4. **Filter disables reorder.** Clear messaging when arrows / drag / Sort are blocked.
 5. **DataTable row drag in `reorderMode`** is still a kit gap — Zones keep arrow columns for now.
 6. **Build order reset ≠ browse restore.** Clearing `orderOrSlot` / member layout hints is permanent (confirm). DataTable **Return to export order** only undoes temporary column sorts.
+7. **Role C may combine** drag, toolbar **Move up/down** (selection), and **per-row arrows** (`onMoveItem`). Gold: Build → Zones → Members export order.
 
 ### Mental model
 
@@ -72,11 +74,12 @@ Name column: linked identity. Trailing actions: delete via `EntityListDeleteActi
 | **C filter**              | Find-in-list only; disables drag when non-empty                                                                     |
 | **C toolbar**             | **Sort channels…** (or equivalent) above the list body                                                              |
 | **C builtins**            | `onMoveSelected`, `onRemoveSelected`, `canMove*`, Alt+↑/↓                                                           |
+| **C per-row arrows**      | `onMoveItem` + `SelectedItemRowMoveButtons` in `renderItem` (optional; gold: build zone Members)                  |
 | **C drag**                | `onReorder` + `SelectedItemDragHandle` in `renderItem`                                                              |
 | **B**                     | Sparse rows; multi-select → add; no reorder of candidates                                                           |
 | **Pair layout**           | Vertical stack: C then B (Zones / Scan / Receive Group Lists) — preferred over side-by-side dual lists for new work |
 
-Gold: Zones → Edit, Scan list edit, Receive Group List edit (`RxGroupListMemberPicker`).
+Gold: Zones → Edit, Scan list edit, Receive Group List edit (`RxGroupListMemberPicker`); Build → Zones → Members for per-row arrows.
 
 ## Naming catalogue
 
@@ -108,5 +111,6 @@ Gold: Zones → Edit, Scan list edit, Receive Group List edit (`RxGroupListMembe
 | `AvailableItemPicker`    | `src/app/components/ui/AvailableItemPicker.tsx`     |
 | `SelectedItemList`       | `src/app/components/ui/SelectedItemList.tsx`        |
 | `SelectedItemDragHandle` | `src/app/components/ui/SelectedItemDragHandle.tsx`  |
+| `SelectedItemRowMoveButtons` | `src/app/components/ui/SelectedItemRowMoveButtons.tsx` |
 | `MembershipSortMenu`     | `src/app/components/library/MembershipSortMenu.tsx` |
 | List prefs               | `src/integrations/listPrefs/`                       |
