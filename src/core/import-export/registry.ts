@@ -45,6 +45,13 @@ export const formatCatalog: readonly FormatCatalogEntry[] = [
     importStatus: 'planned',
     exportStatus: 'planned',
   },
+  {
+    id: 'neonplug',
+    label: 'NeonPlug',
+    importStatus: 'planned',
+    exportStatus: 'planned',
+    issue: '536',
+  },
 ];
 
 export const importAdapters: readonly ImportAdapter[] = [nativeYamlImportAdapter];
