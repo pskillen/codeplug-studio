@@ -1,6 +1,6 @@
 /**
  * NeonPlug radio profiles — import/export boundary only.
- * Channel export + `.neonplug` ZIP packaging: #539. Zones/contacts: #540. UV5R polish: #541.
+ * Channel + org export (#539/#540). UV5R polish: #541.
  *
  * Keep `neonplug-dm32uv` numeric caps in sync with `dm32-baofeng-dm32uv` — see profiles.test.ts.
  */

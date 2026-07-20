@@ -41,15 +41,17 @@ Large DM32-oriented settings bag (display, GPS, buttons, APRS position, embedded
 
 ## Loss table (operator-facing summary)
 
-| NeonPlug content                       | Re-import after Studio export (planned)  |
-| -------------------------------------- | ---------------------------------------- |
-| Channels (modelled RF fields)          | Intended fidelity within modelled fields |
-| Zones / scan / contacts / RX groups    | Empty on #539 export — filled in #540    |
-| Talk-group / contact index on channels | Always `0` until #540                    |
-| Radio settings / VFOs                  | Lost                                     |
-| Emergencies                            | Lost                                     |
-| Encryption keys                        | Lost (intentional)                       |
-| Quick contacts `rawData`               | Lost                                     |
-| Unknown channel bitfields              | Lost (defaults on export)                |
+| NeonPlug content                    | Re-import after Studio export (planned)    |
+| ----------------------------------- | ------------------------------------------ |
+| Channels (modelled RF fields)       | Intended fidelity within modelled fields   |
+| Zones / scan / contacts / RX groups | Filled on DM32UV export (#540); UV5R empty |
+| Channel contact / RX / scan indexes | Wired on DM32UV (#540); `0` on UV5R        |
+| Operator `radioIds`                 | Empty — no library source yet              |
+| Radio settings / VFOs               | Lost                                       |
+| Emergencies                         | Lost                                       |
+| Encryption keys                     | Lost (intentional)                         |
+| Quick contacts `rawData`            | Lost                                       |
+| Unknown channel bitfields           | Lost (defaults on export)                  |
+| Scan CTC / hang / priority          | Defaults only (lossy)                      |
 
-Document any additional loss discovered while implementing [#540](https://github.com/pskillen/codeplug-studio/issues/540)–[#543](https://github.com/pskillen/codeplug-studio/issues/543) here.
+Document any additional loss discovered while implementing [#541](https://github.com/pskillen/codeplug-studio/issues/541)–[#543](https://github.com/pskillen/codeplug-studio/issues/543) here.

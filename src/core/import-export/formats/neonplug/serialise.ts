@@ -1,14 +1,28 @@
 import { applyWireNameLimits } from '@core/import-export/channelExpansion/exportWireNames.ts';
 import type { CpsExportOptions } from '@core/import-export/types.ts';
 import type { AssembledBuild, AssembledChannel } from '@core/services/assemble.ts';
-import { channelToNeonplugChannel, neonplugContextsFromExportOptions } from './channelWire.ts';
+import {
+  channelToNeonplugChannel,
+  dmrContactRefFromChannel,
+  dmrRxGroupListIdFromChannel,
+  neonplugContextsFromExportOptions,
+} from './channelWire.ts';
+import { serialiseNeonplugContactsForProfile } from './contacts.ts';
+import {
+  buildDm32uvChannelNumberMap,
+  resolveContactBookId,
+  resolveRxGroupListId,
+} from './exportContext.ts';
 import {
   DEFAULT_NEONPLUG_PROFILE_ID,
   getNeonplugProfile,
   isNeonplugDm32uvProfile,
 } from './profiles.ts';
+import { serialiseNeonplugRxGroups } from './rxGroups.ts';
 import { collectNeonplugExportWarnings } from './warnings.ts';
 import type { NeonplugChannel, NeonplugCodeplugData, NeonplugRadioInfo } from './wireTypes.ts';
+import { deriveNeonplugZoneDerivedScanLists } from './zoneDerivedScanLists.ts';
+import { serialiseNeonplugZones } from './zones.ts';
 
 export const NEONPLUG_CODEPLUG_VERSION = '1.0.0';
 export const NEONPLUG_JSON_FILE_NAME = 'codeplug.json';
@@ -77,12 +91,19 @@ function resolveWireName(
   return applyWireNameLimits(row.wireName, row.entity, reserved, options, profileId, warnings);
 }
 
+interface Dm32uvChannelFkMaps {
+  contactIdByEntityId: Map<string, number>;
+  rxGroupIndexById: Map<string, number>;
+  scanListIdByChannelId: Map<string, number>;
+}
+
 /** Build NeonPlug channels for DM32UV — sequential numbers 1…N in assemble order. */
 function serialiseDm32uvChannels(
   assembled: AssembledBuild,
   profileId: string,
   options: CpsExportOptions | undefined,
   warnings: string[],
+  fks: Dm32uvChannelFkMaps,
 ): NeonplugChannel[] {
   const profile = getNeonplugProfile(profileId);
   if (!isNeonplugDm32uvProfile(profile)) {
@@ -92,21 +113,31 @@ function serialiseDm32uvChannels(
   const { scanContext, behaviourContext } = neonplugContextsFromExportOptions(options);
   const reserved = new Set<string>();
   const max = profile.maxChannels;
+  const channelNumberById = buildDm32uvChannelNumberMap(assembled, max);
   const channels: NeonplugChannel[] = [];
 
-  for (let i = 0; i < assembled.channels.length && channels.length < max; i++) {
-    const row = assembled.channels[i]!;
+  for (const row of assembled.channels) {
+    const number = channelNumberById.get(row.entity.id);
+    if (number == null) break;
     const name = resolveWireName(row, reserved, profileId, options, warnings);
+    const contactId = resolveContactBookId(
+      dmrContactRefFromChannel(row.entity),
+      fks.contactIdByEntityId,
+    );
+    const rxGroupListId = resolveRxGroupListId(
+      dmrRxGroupListIdFromChannel(row.entity),
+      fks.rxGroupIndexById,
+    );
     channels.push(
       channelToNeonplugChannel(row.entity, {
-        number: i + 1,
+        number,
         name,
         profileId,
         scanContext,
         behaviourContext,
-        contactId: 0,
-        rxGroupListId: 0,
-        scanListId: 0,
+        contactId,
+        rxGroupListId,
+        scanListId: fks.scanListIdByChannelId.get(row.entity.id) ?? 0,
       }),
     );
   }
@@ -190,9 +221,39 @@ export function serialiseNeonplugCodeplug(
   const exportDate = options?.exportDate ?? new Date().toISOString();
   const data = emptyCodeplug(radioInfoForProfile(profileId), exportDate);
 
-  data.channels = isNeonplugDm32uvProfile(profile)
-    ? serialiseDm32uvChannels(assembled, profileId, options, warnings)
-    : serialiseUv5rminiChannels(assembled, profileId, options, warnings);
+  if (isNeonplugDm32uvProfile(profile)) {
+    const { contacts, contactIdByEntityId } = serialiseNeonplugContactsForProfile(
+      assembled,
+      profileId,
+      options,
+      warnings,
+    );
+    const { rxGroups, rxGroupIndexById } = serialiseNeonplugRxGroups(
+      assembled,
+      profile,
+      options,
+      warnings,
+    );
+    const channelNumberById = buildDm32uvChannelNumberMap(assembled, profile.maxChannels);
+    const { scanLists, scanListIdByChannelId } = deriveNeonplugZoneDerivedScanLists(
+      assembled,
+      profile,
+      channelNumberById,
+      options,
+      warnings,
+    );
+    data.contacts = contacts;
+    data.rxGroups = rxGroups;
+    data.zones = serialiseNeonplugZones(assembled, profile, channelNumberById, options, warnings);
+    data.scanLists = scanLists;
+    data.channels = serialiseDm32uvChannels(assembled, profileId, options, warnings, {
+      contactIdByEntityId,
+      rxGroupIndexById,
+      scanListIdByChannelId,
+    });
+  } else {
+    data.channels = serialiseUv5rminiChannels(assembled, profileId, options, warnings);
+  }
 
   return {
     content: JSON.stringify(data),

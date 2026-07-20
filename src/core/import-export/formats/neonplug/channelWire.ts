@@ -12,7 +12,12 @@ import type {
   ChannelModeProfileAnalog,
   ChannelModeProfileDMR,
 } from '@core/models/library.ts';
-import type { ChannelMode, ChannelTone, DMRTimeSlot } from '@core/models/libraryTypes.ts';
+import type {
+  ChannelMode,
+  ChannelTone,
+  DMRTimeSlot,
+  EntityRef,
+} from '@core/models/libraryTypes.ts';
 import { percentToWire } from '../../profileLadder.ts';
 import {
   getNeonplugProfile,
@@ -145,12 +150,22 @@ export interface NeonplugChannelWireOptions {
   /** Override scan inclusion context (build + format defaults). */
   scanContext?: ScanInclusionContext;
   behaviourContext?: ChannelBehaviourContext;
-  /**
-   * Talk-group / contact wire index. Until #540 always `0` (none).
-   */
+  /** Talk-group / contact book index (`0` = none). */
   contactId?: number;
   rxGroupListId?: number;
   scanListId?: number;
+}
+
+/** DMR profile `contactRef` when present (primary DMR mode profile). */
+export function dmrContactRefFromChannel(channel: Channel): EntityRef | null {
+  const dmr = channel.modeProfiles.find(isDmrProfile);
+  return dmr?.contactRef ?? null;
+}
+
+/** DMR profile `rxGroupListId` UUID when present. */
+export function dmrRxGroupListIdFromChannel(channel: Channel): string | null {
+  const dmr = channel.modeProfiles.find(isDmrProfile);
+  return dmr?.rxGroupListId ?? null;
 }
 
 /** Map a Studio library channel → NeonPlug Channel wire object. */

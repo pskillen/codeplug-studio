@@ -24,16 +24,18 @@ Wire shape for `codeplug.json` → `scanLists[]`.
 
 - Member channels are **numbers** into `channels[]`.
 - Priority / designated TX channel fields also use channel numbers (with NeonPlug encoding quirks for “None” / “Current”).
+- Channel `scanListId`: `0` = none; else **1-based** index into `scanLists[]`. Channel wire field is 4 bits (0–15), so at most **15** referenceable lists.
 
-## Studio mapping sketch
+## Studio export mapping (shipped #540)
 
-DM32 CSV in Studio synthesises `Scan.csv` from **zone-derived** scan lists. NeonPlug stores **first-class** scan list objects.
+DM32 CSV synthesises `Scan.csv` from **zone-derived** scan lists (with synthetic carriers). NeonPlug stores **first-class** scan list objects.
 
-| Approach                       | When                                             |
-| ------------------------------ | ------------------------------------------------ |
-| Export zone-derived lists      | Match DM32 export philosophy; fill `scanLists[]` |
-| Export dedicated library lists | Only if Studio model gains dedicated scan lists  |
+| Behaviour             | Studio export                                               |
+| --------------------- | ----------------------------------------------------------- |
+| Source                | Zone grouping `exportScanList` + scan membership helpers    |
+| Members               | Channel **numbers** (no m×n expansion on this profile)      |
+| Synthetic carriers    | **Not emitted** (DM32 CSV quirk only)                       |
+| Priority / hang / CTC | Lossy defaults: `ctcScanMode`/`scanTxMode` = `0`; omit rest |
+| Cap                   | Min of profile `maxScanLists` and **15**                    |
 
-Priority / hang-time / CTC modes: **lossy** unless Studio models them — export documented defaults and note in export warnings.
-
-UV5R-Mini typically leaves `scanLists` empty; per-channel `scanAdd` on [channels](channels.md) carries scan intent.
+UV5R-Mini leaves `scanLists` empty; per-channel `scanAdd` on [channels](channels.md) carries scan intent.

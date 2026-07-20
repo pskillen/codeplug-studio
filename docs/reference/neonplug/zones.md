@@ -16,15 +16,15 @@ Wire shape for `codeplug.json` → `zones[]`.
 
 - Membership is by **channel number**, not channel name and not Studio UUID.
 - Empty `channels` array is valid.
-- Duplicate channel numbers in one zone: treat as NeonPlug behaviour; Studio export should emit a unique ordered list.
+- Duplicate channel numbers in one zone: Studio export emits a unique ordered list.
 
-## Studio mapping sketch
+## Studio export mapping (shipped #540)
 
-| NeonPlug           | Studio                                                |
-| ------------------ | ----------------------------------------------------- |
-| Zone row           | Build **zone grouping** trait layout + library `Zone` |
-| `channels` numbers | Resolve to `memberChannelIds` UUIDs on import         |
-| `name`             | Library zone name / build `zoneOverrides.wireName`    |
-| `id`               | Discard — allocate Studio UUID                        |
+| NeonPlug           | Studio                                                  |
+| ------------------ | ------------------------------------------------------- |
+| Zone row           | Build **zone grouping** trait layout + library `Zone`   |
+| `channels` numbers | From assemble `memberChannelIds` via channel number map |
+| `name`             | Assemble zone `wireName` (profile name limit)           |
+| `id`               | Studio zone UUID (NeonPlug UI id)                       |
 
-UV5R-Mini / analogue-only pathways typically leave `zones` empty.
+UV5R-Mini / analogue-only pathways leave `zones` empty.

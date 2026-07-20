@@ -14,19 +14,19 @@ Wire shape for `codeplug.json` → `rxGroups[]`.
 | `statusFlag`       | number     | Unused in “new format” per NeonPlug comments |
 | `entryFlag`        | number     | Comments: always `0x01`                      |
 | `validationFlag`   | number     | Unused in new format                         |
-| `talkGroupIndices` | `number[]` | Up to **32** DMR / talk-group numbers        |
+| `talkGroupIndices` | `number[]` | Up to **32** DMR / talk-group **DMR IDs**    |
 
 ## FK rules
 
-- `talkGroupIndices` are **contact / talk-group numbers** from NeonPlug’s talk-group table — not Studio UUIDs.
-- Channel `rxGroupListId` points at an RX group list id (`0` = none). Confirm 0-based vs 1-based against a NeonPlug sample before adapter lock-in.
+- `talkGroupIndices` are **DMR IDs** (`TalkGroup.digitalId`) as stored on the radio — not Studio UUIDs and not contacts-book indexes (NeonPlug `structures.ts`).
+- Channel `rxGroupListId`: `0` = none; else **1-based** position in emitted `rxGroups[]` (`rxGroups[i].index = i`).
 
-## Studio mapping sketch
+## Studio export mapping (shipped #540)
 
-| NeonPlug           | Studio                        |
-| ------------------ | ----------------------------- |
-| RX group row       | `RxGroupList`                 |
-| `talkGroupIndices` | UUID talk-group member refs   |
-| `bitmask` / flags  | Lossy unless needed for write |
+| NeonPlug           | Studio                               |
+| ------------------ | ------------------------------------ |
+| RX group row       | `RxGroupList`                        |
+| `talkGroupIndices` | Member talk-group `digitalId` values |
+| `bitmask` / flags  | `entryFlag: 1`; others `0` (lossy)   |
 
 UV5R-Mini / analogue exports: leave `rxGroups` as `[]`.
