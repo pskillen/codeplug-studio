@@ -81,4 +81,4 @@ Deployed builds receive the ID from GitHub Actions secrets — see [build README
 
 - [app-shell README](../app-shell/README.md) — footer legal links, banner mount
 - [DESIGN.md](../../../DESIGN.md) — privacy principle (browser-local operator data)
-- [progress log](analytics-progress.md) · [outstanding](analytics-outstanding.md)
+- Epic [#96](https://github.com/pskillen/codeplug-studio/issues/96) (parked under [#496](https://github.com/pskillen/codeplug-studio/issues/496))

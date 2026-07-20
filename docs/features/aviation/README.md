@@ -2,7 +2,7 @@
 
 Tier-1 reference for **airport airband monitoring** workflows — searching [OpenAIP](https://www.openaip.net/) for civil aviation frequencies and importing RX-only AM channels into the library, with optional Anytone `AMAir.CSV` export.
 
-**Tracking:** [#262](https://github.com/pskillen/codeplug-studio/issues/262) · [#263](https://github.com/pskillen/codeplug-studio/issues/263) · [#264](https://github.com/pskillen/codeplug-studio/issues/264) · [#267](https://github.com/pskillen/codeplug-studio/issues/267) · [#268](https://github.com/pskillen/codeplug-studio/issues/268) · [#284](https://github.com/pskillen/codeplug-studio/issues/284) · [#316](https://github.com/pskillen/codeplug-studio/issues/316) · [progress](airband-openaip-progress.md) · [outstanding](airband-openaip-outstanding.md)
+**Tracking:** [#262](https://github.com/pskillen/codeplug-studio/issues/262) · [#263](https://github.com/pskillen/codeplug-studio/issues/263) · [#264](https://github.com/pskillen/codeplug-studio/issues/264) · [#267](https://github.com/pskillen/codeplug-studio/issues/267) · [#268](https://github.com/pskillen/codeplug-studio/issues/268) · [#284](https://github.com/pskillen/codeplug-studio/issues/284) · [#316](https://github.com/pskillen/codeplug-studio/issues/316) — under [#272](https://github.com/pskillen/codeplug-studio/issues/272)
 
 **Source:** `src/app/routes/library/AddFromOpenAipPage.tsx`, `src/app/components/aviation/`, `src/integrations/aviation/`, `src/core/domain/airband/`
 

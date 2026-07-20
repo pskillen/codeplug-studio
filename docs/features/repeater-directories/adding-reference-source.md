@@ -44,4 +44,4 @@ Checklist for onboarding a new public repeater directory into Codeplug Studio. F
 ## Related
 
 - [repeater directories hub](README.md)
-- [repeater-directory-infra-progress.md](repeater-directory-infra-progress.md) — [#73](https://github.com/pskillen/codeplug-studio/issues/73) / [#341](https://github.com/pskillen/codeplug-studio/issues/341)
+- Session cache [#73](https://github.com/pskillen/codeplug-studio/issues/73) · rate limit [#341](https://github.com/pskillen/codeplug-studio/issues/341) · epic [#280](https://github.com/pskillen/codeplug-studio/issues/280)

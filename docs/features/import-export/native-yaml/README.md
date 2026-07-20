@@ -113,4 +113,4 @@ Directional golden fixtures — not round-trip as the primary gate ([DESIGN.md �
 
 - [import-export hub](../README.md)
 - [data-model](../../data-model/README.md)
-- [native-yaml-progress.md](../native-yaml-progress.md)
+- Cloud / merge follow-ups: epic [#499](https://github.com/pskillen/codeplug-studio/issues/499) · schema migration [#532](https://github.com/pskillen/codeplug-studio/issues/532)

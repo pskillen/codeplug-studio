@@ -2,9 +2,9 @@
 
 Tier-1 hub for **digital APRS** in Codeplug Studio — vendor-neutral library entities, per-channel bindings, and a **singleton** global configuration. Wire column mapping lives in per-format tier-3 references; this doc describes internal semantics only.
 
-**Tracking:** [#353](https://github.com/pskillen/codeplug-studio/issues/353) (persistence) · [#354](https://github.com/pskillen/codeplug-studio/issues/354) (UI) · [#248](https://github.com/pskillen/codeplug-studio/issues/248) (reconciliation) · Epic [#246](https://github.com/pskillen/codeplug-studio/issues/246)
+**Tracking:** [#353](https://github.com/pskillen/codeplug-studio/issues/353) (persistence) · [#354](https://github.com/pskillen/codeplug-studio/issues/354) (UI) · [#248](https://github.com/pskillen/codeplug-studio/issues/248) (reconciliation) · Epic [#501](https://github.com/pskillen/codeplug-studio/issues/501) (supersedes M1 [#246](https://github.com/pskillen/codeplug-studio/issues/246))
 
-**Progress:** [aprs-model-progress.md](aprs-model-progress.md) · **Outstanding:** [aprs-model-outstanding.md](aprs-model-outstanding.md)
+**Outstanding:** [aprs-model-outstanding.md](aprs-model-outstanding.md)
 
 **Components:** [AprsChannelSlotsEditor](../../../src/app/components/library/AprsChannelSlotsEditor.md) · [ChannelAprsBindingSection](../../../src/app/components/library/ChannelAprsBindingSection.md) · [AprsChannelAssignmentPanel](../../../src/app/components/library/AprsChannelAssignmentPanel.md)
 

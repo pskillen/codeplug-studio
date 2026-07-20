@@ -2,7 +2,7 @@
 
 Product behaviour for CHIRP analogue FM/AM CSV in Codeplug Studio. Wire column tables live in the tier-3 [CHIRP reference](../../../reference/chirp/README.md).
 
-**Tracking:** Phase 6 [#38](https://github.com/pskillen/codeplug-studio/issues/38) · [progress](chirp-progress.md) · [outstanding](chirp-outstanding.md)
+**Tracking:** Epic [#504](https://github.com/pskillen/codeplug-studio/issues/504) (import + export; supersedes M1 [#38](https://github.com/pskillen/codeplug-studio/issues/38) / [#214](https://github.com/pskillen/codeplug-studio/issues/214)) · DCS/CrossMode [#527](https://github.com/pskillen/codeplug-studio/issues/527) · import [#222](https://github.com/pskillen/codeplug-studio/issues/222)–[#226](https://github.com/pskillen/codeplug-studio/issues/226)
 
 **Source:** `src/core/import-export/formats/chirp/`
 

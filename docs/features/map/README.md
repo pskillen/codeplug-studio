@@ -6,7 +6,7 @@ Tier-1 reference for the **embedded channel map** — plotting library channels 
 
 **Source:** `src/app/components/CodeplugMap/`, `src/core/domain/geo.ts`, `mapView.ts`, `mapProjection.ts`
 
-**Progress:** [map-embed-progress.md](map-embed-progress.md) · **Outstanding:** [map-embed-outstanding.md](map-embed-outstanding.md)
+**Known deferrals:** summary inset polish / Mapbox settings — [#344](https://github.com/pskillen/codeplug-studio/issues/344)
 
 ## Where the map lives
 
