@@ -8,6 +8,7 @@ import {
   exportBuildSingleFile,
   exportBuildZip,
   listExportBuildFileNames,
+  validateNeonplugDonorBase,
 } from '@core/services/exportBuild.ts';
 import type { ProjectPersistence } from '@integrations/persistence/index.ts';
 import { downloadTextFile, downloadZip } from '@integrations/download/browserDownload.ts';
@@ -159,17 +160,30 @@ export async function downloadCpsSingleFile(
   return { warnings: result.warnings };
 }
 
+export type CpsZipExportOptions = CpsExportOptions & {
+  /** Donor radio-read `.neonplug` for merge-into-base NeonPlug export. */
+  baseNeonplugBytes?: Uint8Array;
+};
+
+export { validateNeonplugDonorBase };
+
 /** Download all CPS CSV files for a build as a ZIP archive. */
 export async function downloadCpsZip(
   projectId: string,
   buildId: string,
-  options?: CpsExportOptions,
+  options?: CpsZipExportOptions,
   store: ProjectPersistence = persistence,
 ): Promise<CpsDownloadResult> {
   const build = await requireBuild(store, projectId, buildId);
   const library = await loadLibrarySlice(store, projectId);
-  const exportOptions = await mergeProjectExportOptions(store, projectId, options);
-  const result = exportBuildZip({ build, library, options: exportOptions });
+  const { baseNeonplugBytes, ...cpsOptions } = options ?? {};
+  const exportOptions = await mergeProjectExportOptions(store, projectId, cpsOptions);
+  const result = exportBuildZip({
+    build,
+    library,
+    options: exportOptions,
+    baseNeonplugBytes,
+  });
   const zipName =
     options?.fileName ?? defaultCpsZipFileName(build.name, build.formatId as FormatId);
   downloadZip(result.zip, zipName);
@@ -180,13 +194,19 @@ export async function downloadCpsZip(
 export async function buildCpsZipBytes(
   projectId: string,
   buildId: string,
-  options?: CpsExportOptions,
+  options?: CpsZipExportOptions,
   store: ProjectPersistence = persistence,
 ): Promise<{ zip: Uint8Array; fileName: string; warnings: string[] }> {
   const build = await requireBuild(store, projectId, buildId);
   const library = await loadLibrarySlice(store, projectId);
-  const exportOptions = await mergeProjectExportOptions(store, projectId, options);
-  const result = exportBuildZip({ build, library, options: exportOptions });
+  const { baseNeonplugBytes, ...cpsOptions } = options ?? {};
+  const exportOptions = await mergeProjectExportOptions(store, projectId, cpsOptions);
+  const result = exportBuildZip({
+    build,
+    library,
+    options: exportOptions,
+    baseNeonplugBytes,
+  });
   const fileName =
     options?.fileName ?? defaultCpsZipFileName(build.name, build.formatId as FormatId);
   return { zip: result.zip, fileName, warnings: result.warnings };
@@ -197,7 +217,7 @@ export async function uploadCpsZipToDrive(
   projectId: string,
   buildId: string,
   target: CpsDriveUploadTarget,
-  options?: CpsExportOptions,
+  options?: CpsZipExportOptions,
   store: ProjectPersistence = persistence,
 ): Promise<CpsDownloadResult> {
   const { zip, warnings } = await buildCpsZipBytes(

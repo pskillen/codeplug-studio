@@ -40,6 +40,7 @@ import {
   downloadCpsSingleFile,
   downloadCpsZip,
   uploadCpsZipToDrive,
+  validateNeonplugDonorBase,
 } from '../../services/buildCpsExportService.ts';
 import { useBuildCpsExportFileNames } from '../../hooks/useBuildCpsExportFileNames.ts';
 import { useGoogleDrive } from '../../hooks/useGoogleDrive.ts';
@@ -76,6 +77,10 @@ export default function ExportBuildCpsPanel({ build }: ExportBuildCpsPanelProps)
   }
   const [overwriteOpen, setOverwriteOpen] = useState(false);
   const [pendingDriveTarget, setPendingDriveTarget] = useState<DriveSaveTarget | null>(null);
+  const [neonplugBaseBytes, setNeonplugBaseBytes] = useState<Uint8Array | null>(null);
+  const [neonplugBaseFileName, setNeonplugBaseFileName] = useState<string | null>(null);
+  const [neonplugBaseError, setNeonplugBaseError] = useState<string | null>(null);
+  const neonplugBaseInputRef = useRef<HTMLInputElement>(null);
   const migratedRef = useRef(false);
 
   const profileNameLimit = useMemo(() => {
@@ -211,7 +216,7 @@ export default function ExportBuildCpsPanel({ build }: ExportBuildCpsPanelProps)
     }
   }
 
-  async function handleDownloadZip() {
+  async function handleDownloadZip(baseNeonplugBytes?: Uint8Array) {
     if (!activeProjectId) return;
     setExporting(true);
     setError(null);
@@ -219,6 +224,7 @@ export default function ExportBuildCpsPanel({ build }: ExportBuildCpsPanelProps)
       const result = await downloadCpsZip(activeProjectId, build.id, {
         ...runtimeExportOverrides,
         fileName: suggestedZipName,
+        baseNeonplugBytes,
       });
       mergeWarnings(result.warnings);
     } catch (err) {
@@ -228,7 +234,7 @@ export default function ExportBuildCpsPanel({ build }: ExportBuildCpsPanelProps)
     }
   }
 
-  async function saveZipToDrive(target: DriveSaveTarget) {
+  async function saveZipToDrive(target: DriveSaveTarget, baseNeonplugBytes?: Uint8Array) {
     if (!activeProjectId) return;
     setExporting(true);
     setError(null);
@@ -242,7 +248,10 @@ export default function ExportBuildCpsPanel({ build }: ExportBuildCpsPanelProps)
             fileName: target.fileName,
             existingFileId: target.existingFileId,
           },
-          runtimeExportOverrides,
+          {
+            ...runtimeExportOverrides,
+            baseNeonplugBytes,
+          },
         ),
       );
       mergeWarnings(result.warnings);
@@ -258,13 +267,33 @@ export default function ExportBuildCpsPanel({ build }: ExportBuildCpsPanelProps)
     }
   }
 
+  async function handleNeonplugBaseFileChange(file: File | null) {
+    setNeonplugBaseError(null);
+    if (!file) {
+      setNeonplugBaseBytes(null);
+      setNeonplugBaseFileName(null);
+      return;
+    }
+    try {
+      const bytes = new Uint8Array(await file.arrayBuffer());
+      const { warnings } = validateNeonplugDonorBase(bytes, build.profileId);
+      mergeWarnings(warnings);
+      setNeonplugBaseBytes(bytes);
+      setNeonplugBaseFileName(file.name);
+    } catch (err) {
+      setNeonplugBaseBytes(null);
+      setNeonplugBaseFileName(null);
+      setNeonplugBaseError(err instanceof Error ? err.message : String(err));
+    }
+  }
+
   function handleDriveSaveTarget(target: DriveSaveTarget) {
     if (target.existingFileId) {
       setPendingDriveTarget(target);
       setOverwriteOpen(true);
       return;
     }
-    void saveZipToDrive(target);
+    void saveZipToDrive(target, isNeonplug ? (neonplugBaseBytes ?? undefined) : undefined);
   }
 
   if (!exportShipped) {
@@ -418,59 +447,144 @@ export default function ExportBuildCpsPanel({ build }: ExportBuildCpsPanelProps)
       {error ? <Alert color="red">{error}</Alert> : null}
       {build.formatId === 'dm32' ? <Dm32AprsSetupAlert exportFileNames={exportFileNames} /> : null}
       {exportWarnings.length > 0 ? <ExportWarningsAlert warnings={exportWarnings} /> : null}
-      <Group gap="xs">
-        <Button
-          leftSection={<IconPackage size={ICON_SIZE_ACTION} stroke={ICON_STROKE} />}
-          variant="filled"
-          disabled={!hasChannels || exporting}
-          loading={exporting}
-          onClick={() => void handleDownloadZip()}
-        >
-          {archiveDownloadLabel}
-        </Button>
-        <GoogleDriveActionButton
-          disabled={!hasChannels || exporting}
-          loading={exporting}
-          onClick={() => setDriveBrowserOpen(true)}
-        >
-          {archiveDriveLabel}
-        </GoogleDriveActionButton>
-        {!isNeonplug ? (
-          <Button
-            variant="outline"
-            leftSection={<IconTable size={ICON_SIZE_ACTION} stroke={ICON_STROKE} />}
-            disabled={!hasChannels || exporting}
-            onClick={() => setPreviewOpen(true)}
-          >
-            Preview CSV
-          </Button>
-        ) : null}
-      </Group>
-      {!isNeonplug ? (
-        <Stack gap={4}>
-          <Text size="sm" fw={600}>
-            Individual files
-          </Text>
-          <Group gap="xs">
-            {exportFileNames.map((fileName) => (
+      {isNeonplug ? (
+        <Stack gap="md">
+          <Stack gap="xs">
+            <Text size="sm" fw={600}>
+              Merge into radio-read base
+            </Text>
+            <Text size="sm">
+              Merge Studio channels and organisation into a radio-read donor so NeonPlug keeps
+              settings and operator DMR IDs:
+            </Text>
+            <Text size="sm" component="div">
+              <ol style={{ margin: 0, paddingLeft: '1.25rem' }}>
+                <li>In NeonPlug, read the codeplug from the radio.</li>
+                <li>
+                  Export a <code>.neonplug</code> file from NeonPlug.
+                </li>
+                <li>Upload that donor file here.</li>
+                <li>Download the merged file for radio write.</li>
+                <li>Import the merged file in NeonPlug.</li>
+                <li>Write the codeplug back to the radio.</li>
+              </ol>
+            </Text>
+            <input
+              ref={neonplugBaseInputRef}
+              type="file"
+              accept=".neonplug,application/zip"
+              style={{ display: 'none' }}
+              onChange={(event) => {
+                const file = event.target.files?.[0] ?? null;
+                void handleNeonplugBaseFileChange(file);
+                event.target.value = '';
+              }}
+            />
+            <Group gap="xs">
               <Button
-                key={fileName}
-                size="xs"
                 variant="light"
-                leftSection={<IconDownload size={ICON_SIZE_ACTION} stroke={ICON_STROKE} />}
-                disabled={!hasChannels || exporting}
-                onClick={() => void handleDownloadFile(fileName)}
+                size="sm"
+                disabled={exporting}
+                onClick={() => neonplugBaseInputRef.current?.click()}
               >
-                {fileName}
+                {neonplugBaseFileName ? 'Change donor .neonplug' : 'Upload donor .neonplug'}
               </Button>
-            ))}
-          </Group>
+              {neonplugBaseFileName ? (
+                <Text size="sm" c="dimmed">
+                  {neonplugBaseFileName}
+                </Text>
+              ) : null}
+            </Group>
+            {neonplugBaseError ? <Alert color="red">{neonplugBaseError}</Alert> : null}
+            <Group gap="xs">
+              <Button
+                leftSection={<IconPackage size={ICON_SIZE_ACTION} stroke={ICON_STROKE} />}
+                variant="filled"
+                disabled={!hasChannels || !neonplugBaseBytes || exporting}
+                loading={exporting}
+                onClick={() => void handleDownloadZip(neonplugBaseBytes ?? undefined)}
+              >
+                Download for radio write
+              </Button>
+              <GoogleDriveActionButton
+                disabled={!hasChannels || !neonplugBaseBytes || exporting}
+                loading={exporting}
+                onClick={() => setDriveBrowserOpen(true)}
+              >
+                Save for radio write to Drive
+              </GoogleDriveActionButton>
+            </Group>
+          </Stack>
+          <Stack gap="xs">
+            <Alert color="yellow" title="Greenfield download (not for radio write)">
+              A Studio-only <code>.neonplug</code> omits radio settings, operator DMR IDs, and other
+              unmodelled NeonPlug fields. Safe for browsing in NeonPlug — not safe to write back
+              without merging into a donor base first.
+            </Alert>
+            <Button
+              leftSection={<IconDownload size={ICON_SIZE_ACTION} stroke={ICON_STROKE} />}
+              variant="subtle"
+              size="compact-sm"
+              disabled={!hasChannels || exporting}
+              loading={exporting}
+              onClick={() => void handleDownloadZip()}
+            >
+              Download greenfield .neonplug
+            </Button>
+          </Stack>
+          <Text size="sm" c="dimmed">
+            NeonPlug export is a single <code>.neonplug</code> ZIP containing{' '}
+            <code>codeplug.json</code>.
+          </Text>
         </Stack>
       ) : (
-        <Text size="sm" c="dimmed">
-          NeonPlug export is a single <code>.neonplug</code> ZIP containing{' '}
-          <code>codeplug.json</code>.
-        </Text>
+        <>
+          <Group gap="xs">
+            <Button
+              leftSection={<IconPackage size={ICON_SIZE_ACTION} stroke={ICON_STROKE} />}
+              variant="filled"
+              disabled={!hasChannels || exporting}
+              loading={exporting}
+              onClick={() => void handleDownloadZip()}
+            >
+              {archiveDownloadLabel}
+            </Button>
+            <GoogleDriveActionButton
+              disabled={!hasChannels || exporting}
+              loading={exporting}
+              onClick={() => setDriveBrowserOpen(true)}
+            >
+              {archiveDriveLabel}
+            </GoogleDriveActionButton>
+            <Button
+              variant="outline"
+              leftSection={<IconTable size={ICON_SIZE_ACTION} stroke={ICON_STROKE} />}
+              disabled={!hasChannels || exporting}
+              onClick={() => setPreviewOpen(true)}
+            >
+              Preview CSV
+            </Button>
+          </Group>
+          <Stack gap={4}>
+            <Text size="sm" fw={600}>
+              Individual files
+            </Text>
+            <Group gap="xs">
+              {exportFileNames.map((fileName) => (
+                <Button
+                  key={fileName}
+                  size="xs"
+                  variant="light"
+                  leftSection={<IconDownload size={ICON_SIZE_ACTION} stroke={ICON_STROKE} />}
+                  disabled={!hasChannels || exporting}
+                  onClick={() => void handleDownloadFile(fileName)}
+                >
+                  {fileName}
+                </Button>
+              ))}
+            </Group>
+          </Stack>
+        </>
       )}
       <Text size="sm" c="dimmed">
         Wire preview pages show the same export settings. Change profile in Overview if needed.
@@ -519,7 +633,12 @@ export default function ExportBuildCpsPanel({ build }: ExportBuildCpsPanelProps)
               color="red"
               loading={exporting}
               onClick={() => {
-                if (pendingDriveTarget) void saveZipToDrive(pendingDriveTarget);
+                if (pendingDriveTarget) {
+                  void saveZipToDrive(
+                    pendingDriveTarget,
+                    isNeonplug ? (neonplugBaseBytes ?? undefined) : undefined,
+                  );
+                }
               }}
             >
               Overwrite

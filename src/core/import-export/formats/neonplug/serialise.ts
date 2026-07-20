@@ -56,6 +56,11 @@ function radioInfoForProfile(profileId: string): NeonplugRadioInfo {
   };
 }
 
+/** NeonPlug `radioInfo.model` string for a Studio profile id (merge / UI checks). */
+export function neonplugRadioModelForProfile(profileId: string): string {
+  return radioInfoForProfile(profileId).model;
+}
+
 function emptyCodeplug(radioInfo: NeonplugRadioInfo, exportDate: string): NeonplugCodeplugData {
   return {
     version: NEONPLUG_CODEPLUG_VERSION,

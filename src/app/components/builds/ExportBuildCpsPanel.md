@@ -20,6 +20,15 @@ Per-build CPS export on the Radio builds detail page — per-file CSV downloads,
 - Export settings are grouped in bordered **Inclusion**, **Naming**, and **Scanning** cards (`FieldCard` — Mantine `Paper`, theme-aware).
 - Planned formats (`exportStatus !== 'shipped'`) show a grey alert instead of actions.
 
+### NeonPlug dual pathway
+
+When `build.formatId === 'neonplug'`:
+
+1. **Primary — Download for radio write:** upload a radio-read donor `.neonplug`, then download/save a merge that overwrites Studio-modelled arrays while retaining donor settings, `radioIds`, and ancillaries. Primary download and Drive save stay disabled until a valid donor is parsed.
+2. **Secondary — Download greenfield `.neonplug`:** smaller subtle control with a yellow warning that greenfield omits radio settings and is **not safe to write back** without a donor base.
+
+CSV preview and per-file buttons are hidden for NeonPlug (single `codeplug.json` package).
+
 ## Usage
 
 ```tsx
@@ -34,3 +43,4 @@ import ExportBuildCpsPanel from '../../components/builds/ExportBuildCpsPanel.tsx
 - [`useBuildCpsExportFileNames.ts`](../../hooks/useBuildCpsExportFileNames.ts) — effective per-file export list for Individual files buttons
 - [`CpsCsvPreview.md`](CpsCsvPreview.md) — tabbed CSV preview modal
 - [`docs/features/builds/README.md`](../../../../docs/features/builds/README.md) — build export workflow
+- [`docs/features/import-export/neonplug/README.md`](../../../../docs/features/import-export/neonplug/README.md) — NeonPlug merge-first export

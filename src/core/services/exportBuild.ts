@@ -11,6 +11,15 @@ import { buildDm32Zip } from '@core/import-export/formats/dm32/packageZip.ts';
 import { buildAnytoneZip } from '@core/import-export/formats/anytone/packageZip.ts';
 import { buildNeonplugZip } from '@core/import-export/formats/neonplug/packageZip.ts';
 import {
+  mergeNeonplugCodeplug,
+  parseNeonplugCodeplugJson,
+  parseNeonplugZip,
+} from '@core/import-export/formats/neonplug/merge.ts';
+import {
+  NEONPLUG_JSON_FILE_NAME,
+  neonplugRadioModelForProfile,
+} from '@core/import-export/formats/neonplug/serialise.ts';
+import {
   anytoneLstFileName,
   isAnytoneLstFileName,
   serialiseAnytoneLstManifest,
@@ -30,6 +39,26 @@ export interface ExportBuildParams {
   library: LibrarySlice;
   fileName: string;
   options?: CpsExportOptions;
+}
+
+/** Optional donor `.neonplug` bytes for merge-into-base NeonPlug export. */
+export interface ExportBuildZipParams extends Omit<ExportBuildParams, 'fileName'> {
+  baseNeonplugBytes?: Uint8Array;
+}
+
+/** Parse a donor `.neonplug` and warn on profile model mismatch (export UI). */
+export function validateNeonplugDonorBase(
+  bytes: Uint8Array,
+  profileId: string,
+): { warnings: string[] } {
+  const { data, warnings } = parseNeonplugZip(bytes);
+  const expected = neonplugRadioModelForProfile(profileId);
+  if (data.radioInfo.model && data.radioInfo.model !== expected) {
+    warnings.push(
+      `Donor radioInfo.model is "${data.radioInfo.model}" but this build targets "${expected}"`,
+    );
+  }
+  return { warnings };
 }
 
 export interface ExportBuildAllResult {
@@ -212,8 +241,32 @@ export function exportBuildZip({
   build,
   library,
   options,
-}: Omit<ExportBuildParams, 'fileName'>): ExportBuildAllResult & { zip: Uint8Array } {
+  baseNeonplugBytes,
+}: ExportBuildZipParams): ExportBuildAllResult & { zip: Uint8Array } {
   const result = exportBuildAll({ build, library, options });
+
+  if (build.formatId === 'neonplug' && baseNeonplugBytes) {
+    const projectedJson = result.files[NEONPLUG_JSON_FILE_NAME];
+    if (projectedJson == null) {
+      throw new Error(`NeonPlug export missing ${NEONPLUG_JSON_FILE_NAME}`);
+    }
+    const projected = parseNeonplugCodeplugJson(JSON.parse(projectedJson) as unknown);
+    const { data: base, warnings: parseWarnings } = parseNeonplugZip(baseNeonplugBytes);
+    const { data: merged, warnings: mergeWarnings } = mergeNeonplugCodeplug(base, projected, {
+      expectedRadioModel: projected.radioInfo.model || undefined,
+    });
+    const files = {
+      ...result.files,
+      [NEONPLUG_JSON_FILE_NAME]: JSON.stringify(merged),
+    };
+    return {
+      ...result,
+      files,
+      warnings: dedupeWarnings([...result.warnings, ...parseWarnings, ...mergeWarnings]),
+      zip: buildNeonplugZip(files),
+    };
+  }
+
   const zip =
     build.formatId === 'neonplug'
       ? buildNeonplugZip(result.files)

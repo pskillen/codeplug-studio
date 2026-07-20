@@ -155,7 +155,9 @@ export interface NeonplugCodeplugData {
   digitalEmergencies: unknown[];
   analogEmergencies: unknown[];
   encryptionKeys: unknown[];
-  digitalEmergencyConfig: null;
-  radioSettings: null;
+  /** Opaque NeonPlug emergency config — retained from donor on merge; null on greenfield. */
+  digitalEmergencyConfig: unknown | null;
+  /** Opaque NeonPlug settings bag — retained from donor on merge; null on greenfield. */
+  radioSettings: unknown | null;
   radioInfo: NeonplugRadioInfo;
 }
