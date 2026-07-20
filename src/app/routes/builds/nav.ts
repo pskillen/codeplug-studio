@@ -13,7 +13,10 @@ export function buildNavItems(build: FormatBuild): BuildNavItem[] {
   const traits = new Set(traitProfileFor(build.profileId)?.traits ?? []);
   const flatMemory = traits.has(BuildCapabilityTrait.FlatMemoryList);
 
-  const items: BuildNavItem[] = [{ label: 'Overview', path: `${base}/overview` }];
+  const items: BuildNavItem[] = [
+    { label: 'Overview', path: `${base}/overview` },
+    { label: 'Radio characteristics', path: `${base}/characteristics` },
+  ];
 
   items.push({ label: 'Channels', path: `${base}/channels` });
 

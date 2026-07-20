@@ -29,7 +29,7 @@ const CAPABILITY_COPY: Record<CapabilityId, CapabilityCopy> = {
     summary:
       'Channels are grouped into named zones. On the radio you switch zone to change which channels are available.',
     consequences: [
-      'This build has a **Zones** page for membership and order.',
+      'This build has a Zones page for membership and order.',
       'Export writes zone membership for your CPS.',
     ],
   },
@@ -47,7 +47,7 @@ const CAPABILITY_COPY: Record<CapabilityId, CapabilityCopy> = {
     summary:
       'Scanning is controlled per channel (include or skip), not with a separate scan-list entity.',
     consequences: [
-      'There is no dedicated **Scan lists** page for this build.',
+      'There is no dedicated Scan lists page for this build.',
       'Export uses each channel’s scan setting on the wire.',
     ],
   },
@@ -56,8 +56,8 @@ const CAPABILITY_COPY: Record<CapabilityId, CapabilityCopy> = {
     summary:
       'Named scan sequences are built from zone membership and default scan inclusion — not as separate library scan-list entities.',
     consequences: [
-      'Use **Zones** and export scan settings to control what is scanned.',
-      'There is no separate **Scan lists** build page for this profile.',
+      'Use Zones and export scan settings to control what is scanned.',
+      'There is no separate Scan lists build page for this profile.',
     ],
     formatNotes: {
       dm32:
@@ -69,7 +69,7 @@ const CAPABILITY_COPY: Record<CapabilityId, CapabilityCopy> = {
     summary:
       'Scan lists are first-class: you curate named lists and assign them to channels, separate from zones.',
     consequences: [
-      'This build has a **Scan lists** page.',
+      'This build has a Scan lists page.',
       'Export writes dedicated scan-list files and per-channel assignments.',
     ],
     formatNotes: {
@@ -82,7 +82,7 @@ const CAPABILITY_COPY: Record<CapabilityId, CapabilityCopy> = {
     summary:
       'Zone membership doubles as the scan sequence — the zone is the scan list. There is no separate scan-list file.',
     consequences: [
-      'Order channels in **Zones** to set both browsing and scan order.',
+      'Order channels in Zones to set both browsing and scan order.',
       'Export does not emit a separate scan-list table for this profile.',
     ],
   },
@@ -172,7 +172,7 @@ export function conceptsForCapabilities(
     concepts.push({
       id: 'dedicated-scan',
       title: 'Separate scan lists',
-      body: 'Scan lists are their own entities. Build them on the **Scan lists** page, then assign them on channels that should use that list.',
+      body: 'Scan lists are their own entities. Build them on the Scan lists page, then assign them on channels that should use that list.',
     });
   }
 
@@ -180,7 +180,7 @@ export function conceptsForCapabilities(
     concepts.push({
       id: 'mxn',
       title: 'Extra rows on export',
-      body: 'When a channel’s RX group list has several talk groups (or contacts), export can create one CPS channel row per member. Check **Channels** wire preview before you flash.',
+      body: 'When a channel’s RX group list has several talk groups (or contacts), export can create one CPS channel row per member. Check Channels wire preview before you flash.',
     });
   }
 

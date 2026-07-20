@@ -6,7 +6,8 @@ import { formatCatalogEntry } from '@core/import-export/registry.ts';
 import type { FormatId } from '@core/import-export/types.ts';
 import ProfilePicker from '../../components/builds/ProfilePicker.tsx';
 import { FormPage, FormSection } from '../../components/ui/index.ts';
-import { buildHasLayoutData, TRAIT_LABELS } from './buildHelpers.ts';
+import { buildHasLayoutData } from './buildHelpers.ts';
+import { capabilityLabel } from '../../lib/buildCapabilityCopy.ts';
 import { BuildService } from '../../state/buildService.ts';
 import { persistence } from '../../state/persistence.ts';
 import { useBuildLayout } from './BuildLayoutContext.tsx';
@@ -126,16 +127,25 @@ export default function BuildOverviewPage() {
               value={displayProfileId}
               onChange={handleProfileChange}
               label="Radio profile"
-              description="Trait profile and wire limits for this build"
+              description="Radio profile and export limits for this build"
             />
           </Stack>
         </FormSection>
 
-        <FormSection title="Capability traits">
+        <FormSection
+          title="How this radio is organised"
+          description={
+            <Text size="sm" component="span">
+              Short labels for this profile. See{' '}
+              <Link to={`/builds/${build.id}/characteristics`}>Radio characteristics</Link> for
+              limits, power levels, and plain-language explanations.
+            </Text>
+          }
+        >
           <Group gap="xs">
             {(profile?.traits ?? []).map((trait) => (
               <Badge key={trait} variant="light">
-                {TRAIT_LABELS[trait] ?? trait}
+                {capabilityLabel(trait)}
               </Badge>
             ))}
           </Group>
