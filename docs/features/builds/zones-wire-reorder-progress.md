@@ -11,6 +11,7 @@
 **Status:** Complete (pending merge)
 
 **Branch:** `468/pskil/zones-wire-reorder`
+**PR:** https://github.com/pskillen/codeplug-studio/pull/533
 
 ---
 
@@ -60,4 +61,4 @@
 
 ## Next
 
-- Open PR (`Closes #468`); companion work remains on #457 plan
+- Merge [PR #533](https://github.com/pskillen/codeplug-studio/pull/533); companion work remains on #457 plan
