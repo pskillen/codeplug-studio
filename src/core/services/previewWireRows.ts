@@ -39,6 +39,7 @@ import type { FormatBuild } from '@core/models/formatBuild.ts';
 import type { Channel, ChannelModeProfileDMR, Zone } from '@core/models/library.ts';
 import type { DMRTimeSlot, EntityRef } from '@core/models/libraryTypes.ts';
 import { directZoneMemberChannelIds, directZoneMemberZoneIds } from '@core/domain/zoneMembers.ts';
+import { sortZonesByExportOrder } from '@core/domain/zoneOrder.ts';
 import { isChirpAnalogueExportable } from '@core/import-export/formats/chirp/channelWire.ts';
 import { previewGeneratedChannelWireName } from './previewChannelWireName.ts';
 import { isAmAirbandBankChannel } from '@core/import-export/formats/anytone/receiveOnlyBanks.ts';
@@ -493,7 +494,7 @@ export function previewWireRows(
       const reserved = shortenListNames ? new Set<string>() : null;
       const warnings: string[] = [];
       const channelById = new Map(library.channels.map((ch) => [ch.id, ch]));
-      const zonesForPreview =
+      const zonesForBank =
         build.formatId === 'anytone'
           ? library.zones.filter((zone) => {
               const assembledZone = projection.zones.find((row) => row.zoneId === zone.id);
@@ -511,6 +512,7 @@ export function previewWireRows(
                 : zoneShowsOnAnytoneDmrBank(kind);
             })
           : library.zones;
+      const zonesForPreview = sortZonesByExportOrder(zonesForBank, build.zoneOverrides);
       return zonesForPreview.map((zone) => {
         const omitFromExport = zone.omitFromExport === true;
         const forceInclude = isEntityForceIncluded(build.zoneOverrides, zone.id);

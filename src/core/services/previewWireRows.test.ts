@@ -868,4 +868,38 @@ describe('previewWireRows', () => {
     );
     expect(airZoneNames.sort()).toEqual(['AM only', 'Mixed']);
   });
+
+  it('orders zone preview rows by build orderOrSlot overrides', () => {
+    const projectId = 'proj-zone-preview-order';
+    const zoneA = { ...newZone(projectId, 'Alpha'), order: 1 };
+    const zoneB = { ...newZone(projectId, 'Bravo'), order: 2 };
+    const zoneC = { ...newZone(projectId, 'Charlie'), order: 3 };
+    const build = {
+      ...newFormatBuild(projectId, 'opengd77-1701'),
+      zoneOverrides: [
+        { libraryEntityId: zoneC.id, orderOrSlot: 1 },
+        { libraryEntityId: zoneA.id, orderOrSlot: 2 },
+        { libraryEntityId: zoneB.id, orderOrSlot: 3 },
+      ],
+    };
+    const library = {
+      channels: [],
+      zones: [zoneA, zoneB, zoneC],
+      talkGroups: [],
+      digitalContacts: [],
+      analogContacts: [],
+      rxGroupLists: [],
+      scanLists: [],
+    };
+
+    const libraryOrder = previewWireRows(
+      { ...build, zoneOverrides: [] },
+      library,
+      'zone',
+    ).map((row) => row.displayLabel);
+    expect(libraryOrder).toEqual(['Alpha', 'Bravo', 'Charlie']);
+
+    const overrideOrder = previewWireRows(build, library, 'zone').map((row) => row.displayLabel);
+    expect(overrideOrder).toEqual(['Charlie', 'Alpha', 'Bravo']);
+  });
 });
