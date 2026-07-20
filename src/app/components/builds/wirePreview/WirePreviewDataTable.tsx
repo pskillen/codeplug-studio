@@ -9,6 +9,7 @@ import { LIST_NAME_FILTER_DEBOUNCE_MS } from '@integrations/listPrefs/index.ts';
 import DataTable, { type DataTableSortState } from '../../ui/DataTable.tsx';
 import WirePreviewListNameCell from './WirePreviewListNameCell.tsx';
 import WirePreviewDisplayCell from './WirePreviewDisplayCell.tsx';
+import WirePreviewInclusionCell from './WirePreviewInclusionCell.tsx';
 import { rowEffectivelyIncluded } from './wirePreviewRowUtils.ts';
 import { ICON_SIZE_ACTION, ICON_STROKE } from '../../../lib/iconSizes.ts';
 
@@ -25,6 +26,13 @@ export interface WirePreviewZoneScanColumnConfig {
   onExportScanListChange: (zoneId: string, enabled: boolean) => void;
 }
 
+/** Inline Skip / Force export on the wire list (dense include controls). */
+export interface WirePreviewInclusionColumnConfig {
+  saving?: boolean;
+  onExcludedChange: (row: WirePreviewRow, excluded: boolean) => void;
+  onForceIncludeChange?: (row: WirePreviewRow, forceInclude: boolean) => void;
+}
+
 export interface WirePreviewDataTableProps {
   rows: WirePreviewRow[];
   onRowActivate: (row: WirePreviewRow) => void;
@@ -36,6 +44,7 @@ export interface WirePreviewDataTableProps {
   reorder?: WirePreviewReorderConfig;
   locationByKey?: Map<string, number>;
   zoneScanColumn?: WirePreviewZoneScanColumnConfig;
+  inclusionColumn?: WirePreviewInclusionColumnConfig;
   emptyMessage?: string;
 }
 
@@ -63,6 +72,7 @@ export default function WirePreviewDataTable({
   reorder,
   locationByKey,
   zoneScanColumn,
+  inclusionColumn,
   emptyMessage = 'No library entities of this type yet.',
 }: WirePreviewDataTableProps) {
   const [internalSort, setInternalSort] = useState<DataTableSortState | null>(null);
@@ -96,6 +106,23 @@ export default function WirePreviewDataTable({
         render: (row) => <WirePreviewListNameCell row={row} />,
       }}
       columns={[
+        ...(inclusionColumn
+          ? [
+              {
+                key: 'inclusion',
+                header: 'Export',
+                hideable: false,
+                render: (row: WirePreviewRow) => (
+                  <WirePreviewInclusionCell
+                    row={row}
+                    disabled={inclusionColumn.saving}
+                    onExcludedChange={inclusionColumn.onExcludedChange}
+                    onForceIncludeChange={inclusionColumn.onForceIncludeChange}
+                  />
+                ),
+              },
+            ]
+          : []),
         ...(locationByKey
           ? [
               {

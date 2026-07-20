@@ -351,6 +351,10 @@ export default function BuildFlatMemoryChannelsPage() {
           onSearchChange={setSearch}
           onRowActivate={(row) => setSelectedRowKey(row.key)}
           locationByKey={locationByKey}
+          inclusionColumn={{
+            saving,
+            onExcludedChange: setRowExcluded,
+          }}
           reorder={{
             orderedKeys: memoryChannelIds,
             onMove: moveChannel,

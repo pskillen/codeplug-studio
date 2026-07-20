@@ -183,6 +183,11 @@ function BuildWirePreviewListContent({
           onSearchChange={setSearch}
           onRowActivate={(row) => setSelectedRowKey(row.key)}
           zoneScanColumn={zoneScanColumn}
+          inclusionColumn={{
+            saving,
+            onExcludedChange: setRowExcluded,
+            onForceIncludeChange: entityKind === 'zone' ? setRowForceIncluded : undefined,
+          }}
           reorder={
             zoneReorderEnabled
               ? {
