@@ -901,5 +901,8 @@ describe('previewWireRows', () => {
 
     const overrideOrder = previewWireRows(build, library, 'zone').map((row) => row.displayLabel);
     expect(overrideOrder).toEqual(['Charlie', 'Alpha', 'Bravo']);
+    expect(previewWireRows(build, library, 'zone').map((row) => row.hasOrderOrSlotOverride)).toEqual(
+      [true, true, true],
+    );
   });
 });

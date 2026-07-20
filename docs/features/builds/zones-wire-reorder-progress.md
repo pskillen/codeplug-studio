@@ -23,12 +23,23 @@
 - `previewWireRows` zone case sorts with `sortZonesByExportOrder(..., build.zoneOverrides)`
 - Unit test: `orders zone preview rows by build orderOrSlot overrides`
 
+---
+
+## Custom order indicator
+
+**Status:** Complete
+
+**Delivered**
+
+- `WirePreviewRow.hasOrderOrSlotOverride`
+- **Custom order** yellow badge on reorder-enabled wire tables (Build → Zones)
+
 **Verify**
 
-- `npx vitest run src/core/services/previewWireRows.test.ts -t "orders zone preview"`
+- `WirePreviewDataTable` test: shows Custom order badge when reorder + override
 
 ---
 
 ## Next
 
-- Slice 2: per-row custom-order indicator on Build → Zones
+- Slice 3: Members tab per-row up/down + styleguide

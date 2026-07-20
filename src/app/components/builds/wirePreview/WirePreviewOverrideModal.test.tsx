@@ -14,6 +14,7 @@ const row: WirePreviewRow = {
   generatedWireName: 'Local 9',
   effectiveWireName: 'Local 9',
   hasWireNameOverride: false,
+  hasOrderOrSlotOverride: false,
   excluded: false,
 };
 
@@ -94,6 +95,7 @@ describe('WirePreviewOverrideModal', () => {
       generatedWireName: 'PMR446',
       effectiveWireName: 'PMR446',
       hasWireNameOverride: false,
+      hasOrderOrSlotOverride: false,
       excluded: false,
       omitFromExport: true,
       forceInclude: false,
@@ -132,6 +134,7 @@ describe('WirePreviewOverrideModal', () => {
       generatedWireName: 'PMR446',
       effectiveWireName: 'PMR446',
       hasWireNameOverride: false,
+      hasOrderOrSlotOverride: false,
       excluded: false,
       omitFromExport: true,
       forceInclude: true,
@@ -165,6 +168,7 @@ describe('WirePreviewOverrideModal', () => {
       generatedWireName: 'Glasgow',
       effectiveWireName: 'Glasgow',
       hasWireNameOverride: false,
+      hasOrderOrSlotOverride: false,
       excluded: false,
     };
     render(
@@ -202,6 +206,7 @@ describe('WirePreviewOverrideModal', () => {
       generatedWireName: 'Glasgow',
       effectiveWireName: 'Glasgow',
       hasWireNameOverride: false,
+      hasOrderOrSlotOverride: false,
       excluded: false,
     };
     render(

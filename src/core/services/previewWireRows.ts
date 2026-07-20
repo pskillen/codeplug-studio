@@ -3,6 +3,7 @@ import {
   isEntityExcluded,
   isEntityForceIncluded,
   overrideByEntityId,
+  overrideOrderOrSlot,
   type OverrideField,
 } from '@core/domain/formatBuildOverrides.ts';
 import { channelDisplayLabel, defaultChannelWireName } from '@core/domain/channelNaming.ts';
@@ -90,6 +91,8 @@ export interface WirePreviewRow {
   effectiveWireName: string;
   /** True when the build stores an explicit wireName override for this row key. */
   hasWireNameOverride: boolean;
+  /** True when the build stores a densified `orderOrSlot` for this row key. */
+  hasOrderOrSlotOverride: boolean;
   excluded: boolean;
   expansionNote?: string;
   displayDetails?: WirePreviewDisplayLine[];
@@ -151,6 +154,9 @@ function previewRow(
   const excluded = override?.excluded === true;
   const wireNameOverride = override?.wireName?.trim();
   const effectiveWireName = sanitiseAsciiWireString(wireNameOverride || generatedWireName);
+  const orderOrSlot = override?.orderOrSlot;
+  const hasOrderOrSlotOverride =
+    orderOrSlot != null && Number.isFinite(orderOrSlot) && orderOrSlot >= 1;
   return {
     key,
     libraryEntityId,
@@ -159,6 +165,7 @@ function previewRow(
     generatedWireName: sanitiseAsciiWireString(generatedWireName),
     effectiveWireName,
     hasWireNameOverride: Boolean(wireNameOverride),
+    hasOrderOrSlotOverride,
     excluded,
     expansionNote,
     displayDetails,
@@ -272,6 +279,7 @@ export function previewWireRows(
             generatedWireName: sanitiseAsciiWireString(generatedWireName),
             effectiveWireName: sanitiseAsciiWireString(channelOverride ?? generatedWireName),
             hasWireNameOverride: Boolean(channelOverride),
+            hasOrderOrSlotOverride: overrideOrderOrSlot(build.channelOverrides, channel.id) != null,
             excluded: isEntityExcluded(build.channelOverrides, channel.id),
             expansionNote,
           });
@@ -332,6 +340,7 @@ export function previewWireRows(
                   keyOverride ?? channelOverride ?? generated.wireName,
                 ),
                 hasWireNameOverride: Boolean(keyOverride ?? channelOverride),
+                hasOrderOrSlotOverride: overrideOrderOrSlot(build.channelOverrides, channel.id) != null,
                 excluded: isEntityExcluded(build.channelOverrides, channel.id),
                 expansionNote: generated.expansionNote,
                 displayDetails: dm32ExpansionDisplayDetails(channel, generated, library),
@@ -352,6 +361,7 @@ export function previewWireRows(
             generatedWireName: sanitiseAsciiWireString(generatedWireName),
             effectiveWireName: sanitiseAsciiWireString(channelOverride ?? generatedWireName),
             hasWireNameOverride: Boolean(channelOverride),
+            hasOrderOrSlotOverride: overrideOrderOrSlot(build.channelOverrides, channel.id) != null,
             excluded: isEntityExcluded(build.channelOverrides, channel.id),
             expansionNote:
               zoneLinkedForPreview && !zoneLinkedForPreview.has(channel.id)
@@ -411,6 +421,7 @@ export function previewWireRows(
                   keyOverride ?? channelOverride ?? generated.wireName,
                 ),
                 hasWireNameOverride: Boolean(keyOverride ?? channelOverride),
+                hasOrderOrSlotOverride: overrideOrderOrSlot(build.channelOverrides, channel.id) != null,
                 excluded: isEntityExcluded(build.channelOverrides, channel.id),
                 expansionNote: generated.expansionNote,
                 displayDetails: anytoneExpansionDisplayDetails(channel, generated, library),
@@ -431,6 +442,7 @@ export function previewWireRows(
             generatedWireName: sanitiseAsciiWireString(generatedWireName),
             effectiveWireName: sanitiseAsciiWireString(channelOverride ?? generatedWireName),
             hasWireNameOverride: Boolean(channelOverride),
+            hasOrderOrSlotOverride: overrideOrderOrSlot(build.channelOverrides, channel.id) != null,
             excluded: isEntityExcluded(build.channelOverrides, channel.id),
             expansionNote:
               zoneLinkedForPreview && !zoneLinkedForPreview.has(channel.id)

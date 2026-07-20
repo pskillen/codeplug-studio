@@ -25,7 +25,7 @@ Read-only wire preview list for build entity routes. Shows library label, genera
 - **Search and sort** are UI-only when not in reorder mode; they do **not** persist to export order or `orderOrSlot`.
 - When **`reorder`** is set, the table runs in **`reorderMode`** (locked to `rows` order; column sorts off). Up/down `ActionIcon`s call `onMove`; clicks stop propagation so they do not open the modal.
 - Parents may show [`ExportOrderOverrideBanner`](./ExportOrderOverrideBanner.md) when `orderOrSlot` (or member layout order) is overridden — reset is separate from this table’s display sort.
-- **Export status badges** — skip, force-export, library omit, expansion notes via `rowEffectivelyIncluded`.
+- **Export status badges** — skip, force-export, library omit, expansion notes via `rowEffectivelyIncluded`. When `reorder` is set, rows with `hasOrderOrSlotOverride` also show a **Custom order** badge.
 
 ## Related
 

@@ -201,6 +201,11 @@ export default function WirePreviewDataTable({
                     Name override
                   </Badge>
                 ) : null}
+                {reorder && row.hasOrderOrSlotOverride ? (
+                  <Badge size="xs" variant="light" color="yellow">
+                    Custom order
+                  </Badge>
+                ) : null}
               </Group>
             );
           },

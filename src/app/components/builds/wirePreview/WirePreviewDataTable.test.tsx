@@ -15,6 +15,7 @@ const rows: WirePreviewRow[] = [
     generatedWireName: 'GB3DA Demo',
     effectiveWireName: 'GB3DA Demo',
     hasWireNameOverride: false,
+    hasOrderOrSlotOverride: false,
     excluded: false,
   },
   {
@@ -25,6 +26,7 @@ const rows: WirePreviewRow[] = [
     generatedWireName: 'Skipped',
     effectiveWireName: 'Skipped',
     hasWireNameOverride: false,
+    hasOrderOrSlotOverride: false,
     excluded: true,
   },
 ];
@@ -90,6 +92,7 @@ describe('WirePreviewDataTable', () => {
       generatedWireName: 'Glasgow',
       effectiveWireName: 'Glasgow',
       hasWireNameOverride: false,
+      hasOrderOrSlotOverride: false,
       excluded: false,
     };
     const layout: ZoneGroupingLayout = {
@@ -114,5 +117,36 @@ describe('WirePreviewDataTable', () => {
     expect(toggle).toBeChecked();
     fireEvent.click(toggle);
     expect(onExportScanListChange).toHaveBeenCalledWith('zone-1', false);
+  });
+
+  it('shows Custom order badge when reorder is enabled and orderOrSlot is overridden', () => {
+    const zoneRow: WirePreviewRow = {
+      key: 'zone-1',
+      libraryEntityId: 'zone-1',
+      entityKind: 'zone',
+      displayLabel: 'Glasgow',
+      generatedWireName: 'Glasgow',
+      effectiveWireName: 'Glasgow',
+      hasWireNameOverride: false,
+      hasOrderOrSlotOverride: true,
+      excluded: false,
+    };
+
+    render(
+      <MemoryRouter>
+        <MantineProvider>
+          <WirePreviewDataTable
+            rows={[zoneRow]}
+            onRowActivate={vi.fn()}
+            reorder={{
+              orderedKeys: ['zone-1'],
+              onMove: vi.fn(),
+            }}
+          />
+        </MantineProvider>
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByText('Custom order')).toBeInTheDocument();
   });
 });
