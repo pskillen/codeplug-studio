@@ -25,21 +25,21 @@ Native YAML remains **project interchange** (library + all builds). It is not cr
 
 ## Routes
 
-| Route                           | Purpose                                                              |
-| ------------------------------- | -------------------------------------------------------------------- |
-| `/builds`                       | List builds for the active project                                   |
-| `/builds/new`                   | Create build — format → profile → name                               |
-| `/builds/:id`                   | Redirect → overview                                                  |
-| `/builds/:id/overview`          | Identity, target profile, organisation badges                        |
+| Route                           | Purpose                                                                |
+| ------------------------------- | ---------------------------------------------------------------------- |
+| `/builds`                       | List builds for the active project                                     |
+| `/builds/new`                   | Create build — format → profile → name                                 |
+| `/builds/:id`                   | Redirect → overview                                                    |
+| `/builds/:id/overview`          | Identity, target profile, organisation badges                          |
 | `/builds/:id/characteristics`   | Read-only radio characteristics — organisation, export limits, ladders |
-| `/builds/:id/channels`          | Wire preview — channels (list + modal)                               |
-| `/builds/:id/channels/bulk`     | Wire preview — channel bulk edit                                     |
-| `/builds/:id/zones`             | Wire preview — zones                                                 |
-| `/builds/:id/talk-groups`       | Wire preview — talk groups                                           |
-| `/builds/:id/contacts`          | Wire preview — contacts                                              |
-| `/builds/:id/rx-group-lists`    | Wire preview — RX group lists                                        |
-| `/builds/:id/export`            | CPS export panel                                                     |
-| `/builds/:id/export-resolution` | Read-only behavioural defaults cascade audit (Channels + Zones tabs) |
+| `/builds/:id/channels`          | Wire preview — channels (list + modal)                                 |
+| `/builds/:id/channels/bulk`     | Wire preview — channel bulk edit                                       |
+| `/builds/:id/zones`             | Wire preview — zones                                                   |
+| `/builds/:id/talk-groups`       | Wire preview — talk groups                                             |
+| `/builds/:id/contacts`          | Wire preview — contacts                                                |
+| `/builds/:id/rx-group-lists`    | Wire preview — RX group lists                                          |
+| `/builds/:id/export`            | CPS export panel                                                       |
+| `/builds/:id/export-resolution` | Read-only behavioural defaults cascade audit (Channels + Zones tabs)   |
 
 Requires an active project (`RequireActiveProject`).
 
@@ -80,7 +80,7 @@ YAML import/export includes `formatBuilds[]` in the project document.
 | Export inclusion flags       | Shipped | [#103](https://github.com/pskillen/codeplug-studio/issues/103) — orphan channels/TGs/RGLs on `FormatBuild` + export UI                                                                                                                                                                                                                                                       |
 | Channel behaviour overrides  | Shipped | [#420](https://github.com/pskillen/codeplug-studio/issues/420) — optional build `exportSettings` overrides on Export panel                                                                                                                                                                                                                                                   |
 | Export resolution summary    | Shipped | [#421](https://github.com/pskillen/codeplug-studio/issues/421) / [#443](https://github.com/pskillen/codeplug-studio/issues/443) — Channels + Zones tabs; zone-derived scan membership cascade                                                                                                                                                                                |
-| Radio characteristics        | Shipped | [#515](https://github.com/pskillen/codeplug-studio/issues/515) — `/builds/:id/characteristics`; copy in `buildCapabilityCopy.ts`; limits via `getProfileExportLimits` (blanks for unmodelled caps)                                                                                                                                                                          |
+| Radio characteristics        | Shipped | [#515](https://github.com/pskillen/codeplug-studio/issues/515) — `/builds/:id/characteristics`; copy in `buildCapabilityCopy.ts`; limits via `getProfileExportLimits` (blanks for unmodelled caps)                                                                                                                                                                           |
 
 ## Export inclusion flags
 

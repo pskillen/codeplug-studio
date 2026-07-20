@@ -60,8 +60,7 @@ const CAPABILITY_COPY: Record<CapabilityId, CapabilityCopy> = {
       'There is no separate Scan lists build page for this profile.',
     ],
     formatNotes: {
-      dm32:
-        'On DM-32UV, Studio synthesises scan rows from zones and your default scan inclusion. That differs from radios with dedicated scan-list files.',
+      dm32: 'On DM-32UV, Studio synthesises scan rows from zones and your default scan inclusion. That differs from radios with dedicated scan-list files.',
     },
   },
   [BuildCapabilityTrait.DedicatedScanLists]: {

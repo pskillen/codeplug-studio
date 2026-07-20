@@ -85,8 +85,7 @@ export default function BuildCharacteristicsPage() {
               </Text>
             </>
           ) : null}
-          . Change the radio profile on{' '}
-          <Link to={`/builds/${build.id}/overview`}>Overview</Link>.
+          . Change the radio profile on <Link to={`/builds/${build.id}/overview`}>Overview</Link>.
         </Text>
       }
     >
@@ -204,8 +203,8 @@ export default function BuildCharacteristicsPage() {
         traits.includes(BuildCapabilityTrait.DedicatedScanLists) ||
         traits.includes(BuildCapabilityTrait.MxNChannelExpansion) ? (
           <Text size="sm" c="dimmed">
-            Wire-column detail for this CPS family lives in the format reference under Help /
-            docs — this page stays at operator limits and organisation, not CSV headers.
+            Wire-column detail for this CPS family lives in the format reference under Help / docs —
+            this page stays at operator limits and organisation, not CSV headers.
           </Text>
         ) : null}
       </Stack>
