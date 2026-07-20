@@ -20,11 +20,11 @@ Wire shape for `codeplug.json` → `zones[]`.
 
 ## Studio export mapping (shipped #540)
 
-| NeonPlug           | Studio                                                |
-| ------------------ | ----------------------------------------------------- |
-| Zone row           | Build **zone grouping** trait layout + library `Zone` |
+| NeonPlug           | Studio                                                  |
+| ------------------ | ------------------------------------------------------- |
+| Zone row           | Build **zone grouping** trait layout + library `Zone`   |
 | `channels` numbers | From assemble `memberChannelIds` via channel number map |
-| `name`             | Assemble zone `wireName` (profile name limit)         |
-| `id`               | Studio zone UUID (NeonPlug UI id)                     |
+| `name`             | Assemble zone `wireName` (profile name limit)           |
+| `id`               | Studio zone UUID (NeonPlug UI id)                       |
 
 UV5R-Mini / analogue-only pathways leave `zones` empty.

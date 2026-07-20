@@ -12,7 +12,12 @@ import type {
   ChannelModeProfileAnalog,
   ChannelModeProfileDMR,
 } from '@core/models/library.ts';
-import type { ChannelMode, ChannelTone, DMRTimeSlot, EntityRef } from '@core/models/libraryTypes.ts';
+import type {
+  ChannelMode,
+  ChannelTone,
+  DMRTimeSlot,
+  EntityRef,
+} from '@core/models/libraryTypes.ts';
 import { percentToWire } from '../../profileLadder.ts';
 import {
   getNeonplugProfile,

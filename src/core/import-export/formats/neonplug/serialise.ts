@@ -244,13 +244,7 @@ export function serialiseNeonplugCodeplug(
     );
     data.contacts = contacts;
     data.rxGroups = rxGroups;
-    data.zones = serialiseNeonplugZones(
-      assembled,
-      profile,
-      channelNumberById,
-      options,
-      warnings,
-    );
+    data.zones = serialiseNeonplugZones(assembled, profile, channelNumberById, options, warnings);
     data.scanLists = scanLists;
     data.channels = serialiseDm32uvChannels(assembled, profileId, options, warnings, {
       contactIdByEntityId,

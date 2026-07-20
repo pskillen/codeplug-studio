@@ -41,17 +41,17 @@ Large DM32-oriented settings bag (display, GPS, buttons, APRS position, embedded
 
 ## Loss table (operator-facing summary)
 
-| NeonPlug content                       | Re-import after Studio export (planned)  |
-| -------------------------------------- | ---------------------------------------- |
-| Channels (modelled RF fields)          | Intended fidelity within modelled fields |
-| Zones / scan / contacts / RX groups    | Filled on DM32UV export (#540); UV5R empty |
-| Channel contact / RX / scan indexes    | Wired on DM32UV (#540); `0` on UV5R      |
-| Operator `radioIds`                    | Empty — no library source yet            |
-| Radio settings / VFOs                  | Lost                                     |
-| Emergencies                            | Lost                                     |
-| Encryption keys                        | Lost (intentional)                       |
-| Quick contacts `rawData`               | Lost                                     |
-| Unknown channel bitfields              | Lost (defaults on export)                |
-| Scan CTC / hang / priority             | Defaults only (lossy)                    |
+| NeonPlug content                    | Re-import after Studio export (planned)    |
+| ----------------------------------- | ------------------------------------------ |
+| Channels (modelled RF fields)       | Intended fidelity within modelled fields   |
+| Zones / scan / contacts / RX groups | Filled on DM32UV export (#540); UV5R empty |
+| Channel contact / RX / scan indexes | Wired on DM32UV (#540); `0` on UV5R        |
+| Operator `radioIds`                 | Empty — no library source yet              |
+| Radio settings / VFOs               | Lost                                       |
+| Emergencies                         | Lost                                       |
+| Encryption keys                     | Lost (intentional)                         |
+| Quick contacts `rawData`            | Lost                                       |
+| Unknown channel bitfields           | Lost (defaults on export)                  |
+| Scan CTC / hang / priority          | Defaults only (lossy)                      |
 
 Document any additional loss discovered while implementing [#541](https://github.com/pskillen/codeplug-studio/issues/541)–[#543](https://github.com/pskillen/codeplug-studio/issues/543) here.

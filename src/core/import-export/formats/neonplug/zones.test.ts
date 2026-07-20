@@ -67,9 +67,7 @@ describe('neonplug/zones', () => {
     );
 
     expect(warnings).toEqual([]);
-    expect(zones).toEqual([
-      { id: 'zone-1', name: 'Local', channels: [1, 3] },
-    ]);
+    expect(zones).toEqual([{ id: 'zone-1', name: 'Local', channels: [1, 3] }]);
 
     const { data } = serialiseNeonplugCodeplug(assembled, {
       exportDate: '2026-07-20T12:00:00.000Z',

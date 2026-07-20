@@ -48,11 +48,7 @@ function assembledDm32(channels: Channel[]): AssembledBuild {
 
 describe('neonplug/exportContext', () => {
   it('builds sequential DM32UV channel numbers truncated at maxChannels', () => {
-    const channels = [
-      fmChannel('ch-1', 'A'),
-      fmChannel('ch-2', 'B'),
-      fmChannel('ch-3', 'C'),
-    ];
+    const channels = [fmChannel('ch-1', 'A'), fmChannel('ch-2', 'B'), fmChannel('ch-3', 'C')];
     const map = buildDm32uvChannelNumberMap(assembledDm32(channels), 2);
     expect([...map.entries()]).toEqual([
       ['ch-1', 1],
@@ -93,10 +89,13 @@ describe('neonplug/exportContext', () => {
   });
 
   it('maps member UUIDs to unique ordered channel numbers', () => {
-    const numbers = channelNumbersForMembers(['ch-1', 'ch-2', 'ch-1', 'missing'], new Map([
-      ['ch-1', 1],
-      ['ch-2', 3],
-    ]));
+    const numbers = channelNumbersForMembers(
+      ['ch-1', 'ch-2', 'ch-1', 'missing'],
+      new Map([
+        ['ch-1', 1],
+        ['ch-2', 3],
+      ]),
+    );
     expect(numbers).toEqual([1, 3]);
   });
 });

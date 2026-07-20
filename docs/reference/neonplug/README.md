@@ -32,37 +32,37 @@ NeonPlug is MIT-licensed. Studio docs cite field names and enums from that sourc
 
 ## Entity inventory (`codeplug.json`)
 
-| JSON key                 | Reference                                                | Studio modelling                                        | Notes                                 |
-| ------------------------ | -------------------------------------------------------- | ------------------------------------------------------- | ------------------------------------- |
-| `channels`               | [channels.md](channels.md)                               | `Channel[]`                                             | Shared Channel shape across radios    |
-| `zones`                  | [zones.md](zones.md)                                     | Build **zone grouping** trait layout                    | Channel **numbers**, not UUIDs        |
-| `scanLists`              | [scan-lists.md](scan-lists.md)                           | Zone-derived scan projection (DM32UV)                   | Channel **numbers**; no carriers      |
-| `contacts`               | [contacts.md](contacts.md)                               | `TalkGroup[]` then `DigitalContact[]`                   | Single NeonPlug contact book          |
-| `rxGroups`               | [rx-groups.md](rx-groups.md)                             | `RxGroupList[]`                                         | `talkGroupIndices` = DMR IDs          |
-| `radioIds`               | [contacts.md](contacts.md#dmr-radio-ids)                 | **Omit** on M1 (`[]`)                                   | No operator DMR-ID list in library    |
-| `quickContacts`          | [contacts.md](contacts.md#quick-contacts)                | **Omit** on M1 (`[]`)                                   | Radio talk-group table with raw bytes |
-| `radioInfo`              | [radio-info-and-settings.md](radio-info-and-settings.md) | Profile / export metadata                               | Model string selects radio pathway    |
-| `radioSettings`          | [radio-info-and-settings.md](radio-info-and-settings.md) | **Lossy** — omit or defaults                            | Large DM32 settings bag               |
-| `messages`               | [radio-info-and-settings.md](radio-info-and-settings.md) | **Lossy**                                               | Quick text messages                   |
-| `digitalEmergencies`     | [radio-info-and-settings.md](radio-info-and-settings.md) | **Lossy**                                               |                                       |
-| `digitalEmergencyConfig` | [radio-info-and-settings.md](radio-info-and-settings.md) | **Lossy**                                               |                                       |
-| `analogEmergencies`      | [radio-info-and-settings.md](radio-info-and-settings.md) | **Lossy**                                               |                                       |
-| `encryptionKeys`         | [radio-info-and-settings.md](radio-info-and-settings.md) | **Lossy** — do not stash secrets in library             |                                       |
-| `exportDate` / `version` | [file-format.md](file-format.md)                         | Envelope only                                           |                                       |
+| JSON key                 | Reference                                                | Studio modelling                            | Notes                                 |
+| ------------------------ | -------------------------------------------------------- | ------------------------------------------- | ------------------------------------- |
+| `channels`               | [channels.md](channels.md)                               | `Channel[]`                                 | Shared Channel shape across radios    |
+| `zones`                  | [zones.md](zones.md)                                     | Build **zone grouping** trait layout        | Channel **numbers**, not UUIDs        |
+| `scanLists`              | [scan-lists.md](scan-lists.md)                           | Zone-derived scan projection (DM32UV)       | Channel **numbers**; no carriers      |
+| `contacts`               | [contacts.md](contacts.md)                               | `TalkGroup[]` then `DigitalContact[]`       | Single NeonPlug contact book          |
+| `rxGroups`               | [rx-groups.md](rx-groups.md)                             | `RxGroupList[]`                             | `talkGroupIndices` = DMR IDs          |
+| `radioIds`               | [contacts.md](contacts.md#dmr-radio-ids)                 | **Omit** on M1 (`[]`)                       | No operator DMR-ID list in library    |
+| `quickContacts`          | [contacts.md](contacts.md#quick-contacts)                | **Omit** on M1 (`[]`)                       | Radio talk-group table with raw bytes |
+| `radioInfo`              | [radio-info-and-settings.md](radio-info-and-settings.md) | Profile / export metadata                   | Model string selects radio pathway    |
+| `radioSettings`          | [radio-info-and-settings.md](radio-info-and-settings.md) | **Lossy** — omit or defaults                | Large DM32 settings bag               |
+| `messages`               | [radio-info-and-settings.md](radio-info-and-settings.md) | **Lossy**                                   | Quick text messages                   |
+| `digitalEmergencies`     | [radio-info-and-settings.md](radio-info-and-settings.md) | **Lossy**                                   |                                       |
+| `digitalEmergencyConfig` | [radio-info-and-settings.md](radio-info-and-settings.md) | **Lossy**                                   |                                       |
+| `analogEmergencies`      | [radio-info-and-settings.md](radio-info-and-settings.md) | **Lossy**                                   |                                       |
+| `encryptionKeys`         | [radio-info-and-settings.md](radio-info-and-settings.md) | **Lossy** — do not stash secrets in library |                                       |
+| `exportDate` / `version` | [file-format.md](file-format.md)                         | Envelope only                               |                                       |
 
 ## Foreign keys (wire edge)
 
 NeonPlug uses **1-based channel numbers** and **list indexes** — not names and not Studio UUIDs. Name fields are display labels only at this boundary.
 
-| From                        | To                              | Key form                                       |
-| --------------------------- | ------------------------------- | ---------------------------------------------- |
-| Zone `channels[]`           | `channels[].number`             | Channel number                                 |
-| Scan list `channels[]`      | `channels[].number`             | Channel number                                 |
-| Channel `contactId`         | Talk-group / contact list index | Integer index (`0` = none)                     |
-| Channel `rxGroupListId`     | `rxGroups` list                 | `0` = none; else **1-based** list position     |
-| Channel `scanListId`        | `scanLists` entry               | `0` = none; else **1-based** (max **15**)       |
-| Channel `dmrRadioIdIndex`   | `radioIds[]`                    | 0-based index; `255` / omit = none             |
-| RX group `talkGroupIndices` | Talk-group **DMR IDs**          | Up to 32 integers (not book indexes)           |
+| From                        | To                              | Key form                                   |
+| --------------------------- | ------------------------------- | ------------------------------------------ |
+| Zone `channels[]`           | `channels[].number`             | Channel number                             |
+| Scan list `channels[]`      | `channels[].number`             | Channel number                             |
+| Channel `contactId`         | Talk-group / contact list index | Integer index (`0` = none)                 |
+| Channel `rxGroupListId`     | `rxGroups` list                 | `0` = none; else **1-based** list position |
+| Channel `scanListId`        | `scanLists` entry               | `0` = none; else **1-based** (max **15**)  |
+| Channel `dmrRadioIdIndex`   | `radioIds[]`                    | 0-based index; `255` / omit = none         |
+| RX group `talkGroupIndices` | Talk-group **DMR IDs**          | Up to 32 integers (not book indexes)       |
 
 On **import**, Studio must allocate UUID `id` FKs and drop NeonPlug numbers as relationship keys. On **export**, assign stable channel numbers from assemble order / profile rules.
 
@@ -79,16 +79,16 @@ Per-radio notes and caps: [`radios/`](radios/README.md). DM-32UV caps match DM32
 
 ## Lossy / deferred fields (summary)
 
-| Area                      | Planned Studio behaviour (M1 export)       |
-| ------------------------- | ------------------------------------------ |
-| Radio settings / VFO bags | Omit (`null`) or document defaults         |
-| Emergencies               | Empty arrays                               |
-| Encryption keys           | Empty — never round-trip secrets via stash |
-| Radio IDs                 | Empty (`[]`) — no operator DMR-ID list yet |
-| Quick contacts / messages | Empty unless a clear library source exists |
-| Unknown Channel bitfields | Export safe defaults (`0` / `false`)       |
-| Scan priority / hang / CTC| Defaults (`ctcScanMode`/`scanTxMode` = 0)  |
-| Calibration               | Not in `CodeplugData` export surface       |
+| Area                       | Planned Studio behaviour (M1 export)       |
+| -------------------------- | ------------------------------------------ |
+| Radio settings / VFO bags  | Omit (`null`) or document defaults         |
+| Emergencies                | Empty arrays                               |
+| Encryption keys            | Empty — never round-trip secrets via stash |
+| Radio IDs                  | Empty (`[]`) — no operator DMR-ID list yet |
+| Quick contacts / messages  | Empty unless a clear library source exists |
+| Unknown Channel bitfields  | Export safe defaults (`0` / `false`)       |
+| Scan priority / hang / CTC | Defaults (`ctcScanMode`/`scanTxMode` = 0)  |
+| Calibration                | Not in `CodeplugData` export surface       |
 
 Detail: [radio-info-and-settings.md](radio-info-and-settings.md).
 

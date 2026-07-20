@@ -24,10 +24,10 @@ Channel `contactId` indexes this book (`0` = none, `1+` = `contacts[].id`). Neon
 
 ### Studio export mapping (shipped #540)
 
-| Order | Studio entity      | NeonPlug contact fields                                      |
-| ----- | ------------------ | ------------------------------------------------------------ |
-| 1…    | `TalkGroup`        | `name`, `dmrId` = `digitalId`                                |
-| then  | `DigitalContact`   | `name`, `dmrId`, optional `callSign` / city / province / …   |
+| Order | Studio entity    | NeonPlug contact fields                                    |
+| ----- | ---------------- | ---------------------------------------------------------- |
+| 1…    | `TalkGroup`      | `name`, `dmrId` = `digitalId`                              |
+| then  | `DigitalContact` | `name`, `dmrId`, optional `callSign` / city / province / … |
 
 - Cap at profile `maxContacts` (250) with export warning.
 - Analog / DTMF contacts omitted.

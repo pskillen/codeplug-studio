@@ -23,10 +23,10 @@ Wire shape for `codeplug.json` → `rxGroups[]`.
 
 ## Studio export mapping (shipped #540)
 
-| NeonPlug           | Studio                                      |
-| ------------------ | ------------------------------------------- |
-| RX group row       | `RxGroupList`                               |
-| `talkGroupIndices` | Member talk-group `digitalId` values        |
-| `bitmask` / flags  | `entryFlag: 1`; others `0` (lossy)          |
+| NeonPlug           | Studio                               |
+| ------------------ | ------------------------------------ |
+| RX group row       | `RxGroupList`                        |
+| `talkGroupIndices` | Member talk-group `digitalId` values |
+| `bitmask` / flags  | `entryFlag: 1`; others `0` (lossy)   |
 
 UV5R-Mini / analogue exports: leave `rxGroups` as `[]`.

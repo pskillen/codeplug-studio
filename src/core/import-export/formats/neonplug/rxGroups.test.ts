@@ -1,9 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import {
-  newChannel,
-  newRxGroupList,
-  newTalkGroup,
-} from '@core/domain/factories.ts';
+import { newChannel, newRxGroupList, newTalkGroup } from '@core/domain/factories.ts';
 import type { Channel, RxGroupList, TalkGroup } from '@core/models/library.ts';
 import type { AssembledBuild } from '@core/services/assemble.ts';
 import { NEONPLUG_DM32UV_PROFILE } from './profiles.ts';

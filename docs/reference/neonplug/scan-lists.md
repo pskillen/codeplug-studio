@@ -30,12 +30,12 @@ Wire shape for `codeplug.json` → `scanLists[]`.
 
 DM32 CSV synthesises `Scan.csv` from **zone-derived** scan lists (with synthetic carriers). NeonPlug stores **first-class** scan list objects.
 
-| Behaviour                         | Studio export                                              |
-| --------------------------------- | ---------------------------------------------------------- |
-| Source                            | Zone grouping `exportScanList` + scan membership helpers   |
-| Members                           | Channel **numbers** (no m×n expansion on this profile)     |
-| Synthetic carriers                | **Not emitted** (DM32 CSV quirk only)                      |
-| Priority / hang / CTC             | Lossy defaults: `ctcScanMode`/`scanTxMode` = `0`; omit rest |
-| Cap                               | Min of profile `maxScanLists` and **15**                   |
+| Behaviour             | Studio export                                               |
+| --------------------- | ----------------------------------------------------------- |
+| Source                | Zone grouping `exportScanList` + scan membership helpers    |
+| Members               | Channel **numbers** (no m×n expansion on this profile)      |
+| Synthetic carriers    | **Not emitted** (DM32 CSV quirk only)                       |
+| Priority / hang / CTC | Lossy defaults: `ctcScanMode`/`scanTxMode` = `0`; omit rest |
+| Cap                   | Min of profile `maxScanLists` and **15**                    |
 
 UV5R-Mini leaves `scanLists` empty; per-channel `scanAdd` on [channels](channels.md) carries scan intent.
