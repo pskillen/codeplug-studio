@@ -1,0 +1,100 @@
+# NeonPlug channels
+
+Wire shape for `codeplug.json` → `channels[]`.
+
+**Ground truth:** [NeonPlug `Channel.ts`](https://github.com/infamy/NeonPlug/blob/main/src/models/Channel.ts)
+
+NeonPlug uses **one Channel type** for all radios. DM-32UV fills digital fields; UV5R-Mini maps into the same object with analogue-relevant fields only ([`uv5rmini/channelMapping.ts`](https://github.com/infamy/NeonPlug/blob/main/src/radios/uv5rmini/channelMapping.ts)).
+
+## Identity and ordering
+
+| Field    | Type   | Notes                                                                                                |
+| -------- | ------ | ---------------------------------------------------------------------------------------------------- |
+| `number` | number | Channel number (DM32: typically 1–4000; UV5R: memory slot)                                           |
+| `name`   | string | Display / radio name — **max 16** chars in DM32 comments; UV5R uses shorter effective names on write |
+
+`number` is the **wire FK** used by zones and scan lists. It is **not** a Studio library id.
+
+## Frequencies
+
+| Field         | Type   | Unit | Notes                          |
+| ------------- | ------ | ---- | ------------------------------ |
+| `rxFrequency` | number | MHz  | e.g. `145.3500`                |
+| `txFrequency` | number | MHz  | Same units; simplex → equal RX |
+
+Studio internal model uses Hz; convert at the boundary.
+
+## Mode and TX allow
+
+| Field        | Type / enum                                                  | Notes                  |
+| ------------ | ------------------------------------------------------------ | ---------------------- |
+| `mode`       | `'Analog' \| 'Digital' \| 'Fixed Analog' \| 'Fixed Digital'` | Channel Type           |
+| `forbidTx`   | boolean                                                      | TX forbidden when true |
+| `loneWorker` | boolean                                                      |                        |
+
+## Bandwidth, scan, APRS (selected)
+
+| Field              | Type / enum                      | Notes                                       |
+| ------------------ | -------------------------------- | ------------------------------------------- |
+| `bandwidth`        | `'12.5kHz' \| '25kHz'`           | Wide / narrow                               |
+| `scanAdd`          | boolean                          | Per-channel scan include                    |
+| `scanListId`       | number                           | Index into scan lists (bit-packed on radio) |
+| `forbidTalkaround` | boolean                          |                                             |
+| `aprsReceive`      | boolean                          |                                             |
+| `aprsReportMode`   | `'Off' \| 'Digital' \| 'Analog'` |                                             |
+| `power`            | `'Low' \| 'Medium' \| 'High'`    | UV5R mapping uses Low/High only             |
+
+## Analogue tones and squelch
+
+| Field                                                 | Type                                                                          | Notes                 |
+| ----------------------------------------------------- | ----------------------------------------------------------------------------- | --------------------- |
+| `rxCtcssDcs`                                          | `{ type: 'CTCSS' \| 'DCS' \| 'None'; value?: number; polarity?: 'N' \| 'P' }` | CTCSS Hz or DCS code  |
+| `txCtcssDcs`                                          | same                                                                          |                       |
+| `squelchLevel`                                        | number                                                                        | 0–255                 |
+| `rxSquelchMode`                                       | `'Carrier/CTC' \| 'Optional' \| 'CTC&Opt' \| 'CTC\|Opt'`                      |                       |
+| `voxFunction` / `scramble` / `compander` / `talkback` | boolean                                                                       | Analogue feature bits |
+
+## Digital (DMR) fields
+
+Valid when `mode` is `Digital` or `Fixed Digital`:
+
+| Field                                 | Type     | Notes                                        |
+| ------------------------------------- | -------- | -------------------------------------------- |
+| `colorCode`                           | number   | 0–15                                         |
+| `contactId`                           | number   | Talk-group / contact **index** (`0` = none)  |
+| `rxGroupListId`                       | number?  | RX group list id (`0` = none)                |
+| `slotOperation`                       | number?  | Slot / TDMA related                          |
+| `tdmaDirectMode`                      | boolean? |                                              |
+| `encryption`                          | boolean? |                                              |
+| `encryptionId`                        | number?  | Key index (`0` = none)                       |
+| `dmrRadioIdIndex`                     | number?  | 0-based into `radioIds`; omit / `255` = none |
+| `shortDataConfirm` / `privateConfirm` | boolean? |                                              |
+
+Legacy `txContactId` exists in the type but NeonPlug comments mark it deprecated in favour of `contactId`.
+
+## Unknown / radio-layout bitfields
+
+Many `unknown*` fields exist (`unknown1A_6_4`, `unknown1C_1_0`, `unknown2A`, …). They mirror DM32 memory layout.
+
+| Studio export guidance | Prefer documented defaults (`0`, `false`) — do **not** stash imported unknown bits for round-trip. |
+| Studio import guidance | Ignore unless a typed library field is added. Document remaining loss. |
+
+## Optional metadata
+
+| Field    | Type   | Notes                                    |
+| -------- | ------ | ---------------------------------------- |
+| `source` | string | Import attribution; not written to radio |
+
+## Mapping sketch → Studio library
+
+| NeonPlug                          | Studio (directional)                                     |
+| --------------------------------- | -------------------------------------------------------- |
+| `rxFrequency` / `txFrequency` MHz | Hz on `Channel`                                          |
+| `mode`                            | `Channel` mode / `primaryMode` / mode profiles           |
+| `power` enum                      | Percentage or profile ladder at export                   |
+| `rxCtcssDcs` / `txCtcssDcs`       | Tone model                                               |
+| `contactId` index                 | UUID talk-group / contact FK after resolve               |
+| `scanAdd`                         | `scanInclusion` / per-channel scan flag                  |
+| `number`                          | Export-time assignment from assemble / flat memory order |
+
+Exact column-by-column adapter tables belong with the export/import implementation tickets; this page is the **wire contract**.
