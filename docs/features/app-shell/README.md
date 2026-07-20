@@ -37,8 +37,6 @@ ProjectProvider
 | [data-table.md](data-table.md)                                                                | `DataTable`, list prefs, entity list hooks, virtualization                                       |
 | [list-kit-roles.md](list-kit-roles.md)                                                        | Four-role list kit (A/B/C/D) — [#460](https://github.com/pskillen/codeplug-studio/issues/460)    |
 | [UI interaction styleguide](../../reference/styleguide/)                                      | Written conventions for agents — [#465](https://github.com/pskillen/codeplug-studio/issues/465)  |
-| [list-kit-460-progress.md](list-kit-460-progress.md)                                          | List kit + styleguide initiative — shipped slices                                                |
-| [list-kit-460-outstanding.md](list-kit-460-outstanding.md)                                    | Deferred adoption / debt from list kit work                                                      |
 | [alerts.md](alerts.md)                                                                        | Mantine `Alert` colour conventions                                                               |
 | [GradientSegmentedControl](../../src/app/components/ui/GradientSegmentedControl.md)           | Per-segment indicator colours with fade on change                                                |
 | [SelectedItemList](../../src/app/components/ui/SelectedItemList.md)                           | Ordered selected-member list shell                                                               |
@@ -53,12 +51,11 @@ ProjectProvider
 | [ActiveProjectBar](../../src/app/components/ActiveProjectBar/ActiveProjectBar.md)             | Active project name + Switch (closes mobile drawer)                                              |
 | [EntityDeleteButton](../../src/app/components/library/EntityDeleteButton.md)                  | Editor footer delete for library entities                                                        |
 | [EntityListDeleteAction](../../src/app/components/library/EntityListDeleteAction.md)          | List row delete trash icon                                                                       |
-| [library-routes-progress.md](library-routes-progress.md)                                      | Library routes initiative — shipped slices                                                       |
-| [library-routes-outstanding.md](library-routes-outstanding.md)                                | Deferred debt from library routes PR                                                             |
-| [datatable-virtualization-progress.md](datatable-virtualization-progress.md)                  | [#381](https://github.com/pskillen/codeplug-studio/issues/381) virtual tbody rollout             |
 | [DataTable.md](../../src/app/components/ui/DataTable.md)                                      | List primitive sidecar — virtual props                                                           |
 | [library/README.md](../library/README.md)                                                     | Library CRUD and list routes                                                                     |
 | [map/README.md](../map/README.md)                                                             | Embedded channel map                                                                             |
+
+Shipped ([#20](https://github.com/pskillen/codeplug-studio/issues/20) library routes, [#381](https://github.com/pskillen/codeplug-studio/issues/381) virtualisation, [#460](https://github.com/pskillen/codeplug-studio/issues/460) list kit) — progress/outstanding logs retired in [#294](https://github.com/pskillen/codeplug-studio/issues/294).
 
 UI primitives live in `src/app/components/ui/` (ported from codeplug-tool). Reusable list infrastructure is documented in [data-table.md](data-table.md) and [list-kit-roles.md](list-kit-roles.md). Written interaction conventions (which shell, Sort…, reorder): [UI interaction styleguide](../../reference/styleguide/). Inline feedback uses Mantine `Alert` — see [alerts.md](alerts.md). Dev styleguide: `/styleguide` and nested pages (unlinked).
 
@@ -146,7 +143,7 @@ The **Help** route adds a **Getting started** section (Quick start modal), workf
 
 ## Related
 
-- [data-table.md](data-table.md) · [library-routes-progress.md](library-routes-progress.md) · [library-routes-outstanding.md](library-routes-outstanding.md)
+- [data-table.md](data-table.md)
 - [onboarding](../onboarding/README.md)
 - [AppLayout sidecar](../../../src/app/components/AppLayout/AppLayout.md)
 - [BuildFooter sidecar](../../../src/app/components/BuildFooter/BuildFooter.md)

@@ -89,14 +89,16 @@ Prefer **tables** for entity fields and UI controls. Use small **JSON or YAML sn
 
 ## Progress and outstanding pair
 
-Create both at **plan kickoff** if missing. Update per [progress-tracking](../progress-tracking/SKILL.md).
+Create both at **plan kickoff** only when [progress-tracking](../progress-tracking/SKILL.md) applies (multi-session / multi-PR). Update per that skill.
 
 | File | Role |
 | --- | --- |
 | `*-progress.md` | Shipped slices, PR links, branch, verify steps, **Next** |
-| `*-outstanding.md` | Checkboxes for discovered debt — not future plan phases |
+| `*-outstanding.md` | Checkboxes for discovered debt — each open item links a GitHub issue |
 
 Link both from the tracking GitHub issue and the Cursor plan **Progress tracking** section.
+
+**After the initiative ships:** retire the pair per progress-tracking **When to retire / delete** — hub status table + GitHub issues become canonical; do not keep stale progress logs forever.
 
 ---
 

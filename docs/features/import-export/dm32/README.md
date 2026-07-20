@@ -2,11 +2,9 @@
 
 Product behaviour for Baofeng DM-32UV CPS CSV export in Codeplug Studio. Wire column tables live in the tier-3 [DM32 reference](../../../reference/dm32/README.md).
 
-**Tracking:** Phase 5 export [#37](https://github.com/pskillen/codeplug-studio/issues/37) · Import [#112](https://github.com/pskillen/codeplug-studio/issues/112)
+**Tracking:** Epic [#503](https://github.com/pskillen/codeplug-studio/issues/503) (import + export; supersedes M1 [#37](https://github.com/pskillen/codeplug-studio/issues/37) / [#112](https://github.com/pskillen/codeplug-studio/issues/112)) · import [#124](https://github.com/pskillen/codeplug-studio/issues/124)–[#128](https://github.com/pskillen/codeplug-studio/issues/128)
 
 **Source:** `src/core/import-export/formats/dm32/`
-
-**Progress:** [dm32-progress.md](../dm32-progress.md) · **Outstanding:** [dm32-outstanding.md](../dm32-outstanding.md)
 
 ## Implementation status
 

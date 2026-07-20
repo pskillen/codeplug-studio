@@ -26,15 +26,15 @@ Many CPS suites (OpenGD77, qDMR, …) offer one-click DMR ID import. **Anytone C
 
 ## Documentation map
 
-| Doc                                                                      | Contents                          |
-| ------------------------------------------------------------------------ | --------------------------------- |
-| This README                                                              | Workflows, boundaries             |
-| [contact-directories-progress.md](contact-directories-progress.md)       | Execution log                     |
-| [contact-directories-outstanding.md](contact-directories-outstanding.md) | Follow-up debt                    |
-| [radioid reference](../../reference/radioid/README.md)                   | API + proxy (tier 3)              |
-| [digital-contacts reference](../../reference/digital-contacts.md)        | Internal field semantics (tier 2) |
-| [library](../library/README.md)                                          | Contact CRUD                      |
-| [import-export/anytone](../import-export/anytone/README.md)              | Anytone export consumer           |
+| Doc                                                               | Contents                          |
+| ----------------------------------------------------------------- | --------------------------------- |
+| This README                                                       | Workflows, boundaries             |
+| [radioid reference](../../reference/radioid/README.md)            | API + proxy (tier 3)              |
+| [digital-contacts reference](../../reference/digital-contacts.md) | Internal field semantics (tier 2) |
+| [library](../library/README.md)                                   | Contact CRUD                      |
+| [import-export/anytone](../import-export/anytone/README.md)       | Anytone export consumer           |
+
+Shipped core path — remaining scale work under epic [#374](https://github.com/pskillen/codeplug-studio/issues/374).
 
 ## Workflows
 

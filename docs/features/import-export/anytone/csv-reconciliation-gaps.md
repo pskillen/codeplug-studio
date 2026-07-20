@@ -87,7 +87,7 @@ Official CPS appends slots `4001` / `4002` (VFO A/B). **Studio need not emit the
 
 ## Open — Channel contact / RGL export
 
-Earlier comment suggested exporting TX contact from RGL membership. Operator elicitation did **not** confirm the requirement — leave as open question in [csv-reconciliation-outstanding.md](csv-reconciliation-outstanding.md); no implementation ticket yet.
+Earlier comment suggested exporting TX contact from RGL membership. Operator elicitation did **not** confirm the requirement — tracked in [#531](https://github.com/pskillen/codeplug-studio/issues/531); see [csv-reconciliation-outstanding.md](csv-reconciliation-outstanding.md).
 
 ---
 

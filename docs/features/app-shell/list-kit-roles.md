@@ -5,7 +5,7 @@ Deep dive for the four-role list kit: entity inventory, member picker, membershi
 **Parent:** [#52](https://github.com/pskillen/codeplug-studio/issues/52) Phase 2b UI improvements  
 **Related:** [#199](https://github.com/pskillen/codeplug-studio/issues/199) styleguide kit · [#381](https://github.com/pskillen/codeplug-studio/issues/381) virtualisation · superseded sketch [#459](https://github.com/pskillen/codeplug-studio/issues/459)
 
-**Progress:** [list-kit-460-progress.md](list-kit-460-progress.md) · [list-kit-460-outstanding.md](list-kit-460-outstanding.md)
+**Shipped:** [#460](https://github.com/pskillen/codeplug-studio/issues/460) — see [list-kit-roles.md](list-kit-roles.md) and [UI interaction styleguide](../../reference/styleguide/).
 
 ## Purpose
 
@@ -97,10 +97,10 @@ Dev-only interactive demos (unlinked from product nav):
 
 ## Implementation status
 
-| Area                    | Status              | Notes                                                                                  |
-| ----------------------- | ------------------- | -------------------------------------------------------------------------------------- |
-| Role map doc            | Shipped (this page) |                                                                                        |
-| Styleguide split        | Shipped             | `/styleguide/*` nested hub                                                             |
-| Kit API A/B/C/D         | Shipped             | `reorderMode`/`orderMode`, `storedOrder`, C drag `onReorder`, `scale`                  |
-| Production adoption     | Shipped             | In-scope surfaces on kit; deferred items in [outstanding](list-kit-460-outstanding.md) |
-| Export-ordering toolkit | Shipped             | See [data-table.md](data-table.md) / SelectedItemList sidecars (#463)                  |
+| Area                    | Status              | Notes                                                                                                                                                                    |
+| ----------------------- | ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Role map doc            | Shipped (this page) |                                                                                                                                                                          |
+| Styleguide split        | Shipped             | `/styleguide/*` nested hub                                                                                                                                               |
+| Kit API A/B/C/D         | Shipped             | `reorderMode`/`orderMode`, `storedOrder`, C drag `onReorder`, `scale`                                                                                                    |
+| Production adoption     | Shipped             | In-scope surfaces on kit; follow-ups under [#344](https://github.com/pskillen/codeplug-studio/issues/344) / [#52](https://github.com/pskillen/codeplug-studio/issues/52) |
+| Export-ordering toolkit | Shipped             | See [data-table.md](data-table.md) / SelectedItemList sidecars (#463)                                                                                                    |
