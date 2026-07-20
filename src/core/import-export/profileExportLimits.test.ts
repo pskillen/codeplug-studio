@@ -51,17 +51,34 @@ describe('getProfileExportLimits', () => {
     expect(limits!.maxContacts).toBeNull();
   });
 
-  it('marks CHIRP zone and digital entity limits as not used', () => {
-    const limits = getProfileExportLimits('chirp', 'chirp-uv5r');
-    expect(limits).not.toBeNull();
-    expect(limits!.maxChannels).toBe(128);
-    expect(limits!.nameLengthChannel).toBe(7);
-    expect(limits!.maxZones).toBe('not_used');
-    expect(limits!.maxScanLists).toBe('not_used');
-    expect(limits!.maxContacts).toBe('not_used');
-    expect(limits!.zoneMembers).toBe('not_used');
-    expect(limits!.powerLadder.length).toBeGreaterThan(0);
-  });
+  it.each([
+    { profileId: 'chirp-uv5r', maxChannels: 128, nameLengthChannel: 7 },
+    { profileId: 'chirp-uv21', maxChannels: 128, nameLengthChannel: 16 },
+    { profileId: 'chirp-rt95', maxChannels: 128, nameLengthChannel: 16 },
+  ] as const)(
+    'marks $profileId organisation limits as not used with profile memory/name caps',
+    ({ profileId, maxChannels, nameLengthChannel }) => {
+      const limits = getProfileExportLimits('chirp', profileId);
+      expect(limits).not.toBeNull();
+      expect(limits!.maxChannels).toBe(maxChannels);
+      expect(limits!.nameLengthChannel).toBe(nameLengthChannel);
+      expect(limits!.maxZones).toBe('not_used');
+      expect(limits!.maxScanLists).toBe('not_used');
+      expect(limits!.maxRxGroupLists).toBe('not_used');
+      expect(limits!.maxContacts).toBe('not_used');
+      expect(limits!.maxTalkGroups).toBe('not_used');
+      expect(limits!.zoneMembers).toBe('not_used');
+      expect(limits!.scanListMembers).toBe('not_used');
+      expect(limits!.rxGroupListMembers).toBe('not_used');
+      expect(limits!.nameLengthZone).toBe('not_used');
+      expect(limits!.nameLengthContact).toBe('not_used');
+      expect(limits!.nameLengthTalkGroup).toBe('not_used');
+      expect(limits!.nameLengthScanList).toBe('not_used');
+      expect(limits!.nameLengthRxGroupList).toBe('not_used');
+      expect(limits!.powerLadder.length).toBeGreaterThan(0);
+      expect(limits!.siblingLadders).toEqual([]);
+    },
+  );
 
   it('returns null for unknown profile', () => {
     expect(getProfileExportLimits('opengd77', 'does-not-exist')).toBeNull();
