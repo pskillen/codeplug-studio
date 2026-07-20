@@ -38,7 +38,7 @@ Trait profiles stay **vendor-neutral** in naming and scope. Radio profiles are *
 | `opengd77-1701`   | Baofeng 1701 / Retevis RT-84 | 1023        | 80           | 16         |
 | `opengd77-md9600` | TYT MD-9600 / Retevis RT-90  | 1023        | 80           | 16         |
 
-Per-radio wire detail and provisional limits: [docs/reference/opengd77/radios/](../../../reference/opengd77/radios/README.md).
+Per-radio wire detail: [docs/reference/opengd77/radios/](../../../reference/opengd77/radios/README.md).
 
 Power column mapping (P-levels, `Master` sentinel): [channels.md](../../../reference/opengd77/channels.md).
 

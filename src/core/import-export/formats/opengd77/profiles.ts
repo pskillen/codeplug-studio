@@ -26,15 +26,21 @@ const OPENGD77_1701_LADDER: readonly PowerLadderEntry[] = [
   { percent: 1, wire: 'P1', approxWatts: '50 mW' },
 ];
 
-/** Provisional — confirm against CPS export. */
+/**
+ * MD-9600 / RT-90 power steps from radio menu elicitation (#441).
+ * Nine fixed levels map to CPS `P1`…`P9` (lowest → highest); `Master` = radio default.
+ * Menu `+W-` is User Power (Options → Radio Options → User Power: ADC voltage to the PA) —
+ * not modelled in Studio; see docs/reference/opengd77/radios/opengd77-md9600.md.
+ */
 const OPENGD77_MD9600_LADDER: readonly PowerLadderEntry[] = [
-  { percent: 100, wire: 'P8', approxWatts: '40–50 W' },
-  { percent: 60, wire: 'P7', approxWatts: '25 W' },
-  { percent: 40, wire: 'P6', approxWatts: '10 W' },
-  { percent: 20, wire: 'P5', approxWatts: '5 W' },
-  { percent: 8, wire: 'P4', approxWatts: '2 W' },
-  { percent: 4, wire: 'P3', approxWatts: '1 W' },
-  { percent: 2, wire: 'P2', approxWatts: '500 mW' },
+  { percent: 100, wire: 'P9', approxWatts: '40 W' },
+  { percent: 63, wire: 'P8', approxWatts: '25 W' },
+  { percent: 25, wire: 'P7', approxWatts: '10 W' },
+  { percent: 13, wire: 'P6', approxWatts: '5 W' },
+  { percent: 5, wire: 'P5', approxWatts: '1 W' },
+  { percent: 4, wire: 'P4', approxWatts: '750 mW' },
+  { percent: 3, wire: 'P3', approxWatts: '500 mW' },
+  { percent: 2, wire: 'P2', approxWatts: '250 mW' },
   { percent: 1, wire: 'P1', approxWatts: '100 mW' },
 ];
 

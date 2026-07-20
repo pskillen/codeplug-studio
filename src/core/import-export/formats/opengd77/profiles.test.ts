@@ -29,10 +29,23 @@ describe('OpenGD77 power ladder', () => {
   });
 
   it('round-trips MD9600 P-levels', () => {
-    expect(opengd77WireToPercent('opengd77-md9600', 'P8')).toBe(100);
+    expect(opengd77WireToPercent('opengd77-md9600', 'P9')).toBe(100);
+    expect(opengd77WireToPercent('opengd77-md9600', 'P8')).toBe(63);
     expect(opengd77WireToPercent('opengd77-md9600', 'P2')).toBe(2);
-    expect(opengd77PercentToWire('opengd77-md9600', 100)).toBe('P8');
+    expect(opengd77WireToPercent('opengd77-md9600', 'P1')).toBe(1);
+    expect(opengd77WireToPercent('opengd77-md9600', 'Master')).toBeNull();
+    expect(opengd77PercentToWire('opengd77-md9600', 100)).toBe('P9');
+    expect(opengd77PercentToWire('opengd77-md9600', 63)).toBe('P8');
     expect(opengd77PercentToWire('opengd77-md9600', 3)).toBe('P3');
+    expect(opengd77PercentToWire('opengd77-md9600', null)).toBe('Master');
+  });
+
+  it('maps MD9600 nearest percent to ladder wire', () => {
+    const profile = getOpenGd77Profile('opengd77-md9600');
+    expect(percentToWire(profile, 80)).toBe('P8');
+    expect(percentToWire(profile, 20)).toBe('P7');
+    expect(percentToWire(profile, 10)).toBe('P6');
+    expect(percentToWire(profile, null)).toBe('P9');
   });
 
   it('throws for unknown profile', () => {
