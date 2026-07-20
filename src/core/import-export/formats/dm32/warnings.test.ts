@@ -54,7 +54,7 @@ describe('collectDm32ExportWarnings', () => {
       { profileId: base.profileId },
       warnings,
     );
-    expect(expanded.length).toBeLessThanOrEqual(1000);
+    expect(expanded.length).toBeLessThanOrEqual(4000);
     const capped = collectDm32ExportWarnings(base, library, {
       profileId: base.profileId,
       maxNameLength: 1,

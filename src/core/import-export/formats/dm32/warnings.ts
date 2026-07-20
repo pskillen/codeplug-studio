@@ -26,9 +26,9 @@ export function collectDm32ExportWarnings(
 
   for (const zone of assembled.zones) {
     const members = expandDm32ZoneMemberWireNames(zone.memberChannelIds, ctx.expansionByChannelId);
-    if (members.length > profile.scanListMembers) {
+    if (members.length > profile.zoneMembers) {
       warnings.push(
-        `Zone "${zone.wireName}" has ${members.length} expanded members (scan cap ${profile.scanListMembers})`,
+        `Zone "${zone.wireName}" has ${members.length} expanded members (cap ${profile.zoneMembers})`,
       );
     }
   }

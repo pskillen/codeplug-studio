@@ -1,19 +1,31 @@
 # Baofeng DM-32UV — radio profile
 
-Stock CPS v1.60 calibration for import/export ladders and caps.
+Stock CPS calibration for import/export ladders and caps. Entity and member
+counts researched from [NeonPlug DM-32UV `LIMITS`](https://github.com/infamy/NeonPlug/blob/main/src/radios/dm32uv/constants.ts)
+and NeonPlug model comments ([tier-3 NeonPlug reference](../../neonplug/radios/dm32uv.md));
+zone name length confirmed on radio hardware.
 
 **Code:** [`profiles.ts`](../../../../src/core/import-export/formats/dm32/profiles.ts)
 
-## Capacity (provisional)
+## Capacity
 
-| Entity                | Cap                                                                                                                                              |
-| --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Channels              | ~1000                                                                                                                                            |
-| Zone members          | No hard export cap in #67                                                                                                                        |
-| RX group list members | 32                                                                                                                                               |
-| Scan list members     | **15** named CSV members (CPS “16” includes implicit current channel; [#486](https://github.com/pskillen/codeplug-studio/issues/486))            |
-| General wire names    | **16** (`nameLimit` — channels, zones, RX lists, …)                                                                                              |
-| Scan list names       | **13** (`scanListNameLimit` — `Scan.csv` `Scan Name` and channel `Scan List` FK; [#485](https://github.com/pskillen/codeplug-studio/issues/485)) |
+| Entity                | Cap                                                                                                                                   |
+| --------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| Channels              | **4000**                                                                                                                              |
+| Zones                 | **250**                                                                                                                               |
+| Zone members          | **64** (distinct from scan-list member cap)                                                                                           |
+| Scan lists            | **32**                                                                                                                                |
+| Scan list members     | **15** named CSV members (CPS “16” includes implicit current channel; [#486](https://github.com/pskillen/codeplug-studio/issues/486)) |
+| RX group lists        | **32**                                                                                                                                |
+| RX group list members | **32**                                                                                                                                |
+| Contacts              | **250**                                                                                                                               |
+| Talk groups           | **800**                                                                                                                               |
+| Channel / zone names  | **16** (`nameLimit` — channel LCD + radio-confirmed zone)                                                                             |
+| Contact / TG names    | **16** (`nameLimit`)                                                                                                                  |
+| Scan list names       | **10** (`scanListNameLimit` — conservative; CPS official 11, NeonPlug radio field 10)                                                 |
+| RX group list names   | **10** (`rxGroupListNameLimit` — NeonPlug RXGroup 11-byte null-terminated field)                                                      |
+
+Zone-derived scan lists synthesise at most **15** named members even when a zone has up to **64** members — intentional export loss; see [scan-lists.md](../scan-lists.md).
 
 ## Power ladder
 

@@ -12,6 +12,12 @@
 | Channel name     | 7 chars | Name shortening at export boundary                                       |
 | Modes            | NFM, AM | Skip non-FM/AM internal modes with warning                               |
 
+Flat-memory CHIRP profiles do **not** use zones, scan lists, contacts, talk groups, or RX group lists. Radio characteristics marks those rows as not used (`getProfileExportLimits`).
+
+## Sibling path: NeonPlug UV5R-Mini binary
+
+[NeonPlug UV5R-Mini](../../neonplug/radios/uv5rmini.md) targets the same radio family over Web Serial with different caps (e.g. **999** memories, name slice **12** bytes). Those figures apply to the NeonPlug / radio binary pathway only — **do not** copy them onto this CHIRP CSV profile.
+
 ## Wire verification
 
 `cps-verify` profile `chirp-uv5r` enforces the memory-slot and name-length caps above, plus LF / selective quoting / exact headers documented in [CHIRP README — Wire verification](../README.md#wire-verification).
@@ -33,3 +39,4 @@ Percent = watts ÷ 5 W max. `null` internal percent exports as high (`5.0W`).
 
 - [Profile index](README.md)
 - [channels.md](../channels.md)
+- [NeonPlug UV5R-Mini](../../neonplug/radios/uv5rmini.md)

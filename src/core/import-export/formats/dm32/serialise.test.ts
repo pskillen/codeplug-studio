@@ -397,7 +397,7 @@ describe('DM32 export serialise', () => {
 
     const rglRows = parseCsv(files['RXGroupLists.csv']);
     const rglNameIndex = rglRows[0]!.indexOf(RX_GROUP_LIST_COL.name);
-    expect(rglRows[1]?.[rglNameIndex]?.length).toBeLessThanOrEqual(16);
+    expect(rglRows[1]?.[rglNameIndex]?.length).toBeLessThanOrEqual(10);
   });
 
   it('emits Scan.csv and carrier when zone exportScanList is enabled', () => {
@@ -551,7 +551,7 @@ describe('DM32 export serialise', () => {
     expect(membersCell).toBe('Member One|');
   });
 
-  it('shortens Scan Name and matching Scan List FK to 13 characters', () => {
+  it('shortens Scan Name and matching Scan List FK to 10 characters', () => {
     const channel = fmChannel('Member One');
     const zone = newZone(PROJECT_ID, 'Glasgow Airband');
     zone.members = [{ kind: 'channel' as const, channelId: channel.id }];
@@ -596,7 +596,7 @@ describe('DM32 export serialise', () => {
     const scanRows = parseCsv(files['Scan.csv']);
     const scanNameIndex = scanRows[0]!.indexOf(SCAN_COL.name);
     const scanName = scanRows[1]?.[scanNameIndex] ?? '';
-    expect(scanName.length).toBeLessThanOrEqual(13);
+    expect(scanName.length).toBeLessThanOrEqual(10);
     expect(scanName.length).toBeLessThan('Glasgow Airband'.length);
 
     const channelRows = parseCsv(files['Channels.csv']);
@@ -607,7 +607,7 @@ describe('DM32 export serialise', () => {
     );
     expect(carrierRow).toBeDefined();
     expect(carrierRow?.[scanListIndex]).toBe(scanName);
-    expect(warnings.some((w) => /Scan list wire name "Glasgow Airband" exceeds 13/.test(w))).toBe(
+    expect(warnings.some((w) => /Scan list wire name "Glasgow Airband" exceeds 10/.test(w))).toBe(
       true,
     );
 
