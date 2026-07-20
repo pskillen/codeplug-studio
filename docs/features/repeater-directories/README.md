@@ -47,18 +47,18 @@ Repeater search is **not** a top-level nav item — it lives under library workf
 
 ## Documentation map
 
-| Doc                                                              | Contents                                                                     |
-| ---------------------------------------------------------------- | ---------------------------------------------------------------------------- |
-| This README                                                      | Workflows, boundaries, code anchors                                          |
-| [adding-reference-source.md](adding-reference-source.md)         | Checklist for new directory integrations                                     |
-| [ukrepeater API reference](../../reference/ukrepeater/README.md) | ETCC endpoints, mode flags, field mapping (tier 3)                           |
-| [BrandMeister reference](../../reference/brandmeister/README.md) | v2 device + talk group endpoints, field mapping (tier 3)                     |
-| [IRTS reference](../../reference/irts/README.md)                 | Anytone CSV + CORS proxy, field mapping (tier 3)                             |
-| [RepeaterBook reference](../../reference/repeaterbook/README.md) | Export API, token model, field mapping (tier 3)                              |
+| Doc                                                              | Contents                                                                               |
+| ---------------------------------------------------------------- | -------------------------------------------------------------------------------------- |
+| This README                                                      | Workflows, boundaries, code anchors                                                    |
+| [adding-reference-source.md](adding-reference-source.md)         | Checklist for new directory integrations                                               |
+| [ukrepeater API reference](../../reference/ukrepeater/README.md) | ETCC endpoints, mode flags, field mapping (tier 3)                                     |
+| [BrandMeister reference](../../reference/brandmeister/README.md) | v2 device + talk group endpoints, field mapping (tier 3)                               |
+| [IRTS reference](../../reference/irts/README.md)                 | Anytone CSV + CORS proxy, field mapping (tier 3)                                       |
+| [RepeaterBook reference](../../reference/repeaterbook/README.md) | Export API, token model, field mapping (tier 3)                                        |
 | [repeaterbook-outstanding.md](repeaterbook-outstanding.md)       | Ops / API scope notes ([#274](https://github.com/pskillen/codeplug-studio/issues/274)) |
-| [map](../map/README.md)                                          | Embedded channel map on Library sections                                     |
-| [library](../library/README.md)                                  | Channel entity CRUD                                                          |
-| [app-shell](../app-shell/README.md)                              | Routes and section nav                                                       |
+| [map](../map/README.md)                                          | Embedded channel map on Library sections                                               |
+| [library](../library/README.md)                                  | Channel entity CRUD                                                                    |
+| [app-shell](../app-shell/README.md)                              | Routes and section nav                                                                 |
 
 Provider delivery: [#43](https://github.com/pskillen/codeplug-studio/issues/43) / [#44](https://github.com/pskillen/codeplug-studio/issues/44) / [#273](https://github.com/pskillen/codeplug-studio/issues/273) / [#274](https://github.com/pskillen/codeplug-studio/issues/274); infra [#73](https://github.com/pskillen/codeplug-studio/issues/73) / [#341](https://github.com/pskillen/codeplug-studio/issues/341) under [#280](https://github.com/pskillen/codeplug-studio/issues/280).
 

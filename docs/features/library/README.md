@@ -33,18 +33,18 @@ Tier-1 reference for editing the vendor-neutral **library** — the per-project 
 
 ## Documentation map
 
-| Doc                                                                      | Contents                                                                                                        |
-| ------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------- |
-| [zone-member-picker.md](zone-member-picker.md)                           | Vertical zone member editor ([#180](https://github.com/pskillen/codeplug-studio/issues/180))                    |
-| [nested-zones.md](nested-zones.md)                                       | Hierarchical zones; flatten at export                                                                           |
-| [rx-group-list-member-picker.md](rx-group-list-member-picker.md)         | Two-list RX group list member editor                                                                            |
-| [scan-lists.md](scan-lists.md)                                           | Library scan lists ([#257](https://github.com/pskillen/codeplug-studio/issues/257))                             |
-| [aviation](../aviation/README.md)                                        | OpenAIP airport airband import ([#263](https://github.com/pskillen/codeplug-studio/issues/263))                 |
-| [contact-directories](../contact-directories/README.md)                  | RadioID.net DMR contact import ([#374](https://github.com/pskillen/codeplug-studio/issues/374))                 |
-| [app-shell/data-table.md](../app-shell/data-table.md)                    | Shared `DataTable` and list prefs                                                                               |
-| [channel-behavioural-defaults](../../reference/channel-behavioural-defaults.md) | Epic [#388](https://github.com/pskillen/codeplug-studio/issues/388) cascade — tier-2 reference           |
-| [zone-behavioural-defaults](../../reference/zone-behavioural-defaults.md) | Zone defaults ([#443](https://github.com/pskillen/codeplug-studio/issues/443))                                |
-| [channel-sets](../../reference/channel-sets.md)                          | Static channel sets ([#172](https://github.com/pskillen/codeplug-studio/issues/172); epic [#281](https://github.com/pskillen/codeplug-studio/issues/281)) |
+| Doc                                                                             | Contents                                                                                                                                                  |
+| ------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [zone-member-picker.md](zone-member-picker.md)                                  | Vertical zone member editor ([#180](https://github.com/pskillen/codeplug-studio/issues/180))                                                              |
+| [nested-zones.md](nested-zones.md)                                              | Hierarchical zones; flatten at export                                                                                                                     |
+| [rx-group-list-member-picker.md](rx-group-list-member-picker.md)                | Two-list RX group list member editor                                                                                                                      |
+| [scan-lists.md](scan-lists.md)                                                  | Library scan lists ([#257](https://github.com/pskillen/codeplug-studio/issues/257))                                                                       |
+| [aviation](../aviation/README.md)                                               | OpenAIP airport airband import ([#263](https://github.com/pskillen/codeplug-studio/issues/263))                                                           |
+| [contact-directories](../contact-directories/README.md)                         | RadioID.net DMR contact import ([#374](https://github.com/pskillen/codeplug-studio/issues/374))                                                           |
+| [app-shell/data-table.md](../app-shell/data-table.md)                           | Shared `DataTable` and list prefs                                                                                                                         |
+| [channel-behavioural-defaults](../../reference/channel-behavioural-defaults.md) | Epic [#388](https://github.com/pskillen/codeplug-studio/issues/388) cascade — tier-2 reference                                                            |
+| [zone-behavioural-defaults](../../reference/zone-behavioural-defaults.md)       | Zone defaults ([#443](https://github.com/pskillen/codeplug-studio/issues/443))                                                                            |
+| [channel-sets](../../reference/channel-sets.md)                                 | Static channel sets ([#172](https://github.com/pskillen/codeplug-studio/issues/172); epic [#281](https://github.com/pskillen/codeplug-studio/issues/281)) |
 
 Shipped initiatives (mode profiles, membership order, zones revision-2, library routes): see GitHub issues cited in the status table — progress/outstanding logs retired in [#294](https://github.com/pskillen/codeplug-studio/issues/294).
 
