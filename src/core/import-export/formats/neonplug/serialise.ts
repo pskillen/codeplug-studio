@@ -1,10 +1,7 @@
 import { applyWireNameLimits } from '@core/import-export/channelExpansion/exportWireNames.ts';
 import type { CpsExportOptions } from '@core/import-export/types.ts';
 import type { AssembledBuild, AssembledChannel } from '@core/services/assemble.ts';
-import {
-  channelToNeonplugChannel,
-  neonplugContextsFromExportOptions,
-} from './channelWire.ts';
+import { channelToNeonplugChannel, neonplugContextsFromExportOptions } from './channelWire.ts';
 import {
   DEFAULT_NEONPLUG_PROFILE_ID,
   getNeonplugProfile,
@@ -187,8 +184,7 @@ export function serialiseNeonplugCodeplug(
   assembled: AssembledBuild,
   options?: NeonplugSerialiseOptions,
 ): NeonplugSerialiseResult {
-  const profileId =
-    options?.profileId ?? assembled.profileId ?? DEFAULT_NEONPLUG_PROFILE_ID;
+  const profileId = options?.profileId ?? assembled.profileId ?? DEFAULT_NEONPLUG_PROFILE_ID;
   const profile = getNeonplugProfile(profileId);
   const warnings = collectNeonplugExportWarnings(assembled, options);
   const exportDate = options?.exportDate ?? new Date().toISOString();

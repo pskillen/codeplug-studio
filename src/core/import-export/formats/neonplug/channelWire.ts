@@ -55,10 +55,7 @@ export function formatNeonplugFrequencyMhz(hz: number | null): number {
 }
 
 /** Studio ladder wire `Middle` → NeonPlug enum `Medium`. */
-export function formatNeonplugPower(
-  percent: number | null,
-  profileId: string,
-): NeonplugPowerLevel {
+export function formatNeonplugPower(percent: number | null, profileId: string): NeonplugPowerLevel {
   const wire = neonplugPercentToWire(profileId, percent);
   if (wire === 'Middle') return 'Medium';
   if (wire === 'Low') return 'Low';
@@ -186,8 +183,7 @@ export function channelToNeonplugChannel(
   const activeDmr = isDigital ? (profiles.find(isDmrProfile) ?? dmrProfile) : dmrProfile;
 
   const scanContext =
-    options.scanContext ??
-    buildScanContext(undefined, { defaultScanInclusion: 'scan' });
+    options.scanContext ?? buildScanContext(undefined, { defaultScanInclusion: 'scan' });
   const scanAdd = resolveEffectiveScanInclusion(channel, scanContext) === 'scan';
 
   const base: NeonplugChannel = {
@@ -217,11 +213,7 @@ export function channelToNeonplugChannel(
     compander: false,
     talkback: false,
     unknown1D_3_0: 0,
-    squelchLevel: formatNeonplugSquelchLevel(
-      activeAnalog?.squelch ?? null,
-      profile,
-      !isDigital,
-    ),
+    squelchLevel: formatNeonplugSquelchLevel(activeAnalog?.squelch ?? null, profile, !isDigital),
     pttIdDisplay: false,
     pttId: 0,
     colorCode: activeDmr?.colourCode ?? 0,

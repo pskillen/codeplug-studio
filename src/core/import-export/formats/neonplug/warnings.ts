@@ -11,8 +11,7 @@ export function collectNeonplugExportWarnings(
   assembled: AssembledBuild,
   options?: CpsExportOptions,
 ): string[] {
-  const profileId =
-    options?.profileId ?? assembled.profileId ?? DEFAULT_NEONPLUG_PROFILE_ID;
+  const profileId = options?.profileId ?? assembled.profileId ?? DEFAULT_NEONPLUG_PROFILE_ID;
   const profile = getNeonplugProfile(profileId);
   const warnings: string[] = [];
 

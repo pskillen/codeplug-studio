@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { unzipSync, strFromU8 } from 'fflate';
 import { emptyLibrary, newChannel, newFormatBuild } from '@core/domain/factories.ts';
+import type { Channel } from '@core/models/library.ts';
 import type { LibrarySlice } from '@core/services/assemble.ts';
 import { exportBuildZip } from './exportBuild.ts';
 import type { NeonplugCodeplugData } from '@core/import-export/formats/neonplug/wireTypes.ts';
@@ -8,7 +9,7 @@ import { NEONPLUG_JSON_FILE_NAME } from '@core/import-export/formats/neonplug/se
 
 const projectId = 'proj-neonplug-export';
 
-function fmChannel(id: string, name: string, rxHz: number) {
+function fmChannel(id: string, name: string, rxHz: number): Channel {
   return {
     ...newChannel(projectId, name),
     id,
@@ -17,9 +18,9 @@ function fmChannel(id: string, name: string, rxHz: number) {
     power: 100,
     modeProfiles: [
       {
-        mode: 'fm' as const,
-        rxTone: '88.5' as const,
-        txTone: '88.5' as const,
+        mode: 'fm',
+        rxTone: '88.5',
+        txTone: '88.5',
         squelch: null,
         bandwidthKHz: 12.5,
       },
@@ -27,7 +28,7 @@ function fmChannel(id: string, name: string, rxHz: number) {
   };
 }
 
-function dmrChannel(id: string, name: string) {
+function dmrChannel(id: string, name: string): Channel {
   return {
     ...newChannel(projectId, name),
     id,
@@ -36,9 +37,9 @@ function dmrChannel(id: string, name: string) {
     power: 50,
     modeProfiles: [
       {
-        mode: 'dmr' as const,
+        mode: 'dmr',
         colourCode: 11,
-        timeslot: 2 as const,
+        timeslot: 2,
         dmrId: null,
         contactRef: null,
         rxGroupListId: null,
@@ -47,7 +48,7 @@ function dmrChannel(id: string, name: string) {
   };
 }
 
-function libraryOf(...channels: ReturnType<typeof fmChannel>[]): LibrarySlice {
+function libraryOf(...channels: Channel[]): LibrarySlice {
   return {
     ...emptyLibrary(),
     channels,
