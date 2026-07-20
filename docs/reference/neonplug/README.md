@@ -1,6 +1,6 @@
 # NeonPlug interchange reference
 
-> **Studio status:** Format scaffold shipped (`FormatId`, catalog, profiles, traits — [#538](https://github.com/pskillen/codeplug-studio/issues/538)). Import/export adapters remain planned under epic [#536](https://github.com/pskillen/codeplug-studio/issues/536). Profiles live in `src/core/import-export/formats/neonplug/profiles.ts`.
+> **Studio status:** Channel export + `.neonplug` ZIP shipped ([#539](https://github.com/pskillen/codeplug-studio/issues/539)); scaffold [#538](https://github.com/pskillen/codeplug-studio/issues/538). Import and organisation entities remain planned under epic [#536](https://github.com/pskillen/codeplug-studio/issues/536). Profiles and adapter live in `src/core/import-export/formats/neonplug/`.
 
 Authoritative reference for **NeonPlug** `.neonplug` files — the backup / interchange format used by [NeonPlug](https://github.com/infamy/NeonPlug) ([neonplug.app](https://neonplug.app)). One wire format among several at Studio’s import/export boundary (siblings: DM32 CSV, CHIRP CSV, OpenGD77, Anytone, native YAML).
 
