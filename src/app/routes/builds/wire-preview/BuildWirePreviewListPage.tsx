@@ -104,7 +104,8 @@ function BuildWirePreviewListContent({
     clearEntityOrderOverrides();
   }
 
-  function handleSortZonesForBuild(_mode: MembershipSortMode) {
+  function handleSortZonesForBuild(mode: MembershipSortMode) {
+    if (mode !== 'name') return;
     const orderedIds = [...allRows]
       .sort((a, b) => a.displayLabel.localeCompare(b.displayLabel))
       .map((row) => row.key);

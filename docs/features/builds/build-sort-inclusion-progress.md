@@ -8,7 +8,7 @@
 
 ## Overall status
 
-**Status:** In progress
+**Status:** Complete (pending merge)
 
 **Branch:** `457/pskil/build-sort-inclusion`
 
@@ -25,6 +25,39 @@
 
 ---
 
+## Settings FieldCards + bulk edit
+
+**Status:** Complete
+
+**Delivered**
+
+- `BuildEntityExportSettingsCard` on Channels / Talk groups / Contacts / RX group lists
+- **Bulk edit names and skip…** as filled CTA inside Channels card
+
+---
+
+## Build Sort…
+
+**Status:** Complete
+
+**Delivered**
+
+- **Sort zones…** on Build → Zones (name)
+- **Sort channels…** on zone Members tab and CHIRP flat memory
+- `buildExportSortConfirmMessage` — build-only confirm copy
+
+---
+
+## Documentation
+
+**Status:** Complete
+
+**Delivered**
+
+- `wire-preview.md`, builds README status
+
+---
+
 ## Next
 
-- Slice 2: Settings FieldCards + bulk-edit discoverability
+- PR open (`Closes #457`)

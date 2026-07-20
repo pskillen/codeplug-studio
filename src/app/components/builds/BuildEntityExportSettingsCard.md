@@ -6,18 +6,18 @@ Mirrors entity-scoped Export page settings onto Build → entity wire routes (Ch
 
 ## Props
 
-| Prop | Type | Description |
-| --- | --- | --- |
-| `build` | `FormatBuild` | Current build |
-| `entityKind` | `WirePreviewEntityKind` | Which settings group to show |
-| `saving` | `boolean` (opt.) | Disable controls while persisting |
-| `exportSettings` | `ResolvedBuildExportSettings` | Resolved name/abbreviation settings |
-| `showExportNameMode` | `boolean` (opt.) | Channel wire name mode |
-| `showDigitalContactExportNameMode` | `boolean` (opt.) | Contacts name mode |
-| `showLibraryAbbreviations` | `boolean` (opt.) | Abbreviations switch |
-| `onExportSettingsPatch` | `(patch) => void` | Persist export settings |
-| `onExportInclusionChange` | `(field, checked) => void` | Persist unlinked inclusion flags |
-| `actions` | `ReactNode` (opt.) | e.g. `ChannelsBulkEditAction` |
+| Prop                               | Type                          | Description                         |
+| ---------------------------------- | ----------------------------- | ----------------------------------- |
+| `build`                            | `FormatBuild`                 | Current build                       |
+| `entityKind`                       | `WirePreviewEntityKind`       | Which settings group to show        |
+| `saving`                           | `boolean` (opt.)              | Disable controls while persisting   |
+| `exportSettings`                   | `ResolvedBuildExportSettings` | Resolved name/abbreviation settings |
+| `showExportNameMode`               | `boolean` (opt.)              | Channel wire name mode              |
+| `showDigitalContactExportNameMode` | `boolean` (opt.)              | Contacts name mode                  |
+| `showLibraryAbbreviations`         | `boolean` (opt.)              | Abbreviations switch                |
+| `onExportSettingsPatch`            | `(patch) => void`             | Persist export settings             |
+| `onExportInclusionChange`          | `(field, checked) => void`    | Persist unlinked inclusion flags    |
+| `actions`                          | `ReactNode` (opt.)            | e.g. `ChannelsBulkEditAction`       |
 
 ## Related
 

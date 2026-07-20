@@ -37,7 +37,9 @@ export interface BuildEntityExportSettingsCardProps {
   actions?: ReactNode;
 }
 
-function cardCopy(entityKind: WirePreviewEntityKind): { title: string; description: string } | null {
+function cardCopy(
+  entityKind: WirePreviewEntityKind,
+): { title: string; description: string } | null {
   switch (entityKind) {
     case 'channel':
       return {
@@ -135,7 +137,10 @@ export default function BuildEntityExportSettingsCard({
               checked={build.exportUnlinkedDigitalContacts !== false}
               disabled={saving}
               onChange={(event) =>
-                onExportInclusionChange('exportUnlinkedDigitalContacts', event.currentTarget.checked)
+                onExportInclusionChange(
+                  'exportUnlinkedDigitalContacts',
+                  event.currentTarget.checked,
+                )
               }
             />
             <Switch
@@ -167,9 +172,7 @@ export default function BuildEntityExportSettingsCard({
         {showLibraryAbbreviations ? (
           <UseLibraryAbbreviationsSwitch
             shortenNames={exportSettings.shortenNames}
-            value={
-              exportSettings.useChannelAbbreviation && exportSettings.useTalkGroupAbbreviation
-            }
+            value={exportSettings.useChannelAbbreviation && exportSettings.useTalkGroupAbbreviation}
             onChange={(useLibraryAbbreviations) =>
               onExportSettingsPatch({
                 useChannelAbbreviation: useLibraryAbbreviations,
@@ -186,8 +189,8 @@ export default function BuildEntityExportSettingsCard({
         ) : null}
 
         <Text size="xs" c="dimmed">
-          The same controls also appear on{' '}
-          <Link to={`/builds/${build.id}/export`}>Export</Link> for this build.
+          The same controls also appear on <Link to={`/builds/${build.id}/export`}>Export</Link> for
+          this build.
         </Text>
       </Stack>
     </FieldCard>

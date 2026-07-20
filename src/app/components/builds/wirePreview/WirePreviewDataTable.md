@@ -6,19 +6,19 @@ Read-only wire preview list for build entity routes. Shows library label, genera
 
 ## Props
 
-| Prop             | Type                              | Description                                                         |
-| ---------------- | --------------------------------- | ------------------------------------------------------------------- |
-| `rows`           | `WirePreviewRow[]`                | Rows from `previewWireRows` (already filtered by parent)            |
-| `onRowActivate`  | `(row) => void`                   | Row click handler — opens override modal                            |
-| `search`         | `string` (optional)               | Client-side filter query                                            |
-| `onSearchChange` | `(value) => void` (optional)      | Search input handler                                                |
-| `sort`           | `DataTableSortState` (optional)   | Controlled sort state                                               |
-| `onSortChange`   | `(state) => void` (optional)      | Sort change handler                                                 |
-| `reorder`        | `WirePreviewReorderConfig` (opt.) | Enables **`reorderMode`** + up/down column for `orderOrSlot`        |
-| `locationByKey`  | `Map<string, number>` (optional)  | CHIRP memory `Location` column                                      |
-| `zoneScanColumn` | `WirePreviewZoneScanColumnConfig` | DM32 / Anytone **Zones** route — per-row export-as-scan-list switch |
-| `inclusionColumn` | `WirePreviewInclusionColumnConfig` | Inline **Skip** / **Force export** (name-adjacent) |
-| `emptyMessage`   | `string` (optional)               | Shown when `rows` is empty                                          |
+| Prop              | Type                               | Description                                                         |
+| ----------------- | ---------------------------------- | ------------------------------------------------------------------- |
+| `rows`            | `WirePreviewRow[]`                 | Rows from `previewWireRows` (already filtered by parent)            |
+| `onRowActivate`   | `(row) => void`                    | Row click handler — opens override modal                            |
+| `search`          | `string` (optional)                | Client-side filter query                                            |
+| `onSearchChange`  | `(value) => void` (optional)       | Search input handler                                                |
+| `sort`            | `DataTableSortState` (optional)    | Controlled sort state                                               |
+| `onSortChange`    | `(state) => void` (optional)       | Sort change handler                                                 |
+| `reorder`         | `WirePreviewReorderConfig` (opt.)  | Enables **`reorderMode`** + up/down column for `orderOrSlot`        |
+| `locationByKey`   | `Map<string, number>` (optional)   | CHIRP memory `Location` column                                      |
+| `zoneScanColumn`  | `WirePreviewZoneScanColumnConfig`  | DM32 / Anytone **Zones** route — per-row export-as-scan-list switch |
+| `inclusionColumn` | `WirePreviewInclusionColumnConfig` | Inline **Skip** / **Force export** (name-adjacent)                  |
+| `emptyMessage`    | `string` (optional)                | Shown when `rows` is empty                                          |
 
 ## Behaviour
 

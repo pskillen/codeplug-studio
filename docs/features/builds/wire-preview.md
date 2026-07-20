@@ -2,23 +2,26 @@
 
 Operator workflow for reviewing and shaping CPS wire names before export. Each build entity type has a dedicated sub-route under `/builds/:id/*` with a **read-only list** (`WirePreviewDataTable`), a **per-row override modal** (`WirePreviewOverrideModal`), and (for channels) a **bulk-edit** surface for wire names and skip toggles.
 
-**Tracking:** [#87](https://github.com/pskillen/codeplug-studio/issues/87) · UI rework [#349](https://github.com/pskillen/codeplug-studio/issues/349) · zone modal tabs [#472](https://github.com/pskillen/codeplug-studio/issues/472) · zones reorder preview [#468](https://github.com/pskillen/codeplug-studio/issues/468)
+**Tracking:** [#87](https://github.com/pskillen/codeplug-studio/issues/87) · UI rework [#349](https://github.com/pskillen/codeplug-studio/issues/349) · zone modal tabs [#472](https://github.com/pskillen/codeplug-studio/issues/472) · zones reorder preview [#468](https://github.com/pskillen/codeplug-studio/issues/468) · build Sort… / inclusion [#457](https://github.com/pskillen/codeplug-studio/issues/457)
 
 **Code:** `src/core/services/previewWireRows.ts`, `src/app/hooks/useBuildWirePreview.ts`, `src/app/routes/builds/wire-preview/`, `src/app/components/builds/wirePreview/`
 
 ## UI surfaces
 
-| Surface       | Component / route                       | Edits                                                                                                                                                                            |
-| ------------- | --------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **List**      | `WirePreviewDataTable` on entity routes | Browse, search; **`reorderMode`** + order arrows when reorder config present; row click opens modal                                                                              |
-| **Modal**     | `WirePreviewOverrideModal`              | Wire name, skip, force-include; zone rows use **Export / Members / Scan** tabs ([#472](https://github.com/pskillen/codeplug-studio/issues/472)); other kinds stay a single stack |
-| **Bulk edit** | `/builds/:id/channels/bulk`             | Embedded `DataTable` — wire name + skip per channel; leave-page guard for unapplied drafts                                                                                       |
+| Surface           | Component / route                       | Edits                                                                                                                                                                            |
+| ----------------- | --------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **List**          | `WirePreviewDataTable` on entity routes | Browse, search; inline **Skip** / **Force export**; **`reorderMode`** + order arrows when reorder config present; row click opens modal                                          |
+| **Settings card** | `BuildEntityExportSettingsCard`         | Entity-scoped inclusion + naming (Channels / Talk groups / Contacts / RX group lists); Channels also host **Bulk edit names and skip…**                                          |
+| **Modal**         | `WirePreviewOverrideModal`              | Wire name, skip, force-include; zone rows use **Export / Members / Scan** tabs ([#472](https://github.com/pskillen/codeplug-studio/issues/472)); other kinds stay a single stack |
+| **Bulk edit**     | `/builds/:id/channels/bulk`             | Embedded `DataTable` — wire name + skip per channel; leave-page guard for unapplied drafts                                                                                       |
 
-`BuildWirePreviewListPage` wraps list + modal for most entity routes. **Zones** and CHIRP flat memory use **`reorderMode`** with an order column for `orderOrSlot`. Zone preview rows are sorted with `sortZonesByExportOrder(..., zoneOverrides)` so the list matches export order after up/down. Zones whose build layout reorders **members** relative to the library show a **Custom member order** badge. Zone row modals use tabs: **Export** (common overrides), **Members** (member export order via `ZoneMemberOrderSection` — drag, selection Move, and **per-row arrows**), and **Scan** only when `zoneScanExportSupported` (trait: `ZoneGrouping` plus `ScanLists` or `DedicatedScanLists` — DM32/Anytone; not OpenGD77 `ZoneAsScanList`).
+`BuildWirePreviewListPage` wraps list + modal for most entity routes. **Zones** and CHIRP flat memory use **`reorderMode`** with an order column for `orderOrSlot`. Zone preview rows are sorted with `sortZonesByExportOrder(..., zoneOverrides)` so the list matches export order after up/down. Zones whose build layout reorders **members** relative to the library show a **Custom member order** badge. One-shot **Sort zones…** / **Sort channels…** (build confirm copy) densifies `orderOrSlot` or member layout hints — library arrays are not rewritten. Zone row modals use tabs: **Export** (common overrides), **Members** (member export order via `ZoneMemberOrderSection` — drag, selection Move, per-row arrows, and Sort…), and **Scan** only when `zoneScanExportSupported` (trait: `ZoneGrouping` plus `ScanLists` or `DedicatedScanLists` — DM32/Anytone; not OpenGD77 `ZoneAsScanList`).
 
 When build `orderOrSlot` (or zone member layout order) differs from the library default, an **`ExportOrderOverrideBanner`** appears with **Reset to library order** (confirmed via `window.confirm`, same seriousness as permanent Sort…). Reset clears densified `orderOrSlot` on the list, or writes zone member `channelIds` back to `resolveEffectiveZoneChannelIds`. This is **not** DataTable `storedOrder` “Return to export order” (display-only).
 
-**Sort and filter** on list pages are client-side convenience only — they do **not** change export order. CHIRP memory order and zone `orderOrSlot` are updated only via up/down reorder controls (or library edits), not table sort. Reorder is disabled while search or “hide not included” filters are active on the zones page.
+**Column sort and filter** on list pages are client-side convenience only — they do **not** change export order. CHIRP memory order and zone `orderOrSlot` are updated via up/down reorder, build **Sort…**, or library edits — not table column sort. Reorder and Sort… are disabled while search or “hide not included” filters are active on the zones page.
+
+List **Export** column: **Skip from export** for most rows; zones with library **Don't export as its own zone** show **Force export** (red when on) and Skip only after force is enabled.
 
 Build **contacts** wire preview debounces toolbar search (300 ms), matches **library name or callsign**, and shows a **Callsign** column for digital contacts. Large contact builds inherit shared [`DataTable`](../../src/app/components/ui/DataTable.md) virtual tbody rendering (`virtualize: 'auto'`, threshold 75 rows) for responsive scrolling.
 
@@ -89,5 +92,7 @@ Secondary nav is trait-gated (`buildNavItems` in `src/app/routes/builds/nav.ts`)
 - [zone-grouping.md](zone-grouping.md) — build zone layout editor
 - [name-shortening.md](../import-export/name-shortening.md) — abbreviation pipeline
 - [WirePreviewDataTable sidecar](../../../src/app/components/builds/wirePreview/WirePreviewDataTable.md)
+- [WirePreviewInclusionCell sidecar](../../../src/app/components/builds/wirePreview/WirePreviewInclusionCell.md)
+- [BuildEntityExportSettingsCard sidecar](../../../src/app/components/builds/BuildEntityExportSettingsCard.md)
 - [WirePreviewOverrideModal sidecar](../../../src/app/components/builds/wirePreview/WirePreviewOverrideModal.md)
 - [data-model](../data-model/README.md) — `FormatBuild` overrides

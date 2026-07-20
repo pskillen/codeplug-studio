@@ -6,12 +6,12 @@ Inline Skip / Force export control for wire-preview entity lists.
 
 ## Props
 
-| Prop                   | Type                                              | Description                                      |
-| ---------------------- | ------------------------------------------------- | ------------------------------------------------ |
-| `row`                  | `WirePreviewRow`                                  | Preview row                                      |
-| `disabled`             | `boolean` (opt.)                                  | Disable while saving                             |
-| `onExcludedChange`     | `(row, excluded) => void`                         | Persist skip                                     |
-| `onForceIncludeChange` | `(row, forceInclude) => void` (opt., zones)       | Persist force-include for library omit zones     |
+| Prop                   | Type                                        | Description                                  |
+| ---------------------- | ------------------------------------------- | -------------------------------------------- |
+| `row`                  | `WirePreviewRow`                            | Preview row                                  |
+| `disabled`             | `boolean` (opt.)                            | Disable while saving                         |
+| `onExcludedChange`     | `(row, excluded) => void`                   | Persist skip                                 |
+| `onForceIncludeChange` | `(row, forceInclude) => void` (opt., zones) | Persist force-include for library omit zones |
 
 ## Behaviour
 

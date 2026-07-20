@@ -8,4 +8,4 @@ Items **skipped**, **incomplete**, or **discovered during execution** — not th
 
 ## Deferred from plan (if needed)
 
-_(none yet)_
+_(none — Zones list, Members tab, and CHIRP flat-memory Sort… all shipped)_
