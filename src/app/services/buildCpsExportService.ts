@@ -64,9 +64,10 @@ function slugifyFileName(name: string): string {
   );
 }
 
-/** Default ZIP archive name for a build CPS export. */
+/** Default archive name for a build CPS export (`.zip`, or `.neonplug` for NeonPlug). */
 export function defaultCpsZipFileName(buildName: string, formatId: FormatId): string {
-  return `${slugifyFileName(buildName)}-${formatId}.zip`;
+  const ext = formatId === 'neonplug' ? 'neonplug' : 'zip';
+  return `${slugifyFileName(buildName)}-${formatId}.${ext}`;
 }
 
 /** Default single-file CPS name from the format adapter profile. */

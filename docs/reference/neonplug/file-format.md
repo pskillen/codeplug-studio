@@ -20,7 +20,7 @@ codeplug-export-<timestamp>.neonplug   (ZIP)
 | Extra ZIP entries       | Not used by NeonPlug today; Studio should ignore unknown entries |
 | Pretty-print            | NeonPlug writes compact JSON (`JSON.stringify(..., null, 0)`)    |
 
-Suggested Studio download name: `{build-or-project}-export-{ISO-ish}.neonplug` (exact pattern deferred to export UI).
+Suggested Studio download name: `{build-name}-neonplug.neonplug` (via `defaultCpsZipFileName`).
 
 ## Envelope fields
 
