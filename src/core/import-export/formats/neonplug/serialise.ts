@@ -21,6 +21,7 @@ import {
 import { serialiseNeonplugRxGroups } from './rxGroups.ts';
 import { collectNeonplugExportWarnings } from './warnings.ts';
 import type { NeonplugChannel, NeonplugCodeplugData, NeonplugRadioInfo } from './wireTypes.ts';
+import { deriveNeonplugZoneDerivedScanLists } from './zoneDerivedScanLists.ts';
 import { serialiseNeonplugZones } from './zones.ts';
 
 export const NEONPLUG_CODEPLUG_VERSION = '1.0.0';
@@ -234,6 +235,13 @@ export function serialiseNeonplugCodeplug(
       warnings,
     );
     const channelNumberById = buildDm32uvChannelNumberMap(assembled, profile.maxChannels);
+    const { scanLists, scanListIdByChannelId } = deriveNeonplugZoneDerivedScanLists(
+      assembled,
+      profile,
+      channelNumberById,
+      options,
+      warnings,
+    );
     data.contacts = contacts;
     data.rxGroups = rxGroups;
     data.zones = serialiseNeonplugZones(
@@ -243,10 +251,11 @@ export function serialiseNeonplugCodeplug(
       options,
       warnings,
     );
+    data.scanLists = scanLists;
     data.channels = serialiseDm32uvChannels(assembled, profileId, options, warnings, {
       contactIdByEntityId,
       rxGroupIndexById,
-      scanListIdByChannelId: new Map(),
+      scanListIdByChannelId,
     });
   } else {
     data.channels = serialiseUv5rminiChannels(assembled, profileId, options, warnings);
