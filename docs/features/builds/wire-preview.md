@@ -2,7 +2,7 @@
 
 Operator workflow for reviewing and shaping CPS wire names before export. Each build entity type has a dedicated sub-route under `/builds/:id/*` with a **read-only list** (`WirePreviewDataTable`), a **per-row override modal** (`WirePreviewOverrideModal`), and (for channels) a **bulk-edit** surface for wire names and skip toggles.
 
-**Tracking:** [#87](https://github.com/pskillen/codeplug-studio/issues/87) · UI rework [#349](https://github.com/pskillen/codeplug-studio/issues/349) · zone modal tabs [#472](https://github.com/pskillen/codeplug-studio/issues/472)
+**Tracking:** [#87](https://github.com/pskillen/codeplug-studio/issues/87) · UI rework [#349](https://github.com/pskillen/codeplug-studio/issues/349) · zone modal tabs [#472](https://github.com/pskillen/codeplug-studio/issues/472) · zones reorder preview [#468](https://github.com/pskillen/codeplug-studio/issues/468)
 
 **Code:** `src/core/services/previewWireRows.ts`, `src/app/hooks/useBuildWirePreview.ts`, `src/app/routes/builds/wire-preview/`, `src/app/components/builds/wirePreview/`
 
@@ -14,7 +14,7 @@ Operator workflow for reviewing and shaping CPS wire names before export. Each b
 | **Modal**     | `WirePreviewOverrideModal`              | Wire name, skip, force-include; zone rows use **Export / Members / Scan** tabs ([#472](https://github.com/pskillen/codeplug-studio/issues/472)); other kinds stay a single stack |
 | **Bulk edit** | `/builds/:id/channels/bulk`             | Embedded `DataTable` — wire name + skip per channel; leave-page guard for unapplied drafts                                                                                       |
 
-`BuildWirePreviewListPage` wraps list + modal for most entity routes. **Zones** and CHIRP flat memory use **`reorderMode`** with an order column for `orderOrSlot`. Zone row modals use tabs: **Export** (common overrides), **Members** (member export order via `ZoneMemberOrderSection`), and **Scan** only when `zoneScanExportSupported` (trait: `ZoneGrouping` plus `ScanLists` or `DedicatedScanLists` — DM32/Anytone; not OpenGD77 `ZoneAsScanList`).
+`BuildWirePreviewListPage` wraps list + modal for most entity routes. **Zones** and CHIRP flat memory use **`reorderMode`** with an order column for `orderOrSlot`. Zone preview rows are sorted with `sortZonesByExportOrder(..., zoneOverrides)` so the list matches export order after up/down. Zones whose build layout reorders **members** relative to the library show a **Custom member order** badge. Zone row modals use tabs: **Export** (common overrides), **Members** (member export order via `ZoneMemberOrderSection` — drag, selection Move, and **per-row arrows**), and **Scan** only when `zoneScanExportSupported` (trait: `ZoneGrouping` plus `ScanLists` or `DedicatedScanLists` — DM32/Anytone; not OpenGD77 `ZoneAsScanList`).
 
 When build `orderOrSlot` (or zone member layout order) differs from the library default, an **`ExportOrderOverrideBanner`** appears with **Reset to library order** (confirmed via `window.confirm`, same seriousness as permanent Sort…). Reset clears densified `orderOrSlot` on the list, or writes zone member `channelIds` back to `resolveEffectiveZoneChannelIds`. This is **not** DataTable `storedOrder` “Return to export order” (display-only).
 

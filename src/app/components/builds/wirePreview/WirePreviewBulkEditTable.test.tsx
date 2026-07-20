@@ -15,6 +15,7 @@ const rows: WirePreviewRow[] = [
     generatedWireName: 'GB3DA Demo',
     effectiveWireName: 'GB3DA Demo',
     hasWireNameOverride: false,
+    hasOrderOrSlotOverride: false,
     excluded: false,
   },
   {
@@ -25,6 +26,7 @@ const rows: WirePreviewRow[] = [
     generatedWireName: 'Excluded',
     effectiveWireName: 'Excluded',
     hasWireNameOverride: false,
+    hasOrderOrSlotOverride: false,
     excluded: true,
   },
 ];

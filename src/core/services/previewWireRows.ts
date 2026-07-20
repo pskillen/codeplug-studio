@@ -3,6 +3,7 @@ import {
   isEntityExcluded,
   isEntityForceIncluded,
   overrideByEntityId,
+  overrideOrderOrSlot,
   type OverrideField,
 } from '@core/domain/formatBuildOverrides.ts';
 import { channelDisplayLabel, defaultChannelWireName } from '@core/domain/channelNaming.ts';
@@ -39,6 +40,11 @@ import type { FormatBuild } from '@core/models/formatBuild.ts';
 import type { Channel, ChannelModeProfileDMR, Zone } from '@core/models/library.ts';
 import type { DMRTimeSlot, EntityRef } from '@core/models/libraryTypes.ts';
 import { directZoneMemberChannelIds, directZoneMemberZoneIds } from '@core/domain/zoneMembers.ts';
+import { sortZonesByExportOrder } from '@core/domain/zoneOrder.ts';
+import {
+  findZoneGroupingSection,
+  isZoneMemberOrderOverridden,
+} from '@core/domain/zoneGroupingLayout.ts';
 import { isChirpAnalogueExportable } from '@core/import-export/formats/chirp/channelWire.ts';
 import { previewGeneratedChannelWireName } from './previewChannelWireName.ts';
 import { isAmAirbandBankChannel } from '@core/import-export/formats/anytone/receiveOnlyBanks.ts';
@@ -89,6 +95,13 @@ export interface WirePreviewRow {
   effectiveWireName: string;
   /** True when the build stores an explicit wireName override for this row key. */
   hasWireNameOverride: boolean;
+  /** True when the build stores a densified `orderOrSlot` for this row key. */
+  hasOrderOrSlotOverride: boolean;
+  /**
+   * Zones only — true when build layout `channelIds` reorders members relative to
+   * library effective membership order.
+   */
+  hasMemberOrderOverride?: boolean;
   excluded: boolean;
   expansionNote?: string;
   displayDetails?: WirePreviewDisplayLine[];
@@ -150,6 +163,9 @@ function previewRow(
   const excluded = override?.excluded === true;
   const wireNameOverride = override?.wireName?.trim();
   const effectiveWireName = sanitiseAsciiWireString(wireNameOverride || generatedWireName);
+  const orderOrSlot = override?.orderOrSlot;
+  const hasOrderOrSlotOverride =
+    orderOrSlot != null && Number.isFinite(orderOrSlot) && orderOrSlot >= 1;
   return {
     key,
     libraryEntityId,
@@ -158,6 +174,7 @@ function previewRow(
     generatedWireName: sanitiseAsciiWireString(generatedWireName),
     effectiveWireName,
     hasWireNameOverride: Boolean(wireNameOverride),
+    hasOrderOrSlotOverride,
     excluded,
     expansionNote,
     displayDetails,
@@ -271,6 +288,7 @@ export function previewWireRows(
             generatedWireName: sanitiseAsciiWireString(generatedWireName),
             effectiveWireName: sanitiseAsciiWireString(channelOverride ?? generatedWireName),
             hasWireNameOverride: Boolean(channelOverride),
+            hasOrderOrSlotOverride: overrideOrderOrSlot(build.channelOverrides, channel.id) != null,
             excluded: isEntityExcluded(build.channelOverrides, channel.id),
             expansionNote,
           });
@@ -331,6 +349,8 @@ export function previewWireRows(
                   keyOverride ?? channelOverride ?? generated.wireName,
                 ),
                 hasWireNameOverride: Boolean(keyOverride ?? channelOverride),
+                hasOrderOrSlotOverride:
+                  overrideOrderOrSlot(build.channelOverrides, channel.id) != null,
                 excluded: isEntityExcluded(build.channelOverrides, channel.id),
                 expansionNote: generated.expansionNote,
                 displayDetails: dm32ExpansionDisplayDetails(channel, generated, library),
@@ -351,6 +371,7 @@ export function previewWireRows(
             generatedWireName: sanitiseAsciiWireString(generatedWireName),
             effectiveWireName: sanitiseAsciiWireString(channelOverride ?? generatedWireName),
             hasWireNameOverride: Boolean(channelOverride),
+            hasOrderOrSlotOverride: overrideOrderOrSlot(build.channelOverrides, channel.id) != null,
             excluded: isEntityExcluded(build.channelOverrides, channel.id),
             expansionNote:
               zoneLinkedForPreview && !zoneLinkedForPreview.has(channel.id)
@@ -410,6 +431,8 @@ export function previewWireRows(
                   keyOverride ?? channelOverride ?? generated.wireName,
                 ),
                 hasWireNameOverride: Boolean(keyOverride ?? channelOverride),
+                hasOrderOrSlotOverride:
+                  overrideOrderOrSlot(build.channelOverrides, channel.id) != null,
                 excluded: isEntityExcluded(build.channelOverrides, channel.id),
                 expansionNote: generated.expansionNote,
                 displayDetails: anytoneExpansionDisplayDetails(channel, generated, library),
@@ -430,6 +453,7 @@ export function previewWireRows(
             generatedWireName: sanitiseAsciiWireString(generatedWireName),
             effectiveWireName: sanitiseAsciiWireString(channelOverride ?? generatedWireName),
             hasWireNameOverride: Boolean(channelOverride),
+            hasOrderOrSlotOverride: overrideOrderOrSlot(build.channelOverrides, channel.id) != null,
             excluded: isEntityExcluded(build.channelOverrides, channel.id),
             expansionNote:
               zoneLinkedForPreview && !zoneLinkedForPreview.has(channel.id)
@@ -476,6 +500,7 @@ export function previewWireRows(
               keyOverride ?? channelOverride ?? generatedWireName,
             ),
             hasWireNameOverride,
+            hasOrderOrSlotOverride: overrideOrderOrSlot(build.channelOverrides, channel.id) != null,
             excluded,
             expansionNote:
               generatedExpansions.length > 1
@@ -493,7 +518,7 @@ export function previewWireRows(
       const reserved = shortenListNames ? new Set<string>() : null;
       const warnings: string[] = [];
       const channelById = new Map(library.channels.map((ch) => [ch.id, ch]));
-      const zonesForPreview =
+      const zonesForBank =
         build.formatId === 'anytone'
           ? library.zones.filter((zone) => {
               const assembledZone = projection.zones.find((row) => row.zoneId === zone.id);
@@ -511,6 +536,8 @@ export function previewWireRows(
                 : zoneShowsOnAnytoneDmrBank(kind);
             })
           : library.zones;
+      const zonesForPreview = sortZonesByExportOrder(zonesForBank, build.zoneOverrides);
+      const zoneGrouping = findZoneGroupingSection(build);
       return zonesForPreview.map((zone) => {
         const omitFromExport = zone.omitFromExport === true;
         const forceInclude = isEntityForceIncluded(build.zoneOverrides, zone.id);
@@ -520,6 +547,7 @@ export function previewWireRows(
         const generatedWireName = shortenListNames
           ? applyListWireNameLimits(baseWireName, reserved!, _options, build.profileId, warnings)
           : zone.name;
+        const layoutEntry = zoneGrouping?.zones.find((entry) => entry.id === zone.id);
         return {
           ...previewRow(
             zone.id,
@@ -533,6 +561,11 @@ export function previewWireRows(
           omitFromExport,
           forceInclude,
           zoneDirectMembers,
+          hasMemberOrderOverride: isZoneMemberOrderOverridden(
+            zone,
+            library.zones,
+            layoutEntry?.channelIds,
+          ),
         };
       });
     }

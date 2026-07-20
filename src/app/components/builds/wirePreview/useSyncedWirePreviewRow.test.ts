@@ -11,6 +11,7 @@ const baseRow: WirePreviewRow = {
   generatedWireName: 'GB3DA Demo',
   effectiveWireName: 'GB3DA Demo',
   hasWireNameOverride: false,
+  hasOrderOrSlotOverride: false,
   excluded: false,
 };
 

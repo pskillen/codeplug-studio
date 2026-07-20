@@ -868,4 +868,85 @@ describe('previewWireRows', () => {
     );
     expect(airZoneNames.sort()).toEqual(['AM only', 'Mixed']);
   });
+
+  it('orders zone preview rows by build orderOrSlot overrides', () => {
+    const projectId = 'proj-zone-preview-order';
+    const zoneA = { ...newZone(projectId, 'Alpha'), order: 1 };
+    const zoneB = { ...newZone(projectId, 'Bravo'), order: 2 };
+    const zoneC = { ...newZone(projectId, 'Charlie'), order: 3 };
+    const build = {
+      ...newFormatBuild(projectId, 'opengd77-1701'),
+      zoneOverrides: [
+        { libraryEntityId: zoneC.id, orderOrSlot: 1 },
+        { libraryEntityId: zoneA.id, orderOrSlot: 2 },
+        { libraryEntityId: zoneB.id, orderOrSlot: 3 },
+      ],
+    };
+    const library = {
+      channels: [],
+      zones: [zoneA, zoneB, zoneC],
+      talkGroups: [],
+      digitalContacts: [],
+      analogContacts: [],
+      rxGroupLists: [],
+      scanLists: [],
+    };
+
+    const libraryOrder = previewWireRows({ ...build, zoneOverrides: [] }, library, 'zone').map(
+      (row) => row.displayLabel,
+    );
+    expect(libraryOrder).toEqual(['Alpha', 'Bravo', 'Charlie']);
+
+    const overrideOrder = previewWireRows(build, library, 'zone').map((row) => row.displayLabel);
+    expect(overrideOrder).toEqual(['Charlie', 'Alpha', 'Bravo']);
+    expect(
+      previewWireRows(build, library, 'zone').map((row) => row.hasOrderOrSlotOverride),
+    ).toEqual([true, true, true]);
+    expect(
+      previewWireRows(build, library, 'zone').every((row) => row.hasMemberOrderOverride !== true),
+    ).toBe(true);
+  });
+
+  it('flags hasMemberOrderOverride when layout channelIds reorder zone members', () => {
+    const projectId = 'proj-zone-member-order';
+    const ch1 = newChannel(projectId, 'One');
+    const ch2 = newChannel(projectId, 'Two');
+    const zone = {
+      ...newZone(projectId, 'Local'),
+      members: [
+        { kind: 'channel' as const, channelId: ch1.id },
+        { kind: 'channel' as const, channelId: ch2.id },
+      ],
+    };
+    const build = {
+      ...newFormatBuild(projectId, 'opengd77-1701'),
+      layout: {
+        sections: [
+          {
+            kind: 'zoneGrouping' as const,
+            zones: [
+              {
+                id: zone.id,
+                name: zone.name,
+                channelIds: [ch2.id, ch1.id],
+              },
+            ],
+          },
+        ],
+      },
+    };
+    const library = {
+      channels: [ch1, ch2],
+      zones: [zone],
+      talkGroups: [],
+      digitalContacts: [],
+      analogContacts: [],
+      rxGroupLists: [],
+      scanLists: [],
+    };
+
+    const row = previewWireRows(build, library, 'zone')[0];
+    expect(row?.hasMemberOrderOverride).toBe(true);
+    expect(row?.hasOrderOrSlotOverride).toBe(false);
+  });
 });

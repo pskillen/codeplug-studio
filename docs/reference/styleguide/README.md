@@ -30,16 +30,16 @@ This is **not** user-facing help copy. For wording aimed at operators, use [help
 
 Name the job first, then pick a shell.
 
-| Category                   | Job                                              | Typical shell                                              | Gold reference                         |
-| -------------------------- | ------------------------------------------------ | ---------------------------------------------------------- | -------------------------------------- |
-| **Entity inventory**       | Browse / filter / open library or build entities | **A** — `DataTable` `variant="list"`                       | Library → Channels                     |
-| **Extreme inventory**      | Same look as A; very large N                     | **D** — `DataTable` `scale="extreme"`                      | Library → Contacts (digital)           |
-| **Agreed-order inventory** | List’s job is export / model order               | **A** + `reorderMode` (+ arrows / Sort…)                   | Library → Zones                        |
-| **Membership pair**        | Curate ordered members of a container            | **B** + **C** — `AvailableItemPicker` + `SelectedItemList` | Zones → Edit members                   |
-| **Embedded inventory**     | Compact table inside a form / wizard             | **A** — `DataTable` `variant="embedded"`                   | Channel set preview; repeater results  |
-| **Entity form**            | Create / edit one entity                         | `FormPage` + `PageSection`                                 | Channel / zone editors                 |
-| **List page chrome**       | Title + intro + table                            | `ListPage`                                                 | Entity list routes                     |
-| **Specialised**            | Diff matrices, CPS spreadsheets, config grids    | Keep custom — document why                                 | Field-diff; export resolution; CPS CSV |
+| Category                   | Job                                              | Typical shell                                              | Gold reference                                                 |
+| -------------------------- | ------------------------------------------------ | ---------------------------------------------------------- | -------------------------------------------------------------- |
+| **Entity inventory**       | Browse / filter / open library or build entities | **A** — `DataTable` `variant="list"`                       | Library → Channels                                             |
+| **Extreme inventory**      | Same look as A; very large N                     | **D** — `DataTable` `scale="extreme"`                      | Library → Contacts (digital)                                   |
+| **Agreed-order inventory** | List’s job is export / model order               | **A** + `reorderMode` (+ arrows / Sort…)                   | Library → Zones                                                |
+| **Membership pair**        | Curate ordered members of a container            | **B** + **C** — `AvailableItemPicker` + `SelectedItemList` | Zones → Edit members; Build → Zones → Members (per-row arrows) |
+| **Embedded inventory**     | Compact table inside a form / wizard             | **A** — `DataTable` `variant="embedded"`                   | Channel set preview; repeater results                          |
+| **Entity form**            | Create / edit one entity                         | `FormPage` + `PageSection`                                 | Channel / zone editors                                         |
+| **List page chrome**       | Title + intro + table                            | `ListPage`                                                 | Entity list routes                                             |
+| **Specialised**            | Diff matrices, CPS spreadsheets, config grids    | Keep custom — document why                                 | Field-diff; export resolution; CPS CSV                         |
 
 Do **not** invent a fifth list look-and-feel for ordinary inventory. Prefer kit shells.
 

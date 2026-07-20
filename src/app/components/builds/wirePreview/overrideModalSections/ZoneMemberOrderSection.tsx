@@ -12,6 +12,7 @@ import { reorderScanListMembers } from '@core/domain/membershipOrder.ts';
 import { channelDisplayLabel } from '@core/domain/channelNaming.ts';
 import SelectedItemDragHandle from '../../../ui/SelectedItemDragHandle.tsx';
 import SelectedItemList from '../../../ui/SelectedItemList.tsx';
+import SelectedItemRowMoveButtons from '../../../ui/SelectedItemRowMoveButtons.tsx';
 import ExportOrderOverrideBanner from '../ExportOrderOverrideBanner.tsx';
 
 export interface ZoneMemberOrderSectionProps {
@@ -42,6 +43,10 @@ export default function ZoneMemberOrderSection({
   const moveSelected = (direction: 'up' | 'down') => {
     if (!selected.length) return;
     onSetChannelIds(reorderScanListMembers(orderedIds, new Set(selected), direction));
+  };
+
+  const moveItem = (id: string, direction: 'up' | 'down') => {
+    onSetChannelIds(reorderScanListMembers(orderedIds, new Set([id]), direction));
   };
 
   const canMoveUp = selected.some((id) => orderedIds.indexOf(id) > 0);
@@ -84,17 +89,23 @@ export default function ZoneMemberOrderSection({
         onReorder={onSetChannelIds}
         reorderDisabled={saving}
         onMoveSelected={moveSelected}
+        onMoveItem={moveItem}
         canMoveUp={!saving && canMoveUp}
         canMoveDown={!saving && canMoveDown}
-        renderItem={({ itemKey, selected: rowSelected, onToggleSelect, dragHandle }) => {
+        renderItem={({ itemKey, selected: rowSelected, onToggleSelect, dragHandle, rowMove }) => {
           const channel = channelById.get(itemKey);
           return (
             <Group key={itemKey} gap="xs" wrap="nowrap">
               <Checkbox checked={rowSelected} onChange={onToggleSelect} aria-label="Select" />
               <SelectedItemDragHandle dragHandle={dragHandle} />
-              <Text size="sm" truncate>
+              <Text size="sm" truncate style={{ flex: 1, minWidth: 0 }}>
                 {channel ? channelDisplayLabel(channel) : itemKey}
               </Text>
+              <SelectedItemRowMoveButtons
+                rowMove={rowMove}
+                upLabel={`Move ${channel ? channelDisplayLabel(channel) : itemKey} up`}
+                downLabel={`Move ${channel ? channelDisplayLabel(channel) : itemKey} down`}
+              />
             </Group>
           );
         }}
