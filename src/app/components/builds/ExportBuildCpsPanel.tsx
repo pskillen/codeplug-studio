@@ -99,6 +99,9 @@ export default function ExportBuildCpsPanel({ build }: ExportBuildCpsPanelProps)
   const exportShipped = formatEntry?.exportStatus === 'shipped';
   const interchangeFolderId = activeProject?.interchange?.googleDrive?.folderId;
   const suggestedZipName = defaultCpsZipFileName(build.name, build.formatId as FormatId);
+  const isNeonplug = build.formatId === 'neonplug';
+  const archiveDownloadLabel = isNeonplug ? 'Download .neonplug' : 'Download ZIP';
+  const archiveDriveLabel = isNeonplug ? 'Save .neonplug to Drive' : 'Save ZIP to Drive';
   const defaultScanValue =
     resolvedSettings.defaultScanInclusion ?? formatDefaults.defaultScanInclusion;
 
@@ -423,43 +426,52 @@ export default function ExportBuildCpsPanel({ build }: ExportBuildCpsPanelProps)
           loading={exporting}
           onClick={() => void handleDownloadZip()}
         >
-          Download ZIP
+          {archiveDownloadLabel}
         </Button>
         <GoogleDriveActionButton
           disabled={!hasChannels || exporting}
           loading={exporting}
           onClick={() => setDriveBrowserOpen(true)}
         >
-          Save ZIP to Drive
+          {archiveDriveLabel}
         </GoogleDriveActionButton>
-        <Button
-          variant="outline"
-          leftSection={<IconTable size={ICON_SIZE_ACTION} stroke={ICON_STROKE} />}
-          disabled={!hasChannels || exporting}
-          onClick={() => setPreviewOpen(true)}
-        >
-          Preview CSV
-        </Button>
+        {!isNeonplug ? (
+          <Button
+            variant="outline"
+            leftSection={<IconTable size={ICON_SIZE_ACTION} stroke={ICON_STROKE} />}
+            disabled={!hasChannels || exporting}
+            onClick={() => setPreviewOpen(true)}
+          >
+            Preview CSV
+          </Button>
+        ) : null}
       </Group>
-      <Stack gap={4}>
-        <Text size="sm" fw={600}>
-          Individual files
+      {!isNeonplug ? (
+        <Stack gap={4}>
+          <Text size="sm" fw={600}>
+            Individual files
+          </Text>
+          <Group gap="xs">
+            {exportFileNames.map((fileName) => (
+              <Button
+                key={fileName}
+                size="xs"
+                variant="light"
+                leftSection={<IconDownload size={ICON_SIZE_ACTION} stroke={ICON_STROKE} />}
+                disabled={!hasChannels || exporting}
+                onClick={() => void handleDownloadFile(fileName)}
+              >
+                {fileName}
+              </Button>
+            ))}
+          </Group>
+        </Stack>
+      ) : (
+        <Text size="sm" c="dimmed">
+          NeonPlug export is a single <code>.neonplug</code> ZIP containing{' '}
+          <code>codeplug.json</code>.
         </Text>
-        <Group gap="xs">
-          {exportFileNames.map((fileName) => (
-            <Button
-              key={fileName}
-              size="xs"
-              variant="light"
-              leftSection={<IconDownload size={ICON_SIZE_ACTION} stroke={ICON_STROKE} />}
-              disabled={!hasChannels || exporting}
-              onClick={() => void handleDownloadFile(fileName)}
-            >
-              {fileName}
-            </Button>
-          ))}
-        </Group>
-      </Stack>
+      )}
       <Text size="sm" c="dimmed">
         Wire preview pages show the same export settings. Change profile in Overview if needed.
       </Text>

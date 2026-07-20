@@ -39,6 +39,7 @@ describe('buildCpsExportService', () => {
 
   it('defaultCpsZipFileName slugifies build name and format id', () => {
     expect(defaultCpsZipFileName('OpenGD77 1701', 'opengd77')).toBe('OpenGD77-1701-opengd77.zip');
+    expect(defaultCpsZipFileName('Neon DM32', 'neonplug')).toBe('Neon-DM32-neonplug.neonplug');
   });
 
   it('buildCpsZipBytes returns a non-empty zip with expected filename', async () => {
@@ -48,6 +49,40 @@ describe('buildCpsExportService', () => {
     expect(result.zip.byteLength).toBeGreaterThan(0);
     expect(result.zip[0]).toBe(0x50);
     expect(result.warnings).toEqual(['Including 1 channel(s) not linked to a zone']);
+  });
+
+  it('buildCpsZipBytes for NeonPlug uses .neonplug and packs codeplug.json', async () => {
+    const meta = newProjectMeta('NeonPlug export test');
+    const channel = {
+      ...newChannel(meta.projectId, 'GB3AO'),
+      rxFrequency: 145_600_000,
+      txFrequency: 145_600_000,
+      modeProfiles: [
+        {
+          mode: 'fm' as const,
+          rxTone: 'none' as const,
+          txTone: 'none' as const,
+          squelch: null,
+          bandwidthKHz: 12.5,
+        },
+      ],
+    };
+    const build = newFormatBuild(meta.projectId, 'neonplug-dm32uv', 'Neon DM32');
+    const store = new InMemoryProjectPersistence();
+    await store.seedProject({
+      meta,
+      channels: [channel],
+      formatBuilds: [build],
+    });
+    const result = await buildCpsZipBytes(meta.projectId, build.id, undefined, store);
+    expect(result.fileName).toBe('Neon-DM32-neonplug.neonplug');
+    expect(result.zip[0]).toBe(0x50); // ZIP local file header 'P'
+    const entries = unzipSync(result.zip);
+    expect(Object.keys(entries)).toEqual(['codeplug.json']);
+    const json = JSON.parse(new TextDecoder().decode(entries['codeplug.json']));
+    expect(json.version).toBe('1.0.0');
+    expect(json.channels).toHaveLength(1);
+    expect(json.radioInfo.model).toBe('DP570UV');
   });
 
   it('buildCpsZipBytes for DM32 build contains core CSV files', async () => {

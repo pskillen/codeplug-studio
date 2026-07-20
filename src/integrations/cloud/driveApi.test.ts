@@ -27,6 +27,7 @@ describe('driveApi', () => {
           { id: 'f1', name: 'Backups', mimeType: DRIVE_FOLDER_MIME },
           { id: 'y1', name: 'demo.yaml', mimeType: 'application/yaml' },
           { id: 'z1', name: 'export.zip', mimeType: 'application/zip' },
+          { id: 'n1', name: 'export.neonplug', mimeType: 'application/zip' },
           { id: 'x1', name: 'notes.txt', mimeType: 'text/plain' },
         ],
       }),
@@ -37,6 +38,7 @@ describe('driveApi', () => {
       { id: 'f1', name: 'Backups', kind: 'folder' },
       { id: 'y1', name: 'demo.yaml', kind: 'yaml' },
       { id: 'z1', name: 'export.zip', kind: 'zip' },
+      { id: 'n1', name: 'export.neonplug', kind: 'zip' },
     ]);
     expect(fetchMock.mock.calls[0]?.[0]).toContain('parent-1');
   });

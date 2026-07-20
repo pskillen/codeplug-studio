@@ -41,13 +41,15 @@ Large DM32-oriented settings bag (display, GPS, buttons, APRS position, embedded
 
 ## Loss table (operator-facing summary)
 
-| NeonPlug content                               | Re-import after Studio export (planned)  |
-| ---------------------------------------------- | ---------------------------------------- |
-| Channels / zones / scan / contacts / RX groups | Intended fidelity within modelled fields |
-| Radio settings / VFOs                          | Lost                                     |
-| Emergencies                                    | Lost                                     |
-| Encryption keys                                | Lost (intentional)                       |
-| Quick contacts `rawData`                       | Lost                                     |
-| Unknown channel bitfields                      | Lost (defaults on export)                |
+| NeonPlug content                       | Re-import after Studio export (planned)  |
+| -------------------------------------- | ---------------------------------------- |
+| Channels (modelled RF fields)          | Intended fidelity within modelled fields |
+| Zones / scan / contacts / RX groups    | Empty on #539 export — filled in #540    |
+| Talk-group / contact index on channels | Always `0` until #540                    |
+| Radio settings / VFOs                  | Lost                                     |
+| Emergencies                            | Lost                                     |
+| Encryption keys                        | Lost (intentional)                       |
+| Quick contacts `rawData`               | Lost                                     |
+| Unknown channel bitfields              | Lost (defaults on export)                |
 
-Document any additional loss discovered while implementing [#539](https://github.com/pskillen/codeplug-studio/issues/539)–[#543](https://github.com/pskillen/codeplug-studio/issues/543) here.
+Document any additional loss discovered while implementing [#540](https://github.com/pskillen/codeplug-studio/issues/540)–[#543](https://github.com/pskillen/codeplug-studio/issues/543) here.

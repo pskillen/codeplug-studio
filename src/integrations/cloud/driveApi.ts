@@ -38,7 +38,8 @@ function isYamlName(name: string): boolean {
 }
 
 function isZipName(name: string): boolean {
-  return name.toLowerCase().endsWith('.zip');
+  const lower = name.toLowerCase();
+  return lower.endsWith('.zip') || lower.endsWith('.neonplug');
 }
 
 function buildMultipartBinaryBody(

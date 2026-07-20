@@ -20,7 +20,7 @@ codeplug-export-<timestamp>.neonplug   (ZIP)
 | Extra ZIP entries       | Not used by NeonPlug today; Studio should ignore unknown entries |
 | Pretty-print            | NeonPlug writes compact JSON (`JSON.stringify(..., null, 0)`)    |
 
-Suggested Studio download name: `{build-or-project}-export-{ISO-ish}.neonplug` (exact pattern deferred to export UI).
+Suggested Studio download name: `{build-name}-neonplug.neonplug` (via `defaultCpsZipFileName`).
 
 ## Envelope fields
 
@@ -57,11 +57,11 @@ Import must reconstruct typed arrays if needed; export must emit number arrays (
 
 Today’s CPS adapters return **string** content (`single-file-cps` / `multi-file`). NeonPlug needs a **binary ZIP**.
 
-**Decided for Studio (#538 / implement in #539):**
+**Shipped (#539):**
 
-1. Serialise `codeplug.json` as a **string** in the NeonPlug adapter.
-2. Wrap that string to ZIP in `exportBuild` / a delivery helper (JSZip entry `codeplug.json`).
+1. Serialise `codeplug.json` as a **string** in the NeonPlug multi-file adapter.
+2. Wrap that string to ZIP in `exportBuildZip` via `buildNeonplugZip` (**fflate** `zipSync`, entry `codeplug.json`).
 
-Option 2 (a binary CPS delivery type returning `Blob` / `Uint8Array`) is deferred unless #539 finds string + wrap insufficient.
+A dedicated binary CPS delivery type returning `Blob` / `Uint8Array` from the adapter remains deferred — string + wrap is sufficient.
 
 Wire truth remains: one ZIP entry named `codeplug.json`.

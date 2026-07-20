@@ -9,6 +9,7 @@ import {
 import { buildOpenGd77Zip } from '@core/import-export/formats/opengd77/packageZip.ts';
 import { buildDm32Zip } from '@core/import-export/formats/dm32/packageZip.ts';
 import { buildAnytoneZip } from '@core/import-export/formats/anytone/packageZip.ts';
+import { buildNeonplugZip } from '@core/import-export/formats/neonplug/packageZip.ts';
 import {
   anytoneLstFileName,
   isAnytoneLstFileName,
@@ -214,10 +215,12 @@ export function exportBuildZip({
 }: Omit<ExportBuildParams, 'fileName'>): ExportBuildAllResult & { zip: Uint8Array } {
   const result = exportBuildAll({ build, library, options });
   const zip =
-    build.formatId === 'dm32'
-      ? buildDm32Zip(result.files)
-      : build.formatId === 'anytone'
-        ? buildAnytoneZip(result.files)
-        : buildOpenGd77Zip(result.files);
+    build.formatId === 'neonplug'
+      ? buildNeonplugZip(result.files)
+      : build.formatId === 'dm32'
+        ? buildDm32Zip(result.files)
+        : build.formatId === 'anytone'
+          ? buildAnytoneZip(result.files)
+          : buildOpenGd77Zip(result.files);
   return { ...result, zip };
 }
