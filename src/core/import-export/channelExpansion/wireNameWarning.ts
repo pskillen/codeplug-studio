@@ -2,6 +2,7 @@ import { getAnytoneProfile } from '@core/import-export/formats/anytone/profiles.
 import { getChirpProfile } from '@core/import-export/formats/chirp/profiles.ts';
 import { getDm32Profile } from '@core/import-export/formats/dm32/profiles.ts';
 import { getOpenGd77Profile } from '@core/import-export/formats/opengd77/profiles.ts';
+import { getNeonplugProfile } from '@core/import-export/formats/neonplug/profiles.ts';
 
 export type WireNameEntityKind =
   'Channel' | 'Talk group' | 'Zone' | 'Scan list' | 'RX group list' | 'Contact' | 'Wire name';
@@ -12,6 +13,7 @@ export function resolveProfileLabel(profileId: string | undefined): string | und
   if (profileId.startsWith('dm32-')) return getDm32Profile(profileId).label;
   if (profileId.startsWith('opengd77-')) return getOpenGd77Profile(profileId).label;
   if (profileId.startsWith('anytone-')) return getAnytoneProfile(profileId).label;
+  if (profileId.startsWith('neonplug-')) return getNeonplugProfile(profileId).label;
   return undefined;
 }
 

@@ -4,6 +4,7 @@ import { getDm32Profile } from '@core/import-export/formats/dm32/profiles.ts';
 import { getOpenGd77Profile } from '@core/import-export/formats/opengd77/profiles.ts';
 import { getChirpProfile } from '@core/import-export/formats/chirp/profiles.ts';
 import { getAnytoneProfile } from '@core/import-export/formats/anytone/profiles.ts';
+import { neonplugNameLimit } from '@core/import-export/formats/neonplug/profiles.ts';
 import {
   channelPickForWireExport,
   composeChannelWireName,
@@ -23,6 +24,7 @@ export function resolveMaxNameLength(
   if (profileId.startsWith('dm32-')) return getDm32Profile(profileId).nameLimit;
   if (profileId.startsWith('opengd77-')) return getOpenGd77Profile(profileId).nameLimit;
   if (profileId.startsWith('anytone-')) return getAnytoneProfile(profileId).nameLimit;
+  if (profileId.startsWith('neonplug-')) return neonplugNameLimit(profileId);
   return undefined;
 }
 
