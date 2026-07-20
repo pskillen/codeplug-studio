@@ -24,6 +24,7 @@ import { useProjects } from '../state/useProjects.ts';
 import { persistence } from '../state/persistence.ts';
 import { BuildService } from '../state/buildService.ts';
 import { loadLibrarySlice } from '../lib/loadLibrarySlice.ts';
+import { resolveOptimisticBuild } from '../lib/resolveOptimisticBuild.ts';
 
 const buildService = new BuildService(persistence);
 
@@ -35,11 +36,7 @@ export function useBuildWirePreview(
   const buildRef = useRef(contextBuild);
   const saveQueueRef = useRef(Promise.resolve());
   const [savedBuild, setSavedBuild] = useState<FormatBuild | null>(null);
-  const build = useMemo(() => {
-    if (!savedBuild) return contextBuild;
-    if (contextBuild.revision === savedBuild.revision) return contextBuild;
-    return savedBuild;
-  }, [contextBuild, savedBuild]);
+  const build = resolveOptimisticBuild(contextBuild, savedBuild);
 
   useEffect(() => {
     buildRef.current = build;

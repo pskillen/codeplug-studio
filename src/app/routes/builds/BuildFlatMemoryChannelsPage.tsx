@@ -30,6 +30,7 @@ import type { Channel } from '@core/models/library.ts';
 import type { WirePreviewRow } from '@core/services/previewWireRows.ts';
 import { mergeExportOptions } from '@core/services/exportBuild.ts';
 import { loadLibrarySlice } from '../../lib/loadLibrarySlice.ts';
+import { resolveOptimisticBuild } from '../../lib/resolveOptimisticBuild.ts';
 import type { LibrarySlice } from '@core/services/assemble.ts';
 import { previewGeneratedChannelWireName } from '@core/services/previewChannelWireName.ts';
 import DefaultScanInclusionSegment from '../../components/builds/DefaultScanInclusionSegment.tsx';
@@ -83,11 +84,7 @@ export default function BuildFlatMemoryChannelsPage() {
   const { build: contextBuild } = useBuildLayout();
   const buildRef = useRef(contextBuild);
   const [savedBuild, setSavedBuild] = useState<FormatBuild | null>(null);
-  const build = useMemo(() => {
-    if (!savedBuild) return contextBuild;
-    if (contextBuild.revision === savedBuild.revision) return contextBuild;
-    return savedBuild;
-  }, [contextBuild, savedBuild]);
+  const build = resolveOptimisticBuild(contextBuild, savedBuild);
   const { activeProjectId } = useProjects();
   const { putBuild } = useFormatBuilds();
   const [librarySlice, setLibrarySlice] = useState<LibrarySlice>({
