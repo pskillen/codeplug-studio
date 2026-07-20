@@ -97,10 +97,11 @@ Many `unknown*` fields exist (`unknown1A_6_4`, `unknown1C_1_0`, `unknown2A`, …
 | `scanAdd`                         | `scanInclusion` / per-channel scan flag                  |
 | `number`                          | Export-time assignment from assemble / flat memory order |
 
-### Export notes (#539)
+### Export notes
 
 - Studio ladder wire **`Middle`** maps to NeonPlug **`Medium`**.
-- Until [#540](https://github.com/pskillen/codeplug-studio/issues/540), `contactId`, `rxGroupListId`, and `scanListId` export as **`0`** (none).
+- **DM32UV:** `contactId` / `rxGroupListId` / `scanListId` resolve from library UUID FKs (`0` = none). `scanListId` is 1-based into zone-derived `scanLists[]` (max **15**).
+- **UV5R-Mini:** org FKs stay `0`; org arrays empty.
 - **DM32UV:** `number` is sequential 1…N in assemble channel order.
 - **UV5R-Mini:** `number` is the flat-memory slot from `assemble` (`channelMemorySlots`); blank slots are omitted.
 - Unknown / radio-layout bitfields use safe defaults (`0` / `false`) — no stash-and-replay.

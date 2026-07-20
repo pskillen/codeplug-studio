@@ -8,7 +8,7 @@ Wire shapes for contact-related arrays in `codeplug.json`.
 - [DMRRadioID.ts](https://github.com/infamy/NeonPlug/blob/main/src/models/DMRRadioID.ts)
 - [QuickContact.ts](https://github.com/infamy/NeonPlug/blob/main/src/models/QuickContact.ts)
 
-NeonPlug’s naming does not match Studio’s `TalkGroup` vs `DigitalContact` split one-to-one. Adapters must **classify at the boundary**.
+NeonPlug’s naming does not match Studio’s `TalkGroup` vs `DigitalContact` split one-to-one. Adapters **classify at the boundary**.
 
 ## Contacts (`contacts[]`)
 
@@ -20,15 +20,18 @@ NeonPlug’s naming does not match Studio’s `TalkGroup` vs `DigitalContact` sp
 | `callSign`                                 | string? | Max 7 chars stored                             |
 | `city` / `province` / `country` / `remark` | string? | Directory metadata                             |
 
-Channel `contactId` indexes into the talk-group / TX contact list used by the radio (see NeonPlug Channel comments for blocks 0x42/0x43). Treat `contacts[]` as the human-editable contact book; confirm against a live NeonPlug export whether TX talk groups live here, in `quickContacts`, or both before locking adapter behaviour.
+Channel `contactId` indexes this book (`0` = none, `1+` = `contacts[].id`). NeonPlug radio comments call this the talk-group list (block 0x44); the JSON interchange exposes a single `contacts[]` array.
 
-### Studio mapping sketch
+### Studio export mapping (shipped #540)
 
-| NeonPlug contact        | Likely Studio entity             |
-| ----------------------- | -------------------------------- |
-| Group / TG-shaped rows  | `TalkGroup`                      |
-| Private call / radio ID | `DigitalContact`                 |
-| `id`                    | Wire index only — UUID on import |
+| Order | Studio entity      | NeonPlug contact fields                                      |
+| ----- | ------------------ | ------------------------------------------------------------ |
+| 1…    | `TalkGroup`        | `name`, `dmrId` = `digitalId`                                |
+| then  | `DigitalContact`   | `name`, `dmrId`, optional `callSign` / city / province / …   |
+
+- Cap at profile `maxContacts` (250) with export warning.
+- Analog / DTMF contacts omitted.
+- Channel `contactRef` → `contactId` via entity UUID map.
 
 ## DMR radio IDs (`radioIds[]`)
 
@@ -42,16 +45,16 @@ Channel `contactId` indexes into the talk-group / TX contact list used by the ra
 
 Channel `dmrRadioIdIndex` references this list (0-based; omit/`255` = none).
 
-### Studio mapping sketch
+### Studio export mapping (shipped #540)
 
-Studio may only expose a single operator DMR ID today. First NeonPlug export can emit **zero or one** `radioIds` entry from project settings when available; otherwise `[]` with a warning.
+Studio has no first-class operator DMR-ID list. Export emits **`radioIds: []`** and leaves `dmrRadioIdIndex` at none (`0`). Documented omit — not a warning spam.
 
 ## Quick contacts (`quickContacts[]`)
 
 | Field           | Type       | Notes                                                 |
 | --------------- | ---------- | ----------------------------------------------------- |
 | `index`         | number     | 1-based entry index                                   |
-| `offset`        | number     | Byte offset in radio block                            |
+| `offset`        | number     | Byte offset in the block where this entry starts      |
 | `name`          | string     | ASCII                                                 |
 | `contactNumber` | number     | Talk-group / contact number                           |
 | `callType`      | number     | `0x03` Private, `0x04` Group, `0x05` All Call         |

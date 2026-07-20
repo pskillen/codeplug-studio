@@ -12,7 +12,7 @@ The internal [library + format build model](../data-model/README.md) is the hub 
 | DM32 CSV     | Planned | Shipped | `src/core/import-export/formats/dm32/`                                                                                                                                                          |
 | CHIRP CSV    | Planned | Shipped | `src/core/import-export/formats/chirp/`                                                                                                                                                         |
 | Anytone CPS  | Planned | Shipped | `src/core/import-export/formats/anytone/`                                                                                                                                                       |
-| NeonPlug ZIP | Planned | Shipped | `src/core/import-export/formats/neonplug/` (channels + ZIP [#539](https://github.com/pskillen/codeplug-studio/issues/539); epic [#536](https://github.com/pskillen/codeplug-studio/issues/536)) |
+| NeonPlug ZIP | Planned | Shipped | `src/core/import-export/formats/neonplug/` (channels + org [#539](https://github.com/pskillen/codeplug-studio/issues/539)/[#540](https://github.com/pskillen/codeplug-studio/issues/540); epic [#536](https://github.com/pskillen/codeplug-studio/issues/536)) |
 | Native YAML  | Shipped | Shipped | `src/core/import-export/formats/native-yaml/`                                                                                                                                                   |
 
 ---
