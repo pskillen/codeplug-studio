@@ -7,20 +7,20 @@ import {
   exportOrderResetConfirmMessage,
   hasAnyOrderOrSlotOverride,
 } from '@core/domain/exportOrderOrSlot.ts';
+import type { DigitalContactExportNameMode } from '@core/import-export/types.ts';
 import type {
   AnytoneWirePreviewBank,
   WirePreviewEntityKind,
   WirePreviewRow,
 } from '@core/services/previewWireRows.ts';
-import ExportNameModeSelect from '../../../components/builds/ExportNameModeSelect.tsx';
-import DigitalContactExportNameModeSelect from '../../../components/builds/DigitalContactExportNameModeSelect.tsx';
-import type { DigitalContactExportNameMode } from '@core/import-export/types.ts';
-import UseLibraryAbbreviationsSwitch from '../../../components/builds/UseLibraryAbbreviationsSwitch.tsx';
 import ExportOrderOverrideBanner from '../../../components/builds/wirePreview/ExportOrderOverrideBanner.tsx';
 import WirePreviewDataTable from '../../../components/builds/wirePreview/WirePreviewDataTable.tsx';
 import type { WirePreviewZoneScanColumnConfig } from '../../../components/builds/wirePreview/WirePreviewDataTable.tsx';
 import WirePreviewOverrideModal from '../../../components/builds/wirePreview/WirePreviewOverrideModal.tsx';
 import { useSyncedWirePreviewRow } from '../../../components/builds/wirePreview/useSyncedWirePreviewRow.ts';
+import BuildEntityExportSettingsCard, {
+  type BuildEntityInclusionField,
+} from '../../../components/builds/BuildEntityExportSettingsCard.tsx';
 import { FormPage } from '../../../components/ui/index.ts';
 import { resolvedBuildExportSettings } from '../../../lib/buildExportSettingsUi.ts';
 import { useBuildWirePreview } from '../../../hooks/useBuildWirePreview.ts';
@@ -109,6 +109,18 @@ function BuildWirePreviewListContent({
     void persistBuild((current) => buildService.withExportSettings(current, patch));
   }
 
+  function patchExportInclusion(field: BuildEntityInclusionField, checked: boolean) {
+    void persistBuild((current) =>
+      buildService.withExportInclusionFlags(current, { [field]: checked }),
+    );
+  }
+
+  const showEntitySettingsCard =
+    entityKind === 'channel' ||
+    entityKind === 'talkGroup' ||
+    entityKind === 'contact' ||
+    entityKind === 'rxGroupList';
+
   return (
     <>
       <Stack gap="md">
@@ -122,39 +134,27 @@ function BuildWirePreviewListContent({
             {description}
           </Text>
         ) : null}
-        {headerActions}
         {error ? (
           <Text c="red" size="sm">
             {error}
           </Text>
         ) : null}
-        {showExportNameMode ? (
-          <ExportNameModeSelect
-            value={exportSettings.nameModeOverride}
-            onChange={(nameModeOverride) => patchExportSettings({ nameModeOverride })}
-            description="Fallback style for channels without an explicit wire name override on this build."
+        {showEntitySettingsCard ? (
+          <BuildEntityExportSettingsCard
+            build={build}
+            entityKind={entityKind}
+            saving={saving}
+            exportSettings={exportSettings}
+            showExportNameMode={showExportNameMode}
+            showDigitalContactExportNameMode={showDigitalContactExportNameMode}
+            showLibraryAbbreviations={showLibraryAbbreviations}
+            onExportSettingsPatch={patchExportSettings}
+            onExportInclusionChange={patchExportInclusion}
+            actions={headerActions}
           />
-        ) : null}
-        {showDigitalContactExportNameMode ? (
-          <DigitalContactExportNameModeSelect
-            value={exportSettings.digitalContactExportNameMode}
-            onChange={(digitalContactExportNameMode) =>
-              patchExportSettings({ digitalContactExportNameMode })
-            }
-          />
-        ) : null}
-        {showLibraryAbbreviations ? (
-          <UseLibraryAbbreviationsSwitch
-            shortenNames={exportSettings.shortenNames}
-            value={exportSettings.useChannelAbbreviation && exportSettings.useTalkGroupAbbreviation}
-            onChange={(useLibraryAbbreviations) =>
-              patchExportSettings({
-                useChannelAbbreviation: useLibraryAbbreviations,
-                useTalkGroupAbbreviation: useLibraryAbbreviations,
-              })
-            }
-          />
-        ) : null}
+        ) : (
+          headerActions
+        )}
         {beforeTable}
         <ExportOrderOverrideBanner
           visible={zoneOrderOverridden}

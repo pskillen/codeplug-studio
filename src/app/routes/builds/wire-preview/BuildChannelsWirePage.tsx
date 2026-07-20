@@ -1,6 +1,6 @@
-import { Button, Group, Stack, Text } from '@mantine/core';
-import { Link } from 'react-router-dom';
+import { Stack, Text } from '@mantine/core';
 import type { WirePreviewRow } from '@core/services/previewWireRows.ts';
+import { ChannelsBulkEditAction } from '../../../components/builds/BuildEntityExportSettingsCard.tsx';
 import BuildFlatMemoryChannelsPage from '../BuildFlatMemoryChannelsPage.tsx';
 import BuildWirePreviewListPage from './BuildWirePreviewListPage.tsx';
 import { useBuildLayout } from '../BuildLayoutContext.tsx';
@@ -40,21 +40,10 @@ export default function BuildChannelsWirePage() {
     <BuildWirePreviewListPage
       title="Channels"
       entityKind="channel"
-      description="Review exported channels. Click a row to edit overrides, or use bulk edit for wire names and skip flags."
+      description="Review exported channels. Click a row to edit overrides."
       showExportNameMode
       showLibraryAbbreviations
-      headerActions={
-        <Group>
-          <Button
-            component={Link}
-            to={`/builds/${build.id}/channels/bulk`}
-            variant="light"
-            size="compact-sm"
-          >
-            Bulk edit names and skip…
-          </Button>
-        </Group>
-      }
+      headerActions={<ChannelsBulkEditAction buildId={build.id} />}
       modalExtraSections={(row) => <ChannelExpansionContext row={row} />}
     />
   );

@@ -28,8 +28,9 @@ import { loadLibrarySlice } from '../../lib/loadLibrarySlice.ts';
 import type { LibrarySlice } from '@core/services/assemble.ts';
 import { previewGeneratedChannelWireName } from '@core/services/previewChannelWireName.ts';
 import DefaultScanInclusionSegment from '../../components/builds/DefaultScanInclusionSegment.tsx';
-import ExportNameModeSelect from '../../components/builds/ExportNameModeSelect.tsx';
-import UseLibraryAbbreviationsSwitch from '../../components/builds/UseLibraryAbbreviationsSwitch.tsx';
+import BuildEntityExportSettingsCard, {
+  ChannelsBulkEditAction,
+} from '../../components/builds/BuildEntityExportSettingsCard.tsx';
 import ExportOrderOverrideBanner from '../../components/builds/wirePreview/ExportOrderOverrideBanner.tsx';
 import WirePreviewDataTable from '../../components/builds/wirePreview/WirePreviewDataTable.tsx';
 import WirePreviewOverrideModal from '../../components/builds/wirePreview/WirePreviewOverrideModal.tsx';
@@ -289,35 +290,20 @@ export default function BuildFlatMemoryChannelsPage() {
       <Stack gap="md">
         <Text size="sm" c="dimmed">
           All analogue FM/AM library channels are included by default. Click a row to edit
-          overrides, or use bulk edit for wire names and skip flags. Location numbers (1…n) follow
-          export order. Digital modes are not exported.
+          overrides. Location numbers (1…n) follow export order. Digital modes are not exported.
         </Text>
-        <Group>
-          <Button
-            component={Link}
-            to={`/builds/${build.id}/channels/bulk`}
-            variant="light"
-            size="compact-sm"
-          >
-            Bulk edit names and skip…
-          </Button>
-        </Group>
-        <ExportNameModeSelect
-          value={exportSettings.nameModeOverride}
-          disabled={savingSettings}
-          onChange={(nameModeOverride) => void handleExportSettingsPatch({ nameModeOverride })}
-          description="Fallback style for channels without an explicit wire name override on this build."
-        />
-        <UseLibraryAbbreviationsSwitch
-          shortenNames={exportSettings.shortenNames}
-          value={exportSettings.useChannelAbbreviation && exportSettings.useTalkGroupAbbreviation}
-          disabled={savingSettings}
-          onChange={(useLibraryAbbreviations) =>
-            void handleExportSettingsPatch({
-              useChannelAbbreviation: useLibraryAbbreviations,
-              useTalkGroupAbbreviation: useLibraryAbbreviations,
-            })
+        <BuildEntityExportSettingsCard
+          build={build}
+          entityKind="channel"
+          saving={savingSettings}
+          exportSettings={exportSettings}
+          showExportNameMode
+          showLibraryAbbreviations
+          onExportSettingsPatch={(patch) => void handleExportSettingsPatch(patch)}
+          onExportInclusionChange={(field, checked) =>
+            void handleExportSettingsPatch({ [field]: checked })
           }
+          actions={<ChannelsBulkEditAction buildId={build.id} />}
         />
         <DefaultScanInclusionSegment
           value={defaultScanValue}
