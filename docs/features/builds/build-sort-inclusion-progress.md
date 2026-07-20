@@ -60,4 +60,4 @@
 
 ## Next
 
-- PR open (`Closes #457`)
+- PR: https://github.com/pskillen/codeplug-studio/pull/534 (`Closes #457`)
