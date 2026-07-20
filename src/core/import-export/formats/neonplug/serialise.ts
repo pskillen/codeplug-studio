@@ -4,15 +4,21 @@ import type { AssembledBuild, AssembledChannel } from '@core/services/assemble.t
 import {
   channelToNeonplugChannel,
   dmrContactRefFromChannel,
+  dmrRxGroupListIdFromChannel,
   neonplugContextsFromExportOptions,
 } from './channelWire.ts';
 import { serialiseNeonplugContactsForProfile } from './contacts.ts';
-import { buildDm32uvChannelNumberMap, resolveContactBookId } from './exportContext.ts';
+import {
+  buildDm32uvChannelNumberMap,
+  resolveContactBookId,
+  resolveRxGroupListId,
+} from './exportContext.ts';
 import {
   DEFAULT_NEONPLUG_PROFILE_ID,
   getNeonplugProfile,
   isNeonplugDm32uvProfile,
 } from './profiles.ts';
+import { serialiseNeonplugRxGroups } from './rxGroups.ts';
 import { collectNeonplugExportWarnings } from './warnings.ts';
 import type { NeonplugChannel, NeonplugCodeplugData, NeonplugRadioInfo } from './wireTypes.ts';
 
@@ -116,6 +122,10 @@ function serialiseDm32uvChannels(
       dmrContactRefFromChannel(row.entity),
       fks.contactIdByEntityId,
     );
+    const rxGroupListId = resolveRxGroupListId(
+      dmrRxGroupListIdFromChannel(row.entity),
+      fks.rxGroupIndexById,
+    );
     channels.push(
       channelToNeonplugChannel(row.entity, {
         number,
@@ -124,7 +134,7 @@ function serialiseDm32uvChannels(
         scanContext,
         behaviourContext,
         contactId,
-        rxGroupListId: 0,
+        rxGroupListId,
         scanListId: fks.scanListIdByChannelId.get(row.entity.id) ?? 0,
       }),
     );
@@ -216,10 +226,17 @@ export function serialiseNeonplugCodeplug(
       options,
       warnings,
     );
+    const { rxGroups, rxGroupIndexById } = serialiseNeonplugRxGroups(
+      assembled,
+      profile,
+      options,
+      warnings,
+    );
     data.contacts = contacts;
+    data.rxGroups = rxGroups;
     data.channels = serialiseDm32uvChannels(assembled, profileId, options, warnings, {
       contactIdByEntityId,
-      rxGroupIndexById: new Map(),
+      rxGroupIndexById,
       scanListIdByChannelId: new Map(),
     });
   } else {
