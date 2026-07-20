@@ -24,6 +24,7 @@ export const ANALYTICS_ROUTE_TEMPLATES = [
   '/builds/:id/rx-group-lists',
   '/builds/:id/export',
   '/builds/:id/export-resolution',
+  '/builds/:id/neonplug-settings',
   '/debug/indexed-db',
   '/debug/local-storage',
   '/library/:kind/:id',

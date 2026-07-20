@@ -303,7 +303,7 @@ export default function ExportBuildCpsPanel({ build }: ExportBuildCpsPanelProps)
         const result = await putBuild(next, build.revision);
         if (!result.ok) {
           setSettingsError(
-            result.reason === 'conflict'
+            result.reason === 'revision_conflict'
               ? 'Build changed elsewhere — reload and try again.'
               : 'Could not save donor settings on this build.',
           );
@@ -329,7 +329,7 @@ export default function ExportBuildCpsPanel({ build }: ExportBuildCpsPanelProps)
       const result = await putBuild(next, build.revision);
       if (!result.ok) {
         setSettingsError(
-          result.reason === 'conflict'
+          result.reason === 'revision_conflict'
             ? 'Build changed elsewhere — reload and try again.'
             : 'Could not clear donor settings.',
         );

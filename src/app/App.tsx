@@ -43,6 +43,7 @@ import NewBuildPage from './routes/builds/NewBuildPage.tsx';
 import BuildLayout from './routes/builds/BuildLayout.tsx';
 import BuildOverviewPage from './routes/builds/BuildOverviewPage.tsx';
 import BuildCharacteristicsPage from './routes/builds/BuildCharacteristicsPage.tsx';
+import BuildNeonplugSettingsPage from './routes/builds/BuildNeonplugSettingsPage.tsx';
 import BuildExportPage from './routes/builds/BuildExportPage.tsx';
 import BuildExportResolutionPage from './routes/builds/BuildExportResolutionPage.tsx';
 import BuildChannelsWirePage from './routes/builds/wire-preview/BuildChannelsWirePage.tsx';
@@ -167,6 +168,7 @@ export const appRouter = createBrowserRouter([
               { path: 'rx-group-lists', element: <BuildRxGroupListsWirePage /> },
               { path: 'export', element: <BuildExportPage /> },
               { path: 'export-resolution', element: <BuildExportResolutionPage /> },
+              { path: 'neonplug-settings', element: <BuildNeonplugSettingsPage /> },
             ],
           },
           { path: '/import-export', element: <ImportExportPage /> },
