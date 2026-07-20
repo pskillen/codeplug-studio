@@ -86,16 +86,70 @@ export interface NeonplugRadioInfo {
   vframes?: Record<string, never>;
 }
 
-/** Top-level `codeplug.json` envelope (channels-first slice; sibling arrays empty until #540). */
+/** Zone row — membership by channel **number**. */
+export interface NeonplugZone {
+  id: string;
+  name: string;
+  channels: number[];
+}
+
+/** Zone-derived or first-class scan list — membership by channel number. */
+export interface NeonplugScanList {
+  name: string;
+  channels: number[];
+  channelCount?: number;
+  ctcScanMode: number;
+  scanTxMode: number;
+  hangTime?: number;
+  priority1Type?: number;
+  priority2Type?: number;
+  priorityChannel1?: number;
+  priorityChannel2?: number;
+  designatedTxChannel?: number;
+}
+
+/** Contact book / talk-group list entry (`contactId` indexes these). */
+export interface NeonplugContact {
+  id: number;
+  name: string;
+  dmrId: number;
+  callSign?: string;
+  city?: string;
+  province?: string;
+  country?: string;
+  remark?: string;
+}
+
+/** RX group list — `talkGroupIndices` are DMR IDs, not book indexes. */
+export interface NeonplugRxGroup {
+  index: number;
+  name: string;
+  bitmask: number;
+  statusFlag: number;
+  entryFlag: number;
+  validationFlag: number;
+  talkGroupIndices: number[];
+}
+
+/** Operator DMR radio ID list entry (M1: usually empty). */
+export interface NeonplugRadioId {
+  index: number;
+  dmrId: string;
+  dmrIdValue: number;
+  dmrIdBytes: number[];
+  name: string;
+}
+
+/** Top-level `codeplug.json` envelope. */
 export interface NeonplugCodeplugData {
   version: string;
   exportDate: string;
   channels: NeonplugChannel[];
-  zones: unknown[];
-  scanLists: unknown[];
-  contacts: unknown[];
-  rxGroups: unknown[];
-  radioIds: unknown[];
+  zones: NeonplugZone[];
+  scanLists: NeonplugScanList[];
+  contacts: NeonplugContact[];
+  rxGroups: NeonplugRxGroup[];
+  radioIds: NeonplugRadioId[];
   quickContacts: unknown[];
   messages: unknown[];
   digitalEmergencies: unknown[];
