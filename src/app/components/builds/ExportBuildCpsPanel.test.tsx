@@ -315,5 +315,40 @@ describe('ExportBuildCpsPanel', () => {
     ).not.toBeDisabled();
     expect(screen.queryByRole('button', { name: 'Preview CSV' })).not.toBeInTheDocument();
     expect(screen.getByText(/not safe to write back/i)).toBeInTheDocument();
+    expect(screen.getByText(/saved on this build/i)).toBeInTheDocument();
+  });
+
+  it('enables radio-write download when DM32UV build has stored cpsWireHydration', async () => {
+    const neonBuild: FormatBuild = {
+      ...opengd77Build,
+      formatId: 'neonplug',
+      profileId: 'neonplug-dm32uv',
+      name: 'Neon DM32',
+      cpsWireHydration: {
+        formatId: 'neonplug',
+        sourceFileName: 'radio.neonplug',
+        capturedAt: '2026-07-20T12:00:00.000Z',
+        retain: {
+          radioIds: [],
+          quickContacts: [],
+          messages: [],
+          digitalEmergencies: [],
+          analogEmergencies: [],
+          encryptionKeys: [],
+          digitalEmergencyConfig: null,
+          radioSettings: { powerOnDisplayLine1: 'X' },
+          radioInfo: { model: 'DP570UV' },
+        },
+      },
+    };
+    render(
+      <MantineProvider>
+        <ExportBuildCpsPanel build={neonBuild} />
+      </MantineProvider>,
+    );
+
+    expect(await screen.findByRole('button', { name: 'Download for radio write' })).not.toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Clear stored donor' })).toBeInTheDocument();
+    expect(screen.getByText(/Stored: radio\.neonplug/)).toBeInTheDocument();
   });
 });

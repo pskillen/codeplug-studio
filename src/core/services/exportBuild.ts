@@ -11,6 +11,10 @@ import { buildDm32Zip } from '@core/import-export/formats/dm32/packageZip.ts';
 import { buildAnytoneZip } from '@core/import-export/formats/anytone/packageZip.ts';
 import { buildNeonplugZip } from '@core/import-export/formats/neonplug/packageZip.ts';
 import {
+  isNeonplugDonorBag,
+  neonplugDonorRetainAsMergeBase,
+} from '@core/import-export/formats/neonplug/donorRetain.ts';
+import {
   mergeNeonplugCodeplug,
   parseNeonplugCodeplugJson,
   parseNeonplugZip,
@@ -245,35 +249,52 @@ export function exportBuildZip({
 }: ExportBuildZipParams): ExportBuildAllResult & { zip: Uint8Array } {
   const result = exportBuildAll({ build, library, options });
 
-  if (build.formatId === 'neonplug' && baseNeonplugBytes) {
+  if (build.formatId === 'neonplug') {
     const projectedJson = result.files[NEONPLUG_JSON_FILE_NAME];
     if (projectedJson == null) {
       throw new Error(`NeonPlug export missing ${NEONPLUG_JSON_FILE_NAME}`);
     }
-    const projected = parseNeonplugCodeplugJson(JSON.parse(projectedJson) as unknown);
-    const { data: base, warnings: parseWarnings } = parseNeonplugZip(baseNeonplugBytes);
-    const { data: merged, warnings: mergeWarnings } = mergeNeonplugCodeplug(base, projected, {
-      expectedRadioModel: projected.radioInfo.model || undefined,
-    });
-    const files = {
-      ...result.files,
-      [NEONPLUG_JSON_FILE_NAME]: JSON.stringify(merged),
-    };
-    return {
-      ...result,
-      files,
-      warnings: dedupeWarnings([...result.warnings, ...parseWarnings, ...mergeWarnings]),
-      zip: buildNeonplugZip(files),
-    };
+
+    let mergeBase = null as ReturnType<typeof neonplugDonorRetainAsMergeBase> | null;
+    const donorWarnings: string[] = [];
+
+    if (baseNeonplugBytes) {
+      const { data, warnings } = parseNeonplugZip(baseNeonplugBytes);
+      mergeBase = data;
+      donorWarnings.push(...warnings);
+    } else if (isNeonplugDonorBag(build.cpsWireHydration)) {
+      mergeBase = neonplugDonorRetainAsMergeBase(build.cpsWireHydration);
+    }
+
+    if (mergeBase) {
+      const projected = parseNeonplugCodeplugJson(JSON.parse(projectedJson) as unknown);
+      const { data: merged, warnings: mergeWarnings } = mergeNeonplugCodeplug(
+        mergeBase,
+        projected,
+        {
+          expectedRadioModel: projected.radioInfo.model || undefined,
+        },
+      );
+      const files = {
+        ...result.files,
+        [NEONPLUG_JSON_FILE_NAME]: JSON.stringify(merged),
+      };
+      return {
+        ...result,
+        files,
+        warnings: dedupeWarnings([...result.warnings, ...donorWarnings, ...mergeWarnings]),
+        zip: buildNeonplugZip(files),
+      };
+    }
+
+    return { ...result, zip: buildNeonplugZip(result.files) };
   }
 
   const zip =
-    build.formatId === 'neonplug'
-      ? buildNeonplugZip(result.files)
-      : build.formatId === 'dm32'
-        ? buildDm32Zip(result.files)
-        : build.formatId === 'anytone'
-          ? buildAnytoneZip(result.files)
-          : buildOpenGd77Zip(result.files);
+    build.formatId === 'dm32'
+      ? buildDm32Zip(result.files)
+      : build.formatId === 'anytone'
+        ? buildAnytoneZip(result.files)
+        : buildOpenGd77Zip(result.files);
   return { ...result, zip };
 }

@@ -24,7 +24,10 @@ Per-build CPS export on the Radio builds detail page — per-file CSV downloads,
 
 When `build.formatId === 'neonplug'`:
 
-1. **Primary — Download for radio write:** upload a radio-read donor `.neonplug`, then download/save a merge that overwrites Studio-modelled arrays while retaining donor settings, `radioIds`, and ancillaries. Primary download and Drive save stay disabled until a valid donor is parsed.
+1. **Primary — Download for radio write:** upload a radio-read donor `.neonplug`, then download/save a merge that overwrites Studio-modelled arrays while retaining donor settings, `radioIds`, and ancillaries.
+   - **DM32UV (`neonplug-dm32uv`):** successful upload also persists retain slices on `build.cpsWireHydration` so later exports can merge without re-uploading. Clear stored donor from the export panel. Session upload still overrides the stored bag for that export.
+   - **UV5R-Mini:** donor stays session-only until a later ticket.
+   - Primary download and Drive save stay disabled until a session donor **or** (DM32UV) stored `cpsWireHydration` is present.
 2. **Secondary — Download greenfield `.neonplug`:** smaller subtle control with a yellow warning that greenfield omits radio settings and is **not safe to write back** without a donor base.
 
 CSV preview and per-file buttons are hidden for NeonPlug (single `codeplug.json` package).
