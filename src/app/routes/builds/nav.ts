@@ -1,6 +1,10 @@
 import { BuildCapabilityTrait } from '@core/models/traits.ts';
 import type { FormatBuild } from '@core/models/formatBuild.ts';
-import { hasDedicatedScanLists, traitProfileFor } from '@core/models/traits.ts';
+import {
+  hasDedicatedScanLists,
+  showsPerChannelScanListNav,
+  traitProfileFor,
+} from '@core/models/traits.ts';
 
 export interface BuildNavItem {
   label: string;
@@ -20,6 +24,10 @@ export function buildNavItems(build: FormatBuild): BuildNavItem[] {
   ];
 
   items.push({ label: 'Channels', path: `${base}/channels` });
+
+  if (showsPerChannelScanListNav(build.profileId)) {
+    items.push({ label: 'Scan list', path: `${base}/scan-list` });
+  }
 
   if (build.formatId === 'anytone') {
     items.push({ label: 'Airband', path: `${base}/airband` });

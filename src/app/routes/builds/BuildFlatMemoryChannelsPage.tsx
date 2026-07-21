@@ -23,7 +23,6 @@ import {
   type MembershipSortMode,
 } from '@core/domain/membershipSort.ts';
 import { getFormatProfiles } from '@core/import-export/formatProfiles.ts';
-import { getFormatExportDefaults } from '@core/import-export/registry.ts';
 import type { FormatId } from '@core/import-export/types.ts';
 import { sanitiseAsciiWireString } from '@core/import-export/sanitiseAsciiWireString.ts';
 import type { Channel } from '@core/models/library.ts';
@@ -33,7 +32,6 @@ import { loadLibrarySlice } from '../../lib/loadLibrarySlice.ts';
 import { resolveOptimisticBuild } from '../../lib/resolveOptimisticBuild.ts';
 import type { LibrarySlice } from '@core/services/assemble.ts';
 import { previewGeneratedChannelWireName } from '@core/services/previewChannelWireName.ts';
-import DefaultScanInclusionSegment from '../../components/builds/DefaultScanInclusionSegment.tsx';
 import BuildEntityExportSettingsCard, {
   ChannelsBulkEditAction,
 } from '../../components/builds/BuildEntityExportSettingsCard.tsx';
@@ -112,9 +110,6 @@ export default function BuildFlatMemoryChannelsPage() {
     [build, librarySlice],
   );
   const exportSettings = resolvedBuildExportSettings(build);
-  const formatDefaults = getFormatExportDefaults(build.formatId);
-  const defaultScanValue =
-    exportSettings.defaultScanInclusion ?? formatDefaults.defaultScanInclusion;
 
   const nameLimit = useMemo(() => {
     const options = getFormatProfiles(build.formatId as FormatId);
@@ -298,6 +293,8 @@ export default function BuildFlatMemoryChannelsPage() {
         <Text size="sm" c="dimmed">
           All analogue FM/AM library channels are included by default. Click a row to edit
           overrides. Location numbers (1…n) follow export order. Digital modes are not exported.
+          Choose which memories scan on the{' '}
+          <Link to={`/builds/${build.id}/scan-list`}>Scan list</Link> page.
         </Text>
         <BuildEntityExportSettingsCard
           build={build}
@@ -311,14 +308,6 @@ export default function BuildFlatMemoryChannelsPage() {
             void handleExportSettingsPatch({ [field]: checked })
           }
           actions={<ChannelsBulkEditAction buildId={build.id} />}
-        />
-        <DefaultScanInclusionSegment
-          value={defaultScanValue}
-          formatDefault={formatDefaults.defaultScanInclusion}
-          disabled={savingSettings}
-          onChange={(defaultScanInclusion) =>
-            void handleExportSettingsPatch({ defaultScanInclusion })
-          }
         />
         {settingsError ? (
           <Text size="sm" c="red">

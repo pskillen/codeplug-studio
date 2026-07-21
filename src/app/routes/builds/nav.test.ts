@@ -28,6 +28,19 @@ describe('buildNavItems', () => {
     const build = { ...newFormatBuild('proj', 'neonplug-uv5rmini'), formatId: 'neonplug' };
     expect(buildNavItems(build).map((item) => item.label)).toContain('NeonPlug settings');
   });
+
+  it('includes Scan list after Channels for flat-memory UV5R builds', () => {
+    const build = { ...newFormatBuild('proj', 'neonplug-uv5rmini'), formatId: 'neonplug' };
+    const labels = buildNavItems(build).map((item) => item.label);
+    expect(labels).toContain('Scan list');
+    expect(labels.indexOf('Scan list')).toBe(labels.indexOf('Channels') + 1);
+    expect(labels).not.toContain('Scan lists');
+  });
+
+  it('includes Scan list for CHIRP UV-5R builds', () => {
+    const build = { ...newFormatBuild('proj', 'chirp-uv5r'), formatId: 'chirp' };
+    expect(buildNavItems(build).map((item) => item.label)).toContain('Scan list');
+  });
 });
 
 describe('pathForSwitchedBuild', () => {

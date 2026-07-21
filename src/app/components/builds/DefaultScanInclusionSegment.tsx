@@ -22,7 +22,7 @@ export default function DefaultScanInclusionSegment({
   return (
     <GradientSegmentedControl
       label="Default scan behaviour"
-      description={`Channels set to Default in the library export as ${value === 'skip' ? 'skipped' : 'included'} on scan. Format default when unset: ${formatDefault}.`}
+      description={`Channels set to Default follow this choice (${value === 'skip' ? 'skip scanning' : 'include in scanning'}). Format default when unset: ${formatDefault}.`}
       value={value}
       onChange={(next) => onChange(next as DefaultScanInclusion)}
       data={[...OPTIONS]}
