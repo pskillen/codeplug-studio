@@ -20,7 +20,7 @@ None — parent mounts only when `build.formatId === 'dm32'`.
 }
 ```
 
-`ExportBuildCpsPanel` mounts this **twice** on long DM32 export pages: once at the top of the panel (above the fold) and again just above the download buttons.
+`ExportBuildCpsPanel` mounts this **twice** on long DM32 export pages: once at the top of the panel (above the fold) and again just above the download buttons. `NewBuildPage` also shows it on the Choose profile step after selecting DM32 CSV.
 
 ## Behaviour
 

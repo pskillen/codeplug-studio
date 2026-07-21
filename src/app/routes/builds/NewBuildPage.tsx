@@ -5,6 +5,7 @@ import { formatCatalog } from '@core/import-export/registry.ts';
 import type { FormatId } from '@core/import-export/types.ts';
 import { traitProfileFor } from '@core/models/traits.ts';
 import ProfilePicker from '../../components/builds/ProfilePicker.tsx';
+import Dm32PreferNeonPlugAlert from '../../components/builds/Dm32PreferNeonPlugAlert.tsx';
 import { formatPathwayBadge } from '../../components/builds/preferNeonPlugPathwayBadges.tsx';
 import { FormPage, PageSection } from '../../components/ui/index.ts';
 import { useFormatBuilds } from '../../state/useFormatBuilds.ts';
@@ -91,6 +92,7 @@ export default function NewBuildPage() {
             description={`Format: ${formatCatalog.find((f) => f.id === formatId)?.label ?? formatId}`}
           >
             <Stack gap="sm">
+              {formatId === 'dm32' ? <Dm32PreferNeonPlugAlert /> : null}
               <ProfilePicker
                 formatId={formatId}
                 onChange={(id) => {
