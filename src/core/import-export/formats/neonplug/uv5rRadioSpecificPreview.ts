@@ -68,10 +68,7 @@ const UV5R_SETTING_SECTIONS: {
         key: 'tot',
         label: 'Timeout timer',
         kind: 'select',
-        options: optionsFor([
-          'Off',
-          ...Array.from({ length: 12 }, (_, i) => `${15 + i * 15} sec`),
-        ]),
+        options: optionsFor(['Off', ...Array.from({ length: 12 }, (_, i) => `${15 + i * 15} sec`)]),
       },
       { key: 'beep', label: 'Beep', kind: 'select', options: optionsFor(['Off', 'On']) },
       { key: 'voicesw', label: 'Enable voice', kind: 'bool' },
