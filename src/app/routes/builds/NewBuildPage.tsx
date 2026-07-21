@@ -5,6 +5,7 @@ import { formatCatalog } from '@core/import-export/registry.ts';
 import type { FormatId } from '@core/import-export/types.ts';
 import { traitProfileFor } from '@core/models/traits.ts';
 import ProfilePicker from '../../components/builds/ProfilePicker.tsx';
+import { formatPathwayBadge } from '../../components/builds/preferNeonPlugPathwayBadges.tsx';
 import { FormPage, PageSection } from '../../components/ui/index.ts';
 import { useFormatBuilds } from '../../state/useFormatBuilds.ts';
 
@@ -64,9 +65,12 @@ export default function NewBuildPage() {
                     setStep('profile');
                   }}
                 >
-                  <Group justify="space-between">
+                  <Group justify="space-between" align="flex-start" wrap="nowrap">
                     <div>
-                      <Text fw={600}>{format.label}</Text>
+                      <Group gap="xs" mb={4}>
+                        <Text fw={600}>{format.label}</Text>
+                        {formatPathwayBadge(format.id)}
+                      </Group>
                       <Text size="sm" c="dimmed">
                         Import: {format.importStatus} · Export: {format.exportStatus}
                       </Text>
