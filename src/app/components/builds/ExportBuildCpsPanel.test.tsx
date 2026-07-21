@@ -152,7 +152,8 @@ describe('ExportBuildCpsPanel', () => {
     const csvButton = await screen.findByRole('button', { name: 'Download CSV' });
     expect(csvButton).not.toBeDisabled();
     expect(screen.queryByRole('button', { name: 'Download ZIP' })).not.toBeInTheDocument();
-    expect(screen.getByText(/not in the memory list/i)).toBeInTheDocument();
+    expect(screen.queryByText(/not in the memory list/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/aren't in a zone/i)).not.toBeInTheDocument();
     expect(screen.getByText(/Only analogue FM\/AM channels/i)).toBeInTheDocument();
   });
 
