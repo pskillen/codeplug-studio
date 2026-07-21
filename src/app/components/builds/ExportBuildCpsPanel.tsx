@@ -19,6 +19,7 @@ import ProfilePicker from './ProfilePicker.tsx';
 import CpsCsvPreviewModal from './CpsCsvPreviewModal.tsx';
 import ExportWarningsAlert from './ExportWarningsAlert.tsx';
 import Dm32PreferNeonPlugAlert from './Dm32PreferNeonPlugAlert.tsx';
+import ChirpUv5rPreferNeonPlugAlert from './ChirpUv5rPreferNeonPlugAlert.tsx';
 import Dm32AprsSetupAlert from './Dm32AprsSetupAlert.tsx';
 import { saveDriveLastFolderId, saveDriveLastFolderPath } from '@integrations/cloud/drivePrefs.ts';
 import DriveBrowserModal, { type DriveSaveTarget } from '../import-export/DriveBrowserModal.tsx';
@@ -390,6 +391,9 @@ export default function ExportBuildCpsPanel({ build }: ExportBuildCpsPanelProps)
             Export uses {traitProfileFor(exportProfileId)?.label ?? exportProfileId}; build default
             is {profileLabel}.
           </Text>
+        ) : null}
+        {build.formatId === 'chirp' && exportProfileId === 'chirp-uv5r' ? (
+          <ChirpUv5rPreferNeonPlugAlert />
         ) : null}
         <ExportBuildSettingsSections
           build={build}

@@ -144,18 +144,38 @@ describe('ExportBuildCpsPanel', () => {
       profileId: 'chirp-uv5r',
     };
     render(
-      <MantineProvider>
-        <ExportBuildCpsPanel build={chirpBuild} />
-      </MantineProvider>,
+      <MemoryRouter>
+        <MantineProvider>
+          <ExportBuildCpsPanel build={chirpBuild} />
+        </MantineProvider>
+      </MemoryRouter>,
     );
 
-    expect(await screen.findByText(/CHIRP CSV/)).toBeInTheDocument();
-    const csvButton = await screen.findByRole('button', { name: 'Download CSV' });
-    expect(csvButton).not.toBeDisabled();
+    expect(await screen.findByRole('button', { name: 'Download CSV' })).not.toBeDisabled();
     expect(screen.queryByRole('button', { name: 'Download ZIP' })).not.toBeInTheDocument();
     expect(screen.queryByText(/not in the memory list/i)).not.toBeInTheDocument();
     expect(screen.queryByText(/aren't in a zone/i)).not.toBeInTheDocument();
     expect(screen.getByText(/Only analogue FM\/AM channels/i)).toBeInTheDocument();
+    expect(screen.getByText(/CHIRP UV-5R support is in progress/)).toBeInTheDocument();
+  });
+
+  it('hides CHIRP prefer-NeonPlug hint when export profile is not UV-5R', async () => {
+    const chirpBuild: FormatBuild = {
+      ...opengd77Build,
+      formatId: 'chirp',
+      profileId: 'chirp-uv21',
+    };
+    render(
+      <MemoryRouter>
+        <MantineProvider>
+          <ExportBuildCpsPanel build={chirpBuild} />
+        </MantineProvider>
+      </MemoryRouter>,
+    );
+
+    expect(await screen.findByRole('button', { name: 'Download CSV' })).not.toBeDisabled();
+    expect(screen.queryByText(/CHIRP UV-5R support is in progress/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/DM-32 CPS export is deprecated/)).not.toBeInTheDocument();
   });
 
   it('shows prefer-NeonPlug deprecation alert for DM32 builds only', async () => {
@@ -194,9 +214,11 @@ describe('ExportBuildCpsPanel', () => {
       profileId: 'chirp-uv5r',
     };
     render(
-      <MantineProvider>
-        <ExportBuildCpsPanel build={chirpBuild} />
-      </MantineProvider>,
+      <MemoryRouter>
+        <MantineProvider>
+          <ExportBuildCpsPanel build={chirpBuild} />
+        </MantineProvider>
+      </MemoryRouter>,
     );
 
     const previewButton = await screen.findByRole('button', { name: 'Preview CSV' });
