@@ -37,7 +37,6 @@ import DebugIndexedDbStorePage from './routes/debug/DebugIndexedDbStorePage.tsx'
 import DebugIndexedDbRowViewerPage from './routes/debug/DebugIndexedDbRowViewerPage.tsx';
 import DebugLocalStoragePage from './routes/debug/DebugLocalStoragePage.tsx';
 import DebugLocalStorageViewerPage from './routes/debug/DebugLocalStorageViewerPage.tsx';
-import ImportExportPage from './routes/import-export/ImportExportPage.tsx';
 import BuildsListPage from './routes/builds/BuildsListPage.tsx';
 import NewBuildPage from './routes/builds/NewBuildPage.tsx';
 import BuildLayout from './routes/builds/BuildLayout.tsx';
@@ -154,7 +153,7 @@ export const appRouter = createBrowserRouter([
             path: '/builds/:id',
             element: <BuildLayout />,
             children: [
-              { index: true, element: <Navigate to="overview" replace /> },
+              { index: true, element: <Navigate to="export" replace /> },
               { path: 'overview', element: <BuildOverviewPage /> },
               { path: 'characteristics', element: <BuildCharacteristicsPage /> },
               { path: 'memories', element: <Navigate to="channels" replace /> },
@@ -171,7 +170,7 @@ export const appRouter = createBrowserRouter([
               { path: 'neonplug-settings', element: <BuildNeonplugSettingsPage /> },
             ],
           },
-          { path: '/import-export', element: <ImportExportPage /> },
+          { path: '/import-export', element: <Navigate to="/summary" replace /> },
           { path: '/summary', element: <SummaryPage /> },
           { path: '/reports', element: <Navigate to="/summary" replace /> },
           { path: '/map', element: <MapRedirect /> },

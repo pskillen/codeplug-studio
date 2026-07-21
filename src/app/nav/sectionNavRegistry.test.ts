@@ -2,9 +2,9 @@ import { describe, expect, it } from 'vitest';
 import { resolveSectionNav, shouldShowSecondaryNav } from './sectionNavRegistry.ts';
 
 describe('sectionNavRegistry', () => {
-  it('resolves build detail routes to Radio build nav', () => {
+  it('resolves build detail routes to Export for radio nav', () => {
     const entry = resolveSectionNav('/builds/abc-123/overview');
-    expect(entry?.title).toBe('Radio build');
+    expect(entry?.title).toBe('Export for radio');
     expect(entry?.Component).toBeDefined();
   });
 

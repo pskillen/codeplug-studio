@@ -46,7 +46,7 @@ const registry: SectionNavEntry[] = [
     Component: AprsConfigurationSectionNav,
   },
   { title: 'Library', prefix: '/library', Component: ChannelsSectionNav },
-  { title: 'Radio build', prefix: '/builds', Component: BuildsSectionNav },
+  { title: 'Export for radio', prefix: '/builds', Component: BuildsSectionNav },
 ];
 
 export function resolveSectionNav(pathname: string): SectionNavEntry | null {

@@ -14,7 +14,8 @@ export function buildNavItems(build: FormatBuild): BuildNavItem[] {
   const flatMemory = traits.has(BuildCapabilityTrait.FlatMemoryList);
 
   const items: BuildNavItem[] = [
-    { label: 'Overview', path: `${base}/overview` },
+    { label: 'Export', path: `${base}/export` },
+    { label: 'Setup', path: `${base}/overview` },
     { label: 'Radio characteristics', path: `${base}/characteristics` },
   ];
 
@@ -40,7 +41,6 @@ export function buildNavItems(build: FormatBuild): BuildNavItem[] {
     );
   }
 
-  items.push({ label: 'Export', path: `${base}/export` });
   items.push({ label: 'Export resolution', path: `${base}/export-resolution` });
 
   if (build.profileId === 'neonplug-dm32uv') {
@@ -53,4 +53,41 @@ export function buildNavItems(build: FormatBuild): BuildNavItem[] {
 export function isBuildDetailPath(pathname: string): boolean {
   if (pathname === '/builds' || pathname === '/builds/new') return false;
   return /^\/builds\/[^/]+/.test(pathname);
+}
+
+/**
+ * When switching builds, keep the current sub-route when the target build
+ * exposes it in secondary nav; otherwise land on Export.
+ */
+export function pathForSwitchedBuild(
+  pathname: string,
+  fromBuildId: string,
+  toBuild: FormatBuild,
+): string {
+  const base = `/builds/${toBuild.id}`;
+  const prefix = `/builds/${fromBuildId}/`;
+  if (!pathname.startsWith(prefix)) {
+    return `${base}/export`;
+  }
+
+  const suffix = pathname.slice(prefix.length);
+  if (!suffix) {
+    return `${base}/export`;
+  }
+
+  const navPaths = new Set(buildNavItems(toBuild).map((item) => item.path));
+  const exact = `${base}/${suffix}`;
+  if (navPaths.has(exact)) {
+    return exact;
+  }
+
+  const firstSegment = suffix.split('/')[0];
+  if (firstSegment) {
+    const parent = `${base}/${firstSegment}`;
+    if (navPaths.has(parent)) {
+      return parent;
+    }
+  }
+
+  return `${base}/export`;
 }

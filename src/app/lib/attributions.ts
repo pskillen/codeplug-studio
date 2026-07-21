@@ -81,7 +81,7 @@ export const ATTRIBUTIONS: AttributionEntry[] = [
       'Optional cloud storage for native YAML project files. OAuth tokens stay in browser storage only.',
     homeUrl: 'https://www.google.com/drive/',
     termsUrl: 'https://policies.google.com/terms',
-    usedIn: ['Settings → Google Drive', 'Import / export Drive browser'],
+    usedIn: ['Settings → Google Drive', 'Summary Drive browser'],
   },
 ];
 

@@ -137,7 +137,7 @@ export default function SidebarDriveControls() {
           )
         ) : null}
         {localFile && !drive ? (
-          <Anchor component={Link} to="/import-export" size="xs">
+          <Anchor component={Link} to="/summary" size="xs">
             Export YAML
           </Anchor>
         ) : null}

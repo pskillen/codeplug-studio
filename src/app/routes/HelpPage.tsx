@@ -43,12 +43,12 @@ export default function HelpPage() {
               channel by hand.
             </List.Item>
             <List.Item>
-              <strong>Format builds</strong> — assemble a build for your radio, then export files
-              for your vendor CPS to flash.
+              <strong>Export for radio</strong> — assemble a format build for your radio, then
+              export CPS files for your vendor CPS to flash. Opening a build lands on Export.
             </List.Item>
             <List.Item>
-              <strong>Summary</strong> — at-a-glance library inventory, breakdowns, and integrity
-              warnings.
+              <strong>Summary</strong> — library inventory, integrity warnings, and project YAML
+              backup (import/export + Drive).
             </List.Item>
             <List.Item>
               <strong>Reference</strong> — optional tools such as the{' '}

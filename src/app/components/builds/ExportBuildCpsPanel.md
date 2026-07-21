@@ -1,6 +1,6 @@
 # ExportBuildCpsPanel
 
-Per-build CPS export on the Radio builds detail page — per-file CSV downloads, ZIP archive download, and Google Drive ZIP upload.
+Per-build CPS export on the Export for radio detail page — per-file CSV downloads, ZIP archive download, and Google Drive ZIP upload.
 
 ## Props
 

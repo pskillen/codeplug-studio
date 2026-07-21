@@ -135,18 +135,15 @@ describe('App', () => {
     expect(await screen.findByText('channels')).toBeInTheDocument();
   });
 
-  it('renders import/export when a project is active', async () => {
+  it('redirects /import-export to Summary with project interchange', async () => {
     const meta = newProjectMeta('Test project');
     await persistence.seedProject({ meta });
     saveActiveProjectId(meta.projectId);
 
     renderApp('/import-export');
 
-    expect(await screen.findByRole('heading', { name: 'Import / export' })).toBeInTheDocument();
-    expect(screen.getByText(/vendor-neutral inside the project/i)).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: 'CPS formats' })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: 'Export to CPS' })).toBeInTheDocument();
-    expect(screen.getByText(/Open a build under/i)).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'Project interchange' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Summary' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Download YAML/i })).toBeInTheDocument();
   });
 

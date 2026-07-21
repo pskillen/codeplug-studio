@@ -21,8 +21,8 @@ IndexedDB remains the **edit store**; YAML and Drive are portable layers on top 
 | Native YAML — export serialiser                         | Shipped     | [#57](https://github.com/pskillen/codeplug-studio/issues/57)                                                                                                                                                                                                           |
 | Native YAML — import parser                             | Shipped     | [#58](https://github.com/pskillen/codeplug-studio/issues/58)                                                                                                                                                                                                           |
 | Application services (`importProject`, `exportProject`) | Shipped     | [#59](https://github.com/pskillen/codeplug-studio/issues/59) — `importProjectYaml` / `exportProjectYaml`                                                                                                                                                               |
-| Local file UI                                           | Shipped     | [#60](https://github.com/pskillen/codeplug-studio/issues/60) — `/import-export`, Home import                                                                                                                                                                           |
-| Format catalog UI (CPS placeholders)                    | Shipped     | [#83](https://github.com/pskillen/codeplug-studio/issues/83) — CPS grid + export build stub                                                                                                                                                                            |
+| Local file UI                                           | Shipped     | [#60](https://github.com/pskillen/codeplug-studio/issues/60) — Summary **Project interchange** (+ Home import); `/import-export` redirects to `/summary` ([#569](https://github.com/pskillen/codeplug-studio/issues/569))                                              |
+| Format catalog UI (CPS placeholders)                    | Retired     | Catalog band removed with standalone Import/export page ([#569](https://github.com/pskillen/codeplug-studio/issues/569)); format discovery is **New build**                                                                                                            |
 | Google Drive                                            | Shipped     | [#61](https://github.com/pskillen/codeplug-studio/issues/61)–[#62](https://github.com/pskillen/codeplug-studio/issues/62)                                                                                                                                              |
 | OpenGD77 CSV export                                     | Shipped     | [#88](https://github.com/pskillen/codeplug-studio/issues/88) adapter + [#91](https://github.com/pskillen/codeplug-studio/issues/91) UI — [#95](https://github.com/pskillen/codeplug-studio/pull/95)                                                                    |
 | CPS export services (`assemble`, `exportBuild`)         | Shipped     | [#86](https://github.com/pskillen/codeplug-studio/issues/86) — [cps-services.md](cps-services.md)                                                                                                                                                                      |
@@ -72,15 +72,11 @@ Routes and UI call **application services** (`importProjectYaml`, `exportProject
 
 Wire mapping for CPS formats lives in `docs/reference/<format>/` — not here.
 
-## UI (`/import-export`)
+## UI (project YAML + CPS export)
 
-The import/export route is organised in three bands:
+**Native YAML** (project interchange) lives on **Summary** (`/summary`) under **Project interchange** — import (replace active project), download, and Google Drive save. Home still offers create-from-YAML. Bookmarks to `/import-export` redirect to `/summary`.
 
-1. **Native YAML** — shipped import (replace active project) and export (download + Google Drive).
-2. **CPS formats** — `CpsFormatCatalogGrid` driven by `formatCatalog`; planned formats show a “coming soon” alert ([`FormatCatalogPanel`](../../../src/app/components/import-export/FormatCatalogPanel.tsx)).
-3. **Export to CPS** — pointer to **Radio builds** (`/builds`); per-build export UI lives on each build detail page ([`ExportBuildCpsPanel`](../../../src/app/components/builds/ExportBuildCpsPanel.tsx)).
-
-Optional deep link: `?format=opengd77` highlights the matching catalog card (`useFormatParam`).
+**CPS export** lives on each format build under **Export for radio** (`/builds` → `/builds/:id/export`) via [`ExportBuildCpsPanel`](../../../src/app/components/builds/ExportBuildCpsPanel.tsx). Format discovery for new targets is the **New build** wizard (`formatCatalog`), not a separate catalog page.
 
 ## Vendor-neutral rules
 

@@ -24,7 +24,7 @@ Rendered inside `AppNav` below `ActiveProjectBar` when the project has a Drive l
 | Linked Drive + clean                      | Save disabled                                                                        |
 | Session expired                           | `SoftWarning` danger tone with greyed Save/Check; buttons still clickable for reauth |
 | Check Drive                               | Runs manual remote-newer check via `useDriveRefresh().checkNow()`                    |
-| Local file only                           | Export YAML link to `/import-export`                                                 |
+| Local file only                           | Export YAML link to `/summary`                                                       |
 | No portable destination + prior Drive use | `BrowserOnlyWarning` (dismissible)                                                   |
 | Never connected Drive                     | Cluster hidden unless project has Drive/local interchange                            |
 
