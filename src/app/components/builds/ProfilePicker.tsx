@@ -2,6 +2,7 @@ import { Card, Group, Select, Stack, Text } from '@mantine/core';
 import type { FormatId } from '@core/import-export/types.ts';
 import { formatProfileWireHint } from '@core/import-export/formatProfiles.ts';
 import { buildProfileOptionsForFormat } from '../../routes/builds/buildHelpers.ts';
+import { profilePathwayBadge } from './preferNeonPlugPathwayBadges.tsx';
 
 export interface ProfilePickerProps {
   formatId: FormatId;
@@ -66,7 +67,7 @@ export default function ProfilePicker({
             if (!disabled) onChange(profile.profileId);
           }}
         >
-          <Group justify="space-between">
+          <Group justify="space-between" align="flex-start" wrap="nowrap">
             <div>
               <Text fw={600}>{profile.label}</Text>
               {profile.hint ? (
@@ -80,6 +81,7 @@ export default function ProfilePicker({
                 </Text>
               ) : null}
             </div>
+            {profilePathwayBadge(profile.profileId)}
           </Group>
         </Card>
       ))}

@@ -23,6 +23,7 @@ Product behaviour for Baofeng DM-32UV CPS CSV export in Codeplug Studio. Wire co
 | Per-repeater scratch channels   | Shipped | [#140](https://github.com/pskillen/codeplug-studio/issues/140) — [export-projections.md](export-projections.md)                                                                                                               |
 | CRLF export line endings        | Shipped | [#314](https://github.com/pskillen/codeplug-studio/issues/314) — Windows CPS import compatibility                                                                                                                             |
 | APRS channel cols + `APRS.md`   | Shipped | [#250](https://github.com/pskillen/codeplug-studio/issues/250) — [aprs.md](../../../reference/dm32/aprs.md)                                                                                                                   |
+| Prefer-NeonPlug export warning  | Shipped | [#556](https://github.com/pskillen/codeplug-studio/issues/556) — orange alert at top of export panel and again above download buttons; New build format/profile pills; CSV download remains available                         |
 | CPS import                      | Planned | [#112](https://github.com/pskillen/codeplug-studio/issues/112)                                                                                                                                                                |
 
 ## Trait profile vs radio profile
@@ -43,6 +44,10 @@ Both use profile id **`dm32-baofeng-dm32uv`**.
 Scan list CSV members are capped at **15** named entries (CPS “16” includes an implicit current-channel slot). Zone membership allows **64** members — zone-derived scan export truncates to 15. General LCD/`nameLimit` remains **16** for channels and zones; `Scan.csv` `Scan Name` and RX group list names use **10** — see [scan-lists.md](../../../reference/dm32/scan-lists.md) and [baofeng-dm32uv.md](../../../reference/dm32/radios/baofeng-dm32uv.md).
 
 Per-radio wire detail: [docs/reference/dm32/radios/](../../../reference/dm32/radios/README.md).
+
+## Prefer NeonPlug for radio write
+
+Baofeng DM-32 CPS CSV import is unreliable. On `/builds/:id/export` for a DM32 build, Studio shows a strong warning to prefer a [NeonPlug](../neonplug/README.md) build and `.neonplug` merge-on-export path. DM32 CSV download stays available for interop and fixtures.
 
 ## Expandable channels (DM32 vs OpenGD77)
 

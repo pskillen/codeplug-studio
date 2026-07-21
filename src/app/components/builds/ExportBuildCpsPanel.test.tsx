@@ -1,6 +1,7 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { MantineProvider } from '@mantine/core';
+import { MemoryRouter } from 'react-router-dom';
 import type { FormatBuild } from '@core/models/formatBuild.ts';
 import type { CpsPreviewResult } from '../../services/buildCpsExportService.ts';
 import ExportBuildCpsPanel from './ExportBuildCpsPanel.tsx';
@@ -143,18 +144,67 @@ describe('ExportBuildCpsPanel', () => {
       profileId: 'chirp-uv5r',
     };
     render(
-      <MantineProvider>
-        <ExportBuildCpsPanel build={chirpBuild} />
-      </MantineProvider>,
+      <MemoryRouter>
+        <MantineProvider>
+          <ExportBuildCpsPanel build={chirpBuild} />
+        </MantineProvider>
+      </MemoryRouter>,
     );
 
-    expect(await screen.findByText(/CHIRP CSV/)).toBeInTheDocument();
-    const csvButton = await screen.findByRole('button', { name: 'Download CSV' });
-    expect(csvButton).not.toBeDisabled();
+    expect(await screen.findByRole('button', { name: 'Download CSV' })).not.toBeDisabled();
     expect(screen.queryByRole('button', { name: 'Download ZIP' })).not.toBeInTheDocument();
     expect(screen.queryByText(/not in the memory list/i)).not.toBeInTheDocument();
     expect(screen.queryByText(/aren't in a zone/i)).not.toBeInTheDocument();
     expect(screen.getByText(/Only analogue FM\/AM channels/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/CHIRP for UV-5R Mini is still being tested/)).toHaveLength(2);
+  });
+
+  it('hides CHIRP prefer-NeonPlug hint when export profile is not UV-5R', async () => {
+    const chirpBuild: FormatBuild = {
+      ...opengd77Build,
+      formatId: 'chirp',
+      profileId: 'chirp-uv21',
+    };
+    render(
+      <MemoryRouter>
+        <MantineProvider>
+          <ExportBuildCpsPanel build={chirpBuild} />
+        </MantineProvider>
+      </MemoryRouter>,
+    );
+
+    expect(await screen.findByRole('button', { name: 'Download CSV' })).not.toBeDisabled();
+    expect(
+      screen.queryByText(/CHIRP for UV-5R Mini is still being tested/),
+    ).not.toBeInTheDocument();
+    expect(screen.queryByText(/Prefer NeonPlug to write your DM-32/)).not.toBeInTheDocument();
+  });
+
+  it('shows prefer-NeonPlug deprecation alert for DM32 builds only', async () => {
+    const dm32Build: FormatBuild = {
+      ...opengd77Build,
+      formatId: 'dm32',
+      profileId: 'dm32-baofeng-dm32uv',
+    };
+    const { unmount } = render(
+      <MemoryRouter>
+        <MantineProvider>
+          <ExportBuildCpsPanel build={dm32Build} />
+        </MantineProvider>
+      </MemoryRouter>,
+    );
+
+    expect(await screen.findAllByText(/Prefer NeonPlug to write your DM-32/)).toHaveLength(2);
+    expect(screen.getByRole('button', { name: 'Download ZIP' })).not.toBeDisabled();
+    unmount();
+
+    render(
+      <MantineProvider>
+        <ExportBuildCpsPanel build={opengd77Build} />
+      </MantineProvider>,
+    );
+    expect(await screen.findByText(/OpenGD77 \(1701\)/)).toBeInTheDocument();
+    expect(screen.queryByText(/Prefer NeonPlug to write your DM-32/)).not.toBeInTheDocument();
   });
 
   it('opens CSV preview modal for CHIRP single-file export', async () => {
@@ -164,9 +214,11 @@ describe('ExportBuildCpsPanel', () => {
       profileId: 'chirp-uv5r',
     };
     render(
-      <MantineProvider>
-        <ExportBuildCpsPanel build={chirpBuild} />
-      </MantineProvider>,
+      <MemoryRouter>
+        <MantineProvider>
+          <ExportBuildCpsPanel build={chirpBuild} />
+        </MantineProvider>
+      </MemoryRouter>,
     );
 
     const previewButton = await screen.findByRole('button', { name: 'Preview CSV' });

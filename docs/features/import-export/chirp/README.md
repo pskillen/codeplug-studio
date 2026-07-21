@@ -8,17 +8,18 @@ Product behaviour for CHIRP analogue FM/AM CSV in Codeplug Studio. Wire column t
 
 ## Implementation status
 
-| Area                                                      | Status  | Notes                                                                   |
-| --------------------------------------------------------- | ------- | ----------------------------------------------------------------------- |
-| Wire reference                                            | Shipped | [reference/chirp/](../../../reference/chirp/README.md)                  |
-| Trait profiles (`chirp-uv5r`, `chirp-rt95`, `chirp-uv21`) | Shipped | `TRAIT_PROFILES` — `FlatMemoryList`, `PerChannelScanFlag`               |
-| Radio profiles + columns                                  | Shipped | `formats/chirp/profiles.ts`, `columns.ts`                               |
-| Flat memory assemble projection                           | Shipped | `exportOrderOrSlot.ts`, `assemble.ts` — `orderOrSlot` on overrides      |
-| Export adapter (single CSV)                               | Shipped | `exportBuildSingleFile` → `serialiseChirpCsv`                           |
-| Channels build UI                                         | Shipped | `/builds/:id/channels` — flat memory list, wire names, scan tri-state   |
-| Browser download + export UI                              | Shipped | `ExportBuildCpsPanel` — Download CSV + preview                          |
-| Export golden tests                                       | Shipped | `exportGolden.test.ts` — three profile fixtures                         |
-| CPS import                                                | Planned | Phase 6b [#214](https://github.com/pskillen/codeplug-studio/issues/214) |
+| Area                                                      | Status  | Notes                                                                                                                                                                                   |
+| --------------------------------------------------------- | ------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Wire reference                                            | Shipped | [reference/chirp/](../../../reference/chirp/README.md)                                                                                                                                  |
+| Trait profiles (`chirp-uv5r`, `chirp-rt95`, `chirp-uv21`) | Shipped | `TRAIT_PROFILES` — `FlatMemoryList`, `PerChannelScanFlag`                                                                                                                               |
+| Radio profiles + columns                                  | Shipped | `formats/chirp/profiles.ts`, `columns.ts`                                                                                                                                               |
+| Flat memory assemble projection                           | Shipped | `exportOrderOrSlot.ts`, `assemble.ts` — `orderOrSlot` on overrides                                                                                                                      |
+| Export adapter (single CSV)                               | Shipped | `exportBuildSingleFile` → `serialiseChirpCsv`                                                                                                                                           |
+| Channels build UI                                         | Shipped | `/builds/:id/channels` — flat memory list, wire names, scan tri-state                                                                                                                   |
+| Browser download + export UI                              | Shipped | `ExportBuildCpsPanel` — Download CSV + preview                                                                                                                                          |
+| UV-5R prefer-NeonPlug export hint                         | Shipped | [#556](https://github.com/pskillen/codeplug-studio/issues/556) — yellow alert at top of export panel and above Download CSV when export profile is `chirp-uv5r`; New build profile pill |
+| Export golden tests                                       | Shipped | `exportGolden.test.ts` — three profile fixtures                                                                                                                                         |
+| CPS import                                                | Planned | Phase 6b [#214](https://github.com/pskillen/codeplug-studio/issues/214)                                                                                                                 |
 
 ## Trait profile vs radio profile
 
@@ -43,6 +44,8 @@ Per-radio wire detail: [docs/reference/chirp/radios/](../../../reference/chirp/r
 2. Create a **CHIRP build** for the target radio profile.
 3. On **Channels**, review the default-included analogue memory list, reorder, set wire names, default scan behaviour, and per-channel scan overrides.
 4. **Export** a single profile-correct CSV from `/builds/:id/export` — organisation follows flat memory order on the build layout.
+
+For **UV-5R Mini** (`chirp-uv5r`), the export page shows a soft hint that CHIRP support is in progress and prefers a [NeonPlug](../neonplug/README.md) UV-5R Mini build. CSV download remains available. Other CHIRP profiles do not show this hint.
 
 ## Export behaviour
 
