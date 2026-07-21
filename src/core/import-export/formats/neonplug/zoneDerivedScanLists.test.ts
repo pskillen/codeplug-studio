@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { newChannel, newZone } from '@core/domain/factories.ts';
 import type { Channel, Zone } from '@core/models/library.ts';
 import type { AssembledBuild } from '@core/services/assemble.ts';
-import { buildDm32uvChannelNumberMap } from './exportContext.ts';
+import { buildDm32uvChannelNumberMap, singletonChannelNumbersById } from './exportContext.ts';
 import { NEONPLUG_DM32UV_PROFILE } from './profiles.ts';
 import { serialiseNeonplugCodeplug } from './serialise.ts';
 import { deriveNeonplugZoneDerivedScanLists } from './zoneDerivedScanLists.ts';
@@ -84,11 +84,13 @@ describe('neonplug/zoneDerivedScanLists', () => {
     };
 
     const warnings: string[] = [];
-    const channelNumberById = buildDm32uvChannelNumberMap(assembled, 4000);
+    const numbersBySource = singletonChannelNumbersById(
+      buildDm32uvChannelNumberMap(assembled, 4000),
+    );
     const derived = deriveNeonplugZoneDerivedScanLists(
       assembled,
       NEONPLUG_DM32UV_PROFILE,
-      channelNumberById,
+      numbersBySource,
       { shortenNames: false },
       warnings,
     );
@@ -159,7 +161,7 @@ describe('neonplug/zoneDerivedScanLists', () => {
     const derived = deriveNeonplugZoneDerivedScanLists(
       assembled,
       NEONPLUG_DM32UV_PROFILE,
-      buildDm32uvChannelNumberMap(assembled, 4000),
+      singletonChannelNumbersById(buildDm32uvChannelNumberMap(assembled, 4000)),
       { exportZoneDerivedScanLists: false },
     );
     expect(derived.scanLists).toEqual([]);

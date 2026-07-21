@@ -1,9 +1,11 @@
 import type { EntityRef } from '@core/models/libraryTypes.ts';
 import type { AssembledBuild } from '@core/services/assemble.ts';
+import type { ExpandedNeonplugChannelRow } from './channelExpansion.ts';
 
 /**
  * Channel UUID → NeonPlug channel `number` for DM32UV sequential export (1…N in assemble order).
  * Truncates at `maxChannels` to match channel serialisation.
+ * Prefer {@link assignNeonplugExpandedChannelNumbers} when m×n expansion is enabled.
  */
 export function buildDm32uvChannelNumberMap(
   assembled: AssembledBuild,
@@ -15,6 +17,54 @@ export function buildDm32uvChannelNumberMap(
     map.set(row.entity.id, i + 1);
   }
   return map;
+}
+
+/** Wrap a 1:1 UUID→number map as UUID→number[] for zone/scan fan-out helpers. */
+export function singletonChannelNumbersById(
+  channelNumberById: ReadonlyMap<string, number>,
+): Map<string, number[]> {
+  const map = new Map<string, number[]>();
+  for (const [id, n] of channelNumberById) {
+    map.set(id, [n]);
+  }
+  return map;
+}
+
+export interface NumberedNeonplugChannelRow {
+  row: ExpandedNeonplugChannelRow;
+  number: number;
+}
+
+/**
+ * Assign sequential NeonPlug channel numbers 1…N to expanded export rows.
+ * Truncates at `maxChannels`; builds source UUID → all projected numbers.
+ */
+export function assignNeonplugExpandedChannelNumbers(
+  expandedRows: readonly ExpandedNeonplugChannelRow[],
+  maxChannels: number,
+  warnings: string[] = [],
+  profileLabel = 'NeonPlug',
+): {
+  numbered: NumberedNeonplugChannelRow[];
+  numbersBySourceChannelId: Map<string, number[]>;
+} {
+  const numbered: NumberedNeonplugChannelRow[] = [];
+  const numbersBySourceChannelId = new Map<string, number[]>();
+  if (expandedRows.length > maxChannels) {
+    warnings.push(
+      `Truncated ${expandedRows.length - maxChannels} expanded channel(s) to fit ${maxChannels} channels for ${profileLabel}`,
+    );
+  }
+  const limit = Math.min(expandedRows.length, maxChannels);
+  for (let i = 0; i < limit; i++) {
+    const row = expandedRows[i]!;
+    const number = i + 1;
+    numbered.push({ row, number });
+    const list = numbersBySourceChannelId.get(row.sourceChannelId) ?? [];
+    list.push(number);
+    numbersBySourceChannelId.set(row.sourceChannelId, list);
+  }
+  return { numbered, numbersBySourceChannelId };
 }
 
 /**

@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { newChannel } from '@core/domain/factories.ts';
-import type { Channel } from '@core/models/library.ts';
+import {
+  newChannel,
+  newRxGroupList,
+  newTalkGroup,
+  newZone,
+} from '@core/domain/factories.ts';
+import type { Channel, ChannelModeProfileDMR } from '@core/models/library.ts';
 import type { AssembledBuild } from '@core/services/assemble.ts';
 import { serialiseNeonplugCodeplug } from './serialise.ts';
 import { collectNeonplugExportWarnings } from './warnings.ts';
@@ -133,5 +138,144 @@ describe('neonplug/serialise', () => {
     expect(collectNeonplugExportWarnings(assembled)).toEqual([
       'Truncated 2 channel(s) to fit 999 memory slots for Baofeng UV-5R Mini (NeonPlug).',
     ]);
+  });
+
+  it('expands RX-list channels and fans out zone members when expandRxGroupLists is on', () => {
+    const tg1 = { ...newTalkGroup(projectId, 'TG1', 101), id: 'tg-1' };
+    const tg2 = { ...newTalkGroup(projectId, 'TG2', 102), id: 'tg-2' };
+    const rgl = {
+      ...newRxGroupList(projectId, 'Local'),
+      id: 'rgl-1',
+      members: [
+        { ref: { kind: 'talkGroup' as const, id: tg1.id } },
+        { ref: { kind: 'talkGroup' as const, id: tg2.id } },
+      ],
+    };
+    const channel: Channel = {
+      ...newChannel(projectId, 'Glasgow'),
+      id: 'ch-1',
+      rxFrequency: 438_800_000,
+      txFrequency: 434_000_000,
+      modeProfiles: [
+        {
+          mode: 'dmr',
+          colourCode: 1,
+          timeslot: 1,
+          dmrId: null,
+          contactRef: null,
+          rxGroupListId: rgl.id,
+        } satisfies ChannelModeProfileDMR,
+      ],
+    };
+    const zone = {
+      ...newZone(projectId, 'West'),
+      id: 'zone-1',
+      members: [{ kind: 'channel' as const, channelId: channel.id }],
+    };
+
+    const assembled: AssembledBuild = {
+      buildId: 'b-exp',
+      formatId: 'neonplug',
+      profileId: 'neonplug-dm32uv',
+      buildName: 'Expand',
+      channels: [{ entity: channel, wireName: 'Glasgow' }],
+      zones: [{ zoneId: zone.id, wireName: 'West', memberChannelIds: [channel.id] }],
+      talkGroups: [
+        { entity: tg1, wireName: tg1.name },
+        { entity: tg2, wireName: tg2.name },
+      ],
+      digitalContacts: [],
+      analogContacts: [],
+      rxGroupLists: [{ entity: rgl, wireName: rgl.name }],
+      scanLists: [],
+      library: {
+        channels: [channel],
+        zones: [zone],
+        talkGroups: [tg1, tg2],
+        digitalContacts: [],
+        analogContacts: [],
+        rxGroupLists: [rgl],
+        scanLists: [],
+      },
+      zoneGrouping: {
+        kind: 'zoneGrouping',
+        zones: [
+          {
+            id: zone.id,
+            name: 'West',
+            channelIds: [channel.id],
+            exportScanList: true,
+          },
+        ],
+      },
+    };
+
+    const { data } = serialiseNeonplugCodeplug(assembled, {
+      exportDate: '2026-07-20T12:00:00.000Z',
+      shortenNames: false,
+      expandRxGroupLists: true,
+      exportScratchChannels: true,
+    });
+
+    // 2 TG rows + 1 scratch
+    expect(data.channels).toHaveLength(3);
+    expect(data.channels.map((c) => c.number)).toEqual([1, 2, 3]);
+    expect(data.channels[0]?.rxGroupListId).toBe(0);
+    expect(data.channels[0]?.contactId).toBeGreaterThan(0);
+    expect(data.channels[2]?.name).toMatch(/Scratch/i);
+    expect(data.channels[2]?.rxGroupListId).toBe(1);
+    expect(data.zones[0]?.channels).toEqual([1, 2, 3]);
+    expect(data.scanLists[0]?.channels).toEqual([1, 2, 3]);
+    expect(data.channels.every((c) => c.scanListId === 1)).toBe(true);
+  });
+
+  it('emits one lean channel when expandRxGroupLists is false', () => {
+    const tg1 = { ...newTalkGroup(projectId, 'TG1', 101), id: 'tg-1' };
+    const rgl = {
+      ...newRxGroupList(projectId, 'Local'),
+      id: 'rgl-1',
+      members: [{ ref: { kind: 'talkGroup' as const, id: tg1.id } }],
+    };
+    const channel: Channel = {
+      ...newChannel(projectId, 'Glasgow'),
+      id: 'ch-1',
+      rxFrequency: 438_800_000,
+      txFrequency: 434_000_000,
+      modeProfiles: [
+        {
+          mode: 'dmr',
+          colourCode: 1,
+          timeslot: 1,
+          dmrId: null,
+          contactRef: null,
+          rxGroupListId: rgl.id,
+        } satisfies ChannelModeProfileDMR,
+      ],
+    };
+
+    const assembled: AssembledBuild = {
+      buildId: 'b-lean',
+      formatId: 'neonplug',
+      profileId: 'neonplug-dm32uv',
+      buildName: 'Lean',
+      channels: [{ entity: channel, wireName: 'Glasgow' }],
+      zones: [],
+      talkGroups: [{ entity: tg1, wireName: tg1.name }],
+      digitalContacts: [],
+      analogContacts: [],
+      rxGroupLists: [{ entity: rgl, wireName: rgl.name }],
+      scanLists: [],
+    };
+
+    const { data } = serialiseNeonplugCodeplug(assembled, {
+      exportDate: '2026-07-20T12:00:00.000Z',
+      shortenNames: false,
+      expandRxGroupLists: false,
+      exportScratchChannels: true,
+    });
+
+    expect(data.channels).toHaveLength(1);
+    expect(data.channels[0]?.name).toBe('Glasgow');
+    expect(data.channels[0]?.rxGroupListId).toBe(1);
   });
 });

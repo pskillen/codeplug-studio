@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { newChannel } from '@core/domain/factories.ts';
 import type { Channel } from '@core/models/library.ts';
 import type { AssembledBuild } from '@core/services/assemble.ts';
-import { buildDm32uvChannelNumberMap } from './exportContext.ts';
+import { buildDm32uvChannelNumberMap, singletonChannelNumbersById } from './exportContext.ts';
 import { NEONPLUG_DM32UV_PROFILE } from './profiles.ts';
 import { serialiseNeonplugCodeplug } from './serialise.ts';
 import { serialiseNeonplugZones } from './zones.ts';
@@ -57,11 +57,13 @@ describe('neonplug/zones', () => {
     };
 
     const warnings: string[] = [];
-    const channelNumberById = buildDm32uvChannelNumberMap(assembled, 4000);
+    const numbersBySource = singletonChannelNumbersById(
+      buildDm32uvChannelNumberMap(assembled, 4000),
+    );
     const zones = serialiseNeonplugZones(
       assembled,
       NEONPLUG_DM32UV_PROFILE,
-      channelNumberById,
+      numbersBySource,
       { shortenNames: false },
       warnings,
     );

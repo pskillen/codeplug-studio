@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { unzipSync, strFromU8 } from 'fflate';
-import { emptyLibrary, newChannel, newFormatBuild } from '@core/domain/factories.ts';
+import { emptyLibrary, newChannel, newFormatBuild, newRxGroupList, newTalkGroup } from '@core/domain/factories.ts';
 import type { Channel } from '@core/models/library.ts';
 import type { LibrarySlice } from '@core/services/assemble.ts';
 import { exportBuildZip } from './exportBuild.ts';
@@ -203,5 +203,53 @@ describe('exportBuildZip neonplug', () => {
     expect(data.messages).toEqual(['stored']);
     expect(data.radioInfo.firmware).toBe('hydrated');
     expect(data.channels[0]?.name).toBe('GB3AO');
+  });
+
+  it('exports expanded talk-group channels into a .neonplug ZIP by default', () => {
+    const tg1 = { ...newTalkGroup(projectId, 'TG1', 101), id: 'tg-1' };
+    const tg2 = { ...newTalkGroup(projectId, 'TG2', 102), id: 'tg-2' };
+    const rgl = {
+      ...newRxGroupList(projectId, 'Local'),
+      id: 'rgl-1',
+      members: [
+        { ref: { kind: 'talkGroup' as const, id: tg1.id } },
+        { ref: { kind: 'talkGroup' as const, id: tg2.id } },
+      ],
+    };
+    const channel: Channel = {
+      ...newChannel(projectId, 'Glasgow'),
+      id: 'ch-1',
+      rxFrequency: 438_800_000,
+      txFrequency: 434_000_000,
+      power: 50,
+      modeProfiles: [
+        {
+          mode: 'dmr',
+          colourCode: 1,
+          timeslot: 1,
+          dmrId: null,
+          contactRef: null,
+          rxGroupListId: rgl.id,
+        },
+      ],
+    };
+    const build = newFormatBuild(projectId, 'neonplug-dm32uv', 'Neon Expand');
+    const library: LibrarySlice = {
+      ...emptyLibrary(),
+      channels: [channel],
+      talkGroups: [tg1, tg2],
+      rxGroupLists: [rgl],
+    };
+
+    const { zip } = exportBuildZip({
+      build,
+      library,
+      options: { shortenNames: false },
+    });
+
+    const data = parseZip(zip);
+    expect(data.channels).toHaveLength(3);
+    expect(data.channels[0]?.rxGroupListId).toBe(0);
+    expect(data.channels[2]?.name).toMatch(/Scratch/i);
   });
 });
