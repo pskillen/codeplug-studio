@@ -13,9 +13,11 @@ None — parent mounts only when `build.formatId === 'chirp'` and export profile
 ## Usage
 
 ```tsx
-{build.formatId === 'chirp' && exportProfileId === 'chirp-uv5r' ? (
-  <ChirpUv5rPreferNeonPlugAlert />
-) : null}
+{
+  build.formatId === 'chirp' && exportProfileId === 'chirp-uv5r' ? (
+    <ChirpUv5rPreferNeonPlugAlert />
+  ) : null;
+}
 ```
 
 ## Behaviour

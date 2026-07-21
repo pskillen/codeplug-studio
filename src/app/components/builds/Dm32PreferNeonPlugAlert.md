@@ -13,7 +13,9 @@ None — parent mounts only when `build.formatId === 'dm32'`.
 ## Usage
 
 ```tsx
-{build.formatId === 'dm32' ? <Dm32PreferNeonPlugAlert /> : null}
+{
+  build.formatId === 'dm32' ? <Dm32PreferNeonPlugAlert /> : null;
+}
 ```
 
 ## Behaviour
