@@ -357,4 +357,58 @@ describe('ExportBuildCpsPanel', () => {
     expect(screen.getByRole('button', { name: 'Clear stored donor' })).toBeInTheDocument();
     expect(screen.getByText(/Stored: radio\.neonplug/)).toBeInTheDocument();
   });
+
+  it('persists donor settings messaging for UV5R-Mini NeonPlug builds', async () => {
+    const neonBuild: FormatBuild = {
+      ...opengd77Build,
+      formatId: 'neonplug',
+      profileId: 'neonplug-uv5rmini',
+      name: 'Neon UV5R',
+    };
+    render(
+      <MantineProvider>
+        <ExportBuildCpsPanel build={neonBuild} />
+      </MantineProvider>,
+    );
+
+    expect(await screen.findByText('Merge into radio-read base')).toBeInTheDocument();
+    expect(screen.getByText(/saved on this build/i)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Download for radio write' })).toBeDisabled();
+  });
+
+  it('enables radio-write download when UV5R-Mini build has stored cpsWireHydration', async () => {
+    const neonBuild: FormatBuild = {
+      ...opengd77Build,
+      formatId: 'neonplug',
+      profileId: 'neonplug-uv5rmini',
+      name: 'Neon UV5R',
+      cpsWireHydration: {
+        formatId: 'neonplug',
+        sourceFileName: 'uv5r.neonplug',
+        capturedAt: '2026-07-21T12:00:00.000Z',
+        retain: {
+          radioIds: [],
+          quickContacts: [],
+          messages: [],
+          digitalEmergencies: [],
+          analogEmergencies: [],
+          encryptionKeys: [],
+          digitalEmergencyConfig: null,
+          radioSettings: { radioSpecific: { foo: 1 } },
+          radioInfo: { model: 'UV5R-Mini' },
+        },
+      },
+    };
+    render(
+      <MantineProvider>
+        <ExportBuildCpsPanel build={neonBuild} />
+      </MantineProvider>,
+    );
+
+    expect(
+      await screen.findByRole('button', { name: 'Download for radio write' }),
+    ).not.toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Clear stored donor' })).toBeInTheDocument();
+    expect(screen.getByText(/Stored: uv5r\.neonplug/)).toBeInTheDocument();
+  });
 });

@@ -107,8 +107,8 @@ export default function ExportBuildCpsPanel({ build }: ExportBuildCpsPanelProps)
   const interchangeFolderId = activeProject?.interchange?.googleDrive?.folderId;
   const suggestedZipName = defaultCpsZipFileName(build.name, build.formatId as FormatId);
   const isNeonplug = build.formatId === 'neonplug';
-  /** Persist donor retain on the build (DM32UV only; UV5R stays session-only until #554). */
-  const persistNeonplugDonor = build.profileId === 'neonplug-dm32uv';
+  /** Persist donor retain on the build for all NeonPlug profiles (DM32UV + UV5R-Mini). */
+  const persistNeonplugDonor = isNeonplug;
   const storedNeonplugDonor = persistNeonplugDonor
     ? isNeonplugDonorBag(build.cpsWireHydration)
       ? build.cpsWireHydration
