@@ -1,9 +1,12 @@
 # DM32 — wire elicitation worksheet
 
+> **Parked (2026-07).** Stock Baofeng CPS CSV is **not** the preferred radio-write path — use [NeonPlug DM32UV](../../features/import-export/neonplug/README.md). Further Observed-cell filling is optional. Convertible backlog: [cps-csv-gaps.md](../../features/import-export/dm32/cps-csv-gaps.md). Keep this sheet as a partial wire inventory; do not treat blank Observed columns as blocking work.
+
 Fill this in while driving **official Baofeng DM-32UV CPS v1.60**. For each row: change the setting in CPS UI → export CSV bundle → record the exact cell text (capitalisation, spaces, punctuation).
 
 **Tracking:** [#404](https://github.com/pskillen/codeplug-studio/issues/404) · Parent [#503](https://github.com/pskillen/codeplug-studio/issues/503) (was [#37](https://github.com/pskillen/codeplug-studio/issues/37))  
 **Supersedes:** [#356](https://github.com/pskillen/codeplug-studio/issues/356)  
+**Gaps / NeonPlug learnings:** [cps-csv-gaps.md](../../features/import-export/dm32/cps-csv-gaps.md)  
 **Gap notes:** [`tmp/dm32-wire-docs-issues.md`](../../../tmp/dm32-wire-docs-issues.md) (local; gitignored)  
 **Headers / adapter:** [`columns.ts`](../../../src/core/import-export/formats/dm32/columns.ts)  
 **Canonical CPS sample:** [`sample-codeplugs/baofeng-dm32/1.60/`](../../../sample-codeplugs/baofeng-dm32/1.60/) (unadulterated v1.60 export)  

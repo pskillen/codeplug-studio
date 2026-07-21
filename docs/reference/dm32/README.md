@@ -1,10 +1,10 @@
 # Baofeng DM32 CPS CSV reference
 
-> **Studio status:** Wire reference ported from [codeplug-tool](https://github.com/pskillen/codeplug-tool); DM32 import/export adapters ship Phase 4–6 under `src/core/import-export/formats/dm32/`.
+> **Studio status:** DM32 CPS CSV **export** ships under `src/core/import-export/formats/dm32/`. For **writing the radio**, prefer [NeonPlug DM32UV](../neonplug/radios/dm32uv.md) (`.neonplug`) — stock Baofeng CPS import/round-trip is unreliable. See [cps-csv-gaps.md](../../features/import-export/dm32/cps-csv-gaps.md).
 
 Authoritative reference for **Baofeng DM-32UV stock CPS** CSV exports (v1.60+). One wire format among several at the import/export boundary.
 
-**Tracking:** archive reference (codeplug-tool#67)
+**Tracking:** archive reference (codeplug-tool#67) · product epic [#503](https://github.com/pskillen/codeplug-studio/issues/503)
 
 ## File inventory (v1.60)
 
@@ -26,7 +26,9 @@ Authoritative reference for **Baofeng DM-32UV stock CPS** CSV exports (v1.60+). 
 
 ## Wire elicitation
 
-Human-led CPS v1.60 column/enum elicitation (supersedes [#356](https://github.com/pskillen/codeplug-studio/issues/356)): [#404](https://github.com/pskillen/codeplug-studio/issues/404) · worksheet [enum-verification.md](enum-verification.md).
+Human-led CPS v1.60 column/enum elicitation (supersedes [#356](https://github.com/pskillen/codeplug-studio/issues/356)): [#404](https://github.com/pskillen/codeplug-studio/issues/404) · worksheet [enum-verification.md](enum-verification.md) (**parked** — NeonPlug preferred for radio write).
+
+Convertible backlog + NeonPlug learnings: [cps-csv-gaps.md](../../features/import-export/dm32/cps-csv-gaps.md).
 
 Tier-3 docs drift vs shipped export was fixed in [#444](https://github.com/pskillen/codeplug-studio/issues/444) / PR [#453](https://github.com/pskillen/codeplug-studio/pull/453).
 
@@ -80,5 +82,7 @@ Structural rules enforced by `cps-verify` for profile `dm32-baofeng-dm32uv` ([wi
 
 - [Data model](../../features/data-model/README.md)
 - [Multi-talkgroup expansion](../multi-talkgroup-expansion.md)
-- [enum-verification.md](enum-verification.md) — human CPS elicitation worksheet ([#404](https://github.com/pskillen/codeplug-studio/issues/404))
+- [cps-csv-gaps.md](../../features/import-export/dm32/cps-csv-gaps.md) — parked CPS fidelity backlog + NeonPlug learnings
+- [enum-verification.md](enum-verification.md) — partial CPS elicitation worksheet ([#404](https://github.com/pskillen/codeplug-studio/issues/404); parked)
+- [NeonPlug DM-32UV](../neonplug/radios/dm32uv.md) — preferred radio-write sibling
 - [OpenGD77 reference](../opengd77/README.md) — sibling format

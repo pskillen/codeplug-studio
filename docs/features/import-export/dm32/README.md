@@ -49,6 +49,8 @@ Per-radio wire detail: [docs/reference/dm32/radios/](../../../reference/dm32/rad
 
 Baofeng DM-32 CPS CSV import is unreliable. On `/builds/:id/export` for a DM32 build, Studio shows a strong warning to prefer a [NeonPlug](../neonplug/README.md) build and `.neonplug` merge-on-export path. DM32 CSV download stays available for interop and fixtures.
 
+**Parked CPS fidelity work:** [cps-csv-gaps.md](cps-csv-gaps.md) (from [#404](https://github.com/pskillen/codeplug-studio/issues/404)) — open elicitation tickets remain convertible; do not treat blank [enum-verification](../../../reference/dm32/enum-verification.md) Observed cells as blockers.
+
 ## Expandable channels (DM32 vs OpenGD77)
 
 | Axis            | DM32                                                                      | OpenGD77                          |
@@ -73,7 +75,9 @@ DM32 scan-list export and scan carrier frequency live on **`FormatBuild.layout`*
 ## Related
 
 - [export-projections.md](export-projections.md) — m×n + scratch
+- [cps-csv-gaps.md](cps-csv-gaps.md) — parked CPS CSV fidelity + NeonPlug learnings
 - [import-export hub](../README.md)
+- [neonplug hub](../neonplug/README.md) — preferred radio write
 - [builds hub](../../builds/README.md)
 - [data-model](../../data-model/README.md)
 - [cps-services.md](../cps-services.md)

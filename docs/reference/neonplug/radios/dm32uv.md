@@ -51,4 +51,5 @@ Do **not** bake these into library CRUD — export warnings and Radio characteri
 ## Related
 
 - Sibling CPS CSV (same radio caps, different wire): [DM32 baofeng-dm32uv](../../dm32/radios/baofeng-dm32uv.md)
+- Parked CPS CSV fidelity backlog: [cps-csv-gaps.md](../../../features/import-export/dm32/cps-csv-gaps.md)
 - [channels.md](../channels.md), [zones.md](../zones.md)
