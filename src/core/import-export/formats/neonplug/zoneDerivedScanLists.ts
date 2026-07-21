@@ -32,9 +32,7 @@ export interface NeonplugZoneDerivedScanExport {
  * (drops `channels.length === 0`) retains the list. Channels stay unbound
  * (`scanListId` 0) — membership is interop-only.
  */
-export function neonplugDm32uvEmptyScanListFloor(
-  memberChannelNumber?: number,
-): NeonplugScanList {
+export function neonplugDm32uvEmptyScanListFloor(memberChannelNumber?: number): NeonplugScanList {
   const hasMember = memberChannelNumber != null && memberChannelNumber > 0;
   return {
     name: NEONPLUG_DM32UV_EMPTY_SCAN_LIST_NAME,
