@@ -36,3 +36,6 @@ sample-exports/
 
 # Codegen output
 *.generated.ts
+
+# Local MCP secrets (never commit)
+.cursor/mcp.json
