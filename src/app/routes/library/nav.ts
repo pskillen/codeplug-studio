@@ -1,11 +1,15 @@
 /** Library list-route catalog — section nav order and editor back-link targets. */
 
+import type { TablerIcon } from '@tabler/icons-react';
+import { entityNavIcons } from '../../nav/entityNavIcons.ts';
+
 export interface LibraryNavEntry {
   label: string;
   plural: string;
   listPath: string;
   editorSlugs: string[];
   sectionNavTitle: string;
+  icon: TablerIcon;
 }
 
 export const LIBRARY_NAV: LibraryNavEntry[] = [
@@ -15,6 +19,7 @@ export const LIBRARY_NAV: LibraryNavEntry[] = [
     listPath: '/library/channels',
     editorSlugs: ['channels'],
     sectionNavTitle: 'Channels',
+    icon: entityNavIcons.channels,
   },
   {
     label: 'Zone',
@@ -22,6 +27,7 @@ export const LIBRARY_NAV: LibraryNavEntry[] = [
     listPath: '/library/zones',
     editorSlugs: ['zones'],
     sectionNavTitle: 'Zones',
+    icon: entityNavIcons.zones,
   },
   {
     label: 'Talk group',
@@ -29,6 +35,7 @@ export const LIBRARY_NAV: LibraryNavEntry[] = [
     listPath: '/library/talk-groups',
     editorSlugs: ['talk-groups'],
     sectionNavTitle: 'Talk groups',
+    icon: entityNavIcons.talkGroups,
   },
   {
     label: 'Contact',
@@ -36,6 +43,7 @@ export const LIBRARY_NAV: LibraryNavEntry[] = [
     listPath: '/library/contacts',
     editorSlugs: ['digital-contacts', 'analog-contacts'],
     sectionNavTitle: 'Contacts',
+    icon: entityNavIcons.contacts,
   },
   {
     label: 'Receive Group List',
@@ -43,6 +51,7 @@ export const LIBRARY_NAV: LibraryNavEntry[] = [
     listPath: '/library/rx-group-lists',
     editorSlugs: ['rx-group-lists'],
     sectionNavTitle: 'Receive Group Lists',
+    icon: entityNavIcons.rxGroupLists,
   },
   {
     label: 'Scan list',
@@ -50,6 +59,7 @@ export const LIBRARY_NAV: LibraryNavEntry[] = [
     listPath: '/library/scan-lists',
     editorSlugs: ['scan-lists'],
     sectionNavTitle: 'Scan lists',
+    icon: entityNavIcons.scanLists,
   },
   {
     label: 'APRS configuration',
@@ -57,6 +67,7 @@ export const LIBRARY_NAV: LibraryNavEntry[] = [
     listPath: '/library/aprs-configuration',
     editorSlugs: ['aprs-configuration'],
     sectionNavTitle: 'APRS configuration',
+    icon: entityNavIcons.aprsConfiguration,
   },
 ];
 
