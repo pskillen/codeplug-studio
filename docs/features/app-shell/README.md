@@ -32,29 +32,29 @@ ProjectProvider
 
 ## Documentation map
 
-| Doc                                                                                           | Contents                                                                                         |
-| --------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
-| [data-table.md](data-table.md)                                                                | `DataTable`, list prefs, entity list hooks, virtualization                                       |
-| [list-kit-roles.md](list-kit-roles.md)                                                        | Four-role list kit (A/B/C/D) — [#460](https://github.com/pskillen/codeplug-studio/issues/460)    |
-| [UI interaction styleguide](../../reference/styleguide/)                                      | Written conventions for agents — [#465](https://github.com/pskillen/codeplug-studio/issues/465)  |
-| [alerts.md](alerts.md)                                                                        | Mantine `Alert` colour conventions                                                               |
-| [GradientSegmentedControl](../../src/app/components/ui/GradientSegmentedControl.md)           | Per-segment indicator colours with fade on change                                                |
-| [SelectedItemList](../../src/app/components/ui/SelectedItemList.md)                           | Ordered selected-member list shell                                                               |
-| [AvailableItemPicker](../../src/app/components/ui/AvailableItemPicker.md)                     | Sectioned pool picker shell                                                                      |
-| [PillTabs](../../src/app/components/ui/PillTabs.md)                                           | Tabs with optional leading pill/badge in labels                                                  |
-| [ImageCheckbox](../../src/app/components/ui/ImageCheckbox.md)                                 | Card checkbox with optional image or media slot                                                  |
-| [BadgeCard](../../src/app/components/ui/BadgeCard.md)                                         | Mantine UI badge feature card                                                                    |
-| [AddFromDataSourceModal](../../src/app/components/library/AddFromDataSourceModal.md)          | Channel set + external directory picker modal                                                    |
-| [SidebarDriveControls](../../src/app/components/SidebarDriveControls/SidebarDriveControls.md) | Sidebar Save / Check Drive ([#368](https://github.com/pskillen/codeplug-studio/issues/368))      |
-| [SoftWarning](../../src/app/components/ui/SoftWarning.md)                                     | Compact theme-aware warning panel for sidebar chrome                                             |
-| [GettingStartedContent](../../src/app/components/onboarding/GettingStartedContent.md)         | Empty-state + Quick start guide ([#345](https://github.com/pskillen/codeplug-studio/issues/345)) |
+| Doc                                                                                           | Contents                                                                                                |
+| --------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
+| [data-table.md](data-table.md)                                                                | `DataTable`, list prefs, entity list hooks, virtualization                                              |
+| [list-kit-roles.md](list-kit-roles.md)                                                        | Four-role list kit (A/B/C/D) — [#460](https://github.com/pskillen/codeplug-studio/issues/460)           |
+| [UI interaction styleguide](../../reference/styleguide/)                                      | Written conventions for agents — [#465](https://github.com/pskillen/codeplug-studio/issues/465)         |
+| [alerts.md](alerts.md)                                                                        | Mantine `Alert` colour conventions                                                                      |
+| [GradientSegmentedControl](../../src/app/components/ui/GradientSegmentedControl.md)           | Per-segment indicator colours with fade on change                                                       |
+| [SelectedItemList](../../src/app/components/ui/SelectedItemList.md)                           | Ordered selected-member list shell                                                                      |
+| [AvailableItemPicker](../../src/app/components/ui/AvailableItemPicker.md)                     | Sectioned pool picker shell                                                                             |
+| [PillTabs](../../src/app/components/ui/PillTabs.md)                                           | Tabs with optional leading pill/badge in labels                                                         |
+| [ImageCheckbox](../../src/app/components/ui/ImageCheckbox.md)                                 | Card checkbox with optional image or media slot                                                         |
+| [BadgeCard](../../src/app/components/ui/BadgeCard.md)                                         | Mantine UI badge feature card                                                                           |
+| [AddFromDataSourceModal](../../src/app/components/library/AddFromDataSourceModal.md)          | Channel set + external directory picker modal                                                           |
+| [SidebarDriveControls](../../src/app/components/SidebarDriveControls/SidebarDriveControls.md) | Sidebar Save / Check Drive ([#368](https://github.com/pskillen/codeplug-studio/issues/368))             |
+| [SoftWarning](../../src/app/components/ui/SoftWarning.md)                                     | Compact theme-aware warning panel for sidebar chrome                                                    |
+| [GettingStartedContent](../../src/app/components/onboarding/GettingStartedContent.md)         | Empty-state + Quick start guide ([#345](https://github.com/pskillen/codeplug-studio/issues/345))        |
 | [AppHeader](../../src/app/components/ui/AppHeader.md)                                         | Shell header burger + branded wordmark ([#330](https://github.com/pskillen/codeplug-studio/issues/330)) |
-| [ActiveProjectBar](../../src/app/components/ActiveProjectBar/ActiveProjectBar.md)             | Active project name + Switch (closes mobile drawer)                                              |
-| [EntityDeleteButton](../../src/app/components/library/EntityDeleteButton.md)                  | Editor footer delete for library entities                                                        |
-| [EntityListDeleteAction](../../src/app/components/library/EntityListDeleteAction.md)          | List row delete trash icon                                                                       |
-| [DataTable.md](../../src/app/components/ui/DataTable.md)                                      | List primitive sidecar — virtual props                                                           |
-| [library/README.md](../library/README.md)                                                     | Library CRUD and list routes                                                                     |
-| [map/README.md](../map/README.md)                                                             | Embedded channel map                                                                             |
+| [ActiveProjectBar](../../src/app/components/ActiveProjectBar/ActiveProjectBar.md)             | Active project name + Switch (closes mobile drawer)                                                     |
+| [EntityDeleteButton](../../src/app/components/library/EntityDeleteButton.md)                  | Editor footer delete for library entities                                                               |
+| [EntityListDeleteAction](../../src/app/components/library/EntityListDeleteAction.md)          | List row delete trash icon                                                                              |
+| [DataTable.md](../../src/app/components/ui/DataTable.md)                                      | List primitive sidecar — virtual props                                                                  |
+| [library/README.md](../library/README.md)                                                     | Library CRUD and list routes                                                                            |
+| [map/README.md](../map/README.md)                                                             | Embedded channel map                                                                                    |
 
 Shipped ([#20](https://github.com/pskillen/codeplug-studio/issues/20) library routes, [#381](https://github.com/pskillen/codeplug-studio/issues/381) virtualisation, [#460](https://github.com/pskillen/codeplug-studio/issues/460) list kit) — progress/outstanding logs retired in [#294](https://github.com/pskillen/codeplug-studio/issues/294).
 
@@ -129,18 +129,18 @@ The **active-project selection** is remembered across reloads via `localStorage`
 
 Brand SVGs live under [`public/branding/`](../../../public/branding/) ([#330](https://github.com/pskillen/codeplug-studio/issues/330)):
 
-| Asset                  | Path                              | Use                                      |
-| ---------------------- | --------------------------------- | ---------------------------------------- |
-| Icon mark              | `public/branding/studio-icon.svg` | Favicon + apple-touch (`index.html`)     |
+| Asset                  | Path                              | Use                                                                       |
+| ---------------------- | --------------------------------- | ------------------------------------------------------------------------- |
+| Icon mark              | `public/branding/studio-icon.svg` | Favicon + apple-touch (`index.html`)                                      |
 | Wordmark (icon + text) | `public/branding/studio-logo.svg` | App header via [`AppHeader`](../../../src/app/components/ui/AppHeader.md) |
-| Hero illustration      | `public/branding/studio-hero.svg` | OG image meta; optional marketing/splash |
+| Hero illustration      | `public/branding/studio-hero.svg` | OG image meta; optional marketing/splash                                  |
 
 Colours assume the default **dark** colour scheme. To update branding, replace the SVGs in place (keep filenames) or change the paths in `index.html` and `AppHeader`.
 
-| Area              | Status  | Notes                                                                 |
-| ----------------- | ------- | --------------------------------------------------------------------- |
-| Favicon / tab     | Shipped | SVG icon + theme-color + OG image in `index.html`                     |
-| Header wordmark   | Shipped | [`AppHeader`](../../../src/app/components/ui/AppHeader.md)            |
+| Area            | Status  | Notes                                                      |
+| --------------- | ------- | ---------------------------------------------------------- |
+| Favicon / tab   | Shipped | SVG icon + theme-color + OG image in `index.html`          |
+| Header wordmark | Shipped | [`AppHeader`](../../../src/app/components/ui/AppHeader.md) |
 
 ## Footer and feedback links
 

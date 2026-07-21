@@ -12,7 +12,13 @@ const LOGO_HEIGHT_PX = 28;
 export default function AppHeader({ opened, onToggle }: AppHeaderProps) {
   return (
     <Group h="100%" px="md" gap="sm">
-      <Burger opened={opened} onClick={onToggle} hiddenFrom="sm" size="sm" aria-label="Toggle navigation" />
+      <Burger
+        opened={opened}
+        onClick={onToggle}
+        hiddenFrom="sm"
+        size="sm"
+        aria-label="Toggle navigation"
+      />
       <UnstyledButton
         component={Link}
         to="/"

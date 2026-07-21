@@ -8,10 +8,10 @@ Gives every route a recognisable **Codeplug Studio** mark in the Mantine `AppShe
 
 ## Props
 
-| Prop       | Type         | Default | Description                          |
-| ---------- | ------------ | ------- | ------------------------------------ |
+| Prop       | Type         | Default | Description                           |
+| ---------- | ------------ | ------- | ------------------------------------- |
 | `opened`   | `boolean`    | —       | Mobile navbar open state for `Burger` |
-| `onToggle` | `() => void` | —       | Toggle mobile navbar                 |
+| `onToggle` | `() => void` | —       | Toggle mobile navbar                  |
 
 ## Usage
 
