@@ -23,7 +23,7 @@ Product behaviour for Baofeng DM-32UV CPS CSV export in Codeplug Studio. Wire co
 | Per-repeater scratch channels   | Shipped | [#140](https://github.com/pskillen/codeplug-studio/issues/140) — [export-projections.md](export-projections.md)                                                                                                               |
 | CRLF export line endings        | Shipped | [#314](https://github.com/pskillen/codeplug-studio/issues/314) — Windows CPS import compatibility                                                                                                                             |
 | APRS channel cols + `APRS.md`   | Shipped | [#250](https://github.com/pskillen/codeplug-studio/issues/250) — [aprs.md](../../../reference/dm32/aprs.md)                                                                                                                   |
-| Prefer-NeonPlug export warning  | Shipped | [#556](https://github.com/pskillen/codeplug-studio/issues/556) — orange alert on DM32 export UI; CSV download remains available                                                                                               |
+| Prefer-NeonPlug export warning  | Shipped | [#556](https://github.com/pskillen/codeplug-studio/issues/556) — orange alert at top of export panel and again above download buttons; New build format/profile pills; CSV download remains available                         |
 | CPS import                      | Planned | [#112](https://github.com/pskillen/codeplug-studio/issues/112)                                                                                                                                                                |
 
 ## Trait profile vs radio profile
