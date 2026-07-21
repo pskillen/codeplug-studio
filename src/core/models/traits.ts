@@ -83,7 +83,11 @@ export const TRAIT_PROFILES: Record<string, TraitProfile> = {
     profileId: 'neonplug-dm32uv',
     formatId: 'neonplug',
     label: 'Baofeng DM-32UV (NeonPlug)',
-    traits: [BuildCapabilityTrait.ZoneGrouping, BuildCapabilityTrait.ScanLists],
+    traits: [
+      BuildCapabilityTrait.ZoneGrouping,
+      BuildCapabilityTrait.ScanLists,
+      BuildCapabilityTrait.MxNChannelExpansion,
+    ],
   },
   'neonplug-uv5rmini': {
     profileId: 'neonplug-uv5rmini',

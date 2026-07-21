@@ -48,12 +48,12 @@ describe('trait profiles', () => {
     expect(profile?.traits).not.toContain(BuildCapabilityTrait.DedicatedScanLists);
   });
 
-  it('registers neonplug-dm32uv with zone grouping and zone-derived scan lists', () => {
+  it('registers neonplug-dm32uv with zone grouping, scan lists, and m×n expansion', () => {
     const profile = traitProfileFor('neonplug-dm32uv');
     expect(profile?.formatId).toBe('neonplug');
     expect(profile?.traits).toContain(BuildCapabilityTrait.ZoneGrouping);
     expect(profile?.traits).toContain(BuildCapabilityTrait.ScanLists);
-    expect(profile?.traits).not.toContain(BuildCapabilityTrait.MxNChannelExpansion);
+    expect(profile?.traits).toContain(BuildCapabilityTrait.MxNChannelExpansion);
     expect(profile?.traits).not.toContain(BuildCapabilityTrait.DedicatedScanLists);
   });
 
