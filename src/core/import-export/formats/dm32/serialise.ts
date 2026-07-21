@@ -7,7 +7,10 @@ import {
   applyListWireNameLimits,
   buildListWireNameMap,
 } from '@core/import-export/channelExpansion/listWireNames.ts';
-import { deriveZoneDerivedScanLists } from '@core/import-export/zoneDerivedScanLists/derive.ts';
+import {
+  deriveZoneDerivedScanLists,
+  ensureDm32ScanCsvFloor,
+} from '@core/import-export/zoneDerivedScanLists/derive.ts';
 import { formatCsv } from './csvWrite.ts';
 import {
   CHANNEL_HEADERS,
@@ -324,12 +327,15 @@ export function serialiseDm32Files(
   );
   const expansionByChannelId = dm32ChannelExpansionById(expandedChannels);
 
-  const scanExport = deriveZoneDerivedScanLists(
-    exportAssembled,
-    library,
-    expansionByChannelId,
-    options,
-    ctxWarnings,
+  const scanExport = ensureDm32ScanCsvFloor(
+    deriveZoneDerivedScanLists(
+      exportAssembled,
+      library,
+      expansionByChannelId,
+      options,
+      ctxWarnings,
+    ),
+    expandedChannels[0]?.wireName,
   );
 
   const templateChannel = library.channels[0] ?? exportAssembled.channels[0]?.entity;
