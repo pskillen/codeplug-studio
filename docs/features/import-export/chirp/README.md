@@ -12,7 +12,7 @@ Product behaviour for CHIRP analogue FM/AM CSV in Codeplug Studio. Wire column t
 | --------------------------------------------------------- | ------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Wire reference                                            | Shipped | [reference/chirp/](../../../reference/chirp/README.md)                                                                                                                                  |
 | Trait profiles (`chirp-uv5r`, `chirp-rt95`, `chirp-uv21`) | Shipped | `TRAIT_PROFILES` — `FlatMemoryList`, `PerChannelScanFlag`                                                                                                                               |
-| Radio profiles + columns                                  | Shipped | `formats/chirp/profiles.ts`, `columns.ts`                                                                                                                                               |
+| Radio profiles + columns                                  | Shipped | `formats/chirp/profiles.ts`, `columns.ts` — UV-5R Mini caps corrected to 999 / 12 ([#584](https://github.com/pskillen/codeplug-studio/issues/584)) |
 | Flat memory assemble projection                           | Shipped | `exportOrderOrSlot.ts`, `assemble.ts` — `orderOrSlot` on overrides                                                                                                                      |
 | Export adapter (single CSV)                               | Shipped | `exportBuildSingleFile` → `serialiseChirpCsv`                                                                                                                                           |
 | Channels build UI                                         | Shipped | `/builds/:id/channels` — flat memory list, wire names, scan tri-state                                                                                                                   |
@@ -32,7 +32,7 @@ Studio uses two related concepts (same `profileId` keys):
 
 | Profile id   | Label               | Name limit | Memory slots |
 | ------------ | ------------------- | ---------- | ------------ |
-| `chirp-uv5r` | Baofeng UV-5R Mini  | 7          | 128          |
+| `chirp-uv5r` | Baofeng UV-5R Mini  | 12         | 999          |
 | `chirp-rt95` | Retevis RT95 VOX    | 16         | 128          |
 | `chirp-uv21` | Baofeng UV-21Pro V2 | 16         | 128          |
 

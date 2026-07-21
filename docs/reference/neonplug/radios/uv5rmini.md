@@ -49,12 +49,12 @@ Same idea as CHIRP UV-5R (traits only):
 
 ## Export caps (Studio profile)
 
-NeonPlug **binary** pathway — intentionally different from CHIRP CSV UV-5R:
+NeonPlug **binary** pathway — same UV-5R Mini memory/name caps as CHIRP CSV; delivery differs:
 
 | Cap                         | NeonPlug `neonplug-uv5rmini` | CHIRP `chirp-uv5r` (sibling) |
 | --------------------------- | ---------------------------- | ---------------------------- |
-| Memory / channels           | **999**                      | 128                          |
-| Channel name                | **12**                       | 7                            |
+| Memory / channels           | **999**                      | **999**                      |
+| Channel name                | **12**                       | **12**                       |
 | Zone / digital organisation | N/A                          | N/A                          |
 
 Export warnings use these Studio radio profile constants — not hard-coded in library UI.

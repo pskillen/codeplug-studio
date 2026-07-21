@@ -39,7 +39,7 @@ Parse by **header name**, not column index.
 
 ## Export name length and shortening
 
-CHIRP `Name` is the composed wire name (`composeChannelWireName`). Profile `nameLimit` varies (e.g. **7** on UV-5R mini, **16** on UV-21 Pro V2). Shortening runs per export file with a shared reserved-name set. See name shortening (Phase 4+).
+CHIRP `Name` is the composed wire name (`composeChannelWireName`). Profile `nameLimit` varies (e.g. **12** on UV-5R mini, **16** on UV-21 Pro V2). Shortening runs per export file with a shared reserved-name set. See name shortening (Phase 4+).
 
 ## Duplex
 

@@ -62,7 +62,7 @@ Structural rules enforced by `cps-verify` for profile `chirp-uv5r` ([wire-verifi
 | Quoting      | Selective RFC 4180                                                                                           |
 | Headers      | Exact `CHIRP_HEADERS` set + order                                                                            |
 | Foreign keys | None (flat memory list)                                                                                      |
-| Cardinality  | Row count ≤ `maxMemorySlots` (128); channel `Name` ≤ `nameLimit` (7) — [chirp-uv5r.md](radios/chirp-uv5r.md) |
+| Cardinality  | Row count ≤ `maxMemorySlots` (999); channel `Name` ≤ `nameLimit` (12) — [chirp-uv5r.md](radios/chirp-uv5r.md) |
 | Files        | Single `.csv` (any basename)                                                                                 |
 
 ## DMR columns on analogue exports
