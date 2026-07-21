@@ -26,6 +26,17 @@ On DM32UV export with m×n expansion enabled (default), Studio may emit **more t
 
 Studio internal model uses Hz; convert at the boundary.
 
+### Receive-only / no-TX sentinel
+
+NeonPlug’s aviation/FM receive-only contract (RX **87–136 MHz** with `forbidTx`) stores TX as `0xFF` on the radio and uses JSON sentinel **`1666.666`** (`NO_TX_FREQUENCY`). Write-time validation (`isValidChannelFrequency`) accepts that band **only** when `forbidTx` is true **and** TX is the sentinel — `txFrequency: 0` is treated as invalid and the channel is dropped before write.
+
+| Condition | Studio export |
+| --------- | ------------- |
+| Effective `forbidTx` and RX MHz in `[87, 136)` | `forbidTx: true`, `txFrequency: 1666.666` |
+| Otherwise | `txFrequency` from model Hz (null/≤0 → `0`) |
+
+Ground truth: NeonPlug `frequencyValidator.ts` / airport import (`airportChannels.ts`).
+
 ## Mode and TX allow
 
 | Field        | Type / enum                                                  | Notes                  |
@@ -102,6 +113,7 @@ Many `unknown*` fields exist (`unknown1A_6_4`, `unknown1C_1_0`, `unknown2A`, …
 ### Export notes
 
 - Studio ladder wire **`Middle`** maps to NeonPlug **`Medium`**.
+- **Receive-only airband / FM band:** when effective `forbidTx` and RX is in **87–136 MHz**, emit `txFrequency: 1666.666` (not `0`) — see [Frequencies](#frequencies) above.
 - **DM32UV:** `contactId` / `rxGroupListId` / `scanListId` resolve from library UUID FKs (`0` = none). `scanListId` is 1-based into zone-derived `scanLists[]` (max **15**).
 - **UV5R-Mini:** org FKs stay `0`; org arrays empty.
 - **DM32UV:** `number` is sequential 1…N in assemble channel order.
