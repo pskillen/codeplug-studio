@@ -23,7 +23,7 @@ Mounted from `BuildSectionNavFrame` above `BuildNavLinks`.
 ## Behaviour
 
 - Renders nothing when the current build cannot be resolved
-- **Select** lists sibling builds by name; changing selection navigates via `pathForSwitchedBuild`
+- **Select** lists sibling builds **grouped by CPS format** (muted group headers; catalog order; name-sorted within each group); changing selection navigates via `pathForSwitchedBuild`
 - Preserves the current sub-route when the target build exposes that nav item; otherwise lands on `/export`
 - Shows format · profile under the select as a read-only cue
 

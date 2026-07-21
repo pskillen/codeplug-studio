@@ -1,10 +1,44 @@
 import { Select, Stack, Text } from '@mantine/core';
-import { formatCatalogEntry } from '@core/import-export/registry.ts';
+import { formatCatalog, formatCatalogEntry } from '@core/import-export/registry.ts';
 import type { FormatId } from '@core/import-export/types.ts';
+import type { FormatBuild } from '@core/models/formatBuild.ts';
 import { traitProfileFor } from '@core/models/traits.ts';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { pathForSwitchedBuild } from '../../../routes/builds/nav.ts';
 import { useFormatBuild, useFormatBuilds } from '../../../state/useFormatBuilds.ts';
+
+/** Mantine Select groups — catalog order, builds sorted by name within each format. */
+function buildSelectGroups(builds: FormatBuild[]) {
+  const byFormat = new Map<string, { value: string; label: string }[]>();
+
+  for (const b of builds) {
+    const key = b.formatId;
+    const items = byFormat.get(key) ?? [];
+    items.push({ value: b.id, label: b.name });
+    byFormat.set(key, items);
+  }
+
+  for (const items of byFormat.values()) {
+    items.sort((a, b) => a.label.localeCompare(b.label, undefined, { sensitivity: 'base' }));
+  }
+
+  const groups: { group: string; items: { value: string; label: string }[] }[] = [];
+
+  for (const entry of formatCatalog) {
+    const items = byFormat.get(entry.id);
+    if (!items?.length) continue;
+    groups.push({ group: entry.label, items });
+    byFormat.delete(entry.id);
+  }
+
+  // Any unknown format ids (should not happen) — append last
+  for (const [formatId, items] of byFormat) {
+    const label = formatCatalogEntry(formatId as FormatId)?.label ?? formatId;
+    groups.push({ group: label, items });
+  }
+
+  return groups;
+}
 
 export default function BuildSwitcher() {
   const { id: paramId } = useParams();
@@ -18,10 +52,7 @@ export default function BuildSwitcher() {
 
   const formatLabel = formatCatalogEntry(build.formatId as FormatId)?.label ?? build.formatId;
   const profileLabel = traitProfileFor(build.profileId)?.label ?? build.profileId;
-  const selectData = builds.map((b) => ({
-    value: b.id,
-    label: b.name,
-  }));
+  const selectData = buildSelectGroups(builds);
 
   return (
     <Stack gap="xs">
