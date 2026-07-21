@@ -25,7 +25,7 @@ Reuse concepts already used by DM32 CSV:
 
 - Zone grouping
 - Zone-derived or projected scan lists
-- Multi-talkgroup / m×n expansion deferred (same product questions as DM32; not enabled on this NeonPlug profile yet)
+- Multi-talkgroup / m×n expansion + scratch companions (default on) — see [export-projections.md](../../../features/import-export/neonplug/export-projections.md)
 
 ## Export caps (Studio profile)
 

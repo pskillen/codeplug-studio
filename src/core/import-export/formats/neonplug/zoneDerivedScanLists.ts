@@ -7,7 +7,7 @@ import {
   scanMemberIds,
 } from '@core/import-export/zoneDerivedScanLists/members.ts';
 import type { AssembledBuild } from '@core/services/assemble.ts';
-import { channelNumbersForMembers } from './exportContext.ts';
+import { expandNeonplugZoneMemberNumbers } from './channelExpansion.ts';
 import type { NeonplugDm32uvRadioProfile } from './profiles.ts';
 import type { NeonplugScanList } from './wireTypes.ts';
 
@@ -16,18 +16,19 @@ export const NEONPLUG_MAX_CHANNEL_SCAN_LIST_ID = 15;
 
 export interface NeonplugZoneDerivedScanExport {
   scanLists: NeonplugScanList[];
-  /** Channel UUID → 1-based NeonPlug `scanListId`. */
+  /** Channel UUID → 1-based NeonPlug `scanListId` (inherited by all expanded rows). */
   scanListIdByChannelId: Map<string, number>;
 }
 
 /**
  * Zone-derived scan lists for NeonPlug DM32UV — no synthetic carriers.
- * Reuses format-agnostic scan membership helpers; projects channel **numbers**.
+ * Reuses format-agnostic scan membership helpers; projects channel **numbers**
+ * after m×n expansion, then truncates to `scanListMembers`.
  */
 export function deriveNeonplugZoneDerivedScanLists(
   assembled: AssembledBuild,
   profile: NeonplugDm32uvRadioProfile,
-  channelNumberById: Map<string, number>,
+  numbersBySourceChannelId: ReadonlyMap<string, readonly number[]>,
   options?: CpsExportOptions,
   warnings: string[] = [],
 ): NeonplugZoneDerivedScanExport {
@@ -68,12 +69,13 @@ export function deriveNeonplugZoneDerivedScanLists(
     const libraryZone = zoneById.get(assembledZone.zoneId);
     if (!libraryZone) continue;
 
-    let memberIds = scanMemberIds(libraryZone, library.zones, {
+    const memberIds = scanMemberIds(libraryZone, library.zones, {
       context: options?.zoneBehaviourContext,
       layoutEntry: entry,
     }).filter((channelId) => {
       if (!exportedChannelIds.has(channelId)) return false;
-      if (!channelNumberById.has(channelId)) return false;
+      const numbers = numbersBySourceChannelId.get(channelId);
+      if (numbers == null || numbers.length === 0) return false;
       const channel = channelById.get(channelId);
       return channel != null && !effectiveScanSkips(channel, scanContext);
     });
@@ -85,11 +87,19 @@ export function deriveNeonplugZoneDerivedScanLists(
       continue;
     }
 
-    if (memberIds.length > profile.scanListMembers) {
+    let channels = expandNeonplugZoneMemberNumbers(memberIds, numbersBySourceChannelId);
+    if (channels.length > profile.scanListMembers) {
       warnings.push(
-        `Zone "${assembledZone.wireName}" scan list truncated from ${memberIds.length} to ${profile.scanListMembers} members`,
+        `Zone "${assembledZone.wireName}" scan list truncated from ${channels.length} to ${profile.scanListMembers} members`,
       );
-      memberIds = memberIds.slice(0, profile.scanListMembers);
+      channels = channels.slice(0, profile.scanListMembers);
+    }
+
+    if (channels.length === 0) {
+      warnings.push(
+        `Zone "${assembledZone.wireName}" has no scan-eligible members; scan list skipped`,
+      );
+      continue;
     }
 
     const name = applyListWireNameLimits(
@@ -102,7 +112,6 @@ export function deriveNeonplugZoneDerivedScanLists(
       profile.scanListNameLimit,
     );
 
-    const channels = channelNumbersForMembers(memberIds, channelNumberById);
     const scanListId = result.scanLists.length + 1;
 
     result.scanLists.push({

@@ -21,7 +21,7 @@ When build `orderOrSlot` (or zone member layout order) differs from the library 
 
 **Column sort and filter** on list pages are client-side convenience only — they do **not** change export order. CHIRP memory order and zone `orderOrSlot` are updated via up/down reorder, build **Sort…**, or library edits — not table column sort. Reorder and Sort… are disabled while search or “hide not included” filters are active on the zones page.
 
-List **Export** column: **Skip from export** for most rows; zones with library **Don't export as its own zone** show **Force export** only (red when on). Turn force off to honour the library omit.
+List **Skip / Force** column: **Skip from export** for most rows; zones with library **Don't export as its own zone** show **Force export** only (red when on). Turn force off to honour the library omit.
 
 Build **contacts** wire preview debounces toolbar search (300 ms), matches **library name or callsign**, and shows a **Callsign** column for digital contacts. Large contact builds inherit shared [`DataTable`](../../src/app/components/ui/DataTable.md) virtual tbody rendering (`virtualize: 'auto'`, threshold 75 rows) for responsive scrolling.
 

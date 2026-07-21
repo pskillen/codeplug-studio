@@ -11,7 +11,8 @@ export const neonplugExportAdapter: MultiFileExportAdapter = {
   defaultExportSettings: {
     defaultScanInclusion: 'scan',
     expandModes: false,
-    expandRxGroupLists: false,
+    expandRxGroupLists: true,
+    exportScratchChannels: true,
   },
   fileNames: [NEONPLUG_JSON_FILE_NAME],
   collectExportWarnings(assembled, options?: CpsExportOptions) {

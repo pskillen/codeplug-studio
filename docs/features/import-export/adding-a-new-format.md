@@ -237,7 +237,7 @@ Each format build is created from a **trait profile** (`TRAIT_PROFILES` in `src/
 | `dm32-baofeng-dm32uv`              | `dm32`     | `ZoneGrouping`, `ScanLists`, `MxNChannelExpansion`                         |
 | `chirp-uv5r`                       | `chirp`    | `FlatMemoryList`, `PerChannelScanFlag`                                     |
 | `anytone-at-d890uv`                | `anytone`  | `ZoneGrouping`, `DedicatedScanLists` (library `ScanList` + `ScanList.CSV`) |
-| `neonplug-dm32uv`                  | `neonplug` | `ZoneGrouping`, `ScanLists`                                                |
+| `neonplug-dm32uv`                  | `neonplug` | `ZoneGrouping`, `ScanLists`, `MxNChannelExpansion`                         |
 | `neonplug-uv5rmini`                | `neonplug` | `FlatMemoryList`, `PerChannelScanFlag`                                     |
 
 **Dedicated scan lists:** formats with a first-class scan-list CPS file (Anytone `ScanList.CSV`) use the `DedicatedScanLists` trait and library `ScanList` entities — not DM32-style zone-derived `ScanLists`. Channel→scan-list assignment is `Channel.scanListId` on the library channel. See [library scan lists](../../features/library/scan-lists.md) and `assemble.ts`.

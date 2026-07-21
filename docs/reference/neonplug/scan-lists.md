@@ -26,16 +26,18 @@ Wire shape for `codeplug.json` → `scanLists[]`.
 - Priority / designated TX channel fields also use channel numbers (with NeonPlug encoding quirks for “None” / “Current”).
 - Channel `scanListId`: `0` = none; else **1-based** index into `scanLists[]`. Channel wire field is 4 bits (0–15), so at most **15** referenceable lists.
 
-## Studio export mapping (shipped #540)
+## Studio export mapping (shipped #540 / #553)
 
 DM32 CSV synthesises `Scan.csv` from **zone-derived** scan lists (with synthetic carriers). NeonPlug stores **first-class** scan list objects.
 
-| Behaviour             | Studio export                                               |
-| --------------------- | ----------------------------------------------------------- |
-| Source                | Zone grouping `exportScanList` + scan membership helpers    |
-| Members               | Channel **numbers** (no m×n expansion on this profile)      |
-| Synthetic carriers    | **Not emitted** (DM32 CSV quirk only)                       |
-| Priority / hang / CTC | Lossy defaults: `ctcScanMode`/`scanTxMode` = `0`; omit rest |
-| Cap                   | Min of profile `maxScanLists` and **15**                    |
+| Behaviour             | Studio export                                                             |
+| --------------------- | ------------------------------------------------------------------------- |
+| Source                | Zone grouping `exportScanList` + scan membership helpers                  |
+| Members               | Channel **numbers**, fanned out after m×n expansion, then truncated to 15 |
+| Synthetic carriers    | **Not emitted** (DM32 CSV quirk only)                                     |
+| Priority / hang / CTC | Lossy defaults: `ctcScanMode`/`scanTxMode` = `0`; omit rest               |
+| Cap                   | Min of profile `maxScanLists` and **15**                                  |
+
+All expanded channel objects for a source library channel inherit the same `scanListId`.
 
 UV5R-Mini leaves `scanLists` empty; per-channel `scanAdd` on [channels](channels.md) carries scan intent.

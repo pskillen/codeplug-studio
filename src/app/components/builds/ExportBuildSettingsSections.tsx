@@ -134,7 +134,7 @@ export default function ExportBuildSettingsSections({
         >
           <Switch
             label={TRAIT_LABELS.mxnChannelExpansion}
-            description="Emit one Channel.CSV memory per talk group on each repeater channel's RX group list."
+            description="Emit one export channel memory per talk group on each repeater channel's RX group list."
             checked={resolvedSettings.expandRxGroupLists}
             disabled={saving}
             onChange={(event) =>
