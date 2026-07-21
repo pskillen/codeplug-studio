@@ -24,9 +24,9 @@ describe('buildNavItems', () => {
     expect(labels).toContain('NeonPlug settings');
   });
 
-  it('omits NeonPlug settings for UV5R NeonPlug builds', () => {
+  it('includes NeonPlug settings for UV5R NeonPlug builds', () => {
     const build = { ...newFormatBuild('proj', 'neonplug-uv5rmini'), formatId: 'neonplug' };
-    expect(buildNavItems(build).map((item) => item.label)).not.toContain('NeonPlug settings');
+    expect(buildNavItems(build).map((item) => item.label)).toContain('NeonPlug settings');
   });
 });
 
