@@ -1,5 +1,9 @@
 import type { CpsWireHydrationBase } from '@core/models/cpsWireHydration.ts';
 import { NEONPLUG_CODEPLUG_VERSION } from './serialise.ts';
+import {
+  summariseUv5rminiRadioSpecific,
+  type NeonplugUv5rSettingSection,
+} from './uv5rRadioSpecificPreview.ts';
 import type { NeonplugCodeplugData, NeonplugRadioId, NeonplugRadioInfo } from './wireTypes.ts';
 
 /**
@@ -52,6 +56,11 @@ export interface NeonplugDonorRetainSummary {
   hasRadioSettings: boolean;
   /** Shallow, safe radioSettings keys (string/number/boolean leaf values only). */
   radioSettingsPreview: Record<string, string | number | boolean>;
+  /**
+   * UV5R-Mini labelled decode of `radioSettings.radioSpecific`.
+   * Empty for DM32-style bags (shallow preview only).
+   */
+  uv5rRadioSpecificSections: NeonplugUv5rSettingSection[];
 }
 
 /** Extract retain-from-base slices from parsed CodeplugData. */
@@ -139,5 +148,6 @@ export function summariseNeonplugDonorRetain(bag: NeonplugDonorBag): NeonplugDon
     hasDigitalEmergencyConfig: retain.digitalEmergencyConfig != null,
     hasRadioSettings: retain.radioSettings != null,
     radioSettingsPreview: summariseNeonplugRadioSettings(retain.radioSettings),
+    uv5rRadioSpecificSections: summariseUv5rminiRadioSpecific(retain.radioSettings),
   };
 }

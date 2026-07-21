@@ -129,6 +129,37 @@ describe('neonplug/donorRetain', () => {
     expect(summary.hasDigitalEmergencyConfig).toBe(true);
     expect(summary.hasRadioSettings).toBe(true);
     expect(summary.radioSettingsPreview.powerOnDisplayLine1).toBe('KEEP');
+    expect(summary.uv5rRadioSpecificSections).toEqual([]);
     expect(JSON.stringify(summary)).not.toContain('SECRET-DO-NOT-SHOW');
+  });
+
+  it('summarises UV5R radioSpecific into labelled sections without changing DM32 preview', () => {
+    const bag = extractNeonplugDonorRetain(
+      sampleCodeplug({
+        radioIds: [],
+        quickContacts: [],
+        messages: [],
+        digitalEmergencies: [],
+        analogEmergencies: [],
+        encryptionKeys: [],
+        digitalEmergencyConfig: null,
+        radioSettings: {
+          radioSpecific: {
+            squelch: 1,
+            beep: 0,
+            voicesw: false,
+            tailclear: true,
+          },
+        },
+        radioInfo: { model: 'UV5R-Mini', firmware: '', buildDate: '' },
+      }),
+    );
+    const summary = summariseNeonplugDonorRetain(bag);
+
+    expect(summary.radioSettingsPreview).toEqual({});
+    expect(summary.uv5rRadioSpecificSections.length).toBeGreaterThan(0);
+    const basic = summary.uv5rRadioSpecificSections.find((s) => s.id === 'basic');
+    expect(basic?.rows.find((r) => r.key === 'squelch')?.displayValue).toBe('1');
+    expect(basic?.rows.find((r) => r.key === 'beep')?.displayValue).toBe('Off');
   });
 });
