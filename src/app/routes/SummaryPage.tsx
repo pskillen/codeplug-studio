@@ -3,16 +3,24 @@ import { Link, useNavigate } from 'react-router-dom';
 import { applyFilters, DEFAULT_MAP_FILTER_OPTS } from '@core/domain/mapProjection.ts';
 import { summariseLibrary } from '@core/domain/summary.ts';
 import CodeplugMap from '../components/CodeplugMap/CodeplugMap.tsx';
+import ExportProjectYamlPanel from '../components/import-export/ExportProjectYamlPanel.tsx';
+import ExportToDrivePanel from '../components/import-export/ExportToDrivePanel.tsx';
+import ImportYamlIntoActivePanel from '../components/import-export/ImportYamlIntoActivePanel.tsx';
 import { useLibrary } from '../state/useLibrary.ts';
+import { useProjects } from '../state/useProjects.ts';
 import { ListPage, PageSection, PageSectionGrid } from '../components/ui/index.ts';
 
 export default function SummaryPage() {
   const { library, loading } = useLibrary();
+  const { activeProjectId } = useProjects();
   const navigate = useNavigate();
 
   if (loading) {
     return (
-      <ListPage title="Summary" description="Read-only summary of the active project's library.">
+      <ListPage
+        title="Summary"
+        description="Library inventory and project YAML backup for the active project."
+      >
         <Text>Loading…</Text>
       </ListPage>
     );
@@ -33,7 +41,10 @@ export default function SummaryPage() {
   ];
 
   return (
-    <ListPage title="Summary" description="Read-only summary of the active project's library.">
+    <ListPage
+      title="Summary"
+      description="Library inventory and project YAML backup for the active project. CPS export for a radio lives under Export for radio."
+    >
       <SimpleGrid cols={{ base: 2, sm: 3, md: 6 }} spacing="sm">
         {counts.map((c) => (
           <PageSection key={c.label}>
@@ -92,6 +103,23 @@ export default function SummaryPage() {
             ))}
           </Stack>
         )}
+      </PageSection>
+
+      <PageSection
+        title="Project interchange"
+        description="Lossless project backup — library, builds, and metadata as native YAML."
+      >
+        <PageSectionGrid>
+          <PageSection title="Import (replace active project)">
+            <ImportYamlIntoActivePanel />
+          </PageSection>
+          <PageSection title="Export">
+            <Stack gap="md">
+              <ExportProjectYamlPanel key={activeProjectId ?? 'none'} />
+              <ExportToDrivePanel key={`${activeProjectId ?? 'none'}-drive`} />
+            </Stack>
+          </PageSection>
+        </PageSectionGrid>
       </PageSection>
     </ListPage>
   );
