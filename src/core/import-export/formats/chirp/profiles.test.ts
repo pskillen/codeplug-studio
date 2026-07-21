@@ -11,6 +11,12 @@ describe('chirp/profiles', () => {
     expect(CHIRP_PROFILES.map((p) => p.id)).toEqual(['chirp-uv5r', 'chirp-uv21', 'chirp-rt95']);
   });
 
+  it('UV-5R Mini uses 999 memory slots and 12-char names', () => {
+    const profile = getChirpProfile('chirp-uv5r');
+    expect(profile.maxMemorySlots).toBe(999);
+    expect(profile.nameLimit).toBe(12);
+  });
+
   it('UV-5R power ladder round-trips', () => {
     expect(chirpWireToPercent('chirp-uv5r', '5.0W')).toBe(100);
     expect(chirpWireToPercent('chirp-uv5r', '1.0W')).toBe(20);

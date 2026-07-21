@@ -52,7 +52,7 @@ describe('getProfileExportLimits', () => {
   });
 
   it.each([
-    { profileId: 'chirp-uv5r', maxChannels: 128, nameLengthChannel: 7 },
+    { profileId: 'chirp-uv5r', maxChannels: 999, nameLengthChannel: 12 },
     { profileId: 'chirp-uv21', maxChannels: 128, nameLengthChannel: 16 },
     { profileId: 'chirp-rt95', maxChannels: 128, nameLengthChannel: 16 },
   ] as const)(

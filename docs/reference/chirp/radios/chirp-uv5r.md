@@ -6,17 +6,17 @@
 
 ## Limits
 
-| Constraint       | Value   | Export behaviour                                                         |
-| ---------------- | ------- | ------------------------------------------------------------------------ |
-| Max memory slots | 128     | Warn when channel count exceeds; truncate lowest-priority rows if forced |
-| Channel name     | 7 chars | Name shortening at export boundary                                       |
-| Modes            | NFM, AM | Skip non-FM/AM internal modes with warning                               |
+| Constraint       | Value    | Export behaviour                                                         |
+| ---------------- | -------- | ------------------------------------------------------------------------ |
+| Max memory slots | 999      | Warn when channel count exceeds; truncate lowest-priority rows if forced |
+| Channel name     | 12 chars | Name shortening at export boundary                                       |
+| Modes            | NFM, AM  | Skip non-FM/AM internal modes with warning                               |
 
 Flat-memory CHIRP profiles do **not** use zones, scan lists, contacts, talk groups, or RX group lists. Radio characteristics marks those rows as not used (`getProfileExportLimits`).
 
 ## Sibling path: NeonPlug UV5R-Mini binary
 
-[NeonPlug UV5R-Mini](../../neonplug/radios/uv5rmini.md) targets the same radio family over Web Serial with different caps (e.g. **999** memories, name slice **12** bytes). Those figures apply to the NeonPlug / radio binary pathway only — **do not** copy them onto this CHIRP CSV profile.
+[NeonPlug UV5R-Mini](../../neonplug/radios/uv5rmini.md) targets the same radio family over Web Serial with the **same** memory/name caps (**999** memories, **12**-char names). Delivery differs (binary vs CHIRP CSV); caps are aligned for UV-5R Mini.
 
 ## Wire verification
 

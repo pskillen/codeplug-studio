@@ -34,7 +34,7 @@ describe('neonplug profiles', () => {
     expect(neon.rxGroupListNameLimit).toBe(dm32.rxGroupListNameLimit);
   });
 
-  it('uses NeonPlug binary UV5R caps, not CHIRP CSV 128/7', () => {
+  it('aligns UV5R Mini memory/name caps with CHIRP chirp-uv5r', () => {
     const neon = getNeonplugProfile('neonplug-uv5rmini');
     const chirp = getChirpProfile('chirp-uv5r');
     expect(neon.id).toBe('neonplug-uv5rmini');
@@ -42,10 +42,8 @@ describe('neonplug profiles', () => {
 
     expect(neon.maxMemorySlots).toBe(999);
     expect(neon.nameLimit).toBe(12);
-    expect(neon.maxMemorySlots).not.toBe(chirp.maxMemorySlots);
-    expect(neon.nameLimit).not.toBe(chirp.nameLimit);
-    expect(chirp.maxMemorySlots).toBe(128);
-    expect(chirp.nameLimit).toBe(7);
+    expect(chirp.maxMemorySlots).toBe(999);
+    expect(chirp.nameLimit).toBe(12);
   });
 
   it('maps power ladder for dm32uv', () => {

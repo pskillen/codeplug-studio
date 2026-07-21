@@ -46,7 +46,7 @@ describe('previewGeneratedChannelWireName', () => {
     const build = newFormatBuild(projectId, 'chirp-uv5r');
 
     const wireName = previewGeneratedChannelWireName(channel, build);
-    expect(wireName.length).toBeLessThanOrEqual(7);
+    expect(wireName.length).toBeLessThanOrEqual(12);
     expect(wireName).toBeTruthy();
   });
 

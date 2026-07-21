@@ -6,7 +6,7 @@ Export-time channel wire name composition and shortening. Runs at the CPS bounda
 
 **Code:** `src/core/domain/channelNaming.ts`, `src/core/import-export/channelExpansion/shortenName.ts`, `exportWireNames.ts`, `talkGroupWireNames.ts`, `listWireNames.ts`, `multiMode.ts`, `multiTalkGroup.ts`, `multiTalkGroupWireName.ts`
 
-Shortening is **shared** in `channelExpansion/` — format adapters only supply the profile `nameLimit` (e.g. CHIRP UV-5R = 7). There is no per-format rename path.
+Shortening is **shared** in `channelExpansion/` — format adapters only supply the profile `nameLimit` (e.g. CHIRP UV-5R = 12). There is no per-format rename path.
 
 ## Pipeline
 

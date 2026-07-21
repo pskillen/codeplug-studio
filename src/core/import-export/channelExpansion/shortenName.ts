@@ -326,7 +326,7 @@ export function shortenWireName(
  * Shorten, disambiguate against `reserved`, and reserve the returned name when the set is mutable.
  *
  * Leaves room for ` 2`, ` 3`, … / ` 10` disambiguation so the final name never exceeds `maxLen`
- * (CHIRP UV-5R is 7 characters — without this, `PMR44` + ` 10` becomes an 8-character overflow).
+ * (without this, `PMR44` + ` 10` becomes an 8-character overflow under a 7-character budget).
  */
 export function finalizeWireName(
   base: string,
