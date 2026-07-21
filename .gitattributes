@@ -1,6 +1,9 @@
 # LF in the repository; native line endings on checkout (CRLF on Windows with core.autocrlf=true).
 * text=auto
 
+# Unadulterated CPS sample codeplugs — preserve exact bytes (CRLF + vendor encoding).
+sample-codeplugs/**/*.csv -text
+
 # Definite binaries — never apply text normalization.
 *.png binary
 *.jpg binary
