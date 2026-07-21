@@ -44,7 +44,7 @@ flowchart LR
   Home[Home / Projects]
   Library[Library CRUD]
   IDB[(IndexedDB)]
-  ImportExport[/import-export]
+  Summary[/summary]
   Settings[Settings]
   YAML[Native YAML file]
   Drive[Google Drive]
@@ -54,9 +54,9 @@ flowchart LR
   Home -->|Open from Drive| Drive
   Settings -->|Reconnect OAuth| Drive
   IDB --> Library
-  Library --> ImportExport
-  ImportExport -->|Export download| YAML
-  ImportExport -->|Save to Drive| Drive
+  Library --> Summary
+  Summary -->|Export download| YAML
+  Summary -->|Save to Drive| Drive
   Drive -->|YAML content| IDB
 ```
 
@@ -92,9 +92,9 @@ With an active project, **Library** routes persist channels, zones, contacts, ta
 - Token and browse path stay in browser localStorage only
 - Expired sessions reconnect inline — Settings **Reconnect**, sidebar Save/Check click, or any Drive action ([#286](https://github.com/pskillen/codeplug-studio/issues/286), [#368](https://github.com/pskillen/codeplug-studio/issues/368))
 
-### 4. Import / export (native YAML)
+### 4. Project interchange (native YAML)
 
-**Import / export** (`/import-export`, active project required):
+**Summary** (`/summary`, active project required) → **Project interchange**:
 
 | Panel                 | Mode                                   | Effect                                                            |
 | --------------------- | -------------------------------------- | ----------------------------------------------------------------- |
@@ -106,17 +106,19 @@ Replace requires the YAML `project.id` to match the active project (replace pane
 
 When switching to a project linked to Drive, **Refresh from Drive** compares remote `modifiedTime` and offers a non-blocking overwrite ([#285](https://github.com/pskillen/codeplug-studio/issues/285)). **Save to Drive** runs the same comparison before push — Machine A must not silently clobber Machine B's newer YAML ([#335](https://github.com/pskillen/codeplug-studio/issues/335)).
 
+`/import-export` permanently redirects to `/summary`.
+
 ### 5. Later — CPS build export (Phase 4+)
 
-Format-specific CSV export (`exportBuild`, `assemble`) is separate from native YAML import/export. Operators will export a **build** for vendor CPS; native YAML remains the lossless Studio backup.
+Format-specific CSV export (`exportBuild`, `assemble`) is separate from native YAML import/export. Operators export a **build** under **Export for radio**; native YAML remains the lossless Studio backup.
 
 ## Services (not UI → adapters)
 
 | UI entry                | Service                                   | Persistence                                   |
 | ----------------------- | ----------------------------------------- | --------------------------------------------- |
 | Home import panel       | `importProjectFromYaml` `createNew`       | `seedProject`                                 |
-| Import / export replace | `importProjectFromYaml` `replaceExisting` | `replaceProject`                              |
-| Import / export export  | `exportProjectToYaml`                     | `loadProjectSeed` + optional `putProjectMeta` |
+| Summary replace         | `importProjectFromYaml` `replaceExisting` | `replaceProject`                              |
+| Summary export          | `exportProjectToYaml`                     | `loadProjectSeed` + optional `putProjectMeta` |
 | Save to Drive           | `exportProjectToYaml` + `GoogleDrivePort` | `putProjectMeta` + Drive file                 |
 
 App wiring: `src/app/services/projectImportExportService.ts`, `src/integrations/cloud/googleDrive.ts`.

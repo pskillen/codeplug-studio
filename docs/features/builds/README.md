@@ -13,15 +13,25 @@ The library holds RF semantics once. Each radio/CPS family expects different org
 ## Operator workflow
 
 1. Curate channels, zones, and contacts in **Library**.
-2. Open **Radio builds** (sidebar) → **New build**.
+2. Open **Export for radio** (sidebar) → **New build**.
 3. Pick a CPS format (OpenGD77, CHIRP, …) and a **profile** (trait + wire variant).
-4. Review the build overview — edit profile; open **Radio characteristics** for organisation, export limits, and power ladders.
-5. Shape wire names and zone layout on entity sub-routes — see [wire-preview.md](wire-preview.md).
-6. Export CPS files from **Export** — see [name-shortening.md](../import-export/name-shortening.md) for export name settings.
+4. Land on **Export** (default) — download CPS files, Drive upload, inclusion and name settings.
+5. Use **Setup** for rename/delete, profile changes, and capability badges; open **Radio characteristics** for organisation and export limits.
+6. Shape wire names and zone layout on entity sub-routes — see [wire-preview.md](wire-preview.md).
+7. Switch builds from the secondary-nav **Build** select without returning to the list.
 
 See [profiles.md](profiles.md) for profile picker workflows.
 
-Native YAML remains **project interchange** (library + all builds). It is not created via the new-build flow.
+Native YAML remains **project interchange** (library + all builds) on **Summary**. It is not created via the new-build flow.
+
+## Export vs Setup
+
+| Surface | Owns |
+| --- | --- |
+| **Export** (`/builds/:id/export`) | Download / Drive / donor merge / format settings / inclusion — the job operators open a build for |
+| **Setup** (`/builds/:id/overview`) | Build identity (rename/delete), target profile, organisation capability badges |
+
+Export does not host identity editors; Setup does not host download actions. Secondary nav lists **Export** first; `/builds/:id` redirects to Export.
 
 ## Routes
 
@@ -29,8 +39,9 @@ Native YAML remains **project interchange** (library + all builds). It is not cr
 | ------------------------------- | ---------------------------------------------------------------------- |
 | `/builds`                       | List builds for the active project                                     |
 | `/builds/new`                   | Create build — format → profile → name                                 |
-| `/builds/:id`                   | Redirect → overview                                                    |
-| `/builds/:id/overview`          | Identity, target profile, organisation badges                          |
+| `/builds/:id`                   | Redirect → export                                                      |
+| `/builds/:id/export`            | CPS export panel (default / front door)                                |
+| `/builds/:id/overview`          | Setup — identity, target profile, organisation badges                  |
 | `/builds/:id/characteristics`   | Read-only radio characteristics — organisation, export limits, ladders |
 | `/builds/:id/channels`          | Wire preview — channels (list + modal)                                 |
 | `/builds/:id/channels/bulk`     | Wire preview — channel bulk edit                                       |
@@ -38,16 +49,15 @@ Native YAML remains **project interchange** (library + all builds). It is not cr
 | `/builds/:id/talk-groups`       | Wire preview — talk groups                                             |
 | `/builds/:id/contacts`          | Wire preview — contacts                                                |
 | `/builds/:id/rx-group-lists`    | Wire preview — RX group lists                                          |
-| `/builds/:id/export`            | CPS export panel                                                       |
 | `/builds/:id/export-resolution` | Read-only behavioural defaults cascade audit (Channels + Zones tabs)   |
 
 Requires an active project (`RequireActiveProject`).
 
-Sidebar label is **Radio builds**; routes and code use `builds`.
+Sidebar label is **Export for radio**; routes and code use `builds`. Secondary section title matches. [`BuildSwitcher`](../../../src/app/components/builds/BuildSwitcher/BuildSwitcher.md) sits above build nav links.
 
 ## CPS export
 
-Per-build CPS export is on `/builds/:id/export` (`ExportBuildCpsPanel`) — not on Import / export. The import/export route keeps an **Export to CPS** section that links here.
+Per-build CPS export is on `/builds/:id/export` (`ExportBuildCpsPanel`) — the build front door. Project YAML backup lives on [Summary](../report/README.md), not on a separate Import/export page.
 
 **CSV preview** ([#151](https://github.com/pskillen/codeplug-studio/issues/151)): outline **Preview CSV** button (after Save ZIP to Drive) opens a modal with one tab per CPS file, rendered as a read-only table. Uses the same `exportBuildAll` path as download — see [`CpsCsvPreview.md`](../../../src/app/components/builds/CpsCsvPreview.md). Build-wide export warnings (profile caps, long wire names, zone cycle messages) are collected once at the core export layer and deduplicated — each distinct message appears once in the preview and ZIP paths ([#319](https://github.com/pskillen/codeplug-studio/issues/319)). The shared [`ExportWarningsAlert`](../../../src/app/components/builds/ExportWarningsAlert.md) folds unlinked-item, member-cap, and shortened-name groups behind collapsed title + count headers ([#408](https://github.com/pskillen/codeplug-studio/issues/408)).
 
@@ -59,6 +69,7 @@ Per-build CPS export is on `/builds/:id/export` (`ExportBuildCpsPanel`) — not 
 | [wire-preview.md](wire-preview.md)                   | Wire name overrides and preview routes        |
 | [wire-name-composition.md](wire-name-composition.md) | Traits → fields for auto-generated wire names |
 | [zone-grouping.md](zone-grouping.md)                 | Build zone layout editor                      |
+| [`BuildSwitcher.md`](../../../src/app/components/builds/BuildSwitcher/BuildSwitcher.md) | Secondary-nav build identity + switcher |
 
 ## Persistence
 
@@ -70,7 +81,7 @@ YAML import/export includes `formatBuilds[]` in the project document.
 
 | Area                         | Status  | Notes                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
 | ---------------------------- | ------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| List + create + detail shell | Shipped | [#82](https://github.com/pskillen/codeplug-studio/issues/82)                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| List + create + detail shell | Shipped | [#82](https://github.com/pskillen/codeplug-studio/issues/82); export-first IA + build switcher [#569](https://github.com/pskillen/codeplug-studio/issues/569)                                                                                                                                                                                                                                                                                                                                  |
 | Per-build CPS export         | Shipped | `ExportBuildCpsPanel` — per-file CSV, ZIP download, Drive ZIP upload, CSV preview modal ([#151](https://github.com/pskillen/codeplug-studio/issues/151)); deduplicated export warnings ([#319](https://github.com/pskillen/codeplug-studio/issues/319)); foldable warning groups ([#408](https://github.com/pskillen/codeplug-studio/issues/408))                                                                                                                                             |
 | Profile picker component     | Shipped | [#85](https://github.com/pskillen/codeplug-studio/issues/85) — `ProfilePicker`                                                                                                                                                                                                                                                                                                                                                                                                                |
 | Wire preview + overrides     | Shipped | [#87](https://github.com/pskillen/codeplug-studio/issues/87) — sub-routes; [#349](https://github.com/pskillen/codeplug-studio/issues/349) — list + modal + channel bulk; list Skip/Force + entity settings cards + build Sort… ([#457](https://github.com/pskillen/codeplug-studio/issues/457)); zones reorder preview ([#468](https://github.com/pskillen/codeplug-studio/issues/468)); force-export for library omit zones ([#186](https://github.com/pskillen/codeplug-studio/issues/186)) |

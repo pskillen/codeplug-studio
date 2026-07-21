@@ -74,7 +74,7 @@ Rejected imports throw with a clear message:
 - Duplicate entity `id` within a collection
 - Inconsistent `projectId` across rows
 - Broken UUID FK (zone member, contact ref, build selection, trait layout channel id, …)
-- `replaceExisting` when YAML project id ≠ active project id (UI may offer `adoptRemote` instead — Import / export **Replace active** panel and Drive refresh)
+- `replaceExisting` when YAML project id ≠ active project id (UI may offer `adoptRemote` instead — Summary **Replace active** panel and Drive refresh)
 
 Nullable model fields may be omitted from YAML or set to `null` — import treats both as `null` (see [tier 3 validation rules](../../../reference/native-yaml/README.md#validation-rules-58)).
 

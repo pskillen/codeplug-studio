@@ -387,16 +387,14 @@ Use `sample-exports/` locally for manual realism (gitignored — do not commit o
 
 ## 7. UI — full feature coverage
 
-Studio surfaces formats in **three places**: project interchange (`/import-export`), **build creation**, and **per-build export / wire preview**. A shipped export adapter is not complete until all relevant UI paths work.
+Studio surfaces formats in **two primary places**: **build creation** (`New build` + `formatCatalog`) and **per-build export / wire preview**. Project YAML interchange lives on **Summary**. A shipped export adapter is not complete until build creation and export paths work.
 
-### Format catalog (`/import-export`)
+### Format discovery (New build)
 
-| Component    | Path                       | Checklist                                                       |
-| ------------ | -------------------------- | --------------------------------------------------------------- |
-| CPS grid     | `CpsFormatCatalogGrid.tsx` | Auto-lists `formatCatalog` (excludes `native-yaml`)             |
-| Format card  | `FormatCatalogPanel.tsx`   | Shows import/export badges from `importStatus` / `exportStatus` |
-| Import route | `ImportExportPage.tsx`     | Native YAML panels + CPS grid                                   |
-| Deep link    | `useFormatParam.ts`        | `?format=<id>` highlights catalog card                          |
+| Component | Path | Checklist |
+| --- | --- | --- |
+| New build | `NewBuildPage.tsx` | Lists CPS formats from `formatCatalog` |
+| Profile picker | `ProfilePicker.tsx` | `buildProfileOptionsForFormat` + `formatProfileWireHint` |
 
 - [ ] `formatCatalog` row with correct `importStatus` / `exportStatus`
 - [ ] Planned import shows "coming soon" — do not register import adapter until ready
@@ -404,16 +402,17 @@ Studio surfaces formats in **three places**: project interchange (`/import-expor
 
 ### Build creation and navigation
 
-| Component      | Path                           | Checklist                                                |
-| -------------- | ------------------------------ | -------------------------------------------------------- |
-| New build      | `NewBuildPage.tsx`             | Lists CPS formats from `formatCatalog`                   |
-| Profile picker | `ProfilePicker.tsx`            | `buildProfileOptionsForFormat` + `formatProfileWireHint` |
-| Build nav      | `src/app/routes/builds/nav.ts` | Trait-driven sections (zones, channels, scan lists, …)   |
+| Component | Path | Checklist |
+| --- | --- | --- |
+| New build | `NewBuildPage.tsx` | Lists CPS formats from `formatCatalog` |
+| Profile picker | `ProfilePicker.tsx` | `buildProfileOptionsForFormat` + `formatProfileWireHint` |
+| Build nav | `src/app/routes/builds/nav.ts` | Trait-driven sections (zones, channels, scan lists, …); Export first |
+| Build switcher | `BuildSwitcher.tsx` | Sibling build Select in secondary chrome |
 
 - [ ] `TraitProfile` registered — build wizard creates valid empty `layout`
 - [ ] Trait pages implemented or explicitly deferred with hub doc **Known gaps**
 - [ ] `profileId` on new `FormatBuild` resolves in both trait and radio registries
-
+- [ ] New build lands on `/builds/:id/export`
 ### Build export (`/builds/:id/export`)
 
 | Component       | Path                                                      | Checklist                                                                                |

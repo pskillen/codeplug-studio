@@ -105,7 +105,7 @@ Implementation: `src/integrations/cloud/googleDrive.ts`.
 
 ### Export workflow
 
-`/import-export` → **Save to Drive** (`ExportToDrivePanel`):
+`/summary` → **Project interchange** → **Save to Drive** (`ExportToDrivePanel`):
 
 1. Opens browser at `ProjectMeta.interchange.googleDrive.folderId` or browse prefs
 2. Pre-fills filename from `suggestExportDestination(meta, 'googleDrive')`
@@ -115,7 +115,7 @@ Implementation: `src/integrations/cloud/googleDrive.ts`.
 
 ### Import workflow
 
-- **Home** and **Import / export** panels: **Open from Drive** → select YAML
+- **Home** and **Summary** panels: **Open from Drive** → select YAML
 - If YAML `project.id` matches an existing IndexedDB project → **overwrite** modal with a left/right **diff table** (**Last edited** / **Last Drive or file save**, all entity counts including APRS)
 - If YAML `project.id` is **not** in IndexedDB → `seedPreservingId` — seeds with the YAML's portable id ([#361](https://github.com/pskillen/codeplug-studio/issues/361)); same for local file drop on Home
 - **Import as new project** (refresh / mismatch modals only) → `createNew` — fresh UUID by explicit operator choice
@@ -165,7 +165,7 @@ When OAuth is not configured, click opens `GoogleDriveNotConfiguredModal` with *
 | OAuth + Drive API port            | Shipped | [#61](https://github.com/pskillen/codeplug-studio/issues/61)                                     |
 | Settings status / disconnect      | Shipped | [#62](https://github.com/pskillen/codeplug-studio/issues/62)                                     |
 | Drive browser modal               | Shipped | [#62](https://github.com/pskillen/codeplug-studio/issues/62)                                     |
-| Import / export workflow          | Shipped | [#62](https://github.com/pskillen/codeplug-studio/issues/62)                                     |
+| Summary project interchange       | Shipped | [#62](https://github.com/pskillen/codeplug-studio/issues/62); YAML on Summary [#569](https://github.com/pskillen/codeplug-studio/issues/569) |
 | Disconnected Drive CTA UX         | Shipped | [#141](https://github.com/pskillen/codeplug-studio/issues/141) — inline connect on action        |
 | Shared session + reconnect        | Shipped | [#286](https://github.com/pskillen/codeplug-studio/issues/286)                                   |
 | App chrome Save bar               | Shipped | [#285](https://github.com/pskillen/codeplug-studio/issues/285)                                   |

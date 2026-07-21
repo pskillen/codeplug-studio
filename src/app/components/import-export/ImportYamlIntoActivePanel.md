@@ -2,7 +2,7 @@ Replace the **active** project from a native YAML file (with confirmation).
 
 ## Purpose
 
-Full-project restore on the Import / export route — wipes library and format-build rows via `replaceProject`.
+Full-project restore on Summary **Project interchange** — wipes library and format-build rows via `replaceProject`.
 
 ## Props
 
