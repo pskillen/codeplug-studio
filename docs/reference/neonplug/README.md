@@ -70,7 +70,7 @@ On **import**, Studio must allocate UUID `id` FKs and drop NeonPlug numbers as r
 
 | NeonPlug radio    | Studio `profileId`  | Traits                                                  |
 | ----------------- | ------------------- | ------------------------------------------------------- |
-| DM-32UV / DP570UV | `neonplug-dm32uv`   | Zone grouping + zone-derived scan lists (like DM32 CSV) |
+| DM-32UV / DP570UV | `neonplug-dm32uv`   | Zone grouping + zone-derived scan lists + m×n expansion |
 | UV5R-Mini         | `neonplug-uv5rmini` | Flat memory + per-channel scan flag (like CHIRP UV-5R)  |
 
 Per-radio notes and caps: [`radios/`](radios/README.md). DM-32UV caps match DM32 CPS; UV5R-Mini uses NeonPlug binary **999** / **12** (not CHIRP CSV **128** / **7**).

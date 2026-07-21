@@ -2,7 +2,7 @@
 
 Product behaviour for NeonPlug `.neonplug` files in Codeplug Studio. Wire tables live in the tier-3 [NeonPlug reference](../../../reference/neonplug/README.md).
 
-**Tracking:** Epic [#536](https://github.com/pskillen/codeplug-studio/issues/536) · scaffold [#538](https://github.com/pskillen/codeplug-studio/issues/538) · channels + ZIP [#539](https://github.com/pskillen/codeplug-studio/issues/539) · org entities [#540](https://github.com/pskillen/codeplug-studio/issues/540) · merge-into-base [#551](https://github.com/pskillen/codeplug-studio/issues/551) · donor persist + settings view [#552](https://github.com/pskillen/codeplug-studio/issues/552) · export UI [#542](https://github.com/pskillen/codeplug-studio/issues/542) · wire reference [#537](https://github.com/pskillen/codeplug-studio/issues/537)
+**Tracking:** Epic [#536](https://github.com/pskillen/codeplug-studio/issues/536) · scaffold [#538](https://github.com/pskillen/codeplug-studio/issues/538) · channels + ZIP [#539](https://github.com/pskillen/codeplug-studio/issues/539) · org entities [#540](https://github.com/pskillen/codeplug-studio/issues/540) · m×n + scratch [#553](https://github.com/pskillen/codeplug-studio/issues/553) · merge-into-base [#551](https://github.com/pskillen/codeplug-studio/issues/551) · donor persist + settings view [#552](https://github.com/pskillen/codeplug-studio/issues/552) · export UI [#542](https://github.com/pskillen/codeplug-studio/issues/542) · wire reference [#537](https://github.com/pskillen/codeplug-studio/issues/537)
 
 **Source:** `src/core/import-export/formats/neonplug/` (profiles, export adapter, `.neonplug` ZIP packaging)
 
@@ -14,6 +14,7 @@ Product behaviour for NeonPlug `.neonplug` files in Codeplug Studio. Wire tables
 | Format scaffold (`FormatId`, catalog, traits)             | Shipped | [#538](https://github.com/pskillen/codeplug-studio/issues/538) — `neonplug` in catalog; profiles + `TRAIT_PROFILES`                                 |
 | Export channels + `.neonplug` ZIP                         | Shipped | [#539](https://github.com/pskillen/codeplug-studio/issues/539) — `assemble` → `codeplug.json` → fflate ZIP                                          |
 | Export zones / scan / contacts / RX groups (DM32 profile) | Shipped | [#540](https://github.com/pskillen/codeplug-studio/issues/540) — org arrays + channel FKs; `radioIds[]` omitted on greenfield                       |
+| m×n expansion + scratch (DM32UV)                          | Shipped | [#553](https://github.com/pskillen/codeplug-studio/issues/553) — see [export-projections.md](export-projections.md)                                 |
 | Merge into radio-read base                                | Shipped | [#551](https://github.com/pskillen/codeplug-studio/issues/551) — retain settings / `radioIds`; see [merge.md](../../../reference/neonplug/merge.md) |
 | Build UI + export download                                | Shipped | [#542](https://github.com/pskillen/codeplug-studio/issues/542) — merge-first + secondary greenfield                                                 |
 | DM32UV donor persist + read-only settings                 | Shipped | [#552](https://github.com/pskillen/codeplug-studio/issues/552) — `FormatBuild.cpsWireHydration`; NeonPlug settings nav                              |
@@ -29,10 +30,10 @@ Studio already exports **DM-32** via CPS CSV and **UV-5R Mini** via CHIRP CSV. N
 
 ## Profiles
 
-| Profile id          | Label                         | Traits                                  | Caps note                                                                                           |
-| ------------------- | ----------------------------- | --------------------------------------- | --------------------------------------------------------------------------------------------------- |
-| `neonplug-dm32uv`   | Baofeng DM-32UV (NeonPlug)    | Zone grouping + zone-derived scan lists | Same numeric caps as DM32 CPS `dm32-baofeng-dm32uv`                                                 |
-| `neonplug-uv5rmini` | Baofeng UV-5R Mini (NeonPlug) | Flat memory + per-channel scan flag     | NeonPlug binary **999** memories / **12**-char names — not CHIRP CSV **128** / **7** (sibling path) |
+| Profile id          | Label                         | Traits                                                  | Caps note                                                                                           |
+| ------------------- | ----------------------------- | ------------------------------------------------------- | --------------------------------------------------------------------------------------------------- |
+| `neonplug-dm32uv`   | Baofeng DM-32UV (NeonPlug)    | Zone grouping + zone-derived scan lists + m×n expansion | Same numeric caps as DM32 CPS `dm32-baofeng-dm32uv`                                                 |
+| `neonplug-uv5rmini` | Baofeng UV-5R Mini (NeonPlug) | Flat memory + per-channel scan flag                     | NeonPlug binary **999** memories / **12**-char names — not CHIRP CSV **128** / **7** (sibling path) |
 
 ## Export delivery
 
@@ -40,7 +41,7 @@ Studio already exports **DM-32** via CPS CSV and **UV-5R Mini** via CHIRP CSV. N
 2. `exportBuildZip` wraps that string with **fflate** (`buildNeonplugZip`) → `.neonplug` binary.
 3. Optional **donor**: session upload bytes **or** (DM32UV) build-stored `cpsWireHydration` → `mergeNeonplugCodeplug` → re-ZIP (merge-first / radio-write path).
 
-**DM32UV:** channels plus zones, zone-derived scan lists, contacts (talk groups then digital contacts), and RX groups; channel `contactId` / `rxGroupListId` / `scanListId` wired. **Greenfield** leaves `radioIds[]` and ancillaries empty. **Merge** retains donor `radioIds`, `radioSettings`, and other unmodelled keys. On DM32UV, a successful donor upload also persists those retain slices on the format build so repeat exports do not require re-upload. **UV5R-Mini:** channels only on greenfield (org arrays empty); donor remains session-only until [#554](https://github.com/pskillen/codeplug-studio/issues/554).
+**DM32UV:** channels plus zones, zone-derived scan lists, contacts (talk groups then digital contacts), and RX groups; channel `contactId` / `rxGroupListId` / `scanListId` wired. Default export expands RX-list channels (m×n + scratch) — see [export-projections.md](export-projections.md). **Greenfield** leaves `radioIds[]` and ancillaries empty. **Merge** retains donor `radioIds`, `radioSettings`, and other unmodelled keys (Studio still overwrites `channels[]` wholesale). On DM32UV, a successful donor upload also persists those retain slices on the format build so repeat exports do not require re-upload. **UV5R-Mini:** channels only on greenfield (org arrays empty); donor remains session-only until [#554](https://github.com/pskillen/codeplug-studio/issues/554).
 
 See [file-format.md](../../../reference/neonplug/file-format.md) and [merge.md](../../../reference/neonplug/merge.md).
 
@@ -60,6 +61,7 @@ See [file-format.md](../../../reference/neonplug/file-format.md) and [merge.md](
 ## Related
 
 - [import-export hub](../README.md)
+- [Export projections (m×n + scratch)](export-projections.md)
 - [NeonPlug wire reference](../../../reference/neonplug/README.md)
 - [Merge policy](../../../reference/neonplug/merge.md)
 - Sibling formats: [DM32](../dm32/README.md), [CHIRP](../chirp/README.md)

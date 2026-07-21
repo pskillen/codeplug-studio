@@ -15,6 +15,8 @@ NeonPlug uses **one Channel type** for all radios. DM-32UV fills digital fields;
 
 `number` is the **wire FK** used by zones and scan lists. It is **not** a Studio library id.
 
+On DM32UV export with m×n expansion enabled (default), Studio may emit **more than one** `channels[]` object per library channel (one per RX-list talk group, plus an optional scratch companion). Numbers are assigned sequentially across the expanded set. See [export-projections.md](../../features/import-export/neonplug/export-projections.md).
+
 ## Frequencies
 
 | Field         | Type   | Unit | Notes                          |
