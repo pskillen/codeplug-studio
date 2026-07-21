@@ -75,6 +75,8 @@ function toWirePreviewRow(
     hasWireNameOverride: Boolean(channelOverride),
     hasOrderOrSlotOverride: overrideOrderOrSlot(build.channelOverrides, channel.id) != null,
     excluded: isEntityExcluded(build.channelOverrides, channel.id),
+    rxFrequency: channel.rxFrequency,
+    txFrequency: channel.txFrequency,
   };
 }
 

@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import type { WirePreviewRow } from '@core/services/previewWireRows.ts';
 import { libraryEditPathForWirePreviewRow } from '../../../lib/wirePreviewRowLinks.ts';
 import ZoneMemberSummaryBadges from '../../library/ZoneMemberSummaryBadges.tsx';
+import { BandPillsForFrequencies } from '../../pills/BandPill.tsx';
 import { wirePreviewExportStatusLabel } from './wirePreviewRowUtils.ts';
 
 export default function WirePreviewDisplayCell({ row }: { row: WirePreviewRow }) {
@@ -12,6 +13,13 @@ export default function WirePreviewDisplayCell({ row }: { row: WirePreviewRow })
     <Stack gap={4}>
       <Group gap="xs" wrap="wrap" align="center">
         <Text size="sm">{row.displayLabel}</Text>
+        {row.entityKind === 'channel' ? (
+          <BandPillsForFrequencies
+            rxFrequency={row.rxFrequency ?? null}
+            txFrequency={row.txFrequency ?? null}
+            size="xs"
+          />
+        ) : null}
         {row.zoneDirectMembers ? (
           <Group gap={4} wrap="wrap">
             <ZoneMemberSummaryBadges

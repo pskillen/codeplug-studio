@@ -113,6 +113,9 @@ export interface WirePreviewRow {
   zoneDirectMembers?: WirePreviewZoneDirectMembers;
   /** Digital contact callsign from library — contact wire preview search/column. */
   libraryCallsign?: string;
+  /** Channel rows only — frequencies for band pills beside the library name. */
+  rxFrequency?: number | null;
+  txFrequency?: number | null;
 }
 
 export function overrideFieldForEntityKind(entityKind: WirePreviewEntityKind): OverrideField {
@@ -145,6 +148,14 @@ function zoneDirectMembersPreview(zone: Zone, library: LibrarySlice): WirePrevie
       return ch ? channelDisplayLabel(ch) : id;
     }),
     zoneNames: zoneIds.map((id) => zoneById.get(id)?.name ?? id),
+  };
+}
+
+/** Band-pill frequencies for channel wire-preview rows. */
+function channelBandFields(channel: Channel): Pick<WirePreviewRow, 'rxFrequency' | 'txFrequency'> {
+  return {
+    rxFrequency: channel.rxFrequency,
+    txFrequency: channel.txFrequency,
   };
 }
 
@@ -291,6 +302,7 @@ export function previewWireRows(
             hasOrderOrSlotOverride: overrideOrderOrSlot(build.channelOverrides, channel.id) != null,
             excluded: isEntityExcluded(build.channelOverrides, channel.id),
             expansionNote,
+            ...channelBandFields(channel),
           });
         };
 
@@ -354,6 +366,7 @@ export function previewWireRows(
                 excluded: isEntityExcluded(build.channelOverrides, channel.id),
                 expansionNote: generated.expansionNote,
                 displayDetails: dm32ExpansionDisplayDetails(channel, generated, library),
+                ...channelBandFields(channel),
               });
             }
             continue;
@@ -377,6 +390,7 @@ export function previewWireRows(
               zoneLinkedForPreview && !zoneLinkedForPreview.has(channel.id)
                 ? PREVIEW_ROW_NOT_ZONE_LINKED_NOTE
                 : undefined,
+            ...channelBandFields(channel),
           });
         }
         return rows;
@@ -436,6 +450,7 @@ export function previewWireRows(
                 excluded: isEntityExcluded(build.channelOverrides, channel.id),
                 expansionNote: generated.expansionNote,
                 displayDetails: anytoneExpansionDisplayDetails(channel, generated, library),
+                ...channelBandFields(channel),
               });
             }
             continue;
@@ -459,6 +474,7 @@ export function previewWireRows(
               zoneLinkedForPreview && !zoneLinkedForPreview.has(channel.id)
                 ? PREVIEW_ROW_NOT_ZONE_LINKED_NOTE
                 : undefined,
+            ...channelBandFields(channel),
           });
         }
         return rows;
@@ -508,6 +524,7 @@ export function previewWireRows(
                 : zoneLinkedForPreview && !zoneLinkedForPreview.has(channel.id)
                   ? PREVIEW_ROW_NOT_ZONE_LINKED_NOTE
                   : undefined,
+            ...channelBandFields(channel),
           });
         }
       }

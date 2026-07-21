@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Badge, Stack, Text } from '@mantine/core';
+import { Badge, Group, Stack, Text } from '@mantine/core';
 import { Link, Navigate } from 'react-router-dom';
 import type { BuildExportSettings, FormatBuild } from '@core/models/formatBuild.ts';
 import { channelDisplayLabel } from '@core/domain/channelNaming.ts';
@@ -18,6 +18,7 @@ import { showsPerChannelScanListNav } from '@core/models/traits.ts';
 import type { LibrarySlice } from '@core/services/assemble.ts';
 import DefaultScanInclusionSegment from '../../components/builds/DefaultScanInclusionSegment.tsx';
 import ScanInclusionSegment from '../../components/channels/ScanInclusionSegment.tsx';
+import { BandPillForChannel } from '../../components/pills/BandPill.tsx';
 import { FormPage, FormSection } from '../../components/ui/index.ts';
 import DataTable from '../../components/ui/DataTable.tsx';
 import { loadLibrarySlice } from '../../lib/loadLibrarySlice.ts';
@@ -213,6 +214,14 @@ export default function BuildFlatMemoryScanListPage() {
               getPath: () => '#',
               sortable: true,
               sortValue: (row) => channelDisplayLabel(row.channel).toLowerCase(),
+              render: (row) => (
+                <Group gap="xs" wrap="wrap" align="center">
+                  <Text size="sm" fw={500}>
+                    {channelDisplayLabel(row.channel)}
+                  </Text>
+                  <BandPillForChannel channel={row.channel} size="xs" />
+                </Group>
+              ),
             }}
             columns={[
               {
