@@ -99,7 +99,7 @@ Per-build toggles on `FormatBuild` (default **on**) control whether orphan libra
 
 | Field                           | When enabled (default)                                 |
 | ------------------------------- | ------------------------------------------------------ |
-| `exportUnlinkedChannels`        | Channels not in any zone member list                   |
+| `exportUnlinkedChannels`        | Channels not in any zone (zone-organised builds only; flat-memory builds ignore this flag) |
 | `exportUnlinkedTalkGroups`      | Talk groups not referenced by an exported channel      |
 | `exportUnlinkedRxGroupLists`    | RX group lists not referenced by an exported channel   |
 | `exportUnlinkedDigitalContacts` | Digital contacts not referenced by an exported channel |

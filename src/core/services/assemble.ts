@@ -303,7 +303,9 @@ function withExportInclusionDefaults(build: FormatBuild): FormatBuild {
 
 function assembleChannels(build: FormatBuild, library: LibrarySlice): AssembledChannel[] {
   const overrides = build.channelOverrides;
-  const includeUnlinked = build.exportUnlinkedChannels !== false;
+  /** Flat-memory radios only export the memory list — no “orphan” inclusion toggle. */
+  const includeUnlinked =
+    !buildUsesFlatMemoryList(build) && build.exportUnlinkedChannels !== false;
   const exportReachable = exportReachableChannelIds(build, library);
   const assembled: AssembledChannel[] = [];
   for (const entity of library.channels) {
@@ -432,11 +434,7 @@ export function exportInclusionWarnings(
 
   if (normalized.exportUnlinkedChannels !== false) {
     if (buildUsesFlatMemoryList(normalized)) {
-      const memoryIds = new Set(chirpMemoryChannelIds(normalized, library));
-      const orphanCount = assembled.channels.filter((row) => !memoryIds.has(row.entity.id)).length;
-      if (orphanCount > 0) {
-        warnings.push(`Including ${orphanCount} channel(s) not in memory list`);
-      }
+      // Flat-memory assemble never includes channels outside the memory list.
     } else {
       const zoneLinked = zoneLinkedChannelIds(normalized, library);
       const orphanCount = assembled.channels.filter((row) => !zoneLinked.has(row.entity.id)).length;

@@ -94,14 +94,10 @@ export default function BuildEntityExportSettingsCard({
   return (
     <FieldCard title={copy.title} description={copy.description}>
       <Stack gap="sm">
-        {entityKind === 'channel' ? (
+        {entityKind === 'channel' && !flatMemory ? (
           <Switch
-            label={
-              flatMemory
-                ? 'Export channels not in the memory list'
-                : 'Export channels not linked to a zone'
-            }
-            description="Turn this off to keep orphan channels out of this build’s export."
+            label="Include channels that aren't in a zone"
+            description="When off, only channels that belong to a zone are exported. Your library is unchanged."
             checked={build.exportUnlinkedChannels !== false}
             disabled={saving}
             onChange={(event) =>
