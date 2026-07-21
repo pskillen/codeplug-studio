@@ -220,6 +220,26 @@ export function channelHasAnalogProfile(channel: Pick<Channel, 'modeProfiles'>):
   return channel.modeProfiles.some(isAnalogChannelModeProfile);
 }
 
+/**
+ * First FM/AM mode profile — used by flat-memory analogue radios (CHIRP UV-5R,
+ * NeonPlug UV5R-Mini). SSB and digital-only channels are not eligible.
+ */
+export function pickFmAmModeProfile(
+  channel: Pick<Channel, 'modeProfiles'>,
+): ChannelModeProfileAnalog | null {
+  for (const profile of channel.modeProfiles) {
+    if (profile.mode === 'fm' || profile.mode === 'am') {
+      return profile;
+    }
+  }
+  return null;
+}
+
+/** True when the channel has an FM or AM mode profile for flat-memory export. */
+export function channelHasFmAmProfile(channel: Pick<Channel, 'modeProfiles'>): boolean {
+  return pickFmAmModeProfile(channel) != null;
+}
+
 /** Patch every analog mode profile on a channel — does not add or remove profiles. */
 export function patchAllAnalogProfiles(
   channel: Pick<Channel, 'modeProfiles'>,

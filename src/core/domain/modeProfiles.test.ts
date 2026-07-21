@@ -5,11 +5,13 @@ import type {
   ChannelModeProfile,
 } from '../models/library.ts';
 import {
+  channelHasFmAmProfile,
   defaultModeProfile,
   findAnalogProfile,
   findDmrProfile,
   isModeOnlyStub,
   normalizeModeProfile,
+  pickFmAmModeProfile,
   reconcilePrimaryMode,
   resolveChannelPrimaryMode,
   syncModeProfiles,
@@ -193,5 +195,20 @@ describe('resolveChannelPrimaryMode', () => {
       modeProfiles: [defaultModeProfile('fm'), defaultModeProfile('dmr')],
     };
     expect(resolveChannelPrimaryMode(channel)).toBe('fm');
+  });
+});
+
+describe('pickFmAmModeProfile', () => {
+  it('picks FM/AM and ignores SSB and digital', () => {
+    expect(
+      pickFmAmModeProfile({
+        modeProfiles: [defaultModeProfile('dmr'), defaultModeProfile('fm')],
+      })?.mode,
+    ).toBe('fm');
+    expect(
+      channelHasFmAmProfile({
+        modeProfiles: [defaultModeProfile('ssb'), defaultModeProfile('dmr')],
+      }),
+    ).toBe(false);
   });
 });

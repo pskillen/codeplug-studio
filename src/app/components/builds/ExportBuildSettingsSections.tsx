@@ -5,6 +5,7 @@ import type {
   FormatBuild,
 } from '@core/models/formatBuild.ts';
 import { showsDefaultScanInclusion, hasMxNChannelExpansion } from '@core/models/traits.ts';
+import { buildUsesFlatMemoryList } from '@core/domain/exportOrderOrSlot.ts';
 import type { FormatExportDefaults } from '@core/import-export/types.ts';
 import { FieldCard } from '../fields/Fields.tsx';
 import ExportNameSettingsFields from './ExportNameSettingsFields.tsx';
@@ -60,72 +61,68 @@ export default function ExportBuildSettingsSections({
     );
   }
 
-  const isChirp = build.formatId === 'chirp';
+  const flatMemory = buildUsesFlatMemoryList(build);
   const showChannelExpansion = hasMxNChannelExpansion(build.profileId);
 
   return (
     <Stack gap="md">
-      <FieldCard
-        title="Inclusion"
-        description="Which library entities are emitted when they are not referenced by exported channels."
-      >
-        <Switch
-          label={
-            isChirp
-              ? 'Export channels not in the memory list'
-              : 'Export channels not linked to a zone'
-          }
-          checked={build.exportUnlinkedChannels !== false}
-          disabled={saving}
-          onChange={(event) =>
-            onExportInclusionChange('exportUnlinkedChannels', event.currentTarget.checked)
-          }
-        />
-        {!isChirp ? (
-          <>
-            <Switch
-              label="Export talk groups not referenced by a channel"
-              checked={build.exportUnlinkedTalkGroups !== false}
-              disabled={saving}
-              onChange={(event) =>
-                onExportInclusionChange('exportUnlinkedTalkGroups', event.currentTarget.checked)
-              }
-            />
-            <Switch
-              label="Export RX group lists not referenced by a channel"
-              checked={build.exportUnlinkedRxGroupLists !== false}
-              disabled={saving}
-              onChange={(event) =>
-                onExportInclusionChange('exportUnlinkedRxGroupLists', event.currentTarget.checked)
-              }
-            />
-            <Switch
-              label="Export digital contacts not referenced by a channel"
-              checked={build.exportUnlinkedDigitalContacts !== false}
-              disabled={saving}
-              onChange={(event) =>
-                onExportInclusionChange(
-                  'exportUnlinkedDigitalContacts',
-                  event.currentTarget.checked,
-                )
-              }
-            />
-            <Switch
-              label="Export analog contacts not referenced by a channel"
-              checked={build.exportUnlinkedAnalogContacts !== false}
-              disabled={saving}
-              onChange={(event) =>
-                onExportInclusionChange('exportUnlinkedAnalogContacts', event.currentTarget.checked)
-              }
-            />
-          </>
-        ) : null}
-        {settingsError ? (
-          <Text size="sm" c="red">
-            {settingsError}
-          </Text>
-        ) : null}
-      </FieldCard>
+      {!flatMemory ? (
+        <FieldCard
+          title="Inclusion"
+          description="Which library entities are exported when they are not already linked from an exported channel or zone."
+        >
+          <Switch
+            label="Include channels that aren't in a zone"
+            description="When off, only channels that belong to a zone are exported. Your library is unchanged."
+            checked={build.exportUnlinkedChannels !== false}
+            disabled={saving}
+            onChange={(event) =>
+              onExportInclusionChange('exportUnlinkedChannels', event.currentTarget.checked)
+            }
+          />
+          <Switch
+            label="Export talk groups not referenced by a channel"
+            checked={build.exportUnlinkedTalkGroups !== false}
+            disabled={saving}
+            onChange={(event) =>
+              onExportInclusionChange('exportUnlinkedTalkGroups', event.currentTarget.checked)
+            }
+          />
+          <Switch
+            label="Export RX group lists not referenced by a channel"
+            checked={build.exportUnlinkedRxGroupLists !== false}
+            disabled={saving}
+            onChange={(event) =>
+              onExportInclusionChange('exportUnlinkedRxGroupLists', event.currentTarget.checked)
+            }
+          />
+          <Switch
+            label="Export digital contacts not referenced by a channel"
+            checked={build.exportUnlinkedDigitalContacts !== false}
+            disabled={saving}
+            onChange={(event) =>
+              onExportInclusionChange('exportUnlinkedDigitalContacts', event.currentTarget.checked)
+            }
+          />
+          <Switch
+            label="Export analog contacts not referenced by a channel"
+            checked={build.exportUnlinkedAnalogContacts !== false}
+            disabled={saving}
+            onChange={(event) =>
+              onExportInclusionChange('exportUnlinkedAnalogContacts', event.currentTarget.checked)
+            }
+          />
+          {settingsError ? (
+            <Text size="sm" c="red">
+              {settingsError}
+            </Text>
+          ) : null}
+        </FieldCard>
+      ) : settingsError ? (
+        <Text size="sm" c="red">
+          {settingsError}
+        </Text>
+      ) : null}
 
       {showChannelExpansion ? (
         <FieldCard

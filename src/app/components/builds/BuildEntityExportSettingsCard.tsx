@@ -3,6 +3,7 @@ import { Button, Group, Stack, Switch, Text } from '@mantine/core';
 import { Link } from 'react-router-dom';
 import type { FormatBuild } from '@core/models/formatBuild.ts';
 import type { ChannelExportNameMode } from '@core/domain/channelNaming.ts';
+import { buildUsesFlatMemoryList } from '@core/domain/exportOrderOrSlot.ts';
 import type { DigitalContactExportNameMode } from '@core/import-export/types.ts';
 import type { WirePreviewEntityKind } from '@core/services/previewWireRows.ts';
 import { FieldCard } from '../fields/Fields.tsx';
@@ -88,19 +89,15 @@ export default function BuildEntityExportSettingsCard({
   const copy = cardCopy(entityKind);
   if (!copy) return null;
 
-  const isChirp = build.formatId === 'chirp';
+  const flatMemory = buildUsesFlatMemoryList(build);
 
   return (
     <FieldCard title={copy.title} description={copy.description}>
       <Stack gap="sm">
-        {entityKind === 'channel' ? (
+        {entityKind === 'channel' && !flatMemory ? (
           <Switch
-            label={
-              isChirp
-                ? 'Export channels not in the memory list'
-                : 'Export channels not linked to a zone'
-            }
-            description="Turn this off to keep orphan channels out of this build’s export."
+            label="Include channels that aren't in a zone"
+            description="When off, only channels that belong to a zone are exported. Your library is unchanged."
             checked={build.exportUnlinkedChannels !== false}
             disabled={saving}
             onChange={(event) =>

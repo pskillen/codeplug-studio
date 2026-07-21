@@ -35,21 +35,23 @@ Export does not host identity editors; Setup does not host download actions. Sec
 
 ## Routes
 
-| Route                           | Purpose                                                                |
-| ------------------------------- | ---------------------------------------------------------------------- |
-| `/builds`                       | List builds for the active project                                     |
-| `/builds/new`                   | Create build — format → profile → name                                 |
-| `/builds/:id`                   | Redirect → export                                                      |
-| `/builds/:id/export`            | CPS export panel (default / front door)                                |
-| `/builds/:id/overview`          | Setup — identity, target profile, organisation badges                  |
-| `/builds/:id/characteristics`   | Read-only radio characteristics — organisation, export limits, ladders |
-| `/builds/:id/channels`          | Wire preview — channels (list + modal)                                 |
-| `/builds/:id/channels/bulk`     | Wire preview — channel bulk edit                                       |
-| `/builds/:id/zones`             | Wire preview — zones                                                   |
-| `/builds/:id/talk-groups`       | Wire preview — talk groups                                             |
-| `/builds/:id/contacts`          | Wire preview — contacts                                                |
-| `/builds/:id/rx-group-lists`    | Wire preview — RX group lists                                          |
-| `/builds/:id/export-resolution` | Read-only behavioural defaults cascade audit (Channels + Zones tabs)   |
+| Route                           | Purpose                                                                  |
+| ------------------------------- | ------------------------------------------------------------------------ |
+| `/builds`                       | List builds for the active project                                       |
+| `/builds/new`                   | Create build — format → profile → name                                   |
+| `/builds/:id`                   | Redirect → export                                                        |
+| `/builds/:id/export`            | CPS export panel (default / front door)                                  |
+| `/builds/:id/overview`          | Setup — identity, target profile, organisation badges                    |
+| `/builds/:id/characteristics`   | Read-only radio characteristics — organisation, export limits, ladders   |
+| `/builds/:id/channels`          | Wire preview — channels (list + modal)                                   |
+| `/builds/:id/scan-list`         | Flat-memory only — per-channel scan include/skip (CHIRP / NeonPlug UV5R) |
+| `/builds/:id/channels/bulk`     | Wire preview — channel bulk edit                                         |
+| `/builds/:id/zones`             | Wire preview — zones                                                     |
+| `/builds/:id/scan-lists`        | Wire preview — dedicated scan lists (e.g. Anytone)                       |
+| `/builds/:id/talk-groups`       | Wire preview — talk groups                                               |
+| `/builds/:id/contacts`          | Wire preview — contacts                                                  |
+| `/builds/:id/rx-group-lists`    | Wire preview — RX group lists                                            |
+| `/builds/:id/export-resolution` | Read-only behavioural defaults cascade audit (Channels + Zones tabs)     |
 
 Requires an active project (`RequireActiveProject`).
 
@@ -97,13 +99,13 @@ YAML import/export includes `formatBuilds[]` in the project document.
 
 Per-build toggles on `FormatBuild` (default **on**) control whether orphan library entities are included in CPS export:
 
-| Field                           | When enabled (default)                                 |
-| ------------------------------- | ------------------------------------------------------ |
-| `exportUnlinkedChannels`        | Channels not in any zone member list                   |
-| `exportUnlinkedTalkGroups`      | Talk groups not referenced by an exported channel      |
-| `exportUnlinkedRxGroupLists`    | RX group lists not referenced by an exported channel   |
-| `exportUnlinkedDigitalContacts` | Digital contacts not referenced by an exported channel |
-| `exportUnlinkedAnalogContacts`  | Analog contacts not referenced by an exported channel  |
+| Field                           | When enabled (default)                                                                     |
+| ------------------------------- | ------------------------------------------------------------------------------------------ |
+| `exportUnlinkedChannels`        | Channels not in any zone (zone-organised builds only; flat-memory builds ignore this flag) |
+| `exportUnlinkedTalkGroups`      | Talk groups not referenced by an exported channel                                          |
+| `exportUnlinkedRxGroupLists`    | RX group lists not referenced by an exported channel                                       |
+| `exportUnlinkedDigitalContacts` | Digital contacts not referenced by an exported channel                                     |
+| `exportUnlinkedAnalogContacts`  | Analog contacts not referenced by an exported channel                                      |
 
 Switches on `/builds/:id/export` **and** the matching Build → entity settings cards persist to the build row. Wire preview `includedPreviewWireRows` honours the same flags.
 

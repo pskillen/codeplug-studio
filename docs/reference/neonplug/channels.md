@@ -119,7 +119,7 @@ Many `unknown*` fields exist (`unknown1A_6_4`, `unknown1C_1_0`, `unknown2A`, …
 - **DM32UV:** `contactId` / `rxGroupListId` / `scanListId` resolve from library UUID FKs (`0` = none). `scanListId` is 1-based into zone-derived `scanLists[]` (max **15**).
 - **UV5R-Mini:** org FKs stay `0`; org arrays empty.
 - **DM32UV:** `number` is sequential 1…N in assemble channel order.
-- **UV5R-Mini:** `number` is the flat-memory slot from `assemble` (`channelMemorySlots`); blank slots are omitted.
+- **UV5R-Mini:** `number` is the flat-memory slot from `assemble` (`channelMemorySlots`); blank slots are omitted; FM/AM only (digital-only channels skipped with a warning).
 - Unknown / radio-layout bitfields use safe defaults (`0` / `false`) — no stash-and-replay.
 
 Exact column-by-column adapter tables belong with the export/import implementation; this page is the **wire contract**.

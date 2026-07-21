@@ -43,6 +43,7 @@ import BuildLayout from './routes/builds/BuildLayout.tsx';
 import BuildOverviewPage from './routes/builds/BuildOverviewPage.tsx';
 import BuildCharacteristicsPage from './routes/builds/BuildCharacteristicsPage.tsx';
 import BuildNeonplugSettingsPage from './routes/builds/BuildNeonplugSettingsPage.tsx';
+import BuildFlatMemoryScanListPage from './routes/builds/BuildFlatMemoryScanListPage.tsx';
 import BuildExportPage from './routes/builds/BuildExportPage.tsx';
 import BuildExportResolutionPage from './routes/builds/BuildExportResolutionPage.tsx';
 import BuildChannelsWirePage from './routes/builds/wire-preview/BuildChannelsWirePage.tsx';
@@ -159,6 +160,7 @@ export const appRouter = createBrowserRouter([
               { path: 'memories', element: <Navigate to="channels" replace /> },
               { path: 'channels/bulk', element: <BuildChannelsBulkEditPage /> },
               { path: 'channels', element: <BuildChannelsWirePage /> },
+              { path: 'scan-list', element: <BuildFlatMemoryScanListPage /> },
               { path: 'airband', element: <BuildAirbandWirePage /> },
               { path: 'zones', element: <BuildZonesWirePage /> },
               { path: 'scan-lists', element: <BuildScanListsWirePage /> },

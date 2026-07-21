@@ -47,7 +47,7 @@ const CAPABILITY_COPY: Record<CapabilityId, CapabilityCopy> = {
     summary:
       'Scanning is controlled per channel (include or skip), not with a separate scan-list entity.',
     consequences: [
-      'There is no dedicated Scan lists page for this build.',
+      'This build has a Scan list page for include/skip per memory.',
       'Export uses each channel’s scan setting on the wire.',
     ],
   },

@@ -1,4 +1,5 @@
 import { Stack, Text } from '@mantine/core';
+import { buildUsesFlatMemoryList } from '@core/domain/exportOrderOrSlot.ts';
 import type { WirePreviewRow } from '@core/services/previewWireRows.ts';
 import { ChannelsBulkEditAction } from '../../../components/builds/BuildEntityExportSettingsCard.tsx';
 import BuildFlatMemoryChannelsPage from '../BuildFlatMemoryChannelsPage.tsx';
@@ -32,7 +33,7 @@ function ChannelExpansionContext({ row }: { row: WirePreviewRow }) {
 export default function BuildChannelsWirePage() {
   const { build } = useBuildLayout();
 
-  if (build.formatId === 'chirp') {
+  if (buildUsesFlatMemoryList(build)) {
     return <BuildFlatMemoryChannelsPage />;
   }
 
