@@ -85,7 +85,7 @@ export default function BuildCharacteristicsPage() {
               </Text>
             </>
           ) : null}
-          . Change the radio profile on <Link to={`/builds/${build.id}/overview`}>Overview</Link>.
+          . Change the radio profile on <Link to={`/builds/${build.id}/overview`}>Setup</Link>.
         </Text>
       }
     >

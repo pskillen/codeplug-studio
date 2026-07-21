@@ -153,7 +153,7 @@ export const appRouter = createBrowserRouter([
             path: '/builds/:id',
             element: <BuildLayout />,
             children: [
-              { index: true, element: <Navigate to="overview" replace /> },
+              { index: true, element: <Navigate to="export" replace /> },
               { path: 'overview', element: <BuildOverviewPage /> },
               { path: 'characteristics', element: <BuildCharacteristicsPage /> },
               { path: 'memories', element: <Navigate to="channels" replace /> },

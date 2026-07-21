@@ -32,7 +32,7 @@ export default function NewBuildPage() {
       setError(outcome.reason);
       return;
     }
-    navigate(`/builds/${outcome.build.id}/overview`);
+    navigate(`/builds/${outcome.build.id}/export`);
   }
 
   return (

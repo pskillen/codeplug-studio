@@ -3,11 +3,12 @@ import { newFormatBuild } from '@core/domain/factories.ts';
 import { describe, expect, it } from 'vitest';
 
 describe('buildNavItems', () => {
-  it('includes Radio characteristics after Overview', () => {
+  it('puts Export first, then Setup and Radio characteristics', () => {
     const build = { ...newFormatBuild('proj', 'opengd77-1701'), formatId: 'opengd77' };
     const labels = buildNavItems(build).map((item) => item.label);
-    expect(labels[0]).toBe('Overview');
-    expect(labels[1]).toBe('Radio characteristics');
+    expect(labels[0]).toBe('Export');
+    expect(labels[1]).toBe('Setup');
+    expect(labels[2]).toBe('Radio characteristics');
   });
 
   it('includes Airband for Anytone builds', () => {
