@@ -156,7 +156,7 @@ describe('ExportBuildCpsPanel', () => {
     expect(screen.queryByText(/not in the memory list/i)).not.toBeInTheDocument();
     expect(screen.queryByText(/aren't in a zone/i)).not.toBeInTheDocument();
     expect(screen.getByText(/Only analogue FM\/AM channels/i)).toBeInTheDocument();
-    expect(screen.getByText(/CHIRP UV-5R support is in progress/)).toBeInTheDocument();
+    expect(screen.getAllByText(/CHIRP for UV-5R Mini is still being tested/)).toHaveLength(2);
   });
 
   it('hides CHIRP prefer-NeonPlug hint when export profile is not UV-5R', async () => {
@@ -174,8 +174,10 @@ describe('ExportBuildCpsPanel', () => {
     );
 
     expect(await screen.findByRole('button', { name: 'Download CSV' })).not.toBeDisabled();
-    expect(screen.queryByText(/CHIRP UV-5R support is in progress/)).not.toBeInTheDocument();
-    expect(screen.queryByText(/DM-32 CPS export is deprecated/)).not.toBeInTheDocument();
+    expect(
+      screen.queryByText(/CHIRP for UV-5R Mini is still being tested/),
+    ).not.toBeInTheDocument();
+    expect(screen.queryByText(/Prefer NeonPlug to write your DM-32/)).not.toBeInTheDocument();
   });
 
   it('shows prefer-NeonPlug deprecation alert for DM32 builds only', async () => {
@@ -192,9 +194,7 @@ describe('ExportBuildCpsPanel', () => {
       </MemoryRouter>,
     );
 
-    expect(
-      await screen.findByText(/DM-32 CPS export is deprecated for radio write/),
-    ).toBeInTheDocument();
+    expect(await screen.findAllByText(/Prefer NeonPlug to write your DM-32/)).toHaveLength(2);
     expect(screen.getByRole('button', { name: 'Download ZIP' })).not.toBeDisabled();
     unmount();
 
@@ -204,7 +204,7 @@ describe('ExportBuildCpsPanel', () => {
       </MantineProvider>,
     );
     expect(await screen.findByText(/OpenGD77 \(1701\)/)).toBeInTheDocument();
-    expect(screen.queryByText(/DM-32 CPS export is deprecated/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Prefer NeonPlug to write your DM-32/)).not.toBeInTheDocument();
   });
 
   it('opens CSV preview modal for CHIRP single-file export', async () => {

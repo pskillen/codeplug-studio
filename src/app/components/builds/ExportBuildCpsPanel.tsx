@@ -370,8 +370,12 @@ export default function ExportBuildCpsPanel({ build }: ExportBuildCpsPanelProps)
     const suggestedCsvName = defaultCpsSingleFileName(build.formatId as FormatId, exportProfileId);
     const profileOverridesBuild = exportProfileId !== build.profileId;
 
+    const showChirpUv5rPreferNeonPlug =
+      build.formatId === 'chirp' && exportProfileId === 'chirp-uv5r';
+
     return (
       <Stack gap="sm">
+        {showChirpUv5rPreferNeonPlug ? <ChirpUv5rPreferNeonPlugAlert /> : null}
         <Text size="sm">
           Export as{' '}
           <Text span fw={600}>
@@ -391,9 +395,6 @@ export default function ExportBuildCpsPanel({ build }: ExportBuildCpsPanelProps)
             Export uses {traitProfileFor(exportProfileId)?.label ?? exportProfileId}; build default
             is {profileLabel}.
           </Text>
-        ) : null}
-        {build.formatId === 'chirp' && exportProfileId === 'chirp-uv5r' ? (
-          <ChirpUv5rPreferNeonPlugAlert />
         ) : null}
         <ExportBuildSettingsSections
           build={build}
@@ -415,6 +416,7 @@ export default function ExportBuildCpsPanel({ build }: ExportBuildCpsPanelProps)
         ) : null}
         {error ? <Alert color="red">{error}</Alert> : null}
         {exportWarnings.length > 0 ? <ExportWarningsAlert warnings={exportWarnings} /> : null}
+        {showChirpUv5rPreferNeonPlug ? <ChirpUv5rPreferNeonPlugAlert /> : null}
         <Group gap="xs">
           <Button
             leftSection={<IconDownload size={ICON_SIZE_ACTION} stroke={ICON_STROKE} />}
@@ -459,8 +461,11 @@ export default function ExportBuildCpsPanel({ build }: ExportBuildCpsPanelProps)
     );
   }
 
+  const showDm32PreferNeonPlug = build.formatId === 'dm32';
+
   return (
     <Stack gap="sm">
+      {showDm32PreferNeonPlug ? <Dm32PreferNeonPlugAlert /> : null}
       <Text size="sm">
         Export as{' '}
         <Text span fw={600}>
@@ -498,8 +503,7 @@ export default function ExportBuildCpsPanel({ build }: ExportBuildCpsPanelProps)
         </Text>
       ) : null}
       {error ? <Alert color="red">{error}</Alert> : null}
-      {build.formatId === 'dm32' ? <Dm32PreferNeonPlugAlert /> : null}
-      {build.formatId === 'dm32' ? <Dm32AprsSetupAlert exportFileNames={exportFileNames} /> : null}
+      {showDm32PreferNeonPlug ? <Dm32AprsSetupAlert exportFileNames={exportFileNames} /> : null}
       {exportWarnings.length > 0 ? <ExportWarningsAlert warnings={exportWarnings} /> : null}
       {isNeonplug ? (
         <Stack gap="md">
@@ -623,6 +627,7 @@ export default function ExportBuildCpsPanel({ build }: ExportBuildCpsPanelProps)
         </Stack>
       ) : (
         <>
+          {showDm32PreferNeonPlug ? <Dm32PreferNeonPlugAlert /> : null}
           <Group gap="xs">
             <Button
               leftSection={<IconPackage size={ICON_SIZE_ACTION} stroke={ICON_STROKE} />}
