@@ -35,6 +35,12 @@ Each zone (or zone-derived scan list) member library channel id **fans out** to 
 
 All expanded rows for a source channel inherit the same `scanListId`.
 
+When **Export zone-derived scan lists** is on:
+
+- With a populated zoneGrouping layout, only zones with `exportScanList: true` emit lists.
+- With an **empty or missing** layout, every assembled zone is treated as `exportScanList: true` (same spirit as zone assemble’s library fallback) — [#562](https://github.com/pskillen/codeplug-studio/issues/562).
+- Each derived list gets a synthetic **`{zone} Scan`** carrier channel (default 145.500 MHz, or layout `scanCarrierFrequencyHz`), prepended as the first zone member, with `designatedTxChannel` on the scan list set to that carrier number.
+
 When no zone-derived scan lists are produced, DM32UV export still emits one default list (`Scan list 1`) with the first exported channel as a member so NeonPlug’s write filter retains it — see [scan-lists.md](../../../reference/neonplug/scan-lists.md) (#564).
 
 ---
