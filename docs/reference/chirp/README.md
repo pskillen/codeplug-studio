@@ -56,14 +56,14 @@ No zones, contacts, talk groups, or RX group lists in CHIRP analogue exports.
 
 Structural rules enforced by `cps-verify` for profile `chirp-uv5r` ([wire-verification.md](../../build/testing/wire-verification.md)):
 
-| Rule         | Expectation                                                                                                  |
-| ------------ | ------------------------------------------------------------------------------------------------------------ |
-| Line endings | **LF** (Studio export via OpenGD77-style `csvWrite`)                                                         |
-| Quoting      | Selective RFC 4180                                                                                           |
-| Headers      | Exact `CHIRP_HEADERS` set + order                                                                            |
-| Foreign keys | None (flat memory list)                                                                                      |
+| Rule         | Expectation                                                                                                   |
+| ------------ | ------------------------------------------------------------------------------------------------------------- |
+| Line endings | **LF** (Studio export via OpenGD77-style `csvWrite`)                                                          |
+| Quoting      | Selective RFC 4180                                                                                            |
+| Headers      | Exact `CHIRP_HEADERS` set + order                                                                             |
+| Foreign keys | None (flat memory list)                                                                                       |
 | Cardinality  | Row count ≤ `maxMemorySlots` (999); channel `Name` ≤ `nameLimit` (12) — [chirp-uv5r.md](radios/chirp-uv5r.md) |
-| Files        | Single `.csv` (any basename)                                                                                 |
+| Files        | Single `.csv` (any basename)                                                                                  |
 
 ## DMR columns on analogue exports
 
