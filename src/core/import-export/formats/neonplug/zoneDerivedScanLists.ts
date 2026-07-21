@@ -2,6 +2,11 @@ import { applyListWireNameLimits } from '@core/import-export/channelExpansion/li
 import { buildScanContext, effectiveScanSkips } from '@core/import-export/scanInclusion/index.ts';
 import type { CpsExportOptions } from '@core/import-export/types.ts';
 import {
+  DEFAULT_SCAN_CARRIER_HZ,
+  zoneScanCarrierWireName,
+  type SyntheticScanCarrier,
+} from '@core/import-export/zoneDerivedScanLists/carrier.ts';
+import {
   layoutEntry,
   scanMasterEnabled,
   scanMemberIds,
@@ -24,6 +29,12 @@ export interface NeonplugZoneDerivedScanExport {
   scanLists: NeonplugScanList[];
   /** Channel UUID → 1-based NeonPlug `scanListId` (inherited by all expanded rows). */
   scanListIdByChannelId: Map<string, number>;
+  /** Synthetic `{zone} Scan` FM carriers (numbered later in serialise). */
+  carriers: SyntheticScanCarrier[];
+  /** Zone id → carrier wire name for zone membership prepend. */
+  carrierPrependByZoneId: Map<string, string>;
+  /** Zone id → 1-based scan list id (for carrier `scanListId` / designated TX). */
+  scanListIdByZoneId: Map<string, number>;
 }
 
 /**
@@ -74,6 +85,10 @@ export function neonplugZoneGroupingLayoutIsEmpty(
  *
  * When `zoneGrouping` is empty/missing and the scan master is on, each assembled
  * zone is treated as `exportScanList: true` (parity with zone assemble fallback).
+ *
+ * Also synthesises DM32-parity `{zone} Scan` carrier metadata (numbered in serialise).
+ *
+ * @param reservedWireNames — existing channel wire names so carrier labels stay unique
  */
 export function deriveNeonplugZoneDerivedScanLists(
   assembled: AssembledBuild,
@@ -81,10 +96,14 @@ export function deriveNeonplugZoneDerivedScanLists(
   numbersBySourceChannelId: ReadonlyMap<string, readonly number[]>,
   options?: CpsExportOptions,
   warnings: string[] = [],
+  reservedWireNames: Iterable<string> = [],
 ): NeonplugZoneDerivedScanExport {
   const result: NeonplugZoneDerivedScanExport = {
     scanLists: [],
     scanListIdByChannelId: new Map(),
+    carriers: [],
+    carrierPrependByZoneId: new Map(),
+    scanListIdByZoneId: new Map(),
   };
 
   if (!scanMasterEnabled(options)) return result;
@@ -104,7 +123,8 @@ export function deriveNeonplugZoneDerivedScanLists(
       : undefined,
     { defaultScanInclusion: 'scan' },
   );
-  const reservedNames = new Set<string>();
+  const reservedScanListNames = new Set<string>();
+  const reservedCarrierNames = new Set(reservedWireNames);
   const maxLists = Math.min(profile.maxScanLists, NEONPLUG_MAX_CHANNEL_SCAN_LIST_ID);
 
   for (const assembledZone of assembled.zones) {
@@ -156,7 +176,7 @@ export function deriveNeonplugZoneDerivedScanLists(
 
     const name = applyListWireNameLimits(
       assembledZone.wireName,
-      reservedNames,
+      reservedScanListNames,
       options,
       profile.id,
       warnings,
@@ -165,6 +185,14 @@ export function deriveNeonplugZoneDerivedScanLists(
     );
 
     const scanListId = result.scanLists.length + 1;
+    const carrierWireName = zoneScanCarrierWireName(
+      assembledZone.wireName,
+      profile.id,
+      reservedCarrierNames,
+      warnings,
+    );
+    reservedCarrierNames.add(carrierWireName);
+    const carrierHz = entry?.scanCarrierFrequencyHz ?? DEFAULT_SCAN_CARRIER_HZ;
 
     result.scanLists.push({
       name,
@@ -174,6 +202,17 @@ export function deriveNeonplugZoneDerivedScanLists(
       ctcScanMode: 0,
       scanTxMode: 0,
     });
+
+    result.carriers.push({
+      zoneId: assembledZone.zoneId,
+      zoneName: assembledZone.wireName,
+      wireName: carrierWireName,
+      frequencyHz: carrierHz,
+      scanListName: name,
+    });
+    result.carrierPrependByZoneId.set(assembledZone.zoneId, carrierWireName);
+    result.scanListIdByZoneId.set(assembledZone.zoneId, scanListId);
+    result.scanListIdByChannelId.set(`scan-carrier:${assembledZone.zoneId}`, scanListId);
 
     for (const channelId of memberIds) {
       if (!result.scanListIdByChannelId.has(channelId)) {

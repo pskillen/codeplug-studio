@@ -8,6 +8,8 @@ import type { NeonplugZone } from './wireTypes.ts';
 /**
  * Project assembled zones → NeonPlug `zones[]` with channel **numbers**.
  * Membership fans out via expanded channel numbers, then truncates to profile `zoneMembers`.
+ * When a zone-derived scan carrier number is provided, it is prepended as the first member
+ * (carrier kept on truncate).
  */
 export function serialiseNeonplugZones(
   assembled: AssembledBuild,
@@ -15,6 +17,7 @@ export function serialiseNeonplugZones(
   numbersBySourceChannelId: ReadonlyMap<string, readonly number[]>,
   options: CpsExportOptions | undefined,
   warnings: string[],
+  carrierNumberByZoneId: ReadonlyMap<string, number> = new Map(),
 ): NeonplugZone[] {
   const zones: NeonplugZone[] = [];
   const reserved = new Set<string>();
@@ -23,6 +26,10 @@ export function serialiseNeonplugZones(
     if (zones.length >= profile.maxZones) break;
 
     let channels = expandNeonplugZoneMemberNumbers(zone.memberChannelIds, numbersBySourceChannelId);
+    const carrierNumber = carrierNumberByZoneId.get(zone.zoneId);
+    if (carrierNumber != null) {
+      channels = [carrierNumber, ...channels.filter((n) => n !== carrierNumber)];
+    }
     if (channels.length > profile.zoneMembers) {
       warnings.push(
         `Zone "${zone.wireName}" truncated from ${channels.length} to ${profile.zoneMembers} members`,

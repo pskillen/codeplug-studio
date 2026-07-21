@@ -221,15 +221,18 @@ describe('neonplug/serialise', () => {
       exportScratchChannels: true,
     });
 
-    // 2 TG rows + 1 scratch
-    expect(data.channels).toHaveLength(3);
-    expect(data.channels.map((c) => c.number)).toEqual([1, 2, 3]);
+    // 2 TG rows + 1 scratch + 1 zone-derived scan carrier
+    expect(data.channels).toHaveLength(4);
+    expect(data.channels.map((c) => c.number)).toEqual([1, 2, 3, 4]);
     expect(data.channels[0]?.rxGroupListId).toBe(0);
     expect(data.channels[0]?.contactId).toBeGreaterThan(0);
     expect(data.channels[2]?.name).toMatch(/Scratch/i);
     expect(data.channels[2]?.rxGroupListId).toBe(1);
-    expect(data.zones[0]?.channels).toEqual([1, 2, 3]);
+    expect(data.channels[3]?.name).toBe('West Scan');
+    expect(data.channels[3]?.mode).toBe('Analog');
+    expect(data.zones[0]?.channels).toEqual([4, 1, 2, 3]);
     expect(data.scanLists[0]?.channels).toEqual([1, 2, 3]);
+    expect(data.scanLists[0]?.designatedTxChannel).toBe(4);
     expect(data.channels.every((c) => c.scanListId === 1)).toBe(true);
   });
 
