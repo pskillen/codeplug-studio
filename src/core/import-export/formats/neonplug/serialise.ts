@@ -5,10 +5,7 @@ import {
   expandAllNeonplugChannelsForExport,
   type ExpandedNeonplugChannelRow,
 } from './channelExpansion.ts';
-import {
-  channelToNeonplugChannel,
-  neonplugContextsFromExportOptions,
-} from './channelWire.ts';
+import { channelToNeonplugChannel, neonplugContextsFromExportOptions } from './channelWire.ts';
 import { serialiseNeonplugContactsForProfile } from './contacts.ts';
 import {
   assignNeonplugExpandedChannelNumbers,

@@ -1,10 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import {
-  newChannel,
-  newRxGroupList,
-  newTalkGroup,
-  newZone,
-} from '@core/domain/factories.ts';
+import { newChannel, newRxGroupList, newTalkGroup, newZone } from '@core/domain/factories.ts';
 import type { Channel, ChannelModeProfileDMR } from '@core/models/library.ts';
 import type { AssembledBuild } from '@core/services/assemble.ts';
 import { serialiseNeonplugCodeplug } from './serialise.ts';

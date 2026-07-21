@@ -22,10 +22,7 @@ export function serialiseNeonplugZones(
   for (const zone of assembled.zones) {
     if (zones.length >= profile.maxZones) break;
 
-    let channels = expandNeonplugZoneMemberNumbers(
-      zone.memberChannelIds,
-      numbersBySourceChannelId,
-    );
+    let channels = expandNeonplugZoneMemberNumbers(zone.memberChannelIds, numbersBySourceChannelId);
     if (channels.length > profile.zoneMembers) {
       warnings.push(
         `Zone "${zone.wireName}" truncated from ${channels.length} to ${profile.zoneMembers} members`,

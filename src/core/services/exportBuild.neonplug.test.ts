@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import { unzipSync, strFromU8 } from 'fflate';
-import { emptyLibrary, newChannel, newFormatBuild, newRxGroupList, newTalkGroup } from '@core/domain/factories.ts';
+import {
+  emptyLibrary,
+  newChannel,
+  newFormatBuild,
+  newRxGroupList,
+  newTalkGroup,
+} from '@core/domain/factories.ts';
 import type { Channel } from '@core/models/library.ts';
 import type { LibrarySlice } from '@core/services/assemble.ts';
 import { exportBuildZip } from './exportBuild.ts';
