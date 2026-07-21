@@ -27,7 +27,8 @@ Wire shapes that are **mostly lossy** for Studio’s first NeonPlug milestones.
 
 Large DM32-oriented settings bag (display, GPS, buttons, APRS position, embedded VFO channels, menu flags, …). Includes nested `vfoA` / `vfoB` as full [Channel](channels.md) objects and optional `radioSpecific` bag for other radios.
 
-| Studio guidance | **Omit** (`null`) on **greenfield** export. On **merge-into-base**, retain the donor bag opaque at the export boundary — do not stash into the library. |
+| Studio guidance | **Omit** (`null`) on **greenfield** export. On **merge-into-base**, retain the donor bag opaque at the export boundary — do not stash into the library — then **overwrite the APRS (+ related GPS) leaf fields** from `Library.aprsConfiguration` when present ([aprs.md](aprs.md), [#559](https://github.com/pskillen/codeplug-studio/issues/559)). Unmodelled keys (e.g. `aprsRepeaterActiveDelay`, VFOs, menu flags) stay from the donor. |
+
 
 ## Deferred arrays / objects
 
@@ -47,7 +48,8 @@ Large DM32-oriented settings bag (display, GPS, buttons, APRS position, embedded
 | Zones / scan / contacts / RX groups     | Filled on DM32UV (#540); UV5R empty | Studio projection                      |
 | Channel contact / RX / scan indexes     | Wired on DM32UV (#540); `0` on UV5R | From Studio projection                 |
 | Operator `radioIds`                     | Empty                               | **Retained** from donor                |
-| Radio settings / VFOs                   | Lost                                | **Retained** from donor                |
+| Radio settings / VFOs                   | Lost                                | **Retained** from donor; **APRS globals patched** from Studio ([aprs.md](aprs.md)) |
+
 | Emergencies / messages / quick contacts | Lost                                | **Retained** from donor                |
 | Encryption keys                         | Lost (intentional on greenfield)    | Opaque retain from donor (not library) |
 | Unknown channel bitfields               | Lost (defaults on export)           | Lost (Studio channels overwrite)       |

@@ -22,6 +22,7 @@ Tier-1 hub for **digital APRS** in Codeplug Studio — vendor-neutral library en
 | Cross-format reconciliation doc                                                                      |                                                                          |
 | Anytone `APRS.CSV` + channel export ([#251](https://github.com/pskillen/codeplug-studio/issues/251)) |                                                                          |
 | DM32 channel APRS + `APRS.md` guide ([#250](https://github.com/pskillen/codeplug-studio/issues/250)) |                                                                          |
+| NeonPlug DM-32UV APRS globals + channel pair on merge-export ([#559](https://github.com/pskillen/codeplug-studio/issues/559)) |                                                                          |
 
 **Analog-off export policy:** Anytone and DM32 **analog APRS** columns are not operator-editable (`Analog APRS PTT Mode` constant). Digital APRS on analog _channels_ is supported where the radio allows reporting via a digital path.
 
@@ -80,6 +81,7 @@ Redirects: `/library/aprs-configurations` → `/library/aprs-configuration`.
 | Anytone APRS slots on analog channels (AM air / FM broadcast)          | Shipped ([#359](https://github.com/pskillen/codeplug-studio/issues/359)) |
 | Native YAML v17 singleton parse + orphan slot soft-warn                | Shipped ([#430](https://github.com/pskillen/codeplug-studio/issues/430)) |
 | DM32 per-channel APRS + `APRS.md` guide                                | Shipped ([#250](https://github.com/pskillen/codeplug-studio/issues/250)) |
+| NeonPlug DM-32UV APRS → `radioSettings` (merge-export)                 | Shipped ([#559](https://github.com/pskillen/codeplug-studio/issues/559)) |
 
 ---
 
@@ -89,3 +91,4 @@ Redirects: `/library/aprs-configurations` → `/library/aprs-configuration`.
 - [Anytone APRS wire inventory](../../reference/anytone/aprs.md) — tier 3
 - [Anytone per-channel APRS](../../reference/anytone/aprs-on-channels.md) — tier 3
 - [DM32 APRS](../../reference/dm32/aprs.md) — tier 3
+- [NeonPlug APRS](../../reference/neonplug/aprs.md) — tier 3

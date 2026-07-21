@@ -53,9 +53,10 @@ Ground truth: NeonPlug `frequencyValidator.ts` / airport import (`airportChannel
 | `scanAdd`          | boolean                          | Per-channel scan include                    |
 | `scanListId`       | number                           | Index into scan lists (bit-packed on radio) |
 | `forbidTalkaround` | boolean                          |                                             |
-| `aprsReceive`      | boolean                          |                                             |
-| `aprsReportMode`   | `'Off' \| 'Digital' \| 'Analog'` |                                             |
+| `aprsReceive`      | boolean                          | From `Channel.aprs.receiveEnabled`              |
+| `aprsReportMode`   | `'Off' \| 'Digital' \| 'Analog'` | Studio emits `'Digital'` or `'Off'` only — see [aprs.md](aprs.md) |
 | `power`            | `'Low' \| 'Medium' \| 'High'`    | UV5R mapping uses Low/High only             |
+
 
 ## Analogue tones and squelch
 
