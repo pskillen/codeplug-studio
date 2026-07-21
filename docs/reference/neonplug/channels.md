@@ -17,6 +17,8 @@ NeonPlug uses **one Channel type** for all radios. DM-32UV fills digital fields;
 
 On DM32UV export with m×n expansion enabled (default), Studio may emit **more than one** `channels[]` object per library channel (one per RX-list talk group, plus an optional scratch companion). Numbers are assigned sequentially across the expanded set. See [export-projections.md](../../features/import-export/neonplug/export-projections.md).
 
+When zone-derived scan export is on, Studio also appends one synthetic **`{zoneName} Scan`** Analog/FM simplex row per exported scan list (export-only id `scan-carrier:{zoneId}`). That carrier is prepended as the first zone member and receives the list’s `scanListId`; see [scan-lists.md](scan-lists.md).
+
 ## Frequencies
 
 | Field         | Type   | Unit | Notes                          |
