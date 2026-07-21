@@ -47,15 +47,15 @@ Ground truth: NeonPlug `frequencyValidator.ts` / airport import (`airportChannel
 
 ## Bandwidth, scan, APRS (selected)
 
-| Field              | Type / enum                      | Notes                                       |
-| ------------------ | -------------------------------- | ------------------------------------------- |
-| `bandwidth`        | `'12.5kHz' \| '25kHz'`           | Wide / narrow                               |
-| `scanAdd`          | boolean                          | Per-channel scan include                    |
-| `scanListId`       | number                           | Index into scan lists (bit-packed on radio) |
-| `forbidTalkaround` | boolean                          |                                             |
-| `aprsReceive`      | boolean                          |                                             |
-| `aprsReportMode`   | `'Off' \| 'Digital' \| 'Analog'` |                                             |
-| `power`            | `'Low' \| 'Medium' \| 'High'`    | UV5R mapping uses Low/High only             |
+| Field              | Type / enum                      | Notes                                                             |
+| ------------------ | -------------------------------- | ----------------------------------------------------------------- |
+| `bandwidth`        | `'12.5kHz' \| '25kHz'`           | Wide / narrow                                                     |
+| `scanAdd`          | boolean                          | Per-channel scan include                                          |
+| `scanListId`       | number                           | Index into scan lists (bit-packed on radio)                       |
+| `forbidTalkaround` | boolean                          |                                                                   |
+| `aprsReceive`      | boolean                          | From `Channel.aprs.receiveEnabled`                                |
+| `aprsReportMode`   | `'Off' \| 'Digital' \| 'Analog'` | Studio emits `'Digital'` or `'Off'` only — see [aprs.md](aprs.md) |
+| `power`            | `'Low' \| 'Medium' \| 'High'`    | UV5R mapping uses Low/High only                                   |
 
 ## Analogue tones and squelch
 

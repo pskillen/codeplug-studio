@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { unzipSync, strFromU8 } from 'fflate';
 import {
   emptyLibrary,
+  newAprsConfiguration,
   newChannel,
   newFormatBuild,
   newRxGroupList,
@@ -13,6 +14,7 @@ import { exportBuildZip } from './exportBuild.ts';
 import type { NeonplugCodeplugData } from '@core/import-export/formats/neonplug/wireTypes.ts';
 import { NEONPLUG_JSON_FILE_NAME } from '@core/import-export/formats/neonplug/serialise.ts';
 import { buildNeonplugZip } from '@core/import-export/formats/neonplug/packageZip.ts';
+import { NEONPLUG_APRS_GREENFIELD_WARNING } from '@core/import-export/formats/neonplug/aprsSettingsWire.ts';
 
 const projectId = 'proj-neonplug-export';
 
@@ -257,5 +259,111 @@ describe('exportBuildZip neonplug', () => {
     expect(data.channels).toHaveLength(3);
     expect(data.channels[0]?.rxGroupListId).toBe(0);
     expect(data.channels[2]?.name).toMatch(/Scratch/i);
+  });
+
+  it('warns on greenfield when library has APRS config and leaves radioSettings null', () => {
+    const ch = dmrChannel('ch-dmr', 'GB7EM');
+    const build = newFormatBuild(projectId, 'neonplug-dm32uv', 'Neon APRS');
+    const library: LibrarySlice = {
+      ...emptyLibrary(),
+      channels: [ch],
+      aprsConfiguration: {
+        ...newAprsConfiguration(projectId, 'Home'),
+        autoTxIntervalSec: 180,
+        channelSlots: [
+          {
+            channelRef: { kind: 'channel', id: ch.id },
+            timeslot: 1,
+            targetDmrId: 23551,
+            callType: 'group',
+          },
+        ],
+      },
+    };
+
+    const { zip, warnings } = exportBuildZip({
+      build,
+      library,
+      options: { shortenNames: false },
+    });
+
+    const data = parseZip(zip);
+    expect(data.radioSettings).toBeNull();
+    expect(warnings).toContain(NEONPLUG_APRS_GREENFIELD_WARNING);
+  });
+
+  it('patches donor radioSettings APRS fields on merge-export', () => {
+    const ch = dmrChannel('ch-dmr', 'GB7EM');
+    const build = newFormatBuild(projectId, 'neonplug-dm32uv', 'Neon APRS Merge');
+    const library: LibrarySlice = {
+      ...emptyLibrary(),
+      channels: [ch],
+      aprsConfiguration: {
+        ...newAprsConfiguration(projectId, 'Home'),
+        autoTxIntervalSec: 180,
+        positionSource: 'fixed',
+        fixedLocation: { lat: 55.9, lon: -3.2 },
+        channelSlots: [
+          {
+            channelRef: { kind: 'channel', id: ch.id },
+            timeslot: 1,
+            targetDmrId: 23551,
+            callType: 'group',
+          },
+          {
+            channelRef: null,
+            timeslot: null,
+            targetDmrId: 23551,
+            callType: 'group',
+          },
+        ],
+      },
+    };
+
+    const baseBody = JSON.stringify({
+      version: '1.0.0',
+      exportDate: '2020-01-01T00:00:00.000Z',
+      channels: [],
+      zones: [],
+      scanLists: [],
+      contacts: [],
+      rxGroups: [],
+      radioIds: [],
+      quickContacts: [],
+      messages: [],
+      digitalEmergencies: [],
+      analogEmergencies: [],
+      encryptionKeys: [],
+      digitalEmergencyConfig: null,
+      radioSettings: {
+        powerOnDisplayLine1: 'RADIO',
+        aprsRepeaterActiveDelay: 3,
+        aprsUploadId: 1,
+        aprsReportChannel1: 99,
+      },
+      radioInfo: { model: 'DP570UV', firmware: 'donor-fw' },
+    });
+    const baseNeonplugBytes = buildNeonplugZip({ [NEONPLUG_JSON_FILE_NAME]: baseBody });
+
+    const { zip, warnings } = exportBuildZip({
+      build,
+      library,
+      options: { shortenNames: false },
+      baseNeonplugBytes,
+    });
+
+    const data = parseZip(zip);
+    const settings = data.radioSettings as Record<string, unknown>;
+    expect(settings.powerOnDisplayLine1).toBe('RADIO');
+    expect(settings.aprsRepeaterActiveDelay).toBe(3);
+    expect(settings.aprsScheduledSendTime).toBe(6);
+    expect(settings.aprsFixedBeacon).toBe(true);
+    expect(settings.aprsReportChannel1).toBe(1);
+    expect(settings.aprsReportChannel2).toBe(0);
+    expect(settings.aprsCallType).toBe(true);
+    expect(settings.aprsUploadId).toBe(23551);
+    expect(settings.latitudeDirection).toBe('N');
+    expect(settings.longitudeDirection).toBe('W');
+    expect(warnings).not.toContain(NEONPLUG_APRS_GREENFIELD_WARNING);
   });
 });

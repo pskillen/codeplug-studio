@@ -229,5 +229,32 @@ describe('channelToNeonplugChannel', () => {
     );
     expect(wire.aprsReceive).toBe(true);
     expect(wire.aprsReportMode).toBe('Digital');
+    // NeonPlug Channel has no digitalPtt / reportSlotIndex — only receive + report mode.
+    expect(wire).not.toHaveProperty('digitalPttMode');
+    expect(wire).not.toHaveProperty('reportSlotIndex');
+  });
+
+  it('maps missing or off APRS binding to receive false and report Off (never Analog)', () => {
+    const absent = channelToNeonplugChannel(channel({}), {
+      number: 1,
+      name: 'No APRS',
+      profileId: 'neonplug-dm32uv',
+    });
+    expect(absent.aprsReceive).toBe(false);
+    expect(absent.aprsReportMode).toBe('Off');
+
+    const off = channelToNeonplugChannel(
+      channel({
+        aprs: {
+          receiveEnabled: false,
+          reportType: 'off',
+          digitalPttMode: 'on',
+          reportSlotIndex: 2,
+        },
+      }),
+      { number: 2, name: 'Off', profileId: 'neonplug-dm32uv' },
+    );
+    expect(off.aprsReceive).toBe(false);
+    expect(off.aprsReportMode).toBe('Off');
   });
 });

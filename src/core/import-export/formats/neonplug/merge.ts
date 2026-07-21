@@ -1,4 +1,8 @@
 import { unzipSync, strFromU8 } from 'fflate';
+import {
+  applyNeonplugAprsRadioSettingsPatch,
+  type NeonplugAprsRadioSettingsPatch,
+} from './aprsSettingsWire.ts';
 import { NEONPLUG_CODEPLUG_VERSION, NEONPLUG_JSON_FILE_NAME } from './serialise.ts';
 import type { NeonplugCodeplugData, NeonplugRadioInfo } from './wireTypes.ts';
 
@@ -103,14 +107,19 @@ export type NeonplugMergeOptions = {
   exportDate?: string;
   /** Expected NeonPlug radioInfo.model from Studio profile (e.g. DP570UV). */
   expectedRadioModel?: string;
+  /**
+   * Shallow APRS (+ related GPS) leaf patch from Studio model.
+   * Applied onto retained donor `radioSettings`; no-op when donor settings are null.
+   */
+  aprsRadioSettingsPatch?: NeonplugAprsRadioSettingsPatch | null;
 };
 
 /**
  * Merge Studio projection into a radio-read donor CodeplugData.
  *
  * Studio overwrites: channels, zones, scanLists, contacts, rxGroups.
- * Donor retains: radioIds, quickContacts, radioSettings, radioInfo, messages,
- * emergencies, encryptionKeys, digitalEmergencyConfig.
+ * Donor retains: radioIds, quickContacts, radioSettings (then APRS patch), radioInfo,
+ * messages, emergencies, encryptionKeys, digitalEmergencyConfig.
  */
 export function mergeNeonplugCodeplug(
   base: NeonplugCodeplugData,
@@ -130,6 +139,11 @@ export function mergeNeonplugCodeplug(
     );
   }
 
+  const radioSettings = applyNeonplugAprsRadioSettingsPatch(
+    base.radioSettings,
+    options?.aprsRadioSettingsPatch ?? null,
+  );
+
   const data: NeonplugCodeplugData = {
     version: NEONPLUG_CODEPLUG_VERSION,
     exportDate,
@@ -146,7 +160,7 @@ export function mergeNeonplugCodeplug(
     analogEmergencies: base.analogEmergencies,
     encryptionKeys: base.encryptionKeys,
     digitalEmergencyConfig: base.digitalEmergencyConfig,
-    radioSettings: base.radioSettings,
+    radioSettings,
     radioInfo: base.radioInfo,
   };
 

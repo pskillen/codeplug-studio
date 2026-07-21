@@ -127,4 +127,58 @@ describe('neonplug/merge', () => {
     });
     expect(warnings.some((w) => /UV5R-Mini/.test(w) && /DP570UV/.test(w))).toBe(true);
   });
+
+  it('patches donor radioSettings APRS slice while retaining unmodelled keys', () => {
+    const base = emptyProjection({
+      radioSettings: {
+        powerOnDisplayLine1: 'KEEP',
+        aprsRepeaterActiveDelay: 5,
+        aprsUploadId: 1,
+        aprsReportChannel1: 9,
+      },
+    });
+    const projected = emptyProjection({
+      channels: [{ number: 1, name: 'Studio' } as NeonplugCodeplugData['channels'][number]],
+    });
+    const { data } = mergeNeonplugCodeplug(base, projected, {
+      aprsRadioSettingsPatch: {
+        aprsScheduledSendTime: 6,
+        aprsFixedBeacon: true,
+        latitude: '55.9',
+        latitudeDirection: 'N',
+        longitude: '3.2',
+        longitudeDirection: 'W',
+        aprsReportChannel1: 4,
+        aprsReportChannel2: 0,
+        aprsReportChannel3: 0,
+        aprsReportChannel4: 0,
+        aprsReportChannel5: 0,
+        aprsReportChannel6: 0,
+        aprsReportChannel7: 0,
+        aprsReportChannel8: 0,
+        aprsCallType: true,
+        aprsUploadId: 23551,
+      },
+    });
+    expect(data.radioSettings).toEqual({
+      powerOnDisplayLine1: 'KEEP',
+      aprsRepeaterActiveDelay: 5,
+      aprsScheduledSendTime: 6,
+      aprsFixedBeacon: true,
+      latitude: '55.9',
+      latitudeDirection: 'N',
+      longitude: '3.2',
+      longitudeDirection: 'W',
+      aprsReportChannel1: 4,
+      aprsReportChannel2: 0,
+      aprsReportChannel3: 0,
+      aprsReportChannel4: 0,
+      aprsReportChannel5: 0,
+      aprsReportChannel6: 0,
+      aprsReportChannel7: 0,
+      aprsReportChannel8: 0,
+      aprsCallType: true,
+      aprsUploadId: 23551,
+    });
+  });
 });

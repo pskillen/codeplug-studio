@@ -26,7 +26,9 @@ import {
 import {
   NEONPLUG_JSON_FILE_NAME,
   neonplugRadioModelForProfile,
+  serialiseNeonplugCodeplug,
 } from '@core/import-export/formats/neonplug/serialise.ts';
+import { NEONPLUG_APRS_GREENFIELD_WARNING } from '@core/import-export/formats/neonplug/aprsSettingsWire.ts';
 import {
   anytoneLstFileName,
   isAnytoneLstFileName,
@@ -286,6 +288,10 @@ export function exportBuildZip({
       mergeBase = neonplugDonorRetainAsMergeBase(build.cpsWireHydration);
     }
 
+    // Re-serialise for the APRS settings patch (same assemble projection as exportBuildAll).
+    const exportOptions = mergeExportOptions(build, options, library);
+    const { aprsSettingsPatch } = serialiseNeonplugCodeplug(result.assembled, exportOptions);
+
     if (mergeBase) {
       const projected = parseNeonplugCodeplugJson(JSON.parse(projectedJson) as unknown);
       const { data: merged, warnings: mergeWarnings } = mergeNeonplugCodeplug(
@@ -293,6 +299,7 @@ export function exportBuildZip({
         projected,
         {
           expectedRadioModel: projected.radioInfo.model || undefined,
+          aprsRadioSettingsPatch: aprsSettingsPatch,
         },
       );
       const files = {
@@ -307,7 +314,12 @@ export function exportBuildZip({
       };
     }
 
-    return { ...result, zip: buildNeonplugZip(result.files) };
+    const greenfieldWarnings = aprsSettingsPatch != null ? [NEONPLUG_APRS_GREENFIELD_WARNING] : [];
+    return {
+      ...result,
+      warnings: dedupeWarnings([...result.warnings, ...greenfieldWarnings]),
+      zip: buildNeonplugZip(result.files),
+    };
   }
 
   const zip =
