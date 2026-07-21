@@ -51,11 +51,19 @@ function isTimeslotToken(token: string): boolean {
   return /^TS\d+$/i.test(token) || /^T\d+$/i.test(token);
 }
 
+/** Pure digits or short alnum designators with digits (S20, SU24, U280) — not PMR446. */
+function isDesignatorToken(token: string): boolean {
+  if (/^\d+$/.test(token)) return true;
+  if (token.length > 5) return false;
+  return /^[A-Za-z]{1,3}\d+[A-Za-z]{0,2}$/.test(token);
+}
+
 function isProtectedToken(token: string): boolean {
   if (!token) return true;
   if (token === '-F' || token === '-D') return true;
   if (isCallsignToken(token)) return true;
   if (isTimeslotToken(token)) return true;
+  if (isDesignatorToken(token)) return true;
   return false;
 }
 
@@ -65,6 +73,21 @@ function tokenizeName(stem: string): string[] {
 
 function joinTokens(tokens: string[]): string {
   return tokens.join(' ');
+}
+
+/**
+ * Abbreviate a whitespace token: try the whole token first (keys like `PMR-446`),
+ * then split on hyphens and abbreviate each part (so `PMR446-1` → `PMR-1`).
+ */
+function abbreviateHyphenatedToken(token: string, level: number): string {
+  if (isProtectedToken(token)) return token;
+  const whole = abbreviateWord(token, level);
+  if (whole !== token) return whole;
+  if (!token.includes('-')) return token;
+  return token
+    .split('-')
+    .map((part) => (isProtectedToken(part) ? part : abbreviateWord(part, level)))
+    .join('-');
 }
 
 function applyDictionaryAtLevel(tokens: string[], level: number): string[] {
@@ -78,7 +101,7 @@ function applyDictionaryAtLevel(tokens: string[], level: number): string[] {
       continue;
     }
     const token = tokens[i]!;
-    result.push(isProtectedToken(token) ? token : abbreviateWord(token, level));
+    result.push(abbreviateHyphenatedToken(token, level));
     i++;
   }
   return result;
@@ -101,6 +124,17 @@ function vowelSqueezeWord(word: string): string {
   return word.replace(/[aeiou]/g, '');
 }
 
+/** Squeeze unprotected hyphen parts inside a whitespace token. */
+function vowelSqueezeToken(token: string): string {
+  if (isProtectedToken(token) || !token.includes('-')) {
+    return isProtectedToken(token) ? token : vowelSqueezeWord(token);
+  }
+  return token
+    .split('-')
+    .map((part) => (isProtectedToken(part) ? part : vowelSqueezeWord(part)))
+    .join('-');
+}
+
 function applyVowelSqueezeProgressive(stem: string, maxLen: number): string {
   const tokens = tokenizeName(stem);
   const squeezed = [...tokens];
@@ -111,7 +145,7 @@ function applyVowelSqueezeProgressive(stem: string, maxLen: number): string {
     for (let i = 0; i < squeezed.length; i++) {
       const token = squeezed[i]!;
       if (isProtectedToken(token)) continue;
-      const next = vowelSqueezeWord(token);
+      const next = vowelSqueezeToken(token);
       if (next === token) continue;
       if (token.length > bestLength) {
         bestLength = token.length;
@@ -119,10 +153,69 @@ function applyVowelSqueezeProgressive(stem: string, maxLen: number): string {
       }
     }
     if (bestIndex < 0) break;
-    squeezed[bestIndex] = vowelSqueezeWord(squeezed[bestIndex]!);
+    squeezed[bestIndex] = vowelSqueezeToken(squeezed[bestIndex]!);
   }
 
   return joinTokens(squeezed);
+}
+
+/**
+ * Split a stem into hyphen/space segments with the separator that precedes each
+ * segment after the first (`''` for the first).
+ */
+function splitSegments(stem: string): { text: string; sep: '' | ' ' | '-' }[] {
+  const trimmed = stem.trim();
+  if (!trimmed) return [];
+  const parts = trimmed.split(/([ -])/);
+  const segments: { text: string; sep: '' | ' ' | '-' }[] = [];
+  let pendingSep: '' | ' ' | '-' = '';
+  for (const part of parts) {
+    if (part === ' ' || part === '-') {
+      pendingSep = part;
+      continue;
+    }
+    if (!part) continue;
+    segments.push({ text: part, sep: segments.length === 0 ? '' : pendingSep || ' ' });
+    pendingSep = '';
+  }
+  return segments;
+}
+
+function joinSegments(segments: { text: string; sep: '' | ' ' | '-' }[]): string {
+  return segments.map((s, i) => (i === 0 ? s.text : `${s.sep}${s.text}`)).join('');
+}
+
+/**
+ * Drop leftmost unprotected segments (space or hyphen) until the stem fits `maxLen`.
+ * Prefers keeping trailing designators (e.g. `UHF-SU24` → `SU24`).
+ */
+function dropLeadingSegments(stem: string, maxLen: number): string {
+  let segments = splitSegments(stem);
+  while (joinSegments(segments).length > maxLen && segments.length > 1) {
+    const dropIndex = segments.findIndex((s) => !isProtectedToken(s.text));
+    if (dropIndex < 0) break;
+    segments = segments.filter((_, i) => i !== dropIndex);
+    if (segments.length > 0) {
+      segments = [{ text: segments[0]!.text, sep: '' }, ...segments.slice(1)];
+    }
+  }
+  return joinSegments(segments);
+}
+
+/**
+ * Hard-truncate preferring a trailing protected segment when present
+ * (e.g. keep `SU24` rather than left-slicing into `UHF-SU`).
+ */
+function hardTruncateStem(stem: string, maxLen: number): string {
+  if (stem.length <= maxLen) return stem;
+  const segments = splitSegments(stem);
+  if (segments.length >= 2) {
+    const last = segments[segments.length - 1]!;
+    if (isProtectedToken(last.text) && last.text.length <= maxLen) {
+      return last.text;
+    }
+  }
+  return stem.slice(0, maxLen);
 }
 
 function applyTalkGroupMemberSuffix(
@@ -182,8 +275,24 @@ export function shortenWireName(
     }
   }
 
+  // Hyphenated sets: drop unprotected prefixes (UHF-SU24 → SU24) before vowel-squeeze
+  // so short band tokens are not mangled into a still-fitting but opaque form (HF-SU24).
+  if (current.includes('-')) {
+    current = dropLeadingSegments(current, stemBudget(0));
+    if (`${current}${suffix}${fixedSuffix}`.length <= maxLen) {
+      return `${current}${suffix}${fixedSuffix}`;
+    }
+  }
+
   if (opts.useVowelSqueeze !== false) {
     current = applyVowelSqueezeProgressive(current, stemBudget(0));
+    if (`${current}${suffix}${fixedSuffix}`.length <= maxLen) {
+      return `${current}${suffix}${fixedSuffix}`;
+    }
+  }
+
+  if (current.includes('-')) {
+    current = dropLeadingSegments(current, stemBudget(0));
     if (`${current}${suffix}${fixedSuffix}`.length <= maxLen) {
       return `${current}${suffix}${fixedSuffix}`;
     }
@@ -201,14 +310,14 @@ export function shortenWireName(
       const downgradedCombined = `${current}${modeSuffix}${fixedSuffix}`;
       if (downgradedCombined.length <= maxLen) return downgradedCombined;
       const stemMax = stemBudget(modeSuffix.length);
-      return `${current.slice(0, stemMax)}${modeSuffix}${fixedSuffix}`;
+      return `${hardTruncateStem(current, stemMax)}${modeSuffix}${fixedSuffix}`;
     }
   }
 
   const combined = `${current}${suffix}${fixedSuffix}`;
   if (combined.length > maxLen) {
     const stemMax = stemBudget(suffix.length);
-    return `${current.slice(0, stemMax)}${suffix}${fixedSuffix}`;
+    return `${hardTruncateStem(current, stemMax)}${suffix}${fixedSuffix}`;
   }
   return combined;
 }

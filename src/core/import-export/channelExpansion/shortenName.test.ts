@@ -58,6 +58,32 @@ describe('shortenWireName channel abbreviation', () => {
   });
 });
 
+describe('hyphenated channel sets (CHIRP 7)', () => {
+  it('applies dictionary PMR446→PMR inside PMR446-N', () => {
+    expect(shortenWireName('PMR446-1', 7)).toBe('PMR-1');
+    expect(shortenWireName('PMR446-16', 7)).toBe('PMR-16');
+  });
+
+  it('finalizes PMR446-1…16 uniquely within 7 chars without PMR44 collision stem', () => {
+    const reserved = new Set<string>();
+    const names: string[] = [];
+    for (let n = 1; n <= 16; n++) {
+      const name = finalizeWireName(`PMR446-${n}`, reserved, 7);
+      expect(name.length).toBeLessThanOrEqual(7);
+      expect(name.startsWith('PMR')).toBe(true);
+      expect(name.startsWith('PMR44')).toBe(false);
+      names.push(name);
+    }
+    expect(new Set(names).size).toBe(16);
+  });
+
+  it('keeps distinguishing designators for banded simplex names under 7', () => {
+    expect(shortenWireName('UHF-SU24', 7)).toBe('SU24');
+    expect(shortenWireName('VHF-S20', 7)).toBe('VHF-S20');
+    expect(shortenWireName('VHF-S20', 6)).toBe('S20');
+  });
+});
+
 describe('finalizeWireName', () => {
   it('keeps double-digit disambiguation within maxLen (CHIRP 7)', () => {
     const reserved = new Set<string>(['PMR44']);

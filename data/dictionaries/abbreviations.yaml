@@ -222,9 +222,11 @@ radio:
     SSTV: [SSTV] # keep as-is
     RAYNET: [RAYN, RYN]
     'Packet Radio': [Pkt, Pk]
-    'PMR 446': [PMR446, PMR]
-    'PMR-446': [PMR446, PMR]
-    'PMR446': [PMR]
+    'PMR 446': [PMR446, PMR, P-]
+    'PMR-446': [PMR446, PMR, P-]
+    'PMR446': [PMR, P-]
+    'UHF-': [U-]
+    'VHF-': [V-]
 
   bands:
     '160m': ['160m']
@@ -316,8 +318,9 @@ stopwords:
 
 # ─────────────────────────────────────────────────────────────────────────────
 # SEPARATOR HANDLING — not abbreviations, but part of the algorithm
-# When names are shortened aggressively, collapsing separators recovers chars.
-# Suggested cascade:
+# Implemented today (shared shortenName.ts): hyphen-aware dictionary split,
+# designator protection, and dropping leading hyphen segments when over budget.
+# Full separator-collapse cascade still deferred:
 #   " - "  →  " "  →  ""    (space-dash-space → space → nothing)
 #   " / "  →  "/"  →  ""
 #   " "    →  ""            (final: remove all spaces)
