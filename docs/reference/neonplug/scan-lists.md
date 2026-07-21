@@ -42,20 +42,23 @@ All expanded channel objects for a source library channel inherit the same `scan
 
 ### Empty-list floor (DM32UV — #564)
 
-Baofeng DM-32 / NeonPlug write paths expect **at least one** scan list. When zone-derived projection would leave `scanLists: []`, Studio emits one **dummy** empty list:
+Baofeng DM-32 / NeonPlug write paths expect **at least one** scan list. NeonPlug’s write path also **strips** lists with `channels.length === 0`, so a memberless dummy is dropped before radio write.
+
+When zone-derived projection would leave `scanLists: []` and the export has ≥1 channel, Studio emits one floor list with the **first exported channel number** as a member (interop workaround only):
 
 ```json
 {
   "name": "Scan list 1",
-  "channels": [],
-  "channelCount": 0,
+  "channels": [1],
+  "channelCount": 1,
   "ctcScanMode": 0,
   "scanTxMode": 0
 }
 ```
 
-- Empty `channels[]` → radio “Current channel” membership semantics; Studio does **not** invent channel members.
-- Channel `scanListId` stays `0` (unbound) unless zone derivation assigned a real list.
+- Channel `scanListId` stays `0` (unbound) — the member exists so NeonPlug retains the list; it is not “assigned scan” for operators.
+- Zero-channel exports keep a memberless floor (`channels: []`) — nothing useful to write.
+- True empty-list / radio “Current channel” semantics remain blocked until NeonPlug stops stripping empty lists and pads scan blocks ([#558](https://github.com/pskillen/codeplug-studio/issues/558)).
 - This floor is a **minimum** when derivation yields nothing; deriving lists from zones when `exportScanList` warrants them remains [#562](https://github.com/pskillen/codeplug-studio/issues/562).
 - Radio encode truncates names to **10** chars (`Scan list 1` is 11 in JSON).
 
