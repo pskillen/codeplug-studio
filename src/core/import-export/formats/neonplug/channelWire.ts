@@ -164,6 +164,11 @@ function formatNeonplugRxSquelchMode(): NeonplugRxSquelchMode {
   return 'Carrier/CTC';
 }
 
+/**
+ * NeonPlug channel APRS is receive + report mode only.
+ * Digital PTT and report-slot index live on radioSettings report channels (see aprsSettingsWire),
+ * not on NeonPlug `Channel`. Analog report mode is never emitted from Studio's digital-only model.
+ */
 function formatNeonplugAprsReportMode(channel: Channel): NeonplugAprsReportMode {
   return channel.aprs?.reportType === 'digital' ? 'Digital' : 'Off';
 }
