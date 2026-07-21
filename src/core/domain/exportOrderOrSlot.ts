@@ -8,8 +8,8 @@ import {
   overrideOrderOrSlot,
   upsertOverride,
 } from '@core/domain/formatBuildOverrides.ts';
+import { channelHasFmAmProfile } from '@core/domain/modeProfiles.ts';
 import { BuildCapabilityTrait, traitProfileFor } from '@core/models/traits.ts';
-import { isChirpAnalogueExportable } from '@core/import-export/formats/chirp/channelWire.ts';
 
 /** One row in a top-level export list; `channelId` null → blank memory slot (CHIRP). */
 export interface ExportMemorySlot {
@@ -27,12 +27,13 @@ export function findFlatMemorySection(build: FormatBuild): FlatMemoryLayout | un
   return build.layout.sections.find((s): s is FlatMemoryLayout => s.kind === 'flatMemory');
 }
 
+/** Analogue FM/AM channel eligible for flat-memory export (CHIRP + NeonPlug UV5R). */
 export function isChirpFlatMemoryChannel(channel: Channel): boolean {
-  return isChirpAnalogueExportable(channel);
+  return channelHasFmAmProfile(channel);
 }
 
-function chirpEligibleChannel(build: FormatBuild, channel: Channel): boolean {
-  if (build.formatId === 'chirp' && !isChirpFlatMemoryChannel(channel)) {
+function flatMemoryEligibleChannel(build: FormatBuild, channel: Channel): boolean {
+  if (buildUsesFlatMemoryList(build) && !isChirpFlatMemoryChannel(channel)) {
     return false;
   }
   return true;
@@ -41,7 +42,8 @@ function chirpEligibleChannel(build: FormatBuild, channel: Channel): boolean {
 function includedChirpChannels(build: FormatBuild, library: LibrarySlice): Channel[] {
   return library.channels.filter(
     (channel) =>
-      chirpEligibleChannel(build, channel) && !isEntityExcluded(build.channelOverrides, channel.id),
+      flatMemoryEligibleChannel(build, channel) &&
+      !isEntityExcluded(build.channelOverrides, channel.id),
   );
 }
 
@@ -193,7 +195,7 @@ export function migrateFlatMemoryLayoutToOrderOrSlot(
   });
 
   for (const channel of library.channels) {
-    if (!chirpEligibleChannel(build, channel)) continue;
+    if (!flatMemoryEligibleChannel(build, channel)) continue;
     if (inList.has(channel.id)) continue;
     if (isEntityExcluded(channelOverrides, channel.id)) continue;
     channelOverrides = upsertOverride(channelOverrides, channel.id, { excluded: true });

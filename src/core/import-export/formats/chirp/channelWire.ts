@@ -1,6 +1,11 @@
-import type { Channel, ChannelModeProfileAnalog, ScanInclusion } from '@core/models/library.ts';
+import type { ChannelModeProfileAnalog, ScanInclusion } from '@core/models/library.ts';
 import type { ChannelTone } from '@core/models/libraryTypes.ts';
 import { chirpPercentToWire, chirpWireToPercent } from './profiles.ts';
+
+export {
+  pickFmAmModeProfile as pickChirpAnalogueProfile,
+  channelHasFmAmProfile as isChirpAnalogueExportable,
+} from '@core/domain/modeProfiles.ts';
 
 const CHIRP_DEFAULT_TONE_FREQ = '88.5';
 
@@ -170,17 +175,4 @@ export function scanInclusionFromChirpSkipColumn(wire: string): ScanInclusion {
 /** TStep is ignored on import — export always emits `5.00`. */
 export function formatChirpTStepWire(): string {
   return '5.00';
-}
-
-export function pickChirpAnalogueProfile(channel: Channel): ChannelModeProfileAnalog | null {
-  for (const profile of channel.modeProfiles) {
-    if (profile.mode === 'fm' || profile.mode === 'am') {
-      return profile;
-    }
-  }
-  return null;
-}
-
-export function isChirpAnalogueExportable(channel: Channel): boolean {
-  return pickChirpAnalogueProfile(channel) != null;
 }

@@ -111,6 +111,30 @@ describe('exportOrderOrSlot', () => {
     expect(chirpMemoryChannelIds(build, library)).toEqual([]);
   });
 
+  it('omits digital channels for NeonPlug UV5R-Mini flat memory', () => {
+    const analogue = fmChannel('ch-fm', 'FM');
+    const digital: Channel = {
+      ...newChannel(projectId, 'DMR'),
+      id: 'ch-dmr',
+      modeProfiles: [
+        {
+          mode: 'dmr' as const,
+          colourCode: 1,
+          timeslot: 1 as const,
+          dmrId: 123,
+          contactRef: null,
+          rxGroupListId: null,
+        },
+      ],
+    };
+    const build = newFormatBuild(projectId, 'neonplug-uv5rmini');
+    const library = { ...emptyLibrary, channels: [analogue, digital] };
+    expect(chirpMemoryChannelIds(build, library)).toEqual(['ch-fm']);
+    expect(resolveChirpChannelMemorySlots(build, library)).toEqual([
+      { slot: 1, channelId: 'ch-fm' },
+    ]);
+  });
+
   it('applyDenseChannelOrderOrSlots rewrites order fields', () => {
     const overrides = applyDenseChannelOrderOrSlots(
       [

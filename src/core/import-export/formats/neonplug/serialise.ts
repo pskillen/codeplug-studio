@@ -1,6 +1,7 @@
 import type { CpsExportOptions } from '@core/import-export/types.ts';
 import type { AssembledBuild, AssembledChannel } from '@core/services/assemble.ts';
 import { applyWireNameLimits } from '@core/import-export/channelExpansion/exportWireNames.ts';
+import { channelHasFmAmProfile } from '@core/domain/modeProfiles.ts';
 import {
   buildNeonplugAprsRadioSettingsPatch,
   type NeonplugAprsRadioSettingsPatch,
@@ -194,6 +195,12 @@ function serialiseUv5rminiChannels(
       if (channels.length >= max) break;
       const row = byId.get(slot.channelId);
       if (!row) continue;
+      if (!channelHasFmAmProfile(row.entity)) {
+        warnings.push(
+          `Skipped non-analogue channel "${row.wireName}" (slot ${slot.slot}) — UV5R-Mini NeonPlug export is FM/AM only.`,
+        );
+        continue;
+      }
       const name = resolveWireName(row, reserved, profileId, options, warnings);
       channels.push(
         channelToNeonplugChannel(row.entity, {
@@ -214,10 +221,16 @@ function serialiseUv5rminiChannels(
   // Fallback when assemble did not attach memory slots — sequential like DM32.
   for (let i = 0; i < assembled.channels.length && channels.length < max; i++) {
     const row = assembled.channels[i]!;
+    if (!channelHasFmAmProfile(row.entity)) {
+      warnings.push(
+        `Skipped non-analogue channel "${row.wireName}" — UV5R-Mini NeonPlug export is FM/AM only.`,
+      );
+      continue;
+    }
     const name = resolveWireName(row, reserved, profileId, options, warnings);
     channels.push(
       channelToNeonplugChannel(row.entity, {
-        number: i + 1,
+        number: channels.length + 1,
         name,
         profileId,
         scanContext,

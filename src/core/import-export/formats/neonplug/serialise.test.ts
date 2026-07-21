@@ -111,6 +111,56 @@ describe('neonplug/serialise', () => {
     expect(data.channels.map((c) => c.name)).toEqual(['Second', 'First']);
   });
 
+  it('skips digital-only channels on UV5R-Mini with a warning', () => {
+    const fm = fmChannel('ch-fm', 'Analog', 145_500_000);
+    const dmr: Channel = {
+      ...newChannel(projectId, 'Digital'),
+      id: 'ch-dmr',
+      rxFrequency: 438_800_000,
+      txFrequency: 434_000_000,
+      modeProfiles: [
+        {
+          mode: 'dmr',
+          colourCode: 1,
+          timeslot: 1,
+          dmrId: null,
+          contactRef: null,
+          rxGroupListId: null,
+        } satisfies ChannelModeProfileDMR,
+      ],
+    };
+    const assembled: AssembledBuild = {
+      buildId: 'b-uv5r-dmr',
+      formatId: 'neonplug',
+      profileId: 'neonplug-uv5rmini',
+      buildName: 'UV5R Neon',
+      channels: [
+        { entity: fm, wireName: 'Analog' },
+        { entity: dmr, wireName: 'Digital' },
+      ],
+      zones: [],
+      talkGroups: [],
+      digitalContacts: [],
+      analogContacts: [],
+      rxGroupLists: [],
+      scanLists: [],
+      channelMemorySlots: [
+        { slot: 1, channelId: 'ch-fm' },
+        { slot: 2, channelId: 'ch-dmr' },
+      ],
+    };
+
+    const { data, warnings } = serialiseNeonplugCodeplug(assembled, {
+      exportDate: '2026-07-20T12:00:00.000Z',
+      shortenNames: false,
+    });
+
+    expect(data.channels).toHaveLength(1);
+    expect(data.channels[0]?.name).toBe('Analog');
+    expect(data.channels[0]?.mode).toBe('Analog');
+    expect(warnings.some((w) => /Digital/.test(w) && /FM\/AM only/i.test(w))).toBe(true);
+  });
+
   it('truncates long channel names to profile limit', () => {
     const long = fmChannel('ch-1', 'ABCDEFGHIJKLMNOPQRST', 145_500_000);
     const { data, warnings } = serialiseNeonplugCodeplug(assembledDm32([long]), {
