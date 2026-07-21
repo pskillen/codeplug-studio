@@ -5,6 +5,7 @@ import type {
   FormatBuild,
 } from '@core/models/formatBuild.ts';
 import { showsDefaultScanInclusion, hasMxNChannelExpansion } from '@core/models/traits.ts';
+import { buildUsesFlatMemoryList } from '@core/domain/exportOrderOrSlot.ts';
 import type { FormatExportDefaults } from '@core/import-export/types.ts';
 import { FieldCard } from '../fields/Fields.tsx';
 import ExportNameSettingsFields from './ExportNameSettingsFields.tsx';
@@ -60,7 +61,7 @@ export default function ExportBuildSettingsSections({
     );
   }
 
-  const isChirp = build.formatId === 'chirp';
+  const flatMemory = buildUsesFlatMemoryList(build);
   const showChannelExpansion = hasMxNChannelExpansion(build.profileId);
 
   return (
@@ -71,7 +72,7 @@ export default function ExportBuildSettingsSections({
       >
         <Switch
           label={
-            isChirp
+            flatMemory
               ? 'Export channels not in the memory list'
               : 'Export channels not linked to a zone'
           }
@@ -81,7 +82,7 @@ export default function ExportBuildSettingsSections({
             onExportInclusionChange('exportUnlinkedChannels', event.currentTarget.checked)
           }
         />
-        {!isChirp ? (
+        {!flatMemory ? (
           <>
             <Switch
               label="Export talk groups not referenced by a channel"

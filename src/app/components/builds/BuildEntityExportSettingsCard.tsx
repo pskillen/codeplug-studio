@@ -3,6 +3,7 @@ import { Button, Group, Stack, Switch, Text } from '@mantine/core';
 import { Link } from 'react-router-dom';
 import type { FormatBuild } from '@core/models/formatBuild.ts';
 import type { ChannelExportNameMode } from '@core/domain/channelNaming.ts';
+import { buildUsesFlatMemoryList } from '@core/domain/exportOrderOrSlot.ts';
 import type { DigitalContactExportNameMode } from '@core/import-export/types.ts';
 import type { WirePreviewEntityKind } from '@core/services/previewWireRows.ts';
 import { FieldCard } from '../fields/Fields.tsx';
@@ -88,7 +89,7 @@ export default function BuildEntityExportSettingsCard({
   const copy = cardCopy(entityKind);
   if (!copy) return null;
 
-  const isChirp = build.formatId === 'chirp';
+  const flatMemory = buildUsesFlatMemoryList(build);
 
   return (
     <FieldCard title={copy.title} description={copy.description}>
@@ -96,7 +97,7 @@ export default function BuildEntityExportSettingsCard({
         {entityKind === 'channel' ? (
           <Switch
             label={
-              isChirp
+              flatMemory
                 ? 'Export channels not in the memory list'
                 : 'Export channels not linked to a zone'
             }
