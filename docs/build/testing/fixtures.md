@@ -10,7 +10,7 @@
 | `test-data/<format>/`                                   | Yes                 | Larger redacted CPS bundles for docs + mapping spikes                                        |
 | `test-data/export-smoke/`                               | Yes                 | Native YAML for CI export → wire-verify smoke ([wire-verification.md](wire-verification.md)) |
 | `cps-verify/fixtures/<format>/<profile>/`               | Yes                 | Wire-shape verifier samples ([wire-verification.md](wire-verification.md))                   |
-| `sample-codeplugs/`                                     | Yes                 | Unadulterated CPS exports for wire-doc ground truth (DM32 v1.60 · OpenGD77 R2025.03.23.1)   |
+| `sample-codeplugs/`                                     | Yes                 | Unadulterated CPS exports for wire-doc ground truth (DM32 v1.60 · OpenGD77 R2025.03.23.1)    |
 | `sample-exports/`                                       | Gitignored          | Operator manual testing — personal codeplugs stay local                                      |
 | `e2e/fixtures/`                                         | **Planned**         | Minimal bundle for Playwright import → export                                                |
 
