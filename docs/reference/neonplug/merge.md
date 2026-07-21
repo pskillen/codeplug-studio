@@ -8,15 +8,15 @@ Merge Studio’s projected `CodeplugData` into a **radio-read donor** `.neonplug
 
 ## Policy
 
-| Key                                                                                  | Source on merge                                           |
-| ------------------------------------------------------------------------------------ | --------------------------------------------------------- |
-| `channels`, `zones`, `scanLists`, `contacts`, `rxGroups`                             | **Studio projection** (wholesale replace)                 |
-| `radioIds`                                                                           | **Always donor** (Studio does not model operator DMR IDs) |
-| `quickContacts`, `messages`, emergencies, `encryptionKeys`, `digitalEmergencyConfig` | **Donor**                                                 |
+| Key                                                                                  | Source on merge                                                                                                                                                                              |
+| ------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `channels`, `zones`, `scanLists`, `contacts`, `rxGroups`                             | **Studio projection** (wholesale replace)                                                                                                                                                    |
+| `radioIds`                                                                           | **Always donor** (Studio does not model operator DMR IDs)                                                                                                                                    |
+| `quickContacts`, `messages`, emergencies, `encryptionKeys`, `digitalEmergencyConfig` | **Donor**                                                                                                                                                                                    |
 | `radioSettings` (incl. nested VFOs)                                                  | **Donor**, then **APRS (+ related GPS) leaf patch** from Studio when `Library.aprsConfiguration` is set ([aprs.md](aprs.md), [#559](https://github.com/pskillen/codeplug-studio/issues/559)) |
-| `radioInfo`                                                                          | **Donor**                                                 |
-| `version`                                                                            | NeonPlug-compatible envelope (`1.0.0`)                    |
-| `exportDate`                                                                         | Set to now on merge                                       |
+| `radioInfo`                                                                          | **Donor**                                                                                                                                                                                    |
+| `version`                                                                            | NeonPlug-compatible envelope (`1.0.0`)                                                                                                                                                       |
+| `exportDate`                                                                         | Set to now on merge                                                                                                                                                                          |
 
 Channels are not slot-patched against unused base channel numbers — Studio replaces the full `channels[]` array.
 

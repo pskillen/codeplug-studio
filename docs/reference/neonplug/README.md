@@ -32,24 +32,24 @@ NeonPlug is MIT-licensed. Studio docs cite field names and enums from that sourc
 
 ## Entity inventory (`codeplug.json`)
 
-| JSON key                 | Reference                                                | Studio modelling                                   | Notes                                 |
-| ------------------------ | -------------------------------------------------------- | -------------------------------------------------- | ------------------------------------- |
-| `channels`               | [channels.md](channels.md)                               | `Channel[]`                                        | Shared Channel shape across radios    |
-| `zones`                  | [zones.md](zones.md)                                     | Build **zone grouping** trait layout               | Channel **numbers**, not UUIDs        |
-| `scanLists`              | [scan-lists.md](scan-lists.md)                           | Zone-derived scan projection (DM32UV)              | Channel **numbers**; no carriers      |
-| `contacts`               | [contacts.md](contacts.md)                               | `TalkGroup[]` then `DigitalContact[]`              | Single NeonPlug contact book          |
-| `rxGroups`               | [rx-groups.md](rx-groups.md)                             | `RxGroupList[]`                                    | `talkGroupIndices` = DMR IDs          |
-| `radioIds`               | [contacts.md](contacts.md#dmr-radio-ids)                 | **Omit** on greenfield (`[]`); **retain** on merge | No operator DMR-ID list in library    |
-| `quickContacts`          | [contacts.md](contacts.md#quick-contacts)                | **Omit** on greenfield; **retain** on merge        | Radio talk-group table with raw bytes |
-| `radioInfo`              | [radio-info-and-settings.md](radio-info-and-settings.md) | Profile stub on greenfield; **retain** on merge    | Model string selects radio pathway    |
-| `radioSettings`          | [radio-info-and-settings.md](radio-info-and-settings.md) · [aprs.md](aprs.md) | **`null`** on greenfield; **retain** on merge, then **APRS slice overwrite** ([#559](https://github.com/pskillen/codeplug-studio/issues/559)) | Large DM32 settings bag; APRS globals patched from Studio |
+| JSON key        | Reference                                                                     | Studio modelling                                                                                                                              | Notes                                                     |
+| --------------- | ----------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------- |
+| `channels`      | [channels.md](channels.md)                                                    | `Channel[]`                                                                                                                                   | Shared Channel shape across radios                        |
+| `zones`         | [zones.md](zones.md)                                                          | Build **zone grouping** trait layout                                                                                                          | Channel **numbers**, not UUIDs                            |
+| `scanLists`     | [scan-lists.md](scan-lists.md)                                                | Zone-derived scan projection (DM32UV)                                                                                                         | Channel **numbers**; no carriers                          |
+| `contacts`      | [contacts.md](contacts.md)                                                    | `TalkGroup[]` then `DigitalContact[]`                                                                                                         | Single NeonPlug contact book                              |
+| `rxGroups`      | [rx-groups.md](rx-groups.md)                                                  | `RxGroupList[]`                                                                                                                               | `talkGroupIndices` = DMR IDs                              |
+| `radioIds`      | [contacts.md](contacts.md#dmr-radio-ids)                                      | **Omit** on greenfield (`[]`); **retain** on merge                                                                                            | No operator DMR-ID list in library                        |
+| `quickContacts` | [contacts.md](contacts.md#quick-contacts)                                     | **Omit** on greenfield; **retain** on merge                                                                                                   | Radio talk-group table with raw bytes                     |
+| `radioInfo`     | [radio-info-and-settings.md](radio-info-and-settings.md)                      | Profile stub on greenfield; **retain** on merge                                                                                               | Model string selects radio pathway                        |
+| `radioSettings` | [radio-info-and-settings.md](radio-info-and-settings.md) · [aprs.md](aprs.md) | **`null`** on greenfield; **retain** on merge, then **APRS slice overwrite** ([#559](https://github.com/pskillen/codeplug-studio/issues/559)) | Large DM32 settings bag; APRS globals patched from Studio |
 
-| `messages`               | [radio-info-and-settings.md](radio-info-and-settings.md) | Empty on greenfield; **retain** on merge           | Quick text messages                   |
-| `digitalEmergencies`     | [radio-info-and-settings.md](radio-info-and-settings.md) | Empty on greenfield; **retain** on merge           |                                       |
-| `digitalEmergencyConfig` | [radio-info-and-settings.md](radio-info-and-settings.md) | `null` on greenfield; **retain** on merge          |                                       |
-| `analogEmergencies`      | [radio-info-and-settings.md](radio-info-and-settings.md) | Empty on greenfield; **retain** on merge           |                                       |
-| `encryptionKeys`         | [radio-info-and-settings.md](radio-info-and-settings.md) | Empty on greenfield; **retain** on merge           | Do not stash secrets in library       |
-| `exportDate` / `version` | [file-format.md](file-format.md)                         | Envelope only                                      |                                       |
+| `messages` | [radio-info-and-settings.md](radio-info-and-settings.md) | Empty on greenfield; **retain** on merge | Quick text messages |
+| `digitalEmergencies` | [radio-info-and-settings.md](radio-info-and-settings.md) | Empty on greenfield; **retain** on merge | |
+| `digitalEmergencyConfig` | [radio-info-and-settings.md](radio-info-and-settings.md) | `null` on greenfield; **retain** on merge | |
+| `analogEmergencies` | [radio-info-and-settings.md](radio-info-and-settings.md) | Empty on greenfield; **retain** on merge | |
+| `encryptionKeys` | [radio-info-and-settings.md](radio-info-and-settings.md) | Empty on greenfield; **retain** on merge | Do not stash secrets in library |
+| `exportDate` / `version` | [file-format.md](file-format.md) | Envelope only | |
 
 ## Foreign keys (wire edge)
 
@@ -80,17 +80,17 @@ Per-radio notes and caps: [`radios/`](radios/README.md). DM-32UV caps match DM32
 
 ## Lossy / deferred fields (summary)
 
-| Area                       | Greenfield export                          | Merge-into-base export                          |
-| -------------------------- | ------------------------------------------ | ----------------------------------------------- |
-| Radio settings / VFO bags  | Omit (`null`)                              | **Retain** from donor; **APRS globals overwritten** from Studio ([aprs.md](aprs.md)) |
+| Area                      | Greenfield export | Merge-into-base export                                                               |
+| ------------------------- | ----------------- | ------------------------------------------------------------------------------------ |
+| Radio settings / VFO bags | Omit (`null`)     | **Retain** from donor; **APRS globals overwritten** from Studio ([aprs.md](aprs.md)) |
 
-| Emergencies / messages     | Empty / `null`                             | **Retain** from donor                           |
-| Encryption keys            | Empty — never round-trip via library stash | **Retain** opaque from donor (not into library) |
-| Radio IDs                  | Empty (`[]`)                               | **Always retain** from donor                    |
-| Quick contacts             | Empty                                      | **Retain** from donor                           |
-| Unknown Channel bitfields  | Export safe defaults (`0` / `false`)       | Same (Studio channels overwrite)                |
-| Scan priority / hang / CTC | Defaults (`ctcScanMode`/`scanTxMode` = 0)  | Same (Studio scan lists overwrite)              |
-| Calibration                | Not in `CodeplugData` export surface       | Not modelled                                    |
+| Emergencies / messages | Empty / `null` | **Retain** from donor |
+| Encryption keys | Empty — never round-trip via library stash | **Retain** opaque from donor (not into library) |
+| Radio IDs | Empty (`[]`) | **Always retain** from donor |
+| Quick contacts | Empty | **Retain** from donor |
+| Unknown Channel bitfields | Export safe defaults (`0` / `false`) | Same (Studio channels overwrite) |
+| Scan priority / hang / CTC | Defaults (`ctcScanMode`/`scanTxMode` = 0) | Same (Studio scan lists overwrite) |
+| Calibration | Not in `CodeplugData` export surface | Not modelled |
 
 Detail: [radio-info-and-settings.md](radio-info-and-settings.md) · [merge.md](merge.md) · [aprs.md](aprs.md).
 

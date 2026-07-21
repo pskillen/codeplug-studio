@@ -12,16 +12,16 @@ Tier-1 hub for **digital APRS** in Codeplug Studio — vendor-neutral library en
 
 ## Scope
 
-| In scope (this epic)                                                                                 | Out of scope                                                             |
-| ---------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------ |
-| Digital DMR-over-APRS configuration and per-channel flags                                            | Analog (AX.25) APRS — not modelled; exporters emit off/default constants |
-| Library `aprsConfiguration` (singleton) + `Channel.aprs?`                                            | OpenGD77 APRS (analog-only) — deferred                                   |
-| Native YAML persistence + domain validation (schema v17)                                             | OpenGD77 APRS (analog-only) — deferred                                   |
-| IndexedDB `aprsConfigurations` store (one row per project)                                           | OpenGD77 APRS (analog-only) — deferred                                   |
-| Library settings page, channel APRS tab, bulk channel assignments, Channels list column              |                                                                          |
-| Cross-format reconciliation doc                                                                      |                                                                          |
-| Anytone `APRS.CSV` + channel export ([#251](https://github.com/pskillen/codeplug-studio/issues/251)) |                                                                          |
-| DM32 channel APRS + `APRS.md` guide ([#250](https://github.com/pskillen/codeplug-studio/issues/250)) |                                                                          |
+| In scope (this epic)                                                                                                          | Out of scope                                                             |
+| ----------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------ |
+| Digital DMR-over-APRS configuration and per-channel flags                                                                     | Analog (AX.25) APRS — not modelled; exporters emit off/default constants |
+| Library `aprsConfiguration` (singleton) + `Channel.aprs?`                                                                     | OpenGD77 APRS (analog-only) — deferred                                   |
+| Native YAML persistence + domain validation (schema v17)                                                                      | OpenGD77 APRS (analog-only) — deferred                                   |
+| IndexedDB `aprsConfigurations` store (one row per project)                                                                    | OpenGD77 APRS (analog-only) — deferred                                   |
+| Library settings page, channel APRS tab, bulk channel assignments, Channels list column                                       |                                                                          |
+| Cross-format reconciliation doc                                                                                               |                                                                          |
+| Anytone `APRS.CSV` + channel export ([#251](https://github.com/pskillen/codeplug-studio/issues/251))                          |                                                                          |
+| DM32 channel APRS + `APRS.md` guide ([#250](https://github.com/pskillen/codeplug-studio/issues/250))                          |                                                                          |
 | NeonPlug DM-32UV APRS globals + channel pair on merge-export ([#559](https://github.com/pskillen/codeplug-studio/issues/559)) |                                                                          |
 
 **Analog-off export policy:** Anytone and DM32 **analog APRS** columns are not operator-editable (`Analog APRS PTT Mode` constant). Digital APRS on analog _channels_ is supported where the radio allows reporting via a digital path.

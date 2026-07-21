@@ -314,8 +314,7 @@ export function exportBuildZip({
       };
     }
 
-    const greenfieldWarnings =
-      aprsSettingsPatch != null ? [NEONPLUG_APRS_GREENFIELD_WARNING] : [];
+    const greenfieldWarnings = aprsSettingsPatch != null ? [NEONPLUG_APRS_GREENFIELD_WARNING] : [];
     return {
       ...result,
       warnings: dedupeWarnings([...result.warnings, ...greenfieldWarnings]),

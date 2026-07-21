@@ -10,13 +10,12 @@ Tier-3 column inventories: [Anytone aprs.md](../../reference/anytone/aprs.md), [
 
 ## Global vs per-channel
 
-| Format                | Global config                        | Per-channel (digital)                                                                                  | Studio mapping                                                                                                  |
-| --------------------- | ------------------------------------ | ------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------- |
-| **Anytone AT-D890UV** | Single `APRS.CSV` row (~184 cols)    | `APRS RX`, `APRS Report Type`, `Digital APRS PTT Mode`, `Digital APRS Report Channel` on `Channel.CSV` | Singleton `AprsConfiguration` + `Channel.aprs`                                                                  |
-| **DM32**              | None — Studio emits `APRS.md` guide  | `APRS Receive`, `APRS Report Type`, `APRS Report Channel`, Digital PTT on channel rows                 | Same `Channel.aprs`; global settings via guide ([#250](https://github.com/pskillen/codeplug-studio/issues/250)) |
+| Format                | Global config                                                                 | Per-channel (digital)                                                                                  | Studio mapping                                                                                                                                                                        |
+| --------------------- | ----------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Anytone AT-D890UV** | Single `APRS.CSV` row (~184 cols)                                             | `APRS RX`, `APRS Report Type`, `Digital APRS PTT Mode`, `Digital APRS Report Channel` on `Channel.CSV` | Singleton `AprsConfiguration` + `Channel.aprs`                                                                                                                                        |
+| **DM32**              | None — Studio emits `APRS.md` guide                                           | `APRS Receive`, `APRS Report Type`, `APRS Report Channel`, Digital PTT on channel rows                 | Same `Channel.aprs`; global settings via guide ([#250](https://github.com/pskillen/codeplug-studio/issues/250))                                                                       |
 | **NeonPlug DM-32UV**  | `radioSettings` APRS fields (slots 1–8 + scheduled send, beacon, call/upload) | `aprsReceive`, `aprsReportMode` on `channels[]`                                                        | Same library model; merge-export patches donor settings ([#559](https://github.com/pskillen/codeplug-studio/issues/559)) — wire: [neonplug/aprs.md](../../reference/neonplug/aprs.md) |
-| **OpenGD77**          | Multi-row `APRS.csv` (named configs) | `Channels.APRS` name FK                                                                                | **Deferred** — analog-only                                                                                      |
-
+| **OpenGD77**          | Multi-row `APRS.csv` (named configs)                                          | `Channels.APRS` name FK                                                                                | **Deferred** — analog-only                                                                                                                                                            |
 
 ---
 
@@ -58,7 +57,6 @@ Export adapters read the singleton library config when serialising the Anytone `
 | NeonPlug single call type / upload ID               | Same consensus as DM32 guide; patched onto donor `radioSettings` ([#559](https://github.com/pskillen/codeplug-studio/issues/559))                 |
 | NeonPlug greenfield APRS globals                    | Omitted (`radioSettings: null`); merge-into-base required                                                                                         |
 | `all call` (Call Type = 2)                          | Deferred                                                                                                                                          |
-
 
 ---
 

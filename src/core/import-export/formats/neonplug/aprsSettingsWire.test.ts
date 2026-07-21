@@ -79,7 +79,10 @@ describe('resolveNeonplugAprsScheduledSendTime', () => {
 
   it('uses manual when auto unset', () => {
     expect(
-      resolveNeonplugAprsScheduledSendTime({ manualTxIntervalSec: 60, autoTxIntervalSec: null }, []),
+      resolveNeonplugAprsScheduledSendTime(
+        { manualTxIntervalSec: 60, autoTxIntervalSec: null },
+        [],
+      ),
     ).toBe(2);
   });
 
