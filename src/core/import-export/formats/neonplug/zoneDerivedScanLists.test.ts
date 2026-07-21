@@ -7,6 +7,7 @@ import { NEONPLUG_DM32UV_PROFILE } from './profiles.ts';
 import { serialiseNeonplugCodeplug } from './serialise.ts';
 import { appendNeonplugScanCarriers } from './scanCarriers.ts';
 import { DEFAULT_SCAN_CARRIER_HZ } from '@core/import-export/zoneDerivedScanLists/carrier.ts';
+import type { NeonplugScanList } from './wireTypes.ts';
 import {
   deriveNeonplugZoneDerivedScanLists,
   ensureNeonplugDm32uvScanListsFloor,
@@ -388,7 +389,7 @@ describe('neonplug/zoneDerivedScanLists', () => {
 
   it('warns when scan carriers cannot fit under maxChannels', () => {
     const template = fmChannel('ch-1', 'Alpha');
-    const scanLists = [
+    const scanLists: NeonplugScanList[] = [
       {
         name: 'Local',
         channels: [1],
