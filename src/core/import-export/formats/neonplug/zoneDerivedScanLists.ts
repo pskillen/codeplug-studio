@@ -14,10 +14,39 @@ import type { NeonplugScanList } from './wireTypes.ts';
 /** Channel `scanListId` is 4 bits (0–15); 0 = none, so at most 15 referenceable lists. */
 export const NEONPLUG_MAX_CHANNEL_SCAN_LIST_ID = 15;
 
+/**
+ * Default name for the DM32UV empty-list floor (#564).
+ * Radio field is ≤10 chars; NeonPlug encode truncates — emit the full label in JSON.
+ */
+export const NEONPLUG_DM32UV_EMPTY_SCAN_LIST_NAME = 'Scan list 1';
+
 export interface NeonplugZoneDerivedScanExport {
   scanLists: NeonplugScanList[];
   /** Channel UUID → 1-based NeonPlug `scanListId` (inherited by all expanded rows). */
   scanListIdByChannelId: Map<string, number>;
+}
+
+/** One empty scan list (no members) — radio “Current channel” semantics; channels stay unbound. */
+export function neonplugDm32uvEmptyScanListFloor(): NeonplugScanList {
+  return {
+    name: NEONPLUG_DM32UV_EMPTY_SCAN_LIST_NAME,
+    channels: [],
+    channelCount: 0,
+    // Lossy defaults — match zone-derived CTC/TX defaults.
+    ctcScanMode: 0,
+    scanTxMode: 0,
+  };
+}
+
+/**
+ * DM32UV firmware / NeonPlug write path expects ≥1 scan list.
+ * Floor empty projections; leave non-empty derivation unchanged.
+ */
+export function ensureNeonplugDm32uvScanListsFloor(
+  scanLists: readonly NeonplugScanList[],
+): NeonplugScanList[] {
+  if (scanLists.length > 0) return [...scanLists];
+  return [neonplugDm32uvEmptyScanListFloor()];
 }
 
 /**

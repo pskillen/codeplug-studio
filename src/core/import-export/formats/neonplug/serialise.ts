@@ -20,7 +20,10 @@ import {
 import { serialiseNeonplugRxGroups } from './rxGroups.ts';
 import { collectNeonplugExportWarnings } from './warnings.ts';
 import type { NeonplugChannel, NeonplugCodeplugData, NeonplugRadioInfo } from './wireTypes.ts';
-import { deriveNeonplugZoneDerivedScanLists } from './zoneDerivedScanLists.ts';
+import {
+  deriveNeonplugZoneDerivedScanLists,
+  ensureNeonplugDm32uvScanListsFloor,
+} from './zoneDerivedScanLists.ts';
 import { serialiseNeonplugZones } from './zones.ts';
 
 export const NEONPLUG_CODEPLUG_VERSION = '1.0.0';
@@ -272,7 +275,7 @@ export function serialiseNeonplugCodeplug(
       options,
       warnings,
     );
-    data.scanLists = scanLists;
+    data.scanLists = ensureNeonplugDm32uvScanListsFloor(scanLists);
     data.channels = serialiseDm32uvChannels(numbered, assembled, profileId, options, {
       contactIdByEntityId,
       rxGroupIndexById,

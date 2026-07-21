@@ -40,4 +40,23 @@ DM32 CSV synthesises `Scan.csv` from **zone-derived** scan lists (with synthetic
 
 All expanded channel objects for a source library channel inherit the same `scanListId`.
 
+### Empty-list floor (DM32UV — #564)
+
+Baofeng DM-32 / NeonPlug write paths expect **at least one** scan list. When zone-derived projection would leave `scanLists: []`, Studio emits one **dummy** empty list:
+
+```json
+{
+  "name": "Scan list 1",
+  "channels": [],
+  "channelCount": 0,
+  "ctcScanMode": 0,
+  "scanTxMode": 0
+}
+```
+
+- Empty `channels[]` → radio “Current channel” membership semantics; Studio does **not** invent channel members.
+- Channel `scanListId` stays `0` (unbound) unless zone derivation assigned a real list.
+- This floor is a **minimum** when derivation yields nothing; deriving lists from zones when `exportScanList` warrants them remains [#562](https://github.com/pskillen/codeplug-studio/issues/562).
+- Radio encode truncates names to **10** chars (`Scan list 1` is 11 in JSON).
+
 UV5R-Mini leaves `scanLists` empty; per-channel `scanAdd` on [channels](channels.md) carries scan intent.
