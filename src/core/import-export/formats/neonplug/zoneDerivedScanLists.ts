@@ -72,9 +72,7 @@ export function ensureNeonplugDm32uvScanListsFloor(
  * True when zoneGrouping is missing or has no zone entries — assemble already
  * falls back to library zones; scan derivation should too (#562).
  */
-export function neonplugZoneGroupingLayoutIsEmpty(
-  layout: AssembledBuild['zoneGrouping'],
-): boolean {
+export function neonplugZoneGroupingLayoutIsEmpty(layout: AssembledBuild['zoneGrouping']): boolean {
   return layout == null || layout.zones.length === 0;
 }
 

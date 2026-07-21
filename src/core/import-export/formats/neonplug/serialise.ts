@@ -264,12 +264,7 @@ export function serialiseNeonplugCodeplug(
       warnings,
     );
     const { numbered: libraryNumbered, numbersBySourceChannelId } =
-      assignNeonplugExpandedChannelNumbers(
-        expanded,
-        profile.maxChannels,
-        warnings,
-        profile.label,
-      );
+      assignNeonplugExpandedChannelNumbers(expanded, profile.maxChannels, warnings, profile.label);
 
     const { scanLists, scanListIdByChannelId, carriers, scanListIdByZoneId } =
       deriveNeonplugZoneDerivedScanLists(

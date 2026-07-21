@@ -30,16 +30,16 @@ Wire shape for `codeplug.json` → `scanLists[]`.
 
 DM32 CSV synthesises `Scan.csv` from **zone-derived** scan lists (with synthetic carriers). NeonPlug stores **first-class** scan list objects and the same carrier pattern as Analog channels in `channels[]`.
 
-| Behaviour          | Studio export                                                                                                                         |
-| ------------------ | ------------------------------------------------------------------------------------------------------------------------------------- |
-| Source             | Zone grouping `exportScanList` + scan membership helpers                                                                              |
-| Empty layout       | When `zoneGrouping` is missing or has no zone entries and the scan master is on, each assembled zone is treated as `exportScanList: true` |
-| Members            | Channel **numbers**, fanned out after m×n expansion, then truncated to 15 (scan-eligible zone members only — not the carrier)         |
-| Synthetic carriers | `{zoneName} Scan` Analog/FM simplex rows in `channels[]`; prepended as first zone member; carrier `scanListId` bound to the list      |
-| Designated TX      | `designatedTxChannel` = carrier channel number                                                                                        |
-| Carrier frequency  | Layout `scanCarrierFrequencyHz` when present; else **145.500 MHz** (`DEFAULT_SCAN_CARRIER_HZ`)                                        |
-| Priority / hang / CTC | Lossy defaults: `ctcScanMode`/`scanTxMode` = `0`; omit rest                                                                        |
-| Cap                | Min of profile `maxScanLists` and **15**                                                                                              |
+| Behaviour             | Studio export                                                                                                                             |
+| --------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| Source                | Zone grouping `exportScanList` + scan membership helpers                                                                                  |
+| Empty layout          | When `zoneGrouping` is missing or has no zone entries and the scan master is on, each assembled zone is treated as `exportScanList: true` |
+| Members               | Channel **numbers**, fanned out after m×n expansion, then truncated to 15 (scan-eligible zone members only — not the carrier)             |
+| Synthetic carriers    | `{zoneName} Scan` Analog/FM simplex rows in `channels[]`; prepended as first zone member; carrier `scanListId` bound to the list          |
+| Designated TX         | `designatedTxChannel` = carrier channel number                                                                                            |
+| Carrier frequency     | Layout `scanCarrierFrequencyHz` when present; else **145.500 MHz** (`DEFAULT_SCAN_CARRIER_HZ`)                                            |
+| Priority / hang / CTC | Lossy defaults: `ctcScanMode`/`scanTxMode` = `0`; omit rest                                                                               |
+| Cap                   | Min of profile `maxScanLists` and **15**                                                                                                  |
 
 All expanded channel objects for a source library channel inherit the same `scanListId`. Carriers use synthetic source id `scan-carrier:{zoneId}` (export-only — not library channels).
 
