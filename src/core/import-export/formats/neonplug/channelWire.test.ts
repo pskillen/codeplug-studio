@@ -8,6 +8,8 @@ import {
   formatNeonplugPower,
   formatNeonplugSlotOperation,
   formatNeonplugTone,
+  formatNeonplugTxFrequencyMhz,
+  NEONPLUG_NO_TX_FREQUENCY_MHZ,
 } from './channelWire.ts';
 
 const projectId = '11111111-1111-4111-8111-111111111111';
@@ -34,6 +36,20 @@ describe('neonplug/channelWire helpers', () => {
   it('converts Hz to MHz', () => {
     expect(formatNeonplugFrequencyMhz(145_350_000)).toBe(145.35);
     expect(formatNeonplugFrequencyMhz(null)).toBe(0);
+  });
+
+  it('emits no-TX sentinel when forbidTx and RX is in 87–136 MHz', () => {
+    expect(formatNeonplugTxFrequencyMhz(null, 118.7, true)).toBe(NEONPLUG_NO_TX_FREQUENCY_MHZ);
+    expect(formatNeonplugTxFrequencyMhz(0, 120.0, true)).toBe(NEONPLUG_NO_TX_FREQUENCY_MHZ);
+    expect(formatNeonplugTxFrequencyMhz(118_700_000, 118.7, true)).toBe(
+      NEONPLUG_NO_TX_FREQUENCY_MHZ,
+    );
+  });
+
+  it('keeps normal TX MHz outside the no-TX band or when TX allowed', () => {
+    expect(formatNeonplugTxFrequencyMhz(145_500_000, 145.5, true)).toBe(145.5);
+    expect(formatNeonplugTxFrequencyMhz(null, 118.7, false)).toBe(0);
+    expect(formatNeonplugTxFrequencyMhz(145_500_000, 145.5, false)).toBe(145.5);
   });
 
   it('maps power Middle ladder wire to NeonPlug Medium', () => {
@@ -163,6 +179,30 @@ describe('channelToNeonplugChannel', () => {
     );
     expect(wire.forbidTx).toBe(true);
     expect(wire.scanAdd).toBe(false);
+  });
+
+  it('emits no-TX TX sentinel for receive-only airband channels', () => {
+    const wire = channelToNeonplugChannel(
+      channel({
+        name: 'EGPH TWR',
+        rxFrequency: 118_700_000,
+        txFrequency: null,
+        forbidTransmit: 'forbid',
+        modeProfiles: [
+          {
+            mode: 'am',
+            rxTone: 'none',
+            txTone: 'none',
+            squelch: null,
+            bandwidthKHz: 12.5,
+          },
+        ],
+      }),
+      { number: 10, name: 'EGPH TWR', profileId: 'neonplug-dm32uv' },
+    );
+    expect(wire.forbidTx).toBe(true);
+    expect(wire.rxFrequency).toBe(118.7);
+    expect(wire.txFrequency).toBe(NEONPLUG_NO_TX_FREQUENCY_MHZ);
   });
 
   it('maps APRS receive and digital report mode', () => {

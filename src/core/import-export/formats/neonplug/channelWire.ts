@@ -53,10 +53,41 @@ function isDmrProfile(profile: ChannelModeProfile): profile is ChannelModeProfil
   return profile.mode === 'dmr';
 }
 
+/**
+ * NeonPlug JSON / display sentinel for receive-only TX (radio stores `0xFF`).
+ * Required when RX is in the aviation/FM no-TX band (87–136 MHz) and `forbidTx`.
+ * @see NeonPlug `NO_TX_FREQUENCY` in `frequencyValidator.ts`
+ */
+export const NEONPLUG_NO_TX_FREQUENCY_MHZ = 1666.666;
+
+/** RX MHz range where NeonPlug expects the no-TX TX sentinel. */
+export const NEONPLUG_NO_TX_BAND_RX_MIN_MHZ = 87;
+export const NEONPLUG_NO_TX_BAND_RX_MAX_MHZ = 136;
+
 /** Hz → MHz number for NeonPlug JSON (e.g. `145.35`). */
 export function formatNeonplugFrequencyMhz(hz: number | null): number {
   if (hz == null || !Number.isFinite(hz) || hz <= 0) return 0;
   return Math.round((hz / 1_000_000) * 1_000_000) / 1_000_000;
+}
+
+/** True when RX MHz is in NeonPlug’s aviation/FM receive-only band. */
+export function isNeonplugNoTxRxBandMhz(rxMhz: number): boolean {
+  return rxMhz >= NEONPLUG_NO_TX_BAND_RX_MIN_MHZ && rxMhz < NEONPLUG_NO_TX_BAND_RX_MAX_MHZ;
+}
+
+/**
+ * TX MHz for NeonPlug JSON. Receive-only channels in the no-TX RX band must emit
+ * {@link NEONPLUG_NO_TX_FREQUENCY_MHZ} — `0` is rejected by NeonPlug write validation.
+ */
+export function formatNeonplugTxFrequencyMhz(
+  txHz: number | null,
+  rxMhz: number,
+  forbidTx: boolean,
+): number {
+  if (forbidTx && isNeonplugNoTxRxBandMhz(rxMhz)) {
+    return NEONPLUG_NO_TX_FREQUENCY_MHZ;
+  }
+  return formatNeonplugFrequencyMhz(txHz);
 }
 
 /** Studio ladder wire `Middle` → NeonPlug enum `Medium`. */
@@ -200,14 +231,16 @@ export function channelToNeonplugChannel(
   const scanContext =
     options.scanContext ?? buildScanContext(undefined, { defaultScanInclusion: 'scan' });
   const scanAdd = resolveEffectiveScanInclusion(channel, scanContext) === 'scan';
+  const forbidTx = effectiveForbidTransmit(channel, options.behaviourContext);
+  const rxFrequency = formatNeonplugFrequencyMhz(channel.rxFrequency);
 
   const base: NeonplugChannel = {
     number: options.number,
     name: options.name,
-    rxFrequency: formatNeonplugFrequencyMhz(channel.rxFrequency),
-    txFrequency: formatNeonplugFrequencyMhz(channel.txFrequency),
+    rxFrequency,
+    txFrequency: formatNeonplugTxFrequencyMhz(channel.txFrequency, rxFrequency, forbidTx),
     mode: wireMode,
-    forbidTx: effectiveForbidTransmit(channel, options.behaviourContext),
+    forbidTx,
     loneWorker: false,
     bandwidth: formatNeonplugBandwidth(activeAnalog?.bandwidthKHz ?? null),
     scanAdd,
