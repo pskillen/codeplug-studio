@@ -35,6 +35,8 @@ Each zone (or zone-derived scan list) member library channel id **fans out** to 
 
 All expanded rows for a source channel inherit the same `scanListId`.
 
+When no zone-derived scan lists are produced, DM32UV export still emits one empty default list (`Scan list 1`) — see [scan-lists.md](../../../reference/neonplug/scan-lists.md) (#564).
+
 ---
 
 ## Caps and merge
