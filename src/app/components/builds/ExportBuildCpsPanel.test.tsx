@@ -1,6 +1,7 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { MantineProvider } from '@mantine/core';
+import { MemoryRouter } from 'react-router-dom';
 import type { FormatBuild } from '@core/models/formatBuild.ts';
 import type { CpsPreviewResult } from '../../services/buildCpsExportService.ts';
 import ExportBuildCpsPanel from './ExportBuildCpsPanel.tsx';
@@ -155,6 +156,35 @@ describe('ExportBuildCpsPanel', () => {
     expect(screen.queryByText(/not in the memory list/i)).not.toBeInTheDocument();
     expect(screen.queryByText(/aren't in a zone/i)).not.toBeInTheDocument();
     expect(screen.getByText(/Only analogue FM\/AM channels/i)).toBeInTheDocument();
+  });
+
+  it('shows prefer-NeonPlug deprecation alert for DM32 builds only', async () => {
+    const dm32Build: FormatBuild = {
+      ...opengd77Build,
+      formatId: 'dm32',
+      profileId: 'dm32-baofeng-dm32uv',
+    };
+    const { unmount } = render(
+      <MemoryRouter>
+        <MantineProvider>
+          <ExportBuildCpsPanel build={dm32Build} />
+        </MantineProvider>
+      </MemoryRouter>,
+    );
+
+    expect(
+      await screen.findByText(/DM-32 CPS export is deprecated for radio write/),
+    ).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Download ZIP' })).not.toBeDisabled();
+    unmount();
+
+    render(
+      <MantineProvider>
+        <ExportBuildCpsPanel build={opengd77Build} />
+      </MantineProvider>,
+    );
+    expect(await screen.findByText(/OpenGD77 \(1701\)/)).toBeInTheDocument();
+    expect(screen.queryByText(/DM-32 CPS export is deprecated/)).not.toBeInTheDocument();
   });
 
   it('opens CSV preview modal for CHIRP single-file export', async () => {

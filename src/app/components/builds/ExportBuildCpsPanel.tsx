@@ -18,6 +18,7 @@ import ExportBuildSettingsSections from './ExportBuildSettingsSections.tsx';
 import ProfilePicker from './ProfilePicker.tsx';
 import CpsCsvPreviewModal from './CpsCsvPreviewModal.tsx';
 import ExportWarningsAlert from './ExportWarningsAlert.tsx';
+import Dm32PreferNeonPlugAlert from './Dm32PreferNeonPlugAlert.tsx';
 import Dm32AprsSetupAlert from './Dm32AprsSetupAlert.tsx';
 import { saveDriveLastFolderId, saveDriveLastFolderPath } from '@integrations/cloud/drivePrefs.ts';
 import DriveBrowserModal, { type DriveSaveTarget } from '../import-export/DriveBrowserModal.tsx';
@@ -493,6 +494,7 @@ export default function ExportBuildCpsPanel({ build }: ExportBuildCpsPanelProps)
         </Text>
       ) : null}
       {error ? <Alert color="red">{error}</Alert> : null}
+      {build.formatId === 'dm32' ? <Dm32PreferNeonPlugAlert /> : null}
       {build.formatId === 'dm32' ? <Dm32AprsSetupAlert exportFileNames={exportFileNames} /> : null}
       {exportWarnings.length > 0 ? <ExportWarningsAlert warnings={exportWarnings} /> : null}
       {isNeonplug ? (
