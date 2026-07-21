@@ -275,7 +275,7 @@ export function serialiseNeonplugCodeplug(
       options,
       warnings,
     );
-    data.scanLists = ensureNeonplugDm32uvScanListsFloor(scanLists);
+    data.scanLists = ensureNeonplugDm32uvScanListsFloor(scanLists, numbered[0]?.number);
     data.channels = serialiseDm32uvChannels(numbered, assembled, profileId, options, {
       contactIdByEntityId,
       rxGroupIndexById,

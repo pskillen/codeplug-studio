@@ -171,7 +171,19 @@ describe('neonplug/zoneDerivedScanLists', () => {
     expect(derived.scanLists).toEqual([]);
   });
 
-  it('floors empty derivation to one dummy empty scan list (DM32UV)', () => {
+  it('floors empty derivation with first channel number so NeonPlug keeps the list', () => {
+    expect(ensureNeonplugDm32uvScanListsFloor([], 1)).toEqual([
+      {
+        name: NEONPLUG_DM32UV_EMPTY_SCAN_LIST_NAME,
+        channels: [1],
+        channelCount: 1,
+        ctcScanMode: 0,
+        scanTxMode: 0,
+      },
+    ]);
+  });
+
+  it('floors memberless when no channel number is available (zero-channel edge)', () => {
     expect(ensureNeonplugDm32uvScanListsFloor([])).toEqual([
       {
         name: NEONPLUG_DM32UV_EMPTY_SCAN_LIST_NAME,
@@ -193,10 +205,10 @@ describe('neonplug/zoneDerivedScanLists', () => {
         scanTxMode: 0,
       },
     ];
-    expect(ensureNeonplugDm32uvScanListsFloor(existing)).toEqual(existing);
+    expect(ensureNeonplugDm32uvScanListsFloor(existing, 1)).toEqual(existing);
   });
 
-  it('serialise floors empty scanLists; channels stay unbound (scanListId 0)', () => {
+  it('serialise floors empty scanLists with first channel; channels stay unbound', () => {
     const ch1 = fmChannel('ch-1', 'Alpha');
     const assembled: AssembledBuild = {
       buildId: 'b1',
@@ -220,11 +232,11 @@ describe('neonplug/zoneDerivedScanLists', () => {
     expect(data.scanLists).toHaveLength(1);
     expect(data.scanLists[0]).toEqual({
       name: NEONPLUG_DM32UV_EMPTY_SCAN_LIST_NAME,
-      channels: [],
-      channelCount: 0,
+      channels: [1],
+      channelCount: 1,
       ctcScanMode: 0,
       scanTxMode: 0,
     });
-    expect(data.channels[0]?.scanListId).toBe(0);
+    expect(data.channels.every((ch) => ch.scanListId === 0)).toBe(true);
   });
 });
