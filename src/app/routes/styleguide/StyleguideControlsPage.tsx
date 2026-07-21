@@ -11,11 +11,12 @@ import {
   Select,
 } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
-import { IconTrash } from '@tabler/icons-react';
+import { IconSettings, IconTrash } from '@tabler/icons-react';
 import { Link } from 'react-router-dom';
 import { UK_BANDS } from '../../lib/bands.ts';
 import { BandPill, BandPillForChannel, ModePill } from '../../components/pills/index.ts';
 import { ICON_SIZE_NAV, ICON_STROKE } from '../../lib/iconSizes.ts';
+import { entityNavIcons } from '../../nav/entityNavIcons.ts';
 import {
   EmptyState,
   FormSection,
@@ -34,6 +35,8 @@ import {
   ScanInclusionSegmentDemo,
   SplitButtonDemo,
 } from './controlDemos.tsx';
+
+const ChannelsNavIcon = entityNavIcons.channels;
 
 export default function StyleguideControlsPage() {
   const [modalOpened, { open: openModal, close: closeModal }] = useDisclosure(false);
@@ -212,10 +215,17 @@ export default function StyleguideControlsPage() {
       <PageSection title="Nav samples">
         <Stack gap="xs" maw={280}>
           <Text size="sm" c="dimmed">
-            NavLink styling (inactive / active)
+            NavLink styling (inactive / active) — secondary nav uses Tabler leftSection icons
           </Text>
-          <NavLink label="Channels" active />
-          <NavLink label="Settings" />
+          <NavLink
+            label="Channels"
+            leftSection={<ChannelsNavIcon size={ICON_SIZE_NAV} stroke={ICON_STROKE} />}
+            active
+          />
+          <NavLink
+            label="Settings"
+            leftSection={<IconSettings size={ICON_SIZE_NAV} stroke={ICON_STROKE} />}
+          />
         </Stack>
       </PageSection>
 
