@@ -2,10 +2,12 @@
 
 Fill this in while driving **official OpenGD77 CPS** (Baofeng 1701 / RT-84 profile preferred). For each row: change the setting in CPS UI → **File → CSV → Export to CSV** → record the exact cell text (capitalisation, spaces, punctuation).
 
-**Tracking:** [#403](https://github.com/pskillen/codeplug-studio/issues/403) · Parent [#36](https://github.com/pskillen/codeplug-studio/issues/36)  
+**Tracking:** [#403](https://github.com/pskillen/codeplug-studio/issues/403) · Parent [#502](https://github.com/pskillen/codeplug-studio/issues/502) (was [#36](https://github.com/pskillen/codeplug-studio/issues/36))  
 **Gap notes:** [`tmp/opengd77-wire-docs-issues.md`](../../../tmp/opengd77-wire-docs-issues.md) (local working notes; gitignored)  
 **Headers / adapter:** [`columns.ts`](../../../src/core/import-export/formats/opengd77/columns.ts)  
 **Sample CPS export (unedited):** [`sample-codeplugs/opengd77R2025.03.23.1/baofeng-1701/`](../../../sample-codeplugs/opengd77R2025.03.23.1/baofeng-1701/) — OpenGD77 CPS R2025.03.23.1 · Baofeng 1701. Prefer this over `test-data/` for observed wire strings.
+
+> Last 24h of main was mostly NeonPlug / DM32UV / UI — **no OpenGD77 CPS CSV wire ships**. Follow-ups below unchanged except epic renumber.
 
 ### Follow-up tickets (filed from #403)
 
@@ -17,7 +19,7 @@ Fill this in while driving **official OpenGD77 CPS** (Baofeng 1701 / RT-84 profi
 | Squelch wire map (`Disabled` / `Open` / `Closed` / `Master` / `%`) | [#439](https://github.com/pskillen/codeplug-studio/issues/439) | Open |
 | Power ladder + user-power (`+W-` / `-W+`) | [#440](https://github.com/pskillen/codeplug-studio/issues/440) | Open |
 | Validate MD-9600 power ladder | [#441](https://github.com/pskillen/codeplug-studio/issues/441) | **Done** — PR [#521](https://github.com/pskillen/codeplug-studio/pull/521); User Power `+W-` still unmodelled |
-| OpenGD77 `APRS.csv` body + `Channels.APRS` FK | [#442](https://github.com/pskillen/codeplug-studio/issues/442) (parent [#246](https://github.com/pskillen/codeplug-studio/issues/246)) | Open |
+| OpenGD77 `APRS.csv` body + `Channels.APRS` FK | [#442](https://github.com/pskillen/codeplug-studio/issues/442) (epic [#501](https://github.com/pskillen/codeplug-studio/issues/501)) | Open |
 
 Related (not filed from #403): behavioural cascade on `Rx Only` / `All Skip` [#424](https://github.com/pskillen/codeplug-studio/issues/424) **done** (docs PR [#434](https://github.com/pskillen/codeplug-studio/pull/434)); `txPermit` has no OpenGD77 column (export loss).
 
