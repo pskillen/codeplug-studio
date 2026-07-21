@@ -15,7 +15,8 @@ describe('formatProfiles', () => {
       'chirp-uv21',
       'chirp-uv5r',
     ]);
-    expect(profiles.find((p) => p.profileId === 'chirp-uv5r')?.nameLimit).toBe(7);
+    expect(profiles.find((p) => p.profileId === 'chirp-uv5r')?.nameLimit).toBe(12);
+    expect(profiles.find((p) => p.profileId === 'chirp-uv5r')?.maxChannels).toBe(999);
   });
 
   it('lists NeonPlug profiles for UI', () => {
@@ -32,7 +33,8 @@ describe('formatProfiles', () => {
 
   it('returns wire hint for OpenGD77 and CHIRP profiles', () => {
     expect(formatProfileWireHint('opengd77', 'opengd77-1701')).toMatch(/16-char/);
-    expect(formatProfileWireHint('chirp', 'chirp-uv5r')).toMatch(/7-char/);
+    expect(formatProfileWireHint('chirp', 'chirp-uv5r')).toMatch(/12-char/);
+    expect(formatProfileWireHint('chirp', 'chirp-uv5r')).toMatch(/999/);
   });
 
   it('returns wire hint for NeonPlug profiles', () => {

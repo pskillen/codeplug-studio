@@ -33,8 +33,8 @@ export const CHIRP_PROFILES: readonly ChirpRadioProfile[] = [
     id: 'chirp-uv5r',
     label: 'Baofeng UV-5R Mini',
     defaultFileName: 'Baofeng_UV-5R Mini_export.csv',
-    maxMemorySlots: 128,
-    nameLimit: 7,
+    maxMemorySlots: 999,
+    nameLimit: 12,
     powerLadder: UV5R_LADDER,
   },
   {
