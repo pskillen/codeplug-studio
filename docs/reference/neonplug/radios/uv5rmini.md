@@ -33,8 +33,10 @@ Other Channel fields are filled with defaults on read-back into the shared model
 
 Same idea as CHIRP UV-5R (traits only):
 
-- Flat memory list
+- Flat memory list — Build → Channels uses the shared flat-memory Channels page
 - Per-channel scan flag (`scanAdd` ↔ `scanInclusion`)
+
+**Analogue-only:** flat-memory packing and UV5R NeonPlug serialise emit FM/AM channels only; digital-only library channels are skipped (with an export warning on serialise).
 
 ## Export caps (Studio profile)
 
