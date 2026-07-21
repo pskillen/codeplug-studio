@@ -2,9 +2,11 @@
 
 Export-time channel wire name composition and shortening. Runs at the CPS boundary — library CRUD does not enforce name length caps.
 
-**Tracking:** [#90](https://github.com/pskillen/codeplug-studio/issues/90), talk group abbrev [#110](https://github.com/pskillen/codeplug-studio/issues/110)
+**Tracking:** [#90](https://github.com/pskillen/codeplug-studio/issues/90), talk group abbrev [#110](https://github.com/pskillen/codeplug-studio/issues/110), hyphenated sets [#582](https://github.com/pskillen/codeplug-studio/issues/582) (epic [#581](https://github.com/pskillen/codeplug-studio/issues/581))
 
 **Code:** `src/core/domain/channelNaming.ts`, `src/core/import-export/channelExpansion/shortenName.ts`, `exportWireNames.ts`, `talkGroupWireNames.ts`, `listWireNames.ts`, `multiMode.ts`, `multiTalkGroup.ts`, `multiTalkGroupWireName.ts`
+
+Shortening is **shared** in `channelExpansion/` — format adapters only supply the profile `nameLimit` (e.g. CHIRP UV-5R = 7). There is no per-format rename path.
 
 ## Pipeline
 
@@ -16,6 +18,10 @@ Export-time channel wire name composition and shortening. Runs at the CPS bounda
    - **No-callsign sites:** `suffix_tg_number` / `suffix_tg_abbrev` modes derive the two-character suffix from `Channel.abbreviation` or `name`, not from a `uniqueWireName` disambiguation suffix (` 2`, ` 3`, …) on the site wire label.
 5. **Shorten** — `applyWireNameLimits` / `finalizeWireName` for channels; `applyTalkGroupWireNameLimits` for talk groups in `Contacts.csv` and FK columns when `shortenNames` is true and the name exceeds `maxNameLength`; `applyListWireNameLimits` for zone, scan list (Anytone), RX group list, and OpenGD77 private contact wire names at export and wire preview.
    - **Library abbrev:** when **Use abbreviations from library** is on (default), prefer `Channel.abbreviation` and `TalkGroup.abbreviation` before dictionary / vowel strategies; multi-mode suffixes (`-F`, `-D`, …) are preserved on channels. Multi-talkgroup **channel** suffixes use `talkGroupMemberSuffix` (legacy `append` mode) and `fixedSuffix` (TG-first compose modes) in `shortenWireName`. Regenerate `dictionary.generated.ts` via `npm run generate:abbreviations` (runs automatically before `test` and `build`).
+   - **Hyphen-aware dictionary:** after peeling mode suffixes, each whitespace token is abbreviated as a whole first (so keys like `PMR-446` still match), then split on `-` so parts can hit the dictionary (`PMR446-1` → `PMR-1`).
+   - **Designator protection:** pure digits and short alnum designators with digits (≤5 chars, e.g. `S20`, `SU24`, `U280`) skip vowel-squeeze and are preferred when truncating.
+   - **Leading hyphen-segment drop:** when still over budget and the stem contains `-`, drop leftmost unprotected segments before hard truncate (`UHF-SU24` → `SU24` under a 7-char limit). Space-separated place names are not dropped this way.
+   - **Hard truncate:** prefers a trailing protected segment when present, instead of always left-slicing the stem.
 
 ## Operator settings
 

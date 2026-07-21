@@ -316,8 +316,9 @@ stopwords:
 
 # ─────────────────────────────────────────────────────────────────────────────
 # SEPARATOR HANDLING — not abbreviations, but part of the algorithm
-# When names are shortened aggressively, collapsing separators recovers chars.
-# Suggested cascade:
+# Implemented today (shared shortenName.ts): hyphen-aware dictionary split,
+# designator protection, and dropping leading hyphen segments when over budget.
+# Full separator-collapse cascade still deferred:
 #   " - "  →  " "  →  ""    (space-dash-space → space → nothing)
 #   " / "  →  "/"  →  ""
 #   " "    →  ""            (final: remove all spaces)
