@@ -22,7 +22,7 @@ Read-only wire preview list for build entity routes. Shows library label, genera
 
 ## Behaviour
 
-- When **`inclusionColumn`** is set, an **Export** column shows Skip (or Force export for library nested-only zones). Clicks stop propagation.
+- When **`inclusionColumn`** is set, a **Skip / Force** column shows Skip from export (or Force export for library nested-only zones). Clicks stop propagation.
 - **No other per-row inputs** — overrides are edited in the modal (or channel bulk-edit route), except **Export scan list** on DM32 / Anytone zone rows when `zoneScanColumn` is set.
 - **Search and sort** are UI-only when not in reorder mode; they do **not** persist to export order or `orderOrSlot`.
 - When **`reorder`** is set, the table runs in **`reorderMode`** (locked to `rows` order; column sorts off). Up/down `ActionIcon`s call `onMove`; clicks stop propagation so they do not open the modal.

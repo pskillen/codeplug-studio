@@ -110,7 +110,7 @@ export default function WirePreviewDataTable({
           ? [
               {
                 key: 'inclusion',
-                header: 'Export',
+                header: 'Skip / Force',
                 hideable: false,
                 render: (row: WirePreviewRow) => (
                   <WirePreviewInclusionCell
