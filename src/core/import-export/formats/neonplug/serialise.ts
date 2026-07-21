@@ -2,6 +2,10 @@ import type { CpsExportOptions } from '@core/import-export/types.ts';
 import type { AssembledBuild, AssembledChannel } from '@core/services/assemble.ts';
 import { applyWireNameLimits } from '@core/import-export/channelExpansion/exportWireNames.ts';
 import {
+  buildNeonplugAprsRadioSettingsPatch,
+  type NeonplugAprsRadioSettingsPatch,
+} from './aprsSettingsWire.ts';
+import {
   expandAllNeonplugChannelsForExport,
   type ExpandedNeonplugChannelRow,
 } from './channelExpansion.ts';
@@ -39,6 +43,12 @@ export interface NeonplugSerialiseResult {
   content: string;
   data: NeonplugCodeplugData;
   warnings: string[];
+  /**
+   * APRS leaf patch for merge-on-export onto donor `radioSettings`.
+   * Null when no library APRS config or UV5R-Mini (no gpsAprs projection).
+   * Greenfield keeps `radioSettings: null` — apply only when a donor bag is present.
+   */
+  aprsSettingsPatch: NeonplugAprsRadioSettingsPatch | null;
 }
 
 function radioInfoForProfile(profileId: string): NeonplugRadioInfo {
@@ -230,6 +240,7 @@ export function serialiseNeonplugCodeplug(
   const warnings = collectNeonplugExportWarnings(assembled, options);
   const exportDate = options?.exportDate ?? new Date().toISOString();
   const data = emptyCodeplug(radioInfoForProfile(profileId), exportDate);
+  let aprsSettingsPatch: NeonplugAprsRadioSettingsPatch | null = null;
 
   if (isNeonplugDm32uvProfile(profile)) {
     const { contacts, contactIdByEntityId } = serialiseNeonplugContactsForProfile(
@@ -281,6 +292,10 @@ export function serialiseNeonplugCodeplug(
       rxGroupIndexById,
       scanListIdByChannelId,
     });
+
+    const aprs = buildNeonplugAprsRadioSettingsPatch(assembled, numbersBySourceChannelId);
+    aprsSettingsPatch = aprs.patch;
+    warnings.push(...aprs.warnings);
   } else {
     data.channels = serialiseUv5rminiChannels(assembled, profileId, options, warnings);
   }
@@ -289,5 +304,6 @@ export function serialiseNeonplugCodeplug(
     content: JSON.stringify(data),
     data,
     warnings,
+    aprsSettingsPatch,
   };
 }

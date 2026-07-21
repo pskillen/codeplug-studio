@@ -282,4 +282,56 @@ describe('neonplug/serialise', () => {
     expect(data.channels[0]?.name).toBe('Glasgow');
     expect(data.channels[0]?.rxGroupListId).toBe(1);
   });
+
+  it('returns APRS radioSettings patch from library config without writing greenfield settings', () => {
+    const channel = fmChannel('ch-aprs', 'APRS Ch', 438_800_000);
+    const assembled: AssembledBuild = {
+      ...assembledDm32([channel]),
+      aprsConfiguration: {
+        id: 'aprs-1',
+        projectId,
+        revision: 1,
+        updatedAt: '2026-07-20T00:00:00.000Z',
+        name: 'Home',
+        comment: '',
+        manualTxIntervalSec: null,
+        autoTxIntervalSec: 180,
+        positionSource: 'gps',
+        fixedLocation: null,
+        channelSlots: [
+          {
+            channelRef: { kind: 'channel', id: channel.id },
+            timeslot: 1,
+            targetDmrId: 23551,
+            callType: 'group',
+          },
+        ],
+      },
+    };
+
+    const { data, aprsSettingsPatch, warnings } = serialiseNeonplugCodeplug(assembled, {
+      exportDate: '2026-07-20T12:00:00.000Z',
+      shortenNames: false,
+    });
+
+    expect(data.radioSettings).toBeNull();
+    expect(aprsSettingsPatch).toMatchObject({
+      aprsScheduledSendTime: 6,
+      aprsFixedBeacon: false,
+      gpsEnabled: true,
+      gpsMode: 0,
+      aprsReportChannel1: 1,
+      aprsCallType: true,
+      aprsUploadId: 23551,
+    });
+    expect(warnings).toEqual([]);
+  });
+
+  it('returns null APRS patch when library has no APRS configuration', () => {
+    const { aprsSettingsPatch } = serialiseNeonplugCodeplug(
+      assembledDm32([fmChannel('ch-1', 'A', 145_500_000)]),
+      { shortenNames: false },
+    );
+    expect(aprsSettingsPatch).toBeNull();
+  });
 });
