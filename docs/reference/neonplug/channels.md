@@ -30,10 +30,10 @@ Studio internal model uses Hz; convert at the boundary.
 
 NeonPlug’s aviation/FM receive-only contract (RX **87–136 MHz** with `forbidTx`) stores TX as `0xFF` on the radio and uses JSON sentinel **`1666.666`** (`NO_TX_FREQUENCY`). Write-time validation (`isValidChannelFrequency`) accepts that band **only** when `forbidTx` is true **and** TX is the sentinel — `txFrequency: 0` is treated as invalid and the channel is dropped before write.
 
-| Condition | Studio export |
-| --------- | ------------- |
-| Effective `forbidTx` and RX MHz in `[87, 136)` | `forbidTx: true`, `txFrequency: 1666.666` |
-| Otherwise | `txFrequency` from model Hz (null/≤0 → `0`) |
+| Condition                                      | Studio export                               |
+| ---------------------------------------------- | ------------------------------------------- |
+| Effective `forbidTx` and RX MHz in `[87, 136)` | `forbidTx: true`, `txFrequency: 1666.666`   |
+| Otherwise                                      | `txFrequency` from model Hz (null/≤0 → `0`) |
 
 Ground truth: NeonPlug `frequencyValidator.ts` / airport import (`airportChannels.ts`).
 
