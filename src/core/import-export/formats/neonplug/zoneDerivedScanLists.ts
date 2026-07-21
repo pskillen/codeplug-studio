@@ -26,12 +26,18 @@ export interface NeonplugZoneDerivedScanExport {
   scanListIdByChannelId: Map<string, number>;
 }
 
-/** One empty scan list (no members) — radio “Current channel” semantics; channels stay unbound. */
-export function neonplugDm32uvEmptyScanListFloor(): NeonplugScanList {
+/**
+ * Floor scan list when zone-derived projection is empty (#564).
+ * With a member channel number, include it so NeonPlug’s write filter
+ * (drops `channels.length === 0`) retains the list. Channels stay unbound
+ * (`scanListId` 0) — membership is interop-only.
+ */
+export function neonplugDm32uvEmptyScanListFloor(memberChannelNumber?: number): NeonplugScanList {
+  const hasMember = memberChannelNumber != null && memberChannelNumber > 0;
   return {
     name: NEONPLUG_DM32UV_EMPTY_SCAN_LIST_NAME,
-    channels: [],
-    channelCount: 0,
+    channels: hasMember ? [memberChannelNumber] : [],
+    channelCount: hasMember ? 1 : 0,
     // Lossy defaults — match zone-derived CTC/TX defaults.
     ctcScanMode: 0,
     scanTxMode: 0,
@@ -39,14 +45,16 @@ export function neonplugDm32uvEmptyScanListFloor(): NeonplugScanList {
 }
 
 /**
- * DM32UV firmware / NeonPlug write path expects ≥1 scan list.
- * Floor empty projections; leave non-empty derivation unchanged.
+ * DM32UV / NeonPlug write path expects ≥1 scan list that survives NeonPlug’s
+ * empty-list strip. Floor empty projections; leave non-empty derivation unchanged.
+ * Pass first exported channel number when available (zero-channel → memberless).
  */
 export function ensureNeonplugDm32uvScanListsFloor(
   scanLists: readonly NeonplugScanList[],
+  firstChannelNumber?: number,
 ): NeonplugScanList[] {
   if (scanLists.length > 0) return [...scanLists];
-  return [neonplugDm32uvEmptyScanListFloor()];
+  return [neonplugDm32uvEmptyScanListFloor(firstChannelNumber)];
 }
 
 /**

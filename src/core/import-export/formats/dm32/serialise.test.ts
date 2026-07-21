@@ -101,7 +101,7 @@ describe('DM32 export serialise', () => {
     const membersIndex = scanRows[0]!.indexOf(SCAN_COL.channelMembers);
     const designedIndex = scanRows[0]!.indexOf(SCAN_COL.designedChannel);
     expect(scanRows[1]?.[scanNameIndex]).toBe('Scan list 1');
-    expect(scanRows[1]?.[membersIndex]).toBe('');
+    expect(scanRows[1]?.[membersIndex]).toBe('GB3DA|');
     expect(scanRows[1]?.[designedIndex]).toBe('None');
     expect(rows[1]?.[headers.indexOf(CHANNEL_COL.scanList)]).toBe('None');
   });

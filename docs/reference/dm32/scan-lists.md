@@ -20,19 +20,19 @@ Synthesised timing / mode columns below are Studio defaults until CPS elicitatio
 
 ### Empty-list floor (#564)
 
-When derivation would leave `Scan.csv` with **no data rows** (no zone has `exportScanList`, master toggle off, or no eligible members), Studio still emits **one** empty default row so CPS / radio layout never sees a count-zero scan region:
+When derivation would leave `Scan.csv` with **no data rows** (no zone has `exportScanList`, master toggle off, or no eligible members), Studio still emits **one** default row so CPS / radio layout never sees a count-zero scan region. With ≥1 exported channel, `Channel Members` holds the first expanded wire name (trailing `|`) so the floor stays aligned with NeonPlug’s ≥1-member workaround:
 
-| Column                 | Floor value                  |
-| ---------------------- | ---------------------------- |
-| `Scan Name`            | `Scan list 1`                |
-| `CTC Scan Mode`        | `Detection CTC`              |
-| `Scan Tx Mode`         | `Last Actived Channel`       |
-| `Hang Time`            | `5.0`                        |
-| `Priority Channel 1/2` | `None`                       |
-| `Designed Channel`     | `None`                       |
-| `Priority Sweep Time`  | `500`                        |
-| `Talkback`             | `0`                          |
-| `Channel Members`      | _(empty — no trailing pipe)_ |
+| Column                 | Floor value                                            |
+| ---------------------- | ------------------------------------------------------ |
+| `Scan Name`            | `Scan list 1`                                          |
+| `CTC Scan Mode`        | `Detection CTC`                                        |
+| `Scan Tx Mode`         | `Last Actived Channel`                                 |
+| `Hang Time`            | `5.0`                                                  |
+| `Priority Channel 1/2` | `None`                                                 |
+| `Designed Channel`     | `None`                                                 |
+| `Priority Sweep Time`  | `500`                                                  |
+| `Talkback`             | `0`                                                    |
+| `Channel Members`      | First expanded wire name + `\|` (empty if no channels) |
 
 No synthetic carrier is created for the floor row; channel `Scan List` stays `None`. Sibling NeonPlug DM32UV export applies the same policy to `scanLists[]` — see [neonplug/scan-lists.md](../neonplug/scan-lists.md).
 

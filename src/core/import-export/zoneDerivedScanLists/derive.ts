@@ -32,8 +32,12 @@ export interface ZoneDerivedScanExport {
   carrierPrependByZoneId: Map<string, string>;
 }
 
-/** One empty Scan.csv row — no synthetic carrier; channels keep `Scan List` = None. */
-export function dm32EmptyScanCsvFloorRow(): ScanCsvRow {
+/** Floor Scan.csv row when zone-derived projection is empty (#564). No carrier; channels keep `Scan List` = None. */
+export function dm32EmptyScanCsvFloorRow(firstChannelWireName?: string): ScanCsvRow {
+  const members =
+    firstChannelWireName != null && firstChannelWireName.length > 0
+      ? `${firstChannelWireName}|`
+      : '';
   return {
     values: {
       [SCAN_COL.number]: '1',
@@ -46,20 +50,23 @@ export function dm32EmptyScanCsvFloorRow(): ScanCsvRow {
       [SCAN_COL.designedChannel]: 'None',
       [SCAN_COL.prioritySweepTime]: '500',
       [SCAN_COL.talkback]: '0',
-      [SCAN_COL.channelMembers]: '',
+      [SCAN_COL.channelMembers]: members,
     },
   };
 }
 
 /**
- * Baofeng DM-32 CPS / radio layout expects ≥1 scan list.
- * Floor empty Scan.csv projections; leave non-empty derivation unchanged.
+ * Baofeng DM-32 expects ≥1 scan list. Floor empty Scan.csv projections;
+ * leave non-empty derivation unchanged. Pass first expanded wire name when available.
  */
-export function ensureDm32ScanCsvFloor(scanExport: ZoneDerivedScanExport): ZoneDerivedScanExport {
+export function ensureDm32ScanCsvFloor(
+  scanExport: ZoneDerivedScanExport,
+  firstChannelWireName?: string,
+): ZoneDerivedScanExport {
   if (scanExport.scanRows.length > 0) return scanExport;
   return {
     ...scanExport,
-    scanRows: [dm32EmptyScanCsvFloorRow()],
+    scanRows: [dm32EmptyScanCsvFloorRow(firstChannelWireName)],
   };
 }
 
@@ -101,10 +108,10 @@ export function deriveZoneDerivedScanLists(
     carrierPrependByZoneId: new Map(),
   };
 
-  if (!scanMasterEnabled(options)) return ensureDm32ScanCsvFloor(result);
+  if (!scanMasterEnabled(options)) return result;
 
   const layout = assembled.zoneGrouping;
-  if (!layout) return ensureDm32ScanCsvFloor(result);
+  if (!layout) return result;
 
   const profileId = options?.profileId ?? assembled.profileId ?? DEFAULT_DM32_PROFILE_ID;
   const profile = getDm32Profile(profileId);
@@ -197,5 +204,5 @@ export function deriveZoneDerivedScanLists(
     });
   }
 
-  return ensureDm32ScanCsvFloor(result);
+  return result;
 }

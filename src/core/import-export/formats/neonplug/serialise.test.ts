@@ -63,8 +63,8 @@ describe('neonplug/serialise', () => {
     expect(data.scanLists).toEqual([
       {
         name: 'Scan list 1',
-        channels: [],
-        channelCount: 0,
+        channels: [1],
+        channelCount: 1,
         ctcScanMode: 0,
         scanTxMode: 0,
       },
