@@ -5,7 +5,11 @@ import type { AssembledBuild } from '@core/services/assemble.ts';
 import { buildDm32uvChannelNumberMap, singletonChannelNumbersById } from './exportContext.ts';
 import { NEONPLUG_DM32UV_PROFILE } from './profiles.ts';
 import { serialiseNeonplugCodeplug } from './serialise.ts';
-import { deriveNeonplugZoneDerivedScanLists } from './zoneDerivedScanLists.ts';
+import {
+  deriveNeonplugZoneDerivedScanLists,
+  ensureNeonplugDm32uvScanListsFloor,
+  NEONPLUG_DM32UV_EMPTY_SCAN_LIST_NAME,
+} from './zoneDerivedScanLists.ts';
 
 const projectId = '11111111-1111-4111-8111-111111111111';
 
@@ -165,5 +169,62 @@ describe('neonplug/zoneDerivedScanLists', () => {
       { exportZoneDerivedScanLists: false },
     );
     expect(derived.scanLists).toEqual([]);
+  });
+
+  it('floors empty derivation to one dummy empty scan list (DM32UV)', () => {
+    expect(ensureNeonplugDm32uvScanListsFloor([])).toEqual([
+      {
+        name: NEONPLUG_DM32UV_EMPTY_SCAN_LIST_NAME,
+        channels: [],
+        channelCount: 0,
+        ctcScanMode: 0,
+        scanTxMode: 0,
+      },
+    ]);
+  });
+
+  it('leaves non-empty derivation unchanged when flooring', () => {
+    const existing = [
+      {
+        name: 'Local',
+        channels: [1, 2],
+        channelCount: 2,
+        ctcScanMode: 0,
+        scanTxMode: 0,
+      },
+    ];
+    expect(ensureNeonplugDm32uvScanListsFloor(existing)).toEqual(existing);
+  });
+
+  it('serialise floors empty scanLists; channels stay unbound (scanListId 0)', () => {
+    const ch1 = fmChannel('ch-1', 'Alpha');
+    const assembled: AssembledBuild = {
+      buildId: 'b1',
+      formatId: 'neonplug',
+      profileId: 'neonplug-dm32uv',
+      buildName: 'DM32 Neon',
+      channels: [{ entity: ch1, wireName: 'Alpha' }],
+      zones: [],
+      talkGroups: [],
+      digitalContacts: [],
+      analogContacts: [],
+      rxGroupLists: [],
+      scanLists: [],
+    };
+
+    const { data } = serialiseNeonplugCodeplug(assembled, {
+      exportDate: '2026-07-20T12:00:00.000Z',
+      shortenNames: false,
+    });
+
+    expect(data.scanLists).toHaveLength(1);
+    expect(data.scanLists[0]).toEqual({
+      name: NEONPLUG_DM32UV_EMPTY_SCAN_LIST_NAME,
+      channels: [],
+      channelCount: 0,
+      ctcScanMode: 0,
+      scanTxMode: 0,
+    });
+    expect(data.channels[0]?.scanListId).toBe(0);
   });
 });

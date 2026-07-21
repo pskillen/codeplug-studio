@@ -60,7 +60,16 @@ describe('neonplug/serialise', () => {
     expect(data.channels[1]?.number).toBe(2);
     expect(data.zones).toEqual([]);
     expect(data.contacts).toEqual([]);
-    expect(data.scanLists).toEqual([]);
+    expect(data.scanLists).toEqual([
+      {
+        name: 'Scan list 1',
+        channels: [],
+        channelCount: 0,
+        ctcScanMode: 0,
+        scanTxMode: 0,
+      },
+    ]);
+    expect(data.channels.every((ch) => ch.scanListId === 0)).toBe(true);
     expect(data.rxGroups).toEqual([]);
     expect(data.radioSettings).toBeNull();
     expect(content.includes('\n')).toBe(false);
