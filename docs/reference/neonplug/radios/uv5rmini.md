@@ -16,6 +16,15 @@ Profile notes for analogue NeonPlug exports targeting UV5R-Mini.
 | `contacts` / RX / radioIds | Usually `[]`                                              |
 | `radioInfo.model`          | `"UV5R-Mini"` (confirm against a live export)             |
 | `radioSettings`            | May include UV5R-specific `radioSpecific` bag — **lossy** |
+| `radioInfo.memoryLayout`   | Present on radio-read exports (config byte range)         |
+
+## NeonPlug settings (read-only)
+
+Build → **NeonPlug settings** decodes donor `radioSettings.radioSpecific` into labelled sections
+(Basic, Display & Channel, PTT & Roger, …) using the same option indexes as NeonPlug
+[`settingsProfile.ts`](https://github.com/infamy/NeonPlug/blob/main/src/radios/uv5rmini/settingsProfile.ts).
+Values are display-only — Studio does not edit or greenfield-write these leaves; merge retains the
+opaque bag. DM32 builds keep the shallow leaf-key preview and are unaffected.
 
 ## Fields that matter on write (NeonPlug mapping)
 
