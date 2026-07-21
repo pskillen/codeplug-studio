@@ -28,5 +28,5 @@ None. Rendered as a layout route element; child routes render through `<Outlet /
 
 ## Related
 
-- [AppNav](../AppNav/AppNav.tsx) · [SectionNav](../SectionNav/SectionNav.tsx)
+- [AppHeader](../ui/AppHeader.md) · [AppNav](../AppNav/AppNav.tsx) · [SectionNav](../SectionNav/SectionNav.tsx)
 - [ui kit](../ui/index.ts) · [docs/features/app-shell](../../../../docs/features/app-shell/README.md)

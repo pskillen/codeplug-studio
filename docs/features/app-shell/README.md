@@ -8,7 +8,7 @@ Tier-1 reference for the Phase 2 application shell: navigation chrome, route sur
 
 ## Overview
 
-The SPA uses Mantine `AppShell` with two-section navigation (primary + section nav), matching the codeplug-tool UI kit. `ProjectProvider` supplies project state via `useProjects()`. Visible product title: **MM9PDY Codeplug Studio**.
+The SPA uses Mantine `AppShell` with two-section navigation (primary + section nav), matching the codeplug-tool UI kit. `ProjectProvider` supplies project state via `useProjects()`. Visible product mark: the **Codeplug Studio** wordmark in the header ([#330](https://github.com/pskillen/codeplug-studio/issues/330)); document title remains **MM9PDY Codeplug Studio**.
 
 ```text
 ProjectProvider
@@ -48,6 +48,7 @@ ProjectProvider
 | [SidebarDriveControls](../../src/app/components/SidebarDriveControls/SidebarDriveControls.md) | Sidebar Save / Check Drive ([#368](https://github.com/pskillen/codeplug-studio/issues/368))      |
 | [SoftWarning](../../src/app/components/ui/SoftWarning.md)                                     | Compact theme-aware warning panel for sidebar chrome                                             |
 | [GettingStartedContent](../../src/app/components/onboarding/GettingStartedContent.md)         | Empty-state + Quick start guide ([#345](https://github.com/pskillen/codeplug-studio/issues/345)) |
+| [AppHeader](../../src/app/components/ui/AppHeader.md)                                         | Shell header burger + branded wordmark ([#330](https://github.com/pskillen/codeplug-studio/issues/330)) |
 | [ActiveProjectBar](../../src/app/components/ActiveProjectBar/ActiveProjectBar.md)             | Active project name + Switch (closes mobile drawer)                                              |
 | [EntityDeleteButton](../../src/app/components/library/EntityDeleteButton.md)                  | Editor footer delete for library entities                                                        |
 | [EntityListDeleteAction](../../src/app/components/library/EntityListDeleteAction.md)          | List row delete trash icon                                                                       |
@@ -123,6 +124,23 @@ State flows through a thin app-state adapter, `ProjectStore` (`src/app/state/pro
 Projects and library rows persist durably in the browser via IndexedDB (Ticket [#9](https://github.com/pskillen/codeplug-studio/issues/9)): one row per entity, optimistic `revision` concurrency, and `BroadcastChannel` cross-tab notifications. A shared singleton (`src/app/state/persistence.ts`) backs the whole app. See [storage.md](../../poc-migration/storage.md) and [library](../library/README.md).
 
 The **active-project selection** is remembered across reloads via `localStorage` (`src/integrations/preferences/`), reconciled against the loaded project list on startup. Channel list filter prefs, entity list name/sort prefs, and channel column visibility use per-project `localStorage` keys under `mm9pdy-codeplug-studio.list.*` — see [data-table.md](data-table.md).
+
+## Branding
+
+Brand SVGs live under [`public/branding/`](../../../public/branding/) ([#330](https://github.com/pskillen/codeplug-studio/issues/330)):
+
+| Asset                  | Path                              | Use                                      |
+| ---------------------- | --------------------------------- | ---------------------------------------- |
+| Icon mark              | `public/branding/studio-icon.svg` | Favicon + apple-touch (`index.html`)     |
+| Wordmark (icon + text) | `public/branding/studio-logo.svg` | App header via [`AppHeader`](../../../src/app/components/ui/AppHeader.md) |
+| Hero illustration      | `public/branding/studio-hero.svg` | OG image meta; optional marketing/splash |
+
+Colours assume the default **dark** colour scheme. To update branding, replace the SVGs in place (keep filenames) or change the paths in `index.html` and `AppHeader`.
+
+| Area              | Status  | Notes                                                                 |
+| ----------------- | ------- | --------------------------------------------------------------------- |
+| Favicon / tab     | Shipped | SVG icon + theme-color + OG image in `index.html`                     |
+| Header wordmark   | Shipped | [`AppHeader`](../../../src/app/components/ui/AppHeader.md)            |
 
 ## Footer and feedback links
 
