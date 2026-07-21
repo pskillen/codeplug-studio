@@ -101,10 +101,7 @@ export default function ExportBuildSettingsSections({
             checked={build.exportUnlinkedDigitalContacts !== false}
             disabled={saving}
             onChange={(event) =>
-              onExportInclusionChange(
-                'exportUnlinkedDigitalContacts',
-                event.currentTarget.checked,
-              )
+              onExportInclusionChange('exportUnlinkedDigitalContacts', event.currentTarget.checked)
             }
           />
           <Switch

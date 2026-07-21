@@ -304,8 +304,7 @@ function withExportInclusionDefaults(build: FormatBuild): FormatBuild {
 function assembleChannels(build: FormatBuild, library: LibrarySlice): AssembledChannel[] {
   const overrides = build.channelOverrides;
   /** Flat-memory radios only export the memory list — no “orphan” inclusion toggle. */
-  const includeUnlinked =
-    !buildUsesFlatMemoryList(build) && build.exportUnlinkedChannels !== false;
+  const includeUnlinked = !buildUsesFlatMemoryList(build) && build.exportUnlinkedChannels !== false;
   const exportReachable = exportReachableChannelIds(build, library);
   const assembled: AssembledChannel[] = [];
   for (const entity of library.channels) {
