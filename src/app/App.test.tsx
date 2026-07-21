@@ -142,8 +142,8 @@ describe('App', () => {
 
     renderApp('/import-export');
 
-    expect(await screen.findByRole('heading', { name: 'Summary' })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: 'Project interchange' })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'Project interchange' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Summary' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Download YAML/i })).toBeInTheDocument();
   });
 

@@ -160,22 +160,22 @@ When OAuth is not configured, click opens `GoogleDriveNotConfiguredModal` with *
 
 ## Implementation status
 
-| Area                              | Status  | Notes                                                                                            |
-| --------------------------------- | ------- | ------------------------------------------------------------------------------------------------ |
-| OAuth + Drive API port            | Shipped | [#61](https://github.com/pskillen/codeplug-studio/issues/61)                                     |
-| Settings status / disconnect      | Shipped | [#62](https://github.com/pskillen/codeplug-studio/issues/62)                                     |
-| Drive browser modal               | Shipped | [#62](https://github.com/pskillen/codeplug-studio/issues/62)                                     |
+| Area                              | Status  | Notes                                                                                                                                        |
+| --------------------------------- | ------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| OAuth + Drive API port            | Shipped | [#61](https://github.com/pskillen/codeplug-studio/issues/61)                                                                                 |
+| Settings status / disconnect      | Shipped | [#62](https://github.com/pskillen/codeplug-studio/issues/62)                                                                                 |
+| Drive browser modal               | Shipped | [#62](https://github.com/pskillen/codeplug-studio/issues/62)                                                                                 |
 | Summary project interchange       | Shipped | [#62](https://github.com/pskillen/codeplug-studio/issues/62); YAML on Summary [#569](https://github.com/pskillen/codeplug-studio/issues/569) |
-| Disconnected Drive CTA UX         | Shipped | [#141](https://github.com/pskillen/codeplug-studio/issues/141) — inline connect on action        |
-| Shared session + reconnect        | Shipped | [#286](https://github.com/pskillen/codeplug-studio/issues/286)                                   |
-| App chrome Save bar               | Shipped | [#285](https://github.com/pskillen/codeplug-studio/issues/285)                                   |
-| UUID-match import overwrite       | Shipped | [#285](https://github.com/pskillen/codeplug-studio/issues/285)                                   |
-| Refresh from Drive prompt         | Shipped | [#285](https://github.com/pskillen/codeplug-studio/issues/285)                                   |
-| Refresh id-mismatch override      | Shipped | [#334](https://github.com/pskillen/codeplug-studio/issues/334)                                   |
-| Save conflict detection           | Shipped | [#335](https://github.com/pskillen/codeplug-studio/issues/335)                                   |
-| Tabular overwrite / conflict diff | Shipped | [#477](https://github.com/pskillen/codeplug-studio/issues/477) — full entity counts + timestamps |
-| Portable project id on open       | Shipped | [#361](https://github.com/pskillen/codeplug-studio/issues/361) — `seedPreservingId` default      |
-| Sidebar Drive controls            | Shipped | [#368](https://github.com/pskillen/codeplug-studio/issues/368) — Save/Check in primary nav       |
+| Disconnected Drive CTA UX         | Shipped | [#141](https://github.com/pskillen/codeplug-studio/issues/141) — inline connect on action                                                    |
+| Shared session + reconnect        | Shipped | [#286](https://github.com/pskillen/codeplug-studio/issues/286)                                                                               |
+| App chrome Save bar               | Shipped | [#285](https://github.com/pskillen/codeplug-studio/issues/285)                                                                               |
+| UUID-match import overwrite       | Shipped | [#285](https://github.com/pskillen/codeplug-studio/issues/285)                                                                               |
+| Refresh from Drive prompt         | Shipped | [#285](https://github.com/pskillen/codeplug-studio/issues/285)                                                                               |
+| Refresh id-mismatch override      | Shipped | [#334](https://github.com/pskillen/codeplug-studio/issues/334)                                                                               |
+| Save conflict detection           | Shipped | [#335](https://github.com/pskillen/codeplug-studio/issues/335)                                                                               |
+| Tabular overwrite / conflict diff | Shipped | [#477](https://github.com/pskillen/codeplug-studio/issues/477) — full entity counts + timestamps                                             |
+| Portable project id on open       | Shipped | [#361](https://github.com/pskillen/codeplug-studio/issues/361) — `seedPreservingId` default                                                  |
+| Sidebar Drive controls            | Shipped | [#368](https://github.com/pskillen/codeplug-studio/issues/368) — Save/Check in primary nav                                                   |
 
 ## Manual verify checklist
 

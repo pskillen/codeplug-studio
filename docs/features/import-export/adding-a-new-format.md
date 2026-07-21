@@ -391,9 +391,9 @@ Studio surfaces formats in **two primary places**: **build creation** (`New buil
 
 ### Format discovery (New build)
 
-| Component | Path | Checklist |
-| --- | --- | --- |
-| New build | `NewBuildPage.tsx` | Lists CPS formats from `formatCatalog` |
+| Component      | Path                | Checklist                                                |
+| -------------- | ------------------- | -------------------------------------------------------- |
+| New build      | `NewBuildPage.tsx`  | Lists CPS formats from `formatCatalog`                   |
 | Profile picker | `ProfilePicker.tsx` | `buildProfileOptionsForFormat` + `formatProfileWireHint` |
 
 - [ ] `formatCatalog` row with correct `importStatus` / `exportStatus`
@@ -402,17 +402,18 @@ Studio surfaces formats in **two primary places**: **build creation** (`New buil
 
 ### Build creation and navigation
 
-| Component | Path | Checklist |
-| --- | --- | --- |
-| New build | `NewBuildPage.tsx` | Lists CPS formats from `formatCatalog` |
-| Profile picker | `ProfilePicker.tsx` | `buildProfileOptionsForFormat` + `formatProfileWireHint` |
-| Build nav | `src/app/routes/builds/nav.ts` | Trait-driven sections (zones, channels, scan lists, …); Export first |
-| Build switcher | `BuildSwitcher.tsx` | Sibling build Select in secondary chrome |
+| Component      | Path                           | Checklist                                                            |
+| -------------- | ------------------------------ | -------------------------------------------------------------------- |
+| New build      | `NewBuildPage.tsx`             | Lists CPS formats from `formatCatalog`                               |
+| Profile picker | `ProfilePicker.tsx`            | `buildProfileOptionsForFormat` + `formatProfileWireHint`             |
+| Build nav      | `src/app/routes/builds/nav.ts` | Trait-driven sections (zones, channels, scan lists, …); Export first |
+| Build switcher | `BuildSwitcher.tsx`            | Sibling build Select in secondary chrome                             |
 
 - [ ] `TraitProfile` registered — build wizard creates valid empty `layout`
 - [ ] Trait pages implemented or explicitly deferred with hub doc **Known gaps**
 - [ ] `profileId` on new `FormatBuild` resolves in both trait and radio registries
 - [ ] New build lands on `/builds/:id/export`
+
 ### Build export (`/builds/:id/export`)
 
 | Component       | Path                                                      | Checklist                                                                                |

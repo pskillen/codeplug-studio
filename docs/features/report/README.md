@@ -8,15 +8,15 @@ Library inventory and project YAML backup for the active project. Gives operator
 
 ## Implementation status
 
-| Area                  | Status   | Notes                                                                 |
-| --------------------- | -------- | --------------------------------------------------------------------- |
-| Entity counts         | Shipped  | Channels, talk groups, digital/analog contacts, RX group lists, zones |
-| Channels by mode      | Shipped  | From the first `modeProfiles` entry per channel                       |
-| Channels by band      | Shipped  | Via `bandLabelForFrequencyHz` on RX frequency                         |
-| Located-channel count | Shipped  | Links to the [library channels map section](../map/README.md)         |
-| Integrity warnings    | Shipped  | Dangling UUID references (`findDanglingReferences`)                   |
+| Area                  | Status   | Notes                                                                                                         |
+| --------------------- | -------- | ------------------------------------------------------------------------------------------------------------- |
+| Entity counts         | Shipped  | Channels, talk groups, digital/analog contacts, RX group lists, zones                                         |
+| Channels by mode      | Shipped  | From the first `modeProfiles` entry per channel                                                               |
+| Channels by band      | Shipped  | Via `bandLabelForFrequencyHz` on RX frequency                                                                 |
+| Located-channel count | Shipped  | Links to the [library channels map section](../map/README.md)                                                 |
+| Integrity warnings    | Shipped  | Dangling UUID references (`findDanglingReferences`)                                                           |
 | Project interchange   | Shipped  | Native YAML import/export + Drive on Summary ([#569](https://github.com/pskillen/codeplug-studio/issues/569)) |
-| Export / print report | Deferred | No report export yet                                                  |
+| Export / print report | Deferred | No report export yet                                                                                          |
 
 ## Concepts
 

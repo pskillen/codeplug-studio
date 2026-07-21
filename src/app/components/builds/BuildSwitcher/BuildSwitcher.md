@@ -15,7 +15,7 @@ None — reads the build id from the route and the project build list from `useF
 ```tsx
 import BuildSwitcher from '../../builds/BuildSwitcher/BuildSwitcher.tsx';
 
-<BuildSwitcher />
+<BuildSwitcher />;
 ```
 
 Mounted from `BuildSectionNavFrame` above `BuildNavLinks`.

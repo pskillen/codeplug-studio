@@ -26,10 +26,10 @@ Native YAML remains **project interchange** (library + all builds) on **Summary*
 
 ## Export vs Setup
 
-| Surface | Owns |
-| --- | --- |
-| **Export** (`/builds/:id/export`) | Download / Drive / donor merge / format settings / inclusion — the job operators open a build for |
-| **Setup** (`/builds/:id/overview`) | Build identity (rename/delete), target profile, organisation capability badges |
+| Surface                            | Owns                                                                                              |
+| ---------------------------------- | ------------------------------------------------------------------------------------------------- |
+| **Export** (`/builds/:id/export`)  | Download / Drive / donor merge / format settings / inclusion — the job operators open a build for |
+| **Setup** (`/builds/:id/overview`) | Build identity (rename/delete), target profile, organisation capability badges                    |
 
 Export does not host identity editors; Setup does not host download actions. Secondary nav lists **Export** first; `/builds/:id` redirects to Export.
 
@@ -63,13 +63,13 @@ Per-build CPS export is on `/builds/:id/export` (`ExportBuildCpsPanel`) — the 
 
 ## Documentation map
 
-| Doc                                                  | Topic                                         |
-| ---------------------------------------------------- | --------------------------------------------- |
-| [profiles.md](profiles.md)                           | Radio profile picker                          |
-| [wire-preview.md](wire-preview.md)                   | Wire name overrides and preview routes        |
-| [wire-name-composition.md](wire-name-composition.md) | Traits → fields for auto-generated wire names |
-| [zone-grouping.md](zone-grouping.md)                 | Build zone layout editor                      |
-| [`BuildSwitcher.md`](../../../src/app/components/builds/BuildSwitcher/BuildSwitcher.md) | Secondary-nav build identity + switcher |
+| Doc                                                                                     | Topic                                         |
+| --------------------------------------------------------------------------------------- | --------------------------------------------- |
+| [profiles.md](profiles.md)                                                              | Radio profile picker                          |
+| [wire-preview.md](wire-preview.md)                                                      | Wire name overrides and preview routes        |
+| [wire-name-composition.md](wire-name-composition.md)                                    | Traits → fields for auto-generated wire names |
+| [zone-grouping.md](zone-grouping.md)                                                    | Build zone layout editor                      |
+| [`BuildSwitcher.md`](../../../src/app/components/builds/BuildSwitcher/BuildSwitcher.md) | Secondary-nav build identity + switcher       |
 
 ## Persistence
 
@@ -81,7 +81,7 @@ YAML import/export includes `formatBuilds[]` in the project document.
 
 | Area                         | Status  | Notes                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
 | ---------------------------- | ------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| List + create + detail shell | Shipped | [#82](https://github.com/pskillen/codeplug-studio/issues/82); export-first IA + build switcher [#569](https://github.com/pskillen/codeplug-studio/issues/569)                                                                                                                                                                                                                                                                                                                                  |
+| List + create + detail shell | Shipped | [#82](https://github.com/pskillen/codeplug-studio/issues/82); export-first IA + build switcher [#569](https://github.com/pskillen/codeplug-studio/issues/569)                                                                                                                                                                                                                                                                                                                                 |
 | Per-build CPS export         | Shipped | `ExportBuildCpsPanel` — per-file CSV, ZIP download, Drive ZIP upload, CSV preview modal ([#151](https://github.com/pskillen/codeplug-studio/issues/151)); deduplicated export warnings ([#319](https://github.com/pskillen/codeplug-studio/issues/319)); foldable warning groups ([#408](https://github.com/pskillen/codeplug-studio/issues/408))                                                                                                                                             |
 | Profile picker component     | Shipped | [#85](https://github.com/pskillen/codeplug-studio/issues/85) — `ProfilePicker`                                                                                                                                                                                                                                                                                                                                                                                                                |
 | Wire preview + overrides     | Shipped | [#87](https://github.com/pskillen/codeplug-studio/issues/87) — sub-routes; [#349](https://github.com/pskillen/codeplug-studio/issues/349) — list + modal + channel bulk; list Skip/Force + entity settings cards + build Sort… ([#457](https://github.com/pskillen/codeplug-studio/issues/457)); zones reorder preview ([#468](https://github.com/pskillen/codeplug-studio/issues/468)); force-export for library omit zones ([#186](https://github.com/pskillen/codeplug-studio/issues/186)) |

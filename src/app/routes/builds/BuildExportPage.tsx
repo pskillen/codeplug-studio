@@ -16,8 +16,7 @@ export default function BuildExportPage() {
             ← Back to builds
           </Link>
           <Text size="sm" c="dimmed">
-            Rename or change profile on{' '}
-            <Link to={`/builds/${build.id}/overview`}>Setup</Link>.
+            Rename or change profile on <Link to={`/builds/${build.id}/overview`}>Setup</Link>.
           </Text>
         </Stack>
       }

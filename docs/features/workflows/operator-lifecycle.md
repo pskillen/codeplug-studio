@@ -114,12 +114,12 @@ Format-specific CSV export (`exportBuild`, `assemble`) is separate from native Y
 
 ## Services (not UI → adapters)
 
-| UI entry                | Service                                   | Persistence                                   |
-| ----------------------- | ----------------------------------------- | --------------------------------------------- |
-| Home import panel       | `importProjectFromYaml` `createNew`       | `seedProject`                                 |
-| Summary replace         | `importProjectFromYaml` `replaceExisting` | `replaceProject`                              |
-| Summary export          | `exportProjectToYaml`                     | `loadProjectSeed` + optional `putProjectMeta` |
-| Save to Drive           | `exportProjectToYaml` + `GoogleDrivePort` | `putProjectMeta` + Drive file                 |
+| UI entry          | Service                                   | Persistence                                   |
+| ----------------- | ----------------------------------------- | --------------------------------------------- |
+| Home import panel | `importProjectFromYaml` `createNew`       | `seedProject`                                 |
+| Summary replace   | `importProjectFromYaml` `replaceExisting` | `replaceProject`                              |
+| Summary export    | `exportProjectToYaml`                     | `loadProjectSeed` + optional `putProjectMeta` |
+| Save to Drive     | `exportProjectToYaml` + `GoogleDrivePort` | `putProjectMeta` + Drive file                 |
 
 App wiring: `src/app/services/projectImportExportService.ts`, `src/integrations/cloud/googleDrive.ts`.
 
