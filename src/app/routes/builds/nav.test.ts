@@ -1,4 +1,4 @@
-import { buildNavItems } from './nav.ts';
+import { buildNavItems, pathForSwitchedBuild } from './nav.ts';
 import { newFormatBuild } from '@core/domain/factories.ts';
 import { describe, expect, it } from 'vitest';
 
@@ -27,5 +27,37 @@ describe('buildNavItems', () => {
   it('omits NeonPlug settings for UV5R NeonPlug builds', () => {
     const build = { ...newFormatBuild('proj', 'neonplug-uv5rmini'), formatId: 'neonplug' };
     expect(buildNavItems(build).map((item) => item.label)).not.toContain('NeonPlug settings');
+  });
+});
+
+describe('pathForSwitchedBuild', () => {
+  const from = { ...newFormatBuild('proj', 'opengd77-1701'), formatId: 'opengd77' as const };
+  const toOpenGd77 = {
+    ...newFormatBuild('proj', 'opengd77-1701'),
+    id: 'target-ogd',
+    formatId: 'opengd77' as const,
+  };
+  const toChirp = {
+    ...newFormatBuild('proj', 'chirp-uv5r'),
+    id: 'target-chirp',
+    formatId: 'chirp' as const,
+  };
+
+  it('preserves a shared sub-route', () => {
+    expect(pathForSwitchedBuild(`/builds/${from.id}/channels`, from.id, toOpenGd77)).toBe(
+      `/builds/${toOpenGd77.id}/channels`,
+    );
+  });
+
+  it('falls back to export when the target lacks the route', () => {
+    expect(pathForSwitchedBuild(`/builds/${from.id}/zones`, from.id, toChirp)).toBe(
+      `/builds/${toChirp.id}/export`,
+    );
+  });
+
+  it('maps nested paths to the parent nav item when present', () => {
+    expect(pathForSwitchedBuild(`/builds/${from.id}/channels/bulk`, from.id, toOpenGd77)).toBe(
+      `/builds/${toOpenGd77.id}/channels`,
+    );
   });
 });
