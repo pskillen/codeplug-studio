@@ -19,7 +19,14 @@ function ancillaryTotal(summary: NeonplugDonorRetainSummary): number {
   );
 }
 
-function RadioInfoSection({ summary }: { summary: NeonplugDonorRetainSummary }) {
+function RadioInfoSection({
+  summary,
+  showMemoryLayout,
+}: {
+  summary: NeonplugDonorRetainSummary;
+  showMemoryLayout: boolean;
+}) {
+  const layout = summary.radioInfo.memoryLayout;
   return (
     <FormSection title="Radio info" description="Retained from the donor on merge.">
       <Table.ScrollContainer minWidth={360}>
@@ -37,6 +44,14 @@ function RadioInfoSection({ summary }: { summary: NeonplugDonorRetainSummary }) 
               <Table.Td fw={600}>Build date</Table.Td>
               <Table.Td>{summary.radioInfo.buildDate || '—'}</Table.Td>
             </Table.Tr>
+            {showMemoryLayout && layout ? (
+              <Table.Tr>
+                <Table.Td fw={600}>Memory layout</Table.Td>
+                <Table.Td>
+                  config {layout.configStart}–{layout.configEnd}
+                </Table.Td>
+              </Table.Tr>
+            ) : null}
           </Table.Tbody>
         </Table>
       </Table.ScrollContainer>
@@ -44,6 +59,7 @@ function RadioInfoSection({ summary }: { summary: NeonplugDonorRetainSummary }) 
   );
 }
 
+/** DM32-style shallow leaf preview (unchanged behaviour). */
 function RadioSettingsSection({ summary }: { summary: NeonplugDonorRetainSummary }) {
   return (
     <FormSection
@@ -79,6 +95,64 @@ function RadioSettingsSection({ summary }: { summary: NeonplugDonorRetainSummary
         </Table.ScrollContainer>
       )}
     </FormSection>
+  );
+}
+
+/** UV5R-Mini labelled decode of radioSettings.radioSpecific. */
+function Uv5rRadioSpecificSections({ summary }: { summary: NeonplugDonorRetainSummary }) {
+  if (!summary.hasRadioSettings) {
+    return (
+      <FormSection title="Radio settings">
+        <Text size="sm" c="dimmed">
+          No radioSettings bag in the stored donor.
+        </Text>
+      </FormSection>
+    );
+  }
+
+  if (summary.uv5rRadioSpecificSections.length === 0) {
+    return (
+      <FormSection title="Radio settings">
+        <Text size="sm" c="dimmed">
+          No UV5R-Mini radioSpecific settings in the stored donor.
+        </Text>
+      </FormSection>
+    );
+  }
+
+  return (
+    <>
+      {summary.uv5rRadioSpecificSections.map((section) => (
+        <FormSection
+          key={section.id}
+          title={section.title}
+          description={
+            section.id === summary.uv5rRadioSpecificSections[0]?.id
+              ? 'Read-only decode of donor radioSettings.radioSpecific (labels match NeonPlug). Retained on merge; not editable in Studio.'
+              : undefined
+          }
+        >
+          <Table.ScrollContainer minWidth={360}>
+            <Table withTableBorder withColumnBorders>
+              <Table.Thead>
+                <Table.Tr>
+                  <Table.Th>Setting</Table.Th>
+                  <Table.Th>Value</Table.Th>
+                </Table.Tr>
+              </Table.Thead>
+              <Table.Tbody>
+                {section.rows.map((row) => (
+                  <Table.Tr key={row.key}>
+                    <Table.Td>{row.label}</Table.Td>
+                    <Table.Td>{row.displayValue}</Table.Td>
+                  </Table.Tr>
+                ))}
+              </Table.Tbody>
+            </Table>
+          </Table.ScrollContainer>
+        </FormSection>
+      ))}
+    </>
   );
 }
 
@@ -240,8 +314,12 @@ export default function BuildNeonplugSettingsPage() {
               </Table.ScrollContainer>
             </FormSection>
 
-            <RadioInfoSection summary={summary} />
-            <RadioSettingsSection summary={summary} />
+            <RadioInfoSection summary={summary} showMemoryLayout={isUv5r} />
+            {isUv5r ? (
+              <Uv5rRadioSpecificSections summary={summary} />
+            ) : (
+              <RadioSettingsSection summary={summary} />
+            )}
             <RadioIdsSection summary={summary} uv5rEmptyHint={isUv5r} />
             <AncillarySection summary={summary} uv5rEmptyHint={isUv5r} />
           </>
