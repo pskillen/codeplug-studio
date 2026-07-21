@@ -102,6 +102,8 @@ Routes that need a project gate on an active project and link back to Projects w
 
 Library list routes each have a dedicated section-nav entry (longest-prefix match in `sectionNavRegistry.ts`). Shared entity links come from `routes/library/nav.ts` inside `LibrarySectionNavFrame` (entity links → divider → route-specific controls). Contextual **New …** actions vary per route (e.g. contacts: New digital + New analog; channels: **Add from…** modal for channel sets and external directories).
 
+**Icons:** Library and build secondary nav items use Tabler icons via `NavLink` `leftSection` at `ICON_SIZE_NAV` / `ICON_STROKE` (same as primary nav). Shared entity icons live in `src/app/nav/entityNavIcons.ts` and are reused on build format nav; build-only pages (Export, Setup, Radio characteristics, …) declare their own icons on `buildNavItems` ([#576](https://github.com/pskillen/codeplug-studio/issues/576)).
+
 ## Project lifecycle
 
 State flows through a thin app-state adapter, `ProjectStore` (`src/app/state/projectStore.ts`), over the `ProjectPersistence` port:

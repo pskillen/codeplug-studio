@@ -79,6 +79,8 @@ Registry: `src/app/nav/sectionNavRegistry.ts` maps pathname prefixes to section 
 
 Section nav titles should match list page titles ([README — Page shells](README.md#page-shells)).
 
+Library and build secondary nav links include Tabler `leftSection` icons (`ICON_SIZE_NAV` / `ICON_STROKE`). Shared entity icons: `src/app/nav/entityNavIcons.ts`; build-only icons are set on `buildNavItems` in `src/app/routes/builds/nav.ts`.
+
 ## Related
 
 - [Styleguide hub](README.md)
