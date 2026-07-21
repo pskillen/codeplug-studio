@@ -58,9 +58,22 @@ export function ensureNeonplugDm32uvScanListsFloor(
 }
 
 /**
- * Zone-derived scan lists for NeonPlug DM32UV — no synthetic carriers.
+ * True when zoneGrouping is missing or has no zone entries — assemble already
+ * falls back to library zones; scan derivation should too (#562).
+ */
+export function neonplugZoneGroupingLayoutIsEmpty(
+  layout: AssembledBuild['zoneGrouping'],
+): boolean {
+  return layout == null || layout.zones.length === 0;
+}
+
+/**
+ * Zone-derived scan lists for NeonPlug DM32UV.
  * Reuses format-agnostic scan membership helpers; projects channel **numbers**
  * after m×n expansion, then truncates to `scanListMembers`.
+ *
+ * When `zoneGrouping` is empty/missing and the scan master is on, each assembled
+ * zone is treated as `exportScanList: true` (parity with zone assemble fallback).
  */
 export function deriveNeonplugZoneDerivedScanLists(
   assembled: AssembledBuild,
@@ -76,9 +89,11 @@ export function deriveNeonplugZoneDerivedScanLists(
 
   if (!scanMasterEnabled(options)) return result;
 
-  const layout = assembled.zoneGrouping;
   const library = assembled.library;
-  if (!layout || !library) return result;
+  if (!library) return result;
+
+  const layout = assembled.zoneGrouping;
+  const emptyLayoutMode = neonplugZoneGroupingLayoutIsEmpty(layout);
 
   const channelById = new Map(library.channels.map((channel) => [channel.id, channel]));
   const zoneById = new Map(library.zones.map((zone) => [zone.id, zone]));
@@ -93,8 +108,8 @@ export function deriveNeonplugZoneDerivedScanLists(
   const maxLists = Math.min(profile.maxScanLists, NEONPLUG_MAX_CHANNEL_SCAN_LIST_ID);
 
   for (const assembledZone of assembled.zones) {
-    const entry = layoutEntry(layout, assembledZone.zoneId);
-    if (!entry?.exportScanList) continue;
+    const entry = emptyLayoutMode ? undefined : layoutEntry(layout, assembledZone.zoneId);
+    if (!emptyLayoutMode && !entry?.exportScanList) continue;
 
     if (result.scanLists.length >= maxLists) {
       warnings.push(

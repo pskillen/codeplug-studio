@@ -171,6 +171,136 @@ describe('neonplug/zoneDerivedScanLists', () => {
     expect(derived.scanLists).toEqual([]);
   });
 
+  it('derives scan lists when zoneGrouping layout is empty (#562)', () => {
+    const ch1 = fmChannel('ch-1', 'Alpha');
+    const ch2 = fmChannel('ch-2', 'Bravo');
+    const zone: Zone = {
+      ...newZone(projectId, 'Local'),
+      id: 'zone-1',
+      members: [
+        { kind: 'channel', channelId: 'ch-1' },
+        { kind: 'channel', channelId: 'ch-2' },
+      ],
+    };
+
+    const assembled: AssembledBuild = {
+      buildId: 'b1',
+      formatId: 'neonplug',
+      profileId: 'neonplug-dm32uv',
+      buildName: 'DM32 Neon',
+      channels: [
+        { entity: ch1, wireName: 'Alpha' },
+        { entity: ch2, wireName: 'Bravo' },
+      ],
+      zones: [
+        {
+          zoneId: 'zone-1',
+          wireName: 'Local',
+          memberChannelIds: ['ch-1', 'ch-2'],
+        },
+      ],
+      talkGroups: [],
+      digitalContacts: [],
+      analogContacts: [],
+      rxGroupLists: [],
+      scanLists: [],
+      library: {
+        channels: [ch1, ch2],
+        zones: [zone],
+        talkGroups: [],
+        digitalContacts: [],
+        analogContacts: [],
+        rxGroupLists: [],
+        scanLists: [],
+      },
+      // No zoneGrouping — assemble falls back to library zones; scan derive should too.
+    };
+
+    const warnings: string[] = [];
+    const derived = deriveNeonplugZoneDerivedScanLists(
+      assembled,
+      NEONPLUG_DM32UV_PROFILE,
+      singletonChannelNumbersById(buildDm32uvChannelNumberMap(assembled, 4000)),
+      { shortenNames: false },
+      warnings,
+    );
+
+    expect(warnings).toEqual([]);
+    expect(derived.scanLists).toEqual([
+      {
+        name: 'Local',
+        channels: [1, 2],
+        channelCount: 2,
+        ctcScanMode: 0,
+        scanTxMode: 0,
+      },
+    ]);
+    expect(derived.scanListIdByChannelId.get('ch-1')).toBe(1);
+
+    const { data } = serialiseNeonplugCodeplug(assembled, {
+      exportDate: '2026-07-20T12:00:00.000Z',
+      shortenNames: false,
+    });
+    expect(data.scanLists[0]?.name).toBe('Local');
+    expect(data.channels.every((c) => c.scanListId === 1)).toBe(true);
+  });
+
+  it('does not imply exportScanList when layout exists but flag is false', () => {
+    const ch1 = fmChannel('ch-1', 'Alpha');
+    const zone: Zone = {
+      ...newZone(projectId, 'Local'),
+      id: 'zone-1',
+      members: [{ kind: 'channel', channelId: 'ch-1' }],
+    };
+    const assembled: AssembledBuild = {
+      buildId: 'b1',
+      formatId: 'neonplug',
+      profileId: 'neonplug-dm32uv',
+      buildName: 'DM32 Neon',
+      channels: [{ entity: ch1, wireName: 'Alpha' }],
+      zones: [{ zoneId: 'zone-1', wireName: 'Local', memberChannelIds: ['ch-1'] }],
+      talkGroups: [],
+      digitalContacts: [],
+      analogContacts: [],
+      rxGroupLists: [],
+      scanLists: [],
+      library: {
+        channels: [ch1],
+        zones: [zone],
+        talkGroups: [],
+        digitalContacts: [],
+        analogContacts: [],
+        rxGroupLists: [],
+        scanLists: [],
+      },
+      zoneGrouping: {
+        kind: 'zoneGrouping',
+        zones: [
+          {
+            id: 'zone-1',
+            name: 'Local',
+            channelIds: ['ch-1'],
+            exportScanList: false,
+          },
+        ],
+      },
+    };
+
+    const derived = deriveNeonplugZoneDerivedScanLists(
+      assembled,
+      NEONPLUG_DM32UV_PROFILE,
+      singletonChannelNumbersById(buildDm32uvChannelNumberMap(assembled, 4000)),
+      { shortenNames: false },
+    );
+    expect(derived.scanLists).toEqual([]);
+
+    const { data } = serialiseNeonplugCodeplug(assembled, {
+      exportDate: '2026-07-20T12:00:00.000Z',
+      shortenNames: false,
+    });
+    expect(data.scanLists[0]?.name).toBe(NEONPLUG_DM32UV_EMPTY_SCAN_LIST_NAME);
+  });
+
   it('floors empty derivation with first channel number so NeonPlug keeps the list', () => {
     expect(ensureNeonplugDm32uvScanListsFloor([], 1)).toEqual([
       {
