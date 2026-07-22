@@ -28,6 +28,7 @@
 | OpenGD77/OpenUV380 serial kit codec            | [#631](https://github.com/pskillen/codeplug-studio/issues/631) | `kit/codecs/opengd77Serial.ts` — C/R/W/X framing; blocks [#624](https://github.com/pskillen/codeplug-studio/issues/624)/[#625](https://github.com/pskillen/codeplug-studio/issues/625)                                                   |
 | DM-32UV binary protocol / memory docs          | [#637](https://github.com/pskillen/codeplug-studio/issues/637) | [docs/reference/radios/baofeng/dm-32uv/](../../reference/radios/baofeng/dm-32uv/README.md); blocks [#638](https://github.com/pskillen/codeplug-studio/issues/638); parent [#636](https://github.com/pskillen/codeplug-studio/issues/636) |
 | RT95 VOX binary protocol / memory docs         | [#642](https://github.com/pskillen/codeplug-studio/issues/642) | [docs/reference/radios/retevis/rt95/](../../reference/radios/retevis/rt95/README.md); blocks [#643](https://github.com/pskillen/codeplug-studio/issues/643); parent [#640](https://github.com/pskillen/codeplug-studio/issues/640)       |
+| AT-D890UV binary protocol / memory docs        | [#647](https://github.com/pskillen/codeplug-studio/issues/647) | [docs/reference/radios/anytone/at-d890uv/](../../reference/radios/anytone/at-d890uv/README.md); blocks [#649](https://github.com/pskillen/codeplug-studio/issues/649); parent [#645](https://github.com/pskillen/codeplug-studio/issues/645) |
 
 ## Next
 
@@ -36,6 +37,7 @@
 3. OpenGD77 adapters (kit codec ready): [#624](https://github.com/pskillen/codeplug-studio/issues/624) (DM-1701) · [#625](https://github.com/pskillen/codeplug-studio/issues/625) (MD-9600).
 4. DM-32UV adapter after binary docs: [#638](https://github.com/pskillen/codeplug-studio/issues/638) (epic [#636](https://github.com/pskillen/codeplug-studio/issues/636)).
 5. RT95 PROGRAM→QX kit codec [#641](https://github.com/pskillen/codeplug-studio/issues/641) → adapter [#643](https://github.com/pskillen/codeplug-studio/issues/643) (epic [#640](https://github.com/pskillen/codeplug-studio/issues/640); docs [#642](https://github.com/pskillen/codeplug-studio/issues/642) shipped).
+6. Anytone DMR kit codec [#646](https://github.com/pskillen/codeplug-studio/issues/646) → D890 adapter [#649](https://github.com/pskillen/codeplug-studio/issues/649) (epic [#645](https://github.com/pskillen/codeplug-studio/issues/645); docs [#647](https://github.com/pskillen/codeplug-studio/issues/647) shipped).
 
 ## Related
 
