@@ -18,6 +18,8 @@ The fixture’s `formatBuilds[]` must include:
 | `dm32`     | `dm32-baofeng-dm32uv` |
 | `opengd77` | `opengd77-1701`       |
 | `chirp`    | `chirp-uv5r`          |
+| `chirp`    | `chirp-uv21`          |
+| `chirp`    | `chirp-rt95`          |
 
 ## Privacy
 

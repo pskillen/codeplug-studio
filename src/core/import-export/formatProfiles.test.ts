@@ -17,6 +17,10 @@ describe('formatProfiles', () => {
     ]);
     expect(profiles.find((p) => p.profileId === 'chirp-uv5r')?.nameLimit).toBe(12);
     expect(profiles.find((p) => p.profileId === 'chirp-uv5r')?.maxChannels).toBe(999);
+    expect(profiles.find((p) => p.profileId === 'chirp-uv21')?.nameLimit).toBe(12);
+    expect(profiles.find((p) => p.profileId === 'chirp-uv21')?.maxChannels).toBe(1000);
+    expect(profiles.find((p) => p.profileId === 'chirp-rt95')?.nameLimit).toBe(6);
+    expect(profiles.find((p) => p.profileId === 'chirp-rt95')?.maxChannels).toBe(200);
   });
 
   it('lists NeonPlug profiles for UI', () => {
@@ -35,6 +39,10 @@ describe('formatProfiles', () => {
     expect(formatProfileWireHint('opengd77', 'opengd77-1701')).toMatch(/16-char/);
     expect(formatProfileWireHint('chirp', 'chirp-uv5r')).toMatch(/12-char/);
     expect(formatProfileWireHint('chirp', 'chirp-uv5r')).toMatch(/999/);
+    expect(formatProfileWireHint('chirp', 'chirp-uv21')).toMatch(/12-char/);
+    expect(formatProfileWireHint('chirp', 'chirp-uv21')).toMatch(/1000/);
+    expect(formatProfileWireHint('chirp', 'chirp-rt95')).toMatch(/6-char/);
+    expect(formatProfileWireHint('chirp', 'chirp-rt95')).toMatch(/200/);
   });
 
   it('returns wire hint for NeonPlug profiles', () => {

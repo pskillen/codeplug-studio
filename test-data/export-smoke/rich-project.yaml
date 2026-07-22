@@ -702,6 +702,60 @@ formatBuilds:
     talkGroupOverrides: []
     updatedAt: 2026-07-16T21:22:09.556Z
     zoneOverrides: []
+  - channelOverrides: []
+    contactOverrides: []
+    exportSettings:
+      exportZoneDerivedScanLists: true
+      maxNameLength: null
+      nameModeOverride: callsign_name
+      shortenNames: true
+      useChannelAbbreviation: true
+      useTalkGroupAbbreviation: false
+    exportUnlinkedAnalogContacts: true
+    exportUnlinkedChannels: true
+    exportUnlinkedDigitalContacts: true
+    exportUnlinkedRxGroupLists: true
+    exportUnlinkedTalkGroups: true
+    formatId: chirp
+    id: 6bc340e5-91bf-4ff8-aabd-587d366d5c46
+    layout:
+      sections: []
+    name: CHIRP UV-21
+    profileId: chirp-uv21
+    projectId: 9734dab8-f8b8-4c81-84eb-a0c2d3479f21
+    revision: 2
+    rxGroupListOverrides: []
+    scanListOverrides: []
+    talkGroupOverrides: []
+    updatedAt: 2026-07-16T21:22:09.556Z
+    zoneOverrides: []
+  - channelOverrides: []
+    contactOverrides: []
+    exportSettings:
+      exportZoneDerivedScanLists: true
+      maxNameLength: null
+      nameModeOverride: callsign_name
+      shortenNames: true
+      useChannelAbbreviation: true
+      useTalkGroupAbbreviation: false
+    exportUnlinkedAnalogContacts: true
+    exportUnlinkedChannels: true
+    exportUnlinkedDigitalContacts: true
+    exportUnlinkedRxGroupLists: true
+    exportUnlinkedTalkGroups: true
+    formatId: chirp
+    id: da214f99-e5f8-4943-b771-d669d1b0fb22
+    layout:
+      sections: []
+    name: CHIRP RT95
+    profileId: chirp-rt95
+    projectId: 9734dab8-f8b8-4c81-84eb-a0c2d3479f21
+    revision: 2
+    rxGroupListOverrides: []
+    scanListOverrides: []
+    talkGroupOverrides: []
+    updatedAt: 2026-07-16T21:22:09.556Z
+    zoneOverrides: []
 library:
   analogContacts: []
   aprsConfiguration:

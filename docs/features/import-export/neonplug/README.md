@@ -27,7 +27,7 @@ Product behaviour for NeonPlug `.neonplug` files in Codeplug Studio. Wire tables
 
 ## Why a separate format
 
-Studio already exports **DM-32** via CPS CSV and **UV-5R Mini** via CHIRP CSV. NeonPlug’s preferred pathway is a single `.neonplug` ZIP containing `codeplug.json`, then in-browser radio write over Web Serial / BLE. That interchange is a sibling CPS format — same library, new format builds — not a projection bolted onto the CSV adapters. Sibling export UIs steer operators here: DM32 CSV shows a strong prefer-NeonPlug warning; CHIRP UV-5R shows a softer in-progress hint ([#556](https://github.com/pskillen/codeplug-studio/issues/556)).
+Studio already exports **DM-32** via CPS CSV and **UV-5R Mini** via CHIRP CSV. NeonPlug’s preferred pathway is a single `.neonplug` ZIP containing `codeplug.json`, then in-browser radio write over Web Serial / BLE. That interchange is a sibling CPS format — same library, new format builds — not a projection bolted onto the CSV adapters. Sibling export UIs: DM32 CSV shows a strong prefer-NeonPlug warning; CHIRP UV-5R shows a blue FYI about the NeonPlug browser pathway ([#556](https://github.com/pskillen/codeplug-studio/issues/556)).
 
 ## Profiles
 

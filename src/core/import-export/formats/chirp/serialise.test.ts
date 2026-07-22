@@ -145,4 +145,42 @@ describe('chirp/serialise', () => {
     expect(warnings.some((w) => w.includes('Skipped 1 non-analogue'))).toBe(true);
     expect(csv.trim().split('\n')).toHaveLength(1);
   });
+
+  it('shortens channel names to 6 chars for chirp-rt95', () => {
+    const ch1: Channel = {
+      ...newChannel(projectId, 'Very Long Channel Name'),
+      id: 'ch-1',
+      callsign: '',
+      rxFrequency: 145_500_000,
+      txFrequency: 145_500_000,
+      modeProfiles: [
+        {
+          mode: 'fm' as const,
+          rxTone: 'none' as const,
+          txTone: 'none' as const,
+          squelch: null,
+          bandwidthKHz: 12.5,
+        },
+      ],
+    };
+    const assembled: AssembledBuild = {
+      buildId: 'b1',
+      formatId: 'chirp',
+      profileId: 'chirp-rt95',
+      buildName: 'Test',
+      channels: [{ entity: ch1, wireName: 'Very Long Channel Name' }],
+      zones: [],
+      talkGroups: [],
+      digitalContacts: [],
+      analogContacts: [],
+      rxGroupLists: [],
+      scanLists: [],
+      channelMemorySlots: [{ slot: 1, channelId: 'ch-1' }],
+    };
+
+    const { csv } = serialiseChirpCsv(assembled, { profileId: 'chirp-rt95', shortenNames: true });
+    const nameCell = csv.trim().split('\n')[1]?.split(',')[1] ?? '';
+    expect(nameCell.length).toBeLessThanOrEqual(6);
+    expect(nameCell.length).toBeGreaterThan(0);
+  });
 });

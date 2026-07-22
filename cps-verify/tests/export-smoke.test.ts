@@ -20,6 +20,8 @@ const SMOKE_PROFILES = [
   { formatId: 'dm32', profileId: 'dm32-baofeng-dm32uv' },
   { formatId: 'opengd77', profileId: 'opengd77-1701' },
   { formatId: 'chirp', profileId: 'chirp-uv5r' },
+  { formatId: 'chirp', profileId: 'chirp-uv21' },
+  { formatId: 'chirp', profileId: 'chirp-rt95' },
 ] as const;
 
 function libraryFromAggregate(aggregate: ProjectAggregate): LibrarySlice {
