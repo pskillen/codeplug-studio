@@ -27,11 +27,12 @@ In-browser read and write of handheld radios over **Web Serial** (and related tr
 
 ## Documentation map
 
-| Doc                                                                | Contents                                   |
-| ------------------------------------------------------------------ | ------------------------------------------ |
-| [browser-radio-io-progress.md](browser-radio-io-progress.md)       | Program progress for epic #594             |
-| [browser-radio-io-outstanding.md](browser-radio-io-outstanding.md) | Open debt with linked issues               |
-| [protocol-kit-architecture.md](protocol-kit-architecture.md)       | Spike deep-dive — kit vs per-radio modules |
+| Doc                                                                | Contents                                                                 |
+| ------------------------------------------------------------------ | ------------------------------------------------------------------------ |
+| [adding-a-radio-adapter.md](adding-a-radio-adapter.md)             | Checklist for new Web Serial radio modules (living — update as we learn) |
+| [browser-radio-io-progress.md](browser-radio-io-progress.md)       | Program progress for epic #594                                           |
+| [browser-radio-io-outstanding.md](browser-radio-io-outstanding.md) | Open debt with linked issues                                             |
+| [protocol-kit-architecture.md](protocol-kit-architecture.md)       | Spike deep-dive — kit vs per-radio modules                               |
 
 Tier-3 protocol refs: [baofeng/uv-5r-mini](../../reference/radios/baofeng/uv-5r-mini/README.md) (PROGRAM+R/W binary; CSV / `.neonplug` ≠ clone) · [baofeng/dm-32uv](../../reference/radios/baofeng/dm-32uv/README.md) (V-frame + 4KB block R/W; CSV / `.neonplug` ≠ binary) · [retevis/rt95](../../reference/radios/retevis/rt95/README.md) (PROGRAM→QX binary; CSV ≠ clone) · [anytone/at-d890uv](../../reference/radios/anytone/at-d890uv/README.md) (Anytone DMR PROGRAM→QX + u32 sparse regions; CSV ≠ binary) · [OpenGD77 / OpenUV380 binary](../../reference/radios/opengd77/README.md) (memory + serial; CSV ≠ binary).
 
@@ -43,7 +44,10 @@ Tier-3 protocol refs: [baofeng/uv-5r-mini](../../reference/radios/baofeng/uv-5r-
 | **Protocol kit** | Reusable session, codecs (PROGRAM+R/W, V-probe, OpenGD77 serial, …), `MemoryMap`, progress |
 | **Radio module** | Per-model descriptor, handshake, image layout, encode/decode                               |
 | **Clone image**  | Contiguous (or sparse-assembled) memory dump decoded offline                               |
+| **Hydration**    | Unmodelled / full-image state persisted on the **FormatBuild** so write-back stays valid (NeonPlug `cpsWireHydration` precedent) |
 | **V-frame**      | Discrete probe/info frames (e.g. DM-32) — not the kit’s default shape                      |
+
+New adapters: follow [adding-a-radio-adapter.md](adding-a-radio-adapter.md). Write always goes through `FormatBuild` + `assemble`; MVP **Read** hydrates the build (read-only settings), and does **not** import channels into the library.
 
 ## Related
 
