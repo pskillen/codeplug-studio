@@ -8,19 +8,19 @@ Cite: anytone-cps — facts only; do not paste GPL sources.
 
 ## Geometry
 
-| Item              | Base / value                         | Notes |
-| ----------------- | ------------------------------------ | ----- |
-| `ZoneSet`         | `0x3482c00`, size `0x20`             | Bit **set** → zone occupied |
-| `ZoneHide`        | `0x3482c20`, size `0x20`             | Bit **set** → zone hidden |
-| `ZonesName`       | `0x3600000`                          | Per-zone name |
-| Name stride       | `ZoneDataOffset` = `0x40`            | |
-| Name length       | `ZoneDataLength` = `0x20`            | D890: **wide-char** (UTF-16 style), not UTF-8 |
-| `ZoneChannels`    | `0x2000000`                          | Membership lists |
-| Channels per zone | `0x200` bytes                        | u16 channel indices; stride `0x200` per zone index |
-| Invalid member    | `0xFFFF`                             | Skip / end filler |
-| `ZoneAChannel`    | `0x3500400`, table `0x200`           | u16 A-channel index per zone (`idx * 2`) |
-| `ZoneBChannel`    | `0x3500600`, table `0x200`           | u16 B-channel index per zone |
-| Max zones (bitmap)| 256 bits (`0x20 × 8`)                | CSV zone-member cap is separate ([limits.md](limits.md)) |
+| Item               | Base / value               | Notes                                                    |
+| ------------------ | -------------------------- | -------------------------------------------------------- |
+| `ZoneSet`          | `0x3482c00`, size `0x20`   | Bit **set** → zone occupied                              |
+| `ZoneHide`         | `0x3482c20`, size `0x20`   | Bit **set** → zone hidden                                |
+| `ZonesName`        | `0x3600000`                | Per-zone name                                            |
+| Name stride        | `ZoneDataOffset` = `0x40`  |                                                          |
+| Name length        | `ZoneDataLength` = `0x20`  | D890: **wide-char** (UTF-16 style), not UTF-8            |
+| `ZoneChannels`     | `0x2000000`                | Membership lists                                         |
+| Channels per zone  | `0x200` bytes              | u16 channel indices; stride `0x200` per zone index       |
+| Invalid member     | `0xFFFF`                   | Skip / end filler                                        |
+| `ZoneAChannel`     | `0x3500400`, table `0x200` | u16 A-channel index per zone (`idx * 2`)                 |
+| `ZoneBChannel`     | `0x3500600`, table `0x200` | u16 B-channel index per zone                             |
+| Max zones (bitmap) | 256 bits (`0x20 × 8`)      | CSV zone-member cap is separate ([limits.md](limits.md)) |
 
 ## ZoneSet / ZoneHide
 
@@ -54,10 +54,10 @@ listAddr = 0x2000000 + (zoneIndex * 0x200)
 
 Packed tables (not per-zone sparse reads):
 
-| Table | Address      | Entry                          |
-| ----- | ------------ | ------------------------------ |
-| A     | `0x3500400`  | `u16` at `zoneIndex * 2`       |
-| B     | `0x3500600`  | `u16` at `zoneIndex * 2`       |
+| Table | Address     | Entry                    |
+| ----- | ----------- | ------------------------ |
+| A     | `0x3500400` | `u16` at `zoneIndex * 2` |
+| B     | `0x3500600` | `u16` at `zoneIndex * 2` |
 
 Indices refer into the channel list / membership semantics used by anytone-cps (zone-local vs global — confirm at adapter time against decode path). Preserve unknown values on RMW.
 

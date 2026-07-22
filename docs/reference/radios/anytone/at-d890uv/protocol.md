@@ -8,41 +8,41 @@ Cite: anytone-cps `SerialDevice`; qdmr `anytone_interface` for handshake cross-c
 
 ## Not RT95 u16 or Mini PROGRAM+R/W
 
-|           | D890 Anytone DMR (this doc)                         | RT95 (#642)                                         | Mini PROGRAM+R/W (#616)              |
-| --------- | --------------------------------------------------- | --------------------------------------------------- | ------------------------------------ |
-| Baud      | **921600**                                          | 9600                                                | ~38400 / 115200                      |
-| Enter     | `PROGRAM` → `QX\x06`                                | same DNA                                            | Ident string (no QX)                 |
-| R/W       | ASCII `'R'` / `'W'`                                 | binary `0x52` / `0x57` (same byte values)           | binary `0x52` / `0x57`               |
-| Addr      | **u32 BE**                                          | u16 BE                                              | u16 BE                               |
-| Block     | 16                                                  | 16                                                  | `0x40`                               |
-| Image     | **Sparse multi‑MB regions**                         | Contiguous ≈ `0x32A0`                               | Contiguous `0x8240`                  |
-| Extra     | Skip write `0x2fa0010`; no echo-strip in anytone-cps | Echo-strip                                          | XOR crypt                            |
+|       | D890 Anytone DMR (this doc)                          | RT95 (#642)                               | Mini PROGRAM+R/W (#616) |
+| ----- | ---------------------------------------------------- | ----------------------------------------- | ----------------------- |
+| Baud  | **921600**                                           | 9600                                      | ~38400 / 115200         |
+| Enter | `PROGRAM` → `QX\x06`                                 | same DNA                                  | Ident string (no QX)    |
+| R/W   | ASCII `'R'` / `'W'`                                  | binary `0x52` / `0x57` (same byte values) | binary `0x52` / `0x57`  |
+| Addr  | **u32 BE**                                           | u16 BE                                    | u16 BE                  |
+| Block | 16                                                   | 16                                        | `0x40`                  |
+| Image | **Sparse multi‑MB regions**                          | Contiguous ≈ `0x32A0`                     | Contiguous `0x8240`     |
+| Extra | Skip write `0x2fa0010`; no echo-strip in anytone-cps | Echo-strip                                | XOR crypt               |
 
 Kit codec for Anytone DMR R/W is sibling [#646](https://github.com/pskillen/codeplug-studio/issues/646) — **out of scope** here; docs may cross-link. Do not reuse RT95 `programQx.ts` (#641) framing (u16 + echo-strip) for this radio.
 
 ## Identity
 
-| Item          | Value                                                          |
-| ------------- | -------------------------------------------------------------- |
-| Baud          | **921600** (anytone-cps `SerialDevice` default)                |
-| Enter         | ASCII `PROGRAM`                                                |
-| Enter reply   | ASCII `QX` + `0x06` (anytone-cps also tolerates a lone `0x00`) |
-| Version probe | `0x02` after enter                                             |
-| Exit          | ASCII `END`                                                    |
-| Block size    | `0x10` (16) — length must be a multiple of 16                  |
-| Read opcode   | ASCII `'R'` (`0x52`)                                           |
-| Write opcode  | ASCII `'W'` (`0x57`)                                           |
-| Write ACK     | Trailing `0x06` on command; radio replies with `0x06`          |
+| Item          | Value                                                            |
+| ------------- | ---------------------------------------------------------------- |
+| Baud          | **921600** (anytone-cps `SerialDevice` default)                  |
+| Enter         | ASCII `PROGRAM`                                                  |
+| Enter reply   | ASCII `QX` + `0x06` (anytone-cps also tolerates a lone `0x00`)   |
+| Version probe | `0x02` after enter                                               |
+| Exit          | ASCII `END`                                                      |
+| Block size    | `0x10` (16) — length must be a multiple of 16                    |
+| Read opcode   | ASCII `'R'` (`0x52`)                                             |
+| Write opcode  | ASCII `'W'` (`0x57`)                                             |
+| Write ACK     | Trailing `0x06` on command; radio replies with `0x06`            |
 | Safe-skip     | Do **not** write address **`0x2fa0010`** (anytone-cps hard skip) |
 
 ## Model allow-list (ident response)
 
 After `PROGRAM` → `QX\x06`, host sends `0x02`. anytone-cps parses:
 
-| Field   | Bytes (approx) | D890 expected   |
-| ------- | -------------- | --------------- |
-| Model   | `resp[0..7]`   | **`ID890UV`**   |
-| Version | `resp[9..12]`  | **`V100`**      |
+| Field   | Bytes (approx) | D890 expected |
+| ------- | -------------- | ------------- |
+| Model   | `resp[0..7]`   | **`ID890UV`** |
+| Version | `resp[9..12]`  | **`V100`**    |
 
 NUL bytes are stripped. Reject other Anytone DMR idents (`ID878UV2` / `V101`, …) unless a separate radio home is opened ([#648](https://github.com/pskillen/codeplug-studio/issues/648)).
 
@@ -62,9 +62,9 @@ Unlike RT95, anytone-cps does **not** implement echo-strip for this path — TX/
 
 ### Read
 
-| Field   | Encoding                                                                 |
-| ------- | ------------------------------------------------------------------------ |
-| Request | `'R'` + address (u32 BE) + length (1 byte, typically `0x10`) — 6 bytes   |
+| Field   | Encoding                                                                                                                     |
+| ------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| Request | `'R'` + address (u32 BE) + length (1 byte, typically `0x10`) — 6 bytes                                                       |
 | Reply   | Starts with `'W'`; payload at bytes `[6..21]` (16 data); checksum @ 22; trailer `0x06` @ 23 — **24 bytes** when length is 16 |
 
 Checksum (anytone-cps): 8-bit sum of reply bytes `[1 .. size-3]` (i.e. excluding first opcode and last two checksum/trailer bytes); compared to byte at index 22.
@@ -73,10 +73,10 @@ Host may request multiple 16-byte chunks by advancing the address; total `length
 
 ### Write
 
-| Field   | Encoding                                                                                          |
-| ------- | ------------------------------------------------------------------------------------------------- |
-| Request | `'W'` + address (u32 BE) + length (`0x10`) + 16 data bytes + checksum + trailing `0x06`           |
-| Reply   | Prefer 1 byte `0x06` ACK                                                                          |
+| Field   | Encoding                                                                                |
+| ------- | --------------------------------------------------------------------------------------- |
+| Request | `'W'` + address (u32 BE) + length (`0x10`) + 16 data bytes + checksum + trailing `0x06` |
+| Reply   | Prefer 1 byte `0x06` ACK                                                                |
 
 Checksum (anytone-cps): 8-bit sum over command bytes after the opcode (`cmd[1:]` before checksum/trailer).
 

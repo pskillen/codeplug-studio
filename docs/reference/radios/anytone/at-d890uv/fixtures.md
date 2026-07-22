@@ -13,12 +13,12 @@ How to obtain binary dumps for **directional** codec tests without committing pe
 
 ## Capture options (future / local)
 
-| Method                   | When                                                                                                                                    | Notes                                                          |
-| ------------------------ | --------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------- |
-| anytone-cps download     | Desktop tool today                                                                                                                      | Sparse `D890_MAP` regions; GPL — facts only into docs          |
-| Studio Web Serial read   | After [#646](https://github.com/pskillen/codeplug-studio/issues/646) + [#649](https://github.com/pskillen/codeplug-studio/issues/649) | 921600 PROGRAM→QX + u32 R/W; save hex locally                  |
-| Anytone CPS CSV          | Naming / semantics only                                                                                                                 | Prove names — **not** binary offsets                           |
-| qdmr Anytone path        | Handshake cross-check                                                                                                                   | No D890 region map — do not treat as layout ground truth       |
+| Method                 | When                                                                                                                                  | Notes                                                    |
+| ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------- |
+| anytone-cps download   | Desktop tool today                                                                                                                    | Sparse `D890_MAP` regions; GPL — facts only into docs    |
+| Studio Web Serial read | After [#646](https://github.com/pskillen/codeplug-studio/issues/646) + [#649](https://github.com/pskillen/codeplug-studio/issues/649) | 921600 PROGRAM→QX + u32 R/W; save hex locally            |
+| Anytone CPS CSV        | Naming / semantics only                                                                                                               | Prove names — **not** binary offsets                     |
+| qdmr Anytone path      | Handshake cross-check                                                                                                                 | No D890 region map — do not treat as layout ground truth |
 
 ## Synthetic fixture recipe
 

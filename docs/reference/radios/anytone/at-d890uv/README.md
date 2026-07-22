@@ -2,11 +2,11 @@
 
 Handheld multi-mode radio (DMR + analogue + AM air + broadcast FM). Studio targets it via Anytone CPS CSV and (planned) Web Serial direct-write.
 
-|                  |                 |
-| ---------------- | --------------- |
-| **Manufacturer** | Anytone         |
-| **Model**        | AT-D890UV       |
-| **CPS**          | Anytone CPS CSV |
+|                  |                    |
+| ---------------- | ------------------ |
+| **Manufacturer** | Anytone            |
+| **Model**        | AT-D890UV          |
+| **CPS**          | Anytone CPS CSV    |
 | **Ident**        | `ID890UV` / `V100` |
 
 Sibling variants (AT-D878UV II, AT-D578UV, …) share the Anytone DMR R/W family but have **different** region maps — see [#648](https://github.com/pskillen/codeplug-studio/issues/648) for D878UVII. Do not reuse this page’s bases for those models.
@@ -25,11 +25,11 @@ Provisional CSV caps mirror `profiles.ts` (`ANYTONE_PROFILES`); still verify aga
 
 ## Documentation map
 
-| Doc                                    | Contents                                                                              |
-| -------------------------------------- | ------------------------------------------------------------------------------------- |
-| [limits.md](limits.md)                 | Channels, zone/scan/RGL members, names, APRS slots, VFO rows (file-adapter truth)     |
-| [capabilities.md](capabilities.md)     | Feature / bank export availability                                                    |
-| [power.md](power.md)                   | Low / Mid / High / Turbo ladder                                                       |
+| Doc                                    | Contents                                                                             |
+| -------------------------------------- | ------------------------------------------------------------------------------------ |
+| [limits.md](limits.md)                 | Channels, zone/scan/RGL members, names, APRS slots, VFO rows (file-adapter truth)    |
+| [capabilities.md](capabilities.md)     | Feature / bank export availability                                                   |
+| [power.md](power.md)                   | Low / Mid / High / Turbo ladder                                                      |
 | [protocol.md](protocol.md)             | Baud 921600, PROGRAM→QX, ident, ASCII R/W + u32 BE, checksum, END, safe-skip address |
 | [memory-layout.md](memory-layout.md)   | `D890_MAP` region table (first-adapter subset) + address formulas                    |
 | [channel-record.md](channel-record.md) | 0x80 combined channel (0x40+0x40); address formula; ChannelSet bitmap                |
