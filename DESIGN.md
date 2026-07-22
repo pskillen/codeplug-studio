@@ -317,8 +317,8 @@ Aligned with [Epic #1](https://github.com/pskillen/codeplug-studio/issues/1):
 
 ## Revision log
 
-| Date       | Change                                                       |
-| ---------- | ------------------------------------------------------------ |
+| Date       | Change                                                                                                                                  |
+| ---------- | --------------------------------------------------------------------------------------------------------------------------------------- |
 | 2026-07-22 | Browser WebSerial radio I/O as intentional goal; CPS/firmware versions ([#595](https://github.com/pskillen/codeplug-studio/issues/595)) |
-| 2026-06-29 | Initial draft on branch `2/pskil/design-md`                  |
-| 2026-06-29 | Build capability traits; bidirectional mapping test strategy |
+| 2026-06-29 | Initial draft on branch `2/pskil/design-md`                                                                                             |
+| 2026-06-29 | Build capability traits; bidirectional mapping test strategy                                                                            |
