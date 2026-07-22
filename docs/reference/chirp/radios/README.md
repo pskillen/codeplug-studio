@@ -39,7 +39,10 @@ Digital/DMR channels in a mixed project are **skipped** with warnings — CHIRP 
 | `chirp-uv21` | Baofeng UV-21Pro V2 | `Baofeng_UV-21ProV2_20251129.csv` | [chirp-uv21.md](chirp-uv21.md) |
 | `chirp-rt95` | Retevis RT95 VOX    | `Retevis_RT95 VOX_20251106.csv`   | [chirp-rt95.md](chirp-rt95.md) |
 
+Caps and ladders are verified against CHIRP Python drivers — [enum-verification.md](../enum-verification.md).
+
 ## Related
 
 - [channels.md](../channels.md)
+- [enum-verification.md](../enum-verification.md)
 - [CHIRP feature hub](../../../features/import-export/chirp/README.md)

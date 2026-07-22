@@ -54,16 +54,22 @@ No zones, contacts, talk groups, or RX group lists in CHIRP analogue exports.
 
 ## Wire verification
 
-Structural rules enforced by `cps-verify` for profile `chirp-uv5r` ([wire-verification.md](../../build/testing/wire-verification.md)):
+Structural rules enforced by `cps-verify` for all CHIRP profiles ([wire-verification.md](../../build/testing/wire-verification.md)). Caps come from [`profiles.ts`](../../../src/core/import-export/formats/chirp/profiles.ts) — see [enum-verification.md](enum-verification.md) and [radios/](radios/README.md).
 
-| Rule         | Expectation                                                                                                   |
-| ------------ | ------------------------------------------------------------------------------------------------------------- |
-| Line endings | **LF** (Studio export via OpenGD77-style `csvWrite`)                                                          |
-| Quoting      | Selective RFC 4180                                                                                            |
-| Headers      | Exact `CHIRP_HEADERS` set + order                                                                             |
-| Foreign keys | None (flat memory list)                                                                                       |
-| Cardinality  | Row count ≤ `maxMemorySlots` (999); channel `Name` ≤ `nameLimit` (12) — [chirp-uv5r.md](radios/chirp-uv5r.md) |
-| Files        | Single `.csv` (any basename)                                                                                  |
+| Rule         | Expectation                                                                          |
+| ------------ | ------------------------------------------------------------------------------------ |
+| Line endings | **LF** (Studio export via OpenGD77-style `csvWrite`)                                 |
+| Quoting      | Selective RFC 4180                                                                   |
+| Headers      | Exact `CHIRP_HEADERS` set + order (= CHIRP `Memory.CSV_FORMAT`)                      |
+| Foreign keys | None (flat memory list)                                                              |
+| Cardinality  | Row count ≤ profile `maxMemorySlots`; channel `Name` ≤ profile `nameLimit`           |
+| Files        | Single `.csv` (any basename)                                                         |
+
+| Profile        | Memory slots | Name length |
+| -------------- | ------------ | ----------- |
+| `chirp-uv5r`   | 999          | 12          |
+| `chirp-uv21`   | 1000         | 12          |
+| `chirp-rt95`   | 200          | 6           |
 
 ## DMR columns on analogue exports
 
@@ -71,6 +77,7 @@ Structural rules enforced by `cps-verify` for profile `chirp-uv5r` ([wire-verifi
 
 ## Related
 
+- [enum-verification.md](enum-verification.md) — CHIRP source vs Studio checklist
 - [Data model](../../features/data-model/README.md)
 - [Channel modes](../channel-modes.md)
 - [OpenGD77 reference](../opengd77/README.md) — sibling format
