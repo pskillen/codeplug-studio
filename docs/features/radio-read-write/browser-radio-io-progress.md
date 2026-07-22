@@ -9,7 +9,7 @@
 | Milestone | Status | Notes |
 | --- | --- | --- |
 | Milestone 1 — CHIRP CSV fidelity | Complete (feature) | UV-5R / UV-21 / RT95 profiles under [#504](https://github.com/pskillen/codeplug-studio/issues/504) |
-| Milestone 2 — WebSerial direct read/write | Architecture spike | [#603](https://github.com/pskillen/codeplug-studio/issues/603) — docs only until kit tickets land |
+| Milestone 2 — WebSerial direct read/write | Architecture documented | [#603](https://github.com/pskillen/codeplug-studio/issues/603) — [protocol-kit-architecture.md](protocol-kit-architecture.md); product code via child tickets |
 
 ## Shipped (foundation)
 
@@ -18,13 +18,14 @@
 | DESIGN.md non-goal → intentional WebSerial | [#595](https://github.com/pskillen/codeplug-studio/issues/595) | Attribution requirement |
 | Attributions stubs (CHIRP + NeonPlug) | [#597](https://github.com/pskillen/codeplug-studio/issues/597) | `AttributionsPage` / attributions lib |
 | Progress docs under `radio-read-write/` | [#603](https://github.com/pskillen/codeplug-studio/issues/603) | Moved from `import-export/` |
+| Protocol kit architecture deep-dive | [#603](https://github.com/pskillen/codeplug-studio/issues/603) | [protocol-kit-architecture.md](protocol-kit-architecture.md) |
+| UV-5R Mini tier-3 stub | [#603](https://github.com/pskillen/codeplug-studio/issues/603) | [docs/reference/baofeng-uv5r-mini/](../../reference/baofeng-uv5r-mini/README.md) |
 
 ## Next
 
-1. Finish architecture spike [#603](https://github.com/pskillen/codeplug-studio/issues/603) — protocol kit boundaries + child tickets.
-2. Implement transport + kit + UV-5R Mini path (child tickets under #594).
-3. Wire firmware gating via supported catalog [#613](https://github.com/pskillen/codeplug-studio/issues/613) when write ships.
-4. In-flow attribution chrome with first write UI ([#597](https://github.com/pskillen/codeplug-studio/issues/597)).
+1. File / implement child tickets under [#594](https://github.com/pskillen/codeplug-studio/issues/594) (transport, kit, UV-5R Mini, app chrome).
+2. Wire firmware gating via supported catalog [#613](https://github.com/pskillen/codeplug-studio/issues/613) when write ships.
+3. In-flow attribution chrome with first write UI ([#597](https://github.com/pskillen/codeplug-studio/issues/597)).
 
 ## Related
 

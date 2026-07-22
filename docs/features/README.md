@@ -54,5 +54,6 @@ Domain-neutral amateur-radio facts (tier 2) and per-format CPS wire tables (tier
 | DM32 CSV                      | [reference/dm32/](../reference/dm32/README.md)                                                                                                                                                |
 | Anytone CPS CSV               | [reference/anytone/](../reference/anytone/README.md) — AT-D890UV wire spike; [variant profile](../reference/anytone/radios/at-d890uv.md)                                                      |
 | NeonPlug `.neonplug`          | [reference/neonplug/](../reference/neonplug/README.md) — ZIP / `codeplug.json`; epic [#536](https://github.com/pskillen/codeplug-studio/issues/536)                                           |
+| Baofeng UV-5R Mini (radio I/O)| [reference/baofeng-uv5r-mini/](../reference/baofeng-uv5r-mini/README.md) — binary protocol stub; epic [#594](https://github.com/pskillen/codeplug-studio/issues/594)                          |
 
 Add a row when a new feature folder ships. Reference trees are **per format** (OpenGD77, DM32, CHIRP, …); OpenGD77 is the first documented, not the internal model default.

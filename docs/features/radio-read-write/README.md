@@ -13,7 +13,7 @@ In-browser read and write of handheld radios over **Web Serial** (and related tr
 | Area | Status | Notes |
 | --- | --- | --- |
 | DESIGN intentional goal + attributions stubs | Shipped | [#595](https://github.com/pskillen/codeplug-studio/issues/595), [#597](https://github.com/pskillen/codeplug-studio/issues/597) |
-| Architecture spike (protocol kit boundaries) | In progress | [#603](https://github.com/pskillen/codeplug-studio/issues/603) — docs only |
+| Architecture spike (protocol kit boundaries) | Documented | [#603](https://github.com/pskillen/codeplug-studio/issues/603) — see [protocol-kit-architecture.md](protocol-kit-architecture.md) |
 | WebSerial transport + protocol kit | Not started | Child tickets after spike |
 | First radio path (UV-5R Mini) | Not started | NeonPlug + CHIRP ground truth |
 | Firmware-gated write | Deferred | Supported catalog [#613](https://github.com/pskillen/codeplug-studio/issues/613) |
@@ -25,9 +25,9 @@ In-browser read and write of handheld radios over **Web Serial** (and related tr
 | --- | --- |
 | [browser-radio-io-progress.md](browser-radio-io-progress.md) | Program progress for epic #594 |
 | [browser-radio-io-outstanding.md](browser-radio-io-outstanding.md) | Open debt with linked issues |
-| [protocol-kit-architecture.md](protocol-kit-architecture.md) | Spike deep-dive — kit vs per-radio modules (lands with #603) |
+| [protocol-kit-architecture.md](protocol-kit-architecture.md) | Spike deep-dive — kit vs per-radio modules |
 
-Tier-3 protocol stubs (memory maps, frame layouts) live under `docs/reference/<family>/` (e.g. Baofeng UV-5R Mini) when implementation starts — not in this hub.
+Tier-3 protocol stubs: [baofeng-uv5r-mini](../../reference/baofeng-uv5r-mini/README.md) (full wire tables with first adapter ticket).
 
 ## Concepts
 
