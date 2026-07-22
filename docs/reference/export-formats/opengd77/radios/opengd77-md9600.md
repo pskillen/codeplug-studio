@@ -1,44 +1,18 @@
-# TYT MD-9600 / Retevis RT-90 — OpenGD77 profile
+# OpenGD77 profile — `opengd77-md9600`
 
-**Profile id:** `opengd77-md9600`  
-**Status:** Power ladder validated from radio menu elicitation ([#441](https://github.com/pskillen/codeplug-studio/issues/441)). Cardinality still matches the 1701 wire layout pending a CPS export check.
+Thin adapter stub. **Radio home (caps, power, features):** [TYT MD-9600 / Retevis RT-90](../../../../radios/tyt/md-9600/README.md).
 
-## Capacity and cardinality
+| | |
+| --- | --- |
+| **Profile id** | `opengd77-md9600` |
+| **Status** | Power ladder validated ([#441](https://github.com/pskillen/codeplug-studio/issues/441)); cardinality still matches 1701 wire pending CPS export check |
+| **Wire verification** | Same layout family as `opengd77-1701` — [file-format.md — Wire verification](../file-format.md#wire-verification) |
+| **Code** | [`profiles.ts`](../../../../../src/core/import-export/formats/opengd77/profiles.ts) (`OPENGD77_MD9600_LADDER`) |
 
-| Constraint      | Value | Notes                    |
-| --------------- | ----- | ------------------------ |
-| Max channels    | 1023  | Same wire format as 1701 |
-| Zone members    | 80    | `Channel1`…`Channel80`   |
-| TG list members | 32    | `Contact1`…`Contact32`   |
+## Adapter-only notes
 
-## Power ladder (P-index → percent)
+| Profile id | Zone members | TG members | Max channels |
+| --- | --- | --- | --- |
+| `opengd77-md9600` | 80 | 32 | 1023 |
 
-Source: MD-9600 radio menu levels (operator elicitation). Fixed steps map to CPS `P1`…`P9` (lowest → highest). `Master` is radio default (`power: null`).
-
-### `+W-` (User Power) — not modelled in Studio
-
-The radio menu also offers **`+W-`**. That selects **User Power** from **Options → Radio Options → User Power**: a raw ADC voltage that drives the power amplifier (PA), not a wattage step on the P-index ladder.
-
-Studio does **not** model User Power / `+W-`. Library `power` and OpenGD77 export only use `Master` and `P1`…`P9`. Operators who need custom PA drive set it on the radio (or in CPS radio options), not in Studio.
-
-| Wire     | Approx. watts (menu)                 | Percent |
-| -------- | ------------------------------------ | ------- |
-| `P9`     | 40 W (VHF + UHF)                     | 100     |
-| `P8`     | 25 W                                 | 63      |
-| `P7`     | 10 W                                 | 25      |
-| `P6`     | 5 W                                  | 13      |
-| `P5`     | 1 W                                  | 5       |
-| `P4`     | 750 mW                               | 4       |
-| `P3`     | 500 mW                               | 3       |
-| `P2`     | 250 mW                               | 2       |
-| `P1`     | 100 mW                               | 1       |
-| `Master` | radio default                        | `null`  |
-| `+W-`    | User Power (ADC → PA); not in Studio | —       |
-
-Implementation: `OPENGD77_MD9600_LADDER` in [`profiles.ts`](../../../../../src/core/import-export/formats/opengd77/profiles.ts).
-
-## Related
-
-- [Radio profiles hub](README.md)
-- [Baofeng 1701 profile](baofeng-1701.md)
-- [#441](https://github.com/pskillen/codeplug-studio/issues/441) — MD-9600 power ladder validation
+Generic wire: [power-squelch.md](../power-squelch.md) · [DTMF / APRS](../dtmf-aprs.md) · [channels.md](../channels.md). Sibling stub: [baofeng-1701](baofeng-1701.md).
