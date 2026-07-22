@@ -21,6 +21,7 @@ import {
   pickChirpAnalogueProfile,
 } from './channelWire.ts';
 
+/** CHIRP Memory defaults for blank / unused DTCS columns. */
 const DEFAULT_DTCS_CODE = '023';
 const DEFAULT_DTCS_POLARITY = 'NN';
 const DEFAULT_CROSS_MODE = 'Tone->Tone';
@@ -132,10 +133,10 @@ export function channelToChirpRow(
     tones.tone,
     tones.rToneFreq,
     tones.cToneFreq,
-    DEFAULT_DTCS_CODE,
-    DEFAULT_DTCS_POLARITY,
-    DEFAULT_DTCS_CODE,
-    DEFAULT_CROSS_MODE,
+    tones.dtcsCode,
+    tones.dtcsPolarity,
+    tones.rxDtcsCode,
+    tones.crossMode,
     formatChirpModeWire(analogue.mode, analogue.bandwidthKHz),
     formatChirpTStepWire(),
     skip,

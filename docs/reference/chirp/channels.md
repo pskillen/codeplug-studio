@@ -29,7 +29,7 @@ Parse by **header name**, not column index.
 | `Tone`                                             | derived                    | see tone table                     | from `rxTone`/`txTone`                                                        |                                                              |
 | `rToneFreq`                                        | `txTone` (`Tone` mode)     | see tone table                     | see tone table                                                                | Default `88.5` when unused                                   |
 | `cToneFreq`                                        | `rxTone`/`txTone` (`TSQL`) | see tone table                     | see tone table                                                                | Default `88.5` when unused                                   |
-| `DtcsCode`/`DtcsPolarity`/`RxDtcsCode`/`CrossMode` | —                          | ignored                            | constants `023`/`NN`/`023`/`Tone->Tone`                                       | DCS not modelled yet                                         |
+| `DtcsCode`/`DtcsPolarity`/`RxDtcsCode`/`CrossMode` | `rxTone`/`txTone` (DCS)    | ignored (import out of scope)      | from `formatChirpToneColumns` — see [Tones](#tones)                           | Studio `D023N`/`D047P`; CHIRP polarity `N`/`R` (`P`→`R`)     |
 | `Mode`                                             | `mode`, `bandwidthKHz`     | `NFM`→fm+12.5; `FM`→fm+25; `AM`→am | inverse                                                                       | Not derived from `TStep`                                     |
 | `TStep`                                            | —                          | ignored                            | constant `5.00`                                                               |                                                              |
 | `Skip`                                             | `scanInclusion`            | `S`→`skip`; blank→`default`        | Resolved `skip`→`S`; else empty                                               | `P` unsupported; build default applies to `default` channels |
@@ -67,13 +67,36 @@ See [channel-behavioural-defaults.md](../channel-behavioural-defaults.md).
 
 ## Tones
 
-| `Tone` | `rToneFreq` | `cToneFreq` | Model                       |
-| ------ | ----------- | ----------- | --------------------------- |
-| empty  | —           | —           | both `none`                 |
-| `Tone` | TX CTCSS    | `88.5`      | `txTone` set, `rxTone=none` |
-| `TSQL` | `88.5`      | CTCSS       | `rxTone=txTone`             |
+Export mirrors CHIRP `split_tone_decode`: classify each of `txTone` / `rxTone` as none, CTCSS (`Tone`), or DCS (`DTCS` from `D###[NP]`), then collapse to a CHIRP `Tone` mode.
 
-Export uses `88.5` for unused frequency cells.
+### CTCSS / empty
+
+| `Tone` | `rToneFreq` | `cToneFreq` | Model                         |
+| ------ | ----------- | ----------- | ----------------------------- |
+| empty  | `88.5`      | `88.5`      | both `none`                   |
+| `Tone` | TX CTCSS    | `88.5`      | `txTone` CTCSS, `rxTone=none` |
+| `TSQL` | `88.5`      | CTCSS       | `rxTone=txTone` (same CTCSS)  |
+
+### DTCS / Cross
+
+| `Tone`  | `CrossMode`   | DTCS columns                        | Model                                        |
+| ------- | ------------- | ----------------------------------- | -------------------------------------------- |
+| `DTCS`  | `Tone->Tone`† | `DtcsCode` = code; polarity TX+RX   | same DCS both sides (`D023N` ↔ `023` / `NN`) |
+| `Cross` | `DTCS->`      | `DtcsCode` from TX                  | TX DCS only                                  |
+| `Cross` | `->DTCS`      | `RxDtcsCode` from RX                | RX DCS only                                  |
+| `Cross` | `Tone->DTCS`  | RX code in `RxDtcsCode`; TX in freq | CTCSS TX + DCS RX                            |
+| `Cross` | `DTCS->Tone`  | TX code in `DtcsCode`; RX in freq   | DCS TX + CTCSS RX                            |
+| `Cross` | `Tone->Tone`  | defaults                            | unequal CTCSS both sides                     |
+| `Cross` | `->Tone`      | defaults; `cToneFreq` = RX CTCSS    | RX CTCSS only                                |
+| `Cross` | `DTCS->DTCS`  | both codes + polarity               | unequal DCS codes and/or polarities          |
+
+† Unused `CrossMode` / DTCS cells keep CHIRP Memory defaults (`023` / `NN` / `Tone->Tone`) when `Tone` is not `Cross`.
+
+**Polarity:** Studio/OpenGD77/NeonPlug use `N`/`P` on `D###[NP]`. CHIRP `DtcsPolarity` is two characters TX then RX (`NN`|`NR`|`RN`|`RR`); map Studio `P` → CHIRP `R`.
+
+Unused CTCSS cells are `88.5`. DCS is never written into `rToneFreq` / `cToneFreq`.
+
+**Accepted export loss:** CHIRP `DTCS-R` and `TSQL-R` tmodes are not emitted (no reverse-only model field).
 
 ## Mode
 

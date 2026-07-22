@@ -8,6 +8,78 @@ export {
 } from '@core/domain/modeProfiles.ts';
 
 const CHIRP_DEFAULT_TONE_FREQ = '88.5';
+const CHIRP_DEFAULT_DTCS_CODE = '023';
+const CHIRP_DEFAULT_CROSS_MODE = 'Tone->Tone';
+
+type ChirpToneKind = 'none' | 'Tone' | 'DTCS';
+
+interface ClassifiedChirpTone {
+  kind: ChirpToneKind;
+  /** CTCSS Hz string, or unused. */
+  ctcssFreq: string;
+  /** Zero-padded 3-digit DTCS code. */
+  dtcsCode: string;
+  /** CHIRP polarity wire `N` or `R` (Studio `P` → `R`). */
+  dtcsPolarity: 'N' | 'R';
+}
+
+export interface ChirpToneWireColumns {
+  tone: string;
+  rToneFreq: string;
+  cToneFreq: string;
+  dtcsCode: string;
+  dtcsPolarity: string;
+  rxDtcsCode: string;
+  crossMode: string;
+}
+
+function chirpDtcsDefaults(): Pick<
+  ChirpToneWireColumns,
+  'dtcsCode' | 'dtcsPolarity' | 'rxDtcsCode' | 'crossMode'
+> {
+  return {
+    dtcsCode: CHIRP_DEFAULT_DTCS_CODE,
+    dtcsPolarity: 'NN',
+    rxDtcsCode: CHIRP_DEFAULT_DTCS_CODE,
+    crossMode: CHIRP_DEFAULT_CROSS_MODE,
+  };
+}
+
+/** Classify Studio `ChannelTone` (`none` | CTCSS Hz | `D023N`) for CHIRP export. */
+export function classifyChirpTone(tone: ChannelTone): ClassifiedChirpTone {
+  if (tone === 'none' || !tone.trim()) {
+    return {
+      kind: 'none',
+      ctcssFreq: CHIRP_DEFAULT_TONE_FREQ,
+      dtcsCode: CHIRP_DEFAULT_DTCS_CODE,
+      dtcsPolarity: 'N',
+    };
+  }
+  const trimmed = tone.trim();
+  const dcs = /^D(\d{1,3})([NP]?)$/i.exec(trimmed);
+  if (dcs) {
+    const code = Number.parseInt(dcs[1]!, 10);
+    const studioPol = (dcs[2]?.toUpperCase() || 'N') as 'N' | 'P';
+    return {
+      kind: 'DTCS',
+      ctcssFreq: CHIRP_DEFAULT_TONE_FREQ,
+      dtcsCode: String(code).padStart(3, '0'),
+      dtcsPolarity: studioPol === 'P' ? 'R' : 'N',
+    };
+  }
+  return {
+    kind: 'Tone',
+    ctcssFreq: trimmed,
+    dtcsCode: CHIRP_DEFAULT_DTCS_CODE,
+    dtcsPolarity: 'N',
+  };
+}
+
+function chirpDtcsPolarityPair(tx: ClassifiedChirpTone, rx: ClassifiedChirpTone): string {
+  const txPol = tx.kind === 'DTCS' ? tx.dtcsPolarity : 'N';
+  const rxPol = rx.kind === 'DTCS' ? rx.dtcsPolarity : 'N';
+  return `${txPol}${rxPol}`;
+}
 
 /** CHIRP `Power` wire → internal percent via profile ladder. */
 export function parseChirpPowerWire(wire: string, profileId: string): number | null {
@@ -73,32 +145,78 @@ export function parseChirpTones(
   return { rxTone: 'none', txTone: 'none' };
 }
 
+/**
+ * Map Studio RX/TX tones to CHIRP tone columns (mirrors `split_tone_decode` in chirp_common.py).
+ * Unused CTCSS cells are `88.5`; unused DTCS cells keep CHIRP Memory defaults (`023` / `Tone->Tone`).
+ */
 export function formatChirpToneColumns(
   rxTone: ChannelTone,
   txTone: ChannelTone,
-): { tone: string; rToneFreq: string; cToneFreq: string } {
-  if (rxTone !== 'none' && txTone !== 'none') {
-    const freq = formatChirpToneFreq(rxTone);
-    return { tone: 'TSQL', rToneFreq: CHIRP_DEFAULT_TONE_FREQ, cToneFreq: freq };
-  }
-  if (txTone !== 'none') {
+): ChirpToneWireColumns {
+  const tx = classifyChirpTone(txTone);
+  const rx = classifyChirpTone(rxTone);
+  const polarity = chirpDtcsPolarityPair(tx, rx);
+  const defaults = chirpDtcsDefaults();
+
+  if (tx.kind === 'none' && rx.kind === 'none') {
     return {
-      tone: 'Tone',
-      rToneFreq: formatChirpToneFreq(txTone),
+      tone: '',
+      rToneFreq: CHIRP_DEFAULT_TONE_FREQ,
       cToneFreq: CHIRP_DEFAULT_TONE_FREQ,
+      ...defaults,
     };
   }
+
+  if (tx.kind === 'Tone' && rx.kind === 'none') {
+    return {
+      tone: 'Tone',
+      rToneFreq: tx.ctcssFreq,
+      cToneFreq: CHIRP_DEFAULT_TONE_FREQ,
+      ...defaults,
+      dtcsPolarity: polarity,
+    };
+  }
+
+  if (tx.kind === 'Tone' && rx.kind === 'Tone' && tx.ctcssFreq === rx.ctcssFreq) {
+    return {
+      tone: 'TSQL',
+      rToneFreq: CHIRP_DEFAULT_TONE_FREQ,
+      cToneFreq: tx.ctcssFreq,
+      ...defaults,
+      dtcsPolarity: polarity,
+    };
+  }
+
+  if (tx.kind === 'DTCS' && rx.kind === 'DTCS' && tx.dtcsCode === rx.dtcsCode) {
+    return {
+      tone: 'DTCS',
+      rToneFreq: CHIRP_DEFAULT_TONE_FREQ,
+      cToneFreq: CHIRP_DEFAULT_TONE_FREQ,
+      dtcsCode: tx.dtcsCode,
+      dtcsPolarity: polarity,
+      rxDtcsCode: CHIRP_DEFAULT_DTCS_CODE,
+      crossMode: CHIRP_DEFAULT_CROSS_MODE,
+    };
+  }
+
+  // Cross — including RX-only, TX-only DTCS, mismatched CTCSS, and CTCSS↔DCS mixes
+  const crossMode = `${tx.kind === 'none' ? '' : tx.kind}->${rx.kind === 'none' ? '' : rx.kind}`;
   return {
-    tone: '',
-    rToneFreq: CHIRP_DEFAULT_TONE_FREQ,
-    cToneFreq: CHIRP_DEFAULT_TONE_FREQ,
+    tone: 'Cross',
+    rToneFreq: tx.kind === 'Tone' ? tx.ctcssFreq : CHIRP_DEFAULT_TONE_FREQ,
+    cToneFreq: rx.kind === 'Tone' ? rx.ctcssFreq : CHIRP_DEFAULT_TONE_FREQ,
+    dtcsCode: tx.kind === 'DTCS' ? tx.dtcsCode : CHIRP_DEFAULT_DTCS_CODE,
+    dtcsPolarity: polarity,
+    rxDtcsCode: rx.kind === 'DTCS' ? rx.dtcsCode : CHIRP_DEFAULT_DTCS_CODE,
+    crossMode,
   };
 }
 
+/** CTCSS Hz for unused/default cells; DCS tones are not written into frequency columns. */
 export function formatChirpToneFreq(tone: ChannelTone): string {
-  if (tone === 'none') return CHIRP_DEFAULT_TONE_FREQ;
-  if (tone.startsWith('D')) return CHIRP_DEFAULT_TONE_FREQ;
-  return tone;
+  const classified = classifyChirpTone(tone);
+  if (classified.kind === 'Tone') return classified.ctcssFreq;
+  return CHIRP_DEFAULT_TONE_FREQ;
 }
 
 export function parseChirpFrequencyWire(wire: string): number | null {
