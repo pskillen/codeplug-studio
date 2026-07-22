@@ -4,7 +4,7 @@ Instructions for AI agents working in this repository.
 
 ## What this repo is
 
-**Codeplug Studio** is a browser-based designer for amateur radio codeplug layouts. Operators curate a **library** of channels, talk groups, and contacts, assemble **format-specific builds** per radio workflow, and export CPS-ready files for vendor CPS to flash. It does **not** write binary codeplugs or replace vendor CPS.
+**Codeplug Studio** is a browser-based designer for amateur radio codeplug layouts. Operators curate a **library** of channels, talk groups, and contacts, assemble **format-specific builds** per radio workflow, and export CPS-ready files (and, where implemented, write radios over Web Serial). It does **not** replace vendor CPS as the only programming path — see [DESIGN.md](DESIGN.md).
 
 **Read first:** [DESIGN.md](DESIGN.md) (product constitution). **Active issue hub:** [Milestone 2: post-MVP (#495)](https://github.com/pskillen/codeplug-studio/issues/495). Migration background (Milestone 1 archive): [docs/poc-migration/epic-1-context.md](docs/poc-migration/epic-1-context.md) and closed [Epic #1](https://github.com/pskillen/codeplug-studio/issues/1).
 
