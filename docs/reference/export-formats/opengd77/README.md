@@ -4,6 +4,8 @@
 
 Authoritative reference for the **OpenGD77 Customer Programming Software (CPS) CSV interchange format** — **one** of the wire formats our import/export adapters speak at the format boundary (siblings: DM32 CSV, qDMR YAML, CHIRP, … documented separately). Per-radio variants (1701, MD9600, …): [`profiles.md`](profiles.md) → [`docs/reference/radios/`](../../radios/).
 
+> **CPS CSV wire ≠ binary memory layout.** Direct radio EEPROM/FLASH maps and the OpenGD77 USB serial protocol are documented under [`docs/reference/radios/opengd77/`](../../radios/opengd77/README.md) — do not treat CSV column tables as binary offsets.
+
 **Tracking:** archive reference (codeplug-tool#43)
 
 ## Two-layer model
@@ -89,3 +91,4 @@ Implementation code is expected to mirror this reference. When code and docs dis
 - Import/export (Phase 4+) — see [DESIGN.md](../../../DESIGN.md)
 - [Data model](../../../features/data-model/README.md)
 - [Channel modes](../../channel-modes.md)
+- Binary memory / Web Serial (separate): [radios/opengd77](../../radios/opengd77/README.md)

@@ -26,10 +26,12 @@ Shares OpenGD77 CPS and codeplug format with Baofeng DM-1701 / Retevis RT-84 (sa
 | [limits.md](limits.md)             | Channels, zone/TG members               |
 | [capabilities.md](capabilities.md) | Modes, `+W-` / User Power note          |
 | [power.md](power.md)               | P1–P9 percent mapping + `+W-` exclusion |
+| [OpenGD77 binary memory](../../opengd77/README.md) | Shared EEPROM/FLASH map + serial protocol (direct I/O) |
 
 ## Adapter wire
 
-- [OpenGD77 export-format](../../../export-formats/opengd77/README.md) — columns / multi-mode / zones
+- [OpenGD77 export-format](../../../export-formats/opengd77/README.md) — CPS CSV columns / multi-mode / zones (**not** binary offsets)
+- Direct read/write memory: [radios/opengd77](../../opengd77/README.md)
 
 ## Ground truth
 
