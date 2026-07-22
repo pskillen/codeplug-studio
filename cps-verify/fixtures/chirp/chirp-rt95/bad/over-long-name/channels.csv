@@ -1,0 +1,2 @@
+Location,Name,Frequency,Duplex,Offset,Tone,rToneFreq,cToneFreq,DtcsCode,DtcsPolarity,RxDtcsCode,CrossMode,Mode,TStep,Skip,Power,Comment,URCALL,RPT1CALL,RPT2CALL,DVCODE
+1,TOOLONG,145.500000,,0.000000,,88.5,88.5,023,NN,023,Tone->Tone,NFM,5.00,,25W,,,,,
