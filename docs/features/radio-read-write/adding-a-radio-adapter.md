@@ -48,10 +48,10 @@ Library (RF semantics)  +  FormatBuild (profile, wire names, slots, layout, hydr
 | **Hydration is a labelled escape hatch** | Same spirit as NeonPlug `FormatBuild.cpsWireHydration` for `.neonplug` donors — opaque retain of radio-safe state Studio does not model |
 | **Display unmodelled settings read-only** | Operator can see that a donor/read exists; editing those bytes in Studio is out of scope until modelled |
 
-**NeonPlug file path (already shipped):** operator reads in NeonPlug → imports `.neonplug` → Studio stores retain on `cpsWireHydration` → merge export.  
-**Direct Web Serial path (this epic):** operator **Read** in Studio → download clone/image → persist hydration on the **current FormatBuild** → show read-only settings → **Write** merges `assemble` projection into that image → upload.
+**NeonPlug file path (already shipped):** operator reads in NeonPlug → imports `.neonplug` → Studio stores retain on `cpsWireHydration` (`formatId: 'neonplug'`) → merge export.  
+**Direct Web Serial path:** operator **Read** in Studio → download clone/image → persist `cpsWireHydration` with `formatId: 'radio-clone'` (`RadioCloneHydrationBag`) on the **current FormatBuild** → show read-only settings → **Write** merges `assemble` projection into that image → upload.
 
-See [neonplug merge](../../reference/export-formats/neonplug/merge.md) and [`CpsWireHydration`](../../../src/core/models/cpsWireHydration.ts). Binary radio hydration may reuse `cpsWireHydration` with a clear discriminant **or** a sibling build field — decide per adapter PR and document the choice here when first shipped.
+See [neonplug merge](../../reference/export-formats/neonplug/merge.md), [`CpsWireHydration`](../../../src/core/models/cpsWireHydration.ts), and [`radioCloneHydration.ts`](../../../src/core/models/radioCloneHydration.ts).
 
 ---
 
@@ -148,7 +148,7 @@ Append here as adapters ship. Keep entries short; promote repeated patterns into
 
 | Date | Adapter / PR | Discovery |
 | --- | --- | --- |
-| _(none yet)_ | — | First fillings expected from UV-5R Mini [#617](https://github.com/pskillen/codeplug-studio/issues/617) / UI [#618](https://github.com/pskillen/codeplug-studio/issues/618) |
+| 2026-07-23 | UV-5R Mini #617 | Binary Web Serial reads persist on `FormatBuild.cpsWireHydration` with discriminant `formatId: 'radio-clone'` (`RadioCloneHydrationBag` in `src/core/models/radioCloneHydration.ts`). Sibling to NeonPlug `formatId: 'neonplug'` file donors — same build field, different retain shape. Native YAML already accepts unknown formatIds as opaque retain. |
 
 ---
 
