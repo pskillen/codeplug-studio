@@ -10,11 +10,14 @@ Items discovered or deferred while planning Milestone 2. File-format CSV work st
 - [ ] Connect/read/write UI + in-flow attribution — [#618](https://github.com/pskillen/codeplug-studio/issues/618)
 - [ ] Gate direct-write on firmware catalog — [#619](https://github.com/pskillen/codeplug-studio/issues/619) (depends on [#613](https://github.com/pskillen/codeplug-studio/issues/613))
 - [ ] In-flow attribution chrome when direct-write ships — tracked on [#618](https://github.com/pskillen/codeplug-studio/issues/618) / stubs [#597](https://github.com/pskillen/codeplug-studio/issues/597)
+- [ ] Baofeng DM-1701 / RT-84 OpenGD77 adapter — [#624](https://github.com/pskillen/codeplug-studio/issues/624) (depends on [#623](https://github.com/pskillen/codeplug-studio/issues/623) docs + kit)
+- [ ] TYT MD-9600 / RT-90 OpenGD77 adapter — [#625](https://github.com/pskillen/codeplug-studio/issues/625) (depends on [#623](https://github.com/pskillen/codeplug-studio/issues/623) docs + kit)
 - [ ] UV-21 / RT95 direct-write only after protocol kit — track under [#591](https://github.com/pskillen/codeplug-studio/issues/591) / [#592](https://github.com/pskillen/codeplug-studio/issues/592)
 
-## Done (spike)
+## Done (spike / docs)
 
 - [x] Architecture spike: reusable WebSerial protocol kit — [#603](https://github.com/pskillen/codeplug-studio/issues/603) (docs: [protocol-kit-architecture.md](protocol-kit-architecture.md))
+- [x] OpenGD77 binary memory reference — [#623](https://github.com/pskillen/codeplug-studio/issues/623) (docs: [radios/opengd77](../../reference/radios/opengd77/README.md))
 
 ## Explicitly out of MVP
 
