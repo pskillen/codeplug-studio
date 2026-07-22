@@ -9,7 +9,7 @@
 | --- | --- | --- |
 | 1 — Rename `formats/` → `export-formats/` | Done | Path rewrite + boundaries + radios hub scaffold |
 | 2 — Extract `baofeng/uv-5r-mini` | Done | `radios/baofeng/uv-5r-mini/` + thin CHIRP/NeonPlug stubs |
-| 3 — Extract remaining Baofeng radios | Pending | |
+| 3 — Extract remaining Baofeng radios | Done | `uv-21-pro-v2`, `dm-32uv`, `dm-1701` + thinned nested stubs |
 | 4 — Extract Retevis / TYT / Anytone | Pending | |
 | 5 — Adapter `profiles.md` + delete nested `radios/` | Pending | |
 | 6 — Hub / rule polish | Pending | |
@@ -23,6 +23,9 @@
 | Progress / outstanding pair | This file + outstanding |
 | documentation-boundaries tier-3 | `export-formats/` + `radios/<mfr>/<model>/` |
 | `docs/reference/radios/baofeng/uv-5r-mini/` | Caps + power + PROGRAM+R/W stub; adapter stubs thinned |
+| `docs/reference/radios/baofeng/uv-21-pro-v2/` | Caps + power; CHIRP stub thinned |
+| `docs/reference/radios/baofeng/dm-32uv/` | Merged DM32 + NeonPlug caps/power/squelch; both stubs thinned |
+| `docs/reference/radios/baofeng/dm-1701/` | OpenGD77 1701/RT-84 caps + P-ladder; stub thinned |
 
 ## Related
 
