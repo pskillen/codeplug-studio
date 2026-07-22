@@ -1,16 +1,28 @@
-import { Button, Group, Stack, Text } from '@mantine/core';
+import { Button, Group, Loader, Stack, Text, TextInput } from '@mantine/core';
 import { IconPlus } from '@tabler/icons-react';
 import { useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import type { FormatBuild } from '@core/models/formatBuild.ts';
 import { traitProfileFor } from '@core/models/traits.ts';
-import { DataTable, ListPage } from '../../components/ui/index.ts';
+import {
+  DataTable,
+  GradientSegmentedControl,
+  ListPage,
+  PageSection,
+} from '../../components/ui/index.ts';
 import type { DataTableColumn } from '../../components/ui/DataTable.tsx';
 import type { DataTableSortState } from '../../lib/dataTable/sort.ts';
 import { filterRowsByName } from '../../hooks/useListNameQuery.ts';
 import { useDebouncedNameFilter } from '../../hooks/useDebouncedNameFilter.ts';
 import { DATATABLE_NAME_SORT_KEY } from '../../lib/dataTable/sort.ts';
 import { useFormatBuilds } from '../../state/useFormatBuilds.ts';
+import { groupFormatBuilds, type BuildsListGroupMode } from './groupFormatBuilds.ts';
+
+const GROUP_OPTIONS = [
+  { value: 'list', label: 'List' },
+  { value: 'radio', label: 'By radio' },
+  { value: 'format', label: 'By format' },
+] as const;
 
 export default function BuildsListPage() {
   const { builds, loading } = useFormatBuilds();
@@ -26,10 +38,15 @@ export default function BuildsListPage() {
     columnKey: DATATABLE_NAME_SORT_KEY,
     direction: 'asc',
   });
+  const [groupMode, setGroupMode] = useState<BuildsListGroupMode>('list');
   const filtered = useMemo(
     () => filterRowsByName(builds, nameFilter, (b) => b.name),
     [builds, nameFilter],
   );
+  const groups = useMemo(() => {
+    if (groupMode === 'list') return null;
+    return groupFormatBuilds(filtered, groupMode);
+  }, [filtered, groupMode]);
 
   const columns = useMemo((): DataTableColumn<FormatBuild>[] => {
     return [
@@ -78,23 +95,67 @@ export default function BuildsListPage() {
             No builds yet. Create one to organise library channels for a target CPS format.
           </Text>
         ) : null}
-        <DataTable
-          variant="list"
-          rows={filtered}
-          totalRowCount={builds.length}
-          search={nameFilterInput}
-          searchPending={nameFilterPending}
-          onSearchChange={setNameFilterInput}
-          searchPlaceholder="Filter name…"
-          sort={sort}
-          onSortChange={setSort}
-          rowKey={(b) => b.id}
-          nameColumn={{
-            getName: (b) => b.name,
-            getPath: (b) => `/builds/${b.id}`,
-          }}
-          columns={columns}
-        />
+        {builds.length > 0 ? (
+          <Group justify="space-between" align="flex-end" wrap="wrap" gap="sm">
+            <TextInput
+              placeholder="Filter name…"
+              value={nameFilterInput}
+              onChange={(e) => setNameFilterInput(e.currentTarget.value)}
+              rightSection={nameFilterPending ? <Loader size={16} /> : undefined}
+              maw={360}
+              style={{ flex: '1 1 12rem' }}
+              aria-label="Filter builds by name"
+            />
+            <GradientSegmentedControl
+              label="Group"
+              size="xs"
+              scheme="three"
+              value={groupMode}
+              onChange={setGroupMode}
+              data={[...GROUP_OPTIONS]}
+            />
+          </Group>
+        ) : null}
+        {groupMode === 'list' ? (
+          <DataTable
+            variant="list"
+            rows={filtered}
+            totalRowCount={builds.length}
+            sort={sort}
+            onSortChange={setSort}
+            rowKey={(b) => b.id}
+            nameColumn={{
+              getName: (b) => b.name,
+              getPath: (b) => `/builds/${b.id}`,
+            }}
+            columns={columns}
+          />
+        ) : (
+          <Stack gap="md">
+            {groups?.length === 0 ? (
+              <Text size="sm" c="dimmed">
+                No builds match this filter.
+              </Text>
+            ) : null}
+            {groups?.map((group) => (
+              <PageSection key={group.key} title={`${group.label} (${group.builds.length})`}>
+                <DataTable
+                  variant="list"
+                  rows={group.builds}
+                  totalRowCount={group.builds.length}
+                  sort={sort}
+                  onSortChange={setSort}
+                  rowKey={(b) => b.id}
+                  nameColumn={{
+                    getName: (b) => b.name,
+                    getPath: (b) => `/builds/${b.id}`,
+                  }}
+                  columns={columns}
+                />
+              </PageSection>
+            ))}
+          </Stack>
+        )}
         {builds.length === 0 ? (
           <Group>
             <Button onClick={() => navigate('/builds/new')}>Create your first build</Button>
