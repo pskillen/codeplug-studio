@@ -1,4 +1,4 @@
-import { Button, Group, Stack, Text, TextInput } from '@mantine/core';
+import { Badge, Button, Group, Stack, Text, TextInput } from '@mantine/core';
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { traitProfileFor } from '@core/models/traits.ts';
@@ -11,25 +11,38 @@ import { capabilityLabel } from '../../lib/buildCapabilityCopy.ts';
 import { BuildService } from '../../state/buildService.ts';
 import { persistence } from '../../state/persistence.ts';
 import { useBuildLayout } from './BuildLayoutContext.tsx';
-import { Badge } from '@mantine/core';
 
 const buildService = new BuildService(persistence);
+
+function normalizeOptionalVersion(value: string): string | undefined {
+  const trimmed = value.trim();
+  return trimmed.length > 0 ? trimmed : undefined;
+}
 
 export default function BuildOverviewPage() {
   const { build } = useBuildLayout();
   const navigate = useNavigate();
   const [name, setName] = useState<string | null>(null);
   const [profileId, setProfileId] = useState<string | null>(null);
+  const [cpsVersion, setCpsVersion] = useState<string | null>(null);
+  const [firmwareVersion, setFirmwareVersion] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const displayName = name ?? build.name;
   const displayProfileId = profileId ?? build.profileId;
+  const displayCpsVersion = cpsVersion ?? build.cpsVersion ?? '';
+  const displayFirmwareVersion = firmwareVersion ?? build.firmwareVersion ?? '';
   const profile = traitProfileFor(displayProfileId);
   const formatEntry = formatCatalogEntry(build.formatId as FormatId);
   const profileDirty = profileId != null && profileId !== build.profileId;
   const nameDirty = name != null && name !== build.name;
+  const nextCps = normalizeOptionalVersion(displayCpsVersion);
+  const nextFirmware = normalizeOptionalVersion(displayFirmwareVersion);
+  const versionsDirty =
+    (cpsVersion != null && nextCps !== build.cpsVersion) ||
+    (firmwareVersion != null && nextFirmware !== build.firmwareVersion);
 
   async function handleSave() {
     setSaving(true);
@@ -37,6 +50,13 @@ export default function BuildOverviewPage() {
     let row = buildService.withUpdatedName(build, displayName);
     if (profileDirty && profileId) {
       row = buildService.withUpdatedProfile(row, profileId);
+    }
+    if (versionsDirty) {
+      row = {
+        ...row,
+        cpsVersion: nextCps,
+        firmwareVersion: nextFirmware,
+      };
     }
     const result = await buildService.putBuild(row, build.revision);
     setSaving(false);
@@ -50,6 +70,8 @@ export default function BuildOverviewPage() {
     }
     setName(null);
     setProfileId(null);
+    setCpsVersion(null);
+    setFirmwareVersion(null);
   }
 
   function handleProfileChange(nextProfileId: string) {
@@ -97,7 +119,7 @@ export default function BuildOverviewPage() {
           <Group mt="sm">
             <Button
               loading={saving}
-              disabled={!nameDirty && !profileDirty}
+              disabled={!nameDirty && !profileDirty && !versionsDirty}
               onClick={() => void handleSave()}
             >
               Save
@@ -128,6 +150,20 @@ export default function BuildOverviewPage() {
               onChange={handleProfileChange}
               label="Radio profile"
               description="Radio profile and export limits for this build"
+            />
+            <TextInput
+              label="CPS version"
+              description="Vendor CPS or interchange tool version for file export (optional)."
+              placeholder="e.g. CHIRP daily, DM-32 CPS 1.60"
+              value={displayCpsVersion}
+              onChange={(e) => setCpsVersion(e.currentTarget.value)}
+            />
+            <TextInput
+              label="Firmware version"
+              description="Radio firmware for direct-write gates when Web Serial is available (optional)."
+              placeholder="e.g. from radio read"
+              value={displayFirmwareVersion}
+              onChange={(e) => setFirmwareVersion(e.currentTarget.value)}
             />
           </Stack>
         </FormSection>
