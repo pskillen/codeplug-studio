@@ -1,6 +1,7 @@
 export {
   buildScanContext,
   effectiveScanSkips,
+  resolveChannelScanInclusionForExport,
   resolveDefaultScanInclusion,
   resolveEffectiveScanInclusion,
   scanInclusionFromLegacyBoolean,

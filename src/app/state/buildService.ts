@@ -2,6 +2,7 @@ import { newFormatBuild } from '@core/domain/factories.ts';
 import { type OverrideField, upsertOverride } from '@core/domain/formatBuildOverrides.ts';
 import type { CpsWireHydration } from '@core/models/cpsWireHydration.ts';
 import type { FormatBuild, BuildExportSettings } from '@core/models/formatBuild.ts';
+import type { ScanInclusion } from '@core/models/library.ts';
 import { isoNow, nextRevision } from '@core/models/revision.ts';
 import type { ScanListsLayout, ZoneGroupingLayout } from '@core/models/traitLayout.ts';
 import type { PutResult } from '@integrations/persistence/index.ts';
@@ -110,6 +111,23 @@ export class BuildService {
       ...build,
       [field]: upsertOverride(build[field], libraryEntityId, {
         wireName: wireName?.trim() || undefined,
+      }),
+      updatedAt: now,
+      revision: nextRevision(build.revision),
+    };
+  }
+
+  /** Per-channel scan inclusion override on channelOverrides (flat-memory / CHIRP Skip). */
+  withScanInclusionOverride(
+    build: FormatBuild,
+    libraryEntityId: string,
+    scanInclusion: ScanInclusion | undefined,
+  ): FormatBuild {
+    const now = isoNow();
+    return {
+      ...build,
+      channelOverrides: upsertOverride(build.channelOverrides, libraryEntityId, {
+        scanInclusion,
       }),
       updatedAt: now,
       revision: nextRevision(build.revision),

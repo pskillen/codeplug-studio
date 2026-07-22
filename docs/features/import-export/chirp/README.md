@@ -17,7 +17,7 @@ Product behaviour for CHIRP analogue FM/AM CSV in Codeplug Studio. Wire column t
 | cps-verify (uv5r, uv21, rt95)                             | Shipped | `cps-verify/fixtures/chirp/`                                                                                                                                                                                                                      |
 | Flat memory assemble projection                           | Shipped | `exportOrderOrSlot.ts`, `assemble.ts` — `orderOrSlot` on overrides                                                                                                                                                                                |
 | Export adapter (single CSV)                               | Shipped | `exportBuildSingleFile` → `serialiseChirpCsv` — **first-class** for `chirp-uv5r`, `chirp-uv21`, and `chirp-rt95` ([#609](https://github.com/pskillen/codeplug-studio/issues/609), [#610](https://github.com/pskillen/codeplug-studio/issues/610)) |
-| Channels build UI                                         | Shipped | `/builds/:id/channels` — flat memory list, wire names, scan tri-state                                                                                                                                                                             |
+| Channels build UI                                         | Shipped | `/builds/:id/channels` + `/scan-list` — flat memory list, wire names; per-channel scan as **build** overrides ([#589](https://github.com/pskillen/codeplug-studio/issues/589))                                                                    |
 | Browser download + export UI                              | Shipped | `ExportBuildCpsPanel` — Download CSV + preview                                                                                                                                                                                                    |
 | UV-5R NeonPlug pathway FYI                                | Shipped | [#556](https://github.com/pskillen/codeplug-studio/issues/556) — blue info alert on export for `chirp-uv5r` (optional NeonPlug browser pathway; no New build pill)                                                                                |
 | Export golden tests                                       | Shipped | `exportGolden.test.ts` — three profile fixtures                                                                                                                                                                                                   |
@@ -45,7 +45,7 @@ Per-radio wire detail: [docs/reference/chirp/radios/](../../../reference/chirp/r
 
 1. Curate analogue channels in the **library** (shared across builds).
 2. Create a **CHIRP build** for the target radio profile.
-3. On **Channels**, review the default-included analogue memory list, reorder, set wire names, default scan behaviour, and per-channel scan overrides.
+3. On **Channels**, review the default-included analogue memory list, reorder, and set wire names. On **Scan list**, set build-wide default scan behaviour and **per-channel scan overrides** (build-scoped — does not change the library channel).
 4. **Export** a single profile-correct CSV from `/builds/:id/export` — organisation follows flat memory order on the build layout.
 
 CSV export is **first-class** for all three CHIRP radio profiles (`chirp-uv5r`, `chirp-uv21`, `chirp-rt95`). For **UV-5R Mini** only (`chirp-uv5r`), the export page shows a blue FYI that a [NeonPlug](../neonplug/README.md) build can also write the radio in the browser ([#556](https://github.com/pskillen/codeplug-studio/issues/556)) — without urging you to leave CHIRP CSV. UV-21 and RT95 do not show that hint.
@@ -58,6 +58,7 @@ CSV export is **first-class** for all three CHIRP radio profiles (`chirp-uv5r`, 
 - **Analogue channels only** — digital/DMR channels skipped with warning.
 - **`Location`:** 1-based index in flat memory order — not stored in the library.
 - **Scan default:** build `exportSettings.defaultScanInclusion` defaults to `skip` (CHIRP convention).
+- **Per-channel scan:** `channelOverrides.scanInclusion` when set wins over library `Channel.scanInclusion`, then the build/format default for remaining `default` — see [scan-inclusion.md](../../../reference/scan-inclusion.md).
 
 ## Lossy fields
 

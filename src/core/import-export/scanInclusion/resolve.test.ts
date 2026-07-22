@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   effectiveScanSkips,
+  resolveChannelScanInclusionForExport,
   resolveEffectiveScanInclusion,
   scanInclusionFromLegacyBoolean,
 } from './resolve.ts';
@@ -40,5 +41,37 @@ describe('resolveEffectiveScanInclusion', () => {
   it('migrates legacy boolean', () => {
     expect(scanInclusionFromLegacyBoolean(true)).toBe('skip');
     expect(scanInclusionFromLegacyBoolean(false)).toBe('default');
+  });
+
+  it('build per-channel override wins over library scanInclusion', () => {
+    expect(
+      resolveChannelScanInclusionForExport(channel('skip'), 'alwaysScan', {
+        buildDefault: 'skip',
+      }),
+    ).toBe('scan');
+    expect(
+      resolveChannelScanInclusionForExport(channel('alwaysScan'), 'skip', {
+        formatDefault: 'scan',
+      }),
+    ).toBe('skip');
+  });
+
+  it('unset override falls through to library then build default', () => {
+    expect(resolveChannelScanInclusionForExport(channel('skip'), undefined, {})).toBe('skip');
+    expect(
+      resolveChannelScanInclusionForExport(channel('default'), undefined, {
+        buildDefault: 'skip',
+        formatDefault: 'scan',
+      }),
+    ).toBe('skip');
+  });
+
+  it('override default uses build/format default even when library is skip', () => {
+    expect(
+      resolveChannelScanInclusionForExport(channel('skip'), 'default', {
+        buildDefault: 'scan',
+        formatDefault: 'skip',
+      }),
+    ).toBe('scan');
   });
 });

@@ -10,7 +10,7 @@ import type {
   TxPermitMode,
 } from './channelBehaviourDefaults.ts';
 import type { CpsWireHydration } from './cpsWireHydration.ts';
-import type { ChannelExportNameMode } from './library.ts';
+import type { ChannelExportNameMode, ScanInclusion } from './library.ts';
 import type { PersistableRow } from './revision.ts';
 import type { TraitLayout } from './traitLayout.ts';
 
@@ -65,6 +65,11 @@ export interface BuildEntityOverride {
    * Unset → default placement after any explicit slots (library order).
    */
   orderOrSlot?: number;
+  /**
+   * Per-build scan participation for flat-memory / per-channel scan flag profiles.
+   * When set, wins over library `Channel.scanInclusion` at export (then build/format default).
+   */
+  scanInclusion?: ScanInclusion;
 }
 
 export interface FormatBuild extends PersistableRow {

@@ -5,7 +5,7 @@ import type { AssembledChannel } from '@core/services/assemble.ts';
 import { formatChirpSkipColumn } from '@core/import-export/scanInclusion/wire.ts';
 import {
   buildScanContext,
-  resolveEffectiveScanInclusion,
+  resolveChannelScanInclusionForExport,
   type ScanInclusionContext,
 } from '@core/import-export/scanInclusion/resolve.ts';
 import type { CpsExportOptions } from '@core/import-export/types.ts';
@@ -122,7 +122,9 @@ export function channelToChirpRow(
     effectiveForbidTransmit(channel, exportOptions?.channelBehaviourContext),
   );
   const tones = formatChirpToneColumns(analogue.rxTone, analogue.txTone);
-  const skip = formatChirpSkipColumn(resolveEffectiveScanInclusion(channel, scanContext));
+  const skip = formatChirpSkipColumn(
+    resolveChannelScanInclusionForExport(channel, row.scanInclusionOverride, scanContext),
+  );
 
   return [
     String(location),

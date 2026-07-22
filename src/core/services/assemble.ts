@@ -4,6 +4,7 @@ import type {
   Channel,
   DigitalContact,
   RxGroupList,
+  ScanInclusion,
   ScanList,
   TalkGroup,
   Zone,
@@ -76,6 +77,11 @@ export interface AssembledChannel {
   wireName: string;
   /** Set when the build has an explicit channel wire name override. */
   wireNameOverride?: string;
+  /**
+   * Per-build scan inclusion when set on `channelOverrides`.
+   * Wins over library `Channel.scanInclusion` at export.
+   */
+  scanInclusionOverride?: ScanInclusion;
   /** CPS scan list wire name from `Channel.scanListId` — `None` when unset. */
   scanListWireName?: string;
   /** 1-based CPS slot (`No.` column) when build override sets orderOrSlot. */
@@ -314,12 +320,14 @@ function assembleChannels(build: FormatBuild, library: LibrarySlice): AssembledC
     if (!reachable && !hasOverride) {
       if (!includeUnlinked || channelInAnyZoneMembership(entity.id, library)) continue;
     }
-    const wireNameOverride = overrideByEntityId(overrides).get(entity.id)?.wireName?.trim();
+    const override = overrideByEntityId(overrides).get(entity.id);
+    const wireNameOverride = override?.wireName?.trim();
     const generated = defaultChannelWireName(entity);
     assembled.push({
       entity,
       wireName: wireNameOverride ?? generated,
       wireNameOverride,
+      scanInclusionOverride: override?.scanInclusion,
     });
   }
   return assembled;

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   isEntityForceIncluded,
+  overrideScanInclusion,
   parseOverrideArray,
   upsertOverride,
 } from './formatBuildOverrides.ts';
@@ -46,5 +47,29 @@ describe('formatBuildOverrides', () => {
     const next = upsertOverride(undefined, 'ch-1', { orderOrSlot: 3 });
     expect(next).toEqual([{ libraryEntityId: 'ch-1', orderOrSlot: 3 }]);
     expect(upsertOverride(next, 'ch-1', { orderOrSlot: undefined })).toEqual([]);
+  });
+
+  it('parses and retains scanInclusion on override rows', () => {
+    const rows = parseOverrideArray(
+      [{ libraryEntityId: 'ch-1', scanInclusion: 'skip' }],
+      'channelOverrides',
+    );
+    expect(rows).toEqual([{ libraryEntityId: 'ch-1', scanInclusion: 'skip' }]);
+    expect(overrideScanInclusion(rows, 'ch-1')).toBe('skip');
+    const next = upsertOverride(undefined, 'ch-1', { scanInclusion: 'alwaysScan' });
+    expect(next).toEqual([{ libraryEntityId: 'ch-1', scanInclusion: 'alwaysScan' }]);
+    expect(upsertOverride(next, 'ch-1', { scanInclusion: undefined })).toEqual([]);
+  });
+
+  it('keeps scanInclusion when clearing wireName', () => {
+    const existing = [{ libraryEntityId: 'ch-1', wireName: 'A', scanInclusion: 'skip' as const }];
+    const next = upsertOverride(existing, 'ch-1', { wireName: undefined });
+    expect(next).toEqual([{ libraryEntityId: 'ch-1', scanInclusion: 'skip' }]);
+  });
+
+  it('rejects invalid scanInclusion on parse', () => {
+    expect(() =>
+      parseOverrideArray([{ libraryEntityId: 'ch-1', scanInclusion: 'nope' }], 'channelOverrides'),
+    ).toThrow(/scanInclusion is invalid/);
   });
 });

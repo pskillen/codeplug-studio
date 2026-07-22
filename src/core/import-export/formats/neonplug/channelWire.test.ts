@@ -181,6 +181,21 @@ describe('channelToNeonplugChannel', () => {
     expect(wire.scanAdd).toBe(false);
   });
 
+  it('applies build scanInclusionOverride over library for scanAdd', () => {
+    const wire = channelToNeonplugChannel(
+      channel({
+        scanInclusion: 'skip',
+      }),
+      {
+        number: 3,
+        name: 'Build scan',
+        profileId: 'neonplug-uv5rmini',
+        scanInclusionOverride: 'alwaysScan',
+      },
+    );
+    expect(wire.scanAdd).toBe(true);
+  });
+
   it('emits no-TX TX sentinel for receive-only airband channels', () => {
     const wire = channelToNeonplugChannel(
       channel({
