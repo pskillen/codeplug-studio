@@ -8,7 +8,7 @@
 | Slice | Status | Notes |
 | --- | --- | --- |
 | 1 — Rename `formats/` → `export-formats/` | Done | Path rewrite + boundaries + radios hub scaffold |
-| 2 — Extract `baofeng/uv-5r-mini` | Pending | |
+| 2 — Extract `baofeng/uv-5r-mini` | Done | `radios/baofeng/uv-5r-mini/` + thin CHIRP/NeonPlug stubs |
 | 3 — Extract remaining Baofeng radios | Pending | |
 | 4 — Extract Retevis / TYT / Anytone | Pending | |
 | 5 — Adapter `profiles.md` + delete nested `radios/` | Pending | |
@@ -22,6 +22,7 @@
 | `docs/reference/export-formats/` | Renamed from `formats/` |
 | Progress / outstanding pair | This file + outstanding |
 | documentation-boundaries tier-3 | `export-formats/` + `radios/<mfr>/<model>/` |
+| `docs/reference/radios/baofeng/uv-5r-mini/` | Caps + power + PROGRAM+R/W stub; adapter stubs thinned |
 
 ## Related
 

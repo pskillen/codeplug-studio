@@ -27,7 +27,7 @@ In-browser read and write of handheld radios over **Web Serial** (and related tr
 | [browser-radio-io-outstanding.md](browser-radio-io-outstanding.md) | Open debt with linked issues               |
 | [protocol-kit-architecture.md](protocol-kit-architecture.md)       | Spike deep-dive — kit vs per-radio modules |
 
-Tier-3 protocol stubs: [baofeng-uv5r-mini](../../reference/radios/baofeng-uv5r-mini/README.md) (full wire tables with first adapter ticket).
+Tier-3 protocol stubs: [baofeng/uv-5r-mini](../../reference/radios/baofeng/uv-5r-mini/README.md) (full wire tables with first adapter ticket).
 
 ## Concepts
 

@@ -8,11 +8,11 @@ Export/import **adapter** wire tables live under [`docs/reference/export-formats
 
 ## Index
 
-Migration under [#621](https://github.com/pskillen/codeplug-studio/issues/621) — manufacturer/model homes land in subsequent commits. Until then, transitional nested profiles remain under `export-formats/*/radios/` and the flat stub below.
+Migration under [#621](https://github.com/pskillen/codeplug-studio/issues/621). Nested adapter stubs remain under `export-formats/*/radios/` until later slices.
 
 | Manufacturer / model | Path | Notes |
 | --- | --- | --- |
-| Baofeng UV-5R Mini | [baofeng-uv5r-mini/](baofeng-uv5r-mini/README.md) | Transitional WebSerial stub; moving to `baofeng/uv-5r-mini/` |
+| Baofeng UV-5R Mini | [baofeng/uv-5r-mini/](baofeng/uv-5r-mini/README.md) | Caps, power, PROGRAM+R/W stub; CHIRP + NeonPlug adapters |
 
 ## Related
 

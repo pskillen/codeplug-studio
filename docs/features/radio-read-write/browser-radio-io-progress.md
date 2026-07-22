@@ -19,7 +19,7 @@
 | Attributions stubs (CHIRP + NeonPlug)      | [#597](https://github.com/pskillen/codeplug-studio/issues/597) | `AttributionsPage` / attributions lib                                                          |
 | Progress docs under `radio-read-write/`    | [#603](https://github.com/pskillen/codeplug-studio/issues/603) | Moved from `import-export/`                                                                    |
 | Protocol kit architecture deep-dive        | [#603](https://github.com/pskillen/codeplug-studio/issues/603) | [protocol-kit-architecture.md](protocol-kit-architecture.md)                                   |
-| UV-5R Mini tier-3 stub                     | [#603](https://github.com/pskillen/codeplug-studio/issues/603) | [docs/reference/radios/baofeng-uv5r-mini/](../../reference/radios/baofeng-uv5r-mini/README.md) |
+| UV-5R Mini radio home                     | [#603](https://github.com/pskillen/codeplug-studio/issues/603) | [docs/reference/radios/baofeng/uv-5r-mini/](../../reference/radios/baofeng/uv-5r-mini/README.md) |
 
 ## Next
 
