@@ -91,6 +91,16 @@ export interface FormatBuild extends PersistableRow {
   /** Export-affecting preferences for this build (name shortening, scan defaults, …). */
   exportSettings?: BuildExportSettings;
   /**
+   * Operator note: vendor CPS / interchange tool version this build targets for file export.
+   * Scopes CSV and similar adapters when they diverge by CPS release — not a radio firmware string.
+   */
+  cpsVersion?: string;
+  /**
+   * Operator note: radio firmware version for direct-write / protocol gates.
+   * Distinct from `cpsVersion` (file CPS). Adapters interpret per format when WebSerial ships.
+   */
+  firmwareVersion?: string;
+  /**
    * Format-scoped CPS wire hydration (unmodelled donor/retain bags for merge export).
    * Not library entities; not wire-stash for modelled channels.
    * Persisted with the build and included in native YAML project interchange.
