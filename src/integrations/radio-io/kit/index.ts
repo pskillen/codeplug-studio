@@ -29,3 +29,16 @@ export {
   programRwCodec,
   sendIdent,
 } from './codecs/programRw.ts';
+export {
+  exchangeVProbe,
+  makeVInfoProbeFrame,
+  makeVProbeFrame,
+  parseVAddrRange,
+  parseVAscii,
+  parseVProbeReply,
+  parseVU32LE,
+  type VProbeReply,
+  V_PROBE_OPCODE,
+  V_PROBE_REPLY_HEADER_LEN,
+  V_PROBE_REQUEST_LEN,
+} from './codecs/vProbe.ts';
