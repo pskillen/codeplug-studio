@@ -1,6 +1,6 @@
 # OpenGD77 export mapping
 
-Tier-1 summary of how `assemble(build, library)` projection maps to OpenGD77 CPS CSV files. Wire column detail lives in [docs/reference/opengd77/](../../../reference/opengd77/README.md).
+Tier-1 summary of how `assemble(build, library)` projection maps to OpenGD77 CPS CSV files. Wire column detail lives in [docs/reference/formats/opengd77/](../../../reference/formats/opengd77/README.md).
 
 **Tracking:** [#88](https://github.com/pskillen/codeplug-studio/issues/88) · Epic [#36](https://github.com/pskillen/codeplug-studio/issues/36)
 

@@ -59,10 +59,10 @@ Projects with build-scoped `ScanListsLayout` sections hoist entries into `librar
 
 ## Scan resume and hang-time concepts
 
-Library scan lists today model **membership and naming** only. CPS formats may also expose scan **resume mode** (time-operated, carrier-operated, search/stop) and **hang-time / priority sample** intervals. Those are format-specific wire columns — do not bake vendor labels into the library entity. For Anytone AT-D890UV terminology and contested Dropout vs Dwell semantics, see the tier-3 [scan-lists translation map](../../reference/anytone/scan-lists.md).
+Library scan lists today model **membership and naming** only. CPS formats may also expose scan **resume mode** (time-operated, carrier-operated, search/stop) and **hang-time / priority sample** intervals. Those are format-specific wire columns — do not bake vendor labels into the library entity. For Anytone AT-D890UV terminology and contested Dropout vs Dwell semantics, see the tier-3 [scan-lists translation map](../../reference/formats/anytone/scan-lists.md).
 
 ## Related
 
 - [library/README.md](README.md) · [rx-group-list-member-picker.md](rx-group-list-member-picker.md)
-- [Anytone hub](../import-export/anytone/README.md) · [tier-3 scan lists](../../reference/anytone/scan-lists.md)
-- [native-yaml `library.scanLists`](../../reference/native-yaml/README.md)
+- [Anytone hub](../import-export/anytone/README.md) · [tier-3 scan lists](../../reference/formats/anytone/scan-lists.md)
+- [native-yaml `library.scanLists`](../../reference/formats/native-yaml/README.md)

@@ -24,13 +24,13 @@ Tier-1 reference for **airport airband monitoring** workflows — searching [Ope
 
 ## Documentation map
 
-| Doc                                                        | Contents                                   |
-| ---------------------------------------------------------- | ------------------------------------------ |
-| This README                                                | Workflows, boundaries, code anchors        |
-| [OpenAIP API reference](../../reference/openaip/README.md) | Core API endpoints, field mapping (tier 3) |
-| [library](../library/README.md)                            | Channel entity CRUD                        |
-| [map](../map/README.md)                                    | Embedded map on search results             |
-| [app-shell](../app-shell/README.md)                        | Routes and section nav                     |
+| Doc                                                                           | Contents                                   |
+| ----------------------------------------------------------------------------- | ------------------------------------------ |
+| This README                                                                   | Workflows, boundaries, code anchors        |
+| [OpenAIP API reference](../../reference/remote-directories/openaip/README.md) | Core API endpoints, field mapping (tier 3) |
+| [library](../library/README.md)                                               | Channel entity CRUD                        |
+| [map](../map/README.md)                                                       | Embedded map on search results             |
+| [app-shell](../app-shell/README.md)                                           | Routes and section nav                     |
 
 ## Workflow
 

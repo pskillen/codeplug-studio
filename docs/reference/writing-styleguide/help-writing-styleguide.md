@@ -121,7 +121,7 @@ _(Where the glossary physically lives — a help page, a shared content manifest
 User-facing help must stay **format-agnostic** when describing the internal model. This mirrors the contributor doc rules — don't undo them in user copy.
 
 - Describe **what the tool does**, not one radio's or one CPS's quirks. OpenGD77 is one format among siblings (CHIRP, DM32, Anytone, native YAML), not the definition.
-- **No wire detail in general help**: no CSV column names, no per-format values, no radio caps. Link out to the import/export hub or per-format reference (`docs/reference/<format>/`).
+- **No wire detail in general help**: no CSV column names, no per-format values, no radio caps. Link out to the import/export hub or per-format reference (`docs/reference/formats/<format>/`).
 - Don't let one radio's terminology become the default. If behaviour is format- or radio-specific, say so explicitly and scope it.
 - Full rules: [`documentation-boundaries.mdc`](../../../.cursor/rules/documentation-boundaries.mdc), [`format-agnostic-docs.mdc`](../../../.cursor/rules/format-agnostic-docs.mdc), [`vendor-boundaries.mdc`](../../../.cursor/rules/vendor-boundaries.mdc), [`AGENTS.md` — Vendor boundaries](../../../AGENTS.md#vendor-boundaries).
 

@@ -25,7 +25,7 @@ flowchart LR
   Library -->|"cross-format export"| FormatB
 ```
 
-Wire-format column detail: `docs/reference/<format>/`. Strategy docs cite **outcomes** (golden snapshots, lossy fields), not every column.
+Wire-format column detail: `docs/reference/formats/<format>/`. Strategy docs cite **outcomes** (golden snapshots, lossy fields), not every column.
 
 ## Required mapping tests
 
@@ -80,7 +80,7 @@ Wire-format column detail: `docs/reference/<format>/`. Strategy docs cite **outc
 | **Export mapping (Anytone)**     | Minimal library + synthetic golden bundle   | `formats/anytone/exportGolden.test.ts`                | Shipped — `Channel.CSV`, `DMRZone.CSV`, `ScanList.CSV`, conditional `APRS.CSV` ([#251](https://github.com/pskillen/codeplug-studio/issues/251)); excludes unmodelled defaults |
 | **Same-format round-trip smoke** | A → internal → A roughly stable             | Optional integration                                  | Secondary — not primary gate                                                                                                                                                  |
 | **Cross-format**                 | A → library → B export                      | Adapter matrix                                        | Planned                                                                                                                                                                       |
-| **Lossy fields**                 | Known non-surviving columns documented      | Reference + mapping tests                             | Per `docs/reference/<format>/`                                                                                                                                                |
+| **Lossy fields**                 | Known non-surviving columns documented      | Reference + mapping tests                             | Per `docs/reference/formats/<format>/`                                                                                                                                        |
 
 ### Round-trip (optional smoke only)
 

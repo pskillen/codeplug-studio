@@ -4,7 +4,7 @@ Heuristic token shapes used when splitting CPS **channel wire names** into inter
 
 > **Studio note:** Channel wire-name parsing ships with import/export (Phase 4+). Patterns below are the target contract; implementation will live under `src/core/import-export/`.
 
-**Feature behaviour:** import adapters split wire names on ingest; export adapters compose from library `callsign` + `name` fields — see per-format channel docs (e.g. [opengd77/channels.md](opengd77/channels.md)).
+**Feature behaviour:** import adapters split wire names on ingest; export adapters compose from library `callsign` + `name` fields — see per-format channel docs (e.g. [opengd77/channels.md](formats/opengd77/channels.md)).
 
 ## Rules common to all patterns
 
@@ -36,4 +36,4 @@ Broader ITU coverage — Benelux, Nordics, Australia (`VK`), Japan (`JA`), Brazi
 ## Related
 
 - [data-model README](../features/data-model/README.md) — `callsign` and `name` fields
-- [ukrepeater](ukrepeater/README.md) — repeater callsign search
+- [ukrepeater](remote-directories/ukrepeater/README.md) — repeater callsign search

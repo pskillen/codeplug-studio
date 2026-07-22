@@ -2,7 +2,7 @@
 
 Domain rules for expanding one **logical digital channel** (with an RX group list) into multiple export rows — one per talk group (or contact) on the wire. Primary consumers: **Baofeng DM32** (default on), **Anytone AT-D890UV** (optional — lean + native RGL remains valid when off), and **NeonPlug DM-32UV** (default on — extra `channels[]` objects + number fan-out; see [neonplug/export-projections.md](../features/import-export/neonplug/export-projections.md)). See also [anytone/export-projections.md](../features/import-export/anytone/export-projections.md).
 
-**Not applicable to OpenGD77** — OpenGD77 CPS carries `TG List` and `TG_Lists.csv` natively; lean export (one channel row + list reference) is correct. See [opengd77/multi-talkgroup.md](opengd77/multi-talkgroup.md).
+**Not applicable to OpenGD77** — OpenGD77 CPS carries `TG List` and `TG_Lists.csv` natively; lean export (one channel row + list reference) is correct. See [opengd77/multi-talkgroup.md](formats/opengd77/multi-talkgroup.md).
 
 > **Studio note:** Expansion is an **export-time projection** driven by the format build's capability traits and the target wire adapter — not a library-schema flag. Implementation: `src/core/import-export/` (Phase 4+). Internal relationships use UUID `id` refs (`rxGroupListId`, `memberRefs`); wire names stay at the import/export edge only.
 
@@ -103,5 +103,5 @@ Flat per-TG rows from a denormalised CPS may collapse into one logical library c
 ## Related
 
 - [Multi-mode expansion](channel-modes.md) — orthogonal axis
-- [OpenGD77 multi-talkgroup](opengd77/multi-talkgroup.md) — N/A for OpenGD77
-- [DM32 reference](dm32/README.md) — planned consumer format
+- [OpenGD77 multi-talkgroup](formats/opengd77/multi-talkgroup.md) — N/A for OpenGD77
+- [DM32 reference](formats/dm32/README.md) — planned consumer format

@@ -13,7 +13,7 @@ Read [AGENTS.md — Vendor boundaries](../../AGENTS.md#vendor-boundaries) for th
 
 | World | Where | Rule |
 | --- | --- | --- |
-| **External CPS formats** | `src/core/import-export/formats/`, `docs/reference/<format>/` | Third-party column layouts, wire strings, name-based FKs at the wire edge, radio caps — stay here |
+| **External CPS formats** | `src/core/import-export/formats/`, `docs/reference/formats/<format>/` | Third-party column layouts, wire strings, name-based FKs at the wire edge, radio caps — stay here |
 | **Internal library model** | `src/core/` (models, domain, validation), `src/app/` (library CRUD, build UI) | Vendor-neutral; strip external modelling at import, re-apply at export |
 
 At the boundary, **convert** — do not pass vendor shapes through to the library model.
@@ -27,13 +27,13 @@ At the boundary, **convert** — do not pass vendor shapes through to the librar
 
 ## OpenGD77 is one format among many
 
-OpenGD77 CSV is one shipped format; **DM32, qDMR, CHIRP, native YAML** are siblings. Do not let OpenGD77 shape the library model, default assumptions, or generic docs. OpenGD77 specifics belong under `src/core/import-export/formats/opengd77/` and `docs/reference/opengd77/`.
+OpenGD77 CSV is one shipped format; **DM32, qDMR, CHIRP, native YAML** are siblings. Do not let OpenGD77 shape the library model, default assumptions, or generic docs. OpenGD77 specifics belong under `src/core/import-export/formats/opengd77/` and `docs/reference/formats/opengd77/`.
 
 ## Approved vendor leakage
 
 Explicit, labelled escape hatches are OK when unlikely to generalise:
 
-- Format-specific opaque columns at the boundary when documented in `docs/reference/<format>/`
+- Format-specific opaque columns at the boundary when documented in `docs/reference/formats/<format>/`
 - Document **known leakage** to fix — do not copy into new code
 
 ## Anti-patterns

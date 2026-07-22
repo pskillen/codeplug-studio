@@ -1,6 +1,6 @@
 import type { ChannelMode } from '@core/models/libraryTypes.ts';
 
-/** ETCC `modeCodes` single-letter flags — see docs/reference/ukrepeater/README.md */
+/** ETCC `modeCodes` single-letter flags — see docs/reference/remote-directories/ukrepeater/README.md */
 const FLAG_TO_MODE: Record<string, ChannelMode> = {
   A: 'fm',
   D: 'dstar',

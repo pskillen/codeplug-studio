@@ -47,18 +47,18 @@ Repeater search is **not** a top-level nav item — it lives under library workf
 
 ## Documentation map
 
-| Doc                                                              | Contents                                                                               |
-| ---------------------------------------------------------------- | -------------------------------------------------------------------------------------- |
-| This README                                                      | Workflows, boundaries, code anchors                                                    |
-| [adding-reference-source.md](adding-reference-source.md)         | Checklist for new directory integrations                                               |
-| [ukrepeater API reference](../../reference/ukrepeater/README.md) | ETCC endpoints, mode flags, field mapping (tier 3)                                     |
-| [BrandMeister reference](../../reference/brandmeister/README.md) | v2 device + talk group endpoints, field mapping (tier 3)                               |
-| [IRTS reference](../../reference/irts/README.md)                 | Anytone CSV + CORS proxy, field mapping (tier 3)                                       |
-| [RepeaterBook reference](../../reference/repeaterbook/README.md) | Export API, token model, field mapping (tier 3)                                        |
-| [repeaterbook-outstanding.md](repeaterbook-outstanding.md)       | Ops / API scope notes ([#274](https://github.com/pskillen/codeplug-studio/issues/274)) |
-| [map](../map/README.md)                                          | Embedded channel map on Library sections                                               |
-| [library](../library/README.md)                                  | Channel entity CRUD                                                                    |
-| [app-shell](../app-shell/README.md)                              | Routes and section nav                                                                 |
+| Doc                                                                                 | Contents                                                                               |
+| ----------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------- |
+| This README                                                                         | Workflows, boundaries, code anchors                                                    |
+| [adding-reference-source.md](adding-reference-source.md)                            | Checklist for new directory integrations                                               |
+| [ukrepeater API reference](../../reference/remote-directories/ukrepeater/README.md) | ETCC endpoints, mode flags, field mapping (tier 3)                                     |
+| [BrandMeister reference](../../reference/remote-directories/brandmeister/README.md) | v2 device + talk group endpoints, field mapping (tier 3)                               |
+| [IRTS reference](../../reference/remote-directories/irts/README.md)                 | Anytone CSV + CORS proxy, field mapping (tier 3)                                       |
+| [RepeaterBook reference](../../reference/remote-directories/repeaterbook/README.md) | Export API, token model, field mapping (tier 3)                                        |
+| [repeaterbook-outstanding.md](repeaterbook-outstanding.md)                          | Ops / API scope notes ([#274](https://github.com/pskillen/codeplug-studio/issues/274)) |
+| [map](../map/README.md)                                                             | Embedded channel map on Library sections                                               |
+| [library](../library/README.md)                                                     | Channel entity CRUD                                                                    |
+| [app-shell](../app-shell/README.md)                                                 | Routes and section nav                                                                 |
 
 Provider delivery: [#43](https://github.com/pskillen/codeplug-studio/issues/43) / [#44](https://github.com/pskillen/codeplug-studio/issues/44) / [#273](https://github.com/pskillen/codeplug-studio/issues/273) / [#274](https://github.com/pskillen/codeplug-studio/issues/274); infra [#73](https://github.com/pskillen/codeplug-studio/issues/73) / [#341](https://github.com/pskillen/codeplug-studio/issues/341) under [#280](https://github.com/pskillen/codeplug-studio/issues/280).
 
@@ -110,7 +110,7 @@ flowchart LR
 | Verify / update | `RepeaterVerifyPanel.tsx`, `RepeaterListingUpdateDialog.tsx`, `BrandmeisterRxGroupListSyncDialog.tsx`               | `channelDiff.ts` patch; RX list sync ([#65](https://github.com/pskillen/codeplug-studio/issues/65)); RepeaterBook verify ([#274](https://github.com/pskillen/codeplug-studio/issues/274))                                                              |
 | Listing match   | `matchListing.ts`                                                                                                   | Auto-pick on verify when unambiguous                                                                                                                                                                                                                   |
 
-Frequency convention: `rxFrequencyHz` is what the radio **receives** (repeater output); `txFrequencyHz` is what it **transmits** (repeater input). ETCC field names are inverted — documented in [ukrepeater reference](../../reference/ukrepeater/README.md#frequency-inversion-critical).
+Frequency convention: `rxFrequencyHz` is what the radio **receives** (repeater output); `txFrequencyHz` is what it **transmits** (repeater input). ETCC field names are inverted — documented in [ukrepeater reference](../../reference/remote-directories/ukrepeater/README.md#frequency-inversion-critical).
 
 ### Multi-mode import
 
@@ -148,7 +148,7 @@ Example: `modeCodes: ["A", "D", "M:1", "F", "P", "N"]` → six profiles on impor
 
 - P25/M17 typed channel profiles beyond stubs.
 - BrandMeister listings always map to DMR-only profiles.
-- BrandMeister: no locator, band, town, or use-my-location search (API limit — see [BrandMeister reference](../../reference/brandmeister/README.md)).
+- BrandMeister: no locator, band, town, or use-my-location search (API limit — see [BrandMeister reference](../../reference/remote-directories/brandmeister/README.md)).
 - IRTS: no coordinates/locator in Anytone CSV; map empty for IRTS results ([#273](https://github.com/pskillen/codeplug-studio/issues/273)).
 - Bulk directory verify from channel list ([#49](https://github.com/pskillen/codeplug-studio/issues/49)).
 
@@ -169,6 +169,6 @@ Example: `modeCodes: ["A", "D", "M:1", "F", "P", "N"]` → six profiles on impor
 
 ## Related
 
-- [ukrepeater reference](../../reference/ukrepeater/README.md) · [BrandMeister reference](../../reference/brandmeister/README.md) · [IRTS reference](../../reference/irts/README.md) · [RepeaterBook reference](../../reference/repeaterbook/README.md)
+- [ukrepeater reference](../../reference/remote-directories/ukrepeater/README.md) · [BrandMeister reference](../../reference/remote-directories/brandmeister/README.md) · [IRTS reference](../../reference/remote-directories/irts/README.md) · [RepeaterBook reference](../../reference/remote-directories/repeaterbook/README.md)
 - [map](../map/README.md) · [library](../library/README.md) · [app-shell](../app-shell/README.md)
 - Epic [#272](https://github.com/pskillen/codeplug-studio/issues/272) · infra [#280](https://github.com/pskillen/codeplug-studio/issues/280)

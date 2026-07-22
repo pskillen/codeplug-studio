@@ -8,7 +8,7 @@ alwaysApply: false
 
 **Critical rule.** When editing related files, if you notice existing code or docs that violate this rule — even outside your current task — **flag it to the user as a high concern** before or alongside your main work. Do not silently ignore, copy the pattern, or defer without mention.
 
-Assume **thousands of third-party CPS formats**. No generic doc can host wire-mapping tables for even one format, however well labelled. Wire detail lives **only** under `docs/reference/<format>/`. Generic docs **link out**; they never embed format tables.
+Assume **thousands of third-party CPS formats**. No generic doc can host wire-mapping tables for even one format, however well labelled. Wire detail lives **only** under `docs/reference/formats/<format>/`. Generic docs **link out**; they never embed format tables.
 
 Pairs with [vendor-boundaries.mdc](vendor-boundaries.mdc) (code/model) and [format-agnostic-docs.mdc](format-agnostic-docs.mdc) (wording). Read [AGENTS.md — Vendor boundaries](../../AGENTS.md#vendor-boundaries) for the code side.
 
@@ -17,8 +17,8 @@ Pairs with [vendor-boundaries.mdc](vendor-boundaries.mdc) (code/model) and [form
 | Tier | Location | Allowed | Forbidden |
 | --- | --- | --- | --- |
 | **1 — Internal model** | [`docs/features/`](../../docs/features/), feature docs describing *our* library, builds, traits | Field types, null semantics, mode applicability, UUID FK rules, trait concepts | CSV column names, format wire values (`P2`, `Master`, `75%`), import/export rule tables |
-| **2 — Domain-neutral reference** | [`docs/reference/*.md`](../../docs/reference/) at the **root** (not in a format subfolder) | RF/amateur domain facts; UI mode taxonomy; **one-line cross-links** to import/export hub or `docs/reference/<format>/` | Wire-mapping tables — including a section titled “OpenGD77 mapping”; enumerating format-specific column headers |
-| **3 — Format wire reference** | `docs/reference/<format>/` (e.g. `opengd77/`, `chirp/`, `dm32/`) | Full column ↔ internal type tables, power ladders, squelch strings, MHz formatting, TOT step, tone wire forms | Claiming these rules apply to other formats |
+| **2 — Domain-neutral reference** | [`docs/reference/*.md`](../../docs/reference/) at the **root** (not in a format subfolder) | RF/amateur domain facts; UI mode taxonomy; **one-line cross-links** to import/export hub or `docs/reference/formats/<format>/` | Wire-mapping tables — including a section titled “OpenGD77 mapping”; enumerating format-specific column headers |
+| **3 — Format / radio / directory wire** | `docs/reference/formats/<format>/`, `docs/reference/radios/<radio>/`, `docs/reference/remote-directories/<dir>/` | CPS columns, radio binary protocols, remote API shapes | Claiming these rules apply to other formats or radios |
 
 Adapter code mirrors tier 3: wire strings and ladders stay in `src/core/import-export/formats/<format>/` only — not in `src/core/` models, generic domain logic, or tier 1/2 docs.
 
@@ -26,13 +26,13 @@ Adapter code mirrors tier 3: wire strings and ladders stay in `src/core/import-e
 
 - **Do not** create new wire-mapping files at `docs/reference/` root (e.g. `power-levels.md`, `squelch-levels.md`, `tones.md`) — not even with an “OpenGD77” subsection inside.
 - **Do not** add wire tables to tier 1 or tier 2 files. If a table maps a CPS column to an internal field, it belongs in tier 3 under the correct format directory.
-- **New format wire docs** go under `docs/reference/<format>/`, indexed from that format's `README.md`.
+- **New format wire docs** go under `docs/reference/formats/<format>/`, indexed from that format's `README.md`.
 
 ## Cross-reference pattern (tier 1 and 2)
 
 One sentence + URL — no table in the generic file:
 
-> Format-specific wire mapping lives in per-format references under `docs/reference/<format>/` (e.g. OpenGD77: `docs/reference/opengd77/channels.md` when ported).
+> Format-specific wire mapping lives in per-format references under `docs/reference/formats/<format>/` (e.g. OpenGD77: `docs/reference/formats/opengd77/channels.md` when ported).
 
 When the sentence is about **all** external formats, link the `<format>/` pattern — not OpenGD77 alone as the definition of the internal model.
 
@@ -40,9 +40,9 @@ When the sentence is about **all** external formats, link the `<format>/` patter
 
 Before saving a doc change, ask:
 
-1. **Which tier?** Internal type → tier 1; RF/UI domain with no CPS → tier 2; CSV column or wire string → tier 3 under `docs/reference/<format>/` only.
+1. **Which tier?** Internal type → tier 1; RF/UI domain with no CPS → tier 2; CSV column or wire string → tier 3 under `docs/reference/formats/<format>/` only.
 2. **10,000-format test:** would this file still make sense if we supported thousands of CPS formats? If it lists one format's wire values, it belongs in that format's directory.
-3. **Tables:** any import/export/wire column table outside `docs/reference/<format>/` → move it; generic files get a link only.
+3. **Tables:** any import/export/wire column table outside `docs/reference/formats/<format>/` → move it; generic files get a link only.
 
 ## Examples
 
@@ -58,7 +58,7 @@ Before saving a doc change, ask:
 **Acceptable (tier 2 — link only):**
 
 ```markdown
-OpenGD77 power column mapping: [opengd77/channels.md](../reference/opengd77/channels.md).
+OpenGD77 power column mapping: [opengd77/channels.md](../reference/formats/opengd77/channels.md).
 ```
 
 **Acceptable (tier 1 — internal semantics only):**
@@ -69,4 +69,4 @@ OpenGD77 power column mapping: [opengd77/channels.md](../reference/opengd77/chan
 
 **Acceptable (tier 3 — OpenGD77 wire table):**
 
-In `docs/reference/opengd77/channels.md` or a sibling file under that directory only.
+In `docs/reference/formats/opengd77/channels.md` or a sibling file under that directory only.

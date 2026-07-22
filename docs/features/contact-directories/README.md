@@ -26,13 +26,13 @@ Many CPS suites (OpenGD77, qDMR, …) offer one-click DMR ID import. **Anytone C
 
 ## Documentation map
 
-| Doc                                                               | Contents                          |
-| ----------------------------------------------------------------- | --------------------------------- |
-| This README                                                       | Workflows, boundaries             |
-| [radioid reference](../../reference/radioid/README.md)            | API + proxy (tier 3)              |
-| [digital-contacts reference](../../reference/digital-contacts.md) | Internal field semantics (tier 2) |
-| [library](../library/README.md)                                   | Contact CRUD                      |
-| [import-export/anytone](../import-export/anytone/README.md)       | Anytone export consumer           |
+| Doc                                                                       | Contents                          |
+| ------------------------------------------------------------------------- | --------------------------------- |
+| This README                                                               | Workflows, boundaries             |
+| [radioid reference](../../reference/remote-directories/radioid/README.md) | API + proxy (tier 3)              |
+| [digital-contacts reference](../../reference/digital-contacts.md)         | Internal field semantics (tier 2) |
+| [library](../library/README.md)                                           | Contact CRUD                      |
+| [import-export/anytone](../import-export/anytone/README.md)               | Anytone export consumer           |
 
 Shipped core path — remaining scale work under epic [#374](https://github.com/pskillen/codeplug-studio/issues/374).
 
@@ -53,7 +53,7 @@ Shipped core path — remaining scale work under epic [#374](https://github.com/
 ## Architecture
 
 - Provider HTTP client in `src/integrations/radioid/` — maps API rows → `DigitalContact` at boundary.
-- CORS bridge: `GET /api/radioid/dmr/user/` (trailing slash required; Pages Function + Vite dev proxy) — see [radioid reference](../../reference/radioid/README.md).
+- CORS bridge: `GET /api/radioid/dmr/user/` (trailing slash required; Pages Function + Vite dev proxy) — see [radioid reference](../../reference/remote-directories/radioid/README.md).
 - UUID `id` FKs internally; wire names only on format build export.
 - **Contact export name style** is an export-time build setting (not import-time): library stores `name` and `callsign` separately; Anytone/OpenGD77 export composes CPS `Name` per `exportSettings.digitalContactExportNameMode`.
 - Duplicate import gate: match on `digitalId` (not display `name`).

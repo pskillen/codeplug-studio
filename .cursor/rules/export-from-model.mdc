@@ -33,7 +33,7 @@ Stash-and-replay hides lossy mappers, breaks edits (model changes ignored when s
 
 1. **Map at the boundary** — parse wire → typed library/build fields on import; model fields → wire on export (use **mode-aware** rules when CPS sentinels differ by analogue vs digital).
 2. **Extend the model** when a CPS column is not esoteric and export needs it. Prefer existing entity fields when mappers can be fixed.
-3. **Document loss** — if a column is genuinely not modelled, say so in `docs/reference/<format>/` and in tests; do not fake fidelity with a wire stash.
+3. **Document loss** — if a column is genuinely not modelled, say so in `docs/reference/formats/<format>/` and in tests; do not fake fidelity with a wire stash.
 4. **Thin audit metadata only** — provenance may record import source or merge hints; export code must **never** branch on stashed wire cells instead of model fields.
 
 ## Tests

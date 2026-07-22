@@ -149,7 +149,7 @@ Search [OpenAIP](https://www.openaip.net/) for airport frequencies and import RX
 3. Review map and per-airport frequency tables; add one airport or batch selected.
 4. Optional **Create zone per airport** on import.
 
-Core: `src/core/domain/airband/`, `src/core/services/airbandImport.ts`. Integration: `src/integrations/aviation/`. UI: `OpenAipAirportSearch` — sidecar `src/app/components/aviation/OpenAipAirportSearch.md`. Reference: [openaip](../../reference/openaip/README.md). Feature hub: [aviation](../aviation/README.md).
+Core: `src/core/domain/airband/`, `src/core/services/airbandImport.ts`. Integration: `src/integrations/aviation/`. UI: `OpenAipAirportSearch` — sidecar `src/app/components/aviation/OpenAipAirportSearch.md`. Reference: [openaip](../../reference/remote-directories/openaip/README.md). Feature hub: [aviation](../aviation/README.md).
 
 Airband is **not** a static channel set — see [aviation](../aviation/README.md) and channel-sets epic [#281](https://github.com/pskillen/codeplug-studio/issues/281).
 
@@ -189,7 +189,7 @@ Channel DMR profiles reference a **digital contact** and an **RX group list** by
 
 - **Top-level tabs:** Identity, Frequencies, Modes (mode pick + `PillTabs` profiles), **Scanning** (`scanInclusion` + `scanListId`), Location, Zone membership (edit only), Repeater verify (edit only) — reduces scroll on long channel forms.
 - **TX offset (Frequencies):** under RX/TX, `TxOffsetControls` shows the live offset (`===` or `+/- MHz`) and band-appropriate quick buttons (2 m / 70 cm documented; others Simplex only) that set TX from RX + offset ([#156](https://github.com/pskillen/codeplug-studio/issues/156); [tx-offsets.md](../../reference/tx-offsets.md)).
-- **Power (Frequencies):** `PercentLevelSlider` stores vendor-neutral percent (`null` = radio default). Below it, `PowerLadderHints` lists approximate watts / wire labels for project format builds (or all shipped ladders if none) — informational only ([#414](https://github.com/pskillen/codeplug-studio/issues/414)). Wire/watts detail lives in `docs/reference/<format>/`; not embedded here.
+- **Power (Frequencies):** `PercentLevelSlider` stores vendor-neutral percent (`null` = radio default). Below it, `PowerLadderHints` lists approximate watts / wire labels for project format builds (or all shipped ladders if none) — informational only ([#414](https://github.com/pskillen/codeplug-studio/issues/414)). Wire/watts detail lives in `docs/reference/formats/<format>/`; not embedded here.
 - **Identity context:** `FormPage` title reflects live callsign or name on edit (`Edit channel — GB7DC`); `ChannelIdentitySummary` under the tab list on non-identity tabs shows name/callsign, band, mode pills, and RX/TX from draft values ([#283](https://github.com/pskillen/codeplug-studio/issues/283)).
 - **No default mode** on new channels — operator selects modes via card grid (`ChannelModesMultiSelect`); `modeProfiles` starts empty.
 - **Location section:** Maidenhead locator, lat/lon, use-location, map click/drag (`ChannelLocationSection` + `MapLocationPicker`). Map unmounts when another editor tab is active ([#208](https://github.com/pskillen/codeplug-studio/issues/208)). Save reconciles locator ↔ coords via `reconcileChannelLocation` (coordinates win on conflict).
