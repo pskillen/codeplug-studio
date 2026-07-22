@@ -47,8 +47,8 @@ Studio keeps watt strings for interchange with Generic CSV and existing goldens.
 | Profile      | CHIRP class                          | Driver caps (source)                                               | Studio (after 2026-07 RE)                                             |
 | ------------ | ------------------------------------ | ------------------------------------------------------------------ | --------------------------------------------------------------------- |
 | `chirp-uv5r` | `UV5RMini` (`baofeng_uv17Pro.py`)    | `CHANNELS=999`, `LENGTH_NAME=12` (UV17Pro), High 5 W / Low 1 W     | 999 / 12 / `5.0W`·`1.0W` — **Match**                                  |
-| `chirp-uv21` | `UV21ProV2` (inherits UV17Pro)       | `CHANNELS=1000`, `LENGTH_NAME=12`, High 5 W / Low 1 W              | Was 128/16/6 W ladder — **corrected** to 1000 / 12 / `5.0W`·`1.0W`    |
-| `chirp-rt95` | `RetevisRT95vox` (`anytone778uv.py`) | `memory_bounds=(1,200)`, `NAME_LENGTH=6`, Low/Med/High ≈ 5/10/25 W | Was 128/16 — **corrected** to 200 / 6; watt ladder `25W`/`10W`/`5.0W` |
+| `chirp-uv21` | `UV21ProV2` (inherits UV17Pro)       | `CHANNELS=1000`, `LENGTH_NAME=12`, High 5 W / Low 1 W              | 1000 / 12 / `5.0W`·`1.0W` — **Match**                                 |
+| `chirp-rt95` | `RetevisRT95vox` (`anytone778uv.py`) | `memory_bounds=(1,200)`, `NAME_LENGTH=6`, Low/Med/High ≈ 5/10/25 W | 200 / 6 / `25W`·`10W`·`5.0W` — **Match**                              |
 
 ## Operator elicitation backlog
 

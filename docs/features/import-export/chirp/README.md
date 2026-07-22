@@ -16,7 +16,7 @@ Product behaviour for CHIRP analogue FM/AM CSV in Codeplug Studio. Wire column t
 | Enum / column verification                                | Shipped | [enum-verification.md](../../../reference/chirp/enum-verification.md)                                                                                                                   |
 | cps-verify (uv5r, uv21, rt95)                             | Shipped | `cps-verify/fixtures/chirp/`                                                                                                                                                            |
 | Flat memory assemble projection                           | Shipped | `exportOrderOrSlot.ts`, `assemble.ts` — `orderOrSlot` on overrides                                                                                                                      |
-| Export adapter (single CSV)                               | Shipped | `exportBuildSingleFile` → `serialiseChirpCsv`                                                                                                                                           |
+| Export adapter (single CSV)                               | Shipped | `exportBuildSingleFile` → `serialiseChirpCsv` — **first-class** for `chirp-uv5r`, `chirp-uv21`, and `chirp-rt95` ([#609](https://github.com/pskillen/codeplug-studio/issues/609), [#610](https://github.com/pskillen/codeplug-studio/issues/610)) |
 | Channels build UI                                         | Shipped | `/builds/:id/channels` — flat memory list, wire names, scan tri-state                                                                                                                   |
 | Browser download + export UI                              | Shipped | `ExportBuildCpsPanel` — Download CSV + preview                                                                                                                                          |
 | UV-5R prefer-NeonPlug export hint                         | Shipped | [#556](https://github.com/pskillen/codeplug-studio/issues/556) — yellow alert at top of export panel and above Download CSV when export profile is `chirp-uv5r`; New build profile pill |
@@ -48,7 +48,7 @@ Per-radio wire detail: [docs/reference/chirp/radios/](../../../reference/chirp/r
 3. On **Channels**, review the default-included analogue memory list, reorder, set wire names, default scan behaviour, and per-channel scan overrides.
 4. **Export** a single profile-correct CSV from `/builds/:id/export` — organisation follows flat memory order on the build layout.
 
-For **UV-5R Mini** (`chirp-uv5r`), the export page shows a soft hint that CHIRP support is in progress and prefers a [NeonPlug](../neonplug/README.md) UV-5R Mini build. CSV download remains available. Other CHIRP profiles do not show this hint.
+CSV export is **first-class** for all three CHIRP radio profiles (`chirp-uv5r`, `chirp-uv21`, `chirp-rt95`). For **UV-5R Mini** only (`chirp-uv5r`), the export page additionally shows a soft hint that prefers a [NeonPlug](../neonplug/README.md) UV-5R Mini build ([#556](https://github.com/pskillen/codeplug-studio/issues/556)); CSV download remains available. UV-21 and RT95 do not show that hint.
 
 ## Export behaviour
 
