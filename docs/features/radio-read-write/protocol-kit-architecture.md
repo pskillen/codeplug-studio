@@ -1,6 +1,6 @@
 # Protocol kit architecture (WebSerial spike)
 
-**Purpose:** Document recommended module boundaries and TypeScript shapes for reusable browser radio I/O. This is the [#603](https://github.com/pskillen/codeplug-studio/issues/603) spike deliverable — **interfaces and layout only**; no production serial code ships with this doc.
+**Purpose:** Document recommended module boundaries and TypeScript shapes for reusable browser radio I/O. Originated as the [#603](https://github.com/pskillen/codeplug-studio/issues/603) spike deliverable; transport + kit core are now implemented under `src/integrations/radio-io/` ([#615](https://github.com/pskillen/codeplug-studio/issues/615), [#616](https://github.com/pskillen/codeplug-studio/issues/616)).
 
 **Hub:** [radio-read-write/README.md](README.md) · **Epic:** [#594](https://github.com/pskillen/codeplug-studio/issues/594)
 
@@ -53,7 +53,7 @@ flowchart TB
 
 ## 2. Generic kit surface (proposed TypeScript shapes)
 
-Names are recommendations for implementers. No production modules exist yet.
+Names match the shipped modules under `src/integrations/radio-io/`.
 
 ```ts
 /** Browser-agnostic byte pipe — Web Serial and BLE both implement this. */
@@ -259,29 +259,31 @@ From NeonPlug lessons and CHIRP scale:
 
 ```text
 src/integrations/radio-io/
+  types.ts                # shared contracts (BytePipe, BlockCodec, …)
   transport/
-    webSerialPipe.ts      # requestPort, baud, BytePipe
-    blePipe.ts            # optional; same BytePipe
+    webSerialPipe.ts      # requestPort, baud, BytePipe  — shipped #615
+    featureDetect.ts
+    blePipe.ts            # optional; same BytePipe — deferred
   kit/
-    memoryMap.ts
+    memoryMap.ts          # shipped #616
     session.ts
     progress.ts
     errors.ts
     codecs/
-      programRw.ts       # first
+      programRw.ts        # shipped #616 (no XOR/magics)
       sxBlocks.ts         # later
   radios/
-    uv5r-mini/
+    uv5r-mini/            # #617
       descriptor.ts
       protocol.ts
       frames.ts
       layout.ts
       channelCodec.ts
-  registry.ts
+  registry.ts             # with live entries — #617
   index.ts
 ```
 
-See child implementation tickets under epic [#594](https://github.com/pskillen/codeplug-studio/issues/594): [#615](https://github.com/pskillen/codeplug-studio/issues/615) (transport), [#616](https://github.com/pskillen/codeplug-studio/issues/616) (kit), [#617](https://github.com/pskillen/codeplug-studio/issues/617) (UV-5R Mini), [#618](https://github.com/pskillen/codeplug-studio/issues/618) (UI), [#619](https://github.com/pskillen/codeplug-studio/issues/619) (firmware gate). Listed in [browser-radio-io-outstanding.md](browser-radio-io-outstanding.md).
+**Shipped:** transport + kit core ([#615](https://github.com/pskillen/codeplug-studio/issues/615), [#616](https://github.com/pskillen/codeplug-studio/issues/616)). **Next:** UV-5R Mini adapter [#617](https://github.com/pskillen/codeplug-studio/issues/617), UI [#618](https://github.com/pskillen/codeplug-studio/issues/618), firmware gate [#619](https://github.com/pskillen/codeplug-studio/issues/619). Listed in [browser-radio-io-outstanding.md](browser-radio-io-outstanding.md).
 
 ## Related
 
