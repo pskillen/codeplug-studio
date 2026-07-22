@@ -2,7 +2,7 @@ import { Badge } from '@mantine/core';
 import type { ReactNode } from 'react';
 import type { FormatId } from '@core/import-export/types.ts';
 
-/** Short pathway cues for New build cards — keep in sync with export alert tone. */
+/** Short pathway cues for New build cards — DM32 / NeonPlug only (CHIRP has no pill). */
 export function formatPathwayBadge(formatId: FormatId): ReactNode {
   if (formatId === 'dm32') {
     return (
@@ -26,13 +26,6 @@ export function profilePathwayBadge(profileId: string): ReactNode {
     return (
       <Badge size="sm" variant="light" color="orange">
         Prefer NeonPlug
-      </Badge>
-    );
-  }
-  if (profileId === 'chirp-uv5r') {
-    return (
-      <Badge size="sm" variant="light" color="yellow">
-        Still testing
       </Badge>
     );
   }

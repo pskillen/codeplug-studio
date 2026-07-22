@@ -1,10 +1,10 @@
 # ChirpUv5rPreferNeonPlugAlert
 
-Soft export-page hint that CHIRP UV-5R Mini support is still being tested; steer operators to NeonPlug.
+Soft export-page info that NeonPlug is another browser pathway for UV-5R Mini — without urging the operator to leave CHIRP CSV.
 
 ## Purpose
 
-CHIRP CSV for UV-5R Mini is not fully proven. This alert prefers the NeonPlug UV-5R Mini pathway without blocking CHIRP CSV download.
+CHIRP CSV for UV-5R Mini is first-class. This alert notes that a NeonPlug UV-5R Mini build can write the radio in the browser, as an optional alternative.
 
 Copy follows the [help writing styleguide](../../../../docs/reference/writing-styleguide/help-writing-styleguide.md).
 
@@ -29,7 +29,7 @@ None — parent mounts only when `build.formatId === 'chirp'` and export profile
 - Always renders when mounted.
 - Gate on **export-time** profile (`exportProfileId`), not only `build.profileId`, because CHIRP allows profile override on the export page.
 - Links to `/builds/new` and [neonplug.app](https://neonplug.app).
-- Yellow Mantine `Alert` — softer than the orange DM32 alert.
+- Blue Mantine `Alert` — informational (not a warning). DM32 keeps the stronger orange prefer-NeonPlug alert.
 
 ## Related
 

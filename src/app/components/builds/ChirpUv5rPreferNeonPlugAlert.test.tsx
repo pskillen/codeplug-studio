@@ -7,7 +7,7 @@ import ChirpUv5rPreferNeonPlugAlert, {
 } from './ChirpUv5rPreferNeonPlugAlert.tsx';
 
 describe('ChirpUv5rPreferNeonPlugAlert', () => {
-  it('shows in-progress copy and NeonPlug CTAs', () => {
+  it('shows FYI copy and NeonPlug links without urging leave CHIRP', () => {
     render(
       <MemoryRouter>
         <MantineProvider>
@@ -17,7 +17,7 @@ describe('ChirpUv5rPreferNeonPlugAlert', () => {
     );
 
     expect(screen.getByText(CHIRP_UV5R_PREFER_NEONPLUG_TITLE)).toBeInTheDocument();
-    expect(screen.getByText(/isn.t fully proven yet/)).toBeInTheDocument();
+    expect(screen.getByText(/Keep using this CHIRP CSV if it suits you/)).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'NeonPlug build' })).toHaveAttribute(
       'href',
       '/builds/new',

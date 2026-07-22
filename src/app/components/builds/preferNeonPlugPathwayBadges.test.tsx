@@ -14,14 +14,14 @@ describe('preferNeonPlugPathwayBadges', () => {
     expect(screen.getAllByText('Prefer NeonPlug')).toHaveLength(2);
   });
 
-  it('marks CHIRP UV-5R as still testing', () => {
+  it('does not badge CHIRP UV-5R as still testing', () => {
     render(
       <MantineProvider>
         {profilePathwayBadge('chirp-uv5r')}
         {profilePathwayBadge('chirp-uv21')}
       </MantineProvider>,
     );
-    expect(screen.getByText('Still testing')).toBeInTheDocument();
+    expect(screen.queryByText('Still testing')).not.toBeInTheDocument();
     expect(screen.queryByText('Prefer NeonPlug')).not.toBeInTheDocument();
   });
 

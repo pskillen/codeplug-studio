@@ -156,7 +156,9 @@ describe('ExportBuildCpsPanel', () => {
     expect(screen.queryByText(/not in the memory list/i)).not.toBeInTheDocument();
     expect(screen.queryByText(/aren't in a zone/i)).not.toBeInTheDocument();
     expect(screen.getByText(/Only analogue FM\/AM channels/i)).toBeInTheDocument();
-    expect(screen.getAllByText(/CHIRP for UV-5R Mini is still being tested/)).toHaveLength(2);
+    expect(
+      screen.getAllByText(/FYI: there's another pathway for UV-5R Mini in the browser/),
+    ).toHaveLength(2);
   });
 
   it('hides CHIRP prefer-NeonPlug hint when export profile is not UV-5R', async () => {
@@ -175,7 +177,7 @@ describe('ExportBuildCpsPanel', () => {
 
     expect(await screen.findByRole('button', { name: 'Download CSV' })).not.toBeDisabled();
     expect(
-      screen.queryByText(/CHIRP for UV-5R Mini is still being tested/),
+      screen.queryByText(/FYI: there's another pathway for UV-5R Mini in the browser/),
     ).not.toBeInTheDocument();
     expect(screen.queryByText(/Prefer NeonPlug to write your DM-32/)).not.toBeInTheDocument();
   });

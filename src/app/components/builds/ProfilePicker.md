@@ -31,7 +31,7 @@ Lists radio variant profiles for a CPS format — used when creating a build or 
 
 - OpenGD77 profiles show `nameLimit`, channel cap, and wire hints from `getFormatProfiles`.
 - Other formats fall back to trait profile registry entries.
-- **Cards mode** shows pathway pills via [`preferNeonPlugPathwayBadges`](preferNeonPlugPathwayBadges.md) for DM32 (`Prefer NeonPlug`), CHIRP UV-5R (`Still testing`), and NeonPlug (`Recommended`).
+- **Cards mode** shows pathway pills via [`preferNeonPlugPathwayBadges`](preferNeonPlugPathwayBadges.md) for DM32 (`Prefer NeonPlug`) and NeonPlug (`Recommended`). CHIRP profiles have no pathway pill.
 - CPS export uses the saved build `profileId` — change profile in Target, not on the export panel (CHIRP export allows a temporary profile override).
 
 ## Related
