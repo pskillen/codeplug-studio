@@ -13,11 +13,11 @@ How to obtain binary dumps for **directional** codec tests without committing pe
 
 ## Capture options (future / local)
 
-| Method | When | Notes |
-| ------ | ---- | ----- |
-| qdmr read | Tooling available today | Use qdmr against hardware; export or save image for offline inspection — **facts only** into docs; fixtures stay local |
-| Studio Web Serial read | After [#615](https://github.com/pskillen/codeplug-studio/issues/615) + OpenGD77 adapter | Read registered spans from [memory-layout.md](memory-layout.md); save hex locally |
-| CPS CSV round-trip | Naming checks only | CSV proves names/semantics, **not** binary offsets — see export-formats hub |
+| Method                 | When                                                                                    | Notes                                                                                                                  |
+| ---------------------- | --------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| qdmr read              | Tooling available today                                                                 | Use qdmr against hardware; export or save image for offline inspection — **facts only** into docs; fixtures stay local |
+| Studio Web Serial read | After [#615](https://github.com/pskillen/codeplug-studio/issues/615) + OpenGD77 adapter | Read registered spans from [memory-layout.md](memory-layout.md); save hex locally                                      |
+| CPS CSV round-trip     | Naming checks only                                                                      | CSV proves names/semantics, **not** binary offsets — see export-formats hub                                            |
 
 ## Synthetic fixture recipe
 
