@@ -2,13 +2,13 @@
 
 Mobile / base analogue FM radio (AnyTone 778UV family). Studio targets it via CHIRP CSV (`RetevisRT95vox`) and (planned) Web Serial direct-write.
 
-|                  |                                       |
-| ---------------- | ------------------------------------- |
-| **Manufacturer** | Retevis                               |
-| **Model**        | RT95 VOX                              |
+|                  |                                               |
+| ---------------- | --------------------------------------------- |
+| **Manufacturer** | Retevis                                       |
+| **Model**        | RT95 VOX                                      |
 | **Aliases**      | RT95 (non-VOX sibling — different allow-list) |
-| **Max RF**       | ~25 W (CHIRP High ≈ 44 dBm)           |
-| **CHIRP driver** | `RetevisRT95vox` in `anytone778uv.py` |
+| **Max RF**       | ~25 W (CHIRP High ≈ 44 dBm)                   |
+| **CHIRP driver** | `RetevisRT95vox` in `anytone778uv.py`         |
 
 > **CHIRP CSV wire ≠ binary clone image.** File interchange lives under [export-formats/chirp](../../../export-formats/chirp/README.md). PROGRAM→QX memory maps, channel records, and handshake framing live in the binary docs below.
 
@@ -45,10 +45,10 @@ PROGRAM→QX clone protocol for Web Serial. See the binary docs in the map above
 
 CHIRP is **GPL**. Extract **facts** only — do **not** paste GPL sources into Studio. NeonPlug has **no** RT95 / 778 path.
 
-| Source                                                                                                                    | Role                                              |
-| ------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------- |
+| Source                                                                                                                                       | Role                                                     |
+| -------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------- |
 | CHIRP `RetevisRT95vox` / `AnyTone778UVBase` in [`anytone778uv.py`](https://github.com/kk7ds/chirp/blob/master/chirp/drivers/anytone778uv.py) | Caps, PROGRAM→QX, contiguous image, channel/settings map |
-| Fixture `formats/chirp/__fixtures__/export/Retevis_RT95 VOX_20251106.csv`                                                 | CHIRP CSV export shape only                       |
+| Fixture `formats/chirp/__fixtures__/export/Retevis_RT95 VOX_20251106.csv`                                                                    | CHIRP CSV export shape only                              |
 
 ## Attribution
 
