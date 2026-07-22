@@ -71,24 +71,24 @@ Export mirrors CHIRP `split_tone_decode`: classify each of `txTone` / `rxTone` a
 
 ### CTCSS / empty
 
-| `Tone` | `rToneFreq` | `cToneFreq` | Model                                       |
-| ------ | ----------- | ----------- | ------------------------------------------- |
-| empty  | `88.5`      | `88.5`      | both `none`                                 |
-| `Tone` | TX CTCSS    | `88.5`      | `txTone` CTCSS, `rxTone=none`               |
-| `TSQL` | `88.5`      | CTCSS       | `rxTone=txTone` (same CTCSS)                |
+| `Tone` | `rToneFreq` | `cToneFreq` | Model                         |
+| ------ | ----------- | ----------- | ----------------------------- |
+| empty  | `88.5`      | `88.5`      | both `none`                   |
+| `Tone` | TX CTCSS    | `88.5`      | `txTone` CTCSS, `rxTone=none` |
+| `TSQL` | `88.5`      | CTCSS       | `rxTone=txTone` (same CTCSS)  |
 
 ### DTCS / Cross
 
-| `Tone`  | `CrossMode`   | DTCS columns                         | Model                                              |
-| ------- | ------------- | ------------------------------------ | -------------------------------------------------- |
-| `DTCS`  | `Tone->Tone`† | `DtcsCode` = code; polarity TX+RX    | same DCS both sides (`D023N` ↔ `023` / `NN`)       |
-| `Cross` | `DTCS->`      | `DtcsCode` from TX                   | TX DCS only                                        |
-| `Cross` | `->DTCS`      | `RxDtcsCode` from RX                 | RX DCS only                                        |
-| `Cross` | `Tone->DTCS`  | RX code in `RxDtcsCode`; TX in freq  | CTCSS TX + DCS RX                                  |
-| `Cross` | `DTCS->Tone`  | TX code in `DtcsCode`; RX in freq    | DCS TX + CTCSS RX                                  |
-| `Cross` | `Tone->Tone`  | defaults                             | unequal CTCSS both sides                           |
-| `Cross` | `->Tone`      | defaults; `cToneFreq` = RX CTCSS     | RX CTCSS only                                      |
-| `Cross` | `DTCS->DTCS`  | both codes + polarity                | unequal DCS codes and/or polarities                |
+| `Tone`  | `CrossMode`   | DTCS columns                        | Model                                        |
+| ------- | ------------- | ----------------------------------- | -------------------------------------------- |
+| `DTCS`  | `Tone->Tone`† | `DtcsCode` = code; polarity TX+RX   | same DCS both sides (`D023N` ↔ `023` / `NN`) |
+| `Cross` | `DTCS->`      | `DtcsCode` from TX                  | TX DCS only                                  |
+| `Cross` | `->DTCS`      | `RxDtcsCode` from RX                | RX DCS only                                  |
+| `Cross` | `Tone->DTCS`  | RX code in `RxDtcsCode`; TX in freq | CTCSS TX + DCS RX                            |
+| `Cross` | `DTCS->Tone`  | TX code in `DtcsCode`; RX in freq   | DCS TX + CTCSS RX                            |
+| `Cross` | `Tone->Tone`  | defaults                            | unequal CTCSS both sides                     |
+| `Cross` | `->Tone`      | defaults; `cToneFreq` = RX CTCSS    | RX CTCSS only                                |
+| `Cross` | `DTCS->DTCS`  | both codes + polarity               | unequal DCS codes and/or polarities          |
 
 † Unused `CrossMode` / DTCS cells keep CHIRP Memory defaults (`023` / `NN` / `Tone->Tone`) when `Tone` is not `Cross`.
 

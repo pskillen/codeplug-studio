@@ -61,15 +61,15 @@ For **UV-5R Mini** (`chirp-uv5r`), the export page shows a soft hint that CHIRP 
 
 ## Lossy fields
 
-| Field                          | Behaviour                                                                 |
-| ------------------------------ | ------------------------------------------------------------------------- |
-| `Location`                     | Export-time assignment from build memory order                            |
-| DMR columns (`URCALL`, …)      | Empty on analogue export                                                  |
-| Mixed-project digital channels | Skipped with warning                                                      |
-| `DTCS-R` / `TSQL-R` tmodes     | Not emitted on export — no reverse-only model field                       |
-| Duplex `+`/`-` with offset 0   | Collapses to simplex in model                                             |
-| `Comment`                      | Not exported — library field only                                         |
-| `TStep`                        | Constant `5.00` on export                                                 |
+| Field                          | Behaviour                                           |
+| ------------------------------ | --------------------------------------------------- |
+| `Location`                     | Export-time assignment from build memory order      |
+| DMR columns (`URCALL`, …)      | Empty on analogue export                            |
+| Mixed-project digital channels | Skipped with warning                                |
+| `DTCS-R` / `TSQL-R` tmodes     | Not emitted on export — no reverse-only model field |
+| Duplex `+`/`-` with offset 0   | Collapses to simplex in model                       |
+| `Comment`                      | Not exported — library field only                   |
+| `TStep`                        | Constant `5.00` on export                           |
 
 DCS / CrossMode export is model-driven from `rxTone`/`txTone` (see [channels.md — Tones](../../../reference/chirp/channels.md#tones)).
 
