@@ -108,6 +108,18 @@ export const ATTRIBUTIONS: AttributionEntry[] = [
       'Planned Web Serial radio I/O (protocol lineage)',
     ],
   },
+  {
+    id: 'qdmr',
+    name: 'qdmr',
+    description:
+      'Open-source DMR codeplug tool (GPL-3). Studio’s OpenGD77 / OpenUV380 binary memory reference extracts layout facts from qdmr’s documented offsets for planned Web Serial adapters — with thanks to the qdmr authors. Studio does not redistribute qdmr source.',
+    homeUrl: 'https://dm3mat.darc.de/qdmr/',
+    termsUrl: 'https://github.com/hmatuschek/qdmr',
+    usedIn: [
+      'OpenGD77 binary memory reference (docs/reference/radios/opengd77)',
+      'Planned OpenGD77-family Web Serial radio I/O (protocol lineage)',
+    ],
+  },
 ];
 
 export function findAttribution(id: string): AttributionEntry | undefined {

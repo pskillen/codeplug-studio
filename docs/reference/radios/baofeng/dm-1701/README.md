@@ -21,15 +21,17 @@ TYT MD-UV380 / Retevis RT-3S / Baofeng DM-1701 / Retevis RT-84 share OpenGD77 CP
 
 ## Documentation map
 
-| Doc                                | Contents                                              |
-| ---------------------------------- | ----------------------------------------------------- |
-| [limits.md](limits.md)             | Channels, zone/TG members, names, TOT, colour code    |
-| [capabilities.md](capabilities.md) | Modes, APRS/DTMF modelling, layout conventions        |
-| [power.md](power.md)               | P1–P9 percent mapping + link to generic wire spelling |
+| Doc                                                | Contents                                               |
+| -------------------------------------------------- | ------------------------------------------------------ |
+| [limits.md](limits.md)                             | Channels, zone/TG members, names, TOT, colour code     |
+| [capabilities.md](capabilities.md)                 | Modes, APRS/DTMF modelling, layout conventions         |
+| [power.md](power.md)                               | P1–P9 percent mapping + link to generic wire spelling  |
+| [OpenGD77 binary memory](../../opengd77/README.md) | Shared EEPROM/FLASH map + serial protocol (direct I/O) |
 
 ## Adapter wire
 
-- [OpenGD77 export-format](../../../export-formats/opengd77/README.md) — columns / multi-mode / zones
+- [OpenGD77 export-format](../../../export-formats/opengd77/README.md) — CPS CSV columns / multi-mode / zones (**not** binary offsets)
+- Direct read/write memory: [radios/opengd77](../../opengd77/README.md)
 
 ## Ground truth
 
