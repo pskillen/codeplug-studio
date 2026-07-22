@@ -9,7 +9,7 @@
 | Milestone                                 | Status                  | Notes                                                                                                                                                         |
 | ----------------------------------------- | ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Milestone 1 — CHIRP CSV fidelity          | Complete (feature)      | UV-5R / UV-21 / RT95 profiles under [#504](https://github.com/pskillen/codeplug-studio/issues/504)                                                            |
-| Milestone 2 — WebSerial direct read/write | Architecture documented | [#603](https://github.com/pskillen/codeplug-studio/issues/603) — [protocol-kit-architecture.md](protocol-kit-architecture.md); product code via child tickets |
+| Milestone 2 — WebSerial direct read/write | Transport + kit shipped | [#615](https://github.com/pskillen/codeplug-studio/issues/615)/[#616](https://github.com/pskillen/codeplug-studio/issues/616); first radio [#617](https://github.com/pskillen/codeplug-studio/issues/617) next |
 
 ## Shipped (foundation)
 
@@ -22,10 +22,12 @@
 | UV-5R Mini radio home                      | [#603](https://github.com/pskillen/codeplug-studio/issues/603) | [docs/reference/radios/baofeng/uv-5r-mini/](../../reference/radios/baofeng/uv-5r-mini/README.md)                                                                        |
 | OpenGD77 / OpenUV380 binary memory docs    | [#623](https://github.com/pskillen/codeplug-studio/issues/623) | [docs/reference/radios/opengd77/](../../reference/radios/opengd77/README.md); `qdmr` attribution                                                                        |
 | UV-5R Mini PROGRAM+R/W binary memory docs  | [#627](https://github.com/pskillen/codeplug-studio/issues/627) | [docs/reference/radios/baofeng/uv-5r-mini/](../../reference/radios/baofeng/uv-5r-mini/README.md); blocks [#617](https://github.com/pskillen/codeplug-studio/issues/617) |
+| WebSerial `BytePipe` transport             | [#615](https://github.com/pskillen/codeplug-studio/issues/615) | `src/integrations/radio-io/transport/` — feature-detect, buffered `readExact` / `write`                                                                                 |
+| Protocol kit (MemoryMap, session, PROGRAM+R/W) | [#616](https://github.com/pskillen/codeplug-studio/issues/616) | `src/integrations/radio-io/kit/` — no DOM; XOR/magics/layout deferred to radio adapters                                                                              |
 
 ## Next
 
-1. Implement [#615](https://github.com/pskillen/codeplug-studio/issues/615) → [#616](https://github.com/pskillen/codeplug-studio/issues/616) → [#617](https://github.com/pskillen/codeplug-studio/issues/617) → [#618](https://github.com/pskillen/codeplug-studio/issues/618).
+1. Implement [#617](https://github.com/pskillen/codeplug-studio/issues/617) (UV-5R Mini adapter) → [#618](https://github.com/pskillen/codeplug-studio/issues/618) (connect UI).
 2. Wire firmware gating [#619](https://github.com/pskillen/codeplug-studio/issues/619) when catalog [#613](https://github.com/pskillen/codeplug-studio/issues/613) is ready.
 3. OpenGD77 adapters after kit + memory docs: [#624](https://github.com/pskillen/codeplug-studio/issues/624) (DM-1701) · [#625](https://github.com/pskillen/codeplug-studio/issues/625) (MD-9600).
 4. Later radios (UV-21 / RT95 direct-write) after Mini path — [#591](https://github.com/pskillen/codeplug-studio/issues/591) / [#592](https://github.com/pskillen/codeplug-studio/issues/592).
