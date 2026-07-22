@@ -146,15 +146,15 @@ interface RadioSession {
 
 “Clone image” is the **storage model**. Wire **codecs** differ by family:
 
-| Codec                              | Wire idea                                                            | Studio status                                              | Anchors                                                                  |
-| ---------------------------------- | -------------------------------------------------------------------- | ---------------------------------------------------------- | ------------------------------------------------------------------------ |
-| **PROGRAM + R/W**                  | Ident string → `R`/`W` blocks + ACK `0x06`                           | **Shipped** `#616` (`BlockCodec`) — UV-5R Mini path        | CHIRP `baofeng_uv17Pro.py`; NeonPlug `uv5rmini/baofengProtocol.ts`       |
-| **V-probe**                        | `0x56` (“V”) + u32 BE param; typed variable reply                    | **Shipped** `#630` (**sibling surface**, not `BlockCodec`) | CHIRP `baofeng_uv17.py`; NeonPlug `dm32uv/`                              |
-| **OpenGD77 / OpenUV380 serial**    | ASCII `C`/`R`/`W`/`X` (Command/Read/Write GD-77 / Write UV380)       | **Shipped** `#631` (**sibling surface**, not `BlockCodec`) | qdmr `opengd77_interface`; [opengd77/protocol.md](../../reference/radios/opengd77/protocol.md) |
-| **S/X blocks**                     | Magic ident → `S`/`X` frames                                         | Deferred — classic UV-5R                                   | CHIRP `baofeng_common.py`, `uv5r.py`                                     |
-| **Stream clone**                   | Contiguous dump + ACK, echo-strip                                    | Later — Yaesu FT-65 family                                 | CHIRP `yaesu_clone.py`; NeonPlug `ft65/`                                 |
-| **ICF frames**                     | `\xFE\xFE`…`\xFD`                                                    | Out of MVP                                                 | CHIRP `icf.py`                                                           |
-| **Kenwood PROGRAM + R/W/Z**        | `PROGRAM` then framed blocks                                         | Out of MVP                                                 | CHIRP `tk760g.py` et al.                                                 |
+| Codec                           | Wire idea                                                      | Studio status                                              | Anchors                                                                                        |
+| ------------------------------- | -------------------------------------------------------------- | ---------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
+| **PROGRAM + R/W**               | Ident string → `R`/`W` blocks + ACK `0x06`                     | **Shipped** `#616` (`BlockCodec`) — UV-5R Mini path        | CHIRP `baofeng_uv17Pro.py`; NeonPlug `uv5rmini/baofengProtocol.ts`                             |
+| **V-probe**                     | `0x56` (“V”) + u32 BE param; typed variable reply              | **Shipped** `#630` (**sibling surface**, not `BlockCodec`) | CHIRP `baofeng_uv17.py`; NeonPlug `dm32uv/`                                                    |
+| **OpenGD77 / OpenUV380 serial** | ASCII `C`/`R`/`W`/`X` (Command/Read/Write GD-77 / Write UV380) | **Shipped** `#631` (**sibling surface**, not `BlockCodec`) | qdmr `opengd77_interface`; [opengd77/protocol.md](../../reference/radios/opengd77/protocol.md) |
+| **S/X blocks**                  | Magic ident → `S`/`X` frames                                   | Deferred — classic UV-5R                                   | CHIRP `baofeng_common.py`, `uv5r.py`                                                           |
+| **Stream clone**                | Contiguous dump + ACK, echo-strip                              | Later — Yaesu FT-65 family                                 | CHIRP `yaesu_clone.py`; NeonPlug `ft65/`                                                       |
+| **ICF frames**                  | `\xFE\xFE`…`\xFD`                                              | Out of MVP                                                 | CHIRP `icf.py`                                                                                 |
+| **Kenwood PROGRAM + R/W/Z**     | `PROGRAM` then framed blocks                                   | Out of MVP                                                 | CHIRP `tk760g.py` et al.                                                                       |
 
 **Surface choice:** only PROGRAM+R/W implements `BlockCodec` (addr/length R/W). V-probe has no write and is not block-shaped; OpenGD77 needs mem-region codes, multi-step flash writes, and dual ACK semantics — both are dedicated sibling modules under `kit/codecs/`.
 

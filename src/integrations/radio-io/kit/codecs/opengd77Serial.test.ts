@@ -75,23 +75,35 @@ describe('OpenGD77 write frames W vs X', () => {
   it('builds sector buffer, finish, and EEPROM frames', () => {
     const block = new Uint8Array(OPENGD77_BLOCK).fill(0x11);
     const buf = makeWriteSectorBufferFrame('X', 0x2000, block);
-    expect(buf.slice(0, 8)).toEqual(new Uint8Array([0x58, 0x02, 0x00, 0x00, 0x20, 0x00, 0x00, 0x20]));
+    expect(buf.slice(0, 8)).toEqual(
+      new Uint8Array([0x58, 0x02, 0x00, 0x00, 0x20, 0x00, 0x00, 0x20]),
+    );
     expect(buf.slice(8)).toEqual(block);
 
     expect(makeFinishFlashSectorFrame('W')).toEqual(new Uint8Array([0x57, 0x03]));
 
     const eepromPayload = new Uint8Array([1, 2, 3]);
     const ee = makeWriteEepromFrame('W', 0x100, eepromPayload);
-    expect(ee.slice(0, 8)).toEqual(new Uint8Array([0x57, 0x04, 0x00, 0x00, 0x01, 0x00, 0x00, 0x03]));
+    expect(ee.slice(0, 8)).toEqual(
+      new Uint8Array([0x57, 0x04, 0x00, 0x00, 0x01, 0x00, 0x00, 0x03]),
+    );
     expect(ee.slice(8)).toEqual(eepromPayload);
   });
 
   it('parseWriteAck accepts type+cmd echo and rejects - as error', () => {
     expect(() =>
-      parseWriteAck(new Uint8Array([0x58, OPENGD77_WRITE_CMD_SET_SECTOR]), 'X', OPENGD77_WRITE_CMD_SET_SECTOR),
+      parseWriteAck(
+        new Uint8Array([0x58, OPENGD77_WRITE_CMD_SET_SECTOR]),
+        'X',
+        OPENGD77_WRITE_CMD_SET_SECTOR,
+      ),
     ).not.toThrow();
     expect(() =>
-      parseWriteAck(new Uint8Array([0x57, OPENGD77_WRITE_CMD_FINISH_SECTOR]), 'W', OPENGD77_WRITE_CMD_FINISH_SECTOR),
+      parseWriteAck(
+        new Uint8Array([0x57, OPENGD77_WRITE_CMD_FINISH_SECTOR]),
+        'W',
+        OPENGD77_WRITE_CMD_FINISH_SECTOR,
+      ),
     ).not.toThrow();
     expect(() =>
       parseWriteAck(new Uint8Array([OPENGD77_CMD_OK, 0x00]), 'W', OPENGD77_WRITE_CMD_EEPROM),

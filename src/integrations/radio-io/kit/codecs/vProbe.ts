@@ -85,11 +85,12 @@ export function parseVU32LE(payload: Uint8Array, offset = 0): number {
     );
   }
   return (
-    payload[offset]! |
-    (payload[offset + 1]! << 8) |
-    (payload[offset + 2]! << 16) |
-    (payload[offset + 3]! << 24)
-  ) >>> 0;
+    (payload[offset]! |
+      (payload[offset + 1]! << 8) |
+      (payload[offset + 2]! << 16) |
+      (payload[offset + 3]! << 24)) >>>
+    0
+  );
 }
 
 /** Trim trailing NULs from an ASCII payload. */
@@ -117,8 +118,7 @@ export async function exchangeVProbe(
     );
   }
   const length = header[2]!;
-  const payload =
-    length > 0 ? await pipe.readExact(length, timeoutMs) : new Uint8Array(0);
+  const payload = length > 0 ? await pipe.readExact(length, timeoutMs) : new Uint8Array(0);
   const frame = new Uint8Array(V_PROBE_REPLY_HEADER_LEN + payload.length);
   frame.set(header, 0);
   frame.set(payload, V_PROBE_REPLY_HEADER_LEN);

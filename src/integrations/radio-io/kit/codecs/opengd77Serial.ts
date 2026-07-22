@@ -123,10 +123,7 @@ export function makeOpenGd77ReadFrame(
  * Parse data reply: `R` + length u16 BE + payload.
  * Length must match payload (and optional expectedLength).
  */
-export function parseOpenGd77ReadReply(
-  frame: Uint8Array,
-  expectedLength?: number,
-): Uint8Array {
+export function parseOpenGd77ReadReply(frame: Uint8Array, expectedLength?: number): Uint8Array {
   if (frame.length < 3) {
     throw new RadioProtocolError(`OpenGD77 read reply too short: ${frame.length} bytes`);
   }
@@ -153,10 +150,7 @@ export function parseOpenGd77ReadReply(
 // --- Write ('W' / 'X') ---
 
 /** 5-byte set flash sector: type + 0x01 + sector u24 BE (`floor(addr/4096)`). */
-export function makeSetFlashSectorFrame(
-  variant: OpenGd77WriteVariant,
-  addr: number,
-): Uint8Array {
+export function makeSetFlashSectorFrame(variant: OpenGd77WriteVariant, addr: number): Uint8Array {
   assertU32(addr, 'OpenGD77 flash address');
   const sector = Math.floor(addr / OPENGD77_SECTOR);
   if (sector > 0xff_ffff) {

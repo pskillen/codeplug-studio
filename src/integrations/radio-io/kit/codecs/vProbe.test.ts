@@ -72,10 +72,7 @@ describe('vProbe frames', () => {
 describe('exchangeVProbe', () => {
   it('writes probe and reassembles header + payload reads', async () => {
     const payload = new Uint8Array([0x00, 0x10, 0x00, 0x00, 0xff, 0xff, 0x00, 0x00]);
-    const { pipe, writes } = mockPipe([
-      new Uint8Array([V_PROBE_OPCODE, 0x0a, 0x08]),
-      payload,
-    ]);
+    const { pipe, writes } = mockPipe([new Uint8Array([V_PROBE_OPCODE, 0x0a, 0x08]), payload]);
     const reply = await exchangeVProbe(pipe, 0x0a, 100);
     expect(writes).toEqual([new Uint8Array([0x56, 0x00, 0x00, 0x00, 0x0a])]);
     expect(reply.id).toBe(0x0a);
