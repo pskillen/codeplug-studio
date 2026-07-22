@@ -2,7 +2,7 @@
 
 Sparse multi‑MB codeplug regions for Anytone AT-D890UV (`D890_MAP`). There is **no** single contiguous clone image like RT95 (`0x32A0`) or UV-5R Mini (`0x8240`).
 
-**Hub:** [README.md](README.md) · **Protocol:** [protocol.md](protocol.md)
+**Hub:** [README.md](README.md) · **Protocol:** [protocol.md](protocol.md) · **Records:** [channel-record.md](channel-record.md) · [zone-record.md](zone-record.md)
 
 > Bases below are **D890 only**. D878UVII uses a different map (`D878II_MAP`) — see [#648](https://github.com/pskillen/codeplug-studio/issues/648). Do not mix.
 
@@ -13,7 +13,7 @@ Cite: anytone-cps `D890_MAP` + `Device` read/write helpers — facts only; do no
 | Constant     | Value       | Role                                      |
 | ------------ | ----------- | ----------------------------------------- |
 | Block size   | `0x10` (16) | Serial R/W quantum ([protocol.md](protocol.md)) |
-| Channel record | `0x80`    | Combined primary+secondary (field layout in channel-record sibling) |
+| Channel record | `0x80`    | Combined primary+secondary — [channel-record.md](channel-record.md) |
 | Max channels | 4000        | ChannelSet bitmap capacity / CSV limits   |
 
 ## First-adapter region table (`D890_MAP`)
@@ -46,7 +46,7 @@ Addresses are **radio absolute** (u32). Read only enabled slots via each region�
 | `ReceiveGroupData`          | `0x3780000`    | Stride `0x200`; length `0x120`                  | Receive-group lists |
 | `MasterIdData`              | `0x3684000`    | Length `0x40`                                   | Master / default radio ID |
 
-Channel / zone field layouts ship in sibling pages on this radio home (channel-record / zone-record).
+Zone record detail: [zone-record.md](zone-record.md). Channel geometry: [channel-record.md](channel-record.md).
 
 ## Channel address formula
 
@@ -104,9 +104,10 @@ Cross-checked against:
 | Channel / zone address formulas  | anytone-cps `Device::readChannelData` / `readZoneData` / writers |
 | Serial block size / framing      | anytone-cps `SerialDevice`                  |
 
-A live radio dump is optional for this doc ticket; capture guidance ships as `fixtures.md` on this radio home.
+A live radio dump is optional for this doc ticket; see [fixtures.md](fixtures.md).
 
 ## Related
 
-- [protocol.md](protocol.md) · [limits.md](limits.md) · [power.md](power.md)
+- [channel-record.md](channel-record.md) · [zone-record.md](zone-record.md) · [protocol.md](protocol.md)
+- [limits.md](limits.md) · [power.md](power.md)
 - D878UVII map (sibling): [#648](https://github.com/pskillen/codeplug-studio/issues/648)

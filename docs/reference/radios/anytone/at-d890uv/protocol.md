@@ -91,6 +91,6 @@ Checksum (anytone-cps): 8-bit sum over command bytes after the opcode (`cmd[1:]`
 
 ## Related
 
-- [memory-layout.md](memory-layout.md)
+- [fixtures.md](fixtures.md) · [memory-layout.md](memory-layout.md) · [channel-record.md](channel-record.md)
 - Planned kit: [#646](https://github.com/pskillen/codeplug-studio/issues/646) · adapter [#649](https://github.com/pskillen/codeplug-studio/issues/649)
 - Family sibling docs: D878UVII [#648](https://github.com/pskillen/codeplug-studio/issues/648)

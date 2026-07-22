@@ -30,8 +30,11 @@ Provisional CSV caps mirror `profiles.ts` (`ANYTONE_PROFILES`); still verify aga
 | [limits.md](limits.md)                 | Channels, zone/scan/RGL members, names, APRS slots, VFO rows (file-adapter truth)     |
 | [capabilities.md](capabilities.md)     | Feature / bank export availability                                                    |
 | [power.md](power.md)                   | Low / Mid / High / Turbo ladder                                                       |
-| [protocol.md](protocol.md)           | Baud 921600, PROGRAM→QX, ident, ASCII R/W + u32 BE, checksum, END, safe-skip address |
-| [memory-layout.md](memory-layout.md) | `D890_MAP` region table (first-adapter subset) + address formulas                    |
+| [protocol.md](protocol.md)             | Baud 921600, PROGRAM→QX, ident, ASCII R/W + u32 BE, checksum, END, safe-skip address |
+| [memory-layout.md](memory-layout.md)   | `D890_MAP` region table (first-adapter subset) + address formulas                    |
+| [channel-record.md](channel-record.md) | 0x80 combined channel (0x40+0x40); address formula; ChannelSet bitmap                |
+| [zone-record.md](zone-record.md)       | ZoneSet / ZonesName / ZoneChannels / A/B indices                                     |
+| [fixtures.md](fixtures.md)             | How to capture dumps for tests without committing personal codeplugs                 |
 
 ## Adapter wire (files)
 
