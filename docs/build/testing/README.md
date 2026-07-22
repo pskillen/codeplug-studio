@@ -79,7 +79,7 @@ Docs-only PRs: `format:check` + link audit is sufficient.
 1. **Changing a parser or serialiser column** → unit test beside `parse.ts` / `serialise.ts`; extend mapping scenario if semantics cross files.
 2. **Changing import into library / merge** → service test in `src/core/services/`; system scenario when multi-step workflow lands.
 3. **Changing UI only** → component RTL under `src/app/` or e2e when browser behaviour matters.
-4. **New format adapter** → follow [adding-a-new-format.md](../features/import-export/adding-a-new-format.md); register under `src/core/import-export/formats/<format>/`; reference docs under `docs/reference/formats/<format>/`; fixture bundle; fill adapter matrix in [mapping-tests.md](mapping-tests.md).
+4. **New format adapter** → follow [adding-a-new-format.md](../features/import-export/adding-a-new-format.md); register under `src/core/import-export/formats/<format>/`; reference docs under `docs/reference/export-formats/<format>/`; fixture bundle; fill adapter matrix in [mapping-tests.md](mapping-tests.md).
 5. **Pure domain helper** (geo, validation, maidenhead) → colocated `*.test.ts` in `src/core/` or `src/integrations/`.
 
 ## Documentation map
@@ -96,9 +96,9 @@ Docs-only PRs: `format:check` + link audit is sufficient.
 
 ## Related
 
-| Resource             | Link                                                                           |
-| -------------------- | ------------------------------------------------------------------------------ |
-| Build and deploy     | [docs/build/README.md](../README.md)                                           |
-| Data model           | [docs/features/data-model/README.md](../../features/data-model/README.md)      |
-| OpenGD77 wire format | [docs/reference/formats/opengd77/](../../reference/formats/opengd77/README.md) |
-| PR checks            | [`.github/workflows/ci.yml`](../../.github/workflows/ci.yml)                   |
+| Resource             | Link                                                                                         |
+| -------------------- | -------------------------------------------------------------------------------------------- |
+| Build and deploy     | [docs/build/README.md](../README.md)                                                         |
+| Data model           | [docs/features/data-model/README.md](../../features/data-model/README.md)                    |
+| OpenGD77 wire format | [docs/reference/export-formats/opengd77/](../../reference/export-formats/opengd77/README.md) |
+| PR checks            | [`.github/workflows/ci.yml`](../../.github/workflows/ci.yml)                                 |

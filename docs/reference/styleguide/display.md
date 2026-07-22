@@ -42,7 +42,7 @@ Wire-name composition for CPS export lives at the import/export boundary. In lib
 | **Name**        | Human qualifier in lists and detail — not the composed CPS wire string |
 | **Comment**     | Internal notes; not exported to CPS                                    |
 
-CPS wire naming rules: [callsigns.md](../callsigns.md) and per-format channel docs under `docs/reference/formats/<format>/`.
+CPS wire naming rules: [callsigns.md](../callsigns.md) and per-format channel docs under `docs/reference/export-formats/<format>/`.
 
 ## Icons
 

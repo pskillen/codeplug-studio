@@ -2,7 +2,7 @@
 
 Product-level overview of how Codeplug Studio projects **library + build** into Baofeng DM-32UV CPS CSV files.
 
-**Wire tables:** [docs/reference/formats/dm32/](../../../reference/formats/dm32/README.md)  
+**Wire tables:** [docs/reference/export-formats/dm32/](../../../reference/export-formats/dm32/README.md)  
 **Code:** `src/core/import-export/formats/dm32/`
 
 ## Input

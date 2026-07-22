@@ -175,7 +175,7 @@ The **library** and domain layer stay vendor-neutral:
 
 - UUID `id` foreign keys; `name` is a label, not an FK.
 - No `OPENGD77_MAX_*` in validation or library CRUD.
-- Wire strings, column names, cardinality caps → `core/import-export/formats/` and `docs/reference/formats/<format>/`.
+- Wire strings, column names, cardinality caps → `core/import-export/formats/` and `docs/reference/export-formats/<format>/`.
 
 **Formats are siblings:** OpenGD77 CSV, DM32 CSV, CHIRP CSV, native YAML, qDMR — OpenGD77 is not the internal model. **Variants** (1701, MD9600, UV-5R, …) are profiles within a format.
 
@@ -187,7 +187,7 @@ Approved at boundary only: format-specific export truncation, warnings, profile 
 
 | Salvage (copy/adapt)                                        | Leave behind                                           |
 | ----------------------------------------------------------- | ------------------------------------------------------ |
-| `docs/reference/formats/<format>/` wire tables              | Round-trip fidelity contract, provenance-boundary docs |
+| `docs/reference/export-formats/<format>/` wire tables       | Round-trip fidelity contract, provenance-boundary docs |
 | Import column parsers (trimmed, no provenance replay)       | `importMerge` idempotency complexity                   |
 | UI primitives: map, DataTable, tone fields, dropzone pieces | `codeplugStore` god-object, old routes/nav             |
 | Repeater directory clients (BrandMeister, UK repeater)      | Round-trip system tests as quality gate                |
@@ -222,7 +222,7 @@ When editing, flag pre-existing violations of vendor boundaries — do not silen
 | ---- | ------------------------------------------ | -------------------------------------------------- |
 | 1    | `docs/features/`                           | Our library, builds, traits — no CPS column tables |
 | 2    | `docs/reference/*.md` (not in `<format>/`) | Bands, modes, display — link out for wire          |
-| 3    | `docs/reference/formats/<format>/`         | Full wire mapping tables                           |
+| 3    | `docs/reference/export-formats/<format>/`  | Full wire mapping tables                           |
 
 ---
 
@@ -263,10 +263,10 @@ These are for Phase 1 modelling and UX iteration — not blockers for constituti
 
 ## Revision log
 
-| Date       | Change                                                                                                                                                                                  |
-| ---------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 2026-06-29 | Initial context dump from migration planning sessions                                                                                                                                   |
-| 2026-06-29 | Link to [storage.md](storage.md) persistence planning notes                                                                                                                             |
-| 2026-06-29 | Phase 0 complete — [epic-1-progress.md](epic-1-progress.md) (gaps file later retired in [#294](https://github.com/pskillen/codeplug-studio/issues/294))                                 |
-| 2026-07-20 | `epic-1-gaps.md` retired; progress reduced to Milestone 1 archive stub — active work under [#495](https://github.com/pskillen/codeplug-studio/issues/495)                               |
-| 2026-07-02 | **Resolved:** Native YAML serialises full project (`ProjectMeta` + library + `formatBuilds[]`) as interchange — see [native-yaml reference](../reference/formats/native-yaml/README.md) |
+| Date       | Change                                                                                                                                                                                         |
+| ---------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2026-06-29 | Initial context dump from migration planning sessions                                                                                                                                          |
+| 2026-06-29 | Link to [storage.md](storage.md) persistence planning notes                                                                                                                                    |
+| 2026-06-29 | Phase 0 complete — [epic-1-progress.md](epic-1-progress.md) (gaps file later retired in [#294](https://github.com/pskillen/codeplug-studio/issues/294))                                        |
+| 2026-07-20 | `epic-1-gaps.md` retired; progress reduced to Milestone 1 archive stub — active work under [#495](https://github.com/pskillen/codeplug-studio/issues/495)                                      |
+| 2026-07-02 | **Resolved:** Native YAML serialises full project (`ProjectMeta` + library + `formatBuilds[]`) as interchange — see [native-yaml reference](../reference/export-formats/native-yaml/README.md) |

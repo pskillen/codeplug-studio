@@ -12,27 +12,27 @@ Application code lives under `src/core/`, `src/integrations/`, and `src/app/` wi
 
 ## Repository layout
 
-| Path                         | Role                                                                                                                                                     |
-| ---------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `README.md`                  | User-facing overview                                                                                                                                     |
-| `DESIGN.md`                  | Living product and architecture constitution                                                                                                             |
-| `AGENTS.md`                  | This file — agent workflow index                                                                                                                         |
-| `docs/poc-migration/`        | Epic 1 migration context, progress logs                                                                                                                  |
-| `docs/features/`             | Tier 1 — library, builds, traits, product behaviour                                                                                                      |
-| `docs/reference/`            | Tier 2 (domain root) + [formats/](docs/reference/formats/), [radios/](docs/reference/radios/), [remote-directories/](docs/reference/remote-directories/) |
-| `docs/reference/styleguide/` | UI interaction conventions (list kit, Sort…, chrome) — [styleguide](docs/reference/styleguide/)                                                          |
-| `docs/build/`                | CI, Pages, [testing](docs/build/testing/README.md)                                                                                                       |
-| `src/core/`                  | Models, domain, import/export, services — **no React**                                                                                                   |
-| `src/integrations/`          | Browser I/O: persistence, cloud, repeater APIs                                                                                                           |
-| `src/app/`                   | React routes, features, components, thin state                                                                                                           |
-| `.cursor/rules/`             | File-scoped editor rules (+ always-applied deliverables)                                                                                                 |
-| `.cursor/skills/`            | Agent skills — git workflow, plans, docs, progress                                                                                                       |
+| Path                         | Role                                                                                                                                                                   |
+| ---------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `README.md`                  | User-facing overview                                                                                                                                                   |
+| `DESIGN.md`                  | Living product and architecture constitution                                                                                                                           |
+| `AGENTS.md`                  | This file — agent workflow index                                                                                                                                       |
+| `docs/poc-migration/`        | Epic 1 migration context, progress logs                                                                                                                                |
+| `docs/features/`             | Tier 1 — library, builds, traits, product behaviour                                                                                                                    |
+| `docs/reference/`            | Tier 2 (domain root) + [export-formats/](docs/reference/export-formats/), [radios/](docs/reference/radios/), [remote-directories/](docs/reference/remote-directories/) |
+| `docs/reference/styleguide/` | UI interaction conventions (list kit, Sort…, chrome) — [styleguide](docs/reference/styleguide/)                                                                        |
+| `docs/build/`                | CI, Pages, [testing](docs/build/testing/README.md)                                                                                                                     |
+| `src/core/`                  | Models, domain, import/export, services — **no React**                                                                                                                 |
+| `src/integrations/`          | Browser I/O: persistence, cloud, repeater APIs                                                                                                                         |
+| `src/app/`                   | React routes, features, components, thin state                                                                                                                         |
+| `.cursor/rules/`             | File-scoped editor rules (+ always-applied deliverables)                                                                                                               |
+| `.cursor/skills/`            | Agent skills — git workflow, plans, docs, progress                                                                                                                     |
 
 **Dependency rule:** `app` → `core`; `integrations` → `core`. Never `core` → `app`.
 
 ## Vendor boundaries
 
-The **library** and domain layer are **vendor-neutral**. Radio caps, column names, wire strings, and profile limits apply only at import/export and in `docs/reference/formats/<format>/`.
+The **library** and domain layer are **vendor-neutral**. Radio caps, column names, wire strings, and profile limits apply only at import/export and in `docs/reference/export-formats/<format>/` / `docs/reference/radios/<manufacturer>/<model>/`.
 
 | Layer                                       | Apply vendor limits?                | Examples                                                                                                                                                                          |
 | ------------------------------------------- | ----------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |

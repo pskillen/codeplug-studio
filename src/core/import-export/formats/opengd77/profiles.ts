@@ -30,7 +30,7 @@ const OPENGD77_1701_LADDER: readonly PowerLadderEntry[] = [
  * MD-9600 / RT-90 power steps from radio menu elicitation (#441).
  * Nine fixed levels map to CPS `P1`…`P9` (lowest → highest); `Master` = radio default.
  * Menu `+W-` is User Power (Options → Radio Options → User Power: ADC voltage to the PA) —
- * not modelled in Studio; see docs/reference/formats/opengd77/radios/opengd77-md9600.md.
+ * not modelled in Studio; see docs/reference/export-formats/opengd77/radios/opengd77-md9600.md.
  */
 const OPENGD77_MD9600_LADDER: readonly PowerLadderEntry[] = [
   { percent: 100, wire: 'P9', approxWatts: '40 W' },

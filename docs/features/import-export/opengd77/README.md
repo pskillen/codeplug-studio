@@ -1,6 +1,6 @@
 # OpenGD77 CSV — import / export
 
-Product behaviour for OpenGD77 CPS CSV in Codeplug Studio. Wire column tables live in the tier-3 [OpenGD77 reference](../../../reference/formats/opengd77/README.md).
+Product behaviour for OpenGD77 CPS CSV in Codeplug Studio. Wire column tables live in the tier-3 [OpenGD77 reference](../../../reference/export-formats/opengd77/README.md).
 
 **Tracking:** Phase 4a [#84](https://github.com/pskillen/codeplug-studio/issues/84)+ · Epic [#36](https://github.com/pskillen/codeplug-studio/issues/36)
 
@@ -38,9 +38,9 @@ Trait profiles stay **vendor-neutral** in naming and scope. Radio profiles are *
 | `opengd77-1701`   | Baofeng 1701 / Retevis RT-84 | 1023        | 80           | 16         |
 | `opengd77-md9600` | TYT MD-9600 / Retevis RT-90  | 1023        | 80           | 16         |
 
-Per-radio wire detail: [docs/reference/formats/opengd77/radios/](../../../reference/formats/opengd77/radios/README.md).
+Per-radio map: [opengd77 profiles.md](../../../reference/export-formats/opengd77/profiles.md) → [`docs/reference/radios/`](../../../reference/radios/).
 
-Power column mapping (P-levels, `Master` sentinel): [channels.md](../../../reference/formats/opengd77/channels.md).
+Power column mapping (P-levels, `Master` sentinel): [channels.md](../../../reference/export-formats/opengd77/channels.md).
 
 ## UI consumption
 

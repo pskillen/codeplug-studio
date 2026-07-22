@@ -2,13 +2,13 @@
  * DM32 CPS wire verifier plugin.
  *
  * Tier-3 documentation sources:
- * - docs/reference/formats/dm32/README.md
- * - docs/reference/formats/dm32/channels.md
- * - docs/reference/formats/dm32/zones.md
- * - docs/reference/formats/dm32/talkgroups.md
- * - docs/reference/formats/dm32/rx-group-lists.md
- * - docs/reference/formats/dm32/scan-lists.md
- * - docs/reference/formats/dm32/radios/baofeng-dm32uv.md
+ * - docs/reference/export-formats/dm32/README.md
+ * - docs/reference/export-formats/dm32/channels.md
+ * - docs/reference/export-formats/dm32/zones.md
+ * - docs/reference/export-formats/dm32/talkgroups.md
+ * - docs/reference/export-formats/dm32/rx-group-lists.md
+ * - docs/reference/export-formats/dm32/scan-lists.md
+ * - docs/reference/radios/baofeng/dm-32uv/README.md
  */
 
 import { csvToTable } from '../../../../src/core/import-export/csvParse.ts';

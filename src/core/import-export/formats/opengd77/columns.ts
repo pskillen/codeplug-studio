@@ -1,4 +1,4 @@
-/** OpenGD77 CPS CSV column headers — mirror docs/reference/formats/opengd77/. */
+/** OpenGD77 CPS CSV column headers — mirror docs/reference/export-formats/opengd77/. */
 export const CHANNEL_COL = {
   number: 'Channel Number',
   name: 'Channel Name',

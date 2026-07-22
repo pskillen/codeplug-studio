@@ -60,4 +60,4 @@ Fixture loaders live beside adapters (planned):
 
 - [Mapping tests](mapping-tests.md)
 - [Unit tests](unit.md)
-- [OpenGD77 reference](../../reference/formats/opengd77/README.md)
+- [OpenGD77 reference](../../reference/export-formats/opengd77/README.md)

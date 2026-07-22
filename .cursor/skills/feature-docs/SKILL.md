@@ -15,7 +15,7 @@ Deploy and release: [docs/build/README.md](../../../docs/build/README.md).
 
 Read [progress-tracking](../progress-tracking/SKILL.md) when an initiative needs execution handoff files.
 
-**Tier 1 focus:** library, format builds, build capability traits, import/export behaviour — not CPS wire tables (those are tier 3 under `docs/reference/formats/<format>/`).
+**Tier 1 focus:** library, format builds, build capability traits, import/export behaviour — not CPS wire tables (those are tier 3 under `docs/reference/export-formats/<format>/`).
 
 **Obligation:** [documentation-deliverables.mdc](../rules/documentation-deliverables.mdc) — docs ship in the same PR as behaviour.
 
@@ -83,7 +83,7 @@ Use for trait layout, merge behaviour, UI interaction, etc.
 
 Prefer **tables** for entity fields and UI controls. Use small **JSON or YAML snippets** when shape matters.
 
-**Wire column tables** belong in `docs/reference/formats/<format>/`, not here — link out per [documentation-boundaries.mdc](../../rules/documentation-boundaries.mdc).
+**Wire column tables** belong in `docs/reference/export-formats/<format>/`, not here — link out per [documentation-boundaries.mdc](../../rules/documentation-boundaries.mdc).
 
 ---
 

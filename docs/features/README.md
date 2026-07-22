@@ -7,7 +7,7 @@ Agent skills for documentation and execution tracking:
 - [feature-docs](../../.cursor/skills/feature-docs/SKILL.md)
 - [progress-tracking](../../.cursor/skills/progress-tracking/SKILL.md)
 
-**Tier boundaries:** [`.cursor/rules/documentation-boundaries.mdc`](../../.cursor/rules/documentation-boundaries.mdc) — tier 1 here; domain reference in `docs/reference/`; wire tables per format under `docs/reference/formats/<format>/`.
+**Tier boundaries:** [`.cursor/rules/documentation-boundaries.mdc`](../../.cursor/rules/documentation-boundaries.mdc) — tier 1 here; domain reference in `docs/reference/`; adapter wire under `docs/reference/export-formats/<format>/`; radio homes under `docs/reference/radios/<mfr>/<model>/`.
 
 **Migration / epic logs:** [docs/poc-migration/](../poc-migration/) — execution progress for Epic #1.
 
@@ -36,7 +36,7 @@ Agent skills for documentation and execution tracking:
 
 ## Reference
 
-Domain-neutral amateur-radio facts (tier 2) at `docs/reference/` root; tier 3 split into [formats/](../reference/formats/), [radios/](../reference/radios/), and [remote-directories/](../reference/remote-directories/).
+Domain-neutral amateur-radio facts (tier 2) at `docs/reference/` root; tier 3 split into [export-formats/](../reference/export-formats/), [radios/](../reference/radios/), and [remote-directories/](../reference/remote-directories/).
 
 | Topic                          | Docs                                                                                                                                                                                          |
 | ------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -46,15 +46,15 @@ Domain-neutral amateur-radio facts (tier 2) at `docs/reference/` root; tier 3 sp
 | Help writing styleguide        | [reference/writing-styleguide/help-writing-styleguide.md](../reference/writing-styleguide/help-writing-styleguide.md)                                                                         |
 | Callsigns                      | [reference/callsigns.md](../reference/callsigns.md)                                                                                                                                           |
 | Multi-talkgroup expansion      | [reference/multi-talkgroup-expansion.md](../reference/multi-talkgroup-expansion.md)                                                                                                           |
-| Indexes                        | [formats/](../reference/formats/README.md) · [radios/](../reference/radios/README.md) · [remote-directories/](../reference/remote-directories/README.md)                                      |
+| Indexes                        | [export-formats/](../reference/export-formats/README.md) · [radios/](../reference/radios/README.md) · [remote-directories/](../reference/remote-directories/README.md)                        |
 | UK Repeater API                | [reference/remote-directories/ukrepeater/](../reference/remote-directories/ukrepeater/README.md)                                                                                              |
 | IRTS Ireland repeater CSV      | [reference/remote-directories/irts/](../reference/remote-directories/irts/README.md)                                                                                                          |
 | OpenAIP Core API               | [reference/remote-directories/openaip/](../reference/remote-directories/openaip/README.md)                                                                                                    |
-| OpenGD77 CPS CSV               | [reference/formats/opengd77/](../reference/formats/opengd77/README.md) — generic wire + [variant profiles](../reference/formats/opengd77/radios/README.md)                                    |
-| CHIRP CSV (analogue FM/AM)     | [reference/formats/chirp/](../reference/formats/chirp/README.md)                                                                                                                              |
-| DM32 CSV                       | [reference/formats/dm32/](../reference/formats/dm32/README.md)                                                                                                                                |
-| Anytone CPS CSV                | [reference/formats/anytone/](../reference/formats/anytone/README.md) — [variant profile](../reference/formats/anytone/radios/at-d890uv.md)                                                    |
-| NeonPlug `.neonplug`           | [reference/formats/neonplug/](../reference/formats/neonplug/README.md) — epic [#536](https://github.com/pskillen/codeplug-studio/issues/536)                                                  |
-| Baofeng UV-5R Mini (radio I/O) | [reference/radios/baofeng-uv5r-mini/](../reference/radios/baofeng-uv5r-mini/README.md) — epic [#594](https://github.com/pskillen/codeplug-studio/issues/594)                                  |
+| OpenGD77 CPS CSV               | [reference/export-formats/opengd77/](../reference/export-formats/opengd77/README.md) — generic wire + [profiles.md](../reference/export-formats/opengd77/profiles.md)                         |
+| CHIRP CSV (analogue FM/AM)     | [reference/export-formats/chirp/](../reference/export-formats/chirp/README.md)                                                                                                                |
+| DM32 CSV                       | [reference/export-formats/dm32/](../reference/export-formats/dm32/README.md)                                                                                                                  |
+| Anytone CPS CSV                | [reference/export-formats/anytone/](../reference/export-formats/anytone/README.md) — [profiles.md](../reference/export-formats/anytone/profiles.md)                                           |
+| NeonPlug `.neonplug`           | [reference/export-formats/neonplug/](../reference/export-formats/neonplug/README.md) — epic [#536](https://github.com/pskillen/codeplug-studio/issues/536)                                    |
+| Baofeng UV-5R Mini (radio I/O) | [reference/radios/baofeng/uv-5r-mini/](../reference/radios/baofeng/uv-5r-mini/README.md) — epic [#594](https://github.com/pskillen/codeplug-studio/issues/594)                                |
 
-Add a row when a new feature folder ships. Format wire trees are siblings under `formats/` (OpenGD77, DM32, CHIRP, …); OpenGD77 is not the internal model default.
+Add a row when a new feature folder ships. Adapter wire trees are siblings under `export-formats/`; radio homes under `radios/<manufacturer>/<model>/`. OpenGD77 is not the internal model default.

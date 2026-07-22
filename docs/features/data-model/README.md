@@ -1,6 +1,6 @@
 # Internal data model
 
-Tier-1 reference for the vendor-neutral **library + format build** model. Wire-format mapping lives in `docs/reference/formats/<format>/` trees and import/export adapters — not here.
+Tier-1 reference for the vendor-neutral **library + format build** model. Wire-format mapping lives in `docs/reference/export-formats/<format>/` trees and import/export adapters — not here.
 
 **Tracking:** Phase 1 [#4](https://github.com/pskillen/codeplug-studio/issues/4) · Persistence planning: [storage.md](../../poc-migration/storage.md)
 

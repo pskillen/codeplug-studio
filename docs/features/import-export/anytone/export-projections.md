@@ -67,7 +67,7 @@ When **Export zone-derived scan lists** is on and a zone is marked **Export as s
 
 - The derived scan list still uses **logical** channel ids for membership.
 - Exported `Scan List Channel Member` columns list **expanded** wire names (plus the zone scan carrier when synthesised).
-- Carrier channel behaviour is unchanged — see [scan-lists.md](../../reference/formats/anytone/scan-lists.md).
+- Carrier channel behaviour is unchanged — see [scan-lists.md](../../reference/export-formats/anytone/scan-lists.md).
 
 ---
 

@@ -2,7 +2,7 @@
 
 Tier-2 reference for the vendor-neutral **`DigitalContact`** library entity — private digital-mode contacts (DMR, D-STAR, etc.), not talk groups or analog DTMF contacts.
 
-Format-specific wire mapping lives in per-format references under `docs/reference/formats/<format>/` (e.g. Anytone: [anytone/talk-groups.md](formats/anytone/talk-groups.md)).
+Format-specific wire mapping lives in per-format references under `docs/reference/export-formats/<format>/` (e.g. Anytone: [anytone/talk-groups.md](formats/anytone/talk-groups.md)).
 
 ## Fields
 
