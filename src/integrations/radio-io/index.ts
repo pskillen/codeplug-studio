@@ -14,9 +14,13 @@ export type {
   ProgressFn,
   ProgressUpdate,
   RadioCapabilities,
+  RadioCompatibleProfile,
   RadioDescriptor,
   RadioSession,
+  RadioWriteStrategy,
 } from './types.ts';
+
+export type { RadioChannelDto, RadioTone } from './radioChannelDto.ts';
 
 export * from './kit/index.ts';
 export * from './transport/index.ts';
