@@ -1,5 +1,8 @@
 import type { BuildEntityOverride } from '@core/models/formatBuild.ts';
+import type { ScanInclusion } from '@core/models/library.ts';
 import { sanitiseAsciiWireString } from '@core/import-export/sanitiseAsciiWireString.ts';
+
+const SCAN_INCLUSION_VALUES: readonly ScanInclusion[] = ['default', 'skip', 'alwaysScan'];
 
 export type OverrideField =
   | 'channelOverrides'
@@ -42,6 +45,13 @@ export function overrideOrderOrSlot(
   const value = (overrides ?? []).find((row) => row.libraryEntityId === entityId)?.orderOrSlot;
   if (value == null || !Number.isFinite(value) || value < 1) return undefined;
   return Math.trunc(value);
+}
+
+export function overrideScanInclusion(
+  overrides: BuildEntityOverride[] | undefined,
+  entityId: string,
+): ScanInclusion | undefined {
+  return (overrides ?? []).find((row) => row.libraryEntityId === entityId)?.scanInclusion;
 }
 
 export function resolveOverrideWireName(
@@ -129,6 +139,17 @@ function parseOverrideRow(raw: unknown, label: string): BuildEntityOverride {
       result.orderOrSlot = Math.trunc(orderOrSlot);
     }
   }
+  if (
+    record.scanInclusion !== undefined &&
+    record.scanInclusion !== null &&
+    record.scanInclusion !== ''
+  ) {
+    const value = String(record.scanInclusion);
+    if (!(SCAN_INCLUSION_VALUES as readonly string[]).includes(value)) {
+      throw new Error(`${label}.scanInclusion is invalid: ${value}`);
+    }
+    result.scanInclusion = value as ScanInclusion;
+  }
   const legacyScanListId =
     record.scanListId !== undefined && record.scanListId !== null && record.scanListId !== ''
       ? String(record.scanListId)
@@ -143,7 +164,10 @@ export function upsertOverride(
   overrides: BuildEntityOverride[] | undefined,
   entityId: string,
   patch: Partial<
-    Pick<BuildEntityOverride, 'excluded' | 'forceInclude' | 'wireName' | 'orderOrSlot'>
+    Pick<
+      BuildEntityOverride,
+      'excluded' | 'forceInclude' | 'wireName' | 'orderOrSlot' | 'scanInclusion'
+    >
   >,
 ): BuildEntityOverride[] {
   const rows = overrides ?? [];
@@ -166,10 +190,21 @@ export function upsertOverride(
     }
   }
 
+  if ('scanInclusion' in patch) {
+    if (patch.scanInclusion == null) {
+      delete merged.scanInclusion;
+    } else if ((SCAN_INCLUSION_VALUES as readonly string[]).includes(patch.scanInclusion)) {
+      merged.scanInclusion = patch.scanInclusion;
+    } else {
+      delete merged.scanInclusion;
+    }
+  }
+
   const hasOrderOrSlot =
     merged.orderOrSlot != null && Number.isFinite(merged.orderOrSlot) && merged.orderOrSlot >= 1;
+  const hasScanInclusion = merged.scanInclusion != null;
 
-  if (!hasWireName && !isExcluded && !isForceIncluded && !hasOrderOrSlot) {
+  if (!hasWireName && !isExcluded && !isForceIncluded && !hasOrderOrSlot && !hasScanInclusion) {
     if (index < 0) return rows;
     return rows.filter((row) => row.libraryEntityId !== entityId);
   }
@@ -186,6 +221,10 @@ export function upsertOverride(
 
   if (!isExcluded) {
     delete merged.excluded;
+  }
+
+  if (!hasScanInclusion) {
+    delete merged.scanInclusion;
   }
 
   if (index < 0) {
