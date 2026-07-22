@@ -6,11 +6,11 @@
 
 **Ground truth:**
 
-| Source | Role |
-| --- | --- |
-| NeonPlug [`src/radios/`](https://github.com/infamy/NeonPlug/tree/main/src/radios) | Descriptor registry, `BaseSerialConnection`, UV5R-Mini / FT-65 / DM-32 implementations |
-| CHIRP [`chirp/drivers/`](https://github.com/kk7ds/chirp/tree/master/chirp/drivers) | Clone-image lifecycle, codec families, `UV5RMini` in `baofeng_uv17Pro.py` |
-| Studio [DESIGN.md](../../../DESIGN.md) | Intentional Web Serial goal; library stays vendor-neutral |
+| Source                                                                             | Role                                                                                   |
+| ---------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------- |
+| NeonPlug [`src/radios/`](https://github.com/infamy/NeonPlug/tree/main/src/radios)  | Descriptor registry, `BaseSerialConnection`, UV5R-Mini / FT-65 / DM-32 implementations |
+| CHIRP [`chirp/drivers/`](https://github.com/kk7ds/chirp/tree/master/chirp/drivers) | Clone-image lifecycle, codec families, `UV5RMini` in `baofeng_uv17Pro.py`              |
+| Studio [DESIGN.md](../../../DESIGN.md)                                             | Intentional Web Serial goal; library stays vendor-neutral                              |
 
 ---
 
@@ -25,7 +25,7 @@ flowchart TB
   transport["integrations/radio-io/transport — WebSerial, optional BLE"]
   radios["integrations/radio-io/radios/uv5r-mini — handshake, layout, encode"]
   coreLib["src/core — library + assemble only"]
-  tier3["docs/reference/baofeng-uv5r-mini/ — wire protocol"]
+  tier3["docs/reference/radios/baofeng-uv5r-mini/ — wire protocol"]
 
   appUI --> svc --> registry
   registry --> radios
@@ -35,15 +35,15 @@ flowchart TB
   radios -.-> tier3
 ```
 
-| Layer | Owns | Must not own |
-| --- | --- | --- |
-| `src/integrations/radio-io/transport/` | Web Serial port request, baud, buffered `readExact` / `write`, timeout; optional BLE GATT adapter with the same byte-stream surface | Radio handshake, memory layout |
-| `src/integrations/radio-io/kit/` | Session lifecycle + progress (`AbortSignal`), pluggable codecs, `MemoryMap`, ACK helpers, typed radio errors | DOM APIs; library Channel CRUD |
-| `src/integrations/radio-io/radios/<id>/` | Descriptor, ident/handshake, memory regions, image ↔ channel decode, firmware string parse, write ranges | React; importing library mutations |
-| `src/integrations/radio-io/` registry | Descriptor list → factory, capabilities, picker metadata | Per-radio framing details |
-| `src/app/` | Operator connect / read / write chrome, progress, in-flow attribution | Frame bytes, CPS column names |
-| `src/core/` | Library + build `assemble` feeding write payloads | Web Serial, binary protocol |
-| `docs/reference/<family>/` | Tier-3 protocol / memory tables | Product workflow prose |
+| Layer                                    | Owns                                                                                                                                | Must not own                       |
+| ---------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------- |
+| `src/integrations/radio-io/transport/`   | Web Serial port request, baud, buffered `readExact` / `write`, timeout; optional BLE GATT adapter with the same byte-stream surface | Radio handshake, memory layout     |
+| `src/integrations/radio-io/kit/`         | Session lifecycle + progress (`AbortSignal`), pluggable codecs, `MemoryMap`, ACK helpers, typed radio errors                        | DOM APIs; library Channel CRUD     |
+| `src/integrations/radio-io/radios/<id>/` | Descriptor, ident/handshake, memory regions, image ↔ channel decode, firmware string parse, write ranges                            | React; importing library mutations |
+| `src/integrations/radio-io/` registry    | Descriptor list → factory, capabilities, picker metadata                                                                            | Per-radio framing details          |
+| `src/app/`                               | Operator connect / read / write chrome, progress, in-flow attribution                                                               | Frame bytes, CPS column names      |
+| `src/core/`                              | Library + build `assemble` feeding write payloads                                                                                   | Web Serial, binary protocol        |
+| `docs/reference/<family>/`               | Tier-3 protocol / memory tables                                                                                                     | Product workflow prose             |
 
 **Dependency direction (unchanged):** `app` → `core`; `integrations` → `core`. Never `core` → `app` or `core` → `integrations`. Radio-io may call `assemble` results via **app services** that pull from core — protocol modules receive already-assembled channel lists / images, not React stores.
 
@@ -116,15 +116,9 @@ interface CloneImageRadio {
   connect(pipe: BytePipe, opts?: { signal?: AbortSignal }): Promise<IdentResult>;
   disconnect(): Promise<void>;
   download(opts: { onProgress?: ProgressFn; signal?: AbortSignal }): Promise<MemoryMap>;
-  upload(
-    image: MemoryMap,
-    opts: { onProgress?: ProgressFn; signal?: AbortSignal },
-  ): Promise<void>;
+  upload(image: MemoryMap, opts: { onProgress?: ProgressFn; signal?: AbortSignal }): Promise<void>;
   decodeChannels(image: MemoryMap): /* Studio-facing channel DTOs */ unknown[];
-  encodeChannels(
-    image: MemoryMap,
-    channels: /* assembled channels */ unknown[],
-  ): MemoryMap;
+  encodeChannels(image: MemoryMap, channels: /* assembled channels */ unknown[]): MemoryMap;
   readFirmware(image: MemoryMap): string | undefined;
 }
 
@@ -137,14 +131,14 @@ interface RadioSession {
 }
 ```
 
-| Shape | NeonPlug analogue | CHIRP analogue |
-| --- | --- | --- |
-| `BytePipe` | `SerialLikePort` + `BaseSerialConnection` | pyserial `pipe` |
-| `ProgressFn` | `onProgress` on protocol | `Status` + `status_fn` |
-| `BlockCodec` | per-radio frame builders | `_make_frame` / family commons |
-| `RadioDescriptor` | `RadioDescriptor` in `radios/types.ts` | `@directory.register` + class attrs |
-| `CloneImageRadio` | protocol class + connection | `CloneModeRadio.sync_in` / `sync_out` |
-| `MemoryMap` | assembled `Uint8Array` image | `MemoryMapBytes` + `bitwise` |
+| Shape             | NeonPlug analogue                         | CHIRP analogue                        |
+| ----------------- | ----------------------------------------- | ------------------------------------- |
+| `BytePipe`        | `SerialLikePort` + `BaseSerialConnection` | pyserial `pipe`                       |
+| `ProgressFn`      | `onProgress` on protocol                  | `Status` + `status_fn`                |
+| `BlockCodec`      | per-radio frame builders                  | `_make_frame` / family commons        |
+| `RadioDescriptor` | `RadioDescriptor` in `radios/types.ts`    | `@directory.register` + class attrs   |
+| `CloneImageRadio` | protocol class + connection               | `CloneModeRadio.sync_in` / `sync_out` |
+| `MemoryMap`       | assembled `Uint8Array` image              | `MemoryMapBytes` + `bitwise`          |
 
 ---
 
@@ -152,14 +146,14 @@ interface RadioSession {
 
 “Clone image” is the **storage model**. Wire **codecs** differ by family:
 
-| Codec | Wire idea | First Studio need | CHIRP / NeonPlug anchors |
-| --- | --- | --- | --- |
-| **PROGRAM + R/W** | Ident string (e.g. `PROGRAMCOLORPROU`) → `R`/`W` blocks + ACK `0x06` | **UV-5R Mini (MVP)** | CHIRP `baofeng_uv17Pro.py`; NeonPlug `uv5rmini/baofengProtocol.ts` |
-| **S/X blocks** | Magic ident → `S`/`X` frames | Classic UV-5R later | CHIRP `baofeng_common.py`, `uv5r.py` |
-| **V-probe** | `0x56` (“V”) frames for memsize/map | UV-17 lineage / DM-32 info | CHIRP `baofeng_uv17.py`; NeonPlug `dm32uv/` |
-| **Stream clone** | Contiguous dump + ACK, echo-strip | Yaesu FT-65 family later | CHIRP `yaesu_clone.py`; NeonPlug `ft65/` |
-| **ICF frames** | `\xFE\xFE`…`\xFD` | Out of MVP | CHIRP `icf.py` |
-| **Kenwood PROGRAM + R/W/Z** | `PROGRAM` then framed blocks | Out of MVP | CHIRP `tk760g.py` et al. |
+| Codec                       | Wire idea                                                            | First Studio need          | CHIRP / NeonPlug anchors                                           |
+| --------------------------- | -------------------------------------------------------------------- | -------------------------- | ------------------------------------------------------------------ |
+| **PROGRAM + R/W**           | Ident string (e.g. `PROGRAMCOLORPROU`) → `R`/`W` blocks + ACK `0x06` | **UV-5R Mini (MVP)**       | CHIRP `baofeng_uv17Pro.py`; NeonPlug `uv5rmini/baofengProtocol.ts` |
+| **S/X blocks**              | Magic ident → `S`/`X` frames                                         | Classic UV-5R later        | CHIRP `baofeng_common.py`, `uv5r.py`                               |
+| **V-probe**                 | `0x56` (“V”) frames for memsize/map                                  | UV-17 lineage / DM-32 info | CHIRP `baofeng_uv17.py`; NeonPlug `dm32uv/`                        |
+| **Stream clone**            | Contiguous dump + ACK, echo-strip                                    | Yaesu FT-65 family later   | CHIRP `yaesu_clone.py`; NeonPlug `ft65/`                           |
+| **ICF frames**              | `\xFE\xFE`…`\xFD`                                                    | Out of MVP                 | CHIRP `icf.py`                                                     |
+| **Kenwood PROGRAM + R/W/Z** | `PROGRAM` then framed blocks                                         | Out of MVP                 | CHIRP `tk760g.py` et al.                                           |
 
 **Spike decision:** implement **PROGRAM + R/W** first (shared kit codec). Add **S/X** as a sibling codec when classic UV-5R direct-write is scheduled. Do **not** shape the kit around DM-32’s V-frame + 4KB block discovery.
 
@@ -167,14 +161,14 @@ interface RadioSession {
 
 ## 4. Brand / model / variant / firmware
 
-| Concern | Recommendation |
-| --- | --- |
-| **Registration** | One `RadioDescriptor` per protocol family entry; `modelIds: string[]` maps marketing names to one factory (NeonPlug pattern). |
-| **Family variants** | Prefer one protocol class with constructor params (id prefixes, offset factor, max name length) — NeonPlug FT-65 / FT-4 / FT-25. Avoid copy-paste subclasses unless layout diverges. |
-| **Ident** | Sequencer: flush → try magics → fingerprint → follow-up magics → `IdentResult`. Wrong magic → typed error pointing at the correct Studio radio (CHIRP `IDENT_BLACKLIST` idea). |
-| **Detect vs picker** | MVP: operator picks model, then ident validates. Optional `detectFromSerial` later (CHIRP `DetectableInterface`) for ambiguous cables. |
-| **Firmware** | Parse from image offset or V-frame string inside the **radio module**. Gate **writes** against the supported catalog ([#613](https://github.com/pskillen/codeplug-studio/issues/613)) — do not add free-text version fields on builds. |
-| **CPS vs firmware** | CPS version scopes **file** adapters; firmware scopes **direct-write** (DESIGN.md). |
+| Concern              | Recommendation                                                                                                                                                                                                                         |
+| -------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Registration**     | One `RadioDescriptor` per protocol family entry; `modelIds: string[]` maps marketing names to one factory (NeonPlug pattern).                                                                                                          |
+| **Family variants**  | Prefer one protocol class with constructor params (id prefixes, offset factor, max name length) — NeonPlug FT-65 / FT-4 / FT-25. Avoid copy-paste subclasses unless layout diverges.                                                   |
+| **Ident**            | Sequencer: flush → try magics → fingerprint → follow-up magics → `IdentResult`. Wrong magic → typed error pointing at the correct Studio radio (CHIRP `IDENT_BLACKLIST` idea).                                                         |
+| **Detect vs picker** | MVP: operator picks model, then ident validates. Optional `detectFromSerial` later (CHIRP `DetectableInterface`) for ambiguous cables.                                                                                                 |
+| **Firmware**         | Parse from image offset or V-frame string inside the **radio module**. Gate **writes** against the supported catalog ([#613](https://github.com/pskillen/codeplug-studio/issues/613)) — do not add free-text version fields on builds. |
+| **CPS vs firmware**  | CPS version scopes **file** adapters; firmware scopes **direct-write** (DESIGN.md).                                                                                                                                                    |
 
 ---
 
@@ -192,27 +186,27 @@ requestPort(baud) → open BytePipe
   → disconnect
 ```
 
-| Rule | Why |
-| --- | --- |
-| Cache full image before write | Settings / DTMF / non-channel regions survive (FT-65 / UV5R pattern) |
-| Upload by **ranges**, not blind full mmap when firmware restricts | CHIRP UV-5R `_ranges_*`; safer on partial-support firmware |
-| Progress + `AbortSignal` on download/upload | Cancel mid-clone without orphaning the port |
-| Separate read-handshake vs upload-handshake when the radio requires it | NeonPlug UV5R-Mini `handshakeUpload()` |
+| Rule                                                                   | Why                                                                  |
+| ---------------------------------------------------------------------- | -------------------------------------------------------------------- |
+| Cache full image before write                                          | Settings / DTMF / non-channel regions survive (FT-65 / UV5R pattern) |
+| Upload by **ranges**, not blind full mmap when firmware restricts      | CHIRP UV-5R `_ranges_*`; safer on partial-support firmware           |
+| Progress + `AbortSignal` on download/upload                            | Cancel mid-clone without orphaning the port                          |
+| Separate read-handshake vs upload-handshake when the radio requires it | NeonPlug UV5R-Mini `handshakeUpload()`                               |
 
 ---
 
 ## 6. First radio: UV-5R Mini
 
-| Item | Value |
-| --- | --- |
-| Studio module path | `src/integrations/radio-io/radios/uv5r-mini/` |
-| Baud | 38400 (NeonPlug) |
-| Ident | `PROGRAMCOLORPROU` (`MSTRING_UV17PROGPS`) |
-| Framing | PROGRAM + R/W; optional payload XOR crypt |
-| Image size | `MEM_TOTAL = 0x8240`; multi-region `MEM_STARTS` / `MEM_SIZES` |
-| Channels | Up to 999 (CHIRP) |
-| BLE | Optional later — same framing, larger upload block (`BLE_UP_BLOCK_SIZE = 0x80`) |
-| Tier-3 stub | [docs/reference/baofeng-uv5r-mini/](../../reference/baofeng-uv5r-mini/README.md) |
+| Item               | Value                                                                                          |
+| ------------------ | ---------------------------------------------------------------------------------------------- |
+| Studio module path | `src/integrations/radio-io/radios/uv5r-mini/`                                                  |
+| Baud               | 38400 (NeonPlug)                                                                               |
+| Ident              | `PROGRAMCOLORPROU` (`MSTRING_UV17PROGPS`)                                                      |
+| Framing            | PROGRAM + R/W; optional payload XOR crypt                                                      |
+| Image size         | `MEM_TOTAL = 0x8240`; multi-region `MEM_STARTS` / `MEM_SIZES`                                  |
+| Channels           | Up to 999 (CHIRP)                                                                              |
+| BLE                | Optional later — same framing, larger upload block (`BLE_UP_BLOCK_SIZE = 0x80`)                |
+| Tier-3 stub        | [docs/reference/radios/baofeng-uv5r-mini/](../../reference/radios/baofeng-uv5r-mini/README.md) |
 
 **Ground-truth files:**
 
@@ -225,12 +219,12 @@ Classic **UV-5R** uses **S/X**, not this path — do not merge the two into one 
 
 ## 7. Testing strategy
 
-| Layer | Approach |
-| --- | --- |
-| Kit codecs + MemoryMap | Unit tests with fixture byte arrays; mocked `BytePipe` recording writes / scripted reads |
-| Radio decode/encode | Golden clone images (from CHIRP `tests/images/` or NeonPlug captures) — no hardware |
-| Transport | Thin adapter tests behind a fake `SerialPort`; manual Web Serial verify on real UV-5R Mini |
-| App chrome | Component tests with fake `CloneImageRadio`; no real port |
+| Layer                  | Approach                                                                                   |
+| ---------------------- | ------------------------------------------------------------------------------------------ |
+| Kit codecs + MemoryMap | Unit tests with fixture byte arrays; mocked `BytePipe` recording writes / scripted reads   |
+| Radio decode/encode    | Golden clone images (from CHIRP `tests/images/` or NeonPlug captures) — no hardware        |
+| Transport              | Thin adapter tests behind a fake `SerialPort`; manual Web Serial verify on real UV-5R Mini |
+| App chrome             | Component tests with fake `CloneImageRadio`; no real port                                  |
 
 Do **not** gate CI on physical radios. Prefer per-direction tests (download decode vs upload encode) over round-trip-only gates — same principle as CPS import/export in DESIGN.md.
 

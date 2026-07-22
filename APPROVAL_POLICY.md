@@ -41,7 +41,7 @@ CI still runs on every PR via [`.github/workflows/ci.yml`](.github/workflows/ci.
 
 ### Vendor boundaries ([vendor-boundaries](.cursor/rules/vendor-boundaries.mdc), [export-from-model](.cursor/rules/export-from-model.mdc))
 
-- PR adds `OPENGD77_*`, `CHIRP_*`, `DM32_*`, or other format/profile cap constants outside `src/core/import-export/formats/` or `docs/reference/<format>/`
+- PR adds `OPENGD77_*`, `CHIRP_*`, `DM32_*`, or other format/profile cap constants outside `src/core/import-export/formats/` or `docs/reference/formats/<format>/`
 - PR resolves library relationships by human-readable wire `name` strings in mutations, validation, persistence, or CRUD (internal FKs must be UUID `id`)
 - PR adds wire stash or stash-and-replay export paths: `wireBag`, `importedColumns`, `*Wire` cell replay, or provenance bags read on export instead of typed model fields
 - PR adds format-specific cardinality limits to library CRUD or validation (defer caps to export adapters)
@@ -55,7 +55,7 @@ CI still runs on every PR via [`.github/workflows/ci.yml`](.github/workflows/ci.
 
 ### Documentation boundaries ([documentation-boundaries](.cursor/rules/documentation-boundaries.mdc), [format-agnostic-docs](.cursor/rules/format-agnostic-docs.mdc))
 
-- PR adds CPS wire-mapping tables (column ↔ internal field) to `docs/features/` or `docs/reference/*.md` at the reference root — wire tables belong only under `docs/reference/<format>/`
+- PR adds CPS wire-mapping tables (column ↔ internal field) to `docs/features/` or `docs/reference/*.md` at the reference root — wire tables belong only under `docs/reference/formats/<format>/`
 - PR adds new wire-mapping files at `docs/reference/` root (e.g. `power-levels.md`, `tones.md`)
 - PR frames OpenGD77 (or any single format) as **the** internal library model in tier-1 or tier-2 docs — generic docs must stay format-agnostic and link out per format
 - PR documents import/export mapping for the **internal** model using only the OpenGD77 reference when the change applies to all formats

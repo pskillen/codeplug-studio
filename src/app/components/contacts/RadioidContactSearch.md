@@ -35,7 +35,7 @@ export default function AddFromRadioidPage() {
 ## Related
 
 - [contact directories](../../../docs/features/contact-directories/README.md)
-- [radioid reference](../../../docs/reference/radioid/README.md)
+- [radioid reference](../../../docs/reference/remote-directories/radioid/README.md)
 - [`RadioidContactBulkImportDialog`](RadioidContactBulkImportDialog.tsx)
 - [`RadioidContactPreviewDialog`](RadioidContactPreviewDialog.tsx)
 - [`RadioidContactUpdateDialog`](RadioidContactUpdateDialog.tsx)

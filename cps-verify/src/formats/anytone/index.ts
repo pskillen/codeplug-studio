@@ -2,17 +2,17 @@
  * Anytone CPS wire verifier plugin.
  *
  * Tier-3 documentation sources (every enforced rule is stated in these files):
- * - docs/reference/anytone/file-format.md
- * - docs/reference/anytone/channels.md
- * - docs/reference/anytone/zones.md
- * - docs/reference/anytone/scan-lists.md
- * - docs/reference/anytone/talk-groups.md
- * - docs/reference/anytone/rx-group-lists.md
- * - docs/reference/anytone/lst-manifest.md
- * - docs/reference/anytone/radios/at-d890uv.md
- * - docs/reference/anytone/am-air.md
- * - docs/reference/anytone/fm-broadcast.md
- * - docs/reference/anytone/aprs.md
+ * - docs/reference/formats/anytone/file-format.md
+ * - docs/reference/formats/anytone/channels.md
+ * - docs/reference/formats/anytone/zones.md
+ * - docs/reference/formats/anytone/scan-lists.md
+ * - docs/reference/formats/anytone/talk-groups.md
+ * - docs/reference/formats/anytone/rx-group-lists.md
+ * - docs/reference/formats/anytone/lst-manifest.md
+ * - docs/reference/formats/anytone/radios/at-d890uv.md
+ * - docs/reference/formats/anytone/am-air.md
+ * - docs/reference/formats/anytone/fm-broadcast.md
+ * - docs/reference/formats/anytone/aprs.md
  */
 
 import { csvToTable } from '../../../../src/core/import-export/csvParse.ts';

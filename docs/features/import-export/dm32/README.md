@@ -1,6 +1,6 @@
 # Baofeng DM32 CSV — export
 
-Product behaviour for Baofeng DM-32UV CPS CSV export in Codeplug Studio. Wire column tables live in the tier-3 [DM32 reference](../../../reference/dm32/README.md).
+Product behaviour for Baofeng DM-32UV CPS CSV export in Codeplug Studio. Wire column tables live in the tier-3 [DM32 reference](../../../reference/formats/dm32/README.md).
 
 **Tracking:** Epic [#503](https://github.com/pskillen/codeplug-studio/issues/503) (import + export; supersedes M1 [#37](https://github.com/pskillen/codeplug-studio/issues/37) / [#112](https://github.com/pskillen/codeplug-studio/issues/112)) · import [#124](https://github.com/pskillen/codeplug-studio/issues/124)–[#128](https://github.com/pskillen/codeplug-studio/issues/128)
 
@@ -22,7 +22,7 @@ Product behaviour for Baofeng DM-32UV CPS CSV export in Codeplug Studio. Wire co
 | Contacts.csv metadata           | Shipped | [#448](https://github.com/pskillen/codeplug-studio/issues/448) — City/Province/Country/Remark from `DigitalContact`                                                                                                           |
 | Per-repeater scratch channels   | Shipped | [#140](https://github.com/pskillen/codeplug-studio/issues/140) — [export-projections.md](export-projections.md)                                                                                                               |
 | CRLF export line endings        | Shipped | [#314](https://github.com/pskillen/codeplug-studio/issues/314) — Windows CPS import compatibility                                                                                                                             |
-| APRS channel cols + `APRS.md`   | Shipped | [#250](https://github.com/pskillen/codeplug-studio/issues/250) — [aprs.md](../../../reference/dm32/aprs.md)                                                                                                                   |
+| APRS channel cols + `APRS.md`   | Shipped | [#250](https://github.com/pskillen/codeplug-studio/issues/250) — [aprs.md](../../../reference/formats/dm32/aprs.md)                                                                                                           |
 | Prefer-NeonPlug export warning  | Shipped | [#556](https://github.com/pskillen/codeplug-studio/issues/556) — orange alert at top of export panel and again above download buttons; New build format/profile pills; CSV download remains available                         |
 | CPS import                      | Planned | [#112](https://github.com/pskillen/codeplug-studio/issues/112)                                                                                                                                                                |
 
@@ -41,15 +41,15 @@ Both use profile id **`dm32-baofeng-dm32uv`**.
 | --------------------- | --------------- | ----------- | ------------ | --------------- | ----------------- | ---------- | --------------- | -------------- |
 | `dm32-baofeng-dm32uv` | Baofeng DM-32UV | 4000        | 64           | 32              | 15                | 16         | 10              | 10             |
 
-Scan list CSV members are capped at **15** named entries (CPS “16” includes an implicit current-channel slot). Zone membership allows **64** members — zone-derived scan export truncates to 15. General LCD/`nameLimit` remains **16** for channels and zones; `Scan.csv` `Scan Name` and RX group list names use **10** — see [scan-lists.md](../../../reference/dm32/scan-lists.md) and [baofeng-dm32uv.md](../../../reference/dm32/radios/baofeng-dm32uv.md).
+Scan list CSV members are capped at **15** named entries (CPS “16” includes an implicit current-channel slot). Zone membership allows **64** members — zone-derived scan export truncates to 15. General LCD/`nameLimit` remains **16** for channels and zones; `Scan.csv` `Scan Name` and RX group list names use **10** — see [scan-lists.md](../../../reference/formats/dm32/scan-lists.md) and [baofeng-dm32uv.md](../../../reference/formats/dm32/radios/baofeng-dm32uv.md).
 
-Per-radio wire detail: [docs/reference/dm32/radios/](../../../reference/dm32/radios/README.md).
+Per-radio wire detail: [docs/reference/formats/dm32/radios/](../../../reference/formats/dm32/radios/README.md).
 
 ## Prefer NeonPlug for radio write
 
 Baofeng DM-32 CPS CSV import is unreliable. On `/builds/:id/export` for a DM32 build, Studio shows a strong warning to prefer a [NeonPlug](../neonplug/README.md) build and `.neonplug` merge-on-export path. DM32 CSV download stays available for interop and fixtures.
 
-**Parked CPS fidelity work:** [cps-csv-gaps.md](cps-csv-gaps.md) (from [#404](https://github.com/pskillen/codeplug-studio/issues/404)) — open elicitation tickets remain convertible; do not treat blank [enum-verification](../../../reference/dm32/enum-verification.md) Observed cells as blockers.
+**Parked CPS fidelity work:** [cps-csv-gaps.md](cps-csv-gaps.md) (from [#404](https://github.com/pskillen/codeplug-studio/issues/404)) — open elicitation tickets remain convertible; do not treat blank [enum-verification](../../../reference/formats/dm32/enum-verification.md) Observed cells as blockers.
 
 ## Expandable channels (DM32 vs OpenGD77)
 
@@ -58,7 +58,7 @@ Baofeng DM-32 CPS CSV import is unreliable. On `/builds/:id/export` for a DM32 b
 | Multi-mode      | Native `Fixed Analog` / `Fixed Digital` on one row (`expandModes: false`) | Separate `-F`/`-D` rows           |
 | Multi-talkgroup | Flat per-TG channel rows (`expandRxGroupLists: true`)                     | Native `TG List` + `TG_Lists.csv` |
 
-See [name-shortening.md](../name-shortening.md) and [dm32/multi-talkgroup.md](../../../reference/dm32/multi-talkgroup.md).
+See [name-shortening.md](../name-shortening.md) and [dm32/multi-talkgroup.md](../../../reference/formats/dm32/multi-talkgroup.md).
 
 ## Zone export knobs (build layout)
 

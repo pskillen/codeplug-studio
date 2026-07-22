@@ -13,7 +13,7 @@ The **library** and feature docs describe **our** product model — not any sing
 ## Internal model docs (`docs/features/`)
 
 - Describe library entities, format builds, traits, and internal UUID relationships.
-- Point wire-format mapping to `docs/reference/<format>/` and import/export feature docs — not OpenGD77 alone.
+- Point wire-format mapping to `docs/reference/formats/<format>/` and import/export feature docs — not OpenGD77 alone.
 - Radio caps and truncation belong in format/reference docs and export adapters, not library-model docs.
 
 ## Unacceptable
@@ -27,9 +27,9 @@ The **library** and feature docs describe **our** product model — not any sing
 
 - "CSVs are mapped by the import/export layer (e.g. OpenGD77 → library types)."
 - "Import any supported CPS export (OpenGD77, DM32, CHIRP, …) or start a blank project."
-- "See [OpenGD77 reference](../../docs/reference/opengd77/README.md) for OpenGD77 column mapping" — scoped to that format.
+- "See [OpenGD77 reference](../../docs/reference/formats/opengd77/README.md) for OpenGD77 column mapping" — scoped to that format.
 - "Build UI composes from capability traits; wire adapters map trait layout per format."
 
 ## Quick check
 
-Before linking to `docs/reference/opengd77/`, ask: is this sentence about **OpenGD77 specifically**, or about **all** external formats? If the latter, link import/export docs or list formats explicitly.
+Before linking to `docs/reference/formats/opengd77/`, ask: is this sentence about **OpenGD77 specifically**, or about **all** external formats? If the latter, link import/export docs or list formats explicitly.

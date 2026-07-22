@@ -2,7 +2,7 @@
 
 Tier-2 reference for how Codeplug Studio models **channel scan participation** in the library and how it resolves at export.
 
-Wire column mapping per format: [CHIRP `Skip`](chirp/channels.md), [OpenGD77 `All Skip`](opengd77/channels.md), [NeonPlug `scanAdd`](neonplug/channels.md). Feature hub: [library CRUD](../features/library/README.md).
+Wire column mapping per format: [CHIRP `Skip`](formats/chirp/channels.md), [OpenGD77 `All Skip`](formats/opengd77/channels.md), [NeonPlug `scanAdd`](formats/neonplug/channels.md). Feature hub: [library CRUD](../features/library/README.md).
 
 ## Library field
 

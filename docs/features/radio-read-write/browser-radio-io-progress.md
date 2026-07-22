@@ -6,20 +6,20 @@
 
 ## Status
 
-| Milestone | Status | Notes |
-| --- | --- | --- |
-| Milestone 1 — CHIRP CSV fidelity | Complete (feature) | UV-5R / UV-21 / RT95 profiles under [#504](https://github.com/pskillen/codeplug-studio/issues/504) |
+| Milestone                                 | Status                  | Notes                                                                                                                                                         |
+| ----------------------------------------- | ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Milestone 1 — CHIRP CSV fidelity          | Complete (feature)      | UV-5R / UV-21 / RT95 profiles under [#504](https://github.com/pskillen/codeplug-studio/issues/504)                                                            |
 | Milestone 2 — WebSerial direct read/write | Architecture documented | [#603](https://github.com/pskillen/codeplug-studio/issues/603) — [protocol-kit-architecture.md](protocol-kit-architecture.md); product code via child tickets |
 
 ## Shipped (foundation)
 
-| Item | Ticket / PR | Notes |
-| --- | --- | --- |
-| DESIGN.md non-goal → intentional WebSerial | [#595](https://github.com/pskillen/codeplug-studio/issues/595) | Attribution requirement |
-| Attributions stubs (CHIRP + NeonPlug) | [#597](https://github.com/pskillen/codeplug-studio/issues/597) | `AttributionsPage` / attributions lib |
-| Progress docs under `radio-read-write/` | [#603](https://github.com/pskillen/codeplug-studio/issues/603) | Moved from `import-export/` |
-| Protocol kit architecture deep-dive | [#603](https://github.com/pskillen/codeplug-studio/issues/603) | [protocol-kit-architecture.md](protocol-kit-architecture.md) |
-| UV-5R Mini tier-3 stub | [#603](https://github.com/pskillen/codeplug-studio/issues/603) | [docs/reference/baofeng-uv5r-mini/](../../reference/baofeng-uv5r-mini/README.md) |
+| Item                                       | Ticket / PR                                                    | Notes                                                                                          |
+| ------------------------------------------ | -------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
+| DESIGN.md non-goal → intentional WebSerial | [#595](https://github.com/pskillen/codeplug-studio/issues/595) | Attribution requirement                                                                        |
+| Attributions stubs (CHIRP + NeonPlug)      | [#597](https://github.com/pskillen/codeplug-studio/issues/597) | `AttributionsPage` / attributions lib                                                          |
+| Progress docs under `radio-read-write/`    | [#603](https://github.com/pskillen/codeplug-studio/issues/603) | Moved from `import-export/`                                                                    |
+| Protocol kit architecture deep-dive        | [#603](https://github.com/pskillen/codeplug-studio/issues/603) | [protocol-kit-architecture.md](protocol-kit-architecture.md)                                   |
+| UV-5R Mini tier-3 stub                     | [#603](https://github.com/pskillen/codeplug-studio/issues/603) | [docs/reference/radios/baofeng-uv5r-mini/](../../reference/radios/baofeng-uv5r-mini/README.md) |
 
 ## Next
 

@@ -41,7 +41,7 @@ When **Export zone-derived scan lists** is on:
 - With an **empty or missing** layout, every assembled zone is treated as `exportScanList: true` (same spirit as zone assemble’s library fallback) — [#562](https://github.com/pskillen/codeplug-studio/issues/562).
 - Each derived list gets a synthetic **`{zone} Scan`** carrier channel (default 145.500 MHz, or layout `scanCarrierFrequencyHz`), prepended as the first zone member, with `designatedTxChannel` on the scan list set to that carrier number.
 
-When no zone-derived scan lists are produced, DM32UV export still emits one default list (`Scan list 1`) with the first exported channel as a member so NeonPlug’s write filter retains it — see [scan-lists.md](../../../reference/neonplug/scan-lists.md) (#564).
+When no zone-derived scan lists are produced, DM32UV export still emits one default list (`Scan list 1`) with the first exported channel as a member so NeonPlug’s write filter retains it — see [scan-lists.md](../../../reference/formats/neonplug/scan-lists.md) (#564).
 
 ---
 
@@ -56,5 +56,5 @@ When no zone-derived scan lists are produced, DM32UV export still emits one defa
 
 - [neonplug feature hub](README.md)
 - [multi-talkgroup-expansion.md](../../../reference/multi-talkgroup-expansion.md)
-- [channels.md](../../../reference/neonplug/channels.md) · [zones.md](../../../reference/neonplug/zones.md) · [scan-lists.md](../../../reference/neonplug/scan-lists.md)
+- [channels.md](../../../reference/formats/neonplug/channels.md) · [zones.md](../../../reference/formats/neonplug/zones.md) · [scan-lists.md](../../../reference/formats/neonplug/scan-lists.md)
 - Sibling: [dm32/export-projections.md](../dm32/export-projections.md)

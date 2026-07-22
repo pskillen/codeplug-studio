@@ -30,7 +30,7 @@ Canonical reference for channel mode labels, categories, UI pill colours, and fo
 | `tetra` | Tetra  | digital  | `#6741d9` | `indigo.6` |
 | `other` | Other  | other    | `#9c36b5` | `grape.6`  |
 
-OpenGD77 `Channel Type` wire mapping (`Analogue` / `Digital` / passthrough): [opengd77/channels.md](opengd77/channels.md).
+OpenGD77 `Channel Type` wire mapping (`Analogue` / `Digital` / passthrough): [opengd77/channels.md](formats/opengd77/channels.md).
 
 ## Form field applicability
 
@@ -45,11 +45,11 @@ OpenGD77 `Channel Type` wire mapping (`Analogue` / `Digital` / passthrough): [op
 | MCC, MNC, GSSI, color code, talk group ref            | `tetra` profile only                                                                     |
 | (hidden) tones                                        | `isDigitalMode(mode)` — all digital modes                                                |
 
-YSF, D-STAR, P25, NXDN, M17, and Tetra are digital but may lack format-specific CPS columns for some adapters. OpenGD77 mode wire rules: [opengd77/channels.md](opengd77/channels.md).
+YSF, D-STAR, P25, NXDN, M17, and Tetra are digital but may lack format-specific CPS columns for some adapters. OpenGD77 mode wire rules: [opengd77/channels.md](formats/opengd77/channels.md).
 
 ## Multi-mode composition
 
-A logical library channel carries zero or more `ChannelModeProfile` entries (e.g. FM + DMR sharing name and frequencies). Field applicability above applies **per profile**. Format-specific export rules (expand vs collapse) live in per-format reference docs — OpenGD77: [opengd77/multi-mode.md](opengd77/multi-mode.md).
+A logical library channel carries zero or more `ChannelModeProfile` entries (e.g. FM + DMR sharing name and frequencies). Field applicability above applies **per profile**. Format-specific export rules (expand vs collapse) live in per-format reference docs — OpenGD77: [opengd77/multi-mode.md](formats/opengd77/multi-mode.md).
 
 ## Related
 

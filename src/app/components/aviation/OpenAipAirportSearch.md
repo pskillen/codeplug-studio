@@ -32,4 +32,4 @@ export default function AddFromOpenAipPage() {
 ## Related
 
 - [Aviation feature hub](../../../../docs/features/aviation/README.md)
-- [OpenAIP reference](../../../../docs/reference/openaip/README.md)
+- [OpenAIP reference](../../../../docs/reference/remote-directories/openaip/README.md)

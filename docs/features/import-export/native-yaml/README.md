@@ -3,7 +3,7 @@
 Studio's **full-project** portable format: `ProjectMeta`, all library entities, and every `FormatBuild` in one YAML file.
 
 **Tracking:** [#56](https://github.com/pskillen/codeplug-studio/issues/56)–[#60](https://github.com/pskillen/codeplug-studio/issues/60)  
-**Tier 3 schema:** [docs/reference/native-yaml/README.md](../../../reference/native-yaml/README.md)
+**Tier 3 schema:** [docs/reference/formats/native-yaml/README.md](../../../reference/formats/native-yaml/README.md)
 
 **Source:** `src/core/import-export/formats/native-yaml/` · services in `src/core/services/`
 
@@ -76,7 +76,7 @@ Rejected imports throw with a clear message:
 - Broken UUID FK (zone member, contact ref, build selection, trait layout channel id, …)
 - `replaceExisting` when YAML project id ≠ active project id (UI may offer `adoptRemote` instead — Summary **Replace active** panel and Drive refresh)
 
-Nullable model fields may be omitted from YAML or set to `null` — import treats both as `null` (see [tier 3 validation rules](../../../reference/native-yaml/README.md#validation-rules-58)).
+Nullable model fields may be omitted from YAML or set to `null` — import treats both as `null` (see [tier 3 validation rules](../../../reference/formats/native-yaml/README.md#validation-rules-58)).
 
 ## Export path
 

@@ -88,7 +88,7 @@ Redirects: `/library/aprs-configurations` → `/library/aprs-configuration`.
 ## Related
 
 - [data-model](../data-model/README.md) — ER diagram and entity tables
-- [Anytone APRS wire inventory](../../reference/anytone/aprs.md) — tier 3
-- [Anytone per-channel APRS](../../reference/anytone/aprs-on-channels.md) — tier 3
-- [DM32 APRS](../../reference/dm32/aprs.md) — tier 3
-- [NeonPlug APRS](../../reference/neonplug/aprs.md) — tier 3
+- [Anytone APRS wire inventory](../../reference/formats/anytone/aprs.md) — tier 3
+- [Anytone per-channel APRS](../../reference/formats/anytone/aprs-on-channels.md) — tier 3
+- [DM32 APRS](../../reference/formats/dm32/aprs.md) — tier 3
+- [NeonPlug APRS](../../reference/formats/neonplug/aprs.md) — tier 3

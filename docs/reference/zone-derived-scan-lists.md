@@ -3,7 +3,7 @@
 Export-time synthesis of **scan lists** and channel `Scan List` FK wiring from zone configuration. Library `ScanList` CRUD is shipped ([#257](https://github.com/pskillen/codeplug-studio/issues/257)); zone-derived lists are an **optional export projection** alongside manual library scan lists.
 
 **Implementation:** `src/core/import-export/zoneDerivedScanLists/` (DM32) · `src/core/import-export/formats/anytone/zoneDerivedScanLists.ts` (Anytone)  
-**DM32 wire layout:** [dm32/scan-lists.md](dm32/scan-lists.md) · **Anytone:** [anytone/scan-lists.md](anytone/scan-lists.md)
+**DM32 wire layout:** [dm32/scan-lists.md](formats/dm32/scan-lists.md) · **Anytone:** [anytone/scan-lists.md](formats/anytone/scan-lists.md)
 
 ## Two-level gating
 

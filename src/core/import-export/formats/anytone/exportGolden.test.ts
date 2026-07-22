@@ -41,7 +41,7 @@ export function assertUniversallyQuotedCsv(text: string): void {
 
 /**
  * Excluded from row compare: No. (slot assignment), unmodelled Channel.CSV defaults.
- * See docs/reference/anytone/channels.md.
+ * See docs/reference/formats/anytone/channels.md.
  */
 const CHANNEL_EXCLUDE_COLUMNS = [
   'No.',
@@ -98,7 +98,7 @@ const CHANNEL_EXCLUDE_COLUMNS = [
   'Hot Key Mask8',
 ];
 
-/** Modelled APRS.CSV columns — remainder are fixture defaults (see docs/reference/anytone/aprs.md). */
+/** Modelled APRS.CSV columns — remainder are fixture defaults (see docs/reference/formats/anytone/aprs.md). */
 const APRS_MODELED_COLUMNS = new Set([
   'Manual TX Interval[s]',
   'APRS Auto TX Interval[s]',
