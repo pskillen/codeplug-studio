@@ -8,7 +8,7 @@ Living product and architecture reference for **Codeplug Studio**. Agents and co
 
 ## What this is
 
-**Codeplug Studio** is a browser-based designer for amateur radio codeplug layouts. It does **not** write a radio's binary codeplug or replace vendor CPS. Operators design a **library** of channels, talk groups, and contacts, assemble **format-specific builds** for each radio workflow, and export CPS-ready files to import and flash elsewhere.
+**Codeplug Studio** is a browser-based designer for amateur radio codeplug layouts. Operators design a **library** of channels, talk groups, and contacts, assemble **format-specific builds** for each radio workflow, and export CPS-ready files (and, where implemented, write radios directly over Web Serial). Studio does **not** replace vendor CPS as the only programming path — file export and third-party tools (e.g. CHIRP, NeonPlug) remain first-class.
 
 This document may change as we learn.
 
@@ -302,17 +302,23 @@ Aligned with [Epic #1](https://github.com/pskillen/codeplug-studio/issues/1):
 
 ## Non-goals (for now)
 
-- Writing binary codeplugs or USB radio programming
-- Replacing vendor CPS
+- Replacing vendor CPS as the sole programming path (file export and sibling tools stay supported)
 - Cloud backend (browser + optional Drive OAuth only)
 - Perfect merge idempotency or round-trip fidelity
-- Supporting every CPS format — extensible adapter pattern, formats added incrementally
+- Supporting every CPS format or every radio — extensible adapter / protocol pattern; targets added incrementally
+
+### Intentional goals (phased)
+
+- **CPS file interchange** (CSV, YAML, `.neonplug`, …) — shipped and ongoing
+- **Browser radio I/O** (Web Serial / related transports) — planned under epic [#594](https://github.com/pskillen/codeplug-studio/issues/594); protocol work must credit reverse-engineering lineages (CHIRP, NeonPlug) in UI attributions
+- **Target versions** — **CPS version** scopes file/CSV adapters; **firmware version** scopes direct-write ([#593](https://github.com/pskillen/codeplug-studio/issues/593))
 
 ---
 
 ## Revision log
 
-| Date       | Change                                                       |
-| ---------- | ------------------------------------------------------------ |
-| 2026-06-29 | Initial draft on branch `2/pskil/design-md`                  |
-| 2026-06-29 | Build capability traits; bidirectional mapping test strategy |
+| Date       | Change                                                                                                                                  |
+| ---------- | --------------------------------------------------------------------------------------------------------------------------------------- |
+| 2026-07-22 | Browser WebSerial radio I/O as intentional goal; CPS/firmware versions ([#595](https://github.com/pskillen/codeplug-studio/issues/595)) |
+| 2026-06-29 | Initial draft on branch `2/pskil/design-md`                                                                                             |
+| 2026-06-29 | Build capability traits; bidirectional mapping test strategy                                                                            |

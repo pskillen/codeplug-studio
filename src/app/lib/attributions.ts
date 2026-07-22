@@ -83,6 +83,31 @@ export const ATTRIBUTIONS: AttributionEntry[] = [
     termsUrl: 'https://policies.google.com/terms',
     usedIn: ['Settings → Google Drive', 'Summary Drive browser'],
   },
+  {
+    id: 'chirp',
+    name: 'CHIRP',
+    description:
+      'Open-source amateur radio programming tool. Studio’s CHIRP CSV export and future browser radio protocols draw on CHIRP’s documented wire formats and drivers — with thanks to the CHIRP project and contributors.',
+    homeUrl: 'https://chirp.danplanet.com/',
+    termsUrl: 'https://chirp.danplanet.com/projects/chirp/wiki/Download',
+    usedIn: [
+      'CHIRP CSV export (UV-5R Mini, UV-21Pro V2, RT95 VOX)',
+      'Planned Web Serial radio I/O (protocol lineage)',
+    ],
+  },
+  {
+    id: 'neonplug',
+    name: 'NeonPlug',
+    description:
+      'Browser CPS that reads and writes supported radios over Web Serial / BLE. Studio’s .neonplug interchange and planned direct-write work build on NeonPlug’s open MIT-licensed models and protocols — with thanks to the NeonPlug authors.',
+    homeUrl: 'https://neonplug.app/',
+    termsUrl: 'https://github.com/infamy/NeonPlug',
+    usedIn: [
+      'NeonPlug .neonplug export / merge',
+      'Prefer-NeonPlug export hints (DM32, UV-5R)',
+      'Planned Web Serial radio I/O (protocol lineage)',
+    ],
+  },
 ];
 
 export function findAttribution(id: string): AttributionEntry | undefined {

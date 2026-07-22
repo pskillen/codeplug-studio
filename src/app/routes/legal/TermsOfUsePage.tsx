@@ -7,8 +7,9 @@ export default function TermsOfUsePage() {
       <PageSection title="As-is software">
         <Text size="sm">
           Codeplug Studio is provided as-is, without warranty. It helps you design codeplug layouts
-          and export CPS-ready files for vendor programming software. It does not write binary
-          codeplugs to radios directly.
+          and export CPS-ready files for vendor programming software. Where browser radio write (Web
+          Serial) is implemented for a radio, treat it as experimental and verify programming before
+          transmitting — file export and third-party tools remain supported paths.
         </Text>
       </PageSection>
 

@@ -6,8 +6,8 @@ Curate your channels, talk groups, and contacts once, then build a version for e
 
 ## What Codeplug Studio is not
 
-- It doesn't write a radio's binary codeplug or flash anything. Studio designs the layout; your vendor CPS programs the radio.
 - It isn't a replacement for your CPS. Export is a best-effort translation into each format, so a file you export and re-import may not come back identical. See [DESIGN.md](DESIGN.md) for what that means in practice.
+- Direct radio write (Web Serial) is a **planned** capability — until it ships for a given radio, Studio designs the layout and you finish in CHIRP, NeonPlug, or vendor CPS.
 
 ## Try it
 
