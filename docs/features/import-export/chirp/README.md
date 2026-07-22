@@ -81,5 +81,5 @@ DCS / CrossMode export is model-driven from `rxTone`/`txTone` (see [channels.md 
 - [data-model](../../data-model/README.md)
 - [scan-inclusion](../../../reference/scan-inclusion.md)
 - [operator lifecycle](../workflows/operator-lifecycle.md)
-- [Browser radio I/O (later)](../browser-radio-io-progress.md) — WebSerial after CSV MVP
+- [Browser radio I/O](../../radio-read-write/README.md) — WebSerial direct read/write ([#594](https://github.com/pskillen/codeplug-studio/issues/594))
 - [enum-verification](../../../reference/chirp/enum-verification.md)
