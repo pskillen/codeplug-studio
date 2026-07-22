@@ -21,6 +21,7 @@ import ExportWarningsAlert from './ExportWarningsAlert.tsx';
 import Dm32PreferNeonPlugAlert from './Dm32PreferNeonPlugAlert.tsx';
 import ChirpUv5rPreferNeonPlugAlert from './ChirpUv5rPreferNeonPlugAlert.tsx';
 import Dm32AprsSetupAlert from './Dm32AprsSetupAlert.tsx';
+import BuildRadioIoPanel from './BuildRadioIoPanel.tsx';
 import { saveDriveLastFolderId, saveDriveLastFolderPath } from '@integrations/cloud/drivePrefs.ts';
 import DriveBrowserModal, { type DriveSaveTarget } from '../import-export/DriveBrowserModal.tsx';
 import GoogleDriveActionButton from '../import-export/GoogleDriveActionButton.tsx';
@@ -505,6 +506,7 @@ export default function ExportBuildCpsPanel({ build }: ExportBuildCpsPanelProps)
       {error ? <Alert color="red">{error}</Alert> : null}
       {showDm32PreferNeonPlug ? <Dm32AprsSetupAlert exportFileNames={exportFileNames} /> : null}
       {exportWarnings.length > 0 ? <ExportWarningsAlert warnings={exportWarnings} /> : null}
+      <BuildRadioIoPanel build={build} />
       {isNeonplug ? (
         <Stack gap="md">
           <Stack gap="xs">

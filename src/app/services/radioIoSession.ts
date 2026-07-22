@@ -4,8 +4,7 @@
  */
 
 import type { FormatBuild } from '@core/models/formatBuild.ts';
-import type { Library } from '@core/models/library.ts';
-import { assemble } from '@core/services/assemble.ts';
+import { assemble, type LibrarySlice } from '@core/services/assemble.ts';
 import {
   isRadioCloneHydrationBag,
   type RadioCloneHydrationBag,
@@ -122,7 +121,7 @@ export class RadioWriteBlockedError extends Error {
 export async function writeBuildToRadio(
   session: RadioSession,
   build: FormatBuild,
-  library: Library,
+  library: LibrarySlice,
   opts?: { onProgress?: ProgressFn; signal?: AbortSignal },
 ): Promise<void> {
   const hydration = getRadioCloneHydration(build);

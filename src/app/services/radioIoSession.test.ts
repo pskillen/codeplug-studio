@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { newChannel, newFormatBuild } from '@core/domain/factories.ts';
-import type { Library } from '@core/models/library.ts';
+import type { LibrarySlice } from '@core/services/assemble.ts';
 import { createRadioCloneHydrationBag } from '@core/models/radioCloneHydration.ts';
 import { UV5R_MINI_MEM_TOTAL } from '@integrations/radio-io/radios/uv5r-mini/constants.ts';
 import type {
@@ -16,7 +16,7 @@ import {
   writeBuildToRadio,
 } from './radioIoSession.ts';
 
-function emptyLibrary(channels: Library['channels'] = []): Library {
+function emptyLibrary(channels: LibrarySlice['channels'] = []): LibrarySlice {
   return {
     channels,
     zones: [],
@@ -26,8 +26,6 @@ function emptyLibrary(channels: Library['channels'] = []): Library {
     analogContacts: [],
     rxGroupLists: [],
     aprsConfiguration: null,
-    channelDefaults: {},
-    zoneDefaults: {},
   };
 }
 
