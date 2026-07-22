@@ -7,9 +7,9 @@
 
 ## Limits
 
-| Constraint       | Value | Source |
-| ---------------- | ----- | ------ |
-| Max memory slots | 1000  | UV17Pro `CHANNELS` |
+| Constraint       | Value | Source                |
+| ---------------- | ----- | --------------------- |
+| Max memory slots | 1000  | UV17Pro `CHANNELS`    |
 | Channel name     | 12    | UV17Pro `LENGTH_NAME` |
 
 ## Power ladder (wire → percent)

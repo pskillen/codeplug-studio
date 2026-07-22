@@ -6,18 +6,18 @@
 
 ## Status
 
-| Milestone | Status | Notes |
-| --- | --- | --- |
-| Milestone 1 — CHIRP CSV fidelity | In flight / landing | Source-backed caps + enum-verification + cps-verify for three profiles |
-| Milestone 2 — WebSerial direct read/write | **Not started** | Architecture spike only until CSV MVP closes |
+| Milestone                                 | Status              | Notes                                                                  |
+| ----------------------------------------- | ------------------- | ---------------------------------------------------------------------- |
+| Milestone 1 — CHIRP CSV fidelity          | In flight / landing | Source-backed caps + enum-verification + cps-verify for three profiles |
+| Milestone 2 — WebSerial direct read/write | **Not started**     | Architecture spike only until CSV MVP closes                           |
 
 ## Shipped (foundation)
 
-| Item | Ticket / PR | Notes |
-| --- | --- | --- |
-| DESIGN.md non-goal → intentional WebSerial | [#595](https://github.com/pskillen/codeplug-studio/issues/595) | Attribution requirement |
-| Attributions stubs (CHIRP + NeonPlug) | [#597](https://github.com/pskillen/codeplug-studio/issues/597) | `AttributionsPage` / attributions lib |
-| `cpsVersion` / `firmwareVersion` on builds | [#596](https://github.com/pskillen/codeplug-studio/issues/596) | Firmware gates future radio I/O |
+| Item                                       | Ticket / PR                                                    | Notes                                 |
+| ------------------------------------------ | -------------------------------------------------------------- | ------------------------------------- |
+| DESIGN.md non-goal → intentional WebSerial | [#595](https://github.com/pskillen/codeplug-studio/issues/595) | Attribution requirement               |
+| Attributions stubs (CHIRP + NeonPlug)      | [#597](https://github.com/pskillen/codeplug-studio/issues/597) | `AttributionsPage` / attributions lib |
+| `cpsVersion` / `firmwareVersion` on builds | [#596](https://github.com/pskillen/codeplug-studio/issues/596) | Firmware gates future radio I/O       |
 
 ## Next (do not implement product WebSerial yet)
 

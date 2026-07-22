@@ -7,9 +7,9 @@
 
 ## Limits
 
-| Constraint       | Value | Source |
-| ---------------- | ----- | ------ |
-| Max memory slots | 200   | `memory_bounds=(1, 200)` |
+| Constraint       | Value | Source                                 |
+| ---------------- | ----- | -------------------------------------- |
+| Max memory slots | 200   | `memory_bounds=(1, 200)`               |
 | Channel name     | 6     | `NAME_LENGTH` on `AnyTone778UVvoxBase` |
 
 ## Power ladder (wire → percent)
