@@ -53,8 +53,8 @@ describe('getProfileExportLimits', () => {
 
   it.each([
     { profileId: 'chirp-uv5r', maxChannels: 999, nameLengthChannel: 12 },
-    { profileId: 'chirp-uv21', maxChannels: 128, nameLengthChannel: 16 },
-    { profileId: 'chirp-rt95', maxChannels: 128, nameLengthChannel: 16 },
+    { profileId: 'chirp-uv21', maxChannels: 1000, nameLengthChannel: 12 },
+    { profileId: 'chirp-rt95', maxChannels: 200, nameLengthChannel: 6 },
   ] as const)(
     'marks $profileId organisation limits as not used with profile memory/name caps',
     ({ profileId, maxChannels, nameLengthChannel }) => {

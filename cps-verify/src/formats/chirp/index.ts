@@ -4,7 +4,8 @@
  * Tier-3 documentation sources:
  * - docs/reference/chirp/README.md
  * - docs/reference/chirp/channels.md
- * - docs/reference/chirp/radios/chirp-uv5r.md
+ * - docs/reference/chirp/enum-verification.md
+ * - docs/reference/chirp/radios/
  */
 
 import { csvToTable } from '../../../../src/core/import-export/csvParse.ts';

@@ -6,10 +6,10 @@ External **wire-shape** checks for CPS CSV bundles (directory or ZIP). Complemen
 
 ## Terminology
 
-| Term                  | Field       | Examples                                                                  |
-| --------------------- | ----------- | ------------------------------------------------------------------------- |
-| **Format**            | `formatId`  | `anytone`, `dm32`, `opengd77`, `chirp`                                    |
-| **Variant / profile** | `profileId` | `anytone-at-d890uv`, `dm32-baofeng-dm32uv`, `opengd77-1701`, `chirp-uv5r` |
+| Term                  | Field       | Examples                                                                                                |
+| --------------------- | ----------- | ------------------------------------------------------------------------------------------------------- |
+| **Format**            | `formatId`  | `anytone`, `dm32`, `opengd77`, `chirp`                                                                  |
+| **Variant / profile** | `profileId` | `anytone-at-d890uv`, `dm32-baofeng-dm32uv`, `opengd77-1701`, `chirp-uv5r` / `chirp-uv21` / `chirp-rt95` |
 
 Fixtures and plugins are **profile-scoped** so sibling radios (e.g. future AT-D878) do not collide.
 
@@ -79,22 +79,22 @@ test-data/export-smoke/rich-project.yaml
   → it.each(CheckOutcome)
 ```
 
-| Piece               | Path                                                                                            |
-| ------------------- | ----------------------------------------------------------------------------------------------- |
-| Native YAML fixture | [`test-data/export-smoke/rich-project.yaml`](../../../test-data/export-smoke/rich-project.yaml) |
-| Harness             | [`cps-verify/tests/export-smoke.test.ts`](../../../cps-verify/tests/export-smoke.test.ts)       |
-| Profiles            | `anytone-at-d890uv`, `dm32-baofeng-dm32uv`, `opengd77-1701`, `chirp-uv5r`                       |
+| Piece               | Path                                                                                                  |
+| ------------------- | ----------------------------------------------------------------------------------------------------- |
+| Native YAML fixture | [`test-data/export-smoke/rich-project.yaml`](../../../test-data/export-smoke/rich-project.yaml)       |
+| Harness             | [`cps-verify/tests/export-smoke.test.ts`](../../../cps-verify/tests/export-smoke.test.ts)             |
+| Profiles            | `anytone-at-d890uv`, `dm32-baofeng-dm32uv`, `opengd77-1701`, `chirp-uv5r`, `chirp-uv21`, `chirp-rt95` |
 
 Same core serialisation as UI **Download ZIP** (`exportBuildZip`); IndexedDB and browser download are not involved. Multi-file formats unzip in-memory so ZIP packaging is exercised.
 
 ## Formats / profiles
 
-| Format     | Profile (default)     | Status  | Notes                              |
-| ---------- | --------------------- | ------- | ---------------------------------- |
-| `anytone`  | `anytone-at-d890uv`   | Shipped | Universal quoting + CRLF           |
-| `dm32`     | `dm32-baofeng-dm32uv` | Shipped | Selective quoting + CRLF           |
-| `opengd77` | `opengd77-1701`       | Shipped | Selective quoting + LF             |
-| `chirp`    | `chirp-uv5r`          | Shipped | Single CSV; selective quoting + LF |
+| Format     | Profile (default)                              | Status  | Notes                              |
+| ---------- | ---------------------------------------------- | ------- | ---------------------------------- |
+| `anytone`  | `anytone-at-d890uv`                            | Shipped | Universal quoting + CRLF           |
+| `dm32`     | `dm32-baofeng-dm32uv`                          | Shipped | Selective quoting + CRLF           |
+| `opengd77` | `opengd77-1701`                                | Shipped | Selective quoting + LF             |
+| `chirp`    | `chirp-uv5r` (also `chirp-uv21`, `chirp-rt95`) | Shipped | Single CSV; selective quoting + LF |
 
 ## Adding a format / profile plugin
 

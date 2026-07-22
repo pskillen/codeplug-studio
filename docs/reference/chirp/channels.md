@@ -2,7 +2,9 @@
 
 Wire column reference for the single CHIRP memory CSV. Per-radio memory and power limits: [radios/](radios/README.md).
 
-**Code:** [`columns.ts`](../../../src/core/import-export/formats/chirp/columns.ts) · [`parse.ts`](../../../src/core/import-export/formats/chirp/parse.ts) · [`channelWire.ts`](../../../src/core/import-export/formats/chirp/channelWire.ts) (import) · [`channelWire.ts`](../../../src/core/import-export/formats/chirp/channelWire.ts) (export) · [`profiles.ts`](../../../src/core/import-export/formats/chirp/profiles.ts)
+**Code:** [`columns.ts`](../../../src/core/import-export/formats/chirp/columns.ts) · [`channelWire.ts`](../../../src/core/import-export/formats/chirp/channelWire.ts) · [`profiles.ts`](../../../src/core/import-export/formats/chirp/profiles.ts)
+
+**CHIRP source:** header order matches `Memory.CSV_FORMAT` in `chirp_common.py` — see [enum-verification.md](enum-verification.md).
 
 Import and export require a **radio profile** (`profileId`) for the power ladder.
 
@@ -39,7 +41,7 @@ Parse by **header name**, not column index.
 
 ## Export name length and shortening
 
-CHIRP `Name` is the composed wire name (`composeChannelWireName`). Profile `nameLimit` varies (e.g. **12** on UV-5R mini, **16** on UV-21 Pro V2). Shortening runs per export file with a shared reserved-name set. See name shortening (Phase 4+).
+CHIRP `Name` is the composed wire name (`composeChannelWireName`). Profile `nameLimit` varies by radio (UV-5R Mini / UV-21Pro V2: **12**; RT95 VOX: **6** — CHIRP driver caps). Shortening runs per export file with a shared reserved-name set.
 
 ## Duplex
 

@@ -1,4 +1,7 @@
-/** CHIRP CSV column headers — shared between import and export adapters. */
+/**
+ * CHIRP CSV column headers — shared between import and export adapters.
+ * Order matches CHIRP `Memory.CSV_FORMAT` in `chirp_common.py`.
+ */
 
 import type { ImportEntityKind } from '../../types.ts';
 

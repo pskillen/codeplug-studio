@@ -13,19 +13,20 @@ export interface ChirpRadioProfile {
   powerLadder: readonly PowerLadderEntry[];
 }
 
-const UV5R_LADDER: readonly PowerLadderEntry[] = [
+/** UV-17Pro family High 5 W / Low 1 W — CHIRP `PowerLevel` labels High/Low; CSV uses watt strings. */
+const UV17PRO_LADDER: readonly PowerLadderEntry[] = [
   { percent: 100, wire: '5.0W', approxWatts: '5 W' },
   { percent: 20, wire: '1.0W', approxWatts: '1 W' },
 ];
 
-const UV21_LADDER: readonly PowerLadderEntry[] = [
-  { percent: 83, wire: '5.0W', approxWatts: '5 W' },
-  { percent: 17, wire: '1.0W', approxWatts: '1 W' },
-];
-
+/**
+ * RT95 VOX — CHIRP `POWER_LEVELS` Low/Medium/High at ~5/10/25 W (`anytone778uv.py`).
+ * Studio exports Generic CSV watt strings (fixtures + `parse_power`).
+ */
 const RT95_LADDER: readonly PowerLadderEntry[] = [
   { percent: 100, wire: '25W', approxWatts: '25 W' },
   { percent: 40, wire: '10W', approxWatts: '10 W' },
+  { percent: 20, wire: '5.0W', approxWatts: '5 W' },
 ];
 
 export const CHIRP_PROFILES: readonly ChirpRadioProfile[] = [
@@ -33,24 +34,29 @@ export const CHIRP_PROFILES: readonly ChirpRadioProfile[] = [
     id: 'chirp-uv5r',
     label: 'Baofeng UV-5R Mini',
     defaultFileName: 'Baofeng_UV-5R Mini_export.csv',
+    /** CHIRP `UV5RMini.CHANNELS` */
     maxMemorySlots: 999,
+    /** CHIRP UV17Pro `LENGTH_NAME` */
     nameLimit: 12,
-    powerLadder: UV5R_LADDER,
+    powerLadder: UV17PRO_LADDER,
   },
   {
     id: 'chirp-uv21',
     label: 'Baofeng UV-21Pro V2',
     defaultFileName: 'Baofeng_UV-21ProV2_export.csv',
-    maxMemorySlots: 128,
-    nameLimit: 16,
-    powerLadder: UV21_LADDER,
+    /** CHIRP `UV17Pro.CHANNELS` (UV21ProV2 inherits) */
+    maxMemorySlots: 1000,
+    nameLimit: 12,
+    powerLadder: UV17PRO_LADDER,
   },
   {
     id: 'chirp-rt95',
     label: 'Retevis RT95 VOX',
     defaultFileName: 'Retevis_RT95 VOX_export.csv',
-    maxMemorySlots: 128,
-    nameLimit: 16,
+    /** CHIRP `memory_bounds` (1, 200) */
+    maxMemorySlots: 200,
+    /** CHIRP `AnyTone778UVvoxBase.NAME_LENGTH` */
+    nameLimit: 6,
     powerLadder: RT95_LADDER,
   },
 ] as const;
