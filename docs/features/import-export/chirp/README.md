@@ -12,7 +12,9 @@ Product behaviour for CHIRP analogue FM/AM CSV in Codeplug Studio. Wire column t
 | --------------------------------------------------------- | ------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Wire reference                                            | Shipped | [reference/chirp/](../../../reference/chirp/README.md)                                                                                                                                  |
 | Trait profiles (`chirp-uv5r`, `chirp-rt95`, `chirp-uv21`) | Shipped | `TRAIT_PROFILES` — `FlatMemoryList`, `PerChannelScanFlag`                                                                                                                               |
-| Radio profiles + columns                                  | Shipped | `formats/chirp/profiles.ts`, `columns.ts` — UV-5R Mini caps corrected to 999 / 12 ([#584](https://github.com/pskillen/codeplug-studio/issues/584))                                      |
+| Radio profiles + columns                                  | Shipped | `formats/chirp/profiles.ts`, `columns.ts` — caps from CHIRP drivers ([#598](https://github.com/pskillen/codeplug-studio/issues/598)): UV-5R 999/12, UV-21 1000/12, RT95 200/6 |
+| Enum / column verification                                | Shipped | [enum-verification.md](../../../reference/chirp/enum-verification.md)                                                                                                                   |
+| cps-verify (uv5r, uv21, rt95)                             | Shipped | `cps-verify/fixtures/chirp/`                                                                                                                                                            |
 | Flat memory assemble projection                           | Shipped | `exportOrderOrSlot.ts`, `assemble.ts` — `orderOrSlot` on overrides                                                                                                                      |
 | Export adapter (single CSV)                               | Shipped | `exportBuildSingleFile` → `serialiseChirpCsv`                                                                                                                                           |
 | Channels build UI                                         | Shipped | `/builds/:id/channels` — flat memory list, wire names, scan tri-state                                                                                                                   |
@@ -33,8 +35,8 @@ Studio uses two related concepts (same `profileId` keys):
 | Profile id   | Label               | Name limit | Memory slots |
 | ------------ | ------------------- | ---------- | ------------ |
 | `chirp-uv5r` | Baofeng UV-5R Mini  | 12         | 999          |
-| `chirp-rt95` | Retevis RT95 VOX    | 16         | 128          |
-| `chirp-uv21` | Baofeng UV-21Pro V2 | 16         | 128          |
+| `chirp-uv21` | Baofeng UV-21Pro V2 | 12         | 1000         |
+| `chirp-rt95` | Retevis RT95 VOX    | 6          | 200          |
 
 Per-radio wire detail: [docs/reference/chirp/radios/](../../../reference/chirp/radios/README.md).
 
@@ -75,3 +77,5 @@ For **UV-5R Mini** (`chirp-uv5r`), the export page shows a soft hint that CHIRP 
 - [data-model](../../data-model/README.md)
 - [scan-inclusion](../../../reference/scan-inclusion.md)
 - [operator lifecycle](../workflows/operator-lifecycle.md)
+- [Browser radio I/O (later)](../browser-radio-io-progress.md) — WebSerial after CSV MVP
+- [enum-verification](../../../reference/chirp/enum-verification.md)

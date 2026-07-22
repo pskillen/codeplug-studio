@@ -24,12 +24,14 @@ Flat-memory CHIRP profiles do **not** use zones, scan lists, contacts, talk grou
 
 ## Power ladder (wire → percent)
 
-Percent = watts ÷ 5 W max. `null` internal percent exports as high (`5.0W`).
+Percent aligned to CHIRP UV17Pro High 5 W / Low 1 W (`baofeng_uv17Pro.py` / `UV5RMini`). Studio exports Generic CSV **watt** strings. `null` internal percent exports as high (`5.0W`).
 
 | Wire   | Watts | Percent |
 | ------ | ----- | ------- |
 | `5.0W` | 5 W   | 100     |
 | `1.0W` | 1 W   | 20      |
+
+**Re-verified** against CHIRP source after UV-5R Mini cap fix ([#584](https://github.com/pskillen/codeplug-studio/issues/584) / [#602](https://github.com/pskillen/codeplug-studio/issues/602)): `CHANNELS=999`, `LENGTH_NAME=12`.
 
 ## Filename convention
 

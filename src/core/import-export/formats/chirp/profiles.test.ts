@@ -24,9 +24,24 @@ describe('chirp/profiles', () => {
     expect(chirpPercentToWire('chirp-uv5r', null)).toBe('5.0W');
   });
 
+  it('UV-21Pro V2 uses 1000 memory slots and 12-char names (UV17Pro family)', () => {
+    const profile = getChirpProfile('chirp-uv21');
+    expect(profile.maxMemorySlots).toBe(1000);
+    expect(profile.nameLimit).toBe(12);
+    expect(chirpWireToPercent('chirp-uv21', '5.0W')).toBe(100);
+    expect(chirpWireToPercent('chirp-uv21', '1.0W')).toBe(20);
+  });
+
+  it('RT95 VOX uses 200 memory slots and 6-char names', () => {
+    const profile = getChirpProfile('chirp-rt95');
+    expect(profile.maxMemorySlots).toBe(200);
+    expect(profile.nameLimit).toBe(6);
+  });
+
   it('RT95 power ladder round-trips', () => {
     expect(chirpWireToPercent('chirp-rt95', '25W')).toBe(100);
     expect(chirpWireToPercent('chirp-rt95', '10W')).toBe(40);
+    expect(chirpWireToPercent('chirp-rt95', '5.0W')).toBe(20);
     expect(chirpPercentToWire('chirp-rt95', null)).toBe('25W');
   });
 
