@@ -146,16 +146,19 @@ interface RadioSession {
 
 “Clone image” is the **storage model**. Wire **codecs** differ by family:
 
-| Codec                       | Wire idea                                                            | First Studio need          | CHIRP / NeonPlug anchors                                           |
-| --------------------------- | -------------------------------------------------------------------- | -------------------------- | ------------------------------------------------------------------ |
-| **PROGRAM + R/W**           | Ident string (e.g. `PROGRAMCOLORPROU`) → `R`/`W` blocks + ACK `0x06` | **UV-5R Mini (MVP)**       | CHIRP `baofeng_uv17Pro.py`; NeonPlug `uv5rmini/baofengProtocol.ts` |
-| **S/X blocks**              | Magic ident → `S`/`X` frames                                         | Classic UV-5R later        | CHIRP `baofeng_common.py`, `uv5r.py`                               |
-| **V-probe**                 | `0x56` (“V”) frames for memsize/map                                  | UV-17 lineage / DM-32 info | CHIRP `baofeng_uv17.py`; NeonPlug `dm32uv/`                        |
-| **Stream clone**            | Contiguous dump + ACK, echo-strip                                    | Yaesu FT-65 family later   | CHIRP `yaesu_clone.py`; NeonPlug `ft65/`                           |
-| **ICF frames**              | `\xFE\xFE`…`\xFD`                                                    | Out of MVP                 | CHIRP `icf.py`                                                     |
-| **Kenwood PROGRAM + R/W/Z** | `PROGRAM` then framed blocks                                         | Out of MVP                 | CHIRP `tk760g.py` et al.                                           |
+| Codec                              | Wire idea                                                            | Studio status                                              | Anchors                                                                  |
+| ---------------------------------- | -------------------------------------------------------------------- | ---------------------------------------------------------- | ------------------------------------------------------------------------ |
+| **PROGRAM + R/W**                  | Ident string → `R`/`W` blocks + ACK `0x06`                           | **Shipped** `#616` (`BlockCodec`) — UV-5R Mini path        | CHIRP `baofeng_uv17Pro.py`; NeonPlug `uv5rmini/baofengProtocol.ts`       |
+| **V-probe**                        | `0x56` (“V”) + u32 BE param; typed variable reply                    | **Shipped** `#630` (**sibling surface**, not `BlockCodec`) | CHIRP `baofeng_uv17.py`; NeonPlug `dm32uv/`                              |
+| **OpenGD77 / OpenUV380 serial**    | ASCII `C`/`R`/`W`/`X` (Command/Read/Write GD-77 / Write UV380)       | **Shipped** `#631` (**sibling surface**, not `BlockCodec`) | qdmr `opengd77_interface`; [opengd77/protocol.md](../../reference/radios/opengd77/protocol.md) |
+| **S/X blocks**                     | Magic ident → `S`/`X` frames                                         | Deferred — classic UV-5R                                   | CHIRP `baofeng_common.py`, `uv5r.py`                                     |
+| **Stream clone**                   | Contiguous dump + ACK, echo-strip                                    | Later — Yaesu FT-65 family                                 | CHIRP `yaesu_clone.py`; NeonPlug `ft65/`                                 |
+| **ICF frames**                     | `\xFE\xFE`…`\xFD`                                                    | Out of MVP                                                 | CHIRP `icf.py`                                                           |
+| **Kenwood PROGRAM + R/W/Z**        | `PROGRAM` then framed blocks                                         | Out of MVP                                                 | CHIRP `tk760g.py` et al.                                                 |
 
-**Spike decision:** implement **PROGRAM + R/W** first (shared kit codec). Add **S/X** as a sibling codec when classic UV-5R direct-write is scheduled. Do **not** shape the kit around DM-32’s V-frame + 4KB block discovery.
+**Surface choice:** only PROGRAM+R/W implements `BlockCodec` (addr/length R/W). V-probe has no write and is not block-shaped; OpenGD77 needs mem-region codes, multi-step flash writes, and dual ACK semantics — both are dedicated sibling modules under `kit/codecs/`.
+
+**Spike decision (historical):** implement **PROGRAM + R/W** first. Do **not** shape the kit around DM-32’s V-frame + 4KB block discovery (discovery stays in radio modules). Add **S/X** when classic UV-5R direct-write is scheduled.
 
 ---
 
@@ -270,7 +273,9 @@ src/integrations/radio-io/
     progress.ts
     errors.ts
     codecs/
-      programRw.ts        # shipped #616 (no XOR/magics)
+      programRw.ts        # shipped #616 (BlockCodec; no XOR/magics)
+      vProbe.ts           # shipped #630 (sibling surface)
+      opengd77Serial.ts   # shipped #631 (sibling surface; C/R/W/X)
       sxBlocks.ts         # later
   radios/
     uv5r-mini/            # #617
@@ -283,7 +288,7 @@ src/integrations/radio-io/
   index.ts
 ```
 
-**Shipped:** transport + kit core ([#615](https://github.com/pskillen/codeplug-studio/issues/615), [#616](https://github.com/pskillen/codeplug-studio/issues/616)). **Next:** UV-5R Mini adapter [#617](https://github.com/pskillen/codeplug-studio/issues/617), UI [#618](https://github.com/pskillen/codeplug-studio/issues/618), firmware gate [#619](https://github.com/pskillen/codeplug-studio/issues/619). Listed in [browser-radio-io-outstanding.md](browser-radio-io-outstanding.md).
+**Shipped:** transport + kit core + sibling codecs ([#615](https://github.com/pskillen/codeplug-studio/issues/615)–[#616](https://github.com/pskillen/codeplug-studio/issues/616), [#630](https://github.com/pskillen/codeplug-studio/issues/630), [#631](https://github.com/pskillen/codeplug-studio/issues/631)). **Next:** UV-5R Mini adapter [#617](https://github.com/pskillen/codeplug-studio/issues/617), UI [#618](https://github.com/pskillen/codeplug-studio/issues/618), firmware gate [#619](https://github.com/pskillen/codeplug-studio/issues/619); OpenGD77 adapters [#624](https://github.com/pskillen/codeplug-studio/issues/624)/[#625](https://github.com/pskillen/codeplug-studio/issues/625) (depend on #631). Listed in [browser-radio-io-outstanding.md](browser-radio-io-outstanding.md).
 
 ## Related
 
