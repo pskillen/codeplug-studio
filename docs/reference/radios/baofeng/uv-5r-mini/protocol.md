@@ -8,20 +8,20 @@ Cite: NeonPlug `baofengProtocol.ts`, `serialConnection.ts`, `constants.ts`; CHIR
 
 ## Identity
 
-| Item | Value |
-| ---- | ----- |
-| Ident (16 ASCII) | `PROGRAMCOLORPROU` (`MSTRING_UV17PROGPS`) |
-| ACK / fingerprint | `0x06` |
-| Block size | `0x40` |
-| Read opcode | `0x52` (`R`) |
-| Write opcode | `0x57` (`W`) |
-| Crypt | XOR with symbol table; default **`encrsym = 1`** (`"CO 7"`) |
+| Item              | Value                                                       |
+| ----------------- | ----------------------------------------------------------- |
+| Ident (16 ASCII)  | `PROGRAMCOLORPROU` (`MSTRING_UV17PROGPS`)                   |
+| ACK / fingerprint | `0x06`                                                      |
+| Block size        | `0x40`                                                      |
+| Read opcode       | `0x52` (`R`)                                                |
+| Write opcode      | `0x57` (`W`)                                                |
+| Crypt             | XOR with symbol table; default **`encrsym = 1`** (`"CO 7"`) |
 
 ## Baud (documented disagreement)
 
-| Source | Baud |
-| ------ | ---- |
-| NeonPlug `UV5RMINI_BAUD_RATE` | **38400** |
+| Source                                             | Baud       |
+| -------------------------------------------------- | ---------- |
+| NeonPlug `UV5RMINI_BAUD_RATE`                      | **38400**  |
 | CHIRP `UV17Pro.BAUD_RATE` (Mini does not override) | **115200** |
 
 **Studio first Web Serial path:** prefer NeonPlug **38400** (browser lineage) and verify on hardware; document both so agents do not silently pick one.
@@ -34,11 +34,11 @@ Cite: NeonPlug `baofengProtocol.ts`, `serialConnection.ts`, `constants.ts`; CHIR
 
 ### Magics (NeonPlug)
 
-| Step | Payload | Expect |
-| ---- | ------- | ------ |
-| 1 | `0x46` (`F`) | 16 bytes |
-| 2 | `0x4d` (`M`) | 15 bytes |
-| 3 | `SEND!` + trailer; **last byte `0x00` = read**, **`0x01` = upload** | 1 byte |
+| Step | Payload                                                             | Expect   |
+| ---- | ------------------------------------------------------------------- | -------- |
+| 1    | `0x46` (`F`)                                                        | 16 bytes |
+| 2    | `0x4d` (`M`)                                                        | 15 bytes |
+| 3    | `SEND!` + trailer; **last byte `0x00` = read**, **`0x01` = upload** | 1 byte   |
 
 CHIRP `_do_ident` uses the same ident + fingerprint, then magics with **last byte `0x00` for both** download and upload (no separate upload trailer).
 

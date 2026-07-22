@@ -22,16 +22,16 @@ Handheld analogue FM/AM radio (UV-17Pro lineage). Studio targets it via CHIRP CS
 
 ## Documentation map
 
-| Doc                                  | Contents                                                              |
-| ------------------------------------ | --------------------------------------------------------------------- |
-| [limits.md](limits.md)               | Memory slots, name length                                             |
-| [capabilities.md](capabilities.md)   | Modes, organisation traits, RF summary                                |
-| [power.md](power.md)                 | High / Low ladder (internal %)                                        |
-| [memory-layout.md](memory-layout.md) | Multi-region image map, packed offsets, not classic S/X               |
-| [channel-record.md](channel-record.md) | 32-byte channel layout + enums                                      |
-| [settings.md](settings.md)           | VFO / settings / ANI / PTT regions; upload-scope notes                |
-| [protocol.md](protocol.md)           | Ident, magics, R/W frames, XOR crypt, baud disagreement               |
-| [fixtures.md](fixtures.md)           | How to capture dumps for tests without committing personal codeplugs  |
+| Doc                                    | Contents                                                             |
+| -------------------------------------- | -------------------------------------------------------------------- |
+| [limits.md](limits.md)                 | Memory slots, name length                                            |
+| [capabilities.md](capabilities.md)     | Modes, organisation traits, RF summary                               |
+| [power.md](power.md)                   | High / Low ladder (internal %)                                       |
+| [memory-layout.md](memory-layout.md)   | Multi-region image map, packed offsets, not classic S/X              |
+| [channel-record.md](channel-record.md) | 32-byte channel layout + enums                                       |
+| [settings.md](settings.md)             | VFO / settings / ANI / PTT regions; upload-scope notes               |
+| [protocol.md](protocol.md)             | Ident, magics, R/W frames, XOR crypt, baud disagreement              |
+| [fixtures.md](fixtures.md)             | How to capture dumps for tests without committing personal codeplugs |
 
 ## Adapter wire (files)
 

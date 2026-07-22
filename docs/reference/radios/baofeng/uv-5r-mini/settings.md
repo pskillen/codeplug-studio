@@ -10,15 +10,15 @@ Cite: NeonPlug `settingsFormat.ts`, `protocol.ts`; CHIRP `UV5RMini` / `_mem_para
 
 NeonPlug documents (CHIRP-aligned):
 
-| Packed offset | Role |
-| ------------- | ---- |
-| `0x8000` | VFO A (32 bytes) |
-| `0x8020` | VFO B (32 bytes) |
-| `0x8040` | Settings (64 bytes) |
-| `0x8080` | ANI |
-| `0x80A0` | PTT ID |
-| `0x81E0` | Upcode |
-| `0x8210` | Downcode |
+| Packed offset | Role                |
+| ------------- | ------------------- |
+| `0x8000`      | VFO A (32 bytes)    |
+| `0x8020`      | VFO B (32 bytes)    |
+| `0x8040`      | Settings (64 bytes) |
+| `0x8080`      | ANI                 |
+| `0x80A0`      | PTT ID              |
+| `0x81E0`      | Upcode              |
+| `0x8210`      | Downcode            |
 
 CHIRP `_mem_params` places `ani=0x8080`, `pttid=0x80A0` on the same packed map. Modes / end-format seek around `0x8220`.
 
@@ -28,20 +28,20 @@ NeonPlug parses squelch, save mode, VOX, backlight, dual watch, TOT, beep, voice
 
 ## Upload behaviours (document both)
 
-| Behaviour | NeonPlug | CHIRP |
-| --------- | -------- | ----- |
-| Full clone **read** | All three `MEM_*` regions → packed `0x8240` | Same |
-| Full clone **upload** | Not the default path | Writes **all** `MEM_STARTS` / `MEM_SIZES` |
-| Channel write | After upload handshake, writes radio addrs `0 … 0x7CE0` only (`999 × 32`) | Full multi-region |
-| Settings write | Read-modify-write one 64-byte block | Part of full upload |
+| Behaviour             | NeonPlug                                                                  | CHIRP                                     |
+| --------------------- | ------------------------------------------------------------------------- | ----------------------------------------- |
+| Full clone **read**   | All three `MEM_*` regions → packed `0x8240`                               | Same                                      |
+| Full clone **upload** | Not the default path                                                      | Writes **all** `MEM_STARTS` / `MEM_SIZES` |
+| Channel write         | After upload handshake, writes radio addrs `0 … 0x7CE0` only (`999 × 32`) | Full multi-region                         |
+| Settings write        | Read-modify-write one 64-byte block                                       | Part of full upload                       |
 
 **Studio implication:** Prefer NeonPlug-style **channel-span** (and optional settings RMW) with a **cached full image** so VFO/settings/ANI survive channel uploads — matches adapter [#617](https://github.com/pskillen/codeplug-studio/issues/617) “safe upload ranges / cache image”.
 
 ## Packed `0x8040` vs radio address caveat
 
-| Context | Address used |
-| ------- | ------------ |
-| Packed image parse | Image offset `0x8040` (= radio **`0x9000`** via region map) |
+| Context                       | Address used                                                    |
+| ----------------------------- | --------------------------------------------------------------- |
+| Packed image parse            | Image offset `0x8040` (= radio **`0x9000`** via region map)     |
 | NeonPlug `writeRadioSettings` | `readBlock` / `writeBlock` with addr **`0x8040`** (radio space) |
 
 Those are **not** the same physical region under the `MEM_*` map. Documented as **verify-on-hardware** debt for #617 — do not assume NeonPlug’s settings-write address is correct without a radio check.

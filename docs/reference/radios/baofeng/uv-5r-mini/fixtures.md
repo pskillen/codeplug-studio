@@ -13,12 +13,12 @@ How to obtain binary dumps for **directional** codec tests without committing pe
 
 ## Capture options (future / local)
 
-| Method | When | Notes |
-| ------ | ---- | ----- |
-| NeonPlug browser read | Tooling available today | Full clone → packed `0x8240`; keep local |
-| CHIRP download | Desktop tool | Same `MEM_*` regions; GPL tool — facts only into docs |
-| Studio Web Serial read | After [#615](https://github.com/pskillen/codeplug-studio/issues/615) + [#617](https://github.com/pskillen/codeplug-studio/issues/617) | Read registered spans; save hex locally |
-| CHIRP CSV / `.neonplug` | Naming checks only | Prove names/semantics — **not** binary offsets |
+| Method                  | When                                                                                                                                  | Notes                                                 |
+| ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------- |
+| NeonPlug browser read   | Tooling available today                                                                                                               | Full clone → packed `0x8240`; keep local              |
+| CHIRP download          | Desktop tool                                                                                                                          | Same `MEM_*` regions; GPL tool — facts only into docs |
+| Studio Web Serial read  | After [#615](https://github.com/pskillen/codeplug-studio/issues/615) + [#617](https://github.com/pskillen/codeplug-studio/issues/617) | Read registered spans; save hex locally               |
+| CHIRP CSV / `.neonplug` | Naming checks only                                                                                                                    | Prove names/semantics — **not** binary offsets        |
 
 ## Synthetic fixture recipe
 

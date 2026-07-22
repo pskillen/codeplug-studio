@@ -13,14 +13,14 @@
 
 ## Shipped (foundation)
 
-| Item                                       | Ticket / PR                                                    | Notes                                                                                            |
-| ------------------------------------------ | -------------------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
-| DESIGN.md non-goal → intentional WebSerial | [#595](https://github.com/pskillen/codeplug-studio/issues/595) | Attribution requirement                                                                          |
-| Attributions stubs (CHIRP + NeonPlug)      | [#597](https://github.com/pskillen/codeplug-studio/issues/597) | `AttributionsPage` / attributions lib                                                            |
-| Progress docs under `radio-read-write/`    | [#603](https://github.com/pskillen/codeplug-studio/issues/603) | Moved from `import-export/`                                                                      |
-| Protocol kit architecture deep-dive        | [#603](https://github.com/pskillen/codeplug-studio/issues/603) | [protocol-kit-architecture.md](protocol-kit-architecture.md)                                     |
-| UV-5R Mini radio home                      | [#603](https://github.com/pskillen/codeplug-studio/issues/603) | [docs/reference/radios/baofeng/uv-5r-mini/](../../reference/radios/baofeng/uv-5r-mini/README.md) |
-| OpenGD77 / OpenUV380 binary memory docs    | [#623](https://github.com/pskillen/codeplug-studio/issues/623) | [docs/reference/radios/opengd77/](../../reference/radios/opengd77/README.md); `qdmr` attribution |
+| Item                                       | Ticket / PR                                                    | Notes                                                                                                                                                                   |
+| ------------------------------------------ | -------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| DESIGN.md non-goal → intentional WebSerial | [#595](https://github.com/pskillen/codeplug-studio/issues/595) | Attribution requirement                                                                                                                                                 |
+| Attributions stubs (CHIRP + NeonPlug)      | [#597](https://github.com/pskillen/codeplug-studio/issues/597) | `AttributionsPage` / attributions lib                                                                                                                                   |
+| Progress docs under `radio-read-write/`    | [#603](https://github.com/pskillen/codeplug-studio/issues/603) | Moved from `import-export/`                                                                                                                                             |
+| Protocol kit architecture deep-dive        | [#603](https://github.com/pskillen/codeplug-studio/issues/603) | [protocol-kit-architecture.md](protocol-kit-architecture.md)                                                                                                            |
+| UV-5R Mini radio home                      | [#603](https://github.com/pskillen/codeplug-studio/issues/603) | [docs/reference/radios/baofeng/uv-5r-mini/](../../reference/radios/baofeng/uv-5r-mini/README.md)                                                                        |
+| OpenGD77 / OpenUV380 binary memory docs    | [#623](https://github.com/pskillen/codeplug-studio/issues/623) | [docs/reference/radios/opengd77/](../../reference/radios/opengd77/README.md); `qdmr` attribution                                                                        |
 | UV-5R Mini PROGRAM+R/W binary memory docs  | [#627](https://github.com/pskillen/codeplug-studio/issues/627) | [docs/reference/radios/baofeng/uv-5r-mini/](../../reference/radios/baofeng/uv-5r-mini/README.md); blocks [#617](https://github.com/pskillen/codeplug-studio/issues/617) |
 
 ## Next
