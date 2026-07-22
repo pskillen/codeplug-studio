@@ -287,7 +287,7 @@ src/integrations/radio-io/
   index.ts
 ```
 
-See child implementation tickets filed under epic [#594](https://github.com/pskillen/codeplug-studio/issues/594) (listed in [browser-radio-io-outstanding.md](browser-radio-io-outstanding.md) after the spike closes).
+See child implementation tickets under epic [#594](https://github.com/pskillen/codeplug-studio/issues/594): [#615](https://github.com/pskillen/codeplug-studio/issues/615) (transport), [#616](https://github.com/pskillen/codeplug-studio/issues/616) (kit), [#617](https://github.com/pskillen/codeplug-studio/issues/617) (UV-5R Mini), [#618](https://github.com/pskillen/codeplug-studio/issues/618) (UI), [#619](https://github.com/pskillen/codeplug-studio/issues/619) (firmware gate). Listed in [browser-radio-io-outstanding.md](browser-radio-io-outstanding.md).
 
 ## Related
 

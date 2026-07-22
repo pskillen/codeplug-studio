@@ -4,10 +4,17 @@ Items discovered or deferred while planning Milestone 2. File-format CSV work st
 
 ## Open
 
-- [ ] Architecture spike: reusable WebSerial protocol kit (session, framing, clone vs V-frame) — [#603](https://github.com/pskillen/codeplug-studio/issues/603)
-- [ ] Firmware-version gating via supported CPS/firmware catalog — [#613](https://github.com/pskillen/codeplug-studio/issues/613) (supersedes closed free-text approach on [#593](https://github.com/pskillen/codeplug-studio/issues/593) / [#596](https://github.com/pskillen/codeplug-studio/issues/596))
-- [ ] In-flow attribution chrome when direct-write ships — [#597](https://github.com/pskillen/codeplug-studio/issues/597)
+- [ ] WebSerial `BytePipe` transport — [#615](https://github.com/pskillen/codeplug-studio/issues/615)
+- [ ] Protocol kit core (session, MemoryMap, R/W codec) — [#616](https://github.com/pskillen/codeplug-studio/issues/616)
+- [ ] UV-5R Mini clone adapter — [#617](https://github.com/pskillen/codeplug-studio/issues/617)
+- [ ] Connect/read/write UI + in-flow attribution — [#618](https://github.com/pskillen/codeplug-studio/issues/618)
+- [ ] Gate direct-write on firmware catalog — [#619](https://github.com/pskillen/codeplug-studio/issues/619) (depends on [#613](https://github.com/pskillen/codeplug-studio/issues/613))
+- [ ] In-flow attribution chrome when direct-write ships — tracked on [#618](https://github.com/pskillen/codeplug-studio/issues/618) / stubs [#597](https://github.com/pskillen/codeplug-studio/issues/597)
 - [ ] UV-21 / RT95 direct-write only after protocol kit — track under [#591](https://github.com/pskillen/codeplug-studio/issues/591) / [#592](https://github.com/pskillen/codeplug-studio/issues/592)
+
+## Done (spike)
+
+- [x] Architecture spike: reusable WebSerial protocol kit — [#603](https://github.com/pskillen/codeplug-studio/issues/603) (docs: [protocol-kit-architecture.md](protocol-kit-architecture.md))
 
 ## Explicitly out of MVP
 

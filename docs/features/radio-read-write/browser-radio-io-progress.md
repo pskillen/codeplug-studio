@@ -23,9 +23,9 @@
 
 ## Next
 
-1. File / implement child tickets under [#594](https://github.com/pskillen/codeplug-studio/issues/594) (transport, kit, UV-5R Mini, app chrome).
-2. Wire firmware gating via supported catalog [#613](https://github.com/pskillen/codeplug-studio/issues/613) when write ships.
-3. In-flow attribution chrome with first write UI ([#597](https://github.com/pskillen/codeplug-studio/issues/597)).
+1. Implement [#615](https://github.com/pskillen/codeplug-studio/issues/615) → [#616](https://github.com/pskillen/codeplug-studio/issues/616) → [#617](https://github.com/pskillen/codeplug-studio/issues/617) → [#618](https://github.com/pskillen/codeplug-studio/issues/618).
+2. Wire firmware gating [#619](https://github.com/pskillen/codeplug-studio/issues/619) when catalog [#613](https://github.com/pskillen/codeplug-studio/issues/613) is ready.
+3. Later radios (UV-21 / RT95 direct-write) after Mini path — [#591](https://github.com/pskillen/codeplug-studio/issues/591) / [#592](https://github.com/pskillen/codeplug-studio/issues/592).
 
 ## Related
 

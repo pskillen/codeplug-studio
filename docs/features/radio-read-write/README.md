@@ -13,11 +13,11 @@ In-browser read and write of handheld radios over **Web Serial** (and related tr
 | Area | Status | Notes |
 | --- | --- | --- |
 | DESIGN intentional goal + attributions stubs | Shipped | [#595](https://github.com/pskillen/codeplug-studio/issues/595), [#597](https://github.com/pskillen/codeplug-studio/issues/597) |
-| Architecture spike (protocol kit boundaries) | Documented | [#603](https://github.com/pskillen/codeplug-studio/issues/603) — see [protocol-kit-architecture.md](protocol-kit-architecture.md) |
-| WebSerial transport + protocol kit | Not started | Child tickets after spike |
-| First radio path (UV-5R Mini) | Not started | NeonPlug + CHIRP ground truth |
-| Firmware-gated write | Deferred | Supported catalog [#613](https://github.com/pskillen/codeplug-studio/issues/613) |
-| In-flow attribution chrome | Deferred | Stubs on `/attributions`; banners with first write UI |
+| Architecture spike (protocol kit boundaries) | Documented | [#603](https://github.com/pskillen/codeplug-studio/issues/603) — [protocol-kit-architecture.md](protocol-kit-architecture.md); children [#615](https://github.com/pskillen/codeplug-studio/issues/615)–[#619](https://github.com/pskillen/codeplug-studio/issues/619) |
+| WebSerial transport + protocol kit | Not started | [#615](https://github.com/pskillen/codeplug-studio/issues/615), [#616](https://github.com/pskillen/codeplug-studio/issues/616) |
+| First radio path (UV-5R Mini) | Not started | [#617](https://github.com/pskillen/codeplug-studio/issues/617) |
+| Firmware-gated write | Deferred | [#619](https://github.com/pskillen/codeplug-studio/issues/619) ← catalog [#613](https://github.com/pskillen/codeplug-studio/issues/613) |
+| In-flow attribution chrome | Deferred | [#618](https://github.com/pskillen/codeplug-studio/issues/618); stubs [#597](https://github.com/pskillen/codeplug-studio/issues/597) |
 
 ## Documentation map
 
