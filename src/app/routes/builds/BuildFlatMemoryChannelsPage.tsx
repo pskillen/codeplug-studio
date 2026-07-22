@@ -8,6 +8,7 @@ import {
   isEntityExcluded,
   overrideByEntityId,
   overrideOrderOrSlot,
+  overrideScanInclusion,
 } from '@core/domain/formatBuildOverrides.ts';
 import {
   applyDenseChannelOrderOrSlots,
@@ -201,26 +202,13 @@ export default function BuildFlatMemoryChannelsPage() {
     }
   }
 
-  async function updateChannelScan(channel: Channel, scanInclusion: Channel['scanInclusion']) {
-    if (!activeProjectId || channel.scanInclusion === scanInclusion) return;
-    setSaving(true);
-    setError(null);
-    const result = await persistence.putChannel({ ...channel, scanInclusion }, channel.revision);
-    setSaving(false);
-    if (!result.ok) {
-      setError(
-        result.reason === 'revision_conflict'
-          ? 'Channel changed elsewhere — reload and try again.'
-          : 'Could not save scan setting.',
-      );
-      return;
-    }
-    setLibrarySlice((prev) => ({
-      ...prev,
-      channels: prev.channels.map((row) =>
-        row.id === channel.id ? { ...row, scanInclusion, revision: result.revision! } : row,
-      ),
-    }));
+  async function updateChannelScan(channelId: string, scanInclusion: Channel['scanInclusion']) {
+    const current =
+      overrideScanInclusion(buildRef.current.channelOverrides, channelId) ??
+      channelById.get(channelId)?.scanInclusion;
+    if (current === scanInclusion) return;
+    const next = buildService.withScanInclusionOverride(buildRef.current, channelId, scanInclusion);
+    await persistBuild(next);
   }
 
   function setRowWireName(row: WirePreviewRow, wireName: string) {
@@ -396,10 +384,13 @@ export default function BuildFlatMemoryChannelsPage() {
         extraSections={
           selectedChannel ? (
             <ChirpChannelScanSection
-              channel={selectedChannel}
+              value={
+                overrideScanInclusion(build.channelOverrides, selectedChannel.id) ??
+                selectedChannel.scanInclusion
+              }
               saving={saving}
               onScanChange={(scanInclusion) =>
-                void updateChannelScan(selectedChannel, scanInclusion)
+                void updateChannelScan(selectedChannel.id, scanInclusion)
               }
             />
           ) : null

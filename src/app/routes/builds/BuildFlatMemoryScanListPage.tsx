@@ -8,10 +8,11 @@ import {
   isChirpFlatMemoryChannel,
   resolveChirpChannelMemorySlots,
 } from '@core/domain/exportOrderOrSlot.ts';
+import { overrideScanInclusion } from '@core/domain/formatBuildOverrides.ts';
 import { getFormatExportDefaults } from '@core/import-export/registry.ts';
 import {
   buildScanContext,
-  resolveEffectiveScanInclusion,
+  resolveChannelScanInclusionForExport,
 } from '@core/import-export/scanInclusion/index.ts';
 import type { Channel, ScanInclusion } from '@core/models/library.ts';
 import { showsPerChannelScanListNav } from '@core/models/traits.ts';
@@ -36,6 +37,8 @@ interface ScanListRow {
   id: string;
   slot: number;
   channel: Channel;
+  /** Build override when set; otherwise library value for the segment. */
+  scanInclusion: ScanInclusion;
 }
 
 /**
@@ -99,7 +102,9 @@ export default function BuildFlatMemoryScanListPage() {
       if (slot.channelId == null) continue;
       const channel = channelById.get(slot.channelId);
       if (!channel || !isChirpFlatMemoryChannel(channel)) continue;
-      out.push({ id: channel.id, slot: slot.slot, channel });
+      const scanInclusion =
+        overrideScanInclusion(build.channelOverrides, channel.id) ?? channel.scanInclusion;
+      out.push({ id: channel.id, slot: slot.slot, channel, scanInclusion });
     }
     return out;
   }, [build, librarySlice, channelById]);
@@ -132,26 +137,27 @@ export default function BuildFlatMemoryScanListPage() {
     }
   }
 
-  async function updateChannelScan(channel: Channel, scanInclusion: ScanInclusion) {
-    if (!activeProjectId || channel.scanInclusion === scanInclusion) return;
+  async function updateChannelScan(channelId: string, scanInclusion: ScanInclusion) {
+    const current =
+      overrideScanInclusion(buildRef.current.channelOverrides, channelId) ??
+      channelById.get(channelId)?.scanInclusion;
+    if (current === scanInclusion) return;
     setSaving(true);
     setError(null);
-    const result = await persistence.putChannel({ ...channel, scanInclusion }, channel.revision);
+    const next = buildService.withScanInclusionOverride(buildRef.current, channelId, scanInclusion);
+    const result = await putBuild(next, buildRef.current.revision);
     setSaving(false);
-    if (!result.ok) {
+    if (result.ok) {
+      const saved = { ...next, revision: result.revision };
+      buildRef.current = saved;
+      setSavedBuild(saved);
+    } else {
       setError(
         result.reason === 'revision_conflict'
-          ? 'Channel changed elsewhere — reload and try again.'
+          ? 'Build changed elsewhere — reload and try again.'
           : 'Could not save scan setting.',
       );
-      return;
     }
-    setLibrarySlice((prev) => ({
-      ...prev,
-      channels: prev.channels.map((row) =>
-        row.id === channel.id ? { ...row, scanInclusion, revision: result.revision! } : row,
-      ),
-    }));
   }
 
   return (
@@ -189,7 +195,7 @@ export default function BuildFlatMemoryScanListPage() {
           description={
             memoryCount === 0
               ? 'Add analogue channels on the Channels page first.'
-              : 'Skip scan keeps a memory out of scanning. Always scan forces it in. Default follows the setting above.'
+              : 'Skip scan keeps a memory out of scanning. Always scan forces it in. Default follows the setting above. Changes apply to this build only — not the library channel.'
           }
         >
           {error ? (
@@ -239,8 +245,8 @@ export default function BuildFlatMemoryScanListPage() {
                   <ScanInclusionSegment
                     compact
                     disabled={saving}
-                    value={row.channel.scanInclusion}
-                    onChange={(scanInclusion) => void updateChannelScan(row.channel, scanInclusion)}
+                    value={row.scanInclusion}
+                    onChange={(scanInclusion) => void updateChannelScan(row.id, scanInclusion)}
                   />
                 ),
               },
@@ -248,7 +254,12 @@ export default function BuildFlatMemoryScanListPage() {
                 key: 'effective',
                 header: 'On export',
                 render: (row) => {
-                  const effective = resolveEffectiveScanInclusion(row.channel, scanContext);
+                  const override = overrideScanInclusion(build.channelOverrides, row.id);
+                  const effective = resolveChannelScanInclusionForExport(
+                    row.channel,
+                    override,
+                    scanContext,
+                  );
                   return effective === 'scan' ? (
                     <Badge color="green" variant="light">
                       Scans
