@@ -3,13 +3,7 @@
  * Cite: NeonPlug serialConnection.ts / protocol.ts (MIT); CHIRP facts only.
  */
 
-import type {
-  BytePipe,
-  CloneImageRadio,
-  IdentResult,
-  MemoryMap,
-  ProgressFn,
-} from '../../types.ts';
+import type { BytePipe, CloneImageRadio, IdentResult, MemoryMap, ProgressFn } from '../../types.ts';
 import type { RadioChannelDto } from '../../radioChannelDto.ts';
 import {
   expectAck,
@@ -69,11 +63,7 @@ function listRadioBlockAddresses(): number[] {
   return addrs;
 }
 
-async function runMagics(
-  pipe: BytePipe,
-  mode: HandshakeMode,
-  signal?: AbortSignal,
-): Promise<void> {
+async function runMagics(pipe: BytePipe, mode: HandshakeMode, signal?: AbortSignal): Promise<void> {
   const magics = mode === 'read' ? UV5R_MINI_MAGICS_READ : UV5R_MINI_MAGICS_UPLOAD;
   for (const { send, responseLen } of magics) {
     throwIfAborted(signal);
@@ -82,19 +72,13 @@ async function runMagics(
   }
 }
 
-async function handshake(
-  pipe: BytePipe,
-  mode: HandshakeMode,
-  signal?: AbortSignal,
-): Promise<void> {
+async function handshake(pipe: BytePipe, mode: HandshakeMode, signal?: AbortSignal): Promise<void> {
   throwIfAborted(signal);
   try {
     await sendIdent(pipe, UV5R_MINI_IDENT, UV5R_MINI_IDENT_TIMEOUT_MS);
   } catch (err) {
     throw new RadioWrongIdentError(
-      err instanceof Error
-        ? `UV-5R Mini ident failed: ${err.message}`
-        : 'UV-5R Mini ident failed',
+      err instanceof Error ? `UV-5R Mini ident failed: ${err.message}` : 'UV-5R Mini ident failed',
     );
   }
   await runMagics(pipe, mode, signal);
@@ -141,10 +125,7 @@ export class Uv5rMiniProtocol implements CloneImageRadio {
     return this.pipe;
   }
 
-  async download(opts: {
-    onProgress?: ProgressFn;
-    signal?: AbortSignal;
-  }): Promise<MemoryMap> {
+  async download(opts: { onProgress?: ProgressFn; signal?: AbortSignal }): Promise<MemoryMap> {
     const pipe = this.requirePipe();
     const addrs = listRadioBlockAddresses();
     const image = createMemoryMap(UV5R_MINI_MEM_TOTAL);

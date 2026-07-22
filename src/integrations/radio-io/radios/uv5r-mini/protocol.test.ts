@@ -52,7 +52,8 @@ class ScriptedPipe implements BytePipe {
     this.writes.push(data.slice());
   }
 
-  async readExact(n: number, _timeoutMs: number): Promise<Uint8Array> {
+  async readExact(n: number, timeoutMs: number): Promise<Uint8Array> {
+    void timeoutMs;
     if (this.queue.length === 0) {
       throw new Error(`ScriptedPipe: no queued bytes for readExact(${n})`);
     }

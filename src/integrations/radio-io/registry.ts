@@ -19,18 +19,13 @@ export function getRadioDescriptor(modelId: string): RadioDescriptor | undefined
 }
 
 /** Descriptors whose compatibleProfiles include the given format/profile pair. */
-export function listDescriptorsForProfile(
-  formatId: string,
-  profileId: string,
-): RadioDescriptor[] {
+export function listDescriptorsForProfile(formatId: string, profileId: string): RadioDescriptor[] {
   return DESCRIPTORS.filter((d) =>
     d.compatibleProfiles.some((p) => p.formatId === formatId && p.profileId === profileId),
   );
 }
 
 /** Whether a profile is listed on any registered descriptor. */
-export function isProfileCompatibleWithAnyRadio(
-  profile: RadioCompatibleProfile,
-): boolean {
+export function isProfileCompatibleWithAnyRadio(profile: RadioCompatibleProfile): boolean {
   return listDescriptorsForProfile(profile.formatId, profile.profileId).length > 0;
 }

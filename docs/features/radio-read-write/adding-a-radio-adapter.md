@@ -12,13 +12,13 @@ Sibling concern to [adding a CPS file format](../import-export/adding-a-new-form
 
 ## What an adapter is
 
-| Piece | Owns | Must not own |
-| --- | --- | --- |
+| Piece                 | Owns                                                                                                                             | Must not own                                           |
+| --------------------- | -------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------ |
 | `radios/<id>/` module | Descriptor, ident/handshake, memory layout, crypt, encode/decode of modelled regions, safe write strategy, firmware string parse | React; library CRUD; `assemble`; FormatBuild mutations |
-| `kit/` codecs | Shared framing (PROGRAM+R/W, OpenGD77 serial, V-probe, …) | Per-radio `MEM_*`, XOR tables, model idents |
-| `transport/` | `BytePipe` (Web Serial today) | Handshake or memory maps |
-| Registry | Descriptor list / lookup by model or compatible profile | Framing details |
-| App services + UI | Port request, progress, **FormatBuild hydration**, `assemble` → encode → upload, attribution | Frame bytes, CPS column names |
+| `kit/` codecs         | Shared framing (PROGRAM+R/W, OpenGD77 serial, V-probe, …)                                                                        | Per-radio `MEM_*`, XOR tables, model idents            |
+| `transport/`          | `BytePipe` (Web Serial today)                                                                                                    | Handshake or memory maps                               |
+| Registry              | Descriptor list / lookup by model or compatible profile                                                                          | Framing details                                        |
+| App services + UI     | Port request, progress, **FormatBuild hydration**, `assemble` → encode → upload, attribution                                     | Frame bytes, CPS column names                          |
 
 **Dependency direction:** `app` → `core` + `integrations/radio-io`; radio modules → kit + types only. Never `core` → `integrations`.
 
@@ -40,13 +40,13 @@ Library (RF semantics)  +  FormatBuild (profile, wire names, slots, layout, hydr
                               upload (full or selective)
 ```
 
-| Rule | Why |
-| --- | --- |
-| **Write always goes through a FormatBuild** | Same bridge as CPS export — name limits, slots, exclusions, trait layout |
-| **`assemble(build, library)` before encode** | Modelled channels come from the projection, not a raw library dump |
-| **Read hydrates the FormatBuild, not the library** (MVP) | Unmodelled registers must survive; importing radio channels into the library is a separate deliverable |
-| **Hydration is a labelled escape hatch** | Same spirit as NeonPlug `FormatBuild.cpsWireHydration` for `.neonplug` donors — opaque retain of radio-safe state Studio does not model |
-| **Display unmodelled settings read-only** | Operator can see that a donor/read exists; editing those bytes in Studio is out of scope until modelled |
+| Rule                                                     | Why                                                                                                                                     |
+| -------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
+| **Write always goes through a FormatBuild**              | Same bridge as CPS export — name limits, slots, exclusions, trait layout                                                                |
+| **`assemble(build, library)` before encode**             | Modelled channels come from the projection, not a raw library dump                                                                      |
+| **Read hydrates the FormatBuild, not the library** (MVP) | Unmodelled registers must survive; importing radio channels into the library is a separate deliverable                                  |
+| **Hydration is a labelled escape hatch**                 | Same spirit as NeonPlug `FormatBuild.cpsWireHydration` for `.neonplug` donors — opaque retain of radio-safe state Studio does not model |
+| **Display unmodelled settings read-only**                | Operator can see that a donor/read exists; editing those bytes in Studio is out of scope until modelled                                 |
 
 **NeonPlug file path (already shipped):** operator reads in NeonPlug → imports `.neonplug` → Studio stores retain on `cpsWireHydration` (`formatId: 'neonplug'`) → merge export.  
 **Direct Web Serial path:** operator **Read** in Studio → download clone/image → persist `cpsWireHydration` with `formatId: 'radio-clone'` (`RadioCloneHydrationBag`) on the **current FormatBuild** → show read-only settings → **Write** merges `assemble` projection into that image → upload.
@@ -59,9 +59,9 @@ See [neonplug merge](../../reference/export-formats/neonplug/merge.md), [`CpsWir
 
 Radios differ in how safely Studio can update them:
 
-| Strategy | Behaviour | Adapter must |
-| --- | --- | --- |
-| **Selective ranges** | Write only modelled (or declared safe) address ranges; leave other EEPROM alone | Publish safe upload ranges; still **read/cache** first when non-channel regions must be known |
+| Strategy              | Behaviour                                                                       | Adapter must                                                                                                                                                           |
+| --------------------- | ------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Selective ranges**  | Write only modelled (or declared safe) address ranges; leave other EEPROM alone | Publish safe upload ranges; still **read/cache** first when non-channel regions must be known                                                                          |
 | **Full image upload** | Radio/firmware expects a complete clone; partial write is unsafe or unsupported | Require a prior **Read** (or equivalent hydration) on the FormatBuild; encode modelled channels into the cached full image; upload the whole (or all required regions) |
 
 Declare the strategy on the descriptor (e.g. capability flag or `writeStrategy: 'selective-ranges' | 'full-image'`). UI gates **Write** when hydration is missing for full-image radios (same UX idea as NeonPlug “donor required for radio-write download”).
@@ -146,8 +146,8 @@ UV-5R Mini (PROGRAM+R/W): treat as **read-cached image + encode channels + uploa
 
 Append here as adapters ship. Keep entries short; promote repeated patterns into the sections above.
 
-| Date | Adapter / PR | Discovery |
-| --- | --- | --- |
+| Date       | Adapter / PR    | Discovery                                                                                                                                                                                                                                                                                                                                                |
+| ---------- | --------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | 2026-07-23 | UV-5R Mini #617 | Binary Web Serial reads persist on `FormatBuild.cpsWireHydration` with discriminant `formatId: 'radio-clone'` (`RadioCloneHydrationBag` in `src/core/models/radioCloneHydration.ts`). Sibling to NeonPlug `formatId: 'neonplug'` file donors — same build field, different retain shape. Native YAML already accepts unknown formatIds as opaque retain. |
 
 ---

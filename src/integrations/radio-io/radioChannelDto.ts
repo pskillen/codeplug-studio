@@ -4,9 +4,7 @@
  */
 
 export type RadioTone =
-  | { kind: 'none' }
-  | { kind: 'ctcss'; hz: number }
-  | { kind: 'dcs'; code: number };
+  { kind: 'none' } | { kind: 'ctcss'; hz: number } | { kind: 'dcs'; code: number };
 
 /**
  * One memory slot as seen by clone-image radios.

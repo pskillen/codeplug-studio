@@ -114,8 +114,7 @@ export function decodeChannelRecord(raw: Uint8Array, slotIndex: number): RadioCh
     };
   }
   const rxHz = decodeBcdFreq(raw.subarray(0, 4));
-  const txAllFF =
-    raw[4] === 0xff && raw[5] === 0xff && raw[6] === 0xff && raw[7] === 0xff;
+  const txAllFF = raw[4] === 0xff && raw[5] === 0xff && raw[6] === 0xff && raw[7] === 0xff;
   const txAllZero = raw[4] === 0 && raw[5] === 0 && raw[6] === 0 && raw[7] === 0;
   const txFilled = !txAllFF && !txAllZero;
   const txHz = txFilled ? decodeBcdFreq(raw.subarray(4, 8)) : rxHz;

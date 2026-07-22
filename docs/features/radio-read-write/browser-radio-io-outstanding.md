@@ -4,7 +4,6 @@ Items discovered or deferred while planning Milestone 2. File-format CSV work st
 
 ## Open
 
-- [ ] UV-5R Mini clone adapter — [#617](https://github.com/pskillen/codeplug-studio/issues/617) (depends on [#627](https://github.com/pskillen/codeplug-studio/issues/627) docs + kit)
 - [ ] Connect/read/write UI + in-flow attribution — [#618](https://github.com/pskillen/codeplug-studio/issues/618)
 - [ ] Gate direct-write on firmware catalog — [#619](https://github.com/pskillen/codeplug-studio/issues/619) (depends on [#613](https://github.com/pskillen/codeplug-studio/issues/613))
 - [ ] In-flow attribution chrome when direct-write ships — tracked on [#618](https://github.com/pskillen/codeplug-studio/issues/618) / stubs [#597](https://github.com/pskillen/codeplug-studio/issues/597)
@@ -16,7 +15,7 @@ Items discovered or deferred while planning Milestone 2. File-format CSV work st
 - [ ] Anytone DMR R/W kit codec — [#646](https://github.com/pskillen/codeplug-studio/issues/646) (sibling surface; 921600 + u32 BE; not RT95 `programQx` / Mini `BlockCodec`; parent epic [#645](https://github.com/pskillen/codeplug-studio/issues/645))
 - [ ] AT-D890UV Web Serial adapter — [#649](https://github.com/pskillen/codeplug-studio/issues/649) (depends on [#647](https://github.com/pskillen/codeplug-studio/issues/647) docs + [#646](https://github.com/pskillen/codeplug-studio/issues/646) codec; parent epic [#645](https://github.com/pskillen/codeplug-studio/issues/645))
 
-## Done (spike / docs / kit)
+## Done (spike / docs / kit / first adapter)
 
 - [x] Architecture spike: reusable WebSerial protocol kit — [#603](https://github.com/pskillen/codeplug-studio/issues/603) (docs: [protocol-kit-architecture.md](protocol-kit-architecture.md))
 - [x] OpenGD77 binary memory reference — [#623](https://github.com/pskillen/codeplug-studio/issues/623) (docs: [radios/opengd77](../../reference/radios/opengd77/README.md))
@@ -28,6 +27,7 @@ Items discovered or deferred while planning Milestone 2. File-format CSV work st
 - [x] Protocol kit core (session, MemoryMap, R/W codec) — [#616](https://github.com/pskillen/codeplug-studio/issues/616) (`src/integrations/radio-io/kit/`)
 - [x] V-probe kit codec — [#630](https://github.com/pskillen/codeplug-studio/issues/630) (`kit/codecs/vProbe.ts`)
 - [x] OpenGD77/OpenUV380 serial kit codec — [#631](https://github.com/pskillen/codeplug-studio/issues/631) (`kit/codecs/opengd77Serial.ts`)
+- [x] UV-5R Mini clone adapter + registry — [#617](https://github.com/pskillen/codeplug-studio/issues/617) (`radios/uv5r-mini/`, `registry.ts`, `radio-clone` hydration)
 
 ## Explicitly out of MVP
 

@@ -14,8 +14,4 @@ export {
   encodeChannelsIntoImage,
   readFirmwareFromImage,
 } from './channelCodec.ts';
-export {
-  UV5R_MINI_BAUD_RATE,
-  UV5R_MINI_CHANNEL_COUNT,
-  UV5R_MINI_MEM_TOTAL,
-} from './constants.ts';
+export { UV5R_MINI_BAUD_RATE, UV5R_MINI_CHANNEL_COUNT, UV5R_MINI_MEM_TOTAL } from './constants.ts';
