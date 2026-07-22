@@ -21,3 +21,15 @@ export {
   type CreateRadioSessionInput,
   setCachedImage,
 } from './session.ts';
+export {
+  expectAck,
+  makeProgramRwReadFrame,
+  makeProgramRwWriteFrame,
+  parseProgramRwReadReply,
+  PROGRAM_RW_ACK,
+  PROGRAM_RW_HEADER_LEN,
+  PROGRAM_RW_READ_OPCODE,
+  PROGRAM_RW_WRITE_OPCODE,
+  programRwCodec,
+  sendIdent,
+} from './codecs/programRw.ts';
