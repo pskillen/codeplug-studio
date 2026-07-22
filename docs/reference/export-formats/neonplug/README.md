@@ -4,6 +4,8 @@
 
 Authoritative reference for **NeonPlug** `.neonplug` files — the backup / interchange format used by [NeonPlug](https://github.com/infamy/NeonPlug) ([neonplug.app](https://neonplug.app)). One wire format among several at Studio’s import/export boundary (siblings: DM32 CSV, CHIRP CSV, OpenGD77, Anytone, native YAML).
 
+> **`.neonplug` wire ≠ UV-5R Mini clone image.** Direct radio PROGRAM+R/W memory for UV-5R Mini lives under [`docs/reference/radios/baofeng/uv-5r-mini/`](../../radios/baofeng/uv-5r-mini/README.md) — do not treat `codeplug.json` fields as EEPROM offsets.
+
 **Tracking:** [#537](https://github.com/pskillen/codeplug-studio/issues/537) (this reference) · scaffold [#538](https://github.com/pskillen/codeplug-studio/issues/538) · epic [#536](https://github.com/pskillen/codeplug-studio/issues/536)
 
 ## What a `.neonplug` file is
@@ -102,3 +104,4 @@ Detail: [radio-info-and-settings.md](radio-info-and-settings.md) · [merge.md](m
 - Sibling wires: [DM32 CSV](../dm32/README.md), [CHIRP CSV](../chirp/README.md)
 - [Data model](../../../features/data-model/README.md)
 - [Adding a new format](../../../features/import-export/adding-a-new-format.md)
+- Binary memory / Web Serial (UV-5R Mini): [radios/baofeng/uv-5r-mini](../../radios/baofeng/uv-5r-mini/README.md)

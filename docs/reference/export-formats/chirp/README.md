@@ -4,6 +4,8 @@
 
 Authoritative reference for **CHIRP** radio memory CSV exports — one wire format among several at the import/export boundary (siblings: OpenGD77, DM32, qDMR, native YAML). CHIRP is **analogue FM/AM** oriented; DMR columns exist in the wire format but are empty on analogue exports.
 
+> **CHIRP CSV wire ≠ binary clone image.** Direct radio PROGRAM+R/W memory for UV-5R Mini lives under [`docs/reference/radios/baofeng/uv-5r-mini/`](../../radios/baofeng/uv-5r-mini/README.md) — do not treat CSV columns as clone offsets.
+
 **Tracking:** archive reference (codeplug-tool#103)
 
 ## File shape
@@ -81,3 +83,4 @@ Structural rules enforced by `cps-verify` for all CHIRP profiles ([wire-verifica
 - [Data model](../../../features/data-model/README.md)
 - [Channel modes](../../channel-modes.md)
 - [OpenGD77 reference](../opengd77/README.md) — sibling format
+- Binary memory / Web Serial (UV-5R Mini): [radios/baofeng/uv-5r-mini](../../radios/baofeng/uv-5r-mini/README.md)
