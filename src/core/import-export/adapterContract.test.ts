@@ -75,6 +75,8 @@ describe('adapter contracts', () => {
     expect(isSingleFileCpsExportAdapter(adapter)).toBe(true);
     if (isSingleFileCpsExportAdapter(adapter)) {
       expect(adapter.defaultFileName('chirp-uv5r')).toContain('UV-5R');
+      expect(adapter.defaultFileName('chirp-uv21')).toContain('UV-21');
+      expect(adapter.defaultFileName('chirp-rt95')).toContain('RT95');
       expect(typeof adapter.serialise).toBe('function');
     }
   });
