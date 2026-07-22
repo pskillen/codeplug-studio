@@ -1,38 +1,85 @@
-# UV-5R Mini — memory layout / protocol stub
+# UV-5R Mini — memory layout
 
-Tier-3 notes for **PROGRAM + R/W** clone I/O (Web Serial / future BLE). Full frame tables land with the first radio-io adapter ticket; this page captures ground-truth constants for planning.
+Multi-region clone image for **PROGRAM + R/W** (UV-17Pro family). Assembled image size `MEM_TOTAL = 0x8240`.
 
-**Product hub:** [radio-read-write](../../../../features/radio-read-write/README.md) · [protocol-kit architecture](../../../../features/radio-read-write/protocol-kit-architecture.md)
+**Hub:** [README.md](README.md) · **Records:** [channel-record.md](channel-record.md) · **Protocol:** [protocol.md](protocol.md)
 
-**File adapters (CSV / `.neonplug`):** [export-formats/chirp](../../../export-formats/chirp/README.md) · [export-formats/neonplug](../../../export-formats/neonplug/README.md)
+> Classic **UV-5R** uses **S/X** at 9600 baud with a different image size — do **not** merge that path into this map.
 
-## Protocol family
+## Transfer sizes
 
-| Item       | Value                                                                           |
-| ---------- | ------------------------------------------------------------------------------- |
-| Family     | **PROGRAM + R/W** (not classic UV-5R **S/X**)                                   |
-| Ident      | `PROGRAMCOLORPROU` (`MSTRING_UV17PROGPS`)                                       |
-| Baud       | **38400** (NeonPlug)                                                            |
-| Image size | `MEM_TOTAL = 0x8240` (multi-region `MEM_STARTS` / `MEM_SIZES`)                  |
-| Block ops  | Read `0x52` (`R`), Write `W`; ACK `0x06`                                        |
-| Crypt      | Optional payload **XOR** crypt                                                  |
-| BLE        | Optional later — same framing; larger upload block (`BLE_UP_BLOCK_SIZE = 0x80`) |
-| Channels   | Up to **999** (see [limits.md](limits.md))                                      |
+| Constant | Value | Role |
+| -------- | ----- | ---- |
+| Block size | `0x40` (64) | Read/write quantum |
+| Channel record | `32` | See [channel-record.md](channel-record.md) |
+| Channel count | `999` | Channels occupy first `0x7CE0` bytes of packed image |
+| Assembled image | `0x8240` | Concatenation of three radio regions |
 
-Classic **UV-5R** uses **S/X** — do not merge that path into this codec.
+## Radio regions (`MEM_STARTS` / `MEM_SIZES`)
 
-## Ground truth
+Identical in NeonPlug and CHIRP `UV5RMini`:
 
-| Source                                                                                                                  | Role                                                                       |
-| ----------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------- |
-| CHIRP `UV5RMini` in [`baofeng_uv17Pro.py`](https://github.com/kk7ds/chirp/blob/master/chirp/drivers/baofeng_uv17Pro.py) | Caps, R/W protocol, crypt, memory regions                                  |
-| NeonPlug [`src/radios/uv5rmini/`](https://github.com/infamy/NeonPlug/tree/main/src/radios/uv5rmini)                     | Browser framing (`baofengProtocol.ts`, `serialConnection.ts`, channel map) |
+| Index | Radio address | Size | Notes |
+| ----- | ------------- | ---- | ----- |
+| 0 | `0x0000` | `0x8040` | Channels + mid-image VFO/settings area |
+| 1 | `0x9000` | `0x0040` | Second region (packed after first) |
+| 2 | `0xA000` | `0x01C0` | Third region (ANI / PTT / codes area in packed map) |
 
-## Planned Studio module
+Cite: NeonPlug `constants.ts`; CHIRP `baofeng_uv17Pro.py` `UV5RMini`.
 
-`src/integrations/radio-io/radios/uv5r-mini/` — handshake, layout, encode (see protocol-kit architecture).
+## Packed image ↔ radio address map
+
+Clone download concatenates the three regions in order into one buffer:
+
+| Packed image offset | Size | Radio address |
+| ------------------- | ---- | ------------- |
+| `0x0000` | `0x8040` | `0x0000` |
+| `0x8040` | `0x0040` | `0x9000` |
+| `0x8080` | `0x01C0` | `0xA000` |
+
+Sum: `0x8040 + 0x40 + 0x1C0 = 0x8240`.
+
+## Notable packed-image offsets
+
+| Offset | Size / role |
+| ------ | ----------- |
+| `0x0000` … | Channel records (`999 × 32 = 0x7CE0`) |
+| `0x1EF0` | Firmware version string (`_fw_ver_start`) |
+| `0x8000` | VFO A (32 bytes) — NeonPlug / CHIRP-aligned comment |
+| `0x8020` | VFO B (32 bytes) |
+| `0x8040` | Settings (64 bytes) — see [settings.md](settings.md) |
+| `0x8080` | ANI |
+| `0x80A0` | PTT ID |
+| `0x81E0` | Upcode |
+| `0x8210` | Downcode |
+| `0x8220` | Modes / end-format area (CHIRP `_end_fmt` seeks here; 32 B) |
+
+**Address caveat:** Packed image offset `0x8040` is radio address **`0x9000`** (second `MEM_*` region). NeonPlug settings **parse** uses packed `0x8040`; settings **write** currently uses radio addr `0x8040` — treat as verify-on-hardware debt for adapter [#617](https://github.com/pskillen/codeplug-studio/issues/617). See [settings.md](settings.md).
+
+## Not classic UV-5R (S/X)
+
+| Item | UV-5R Mini (this doc) | Classic UV-5R |
+| ---- | --------------------- | ------------- |
+| Protocol | PROGRAM + R/W (`0x52` / `0x57`) | S/X blocks |
+| Ident | `PROGRAMCOLORPROU` | Model-specific UV5R idents |
+| Baud | NeonPlug 38400 / CHIRP 115200 | 9600 |
+| Image | `0x8240`, multi-region | `~0x1808`, different ranges |
+| Channels / name | 999 / 12 chars | Classic layout; name length 7 |
+| Wide bit | `1` → NFM | `1` → FM (opposite polarity) |
+
+## Verification
+
+Cross-checked against:
+
+| Fact set | Source |
+| -------- | ------ |
+| `MEM_*`, block size, FW offset | NeonPlug `src/radios/uv5rmini/constants.ts` |
+| Same `MEM_*` | CHIRP `chirp/drivers/baofeng_uv17Pro.py` (`UV5RMini`) |
+| Packed settings layout comment | NeonPlug `settingsFormat.ts` |
+
+A live radio dump is optional for this doc ticket; see [fixtures.md](fixtures.md).
 
 ## Related
 
-- [README.md](README.md) · [power.md](power.md)
-- Adapter profiles: [chirp profiles.md](../../../export-formats/chirp/profiles.md) · [neonplug profiles.md](../../../export-formats/neonplug/profiles.md)
+- [channel-record.md](channel-record.md) · [settings.md](settings.md) · [protocol.md](protocol.md)
+- [limits.md](limits.md) · [power.md](power.md)
