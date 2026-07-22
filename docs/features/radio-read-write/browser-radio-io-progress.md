@@ -27,6 +27,7 @@
 | V-probe kit codec                              | [#630](https://github.com/pskillen/codeplug-studio/issues/630) | `kit/codecs/vProbe.ts` — sibling surface (not `BlockCodec`)                                                                                                                                                                              |
 | OpenGD77/OpenUV380 serial kit codec            | [#631](https://github.com/pskillen/codeplug-studio/issues/631) | `kit/codecs/opengd77Serial.ts` — C/R/W/X framing; blocks [#624](https://github.com/pskillen/codeplug-studio/issues/624)/[#625](https://github.com/pskillen/codeplug-studio/issues/625)                                                   |
 | DM-32UV binary protocol / memory docs          | [#637](https://github.com/pskillen/codeplug-studio/issues/637) | [docs/reference/radios/baofeng/dm-32uv/](../../reference/radios/baofeng/dm-32uv/README.md); blocks [#638](https://github.com/pskillen/codeplug-studio/issues/638); parent [#636](https://github.com/pskillen/codeplug-studio/issues/636) |
+| RT95 VOX binary protocol / memory docs         | [#642](https://github.com/pskillen/codeplug-studio/issues/642) | [docs/reference/radios/retevis/rt95/](../../reference/radios/retevis/rt95/README.md); blocks [#643](https://github.com/pskillen/codeplug-studio/issues/643); parent [#640](https://github.com/pskillen/codeplug-studio/issues/640)     |
 
 ## Next
 
@@ -34,7 +35,7 @@
 2. Wire firmware gating [#619](https://github.com/pskillen/codeplug-studio/issues/619) when catalog [#613](https://github.com/pskillen/codeplug-studio/issues/613) is ready.
 3. OpenGD77 adapters (kit codec ready): [#624](https://github.com/pskillen/codeplug-studio/issues/624) (DM-1701) · [#625](https://github.com/pskillen/codeplug-studio/issues/625) (MD-9600).
 4. DM-32UV adapter after binary docs: [#638](https://github.com/pskillen/codeplug-studio/issues/638) (epic [#636](https://github.com/pskillen/codeplug-studio/issues/636)).
-5. Later radios (UV-21 / RT95 direct-write) after Mini path — [#591](https://github.com/pskillen/codeplug-studio/issues/591) / [#592](https://github.com/pskillen/codeplug-studio/issues/592).
+5. RT95 PROGRAM→QX kit codec [#641](https://github.com/pskillen/codeplug-studio/issues/641) → adapter [#643](https://github.com/pskillen/codeplug-studio/issues/643) (epic [#640](https://github.com/pskillen/codeplug-studio/issues/640); docs [#642](https://github.com/pskillen/codeplug-studio/issues/642) shipped).
 
 ## Related
 
