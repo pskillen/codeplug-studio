@@ -2,6 +2,8 @@
 
 Product behaviour for NeonPlug `.neonplug` files in Codeplug Studio. Wire tables live in the tier-3 [NeonPlug reference](../../../reference/export-formats/neonplug/README.md).
 
+Per-radio map: [neonplug profiles.md](../../../reference/export-formats/neonplug/profiles.md) → [`docs/reference/radios/`](../../../reference/radios/).
+
 **Tracking:** Epic [#536](https://github.com/pskillen/codeplug-studio/issues/536) · scaffold [#538](https://github.com/pskillen/codeplug-studio/issues/538) · channels + ZIP [#539](https://github.com/pskillen/codeplug-studio/issues/539) · org entities [#540](https://github.com/pskillen/codeplug-studio/issues/540) · m×n + scratch [#553](https://github.com/pskillen/codeplug-studio/issues/553) · merge-into-base [#551](https://github.com/pskillen/codeplug-studio/issues/551) · donor persist + settings view [#552](https://github.com/pskillen/codeplug-studio/issues/552) · export UI [#542](https://github.com/pskillen/codeplug-studio/issues/542) · wire reference [#537](https://github.com/pskillen/codeplug-studio/issues/537) · no-TX sentinel [#561](https://github.com/pskillen/codeplug-studio/issues/561) · empty scan floor [#564](https://github.com/pskillen/codeplug-studio/issues/564) · empty-layout scans + carriers [#562](https://github.com/pskillen/codeplug-studio/issues/562) · APRS globals [#559](https://github.com/pskillen/codeplug-studio/issues/559)
 
 **Source:** `src/core/import-export/formats/neonplug/` (profiles, export adapter, `.neonplug` ZIP packaging)

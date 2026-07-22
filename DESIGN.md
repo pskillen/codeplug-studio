@@ -74,7 +74,7 @@ Do not model OpenGD77 zones in the library because OpenGD77 has a Zones.csv; mod
 
 ### 4. Vendor-neutral core
 
-Radio caps, column names, wire strings, and profile limits apply only in `core/import-export/formats/` and `docs/reference/export-formats/<format>/`. The library model, domain mutations, validation, and library CRUD UI do not embed `OPENGD77_`* constants or format-specific cardinality.
+Radio caps, column names, wire strings, and profile limits apply only in `core/import-export/formats/`, `docs/reference/export-formats/<format>/`, and `docs/reference/radios/<manufacturer>/<model>/`. The library model, domain mutations, validation, and library CRUD UI do not embed `OPENGD77_`* constants or format-specific cardinality.
 
 ### 5. Merge and match — best effort
 
@@ -101,7 +101,7 @@ src/
   app/               # React: routes, features, components, thin state adapters.
 docs/
   features/          # Tier 1 — our product behaviour and internal model
-  reference/         # Tier 2 (domain) + Tier 3 (per-format wire tables)
+  reference/         # Tier 2 (domain) + Tier 3 (export-formats / radios / remote-directories)
 ```
 
 **Persistence:** `ProjectPersistence` port in `integrations/` — per-entity rows with optimistic `revision`. Phase 1: in-memory; Phase 2: IndexedDB. See [docs/poc-migration/storage.md](docs/poc-migration/storage.md).
@@ -279,8 +279,8 @@ System tests target `core/services` and format adapters, not React routes.
 | Tier                         | Location                                   | Contents                                                             |
 | ---------------------------- | ------------------------------------------ | -------------------------------------------------------------------- |
 | 1 — Product / internal model | `docs/features/`                           | Library, builds, entities, UUID rules — no CPS column tables         |
-| 2 — Domain reference         | `docs/reference/*.md` (not in `<format>/`) | Bands, channel modes, display conventions — link out for wire detail |
-| 3 — Format wire reference    | `docs/reference/export-formats/<format>/`         | Column ↔ type tables, ladders, sentinels                             |
+| 2 — Domain reference         | `docs/reference/*.md` (root only)          | Bands, channel modes, display conventions — link out for wire detail |
+| 3 — Adapter / radio / directory wire | `docs/reference/export-formats/<format>/`, `docs/reference/radios/<mfr>/<model>/`, `docs/reference/remote-directories/<dir>/` | CPS columns; radio caps/ladders/layout; remote API shapes |
 
 See [`.cursor/rules/documentation-boundaries.mdc`](.cursor/rules/documentation-boundaries.mdc).
 

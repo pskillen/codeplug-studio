@@ -70,7 +70,7 @@ Routes and UI call **application services** (`importProjectYaml`, `exportProject
 | `neonplug`    | Planned | Shipped | Single ZIP (`.neonplug`)   |
 | `qdmr`        | Planned | Planned | YAML (vendor)              |
 
-Wire mapping for CPS formats lives in `docs/reference/export-formats/<format>/` — not here.
+Wire mapping for CPS formats lives in `docs/reference/export-formats/<format>/` — not here. Radio caps, power ladders, and hardware facts live under `docs/reference/radios/<manufacturer>/<model>/`. Per-adapter `profiles.md` maps Studio `profileId` → radio home. Nested `export-formats/*/radios/` trees no longer exist ([#621](https://github.com/pskillen/codeplug-studio/issues/621)).
 
 ## UI (project YAML + CPS export)
 
@@ -106,6 +106,8 @@ Wire mapping for CPS formats lives in `docs/reference/export-formats/<format>/` 
 | [neonplug/README.md](neonplug/README.md)                                                       | NeonPlug product hub (channel export + ZIP shipped; org entities / import planned)                                                                                                                                 |
 | [../../reference/export-formats/neonplug/README.md](../../reference/export-formats/neonplug/README.md)       | Tier 3 — NeonPlug `.neonplug` / `codeplug.json`                                                                                                                                                                    |
 | [../../reference/export-formats/native-yaml/README.md](../../reference/export-formats/native-yaml/README.md) | Tier 3 — YAML field tables and example document                                                                                                                                                                    |
+| [../../reference/radios/README.md](../../reference/radios/README.md)                                         | Tier 3 — radio homes (`radios/<mfr>/<model>/`); caps/power/layout shared across adapters                                                                                                                          |
+| [../../reference/export-formats/README.md](../../reference/export-formats/README.md)                         | Tier 3 index — adapter wire hubs + `profiles.md` → radio home                                                                                                                                                      |
 
 Format epics under [#298](https://github.com/pskillen/codeplug-studio/issues/298): [#502](https://github.com/pskillen/codeplug-studio/issues/502)–[#505](https://github.com/pskillen/codeplug-studio/issues/505), [#536](https://github.com/pskillen/codeplug-studio/issues/536) (NeonPlug). Cloud interchange: [#499](https://github.com/pskillen/codeplug-studio/issues/499).
 

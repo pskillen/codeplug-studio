@@ -5,7 +5,7 @@
  * - docs/reference/export-formats/chirp/README.md
  * - docs/reference/export-formats/chirp/channels.md
  * - docs/reference/export-formats/chirp/enum-verification.md
- * - docs/reference/export-formats/chirp/radios/
+ * - docs/reference/radios/ + docs/reference/export-formats/chirp/profiles.md
  */
 
 import { csvToTable } from '../../../../src/core/import-export/csvParse.ts';

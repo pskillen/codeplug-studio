@@ -8,7 +8,7 @@
  * - docs/reference/export-formats/dm32/talkgroups.md
  * - docs/reference/export-formats/dm32/rx-group-lists.md
  * - docs/reference/export-formats/dm32/scan-lists.md
- * - docs/reference/export-formats/dm32/radios/baofeng-dm32uv.md
+ * - docs/reference/radios/baofeng/dm-32uv/README.md
  */
 
 import { csvToTable } from '../../../../src/core/import-export/csvParse.ts';

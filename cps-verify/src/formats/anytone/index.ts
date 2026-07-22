@@ -9,7 +9,7 @@
  * - docs/reference/export-formats/anytone/talk-groups.md
  * - docs/reference/export-formats/anytone/rx-group-lists.md
  * - docs/reference/export-formats/anytone/lst-manifest.md
- * - docs/reference/export-formats/anytone/radios/at-d890uv.md
+ * - docs/reference/radios/anytone/at-d890uv/README.md
  * - docs/reference/export-formats/anytone/am-air.md
  * - docs/reference/export-formats/anytone/fm-broadcast.md
  * - docs/reference/export-formats/anytone/aprs.md

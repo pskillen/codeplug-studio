@@ -8,7 +8,7 @@
  * - docs/reference/export-formats/opengd77/contacts.md
  * - docs/reference/export-formats/opengd77/tg-lists.md
  * - docs/reference/export-formats/opengd77/dtmf-aprs.md
- * - docs/reference/export-formats/opengd77/radios/baofeng-1701.md
+ * - docs/reference/radios/baofeng/dm-1701/README.md
  */
 
 import { csvToTable } from '../../../../src/core/import-export/csvParse.ts';

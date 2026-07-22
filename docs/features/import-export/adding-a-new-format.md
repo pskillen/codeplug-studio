@@ -94,7 +94,7 @@ Nested zone semantics: [nested-zones.md](../library/nested-zones.md).
 
 ## 1. Reference docs (tier 3)
 
-Wire-format ground truth lives under `docs/reference/export-formats/<format>/` — separate from adapter **behaviour** docs under `docs/features/import-export/<format>/`.
+Wire-format ground truth lives under `docs/reference/export-formats/<format>/` — separate from adapter **behaviour** docs under `docs/features/import-export/<format>/`. Radio hardware facts live under `docs/reference/radios/<manufacturer>/<model>/`; link them from `export-formats/<format>/profiles.md` (`profileId` → radio home). Do **not** nest radio stubs under `export-formats/<format>/radios/`.
 
 Per [documentation-boundaries.mdc](../../../.cursor/rules/documentation-boundaries.mdc): **no wire-mapping tables** in tier-1 feature docs or tier-2 domain docs — link out only.
 
