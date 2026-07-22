@@ -71,7 +71,7 @@ Anytone builds partition **AM airband** receive channels into `AMAir.CSV` / `AMZ
 - **Zones** — zones with at least one non-airband member (DMR-only and dual-mode)
 - **Airband** — airband channels plus zones with at least one airband member (airband-only and dual-mode)
 
-Dual-mode zones appear on both **Zones** (DMR member projection) and **Airband** (AM member projection). See [am-air.md](../../reference/formats/anytone/am-air.md) for export column detail.
+Dual-mode zones appear on both **Zones** (DMR member projection) and **Airband** (AM member projection). See [am-air.md](../../reference/export-formats/anytone/am-air.md) for export column detail.
 
 ## Routes
 

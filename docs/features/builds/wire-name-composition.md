@@ -56,7 +56,7 @@ When `expandModes` is true and a channel has multiple `modeProfiles`:
 
 Override keys for expansion rows: `${channelId}:${modeSuffix}` (e.g. `…3333:-D`).
 
-See [OpenGD77 multi-mode](../../reference/formats/opengd77/multi-mode.md).
+See [OpenGD77 multi-mode](../../reference/export-formats/opengd77/multi-mode.md).
 
 ### Multi-talkgroup fan-out (DM32)
 

@@ -6,8 +6,8 @@ Variance and debt report for **stock Baofeng DM-32UV CPS CSV** export vs what we
 
 **Purpose:** Leave a single convertible backlog. Rows may become GitHub tickets under [#503](https://github.com/pskillen/codeplug-studio/issues/503) later — or stay accepted loss. Do **not** treat this file as an active sprint plan.
 
-**Tier-3 wire tables:** [docs/reference/formats/dm32/](../../../reference/formats/dm32/README.md) · worksheet (frozen): [enum-verification.md](../../../reference/formats/dm32/enum-verification.md)  
-**NeonPlug sibling (same radio family, different wire):** [docs/reference/formats/neonplug/](../../../reference/formats/neonplug/README.md) · [radios/dm32uv.md](../../../reference/formats/neonplug/radios/dm32uv.md)
+**Tier-3 wire tables:** [docs/reference/export-formats/dm32/](../../../reference/export-formats/dm32/README.md) · worksheet (frozen): [enum-verification.md](../../../reference/export-formats/dm32/enum-verification.md)  
+**NeonPlug sibling (same radio family, different wire):** [docs/reference/export-formats/neonplug/](../../../reference/export-formats/neonplug/README.md) · [radios/dm32uv.md](../../../reference/export-formats/neonplug/radios/dm32uv.md)
 
 ---
 
@@ -20,7 +20,7 @@ Variance and debt report for **stock Baofeng DM-32UV CPS CSV** export vs what we
 |   **P0** | Empty / zero-member `Scan.csv` floor                                   | **Shipped** ([#564](https://github.com/pskillen/codeplug-studio/issues/564) / PRs [#566](https://github.com/pskillen/codeplug-studio/pull/566)–[#567](https://github.com/pskillen/codeplug-studio/pull/567))                                                                 |
 |   **P1** | Scan names empty/garbled in CPS after import                           | **Open** [#478](https://github.com/pskillen/codeplug-studio/issues/478) — strongest evidence CPS is a dead end; **park** unless someone needs CSV→CPS display                                                                                                                |
 |   **P2** | TX Admit / RX Squelch / Fixed Analog / Scan constants / DMR ID default | **Open** elicitation tickets [#445](https://github.com/pskillen/codeplug-studio/issues/445)–[#451](https://github.com/pskillen/codeplug-studio/issues/451), [#446](https://github.com/pskillen/codeplug-studio/issues/446) — **park**; NeonPlug does not use these CSV enums |
-|   **P2** | Full CPS enum worksheet completion                                     | **Parked** — [enum-verification.md](../../../reference/formats/dm32/enum-verification.md) kept as partial inventory                                                                                                                                                          |
+|   **P2** | Full CPS enum worksheet completion                                     | **Parked** — [enum-verification.md](../../../reference/export-formats/dm32/enum-verification.md) kept as partial inventory                                                                                                                                                          |
 |   **P3** | CPS CSV **import**                                                     | Planned under [#112](https://github.com/pskillen/codeplug-studio/issues/112) / [#503](https://github.com/pskillen/codeplug-studio/issues/503) — deprioritised vs NeonPlug import                                                                                             |
 
 ---
@@ -90,7 +90,7 @@ Do **not** file by default. Promote only if someone needs stock CPS CSV as a pri
 | **G5**  | Richer v1.60 fixture rows                                                                            | [#449](https://github.com/pskillen/codeplug-studio/issues/449) | Fixed Analog, DCS, squelch ladder, scan variants |
 | **G6**  | RX Squelch Mode Carrier vs Carrier/CTC                                                               | [#450](https://github.com/pskillen/codeplug-studio/issues/450) |                                                  |
 | **G7**  | Fixed Analog Channel Type + fixture                                                                  | [#451](https://github.com/pskillen/codeplug-studio/issues/451) |                                                  |
-| **G8**  | Finish [enum-verification.md](../../../reference/formats/dm32/enum-verification.md) Observed columns | [#404](https://github.com/pskillen/codeplug-studio/issues/404) | Parked elicitation                               |
+| **G8**  | Finish [enum-verification.md](../../../reference/export-formats/dm32/enum-verification.md) Observed columns | [#404](https://github.com/pskillen/codeplug-studio/issues/404) | Parked elicitation                               |
 | **G9**  | CPS CSV import                                                                                       | [#112](https://github.com/pskillen/codeplug-studio/issues/112) | Prefer NeonPlug import epic instead              |
 | **G10** | `DMR-ID.csv` export                                                                                  | —                                                              | Accepted skip unless CPS proven to require it    |
 

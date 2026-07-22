@@ -628,7 +628,7 @@ describe('DM32 export serialise', () => {
 
   /**
    * Excluded from row compare: No., Scan List (zone-derived), DMR ID (radio label).
-   * See docs/reference/formats/dm32/channels.md and export-mapping.md.
+   * See docs/reference/export-formats/dm32/channels.md and export-mapping.md.
    */
   it('minimal library export matches synthetic golden bundle', () => {
     const build = minimalDm32ExportBuild();

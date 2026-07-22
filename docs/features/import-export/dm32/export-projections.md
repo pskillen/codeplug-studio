@@ -38,5 +38,5 @@ Each zone member library channel id **fans out** to all projected wire names (ex
 ## Related
 
 - [export-mapping.md](export-mapping.md)
-- [multi-talkgroup.md](../../../reference/formats/dm32/multi-talkgroup.md)
+- [multi-talkgroup.md](../../../reference/export-formats/dm32/multi-talkgroup.md)
 - [zone-grouping.md](../../builds/zone-grouping.md)

@@ -25,7 +25,7 @@ import ForbidTransmitSegment from '@app/components/channels/ForbidTransmitSegmen
 - **RX only** → `forbidTransmit: true` — maps to CPS `Rx Only` / `Yes` at the OpenGD77 export boundary.
 - Indicator colour follows the shared `allowForbid` preset (teal when Allow TX, orange when RX only).
 
-Vendor-neutral field name; wire column mapping is format-specific (see [OpenGD77 channels reference](../../../../docs/reference/formats/opengd77/channels.md)).
+Vendor-neutral field name; wire column mapping is format-specific (see [OpenGD77 channels reference](../../../../docs/reference/export-formats/opengd77/channels.md)).
 
 ## Related
 

@@ -25,4 +25,4 @@ alwaysApply: true
 
 - Shipping UI or integration behaviour with no tier-1 doc update when the feature area already has a hub.
 - Deferring docs to "a later PR" for the same slice of work.
-- Putting CPS wire tables in `docs/features/` — link to `docs/reference/formats/<format>/` instead.
+- Putting CPS wire tables in `docs/features/` — link to `docs/reference/export-formats/<format>/` instead.

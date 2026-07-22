@@ -2,10 +2,10 @@
  * CHIRP CSV wire verifier plugin.
  *
  * Tier-3 documentation sources:
- * - docs/reference/formats/chirp/README.md
- * - docs/reference/formats/chirp/channels.md
- * - docs/reference/formats/chirp/enum-verification.md
- * - docs/reference/formats/chirp/radios/
+ * - docs/reference/export-formats/chirp/README.md
+ * - docs/reference/export-formats/chirp/channels.md
+ * - docs/reference/export-formats/chirp/enum-verification.md
+ * - docs/reference/export-formats/chirp/radios/
  */
 
 import { csvToTable } from '../../../../src/core/import-export/csvParse.ts';

@@ -2,17 +2,17 @@
  * Anytone CPS wire verifier plugin.
  *
  * Tier-3 documentation sources (every enforced rule is stated in these files):
- * - docs/reference/formats/anytone/file-format.md
- * - docs/reference/formats/anytone/channels.md
- * - docs/reference/formats/anytone/zones.md
- * - docs/reference/formats/anytone/scan-lists.md
- * - docs/reference/formats/anytone/talk-groups.md
- * - docs/reference/formats/anytone/rx-group-lists.md
- * - docs/reference/formats/anytone/lst-manifest.md
- * - docs/reference/formats/anytone/radios/at-d890uv.md
- * - docs/reference/formats/anytone/am-air.md
- * - docs/reference/formats/anytone/fm-broadcast.md
- * - docs/reference/formats/anytone/aprs.md
+ * - docs/reference/export-formats/anytone/file-format.md
+ * - docs/reference/export-formats/anytone/channels.md
+ * - docs/reference/export-formats/anytone/zones.md
+ * - docs/reference/export-formats/anytone/scan-lists.md
+ * - docs/reference/export-formats/anytone/talk-groups.md
+ * - docs/reference/export-formats/anytone/rx-group-lists.md
+ * - docs/reference/export-formats/anytone/lst-manifest.md
+ * - docs/reference/export-formats/anytone/radios/at-d890uv.md
+ * - docs/reference/export-formats/anytone/am-air.md
+ * - docs/reference/export-formats/anytone/fm-broadcast.md
+ * - docs/reference/export-formats/anytone/aprs.md
  */
 
 import { csvToTable } from '../../../../src/core/import-export/csvParse.ts';

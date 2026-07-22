@@ -15,7 +15,7 @@ Fixtures and plugins are **profile-scoped** so sibling radios (e.g. future AT-D8
 
 ## Docs ↔ suite sync contract
 
-1. **Tier-3 is canon** — every rule `cps-verify` enforces must appear under `docs/reference/formats/<format>/` (and `radios/` for caps).
+1. **Tier-3 is canon** — every rule `cps-verify` enforces must appear under `docs/reference/export-formats/<format>/` (and `radios/` for caps).
 2. Each format plugin module header **lists every tier-3 path** it enforces.
 3. Changing wire rules, caps, quoting, or line endings → update **docs and** `cps-verify` rules/fixtures/tests in the **same PR**.
 4. Fixture endings match documented Studio export: Anytone/DM32 **CRLF**; OpenGD77/CHIRP **LF**.
@@ -98,7 +98,7 @@ Same core serialisation as UI **Download ZIP** (`exportBuildZip`); IndexedDB and
 
 ## Adding a format / profile plugin
 
-1. Gap-fill tier-3 **Wire verification** under `docs/reference/formats/<format>/`.
+1. Gap-fill tier-3 **Wire verification** under `docs/reference/export-formats/<format>/`.
 2. Add `cps-verify/src/formats/<formatId>/` with SOURCES header.
 3. Register in `cps-verify/src/formats/registry.ts`.
 4. Add `fixtures/<formatId>/<profileId>/good` + crafted `bad/`.
@@ -108,4 +108,4 @@ Same core serialisation as UI **Download ZIP** (`exportBuildZip`); IndexedDB and
 
 - [Testing hub](README.md)
 - [Fixtures](fixtures.md)
-- [Anytone file format](../../reference/formats/anytone/file-format.md)
+- [Anytone file format](../../reference/export-formats/anytone/file-format.md)

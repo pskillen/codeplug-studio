@@ -2,13 +2,13 @@
  * OpenGD77 CPS wire verifier plugin.
  *
  * Tier-3 documentation sources:
- * - docs/reference/formats/opengd77/file-format.md
- * - docs/reference/formats/opengd77/channels.md
- * - docs/reference/formats/opengd77/zones.md
- * - docs/reference/formats/opengd77/contacts.md
- * - docs/reference/formats/opengd77/tg-lists.md
- * - docs/reference/formats/opengd77/dtmf-aprs.md
- * - docs/reference/formats/opengd77/radios/baofeng-1701.md
+ * - docs/reference/export-formats/opengd77/file-format.md
+ * - docs/reference/export-formats/opengd77/channels.md
+ * - docs/reference/export-formats/opengd77/zones.md
+ * - docs/reference/export-formats/opengd77/contacts.md
+ * - docs/reference/export-formats/opengd77/tg-lists.md
+ * - docs/reference/export-formats/opengd77/dtmf-aprs.md
+ * - docs/reference/export-formats/opengd77/radios/baofeng-1701.md
  */
 
 import { csvToTable } from '../../../../src/core/import-export/csvParse.ts';

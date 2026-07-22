@@ -4,7 +4,7 @@ Variance report: **Codeplug Studio** Anytone export adapter vs **operator AT-D89
 
 Earlier single-build comparison: [tmp/export-variance-report.md](../../../../tmp/export-variance-report.md) (Studio export vs minimal official sample).
 
-**Purpose:** Track wire-format mismatches. Tier-3 column detail stays in [docs/reference/formats/anytone/](../../../reference/formats/anytone/README.md) — especially [enum-verification.md](../../../reference/formats/anytone/enum-verification.md).
+**Purpose:** Track wire-format mismatches. Tier-3 column detail stays in [docs/reference/export-formats/anytone/](../../../reference/export-formats/anytone/README.md) — especially [enum-verification.md](../../../reference/export-formats/anytone/enum-verification.md).
 
 ---
 
@@ -19,7 +19,7 @@ Earlier single-build comparison: [tmp/export-variance-report.md](../../../../tmp
 |   **P1** | Channel TX contact from RGL          | **Open question** — operator unsure; leave in outstanding, no ticket yet                                                                                                                  |
 |   **P2** | Power ladder Mid / Turbo             | **Shipped** ([#391](https://github.com/pskillen/codeplug-studio/issues/391))                                                                                                              |
 |   **P2** | ScanList timing / Scan Mode          | Timing defaults → all `5.0` in [#402](https://github.com/pskillen/codeplug-studio/issues/402); Scan Mode readiness remains [#393](https://github.com/pskillen/codeplug-studio/issues/393) |
-|   **P2** | Enum / constant tail columns         | Elicited — see [enum-verification.md](../../../reference/formats/anytone/enum-verification.md)                                                                                            |
+|   **P2** | Enum / constant tail columns         | Elicited — see [enum-verification.md](../../../reference/export-formats/anytone/enum-verification.md)                                                                                            |
 |   **P2** | Sidecar CPS files                    | Skip / future epics (OptionalSetting, HotKey, roaming, NXDN)                                                                                                                              |
 |    **—** | Inventory / doc drift vs adapter     | Corrected in [#402](https://github.com/pskillen/codeplug-studio/issues/402) mop-up                                                                                                        |
 
@@ -53,13 +53,13 @@ Cross-file name FK issues from the earlier variance report were addressed in [#2
 
 ### CPS files not in Studio MVP export
 
-`OptionalSetting.CSV`, encryption/hotkey/roaming/NXDN sidecars, tone encode tables, … — inventory and skip notes in [tier-3 README](../../../reference/formats/anytone/README.md). `APRS.CSV` / `AMZone.CSV` shipped when applicable.
+`OptionalSetting.CSV`, encryption/hotkey/roaming/NXDN sidecars, tone encode tables, … — inventory and skip notes in [tier-3 README](../../../reference/export-formats/anytone/README.md). `APRS.CSV` / `AMZone.CSV` shipped when applicable.
 
 ---
 
 ## Closed — `Channel.CSV` VFO rows (was P0)
 
-Official CPS appends slots `4001` / `4002` (VFO A/B). **Studio need not emit them** — CPS adds VFO rows on import ([#357](https://github.com/pskillen/codeplug-studio/issues/357)). See [channels.md](../../../reference/formats/anytone/channels.md) and [file-format.md](../../../reference/formats/anytone/file-format.md).
+Official CPS appends slots `4001` / `4002` (VFO A/B). **Studio need not emit them** — CPS adds VFO rows on import ([#357](https://github.com/pskillen/codeplug-studio/issues/357)). See [channels.md](../../../reference/export-formats/anytone/channels.md) and [file-format.md](../../../reference/export-formats/anytone/file-format.md).
 
 ---
 
@@ -71,7 +71,7 @@ Official CPS appends slots `4001` / `4002` (VFO A/B). **Studio need not emit the
 
 ## P1 — Airband mode partition
 
-**Shipped** ([#316](https://github.com/pskillen/codeplug-studio/issues/316)). Wire: [am-air.md](../../../reference/formats/anytone/am-air.md). **`FMZone.CSV` does not exist on D890.**
+**Shipped** ([#316](https://github.com/pskillen/codeplug-studio/issues/316)). Wire: [am-air.md](../../../reference/export-formats/anytone/am-air.md). **`FMZone.CSV` does not exist on D890.**
 
 ---
 
@@ -95,11 +95,11 @@ Earlier comment suggested exporting TX contact from RGL membership. Operator eli
 
 | Topic                            | Docs                                                                            | Code                                                                                                                                                                                        |
 | -------------------------------- | ------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Power Mid / Turbo + watts        | [at-d890uv.md](../../../reference/formats/anytone/radios/at-d890uv.md)          | **Shipped** ([#391](https://github.com/pskillen/codeplug-studio/issues/391))                                                                                                                |
-| Scan Mode / Revert / timing      | [scan-lists.md](../../../reference/formats/anytone/scan-lists.md)               | Timing → all `5.0` ([#402](https://github.com/pskillen/codeplug-studio/issues/402)); Scan Mode readiness [#393](https://github.com/pskillen/codeplug-studio/issues/393)                     |
-| Busy Lock provisional constants  | [enum-verification.md](../../../reference/formats/anytone/enum-verification.md) | Mode-aware export constants shipped; full library field via [#388](https://github.com/pskillen/codeplug-studio/issues/388) / [#396](https://github.com/pskillen/codeplug-studio/issues/396) |
-| Slot Suit / talker alias / …     | [enum-verification.md](../../../reference/formats/anytone/enum-verification.md) | [#395](https://github.com/pskillen/codeplug-studio/issues/395), [#398](https://github.com/pskillen/codeplug-studio/issues/398)                                                              |
-| FM bank members in `DMRZone.CSV` | [fm-broadcast.md](../../../reference/formats/anytone/fm-broadcast.md) / zones   | [#418](https://github.com/pskillen/codeplug-studio/issues/418)                                                                                                                              |
+| Power Mid / Turbo + watts        | [at-d890uv.md](../../../reference/export-formats/anytone/radios/at-d890uv.md)          | **Shipped** ([#391](https://github.com/pskillen/codeplug-studio/issues/391))                                                                                                                |
+| Scan Mode / Revert / timing      | [scan-lists.md](../../../reference/export-formats/anytone/scan-lists.md)               | Timing → all `5.0` ([#402](https://github.com/pskillen/codeplug-studio/issues/402)); Scan Mode readiness [#393](https://github.com/pskillen/codeplug-studio/issues/393)                     |
+| Busy Lock provisional constants  | [enum-verification.md](../../../reference/export-formats/anytone/enum-verification.md) | Mode-aware export constants shipped; full library field via [#388](https://github.com/pskillen/codeplug-studio/issues/388) / [#396](https://github.com/pskillen/codeplug-studio/issues/396) |
+| Slot Suit / talker alias / …     | [enum-verification.md](../../../reference/export-formats/anytone/enum-verification.md) | [#395](https://github.com/pskillen/codeplug-studio/issues/395), [#398](https://github.com/pskillen/codeplug-studio/issues/398)                                                              |
+| FM bank members in `DMRZone.CSV` | [fm-broadcast.md](../../../reference/export-formats/anytone/fm-broadcast.md) / zones   | [#418](https://github.com/pskillen/codeplug-studio/issues/418)                                                                                                                              |
 
 ---
 
@@ -113,7 +113,7 @@ Single-pass reconciliation of Studio-emitted files against hand-reviewed tier-3 
 
 | Tier                       | Files / columns                                                                                                                   |
 | -------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
-| **Bidirectional (target)** | DMR core columns documented in [channels.md](../../../reference/formats/anytone/channels.md), talk groups, RGL, zones, scan lists |
+| **Bidirectional (target)** | DMR core columns documented in [channels.md](../../../reference/export-formats/anytone/channels.md), talk groups, RGL, zones, scan lists |
 | **Export default**         | Unmodelled `Channel.CSV` tail (`channelDefaults.ts`); confirmation / talker-alias defaults                                        |
 | **Header-only / Skip**     | OptionalSetting, HotKey, encryption, roaming (future epics)                                                                       |
 | **Skip**                   | Import not in scope [#229](https://github.com/pskillen/codeplug-studio/issues/229)                                                |
@@ -138,4 +138,4 @@ Single-pass reconciliation of Studio-emitted files against hand-reviewed tier-3 
 
 - Studio export code: `src/core/import-export/formats/anytone/`
 - Golden fixtures: `test-data/anytone/at-d890uv/`
-- Enum checklist: [enum-verification.md](../../../reference/formats/anytone/enum-verification.md)
+- Enum checklist: [enum-verification.md](../../../reference/export-formats/anytone/enum-verification.md)

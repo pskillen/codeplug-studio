@@ -1,6 +1,6 @@
 # CHIRP CSV — import / export
 
-Product behaviour for CHIRP analogue FM/AM CSV in Codeplug Studio. Wire column tables live in the tier-3 [CHIRP reference](../../../reference/formats/chirp/README.md).
+Product behaviour for CHIRP analogue FM/AM CSV in Codeplug Studio. Wire column tables live in the tier-3 [CHIRP reference](../../../reference/export-formats/chirp/README.md).
 
 **Tracking:** Epic [#504](https://github.com/pskillen/codeplug-studio/issues/504) (import + export; supersedes M1 [#38](https://github.com/pskillen/codeplug-studio/issues/38) / [#214](https://github.com/pskillen/codeplug-studio/issues/214)) · DCS/CrossMode [#527](https://github.com/pskillen/codeplug-studio/issues/527) · import [#222](https://github.com/pskillen/codeplug-studio/issues/222)–[#226](https://github.com/pskillen/codeplug-studio/issues/226)
 
@@ -10,10 +10,10 @@ Product behaviour for CHIRP analogue FM/AM CSV in Codeplug Studio. Wire column t
 
 | Area                                                      | Status  | Notes                                                                                                                                                                                                                                             |
 | --------------------------------------------------------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Wire reference                                            | Shipped | [reference/formats/chirp/](../../../reference/formats/chirp/README.md)                                                                                                                                                                            |
+| Wire reference                                            | Shipped | [reference/export-formats/chirp/](../../../reference/export-formats/chirp/README.md)                                                                                                                                                                            |
 | Trait profiles (`chirp-uv5r`, `chirp-rt95`, `chirp-uv21`) | Shipped | `TRAIT_PROFILES` — `FlatMemoryList`, `PerChannelScanFlag`                                                                                                                                                                                         |
 | Radio profiles + columns                                  | Shipped | `formats/chirp/profiles.ts`, `columns.ts` — caps from CHIRP drivers ([#598](https://github.com/pskillen/codeplug-studio/issues/598)): UV-5R 999/12, UV-21 1000/12, RT95 200/6                                                                     |
-| Enum / column verification                                | Shipped | [enum-verification.md](../../../reference/formats/chirp/enum-verification.md)                                                                                                                                                                     |
+| Enum / column verification                                | Shipped | [enum-verification.md](../../../reference/export-formats/chirp/enum-verification.md)                                                                                                                                                                     |
 | cps-verify (uv5r, uv21, rt95)                             | Shipped | `cps-verify/fixtures/chirp/`                                                                                                                                                                                                                      |
 | Flat memory assemble projection                           | Shipped | `exportOrderOrSlot.ts`, `assemble.ts` — `orderOrSlot` on overrides                                                                                                                                                                                |
 | Export adapter (single CSV)                               | Shipped | `exportBuildSingleFile` → `serialiseChirpCsv` — **first-class** for `chirp-uv5r`, `chirp-uv21`, and `chirp-rt95` ([#609](https://github.com/pskillen/codeplug-studio/issues/609), [#610](https://github.com/pskillen/codeplug-studio/issues/610)) |
@@ -39,7 +39,7 @@ Studio uses two related concepts (same `profileId` keys):
 | `chirp-uv21` | Baofeng UV-21Pro V2 | 12         | 1000         |
 | `chirp-rt95` | Retevis RT95 VOX    | 6          | 200          |
 
-Per-radio wire detail: [docs/reference/formats/chirp/radios/](../../../reference/formats/chirp/radios/README.md).
+Per-radio wire detail: [docs/reference/export-formats/chirp/radios/](../../../reference/export-formats/chirp/radios/README.md).
 
 ## Operator workflow
 
@@ -72,7 +72,7 @@ CSV export is **first-class** for all three CHIRP radio profiles (`chirp-uv5r`, 
 | `Comment`                      | Not exported — library field only                   |
 | `TStep`                        | Constant `5.00` on export                           |
 
-DCS / CrossMode export is model-driven from `rxTone`/`txTone` (see [channels.md — Tones](../../../reference/formats/chirp/channels.md#tones)).
+DCS / CrossMode export is model-driven from `rxTone`/`txTone` (see [channels.md — Tones](../../../reference/export-formats/chirp/channels.md#tones)).
 
 ## Related
 
@@ -82,4 +82,4 @@ DCS / CrossMode export is model-driven from `rxTone`/`txTone` (see [channels.md 
 - [scan-inclusion](../../../reference/scan-inclusion.md)
 - [operator lifecycle](../workflows/operator-lifecycle.md)
 - [Browser radio I/O](../../radio-read-write/README.md) — WebSerial direct read/write ([#594](https://github.com/pskillen/codeplug-studio/issues/594))
-- [enum-verification](../../../reference/formats/chirp/enum-verification.md)
+- [enum-verification](../../../reference/export-formats/chirp/enum-verification.md)
