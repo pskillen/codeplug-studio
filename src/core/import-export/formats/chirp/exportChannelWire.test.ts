@@ -127,4 +127,40 @@ describe('chirp/exportChannelWire', () => {
     );
     expect(row[1]).toBe('GB7AC Largs');
   });
+
+  it('exports Skip from build scanInclusionOverride over library', () => {
+    const librarySkip = channelToChirpRow(
+      {
+        ...assembledChannel({
+          name: 'Library skip',
+          rxFrequency: 145_500_000,
+          txFrequency: 145_500_000,
+          scanInclusion: 'skip',
+        }),
+        scanInclusionOverride: 'alwaysScan',
+      },
+      1,
+      'chirp-uv5r',
+      testWireOptions(),
+      { formatDefault: 'skip' },
+    );
+    expect(librarySkip[14]).toBe('');
+
+    const libraryDefault = channelToChirpRow(
+      {
+        ...assembledChannel({
+          name: 'Library default',
+          rxFrequency: 145_500_000,
+          txFrequency: 145_500_000,
+          scanInclusion: 'default',
+        }),
+        scanInclusionOverride: 'skip',
+      },
+      2,
+      'chirp-rt95',
+      testWireOptions(),
+      { formatDefault: 'skip' },
+    );
+    expect(libraryDefault[14]).toBe('S');
+  });
 });

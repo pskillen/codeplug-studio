@@ -2,7 +2,7 @@ import { effectiveForbidTransmit } from '@core/import-export/channelBehaviourDef
 import type { ChannelBehaviourContext } from '@core/import-export/channelBehaviourDefaults/resolve.ts';
 import {
   buildScanContext,
-  resolveEffectiveScanInclusion,
+  resolveChannelScanInclusionForExport,
   type ScanInclusionContext,
 } from '@core/import-export/scanInclusion/resolve.ts';
 import type { CpsExportOptions } from '@core/import-export/types.ts';
@@ -11,6 +11,7 @@ import type {
   ChannelModeProfile,
   ChannelModeProfileAnalog,
   ChannelModeProfileDMR,
+  ScanInclusion,
 } from '@core/models/library.ts';
 import type {
   ChannelMode,
@@ -185,6 +186,8 @@ export interface NeonplugChannelWireOptions {
   profileId: string;
   /** Override scan inclusion context (build + format defaults). */
   scanContext?: ScanInclusionContext;
+  /** Per-channel build override — wins over library `scanInclusion`. */
+  scanInclusionOverride?: ScanInclusion;
   behaviourContext?: ChannelBehaviourContext;
   /** Talk-group / contact book index (`0` = none). */
   contactId?: number;
@@ -235,7 +238,9 @@ export function channelToNeonplugChannel(
 
   const scanContext =
     options.scanContext ?? buildScanContext(undefined, { defaultScanInclusion: 'scan' });
-  const scanAdd = resolveEffectiveScanInclusion(channel, scanContext) === 'scan';
+  const scanAdd =
+    resolveChannelScanInclusionForExport(channel, options.scanInclusionOverride, scanContext) ===
+    'scan';
   const forbidTx = effectiveForbidTransmit(channel, options.behaviourContext);
   const rxFrequency = formatNeonplugFrequencyMhz(channel.rxFrequency);
 

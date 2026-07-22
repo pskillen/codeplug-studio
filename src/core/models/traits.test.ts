@@ -29,6 +29,15 @@ describe('trait profiles', () => {
     expect(profile?.traits).toContain(BuildCapabilityTrait.PerChannelScanFlag);
   });
 
+  it('registers all CHIRP variants with per-channel scan flag', () => {
+    for (const profileId of ['chirp-uv5r', 'chirp-rt95', 'chirp-uv21'] as const) {
+      const profile = traitProfileFor(profileId);
+      expect(profile?.formatId).toBe('chirp');
+      expect(profile?.traits).toContain(BuildCapabilityTrait.FlatMemoryList);
+      expect(profile?.traits).toContain(BuildCapabilityTrait.PerChannelScanFlag);
+    }
+  });
+
   it('registers opengd77-md9600 with zone traits', () => {
     const profile = traitProfileFor('opengd77-md9600');
     expect(profile?.traits).toContain(BuildCapabilityTrait.ZoneGrouping);
