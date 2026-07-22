@@ -9,11 +9,11 @@ CSV export is **first-class** — same shared CHIRP pathway as UV-5R Mini (`expo
 
 ## Limits
 
-| Constraint       | Value     | Export behaviour                                                         |
-| ---------------- | --------- | ------------------------------------------------------------------------ |
-| Max memory slots | 1000      | Warn when channel count exceeds; truncate lowest-priority rows if forced |
-| Channel name     | 12 chars  | Name shortening at export boundary                                       |
-| Modes            | NFM, AM   | Skip non-FM/AM internal modes with warning                               |
+| Constraint       | Value    | Export behaviour                                                         |
+| ---------------- | -------- | ------------------------------------------------------------------------ |
+| Max memory slots | 1000     | Warn when channel count exceeds; truncate lowest-priority rows if forced |
+| Channel name     | 12 chars | Name shortening at export boundary                                       |
+| Modes            | NFM, AM  | Skip non-FM/AM internal modes with warning                               |
 
 Flat-memory CHIRP profiles do **not** use zones, scan lists, contacts, talk groups, or RX group lists. Radio characteristics marks those rows as not used (`getProfileExportLimits`).
 
