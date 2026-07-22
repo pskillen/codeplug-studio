@@ -15,7 +15,7 @@ Export/import **adapter** wire tables live under [`docs/reference/export-formats
 | Baofeng DM-32UV         | [baofeng/dm-32uv/](baofeng/dm-32uv/README.md)           | Caps, power; V-frame + 4KB binary memory ([#637](https://github.com/pskillen/codeplug-studio/issues/637)); DM32 + NeonPlug (`DP570UV`) |
 | Baofeng DM-1701 / RT-84 | [baofeng/dm-1701/](baofeng/dm-1701/README.md)           | Caps, power P-ladder; OpenGD77                                                                                                         |
 | OpenGD77 / OpenUV380    | [opengd77/](opengd77/README.md)                         | Binary memory + serial protocol (CSV ≠ binary)                                                                                         |
-| Retevis RT95 VOX        | [retevis/rt95/](retevis/rt95/README.md)                 | Caps, power; CHIRP `chirp-rt95`                                                                                                        |
+| Retevis RT95 VOX        | [retevis/rt95/](retevis/rt95/README.md)                 | Caps, power; PROGRAM→QX binary memory ([#642](https://github.com/pskillen/codeplug-studio/issues/642)); CHIRP `chirp-rt95`             |
 | TYT MD-9600 / RT-90     | [tyt/md-9600/](tyt/md-9600/README.md)                   | Caps, power P-ladder (+W- not modelled); OpenGD77                                                                                      |
 | Anytone AT-D890UV       | [anytone/at-d890uv/](anytone/at-d890uv/README.md)       | Caps, power, bank features; Anytone CPS                                                                                                |
 
