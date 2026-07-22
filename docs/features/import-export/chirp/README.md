@@ -21,6 +21,7 @@ Product behaviour for CHIRP analogue FM/AM CSV in Codeplug Studio. Wire column t
 | Browser download + export UI                              | Shipped | `ExportBuildCpsPanel` — Download CSV + preview                                                                                                                                          |
 | UV-5R prefer-NeonPlug export hint                         | Shipped | [#556](https://github.com/pskillen/codeplug-studio/issues/556) — yellow alert at top of export panel and above Download CSV when export profile is `chirp-uv5r`; New build profile pill |
 | Export golden tests                                       | Shipped | `exportGolden.test.ts` — three profile fixtures                                                                                                                                         |
+| DCS / CrossMode export                                    | Shipped | [#527](https://github.com/pskillen/codeplug-studio/issues/527) — `formatChirpToneColumns` mirrors CHIRP `split_tone_decode`                                                             |
 | CPS import                                                | Planned | Phase 6b [#214](https://github.com/pskillen/codeplug-studio/issues/214)                                                                                                                 |
 
 ## Trait profile vs radio profile
@@ -60,15 +61,17 @@ For **UV-5R Mini** (`chirp-uv5r`), the export page shows a soft hint that CHIRP 
 
 ## Lossy fields
 
-| Field                          | Behaviour                                      |
-| ------------------------------ | ---------------------------------------------- |
-| `Location`                     | Export-time assignment from build memory order |
-| DMR columns (`URCALL`, …)      | Empty on analogue export                       |
-| Mixed-project digital channels | Skipped with warning                           |
-| `DtcsCode` / `CrossMode`       | Export constants only — DCS not modelled       |
-| Duplex `+`/`-` with offset 0   | Collapses to simplex in model                  |
-| `Comment`                      | Not exported — library field only              |
-| `TStep`                        | Constant `5.00` on export                      |
+| Field                          | Behaviour                                                                 |
+| ------------------------------ | ------------------------------------------------------------------------- |
+| `Location`                     | Export-time assignment from build memory order                            |
+| DMR columns (`URCALL`, …)      | Empty on analogue export                                                  |
+| Mixed-project digital channels | Skipped with warning                                                      |
+| `DTCS-R` / `TSQL-R` tmodes     | Not emitted on export — no reverse-only model field                       |
+| Duplex `+`/`-` with offset 0   | Collapses to simplex in model                                             |
+| `Comment`                      | Not exported — library field only                                         |
+| `TStep`                        | Constant `5.00` on export                                                 |
+
+DCS / CrossMode export is model-driven from `rxTone`/`txTone` (see [channels.md — Tones](../../../reference/chirp/channels.md#tones)).
 
 ## Related
 

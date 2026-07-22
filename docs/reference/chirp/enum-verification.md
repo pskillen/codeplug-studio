@@ -23,8 +23,8 @@ Fill **Observed** when re-checking against a live CHIRP build; **Source** is fro
 | Frequency                    | MHz string via `format_freq`                                                                                                 | 6 dp MHz                         | Match intent                                                                      |
 | Duplex                       | `""`, `+`, `-`, `off`, …                                                                                                     | `deriveChirpDuplexAndOffset`     | Match intent; `split` N/A                                                         |
 | Offset                       | MHz                                                                                                                          | MHz 6 dp                         | Match                                                                             |
-| Tone / rToneFreq / cToneFreq | tmode + tones                                                                                                                | Tone/TSQL mapping                | Match intent                                                                      |
-| Dtcs\* / CrossMode           | full DCS model                                                                                                               | constants only                   | **Accepted gap** → [#527](https://github.com/pskillen/codeplug-studio/issues/527) |
+| Tone / rToneFreq / cToneFreq | tmode + tones                                                                                                                | Tone/TSQL/DTCS/Cross via `formatChirpToneColumns` | Match intent (`split_tone_decode`)                                      |
+| Dtcs\* / CrossMode           | full DCS model                                                                                                               | model-driven from `rxTone`/`txTone` | **Match intent** (export; [#527](https://github.com/pskillen/codeplug-studio/issues/527)) |
 | Mode                         | radio `valid_modes`                                                                                                          | NFM/FM/AM                        | Match subset                                                                      |
 | TStep                        | memory tuning_step                                                                                                           | constant `5.00`                  | Accepted constant                                                                 |
 | Skip                         | `""` / `S` (and sometimes `P`)                                                                                               | `S` or empty                     | Match; `P` unsupported                                                            |
@@ -56,7 +56,7 @@ Studio keeps watt strings for interchange with Generic CSV and existing goldens.
 | ---------------------------------------------------------------------- | -------- | -------------------------------------------------------------- |
 | Live CHIRP export of UV-21 / RT95 confirming watt vs label Power cells | Medium   | Optional if sticking to Generic CSV convention                 |
 | `P` priority skip                                                      | Low      | Unsupported                                                    |
-| DCS / CrossMode                                                        | High     | [#527](https://github.com/pskillen/codeplug-studio/issues/527) |
+| DCS / CrossMode import (`DTCS` / `Cross` parse)                        | Medium   | Export done ([#527](https://github.com/pskillen/codeplug-studio/issues/527)); import under [#222](https://github.com/pskillen/codeplug-studio/issues/222)–[#226](https://github.com/pskillen/codeplug-studio/issues/226) |
 
 ## Related
 
