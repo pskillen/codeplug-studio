@@ -6,11 +6,7 @@
  */
 
 import type { BytePipe } from '../types.ts';
-import {
-  RadioClosedError,
-  RadioTimeoutError,
-  RadioUnsupportedError,
-} from '../kit/errors.ts';
+import { RadioClosedError, RadioTimeoutError, RadioUnsupportedError } from '../kit/errors.ts';
 import { assertWebSerialSupported } from './featureDetect.ts';
 
 export interface WebSerialPipeOptions {
@@ -86,9 +82,7 @@ class WebSerialBytePipe implements BytePipe {
         throw new RadioClosedError('Serial port closed unexpectedly.');
       }
       if (Date.now() > deadline) {
-        throw new RadioTimeoutError(
-          `Timeout: needed ${n} bytes, have ${this.buf.length}.`,
-        );
+        throw new RadioTimeoutError(`Timeout: needed ${n} bytes, have ${this.buf.length}.`);
       }
       const remaining = Math.max(1, deadline - Date.now());
       await this.waitForBytes(remaining);
@@ -205,10 +199,7 @@ async function resolvePort(forceSelection: boolean): Promise<SerialPortLike> {
 /**
  * Open an already-obtained port at `baudRate` and return a BytePipe.
  */
-export async function openWebSerialPipe(
-  port: SerialPortLike,
-  baudRate: number,
-): Promise<BytePipe> {
+export async function openWebSerialPipe(port: SerialPortLike, baudRate: number): Promise<BytePipe> {
   if (!port.readable || !port.writable) {
     await port.open({ baudRate });
   } else if (port.readable.locked || port.writable.locked) {
@@ -224,9 +215,7 @@ export async function openWebSerialPipe(
 /**
  * Request (or reuse) a Web Serial port and open a BytePipe at `baudRate`.
  */
-export async function requestWebSerialPipe(
-  options: WebSerialPipeOptions,
-): Promise<BytePipe> {
+export async function requestWebSerialPipe(options: WebSerialPipeOptions): Promise<BytePipe> {
   const port = await resolvePort(options.forceSelection ?? false);
   return openWebSerialPipe(port, options.baudRate);
 }

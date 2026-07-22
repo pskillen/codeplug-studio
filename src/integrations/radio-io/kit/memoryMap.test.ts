@@ -1,9 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import {
-  createMemoryMap,
-  memoryMapFromBytes,
-  memoryMapToBytes,
-} from './memoryMap.ts';
+import { createMemoryMap, memoryMapFromBytes, memoryMapToBytes } from './memoryMap.ts';
 import { RadioAbortedError } from './errors.ts';
 import { assertNotAborted, reportProgress, throwIfAborted } from './progress.ts';
 import { clearCachedImage, createRadioSession, setCachedImage } from './session.ts';
@@ -53,9 +49,9 @@ describe('progress', () => {
     const signal = AbortSignal.abort();
     expect(() => assertNotAborted(signal)).toThrow(RadioAbortedError);
     expect(() => throwIfAborted(signal)).toThrow(RadioAbortedError);
-    expect(() =>
-      reportProgress(undefined, { cur: 0, max: 1, msg: 'x' }, signal),
-    ).toThrow(RadioAbortedError);
+    expect(() => reportProgress(undefined, { cur: 0, max: 1, msg: 'x' }, signal)).toThrow(
+      RadioAbortedError,
+    );
   });
 });
 

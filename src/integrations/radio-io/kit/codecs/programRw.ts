@@ -63,14 +63,9 @@ export function makeProgramRwWriteFrame(
 }
 
 /** Strip 4-byte header; optional opcode check when expectedOpcode is set. */
-export function parseProgramRwReadReply(
-  frame: Uint8Array,
-  expectedLength?: number,
-): Uint8Array {
+export function parseProgramRwReadReply(frame: Uint8Array, expectedLength?: number): Uint8Array {
   if (frame.length < PROGRAM_RW_HEADER_LEN) {
-    throw new RadioProtocolError(
-      `PROGRAM+R/W read reply too short: ${frame.length} bytes`,
-    );
+    throw new RadioProtocolError(`PROGRAM+R/W read reply too short: ${frame.length} bytes`);
   }
   if (frame[0] !== PROGRAM_RW_READ_OPCODE) {
     throw new RadioProtocolError(
@@ -96,9 +91,7 @@ export function parseProgramRwReadReply(
 export async function expectAck(pipe: BytePipe, timeoutMs: number): Promise<void> {
   const byte = await pipe.readExact(1, timeoutMs);
   if (byte[0] !== PROGRAM_RW_ACK) {
-    throw new RadioProtocolError(
-      `Expected ACK 0x06, got 0x${byte[0]?.toString(16) ?? '??'}`,
-    );
+    throw new RadioProtocolError(`Expected ACK 0x06, got 0x${byte[0]?.toString(16) ?? '??'}`);
   }
 }
 

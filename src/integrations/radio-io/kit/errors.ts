@@ -4,13 +4,7 @@
  */
 
 export type RadioIoErrorCode =
-  | 'timeout'
-  | 'closed'
-  | 'noResponse'
-  | 'wrongIdent'
-  | 'protocol'
-  | 'aborted'
-  | 'unsupported';
+  'timeout' | 'closed' | 'noResponse' | 'wrongIdent' | 'protocol' | 'aborted' | 'unsupported';
 
 export class RadioIoError extends Error {
   readonly code: RadioIoErrorCode;

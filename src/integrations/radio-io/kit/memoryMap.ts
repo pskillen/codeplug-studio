@@ -35,9 +35,7 @@ function assertRange(offset: number, length: number, size: number): void {
     throw new RangeError(`MemoryMap length must be a non-negative integer, got ${length}`);
   }
   if (offset + length > size) {
-    throw new RangeError(
-      `MemoryMap range [${offset}, ${offset + length}) exceeds size ${size}`,
-    );
+    throw new RangeError(`MemoryMap range [${offset}, ${offset + length}) exceeds size ${size}`);
   }
 }
 

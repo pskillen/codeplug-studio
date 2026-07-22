@@ -38,9 +38,7 @@ function mockPipe(scriptedReads: Uint8Array[]): {
 
 describe('programRwCodec frames', () => {
   it('builds read frames as R + u16 BE addr + length', () => {
-    expect(makeProgramRwReadFrame(0x0010, 0x40)).toEqual(
-      new Uint8Array([0x52, 0x00, 0x10, 0x40]),
-    );
+    expect(makeProgramRwReadFrame(0x0010, 0x40)).toEqual(new Uint8Array([0x52, 0x00, 0x10, 0x40]));
     expect(programRwCodec.makeReadFrame(0x8240, 0x10)).toEqual(
       new Uint8Array([0x52, 0x82, 0x40, 0x10]),
     );
@@ -68,9 +66,9 @@ describe('programRwCodec frames', () => {
     expect(() => parseProgramRwReadReply(new Uint8Array([0x57, 0, 0, 1, 9]))).toThrow(
       RadioProtocolError,
     );
-    expect(() =>
-      parseProgramRwReadReply(new Uint8Array([0x52, 0, 0, 2, 1])),
-    ).toThrow(RadioProtocolError);
+    expect(() => parseProgramRwReadReply(new Uint8Array([0x52, 0, 0, 2, 1]))).toThrow(
+      RadioProtocolError,
+    );
   });
 });
 

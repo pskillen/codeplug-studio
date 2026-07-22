@@ -21,7 +21,9 @@ describe('featureDetect', () => {
   });
 
   it('reports supported when navigator.serial is present', () => {
-    vi.stubGlobal('navigator', { serial: { getPorts: async () => [], requestPort: async () => ({}) } });
+    vi.stubGlobal('navigator', {
+      serial: { getPorts: async () => [], requestPort: async () => ({}) },
+    });
     expect(isWebSerialSupported()).toBe(true);
     expect(() => assertWebSerialSupported()).not.toThrow();
   });
@@ -82,7 +84,8 @@ describe('openWebSerialPipe', () => {
     fake.pushRead(new Uint8Array([9, 8, 7]));
     // drain into buffer
     await pipe.readExact(1, 500);
-    await pipe.flush();
+    expect(pipe.flush).toBeTypeOf('function');
+    await pipe.flush!();
     // after flush, leftover must not be returned
     const late = pipe.readExact(2, 60);
     await expect(late).rejects.toBeInstanceOf(RadioTimeoutError);

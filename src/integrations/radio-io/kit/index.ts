@@ -9,11 +9,7 @@ export {
   RadioUnsupportedError,
   RadioWrongIdentError,
 } from './errors.ts';
-export {
-  createMemoryMap,
-  memoryMapFromBytes,
-  memoryMapToBytes,
-} from './memoryMap.ts';
+export { createMemoryMap, memoryMapFromBytes, memoryMapToBytes } from './memoryMap.ts';
 export { assertNotAborted, reportProgress, throwIfAborted } from './progress.ts';
 export {
   clearCachedImage,
