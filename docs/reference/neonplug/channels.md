@@ -102,15 +102,15 @@ Many `unknown*` fields exist (`unknown1A_6_4`, `unknown1C_1_0`, `unknown2A`, …
 
 ## Mapping sketch → Studio library
 
-| NeonPlug                          | Studio (directional)                                     |
-| --------------------------------- | -------------------------------------------------------- |
-| `rxFrequency` / `txFrequency` MHz | Hz on `Channel`                                          |
-| `mode`                            | `Channel` mode / `primaryMode` / mode profiles           |
-| `power` enum                      | Percentage or profile ladder at export                   |
-| `rxCtcssDcs` / `txCtcssDcs`       | Tone model                                               |
-| `contactId` index                 | UUID talk-group / contact FK after resolve               |
-| `scanAdd`                         | `scanInclusion` / per-channel scan flag                  |
-| `number`                          | Export-time assignment from assemble / flat memory order |
+| NeonPlug                          | Studio (directional)                                                                               |
+| --------------------------------- | -------------------------------------------------------------------------------------------------- |
+| `rxFrequency` / `txFrequency` MHz | Hz on `Channel`                                                                                    |
+| `mode`                            | `Channel` mode / `primaryMode` / mode profiles                                                     |
+| `power` enum                      | Percentage or profile ladder at export                                                             |
+| `rxCtcssDcs` / `txCtcssDcs`       | Tone model                                                                                         |
+| `contactId` index                 | UUID talk-group / contact FK after resolve                                                         |
+| `scanAdd`                         | `scanInclusion` / per-channel build override → library ([scan-inclusion.md](../scan-inclusion.md)) |
+| `number`                          | Export-time assignment from assemble / flat memory order                                           |
 
 ### Export notes
 
