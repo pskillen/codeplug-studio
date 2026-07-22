@@ -1,6 +1,6 @@
 # OpenGD77 — Channels.csv
 
-Generic column reference for `Channels.csv`. Cardinality and display-length limits are radio-profile-specific — see [radios/baofeng-1701.md](radios/baofeng-1701.md).
+Generic column reference for `Channels.csv`. Cardinality and display-length limits are radio-profile-specific — see [profiles.md](profiles.md) / [dm-1701](../../radios/baofeng/dm-1701/README.md).
 
 **Code:** [`columns.ts`](../../../../src/core/import-export/formats/opengd77/columns.ts) · [`parse.ts`](../../../../src/core/import-export/formats/opengd77/parse.ts) · [`serialise.ts`](../../../../src/core/import-export/formats/opengd77/serialise.ts) · [`channelWire.ts`](../../../../src/core/import-export/formats/opengd77/channelWire.ts) (import) · [`channelWire.ts`](../../../../src/core/import-export/formats/opengd77/channelWire.ts) (export)
 
@@ -64,7 +64,7 @@ OpenGD77 `Channels.csv` has **no TX Admit or Busy Lock column**. Resolved `txPer
 
 ## Export name length and shortening
 
-Radio LCD limits are profile-specific (~16 chars on [Baofeng 1701](radios/baofeng-1701.md)). The app default `nameLimit` is **16** on OpenGD77 profiles (`src/core/import-export/formats/opengd77/profiles.ts`).
+Radio LCD limits are profile-specific (~16 chars on [Baofeng 1701](../../radios/baofeng/dm-1701/README.md)). The app default `nameLimit` is **16** on OpenGD77 profiles (`src/core/import-export/formats/opengd77/profiles.ts`).
 
 When a composed or expanded wire name exceeds the effective limit, export runs the shortening pipeline (dictionary → vowel-squeeze → optional `callsign_suffix` downgrade → truncate). Zone `ChannelN` members and TG-list contact names receive the **same** shortened strings as `Channels.csv`.
 

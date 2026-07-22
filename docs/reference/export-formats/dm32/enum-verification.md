@@ -371,6 +371,6 @@ Inventory for documentation / future only.
 
 - [DM32 reference hub](README.md)
 - [channels.md](channels.md) · [zones.md](zones.md) · [talkgroups.md](talkgroups.md) · [contacts.md](contacts.md) · [rx-group-lists.md](rx-group-lists.md) · [dtmf-contacts.md](dtmf-contacts.md) · [scan-lists.md](scan-lists.md)
-- [baofeng-dm32uv.md](radios/baofeng-dm32uv.md)
+- [profiles.md](profiles.md) · [dm-32uv](../../radios/baofeng/dm-32uv/README.md)
 - Outstanding: [dm32-outstanding.md](../../../features/import-export/dm32-outstanding.md)
 - Sibling worksheets: [anytone/enum-verification.md](../anytone/enum-verification.md) · [opengd77/enum-verification.md](../opengd77/enum-verification.md)

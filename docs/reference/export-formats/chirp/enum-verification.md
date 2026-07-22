@@ -61,5 +61,5 @@ Studio keeps watt strings for interchange with Generic CSV and existing goldens.
 ## Related
 
 - [channels.md](channels.md)
-- [radios/](radios/README.md)
+- [profiles.md](profiles.md)
 - Feature hub: [chirp/README.md](../../../features/import-export/chirp/README.md)

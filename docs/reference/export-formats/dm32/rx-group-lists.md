@@ -6,6 +6,6 @@
 | `RX Group Name`   | `RxGroupList.name` | FK from channel `RX Group List`; shortened when export **Shorten long names** is on and name exceeds profile `nameLimit` |
 | `Contact Members` | `memberRefs`       | Pipe-separated talk-group / contact **names**                                                                            |
 
-**Cap:** 32 members per list ([baofeng-dm32uv.md](radios/baofeng-dm32uv.md)).
+**Cap:** 32 members per list ([dm-32uv](../../radios/baofeng/dm-32uv/README.md) · [profiles.md](profiles.md)).
 
 **`ALL` list:** CPS meta list — channel column `ALL` references this name. Member pipe list is opaque wire text; preserve verbatim on bidirectional mapping.

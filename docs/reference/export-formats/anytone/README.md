@@ -11,7 +11,7 @@ Authoritative reference for **Anytone Customer Programming Software (CPS) CSV** 
 | Layer                   | Location                      | Contents                                                                  |
 | ----------------------- | ----------------------------- | ------------------------------------------------------------------------- |
 | **Generic wire format** | This directory                | Column headers, semantic mapping, import/export fidelity tiers            |
-| **Radio profiles**      | [`radios/`](radios/README.md) | Per-radio limits (channel caps, name length, member counts) — provisional |
+| **Radio profiles**      | [`profiles.md`](profiles.md) · [`radios/`](../../radios/) | Studio `profileId` → radio home; caps provisional in radios tree |
 
 The **internal library model is format-agnostic** ([data model](../../../features/data-model/README.md)). Anytone constraints apply at **export time** when the operator picks `anytone-at-d890uv`.
 

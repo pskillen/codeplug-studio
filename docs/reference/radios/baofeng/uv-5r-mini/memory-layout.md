@@ -35,4 +35,4 @@ Classic **UV-5R** uses **S/X** — do not merge that path into this codec.
 ## Related
 
 - [README.md](README.md) · [power.md](power.md)
-- Adapter stubs: [chirp-uv5r](../../../export-formats/chirp/radios/chirp-uv5r.md) · [uv5rmini](../../../export-formats/neonplug/radios/uv5rmini.md)
+- Adapter profiles: [chirp profiles.md](../../../export-formats/chirp/profiles.md) · [neonplug profiles.md](../../../export-formats/neonplug/profiles.md)

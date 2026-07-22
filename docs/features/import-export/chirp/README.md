@@ -39,7 +39,7 @@ Studio uses two related concepts (same `profileId` keys):
 | `chirp-uv21` | Baofeng UV-21Pro V2 | 12         | 1000         |
 | `chirp-rt95` | Retevis RT95 VOX    | 6          | 200          |
 
-Per-radio wire detail: [docs/reference/export-formats/chirp/radios/](../../../reference/export-formats/chirp/radios/README.md).
+Per-radio map: [chirp profiles.md](../../../reference/export-formats/chirp/profiles.md) → [`docs/reference/radios/`](../../../reference/radios/).
 
 ## Operator workflow
 

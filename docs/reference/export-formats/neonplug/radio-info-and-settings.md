@@ -27,7 +27,7 @@ Wire shapes that are **mostly lossy** for Studio’s first NeonPlug milestones.
 
 Large DM32-oriented settings bag (display, GPS, buttons, APRS position, embedded VFO channels, menu flags, …). Includes nested `vfoA` / `vfoB` as full [Channel](channels.md) objects and optional `radioSpecific` bag for other radios.
 
-**UV5R-Mini:** radio-read donors typically have `radioSettings: { radioSpecific: { … } }` only (no shallow DM32 leaves). Build → NeonPlug settings decodes those leaves into labelled sections; see [radios/uv5rmini.md](radios/uv5rmini.md). DM32 settings UI continues to show shallow leaf keys only.
+**UV5R-Mini:** radio-read donors typically have `radioSettings: { radioSpecific: { … } }` only (no shallow DM32 leaves). Build → NeonPlug settings decodes those leaves into labelled sections; see [profiles.md](profiles.md) (`neonplug-uv5rmini`). DM32 settings UI continues to show shallow leaf keys only.
 
 | Studio guidance | **Omit** (`null`) on **greenfield** export. On **merge-into-base**, retain the donor bag opaque at the export boundary — do not stash into the library — then **overwrite the APRS (+ related GPS) leaf fields** from `Library.aprsConfiguration` when present ([aprs.md](aprs.md), [#559](https://github.com/pskillen/codeplug-studio/issues/559)). Unmodelled keys (e.g. `aprsRepeaterActiveDelay`, VFOs, menu flags) stay from the donor. |
 

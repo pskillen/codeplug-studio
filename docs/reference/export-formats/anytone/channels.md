@@ -34,7 +34,7 @@ DCDM (double-capacity digital mode) is **not** a channel type — it appears on 
 
 ## Transmit Power
 
-Wire ladder (AT-D890UV): `Low` / `Mid` / `High` / `Turbo`. Watt mapping and Studio `%` ladder: [radios/at-d890uv.md](radios/at-d890uv.md).
+Wire ladder (AT-D890UV): `Low` / `Mid` / `High` / `Turbo`. Watt mapping and Studio `%` ladder: [at-d890uv power](../../radios/anytone/at-d890uv/power.md) · [profiles.md](profiles.md).
 
 ## Busy Lock / TX Permit
 

@@ -7,7 +7,7 @@ Variance and debt report for **stock Baofeng DM-32UV CPS CSV** export vs what we
 **Purpose:** Leave a single convertible backlog. Rows may become GitHub tickets under [#503](https://github.com/pskillen/codeplug-studio/issues/503) later — or stay accepted loss. Do **not** treat this file as an active sprint plan.
 
 **Tier-3 wire tables:** [docs/reference/export-formats/dm32/](../../../reference/export-formats/dm32/README.md) · worksheet (frozen): [enum-verification.md](../../../reference/export-formats/dm32/enum-verification.md)  
-**NeonPlug sibling (same radio family, different wire):** [docs/reference/export-formats/neonplug/](../../../reference/export-formats/neonplug/README.md) · [radios/dm32uv.md](../../../reference/export-formats/neonplug/radios/dm32uv.md)
+**NeonPlug sibling (same radio family, different wire):** [docs/reference/export-formats/neonplug/](../../../reference/export-formats/neonplug/README.md) · [neonplug profiles.md](../../../reference/export-formats/neonplug/profiles.md) (`neonplug-dm32uv`)
 
 ---
 

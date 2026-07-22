@@ -22,4 +22,4 @@ CHIRP column mapping for `Power`: [channels.md](../../../export-formats/chirp/ch
 ## Related
 
 - [capabilities.md](capabilities.md) · [limits.md](limits.md)
-- Adapter stub: [chirp-rt95](../../../export-formats/chirp/radios/chirp-rt95.md)
+- Adapter profile: [chirp profiles.md](../../../export-formats/chirp/profiles.md) (`chirp-rt95`)

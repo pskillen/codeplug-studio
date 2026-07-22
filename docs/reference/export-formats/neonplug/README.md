@@ -74,7 +74,7 @@ On **import**, Studio must allocate UUID `id` FKs and drop NeonPlug numbers as r
 | DM-32UV / DP570UV | `neonplug-dm32uv`   | Zone grouping + zone-derived scan lists + m×n expansion |
 | UV5R-Mini         | `neonplug-uv5rmini` | Flat memory + per-channel scan flag (like CHIRP UV-5R)  |
 
-Per-radio notes and caps: [`radios/`](radios/README.md). DM-32UV caps match DM32 CPS; UV5R-Mini uses **999** / **12** on both NeonPlug binary and CHIRP CSV `chirp-uv5r`.
+Per-radio map: [`profiles.md`](profiles.md) → [`docs/reference/radios/`](../../radios/). DM-32UV caps match DM32 CPS; UV5R-Mini uses **999** / **12** on both NeonPlug binary and CHIRP CSV `chirp-uv5r`.
 
 **Out of scope for epic #536:** Yaesu FT-65 / FT-4 / FT-25 (NeonPlug supports them; no Studio pathway yet).
 

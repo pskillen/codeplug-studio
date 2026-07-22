@@ -4,7 +4,7 @@
 
 ## Problem
 
-The Baofeng 1701 / OpenGD77 CPS has **no dual-mode channel row** — an FM+DMR repeater on the same frequency needs separate `Analogue` and `Digital` `Channels.csv` entries ([1701 profile](radios/baofeng-1701.md)). The internal model lets operators model one logical site with multiple mode profiles; export expands to the wire rows the radio expects.
+The Baofeng 1701 / OpenGD77 CPS has **no dual-mode channel row** — an FM+DMR repeater on the same frequency needs separate `Analogue` and `Digital` `Channels.csv` entries ([`opengd77-1701`](profiles.md)). The internal model lets operators model one logical site with multiple mode profiles; export expands to the wire rows the radio expects.
 
 Sibling formats differ: DM32 stock CPS uses native `Fixed Analog` / `Fixed Digital` on **one** row (archive reference #67); qDMR splits into separate `fm:` / `dmr:` channels.
 
@@ -36,7 +36,7 @@ Implementation: `src/core/import-export/ (planned)` — `expandChannelForExport(
 
 Zones reference **logical channel ids** internally (`memberChannelIds`). On export, each multi-mode member expands to **all** derived wire names in zone member columns (`Channel1`…`Channel80`).
 
-If expansion would exceed the target profile's zone member cap, export truncates at the boundary and emits a warning (see [zones.md](zones.md), [1701 profile](radios/baofeng-1701.md)).
+If expansion would exceed the target profile's zone member cap, export truncates at the boundary and emits a warning (see [zones.md](zones.md), [`opengd77-1701`](profiles.md)).
 
 ## Import re-normalisation (best-effort)
 

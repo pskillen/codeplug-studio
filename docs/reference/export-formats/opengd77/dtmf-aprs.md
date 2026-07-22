@@ -1,6 +1,6 @@
 # OpenGD77 — DTMF.csv and APRS.csv
 
-Generic column reference for deferred OpenGD77 CPS files. **Feature availability varies by radio** — see [radio profiles](radios/README.md).
+Generic column reference for deferred OpenGD77 CPS files. **Feature availability varies by radio** — see [profiles.md](profiles.md).
 
 **App status:** Both files are **skipped on import**. Export includes **header-only** bodies inside the ZIP bundle. OpenGD77 APRS body export: [#442](https://github.com/pskillen/codeplug-studio/issues/442); see [opengd77-outstanding.md](../../../features/import-export/opengd77-outstanding.md).
 
@@ -17,7 +17,7 @@ Tone sequences for analogue repeaters. Referenced independently of channel rows.
 
 | Profile                                | DTMF.csv                                       |
 | -------------------------------------- | ---------------------------------------------- |
-| [Baofeng 1701](radios/baofeng-1701.md) | Supported in CPS; not modelled in app          |
+| [Baofeng 1701](../../radios/baofeng/dm-1701/README.md) (`opengd77-1701`) | Supported in CPS; not modelled in app          |
 | Other OpenGD77 targets                 | Assumed supported where CPS exports file — TBD |
 
 ## APRS.csv
@@ -56,7 +56,7 @@ Canonical header order in [`columns.ts`](../../../../src/core/import-export/form
 
 | Profile                                | APRS.csv            | Notes                                    |
 | -------------------------------------- | ------------------- | ---------------------------------------- |
-| [Baofeng 1701](radios/baofeng-1701.md) | Supported in CPS    | Config body not modelled in app          |
+| [Baofeng 1701](../../radios/baofeng/dm-1701/README.md) (`opengd77-1701`) | Supported in CPS    | Config body not modelled in app          |
 | RD-5R / DM-5R                          | Hotspot limitations | USB while TX — operational, not CSV      |
 | GD-77S                                 | Headless            | APRS operation differs — wire format TBD |
 

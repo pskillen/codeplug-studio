@@ -33,4 +33,4 @@ Empty wire → `null`.
 ## Related
 
 - [capabilities.md](capabilities.md) · [limits.md](limits.md)
-- Adapter stubs: [baofeng-dm32uv](../../../export-formats/dm32/radios/baofeng-dm32uv.md) · [dm32uv](../../../export-formats/neonplug/radios/dm32uv.md)
+- Adapter profiles: [dm32 profiles.md](../../../export-formats/dm32/profiles.md) · [neonplug profiles.md](../../../export-formats/neonplug/profiles.md)

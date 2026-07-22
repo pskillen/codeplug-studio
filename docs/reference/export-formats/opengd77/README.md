@@ -2,7 +2,7 @@
 
 > **Studio status:** Wire reference ported from [codeplug-tool](https://github.com/pskillen/codeplug-tool); OpenGD77 import/export adapters ship Phase 4–6 under `src/core/import-export/formats/opengd77/`. Import/export columns below describe **target** behaviour from the archive implementation.
 
-Authoritative reference for the **OpenGD77 Customer Programming Software (CPS) CSV interchange format** — **one** of the wire formats our import/export adapters speak at the format boundary (siblings: DM32 CSV, qDMR YAML, CHIRP, … documented separately). Per-radio variants (1701, MD9600, …) live in [`radios/`](radios/README.md).
+Authoritative reference for the **OpenGD77 Customer Programming Software (CPS) CSV interchange format** — **one** of the wire formats our import/export adapters speak at the format boundary (siblings: DM32 CSV, qDMR YAML, CHIRP, … documented separately). Per-radio variants (1701, MD9600, …): [`profiles.md`](profiles.md) → [`docs/reference/radios/`](../../radios/).
 
 **Tracking:** archive reference (codeplug-tool#43)
 
@@ -11,9 +11,9 @@ Authoritative reference for the **OpenGD77 Customer Programming Software (CPS) C
 | Layer                   | Location                                      | Contents                                                                                                          |
 | ----------------------- | --------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
 | **Generic wire format** | This directory (`channels.md`, `zones.md`, …) | Column headers, semantic mapping to internal models, import/export conversion rules, import/export fidelity tiers |
-| **Radio profiles**      | [`radios/`](radios/README.md)                 | Per-radio limits (max channels, zone member count), feature availability (APRS, DTMF), layout conventions         |
+| **Radio profiles**      | [`profiles.md`](profiles.md) · [`radios/`](../../radios/) | Studio `profileId` → radio home; limits and features in radios tree |
 
-The **internal library model is format- and radio-agnostic** ([data model](../../../features/data-model/README.md)). OpenGD77 radio-variant constraints are documented in radio profiles and are intended to be **applied at export time** when the operator picks a target OpenGD77 radio variant. The archive adapter was calibrated to the [Baofeng 1701 variant](radios/baofeng-1701.md).
+The **internal library model is format- and radio-agnostic** ([data model](../../../features/data-model/README.md)). OpenGD77 radio-variant constraints are documented in radio profiles and are intended to be **applied at export time** when the operator picks a target OpenGD77 radio variant. The archive adapter was calibrated to the [Baofeng 1701 / `opengd77-1701`](profiles.md) profile.
 
 ## File set
 
@@ -71,7 +71,7 @@ See [file-format.md](file-format.md) for header-name parsing, case-sensitive for
 | [dtmf-aprs.md](dtmf-aprs.md)             | Deferred files + radio availability                                                      |
 | [multi-talkgroup.md](multi-talkgroup.md) | N/A — native RGL; see [multi-talkgroup-expansion.md](../../multi-talkgroup-expansion.md) |
 | [multi-mode.md](multi-mode.md)           | Multi-mode channel expansion (archive reference #46)                                     |
-| [radios/README.md](radios/README.md)     | Radio profile concept and index                                                          |
+| [profiles.md](profiles.md)               | Studio profile id → radio home index                                                     |
 
 ## Sources
 

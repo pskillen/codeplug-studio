@@ -26,5 +26,5 @@ Profile-independent OpenGD77 rules: `N%`, `Disabled` → 0%, `Master` → `null`
 ## Related
 
 - [capabilities.md](capabilities.md) · [limits.md](limits.md)
-- Adapter stub: [baofeng-1701](../../../export-formats/opengd77/radios/baofeng-1701.md)
+- Adapter profile: [opengd77 profiles.md](../../../export-formats/opengd77/profiles.md) (`opengd77-1701`)
 - Code: [`profiles.ts`](../../../../src/core/import-export/formats/opengd77/profiles.ts) (`OPENGD77_1701_LADDER`)

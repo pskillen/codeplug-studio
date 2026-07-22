@@ -2,6 +2,8 @@
 
 Tier 3 schema for Codeplug Studio's full-project interchange format. Internal type semantics (null meaning, mode applicability) are in [data-model](../../../features/data-model/README.md).
 
+**Not radio-capped:** Native YAML stores the vendor-neutral library and format builds as-is. There is no per-radio profile picker or hardware cardinality at this wire edge — contrast CPS adapters with [`profiles.md`](../chirp/profiles.md) maps into [`docs/reference/radios/`](../../radios/).
+
 **Tracking:** [#56](https://github.com/pskillen/codeplug-studio/issues/56)
 
 **Source:** `src/core/import-export/projectDocument.ts`, `formats/native-yaml/`

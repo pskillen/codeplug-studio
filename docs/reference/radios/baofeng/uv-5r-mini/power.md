@@ -22,4 +22,4 @@ CHIRP column mapping for `Power`: [channels.md](../../../export-formats/chirp/ch
 ## Related
 
 - [capabilities.md](capabilities.md) · [limits.md](limits.md)
-- Adapter stubs: [chirp-uv5r](../../../export-formats/chirp/radios/chirp-uv5r.md) · [uv5rmini](../../../export-formats/neonplug/radios/uv5rmini.md)
+- Adapter profiles: [chirp profiles.md](../../../export-formats/chirp/profiles.md) · [neonplug profiles.md](../../../export-formats/neonplug/profiles.md)

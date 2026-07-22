@@ -23,7 +23,7 @@ Sample fixtures: [`sample-exports/Chirp 2026-06-29/`](../../../../sample-exports
 | Layer                   | Location                                    | Contents                                                  |
 | ----------------------- | ------------------------------------------- | --------------------------------------------------------- |
 | **Generic wire format** | This directory ([channels.md](channels.md)) | Column headers, semantic mapping, conversion rules        |
-| **Radio profiles**      | [`radios/`](radios/README.md)               | Per-radio memory size, power ladder, filename conventions |
+| **Radio profiles**      | [`profiles.md`](profiles.md) · [`radios/`](../../radios/) | Studio `profileId` → radio home; caps/power in radios tree |
 
 The **internal library model is format-agnostic** ([data model](../../../features/data-model/README.md)). CHIRP profile limits apply at **export time** when the operator picks a target radio.
 
@@ -54,7 +54,7 @@ No zones, contacts, talk groups, or RX group lists in CHIRP analogue exports.
 
 ## Wire verification
 
-Structural rules enforced by `cps-verify` for all CHIRP profiles ([wire-verification.md](../../../build/testing/wire-verification.md)). Caps come from [`profiles.ts`](../../../../src/core/import-export/formats/chirp/profiles.ts) — see [enum-verification.md](enum-verification.md) and [radios/](radios/README.md).
+Structural rules enforced by `cps-verify` for all CHIRP profiles ([wire-verification.md](../../../build/testing/wire-verification.md)). Caps come from [`profiles.ts`](../../../../src/core/import-export/formats/chirp/profiles.ts) — see [enum-verification.md](enum-verification.md) and [profiles.md](profiles.md).
 
 | Rule         | Expectation                                                                |
 | ------------ | -------------------------------------------------------------------------- |

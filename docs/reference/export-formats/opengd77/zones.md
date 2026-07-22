@@ -1,6 +1,6 @@
 # OpenGD77 — Zones.csv
 
-Generic column reference for `Zones.csv`. Member column count is radio-profile-specific — see [radios/baofeng-1701.md](radios/baofeng-1701.md).
+Generic column reference for `Zones.csv`. Member column count is radio-profile-specific — see [profiles.md](profiles.md) / [dm-1701](../../radios/baofeng/dm-1701/README.md).
 
 **Code:** [`columns.ts`](../../../../src/core/import-export/formats/opengd77/columns.ts) (`zoneMemberHeaders`) · [`parse.ts`](../../../../src/core/import-export/formats/opengd77/parse.ts) · [`serialise.ts`](../../../../src/core/import-export/formats/opengd77/serialise.ts) · [`codeplug.ts`](../../../../src/core/services/assemble.ts) (`resolveZoneMembers`)
 
@@ -47,4 +47,4 @@ Serialiser writes `sourceMemberNames` into `Channel1`…`ChannelN` in order. Nam
 
 - [Channels](channels.md)
 - [File format rules](file-format.md)
-- [Radio profiles](radios/README.md)
+- [Studio profiles](profiles.md)

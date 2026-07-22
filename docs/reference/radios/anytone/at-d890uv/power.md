@@ -17,5 +17,5 @@ Map at the export boundary in `profiles.ts` (`AT_D890UV_POWER_LADDER`). Watts ar
 ## Related
 
 - [capabilities.md](capabilities.md) · [limits.md](limits.md)
-- Adapter stub: [at-d890uv](../../../export-formats/anytone/radios/at-d890uv.md)
+- Adapter profile: [anytone profiles.md](../../../export-formats/anytone/profiles.md) (`anytone-at-d890uv`)
 - Code: [`profiles.ts`](../../../../src/core/import-export/formats/anytone/profiles.ts)

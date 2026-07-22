@@ -11,7 +11,7 @@
 | 2 — Extract `baofeng/uv-5r-mini` | Done | `radios/baofeng/uv-5r-mini/` + thin CHIRP/NeonPlug stubs |
 | 3 — Extract remaining Baofeng radios | Done | `uv-21-pro-v2`, `dm-32uv`, `dm-1701` + thinned nested stubs |
 | 4 — Extract Retevis / TYT / Anytone | Done | `retevis/rt95`, `tyt/md-9600`, `anytone/at-d890uv` + thinned stubs |
-| 5 — Adapter `profiles.md` + delete nested `radios/` | Pending | |
+| 5 — Adapter `profiles.md` + delete nested `radios/` | Done | Per-adapter `profiles.md`; nested `radios/` removed |
 | 6 — Hub / rule polish | Pending | |
 | 7 — PR | Pending | |
 

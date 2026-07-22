@@ -33,5 +33,5 @@ Profile-independent OpenGD77 rules: `N%`, `Disabled` → 0%, `Master` → `null`
 ## Related
 
 - [capabilities.md](capabilities.md) · [limits.md](limits.md)
-- Adapter stub: [opengd77-md9600](../../../export-formats/opengd77/radios/opengd77-md9600.md)
+- Adapter profile: [opengd77 profiles.md](../../../export-formats/opengd77/profiles.md) (`opengd77-md9600`)
 - Code: [`profiles.ts`](../../../../src/core/import-export/formats/opengd77/profiles.ts) (`OPENGD77_MD9600_LADDER`)

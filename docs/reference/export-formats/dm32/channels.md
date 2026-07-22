@@ -1,6 +1,6 @@
 # DM32 — Channels.csv
 
-Baofeng DM-32UV stock CPS `Channels.csv` (40 columns, v1.60). Cardinality and ladders: [radios/baofeng-dm32uv.md](radios/baofeng-dm32uv.md).
+Baofeng DM-32UV stock CPS `Channels.csv` (40 columns, v1.60). Cardinality and ladders: [dm-32uv](../../radios/baofeng/dm-32uv/README.md) · [profiles.md](profiles.md).
 
 **Code (export):** [`columns.ts`](../../../../src/core/import-export/formats/dm32/columns.ts) · [`channelWire.ts`](../../../../src/core/import-export/formats/dm32/channelWire.ts) · [`serialise.ts`](../../../../src/core/import-export/formats/dm32/serialise.ts)
 

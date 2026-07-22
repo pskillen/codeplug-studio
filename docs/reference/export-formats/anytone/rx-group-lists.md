@@ -29,7 +29,7 @@ Native RGL file — lean export keeps `Receive Group List` FK on `Channel.CSV`. 
 | --------------- | ------------------------------------------------------------------------------- |
 | FK from channel | `Channel.CSV` `Receive Group List` must match a `Group Name` or `None`          |
 | Contact members | `Contact` pipe-separated talk-group **names** must exist in `DMRTalkGroups.CSV` |
-| Cardinality     | At most **32** contacts per RGL ([at-d890uv.md](radios/at-d890uv.md))           |
+| Cardinality     | At most **32** contacts per RGL ([at-d890uv](../../radios/anytone/at-d890uv/README.md) · [profiles.md](profiles.md))           |
 
 ## Related
 

@@ -23,7 +23,7 @@ OpenGD77 CPS builds internal indexes from **exact name matches** across files. T
 
 Matching is **case-sensitive**. Renaming a channel requires updating every zone reference; renaming a contact requires updating channels and TG list members.
 
-Member column **count** (`ChannelN`, `ContactN`) is radio-profile-specific — see [radios/](radios/README.md).
+Member column **count** (`ChannelN`, `ContactN`) is radio-profile-specific — see [profiles.md](profiles.md).
 
 ## Internal vs vendor fields
 
@@ -79,12 +79,12 @@ Structural rules enforced by `cps-verify` for profile `opengd77-1701` ([wire-ver
 | Quoting        | Selective RFC 4180                                                                                                                           |
 | Headers        | Exact modelled column set + order when the file is present (`Channels`, `Zones`, `Contacts`, `TG_Lists`; DTMF/APRS header-only when present) |
 | Foreign keys   | Name refs per table above; empty / `None` / `Off` sentinels                                                                                  |
-| Cardinality    | Zone members ≤ 80; TG list members ≤ 32; channel name ≤ 16 ([baofeng-1701.md](radios/baofeng-1701.md))                                       |
+| Cardinality    | Zone members ≤ 80; TG list members ≤ 32; channel name ≤ 16 ([`opengd77-1701`](profiles.md) / [dm-1701](../../radios/baofeng/dm-1701/README.md))                                       |
 | Required files | Core set when `Channels.csv` present: Zones, Contacts, TG_Lists                                                                              |
 
 ## Export-time radio profiles
 
-Cardinality limits (max channels, zone member slots, TG list member slots, name display length) and feature availability (APRS configs, DTMF, airband) **diverge by radio or radio family**. These belong in [radio profiles](radios/README.md), not in generic column tables.
+Cardinality limits (max channels, zone member slots, TG list member slots, name display length) and feature availability (APRS configs, DTMF, airband) **diverge by radio or radio family**. These belong in [profiles.md](profiles.md) / radio homes, not in generic column tables.
 
 Intended architecture:
 
@@ -92,7 +92,7 @@ Intended architecture:
 2. At export, operator selects a **radio profile** (e.g. Baofeng 1701).
 3. Exporter applies profile limits (truncate/pad member columns, validate counts) while serialising generic wire columns.
 
-Today's shipped exporter uses [Baofeng 1701](radios/baofeng-1701.md) constants (80 zone members, 32 TG list members) without a profile picker.
+Today's shipped exporter uses [Baofeng 1701 / `opengd77-1701`](profiles.md) constants (80 zone members, 32 TG list members) without a profile picker.
 
 ## App import requirements vs CPS
 
@@ -104,4 +104,4 @@ This is stricter than "channels without map coordinates" in some hand-edited CSV
 
 - [OpenGD77 reference hub](README.md)
 - [Channels](channels.md) · [Zones](zones.md) · [Contacts](contacts.md) · [TG lists](tg-lists.md)
-- [Radio profiles](radios/README.md)
+- [Studio profiles](profiles.md)

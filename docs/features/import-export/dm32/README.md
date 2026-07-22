@@ -41,9 +41,9 @@ Both use profile id **`dm32-baofeng-dm32uv`**.
 | --------------------- | --------------- | ----------- | ------------ | --------------- | ----------------- | ---------- | --------------- | -------------- |
 | `dm32-baofeng-dm32uv` | Baofeng DM-32UV | 4000        | 64           | 32              | 15                | 16         | 10              | 10             |
 
-Scan list CSV members are capped at **15** named entries (CPS “16” includes an implicit current-channel slot). Zone membership allows **64** members — zone-derived scan export truncates to 15. General LCD/`nameLimit` remains **16** for channels and zones; `Scan.csv` `Scan Name` and RX group list names use **10** — see [scan-lists.md](../../../reference/export-formats/dm32/scan-lists.md) and [baofeng-dm32uv.md](../../../reference/export-formats/dm32/radios/baofeng-dm32uv.md).
+Scan list CSV members are capped at **15** named entries (CPS “16” includes an implicit current-channel slot). Zone membership allows **64** members — zone-derived scan export truncates to 15. General LCD/`nameLimit` remains **16** for channels and zones; `Scan.csv` `Scan Name` and RX group list names use **10** — see [scan-lists.md](../../../reference/export-formats/dm32/scan-lists.md) and [dm-32uv](../../../reference/radios/baofeng/dm-32uv/README.md) · [dm32 profiles.md](../../../reference/export-formats/dm32/profiles.md).
 
-Per-radio wire detail: [docs/reference/export-formats/dm32/radios/](../../../reference/export-formats/dm32/radios/README.md).
+Per-radio map: [dm32 profiles.md](../../../reference/export-formats/dm32/profiles.md) → [`docs/reference/radios/`](../../../reference/radios/).
 
 ## Prefer NeonPlug for radio write
 

@@ -1,6 +1,6 @@
 # CHIRP — channel CSV
 
-Wire column reference for the single CHIRP memory CSV. Per-radio memory and power limits: [radios/](radios/README.md).
+Wire column reference for the single CHIRP memory CSV. Per-radio memory and power limits: [profiles.md](profiles.md) → [`docs/reference/radios/`](../../radios/).
 
 **Code:** [`columns.ts`](../../../../src/core/import-export/formats/chirp/columns.ts) · [`channelWire.ts`](../../../../src/core/import-export/formats/chirp/channelWire.ts) · [`profiles.ts`](../../../../src/core/import-export/formats/chirp/profiles.ts)
 
@@ -108,7 +108,7 @@ Unused CTCSS cells are `88.5`. DCS is never written into `rToneFreq` / `cToneFre
 
 ## Power
 
-See per-radio ladders in [radios/](radios/README.md). Internal `power` is 0–100 percent; `null` = radio default (exports as profile high step).
+See per-radio ladders via [profiles.md](profiles.md). Internal `power` is 0–100 percent; `null` = radio default (exports as profile high step).
 
 ## TX Admit
 
@@ -121,4 +121,4 @@ Model-only serialisation — no `wireColumns` provenance stash. File-level tests
 ## Related
 
 - [CHIRP overview](README.md)
-- [Radio profiles](radios/README.md)
+- [Studio profiles](profiles.md)

@@ -42,7 +42,7 @@ Internal model uses UUID `id` FKs; name resolution belongs in import/export adap
 
 When **Shorten long names** is enabled on a build (default), Studio shortens CPS name columns to the radio profile limit at export. Anytone requires one canonical string per entity across all CSV files in a single export pass ([#292](https://github.com/pskillen/codeplug-studio/issues/292)).
 
-**Wire verification:** Name FKs must resolve to a row in the target table (or a documented sentinel). Pipe-separated member lists must not exceed radio profile caps — see [radios/at-d890uv.md](radios/at-d890uv.md).
+**Wire verification:** Name FKs must resolve to a row in the target table (or a documented sentinel). Pipe-separated member lists must not exceed radio profile caps — see [profiles.md](profiles.md) / [at-d890uv](../../radios/anytone/at-d890uv/README.md).
 
 ## Headers
 
@@ -83,7 +83,7 @@ Structural / mechanical rules enforced by the external verifier ([docs/build/tes
 | Escaping       | No embedded `"` inside field bodies                                                           |
 | Headers        | Exact modelled column set + order when the file is present                                    |
 | Foreign keys   | Cross-file name refs resolve; `None` / `Off` / empty are sentinels where documented           |
-| Cardinality    | Zone / scan / RGL member counts and name lengths within [AT-D890UV caps](radios/at-d890uv.md) |
+| Cardinality    | Zone / scan / RGL member counts and name lengths within [AT-D890UV caps](../../radios/anytone/at-d890uv/limits.md) |
 | Required files | Core DMR tables + `.LST` when validating a full bundle that includes `Channel.CSV`            |
 
 ## Related

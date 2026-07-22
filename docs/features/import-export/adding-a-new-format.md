@@ -22,7 +22,7 @@ The internal [library + format build model](../data-model/README.md) is the hub 
 | Situation                                                           | What to build                                                                                                                                                                            |
 | ------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **New format** (e.g. CHIRP CSV, qDMR YAML)                          | Import and/or export adapters, tier-3 reference docs, trait profile, radio profiles, fixtures, tests, `formatCatalog` entry, build UI wiring                                             |
-| **New radio on an existing format** (e.g. another OpenGD77 variant) | Tier-3 [radio profile](../../reference/export-formats/opengd77/radios/README.md) doc + row in `formats/<format>/profiles.ts` — export limits at profile picker only; adapter stays format-level |
+| **New radio on an existing format** (e.g. another OpenGD77 variant) | Tier-3 radio home under [`docs/reference/radios/<mfr>/<model>/`](../../reference/radios/) + row in adapter [`profiles.md`](../../reference/export-formats/opengd77/profiles.md) / `formats/<format>/profiles.ts` — export limits at profile picker only; adapter stays format-level |
 
 Do **not** bake radio profile caps into library mutations, validation, or CRUD UI. See [AGENTS.md — Vendor boundaries](../../../AGENTS.md#vendor-boundaries).
 
@@ -101,7 +101,7 @@ Per [documentation-boundaries.mdc](../../../.cursor/rules/documentation-boundari
 - [ ] Create `docs/reference/export-formats/<format>/README.md` hub — file list, FK rules, skip-vs-error table
 - [ ] One page per CPS file or logical grouping (channels, zones, contacts, scan lists, …)
 - [ ] Document **lossy fields** (header-only files, columns not modelled, genuinely unmapped columns)
-- [ ] If one format serves many radios, add `docs/reference/export-formats/<format>/radios/` for per-radio limits
+- [ ] If one format serves many radios, add/update `docs/reference/radios/<mfr>/<model>/` and a row in `docs/reference/export-formats/<format>/profiles.md`
 - [ ] Cite ground-truth sources (vendor CPS exports, community docs, reverse-engineered samples)
 - [ ] Document expansion choices: multi-mode rows, multi-talkgroup fan-out, zone member wire naming
 
@@ -509,7 +509,7 @@ End-to-end smoke before PR:
 | Step              | Location                                                     |
 | ----------------- | ------------------------------------------------------------ |
 | Reference hub     | `docs/reference/export-formats/opengd77/README.md`                  |
-| Radio profiles    | `docs/reference/export-formats/opengd77/radios/`                    |
+| Radio profiles    | `docs/reference/radios/<mfr>/<model>/` + `export-formats/<format>/profiles.md` |
 | Adapter behaviour | `docs/features/import-export/opengd77/README.md`             |
 | Export adapter    | `formats/opengd77/adapter.ts`, `serialise.ts`, `listWire.ts` |
 | Registry          | `registry.ts` — export only today                            |

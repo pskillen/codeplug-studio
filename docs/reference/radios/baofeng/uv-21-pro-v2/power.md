@@ -21,5 +21,5 @@ CHIRP column mapping for `Power`: [channels.md](../../../export-formats/chirp/ch
 ## Related
 
 - [capabilities.md](capabilities.md) · [limits.md](limits.md)
-- Adapter stub: [chirp-uv21](../../../export-formats/chirp/radios/chirp-uv21.md)
+- Adapter profile: [chirp profiles.md](../../../export-formats/chirp/profiles.md) (`chirp-uv21`)
 - Sibling: [UV-5R Mini power](../uv-5r-mini/power.md)
