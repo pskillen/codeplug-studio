@@ -58,9 +58,8 @@ export async function openRadioSessionForBuild(
     );
   }
   const descriptor =
-    (opts?.modelId
-      ? candidates.find((d) => d.modelIds.includes(opts.modelId!))
-      : undefined) ?? candidates[0]!;
+    (opts?.modelId ? candidates.find((d) => d.modelIds.includes(opts.modelId!)) : undefined) ??
+    candidates[0]!;
   const pipe = await requestWebSerialPipe({
     baudRate: descriptor.baudRate,
     forceSelection: opts?.forcePortSelection ?? true,

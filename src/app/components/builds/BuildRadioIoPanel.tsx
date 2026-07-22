@@ -171,9 +171,7 @@ export default function BuildRadioIoPanel({ build }: BuildRadioIoPanelProps) {
         Write sends the assembled build into that image — it does not import channels into the
         library.
       </Text>
-      {!serialOk ? (
-        <Alert color="yellow">{getWebSerialUnsupportedMessage()}</Alert>
-      ) : null}
+      {!serialOk ? <Alert color="yellow">{getWebSerialUnsupportedMessage()}</Alert> : null}
       {attributionNames ? (
         <Text size="xs" c="dimmed">
           Protocol lineage thanks to {attributionNames}. See{' '}

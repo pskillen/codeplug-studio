@@ -93,7 +93,7 @@ export const ATTRIBUTIONS: AttributionEntry[] = [
     usedIn: [
       'CHIRP CSV export (UV-5R Mini, UV-21Pro V2, RT95 VOX)',
       'UV-5R Mini binary memory reference (docs/reference/radios/baofeng/uv-5r-mini)',
-      'Planned Web Serial radio I/O (protocol lineage)',
+      'Web Serial radio I/O (UV-5R Mini adapter — protocol lineage)',
     ],
   },
   {
@@ -107,7 +107,7 @@ export const ATTRIBUTIONS: AttributionEntry[] = [
       'NeonPlug .neonplug export / merge',
       'Prefer-NeonPlug export hints (DM32, UV-5R)',
       'UV-5R Mini binary memory reference (docs/reference/radios/baofeng/uv-5r-mini)',
-      'Planned Web Serial radio I/O (protocol lineage)',
+      'Web Serial radio I/O (UV-5R Mini adapter — protocol lineage)',
     ],
   },
   {

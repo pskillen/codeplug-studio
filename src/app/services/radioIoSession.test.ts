@@ -92,7 +92,9 @@ describe('radioIoSession helpers', () => {
       radioModelId: 'UV5R-Mini',
       imageBytes,
     });
-    const upload = vi.fn(async (_img: MemoryMap) => undefined);
+    const upload = vi.fn(async (_img: MemoryMap) => {
+      void _img;
+    });
     const radio: CloneImageRadio = {
       connect: vi.fn(),
       disconnect: vi.fn(),

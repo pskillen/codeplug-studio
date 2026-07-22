@@ -57,9 +57,9 @@ Requires an active project (`RequireActiveProject`).
 
 Sidebar label is **Export for radio**; routes and code use `builds`. Secondary section title matches. [`BuildSwitcher`](../../../src/app/components/builds/BuildSwitcher/BuildSwitcher.md) sits above build nav links.
 
-## CPS export
+**CPS export:** Per-build CPS export is on `/builds/:id/export` (`ExportBuildCpsPanel`) — the build front door. Project YAML backup lives on [Summary](../report/README.md), not on a separate Import/export page.
 
-Per-build CPS export is on `/builds/:id/export` (`ExportBuildCpsPanel`) — the build front door. Project YAML backup lives on [Summary](../report/README.md), not on a separate Import/export page.
+**Web Serial (when a radio adapter is registered for the build profile):** the same Export page hosts **Read from radio** / **Write to radio** (`BuildRadioIoPanel`). Read stores a `radio-clone` image on `FormatBuild.cpsWireHydration`; Write runs `assemble` into that image. See [radio-read-write](../radio-read-write/README.md) and [adding-a-radio-adapter.md](../radio-read-write/adding-a-radio-adapter.md).
 
 **CSV preview** ([#151](https://github.com/pskillen/codeplug-studio/issues/151)): outline **Preview CSV** button (after Save ZIP to Drive) opens a modal with one tab per CPS file, rendered as a read-only table. Uses the same `exportBuildAll` path as download — see [`CpsCsvPreview.md`](../../../src/app/components/builds/CpsCsvPreview.md). Build-wide export warnings (profile caps, long wire names, zone cycle messages) are collected once at the core export layer and deduplicated — each distinct message appears once in the preview and ZIP paths ([#319](https://github.com/pskillen/codeplug-studio/issues/319)). The shared [`ExportWarningsAlert`](../../../src/app/components/builds/ExportWarningsAlert.md) folds unlinked-item, member-cap, and shortened-name groups behind collapsed title + count headers ([#408](https://github.com/pskillen/codeplug-studio/issues/408)).
 

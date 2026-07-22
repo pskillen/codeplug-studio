@@ -6,8 +6,8 @@ Build Export chrome for **Web Serial** read/write when a registered radio adapte
 
 ## Props
 
-| Prop | Type | Description |
-| --- | --- | --- |
+| Prop    | Type          | Description                                                      |
+| ------- | ------------- | ---------------------------------------------------------------- |
 | `build` | `FormatBuild` | Active format build (must have a compatible registry descriptor) |
 
 ## Usage

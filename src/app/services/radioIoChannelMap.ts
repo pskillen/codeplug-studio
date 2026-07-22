@@ -49,9 +49,7 @@ export function assembledChannelsToRadioDtos(
       rxTone: parseChannelTone(analog && 'rxTone' in analog ? analog.rxTone : 'none'),
       txTone: parseChannelTone(analog && 'txTone' in analog ? analog.txTone : 'none'),
       powerPercent: row.entity.power,
-      bandwidth: bandwidthFromKHz(
-        analog && 'bandwidthKHz' in analog ? analog.bandwidthKHz : null,
-      ),
+      bandwidth: bandwidthFromKHz(analog && 'bandwidthKHz' in analog ? analog.bandwidthKHz : null),
     });
   });
   return dtos;
