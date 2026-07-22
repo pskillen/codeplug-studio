@@ -6,7 +6,7 @@ Items discovered or deferred while planning Milestone 2. File-format CSV work st
 
 - [ ] WebSerial `BytePipe` transport — [#615](https://github.com/pskillen/codeplug-studio/issues/615)
 - [ ] Protocol kit core (session, MemoryMap, R/W codec) — [#616](https://github.com/pskillen/codeplug-studio/issues/616)
-- [ ] UV-5R Mini clone adapter — [#617](https://github.com/pskillen/codeplug-studio/issues/617)
+- [ ] UV-5R Mini clone adapter — [#617](https://github.com/pskillen/codeplug-studio/issues/617) (depends on [#627](https://github.com/pskillen/codeplug-studio/issues/627) docs + kit)
 - [ ] Connect/read/write UI + in-flow attribution — [#618](https://github.com/pskillen/codeplug-studio/issues/618)
 - [ ] Gate direct-write on firmware catalog — [#619](https://github.com/pskillen/codeplug-studio/issues/619) (depends on [#613](https://github.com/pskillen/codeplug-studio/issues/613))
 - [ ] In-flow attribution chrome when direct-write ships — tracked on [#618](https://github.com/pskillen/codeplug-studio/issues/618) / stubs [#597](https://github.com/pskillen/codeplug-studio/issues/597)
@@ -18,6 +18,7 @@ Items discovered or deferred while planning Milestone 2. File-format CSV work st
 
 - [x] Architecture spike: reusable WebSerial protocol kit — [#603](https://github.com/pskillen/codeplug-studio/issues/603) (docs: [protocol-kit-architecture.md](protocol-kit-architecture.md))
 - [x] OpenGD77 binary memory reference — [#623](https://github.com/pskillen/codeplug-studio/issues/623) (docs: [radios/opengd77](../../reference/radios/opengd77/README.md))
+- [x] UV-5R Mini binary memory reference — [#627](https://github.com/pskillen/codeplug-studio/issues/627) (docs: [radios/baofeng/uv-5r-mini](../../reference/radios/baofeng/uv-5r-mini/README.md))
 
 ## Explicitly out of MVP
 
