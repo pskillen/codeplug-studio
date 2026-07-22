@@ -149,7 +149,7 @@ interface RadioSession {
 | Codec                           | Wire idea                                                      | Studio status                                              | Anchors                                                                                        |
 | ------------------------------- | -------------------------------------------------------------- | ---------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
 | **PROGRAM + R/W**               | Ident string → `R`/`W` blocks + ACK `0x06`                     | **Shipped** `#616` (`BlockCodec`) — UV-5R Mini path        | CHIRP `baofeng_uv17Pro.py`; NeonPlug `uv5rmini/baofengProtocol.ts`                             |
-| **V-probe**                     | `0x56` (“V”) + u32 BE param; typed variable reply              | **Shipped** `#630` (**sibling surface**, not `BlockCodec`) | CHIRP `baofeng_uv17.py`; NeonPlug `dm32uv/`                                                    |
+| **V-probe**                     | `0x56` (“V”) + u32 BE param; typed variable reply              | **Shipped** `#630` (**sibling surface**, not `BlockCodec`) | CHIRP `baofeng_uv17.py`; NeonPlug `dm32uv/`; DM-32UV session + 4KB block R/W (not this codec): [dm-32uv](../../reference/radios/baofeng/dm-32uv/README.md) |
 | **OpenGD77 / OpenUV380 serial** | ASCII `C`/`R`/`W`/`X` (Command/Read/Write GD-77 / Write UV380) | **Shipped** `#631` (**sibling surface**, not `BlockCodec`) | qdmr `opengd77_interface`; [opengd77/protocol.md](../../reference/radios/opengd77/protocol.md) |
 | **S/X blocks**                  | Magic ident → `S`/`X` frames                                   | Deferred — classic UV-5R                                   | CHIRP `baofeng_common.py`, `uv5r.py`                                                           |
 | **Stream clone**                | Contiguous dump + ACK, echo-strip                              | Later — Yaesu FT-65 family                                 | CHIRP `yaesu_clone.py`; NeonPlug `ft65/`                                                       |
@@ -158,7 +158,7 @@ interface RadioSession {
 
 **Surface choice:** only PROGRAM+R/W implements `BlockCodec` (addr/length R/W). V-probe has no write and is not block-shaped; OpenGD77 needs mem-region codes, multi-step flash writes, and dual ACK semantics — both are dedicated sibling modules under `kit/codecs/`.
 
-**Spike decision (historical):** implement **PROGRAM + R/W** first. Do **not** shape the kit around DM-32’s V-frame + 4KB block discovery (discovery stays in radio modules). Add **S/X** when classic UV-5R direct-write is scheduled.
+**Spike decision (historical):** implement **PROGRAM + R/W** first. Do **not** shape the kit around DM-32’s V-frame + 4KB block discovery (discovery stays in radio modules). Add **S/X** when classic UV-5R direct-write is scheduled. Tier-3 wire tables for that family: [baofeng/dm-32uv](../../reference/radios/baofeng/dm-32uv/README.md) ([#637](https://github.com/pskillen/codeplug-studio/issues/637)).
 
 ---
 

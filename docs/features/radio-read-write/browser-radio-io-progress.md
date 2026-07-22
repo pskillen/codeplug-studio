@@ -26,13 +26,15 @@
 | Protocol kit (MemoryMap, session, PROGRAM+R/W) | [#616](https://github.com/pskillen/codeplug-studio/issues/616) | `src/integrations/radio-io/kit/` — no DOM; XOR/magics/layout deferred to radio adapters                                                                                                |
 | V-probe kit codec                              | [#630](https://github.com/pskillen/codeplug-studio/issues/630) | `kit/codecs/vProbe.ts` — sibling surface (not `BlockCodec`)                                                                                                                            |
 | OpenGD77/OpenUV380 serial kit codec            | [#631](https://github.com/pskillen/codeplug-studio/issues/631) | `kit/codecs/opengd77Serial.ts` — C/R/W/X framing; blocks [#624](https://github.com/pskillen/codeplug-studio/issues/624)/[#625](https://github.com/pskillen/codeplug-studio/issues/625) |
+| DM-32UV binary protocol / memory docs          | [#637](https://github.com/pskillen/codeplug-studio/issues/637) | [docs/reference/radios/baofeng/dm-32uv/](../../reference/radios/baofeng/dm-32uv/README.md); blocks [#638](https://github.com/pskillen/codeplug-studio/issues/638); parent [#636](https://github.com/pskillen/codeplug-studio/issues/636) |
 
 ## Next
 
 1. Implement [#617](https://github.com/pskillen/codeplug-studio/issues/617) (UV-5R Mini adapter) → [#618](https://github.com/pskillen/codeplug-studio/issues/618) (connect UI).
 2. Wire firmware gating [#619](https://github.com/pskillen/codeplug-studio/issues/619) when catalog [#613](https://github.com/pskillen/codeplug-studio/issues/613) is ready.
 3. OpenGD77 adapters (kit codec ready): [#624](https://github.com/pskillen/codeplug-studio/issues/624) (DM-1701) · [#625](https://github.com/pskillen/codeplug-studio/issues/625) (MD-9600).
-4. Later radios (UV-21 / RT95 direct-write) after Mini path — [#591](https://github.com/pskillen/codeplug-studio/issues/591) / [#592](https://github.com/pskillen/codeplug-studio/issues/592).
+4. DM-32UV adapter after binary docs: [#638](https://github.com/pskillen/codeplug-studio/issues/638) (epic [#636](https://github.com/pskillen/codeplug-studio/issues/636)).
+5. Later radios (UV-21 / RT95 direct-write) after Mini path — [#591](https://github.com/pskillen/codeplug-studio/issues/591) / [#592](https://github.com/pskillen/codeplug-studio/issues/592).
 
 ## Related
 
