@@ -8,10 +8,10 @@ _(none)_ — slice 6 hub/path polish complete. Ready to retire this pair when [#
 
 ## Intentional non-fixes
 
-| Item | Notes |
-| --- | --- |
-| `src/app/routes/builds/groupFormatBuilds.ts` keys `radio:baofeng-uv5r-mini` | Runtime grouping key, not a docs path — leave as-is |
-| `src/core/import-export/formats/` | Adapter code tree — must not be rewritten to `export-formats/` |
+| Item                                                                        | Notes                                                          |
+| --------------------------------------------------------------------------- | -------------------------------------------------------------- |
+| `src/app/routes/builds/groupFormatBuilds.ts` keys `radio:baofeng-uv5r-mini` | Runtime grouping key, not a docs path — leave as-is            |
+| `src/core/import-export/formats/`                                           | Adapter code tree — must not be rewritten to `export-formats/` |
 
 ## Related
 

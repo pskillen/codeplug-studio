@@ -19,7 +19,7 @@ Earlier single-build comparison: [tmp/export-variance-report.md](../../../../tmp
 |   **P1** | Channel TX contact from RGL          | **Open question** — operator unsure; leave in outstanding, no ticket yet                                                                                                                  |
 |   **P2** | Power ladder Mid / Turbo             | **Shipped** ([#391](https://github.com/pskillen/codeplug-studio/issues/391))                                                                                                              |
 |   **P2** | ScanList timing / Scan Mode          | Timing defaults → all `5.0` in [#402](https://github.com/pskillen/codeplug-studio/issues/402); Scan Mode readiness remains [#393](https://github.com/pskillen/codeplug-studio/issues/393) |
-|   **P2** | Enum / constant tail columns         | Elicited — see [enum-verification.md](../../../reference/export-formats/anytone/enum-verification.md)                                                                                            |
+|   **P2** | Enum / constant tail columns         | Elicited — see [enum-verification.md](../../../reference/export-formats/anytone/enum-verification.md)                                                                                     |
 |   **P2** | Sidecar CPS files                    | Skip / future epics (OptionalSetting, HotKey, roaming, NXDN)                                                                                                                              |
 |    **—** | Inventory / doc drift vs adapter     | Corrected in [#402](https://github.com/pskillen/codeplug-studio/issues/402) mop-up                                                                                                        |
 
@@ -93,13 +93,13 @@ Earlier comment suggested exporting TX contact from RGL membership. Operator eli
 
 ## P2 — Power / scan / defaults
 
-| Topic                            | Docs                                                                            | Code                                                                                                                                                                                        |
-| -------------------------------- | ------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Topic                            | Docs                                                                                                                                        | Code                                                                                                                                                                                        |
+| -------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Power Mid / Turbo + watts        | [at-d890uv power](../../../reference/radios/anytone/at-d890uv/power.md) · [profiles](../../../reference/export-formats/anytone/profiles.md) | **Shipped** ([#391](https://github.com/pskillen/codeplug-studio/issues/391))                                                                                                                |
-| Scan Mode / Revert / timing      | [scan-lists.md](../../../reference/export-formats/anytone/scan-lists.md)               | Timing → all `5.0` ([#402](https://github.com/pskillen/codeplug-studio/issues/402)); Scan Mode readiness [#393](https://github.com/pskillen/codeplug-studio/issues/393)                     |
-| Busy Lock provisional constants  | [enum-verification.md](../../../reference/export-formats/anytone/enum-verification.md) | Mode-aware export constants shipped; full library field via [#388](https://github.com/pskillen/codeplug-studio/issues/388) / [#396](https://github.com/pskillen/codeplug-studio/issues/396) |
-| Slot Suit / talker alias / …     | [enum-verification.md](../../../reference/export-formats/anytone/enum-verification.md) | [#395](https://github.com/pskillen/codeplug-studio/issues/395), [#398](https://github.com/pskillen/codeplug-studio/issues/398)                                                              |
-| FM bank members in `DMRZone.CSV` | [fm-broadcast.md](../../../reference/export-formats/anytone/fm-broadcast.md) / zones   | [#418](https://github.com/pskillen/codeplug-studio/issues/418)                                                                                                                              |
+| Scan Mode / Revert / timing      | [scan-lists.md](../../../reference/export-formats/anytone/scan-lists.md)                                                                    | Timing → all `5.0` ([#402](https://github.com/pskillen/codeplug-studio/issues/402)); Scan Mode readiness [#393](https://github.com/pskillen/codeplug-studio/issues/393)                     |
+| Busy Lock provisional constants  | [enum-verification.md](../../../reference/export-formats/anytone/enum-verification.md)                                                      | Mode-aware export constants shipped; full library field via [#388](https://github.com/pskillen/codeplug-studio/issues/388) / [#396](https://github.com/pskillen/codeplug-studio/issues/396) |
+| Slot Suit / talker alias / …     | [enum-verification.md](../../../reference/export-formats/anytone/enum-verification.md)                                                      | [#395](https://github.com/pskillen/codeplug-studio/issues/395), [#398](https://github.com/pskillen/codeplug-studio/issues/398)                                                              |
+| FM bank members in `DMRZone.CSV` | [fm-broadcast.md](../../../reference/export-formats/anytone/fm-broadcast.md) / zones                                                        | [#418](https://github.com/pskillen/codeplug-studio/issues/418)                                                                                                                              |
 
 ---
 
@@ -111,12 +111,12 @@ Single-pass reconciliation of Studio-emitted files against hand-reviewed tier-3 
 
 ## P2 — Fidelity tiers (reconciliation)
 
-| Tier                       | Files / columns                                                                                                                   |
-| -------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| Tier                       | Files / columns                                                                                                                          |
+| -------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
 | **Bidirectional (target)** | DMR core columns documented in [channels.md](../../../reference/export-formats/anytone/channels.md), talk groups, RGL, zones, scan lists |
-| **Export default**         | Unmodelled `Channel.CSV` tail (`channelDefaults.ts`); confirmation / talker-alias defaults                                        |
-| **Header-only / Skip**     | OptionalSetting, HotKey, encryption, roaming (future epics)                                                                       |
-| **Skip**                   | Import not in scope [#229](https://github.com/pskillen/codeplug-studio/issues/229)                                                |
+| **Export default**         | Unmodelled `Channel.CSV` tail (`channelDefaults.ts`); confirmation / talker-alias defaults                                               |
+| **Header-only / Skip**     | OptionalSetting, HotKey, encryption, roaming (future epics)                                                                              |
+| **Skip**                   | Import not in scope [#229](https://github.com/pskillen/codeplug-studio/issues/229)                                                       |
 
 ---
 

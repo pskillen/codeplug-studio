@@ -8,10 +8,10 @@ Authoritative reference for the **OpenGD77 Customer Programming Software (CPS) C
 
 ## Two-layer model
 
-| Layer                   | Location                                      | Contents                                                                                                          |
-| ----------------------- | --------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
-| **Generic wire format** | This directory (`channels.md`, `zones.md`, …) | Column headers, semantic mapping to internal models, import/export conversion rules, import/export fidelity tiers |
-| **Radio profiles**      | [`profiles.md`](profiles.md) · [`radios/`](../../radios/) | Studio `profileId` → radio home; limits and features in radios tree |
+| Layer                   | Location                                                  | Contents                                                                                                          |
+| ----------------------- | --------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| **Generic wire format** | This directory (`channels.md`, `zones.md`, …)             | Column headers, semantic mapping to internal models, import/export conversion rules, import/export fidelity tiers |
+| **Radio profiles**      | [`profiles.md`](profiles.md) · [`radios/`](../../radios/) | Studio `profileId` → radio home; limits and features in radios tree                                               |
 
 The **internal library model is format- and radio-agnostic** ([data model](../../../features/data-model/README.md)). OpenGD77 radio-variant constraints are documented in radio profiles and are intended to be **applied at export time** when the operator picks a target OpenGD77 radio variant. The archive adapter was calibrated to the [Baofeng 1701 / `opengd77-1701`](profiles.md) profile.
 

@@ -40,7 +40,7 @@ Member order in pipe-separated columns must stay aligned on import and export.
 | --------------- | ---------------------------------------------------------------------------------------------------------------------- |
 | Member FKs      | Each `Zone Channel Member` name must exist as `Channel.CSV` `Channel Name` (or `AMAir.CSV` `Name` when AM zones apply) |
 | A/B channel FKs | `A Channel` / `B Channel` must resolve or use a documented sentinel                                                    |
-| Cardinality     | At most **64** members per zone ([at-d890uv](../../radios/anytone/at-d890uv/README.md) · [profiles.md](profiles.md))                                                  |
+| Cardinality     | At most **64** members per zone ([at-d890uv](../../radios/anytone/at-d890uv/README.md) · [profiles.md](profiles.md))   |
 | Name length     | `Zone Name` ≤ profile name limit (16 on AT-D890UV)                                                                     |
 
 ## Related

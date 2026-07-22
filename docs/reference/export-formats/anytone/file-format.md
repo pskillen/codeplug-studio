@@ -76,15 +76,15 @@ Unlike OpenGD77 (OS-locale delimiter quirks), the AT-D890UV sample uses comma de
 
 Structural / mechanical rules enforced by the external verifier ([docs/build/testing/wire-verification.md](../../../build/testing/wire-verification.md)):
 
-| Rule           | Expectation                                                                                   |
-| -------------- | --------------------------------------------------------------------------------------------- |
-| Line endings   | CRLF on `.CSV` and `.LST`                                                                     |
-| Quoting        | Every CSV field double-quoted                                                                 |
-| Escaping       | No embedded `"` inside field bodies                                                           |
-| Headers        | Exact modelled column set + order when the file is present                                    |
-| Foreign keys   | Cross-file name refs resolve; `None` / `Off` / empty are sentinels where documented           |
+| Rule           | Expectation                                                                                                        |
+| -------------- | ------------------------------------------------------------------------------------------------------------------ |
+| Line endings   | CRLF on `.CSV` and `.LST`                                                                                          |
+| Quoting        | Every CSV field double-quoted                                                                                      |
+| Escaping       | No embedded `"` inside field bodies                                                                                |
+| Headers        | Exact modelled column set + order when the file is present                                                         |
+| Foreign keys   | Cross-file name refs resolve; `None` / `Off` / empty are sentinels where documented                                |
 | Cardinality    | Zone / scan / RGL member counts and name lengths within [AT-D890UV caps](../../radios/anytone/at-d890uv/limits.md) |
-| Required files | Core DMR tables + `.LST` when validating a full bundle that includes `Channel.CSV`            |
+| Required files | Core DMR tables + `.LST` when validating a full bundle that includes `Channel.CSV`                                 |
 
 ## Related
 

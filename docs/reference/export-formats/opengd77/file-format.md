@@ -73,14 +73,14 @@ Our browser parser accepts standard comma-separated CSV as exported by the CPS o
 
 Structural rules enforced by `cps-verify` for profile `opengd77-1701` ([wire-verification.md](../../../build/testing/wire-verification.md)):
 
-| Rule           | Expectation                                                                                                                                  |
-| -------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
-| Line endings   | **LF** (Studio export)                                                                                                                       |
-| Quoting        | Selective RFC 4180                                                                                                                           |
-| Headers        | Exact modelled column set + order when the file is present (`Channels`, `Zones`, `Contacts`, `TG_Lists`; DTMF/APRS header-only when present) |
-| Foreign keys   | Name refs per table above; empty / `None` / `Off` sentinels                                                                                  |
-| Cardinality    | Zone members ≤ 80; TG list members ≤ 32; channel name ≤ 16 ([`opengd77-1701`](profiles.md) / [dm-1701](../../radios/baofeng/dm-1701/README.md))                                       |
-| Required files | Core set when `Channels.csv` present: Zones, Contacts, TG_Lists                                                                              |
+| Rule           | Expectation                                                                                                                                     |
+| -------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| Line endings   | **LF** (Studio export)                                                                                                                          |
+| Quoting        | Selective RFC 4180                                                                                                                              |
+| Headers        | Exact modelled column set + order when the file is present (`Channels`, `Zones`, `Contacts`, `TG_Lists`; DTMF/APRS header-only when present)    |
+| Foreign keys   | Name refs per table above; empty / `None` / `Off` sentinels                                                                                     |
+| Cardinality    | Zone members ≤ 80; TG list members ≤ 32; channel name ≤ 16 ([`opengd77-1701`](profiles.md) / [dm-1701](../../radios/baofeng/dm-1701/README.md)) |
+| Required files | Core set when `Channels.csv` present: Zones, Contacts, TG_Lists                                                                                 |
 
 ## Export-time radio profiles
 

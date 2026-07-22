@@ -2,11 +2,11 @@
 
 ## RF / modes
 
-| Capability | Support |
-| --- | --- |
-| Max RF power | ~25 W |
-| Analogue FM (NFM) | Yes |
-| AM | Yes |
+| Capability          | Support                                                        |
+| ------------------- | -------------------------------------------------------------- |
+| Max RF power        | ~25 W                                                          |
+| Analogue FM (NFM)   | Yes                                                            |
+| AM                  | Yes                                                            |
 | DMR / other digital | No — non-FM/AM internal modes skipped on export (with warning) |
 
 ## Organisation traits

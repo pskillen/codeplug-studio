@@ -276,11 +276,11 @@ System tests target `core/services` and format adapters, not React routes.
 
 ## Documentation tiers
 
-| Tier                         | Location                                   | Contents                                                             |
-| ---------------------------- | ------------------------------------------ | -------------------------------------------------------------------- |
-| 1 — Product / internal model | `docs/features/`                           | Library, builds, entities, UUID rules — no CPS column tables         |
-| 2 — Domain reference         | `docs/reference/*.md` (root only)          | Bands, channel modes, display conventions — link out for wire detail |
-| 3 — Adapter / radio / directory wire | `docs/reference/export-formats/<format>/`, `docs/reference/radios/<mfr>/<model>/`, `docs/reference/remote-directories/<dir>/` | CPS columns; radio caps/ladders/layout; remote API shapes |
+| Tier                                 | Location                                                                                                                      | Contents                                                             |
+| ------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------- |
+| 1 — Product / internal model         | `docs/features/`                                                                                                              | Library, builds, entities, UUID rules — no CPS column tables         |
+| 2 — Domain reference                 | `docs/reference/*.md` (root only)                                                                                             | Bands, channel modes, display conventions — link out for wire detail |
+| 3 — Adapter / radio / directory wire | `docs/reference/export-formats/<format>/`, `docs/reference/radios/<mfr>/<model>/`, `docs/reference/remote-directories/<dir>/` | CPS columns; radio caps/ladders/layout; remote API shapes            |
 
 See [`.cursor/rules/documentation-boundaries.mdc`](.cursor/rules/documentation-boundaries.mdc).
 

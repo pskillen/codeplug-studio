@@ -69,14 +69,14 @@ Studio profile map: [`profiles.md`](profiles.md). Caps and ladders: [`docs/refer
 
 Structural rules enforced by `cps-verify` for profile `dm32-baofeng-dm32uv` ([wire-verification.md](../../../build/testing/wire-verification.md)):
 
-| Rule           | Expectation                                                                                                                                                                    |
-| -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Line endings   | **CRLF** on Studio export CSV                                                                                                                                                  |
-| Quoting        | Selective RFC 4180 (quote fields that contain comma, quote, or newline)                                                                                                        |
-| Headers        | Exact modelled column set + order when the file is present                                                                                                                     |
-| Foreign keys   | Name refs per table above; `ALL` / empty sentinels where documented                                                                                                            |
+| Rule           | Expectation                                                                                                                                                                        |
+| -------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Line endings   | **CRLF** on Studio export CSV                                                                                                                                                      |
+| Quoting        | Selective RFC 4180 (quote fields that contain comma, quote, or newline)                                                                                                            |
+| Headers        | Exact modelled column set + order when the file is present                                                                                                                         |
+| Foreign keys   | Name refs per table above; `ALL` / empty sentinels where documented                                                                                                                |
 | Cardinality    | Channels ≤ 4000; zone members ≤ 64; RGL members ≤ 32; scan members ≤ 15; channel/zone name ≤ 16; Scan Name ≤ 10; RGL name ≤ 10 ([dm-32uv](../../radios/baofeng/dm-32uv/README.md)) |
-| Required files | Core set when `Channels.csv` present: Zones, Talkgroups, RXGroupLists, Scan                                                                                                    |
+| Required files | Core set when `Channels.csv` present: Zones, Talkgroups, RXGroupLists, Scan                                                                                                        |
 
 ## Related
 

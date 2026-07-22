@@ -20,9 +20,9 @@ Sample fixtures: [`sample-exports/Chirp 2026-06-29/`](../../../../sample-exports
 
 ## Two-layer model
 
-| Layer                   | Location                                    | Contents                                                  |
-| ----------------------- | ------------------------------------------- | --------------------------------------------------------- |
-| **Generic wire format** | This directory ([channels.md](channels.md)) | Column headers, semantic mapping, conversion rules        |
+| Layer                   | Location                                                  | Contents                                                   |
+| ----------------------- | --------------------------------------------------------- | ---------------------------------------------------------- |
+| **Generic wire format** | This directory ([channels.md](channels.md))               | Column headers, semantic mapping, conversion rules         |
 | **Radio profiles**      | [`profiles.md`](profiles.md) · [`radios/`](../../radios/) | Studio `profileId` → radio home; caps/power in radios tree |
 
 The **internal library model is format-agnostic** ([data model](../../../features/data-model/README.md)). CHIRP profile limits apply at **export time** when the operator picks a target radio.

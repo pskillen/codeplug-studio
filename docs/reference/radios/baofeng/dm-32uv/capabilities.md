@@ -2,10 +2,10 @@
 
 ## RF / modes
 
-| Capability | Support |
-| --- | --- |
-| DMR digital | Yes |
-| Analogue FM | Yes |
+| Capability           | Support                                                      |
+| -------------------- | ------------------------------------------------------------ |
+| DMR digital          | Yes                                                          |
+| Analogue FM          | Yes                                                          |
 | Dual-mode single row | Per adapter wire rules (DM32 CPS / NeonPlug Channel objects) |
 
 ## Organisation traits

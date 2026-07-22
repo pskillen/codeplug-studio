@@ -2,12 +2,12 @@
 
 ## RF / modes
 
-| Capability | Support |
-| --- | --- |
-| Max RF power | 5 W |
-| Analogue FM (NFM / wide) | Yes |
-| AM | Yes (airband-style use) |
-| DMR / other digital | No — digital-only library channels skipped on export (with warning) |
+| Capability               | Support                                                             |
+| ------------------------ | ------------------------------------------------------------------- |
+| Max RF power             | 5 W                                                                 |
+| Analogue FM (NFM / wide) | Yes                                                                 |
+| AM                       | Yes (airband-style use)                                             |
+| DMR / other digital      | No — digital-only library channels skipped on export (with warning) |
 
 ## Organisation traits
 

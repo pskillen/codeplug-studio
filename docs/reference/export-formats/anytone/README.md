@@ -8,9 +8,9 @@ Authoritative reference for **Anytone Customer Programming Software (CPS) CSV** 
 
 ## Two-layer model
 
-| Layer                   | Location                      | Contents                                                                  |
-| ----------------------- | ----------------------------- | ------------------------------------------------------------------------- |
-| **Generic wire format** | This directory                | Column headers, semantic mapping, import/export fidelity tiers            |
+| Layer                   | Location                                                  | Contents                                                         |
+| ----------------------- | --------------------------------------------------------- | ---------------------------------------------------------------- |
+| **Generic wire format** | This directory                                            | Column headers, semantic mapping, import/export fidelity tiers   |
 | **Radio profiles**      | [`profiles.md`](profiles.md) · [`radios/`](../../radios/) | Studio `profileId` → radio home; caps provisional in radios tree |
 
 The **internal library model is format-agnostic** ([data model](../../../features/data-model/README.md)). Anytone constraints apply at **export time** when the operator picks `anytone-at-d890uv`.

@@ -4,29 +4,29 @@ Internal Studio `power` / `squelch` are **0–100 percent** (or `null` = unset /
 
 ## Power
 
-| Step | Wire | Internal percent |
-| --- | --- | --- |
-| High | `High` | **100** |
-| Middle | `Middle` | **50** |
-| Low | `Low` | **20** |
-| Unset | empty | **`null`** |
+| Step   | Wire     | Internal percent |
+| ------ | -------- | ---------------- |
+| High   | `High`   | **100**          |
+| Middle | `Middle` | **50**           |
+| Low    | `Low`    | **20**           |
+| Unset  | empty    | **`null`**       |
 
 On export, `null` defaults to **High**.
 
 ### Adapter wire spelling
 
-| Adapter | Profile | High | Middle | Low |
-| --- | --- | --- | --- | --- |
+| Adapter      | Profile               | High   | Middle   | Low   |
+| ------------ | --------------------- | ------ | -------- | ----- |
 | DM32 CPS CSV | `dm32-baofeng-dm32uv` | `High` | `Middle` | `Low` |
-| NeonPlug | `neonplug-dm32uv` | `High` | `Middle` | `Low` |
+| NeonPlug     | `neonplug-dm32uv`     | `High` | `Middle` | `Low` |
 
 ## Squelch
 
 Same ladder on analogue and digital channels.
 
-| Wire `Squelch Level` | Internal `squelch` % |
-| --- | --- |
-| `0`–`9` | `round(level × 100 / 9)` |
+| Wire `Squelch Level` | Internal `squelch` %     |
+| -------------------- | ------------------------ |
+| `0`–`9`              | `round(level × 100 / 9)` |
 
 Empty wire → `null`.
 

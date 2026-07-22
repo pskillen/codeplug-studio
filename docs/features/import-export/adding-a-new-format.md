@@ -19,9 +19,9 @@ The internal [library + format build model](../data-model/README.md) is the hub 
 
 ## When to add what
 
-| Situation                                                           | What to build                                                                                                                                                                            |
-| ------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **New format** (e.g. CHIRP CSV, qDMR YAML)                          | Import and/or export adapters, tier-3 reference docs, trait profile, radio profiles, fixtures, tests, `formatCatalog` entry, build UI wiring                                             |
+| Situation                                                           | What to build                                                                                                                                                                                                                                                                       |
+| ------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **New format** (e.g. CHIRP CSV, qDMR YAML)                          | Import and/or export adapters, tier-3 reference docs, trait profile, radio profiles, fixtures, tests, `formatCatalog` entry, build UI wiring                                                                                                                                        |
 | **New radio on an existing format** (e.g. another OpenGD77 variant) | Tier-3 radio home under [`docs/reference/radios/<mfr>/<model>/`](../../reference/radios/) + row in adapter [`profiles.md`](../../reference/export-formats/opengd77/profiles.md) / `formats/<format>/profiles.ts` — export limits at profile picker only; adapter stays format-level |
 
 Do **not** bake radio profile caps into library mutations, validation, or CRUD UI. See [AGENTS.md — Vendor boundaries](../../../AGENTS.md#vendor-boundaries).
@@ -506,16 +506,16 @@ End-to-end smoke before PR:
 
 ## Worked example: OpenGD77 (export shipped)
 
-| Step              | Location                                                     |
-| ----------------- | ------------------------------------------------------------ |
-| Reference hub     | `docs/reference/export-formats/opengd77/README.md`                  |
+| Step              | Location                                                                       |
+| ----------------- | ------------------------------------------------------------------------------ |
+| Reference hub     | `docs/reference/export-formats/opengd77/README.md`                             |
 | Radio profiles    | `docs/reference/radios/<mfr>/<model>/` + `export-formats/<format>/profiles.md` |
-| Adapter behaviour | `docs/features/import-export/opengd77/README.md`             |
-| Export adapter    | `formats/opengd77/adapter.ts`, `serialise.ts`, `listWire.ts` |
-| Registry          | `registry.ts` — export only today                            |
-| Trait profiles    | `opengd77-1701`, `opengd77-md9600` in `traits.ts`            |
-| Fixtures / tests  | `formats/opengd77/serialise.test.ts`, `warnings.test.ts`     |
-| Expansion         | Multi-mode **on** export; multi-TG **off** (native RGL)      |
+| Adapter behaviour | `docs/features/import-export/opengd77/README.md`                               |
+| Export adapter    | `formats/opengd77/adapter.ts`, `serialise.ts`, `listWire.ts`                   |
+| Registry          | `registry.ts` — export only today                                              |
+| Trait profiles    | `opengd77-1701`, `opengd77-md9600` in `traits.ts`                              |
+| Fixtures / tests  | `formats/opengd77/serialise.test.ts`, `warnings.test.ts`                       |
+| Expansion         | Multi-mode **on** export; multi-TG **off** (native RGL)                        |
 
 ---
 
@@ -523,7 +523,7 @@ End-to-end smoke before PR:
 
 | Step              | Location                                                     |
 | ----------------- | ------------------------------------------------------------ |
-| Reference hub     | `docs/reference/export-formats/dm32/README.md`                      |
+| Reference hub     | `docs/reference/export-formats/dm32/README.md`               |
 | Adapter behaviour | `docs/features/import-export/dm32/README.md`                 |
 | Export adapter    | `formats/dm32/adapter.ts`, `channelExpansion.ts`             |
 | Zone scan derive  | `zoneDerivedScanLists/derive.ts`                             |
@@ -538,7 +538,7 @@ End-to-end smoke before PR:
 | Step          | Location                                                                          |
 | ------------- | --------------------------------------------------------------------------------- |
 | Feature hub   | `docs/features/import-export/chirp/README.md`                                     |
-| Reference hub | `docs/reference/export-formats/chirp/README.md`                                          |
+| Reference hub | `docs/reference/export-formats/chirp/README.md`                                   |
 | Trait profile | `chirp-uv5r`, `chirp-rt95`, `chirp-uv21` — `FlatMemoryList`, `PerChannelScanFlag` |
 | Adapter       | `formats/chirp/adapter.ts`, `serialise.ts`, `exportChannelWire.ts`                |
 | Delivery      | `single-file-cps` — one memory CSV                                                |
@@ -554,7 +554,7 @@ End-to-end smoke before PR:
 | Step           | Location                                                                                                |
 | -------------- | ------------------------------------------------------------------------------------------------------- |
 | Feature hub    | `docs/features/import-export/anytone/README.md`                                                         |
-| Reference hub  | `docs/reference/export-formats/anytone/README.md`                                                              |
+| Reference hub  | `docs/reference/export-formats/anytone/README.md`                                                       |
 | Fixtures       | `test-data/anytone/at-d890uv/` (wire spike) + `formats/anytone/__fixtures__/export/` (golden)           |
 | Export adapter | `formats/anytone/adapter.ts`, `serialise.ts`, `channelWire.ts`, `exportChannelWire.ts`, `packageZip.ts` |
 | Scan lists     | Library `ScanList`; `BuildScanListsWirePage`, `BuildScanListLibraryGuidance`                            |
@@ -571,7 +571,7 @@ Not a CPS format, but shows the **single-file project** adapter pattern:
 
 | Step       | Location                                                     |
 | ---------- | ------------------------------------------------------------ |
-| Reference  | `docs/reference/export-formats/native-yaml/README.md`               |
+| Reference  | `docs/reference/export-formats/native-yaml/README.md`        |
 | Adapter    | `formats/native-yaml/adapter.ts`, `parse.ts`, `serialise.ts` |
 | Service    | `importProjectYaml.ts`, `exportProjectYaml.ts`               |
 | Round-trip | `formats/native-yaml/roundtrip.test.ts`                      |

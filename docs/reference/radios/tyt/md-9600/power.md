@@ -10,19 +10,19 @@ Source: MD-9600 radio menu levels (operator elicitation, [#441](https://github.c
 
 The radio menu also offers **`+W-`** (User Power / ADC → PA). Studio does **not** model it — see [capabilities.md](capabilities.md).
 
-| Wire | Approx. watts (menu) | Percent |
-| --- | --- | --- |
-| `P9` | 40 W (VHF + UHF) | **100** |
-| `P8` | 25 W | **63** |
-| `P7` | 10 W | **25** |
-| `P6` | 5 W | **13** |
-| `P5` | 1 W | **5** |
-| `P4` | 750 mW | **4** |
-| `P3` | 500 mW | **3** |
-| `P2` | 250 mW | **2** |
-| `P1` | 100 mW | **1** |
-| `Master` | radio default | **`null`** |
-| `+W-` | User Power (ADC → PA); not in Studio | — |
+| Wire     | Approx. watts (menu)                 | Percent    |
+| -------- | ------------------------------------ | ---------- |
+| `P9`     | 40 W (VHF + UHF)                     | **100**    |
+| `P8`     | 25 W                                 | **63**     |
+| `P7`     | 10 W                                 | **25**     |
+| `P6`     | 5 W                                  | **13**     |
+| `P5`     | 1 W                                  | **5**      |
+| `P4`     | 750 mW                               | **4**      |
+| `P3`     | 500 mW                               | **3**      |
+| `P2`     | 250 mW                               | **2**      |
+| `P1`     | 100 mW                               | **1**      |
+| `Master` | radio default                        | **`null`** |
+| `+W-`    | User Power (ADC → PA); not in Studio | —          |
 
 Export picks the nearest ladder step for non-exact percent values. `null` exports as `Master`.
 

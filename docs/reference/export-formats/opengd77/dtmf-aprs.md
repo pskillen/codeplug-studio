@@ -15,10 +15,10 @@ Tone sequences for analogue repeaters. Referenced independently of channel rows.
 
 ### Radio availability
 
-| Profile                                | DTMF.csv                                       |
-| -------------------------------------- | ---------------------------------------------- |
+| Profile                                                                  | DTMF.csv                                       |
+| ------------------------------------------------------------------------ | ---------------------------------------------- |
 | [Baofeng 1701](../../radios/baofeng/dm-1701/README.md) (`opengd77-1701`) | Supported in CPS; not modelled in app          |
-| Other OpenGD77 targets                 | Assumed supported where CPS exports file — TBD |
+| Other OpenGD77 targets                                                   | Assumed supported where CPS exports file — TBD |
 
 ## APRS.csv
 
@@ -54,11 +54,11 @@ Canonical header order in [`columns.ts`](../../../../src/core/import-export/form
 
 ### Radio availability
 
-| Profile                                | APRS.csv            | Notes                                    |
-| -------------------------------------- | ------------------- | ---------------------------------------- |
+| Profile                                                                  | APRS.csv            | Notes                                    |
+| ------------------------------------------------------------------------ | ------------------- | ---------------------------------------- |
 | [Baofeng 1701](../../radios/baofeng/dm-1701/README.md) (`opengd77-1701`) | Supported in CPS    | Config body not modelled in app          |
-| RD-5R / DM-5R                          | Hotspot limitations | USB while TX — operational, not CSV      |
-| GD-77S                                 | Headless            | APRS operation differs — wire format TBD |
+| RD-5R / DM-5R                                                            | Hotspot limitations | USB while TX — operational, not CSV      |
+| GD-77S                                                                   | Headless            | APRS operation differs — wire format TBD |
 
 ## Future modelling
 

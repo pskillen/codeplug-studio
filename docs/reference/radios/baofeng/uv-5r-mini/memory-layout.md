@@ -8,25 +8,25 @@ Tier-3 notes for **PROGRAM + R/W** clone I/O (Web Serial / future BLE). Full fra
 
 ## Protocol family
 
-| Item | Value |
-| --- | --- |
-| Family | **PROGRAM + R/W** (not classic UV-5R **S/X**) |
-| Ident | `PROGRAMCOLORPROU` (`MSTRING_UV17PROGPS`) |
-| Baud | **38400** (NeonPlug) |
-| Image size | `MEM_TOTAL = 0x8240` (multi-region `MEM_STARTS` / `MEM_SIZES`) |
-| Block ops | Read `0x52` (`R`), Write `W`; ACK `0x06` |
-| Crypt | Optional payload **XOR** crypt |
-| BLE | Optional later — same framing; larger upload block (`BLE_UP_BLOCK_SIZE = 0x80`) |
-| Channels | Up to **999** (see [limits.md](limits.md)) |
+| Item       | Value                                                                           |
+| ---------- | ------------------------------------------------------------------------------- |
+| Family     | **PROGRAM + R/W** (not classic UV-5R **S/X**)                                   |
+| Ident      | `PROGRAMCOLORPROU` (`MSTRING_UV17PROGPS`)                                       |
+| Baud       | **38400** (NeonPlug)                                                            |
+| Image size | `MEM_TOTAL = 0x8240` (multi-region `MEM_STARTS` / `MEM_SIZES`)                  |
+| Block ops  | Read `0x52` (`R`), Write `W`; ACK `0x06`                                        |
+| Crypt      | Optional payload **XOR** crypt                                                  |
+| BLE        | Optional later — same framing; larger upload block (`BLE_UP_BLOCK_SIZE = 0x80`) |
+| Channels   | Up to **999** (see [limits.md](limits.md))                                      |
 
 Classic **UV-5R** uses **S/X** — do not merge that path into this codec.
 
 ## Ground truth
 
-| Source | Role |
-| --- | --- |
-| CHIRP `UV5RMini` in [`baofeng_uv17Pro.py`](https://github.com/kk7ds/chirp/blob/master/chirp/drivers/baofeng_uv17Pro.py) | Caps, R/W protocol, crypt, memory regions |
-| NeonPlug [`src/radios/uv5rmini/`](https://github.com/infamy/NeonPlug/tree/main/src/radios/uv5rmini) | Browser framing (`baofengProtocol.ts`, `serialConnection.ts`, channel map) |
+| Source                                                                                                                  | Role                                                                       |
+| ----------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------- |
+| CHIRP `UV5RMini` in [`baofeng_uv17Pro.py`](https://github.com/kk7ds/chirp/blob/master/chirp/drivers/baofeng_uv17Pro.py) | Caps, R/W protocol, crypt, memory regions                                  |
+| NeonPlug [`src/radios/uv5rmini/`](https://github.com/infamy/NeonPlug/tree/main/src/radios/uv5rmini)                     | Browser framing (`baofengProtocol.ts`, `serialConnection.ts`, channel map) |
 
 ## Planned Studio module
 
