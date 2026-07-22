@@ -13,11 +13,11 @@ How to obtain binary dumps for **directional** codec tests without committing pe
 
 ## Capture options (future / local)
 
-| Method                 | When                                                                 | Notes |
-| ---------------------- | -------------------------------------------------------------------- | ----- |
-| NeonPlug browser read  | Tooling available today                                              | Full discovery + bulk blocks; keep local |
-| Studio Web Serial read | After adapter [#638](https://github.com/pskillen/codeplug-studio/issues/638) | Save hex locally; do not commit |
-| DM32 CPS CSV / `.neonplug` | Naming / semantics checks only                                   | **Not** binary offsets |
+| Method                     | When                                                                         | Notes                                    |
+| -------------------------- | ---------------------------------------------------------------------------- | ---------------------------------------- |
+| NeonPlug browser read      | Tooling available today                                                      | Full discovery + bulk blocks; keep local |
+| Studio Web Serial read     | After adapter [#638](https://github.com/pskillen/codeplug-studio/issues/638) | Save hex locally; do not commit          |
+| DM32 CPS CSV / `.neonplug` | Naming / semantics checks only                                               | **Not** binary offsets                   |
 
 ## Synthetic fixture recipe
 

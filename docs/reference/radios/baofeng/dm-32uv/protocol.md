@@ -8,33 +8,33 @@ Cite: NeonPlug `connection.ts`, `constants.ts`, `protocol.ts` (facts only — do
 
 ## Identity
 
-| Item              | Value                                                                 |
-| ----------------- | --------------------------------------------------------------------- |
-| Baud              | **115200** (`CONNECTION.BAUD_RATE`)                                   |
-| Model strings     | PSEARCH payload contains `DP570`, `DM32`, or `DM-32`                  |
-| Handshake ACK     | `0x06`                                                                |
-| V-frame opcode    | `0x56` (`V`) — Studio kit: `kit/codecs/vProbe.ts` ([#630](https://github.com/pskillen/codeplug-studio/issues/630)) |
-| Read opcode       | `0x52` (`R`) — **24-bit LE address**, length u16 LE                   |
-| Write opcode      | `0x57` (`W`) — **4KB blocks** with metadata at data `[0xFFF]`         |
-| Block quantum     | **4096** bytes                                                        |
+| Item           | Value                                                                                                              |
+| -------------- | ------------------------------------------------------------------------------------------------------------------ |
+| Baud           | **115200** (`CONNECTION.BAUD_RATE`)                                                                                |
+| Model strings  | PSEARCH payload contains `DP570`, `DM32`, or `DM-32`                                                               |
+| Handshake ACK  | `0x06`                                                                                                             |
+| V-frame opcode | `0x56` (`V`) — Studio kit: `kit/codecs/vProbe.ts` ([#630](https://github.com/pskillen/codeplug-studio/issues/630)) |
+| Read opcode    | `0x52` (`R`) — **24-bit LE address**, length u16 LE                                                                |
+| Write opcode   | `0x57` (`W`) — **4KB blocks** with metadata at data `[0xFFF]`                                                      |
+| Block quantum  | **4096** bytes                                                                                                     |
 
 > **Not kit PROGRAM+R/W.** UV-5R Mini uses 16-bit BE addr + 64-byte XOR-crypted blocks after an ASCII ident. DM-32 uses ASCII `PSEARCH`/`PASSSTA`/`SYSINFO`, then V-frames, then PROGRAM mode, then R/W with **24-bit LE** addressing and **4KB** payloads. Do not reuse `BlockCodec` for DM-32 block I/O.
 
 ## Timeouts and delays (NeonPlug)
 
-| Constant                         | ms    | Role                                      |
-| -------------------------------- | ----- | ----------------------------------------- |
-| `INIT_DELAY`                     | 400   | After port open                           |
-| `CLEAR_BUFFER_DELAY`             | 200   | After flush / before PSEARCH              |
-| `PSEARCH_READ_DELAY`             | 150   | After sending `PSEARCH`                   |
-| `REOPEN_DELAY`                   | 400   | Close → reopen settling                   |
-| `BLOCK_READ_DELAY`               | 150   | Between full 4KB block reads              |
-| `TIMEOUT.REQUEST_RESPONSE`       | 5000  | Default request/response cycle            |
-| `TIMEOUT.HANDSHAKE`              | 5000  | Handshake commands                        |
-| `TIMEOUT.READ_MEMORY`            | 15000 | Large (4KB) read payload                  |
-| `TIMEOUT.WRITE_MEMORY`           | 5000  | Write ACK                                 |
-| `TIMEOUT.VFRAME_QUERY`           | 5000  | Per V-frame                               |
-| `TIMEOUT.PORT_OPEN`              | 5000  | Port open                                 |
+| Constant                   | ms    | Role                           |
+| -------------------------- | ----- | ------------------------------ |
+| `INIT_DELAY`               | 400   | After port open                |
+| `CLEAR_BUFFER_DELAY`       | 200   | After flush / before PSEARCH   |
+| `PSEARCH_READ_DELAY`       | 150   | After sending `PSEARCH`        |
+| `REOPEN_DELAY`             | 400   | Close → reopen settling        |
+| `BLOCK_READ_DELAY`         | 150   | Between full 4KB block reads   |
+| `TIMEOUT.REQUEST_RESPONSE` | 5000  | Default request/response cycle |
+| `TIMEOUT.HANDSHAKE`        | 5000  | Handshake commands             |
+| `TIMEOUT.READ_MEMORY`      | 15000 | Large (4KB) read payload       |
+| `TIMEOUT.WRITE_MEMORY`     | 5000  | Write ACK                      |
+| `TIMEOUT.VFRAME_QUERY`     | 5000  | Per V-frame                    |
+| `TIMEOUT.PORT_OPEN`        | 5000  | Port open                      |
 
 ## Handshake (ASCII)
 
@@ -53,15 +53,15 @@ After handshake, NeonPlug queries V-frames with:
 
 Typical IDs used at connect (NeonPlug loops a fixed list including these):
 
-| ID     | Role (NeonPlug `VFRAME`)   |
-| ------ | -------------------------- |
-| `0x01` | Firmware string            |
-| `0x03` | Build date                 |
-| `0x04` | DSP version                |
-| `0x05` | Radio version              |
+| ID     | Role (NeonPlug `VFRAME`)             |
+| ------ | ------------------------------------ |
+| `0x01` | Firmware string                      |
+| `0x03` | Build date                           |
+| `0x04` | DSP version                          |
+| `0x05` | Radio version                        |
 | `0x0A` | **Memory layout** (config start/end) |
-| `0x0B` | Codeplug version           |
-| `0x0E` | Memberships range (noted)  |
+| `0x0B` | Codeplug version                     |
+| `0x0E` | Memberships range (noted)            |
 | `0x0F` | **Contacts** memory range / capacity |
 
 **Config range (`0x0A`):** 8 bytes = `start_addr` (u32 LE) + `end_addr` (u32 LE). Feeds discovery — see [memory-layout.md](memory-layout.md).
@@ -82,19 +82,19 @@ Radio is then ready for memory R/W.
 
 ### Read
 
-| Field   | Encoding                                      |
-| ------- | --------------------------------------------- |
+| Field   | Encoding                                         |
+| ------- | ------------------------------------------------ |
 | Request | `0x52` + addr (3 bytes LE) + length (2 bytes LE) |
-| Reply   | `0x57` + addr (3 LE) + length (2 LE) + data   |
+| Reply   | `0x57` + addr (3 LE) + length (2 LE) + data      |
 
 NeonPlug discovery reads **1 byte** at `blockAddr + 0xFFF` for metadata; bulk paths request full **4096** bytes.
 
 ### Write (codeplug 4KB block)
 
-| Field   | Encoding                                                                 |
-| ------- | ------------------------------------------------------------------------ |
+| Field   | Encoding                                                                  |
+| ------- | ------------------------------------------------------------------------- |
 | Request | `0x57` + addr (3 LE) + `0x00` + `0x10` + **4096** data bytes (total 4102) |
-| Reply   | ACK `0x06`                                                               |
+| Reply   | ACK `0x06`                                                                |
 
 Metadata lives **inside** the data block at offset `0xFFF` (not a trailing extra byte outside the 4KB). Address must be **4KB-aligned**.
 
