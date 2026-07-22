@@ -1106,6 +1106,12 @@ function parseFormatBuild(raw: unknown, index: number): ParsedFormatBuild {
     ...(record.exportSettings !== undefined && record.exportSettings !== null
       ? { exportSettings: parseExportSettings(record.exportSettings, `${label}.exportSettings`) }
       : {}),
+    ...(record.cpsVersion !== undefined && record.cpsVersion !== null
+      ? { cpsVersion: expectString(record.cpsVersion, `${label}.cpsVersion`) }
+      : {}),
+    ...(record.firmwareVersion !== undefined && record.firmwareVersion !== null
+      ? { firmwareVersion: expectString(record.firmwareVersion, `${label}.firmwareVersion`) }
+      : {}),
     ...(record.cpsWireHydration !== undefined && record.cpsWireHydration !== null
       ? {
           cpsWireHydration: parseCpsWireHydration(
@@ -1487,6 +1493,7 @@ export function validateDocument(raw: unknown): ProjectAggregate {
   const studioSchemaVersion = document.studioSchemaVersion;
   if (
     studioSchemaVersion !== STUDIO_SCHEMA_VERSION &&
+    studioSchemaVersion !== 21 &&
     studioSchemaVersion !== 20 &&
     studioSchemaVersion !== 19 &&
     studioSchemaVersion !== 18 &&
@@ -1507,7 +1514,7 @@ export function validateDocument(raw: unknown): ProjectAggregate {
     studioSchemaVersion !== 2
   ) {
     throw new NativeYamlImportError(
-      `Unsupported studioSchemaVersion: ${String(studioSchemaVersion)} (expected ${STUDIO_SCHEMA_VERSION}, 20, 19, 18, 17, 16, 15, 14, 13, 12, 10, 9, 8, 7, 6, 5, 4, 3, or 2)`,
+      `Unsupported studioSchemaVersion: ${String(studioSchemaVersion)} (expected ${STUDIO_SCHEMA_VERSION}, 21, 20, 19, 18, 17, 16, 15, 14, 13, 12, 10, 9, 8, 7, 6, 5, 4, 3, or 2)`,
     );
   }
 

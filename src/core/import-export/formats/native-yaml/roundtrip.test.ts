@@ -149,6 +149,24 @@ describe('native-yaml round-trip smoke', () => {
     );
   });
 
+  it('preserves cpsVersion and firmwareVersion on format build round-trip', () => {
+    const aggregate = projectWithFormatBuildAggregate();
+    const build = aggregate.formatBuilds[0]!;
+    const withVersions = {
+      ...aggregate,
+      formatBuilds: [
+        {
+          ...build,
+          cpsVersion: 'CHIRP daily',
+          firmwareVersion: 'V1.23',
+        },
+      ],
+    };
+    const parsed = parseProjectDocument(serialiseProject(withVersions));
+    expect(parsed.formatBuilds[0]?.cpsVersion).toBe('CHIRP daily');
+    expect(parsed.formatBuilds[0]?.firmwareVersion).toBe('V1.23');
+  });
+
   it('preserves composite channel override keys on round-trip', () => {
     const aggregate = projectWithFormatBuildAggregate();
     const build = aggregate.formatBuilds[0]!;
