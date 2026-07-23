@@ -13,11 +13,8 @@ import type { ZoneBehaviourDefaults } from '@core/models/zoneBehaviourDefaults.t
 import { extractNeonplugDonorRetain } from '@core/import-export/formats/neonplug/donorRetain.ts';
 import { parseNeonplugCodeplugJson } from '@core/import-export/formats/neonplug/merge.ts';
 import type { CpsWireHydration } from '@core/models/cpsWireHydration.ts';
-import type {
-  BuildEntityOverride,
-  BuildExportSettings,
-  FormatBuild,
-} from '@core/models/formatBuild.ts';
+import type { BuildEntityOverride, BuildExportSettings, RadioBuild } from '@core/models/radioBuild.ts';
+import type { EgressKind, EgressPath } from '@core/models/egressPath.ts';
 import type { AprsChannelSlot, AprsConfiguration, ChannelAprsBinding } from '@core/models/aprs.ts';
 import type {
   AprsPositionSource,
@@ -75,12 +72,8 @@ import {
 } from '@core/domain/aprs/index.ts';
 import { migrateAprsSingletonLibrary } from '@core/domain/migrateAprsSingleton.ts';
 import { normalizeZoneMemberEntry } from '@core/domain/zoneMembers.ts';
-import { migrateFormatBuild } from '@core/domain/migrateFormatBuild.ts';
 import { migrateProjectAggregate } from '@core/domain/migrateZoneExportFields.ts';
-import {
-  parseOverrideArray,
-  type LegacyEntitySelection,
-} from '@core/domain/formatBuildOverrides.ts';
+import { parseOverrideArray } from '@core/domain/formatBuildOverrides.ts';
 import { NATIVE_YAML_SCHEMA_VERSION, type ProjectAggregate } from '../../projectDocument.ts';
 import {
   NativeYamlImportError,
@@ -808,27 +801,13 @@ function parseLibrary(raw: unknown, studioSchemaVersion: number): Library {
   };
 }
 
-function parseLegacySelectionArray(raw: unknown, label: string): LegacyEntitySelection[] {
-  return expectArray(raw, label).map((row, index) => {
-    const record = expectRecord(row, `${label}[${index}]`);
-    const overrides = expectRecord(record.overrides, `${label}[${index}].overrides`);
-    return {
-      libraryEntityId: expectString(record.libraryEntityId, `${label}[${index}].libraryEntityId`),
-      overrides: {
-        name: expectString(overrides.name, `${label}[${index}].overrides.name`),
-      },
-    };
-  });
-}
-
 function parseOverrideField(
   record: Record<string, unknown>,
-  newKey: string,
-  _legacyKey: string,
+  key: string,
   label: string,
 ): BuildEntityOverride[] {
-  if (record[newKey] !== undefined && record[newKey] !== null) {
-    return parseOverrideArray(record[newKey], `${label}.${newKey}`);
+  if (record[key] !== undefined && record[key] !== null) {
+    return parseOverrideArray(record[key], `${label}.${key}`);
   }
   return [];
 }
@@ -1001,65 +980,22 @@ function parseExportSettings(raw: unknown, label: string): BuildExportSettings |
   return Object.keys(settings).length > 0 ? settings : undefined;
 }
 
-interface ParsedFormatBuild {
-  build: FormatBuild;
-  legacy: {
-    channelSelections?: LegacyEntitySelection[];
-    zoneSelections?: LegacyEntitySelection[];
-    talkGroupSelections?: LegacyEntitySelection[];
-    rxGroupListSelections?: LegacyEntitySelection[];
-    contactSelections?: LegacyEntitySelection[];
-  };
-}
+/** Parse one persisted radio build (#654) — no formatId/profileId; see {@link EgressPath}. */
+function parseRadioBuild(raw: unknown, index: number): RadioBuild {
+  const record = expectRecord(raw, `radioBuilds[${index}]`);
+  const label = `radioBuilds[${index}]`;
 
-function parseFormatBuild(raw: unknown, index: number): ParsedFormatBuild {
-  const record = expectRecord(raw, `formatBuilds[${index}]`);
-  const label = `formatBuilds[${index}]`;
-  const legacy = {
-    channelSelections:
-      record.channelSelections !== undefined && record.channelSelections !== null
-        ? parseLegacySelectionArray(record.channelSelections, `${label}.channelSelections`)
-        : undefined,
-    zoneSelections:
-      record.zoneSelections !== undefined && record.zoneSelections !== null
-        ? parseLegacySelectionArray(record.zoneSelections, `${label}.zoneSelections`)
-        : undefined,
-    talkGroupSelections:
-      record.talkGroupSelections !== undefined && record.talkGroupSelections !== null
-        ? parseLegacySelectionArray(record.talkGroupSelections, `${label}.talkGroupSelections`)
-        : undefined,
-    rxGroupListSelections:
-      record.rxGroupListSelections !== undefined && record.rxGroupListSelections !== null
-        ? parseLegacySelectionArray(record.rxGroupListSelections, `${label}.rxGroupListSelections`)
-        : undefined,
-    contactSelections:
-      record.contactSelections !== undefined && record.contactSelections !== null
-        ? parseLegacySelectionArray(record.contactSelections, `${label}.contactSelections`)
-        : undefined,
-  };
-
-  const build: FormatBuild = {
+  return {
     ...parsePersistableRow(record, label),
-    formatId: expectString(record.formatId, `${label}.formatId`),
-    profileId: expectString(record.profileId, `${label}.profileId`),
+    radioTargetId: expectString(record.radioTargetId, `${label}.radioTargetId`),
     name: expectString(record.name, `${label}.name`),
     layout: parseTraitLayout(record.layout),
-    channelOverrides: parseOverrideField(record, 'channelOverrides', 'channelSelections', label),
-    zoneOverrides: parseOverrideField(record, 'zoneOverrides', 'zoneSelections', label),
-    scanListOverrides: parseOverrideField(record, 'scanListOverrides', '', label),
-    talkGroupOverrides: parseOverrideField(
-      record,
-      'talkGroupOverrides',
-      'talkGroupSelections',
-      label,
-    ),
-    rxGroupListOverrides: parseOverrideField(
-      record,
-      'rxGroupListOverrides',
-      'rxGroupListSelections',
-      label,
-    ),
-    contactOverrides: parseOverrideField(record, 'contactOverrides', 'contactSelections', label),
+    channelOverrides: parseOverrideField(record, 'channelOverrides', label),
+    zoneOverrides: parseOverrideField(record, 'zoneOverrides', label),
+    scanListOverrides: parseOverrideField(record, 'scanListOverrides', label),
+    talkGroupOverrides: parseOverrideField(record, 'talkGroupOverrides', label),
+    rxGroupListOverrides: parseOverrideField(record, 'rxGroupListOverrides', label),
+    contactOverrides: parseOverrideField(record, 'contactOverrides', label),
     ...(record.exportUnlinkedChannels !== undefined && record.exportUnlinkedChannels !== null
       ? {
           exportUnlinkedChannels: expectBoolean(
@@ -1106,17 +1042,36 @@ function parseFormatBuild(raw: unknown, index: number): ParsedFormatBuild {
     ...(record.exportSettings !== undefined && record.exportSettings !== null
       ? { exportSettings: parseExportSettings(record.exportSettings, `${label}.exportSettings`) }
       : {}),
-    ...(record.cpsWireHydration !== undefined && record.cpsWireHydration !== null
-      ? {
-          cpsWireHydration: parseCpsWireHydration(
-            record.cpsWireHydration,
-            `${label}.cpsWireHydration`,
-          ),
-        }
+    ...(record.defaultEgressPathId !== undefined && record.defaultEgressPathId !== null
+      ? { defaultEgressPathId: expectString(record.defaultEgressPathId, `${label}.defaultEgressPathId`) }
       : {}),
   };
+}
 
-  return { build, legacy };
+const EGRESS_KINDS: readonly EgressKind[] = ['cps-file', 'web-serial'];
+
+/** Parse one persisted egress pathway under a {@link RadioBuild} (#654). */
+function parseEgressPath(raw: unknown, index: number): EgressPath {
+  const record = expectRecord(raw, `egressPaths[${index}]`);
+  const label = `egressPaths[${index}]`;
+  const kind = expectString(record.kind, `${label}.kind`);
+  if (!(EGRESS_KINDS as readonly string[]).includes(kind)) {
+    throw new NativeYamlImportError(`${label}.kind is invalid: ${kind}`);
+  }
+
+  return {
+    ...parsePersistableRow(record, label),
+    radioBuildId: expectString(record.radioBuildId, `${label}.radioBuildId`),
+    formatId: expectString(record.formatId, `${label}.formatId`),
+    profileId: expectString(record.profileId, `${label}.profileId`),
+    kind: kind as EgressKind,
+    ...(record.label !== undefined && record.label !== null
+      ? { label: expectString(record.label, `${label}.label`) }
+      : {}),
+    ...(record.hydration !== undefined && record.hydration !== null
+      ? { hydration: parseCpsWireHydration(record.hydration, `${label}.hydration`) }
+      : {}),
+  };
 }
 
 function parseScanMemberInclusion(raw: unknown, label: string): Record<string, 'include' | 'skip'> {
@@ -1299,7 +1254,11 @@ function assertProjectId(rows: { projectId: string }[], projectId: string, label
   }
 }
 
-function validateForeignKeys(library: Library, formatBuilds: FormatBuild[]): void {
+function validateForeignKeys(
+  library: Library,
+  radioBuilds: RadioBuild[],
+  egressPaths: EgressPath[],
+): void {
   const ids = libraryEntityIds(library);
 
   for (const zone of library.zones) {
@@ -1381,7 +1340,7 @@ function validateForeignKeys(library: Library, formatBuilds: FormatBuild[]): voi
   // here blocks Drive conflict preview and overwrite of a healthy local project when the
   // remote YAML has empty slots or a missing config. See collectAprsValidationWarnings.
 
-  for (const build of formatBuilds) {
+  for (const build of radioBuilds) {
     for (const section of build.layout.sections) {
       if (section.kind === 'zoneGrouping') {
         for (const zone of section.zones) {
@@ -1472,10 +1431,40 @@ function validateForeignKeys(library: Library, formatBuilds: FormatBuild[]): voi
       }
     }
   }
+
+  const radioBuildIds = new Set(radioBuilds.map((build) => build.id));
+  for (const egress of egressPaths) {
+    if (!radioBuildIds.has(egress.radioBuildId)) {
+      throw new NativeYamlImportError(
+        `Egress path radioBuildId ${egress.radioBuildId} not found in radioBuilds`,
+      );
+    }
+  }
 }
 
-/** Validate a parsed YAML tree and return a project aggregate. */
-export function validateDocument(raw: unknown): ProjectAggregate {
+export interface ValidateDocumentResult {
+  aggregate: ProjectAggregate;
+  warnings: string[];
+}
+
+/**
+ * Parse the legacy pre-#654 `formatBuilds[]` envelope key. Builds are no longer
+ * migrated on import — the array is only inspected to report how many rows are
+ * being dropped; radioBuilds/egressPaths always come back empty.
+ */
+function legacyFormatBuildsWarning(document: Record<string, unknown>): string | null {
+  if (document.formatBuilds === undefined) return null;
+  const legacy = expectArray(document.formatBuilds, 'formatBuilds');
+  if (legacy.length === 0) return null;
+  return (
+    `Ignoring ${legacy.length} legacy format build(s) from this document — builds are no ` +
+    'longer part of native YAML interchange; recreate radio builds and egress paths in ' +
+    'Builds after import (#654).'
+  );
+}
+
+/** Validate a parsed YAML tree and return a project aggregate plus import warnings. */
+export function validateDocument(raw: unknown): ValidateDocumentResult {
   const document = expectRecord(raw, 'document');
 
   if (document.schemaVersion !== NATIVE_YAML_SCHEMA_VERSION) {
@@ -1514,9 +1503,26 @@ export function validateDocument(raw: unknown): ProjectAggregate {
 
   const project = parseProjectMeta(document.project);
   const library = parseLibrary(document.library, studioSchemaVersion);
-  const formatBuilds = expectArray(document.formatBuilds, 'formatBuilds')
-    .map((row, index) => parseFormatBuild(row, index))
-    .map(({ build, legacy }) => migrateFormatBuild(build, library, legacy));
+
+  const warnings: string[] = [];
+  let radioBuilds: RadioBuild[];
+  let egressPaths: EgressPath[];
+  if (document.radioBuilds !== undefined) {
+    radioBuilds = expectArray(document.radioBuilds, 'radioBuilds').map((row, index) =>
+      parseRadioBuild(row, index),
+    );
+    egressPaths =
+      document.egressPaths === undefined
+        ? []
+        : expectArray(document.egressPaths, 'egressPaths').map((row, index) =>
+            parseEgressPath(row, index),
+          );
+  } else {
+    const warning = legacyFormatBuildsWarning(document);
+    if (warning) warnings.push(warning);
+    radioBuilds = [];
+    egressPaths = [];
+  }
 
   const allRows = [
     project,
@@ -1528,7 +1534,8 @@ export function validateDocument(raw: unknown): ProjectAggregate {
     ...library.rxGroupLists,
     ...library.scanLists,
     ...(library.aprsConfiguration ? [library.aprsConfiguration] : []),
-    ...formatBuilds,
+    ...radioBuilds,
+    ...egressPaths,
   ];
 
   assertProjectId(allRows, project.id, 'row');
@@ -1542,16 +1549,17 @@ export function validateDocument(raw: unknown): ProjectAggregate {
   if (library.aprsConfiguration) {
     assertUniqueIds([library.aprsConfiguration], 'library.aprsConfiguration');
   }
-  assertUniqueIds(formatBuilds, 'formatBuilds');
+  assertUniqueIds(radioBuilds, 'radioBuilds');
+  assertUniqueIds(egressPaths, 'egressPaths');
 
-  validateForeignKeys(library, formatBuilds);
+  validateForeignKeys(library, radioBuilds, egressPaths);
 
   const channelDefaults = normalizeChannelBehaviourDefaults(
     library.channelDefaults ?? project.channelDefaults,
   );
   const zoneDefaults = normalizeZoneBehaviourDefaults(library.zoneDefaults ?? project.zoneDefaults);
 
-  return migrateProjectAggregate({
+  const aggregate = migrateProjectAggregate({
     meta: { ...project, channelDefaults, zoneDefaults },
     channelDefaults,
     zoneDefaults,
@@ -1563,8 +1571,11 @@ export function validateDocument(raw: unknown): ProjectAggregate {
     rxGroupLists: library.rxGroupLists,
     scanLists: library.scanLists,
     aprsConfiguration: library.aprsConfiguration,
-    formatBuilds,
+    radioBuilds,
+    egressPaths,
   });
+
+  return { aggregate, warnings };
 }
 
 export function isNativeYamlDocument(raw: unknown): boolean {

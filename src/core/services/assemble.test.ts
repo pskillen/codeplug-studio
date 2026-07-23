@@ -7,6 +7,7 @@ import {
   newChannel,
   newDigitalContact,
   newFormatBuild,
+  newRadioBuildForProfile,
   newScanList,
   newTalkGroup,
 } from '@core/domain/factories.ts';
@@ -22,9 +23,9 @@ const fixtureDir = join(
 
 describe('assemble', () => {
   it('projects channel wire names and zone layout from format build fixture', () => {
-    const yaml = readFileSync(join(fixtureDir, 'with-format-build.yaml'), 'utf8');
+    const yaml = readFileSync(join(fixtureDir, 'with-radio-build.yaml'), 'utf8');
     const aggregate = parseProjectDocument(yaml);
-    const build = aggregate.formatBuilds[0]!;
+    const build = aggregate.radioBuilds[0]!;
     const library = {
       channels: aggregate.channels,
       zones: aggregate.zones,
@@ -55,9 +56,9 @@ describe('assemble', () => {
   });
 
   it('honours export-time profile override without mutating build', () => {
-    const yaml = readFileSync(join(fixtureDir, 'with-format-build.yaml'), 'utf8');
+    const yaml = readFileSync(join(fixtureDir, 'with-radio-build.yaml'), 'utf8');
     const aggregate = parseProjectDocument(yaml);
-    const build = aggregate.formatBuilds[0]!;
+    const build = aggregate.radioBuilds[0]!;
     const library = {
       channels: aggregate.channels,
       zones: aggregate.zones,
@@ -70,14 +71,14 @@ describe('assemble', () => {
 
     const projection = assemble(build, library, { profileId: 'opengd77-md9600' });
     expect(projection.profileId).toBe('opengd77-md9600');
-    expect(build.profileId).toBe('opengd77-1701');
+    expect(build.radioTargetId).toBe('baofeng-dm1701');
   });
 
   it('excludes channels when channel override marks excluded', () => {
-    const yaml = readFileSync(join(fixtureDir, 'with-format-build.yaml'), 'utf8');
+    const yaml = readFileSync(join(fixtureDir, 'with-radio-build.yaml'), 'utf8');
     const aggregate = parseProjectDocument(yaml);
     const build = {
-      ...aggregate.formatBuilds[0]!,
+      ...aggregate.radioBuilds[0]!,
       channelOverrides: [
         {
           libraryEntityId: '33333333-3333-4333-8333-333333333333',
@@ -101,11 +102,11 @@ describe('assemble', () => {
   });
 
   it('prefers wireName override over the library display name', () => {
-    const yaml = readFileSync(join(fixtureDir, 'with-format-build.yaml'), 'utf8');
+    const yaml = readFileSync(join(fixtureDir, 'with-radio-build.yaml'), 'utf8');
     const aggregate = parseProjectDocument(yaml);
     const channelId = '22222222-2222-4222-8222-222222222222';
     const build = {
-      ...aggregate.formatBuilds[0]!,
+      ...aggregate.radioBuilds[0]!,
       channelOverrides: [{ libraryEntityId: channelId, wireName: 'Custom wire' }],
     };
     const library = {
@@ -123,10 +124,10 @@ describe('assemble', () => {
   });
 
   it('composes default channel wire names from callsign and name', () => {
-    const yaml = readFileSync(join(fixtureDir, 'with-format-build.yaml'), 'utf8');
+    const yaml = readFileSync(join(fixtureDir, 'with-radio-build.yaml'), 'utf8');
     const aggregate = parseProjectDocument(yaml);
     const build = {
-      ...aggregate.formatBuilds[0]!,
+      ...aggregate.radioBuilds[0]!,
       channelOverrides: [],
     };
     const library = {
@@ -147,9 +148,9 @@ describe('assemble', () => {
   });
 
   it('includes unlinked talk groups when exportUnlinkedTalkGroups is true (default)', () => {
-    const yaml = readFileSync(join(fixtureDir, 'with-format-build.yaml'), 'utf8');
+    const yaml = readFileSync(join(fixtureDir, 'with-radio-build.yaml'), 'utf8');
     const aggregate = parseProjectDocument(yaml);
-    const build = aggregate.formatBuilds[0]!;
+    const build = aggregate.radioBuilds[0]!;
     const orphanTalkGroup = newTalkGroup(aggregate.meta.id, 'Orphan TG', 9999);
     const library = {
       channels: aggregate.channels,
@@ -166,10 +167,10 @@ describe('assemble', () => {
   });
 
   it('excludes unlinked talk groups when exportUnlinkedTalkGroups is false', () => {
-    const yaml = readFileSync(join(fixtureDir, 'with-format-build.yaml'), 'utf8');
+    const yaml = readFileSync(join(fixtureDir, 'with-radio-build.yaml'), 'utf8');
     const aggregate = parseProjectDocument(yaml);
     const build = {
-      ...aggregate.formatBuilds[0]!,
+      ...aggregate.radioBuilds[0]!,
       exportUnlinkedTalkGroups: false,
     };
     const orphanTalkGroup = newTalkGroup(aggregate.meta.id, 'Orphan TG', 9999);
@@ -228,10 +229,10 @@ describe('assemble', () => {
   });
 
   it('excludes unzoned channels when exportUnlinkedChannels is false', () => {
-    const yaml = readFileSync(join(fixtureDir, 'with-format-build.yaml'), 'utf8');
+    const yaml = readFileSync(join(fixtureDir, 'with-radio-build.yaml'), 'utf8');
     const aggregate = parseProjectDocument(yaml);
     const build = {
-      ...aggregate.formatBuilds[0]!,
+      ...aggregate.radioBuilds[0]!,
       exportUnlinkedChannels: false,
       channelOverrides: [],
     };
@@ -291,8 +292,7 @@ describe('assemble', () => {
       revision: 1,
       updatedAt: '2026-01-01T00:00:00.000Z',
       name: 'Nested test',
-      formatId: 'opengd77',
-      profileId: 'opengd77-1701',
+      radioTargetId: 'baofeng-dm1701',
       layout: { sections: [] },
       channelOverrides: [],
       zoneOverrides: [],
@@ -358,8 +358,7 @@ describe('assemble', () => {
       revision: 1,
       updatedAt: '2026-01-01T00:00:00.000Z',
       name: 'Nested layout test',
-      formatId: 'dm32',
-      profileId: 'dm32-baofeng-dm32uv',
+      radioTargetId: 'baofeng-dm32uv',
       layout: {
         sections: [
           {
@@ -444,8 +443,7 @@ describe('assemble', () => {
       revision: 1,
       updatedAt: '2026-01-01T00:00:00.000Z',
       name: 'Omit test',
-      formatId: 'opengd77',
-      profileId: 'opengd77-1701',
+      radioTargetId: 'baofeng-dm1701',
       layout: { sections: [] },
       channelOverrides: [],
       zoneOverrides: [],
@@ -510,8 +508,7 @@ describe('assemble', () => {
       revision: 1,
       updatedAt: '2026-01-01T00:00:00.000Z',
       name: 'Omit orphan test',
-      formatId: 'opengd77',
-      profileId: 'opengd77-1701',
+      radioTargetId: 'baofeng-dm1701',
       layout: { sections: [] },
       channelOverrides: [],
       zoneOverrides: [],
@@ -579,8 +576,7 @@ describe('assemble', () => {
       revision: 1,
       updatedAt: '2026-01-01T00:00:00.000Z',
       name: 'Force include test',
-      formatId: 'opengd77',
-      profileId: 'opengd77-1701',
+      radioTargetId: 'baofeng-dm1701',
       layout: { sections: [] },
       channelOverrides: [],
       zoneOverrides: [{ libraryEntityId: pmrZone.id, forceInclude: true }],
@@ -634,8 +630,7 @@ describe('assemble', () => {
       revision: 1,
       updatedAt: '2026-01-01T00:00:00.000Z',
       name: 'Force include orphan test',
-      formatId: 'opengd77',
-      profileId: 'opengd77-1701',
+      radioTargetId: 'baofeng-dm1701',
       layout: { sections: [] },
       channelOverrides: [],
       zoneOverrides: [{ libraryEntityId: pmrZone.id, forceInclude: true }],
@@ -686,8 +681,7 @@ describe('assemble', () => {
       revision: 1,
       updatedAt: '2026-01-01T00:00:00.000Z',
       name: 'Excluded wins test',
-      formatId: 'opengd77',
-      profileId: 'opengd77-1701',
+      radioTargetId: 'baofeng-dm1701',
       layout: { sections: [] },
       channelOverrides: [],
       zoneOverrides: [{ libraryEntityId: pmrZone.id, forceInclude: true, excluded: true }],
@@ -741,8 +735,7 @@ describe('assemble', () => {
       revision: 1,
       updatedAt: '2026-01-01T00:00:00.000Z',
       name: 'CHIRP test',
-      formatId: 'chirp',
-      profileId: 'chirp-uv5r',
+      radioTargetId: 'baofeng-uv5r-mini',
       layout: {
         sections: [
           {
@@ -835,7 +828,7 @@ describe('assemble', () => {
       rxGroupLists: [],
       scanLists: [],
     };
-    const build = newFormatBuild(projectId, 'opengd77-1701');
+    const { build, egress } = newRadioBuildForProfile(projectId, 'opengd77-1701');
 
     const projection = assemble(build, library);
     const glasgow = projection.zones.find((zone) => zone.zoneId === glasgowZone.id);
@@ -844,7 +837,7 @@ describe('assemble', () => {
     const warnings = exportInclusionWarnings(build, library, projection);
     expect(warnings.some((warning) => warning.includes('cycle'))).toBe(true);
 
-    const exportResult = exportBuildAll({ build, library });
+    const exportResult = exportBuildAll({ build, egress, library });
     expect(exportResult.warnings.some((warning) => warning.includes('cycle'))).toBe(true);
     expect(Object.keys(exportResult.files).length).toBeGreaterThan(0);
   });

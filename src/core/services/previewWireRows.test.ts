@@ -25,9 +25,9 @@ const fixtureDir = join(
 
 describe('previewWireRows', () => {
   it('shows channel display label and effective wire name from overrides', () => {
-    const yaml = readFileSync(join(fixtureDir, 'with-format-build.yaml'), 'utf8');
+    const yaml = readFileSync(join(fixtureDir, 'with-radio-build.yaml'), 'utf8');
     const aggregate = parseProjectDocument(yaml);
-    const build = aggregate.formatBuilds[0]!;
+    const build = aggregate.radioBuilds[0]!;
     const library = {
       channels: aggregate.channels,
       zones: aggregate.zones,
@@ -49,11 +49,11 @@ describe('previewWireRows', () => {
   });
 
   it('keeps talk group generated wire name separate from build override', () => {
-    const yaml = readFileSync(join(fixtureDir, 'with-format-build.yaml'), 'utf8');
+    const yaml = readFileSync(join(fixtureDir, 'with-radio-build.yaml'), 'utf8');
     const aggregate = parseProjectDocument(yaml);
     const tgId = '55555555-5555-4555-8555-555555555555';
     const build = {
-      ...aggregate.formatBuilds[0]!,
+      ...aggregate.radioBuilds[0]!,
       talkGroupOverrides: [{ libraryEntityId: tgId, wireName: 'Custom Override' }],
     };
     const library = {
@@ -76,11 +76,11 @@ describe('previewWireRows', () => {
   });
 
   it('applies talk group abbreviation to generated wire name when override is set', () => {
-    const yaml = readFileSync(join(fixtureDir, 'with-format-build.yaml'), 'utf8');
+    const yaml = readFileSync(join(fixtureDir, 'with-radio-build.yaml'), 'utf8');
     const aggregate = parseProjectDocument(yaml);
     const tgId = '55555555-5555-4555-8555-555555555555';
     const build = {
-      ...aggregate.formatBuilds[0]!,
+      ...aggregate.radioBuilds[0]!,
       talkGroupOverrides: [{ libraryEntityId: tgId, wireName: 'Short override' }],
     };
     const library = {
@@ -107,10 +107,10 @@ describe('previewWireRows', () => {
   });
 
   it('marks excluded channels in preview rows', () => {
-    const yaml = readFileSync(join(fixtureDir, 'with-format-build.yaml'), 'utf8');
+    const yaml = readFileSync(join(fixtureDir, 'with-radio-build.yaml'), 'utf8');
     const aggregate = parseProjectDocument(yaml);
     const build = {
-      ...aggregate.formatBuilds[0]!,
+      ...aggregate.radioBuilds[0]!,
       channelOverrides: [
         {
           libraryEntityId: '33333333-3333-4333-8333-333333333333',
@@ -225,9 +225,9 @@ describe('previewWireRows', () => {
   });
 
   it('expands multi-mode channels into separate preview rows', () => {
-    const yaml = readFileSync(join(fixtureDir, 'with-format-build.yaml'), 'utf8');
+    const yaml = readFileSync(join(fixtureDir, 'with-radio-build.yaml'), 'utf8');
     const aggregate = parseProjectDocument(yaml);
-    const build = aggregate.formatBuilds[0]!;
+    const build = aggregate.radioBuilds[0]!;
     const channels: Channel[] = aggregate.channels.map((channel, index) =>
       index === 1
         ? {
@@ -275,9 +275,9 @@ describe('previewWireRows', () => {
   });
 
   it('shortens wire names at the profile name limit in preview', () => {
-    const yaml = readFileSync(join(fixtureDir, 'with-format-build.yaml'), 'utf8');
+    const yaml = readFileSync(join(fixtureDir, 'with-radio-build.yaml'), 'utf8');
     const aggregate = parseProjectDocument(yaml);
-    const build = aggregate.formatBuilds[0]!;
+    const build = aggregate.radioBuilds[0]!;
     const channels = aggregate.channels.map((channel) => ({
       ...channel,
       name: 'Very Long Channel Name That Exceeds Limit',
@@ -302,10 +302,10 @@ describe('previewWireRows', () => {
   });
 
   it('generates channel wire names from callsign and name when no override', () => {
-    const yaml = readFileSync(join(fixtureDir, 'with-format-build.yaml'), 'utf8');
+    const yaml = readFileSync(join(fixtureDir, 'with-radio-build.yaml'), 'utf8');
     const aggregate = parseProjectDocument(yaml);
     const build = {
-      ...aggregate.formatBuilds[0]!,
+      ...aggregate.radioBuilds[0]!,
       channelOverrides: [],
     };
     const library = {
@@ -331,10 +331,10 @@ describe('previewWireRows', () => {
   });
 
   it('prefers channel abbreviation over vowel squeeze in preview', () => {
-    const yaml = readFileSync(join(fixtureDir, 'with-format-build.yaml'), 'utf8');
+    const yaml = readFileSync(join(fixtureDir, 'with-radio-build.yaml'), 'utf8');
     const aggregate = parseProjectDocument(yaml);
     const build = {
-      ...aggregate.formatBuilds[0]!,
+      ...aggregate.radioBuilds[0]!,
       channelOverrides: [],
     };
     const channels = aggregate.channels.map((channel, index) =>
@@ -399,7 +399,10 @@ describe('previewWireRows', () => {
       scanLists: [],
     };
 
-    const rows = previewWireRows(build, library, 'channel', { profileId: build.profileId });
+    const rows = previewWireRows(build, library, 'channel', {
+      formatId: 'dm32',
+      profileId: 'dm32-baofeng-dm32uv',
+    });
     const fanOutRows = rows.filter((row) =>
       row.displayDetails?.some((line) => line.label === 'Talk group'),
     );
@@ -783,8 +786,12 @@ describe('previewWireRows', () => {
         rxGroupLists: [rgl],
         scanLists: [],
       };
-      const zoneRow = previewWireRows(build, library, 'zone')[0];
-      const rglRow = previewWireRows(build, library, 'rxGroupList')[0];
+      const egress =
+        formatId === 'opengd77-1701'
+          ? { formatId: 'opengd77', profileId: 'opengd77-1701' }
+          : { formatId: 'dm32', profileId: 'dm32-baofeng-dm32uv' };
+      const zoneRow = previewWireRows(build, library, 'zone', egress)[0];
+      const rglRow = previewWireRows(build, library, 'rxGroupList', egress)[0];
       expect(zoneRow?.effectiveWireName.length).toBeLessThanOrEqual(16);
       expect(rglRow?.effectiveWireName.length).toBeLessThanOrEqual(16);
     }

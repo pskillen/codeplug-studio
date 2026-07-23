@@ -36,7 +36,7 @@ describe('migrateChannelScanListFromBuildOverrides', () => {
         analogSquelchMode: 'carrier',
       },
       aprsConfiguration: null,
-      formatBuilds: [
+      radioBuilds: [
         {
           ...newFormatBuild(PROJECT_ID, 'anytone-at-d890uv'),
           channelOverrides: [
@@ -47,9 +47,10 @@ describe('migrateChannelScanListFromBuildOverrides', () => {
           ],
         },
       ],
+      egressPaths: [],
     });
 
     expect(result.channels[0]?.scanListId).toBe(SCAN_LIST_ID);
-    expect(result.formatBuilds[0]?.channelOverrides).toEqual([]);
+    expect(result.radioBuilds[0]?.channelOverrides).toEqual([]);
   });
 });

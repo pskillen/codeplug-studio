@@ -5,7 +5,7 @@ import { resolveEffectiveZoneChannelIds } from './zoneHierarchy.ts';
 
 /** A reference held by one library entity pointing at a target entity. */
 export interface EntityReference {
-  fromKind: 'channel' | 'zone' | 'rxGroupList' | 'scanList' | 'aprsConfiguration' | 'formatBuild';
+  fromKind: 'channel' | 'zone' | 'rxGroupList' | 'scanList' | 'aprsConfiguration';
   fromId: string;
   fromName: string;
   /** Human-readable description of how the target is referenced. */

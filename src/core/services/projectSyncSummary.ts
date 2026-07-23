@@ -12,7 +12,8 @@ export interface ProjectSyncCounts {
   rxGroupLists: number;
   scanLists: number;
   aprsConfigurations: number;
-  formatBuilds: number;
+  radioBuilds: number;
+  egressPaths: number;
 }
 
 export type ProjectSyncCountKey = keyof ProjectSyncCounts;
@@ -61,7 +62,8 @@ const COUNT_LABELS: Record<ProjectSyncCountKey, string> = {
   rxGroupLists: 'RX group lists',
   scanLists: 'Scan lists',
   aprsConfigurations: 'APRS configurations',
-  formatBuilds: 'Format builds',
+  radioBuilds: 'Radio builds',
+  egressPaths: 'Egress paths',
 };
 
 const COUNT_ORDER: ProjectSyncCountKey[] = [
@@ -73,7 +75,8 @@ const COUNT_ORDER: ProjectSyncCountKey[] = [
   'rxGroupLists',
   'scanLists',
   'aprsConfigurations',
-  'formatBuilds',
+  'radioBuilds',
+  'egressPaths',
 ];
 
 function countRows<T>(rows: T[] | undefined): number {
@@ -96,7 +99,8 @@ function countsFromSeed(seed: ProjectSeed): ProjectSyncCounts {
     rxGroupLists: countRows(seed.rxGroupLists),
     scanLists: countRows(seed.scanLists),
     aprsConfigurations: countRows(seed.aprsConfigurations),
-    formatBuilds: countRows(seed.formatBuilds),
+    radioBuilds: countRows(seed.radioBuilds),
+    egressPaths: countRows(seed.egressPaths),
   };
 }
 
@@ -111,7 +115,8 @@ function lastModifiedFromSeed(seed: ProjectSeed): string | null {
     ...(seed.rxGroupLists ?? []).map((row) => row.updatedAt),
     ...(seed.scanLists ?? []).map((row) => row.updatedAt),
     ...(seed.aprsConfigurations ?? []).map((row) => row.updatedAt),
-    ...(seed.formatBuilds ?? []).map((row) => row.updatedAt),
+    ...(seed.radioBuilds ?? []).map((row) => row.updatedAt),
+    ...(seed.egressPaths ?? []).map((row) => row.updatedAt),
   ]);
 }
 
@@ -136,7 +141,8 @@ export function summariseProjectAggregate(aggregate: ProjectAggregate): ProjectS
     rxGroupLists: aggregate.rxGroupLists,
     scanLists: aggregate.scanLists,
     aprsConfigurations: aggregate.aprsConfiguration ? [aggregate.aprsConfiguration] : [],
-    formatBuilds: aggregate.formatBuilds,
+    radioBuilds: aggregate.radioBuilds,
+    egressPaths: aggregate.egressPaths,
   });
 }
 

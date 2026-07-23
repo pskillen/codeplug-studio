@@ -33,7 +33,8 @@ export function testProjectSyncSummary(
       rxGroupLists: 0,
       scanLists: 0,
       aprsConfigurations: 0,
-      formatBuilds: 0,
+      radioBuilds: 0,
+      egressPaths: 0,
       ...counts,
     },
   };

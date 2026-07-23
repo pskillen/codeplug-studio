@@ -3,7 +3,7 @@ import type { AprsConfiguration } from '@core/models/aprs.ts';
 import type { Library, Zone } from '@core/models/library.ts';
 import type { ZoneGroupingZoneEntry } from '@core/models/traitLayout.ts';
 import type { ProjectAggregate } from '@core/import-export/projectDocument.ts';
-import { defaultCompatibleEgress } from '@core/radio-targets/index.ts';
+import { radioTargetFor } from '@core/radio-targets/index.ts';
 import {
   findZoneGroupingSection,
   replaceZoneGroupingSection,
@@ -62,9 +62,10 @@ function channelIdsFromZone(zone: Zone, zones: Zone[]): string[] {
   return resolveEffectiveZoneChannelIds(zone, zones);
 }
 
-/** True when a build's default egress resolves to the DM32 format (radioTargetId-derived, #654). */
+/** True when the radio target has a DM32-compatible egress (not only the default pathway). */
 function isDm32Build(build: RadioBuild): boolean {
-  return defaultCompatibleEgress(build.radioTargetId)?.formatId === 'dm32';
+  const target = radioTargetFor(build.radioTargetId);
+  return target?.compatibleEgress.some((egress) => egress.formatId === 'dm32') ?? false;
 }
 
 export function migrateZoneExportFieldsToBuildLayout(
@@ -161,9 +162,9 @@ export function migrateProjectAggregate(aggregate: ProjectAggregate): ProjectAgg
     ),
   };
 
-  const { library: migratedLibrary, formatBuilds } = migrateZoneExportFieldsToBuildLayout(
+  const { library: migratedLibrary, formatBuilds: radioBuilds } = migrateZoneExportFieldsToBuildLayout(
     library,
-    withMembers.formatBuilds,
+    withMembers.radioBuilds,
   );
 
   return migrateAprsSingletonAggregate(
@@ -180,7 +181,8 @@ export function migrateProjectAggregate(aggregate: ProjectAggregate): ProjectAgg
         aprsConfiguration: migratedLibrary.aprsConfiguration,
         channelDefaults: migratedLibrary.channelDefaults,
         zoneDefaults: migratedLibrary.zoneDefaults,
-        formatBuilds,
+        radioBuilds,
+        egressPaths: withMembers.egressPaths,
       }),
     ),
   );

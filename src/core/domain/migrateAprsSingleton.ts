@@ -1,5 +1,5 @@
 import type { AprsChannelSlot, AprsConfiguration, ChannelAprsBinding } from '@core/models/aprs.ts';
-import type { FormatBuild } from '@core/models/formatBuild.ts';
+import type { RadioBuild } from '@core/models/radioBuild.ts';
 import type { Library } from '@core/models/library.ts';
 import type { EntityRef } from '@core/models/libraryTypes.ts';
 import type { ProjectAggregate } from '@core/import-export/projectDocument.ts';
@@ -21,7 +21,7 @@ type LegacyLibrary = Omit<Library, 'aprsConfiguration'> & {
   aprsConfigurations?: AprsConfiguration[];
 };
 
-type LegacyFormatBuild = FormatBuild & {
+type LegacyRadioBuild = RadioBuild & {
   activeAprsConfigurationId?: string | null;
 };
 
@@ -127,14 +127,14 @@ export function migrateAprsSingletonLibrary(library: LegacyLibrary): Library {
   };
 }
 
-export function stripActiveAprsConfigurationId(build: LegacyFormatBuild): FormatBuild {
+export function stripActiveAprsConfigurationId(build: LegacyRadioBuild): RadioBuild {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars -- legacy build field dropped at migration
   const { activeAprsConfigurationId, ...rest } = build;
   return rest;
 }
 
-export function migrateAprsSingletonFormatBuilds(formatBuilds: LegacyFormatBuild[]): FormatBuild[] {
-  return formatBuilds.map(stripActiveAprsConfigurationId);
+export function migrateAprsSingletonRadioBuilds(radioBuilds: LegacyRadioBuild[]): RadioBuild[] {
+  return radioBuilds.map(stripActiveAprsConfigurationId);
 }
 
 export function migrateAprsSingletonAggregate(aggregate: ProjectAggregate): ProjectAggregate {
@@ -172,6 +172,7 @@ export function migrateAprsSingletonAggregate(aggregate: ProjectAggregate): Proj
     aprsConfiguration: library.aprsConfiguration,
     channelDefaults: library.channelDefaults,
     zoneDefaults: library.zoneDefaults,
-    formatBuilds: migrateAprsSingletonFormatBuilds(aggregate.formatBuilds as LegacyFormatBuild[]),
+    radioBuilds: migrateAprsSingletonRadioBuilds(aggregate.radioBuilds as LegacyRadioBuild[]),
+    egressPaths: aggregate.egressPaths,
   };
 }

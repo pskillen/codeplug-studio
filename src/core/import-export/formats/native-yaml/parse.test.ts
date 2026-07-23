@@ -4,7 +4,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import { NativeYamlImportError } from './errors.ts';
-import { parseProjectDocument } from './parse.ts';
+import { parseProjectDocument, parseProjectDocumentWithWarnings } from './parse.ts';
 import {
   fullLibraryAggregate,
   minimalProjectAggregate,
@@ -133,10 +133,19 @@ describe('native-yaml validate', () => {
     );
   });
 
-  it('rejects broken build selection FK', () => {
-    expect(() => parseProjectDocument(readFixture('broken-fk.yaml'))).toThrow(
-      /not found in library/,
+  it('drops legacy formatBuilds with a warning instead of validating their FKs', () => {
+    const { aggregate, warnings } = parseProjectDocumentWithWarnings(
+      readFixture('broken-fk.yaml'),
     );
+    expect(aggregate.radioBuilds).toEqual([]);
+    expect(aggregate.egressPaths).toEqual([]);
+    expect(warnings).toEqual([expect.stringContaining('Ignoring 1 legacy format build')]);
+  });
+
+  it('rejects broken build selection FK on new-style radioBuilds', () => {
+    expect(() =>
+      parseProjectDocument(readFixture('broken-fk-radio-build.yaml')),
+    ).toThrow(/not found in library/);
   });
 
   it('soft-warns out-of-range APRS report slot index instead of hard-failing', () => {

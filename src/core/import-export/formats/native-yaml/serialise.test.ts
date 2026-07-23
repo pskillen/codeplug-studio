@@ -6,7 +6,7 @@ import { serialiseProject } from './serialise.ts';
 import {
   fullLibraryAggregate,
   minimalProjectAggregate,
-  projectWithFormatBuildAggregate,
+  projectWithRadioBuildAggregate,
 } from './testFixtures.ts';
 
 const fixturesDir = join(dirname(fileURLToPath(import.meta.url)), '__fixtures__/export');
@@ -32,9 +32,9 @@ describe('native-yaml serialise', () => {
     );
   });
 
-  it('serialises format build with trait layout and selections', () => {
-    expect(normaliseYamlEol(serialiseProject(projectWithFormatBuildAggregate()))).toBe(
-      readGolden('with-format-build.yaml'),
+  it('serialises radio build with trait layout, selections, and egress path', () => {
+    expect(normaliseYamlEol(serialiseProject(projectWithRadioBuildAggregate()))).toBe(
+      readGolden('with-radio-build.yaml'),
     );
   });
 });

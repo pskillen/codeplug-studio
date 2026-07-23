@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { FormatBuild } from '@core/models/formatBuild.ts';
+import type { RadioBuild } from '@core/models/radioBuild.ts';
 import type { Library, Zone } from '@core/models/library.ts';
 import { initialRevision } from '@core/models/revision.ts';
 import {
@@ -31,14 +31,13 @@ function legacyZone(): Zone & {
   };
 }
 
-function dm32Build(): FormatBuild {
+function dm32Build(): RadioBuild {
   return {
     id: '99999999-9999-4999-8999-999999999999',
     projectId: PROJECT_ID,
     revision: initialRevision(),
     updatedAt: '2026-07-02T10:00:00.000Z',
-    formatId: 'dm32',
-    profileId: 'dm32-baofeng-dm32uv',
+    radioTargetId: 'baofeng-dm32uv',
     name: 'DM32',
     layout: { sections: [] },
     channelOverrides: [],
@@ -98,30 +97,6 @@ describe('migrateZoneExportFields', () => {
     });
   });
 
-  it('migrates dm32-default profile id to dm32-baofeng-dm32uv', () => {
-    const library: Library = {
-      channels: [],
-      zones: [],
-      talkGroups: [],
-      digitalContacts: [],
-      analogContacts: [],
-      rxGroupLists: [],
-      scanLists: [],
-      channelDefaults: {
-        forbidTransmit: false,
-        txPermit: 'permitAlways',
-        sendTalkerAlias: 'on',
-        analogSquelchMode: 'carrier',
-      },
-      zoneDefaults: { includeInZoneDerivedScanList: true },
-      aprsConfiguration: null,
-    };
-    const { formatBuilds } = migrateZoneExportFieldsToBuildLayout(library, [
-      { ...dm32Build(), profileId: 'dm32-default' },
-    ]);
-    expect(formatBuilds[0]!.profileId).toBe('dm32-baofeng-dm32uv');
-  });
-
   it('migrateProjectAggregate cleans zones and updates builds', () => {
     const result = migrateProjectAggregate({
       meta: {
@@ -149,11 +124,12 @@ describe('migrateZoneExportFields', () => {
         analogSquelchMode: 'carrier',
       },
       aprsConfiguration: null,
-      formatBuilds: [dm32Build()],
+      radioBuilds: [dm32Build()],
+      egressPaths: [],
     });
 
     expect(result.zones[0]).not.toHaveProperty('exportScanList');
-    const section = result.formatBuilds[0]!.layout.sections.find((s) => s.kind === 'zoneGrouping');
+    const section = result.radioBuilds[0]!.layout.sections.find((s) => s.kind === 'zoneGrouping');
     expect(section?.kind).toBe('zoneGrouping');
   });
 });
