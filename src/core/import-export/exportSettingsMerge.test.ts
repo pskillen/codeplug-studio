@@ -44,4 +44,11 @@ describe('mergeExportOptions', () => {
     expect(mergeExportOptions(dm32, 'dm32').exportZoneDerivedScanLists).toBe(true);
     expect(mergeExportOptions(anytone, 'anytone').exportZoneDerivedScanLists).toBe(false);
   });
+
+  it('carries egress profileId for wire-name limit resolution', () => {
+    const chirp = newFormatBuild('proj', 'chirp-uv5r');
+    const options = mergeExportOptions(chirp, 'chirp', { profileId: 'chirp-uv5r' });
+    expect(options.profileId).toBe('chirp-uv5r');
+    expect(options.shortenNames).toBe(true);
+  });
 });

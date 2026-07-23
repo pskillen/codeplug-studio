@@ -98,6 +98,21 @@ export interface ExportBuildAllResult {
 
 export { mergeExportOptions };
 
+/** Merge build export settings with egress identity (profileId for wire name limits). */
+function exportOptionsForEgress(
+  build: RadioBuild,
+  egress: EgressPath,
+  options?: CpsExportOptions,
+  library?: LibrarySlice,
+): CpsExportOptions {
+  return mergeExportOptions(
+    build,
+    egress.formatId,
+    { ...options, profileId: options?.profileId ?? egress.profileId },
+    library,
+  );
+}
+
 function anytoneLstStem(options: CpsExportOptions): string | undefined {
   const stem = options.projectName?.trim();
   return stem || undefined;
@@ -134,7 +149,7 @@ export function listExportBuildFileNames({
   library,
   options,
 }: Omit<ExportBuildParams, 'fileName'>): readonly string[] {
-  const exportOptions = mergeExportOptions(build, egress.formatId, options, library);
+  const exportOptions = exportOptionsForEgress(build, egress, options, library);
   const projection = assemble(build, library, {
     formatId: egress.formatId,
     profileId: egress.profileId,
@@ -160,7 +175,7 @@ export function exportBuildFile({
   fileName,
   options,
 }: ExportBuildParams): ExportResult & { content: string; assembled: AssembledBuild } {
-  const exportOptions = mergeExportOptions(build, egress.formatId, options, library);
+  const exportOptions = exportOptionsForEgress(build, egress, options, library);
   const projection = assemble(build, library, {
     formatId: egress.formatId,
     profileId: egress.profileId,
@@ -201,7 +216,7 @@ export function exportBuildAll({
   library,
   options,
 }: Omit<ExportBuildParams, 'fileName'>): ExportBuildAllResult {
-  const exportOptions = mergeExportOptions(build, egress.formatId, options, library);
+  const exportOptions = exportOptionsForEgress(build, egress, options, library);
   const projection = assemble(build, library, {
     formatId: egress.formatId,
     profileId: egress.profileId,
@@ -249,7 +264,7 @@ export function exportBuildSingleFile({
   fileName: string;
   content: string;
 } {
-  const exportOptions = mergeExportOptions(build, egress.formatId, options, library);
+  const exportOptions = exportOptionsForEgress(build, egress, options, library);
   const projection = assemble(build, library, {
     formatId: egress.formatId,
     profileId: egress.profileId,
@@ -309,7 +324,7 @@ export function exportBuildZip({
     }
 
     // Re-serialise for the APRS settings patch (same assemble projection as exportBuildAll).
-    const exportOptions = mergeExportOptions(build, egress.formatId, options, library);
+    const exportOptions = exportOptionsForEgress(build, egress, options, library);
     const { aprsSettingsPatch } = serialiseNeonplugCodeplug(result.assembled, exportOptions);
 
     if (mergeBase) {

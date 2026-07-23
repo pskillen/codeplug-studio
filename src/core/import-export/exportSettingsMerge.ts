@@ -90,6 +90,8 @@ function applyFormatExportDefaults(defaults: FormatExportDefaults): CpsExportOpt
 /**
  * Merge format defaults, build-stored settings, and runtime overrides for export.
  * `formatId` comes from the egress path (build no longer carries `formatId`/`profileId`, #654).
+ * Pass `options.profileId` (usually the active egress profile) so wire-name shortening
+ * can resolve profile limits — without it, CHIRP/etc. skip shortening.
  */
 export function mergeExportOptions(
   build: RadioBuild,

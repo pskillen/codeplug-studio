@@ -28,7 +28,10 @@ export function previewGeneratedChannelWireName(
 ): string {
   const defaultEgress = defaultCompatibleEgress(build.radioTargetId);
   const formatId = options?.formatId ?? defaultEgress?.formatId ?? '';
-  const merged = options ?? mergeExportOptions(build, formatId);
+  const merged = mergeExportOptions(build, formatId, {
+    ...options,
+    profileId: options?.profileId ?? defaultEgress?.profileId,
+  });
   const profileId = merged.profileId ?? defaultEgress?.profileId;
   const reserved = new Set<string>();
   const warnings: string[] = [];

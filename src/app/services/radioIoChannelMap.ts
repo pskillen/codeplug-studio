@@ -43,7 +43,7 @@ function radioWireName(
   reserved: Set<string>,
   warnings: string[],
 ): string {
-  const merged = mergeExportOptions(build, egress.formatId);
+  const merged = mergeExportOptions(build, egress.formatId, { profileId: egress.profileId });
   const pick = channelPickForWireExport(row.entity, {
     nameModeOverride: merged.nameModeOverride as ChannelExportNameMode | undefined,
   });
