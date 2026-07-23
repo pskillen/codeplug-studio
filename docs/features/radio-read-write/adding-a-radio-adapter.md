@@ -31,7 +31,9 @@ Library (RF semantics)  +  RadioBuild (wire names, slots, trait layout)
                                     │
                           assemble(radioBuild, library)
                                     │
-                            AssembledBuild  ──►  RadioChannelDto[]  ──►  encode into image
+                    expandAllMxNChannels (when MxNChannelExpansion)
+                                    │
+                            RadioChannelDto[]  ──►  encode into image
                                     │
               Active EgressPath.hydration (unmodelled / full clone cache)
                                     │
@@ -40,13 +42,14 @@ Library (RF semantics)  +  RadioBuild (wire names, slots, trait layout)
                               upload (full or selective)
 ```
 
-| Rule                                                           | Why                                                                                                                                |
-| -------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
-| **Write always goes through a RadioBuild + egress**            | Same bridge as CPS export — name limits, slots, exclusions, trait layout; egress supplies `formatId` / `profileId` for the pathway |
-| **`assemble(build, library)` before encode**                   | Modelled channels come from the projection, not a raw library dump                                                                 |
-| **Read hydrates the active EgressPath, not the library** (MVP) | Unmodelled registers must survive; importing radio channels into the library is a separate deliverable                             |
-| **Hydration is a labelled escape hatch on egress**             | Same spirit as NeonPlug donor retain — opaque state Studio does not model; stored on `EgressPath.hydration` (`CpsWireHydration`)   |
-| **Display unmodelled settings read-only**                      | Operator can see that a donor/read exists; editing those bytes in Studio is out of scope until modelled                            |
+| Rule                                                           | Why                                                                                                                                                                                                            |
+| -------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Write always goes through a RadioBuild + egress**            | Same bridge as CPS export — name limits, slots, exclusions, trait layout; egress supplies `formatId` / `profileId` for the pathway                                                                             |
+| **`assemble(build, library)` before encode**                   | Modelled channels come from the projection, not a raw library dump                                                                                                                                             |
+| **Shared m×n expander when trait applies**                     | Preview, CPS export, and Web Serial write must emit the same channel fan-out ([#664](https://github.com/pskillen/codeplug-studio/issues/664) / [#665](https://github.com/pskillen/codeplug-studio/issues/665)) |
+| **Read hydrates the active EgressPath, not the library** (MVP) | Unmodelled registers must survive; importing radio channels into the library is a separate deliverable                                                                                                         |
+| **Hydration is a labelled escape hatch on egress**             | Same spirit as NeonPlug donor retain — opaque state Studio does not model; stored on `EgressPath.hydration` (`CpsWireHydration`)                                                                               |
+| **Display unmodelled settings read-only**                      | Operator can see that a donor/read exists; editing those bytes in Studio is out of scope until modelled                                                                                                        |
 
 **NeonPlug file path (shipped):** operator imports `.neonplug` on the NeonPlug **egress** → Studio stores retain on `EgressPath.hydration` (`formatId: 'neonplug'`) → merge export through that egress.  
 **Direct Web Serial path:** pick the **Web Serial** egress on a catalog target that includes `radio-io` (e.g. UV-5R Mini) → **Read** in Studio → persist `EgressPath.hydration` with `formatId: 'radio-clone'` (`RadioCloneHydrationBag`) → show read-only settings on **Radio image** → **Write** merges `assemble` projection into that image → upload. CPS file egresses on the same build remain separate children.
@@ -108,7 +111,8 @@ UV-5R Mini (PROGRAM+R/W): treat as **read-cached image + encode channels + uploa
 ### 5. App / RadioBuild + egress integration
 
 - [ ] **Read:** download → cache → persist hydration on the **selected Web Serial EgressPath** → read-only settings view (no library channel import unless a later ticket says so)
-- [ ] **Write:** require compatible egress on the build → `assemble(build, library)` → map to radio DTOs → encode into hydrated image → upload
+- [ ] **Write:** require compatible egress on the build → `assemble(build, library)` → **shared MxN expand when trait applies** → map to radio DTOs → encode into hydrated image → upload
+- [ ] Do **not** import `formats/<cps>/channelExpansion.ts` from the write path — use `channelExpansion/mxnExpandAll.ts`
 - [ ] Refuse write when full-image strategy lacks egress hydration
 - [ ] In-flow attribution from `attributionIds`
 - [ ] Build Export hosts egress switcher + connect/read/write for Web Serial — not a library-only dump UI
@@ -164,6 +168,7 @@ Append here as adapters ship. Keep entries short; promote repeated patterns into
 | 2026-07-23 | DM-32UV #663    | Web Serial `port.open` must pass `bufferSize` ≫ 255 (Studio: 64 KiB). Default 255 drops / stalls 4KB block replies on macOS CDC and can reboot the radio after metadata discovery. Also apply NeonPlug `BLOCK_READ_DELAY` (150 ms) between full-block downloads.                                                                                                                                                                           |
 | 2026-07-23 | DM-32UV #663    | `WebSerialBytePipe.readExact` must **park** until the buffer grows when a partial chunk is already buffered. Resolving early whenever `buf.length > 0` busy-spins the microtask queue, starves the continuous `pump()`, and stalls the first 4KB reply after metadata (radio leaves PC Program). NeonPlug pull-`read()` never hits this.                                                                                                   |
 | 2026-07-23 | DM-32UV #638    | Selective-range upload must **seed** sparse block addresses from prior Read hydration (`seedProtocolForUpload`) before `upload`. Connect alone leaves `cache.blocks` empty — Write then no-ops, the progress modal vanishes, and the radio drops out of PROGRAM.                                                                                                                                                                           |
+| 2026-07-23 | MxN #664/#665   | Web Serial write for `MxNChannelExpansion` radios must call shared `expandAllMxNChannels` (not lean 1:1 assemble). Defaults for `radio-io-dm32uv` match CPS (`expandRxGroupLists` / scratch on). Do not import format-named `channelExpansion.ts` from the write path. Contact-table encode still deferred (#636).                                                                                                                         |
 
 ---
 

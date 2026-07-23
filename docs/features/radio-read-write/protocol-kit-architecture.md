@@ -185,7 +185,9 @@ requestPort(baud) → open BytePipe
   → radio.download(onProgress)    // fill MemoryMap via BlockCodec
   → persist FormatBuild.cpsWireHydration (formatId: radio-clone)
   → (operator curates library + FormatBuild as usual)
-  → assemble(build, library) → RadioChannelDto[]
+  → assemble(build, library)
+  → expandAllMxNChannels when MxNChannelExpansion (same as CPS export)
+  → RadioChannelDto[]
   → encode into hydrated image (preserve unmodelled regions)
   → radio.upload(image)           // often re-handshake; full or selective ranges
   → disconnect
@@ -193,13 +195,13 @@ requestPort(baud) → open BytePipe
 
 MVP **Read** hydrates the FormatBuild only — it does **not** import channels into the library. See [adding-a-radio-adapter.md](adding-a-radio-adapter.md).
 
-| Rule                                                                   | Why                                                                  |
-| ---------------------------------------------------------------------- | -------------------------------------------------------------------- |
-| Cache / hydrate full image before write                                | Settings / DTMF / non-channel regions survive (FT-65 / UV5R pattern) |
-| Upload by **ranges** or full multi-region image per descriptor         | CHIRP UV-5R `_ranges_*`; Mini uploads all MEM_* from hydrated image  |
-| Progress + `AbortSignal` on download/upload                            | Cancel mid-clone without orphaning the port                          |
-| Separate read-handshake vs upload-handshake when the radio requires it | NeonPlug UV5R-Mini `handshakeUpload()`                               |
-| Write always via FormatBuild + `assemble`                              | Same bridge as CPS export — never bare library dump                  |
+| Rule                                                                   | Why                                                                       |
+| ---------------------------------------------------------------------- | ------------------------------------------------------------------------- |
+| Cache / hydrate full image before write                                | Settings / DTMF / non-channel regions survive (FT-65 / UV5R pattern)      |
+| Upload by **ranges** or full multi-region image per descriptor         | CHIRP UV-5R `_ranges_*`; Mini uploads all MEM_* from hydrated image       |
+| Progress + `AbortSignal` on download/upload                            | Cancel mid-clone without orphaning the port                               |
+| Separate read-handshake vs upload-handshake when the radio requires it | NeonPlug UV5R-Mini `handshakeUpload()`                                    |
+| Write always via FormatBuild + `assemble` + shared MxN expander        | Same channel projection as CPS export / preview — never bare library dump |
 
 ---
 

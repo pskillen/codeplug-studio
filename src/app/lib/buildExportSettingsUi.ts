@@ -27,8 +27,9 @@ export type ResolvedBuildExportSettings = Required<
  */
 export function resolvedBuildExportSettings(build: RadioBuild): ResolvedBuildExportSettings {
   const stored = build.exportSettings ?? {};
-  const resolvedFormatId = defaultCompatibleEgress(build.radioTargetId)?.formatId ?? 'opengd77';
-  const formatDefaults = getFormatExportDefaults(resolvedFormatId);
+  const defaultEgress = defaultCompatibleEgress(build.radioTargetId);
+  const resolvedFormatId = defaultEgress?.formatId ?? 'opengd77';
+  const formatDefaults = getFormatExportDefaults(resolvedFormatId, defaultEgress?.profileId);
   const exportZoneDerivedDefault =
     formatDefaults.exportZoneDerivedScanLists ??
     DEFAULT_BUILD_EXPORT_SETTINGS.exportZoneDerivedScanLists;
@@ -55,8 +56,9 @@ export function resolvedBuildExportSettings(build: RadioBuild): ResolvedBuildExp
 
 /** Format defaults for Export projection UI — catalog default egress, not active pathway. */
 export function radioBuildFormatExportDefaults(build: RadioBuild) {
-  const formatId = defaultCompatibleEgress(build.radioTargetId)?.formatId ?? 'opengd77';
-  return getFormatExportDefaults(formatId);
+  const defaultEgress = defaultCompatibleEgress(build.radioTargetId);
+  const formatId = defaultEgress?.formatId ?? 'opengd77';
+  return getFormatExportDefaults(formatId, defaultEgress?.profileId);
 }
 
 export type { DigitalContactExportNameMode };

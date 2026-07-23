@@ -267,7 +267,7 @@ See [DESIGN.md — Build capability traits](../../../DESIGN.md#build-capability-
 
 ## 4. Expandable channels
 
-The library lets operators keep **fewer logical channels** than some CPS formats require on the wire. Shared expansion lives in `src/core/import-export/channelExpansion/` — each format adapter decides **which axes apply**.
+The library lets operators keep **fewer logical channels** than some CPS formats require on the wire. Shared expansion lives in `src/core/import-export/channelExpansion/` — **m×n expand-all** is selected by **`radioTargetId` / `MxNChannelExpansion`** (`expandAllMxNChannels`), not by format id. Format adapters only serialise already-expanded projection rows (thin shims may remain for wire-name hooks such as Anytone).
 
 | Question                                                                                  | If yes on wire                                                                            | If no on wire                                                                           |
 | ----------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------- |
@@ -280,9 +280,10 @@ Neither axis is automatic — **document the choice** in `docs/reference/export-
 
 ```text
 AssembledBuild.channels
-  → expandChannelWireRows / expandAllDm32ChannelsForExport (format-specific)
-  → expanded wire rows
-  → serialise each row to vendor columns
+  → expandAllMxNChannels (when radio target has MxNChannelExpansion)
+    or expandChannelWireRows (multi-mode only)
+  → vendor-neutral projection rows
+  → format adapter serialises each row to vendor columns / radio DTOs
 ```
 
 `CpsExportOptions` flags (set defaults in export UI per format):
@@ -290,12 +291,12 @@ AssembledBuild.channels
 | Option                         | Typical use                                          |
 | ------------------------------ | ---------------------------------------------------- |
 | `expandModes`                  | `true` OpenGD77; `false` DM32 (native dual-mode row) |
-| `expandRxGroupLists`           | `false` OpenGD77; `true` DM32                        |
+| `expandRxGroupLists`           | `false` OpenGD77; `true` DM32 / NeonPlug / Anytone   |
 | `expandRxGroupListMembers`     | `'all'` \| `'talkGroupsOnly'`                        |
 | `multiTalkGroupExportNameMode` | Wire naming for fan-out rows                         |
 | `exportZoneDerivedScanLists`   | DM32 zone → `Scan.csv` synthesis                     |
 
-Zone members: use format-specific `expandZoneMemberWireNames` so logical channel ids fan out to **expanded wire names** (multi-mode and multi-TG aware). Warn/truncate at profile caps in `warnings.ts`.
+Zone members: use shared `expandMxNZoneMemberWireNames` / `expandMxNZoneMemberNumbers` so logical channel ids fan out to **expanded wire names** (or NeonPlug numbers). Warn/truncate at profile caps in `warnings.ts`.
 
 ### Import pipeline (best-effort collapse)
 
@@ -322,11 +323,11 @@ Domain background: [data-model](../data-model/README.md), [name-shortening.md](n
 
 **Do not** use `assembled.channels[].wireName` as the CPS wire name in preview or serialise unless you have already run the format’s full composition step.
 
-| Format trait stack                             | Preview (`previewWireRows.ts`)                             | Export (`serialise.ts`)                                                                                         |
-| ---------------------------------------------- | ---------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
-| Multi-mode expansion (OpenGD77)                | `expandChannelWireRows`                                    | Same helper in serialise                                                                                        |
-| Multi-TG fan-out (DM32)                        | `expandAllDm32ChannelsForExport`                           | Same helper in serialise                                                                                        |
-| Flat / single row per channel (CHIRP, Anytone) | `previewGeneratedChannelWireName(channel, build, options)` | Format `exportChannelWire.ts` — e.g. `channelWireName` / `anytoneChannelWireName` calling `applyWireNameLimits` |
+| Format trait stack                           | Preview (`previewWireRows.ts`)                             | Export (`serialise.ts`)                                                              |
+| -------------------------------------------- | ---------------------------------------------------------- | ------------------------------------------------------------------------------------ |
+| Multi-mode expansion (OpenGD77)              | `expandChannelWireRows`                                    | Same helper in serialise                                                             |
+| Multi-TG / m×n fan-out (MxNChannelExpansion) | `expandAllMxNChannels` (gated by `hasMxNChannelExpansion`) | Same shared expander; format adapters only shape projection rows                     |
+| Flat / single row per channel (CHIRP)        | `previewGeneratedChannelWireName(channel, build, options)` | Format `exportChannelWire.ts` — e.g. `channelWireName` calling `applyWireNameLimits` |
 
 Checklist for flat/single-row formats:
 
@@ -528,15 +529,15 @@ End-to-end smoke before PR:
 
 ## Worked example: DM32 (export shipped)
 
-| Step              | Location                                                     |
-| ----------------- | ------------------------------------------------------------ |
-| Reference hub     | `docs/reference/export-formats/dm32/README.md`               |
-| Adapter behaviour | `docs/features/import-export/dm32/README.md`                 |
-| Export adapter    | `formats/dm32/adapter.ts`, `channelExpansion.ts`             |
-| Zone scan derive  | `zoneDerivedScanLists/derive.ts`                             |
-| Trait profile     | `dm32-baofeng-dm32uv`                                        |
-| Fixtures / tests  | `src/test/dm32/`, `formats/dm32/serialise.test.ts`           |
-| Expansion         | Multi-mode **off**; multi-TG **on**; zone-derived `Scan.csv` |
+| Step              | Location                                                              |
+| ----------------- | --------------------------------------------------------------------- |
+| Reference hub     | `docs/reference/export-formats/dm32/README.md`                        |
+| Adapter behaviour | `docs/features/import-export/dm32/README.md`                          |
+| Export adapter    | `formats/dm32/adapter.ts`; m×n via `channelExpansion/mxnExpandAll.ts` |
+| Zone scan derive  | `zoneDerivedScanLists/derive.ts`                                      |
+| Trait profile     | `dm32-baofeng-dm32uv`                                                 |
+| Fixtures / tests  | `src/test/dm32/`, `formats/dm32/serialise.test.ts`                    |
+| Expansion         | Multi-mode **off**; multi-TG **on**; zone-derived `Scan.csv`          |
 
 ---
 

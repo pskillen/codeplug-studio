@@ -91,6 +91,7 @@ Baofeng DM32 export uses similar m×n expansion mechanics but differs in default
 
 ## Related
 
+- Shared expander: `src/core/import-export/channelExpansion/mxnExpandAll.ts`
 - [anytone/README.md](README.md) — feature hub
 - [multi-talkgroup-expansion.md](../../reference/multi-talkgroup-expansion.md) — domain rules
 - [wire-preview.md](../../builds/wire-preview.md)

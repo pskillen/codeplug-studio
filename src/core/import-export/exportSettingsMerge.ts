@@ -99,7 +99,7 @@ export function mergeExportOptions(
   options?: CpsExportOptions,
   library?: Pick<LibrarySlice, 'channelDefaults' | 'zoneDefaults'>,
 ): CpsExportOptions {
-  const formatDefaults = getFormatExportDefaults(formatId);
+  const formatDefaults = getFormatExportDefaults(formatId, options?.profileId);
   const stored = build.exportSettings ?? {};
   return {
     shortenNames: DEFAULT_BUILD_EXPORT_SETTINGS.shortenNames,

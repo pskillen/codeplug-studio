@@ -1,16 +1,23 @@
 /**
  * Map assemble() projection channels → radio-boundary DTOs for Web Serial encode.
  * Applies RadioBuild export name settings (profile nameLimit, shortenNames, …).
+ * When the radio target has MxNChannelExpansion, fans out via expandAllMxNChannels
+ * (same projection as CPS export / wire preview).
  * No framing — integrations radio modules consume RadioChannelDto only.
  */
 
-import type { AssembledChannel } from '@core/services/assemble.ts';
+import type { AssembledBuild, AssembledChannel, LibrarySlice } from '@core/services/assemble.ts';
 import type { RadioBuild } from '@core/models/radioBuild.ts';
-import type { ChannelTone } from '@core/models/library.ts';
+import type { Channel, ChannelModeProfile, ChannelTone } from '@core/models/library.ts';
 import { channelPickForWireExport, composeChannelWireName } from '@core/domain/channelNaming.ts';
 import type { ChannelExportNameMode } from '@core/domain/channelNaming.ts';
 import { applyWireNameLimits } from '@core/import-export/channelExpansion/exportWireNames.ts';
+import { expandAllMxNChannels } from '@core/import-export/channelExpansion/mxnExpandAll.ts';
+import type { ExpandedMxNChannelRow } from '@core/import-export/channelExpansion/mxnExpandAll.ts';
 import { mergeExportOptions } from '@core/import-export/exportSettingsMerge.ts';
+import { getProfileExportLimits } from '@core/import-export/profileExportLimits.ts';
+import type { FormatId } from '@core/import-export/types.ts';
+import { hasMxNChannelExpansion } from '@core/radio-targets/index.ts';
 import type {
   RadioChannelDto,
   RadioChannelMode,
@@ -20,6 +27,11 @@ import type {
 export interface RadioWireEgressIds {
   formatId: string;
   profileId: string;
+}
+
+export interface AssembledChannelsToRadioDtosResult {
+  dtos: RadioChannelDto[];
+  warnings: string[];
 }
 
 function parseChannelTone(tone: ChannelTone | undefined): RadioTone {
@@ -66,9 +78,15 @@ function radioWireName(
   );
 }
 
-function digitalFields(row: AssembledChannel): Partial<RadioChannelDto> {
-  const dmr = row.entity.modeProfiles.find((p) => p.mode === 'dmr');
-  const analog = row.entity.modeProfiles.find((p) => p.mode === 'fm' || p.mode === 'am');
+function isDmrProfile(
+  profile: ChannelModeProfile,
+): profile is Extract<ChannelModeProfile, { mode: 'dmr' }> {
+  return profile.mode === 'dmr';
+}
+
+function digitalFieldsFromChannel(channel: Channel): Partial<RadioChannelDto> {
+  const dmr = channel.modeProfiles.find((p) => p.mode === 'dmr');
+  const analog = channel.modeProfiles.find((p) => p.mode === 'fm' || p.mode === 'am');
   let mode: RadioChannelMode | undefined;
   if (dmr && analog) mode = 'fixed-digital';
   else if (dmr) mode = 'digital';
@@ -83,12 +101,52 @@ function digitalFields(row: AssembledChannel): Partial<RadioChannelDto> {
     mode: mode ?? 'digital',
     colorCode: dmr.colourCode ?? undefined,
     timeslot,
-    // TX-contact index is radio-native; leave unset so RMW preserves hydrated TG links.
+    // TX-contact index is radio-native; leave unset so RMW preserves hydrated TG links
+    // until library→radio contact encode lands (#636).
   };
 }
 
+function digitalFieldsFromProjection(
+  projection: ExpandedMxNChannelRow,
+  channel: Channel,
+): Partial<RadioChannelDto> {
+  const analog = channel.modeProfiles.find((p) => p.mode === 'fm' || p.mode === 'am');
+  const dmr = isDmrProfile(projection.modeProfile) ? projection.modeProfile : null;
+  let mode: RadioChannelMode | undefined;
+  if (dmr && analog) mode = 'fixed-digital';
+  else if (dmr) mode = 'digital';
+  else if (analog) mode = 'analog';
+
+  if (!dmr) {
+    return mode ? { mode } : {};
+  }
+
+  const timeslot = dmr.timeslot === 2 ? 2 : dmr.timeslot === 1 ? 1 : undefined;
+  return {
+    mode: mode ?? 'digital',
+    colorCode: dmr.colourCode ?? undefined,
+    timeslot,
+  };
+}
+
+function truncateToRadioCapacity(
+  dtos: RadioChannelDto[],
+  egress: RadioWireEgressIds,
+  warnings: string[],
+): RadioChannelDto[] {
+  const limits = getProfileExportLimits(egress.formatId as FormatId, egress.profileId);
+  const maxSlots = limits?.maxChannels;
+  if (typeof maxSlots === 'number' && dtos.length > maxSlots) {
+    warnings.push(
+      `Expanded channel count ${dtos.length} exceeds radio capacity ${maxSlots}; truncating`,
+    );
+    return dtos.slice(0, maxSlots);
+  }
+  return dtos;
+}
+
 /**
- * Convert assembled channels to RadioChannelDto list.
+ * Lean 1:1 map — used for non-MxN radios (UV-5R Mini, …).
  * Slot: `orderOrSlot` when set, else stable 1-based index in assemble order.
  * Empty / missing RX frequency → skipped (not written as empty slots).
  */
@@ -97,6 +155,14 @@ export function assembledChannelsToRadioDtos(
   build: RadioBuild,
   egress: RadioWireEgressIds,
 ): RadioChannelDto[] {
+  return assembledChannelsToRadioDtosWithWarnings(channels, build, egress).dtos;
+}
+
+export function assembledChannelsToRadioDtosWithWarnings(
+  channels: readonly AssembledChannel[],
+  build: RadioBuild,
+  egress: RadioWireEgressIds,
+): AssembledChannelsToRadioDtosResult {
   const reserved = new Set<string>();
   const warnings: string[] = [];
   const dtos: RadioChannelDto[] = [];
@@ -116,8 +182,60 @@ export function assembledChannelsToRadioDtos(
       txTone: parseChannelTone(analog && 'txTone' in analog ? analog.txTone : 'none'),
       powerPercent: row.entity.power,
       bandwidth: bandwidthFromKHz(analog && 'bandwidthKHz' in analog ? analog.bandwidthKHz : null),
-      ...digitalFields(row),
+      ...digitalFieldsFromChannel(row.entity),
     });
   });
-  return dtos;
+  return { dtos: truncateToRadioCapacity(dtos, egress, warnings), warnings };
+}
+
+/**
+ * Expand (when MxN) then map to RadioChannelDto — same projection as CPS export / preview.
+ */
+export function expandAssembledChannelsToRadioDtos(
+  assembled: AssembledBuild,
+  build: RadioBuild,
+  library: Pick<LibrarySlice, 'talkGroups' | 'digitalContacts'>,
+  egress: RadioWireEgressIds,
+): AssembledChannelsToRadioDtosResult {
+  if (!hasMxNChannelExpansion(build.radioTargetId)) {
+    return assembledChannelsToRadioDtosWithWarnings(assembled.channels, build, egress);
+  }
+
+  const warnings: string[] = [];
+  const merged = mergeExportOptions(build, egress.formatId, { profileId: egress.profileId });
+  const expanded = expandAllMxNChannels({
+    assembled,
+    library,
+    radioTargetId: build.radioTargetId,
+    options: merged,
+    warnings,
+  });
+
+  const channelById = new Map(assembled.channels.map((row) => [row.entity.id, row.entity]));
+  const dtos: RadioChannelDto[] = [];
+  let slotIndex = 1;
+
+  for (const projection of expanded) {
+    const channel = channelById.get(projection.sourceChannelId);
+    if (!channel) continue;
+    const rxHz = channel.rxFrequency;
+    if (rxHz == null || rxHz <= 0) continue;
+    const analog = channel.modeProfiles.find((p) => p.mode === 'fm' || p.mode === 'am');
+    const txHz = channel.txFrequency ?? rxHz;
+    dtos.push({
+      slotIndex,
+      empty: false,
+      wireName: projection.wireName,
+      rxHz,
+      txHz,
+      rxTone: parseChannelTone(analog && 'rxTone' in analog ? analog.rxTone : 'none'),
+      txTone: parseChannelTone(analog && 'txTone' in analog ? analog.txTone : 'none'),
+      powerPercent: channel.power,
+      bandwidth: bandwidthFromKHz(analog && 'bandwidthKHz' in analog ? analog.bandwidthKHz : null),
+      ...digitalFieldsFromProjection(projection, channel),
+    });
+    slotIndex += 1;
+  }
+
+  return { dtos: truncateToRadioCapacity(dtos, egress, warnings), warnings };
 }

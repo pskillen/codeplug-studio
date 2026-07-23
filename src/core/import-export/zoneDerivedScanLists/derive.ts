@@ -8,7 +8,7 @@ import {
   zoneScanCarrierWireName,
   type SyntheticScanCarrier,
 } from './carrier.ts';
-import type { ExpandedDm32ChannelRow } from '../formats/dm32/channelExpansion.ts';
+import type { ExpandedMxNChannelRow } from '../channelExpansion/mxnExpandAll.ts';
 import { SCAN_COL } from '../formats/dm32/columns.ts';
 import { DEFAULT_DM32_PROFILE_ID, getDm32Profile } from '../formats/dm32/profiles.ts';
 import { applyListWireNameLimits } from '../channelExpansion/listWireNames.ts';
@@ -73,7 +73,7 @@ export function ensureDm32ScanCsvFloor(
 function expandedWireNamesForMembers(
   memberIds: string[],
   channelById: Map<string, Channel>,
-  expansionByChannelId: Map<string, ExpandedDm32ChannelRow[]>,
+  expansionByChannelId: Map<string, ExpandedMxNChannelRow[]>,
   options?: CpsExportOptions,
 ): string[] {
   const scanContext = buildScanContext(
@@ -97,7 +97,7 @@ function expandedWireNamesForMembers(
 export function deriveZoneDerivedScanLists(
   assembled: AssembledBuild,
   library: LibrarySlice,
-  expansionByChannelId: Map<string, ExpandedDm32ChannelRow[]>,
+  expansionByChannelId: Map<string, ExpandedMxNChannelRow[]>,
   options?: CpsExportOptions,
   warnings: string[] = [],
 ): ZoneDerivedScanExport {

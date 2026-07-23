@@ -21,7 +21,7 @@ import {
   isWebSerialSupported,
   getWebSerialUnsupportedMessage,
 } from '@integrations/radio-io/index.ts';
-import { assembledChannelsToRadioDtos } from './radioIoChannelMap.ts';
+import { expandAssembledChannelsToRadioDtos } from './radioIoChannelMap.ts';
 
 export { isWebSerialSupported, getWebSerialUnsupportedMessage };
 
@@ -144,7 +144,7 @@ export async function writeBuildToRadio(
   egress: EgressPath,
   library: LibrarySlice,
   opts?: { onProgress?: ProgressFn; signal?: AbortSignal },
-): Promise<void> {
+): Promise<{ warnings: string[] }> {
   const hydration = getRadioCloneHydration(egress);
   if (session.descriptor.hydrationRequiredForWrite && !hydration) {
     throw new RadioWriteBlockedError(
@@ -159,7 +159,7 @@ export async function writeBuildToRadio(
     formatId: egress.formatId,
     profileId: egress.profileId,
   });
-  const dtos = assembledChannelsToRadioDtos(assembled.channels, build, egress);
+  const { dtos, warnings } = expandAssembledChannelsToRadioDtos(assembled, build, library, egress);
   // Sparse radios (DM-32UV) need absolute block addresses from the prior Read
   // bag — connect alone does not populate download cache.
   session.descriptor.hydration.seedProtocolForUpload?.(session.radio, hydration);
@@ -169,6 +169,7 @@ export async function writeBuildToRadio(
     onProgress: opts?.onProgress,
     signal: opts?.signal,
   });
+  return { warnings };
 }
 
 export async function closeRadioSession(session: RadioSession): Promise<void> {

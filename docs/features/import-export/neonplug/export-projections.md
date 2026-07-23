@@ -54,6 +54,7 @@ When no zone-derived scan lists are produced, DM32UV export still emits one defa
 
 ## Related
 
+- Shared expander: `src/core/import-export/channelExpansion/mxnExpandAll.ts`
 - [neonplug feature hub](README.md)
 - [multi-talkgroup-expansion.md](../../../reference/multi-talkgroup-expansion.md)
 - [channels.md](../../../reference/export-formats/neonplug/channels.md) · [zones.md](../../../reference/export-formats/neonplug/zones.md) · [scan-lists.md](../../../reference/export-formats/neonplug/scan-lists.md)
