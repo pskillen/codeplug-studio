@@ -30,9 +30,14 @@ function emptyLibrary(channels: LibrarySlice['channels'] = []): LibrarySlice {
 }
 
 describe('radioIoSession helpers', () => {
-  it('lists Mini descriptor for neonplug-uv5rmini builds', () => {
-    const build = newFormatBuild('p1', 'neonplug-uv5rmini');
+  it('lists Mini descriptor for radio-io-uv5r-mini builds', () => {
+    const build = newFormatBuild('p1', 'radio-io-uv5r-mini');
     expect(descriptorsForBuild(build).length).toBeGreaterThan(0);
+  });
+
+  it('does not list Mini for NeonPlug file builds', () => {
+    const build = newFormatBuild('p1', 'neonplug-uv5rmini');
+    expect(descriptorsForBuild(build)).toHaveLength(0);
   });
 
   it('detects radio-clone hydration', () => {
@@ -42,7 +47,7 @@ describe('radioIoSession helpers', () => {
       radioModelId: 'UV5R-Mini',
       imageBytes: image,
     });
-    const build = newFormatBuild('p1', 'neonplug-uv5rmini');
+    const build = newFormatBuild('p1', 'radio-io-uv5r-mini');
     expect(buildHasRadioCloneHydration({ ...build, cpsWireHydration: hydration })).toBe(true);
     expect(buildHasRadioCloneHydration(build)).toBe(false);
   });
@@ -69,7 +74,7 @@ describe('radioIoSession helpers', () => {
         analogOnly: true,
       },
       attributionIds: [],
-      compatibleProfiles: [{ formatId: 'neonplug', profileId: 'neonplug-uv5rmini' }],
+      compatibleProfiles: [{ formatId: 'radio-io', profileId: 'radio-io-uv5r-mini' }],
       writeStrategy: 'full-image',
       hydrationRequiredForWrite: true,
       baudRate: 38400,
@@ -80,7 +85,7 @@ describe('radioIoSession helpers', () => {
       radio,
     };
     await expect(
-      writeBuildToRadio(session, newFormatBuild('p1', 'neonplug-uv5rmini'), emptyLibrary()),
+      writeBuildToRadio(session, newFormatBuild('p1', 'radio-io-uv5r-mini'), emptyLibrary()),
     ).rejects.toBeInstanceOf(RadioWriteBlockedError);
     expect(radio.upload).not.toHaveBeenCalled();
   });
@@ -116,7 +121,7 @@ describe('radioIoSession helpers', () => {
         analogOnly: true,
       },
       attributionIds: ['chirp', 'neonplug'],
-      compatibleProfiles: [{ formatId: 'neonplug', profileId: 'neonplug-uv5rmini' }],
+      compatibleProfiles: [{ formatId: 'radio-io', profileId: 'radio-io-uv5r-mini' }],
       writeStrategy: 'full-image',
       hydrationRequiredForWrite: true,
       baudRate: 38400,
@@ -137,7 +142,7 @@ describe('radioIoSession helpers', () => {
       ],
     };
     const build = {
-      ...newFormatBuild('p1', 'neonplug-uv5rmini'),
+      ...newFormatBuild('p1', 'radio-io-uv5r-mini'),
       cpsWireHydration: hydration,
       channelOverrides: [{ libraryEntityId: 'ch-1', wireName: 'TEST', orderOrSlot: 1 }],
     };

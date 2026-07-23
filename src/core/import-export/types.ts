@@ -6,7 +6,15 @@ import type { DigitalContactExportNameMode } from './digitalContactExportName.ts
 
 /** Canonical format ids — shared by registry and future UI. */
 export type FormatId =
-  'native-yaml' | 'opengd77' | 'chirp' | 'dm32' | 'anytone' | 'qdmr' | 'neonplug';
+  | 'native-yaml'
+  | 'opengd77'
+  | 'chirp'
+  | 'dm32'
+  | 'anytone'
+  | 'qdmr'
+  | 'neonplug'
+  /** Web Serial direct-write builds — no CPS file adapter. */
+  | 'radio-io';
 
 export type { MultiTalkGroupExportNameMode } from './channelExpansion/multiTalkGroupWireName.ts';
 export { DEFAULT_MULTI_TG_EXPORT_NAME_MODE } from './channelExpansion/multiTalkGroupWireName.ts';

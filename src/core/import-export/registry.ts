@@ -53,6 +53,13 @@ export const formatCatalog: readonly FormatCatalogEntry[] = [
     exportStatus: 'shipped',
     issue: '536',
   },
+  {
+    id: 'radio-io',
+    label: 'Direct radio',
+    importStatus: 'planned',
+    exportStatus: 'planned',
+    issue: '618',
+  },
 ];
 
 export const importAdapters: readonly ImportAdapter[] = [nativeYamlImportAdapter];

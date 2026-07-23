@@ -73,6 +73,13 @@ describe('trait profiles', () => {
     expect(profile?.traits).toContain(BuildCapabilityTrait.PerChannelScanFlag);
   });
 
+  it('registers radio-io-uv5r-mini with flat memory traits (Web Serial only)', () => {
+    const profile = traitProfileFor('radio-io-uv5r-mini');
+    expect(profile?.formatId).toBe('radio-io');
+    expect(profile?.traits).toContain(BuildCapabilityTrait.FlatMemoryList);
+    expect(profile?.traits).toContain(BuildCapabilityTrait.PerChannelScanFlag);
+  });
+
   it('distinguishes dedicated vs zone-derived scan list semantics', () => {
     expect(hasDedicatedScanLists('anytone-at-d890uv')).toBe(true);
     expect(hasDedicatedScanLists('dm32-baofeng-dm32uv')).toBe(false);
@@ -83,6 +90,7 @@ describe('trait profiles', () => {
     expect(showsDefaultScanInclusion('chirp-uv5r')).toBe(true);
     expect(showsDefaultScanInclusion('neonplug-dm32uv')).toBe(true);
     expect(showsDefaultScanInclusion('neonplug-uv5rmini')).toBe(true);
+    expect(showsDefaultScanInclusion('radio-io-uv5r-mini')).toBe(true);
   });
 
   it('has stable profile keys', () => {
@@ -96,6 +104,7 @@ describe('trait profiles', () => {
       'neonplug-uv5rmini',
       'opengd77-1701',
       'opengd77-md9600',
+      'radio-io-uv5r-mini',
     ]);
   });
 });
@@ -124,6 +133,13 @@ describe('factories', () => {
     const uv5r = newFormatBuild(projectId, 'neonplug-uv5rmini');
     expect(uv5r.formatId).toBe('neonplug');
     expect(uv5r.profileId).toBe('neonplug-uv5rmini');
+  });
+
+  it('creates Direct radio FormatBuild for UV-5R Mini Web Serial', () => {
+    const projectId = newProjectMeta('P').id;
+    const build = newFormatBuild(projectId, 'radio-io-uv5r-mini');
+    expect(build.formatId).toBe('radio-io');
+    expect(build.profileId).toBe('radio-io-uv5r-mini');
   });
 
   it('rejects unknown profile', () => {
