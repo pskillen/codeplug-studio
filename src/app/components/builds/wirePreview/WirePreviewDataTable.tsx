@@ -1,17 +1,26 @@
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { useDebouncedValue } from '@mantine/hooks';
 import { ActionIcon, Badge, Group, Stack, Switch, Text } from '@mantine/core';
 import { IconArrowDown, IconArrowUp } from '@tabler/icons-react';
+import { isEntityExcluded } from '@core/domain/formatBuildOverrides.ts';
+import type { BuildEntityOverride } from '@core/models/formatBuild.ts';
 import type { WirePreviewEntityKind, WirePreviewRow } from '@core/services/previewWireRows.ts';
 import type { ZoneGroupingLayout } from '@core/models/traitLayout.ts';
 import { layoutEntry } from '@core/import-export/zoneDerivedScanLists/members.ts';
 import { LIST_NAME_FILTER_DEBOUNCE_MS } from '@integrations/listPrefs/index.ts';
 import DataTable, { type DataTableSortState } from '../../ui/DataTable.tsx';
+import dataTableClasses from '../../ui/DataTable.module.css';
 import WirePreviewListNameCell from './WirePreviewListNameCell.tsx';
 import WirePreviewDisplayCell from './WirePreviewDisplayCell.tsx';
 import WirePreviewInclusionCell from './WirePreviewInclusionCell.tsx';
 import { rowEffectivelyIncluded } from './wirePreviewRowUtils.ts';
 import { ICON_SIZE_ACTION, ICON_STROKE } from '../../../lib/iconSizes.ts';
+import {
+  applyWirePreviewNestCollapse,
+  filterNestedWirePreviewRows,
+  groupWirePreviewChannelRows,
+  type WirePreviewTableRow,
+} from './groupWirePreviewChannelRows.ts';
 
 export interface WirePreviewReorderConfig {
   orderedKeys: string[];
@@ -46,19 +55,11 @@ export interface WirePreviewDataTableProps {
   zoneScanColumn?: WirePreviewZoneScanColumnConfig;
   inclusionColumn?: WirePreviewInclusionColumnConfig;
   emptyMessage?: string;
-}
-
-function rowSearchText(row: WirePreviewRow): string {
-  return [
-    row.displayLabel,
-    row.libraryCallsign ?? '',
-    row.generatedWireName,
-    row.effectiveWireName,
-    row.expansionNote ?? '',
-    ...(row.displayDetails?.map((d) => `${d.label} ${d.value}`) ?? []),
-  ]
-    .join(' ')
-    .toLowerCase();
+  /**
+   * Channel overrides for parent-id skip when nesting Channels projections (#560).
+   * When omitted, nest chrome still groups but parent Skip state defaults to false.
+   */
+  channelOverrides?: readonly BuildEntityOverride[];
 }
 
 export default function WirePreviewDataTable({
@@ -74,17 +75,48 @@ export default function WirePreviewDataTable({
   zoneScanColumn,
   inclusionColumn,
   emptyMessage = 'No library entities of this type yet.',
+  channelOverrides,
 }: WirePreviewDataTableProps) {
   const [internalSort, setInternalSort] = useState<DataTableSortState | null>(null);
   const effectiveSort = sort !== undefined ? sort : internalSort;
   const setSort = onSortChange ?? setInternalSort;
   const [debouncedSearch] = useDebouncedValue(search, LIST_NAME_FILTER_DEBOUNCE_MS);
+  const [collapsedParentIds, setCollapsedParentIds] = useState<Set<string>>(() => new Set());
+
+  const nestChannels = entityKind === 'channel';
+
+  const nestedRows = useMemo(() => {
+    if (!nestChannels) return rows as WirePreviewTableRow[];
+    return groupWirePreviewChannelRows(rows, (parentId) =>
+      isEntityExcluded(channelOverrides, parentId),
+    );
+  }, [nestChannels, rows, channelOverrides]);
 
   const filteredRows = useMemo(() => {
-    const q = debouncedSearch?.trim().toLowerCase();
-    if (!q) return rows;
-    return rows.filter((row) => rowSearchText(row).includes(q));
-  }, [rows, debouncedSearch]);
+    const searched = filterNestedWirePreviewRows(nestedRows, debouncedSearch ?? '');
+    if (!nestChannels) return searched;
+    return applyWirePreviewNestCollapse(searched, collapsedParentIds);
+  }, [nestedRows, debouncedSearch, nestChannels, collapsedParentIds]);
+
+  const toggleNest = useCallback((parentId: string) => {
+    setCollapsedParentIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(parentId)) next.delete(parentId);
+      else next.add(parentId);
+      return next;
+    });
+  }, []);
+
+  const handleRowActivate = useCallback(
+    (row: WirePreviewTableRow) => {
+      if (row.nestRole === 'parent') {
+        toggleNest(row.libraryEntityId);
+        return;
+      }
+      onRowActivate(row);
+    },
+    [onRowActivate, toggleNest],
+  );
 
   const reorderIndexByKey = useMemo(() => {
     if (!reorder) return new Map<string, number>();
@@ -94,16 +126,28 @@ export default function WirePreviewDataTable({
   return (
     <DataTable
       rows={filteredRows}
-      rowKey={(row) => row.key}
-      onRowActivate={onRowActivate}
+      rowKey={(row) => (row.nestRole === 'parent' ? `nest-parent:${row.key}` : row.key)}
+      onRowActivate={handleRowActivate}
       reorderMode={Boolean(reorder)}
+      getRowClassName={(row) => {
+        if (row.nestRole === 'parent') return dataTableClasses.rowNestParent;
+        return undefined;
+      }}
       nameColumn={{
         header: 'Library name',
         getName: (row) => row.displayLabel,
         getPath: () => '#',
         sortable: true,
         sortValue: (row) => row.displayLabel.toLowerCase(),
-        render: (row) => <WirePreviewListNameCell row={row} />,
+        render: (row) => (
+          <WirePreviewListNameCell
+            row={row}
+            nestExpanded={!collapsedParentIds.has(row.libraryEntityId)}
+            onToggleNest={
+              row.nestRole === 'parent' ? () => toggleNest(row.libraryEntityId) : undefined
+            }
+          />
+        ),
       }}
       columns={[
         ...(inclusionColumn
@@ -112,12 +156,14 @@ export default function WirePreviewDataTable({
                 key: 'inclusion',
                 header: 'Skip / Force',
                 hideable: false,
-                render: (row: WirePreviewRow) => (
+                render: (row: WirePreviewTableRow) => (
                   <WirePreviewInclusionCell
                     row={row}
                     disabled={inclusionColumn.saving}
                     onExcludedChange={inclusionColumn.onExcludedChange}
-                    onForceIncludeChange={inclusionColumn.onForceIncludeChange}
+                    onForceIncludeChange={
+                      row.nestRole === 'parent' ? undefined : inclusionColumn.onForceIncludeChange
+                    }
                   />
                 ),
               },
@@ -129,9 +175,11 @@ export default function WirePreviewDataTable({
                 key: 'location',
                 header: 'Location',
                 sortable: true,
-                sortValue: (row: WirePreviewRow) => locationByKey.get(row.key) ?? 0,
-                render: (row: WirePreviewRow) => (
-                  <Text size="sm">{locationByKey.get(row.key) ?? '—'}</Text>
+                sortValue: (row: WirePreviewTableRow) => locationByKey.get(row.key) ?? 0,
+                render: (row: WirePreviewTableRow) => (
+                  <Text size="sm">
+                    {row.nestRole === 'parent' ? '—' : (locationByKey.get(row.key) ?? '—')}
+                  </Text>
                 ),
               },
             ]
@@ -142,8 +190,8 @@ export default function WirePreviewDataTable({
                 key: 'callsign',
                 header: 'Callsign',
                 sortable: true,
-                sortValue: (row: WirePreviewRow) => row.libraryCallsign?.toLowerCase() ?? '',
-                render: (row: WirePreviewRow) => (
+                sortValue: (row: WirePreviewTableRow) => row.libraryCallsign?.toLowerCase() ?? '',
+                render: (row: WirePreviewTableRow) => (
                   <Text size="sm">{row.libraryCallsign?.trim() || '—'}</Text>
                 ),
               },
@@ -154,18 +202,23 @@ export default function WirePreviewDataTable({
           header: 'Export name',
           sortable: true,
           sortValue: (row) => row.effectiveWireName.toLowerCase(),
-          render: (row) => (
-            <Stack gap={2}>
-              <Text size="sm" fw={row.hasWireNameOverride ? 600 : 400}>
-                {row.effectiveWireName}
+          render: (row) =>
+            row.nestRole === 'parent' ? (
+              <Text size="sm" c="dimmed">
+                —
               </Text>
-              {row.hasWireNameOverride ? (
-                <Text size="xs" c="dimmed">
-                  Default: {row.generatedWireName}
+            ) : (
+              <Stack gap={2}>
+                <Text size="sm" fw={row.hasWireNameOverride ? 600 : 400}>
+                  {row.effectiveWireName}
                 </Text>
-              ) : null}
-            </Stack>
-          ),
+                {row.hasWireNameOverride ? (
+                  <Text size="xs" c="dimmed">
+                    Default: {row.generatedWireName}
+                  </Text>
+                ) : null}
+              </Stack>
+            ),
         },
         ...(zoneScanColumn
           ? [
@@ -173,12 +226,12 @@ export default function WirePreviewDataTable({
                 key: 'exportScanList',
                 header: 'Export scan list',
                 sortable: true,
-                sortValue: (row: WirePreviewRow) => {
+                sortValue: (row: WirePreviewTableRow) => {
                   if (row.entityKind !== 'zone') return '';
                   const entry = layoutEntry(zoneScanColumn.layout, row.libraryEntityId);
                   return entry?.exportScanList ? '1' : '0';
                 },
-                render: (row: WirePreviewRow) => {
+                render: (row: WirePreviewTableRow) => {
                   if (row.entityKind !== 'zone') {
                     return (
                       <Text size="sm" c="dimmed">
@@ -211,6 +264,13 @@ export default function WirePreviewDataTable({
           key: 'status',
           header: 'Status',
           render: (row) => {
+            if (row.nestRole === 'parent') {
+              return (
+                <Badge size="xs" variant="light" color={row.excluded ? 'orange' : 'gray'}>
+                  {row.excluded ? 'All skipped' : `${row.nestChildCount} projections`}
+                </Badge>
+              );
+            }
             const included = rowEffectivelyIncluded(row);
             return (
               <Group gap="xs">
@@ -242,7 +302,14 @@ export default function WirePreviewDataTable({
               {
                 key: 'reorder',
                 header: 'Order',
-                render: (row: WirePreviewRow) => {
+                render: (row: WirePreviewTableRow) => {
+                  if (row.nestRole === 'parent' || row.nestRole === 'child') {
+                    return (
+                      <Text size="sm" c="dimmed">
+                        —
+                      </Text>
+                    );
+                  }
                   const index = reorderIndexByKey.get(row.key) ?? -1;
                   return (
                     <Group gap={4} onClick={(e) => e.stopPropagation()}>
@@ -277,7 +344,14 @@ export default function WirePreviewDataTable({
           header: 'Details',
           hideable: true,
           defaultVisible: false,
-          render: (row) => <WirePreviewDisplayCell row={row} />,
+          render: (row) =>
+            row.nestRole === 'parent' ? (
+              <Text size="sm" c="dimmed">
+                —
+              </Text>
+            ) : (
+              <WirePreviewDisplayCell row={row} />
+            ),
         },
       ]}
       sort={effectiveSort}
@@ -299,7 +373,9 @@ export default function WirePreviewDataTable({
       caption={
         reorder
           ? 'Click a row to edit export overrides. Order arrows mutate export order; filter disables reorder.'
-          : 'Click a row to edit export overrides. Sort and filter affect display only — not export order.'
+          : nestChannels
+            ? 'Expanded channels nest under a shaded parent. Parent Skip omits all projections; child Skip omits one wire. Click a projection to edit overrides.'
+            : 'Click a row to edit export overrides. Sort and filter affect display only — not export order.'
       }
     />
   );

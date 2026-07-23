@@ -334,9 +334,11 @@ export default function BuildFlatMemoryChannelsPage() {
 
         <WirePreviewDataTable
           rows={previewRows}
+          entityKind="channel"
           search={search}
           onSearchChange={setSearch}
           onRowActivate={(row) => setSelectedRowKey(row.key)}
+          channelOverrides={build.channelOverrides}
           locationByKey={locationByKey}
           inclusionColumn={{
             saving,

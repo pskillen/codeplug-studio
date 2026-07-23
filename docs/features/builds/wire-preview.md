@@ -59,6 +59,8 @@ Each entity wire page offers **Hide items not to be included in export** above t
 
 When `hasMxNChannelExpansion(build.radioTargetId)` is true (Baofeng DM-32UV — CPS, NeonPlug, and Web Serial egresses — and Anytone AT-D890UV), channel preview uses the shared **`expandAllMxNChannels`** API (same projection as CPS export and Web Serial write). Fan-out and scratch rows honour Export settings (`expandRxGroupLists`, `exportScratchChannels`). Fan-out rows include **displayDetails** (channel name, talk group name + digital ID + slot, or a scratch marker). Library channels omitted from export (when **Export channels not linked to a zone** is off) still appear in preview with a **Not linked to a zone** note. Anytone site wire names still go through `anytoneChannelWireName` as a resolve hook. OpenGD77 builds continue to use multi-mode expansion only.
 
+On the **Channels** list, when a library channel expands to **more than one** projection (m×n, multi-mode, or scratch companions), rows **nest under a shaded parent** with a projection-count badge and chevron collapse ([#560](https://github.com/pskillen/codeplug-studio/issues/560)). Parent **Skip** excludes the library channel id (all projections); child **Skip** and wire-name overrides use the projection `key` ([#351](https://github.com/pskillen/codeplug-studio/issues/351)). Single-projection channels stay flat. Nesting is presentation-only over flat `previewWireRows` — not a second expansion pipeline.
+
 See [export-projections.md](../import-export/anytone/export-projections.md) and [multi-talkgroup-expansion.md](../../reference/multi-talkgroup-expansion.md).
 
 ### Anytone receive-bank preview

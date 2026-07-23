@@ -133,6 +133,8 @@ export interface DataTableProps<T> {
   /** Estimated row height for the virtualizer (list ~44px, activate rows ~56px). */
   estimatedRowHeight?: number;
   virtualizeOverscan?: number;
+  /** Optional class name(s) for each data row (`Table.Tr`). */
+  getRowClassName?: (row: T) => string | undefined;
 }
 
 function LinkedCell<T>({
@@ -249,6 +251,7 @@ export default function DataTable<T>({
   virtualize = 'auto',
   estimatedRowHeight,
   virtualizeOverscan,
+  getRowClassName,
 }: DataTableProps<T>) {
   const isList = variant === 'list';
   const showSearchInput = showSearch ?? (isList && onSearchChange !== undefined);
@@ -447,6 +450,7 @@ export default function DataTable<T>({
           key={reactKey}
           data-testid="datatable-tbody-row"
           data-selected={selectedKeys.includes(key) || undefined}
+          className={getRowClassName?.(row)}
           onClick={onRowActivate ? () => onRowActivate(row) : undefined}
           style={onRowActivate ? { cursor: 'pointer' } : undefined}
         >
@@ -485,6 +489,7 @@ export default function DataTable<T>({
       nameColumn,
       callsignColumn,
       visibleColumns,
+      getRowClassName,
     ],
   );
 

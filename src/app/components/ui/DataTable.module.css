@@ -41,3 +41,8 @@
   opacity: 1;
   color: var(--mantine-color-brand-filled);
 }
+
+.rowNestParent {
+  background-color: var(--mantine-color-default-hover);
+}
+

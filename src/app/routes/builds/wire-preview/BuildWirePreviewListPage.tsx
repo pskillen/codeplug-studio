@@ -218,6 +218,7 @@ function BuildWirePreviewListContent({
           search={search}
           onSearchChange={setSearch}
           onRowActivate={(row) => setSelectedRowKey(row.key)}
+          channelOverrides={build.channelOverrides}
           zoneScanColumn={zoneScanColumn}
           inclusionColumn={{
             saving,
