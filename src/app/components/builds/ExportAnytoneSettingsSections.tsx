@@ -1,5 +1,5 @@
 import { NumberInput, Stack, Switch, Text } from '@mantine/core';
-import { hasMxNChannelExpansion } from '@core/models/traits.ts';
+import { hasMxNChannelExpansion } from '@core/radio-targets/index.ts';
 import { FieldCard } from '../fields/Fields.tsx';
 import ExportNameModeSelect from './ExportNameModeSelect.tsx';
 import DigitalContactExportNameModeSelect from './DigitalContactExportNameModeSelect.tsx';
@@ -12,7 +12,6 @@ import type { ExportBuildSettingsSectionsProps } from './ExportBuildSettingsSect
 type ExportAnytoneSettingsSectionsProps = Pick<
   ExportBuildSettingsSectionsProps,
   | 'build'
-  | 'profileId'
   | 'saving'
   | 'settingsError'
   | 'profileNameLimit'
@@ -23,7 +22,6 @@ type ExportAnytoneSettingsSectionsProps = Pick<
 
 export default function ExportAnytoneSettingsSections({
   build,
-  profileId,
   saving,
   settingsError,
   profileNameLimit,
@@ -31,7 +29,7 @@ export default function ExportAnytoneSettingsSections({
   onExportSettingsPatch,
   onExportInclusionChange,
 }: ExportAnytoneSettingsSectionsProps) {
-  const showChannelExpansion = hasMxNChannelExpansion(profileId);
+  const showChannelExpansion = hasMxNChannelExpansion(build.radioTargetId);
 
   return (
     <Stack gap="md">

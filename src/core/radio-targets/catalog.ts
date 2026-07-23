@@ -128,6 +128,37 @@ export function radioTargetHasTrait(radioTargetId: string, trait: Trait): boolea
   return traitsForRadioTarget(radioTargetId).includes(trait);
 }
 
+/** Whether any compatible egress for this radio uses the given format id. */
+export function radioTargetHasCompatibleFormat(radioTargetId: string, formatId: string): boolean {
+  return (
+    radioTargetFor(radioTargetId)?.compatibleEgress.some((e) => e.formatId === formatId) ?? false
+  );
+}
+
+export function hasDedicatedScanLists(radioTargetId: string): boolean {
+  return radioTargetHasTrait(radioTargetId, BuildCapabilityTrait.DedicatedScanLists);
+}
+
+export function hasMxNChannelExpansion(radioTargetId: string): boolean {
+  return radioTargetHasTrait(radioTargetId, BuildCapabilityTrait.MxNChannelExpansion);
+}
+
+/** Whether Export should show default scan inclusion (not dedicated scan-list radios). */
+export function showsDefaultScanInclusion(radioTargetId: string): boolean {
+  return !hasDedicatedScanLists(radioTargetId);
+}
+
+/**
+ * Flat-memory radios with a per-channel scan flag get a dedicated **Scan list** build page
+ * (CHIRP UV-5R, NeonPlug UV5R-Mini, …).
+ */
+export function showsPerChannelScanListNav(radioTargetId: string): boolean {
+  return (
+    radioTargetHasTrait(radioTargetId, BuildCapabilityTrait.FlatMemoryList) &&
+    radioTargetHasTrait(radioTargetId, BuildCapabilityTrait.PerChannelScanFlag)
+  );
+}
+
 /**
  * Resolve which radio target owns a legacy / egress profile id.
  * Used when seeding egress from profile or mapping old test helpers.

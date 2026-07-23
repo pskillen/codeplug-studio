@@ -115,7 +115,7 @@ export default function BuildFlatMemoryChannelsPage() {
     () => mergeExportOptions(build, egress.formatId, { profileId: egress.profileId }, librarySlice),
     [build, egress.formatId, egress.profileId, librarySlice],
   );
-  const exportSettings = resolvedBuildExportSettings(build, egress.formatId);
+  const exportSettings = resolvedBuildExportSettings(build);
 
   const nameLimit = useMemo(() => {
     const options = getFormatProfiles(egress.formatId as FormatId);

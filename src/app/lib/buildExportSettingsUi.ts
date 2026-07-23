@@ -20,13 +20,14 @@ export type ResolvedBuildExportSettings = Required<
 > &
   Pick<BuildExportSettings, 'maxNameLength' | 'defaultScanInclusion'>;
 
-export function resolvedBuildExportSettings(
-  build: RadioBuild,
-  formatId?: string,
-): ResolvedBuildExportSettings {
+/**
+ * Merge stored radio-level `exportSettings` with format defaults from the catalog
+ * **default** compatible egress — never the active pathway — so Export UI fill-ins
+ * stay stable when switching CHIRP / NeonPlug / Web Serial.
+ */
+export function resolvedBuildExportSettings(build: RadioBuild): ResolvedBuildExportSettings {
   const stored = build.exportSettings ?? {};
-  const resolvedFormatId =
-    formatId ?? defaultCompatibleEgress(build.radioTargetId)?.formatId ?? 'opengd77';
+  const resolvedFormatId = defaultCompatibleEgress(build.radioTargetId)?.formatId ?? 'opengd77';
   const formatDefaults = getFormatExportDefaults(resolvedFormatId);
   const exportZoneDerivedDefault =
     formatDefaults.exportZoneDerivedScanLists ??
@@ -50,6 +51,12 @@ export function resolvedBuildExportSettings(
       stored.digitalContactExportNameMode ?? DEFAULT_DIGITAL_CONTACT_EXPORT_NAME_MODE,
     defaultScanInclusion: stored.defaultScanInclusion,
   };
+}
+
+/** Format defaults for Export projection UI — catalog default egress, not active pathway. */
+export function radioBuildFormatExportDefaults(build: RadioBuild) {
+  const formatId = defaultCompatibleEgress(build.radioTargetId)?.formatId ?? 'opengd77';
+  return getFormatExportDefaults(formatId);
 }
 
 export type { DigitalContactExportNameMode };

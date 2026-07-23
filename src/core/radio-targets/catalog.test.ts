@@ -2,10 +2,14 @@ import { describe, expect, it } from 'vitest';
 import { BuildCapabilityTrait } from '@core/models/traits.ts';
 import {
   defaultCompatibleEgress,
+  hasMxNChannelExpansion,
   listRadioTargets,
   orderEgressPathsByCatalog,
   radioTargetFor,
+  radioTargetHasCompatibleFormat,
   radioTargetIdForProfile,
+  showsDefaultScanInclusion,
+  showsPerChannelScanListNav,
   traitsForRadioTarget,
 } from './catalog.ts';
 
@@ -66,5 +70,22 @@ describe('radio target catalog', () => {
     ]) {
       expect(ids).toContain(profileId);
     }
+  });
+
+  it('reports compatible formats independently of active egress', () => {
+    expect(radioTargetHasCompatibleFormat('baofeng-uv5r-mini', 'chirp')).toBe(true);
+    expect(radioTargetHasCompatibleFormat('baofeng-uv5r-mini', 'neonplug')).toBe(true);
+    expect(radioTargetHasCompatibleFormat('baofeng-uv5r-mini', 'radio-io')).toBe(true);
+    expect(radioTargetHasCompatibleFormat('baofeng-uv5r-mini', 'anytone')).toBe(false);
+    expect(radioTargetHasCompatibleFormat('baofeng-dm32uv', 'dm32')).toBe(true);
+    expect(radioTargetHasCompatibleFormat('anytone-at-d890uv', 'anytone')).toBe(true);
+  });
+
+  it('gates Export projection traits by radio target for multi-egress Mini', () => {
+    expect(showsDefaultScanInclusion('baofeng-uv5r-mini')).toBe(true);
+    expect(showsPerChannelScanListNav('baofeng-uv5r-mini')).toBe(true);
+    expect(hasMxNChannelExpansion('baofeng-uv5r-mini')).toBe(false);
+    expect(hasMxNChannelExpansion('baofeng-dm32uv')).toBe(true);
+    expect(hasMxNChannelExpansion('anytone-at-d890uv')).toBe(true);
   });
 });

@@ -9,7 +9,6 @@ import {
   resolveChirpChannelMemorySlots,
 } from '@core/domain/exportOrderOrSlot.ts';
 import { overrideScanInclusion } from '@core/domain/formatBuildOverrides.ts';
-import { getFormatExportDefaults } from '@core/import-export/registry.ts';
 import {
   buildScanContext,
   resolveChannelScanInclusionForExport,
@@ -25,8 +24,10 @@ import { FormPage, FormSection } from '../../components/ui/index.ts';
 import DataTable from '../../components/ui/DataTable.tsx';
 import { loadLibrarySlice } from '../../lib/loadLibrarySlice.ts';
 import { resolveOptimisticBuild } from '../../lib/resolveOptimisticBuild.ts';
-import { egressIdentityForBuild } from '../../lib/buildEgressUi.ts';
-import { resolvedBuildExportSettings } from '../../lib/buildExportSettingsUi.ts';
+import {
+  radioBuildFormatExportDefaults,
+  resolvedBuildExportSettings,
+} from '../../lib/buildExportSettingsUi.ts';
 import { useBuildLayout } from './BuildLayoutContext.tsx';
 import { useProjects } from '../../state/useProjects.ts';
 import { useFormatBuilds } from '../../state/useFormatBuilds.ts';
@@ -48,7 +49,7 @@ interface ScanListRow {
  * No memory order, wire names, or skip-from-export here — those stay on Channels.
  */
 export default function BuildFlatMemoryScanListPage() {
-  const { build: contextBuild, activeEgress } = useBuildLayout();
+  const { build: contextBuild } = useBuildLayout();
   const buildRef = useRef(contextBuild);
   const [savedBuild, setSavedBuild] = useState<RadioBuild | null>(null);
   const build = resolveOptimisticBuild(contextBuild, savedBuild);
@@ -73,10 +74,8 @@ export default function BuildFlatMemoryScanListPage() {
     buildRef.current = build;
   }, [build]);
 
-  const egress = useMemo(() => egressIdentityForBuild(build, activeEgress), [build, activeEgress]);
-
-  const exportSettings = resolvedBuildExportSettings(build, egress.formatId);
-  const formatDefaults = getFormatExportDefaults(egress.formatId);
+  const exportSettings = resolvedBuildExportSettings(build);
+  const formatDefaults = radioBuildFormatExportDefaults(build);
   const defaultScanValue =
     exportSettings.defaultScanInclusion ?? formatDefaults.defaultScanInclusion;
   const scanContext = buildScanContext({ defaultScanInclusion: defaultScanValue }, formatDefaults);

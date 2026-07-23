@@ -4,11 +4,7 @@ import { IconDownload, IconPackage, IconTable } from '@tabler/icons-react';
 import type { BuildExportSettings, RadioBuild } from '@core/models/formatBuild.ts';
 import type { EgressPath } from '@core/models/egressPath.ts';
 import { traitProfileFor } from '@core/models/traits.ts';
-import {
-  formatCatalogEntry,
-  getExportAdapter,
-  getFormatExportDefaults,
-} from '@core/import-export/registry.ts';
+import { formatCatalogEntry, getExportAdapter } from '@core/import-export/registry.ts';
 import {
   isMultiFileExportAdapter,
   isSingleFileCpsExportAdapter,
@@ -31,7 +27,10 @@ import { saveDriveLastFolderId, saveDriveLastFolderPath } from '@integrations/cl
 import DriveBrowserModal, { type DriveSaveTarget } from '../import-export/DriveBrowserModal.tsx';
 import GoogleDriveActionButton from '../import-export/GoogleDriveActionButton.tsx';
 import { ICON_SIZE_ACTION, ICON_STROKE } from '../../lib/iconSizes.ts';
-import { resolvedBuildExportSettings } from '../../lib/buildExportSettingsUi.ts';
+import {
+  resolvedBuildExportSettings,
+  radioBuildFormatExportDefaults,
+} from '../../lib/buildExportSettingsUi.ts';
 import {
   buildNeedsLegacyExportSettingsMigration,
   clearLegacyExportSettingsLocalStorage,
@@ -80,8 +79,8 @@ export default function ExportBuildCpsPanel({ build }: ExportBuildCpsPanelProps)
   const formatEntry = formatCatalogEntry(formatId);
   const profileLabel = traitProfileFor(profileId)?.label ?? profileId;
   const wireHint = formatProfileWireHint(formatId, profileId);
-  const formatDefaults = getFormatExportDefaults(formatId);
-  const resolvedSettings = resolvedBuildExportSettings(build, formatId);
+  const formatDefaults = radioBuildFormatExportDefaults(build);
+  const resolvedSettings = resolvedBuildExportSettings(build);
 
   const [channelCount, setChannelCount] = useState<number | null>(null);
   const [exportWarnings, setExportWarnings] = useState<string[]>([]);
@@ -425,7 +424,6 @@ export default function ExportBuildCpsPanel({ build }: ExportBuildCpsPanelProps)
         <ExportBuildSettingsSections
           build={build}
           formatId={formatId}
-          profileId={profileId}
           saving={savingSettings}
           settingsError={settingsError}
           profileNameLimit={profileNameLimit}
@@ -486,7 +484,6 @@ export default function ExportBuildCpsPanel({ build }: ExportBuildCpsPanelProps)
         <ExportBuildSettingsSections
           build={build}
           formatId={formatId}
-          profileId={profileId}
           saving={savingSettings}
           settingsError={settingsError}
           profileNameLimit={profileNameLimit}
@@ -579,7 +576,6 @@ export default function ExportBuildCpsPanel({ build }: ExportBuildCpsPanelProps)
       <ExportBuildSettingsSections
         build={build}
         formatId={formatId}
-        profileId={profileId}
         saving={savingSettings}
         settingsError={settingsError}
         profileNameLimit={profileNameLimit}

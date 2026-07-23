@@ -1,6 +1,7 @@
 import { NumberInput, Stack, Switch, Text } from '@mantine/core';
 import type { BuildExportSettings, FormatBuild } from '@core/models/formatBuild.ts';
 import type { ChannelExportNameMode } from '@core/domain/channelNaming.ts';
+import { radioTargetHasCompatibleFormat } from '@core/radio-targets/index.ts';
 import { resolvedBuildExportSettings } from '../../lib/buildExportSettingsUi.ts';
 import ExportNameModeSelect from './ExportNameModeSelect.tsx';
 import DigitalContactExportNameModeSelect from './DigitalContactExportNameModeSelect.tsx';
@@ -8,7 +9,6 @@ import UseLibraryAbbreviationsSwitch from './UseLibraryAbbreviationsSwitch.tsx';
 
 export interface ExportNameSettingsFieldsProps {
   build: FormatBuild;
-  formatId: string;
   onPatch: (patch: Partial<BuildExportSettings>) => void;
   saving?: boolean;
   profileNameLimit?: number;
@@ -16,13 +16,14 @@ export interface ExportNameSettingsFieldsProps {
 
 export default function ExportNameSettingsFields({
   build,
-  formatId,
   onPatch,
   saving = false,
   profileNameLimit,
 }: ExportNameSettingsFieldsProps) {
-  const settings = resolvedBuildExportSettings(build, formatId);
-  const showContactExportNameMode = formatId === 'anytone' || formatId === 'opengd77';
+  const settings = resolvedBuildExportSettings(build);
+  const showContactExportNameMode =
+    radioTargetHasCompatibleFormat(build.radioTargetId, 'anytone') ||
+    radioTargetHasCompatibleFormat(build.radioTargetId, 'opengd77');
 
   return (
     <Stack gap="sm">
