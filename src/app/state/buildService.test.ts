@@ -37,10 +37,9 @@ describe('BuildService', () => {
     expect(outcome.ok).toBe(true);
     if (!outcome.ok) return;
 
-    expect(outcome.egressPaths.map((e) => e.formatId).sort()).toEqual(
-      ['chirp', 'neonplug', 'radio-io'].sort(),
-    );
+    expect(outcome.egressPaths.map((e) => e.formatId)).toEqual(['radio-io', 'neonplug', 'chirp']);
     expect(outcome.build.defaultEgressPathId).toBe(outcome.egressPaths[0]?.id);
+    expect(outcome.egressPaths[0]?.formatId).toBe('radio-io');
   });
 
   it('rejects unknown radio target on create', async () => {

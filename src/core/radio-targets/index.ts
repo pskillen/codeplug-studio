@@ -3,6 +3,7 @@ export {
   compatibleEgressForProfile,
   defaultCompatibleEgress,
   listRadioTargets,
+  orderEgressPathsByCatalog,
   radioTargetFor,
   radioTargetHasTrait,
   radioTargetIdForProfile,

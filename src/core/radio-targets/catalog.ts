@@ -151,3 +151,24 @@ export function compatibleEgressForProfile(
 export function defaultCompatibleEgress(radioTargetId: string): CompatibleEgress | undefined {
   return radioTargetFor(radioTargetId)?.compatibleEgress[0];
 }
+
+/**
+ * Sort persisted egress rows into catalog preference order (first = default /
+ * easiest pathway, e.g. Web Serial for UV-5R Mini). IndexedDB list order is
+ * not guaranteed.
+ */
+export function orderEgressPathsByCatalog<T extends { formatId: string; profileId: string }>(
+  radioTargetId: string,
+  paths: readonly T[],
+): T[] {
+  const target = radioTargetFor(radioTargetId);
+  if (!target) return [...paths];
+  const rank = new Map(
+    target.compatibleEgress.map((entry, index) => [`${entry.formatId}:${entry.profileId}`, index]),
+  );
+  return [...paths].sort((a, b) => {
+    const ra = rank.get(`${a.formatId}:${a.profileId}`) ?? Number.MAX_SAFE_INTEGER;
+    const rb = rank.get(`${b.formatId}:${b.profileId}`) ?? Number.MAX_SAFE_INTEGER;
+    return ra - rb || a.profileId.localeCompare(b.profileId);
+  });
+}

@@ -3,6 +3,7 @@ import { BuildCapabilityTrait } from '@core/models/traits.ts';
 import {
   defaultCompatibleEgress,
   listRadioTargets,
+  orderEgressPathsByCatalog,
   radioTargetFor,
   radioTargetIdForProfile,
   traitsForRadioTarget,
@@ -38,6 +39,15 @@ describe('radio target catalog', () => {
 
   it('defaults Mini egress to Web Serial first', () => {
     expect(defaultCompatibleEgress('baofeng-uv5r-mini')?.formatId).toBe('radio-io');
+  });
+
+  it('orders shuffled Mini egress paths with Web Serial first', () => {
+    const ordered = orderEgressPathsByCatalog('baofeng-uv5r-mini', [
+      { formatId: 'chirp', profileId: 'chirp-uv5r' },
+      { formatId: 'neonplug', profileId: 'neonplug-uv5rmini' },
+      { formatId: 'radio-io', profileId: 'radio-io-uv5r-mini' },
+    ]);
+    expect(ordered.map((p) => p.formatId)).toEqual(['radio-io', 'neonplug', 'chirp']);
   });
 
   it('covers every shipped TRAIT_PROFILES radio via catalog egress', () => {

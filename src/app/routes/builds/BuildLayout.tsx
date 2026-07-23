@@ -3,6 +3,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, Outlet, useParams } from 'react-router-dom';
 import type { EgressPath } from '@core/models/egressPath.ts';
 import type { RadioBuild } from '@core/models/radioBuild.ts';
+import { orderEgressPathsByCatalog } from '@core/radio-targets/index.ts';
 import { FormPage } from '../../components/ui/index.ts';
 import { BuildService } from '../../state/buildService.ts';
 import { persistence } from '../../state/persistence.ts';
@@ -46,6 +47,10 @@ function resolveActiveEgressId(
   return egressPaths[0]?.id ?? null;
 }
 
+function orderedEgressPaths(build: RadioBuild, paths: EgressPath[]): EgressPath[] {
+  return orderEgressPathsByCatalog(build.radioTargetId, paths);
+}
+
 export default function BuildLayout() {
   const { id } = useParams();
   const { activeProjectId } = useProjects();
@@ -63,17 +68,18 @@ export default function BuildLayout() {
   }
 
   const reloadEgressPaths = useCallback(async () => {
-    if (!activeProjectId || !id) {
+    if (!activeProjectId || !id || !build) {
       setEgressPaths([]);
       return;
     }
-    setEgressPaths(await serviceRef.current!.listEgressPaths(activeProjectId, id));
-  }, [activeProjectId, id]);
+    const paths = await serviceRef.current!.listEgressPaths(activeProjectId, id);
+    setEgressPaths(orderedEgressPaths(build, paths));
+  }, [activeProjectId, id, build]);
 
   useEffect(() => {
     let cancelled = false;
     const load = async () => {
-      if (!activeProjectId || !id) {
+      if (!activeProjectId || !id || !build) {
         if (!cancelled) {
           setEgressPaths([]);
         }
@@ -81,7 +87,7 @@ export default function BuildLayout() {
       }
       const paths = await serviceRef.current!.listEgressPaths(activeProjectId, id);
       if (!cancelled) {
-        setEgressPaths(paths);
+        setEgressPaths(orderedEgressPaths(build, paths));
       }
     };
     void load();
@@ -94,7 +100,7 @@ export default function BuildLayout() {
       cancelled = true;
       unsubscribe();
     };
-  }, [activeProjectId, id, reloadEgressPaths]);
+  }, [activeProjectId, id, build, reloadEgressPaths]);
 
   const setActiveEgressId = useCallback(
     (egressId: string) => {
