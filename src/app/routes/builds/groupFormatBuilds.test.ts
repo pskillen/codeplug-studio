@@ -39,15 +39,16 @@ describe('groupFormatBuilds', () => {
     expect(groups[0]?.builds.map((b) => b.name)).toEqual(['CSV', 'Neon']);
   });
 
-  it('groups UV-5R Mini CHIRP and NeonPlug as the same radio', () => {
+  it('groups UV-5R Mini CHIRP, NeonPlug, and Direct radio as the same radio', () => {
     const builds = [
       { ...newFormatBuild(projectId, 'chirp-uv5r'), name: 'CHIRP' },
       { ...newFormatBuild(projectId, 'neonplug-uv5rmini'), name: 'Neon' },
+      { ...newFormatBuild(projectId, 'radio-io-uv5r-mini'), name: 'Serial' },
     ];
     const groups = groupFormatBuilds(builds, 'radio');
     expect(groups).toHaveLength(1);
     expect(groups[0]?.key).toBe('radio:baofeng-uv5r-mini');
     expect(groups[0]?.label).toBe('Baofeng UV-5R Mini');
-    expect(groups[0]?.builds.map((b) => b.name)).toEqual(['CHIRP', 'Neon']);
+    expect(groups[0]?.builds.map((b) => b.name)).toEqual(['CHIRP', 'Neon', 'Serial']);
   });
 });

@@ -43,6 +43,7 @@ import BuildLayout from './routes/builds/BuildLayout.tsx';
 import BuildOverviewPage from './routes/builds/BuildOverviewPage.tsx';
 import BuildCharacteristicsPage from './routes/builds/BuildCharacteristicsPage.tsx';
 import BuildNeonplugSettingsPage from './routes/builds/BuildNeonplugSettingsPage.tsx';
+import BuildRadioImageSettingsPage from './routes/builds/BuildRadioImageSettingsPage.tsx';
 import BuildFlatMemoryScanListPage from './routes/builds/BuildFlatMemoryScanListPage.tsx';
 import BuildExportPage from './routes/builds/BuildExportPage.tsx';
 import BuildExportResolutionPage from './routes/builds/BuildExportResolutionPage.tsx';
@@ -170,6 +171,7 @@ export const appRouter = createBrowserRouter([
               { path: 'export', element: <BuildExportPage /> },
               { path: 'export-resolution', element: <BuildExportResolutionPage /> },
               { path: 'neonplug-settings', element: <BuildNeonplugSettingsPage /> },
+              { path: 'radio-image', element: <BuildRadioImageSettingsPage /> },
             ],
           },
           { path: '/import-export', element: <Navigate to="/summary" replace /> },

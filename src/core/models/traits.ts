@@ -95,6 +95,13 @@ export const TRAIT_PROFILES: Record<string, TraitProfile> = {
     label: 'Baofeng UV-5R Mini (NeonPlug)',
     traits: [BuildCapabilityTrait.FlatMemoryList, BuildCapabilityTrait.PerChannelScanFlag],
   },
+  /** Web Serial direct-write — not a CPS file pathway. */
+  'radio-io-uv5r-mini': {
+    profileId: 'radio-io-uv5r-mini',
+    formatId: 'radio-io',
+    label: 'Baofeng UV-5R Mini',
+    traits: [BuildCapabilityTrait.FlatMemoryList, BuildCapabilityTrait.PerChannelScanFlag],
+  },
 };
 
 export function traitProfileFor(profileId: string): TraitProfile | undefined {

@@ -36,6 +36,7 @@ export {
   extractUv5rMiniHydration,
   mergeChannelsIntoUv5rMiniHydration,
   memoryMapFromUv5rMiniHydration,
+  summariseUv5rMiniClone,
 } from './radios/uv5r-mini/index.ts';
 
 // Optional BLE BytePipe (same interface) — deferred; see epic #594.

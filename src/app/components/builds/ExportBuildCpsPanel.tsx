@@ -21,6 +21,7 @@ import ExportWarningsAlert from './ExportWarningsAlert.tsx';
 import Dm32PreferNeonPlugAlert from './Dm32PreferNeonPlugAlert.tsx';
 import ChirpUv5rPreferNeonPlugAlert from './ChirpUv5rPreferNeonPlugAlert.tsx';
 import Dm32AprsSetupAlert from './Dm32AprsSetupAlert.tsx';
+import BuildRadioIoPanel from './BuildRadioIoPanel.tsx';
 import { saveDriveLastFolderId, saveDriveLastFolderPath } from '@integrations/cloud/drivePrefs.ts';
 import DriveBrowserModal, { type DriveSaveTarget } from '../import-export/DriveBrowserModal.tsx';
 import GoogleDriveActionButton from '../import-export/GoogleDriveActionButton.tsx';
@@ -346,6 +347,41 @@ export default function ExportBuildCpsPanel({ build }: ExportBuildCpsPanelProps)
     void saveZipToDrive(target, isNeonplug ? (neonplugBaseBytes ?? undefined) : undefined);
   }
 
+  if (build.formatId === 'radio-io') {
+    return (
+      <Stack gap="sm">
+        <Text size="sm">
+          Direct radio via Web Serial for{' '}
+          <Text span fw={600}>
+            {profileLabel}
+          </Text>
+          . There is no CPS file export for this build — use Connect / Read / Write below. Curate
+          channels on the library and this build&apos;s memory list; Write runs assemble into a
+          previously Read clone image.
+        </Text>
+        {wireHint ? (
+          <Text size="sm" c="dimmed">
+            {wireHint}
+          </Text>
+        ) : null}
+        <ExportBuildSettingsSections
+          build={build}
+          saving={savingSettings}
+          settingsError={settingsError}
+          profileNameLimit={profileNameLimit}
+          resolvedSettings={resolvedSettings}
+          formatDefaults={formatDefaults}
+          defaultScanValue={defaultScanValue}
+          onExportSettingsPatch={(patch) => void handleExportSettingsPatch(patch)}
+          onExportInclusionChange={(field, checked) =>
+            void handleExportInclusionChange(field, checked)
+          }
+        />
+        <BuildRadioIoPanel build={build} />
+      </Stack>
+    );
+  }
+
   if (!exportShipped) {
     return (
       <Alert color="gray" title="Export not available yet">
@@ -505,6 +541,7 @@ export default function ExportBuildCpsPanel({ build }: ExportBuildCpsPanelProps)
       {error ? <Alert color="red">{error}</Alert> : null}
       {showDm32PreferNeonPlug ? <Dm32AprsSetupAlert exportFileNames={exportFileNames} /> : null}
       {exportWarnings.length > 0 ? <ExportWarningsAlert warnings={exportWarnings} /> : null}
+      <BuildRadioIoPanel build={build} />
       {isNeonplug ? (
         <Stack gap="md">
           <Stack gap="xs">

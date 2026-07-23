@@ -155,7 +155,11 @@ export default function ExportBuildSettingsSections({
 
       <FieldCard
         title="Naming"
-        description="Wire name length, abbreviation, and fallback style for CPS export."
+        description={
+          build.formatId === 'radio-io'
+            ? 'Wire name length, abbreviation, and fallback style for radio write.'
+            : 'Wire name length, abbreviation, and fallback style for CPS export.'
+        }
       >
         <ExportNameSettingsFields
           build={build}

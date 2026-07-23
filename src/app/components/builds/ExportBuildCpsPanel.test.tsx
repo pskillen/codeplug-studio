@@ -51,6 +51,14 @@ vi.mock('../../services/buildCpsExportService.ts', async (importOriginal) => {
   };
 });
 
+vi.mock('../../hooks/useUnsavedNavigationGuard.ts', () => ({
+  useUnsavedNavigationGuard: () => ({
+    modalOpen: false,
+    stay: vi.fn(),
+    leave: vi.fn(),
+  }),
+}));
+
 vi.mock('../../state/useProjects.ts', () => ({
   useProjects: () => ({
     activeProjectId: 'project-1',
@@ -465,5 +473,28 @@ describe('ExportBuildCpsPanel', () => {
     ).not.toBeDisabled();
     expect(screen.getByRole('button', { name: 'Clear stored donor' })).toBeInTheDocument();
     expect(screen.getByText(/Stored: uv5r\.neonplug/)).toBeInTheDocument();
+  });
+
+  it('shows Web Serial panel for Direct radio builds without CPS download', async () => {
+    const radioBuild: FormatBuild = {
+      ...opengd77Build,
+      formatId: 'radio-io',
+      profileId: 'radio-io-uv5r-mini',
+      name: 'Mini Serial',
+    };
+    render(
+      <MantineProvider>
+        <ExportBuildCpsPanel build={radioBuild} />
+      </MantineProvider>,
+    );
+
+    expect(await screen.findByText(/Direct radio via Web Serial/i)).toBeInTheDocument();
+    expect(screen.getByText(/no CPS file export/i)).toBeInTheDocument();
+    expect(screen.getByText('Naming')).toBeInTheDocument();
+    expect(screen.getByText(/Target name length/i)).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Download ZIP/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Download CSV/i })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Read from radio/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Write to radio/i })).toBeInTheDocument();
   });
 });

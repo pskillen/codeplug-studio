@@ -48,7 +48,8 @@ export default function NewBuildPage() {
     >
       <Stack gap="lg">
         <Text size="sm" c="dimmed">
-          Native YAML is project interchange — not a format build. Pick a CPS target workflow below.
+          Native YAML is project interchange — not a format build. Pick a CPS file workflow or
+          Direct radio (Web Serial) below.
         </Text>
 
         {step === 'format' ? (
@@ -73,7 +74,9 @@ export default function NewBuildPage() {
                         {formatPathwayBadge(format.id)}
                       </Group>
                       <Text size="sm" c="dimmed">
-                        Import: {format.importStatus} · Export: {format.exportStatus}
+                        {format.id === 'radio-io'
+                          ? 'Web Serial read/write — no CPS file export'
+                          : `Import: ${format.importStatus} · Export: ${format.exportStatus}`}
                       </Text>
                     </div>
                     <Button variant="light" size="compact-sm">

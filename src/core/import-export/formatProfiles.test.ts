@@ -35,6 +35,13 @@ describe('formatProfiles', () => {
     expect(profiles.find((p) => p.profileId === 'neonplug-uv5rmini')?.maxChannels).toBe(999);
   });
 
+  it('lists Direct radio profiles for UI', () => {
+    const profiles = getFormatProfiles('radio-io');
+    expect(profiles.map((p) => p.profileId)).toEqual(['radio-io-uv5r-mini']);
+    expect(profiles[0]?.nameLimit).toBe(12);
+    expect(profiles[0]?.maxChannels).toBe(999);
+  });
+
   it('returns wire hint for OpenGD77 and CHIRP profiles', () => {
     expect(formatProfileWireHint('opengd77', 'opengd77-1701')).toMatch(/16-char/);
     expect(formatProfileWireHint('chirp', 'chirp-uv5r')).toMatch(/12-char/);
@@ -50,5 +57,11 @@ describe('formatProfiles', () => {
     expect(formatProfileWireHint('neonplug', 'neonplug-dm32uv')).toMatch(/4000/);
     expect(formatProfileWireHint('neonplug', 'neonplug-uv5rmini')).toMatch(/12-char/);
     expect(formatProfileWireHint('neonplug', 'neonplug-uv5rmini')).toMatch(/999/);
+  });
+
+  it('returns wire hint for Direct radio profiles', () => {
+    expect(formatProfileWireHint('radio-io', 'radio-io-uv5r-mini')).toMatch(/12-char/);
+    expect(formatProfileWireHint('radio-io', 'radio-io-uv5r-mini')).toMatch(/999/);
+    expect(formatProfileWireHint('radio-io', 'radio-io-uv5r-mini')).toMatch(/Web Serial/);
   });
 });
