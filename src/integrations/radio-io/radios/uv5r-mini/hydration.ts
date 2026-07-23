@@ -48,7 +48,9 @@ export function memoryMapFromUv5rMiniHydration(bag: RadioCloneHydrationBag): Mem
 export function mergeChannelsIntoUv5rMiniHydration(
   bag: RadioCloneHydrationBag,
   channels: readonly RadioChannelDto[],
+  organisation?: import('../../radioWriteProjection.ts').RadioWriteOrganisation,
 ): MemoryMap {
+  void organisation;
   const image = memoryMapFromUv5rMiniHydration(bag);
   encodeChannelsIntoImage(image, channels);
   return image;

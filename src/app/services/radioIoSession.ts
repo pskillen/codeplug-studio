@@ -26,7 +26,8 @@ import {
   isWebSerialSupported,
   getWebSerialUnsupportedMessage,
 } from '@integrations/radio-io/index.ts';
-import { expandAssembledChannelsToRadioDtos } from './radioIoChannelMap.ts';
+import { buildRadioWriteProjection } from './radioIoWriteProjection.ts';
+import type { RadioWriteOrganisation } from '@integrations/radio-io/radioWriteProjection.ts';
 
 export { isWebSerialSupported, getWebSerialUnsupportedMessage };
 
@@ -205,14 +206,18 @@ export function prepareRadioWriteImage(
     formatId: egress.formatId,
     profileId: egress.profileId,
   });
-  const { dtos, warnings } = expandAssembledChannelsToRadioDtos(assembled, build, library, egress);
-  return { image: mergeChannelsForWrite(egress, hydration, dtos), warnings };
+  const projection = buildRadioWriteProjection(assembled, build, library, egress);
+  return {
+    image: mergeChannelsForWrite(egress, hydration, projection.channels, projection.organisation),
+    warnings: projection.warnings,
+  };
 }
 
 function mergeChannelsForWrite(
   egress: EgressPath,
   hydration: RadioCloneHydrationBag,
   dtos: Parameters<RadioHydrationHooks['mergeChannelsIntoHydration']>[1],
+  organisation?: RadioWriteOrganisation,
 ): MemoryMap {
   const descriptors = descriptorsForEgress(egress);
   const descriptor = descriptors[0];
@@ -221,7 +226,7 @@ function mergeChannelsForWrite(
       `No Web Serial radio adapter is registered for ${egress.formatId}/${egress.profileId}.`,
     );
   }
-  return descriptor.hydration.mergeChannelsIntoHydration(hydration, dtos);
+  return descriptor.hydration.mergeChannelsIntoHydration(hydration, dtos, organisation);
 }
 
 /**

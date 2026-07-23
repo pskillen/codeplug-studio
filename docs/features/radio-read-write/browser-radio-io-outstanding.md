@@ -4,6 +4,7 @@ Items discovered or deferred while planning Milestone 2. File-format CSV work st
 
 ## Open
 
+- [ ] DM-32UV full modelled Write encode — [#667](https://github.com/pskillen/codeplug-studio/issues/667) (zones, scan lists, TGs, RX groups, digital contacts, APRS; analog contacts gap called out in UI; parent [#636](https://github.com/pskillen/codeplug-studio/issues/636))
 - [ ] Gate direct-write on firmware catalog — [#619](https://github.com/pskillen/codeplug-studio/issues/619) (depends on [#613](https://github.com/pskillen/codeplug-studio/issues/613))
 - [ ] Baofeng DM-1701 / RT-84 OpenGD77 adapter — [#624](https://github.com/pskillen/codeplug-studio/issues/624) (depends on [#623](https://github.com/pskillen/codeplug-studio/issues/623) docs + [#631](https://github.com/pskillen/codeplug-studio/issues/631) serial kit)
 - [ ] TYT MD-9600 / RT-90 OpenGD77 adapter — [#625](https://github.com/pskillen/codeplug-studio/issues/625) (depends on [#623](https://github.com/pskillen/codeplug-studio/issues/623) docs + [#631](https://github.com/pskillen/codeplug-studio/issues/631) serial kit)

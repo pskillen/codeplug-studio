@@ -96,7 +96,9 @@ export function extractDm32uvHydrationFromProtocol(
 export function mergeChannelsIntoDm32uvHydration(
   bag: RadioCloneHydrationBag,
   channels: readonly RadioChannelDto[],
+  organisation?: import('../../radioWriteProjection.ts').RadioWriteOrganisation,
 ): MemoryMap {
+  void organisation; // encoded in later #667 slices
   const cache = cacheFromBag(bag);
   const image = memoryMapFromDm32uvHydration(bag);
   const ctx: Dm32ChannelDecodeContext = {
