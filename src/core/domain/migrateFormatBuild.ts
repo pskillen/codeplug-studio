@@ -1,4 +1,4 @@
-import type { BuildEntityOverride, FormatBuild } from '@core/models/formatBuild.ts';
+import type { BuildEntityOverride, RadioBuild } from '@core/models/radioBuild.ts';
 import type { Library } from '@core/models/library.ts';
 import { emptyTraitLayout } from '@core/models/traitLayout.ts';
 import { migrateFlatMemoryLayoutOrderOnly } from './exportOrderOrSlot.ts';
@@ -12,7 +12,7 @@ export interface LegacyFormatBuildFields {
   contactSelections?: LegacyEntitySelection[];
 }
 
-type LegacyFormatBuild = FormatBuild & LegacyFormatBuildFields;
+type LegacyRadioBuild = RadioBuild & LegacyFormatBuildFields;
 
 function hasLegacySelections(legacy?: LegacyFormatBuildFields): boolean {
   if (!legacy) return false;
@@ -37,11 +37,11 @@ function migrateOverrideField(
 
 /** Normalise legacy *Selections fields to sparse *Overrides (opt-out semantics). */
 export function migrateFormatBuild(
-  build: FormatBuild,
+  build: RadioBuild,
   library: Library,
   legacy?: LegacyFormatBuildFields,
-): FormatBuild {
-  const legacyFromBuild = build as LegacyFormatBuild;
+): RadioBuild {
+  const legacyFromBuild = build as LegacyRadioBuild;
   const legacyFields = legacy ?? {
     channelSelections: legacyFromBuild.channelSelections,
     zoneSelections: legacyFromBuild.zoneSelections,
@@ -94,7 +94,7 @@ export function migrateFormatBuild(
   };
 }
 
-function missingOverrideFields(build: LegacyFormatBuild): boolean {
+function missingOverrideFields(build: LegacyRadioBuild): boolean {
   return (
     build.channelOverrides === undefined ||
     build.zoneOverrides === undefined ||
@@ -106,8 +106,8 @@ function missingOverrideFields(build: LegacyFormatBuild): boolean {
 }
 
 /** Rename-only normalisation when library is unavailable (e.g. IndexedDB read). */
-export function normalizeFormatBuildFields(build: LegacyFormatBuild): FormatBuild {
-  const normalized: FormatBuild = {
+export function normalizeFormatBuildFields(build: LegacyRadioBuild): RadioBuild {
+  const normalized: RadioBuild = {
     ...build,
     layout: build.layout ?? emptyTraitLayout(),
     channelOverrides:

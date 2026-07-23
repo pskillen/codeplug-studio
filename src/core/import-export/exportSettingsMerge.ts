@@ -5,8 +5,7 @@ import {
   DEFAULT_DIGITAL_CONTACT_EXPORT_NAME_MODE,
   DEFAULT_MULTI_TG_EXPORT_NAME_MODE,
 } from '@core/import-export/types.ts';
-import type { BuildExportSettings } from '@core/models/formatBuild.ts';
-import type { FormatBuild } from '@core/models/formatBuild.ts';
+import type { BuildExportSettings, RadioBuild } from '@core/models/radioBuild.ts';
 import type { CpsExportOptions, FormatExportDefaults } from '@core/import-export/types.ts';
 import type { LibrarySlice } from '@core/services/assemble.ts';
 import { getFormatExportDefaults } from '@core/import-export/registry.ts';
@@ -88,13 +87,17 @@ function applyFormatExportDefaults(defaults: FormatExportDefaults): CpsExportOpt
   };
 }
 
-/** Merge format defaults, build-stored settings, and runtime overrides for export. */
+/**
+ * Merge format defaults, build-stored settings, and runtime overrides for export.
+ * `formatId` comes from the egress path (build no longer carries `formatId`/`profileId`, #654).
+ */
 export function mergeExportOptions(
-  build: FormatBuild,
+  build: RadioBuild,
+  formatId: string,
   options?: CpsExportOptions,
   library?: Pick<LibrarySlice, 'channelDefaults' | 'zoneDefaults'>,
 ): CpsExportOptions {
-  const formatDefaults = getFormatExportDefaults(build.formatId);
+  const formatDefaults = getFormatExportDefaults(formatId);
   const stored = build.exportSettings ?? {};
   return {
     shortenNames: DEFAULT_BUILD_EXPORT_SETTINGS.shortenNames,
@@ -108,7 +111,7 @@ export function mergeExportOptions(
     ...applyFormatExportDefaults(formatDefaults),
     ...storedToCpsOptions(stored),
     ...options,
-    profileId: options?.profileId ?? build.profileId,
+    profileId: options?.profileId,
     contactOverrides: options?.contactOverrides ?? build.contactOverrides,
     channelBehaviourContext: buildChannelBehaviourContext(library?.channelDefaults, stored),
     zoneBehaviourContext: buildZoneBehaviourContext(library?.zoneDefaults, stored),

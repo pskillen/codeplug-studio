@@ -1,4 +1,5 @@
-import type { FormatBuild } from '@core/models/formatBuild.ts';
+import type { RadioBuild } from '@core/models/radioBuild.ts';
+import type { EgressPath } from '@core/models/egressPath.ts';
 import { findZoneGroupingSection } from '@core/domain/zoneGroupingLayout.ts';
 import { mergeExportOptions } from '@core/import-export/exportSettingsMerge.ts';
 import { getExportAdapter } from '@core/import-export/registry.ts';
@@ -45,7 +46,9 @@ import {
 } from './assemble.ts';
 
 export interface ExportBuildParams {
-  build: FormatBuild;
+  build: RadioBuild;
+  /** Egress pathway carrying `formatId` / `profileId` / operation hydration (#654). */
+  egress: EgressPath;
   library: LibrarySlice;
   fileName: string;
   options?: CpsExportOptions;
@@ -127,46 +130,57 @@ function listCsvAndSidecarFileNames(
 /** Ordered CPS file names for a build without serialising file bodies. */
 export function listExportBuildFileNames({
   build,
+  egress,
   library,
   options,
 }: Omit<ExportBuildParams, 'fileName'>): readonly string[] {
-  const exportOptions = mergeExportOptions(build, options, library);
-  const projection = assemble(build, library, { profileId: exportOptions.profileId });
+  const exportOptions = mergeExportOptions(build, egress.formatId, options, library);
+  const projection = assemble(build, library, {
+    formatId: egress.formatId,
+    profileId: egress.profileId,
+  });
   const assembled = {
     ...projection,
     library,
     zoneGrouping: findZoneGroupingSection(build),
   };
   const csvFileNames = resolveEffectiveExportFileNames(
-    build.formatId as FormatId,
+    egress.formatId as FormatId,
     assembled,
     exportOptions,
   );
-  return listCsvAndSidecarFileNames(build.formatId as FormatId, csvFileNames, exportOptions);
+  return listCsvAndSidecarFileNames(egress.formatId as FormatId, csvFileNames, exportOptions);
 }
 
 /** Serialise one CPS file from a build + library. */
 export function exportBuildFile({
   build,
+  egress,
   library,
   fileName,
   options,
 }: ExportBuildParams): ExportResult & { content: string; assembled: AssembledBuild } {
-  const exportOptions = mergeExportOptions(build, options, library);
-  const projection = assemble(build, library, { profileId: exportOptions.profileId });
+  const exportOptions = mergeExportOptions(build, egress.formatId, options, library);
+  const projection = assemble(build, library, {
+    formatId: egress.formatId,
+    profileId: egress.profileId,
+  });
   const assembled = {
     ...projection,
     library,
     zoneGrouping: findZoneGroupingSection(build),
   };
-  const adapter = getExportAdapter(build.formatId as FormatId);
+  const adapter = getExportAdapter(egress.formatId as FormatId);
   if (!isMultiFileExportAdapter(adapter)) {
-    throw new Error(`Format ${build.formatId} does not support multi-file CPS export`);
+    throw new Error(`Format ${egress.formatId} does not support multi-file CPS export`);
   }
 
-  if (build.formatId === 'anytone' && isAnytoneLstFileName(fileName, exportOptions.projectName)) {
+  if (
+    egress.formatId === 'anytone' &&
+    isAnytoneLstFileName(fileName, exportOptions.projectName)
+  ) {
     const csvFileNames = resolveEffectiveExportFileNames(
-      build.formatId as FormatId,
+      egress.formatId as FormatId,
       assembled,
       exportOptions,
     );
@@ -186,19 +200,23 @@ export function exportBuildFile({
 /** Serialise all CPS files for a build. */
 export function exportBuildAll({
   build,
+  egress,
   library,
   options,
 }: Omit<ExportBuildParams, 'fileName'>): ExportBuildAllResult {
-  const exportOptions = mergeExportOptions(build, options, library);
-  const projection = assemble(build, library, { profileId: exportOptions.profileId });
+  const exportOptions = mergeExportOptions(build, egress.formatId, options, library);
+  const projection = assemble(build, library, {
+    formatId: egress.formatId,
+    profileId: egress.profileId,
+  });
   const assembled = {
     ...projection,
     library,
     zoneGrouping: findZoneGroupingSection(build),
   };
-  const adapter = getExportAdapter(build.formatId as FormatId);
+  const adapter = getExportAdapter(egress.formatId as FormatId);
   if (!isMultiFileExportAdapter(adapter)) {
-    throw new Error(`Format ${build.formatId} does not support multi-file CPS export`);
+    throw new Error(`Format ${egress.formatId} does not support multi-file CPS export`);
   }
 
   const files: Record<string, string> = {};
@@ -208,7 +226,7 @@ export function exportBuildAll({
   ];
 
   const exportFileNames = resolveEffectiveExportFileNames(
-    build.formatId as FormatId,
+    egress.formatId as FormatId,
     assembled,
     exportOptions,
   );
@@ -219,7 +237,7 @@ export function exportBuildAll({
     warnings.push(...result.warnings);
   }
 
-  appendAnytoneLstManifest(build.formatId as FormatId, files, exportFileNames, exportOptions);
+  appendAnytoneLstManifest(egress.formatId as FormatId, files, exportFileNames, exportOptions);
 
   return { assembled, files, warnings: dedupeWarnings(warnings) };
 }
@@ -227,26 +245,30 @@ export function exportBuildAll({
 /** Serialise a single CPS file (CHIRP memory CSV). */
 export function exportBuildSingleFile({
   build,
+  egress,
   library,
   options,
 }: Omit<ExportBuildParams, 'fileName'>): ExportBuildAllResult & {
   fileName: string;
   content: string;
 } {
-  const exportOptions = mergeExportOptions(build, options, library);
-  const projection = assemble(build, library, { profileId: exportOptions.profileId });
+  const exportOptions = mergeExportOptions(build, egress.formatId, options, library);
+  const projection = assemble(build, library, {
+    formatId: egress.formatId,
+    profileId: egress.profileId,
+  });
   const assembled = {
     ...projection,
     library,
     zoneGrouping: findZoneGroupingSection(build),
   };
-  const adapter = getExportAdapter(build.formatId as FormatId);
+  const adapter = getExportAdapter(egress.formatId as FormatId);
   if (!isSingleFileCpsExportAdapter(adapter)) {
-    throw new Error(`Format ${build.formatId} does not support single-file CPS export`);
+    throw new Error(`Format ${egress.formatId} does not support single-file CPS export`);
   }
 
   const fileName =
-    options?.fileName ?? adapter.defaultFileName(exportOptions.profileId ?? build.profileId);
+    options?.fileName ?? adapter.defaultFileName(exportOptions.profileId ?? egress.profileId);
   const result = adapter.serialise(assembled, exportOptions);
   const warnings = dedupeWarnings([
     ...exportInclusionWarnings(build, library, assembled),
@@ -265,13 +287,14 @@ export function exportBuildSingleFile({
 /** Serialise all CPS files and package as a ZIP byte array. */
 export function exportBuildZip({
   build,
+  egress,
   library,
   options,
   baseNeonplugBytes,
 }: ExportBuildZipParams): ExportBuildAllResult & { zip: Uint8Array } {
-  const result = exportBuildAll({ build, library, options });
+  const result = exportBuildAll({ build, egress, library, options });
 
-  if (build.formatId === 'neonplug') {
+  if (egress.formatId === 'neonplug') {
     const projectedJson = result.files[NEONPLUG_JSON_FILE_NAME];
     if (projectedJson == null) {
       throw new Error(`NeonPlug export missing ${NEONPLUG_JSON_FILE_NAME}`);
@@ -284,12 +307,12 @@ export function exportBuildZip({
       const { data, warnings } = parseNeonplugZip(baseNeonplugBytes);
       mergeBase = data;
       donorWarnings.push(...warnings);
-    } else if (isNeonplugDonorBag(build.cpsWireHydration)) {
-      mergeBase = neonplugDonorRetainAsMergeBase(build.cpsWireHydration);
+    } else if (isNeonplugDonorBag(egress.hydration)) {
+      mergeBase = neonplugDonorRetainAsMergeBase(egress.hydration);
     }
 
     // Re-serialise for the APRS settings patch (same assemble projection as exportBuildAll).
-    const exportOptions = mergeExportOptions(build, options, library);
+    const exportOptions = mergeExportOptions(build, egress.formatId, options, library);
     const { aprsSettingsPatch } = serialiseNeonplugCodeplug(result.assembled, exportOptions);
 
     if (mergeBase) {
@@ -323,9 +346,9 @@ export function exportBuildZip({
   }
 
   const zip =
-    build.formatId === 'dm32'
+    egress.formatId === 'dm32'
       ? buildDm32Zip(result.files)
-      : build.formatId === 'anytone'
+      : egress.formatId === 'anytone'
         ? buildAnytoneZip(result.files)
         : buildOpenGd77Zip(result.files);
   return { ...result, zip };

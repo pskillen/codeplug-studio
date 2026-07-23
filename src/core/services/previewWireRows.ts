@@ -1,4 +1,3 @@
-import type { CpsExportOptions } from '@core/import-export/types.ts';
 import {
   isEntityExcluded,
   isEntityForceIncluded,
@@ -36,7 +35,7 @@ import {
   zoneLinkedChannelIds,
   type LibrarySlice,
 } from './assemble.ts';
-import type { FormatBuild } from '@core/models/formatBuild.ts';
+import type { RadioBuild } from '@core/models/radioBuild.ts';
 import type { Channel, ChannelModeProfileDMR, Zone } from '@core/models/library.ts';
 import type { DMRTimeSlot, EntityRef } from '@core/models/libraryTypes.ts';
 import { directZoneMemberChannelIds, directZoneMemberZoneIds } from '@core/domain/zoneMembers.ts';
@@ -46,7 +45,11 @@ import {
   isZoneMemberOrderOverridden,
 } from '@core/domain/zoneGroupingLayout.ts';
 import { isChirpAnalogueExportable } from '@core/import-export/formats/chirp/channelWire.ts';
-import { previewGeneratedChannelWireName } from './previewChannelWireName.ts';
+import {
+  previewGeneratedChannelWireName,
+  type WirePreviewChannelNameOptions,
+} from './previewChannelWireName.ts';
+import { defaultCompatibleEgress } from '@core/radio-targets/index.ts';
 import { isAmAirbandBankChannel } from '@core/import-export/formats/anytone/receiveOnlyBanks.ts';
 import {
   classifyAnytoneZoneByMembers,
@@ -165,7 +168,7 @@ function previewRow(
   entityKind: WirePreviewEntityKind,
   displayLabel: string,
   generatedWireName: string,
-  overrides: FormatBuild[OverrideField],
+  overrides: RadioBuild[OverrideField],
   expansionNote?: string,
   displayDetails?: WirePreviewDisplayLine[],
   libraryCallsign?: string,
@@ -258,22 +261,25 @@ function anytoneExpansionDisplayDetails(
 }
 
 export function previewWireRows(
-  build: FormatBuild,
+  build: RadioBuild,
   library: LibrarySlice,
   entityKind: WirePreviewEntityKind,
-  _options?: CpsExportOptions,
+  _options?: WirePreviewChannelNameOptions,
   anytoneBank: AnytoneWirePreviewBank = 'dmr',
 ): WirePreviewRow[] {
-  const projection = assemble(build, library, { profileId: _options?.profileId });
+  const defaultEgress = defaultCompatibleEgress(build.radioTargetId);
+  const formatId = _options?.formatId ?? defaultEgress?.formatId ?? '';
+  const profileId = _options?.profileId ?? defaultEgress?.profileId;
+  const projection = assemble(build, library, { formatId, profileId });
 
   switch (entityKind) {
     case 'channel': {
-      const expandModes = build.formatId === 'dm32' ? false : (_options?.expandModes ?? true);
+      const expandModes = formatId === 'dm32' ? false : (_options?.expandModes ?? true);
       const rows: WirePreviewRow[] = [];
       const reserved = new Set<string>();
       const warnings: string[] = [];
 
-      if (build.formatId === 'chirp' || build.formatId === 'radio-io') {
+      if (formatId === 'chirp' || formatId === 'radio-io') {
         const memorySlots =
           projection.channelMemorySlots ??
           projection.channels.map((row, index) => ({
@@ -323,13 +329,13 @@ export function previewWireRows(
         return rows;
       }
 
-      if (build.formatId === 'dm32') {
+      if (formatId === 'dm32') {
         const assembled = projection;
         const dm32Options = {
           ..._options,
           expandModes: false,
           expandRxGroupLists: _options?.expandRxGroupLists ?? true,
-          profileId: _options?.profileId ?? build.profileId,
+          profileId,
         };
         const expanded = expandAllDm32ChannelsForExport(assembled, library, dm32Options, warnings);
         const expandedByChannelId = new Map<string, (typeof expanded)[number][]>();
@@ -396,14 +402,14 @@ export function previewWireRows(
         return rows;
       }
 
-      if (build.formatId === 'anytone') {
+      if (formatId === 'anytone') {
         const assembled = projection;
         const anytoneOptions = {
           ..._options,
           expandModes: false,
           expandRxGroupLists: _options?.expandRxGroupLists ?? true,
           exportScratchChannels: _options?.exportScratchChannels ?? true,
-          profileId: _options?.profileId ?? build.profileId,
+          profileId,
         };
         const expanded = expandAllAnytoneChannelsForExport(
           assembled,
@@ -489,7 +495,7 @@ export function previewWireRows(
           undefined,
           expandModes,
           _options,
-          build.profileId,
+          profileId,
           reserved,
           warnings,
         );
@@ -531,12 +537,12 @@ export function previewWireRows(
       return rows;
     }
     case 'zone': {
-      const shortenListNames = formatUsesListNameShortening(build.formatId);
+      const shortenListNames = formatUsesListNameShortening(formatId);
       const reserved = shortenListNames ? new Set<string>() : null;
       const warnings: string[] = [];
       const channelById = new Map(library.channels.map((ch) => [ch.id, ch]));
       const zonesForBank =
-        build.formatId === 'anytone'
+        formatId === 'anytone'
           ? library.zones.filter((zone) => {
               const assembledZone = projection.zones.find((row) => row.zoneId === zone.id);
               const memberIds =
@@ -562,7 +568,7 @@ export function previewWireRows(
         const assembledZone = projection.zones.find((row) => row.zoneId === zone.id);
         const baseWireName = assembledZone?.wireName ?? zone.name;
         const generatedWireName = shortenListNames
-          ? applyListWireNameLimits(baseWireName, reserved!, _options, build.profileId, warnings)
+          ? applyListWireNameLimits(baseWireName, reserved!, _options, profileId, warnings)
           : zone.name;
         const layoutEntry = zoneGrouping?.zones.find((entry) => entry.id === zone.id);
         return {
@@ -587,7 +593,7 @@ export function previewWireRows(
       });
     }
     case 'scanList': {
-      const shortenListNames = build.formatId === 'anytone';
+      const shortenListNames = formatId === 'anytone';
       const reserved = shortenListNames ? new Set<string>() : null;
       const warnings: string[] = [];
       return library.scanLists.map((entry) => {
@@ -595,7 +601,7 @@ export function previewWireRows(
         const memberCount = entry.memberChannelIds.length;
         const baseWireName = assembled?.wireName ?? entry.name;
         const generatedWireName = shortenListNames
-          ? applyListWireNameLimits(baseWireName, reserved!, _options, build.profileId, warnings)
+          ? applyListWireNameLimits(baseWireName, reserved!, _options, profileId, warnings)
           : entry.name;
         return previewRow(
           entry.id,
@@ -620,7 +626,7 @@ export function previewWireRows(
           talkGroup,
           reserved,
           _options,
-          build.profileId,
+          profileId,
           warnings,
         );
         return previewRow(
@@ -635,7 +641,7 @@ export function previewWireRows(
       });
     }
     case 'contact': {
-      const shortenContacts = build.formatId === 'anytone' || build.formatId === 'opengd77';
+      const shortenContacts = formatId === 'anytone' || formatId === 'opengd77';
       const mode = _options?.digitalContactExportNameMode ?? 'name';
       const contactOverrides = _options?.contactOverrides ?? build.contactOverrides;
       const warnings: string[] = [];
@@ -644,7 +650,7 @@ export function previewWireRows(
         const assembled = projection.digitalContacts.find((row) => row.entity.id === contact.id);
         const baseWireName = resolveDigitalContactExportBaseName(contact, contactOverrides, mode);
         const generatedWireName = shortenContacts
-          ? applyDigitalContactExportWireName(baseWireName, _options, build.profileId, warnings)
+          ? applyDigitalContactExportWireName(baseWireName, _options, profileId, warnings)
           : contact.name;
         rows.push(
           previewRow(
@@ -664,7 +670,7 @@ export function previewWireRows(
         const assembled = projection.analogContacts.find((row) => row.entity.id === contact.id);
         const baseWireName = resolveAnalogContactExportBaseName(contact, contactOverrides);
         const generatedWireName = shortenContacts
-          ? applyDigitalContactExportWireName(baseWireName, _options, build.profileId, warnings)
+          ? applyDigitalContactExportWireName(baseWireName, _options, profileId, warnings)
           : contact.name;
         rows.push(
           previewRow(
@@ -681,14 +687,14 @@ export function previewWireRows(
       return rows;
     }
     case 'rxGroupList': {
-      const shortenListNames = formatUsesListNameShortening(build.formatId);
+      const shortenListNames = formatUsesListNameShortening(formatId);
       const reserved = shortenListNames ? new Set<string>() : null;
       const warnings: string[] = [];
       return library.rxGroupLists.map((list) => {
         const assembled = projection.rxGroupLists.find((row) => row.entity.id === list.id);
         const baseWireName = assembled?.wireName ?? list.name;
         const generatedWireName = shortenListNames
-          ? applyListWireNameLimits(baseWireName, reserved!, _options, build.profileId, warnings)
+          ? applyListWireNameLimits(baseWireName, reserved!, _options, profileId, warnings)
           : list.name;
         return previewRow(
           list.id,
@@ -706,7 +712,7 @@ export function previewWireRows(
 
 /** Whether a preview row would be included in CPS export (per-row include toggle + export inclusion flags). */
 export function isPreviewRowIncludedInExport(
-  build: FormatBuild,
+  build: RadioBuild,
   library: LibrarySlice,
   entityKind: WirePreviewEntityKind,
   row: WirePreviewRow,
@@ -745,10 +751,10 @@ export function isPreviewRowIncludedInExport(
 
 /** Rows that would be included in export (not excluded and matching export inclusion flags). */
 export function includedPreviewWireRows(
-  build: FormatBuild,
+  build: RadioBuild,
   library: LibrarySlice,
   entityKind: WirePreviewEntityKind,
-  options?: CpsExportOptions,
+  options?: WirePreviewChannelNameOptions,
 ): WirePreviewRow[] {
   return previewWireRows(build, library, entityKind, options).filter((row) =>
     isPreviewRowIncludedInExport(build, library, entityKind, row),
@@ -756,7 +762,7 @@ export function includedPreviewWireRows(
 }
 
 export function isPreviewRowExcluded(
-  build: FormatBuild,
+  build: RadioBuild,
   entityKind: WirePreviewEntityKind,
   libraryEntityId: string,
 ): boolean {

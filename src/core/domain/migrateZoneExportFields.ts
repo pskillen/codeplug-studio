@@ -1,8 +1,9 @@
-import type { FormatBuild } from '@core/models/formatBuild.ts';
+import type { RadioBuild } from '@core/models/radioBuild.ts';
 import type { AprsConfiguration } from '@core/models/aprs.ts';
 import type { Library, Zone } from '@core/models/library.ts';
 import type { ZoneGroupingZoneEntry } from '@core/models/traitLayout.ts';
 import type { ProjectAggregate } from '@core/import-export/projectDocument.ts';
+import { defaultCompatibleEgress } from '@core/radio-targets/index.ts';
 import {
   findZoneGroupingSection,
   replaceZoneGroupingSection,
@@ -61,10 +62,15 @@ function channelIdsFromZone(zone: Zone, zones: Zone[]): string[] {
   return resolveEffectiveZoneChannelIds(zone, zones);
 }
 
+/** True when a build's default egress resolves to the DM32 format (radioTargetId-derived, #654). */
+function isDm32Build(build: RadioBuild): boolean {
+  return defaultCompatibleEgress(build.radioTargetId)?.formatId === 'dm32';
+}
+
 export function migrateZoneExportFieldsToBuildLayout(
   library: Library,
-  formatBuilds: FormatBuild[],
-): { library: Library; formatBuilds: FormatBuild[] } {
+  formatBuilds: RadioBuild[],
+): { library: Library; formatBuilds: RadioBuild[] } {
   const legacyByZoneId = new Map<string, LegacyZoneExportFields>();
   for (const zone of library.zones) {
     const legacy = readLegacyZoneExportFields(zone as ZoneWithLegacy);
@@ -84,7 +90,7 @@ export function migrateZoneExportFieldsToBuildLayout(
   }
 
   const updatedBuilds = formatBuilds.map((build) => {
-    if (build.formatId !== 'dm32') return build;
+    if (!isDm32Build(build)) return build;
 
     let section = findZoneGroupingSection(build);
     if (!section) {
@@ -123,10 +129,13 @@ export function migrateZoneExportFieldsToBuildLayout(
   };
 }
 
-export function migrateDm32ProfileId(formatBuilds: FormatBuild[]): FormatBuild[] {
-  return formatBuilds.map((build) =>
-    build.profileId === 'dm32-default' ? { ...build, profileId: 'dm32-baofeng-dm32uv' } : build,
-  );
+/**
+ * @deprecated No-op — `RadioBuild` no longer carries `profileId`; the DM32 default-profile
+ * rewrite this performed is now implicit in `defaultCompatibleEgress` (radioTargetId →
+ * `dm32-baofeng-dm32uv` is the only DM32 egress in the catalog) (#654).
+ */
+export function migrateDm32ProfileId(formatBuilds: RadioBuild[]): RadioBuild[] {
+  return formatBuilds;
 }
 
 /** Normalise legacy library zone export fields and profile ids on load/import. */

@@ -1,5 +1,5 @@
 /**
- * Web Serial / binary clone hydration for {@link FormatBuild.cpsWireHydration}.
+ * Web Serial / binary clone hydration for {@link EgressPath.hydration} (#654).
  *
  * Parallel to NeonPlug file donor bags (`formatId: 'neonplug'`): persist the
  * full (or sparse) clone image so unmodelled registers survive write-back.
