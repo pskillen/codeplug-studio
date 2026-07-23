@@ -11,11 +11,7 @@ import { BuildCapabilityTrait } from '@core/models/traits.ts';
 import type { EgressPath } from '@core/models/egressPath.ts';
 import type { RadioBuild } from '@core/models/radioBuild.ts';
 import { hasDedicatedScanLists, showsPerChannelScanListNav } from '@core/models/traits.ts';
-import {
-  defaultCompatibleEgress,
-  radioTargetFor,
-  traitsForRadioTarget,
-} from '@core/radio-targets/index.ts';
+import { defaultCompatibleEgress, traitsForRadioTarget } from '@core/radio-targets/index.ts';
 import { entityNavIcons } from '../../nav/entityNavIcons.ts';
 
 export interface BuildNavItem {
@@ -24,25 +20,28 @@ export interface BuildNavItem {
   icon: TablerIcon;
 }
 
-function navProfileId(build: RadioBuild, egressPaths?: EgressPath[]): string | undefined {
-  return egressPaths?.[0]?.profileId ?? defaultCompatibleEgress(build.radioTargetId)?.profileId;
+export interface BuildNavOptions {
+  /** Seeded egress rows — used for profile helpers when active egress is unset. */
+  egressPaths?: EgressPath[];
+  /** Selected pathway — retain links (NeonPlug settings / Radio image) only when this matches. */
+  activeEgress?: EgressPath | null;
 }
 
-function navFormatIds(build: RadioBuild, egressPaths?: EgressPath[]): Set<string> {
-  if (egressPaths && egressPaths.length > 0) {
-    return new Set(egressPaths.map((path) => path.formatId));
-  }
-  const catalog = radioTargetFor(build.radioTargetId)?.compatibleEgress ?? [];
-  return new Set(catalog.map((entry) => entry.formatId));
+function navProfileId(build: RadioBuild, options?: BuildNavOptions): string | undefined {
+  return (
+    options?.activeEgress?.profileId ??
+    options?.egressPaths?.[0]?.profileId ??
+    defaultCompatibleEgress(build.radioTargetId)?.profileId
+  );
 }
 
 /** Secondary nav entries for a radio build detail shell. */
-export function buildNavItems(build: RadioBuild, egressPaths?: EgressPath[]): BuildNavItem[] {
+export function buildNavItems(build: RadioBuild, options?: BuildNavOptions): BuildNavItem[] {
   const base = `/builds/${build.id}`;
   const traits = new Set(traitsForRadioTarget(build.radioTargetId));
   const flatMemory = traits.has(BuildCapabilityTrait.FlatMemoryList);
-  const profileId = navProfileId(build, egressPaths);
-  const formatIds = navFormatIds(build, egressPaths);
+  const profileId = navProfileId(build, options);
+  const activeFormatId = options?.activeEgress?.formatId;
 
   const items: BuildNavItem[] = [
     { label: 'Export', path: `${base}/export`, icon: IconFileExport },
@@ -64,7 +63,7 @@ export function buildNavItems(build: RadioBuild, egressPaths?: EgressPath[]): Bu
     });
   }
 
-  if (formatIds.has('anytone')) {
+  if (activeFormatId === 'anytone') {
     items.push({ label: 'Airband', path: `${base}/airband`, icon: IconPlane });
   }
 
@@ -102,7 +101,7 @@ export function buildNavItems(build: RadioBuild, egressPaths?: EgressPath[]): Bu
     icon: IconBinaryTree2,
   });
 
-  if (formatIds.has('neonplug')) {
+  if (activeFormatId === 'neonplug') {
     items.push({
       label: 'NeonPlug settings',
       path: `${base}/neonplug-settings`,
@@ -110,7 +109,7 @@ export function buildNavItems(build: RadioBuild, egressPaths?: EgressPath[]): Bu
     });
   }
 
-  if (formatIds.has('radio-io')) {
+  if (activeFormatId === 'radio-io') {
     items.push({
       label: 'Radio image',
       path: `${base}/radio-image`,

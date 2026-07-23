@@ -97,8 +97,8 @@ export default function BuildsListPage() {
       <Stack gap="lg">
         {builds.length === 0 ? (
           <Text c="dimmed">
-            No builds yet. Create one for the radio you are programming — you can keep several builds
-            for the same radio type (for example Team A and Team B).
+            No builds yet. Create one for the radio you are programming — you can keep several
+            builds for the same radio type (for example Team A and Team B).
           </Text>
         ) : null}
         {builds.length > 0 ? (
@@ -115,7 +115,7 @@ export default function BuildsListPage() {
             <GradientSegmentedControl
               label="Group"
               size="xs"
-              scheme="two"
+              scheme="onOff"
               value={groupMode}
               onChange={setGroupMode}
               data={[...GROUP_OPTIONS]}

@@ -378,6 +378,20 @@ export default function ExportBuildCpsPanel({ build }: ExportBuildCpsPanelProps)
     );
   }
 
+  async function handleActiveEgressChange(egressId: string) {
+    setActiveEgressId(egressId);
+    if (build.defaultEgressPathId === egressId) return;
+    const next = buildService.withDefaultEgressPathId(build, egressId);
+    const result = await putBuild(next, build.revision);
+    if (!result.ok) {
+      setSettingsError(
+        result.reason === 'revision_conflict'
+          ? 'This build was changed elsewhere. Reload and reselect the export pathway.'
+          : 'Could not save the preferred export pathway.',
+      );
+    }
+  }
+
   const egressSwitcher =
     egressPaths.length > 1 ? (
       <Stack gap={4}>
@@ -390,7 +404,7 @@ export default function ExportBuildCpsPanel({ build }: ExportBuildCpsPanelProps)
             value: path.id,
             label: egressPathLabel(path),
           }))}
-          onChange={setActiveEgressId}
+          onChange={(id) => void handleActiveEgressChange(id)}
         />
       </Stack>
     ) : null;
@@ -404,7 +418,7 @@ export default function ExportBuildCpsPanel({ build }: ExportBuildCpsPanelProps)
           <Text span fw={600}>
             {profileLabel}
           </Text>
-          . There is no CPS file export for this build — use Connect / Read / Write below. Curate
+          . There is no CPS file export for this pathway — use Connect / Read / Write below. Curate
           channels on the library and this build&apos;s memory list; Write runs assemble into a
           previously Read clone image.
         </Text>
@@ -654,7 +668,7 @@ export default function ExportBuildCpsPanel({ build }: ExportBuildCpsPanelProps)
                   Stored
                   {storedNeonplugDonor.sourceFileName
                     ? `: ${storedNeonplugDonor.sourceFileName}`
-                    : ' on this build'}
+                    : ' on this egress'}
                   {storedNeonplugDonor.capturedAt
                     ? ` (${new Date(storedNeonplugDonor.capturedAt).toLocaleString()})`
                     : ''}
@@ -675,8 +689,8 @@ export default function ExportBuildCpsPanel({ build }: ExportBuildCpsPanelProps)
             </Group>
             {persistNeonplugDonor ? (
               <Text size="sm" c="dimmed">
-                Donor settings are saved on this build for repeat exports. Upload once, then
-                download for radio write without re-selecting the file.
+                Donor settings are saved on this NeonPlug egress pathway for repeat exports. Upload
+                once, then download for radio write without re-selecting the file.
               </Text>
             ) : null}
             {neonplugBaseError ? <Alert color="red">{neonplugBaseError}</Alert> : null}

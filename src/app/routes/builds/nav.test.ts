@@ -11,27 +11,37 @@ describe('buildNavItems', () => {
     expect(labels[2]).toBe('Radio characteristics');
   });
 
-  it('includes Airband for Anytone builds', () => {
-    const build = newFormatBuild('proj', 'anytone-at-d890uv');
-    const labels = buildNavItems(build).map((item) => item.label);
+  it('includes Airband only when the active egress is Anytone', () => {
+    const { build, egress } = newRadioBuildForProfile('proj', 'anytone-at-d890uv');
+    expect(buildNavItems(build).map((item) => item.label)).not.toContain('Airband');
+    const labels = buildNavItems(build, { activeEgress: egress }).map((item) => item.label);
     expect(labels).toContain('Airband');
     expect(labels.indexOf('Airband')).toBeGreaterThan(labels.indexOf('Channels'));
   });
 
-  it('includes NeonPlug settings for DM32UV NeonPlug builds', () => {
-    const build = newFormatBuild('proj', 'neonplug-dm32uv');
-    const labels = buildNavItems(build).map((item) => item.label);
-    expect(labels).toContain('NeonPlug settings');
+  it('includes NeonPlug settings only when the active egress is NeonPlug', () => {
+    const { build, egress, egressPaths } = newRadioBuildForProfile('proj', 'neonplug-dm32uv');
+    expect(buildNavItems(build, { egressPaths }).map((item) => item.label)).not.toContain(
+      'NeonPlug settings',
+    );
+    expect(
+      buildNavItems(build, { egressPaths, activeEgress: egress }).map((item) => item.label),
+    ).toContain('NeonPlug settings');
   });
 
-  it('includes NeonPlug settings for UV5R NeonPlug builds', () => {
-    const build = newFormatBuild('proj', 'neonplug-uv5rmini');
-    expect(buildNavItems(build).map((item) => item.label)).toContain('NeonPlug settings');
+  it('includes NeonPlug settings for UV5R when NeonPlug egress is active', () => {
+    const { build, egress } = newRadioBuildForProfile('proj', 'neonplug-uv5rmini');
+    expect(buildNavItems(build, { activeEgress: egress }).map((item) => item.label)).toContain(
+      'NeonPlug settings',
+    );
   });
 
-  it('includes Radio image for Direct radio builds', () => {
+  it('includes Radio image only when the active egress is Direct radio', () => {
     const { build, egress } = newRadioBuildForProfile('proj', 'radio-io-uv5r-mini');
-    const labels = buildNavItems(build, [egress]).map((item) => item.label);
+    expect(buildNavItems(build, { egressPaths: [egress] }).map((item) => item.label)).not.toContain(
+      'Radio image',
+    );
+    const labels = buildNavItems(build, { activeEgress: egress }).map((item) => item.label);
     expect(labels).toContain('Radio image');
     expect(labels).not.toContain('NeonPlug settings');
   });
@@ -76,6 +86,12 @@ describe('pathForSwitchedBuild', () => {
   it('maps nested paths to the parent nav item when present', () => {
     expect(pathForSwitchedBuild(`/builds/${from.id}/channels/bulk`, from.id, toOpenGd77)).toBe(
       `/builds/${toOpenGd77.id}/channels`,
+    );
+  });
+
+  it('falls back to export for retain routes when active egress is unknown', () => {
+    expect(pathForSwitchedBuild(`/builds/${from.id}/neonplug-settings`, from.id, toOpenGd77)).toBe(
+      `/builds/${toOpenGd77.id}/export`,
     );
   });
 });

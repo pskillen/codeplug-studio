@@ -300,7 +300,7 @@ describe('ExportBuildCpsPanel', () => {
     ).not.toBeDisabled();
     expect(screen.queryByRole('button', { name: 'Preview CSV' })).not.toBeInTheDocument();
     expect(screen.getByText(/not safe to write back/i)).toBeInTheDocument();
-    expect(screen.getByText(/saved on this build/i)).toBeInTheDocument();
+    expect(screen.getByText(/saved on this NeonPlug egress pathway/i)).toBeInTheDocument();
   });
 
   it('enables radio-write download when DM32UV egress has stored hydration', async () => {
@@ -334,7 +334,7 @@ describe('ExportBuildCpsPanel', () => {
     renderExportPanel('neonplug-uv5rmini');
 
     expect(await screen.findByText('Merge into radio-read base')).toBeInTheDocument();
-    expect(screen.getByText(/saved on this build/i)).toBeInTheDocument();
+    expect(screen.getByText(/saved on this NeonPlug egress pathway/i)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Download for radio write' })).toBeDisabled();
   });
 

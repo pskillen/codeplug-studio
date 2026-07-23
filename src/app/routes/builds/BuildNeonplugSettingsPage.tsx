@@ -263,7 +263,7 @@ function AncillarySection({
   );
 }
 
-/** Read-only NeonPlug donor settings retained on a NeonPlug format build. */
+/** Read-only NeonPlug donor settings retained on the active NeonPlug egress pathway. */
 export default function BuildNeonplugSettingsPage() {
   const { build, activeEgress } = useBuildLayout();
 
@@ -280,9 +280,10 @@ export default function BuildNeonplugSettingsPage() {
       title="NeonPlug settings"
       description={
         <Text size="sm" component="span">
-          Read-only view of unmodelled donor settings stored on this build for merge export. Upload
-          or replace the donor on <Link to={`/builds/${build.id}/export`}>Export</Link>. The bag
-          persists with the project (IndexedDB and native YAML export/import).
+          Read-only view of unmodelled donor settings stored on this NeonPlug egress pathway for
+          merge export. Upload or replace the donor on{' '}
+          <Link to={`/builds/${build.id}/export`}>Export</Link>. The bag persists with the project
+          (IndexedDB and native YAML export/import).
         </Text>
       }
     >

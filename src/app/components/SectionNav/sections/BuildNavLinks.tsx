@@ -23,6 +23,7 @@ export default function BuildNavLinks() {
 
   const build = layout?.build ?? hookBuild;
   const egressPaths = layout?.egressPaths ?? localEgressPaths;
+  const activeEgress = layout?.activeEgress ?? null;
 
   const reloadEgressPaths = useCallback(async () => {
     if (!activeProjectId || !buildId) {
@@ -59,7 +60,7 @@ export default function BuildNavLinks() {
 
   return (
     <Stack gap={4}>
-      {buildNavItems(build, egressPaths).map((entry) => {
+      {buildNavItems(build, { egressPaths, activeEgress }).map((entry) => {
         const Icon = entry.icon;
         return (
           <NavLink
