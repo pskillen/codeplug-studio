@@ -1,7 +1,4 @@
-import {
-  BuildCapabilityTrait,
-  type BuildCapabilityTrait as Trait,
-} from '@core/models/traits.ts';
+import { BuildCapabilityTrait, type BuildCapabilityTrait as Trait } from '@core/models/traits.ts';
 import { egressKindForFormatId, type EgressKind } from '@core/models/egressPath.ts';
 
 /** One compatible CPS / Web Serial pathway for a radio target. */
@@ -22,11 +19,7 @@ export interface RadioTarget {
   compatibleEgress: readonly CompatibleEgress[];
 }
 
-function egress(
-  formatId: string,
-  profileId: string,
-  label: string,
-): CompatibleEgress {
+function egress(formatId: string, profileId: string, label: string): CompatibleEgress {
   return {
     formatId,
     profileId,

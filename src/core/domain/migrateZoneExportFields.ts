@@ -162,10 +162,8 @@ export function migrateProjectAggregate(aggregate: ProjectAggregate): ProjectAgg
     ),
   };
 
-  const { library: migratedLibrary, formatBuilds: radioBuilds } = migrateZoneExportFieldsToBuildLayout(
-    library,
-    withMembers.radioBuilds,
-  );
+  const { library: migratedLibrary, formatBuilds: radioBuilds } =
+    migrateZoneExportFieldsToBuildLayout(library, withMembers.radioBuilds);
 
   return migrateAprsSingletonAggregate(
     migrateChannelScanListFromBuildOverrides(

@@ -12,10 +12,7 @@ import type { FormatId } from '@core/import-export/types.ts';
 import { buildZoneBehaviourContext } from '@core/import-export/zoneBehaviourDefaults/index.ts';
 import type { LibrarySlice } from '@core/services/assemble.ts';
 import { BuildCapabilityTrait } from '@core/models/traits.ts';
-import {
-  radioTargetHasTrait,
-  traitsForRadioTarget,
-} from '@core/radio-targets/index.ts';
+import { radioTargetHasTrait, traitsForRadioTarget } from '@core/radio-targets/index.ts';
 import { egressIdentityForBuild } from '../lib/buildEgressUi.ts';
 import { useBuildLayout } from '../routes/builds/BuildLayoutContext.tsx';
 import { useProjects } from '../state/useProjects.ts';
@@ -51,10 +48,7 @@ export function useZoneScanExportLayout() {
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
-  const egress = useMemo(
-    () => egressIdentityForBuild(build, activeEgress),
-    [build, activeEgress],
-  );
+  const egress = useMemo(() => egressIdentityForBuild(build, activeEgress), [build, activeEgress]);
 
   const layoutSupported = zoneGroupingLayoutSupported(build);
   const enabled = zoneScanExportSupported(build);

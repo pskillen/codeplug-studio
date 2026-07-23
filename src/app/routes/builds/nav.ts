@@ -10,10 +10,7 @@ import type { TablerIcon } from '@tabler/icons-react';
 import { BuildCapabilityTrait } from '@core/models/traits.ts';
 import type { EgressPath } from '@core/models/egressPath.ts';
 import type { RadioBuild } from '@core/models/radioBuild.ts';
-import {
-  hasDedicatedScanLists,
-  showsPerChannelScanListNav,
-} from '@core/models/traits.ts';
+import { hasDedicatedScanLists, showsPerChannelScanListNav } from '@core/models/traits.ts';
 import {
   defaultCompatibleEgress,
   radioTargetFor,

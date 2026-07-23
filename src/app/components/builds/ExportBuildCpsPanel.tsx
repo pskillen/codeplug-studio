@@ -113,9 +113,7 @@ export default function ExportBuildCpsPanel({ build }: ExportBuildCpsPanelProps)
       egressId: activeEgress?.id,
       profileId: formatId === 'chirp' ? exportProfileId : undefined,
       fileName:
-        formatId === 'chirp'
-          ? defaultCpsSingleFileName(formatId, exportProfileId)
-          : undefined,
+        formatId === 'chirp' ? defaultCpsSingleFileName(formatId, exportProfileId) : undefined,
     }),
     [activeEgress?.id, formatId, exportProfileId],
   );
@@ -438,8 +436,8 @@ export default function ExportBuildCpsPanel({ build }: ExportBuildCpsPanelProps)
   if (!exportShipped) {
     return (
       <Alert color="gray" title="Export not available yet">
-        {formatEntry?.label ?? formatId} CPS export is planned. OpenGD77 CSV export is
-        available on OpenGD77 builds.
+        {formatEntry?.label ?? formatId} CPS export is planned. OpenGD77 CSV export is available on
+        OpenGD77 builds.
       </Alert>
     );
   }
@@ -481,8 +479,8 @@ export default function ExportBuildCpsPanel({ build }: ExportBuildCpsPanelProps)
         />
         {profileOverridesBuild ? (
           <Text size="sm" c="dimmed">
-            Export uses {traitProfileFor(exportProfileId)?.label ?? exportProfileId}; pathway default
-            is {profileLabel}.
+            Export uses {traitProfileFor(exportProfileId)?.label ?? exportProfileId}; pathway
+            default is {profileLabel}.
           </Text>
         ) : null}
         <ExportBuildSettingsSections

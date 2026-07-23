@@ -48,14 +48,16 @@ export function useBuildWirePreview(
   const [saving, setSaving] = useState(false);
   const [hideNotIncludedInExport, setHideNotIncludedInExport] = useState(false);
 
-  const egress = useMemo(
-    () => egressIdentityForBuild(build, activeEgress),
-    [build, activeEgress],
-  );
+  const egress = useMemo(() => egressIdentityForBuild(build, activeEgress), [build, activeEgress]);
 
   const exportOptions = useMemo(
     () =>
-      mergeExportOptions(build, egress.formatId, { profileId: egress.profileId }, library ?? undefined),
+      mergeExportOptions(
+        build,
+        egress.formatId,
+        { profileId: egress.profileId },
+        library ?? undefined,
+      ),
     [build, egress.formatId, egress.profileId, library],
   );
 

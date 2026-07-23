@@ -4,8 +4,8 @@ Committed **native project YAML** used by the CPS wire export smoke ([#481](http
 
 ## Files
 
-| File                | Role                                                                       |
-| ------------------- | -------------------------------------------------------------------------- |
+| File                | Role                                                                                   |
+| ------------------- | -------------------------------------------------------------------------------------- |
 | `rich-project.yaml` | Representative library + radio builds/egress paths for each verifier-supported profile |
 
 ## Profiles under smoke

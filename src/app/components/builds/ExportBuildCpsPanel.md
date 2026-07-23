@@ -4,8 +4,8 @@ Per-build CPS export on the Export for radio detail page — per-file CSV downlo
 
 ## Props
 
-| Prop    | Type          | Description                                   |
-| ------- | ------------- | --------------------------------------------- |
+| Prop    | Type         | Description                                              |
+| ------- | ------------ | -------------------------------------------------------- |
 | `build` | `RadioBuild` | Active radio build (wire names, layout, export settings) |
 
 Requires `useBuildLayout()` — `formatId` / `profileId` come from the **active egress pathway**, not the build row.

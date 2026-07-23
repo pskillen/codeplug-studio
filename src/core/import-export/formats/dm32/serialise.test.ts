@@ -660,7 +660,10 @@ describe('DM32 export serialise', () => {
   it('v1.60 fixture headers match export headers for core files', () => {
     const build = minimalDm32ExportBuild();
     const library = minimalDm32ExportLibrary();
-    const exported = serialiseDm32Files({ ...assemble(build, library, DM32_PROJECTION), library }, library);
+    const exported = serialiseDm32Files(
+      { ...assemble(build, library, DM32_PROJECTION), library },
+      library,
+    );
     for (const fileName of DM32_CORE_EXPORT_FILES) {
       const fixtureCsv = readFileSync(join(fixtureDir, fileName), 'utf8');
       expect(compareCsvHeaders(fixtureCsv, exported[fileName]!)).toBe(true);

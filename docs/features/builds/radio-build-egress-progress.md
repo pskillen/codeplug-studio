@@ -4,13 +4,13 @@
 
 ## Status
 
-| Slice | Status | Notes |
-| --- | --- | --- |
-| 1 Model + catalog | Done | `RadioBuild`, `EgressPath`, `src/core/radio-targets/catalog.ts` |
-| 2 Persistence + `BuildService` | Done | IndexedDB `radioBuilds` + `egressPaths` (schema v22); native YAML; legacy `formatBuilds` dropped with warning |
-| 3 assemble / export / radio-io callers | Done | `exportBuild*` / `assemble` take `{ build, egress, library }`; app services wired to egress |
-| 4 UI egress picker + retain pages | Done | Export egress switcher; NeonPlug settings + Radio image scoped to egress hydration |
-| 5 Docs | Done | Hub, contributor checklists, DESIGN.md, data-model aligned |
+| Slice                                  | Status | Notes                                                                                                         |
+| -------------------------------------- | ------ | ------------------------------------------------------------------------------------------------------------- |
+| 1 Model + catalog                      | Done   | `RadioBuild`, `EgressPath`, `src/core/radio-targets/catalog.ts`                                               |
+| 2 Persistence + `BuildService`         | Done   | IndexedDB `radioBuilds` + `egressPaths` (schema v22); native YAML; legacy `formatBuilds` dropped with warning |
+| 3 assemble / export / radio-io callers | Done   | `exportBuild*` / `assemble` take `{ build, egress, library }`; app services wired to egress                   |
+| 4 UI egress picker + retain pages      | Done   | Export egress switcher; NeonPlug settings + Radio image scoped to egress hydration                            |
+| 5 Docs                                 | Done   | Hub, contributor checklists, DESIGN.md, data-model aligned                                                    |
 
 ## What shipped
 

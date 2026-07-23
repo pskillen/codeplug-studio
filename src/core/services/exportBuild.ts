@@ -175,10 +175,7 @@ export function exportBuildFile({
     throw new Error(`Format ${egress.formatId} does not support multi-file CPS export`);
   }
 
-  if (
-    egress.formatId === 'anytone' &&
-    isAnytoneLstFileName(fileName, exportOptions.projectName)
-  ) {
+  if (egress.formatId === 'anytone' && isAnytoneLstFileName(fileName, exportOptions.projectName)) {
     const csvFileNames = resolveEffectiveExportFileNames(
       egress.formatId as FormatId,
       assembled,

@@ -14,9 +14,9 @@ The library holds RF semantics once. Each radio expects different organisation (
 
 `radioTargetId` is a **catalog reference**, not a uniqueness key. A project may have several builds for the same handheld type, each with its own overrides and egress children:
 
-| Build name | `radioTargetId` | Example difference |
-| --- | --- | --- |
-| UV-5R Team A | `baofeng-uv5r-mini` | Subset of channels; one scan config |
+| Build name   | `radioTargetId`     | Example difference                       |
+| ------------ | ------------------- | ---------------------------------------- |
+| UV-5R Team A | `baofeng-uv5r-mini` | Subset of channels; one scan config      |
 | UV-5R Team B | `baofeng-uv5r-mini` | Different inclusions / scan / wire names |
 
 Both share the **library**; each has its own `RadioBuild` → `assemble` → `EgressPath` tree. Creating another build for the same target always allocates a new UUID — no “one build per radio” gate.
@@ -40,7 +40,7 @@ Native YAML remains **project interchange** (library + all radio builds + egress
 | Surface                            | Owns                                                                                                                                 |
 | ---------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
 | **Export** (`/builds/:id/export`)  | **Egress switcher** (CPS file / Web Serial pathway), download / Drive / donor merge / format settings / inclusion / hydration upload |
-| **Setup** (`/builds/:id/overview`) | Build identity (rename/delete), catalog radio target, organisation capability badges                                               |
+| **Setup** (`/builds/:id/overview`) | Build identity (rename/delete), catalog radio target, organisation capability badges                                                 |
 
 Export does not host identity editors; Setup does not host download actions. Secondary nav lists **Export** first; `/builds/:id` redirects to Export.
 
@@ -111,7 +111,7 @@ Native YAML import/export includes `radioBuilds[]` and `egressPaths[]` in the pr
 | Channel behaviour overrides  | Shipped | [#420](https://github.com/pskillen/codeplug-studio/issues/420) — optional build `exportSettings` overrides on Export panel                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
 | Export resolution summary    | Shipped | [#421](https://github.com/pskillen/codeplug-studio/issues/421) / [#443](https://github.com/pskillen/codeplug-studio/issues/443) — Channels + Zones tabs; zone-derived scan membership cascade                                                                                                                                                                                                                                                                                                                                                                                                    |
 | Radio characteristics        | Shipped | [#515](https://github.com/pskillen/codeplug-studio/issues/515) — `/builds/:id/characteristics`; copy in `buildCapabilityCopy.ts`; limits via `getProfileExportLimits` (blanks for unmodelled caps)                                                                                                                                                                                                                                                                                                                                                                                               |
-| RadioBuild + EgressPath      | Shipped | [#654](https://github.com/pskillen/codeplug-studio/issues/654) — radio-centric `RadioBuild` + child `EgressPath` pathways; egress switcher on Export; hydration on egress; schema v22 |
+| RadioBuild + EgressPath      | Shipped | [#654](https://github.com/pskillen/codeplug-studio/issues/654) — radio-centric `RadioBuild` + child `EgressPath` pathways; egress switcher on Export; hydration on egress; schema v22                                                                                                                                                                                                                                                                                                                                                                                                            |
 
 ## Export inclusion flags
 

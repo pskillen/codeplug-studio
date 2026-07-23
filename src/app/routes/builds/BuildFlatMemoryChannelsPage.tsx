@@ -109,19 +109,10 @@ export default function BuildFlatMemoryChannelsPage() {
     buildRef.current = build;
   }, [build]);
 
-  const egress = useMemo(
-    () => egressIdentityForBuild(build, activeEgress),
-    [build, activeEgress],
-  );
+  const egress = useMemo(() => egressIdentityForBuild(build, activeEgress), [build, activeEgress]);
 
   const exportOptions = useMemo(
-    () =>
-      mergeExportOptions(
-        build,
-        egress.formatId,
-        { profileId: egress.profileId },
-        librarySlice,
-      ),
+    () => mergeExportOptions(build, egress.formatId, { profileId: egress.profileId }, librarySlice),
     [build, egress.formatId, egress.profileId, librarySlice],
   );
   const exportSettings = resolvedBuildExportSettings(build, egress.formatId);

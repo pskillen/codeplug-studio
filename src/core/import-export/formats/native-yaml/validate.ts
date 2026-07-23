@@ -13,7 +13,11 @@ import type { ZoneBehaviourDefaults } from '@core/models/zoneBehaviourDefaults.t
 import { extractNeonplugDonorRetain } from '@core/import-export/formats/neonplug/donorRetain.ts';
 import { parseNeonplugCodeplugJson } from '@core/import-export/formats/neonplug/merge.ts';
 import type { CpsWireHydration } from '@core/models/cpsWireHydration.ts';
-import type { BuildEntityOverride, BuildExportSettings, RadioBuild } from '@core/models/radioBuild.ts';
+import type {
+  BuildEntityOverride,
+  BuildExportSettings,
+  RadioBuild,
+} from '@core/models/radioBuild.ts';
 import type { EgressKind, EgressPath } from '@core/models/egressPath.ts';
 import type { AprsChannelSlot, AprsConfiguration, ChannelAprsBinding } from '@core/models/aprs.ts';
 import type {
@@ -1043,7 +1047,12 @@ function parseRadioBuild(raw: unknown, index: number): RadioBuild {
       ? { exportSettings: parseExportSettings(record.exportSettings, `${label}.exportSettings`) }
       : {}),
     ...(record.defaultEgressPathId !== undefined && record.defaultEgressPathId !== null
-      ? { defaultEgressPathId: expectString(record.defaultEgressPathId, `${label}.defaultEgressPathId`) }
+      ? {
+          defaultEgressPathId: expectString(
+            record.defaultEgressPathId,
+            `${label}.defaultEgressPathId`,
+          ),
+        }
       : {}),
   };
 }

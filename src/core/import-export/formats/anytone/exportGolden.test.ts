@@ -237,7 +237,9 @@ describe('anytone/export golden', () => {
     const result = exportBuildAll({ build, egress: anytoneEgress, library });
 
     expect(result.files['APRS.CSV']).toBeUndefined();
-    expect(listExportBuildFileNames({ build, egress: anytoneEgress, library })).not.toContain('APRS.CSV');
+    expect(listExportBuildFileNames({ build, egress: anytoneEgress, library })).not.toContain(
+      'APRS.CSV',
+    );
   });
 
   it('APRS-enabled export includes APRS.CSV with modelled columns', () => {
@@ -248,7 +250,9 @@ describe('anytone/export golden', () => {
 
     expect(result.files['APRS.CSV']).toBeDefined();
     assertUniversallyQuotedCsv(result.files['APRS.CSV']!);
-    expect(listExportBuildFileNames({ build, egress: anytoneEgress, library })).toContain('APRS.CSV');
+    expect(listExportBuildFileNames({ build, egress: anytoneEgress, library })).toContain(
+      'APRS.CSV',
+    );
 
     const comparison = compareCsvRecords(fixtureCsv, result.files['APRS.CSV']!, {
       nameColumn: 'Manual TX Interval[s]',
@@ -315,7 +319,9 @@ describe('anytone/export golden', () => {
 
     const expectedLst = serialiseAnytoneLstManifest([...ANYTONE_EXPORT_FILE_NAMES]);
     expect(result.files['meep.LST']).toBe(expectedLst);
-    expect(listExportBuildFileNames({ build, egress: anytoneEgress, library, options })).toContain('meep.LST');
+    expect(listExportBuildFileNames({ build, egress: anytoneEgress, library, options })).toContain(
+      'meep.LST',
+    );
 
     const zipped = exportBuildZip({ build, egress: anytoneEgress, library, options });
     expect(zipped.files['meep.LST']).toBe(expectedLst);

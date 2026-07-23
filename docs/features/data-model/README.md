@@ -10,11 +10,11 @@ Tier-1 reference for the vendor-neutral **library + radio build + egress** model
 
 Codeplug Studio separates **what you know about RF** from **how a specific radio configuration is assembled** and **how that assembly leaves Studio**. All are persisted in the project — export / direct-write is the **union** of library + radio build (+ selected egress), not a one-shot projection from a single internal shape.
 
-| Layer | Model | Vendor-neutral? | Persisted? | Role |
-| --- | --- | --- | --- | --- |
-| **Library** | `Channel`, `TalkGroup`, `Zone`, … | **Yes** | Yes | Canonical RF inventory — frequencies, modes, contacts, grouping you curate once |
-| **Radio build** | `RadioBuild` (`radioTargetId` + overrides / layout) | No (scoped to a catalog radio) | **Yes** | One **named** mapping of the library onto that radio’s traits and wire limits |
-| **Egress path** | `EgressPath` (`formatId` / `profileId` + optional hydration) | No (CPS file or Web Serial) | **Yes** | How that build is written or downloaded; donor / clone retain bags live here |
+| Layer           | Model                                                        | Vendor-neutral?                | Persisted? | Role                                                                            |
+| --------------- | ------------------------------------------------------------ | ------------------------------ | ---------- | ------------------------------------------------------------------------------- |
+| **Library**     | `Channel`, `TalkGroup`, `Zone`, …                            | **Yes**                        | Yes        | Canonical RF inventory — frequencies, modes, contacts, grouping you curate once |
+| **Radio build** | `RadioBuild` (`radioTargetId` + overrides / layout)          | No (scoped to a catalog radio) | **Yes**    | One **named** mapping of the library onto that radio’s traits and wire limits   |
+| **Egress path** | `EgressPath` (`formatId` / `profileId` + optional hydration) | No (CPS file or Web Serial)    | **Yes**    | How that build is written or downloaded; donor / clone retain bags live here    |
 
 **Many radio builds may share one `radioTargetId`.** Identity is the build UUID and display `name` (e.g. two UV-5R Mini builds for Team A vs Team B with different channel subsets). Each build owns its own egress children. See [builds hub](../builds/README.md) and [#654](https://github.com/pskillen/codeplug-studio/issues/654).
 
@@ -137,7 +137,7 @@ Library CRUD edits this layer only — no radio name-length caps, no format wire
 
 | Field                  | Purpose                                                                                   |
 | ---------------------- | ----------------------------------------------------------------------------------------- |
-| `radioTargetId`        | Catalog radio target (`baofeng-uv5r-mini`, `baofeng-dm32uv`, …) — not unique per project |
+| `radioTargetId`        | Catalog radio target (`baofeng-uv5r-mini`, `baofeng-dm32uv`, …) — not unique per project  |
 | `name`                 | Operator label for this build (e.g. "UV-5R Team A")                                       |
 | `channelOverrides`     | Sparse channel customisation — `excluded` omits from build; `wireName` is CPS wire string |
 | `zoneOverrides`        | Sparse zone customisation                                                                 |
@@ -173,14 +173,14 @@ Build UI and layout compose from traits; wire adapters map `assemble(build, libr
 
 `EgressPath` — one **persisted** delivery pathway under a `RadioBuild`. A target may seed several egress children (e.g. Web Serial + NeonPlug + CHIRP for UV-5R Mini).
 
-| Field           | Purpose                                                                 |
-| --------------- | ----------------------------------------------------------------------- |
-| `radioBuildId`  | Parent build FK                                                         |
-| `formatId`      | Adapter family (`neonplug`, `chirp`, `radio-io`, …)                     |
-| `profileId`     | Variant within the format — export limits and wire adapter selection    |
-| `kind`          | `cps-file` or `web-serial`                                              |
-| `label`         | Optional display label for the egress switcher                          |
-| `hydration`     | Optional `CpsWireHydration` — NeonPlug donor or radio-clone retain only |
+| Field          | Purpose                                                                 |
+| -------------- | ----------------------------------------------------------------------- |
+| `radioBuildId` | Parent build FK                                                         |
+| `formatId`     | Adapter family (`neonplug`, `chirp`, `radio-io`, …)                     |
+| `profileId`    | Variant within the format — export limits and wire adapter selection    |
+| `kind`         | `cps-file` or `web-serial`                                              |
+| `label`        | Optional display label for the egress switcher                          |
+| `hydration`    | Optional `CpsWireHydration` — NeonPlug donor or radio-clone retain only |
 
 Hydration is an egress-scoped escape hatch for unmodelled retain (donor merge, full clone image). Wire names and trait layout stay on `RadioBuild`.
 
@@ -214,15 +214,15 @@ Neither layer alone is the export format — the wire output is always the combi
 
 ## Implementation status
 
-| Area                      | Status                                                                                                 |
-| ------------------------- | ------------------------------------------------------------------------------------------------------ |
-| Core types                | Shipped (Phase 1)                                                                                      |
-| `ProjectPersistence` port | Shipped — in-memory + IndexedDB                                                                        |
-| IndexedDB persistence     | Shipped (Phase 2)                                                                                      |
-| Import/export adapters    | Phase 4+                                                                                               |
-| Library CRUD UI           | Shipped (Phase 2)                                                                                      |
-| Build CRUD UI + overrides | Shipped — [#82](https://github.com/pskillen/codeplug-studio/issues/82)                                 |
-| RadioBuild + EgressPath   | Shipped — [#654](https://github.com/pskillen/codeplug-studio/issues/654); schema v22                 |
+| Area                      | Status                                                                               |
+| ------------------------- | ------------------------------------------------------------------------------------ |
+| Core types                | Shipped (Phase 1)                                                                    |
+| `ProjectPersistence` port | Shipped — in-memory + IndexedDB                                                      |
+| IndexedDB persistence     | Shipped (Phase 2)                                                                    |
+| Import/export adapters    | Phase 4+                                                                             |
+| Library CRUD UI           | Shipped (Phase 2)                                                                    |
+| Build CRUD UI + overrides | Shipped — [#82](https://github.com/pskillen/codeplug-studio/issues/82)               |
+| RadioBuild + EgressPath   | Shipped — [#654](https://github.com/pskillen/codeplug-studio/issues/654); schema v22 |
 
 ## Related
 

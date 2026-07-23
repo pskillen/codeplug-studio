@@ -73,10 +73,7 @@ export default function BuildFlatMemoryScanListPage() {
     buildRef.current = build;
   }, [build]);
 
-  const egress = useMemo(
-    () => egressIdentityForBuild(build, activeEgress),
-    [build, activeEgress],
-  );
+  const egress = useMemo(() => egressIdentityForBuild(build, activeEgress), [build, activeEgress]);
 
   const exportSettings = resolvedBuildExportSettings(build, egress.formatId);
   const formatDefaults = getFormatExportDefaults(egress.formatId);

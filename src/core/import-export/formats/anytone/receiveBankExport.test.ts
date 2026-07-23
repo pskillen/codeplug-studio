@@ -138,7 +138,11 @@ describe('anytone/receive bank export', () => {
         { libraryEntityId: hamFm.id, wireName: '2m FM' },
       ],
     };
-    const mixed = exportBuildAll({ build: mixedBuild, egress: anytoneEgress, library: mixedLibrary });
+    const mixed = exportBuildAll({
+      build: mixedBuild,
+      egress: anytoneEgress,
+      library: mixedLibrary,
+    });
     expect(mixed.files['FM.CSV']).toBeDefined();
     expect(mixed.files['Channel.CSV']!.includes('2m FM')).toBe(true);
   });

@@ -54,8 +54,7 @@ export class BuildService {
     radioTargetId: string,
     name?: string,
   ): Promise<
-    | { ok: true; build: RadioBuild; egressPaths: EgressPath[] }
-    | { ok: false; reason: string }
+    { ok: true; build: RadioBuild; egressPaths: EgressPath[] } | { ok: false; reason: string }
   > {
     const { build, egressPaths } = newRadioBuildWithEgresses(projectId, radioTargetId, name);
     const buildResult = await this.persistence.putRadioBuild(build, null);

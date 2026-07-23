@@ -70,11 +70,7 @@ export function newProjectMeta(name: string, projectId: string = newId()): Proje
   };
 }
 
-export function newRadioBuild(
-  projectId: string,
-  radioTargetId: string,
-  name?: string,
-): RadioBuild {
+export function newRadioBuild(projectId: string, radioTargetId: string, name?: string): RadioBuild {
   const target = radioTargetFor(radioTargetId);
   if (!target) {
     throw new Error(`Unknown radio target: ${radioTargetId}`);
