@@ -2,8 +2,8 @@ import { Button, Group, Loader, Stack, Text, TextInput } from '@mantine/core';
 import { IconPlus } from '@tabler/icons-react';
 import { useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import type { FormatBuild } from '@core/models/formatBuild.ts';
-import { traitProfileFor } from '@core/models/traits.ts';
+import type { RadioBuild } from '@core/models/radioBuild.ts';
+import { radioTargetFor } from '@core/radio-targets/index.ts';
 import {
   DataTable,
   GradientSegmentedControl,
@@ -48,19 +48,25 @@ export default function BuildsListPage() {
     return groupFormatBuilds(filtered, groupMode);
   }, [filtered, groupMode]);
 
-  const columns = useMemo((): DataTableColumn<FormatBuild>[] => {
+  const columns = useMemo((): DataTableColumn<RadioBuild>[] => {
     return [
       {
-        key: 'format',
-        header: 'Format',
-        render: (b) => b.formatId,
-        sortValue: (b) => b.formatId,
+        key: 'radio',
+        header: 'Radio',
+        render: (b) => radioTargetFor(b.radioTargetId)?.label ?? b.radioTargetId,
+        sortValue: (b) => radioTargetFor(b.radioTargetId)?.label ?? b.radioTargetId,
       },
       {
-        key: 'profile',
-        header: 'Profile',
-        render: (b) => traitProfileFor(b.profileId)?.label ?? b.profileId,
-        sortValue: (b) => traitProfileFor(b.profileId)?.label ?? b.profileId,
+        key: 'egress',
+        header: 'Export paths',
+        render: (b) =>
+          radioTargetFor(b.radioTargetId)
+            ?.compatibleEgress.map((entry) => entry.label)
+            .join(' · ') ?? '—',
+        sortValue: (b) =>
+          radioTargetFor(b.radioTargetId)
+            ?.compatibleEgress.map((entry) => entry.label)
+            .join(' · ') ?? '',
       },
       {
         key: 'updated',
@@ -82,7 +88,7 @@ export default function BuildsListPage() {
   return (
     <ListPage
       title="Builds"
-      description="Format-specific assemblies from your library — one build per radio workflow."
+      description="Radio-target assemblies from your library — wire names and layout per handheld or mobile."
       actions={
         <Button component={Link} to="/builds/new" leftSection={<IconPlus size={16} />}>
           New build

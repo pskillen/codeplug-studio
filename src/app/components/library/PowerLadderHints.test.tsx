@@ -1,6 +1,7 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { MantineProvider } from '@mantine/core';
+import { newRadioBuildForProfile } from '@core/domain/factories.ts';
 import PowerLadderHints from './PowerLadderHints.tsx';
 
 vi.mock('../../state/useFormatBuilds.ts', () => ({
@@ -37,24 +38,7 @@ describe('PowerLadderHints', () => {
   it('scopes to project builds when present', () => {
     mockedUseFormatBuilds.mockReturnValue({
       projectId: 'p1',
-      builds: [
-        {
-          id: 'b1',
-          projectId: 'p1',
-          name: 'Anytone',
-          formatId: 'anytone',
-          profileId: 'anytone-at-d890uv',
-          revision: 1,
-          updatedAt: '2026-01-01T00:00:00.000Z',
-          layout: { sections: [] },
-          channelOverrides: [],
-          zoneOverrides: [],
-          scanListOverrides: [],
-          talkGroupOverrides: [],
-          rxGroupListOverrides: [],
-          contactOverrides: [],
-        },
-      ],
+      builds: [newRadioBuildForProfile('p1', 'anytone-at-d890uv').build],
       loading: false,
       reload: vi.fn(),
       createBuild: vi.fn(),

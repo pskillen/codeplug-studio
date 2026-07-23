@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { formatCatalog } from '@core/import-export/registry.ts';
 import type { FormatId } from '@core/import-export/types.ts';
+import { radioTargetIdForProfile } from '@core/radio-targets/index.ts';
 import { traitProfileFor } from '@core/models/traits.ts';
 import ProfilePicker from '../../components/builds/ProfilePicker.tsx';
 import Dm32PreferNeonPlugAlert from '../../components/builds/Dm32PreferNeonPlugAlert.tsx';
@@ -26,9 +27,14 @@ export default function NewBuildPage() {
 
   async function handleCreate() {
     if (!profileId) return;
+    const radioTargetId = radioTargetIdForProfile(profileId);
+    if (!radioTargetId) {
+      setError('Unknown radio profile.');
+      return;
+    }
     setCreating(true);
     setError(null);
-    const outcome = await createBuild(profileId, name.trim() || undefined);
+    const outcome = await createBuild(radioTargetId, name.trim() || undefined);
     setCreating(false);
     if (!outcome.ok) {
       setError(outcome.reason);

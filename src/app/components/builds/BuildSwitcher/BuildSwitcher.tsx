@@ -1,43 +1,28 @@
 import { Select, Stack, Text } from '@mantine/core';
-import { formatCatalog, formatCatalogEntry } from '@core/import-export/registry.ts';
-import type { FormatId } from '@core/import-export/types.ts';
-import type { FormatBuild } from '@core/models/formatBuild.ts';
-import { traitProfileFor } from '@core/models/traits.ts';
+import type { RadioBuild } from '@core/models/radioBuild.ts';
+import { radioTargetFor } from '@core/radio-targets/index.ts';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { pathForSwitchedBuild } from '../../../routes/builds/nav.ts';
 import { useFormatBuild, useFormatBuilds } from '../../../state/useFormatBuilds.ts';
 
-/** Mantine Select groups — catalog order, builds sorted by name within each format. */
-function buildSelectGroups(builds: FormatBuild[]) {
-  const byFormat = new Map<string, { value: string; label: string }[]>();
+/** Mantine Select groups — catalog radio family, builds sorted by name within each group. */
+function buildSelectGroups(builds: RadioBuild[]) {
+  const byGroup = new Map<string, { value: string; label: string }[]>();
 
-  for (const b of builds) {
-    const key = b.formatId;
-    const items = byFormat.get(key) ?? [];
-    items.push({ value: b.id, label: b.name });
-    byFormat.set(key, items);
+  for (const build of builds) {
+    const group = radioTargetFor(build.radioTargetId)?.group ?? 'Other';
+    const items = byGroup.get(group) ?? [];
+    items.push({ value: build.id, label: build.name });
+    byGroup.set(group, items);
   }
 
-  for (const items of byFormat.values()) {
+  for (const items of byGroup.values()) {
     items.sort((a, b) => a.label.localeCompare(b.label, undefined, { sensitivity: 'base' }));
   }
 
-  const groups: { group: string; items: { value: string; label: string }[] }[] = [];
-
-  for (const entry of formatCatalog) {
-    const items = byFormat.get(entry.id);
-    if (!items?.length) continue;
-    groups.push({ group: entry.label, items });
-    byFormat.delete(entry.id);
-  }
-
-  // Any unknown format ids (should not happen) — append last
-  for (const [formatId, items] of byFormat) {
-    const label = formatCatalogEntry(formatId as FormatId)?.label ?? formatId;
-    groups.push({ group: label, items });
-  }
-
-  return groups;
+  return [...byGroup.entries()]
+    .sort(([a], [b]) => a.localeCompare(b, undefined, { sensitivity: 'base' }))
+    .map(([group, items]) => ({ group, items }));
 }
 
 export default function BuildSwitcher() {
@@ -50,8 +35,7 @@ export default function BuildSwitcher() {
 
   if (!build || !buildId) return null;
 
-  const formatLabel = formatCatalogEntry(build.formatId as FormatId)?.label ?? build.formatId;
-  const profileLabel = traitProfileFor(build.profileId)?.label ?? build.profileId;
+  const radioLabel = radioTargetFor(build.radioTargetId)?.label ?? build.radioTargetId;
   const selectData = buildSelectGroups(builds);
 
   return (
@@ -70,7 +54,7 @@ export default function BuildSwitcher() {
         searchable={builds.length > 5}
       />
       <Text size="xs" c="dimmed">
-        {formatLabel} · {profileLabel}
+        {radioLabel}
       </Text>
     </Stack>
   );
