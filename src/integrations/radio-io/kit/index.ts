@@ -28,6 +28,7 @@ export {
   PROGRAM_RW_WRITE_OPCODE,
   programRwCodec,
   sendIdent,
+  waitForAckByte,
 } from './codecs/programRw.ts';
 export {
   exchangeVProbe,

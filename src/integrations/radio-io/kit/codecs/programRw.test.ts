@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { BytePipe } from '../../types.ts';
-import { RadioProtocolError } from '../errors.ts';
+import { RadioProtocolError, RadioTimeoutError } from '../errors.ts';
 import {
   expectAck,
   makeProgramRwReadFrame,
@@ -9,6 +9,7 @@ import {
   PROGRAM_RW_ACK,
   programRwCodec,
   sendIdent,
+  waitForAckByte,
 } from './programRw.ts';
 
 function mockPipe(scriptedReads: Uint8Array[]): {
@@ -24,7 +25,7 @@ function mockPipe(scriptedReads: Uint8Array[]): {
     async readExact(n) {
       const next = queue.shift();
       if (!next) {
-        throw new Error('mockPipe: no scripted read left');
+        throw new RadioTimeoutError('mockPipe: timed out');
       }
       if (next.length !== n) {
         throw new Error(`mockPipe: expected read ${n}, scripted ${next.length}`);
@@ -78,12 +79,21 @@ describe('expectAck / sendIdent', () => {
     await expect(expectAck(pipe, 100)).resolves.toBeUndefined();
   });
 
-  it('rejects non-ACK', async () => {
+  it('rejects non-ACK after junk exhausts timeout', async () => {
     const { pipe } = mockPipe([new Uint8Array([0x15])]);
     await expect(expectAck(pipe, 100)).rejects.toBeInstanceOf(RadioProtocolError);
   });
 
-  it('sendIdent writes caller bytes then expects ACK', async () => {
+  it('waitForAckByte skips leading junk bytes', async () => {
+    const { pipe } = mockPipe([
+      new Uint8Array([0xff]),
+      new Uint8Array([0xaa]),
+      new Uint8Array([PROGRAM_RW_ACK]),
+    ]);
+    await expect(waitForAckByte(pipe, 100)).resolves.toBeUndefined();
+  });
+
+  it('sendIdent writes caller bytes then seeks ACK', async () => {
     const ident = new TextEncoder().encode('PROGRAMTEST');
     const { pipe, writes } = mockPipe([new Uint8Array([PROGRAM_RW_ACK])]);
     await sendIdent(pipe, ident, 100);

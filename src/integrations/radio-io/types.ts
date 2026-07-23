@@ -121,7 +121,7 @@ export interface RadioDescriptor {
  * Concrete implementations live under radios/<id>/ (#617+).
  */
 export interface CloneImageRadio {
-  connect(pipe: BytePipe, opts?: { signal?: AbortSignal }): Promise<IdentResult>;
+  connect(pipe: BytePipe, opts?: { signal?: AbortSignal; settleScale?: number }): Promise<IdentResult>;
   disconnect(): Promise<void>;
   download(opts: { onProgress?: ProgressFn; signal?: AbortSignal }): Promise<MemoryMap>;
   upload(image: MemoryMap, opts: { onProgress?: ProgressFn; signal?: AbortSignal }): Promise<void>;
