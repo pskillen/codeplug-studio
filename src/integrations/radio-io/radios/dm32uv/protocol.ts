@@ -22,6 +22,10 @@ import {
   DM32_VFRAME_QUERY_IDS,
 } from './constants.ts';
 import {
+  decodeChannelsFromDm32Image,
+  encodeChannelsIntoDm32Image,
+} from './channelCodec.ts';
+import {
   dm32AsciiHandshake,
   dm32EnterProgrammingMode,
   dm32QueryVFrame,
@@ -202,15 +206,14 @@ export class Dm32uvProtocol implements CloneImageRadio {
     }
   }
 
-  decodeChannels(_image: MemoryMap): RadioChannelDto[] {
-    // Slice 3 fills channel decode.
-    void _image;
-    return [];
+  decodeChannels(image: MemoryMap): RadioChannelDto[] {
+    if (!this.cache) return [];
+    return decodeChannelsFromDm32Image(image, this.cache);
   }
 
-  encodeChannels(image: MemoryMap, _channels: readonly RadioChannelDto[]): MemoryMap {
-    void _channels;
-    return image;
+  encodeChannels(image: MemoryMap, channels: readonly RadioChannelDto[]): MemoryMap {
+    if (!this.cache) return image;
+    return encodeChannelsIntoDm32Image(image, this.cache, channels);
   }
 
   readFirmware(_image: MemoryMap): string | undefined {

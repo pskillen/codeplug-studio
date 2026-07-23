@@ -37,9 +37,11 @@ describe('formatProfiles', () => {
 
   it('lists Direct radio profiles for UI', () => {
     const profiles = getFormatProfiles('radio-io');
-    expect(profiles.map((p) => p.profileId)).toEqual(['radio-io-uv5r-mini']);
+    expect(profiles.map((p) => p.profileId)).toEqual(['radio-io-uv5r-mini', 'radio-io-dm32uv']);
     expect(profiles[0]?.nameLimit).toBe(12);
     expect(profiles[0]?.maxChannels).toBe(999);
+    expect(profiles[1]?.nameLimit).toBe(16);
+    expect(profiles[1]?.maxChannels).toBe(4000);
   });
 
   it('returns wire hint for OpenGD77 and CHIRP profiles', () => {

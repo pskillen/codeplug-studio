@@ -67,6 +67,7 @@ describe('radio target catalog', () => {
       'neonplug-dm32uv',
       'neonplug-uv5rmini',
       'radio-io-uv5r-mini',
+      'radio-io-dm32uv',
     ]) {
       expect(ids).toContain(profileId);
     }
@@ -78,6 +79,7 @@ describe('radio target catalog', () => {
     expect(radioTargetHasCompatibleFormat('baofeng-uv5r-mini', 'radio-io')).toBe(true);
     expect(radioTargetHasCompatibleFormat('baofeng-uv5r-mini', 'anytone')).toBe(false);
     expect(radioTargetHasCompatibleFormat('baofeng-dm32uv', 'dm32')).toBe(true);
+    expect(radioTargetHasCompatibleFormat('baofeng-dm32uv', 'radio-io')).toBe(true);
     expect(radioTargetHasCompatibleFormat('anytone-at-d890uv', 'anytone')).toBe(true);
   });
 

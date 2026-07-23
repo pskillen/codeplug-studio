@@ -102,6 +102,17 @@ export const TRAIT_PROFILES: Record<string, TraitProfile> = {
     label: 'Baofeng UV-5R Mini',
     traits: [BuildCapabilityTrait.FlatMemoryList, BuildCapabilityTrait.PerChannelScanFlag],
   },
+  /** Web Serial direct-write — DM-32UV V-frame / 4KB blocks. */
+  'radio-io-dm32uv': {
+    profileId: 'radio-io-dm32uv',
+    formatId: 'radio-io',
+    label: 'Baofeng DM-32UV',
+    traits: [
+      BuildCapabilityTrait.ZoneGrouping,
+      BuildCapabilityTrait.ScanLists,
+      BuildCapabilityTrait.MxNChannelExpansion,
+    ],
+  },
 };
 
 export function traitProfileFor(profileId: string): TraitProfile | undefined {

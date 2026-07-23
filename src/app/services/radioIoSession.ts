@@ -117,6 +117,7 @@ export async function readRadioHydrationForBuild(
   const modelId = session.descriptor.modelIds[0] ?? 'radio';
   const hydration = session.descriptor.hydration.extractHydration(image, {
     sourceFileName: `web-serial:${modelId}`,
+    protocol: session.radio,
   });
 
   return {

@@ -28,3 +28,20 @@ export {
   makeDm32ReadFrame,
   makeDm32WriteFrame,
 } from './connection.ts';
+export {
+  DM32UV_DESCRIPTOR,
+  DM32UV_MODEL_ID,
+} from './descriptor.ts';
+export {
+  extractDm32uvHydration,
+  extractDm32uvHydrationFromProtocol,
+  mergeChannelsIntoDm32uvHydration,
+  memoryMapFromDm32uvHydration,
+} from './hydration.ts';
+export {
+  decodeChannelsFromDm32Image,
+  encodeChannelsIntoDm32Image,
+  parseDm32ChannelRecord,
+  encodeDm32ChannelRecord,
+} from './channelCodec.ts';
+export { summariseDm32uvClone, type Dm32uvCloneSummary } from './cloneSummary.ts';

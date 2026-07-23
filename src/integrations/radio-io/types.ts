@@ -70,7 +70,12 @@ export interface RadioCompatibleProfile {
 export interface RadioHydrationHooks {
   extractHydration(
     image: MemoryMap,
-    meta?: { sourceFileName?: string; capturedAt?: string },
+    meta?: {
+      sourceFileName?: string;
+      capturedAt?: string;
+      /** Active protocol — sparse radios may read download cache from here. */
+      protocol?: CloneImageRadio;
+    },
   ): import('@core/models/radioCloneHydration.ts').RadioCloneHydrationBag;
   mergeChannelsIntoHydration(
     bag: import('@core/models/radioCloneHydration.ts').RadioCloneHydrationBag,
