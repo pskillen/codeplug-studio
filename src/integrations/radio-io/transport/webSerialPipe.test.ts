@@ -6,7 +6,11 @@ import {
   isWebSerialSupported,
 } from './featureDetect.ts';
 import { createFakeSerialPort } from './fakeSerialPort.ts';
-import { openWebSerialPipe, requestWebSerialPipe } from './webSerialPipe.ts';
+import {
+  openWebSerialPipe,
+  requestWebSerialPipe,
+  WEB_SERIAL_HOST_BUFFER_SIZE,
+} from './webSerialPipe.ts';
 
 describe('featureDetect', () => {
   afterEach(() => {
@@ -94,7 +98,12 @@ describe('openWebSerialPipe', () => {
 
   it('opens a closed port via port.open before attaching', async () => {
     const fake = createFakeSerialPort({ initiallyOpen: false });
+    const openSpy = vi.spyOn(fake.port, 'open');
     const pipe = await openWebSerialPipe(fake.port, 38400);
+    expect(openSpy).toHaveBeenCalledWith({
+      baudRate: 38400,
+      bufferSize: WEB_SERIAL_HOST_BUFFER_SIZE,
+    });
     await pipe.write(new Uint8Array([1]));
     expect(fake.writtenBytes()).toEqual(new Uint8Array([1]));
     await pipe.close();

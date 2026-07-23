@@ -21,9 +21,17 @@ export interface WebSerialPipeOptions {
 export interface SerialPortLike {
   readonly readable: ReadableStream<Uint8Array> | null;
   readonly writable: WritableStream<Uint8Array> | null;
-  open(options: { baudRate: number }): Promise<void>;
+  open(options: { baudRate: number; bufferSize?: number }): Promise<void>;
   close(): Promise<void>;
 }
+
+/**
+ * Web Serial default `bufferSize` is 255 — far too small for DM-32UV 4KB block
+ * replies (and stressful on macOS CDC). Open with a larger host-side buffer so
+ * the OS→browser queue can absorb a full R/W frame without dropping / stalling
+ * the radio (see WICG/serial#164, MDN SerialPort.open).
+ */
+export const WEB_SERIAL_HOST_BUFFER_SIZE = 65_536;
 
 class WebSerialBytePipe implements BytePipe {
   readonly baudRate: number;
@@ -201,7 +209,7 @@ async function resolvePort(forceSelection: boolean): Promise<SerialPortLike> {
  */
 export async function openWebSerialPipe(port: SerialPortLike, baudRate: number): Promise<BytePipe> {
   if (!port.readable || !port.writable) {
-    await port.open({ baudRate });
+    await port.open({ baudRate, bufferSize: WEB_SERIAL_HOST_BUFFER_SIZE });
   } else if (port.readable.locked || port.writable.locked) {
     throw new RadioClosedError(
       'Serial port is busy from a previous operation. Reconnect the cable or reload the page.',
