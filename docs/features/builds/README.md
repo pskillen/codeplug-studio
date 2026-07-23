@@ -31,7 +31,7 @@ Both share the **library**; each has its own `RadioBuild` → `assemble` → `Eg
 6. Shape wire names and zone layout on entity sub-routes — see [wire-preview.md](wire-preview.md).
 7. Switch builds from the secondary-nav **Build** select without returning to the list.
 
-See [profiles.md](profiles.md) for legacy profile-picker notes; radio-target create is the #654 direction ([progress](radio-build-egress-progress.md)).
+See [profiles.md](profiles.md) for egress profile limits and the CHIRP runtime profile override on Export.
 
 Native YAML remains **project interchange** (library + all radio builds + egress paths) on **Summary**. It is not created via the new-build flow.
 
@@ -50,8 +50,8 @@ Export does not host identity editors; Setup does not host download actions. Sec
 
 | Route                           | Purpose                                                                                                                                  |
 | ------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
-| `/builds`                       | List builds for the active project — **Group**: List / By radio / By format                                                              |
-| `/builds/new`                   | Create build — format → profile → name (profile maps to catalog `radioTargetId`; seeds all compatible egress children)                   |
+| `/builds`                       | List builds — **Group**: List / By radio                                                                                                 |
+| `/builds/new`                   | Create build — **choose radio target** → name (seeds all compatible egress children)                                                     |
 | `/builds/:id`                   | Redirect → export                                                                                                                        |
 | `/builds/:id/export`            | CPS export panel (default / front door)                                                                                                  |
 | `/builds/:id/overview`          | Setup — identity, target profile, organisation badges                                                                                    |
@@ -65,8 +65,8 @@ Export does not host identity editors; Setup does not host download actions. Sec
 | `/builds/:id/contacts`          | Wire preview — contacts                                                                                                                  |
 | `/builds/:id/rx-group-lists`    | Wire preview — RX group lists                                                                                                            |
 | `/builds/:id/export-resolution` | Read-only behavioural defaults cascade audit (Channels + Zones tabs)                                                                     |
-| `/builds/:id/neonplug-settings` | When build has a NeonPlug egress — read-only donor settings from that egress’s `hydration`                                               |
-| `/builds/:id/radio-image`       | When build has a Web Serial egress — read-only clone image summary from that egress’s `hydration` (opaque VFO/settings retain)           |
+| `/builds/:id/neonplug-settings` | When **active** egress is NeonPlug — read-only donor settings from that egress’s `hydration`                                             |
+| `/builds/:id/radio-image`       | When **active** egress is Web Serial — read-only clone image summary from that egress’s `hydration`                                      |
 
 Requires an active project (`RequireActiveProject`).
 
@@ -74,7 +74,7 @@ Sidebar label is **Export for radio**; routes and code use `builds`. Secondary s
 
 **CPS export:** Per-build CPS export is on `/builds/:id/export` (`ExportBuildCpsPanel`) — the build front door. Project YAML backup lives on [Summary](../report/README.md), not on a separate Import/export page.
 
-**Web Serial (Direct radio targets):** create via **Direct radio** → profile (e.g. Baofeng UV-5R Mini) — resolves to a catalog `radioTargetId` and seeds a `radio-io` **egress** alongside NeonPlug/CHIRP siblings where the target supports them. On Export, pick the **Web Serial** egress: `BuildRadioIoPanel` hosts Read (hydrate `radio-clone` on that egress) / Write (`assemble` into the hydrated image). Secondary nav **Radio image** shows a read-only summary of the active Web Serial egress hydration. CPS file egresses (NeonPlug, CHIRP, …) remain separate children under the same build. See [radio-read-write](../radio-read-write/README.md) and [adding-a-radio-adapter.md](../radio-read-write/adding-a-radio-adapter.md).
+**Web Serial:** create a radio target that lists a Web Serial egress (e.g. Baofeng UV-5R Mini). On Export, pick the **Web Serial** pathway: `BuildRadioIoPanel` hosts Read (hydrate `radio-clone` on that egress) / Write (`assemble` into the hydrated image). Secondary nav **Radio image** appears only while that pathway is active. CPS file egresses (NeonPlug, CHIRP, …) remain separate children under the same build. See [radio-read-write](../radio-read-write/README.md) and [adding-a-radio-adapter.md](../radio-read-write/adding-a-radio-adapter.md).
 
 **CSV preview** ([#151](https://github.com/pskillen/codeplug-studio/issues/151)): outline **Preview CSV** button (after Save ZIP to Drive) opens a modal with one tab per CPS file, rendered as a read-only table. Uses the same `exportBuildAll` path as download — see [`CpsCsvPreview.md`](../../../src/app/components/builds/CpsCsvPreview.md). Build-wide export warnings (profile caps, long wire names, zone cycle messages) are collected once at the core export layer and deduplicated — each distinct message appears once in the preview and ZIP paths ([#319](https://github.com/pskillen/codeplug-studio/issues/319)). The shared [`ExportWarningsAlert`](../../../src/app/components/builds/ExportWarningsAlert.md) folds unlinked-item, member-cap, and shortened-name groups behind collapsed title + count headers ([#408](https://github.com/pskillen/codeplug-studio/issues/408)).
 

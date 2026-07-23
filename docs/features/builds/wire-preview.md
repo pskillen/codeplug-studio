@@ -38,7 +38,7 @@ Build overrides use **sparse opt-out** storage (`BuildEntityOverride`):
 | `orderOrSlot`    | 1-based top-level export position (CHIRP memory `Location`; zone list order; gaps → blank slots on CHIRP). First reorder densifies `1…n`; **Reset to library order** clears all densified slots for that list. |
 | `scanInclusion`  | Flat-memory / per-channel scan flag only — build-scoped Skip / Default / Always scan; wins over library `Channel.scanInclusion` at export ([#589](https://github.com/pskillen/codeplug-studio/issues/589)).    |
 
-Overrides are stored on `FormatBuild` as `channelOverrides`, `zoneOverrides`, `talkGroupOverrides`, `contactOverrides`, and `rxGroupListOverrides` (`studioSchemaVersion: 3`).
+Overrides are stored on `RadioBuild` as `channelOverrides`, `zoneOverrides`, `talkGroupOverrides`, `contactOverrides`, and `rxGroupListOverrides`.
 
 ## Preview rows
 
@@ -86,7 +86,7 @@ Dual-mode zones appear on both **Zones** (DMR member projection) and **Airband**
 | `/builds/:id/contacts`       | `contact`          | Digital + analog contacts; overrides in modal                                                                                                                                                                                                                                                                                                                              |
 | `/builds/:id/rx-group-lists` | `rxGroupList`      | Overrides in modal                                                                                                                                                                                                                                                                                                                                                         |
 
-Secondary nav is trait-gated (`buildNavItems` in `src/app/routes/builds/nav.ts`).
+Secondary nav is trait-gated from `radioTargetId`, with NeonPlug settings / Radio image / Airband shown only when the **active egress** matches (`buildNavItems` in `src/app/routes/builds/nav.ts`).
 
 ## Related
 
@@ -98,4 +98,4 @@ Secondary nav is trait-gated (`buildNavItems` in `src/app/routes/builds/nav.ts`)
 - [BuildEntityExportSettingsCard sidecar](../../../src/app/components/builds/BuildEntityExportSettingsCard.md)
 - [WirePreviewOverrideModal sidecar](../../../src/app/components/builds/wirePreview/WirePreviewOverrideModal.md)
 - [ChirpChannelScanSection sidecar](../../../src/app/components/builds/wirePreview/overrideModalSections/ChirpChannelScanSection.md)
-- [data-model](../data-model/README.md) — `FormatBuild` overrides
+- [data-model](../data-model/README.md) — `RadioBuild` overrides
