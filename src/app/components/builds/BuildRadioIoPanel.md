@@ -24,6 +24,7 @@ Renders nothing when `descriptorsForBuild(build)` is empty.
 - **Read from radio** → download → persist hydration on the build → read-only summary.
 - **Write to radio** → blocked until hydration exists (full-image strategy).
 - Progress + Cancel via `AbortSignal`.
+- On **read/write failure** (timeout, abort, protocol error, …): closes the Web Serial session so the port is released for the next attempt or another process. Successful ops may keep the session until Disconnect.
 - In-flow attribution from `descriptor.attributionIds`.
 
 Does **not** import radio channels into the library.

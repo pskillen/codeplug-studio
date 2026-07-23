@@ -101,6 +101,7 @@ UV-5R Mini (PROGRAM+R/W): treat as **read-cached image + encode channels + uploa
 - [ ] `RadioDescriptor`: `modelIds`, label, group, capabilities, `attributionIds`, `protocolFactory`
 - [ ] **`compatibleProfiles`**: `{ formatId, profileId }[]` so UI binds to FormatBuilds. Prefer a **Direct radio** (`radio-io`) profile for Web Serial — not a CPS file format (NeonPlug/CHIRP). CPS pathways stay file-only; adapters cite them via `attributionIds` only.
 - [ ] For Direct radio profiles: still wire `nameLimit` / `resolveMaxNameLength` / `getProfileExportLimits` / Export naming settings (same as [adding-a-new-format.md](../import-export/adding-a-new-format.md) channel wire-name checklist) — serial write uses them even without a CPS adapter
+- [ ] On failed connect/read/write: always close `BytePipe` / clear UI session so the OS port is not held
 - [ ] Write-strategy / hydration-required flags for UI gating
 - [ ] Register in `registry.ts`; UI picks only via registry (no `instanceof`)
 
@@ -153,6 +154,7 @@ Append here as adapters ship. Keep entries short; promote repeated patterns into
 | 2026-07-23 | UI #618         | Export panel hosts `BuildRadioIoPanel` when `listDescriptorsForProfile` matches. NeonPlug file-donor and Web Serial `radio-clone` bags share `cpsWireHydration` — distinguish with `isNeonplugDonorBag` vs `isRadioCloneHydrationBag`.                                                                                                                                                                                                     |
 | 2026-07-23 | UI #618         | Web Serial binds to dedicated `formatId: 'radio-io'` FormatBuilds (e.g. `radio-io-uv5r-mini`), not NeonPlug/CHIRP CPS profiles. Export for `radio-io` is serial-only — no CPS ZIP/CSV. NeonPlug/CHIRP remain file pathways; cite protocol lineage via `attributionIds` only.                                                                                                                                                               |
 | 2026-07-23 | UI #618         | Direct radio still needs CPS-format boundary wiring for name limits: `profiles.ts` `nameLimit`, `resolveMaxNameLength`, `getProfileExportLimits`, `getFormatExportDefaults`, Export naming/scan settings, wire preview via `previewGeneratedChannelWireName`, and write-path `applyWireNameLimits` — even with no file adapter. See [adding-a-new-format.md](../import-export/adding-a-new-format.md) § registration + channel wire names. |
+| 2026-07-23 | UI #618         | On read/write failure (timeout, abort, protocol error), release the Web Serial port: close pipe if `connect` fails before a session exists; UI clears the session after any failed Read/Write so the next attempt (or another process) can open the port.                                                                                                                                                                                  |
 
 ---
 

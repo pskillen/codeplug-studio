@@ -71,6 +71,13 @@ export default function BuildRadioIoPanel({ build }: BuildRadioIoPanelProps) {
     setProgress(p);
   }
 
+  async function releaseSession(): Promise<void> {
+    const session = sessionRef.current;
+    sessionRef.current = null;
+    setConnected(false);
+    if (session) await closeRadioSession(session);
+  }
+
   async function ensureSession(): Promise<RadioSession> {
     if (sessionRef.current) return sessionRef.current;
     const { session } = await openRadioSessionForBuild(build, { forcePortSelection: true });
@@ -103,6 +110,8 @@ export default function BuildRadioIoPanel({ build }: BuildRadioIoPanelProps) {
       setLastOccupied(result.channelCountOccupied);
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
+      // Always drop the port on failure so the next attempt (or another app) can open it.
+      await releaseSession();
     } finally {
       setBusy(false);
       setProgress(null);
@@ -131,6 +140,7 @@ export default function BuildRadioIoPanel({ build }: BuildRadioIoPanelProps) {
       } else {
         setError(err instanceof Error ? err.message : String(err));
       }
+      await releaseSession();
     } finally {
       setBusy(false);
       setProgress(null);
@@ -143,10 +153,7 @@ export default function BuildRadioIoPanel({ build }: BuildRadioIoPanelProps) {
   }
 
   async function handleDisconnect() {
-    const session = sessionRef.current;
-    sessionRef.current = null;
-    setConnected(false);
-    if (session) await closeRadioSession(session);
+    await releaseSession();
   }
 
   async function handleClearHydration() {

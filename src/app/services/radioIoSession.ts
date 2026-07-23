@@ -65,7 +65,16 @@ export async function openRadioSessionForBuild(
     forceSelection: opts?.forcePortSelection ?? true,
   });
   const radio = descriptor.protocolFactory();
-  await radio.connect(pipe, { signal: opts?.signal });
+  try {
+    await radio.connect(pipe, { signal: opts?.signal });
+  } catch (err) {
+    try {
+      await pipe.close();
+    } catch {
+      /* ignore close errors while surfacing connect failure */
+    }
+    throw err;
+  }
   const session = createRadioSession({ descriptor, pipe, radio });
   return { session, descriptor };
 }

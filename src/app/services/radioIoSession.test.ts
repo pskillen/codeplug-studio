@@ -12,9 +12,11 @@ import type {
 import {
   buildHasRadioCloneHydration,
   descriptorsForBuild,
+  openRadioSessionForBuild,
   RadioWriteBlockedError,
   writeBuildToRadio,
 } from './radioIoSession.ts';
+import * as radioIo from '@integrations/radio-io/index.ts';
 
 function emptyLibrary(channels: LibrarySlice['channels'] = []): LibrarySlice {
   return {
@@ -151,5 +153,53 @@ describe('radioIoSession helpers', () => {
     const uploaded = upload.mock.calls[0]![0] as MemoryMap;
     expect(uploaded.size).toBe(UV5R_MINI_MEM_TOTAL);
     expect(uploaded.bytes[0]).not.toBe(0xff);
+  });
+
+  it('closes the serial pipe when connect/handshake fails', async () => {
+    const close = vi.fn(async () => undefined);
+    const pipe = {
+      write: vi.fn(),
+      readExact: vi.fn(),
+      flush: vi.fn(),
+      close,
+    };
+    const requestSpy = vi.spyOn(radioIo, 'requestWebSerialPipe').mockResolvedValue(pipe);
+    const listSpy = vi.spyOn(radioIo, 'listDescriptorsForProfile').mockReturnValue([
+      {
+        modelIds: ['UV5R-Mini'],
+        label: 'Mini',
+        supportsBle: false,
+        protocolFactory: () => ({
+          connect: async () => {
+            throw new Error('ident timeout');
+          },
+          disconnect: vi.fn(),
+          download: vi.fn(),
+          upload: vi.fn(),
+          decodeChannels: () => [],
+          encodeChannels: (img) => img,
+          readFirmware: () => undefined,
+        }),
+        capabilities: {
+          maxChannels: 999,
+          supportsZones: false,
+          supportsScanLists: false,
+          analogOnly: true,
+        },
+        attributionIds: [],
+        compatibleProfiles: [{ formatId: 'radio-io', profileId: 'radio-io-uv5r-mini' }],
+        writeStrategy: 'full-image',
+        hydrationRequiredForWrite: true,
+        baudRate: 38400,
+      },
+    ]);
+
+    await expect(
+      openRadioSessionForBuild(newFormatBuild('p1', 'radio-io-uv5r-mini')),
+    ).rejects.toThrow(/ident timeout/);
+    expect(close).toHaveBeenCalledTimes(1);
+
+    requestSpy.mockRestore();
+    listSpy.mockRestore();
   });
 });
