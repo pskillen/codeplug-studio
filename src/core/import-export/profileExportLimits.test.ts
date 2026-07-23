@@ -128,4 +128,14 @@ describe('getProfileExportLimits', () => {
     expect(limits!.powerLadder.length).toBeGreaterThan(0);
     expect(limits!.siblingLadders).toEqual([]);
   });
+
+  it('marks Direct radio UV-5R Mini organisation limits as not used with binary memory/name caps', () => {
+    const limits = getProfileExportLimits('radio-io', 'radio-io-uv5r-mini');
+    expect(limits).not.toBeNull();
+    expect(limits!.maxChannels).toBe(999);
+    expect(limits!.nameLengthChannel).toBe(12);
+    expect(limits!.maxZones).toBe('not_used');
+    expect(limits!.maxScanLists).toBe('not_used');
+    expect(limits!.powerLadder.map((e) => e.wire)).toEqual(['High', 'Low']);
+  });
 });

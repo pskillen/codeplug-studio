@@ -364,6 +364,19 @@ export default function ExportBuildCpsPanel({ build }: ExportBuildCpsPanelProps)
             {wireHint}
           </Text>
         ) : null}
+        <ExportBuildSettingsSections
+          build={build}
+          saving={savingSettings}
+          settingsError={settingsError}
+          profileNameLimit={profileNameLimit}
+          resolvedSettings={resolvedSettings}
+          formatDefaults={formatDefaults}
+          defaultScanValue={defaultScanValue}
+          onExportSettingsPatch={(patch) => void handleExportSettingsPatch(patch)}
+          onExportInclusionChange={(field, checked) =>
+            void handleExportInclusionChange(field, checked)
+          }
+        />
         <BuildRadioIoPanel build={build} />
       </Stack>
     );

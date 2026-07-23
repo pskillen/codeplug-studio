@@ -273,7 +273,7 @@ export function previewWireRows(
       const reserved = new Set<string>();
       const warnings: string[] = [];
 
-      if (build.formatId === 'chirp') {
+      if (build.formatId === 'chirp' || build.formatId === 'radio-io') {
         const memorySlots =
           projection.channelMemorySlots ??
           projection.channels.map((row, index) => ({

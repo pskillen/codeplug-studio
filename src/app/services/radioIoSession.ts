@@ -134,7 +134,7 @@ export async function writeBuildToRadio(
   }
 
   const assembled = assemble(build, library);
-  const dtos = assembledChannelsToRadioDtos(assembled.channels);
+  const dtos = assembledChannelsToRadioDtos(assembled.channels, build);
   const image = mergeChannelsIntoUv5rMiniHydration(hydration, dtos);
   setCachedImage(session, image);
   await session.radio.upload(image, {

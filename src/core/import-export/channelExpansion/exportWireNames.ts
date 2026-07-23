@@ -5,6 +5,7 @@ import { getOpenGd77Profile } from '@core/import-export/formats/opengd77/profile
 import { getChirpProfile } from '@core/import-export/formats/chirp/profiles.ts';
 import { getAnytoneProfile } from '@core/import-export/formats/anytone/profiles.ts';
 import { neonplugNameLimit } from '@core/import-export/formats/neonplug/profiles.ts';
+import { radioIoNameLimit } from '@core/import-export/formats/radio-io/profiles.ts';
 import {
   channelPickForWireExport,
   composeChannelWireName,
@@ -25,6 +26,7 @@ export function resolveMaxNameLength(
   if (profileId.startsWith('opengd77-')) return getOpenGd77Profile(profileId).nameLimit;
   if (profileId.startsWith('anytone-')) return getAnytoneProfile(profileId).nameLimit;
   if (profileId.startsWith('neonplug-')) return neonplugNameLimit(profileId);
+  if (profileId.startsWith('radio-io-')) return radioIoNameLimit(profileId);
   return undefined;
 }
 

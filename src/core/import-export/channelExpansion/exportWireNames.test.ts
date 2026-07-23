@@ -18,6 +18,10 @@ describe('resolveMaxNameLength', () => {
     expect(resolveMaxNameLength('neonplug-uv5rmini')).toBe(12);
   });
 
+  it('resolves Direct radio UV-5R Mini name limit by prefix', () => {
+    expect(resolveMaxNameLength('radio-io-uv5r-mini')).toBe(12);
+  });
+
   it('returns undefined for unknown profile ids', () => {
     expect(resolveMaxNameLength('unknown-profile')).toBeUndefined();
   });
