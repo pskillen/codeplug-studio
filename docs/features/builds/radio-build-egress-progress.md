@@ -1,41 +1,28 @@
 # RadioBuild + EgressPath — progress
 
-**Tracking:** [#654](https://github.com/pskillen/codeplug-studio/issues/654) · Branch `654/pskil/radio-build-egress`
+**Tracking:** [#654](https://github.com/pskillen/codeplug-studio/issues/654) · Branch `654/pskil/radio-build-egress` · **Shipped**
 
 ## Status
 
 | Slice | Status | Notes |
 | --- | --- | --- |
-| 1 Model + catalog | Done | `RadioBuild`, `EgressPath`, `src/core/radio-targets/` (committed) |
-| 2 Persistence (IndexedDB/in-memory) + `BuildService` | Done | `radioBuilds` + `egressPaths` stores; YAML + BuildService (committed) |
-| 3 assemble / export / radio-io app callers | Pending | Core `exportBuild` already takes `egress`; **app UI still on old `build.formatId` shape — branch does not typecheck** |
-| 4 UI egress picker + retain pages | Pending | |
-| 5 Docs | Partial | Multi-build-per-target clarified; contributor checklists still need #654 rewrite |
+| 1 Model + catalog | Done | `RadioBuild`, `EgressPath`, `src/core/radio-targets/catalog.ts` |
+| 2 Persistence + `BuildService` | Done | IndexedDB `radioBuilds` + `egressPaths` (schema v22); native YAML; legacy `formatBuilds` dropped with warning |
+| 3 assemble / export / radio-io callers | Done | `exportBuild*` / `assemble` take `{ build, egress, library }`; app services wired to egress |
+| 4 UI egress picker + retain pages | Done | Export egress switcher; NeonPlug settings + Radio image scoped to egress hydration |
+| 5 Docs | Done | Hub, contributor checklists, DESIGN.md, data-model aligned |
 
-## Stash (do not pop blindly)
+## What shipped
 
-Interrupted agent WIP (UI/YAML/test mass edits) was stashed as:
+- **`RadioBuild`**: radio-centric config keyed by catalog `radioTargetId` — wire names, slots, inclusions, trait layout. Many builds may share the same target id.
+- **`EgressPath`**: child pathways with `formatId` / `profileId`, `kind: cps-file | web-serial`, optional `hydration` (NeonPlug donor / radio-clone retain).
+- **Persistence**: IndexedDB `radioBuilds` + `egressPaths` at schema v22; legacy `formatBuilds` store removed without migration.
+- **Native YAML**: `radioBuilds[]` + `egressPaths[]`; non-empty legacy `formatBuilds[]` dropped with import warning.
+- **Export UI**: egress switcher on `/builds/:id/export`; donor merge and Web Serial read/write hydrate the **active egress**.
+- **Create build**: New build flow still uses format → profile picker; profile maps to `radioTargetId` and seeds all compatible egress children.
 
-`stash@{0}: WIP #654 interrupted agent UI/YAML/test edits — do not resume blindly`
+See [builds hub](README.md) and [data-model](../data-model/README.md) for the canonical product description.
 
-Treat as **lost**. Resume Slice 3/4 from the committed tip with **small tasks + commit after each**.
+## Next
 
-## In flight
-
-- Core models and radio-target catalog landed; factories seed egresses per target.
-- Persistence port (`src/integrations/persistence/`) now stores `radioBuild` + `egressPath` rows in place of the legacy `formatBuild` store:
-  - `types.ts` / `stores.ts`: `EntityKind` has `radioBuild` | `egressPath`; `ProjectSeed.radioBuilds` / `egressPaths`.
-  - `indexedDb.ts`: schema upgrade drops the legacy `formatBuilds` object store outright (no build-data migration; library rows untouched) and creates `radioBuilds` + `egressPaths` (with a `byRadioBuild` compound index for `listEgressPathsForBuild`).
-  - `inMemory.ts`: mirrors the same CRUD + cascade-delete behaviour for tests/dev.
-  - `formatBuildRow.ts` renamed to `radioBuildRow.ts` (`readRadioBuildRow`), still normalising via `migrateFormatBuild.ts` (already `RadioBuild`-typed from Slice 1).
-  - `projectSeed.ts` bridges `ProjectAggregate.radioBuilds`/`egressPaths` ↔ `ProjectSeed.radioBuilds`/`egressPaths` directly (no more `formatBuilds` field).
-- Native YAML (`src/core/import-export/projectDocument.ts` + `formats/native-yaml/`) rewritten for `radioBuilds[]` + `egressPaths[]`: `ProjectAggregate`/`StudioProjectDocument` carry both arrays; `validate.ts` gained `parseRadioBuild` (`radioTargetId` required, no `formatId`/`profileId`/`cpsWireHydration`) and `parseEgressPath` (`formatId`, `profileId`, `kind`, optional `hydration`), plus FK validation of `egressPath.radioBuildId`/`formatId`+overrides against the parsed library and build set. Documents with a **legacy, non-empty** `formatBuilds[]` are no longer migrated — they're dropped with a single `NativeYamlImportError`-free warning (`radioBuilds`/`egressPaths` come back empty; library rows are kept). `validateDocument`/`parseProjectDocumentWithWarnings` now return `{ aggregate, warnings }`; `parseProjectDocument` stays warning-less for existing callers. The four `core/domain/migrate*.ts` files consuming `ProjectAggregate.formatBuilds` (`migrateZoneExportFields`, `migrateScanLists`, `migrateAprsSingleton`, `migrateChannelScanList`) were renamed to `radioBuilds` to match. Cleaned up the dead `'formatBuild'` member of `EntityReference.fromKind` in `references.ts`.
-- `src/app/state/buildService.ts` rewritten for `RadioBuild` + `EgressPath`: `createBuild(projectId, radioTargetId, name?)` seeds every compatible egress via `newRadioBuildWithEgresses`; `deleteBuild` cascades egress paths; `withUpdatedProfile` removed (profile now lives on `EgressPath`) and replaced with `withDefaultEgressPathId`; `withCpsWireHydration`/`clearCpsWireHydration` moved to `withEgressHydration`/`clearEgressHydration` on `EgressPath`. Added `listEgressPaths` / `getEgressPath` / `putEgressPath`.
-- `src/app/state/useFormatBuilds.ts` kept its file/hook names (`useFormatBuilds`/`useFormatBuild`) to avoid a wide UI import rename this slice, but now reads `RadioBuild[]` via the new persistence methods internally.
-- Fixed two other persistence-port consumers broken by the store rename (not in the original file list, but required for the port to compile): `src/app/state/libraryService.ts` (`deleteAllDigitalContacts` build-override pruning) and its test.
-- Persistence + `BuildService` unit tests updated and passing (`indexedDb.test.ts`, `inMemory.test.ts`, `buildService.test.ts`, `libraryService.test.ts`).
-- Still broken (pre-existing from Slice 1, unaffected by Slice 2, deferred to Slice 3/4): UI components and services reading `build.formatId` / `build.profileId` / `build.cpsWireHydration` directly (`ExportBuildCpsPanel`, `BuildSwitcher`, `buildCpsExportService.ts`, `radioIoSession.ts`, etc.) — these need the egress picker + per-egress export wiring before they compile again.
-
-## Design clarifications
-
-- **Multiple RadioBuilds per `radioTargetId` are intentional and already supported** (no uniqueness gate). Operators can keep e.g. “UV-5R Team A” and “UV-5R Team B” against one library, each with its own overrides and egress children. Documented in [builds README](README.md) and [data-model](../data-model/README.md).
+Initiative complete — hub implementation status and GitHub [#654](https://github.com/pskillen/codeplug-studio/issues/654) are canonical. Retire this log when the branch merges.

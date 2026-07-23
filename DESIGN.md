@@ -62,13 +62,13 @@ Export reads the library + build state and serialises to CPS wire values. Re-imp
 
 ### 3. Library, then builds
 
-Operators curate once. Each format build gets a workflow suited to how that radio/CPS _behaves_ — not how its CSV happens to be laid out. Overlapping but disjoint terminology stays at the build layer, not in the library.
+Operators curate once. Each **radio build** gets a workflow suited to how that radio/CPS _behaves_ — not how its CSV happens to be laid out. Overlapping but disjoint terminology stays at the build layer, not in the library.
 
 ### 3a. Build workflows from capability traits
 
 Radios differ along a small set of **behavioural concerns** (see [Build capability traits](#build-capability-traits)). Most radios are a permutation of these — not a unique snowflake requiring a one-off app model.
 
-**FormatBuild** data and **build UI** are composed from a **trait profile** (which concerns apply and how). **Wire import/export adapters** remain specific to a format/profile (OpenGD77-1701 CSV, CHIRP UV-5R, …) but _project_ library + trait-shaped build state → wire at the boundary.
+**RadioBuild** data and **build UI** are composed from a **trait profile** (which concerns apply and how) on a catalog **radio target**. **EgressPath** children hold adapter identity (`formatId` / `profileId`) and optional operation hydration. **Wire import/export adapters** remain specific to a format/profile (OpenGD77-1701 CSV, CHIRP UV-5R, …) but _project_ library + trait-shaped build state → wire at the boundary through the selected egress.
 
 Do not model OpenGD77 zones in the library because OpenGD77 has a Zones.csv; model **zone grouping** on the build when the trait profile says the radio uses zones.
 
@@ -118,7 +118,7 @@ flowchart TB
     Repeaters[BrandMeister UK repeater APIs]
   end
   subgraph core [core]
-    Models[Library Project FormatBuild]
+    Models[Library Project RadioBuild EgressPath]
     Domain[mutations validation]
     IE[import-export formats]
     Services[import export assemble]
@@ -145,7 +145,8 @@ Exact fields land in Phase 1. Shape at a glance:
 Project
   id, name, description, notes, author, createdAt, updatedAt
   library: Library
-  builds: FormatBuild[]
+  radioBuilds: RadioBuild[]
+  egressPaths: EgressPath[]
 
 Library
   channels: Channel[]
@@ -154,20 +155,25 @@ Library
   rxGroupLists: RxGroupList[]    # if modelled at library level
   zones: Zone[]                  # TBD: library-level vs build-level only
 
-FormatBuild
-  id, formatId, profileId?, name
-  traitProfile: TraitProfile     # which capability traits apply
-  channelSelections, zoneSelections, …  # libraryEntityId + overrides.name (wire names)
+RadioBuild
+  id, radioTargetId, name
+  trait layout from catalog target traits
+  channelOverrides, zoneOverrides, …  # libraryEntityId + wireName / excluded
   layout: TraitLayout            # trait-shaped state (zones, scan lists, memory slots, …)
+  exportSettings?, defaultEgressPathId?
+
+EgressPath
+  id, radioBuildId, formatId, profileId, kind (cps-file | web-serial)
+  hydration?: CpsWireHydration   # NeonPlug donor / radio-clone retain (egress-scoped)
 ```
 
 **Relationships:** UUID `id` foreign keys inside the library. `name` fields are display/export labels, not relationship keys.
 
-**Separation:** `Library` holds RF semantics (frequency, mode, talk group ref, …). `FormatBuild` holds _target-specific_ state: which library rows participate, trait-shaped `layout`, and **persisted wire-name overrides** per selection. Wire adapters read `assemble(build, library)` — they do not dictate the internal library shape.
+**Separation:** `Library` holds RF semantics (frequency, mode, talk group ref, …). `RadioBuild` holds _target-specific_ state: which library rows participate, trait-shaped `layout`, and **persisted wire-name overrides** per selection. `EgressPath` holds how that assembly leaves Studio (adapter identity + optional hydration). Wire adapters read `assemble(build, library)` and serialise through the active egress — they do not dictate the internal library shape.
 
-**Export is the union of both persisted layers.** The library is not “the export format in neutral clothing”; the build profile supplies the format-scoped mapping (organisation, limits, wire names). The archive [codeplug-tool](https://github.com/pskillen/codeplug-tool) instead held one internal codeplug and re-projected at export time without durable per-target customisation.
+**Export is the union of persisted layers.** The library is not “the export format in neutral clothing”; the radio build supplies organisation, limits, and wire names; the egress supplies format/profile (and donor/clone retain when needed). The archive [codeplug-tool](https://github.com/pskillen/codeplug-tool) instead held one internal codeplug and re-projected at export time without durable per-target customisation.
 
-**Naming:** Library `name` fields are human labels. CPS wire names for a given radio live on `FormatBuild` selection `overrides.name` (pre-filled on import or by profile shortening rules; operator-editable and persisted). This matters especially for profile length limits (e.g. 16 characters) and m×n / multi-talkgroup expansion, where composed names like `GB7GL Glasgow Scotland TS2` must be abbreviated per target.
+**Naming:** Library `name` fields are human labels. CPS wire names for a given radio live on `RadioBuild` `*Overrides` (`wireName`, …) (pre-filled on import or by profile shortening rules; operator-editable and persisted). This matters especially for profile length limits (e.g. 16 characters) and m×n / multi-talkgroup expansion, where composed names like `GB7GL Glasgow Scotland TS2` must be abbreviated per target.
 
 **Open questions** (resolve during Phase 1 modelling):
 
@@ -189,9 +195,9 @@ FormatBuild
 
 ### Export
 
-1. Select build (format + profile).
+1. Select build and **egress pathway** (CPS file or Web Serial).
 2. `assemble(build, library)` → export projection.
-3. Serialise projection → CPS files via format adapter.
+3. Serialise projection → CPS files (or encode into hydrated radio image) via format adapter for that egress.
 4. Surface warnings (truncation, dropped fields, cardinality limits).
 
 ### Formats and phases
@@ -229,13 +235,15 @@ Most target radios are a **permutation** of these (plus caps: max channels, max 
 ```mermaid
 flowchart LR
   Library[Library entities]
-  Build[FormatBuild trait layout]
-  Traits[Trait profile per format]
+  Build[RadioBuild trait layout]
+  Egress[EgressPath format profile]
+  Traits[Trait profile per radio target]
   Adapter[Wire adapter format-specific]
   Library --> Build
   Traits --> Build
   Build --> Adapter
-  Adapter --> CPS[CPS files]
+  Egress --> Adapter
+  Adapter --> CPS[CPS files or radio]
 ```
 
 **UI implication:** `app/features/builds/` shares trait modules — e.g. `zone-grouping/`, `scan-lists/`, `flat-memories/` — composed per profile. Format-specific pages wire the modules their profile needs.
@@ -258,7 +266,7 @@ In codeplug-tool, **full import→export→re-import equality** often stood in f
 | ---------------------------- | ------------------------------------- | --------------------------------------------------------------------------- |
 | **Wire → internal (import)** | CPS fixture files                     | Expected library entities + build trait layout (golden JSON/YAML snapshots) |
 | **Internal → wire (export)** | Constructed library + build in memory | Expected CPS columns/rows (golden files or normalised snapshots)            |
-| **Assemble**                 | Library + `FormatBuild`               | Export projection object before serialisation                               |
+| **Assemble**                 | Library + `RadioBuild`                | Export projection object before serialisation                               |
 
 Import and export tests use **different fixtures**. Export tests do not require importing first. Overlap between directions is a nice cross-check, not the definition of correctness.
 
