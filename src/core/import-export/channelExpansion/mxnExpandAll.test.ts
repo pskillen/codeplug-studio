@@ -289,9 +289,10 @@ describe('expandAllMxNChannels — dm32Family', () => {
 describe('expandAllMxNChannels — anytoneFamily', () => {
   const radioTargetId = 'anytone-at-d890uv';
 
-  const anytoneResolveSiteWireName: NonNullable<
-    ExpandAllMxNChannelsArgs['resolveSiteWireName']
-  > = (assembledChannel, ctx) =>
+  const anytoneResolveSiteWireName: NonNullable<ExpandAllMxNChannelsArgs['resolveSiteWireName']> = (
+    assembledChannel,
+    ctx,
+  ) =>
     anytoneChannelWireName(
       assembledChannel,
       { reserved: ctx.reserved, warnings: ctx.warnings, reserve: !ctx.willExpandRx },

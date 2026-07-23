@@ -360,7 +360,8 @@ export function previewWireRows(
 
         for (const channel of library.channels) {
           if (formatId === 'anytone') {
-            if (anytoneBank === 'dmr' && isAmAirbandBankChannel(channel, behaviourContext)) continue;
+            if (anytoneBank === 'dmr' && isAmAirbandBankChannel(channel, behaviourContext))
+              continue;
             if (anytoneBank === 'airband' && !isAmAirbandBankChannel(channel, behaviourContext))
               continue;
           }

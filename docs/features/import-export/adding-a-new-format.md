@@ -323,11 +323,11 @@ Domain background: [data-model](../data-model/README.md), [name-shortening.md](n
 
 **Do not** use `assembled.channels[].wireName` as the CPS wire name in preview or serialise unless you have already run the format’s full composition step.
 
-| Format trait stack                             | Preview (`previewWireRows.ts`)                             | Export (`serialise.ts`)                                                                                         |
-| ---------------------------------------------- | ---------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
-| Multi-mode expansion (OpenGD77)                | `expandChannelWireRows`                                    | Same helper in serialise                                                                                        |
-| Multi-TG / m×n fan-out (MxNChannelExpansion)   | `expandAllMxNChannels` (gated by `hasMxNChannelExpansion`) | Same shared expander; format adapters only shape projection rows                                                |
-| Flat / single row per channel (CHIRP)          | `previewGeneratedChannelWireName(channel, build, options)` | Format `exportChannelWire.ts` — e.g. `channelWireName` calling `applyWireNameLimits`                            |
+| Format trait stack                           | Preview (`previewWireRows.ts`)                             | Export (`serialise.ts`)                                                              |
+| -------------------------------------------- | ---------------------------------------------------------- | ------------------------------------------------------------------------------------ |
+| Multi-mode expansion (OpenGD77)              | `expandChannelWireRows`                                    | Same helper in serialise                                                             |
+| Multi-TG / m×n fan-out (MxNChannelExpansion) | `expandAllMxNChannels` (gated by `hasMxNChannelExpansion`) | Same shared expander; format adapters only shape projection rows                     |
+| Flat / single row per channel (CHIRP)        | `previewGeneratedChannelWireName(channel, build, options)` | Format `exportChannelWire.ts` — e.g. `channelWireName` calling `applyWireNameLimits` |
 
 Checklist for flat/single-row formats:
 
@@ -529,15 +529,15 @@ End-to-end smoke before PR:
 
 ## Worked example: DM32 (export shipped)
 
-| Step              | Location                                                     |
-| ----------------- | ------------------------------------------------------------ |
-| Reference hub     | `docs/reference/export-formats/dm32/README.md`               |
-| Adapter behaviour | `docs/features/import-export/dm32/README.md`                 |
+| Step              | Location                                                              |
+| ----------------- | --------------------------------------------------------------------- |
+| Reference hub     | `docs/reference/export-formats/dm32/README.md`                        |
+| Adapter behaviour | `docs/features/import-export/dm32/README.md`                          |
 | Export adapter    | `formats/dm32/adapter.ts`; m×n via `channelExpansion/mxnExpandAll.ts` |
-| Zone scan derive  | `zoneDerivedScanLists/derive.ts`                             |
-| Trait profile     | `dm32-baofeng-dm32uv`                                        |
-| Fixtures / tests  | `src/test/dm32/`, `formats/dm32/serialise.test.ts`           |
-| Expansion         | Multi-mode **off**; multi-TG **on**; zone-derived `Scan.csv` |
+| Zone scan derive  | `zoneDerivedScanLists/derive.ts`                                      |
+| Trait profile     | `dm32-baofeng-dm32uv`                                                 |
+| Fixtures / tests  | `src/test/dm32/`, `formats/dm32/serialise.test.ts`                    |
+| Expansion         | Multi-mode **off**; multi-TG **on**; zone-derived `Scan.csv`          |
 
 ---
 
