@@ -4,8 +4,8 @@ import {
   newAprsConfiguration,
   newChannel,
   newDigitalContact,
-  newFormatBuild,
   newProjectMeta,
+  newRadioBuild,
   newRxGroupList,
   newTalkGroup,
   newZone,
@@ -122,7 +122,7 @@ describe('LibraryService', () => {
       ],
     };
     const build = {
-      ...newFormatBuild(projectId, 'opengd77-1701'),
+      ...newRadioBuild(projectId, 'baofeng-dm1701'),
       contactOverrides: [
         { libraryEntityId: contact.id, wireName: 'WireA' },
         { libraryEntityId: analog.id, wireName: 'WireAnalog' },
@@ -133,7 +133,7 @@ describe('LibraryService', () => {
     await persistence.putTalkGroup(talkGroup, null);
     await persistence.putChannel(channel, null);
     await persistence.putRxGroupList(rxList, null);
-    await persistence.putFormatBuild(build, null);
+    await persistence.putRadioBuild(build, null);
 
     const outcome = await service.deleteAllDigitalContacts(projectId);
 
@@ -153,7 +153,7 @@ describe('LibraryService', () => {
     const updatedRx = await persistence.getRxGroupList(projectId, rxList.id);
     expect(updatedRx?.members).toEqual([{ ref: { kind: 'talkGroup', id: talkGroup.id } }]);
 
-    const updatedBuild = await persistence.getFormatBuild(projectId, build.id);
+    const updatedBuild = await persistence.getRadioBuild(projectId, build.id);
     expect(updatedBuild?.contactOverrides).toEqual([
       { libraryEntityId: analog.id, wireName: 'WireAnalog' },
     ]);
