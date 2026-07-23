@@ -53,6 +53,7 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
   const [phase, setPhase] = useState<RadioIoProgressPhase>('connecting');
   const [connected, setConnected] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [writeWarnings, setWriteWarnings] = useState<string[]>([]);
   const [progress, setProgress] = useState<ProgressUpdate | null>(null);
   const [lastFirmware, setLastFirmware] = useState<string | undefined>();
   const [lastOccupied, setLastOccupied] = useState<number | null>(null);
@@ -147,6 +148,7 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
 
   async function handleWrite() {
     setError(null);
+    setWriteWarnings([]);
     setBusy(true);
     setOperation('write');
     setPhase('connecting');
@@ -159,10 +161,11 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
       const library = await loadLibrarySlice(persistence, activeProjectId);
       const session = await ensureSession();
       setPhase('preparing');
-      await writeBuildToRadio(session, build, egress, library, {
+      const { warnings } = await writeBuildToRadio(session, build, egress, library, {
         onProgress,
         signal: abortRef.current.signal,
       });
+      if (warnings.length > 0) setWriteWarnings(warnings);
     } catch (err) {
       if (err instanceof RadioWriteBlockedError) {
         setError(err.message);
@@ -274,6 +277,17 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
         </Text>
       )}
       {error ? <Alert color="red">{error}</Alert> : null}
+      {writeWarnings.length > 0 ? (
+        <Alert color="yellow" title="Write warnings">
+          <Stack gap={4}>
+            {writeWarnings.map((line) => (
+              <Text key={line} size="sm">
+                {line}
+              </Text>
+            ))}
+          </Stack>
+        </Alert>
+      ) : null}
 
       <RadioIoProgressModal
         opened={busy}

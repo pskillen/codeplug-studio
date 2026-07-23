@@ -38,6 +38,19 @@ describe('mergeExportOptions', () => {
     expect(getFormatExportDefaults('chirp').defaultScanInclusion).toBe('skip');
   });
 
+  it('getFormatExportDefaults enables m×n for radio-io-dm32uv profile', () => {
+    expect(getFormatExportDefaults('radio-io').expandRxGroupLists).toBe(false);
+    expect(getFormatExportDefaults('radio-io', 'radio-io-dm32uv').expandRxGroupLists).toBe(true);
+    expect(getFormatExportDefaults('radio-io', 'radio-io-dm32uv').exportScratchChannels).toBe(true);
+  });
+
+  it('mergeExportOptions applies radio-io-dm32uv m×n defaults via profileId', () => {
+    const build = { ...newFormatBuild('proj', 'radio-io-dm32uv'), exportSettings: {} };
+    const options = mergeExportOptions(build, 'radio-io', { profileId: 'radio-io-dm32uv' });
+    expect(options.expandRxGroupLists).toBe(true);
+    expect(options.exportScratchChannels).toBe(true);
+  });
+
   it('defaults exportZoneDerivedScanLists on for dm32 and off for anytone', () => {
     const dm32 = { ...newFormatBuild('proj', 'dm32-baofeng-dm32uv'), exportSettings: {} };
     const anytone = { ...newFormatBuild('proj', 'anytone-at-d890uv'), exportSettings: {} };

@@ -105,6 +105,14 @@ const RADIO_IO_EXPORT_DEFAULTS: FormatExportDefaults = {
   expandRxGroupLists: false,
 };
 
+/** DM-32UV Web Serial — same m×n defaults as DM32 CPS / NeonPlug. */
+const RADIO_IO_DM32UV_EXPORT_DEFAULTS: FormatExportDefaults = {
+  defaultScanInclusion: 'scan',
+  expandModes: false,
+  expandRxGroupLists: true,
+  exportScratchChannels: true,
+};
+
 const OPENGD77_EXPORT_DEFAULTS: FormatExportDefaults = {
   defaultScanInclusion: 'scan',
   expandModes: true,
@@ -135,7 +143,13 @@ const FORMAT_EXPORT_DEFAULTS: Partial<Record<FormatId, FormatExportDefaults>> = 
   anytone: ANYTONE_EXPORT_DEFAULTS,
 };
 
-export function getFormatExportDefaults(formatId: string): FormatExportDefaults {
+export function getFormatExportDefaults(
+  formatId: string,
+  profileId?: string,
+): FormatExportDefaults {
+  if (formatId === 'radio-io' && profileId === 'radio-io-dm32uv') {
+    return RADIO_IO_DM32UV_EXPORT_DEFAULTS;
+  }
   const fromAdapter = exportAdapters.find((a) => a.id === formatId)?.defaultExportSettings;
   if (fromAdapter) return fromAdapter;
   return FORMAT_EXPORT_DEFAULTS[formatId as FormatId] ?? { defaultScanInclusion: 'scan' };
