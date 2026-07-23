@@ -49,7 +49,7 @@ Library (RF semantics)  +  FormatBuild (profile, wire names, slots, layout, hydr
 | **Display unmodelled settings read-only**                | Operator can see that a donor/read exists; editing those bytes in Studio is out of scope until modelled                                 |
 
 **NeonPlug file path (already shipped):** operator reads in NeonPlug → imports `.neonplug` → Studio stores retain on `cpsWireHydration` (`formatId: 'neonplug'`) → merge export.  
-**Direct Web Serial path:** operator **Read** in Studio → download clone/image → persist `cpsWireHydration` with `formatId: 'radio-clone'` (`RadioCloneHydrationBag`) on the **current FormatBuild** → show read-only settings → **Write** merges `assemble` projection into that image → upload.
+**Direct Web Serial path:** create a **Direct radio** FormatBuild (`formatId: 'radio-io'`, e.g. `radio-io-uv5r-mini`) → **Read** in Studio → download clone/image → persist `cpsWireHydration` with `formatId: 'radio-clone'` (`RadioCloneHydrationBag`) → show read-only settings → **Write** merges `assemble` projection into that image → upload. No CPS ZIP/CSV on this build.
 
 See [neonplug merge](../../reference/export-formats/neonplug/merge.md), [`CpsWireHydration`](../../../src/core/models/cpsWireHydration.ts), and [`radioCloneHydration.ts`](../../../src/core/models/radioCloneHydration.ts).
 
@@ -99,7 +99,7 @@ UV-5R Mini (PROGRAM+R/W): treat as **read-cached image + encode channels + uploa
 ### 4. Descriptor + registry
 
 - [ ] `RadioDescriptor`: `modelIds`, label, group, capabilities, `attributionIds`, `protocolFactory`
-- [ ] **`compatibleProfiles`**: `{ formatId, profileId }[]` so UI binds to FormatBuilds (e.g. Mini → `neonplug-uv5rmini`, optionally `chirp-uv5r`)
+- [ ] **`compatibleProfiles`**: `{ formatId, profileId }[]` so UI binds to FormatBuilds. Prefer a **Direct radio** (`radio-io`) profile for Web Serial — not a CPS file format (NeonPlug/CHIRP). CPS pathways stay file-only; adapters cite them via `attributionIds` only.
 - [ ] Write-strategy / hydration-required flags for UI gating
 - [ ] Register in `registry.ts`; UI picks only via registry (no `instanceof`)
 
@@ -150,6 +150,7 @@ Append here as adapters ship. Keep entries short; promote repeated patterns into
 | ---------- | --------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | 2026-07-23 | UV-5R Mini #617 | Binary Web Serial reads persist on `FormatBuild.cpsWireHydration` with discriminant `formatId: 'radio-clone'` (`RadioCloneHydrationBag` in `src/core/models/radioCloneHydration.ts`). Sibling to NeonPlug `formatId: 'neonplug'` file donors — same build field, different retain shape. Native YAML already accepts unknown formatIds as opaque retain. |
 | 2026-07-23 | UI #618         | Export panel hosts `BuildRadioIoPanel` when `listDescriptorsForProfile` matches. NeonPlug file-donor and Web Serial `radio-clone` bags share `cpsWireHydration` — distinguish with `isNeonplugDonorBag` vs `isRadioCloneHydrationBag`.                                                                                                                   |
+| 2026-07-23 | UI #618         | Web Serial binds to dedicated `formatId: 'radio-io'` FormatBuilds (e.g. `radio-io-uv5r-mini`), not NeonPlug/CHIRP CPS profiles. Export for `radio-io` is serial-only — no CPS ZIP/CSV. NeonPlug/CHIRP remain file pathways; cite protocol lineage via `attributionIds` only.                                                                             |
 
 ---
 
