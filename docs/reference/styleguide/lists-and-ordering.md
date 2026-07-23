@@ -43,7 +43,7 @@ Prefer these names in code and docs.
 5. **DataTable row drag in `reorderMode`** is still a kit gap — Zones keep arrow columns for now.
 6. **Build order reset ≠ browse restore.** Clearing `orderOrSlot` / member layout hints is permanent (confirm). DataTable **Return to export order** only undoes temporary column sorts.
 7. **Nested projection chrome** (Channels wire preview) uses `getRowClassName` + indented name cells — not card Accordion lists.
-7. **Role C may combine** drag, toolbar **Move up/down** (selection), and **per-row arrows** (`onMoveItem`). Gold: Build → Zones → Members export order.
+8. **Role C may combine** drag, toolbar **Move up/down** (selection), and **per-row arrows** (`onMoveItem`). Gold: Build → Zones → Members export order.
 
 ### Mental model
 

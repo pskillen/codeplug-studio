@@ -49,9 +49,10 @@ export function isProjectionExcluded(
  * Drop expanded wire rows whose projection key (or parent channel) is excluded on the build.
  * Shared by CPS serialise, wire preview parity tests, and Web Serial write.
  */
-export function filterExpandedRowsByOverrides<
-  T extends { key: string; sourceChannelId: string },
->(rows: readonly T[], overrides: readonly BuildEntityOverride[] | undefined): T[] {
+export function filterExpandedRowsByOverrides<T extends { key: string; sourceChannelId: string }>(
+  rows: readonly T[],
+  overrides: readonly BuildEntityOverride[] | undefined,
+): T[] {
   return rows.filter((row) => !isProjectionExcluded(overrides, row.key, row.sourceChannelId));
 }
 

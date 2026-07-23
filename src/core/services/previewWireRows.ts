@@ -444,11 +444,7 @@ export function previewWireRows(
             .get(generated.key)
             ?.wireName?.trim();
           const generatedWireName = generated.wireName;
-          const excluded = isProjectionExcluded(
-            build.channelOverrides,
-            generated.key,
-            channel.id,
-          );
+          const excluded = isProjectionExcluded(build.channelOverrides, generated.key, channel.id);
           const hasWireNameOverride = Boolean(keyOverride ?? channelOverride);
           rows.push({
             key: generated.key,

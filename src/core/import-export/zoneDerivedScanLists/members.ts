@@ -137,8 +137,7 @@ export function collectZoneScanProjectionMemberRefs(
   zones: Zone[],
   resolveOptions: ScanMemberResolveOptions | undefined,
   expansionByChannelId:
-    | Map<string, ReadonlyArray<Pick<ExpandedMxNChannelRow, 'key' | 'wireName'>>>
-    | undefined,
+    Map<string, ReadonlyArray<Pick<ExpandedMxNChannelRow, 'key' | 'wireName'>>> | undefined,
   channelLabel: (channelId: string) => string,
 ): ZoneScanProjectionMemberRef[] {
   const base = collectZoneScanMemberRefs(zone, zones, resolveOptions);

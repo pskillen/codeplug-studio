@@ -214,17 +214,13 @@ function serialiseScanListsCsv(
   const rows = assembled.scanLists.map((scanList, index) => {
     const zoneId = zoneIdFromDerivedScanListId(scanList.scanListId);
     const projection =
-      zoneId != null
-        ? layoutEntry(assembled.zoneGrouping, zoneId)?.scanMemberInclusion
-        : undefined;
+      zoneId != null ? layoutEntry(assembled.zoneGrouping, zoneId)?.scanMemberInclusion : undefined;
     const memberWireNames = scanList.memberChannelIds.flatMap((id) => {
       const expanded = context.expansionByChannelId.get(id);
       if (!expanded || expanded.length === 0) {
         return [context.memberChannelWireName(id)].filter(Boolean);
       }
-      return expanded
-        .filter((row) => projection?.[row.key] !== 'skip')
-        .map((row) => row.wireName);
+      return expanded.filter((row) => projection?.[row.key] !== 'skip').map((row) => row.wireName);
     });
     const memberRx = scanList.memberChannelIds.flatMap((id) => {
       const expanded = context.expansionByChannelId.get(id) ?? [];
