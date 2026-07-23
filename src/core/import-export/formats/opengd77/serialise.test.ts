@@ -244,7 +244,6 @@ describe('OpenGD77 export serialise', () => {
     };
     const build = {
       ...newFormatBuild(FIXTURE_PROJECT_ID, 'opengd77-1701', 'Nested export'),
-      formatId: 'opengd77',
       layout: {
         sections: [
           {
@@ -440,7 +439,7 @@ describe('OpenGD77 export serialise', () => {
       scanLists: [],
     };
     const assembled = assemble(build, library);
-    const csv = serialiseChannels(assembled, { profileId: build.profileId, expandModes: true });
+    const csv = serialiseChannels(assembled, { profileId: 'opengd77-1701', expandModes: true });
     expect(csv).toContain('-F');
     expect(csv).toContain('-D');
   });

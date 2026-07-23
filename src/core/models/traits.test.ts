@@ -7,12 +7,13 @@ import {
   traitProfileFor,
 } from './traits.ts';
 import { STUDIO_SCHEMA_VERSION } from './schemaVersion.ts';
-import { newFormatBuild, newProjectMeta } from '../domain/factories.ts';
+import { newFormatBuild, newProjectMeta, newRadioBuildForProfile } from '../domain/factories.ts';
+import { radioTargetIdForProfile } from '../radio-targets/catalog.ts';
 import { nextRevision, initialRevision } from './revision.ts';
 
 describe('schemaVersion', () => {
   it('starts at 4', () => {
-    expect(STUDIO_SCHEMA_VERSION).toBe(21);
+    expect(STUDIO_SCHEMA_VERSION).toBe(22);
   });
 });
 
@@ -117,29 +118,33 @@ describe('factories', () => {
     expect(project.id).toBe(project.projectId);
   });
 
-  it('creates format build from profile', () => {
+  it('creates radio build from profile with egress', () => {
     const projectId = newProjectMeta('P').id;
-    const build = newFormatBuild(projectId, 'opengd77-1701');
-    expect(build.formatId).toBe('opengd77');
-    expect(build.profileId).toBe('opengd77-1701');
+    const { build, egress } = newRadioBuildForProfile(projectId, 'opengd77-1701');
+    expect(build.radioTargetId).toBe(radioTargetIdForProfile('opengd77-1701'));
+    expect(egress.formatId).toBe('opengd77');
+    expect(egress.profileId).toBe('opengd77-1701');
     expect(build.layout.sections).toEqual([]);
   });
 
-  it('creates NeonPlug format builds from trait profiles', () => {
+  it('creates NeonPlug radio builds from trait profiles', () => {
     const projectId = newProjectMeta('P').id;
-    const dm32uv = newFormatBuild(projectId, 'neonplug-dm32uv');
-    expect(dm32uv.formatId).toBe('neonplug');
-    expect(dm32uv.profileId).toBe('neonplug-dm32uv');
-    const uv5r = newFormatBuild(projectId, 'neonplug-uv5rmini');
-    expect(uv5r.formatId).toBe('neonplug');
-    expect(uv5r.profileId).toBe('neonplug-uv5rmini');
+    const dm32uv = newRadioBuildForProfile(projectId, 'neonplug-dm32uv');
+    expect(dm32uv.build.radioTargetId).toBe('baofeng-dm32uv');
+    expect(dm32uv.egress.formatId).toBe('neonplug');
+    expect(dm32uv.egress.profileId).toBe('neonplug-dm32uv');
+    const uv5r = newRadioBuildForProfile(projectId, 'neonplug-uv5rmini');
+    expect(uv5r.build.radioTargetId).toBe('baofeng-uv5r-mini');
+    expect(uv5r.egress.formatId).toBe('neonplug');
+    expect(uv5r.egress.profileId).toBe('neonplug-uv5rmini');
   });
 
-  it('creates Direct radio FormatBuild for UV-5R Mini Web Serial', () => {
+  it('creates Direct radio build for UV-5R Mini Web Serial', () => {
     const projectId = newProjectMeta('P').id;
-    const build = newFormatBuild(projectId, 'radio-io-uv5r-mini');
-    expect(build.formatId).toBe('radio-io');
-    expect(build.profileId).toBe('radio-io-uv5r-mini');
+    const { build, egress } = newRadioBuildForProfile(projectId, 'radio-io-uv5r-mini');
+    expect(build.radioTargetId).toBe('baofeng-uv5r-mini');
+    expect(egress.formatId).toBe('radio-io');
+    expect(egress.profileId).toBe('radio-io-uv5r-mini');
   });
 
   it('rejects unknown profile', () => {

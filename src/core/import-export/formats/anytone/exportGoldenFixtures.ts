@@ -2,17 +2,23 @@ import {
   newAprsConfiguration,
   newChannel,
   newFormatBuild,
+  newRadioBuildForProfile,
   newScanList,
   newTalkGroup,
   newZone,
 } from '@core/domain/factories.ts';
 import type { Channel } from '@core/models/library.ts';
-import type { FormatBuild } from '@core/models/formatBuild.ts';
+import type { EgressPath } from '@core/models/egressPath.ts';
+import type { RadioBuild } from '@core/models/radioBuild.ts';
 import type { LibrarySlice } from '@core/services/assemble.ts';
 
 export const ANYTONE_GOLDEN_PROJECT_ID = '11111111-1111-4111-8111-111111111111';
 
 export const ANYTONE_GOLDEN_SCAN_LIST_ID = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
+
+export function anytoneExportEgress(projectId = ANYTONE_GOLDEN_PROJECT_ID): EgressPath {
+  return newRadioBuildForProfile(projectId, 'anytone-at-d890uv').egress;
+}
 
 /** Minimal library + build for directional export golden tests. */
 export function minimalAnytoneExportLibrary(): LibrarySlice {
@@ -74,7 +80,7 @@ export function minimalAnytoneExportLibrary(): LibrarySlice {
   };
 }
 
-export function minimalAnytoneExportBuild(library: LibrarySlice): FormatBuild {
+export function minimalAnytoneExportBuild(library: LibrarySlice): RadioBuild {
   const zone = library.zones[0]!;
   const ch1 = library.channels[0]!;
   const ch2 = library.channels[1]!;
@@ -174,7 +180,7 @@ export function aprsAmAirSlotExportLibrary(): LibrarySlice {
   };
 }
 
-export function aprsAmAirSlotExportBuild(library: LibrarySlice): FormatBuild {
+export function aprsAmAirSlotExportBuild(library: LibrarySlice): RadioBuild {
   const airband = library.channels[0]!;
   return {
     ...newFormatBuild(ANYTONE_GOLDEN_PROJECT_ID, 'anytone-at-d890uv', 'Air APRS export'),

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { newChannel, newFormatBuild } from '@core/domain/factories.ts';
+import { newChannel, newRadioBuildForProfile } from '@core/domain/factories.ts';
 import { dedupeWarnings } from '@core/import-export/dedupeWarnings.ts';
 import { exportBuildAll } from './exportBuild.ts';
 
@@ -36,13 +36,14 @@ describe('exportBuildAll', () => {
       rxGroupLists: [],
       scanLists: [],
     };
+    const { build: baseBuild, egress } = newRadioBuildForProfile(projectId, 'opengd77-1701');
     const build = {
-      ...newFormatBuild(projectId, 'opengd77-1701'),
+      ...baseBuild,
       channelOverrides: [{ libraryEntityId: channel.id, wireName: longName }],
     };
     const longNameWarningPrefix = `Channel wire name "${longName}" exceeds 16 characters`;
 
-    const result = exportBuildAll({ build, library });
+    const result = exportBuildAll({ build, egress, library });
 
     expect(Object.keys(result.files).length).toBeGreaterThan(1);
     expect(
@@ -78,10 +79,10 @@ describe('exportBuildAll', () => {
       rxGroupLists: [],
       scanLists: [],
     };
-    const build = newFormatBuild(projectId, 'dm32-baofeng-dm32uv');
+    const { build, egress } = newRadioBuildForProfile(projectId, 'dm32-baofeng-dm32uv');
     const capWarning = 'Zone "Glasgow" has 65 expanded members (cap 64)';
 
-    const result = exportBuildAll({ build, library });
+    const result = exportBuildAll({ build, egress, library });
 
     expect(Object.keys(result.files).length).toBeGreaterThan(1);
     expect(result.warnings.filter((warning) => warning === capWarning)).toHaveLength(1);
@@ -132,9 +133,9 @@ describe('exportBuildAll', () => {
       rxGroupLists: [],
       scanLists: [],
     };
-    const build = newFormatBuild(projectId, 'dm32-baofeng-dm32uv');
+    const { build, egress } = newRadioBuildForProfile(projectId, 'dm32-baofeng-dm32uv');
 
-    const result = exportBuildAll({ build, library });
+    const result = exportBuildAll({ build, egress, library });
 
     expect(result.warnings).toContain('Zone "Glasgow" has 65 expanded members (cap 64)');
     expect(result.warnings).toContain('Zone "Edinburgh" has 65 expanded members (cap 64)');

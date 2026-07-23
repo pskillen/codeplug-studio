@@ -40,7 +40,8 @@ describe('migrateZoneMemberEntries', () => {
         analogSquelchMode: 'carrier',
       },
       aprsConfiguration: null,
-      formatBuilds: [],
+      radioBuilds: [],
+      egressPaths: [],
     } satisfies ProjectAggregate;
 
     const migrated = migrateZoneMemberEntries(aggregate);

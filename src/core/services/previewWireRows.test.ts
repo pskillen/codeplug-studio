@@ -98,7 +98,7 @@ describe('previewWireRows', () => {
     };
 
     const rows = previewWireRows(build, library, 'talkGroup', {
-      profileId: build.profileId,
+      profileId: 'opengd77-1701',
       shortenNames: true,
     });
     const row = rows.find((entry) => entry.libraryEntityId === tgId);
@@ -263,7 +263,7 @@ describe('previewWireRows', () => {
     };
 
     const rows = previewWireRows(build, library, 'channel', {
-      profileId: build.profileId,
+      profileId: 'opengd77-1701',
       expandModes: true,
     });
     const multiModeRows = rows.filter((row) => row.libraryEntityId === channels[1]!.id);
@@ -294,7 +294,7 @@ describe('previewWireRows', () => {
     };
 
     const rows = previewWireRows(build, library, 'channel', {
-      profileId: build.profileId,
+      profileId: 'opengd77-1701',
       shortenNames: true,
       maxNameLength: 16,
     });
@@ -319,7 +319,7 @@ describe('previewWireRows', () => {
     };
 
     const rows = previewWireRows(build, library, 'channel', {
-      profileId: build.profileId,
+      profileId: 'opengd77-1701',
       shortenNames: false,
     });
     expect(rows.find((row) => row.libraryEntityId.endsWith('2222'))?.generatedWireName).toBe(
@@ -353,7 +353,7 @@ describe('previewWireRows', () => {
     };
 
     const rows = previewWireRows(build, library, 'channel', {
-      profileId: build.profileId,
+      profileId: 'opengd77-1701',
       shortenNames: true,
     });
     const row = rows.find((r) => r.libraryEntityId === channels[1]!.id);
@@ -616,10 +616,7 @@ describe('previewWireRows', () => {
       id: 'zone-glasgow',
       members: [{ kind: 'zone' as const, zoneId: pmrZone.id }],
     };
-    const build = {
-      ...newFormatBuild(projectId, 'opengd77-1701', 'Omit preview'),
-      formatId: 'opengd77',
-    };
+    const build = newFormatBuild(projectId, 'opengd77-1701', 'Omit preview');
     const library = {
       channels: [pmrChannel],
       zones: [pmrZone, glasgowZone],
@@ -655,7 +652,6 @@ describe('previewWireRows', () => {
     };
     const build = {
       ...newFormatBuild(projectId, 'opengd77-1701', 'Force include preview'),
-      formatId: 'opengd77',
       zoneOverrides: [{ libraryEntityId: pmrZone.id, forceInclude: true }],
     };
     const library = {
@@ -684,7 +680,6 @@ describe('previewWireRows', () => {
     };
     const build = {
       ...newFormatBuild(projectId, 'opengd77-1701', 'Force excluded preview'),
-      formatId: 'opengd77',
       zoneOverrides: [{ libraryEntityId: pmrZone.id, forceInclude: true, excluded: true }],
     };
     const library = {
@@ -713,7 +708,7 @@ describe('previewWireRows', () => {
         { kind: 'zone' as const, zoneId: childZone.id },
       ],
     };
-    const build = { ...newFormatBuild(projectId, 'opengd77-1701', 'Badges'), formatId: 'opengd77' };
+    const build = newFormatBuild(projectId, 'opengd77-1701', 'Badges');
     const library = {
       channels: [ch],
       zones: [childZone, parentZone],
@@ -745,10 +740,7 @@ describe('previewWireRows', () => {
       omitFromExport: true,
       members: [{ kind: 'channel' as const, channelId: pmrChannel.id }],
     };
-    const build = {
-      ...newFormatBuild(projectId, 'opengd77-1701', 'Omit channel preview'),
-      formatId: 'opengd77',
-    };
+    const build = newFormatBuild(projectId, 'opengd77-1701', 'Omit channel preview');
     const library = {
       channels: [pmrChannel],
       zones: [pmrZone],
@@ -812,7 +804,7 @@ describe('previewWireRows', () => {
       forbidTransmit: 'forbid',
       modeProfiles: [defaultModeProfile('am')],
     };
-    const build = { ...newFormatBuild(projectId, 'anytone-at-d890uv'), formatId: 'anytone' };
+    const build = newFormatBuild(projectId, 'anytone-at-d890uv');
     const library = {
       channels: [dmr, air],
       zones: [],
@@ -856,7 +848,7 @@ describe('previewWireRows', () => {
         { kind: 'channel' as const, channelId: air.id },
       ],
     };
-    const build = { ...newFormatBuild(projectId, 'anytone-at-d890uv'), formatId: 'anytone' };
+    const build = newFormatBuild(projectId, 'anytone-at-d890uv');
     const library = {
       channels: [dmr, air],
       zones: [airOnlyZone, mixedZone],

@@ -5,11 +5,13 @@ import { exportBuildAll } from '@core/services/exportBuild.ts';
 import { assemble } from '@core/services/assemble.ts';
 import type { Channel, Zone } from '@core/models/library.ts';
 import type { LibrarySlice } from '@core/services/assemble.ts';
-import type { FormatBuild } from '@core/models/formatBuild.ts';
+import type { RadioBuild } from '@core/models/radioBuild.ts';
+import { anytoneExportEgress } from './exportGoldenFixtures.ts';
 import { AM_ZONE_HEADERS } from './columns.ts';
 import { resolveAnytoneExportFileNames, serialiseAmZonesCsv } from './serialise.ts';
 
 const PROJECT_ID = 'proj-amzone-export';
+const anytoneEgress = anytoneExportEgress(PROJECT_ID);
 
 function dmrChannel(name: string) {
   return {
@@ -42,7 +44,7 @@ function libraryWithZones(channels: Channel[], zones: Zone[]): LibrarySlice {
   };
 }
 
-function anytoneBuild(library: LibrarySlice): FormatBuild {
+function anytoneBuild(library: LibrarySlice): RadioBuild {
   return {
     ...newFormatBuild(PROJECT_ID, 'anytone-at-d890uv', 'AM zone export'),
     layout: { sections: [] },
@@ -73,7 +75,7 @@ describe('anytone AMZone export', () => {
     const assembled = assemble(build, library);
 
     expect(resolveAnytoneExportFileNames(assembled)).not.toContain('AMZone.CSV');
-    const result = exportBuildAll({ build, library });
+    const result = exportBuildAll({ build, egress: anytoneEgress, library });
     expect(result.files['AMZone.CSV']).toBeUndefined();
   });
 
@@ -88,7 +90,7 @@ describe('anytone AMZone export', () => {
     const assembled = assemble(build, library);
 
     expect(resolveAnytoneExportFileNames(assembled)).toContain('AMZone.CSV');
-    const result = exportBuildAll({ build, library });
+    const result = exportBuildAll({ build, egress: anytoneEgress, library });
     expect(result.files['AMZone.CSV']).toBeDefined();
     expect(csvBodyRows(result.files['DMRZone.CSV']!)).toHaveLength(0);
     expect(result.files['AMZone.CSV']!).toContain('Tower');
@@ -107,7 +109,7 @@ describe('anytone AMZone export', () => {
     };
     const library = libraryWithZones([dmr, air], [zone]);
     const build = anytoneBuild(library);
-    const result = exportBuildAll({ build, library });
+    const result = exportBuildAll({ build, egress: anytoneEgress, library });
 
     const dmrZoneCsv = result.files['DMRZone.CSV']!;
     const amZoneCsv = result.files['AMZone.CSV']!;
