@@ -5,7 +5,7 @@ import { exportProjectYaml } from '@core/services/exportProjectYaml.ts';
 import { importProjectYaml } from '@core/services/importProjectYaml.ts';
 import type { ProjectInterchangePort } from '@core/services/projectInterchangePort.ts';
 import { seedToAggregate } from '@core/services/projectSeedMapping.ts';
-import { projectWithFormatBuildAggregate } from '@core/import-export/formats/native-yaml/testFixtures.ts';
+import { projectWithRadioBuildAggregate } from '@core/import-export/formats/native-yaml/testFixtures.ts';
 import {
   InMemoryProjectPersistence,
   seedFromAggregate,
@@ -25,7 +25,7 @@ function asInterchangePort(store: ProjectPersistence): ProjectInterchangePort {
 describe('native YAML interchange system', () => {
   it('export → replaceExisting → reload matches exported document', async () => {
     const persistence = new InMemoryProjectPersistence();
-    const sourceAggregate = projectWithFormatBuildAggregate();
+    const sourceAggregate = projectWithRadioBuildAggregate();
     await persistence.seedProject(seedFromAggregate(sourceAggregate));
     const port = asInterchangePort(persistence);
     const projectId = sourceAggregate.meta.projectId;
@@ -51,13 +51,14 @@ describe('native YAML interchange system', () => {
     expect(reloadedAggregate.meta.interchange?.localFile?.exportedAt).toBeTruthy();
 
     expect(reloadedAggregate.channels).toEqual(parsedFromExport.channels);
-    expect(reloadedAggregate.formatBuilds).toEqual(parsedFromExport.formatBuilds);
+    expect(reloadedAggregate.radioBuilds).toEqual(parsedFromExport.radioBuilds);
+    expect(reloadedAggregate.egressPaths).toEqual(parsedFromExport.egressPaths);
     expect(reloadedAggregate.meta.name).toBe(parsedFromExport.meta.name);
   });
 
   it('seedPreservingId import on empty store keeps the YAML project id', async () => {
     const sourcePersistence = new InMemoryProjectPersistence();
-    const sourceAggregate = projectWithFormatBuildAggregate();
+    const sourceAggregate = projectWithRadioBuildAggregate();
     await sourcePersistence.seedProject(seedFromAggregate(sourceAggregate));
     const sourcePort = asInterchangePort(sourcePersistence);
     const projectId = sourceAggregate.meta.projectId;
@@ -78,7 +79,7 @@ describe('native YAML interchange system', () => {
 
   it('export YAML contains the local project id', async () => {
     const persistence = new InMemoryProjectPersistence();
-    const sourceAggregate = projectWithFormatBuildAggregate();
+    const sourceAggregate = projectWithRadioBuildAggregate();
     await persistence.seedProject(seedFromAggregate(sourceAggregate));
     const port = asInterchangePort(persistence);
     const projectId = sourceAggregate.meta.projectId;
@@ -96,7 +97,7 @@ describe('native YAML interchange system', () => {
 
   it('createNew import seeds an isolated project', async () => {
     const persistence = new InMemoryProjectPersistence();
-    const existing = projectWithFormatBuildAggregate();
+    const existing = projectWithRadioBuildAggregate();
     await persistence.seedProject(seedFromAggregate(existing));
     const port = asInterchangePort(persistence);
 

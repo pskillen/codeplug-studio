@@ -63,9 +63,9 @@ describe('OpenGD77 export serialise', () => {
   }
 
   function loadAssembled() {
-    const yaml = readFileSync(join(fixtureDir, 'with-format-build.yaml'), 'utf8');
+    const yaml = readFileSync(join(fixtureDir, 'with-radio-build.yaml'), 'utf8');
     const aggregate = parseProjectDocument(yaml);
-    const build = aggregate.formatBuilds[0]!;
+    const build = aggregate.radioBuilds[0]!;
     const library = {
       channels: aggregate.channels,
       zones: aggregate.zones,
@@ -279,9 +279,10 @@ describe('OpenGD77 export serialise', () => {
   });
 
   it('exportBuildAll returns all six CPS files', () => {
-    const yaml = readFileSync(join(fixtureDir, 'with-format-build.yaml'), 'utf8');
+    const yaml = readFileSync(join(fixtureDir, 'with-radio-build.yaml'), 'utf8');
     const aggregate = parseProjectDocument(yaml);
-    const build = aggregate.formatBuilds[0]!;
+    const build = aggregate.radioBuilds[0]!;
+    const egress = aggregate.egressPaths[0]!;
     const library = {
       channels: aggregate.channels,
       zones: aggregate.zones,
@@ -292,7 +293,7 @@ describe('OpenGD77 export serialise', () => {
       scanLists: [],
     };
 
-    const result = exportBuildAll({ build, library });
+    const result = exportBuildAll({ build, egress, library });
     expect(Object.keys(result.files)).toEqual([
       'Channels.csv',
       'Zones.csv',
@@ -402,9 +403,9 @@ describe('OpenGD77 export serialise', () => {
   });
 
   it('expands multi-mode channels into -F and -D wire rows when expandModes is true', () => {
-    const yaml = readFileSync(join(fixtureDir, 'with-format-build.yaml'), 'utf8');
+    const yaml = readFileSync(join(fixtureDir, 'with-radio-build.yaml'), 'utf8');
     const aggregate = parseProjectDocument(yaml);
-    const build = aggregate.formatBuilds[0]!;
+    const build = aggregate.radioBuilds[0]!;
     const channels: Channel[] = aggregate.channels.map((channel, index) =>
       index === 1
         ? {
