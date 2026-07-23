@@ -8,6 +8,7 @@ import {
 } from './aprsSettingsWire.ts';
 import {
   expandAllNeonplugChannelsForExport,
+  neonplugChannelExpansionById,
   type ExpandedNeonplugChannelRow,
 } from './channelExpansion.ts';
 import { channelToNeonplugChannel, neonplugContextsFromExportOptions } from './channelWire.ts';
@@ -282,6 +283,7 @@ export function serialiseNeonplugCodeplug(
     const { numbered: libraryNumbered, numbersBySourceChannelId } =
       assignNeonplugExpandedChannelNumbers(expanded, profile.maxChannels, warnings, profile.label);
 
+    const expansionByChannelId = neonplugChannelExpansionById(expanded);
     const { scanLists, scanListIdByChannelId, carriers, scanListIdByZoneId } =
       deriveNeonplugZoneDerivedScanLists(
         assembled,
@@ -290,6 +292,7 @@ export function serialiseNeonplugCodeplug(
         options,
         warnings,
         expanded.map((row) => row.wireName),
+        expansionByChannelId,
       );
 
     const templateChannel = assembled.library?.channels[0] ?? assembled.channels[0]?.entity;

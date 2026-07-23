@@ -75,6 +75,7 @@ function expandedWireNamesForMembers(
   channelById: Map<string, Channel>,
   expansionByChannelId: Map<string, ExpandedMxNChannelRow[]>,
   options?: CpsExportOptions,
+  projection?: Record<string, 'include' | 'skip'> | null,
 ): string[] {
   const scanContext = buildScanContext(
     options?.defaultScanInclusion != null
@@ -87,6 +88,9 @@ function expandedWireNamesForMembers(
     const channel = channelById.get(channelId);
     if (!channel || effectiveScanSkips(channel, scanContext)) continue;
     for (const row of expansionByChannelId.get(channelId) ?? []) {
+      // Parent-id skip already removed the channel from memberIds; projection-key skip
+      // drops individual expanded wires (#570).
+      if (projection?.[row.key] === 'skip') continue;
       names.push(row.wireName);
     }
   }
@@ -136,6 +140,7 @@ export function deriveZoneDerivedScanLists(
       channelById,
       expansionByChannelId,
       options,
+      entry.scanMemberInclusion,
     );
 
     if (memberWireNames.length === 0) {

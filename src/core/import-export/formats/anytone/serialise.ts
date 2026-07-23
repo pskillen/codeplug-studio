@@ -38,6 +38,8 @@ import { channelFrequencyById, rxGroupListMemberNames } from './listWire.ts';
 import { DEFAULT_ANYTONE_PROFILE_ID } from './profiles.ts';
 import { partitionAnytoneChannels } from './receiveOnlyBanks.ts';
 import { hasAmZoneExport, partitionAnytoneZones } from './zonePartition.ts';
+import { zoneIdFromDerivedScanListId } from './zoneDerivedScanLists.ts';
+import { layoutEntry } from '@core/import-export/zoneDerivedScanLists/members.ts';
 import {
   buildScanContext,
   resolveEffectiveScanInclusion,
@@ -209,29 +211,39 @@ function serialiseScanListsCsv(
   context: AnytoneExportWireContext,
 ): string {
   const channels = channelFrequencyById(assembled);
-  const rows = assembled.scanLists.map((scanList, index) =>
-    padRow(SCAN_LIST_HEADERS, {
+  const rows = assembled.scanLists.map((scanList, index) => {
+    const zoneId = zoneIdFromDerivedScanListId(scanList.scanListId);
+    const projection =
+      zoneId != null
+        ? layoutEntry(assembled.zoneGrouping, zoneId)?.scanMemberInclusion
+        : undefined;
+    const memberWireNames = scanList.memberChannelIds.flatMap((id) => {
+      const expanded = context.expansionByChannelId.get(id);
+      if (!expanded || expanded.length === 0) {
+        return [context.memberChannelWireName(id)].filter(Boolean);
+      }
+      return expanded
+        .filter((row) => projection?.[row.key] !== 'skip')
+        .map((row) => row.wireName);
+    });
+    const memberRx = scanList.memberChannelIds.flatMap((id) => {
+      const expanded = context.expansionByChannelId.get(id) ?? [];
+      const freq = channels.get(id)?.rx ?? '0.00000';
+      if (expanded.length === 0) return [freq];
+      return expanded.filter((row) => projection?.[row.key] !== 'skip').map(() => freq);
+    });
+    const memberTx = scanList.memberChannelIds.flatMap((id) => {
+      const expanded = context.expansionByChannelId.get(id) ?? [];
+      const freq = channels.get(id)?.tx ?? '0.00000';
+      if (expanded.length === 0) return [freq];
+      return expanded.filter((row) => projection?.[row.key] !== 'skip').map(() => freq);
+    });
+    return padRow(SCAN_LIST_HEADERS, {
       [SCAN_LIST_COL.number]: String(index + 1),
       [SCAN_LIST_COL.name]: context.scanListWireName(scanList.scanListId),
-      [SCAN_LIST_COL.members]: scanList.memberChannelIds
-        .flatMap((id) => context.memberChannelWireNames(id))
-        .join('|'),
-      [SCAN_LIST_COL.memberRx]: scanList.memberChannelIds
-        .flatMap((id) => {
-          const expanded = context.expansionByChannelId.get(id);
-          const count = expanded?.length ?? 1;
-          const freq = channels.get(id)?.rx ?? '0.00000';
-          return Array.from({ length: count }, () => freq);
-        })
-        .join('|'),
-      [SCAN_LIST_COL.memberTx]: scanList.memberChannelIds
-        .flatMap((id) => {
-          const expanded = context.expansionByChannelId.get(id);
-          const count = expanded?.length ?? 1;
-          const freq = channels.get(id)?.tx ?? '0.00000';
-          return Array.from({ length: count }, () => freq);
-        })
-        .join('|'),
+      [SCAN_LIST_COL.members]: memberWireNames.join('|'),
+      [SCAN_LIST_COL.memberRx]: memberRx.join('|'),
+      [SCAN_LIST_COL.memberTx]: memberTx.join('|'),
       [SCAN_LIST_COL.scanMode]: 'Off',
       [SCAN_LIST_COL.prioritySelect]: 'Off',
       [SCAN_LIST_COL.priority1]: 'Off',
@@ -245,8 +257,8 @@ function serialiseScanListsCsv(
       [SCAN_LIST_COL.lookBackB]: '5.0',
       [SCAN_LIST_COL.dropoutDelay]: '5.0',
       [SCAN_LIST_COL.dwellTime]: '5.0',
-    }),
-  );
+    });
+  });
   return formatCsv(SCAN_LIST_HEADERS, rows);
 }
 

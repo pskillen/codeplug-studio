@@ -88,6 +88,7 @@ export default function BuildZonesWirePage() {
             saving={zoneScan.saving}
             onUpdateZoneEntry={(patch) => zoneScan.updateZoneEntry(row.libraryEntityId, patch)}
             onUpdateMemberScanInclusion={zoneScan.updateMemberScanInclusion}
+            expansionByChannelId={zoneScan.expansionByChannelId}
           />
         );
       }}

@@ -1086,8 +1086,9 @@ function parseEgressPath(raw: unknown, index: number): EgressPath {
 function parseScanMemberInclusion(raw: unknown, label: string): Record<string, 'include' | 'skip'> {
   const record = expectRecord(raw, label);
   const result: Record<string, 'include' | 'skip'> = {};
-  for (const [channelId, value] of Object.entries(record)) {
-    result[channelId] = parseEnumField(value, `${label}.${channelId}`, [
+  // Keys are library channel UUIDs and/or expansion projection keys (same space as channelOverrides).
+  for (const [memberKey, value] of Object.entries(record)) {
+    result[memberKey] = parseEnumField(value, `${label}.${memberKey}`, [
       'include',
       'skip',
     ] as const);

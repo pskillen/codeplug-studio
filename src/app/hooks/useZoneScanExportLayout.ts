@@ -10,9 +10,19 @@ import {
 import { scanListMemberCapForProfile } from '@core/import-export/formatProfiles.ts';
 import type { FormatId } from '@core/import-export/types.ts';
 import { buildZoneBehaviourContext } from '@core/import-export/zoneBehaviourDefaults/index.ts';
-import type { LibrarySlice } from '@core/services/assemble.ts';
+import { assemble, type LibrarySlice } from '@core/services/assemble.ts';
 import { BuildCapabilityTrait } from '@core/models/traits.ts';
-import { radioTargetHasTrait, traitsForRadioTarget } from '@core/radio-targets/index.ts';
+import {
+  hasMxNChannelExpansion,
+  radioTargetHasTrait,
+  traitsForRadioTarget,
+} from '@core/radio-targets/index.ts';
+import {
+  expandAllMxNChannels,
+  mxnExpansionByChannelId,
+  type ExpandedMxNChannelRow,
+} from '@core/import-export/channelExpansion/mxnExpandAll.ts';
+import { mergeExportOptions } from '@core/import-export/exportSettingsMerge.ts';
 import { egressIdentityForBuild } from '../lib/buildEgressUi.ts';
 import { useBuildLayout } from '../routes/builds/BuildLayoutContext.tsx';
 import { useProjects } from '../state/useProjects.ts';
@@ -87,6 +97,27 @@ export function useZoneScanExportLayout() {
     [library],
   );
 
+  /** MxN expansion keyed by parent channel — Scan-tab nest + counts (#570). */
+  const expansionByChannelId = useMemo((): Map<string, ExpandedMxNChannelRow[]> | undefined => {
+    if (!library || !enabled || !hasMxNChannelExpansion(build.radioTargetId)) return undefined;
+    const assembled = assemble(build, library);
+    const options = mergeExportOptions(
+      build,
+      egress.formatId,
+      { profileId: egress.profileId },
+      library,
+    );
+    const warnings: string[] = [];
+    const rows = expandAllMxNChannels({
+      assembled,
+      library,
+      radioTargetId: build.radioTargetId,
+      options,
+      warnings,
+    });
+    return mxnExpansionByChannelId(rows);
+  }, [library, enabled, build, egress.formatId, egress.profileId]);
+
   const persistLayout = useCallback(
     async (nextLayout: ZoneGroupingLayout) => {
       setSaving(true);
@@ -126,14 +157,14 @@ export function useZoneScanExportLayout() {
 
   /** Persist per-exported-zone projection skip/include — does not mutate library zones. */
   const updateMemberScanInclusion = useCallback(
-    (exportedZoneId: string, channelId: string, includeInScanList: boolean) => {
+    (exportedZoneId: string, memberKey: string, includeInScanList: boolean) => {
       if (!layout) return;
       const entry = layout.zones.find((zone) => zone.id === exportedZoneId);
       const nextInclusion = { ...(entry?.scanMemberInclusion ?? {}) };
       if (includeInScanList) {
-        delete nextInclusion[channelId];
+        delete nextInclusion[memberKey];
       } else {
-        nextInclusion[channelId] = 'skip';
+        nextInclusion[memberKey] = 'skip';
       }
       const scanMemberInclusion = Object.keys(nextInclusion).length > 0 ? nextInclusion : undefined;
       void persistLayout(updateZoneGroupingEntry(layout, exportedZoneId, { scanMemberInclusion }));
@@ -150,6 +181,7 @@ export function useZoneScanExportLayout() {
     library,
     zoneById,
     channelById,
+    expansionByChannelId,
     zoneBehaviourContext,
     saving,
     error,
