@@ -86,7 +86,7 @@ Dual-mode zones appear on both **Zones** (DMR member projection) and **Airband**
 | `/builds/:id/contacts`       | `contact`          | Digital + analog contacts; overrides in modal                                                                                                                                                                                                                                                                                                                              |
 | `/builds/:id/rx-group-lists` | `rxGroupList`      | Overrides in modal                                                                                                                                                                                                                                                                                                                                                         |
 
-Secondary nav is trait-gated from `radioTargetId`, with NeonPlug settings / Radio image / Airband shown only when the **active egress** matches (`buildNavItems` in `src/app/routes/builds/nav.ts`).
+Secondary nav is trait-gated from `radioTargetId`. Airband still keys off the **active** Anytone egress. NeonPlug settings / Radio image appear when the matching retain bag exists on any egress (`buildNavItems` in `src/app/routes/builds/nav.ts`) — not only while that pathway is selected ([#668](https://github.com/pskillen/codeplug-studio/issues/668)).
 
 ## Related
 

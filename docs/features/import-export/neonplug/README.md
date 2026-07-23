@@ -54,10 +54,10 @@ See [file-format.md](../../../reference/export-formats/neonplug/file-format.md) 
 2. Create a **NeonPlug build** for the target radio profile (`/builds/new`).
 3. In NeonPlug, **read from the radio** and export a donor `.neonplug`.
 4. On the build export page, upload the donor once (saved on the build) → **Download for radio write** (or save the merge to Drive).
-5. Later exports reuse the stored donor; replace or clear from Export, or inspect on **NeonPlug settings**.
+5. Later exports reuse the stored donor; replace or clear from Export, or inspect on **NeonPlug settings** (secondary nav appears whenever a donor bag is stored — the Export pathway need not be on NeonPlug; [#668](https://github.com/pskillen/codeplug-studio/issues/668)).
 6. Import the merged file in NeonPlug → write to the radio.
 
-**Persistence:** donor retain slices live on `FormatBuild.cpsWireHydration` — IndexedDB with the project, and **included** when the operator exports/imports native YAML (Drive or download). Do not commit personal project YAML into the Studio repo.
+**Persistence:** donor retain slices live on the NeonPlug **`EgressPath.hydration`** — IndexedDB with the project, and **included** when the operator exports/imports native YAML (Drive or download). Do not commit personal project YAML into the Studio repo.
 
 **Secondary:** **Download greenfield `.neonplug`** for browsing / debug only — it omits radio settings and is **not safe to write back** without a donor merge.
 
