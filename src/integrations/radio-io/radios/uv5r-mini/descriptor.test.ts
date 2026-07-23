@@ -15,7 +15,8 @@ describe('UV-5R Mini descriptor / registry', () => {
     expect(d?.writeStrategy).toBe('full-image');
     expect(d?.hydrationRequiredForWrite).toBe(true);
     expect(d?.attributionIds).toEqual(['chirp', 'neonplug']);
-    expect(d?.baudRate).toBe(38400);
+    expect(d?.baudRate).toBe(115200);
+    expect(d?.baudRateFallback).toBe(38400);
     expect(d?.compatibleProfiles).toEqual([
       { formatId: 'radio-io', profileId: 'radio-io-uv5r-mini' },
     ]);

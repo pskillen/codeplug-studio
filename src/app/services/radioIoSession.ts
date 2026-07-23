@@ -13,7 +13,10 @@ import {
 import {
   createRadioSession,
   listDescriptorsForProfile,
-  requestWebSerialPipe,
+  openWebSerialPipe,
+  RadioTimeoutError,
+  RadioWrongIdentError,
+  requestWebSerialPort,
   setCachedImage,
   type ProgressFn,
   type RadioDescriptor,
@@ -50,6 +53,23 @@ export interface OpenRadioSessionResult {
   descriptor: RadioDescriptor;
 }
 
+function isHandshakeConnectFailure(err: unknown): boolean {
+  return err instanceof RadioWrongIdentError || err instanceof RadioTimeoutError;
+}
+
+function withBaudsTriedMessage(err: unknown, baudsTried: readonly number[]): Error {
+  const list = baudsTried.join(', ');
+  if (err instanceof Error) {
+    if (err.message.includes('tried baud')) {
+      return err;
+    }
+    const next = new Error(`${err.message} (tried baud: ${list})`);
+    next.name = err.name;
+    return next;
+  }
+  return new Error(`Radio connect failed (tried baud: ${list})`);
+}
+
 /** Open Web Serial for the first compatible descriptor (or explicit modelId). */
 export async function openRadioSessionForEgress(
   egress: EgressPath,
@@ -64,23 +84,44 @@ export async function openRadioSessionForEgress(
   const descriptor =
     (opts?.modelId ? candidates.find((d) => d.modelIds.includes(opts.modelId!)) : undefined) ??
     candidates[0]!;
-  const pipe = await requestWebSerialPipe({
-    baudRate: descriptor.baudRate,
-    forceSelection: opts?.forcePortSelection ?? true,
-  });
-  const radio = descriptor.protocolFactory();
-  try {
-    await radio.connect(pipe, { signal: opts?.signal });
-  } catch (err) {
-    try {
-      await pipe.close();
-    } catch {
-      /* ignore close errors while surfacing connect failure */
+
+  const bauds = descriptor.baudRateFallback
+    ? ([descriptor.baudRate, descriptor.baudRateFallback] as const)
+    : ([descriptor.baudRate] as const);
+
+  const port = await requestWebSerialPort(opts?.forcePortSelection ?? true);
+  let pipe: Awaited<ReturnType<typeof openWebSerialPipe>> | null = null;
+
+  for (let attempt = 0; attempt < bauds.length; attempt++) {
+    if (pipe) {
+      try {
+        await pipe.close();
+      } catch {
+        /* ignore close errors before baud retry */
+      }
     }
-    throw err;
+    pipe = await openWebSerialPipe(port, bauds[attempt]!);
+    const radio = descriptor.protocolFactory();
+    try {
+      await radio.connect(pipe, { signal: opts?.signal });
+      const session = createRadioSession({ descriptor, pipe, radio });
+      return { session, descriptor };
+    } catch (err) {
+      const baudsTried = bauds.slice(0, attempt + 1);
+      const canRetry =
+        attempt < bauds.length - 1 && isHandshakeConnectFailure(err) && descriptor.baudRateFallback;
+      if (!canRetry) {
+        try {
+          await pipe.close();
+        } catch {
+          /* ignore close errors while surfacing connect failure */
+        }
+        throw withBaudsTriedMessage(err, baudsTried);
+      }
+    }
   }
-  const session = createRadioSession({ descriptor, pipe, radio });
-  return { session, descriptor };
+
+  throw new Error('Radio connect failed unexpectedly.');
 }
 
 /** @deprecated Prefer {@link openRadioSessionForEgress}. */

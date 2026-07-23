@@ -109,6 +109,8 @@ export interface RadioDescriptor {
   hydrationRequiredForWrite: boolean;
   /** Baud for Web Serial open (radio-specific). */
   baudRate: number;
+  /** Optional second baud to try once when ident/handshake fails at {@link baudRate}. */
+  baudRateFallback?: number;
   /** Persist / merge clone image for this radio family. */
   hydration: RadioHydrationHooks;
 }
