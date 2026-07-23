@@ -16,7 +16,8 @@ export function assertSeedProjectId(projectId: string, seed: ProjectSeed): void 
     ...(seed.rxGroupLists ?? []),
     ...(seed.scanLists ?? []),
     ...(seed.aprsConfigurations ?? []),
-    ...(seed.formatBuilds ?? []),
+    ...(seed.radioBuilds ?? []),
+    ...(seed.egressPaths ?? []),
   ];
   for (const row of rows) {
     if (row.projectId !== projectId) {
@@ -25,6 +26,13 @@ export function assertSeedProjectId(projectId: string, seed: ProjectSeed): void 
   }
 }
 
+/**
+ * Bridge {@link ProjectAggregate} (native YAML / core) to {@link ProjectSeed}
+ * (persistence port). `ProjectAggregate.formatBuilds` still holds the pre-#654
+ * `RadioBuild` shape — mapped onto `seed.radioBuilds`; `egressPaths` are not yet
+ * modelled on the aggregate (native YAML egress support lands in a later slice
+ * of #654), so they round-trip empty here.
+ */
 export function seedFromAggregate(aggregate: ProjectAggregate): ProjectSeed {
   return {
     meta: aggregate.meta,
@@ -36,7 +44,7 @@ export function seedFromAggregate(aggregate: ProjectAggregate): ProjectSeed {
     rxGroupLists: aggregate.rxGroupLists,
     scanLists: aggregate.scanLists,
     aprsConfigurations: aggregate.aprsConfiguration ? [aggregate.aprsConfiguration] : [],
-    formatBuilds: aggregate.formatBuilds,
+    radioBuilds: aggregate.formatBuilds,
   };
 }
 
@@ -51,6 +59,6 @@ export function aggregateFromSeed(seed: ProjectSeed): ProjectAggregate {
     rxGroupLists: seed.rxGroupLists ?? [],
     scanLists: seed.scanLists ?? [],
     aprsConfiguration: seed.aprsConfigurations?.[0] ?? null,
-    formatBuilds: seed.formatBuilds ?? [],
+    formatBuilds: seed.radioBuilds ?? [],
   };
 }

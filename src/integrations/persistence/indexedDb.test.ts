@@ -4,8 +4,8 @@ import {
   newAprsConfiguration,
   newChannel,
   newDigitalContact,
-  newFormatBuild,
   newProjectMeta,
+  newRadioBuildWithEgresses,
   newTalkGroup,
 } from '@core/domain/factories.ts';
 import type { Channel } from '@core/models/library.ts';
@@ -189,18 +189,118 @@ describe('IndexedDbProjectPersistence', () => {
     });
   });
 
-  it('loadProjectSeed returns full aggregate including formatBuilds', async () => {
+  it('loadProjectSeed returns full aggregate including radioBuilds and egressPaths', async () => {
     const store = makeStore();
     const meta = newProjectMeta('Test');
     const channel = newChannel(meta.projectId, 'Local');
-    const build = newFormatBuild(meta.projectId, 'opengd77-1701');
-    await store.seedProject({ meta, channels: [channel], formatBuilds: [build] });
+    const { build, egressPaths } = newRadioBuildWithEgresses(meta.projectId, 'baofeng-dm1701');
+    await store.seedProject({
+      meta,
+      channels: [channel],
+      radioBuilds: [build],
+      egressPaths,
+    });
 
     const seed = await store.loadProjectSeed(meta.projectId);
     expect(seed?.meta.id).toBe(meta.id);
     expect(seed?.channels).toHaveLength(1);
-    expect(seed?.formatBuilds).toHaveLength(1);
-    expect(seed?.formatBuilds?.[0]?.id).toBe(build.id);
+    expect(seed?.radioBuilds).toHaveLength(1);
+    expect(seed?.radioBuilds?.[0]?.id).toBe(build.id);
+    expect(seed?.egressPaths).toHaveLength(egressPaths.length);
+  });
+
+  it('putRadioBuild and putEgressPath persist and read back rows', async () => {
+    const store = makeStore();
+    const meta = newProjectMeta('Test');
+    await store.seedProject({ meta });
+    const { build, egressPaths } = newRadioBuildWithEgresses(meta.projectId, 'baofeng-uv5r-mini');
+
+    await store.putRadioBuild(build, null);
+    for (const egress of egressPaths) {
+      await store.putEgressPath(egress, null);
+    }
+
+    expect(await store.getRadioBuild(meta.projectId, build.id)).toMatchObject({ id: build.id });
+    expect(await store.listRadioBuilds(meta.projectId)).toHaveLength(1);
+    expect(await store.listEgressPaths(meta.projectId)).toHaveLength(egressPaths.length);
+  });
+
+  it('listEgressPathsForBuild scopes to one radio build', async () => {
+    const store = makeStore();
+    const meta = newProjectMeta('Test');
+    await store.seedProject({ meta });
+    const buildA = newRadioBuildWithEgresses(meta.projectId, 'baofeng-uv5r-mini', 'A');
+    const buildB = newRadioBuildWithEgresses(meta.projectId, 'baofeng-dm1701', 'B');
+    await store.putRadioBuild(buildA.build, null);
+    await store.putRadioBuild(buildB.build, null);
+    for (const egress of [...buildA.egressPaths, ...buildB.egressPaths]) {
+      await store.putEgressPath(egress, null);
+    }
+
+    const forA = await store.listEgressPathsForBuild(meta.projectId, buildA.build.id);
+    const forB = await store.listEgressPathsForBuild(meta.projectId, buildB.build.id);
+    expect(forA).toHaveLength(buildA.egressPaths.length);
+    expect(forA.every((row) => row.radioBuildId === buildA.build.id)).toBe(true);
+    expect(forB).toHaveLength(buildB.egressPaths.length);
+    expect(forB.every((row) => row.radioBuildId === buildB.build.id)).toBe(true);
+  });
+
+  it('upgrading a legacy DB drops formatBuilds but keeps the library', async () => {
+    const dbName = `legacy-db-${counter++}`;
+    const meta = newProjectMeta('Legacy');
+    const channel = newChannel(meta.projectId, 'Kept');
+
+    // Simulate a pre-#654 DB: projects/channels + the now-removed formatBuilds store.
+    await new Promise<void>((resolve, reject) => {
+      const req = indexedDB.open(dbName, 1);
+      req.onupgradeneeded = () => {
+        const db = req.result;
+        const projects = db.createObjectStore('projects', { keyPath: ['projectId', 'id'] });
+        projects.createIndex('byProject', 'projectId', { unique: false });
+        const channels = db.createObjectStore('channels', { keyPath: ['projectId', 'id'] });
+        channels.createIndex('byProject', 'projectId', { unique: false });
+        const legacyBuilds = db.createObjectStore('formatBuilds', { keyPath: ['projectId', 'id'] });
+        legacyBuilds.createIndex('byProject', 'projectId', { unique: false });
+      };
+      req.onsuccess = () => {
+        const db = req.result;
+        const tx = db.transaction(['projects', 'channels', 'formatBuilds'], 'readwrite');
+        tx.objectStore('projects').put(meta);
+        tx.objectStore('channels').put(channel);
+        tx.objectStore('formatBuilds').put({
+          id: 'legacy-build',
+          projectId: meta.projectId,
+          revision: 1,
+          updatedAt: meta.updatedAt,
+          name: 'Legacy build',
+          formatId: 'opengd77',
+          profileId: 'opengd77-1701',
+        });
+        tx.oncomplete = () => {
+          db.close();
+          resolve();
+        };
+        tx.onerror = () => reject(tx.error);
+      };
+      req.onerror = () => reject(req.error);
+    });
+
+    const store = new IndexedDbProjectPersistence(dbName);
+    open.add(store);
+
+    expect(await store.loadProjectMeta(meta.projectId)).toMatchObject({ name: 'Legacy' });
+    expect(await store.listChannels(meta.projectId)).toHaveLength(1);
+    expect(await store.listRadioBuilds(meta.projectId)).toHaveLength(0);
+
+    const rawDb = await new Promise<IDBDatabase>((resolve, reject) => {
+      const req = indexedDB.open(dbName);
+      req.onsuccess = () => resolve(req.result);
+      req.onerror = () => reject(req.error);
+    });
+    expect(rawDb.objectStoreNames.contains('formatBuilds')).toBe(false);
+    expect(rawDb.objectStoreNames.contains('radioBuilds')).toBe(true);
+    expect(rawDb.objectStoreNames.contains('egressPaths')).toBe(true);
+    rawDb.close();
   });
 
   it('replaceProject removes stale rows from a prior seed', async () => {
@@ -268,12 +368,13 @@ describe('IndexedDbProjectPersistence', () => {
     const meta = newProjectMeta('Test');
     const channel = newChannel(meta.projectId, 'Local');
     const tg = newTalkGroup(meta.projectId, 'World', 91);
-    const build = newFormatBuild(meta.projectId, 'opengd77-1701');
+    const { build, egressPaths } = newRadioBuildWithEgresses(meta.projectId, 'baofeng-dm1701');
     await store.seedProject({
       meta,
       channels: [channel],
       talkGroups: [tg],
-      formatBuilds: [build],
+      radioBuilds: [build],
+      egressPaths,
     });
 
     await store.deleteEntity(meta.projectId, 'project', meta.id);
@@ -281,6 +382,7 @@ describe('IndexedDbProjectPersistence', () => {
     expect(await store.loadProjectMeta(meta.projectId)).toBeNull();
     expect(await store.listChannels(meta.projectId)).toHaveLength(0);
     expect(await store.listTalkGroups(meta.projectId)).toHaveLength(0);
-    expect(await store.listFormatBuilds(meta.projectId)).toHaveLength(0);
+    expect(await store.listRadioBuilds(meta.projectId)).toHaveLength(0);
+    expect(await store.listEgressPaths(meta.projectId)).toHaveLength(0);
   });
 });

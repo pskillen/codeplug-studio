@@ -1,4 +1,5 @@
-import type { FormatBuild } from '@core/models/formatBuild.ts';
+import type { RadioBuild } from '@core/models/radioBuild.ts';
+import type { EgressPath } from '@core/models/egressPath.ts';
 import type { AprsConfiguration } from '@core/models/aprs.ts';
 import type {
   AnalogContact,
@@ -36,10 +37,11 @@ export type EntityKind =
   | 'rxGroupList'
   | 'scanList'
   | 'aprsConfiguration'
-  | 'formatBuild';
+  | 'radioBuild'
+  | 'egressPath';
 
-/** Library entity kinds (everything except project metadata). */
-export type LibraryEntityKind = Exclude<EntityKind, 'project' | 'formatBuild'>;
+/** Library entity kinds (everything except project metadata and build/egress rows). */
+export type LibraryEntityKind = Exclude<EntityKind, 'project' | 'radioBuild' | 'egressPath'>;
 
 /** Cross-tab / same-tab change notification emitted on every write or delete. */
 export interface PersistenceChange {
@@ -61,7 +63,8 @@ export interface ProjectSeed {
   rxGroupLists?: RxGroupList[];
   scanLists?: ScanList[];
   aprsConfigurations?: AprsConfiguration[];
-  formatBuilds?: FormatBuild[];
+  radioBuilds?: RadioBuild[];
+  egressPaths?: EgressPath[];
 }
 
 /**
@@ -116,9 +119,15 @@ export interface ProjectPersistence {
   putAprsConfiguration(row: AprsConfiguration, expectedRevision: number | null): Promise<PutResult>;
   listAprsConfigurations(projectId: string): Promise<AprsConfiguration[]>;
 
-  getFormatBuild(projectId: string, id: string): Promise<FormatBuild | null>;
-  putFormatBuild(row: FormatBuild, expectedRevision: number | null): Promise<PutResult>;
-  listFormatBuilds(projectId: string): Promise<FormatBuild[]>;
+  getRadioBuild(projectId: string, id: string): Promise<RadioBuild | null>;
+  putRadioBuild(row: RadioBuild, expectedRevision: number | null): Promise<PutResult>;
+  listRadioBuilds(projectId: string): Promise<RadioBuild[]>;
+
+  getEgressPath(projectId: string, id: string): Promise<EgressPath | null>;
+  putEgressPath(row: EgressPath, expectedRevision: number | null): Promise<PutResult>;
+  listEgressPaths(projectId: string): Promise<EgressPath[]>;
+  /** Egress pathways belonging to one {@link RadioBuild} (#654). */
+  listEgressPathsForBuild(projectId: string, radioBuildId: string): Promise<EgressPath[]>;
 
   deleteEntity(projectId: string, kind: EntityKind, id: string): Promise<void>;
   seedProject(seed: ProjectSeed): Promise<void>;

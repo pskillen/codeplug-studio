@@ -3,8 +3,8 @@ import {
   newAprsConfiguration,
   newChannel,
   newDigitalContact,
-  newFormatBuild,
   newProjectMeta,
+  newRadioBuildWithEgresses,
   newTalkGroup,
 } from '@core/domain/factories.ts';
 import { InMemoryProjectPersistence } from './inMemory.ts';
@@ -110,18 +110,60 @@ describe('InMemoryProjectPersistence', () => {
     });
   });
 
-  it('loadProjectSeed returns full aggregate including formatBuilds', async () => {
+  it('loadProjectSeed returns full aggregate including radioBuilds and egressPaths', async () => {
     const store = new InMemoryProjectPersistence();
     const meta = newProjectMeta('Test');
     const channel = newChannel(meta.projectId, 'Local');
-    const build = newFormatBuild(meta.projectId, 'opengd77-1701');
-    await store.seedProject({ meta, channels: [channel], formatBuilds: [build] });
+    const { build, egressPaths } = newRadioBuildWithEgresses(meta.projectId, 'baofeng-dm1701');
+    await store.seedProject({
+      meta,
+      channels: [channel],
+      radioBuilds: [build],
+      egressPaths,
+    });
 
     const seed = await store.loadProjectSeed(meta.projectId);
     expect(seed?.meta.id).toBe(meta.id);
     expect(seed?.channels).toHaveLength(1);
-    expect(seed?.formatBuilds).toHaveLength(1);
-    expect(seed?.formatBuilds?.[0]?.id).toBe(build.id);
+    expect(seed?.radioBuilds).toHaveLength(1);
+    expect(seed?.radioBuilds?.[0]?.id).toBe(build.id);
+    expect(seed?.egressPaths).toHaveLength(egressPaths.length);
+  });
+
+  it('putRadioBuild and putEgressPath persist and read back rows', async () => {
+    const store = new InMemoryProjectPersistence();
+    const meta = newProjectMeta('Test');
+    await store.seedProject({ meta });
+    const { build, egressPaths } = newRadioBuildWithEgresses(meta.projectId, 'baofeng-uv5r-mini');
+
+    await store.putRadioBuild(build, null);
+    for (const egress of egressPaths) {
+      await store.putEgressPath(egress, null);
+    }
+
+    expect(await store.getRadioBuild(meta.projectId, build.id)).toMatchObject({ id: build.id });
+    expect(await store.listRadioBuilds(meta.projectId)).toHaveLength(1);
+    expect(await store.listEgressPaths(meta.projectId)).toHaveLength(egressPaths.length);
+  });
+
+  it('listEgressPathsForBuild scopes to one radio build', async () => {
+    const store = new InMemoryProjectPersistence();
+    const meta = newProjectMeta('Test');
+    await store.seedProject({ meta });
+    const buildA = newRadioBuildWithEgresses(meta.projectId, 'baofeng-uv5r-mini', 'A');
+    const buildB = newRadioBuildWithEgresses(meta.projectId, 'baofeng-dm1701', 'B');
+    await store.putRadioBuild(buildA.build, null);
+    await store.putRadioBuild(buildB.build, null);
+    for (const egress of [...buildA.egressPaths, ...buildB.egressPaths]) {
+      await store.putEgressPath(egress, null);
+    }
+
+    const forA = await store.listEgressPathsForBuild(meta.projectId, buildA.build.id);
+    const forB = await store.listEgressPathsForBuild(meta.projectId, buildB.build.id);
+    expect(forA).toHaveLength(buildA.egressPaths.length);
+    expect(forA.every((row) => row.radioBuildId === buildA.build.id)).toBe(true);
+    expect(forB).toHaveLength(buildB.egressPaths.length);
+    expect(forB.every((row) => row.radioBuildId === buildB.build.id)).toBe(true);
   });
 
   it('replaceProject removes stale rows from a prior seed', async () => {
@@ -252,12 +294,13 @@ describe('InMemoryProjectPersistence', () => {
     const meta = newProjectMeta('Test');
     const channel = newChannel(meta.projectId, 'Local');
     const tg = newTalkGroup(meta.projectId, 'World', 91);
-    const build = newFormatBuild(meta.projectId, 'opengd77-1701');
+    const { build, egressPaths } = newRadioBuildWithEgresses(meta.projectId, 'baofeng-dm1701');
     await store.seedProject({
       meta,
       channels: [channel],
       talkGroups: [tg],
-      formatBuilds: [build],
+      radioBuilds: [build],
+      egressPaths,
     });
 
     await store.deleteEntity(meta.projectId, 'project', meta.id);
@@ -265,6 +308,7 @@ describe('InMemoryProjectPersistence', () => {
     expect(await store.loadProjectMeta(meta.projectId)).toBeNull();
     expect(await store.listChannels(meta.projectId)).toHaveLength(0);
     expect(await store.listTalkGroups(meta.projectId)).toHaveLength(0);
-    expect(await store.listFormatBuilds(meta.projectId)).toHaveLength(0);
+    expect(await store.listRadioBuilds(meta.projectId)).toHaveLength(0);
+    expect(await store.listEgressPaths(meta.projectId)).toHaveLength(0);
   });
 });

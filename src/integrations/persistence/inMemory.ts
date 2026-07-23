@@ -1,4 +1,5 @@
-import type { FormatBuild } from '@core/models/formatBuild.ts';
+import type { RadioBuild } from '@core/models/radioBuild.ts';
+import type { EgressPath } from '@core/models/egressPath.ts';
 import type { AprsConfiguration } from '@core/models/aprs.ts';
 import type {
   AnalogContact,
@@ -24,7 +25,7 @@ import type {
 } from './types.ts';
 import { assertSeedProjectId } from './projectSeed.ts';
 import { readChannelRow } from './channelRow.ts';
-import { readFormatBuildRow } from './formatBuildRow.ts';
+import { readRadioBuildRow } from './radioBuildRow.ts';
 
 type RowMap<T extends { id: string; projectId: string }> = Map<string, T>;
 
@@ -52,7 +53,8 @@ export class InMemoryProjectPersistence implements ProjectPersistence {
   private rxGroupLists: RowMap<RxGroupList> = new Map();
   private scanLists: RowMap<ScanList> = new Map();
   private aprsConfigurations: RowMap<AprsConfiguration> = new Map();
-  private formatBuilds: RowMap<FormatBuild> = new Map();
+  private radioBuilds: RowMap<RadioBuild> = new Map();
+  private egressPaths: RowMap<EgressPath> = new Map();
   private listeners = new Set<PersistenceListener>();
   private notificationDepth = 0;
   private suppressedProjectId: string | null = null;
@@ -231,17 +233,35 @@ export class InMemoryProjectPersistence implements ProjectPersistence {
     return this.listRows(this.aprsConfigurations, projectId);
   }
 
-  async getFormatBuild(projectId: string, id: string): Promise<FormatBuild | null> {
-    const row = this.formatBuilds.get(rowKey(projectId, id));
-    return row ? readFormatBuildRow(row) : null;
+  async getRadioBuild(projectId: string, id: string): Promise<RadioBuild | null> {
+    const row = this.radioBuilds.get(rowKey(projectId, id));
+    return row ? readRadioBuildRow(row) : null;
   }
 
-  async putFormatBuild(row: FormatBuild, expectedRevision: number | null): Promise<PutResult> {
-    return this.putRow('formatBuild', this.formatBuilds, readFormatBuildRow(row), expectedRevision);
+  async putRadioBuild(row: RadioBuild, expectedRevision: number | null): Promise<PutResult> {
+    return this.putRow('radioBuild', this.radioBuilds, readRadioBuildRow(row), expectedRevision);
   }
 
-  async listFormatBuilds(projectId: string): Promise<FormatBuild[]> {
-    return this.listRows(this.formatBuilds, projectId).map(readFormatBuildRow);
+  async listRadioBuilds(projectId: string): Promise<RadioBuild[]> {
+    return this.listRows(this.radioBuilds, projectId).map(readRadioBuildRow);
+  }
+
+  async getEgressPath(projectId: string, id: string): Promise<EgressPath | null> {
+    return this.egressPaths.get(rowKey(projectId, id)) ?? null;
+  }
+
+  async putEgressPath(row: EgressPath, expectedRevision: number | null): Promise<PutResult> {
+    return this.putRow('egressPath', this.egressPaths, row, expectedRevision);
+  }
+
+  async listEgressPaths(projectId: string): Promise<EgressPath[]> {
+    return this.listRows(this.egressPaths, projectId);
+  }
+
+  async listEgressPathsForBuild(projectId: string, radioBuildId: string): Promise<EgressPath[]> {
+    return this.listRows(this.egressPaths, projectId).filter(
+      (row) => row.radioBuildId === radioBuildId,
+    );
   }
 
   async deleteEntity(projectId: string, kind: EntityKind, id: string): Promise<void> {
@@ -268,7 +288,8 @@ export class InMemoryProjectPersistence implements ProjectPersistence {
       rxGroupLists,
       scanLists,
       aprsConfigurations,
-      formatBuilds,
+      radioBuilds,
+      egressPaths,
     ] = await Promise.all([
       this.listChannels(projectId),
       this.listZones(projectId),
@@ -278,7 +299,8 @@ export class InMemoryProjectPersistence implements ProjectPersistence {
       this.listRxGroupLists(projectId),
       this.listScanLists(projectId),
       this.listAprsConfigurations(projectId),
-      this.listFormatBuilds(projectId),
+      this.listRadioBuilds(projectId),
+      this.listEgressPaths(projectId),
     ]);
     return {
       meta,
@@ -290,7 +312,8 @@ export class InMemoryProjectPersistence implements ProjectPersistence {
       rxGroupLists,
       scanLists,
       aprsConfigurations,
-      formatBuilds,
+      radioBuilds,
+      egressPaths,
     };
   }
 
@@ -354,8 +377,11 @@ export class InMemoryProjectPersistence implements ProjectPersistence {
     for (const row of seed.aprsConfigurations ?? []) {
       this.aprsConfigurations.set(rowKey(row.projectId, row.id), { ...row });
     }
-    for (const row of seed.formatBuilds ?? []) {
-      this.formatBuilds.set(rowKey(row.projectId, row.id), { ...row });
+    for (const row of seed.radioBuilds ?? []) {
+      this.radioBuilds.set(rowKey(row.projectId, row.id), { ...row });
+    }
+    for (const row of seed.egressPaths ?? []) {
+      this.egressPaths.set(rowKey(row.projectId, row.id), { ...row });
     }
   }
 
@@ -370,7 +396,8 @@ export class InMemoryProjectPersistence implements ProjectPersistence {
       this.rxGroupLists,
       this.scanLists,
       this.aprsConfigurations,
-      this.formatBuilds,
+      this.radioBuilds,
+      this.egressPaths,
     ]) {
       for (const [key, row] of [...map.entries()]) {
         if (row.projectId === projectId) {
@@ -437,7 +464,8 @@ export class InMemoryProjectPersistence implements ProjectPersistence {
     | RxGroupList
     | ScanList
     | AprsConfiguration
-    | FormatBuild
+    | RadioBuild
+    | EgressPath
   > | null {
     switch (kind) {
       case 'channel':
@@ -456,8 +484,10 @@ export class InMemoryProjectPersistence implements ProjectPersistence {
         return this.scanLists;
       case 'aprsConfiguration':
         return this.aprsConfigurations;
-      case 'formatBuild':
-        return this.formatBuilds;
+      case 'radioBuild':
+        return this.radioBuilds;
+      case 'egressPath':
+        return this.egressPaths;
       case 'project':
         return null;
       default:

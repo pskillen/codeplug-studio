@@ -1,5 +1,6 @@
 import { STUDIO_SCHEMA_VERSION } from '@core/models/schemaVersion.ts';
-import type { FormatBuild } from '@core/models/formatBuild.ts';
+import type { RadioBuild } from '@core/models/radioBuild.ts';
+import type { EgressPath } from '@core/models/egressPath.ts';
 import type { AprsConfiguration } from '@core/models/aprs.ts';
 import type {
   AnalogContact,
@@ -26,7 +27,10 @@ import type {
 import { DEFAULT_DB_NAME, STORES, STORE_NAMES } from './stores.ts';
 import { assertSeedProjectId } from './projectSeed.ts';
 import { readChannelRow } from './channelRow.ts';
-import { readFormatBuildRow } from './formatBuildRow.ts';
+import { readRadioBuildRow } from './radioBuildRow.ts';
+
+/** Legacy IndexedDB store name dropped in schema v22 (#654) — no build data migration. */
+const LEGACY_FORMAT_BUILDS_STORE = 'formatBuilds';
 
 type PersistableRow = {
   id: string;
@@ -88,10 +92,18 @@ export class IndexedDbProjectPersistence implements ProjectPersistence {
       // Migration hook: create/upgrade stores as the schema version bumps.
       request.onupgradeneeded = () => {
         const db = request.result;
+        // Schema v22 (#654): drop the legacy formatBuilds store outright — builds are
+        // not migrated to radioBuilds/egressPaths; library rows are untouched.
+        if (db.objectStoreNames.contains(LEGACY_FORMAT_BUILDS_STORE)) {
+          db.deleteObjectStore(LEGACY_FORMAT_BUILDS_STORE);
+        }
         for (const store of Object.values(STORES)) {
           if (!db.objectStoreNames.contains(store)) {
             const os = db.createObjectStore(store, { keyPath: ['projectId', 'id'] });
             os.createIndex('byProject', 'projectId', { unique: false });
+            if (store === STORES.egressPath) {
+              os.createIndex('byRadioBuild', ['projectId', 'radioBuildId'], { unique: false });
+            }
           }
         }
       };
@@ -279,16 +291,39 @@ export class IndexedDbProjectPersistence implements ProjectPersistence {
     return this.listRows<AprsConfiguration>('aprsConfiguration', projectId);
   }
 
-  async getFormatBuild(projectId: string, id: string): Promise<FormatBuild | null> {
-    const row = await this.getRow<FormatBuild>('formatBuild', projectId, id);
-    return row ? readFormatBuildRow(row) : null;
+  async getRadioBuild(projectId: string, id: string): Promise<RadioBuild | null> {
+    const row = await this.getRow<RadioBuild>('radioBuild', projectId, id);
+    return row ? readRadioBuildRow(row) : null;
   }
-  async putFormatBuild(row: FormatBuild, expectedRevision: number | null): Promise<PutResult> {
-    return this.putRow('formatBuild', readFormatBuildRow(row), expectedRevision);
+  async putRadioBuild(row: RadioBuild, expectedRevision: number | null): Promise<PutResult> {
+    return this.putRow('radioBuild', readRadioBuildRow(row), expectedRevision);
   }
-  async listFormatBuilds(projectId: string): Promise<FormatBuild[]> {
-    const rows = await this.listRows<FormatBuild>('formatBuild', projectId);
-    return rows.map(readFormatBuildRow);
+  async listRadioBuilds(projectId: string): Promise<RadioBuild[]> {
+    const rows = await this.listRows<RadioBuild>('radioBuild', projectId);
+    return rows.map(readRadioBuildRow);
+  }
+
+  async getEgressPath(projectId: string, id: string): Promise<EgressPath | null> {
+    return this.getRow<EgressPath>('egressPath', projectId, id);
+  }
+  async putEgressPath(row: EgressPath, expectedRevision: number | null): Promise<PutResult> {
+    return this.putRow('egressPath', row, expectedRevision);
+  }
+  async listEgressPaths(projectId: string): Promise<EgressPath[]> {
+    const db = await this.db();
+    const storeName = STORES.egressPath;
+    const tx = db.transaction(storeName, 'readonly');
+    const index = tx.objectStore(storeName).index('byProject');
+    const rows = await promisifyRequest<EgressPath[]>(index.getAll(projectId));
+    return rows.sort((a, b) => (a.label ?? '').localeCompare(b.label ?? ''));
+  }
+  async listEgressPathsForBuild(projectId: string, radioBuildId: string): Promise<EgressPath[]> {
+    const db = await this.db();
+    const storeName = STORES.egressPath;
+    const tx = db.transaction(storeName, 'readonly');
+    const index = tx.objectStore(storeName).index('byRadioBuild');
+    const rows = await promisifyRequest<EgressPath[]>(index.getAll([projectId, radioBuildId]));
+    return rows.sort((a, b) => (a.label ?? '').localeCompare(b.label ?? ''));
   }
 
   async deleteEntity(projectId: string, kind: EntityKind, id: string): Promise<void> {
@@ -321,7 +356,8 @@ export class IndexedDbProjectPersistence implements ProjectPersistence {
       rxGroupLists,
       scanLists,
       aprsConfigurations,
-      formatBuilds,
+      radioBuilds,
+      egressPaths,
     ] = await Promise.all([
       this.listChannels(projectId),
       this.listZones(projectId),
@@ -331,7 +367,8 @@ export class IndexedDbProjectPersistence implements ProjectPersistence {
       this.listRxGroupLists(projectId),
       this.listScanLists(projectId),
       this.listAprsConfigurations(projectId),
-      this.listFormatBuilds(projectId),
+      this.listRadioBuilds(projectId),
+      this.listEgressPaths(projectId),
     ]);
     return {
       meta,
@@ -343,7 +380,8 @@ export class IndexedDbProjectPersistence implements ProjectPersistence {
       rxGroupLists,
       scanLists,
       aprsConfigurations,
-      formatBuilds,
+      radioBuilds,
+      egressPaths,
     };
   }
 
@@ -360,7 +398,8 @@ export class IndexedDbProjectPersistence implements ProjectPersistence {
       { kind: 'rxGroupList', rows: seed.rxGroupLists ?? [] },
       { kind: 'scanList', rows: seed.scanLists ?? [] },
       { kind: 'aprsConfiguration', rows: seed.aprsConfigurations ?? [] },
-      { kind: 'formatBuild', rows: seed.formatBuilds ?? [] },
+      { kind: 'radioBuild', rows: seed.radioBuilds ?? [] },
+      { kind: 'egressPath', rows: seed.egressPaths ?? [] },
     ];
     await new Promise<void>((resolve, reject) => {
       const tx = db.transaction(STORE_NAMES, 'readwrite');
@@ -416,7 +455,8 @@ export class IndexedDbProjectPersistence implements ProjectPersistence {
       { kind: 'rxGroupList', rows: seed.rxGroupLists ?? [] },
       { kind: 'scanList', rows: seed.scanLists ?? [] },
       { kind: 'aprsConfiguration', rows: seed.aprsConfigurations ?? [] },
-      { kind: 'formatBuild', rows: seed.formatBuilds ?? [] },
+      { kind: 'radioBuild', rows: seed.radioBuilds ?? [] },
+      { kind: 'egressPath', rows: seed.egressPaths ?? [] },
     ];
     const storeNames = writes.map((w) => STORES[w.kind]);
     await new Promise<void>((resolve, reject) => {
