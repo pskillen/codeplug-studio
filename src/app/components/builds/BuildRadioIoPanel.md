@@ -21,6 +21,7 @@ Renders nothing when `descriptorsForEgress(egress)` is empty. Must render under 
 
 ## Behaviour
 
+- Leads with [`WebSerialExperimentalAlert`](./WebSerialExperimentalAlert.md) — orange experimental warning (does not block controls).
 - Feature-detects Web Serial; shows unsupported banner when missing.
 - **Read from radio** → download → persist hydration on the **egress** → read-only summary.
 - **Write to radio** → blocked until hydration exists (full-image strategy).
@@ -33,6 +34,7 @@ Does **not** import radio channels into the library.
 
 ## Related
 
+- [`WebSerialExperimentalAlert.md`](WebSerialExperimentalAlert.md) — experimental pathway warning
 - [radio-read-write hub](../../../docs/features/radio-read-write/README.md)
 - [adding-a-radio-adapter.md](../../../docs/features/radio-read-write/adding-a-radio-adapter.md)
 - Services: `src/app/services/radioIoSession.ts`

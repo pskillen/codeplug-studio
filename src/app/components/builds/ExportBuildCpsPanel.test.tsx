@@ -406,6 +406,7 @@ describe('ExportBuildCpsPanel', () => {
 
     expect(await screen.findByText(/Direct radio via Web Serial/i)).toBeInTheDocument();
     expect(screen.getByText(/no CPS file export/i)).toBeInTheDocument();
+    expect(screen.getByText('Web Serial is experimental')).toBeInTheDocument();
     expect(screen.getByText('Naming')).toBeInTheDocument();
     expect(screen.getByText(/Target name length/i)).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /Download ZIP/i })).not.toBeInTheDocument();
