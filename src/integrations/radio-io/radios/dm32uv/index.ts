@@ -2,12 +2,7 @@
  * Baofeng DM-32UV / DP570UV radio module — V-frame + 4KB block clone.
  */
 
-export {
-  DM32_BLOCK_SIZE,
-  DM32_CONNECTION,
-  DM32_METADATA,
-  DM32_MODEL_IDS,
-} from './constants.ts';
+export { DM32_BLOCK_SIZE, DM32_CONNECTION, DM32_METADATA, DM32_MODEL_IDS } from './constants.ts';
 export {
   createDm32uvProtocol,
   Dm32uvProtocol,
@@ -28,10 +23,7 @@ export {
   makeDm32ReadFrame,
   makeDm32WriteFrame,
 } from './connection.ts';
-export {
-  DM32UV_DESCRIPTOR,
-  DM32UV_MODEL_ID,
-} from './descriptor.ts';
+export { DM32UV_DESCRIPTOR, DM32UV_MODEL_ID } from './descriptor.ts';
 export {
   extractDm32uvHydration,
   extractDm32uvHydrationFromProtocol,

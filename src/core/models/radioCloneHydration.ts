@@ -61,7 +61,9 @@ export interface RadioCloneHydrationBag extends CpsWireHydrationBase {
 function isSparseBlock(value: unknown): value is RadioCloneSparseBlock {
   if (value == null || typeof value !== 'object' || Array.isArray(value)) return false;
   const b = value as Record<string, unknown>;
-  return typeof b.address === 'number' && typeof b.dataBase64 === 'string' && b.dataBase64.length > 0;
+  return (
+    typeof b.address === 'number' && typeof b.dataBase64 === 'string' && b.dataBase64.length > 0
+  );
 }
 
 export function radioCloneHasSparseBlocks(bag: RadioCloneHydrationBag): boolean {
@@ -170,9 +172,7 @@ export function createRadioCloneHydrationBagFromBlocks(input: {
 /** Contiguous image bytes — throws if the bag is sparse-only. */
 export function radioCloneImageBytes(bag: RadioCloneHydrationBag): Uint8Array {
   if (!bag.retain.imageBase64) {
-    throw new RangeError(
-      'radioCloneImageBytes: bag has no contiguous image (sparse blocks only)',
-    );
+    throw new RangeError('radioCloneImageBytes: bag has no contiguous image (sparse blocks only)');
   }
   return base64ToBytes(bag.retain.imageBase64);
 }

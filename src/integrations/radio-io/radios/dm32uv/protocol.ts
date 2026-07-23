@@ -3,13 +3,7 @@
  * Cite: NeonPlug dm32uv/protocol.ts session flow (facts only).
  */
 
-import type {
-  BytePipe,
-  CloneImageRadio,
-  IdentResult,
-  MemoryMap,
-  ProgressFn,
-} from '../../types.ts';
+import type { BytePipe, CloneImageRadio, IdentResult, MemoryMap, ProgressFn } from '../../types.ts';
 import type { RadioChannelDto } from '../../radioChannelDto.ts';
 import { createMemoryMap } from '../../kit/memoryMap.ts';
 import { reportProgress, throwIfAborted } from '../../kit/progress.ts';
@@ -21,10 +15,7 @@ import {
   DM32_VFRAME,
   DM32_VFRAME_QUERY_IDS,
 } from './constants.ts';
-import {
-  decodeChannelsFromDm32Image,
-  encodeChannelsIntoDm32Image,
-} from './channelCodec.ts';
+import { decodeChannelsFromDm32Image, encodeChannelsIntoDm32Image } from './channelCodec.ts';
 import {
   dm32AsciiHandshake,
   dm32EnterProgrammingMode,
@@ -152,7 +143,11 @@ export class Dm32uvProtocol implements CloneImageRadio {
     }
     const settle = { ...this.settle, signal: opts.signal ?? this.settle.signal };
 
-    reportProgress(opts.onProgress, { cur: 0, max: 100, msg: 'Discovering memory blocks' }, opts.signal);
+    reportProgress(
+      opts.onProgress,
+      { cur: 0, max: 100, msg: 'Discovering memory blocks' },
+      opts.signal,
+    );
     const discovered = await discoverDm32MemoryBlocks(
       this.pipe,
       this.cache.addressBase,
@@ -181,7 +176,10 @@ export class Dm32uvProtocol implements CloneImageRadio {
     return blocksToMemoryMap(this.cache);
   }
 
-  async upload(image: MemoryMap, opts: { onProgress?: ProgressFn; signal?: AbortSignal }): Promise<void> {
+  async upload(
+    image: MemoryMap,
+    opts: { onProgress?: ProgressFn; signal?: AbortSignal },
+  ): Promise<void> {
     if (!this.pipe || !this.cache) {
       throw new RadioProtocolError('DM-32UV not connected');
     }

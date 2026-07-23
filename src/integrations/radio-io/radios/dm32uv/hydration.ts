@@ -11,10 +11,7 @@ import type { MemoryMap } from '../../types.ts';
 import type { RadioChannelDto } from '../../radioChannelDto.ts';
 import { createMemoryMap } from '../../kit/memoryMap.ts';
 import { DM32_BLOCK_SIZE, DM32_MODEL_IDS } from './constants.ts';
-import {
-  encodeChannelsIntoDm32Image,
-  type Dm32ChannelDecodeContext,
-} from './channelCodec.ts';
+import { encodeChannelsIntoDm32Image, type Dm32ChannelDecodeContext } from './channelCodec.ts';
 import type { Dm32DownloadCache } from './protocol.ts';
 
 export const DM32UV_MODEL_ID = DM32_MODEL_IDS[0];

@@ -32,12 +32,12 @@ export default function BuildRadioImageSettingsPage() {
   const isUv5rMini = bag?.retain.radioModelId === UV5R_MINI_MODEL_ID;
   const isDm32 =
     bag?.retain.radioModelId === DM32UV_MODEL_ID || bag?.retain.radioModelId === 'DP570UV';
-  const summary = bag
-    ? isUv5rMini
-      ? summariseUv5rMiniClone(bag)
-      : isDm32
-        ? summariseDm32uvClone(bag)
-        : null;
+  let summary = null;
+  if (bag && isUv5rMini) {
+    summary = summariseUv5rMiniClone(bag);
+  } else if (bag && isDm32) {
+    summary = summariseDm32uvClone(bag);
+  }
 
   return (
     <FormPage

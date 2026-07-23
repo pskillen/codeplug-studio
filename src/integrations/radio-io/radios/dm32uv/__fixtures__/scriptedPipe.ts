@@ -2,7 +2,7 @@
  * Scripted BytePipe helpers + synthetic sparse blocks for DM-32UV unit tests.
  */
 
-import type { BytePipe } from '../../types.ts';
+import type { BytePipe } from '../../../types.ts';
 import { DM32_BLOCK_SIZE, DM32_METADATA, DM32_METADATA_OFFSET } from '../constants.ts';
 
 export class Dm32ScriptedPipe implements BytePipe {
@@ -78,7 +78,10 @@ export function enqueueReadReply(pipe: Dm32ScriptedPipe, address: number, data: 
  *
  * Range end 0x2fff → blocks 0x1000 and 0x2000.
  */
-export function scriptDm32DownloadTwoBlocks(pipe: Dm32ScriptedPipe, channelCount = 1): {
+export function scriptDm32DownloadTwoBlocks(
+  pipe: Dm32ScriptedPipe,
+  channelCount = 1,
+): {
   start: number;
   end: number;
   channelBlock: Uint8Array;
@@ -102,7 +105,9 @@ export function scriptDm32DownloadTwoBlocks(pipe: Dm32ScriptedPipe, channelCount
   layout.set(u32le(start), 0);
   layout.set(u32le(end), 4);
   const firmware = new TextEncoder().encode('DM32.TEST.001\0');
-  for (const id of [0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0d, 0x0e, 0x0f, 0x10]) {
+  for (const id of [
+    0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0d, 0x0e, 0x0f, 0x10,
+  ]) {
     if (id === 0x0a) enqueueVFrame(pipe, id, layout);
     else if (id === 0x01) enqueueVFrame(pipe, id, firmware);
     else enqueueVFrame(pipe, id, new Uint8Array(0));
@@ -114,8 +119,16 @@ export function scriptDm32DownloadTwoBlocks(pipe: Dm32ScriptedPipe, channelCount
   pipe.enqueue(new Uint8Array([0x06]));
 
   // Discovery: metadata at 0x1000+0xFFF and 0x2000+0xFFF
-  enqueueReadReply(pipe, start + DM32_METADATA_OFFSET, new Uint8Array([DM32_METADATA.CHANNEL_FIRST]));
-  enqueueReadReply(pipe, 0x2000 + DM32_METADATA_OFFSET, new Uint8Array([DM32_METADATA.VFO_SETTINGS]));
+  enqueueReadReply(
+    pipe,
+    start + DM32_METADATA_OFFSET,
+    new Uint8Array([DM32_METADATA.CHANNEL_FIRST]),
+  );
+  enqueueReadReply(
+    pipe,
+    0x2000 + DM32_METADATA_OFFSET,
+    new Uint8Array([DM32_METADATA.VFO_SETTINGS]),
+  );
 
   // Channel count (2 bytes at first block)
   enqueueReadReply(pipe, start, new Uint8Array([channelCount & 0xff, (channelCount >>> 8) & 0xff]));

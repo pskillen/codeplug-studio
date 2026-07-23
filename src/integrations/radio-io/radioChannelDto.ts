@@ -4,7 +4,9 @@
  */
 
 export type RadioTone =
-  { kind: 'none' } | { kind: 'ctcss'; hz: number } | { kind: 'dcs'; code: number; polarity?: 'N' | 'I' };
+  | { kind: 'none' }
+  | { kind: 'ctcss'; hz: number }
+  | { kind: 'dcs'; code: number; polarity?: 'N' | 'I' };
 
 export type RadioChannelMode = 'analog' | 'digital' | 'fixed-analog' | 'fixed-digital';
 

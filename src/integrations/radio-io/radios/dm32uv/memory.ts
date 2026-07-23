@@ -153,7 +153,12 @@ export async function readChannelCount(
   firstChannelBlockAddr: number,
   opts?: Dm32SettleOptions,
 ): Promise<number> {
-  const data = await dm32ReadMemory(pipe, firstChannelBlockAddr + DM32_OFFSET.CHANNEL_COUNT, 2, opts);
+  const data = await dm32ReadMemory(
+    pipe,
+    firstChannelBlockAddr + DM32_OFFSET.CHANNEL_COUNT,
+    2,
+    opts,
+  );
   return data[0]! | (data[1]! << 8);
 }
 

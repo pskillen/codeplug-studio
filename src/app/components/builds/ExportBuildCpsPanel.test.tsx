@@ -173,19 +173,25 @@ describe('ExportBuildCpsPanel', () => {
     expect(
       screen.queryByText(/FYI: there's another pathway for UV-5R Mini in the browser/),
     ).not.toBeInTheDocument();
-    expect(screen.queryByText(/Prefer Web Serial or NeonPlug for your DM-32/)).not.toBeInTheDocument();
+    expect(
+      screen.queryByText(/Prefer Web Serial or NeonPlug for your DM-32/),
+    ).not.toBeInTheDocument();
   });
 
   it('shows prefer-NeonPlug deprecation alert for DM32 CSV pathway only', async () => {
     const { unmount } = renderExportPanel('dm32-baofeng-dm32uv', { router: true });
 
-    expect(await screen.findByText(/Prefer Web Serial or NeonPlug for your DM-32/)).toBeInTheDocument();
+    expect(
+      await screen.findByText(/Prefer Web Serial or NeonPlug for your DM-32/),
+    ).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Download ZIP' })).not.toBeDisabled();
     unmount();
 
     renderExportPanel('opengd77-1701');
     expect(await screen.findByText(/OpenGD77 \(1701\)/)).toBeInTheDocument();
-    expect(screen.queryByText(/Prefer Web Serial or NeonPlug for your DM-32/)).not.toBeInTheDocument();
+    expect(
+      screen.queryByText(/Prefer Web Serial or NeonPlug for your DM-32/),
+    ).not.toBeInTheDocument();
   });
 
   it('places radio settings above the export pathway switcher', async () => {

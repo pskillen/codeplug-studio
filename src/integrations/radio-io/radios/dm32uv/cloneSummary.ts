@@ -3,7 +3,10 @@
  */
 
 import type { RadioCloneHydrationBag } from '@core/models/radioCloneHydration.ts';
-import { radioCloneHasSparseBlocks, radioCloneSparseBlockBytes } from '@core/models/radioCloneHydration.ts';
+import {
+  radioCloneHasSparseBlocks,
+  radioCloneSparseBlockBytes,
+} from '@core/models/radioCloneHydration.ts';
 import { decodeChannelsFromDm32Image } from './channelCodec.ts';
 import { memoryMapFromDm32uvHydration } from './hydration.ts';
 import { DM32_METADATA_OFFSET } from './constants.ts';

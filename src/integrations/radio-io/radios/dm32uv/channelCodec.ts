@@ -193,7 +193,7 @@ export function encodeDm32ChannelRecord(ch: RadioChannelDto): Uint8Array {
   modeFlags |= (powerWireFromPercent(ch.powerPercent) & 0x03) << 1;
   data[0x18] = modeFlags;
 
-  let scanBw = ch.bandwidth === 'FM' ? 0x80 : 0x00;
+  const scanBw = ch.bandwidth === 'FM' ? 0x80 : 0x00;
   data[0x19] = scanBw;
 
   let digital = (ch.colorCode ?? 1) & 0x0f;
@@ -207,7 +207,7 @@ export function encodeDm32ChannelRecord(ch: RadioChannelDto): Uint8Array {
 }
 
 function findBlockByMetadata(
-  image: MemoryMap,
+  _image: MemoryMap,
   addressBase: number,
   metadata: number,
   discovered: readonly { address: number; metadata: number }[],
@@ -265,8 +265,7 @@ export function decodeChannelsFromDm32Image(
 ): RadioChannelDto[] {
   const channelBlocks = cache.discovered
     .filter(
-      (b) =>
-        b.metadata >= DM32_METADATA.CHANNEL_FIRST && b.metadata <= DM32_METADATA.CHANNEL_LAST,
+      (b) => b.metadata >= DM32_METADATA.CHANNEL_FIRST && b.metadata <= DM32_METADATA.CHANNEL_LAST,
     )
     .sort((a, b) => a.metadata - b.metadata);
   if (channelBlocks.length === 0) return [];
@@ -298,8 +297,7 @@ export function encodeChannelsIntoDm32Image(
 ): MemoryMap {
   const channelBlocks = cache.discovered
     .filter(
-      (b) =>
-        b.metadata >= DM32_METADATA.CHANNEL_FIRST && b.metadata <= DM32_METADATA.CHANNEL_LAST,
+      (b) => b.metadata >= DM32_METADATA.CHANNEL_FIRST && b.metadata <= DM32_METADATA.CHANNEL_LAST,
     )
     .sort((a, b) => a.metadata - b.metadata);
   if (channelBlocks.length === 0) return image;

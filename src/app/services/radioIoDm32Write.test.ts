@@ -1,7 +1,11 @@
 import { describe, expect, it, vi } from 'vitest';
 import { newChannel, newRadioBuildForProfile } from '@core/domain/factories.ts';
 import type { LibrarySlice } from '@core/services/assemble.ts';
-import { DM32_BLOCK_SIZE, DM32_METADATA, DM32_METADATA_OFFSET } from '@integrations/radio-io/radios/dm32uv/constants.ts';
+import {
+  DM32_BLOCK_SIZE,
+  DM32_METADATA,
+  DM32_METADATA_OFFSET,
+} from '@integrations/radio-io/radios/dm32uv/constants.ts';
 import {
   extractDm32uvHydrationFromProtocol,
   mergeChannelsIntoDm32uvHydration,
@@ -63,8 +67,6 @@ describe('assembledChannelsToRadioDtos digital fields', () => {
           entity: ch,
           wireName: 'DIG',
           orderOrSlot: 1,
-          excluded: false,
-          forceInclude: false,
         },
       ],
       build,

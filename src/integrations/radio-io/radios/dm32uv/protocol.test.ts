@@ -58,6 +58,8 @@ describe('Dm32uvProtocol', () => {
     pipe.enqueue(psearch);
 
     const radio = new Dm32uvProtocol();
-    await expect(radio.connect(pipe, { settleScale: 0 })).rejects.toThrow(/Unsupported radio model/);
+    await expect(radio.connect(pipe, { settleScale: 0 })).rejects.toThrow(
+      /Unsupported radio model/,
+    );
   });
 });
