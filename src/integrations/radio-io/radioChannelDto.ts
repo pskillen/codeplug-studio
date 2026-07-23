@@ -44,4 +44,8 @@ export interface RadioChannelDto {
   scanListId?: number;
   /** When true, set scan-add bit (0x19 bit 6). */
   scanAdd?: boolean;
+  /** Channel APRS receive (0x1A bit 2). */
+  aprsReceive?: boolean;
+  /** Channel APRS report mode (0x1C bits 3–2). */
+  aprsReportMode?: 'off' | 'digital' | 'analog';
 }

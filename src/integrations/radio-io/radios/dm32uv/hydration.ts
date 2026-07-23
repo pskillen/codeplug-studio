@@ -18,6 +18,7 @@ import { encodeScanListsIntoDm32Image } from './scanListCodec.ts';
 import { encodeTalkGroupsIntoDm32Image } from './talkGroupCodec.ts';
 import { encodeRxGroupsIntoDm32Image } from './rxGroupCodec.ts';
 import { encodeDigitalContactsIntoDm32Image } from './contactCodec.ts';
+import { encodeAprsIntoDm32Image } from './aprsCodec.ts';
 import type { Dm32DownloadCache } from './protocol.ts';
 
 export const DM32UV_MODEL_ID = DM32_MODEL_IDS[0];
@@ -139,6 +140,9 @@ export function mergeChannelsIntoDm32uvHydration(
   }
   if (organisation?.scanLists) {
     next = encodeScanListsIntoDm32Image(next, ctx, organisation.scanLists);
+  }
+  if (organisation?.aprs) {
+    next = encodeAprsIntoDm32Image(next, ctx, organisation.aprs);
   }
   return next;
 }

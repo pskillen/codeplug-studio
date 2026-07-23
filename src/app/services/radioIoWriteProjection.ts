@@ -27,6 +27,7 @@ import { DM32_EMPTY_SCAN_LIST_NAME } from '@core/import-export/zoneDerivedScanLi
 import { buildScanContext, effectiveScanSkips } from '@core/import-export/scanInclusion/index.ts';
 import type { RadioChannelDto } from '@integrations/radio-io/radioChannelDto.ts';
 import type {
+  RadioAprsDto,
   RadioDigitalContactDto,
   RadioRxGroupDto,
   RadioScanListDto,
@@ -34,6 +35,7 @@ import type {
   RadioWriteProjection,
   RadioZoneDto,
 } from '@integrations/radio-io/radioWriteProjection.ts';
+import { buildNeonplugAprsRadioSettingsPatch } from '@core/services/aprsExportFacts.ts';
 import {
   expandAssembledChannelsToRadioDtos,
   type RadioChannelFkMaps,
@@ -425,6 +427,44 @@ function buildTalkGroupsAndRx(
 /**
  * Assemble → channel DTOs + source→number map + organisation (zones/scan/TG/RX for DM-32).
  */
+/** Map NeonPlug APRS settings patch → radio-boundary APRS DTO. */
+function radioAprsFromNeonplugPatch(
+  assembled: AssembledBuild,
+  numbersBySourceChannelId: ReadonlyMap<string, readonly number[]>,
+  warnings: string[],
+): RadioAprsDto | null {
+  const numberArrays = new Map<string, number[]>();
+  for (const [id, nums] of numbersBySourceChannelId) {
+    numberArrays.set(id, [...nums]);
+  }
+  const { patch, warnings: aprsWarnings } = buildNeonplugAprsRadioSettingsPatch(
+    assembled,
+    numberArrays,
+  );
+  warnings.push(...aprsWarnings);
+  if (patch == null) return null;
+  return {
+    reportChannelNumbers: [
+      patch.aprsReportChannel1,
+      patch.aprsReportChannel2,
+      patch.aprsReportChannel3,
+      patch.aprsReportChannel4,
+      patch.aprsReportChannel5,
+      patch.aprsReportChannel6,
+      patch.aprsReportChannel7,
+      patch.aprsReportChannel8,
+    ],
+    scheduledSendTime: patch.aprsScheduledSendTime,
+    manualBeacon: patch.aprsFixedBeacon,
+    latitude: patch.latitude,
+    latitudeHemisphere: patch.latitudeDirection,
+    longitude: patch.longitude,
+    longitudeHemisphere: patch.longitudeDirection,
+    callType: patch.aprsCallType ? 1 : 0,
+    uploadDmrId: patch.aprsUploadId,
+  };
+}
+
 export function buildRadioWriteProjection(
   assembled: AssembledBuild,
   build: RadioBuild,
@@ -485,6 +525,7 @@ export function buildRadioWriteProjection(
       talkGroups,
       rxGroups,
       digitalContacts,
+      aprs: radioAprsFromNeonplugPatch(assembled, numbersBySourceChannelId, warnings),
     };
   }
 

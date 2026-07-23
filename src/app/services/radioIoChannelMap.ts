@@ -109,6 +109,15 @@ function isDmrProfile(
   return profile.mode === 'dmr';
 }
 
+function aprsFieldsFromChannel(channel: Channel): Partial<RadioChannelDto> {
+  const aprs = channel.aprs;
+  if (!aprs) return {};
+  return {
+    aprsReceive: aprs.receiveEnabled === true,
+    aprsReportMode: aprs.reportType === 'digital' ? 'digital' : 'off',
+  };
+}
+
 function digitalFieldsFromChannel(
   channel: Channel,
   fkMaps?: RadioChannelFkMaps,
@@ -121,7 +130,7 @@ function digitalFieldsFromChannel(
   else if (analog) mode = 'analog';
 
   if (!dmr) {
-    return mode ? { mode } : {};
+    return { ...(mode ? { mode } : {}), ...aprsFieldsFromChannel(channel) };
   }
 
   const timeslot = dmr.timeslot === 2 ? 2 : dmr.timeslot === 1 ? 1 : undefined;
@@ -133,6 +142,7 @@ function digitalFieldsFromChannel(
     timeslot,
     ...(txContactId != null ? { txContactId } : {}),
     ...(rxGroupIndex != null ? { rxGroupIndex } : {}),
+    ...aprsFieldsFromChannel(channel),
   };
 }
 
@@ -149,7 +159,7 @@ function digitalFieldsFromProjection(
   else if (analog) mode = 'analog';
 
   if (!dmr) {
-    return mode ? { mode } : {};
+    return { ...(mode ? { mode } : {}), ...aprsFieldsFromChannel(channel) };
   }
 
   const timeslot = dmr.timeslot === 2 ? 2 : dmr.timeslot === 1 ? 1 : undefined;
@@ -164,6 +174,7 @@ function digitalFieldsFromProjection(
     timeslot,
     ...(txContactId != null ? { txContactId } : {}),
     ...(rxGroupIndex != null ? { rxGroupIndex } : {}),
+    ...aprsFieldsFromChannel(channel),
   };
 }
 
