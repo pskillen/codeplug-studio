@@ -97,9 +97,11 @@ export function useZoneScanExportLayout() {
     [library],
   );
 
-  /** MxN expansion keyed by parent channel — Scan-tab nest + counts (#570). */
+  /** MxN expansion keyed by parent channel — Members tab nest + Scan-tab counts (#570). */
   const expansionByChannelId = useMemo((): Map<string, ExpandedMxNChannelRow[]> | undefined => {
-    if (!library || !enabled || !hasMxNChannelExpansion(build.radioTargetId)) return undefined;
+    if (!library || !layoutSupported || !hasMxNChannelExpansion(build.radioTargetId)) {
+      return undefined;
+    }
     const assembled = assemble(build, library);
     const options = mergeExportOptions(
       build,
@@ -116,7 +118,7 @@ export function useZoneScanExportLayout() {
       warnings,
     });
     return mxnExpansionByChannelId(rows);
-  }, [library, enabled, build, egress.formatId, egress.profileId]);
+  }, [library, layoutSupported, build, egress.formatId, egress.profileId]);
 
   const persistLayout = useCallback(
     async (nextLayout: ZoneGroupingLayout) => {
