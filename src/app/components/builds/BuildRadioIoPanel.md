@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Build Export chrome for **Web Serial** read/write when a registered radio adapter matches the FormatBuild profile. Read hydrates `cpsWireHydration` (`radio-clone`); write runs `assemble` → encode → upload.
+Build Export chrome for **Web Serial** read/write on **Direct radio** (`radio-io`) FormatBuilds when a registered adapter matches the profile. Read hydrates `cpsWireHydration` (`radio-clone`); write runs `assemble` → encode → upload. No CPS ZIP/CSV for this format.
 
 ## Props
 

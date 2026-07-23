@@ -347,6 +347,28 @@ export default function ExportBuildCpsPanel({ build }: ExportBuildCpsPanelProps)
     void saveZipToDrive(target, isNeonplug ? (neonplugBaseBytes ?? undefined) : undefined);
   }
 
+  if (build.formatId === 'radio-io') {
+    return (
+      <Stack gap="sm">
+        <Text size="sm">
+          Direct radio via Web Serial for{' '}
+          <Text span fw={600}>
+            {profileLabel}
+          </Text>
+          . There is no CPS file export for this build — use Connect / Read / Write below. Curate
+          channels on the library and this build&apos;s memory list; Write runs assemble into a
+          previously Read clone image.
+        </Text>
+        {wireHint ? (
+          <Text size="sm" c="dimmed">
+            {wireHint}
+          </Text>
+        ) : null}
+        <BuildRadioIoPanel build={build} />
+      </Stack>
+    );
+  }
+
   if (!exportShipped) {
     return (
       <Alert color="gray" title="Export not available yet">
