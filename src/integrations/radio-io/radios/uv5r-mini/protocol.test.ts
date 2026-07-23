@@ -93,7 +93,8 @@ class ScriptedPipe implements BytePipe {
     if (data[0] === 0x52 && this.readBlockQueue.length > 0) {
       const addr = (data[1]! << 8) | data[2]!;
       const idx = this.readBlockQueue.findIndex((b) => b.addr === addr);
-      const block = idx >= 0 ? this.readBlockQueue.splice(idx, 1)[0]! : this.readBlockQueue.shift()!;
+      const block =
+        idx >= 0 ? this.readBlockQueue.splice(idx, 1)[0]! : this.readBlockQueue.shift()!;
       this.enqueueReadReply(block.plain, block.addr, addr === 0 && this.writes.length < 20);
     }
     if (data[0] === 0x57) {

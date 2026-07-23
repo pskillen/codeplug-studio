@@ -123,11 +123,7 @@ async function waitForReadResponse(pipe: BytePipe, timeoutMs: number): Promise<U
   );
 }
 
-async function runMagics(
-  pipe: BytePipe,
-  mode: HandshakeMode,
-  signal?: AbortSignal,
-): Promise<void> {
+async function runMagics(pipe: BytePipe, mode: HandshakeMode, signal?: AbortSignal): Promise<void> {
   const magics = mode === 'read' ? UV5R_MINI_MAGICS_READ : UV5R_MINI_MAGICS_UPLOAD;
   for (const { send, responseLen } of magics) {
     throwIfAborted(signal);

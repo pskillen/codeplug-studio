@@ -207,16 +207,16 @@ MVP **Read** hydrates the FormatBuild only — it does **not** import channels i
 
 ## 6. First radio: UV-5R Mini
 
-| Item               | Value                                                                                            |
-| ------------------ | ------------------------------------------------------------------------------------------------ |
-| Studio module path | `src/integrations/radio-io/radios/uv5r-mini/`                                                    |
+| Item               | Value                                                                                                                             |
+| ------------------ | --------------------------------------------------------------------------------------------------------------------------------- |
+| Studio module path | `src/integrations/radio-io/radios/uv5r-mini/`                                                                                     |
 | Baud               | **115200** primary; **38400** one-shot fallback on ident failure ([#673](https://github.com/pskillen/codeplug-studio/issues/673)) |
-| Ident              | `PROGRAMCOLORPROU` (`MSTRING_UV17PROGPS`)                                                        |
-| Framing            | PROGRAM + R/W; optional payload XOR crypt                                                        |
-| Image size         | `MEM_TOTAL = 0x8240`; multi-region `MEM_STARTS` / `MEM_SIZES`                                    |
-| Channels           | Up to 999 (CHIRP)                                                                                |
-| BLE                | Optional later — same framing, larger upload block (`BLE_UP_BLOCK_SIZE = 0x80`)                  |
-| Tier-3 stub        | [docs/reference/radios/baofeng/uv-5r-mini/](../../reference/radios/baofeng/uv-5r-mini/README.md) |
+| Ident              | `PROGRAMCOLORPROU` (`MSTRING_UV17PROGPS`)                                                                                         |
+| Framing            | PROGRAM + R/W; optional payload XOR crypt                                                                                         |
+| Image size         | `MEM_TOTAL = 0x8240`; multi-region `MEM_STARTS` / `MEM_SIZES`                                                                     |
+| Channels           | Up to 999 (CHIRP)                                                                                                                 |
+| BLE                | Optional later — same framing, larger upload block (`BLE_UP_BLOCK_SIZE = 0x80`)                                                   |
+| Tier-3 stub        | [docs/reference/radios/baofeng/uv-5r-mini/](../../reference/radios/baofeng/uv-5r-mini/README.md)                                  |
 
 **Ground-truth files:**
 

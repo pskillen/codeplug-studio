@@ -28,13 +28,13 @@ Cite: NeonPlug `baofengProtocol.ts`, `serialConnection.ts`, `constants.ts`; CHIR
 
 ## Transport settles and line control
 
-| Step | Studio | NeonPlug | CHIRP |
-| --- | --- | --- | --- |
-| After port open | **300 ms** settle → flush RX buffer → **200 ms** settle | same | `_clean_buffer` drain |
-| Before each magic / write | flush RX buffer | `buf = []` | — |
-| ACK after ident / write | seek `0x06` (discard leading junk) | `waitForByte` | exact after flush |
-| Read block reply | drain to leading `0x52`, then 68 bytes | same | exact 68 bytes |
-| RTS / DTR | assert when Web Serial `setSignals` supported | — | `WANTS_RTS` / `WANTS_DTR` |
+| Step                      | Studio                                                  | NeonPlug      | CHIRP                     |
+| ------------------------- | ------------------------------------------------------- | ------------- | ------------------------- |
+| After port open           | **300 ms** settle → flush RX buffer → **200 ms** settle | same          | `_clean_buffer` drain     |
+| Before each magic / write | flush RX buffer                                         | `buf = []`    | —                         |
+| ACK after ident / write   | seek `0x06` (discard leading junk)                      | `waitForByte` | exact after flush         |
+| Read block reply          | drain to leading `0x52`, then 68 bytes                  | same          | exact 68 bytes            |
+| RTS / DTR                 | assert when Web Serial `setSignals` supported           | —             | `WANTS_RTS` / `WANTS_DTR` |
 
 ## Handshake
 
