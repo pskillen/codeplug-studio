@@ -12,6 +12,7 @@ import {
 import {
   summariseUv5rMiniClone,
   UV5R_MINI_MODEL_ID,
+  type Uv5rMiniCloneSummary,
 } from '@integrations/radio-io/radios/uv5r-mini/index.ts';
 import {
   summariseDm32uvClone,
@@ -225,6 +226,196 @@ function Dm32RequiredBlocksSection({ summary }: { summary: Dm32uvCloneSummary })
   );
 }
 
+function Uv5rOnRadioSection({ summary }: { summary: Uv5rMiniCloneSummary }) {
+  const c = summary.onRadioCounts;
+  return (
+    <FormSection
+      title="On the radio"
+      description="Counts decoded from the stored image — not your build layout."
+    >
+      <Table.ScrollContainer minWidth={360}>
+        <Table withTableBorder withColumnBorders>
+          <Table.Tbody>
+            <Table.Tr>
+              <Table.Td fw={600}>Channels</Table.Td>
+              <Table.Td>
+                {c.occupiedChannels} occupied · {c.emptyChannelSlots} empty slots
+              </Table.Td>
+            </Table.Tr>
+          </Table.Tbody>
+        </Table>
+      </Table.ScrollContainer>
+    </FormSection>
+  );
+}
+
+function Uv5rWrittenFromBuildSection({ summary }: { summary: Uv5rMiniCloneSummary }) {
+  return (
+    <FormSection
+      title="Written from your build"
+      description="When you Write to radio, Studio updates these from your build."
+    >
+      <List size="sm" spacing="xs">
+        {summary.writtenFromBuild.map((item) => (
+          <List.Item key={item}>{item}</List.Item>
+        ))}
+      </List>
+    </FormSection>
+  );
+}
+
+function Uv5rKeptOnWriteSection({ summary }: { summary: Uv5rMiniCloneSummary }) {
+  return (
+    <FormSection
+      title="Kept on Write"
+      description="Everything below stays as it was on Read from radio — Studio does not change it when you write from your build."
+    >
+      {summary.retainGroups.length === 0 ? (
+        <Text size="sm" c="dimmed">
+          No retained regions identified in the stored image.
+        </Text>
+      ) : (
+        <Table.ScrollContainer minWidth={360}>
+          <Table withTableBorder withColumnBorders>
+            <Table.Thead>
+              <Table.Tr>
+                <Table.Th>Region</Table.Th>
+                <Table.Th>Regions</Table.Th>
+              </Table.Tr>
+            </Table.Thead>
+            <Table.Tbody>
+              {summary.retainGroups.map((group) => (
+                <Table.Tr key={group.label}>
+                  <Table.Td>{group.label}</Table.Td>
+                  <Table.Td>{group.regionCount}</Table.Td>
+                </Table.Tr>
+              ))}
+            </Table.Tbody>
+          </Table>
+        </Table.ScrollContainer>
+      )}
+    </FormSection>
+  );
+}
+
+function Uv5rSettingsRetainSection({ summary }: { summary: Uv5rMiniCloneSummary }) {
+  return (
+    <FormSection title="Radio settings">
+      {summary.settingsRetain.length === 0 ? (
+        <Text size="sm" c="dimmed">
+          No radio settings block in the stored image.
+        </Text>
+      ) : (
+        <Table.ScrollContainer minWidth={360}>
+          <Table withTableBorder withColumnBorders>
+            <Table.Thead>
+              <Table.Tr>
+                <Table.Th>Setting</Table.Th>
+                <Table.Th>Value</Table.Th>
+              </Table.Tr>
+            </Table.Thead>
+            <Table.Tbody>
+              {summary.settingsRetain.map((row) => (
+                <Table.Tr key={row.label}>
+                  <Table.Td>{row.label}</Table.Td>
+                  <Table.Td>{row.value}</Table.Td>
+                </Table.Tr>
+              ))}
+            </Table.Tbody>
+          </Table>
+        </Table.ScrollContainer>
+      )}
+    </FormSection>
+  );
+}
+
+function Uv5rAncillaryRetainSection({ summary }: { summary: Uv5rMiniCloneSummary }) {
+  return (
+    <FormSection title="Other retained features">
+      <Table.ScrollContainer minWidth={360}>
+        <Table withTableBorder withColumnBorders>
+          <Table.Thead>
+            <Table.Tr>
+              <Table.Th>Feature</Table.Th>
+              <Table.Th>Value</Table.Th>
+            </Table.Tr>
+          </Table.Thead>
+          <Table.Tbody>
+            {summary.ancillaryRetain.rows.map((row) => (
+              <Table.Tr key={row.label}>
+                <Table.Td>{row.label}</Table.Td>
+                <Table.Td>{row.value}</Table.Td>
+              </Table.Tr>
+            ))}
+          </Table.Tbody>
+        </Table>
+      </Table.ScrollContainer>
+    </FormSection>
+  );
+}
+
+function Uv5rRadioImageSections({
+  summary,
+  bag,
+}: {
+  summary: Uv5rMiniCloneSummary;
+  bag: RadioCloneHydrationBag;
+}) {
+  return (
+    <>
+      <FormSection title="Capture">
+        <Table.ScrollContainer minWidth={360}>
+          <Table withTableBorder withColumnBorders>
+            <Table.Tbody>
+              <Table.Tr>
+                <Table.Td fw={600}>Source</Table.Td>
+                <Table.Td>{bag.sourceFileName ?? '—'}</Table.Td>
+              </Table.Tr>
+              <Table.Tr>
+                <Table.Td fw={600}>Captured</Table.Td>
+                <Table.Td>{new Date(bag.capturedAt).toLocaleString()}</Table.Td>
+              </Table.Tr>
+              <Table.Tr>
+                <Table.Td fw={600}>Via</Table.Td>
+                <Table.Td>{summary.capturedVia}</Table.Td>
+              </Table.Tr>
+            </Table.Tbody>
+          </Table>
+        </Table.ScrollContainer>
+      </FormSection>
+
+      <FormSection title="Radio info">
+        <Table.ScrollContainer minWidth={360}>
+          <Table withTableBorder withColumnBorders>
+            <Table.Tbody>
+              <Table.Tr>
+                <Table.Td fw={600}>Model</Table.Td>
+                <Table.Td>{summary.radioModelId}</Table.Td>
+              </Table.Tr>
+              <Table.Tr>
+                <Table.Td fw={600}>Firmware</Table.Td>
+                <Table.Td>{summary.firmware?.trim() || '—'}</Table.Td>
+              </Table.Tr>
+              <Table.Tr>
+                <Table.Td fw={600}>Image size</Table.Td>
+                <Table.Td>
+                  {summary.imageByteLength} bytes ({hexOffset(summary.imageByteLength)})
+                </Table.Td>
+              </Table.Tr>
+            </Table.Tbody>
+          </Table>
+        </Table.ScrollContainer>
+      </FormSection>
+
+      <Uv5rOnRadioSection summary={summary} />
+      <Uv5rWrittenFromBuildSection summary={summary} />
+      <Uv5rKeptOnWriteSection summary={summary} />
+      <Uv5rSettingsRetainSection summary={summary} />
+      <Uv5rAncillaryRetainSection summary={summary} />
+    </>
+  );
+}
+
 function Dm32RadioImageSections({
   summary,
   bag,
@@ -317,7 +508,9 @@ export default function BuildRadioImageSettingsPage() {
           has stored an image — the Export pathway switcher need not be on Direct radio.{' '}
           {isDm32
             ? 'Counts show what is on the radio; retained settings are what Studio keeps when you write channels and other build data from your library.'
-            : 'Unmodelled regions (VFO, settings, ANI) are retained for Write so they survive channel updates from the library. Settings are not editable in Studio.'}
+            : isUv5rMini
+              ? 'Counts show what is on the radio; retained settings are what Studio keeps when you write channels from your library.'
+              : 'Unmodelled regions (VFO, settings, ANI) are retained for Write so they survive channel updates from the library. Settings are not editable in Studio.'}
         </Text>
       }
     >
@@ -341,92 +534,7 @@ export default function BuildRadioImageSettingsPage() {
         ) : dm32Summary && bag ? (
           <Dm32RadioImageSections summary={dm32Summary} bag={bag} />
         ) : uv5rSummary && bag ? (
-          <>
-            <FormSection title="Capture">
-              <Table.ScrollContainer minWidth={360}>
-                <Table withTableBorder withColumnBorders>
-                  <Table.Tbody>
-                    <Table.Tr>
-                      <Table.Td fw={600}>Source</Table.Td>
-                      <Table.Td>{bag.sourceFileName ?? '—'}</Table.Td>
-                    </Table.Tr>
-                    <Table.Tr>
-                      <Table.Td fw={600}>Captured</Table.Td>
-                      <Table.Td>{new Date(bag.capturedAt).toLocaleString()}</Table.Td>
-                    </Table.Tr>
-                    <Table.Tr>
-                      <Table.Td fw={600}>Via</Table.Td>
-                      <Table.Td>{uv5rSummary.capturedVia}</Table.Td>
-                    </Table.Tr>
-                  </Table.Tbody>
-                </Table>
-              </Table.ScrollContainer>
-            </FormSection>
-
-            <FormSection
-              title="Radio info"
-              description="Parsed from the stored clone image where available."
-            >
-              <Table.ScrollContainer minWidth={360}>
-                <Table withTableBorder withColumnBorders>
-                  <Table.Tbody>
-                    <Table.Tr>
-                      <Table.Td fw={600}>Model</Table.Td>
-                      <Table.Td>{uv5rSummary.radioModelId}</Table.Td>
-                    </Table.Tr>
-                    <Table.Tr>
-                      <Table.Td fw={600}>Firmware</Table.Td>
-                      <Table.Td>{uv5rSummary.firmware?.trim() || '—'}</Table.Td>
-                    </Table.Tr>
-                    <Table.Tr>
-                      <Table.Td fw={600}>Image size</Table.Td>
-                      <Table.Td>
-                        {uv5rSummary.imageByteLength} bytes (
-                        {hexOffset(uv5rSummary.imageByteLength)})
-                      </Table.Td>
-                    </Table.Tr>
-                    <Table.Tr>
-                      <Table.Td fw={600}>Occupied channels on radio</Table.Td>
-                      <Table.Td>
-                        {uv5rSummary.occupiedChannelCount} occupied ·{' '}
-                        {uv5rSummary.emptyChannelSlots} empty slots (decoded from image — Write
-                        still uses library + assemble)
-                      </Table.Td>
-                    </Table.Tr>
-                  </Table.Tbody>
-                </Table>
-              </Table.ScrollContainer>
-            </FormSection>
-
-            <FormSection
-              title="Retained regions"
-              description="Channels are overwritten from the library on Write. Other regions stay as opaque bytes from Read — Studio does not model them yet (unlike NeonPlug JSON settings bags)."
-            >
-              <Table.ScrollContainer minWidth={480}>
-                <Table withTableBorder withColumnBorders>
-                  <Table.Thead>
-                    <Table.Tr>
-                      <Table.Th>Region</Table.Th>
-                      <Table.Th>Packed offset</Table.Th>
-                      <Table.Th>Size</Table.Th>
-                      <Table.Th>On Write</Table.Th>
-                    </Table.Tr>
-                  </Table.Thead>
-                  <Table.Tbody>
-                    {'regions' in uv5rSummary &&
-                      uv5rSummary.regions.map((region) => (
-                        <Table.Tr key={region.label}>
-                          <Table.Td>{region.label}</Table.Td>
-                          <Table.Td>{hexOffset(region.packedOffset)}</Table.Td>
-                          <Table.Td>{region.sizeBytes} bytes</Table.Td>
-                          <Table.Td>{region.role}</Table.Td>
-                        </Table.Tr>
-                      ))}
-                  </Table.Tbody>
-                </Table>
-              </Table.ScrollContainer>
-            </FormSection>
-          </>
+          <Uv5rRadioImageSections summary={uv5rSummary} bag={bag} />
         ) : null}
       </Stack>
     </FormPage>
