@@ -265,14 +265,14 @@ function AncillarySection({
 
 /** Read-only NeonPlug donor settings retained on a NeonPlug format build. */
 export default function BuildNeonplugSettingsPage() {
-  const { build } = useBuildLayout();
+  const { build, activeEgress } = useBuildLayout();
 
-  if (build.formatId !== 'neonplug') {
+  if (activeEgress?.formatId !== 'neonplug') {
     return <Navigate to={`/builds/${build.id}/export`} replace />;
   }
 
-  const isUv5r = build.profileId === 'neonplug-uv5rmini';
-  const donor = isNeonplugDonorBag(build.cpsWireHydration) ? build.cpsWireHydration : null;
+  const isUv5r = activeEgress.profileId === 'neonplug-uv5rmini';
+  const donor = isNeonplugDonorBag(activeEgress.hydration) ? activeEgress.hydration : null;
   const summary = donor ? summariseNeonplugDonorRetain(donor) : null;
 
   return (

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import type { FormatBuild } from '@core/models/formatBuild.ts';
+import type { RadioBuild } from '@core/models/radioBuild.ts';
 import type { ZoneGroupingLayout, ZoneGroupingZoneEntry } from '@core/models/traitLayout.ts';
 import {
   findZoneGroupingSection,
@@ -11,7 +11,12 @@ import { scanListMemberCapForProfile } from '@core/import-export/formatProfiles.
 import type { FormatId } from '@core/import-export/types.ts';
 import { buildZoneBehaviourContext } from '@core/import-export/zoneBehaviourDefaults/index.ts';
 import type { LibrarySlice } from '@core/services/assemble.ts';
-import { BuildCapabilityTrait, traitProfileFor } from '@core/models/traits.ts';
+import { BuildCapabilityTrait } from '@core/models/traits.ts';
+import {
+  radioTargetHasTrait,
+  traitsForRadioTarget,
+} from '@core/radio-targets/index.ts';
+import { egressIdentityForBuild } from '../lib/buildEgressUi.ts';
 import { useBuildLayout } from '../routes/builds/BuildLayoutContext.tsx';
 import { useProjects } from '../state/useProjects.ts';
 import { useFormatBuilds } from '../state/useFormatBuilds.ts';
@@ -21,8 +26,8 @@ import { loadLibrarySlice } from '../lib/loadLibrarySlice.ts';
 
 const buildService = new BuildService(persistence);
 
-export function zoneScanExportSupported(build: FormatBuild): boolean {
-  const traits = traitProfileFor(build.profileId)?.traits ?? [];
+export function zoneScanExportSupported(build: RadioBuild): boolean {
+  const traits = traitsForRadioTarget(build.radioTargetId);
   return (
     traits.includes(BuildCapabilityTrait.ZoneGrouping) &&
     (traits.includes(BuildCapabilityTrait.ScanLists) ||
@@ -30,27 +35,31 @@ export function zoneScanExportSupported(build: FormatBuild): boolean {
   );
 }
 
-export function zoneGroupingLayoutSupported(build: FormatBuild): boolean {
-  const profile = traitProfileFor(build.profileId);
-  return profile?.traits.includes(BuildCapabilityTrait.ZoneGrouping) ?? false;
+export function zoneGroupingLayoutSupported(build: RadioBuild): boolean {
+  return radioTargetHasTrait(build.radioTargetId, BuildCapabilityTrait.ZoneGrouping);
 }
 
-export function scanListMemberCapForBuild(build: FormatBuild): number {
-  return scanListMemberCapForProfile(build.formatId as FormatId, build.profileId);
+export function scanListMemberCapForBuild(formatId: string, profileId: string): number {
+  return scanListMemberCapForProfile(formatId as FormatId, profileId);
 }
 
 export function useZoneScanExportLayout() {
-  const { build } = useBuildLayout();
+  const { build, activeEgress } = useBuildLayout();
   const { activeProjectId } = useProjects();
   const { putBuild } = useFormatBuilds();
   const [library, setLibrary] = useState<LibrarySlice | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
+  const egress = useMemo(
+    () => egressIdentityForBuild(build, activeEgress),
+    [build, activeEgress],
+  );
+
   const layoutSupported = zoneGroupingLayoutSupported(build);
   const enabled = zoneScanExportSupported(build);
   const showScanCarrierControls = enabled;
-  const scanListMemberCap = scanListMemberCapForBuild(build);
+  const scanListMemberCap = scanListMemberCapForBuild(egress.formatId, egress.profileId);
 
   useEffect(() => {
     if (!activeProjectId || !layoutSupported) return;

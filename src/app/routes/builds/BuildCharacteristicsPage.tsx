@@ -10,9 +10,10 @@ import type { PowerLadderEntry } from '@core/import-export/profileLadder.ts';
 import { formatCatalogEntry } from '@core/import-export/registry.ts';
 import {
   BuildCapabilityTrait,
-  traitProfileFor,
   type BuildCapabilityTrait as CapabilityId,
 } from '@core/models/traits.ts';
+import { traitsForRadioTarget } from '@core/radio-targets/index.ts';
+import { egressIdentityForBuild } from '../../lib/buildEgressUi.ts';
 import { FormPage, FormSection } from '../../components/ui/index.ts';
 import {
   BUILD_ORGANISATION_INTRO,
@@ -59,13 +60,12 @@ function ladderLine(entry: PowerLadderEntry): string {
 }
 
 export default function BuildCharacteristicsPage() {
-  const { build } = useBuildLayout();
-  const formatId = build.formatId as FormatId;
-  const formatEntry = formatCatalogEntry(formatId);
-  const traitProfile = traitProfileFor(build.profileId);
-  const traits = (traitProfile?.traits ?? []) as CapabilityId[];
-  const limits = getProfileExportLimits(formatId, build.profileId);
-  const concepts = conceptsForCapabilities(traits, formatId);
+  const { build, activeEgress } = useBuildLayout();
+  const { formatId, profileId } = egressIdentityForBuild(build, activeEgress);
+  const formatEntry = formatCatalogEntry(formatId as FormatId);
+  const traits = traitsForRadioTarget(build.radioTargetId) as CapabilityId[];
+  const limits = getProfileExportLimits(formatId as FormatId, profileId);
+  const concepts = conceptsForCapabilities(traits, formatId as FormatId);
   const shownLimits = limits ? limitRows(limits) : [];
 
   return (
@@ -75,7 +75,7 @@ export default function BuildCharacteristicsPage() {
         <Text size="sm" component="span">
           Read-only facts for{' '}
           <Text span fw={600}>
-            {formatEntry?.label ?? build.formatId}
+            {formatEntry?.label ?? formatId}
           </Text>
           {limits ? (
             <>
@@ -85,7 +85,8 @@ export default function BuildCharacteristicsPage() {
               </Text>
             </>
           ) : null}
-          . Change the radio profile on <Link to={`/builds/${build.id}/overview`}>Setup</Link>.
+          . Limits follow the active export pathway — switch it on{' '}
+          <Link to={`/builds/${build.id}/export`}>Export</Link>.
         </Text>
       }
     >
@@ -99,7 +100,7 @@ export default function BuildCharacteristicsPage() {
             <Stack gap="md">
               {traits.map((trait) => {
                 const copy = capabilityCopyFor(trait);
-                const note = copy.formatNotes?.[formatId];
+                const note = copy.formatNotes?.[formatId as FormatId];
                 return (
                   <Stack key={trait} gap={4}>
                     <Title order={5}>{copy.label}</Title>

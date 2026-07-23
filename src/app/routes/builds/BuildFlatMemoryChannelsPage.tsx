@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Button, Group, Stack, Text } from '@mantine/core';
 import { IconPlus } from '@tabler/icons-react';
 import { Link } from 'react-router-dom';
-import type { BuildExportSettings, FormatBuild } from '@core/models/formatBuild.ts';
+import type { BuildExportSettings, RadioBuild } from '@core/models/radioBuild.ts';
 import { channelDisplayLabel } from '@core/domain/channelNaming.ts';
 import {
   isEntityExcluded,
@@ -44,6 +44,7 @@ import { useSyncedWirePreviewRow } from '../../components/builds/wirePreview/use
 import ChirpChannelScanSection from '../../components/builds/wirePreview/overrideModalSections/ChirpChannelScanSection.tsx';
 import { FormPage } from '../../components/ui/index.ts';
 import { ICON_STROKE } from '../../lib/iconSizes.ts';
+import { egressIdentityForBuild } from '../../lib/buildEgressUi.ts';
 import { resolvedBuildExportSettings } from '../../lib/buildExportSettingsUi.ts';
 import { useBuildLayout } from './BuildLayoutContext.tsx';
 import { useProjects } from '../../state/useProjects.ts';
@@ -82,9 +83,9 @@ function toWirePreviewRow(
 }
 
 export default function BuildFlatMemoryChannelsPage() {
-  const { build: contextBuild } = useBuildLayout();
+  const { build: contextBuild, activeEgress } = useBuildLayout();
   const buildRef = useRef(contextBuild);
-  const [savedBuild, setSavedBuild] = useState<FormatBuild | null>(null);
+  const [savedBuild, setSavedBuild] = useState<RadioBuild | null>(null);
   const build = resolveOptimisticBuild(contextBuild, savedBuild);
   const { activeProjectId } = useProjects();
   const { putBuild } = useFormatBuilds();
@@ -108,16 +109,27 @@ export default function BuildFlatMemoryChannelsPage() {
     buildRef.current = build;
   }, [build]);
 
-  const exportOptions = useMemo(
-    () => mergeExportOptions(build, undefined, librarySlice),
-    [build, librarySlice],
+  const egress = useMemo(
+    () => egressIdentityForBuild(build, activeEgress),
+    [build, activeEgress],
   );
-  const exportSettings = resolvedBuildExportSettings(build);
+
+  const exportOptions = useMemo(
+    () =>
+      mergeExportOptions(
+        build,
+        egress.formatId,
+        { profileId: egress.profileId },
+        librarySlice,
+      ),
+    [build, egress.formatId, egress.profileId, librarySlice],
+  );
+  const exportSettings = resolvedBuildExportSettings(build, egress.formatId);
 
   const nameLimit = useMemo(() => {
-    const options = getFormatProfiles(build.formatId as FormatId);
-    return options.find((option) => option.profileId === build.profileId)?.nameLimit;
-  }, [build.formatId, build.profileId]);
+    const options = getFormatProfiles(egress.formatId as FormatId);
+    return options.find((option) => option.profileId === egress.profileId)?.nameLimit;
+  }, [egress.formatId, egress.profileId]);
 
   useEffect(() => {
     if (!activeProjectId) return;

@@ -18,13 +18,13 @@ function hexOffset(n: number): string {
 }
 
 export default function BuildRadioImageSettingsPage() {
-  const { build } = useBuildLayout();
+  const { build, activeEgress } = useBuildLayout();
 
-  if (build.formatId !== 'radio-io') {
+  if (activeEgress?.formatId !== 'radio-io') {
     return <Navigate to={`/builds/${build.id}/export`} replace />;
   }
 
-  const bag = isRadioCloneHydrationBag(build.cpsWireHydration) ? build.cpsWireHydration : null;
+  const bag = isRadioCloneHydrationBag(activeEgress.hydration) ? activeEgress.hydration : null;
   const isUv5rMini = bag?.retain.radioModelId === UV5R_MINI_MODEL_ID;
   const summary = bag && isUv5rMini ? summariseUv5rMiniClone(bag) : null;
 
