@@ -7,7 +7,6 @@ import { traitProfileFor } from '@core/models/traits.ts';
 import {
   formatCatalogEntry,
   getExportAdapter,
-  getFormatExportDefaults,
 } from '@core/import-export/registry.ts';
 import {
   isMultiFileExportAdapter,
@@ -31,7 +30,7 @@ import { saveDriveLastFolderId, saveDriveLastFolderPath } from '@integrations/cl
 import DriveBrowserModal, { type DriveSaveTarget } from '../import-export/DriveBrowserModal.tsx';
 import GoogleDriveActionButton from '../import-export/GoogleDriveActionButton.tsx';
 import { ICON_SIZE_ACTION, ICON_STROKE } from '../../lib/iconSizes.ts';
-import { resolvedBuildExportSettings } from '../../lib/buildExportSettingsUi.ts';
+import { resolvedBuildExportSettings, radioBuildFormatExportDefaults } from '../../lib/buildExportSettingsUi.ts';
 import {
   buildNeedsLegacyExportSettingsMigration,
   clearLegacyExportSettingsLocalStorage,
@@ -80,8 +79,8 @@ export default function ExportBuildCpsPanel({ build }: ExportBuildCpsPanelProps)
   const formatEntry = formatCatalogEntry(formatId);
   const profileLabel = traitProfileFor(profileId)?.label ?? profileId;
   const wireHint = formatProfileWireHint(formatId, profileId);
-  const formatDefaults = getFormatExportDefaults(formatId);
-  const resolvedSettings = resolvedBuildExportSettings(build, formatId);
+  const formatDefaults = radioBuildFormatExportDefaults(build);
+  const resolvedSettings = resolvedBuildExportSettings(build);
 
   const [channelCount, setChannelCount] = useState<number | null>(null);
   const [exportWarnings, setExportWarnings] = useState<string[]>([]);

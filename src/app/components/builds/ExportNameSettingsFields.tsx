@@ -21,7 +21,7 @@ export default function ExportNameSettingsFields({
   saving = false,
   profileNameLimit,
 }: ExportNameSettingsFieldsProps) {
-  const settings = resolvedBuildExportSettings(build, formatId);
+  const settings = resolvedBuildExportSettings(build);
   const showContactExportNameMode = formatId === 'anytone' || formatId === 'opengd77';
 
   return (
