@@ -1,9 +1,10 @@
 /**
- * Thin app services for Web Serial read (FormatBuild hydration) and write (assemble → encode).
+ * Thin app services for Web Serial read (EgressPath hydration) and write (assemble → encode).
  * No PROGRAM frame bytes here — integrations/radio-io owns protocol.
  */
 
-import type { FormatBuild } from '@core/models/formatBuild.ts';
+import type { RadioBuild } from '@core/models/radioBuild.ts';
+import type { EgressPath } from '@core/models/egressPath.ts';
 import { assemble, type LibrarySlice } from '@core/services/assemble.ts';
 import {
   isRadioCloneHydrationBag,
@@ -29,16 +30,24 @@ import { assembledChannelsToRadioDtos } from './radioIoChannelMap.ts';
 
 export { isWebSerialSupported, getWebSerialUnsupportedMessage };
 
-export function descriptorsForBuild(build: FormatBuild): RadioDescriptor[] {
-  return listDescriptorsForProfile(build.formatId, build.profileId);
+export function descriptorsForEgress(egress: EgressPath): RadioDescriptor[] {
+  return listDescriptorsForProfile(egress.formatId, egress.profileId);
 }
 
-export function buildHasRadioCloneHydration(build: FormatBuild): boolean {
-  return isRadioCloneHydrationBag(build.cpsWireHydration);
+/** @deprecated Prefer {@link descriptorsForEgress}. */
+export function descriptorsForBuild(egress: EgressPath): RadioDescriptor[] {
+  return descriptorsForEgress(egress);
 }
 
-export function getRadioCloneHydration(build: FormatBuild): RadioCloneHydrationBag | null {
-  return isRadioCloneHydrationBag(build.cpsWireHydration) ? build.cpsWireHydration : null;
+export function egressHasRadioCloneHydration(egress: EgressPath): boolean {
+  return isRadioCloneHydrationBag(egress.hydration);
+}
+
+/** @deprecated Prefer {@link egressHasRadioCloneHydration}. */
+export const buildHasRadioCloneHydration = egressHasRadioCloneHydration;
+
+export function getRadioCloneHydration(egress: EgressPath): RadioCloneHydrationBag | null {
+  return isRadioCloneHydrationBag(egress.hydration) ? egress.hydration : null;
 }
 
 export interface OpenRadioSessionResult {
@@ -47,14 +56,14 @@ export interface OpenRadioSessionResult {
 }
 
 /** Open Web Serial for the first compatible descriptor (or explicit modelId). */
-export async function openRadioSessionForBuild(
-  build: FormatBuild,
+export async function openRadioSessionForEgress(
+  egress: EgressPath,
   opts?: { modelId?: string; forcePortSelection?: boolean; signal?: AbortSignal },
 ): Promise<OpenRadioSessionResult> {
-  const candidates = descriptorsForBuild(build);
+  const candidates = descriptorsForEgress(egress);
   if (candidates.length === 0) {
     throw new Error(
-      `No Web Serial radio adapter is registered for ${build.formatId}/${build.profileId}.`,
+      `No Web Serial radio adapter is registered for ${egress.formatId}/${egress.profileId}.`,
     );
   }
   const descriptor =
@@ -79,6 +88,14 @@ export async function openRadioSessionForBuild(
   return { session, descriptor };
 }
 
+/** @deprecated Prefer {@link openRadioSessionForEgress}. */
+export async function openRadioSessionForBuild(
+  egress: EgressPath,
+  opts?: { modelId?: string; forcePortSelection?: boolean; signal?: AbortSignal },
+): Promise<OpenRadioSessionResult> {
+  return openRadioSessionForEgress(egress, opts);
+}
+
 export interface ReadRadioHydrationResult {
   hydration: RadioCloneHydrationBag;
   firmware?: string;
@@ -86,7 +103,7 @@ export interface ReadRadioHydrationResult {
 }
 
 /**
- * Download clone image and return FormatBuild hydration bag (does not mutate library).
+ * Download clone image and return egress hydration bag (does not mutate library).
  */
 export async function readRadioHydrationForBuild(
   session: RadioSession,
@@ -124,26 +141,30 @@ export class RadioWriteBlockedError extends Error {
 
 /**
  * Assemble build → encode into hydrated image → upload.
- * Requires radio-clone hydration when descriptor.hydrationRequiredForWrite.
+ * Requires radio-clone hydration on the egress when descriptor.hydrationRequiredForWrite.
  */
 export async function writeBuildToRadio(
   session: RadioSession,
-  build: FormatBuild,
+  build: RadioBuild,
+  egress: EgressPath,
   library: LibrarySlice,
   opts?: { onProgress?: ProgressFn; signal?: AbortSignal },
 ): Promise<void> {
-  const hydration = getRadioCloneHydration(build);
+  const hydration = getRadioCloneHydration(egress);
   if (session.descriptor.hydrationRequiredForWrite && !hydration) {
     throw new RadioWriteBlockedError(
       'Read from the radio first so Studio can preserve unmodelled settings, then write.',
     );
   }
   if (!hydration) {
-    throw new RadioWriteBlockedError('Missing radio clone hydration on this format build.');
+    throw new RadioWriteBlockedError('Missing radio clone hydration on this egress path.');
   }
 
-  const assembled = assemble(build, library);
-  const dtos = assembledChannelsToRadioDtos(assembled.channels, build);
+  const assembled = assemble(build, library, {
+    formatId: egress.formatId,
+    profileId: egress.profileId,
+  });
+  const dtos = assembledChannelsToRadioDtos(assembled.channels, build, egress);
   const image = mergeChannelsIntoUv5rMiniHydration(hydration, dtos);
   setCachedImage(session, image);
   await session.radio.upload(image, {

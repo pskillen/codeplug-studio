@@ -1,4 +1,5 @@
-import type { FormatBuild } from '@core/models/formatBuild.ts';
+import type { RadioBuild } from '@core/models/radioBuild.ts';
+import type { EgressPath } from '@core/models/egressPath.ts';
 import type { CpsExportOptions, FormatId } from '@core/import-export/types.ts';
 import { isSingleFileCpsExportAdapter } from '@core/import-export/exportAdapter.ts';
 import { getExportAdapter } from '@core/import-export/registry.ts';
@@ -31,16 +32,30 @@ export interface CpsPreviewResult {
   fileNames: string[];
 }
 
-async function requireBuild(
+/** App export options — optional egress id defaults to the build's preferred pathway (#654). */
+export type CpsAppExportOptions = CpsExportOptions & {
+  egressId?: string;
+};
+
+async function requireBuildAndEgress(
   store: ProjectPersistence,
   projectId: string,
   buildId: string,
-): Promise<FormatBuild> {
-  const build = await store.getFormatBuild(projectId, buildId);
+  egressId?: string,
+): Promise<{ build: RadioBuild; egress: EgressPath }> {
+  const build = await store.getRadioBuild(projectId, buildId);
   if (!build) {
-    throw new Error(`Format build not found: ${buildId}`);
+    throw new Error(`Radio build not found: ${buildId}`);
   }
-  return build;
+  const paths = await store.listEgressPathsForBuild(projectId, buildId);
+  const egress =
+    (egressId ? paths.find((path) => path.id === egressId) : undefined) ??
+    paths.find((path) => path.id === build.defaultEgressPathId) ??
+    paths[0];
+  if (!egress) {
+    throw new Error(`No egress path for radio build ${buildId}`);
+  }
+  return { build, egress };
 }
 
 async function mergeProjectExportOptions(
@@ -79,21 +94,31 @@ export function defaultCpsSingleFileName(formatId: FormatId, profileId: string):
   return `${slugifyFileName(profileId)}.csv`;
 }
 
+function stripAppOptions(options?: CpsAppExportOptions): {
+  egressId?: string;
+  cpsOptions: CpsExportOptions;
+} {
+  if (!options) return { cpsOptions: {} };
+  const { egressId, ...cpsOptions } = options;
+  return { egressId, cpsOptions };
+}
+
 /** Serialise all CPS CSV files for preview (no browser download). */
 export async function previewCpsExport(
   projectId: string,
   buildId: string,
-  options?: CpsExportOptions,
+  options?: CpsAppExportOptions,
   store: ProjectPersistence = persistence,
 ): Promise<CpsPreviewResult> {
-  const build = await requireBuild(store, projectId, buildId);
+  const { egressId, cpsOptions } = stripAppOptions(options);
+  const { build, egress } = await requireBuildAndEgress(store, projectId, buildId, egressId);
   const library = await loadLibrarySlice(store, projectId);
-  const exportOptions = await mergeProjectExportOptions(store, projectId, options);
-  const result = exportBuildAll({ build, library, options: exportOptions });
+  const exportOptions = await mergeProjectExportOptions(store, projectId, cpsOptions);
+  const result = exportBuildAll({ build, egress, library, options: exportOptions });
   return {
     files: result.files,
     warnings: result.warnings,
-    fileNames: [...listExportBuildFileNames({ build, library, options: exportOptions })],
+    fileNames: [...listExportBuildFileNames({ build, egress, library, options: exportOptions })],
   };
 }
 
@@ -101,26 +126,28 @@ export async function previewCpsExport(
 export async function listCpsExportFileNames(
   projectId: string,
   buildId: string,
-  options?: CpsExportOptions,
+  options?: CpsAppExportOptions,
   store: ProjectPersistence = persistence,
 ): Promise<readonly string[]> {
-  const build = await requireBuild(store, projectId, buildId);
+  const { egressId, cpsOptions } = stripAppOptions(options);
+  const { build, egress } = await requireBuildAndEgress(store, projectId, buildId, egressId);
   const library = await loadLibrarySlice(store, projectId);
-  const exportOptions = await mergeProjectExportOptions(store, projectId, options);
-  return listExportBuildFileNames({ build, library, options: exportOptions });
+  const exportOptions = await mergeProjectExportOptions(store, projectId, cpsOptions);
+  return listExportBuildFileNames({ build, egress, library, options: exportOptions });
 }
 
 /** Serialise a single CPS CSV for preview (no browser download). */
 export async function previewCpsSingleFile(
   projectId: string,
   buildId: string,
-  options?: CpsExportOptions,
+  options?: CpsAppExportOptions,
   store: ProjectPersistence = persistence,
 ): Promise<CpsPreviewResult> {
-  const build = await requireBuild(store, projectId, buildId);
+  const { egressId, cpsOptions } = stripAppOptions(options);
+  const { build, egress } = await requireBuildAndEgress(store, projectId, buildId, egressId);
   const library = await loadLibrarySlice(store, projectId);
-  const result = exportBuildSingleFile({ build, library, options });
-  const fileName = options?.fileName ?? result.fileName;
+  const result = exportBuildSingleFile({ build, egress, library, options: cpsOptions });
+  const fileName = cpsOptions.fileName ?? result.fileName;
   return {
     files: result.files,
     warnings: result.warnings,
@@ -133,13 +160,14 @@ export async function downloadCpsFile(
   projectId: string,
   buildId: string,
   fileName: string,
-  options?: CpsExportOptions,
+  options?: CpsAppExportOptions,
   store: ProjectPersistence = persistence,
 ): Promise<CpsDownloadResult> {
-  const build = await requireBuild(store, projectId, buildId);
+  const { egressId, cpsOptions } = stripAppOptions(options);
+  const { build, egress } = await requireBuildAndEgress(store, projectId, buildId, egressId);
   const library = await loadLibrarySlice(store, projectId);
-  const exportOptions = await mergeProjectExportOptions(store, projectId, options);
-  const result = exportBuildFile({ build, library, fileName, options: exportOptions });
+  const exportOptions = await mergeProjectExportOptions(store, projectId, cpsOptions);
+  const result = exportBuildFile({ build, egress, library, fileName, options: exportOptions });
   downloadTextFile(result.content, fileName);
   return { warnings: result.warnings };
 }
@@ -148,18 +176,19 @@ export async function downloadCpsFile(
 export async function downloadCpsSingleFile(
   projectId: string,
   buildId: string,
-  options?: CpsExportOptions,
+  options?: CpsAppExportOptions,
   store: ProjectPersistence = persistence,
 ): Promise<CpsDownloadResult> {
-  const build = await requireBuild(store, projectId, buildId);
+  const { egressId, cpsOptions } = stripAppOptions(options);
+  const { build, egress } = await requireBuildAndEgress(store, projectId, buildId, egressId);
   const library = await loadLibrarySlice(store, projectId);
-  const result = exportBuildSingleFile({ build, library, options });
-  const fileName = options?.fileName ?? result.fileName;
+  const result = exportBuildSingleFile({ build, egress, library, options: cpsOptions });
+  const fileName = cpsOptions.fileName ?? result.fileName;
   downloadTextFile(result.content, fileName);
   return { warnings: result.warnings };
 }
 
-export type CpsZipExportOptions = CpsExportOptions & {
+export type CpsZipExportOptions = CpsAppExportOptions & {
   /** Donor radio-read `.neonplug` for merge-into-base NeonPlug export. */
   baseNeonplugBytes?: Uint8Array;
 };
@@ -180,20 +209,9 @@ export async function downloadCpsZip(
   options?: CpsZipExportOptions,
   store: ProjectPersistence = persistence,
 ): Promise<CpsDownloadResult> {
-  const build = await requireBuild(store, projectId, buildId);
-  const library = await loadLibrarySlice(store, projectId);
-  const { baseNeonplugBytes, ...cpsOptions } = options ?? {};
-  const exportOptions = await mergeProjectExportOptions(store, projectId, cpsOptions);
-  const result = exportBuildZip({
-    build,
-    library,
-    options: exportOptions,
-    baseNeonplugBytes,
-  });
-  const zipName =
-    options?.fileName ?? defaultCpsZipFileName(build.name, build.formatId as FormatId);
-  downloadZip(result.zip, zipName);
-  return { warnings: result.warnings };
+  const { zip, fileName, warnings } = await buildCpsZipBytes(projectId, buildId, options, store);
+  downloadZip(zip, fileName);
+  return { warnings };
 }
 
 /** Build CPS ZIP bytes without triggering a browser download. */
@@ -203,18 +221,20 @@ export async function buildCpsZipBytes(
   options?: CpsZipExportOptions,
   store: ProjectPersistence = persistence,
 ): Promise<{ zip: Uint8Array; fileName: string; warnings: string[] }> {
-  const build = await requireBuild(store, projectId, buildId);
+  const { egressId, baseNeonplugBytes, ...rest } = options ?? {};
+  const cpsOptions: CpsExportOptions = rest;
+  const { build, egress } = await requireBuildAndEgress(store, projectId, buildId, egressId);
   const library = await loadLibrarySlice(store, projectId);
-  const { baseNeonplugBytes, ...cpsOptions } = options ?? {};
   const exportOptions = await mergeProjectExportOptions(store, projectId, cpsOptions);
   const result = exportBuildZip({
     build,
+    egress,
     library,
     options: exportOptions,
     baseNeonplugBytes,
   });
   const fileName =
-    options?.fileName ?? defaultCpsZipFileName(build.name, build.formatId as FormatId);
+    options?.fileName ?? defaultCpsZipFileName(build.name, egress.formatId as FormatId);
   return { zip: result.zip, fileName, warnings: result.warnings };
 }
 
