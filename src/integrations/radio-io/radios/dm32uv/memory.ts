@@ -169,8 +169,15 @@ export async function bulkReadDm32Blocks(
 ): Promise<Map<number, Uint8Array>> {
   const out = new Map<number, Uint8Array>();
   const total = blocks.length;
+  const scale = opts?.settleScale ?? 1;
+  // NeonPlug CONNECTION.BLOCK_READ_DELAY — radio reboots if 4KB transfers are back-to-back
+  // (also settle once before the first full block after a long metadata scan).
+  const interBlockMs = scale <= 0 ? 0 : DM32_CONNECTION.BLOCK_READ_DELAY_MS * scale;
   for (let i = 0; i < blocks.length; i++) {
     throwIfAborted(opts?.signal);
+    if (interBlockMs > 0) {
+      await new Promise((r) => setTimeout(r, interBlockMs));
+    }
     const block = blocks[i]!;
     reportProgress(
       opts?.onProgress,
