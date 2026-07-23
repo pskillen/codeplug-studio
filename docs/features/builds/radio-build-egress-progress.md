@@ -6,11 +6,19 @@
 
 | Slice | Status | Notes |
 | --- | --- | --- |
-| 1 Model + catalog | In progress | `RadioBuild`, `EgressPath`, `src/core/radio-targets/` |
-| 2 Persistence (IndexedDB/in-memory) + `BuildService` | Done | `radioBuilds` + `egressPaths` stores; native YAML now parses/emits both arrays directly |
-| 3 assemble / export / radio-io | Pending | `assemble`/`exportBuild` already take `egress` per Slice 1; UI callers not yet wired |
+| 1 Model + catalog | Done | `RadioBuild`, `EgressPath`, `src/core/radio-targets/` (committed) |
+| 2 Persistence (IndexedDB/in-memory) + `BuildService` | Done | `radioBuilds` + `egressPaths` stores; YAML + BuildService (committed) |
+| 3 assemble / export / radio-io app callers | Pending | Core `exportBuild` already takes `egress`; **app UI still on old `build.formatId` shape — branch does not typecheck** |
 | 4 UI egress picker + retain pages | Pending | |
-| 5 Docs | Pending | |
+| 5 Docs | Partial | Multi-build-per-target clarified; contributor checklists still need #654 rewrite |
+
+## Stash (do not pop blindly)
+
+Interrupted agent WIP (UI/YAML/test mass edits) was stashed as:
+
+`stash@{0}: WIP #654 interrupted agent UI/YAML/test edits — do not resume blindly`
+
+Treat as **lost**. Resume Slice 3/4 from the committed tip with **small tasks + commit after each**.
 
 ## In flight
 
