@@ -12,9 +12,9 @@ Requires `useBuildLayout()` — `formatId` / `profileId` come from the **active 
 
 ## Behaviour
 
-- **Radio-level settings first** — Inclusion / Naming / Scanning (`ExportBuildSettingsSections`) render above the pathway chooser so projection prefs read as build-scoped.
+- **Radio-level settings first** — Inclusion / Naming / Scanning (`ExportBuildSettingsSections`) render above the pathway chooser. Visibility and fill-in defaults key off catalog **`radioTargetId`** (traits + default compatible egress), not the active pathway — switching CHIRP ↔ NeonPlug ↔ Web Serial must not flip projection controls ([#658](https://github.com/pskillen/codeplug-studio/issues/658)).
 - **Export pathway** — when multiple `EgressPath` rows exist, a **SegmentedControl** sits below those settings (session + `defaultEgressPathId`). Catalog order prefers Web Serial when available.
-- Pathway-specific chrome (CHIRP profile picker, NeonPlug donor merge, Web Serial Connect/Read/Write, download buttons) follows the switcher.
+- Pathway-specific chrome (CHIRP profile picker, NeonPlug donor merge, Web Serial Connect/Read/Write, download buttons, pathway wire-name caps) follows the switcher.
 - CHIRP keeps a runtime **export profile** override (`ProfilePicker`) within the CHIRP egress only; non-CHIRP ids are ignored via `resolveChirpExportProfileId`.
 - Disables export actions when the project library has no channels.
 - Shows export warnings returned by the format adapter (profile limits, name length, etc.).

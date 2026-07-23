@@ -39,10 +39,12 @@ Native YAML remains **project interchange** (library + all radio builds + egress
 
 | Surface                            | Owns                                                                                                                                 |
 | ---------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
-| **Export** (`/builds/:id/export`)  | **Egress switcher** (CPS file / Web Serial pathway), download / Drive / donor merge / format settings / inclusion / hydration upload |
+| **Export** (`/builds/:id/export`)  | **Radio-level** projection settings (gated by `radioTargetId` traits), then **egress switcher**, download / Drive / donor / hydration |
 | **Setup** (`/builds/:id/overview`) | Build identity (rename/delete), catalog radio target, organisation capability badges                                                 |
 
 Export does not host identity editors; Setup does not host download actions. Secondary nav lists **Export** first; `/builds/:id` redirects to Export.
+
+Projection settings (scan inclusion, m×n, naming fill-ins, …) stay visible across pathway switches ([#658](https://github.com/pskillen/codeplug-studio/issues/658)). Pathway chrome (CHIRP profile picker, NeonPlug donor, Web Serial, CPS download) follows the active egress.
 
 **Hydration** (NeonPlug donor `.neonplug`, Web Serial `radio-clone` image) is stored on the active **`EgressPath`**, not on the `RadioBuild` row. NeonPlug settings and Radio image retain pages summarise hydration for the matching egress child.
 
@@ -112,6 +114,7 @@ Native YAML import/export includes `radioBuilds[]` and `egressPaths[]` in the pr
 | Export resolution summary    | Shipped | [#421](https://github.com/pskillen/codeplug-studio/issues/421) / [#443](https://github.com/pskillen/codeplug-studio/issues/443) — Channels + Zones tabs; zone-derived scan membership cascade                                                                                                                                                                                                                                                                                                                                                                                                    |
 | Radio characteristics        | Shipped | [#515](https://github.com/pskillen/codeplug-studio/issues/515) — `/builds/:id/characteristics`; copy in `buildCapabilityCopy.ts`; limits via `getProfileExportLimits` (blanks for unmodelled caps)                                                                                                                                                                                                                                                                                                                                                                                               |
 | RadioBuild + EgressPath      | Shipped | [#654](https://github.com/pskillen/codeplug-studio/issues/654) — radio-centric `RadioBuild` + child `EgressPath` pathways; egress switcher on Export; hydration on egress; schema v22                                                                                                                                                                                                                                                                                                                                                                                                            |
+| Export projection trait gates | Shipped | [#658](https://github.com/pskillen/codeplug-studio/issues/658) — Export settings visibility / fill-ins from `radioTargetId` traits (not active egress profile)                                                                                                                                                                                                                                                                                                                                                                                                                                    |
 
 ## Export inclusion flags
 

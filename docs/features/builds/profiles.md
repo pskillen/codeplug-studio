@@ -1,6 +1,12 @@
 # Profiles and export limits on radio builds
 
-A **radio build** is keyed by catalog `radioTargetId`. Compatible **egress pathways** carry `formatId` / `profileId` (CHIRP, NeonPlug, OpenGD77, …). Profile wire limits and capability copy come from the **active egress** profile (or the catalog default when none is selected).
+A **radio build** is keyed by catalog `radioTargetId`. Compatible **egress pathways** carry `formatId` / `profileId` (CHIRP, NeonPlug, OpenGD77, …).
+
+| Concern                                              | Source of truth                                      |
+| ---------------------------------------------------- | ---------------------------------------------------- |
+| Organisation / Export **projection** UI visibility   | Catalog `RadioTarget.traits` for `radioTargetId`     |
+| Unset `exportSettings` fill-ins on Export             | Catalog **default** compatible egress format defaults |
+| Wire limits, ladders, retain, download/write chrome   | **Active egress** profile (or catalog default)       |
 
 ## When radios and profiles are chosen
 
@@ -10,7 +16,7 @@ A **radio build** is keyed by catalog `radioTargetId`. Compatible **egress pathw
 | Export pathway         | `/builds/:id/export` — egress switcher                   | Active selection in session + `defaultEgressPathId` on the build           |
 | CHIRP runtime override | Export panel `ProfilePicker` when active egress is CHIRP | Session / export options only (does not rewrite seeded egress `profileId`) |
 
-Changing the preferred pathway on Export updates `defaultEgressPathId` so the next session restores it.
+Changing the preferred pathway on Export updates `defaultEgressPathId` so the next session restores it. Switching pathways must **not** change which projection settings appear ([#658](https://github.com/pskillen/codeplug-studio/issues/658)).
 
 ## Operator-facing characteristics
 
@@ -37,3 +43,4 @@ Catalog entries such as Baofeng DM-1701 vs MD-9600 are **separate radio targets*
 - [DESIGN.md](../../../DESIGN.md) — build capability traits
 - [#515](https://github.com/pskillen/codeplug-studio/issues/515) — Radio characteristics page
 - [#654](https://github.com/pskillen/codeplug-studio/issues/654) — RadioBuild + EgressPath
+- [#658](https://github.com/pskillen/codeplug-studio/issues/658) — Export projection gated by radio target
