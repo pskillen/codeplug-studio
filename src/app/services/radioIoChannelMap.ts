@@ -11,7 +11,11 @@ import { channelPickForWireExport, composeChannelWireName } from '@core/domain/c
 import type { ChannelExportNameMode } from '@core/domain/channelNaming.ts';
 import { applyWireNameLimits } from '@core/import-export/channelExpansion/exportWireNames.ts';
 import { mergeExportOptions } from '@core/import-export/exportSettingsMerge.ts';
-import type { RadioChannelDto, RadioTone } from '@integrations/radio-io/radioChannelDto.ts';
+import type {
+  RadioChannelDto,
+  RadioChannelMode,
+  RadioTone,
+} from '@integrations/radio-io/radioChannelDto.ts';
 
 export interface RadioWireEgressIds {
   formatId: string;
@@ -62,6 +66,27 @@ function radioWireName(
   );
 }
 
+function digitalFields(row: AssembledChannel): Partial<RadioChannelDto> {
+  const dmr = row.entity.modeProfiles.find((p) => p.mode === 'dmr');
+  const analog = row.entity.modeProfiles.find((p) => p.mode === 'fm' || p.mode === 'am');
+  let mode: RadioChannelMode | undefined;
+  if (dmr && analog) mode = 'fixed-digital';
+  else if (dmr) mode = 'digital';
+  else if (analog) mode = 'analog';
+
+  if (!dmr) {
+    return mode ? { mode } : {};
+  }
+
+  const timeslot = dmr.timeslot === 2 ? 2 : dmr.timeslot === 1 ? 1 : undefined;
+  return {
+    mode: mode ?? 'digital',
+    colorCode: dmr.colourCode ?? undefined,
+    timeslot,
+    // TX-contact index is radio-native; leave unset so RMW preserves hydrated TG links.
+  };
+}
+
 /**
  * Convert assembled channels to RadioChannelDto list.
  * Slot: `orderOrSlot` when set, else stable 1-based index in assemble order.
@@ -91,6 +116,7 @@ export function assembledChannelsToRadioDtos(
       txTone: parseChannelTone(analog && 'txTone' in analog ? analog.txTone : 'none'),
       powerPercent: row.entity.power,
       bandwidth: bandwidthFromKHz(analog && 'bandwidthKHz' in analog ? analog.bandwidthKHz : null),
+      ...digitalFields(row),
     });
   });
   return dtos;

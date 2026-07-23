@@ -46,7 +46,8 @@ export function createFakeSerialPort(options?: {
     get writable() {
       return openWritable;
     },
-    async open() {
+    async open(options?: { baudRate: number; bufferSize?: number }) {
+      void options;
       openReadable = readable;
       openWritable = writable;
     },

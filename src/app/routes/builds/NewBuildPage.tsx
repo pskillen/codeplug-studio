@@ -2,7 +2,6 @@ import { Button, Card, Group, Stack, Text, TextInput, Anchor } from '@mantine/co
 import { useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { listRadioTargets, type RadioTarget } from '@core/radio-targets/index.ts';
-import Dm32PreferNeonPlugAlert from '../../components/builds/Dm32PreferNeonPlugAlert.tsx';
 import { FormPage, PageSection } from '../../components/ui/index.ts';
 import { useFormatBuilds } from '../../state/useFormatBuilds.ts';
 
@@ -96,11 +95,6 @@ export default function NewBuildPage() {
                           <Text size="sm" c="dimmed">
                             {egressSummary(target)}
                           </Text>
-                          {target.id === 'baofeng-dm32uv' ? (
-                            <Stack gap="xs" mt="sm" onClick={(e) => e.stopPropagation()}>
-                              <Dm32PreferNeonPlugAlert />
-                            </Stack>
-                          ) : null}
                         </div>
                         <Button variant="light" size="compact-sm">
                           Select

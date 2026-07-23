@@ -91,6 +91,7 @@ describe('trait profiles', () => {
       'neonplug-uv5rmini',
       'opengd77-1701',
       'opengd77-md9600',
+      'radio-io-dm32uv',
       'radio-io-uv5r-mini',
     ]);
   });

@@ -10,6 +10,10 @@ import {
   summariseUv5rMiniClone,
   UV5R_MINI_MODEL_ID,
 } from '@integrations/radio-io/radios/uv5r-mini/index.ts';
+import {
+  summariseDm32uvClone,
+  DM32UV_MODEL_ID,
+} from '@integrations/radio-io/radios/dm32uv/index.ts';
 import { FormPage, FormSection } from '../../components/ui/index.ts';
 import { useBuildLayout } from './BuildLayoutContext.tsx';
 
@@ -26,7 +30,14 @@ export default function BuildRadioImageSettingsPage() {
 
   const bag = isRadioCloneHydrationBag(activeEgress.hydration) ? activeEgress.hydration : null;
   const isUv5rMini = bag?.retain.radioModelId === UV5R_MINI_MODEL_ID;
-  const summary = bag && isUv5rMini ? summariseUv5rMiniClone(bag) : null;
+  const isDm32 =
+    bag?.retain.radioModelId === DM32UV_MODEL_ID || bag?.retain.radioModelId === 'DP570UV';
+  let summary = null;
+  if (bag && isUv5rMini) {
+    summary = summariseUv5rMiniClone(bag);
+  } else if (bag && isDm32) {
+    summary = summariseDm32uvClone(bag);
+  }
 
   return (
     <FormPage

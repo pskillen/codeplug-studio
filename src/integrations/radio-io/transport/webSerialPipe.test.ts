@@ -6,7 +6,11 @@ import {
   isWebSerialSupported,
 } from './featureDetect.ts';
 import { createFakeSerialPort } from './fakeSerialPort.ts';
-import { openWebSerialPipe, requestWebSerialPipe } from './webSerialPipe.ts';
+import {
+  openWebSerialPipe,
+  requestWebSerialPipe,
+  WEB_SERIAL_HOST_BUFFER_SIZE,
+} from './webSerialPipe.ts';
 
 describe('featureDetect', () => {
   afterEach(() => {
@@ -44,6 +48,30 @@ describe('openWebSerialPipe', () => {
     // leftover byte stays buffered for next read
     const next = pipe.readExact(1, 500);
     await expect(next).resolves.toEqual(new Uint8Array([6]));
+    await pipe.close();
+  });
+
+  it('readExact completes a 4KB-class payload delivered in many small chunks', async () => {
+    // Regression: waiters must park when buf has a partial chunk; busy-spinning
+    // starves the pump and stalls DM-32 4KB block replies (#663).
+    const fake = createFakeSerialPort();
+    const pipe = await openWebSerialPipe(fake.port, 115200);
+    const total = 4102; // 6-byte R/W header + 4096 data
+    const readPromise = pipe.readExact(total, 5000);
+
+    const chunk = 64;
+    for (let offset = 0; offset < total; offset += chunk) {
+      const end = Math.min(offset + chunk, total);
+      const piece = new Uint8Array(end - offset);
+      for (let i = 0; i < piece.length; i++) piece[i] = (offset + i) & 0xff;
+      fake.pushRead(piece);
+      await new Promise((r) => setTimeout(r, 0));
+    }
+
+    const got = await readPromise;
+    expect(got).toHaveLength(total);
+    expect(got[0]).toBe(0);
+    expect(got[total - 1]).toBe((total - 1) & 0xff);
     await pipe.close();
   });
 
@@ -94,7 +122,12 @@ describe('openWebSerialPipe', () => {
 
   it('opens a closed port via port.open before attaching', async () => {
     const fake = createFakeSerialPort({ initiallyOpen: false });
+    const openSpy = vi.spyOn(fake.port, 'open');
     const pipe = await openWebSerialPipe(fake.port, 38400);
+    expect(openSpy).toHaveBeenCalledWith({
+      baudRate: 38400,
+      bufferSize: WEB_SERIAL_HOST_BUFFER_SIZE,
+    });
     await pipe.write(new Uint8Array([1]));
     expect(fake.writtenBytes()).toEqual(new Uint8Array([1]));
     await pipe.close();

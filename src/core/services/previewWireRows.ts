@@ -274,12 +274,16 @@ export function previewWireRows(
 
   switch (entityKind) {
     case 'channel': {
-      const expandModes = formatId === 'dm32' ? false : (_options?.expandModes ?? true);
+      // DM-32 CSV and radio-io-dm32uv are zone-grouped; only Mini radio-io is flat memory.
+      const expandModes =
+        formatId === 'dm32' || profileId === 'radio-io-dm32uv'
+          ? false
+          : (_options?.expandModes ?? true);
       const rows: WirePreviewRow[] = [];
       const reserved = new Set<string>();
       const warnings: string[] = [];
 
-      if (formatId === 'chirp' || formatId === 'radio-io') {
+      if (formatId === 'chirp' || (formatId === 'radio-io' && profileId === 'radio-io-uv5r-mini')) {
         const memorySlots =
           projection.channelMemorySlots ??
           projection.channels.map((row, index) => ({

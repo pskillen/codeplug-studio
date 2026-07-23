@@ -1,10 +1,11 @@
 import { Alert, Anchor, Text } from '@mantine/core';
 
-export const DM32_PREFER_NEONPLUG_TITLE = 'Prefer NeonPlug to write your DM-32';
+export const DM32_PREFER_NEONPLUG_TITLE = 'Prefer Web Serial or NeonPlug for your DM-32';
 
 /**
- * Strong warning for Baofeng DM-32UV: prefer NeonPlug egress over CPS CSV for radio write.
- * Parent gates on the DM-32UV radio target; this component always renders when mounted.
+ * Strong warning when the active Export egress is native Baofeng DM-32 CPS CSV.
+ * Prefer in-browser Web Serial or NeonPlug for radio write.
+ * Parent mounts only for the dm32 CPS pathway — not on New Radio.
  */
 export default function Dm32PreferNeonPlugAlert() {
   return (
@@ -14,12 +15,12 @@ export default function Dm32PreferNeonPlugAlert() {
         Studio can&apos;t guarantee a DM-32 CSV download will land correctly in CPS.
       </Text>
       <Text size="sm" mt="xs">
-        After creating this radio build, choose the <strong>NeonPlug</strong> pathway on Export,
-        download a <code>.neonplug</code> file, then write the radio from{' '}
+        Switch to the <strong>Web Serial</strong> pathway on this Export page to read/write the
+        radio in the browser, or use <strong>NeonPlug</strong> (<code>.neonplug</code> via{' '}
         <Anchor href="https://neonplug.app" target="_blank" rel="noopener noreferrer">
           neonplug.app
         </Anchor>
-        . You can still download DM-32 CSV for other tools or testing.
+        ). You can still download DM-32 CSV for other tools or testing.
       </Text>
     </Alert>
   );

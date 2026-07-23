@@ -21,11 +21,6 @@ import {
   isWebSerialSupported,
   getWebSerialUnsupportedMessage,
 } from '@integrations/radio-io/index.ts';
-import {
-  extractUv5rMiniHydration,
-  mergeChannelsIntoUv5rMiniHydration,
-  UV5R_MINI_MODEL_ID,
-} from '@integrations/radio-io/radios/uv5r-mini/index.ts';
 import { assembledChannelsToRadioDtos } from './radioIoChannelMap.ts';
 
 export { isWebSerialSupported, getWebSerialUnsupportedMessage };
@@ -104,6 +99,7 @@ export interface ReadRadioHydrationResult {
 
 /**
  * Download clone image and return egress hydration bag (does not mutate library).
+ * Uses {@link RadioDescriptor.hydration} — no per-radio imports in this module.
  */
 export async function readRadioHydrationForBuild(
   session: RadioSession,
@@ -118,11 +114,10 @@ export async function readRadioHydrationForBuild(
   const channels = session.radio.decodeChannels(image);
   const occupied = channels.filter((c) => !c.empty).length;
 
-  const modelId = session.descriptor.modelIds.includes(UV5R_MINI_MODEL_ID)
-    ? UV5R_MINI_MODEL_ID
-    : (session.descriptor.modelIds[0] ?? UV5R_MINI_MODEL_ID);
-  const hydration = extractUv5rMiniHydration(image, {
+  const modelId = session.descriptor.modelIds[0] ?? 'radio';
+  const hydration = session.descriptor.hydration.extractHydration(image, {
     sourceFileName: `web-serial:${modelId}`,
+    protocol: session.radio,
   });
 
   return {
@@ -165,7 +160,10 @@ export async function writeBuildToRadio(
     profileId: egress.profileId,
   });
   const dtos = assembledChannelsToRadioDtos(assembled.channels, build, egress);
-  const image = mergeChannelsIntoUv5rMiniHydration(hydration, dtos);
+  // Sparse radios (DM-32UV) need absolute block addresses from the prior Read
+  // bag — connect alone does not populate download cache.
+  session.descriptor.hydration.seedProtocolForUpload?.(session.radio, hydration);
+  const image = session.descriptor.hydration.mergeChannelsIntoHydration(hydration, dtos);
   setCachedImage(session, image);
   await session.radio.upload(image, {
     onProgress: opts?.onProgress,

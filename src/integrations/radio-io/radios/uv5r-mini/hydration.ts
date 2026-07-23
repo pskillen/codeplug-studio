@@ -1,5 +1,5 @@
 /**
- * Bridge MemoryMap ↔ FormatBuild radio-clone hydration for UV-5R Mini.
+ * Bridge MemoryMap ↔ EgressPath radio-clone hydration for UV-5R Mini.
  */
 
 import {

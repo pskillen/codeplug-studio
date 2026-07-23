@@ -89,6 +89,8 @@ Radio is then ready for memory R/W.
 
 NeonPlug discovery reads **1 byte** at `blockAddr + 0xFFF` for metadata; bulk paths request full **4096** bytes.
 
+**Host note (Web Serial):** open the port with a large `bufferSize` (Studio uses 64 KiB). The Web Serial default is **255** bytes — too small for a 4KB reply on macOS CDC and can stall the host / reboot the radio ([#663](https://github.com/pskillen/codeplug-studio/issues/663)).
+
 ### Write (codeplug 4KB block)
 
 | Field   | Encoding                                                                  |

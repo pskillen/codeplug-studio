@@ -15,6 +15,7 @@ export type {
   RadioCapabilities,
   RadioCompatibleProfile,
   RadioDescriptor,
+  RadioHydrationHooks,
   RadioSession,
   RadioWriteStrategy,
 } from './types.ts';
@@ -38,5 +39,13 @@ export {
   memoryMapFromUv5rMiniHydration,
   summariseUv5rMiniClone,
 } from './radios/uv5r-mini/index.ts';
+export {
+  DM32UV_DESCRIPTOR,
+  DM32UV_MODEL_ID,
+  createDm32uvProtocol,
+  extractDm32uvHydration,
+  mergeChannelsIntoDm32uvHydration,
+  summariseDm32uvClone,
+} from './radios/dm32uv/index.ts';
 
 // Optional BLE BytePipe (same interface) — deferred; see epic #594.

@@ -84,6 +84,7 @@ export const RADIO_TARGETS: Record<string, RadioTarget> = {
     group: 'Baofeng',
     traits: dm32Traits,
     compatibleEgress: [
+      egress('radio-io', 'radio-io-dm32uv', 'Web Serial'),
       egress('neonplug', 'neonplug-dm32uv', 'NeonPlug'),
       egress('dm32', 'dm32-baofeng-dm32uv', 'DM32 CSV'),
     ],

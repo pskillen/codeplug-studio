@@ -21,9 +21,17 @@ export interface WebSerialPipeOptions {
 export interface SerialPortLike {
   readonly readable: ReadableStream<Uint8Array> | null;
   readonly writable: WritableStream<Uint8Array> | null;
-  open(options: { baudRate: number }): Promise<void>;
+  open(options: { baudRate: number; bufferSize?: number }): Promise<void>;
   close(): Promise<void>;
 }
+
+/**
+ * Web Serial default `bufferSize` is 255 — far too small for DM-32UV 4KB block
+ * replies (and stressful on macOS CDC). Open with a larger host-side buffer so
+ * the OS→browser queue can absorb a full R/W frame without dropping / stalling
+ * the radio (see WICG/serial#164, MDN SerialPort.open).
+ */
+export const WEB_SERIAL_HOST_BUFFER_SIZE = 65_536;
 
 class WebSerialBytePipe implements BytePipe {
   readonly baudRate: number;
@@ -85,7 +93,10 @@ class WebSerialBytePipe implements BytePipe {
         throw new RadioTimeoutError(`Timeout: needed ${n} bytes, have ${this.buf.length}.`);
       }
       const remaining = Math.max(1, deadline - Date.now());
-      await this.waitForBytes(remaining);
+      // Park until the buffer grows (or timeout/eof). Must not busy-spin when
+      // buf already has a partial chunk — that starves the continuous pump and
+      // stalls 4KB DM-32 replies (radio exits PC Program / reboots).
+      await this.waitForBufferGrowth(this.buf.length, remaining);
     }
 
     const result = this.buf.slice(0, n);
@@ -155,8 +166,12 @@ class WebSerialBytePipe implements BytePipe {
     }
   }
 
-  private waitForBytes(timeoutMs: number): Promise<void> {
-    if (this.buf.length > 0 || this.eof || this.closed) {
+  /**
+   * Wait until `buf.length` exceeds `priorLength`, or eof/closed/timeout.
+   * Lost-wakeup safe: re-check after registering the waiter.
+   */
+  private waitForBufferGrowth(priorLength: number, timeoutMs: number): Promise<void> {
+    if (this.buf.length > priorLength || this.eof || this.closed) {
       return Promise.resolve();
     }
     return new Promise((resolve) => {
@@ -169,9 +184,17 @@ class WebSerialBytePipe implements BytePipe {
       }, timeoutMs);
       const onNotify = (): void => {
         clearTimeout(timer);
+        const idx = this.waiters.indexOf(onNotify);
+        if (idx >= 0) {
+          this.waiters.splice(idx, 1);
+        }
         resolve();
       };
       this.waiters.push(onNotify);
+      // Data may have arrived between the length check and registration.
+      if (this.buf.length > priorLength || this.eof || this.closed) {
+        onNotify();
+      }
     });
   }
 
@@ -201,7 +224,7 @@ async function resolvePort(forceSelection: boolean): Promise<SerialPortLike> {
  */
 export async function openWebSerialPipe(port: SerialPortLike, baudRate: number): Promise<BytePipe> {
   if (!port.readable || !port.writable) {
-    await port.open({ baudRate });
+    await port.open({ baudRate, bufferSize: WEB_SERIAL_HOST_BUFFER_SIZE });
   } else if (port.readable.locked || port.writable.locked) {
     throw new RadioClosedError(
       'Serial port is busy from a previous operation. Reconnect the cable or reload the page.',
