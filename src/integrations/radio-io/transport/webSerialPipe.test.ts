@@ -51,6 +51,30 @@ describe('openWebSerialPipe', () => {
     await pipe.close();
   });
 
+  it('readExact completes a 4KB-class payload delivered in many small chunks', async () => {
+    // Regression: waiters must park when buf has a partial chunk; busy-spinning
+    // starves the pump and stalls DM-32 4KB block replies (#663).
+    const fake = createFakeSerialPort();
+    const pipe = await openWebSerialPipe(fake.port, 115200);
+    const total = 4102; // 6-byte R/W header + 4096 data
+    const readPromise = pipe.readExact(total, 5000);
+
+    const chunk = 64;
+    for (let offset = 0; offset < total; offset += chunk) {
+      const end = Math.min(offset + chunk, total);
+      const piece = new Uint8Array(end - offset);
+      for (let i = 0; i < piece.length; i++) piece[i] = (offset + i) & 0xff;
+      fake.pushRead(piece);
+      await new Promise((r) => setTimeout(r, 0));
+    }
+
+    const got = await readPromise;
+    expect(got).toHaveLength(total);
+    expect(got[0]).toBe(0);
+    expect(got[total - 1]).toBe((total - 1) & 0xff);
+    await pipe.close();
+  });
+
   it('throws RadioTimeoutError when not enough bytes arrive', async () => {
     const fake = createFakeSerialPort();
     const pipe = await openWebSerialPipe(fake.port, 9600);

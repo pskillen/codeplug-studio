@@ -93,7 +93,10 @@ class WebSerialBytePipe implements BytePipe {
         throw new RadioTimeoutError(`Timeout: needed ${n} bytes, have ${this.buf.length}.`);
       }
       const remaining = Math.max(1, deadline - Date.now());
-      await this.waitForBytes(remaining);
+      // Park until the buffer grows (or timeout/eof). Must not busy-spin when
+      // buf already has a partial chunk — that starves the continuous pump and
+      // stalls 4KB DM-32 replies (radio exits PC Program / reboots).
+      await this.waitForBufferGrowth(this.buf.length, remaining);
     }
 
     const result = this.buf.slice(0, n);
@@ -163,8 +166,12 @@ class WebSerialBytePipe implements BytePipe {
     }
   }
 
-  private waitForBytes(timeoutMs: number): Promise<void> {
-    if (this.buf.length > 0 || this.eof || this.closed) {
+  /**
+   * Wait until `buf.length` exceeds `priorLength`, or eof/closed/timeout.
+   * Lost-wakeup safe: re-check after registering the waiter.
+   */
+  private waitForBufferGrowth(priorLength: number, timeoutMs: number): Promise<void> {
+    if (this.buf.length > priorLength || this.eof || this.closed) {
       return Promise.resolve();
     }
     return new Promise((resolve) => {
@@ -177,9 +184,17 @@ class WebSerialBytePipe implements BytePipe {
       }, timeoutMs);
       const onNotify = (): void => {
         clearTimeout(timer);
+        const idx = this.waiters.indexOf(onNotify);
+        if (idx >= 0) {
+          this.waiters.splice(idx, 1);
+        }
         resolve();
       };
       this.waiters.push(onNotify);
+      // Data may have arrived between the length check and registration.
+      if (this.buf.length > priorLength || this.eof || this.closed) {
+        onNotify();
+      }
     });
   }
 
