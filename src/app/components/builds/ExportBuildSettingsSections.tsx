@@ -4,7 +4,10 @@ import type {
   DefaultScanInclusion,
   FormatBuild,
 } from '@core/models/formatBuild.ts';
-import { showsDefaultScanInclusion, hasMxNChannelExpansion } from '@core/models/traits.ts';
+import {
+  hasMxNChannelExpansion,
+  showsDefaultScanInclusion,
+} from '@core/radio-targets/index.ts';
 import { buildUsesFlatMemoryList } from '@core/domain/exportOrderOrSlot.ts';
 import type { FormatExportDefaults } from '@core/import-export/types.ts';
 import { FieldCard } from '../fields/Fields.tsx';
@@ -19,7 +22,6 @@ import { TRAIT_LABELS } from '../../routes/builds/buildHelpers.ts';
 export interface ExportBuildSettingsSectionsProps {
   build: FormatBuild;
   formatId: string;
-  profileId: string;
   saving: boolean;
   settingsError: string | null;
   profileNameLimit?: number;
@@ -41,7 +43,6 @@ export interface ExportBuildSettingsSectionsProps {
 export default function ExportBuildSettingsSections({
   build,
   formatId,
-  profileId,
   saving,
   settingsError,
   profileNameLimit,
@@ -55,7 +56,6 @@ export default function ExportBuildSettingsSections({
     return (
       <ExportAnytoneSettingsSections
         build={build}
-        profileId={profileId}
         saving={saving}
         settingsError={settingsError}
         profileNameLimit={profileNameLimit}
@@ -67,7 +67,7 @@ export default function ExportBuildSettingsSections({
   }
 
   const flatMemory = buildUsesFlatMemoryList(build);
-  const showChannelExpansion = hasMxNChannelExpansion(profileId);
+  const showChannelExpansion = hasMxNChannelExpansion(build.radioTargetId);
 
   return (
     <Stack gap="md">
@@ -178,12 +178,12 @@ export default function ExportBuildSettingsSections({
       <FieldCard
         title="Scanning"
         description={
-          showsDefaultScanInclusion(profileId)
+          showsDefaultScanInclusion(build.radioTargetId)
             ? 'Default scan behaviour for channels and format-specific scan list export.'
             : 'Scan list membership and per-channel assignment for this format.'
         }
       >
-        {showsDefaultScanInclusion(profileId) ? (
+        {showsDefaultScanInclusion(build.radioTargetId) ? (
           <DefaultScanInclusionSegment
             value={defaultScanValue}
             formatDefault={formatDefaults.defaultScanInclusion}

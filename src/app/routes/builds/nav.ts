@@ -10,8 +10,11 @@ import type { TablerIcon } from '@tabler/icons-react';
 import { BuildCapabilityTrait } from '@core/models/traits.ts';
 import type { EgressPath } from '@core/models/egressPath.ts';
 import type { RadioBuild } from '@core/models/radioBuild.ts';
-import { hasDedicatedScanLists, showsPerChannelScanListNav } from '@core/models/traits.ts';
-import { defaultCompatibleEgress, traitsForRadioTarget } from '@core/radio-targets/index.ts';
+import {
+  hasDedicatedScanLists,
+  showsPerChannelScanListNav,
+  traitsForRadioTarget,
+} from '@core/radio-targets/index.ts';
 import { entityNavIcons } from '../../nav/entityNavIcons.ts';
 
 export interface BuildNavItem {
@@ -21,18 +24,10 @@ export interface BuildNavItem {
 }
 
 export interface BuildNavOptions {
-  /** Seeded egress rows — used for profile helpers when active egress is unset. */
+  /** Seeded egress rows — reserved for callers that still pass pathway context. */
   egressPaths?: EgressPath[];
   /** Selected pathway — retain links (NeonPlug settings / Radio image) only when this matches. */
   activeEgress?: EgressPath | null;
-}
-
-function navProfileId(build: RadioBuild, options?: BuildNavOptions): string | undefined {
-  return (
-    options?.activeEgress?.profileId ??
-    options?.egressPaths?.[0]?.profileId ??
-    defaultCompatibleEgress(build.radioTargetId)?.profileId
-  );
 }
 
 /** Secondary nav entries for a radio build detail shell. */
@@ -40,7 +35,6 @@ export function buildNavItems(build: RadioBuild, options?: BuildNavOptions): Bui
   const base = `/builds/${build.id}`;
   const traits = new Set(traitsForRadioTarget(build.radioTargetId));
   const flatMemory = traits.has(BuildCapabilityTrait.FlatMemoryList);
-  const profileId = navProfileId(build, options);
   const activeFormatId = options?.activeEgress?.formatId;
 
   const items: BuildNavItem[] = [
@@ -55,7 +49,7 @@ export function buildNavItems(build: RadioBuild, options?: BuildNavOptions): Bui
 
   items.push({ label: 'Channels', path: `${base}/channels`, icon: entityNavIcons.channels });
 
-  if (profileId && showsPerChannelScanListNav(profileId)) {
+  if (showsPerChannelScanListNav(build.radioTargetId)) {
     items.push({
       label: 'Scan list',
       path: `${base}/scan-list`,
@@ -71,7 +65,7 @@ export function buildNavItems(build: RadioBuild, options?: BuildNavOptions): Bui
     items.push({ label: 'Zones', path: `${base}/zones`, icon: entityNavIcons.zones });
   }
 
-  if (profileId && hasDedicatedScanLists(profileId)) {
+  if (hasDedicatedScanLists(build.radioTargetId)) {
     items.push({
       label: 'Scan lists',
       path: `${base}/scan-lists`,

@@ -425,7 +425,6 @@ export default function ExportBuildCpsPanel({ build }: ExportBuildCpsPanelProps)
         <ExportBuildSettingsSections
           build={build}
           formatId={formatId}
-          profileId={profileId}
           saving={savingSettings}
           settingsError={settingsError}
           profileNameLimit={profileNameLimit}
@@ -486,7 +485,6 @@ export default function ExportBuildCpsPanel({ build }: ExportBuildCpsPanelProps)
         <ExportBuildSettingsSections
           build={build}
           formatId={formatId}
-          profileId={profileId}
           saving={savingSettings}
           settingsError={settingsError}
           profileNameLimit={profileNameLimit}
@@ -579,7 +577,6 @@ export default function ExportBuildCpsPanel({ build }: ExportBuildCpsPanelProps)
       <ExportBuildSettingsSections
         build={build}
         formatId={formatId}
-        profileId={profileId}
         saving={savingSettings}
         settingsError={settingsError}
         profileNameLimit={profileNameLimit}

@@ -108,29 +108,4 @@ export function traitProfileFor(profileId: string): TraitProfile | undefined {
   return TRAIT_PROFILES[profileId];
 }
 
-export function hasDedicatedScanLists(profileId: string): boolean {
-  const traits = traitProfileFor(profileId)?.traits ?? [];
-  return traits.includes(BuildCapabilityTrait.DedicatedScanLists);
-}
-
-export function hasMxNChannelExpansion(profileId: string): boolean {
-  const traits = traitProfileFor(profileId)?.traits ?? [];
-  return traits.includes(BuildCapabilityTrait.MxNChannelExpansion);
-}
-
-/** Whether the export page should show default scan inclusion (zone-derived / per-channel scan flag semantics). */
-export function showsDefaultScanInclusion(profileId: string): boolean {
-  return !hasDedicatedScanLists(profileId);
-}
-
-/**
- * Flat-memory radios with a per-channel scan flag get a dedicated **Scan list** build page
- * (CHIRP UV-5R, NeonPlug UV5R-Mini, …).
- */
-export function showsPerChannelScanListNav(profileId: string): boolean {
-  const traits = traitProfileFor(profileId)?.traits ?? [];
-  return (
-    traits.includes(BuildCapabilityTrait.FlatMemoryList) &&
-    traits.includes(BuildCapabilityTrait.PerChannelScanFlag)
-  );
-}
+/** Radio-target trait gates live in `@core/radio-targets` (keyed by `radioTargetId`). */

@@ -1,14 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import {
-  BuildCapabilityTrait,
-  TRAIT_PROFILES,
-  hasDedicatedScanLists,
-  showsDefaultScanInclusion,
-  traitProfileFor,
-} from './traits.ts';
+import { BuildCapabilityTrait, TRAIT_PROFILES, traitProfileFor } from './traits.ts';
 import { STUDIO_SCHEMA_VERSION } from './schemaVersion.ts';
 import { newFormatBuild, newProjectMeta, newRadioBuildForProfile } from '../domain/factories.ts';
-import { radioTargetIdForProfile } from '../radio-targets/catalog.ts';
+import {
+  hasDedicatedScanLists,
+  radioTargetIdForProfile,
+  showsDefaultScanInclusion,
+  showsPerChannelScanListNav,
+} from '../radio-targets/catalog.ts';
 import { nextRevision, initialRevision } from './revision.ts';
 
 describe('schemaVersion', () => {
@@ -81,19 +80,6 @@ describe('trait profiles', () => {
     expect(profile?.traits).toContain(BuildCapabilityTrait.PerChannelScanFlag);
   });
 
-  it('distinguishes dedicated vs zone-derived scan list semantics', () => {
-    expect(hasDedicatedScanLists('anytone-at-d890uv')).toBe(true);
-    expect(hasDedicatedScanLists('dm32-baofeng-dm32uv')).toBe(false);
-    expect(hasDedicatedScanLists('neonplug-dm32uv')).toBe(false);
-    expect(showsDefaultScanInclusion('anytone-at-d890uv')).toBe(false);
-    expect(showsDefaultScanInclusion('dm32-baofeng-dm32uv')).toBe(true);
-    expect(showsDefaultScanInclusion('opengd77-1701')).toBe(true);
-    expect(showsDefaultScanInclusion('chirp-uv5r')).toBe(true);
-    expect(showsDefaultScanInclusion('neonplug-dm32uv')).toBe(true);
-    expect(showsDefaultScanInclusion('neonplug-uv5rmini')).toBe(true);
-    expect(showsDefaultScanInclusion('radio-io-uv5r-mini')).toBe(true);
-  });
-
   it('has stable profile keys', () => {
     expect(Object.keys(TRAIT_PROFILES).sort()).toEqual([
       'anytone-at-d890uv',
@@ -107,6 +93,28 @@ describe('trait profiles', () => {
       'opengd77-md9600',
       'radio-io-uv5r-mini',
     ]);
+  });
+});
+
+describe('radio-target trait gates', () => {
+  it('distinguishes dedicated vs zone-derived scan list semantics by radio target', () => {
+    expect(hasDedicatedScanLists('anytone-at-d890uv')).toBe(true);
+    expect(hasDedicatedScanLists('baofeng-dm32uv')).toBe(false);
+    expect(hasDedicatedScanLists('baofeng-dm1701')).toBe(false);
+    expect(showsDefaultScanInclusion('anytone-at-d890uv')).toBe(false);
+    expect(showsDefaultScanInclusion('baofeng-dm32uv')).toBe(true);
+    expect(showsDefaultScanInclusion('baofeng-dm1701')).toBe(true);
+    expect(showsDefaultScanInclusion('baofeng-uv5r-mini')).toBe(true);
+  });
+
+  it('keeps UV-5R Mini scan/m×n visibility identical across egress profiles', () => {
+    const radioTargetId = 'baofeng-uv5r-mini';
+    expect(showsDefaultScanInclusion(radioTargetId)).toBe(true);
+    expect(showsPerChannelScanListNav(radioTargetId)).toBe(true);
+    expect(hasDedicatedScanLists(radioTargetId)).toBe(false);
+    for (const profileId of ['radio-io-uv5r-mini', 'neonplug-uv5rmini', 'chirp-uv5r'] as const) {
+      expect(radioTargetIdForProfile(profileId)).toBe(radioTargetId);
+    }
   });
 });
 
