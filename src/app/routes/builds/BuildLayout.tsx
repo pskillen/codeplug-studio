@@ -54,7 +54,13 @@ export default function BuildLayout() {
   serviceRef.current ??= new BuildService(persistence);
 
   const [egressPaths, setEgressPaths] = useState<EgressPath[]>([]);
-  const [activeEgressId, setActiveEgressIdState] = useState<string | null>(null);
+  /** Operator override for this mount of a build; cleared when `id` changes. */
+  const [activeEgressOverrideId, setActiveEgressOverrideId] = useState<string | null>(null);
+  const [trackedBuildId, setTrackedBuildId] = useState(id);
+  if (id !== trackedBuildId) {
+    setTrackedBuildId(id);
+    setActiveEgressOverrideId(null);
+  }
 
   const reloadEgressPaths = useCallback(async () => {
     if (!activeProjectId || !id) {
@@ -70,7 +76,6 @@ export default function BuildLayout() {
       if (!activeProjectId || !id) {
         if (!cancelled) {
           setEgressPaths([]);
-          setActiveEgressIdState(null);
         }
         return;
       }
@@ -91,39 +96,22 @@ export default function BuildLayout() {
     };
   }, [activeProjectId, id, reloadEgressPaths]);
 
-  useEffect(() => {
-    if (!id || !build) return;
-    const stored = readStoredActiveEgressId(id);
-    setActiveEgressIdState(resolveActiveEgressId(build, egressPaths, stored));
-  }, [build, egressPaths, id]);
-
   const setActiveEgressId = useCallback(
     (egressId: string) => {
       if (!id) return;
       writeStoredActiveEgressId(id, egressId);
-      setActiveEgressIdState(egressId);
+      setActiveEgressOverrideId(egressId);
     },
     [id],
   );
 
+  const preferredEgressId = activeEgressOverrideId ?? (id ? readStoredActiveEgressId(id) : null);
+  const activeEgressId = build
+    ? resolveActiveEgressId(build, egressPaths, preferredEgressId)
+    : null;
   const activeEgress = useMemo(
     () => egressPaths.find((path) => path.id === activeEgressId) ?? null,
     [egressPaths, activeEgressId],
-  );
-
-  const contextValue = useMemo(
-    () =>
-      build && id
-        ? {
-            build,
-            buildId: id,
-            egressPaths,
-            activeEgress,
-            setActiveEgressId,
-            reloadEgressPaths,
-          }
-        : null,
-    [build, id, egressPaths, activeEgress, setActiveEgressId, reloadEgressPaths],
   );
 
   if (loading) {
@@ -134,7 +122,7 @@ export default function BuildLayout() {
     );
   }
 
-  if (!build || !id || !contextValue) {
+  if (!build || !id) {
     return (
       <FormPage title="Build not found">
         <Text>
@@ -145,7 +133,16 @@ export default function BuildLayout() {
   }
 
   return (
-    <BuildLayoutProvider value={contextValue}>
+    <BuildLayoutProvider
+      value={{
+        build,
+        buildId: id,
+        egressPaths,
+        activeEgress,
+        setActiveEgressId,
+        reloadEgressPaths,
+      }}
+    >
       <Outlet />
     </BuildLayoutProvider>
   );
