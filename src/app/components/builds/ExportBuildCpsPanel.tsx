@@ -22,7 +22,6 @@ import ProfilePicker from './ProfilePicker.tsx';
 import CpsCsvPreviewModal from './CpsCsvPreviewModal.tsx';
 import ExportWarningsAlert from './ExportWarningsAlert.tsx';
 import Dm32PreferNeonPlugAlert from './Dm32PreferNeonPlugAlert.tsx';
-import ChirpUv5rPreferNeonPlugAlert from './ChirpUv5rPreferNeonPlugAlert.tsx';
 import Dm32AprsSetupAlert from './Dm32AprsSetupAlert.tsx';
 import BuildRadioIoPanel from './BuildRadioIoPanel.tsx';
 import { saveDriveLastFolderId, saveDriveLastFolderPath } from '@integrations/cloud/drivePrefs.ts';
@@ -422,21 +421,6 @@ export default function ExportBuildCpsPanel({ build }: ExportBuildCpsPanelProps)
   if (formatId === 'radio-io') {
     return (
       <Stack gap="sm">
-        {egressSwitcher}
-        <Text size="sm">
-          Direct radio via Web Serial for{' '}
-          <Text span fw={600}>
-            {profileLabel}
-          </Text>
-          . There is no CPS file export for this pathway — use Connect / Read / Write below. Curate
-          channels on the library and this build&apos;s memory list; Write runs assemble into a
-          previously Read clone image.
-        </Text>
-        {wireHint ? (
-          <Text size="sm" c="dimmed">
-            {wireHint}
-          </Text>
-        ) : null}
         <ExportBuildSettingsSections
           build={build}
           formatId={formatId}
@@ -452,6 +436,21 @@ export default function ExportBuildCpsPanel({ build }: ExportBuildCpsPanelProps)
             void handleExportInclusionChange(field, checked)
           }
         />
+        {egressSwitcher}
+        <Text size="sm">
+          Direct radio via Web Serial for{' '}
+          <Text span fw={600}>
+            {profileLabel}
+          </Text>
+          . There is no CPS file export for this pathway — use Connect / Read / Write below. Curate
+          channels on the library and this build&apos;s memory list; Write runs assemble into a
+          previously Read clone image.
+        </Text>
+        {wireHint ? (
+          <Text size="sm" c="dimmed">
+            {wireHint}
+          </Text>
+        ) : null}
         <BuildRadioIoPanel build={build} egress={activeEgress} />
       </Stack>
     );
@@ -481,13 +480,24 @@ export default function ExportBuildCpsPanel({ build }: ExportBuildCpsPanelProps)
     const suggestedCsvName = defaultCpsSingleFileName(formatId, chirpExportProfileId);
     const profileOverridesBuild = chirpExportProfileId !== profileId;
 
-    const showChirpUv5rPreferNeonPlug =
-      formatId === 'chirp' && chirpExportProfileId === 'chirp-uv5r';
-
     return (
       <Stack gap="sm">
+        <ExportBuildSettingsSections
+          build={build}
+          formatId={formatId}
+          profileId={profileId}
+          saving={savingSettings}
+          settingsError={settingsError}
+          profileNameLimit={profileNameLimit}
+          resolvedSettings={resolvedSettings}
+          formatDefaults={formatDefaults}
+          defaultScanValue={defaultScanValue}
+          onExportSettingsPatch={(patch) => void handleExportSettingsPatch(patch)}
+          onExportInclusionChange={(field, checked) =>
+            void handleExportInclusionChange(field, checked)
+          }
+        />
         {egressSwitcher}
-        {showChirpUv5rPreferNeonPlug ? <ChirpUv5rPreferNeonPlugAlert /> : null}
         <Text size="sm">
           Export as{' '}
           <Text span fw={600}>
@@ -508,21 +518,6 @@ export default function ExportBuildCpsPanel({ build }: ExportBuildCpsPanelProps)
             default is {profileLabel}.
           </Text>
         ) : null}
-        <ExportBuildSettingsSections
-          build={build}
-          formatId={formatId}
-          profileId={profileId}
-          saving={savingSettings}
-          settingsError={settingsError}
-          profileNameLimit={profileNameLimit}
-          resolvedSettings={resolvedSettings}
-          formatDefaults={formatDefaults}
-          defaultScanValue={defaultScanValue}
-          onExportSettingsPatch={(patch) => void handleExportSettingsPatch(patch)}
-          onExportInclusionChange={(field, checked) =>
-            void handleExportInclusionChange(field, checked)
-          }
-        />
         {!hasChannels ? (
           <Text size="sm" c="dimmed">
             Add channels to the library and memory list before exporting this build.
@@ -530,7 +525,6 @@ export default function ExportBuildCpsPanel({ build }: ExportBuildCpsPanelProps)
         ) : null}
         {error ? <Alert color="red">{error}</Alert> : null}
         {exportWarnings.length > 0 ? <ExportWarningsAlert warnings={exportWarnings} /> : null}
-        {showChirpUv5rPreferNeonPlug ? <ChirpUv5rPreferNeonPlugAlert /> : null}
         <Group gap="xs">
           <Button
             leftSection={<IconDownload size={ICON_SIZE_ACTION} stroke={ICON_STROKE} />}
@@ -581,6 +575,21 @@ export default function ExportBuildCpsPanel({ build }: ExportBuildCpsPanelProps)
 
   return (
     <Stack gap="sm">
+      <ExportBuildSettingsSections
+        build={build}
+        formatId={formatId}
+        profileId={profileId}
+        saving={savingSettings}
+        settingsError={settingsError}
+        profileNameLimit={profileNameLimit}
+        resolvedSettings={resolvedSettings}
+        formatDefaults={formatDefaults}
+        defaultScanValue={defaultScanValue}
+        onExportSettingsPatch={(patch) => void handleExportSettingsPatch(patch)}
+        onExportInclusionChange={(field, checked) =>
+          void handleExportInclusionChange(field, checked)
+        }
+      />
       {egressSwitcher}
       {showDm32PreferNeonPlug ? <Dm32PreferNeonPlugAlert /> : null}
       <Text size="sm">
@@ -603,21 +612,6 @@ export default function ExportBuildCpsPanel({ build }: ExportBuildCpsPanelProps)
           {wireHint}
         </Text>
       ) : null}
-      <ExportBuildSettingsSections
-        build={build}
-        formatId={formatId}
-        profileId={profileId}
-        saving={savingSettings}
-        settingsError={settingsError}
-        profileNameLimit={profileNameLimit}
-        resolvedSettings={resolvedSettings}
-        formatDefaults={formatDefaults}
-        defaultScanValue={defaultScanValue}
-        onExportSettingsPatch={(patch) => void handleExportSettingsPatch(patch)}
-        onExportInclusionChange={(field, checked) =>
-          void handleExportInclusionChange(field, checked)
-        }
-      />
       {!hasChannels ? (
         <Text size="sm" c="dimmed">
           Add channels to the library before exporting this build.
@@ -748,7 +742,6 @@ export default function ExportBuildCpsPanel({ build }: ExportBuildCpsPanelProps)
         </Stack>
       ) : (
         <>
-          {showDm32PreferNeonPlug ? <Dm32PreferNeonPlugAlert /> : null}
           <Group gap="xs">
             <Button
               leftSection={<IconPackage size={ICON_SIZE_ACTION} stroke={ICON_STROKE} />}

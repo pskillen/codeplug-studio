@@ -31,4 +31,3 @@ import { formatPathwayBadge, profilePathwayBadge } from './preferNeonPlugPathway
 - [`NewBuildPage.tsx`](../../routes/builds/NewBuildPage.tsx)
 - [`ProfilePicker.tsx`](ProfilePicker.tsx)
 - [`Dm32PreferNeonPlugAlert.tsx`](Dm32PreferNeonPlugAlert.tsx)
-- [`ChirpUv5rPreferNeonPlugAlert.tsx`](ChirpUv5rPreferNeonPlugAlert.tsx)

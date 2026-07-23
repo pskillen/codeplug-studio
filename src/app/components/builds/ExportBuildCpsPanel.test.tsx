@@ -162,12 +162,12 @@ describe('ExportBuildCpsPanel', () => {
     expect(screen.queryByText(/aren't in a zone/i)).not.toBeInTheDocument();
     expect(screen.getByText(/Only analogue FM\/AM channels/i)).toBeInTheDocument();
     expect(
-      screen.getAllByText(/FYI: there's another pathway for UV-5R Mini in the browser/),
-    ).toHaveLength(2);
+      screen.queryByText(/FYI: there's another pathway for UV-5R Mini in the browser/),
+    ).not.toBeInTheDocument();
   });
 
-  it('hides CHIRP prefer-NeonPlug hint when export profile is not UV-5R', async () => {
-    renderExportPanel('chirp-uv21', { router: true });
+  it('does not show CHIRP try-NeonPlug tip on UV-5R Mini CHIRP pathway', async () => {
+    renderExportPanel('chirp-uv5r', { router: true });
 
     expect(await screen.findByRole('button', { name: 'Download CSV' })).not.toBeDisabled();
     expect(
@@ -176,16 +176,45 @@ describe('ExportBuildCpsPanel', () => {
     expect(screen.queryByText(/Prefer NeonPlug to write your DM-32/)).not.toBeInTheDocument();
   });
 
-  it('shows prefer-NeonPlug deprecation alert for DM32 builds only', async () => {
+  it('shows prefer-NeonPlug deprecation alert for DM32 CSV pathway only', async () => {
     const { unmount } = renderExportPanel('dm32-baofeng-dm32uv', { router: true });
 
-    expect(await screen.findAllByText(/Prefer NeonPlug to write your DM-32/)).toHaveLength(2);
+    expect(await screen.findByText(/Prefer NeonPlug to write your DM-32/)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Download ZIP' })).not.toBeDisabled();
     unmount();
 
     renderExportPanel('opengd77-1701');
     expect(await screen.findByText(/OpenGD77 \(1701\)/)).toBeInTheDocument();
     expect(screen.queryByText(/Prefer NeonPlug to write your DM-32/)).not.toBeInTheDocument();
+  });
+
+  it('places radio settings above the export pathway switcher', async () => {
+    const { build, egressPaths } = newRadioBuildForProfile('project-1', 'radio-io-uv5r-mini');
+    const radioIo = egressPaths.find((path) => path.formatId === 'radio-io');
+    if (!radioIo) throw new Error('expected Web Serial egress');
+
+    render(
+      <BuildLayoutProvider
+        value={{
+          build,
+          buildId: build.id,
+          egressPaths,
+          activeEgress: radioIo,
+          setActiveEgressId: vi.fn(),
+          reloadEgressPaths: vi.fn(async () => {}),
+        }}
+      >
+        <MantineProvider>
+          <MemoryRouter>
+            <ExportBuildCpsPanel build={build} />
+          </MemoryRouter>
+        </MantineProvider>
+      </BuildLayoutProvider>,
+    );
+
+    const naming = await screen.findByText('Naming');
+    const pathway = screen.getByText('Export pathway');
+    expect(naming.compareDocumentPosition(pathway) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 
   it('opens CSV preview modal for CHIRP single-file export', async () => {
