@@ -4,7 +4,11 @@
 
 import type { RadioDescriptor } from '../../types.ts';
 import { UV5R_MINI_BAUD_RATE, UV5R_MINI_CHANNEL_COUNT } from './constants.ts';
-import { UV5R_MINI_MODEL_ID } from './hydration.ts';
+import {
+  extractUv5rMiniHydration,
+  mergeChannelsIntoUv5rMiniHydration,
+  UV5R_MINI_MODEL_ID,
+} from './hydration.ts';
 import { createUv5rMiniProtocol } from './protocol.ts';
 
 export { UV5R_MINI_MODEL_ID };
@@ -28,4 +32,8 @@ export const UV5R_MINI_DESCRIPTOR: RadioDescriptor = {
   writeStrategy: 'full-image',
   hydrationRequiredForWrite: true,
   baudRate: UV5R_MINI_BAUD_RATE,
+  hydration: {
+    extractHydration: extractUv5rMiniHydration,
+    mergeChannelsIntoHydration: mergeChannelsIntoUv5rMiniHydration,
+  },
 };

@@ -63,6 +63,21 @@ export interface RadioCompatibleProfile {
   profileId: string;
 }
 
+/**
+ * Per-radio bridge between MemoryMap and egress radio-clone hydration.
+ * App session calls these instead of importing concrete radio modules.
+ */
+export interface RadioHydrationHooks {
+  extractHydration(
+    image: MemoryMap,
+    meta?: { sourceFileName?: string; capturedAt?: string },
+  ): import('@core/models/radioCloneHydration.ts').RadioCloneHydrationBag;
+  mergeChannelsIntoHydration(
+    bag: import('@core/models/radioCloneHydration.ts').RadioCloneHydrationBag,
+    channels: readonly import('./radioChannelDto.ts').RadioChannelDto[],
+  ): MemoryMap;
+}
+
 export interface RadioDescriptor {
   modelIds: readonly string[];
   label: string;
@@ -72,14 +87,16 @@ export interface RadioDescriptor {
   capabilities: RadioCapabilities;
   /** Keys into Studio attributions lib (#597). */
   attributionIds: readonly string[];
-  /** FormatBuild profiles eligible for connect / read / write. */
+  /** Egress profiles eligible for connect / read / write. */
   compatibleProfiles: readonly RadioCompatibleProfile[];
   /** Upload strategy — full-image radios require prior Read hydration. */
   writeStrategy: RadioWriteStrategy;
-  /** When true, Write is blocked until FormatBuild has binary hydration from Read. */
+  /** When true, Write is blocked until egress has binary hydration from Read. */
   hydrationRequiredForWrite: boolean;
   /** Baud for Web Serial open (radio-specific). */
   baudRate: number;
+  /** Persist / merge clone image for this radio family. */
+  hydration: RadioHydrationHooks;
 }
 
 /**

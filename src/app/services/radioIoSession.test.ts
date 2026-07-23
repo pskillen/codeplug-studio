@@ -2,11 +2,16 @@ import { describe, expect, it, vi } from 'vitest';
 import { newChannel, newRadioBuildForProfile } from '@core/domain/factories.ts';
 import type { LibrarySlice } from '@core/services/assemble.ts';
 import { createRadioCloneHydrationBag } from '@core/models/radioCloneHydration.ts';
+import {
+  extractUv5rMiniHydration,
+  mergeChannelsIntoUv5rMiniHydration,
+} from '@integrations/radio-io/radios/uv5r-mini/hydration.ts';
 import { UV5R_MINI_MEM_TOTAL } from '@integrations/radio-io/radios/uv5r-mini/constants.ts';
 import type {
   CloneImageRadio,
   MemoryMap,
   RadioDescriptor,
+  RadioHydrationHooks,
   RadioSession,
 } from '@integrations/radio-io/types.ts';
 import {
@@ -33,6 +38,32 @@ function emptyLibrary(channels: LibrarySlice['channels'] = []): LibrarySlice {
 
 function uv5rMiniRadioIo() {
   return newRadioBuildForProfile('p1', 'radio-io-uv5r-mini');
+}
+
+const miniHydration: RadioHydrationHooks = {
+  extractHydration: extractUv5rMiniHydration,
+  mergeChannelsIntoHydration: mergeChannelsIntoUv5rMiniHydration,
+};
+
+function miniDescriptor(radio: CloneImageRadio): RadioDescriptor {
+  return {
+    modelIds: ['UV5R-Mini'],
+    label: 'Mini',
+    supportsBle: false,
+    protocolFactory: () => radio,
+    capabilities: {
+      maxChannels: 999,
+      supportsZones: false,
+      supportsScanLists: false,
+      analogOnly: true,
+    },
+    attributionIds: ['chirp', 'neonplug'],
+    compatibleProfiles: [{ formatId: 'radio-io', profileId: 'radio-io-uv5r-mini' }],
+    writeStrategy: 'full-image',
+    hydrationRequiredForWrite: true,
+    baudRate: 38400,
+    hydration: miniHydration,
+  };
 }
 
 describe('radioIoSession helpers', () => {
@@ -68,25 +99,8 @@ describe('radioIoSession helpers', () => {
       encodeChannels: (img) => img,
       readFirmware: () => undefined,
     };
-    const descriptor: RadioDescriptor = {
-      modelIds: ['UV5R-Mini'],
-      label: 'Mini',
-      supportsBle: false,
-      protocolFactory: () => radio,
-      capabilities: {
-        maxChannels: 999,
-        supportsZones: false,
-        supportsScanLists: false,
-        analogOnly: true,
-      },
-      attributionIds: [],
-      compatibleProfiles: [{ formatId: 'radio-io', profileId: 'radio-io-uv5r-mini' }],
-      writeStrategy: 'full-image',
-      hydrationRequiredForWrite: true,
-      baudRate: 38400,
-    };
     const session: RadioSession = {
-      descriptor,
+      descriptor: miniDescriptor(radio),
       pipe: { write: vi.fn(), readExact: vi.fn(), close: vi.fn() },
       radio,
     };
@@ -116,25 +130,8 @@ describe('radioIoSession helpers', () => {
       encodeChannels: (img) => img,
       readFirmware: () => undefined,
     };
-    const descriptor: RadioDescriptor = {
-      modelIds: ['UV5R-Mini'],
-      label: 'Mini',
-      supportsBle: false,
-      protocolFactory: () => radio,
-      capabilities: {
-        maxChannels: 999,
-        supportsZones: false,
-        supportsScanLists: false,
-        analogOnly: true,
-      },
-      attributionIds: ['chirp', 'neonplug'],
-      compatibleProfiles: [{ formatId: 'radio-io', profileId: 'radio-io-uv5r-mini' }],
-      writeStrategy: 'full-image',
-      hydrationRequiredForWrite: true,
-      baudRate: 38400,
-    };
     const session: RadioSession = {
-      descriptor,
+      descriptor: miniDescriptor(radio),
       pipe: { write: vi.fn(), readExact: vi.fn(), close: vi.fn() },
       radio,
     };
@@ -200,6 +197,7 @@ describe('radioIoSession helpers', () => {
         writeStrategy: 'full-image',
         hydrationRequiredForWrite: true,
         baudRate: 38400,
+        hydration: miniHydration,
       },
     ]);
 

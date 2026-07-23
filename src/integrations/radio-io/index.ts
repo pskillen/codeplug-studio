@@ -15,6 +15,7 @@ export type {
   RadioCapabilities,
   RadioCompatibleProfile,
   RadioDescriptor,
+  RadioHydrationHooks,
   RadioSession,
   RadioWriteStrategy,
 } from './types.ts';

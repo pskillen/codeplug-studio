@@ -88,6 +88,15 @@ describe('session', () => {
     writeStrategy: 'full-image',
     hydrationRequiredForWrite: true,
     baudRate: 9600,
+    hydration: {
+      extractHydration: () => {
+        throw new Error('not used');
+      },
+      mergeChannelsIntoHydration: (bag) => {
+        void bag;
+        return createMemoryMap(0);
+      },
+    },
   };
 
   it('createRadioSession stores inputs and supports image cache helpers', () => {
