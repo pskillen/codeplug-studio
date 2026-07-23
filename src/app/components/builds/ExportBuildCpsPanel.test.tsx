@@ -481,10 +481,11 @@ describe('ExportBuildCpsPanel', () => {
     if (!radioIo || !neon || !chirp) {
       throw new Error('expected UV-5R Mini Web Serial + NeonPlug + CHIRP egresses');
     }
+    const radioIoEgress = radioIo;
 
     function Uv5rMiniSettingsHarness() {
-      const [activeEgressId, setActiveEgressId] = useState(radioIo.id);
-      const activeEgress = egressPaths.find((path) => path.id === activeEgressId) ?? radioIo;
+      const [activeEgressId, setActiveEgressId] = useState(radioIoEgress.id);
+      const activeEgress = egressPaths.find((path) => path.id === activeEgressId) ?? radioIoEgress;
 
       return (
         <BuildLayoutProvider
