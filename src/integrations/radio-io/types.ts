@@ -81,6 +81,15 @@ export interface RadioHydrationHooks {
     bag: import('@core/models/radioCloneHydration.ts').RadioCloneHydrationBag,
     channels: readonly import('./radioChannelDto.ts').RadioChannelDto[],
   ): MemoryMap;
+  /**
+   * Optional: re-bind protocol upload state from a prior Read hydration.
+   * Sparse radios (DM-32UV) need absolute block addresses after a fresh
+   * connect — download cache is empty until this runs.
+   */
+  seedProtocolForUpload?(
+    protocol: CloneImageRadio,
+    bag: import('@core/models/radioCloneHydration.ts').RadioCloneHydrationBag,
+  ): void;
 }
 
 export interface RadioDescriptor {

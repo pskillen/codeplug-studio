@@ -150,6 +150,7 @@ describe('DM-32UV write via hydration merge', () => {
     const upload = vi.fn(async (_img: MemoryMap) => {
       void _img;
     });
+    const seedProtocolForUpload = vi.fn();
     const radio: CloneImageRadio = {
       connect: vi.fn(),
       disconnect: vi.fn(),
@@ -178,6 +179,7 @@ describe('DM-32UV write via hydration merge', () => {
       hydration: {
         extractHydration: () => hydration,
         mergeChannelsIntoHydration: mergeChannelsIntoDm32uvHydration,
+        seedProtocolForUpload,
       },
     };
     const session: RadioSession = {
@@ -206,6 +208,7 @@ describe('DM-32UV write via hydration merge', () => {
       emptyLibrary([ch]),
     );
     expect(upload).toHaveBeenCalledTimes(1);
+    expect(seedProtocolForUpload).toHaveBeenCalledTimes(1);
     const uploaded = upload.mock.calls[0]![0] as MemoryMap;
     // Settings block metadata preserved
     expect(uploaded.bytes[DM32_BLOCK_SIZE + DM32_METADATA_OFFSET]).toBe(DM32_METADATA.VFO_SETTINGS);

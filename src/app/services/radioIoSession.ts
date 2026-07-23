@@ -160,6 +160,9 @@ export async function writeBuildToRadio(
     profileId: egress.profileId,
   });
   const dtos = assembledChannelsToRadioDtos(assembled.channels, build, egress);
+  // Sparse radios (DM-32UV) need absolute block addresses from the prior Read
+  // bag — connect alone does not populate download cache.
+  session.descriptor.hydration.seedProtocolForUpload?.(session.radio, hydration);
   const image = session.descriptor.hydration.mergeChannelsIntoHydration(hydration, dtos);
   setCachedImage(session, image);
   await session.radio.upload(image, {

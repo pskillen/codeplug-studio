@@ -16,7 +16,7 @@ import type { Dm32DownloadCache } from './protocol.ts';
 
 export const DM32UV_MODEL_ID = DM32_MODEL_IDS[0];
 
-function cacheFromBag(bag: RadioCloneHydrationBag): Dm32DownloadCache {
+export function cacheFromBag(bag: RadioCloneHydrationBag): Dm32DownloadCache {
   const blocks = new Map<number, Uint8Array>();
   for (const b of radioCloneSparseBlockBytes(bag)) {
     blocks.set(b.address, b.data);

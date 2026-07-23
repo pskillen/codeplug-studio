@@ -5,6 +5,7 @@
 import type { RadioDescriptor } from '../../types.ts';
 import { DM32_CONNECTION, DM32_LIMITS, DM32_MODEL_IDS } from './constants.ts';
 import {
+  cacheFromBag,
   extractDm32uvHydration,
   extractDm32uvHydrationFromProtocol,
   mergeChannelsIntoDm32uvHydration,
@@ -45,5 +46,10 @@ export const DM32UV_DESCRIPTOR: RadioDescriptor = {
       return extractDm32uvHydration(image, meta);
     },
     mergeChannelsIntoHydration: mergeChannelsIntoDm32uvHydration,
+    seedProtocolForUpload: (protocol, bag) => {
+      if (protocol instanceof Dm32uvProtocol) {
+        protocol.seedDownloadCache(cacheFromBag(bag));
+      }
+    },
   },
 };

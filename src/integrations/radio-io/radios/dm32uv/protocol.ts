@@ -83,6 +83,33 @@ export class Dm32uvProtocol implements CloneImageRadio {
     return this.cache;
   }
 
+  /**
+   * Re-bind sparse block addresses from a prior Read hydration.
+   * Required before upload when this session did not run download (typical
+   * Write after remount / disconnect — connect alone leaves blocks empty).
+   */
+  seedDownloadCache(seed: Dm32DownloadCache): void {
+    if (seed.blocks.size === 0) {
+      throw new RadioProtocolError('DM-32UV hydration has no sparse blocks to write');
+    }
+    if (!this.cache) {
+      this.cache = {
+        addressBase: seed.addressBase,
+        mapSize: seed.mapSize,
+        firmware: seed.firmware,
+        modelString: seed.modelString,
+        discovered: seed.discovered.map((b) => ({ ...b })),
+        blocks: new Map(seed.blocks),
+      };
+      return;
+    }
+    this.cache.addressBase = seed.addressBase;
+    this.cache.mapSize = seed.mapSize;
+    this.cache.firmware = seed.firmware ?? this.cache.firmware;
+    this.cache.discovered = seed.discovered.map((b) => ({ ...b }));
+    this.cache.blocks = new Map(seed.blocks);
+  }
+
   async connect(
     pipe: BytePipe,
     opts?: { signal?: AbortSignal; settleScale?: number },
@@ -183,8 +210,19 @@ export class Dm32uvProtocol implements CloneImageRadio {
     if (!this.pipe || !this.cache) {
       throw new RadioProtocolError('DM-32UV not connected');
     }
-    // Re-handshake for write is deferred to slice 4 if needed; for now write dirty cached addrs.
+    if (!this.programming) {
+      await dm32EnterProgrammingMode(this.pipe, {
+        ...this.settle,
+        signal: opts.signal ?? this.settle.signal,
+      });
+      this.programming = true;
+    }
     const addresses = [...this.cache.blocks.keys()].sort((a, b) => a - b);
+    if (addresses.length === 0) {
+      throw new RadioProtocolError(
+        'DM-32UV upload has no sparse blocks — seed from a prior Read hydration before Write',
+      );
+    }
     const blocks = memoryMapToDm32Blocks(image, this.cache.addressBase, addresses);
     const total = addresses.length;
     for (let i = 0; i < addresses.length; i++) {
