@@ -381,14 +381,16 @@ export default function BuildRadioImageSettingsPage() {
                     <Table.Tr>
                       <Table.Td fw={600}>Image size</Table.Td>
                       <Table.Td>
-                        {uv5rSummary.imageByteLength} bytes ({hexOffset(uv5rSummary.imageByteLength)})
+                        {uv5rSummary.imageByteLength} bytes (
+                        {hexOffset(uv5rSummary.imageByteLength)})
                       </Table.Td>
                     </Table.Tr>
                     <Table.Tr>
                       <Table.Td fw={600}>Occupied channels on radio</Table.Td>
                       <Table.Td>
-                        {uv5rSummary.occupiedChannelCount} occupied · {uv5rSummary.emptyChannelSlots}{' '}
-                        empty slots (decoded from image — Write still uses library + assemble)
+                        {uv5rSummary.occupiedChannelCount} occupied ·{' '}
+                        {uv5rSummary.emptyChannelSlots} empty slots (decoded from image — Write
+                        still uses library + assemble)
                       </Table.Td>
                     </Table.Tr>
                   </Table.Tbody>

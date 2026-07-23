@@ -143,8 +143,7 @@ export function dm32ChannelBankAddresses(
 ): Set<number> {
   const channelBlocks = discovered
     .filter(
-      (b) =>
-        b.metadata >= DM32_METADATA.CHANNEL_FIRST && b.metadata <= DM32_METADATA.CHANNEL_LAST,
+      (b) => b.metadata >= DM32_METADATA.CHANNEL_FIRST && b.metadata <= DM32_METADATA.CHANNEL_LAST,
     )
     .map((b) => ({
       address: b.address,
