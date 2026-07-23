@@ -32,8 +32,17 @@ export const UV5R_MINI_CHANNEL_SIZE = 32;
 /** Packed span of all channel records. */
 export const UV5R_MINI_CHANNEL_SPAN = UV5R_MINI_CHANNEL_COUNT * UV5R_MINI_CHANNEL_SIZE; // 0x7CE0
 
-/** NeonPlug baud for UV-5R Mini (CHIRP UV17Pro uses 115200 — prefer NeonPlug for Studio). */
-export const UV5R_MINI_BAUD_RATE = 38400;
+/** Primary baud — CHIRP UV17Pro / UV5RMini (115200). */
+export const UV5R_MINI_BAUD_RATE = 115_200;
+
+/** Fallback when ident fails at primary — NeonPlug browser lineage (38400). */
+export const UV5R_MINI_BAUD_RATE_FALLBACK = 38_400;
+
+/** Post-open settle before ident (NeonPlug serialConnection). */
+export const UV5R_MINI_INIT_DELAY_MS = 300;
+
+/** Buffer clear settle before ident (NeonPlug serialConnection). */
+export const UV5R_MINI_CLEAR_BUFFER_DELAY_MS = 200;
 
 /** Firmware version string offset in packed clone image. */
 export const UV5R_MINI_FW_VER_OFFSET = 0x1ef0;

@@ -6,6 +6,7 @@ export {
 export {
   openWebSerialPipe,
   requestWebSerialPipe,
+  requestWebSerialPort,
   WEB_SERIAL_HOST_BUFFER_SIZE,
   type SerialPortLike,
   type WebSerialPipeOptions,

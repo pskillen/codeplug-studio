@@ -13,14 +13,16 @@ import {
   sendIdent,
 } from '../../kit/codecs/programRw.ts';
 import { createMemoryMap, memoryMapFromBytes } from '../../kit/memoryMap.ts';
+import { RadioProtocolError, RadioTimeoutError, RadioWrongIdentError } from '../../kit/errors.ts';
 import { reportProgress, throwIfAborted } from '../../kit/progress.ts';
-import { RadioProtocolError, RadioWrongIdentError } from '../../kit/errors.ts';
 import {
   UV5R_MINI_BLOCK_SIZE,
   UV5R_MINI_CHANNEL_SPAN,
+  UV5R_MINI_CLEAR_BUFFER_DELAY_MS,
   UV5R_MINI_CLONE_BLOCK_COUNT,
   UV5R_MINI_IDENT,
   UV5R_MINI_IDENT_TIMEOUT_MS,
+  UV5R_MINI_INIT_DELAY_MS,
   UV5R_MINI_IO_TIMEOUT_MS,
   UV5R_MINI_MEM_SIZES,
   UV5R_MINI_MEM_STARTS,
@@ -37,6 +39,49 @@ import {
 } from './channelCodec.ts';
 
 type HandshakeMode = 'read' | 'upload';
+
+export interface Uv5rMiniConnectOptions {
+  signal?: AbortSignal;
+  /** Multiply NeonPlug settle delays (tests use 0). Default 1 for read connect. */
+  settleScale?: number;
+  /**
+   * `read` — ident + read magics (download).
+   * `none` — attach pipe only; upload supplies upload handshake (NeonPlug write path).
+   */
+  handshake?: 'read' | 'none';
+}
+
+function scaledMs(baseMs: number, scale: number): number {
+  if (scale <= 0) {
+    return 0;
+  }
+  return Math.round(baseMs * scale);
+}
+
+async function delay(ms: number, signal?: AbortSignal): Promise<void> {
+  throwIfAborted(signal);
+  if (ms <= 0) {
+    return;
+  }
+  await new Promise<void>((resolve, reject) => {
+    const t = setTimeout(() => {
+      signal?.removeEventListener('abort', onAbort);
+      resolve();
+    }, ms);
+    const onAbort = (): void => {
+      clearTimeout(t);
+      reject(signal?.reason ?? new Error('aborted'));
+    };
+    signal?.addEventListener('abort', onAbort, { once: true });
+  });
+  throwIfAborted(signal);
+}
+
+async function flushPipe(pipe: BytePipe): Promise<void> {
+  if (pipe.flush) {
+    await pipe.flush();
+  }
+}
 
 function packedOffsetForRadioAddr(radioAddr: number): number {
   let packed = 0;
@@ -63,17 +108,53 @@ function listRadioBlockAddresses(): number[] {
   return addrs;
 }
 
+/** Drain until buffer starts with 0x52, then read 68 bytes (NeonPlug waitForReadResponse). */
+async function waitForReadResponse(pipe: BytePipe, timeoutMs: number): Promise<Uint8Array> {
+  const deadline = Date.now() + timeoutMs;
+  const pending: number[] = [];
+  while (Date.now() < deadline) {
+    while (pending.length > 0 && pending[0] !== 0x52) {
+      pending.shift();
+    }
+    if (pending.length >= UV5R_MINI_READ_RESPONSE_LEN) {
+      return new Uint8Array(pending.splice(0, UV5R_MINI_READ_RESPONSE_LEN));
+    }
+    const remaining = Math.max(1, deadline - Date.now());
+    const byte = await pipe.readExact(1, remaining);
+    pending.push(byte[0]!);
+  }
+  throw new RadioTimeoutError(
+    `Timeout waiting for read response (${UV5R_MINI_READ_RESPONSE_LEN} bytes). Have ${pending.length} bytes.`,
+  );
+}
+
 async function runMagics(pipe: BytePipe, mode: HandshakeMode, signal?: AbortSignal): Promise<void> {
   const magics = mode === 'read' ? UV5R_MINI_MAGICS_READ : UV5R_MINI_MAGICS_UPLOAD;
   for (const { send, responseLen } of magics) {
     throwIfAborted(signal);
+    await flushPipe(pipe);
     await pipe.write(send);
     await pipe.readExact(responseLen, UV5R_MINI_IO_TIMEOUT_MS);
   }
 }
 
-async function handshake(pipe: BytePipe, mode: HandshakeMode, signal?: AbortSignal): Promise<void> {
+async function handshake(
+  pipe: BytePipe,
+  mode: HandshakeMode,
+  opts?: Uv5rMiniConnectOptions,
+): Promise<void> {
+  const signal = opts?.signal;
+  // NeonPlug `handshakeUpload()` has no post-open settle — only flush + ident + magics.
+  const skipPortSettle = mode === 'upload';
+  const scale = skipPortSettle ? 0 : (opts?.settleScale ?? 1);
   throwIfAborted(signal);
+  if (!skipPortSettle) {
+    await delay(scaledMs(UV5R_MINI_INIT_DELAY_MS, scale), signal);
+  }
+  await flushPipe(pipe);
+  if (!skipPortSettle) {
+    await delay(scaledMs(UV5R_MINI_CLEAR_BUFFER_DELAY_MS, scale), signal);
+  }
   try {
     await sendIdent(pipe, UV5R_MINI_IDENT, UV5R_MINI_IDENT_TIMEOUT_MS);
   } catch (err) {
@@ -87,7 +168,7 @@ async function handshake(pipe: BytePipe, mode: HandshakeMode, signal?: AbortSign
 async function readBlock(pipe: BytePipe, radioAddr: number): Promise<Uint8Array> {
   const frame = makeProgramRwReadFrame(radioAddr, UV5R_MINI_BLOCK_SIZE);
   await pipe.write(frame);
-  const raw = await pipe.readExact(UV5R_MINI_READ_RESPONSE_LEN, UV5R_MINI_IO_TIMEOUT_MS);
+  const raw = await waitForReadResponse(pipe, UV5R_MINI_IO_TIMEOUT_MS);
   const encrypted = parseProgramRwReadReply(raw, UV5R_MINI_BLOCK_SIZE);
   return uv5rMiniCrypt(encrypted);
 }
@@ -96,6 +177,7 @@ async function writeBlock(pipe: BytePipe, radioAddr: number, plain: Uint8Array):
   if (plain.length !== UV5R_MINI_BLOCK_SIZE) {
     throw new RangeError(`Block must be ${UV5R_MINI_BLOCK_SIZE} bytes`);
   }
+  await flushPipe(pipe);
   const encrypted = uv5rMiniCrypt(plain);
   const frame = makeProgramRwWriteFrame(radioAddr, UV5R_MINI_BLOCK_SIZE, encrypted);
   await pipe.write(frame);
@@ -105,9 +187,11 @@ async function writeBlock(pipe: BytePipe, radioAddr: number, plain: Uint8Array):
 export class Uv5rMiniProtocol implements CloneImageRadio {
   private pipe: BytePipe | null = null;
 
-  async connect(pipe: BytePipe, opts?: { signal?: AbortSignal }): Promise<IdentResult> {
+  async connect(pipe: BytePipe, opts?: Uv5rMiniConnectOptions): Promise<IdentResult> {
     this.pipe = pipe;
-    await handshake(pipe, 'read', opts?.signal);
+    if (opts?.handshake !== 'none') {
+      await handshake(pipe, 'read', opts);
+    }
     return {
       raw: UV5R_MINI_IDENT.slice(),
       modelHints: ['UV5R-Mini', 'UV-5R Mini'],
@@ -154,10 +238,13 @@ export class Uv5rMiniProtocol implements CloneImageRadio {
       throw new RangeError(`Upload image must be at least 0x${UV5R_MINI_MEM_TOTAL.toString(16)}`);
     }
     const pipe = this.requirePipe();
-    await handshake(pipe, 'upload', opts.signal);
-
-    // Upload all MEM_* regions so settings/VFO/ANI from the hydrated image survive.
     const addrs = listRadioBlockAddresses();
+    reportProgress(
+      opts.onProgress,
+      { cur: 0, max: addrs.length, msg: 'Upload handshake' },
+      opts.signal,
+    );
+    await handshake(pipe, 'upload', { signal: opts.signal });
     let done = 0;
     const max = addrs.length;
     for (const addr of addrs) {

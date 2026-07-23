@@ -3,7 +3,11 @@
  */
 
 import type { RadioDescriptor } from '../../types.ts';
-import { UV5R_MINI_BAUD_RATE, UV5R_MINI_CHANNEL_COUNT } from './constants.ts';
+import {
+  UV5R_MINI_BAUD_RATE,
+  UV5R_MINI_BAUD_RATE_FALLBACK,
+  UV5R_MINI_CHANNEL_COUNT,
+} from './constants.ts';
 import {
   extractUv5rMiniHydration,
   mergeChannelsIntoUv5rMiniHydration,
@@ -32,6 +36,7 @@ export const UV5R_MINI_DESCRIPTOR: RadioDescriptor = {
   writeStrategy: 'full-image',
   hydrationRequiredForWrite: true,
   baudRate: UV5R_MINI_BAUD_RATE,
+  baudRateFallback: UV5R_MINI_BAUD_RATE_FALLBACK,
   hydration: {
     extractHydration: extractUv5rMiniHydration,
     mergeChannelsIntoHydration: mergeChannelsIntoUv5rMiniHydration,

@@ -11,7 +11,7 @@
  */
 
 import type { BlockCodec, BytePipe } from '../../types.ts';
-import { RadioProtocolError } from '../errors.ts';
+import { RadioProtocolError, RadioTimeoutError } from '../errors.ts';
 
 export const PROGRAM_RW_ACK = 0x06;
 export const PROGRAM_RW_READ_OPCODE = 0x52; // 'R'
@@ -87,11 +87,28 @@ export function parseProgramRwReadReply(frame: Uint8Array, expectedLength?: numb
   return payload.slice();
 }
 
+/** Scan buffered bytes for ACK 0x06, discarding leading junk (NeonPlug waitForByte). */
+export async function waitForAckByte(pipe: BytePipe, timeoutMs: number): Promise<void> {
+  const deadline = Date.now() + timeoutMs;
+  while (Date.now() < deadline) {
+    const remaining = Math.max(1, deadline - Date.now());
+    const byte = await pipe.readExact(1, remaining);
+    if (byte[0] === PROGRAM_RW_ACK) {
+      return;
+    }
+  }
+  throw new RadioTimeoutError(`Timeout waiting for ACK 0x06`);
+}
+
 /** Read one byte and require ACK 0x06. */
 export async function expectAck(pipe: BytePipe, timeoutMs: number): Promise<void> {
-  const byte = await pipe.readExact(1, timeoutMs);
-  if (byte[0] !== PROGRAM_RW_ACK) {
-    throw new RadioProtocolError(`Expected ACK 0x06, got 0x${byte[0]?.toString(16) ?? '??'}`);
+  try {
+    await waitForAckByte(pipe, timeoutMs);
+  } catch (err) {
+    if (err instanceof RadioTimeoutError) {
+      throw new RadioProtocolError('Expected ACK 0x06, timed out');
+    }
+    throw err;
   }
 }
 
@@ -105,7 +122,7 @@ export async function sendIdent(
   timeoutMs: number,
 ): Promise<void> {
   await pipe.write(ident);
-  await expectAck(pipe, timeoutMs);
+  await waitForAckByte(pipe, timeoutMs);
 }
 
 export const programRwCodec: BlockCodec = {

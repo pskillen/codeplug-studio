@@ -13,10 +13,15 @@ import {
 import {
   createRadioSession,
   listDescriptorsForProfile,
-  requestWebSerialPipe,
+  openWebSerialPipe,
+  RadioTimeoutError,
+  RadioWrongIdentError,
+  requestWebSerialPort,
   setCachedImage,
+  type MemoryMap,
   type ProgressFn,
   type RadioDescriptor,
+  type RadioHydrationHooks,
   type RadioSession,
   isWebSerialSupported,
   getWebSerialUnsupportedMessage,
@@ -50,10 +55,33 @@ export interface OpenRadioSessionResult {
   descriptor: RadioDescriptor;
 }
 
+function isHandshakeConnectFailure(err: unknown): boolean {
+  return err instanceof RadioWrongIdentError || err instanceof RadioTimeoutError;
+}
+
+function withBaudsTriedMessage(err: unknown, baudsTried: readonly number[]): Error {
+  const list = baudsTried.join(', ');
+  if (err instanceof Error) {
+    if (err.message.includes('tried baud')) {
+      return err;
+    }
+    const next = new Error(`${err.message} (tried baud: ${list})`);
+    next.name = err.name;
+    return next;
+  }
+  return new Error(`Radio connect failed (tried baud: ${list})`);
+}
+
 /** Open Web Serial for the first compatible descriptor (or explicit modelId). */
 export async function openRadioSessionForEgress(
   egress: EgressPath,
-  opts?: { modelId?: string; forcePortSelection?: boolean; signal?: AbortSignal },
+  opts?: {
+    modelId?: string;
+    forcePortSelection?: boolean;
+    signal?: AbortSignal;
+    /** Write opens the port without read handshake; upload supplies upload handshake. */
+    purpose?: 'read' | 'write';
+  },
 ): Promise<OpenRadioSessionResult> {
   const candidates = descriptorsForEgress(egress);
   if (candidates.length === 0) {
@@ -64,23 +92,47 @@ export async function openRadioSessionForEgress(
   const descriptor =
     (opts?.modelId ? candidates.find((d) => d.modelIds.includes(opts.modelId!)) : undefined) ??
     candidates[0]!;
-  const pipe = await requestWebSerialPipe({
-    baudRate: descriptor.baudRate,
-    forceSelection: opts?.forcePortSelection ?? true,
-  });
-  const radio = descriptor.protocolFactory();
-  try {
-    await radio.connect(pipe, { signal: opts?.signal });
-  } catch (err) {
-    try {
-      await pipe.close();
-    } catch {
-      /* ignore close errors while surfacing connect failure */
+
+  const bauds = descriptor.baudRateFallback
+    ? ([descriptor.baudRate, descriptor.baudRateFallback] as const)
+    : ([descriptor.baudRate] as const);
+
+  const port = await requestWebSerialPort(opts?.forcePortSelection ?? true);
+  let pipe: Awaited<ReturnType<typeof openWebSerialPipe>> | null = null;
+
+  for (let attempt = 0; attempt < bauds.length; attempt++) {
+    if (pipe) {
+      try {
+        await pipe.close();
+      } catch {
+        /* ignore close errors before baud retry */
+      }
     }
-    throw err;
+    pipe = await openWebSerialPipe(port, bauds[attempt]!);
+    const radio = descriptor.protocolFactory();
+    try {
+      await radio.connect(pipe, {
+        signal: opts?.signal,
+        handshake: opts?.purpose === 'write' ? 'none' : 'read',
+      });
+      const session = createRadioSession({ descriptor, pipe, radio });
+      return { session, descriptor };
+    } catch (err) {
+      const baudsTried = bauds.slice(0, attempt + 1);
+      const canRetry =
+        attempt < bauds.length - 1 && isHandshakeConnectFailure(err) && descriptor.baudRateFallback;
+      if (!canRetry) {
+        try {
+          await pipe.close();
+        } catch {
+          /* ignore close errors while surfacing connect failure */
+        }
+        throw withBaudsTriedMessage(err, baudsTried);
+      }
+    }
   }
-  const session = createRadioSession({ descriptor, pipe, radio });
-  return { session, descriptor };
+
+  throw new Error('Radio connect failed unexpectedly.');
 }
 
 /** @deprecated Prefer {@link openRadioSessionForEgress}. */
@@ -135,6 +187,44 @@ export class RadioWriteBlockedError extends Error {
 }
 
 /**
+ * Assemble build → encode into hydrated image (no serial I/O).
+ * Call before opening a Web Serial session on Write so the radio is not left
+ * in program mode during CPU-heavy assemble (UV-5R Mini times out quickly).
+ */
+export function prepareRadioWriteImage(
+  build: RadioBuild,
+  egress: EgressPath,
+  library: LibrarySlice,
+): { image: MemoryMap; warnings: string[] } {
+  const hydration = getRadioCloneHydration(egress);
+  if (!hydration) {
+    throw new RadioWriteBlockedError('Missing radio clone hydration on this egress path.');
+  }
+
+  const assembled = assemble(build, library, {
+    formatId: egress.formatId,
+    profileId: egress.profileId,
+  });
+  const { dtos, warnings } = expandAssembledChannelsToRadioDtos(assembled, build, library, egress);
+  return { image: mergeChannelsForWrite(egress, hydration, dtos), warnings };
+}
+
+function mergeChannelsForWrite(
+  egress: EgressPath,
+  hydration: RadioCloneHydrationBag,
+  dtos: Parameters<RadioHydrationHooks['mergeChannelsIntoHydration']>[1],
+): MemoryMap {
+  const descriptors = descriptorsForEgress(egress);
+  const descriptor = descriptors[0];
+  if (!descriptor) {
+    throw new Error(
+      `No Web Serial radio adapter is registered for ${egress.formatId}/${egress.profileId}.`,
+    );
+  }
+  return descriptor.hydration.mergeChannelsIntoHydration(hydration, dtos);
+}
+
+/**
  * Assemble build → encode into hydrated image → upload.
  * Requires radio-clone hydration on the egress when descriptor.hydrationRequiredForWrite.
  */
@@ -151,25 +241,33 @@ export async function writeBuildToRadio(
       'Read from the radio first so Studio can preserve unmodelled settings, then write.',
     );
   }
-  if (!hydration) {
-    throw new RadioWriteBlockedError('Missing radio clone hydration on this egress path.');
-  }
-
-  const assembled = assemble(build, library, {
-    formatId: egress.formatId,
-    profileId: egress.profileId,
-  });
-  const { dtos, warnings } = expandAssembledChannelsToRadioDtos(assembled, build, library, egress);
-  // Sparse radios (DM-32UV) need absolute block addresses from the prior Read
-  // bag — connect alone does not populate download cache.
-  session.descriptor.hydration.seedProtocolForUpload?.(session.radio, hydration);
-  const image = session.descriptor.hydration.mergeChannelsIntoHydration(hydration, dtos);
+  const { image, warnings } = prepareRadioWriteImage(build, egress, library);
+  session.descriptor.hydration.seedProtocolForUpload?.(session.radio, hydration!);
   setCachedImage(session, image);
   await session.radio.upload(image, {
     onProgress: opts?.onProgress,
     signal: opts?.signal,
   });
   return { warnings };
+}
+
+/** Upload a prepared clone image after {@link prepareRadioWriteImage} and session connect. */
+export async function uploadPreparedRadioWrite(
+  session: RadioSession,
+  egress: EgressPath,
+  image: MemoryMap,
+  opts?: { onProgress?: ProgressFn; signal?: AbortSignal },
+): Promise<void> {
+  const hydration = getRadioCloneHydration(egress);
+  if (!hydration) {
+    throw new RadioWriteBlockedError('Missing radio clone hydration on this egress path.');
+  }
+  session.descriptor.hydration.seedProtocolForUpload?.(session.radio, hydration);
+  setCachedImage(session, image);
+  await session.radio.upload(image, {
+    onProgress: opts?.onProgress,
+    signal: opts?.signal,
+  });
 }
 
 export async function closeRadioSession(session: RadioSession): Promise<void> {

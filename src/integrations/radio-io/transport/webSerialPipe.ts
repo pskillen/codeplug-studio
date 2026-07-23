@@ -23,6 +23,7 @@ export interface SerialPortLike {
   readonly writable: WritableStream<Uint8Array> | null;
   open(options: { baudRate: number; bufferSize?: number }): Promise<void>;
   close(): Promise<void>;
+  setSignals?(signals: { dataTerminalReady?: boolean; requestToSend?: boolean }): Promise<void>;
 }
 
 /**
@@ -219,12 +220,26 @@ async function resolvePort(forceSelection: boolean): Promise<SerialPortLike> {
   return existing[0] ?? (await serial.requestPort());
 }
 
+/** Request (or reuse) a Web Serial port without opening it. */
+export async function requestWebSerialPort(forceSelection = false): Promise<SerialPortLike> {
+  return resolvePort(forceSelection);
+}
+
+async function assertSerialSignals(port: SerialPortLike): Promise<void> {
+  try {
+    await port.setSignals?.({ dataTerminalReady: true, requestToSend: true });
+  } catch {
+    /* RTS/DTR unsupported or rejected — best effort (CHIRP WANTS_RTS/DTR). */
+  }
+}
+
 /**
  * Open an already-obtained port at `baudRate` and return a BytePipe.
  */
 export async function openWebSerialPipe(port: SerialPortLike, baudRate: number): Promise<BytePipe> {
   if (!port.readable || !port.writable) {
     await port.open({ baudRate, bufferSize: WEB_SERIAL_HOST_BUFFER_SIZE });
+    await assertSerialSignals(port);
   } else if (port.readable.locked || port.writable.locked) {
     throw new RadioClosedError(
       'Serial port is busy from a previous operation. Reconnect the cable or reload the page.',
@@ -239,6 +254,6 @@ export async function openWebSerialPipe(port: SerialPortLike, baudRate: number):
  * Request (or reuse) a Web Serial port and open a BytePipe at `baudRate`.
  */
 export async function requestWebSerialPipe(options: WebSerialPipeOptions): Promise<BytePipe> {
-  const port = await resolvePort(options.forceSelection ?? false);
+  const port = await requestWebSerialPort(options.forceSelection ?? false);
   return openWebSerialPipe(port, options.baudRate);
 }

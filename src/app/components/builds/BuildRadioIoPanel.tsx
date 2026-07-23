@@ -24,9 +24,10 @@ import {
   getWebSerialUnsupportedMessage,
   isWebSerialSupported,
   openRadioSessionForEgress,
+  prepareRadioWriteImage,
   RadioWriteBlockedError,
   readRadioHydrationForBuild,
-  writeBuildToRadio,
+  uploadPreparedRadioWrite,
 } from '../../services/radioIoSession.ts';
 import RadioIoProgressModal, {
   type RadioIoOperation,
@@ -100,9 +101,12 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
     if (session) await closeRadioSession(session);
   }
 
-  async function ensureSession(): Promise<RadioSession> {
+  async function ensureSession(forWrite = false): Promise<RadioSession> {
     if (sessionRef.current) return sessionRef.current;
-    const { session } = await openRadioSessionForEgress(egress, { forcePortSelection: true });
+    const { session } = await openRadioSessionForEgress(egress, {
+      forcePortSelection: true,
+      purpose: forWrite ? 'write' : 'read',
+    });
     sessionRef.current = session;
     setConnected(true);
     return session;
@@ -160,9 +164,12 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
         throw new Error('No active project.');
       }
       const library = await loadLibrarySlice(persistence, activeProjectId);
-      const session = await ensureSession();
       setPhase('preparing');
-      const { warnings } = await writeBuildToRadio(session, build, egress, library, {
+      const { image, warnings } = prepareRadioWriteImage(build, egress, library);
+      setPhase('connecting');
+      const session = await ensureSession(true);
+      setPhase('transfer');
+      await uploadPreparedRadioWrite(session, egress, image, {
         onProgress,
         signal: abortRef.current.signal,
       });

@@ -23,6 +23,7 @@ interface SerialPort extends EventTarget {
   open(options: SerialOptions): Promise<void>;
   close(): Promise<void>;
   getInfo(): SerialPortInfo;
+  setSignals?(signals: { dataTerminalReady?: boolean; requestToSend?: boolean }): Promise<void>;
 }
 
 interface SerialPortRequestOptions {

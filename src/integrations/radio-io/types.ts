@@ -109,6 +109,8 @@ export interface RadioDescriptor {
   hydrationRequiredForWrite: boolean;
   /** Baud for Web Serial open (radio-specific). */
   baudRate: number;
+  /** Optional second baud to try once when ident/handshake fails at {@link baudRate}. */
+  baudRateFallback?: number;
   /** Persist / merge clone image for this radio family. */
   hydration: RadioHydrationHooks;
 }
@@ -119,7 +121,10 @@ export interface RadioDescriptor {
  * Concrete implementations live under radios/<id>/ (#617+).
  */
 export interface CloneImageRadio {
-  connect(pipe: BytePipe, opts?: { signal?: AbortSignal }): Promise<IdentResult>;
+  connect(
+    pipe: BytePipe,
+    opts?: { signal?: AbortSignal; settleScale?: number; handshake?: 'read' | 'none' },
+  ): Promise<IdentResult>;
   disconnect(): Promise<void>;
   download(opts: { onProgress?: ProgressFn; signal?: AbortSignal }): Promise<MemoryMap>;
   upload(image: MemoryMap, opts: { onProgress?: ProgressFn; signal?: AbortSignal }): Promise<void>;

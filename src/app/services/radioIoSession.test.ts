@@ -18,6 +18,7 @@ import {
   buildHasRadioCloneHydration,
   descriptorsForBuild,
   openRadioSessionForBuild,
+  prepareRadioWriteImage,
   RadioWriteBlockedError,
   writeBuildToRadio,
 } from './radioIoSession.ts';
@@ -61,7 +62,8 @@ function miniDescriptor(radio: CloneImageRadio): RadioDescriptor {
     compatibleProfiles: [{ formatId: 'radio-io', profileId: 'radio-io-uv5r-mini' }],
     writeStrategy: 'full-image',
     hydrationRequiredForWrite: true,
-    baudRate: 38400,
+    baudRate: 115200,
+    baudRateFallback: 38400,
     hydration: miniHydration,
   };
 }
@@ -87,6 +89,35 @@ describe('radioIoSession helpers', () => {
     const { egress } = uv5rMiniRadioIo();
     expect(buildHasRadioCloneHydration({ ...egress, hydration })).toBe(true);
     expect(buildHasRadioCloneHydration(egress)).toBe(false);
+  });
+
+  it('prepares write image without a serial session', () => {
+    const imageBytes = new Uint8Array(UV5R_MINI_MEM_TOTAL);
+    imageBytes.fill(0xff);
+    const hydration = createRadioCloneHydrationBag({
+      radioModelId: 'UV5R-Mini',
+      imageBytes,
+    });
+    const ch = {
+      ...newChannel('p1', 'Test'),
+      id: 'ch-1',
+      rxFrequency: 145_500_000,
+      txFrequency: 145_500_000,
+      power: 100,
+      modeProfiles: [
+        { mode: 'fm' as const, squelch: null, rxTone: 'none', txTone: 'none', bandwidthKHz: 25 },
+      ],
+    };
+    const { build, egress } = uv5rMiniRadioIo();
+    const { image } = prepareRadioWriteImage(
+      {
+        ...build,
+        channelOverrides: [{ libraryEntityId: 'ch-1', wireName: 'TEST', orderOrSlot: 1 }],
+      },
+      { ...egress, hydration },
+      emptyLibrary([ch]),
+    );
+    expect(image.size).toBe(UV5R_MINI_MEM_TOTAL);
   });
 
   it('blocks write without hydration', async () => {
@@ -169,7 +200,14 @@ describe('radioIoSession helpers', () => {
       flush: vi.fn(),
       close,
     };
-    const requestSpy = vi.spyOn(radioIo, 'requestWebSerialPipe').mockResolvedValue(pipe);
+    const port = {
+      readable: null,
+      writable: null,
+      open: vi.fn(async () => undefined),
+      close: vi.fn(async () => undefined),
+    };
+    const portSpy = vi.spyOn(radioIo, 'requestWebSerialPort').mockResolvedValue(port);
+    const openSpy = vi.spyOn(radioIo, 'openWebSerialPipe').mockResolvedValue(pipe);
     const listSpy = vi.spyOn(radioIo, 'listDescriptorsForProfile').mockReturnValue([
       {
         modelIds: ['UV5R-Mini'],
@@ -177,7 +215,7 @@ describe('radioIoSession helpers', () => {
         supportsBle: false,
         protocolFactory: () => ({
           connect: async () => {
-            throw new Error('ident timeout');
+            throw new radioIo.RadioTimeoutError('ident timeout');
           },
           disconnect: vi.fn(),
           download: vi.fn(),
@@ -196,16 +234,19 @@ describe('radioIoSession helpers', () => {
         compatibleProfiles: [{ formatId: 'radio-io', profileId: 'radio-io-uv5r-mini' }],
         writeStrategy: 'full-image',
         hydrationRequiredForWrite: true,
-        baudRate: 38400,
+        baudRate: 115200,
+        baudRateFallback: 38400,
         hydration: miniHydration,
       },
     ]);
 
     const { egress } = uv5rMiniRadioIo();
     await expect(openRadioSessionForBuild(egress)).rejects.toThrow(/ident timeout/);
-    expect(close).toHaveBeenCalledTimes(1);
+    expect(close).toHaveBeenCalledTimes(2);
+    expect(openSpy).toHaveBeenCalledTimes(2);
 
-    requestSpy.mockRestore();
+    portSpy.mockRestore();
+    openSpy.mockRestore();
     listSpy.mockRestore();
   });
 });
