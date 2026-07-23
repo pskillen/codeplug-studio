@@ -51,7 +51,6 @@ export default function BuildRadioIoPanel({ build }: BuildRadioIoPanelProps) {
   const [connected, setConnected] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [progress, setProgress] = useState<ProgressUpdate | null>(null);
-  const [navBlockedHint, setNavBlockedHint] = useState(false);
   const [lastFirmware, setLastFirmware] = useState<string | undefined>();
   const [lastOccupied, setLastOccupied] = useState<number | null>(null);
 
@@ -62,10 +61,10 @@ export default function BuildRadioIoPanel({ build }: BuildRadioIoPanelProps) {
 
   const { modalOpen: leaveAttempted, stay } = useUnsavedNavigationGuard(busy);
 
+  // Reset the router blocker so the operator stays on this page; the progress modal
+  // already warns to keep the tab open (no extra setState — avoids cascading renders).
   useEffect(() => {
-    if (!leaveAttempted) return;
-    stay();
-    setNavBlockedHint(true);
+    if (leaveAttempted) stay();
   }, [leaveAttempted, stay]);
 
   useEffect(() => {
@@ -110,7 +109,6 @@ export default function BuildRadioIoPanel({ build }: BuildRadioIoPanelProps) {
     setOperation('read');
     setPhase('connecting');
     setProgress(null);
-    setNavBlockedHint(false);
     abortRef.current = new AbortController();
     try {
       const session = await ensureSession();
@@ -139,7 +137,6 @@ export default function BuildRadioIoPanel({ build }: BuildRadioIoPanelProps) {
     } finally {
       setBusy(false);
       setProgress(null);
-      setNavBlockedHint(false);
       abortRef.current = null;
     }
   }
@@ -150,7 +147,6 @@ export default function BuildRadioIoPanel({ build }: BuildRadioIoPanelProps) {
     setOperation('write');
     setPhase('connecting');
     setProgress(null);
-    setNavBlockedHint(false);
     abortRef.current = new AbortController();
     try {
       if (!activeProjectId) {
@@ -173,7 +169,6 @@ export default function BuildRadioIoPanel({ build }: BuildRadioIoPanelProps) {
     } finally {
       setBusy(false);
       setProgress(null);
-      setNavBlockedHint(false);
       abortRef.current = null;
     }
   }
@@ -280,7 +275,7 @@ export default function BuildRadioIoPanel({ build }: BuildRadioIoPanelProps) {
         operation={operation}
         phase={phase}
         progress={progress}
-        navigationBlocked={navBlockedHint}
+        navigationBlocked={leaveAttempted}
         onCancel={handleCancel}
       />
     </Stack>
