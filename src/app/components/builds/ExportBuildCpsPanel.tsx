@@ -15,6 +15,7 @@ import {
 } from '@core/import-export/exportAdapter.ts';
 import { formatProfileWireHint, getFormatProfiles } from '@core/import-export/formatProfiles.ts';
 import type { FormatId } from '@core/import-export/types.ts';
+import { resolveChirpExportProfileId } from '@core/import-export/formats/chirp/profiles.ts';
 import type { CpsAppExportOptions } from '../../services/buildCpsExportService.ts';
 import ExportBuildSettingsSections from './ExportBuildSettingsSections.tsx';
 import ProfilePicker from './ProfilePicker.tsx';
@@ -88,12 +89,19 @@ export default function ExportBuildCpsPanel({ build }: ExportBuildCpsPanelProps)
   const [settingsError, setSettingsError] = useState<string | null>(null);
   const [driveBrowserOpen, setDriveBrowserOpen] = useState(false);
   const [previewOpen, setPreviewOpen] = useState(false);
+  /** CHIRP-only runtime profile override — must not absorb NeonPlug / radio-io profile ids. */
   const [exportProfileId, setExportProfileId] = useState(profileId);
-  const [lastEgressProfileId, setLastEgressProfileId] = useState(profileId);
-  if (profileId !== lastEgressProfileId) {
-    setLastEgressProfileId(profileId);
+  const [lastChirpEgressId, setLastChirpEgressId] = useState(
+    formatId === 'chirp' ? (activeEgress?.id ?? null) : null,
+  );
+  if (formatId === 'chirp' && activeEgress && activeEgress.id !== lastChirpEgressId) {
+    setLastChirpEgressId(activeEgress.id);
     setExportProfileId(profileId);
+  } else if (formatId !== 'chirp' && lastChirpEgressId !== null) {
+    setLastChirpEgressId(null);
   }
+  const chirpExportProfileId =
+    formatId === 'chirp' ? resolveChirpExportProfileId(exportProfileId, profileId) : profileId;
   const [overwriteOpen, setOverwriteOpen] = useState(false);
   const [pendingDriveTarget, setPendingDriveTarget] = useState<DriveSaveTarget | null>(null);
   const [neonplugBaseBytes, setNeonplugBaseBytes] = useState<Uint8Array | null>(null);
@@ -104,18 +112,20 @@ export default function ExportBuildCpsPanel({ build }: ExportBuildCpsPanelProps)
 
   const profileNameLimit = useMemo(() => {
     const options = getFormatProfiles(formatId);
-    const resolvedProfileId = formatId === 'chirp' ? exportProfileId : profileId;
+    const resolvedProfileId = formatId === 'chirp' ? chirpExportProfileId : profileId;
     return options.find((option) => option.profileId === resolvedProfileId)?.nameLimit;
-  }, [formatId, profileId, exportProfileId]);
+  }, [formatId, profileId, chirpExportProfileId]);
 
   const runtimeExportOverrides = useMemo(
     (): CpsAppExportOptions => ({
       egressId: activeEgress?.id,
-      profileId: formatId === 'chirp' ? exportProfileId : undefined,
+      profileId: formatId === 'chirp' ? chirpExportProfileId : undefined,
       fileName:
-        formatId === 'chirp' ? defaultCpsSingleFileName(formatId, exportProfileId) : undefined,
+        formatId === 'chirp'
+          ? defaultCpsSingleFileName(formatId, chirpExportProfileId)
+          : undefined,
     }),
-    [activeEgress?.id, formatId, exportProfileId],
+    [activeEgress?.id, formatId, chirpExportProfileId],
   );
   const exportFileNames = useBuildCpsExportFileNames(
     build,
@@ -468,10 +478,11 @@ export default function ExportBuildCpsPanel({ build }: ExportBuildCpsPanelProps)
   }
 
   if (isSingleFileCpsExportAdapter(adapter)) {
-    const suggestedCsvName = defaultCpsSingleFileName(formatId, exportProfileId);
-    const profileOverridesBuild = exportProfileId !== profileId;
+    const suggestedCsvName = defaultCpsSingleFileName(formatId, chirpExportProfileId);
+    const profileOverridesBuild = chirpExportProfileId !== profileId;
 
-    const showChirpUv5rPreferNeonPlug = formatId === 'chirp' && exportProfileId === 'chirp-uv5r';
+    const showChirpUv5rPreferNeonPlug =
+      formatId === 'chirp' && chirpExportProfileId === 'chirp-uv5r';
 
     return (
       <Stack gap="sm">
@@ -487,13 +498,13 @@ export default function ExportBuildCpsPanel({ build }: ExportBuildCpsPanelProps)
         <ProfilePicker
           mode="select"
           formatId={formatId}
-          value={exportProfileId}
+          value={chirpExportProfileId}
           onChange={setExportProfileId}
           description="CHIRP memory layout and power ladder for target hardware"
         />
         {profileOverridesBuild ? (
           <Text size="sm" c="dimmed">
-            Export uses {traitProfileFor(exportProfileId)?.label ?? exportProfileId}; pathway
+            Export uses {traitProfileFor(chirpExportProfileId)?.label ?? chirpExportProfileId}; pathway
             default is {profileLabel}.
           </Text>
         ) : null}

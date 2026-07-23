@@ -1,4 +1,5 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest';
+import { useState } from 'react';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { MantineProvider } from '@mantine/core';
 import { MemoryRouter } from 'react-router-dom';
@@ -41,7 +42,7 @@ vi.mock('../../services/buildCpsExportService.ts', async (importOriginal) => {
   const actual = await importOriginal<typeof import('../../services/buildCpsExportService.ts')>();
   return {
     ...actual,
-    defaultCpsSingleFileName: () => 'Baofeng_UV-5R Mini_export.csv',
+    // Keep real defaultCpsSingleFileName so poisoned CHIRP profile ids still throw in tests.
     defaultCpsZipFileName: () => 'demo-opengd77.zip',
     downloadCpsFile,
     downloadCpsSingleFile,
@@ -398,5 +399,45 @@ describe('ExportBuildCpsPanel', () => {
     );
 
     expect(screen.getByText(/No export pathway/i)).toBeInTheDocument();
+  });
+
+  it('survives NeonPlug → CHIRP egress switch without poisoned profile id', async () => {
+    const { build, egressPaths } = newRadioBuildForProfile('project-1', 'neonplug-uv5rmini');
+    const neon = egressPaths.find((path) => path.formatId === 'neonplug');
+    const chirp = egressPaths.find((path) => path.formatId === 'chirp');
+    if (!neon || !chirp) throw new Error('expected UV-5R Mini NeonPlug + CHIRP egresses');
+
+    function Uv5rMiniExportHarness() {
+      const [activeEgressId, setActiveEgressId] = useState(neon.id);
+      const activeEgress = egressPaths.find((path) => path.id === activeEgressId) ?? neon;
+
+      return (
+        <BuildLayoutProvider
+          value={{
+            build,
+            buildId: build.id,
+            egressPaths,
+            activeEgress,
+            setActiveEgressId,
+            reloadEgressPaths: vi.fn(async () => {}),
+          }}
+        >
+          <MantineProvider>
+            <MemoryRouter>
+              <ExportBuildCpsPanel build={build} />
+            </MemoryRouter>
+          </MantineProvider>
+        </BuildLayoutProvider>
+      );
+    }
+
+    render(<Uv5rMiniExportHarness />);
+
+    expect(
+      await screen.findByRole('button', { name: /Download for radio write/i }),
+    ).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('radio', { name: /CHIRP CSV/i }));
+    expect(await screen.findByRole('button', { name: /Download CSV/i })).toBeInTheDocument();
+    expect(screen.getByText(/memory CSV using the profile below/i)).toBeInTheDocument();
   });
 });
