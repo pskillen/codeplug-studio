@@ -54,7 +54,7 @@ These are **already reflected** (or should stay in sync) between `dm32-baofeng-d
 | Trailing `\|` on scan members       | CPS sample / re-export style                             | Studio Scan.csv emits terminator; **Zones.csv does not**                                                                 |
 | APRS                                | NeonPlug: `radioSettings` patch + channel fields         | CPS: channel columns + operator `APRS.md` guide (no `APRS.csv`)                                                          |
 | Contacts metadata                   | NeonPlug contact book fields                             | CPS `Contacts.csv` City/Province/Country/Remark shipped ([#448](https://github.com/pskillen/codeplug-studio/issues/448)) |
-| m×n + scratch                       | Shared Studio projections                                | Both formats consume the same assemble/export projections                                                                |
+| m×n + scratch                       | Shared `expandAllMxNChannels` (`channelExpansion/mxnExpandAll.ts`) | Both formats + Web Serial consume the same radio-target projection ([#664](https://github.com/pskillen/codeplug-studio/issues/664)) |
 
 Profile sync test: `formats/neonplug/profiles.test.ts` (caps must not drift).
 

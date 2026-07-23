@@ -1,10 +1,10 @@
 # Multi-talkgroup expansion
 
-Domain rules for expanding one **logical digital channel** (with an RX group list) into multiple export rows — one per talk group (or contact) on the wire. Primary consumers: **Baofeng DM32** (default on), **Anytone AT-D890UV** (optional — lean + native RGL remains valid when off), and **NeonPlug DM-32UV** (default on — extra `channels[]` objects + number fan-out; see [neonplug/export-projections.md](../features/import-export/neonplug/export-projections.md)). See also [anytone/export-projections.md](../features/import-export/anytone/export-projections.md).
+Domain rules for expanding one **logical digital channel** (with an RX group list) into multiple export rows — one per talk group (or contact) on the wire. Primary consumers: radio targets with **`MxNChannelExpansion`** — **Baofeng DM-32UV** (CPS CSV, NeonPlug, Web Serial), and **Anytone AT-D890UV** (optional — lean + native RGL remains valid when off). See [neonplug/export-projections.md](../features/import-export/neonplug/export-projections.md) and [anytone/export-projections.md](../features/import-export/anytone/export-projections.md).
 
 **Not applicable to OpenGD77** — OpenGD77 CPS carries `TG List` and `TG_Lists.csv` natively; lean export (one channel row + list reference) is correct. See [opengd77/multi-talkgroup.md](formats/opengd77/multi-talkgroup.md).
 
-> **Studio note:** Expansion is an **export-time projection** driven by the format build's capability traits and the target wire adapter — not a library-schema flag. Implementation: `src/core/import-export/` (Phase 4+). Internal relationships use UUID `id` refs (`rxGroupListId`, `memberRefs`); wire names stay at the import/export edge only.
+> **Studio note:** Expansion is an **export-/write-time projection** driven by the radio target's **`MxNChannelExpansion`** trait and build export settings — not a library-schema flag and not owned by a named CPS format pathway. Implementation: `src/core/import-export/channelExpansion/mxnExpandAll.ts` (`expandAllMxNChannels`). Format adapters and radio-io DTO mapping only consume projection rows. Internal relationships use UUID `id` refs (`rxGroupListId`, `memberRefs`); wire names stay at the import/export edge only.
 
 **Archive reference:** ported from [codeplug-tool](https://github.com/pskillen/codeplug-tool) multi-TG expansion design.
 
@@ -35,7 +35,7 @@ Enable TG expansion (`ExportOptions.expandRxGroupLists`) when the operator wants
 | No RGL or zero members after filter                                      | Emit one unchanged row; optional warning                    |
 | Combined with multi-mode                                                 | Mode expand first, then TG expand on digital rows → **m×n** |
 
-Export path: `assemble(build, library)` → trait-aware projection → wire serialisation in `src/core/import-export/formats/<format>/`.
+Export path: `assemble(build, library)` → **`expandAllMxNChannels`** (when the radio target has `MxNChannelExpansion`) → wire serialisation / radio DTO encode.
 
 ### Member filter (`ExportOptions.expandRxGroupListMembers`)
 

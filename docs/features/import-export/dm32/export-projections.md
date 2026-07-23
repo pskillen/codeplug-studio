@@ -37,6 +37,7 @@ Each zone member library channel id **fans out** to all projected wire names (ex
 
 ## Related
 
+- Shared expander: `src/core/import-export/channelExpansion/mxnExpandAll.ts`
 - [export-mapping.md](export-mapping.md)
 - [multi-talkgroup.md](../../../reference/export-formats/dm32/multi-talkgroup.md)
 - [zone-grouping.md](../../builds/zone-grouping.md)
