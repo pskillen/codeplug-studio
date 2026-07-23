@@ -13,8 +13,23 @@ export {
   summariseUv5rMiniClone,
   UV5R_MINI_CLONE_REGION_SUMMARIES,
   type Uv5rMiniCloneSummary,
+  type Uv5rMiniOnRadioCounts,
+  type Uv5rMiniRetainGroupSummary,
   type RadioCloneRegionSummary,
 } from './cloneSummary.ts';
+export {
+  settingsRetainPreview,
+  ancillaryRetainPreview,
+  type Uv5rMiniRetainPreviewRow,
+  type Uv5rMiniAncillaryRetainPreview,
+} from './retainPreview.ts';
+export {
+  UV5R_MINI_WRITTEN_FROM_BUILD_LABELS,
+  UV5R_MINI_REGION_MANIFEST,
+  uv5rMiniWriteRole,
+  type Uv5rMiniRegionId,
+  type Uv5rMiniWriteRole,
+} from './writeRole.ts';
 export {
   decodeChannelsFromImage,
   encodeChannelsIntoImage,

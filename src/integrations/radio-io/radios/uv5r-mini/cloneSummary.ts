@@ -1,24 +1,40 @@
 /**
  * Read-only summary of a UV-5R Mini radio-clone hydration bag for build UI.
- * Does not decode labelled settings enums yet — shows retain metadata + region map.
  */
 
 import type { RadioCloneHydrationBag } from '@core/models/radioCloneHydration.ts';
 import { radioCloneImageBytes } from '@core/models/radioCloneHydration.ts';
 import { memoryMapFromBytes } from '../../kit/memoryMap.ts';
-import {
-  UV5R_MINI_CHANNEL_COUNT,
-  UV5R_MINI_CHANNEL_SPAN,
-  UV5R_MINI_MEM_TOTAL,
-} from './constants.ts';
+import { UV5R_MINI_CHANNEL_COUNT } from './constants.ts';
 import { decodeChannelsFromImage, readFirmwareFromImage } from './channelCodec.ts';
+import {
+  UV5R_MINI_REGION_MANIFEST,
+  UV5R_MINI_WRITTEN_FROM_BUILD_LABELS,
+  uv5rMiniKeptRegions,
+} from './writeRole.ts';
+import {
+  ancillaryRetainPreview,
+  settingsRetainPreview,
+  type Uv5rMiniAncillaryRetainPreview,
+  type Uv5rMiniRetainPreviewRow,
+} from './retainPreview.ts';
 
+/** @deprecated Use Uv5rMiniRetainGroupSummary — kept for barrel compatibility. */
 export interface RadioCloneRegionSummary {
   label: string;
-  /** Packed image offset (hex display uses this). */
   packedOffset: number;
   sizeBytes: number;
-  /** What Studio does with this region on write. */
+  role: string;
+}
+
+export interface Uv5rMiniOnRadioCounts {
+  occupiedChannels: number;
+  emptyChannelSlots: number;
+}
+
+export interface Uv5rMiniRetainGroupSummary {
+  label: string;
+  regionCount: number;
   role: string;
 }
 
@@ -27,44 +43,29 @@ export interface Uv5rMiniCloneSummary {
   firmware?: string;
   imageByteLength: number;
   capturedVia: RadioCloneHydrationBag['retain']['capturedVia'];
-  occupiedChannelCount: number;
-  emptyChannelSlots: number;
-  regions: readonly RadioCloneRegionSummary[];
+  onRadioCounts: Uv5rMiniOnRadioCounts;
+  writtenFromBuild: readonly string[];
+  retainGroups: readonly Uv5rMiniRetainGroupSummary[];
+  settingsRetain: readonly Uv5rMiniRetainPreviewRow[];
+  ancillaryRetain: Uv5rMiniAncillaryRetainPreview;
 }
 
-/** Packed-image regions Studio preserves outside modelled channel encode. */
-export const UV5R_MINI_CLONE_REGION_SUMMARIES: readonly RadioCloneRegionSummary[] = [
-  {
-    label: 'Channel memories',
-    packedOffset: 0x0000,
-    sizeBytes: UV5R_MINI_CHANNEL_SPAN,
-    role: 'Replaced from assemble() on Write; library is the source of truth',
-  },
-  {
-    label: 'VFO A',
-    packedOffset: 0x8000,
-    sizeBytes: 32,
-    role: 'Opaque retain — not modelled in the library',
-  },
-  {
-    label: 'VFO B',
-    packedOffset: 0x8020,
-    sizeBytes: 32,
-    role: 'Opaque retain — not modelled in the library',
-  },
-  {
-    label: 'Radio settings',
-    packedOffset: 0x8040,
-    sizeBytes: 64,
-    role: 'Opaque retain — not modelled in the library',
-  },
-  {
-    label: 'ANI / PTT / codes area',
-    packedOffset: 0x8080,
-    sizeBytes: UV5R_MINI_MEM_TOTAL - 0x8080,
-    role: 'Opaque retain — not modelled in the library',
-  },
-];
+/** Legacy region table derived from write-role manifest. */
+export const UV5R_MINI_CLONE_REGION_SUMMARIES: readonly RadioCloneRegionSummary[] =
+  UV5R_MINI_REGION_MANIFEST.map((r) => ({
+    label: r.label,
+    packedOffset: r.packedOffset,
+    sizeBytes: r.sizeBytes,
+    role: r.retainRoleCopy,
+  }));
+
+function buildRetainGroups(): Uv5rMiniRetainGroupSummary[] {
+  return uv5rMiniKeptRegions().map((r) => ({
+    label: r.label,
+    regionCount: 1,
+    role: r.retainRoleCopy,
+  }));
+}
 
 export function summariseUv5rMiniClone(bag: RadioCloneHydrationBag): Uv5rMiniCloneSummary {
   const bytes = radioCloneImageBytes(bag);
@@ -78,8 +79,13 @@ export function summariseUv5rMiniClone(bag: RadioCloneHydrationBag): Uv5rMiniClo
     firmware,
     imageByteLength: bag.retain.imageByteLength,
     capturedVia: bag.retain.capturedVia,
-    occupiedChannelCount: occupied,
-    emptyChannelSlots: UV5R_MINI_CHANNEL_COUNT - occupied,
-    regions: UV5R_MINI_CLONE_REGION_SUMMARIES,
+    onRadioCounts: {
+      occupiedChannels: occupied,
+      emptyChannelSlots: UV5R_MINI_CHANNEL_COUNT - occupied,
+    },
+    writtenFromBuild: [...UV5R_MINI_WRITTEN_FROM_BUILD_LABELS],
+    retainGroups: buildRetainGroups(),
+    settingsRetain: settingsRetainPreview(bytes),
+    ancillaryRetain: ancillaryRetainPreview(bytes),
   };
 }

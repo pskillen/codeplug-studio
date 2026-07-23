@@ -47,6 +47,21 @@ export const UV5R_MINI_CLEAR_BUFFER_DELAY_MS = 200;
 /** Firmware version string offset in packed clone image. */
 export const UV5R_MINI_FW_VER_OFFSET = 0x1ef0;
 
+/** Packed-image retain region offsets — cite tier-3 settings.md / memory-layout.md. */
+export const UV5R_MINI_VFO_A_OFFSET = 0x8000;
+export const UV5R_MINI_VFO_B_OFFSET = 0x8020;
+export const UV5R_MINI_VFO_SIZE = 32;
+export const UV5R_MINI_SETTINGS_OFFSET = 0x8040;
+export const UV5R_MINI_SETTINGS_SIZE = 64;
+export const UV5R_MINI_ANI_OFFSET = 0x8080;
+export const UV5R_MINI_ANI_SIZE = 0x20;
+export const UV5R_MINI_PTT_ID_OFFSET = 0x80a0;
+export const UV5R_MINI_PTT_ID_SIZE = 0x140;
+export const UV5R_MINI_UPCODE_OFFSET = 0x81e0;
+export const UV5R_MINI_UPCODE_SIZE = 0x30;
+export const UV5R_MINI_DOWNCODE_OFFSET = 0x8210;
+export const UV5R_MINI_DOWNCODE_SIZE = UV5R_MINI_MEM_TOTAL - UV5R_MINI_DOWNCODE_OFFSET;
+
 /** Default XOR symbol index ("CO 7"). */
 export const UV5R_MINI_DEFAULT_ENCRSYM = 1;
 
