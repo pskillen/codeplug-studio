@@ -183,20 +183,23 @@ interface RadioSession {
 requestPort(baud) → open BytePipe
   → radio.connect(pipe)           // ident / handshake
   → radio.download(onProgress)    // fill MemoryMap via BlockCodec
-  → cache image on RadioSession
-  → radio.decodeChannels(image)   // → DTOs → app maps into library / build
-  → (edit in Studio)
-  → assemble build → encode into cached image
-  → radio.upload(image)           // often re-handshake; write ranges only
+  → persist FormatBuild.cpsWireHydration (formatId: radio-clone)
+  → (operator curates library + FormatBuild as usual)
+  → assemble(build, library) → RadioChannelDto[]
+  → encode into hydrated image (preserve unmodelled regions)
+  → radio.upload(image)           // often re-handshake; full or selective ranges
   → disconnect
 ```
 
+MVP **Read** hydrates the FormatBuild only — it does **not** import channels into the library. See [adding-a-radio-adapter.md](adding-a-radio-adapter.md).
+
 | Rule                                                                   | Why                                                                  |
 | ---------------------------------------------------------------------- | -------------------------------------------------------------------- |
-| Cache full image before write                                          | Settings / DTMF / non-channel regions survive (FT-65 / UV5R pattern) |
-| Upload by **ranges**, not blind full mmap when firmware restricts      | CHIRP UV-5R `_ranges_*`; safer on partial-support firmware           |
+| Cache / hydrate full image before write                                | Settings / DTMF / non-channel regions survive (FT-65 / UV5R pattern) |
+| Upload by **ranges** or full multi-region image per descriptor         | CHIRP UV-5R `_ranges_*`; Mini uploads all MEM_* from hydrated image  |
 | Progress + `AbortSignal` on download/upload                            | Cancel mid-clone without orphaning the port                          |
 | Separate read-handshake vs upload-handshake when the radio requires it | NeonPlug UV5R-Mini `handshakeUpload()`                               |
+| Write always via FormatBuild + `assemble`                              | Same bridge as CPS export — never bare library dump                  |
 
 ---
 
@@ -280,17 +283,19 @@ src/integrations/radio-io/
       opengd77Serial.ts   # shipped #631 (sibling surface; C/R/W/X)
       sxBlocks.ts         # later
   radios/
-    uv5r-mini/            # #617
+    uv5r-mini/            # shipped #617
       descriptor.ts
       protocol.ts
-      frames.ts
-      layout.ts
+      crypt.ts
       channelCodec.ts
-  registry.ts             # with live entries — #617
+      hydration.ts
+  registry.ts             # shipped #617 — listRadioDescriptors / by profile
   index.ts
 ```
 
-**Shipped:** transport + kit core + sibling codecs ([#615](https://github.com/pskillen/codeplug-studio/issues/615)–[#616](https://github.com/pskillen/codeplug-studio/issues/616), [#630](https://github.com/pskillen/codeplug-studio/issues/630), [#631](https://github.com/pskillen/codeplug-studio/issues/631)). **Next:** UV-5R Mini adapter [#617](https://github.com/pskillen/codeplug-studio/issues/617), UI [#618](https://github.com/pskillen/codeplug-studio/issues/618), firmware gate [#619](https://github.com/pskillen/codeplug-studio/issues/619); OpenGD77 adapters [#624](https://github.com/pskillen/codeplug-studio/issues/624)/[#625](https://github.com/pskillen/codeplug-studio/issues/625) (depend on #631). Listed in [browser-radio-io-outstanding.md](browser-radio-io-outstanding.md).
+**Shipped:** transport + kit core + sibling codecs + **UV-5R Mini adapter + registry** ([#615](https://github.com/pskillen/codeplug-studio/issues/615)–[#617](https://github.com/pskillen/codeplug-studio/issues/617), [#630](https://github.com/pskillen/codeplug-studio/issues/630), [#631](https://github.com/pskillen/codeplug-studio/issues/631)). **Next:** connect UI [#618](https://github.com/pskillen/codeplug-studio/issues/618), firmware gate [#619](https://github.com/pskillen/codeplug-studio/issues/619); OpenGD77 adapters [#624](https://github.com/pskillen/codeplug-studio/issues/624)/[#625](https://github.com/pskillen/codeplug-studio/issues/625). Listed in [browser-radio-io-outstanding.md](browser-radio-io-outstanding.md).
+
+New adapters: [adding-a-radio-adapter.md](adding-a-radio-adapter.md).
 
 ## Related
 

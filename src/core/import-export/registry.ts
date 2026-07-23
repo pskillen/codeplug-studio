@@ -53,6 +53,13 @@ export const formatCatalog: readonly FormatCatalogEntry[] = [
     exportStatus: 'shipped',
     issue: '536',
   },
+  {
+    id: 'radio-io',
+    label: 'Direct radio',
+    importStatus: 'planned',
+    exportStatus: 'planned',
+    issue: '618',
+  },
 ];
 
 export const importAdapters: readonly ImportAdapter[] = [nativeYamlImportAdapter];
@@ -92,6 +99,12 @@ const CHIRP_EXPORT_DEFAULTS: FormatExportDefaults = {
   expandRxGroupLists: false,
 };
 
+const RADIO_IO_EXPORT_DEFAULTS: FormatExportDefaults = {
+  defaultScanInclusion: 'skip',
+  expandModes: false,
+  expandRxGroupLists: false,
+};
+
 const OPENGD77_EXPORT_DEFAULTS: FormatExportDefaults = {
   defaultScanInclusion: 'scan',
   expandModes: true,
@@ -116,6 +129,7 @@ const ANYTONE_EXPORT_DEFAULTS: FormatExportDefaults = {
 
 const FORMAT_EXPORT_DEFAULTS: Partial<Record<FormatId, FormatExportDefaults>> = {
   chirp: CHIRP_EXPORT_DEFAULTS,
+  'radio-io': RADIO_IO_EXPORT_DEFAULTS,
   opengd77: OPENGD77_EXPORT_DEFAULTS,
   dm32: DM32_EXPORT_DEFAULTS,
   anytone: ANYTONE_EXPORT_DEFAULTS,

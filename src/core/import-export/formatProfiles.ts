@@ -21,6 +21,11 @@ import {
   isNeonplugDm32uvProfile,
   type NeonplugRadioProfile,
 } from './formats/neonplug/profiles.ts';
+import {
+  RADIO_IO_PROFILES,
+  getRadioIoProfile,
+  type RadioIoRadioProfile,
+} from './formats/radio-io/profiles.ts';
 
 export interface FormatProfileOption {
   profileId: string;
@@ -37,6 +42,7 @@ export function getFormatProfiles(formatId: 'dm32'): FormatProfileOption[];
 export function getFormatProfiles(formatId: 'chirp'): FormatProfileOption[];
 export function getFormatProfiles(formatId: 'anytone'): FormatProfileOption[];
 export function getFormatProfiles(formatId: 'neonplug'): FormatProfileOption[];
+export function getFormatProfiles(formatId: 'radio-io'): FormatProfileOption[];
 export function getFormatProfiles(formatId: FormatId): FormatProfileOption[];
 export function getFormatProfiles(formatId: FormatId): FormatProfileOption[] {
   if (formatId === 'opengd77') {
@@ -53,6 +59,9 @@ export function getFormatProfiles(formatId: FormatId): FormatProfileOption[] {
   }
   if (formatId === 'neonplug') {
     return NEONPLUG_PROFILES.map(neonplugProfileToOption);
+  }
+  if (formatId === 'radio-io') {
+    return RADIO_IO_PROFILES.map(radioIoProfileToOption);
   }
   return [];
 }
@@ -116,6 +125,16 @@ function neonplugProfileToOption(profile: NeonplugRadioProfile): FormatProfileOp
   };
 }
 
+function radioIoProfileToOption(profile: RadioIoRadioProfile): FormatProfileOption {
+  return {
+    profileId: profile.id,
+    label: profile.label,
+    formatId: 'radio-io',
+    nameLimit: profile.nameLimit,
+    maxChannels: profile.maxMemorySlots,
+  };
+}
+
 /** Scan list member cap for zone-derived scan UI — export boundary only. */
 export function scanListMemberCapForProfile(formatId: FormatId, profileId: string): number {
   if (formatId === 'dm32') {
@@ -172,6 +191,14 @@ export function formatProfileWireHint(formatId: FormatId, profileId: string): st
         return `${profile.nameLimit}-char wire names · ${profile.maxChannels} channels max · ${profile.rxGroupListMembers} RX list members · ${profile.scanListMembers} scan members`;
       }
       return `${profile.nameLimit}-char wire names · ${profile.maxMemorySlots} memory slots`;
+    } catch {
+      return null;
+    }
+  }
+  if (formatId === 'radio-io') {
+    try {
+      const profile = getRadioIoProfile(profileId);
+      return `${profile.nameLimit}-char wire names · ${profile.maxMemorySlots} memory slots · Web Serial only`;
     } catch {
       return null;
     }

@@ -23,13 +23,21 @@ export function buildProfileOptionsForFormat(formatId: FormatId): BuildProfileOp
           : undefined,
     }));
   }
+  const capsById = new Map(getFormatProfiles(formatId).map((p) => [p.profileId, p]));
   return Object.values(TRAIT_PROFILES)
     .filter((p) => p.formatId === formatId)
-    .map((p) => ({
-      profileId: p.profileId,
-      label: p.label,
-      formatId: p.formatId as FormatId,
-    }));
+    .map((p) => {
+      const caps = capsById.get(p.profileId);
+      return {
+        profileId: p.profileId,
+        label: p.label,
+        formatId: p.formatId as FormatId,
+        hint:
+          caps?.nameLimit != null
+            ? `${caps.nameLimit}-char names · up to ${caps.maxChannels ?? '?'} channels`
+            : undefined,
+      };
+    });
 }
 
 /** True when changing profile may invalidate layout or wire overrides. */

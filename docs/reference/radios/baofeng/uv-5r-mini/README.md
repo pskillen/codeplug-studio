@@ -53,11 +53,13 @@ CHIRP is **GPL**. Extract **facts** only — do **not** paste GPL sources into S
 
 ## Attribution
 
-Protocol lineage credit: `/attributions` entries `chirp` and `neonplug` ([#597](https://github.com/pskillen/codeplug-studio/issues/597)). Planned `RadioDescriptor.attributionIds` for the UV-5R Mini adapter should include both.
+Protocol lineage credit: `/attributions` entries `chirp` and `neonplug` ([#597](https://github.com/pskillen/codeplug-studio/issues/597)). `RadioDescriptor.attributionIds` includes both.
 
-## Planned Studio module
+## Studio module
 
-`src/integrations/radio-io/radios/uv5r-mini/` — handshake, layout, encode (see [protocol-kit architecture](../../../../features/radio-read-write/protocol-kit-architecture.md)). This ticket ships **docs only**.
+`src/integrations/radio-io/radios/uv5r-mini/` — handshake, layout, encode/decode, `radio-clone` hydration ([#617](https://github.com/pskillen/codeplug-studio/issues/617)). Registry: `src/integrations/radio-io/registry.ts`. Checklist: [adding-a-radio-adapter.md](../../../../features/radio-read-write/adding-a-radio-adapter.md).
+
+**Manual verify (not CI):** real UV-5R Mini over Web Serial at NeonPlug baud **38400** after connect UI [#618](https://github.com/pskillen/codeplug-studio/issues/618) lands.
 
 ## Related
 

@@ -94,6 +94,14 @@ export function buildNavItems(build: FormatBuild): BuildNavItem[] {
     });
   }
 
+  if (build.formatId === 'radio-io') {
+    items.push({
+      label: 'Radio image',
+      path: `${base}/radio-image`,
+      icon: IconPlugConnected,
+    });
+  }
+
   return items;
 }
 

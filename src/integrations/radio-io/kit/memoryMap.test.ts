@@ -84,6 +84,10 @@ describe('session', () => {
       analogOnly: true,
     },
     attributionIds: [],
+    compatibleProfiles: [],
+    writeStrategy: 'full-image',
+    hydrationRequiredForWrite: true,
+    baudRate: 9600,
   };
 
   it('createRadioSession stores inputs and supports image cache helpers', () => {

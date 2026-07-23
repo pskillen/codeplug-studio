@@ -6,10 +6,10 @@
 
 ## Status
 
-| Milestone                                 | Status                  | Notes                                                                                                                                                                                                          |
-| ----------------------------------------- | ----------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Milestone 1 — CHIRP CSV fidelity          | Complete (feature)      | UV-5R / UV-21 / RT95 profiles under [#504](https://github.com/pskillen/codeplug-studio/issues/504)                                                                                                             |
-| Milestone 2 — WebSerial direct read/write | Transport + kit shipped | [#615](https://github.com/pskillen/codeplug-studio/issues/615)/[#616](https://github.com/pskillen/codeplug-studio/issues/616); first radio [#617](https://github.com/pskillen/codeplug-studio/issues/617) next |
+| Milestone                                 | Status             | Notes                                                                                                                                             |
+| ----------------------------------------- | ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Milestone 1 — CHIRP CSV fidelity          | Complete (feature) | UV-5R / UV-21 / RT95 profiles under [#504](https://github.com/pskillen/codeplug-studio/issues/504)                                                |
+| Milestone 2 — WebSerial direct read/write | Mini path shipped  | Adapter [#617](https://github.com/pskillen/codeplug-studio/issues/617) + Export UI [#618](https://github.com/pskillen/codeplug-studio/issues/618) |
 
 ## Shipped (foundation)
 
@@ -20,6 +20,8 @@
 | Progress docs under `radio-read-write/`        | [#603](https://github.com/pskillen/codeplug-studio/issues/603) | Moved from `import-export/`                                                                                                                                                                                                                  |
 | Protocol kit architecture deep-dive            | [#603](https://github.com/pskillen/codeplug-studio/issues/603) | [protocol-kit-architecture.md](protocol-kit-architecture.md)                                                                                                                                                                                 |
 | UV-5R Mini radio home                          | [#603](https://github.com/pskillen/codeplug-studio/issues/603) | [docs/reference/radios/baofeng/uv-5r-mini/](../../reference/radios/baofeng/uv-5r-mini/README.md)                                                                                                                                             |
+| UV-5R Mini clone adapter + registry            | [#617](https://github.com/pskillen/codeplug-studio/issues/617) | `radios/uv5r-mini/`; `radio-clone` hydration; checklist [adding-a-radio-adapter.md](adding-a-radio-adapter.md)                                                                                                                               |
+| Connect/read/write UI + in-flow attribution    | [#618](https://github.com/pskillen/codeplug-studio/issues/618) | `BuildRadioIoPanel` on **Direct radio** (`radio-io`) Export; FormatBuild `radio-clone` hydration; no CPS file export                                                                                                                         |
 | OpenGD77 / OpenUV380 binary memory docs        | [#623](https://github.com/pskillen/codeplug-studio/issues/623) | [docs/reference/radios/opengd77/](../../reference/radios/opengd77/README.md); `qdmr` attribution                                                                                                                                             |
 | UV-5R Mini PROGRAM+R/W binary memory docs      | [#627](https://github.com/pskillen/codeplug-studio/issues/627) | [docs/reference/radios/baofeng/uv-5r-mini/](../../reference/radios/baofeng/uv-5r-mini/README.md); blocks [#617](https://github.com/pskillen/codeplug-studio/issues/617)                                                                      |
 | WebSerial `BytePipe` transport                 | [#615](https://github.com/pskillen/codeplug-studio/issues/615) | `src/integrations/radio-io/transport/` — feature-detect, buffered `readExact` / `write`                                                                                                                                                      |
@@ -32,12 +34,11 @@
 
 ## Next
 
-1. Implement [#617](https://github.com/pskillen/codeplug-studio/issues/617) (UV-5R Mini adapter) → [#618](https://github.com/pskillen/codeplug-studio/issues/618) (connect UI).
-2. Wire firmware gating [#619](https://github.com/pskillen/codeplug-studio/issues/619) when catalog [#613](https://github.com/pskillen/codeplug-studio/issues/613) is ready.
-3. OpenGD77 adapters (kit codec ready): [#624](https://github.com/pskillen/codeplug-studio/issues/624) (DM-1701) · [#625](https://github.com/pskillen/codeplug-studio/issues/625) (MD-9600).
-4. DM-32UV adapter after binary docs: [#638](https://github.com/pskillen/codeplug-studio/issues/638) (epic [#636](https://github.com/pskillen/codeplug-studio/issues/636)).
-5. RT95 PROGRAM→QX kit codec [#641](https://github.com/pskillen/codeplug-studio/issues/641) → adapter [#643](https://github.com/pskillen/codeplug-studio/issues/643) (epic [#640](https://github.com/pskillen/codeplug-studio/issues/640); docs [#642](https://github.com/pskillen/codeplug-studio/issues/642) shipped).
-6. Anytone DMR kit codec [#646](https://github.com/pskillen/codeplug-studio/issues/646) → D890 adapter [#649](https://github.com/pskillen/codeplug-studio/issues/649) (epic [#645](https://github.com/pskillen/codeplug-studio/issues/645); docs [#647](https://github.com/pskillen/codeplug-studio/issues/647) shipped).
+1. Wire firmware gating [#619](https://github.com/pskillen/codeplug-studio/issues/619) when catalog [#613](https://github.com/pskillen/codeplug-studio/issues/613) is ready.
+2. OpenGD77 adapters (kit codec ready): [#624](https://github.com/pskillen/codeplug-studio/issues/624) (DM-1701) · [#625](https://github.com/pskillen/codeplug-studio/issues/625) (MD-9600).
+3. DM-32UV adapter after binary docs: [#638](https://github.com/pskillen/codeplug-studio/issues/638) (epic [#636](https://github.com/pskillen/codeplug-studio/issues/636)).
+4. RT95 PROGRAM→QX kit codec [#641](https://github.com/pskillen/codeplug-studio/issues/641) → adapter [#643](https://github.com/pskillen/codeplug-studio/issues/643) (epic [#640](https://github.com/pskillen/codeplug-studio/issues/640); docs [#642](https://github.com/pskillen/codeplug-studio/issues/642) shipped).
+5. Anytone DMR kit codec [#646](https://github.com/pskillen/codeplug-studio/issues/646) → D890 adapter [#649](https://github.com/pskillen/codeplug-studio/issues/649) (epic [#645](https://github.com/pskillen/codeplug-studio/issues/645); docs [#647](https://github.com/pskillen/codeplug-studio/issues/647) shipped).
 
 ## Related
 

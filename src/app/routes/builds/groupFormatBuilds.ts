@@ -20,6 +20,7 @@ const RADIO_FAMILY_BY_PROFILE: Readonly<Record<string, { key: string; label: str
   'neonplug-dm32uv': { key: 'radio:baofeng-dm32uv', label: 'Baofeng DM-32UV' },
   'chirp-uv5r': { key: 'radio:baofeng-uv5r-mini', label: 'Baofeng UV-5R Mini' },
   'neonplug-uv5rmini': { key: 'radio:baofeng-uv5r-mini', label: 'Baofeng UV-5R Mini' },
+  'radio-io-uv5r-mini': { key: 'radio:baofeng-uv5r-mini', label: 'Baofeng UV-5R Mini' },
 };
 
 function radioFamilyFor(profileId: string): { key: string; label: string } {

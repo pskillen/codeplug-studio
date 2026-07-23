@@ -54,6 +54,15 @@ export interface RadioCapabilities {
   supportsBulkRead?: boolean;
 }
 
+/** How Studio must write modelled data back to the radio. */
+export type RadioWriteStrategy = 'selective-ranges' | 'full-image';
+
+/** Format build profiles this radio adapter can pair with. */
+export interface RadioCompatibleProfile {
+  formatId: string;
+  profileId: string;
+}
+
 export interface RadioDescriptor {
   modelIds: readonly string[];
   label: string;
@@ -63,6 +72,14 @@ export interface RadioDescriptor {
   capabilities: RadioCapabilities;
   /** Keys into Studio attributions lib (#597). */
   attributionIds: readonly string[];
+  /** FormatBuild profiles eligible for connect / read / write. */
+  compatibleProfiles: readonly RadioCompatibleProfile[];
+  /** Upload strategy — full-image radios require prior Read hydration. */
+  writeStrategy: RadioWriteStrategy;
+  /** When true, Write is blocked until FormatBuild has binary hydration from Read. */
+  hydrationRequiredForWrite: boolean;
+  /** Baud for Web Serial open (radio-specific). */
+  baudRate: number;
 }
 
 /**
@@ -75,8 +92,11 @@ export interface CloneImageRadio {
   disconnect(): Promise<void>;
   download(opts: { onProgress?: ProgressFn; signal?: AbortSignal }): Promise<MemoryMap>;
   upload(image: MemoryMap, opts: { onProgress?: ProgressFn; signal?: AbortSignal }): Promise<void>;
-  decodeChannels(image: MemoryMap): unknown[];
-  encodeChannels(image: MemoryMap, channels: unknown[]): MemoryMap;
+  decodeChannels(image: MemoryMap): import('./radioChannelDto.ts').RadioChannelDto[];
+  encodeChannels(
+    image: MemoryMap,
+    channels: readonly import('./radioChannelDto.ts').RadioChannelDto[],
+  ): MemoryMap;
   readFirmware(image: MemoryMap): string | undefined;
 }
 

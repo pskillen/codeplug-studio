@@ -29,6 +29,12 @@ describe('buildNavItems', () => {
     expect(buildNavItems(build).map((item) => item.label)).toContain('NeonPlug settings');
   });
 
+  it('includes Radio image for Direct radio builds', () => {
+    const build = { ...newFormatBuild('proj', 'radio-io-uv5r-mini'), formatId: 'radio-io' };
+    expect(buildNavItems(build).map((item) => item.label)).toContain('Radio image');
+    expect(buildNavItems(build).map((item) => item.label)).not.toContain('NeonPlug settings');
+  });
+
   it('includes Scan list after Channels for flat-memory UV5R builds', () => {
     const build = { ...newFormatBuild('proj', 'neonplug-uv5rmini'), formatId: 'neonplug' };
     const labels = buildNavItems(build).map((item) => item.label);
