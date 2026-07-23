@@ -14,6 +14,7 @@ import type { ChannelExportNameMode } from '@core/domain/channelNaming.ts';
 import { applyWireNameLimits } from '@core/import-export/channelExpansion/exportWireNames.ts';
 import { expandAllMxNChannels } from '@core/import-export/channelExpansion/mxnExpandAll.ts';
 import type { ExpandedMxNChannelRow } from '@core/import-export/channelExpansion/mxnExpandAll.ts';
+import { filterExpandedRowsByOverrides } from '@core/domain/formatBuildOverrides.ts';
 import { mergeExportOptions } from '@core/import-export/exportSettingsMerge.ts';
 import { getProfileExportLimits } from '@core/import-export/profileExportLimits.ts';
 import type { FormatId } from '@core/import-export/types.ts';
@@ -203,13 +204,16 @@ export function expandAssembledChannelsToRadioDtos(
 
   const warnings: string[] = [];
   const merged = mergeExportOptions(build, egress.formatId, { profileId: egress.profileId });
-  const expanded = expandAllMxNChannels({
-    assembled,
-    library,
-    radioTargetId: build.radioTargetId,
-    options: merged,
-    warnings,
-  });
+  const expanded = filterExpandedRowsByOverrides(
+    expandAllMxNChannels({
+      assembled,
+      library,
+      radioTargetId: build.radioTargetId,
+      options: merged,
+      warnings,
+    }),
+    build.channelOverrides,
+  );
 
   const channelById = new Map(assembled.channels.map((row) => [row.entity.id, row.entity]));
   const dtos: RadioChannelDto[] = [];

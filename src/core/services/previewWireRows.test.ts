@@ -274,6 +274,60 @@ describe('previewWireRows', () => {
     expect(multiModeRows[1]?.effectiveWireName).toBe('GB7GL Scot');
   });
 
+  it('marks only the skipped multi-mode projection as excluded', () => {
+    const yaml = readFileSync(join(fixtureDir, 'with-radio-build.yaml'), 'utf8');
+    const aggregate = parseProjectDocument(yaml);
+    const channels: Channel[] = aggregate.channels.map((channel, index) =>
+      index === 1
+        ? {
+            ...channel,
+            modeProfiles: [
+              {
+                mode: 'fm' as const,
+                squelch: 50,
+                rxTone: 'none' as const,
+                txTone: 'none' as const,
+                bandwidthKHz: 12.5,
+              },
+              {
+                mode: 'dmr' as const,
+                colourCode: 1,
+                timeslot: 2 as const,
+                dmrId: 123,
+                contactRef: null,
+                rxGroupListId: null,
+              },
+            ],
+          }
+        : channel,
+    );
+    const multiId = channels[1]!.id;
+    const skipKey = `${multiId}:-F`;
+    const keepKey = `${multiId}:-D`;
+    const build = {
+      ...aggregate.radioBuilds[0]!,
+      channelOverrides: [{ libraryEntityId: skipKey, excluded: true }],
+    };
+    const library = {
+      channels,
+      zones: aggregate.zones,
+      talkGroups: aggregate.talkGroups,
+      digitalContacts: aggregate.digitalContacts,
+      analogContacts: aggregate.analogContacts,
+      rxGroupLists: aggregate.rxGroupLists,
+      scanLists: [],
+    };
+
+    const rows = previewWireRows(build, library, 'channel', {
+      profileId: 'opengd77-1701',
+      expandModes: true,
+    });
+    const multiModeRows = rows.filter((row) => row.libraryEntityId === multiId);
+    expect(multiModeRows).toHaveLength(2);
+    expect(multiModeRows.find((row) => row.key === skipKey)?.excluded).toBe(true);
+    expect(multiModeRows.find((row) => row.key === keepKey)?.excluded).toBe(false);
+  });
+
   it('shortens wire names at the profile name limit in preview', () => {
     const yaml = readFileSync(join(fixtureDir, 'with-radio-build.yaml'), 'utf8');
     const aggregate = parseProjectDocument(yaml);

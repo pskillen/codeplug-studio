@@ -25,10 +25,34 @@ export function overrideByEntityId(
 }
 
 export function isEntityExcluded(
-  overrides: BuildEntityOverride[] | undefined,
+  overrides: readonly BuildEntityOverride[] | undefined,
   entityId: string,
 ): boolean {
   return (overrides ?? []).find((row) => row.libraryEntityId === entityId)?.excluded === true;
+}
+
+/**
+ * Whether an expanded channel projection is skipped from export.
+ * Projection-key `excluded` wins for that row; parent `channelId` excluded skips all projections.
+ */
+export function isProjectionExcluded(
+  overrides: readonly BuildEntityOverride[] | undefined,
+  projectionKey: string,
+  parentChannelId: string,
+): boolean {
+  if (isEntityExcluded(overrides, parentChannelId)) return true;
+  if (projectionKey !== parentChannelId && isEntityExcluded(overrides, projectionKey)) return true;
+  return false;
+}
+
+/**
+ * Drop expanded wire rows whose projection key (or parent channel) is excluded on the build.
+ * Shared by CPS serialise, wire preview parity tests, and Web Serial write.
+ */
+export function filterExpandedRowsByOverrides<
+  T extends { key: string; sourceChannelId: string },
+>(rows: readonly T[], overrides: readonly BuildEntityOverride[] | undefined): T[] {
+  return rows.filter((row) => !isProjectionExcluded(overrides, row.key, row.sourceChannelId));
 }
 
 export function isEntityForceIncluded(

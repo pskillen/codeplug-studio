@@ -6,6 +6,7 @@
 import type { CpsExportOptions } from '@core/import-export/types.ts';
 import type { AssembledBuild, AssembledChannel } from '@core/services/assemble.ts';
 import { radioTargetIdForProfile } from '@core/radio-targets/index.ts';
+import { filterExpandedRowsByOverrides } from '@core/domain/formatBuildOverrides.ts';
 import {
   expandAllMxNChannels,
   expandMxNChannelWireRows,
@@ -26,6 +27,13 @@ function resolveRadioTargetId(assembled: AssembledBuild, options?: CpsExportOpti
   return radioTargetIdForProfile(profileId) ?? DEFAULT_RADIO_TARGET;
 }
 
+function withProjectionExclusions(
+  rows: ExpandedDm32ChannelRow[],
+  options?: CpsExportOptions,
+): ExpandedDm32ChannelRow[] {
+  return filterExpandedRowsByOverrides(rows, options?.channelOverrides);
+}
+
 /** Expand one channel into export wire rows (RX-list fan-out + optional scratch). */
 export function expandDm32ChannelWireRows(
   assembledChannel: AssembledChannel,
@@ -37,24 +45,24 @@ export function expandDm32ChannelWireRows(
 ): ExpandedDm32ChannelRow[] {
   const radioTargetId = resolveRadioTargetId(assembled, options);
   const policy = mxnPolicyForRadioTarget(radioTargetId);
-  if (!policy) {
-    return expandAllMxNChannels({
-      assembled: { ...assembled, channels: [assembledChannel] },
-      library,
-      radioTargetId,
-      options,
-      warnings,
-    });
-  }
-  return expandMxNChannelWireRows(
-    assembledChannel,
-    assembled,
-    library,
-    policy,
-    options,
-    reserved,
-    warnings,
-  );
+  const rows = !policy
+    ? expandAllMxNChannels({
+        assembled: { ...assembled, channels: [assembledChannel] },
+        library,
+        radioTargetId,
+        options,
+        warnings,
+      })
+    : expandMxNChannelWireRows(
+        assembledChannel,
+        assembled,
+        library,
+        policy,
+        options,
+        reserved,
+        warnings,
+      );
+  return withProjectionExclusions(rows, options);
 }
 
 /** Expand all assembled channels for DM32 export, preserving order. */
@@ -64,13 +72,16 @@ export function expandAllDm32ChannelsForExport(
   options?: CpsExportOptions,
   warnings: string[] = [],
 ): ExpandedDm32ChannelRow[] {
-  return expandAllMxNChannels({
-    assembled,
-    library,
-    radioTargetId: resolveRadioTargetId(assembled, options),
+  return withProjectionExclusions(
+    expandAllMxNChannels({
+      assembled,
+      library,
+      radioTargetId: resolveRadioTargetId(assembled, options),
+      options,
+      warnings,
+    }),
     options,
-    warnings,
-  });
+  );
 }
 
 /** Map channel id → expanded wire rows for zone member resolution. */

@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import {
+  filterExpandedRowsByOverrides,
   isEntityForceIncluded,
+  isProjectionExcluded,
   overrideScanInclusion,
   parseOverrideArray,
   upsertOverride,
@@ -71,5 +73,33 @@ describe('formatBuildOverrides', () => {
     expect(() =>
       parseOverrideArray([{ libraryEntityId: 'ch-1', scanInclusion: 'nope' }], 'channelOverrides'),
     ).toThrow(/scanInclusion is invalid/);
+  });
+
+  it('isProjectionExcluded honours projection key and parent channel id', () => {
+    const overrides = [
+      { libraryEntityId: 'ch-1:fm', excluded: true },
+      { libraryEntityId: 'ch-2', excluded: true },
+    ];
+    expect(isProjectionExcluded(overrides, 'ch-1:fm', 'ch-1')).toBe(true);
+    expect(isProjectionExcluded(overrides, 'ch-1:dmr', 'ch-1')).toBe(false);
+    expect(isProjectionExcluded(overrides, 'ch-2:fm', 'ch-2')).toBe(true);
+    expect(isProjectionExcluded(overrides, 'ch-2', 'ch-2')).toBe(true);
+  });
+
+  it('filterExpandedRowsByOverrides drops excluded projections only', () => {
+    const rows = [
+      { key: 'ch-1:tg-a', sourceChannelId: 'ch-1', wireName: 'A' },
+      { key: 'ch-1:tg-b', sourceChannelId: 'ch-1', wireName: 'B' },
+      { key: 'ch-1:scratch', sourceChannelId: 'ch-1', wireName: 'S' },
+    ];
+    const filtered = filterExpandedRowsByOverrides(rows, [
+      { libraryEntityId: 'ch-1:tg-b', excluded: true },
+    ]);
+    expect(filtered.map((row) => row.key)).toEqual(['ch-1:tg-a', 'ch-1:scratch']);
+
+    const parentSkip = filterExpandedRowsByOverrides(rows, [
+      { libraryEntityId: 'ch-1', excluded: true },
+    ]);
+    expect(parentSkip).toEqual([]);
   });
 });

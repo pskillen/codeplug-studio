@@ -144,11 +144,14 @@ export function useBuildWirePreview(
   const setRowExcluded = useCallback(
     (row: WirePreviewRow, excluded: boolean) => {
       const field = overrideFieldForEntityKind(entityKind);
+      // Channels: write against projection `key` (wire-name parity). Parent-id skip still
+      // means all projections via isProjectionExcluded at preview/export.
+      const entityId = entityKind === 'channel' ? row.key : row.libraryEntityId;
       void persistBuild((current) => {
-        if (isEntityExcluded(current[field], row.libraryEntityId) === excluded) {
+        if (isEntityExcluded(current[field], entityId) === excluded) {
           return current;
         }
-        return buildService.withEntityExcluded(current, field, row.libraryEntityId, excluded);
+        return buildService.withEntityExcluded(current, field, entityId, excluded);
       });
     },
     [entityKind, persistBuild],

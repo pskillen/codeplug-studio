@@ -109,6 +109,8 @@ export interface CpsExportOptions {
   digitalContactExportNameMode?: DigitalContactExportNameMode;
   /** Build contact overrides — used to honour per-contact wire name overrides at export. */
   contactOverrides?: readonly import('@core/models/formatBuild.ts').BuildEntityOverride[];
+  /** Build channel overrides — projection-key skip / wire names after m×n expand. */
+  channelOverrides?: readonly import('@core/models/formatBuild.ts').BuildEntityOverride[];
   /** When false, skip zone-derived Scan.csv synthesis on DM32 export. Default true. */
   exportZoneDerivedScanLists?: boolean;
   /** When true with expandRxGroupLists, emit one scratch companion row per expanded repeater channel. */
