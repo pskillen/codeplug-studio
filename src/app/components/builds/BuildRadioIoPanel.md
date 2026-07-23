@@ -2,26 +2,27 @@
 
 ## Purpose
 
-Build Export chrome for **Web Serial** read/write on **Direct radio** (`radio-io`) FormatBuilds when a registered adapter matches the profile. Read hydrates `cpsWireHydration` (`radio-clone`); write runs `assemble` → encode → upload. No CPS ZIP/CSV for this format.
+Build Export chrome for **Web Serial** read/write on **Direct radio** (`radio-io`) egress pathways when a registered adapter matches the profile. Read hydrates `EgressPath.hydration` (`radio-clone`); write runs `assemble` → encode → upload. No CPS ZIP/CSV for this format.
 
 ## Props
 
-| Prop    | Type          | Description                                                      |
-| ------- | ------------- | ---------------------------------------------------------------- |
-| `build` | `FormatBuild` | Active format build (must have a compatible registry descriptor) |
+| Prop     | Type         | Description                                                                  |
+| -------- | ------------ | ---------------------------------------------------------------------------- |
+| `build`  | `RadioBuild` | Active radio build                                                           |
+| `egress` | `EgressPath` | Active Web Serial pathway (`formatId`/`profileId`/hydration live here, #654) |
 
 ## Usage
 
 ```tsx
-<BuildRadioIoPanel build={build} />
+<BuildRadioIoPanel build={build} egress={activeEgress} />
 ```
 
-Renders nothing when `descriptorsForBuild(build)` is empty.
+Renders nothing when `descriptorsForEgress(egress)` is empty. Must render under `BuildLayoutProvider` (uses `reloadEgressPaths`).
 
 ## Behaviour
 
 - Feature-detects Web Serial; shows unsupported banner when missing.
-- **Read from radio** → download → persist hydration on the build → read-only summary.
+- **Read from radio** → download → persist hydration on the **egress** → read-only summary.
 - **Write to radio** → blocked until hydration exists (full-image strategy).
 - While busy, opens [`RadioIoProgressModal`](./RadioIoProgressModal.md) (steps + transfer progress bar + keep-tab warning). Cancel aborts via `AbortSignal`.
 - Blocks in-app navigation and tab close while busy (`useUnsavedNavigationGuard`); releases the port on failure.
