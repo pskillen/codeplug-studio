@@ -69,7 +69,12 @@ export function encodeDm32TalkGroupBlock(talkGroups: readonly RadioTalkGroupDto[
   return data;
 }
 
-function patchTgCounter(image: MemoryMap, addressBase: number, address: number, count: number): void {
+function patchTgCounter(
+  image: MemoryMap,
+  addressBase: number,
+  address: number,
+  count: number,
+): void {
   const base = address - addressBase;
   image.bytes[base + DM32_OFFSET.TALK_GROUP_COUNTER] = count & 0xff;
   image.bytes[base + DM32_METADATA_OFFSET] = DM32_METADATA.CONFIG_TG_COUNTER;

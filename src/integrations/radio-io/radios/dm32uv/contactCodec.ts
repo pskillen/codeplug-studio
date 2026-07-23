@@ -12,12 +12,7 @@ export const DM32_CONTACTS_PER_BLOCK = 44;
 
 const TE = new TextEncoder();
 
-function writePaddedField(
-  data: Uint8Array,
-  offset: number,
-  maxLen: number,
-  text: string,
-): void {
+function writePaddedField(data: Uint8Array, offset: number, maxLen: number, text: string): void {
   data.fill(0xff, offset, offset + maxLen);
   const bytes = TE.encode(text.slice(0, maxLen - 1));
   data.set(bytes, offset);
@@ -100,7 +95,11 @@ export function encodeDigitalContactsIntoDm32Image(
       const entryOff =
         lastBlockNum === 0 ? 0x10 + i * DM32_CONTACT_ENTRY_SIZE : i * DM32_CONTACT_ENTRY_SIZE;
       if (entryOff + DM32_CONTACT_ENTRY_SIZE <= DM32_BLOCK_SIZE - 1) {
-        image.bytes.fill(0xff, lastMapOff + entryOff, lastMapOff + entryOff + DM32_CONTACT_ENTRY_SIZE);
+        image.bytes.fill(
+          0xff,
+          lastMapOff + entryOff,
+          lastMapOff + entryOff + DM32_CONTACT_ENTRY_SIZE,
+        );
       }
     }
   }
@@ -109,9 +108,7 @@ export function encodeDigitalContactsIntoDm32Image(
 }
 
 /** Parse V-frame 0x0F payload → contact absolute start/end. */
-export function parseDm32ContactsRange(
-  payload: Uint8Array,
-): { start: number; end: number } | null {
+export function parseDm32ContactsRange(payload: Uint8Array): { start: number; end: number } | null {
   if (payload.length < 8) return null;
   const start = payload[0]! | (payload[1]! << 8) | (payload[2]! << 16) | (payload[3]! << 24);
   const end = payload[4]! | (payload[5]! << 8) | (payload[6]! << 16) | (payload[7]! << 24);

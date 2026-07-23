@@ -4,7 +4,10 @@
 
 import type { AssembledBuild, LibrarySlice } from '@core/services/assemble.ts';
 import type { RadioBuild } from '@core/models/radioBuild.ts';
-import { expandAllMxNChannels, expandMxNZoneMemberNumbers } from '@core/import-export/channelExpansion/mxnExpandAll.ts';
+import {
+  expandAllMxNChannels,
+  expandMxNZoneMemberNumbers,
+} from '@core/import-export/channelExpansion/mxnExpandAll.ts';
 import { filterExpandedRowsByOverrides } from '@core/domain/formatBuildOverrides.ts';
 import { mergeExportOptions } from '@core/import-export/exportSettingsMerge.ts';
 import {

@@ -151,7 +151,9 @@ export class Dm32uvProtocol implements CloneImageRadio {
     const alignedEnd = alignConfigEnd(range.end);
     const mapSize = alignedEnd - addressBase + DM32_BLOCK_SIZE;
 
-    const contactsRange = parseDm32ContactsRange(vframes.get(DM32_VFRAME.CONTACTS) ?? new Uint8Array());
+    const contactsRange = parseDm32ContactsRange(
+      vframes.get(DM32_VFRAME.CONTACTS) ?? new Uint8Array(),
+    );
 
     this.cache = {
       addressBase,
@@ -222,10 +224,8 @@ export class Dm32uvProtocol implements CloneImageRadio {
       this.cache.contactsEnd != null &&
       this.cache.contactsEnd > this.cache.contactsBase
     ) {
-      const contactFirst =
-        Math.floor(this.cache.contactsBase / DM32_BLOCK_SIZE) * DM32_BLOCK_SIZE;
-      const contactLast =
-        Math.floor(this.cache.contactsEnd / DM32_BLOCK_SIZE) * DM32_BLOCK_SIZE;
+      const contactFirst = Math.floor(this.cache.contactsBase / DM32_BLOCK_SIZE) * DM32_BLOCK_SIZE;
+      const contactLast = Math.floor(this.cache.contactsEnd / DM32_BLOCK_SIZE) * DM32_BLOCK_SIZE;
       const newBase = Math.min(this.cache.addressBase, contactFirst);
       const configLast = this.cache.addressBase + this.cache.mapSize - DM32_BLOCK_SIZE;
       const newLast = Math.max(configLast, contactLast);

@@ -171,9 +171,7 @@ export function createRadioCloneHydrationBagFromBlocks(input: {
       blocks,
       ...(input.addressBase !== undefined ? { addressBase: input.addressBase } : {}),
       ...(input.firmware !== undefined ? { firmware: input.firmware } : {}),
-      ...(input.dm32ContactsBase !== undefined
-        ? { dm32ContactsBase: input.dm32ContactsBase }
-        : {}),
+      ...(input.dm32ContactsBase !== undefined ? { dm32ContactsBase: input.dm32ContactsBase } : {}),
       ...(input.dm32ContactsEnd !== undefined ? { dm32ContactsEnd: input.dm32ContactsEnd } : {}),
     },
   };

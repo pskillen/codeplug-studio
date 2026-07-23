@@ -164,10 +164,7 @@ function digitalFieldsFromProjection(
 
   const timeslot = dmr.timeslot === 2 ? 2 : dmr.timeslot === 1 ? 1 : undefined;
   const txContactId = resolveContactId(projection.txContactRef ?? dmr.contactRef, fkMaps);
-  const rxGroupIndex = resolveRxGroupIndex(
-    projection.rxGroupListId ?? dmr.rxGroupListId,
-    fkMaps,
-  );
+  const rxGroupIndex = resolveRxGroupIndex(projection.rxGroupListId ?? dmr.rxGroupListId, fkMaps);
   return {
     mode: mode ?? 'digital',
     colorCode: dmr.colourCode ?? undefined,

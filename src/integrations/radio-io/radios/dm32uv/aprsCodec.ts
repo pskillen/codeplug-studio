@@ -13,12 +13,7 @@ export const DM32_APRS_SLICE_END = 0x334; // inclusive
 
 const TE = new TextEncoder();
 
-function writeAsciiField(
-  block: Uint8Array,
-  offset: number,
-  maxLen: number,
-  text: string,
-): void {
+function writeAsciiField(block: Uint8Array, offset: number, maxLen: number, text: string): void {
   block.fill(0xff, offset, offset + maxLen);
   const bytes = TE.encode(text.slice(0, maxLen - 1));
   block.set(bytes, offset);
