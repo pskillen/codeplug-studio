@@ -1,8 +1,9 @@
 import { DEFAULT_BUILD_EXPORT_SETTINGS } from '@core/import-export/exportSettingsMerge.ts';
 import { DEFAULT_DIGITAL_CONTACT_EXPORT_NAME_MODE } from '@core/import-export/types.ts';
 import { getFormatExportDefaults } from '@core/import-export/registry.ts';
-import type { BuildExportSettings, FormatBuild } from '@core/models/formatBuild.ts';
+import type { BuildExportSettings, RadioBuild } from '@core/models/formatBuild.ts';
 import type { DigitalContactExportNameMode } from '@core/import-export/types.ts';
+import { defaultCompatibleEgress } from '@core/radio-targets/index.ts';
 
 export type ResolvedBuildExportSettings = Required<
   Pick<
@@ -19,9 +20,14 @@ export type ResolvedBuildExportSettings = Required<
 > &
   Pick<BuildExportSettings, 'maxNameLength' | 'defaultScanInclusion'>;
 
-export function resolvedBuildExportSettings(build: FormatBuild): ResolvedBuildExportSettings {
+export function resolvedBuildExportSettings(
+  build: RadioBuild,
+  formatId?: string,
+): ResolvedBuildExportSettings {
   const stored = build.exportSettings ?? {};
-  const formatDefaults = getFormatExportDefaults(build.formatId);
+  const resolvedFormatId =
+    formatId ?? defaultCompatibleEgress(build.radioTargetId)?.formatId ?? 'opengd77';
+  const formatDefaults = getFormatExportDefaults(resolvedFormatId);
   const exportZoneDerivedDefault =
     formatDefaults.exportZoneDerivedScanLists ??
     DEFAULT_BUILD_EXPORT_SETTINGS.exportZoneDerivedScanLists;

@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Alert, Button, Group, Modal, Stack, Text } from '@mantine/core';
+import { Alert, Button, Group, Modal, SegmentedControl, Stack, Text } from '@mantine/core';
 import { IconDownload, IconPackage, IconTable } from '@tabler/icons-react';
-import type { BuildExportSettings, FormatBuild } from '@core/models/formatBuild.ts';
+import type { BuildExportSettings, RadioBuild } from '@core/models/formatBuild.ts';
+import type { EgressPath } from '@core/models/egressPath.ts';
 import { traitProfileFor } from '@core/models/traits.ts';
 import {
   formatCatalogEntry,
@@ -13,7 +14,8 @@ import {
   isSingleFileCpsExportAdapter,
 } from '@core/import-export/exportAdapter.ts';
 import { formatProfileWireHint, getFormatProfiles } from '@core/import-export/formatProfiles.ts';
-import type { CpsExportOptions, FormatId } from '@core/import-export/types.ts';
+import type { FormatId } from '@core/import-export/types.ts';
+import type { CpsAppExportOptions } from '../../services/buildCpsExportService.ts';
 import ExportBuildSettingsSections from './ExportBuildSettingsSections.tsx';
 import ProfilePicker from './ProfilePicker.tsx';
 import CpsCsvPreviewModal from './CpsCsvPreviewModal.tsx';
@@ -34,6 +36,7 @@ import {
 } from '../../lib/migrateLegacyExportSettings.ts';
 import { useProjects } from '../../state/useProjects.ts';
 import { useFormatBuilds } from '../../state/useFormatBuilds.ts';
+import { useBuildLayout } from '../../routes/builds/BuildLayoutContext.tsx';
 import { BuildService } from '../../state/buildService.ts';
 import { persistence } from '../../state/persistence.ts';
 import {
@@ -51,20 +54,31 @@ import { useBuildCpsExportFileNames } from '../../hooks/useBuildCpsExportFileNam
 import { useGoogleDrive } from '../../hooks/useGoogleDrive.ts';
 
 export interface ExportBuildCpsPanelProps {
-  build: FormatBuild;
+  build: RadioBuild;
 }
 
 const buildService = new BuildService(persistence);
 
+function egressPathLabel(path: EgressPath): string {
+  if (path.label?.trim()) return path.label.trim();
+  const formatLabel = formatCatalogEntry(path.formatId as FormatId)?.label ?? path.formatId;
+  const profile = traitProfileFor(path.profileId)?.label ?? path.profileId;
+  return `${formatLabel} — ${profile}`;
+}
+
 export default function ExportBuildCpsPanel({ build }: ExportBuildCpsPanelProps) {
   const { activeProjectId, activeProject } = useProjects();
+  const { activeEgress, egressPaths, setActiveEgressId, reloadEgressPaths } = useBuildLayout();
   const { withDriveAuthRetry } = useGoogleDrive();
   const { putBuild } = useFormatBuilds();
-  const formatEntry = formatCatalogEntry(build.formatId as FormatId);
-  const profileLabel = traitProfileFor(build.profileId)?.label ?? build.profileId;
-  const wireHint = formatProfileWireHint(build.formatId as FormatId, build.profileId);
-  const formatDefaults = getFormatExportDefaults(build.formatId);
-  const resolvedSettings = resolvedBuildExportSettings(build);
+
+  const formatId = (activeEgress?.formatId ?? 'opengd77') as FormatId;
+  const profileId = activeEgress?.profileId ?? '';
+  const formatEntry = formatCatalogEntry(formatId);
+  const profileLabel = traitProfileFor(profileId)?.label ?? profileId;
+  const wireHint = formatProfileWireHint(formatId, profileId);
+  const formatDefaults = getFormatExportDefaults(formatId);
+  const resolvedSettings = resolvedBuildExportSettings(build, formatId);
 
   const [channelCount, setChannelCount] = useState<number | null>(null);
   const [exportWarnings, setExportWarnings] = useState<string[]>([]);
@@ -74,11 +88,11 @@ export default function ExportBuildCpsPanel({ build }: ExportBuildCpsPanelProps)
   const [settingsError, setSettingsError] = useState<string | null>(null);
   const [driveBrowserOpen, setDriveBrowserOpen] = useState(false);
   const [previewOpen, setPreviewOpen] = useState(false);
-  const [exportProfileId, setExportProfileId] = useState(build.profileId);
-  const [lastBuildProfileId, setLastBuildProfileId] = useState(build.profileId);
-  if (build.profileId !== lastBuildProfileId) {
-    setLastBuildProfileId(build.profileId);
-    setExportProfileId(build.profileId);
+  const [exportProfileId, setExportProfileId] = useState(profileId);
+  const [lastEgressProfileId, setLastEgressProfileId] = useState(profileId);
+  if (profileId !== lastEgressProfileId) {
+    setLastEgressProfileId(profileId);
+    setExportProfileId(profileId);
   }
   const [overwriteOpen, setOverwriteOpen] = useState(false);
   const [pendingDriveTarget, setPendingDriveTarget] = useState<DriveSaveTarget | null>(null);
@@ -89,32 +103,38 @@ export default function ExportBuildCpsPanel({ build }: ExportBuildCpsPanelProps)
   const migratedRef = useRef(false);
 
   const profileNameLimit = useMemo(() => {
-    const options = getFormatProfiles(build.formatId as FormatId);
-    const profileId = build.formatId === 'chirp' ? exportProfileId : build.profileId;
-    return options.find((option) => option.profileId === profileId)?.nameLimit;
-  }, [build.formatId, build.profileId, exportProfileId]);
+    const options = getFormatProfiles(formatId);
+    const resolvedProfileId = formatId === 'chirp' ? exportProfileId : profileId;
+    return options.find((option) => option.profileId === resolvedProfileId)?.nameLimit;
+  }, [formatId, profileId, exportProfileId]);
 
   const runtimeExportOverrides = useMemo(
-    (): CpsExportOptions => ({
-      profileId: exportProfileId,
+    (): CpsAppExportOptions => ({
+      egressId: activeEgress?.id,
+      profileId: formatId === 'chirp' ? exportProfileId : undefined,
       fileName:
-        build.formatId === 'chirp'
-          ? defaultCpsSingleFileName(build.formatId as FormatId, exportProfileId)
+        formatId === 'chirp'
+          ? defaultCpsSingleFileName(formatId, exportProfileId)
           : undefined,
     }),
-    [build.formatId, exportProfileId],
+    [activeEgress?.id, formatId, exportProfileId],
   );
-  const exportFileNames = useBuildCpsExportFileNames(build, runtimeExportOverrides);
+  const exportFileNames = useBuildCpsExportFileNames(
+    build,
+    formatId,
+    profileId,
+    runtimeExportOverrides,
+  );
   const hasChannels = Boolean(activeProjectId) && (channelCount ?? 0) > 0;
   const exportShipped = formatEntry?.exportStatus === 'shipped';
   const interchangeFolderId = activeProject?.interchange?.googleDrive?.folderId;
-  const suggestedZipName = defaultCpsZipFileName(build.name, build.formatId as FormatId);
-  const isNeonplug = build.formatId === 'neonplug';
-  /** Persist donor retain on the build for all NeonPlug profiles (DM32UV + UV5R-Mini). */
+  const suggestedZipName = defaultCpsZipFileName(build.name, formatId);
+  const isNeonplug = formatId === 'neonplug';
+  /** Persist donor retain on the egress path for all NeonPlug profiles (DM32UV + UV5R-Mini). */
   const persistNeonplugDonor = isNeonplug;
   const storedNeonplugDonor = persistNeonplugDonor
-    ? isNeonplugDonorBag(build.cpsWireHydration)
-      ? build.cpsWireHydration
+    ? isNeonplugDonorBag(activeEgress?.hydration)
+      ? activeEgress.hydration
       : null
     : null;
   const hasNeonplugMergeDonor = Boolean(neonplugBaseBytes) || Boolean(storedNeonplugDonor);
@@ -289,23 +309,25 @@ export default function ExportBuildCpsPanel({ build }: ExportBuildCpsPanelProps)
     }
     try {
       const bytes = new Uint8Array(await file.arrayBuffer());
-      const { warnings } = validateNeonplugDonorBase(bytes, build.profileId);
+      const { warnings } = validateNeonplugDonorBase(bytes, profileId);
       mergeWarnings(warnings);
       setNeonplugBaseBytes(bytes);
       setNeonplugBaseFileName(file.name);
 
-      if (persistNeonplugDonor) {
+      if (persistNeonplugDonor && activeEgress) {
         const bag = extractNeonplugDonorFromZip(bytes, { sourceFileName: file.name });
         setSavingSettings(true);
         setSettingsError(null);
-        const next = buildService.withCpsWireHydration(build, bag);
-        const result = await putBuild(next, build.revision);
+        const next = buildService.withEgressHydration(activeEgress, bag);
+        const result = await buildService.putEgressPath(next, activeEgress.revision);
         if (!result.ok) {
           setSettingsError(
             result.reason === 'revision_conflict'
-              ? 'Build changed elsewhere — reload and try again.'
-              : 'Could not save donor settings on this build.',
+              ? 'Egress changed elsewhere — reload and try again.'
+              : 'Could not save donor settings on this pathway.',
           );
+        } else {
+          await reloadEgressPaths();
         }
         setSavingSettings(false);
       }
@@ -318,20 +340,22 @@ export default function ExportBuildCpsPanel({ build }: ExportBuildCpsPanelProps)
   }
 
   async function handleClearStoredNeonplugDonor() {
-    if (!persistNeonplugDonor || !storedNeonplugDonor) return;
+    if (!persistNeonplugDonor || !storedNeonplugDonor || !activeEgress) return;
     setSavingSettings(true);
     setSettingsError(null);
     setNeonplugBaseBytes(null);
     setNeonplugBaseFileName(null);
     try {
-      const next = buildService.clearCpsWireHydration(build);
-      const result = await putBuild(next, build.revision);
+      const next = buildService.clearEgressHydration(activeEgress);
+      const result = await buildService.putEgressPath(next, activeEgress.revision);
       if (!result.ok) {
         setSettingsError(
           result.reason === 'revision_conflict'
-            ? 'Build changed elsewhere — reload and try again.'
+            ? 'Egress changed elsewhere — reload and try again.'
             : 'Could not clear donor settings.',
         );
+      } else {
+        await reloadEgressPaths();
       }
     } finally {
       setSavingSettings(false);
@@ -347,9 +371,36 @@ export default function ExportBuildCpsPanel({ build }: ExportBuildCpsPanelProps)
     void saveZipToDrive(target, isNeonplug ? (neonplugBaseBytes ?? undefined) : undefined);
   }
 
-  if (build.formatId === 'radio-io') {
+  if (!activeEgress) {
+    return (
+      <Alert color="gray" title="No export pathway">
+        This build has no active egress pathway. Reload the page or open Setup to restore pathways
+        for this radio.
+      </Alert>
+    );
+  }
+
+  const egressSwitcher =
+    egressPaths.length > 1 ? (
+      <Stack gap={4}>
+        <Text size="sm" fw={600}>
+          Export pathway
+        </Text>
+        <SegmentedControl
+          value={activeEgress.id}
+          data={egressPaths.map((path) => ({
+            value: path.id,
+            label: egressPathLabel(path),
+          }))}
+          onChange={setActiveEgressId}
+        />
+      </Stack>
+    ) : null;
+
+  if (formatId === 'radio-io') {
     return (
       <Stack gap="sm">
+        {egressSwitcher}
         <Text size="sm">
           Direct radio via Web Serial for{' '}
           <Text span fw={600}>
@@ -366,6 +417,8 @@ export default function ExportBuildCpsPanel({ build }: ExportBuildCpsPanelProps)
         ) : null}
         <ExportBuildSettingsSections
           build={build}
+          formatId={formatId}
+          profileId={profileId}
           saving={savingSettings}
           settingsError={settingsError}
           profileNameLimit={profileNameLimit}
@@ -377,7 +430,7 @@ export default function ExportBuildCpsPanel({ build }: ExportBuildCpsPanelProps)
             void handleExportInclusionChange(field, checked)
           }
         />
-        <BuildRadioIoPanel build={build} />
+        <BuildRadioIoPanel build={build} egress={activeEgress} />
       </Stack>
     );
   }
@@ -385,7 +438,7 @@ export default function ExportBuildCpsPanel({ build }: ExportBuildCpsPanelProps)
   if (!exportShipped) {
     return (
       <Alert color="gray" title="Export not available yet">
-        {formatEntry?.label ?? build.formatId} CPS export is planned. OpenGD77 CSV export is
+        {formatEntry?.label ?? formatId} CPS export is planned. OpenGD77 CSV export is
         available on OpenGD77 builds.
       </Alert>
     );
@@ -393,47 +446,49 @@ export default function ExportBuildCpsPanel({ build }: ExportBuildCpsPanelProps)
 
   let adapter;
   try {
-    adapter = getExportAdapter(build.formatId as FormatId);
+    adapter = getExportAdapter(formatId);
   } catch {
     return (
       <Alert color="gray" title="Export not available">
-        No exporter is registered for {formatEntry?.label ?? build.formatId}.
+        No exporter is registered for {formatEntry?.label ?? formatId}.
       </Alert>
     );
   }
 
   if (isSingleFileCpsExportAdapter(adapter)) {
-    const suggestedCsvName = defaultCpsSingleFileName(build.formatId as FormatId, exportProfileId);
-    const profileOverridesBuild = exportProfileId !== build.profileId;
+    const suggestedCsvName = defaultCpsSingleFileName(formatId, exportProfileId);
+    const profileOverridesBuild = exportProfileId !== profileId;
 
-    const showChirpUv5rPreferNeonPlug =
-      build.formatId === 'chirp' && exportProfileId === 'chirp-uv5r';
+    const showChirpUv5rPreferNeonPlug = formatId === 'chirp' && exportProfileId === 'chirp-uv5r';
 
     return (
       <Stack gap="sm">
+        {egressSwitcher}
         {showChirpUv5rPreferNeonPlug ? <ChirpUv5rPreferNeonPlugAlert /> : null}
         <Text size="sm">
           Export as{' '}
           <Text span fw={600}>
-            {formatEntry?.label ?? build.formatId}
+            {formatEntry?.label ?? formatId}
           </Text>{' '}
           memory CSV using the profile below.
         </Text>
         <ProfilePicker
           mode="select"
-          formatId={build.formatId as FormatId}
+          formatId={formatId}
           value={exportProfileId}
           onChange={setExportProfileId}
           description="CHIRP memory layout and power ladder for target hardware"
         />
         {profileOverridesBuild ? (
           <Text size="sm" c="dimmed">
-            Export uses {traitProfileFor(exportProfileId)?.label ?? exportProfileId}; build default
+            Export uses {traitProfileFor(exportProfileId)?.label ?? exportProfileId}; pathway default
             is {profileLabel}.
           </Text>
         ) : null}
         <ExportBuildSettingsSections
           build={build}
+          formatId={formatId}
+          profileId={profileId}
           saving={savingSettings}
           settingsError={settingsError}
           profileNameLimit={profileNameLimit}
@@ -483,6 +538,8 @@ export default function ExportBuildCpsPanel({ build }: ExportBuildCpsPanelProps)
           opened={previewOpen}
           onClose={() => setPreviewOpen(false)}
           build={build}
+          formatId={formatId}
+          profileId={profileId}
           exportOptions={runtimeExportOverrides}
         />
       </Stack>
@@ -492,29 +549,32 @@ export default function ExportBuildCpsPanel({ build }: ExportBuildCpsPanelProps)
   if (!isMultiFileExportAdapter(adapter)) {
     return (
       <Alert color="gray" title="Export not available">
-        No exporter delivery mode is registered for {formatEntry?.label ?? build.formatId}.
+        No exporter delivery mode is registered for {formatEntry?.label ?? formatId}.
       </Alert>
     );
   }
 
-  const showDm32PreferNeonPlug = build.formatId === 'dm32';
+  const showDm32PreferNeonPlug = formatId === 'dm32';
 
   return (
     <Stack gap="sm">
+      {egressSwitcher}
       {showDm32PreferNeonPlug ? <Dm32PreferNeonPlugAlert /> : null}
       <Text size="sm">
         Export as{' '}
         <Text span fw={600}>
-          {formatEntry?.label ?? build.formatId}
+          {formatEntry?.label ?? formatId}
         </Text>{' '}
-        CPS files using the saved build profile.
+        CPS files using the active export pathway.
       </Text>
-      <Text size="sm">
-        <Text span fw={600}>
-          Profile:{' '}
+      {egressPaths.length <= 1 ? (
+        <Text size="sm">
+          <Text span fw={600}>
+            Profile:{' '}
+          </Text>
+          {profileLabel}
         </Text>
-        {profileLabel}
-      </Text>
+      ) : null}
       {wireHint ? (
         <Text size="sm" c="dimmed">
           {wireHint}
@@ -522,6 +582,8 @@ export default function ExportBuildCpsPanel({ build }: ExportBuildCpsPanelProps)
       ) : null}
       <ExportBuildSettingsSections
         build={build}
+        formatId={formatId}
+        profileId={profileId}
         saving={savingSettings}
         settingsError={settingsError}
         profileNameLimit={profileNameLimit}
@@ -541,7 +603,6 @@ export default function ExportBuildCpsPanel({ build }: ExportBuildCpsPanelProps)
       {error ? <Alert color="red">{error}</Alert> : null}
       {showDm32PreferNeonPlug ? <Dm32AprsSetupAlert exportFileNames={exportFileNames} /> : null}
       {exportWarnings.length > 0 ? <ExportWarningsAlert warnings={exportWarnings} /> : null}
-      <BuildRadioIoPanel build={build} />
       {isNeonplug ? (
         <Stack gap="md">
           <Stack gap="xs">
@@ -713,7 +774,8 @@ export default function ExportBuildCpsPanel({ build }: ExportBuildCpsPanelProps)
         </>
       )}
       <Text size="sm" c="dimmed">
-        Wire preview pages show the same export settings. Change profile in Overview if needed.
+        Wire preview pages show the same export settings. Switch export pathway above when this
+        radio supports multiple CPS targets.
       </Text>
       <DriveBrowserModal
         opened={driveBrowserOpen}
@@ -730,6 +792,8 @@ export default function ExportBuildCpsPanel({ build }: ExportBuildCpsPanelProps)
         opened={previewOpen}
         onClose={() => setPreviewOpen(false)}
         build={build}
+        formatId={formatId}
+        profileId={profileId}
         exportOptions={runtimeExportOverrides}
       />
       <Modal

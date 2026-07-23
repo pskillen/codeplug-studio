@@ -12,6 +12,7 @@ import type { ExportBuildSettingsSectionsProps } from './ExportBuildSettingsSect
 type ExportAnytoneSettingsSectionsProps = Pick<
   ExportBuildSettingsSectionsProps,
   | 'build'
+  | 'profileId'
   | 'saving'
   | 'settingsError'
   | 'profileNameLimit'
@@ -22,6 +23,7 @@ type ExportAnytoneSettingsSectionsProps = Pick<
 
 export default function ExportAnytoneSettingsSections({
   build,
+  profileId,
   saving,
   settingsError,
   profileNameLimit,
@@ -29,7 +31,7 @@ export default function ExportAnytoneSettingsSections({
   onExportSettingsPatch,
   onExportInclusionChange,
 }: ExportAnytoneSettingsSectionsProps) {
-  const showChannelExpansion = hasMxNChannelExpansion(build.profileId);
+  const showChannelExpansion = hasMxNChannelExpansion(profileId);
 
   return (
     <Stack gap="md">

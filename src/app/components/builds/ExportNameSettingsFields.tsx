@@ -8,6 +8,7 @@ import UseLibraryAbbreviationsSwitch from './UseLibraryAbbreviationsSwitch.tsx';
 
 export interface ExportNameSettingsFieldsProps {
   build: FormatBuild;
+  formatId: string;
   onPatch: (patch: Partial<BuildExportSettings>) => void;
   saving?: boolean;
   profileNameLimit?: number;
@@ -15,12 +16,13 @@ export interface ExportNameSettingsFieldsProps {
 
 export default function ExportNameSettingsFields({
   build,
+  formatId,
   onPatch,
   saving = false,
   profileNameLimit,
 }: ExportNameSettingsFieldsProps) {
-  const settings = resolvedBuildExportSettings(build);
-  const showContactExportNameMode = build.formatId === 'anytone' || build.formatId === 'opengd77';
+  const settings = resolvedBuildExportSettings(build, formatId);
+  const showContactExportNameMode = formatId === 'anytone' || formatId === 'opengd77';
 
   return (
     <Stack gap="sm">

@@ -6,11 +6,15 @@ Per-build CPS export on the Export for radio detail page — per-file CSV downlo
 
 | Prop    | Type          | Description                                   |
 | ------- | ------------- | --------------------------------------------- |
-| `build` | `FormatBuild` | Active format build (format, profile, layout) |
+| `build` | `RadioBuild` | Active radio build (wire names, layout, export settings) |
+
+Requires `useBuildLayout()` — `formatId` / `profileId` come from the **active egress pathway**, not the build row.
 
 ## Behaviour
 
-- Uses the build’s **saved** `profileId` from the Target section (no export-time profile override).
+- Uses the **active egress pathway** from build layout context (`formatId` + `profileId` on `EgressPath`).
+- When a build has multiple compatible egress pathways, a **SegmentedControl** switches the active pathway (session-persisted via layout).
+- CHIRP keeps a runtime **export profile** override (`ProfilePicker`) within the CHIRP egress only.
 - Disables export actions when the project library has no channels.
 - Shows export warnings returned by the format adapter (profile limits, name length, etc.).
 - **DM32** (`formatId === 'dm32'`): mounts `Dm32PreferNeonPlugAlert` twice — top of the panel (above the fold) and just above the download buttons. Orange — prefer NeonPlug for radio write. Conditional `Dm32AprsSetupAlert` when `APRS.md` is in the export file list. Downloads stay enabled.
@@ -27,9 +31,7 @@ Per-build CPS export on the Export for radio detail page — per-file CSV downlo
 When `build.formatId === 'neonplug'`:
 
 1. **Primary — Download for radio write:** upload a radio-read donor `.neonplug`, then download/save a merge that overwrites Studio-modelled arrays while retaining donor settings, `radioIds`, and ancillaries.
-   - **DM32UV (`neonplug-dm32uv`):** successful upload also persists retain slices on `build.cpsWireHydration` so later exports can merge without re-uploading (and native YAML project export/import carries the bag). Clear stored donor from the export panel. Session upload still overrides the stored bag for that export.
-   - **UV5R-Mini:** donor stays session-only until a later ticket.
-   - Primary download and Drive save stay disabled until a session donor **or** (DM32UV) stored `cpsWireHydration` is present.
+   - Successful upload persists retain slices on the **active egress** `hydration` via `putEgressPath` so later exports can merge without re-uploading. Clear stored donor from the export panel. Session upload still overrides the stored bag for that export.
 2. **Secondary — Download greenfield `.neonplug`:** smaller subtle control with a yellow warning that greenfield omits radio settings and is **not safe to write back** without a donor base.
 
 CSV preview and per-file buttons are hidden for NeonPlug (single `codeplug.json` package).

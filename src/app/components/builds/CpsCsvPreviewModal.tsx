@@ -1,6 +1,7 @@
 import { Modal, Stack } from '@mantine/core';
-import type { FormatBuild } from '@core/models/formatBuild.ts';
-import type { CpsExportOptions } from '@core/import-export/types.ts';
+import type { RadioBuild } from '@core/models/formatBuild.ts';
+import type { FormatId } from '@core/import-export/types.ts';
+import type { CpsAppExportOptions } from '../../services/buildCpsExportService.ts';
 import { useBuildCpsExportPreview } from '../../hooks/useBuildCpsExportPreview.ts';
 import CpsCsvPreview from './CpsCsvPreview.tsx';
 import ExportWarningsAlert from './ExportWarningsAlert.tsx';
@@ -8,19 +9,25 @@ import ExportWarningsAlert from './ExportWarningsAlert.tsx';
 export interface CpsCsvPreviewModalProps {
   opened: boolean;
   onClose: () => void;
-  build: FormatBuild;
-  exportOptions: CpsExportOptions;
+  build: RadioBuild;
+  formatId: FormatId;
+  profileId: string;
+  exportOptions: CpsAppExportOptions;
 }
 
 export default function CpsCsvPreviewModal({
   opened,
   onClose,
   build,
+  formatId,
+  profileId,
   exportOptions,
 }: CpsCsvPreviewModalProps) {
   const { fileNames, tablesByFile, textByFile, warnings, loading, error } =
     useBuildCpsExportPreview({
       build,
+      formatId,
+      profileId,
       exportOptions,
       enabled: opened,
     });
