@@ -18,6 +18,7 @@ import {
   buildHasRadioCloneHydration,
   descriptorsForBuild,
   openRadioSessionForBuild,
+  prepareRadioWriteImage,
   RadioWriteBlockedError,
   writeBuildToRadio,
 } from './radioIoSession.ts';
@@ -88,6 +89,35 @@ describe('radioIoSession helpers', () => {
     const { egress } = uv5rMiniRadioIo();
     expect(buildHasRadioCloneHydration({ ...egress, hydration })).toBe(true);
     expect(buildHasRadioCloneHydration(egress)).toBe(false);
+  });
+
+  it('prepares write image without a serial session', () => {
+    const imageBytes = new Uint8Array(UV5R_MINI_MEM_TOTAL);
+    imageBytes.fill(0xff);
+    const hydration = createRadioCloneHydrationBag({
+      radioModelId: 'UV5R-Mini',
+      imageBytes,
+    });
+    const ch = {
+      ...newChannel('p1', 'Test'),
+      id: 'ch-1',
+      rxFrequency: 145_500_000,
+      txFrequency: 145_500_000,
+      power: 100,
+      modeProfiles: [
+        { mode: 'fm' as const, squelch: null, rxTone: 'none', txTone: 'none', bandwidthKHz: 25 },
+      ],
+    };
+    const { build, egress } = uv5rMiniRadioIo();
+    const { image } = prepareRadioWriteImage(
+      {
+        ...build,
+        channelOverrides: [{ libraryEntityId: 'ch-1', wireName: 'TEST', orderOrSlot: 1 }],
+      },
+      { ...egress, hydration },
+      emptyLibrary([ch]),
+    );
+    expect(image.size).toBe(UV5R_MINI_MEM_TOTAL);
   });
 
   it('blocks write without hydration', async () => {

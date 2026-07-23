@@ -225,7 +225,7 @@ export class Uv5rMiniProtocol implements CloneImageRadio {
       throw new RangeError(`Upload image must be at least 0x${UV5R_MINI_MEM_TOTAL.toString(16)}`);
     }
     const pipe = this.requirePipe();
-    await handshake(pipe, 'upload', { signal: opts.signal, settleScale: 0 });
+    await handshake(pipe, 'upload', { signal: opts.signal });
 
     // Upload all MEM_* regions so settings/VFO/ANI from the hydrated image survive.
     const addrs = listRadioBlockAddresses();

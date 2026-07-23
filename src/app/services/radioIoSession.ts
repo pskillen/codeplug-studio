@@ -18,8 +18,10 @@ import {
   RadioWrongIdentError,
   requestWebSerialPort,
   setCachedImage,
+  type MemoryMap,
   type ProgressFn,
   type RadioDescriptor,
+  type RadioHydrationHooks,
   type RadioSession,
   isWebSerialSupported,
   getWebSerialUnsupportedMessage,
@@ -176,6 +178,44 @@ export class RadioWriteBlockedError extends Error {
 }
 
 /**
+ * Assemble build → encode into hydrated image (no serial I/O).
+ * Call before opening a Web Serial session on Write so the radio is not left
+ * in program mode during CPU-heavy assemble (UV-5R Mini times out quickly).
+ */
+export function prepareRadioWriteImage(
+  build: RadioBuild,
+  egress: EgressPath,
+  library: LibrarySlice,
+): { image: MemoryMap; warnings: string[] } {
+  const hydration = getRadioCloneHydration(egress);
+  if (!hydration) {
+    throw new RadioWriteBlockedError('Missing radio clone hydration on this egress path.');
+  }
+
+  const assembled = assemble(build, library, {
+    formatId: egress.formatId,
+    profileId: egress.profileId,
+  });
+  const { dtos, warnings } = expandAssembledChannelsToRadioDtos(assembled, build, library, egress);
+  return { image: mergeChannelsForWrite(egress, hydration, dtos), warnings };
+}
+
+function mergeChannelsForWrite(
+  egress: EgressPath,
+  hydration: RadioCloneHydrationBag,
+  dtos: Parameters<RadioHydrationHooks['mergeChannelsIntoHydration']>[1],
+): MemoryMap {
+  const descriptors = descriptorsForEgress(egress);
+  const descriptor = descriptors[0];
+  if (!descriptor) {
+    throw new Error(
+      `No Web Serial radio adapter is registered for ${egress.formatId}/${egress.profileId}.`,
+    );
+  }
+  return descriptor.hydration.mergeChannelsIntoHydration(hydration, dtos);
+}
+
+/**
  * Assemble build → encode into hydrated image → upload.
  * Requires radio-clone hydration on the egress when descriptor.hydrationRequiredForWrite.
  */
@@ -192,25 +232,33 @@ export async function writeBuildToRadio(
       'Read from the radio first so Studio can preserve unmodelled settings, then write.',
     );
   }
-  if (!hydration) {
-    throw new RadioWriteBlockedError('Missing radio clone hydration on this egress path.');
-  }
-
-  const assembled = assemble(build, library, {
-    formatId: egress.formatId,
-    profileId: egress.profileId,
-  });
-  const { dtos, warnings } = expandAssembledChannelsToRadioDtos(assembled, build, library, egress);
-  // Sparse radios (DM-32UV) need absolute block addresses from the prior Read
-  // bag — connect alone does not populate download cache.
-  session.descriptor.hydration.seedProtocolForUpload?.(session.radio, hydration);
-  const image = session.descriptor.hydration.mergeChannelsIntoHydration(hydration, dtos);
+  const { image, warnings } = prepareRadioWriteImage(build, egress, library);
+  session.descriptor.hydration.seedProtocolForUpload?.(session.radio, hydration!);
   setCachedImage(session, image);
   await session.radio.upload(image, {
     onProgress: opts?.onProgress,
     signal: opts?.signal,
   });
   return { warnings };
+}
+
+/** Upload a prepared clone image after {@link prepareRadioWriteImage} and session connect. */
+export async function uploadPreparedRadioWrite(
+  session: RadioSession,
+  egress: EgressPath,
+  image: MemoryMap,
+  opts?: { onProgress?: ProgressFn; signal?: AbortSignal },
+): Promise<void> {
+  const hydration = getRadioCloneHydration(egress);
+  if (!hydration) {
+    throw new RadioWriteBlockedError('Missing radio clone hydration on this egress path.');
+  }
+  session.descriptor.hydration.seedProtocolForUpload?.(session.radio, hydration);
+  setCachedImage(session, image);
+  await session.radio.upload(image, {
+    onProgress: opts?.onProgress,
+    signal: opts?.signal,
+  });
 }
 
 export async function closeRadioSession(session: RadioSession): Promise<void> {

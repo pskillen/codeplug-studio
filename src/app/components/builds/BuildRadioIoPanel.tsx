@@ -24,9 +24,10 @@ import {
   getWebSerialUnsupportedMessage,
   isWebSerialSupported,
   openRadioSessionForEgress,
+  prepareRadioWriteImage,
   RadioWriteBlockedError,
   readRadioHydrationForBuild,
-  writeBuildToRadio,
+  uploadPreparedRadioWrite,
 } from '../../services/radioIoSession.ts';
 import RadioIoProgressModal, {
   type RadioIoOperation,
@@ -160,9 +161,12 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
         throw new Error('No active project.');
       }
       const library = await loadLibrarySlice(persistence, activeProjectId);
-      const session = await ensureSession();
       setPhase('preparing');
-      const { warnings } = await writeBuildToRadio(session, build, egress, library, {
+      const { image, warnings } = prepareRadioWriteImage(build, egress, library);
+      setPhase('connecting');
+      const session = await ensureSession();
+      setPhase('transfer');
+      await uploadPreparedRadioWrite(session, egress, image, {
         onProgress,
         signal: abortRef.current.signal,
       });
