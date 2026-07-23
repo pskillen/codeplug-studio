@@ -51,6 +51,14 @@ vi.mock('../../services/buildCpsExportService.ts', async (importOriginal) => {
   };
 });
 
+vi.mock('../../hooks/useUnsavedNavigationGuard.ts', () => ({
+  useUnsavedNavigationGuard: () => ({
+    modalOpen: false,
+    stay: vi.fn(),
+    leave: vi.fn(),
+  }),
+}));
+
 vi.mock('../../state/useProjects.ts', () => ({
   useProjects: () => ({
     activeProjectId: 'project-1',

@@ -23,8 +23,8 @@ Renders nothing when `descriptorsForBuild(build)` is empty.
 - Feature-detects Web Serial; shows unsupported banner when missing.
 - **Read from radio** → download → persist hydration on the build → read-only summary.
 - **Write to radio** → blocked until hydration exists (full-image strategy).
-- Progress + Cancel via `AbortSignal`.
-- On **read/write failure** (timeout, abort, protocol error, …): closes the Web Serial session so the port is released for the next attempt or another process. Successful ops may keep the session until Disconnect.
+- While busy, opens [`RadioIoProgressModal`](./RadioIoProgressModal.md) (steps + transfer progress bar + keep-tab warning). Cancel aborts via `AbortSignal`.
+- Blocks in-app navigation and tab close while busy (`useUnsavedNavigationGuard`); releases the port on failure.
 - In-flow attribution from `descriptor.attributionIds`.
 
 Does **not** import radio channels into the library.

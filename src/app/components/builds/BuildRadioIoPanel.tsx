@@ -4,11 +4,12 @@
  */
 
 import { useEffect, useRef, useState } from 'react';
-import { Alert, Anchor, Button, Group, Progress, Stack, Text } from '@mantine/core';
+import { Alert, Anchor, Button, Group, Stack, Text } from '@mantine/core';
 import type { FormatBuild } from '@core/models/formatBuild.ts';
 import type { ProgressUpdate, RadioSession } from '@integrations/radio-io/types.ts';
 import { findAttribution } from '../../lib/attributions.ts';
 import { loadLibrarySlice } from '../../lib/loadLibrarySlice.ts';
+import { useUnsavedNavigationGuard } from '../../hooks/useUnsavedNavigationGuard.ts';
 import { BuildService } from '../../state/buildService.ts';
 import { persistence } from '../../state/persistence.ts';
 import { useFormatBuilds } from '../../state/useFormatBuilds.ts';
@@ -25,6 +26,10 @@ import {
   readRadioHydrationForBuild,
   writeBuildToRadio,
 } from '../../services/radioIoSession.ts';
+import RadioIoProgressModal, {
+  type RadioIoOperation,
+  type RadioIoProgressPhase,
+} from './RadioIoProgressModal.tsx';
 
 export interface BuildRadioIoPanelProps {
   build: FormatBuild;
@@ -40,9 +45,12 @@ export default function BuildRadioIoPanel({ build }: BuildRadioIoPanelProps) {
   const abortRef = useRef<AbortController | null>(null);
 
   const [busy, setBusy] = useState(false);
+  const [operation, setOperation] = useState<RadioIoOperation>('read');
+  const [phase, setPhase] = useState<RadioIoProgressPhase>('connecting');
   const [connected, setConnected] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [progress, setProgress] = useState<ProgressUpdate | null>(null);
+  const [navBlockedHint, setNavBlockedHint] = useState(false);
   const [lastFirmware, setLastFirmware] = useState<string | undefined>();
   const [lastOccupied, setLastOccupied] = useState<number | null>(null);
 
@@ -50,6 +58,14 @@ export default function BuildRadioIoPanel({ build }: BuildRadioIoPanelProps) {
   const hydration = getRadioCloneHydration(build);
   const hasHydration = buildHasRadioCloneHydration(build);
   const descriptor = descriptors[0];
+
+  const { modalOpen: leaveAttempted, stay } = useUnsavedNavigationGuard(busy);
+
+  useEffect(() => {
+    if (!leaveAttempted) return;
+    stay();
+    setNavBlockedHint(true);
+  }, [leaveAttempted, stay]);
 
   useEffect(() => {
     return () => {
@@ -68,6 +84,7 @@ export default function BuildRadioIoPanel({ build }: BuildRadioIoPanelProps) {
     .join(' / ');
 
   function onProgress(p: ProgressUpdate) {
+    setPhase('transfer');
     setProgress(p);
   }
 
@@ -89,14 +106,20 @@ export default function BuildRadioIoPanel({ build }: BuildRadioIoPanelProps) {
   async function handleRead() {
     setError(null);
     setBusy(true);
+    setOperation('read');
+    setPhase('connecting');
     setProgress(null);
+    setNavBlockedHint(false);
     abortRef.current = new AbortController();
     try {
       const session = await ensureSession();
+      setPhase('transfer');
       const result = await readRadioHydrationForBuild(session, {
         onProgress,
         signal: abortRef.current.signal,
       });
+      setPhase('saving');
+      setProgress(null);
       const next = buildService.withCpsWireHydration(build, result.hydration);
       const saved = await putBuild(next, build.revision);
       if (!saved.ok) {
@@ -115,6 +138,7 @@ export default function BuildRadioIoPanel({ build }: BuildRadioIoPanelProps) {
     } finally {
       setBusy(false);
       setProgress(null);
+      setNavBlockedHint(false);
       abortRef.current = null;
     }
   }
@@ -122,7 +146,10 @@ export default function BuildRadioIoPanel({ build }: BuildRadioIoPanelProps) {
   async function handleWrite() {
     setError(null);
     setBusy(true);
+    setOperation('write');
+    setPhase('connecting');
     setProgress(null);
+    setNavBlockedHint(false);
     abortRef.current = new AbortController();
     try {
       if (!activeProjectId) {
@@ -130,6 +157,7 @@ export default function BuildRadioIoPanel({ build }: BuildRadioIoPanelProps) {
       }
       const library = await loadLibrarySlice(persistence, activeProjectId);
       const session = await ensureSession();
+      setPhase('preparing');
       await writeBuildToRadio(session, build, library, {
         onProgress,
         signal: abortRef.current.signal,
@@ -144,6 +172,7 @@ export default function BuildRadioIoPanel({ build }: BuildRadioIoPanelProps) {
     } finally {
       setBusy(false);
       setProgress(null);
+      setNavBlockedHint(false);
       abortRef.current = null;
     }
   }
@@ -204,11 +233,6 @@ export default function BuildRadioIoPanel({ build }: BuildRadioIoPanelProps) {
         >
           Write to radio
         </Button>
-        {busy ? (
-          <Button size="xs" variant="default" color="gray" onClick={handleCancel}>
-            Cancel
-          </Button>
-        ) : null}
         <Button
           size="xs"
           variant="subtle"
@@ -218,14 +242,6 @@ export default function BuildRadioIoPanel({ build }: BuildRadioIoPanelProps) {
           Disconnect
         </Button>
       </Group>
-      {progress ? (
-        <Stack gap={4}>
-          <Text size="xs">
-            {progress.msg} ({progress.cur}/{progress.max})
-          </Text>
-          <Progress value={progress.max ? (100 * progress.cur) / progress.max : 0} />
-        </Stack>
-      ) : null}
       {hasHydration && hydration ? (
         <Alert color="gray" title="Stored radio image (read-only)">
           <Text size="sm">
@@ -253,6 +269,15 @@ export default function BuildRadioIoPanel({ build }: BuildRadioIoPanelProps) {
         </Text>
       )}
       {error ? <Alert color="red">{error}</Alert> : null}
+
+      <RadioIoProgressModal
+        opened={busy}
+        operation={operation}
+        phase={phase}
+        progress={progress}
+        navigationBlocked={navBlockedHint}
+        onCancel={handleCancel}
+      />
     </Stack>
   );
 }
