@@ -372,7 +372,7 @@ function buildTalkGroupsAndRx(
       undefined,
       egress.profileId,
       warnings,
-      'Digital contact',
+      'Contact',
       nameLen,
     );
     digitalContacts.push({
@@ -504,7 +504,7 @@ export function buildRadioWriteProjection(
     library,
     egress,
     warnings,
-    limits?.maxChannels,
+    typeof limits?.maxChannels === 'number' ? limits.maxChannels : undefined,
   );
 
   let channels = dtos;
