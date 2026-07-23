@@ -217,14 +217,14 @@ export default function BuildFlatMemoryChannelsPage() {
   function setRowWireName(row: WirePreviewRow, wireName: string) {
     const current = buildRef.current;
     void persistBuild(
-      buildService.withWireNameOverride(current, 'channelOverrides', row.libraryEntityId, wireName),
+      buildService.withWireNameOverride(current, 'channelOverrides', row.key, wireName),
     );
   }
 
   function setRowExcluded(row: WirePreviewRow, excluded: boolean) {
     const current = buildRef.current;
     void persistBuild(
-      buildService.withEntityExcluded(current, 'channelOverrides', row.libraryEntityId, excluded),
+      buildService.withEntityExcluded(current, 'channelOverrides', row.key, excluded),
     );
   }
 
@@ -334,9 +334,11 @@ export default function BuildFlatMemoryChannelsPage() {
 
         <WirePreviewDataTable
           rows={previewRows}
+          entityKind="channel"
           search={search}
           onSearchChange={setSearch}
           onRowActivate={(row) => setSelectedRowKey(row.key)}
+          channelOverrides={build.channelOverrides}
           locationByKey={locationByKey}
           inclusionColumn={{
             saving,

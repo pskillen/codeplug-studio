@@ -1,6 +1,7 @@
 import type { AssembledBuild } from '@core/services/assemble.ts';
 import type { CpsExportOptions } from '@core/import-export/types.ts';
 import { expandChannelWireRows } from '@core/import-export/channelExpansion/multiMode.ts';
+import { isProjectionExcluded } from '@core/domain/formatBuildOverrides.ts';
 import { buildListWireNameMap } from '@core/import-export/channelExpansion/listWireNames.ts';
 import {
   applyDigitalContactExportWireName,
@@ -34,6 +35,7 @@ function seedReservedFromChannels(
       warnings,
     );
     for (const entry of expanded) {
+      if (isProjectionExcluded(options?.channelOverrides, entry.key, row.entity.id)) continue;
       reserved.add(entry.wireName);
     }
   }

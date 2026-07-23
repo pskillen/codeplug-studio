@@ -115,6 +115,7 @@ export function mergeExportOptions(
     ...options,
     profileId: options?.profileId,
     contactOverrides: options?.contactOverrides ?? build.contactOverrides,
+    channelOverrides: options?.channelOverrides ?? build.channelOverrides,
     channelBehaviourContext: buildChannelBehaviourContext(library?.channelDefaults, stored),
     zoneBehaviourContext: buildZoneBehaviourContext(library?.zoneDefaults, stored),
   };

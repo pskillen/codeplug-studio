@@ -66,6 +66,7 @@ export default function BuildZonesWirePage() {
             entry={ctx.entry}
             channelById={zoneScan.channelById}
             saving={zoneScan.saving}
+            expansionByChannelId={zoneScan.expansionByChannelId}
             onSetChannelIds={(channelIds) =>
               zoneScan.setZoneMemberChannelIds(row.libraryEntityId, channelIds)
             }
@@ -88,6 +89,7 @@ export default function BuildZonesWirePage() {
             saving={zoneScan.saving}
             onUpdateZoneEntry={(patch) => zoneScan.updateZoneEntry(row.libraryEntityId, patch)}
             onUpdateMemberScanInclusion={zoneScan.updateMemberScanInclusion}
+            expansionByChannelId={zoneScan.expansionByChannelId}
           />
         );
       }}

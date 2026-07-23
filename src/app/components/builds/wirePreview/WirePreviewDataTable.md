@@ -6,26 +6,29 @@ Read-only wire preview list for build entity routes. Shows library label, genera
 
 ## Props
 
-| Prop              | Type                               | Description                                                         |
-| ----------------- | ---------------------------------- | ------------------------------------------------------------------- |
-| `rows`            | `WirePreviewRow[]`                 | Rows from `previewWireRows` (already filtered by parent)            |
-| `onRowActivate`   | `(row) => void`                    | Row click handler — opens override modal                            |
-| `search`          | `string` (optional)                | Client-side filter query                                            |
-| `onSearchChange`  | `(value) => void` (optional)       | Search input handler                                                |
-| `sort`            | `DataTableSortState` (optional)    | Controlled sort state                                               |
-| `onSortChange`    | `(state) => void` (optional)       | Sort change handler                                                 |
-| `reorder`         | `WirePreviewReorderConfig` (opt.)  | Enables **`reorderMode`** + up/down column for `orderOrSlot`        |
-| `locationByKey`   | `Map<string, number>` (optional)   | CHIRP memory `Location` column                                      |
-| `zoneScanColumn`  | `WirePreviewZoneScanColumnConfig`  | DM32 / Anytone **Zones** route — per-row export-as-scan-list switch |
-| `inclusionColumn` | `WirePreviewInclusionColumnConfig` | Inline **Skip** / **Force export** (name-adjacent)                  |
-| `emptyMessage`    | `string` (optional)                | Shown when `rows` is empty                                          |
+| Prop               | Type                               | Description                                                                 |
+| ------------------ | ---------------------------------- | --------------------------------------------------------------------------- |
+| `rows`             | `WirePreviewRow[]`                 | Rows from `previewWireRows` (already filtered by parent)                    |
+| `onRowActivate`    | `(row) => void`                    | Row click handler — opens override modal (projection rows only when nested) |
+| `entityKind`       | `WirePreviewEntityKind` (optional) | When `channel`, multi-projection rows nest under shaded parents (#560)      |
+| `channelOverrides` | `BuildEntityOverride[]` (optional) | Parent-id Skip state for nest chrome                                        |
+| `search`           | `string` (optional)                | Client-side filter query                                                    |
+| `onSearchChange`   | `(value) => void` (optional)       | Search input handler                                                        |
+| `sort`             | `DataTableSortState` (optional)    | Controlled sort state                                                       |
+| `onSortChange`     | `(state) => void` (optional)       | Sort change handler                                                         |
+| `reorder`          | `WirePreviewReorderConfig` (opt.)  | Enables **`reorderMode`** + up/down column for `orderOrSlot`                |
+| `locationByKey`    | `Map<string, number>` (optional)   | CHIRP memory `Location` column                                              |
+| `zoneScanColumn`   | `WirePreviewZoneScanColumnConfig`  | DM32 / Anytone **Zones** route — per-row export-as-scan-list switch         |
+| `inclusionColumn`  | `WirePreviewInclusionColumnConfig` | Inline **Skip** / **Force export** (name-adjacent)                          |
+| `emptyMessage`     | `string` (optional)                | Shown when `rows` is empty                                                  |
 
 ## Behaviour
 
+- When **`entityKind` is `channel`** and multiple preview rows share a `libraryEntityId`, the table inserts a **shaded parent** row (library label + projection count badge + chevron). Children are indented; collapse is local UI state. Parent **Skip** writes `excluded` on the parent channel id (all projections); child **Skip** / wire-name modal use the projection `key` (#351 / #560). Single-row channels stay flat (no nest chrome).
 - When **`inclusionColumn`** is set, a **Skip / Force** column shows Skip from export (or Force export for library nested-only zones). Clicks stop propagation.
 - **No other per-row inputs** — overrides are edited in the modal (or channel bulk-edit route), except **Export scan list** on DM32 / Anytone zone rows when `zoneScanColumn` is set.
-- **Search and sort** are UI-only when not in reorder mode; they do **not** persist to export order or `orderOrSlot`.
-- When **`reorder`** is set, the table runs in **`reorderMode`** (locked to `rows` order; column sorts off). Up/down `ActionIcon`s call `onMove`; clicks stop propagation so they do not open the modal.
+- **Search and sort** are UI-only when not in reorder mode; they do **not** persist to export order or `orderOrSlot`. Nest search keeps parent chrome when a child matches.
+- When **`reorder`** is set, the table runs in **`reorderMode`** (locked to `rows` order; column sorts off). Up/down `ActionIcon`s call `onMove`; clicks stop propagation so they do not open the modal. Nest parent/child rows hide order arrows.
 - Parents may show [`ExportOrderOverrideBanner`](./ExportOrderOverrideBanner.md) when `orderOrSlot` (or member layout order) is overridden — reset is separate from this table’s display sort.
 - **Export status badges** — skip, force-export, library omit, expansion notes via `rowEffectivelyIncluded`. Zone rows with a build member-order layout hint show **Custom member order**.
 
@@ -35,3 +38,4 @@ Read-only wire preview list for build entity routes. Shows library label, genera
 - [ExportOrderOverrideBanner.md](./ExportOrderOverrideBanner.md)
 - [WirePreviewOverrideModal.md](./WirePreviewOverrideModal.md)
 - `BuildWirePreviewListPage` route wrapper
+- `groupWirePreviewChannelRows` — presentation grouping over flat `previewWireRows`

@@ -78,6 +78,8 @@ Controlled by `ExportOptions.multiTalkGroupExportNameMode` (export panel). Defau
 
 Format builds with **zone grouping** or **scan list** traits reference **logical channel ids** internally (`memberChannelIds`). When TG expansion runs on export, each zone member expands to **all** derived wire names for that logical channel.
 
+Zone-derived scan membership (`scanMemberInclusion`) may key on the **parent channel id** or an individual **projection key** (same string space as channel wire-name / skip overrides). Parent-key `skip` omits every expanded wire for that channel; projection-key `skip` omits one wire only.
+
 If fan-out would exceed the target profile cap, export truncates at the boundary and emits a warning.
 
 ---

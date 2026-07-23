@@ -7,6 +7,7 @@
 import type { CpsExportOptions } from '@core/import-export/types.ts';
 import type { AssembledBuild, AssembledChannel } from '@core/services/assemble.ts';
 import { radioTargetIdForProfile } from '@core/radio-targets/index.ts';
+import { filterExpandedRowsByOverrides } from '@core/domain/formatBuildOverrides.ts';
 import {
   expandAllMxNChannels,
   expandMxNChannelWireRows,
@@ -27,6 +28,13 @@ const DEFAULT_RADIO_TARGET = 'anytone-at-d890uv';
 function resolveRadioTargetId(assembled: AssembledBuild, options?: CpsExportOptions): string {
   const profileId = options?.profileId ?? assembled.profileId;
   return radioTargetIdForProfile(profileId) ?? DEFAULT_RADIO_TARGET;
+}
+
+function withProjectionExclusions(
+  rows: ExpandedAnytoneChannelRow[],
+  options?: CpsExportOptions,
+): ExpandedAnytoneChannelRow[] {
+  return filterExpandedRowsByOverrides(rows, options?.channelOverrides);
 }
 
 const resolveAnytoneSiteWireName: NonNullable<ExpandAllMxNChannelsArgs['resolveSiteWireName']> = (
@@ -51,26 +59,26 @@ export function expandAnytoneChannelWireRows(
 ): ExpandedAnytoneChannelRow[] {
   const radioTargetId = resolveRadioTargetId(assembled, options);
   const policy = mxnPolicyForRadioTarget(radioTargetId);
-  if (!policy) {
-    return expandAllMxNChannels({
-      assembled: { ...assembled, channels: [assembledChannel] },
-      library,
-      radioTargetId,
-      options,
-      warnings,
-      resolveSiteWireName: resolveAnytoneSiteWireName,
-    });
-  }
-  return expandMxNChannelWireRows(
-    assembledChannel,
-    assembled,
-    library,
-    policy,
-    options,
-    reserved,
-    warnings,
-    resolveAnytoneSiteWireName,
-  );
+  const rows = !policy
+    ? expandAllMxNChannels({
+        assembled: { ...assembled, channels: [assembledChannel] },
+        library,
+        radioTargetId,
+        options,
+        warnings,
+        resolveSiteWireName: resolveAnytoneSiteWireName,
+      })
+    : expandMxNChannelWireRows(
+        assembledChannel,
+        assembled,
+        library,
+        policy,
+        options,
+        reserved,
+        warnings,
+        resolveAnytoneSiteWireName,
+      );
+  return withProjectionExclusions(rows, options);
 }
 
 /** Expand all assembled channels for Anytone export, preserving order. */
@@ -80,14 +88,17 @@ export function expandAllAnytoneChannelsForExport(
   options?: CpsExportOptions,
   warnings: string[] = [],
 ): ExpandedAnytoneChannelRow[] {
-  return expandAllMxNChannels({
-    assembled,
-    library,
-    radioTargetId: resolveRadioTargetId(assembled, options),
+  return withProjectionExclusions(
+    expandAllMxNChannels({
+      assembled,
+      library,
+      radioTargetId: resolveRadioTargetId(assembled, options),
+      options,
+      warnings,
+      resolveSiteWireName: resolveAnytoneSiteWireName,
+    }),
     options,
-    warnings,
-    resolveSiteWireName: resolveAnytoneSiteWireName,
-  });
+  );
 }
 
 /** Map channel id → expanded wire rows for zone member resolution. */

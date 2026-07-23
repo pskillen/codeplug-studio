@@ -29,6 +29,7 @@ See [list-kit-roles.md](../../../../docs/features/app-shell/list-kit-roles.md).
 | `scale`                                                                             | `'default' \| 'extreme'` | `'extreme'` forces virtualisation on (role D); use cheap cells                                       |
 | `virtualize`                                                                        | `boolean \| 'auto'`      | Default `'auto'` — window tbody when `rows.length >= 75`                                             |
 | `estimatedRowHeight` / `virtualizeOverscan`                                         | `number`                 | Virtualizer tuning                                                                                   |
+| `getRowClassName`                                                                   | `(row) => string?`       | Optional `Table.Tr` class (e.g. shaded nest parents on Channels wire preview)                        |
 | `mobileColumnPolicy`                                                                | `'none' \| 'collapse'`   | Stub — only `none` implemented                                                                       |
 
 ## Usage

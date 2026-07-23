@@ -10,8 +10,9 @@ export interface ZoneGroupingZoneEntry {
   exportScanList?: boolean;
   scanCarrierFrequencyHz?: number | null;
   /**
-   * Per-channel include/skip for this exported zone's derived scan list.
-   * Build-scoped; does not mutate library zone membership.
+   * Per-member include/skip for this exported zone's derived scan list.
+   * Keys are library channel UUIDs and/or expansion projection keys (same string
+   * space as `channelOverrides`). Build-scoped; does not mutate library membership.
    */
   scanMemberInclusion?: Record<string, 'include' | 'skip'>;
 }

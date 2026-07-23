@@ -1,6 +1,7 @@
 import {
   isEntityExcluded,
   isEntityForceIncluded,
+  isProjectionExcluded,
   overrideByEntityId,
   overrideOrderOrSlot,
   type OverrideField,
@@ -386,7 +387,7 @@ export function previewWireRows(
                 hasWireNameOverride: Boolean(keyOverride ?? channelOverride),
                 hasOrderOrSlotOverride:
                   overrideOrderOrSlot(build.channelOverrides, channel.id) != null,
-                excluded: isEntityExcluded(build.channelOverrides, channel.id),
+                excluded: isProjectionExcluded(build.channelOverrides, generated.key, channel.id),
                 expansionNote: generated.expansionNote,
                 displayDetails: mxnExpansionDisplayDetails(channel, generated, library),
                 ...channelBandFields(channel),
@@ -443,7 +444,7 @@ export function previewWireRows(
             .get(generated.key)
             ?.wireName?.trim();
           const generatedWireName = generated.wireName;
-          const excluded = isEntityExcluded(build.channelOverrides, channel.id);
+          const excluded = isProjectionExcluded(build.channelOverrides, generated.key, channel.id);
           const hasWireNameOverride = Boolean(keyOverride ?? channelOverride);
           rows.push({
             key: generated.key,

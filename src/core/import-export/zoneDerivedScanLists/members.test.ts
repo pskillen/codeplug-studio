@@ -88,4 +88,36 @@ describe('zoneDerivedScanLists members', () => {
       }),
     ).toEqual([]);
   });
+
+  it('counts expanded projections and honour projection-key skips', () => {
+    const z = zone(PARENT_ID, [{ kind: 'channel', channelId: CHANNEL_A }]);
+    const expansion = new Map([
+      [
+        CHANNEL_A,
+        [
+          { key: `${CHANNEL_A}:tg-1`, sourceChannelId: CHANNEL_A },
+          { key: `${CHANNEL_A}:tg-2`, sourceChannelId: CHANNEL_A },
+        ],
+      ],
+    ]);
+    expect(zoneScanMemberCounts(z, [z], undefined, expansion)).toEqual({
+      included: 2,
+      total: 2,
+    });
+    expect(
+      zoneScanMemberCounts(
+        z,
+        [z],
+        {
+          layoutEntry: {
+            id: PARENT_ID,
+            name: 'Test',
+            channelIds: [],
+            scanMemberInclusion: { [`${CHANNEL_A}:tg-2`]: 'skip' },
+          },
+        },
+        expansion,
+      ),
+    ).toEqual({ included: 1, total: 2 });
+  });
 });

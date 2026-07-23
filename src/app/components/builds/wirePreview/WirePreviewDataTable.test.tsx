@@ -168,6 +168,53 @@ describe('WirePreviewDataTable', () => {
     expect(screen.queryByText(/Channel:/)).not.toBeInTheDocument();
   });
 
+  it('nests multi-projection channels under a collapsible shaded parent', () => {
+    const multi: WirePreviewRow[] = [
+      {
+        key: 'ch-1:-F',
+        libraryEntityId: 'ch-1',
+        entityKind: 'channel',
+        displayLabel: 'Site (FM)',
+        generatedWireName: 'Site-F',
+        effectiveWireName: 'Site-F',
+        hasWireNameOverride: false,
+        hasOrderOrSlotOverride: false,
+        excluded: false,
+      },
+      {
+        key: 'ch-1:-D',
+        libraryEntityId: 'ch-1',
+        entityKind: 'channel',
+        displayLabel: 'Site (DMR)',
+        generatedWireName: 'Site-D',
+        effectiveWireName: 'Site-D',
+        hasWireNameOverride: false,
+        hasOrderOrSlotOverride: false,
+        excluded: false,
+      },
+    ];
+    const onRowActivate = vi.fn();
+    render(
+      <MemoryRouter>
+        <MantineProvider>
+          <WirePreviewDataTable
+            rows={multi}
+            entityKind="channel"
+            onRowActivate={onRowActivate}
+            inclusionColumn={{ onExcludedChange: vi.fn() }}
+          />
+        </MantineProvider>
+      </MemoryRouter>,
+    );
+
+    expect(screen.getAllByText('2 projections').length).toBeGreaterThan(0);
+    expect(screen.getByLabelText('Collapse projections for Site')).toBeInTheDocument();
+    fireEvent.click(screen.getByLabelText('Collapse projections for Site'));
+    expect(screen.queryByText('Site (FM)')).not.toBeInTheDocument();
+    expect(screen.getByLabelText('Expand projections for Site')).toBeInTheDocument();
+    expect(onRowActivate).not.toHaveBeenCalled();
+  });
+
   it('renders export scan list switch for zone rows when zoneScanColumn is set', () => {
     const zoneRow: WirePreviewRow = {
       key: 'zone-1',

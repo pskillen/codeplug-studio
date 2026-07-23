@@ -18,6 +18,7 @@ export interface ZoneScanOverrideSectionProps {
   saving: boolean;
   onUpdateZoneEntry: (patch: Partial<ZoneGroupingZoneEntry>) => void;
   onUpdateMemberScanInclusion: ZoneScanExpandPanelProps['onUpdateMemberScanInclusion'];
+  expansionByChannelId?: ZoneScanExpandPanelProps['expansionByChannelId'];
 }
 
 export default function ZoneScanOverrideSection({
@@ -31,11 +32,17 @@ export default function ZoneScanOverrideSection({
   saving,
   onUpdateZoneEntry,
   onUpdateMemberScanInclusion,
+  expansionByChannelId,
 }: ZoneScanOverrideSectionProps) {
-  const { included, total } = zoneScanMemberCounts(zone, zones, {
-    context: zoneBehaviourContext,
-    layoutEntry: entry,
-  });
+  const { included, total } = zoneScanMemberCounts(
+    zone,
+    zones,
+    {
+      context: zoneBehaviourContext,
+      layoutEntry: entry,
+    },
+    expansionByChannelId,
+  );
   const capExceeded = included > scanListMemberCap;
 
   return (
@@ -66,6 +73,7 @@ export default function ZoneScanOverrideSection({
           saving={saving}
           onUpdateZoneEntry={onUpdateZoneEntry}
           onUpdateMemberScanInclusion={onUpdateMemberScanInclusion}
+          expansionByChannelId={expansionByChannelId}
         />
       ) : null}
     </Stack>

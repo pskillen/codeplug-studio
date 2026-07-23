@@ -6,6 +6,7 @@
 import type { CpsExportOptions } from '@core/import-export/types.ts';
 import type { AssembledBuild, AssembledChannel } from '@core/services/assemble.ts';
 import { radioTargetIdForProfile } from '@core/radio-targets/index.ts';
+import { filterExpandedRowsByOverrides } from '@core/domain/formatBuildOverrides.ts';
 import {
   expandAllMxNChannels,
   expandMxNChannelWireRows,
@@ -29,6 +30,13 @@ function resolveRadioTargetId(assembled: AssembledBuild, options?: CpsExportOpti
   return radioTargetIdForProfile(profileId) ?? DEFAULT_RADIO_TARGET;
 }
 
+function withProjectionExclusions(
+  rows: ExpandedNeonplugChannelRow[],
+  options?: CpsExportOptions,
+): ExpandedNeonplugChannelRow[] {
+  return filterExpandedRowsByOverrides(rows, options?.channelOverrides);
+}
+
 /** Expand one channel into export rows (RX-list fan-out + optional scratch). */
 export function expandNeonplugChannelWireRows(
   assembledChannel: AssembledChannel,
@@ -40,24 +48,24 @@ export function expandNeonplugChannelWireRows(
 ): ExpandedNeonplugChannelRow[] {
   const radioTargetId = resolveRadioTargetId(assembled, options);
   const policy = mxnPolicyForRadioTarget(radioTargetId);
-  if (!policy) {
-    return expandAllMxNChannels({
-      assembled: { ...assembled, channels: [assembledChannel] },
-      library,
-      radioTargetId,
-      options,
-      warnings,
-    });
-  }
-  return expandMxNChannelWireRows(
-    assembledChannel,
-    assembled,
-    library,
-    policy,
-    options,
-    reserved,
-    warnings,
-  );
+  const rows = !policy
+    ? expandAllMxNChannels({
+        assembled: { ...assembled, channels: [assembledChannel] },
+        library,
+        radioTargetId,
+        options,
+        warnings,
+      })
+    : expandMxNChannelWireRows(
+        assembledChannel,
+        assembled,
+        library,
+        policy,
+        options,
+        reserved,
+        warnings,
+      );
+  return withProjectionExclusions(rows, options);
 }
 
 /** Expand all assembled channels for NeonPlug DM32UV export, preserving order. */
@@ -67,13 +75,16 @@ export function expandAllNeonplugChannelsForExport(
   options?: CpsExportOptions,
   warnings: string[] = [],
 ): ExpandedNeonplugChannelRow[] {
-  return expandAllMxNChannels({
-    assembled,
-    library,
-    radioTargetId: resolveRadioTargetId(assembled, options),
+  return withProjectionExclusions(
+    expandAllMxNChannels({
+      assembled,
+      library,
+      radioTargetId: resolveRadioTargetId(assembled, options),
+      options,
+      warnings,
+    }),
     options,
-    warnings,
-  });
+  );
 }
 
 /** Map channel id → expanded rows for zone / scan member resolution. */

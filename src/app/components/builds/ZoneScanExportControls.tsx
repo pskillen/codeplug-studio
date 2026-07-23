@@ -4,11 +4,13 @@ import type { Zone } from '@core/models/library.ts';
 import type { ZoneGroupingZoneEntry } from '@core/models/traitLayout.ts';
 import type { ZoneBehaviourContext } from '@core/import-export/zoneBehaviourDefaults/index.ts';
 import {
-  collectZoneScanMemberRefs,
+  collectZoneScanProjectionMemberRefs,
   zoneScanMemberCounts,
 } from '@core/import-export/zoneDerivedScanLists/members.ts';
+import type { ExpandedMxNChannelRow } from '@core/import-export/channelExpansion/mxnExpandAll.ts';
 import { channelDisplayLabel } from '@core/domain/channelNaming.ts';
 import { ICON_SIZE_ACTION, ICON_STROKE } from '../../lib/iconSizes.ts';
+import { useState } from 'react';
 
 const DEFAULT_CARRIER_MHZ = 145.5;
 
@@ -23,6 +25,7 @@ export interface ZoneScanRowHeaderProps {
   saving: boolean;
   onToggleExpand: () => void;
   onExportScanListChange: (enabled: boolean) => void;
+  expansionByChannelId?: Map<string, ExpandedMxNChannelRow[]>;
 }
 
 export function ZoneScanRowHeader({
@@ -36,11 +39,17 @@ export function ZoneScanRowHeader({
   saving,
   onToggleExpand,
   onExportScanListChange,
+  expansionByChannelId,
 }: ZoneScanRowHeaderProps) {
-  const { included, total } = zoneScanMemberCounts(zone, zones, {
-    context: zoneBehaviourContext,
-    layoutEntry: entry,
-  });
+  const { included, total } = zoneScanMemberCounts(
+    zone,
+    zones,
+    {
+      context: zoneBehaviourContext,
+      layoutEntry: entry,
+    },
+    expansionByChannelId,
+  );
   const capExceeded = included > scanListMemberCap;
 
   return (
@@ -90,9 +99,10 @@ export interface ZoneScanExpandPanelProps {
   /** Updates build layout projection for this exported zone — not library membership. */
   onUpdateMemberScanInclusion: (
     exportedZoneId: string,
-    channelId: string,
+    memberKey: string,
     includeInScanList: boolean,
   ) => void;
+  expansionByChannelId?: Map<string, ExpandedMxNChannelRow[]>;
 }
 
 export function ZoneScanExpandPanel({
@@ -105,15 +115,26 @@ export function ZoneScanExpandPanel({
   saving,
   onUpdateZoneEntry,
   onUpdateMemberScanInclusion,
+  expansionByChannelId,
 }: ZoneScanExpandPanelProps) {
+  const [collapsedParents, setCollapsedParents] = useState<Set<string>>(() => new Set());
   const carrierMhz =
     entry?.scanCarrierFrequencyHz != null
       ? entry.scanCarrierFrequencyHz / 1_000_000
       : DEFAULT_CARRIER_MHZ;
-  const memberRefs = collectZoneScanMemberRefs(zone, zones, {
-    context: zoneBehaviourContext,
-    layoutEntry: entry,
-  });
+  const memberRefs = collectZoneScanProjectionMemberRefs(
+    zone,
+    zones,
+    {
+      context: zoneBehaviourContext,
+      layoutEntry: entry,
+    },
+    expansionByChannelId,
+    (channelId) => {
+      const channel = channelById.get(channelId);
+      return channel ? channelDisplayLabel(channel) : channelId;
+    },
+  );
   const zoneById = new Map(zones.map((row) => [row.id, row]));
 
   return (
@@ -138,29 +159,77 @@ export function ZoneScanExpandPanel({
           Include in scan list
         </Text>
         <Text size="xs" c="dimmed">
-          Changes apply to this radio build only (exported zone projection).
+          Changes apply to this radio build only (exported zone projection). Expanded channels can
+          skip individual projections.
         </Text>
         {memberRefs.map((member) => {
-          const channel = channelById.get(member.channelId);
+          if (member.nestRole === 'child' && collapsedParents.has(member.channelId)) {
+            return null;
+          }
           const ownerZone = zoneById.get(member.ownerZoneId);
-          const label = channel ? channelDisplayLabel(channel) : member.channelId;
           const nested = member.ownerZoneId !== zone.id;
-          const displayLabel = nested && ownerZone ? `${label} (${ownerZone.name})` : label;
+          const baseLabel =
+            member.nestRole === 'child'
+              ? member.displayLabel
+              : nested && ownerZone
+                ? `${member.displayLabel} (${ownerZone.name})`
+                : member.displayLabel;
+          const isParent = member.nestRole === 'parent';
+          const expanded = !collapsedParents.has(member.channelId);
+
           return (
             <Group
-              key={`${member.ownerZoneId}:${member.channelId}`}
+              key={`${member.ownerZoneId}:${member.memberKey}`}
               justify="space-between"
               wrap="nowrap"
+              pl={member.nestRole === 'child' ? 'md' : undefined}
+              style={
+                isParent
+                  ? { background: 'var(--mantine-color-default-hover)', borderRadius: 4 }
+                  : undefined
+              }
             >
-              <Text size="sm">{displayLabel}</Text>
+              <Group gap="xs" wrap="nowrap">
+                {isParent ? (
+                  <ActionIcon
+                    variant="subtle"
+                    size="sm"
+                    aria-label={
+                      expanded
+                        ? `Collapse projections for ${baseLabel}`
+                        : `Expand projections for ${baseLabel}`
+                    }
+                    onClick={() =>
+                      setCollapsedParents((prev) => {
+                        const next = new Set(prev);
+                        if (next.has(member.channelId)) next.delete(member.channelId);
+                        else next.add(member.channelId);
+                        return next;
+                      })
+                    }
+                  >
+                    {expanded ? (
+                      <IconChevronDown size={ICON_SIZE_ACTION} stroke={ICON_STROKE} />
+                    ) : (
+                      <IconChevronRight size={ICON_SIZE_ACTION} stroke={ICON_STROKE} />
+                    )}
+                  </ActionIcon>
+                ) : null}
+                <Text size="sm" fw={isParent ? 600 : 400}>
+                  {baseLabel}
+                  {isParent && member.nestChildCount != null
+                    ? ` (${member.nestChildCount} projections)`
+                    : ''}
+                </Text>
+              </Group>
               <Switch
-                aria-label={`Include ${displayLabel} in scan list`}
+                aria-label={`Include ${baseLabel} in scan list`}
                 checked={member.includeInScanList}
                 disabled={saving}
                 onChange={(event) =>
                   onUpdateMemberScanInclusion(
                     zone.id,
-                    member.channelId,
+                    member.memberKey,
                     event.currentTarget.checked,
                   )
                 }

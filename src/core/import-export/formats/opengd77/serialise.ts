@@ -14,6 +14,7 @@ import type {
 } from '@core/models/library.ts';
 import type { ChannelMode } from '@core/models/libraryTypes.ts';
 import { expandChannelWireRows } from '@core/import-export/channelExpansion/multiMode.ts';
+import { filterExpandedRowsByOverrides } from '@core/domain/formatBuildOverrides.ts';
 import { withTalkGroupWireNameLimits } from '@core/import-export/channelExpansion/talkGroupWireNames.ts';
 import { formatCsv } from './csvWrite.ts';
 import {
@@ -136,16 +137,19 @@ export function serialiseChannels(assembled: AssembledBuild, options?: CpsExport
   const expandModes = options?.expandModes ?? true;
   const warnings: string[] = [];
   const reserved = new Set<string>();
-  const expandedRows = assembled.channels.flatMap((row) =>
-    expandChannelWireRows(
-      row.entity,
-      row.wireNameOverride?.trim() || row.wireName,
-      expandModes,
-      options,
-      profile.id,
-      reserved,
-      warnings,
+  const expandedRows = filterExpandedRowsByOverrides(
+    assembled.channels.flatMap((row) =>
+      expandChannelWireRows(
+        row.entity,
+        row.wireNameOverride?.trim() || row.wireName,
+        expandModes,
+        options,
+        profile.id,
+        reserved,
+        warnings,
+      ),
     ),
+    options?.channelOverrides,
   );
   const rows = expandedRows.map((row, i) =>
     padRow(

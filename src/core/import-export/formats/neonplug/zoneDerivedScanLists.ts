@@ -12,7 +12,6 @@ import {
   scanMemberIds,
 } from '@core/import-export/zoneDerivedScanLists/members.ts';
 import type { AssembledBuild } from '@core/services/assemble.ts';
-import { expandNeonplugZoneMemberNumbers } from './channelExpansion.ts';
 import type { NeonplugDm32uvRadioProfile } from './profiles.ts';
 import type { NeonplugScanList } from './wireTypes.ts';
 
@@ -95,6 +94,8 @@ export function deriveNeonplugZoneDerivedScanLists(
   options?: CpsExportOptions,
   warnings: string[] = [],
   reservedWireNames: Iterable<string> = [],
+  /** Parallel to numbers — used to honour projection-key scan skips (#570). */
+  expansionByChannelId?: ReadonlyMap<string, ReadonlyArray<{ key: string }>>,
 ): NeonplugZoneDerivedScanExport {
   const result: NeonplugZoneDerivedScanExport = {
     scanLists: [],
@@ -157,7 +158,17 @@ export function deriveNeonplugZoneDerivedScanLists(
       continue;
     }
 
-    let channels = expandNeonplugZoneMemberNumbers(memberIds, numbersBySourceChannelId);
+    let channels: number[] = [];
+    const projection = entry?.scanMemberInclusion;
+    for (const channelId of memberIds) {
+      const nums = numbersBySourceChannelId.get(channelId) ?? [];
+      const rows = expansionByChannelId?.get(channelId);
+      for (let i = 0; i < nums.length; i++) {
+        const key = rows?.[i]?.key ?? channelId;
+        if (projection?.[key] === 'skip') continue;
+        channels.push(nums[i]!);
+      }
+    }
     if (channels.length > profile.scanListMembers) {
       warnings.push(
         `Zone "${assembledZone.wireName}" scan list truncated from ${channels.length} to ${profile.scanListMembers} members`,

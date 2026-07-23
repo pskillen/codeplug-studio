@@ -126,4 +126,52 @@ describe('dm32 channelExpansion', () => {
     expect(rows.every((row) => row.rowKind === 'talkGroup')).toBe(true);
     expect(rows).toHaveLength(1);
   });
+
+  it('drops a single projection when its key is excluded', () => {
+    const tgA = newTalkGroup(PROJECT_ID, 'Scotland', 950);
+    const tgB = newTalkGroup(PROJECT_ID, 'England', 2350);
+    const rgl = {
+      ...newRxGroupList(PROJECT_ID, 'UK'),
+      members: [
+        { ref: { kind: 'talkGroup' as const, id: tgA.id } },
+        { ref: { kind: 'talkGroup' as const, id: tgB.id } },
+      ],
+    };
+    const channel = dmrRepeaterChannel('Glasgow', rgl.id);
+    const build = newFormatBuild(PROJECT_ID, 'dm32-baofeng-dm32uv');
+    const library = {
+      channels: [channel],
+      zones: [],
+      talkGroups: [tgA, tgB],
+      digitalContacts: [],
+      analogContacts: [],
+      rxGroupLists: [rgl],
+      scanLists: [],
+    };
+    const assembled = assemble(build, library);
+    const all = expandAllDm32ChannelsForExport(assembled, library, {
+      expandRxGroupLists: true,
+      exportScratchChannels: false,
+      profileId: 'dm32-baofeng-dm32uv',
+    });
+    expect(all.length).toBeGreaterThanOrEqual(2);
+    const skipKey = all[0]!.key;
+
+    const filtered = expandAllDm32ChannelsForExport(assembled, library, {
+      expandRxGroupLists: true,
+      exportScratchChannels: false,
+      profileId: 'dm32-baofeng-dm32uv',
+      channelOverrides: [{ libraryEntityId: skipKey, excluded: true }],
+    });
+    expect(filtered).toHaveLength(all.length - 1);
+    expect(filtered.every((row) => row.key !== skipKey)).toBe(true);
+
+    const parentSkip = expandAllDm32ChannelsForExport(assembled, library, {
+      expandRxGroupLists: true,
+      exportScratchChannels: false,
+      profileId: 'dm32-baofeng-dm32uv',
+      channelOverrides: [{ libraryEntityId: channel.id, excluded: true }],
+    });
+    expect(parentSkip).toHaveLength(0);
+  });
 });
