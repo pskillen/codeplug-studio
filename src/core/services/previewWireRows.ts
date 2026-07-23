@@ -8,17 +8,15 @@ import {
 import { channelDisplayLabel, defaultChannelWireName } from '@core/domain/channelNaming.ts';
 import { sanitiseAsciiWireString } from '@core/import-export/sanitiseAsciiWireString.ts';
 import {
-  expandAllDm32ChannelsForExport,
-  type ExpandedDm32ChannelRow,
-} from '@core/import-export/formats/dm32/channelExpansion.ts';
-import {
-  expandAllAnytoneChannelsForExport,
-  type ExpandedAnytoneChannelRow,
-} from '@core/import-export/formats/anytone/channelExpansion.ts';
+  expandAllMxNChannels,
+  type ExpandedMxNChannelRow,
+} from '@core/import-export/channelExpansion/mxnExpandAll.ts';
+import { anytoneChannelWireName } from '@core/import-export/formats/anytone/exportChannelWire.ts';
 import {
   expandChannelWireRows,
   modeExportNameSuffix,
 } from '@core/import-export/channelExpansion/multiMode.ts';
+import { hasMxNChannelExpansion } from '@core/radio-targets/index.ts';
 import { applyTalkGroupWireNameLimits } from '@core/import-export/channelExpansion/talkGroupWireNames.ts';
 import {
   applyListWireNameLimits,
@@ -232,23 +230,9 @@ function dm32RxListFanOutDisplayDetails(
   ];
 }
 
-function dm32ExpansionDisplayDetails(
+function mxnExpansionDisplayDetails(
   channel: Channel,
-  generated: ExpandedDm32ChannelRow,
-  library: LibrarySlice,
-): WirePreviewDisplayLine[] | undefined {
-  if (generated.rowKind === 'scratch') {
-    return [{ label: 'Row', value: 'Scratch channel' }];
-  }
-  if (generated.rowKind === 'talkGroup') {
-    return dm32RxListFanOutDisplayDetails(channel, generated.txContactRef, library);
-  }
-  return undefined;
-}
-
-function anytoneExpansionDisplayDetails(
-  channel: Channel,
-  generated: ExpandedAnytoneChannelRow,
+  generated: ExpandedMxNChannelRow,
   library: LibrarySlice,
 ): WirePreviewDisplayLine[] | undefined {
   if (generated.rowKind === 'scratch') {
@@ -333,95 +317,37 @@ export function previewWireRows(
         return rows;
       }
 
-      if (formatId === 'dm32') {
+      if (hasMxNChannelExpansion(build.radioTargetId)) {
         const assembled = projection;
-        const dm32Options = {
-          ..._options,
-          expandModes: false,
-          expandRxGroupLists: _options?.expandRxGroupLists ?? true,
-          profileId,
-        };
-        const expanded = expandAllDm32ChannelsForExport(assembled, library, dm32Options, warnings);
-        const expandedByChannelId = new Map<string, (typeof expanded)[number][]>();
-        for (const generated of expanded) {
-          const list = expandedByChannelId.get(generated.sourceChannelId) ?? [];
-          list.push(generated);
-          expandedByChannelId.set(generated.sourceChannelId, list);
-        }
-        const zoneLinkedForPreview =
-          build.exportUnlinkedChannels === false ? zoneLinkedChannelIds(build, library) : null;
-
-        for (const channel of library.channels) {
-          const generatedRows = expandedByChannelId.get(channel.id);
-          if (generatedRows) {
-            for (const generated of generatedRows) {
-              const channelOverride = overrideByEntityId(build.channelOverrides)
-                .get(channel.id)
-                ?.wireName?.trim();
-              const keyOverride = overrideByEntityId(build.channelOverrides)
-                .get(generated.key)
-                ?.wireName?.trim();
-              rows.push({
-                key: generated.key,
-                libraryEntityId: channel.id,
-                entityKind: 'channel',
-                displayLabel: channelDisplayLabel(channel),
-                generatedWireName: sanitiseAsciiWireString(generated.wireName),
-                effectiveWireName: sanitiseAsciiWireString(
-                  keyOverride ?? channelOverride ?? generated.wireName,
-                ),
-                hasWireNameOverride: Boolean(keyOverride ?? channelOverride),
-                hasOrderOrSlotOverride:
-                  overrideOrderOrSlot(build.channelOverrides, channel.id) != null,
-                excluded: isEntityExcluded(build.channelOverrides, channel.id),
-                expansionNote: generated.expansionNote,
-                displayDetails: dm32ExpansionDisplayDetails(channel, generated, library),
-                ...channelBandFields(channel),
-              });
-            }
-            continue;
-          }
-
-          const channelOverride = overrideByEntityId(build.channelOverrides)
-            .get(channel.id)
-            ?.wireName?.trim();
-          const generatedWireName = defaultChannelWireName(channel);
-          rows.push({
-            key: channel.id,
-            libraryEntityId: channel.id,
-            entityKind: 'channel',
-            displayLabel: channelDisplayLabel(channel),
-            generatedWireName: sanitiseAsciiWireString(generatedWireName),
-            effectiveWireName: sanitiseAsciiWireString(channelOverride ?? generatedWireName),
-            hasWireNameOverride: Boolean(channelOverride),
-            hasOrderOrSlotOverride: overrideOrderOrSlot(build.channelOverrides, channel.id) != null,
-            excluded: isEntityExcluded(build.channelOverrides, channel.id),
-            expansionNote:
-              zoneLinkedForPreview && !zoneLinkedForPreview.has(channel.id)
-                ? PREVIEW_ROW_NOT_ZONE_LINKED_NOTE
-                : undefined,
-            ...channelBandFields(channel),
-          });
-        }
-        return rows;
-      }
-
-      if (formatId === 'anytone') {
-        const assembled = projection;
-        const anytoneOptions = {
+        const mxnOptions = {
           ..._options,
           expandModes: false,
           expandRxGroupLists: _options?.expandRxGroupLists ?? true,
           exportScratchChannels: _options?.exportScratchChannels ?? true,
           profileId,
         };
-        const expanded = expandAllAnytoneChannelsForExport(
+        const expanded = expandAllMxNChannels({
           assembled,
           library,
-          anytoneOptions,
+          radioTargetId: build.radioTargetId,
+          options: mxnOptions,
           warnings,
-        );
-        const expandedByChannelId = new Map<string, ExpandedAnytoneChannelRow[]>();
+          resolveSiteWireName:
+            formatId === 'anytone'
+              ? (assembledChannel, ctx) =>
+                  anytoneChannelWireName(
+                    assembledChannel,
+                    {
+                      reserved: ctx.reserved,
+                      warnings: ctx.warnings,
+                      reserve: !ctx.willExpandRx,
+                    },
+                    ctx.options,
+                    ctx.profileId ?? profileId,
+                  )
+              : undefined,
+        });
+        const expandedByChannelId = new Map<string, ExpandedMxNChannelRow[]>();
         for (const generated of expanded) {
           const list = expandedByChannelId.get(generated.sourceChannelId) ?? [];
           list.push(generated);
@@ -433,9 +359,11 @@ export function previewWireRows(
         const behaviourContext = _options?.channelBehaviourContext;
 
         for (const channel of library.channels) {
-          if (anytoneBank === 'dmr' && isAmAirbandBankChannel(channel, behaviourContext)) continue;
-          if (anytoneBank === 'airband' && !isAmAirbandBankChannel(channel, behaviourContext))
-            continue;
+          if (formatId === 'anytone') {
+            if (anytoneBank === 'dmr' && isAmAirbandBankChannel(channel, behaviourContext)) continue;
+            if (anytoneBank === 'airband' && !isAmAirbandBankChannel(channel, behaviourContext))
+              continue;
+          }
           const generatedRows = expandedByChannelId.get(channel.id);
           if (generatedRows) {
             for (const generated of generatedRows) {
@@ -459,7 +387,7 @@ export function previewWireRows(
                   overrideOrderOrSlot(build.channelOverrides, channel.id) != null,
                 excluded: isEntityExcluded(build.channelOverrides, channel.id),
                 expansionNote: generated.expansionNote,
-                displayDetails: anytoneExpansionDisplayDetails(channel, generated, library),
+                displayDetails: mxnExpansionDisplayDetails(channel, generated, library),
                 ...channelBandFields(channel),
               });
             }
@@ -469,7 +397,10 @@ export function previewWireRows(
           const channelOverride = overrideByEntityId(build.channelOverrides)
             .get(channel.id)
             ?.wireName?.trim();
-          const generatedWireName = previewGeneratedChannelWireName(channel, build, _options);
+          const generatedWireName =
+            formatId === 'anytone'
+              ? previewGeneratedChannelWireName(channel, build, _options)
+              : defaultChannelWireName(channel);
           rows.push({
             key: channel.id,
             libraryEntityId: channel.id,
