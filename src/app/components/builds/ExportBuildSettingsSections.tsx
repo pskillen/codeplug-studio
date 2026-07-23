@@ -6,6 +6,7 @@ import type {
 } from '@core/models/formatBuild.ts';
 import {
   hasMxNChannelExpansion,
+  radioTargetHasCompatibleFormat,
   showsDefaultScanInclusion,
 } from '@core/radio-targets/index.ts';
 import { buildUsesFlatMemoryList } from '@core/domain/exportOrderOrSlot.ts';
@@ -21,6 +22,7 @@ import { TRAIT_LABELS } from '../../routes/builds/buildHelpers.ts';
 
 export interface ExportBuildSettingsSectionsProps {
   build: FormatBuild;
+  /** Active egress format — pathway copy only (e.g. naming card wording). */
   formatId: string;
   saving: boolean;
   settingsError: string | null;
@@ -52,7 +54,7 @@ export default function ExportBuildSettingsSections({
   onExportSettingsPatch,
   onExportInclusionChange,
 }: ExportBuildSettingsSectionsProps) {
-  if (formatId === 'anytone') {
+  if (radioTargetHasCompatibleFormat(build.radioTargetId, 'anytone')) {
     return (
       <ExportAnytoneSettingsSections
         build={build}
@@ -68,6 +70,12 @@ export default function ExportBuildSettingsSections({
 
   const flatMemory = buildUsesFlatMemoryList(build);
   const showChannelExpansion = hasMxNChannelExpansion(build.radioTargetId);
+  const showZoneDerivedScanLists =
+    radioTargetHasCompatibleFormat(build.radioTargetId, 'dm32') ||
+    radioTargetHasCompatibleFormat(build.radioTargetId, 'anytone');
+  const zoneDerivedScanLabel = radioTargetHasCompatibleFormat(build.radioTargetId, 'dm32')
+    ? 'Export zone-derived scan lists (Scan.csv)'
+    : 'Export zone-derived scan lists (ScanList.CSV)';
 
   return (
     <Stack gap="md">
@@ -168,7 +176,6 @@ export default function ExportBuildSettingsSections({
       >
         <ExportNameSettingsFields
           build={build}
-          formatId={formatId}
           saving={saving}
           onPatch={onExportSettingsPatch}
           profileNameLimit={profileNameLimit}
@@ -196,14 +203,10 @@ export default function ExportBuildSettingsSections({
             assignment on the Channels page — not export defaults.
           </Text>
         )}
-        {(formatId === 'dm32' || formatId === 'anytone') && (
+        {showZoneDerivedScanLists ? (
           <>
             <Switch
-              label={
-                formatId === 'dm32'
-                  ? 'Export zone-derived scan lists (Scan.csv)'
-                  : 'Export zone-derived scan lists (ScanList.CSV)'
-              }
+              label={zoneDerivedScanLabel}
               description="Requires per-zone Export as scan list on the Zones page. Library scan lists still export when enabled."
               checked={resolvedSettings.exportZoneDerivedScanLists}
               disabled={saving}
@@ -219,7 +222,7 @@ export default function ExportBuildSettingsSections({
               onPatch={onExportSettingsPatch}
             />
           </>
-        )}
+        ) : null}
       </FieldCard>
 
       <FieldCard

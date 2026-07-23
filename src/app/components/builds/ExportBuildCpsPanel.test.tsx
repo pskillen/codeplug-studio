@@ -472,4 +472,51 @@ describe('ExportBuildCpsPanel', () => {
     expect(screen.getByText(/memory CSV using the profile below/i)).toBeInTheDocument();
     expect(chirpEgress.formatId).toBe('chirp');
   });
+
+  it('keeps projection settings visible across UV-5R Mini egress switches', async () => {
+    const { build, egressPaths } = newRadioBuildForProfile('project-1', 'radio-io-uv5r-mini');
+    const radioIo = egressPaths.find((path) => path.formatId === 'radio-io');
+    const neon = egressPaths.find((path) => path.formatId === 'neonplug');
+    const chirp = egressPaths.find((path) => path.formatId === 'chirp');
+    if (!radioIo || !neon || !chirp) {
+      throw new Error('expected UV-5R Mini Web Serial + NeonPlug + CHIRP egresses');
+    }
+
+    function Uv5rMiniSettingsHarness() {
+      const [activeEgressId, setActiveEgressId] = useState(radioIo.id);
+      const activeEgress = egressPaths.find((path) => path.id === activeEgressId) ?? radioIo;
+
+      return (
+        <BuildLayoutProvider
+          value={{
+            build,
+            buildId: build.id,
+            egressPaths,
+            activeEgress,
+            setActiveEgressId,
+            reloadEgressPaths: vi.fn(async () => {}),
+          }}
+        >
+          <MantineProvider>
+            <MemoryRouter>
+              <ExportBuildCpsPanel build={build} />
+            </MemoryRouter>
+          </MantineProvider>
+        </BuildLayoutProvider>
+      );
+    }
+
+    render(<Uv5rMiniSettingsHarness />);
+
+    expect(await screen.findByText('Naming')).toBeInTheDocument();
+    expect(screen.getByText('Default scan behaviour')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('radio', { name: /NeonPlug/i }));
+    expect(await screen.findByText('Naming')).toBeInTheDocument();
+    expect(screen.getByText('Default scan behaviour')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('radio', { name: /CHIRP CSV/i }));
+    expect(await screen.findByText('Naming')).toBeInTheDocument();
+    expect(screen.getByText('Default scan behaviour')).toBeInTheDocument();
+  });
 });
