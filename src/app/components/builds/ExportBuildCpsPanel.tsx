@@ -4,10 +4,7 @@ import { IconDownload, IconPackage, IconTable } from '@tabler/icons-react';
 import type { BuildExportSettings, RadioBuild } from '@core/models/formatBuild.ts';
 import type { EgressPath } from '@core/models/egressPath.ts';
 import { traitProfileFor } from '@core/models/traits.ts';
-import {
-  formatCatalogEntry,
-  getExportAdapter,
-} from '@core/import-export/registry.ts';
+import { formatCatalogEntry, getExportAdapter } from '@core/import-export/registry.ts';
 import {
   isMultiFileExportAdapter,
   isSingleFileCpsExportAdapter,
@@ -30,7 +27,10 @@ import { saveDriveLastFolderId, saveDriveLastFolderPath } from '@integrations/cl
 import DriveBrowserModal, { type DriveSaveTarget } from '../import-export/DriveBrowserModal.tsx';
 import GoogleDriveActionButton from '../import-export/GoogleDriveActionButton.tsx';
 import { ICON_SIZE_ACTION, ICON_STROKE } from '../../lib/iconSizes.ts';
-import { resolvedBuildExportSettings, radioBuildFormatExportDefaults } from '../../lib/buildExportSettingsUi.ts';
+import {
+  resolvedBuildExportSettings,
+  radioBuildFormatExportDefaults,
+} from '../../lib/buildExportSettingsUi.ts';
 import {
   buildNeedsLegacyExportSettingsMigration,
   clearLegacyExportSettingsLocalStorage,

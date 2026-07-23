@@ -2,11 +2,11 @@
 
 A **radio build** is keyed by catalog `radioTargetId`. Compatible **egress pathways** carry `formatId` / `profileId` (CHIRP, NeonPlug, OpenGD77, …).
 
-| Concern                                              | Source of truth                                      |
-| ---------------------------------------------------- | ---------------------------------------------------- |
-| Organisation / Export **projection** UI visibility   | Catalog `RadioTarget.traits` for `radioTargetId`     |
-| Unset `exportSettings` fill-ins on Export             | Catalog **default** compatible egress format defaults |
-| Wire limits, ladders, retain, download/write chrome   | **Active egress** profile (or catalog default)       |
+| Concern                                             | Source of truth                                       |
+| --------------------------------------------------- | ----------------------------------------------------- |
+| Organisation / Export **projection** UI visibility  | Catalog `RadioTarget.traits` for `radioTargetId`      |
+| Unset `exportSettings` fill-ins on Export           | Catalog **default** compatible egress format defaults |
+| Wire limits, ladders, retain, download/write chrome | **Active egress** profile (or catalog default)        |
 
 ## When radios and profiles are chosen
 

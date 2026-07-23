@@ -9,18 +9,18 @@ Grouped export preference controls on the build **Export** page.
 
 ## Props
 
-| Prop                      | Type                          | Description                                                                      |
-| ------------------------- | ----------------------------- | -------------------------------------------------------------------------------- |
-| `build`                   | `FormatBuild` / `RadioBuild`  | Active radio build                                                               |
+| Prop                      | Type                          | Description                                                                       |
+| ------------------------- | ----------------------------- | --------------------------------------------------------------------------------- |
+| `build`                   | `FormatBuild` / `RadioBuild`  | Active radio build                                                                |
 | `formatId`                | `string`                      | Active egress format — pathway copy only (e.g. naming card “radio write” wording) |
-| `saving`                  | `boolean`                     | Disables controls while persisting                                               |
-| `settingsError`           | `string \| null`              | Inclusion save error message                                                     |
-| `profileNameLimit`        | `number?`                     | Active pathway wire name cap for naming fields                                   |
-| `resolvedSettings`        | `ResolvedBuildExportSettings` | Merged radio defaults + stored `exportSettings`                                  |
-| `formatDefaults`          | `FormatExportDefaults`        | Catalog **default egress** format defaults for scan inclusion hint               |
-| `defaultScanValue`        | `DefaultScanInclusion`        | Effective default scan behaviour                                                 |
-| `onExportSettingsPatch`   | `(patch) => void`             | Persists `build.exportSettings` partial updates                                  |
-| `onExportInclusionChange` | `(field, checked) => void`    | Persists unlinked entity inclusion flags                                         |
+| `saving`                  | `boolean`                     | Disables controls while persisting                                                |
+| `settingsError`           | `string \| null`              | Inclusion save error message                                                      |
+| `profileNameLimit`        | `number?`                     | Active pathway wire name cap for naming fields                                    |
+| `resolvedSettings`        | `ResolvedBuildExportSettings` | Merged radio defaults + stored `exportSettings`                                   |
+| `formatDefaults`          | `FormatExportDefaults`        | Catalog **default egress** format defaults for scan inclusion hint                |
+| `defaultScanValue`        | `DefaultScanInclusion`        | Effective default scan behaviour                                                  |
+| `onExportSettingsPatch`   | `(patch) => void`             | Persists `build.exportSettings` partial updates                                   |
+| `onExportInclusionChange` | `(field, checked) => void`    | Persists unlinked entity inclusion flags                                          |
 
 ## Behaviour
 

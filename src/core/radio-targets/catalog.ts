@@ -129,10 +129,7 @@ export function radioTargetHasTrait(radioTargetId: string, trait: Trait): boolea
 }
 
 /** Whether any compatible egress for this radio uses the given format id. */
-export function radioTargetHasCompatibleFormat(
-  radioTargetId: string,
-  formatId: string,
-): boolean {
+export function radioTargetHasCompatibleFormat(radioTargetId: string, formatId: string): boolean {
   return (
     radioTargetFor(radioTargetId)?.compatibleEgress.some((e) => e.formatId === formatId) ?? false
   );
