@@ -98,7 +98,7 @@ describe('deriveZoneDerivedScanLists', () => {
       scanLists: [],
     };
     const assembled = {
-      ...assemble(build, library),
+      ...assemble(build, library, { formatId: 'dm32', profileId: 'dm32-baofeng-dm32uv' }),
       library,
       zoneGrouping: layout,
     };
