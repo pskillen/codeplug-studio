@@ -12,7 +12,7 @@ vi.mock('../../state/useFormatBuilds.ts', () => ({
 }));
 
 describe('NewBuildPage', () => {
-  it('shows prefer-NeonPlug warning on the DM32 profile step', async () => {
+  it('lists radios grouped by manufacturer with egress pathway summary', () => {
     render(
       <MemoryRouter>
         <MantineProvider>
@@ -21,13 +21,13 @@ describe('NewBuildPage', () => {
       </MemoryRouter>,
     );
 
-    fireEvent.click(screen.getByText('DM32 CSV'));
-
-    expect(await screen.findByText(DM32_PREFER_NEONPLUG_TITLE)).toBeInTheDocument();
-    expect(screen.getByText('Choose profile')).toBeInTheDocument();
+    expect(screen.getByText('Choose radio')).toBeInTheDocument();
+    expect(screen.getByText('Baofeng UV-5R Mini')).toBeInTheDocument();
+    expect(screen.getByText(/Web Serial · NeonPlug · CHIRP CSV/)).toBeInTheDocument();
+    expect(screen.queryByText('Choose format')).not.toBeInTheDocument();
   });
 
-  it('does not show the DM32 warning on the CHIRP profile step', async () => {
+  it('shows prefer-NeonPlug warning on the DM-32UV radio card', () => {
     render(
       <MemoryRouter>
         <MantineProvider>
@@ -36,9 +36,23 @@ describe('NewBuildPage', () => {
       </MemoryRouter>,
     );
 
-    fireEvent.click(screen.getByText('CHIRP CSV'));
+    expect(screen.getByText('Baofeng DM-32UV')).toBeInTheDocument();
+    expect(screen.getByText(DM32_PREFER_NEONPLUG_TITLE)).toBeInTheDocument();
+  });
 
-    expect(await screen.findByText('Choose profile')).toBeInTheDocument();
+  it('advances to name step when a radio is selected', () => {
+    render(
+      <MemoryRouter>
+        <MantineProvider>
+          <NewBuildPage />
+        </MantineProvider>
+      </MemoryRouter>,
+    );
+
+    fireEvent.click(screen.getByText('Baofeng UV-5R Mini'));
+
+    expect(screen.getByText('Name build')).toBeInTheDocument();
+    expect(screen.getByLabelText('Build name')).toHaveValue('Baofeng UV-5R Mini');
     expect(screen.queryByText(DM32_PREFER_NEONPLUG_TITLE)).not.toBeInTheDocument();
   });
 });

@@ -1,37 +1,45 @@
 import { Button, Card, Group, Stack, Text, TextInput, Anchor } from '@mantine/core';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { formatCatalog } from '@core/import-export/registry.ts';
-import type { FormatId } from '@core/import-export/types.ts';
-import { radioTargetIdForProfile } from '@core/radio-targets/index.ts';
-import { traitProfileFor } from '@core/models/traits.ts';
-import ProfilePicker from '../../components/builds/ProfilePicker.tsx';
+import { listRadioTargets, type RadioTarget } from '@core/radio-targets/index.ts';
 import Dm32PreferNeonPlugAlert from '../../components/builds/Dm32PreferNeonPlugAlert.tsx';
-import { formatPathwayBadge } from '../../components/builds/preferNeonPlugPathwayBadges.tsx';
 import { FormPage, PageSection } from '../../components/ui/index.ts';
 import { useFormatBuilds } from '../../state/useFormatBuilds.ts';
 
-const CPS_FORMATS = formatCatalog.filter((f) => f.id !== 'native-yaml');
+type Step = 'radio' | 'name';
 
-type Step = 'format' | 'profile' | 'name';
+function targetsByGroup(
+  targets: readonly RadioTarget[],
+): { group: string; targets: RadioTarget[] }[] {
+  const map = new Map<string, RadioTarget[]>();
+  for (const target of targets) {
+    const list = map.get(target.group) ?? [];
+    list.push(target);
+    map.set(target.group, list);
+  }
+  return [...map.entries()].map(([group, groupTargets]) => ({ group, targets: groupTargets }));
+}
+
+function egressSummary(target: RadioTarget): string {
+  return target.compatibleEgress.map((entry) => entry.label).join(' · ');
+}
 
 export default function NewBuildPage() {
   const navigate = useNavigate();
   const { createBuild } = useFormatBuilds();
-  const [step, setStep] = useState<Step>('format');
-  const [formatId, setFormatId] = useState<FormatId | null>(null);
-  const [profileId, setProfileId] = useState<string | null>(null);
+  const [step, setStep] = useState<Step>('radio');
+  const [radioTargetId, setRadioTargetId] = useState<string | null>(null);
   const [name, setName] = useState('');
   const [creating, setCreating] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const groups = useMemo(() => targetsByGroup(listRadioTargets()), []);
+  const selectedTarget = radioTargetId
+    ? listRadioTargets().find((target) => target.id === radioTargetId)
+    : undefined;
+
   async function handleCreate() {
-    if (!profileId) return;
-    const radioTargetId = radioTargetIdForProfile(profileId);
-    if (!radioTargetId) {
-      setError('Unknown radio profile.');
-      return;
-    }
+    if (!radioTargetId) return;
     setCreating(true);
     setError(null);
     const outcome = await createBuild(radioTargetId, name.trim() || undefined);
@@ -54,75 +62,69 @@ export default function NewBuildPage() {
     >
       <Stack gap="lg">
         <Text size="sm" c="dimmed">
-          Native YAML is project interchange — not a format build. Pick a CPS file workflow or
-          Direct radio (Web Serial) below.
+          Pick the handheld or mobile you are programming. Compatible export pathways (Web Serial,
+          NeonPlug, CPS CSV, …) are seeded automatically — choose which pathway to use on Export.
+          You can create more than one build for the same radio type (for example Team A and Team
+          B).
         </Text>
 
-        {step === 'format' ? (
-          <PageSection title="Choose format">
-            <Stack gap="sm">
-              {CPS_FORMATS.map((format) => (
-                <Card
-                  key={format.id}
-                  withBorder
-                  padding="md"
-                  style={{ cursor: 'pointer' }}
-                  onClick={() => {
-                    setFormatId(format.id);
-                    setProfileId(null);
-                    setStep('profile');
-                  }}
-                >
-                  <Group justify="space-between" align="flex-start" wrap="nowrap">
-                    <div>
-                      <Group gap="xs" mb={4}>
-                        <Text fw={600}>{format.label}</Text>
-                        {formatPathwayBadge(format.id)}
+        {step === 'radio' ? (
+          <PageSection title="Choose radio">
+            <Stack gap="lg">
+              {groups.map(({ group, targets }) => (
+                <Stack key={group} gap="sm">
+                  <Text fw={600} size="sm">
+                    {group}
+                  </Text>
+                  {targets.map((target) => (
+                    <Card
+                      key={target.id}
+                      withBorder
+                      padding="md"
+                      style={{ cursor: 'pointer' }}
+                      onClick={() => {
+                        setRadioTargetId(target.id);
+                        setName(target.label);
+                        setStep('name');
+                      }}
+                    >
+                      <Group justify="space-between" align="flex-start" wrap="nowrap">
+                        <div>
+                          <Text fw={600} mb={4}>
+                            {target.label}
+                          </Text>
+                          <Text size="sm" c="dimmed">
+                            {egressSummary(target)}
+                          </Text>
+                          {target.id === 'baofeng-dm32uv' ? (
+                            <Stack gap="xs" mt="sm" onClick={(e) => e.stopPropagation()}>
+                              <Dm32PreferNeonPlugAlert />
+                            </Stack>
+                          ) : null}
+                        </div>
+                        <Button variant="light" size="compact-sm">
+                          Select
+                        </Button>
                       </Group>
-                      <Text size="sm" c="dimmed">
-                        {format.id === 'radio-io'
-                          ? 'Web Serial read/write — no CPS file export'
-                          : `Import: ${format.importStatus} · Export: ${format.exportStatus}`}
-                      </Text>
-                    </div>
-                    <Button variant="light" size="compact-sm">
-                      Select
-                    </Button>
-                  </Group>
-                </Card>
+                    </Card>
+                  ))}
+                </Stack>
               ))}
             </Stack>
           </PageSection>
         ) : null}
 
-        {step === 'profile' && formatId ? (
-          <PageSection
-            title="Choose profile"
-            description={`Format: ${formatCatalog.find((f) => f.id === formatId)?.label ?? formatId}`}
-          >
-            <Stack gap="sm">
-              {formatId === 'dm32' ? <Dm32PreferNeonPlugAlert /> : null}
-              <ProfilePicker
-                formatId={formatId}
-                onChange={(id) => {
-                  setProfileId(id);
-                  setName(traitProfileFor(id)?.label ?? id);
-                  setStep('name');
-                }}
-              />
-              <Button variant="subtle" onClick={() => setStep('format')}>
-                ← Change format
-              </Button>
-            </Stack>
-          </PageSection>
-        ) : null}
-
-        {step === 'name' && profileId ? (
+        {step === 'name' && selectedTarget ? (
           <PageSection title="Name build">
             <Stack gap="md">
+              <Text size="sm" c="dimmed">
+                Radio: {selectedTarget.label}
+                <br />
+                Pathways: {egressSummary(selectedTarget)}
+              </Text>
               <TextInput
                 label="Build name"
-                description="Defaults to the profile label — change if you run multiple builds for the same radio."
+                description="Defaults to the radio label — change it when you run multiple builds for the same radio (Team A / Team B)."
                 value={name}
                 onChange={(e) => setName(e.currentTarget.value)}
               />
@@ -135,8 +137,14 @@ export default function NewBuildPage() {
                 <Button loading={creating} onClick={() => void handleCreate()}>
                   Create build
                 </Button>
-                <Button variant="subtle" onClick={() => setStep('profile')}>
-                  ← Change profile
+                <Button
+                  variant="subtle"
+                  onClick={() => {
+                    setStep('radio');
+                    setRadioTargetId(null);
+                  }}
+                >
+                  ← Change radio
                 </Button>
               </Group>
             </Stack>
