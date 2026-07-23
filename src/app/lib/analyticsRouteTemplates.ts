@@ -25,6 +25,7 @@ export const ANALYTICS_ROUTE_TEMPLATES = [
   '/builds/:id/export',
   '/builds/:id/export-resolution',
   '/builds/:id/neonplug-settings',
+  '/builds/:id/radio-image',
   '/debug/indexed-db',
   '/debug/local-storage',
   '/library/:kind/:id',

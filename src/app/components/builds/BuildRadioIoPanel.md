@@ -25,6 +25,7 @@ Renders nothing when `descriptorsForBuild(build)` is empty.
 - **Write to radio** → blocked until hydration exists (full-image strategy).
 - While busy, opens [`RadioIoProgressModal`](./RadioIoProgressModal.md) (steps + transfer progress bar + keep-tab warning). Cancel aborts via `AbortSignal`.
 - Blocks in-app navigation and tab close while busy (`useUnsavedNavigationGuard`); releases the port on failure.
+- Links to build **Radio image** (`/builds/:id/radio-image`) for the retained region map.
 - In-flow attribution from `descriptor.attributionIds`.
 
 Does **not** import radio channels into the library.

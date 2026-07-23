@@ -52,6 +52,8 @@ Export does not host identity editors; Setup does not host download actions. Sec
 | `/builds/:id/contacts`          | Wire preview — contacts                                                                                                                  |
 | `/builds/:id/rx-group-lists`    | Wire preview — RX group lists                                                                                                            |
 | `/builds/:id/export-resolution` | Read-only behavioural defaults cascade audit (Channels + Zones tabs)                                                                     |
+| `/builds/:id/neonplug-settings` | NeonPlug only — read-only donor settings retain                                                                                          |
+| `/builds/:id/radio-image`       | Direct radio only — read-only Web Serial clone image summary (opaque VFO/settings retain)                                                |
 
 Requires an active project (`RequireActiveProject`).
 
@@ -59,7 +61,7 @@ Sidebar label is **Export for radio**; routes and code use `builds`. Secondary s
 
 **CPS export:** Per-build CPS export is on `/builds/:id/export` (`ExportBuildCpsPanel`) — the build front door. Project YAML backup lives on [Summary](../report/README.md), not on a separate Import/export page.
 
-**Web Serial (Direct radio builds):** create format **Direct radio** → profile for the handheld (e.g. Baofeng UV-5R Mini). Export is **serial-only** — no CPS ZIP/CSV. `BuildRadioIoPanel` hosts Read (hydrate `radio-clone` on the build) / Write (`assemble` into that image). NeonPlug and CHIRP FormatBuilds remain file pathways. See [radio-read-write](../radio-read-write/README.md) and [adding-a-radio-adapter.md](../radio-read-write/adding-a-radio-adapter.md).
+**Web Serial (Direct radio builds):** create format **Direct radio** → profile for the handheld (e.g. Baofeng UV-5R Mini). Export is **serial-only** — no CPS ZIP/CSV. `BuildRadioIoPanel` hosts Read (hydrate `radio-clone` on the build) / Write (`assemble` into that image). Secondary nav **Radio image** shows a read-only summary of the retained clone (sibling to NeonPlug settings). NeonPlug and CHIRP FormatBuilds remain file pathways. See [radio-read-write](../radio-read-write/README.md) and [adding-a-radio-adapter.md](../radio-read-write/adding-a-radio-adapter.md).
 
 **CSV preview** ([#151](https://github.com/pskillen/codeplug-studio/issues/151)): outline **Preview CSV** button (after Save ZIP to Drive) opens a modal with one tab per CPS file, rendered as a read-only table. Uses the same `exportBuildAll` path as download — see [`CpsCsvPreview.md`](../../../src/app/components/builds/CpsCsvPreview.md). Build-wide export warnings (profile caps, long wire names, zone cycle messages) are collected once at the core export layer and deduplicated — each distinct message appears once in the preview and ZIP paths ([#319](https://github.com/pskillen/codeplug-studio/issues/319)). The shared [`ExportWarningsAlert`](../../../src/app/components/builds/ExportWarningsAlert.md) folds unlinked-item, member-cap, and shortened-name groups behind collapsed title + count headers ([#408](https://github.com/pskillen/codeplug-studio/issues/408)).
 

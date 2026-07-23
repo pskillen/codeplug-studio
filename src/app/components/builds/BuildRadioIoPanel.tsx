@@ -4,6 +4,7 @@
  */
 
 import { useEffect, useRef, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { Alert, Anchor, Button, Group, Stack, Text } from '@mantine/core';
 import type { FormatBuild } from '@core/models/formatBuild.ts';
 import type { ProgressUpdate, RadioSession } from '@integrations/radio-io/types.ts';
@@ -257,7 +258,11 @@ export default function BuildRadioIoPanel({ build }: BuildRadioIoPanelProps) {
               : ''}
           </Text>
           <Text size="xs" c="dimmed" mt={4}>
-            Unmodelled registers are retained for write-back. Settings are not editable here.
+            Unmodelled registers are retained for write-back. See{' '}
+            <Anchor component={Link} to={`/builds/${build.id}/radio-image`} size="xs">
+              Radio image
+            </Anchor>{' '}
+            for the retained region map. Settings are not editable here.
           </Text>
           <Button size="xs" variant="subtle" mt="xs" onClick={() => void handleClearHydration()}>
             Clear stored image

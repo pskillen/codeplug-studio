@@ -8,6 +8,7 @@ import type { AssembledChannel } from '@core/services/assemble.ts';
 import type { FormatBuild } from '@core/models/formatBuild.ts';
 import type { ChannelTone } from '@core/models/library.ts';
 import { channelPickForWireExport, composeChannelWireName } from '@core/domain/channelNaming.ts';
+import type { ChannelExportNameMode } from '@core/domain/channelNaming.ts';
 import { applyWireNameLimits } from '@core/import-export/channelExpansion/exportWireNames.ts';
 import { mergeExportOptions } from '@core/import-export/exportSettingsMerge.ts';
 import type { RadioChannelDto, RadioTone } from '@integrations/radio-io/radioChannelDto.ts';
@@ -38,7 +39,7 @@ function radioWireName(
 ): string {
   const merged = mergeExportOptions(build);
   const pick = channelPickForWireExport(row.entity, {
-    nameModeOverride: merged.nameModeOverride,
+    nameModeOverride: merged.nameModeOverride as ChannelExportNameMode | undefined,
   });
   let base = row.wireNameOverride?.trim() ? row.wireName : composeChannelWireName(pick);
   const abbrev = row.entity.abbreviation?.trim();

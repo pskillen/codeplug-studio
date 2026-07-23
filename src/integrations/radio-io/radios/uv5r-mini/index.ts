@@ -10,6 +10,12 @@ export {
   memoryMapFromUv5rMiniHydration,
 } from './hydration.ts';
 export {
+  summariseUv5rMiniClone,
+  UV5R_MINI_CLONE_REGION_SUMMARIES,
+  type Uv5rMiniCloneSummary,
+  type RadioCloneRegionSummary,
+} from './cloneSummary.ts';
+export {
   decodeChannelsFromImage,
   encodeChannelsIntoImage,
   readFirmwareFromImage,
