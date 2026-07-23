@@ -1,7 +1,8 @@
-import { newFormatBuild } from '@core/domain/factories.ts';
+import { newRadioBuildWithEgresses } from '@core/domain/factories.ts';
 import { type OverrideField, upsertOverride } from '@core/domain/formatBuildOverrides.ts';
 import type { CpsWireHydration } from '@core/models/cpsWireHydration.ts';
-import type { FormatBuild, BuildExportSettings } from '@core/models/formatBuild.ts';
+import type { BuildExportSettings, RadioBuild } from '@core/models/radioBuild.ts';
+import type { EgressPath } from '@core/models/egressPath.ts';
 import type { ScanInclusion } from '@core/models/library.ts';
 import { isoNow, nextRevision } from '@core/models/revision.ts';
 import type { ScanListsLayout, ZoneGroupingLayout } from '@core/models/traitLayout.ts';
@@ -9,43 +10,73 @@ import type { PutResult } from '@integrations/persistence/index.ts';
 import type { ProjectPersistence } from '@integrations/persistence/index.ts';
 
 /**
- * App-layer service for format build persistence over the
- * {@link ProjectPersistence} port.
+ * App-layer service for {@link RadioBuild} + {@link EgressPath} persistence over
+ * the {@link ProjectPersistence} port (#654).
  */
 export class BuildService {
   constructor(private readonly persistence: ProjectPersistence) {}
 
-  async listBuilds(projectId: string): Promise<FormatBuild[]> {
-    return this.persistence.listFormatBuilds(projectId);
+  async listBuilds(projectId: string): Promise<RadioBuild[]> {
+    return this.persistence.listRadioBuilds(projectId);
   }
 
-  async getBuild(projectId: string, id: string): Promise<FormatBuild | null> {
-    return this.persistence.getFormatBuild(projectId, id);
+  async getBuild(projectId: string, id: string): Promise<RadioBuild | null> {
+    return this.persistence.getRadioBuild(projectId, id);
   }
 
+  async listEgressPaths(projectId: string, radioBuildId: string): Promise<EgressPath[]> {
+    return this.persistence.listEgressPathsForBuild(projectId, radioBuildId);
+  }
+
+  async getEgressPath(projectId: string, id: string): Promise<EgressPath | null> {
+    return this.persistence.getEgressPath(projectId, id);
+  }
+
+  async putEgressPath(egress: EgressPath, expectedRevision: number | null): Promise<PutResult> {
+    return this.persistence.putEgressPath(egress, expectedRevision);
+  }
+
+  /**
+   * Create a radio build for a catalog target and seed every compatible egress
+   * pathway for it. Throws if `radioTargetId` is not in the catalog.
+   */
   async createBuild(
     projectId: string,
-    profileId: string,
+    radioTargetId: string,
     name?: string,
-  ): Promise<{ ok: true; build: FormatBuild } | { ok: false; reason: string }> {
-    const build = newFormatBuild(projectId, profileId, name);
-    const result = await this.persistence.putFormatBuild(build, null);
-    if (!result.ok) {
-      return { ok: false, reason: result.reason ?? 'Save failed' };
+  ): Promise<
+    | { ok: true; build: RadioBuild; egressPaths: EgressPath[] }
+    | { ok: false; reason: string }
+  > {
+    const { build, egressPaths } = newRadioBuildWithEgresses(projectId, radioTargetId, name);
+    const buildResult = await this.persistence.putRadioBuild(build, null);
+    if (!buildResult.ok) {
+      return { ok: false, reason: buildResult.reason ?? 'Save failed' };
     }
-    return { ok: true, build };
+    for (const egress of egressPaths) {
+      const egressResult = await this.persistence.putEgressPath(egress, null);
+      if (!egressResult.ok) {
+        return { ok: false, reason: egressResult.reason ?? 'Save failed' };
+      }
+    }
+    return { ok: true, build, egressPaths };
   }
 
-  async putBuild(build: FormatBuild, expectedRevision: number | null): Promise<PutResult> {
-    return this.persistence.putFormatBuild(build, expectedRevision);
+  async putBuild(build: RadioBuild, expectedRevision: number | null): Promise<PutResult> {
+    return this.persistence.putRadioBuild(build, expectedRevision);
   }
 
+  /** Delete a radio build and every egress path scoped to it. */
   async deleteBuild(projectId: string, id: string): Promise<void> {
-    await this.persistence.deleteEntity(projectId, 'formatBuild', id);
+    const egressPaths = await this.persistence.listEgressPathsForBuild(projectId, id);
+    for (const egress of egressPaths) {
+      await this.persistence.deleteEntity(projectId, 'egressPath', egress.id);
+    }
+    await this.persistence.deleteEntity(projectId, 'radioBuild', id);
   }
 
   /** Touch name and updatedAt before save. */
-  withUpdatedName(build: FormatBuild, name: string): FormatBuild {
+  withUpdatedName(build: RadioBuild, name: string): RadioBuild {
     const now = isoNow();
     return {
       ...build,
@@ -55,23 +86,23 @@ export class BuildService {
     };
   }
 
-  /** Change radio profile (trait + wire variant) before save. */
-  withUpdatedProfile(build: FormatBuild, profileId: string): FormatBuild {
+  /** Change the preferred egress for the Export UI (formatId/profileId live on the egress, #654). */
+  withDefaultEgressPathId(build: RadioBuild, egressPathId: string | undefined): RadioBuild {
     const now = isoNow();
     return {
       ...build,
-      profileId,
+      defaultEgressPathId: egressPathId,
       updatedAt: now,
       revision: nextRevision(build.revision),
     };
   }
 
   withEntityExcluded(
-    build: FormatBuild,
+    build: RadioBuild,
     field: OverrideField,
     libraryEntityId: string,
     excluded: boolean,
-  ): FormatBuild {
+  ): RadioBuild {
     const now = isoNow();
     return {
       ...build,
@@ -82,11 +113,11 @@ export class BuildService {
   }
 
   withEntityForceIncluded(
-    build: FormatBuild,
+    build: RadioBuild,
     field: OverrideField,
     libraryEntityId: string,
     forceInclude: boolean,
-  ): FormatBuild {
+  ): RadioBuild {
     const now = isoNow();
     return {
       ...build,
@@ -101,11 +132,11 @@ export class BuildService {
   }
 
   withWireNameOverride(
-    build: FormatBuild,
+    build: RadioBuild,
     field: OverrideField,
     libraryEntityId: string,
     wireName: string | undefined,
-  ): FormatBuild {
+  ): RadioBuild {
     const now = isoNow();
     return {
       ...build,
@@ -119,10 +150,10 @@ export class BuildService {
 
   /** Per-channel scan inclusion override on channelOverrides (flat-memory / CHIRP Skip). */
   withScanInclusionOverride(
-    build: FormatBuild,
+    build: RadioBuild,
     libraryEntityId: string,
     scanInclusion: ScanInclusion | undefined,
-  ): FormatBuild {
+  ): RadioBuild {
     const now = isoNow();
     return {
       ...build,
@@ -134,7 +165,7 @@ export class BuildService {
     };
   }
 
-  withZoneGroupingSection(build: FormatBuild, section: ZoneGroupingLayout): FormatBuild {
+  withZoneGroupingSection(build: RadioBuild, section: ZoneGroupingLayout): RadioBuild {
     const now = isoNow();
     const other = build.layout.sections.filter((s) => s.kind !== 'zoneGrouping');
     return {
@@ -145,7 +176,7 @@ export class BuildService {
     };
   }
 
-  withScanListsSection(build: FormatBuild, section: ScanListsLayout): FormatBuild {
+  withScanListsSection(build: RadioBuild, section: ScanListsLayout): RadioBuild {
     const now = isoNow();
     const other = build.layout.sections.filter((s) => s.kind !== 'scanLists');
     return {
@@ -157,10 +188,10 @@ export class BuildService {
   }
 
   withExportInclusionFlags(
-    build: FormatBuild,
+    build: RadioBuild,
     flags: Partial<
       Pick<
-        FormatBuild,
+        RadioBuild,
         | 'exportUnlinkedChannels'
         | 'exportUnlinkedTalkGroups'
         | 'exportUnlinkedRxGroupLists'
@@ -168,7 +199,7 @@ export class BuildService {
         | 'exportUnlinkedAnalogContacts'
       >
     >,
-  ): FormatBuild {
+  ): RadioBuild {
     const now = isoNow();
     return {
       ...build,
@@ -178,7 +209,7 @@ export class BuildService {
     };
   }
 
-  withExportSettings(build: FormatBuild, patch: Partial<BuildExportSettings>): FormatBuild {
+  withExportSettings(build: RadioBuild, patch: Partial<BuildExportSettings>): RadioBuild {
     const now = isoNow();
     return {
       ...build,
@@ -191,26 +222,26 @@ export class BuildService {
     };
   }
 
-  /** Persist or replace format-scoped CPS wire hydration on the build. */
-  withCpsWireHydration(build: FormatBuild, hydration: CpsWireHydration): FormatBuild {
+  /** Persist or replace egress-scoped CPS wire hydration (NeonPlug donor / radio-clone image, #654). */
+  withEgressHydration(egress: EgressPath, hydration: CpsWireHydration): EgressPath {
     const now = isoNow();
     return {
-      ...build,
-      cpsWireHydration: hydration,
+      ...egress,
+      hydration,
       updatedAt: now,
-      revision: nextRevision(build.revision),
+      revision: nextRevision(egress.revision),
     };
   }
 
-  /** Clear stored CPS wire hydration bag. */
-  clearCpsWireHydration(build: FormatBuild): FormatBuild {
+  /** Clear stored CPS wire hydration bag from an egress path. */
+  clearEgressHydration(egress: EgressPath): EgressPath {
     const now = isoNow();
-    const next: FormatBuild = {
-      ...build,
+    const next: EgressPath = {
+      ...egress,
       updatedAt: now,
-      revision: nextRevision(build.revision),
+      revision: nextRevision(egress.revision),
     };
-    delete next.cpsWireHydration;
+    delete next.hydration;
     return next;
   }
 }
