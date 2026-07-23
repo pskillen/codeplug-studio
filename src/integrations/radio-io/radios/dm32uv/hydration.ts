@@ -15,6 +15,8 @@ import { DM32_BLOCK_SIZE, DM32_MODEL_IDS } from './constants.ts';
 import { encodeChannelsIntoDm32Image, type Dm32ChannelDecodeContext } from './channelCodec.ts';
 import { encodeZonesIntoDm32Image } from './zoneCodec.ts';
 import { encodeScanListsIntoDm32Image } from './scanListCodec.ts';
+import { encodeTalkGroupsIntoDm32Image } from './talkGroupCodec.ts';
+import { encodeRxGroupsIntoDm32Image } from './rxGroupCodec.ts';
 import type { Dm32DownloadCache } from './protocol.ts';
 
 export const DM32UV_MODEL_ID = DM32_MODEL_IDS[0];
@@ -107,7 +109,15 @@ export function mergeChannelsIntoDm32uvHydration(
     addressBase: cache.addressBase,
     discovered: cache.discovered,
   };
-  let next = encodeChannelsIntoDm32Image(image, ctx, channels);
+  let next = image;
+  // Indices before channel FK bytes
+  if (organisation?.talkGroups) {
+    next = encodeTalkGroupsIntoDm32Image(next, ctx, organisation.talkGroups);
+  }
+  if (organisation?.rxGroups) {
+    next = encodeRxGroupsIntoDm32Image(next, ctx, organisation.rxGroups);
+  }
+  next = encodeChannelsIntoDm32Image(next, ctx, channels);
   if (organisation?.zones) {
     next = encodeZonesIntoDm32Image(next, ctx, organisation.zones);
   }

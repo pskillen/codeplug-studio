@@ -28,14 +28,20 @@ import { DM32_EMPTY_SCAN_LIST_NAME } from '@core/import-export/zoneDerivedScanLi
 import { buildScanContext, effectiveScanSkips } from '@core/import-export/scanInclusion/index.ts';
 import type { RadioChannelDto } from '@integrations/radio-io/radioChannelDto.ts';
 import type {
+  RadioRxGroupDto,
   RadioScanListDto,
+  RadioTalkGroupDto,
   RadioWriteProjection,
   RadioZoneDto,
 } from '@integrations/radio-io/radioWriteProjection.ts';
 import {
   expandAssembledChannelsToRadioDtos,
+  type RadioChannelFkMaps,
   type RadioWireEgressIds,
 } from './radioIoChannelMap.ts';
+
+/** NeonPlug quick-contact group-call type byte. */
+const TG_CALL_TYPE_GROUP = 0x04;
 
 function buildNumbersBySourceChannelId(
   assembled: AssembledBuild,
@@ -273,8 +279,85 @@ function buildDm32Organisation(
   };
 }
 
+function buildTalkGroupsAndRx(
+  assembled: AssembledBuild,
+  egress: RadioWireEgressIds,
+  warnings: string[],
+): {
+  talkGroups: RadioTalkGroupDto[];
+  rxGroups: RadioRxGroupDto[];
+  fkMaps: RadioChannelFkMaps;
+} {
+  const profile = getRadioIoProfile(egress.profileId);
+  const contactIdByEntityId = new Map<string, number>();
+  const talkGroups: RadioTalkGroupDto[] = [];
+  const reservedTg = new Set<string>();
+
+  for (const row of assembled.talkGroups) {
+    if (talkGroups.length >= 800) break;
+    const wireName = applyListWireNameLimits(
+      row.wireName,
+      reservedTg,
+      undefined,
+      egress.profileId,
+      warnings,
+      'Talk group',
+      isRadioIoDm32uvProfile(profile) ? profile.nameLimit : 16,
+    );
+    const index = talkGroups.length + 1;
+    talkGroups.push({
+      index,
+      wireName,
+      digitalId: row.entity.digitalId,
+      callType: TG_CALL_TYPE_GROUP,
+    });
+    contactIdByEntityId.set(row.entity.id, index);
+  }
+
+  const rxGroupIndexById = new Map<string, number>();
+  const rxGroups: RadioRxGroupDto[] = [];
+  const reservedRx = new Set<string>();
+  const maxRx = isRadioIoDm32uvProfile(profile) ? profile.maxRxGroupLists : 32;
+  const maxRxMembers = isRadioIoDm32uvProfile(profile) ? profile.rxGroupListMembers : 32;
+
+  for (const row of assembled.rxGroupLists) {
+    if (rxGroups.length >= maxRx) break;
+    const wireName = applyListWireNameLimits(
+      row.wireName,
+      reservedRx,
+      undefined,
+      egress.profileId,
+      warnings,
+      'RX group list',
+      10,
+    );
+    const memberDigitalIds: number[] = [];
+    for (const member of row.entity.members) {
+      if (memberDigitalIds.length >= maxRxMembers) break;
+      if (member.ref.kind === 'talkGroup') {
+        const tg = assembled.talkGroups.find((t) => t.entity.id === member.ref.id);
+        if (tg) memberDigitalIds.push(tg.entity.digitalId);
+      } else if (member.ref.kind === 'digitalContact') {
+        const dc = assembled.digitalContacts.find((d) => d.entity.id === member.ref.id);
+        if (dc) memberDigitalIds.push(dc.entity.digitalId);
+      }
+    }
+    const index = rxGroups.length + 1;
+    rxGroups.push({ index, wireName, memberDigitalIds });
+    // Channel byte uses 0-based in some docs; NeonPlug RX group id is 1-based in channel field bits.
+    // Studio channelCodec writes rxGroupIndex & 0x3f — use 1-based index matching NeonPlug.
+    rxGroupIndexById.set(row.entity.id, index);
+  }
+
+  return {
+    talkGroups,
+    rxGroups,
+    fkMaps: { contactIdByEntityId, rxGroupIndexById },
+  };
+}
+
 /**
- * Assemble → channel DTOs + source→number map + organisation (zones/scan for DM-32).
+ * Assemble → channel DTOs + source→number map + organisation (zones/scan/TG/RX for DM-32).
  */
 export function buildRadioWriteProjection(
   assembled: AssembledBuild,
@@ -282,12 +365,27 @@ export function buildRadioWriteProjection(
   library: LibrarySlice,
   egress: RadioWireEgressIds,
 ): RadioWriteProjection {
-  const { dtos, warnings } = expandAssembledChannelsToRadioDtos(
+  const warnings: string[] = [];
+  let fkMaps: RadioChannelFkMaps | undefined;
+  let talkGroups: RadioTalkGroupDto[] = [];
+  let rxGroups: RadioRxGroupDto[] = [];
+
+  if (egress.profileId === 'radio-io-dm32uv') {
+    const tgRx = buildTalkGroupsAndRx(assembled, egress, warnings);
+    talkGroups = tgRx.talkGroups;
+    rxGroups = tgRx.rxGroups;
+    fkMaps = tgRx.fkMaps;
+  }
+
+  const { dtos, warnings: channelWarnings } = expandAssembledChannelsToRadioDtos(
     assembled,
     build,
     library,
     egress,
+    fkMaps,
   );
+  warnings.push(...channelWarnings);
+
   const limits = getProfileExportLimits(egress.formatId as FormatId, egress.profileId);
   let numbersBySourceChannelId = buildNumbersBySourceChannelId(
     assembled,
@@ -313,7 +411,12 @@ export function buildRadioWriteProjection(
     );
     channels = org.channels;
     numbersBySourceChannelId = org.numbersBySourceChannelId;
-    organisation = { zones: org.zones, scanLists: org.scanLists };
+    organisation = {
+      zones: org.zones,
+      scanLists: org.scanLists,
+      talkGroups,
+      rxGroups,
+    };
   }
 
   return {
