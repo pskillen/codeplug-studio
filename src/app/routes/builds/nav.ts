@@ -15,6 +15,7 @@ import {
   showsPerChannelScanListNav,
   traitsForRadioTarget,
 } from '@core/radio-targets/index.ts';
+import { findNeonplugDonorEgress, findRadioCloneEgress } from '../../lib/buildEgressUi.ts';
 import { entityNavIcons } from '../../nav/entityNavIcons.ts';
 
 export interface BuildNavItem {
@@ -24,9 +25,9 @@ export interface BuildNavItem {
 }
 
 export interface BuildNavOptions {
-  /** Seeded egress rows — reserved for callers that still pass pathway context. */
+  /** Seeded egress rows — retain links appear when a matching hydration bag exists. */
   egressPaths?: EgressPath[];
-  /** Selected pathway — retain links (NeonPlug settings / Radio image) only when this matches. */
+  /** Selected pathway — Airband (and similar wire-only chrome) keys off this. */
   activeEgress?: EgressPath | null;
 }
 
@@ -36,6 +37,7 @@ export function buildNavItems(build: RadioBuild, options?: BuildNavOptions): Bui
   const traits = new Set(traitsForRadioTarget(build.radioTargetId));
   const flatMemory = traits.has(BuildCapabilityTrait.FlatMemoryList);
   const activeFormatId = options?.activeEgress?.formatId;
+  const egressPaths = options?.egressPaths ?? [];
 
   const items: BuildNavItem[] = [
     { label: 'Export', path: `${base}/export`, icon: IconFileExport },
@@ -95,7 +97,7 @@ export function buildNavItems(build: RadioBuild, options?: BuildNavOptions): Bui
     icon: IconBinaryTree2,
   });
 
-  if (activeFormatId === 'neonplug') {
+  if (findNeonplugDonorEgress(egressPaths)) {
     items.push({
       label: 'NeonPlug settings',
       path: `${base}/neonplug-settings`,
@@ -103,7 +105,7 @@ export function buildNavItems(build: RadioBuild, options?: BuildNavOptions): Bui
     });
   }
 
-  if (activeFormatId === 'radio-io') {
+  if (findRadioCloneEgress(egressPaths)) {
     items.push({
       label: 'Radio image',
       path: `${base}/radio-image`,

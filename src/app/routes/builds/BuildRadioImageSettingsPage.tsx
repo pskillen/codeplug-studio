@@ -1,5 +1,5 @@
 /**
- * Read-only view of Web Serial radio-clone hydration on the active Direct radio egress.
+ * Read-only view of Web Serial radio-clone hydration on the Direct radio egress.
  * Sibling to NeonPlug settings — unmodelled retain for write-back, not library fields.
  */
 
@@ -14,6 +14,7 @@ import {
   summariseDm32uvClone,
   DM32UV_MODEL_ID,
 } from '@integrations/radio-io/radios/dm32uv/index.ts';
+import { findEgressByFormatId } from '../../lib/buildEgressUi.ts';
 import { FormPage, FormSection } from '../../components/ui/index.ts';
 import { useBuildLayout } from './BuildLayoutContext.tsx';
 
@@ -22,13 +23,14 @@ function hexOffset(n: number): string {
 }
 
 export default function BuildRadioImageSettingsPage() {
-  const { build, activeEgress } = useBuildLayout();
+  const { build, egressPaths } = useBuildLayout();
+  const radioEgress = findEgressByFormatId(egressPaths, 'radio-io');
 
-  if (activeEgress?.formatId !== 'radio-io') {
+  if (!radioEgress) {
     return <Navigate to={`/builds/${build.id}/export`} replace />;
   }
 
-  const bag = isRadioCloneHydrationBag(activeEgress.hydration) ? activeEgress.hydration : null;
+  const bag = isRadioCloneHydrationBag(radioEgress.hydration) ? radioEgress.hydration : null;
   const isUv5rMini = bag?.retain.radioModelId === UV5R_MINI_MODEL_ID;
   const isDm32 =
     bag?.retain.radioModelId === DM32UV_MODEL_ID || bag?.retain.radioModelId === 'DP570UV';
@@ -44,10 +46,11 @@ export default function BuildRadioImageSettingsPage() {
       title="Radio image"
       description={
         <Text size="sm" component="span">
-          Read-only view of the clone image stored on this Web Serial egress pathway after{' '}
-          <Link to={`/builds/${build.id}/export`}>Read from radio</Link>. Unmodelled regions (VFO,
-          settings, ANI) are retained for Write so they survive channel updates from the library.
-          Settings are not editable in Studio.
+          Read-only view of the clone image stored on this build’s Web Serial egress pathway after{' '}
+          <Link to={`/builds/${build.id}/export`}>Read from radio</Link>. Available whenever a Read
+          has stored an image — the Export pathway switcher need not be on Direct radio. Unmodelled
+          regions (VFO, settings, ANI) are retained for Write so they survive channel updates from
+          the library. Settings are not editable in Studio.
         </Text>
       }
     >

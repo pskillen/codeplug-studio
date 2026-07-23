@@ -1,5 +1,6 @@
 import { Link, Navigate } from 'react-router-dom';
 import { Stack, Table, Text } from '@mantine/core';
+import { findEgressByFormatId } from '../../lib/buildEgressUi.ts';
 import {
   isNeonplugDonorBag,
   summariseNeonplugDonorRetain,
@@ -263,16 +264,17 @@ function AncillarySection({
   );
 }
 
-/** Read-only NeonPlug donor settings retained on the active NeonPlug egress pathway. */
+/** Read-only NeonPlug donor settings retained on the NeonPlug egress pathway. */
 export default function BuildNeonplugSettingsPage() {
-  const { build, activeEgress } = useBuildLayout();
+  const { build, egressPaths } = useBuildLayout();
+  const neonEgress = findEgressByFormatId(egressPaths, 'neonplug');
 
-  if (activeEgress?.formatId !== 'neonplug') {
+  if (!neonEgress) {
     return <Navigate to={`/builds/${build.id}/export`} replace />;
   }
 
-  const isUv5r = activeEgress.profileId === 'neonplug-uv5rmini';
-  const donor = isNeonplugDonorBag(activeEgress.hydration) ? activeEgress.hydration : null;
+  const isUv5r = neonEgress.profileId === 'neonplug-uv5rmini';
+  const donor = isNeonplugDonorBag(neonEgress.hydration) ? neonEgress.hydration : null;
   const summary = donor ? summariseNeonplugDonorRetain(donor) : null;
 
   return (
@@ -280,10 +282,11 @@ export default function BuildNeonplugSettingsPage() {
       title="NeonPlug settings"
       description={
         <Text size="sm" component="span">
-          Read-only view of unmodelled donor settings stored on this NeonPlug egress pathway for
-          merge export. Upload or replace the donor on{' '}
-          <Link to={`/builds/${build.id}/export`}>Export</Link>. The bag persists with the project
-          (IndexedDB and native YAML export/import).
+          Read-only view of unmodelled donor settings stored on this build’s NeonPlug egress pathway
+          for merge export. Upload or replace the donor on{' '}
+          <Link to={`/builds/${build.id}/export`}>Export</Link>. Available whenever a donor is
+          stored — the Export pathway switcher need not be on NeonPlug. The bag persists with the
+          project (IndexedDB and native YAML export/import).
         </Text>
       }
     >

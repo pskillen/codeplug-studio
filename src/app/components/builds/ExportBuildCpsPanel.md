@@ -19,6 +19,7 @@ Requires `useBuildLayout()` — `formatId` / `profileId` come from the **active 
 - Disables export actions when the project library has no channels.
 - Shows export warnings returned by the format adapter (profile limits, name length, etc.).
 - **DM32** (`formatId === 'dm32'`): mounts `Dm32PreferNeonPlugAlert` once after the pathway switcher — orange deprecation of native Baofeng DM-32 CPS CSV for radio write (**Export only**, not New Radio). Conditional `Dm32AprsSetupAlert` when `APRS.md` is in the export file list. Downloads stay enabled.
+- **Web Serial** (`formatId === 'radio-io'`): `BuildRadioIoPanel` leads with `WebSerialExperimentalAlert` — orange warning that browser write is experimental and riskier than established CPS until each adapter is marked stable.
 - No soft “try NeonPlug” tips on CHIRP / Web Serial — those pathways are siblings under the same radio build.
 - **Download ZIP** packages all CPS CSV files via `buildCpsExportService.downloadCpsZip` (includes conditional files when the adapter adds them, e.g. Anytone `AMAir.CSV` / `FM.CSV`, plus Anytone `{projectSlug}.LST` manifest when project name is set).
 - **Individual files** trigger `downloadCpsFile` per **effective** export file list (`listCpsExportFileNames` / `resolveEffectiveExportFileNames`) — not the static adapter `fileNames` when a format appends conditional banks or sidecars (e.g. `.LST`).

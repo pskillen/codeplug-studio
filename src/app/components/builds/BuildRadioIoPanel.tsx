@@ -32,6 +32,7 @@ import RadioIoProgressModal, {
   type RadioIoOperation,
   type RadioIoProgressPhase,
 } from './RadioIoProgressModal.tsx';
+import WebSerialExperimentalAlert from './WebSerialExperimentalAlert.tsx';
 
 export interface BuildRadioIoPanelProps {
   build: RadioBuild;
@@ -203,6 +204,7 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
 
   return (
     <Stack gap="sm">
+      <WebSerialExperimentalAlert />
       <Text fw={600} size="sm">
         Direct radio (Web Serial)
       </Text>
