@@ -67,7 +67,7 @@ Projection settings (scan inclusion, m×n, naming fill-ins, …) stay visible ac
 | `/builds/:id/contacts`          | Wire preview — contacts                                                                                                                  |
 | `/builds/:id/rx-group-lists`    | Wire preview — RX group lists                                                                                                            |
 | `/builds/:id/export-resolution` | Read-only behavioural defaults cascade audit (Channels + Zones tabs)                                                                     |
-| `/builds/:id/neonplug-settings` | When a NeonPlug donor bag is stored — read-only donor settings from that egress’s `hydration` (nav regardless of active pathway)          |
+| `/builds/:id/neonplug-settings` | When a NeonPlug donor bag is stored — read-only donor settings from that egress’s `hydration` (nav regardless of active pathway)         |
 | `/builds/:id/radio-image`       | When a Web Serial `radio-clone` bag is stored — read-only clone image summary from that egress’s `hydration` (nav regardless of pathway) |
 
 Requires an active project (`RequireActiveProject`).
