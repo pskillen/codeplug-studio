@@ -15,7 +15,8 @@ import { applyWireNameLimits } from '@core/import-export/channelExpansion/export
 import { expandAllMxNChannels } from '@core/import-export/channelExpansion/mxnExpandAll.ts';
 import type { ExpandedMxNChannelRow } from '@core/import-export/channelExpansion/mxnExpandAll.ts';
 import { mergeExportOptions } from '@core/import-export/exportSettingsMerge.ts';
-import { getRadioIoProfile } from '@core/import-export/formats/radio-io/profiles.ts';
+import { getProfileExportLimits } from '@core/import-export/profileExportLimits.ts';
+import type { FormatId } from '@core/import-export/types.ts';
 import { hasMxNChannelExpansion } from '@core/radio-targets/index.ts';
 import type {
   RadioChannelDto,
@@ -133,17 +134,13 @@ function truncateToRadioCapacity(
   egress: RadioWireEgressIds,
   warnings: string[],
 ): RadioChannelDto[] {
-  try {
-    const profile = getRadioIoProfile(egress.profileId);
-    const maxSlots = profile.maxMemorySlots;
-    if (dtos.length > maxSlots) {
-      warnings.push(
-        `Expanded channel count ${dtos.length} exceeds radio capacity ${maxSlots}; truncating`,
-      );
-      return dtos.slice(0, maxSlots);
-    }
-  } catch {
-    // Unknown profile — skip capacity check.
+  const limits = getProfileExportLimits(egress.formatId as FormatId, egress.profileId);
+  const maxSlots = limits?.maxChannels;
+  if (typeof maxSlots === 'number' && dtos.length > maxSlots) {
+    warnings.push(
+      `Expanded channel count ${dtos.length} exceeds radio capacity ${maxSlots}; truncating`,
+    );
+    return dtos.slice(0, maxSlots);
   }
   return dtos;
 }
