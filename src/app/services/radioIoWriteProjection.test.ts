@@ -34,6 +34,8 @@ describe('buildRadioWriteProjection', () => {
     const projection = buildRadioWriteProjection(assembled, build, library, egress);
     expect(projection.channels.length).toBeGreaterThanOrEqual(1);
     expect(projection.numbersBySourceChannelId.get('ch-a')).toEqual([1]);
-    expect(projection.organisation).toEqual({});
+    expect(projection.organisation.zones).toEqual([]);
+    expect(projection.organisation.scanLists).toHaveLength(1);
+    expect(projection.organisation.scanLists?.[0]?.wireName).toBe('Scan list 1');
   });
 });

@@ -37,4 +37,11 @@ export interface RadioChannelDto {
   txContactId?: number;
   /** RX group list index (0-based / radio-native). */
   rxGroupIndex?: number;
+  /**
+   * Scan list id on channel record (1–32); bit-packed into byte 0x19 bits 5–2.
+   * Undefined = leave scan-list id unset (0).
+   */
+  scanListId?: number;
+  /** When true, set scan-add bit (0x19 bit 6). */
+  scanAdd?: boolean;
 }

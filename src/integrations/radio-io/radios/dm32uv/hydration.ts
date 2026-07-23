@@ -9,9 +9,12 @@ import {
 } from '@core/models/radioCloneHydration.ts';
 import type { MemoryMap } from '../../types.ts';
 import type { RadioChannelDto } from '../../radioChannelDto.ts';
+import type { RadioWriteOrganisation } from '../../radioWriteProjection.ts';
 import { createMemoryMap } from '../../kit/memoryMap.ts';
 import { DM32_BLOCK_SIZE, DM32_MODEL_IDS } from './constants.ts';
 import { encodeChannelsIntoDm32Image, type Dm32ChannelDecodeContext } from './channelCodec.ts';
+import { encodeZonesIntoDm32Image } from './zoneCodec.ts';
+import { encodeScanListsIntoDm32Image } from './scanListCodec.ts';
 import type { Dm32DownloadCache } from './protocol.ts';
 
 export const DM32UV_MODEL_ID = DM32_MODEL_IDS[0];
@@ -96,14 +99,20 @@ export function extractDm32uvHydrationFromProtocol(
 export function mergeChannelsIntoDm32uvHydration(
   bag: RadioCloneHydrationBag,
   channels: readonly RadioChannelDto[],
-  organisation?: import('../../radioWriteProjection.ts').RadioWriteOrganisation,
+  organisation?: RadioWriteOrganisation,
 ): MemoryMap {
-  void organisation; // encoded in later #667 slices
   const cache = cacheFromBag(bag);
   const image = memoryMapFromDm32uvHydration(bag);
   const ctx: Dm32ChannelDecodeContext = {
     addressBase: cache.addressBase,
     discovered: cache.discovered,
   };
-  return encodeChannelsIntoDm32Image(image, ctx, channels);
+  let next = encodeChannelsIntoDm32Image(image, ctx, channels);
+  if (organisation?.zones) {
+    next = encodeZonesIntoDm32Image(next, ctx, organisation.zones);
+  }
+  if (organisation?.scanLists) {
+    next = encodeScanListsIntoDm32Image(next, ctx, organisation.scanLists);
+  }
+  return next;
 }

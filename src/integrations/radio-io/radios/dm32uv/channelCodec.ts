@@ -193,7 +193,10 @@ export function encodeDm32ChannelRecord(ch: RadioChannelDto): Uint8Array {
   modeFlags |= (powerWireFromPercent(ch.powerPercent) & 0x03) << 1;
   data[0x18] = modeFlags;
 
-  const scanBw = ch.bandwidth === 'FM' ? 0x80 : 0x00;
+  const scanBw =
+    (ch.bandwidth === 'FM' ? 0x80 : 0x00) |
+    (ch.scanAdd ? 0x40 : 0x00) |
+    (((ch.scanListId ?? 0) & 0x0f) << 2);
   data[0x19] = scanBw;
 
   let digital = (ch.colorCode ?? 1) & 0x0f;

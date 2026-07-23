@@ -36,6 +36,8 @@ export {
   parseDm32ChannelRecord,
   encodeDm32ChannelRecord,
 } from './channelCodec.ts';
+export { encodeDm32Zone, encodeZonesIntoDm32Image } from './zoneCodec.ts';
+export { encodeDm32ScanList, encodeScanListsIntoDm32Image } from './scanListCodec.ts';
 export {
   summariseDm32uvClone,
   type Dm32uvCloneSummary,
