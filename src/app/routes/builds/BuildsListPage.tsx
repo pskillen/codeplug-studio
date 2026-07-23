@@ -2,8 +2,8 @@ import { Button, Group, Loader, Stack, Text, TextInput } from '@mantine/core';
 import { IconPlus } from '@tabler/icons-react';
 import { useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import type { FormatBuild } from '@core/models/formatBuild.ts';
-import { traitProfileFor } from '@core/models/traits.ts';
+import type { RadioBuild } from '@core/models/radioBuild.ts';
+import { radioTargetFor } from '@core/radio-targets/index.ts';
 import {
   DataTable,
   GradientSegmentedControl,
@@ -21,7 +21,6 @@ import { groupFormatBuilds, type BuildsListGroupMode } from './groupFormatBuilds
 const GROUP_OPTIONS = [
   { value: 'list', label: 'List' },
   { value: 'radio', label: 'By radio' },
-  { value: 'format', label: 'By format' },
 ] as const;
 
 export default function BuildsListPage() {
@@ -48,19 +47,25 @@ export default function BuildsListPage() {
     return groupFormatBuilds(filtered, groupMode);
   }, [filtered, groupMode]);
 
-  const columns = useMemo((): DataTableColumn<FormatBuild>[] => {
+  const columns = useMemo((): DataTableColumn<RadioBuild>[] => {
     return [
       {
-        key: 'format',
-        header: 'Format',
-        render: (b) => b.formatId,
-        sortValue: (b) => b.formatId,
+        key: 'radio',
+        header: 'Radio',
+        render: (b) => radioTargetFor(b.radioTargetId)?.label ?? b.radioTargetId,
+        sortValue: (b) => radioTargetFor(b.radioTargetId)?.label ?? b.radioTargetId,
       },
       {
-        key: 'profile',
-        header: 'Profile',
-        render: (b) => traitProfileFor(b.profileId)?.label ?? b.profileId,
-        sortValue: (b) => traitProfileFor(b.profileId)?.label ?? b.profileId,
+        key: 'egress',
+        header: 'Export paths',
+        render: (b) =>
+          radioTargetFor(b.radioTargetId)
+            ?.compatibleEgress.map((entry) => entry.label)
+            .join(' · ') ?? '—',
+        sortValue: (b) =>
+          radioTargetFor(b.radioTargetId)
+            ?.compatibleEgress.map((entry) => entry.label)
+            .join(' · ') ?? '',
       },
       {
         key: 'updated',
@@ -82,7 +87,7 @@ export default function BuildsListPage() {
   return (
     <ListPage
       title="Builds"
-      description="Format-specific assemblies from your library — one build per radio workflow."
+      description="Named radio configurations from your library — wire names and layout per handheld. Export pathways (Web Serial, NeonPlug, CPS) are chosen per build on Export."
       actions={
         <Button component={Link} to="/builds/new" leftSection={<IconPlus size={16} />}>
           New build
@@ -92,7 +97,8 @@ export default function BuildsListPage() {
       <Stack gap="lg">
         {builds.length === 0 ? (
           <Text c="dimmed">
-            No builds yet. Create one to organise library channels for a target CPS format.
+            No builds yet. Create one for the radio you are programming — you can keep several
+            builds for the same radio type (for example Team A and Team B).
           </Text>
         ) : null}
         {builds.length > 0 ? (
@@ -109,7 +115,7 @@ export default function BuildsListPage() {
             <GradientSegmentedControl
               label="Group"
               size="xs"
-              scheme="three"
+              scheme="onOff"
               value={groupMode}
               onChange={setGroupMode}
               data={[...GROUP_OPTIONS]}

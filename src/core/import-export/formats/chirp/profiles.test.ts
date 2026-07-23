@@ -4,6 +4,7 @@ import {
   chirpPercentToWire,
   chirpWireToPercent,
   getChirpProfile,
+  resolveChirpExportProfileId,
 } from './profiles.ts';
 
 describe('chirp/profiles', () => {
@@ -47,5 +48,11 @@ describe('chirp/profiles', () => {
 
   it('throws for unknown profile', () => {
     expect(() => getChirpProfile('baofeng-uv5r-mini')).toThrow(/Unknown CHIRP profile/);
+  });
+
+  it('resolveChirpExportProfileId ignores poisoned non-CHIRP ids from egress switches', () => {
+    expect(resolveChirpExportProfileId('neonplug-uv5rmini', 'chirp-uv5r')).toBe('chirp-uv5r');
+    expect(resolveChirpExportProfileId('radio-io-uv5r-mini', 'chirp-uv5r')).toBe('chirp-uv5r');
+    expect(resolveChirpExportProfileId('chirp-uv21', 'chirp-uv5r')).toBe('chirp-uv21');
   });
 });

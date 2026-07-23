@@ -60,7 +60,7 @@ describe('anytoneChannelWireName', () => {
     const exportName = anytoneChannelWireName(
       { entity: channel, wireName: 'unused' },
       { reserved: new Set() },
-      { profileId: build.profileId, shortenNames: true },
+      { profileId: 'anytone-at-d890uv', shortenNames: true },
     );
 
     expect(exportName).toBe(preview);

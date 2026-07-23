@@ -4,7 +4,7 @@ import {
   emptyLibrary,
   newAprsConfiguration,
   newChannel,
-  newFormatBuild,
+  newRadioBuildForProfile,
   newRxGroupList,
   newTalkGroup,
 } from '@core/domain/factories.ts';
@@ -75,9 +75,10 @@ describe('exportBuildZip neonplug', () => {
   it('exports DM32UV channels with sequential numbers into a .neonplug ZIP', () => {
     const chFm = fmChannel('ch-fm', 'GB3AO', 145_600_000);
     const chDmr = dmrChannel('ch-dmr', 'GB7EM');
-    const build = newFormatBuild(projectId, 'neonplug-dm32uv', 'Neon DM32');
+    const { build, egress } = newRadioBuildForProfile(projectId, 'neonplug-dm32uv', 'Neon DM32');
     const { zip, files, warnings } = exportBuildZip({
       build,
+      egress,
       library: libraryOf(chFm, chDmr),
       options: { shortenNames: false },
     });
@@ -114,8 +115,13 @@ describe('exportBuildZip neonplug', () => {
   it('exports UV5R-Mini using flat-memory slot numbers', () => {
     const ch1 = fmChannel('ch-1', 'First', 145_500_000);
     const ch2 = fmChannel('ch-2', 'Second', 433_500_000);
+    const { build: baseBuild, egress } = newRadioBuildForProfile(
+      projectId,
+      'neonplug-uv5rmini',
+      'Neon UV5R',
+    );
     const build = {
-      ...newFormatBuild(projectId, 'neonplug-uv5rmini', 'Neon UV5R'),
+      ...baseBuild,
       channelOverrides: [
         { libraryEntityId: ch2.id, orderOrSlot: 2 },
         { libraryEntityId: ch1.id, orderOrSlot: 5 },
@@ -124,6 +130,7 @@ describe('exportBuildZip neonplug', () => {
 
     const { zip } = exportBuildZip({
       build,
+      egress,
       library: libraryOf(ch1, ch2),
       options: { shortenNames: false },
     });
@@ -138,7 +145,7 @@ describe('exportBuildZip neonplug', () => {
 
   it('merges Studio projection into a donor .neonplug base', () => {
     const chFm = fmChannel('ch-fm', 'GB3AO', 145_600_000);
-    const build = newFormatBuild(projectId, 'neonplug-dm32uv', 'Neon DM32');
+    const { build, egress } = newRadioBuildForProfile(projectId, 'neonplug-dm32uv', 'Neon DM32');
     const baseBody = JSON.stringify({
       version: '1.0.0',
       exportDate: '2020-01-01T00:00:00.000Z',
@@ -161,6 +168,7 @@ describe('exportBuildZip neonplug', () => {
 
     const { zip, warnings } = exportBuildZip({
       build,
+      egress,
       library: libraryOf(chFm),
       options: { shortenNames: false },
       baseNeonplugBytes,
@@ -178,11 +186,16 @@ describe('exportBuildZip neonplug', () => {
     expect(warnings.every((w) => !/UV5R-Mini/.test(w))).toBe(true);
   });
 
-  it('merges using build.cpsWireHydration when no session donor bytes', () => {
+  it('merges using egress hydration when no session donor bytes', () => {
     const chFm = fmChannel('ch-fm', 'GB3AO', 145_600_000);
-    const build = {
-      ...newFormatBuild(projectId, 'neonplug-dm32uv', 'Neon DM32'),
-      cpsWireHydration: {
+    const { build, egress: baseEgress } = newRadioBuildForProfile(
+      projectId,
+      'neonplug-dm32uv',
+      'Neon DM32',
+    );
+    const egress = {
+      ...baseEgress,
+      hydration: {
         formatId: 'neonplug' as const,
         sourceFileName: 'radio.neonplug',
         capturedAt: '2026-07-20T12:00:00.000Z',
@@ -202,6 +215,7 @@ describe('exportBuildZip neonplug', () => {
 
     const { zip } = exportBuildZip({
       build,
+      egress,
       library: libraryOf(chFm),
       options: { shortenNames: false },
     });
@@ -241,7 +255,7 @@ describe('exportBuildZip neonplug', () => {
         },
       ],
     };
-    const build = newFormatBuild(projectId, 'neonplug-dm32uv', 'Neon Expand');
+    const { build, egress } = newRadioBuildForProfile(projectId, 'neonplug-dm32uv', 'Neon Expand');
     const library: LibrarySlice = {
       ...emptyLibrary(),
       channels: [channel],
@@ -251,6 +265,7 @@ describe('exportBuildZip neonplug', () => {
 
     const { zip } = exportBuildZip({
       build,
+      egress,
       library,
       options: { shortenNames: false },
     });
@@ -263,7 +278,7 @@ describe('exportBuildZip neonplug', () => {
 
   it('warns on greenfield when library has APRS config and leaves radioSettings null', () => {
     const ch = dmrChannel('ch-dmr', 'GB7EM');
-    const build = newFormatBuild(projectId, 'neonplug-dm32uv', 'Neon APRS');
+    const { build, egress } = newRadioBuildForProfile(projectId, 'neonplug-dm32uv', 'Neon APRS');
     const library: LibrarySlice = {
       ...emptyLibrary(),
       channels: [ch],
@@ -283,6 +298,7 @@ describe('exportBuildZip neonplug', () => {
 
     const { zip, warnings } = exportBuildZip({
       build,
+      egress,
       library,
       options: { shortenNames: false },
     });
@@ -294,7 +310,11 @@ describe('exportBuildZip neonplug', () => {
 
   it('patches donor radioSettings APRS fields on merge-export', () => {
     const ch = dmrChannel('ch-dmr', 'GB7EM');
-    const build = newFormatBuild(projectId, 'neonplug-dm32uv', 'Neon APRS Merge');
+    const { build, egress } = newRadioBuildForProfile(
+      projectId,
+      'neonplug-dm32uv',
+      'Neon APRS Merge',
+    );
     const library: LibrarySlice = {
       ...emptyLibrary(),
       channels: [ch],
@@ -347,6 +367,7 @@ describe('exportBuildZip neonplug', () => {
 
     const { zip, warnings } = exportBuildZip({
       build,
+      egress,
       library,
       options: { shortenNames: false },
       baseNeonplugBytes,

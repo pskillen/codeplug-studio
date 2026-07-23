@@ -1,17 +1,22 @@
 /**
  * Map assemble() projection channels → radio-boundary DTOs for Web Serial encode.
- * Applies FormatBuild export name settings (profile nameLimit, shortenNames, …).
+ * Applies RadioBuild export name settings (profile nameLimit, shortenNames, …).
  * No framing — integrations radio modules consume RadioChannelDto only.
  */
 
 import type { AssembledChannel } from '@core/services/assemble.ts';
-import type { FormatBuild } from '@core/models/formatBuild.ts';
+import type { RadioBuild } from '@core/models/radioBuild.ts';
 import type { ChannelTone } from '@core/models/library.ts';
 import { channelPickForWireExport, composeChannelWireName } from '@core/domain/channelNaming.ts';
 import type { ChannelExportNameMode } from '@core/domain/channelNaming.ts';
 import { applyWireNameLimits } from '@core/import-export/channelExpansion/exportWireNames.ts';
 import { mergeExportOptions } from '@core/import-export/exportSettingsMerge.ts';
 import type { RadioChannelDto, RadioTone } from '@integrations/radio-io/radioChannelDto.ts';
+
+export interface RadioWireEgressIds {
+  formatId: string;
+  profileId: string;
+}
 
 function parseChannelTone(tone: ChannelTone | undefined): RadioTone {
   if (!tone || tone === 'none') return { kind: 'none' };
@@ -33,11 +38,12 @@ function bandwidthFromKHz(bandwidthKHz: number | null | undefined): 'FM' | 'NFM'
 
 function radioWireName(
   row: AssembledChannel,
-  build: FormatBuild,
+  build: RadioBuild,
+  egress: RadioWireEgressIds,
   reserved: Set<string>,
   warnings: string[],
 ): string {
-  const merged = mergeExportOptions(build);
+  const merged = mergeExportOptions(build, egress.formatId, { profileId: egress.profileId });
   const pick = channelPickForWireExport(row.entity, {
     nameModeOverride: merged.nameModeOverride as ChannelExportNameMode | undefined,
   });
@@ -51,7 +57,7 @@ function radioWireName(
     row.entity,
     reserved,
     merged,
-    merged.profileId ?? build.profileId,
+    merged.profileId ?? egress.profileId,
     warnings,
   );
 }
@@ -63,7 +69,8 @@ function radioWireName(
  */
 export function assembledChannelsToRadioDtos(
   channels: readonly AssembledChannel[],
-  build: FormatBuild,
+  build: RadioBuild,
+  egress: RadioWireEgressIds,
 ): RadioChannelDto[] {
   const reserved = new Set<string>();
   const warnings: string[] = [];
@@ -77,7 +84,7 @@ export function assembledChannelsToRadioDtos(
     dtos.push({
       slotIndex,
       empty: false,
-      wireName: radioWireName(row, build, reserved, warnings),
+      wireName: radioWireName(row, build, egress, reserved, warnings),
       rxHz,
       txHz,
       rxTone: parseChannelTone(analog && 'rxTone' in analog ? analog.rxTone : 'none'),

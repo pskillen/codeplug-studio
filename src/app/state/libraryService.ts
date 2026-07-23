@@ -147,7 +147,7 @@ export class LibraryService {
       const analogIds = new Set(
         (await this.persistence.listAnalogContacts(projectId)).map((contact) => contact.id),
       );
-      const builds = await this.persistence.listFormatBuilds(projectId);
+      const builds = await this.persistence.listRadioBuilds(projectId);
       for (const build of builds) {
         const nextOverrides = build.contactOverrides.filter((override) =>
           analogIds.has(override.libraryEntityId),
@@ -155,15 +155,15 @@ export class LibraryService {
         const pruned = build.contactOverrides.length - nextOverrides.length;
         if (pruned === 0) continue;
         prunedBuildOverrides += pruned;
-        const result = await this.persistence.putFormatBuild(
+        const result = await this.persistence.putRadioBuild(
           { ...build, contactOverrides: nextOverrides },
           build.revision,
         );
         if (!result.ok) {
           throw new Error(
             result.reason === 'revision_conflict'
-              ? 'A format build was changed elsewhere. Reload and try again.'
-              : 'Failed to prune contact overrides on format builds.',
+              ? 'A radio build was changed elsewhere. Reload and try again.'
+              : 'Failed to prune contact overrides on radio builds.',
           );
         }
       }

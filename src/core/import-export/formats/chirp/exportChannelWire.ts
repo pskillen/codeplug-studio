@@ -45,6 +45,7 @@ export function effectiveMaxNameLength(
 
 function channelWireName(
   row: AssembledChannel,
+  profileId: string,
   options: ChirpChannelWireOptions,
   exportOptions?: CpsExportOptions,
 ): string {
@@ -73,7 +74,7 @@ function channelWireName(
     row.entity,
     options.reserved,
     exportOptions,
-    exportOptions?.profileId,
+    exportOptions?.profileId ?? profileId,
     options.warnings ?? [],
   );
 }
@@ -128,7 +129,7 @@ export function channelToChirpRow(
 
   return [
     String(location),
-    channelWireName(row, wireOptions, exportOptions),
+    channelWireName(row, profileId, wireOptions, exportOptions),
     formatChirpFrequencyWire(channel.rxFrequency),
     duplex,
     offsetMhz.toFixed(6),

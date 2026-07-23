@@ -13,7 +13,8 @@ export const STORES: Record<EntityKind, string> = {
   rxGroupList: 'rxGroupLists',
   scanList: 'scanLists',
   aprsConfiguration: 'aprsConfigurations',
-  formatBuild: 'formatBuilds',
+  radioBuild: 'radioBuilds',
+  egressPath: 'egressPaths',
 };
 
 export const STORE_NAMES = Object.values(STORES);

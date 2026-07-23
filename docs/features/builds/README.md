@@ -1,44 +1,57 @@
-# Format builds
+# Radio builds
 
-Per-target CPS workflows that map the vendor-neutral [library](../library/README.md) to one radio format and profile.
+Per-target radio workflows that map the vendor-neutral [library](../library/README.md) to one handheld configuration, then egress via Web Serial and/or CPS files.
 
-**Tracking:** Phase 4a [#82](https://github.com/pskillen/codeplug-studio/issues/82) · Epic [#36](https://github.com/pskillen/codeplug-studio/issues/36)
+**Tracking:** Phase 4a [#82](https://github.com/pskillen/codeplug-studio/issues/82) · Epic [#36](https://github.com/pskillen/codeplug-studio/issues/36) · RadioBuild redesign [#654](https://github.com/pskillen/codeplug-studio/issues/654)
 
 **Source:** `src/app/routes/builds/`, `src/app/state/buildService.ts`
 
 ## Problem
 
-The library holds RF semantics once. Each radio/CPS family expects different organisation (zones, flat memories, scan lists) and wire limits. A **format build** is the persisted assembly for one target — selections, trait layout, and wire-name overrides survive between sessions.
+The library holds RF semantics once. Each radio expects different organisation (zones, flat memories, scan lists) and wire limits. A **radio build** (`RadioBuild`) is the persisted assembly for one **named configuration** of a catalog radio target — selections, trait layout, and wire-name overrides survive between sessions. Getting data onto the radio uses **egress pathways** (`EgressPath`: Web Serial, NeonPlug, CHIRP CSV, …) under that build.
+
+## Many builds, same radio type
+
+`radioTargetId` is a **catalog reference**, not a uniqueness key. A project may have several builds for the same handheld type, each with its own overrides and egress children:
+
+| Build name   | `radioTargetId`     | Example difference                       |
+| ------------ | ------------------- | ---------------------------------------- |
+| UV-5R Team A | `baofeng-uv5r-mini` | Subset of channels; one scan config      |
+| UV-5R Team B | `baofeng-uv5r-mini` | Different inclusions / scan / wire names |
+
+Both share the **library**; each has its own `RadioBuild` → `assemble` → `EgressPath` tree. Creating another build for the same target always allocates a new UUID — no “one build per radio” gate.
 
 ## Operator workflow
 
 1. Curate channels, zones, and contacts in **Library**.
 2. Open **Export for radio** (sidebar) → **New build**.
-3. Pick a CPS format (OpenGD77, CHIRP, …) and a **profile** (trait + wire variant).
-4. Land on **Export** (default) — download CPS files, Drive upload, inclusion and name settings.
-5. Use **Setup** for rename/delete, profile changes, and capability badges; open **Radio characteristics** for organisation and export limits.
+3. Pick a **radio target** (e.g. Baofeng UV-5R Mini) and a display name (use names to distinguish Team A / Team B permutations).
+4. Land on **Export** (default) — choose an **egress** (Web Serial, NeonPlug, CHIRP, …), then download / write / donor merge as that pathway requires.
+5. Use **Setup** for rename/delete and capability badges; open **Radio characteristics** for organisation and export limits.
 6. Shape wire names and zone layout on entity sub-routes — see [wire-preview.md](wire-preview.md).
 7. Switch builds from the secondary-nav **Build** select without returning to the list.
 
-See [profiles.md](profiles.md) for profile picker workflows.
+See [profiles.md](profiles.md) for egress profile limits and the CHIRP runtime profile override on Export.
 
-Native YAML remains **project interchange** (library + all builds) on **Summary**. It is not created via the new-build flow.
+Native YAML remains **project interchange** (library + all radio builds + egress paths) on **Summary**. It is not created via the new-build flow.
 
 ## Export vs Setup
 
-| Surface                            | Owns                                                                                              |
-| ---------------------------------- | ------------------------------------------------------------------------------------------------- |
-| **Export** (`/builds/:id/export`)  | Download / Drive / donor merge / format settings / inclusion — the job operators open a build for |
-| **Setup** (`/builds/:id/overview`) | Build identity (rename/delete), target profile, organisation capability badges                    |
+| Surface                            | Owns                                                                                                                                 |
+| ---------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| **Export** (`/builds/:id/export`)  | **Egress switcher** (CPS file / Web Serial pathway), download / Drive / donor merge / format settings / inclusion / hydration upload |
+| **Setup** (`/builds/:id/overview`) | Build identity (rename/delete), catalog radio target, organisation capability badges                                                 |
 
 Export does not host identity editors; Setup does not host download actions. Secondary nav lists **Export** first; `/builds/:id` redirects to Export.
+
+**Hydration** (NeonPlug donor `.neonplug`, Web Serial `radio-clone` image) is stored on the active **`EgressPath`**, not on the `RadioBuild` row. NeonPlug settings and Radio image retain pages summarise hydration for the matching egress child.
 
 ## Routes
 
 | Route                           | Purpose                                                                                                                                  |
 | ------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
-| `/builds`                       | List builds for the active project — **Group**: List / By radio / By format                                                              |
-| `/builds/new`                   | Create build — format → profile → name                                                                                                   |
+| `/builds`                       | List builds — **Group**: List / By radio                                                                                                 |
+| `/builds/new`                   | Create build — **choose radio target** → name (seeds all compatible egress children)                                                     |
 | `/builds/:id`                   | Redirect → export                                                                                                                        |
 | `/builds/:id/export`            | CPS export panel (default / front door)                                                                                                  |
 | `/builds/:id/overview`          | Setup — identity, target profile, organisation badges                                                                                    |
@@ -52,8 +65,8 @@ Export does not host identity editors; Setup does not host download actions. Sec
 | `/builds/:id/contacts`          | Wire preview — contacts                                                                                                                  |
 | `/builds/:id/rx-group-lists`    | Wire preview — RX group lists                                                                                                            |
 | `/builds/:id/export-resolution` | Read-only behavioural defaults cascade audit (Channels + Zones tabs)                                                                     |
-| `/builds/:id/neonplug-settings` | NeonPlug only — read-only donor settings retain                                                                                          |
-| `/builds/:id/radio-image`       | Direct radio only — read-only Web Serial clone image summary (opaque VFO/settings retain)                                                |
+| `/builds/:id/neonplug-settings` | When **active** egress is NeonPlug — read-only donor settings from that egress’s `hydration`                                             |
+| `/builds/:id/radio-image`       | When **active** egress is Web Serial — read-only clone image summary from that egress’s `hydration`                                      |
 
 Requires an active project (`RequireActiveProject`).
 
@@ -61,7 +74,7 @@ Sidebar label is **Export for radio**; routes and code use `builds`. Secondary s
 
 **CPS export:** Per-build CPS export is on `/builds/:id/export` (`ExportBuildCpsPanel`) — the build front door. Project YAML backup lives on [Summary](../report/README.md), not on a separate Import/export page.
 
-**Web Serial (Direct radio builds):** create format **Direct radio** → profile for the handheld (e.g. Baofeng UV-5R Mini). Export is **serial-only** — no CPS ZIP/CSV. `BuildRadioIoPanel` hosts Read (hydrate `radio-clone` on the build) / Write (`assemble` into that image). Secondary nav **Radio image** shows a read-only summary of the retained clone (sibling to NeonPlug settings). NeonPlug and CHIRP FormatBuilds remain file pathways. See [radio-read-write](../radio-read-write/README.md) and [adding-a-radio-adapter.md](../radio-read-write/adding-a-radio-adapter.md).
+**Web Serial:** create a radio target that lists a Web Serial egress (e.g. Baofeng UV-5R Mini). On Export, pick the **Web Serial** pathway: `BuildRadioIoPanel` hosts Read (hydrate `radio-clone` on that egress) / Write (`assemble` into the hydrated image). Secondary nav **Radio image** appears only while that pathway is active. CPS file egresses (NeonPlug, CHIRP, …) remain separate children under the same build. See [radio-read-write](../radio-read-write/README.md) and [adding-a-radio-adapter.md](../radio-read-write/adding-a-radio-adapter.md).
 
 **CSV preview** ([#151](https://github.com/pskillen/codeplug-studio/issues/151)): outline **Preview CSV** button (after Save ZIP to Drive) opens a modal with one tab per CPS file, rendered as a read-only table. Uses the same `exportBuildAll` path as download — see [`CpsCsvPreview.md`](../../../src/app/components/builds/CpsCsvPreview.md). Build-wide export warnings (profile caps, long wire names, zone cycle messages) are collected once at the core export layer and deduplicated — each distinct message appears once in the preview and ZIP paths ([#319](https://github.com/pskillen/codeplug-studio/issues/319)). The shared [`ExportWarningsAlert`](../../../src/app/components/builds/ExportWarningsAlert.md) folds unlinked-item, member-cap, and shortened-name groups behind collapsed title + count headers ([#408](https://github.com/pskillen/codeplug-studio/issues/408)).
 
@@ -73,13 +86,15 @@ Sidebar label is **Export for radio**; routes and code use `builds`. Secondary s
 | [wire-preview.md](wire-preview.md)                                                      | Wire name overrides and preview routes        |
 | [wire-name-composition.md](wire-name-composition.md)                                    | Traits → fields for auto-generated wire names |
 | [zone-grouping.md](zone-grouping.md)                                                    | Build zone layout editor                      |
+| [radio-build-egress-progress.md](radio-build-egress-progress.md)                        | #654 execution log (shipped)                  |
+| [radio-build-egress-outstanding.md](radio-build-egress-outstanding.md)                  | #654 discovered debt                          |
 | [`BuildSwitcher.md`](../../../src/app/components/builds/BuildSwitcher/BuildSwitcher.md) | Secondary-nav build identity + switcher       |
 
 ## Persistence
 
-Builds are `FormatBuild` rows in IndexedDB (`formatBuilds` store). CRUD goes through `BuildService` and `useFormatBuilds` — same persistence port as library entities.
+`RadioBuild` rows live in IndexedDB (`radioBuilds` store). Child `EgressPath` rows live in `egressPaths` (compound index `byRadioBuild`). CRUD goes through `BuildService` and `useFormatBuilds` (hook name retained) — same persistence port as library entities. **Schema v22** drops legacy `formatBuilds` outright — no build-data migration; library rows are untouched.
 
-YAML import/export includes `formatBuilds[]` in the project document.
+Native YAML import/export includes `radioBuilds[]` and `egressPaths[]` in the project document. Legacy documents with a non-empty `formatBuilds[]` are not migrated — that array is dropped with a single import warning (`radioBuilds` / `egressPaths` come back empty; library is retained).
 
 ## Implementation status
 
@@ -92,14 +107,15 @@ YAML import/export includes `formatBuilds[]` in the project document.
 | Zone grouping editor         | Shipped | Expandable zone rows on `/builds/:id/zones` — export-as-scan-list + member counts in row header ([#152](https://github.com/pskillen/codeplug-studio/issues/152), [#318](https://github.com/pskillen/codeplug-studio/issues/318)); DM32 carrier/scratch in expanded panel ([#121](https://github.com/pskillen/codeplug-studio/issues/121))                                                                                                                                                                                                                                                        |
 | Multi-mode channel expansion | Shipped | [#89](https://github.com/pskillen/codeplug-studio/issues/89) — preview + OpenGD77 export                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
 | Export name shortening       | Shipped | [#90](https://github.com/pskillen/codeplug-studio/issues/90) — `useExportSettings` + dictionary                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
-| Export inclusion flags       | Shipped | [#103](https://github.com/pskillen/codeplug-studio/issues/103) — orphan channels/TGs/RGLs on `FormatBuild` + export UI                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| Export inclusion flags       | Shipped | [#103](https://github.com/pskillen/codeplug-studio/issues/103) — orphan channels/TGs/RGLs on `RadioBuild` + export UI                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
 | Channel behaviour overrides  | Shipped | [#420](https://github.com/pskillen/codeplug-studio/issues/420) — optional build `exportSettings` overrides on Export panel                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
 | Export resolution summary    | Shipped | [#421](https://github.com/pskillen/codeplug-studio/issues/421) / [#443](https://github.com/pskillen/codeplug-studio/issues/443) — Channels + Zones tabs; zone-derived scan membership cascade                                                                                                                                                                                                                                                                                                                                                                                                    |
 | Radio characteristics        | Shipped | [#515](https://github.com/pskillen/codeplug-studio/issues/515) — `/builds/:id/characteristics`; copy in `buildCapabilityCopy.ts`; limits via `getProfileExportLimits` (blanks for unmodelled caps)                                                                                                                                                                                                                                                                                                                                                                                               |
+| RadioBuild + EgressPath      | Shipped | [#654](https://github.com/pskillen/codeplug-studio/issues/654) — radio-centric `RadioBuild` + child `EgressPath` pathways; egress switcher on Export; hydration on egress; schema v22                                                                                                                                                                                                                                                                                                                                                                                                            |
 
 ## Export inclusion flags
 
-Per-build toggles on `FormatBuild` (default **on**) control whether orphan library entities are included in CPS export:
+Per-build toggles on `RadioBuild` (default **on**) control whether orphan library entities are included in CPS export:
 
 | Field                           | When enabled (default)                                                                     |
 | ------------------------------- | ------------------------------------------------------------------------------------------ |
@@ -112,6 +128,6 @@ Per-build toggles on `FormatBuild` (default **on**) control whether orphan libra
 Switches on `/builds/:id/export` **and** the matching Build → entity settings cards persist to the build row. Wire preview `includedPreviewWireRows` honours the same flags.
 
 - [profiles.md](profiles.md) — radio profile picker workflows
-- [data-model](../data-model/README.md) — `FormatBuild`, trait layout, selections
+- [data-model](../data-model/README.md) — `RadioBuild`, `EgressPath`, trait layout, overrides
 - [import-export/opengd77](../import-export/opengd77/README.md) — OpenGD77 profiles
 - [DESIGN.md](../../../DESIGN.md) — build capability traits

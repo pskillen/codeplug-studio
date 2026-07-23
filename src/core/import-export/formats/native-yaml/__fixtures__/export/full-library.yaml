@@ -1,4 +1,4 @@
-formatBuilds: []
+egressPaths: []
 library:
   analogContacts:
     - code: "12345"
@@ -156,5 +156,6 @@ project:
   updatedAt: 2026-07-02T10:00:00.000Z
   zoneDefaults:
     includeInZoneDerivedScanList: true
+radioBuilds: []
 schemaVersion: 1
-studioSchemaVersion: 21
+studioSchemaVersion: 22

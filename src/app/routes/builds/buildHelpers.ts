@@ -10,7 +10,7 @@ export interface BuildProfileOption {
   hint?: string;
 }
 
-/** Profiles available when creating a build for a CPS format. */
+/** Profiles available for a CPS format (e.g. CHIRP runtime profile override on Export). */
 export function buildProfileOptionsForFormat(formatId: FormatId): BuildProfileOption[] {
   if (formatId === 'opengd77') {
     return getFormatProfiles('opengd77').map((p) => ({

@@ -16,10 +16,8 @@ describe('Dm32PreferNeonPlugAlert', () => {
 
     expect(screen.getByText(DM32_PREFER_NEONPLUG_TITLE)).toBeInTheDocument();
     expect(screen.getByText(/imports CSV incompletely/)).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'NeonPlug build' })).toHaveAttribute(
-      'href',
-      '/builds/new',
-    );
+    expect(screen.getByText(/choose the/i)).toBeInTheDocument();
+    expect(screen.getByText('NeonPlug')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'neonplug.app' })).toHaveAttribute(
       'href',
       'https://neonplug.app',

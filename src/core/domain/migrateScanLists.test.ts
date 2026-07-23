@@ -34,7 +34,7 @@ describe('migrateBuildScanListsToLibrary', () => {
         analogSquelchMode: 'carrier',
       },
       aprsConfiguration: null,
-      formatBuilds: [
+      radioBuilds: [
         {
           ...newFormatBuild(PROJECT_ID, 'anytone-at-d890uv'),
           layout: {
@@ -59,6 +59,7 @@ describe('migrateBuildScanListsToLibrary', () => {
           ],
         },
       ],
+      egressPaths: [],
     });
 
     expect(aggregate.scanLists).toHaveLength(1);
@@ -67,9 +68,9 @@ describe('migrateBuildScanListsToLibrary', () => {
       name: 'Zone A SCL',
       memberChannelIds: ['ch-1', 'ch-2'],
     });
-    expect(aggregate.formatBuilds[0]?.layout.sections).toEqual([]);
+    expect(aggregate.radioBuilds[0]?.layout.sections).toEqual([]);
     expect(
-      (aggregate.formatBuilds[0]?.channelOverrides[0] as { scanListId?: string }).scanListId,
+      (aggregate.radioBuilds[0]?.channelOverrides[0] as { scanListId?: string }).scanListId,
     ).toBe(SCAN_LIST_ID);
   });
 });

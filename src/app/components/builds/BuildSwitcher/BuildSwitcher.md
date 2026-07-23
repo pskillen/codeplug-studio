@@ -1,10 +1,10 @@
 # BuildSwitcher
 
-Current format-build identity and sibling switcher in build secondary nav chrome.
+Current radio-build identity and sibling switcher in build secondary nav chrome.
 
 ## Purpose
 
-Makes the active build obvious (name + format/profile cue) and lets operators jump to another build without climbing back to the Export for radio list.
+Makes the active build obvious (name + radio-target cue) and lets operators jump to another build without climbing back to the builds list.
 
 ## Props
 
@@ -23,9 +23,9 @@ Mounted from `BuildSectionNavFrame` above `BuildNavLinks`.
 ## Behaviour
 
 - Renders nothing when the current build cannot be resolved
-- **Select** lists sibling builds **grouped by CPS format** (muted group headers; catalog order; name-sorted within each group); changing selection navigates via `pathForSwitchedBuild`
+- **Select** lists sibling builds **grouped by manufacturer / family** (muted group headers; name-sorted within each group); changing selection navigates via `pathForSwitchedBuild`
 - Preserves the current sub-route when the target build exposes that nav item; otherwise lands on `/export`
-- Shows format · profile under the select as a read-only cue
+- Shows the catalog radio-target label under the select as a read-only cue
 
 ## Related
 

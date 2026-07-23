@@ -1,761 +1,52 @@
-formatBuilds:
-  - channelOverrides:
-      - libraryEntityId: ca70ca22-179f-4442-8824-0894f3c764c6:-D:talkGroup:f7c35ef0-86ac-4908-a53e-6ad79092fc46
-        wireName: Hspt MM9PDY TG
-      - libraryEntityId: ca70ca22-179f-4442-8824-0894f3c764c6:-D:talkGroup:dc74e45d-11a0-4786-b5c5-baeecca3b4c5
-        wireName: Hspt Scot Chat
-      - libraryEntityId: ca70ca22-179f-4442-8824-0894f3c764c6:-D:talkGroup:e4ceac7d-d163-495d-a39c-cba3aef5c52d
-        wireName: Hspt Scot Mult
-      - libraryEntityId: ca70ca22-179f-4442-8824-0894f3c764c6:-D:talkGroup:8c4ddb48-fb84-4e4d-9387-046f4c2932d2
-        wireName: Hspt Scotland
-      - excluded: true
-        libraryEntityId: 3219abdc-e64c-4bff-a5d7-7d69963b83d8
-      - libraryEntityId: ca70ca22-179f-4442-8824-0894f3c764c6:-D:talkGroup:5b6778fb-a0f9-4088-8e0c-2c89e518cac4
-        wireName: Hspt Scot West
-      - excluded: true
-        libraryEntityId: bf4a02c4-20c7-4a79-a502-8911bfaba4e3
-      - excluded: true
-        libraryEntityId: 881719e5-04b9-4ef0-a7cc-0775a45e1533
-      - excluded: true
-        libraryEntityId: 5268c7cb-2abd-440f-ba06-955eb8e58db9
-    contactOverrides: []
-    exportSettings:
-      exportZoneDerivedScanLists: true
-      maxNameLength: null
-      nameModeOverride: callsign_name
-      shortenNames: true
-      useChannelAbbreviation: true
-      useTalkGroupAbbreviation: true
-    exportUnlinkedAnalogContacts: true
-    exportUnlinkedChannels: true
-    exportUnlinkedDigitalContacts: true
-    exportUnlinkedRxGroupLists: true
-    exportUnlinkedTalkGroups: true
-    formatId: anytone
-    id: 436617a3-217a-4866-a249-319f492c6b28
-    layout:
-      sections:
-        - kind: zoneGrouping
-          zones:
-            - channelIds:
-                - 3b631c77-1d8e-4ac4-b8c6-edbb4571b5f1
-                - 7302e505-1f0e-456e-954c-3a0e55f89bf1
-                - abfc26c9-44ca-4a72-89a9-716e2fb8b872
-                - 8928d8ed-9c96-477c-8358-859a968e05bf
-                - b9e5e9f0-2958-4321-b9d8-ba8eca4f64d1
-                - 41b8a368-a823-4006-9c8b-88011b48f551
-                - 4b983368-1d35-46cc-bb76-152a91a0f311
-                - 0aafa779-acc4-4b14-ac55-cfa3a5a241a1
-                - 6d9cb486-4c95-4d19-a2ae-1cf3dc68c4e6
-                - 26c20999-beb8-4dc7-8545-ee3d97cd86e1
-                - 4b644bf4-fa40-42ef-aee6-f7c56cd5d84c
-                - 21399ab7-d7bb-451f-9f92-775638dd2bba
-              exportScanList: true
-              id: 3265622f-cea2-46b2-9d17-b4d543e4d874
-              name: Aberdeen
-            - channelIds:
-                - f6381b6c-7da1-4774-a800-ec33605c266b
-                - 394e36f6-b04c-4e3c-8c8c-a71221dc50b3
-                - 35b330af-23a9-48bf-89c2-655279a134a0
-                - 3cfbaaa5-c470-44c8-8fc6-99533c930789
-                - 560af276-dd29-48a2-8fb6-f268bd7ec285
-              id: 4501b9e2-dc29-4a44-bd4c-c0f736e91f25
-              name: Aberdn Airband
-            - channelIds:
-                - 70bad150-2d11-4706-a3db-57175d068313
-                - ca70ca22-179f-4442-8824-0894f3c764c6
-                - abfc26c9-44ca-4a72-89a9-716e2fb8b872
-                - 8928d8ed-9c96-477c-8358-859a968e05bf
-                - b9e5e9f0-2958-4321-b9d8-ba8eca4f64d1
-                - 41b8a368-a823-4006-9c8b-88011b48f551
-                - 4b983368-1d35-46cc-bb76-152a91a0f311
-                - 0aafa779-acc4-4b14-ac55-cfa3a5a241a1
-                - 6d9cb486-4c95-4d19-a2ae-1cf3dc68c4e6
-                - 26c20999-beb8-4dc7-8545-ee3d97cd86e1
-                - 4b644bf4-fa40-42ef-aee6-f7c56cd5d84c
-                - 21399ab7-d7bb-451f-9f92-775638dd2bba
-              exportScanList: true
-              id: dbff7ef8-215a-4b01-ae84-f7fe78be4022
-              name: Aboyne
-            - channelIds:
-                - 6c7bc1cc-1b52-445a-a72e-43aaf212f47b
-                - 1c99ded1-50f5-4b57-bad3-e335d06531a2
-                - 35053ef7-560e-402f-829b-b8484f4efbf5
-                - 211c5132-bac9-4257-8f58-0637808f1dba
-                - a557d38c-2d9c-4a18-bc60-0354b4ee2cdf
-                - 2cc9e394-2f5b-4b23-a3dc-9420c6aa6b4c
-                - abfc26c9-44ca-4a72-89a9-716e2fb8b872
-                - 8928d8ed-9c96-477c-8358-859a968e05bf
-                - b9e5e9f0-2958-4321-b9d8-ba8eca4f64d1
-                - 41b8a368-a823-4006-9c8b-88011b48f551
-                - 4b983368-1d35-46cc-bb76-152a91a0f311
-                - 0aafa779-acc4-4b14-ac55-cfa3a5a241a1
-                - 6d9cb486-4c95-4d19-a2ae-1cf3dc68c4e6
-                - 26c20999-beb8-4dc7-8545-ee3d97cd86e1
-                - 4b644bf4-fa40-42ef-aee6-f7c56cd5d84c
-                - 21399ab7-d7bb-451f-9f92-775638dd2bba
-              exportScanList: true
-              id: 9a78b0b4-388a-4dbe-8bc7-8f2223ffb8be
-              name: Dundee
-            - channelIds:
-                - 041595cf-144f-4505-8d7f-11d4172d7854
-                - 206d71b7-b445-4abc-bdcc-7d49a0a8e835
-                - 6f55c822-1f91-448b-aafe-e0da3a94e1e3
-                - 2d61c26c-7eb2-4c9a-8062-7dc8b12c08d0
-                - 6f0bd721-0fbc-4966-ad82-21bee7cb01b0
-                - 0424b169-1fd7-45f0-b2ac-7be8d0c293c6
-                - d27479d4-bef9-442d-9e58-8a4f43a8cfd7
-                - 24cca1c9-df68-4b56-bd6a-23d2a56d1ab9
-                - f50b3ba9-66a9-4ec7-86b6-6feab5be7515
-              id: 41707a0a-964e-4062-8909-2db7afdd3750
-              name: Edin Airband
-            - channelIds:
-                - 6290f8fd-0501-4597-93f5-d8e8e4c944fc
-                - abbe01e6-035c-4776-aad1-9626a1d2c2c9
-                - a23a4363-f653-4bc4-8c6e-13756bda0a97
-                - 881719e5-04b9-4ef0-a7cc-0775a45e1533
-                - 86880ca2-4a23-476a-b0d0-7bc72658598b
-                - 09baf926-3d27-4f45-b6f3-87c5e3b6943a
-                - 4f4d1310-4da9-4053-b7a1-df47d00bcfb0
-                - d33c7c26-3b49-423e-ac7f-f23f0ec53522
-                - abfc26c9-44ca-4a72-89a9-716e2fb8b872
-                - 8928d8ed-9c96-477c-8358-859a968e05bf
-                - b9e5e9f0-2958-4321-b9d8-ba8eca4f64d1
-                - 41b8a368-a823-4006-9c8b-88011b48f551
-                - 4b983368-1d35-46cc-bb76-152a91a0f311
-                - 0aafa779-acc4-4b14-ac55-cfa3a5a241a1
-                - 6d9cb486-4c95-4d19-a2ae-1cf3dc68c4e6
-                - 26c20999-beb8-4dc7-8545-ee3d97cd86e1
-                - 4b644bf4-fa40-42ef-aee6-f7c56cd5d84c
-                - 21399ab7-d7bb-451f-9f92-775638dd2bba
-              exportScanList: true
-              id: b66aae38-4ba1-4055-a8bf-ea0aeece0839
-              name: Edinburgh
-            - channelIds:
-                - 38f23e93-aa3e-4ca0-ad40-513930eeb3f2
-                - 7a1ffb31-75ab-49f4-8862-588babb16229
-                - 34a70d64-0044-4678-9783-5ec4dd2b0b1c
-                - 833f26c1-1a08-4295-8e8e-8bdad8a67580
-                - ba83c50d-ea62-4e8f-b3c5-73fd2d77c9ba
-                - 29b766f5-8f13-4545-9cba-69cf7469976c
-                - ae96efa5-8a48-4edc-86af-25deb080e1c5
-                - b39fdcc7-79d8-47ab-80bd-266deea94142
-                - 2e9f785f-a0db-40ef-b46b-348b3238d0a7
-                - fddbb856-fe0b-4f2d-8520-cddeeaee47fd
-                - c402e4c4-3079-4609-abe2-9501b6d4b9d6
-                - abfc26c9-44ca-4a72-89a9-716e2fb8b872
-                - 8928d8ed-9c96-477c-8358-859a968e05bf
-                - b9e5e9f0-2958-4321-b9d8-ba8eca4f64d1
-                - 41b8a368-a823-4006-9c8b-88011b48f551
-                - 4b983368-1d35-46cc-bb76-152a91a0f311
-                - 0aafa779-acc4-4b14-ac55-cfa3a5a241a1
-                - 6d9cb486-4c95-4d19-a2ae-1cf3dc68c4e6
-                - 26c20999-beb8-4dc7-8545-ee3d97cd86e1
-                - 4b644bf4-fa40-42ef-aee6-f7c56cd5d84c
-                - 21399ab7-d7bb-451f-9f92-775638dd2bba
-              exportScanList: true
-              id: 8925c989-552e-4abf-8e89-59ab46d553af
-              name: Glasgow
-            - channelIds:
-                - eb2be667-3e6a-423f-a518-8938021cae3b
-                - b29a77ae-d883-4ec7-99cd-c5d0a637ed2a
-                - e0a2d306-8f22-4a93-a65f-c5dd0be317c7
-                - 38fec83d-de58-4df7-922d-0a6be65033e1
-                - bc176d8c-e690-4fe5-bb11-d8dbbc3e35c8
-                - df79c9f5-00d3-47d4-b8de-367a84a26aa6
-                - 23739a7a-f56f-4fce-9b5e-4c81bac90104
-                - 10423cd0-2ef4-4f92-bf92-2f802e23f98e
-                - 968ea37c-1bfb-4baa-9b3a-e717d37d1433
-                - e3e123ce-4e44-435b-89f3-c38fc435ec42
-              id: fdb6effe-cdb6-4aa9-b8f6-10fd0afe5256
-              name: Glasgow Airband
-            - channelIds:
-                - ca70ca22-179f-4442-8824-0894f3c764c6
-                - 7a1ffb31-75ab-49f4-8862-588babb16229
-                - 29b766f5-8f13-4545-9cba-69cf7469976c
-                - 34a70d64-0044-4678-9783-5ec4dd2b0b1c
-                - c402e4c4-3079-4609-abe2-9501b6d4b9d6
-                - 833f26c1-1a08-4295-8e8e-8bdad8a67580
-                - abfc26c9-44ca-4a72-89a9-716e2fb8b872
-                - 8928d8ed-9c96-477c-8358-859a968e05bf
-                - b9e5e9f0-2958-4321-b9d8-ba8eca4f64d1
-                - 41b8a368-a823-4006-9c8b-88011b48f551
-                - 4b983368-1d35-46cc-bb76-152a91a0f311
-                - 0aafa779-acc4-4b14-ac55-cfa3a5a241a1
-                - 6d9cb486-4c95-4d19-a2ae-1cf3dc68c4e6
-                - 26c20999-beb8-4dc7-8545-ee3d97cd86e1
-                - 4b644bf4-fa40-42ef-aee6-f7c56cd5d84c
-                - 21399ab7-d7bb-451f-9f92-775638dd2bba
-              exportScanList: true
-              id: 82265ffb-a90a-46a9-9401-1520af568ee9
-              name: Home Shack
-            - channelIds:
-                - ca70ca22-179f-4442-8824-0894f3c764c6
-                - 38f23e93-aa3e-4ca0-ad40-513930eeb3f2
-                - 7a1ffb31-75ab-49f4-8862-588babb16229
-                - 34a70d64-0044-4678-9783-5ec4dd2b0b1c
-                - 833f26c1-1a08-4295-8e8e-8bdad8a67580
-                - ba83c50d-ea62-4e8f-b3c5-73fd2d77c9ba
-                - 29b766f5-8f13-4545-9cba-69cf7469976c
-                - fddbb856-fe0b-4f2d-8520-cddeeaee47fd
-                - c402e4c4-3079-4609-abe2-9501b6d4b9d6
-                - abfc26c9-44ca-4a72-89a9-716e2fb8b872
-                - 8928d8ed-9c96-477c-8358-859a968e05bf
-                - b9e5e9f0-2958-4321-b9d8-ba8eca4f64d1
-                - 41b8a368-a823-4006-9c8b-88011b48f551
-                - 4b983368-1d35-46cc-bb76-152a91a0f311
-                - 0aafa779-acc4-4b14-ac55-cfa3a5a241a1
-                - 6d9cb486-4c95-4d19-a2ae-1cf3dc68c4e6
-                - 26c20999-beb8-4dc7-8545-ee3d97cd86e1
-                - 4b644bf4-fa40-42ef-aee6-f7c56cd5d84c
-                - 21399ab7-d7bb-451f-9f92-775638dd2bba
-              exportScanList: true
-              id: 5133f2fe-41a4-4c5f-a5e7-a056c1e172ba
-              name: Morning Walk
-            - channelIds:
-                - 211c5132-bac9-4257-8f58-0637808f1dba
-                - a557d38c-2d9c-4a18-bc60-0354b4ee2cdf
-                - 2cc9e394-2f5b-4b23-a3dc-9420c6aa6b4c
-                - 6c7bc1cc-1b52-445a-a72e-43aaf212f47b
-                - 1c99ded1-50f5-4b57-bad3-e335d06531a2
-                - abfc26c9-44ca-4a72-89a9-716e2fb8b872
-                - 8928d8ed-9c96-477c-8358-859a968e05bf
-                - b9e5e9f0-2958-4321-b9d8-ba8eca4f64d1
-                - 41b8a368-a823-4006-9c8b-88011b48f551
-                - 4b983368-1d35-46cc-bb76-152a91a0f311
-                - 0aafa779-acc4-4b14-ac55-cfa3a5a241a1
-                - 6d9cb486-4c95-4d19-a2ae-1cf3dc68c4e6
-                - 26c20999-beb8-4dc7-8545-ee3d97cd86e1
-                - 4b644bf4-fa40-42ef-aee6-f7c56cd5d84c
-                - 21399ab7-d7bb-451f-9f92-775638dd2bba
-              exportScanList: true
-              id: c5844927-de71-426e-b2c0-418776b2d135
-              name: Perth
-            - channelIds:
-                - 6f13aa05-b011-4d0c-bd9c-b19c56716fc6
-                - a6559d4b-d9b2-448b-971b-f38034147527
-                - 704a87cf-d610-4bbf-af78-1c29e9aa5a97
-                - 78852154-fb9f-4f16-870a-020f468341db
-                - c6973b7f-fedd-49b6-8a16-ec19643d2590
-                - 9da78b52-c0fb-4dce-b054-470d4bc7b4af
-                - 8710cf64-fd67-47ee-88d8-9d26cbdaf5ad
-                - 28e21d75-ca0d-4f20-855c-cf38e10e8f18
-                - f75317fa-810c-47c1-92c9-28aefbaac829
-                - e7d4448d-7e2d-4219-a71a-9c11f0f080d2
-                - c7f95831-de0c-4ce9-aa08-dd2743e4ab9e
-                - 124ea979-df82-4c4e-8963-61309dbbc265
-                - dc318f4c-686a-4efa-9729-450eff32b71e
-                - 8208716b-34e2-45f5-a0df-21818c84ca27
-                - f9c60e6a-e443-408f-a2b7-a20ee881a347
-                - 598eac81-060d-480b-b97d-b6382f19d68d
-              exportScanList: true
-              id: f0b8cbd5-7b10-4cfd-8ccc-833be4b3d9b9
-              name: PMR-446
-            - channelIds:
-                - abfc26c9-44ca-4a72-89a9-716e2fb8b872
-                - 8928d8ed-9c96-477c-8358-859a968e05bf
-                - b9e5e9f0-2958-4321-b9d8-ba8eca4f64d1
-                - 41b8a368-a823-4006-9c8b-88011b48f551
-                - 4b983368-1d35-46cc-bb76-152a91a0f311
-                - 0aafa779-acc4-4b14-ac55-cfa3a5a241a1
-                - 6d9cb486-4c95-4d19-a2ae-1cf3dc68c4e6
-                - 26c20999-beb8-4dc7-8545-ee3d97cd86e1
-                - 4b644bf4-fa40-42ef-aee6-f7c56cd5d84c
-                - 21399ab7-d7bb-451f-9f92-775638dd2bba
-              id: a3dd95b6-5274-48d4-9d58-2516d20aac51
-              name: Simplex scan channels
-            - channelIds:
-                - 4e745f41-9a2e-4f55-bec0-5a497c7c0738
-                - ab6751ae-d76c-46aa-9fb6-6ec1713a3535
-                - 32a743bd-5276-440d-8e70-190dc169a475
-                - 6b60edf0-d045-4008-859b-c0b7fa5c1eab
-                - 86a5be84-397d-4914-9ef9-917bfa5f1160
-                - e39e8c04-014d-4ec3-a567-5a0143055f78
-                - b0996ee3-b2f7-4c18-83aa-1f278636e9f3
-                - 4d1c1716-8473-4dad-86bf-89124a23a784
-                - 4b983368-1d35-46cc-bb76-152a91a0f311
-                - 7faf28c4-a13b-4186-9741-4155e4c2358c
-                - 91eab4e1-22ab-4a87-a003-ac8ac8b91cdd
-                - 383eba32-4f3e-4f2a-ba95-ae1383bacbab
-                - 5fbb58d9-a807-4d8e-b9ed-debc86c58c89
-                - 1f56ca78-895e-4510-a5ca-70f8d057ab2c
-                - 2fb66912-0bff-4e0a-9687-03fa7be58b1c
-                - 55b5403a-be69-4648-8da8-64ad3710b3d1
-                - 583dba48-4632-424e-ab84-5ec80a56c199
-              exportScanList: true
-              id: a9834106-11a0-4f59-9458-cc56b4095c42
-              name: UK UHF simplex
-            - channelIds:
-                - 65432461-b2fa-48a1-9fa6-eadd6ae763f9
-                - 5292da72-926f-451f-af2d-a81eee6abd35
-                - 1a31d271-eae4-43a5-9045-a718f95c926c
-                - efb34289-df3a-45a4-8c8f-1cfae6f667c9
-                - 715d5008-1d25-4c98-bfe3-3320be02fd94
-                - e9fbfc42-7675-45fa-be19-8fda1bacbd70
-                - f85beb5c-0e18-405d-876e-66bafa114c76
-                - e2d7c249-24b4-4a3e-bf3c-c033fb2531c4
-                - acbc4a97-13a2-4a50-a137-71fab903c490
-                - adeb0130-c699-45e4-b579-635bd31f0c71
-                - 0aafa779-acc4-4b14-ac55-cfa3a5a241a1
-                - 6d9cb486-4c95-4d19-a2ae-1cf3dc68c4e6
-                - 26c20999-beb8-4dc7-8545-ee3d97cd86e1
-                - 4b644bf4-fa40-42ef-aee6-f7c56cd5d84c
-                - 21399ab7-d7bb-451f-9f92-775638dd2bba
-                - abedcfec-bab5-452d-aca2-950aba2be269
-              exportScanList: true
-              id: cd2a1e8a-d503-485c-bc07-1b37932201c3
-              name: UK VHF simplex
-    name: Anytone AT-D890UV
+egressPaths:
+  - formatId: anytone
+    id: 0e8da215-b7e4-4105-8478-9a44660dd07e
+    kind: cps-file
     profileId: anytone-at-d890uv
     projectId: 9734dab8-f8b8-4c81-84eb-a0c2d3479f21
-    revision: 91
-    rxGroupListOverrides: []
-    scanListOverrides: []
-    talkGroupOverrides: []
+    radioBuildId: 436617a3-217a-4866-a249-319f492c6b28
+    revision: 1
     updatedAt: 2026-07-17T20:20:55.713Z
-    zoneOverrides:
-      - libraryEntityId: dbff7ef8-215a-4b01-ae84-f7fe78be4022
-        orderOrSlot: 1
-      - libraryEntityId: 3265622f-cea2-46b2-9d17-b4d543e4d874
-        orderOrSlot: 2
-      - libraryEntityId: 9a78b0b4-388a-4dbe-8bc7-8f2223ffb8be
-        orderOrSlot: 3
-      - libraryEntityId: b66aae38-4ba1-4055-a8bf-ea0aeece0839
-        orderOrSlot: 4
-      - libraryEntityId: 8925c989-552e-4abf-8e89-59ab46d553af
-        orderOrSlot: 5
-      - libraryEntityId: 82265ffb-a90a-46a9-9401-1520af568ee9
-        orderOrSlot: 6
-      - libraryEntityId: 5133f2fe-41a4-4c5f-a5e7-a056c1e172ba
-        orderOrSlot: 7
-      - libraryEntityId: c5844927-de71-426e-b2c0-418776b2d135
-        orderOrSlot: 8
-      - libraryEntityId: f0b8cbd5-7b10-4cfd-8ccc-833be4b3d9b9
-        orderOrSlot: 9
-      - libraryEntityId: a3dd95b6-5274-48d4-9d58-2516d20aac51
-        orderOrSlot: 10
-      - libraryEntityId: a9834106-11a0-4f59-9458-cc56b4095c42
-        orderOrSlot: 11
-      - libraryEntityId: cd2a1e8a-d503-485c-bc07-1b37932201c3
-        orderOrSlot: 12
-  - channelOverrides: []
-    contactOverrides: []
-    exportSettings:
-      exportZoneDerivedScanLists: true
-      maxNameLength: null
-      nameModeOverride: callsign_name
-      shortenNames: true
-      useChannelAbbreviation: true
-      useTalkGroupAbbreviation: false
-    exportUnlinkedAnalogContacts: true
-    exportUnlinkedChannels: true
-    exportUnlinkedDigitalContacts: true
-    exportUnlinkedRxGroupLists: true
-    exportUnlinkedTalkGroups: true
-    formatId: opengd77
-    id: afba4ef7-8dae-4ed5-8956-5bf03ea4b951
-    layout:
-      sections:
-        - kind: zoneGrouping
-          zones:
-            - channelIds:
-                - 38f23e93-aa3e-4ca0-ad40-513930eeb3f2
-                - 7a1ffb31-75ab-49f4-8862-588babb16229
-                - 34a70d64-0044-4678-9783-5ec4dd2b0b1c
-                - 833f26c1-1a08-4295-8e8e-8bdad8a67580
-              id: 8925c989-552e-4abf-8e89-59ab46d553af
-              name: Glasgow
-    name: Baofeng 1701 / Retevis RT-84
+  - formatId: opengd77
+    id: 60e73183-2967-4464-a6cb-81c59300212f
+    kind: cps-file
     profileId: opengd77-1701
     projectId: 9734dab8-f8b8-4c81-84eb-a0c2d3479f21
-    revision: 796
-    rxGroupListOverrides: []
-    scanListOverrides: []
-    talkGroupOverrides: []
+    radioBuildId: afba4ef7-8dae-4ed5-8956-5bf03ea4b951
+    revision: 1
     updatedAt: 2026-07-16T22:59:05.537Z
-    zoneOverrides: []
-  - channelOverrides: []
-    contactOverrides: []
-    exportSettings:
-      exportZoneDerivedScanLists: true
-      maxNameLength: null
-      nameModeOverride: callsign_name
-      shortenNames: true
-      useChannelAbbreviation: true
-      useTalkGroupAbbreviation: false
-    exportUnlinkedAnalogContacts: true
-    exportUnlinkedChannels: false
-    exportUnlinkedDigitalContacts: true
-    exportUnlinkedRxGroupLists: false
-    exportUnlinkedTalkGroups: false
-    formatId: dm32
-    id: a1468012-adde-46cd-8853-32a1217ba23f
-    layout:
-      sections:
-        - kind: zoneGrouping
-          zones:
-            - channelIds:
-                - ca70ca22-179f-4442-8824-0894f3c764c6
-                - 7a1ffb31-75ab-49f4-8862-588babb16229
-                - 29b766f5-8f13-4545-9cba-69cf7469976c
-                - 34a70d64-0044-4678-9783-5ec4dd2b0b1c
-                - c402e4c4-3079-4609-abe2-9501b6d4b9d6
-                - 833f26c1-1a08-4295-8e8e-8bdad8a67580
-                - abfc26c9-44ca-4a72-89a9-716e2fb8b872
-                - 8928d8ed-9c96-477c-8358-859a968e05bf
-                - b9e5e9f0-2958-4321-b9d8-ba8eca4f64d1
-                - 41b8a368-a823-4006-9c8b-88011b48f551
-                - 4b983368-1d35-46cc-bb76-152a91a0f311
-                - 0aafa779-acc4-4b14-ac55-cfa3a5a241a1
-                - 6d9cb486-4c95-4d19-a2ae-1cf3dc68c4e6
-                - 26c20999-beb8-4dc7-8545-ee3d97cd86e1
-                - 4b644bf4-fa40-42ef-aee6-f7c56cd5d84c
-                - 21399ab7-d7bb-451f-9f92-775638dd2bba
-              exportScanList: true
-              id: 82265ffb-a90a-46a9-9401-1520af568ee9
-              name: Home Shack
-            - channelIds:
-                - ca70ca22-179f-4442-8824-0894f3c764c6
-                - 38f23e93-aa3e-4ca0-ad40-513930eeb3f2
-                - 7a1ffb31-75ab-49f4-8862-588babb16229
-                - 34a70d64-0044-4678-9783-5ec4dd2b0b1c
-                - 833f26c1-1a08-4295-8e8e-8bdad8a67580
-                - ba83c50d-ea62-4e8f-b3c5-73fd2d77c9ba
-                - 29b766f5-8f13-4545-9cba-69cf7469976c
-                - fddbb856-fe0b-4f2d-8520-cddeeaee47fd
-                - c402e4c4-3079-4609-abe2-9501b6d4b9d6
-                - abfc26c9-44ca-4a72-89a9-716e2fb8b872
-                - 8928d8ed-9c96-477c-8358-859a968e05bf
-                - b9e5e9f0-2958-4321-b9d8-ba8eca4f64d1
-                - 41b8a368-a823-4006-9c8b-88011b48f551
-                - 4b983368-1d35-46cc-bb76-152a91a0f311
-                - 0aafa779-acc4-4b14-ac55-cfa3a5a241a1
-                - 6d9cb486-4c95-4d19-a2ae-1cf3dc68c4e6
-                - 26c20999-beb8-4dc7-8545-ee3d97cd86e1
-                - 4b644bf4-fa40-42ef-aee6-f7c56cd5d84c
-                - 21399ab7-d7bb-451f-9f92-775638dd2bba
-              exportScanList: true
-              id: 5133f2fe-41a4-4c5f-a5e7-a056c1e172ba
-              name: Morning Walk
-            - channelIds:
-                - 38f23e93-aa3e-4ca0-ad40-513930eeb3f2
-                - 7a1ffb31-75ab-49f4-8862-588babb16229
-                - 34a70d64-0044-4678-9783-5ec4dd2b0b1c
-                - 833f26c1-1a08-4295-8e8e-8bdad8a67580
-                - ba83c50d-ea62-4e8f-b3c5-73fd2d77c9ba
-                - 29b766f5-8f13-4545-9cba-69cf7469976c
-                - ae96efa5-8a48-4edc-86af-25deb080e1c5
-                - b39fdcc7-79d8-47ab-80bd-266deea94142
-                - 2e9f785f-a0db-40ef-b46b-348b3238d0a7
-                - fddbb856-fe0b-4f2d-8520-cddeeaee47fd
-                - c402e4c4-3079-4609-abe2-9501b6d4b9d6
-                - abfc26c9-44ca-4a72-89a9-716e2fb8b872
-                - 8928d8ed-9c96-477c-8358-859a968e05bf
-                - b9e5e9f0-2958-4321-b9d8-ba8eca4f64d1
-                - 41b8a368-a823-4006-9c8b-88011b48f551
-                - 4b983368-1d35-46cc-bb76-152a91a0f311
-                - 0aafa779-acc4-4b14-ac55-cfa3a5a241a1
-                - 6d9cb486-4c95-4d19-a2ae-1cf3dc68c4e6
-                - 26c20999-beb8-4dc7-8545-ee3d97cd86e1
-                - 4b644bf4-fa40-42ef-aee6-f7c56cd5d84c
-                - 21399ab7-d7bb-451f-9f92-775638dd2bba
-              exportScanList: true
-              exportScratchChannel: false
-              id: 8925c989-552e-4abf-8e89-59ab46d553af
-              name: Glasgow
-              scanCarrierFrequencyHz: null
-            - channelIds:
-                - 6290f8fd-0501-4597-93f5-d8e8e4c944fc
-                - abbe01e6-035c-4776-aad1-9626a1d2c2c9
-                - a23a4363-f653-4bc4-8c6e-13756bda0a97
-                - 881719e5-04b9-4ef0-a7cc-0775a45e1533
-                - 86880ca2-4a23-476a-b0d0-7bc72658598b
-                - 09baf926-3d27-4f45-b6f3-87c5e3b6943a
-                - 4f4d1310-4da9-4053-b7a1-df47d00bcfb0
-                - d33c7c26-3b49-423e-ac7f-f23f0ec53522
-                - abfc26c9-44ca-4a72-89a9-716e2fb8b872
-                - 8928d8ed-9c96-477c-8358-859a968e05bf
-                - b9e5e9f0-2958-4321-b9d8-ba8eca4f64d1
-                - 41b8a368-a823-4006-9c8b-88011b48f551
-                - 4b983368-1d35-46cc-bb76-152a91a0f311
-                - 0aafa779-acc4-4b14-ac55-cfa3a5a241a1
-                - 6d9cb486-4c95-4d19-a2ae-1cf3dc68c4e6
-                - 26c20999-beb8-4dc7-8545-ee3d97cd86e1
-                - 4b644bf4-fa40-42ef-aee6-f7c56cd5d84c
-                - 21399ab7-d7bb-451f-9f92-775638dd2bba
-              exportScanList: true
-              id: b66aae38-4ba1-4055-a8bf-ea0aeece0839
-              name: Edinburgh
-            - channelIds:
-                - 6c7bc1cc-1b52-445a-a72e-43aaf212f47b
-                - 1c99ded1-50f5-4b57-bad3-e335d06531a2
-                - 35053ef7-560e-402f-829b-b8484f4efbf5
-                - 211c5132-bac9-4257-8f58-0637808f1dba
-                - a557d38c-2d9c-4a18-bc60-0354b4ee2cdf
-                - 2cc9e394-2f5b-4b23-a3dc-9420c6aa6b4c
-                - abfc26c9-44ca-4a72-89a9-716e2fb8b872
-                - 8928d8ed-9c96-477c-8358-859a968e05bf
-                - b9e5e9f0-2958-4321-b9d8-ba8eca4f64d1
-                - 41b8a368-a823-4006-9c8b-88011b48f551
-                - 4b983368-1d35-46cc-bb76-152a91a0f311
-                - 0aafa779-acc4-4b14-ac55-cfa3a5a241a1
-                - 6d9cb486-4c95-4d19-a2ae-1cf3dc68c4e6
-                - 26c20999-beb8-4dc7-8545-ee3d97cd86e1
-                - 4b644bf4-fa40-42ef-aee6-f7c56cd5d84c
-                - 21399ab7-d7bb-451f-9f92-775638dd2bba
-              exportScanList: true
-              id: 9a78b0b4-388a-4dbe-8bc7-8f2223ffb8be
-              name: Dundee
-            - channelIds:
-                - 211c5132-bac9-4257-8f58-0637808f1dba
-                - a557d38c-2d9c-4a18-bc60-0354b4ee2cdf
-                - 2cc9e394-2f5b-4b23-a3dc-9420c6aa6b4c
-                - 6c7bc1cc-1b52-445a-a72e-43aaf212f47b
-                - 1c99ded1-50f5-4b57-bad3-e335d06531a2
-                - abfc26c9-44ca-4a72-89a9-716e2fb8b872
-                - 8928d8ed-9c96-477c-8358-859a968e05bf
-                - b9e5e9f0-2958-4321-b9d8-ba8eca4f64d1
-                - 41b8a368-a823-4006-9c8b-88011b48f551
-                - 4b983368-1d35-46cc-bb76-152a91a0f311
-                - 0aafa779-acc4-4b14-ac55-cfa3a5a241a1
-                - 6d9cb486-4c95-4d19-a2ae-1cf3dc68c4e6
-                - 26c20999-beb8-4dc7-8545-ee3d97cd86e1
-                - 4b644bf4-fa40-42ef-aee6-f7c56cd5d84c
-                - 21399ab7-d7bb-451f-9f92-775638dd2bba
-              exportScanList: true
-              id: c5844927-de71-426e-b2c0-418776b2d135
-              name: Perth
-            - channelIds:
-                - 70bad150-2d11-4706-a3db-57175d068313
-                - ca70ca22-179f-4442-8824-0894f3c764c6
-                - 0aafa779-acc4-4b14-ac55-cfa3a5a241a1
-                - 6d9cb486-4c95-4d19-a2ae-1cf3dc68c4e6
-                - 26c20999-beb8-4dc7-8545-ee3d97cd86e1
-                - 4b644bf4-fa40-42ef-aee6-f7c56cd5d84c
-                - 21399ab7-d7bb-451f-9f92-775638dd2bba
-                - 4b983368-1d35-46cc-bb76-152a91a0f311
-                - abfc26c9-44ca-4a72-89a9-716e2fb8b872
-                - 8928d8ed-9c96-477c-8358-859a968e05bf
-                - b9e5e9f0-2958-4321-b9d8-ba8eca4f64d1
-                - 41b8a368-a823-4006-9c8b-88011b48f551
-              exportScanList: true
-              id: dbff7ef8-215a-4b01-ae84-f7fe78be4022
-              name: Aboyne
-            - channelIds:
-                - 3b631c77-1d8e-4ac4-b8c6-edbb4571b5f1
-                - 7302e505-1f0e-456e-954c-3a0e55f89bf1
-                - 0aafa779-acc4-4b14-ac55-cfa3a5a241a1
-                - 6d9cb486-4c95-4d19-a2ae-1cf3dc68c4e6
-                - 26c20999-beb8-4dc7-8545-ee3d97cd86e1
-                - 4b644bf4-fa40-42ef-aee6-f7c56cd5d84c
-                - 21399ab7-d7bb-451f-9f92-775638dd2bba
-                - 4b983368-1d35-46cc-bb76-152a91a0f311
-                - abfc26c9-44ca-4a72-89a9-716e2fb8b872
-                - 8928d8ed-9c96-477c-8358-859a968e05bf
-                - b9e5e9f0-2958-4321-b9d8-ba8eca4f64d1
-                - 41b8a368-a823-4006-9c8b-88011b48f551
-              exportScanList: true
-              id: 3265622f-cea2-46b2-9d17-b4d543e4d874
-              name: Aberdeen
-            - channelIds:
-                - eb2be667-3e6a-423f-a518-8938021cae3b
-                - b29a77ae-d883-4ec7-99cd-c5d0a637ed2a
-                - e0a2d306-8f22-4a93-a65f-c5dd0be317c7
-                - 38fec83d-de58-4df7-922d-0a6be65033e1
-                - bc176d8c-e690-4fe5-bb11-d8dbbc3e35c8
-                - df79c9f5-00d3-47d4-b8de-367a84a26aa6
-                - 23739a7a-f56f-4fce-9b5e-4c81bac90104
-                - 10423cd0-2ef4-4f92-bf92-2f802e23f98e
-                - 968ea37c-1bfb-4baa-9b3a-e717d37d1433
-                - e3e123ce-4e44-435b-89f3-c38fc435ec42
-              exportScanList: true
-              id: fdb6effe-cdb6-4aa9-b8f6-10fd0afe5256
-              name: Glasgow Airband
-            - channelIds:
-                - 041595cf-144f-4505-8d7f-11d4172d7854
-                - 206d71b7-b445-4abc-bdcc-7d49a0a8e835
-                - 6f55c822-1f91-448b-aafe-e0da3a94e1e3
-                - 2d61c26c-7eb2-4c9a-8062-7dc8b12c08d0
-                - 6f0bd721-0fbc-4966-ad82-21bee7cb01b0
-                - 0424b169-1fd7-45f0-b2ac-7be8d0c293c6
-                - d27479d4-bef9-442d-9e58-8a4f43a8cfd7
-                - 24cca1c9-df68-4b56-bd6a-23d2a56d1ab9
-                - f50b3ba9-66a9-4ec7-86b6-6feab5be7515
-              exportScanList: true
-              id: 41707a0a-964e-4062-8909-2db7afdd3750
-              name: Edin Airband
-            - channelIds:
-                - f6381b6c-7da1-4774-a800-ec33605c266b
-                - 394e36f6-b04c-4e3c-8c8c-a71221dc50b3
-                - 35b330af-23a9-48bf-89c2-655279a134a0
-                - 3cfbaaa5-c470-44c8-8fc6-99533c930789
-                - 560af276-dd29-48a2-8fb6-f268bd7ec285
-              exportScanList: true
-              id: 4501b9e2-dc29-4a44-bd4c-c0f736e91f25
-              name: Aberdn Airband
-            - channelIds:
-                - 6f13aa05-b011-4d0c-bd9c-b19c56716fc6
-                - a6559d4b-d9b2-448b-971b-f38034147527
-                - 704a87cf-d610-4bbf-af78-1c29e9aa5a97
-                - 78852154-fb9f-4f16-870a-020f468341db
-                - c6973b7f-fedd-49b6-8a16-ec19643d2590
-                - 9da78b52-c0fb-4dce-b054-470d4bc7b4af
-                - 8710cf64-fd67-47ee-88d8-9d26cbdaf5ad
-                - 28e21d75-ca0d-4f20-855c-cf38e10e8f18
-                - f75317fa-810c-47c1-92c9-28aefbaac829
-                - e7d4448d-7e2d-4219-a71a-9c11f0f080d2
-                - c7f95831-de0c-4ce9-aa08-dd2743e4ab9e
-                - 124ea979-df82-4c4e-8963-61309dbbc265
-                - dc318f4c-686a-4efa-9729-450eff32b71e
-                - 8208716b-34e2-45f5-a0df-21818c84ca27
-                - f9c60e6a-e443-408f-a2b7-a20ee881a347
-                - 598eac81-060d-480b-b97d-b6382f19d68d
-              id: f0b8cbd5-7b10-4cfd-8ccc-833be4b3d9b9
-              name: PMR-446
-            - channelIds:
-                - abfc26c9-44ca-4a72-89a9-716e2fb8b872
-                - 8928d8ed-9c96-477c-8358-859a968e05bf
-                - b9e5e9f0-2958-4321-b9d8-ba8eca4f64d1
-                - 41b8a368-a823-4006-9c8b-88011b48f551
-                - 4b983368-1d35-46cc-bb76-152a91a0f311
-                - 0aafa779-acc4-4b14-ac55-cfa3a5a241a1
-                - 6d9cb486-4c95-4d19-a2ae-1cf3dc68c4e6
-                - 26c20999-beb8-4dc7-8545-ee3d97cd86e1
-                - 4b644bf4-fa40-42ef-aee6-f7c56cd5d84c
-                - 21399ab7-d7bb-451f-9f92-775638dd2bba
-              id: a3dd95b6-5274-48d4-9d58-2516d20aac51
-              name: Simplex scan channels
-            - channelIds:
-                - 4e745f41-9a2e-4f55-bec0-5a497c7c0738
-                - ab6751ae-d76c-46aa-9fb6-6ec1713a3535
-                - 32a743bd-5276-440d-8e70-190dc169a475
-                - 6b60edf0-d045-4008-859b-c0b7fa5c1eab
-                - 86a5be84-397d-4914-9ef9-917bfa5f1160
-                - e39e8c04-014d-4ec3-a567-5a0143055f78
-                - b0996ee3-b2f7-4c18-83aa-1f278636e9f3
-                - 4d1c1716-8473-4dad-86bf-89124a23a784
-                - 4b983368-1d35-46cc-bb76-152a91a0f311
-                - 7faf28c4-a13b-4186-9741-4155e4c2358c
-                - 91eab4e1-22ab-4a87-a003-ac8ac8b91cdd
-                - 383eba32-4f3e-4f2a-ba95-ae1383bacbab
-                - 5fbb58d9-a807-4d8e-b9ed-debc86c58c89
-                - 1f56ca78-895e-4510-a5ca-70f8d057ab2c
-                - 2fb66912-0bff-4e0a-9687-03fa7be58b1c
-                - 55b5403a-be69-4648-8da8-64ad3710b3d1
-                - 583dba48-4632-424e-ab84-5ec80a56c199
-              id: a9834106-11a0-4f59-9458-cc56b4095c42
-              name: UK UHF simplex
-            - channelIds:
-                - 65432461-b2fa-48a1-9fa6-eadd6ae763f9
-                - 5292da72-926f-451f-af2d-a81eee6abd35
-                - 1a31d271-eae4-43a5-9045-a718f95c926c
-                - efb34289-df3a-45a4-8c8f-1cfae6f667c9
-                - 715d5008-1d25-4c98-bfe3-3320be02fd94
-                - e9fbfc42-7675-45fa-be19-8fda1bacbd70
-                - f85beb5c-0e18-405d-876e-66bafa114c76
-                - e2d7c249-24b4-4a3e-bf3c-c033fb2531c4
-                - acbc4a97-13a2-4a50-a137-71fab903c490
-                - adeb0130-c699-45e4-b579-635bd31f0c71
-                - 0aafa779-acc4-4b14-ac55-cfa3a5a241a1
-                - 6d9cb486-4c95-4d19-a2ae-1cf3dc68c4e6
-                - 26c20999-beb8-4dc7-8545-ee3d97cd86e1
-                - 4b644bf4-fa40-42ef-aee6-f7c56cd5d84c
-                - 21399ab7-d7bb-451f-9f92-775638dd2bba
-                - abedcfec-bab5-452d-aca2-950aba2be269
-              id: cd2a1e8a-d503-485c-bc07-1b37932201c3
-              name: UK VHF simplex
-    name: Baofeng DM-32UV
+  - formatId: dm32
+    id: e6d4c36d-aad0-43a7-9fe9-bd554cab48f5
+    kind: cps-file
     profileId: dm32-baofeng-dm32uv
     projectId: 9734dab8-f8b8-4c81-84eb-a0c2d3479f21
-    revision: 37
-    rxGroupListOverrides: []
-    scanListOverrides: []
-    talkGroupOverrides: []
+    radioBuildId: a1468012-adde-46cd-8853-32a1217ba23f
+    revision: 1
     updatedAt: 2026-07-17T22:18:57.868Z
-    zoneOverrides:
-      - libraryEntityId: 4501b9e2-dc29-4a44-bd4c-c0f736e91f25
-        wireName: Aberdeen Air
-  - channelOverrides: []
-    contactOverrides: []
-    exportSettings:
-      exportZoneDerivedScanLists: true
-      maxNameLength: null
-      nameModeOverride: callsign_name
-      shortenNames: true
-      useChannelAbbreviation: true
-      useTalkGroupAbbreviation: false
-    exportUnlinkedAnalogContacts: true
-    exportUnlinkedChannels: true
-    exportUnlinkedDigitalContacts: true
-    exportUnlinkedRxGroupLists: true
-    exportUnlinkedTalkGroups: true
-    formatId: chirp
-    id: 5cb69ea9-7fda-44dd-b4a5-42aa96244c3a
-    layout:
-      sections: []
-    name: CHIRP UV-5R
+  - formatId: chirp
+    id: 7f350e53-5b09-4861-bc73-ff74e77c7b7e
+    kind: cps-file
     profileId: chirp-uv5r
     projectId: 9734dab8-f8b8-4c81-84eb-a0c2d3479f21
-    revision: 2
-    rxGroupListOverrides: []
-    scanListOverrides: []
-    talkGroupOverrides: []
+    radioBuildId: 5cb69ea9-7fda-44dd-b4a5-42aa96244c3a
+    revision: 1
     updatedAt: 2026-07-16T21:22:09.556Z
-    zoneOverrides: []
-  - channelOverrides: []
-    contactOverrides: []
-    exportSettings:
-      exportZoneDerivedScanLists: true
-      maxNameLength: null
-      nameModeOverride: callsign_name
-      shortenNames: true
-      useChannelAbbreviation: true
-      useTalkGroupAbbreviation: false
-    exportUnlinkedAnalogContacts: true
-    exportUnlinkedChannels: true
-    exportUnlinkedDigitalContacts: true
-    exportUnlinkedRxGroupLists: true
-    exportUnlinkedTalkGroups: true
-    formatId: chirp
-    id: 6bc340e5-91bf-4ff8-aabd-587d366d5c46
-    layout:
-      sections: []
-    name: CHIRP UV-21
+  - formatId: chirp
+    id: 851ee89c-5a38-4a7a-8de4-1326a3becc8d
+    kind: cps-file
     profileId: chirp-uv21
     projectId: 9734dab8-f8b8-4c81-84eb-a0c2d3479f21
-    revision: 2
-    rxGroupListOverrides: []
-    scanListOverrides: []
-    talkGroupOverrides: []
+    radioBuildId: 6bc340e5-91bf-4ff8-aabd-587d366d5c46
+    revision: 1
     updatedAt: 2026-07-16T21:22:09.556Z
-    zoneOverrides: []
-  - channelOverrides: []
-    contactOverrides: []
-    exportSettings:
-      exportZoneDerivedScanLists: true
-      maxNameLength: null
-      nameModeOverride: callsign_name
-      shortenNames: true
-      useChannelAbbreviation: true
-      useTalkGroupAbbreviation: false
-    exportUnlinkedAnalogContacts: true
-    exportUnlinkedChannels: true
-    exportUnlinkedDigitalContacts: true
-    exportUnlinkedRxGroupLists: true
-    exportUnlinkedTalkGroups: true
-    formatId: chirp
-    id: da214f99-e5f8-4943-b771-d669d1b0fb22
-    layout:
-      sections: []
-    name: CHIRP RT95
+  - formatId: chirp
+    id: 8627cddf-8070-4d6e-a7c8-cfbef1d1b01f
+    kind: cps-file
     profileId: chirp-rt95
     projectId: 9734dab8-f8b8-4c81-84eb-a0c2d3479f21
-    revision: 2
-    rxGroupListOverrides: []
-    scanListOverrides: []
-    talkGroupOverrides: []
+    radioBuildId: da214f99-e5f8-4943-b771-d669d1b0fb22
+    revision: 1
     updatedAt: 2026-07-16T21:22:09.556Z
-    zoneOverrides: []
 library:
   analogContacts: []
   aprsConfiguration:
@@ -5545,5 +4836,757 @@ project:
   updatedAt: 2026-07-18T05:53:06.512Z
   zoneDefaults:
     includeInZoneDerivedScanList: true
+radioBuilds:
+  - channelOverrides:
+      - libraryEntityId: ca70ca22-179f-4442-8824-0894f3c764c6:-D:talkGroup:f7c35ef0-86ac-4908-a53e-6ad79092fc46
+        wireName: Hspt MM9PDY TG
+      - libraryEntityId: ca70ca22-179f-4442-8824-0894f3c764c6:-D:talkGroup:dc74e45d-11a0-4786-b5c5-baeecca3b4c5
+        wireName: Hspt Scot Chat
+      - libraryEntityId: ca70ca22-179f-4442-8824-0894f3c764c6:-D:talkGroup:e4ceac7d-d163-495d-a39c-cba3aef5c52d
+        wireName: Hspt Scot Mult
+      - libraryEntityId: ca70ca22-179f-4442-8824-0894f3c764c6:-D:talkGroup:8c4ddb48-fb84-4e4d-9387-046f4c2932d2
+        wireName: Hspt Scotland
+      - excluded: true
+        libraryEntityId: 3219abdc-e64c-4bff-a5d7-7d69963b83d8
+      - libraryEntityId: ca70ca22-179f-4442-8824-0894f3c764c6:-D:talkGroup:5b6778fb-a0f9-4088-8e0c-2c89e518cac4
+        wireName: Hspt Scot West
+      - excluded: true
+        libraryEntityId: bf4a02c4-20c7-4a79-a502-8911bfaba4e3
+      - excluded: true
+        libraryEntityId: 881719e5-04b9-4ef0-a7cc-0775a45e1533
+      - excluded: true
+        libraryEntityId: 5268c7cb-2abd-440f-ba06-955eb8e58db9
+    contactOverrides: []
+    exportSettings:
+      exportZoneDerivedScanLists: true
+      maxNameLength: null
+      nameModeOverride: callsign_name
+      shortenNames: true
+      useChannelAbbreviation: true
+      useTalkGroupAbbreviation: true
+    exportUnlinkedAnalogContacts: true
+    exportUnlinkedChannels: true
+    exportUnlinkedDigitalContacts: true
+    exportUnlinkedRxGroupLists: true
+    exportUnlinkedTalkGroups: true
+    id: 436617a3-217a-4866-a249-319f492c6b28
+    layout:
+      sections:
+        - kind: zoneGrouping
+          zones:
+            - channelIds:
+                - 3b631c77-1d8e-4ac4-b8c6-edbb4571b5f1
+                - 7302e505-1f0e-456e-954c-3a0e55f89bf1
+                - abfc26c9-44ca-4a72-89a9-716e2fb8b872
+                - 8928d8ed-9c96-477c-8358-859a968e05bf
+                - b9e5e9f0-2958-4321-b9d8-ba8eca4f64d1
+                - 41b8a368-a823-4006-9c8b-88011b48f551
+                - 4b983368-1d35-46cc-bb76-152a91a0f311
+                - 0aafa779-acc4-4b14-ac55-cfa3a5a241a1
+                - 6d9cb486-4c95-4d19-a2ae-1cf3dc68c4e6
+                - 26c20999-beb8-4dc7-8545-ee3d97cd86e1
+                - 4b644bf4-fa40-42ef-aee6-f7c56cd5d84c
+                - 21399ab7-d7bb-451f-9f92-775638dd2bba
+              exportScanList: true
+              id: 3265622f-cea2-46b2-9d17-b4d543e4d874
+              name: Aberdeen
+            - channelIds:
+                - f6381b6c-7da1-4774-a800-ec33605c266b
+                - 394e36f6-b04c-4e3c-8c8c-a71221dc50b3
+                - 35b330af-23a9-48bf-89c2-655279a134a0
+                - 3cfbaaa5-c470-44c8-8fc6-99533c930789
+                - 560af276-dd29-48a2-8fb6-f268bd7ec285
+              id: 4501b9e2-dc29-4a44-bd4c-c0f736e91f25
+              name: Aberdn Airband
+            - channelIds:
+                - 70bad150-2d11-4706-a3db-57175d068313
+                - ca70ca22-179f-4442-8824-0894f3c764c6
+                - abfc26c9-44ca-4a72-89a9-716e2fb8b872
+                - 8928d8ed-9c96-477c-8358-859a968e05bf
+                - b9e5e9f0-2958-4321-b9d8-ba8eca4f64d1
+                - 41b8a368-a823-4006-9c8b-88011b48f551
+                - 4b983368-1d35-46cc-bb76-152a91a0f311
+                - 0aafa779-acc4-4b14-ac55-cfa3a5a241a1
+                - 6d9cb486-4c95-4d19-a2ae-1cf3dc68c4e6
+                - 26c20999-beb8-4dc7-8545-ee3d97cd86e1
+                - 4b644bf4-fa40-42ef-aee6-f7c56cd5d84c
+                - 21399ab7-d7bb-451f-9f92-775638dd2bba
+              exportScanList: true
+              id: dbff7ef8-215a-4b01-ae84-f7fe78be4022
+              name: Aboyne
+            - channelIds:
+                - 6c7bc1cc-1b52-445a-a72e-43aaf212f47b
+                - 1c99ded1-50f5-4b57-bad3-e335d06531a2
+                - 35053ef7-560e-402f-829b-b8484f4efbf5
+                - 211c5132-bac9-4257-8f58-0637808f1dba
+                - a557d38c-2d9c-4a18-bc60-0354b4ee2cdf
+                - 2cc9e394-2f5b-4b23-a3dc-9420c6aa6b4c
+                - abfc26c9-44ca-4a72-89a9-716e2fb8b872
+                - 8928d8ed-9c96-477c-8358-859a968e05bf
+                - b9e5e9f0-2958-4321-b9d8-ba8eca4f64d1
+                - 41b8a368-a823-4006-9c8b-88011b48f551
+                - 4b983368-1d35-46cc-bb76-152a91a0f311
+                - 0aafa779-acc4-4b14-ac55-cfa3a5a241a1
+                - 6d9cb486-4c95-4d19-a2ae-1cf3dc68c4e6
+                - 26c20999-beb8-4dc7-8545-ee3d97cd86e1
+                - 4b644bf4-fa40-42ef-aee6-f7c56cd5d84c
+                - 21399ab7-d7bb-451f-9f92-775638dd2bba
+              exportScanList: true
+              id: 9a78b0b4-388a-4dbe-8bc7-8f2223ffb8be
+              name: Dundee
+            - channelIds:
+                - 041595cf-144f-4505-8d7f-11d4172d7854
+                - 206d71b7-b445-4abc-bdcc-7d49a0a8e835
+                - 6f55c822-1f91-448b-aafe-e0da3a94e1e3
+                - 2d61c26c-7eb2-4c9a-8062-7dc8b12c08d0
+                - 6f0bd721-0fbc-4966-ad82-21bee7cb01b0
+                - 0424b169-1fd7-45f0-b2ac-7be8d0c293c6
+                - d27479d4-bef9-442d-9e58-8a4f43a8cfd7
+                - 24cca1c9-df68-4b56-bd6a-23d2a56d1ab9
+                - f50b3ba9-66a9-4ec7-86b6-6feab5be7515
+              id: 41707a0a-964e-4062-8909-2db7afdd3750
+              name: Edin Airband
+            - channelIds:
+                - 6290f8fd-0501-4597-93f5-d8e8e4c944fc
+                - abbe01e6-035c-4776-aad1-9626a1d2c2c9
+                - a23a4363-f653-4bc4-8c6e-13756bda0a97
+                - 881719e5-04b9-4ef0-a7cc-0775a45e1533
+                - 86880ca2-4a23-476a-b0d0-7bc72658598b
+                - 09baf926-3d27-4f45-b6f3-87c5e3b6943a
+                - 4f4d1310-4da9-4053-b7a1-df47d00bcfb0
+                - d33c7c26-3b49-423e-ac7f-f23f0ec53522
+                - abfc26c9-44ca-4a72-89a9-716e2fb8b872
+                - 8928d8ed-9c96-477c-8358-859a968e05bf
+                - b9e5e9f0-2958-4321-b9d8-ba8eca4f64d1
+                - 41b8a368-a823-4006-9c8b-88011b48f551
+                - 4b983368-1d35-46cc-bb76-152a91a0f311
+                - 0aafa779-acc4-4b14-ac55-cfa3a5a241a1
+                - 6d9cb486-4c95-4d19-a2ae-1cf3dc68c4e6
+                - 26c20999-beb8-4dc7-8545-ee3d97cd86e1
+                - 4b644bf4-fa40-42ef-aee6-f7c56cd5d84c
+                - 21399ab7-d7bb-451f-9f92-775638dd2bba
+              exportScanList: true
+              id: b66aae38-4ba1-4055-a8bf-ea0aeece0839
+              name: Edinburgh
+            - channelIds:
+                - 38f23e93-aa3e-4ca0-ad40-513930eeb3f2
+                - 7a1ffb31-75ab-49f4-8862-588babb16229
+                - 34a70d64-0044-4678-9783-5ec4dd2b0b1c
+                - 833f26c1-1a08-4295-8e8e-8bdad8a67580
+                - ba83c50d-ea62-4e8f-b3c5-73fd2d77c9ba
+                - 29b766f5-8f13-4545-9cba-69cf7469976c
+                - ae96efa5-8a48-4edc-86af-25deb080e1c5
+                - b39fdcc7-79d8-47ab-80bd-266deea94142
+                - 2e9f785f-a0db-40ef-b46b-348b3238d0a7
+                - fddbb856-fe0b-4f2d-8520-cddeeaee47fd
+                - c402e4c4-3079-4609-abe2-9501b6d4b9d6
+                - abfc26c9-44ca-4a72-89a9-716e2fb8b872
+                - 8928d8ed-9c96-477c-8358-859a968e05bf
+                - b9e5e9f0-2958-4321-b9d8-ba8eca4f64d1
+                - 41b8a368-a823-4006-9c8b-88011b48f551
+                - 4b983368-1d35-46cc-bb76-152a91a0f311
+                - 0aafa779-acc4-4b14-ac55-cfa3a5a241a1
+                - 6d9cb486-4c95-4d19-a2ae-1cf3dc68c4e6
+                - 26c20999-beb8-4dc7-8545-ee3d97cd86e1
+                - 4b644bf4-fa40-42ef-aee6-f7c56cd5d84c
+                - 21399ab7-d7bb-451f-9f92-775638dd2bba
+              exportScanList: true
+              id: 8925c989-552e-4abf-8e89-59ab46d553af
+              name: Glasgow
+            - channelIds:
+                - eb2be667-3e6a-423f-a518-8938021cae3b
+                - b29a77ae-d883-4ec7-99cd-c5d0a637ed2a
+                - e0a2d306-8f22-4a93-a65f-c5dd0be317c7
+                - 38fec83d-de58-4df7-922d-0a6be65033e1
+                - bc176d8c-e690-4fe5-bb11-d8dbbc3e35c8
+                - df79c9f5-00d3-47d4-b8de-367a84a26aa6
+                - 23739a7a-f56f-4fce-9b5e-4c81bac90104
+                - 10423cd0-2ef4-4f92-bf92-2f802e23f98e
+                - 968ea37c-1bfb-4baa-9b3a-e717d37d1433
+                - e3e123ce-4e44-435b-89f3-c38fc435ec42
+              id: fdb6effe-cdb6-4aa9-b8f6-10fd0afe5256
+              name: Glasgow Airband
+            - channelIds:
+                - ca70ca22-179f-4442-8824-0894f3c764c6
+                - 7a1ffb31-75ab-49f4-8862-588babb16229
+                - 29b766f5-8f13-4545-9cba-69cf7469976c
+                - 34a70d64-0044-4678-9783-5ec4dd2b0b1c
+                - c402e4c4-3079-4609-abe2-9501b6d4b9d6
+                - 833f26c1-1a08-4295-8e8e-8bdad8a67580
+                - abfc26c9-44ca-4a72-89a9-716e2fb8b872
+                - 8928d8ed-9c96-477c-8358-859a968e05bf
+                - b9e5e9f0-2958-4321-b9d8-ba8eca4f64d1
+                - 41b8a368-a823-4006-9c8b-88011b48f551
+                - 4b983368-1d35-46cc-bb76-152a91a0f311
+                - 0aafa779-acc4-4b14-ac55-cfa3a5a241a1
+                - 6d9cb486-4c95-4d19-a2ae-1cf3dc68c4e6
+                - 26c20999-beb8-4dc7-8545-ee3d97cd86e1
+                - 4b644bf4-fa40-42ef-aee6-f7c56cd5d84c
+                - 21399ab7-d7bb-451f-9f92-775638dd2bba
+              exportScanList: true
+              id: 82265ffb-a90a-46a9-9401-1520af568ee9
+              name: Home Shack
+            - channelIds:
+                - ca70ca22-179f-4442-8824-0894f3c764c6
+                - 38f23e93-aa3e-4ca0-ad40-513930eeb3f2
+                - 7a1ffb31-75ab-49f4-8862-588babb16229
+                - 34a70d64-0044-4678-9783-5ec4dd2b0b1c
+                - 833f26c1-1a08-4295-8e8e-8bdad8a67580
+                - ba83c50d-ea62-4e8f-b3c5-73fd2d77c9ba
+                - 29b766f5-8f13-4545-9cba-69cf7469976c
+                - fddbb856-fe0b-4f2d-8520-cddeeaee47fd
+                - c402e4c4-3079-4609-abe2-9501b6d4b9d6
+                - abfc26c9-44ca-4a72-89a9-716e2fb8b872
+                - 8928d8ed-9c96-477c-8358-859a968e05bf
+                - b9e5e9f0-2958-4321-b9d8-ba8eca4f64d1
+                - 41b8a368-a823-4006-9c8b-88011b48f551
+                - 4b983368-1d35-46cc-bb76-152a91a0f311
+                - 0aafa779-acc4-4b14-ac55-cfa3a5a241a1
+                - 6d9cb486-4c95-4d19-a2ae-1cf3dc68c4e6
+                - 26c20999-beb8-4dc7-8545-ee3d97cd86e1
+                - 4b644bf4-fa40-42ef-aee6-f7c56cd5d84c
+                - 21399ab7-d7bb-451f-9f92-775638dd2bba
+              exportScanList: true
+              id: 5133f2fe-41a4-4c5f-a5e7-a056c1e172ba
+              name: Morning Walk
+            - channelIds:
+                - 211c5132-bac9-4257-8f58-0637808f1dba
+                - a557d38c-2d9c-4a18-bc60-0354b4ee2cdf
+                - 2cc9e394-2f5b-4b23-a3dc-9420c6aa6b4c
+                - 6c7bc1cc-1b52-445a-a72e-43aaf212f47b
+                - 1c99ded1-50f5-4b57-bad3-e335d06531a2
+                - abfc26c9-44ca-4a72-89a9-716e2fb8b872
+                - 8928d8ed-9c96-477c-8358-859a968e05bf
+                - b9e5e9f0-2958-4321-b9d8-ba8eca4f64d1
+                - 41b8a368-a823-4006-9c8b-88011b48f551
+                - 4b983368-1d35-46cc-bb76-152a91a0f311
+                - 0aafa779-acc4-4b14-ac55-cfa3a5a241a1
+                - 6d9cb486-4c95-4d19-a2ae-1cf3dc68c4e6
+                - 26c20999-beb8-4dc7-8545-ee3d97cd86e1
+                - 4b644bf4-fa40-42ef-aee6-f7c56cd5d84c
+                - 21399ab7-d7bb-451f-9f92-775638dd2bba
+              exportScanList: true
+              id: c5844927-de71-426e-b2c0-418776b2d135
+              name: Perth
+            - channelIds:
+                - 6f13aa05-b011-4d0c-bd9c-b19c56716fc6
+                - a6559d4b-d9b2-448b-971b-f38034147527
+                - 704a87cf-d610-4bbf-af78-1c29e9aa5a97
+                - 78852154-fb9f-4f16-870a-020f468341db
+                - c6973b7f-fedd-49b6-8a16-ec19643d2590
+                - 9da78b52-c0fb-4dce-b054-470d4bc7b4af
+                - 8710cf64-fd67-47ee-88d8-9d26cbdaf5ad
+                - 28e21d75-ca0d-4f20-855c-cf38e10e8f18
+                - f75317fa-810c-47c1-92c9-28aefbaac829
+                - e7d4448d-7e2d-4219-a71a-9c11f0f080d2
+                - c7f95831-de0c-4ce9-aa08-dd2743e4ab9e
+                - 124ea979-df82-4c4e-8963-61309dbbc265
+                - dc318f4c-686a-4efa-9729-450eff32b71e
+                - 8208716b-34e2-45f5-a0df-21818c84ca27
+                - f9c60e6a-e443-408f-a2b7-a20ee881a347
+                - 598eac81-060d-480b-b97d-b6382f19d68d
+              exportScanList: true
+              id: f0b8cbd5-7b10-4cfd-8ccc-833be4b3d9b9
+              name: PMR-446
+            - channelIds:
+                - abfc26c9-44ca-4a72-89a9-716e2fb8b872
+                - 8928d8ed-9c96-477c-8358-859a968e05bf
+                - b9e5e9f0-2958-4321-b9d8-ba8eca4f64d1
+                - 41b8a368-a823-4006-9c8b-88011b48f551
+                - 4b983368-1d35-46cc-bb76-152a91a0f311
+                - 0aafa779-acc4-4b14-ac55-cfa3a5a241a1
+                - 6d9cb486-4c95-4d19-a2ae-1cf3dc68c4e6
+                - 26c20999-beb8-4dc7-8545-ee3d97cd86e1
+                - 4b644bf4-fa40-42ef-aee6-f7c56cd5d84c
+                - 21399ab7-d7bb-451f-9f92-775638dd2bba
+              id: a3dd95b6-5274-48d4-9d58-2516d20aac51
+              name: Simplex scan channels
+            - channelIds:
+                - 4e745f41-9a2e-4f55-bec0-5a497c7c0738
+                - ab6751ae-d76c-46aa-9fb6-6ec1713a3535
+                - 32a743bd-5276-440d-8e70-190dc169a475
+                - 6b60edf0-d045-4008-859b-c0b7fa5c1eab
+                - 86a5be84-397d-4914-9ef9-917bfa5f1160
+                - e39e8c04-014d-4ec3-a567-5a0143055f78
+                - b0996ee3-b2f7-4c18-83aa-1f278636e9f3
+                - 4d1c1716-8473-4dad-86bf-89124a23a784
+                - 4b983368-1d35-46cc-bb76-152a91a0f311
+                - 7faf28c4-a13b-4186-9741-4155e4c2358c
+                - 91eab4e1-22ab-4a87-a003-ac8ac8b91cdd
+                - 383eba32-4f3e-4f2a-ba95-ae1383bacbab
+                - 5fbb58d9-a807-4d8e-b9ed-debc86c58c89
+                - 1f56ca78-895e-4510-a5ca-70f8d057ab2c
+                - 2fb66912-0bff-4e0a-9687-03fa7be58b1c
+                - 55b5403a-be69-4648-8da8-64ad3710b3d1
+                - 583dba48-4632-424e-ab84-5ec80a56c199
+              exportScanList: true
+              id: a9834106-11a0-4f59-9458-cc56b4095c42
+              name: UK UHF simplex
+            - channelIds:
+                - 65432461-b2fa-48a1-9fa6-eadd6ae763f9
+                - 5292da72-926f-451f-af2d-a81eee6abd35
+                - 1a31d271-eae4-43a5-9045-a718f95c926c
+                - efb34289-df3a-45a4-8c8f-1cfae6f667c9
+                - 715d5008-1d25-4c98-bfe3-3320be02fd94
+                - e9fbfc42-7675-45fa-be19-8fda1bacbd70
+                - f85beb5c-0e18-405d-876e-66bafa114c76
+                - e2d7c249-24b4-4a3e-bf3c-c033fb2531c4
+                - acbc4a97-13a2-4a50-a137-71fab903c490
+                - adeb0130-c699-45e4-b579-635bd31f0c71
+                - 0aafa779-acc4-4b14-ac55-cfa3a5a241a1
+                - 6d9cb486-4c95-4d19-a2ae-1cf3dc68c4e6
+                - 26c20999-beb8-4dc7-8545-ee3d97cd86e1
+                - 4b644bf4-fa40-42ef-aee6-f7c56cd5d84c
+                - 21399ab7-d7bb-451f-9f92-775638dd2bba
+                - abedcfec-bab5-452d-aca2-950aba2be269
+              exportScanList: true
+              id: cd2a1e8a-d503-485c-bc07-1b37932201c3
+              name: UK VHF simplex
+    name: Anytone AT-D890UV
+    projectId: 9734dab8-f8b8-4c81-84eb-a0c2d3479f21
+    radioTargetId: anytone-at-d890uv
+    revision: 91
+    rxGroupListOverrides: []
+    scanListOverrides: []
+    talkGroupOverrides: []
+    updatedAt: 2026-07-17T20:20:55.713Z
+    zoneOverrides:
+      - libraryEntityId: dbff7ef8-215a-4b01-ae84-f7fe78be4022
+        orderOrSlot: 1
+      - libraryEntityId: 3265622f-cea2-46b2-9d17-b4d543e4d874
+        orderOrSlot: 2
+      - libraryEntityId: 9a78b0b4-388a-4dbe-8bc7-8f2223ffb8be
+        orderOrSlot: 3
+      - libraryEntityId: b66aae38-4ba1-4055-a8bf-ea0aeece0839
+        orderOrSlot: 4
+      - libraryEntityId: 8925c989-552e-4abf-8e89-59ab46d553af
+        orderOrSlot: 5
+      - libraryEntityId: 82265ffb-a90a-46a9-9401-1520af568ee9
+        orderOrSlot: 6
+      - libraryEntityId: 5133f2fe-41a4-4c5f-a5e7-a056c1e172ba
+        orderOrSlot: 7
+      - libraryEntityId: c5844927-de71-426e-b2c0-418776b2d135
+        orderOrSlot: 8
+      - libraryEntityId: f0b8cbd5-7b10-4cfd-8ccc-833be4b3d9b9
+        orderOrSlot: 9
+      - libraryEntityId: a3dd95b6-5274-48d4-9d58-2516d20aac51
+        orderOrSlot: 10
+      - libraryEntityId: a9834106-11a0-4f59-9458-cc56b4095c42
+        orderOrSlot: 11
+      - libraryEntityId: cd2a1e8a-d503-485c-bc07-1b37932201c3
+        orderOrSlot: 12
+  - channelOverrides: []
+    contactOverrides: []
+    exportSettings:
+      exportZoneDerivedScanLists: true
+      maxNameLength: null
+      nameModeOverride: callsign_name
+      shortenNames: true
+      useChannelAbbreviation: true
+      useTalkGroupAbbreviation: false
+    exportUnlinkedAnalogContacts: true
+    exportUnlinkedChannels: true
+    exportUnlinkedDigitalContacts: true
+    exportUnlinkedRxGroupLists: true
+    exportUnlinkedTalkGroups: true
+    id: afba4ef7-8dae-4ed5-8956-5bf03ea4b951
+    layout:
+      sections:
+        - kind: zoneGrouping
+          zones:
+            - channelIds:
+                - 38f23e93-aa3e-4ca0-ad40-513930eeb3f2
+                - 7a1ffb31-75ab-49f4-8862-588babb16229
+                - 34a70d64-0044-4678-9783-5ec4dd2b0b1c
+                - 833f26c1-1a08-4295-8e8e-8bdad8a67580
+              id: 8925c989-552e-4abf-8e89-59ab46d553af
+              name: Glasgow
+    name: Baofeng 1701 / Retevis RT-84
+    projectId: 9734dab8-f8b8-4c81-84eb-a0c2d3479f21
+    radioTargetId: baofeng-dm1701
+    revision: 796
+    rxGroupListOverrides: []
+    scanListOverrides: []
+    talkGroupOverrides: []
+    updatedAt: 2026-07-16T22:59:05.537Z
+    zoneOverrides: []
+  - channelOverrides: []
+    contactOverrides: []
+    exportSettings:
+      exportZoneDerivedScanLists: true
+      maxNameLength: null
+      nameModeOverride: callsign_name
+      shortenNames: true
+      useChannelAbbreviation: true
+      useTalkGroupAbbreviation: false
+    exportUnlinkedAnalogContacts: true
+    exportUnlinkedChannels: false
+    exportUnlinkedDigitalContacts: true
+    exportUnlinkedRxGroupLists: false
+    exportUnlinkedTalkGroups: false
+    id: a1468012-adde-46cd-8853-32a1217ba23f
+    layout:
+      sections:
+        - kind: zoneGrouping
+          zones:
+            - channelIds:
+                - ca70ca22-179f-4442-8824-0894f3c764c6
+                - 7a1ffb31-75ab-49f4-8862-588babb16229
+                - 29b766f5-8f13-4545-9cba-69cf7469976c
+                - 34a70d64-0044-4678-9783-5ec4dd2b0b1c
+                - c402e4c4-3079-4609-abe2-9501b6d4b9d6
+                - 833f26c1-1a08-4295-8e8e-8bdad8a67580
+                - abfc26c9-44ca-4a72-89a9-716e2fb8b872
+                - 8928d8ed-9c96-477c-8358-859a968e05bf
+                - b9e5e9f0-2958-4321-b9d8-ba8eca4f64d1
+                - 41b8a368-a823-4006-9c8b-88011b48f551
+                - 4b983368-1d35-46cc-bb76-152a91a0f311
+                - 0aafa779-acc4-4b14-ac55-cfa3a5a241a1
+                - 6d9cb486-4c95-4d19-a2ae-1cf3dc68c4e6
+                - 26c20999-beb8-4dc7-8545-ee3d97cd86e1
+                - 4b644bf4-fa40-42ef-aee6-f7c56cd5d84c
+                - 21399ab7-d7bb-451f-9f92-775638dd2bba
+              exportScanList: true
+              id: 82265ffb-a90a-46a9-9401-1520af568ee9
+              name: Home Shack
+            - channelIds:
+                - ca70ca22-179f-4442-8824-0894f3c764c6
+                - 38f23e93-aa3e-4ca0-ad40-513930eeb3f2
+                - 7a1ffb31-75ab-49f4-8862-588babb16229
+                - 34a70d64-0044-4678-9783-5ec4dd2b0b1c
+                - 833f26c1-1a08-4295-8e8e-8bdad8a67580
+                - ba83c50d-ea62-4e8f-b3c5-73fd2d77c9ba
+                - 29b766f5-8f13-4545-9cba-69cf7469976c
+                - fddbb856-fe0b-4f2d-8520-cddeeaee47fd
+                - c402e4c4-3079-4609-abe2-9501b6d4b9d6
+                - abfc26c9-44ca-4a72-89a9-716e2fb8b872
+                - 8928d8ed-9c96-477c-8358-859a968e05bf
+                - b9e5e9f0-2958-4321-b9d8-ba8eca4f64d1
+                - 41b8a368-a823-4006-9c8b-88011b48f551
+                - 4b983368-1d35-46cc-bb76-152a91a0f311
+                - 0aafa779-acc4-4b14-ac55-cfa3a5a241a1
+                - 6d9cb486-4c95-4d19-a2ae-1cf3dc68c4e6
+                - 26c20999-beb8-4dc7-8545-ee3d97cd86e1
+                - 4b644bf4-fa40-42ef-aee6-f7c56cd5d84c
+                - 21399ab7-d7bb-451f-9f92-775638dd2bba
+              exportScanList: true
+              id: 5133f2fe-41a4-4c5f-a5e7-a056c1e172ba
+              name: Morning Walk
+            - channelIds:
+                - 38f23e93-aa3e-4ca0-ad40-513930eeb3f2
+                - 7a1ffb31-75ab-49f4-8862-588babb16229
+                - 34a70d64-0044-4678-9783-5ec4dd2b0b1c
+                - 833f26c1-1a08-4295-8e8e-8bdad8a67580
+                - ba83c50d-ea62-4e8f-b3c5-73fd2d77c9ba
+                - 29b766f5-8f13-4545-9cba-69cf7469976c
+                - ae96efa5-8a48-4edc-86af-25deb080e1c5
+                - b39fdcc7-79d8-47ab-80bd-266deea94142
+                - 2e9f785f-a0db-40ef-b46b-348b3238d0a7
+                - fddbb856-fe0b-4f2d-8520-cddeeaee47fd
+                - c402e4c4-3079-4609-abe2-9501b6d4b9d6
+                - abfc26c9-44ca-4a72-89a9-716e2fb8b872
+                - 8928d8ed-9c96-477c-8358-859a968e05bf
+                - b9e5e9f0-2958-4321-b9d8-ba8eca4f64d1
+                - 41b8a368-a823-4006-9c8b-88011b48f551
+                - 4b983368-1d35-46cc-bb76-152a91a0f311
+                - 0aafa779-acc4-4b14-ac55-cfa3a5a241a1
+                - 6d9cb486-4c95-4d19-a2ae-1cf3dc68c4e6
+                - 26c20999-beb8-4dc7-8545-ee3d97cd86e1
+                - 4b644bf4-fa40-42ef-aee6-f7c56cd5d84c
+                - 21399ab7-d7bb-451f-9f92-775638dd2bba
+              exportScanList: true
+              exportScratchChannel: false
+              id: 8925c989-552e-4abf-8e89-59ab46d553af
+              name: Glasgow
+              scanCarrierFrequencyHz: null
+            - channelIds:
+                - 6290f8fd-0501-4597-93f5-d8e8e4c944fc
+                - abbe01e6-035c-4776-aad1-9626a1d2c2c9
+                - a23a4363-f653-4bc4-8c6e-13756bda0a97
+                - 881719e5-04b9-4ef0-a7cc-0775a45e1533
+                - 86880ca2-4a23-476a-b0d0-7bc72658598b
+                - 09baf926-3d27-4f45-b6f3-87c5e3b6943a
+                - 4f4d1310-4da9-4053-b7a1-df47d00bcfb0
+                - d33c7c26-3b49-423e-ac7f-f23f0ec53522
+                - abfc26c9-44ca-4a72-89a9-716e2fb8b872
+                - 8928d8ed-9c96-477c-8358-859a968e05bf
+                - b9e5e9f0-2958-4321-b9d8-ba8eca4f64d1
+                - 41b8a368-a823-4006-9c8b-88011b48f551
+                - 4b983368-1d35-46cc-bb76-152a91a0f311
+                - 0aafa779-acc4-4b14-ac55-cfa3a5a241a1
+                - 6d9cb486-4c95-4d19-a2ae-1cf3dc68c4e6
+                - 26c20999-beb8-4dc7-8545-ee3d97cd86e1
+                - 4b644bf4-fa40-42ef-aee6-f7c56cd5d84c
+                - 21399ab7-d7bb-451f-9f92-775638dd2bba
+              exportScanList: true
+              id: b66aae38-4ba1-4055-a8bf-ea0aeece0839
+              name: Edinburgh
+            - channelIds:
+                - 6c7bc1cc-1b52-445a-a72e-43aaf212f47b
+                - 1c99ded1-50f5-4b57-bad3-e335d06531a2
+                - 35053ef7-560e-402f-829b-b8484f4efbf5
+                - 211c5132-bac9-4257-8f58-0637808f1dba
+                - a557d38c-2d9c-4a18-bc60-0354b4ee2cdf
+                - 2cc9e394-2f5b-4b23-a3dc-9420c6aa6b4c
+                - abfc26c9-44ca-4a72-89a9-716e2fb8b872
+                - 8928d8ed-9c96-477c-8358-859a968e05bf
+                - b9e5e9f0-2958-4321-b9d8-ba8eca4f64d1
+                - 41b8a368-a823-4006-9c8b-88011b48f551
+                - 4b983368-1d35-46cc-bb76-152a91a0f311
+                - 0aafa779-acc4-4b14-ac55-cfa3a5a241a1
+                - 6d9cb486-4c95-4d19-a2ae-1cf3dc68c4e6
+                - 26c20999-beb8-4dc7-8545-ee3d97cd86e1
+                - 4b644bf4-fa40-42ef-aee6-f7c56cd5d84c
+                - 21399ab7-d7bb-451f-9f92-775638dd2bba
+              exportScanList: true
+              id: 9a78b0b4-388a-4dbe-8bc7-8f2223ffb8be
+              name: Dundee
+            - channelIds:
+                - 211c5132-bac9-4257-8f58-0637808f1dba
+                - a557d38c-2d9c-4a18-bc60-0354b4ee2cdf
+                - 2cc9e394-2f5b-4b23-a3dc-9420c6aa6b4c
+                - 6c7bc1cc-1b52-445a-a72e-43aaf212f47b
+                - 1c99ded1-50f5-4b57-bad3-e335d06531a2
+                - abfc26c9-44ca-4a72-89a9-716e2fb8b872
+                - 8928d8ed-9c96-477c-8358-859a968e05bf
+                - b9e5e9f0-2958-4321-b9d8-ba8eca4f64d1
+                - 41b8a368-a823-4006-9c8b-88011b48f551
+                - 4b983368-1d35-46cc-bb76-152a91a0f311
+                - 0aafa779-acc4-4b14-ac55-cfa3a5a241a1
+                - 6d9cb486-4c95-4d19-a2ae-1cf3dc68c4e6
+                - 26c20999-beb8-4dc7-8545-ee3d97cd86e1
+                - 4b644bf4-fa40-42ef-aee6-f7c56cd5d84c
+                - 21399ab7-d7bb-451f-9f92-775638dd2bba
+              exportScanList: true
+              id: c5844927-de71-426e-b2c0-418776b2d135
+              name: Perth
+            - channelIds:
+                - 70bad150-2d11-4706-a3db-57175d068313
+                - ca70ca22-179f-4442-8824-0894f3c764c6
+                - 0aafa779-acc4-4b14-ac55-cfa3a5a241a1
+                - 6d9cb486-4c95-4d19-a2ae-1cf3dc68c4e6
+                - 26c20999-beb8-4dc7-8545-ee3d97cd86e1
+                - 4b644bf4-fa40-42ef-aee6-f7c56cd5d84c
+                - 21399ab7-d7bb-451f-9f92-775638dd2bba
+                - 4b983368-1d35-46cc-bb76-152a91a0f311
+                - abfc26c9-44ca-4a72-89a9-716e2fb8b872
+                - 8928d8ed-9c96-477c-8358-859a968e05bf
+                - b9e5e9f0-2958-4321-b9d8-ba8eca4f64d1
+                - 41b8a368-a823-4006-9c8b-88011b48f551
+              exportScanList: true
+              id: dbff7ef8-215a-4b01-ae84-f7fe78be4022
+              name: Aboyne
+            - channelIds:
+                - 3b631c77-1d8e-4ac4-b8c6-edbb4571b5f1
+                - 7302e505-1f0e-456e-954c-3a0e55f89bf1
+                - 0aafa779-acc4-4b14-ac55-cfa3a5a241a1
+                - 6d9cb486-4c95-4d19-a2ae-1cf3dc68c4e6
+                - 26c20999-beb8-4dc7-8545-ee3d97cd86e1
+                - 4b644bf4-fa40-42ef-aee6-f7c56cd5d84c
+                - 21399ab7-d7bb-451f-9f92-775638dd2bba
+                - 4b983368-1d35-46cc-bb76-152a91a0f311
+                - abfc26c9-44ca-4a72-89a9-716e2fb8b872
+                - 8928d8ed-9c96-477c-8358-859a968e05bf
+                - b9e5e9f0-2958-4321-b9d8-ba8eca4f64d1
+                - 41b8a368-a823-4006-9c8b-88011b48f551
+              exportScanList: true
+              id: 3265622f-cea2-46b2-9d17-b4d543e4d874
+              name: Aberdeen
+            - channelIds:
+                - eb2be667-3e6a-423f-a518-8938021cae3b
+                - b29a77ae-d883-4ec7-99cd-c5d0a637ed2a
+                - e0a2d306-8f22-4a93-a65f-c5dd0be317c7
+                - 38fec83d-de58-4df7-922d-0a6be65033e1
+                - bc176d8c-e690-4fe5-bb11-d8dbbc3e35c8
+                - df79c9f5-00d3-47d4-b8de-367a84a26aa6
+                - 23739a7a-f56f-4fce-9b5e-4c81bac90104
+                - 10423cd0-2ef4-4f92-bf92-2f802e23f98e
+                - 968ea37c-1bfb-4baa-9b3a-e717d37d1433
+                - e3e123ce-4e44-435b-89f3-c38fc435ec42
+              exportScanList: true
+              id: fdb6effe-cdb6-4aa9-b8f6-10fd0afe5256
+              name: Glasgow Airband
+            - channelIds:
+                - 041595cf-144f-4505-8d7f-11d4172d7854
+                - 206d71b7-b445-4abc-bdcc-7d49a0a8e835
+                - 6f55c822-1f91-448b-aafe-e0da3a94e1e3
+                - 2d61c26c-7eb2-4c9a-8062-7dc8b12c08d0
+                - 6f0bd721-0fbc-4966-ad82-21bee7cb01b0
+                - 0424b169-1fd7-45f0-b2ac-7be8d0c293c6
+                - d27479d4-bef9-442d-9e58-8a4f43a8cfd7
+                - 24cca1c9-df68-4b56-bd6a-23d2a56d1ab9
+                - f50b3ba9-66a9-4ec7-86b6-6feab5be7515
+              exportScanList: true
+              id: 41707a0a-964e-4062-8909-2db7afdd3750
+              name: Edin Airband
+            - channelIds:
+                - f6381b6c-7da1-4774-a800-ec33605c266b
+                - 394e36f6-b04c-4e3c-8c8c-a71221dc50b3
+                - 35b330af-23a9-48bf-89c2-655279a134a0
+                - 3cfbaaa5-c470-44c8-8fc6-99533c930789
+                - 560af276-dd29-48a2-8fb6-f268bd7ec285
+              exportScanList: true
+              id: 4501b9e2-dc29-4a44-bd4c-c0f736e91f25
+              name: Aberdn Airband
+            - channelIds:
+                - 6f13aa05-b011-4d0c-bd9c-b19c56716fc6
+                - a6559d4b-d9b2-448b-971b-f38034147527
+                - 704a87cf-d610-4bbf-af78-1c29e9aa5a97
+                - 78852154-fb9f-4f16-870a-020f468341db
+                - c6973b7f-fedd-49b6-8a16-ec19643d2590
+                - 9da78b52-c0fb-4dce-b054-470d4bc7b4af
+                - 8710cf64-fd67-47ee-88d8-9d26cbdaf5ad
+                - 28e21d75-ca0d-4f20-855c-cf38e10e8f18
+                - f75317fa-810c-47c1-92c9-28aefbaac829
+                - e7d4448d-7e2d-4219-a71a-9c11f0f080d2
+                - c7f95831-de0c-4ce9-aa08-dd2743e4ab9e
+                - 124ea979-df82-4c4e-8963-61309dbbc265
+                - dc318f4c-686a-4efa-9729-450eff32b71e
+                - 8208716b-34e2-45f5-a0df-21818c84ca27
+                - f9c60e6a-e443-408f-a2b7-a20ee881a347
+                - 598eac81-060d-480b-b97d-b6382f19d68d
+              id: f0b8cbd5-7b10-4cfd-8ccc-833be4b3d9b9
+              name: PMR-446
+            - channelIds:
+                - abfc26c9-44ca-4a72-89a9-716e2fb8b872
+                - 8928d8ed-9c96-477c-8358-859a968e05bf
+                - b9e5e9f0-2958-4321-b9d8-ba8eca4f64d1
+                - 41b8a368-a823-4006-9c8b-88011b48f551
+                - 4b983368-1d35-46cc-bb76-152a91a0f311
+                - 0aafa779-acc4-4b14-ac55-cfa3a5a241a1
+                - 6d9cb486-4c95-4d19-a2ae-1cf3dc68c4e6
+                - 26c20999-beb8-4dc7-8545-ee3d97cd86e1
+                - 4b644bf4-fa40-42ef-aee6-f7c56cd5d84c
+                - 21399ab7-d7bb-451f-9f92-775638dd2bba
+              id: a3dd95b6-5274-48d4-9d58-2516d20aac51
+              name: Simplex scan channels
+            - channelIds:
+                - 4e745f41-9a2e-4f55-bec0-5a497c7c0738
+                - ab6751ae-d76c-46aa-9fb6-6ec1713a3535
+                - 32a743bd-5276-440d-8e70-190dc169a475
+                - 6b60edf0-d045-4008-859b-c0b7fa5c1eab
+                - 86a5be84-397d-4914-9ef9-917bfa5f1160
+                - e39e8c04-014d-4ec3-a567-5a0143055f78
+                - b0996ee3-b2f7-4c18-83aa-1f278636e9f3
+                - 4d1c1716-8473-4dad-86bf-89124a23a784
+                - 4b983368-1d35-46cc-bb76-152a91a0f311
+                - 7faf28c4-a13b-4186-9741-4155e4c2358c
+                - 91eab4e1-22ab-4a87-a003-ac8ac8b91cdd
+                - 383eba32-4f3e-4f2a-ba95-ae1383bacbab
+                - 5fbb58d9-a807-4d8e-b9ed-debc86c58c89
+                - 1f56ca78-895e-4510-a5ca-70f8d057ab2c
+                - 2fb66912-0bff-4e0a-9687-03fa7be58b1c
+                - 55b5403a-be69-4648-8da8-64ad3710b3d1
+                - 583dba48-4632-424e-ab84-5ec80a56c199
+              id: a9834106-11a0-4f59-9458-cc56b4095c42
+              name: UK UHF simplex
+            - channelIds:
+                - 65432461-b2fa-48a1-9fa6-eadd6ae763f9
+                - 5292da72-926f-451f-af2d-a81eee6abd35
+                - 1a31d271-eae4-43a5-9045-a718f95c926c
+                - efb34289-df3a-45a4-8c8f-1cfae6f667c9
+                - 715d5008-1d25-4c98-bfe3-3320be02fd94
+                - e9fbfc42-7675-45fa-be19-8fda1bacbd70
+                - f85beb5c-0e18-405d-876e-66bafa114c76
+                - e2d7c249-24b4-4a3e-bf3c-c033fb2531c4
+                - acbc4a97-13a2-4a50-a137-71fab903c490
+                - adeb0130-c699-45e4-b579-635bd31f0c71
+                - 0aafa779-acc4-4b14-ac55-cfa3a5a241a1
+                - 6d9cb486-4c95-4d19-a2ae-1cf3dc68c4e6
+                - 26c20999-beb8-4dc7-8545-ee3d97cd86e1
+                - 4b644bf4-fa40-42ef-aee6-f7c56cd5d84c
+                - 21399ab7-d7bb-451f-9f92-775638dd2bba
+                - abedcfec-bab5-452d-aca2-950aba2be269
+              id: cd2a1e8a-d503-485c-bc07-1b37932201c3
+              name: UK VHF simplex
+    name: Baofeng DM-32UV
+    projectId: 9734dab8-f8b8-4c81-84eb-a0c2d3479f21
+    radioTargetId: baofeng-dm32uv
+    revision: 37
+    rxGroupListOverrides: []
+    scanListOverrides: []
+    talkGroupOverrides: []
+    updatedAt: 2026-07-17T22:18:57.868Z
+    zoneOverrides:
+      - libraryEntityId: 4501b9e2-dc29-4a44-bd4c-c0f736e91f25
+        wireName: Aberdeen Air
+  - channelOverrides: []
+    contactOverrides: []
+    exportSettings:
+      exportZoneDerivedScanLists: true
+      maxNameLength: null
+      nameModeOverride: callsign_name
+      shortenNames: true
+      useChannelAbbreviation: true
+      useTalkGroupAbbreviation: false
+    exportUnlinkedAnalogContacts: true
+    exportUnlinkedChannels: true
+    exportUnlinkedDigitalContacts: true
+    exportUnlinkedRxGroupLists: true
+    exportUnlinkedTalkGroups: true
+    id: 5cb69ea9-7fda-44dd-b4a5-42aa96244c3a
+    layout:
+      sections: []
+    name: CHIRP UV-5R
+    projectId: 9734dab8-f8b8-4c81-84eb-a0c2d3479f21
+    radioTargetId: baofeng-uv5r-mini
+    revision: 2
+    rxGroupListOverrides: []
+    scanListOverrides: []
+    talkGroupOverrides: []
+    updatedAt: 2026-07-16T21:22:09.556Z
+    zoneOverrides: []
+  - channelOverrides: []
+    contactOverrides: []
+    exportSettings:
+      exportZoneDerivedScanLists: true
+      maxNameLength: null
+      nameModeOverride: callsign_name
+      shortenNames: true
+      useChannelAbbreviation: true
+      useTalkGroupAbbreviation: false
+    exportUnlinkedAnalogContacts: true
+    exportUnlinkedChannels: true
+    exportUnlinkedDigitalContacts: true
+    exportUnlinkedRxGroupLists: true
+    exportUnlinkedTalkGroups: true
+    id: 6bc340e5-91bf-4ff8-aabd-587d366d5c46
+    layout:
+      sections: []
+    name: CHIRP UV-21
+    projectId: 9734dab8-f8b8-4c81-84eb-a0c2d3479f21
+    radioTargetId: baofeng-uv21
+    revision: 2
+    rxGroupListOverrides: []
+    scanListOverrides: []
+    talkGroupOverrides: []
+    updatedAt: 2026-07-16T21:22:09.556Z
+    zoneOverrides: []
+  - channelOverrides: []
+    contactOverrides: []
+    exportSettings:
+      exportZoneDerivedScanLists: true
+      maxNameLength: null
+      nameModeOverride: callsign_name
+      shortenNames: true
+      useChannelAbbreviation: true
+      useTalkGroupAbbreviation: false
+    exportUnlinkedAnalogContacts: true
+    exportUnlinkedChannels: true
+    exportUnlinkedDigitalContacts: true
+    exportUnlinkedRxGroupLists: true
+    exportUnlinkedTalkGroups: true
+    id: da214f99-e5f8-4943-b771-d669d1b0fb22
+    layout:
+      sections: []
+    name: CHIRP RT95
+    projectId: 9734dab8-f8b8-4c81-84eb-a0c2d3479f21
+    radioTargetId: retevis-rt95
+    revision: 2
+    rxGroupListOverrides: []
+    scanListOverrides: []
+    talkGroupOverrides: []
+    updatedAt: 2026-07-16T21:22:09.556Z
+    zoneOverrides: []
 schemaVersion: 1
-studioSchemaVersion: 21
+studioSchemaVersion: 22

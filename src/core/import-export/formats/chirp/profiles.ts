@@ -63,6 +63,24 @@ export const CHIRP_PROFILES: readonly ChirpRadioProfile[] = [
 
 export const DEFAULT_CHIRP_PROFILE_ID = CHIRP_PROFILES[0]!.id;
 
+export function isChirpProfileId(profileId: string): boolean {
+  return CHIRP_PROFILES.some((p) => p.id === profileId);
+}
+
+/**
+ * CHIRP Export UI keeps a runtime profile override (`exportProfileId`).
+ * When switching away from CHIRP and back, that state can briefly hold a
+ * non-CHIRP egress profile id — fall back to the active CHIRP egress profile.
+ */
+export function resolveChirpExportProfileId(
+  exportProfileId: string,
+  egressProfileId: string,
+): string {
+  if (isChirpProfileId(exportProfileId)) return exportProfileId;
+  if (isChirpProfileId(egressProfileId)) return egressProfileId;
+  return DEFAULT_CHIRP_PROFILE_ID;
+}
+
 export function getChirpProfile(profileId: string): ChirpRadioProfile {
   const found = CHIRP_PROFILES.find((p) => p.id === profileId);
   if (!found) throw new Error(`Unknown CHIRP profile: ${profileId}`);

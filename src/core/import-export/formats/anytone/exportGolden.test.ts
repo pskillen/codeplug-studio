@@ -20,12 +20,14 @@ import {
   aprsAmAirSlotExportBuild,
   aprsAmAirSlotExportLibrary,
   aprsEnabledAnytoneExportLibrary,
+  anytoneExportEgress,
   minimalAnytoneExportBuild,
   minimalAnytoneExportLibrary,
 } from './exportGoldenFixtures.ts';
 import { APRS_HEADERS } from './columns.ts';
 
 const fixtureDir = join(dirname(fileURLToPath(import.meta.url)), '__fixtures__/export');
+const anytoneEgress = anytoneExportEgress();
 
 /** Every non-empty line must be comma-separated fields each wrapped in double quotes. */
 const UNIVERSALLY_QUOTED_LINE = /^("[^"]*")(,"[^"]*")*$/;
@@ -164,7 +166,7 @@ describe('anytone/export golden', () => {
   it('minimal export uses universal double-quoting on all CPS files', () => {
     const library = minimalAnytoneExportLibrary();
     const build = minimalAnytoneExportBuild(library);
-    const result = exportBuildAll({ build, library });
+    const result = exportBuildAll({ build, egress: anytoneEgress, library });
 
     for (const fileName of ANYTONE_EXPORT_FILE_NAMES) {
       const content = result.files[fileName];
@@ -177,7 +179,7 @@ describe('anytone/export golden', () => {
     const library = minimalAnytoneExportLibrary();
     const build = minimalAnytoneExportBuild(library);
     const fixtureCsv = readFileSync(join(fixtureDir, 'Channel.CSV'), 'utf8');
-    const result = exportBuildAll({ build, library });
+    const result = exportBuildAll({ build, egress: anytoneEgress, library });
 
     const comparison = compareCsvRecords(fixtureCsv, result.files['Channel.CSV']!, {
       nameColumn: 'Channel Name',
@@ -196,7 +198,7 @@ describe('anytone/export golden', () => {
     const library = minimalAnytoneExportLibrary();
     const build = minimalAnytoneExportBuild(library);
     const fixtureCsv = readFileSync(join(fixtureDir, 'DMRZone.CSV'), 'utf8');
-    const result = exportBuildAll({ build, library });
+    const result = exportBuildAll({ build, egress: anytoneEgress, library });
 
     const comparison = compareCsvRecords(fixtureCsv, result.files['DMRZone.CSV']!, {
       nameColumn: 'Zone Name',
@@ -214,7 +216,7 @@ describe('anytone/export golden', () => {
     const library = minimalAnytoneExportLibrary();
     const build = minimalAnytoneExportBuild(library);
     const fixtureCsv = readFileSync(join(fixtureDir, 'ScanList.CSV'), 'utf8');
-    const result = exportBuildAll({ build, library });
+    const result = exportBuildAll({ build, egress: anytoneEgress, library });
 
     const comparison = compareCsvRecords(fixtureCsv, result.files['ScanList.CSV']!, {
       nameColumn: 'Scan List Name',
@@ -232,21 +234,25 @@ describe('anytone/export golden', () => {
   it('minimal export omits APRS.CSV when no aprs configuration', () => {
     const library = minimalAnytoneExportLibrary();
     const build = minimalAnytoneExportBuild(library);
-    const result = exportBuildAll({ build, library });
+    const result = exportBuildAll({ build, egress: anytoneEgress, library });
 
     expect(result.files['APRS.CSV']).toBeUndefined();
-    expect(listExportBuildFileNames({ build, library })).not.toContain('APRS.CSV');
+    expect(listExportBuildFileNames({ build, egress: anytoneEgress, library })).not.toContain(
+      'APRS.CSV',
+    );
   });
 
   it('APRS-enabled export includes APRS.CSV with modelled columns', () => {
     const library = aprsEnabledAnytoneExportLibrary();
     const build = minimalAnytoneExportBuild(library);
     const fixtureCsv = readFileSync(join(fixtureDir, 'APRS.CSV'), 'utf8');
-    const result = exportBuildAll({ build, library });
+    const result = exportBuildAll({ build, egress: anytoneEgress, library });
 
     expect(result.files['APRS.CSV']).toBeDefined();
     assertUniversallyQuotedCsv(result.files['APRS.CSV']!);
-    expect(listExportBuildFileNames({ build, library })).toContain('APRS.CSV');
+    expect(listExportBuildFileNames({ build, egress: anytoneEgress, library })).toContain(
+      'APRS.CSV',
+    );
 
     const comparison = compareCsvRecords(fixtureCsv, result.files['APRS.CSV']!, {
       nameColumn: 'Manual TX Interval[s]',
@@ -269,7 +275,7 @@ describe('anytone/export golden', () => {
   it('APRS-enabled export maps Channel.aprs on Channel.CSV', () => {
     const library = aprsEnabledAnytoneExportLibrary();
     const build = minimalAnytoneExportBuild(library);
-    const result = exportBuildAll({ build, library });
+    const result = exportBuildAll({ build, egress: anytoneEgress, library });
     const parsed = parseCsv(result.files['Channel.CSV']!);
     const headers = parsed[0]!;
     const rows = parsed.slice(1);
@@ -285,7 +291,7 @@ describe('anytone/export golden', () => {
   it('APRS slot bound to AM air channel exports matching AMAir.CSV No.', () => {
     const library = aprsAmAirSlotExportLibrary();
     const build = aprsAmAirSlotExportBuild(library);
-    const result = exportBuildAll({ build, library });
+    const result = exportBuildAll({ build, egress: anytoneEgress, library });
 
     expect(result.files['AMAir.CSV']).toBeDefined();
     expect(result.files['APRS.CSV']).toBeDefined();
@@ -309,13 +315,15 @@ describe('anytone/export golden', () => {
     const library = minimalAnytoneExportLibrary();
     const build = minimalAnytoneExportBuild(library);
     const options = { projectName: 'meep' };
-    const result = exportBuildAll({ build, library, options });
+    const result = exportBuildAll({ build, egress: anytoneEgress, library, options });
 
     const expectedLst = serialiseAnytoneLstManifest([...ANYTONE_EXPORT_FILE_NAMES]);
     expect(result.files['meep.LST']).toBe(expectedLst);
-    expect(listExportBuildFileNames({ build, library, options })).toContain('meep.LST');
+    expect(listExportBuildFileNames({ build, egress: anytoneEgress, library, options })).toContain(
+      'meep.LST',
+    );
 
-    const zipped = exportBuildZip({ build, library, options });
+    const zipped = exportBuildZip({ build, egress: anytoneEgress, library, options });
     expect(zipped.files['meep.LST']).toBe(expectedLst);
     expect(zipped.zip.length).toBeGreaterThan(0);
   });

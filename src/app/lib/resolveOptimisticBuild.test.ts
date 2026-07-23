@@ -1,23 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import type { FormatBuild } from '@core/models/formatBuild.ts';
+import { newRadioBuild } from '@core/domain/factories.ts';
+import type { RadioBuild } from '@core/models/radioBuild.ts';
 import { resolveOptimisticBuild } from './resolveOptimisticBuild.ts';
 
-function build(revision: number, name: string): FormatBuild {
+function build(revision: number, name: string): RadioBuild {
   return {
-    id: 'b1',
-    projectId: 'p1',
-    name,
-    formatId: 'opengd77',
-    profileId: 'opengd77-gd77',
-    layout: { sections: [] },
-    channelOverrides: [],
-    zoneOverrides: [],
-    scanListOverrides: [],
-    talkGroupOverrides: [],
-    rxGroupListOverrides: [],
-    contactOverrides: [],
-    updatedAt: '2020-01-01T00:00:00.000Z',
+    ...newRadioBuild('p1', 'baofeng-dm1701', name),
     revision,
+    updatedAt: '2020-01-01T00:00:00.000Z',
   };
 }
 

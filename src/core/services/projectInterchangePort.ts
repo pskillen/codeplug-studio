@@ -1,4 +1,5 @@
-import type { FormatBuild } from '@core/models/formatBuild.ts';
+import type { RadioBuild } from '@core/models/radioBuild.ts';
+import type { EgressPath } from '@core/models/egressPath.ts';
 import type {
   AnalogContact,
   Channel,
@@ -25,7 +26,8 @@ export interface ProjectSeed {
   rxGroupLists?: RxGroupList[];
   scanLists?: ScanList[];
   aprsConfigurations?: AprsConfiguration[];
-  formatBuilds?: FormatBuild[];
+  radioBuilds?: RadioBuild[];
+  egressPaths?: EgressPath[];
 }
 
 /** Narrow persistence port for project YAML interchange (#59). */

@@ -1,11 +1,12 @@
 import { useEffect, useMemo, useState } from 'react';
-import type { FormatBuild } from '@core/models/formatBuild.ts';
+import type { RadioBuild } from '@core/models/formatBuild.ts';
 import {
   isMultiFileExportAdapter,
   isSingleFileCpsExportAdapter,
 } from '@core/import-export/exportAdapter.ts';
 import { getExportAdapter } from '@core/import-export/registry.ts';
-import type { CpsExportOptions, FormatId } from '@core/import-export/types.ts';
+import type { FormatId } from '@core/import-export/types.ts';
+import type { CpsAppExportOptions } from '../services/buildCpsExportService.ts';
 import { listCpsExportFileNames } from '../services/buildCpsExportService.ts';
 import { useProjects } from '../state/useProjects.ts';
 
@@ -27,12 +28,16 @@ function staticExportFileNames(
 }
 
 /** Resolved CPS export file list for multi-file builds (includes conditional files). */
-export function useBuildCpsExportFileNames(build: FormatBuild, exportOptions: CpsExportOptions) {
+export function useBuildCpsExportFileNames(
+  build: RadioBuild,
+  formatId: FormatId,
+  profileId: string,
+  exportOptions: CpsAppExportOptions,
+) {
   const { activeProjectId } = useProjects();
   const fallbackFileNames = useMemo(
-    () =>
-      staticExportFileNames(build.formatId as FormatId, build.profileId, exportOptions.profileId),
-    [build.formatId, build.profileId, exportOptions.profileId],
+    () => staticExportFileNames(formatId, profileId, exportOptions.profileId),
+    [formatId, profileId, exportOptions.profileId],
   );
   const [resolved, setResolved] = useState<{ requestKey: string; fileNames: string[] } | null>(
     null,

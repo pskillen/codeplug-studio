@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { newChannel, newFormatBuild } from '@core/domain/factories.ts';
+import { newChannel, newRadioBuildForProfile } from '@core/domain/factories.ts';
 import type { LibrarySlice } from '@core/services/assemble.ts';
 import { createRadioCloneHydrationBag } from '@core/models/radioCloneHydration.ts';
 import { UV5R_MINI_MEM_TOTAL } from '@integrations/radio-io/radios/uv5r-mini/constants.ts';
@@ -31,27 +31,31 @@ function emptyLibrary(channels: LibrarySlice['channels'] = []): LibrarySlice {
   };
 }
 
+function uv5rMiniRadioIo() {
+  return newRadioBuildForProfile('p1', 'radio-io-uv5r-mini');
+}
+
 describe('radioIoSession helpers', () => {
-  it('lists Mini descriptor for radio-io-uv5r-mini builds', () => {
-    const build = newFormatBuild('p1', 'radio-io-uv5r-mini');
-    expect(descriptorsForBuild(build).length).toBeGreaterThan(0);
+  it('lists Mini descriptor for radio-io-uv5r-mini egress', () => {
+    const { egress } = uv5rMiniRadioIo();
+    expect(descriptorsForBuild(egress).length).toBeGreaterThan(0);
   });
 
-  it('does not list Mini for NeonPlug file builds', () => {
-    const build = newFormatBuild('p1', 'neonplug-uv5rmini');
-    expect(descriptorsForBuild(build)).toHaveLength(0);
+  it('does not list Mini for NeonPlug file egress', () => {
+    const { egress } = newRadioBuildForProfile('p1', 'neonplug-uv5rmini');
+    expect(descriptorsForBuild(egress)).toHaveLength(0);
   });
 
-  it('detects radio-clone hydration', () => {
+  it('detects radio-clone hydration on egress', () => {
     const image = new Uint8Array(UV5R_MINI_MEM_TOTAL);
     image.fill(0xff);
     const hydration = createRadioCloneHydrationBag({
       radioModelId: 'UV5R-Mini',
       imageBytes: image,
     });
-    const build = newFormatBuild('p1', 'radio-io-uv5r-mini');
-    expect(buildHasRadioCloneHydration({ ...build, cpsWireHydration: hydration })).toBe(true);
-    expect(buildHasRadioCloneHydration(build)).toBe(false);
+    const { egress } = uv5rMiniRadioIo();
+    expect(buildHasRadioCloneHydration({ ...egress, hydration })).toBe(true);
+    expect(buildHasRadioCloneHydration(egress)).toBe(false);
   });
 
   it('blocks write without hydration', async () => {
@@ -86,9 +90,10 @@ describe('radioIoSession helpers', () => {
       pipe: { write: vi.fn(), readExact: vi.fn(), close: vi.fn() },
       radio,
     };
-    await expect(
-      writeBuildToRadio(session, newFormatBuild('p1', 'radio-io-uv5r-mini'), emptyLibrary()),
-    ).rejects.toBeInstanceOf(RadioWriteBlockedError);
+    const { build, egress } = uv5rMiniRadioIo();
+    await expect(writeBuildToRadio(session, build, egress, emptyLibrary())).rejects.toBeInstanceOf(
+      RadioWriteBlockedError,
+    );
     expect(radio.upload).not.toHaveBeenCalled();
   });
 
@@ -143,12 +148,16 @@ describe('radioIoSession helpers', () => {
         { mode: 'fm' as const, squelch: null, rxTone: 'none', txTone: 'none', bandwidthKHz: 25 },
       ],
     };
-    const build = {
-      ...newFormatBuild('p1', 'radio-io-uv5r-mini'),
-      cpsWireHydration: hydration,
-      channelOverrides: [{ libraryEntityId: 'ch-1', wireName: 'TEST', orderOrSlot: 1 }],
-    };
-    await writeBuildToRadio(session, build, emptyLibrary([ch]));
+    const { build, egress } = uv5rMiniRadioIo();
+    await writeBuildToRadio(
+      session,
+      {
+        ...build,
+        channelOverrides: [{ libraryEntityId: 'ch-1', wireName: 'TEST', orderOrSlot: 1 }],
+      },
+      { ...egress, hydration },
+      emptyLibrary([ch]),
+    );
     expect(upload).toHaveBeenCalledTimes(1);
     const uploaded = upload.mock.calls[0]![0] as MemoryMap;
     expect(uploaded.size).toBe(UV5R_MINI_MEM_TOTAL);
@@ -194,9 +203,8 @@ describe('radioIoSession helpers', () => {
       },
     ]);
 
-    await expect(
-      openRadioSessionForBuild(newFormatBuild('p1', 'radio-io-uv5r-mini')),
-    ).rejects.toThrow(/ident timeout/);
+    const { egress } = uv5rMiniRadioIo();
+    await expect(openRadioSessionForBuild(egress)).rejects.toThrow(/ident timeout/);
     expect(close).toHaveBeenCalledTimes(1);
 
     requestSpy.mockRestore();

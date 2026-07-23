@@ -2,6 +2,7 @@ import type { FormatId } from './types.ts';
 import {
   CHIRP_PROFILES,
   getChirpProfile,
+  resolveChirpExportProfileId,
   type ChirpRadioProfile,
 } from './formats/chirp/profiles.ts';
 import { DM32_PROFILES, getDm32Profile, type Dm32RadioProfile } from './formats/dm32/profiles.ts';
@@ -205,3 +206,5 @@ export function formatProfileWireHint(formatId: FormatId, profileId: string): st
   }
   return null;
 }
+
+export { resolveChirpExportProfileId };

@@ -2,10 +2,10 @@ import { normalizeChannelBehaviourDefaults } from './normalizeChannelBehaviourDe
 import { normalizeZoneBehaviourDefaults } from './normalizeZoneBehaviourDefaults.ts';
 import type { ProjectAggregate } from '@core/import-export/projectDocument.ts';
 import type { Library, ScanList } from '@core/models/library.ts';
-import type { FormatBuild } from '@core/models/formatBuild.ts';
+import type { RadioBuild } from '@core/models/radioBuild.ts';
 import type { ScanListEntry, ScanListsLayout } from '@core/models/traitLayout.ts';
 
-function scanListsSections(build: FormatBuild): ScanListsLayout[] {
+function scanListsSections(build: RadioBuild): ScanListsLayout[] {
   return build.layout.sections.filter((s): s is ScanListsLayout => s.kind === 'scanLists');
 }
 
@@ -20,7 +20,7 @@ function entryToScanList(entry: ScanListEntry, projectId: string): ScanList {
   };
 }
 
-function stripScanListsSections(build: FormatBuild): FormatBuild {
+function stripScanListsSections(build: RadioBuild): RadioBuild {
   const sections = build.layout.sections.filter((section) => section.kind !== 'scanLists');
   if (sections.length === build.layout.sections.length) return build;
   return { ...build, layout: { ...build.layout, sections } };
@@ -38,7 +38,7 @@ export function migrateBuildScanListsToLibrary(aggregate: ProjectAggregate): Pro
   let libraryChanged = false;
   let buildsChanged = false;
 
-  const formatBuilds = aggregate.formatBuilds.map((build) => {
+  const radioBuilds = aggregate.radioBuilds.map((build) => {
     const sections = scanListsSections(build);
     if (sections.length === 0) return build;
 
@@ -93,6 +93,6 @@ export function migrateBuildScanListsToLibrary(aggregate: ProjectAggregate): Pro
   return {
     ...aggregate,
     ...library,
-    formatBuilds,
+    radioBuilds,
   };
 }

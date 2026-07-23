@@ -60,9 +60,13 @@ function zipToBundleFiles(zip: Uint8Array): BundleFile[] {
 
 function exportSmokeOutcomes(formatId: string, profileId: string): CheckOutcome[] {
   const project = loadSmokeProject();
-  const build = project.formatBuilds.find((b) => b.profileId === profileId);
+  const egress = project.egressPaths.find((e) => e.profileId === profileId);
+  if (!egress) {
+    throw new Error(`Missing egressPath for ${profileId}`);
+  }
+  const build = project.radioBuilds.find((b) => b.id === egress.radioBuildId);
   if (!build) {
-    throw new Error(`Missing formatBuild for ${profileId}`);
+    throw new Error(`Missing radioBuild for egressPath ${egress.id} (profile ${profileId})`);
   }
   const library = libraryFromAggregate(project);
   const options = { projectName: project.meta.name?.trim() || undefined };
@@ -72,23 +76,23 @@ function exportSmokeOutcomes(formatId: string, profileId: string): CheckOutcome[
   }
 
   if (formatId === 'chirp') {
-    const result = exportBuildSingleFile({ build, library, options });
+    const result = exportBuildSingleFile({ build, egress, library, options });
     const files: BundleFile[] = [
       { path: result.fileName, name: result.fileName, text: result.content },
     ];
     return verifier.verifyDetailed(files, profileId);
   }
 
-  const result = exportBuildZip({ build, library, options });
+  const result = exportBuildZip({ build, egress, library, options });
   return verifier.verifyDetailed(zipToBundleFiles(result.zip), profileId);
 }
 
 describe('export-smoke: YAML → export → verify wire-valid', () => {
   it('fixture includes every smoke profile', () => {
     const project = loadSmokeProject();
-    const profileIds = new Set(project.formatBuilds.map((b) => b.profileId));
+    const profileIds = new Set(project.egressPaths.map((e) => e.profileId));
     for (const { profileId } of SMOKE_PROFILES) {
-      expect(profileIds.has(profileId), `missing formatBuild for ${profileId}`).toBe(true);
+      expect(profileIds.has(profileId), `missing egressPath for ${profileId}`).toBe(true);
     }
   });
 

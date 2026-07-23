@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import type { FormatBuild } from '@core/models/formatBuild.ts';
+import type { RadioBuild } from '@core/models/radioBuild.ts';
 import {
   isEntityExcluded,
   isEntityForceIncluded,
@@ -14,11 +14,11 @@ import {
   type WirePreviewEntityKind,
   type WirePreviewRow,
 } from '@core/services/previewWireRows.ts';
-import { traitProfileFor } from '@core/models/traits.ts';
 import { getFormatProfiles } from '@core/import-export/formatProfiles.ts';
 import type { FormatId } from '@core/import-export/types.ts';
 import { mergeExportOptions } from '@core/services/exportBuild.ts';
 import { applyDenseOrderOrSlots, clearAllOrderOrSlots } from '@core/domain/exportOrderOrSlot.ts';
+import { egressIdentityForBuild } from '../lib/buildEgressUi.ts';
 import { useBuildLayout } from '../routes/builds/BuildLayoutContext.tsx';
 import { useProjects } from '../state/useProjects.ts';
 import { persistence } from '../state/persistence.ts';
@@ -32,10 +32,10 @@ export function useBuildWirePreview(
   entityKind: WirePreviewEntityKind,
   anytoneBank: AnytoneWirePreviewBank = 'dmr',
 ) {
-  const { build: contextBuild } = useBuildLayout();
+  const { build: contextBuild, activeEgress } = useBuildLayout();
   const buildRef = useRef(contextBuild);
   const saveQueueRef = useRef(Promise.resolve());
-  const [savedBuild, setSavedBuild] = useState<FormatBuild | null>(null);
+  const [savedBuild, setSavedBuild] = useState<RadioBuild | null>(null);
   const build = resolveOptimisticBuild(contextBuild, savedBuild);
 
   useEffect(() => {
@@ -47,15 +47,30 @@ export function useBuildWirePreview(
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [hideNotIncludedInExport, setHideNotIncludedInExport] = useState(false);
+
+  const egress = useMemo(() => egressIdentityForBuild(build, activeEgress), [build, activeEgress]);
+
   const exportOptions = useMemo(
-    () => mergeExportOptions(build, undefined, library ?? undefined),
-    [build, library],
+    () =>
+      mergeExportOptions(
+        build,
+        egress.formatId,
+        { profileId: egress.profileId },
+        library ?? undefined,
+      ),
+    [build, egress.formatId, egress.profileId, library],
   );
 
   const allRows = useMemo(() => {
     if (!library) return [];
-    return previewWireRows(build, library, entityKind, exportOptions, anytoneBank);
-  }, [build, library, entityKind, exportOptions, anytoneBank]);
+    return previewWireRows(
+      build,
+      library,
+      entityKind,
+      { formatId: egress.formatId, profileId: egress.profileId, ...exportOptions },
+      anytoneBank,
+    );
+  }, [build, library, entityKind, exportOptions, anytoneBank, egress.formatId, egress.profileId]);
 
   const rows = useMemo(() => {
     if (!hideNotIncludedInExport || !library) return allRows;
@@ -82,14 +97,12 @@ export function useBuildWirePreview(
       case 'rxGroupList':
         return library.rxGroupLists.length > 0;
     }
-  }, [library, entityKind]);
+  }, [library, entityKind, build.layout.sections]);
 
   const nameLimit = useMemo(() => {
-    const profile = traitProfileFor(build.profileId);
-    if (!profile) return undefined;
-    const options = getFormatProfiles(profile.formatId as FormatId);
-    return options.find((option) => option.profileId === build.profileId)?.nameLimit;
-  }, [build.profileId]);
+    const options = getFormatProfiles(egress.formatId as FormatId);
+    return options.find((option) => option.profileId === egress.profileId)?.nameLimit;
+  }, [egress.formatId, egress.profileId]);
 
   useEffect(() => {
     if (!activeProjectId) return;
@@ -102,7 +115,7 @@ export function useBuildWirePreview(
     };
   }, [activeProjectId, build.updatedAt]);
 
-  const persistBuild = useCallback((mutate: (current: FormatBuild) => FormatBuild) => {
+  const persistBuild = useCallback((mutate: (current: RadioBuild) => RadioBuild) => {
     const run = async () => {
       const current = buildRef.current;
       const next = mutate(current);

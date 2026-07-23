@@ -40,7 +40,13 @@ export {
   type FlatMemoryLayout,
   emptyTraitLayout,
 } from './traitLayout.ts';
-export { type FormatBuild, type BuildEntityOverride } from './formatBuild.ts';
+export {
+  type RadioBuild,
+  type FormatBuild,
+  type BuildEntityOverride,
+  type BuildExportSettings,
+} from './formatBuild.ts';
+export { type EgressPath, type EgressKind, egressKindForFormatId } from './egressPath.ts';
 export type {
   AnalogChannelMode,
   AprsPositionSource,

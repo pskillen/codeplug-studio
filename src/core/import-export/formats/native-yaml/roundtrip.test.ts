@@ -19,7 +19,7 @@ import {
   fullLibraryAggregate,
   minimalProjectAggregate,
   nestedZonesAggregate,
-  projectWithFormatBuildAggregate,
+  projectWithRadioBuildAggregate,
 } from './testFixtures.ts';
 import type { Channel } from '@core/models/library.ts';
 import { newChannel } from '@core/domain/factories.ts';
@@ -27,7 +27,7 @@ import { initialRevision } from '@core/models/revision.ts';
 
 describe('native-yaml round-trip smoke', () => {
   it('serialise → parse preserves aggregate via adapters', () => {
-    const aggregate = projectWithFormatBuildAggregate();
+    const aggregate = projectWithRadioBuildAggregate();
     const exportAdapter = getExportAdapter('native-yaml');
     const importAdapter = getImportAdapter('native-yaml');
 
@@ -45,13 +45,13 @@ describe('native-yaml round-trip smoke', () => {
   });
 
   it('serialise → parse via module functions', () => {
-    const aggregate = projectWithFormatBuildAggregate();
+    const aggregate = projectWithRadioBuildAggregate();
     const yaml = serialiseProject(aggregate);
     expect(parseProjectDocument(yaml)).toEqual(aggregate);
   });
 
   it('preserves TalkGroup.abbreviation on round-trip', () => {
-    const aggregate = projectWithFormatBuildAggregate();
+    const aggregate = projectWithRadioBuildAggregate();
     expect(aggregate.talkGroups[0]?.abbreviation).toBe('Sco');
     const yaml = serialiseProject(aggregate);
     const parsed = parseProjectDocument(yaml);
@@ -87,11 +87,11 @@ describe('native-yaml round-trip smoke', () => {
   });
 
   it('preserves forceInclude on zone overrides round-trip', () => {
-    const aggregate = projectWithFormatBuildAggregate();
-    const build = aggregate.formatBuilds[0]!;
+    const aggregate = projectWithRadioBuildAggregate();
+    const build = aggregate.radioBuilds[0]!;
     const withForceInclude = {
       ...aggregate,
-      formatBuilds: [
+      radioBuilds: [
         {
           ...build,
           zoneOverrides: build.zoneOverrides.map((row) =>
@@ -101,22 +101,22 @@ describe('native-yaml round-trip smoke', () => {
       ],
     };
     const parsed = parseProjectDocument(serialiseProject(withForceInclude));
-    const parsedBuild = parsed.formatBuilds[0];
+    const parsedBuild = parsed.radioBuilds[0];
     expect(
       parsedBuild?.zoneOverrides.find((row) => row.libraryEntityId === FIXTURE_ZONE_ID)
         ?.forceInclude,
     ).toBe(true);
   });
 
-  it('preserves cpsWireHydration on format build round-trip', () => {
-    const aggregate = projectWithFormatBuildAggregate();
-    const build = aggregate.formatBuilds[0]!;
+  it('preserves cpsWireHydration on egress path round-trip', () => {
+    const aggregate = projectWithRadioBuildAggregate();
+    const egressPath = aggregate.egressPaths[0]!;
     const withHydration = {
       ...aggregate,
-      formatBuilds: [
+      egressPaths: [
         {
-          ...build,
-          cpsWireHydration: {
+          ...egressPath,
+          hydration: {
             formatId: 'neonplug' as const,
             sourceFileName: 'radio.neonplug',
             capturedAt: '2026-07-20T12:00:00.000Z',
@@ -144,14 +144,12 @@ describe('native-yaml round-trip smoke', () => {
       ],
     };
     const parsed = parseProjectDocument(serialiseProject(withHydration));
-    expect(parsed.formatBuilds[0]?.cpsWireHydration).toEqual(
-      withHydration.formatBuilds[0]!.cpsWireHydration,
-    );
+    expect(parsed.egressPaths[0]?.hydration).toEqual(withHydration.egressPaths[0]!.hydration);
   });
 
   it('preserves composite channel override keys on round-trip', () => {
-    const aggregate = projectWithFormatBuildAggregate();
-    const build = aggregate.formatBuilds[0]!;
+    const aggregate = projectWithRadioBuildAggregate();
+    const build = aggregate.radioBuilds[0]!;
     const expansionKey = expansionWireKey(FIXTURE_CHANNEL_B_ID, 'dmr');
     const multiTalkGroupKey = multiTalkGroupMemberWireKey(FIXTURE_CHANNEL_B_ID, 'dmr', {
       kind: 'talkGroup',
@@ -159,7 +157,7 @@ describe('native-yaml round-trip smoke', () => {
     });
     const withCompositeOverrides = {
       ...aggregate,
-      formatBuilds: [
+      radioBuilds: [
         {
           ...build,
           exportSettings: { ...build.exportSettings, expandModes: true },
@@ -173,7 +171,7 @@ describe('native-yaml round-trip smoke', () => {
     };
 
     const parsed = parseProjectDocument(serialiseProject(withCompositeOverrides));
-    const parsedBuild = parsed.formatBuilds[0];
+    const parsedBuild = parsed.radioBuilds[0];
     expect(
       parsedBuild?.channelOverrides.find((row) => row.libraryEntityId === expansionKey)?.wireName,
     ).toBe('GB7GL-D');

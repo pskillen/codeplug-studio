@@ -12,18 +12,20 @@ import {
 } from '../../../../test/csvRecordCompare.ts';
 import {
   ANYTONE_GOLDEN_PROJECT_ID,
+  anytoneExportEgress,
   minimalAnytoneExportBuild,
   minimalAnytoneExportLibrary,
 } from './exportGoldenFixtures.ts';
 import { serialiseAmAirCsv, serialiseFmBroadcastCsv } from './serialise.ts';
 import { assemble } from '@core/services/assemble.ts';
 import type { LibrarySlice } from '@core/services/assemble.ts';
-import type { FormatBuild } from '@core/models/formatBuild.ts';
+import type { RadioBuild } from '@core/models/radioBuild.ts';
 
 const wireFixtureDir = join(
   dirname(fileURLToPath(import.meta.url)),
   '../../../../../test-data/anytone/at-d890uv',
 );
+const anytoneEgress = anytoneExportEgress();
 
 function airbandLibrary(): LibrarySlice {
   const airband: Channel = {
@@ -44,7 +46,7 @@ function airbandLibrary(): LibrarySlice {
   };
 }
 
-function airbandBuild(library: LibrarySlice): FormatBuild {
+function airbandBuild(library: LibrarySlice): RadioBuild {
   return {
     ...newFormatBuild(ANYTONE_GOLDEN_PROJECT_ID, 'anytone-at-d890uv', 'Airband export'),
     layout: { sections: [] },
@@ -72,7 +74,7 @@ function fmBroadcastLibrary(scanInclusion: 'default' | 'skip' = 'default'): Libr
   };
 }
 
-function fmBroadcastBuild(library: LibrarySlice): FormatBuild {
+function fmBroadcastBuild(library: LibrarySlice): RadioBuild {
   return {
     ...newFormatBuild(ANYTONE_GOLDEN_PROJECT_ID, 'anytone-at-d890uv', 'FM export'),
     layout: { sections: [] },
@@ -84,7 +86,7 @@ describe('anytone/receive bank export', () => {
   it('omits AMAir.CSV and FM.CSV when no receive-bank channels', () => {
     const library = minimalAnytoneExportLibrary();
     const build = minimalAnytoneExportBuild(library);
-    const result = exportBuildAll({ build, library });
+    const result = exportBuildAll({ build, egress: anytoneEgress, library });
     expect(result.files['AMAir.CSV']).toBeUndefined();
     expect(result.files['FM.CSV']).toBeUndefined();
   });
@@ -92,7 +94,7 @@ describe('anytone/receive bank export', () => {
   it('includes AMAir.CSV and excludes airband from Channel.CSV', () => {
     const library = airbandLibrary();
     const build = airbandBuild(library);
-    const result = exportBuildAll({ build, library });
+    const result = exportBuildAll({ build, egress: anytoneEgress, library });
     expect(result.files['AMAir.CSV']).toBeDefined();
     expect(result.files['Channel.CSV']).toBeDefined();
     expect(result.files['Channel.CSV']!.split('\n').filter(Boolean)).toHaveLength(1);
@@ -115,7 +117,7 @@ describe('anytone/receive bank export', () => {
   it('includes FM.CSV for broadcast FM and keeps ham FM in Channel.CSV', () => {
     const library = fmBroadcastLibrary();
     const build = fmBroadcastBuild(library);
-    const result = exportBuildAll({ build, library });
+    const result = exportBuildAll({ build, egress: anytoneEgress, library });
     expect(result.files['FM.CSV']).toBeDefined();
 
     const hamFm: Channel = {
@@ -129,14 +131,18 @@ describe('anytone/receive bank export', () => {
       ...library,
       channels: [...library.channels, hamFm],
     };
-    const mixedBuild: FormatBuild = {
+    const mixedBuild: RadioBuild = {
       ...build,
       channelOverrides: [
         { libraryEntityId: library.channels[0]!.id, wireName: 'FM station 1' },
         { libraryEntityId: hamFm.id, wireName: '2m FM' },
       ],
     };
-    const mixed = exportBuildAll({ build: mixedBuild, library: mixedLibrary });
+    const mixed = exportBuildAll({
+      build: mixedBuild,
+      egress: anytoneEgress,
+      library: mixedLibrary,
+    });
     expect(mixed.files['FM.CSV']).toBeDefined();
     expect(mixed.files['Channel.CSV']!.includes('2m FM')).toBe(true);
   });

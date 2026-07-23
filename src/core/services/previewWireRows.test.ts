@@ -25,9 +25,9 @@ const fixtureDir = join(
 
 describe('previewWireRows', () => {
   it('shows channel display label and effective wire name from overrides', () => {
-    const yaml = readFileSync(join(fixtureDir, 'with-format-build.yaml'), 'utf8');
+    const yaml = readFileSync(join(fixtureDir, 'with-radio-build.yaml'), 'utf8');
     const aggregate = parseProjectDocument(yaml);
-    const build = aggregate.formatBuilds[0]!;
+    const build = aggregate.radioBuilds[0]!;
     const library = {
       channels: aggregate.channels,
       zones: aggregate.zones,
@@ -49,11 +49,11 @@ describe('previewWireRows', () => {
   });
 
   it('keeps talk group generated wire name separate from build override', () => {
-    const yaml = readFileSync(join(fixtureDir, 'with-format-build.yaml'), 'utf8');
+    const yaml = readFileSync(join(fixtureDir, 'with-radio-build.yaml'), 'utf8');
     const aggregate = parseProjectDocument(yaml);
     const tgId = '55555555-5555-4555-8555-555555555555';
     const build = {
-      ...aggregate.formatBuilds[0]!,
+      ...aggregate.radioBuilds[0]!,
       talkGroupOverrides: [{ libraryEntityId: tgId, wireName: 'Custom Override' }],
     };
     const library = {
@@ -76,11 +76,11 @@ describe('previewWireRows', () => {
   });
 
   it('applies talk group abbreviation to generated wire name when override is set', () => {
-    const yaml = readFileSync(join(fixtureDir, 'with-format-build.yaml'), 'utf8');
+    const yaml = readFileSync(join(fixtureDir, 'with-radio-build.yaml'), 'utf8');
     const aggregate = parseProjectDocument(yaml);
     const tgId = '55555555-5555-4555-8555-555555555555';
     const build = {
-      ...aggregate.formatBuilds[0]!,
+      ...aggregate.radioBuilds[0]!,
       talkGroupOverrides: [{ libraryEntityId: tgId, wireName: 'Short override' }],
     };
     const library = {
@@ -98,7 +98,7 @@ describe('previewWireRows', () => {
     };
 
     const rows = previewWireRows(build, library, 'talkGroup', {
-      profileId: build.profileId,
+      profileId: 'opengd77-1701',
       shortenNames: true,
     });
     const row = rows.find((entry) => entry.libraryEntityId === tgId);
@@ -107,10 +107,10 @@ describe('previewWireRows', () => {
   });
 
   it('marks excluded channels in preview rows', () => {
-    const yaml = readFileSync(join(fixtureDir, 'with-format-build.yaml'), 'utf8');
+    const yaml = readFileSync(join(fixtureDir, 'with-radio-build.yaml'), 'utf8');
     const aggregate = parseProjectDocument(yaml);
     const build = {
-      ...aggregate.formatBuilds[0]!,
+      ...aggregate.radioBuilds[0]!,
       channelOverrides: [
         {
           libraryEntityId: '33333333-3333-4333-8333-333333333333',
@@ -225,9 +225,9 @@ describe('previewWireRows', () => {
   });
 
   it('expands multi-mode channels into separate preview rows', () => {
-    const yaml = readFileSync(join(fixtureDir, 'with-format-build.yaml'), 'utf8');
+    const yaml = readFileSync(join(fixtureDir, 'with-radio-build.yaml'), 'utf8');
     const aggregate = parseProjectDocument(yaml);
-    const build = aggregate.formatBuilds[0]!;
+    const build = aggregate.radioBuilds[0]!;
     const channels: Channel[] = aggregate.channels.map((channel, index) =>
       index === 1
         ? {
@@ -263,7 +263,7 @@ describe('previewWireRows', () => {
     };
 
     const rows = previewWireRows(build, library, 'channel', {
-      profileId: build.profileId,
+      profileId: 'opengd77-1701',
       expandModes: true,
     });
     const multiModeRows = rows.filter((row) => row.libraryEntityId === channels[1]!.id);
@@ -275,9 +275,9 @@ describe('previewWireRows', () => {
   });
 
   it('shortens wire names at the profile name limit in preview', () => {
-    const yaml = readFileSync(join(fixtureDir, 'with-format-build.yaml'), 'utf8');
+    const yaml = readFileSync(join(fixtureDir, 'with-radio-build.yaml'), 'utf8');
     const aggregate = parseProjectDocument(yaml);
-    const build = aggregate.formatBuilds[0]!;
+    const build = aggregate.radioBuilds[0]!;
     const channels = aggregate.channels.map((channel) => ({
       ...channel,
       name: 'Very Long Channel Name That Exceeds Limit',
@@ -294,7 +294,7 @@ describe('previewWireRows', () => {
     };
 
     const rows = previewWireRows(build, library, 'channel', {
-      profileId: build.profileId,
+      profileId: 'opengd77-1701',
       shortenNames: true,
       maxNameLength: 16,
     });
@@ -302,10 +302,10 @@ describe('previewWireRows', () => {
   });
 
   it('generates channel wire names from callsign and name when no override', () => {
-    const yaml = readFileSync(join(fixtureDir, 'with-format-build.yaml'), 'utf8');
+    const yaml = readFileSync(join(fixtureDir, 'with-radio-build.yaml'), 'utf8');
     const aggregate = parseProjectDocument(yaml);
     const build = {
-      ...aggregate.formatBuilds[0]!,
+      ...aggregate.radioBuilds[0]!,
       channelOverrides: [],
     };
     const library = {
@@ -319,7 +319,7 @@ describe('previewWireRows', () => {
     };
 
     const rows = previewWireRows(build, library, 'channel', {
-      profileId: build.profileId,
+      profileId: 'opengd77-1701',
       shortenNames: false,
     });
     expect(rows.find((row) => row.libraryEntityId.endsWith('2222'))?.generatedWireName).toBe(
@@ -331,10 +331,10 @@ describe('previewWireRows', () => {
   });
 
   it('prefers channel abbreviation over vowel squeeze in preview', () => {
-    const yaml = readFileSync(join(fixtureDir, 'with-format-build.yaml'), 'utf8');
+    const yaml = readFileSync(join(fixtureDir, 'with-radio-build.yaml'), 'utf8');
     const aggregate = parseProjectDocument(yaml);
     const build = {
-      ...aggregate.formatBuilds[0]!,
+      ...aggregate.radioBuilds[0]!,
       channelOverrides: [],
     };
     const channels = aggregate.channels.map((channel, index) =>
@@ -353,7 +353,7 @@ describe('previewWireRows', () => {
     };
 
     const rows = previewWireRows(build, library, 'channel', {
-      profileId: build.profileId,
+      profileId: 'opengd77-1701',
       shortenNames: true,
     });
     const row = rows.find((r) => r.libraryEntityId === channels[1]!.id);
@@ -399,7 +399,10 @@ describe('previewWireRows', () => {
       scanLists: [],
     };
 
-    const rows = previewWireRows(build, library, 'channel', { profileId: build.profileId });
+    const rows = previewWireRows(build, library, 'channel', {
+      formatId: 'dm32',
+      profileId: 'dm32-baofeng-dm32uv',
+    });
     const fanOutRows = rows.filter((row) =>
       row.displayDetails?.some((line) => line.label === 'Talk group'),
     );
@@ -613,10 +616,7 @@ describe('previewWireRows', () => {
       id: 'zone-glasgow',
       members: [{ kind: 'zone' as const, zoneId: pmrZone.id }],
     };
-    const build = {
-      ...newFormatBuild(projectId, 'opengd77-1701', 'Omit preview'),
-      formatId: 'opengd77',
-    };
+    const build = newFormatBuild(projectId, 'opengd77-1701', 'Omit preview');
     const library = {
       channels: [pmrChannel],
       zones: [pmrZone, glasgowZone],
@@ -652,7 +652,6 @@ describe('previewWireRows', () => {
     };
     const build = {
       ...newFormatBuild(projectId, 'opengd77-1701', 'Force include preview'),
-      formatId: 'opengd77',
       zoneOverrides: [{ libraryEntityId: pmrZone.id, forceInclude: true }],
     };
     const library = {
@@ -681,7 +680,6 @@ describe('previewWireRows', () => {
     };
     const build = {
       ...newFormatBuild(projectId, 'opengd77-1701', 'Force excluded preview'),
-      formatId: 'opengd77',
       zoneOverrides: [{ libraryEntityId: pmrZone.id, forceInclude: true, excluded: true }],
     };
     const library = {
@@ -710,7 +708,7 @@ describe('previewWireRows', () => {
         { kind: 'zone' as const, zoneId: childZone.id },
       ],
     };
-    const build = { ...newFormatBuild(projectId, 'opengd77-1701', 'Badges'), formatId: 'opengd77' };
+    const build = newFormatBuild(projectId, 'opengd77-1701', 'Badges');
     const library = {
       channels: [ch],
       zones: [childZone, parentZone],
@@ -742,10 +740,7 @@ describe('previewWireRows', () => {
       omitFromExport: true,
       members: [{ kind: 'channel' as const, channelId: pmrChannel.id }],
     };
-    const build = {
-      ...newFormatBuild(projectId, 'opengd77-1701', 'Omit channel preview'),
-      formatId: 'opengd77',
-    };
+    const build = newFormatBuild(projectId, 'opengd77-1701', 'Omit channel preview');
     const library = {
       channels: [pmrChannel],
       zones: [pmrZone],
@@ -783,8 +778,12 @@ describe('previewWireRows', () => {
         rxGroupLists: [rgl],
         scanLists: [],
       };
-      const zoneRow = previewWireRows(build, library, 'zone')[0];
-      const rglRow = previewWireRows(build, library, 'rxGroupList')[0];
+      const egress =
+        formatId === 'opengd77-1701'
+          ? { formatId: 'opengd77', profileId: 'opengd77-1701' }
+          : { formatId: 'dm32', profileId: 'dm32-baofeng-dm32uv' };
+      const zoneRow = previewWireRows(build, library, 'zone', egress)[0];
+      const rglRow = previewWireRows(build, library, 'rxGroupList', egress)[0];
       expect(zoneRow?.effectiveWireName.length).toBeLessThanOrEqual(16);
       expect(rglRow?.effectiveWireName.length).toBeLessThanOrEqual(16);
     }
@@ -805,7 +804,7 @@ describe('previewWireRows', () => {
       forbidTransmit: 'forbid',
       modeProfiles: [defaultModeProfile('am')],
     };
-    const build = { ...newFormatBuild(projectId, 'anytone-at-d890uv'), formatId: 'anytone' };
+    const build = newFormatBuild(projectId, 'anytone-at-d890uv');
     const library = {
       channels: [dmr, air],
       zones: [],
@@ -849,7 +848,7 @@ describe('previewWireRows', () => {
         { kind: 'channel' as const, channelId: air.id },
       ],
     };
-    const build = { ...newFormatBuild(projectId, 'anytone-at-d890uv'), formatId: 'anytone' };
+    const build = newFormatBuild(projectId, 'anytone-at-d890uv');
     const library = {
       channels: [dmr, air],
       zones: [airOnlyZone, mixedZone],

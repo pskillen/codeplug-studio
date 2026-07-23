@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { newFormatBuild } from '@core/domain/factories.ts';
-import type { FormatBuild } from '@core/models/formatBuild.ts';
+import type { RadioBuild } from '@core/models/radioBuild.ts';
 import type { LibrarySlice } from '@core/services/assemble.ts';
 import { getFormatExportDefaults } from './registry.ts';
 import { mergeExportOptions } from '@core/import-export/exportSettingsMerge.ts';
@@ -8,7 +8,7 @@ import { DEFAULT_CHANNEL_BEHAVIOUR_DEFAULTS } from '@core/models/channelBehaviou
 import { effectiveForbidTransmit } from './channelBehaviourDefaults/resolve.ts';
 
 describe('mergeExportOptions', () => {
-  const build: FormatBuild = {
+  const build: RadioBuild = {
     ...newFormatBuild('proj', 'opengd77-1701'),
     exportSettings: {
       shortenNames: false,
@@ -17,7 +17,7 @@ describe('mergeExportOptions', () => {
   };
 
   it('merges format defaults with build export settings', () => {
-    const options = mergeExportOptions(build);
+    const options = mergeExportOptions(build, 'opengd77');
     expect(options.shortenNames).toBe(false);
     expect(options.defaultScanInclusion).toBe('skip');
     expect(options.expandModes).toBe(true);
@@ -27,8 +27,8 @@ describe('mergeExportOptions', () => {
     const library: Pick<LibrarySlice, 'channelDefaults'> = {
       channelDefaults: { ...DEFAULT_CHANNEL_BEHAVIOUR_DEFAULTS, forbidTransmit: true },
     };
-    const stale = mergeExportOptions(build);
-    const merged = mergeExportOptions(build, stale, library);
+    const stale = mergeExportOptions(build, 'opengd77');
+    const merged = mergeExportOptions(build, 'opengd77', stale, library);
     expect(
       effectiveForbidTransmit({ forbidTransmit: 'default' }, merged.channelBehaviourContext),
     ).toBe(true);
@@ -41,7 +41,14 @@ describe('mergeExportOptions', () => {
   it('defaults exportZoneDerivedScanLists on for dm32 and off for anytone', () => {
     const dm32 = { ...newFormatBuild('proj', 'dm32-baofeng-dm32uv'), exportSettings: {} };
     const anytone = { ...newFormatBuild('proj', 'anytone-at-d890uv'), exportSettings: {} };
-    expect(mergeExportOptions(dm32).exportZoneDerivedScanLists).toBe(true);
-    expect(mergeExportOptions(anytone).exportZoneDerivedScanLists).toBe(false);
+    expect(mergeExportOptions(dm32, 'dm32').exportZoneDerivedScanLists).toBe(true);
+    expect(mergeExportOptions(anytone, 'anytone').exportZoneDerivedScanLists).toBe(false);
+  });
+
+  it('carries egress profileId for wire-name limit resolution', () => {
+    const chirp = newFormatBuild('proj', 'chirp-uv5r');
+    const options = mergeExportOptions(chirp, 'chirp', { profileId: 'chirp-uv5r' });
+    expect(options.profileId).toBe('chirp-uv5r');
+    expect(options.shortenNames).toBe(true);
   });
 });

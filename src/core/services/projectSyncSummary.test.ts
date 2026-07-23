@@ -50,7 +50,8 @@ describe('projectSyncSummary', () => {
       'rxGroupLists',
       'scanLists',
       'aprsConfigurations',
-      'formatBuilds',
+      'radioBuilds',
+      'egressPaths',
     ]);
     const channels = diff.counts.find((row) => row.key === 'channels');
     expect(channels?.delta).toBe(1);

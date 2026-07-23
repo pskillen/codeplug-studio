@@ -1,6 +1,11 @@
 import { describe, expect, it, vi } from 'vitest';
 import { unzipSync } from 'fflate';
-import { newChannel, newFormatBuild, newProjectMeta } from '@core/domain/factories.ts';
+import {
+  newChannel,
+  newProjectMeta,
+  newRadioBuildForProfile,
+  newRadioBuildWithEgresses,
+} from '@core/domain/factories.ts';
 import { DM32_CORE_EXPORT_FILES } from '../../test/dm32CsvCompare.ts';
 import { InMemoryProjectPersistence } from '@integrations/persistence/inMemory.ts';
 import {
@@ -27,12 +32,17 @@ describe('buildCpsExportService', () => {
   async function seedStore() {
     const meta = newProjectMeta('Export test');
     const channel = newChannel(meta.projectId, 'GB3DA Demo', 'GB3DA');
-    const build = newFormatBuild(meta.projectId, 'opengd77-1701', 'OpenGD77 1701');
+    const { build, egressPaths } = newRadioBuildWithEgresses(
+      meta.projectId,
+      'baofeng-dm1701',
+      'OpenGD77 1701',
+    );
     const store = new InMemoryProjectPersistence();
     await store.seedProject({
       meta,
       channels: [channel],
-      formatBuilds: [build],
+      radioBuilds: [build],
+      egressPaths,
     });
     return { store, build, projectId: meta.projectId };
   }
@@ -67,12 +77,17 @@ describe('buildCpsExportService', () => {
         },
       ],
     };
-    const build = newFormatBuild(meta.projectId, 'neonplug-dm32uv', 'Neon DM32');
+    const { build, egressPaths } = newRadioBuildForProfile(
+      meta.projectId,
+      'neonplug-dm32uv',
+      'Neon DM32',
+    );
     const store = new InMemoryProjectPersistence();
     await store.seedProject({
       meta,
       channels: [channel],
-      formatBuilds: [build],
+      radioBuilds: [build],
+      egressPaths,
     });
     const result = await buildCpsZipBytes(meta.projectId, build.id, undefined, store);
     expect(result.fileName).toBe('Neon-DM32-neonplug.neonplug');
@@ -88,12 +103,17 @@ describe('buildCpsExportService', () => {
   it('buildCpsZipBytes for DM32 build contains core CSV files', async () => {
     const meta = newProjectMeta('DM32 export test');
     const channel = newChannel(meta.projectId, 'GB7FE Stirling');
-    const build = newFormatBuild(meta.projectId, 'dm32-baofeng-dm32uv', 'DM32 UV');
+    const { build, egressPaths } = newRadioBuildForProfile(
+      meta.projectId,
+      'dm32-baofeng-dm32uv',
+      'DM32 UV',
+    );
     const store = new InMemoryProjectPersistence();
     await store.seedProject({
       meta,
       channels: [channel],
-      formatBuilds: [build],
+      radioBuilds: [build],
+      egressPaths,
     });
     const result = await buildCpsZipBytes(meta.projectId, build.id, undefined, store);
     expect(result.fileName).toBe('DM32-UV-dm32.zip');

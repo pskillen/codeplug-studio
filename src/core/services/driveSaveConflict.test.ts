@@ -17,7 +17,8 @@ function summary(overrides: Partial<ProjectSyncSummary> = {}): ProjectSyncSummar
       rxGroupLists: 0,
       scanLists: 0,
       aprsConfigurations: 0,
-      formatBuilds: 0,
+      radioBuilds: 0,
+      egressPaths: 0,
     },
     ...overrides,
   };

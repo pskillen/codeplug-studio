@@ -4,13 +4,13 @@ Committed **native project YAML** used by the CPS wire export smoke ([#481](http
 
 ## Files
 
-| File                | Role                                                                       |
-| ------------------- | -------------------------------------------------------------------------- |
-| `rich-project.yaml` | Representative library + format builds for each verifier-supported profile |
+| File                | Role                                                                                   |
+| ------------------- | -------------------------------------------------------------------------------------- |
+| `rich-project.yaml` | Representative library + radio builds/egress paths for each verifier-supported profile |
 
 ## Profiles under smoke
 
-The fixture’s `formatBuilds[]` must include:
+The fixture's `egressPaths[]` (each pointing at a `radioBuilds[]` row via `radioBuildId`) must include:
 
 | `formatId` | `profileId`           |
 | ---------- | --------------------- |

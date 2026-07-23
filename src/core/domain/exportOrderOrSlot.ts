@@ -1,5 +1,4 @@
-import type { FormatBuild } from '@core/models/formatBuild.ts';
-import type { BuildEntityOverride } from '@core/models/formatBuild.ts';
+import type { BuildEntityOverride, RadioBuild } from '@core/models/radioBuild.ts';
 import type { Channel } from '@core/models/library.ts';
 import type { FlatMemoryLayout } from '@core/models/traitLayout.ts';
 import type { LibrarySlice } from '@core/services/assemble.ts';
@@ -9,7 +8,8 @@ import {
   upsertOverride,
 } from '@core/domain/formatBuildOverrides.ts';
 import { channelHasFmAmProfile } from '@core/domain/modeProfiles.ts';
-import { BuildCapabilityTrait, traitProfileFor } from '@core/models/traits.ts';
+import { BuildCapabilityTrait } from '@core/models/traits.ts';
+import { radioTargetHasTrait } from '@core/radio-targets/index.ts';
 
 /** One row in a top-level export list; `channelId` null → blank memory slot (CHIRP). */
 export interface ExportMemorySlot {
@@ -18,12 +18,11 @@ export interface ExportMemorySlot {
   channelId: string | null;
 }
 
-export function buildUsesFlatMemoryList(build: FormatBuild): boolean {
-  const profile = traitProfileFor(build.profileId);
-  return profile?.traits.includes(BuildCapabilityTrait.FlatMemoryList) ?? false;
+export function buildUsesFlatMemoryList(build: RadioBuild): boolean {
+  return radioTargetHasTrait(build.radioTargetId, BuildCapabilityTrait.FlatMemoryList);
 }
 
-export function findFlatMemorySection(build: FormatBuild): FlatMemoryLayout | undefined {
+export function findFlatMemorySection(build: RadioBuild): FlatMemoryLayout | undefined {
   return build.layout.sections.find((s): s is FlatMemoryLayout => s.kind === 'flatMemory');
 }
 
@@ -32,14 +31,14 @@ export function isChirpFlatMemoryChannel(channel: Channel): boolean {
   return channelHasFmAmProfile(channel);
 }
 
-function flatMemoryEligibleChannel(build: FormatBuild, channel: Channel): boolean {
+function flatMemoryEligibleChannel(build: RadioBuild, channel: Channel): boolean {
   if (buildUsesFlatMemoryList(build) && !isChirpFlatMemoryChannel(channel)) {
     return false;
   }
   return true;
 }
 
-function includedChirpChannels(build: FormatBuild, library: LibrarySlice): Channel[] {
+function includedChirpChannels(build: RadioBuild, library: LibrarySlice): Channel[] {
   return library.channels.filter(
     (channel) =>
       flatMemoryEligibleChannel(build, channel) &&
@@ -49,7 +48,7 @@ function includedChirpChannels(build: FormatBuild, library: LibrarySlice): Chann
 
 /** Resolve CHIRP memory slots from sparse overrides; gaps become blank slots. */
 export function resolveChirpChannelMemorySlots(
-  build: FormatBuild,
+  build: RadioBuild,
   library: LibrarySlice,
 ): ExportMemorySlot[] {
   const included = includedChirpChannels(build, library);
@@ -98,7 +97,7 @@ export function resolveChirpChannelMemorySlots(
 }
 
 /** Channel ids in memory-slot order (blanks omitted). */
-export function chirpMemoryChannelIds(build: FormatBuild, library: LibrarySlice): string[] {
+export function chirpMemoryChannelIds(build: RadioBuild, library: LibrarySlice): string[] {
   return resolveChirpChannelMemorySlots(build, library)
     .map((row) => row.channelId)
     .filter((id): id is string => id != null);
@@ -162,7 +161,7 @@ export function exportOrderResetConfirmMessage(): string {
 }
 
 /** Order-only migration when library is unavailable (IndexedDB read). */
-export function migrateFlatMemoryLayoutOrderOnly(build: FormatBuild): FormatBuild {
+export function migrateFlatMemoryLayoutOrderOnly(build: RadioBuild): RadioBuild {
   const flatMemory = findFlatMemorySection(build);
   if (!flatMemory) return build;
 
@@ -181,9 +180,9 @@ export function migrateFlatMemoryLayoutOrderOnly(build: FormatBuild): FormatBuil
 }
 /** Convert legacy flat-memory layout to orderOrSlot overrides and strip the section. */
 export function migrateFlatMemoryLayoutToOrderOrSlot(
-  build: FormatBuild,
+  build: RadioBuild,
   library: LibrarySlice,
-): FormatBuild {
+): RadioBuild {
   const flatMemory = findFlatMemorySection(build);
   if (!flatMemory) return build;
 

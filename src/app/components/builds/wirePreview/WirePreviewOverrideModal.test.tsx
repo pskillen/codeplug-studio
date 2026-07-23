@@ -4,7 +4,7 @@ import { MantineProvider } from '@mantine/core';
 import { MemoryRouter } from 'react-router-dom';
 import WirePreviewOverrideModal from './WirePreviewOverrideModal.tsx';
 import type { WirePreviewRow } from '@core/services/previewWireRows.ts';
-import type { FormatBuild } from '@core/models/formatBuild.ts';
+import { newRadioBuildForProfile } from '@core/domain/factories.ts';
 
 const row: WirePreviewRow = {
   key: 'tg-1',
@@ -19,11 +19,10 @@ const row: WirePreviewRow = {
 };
 
 const build = {
+  ...newRadioBuildForProfile('project-1', 'opengd77-1701').build,
   id: 'build-1',
   name: 'Test build',
-  formatId: 'opengd77',
-  profileId: 'opengd77-md380',
-} as FormatBuild;
+};
 
 describe('WirePreviewOverrideModal', () => {
   it('persists skip-from-export via callback', () => {

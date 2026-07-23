@@ -1,4 +1,5 @@
-import type { FormatBuild } from '@core/models/formatBuild.ts';
+import type { RadioBuild } from '@core/models/radioBuild.ts';
+import type { EgressPath } from '@core/models/egressPath.ts';
 import type { AprsConfiguration } from '@core/models/aprs.ts';
 import type {
   AnalogContact,
@@ -24,14 +25,15 @@ export const NATIVE_YAML_SCHEMA_VERSION = 1;
 
 /**
  * Full-project interchange envelope for native YAML v1.
- * Serialises library entities and all format builds for one project.
+ * Serialises library entities, radio builds, and egress paths for one project (#654).
  */
 export interface StudioProjectDocument {
   schemaVersion: typeof NATIVE_YAML_SCHEMA_VERSION;
   studioSchemaVersion: number;
   project: ProjectMeta;
   library: Library;
-  formatBuilds: FormatBuild[];
+  radioBuilds: RadioBuild[];
+  egressPaths: EgressPath[];
 }
 
 /**
@@ -52,7 +54,8 @@ export interface ProjectAggregate {
   rxGroupLists: RxGroupList[];
   scanLists: ScanList[];
   aprsConfiguration: AprsConfiguration | null;
-  formatBuilds: FormatBuild[];
+  radioBuilds: RadioBuild[];
+  egressPaths: EgressPath[];
 }
 
 export function emptyLibrary(): Library {
@@ -91,7 +94,8 @@ export function documentFromAggregate(aggregate: ProjectAggregate): StudioProjec
         aggregate.meta.zoneDefaults ?? aggregate.zoneDefaults,
       ),
     },
-    formatBuilds: aggregate.formatBuilds,
+    radioBuilds: aggregate.radioBuilds,
+    egressPaths: aggregate.egressPaths,
   };
 }
 
@@ -114,6 +118,7 @@ export function aggregateFromDocument(doc: StudioProjectDocument): ProjectAggreg
     rxGroupLists: doc.library.rxGroupLists,
     scanLists: doc.library.scanLists ?? [],
     aprsConfiguration: doc.library.aprsConfiguration ?? null,
-    formatBuilds: doc.formatBuilds,
+    radioBuilds: doc.radioBuilds,
+    egressPaths: doc.egressPaths,
   };
 }

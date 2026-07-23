@@ -8,6 +8,7 @@ import {
   newChannel,
   newDigitalContact,
   newFormatBuild,
+  newRadioBuildForProfile,
   newRxGroupList,
   newTalkGroup,
   newZone,
@@ -47,6 +48,8 @@ const fixtureDir = join(
 
 const PROJECT_ID = 'proj-1';
 
+const DM32_PROJECTION = { formatId: 'dm32', profileId: 'dm32-baofeng-dm32uv' } as const;
+
 function fmChannel(name: string, overrides: Partial<Channel> = {}): Channel {
   return {
     ...newChannel(PROJECT_ID, name),
@@ -68,7 +71,11 @@ function expectCrlfLineEndings(csv: string): void {
 
 describe('DM32 export serialise', () => {
   it('serialises all export files with CRLF line endings', () => {
-    const assembled = assemble(minimalDm32ExportBuild(), minimalDm32ExportLibrary());
+    const assembled = assemble(
+      minimalDm32ExportBuild(),
+      minimalDm32ExportLibrary(),
+      DM32_PROJECTION,
+    );
     const files = serialiseDm32Files(assembled, minimalDm32ExportLibrary());
     for (const fileName of DM32_CORE_EXPORT_FILES) {
       expectCrlfLineEndings(files[fileName]);
@@ -88,7 +95,7 @@ describe('DM32 export serialise', () => {
       rxGroupLists: [],
       scanLists: [],
     };
-    const assembled = assemble(build, library);
+    const assembled = assemble(build, library, DM32_PROJECTION);
     const files = serialiseDm32Files(assembled, library);
     const rows = parseCsv(files['Channels.csv']);
     const headers = rows[0]!;
@@ -127,7 +134,7 @@ describe('DM32 export serialise', () => {
       rxGroupLists: [],
       scanLists: [],
     };
-    const assembled = assemble(build, library);
+    const assembled = assemble(build, library, DM32_PROJECTION);
     const files = serialiseDm32Files(assembled, library);
     const rows = parseCsv(files['Contacts.csv']);
     const headers = rows[0]!;
@@ -155,7 +162,7 @@ describe('DM32 export serialise', () => {
       rxGroupLists: [],
       scanLists: [],
     };
-    const assembled = assemble(build, library);
+    const assembled = assemble(build, library, DM32_PROJECTION);
     const files = serialiseDm32Files(assembled, library, {
       channelBehaviourContext: buildChannelBehaviourContext({
         ...DEFAULT_CHANNEL_BEHAVIOUR_DEFAULTS,
@@ -192,7 +199,7 @@ describe('DM32 export serialise', () => {
       rxGroupLists: [],
       scanLists: [],
     };
-    const assembled = assemble(build, library);
+    const assembled = assemble(build, library, DM32_PROJECTION);
     const files = serialiseDm32Files(assembled, library);
     const rows = parseCsv(files['Channels.csv']);
     const headers = rows[0]!;
@@ -216,7 +223,7 @@ describe('DM32 export serialise', () => {
       rxGroupLists: [],
       scanLists: [],
     };
-    const assembled = assemble(build, library);
+    const assembled = assemble(build, library, DM32_PROJECTION);
     const files = serialiseDm32Files(assembled, library);
     const rows = parseCsv(files['Zones.csv']);
     const headers = rows[0]!;
@@ -237,7 +244,6 @@ describe('DM32 export serialise', () => {
     };
     const build: FormatBuild = {
       ...newFormatBuild(FIXTURE_PROJECT_ID, 'dm32-baofeng-dm32uv', 'Nested export'),
-      formatId: 'dm32',
       layout: {
         sections: [
           {
@@ -258,7 +264,7 @@ describe('DM32 export serialise', () => {
         ],
       },
     };
-    const files = serialiseDm32Files(assemble(build, library), library);
+    const files = serialiseDm32Files(assemble(build, library, DM32_PROJECTION), library);
     const zoneRows = parseCsv(files['Zones.csv']);
     const headers = zoneRows[0]!;
     const nameIndex = headers.indexOf(ZONE_COL.name);
@@ -305,7 +311,7 @@ describe('DM32 export serialise', () => {
       zones: [],
       scanLists: [],
     };
-    const assembled = assemble(build, library);
+    const assembled = assemble(build, library, DM32_PROJECTION);
     const files = serialiseDm32Files(assembled, library, { exportScratchChannels: false });
     const rows = parseCsv(files['Channels.csv']);
     expect(rows.length).toBe(3);
@@ -360,7 +366,7 @@ describe('DM32 export serialise', () => {
       zones: [zone],
       scanLists: [],
     };
-    const assembled = assemble(build, library);
+    const assembled = assemble(build, library, DM32_PROJECTION);
     const files = serialiseDm32Files(assembled, library, { exportScratchChannels: true });
     const channelRows = parseCsv(files['Channels.csv']);
     // header + 2 TG rows + 1 scratch
@@ -396,7 +402,7 @@ describe('DM32 export serialise', () => {
       rxGroupLists: [rgl],
       scanLists: [],
     };
-    const assembled = assemble(build, library);
+    const assembled = assemble(build, library, DM32_PROJECTION);
     const files = serialiseDm32Files(assembled, library, {
       profileId: 'dm32-baofeng-dm32uv',
       shortenNames: true,
@@ -441,7 +447,7 @@ describe('DM32 export serialise', () => {
       scanLists: [],
     };
     const assembled = {
-      ...assemble(build, library),
+      ...assemble(build, library, DM32_PROJECTION),
       library,
       zoneGrouping: layout,
     };
@@ -502,7 +508,7 @@ describe('DM32 export serialise', () => {
       scanLists: [],
     };
     const assembled = {
-      ...assemble(build, library),
+      ...assemble(build, library, DM32_PROJECTION),
       library,
       zoneGrouping: layout,
     };
@@ -550,7 +556,7 @@ describe('DM32 export serialise', () => {
       scanLists: [],
     };
     const assembled = {
-      ...assemble(build, library),
+      ...assemble(build, library, DM32_PROJECTION),
       library,
       zoneGrouping: layout,
     };
@@ -592,7 +598,7 @@ describe('DM32 export serialise', () => {
       scanLists: [],
     };
     const assembled = {
-      ...assemble(build, library),
+      ...assemble(build, library, DM32_PROJECTION),
       library,
       zoneGrouping: layout,
     };
@@ -633,7 +639,7 @@ describe('DM32 export serialise', () => {
   it('minimal library export matches synthetic golden bundle', () => {
     const build = minimalDm32ExportBuild();
     const library = minimalDm32ExportLibrary();
-    const assembled = { ...assemble(build, library), library };
+    const assembled = { ...assemble(build, library, DM32_PROJECTION), library };
     const exported = serialiseDm32Files(assembled, library);
     const comparison = compareDm32ExportBundle(minimalDm32Bundle, exported);
     expect(comparison.ok, formatDm32BundleCompareFailure(comparison)).toBe(true);
@@ -642,7 +648,8 @@ describe('DM32 export serialise', () => {
   it('exportBuildAll returns core DM32 CSV files for minimal library', () => {
     const build = minimalDm32ExportBuild();
     const library = minimalDm32ExportLibrary();
-    const result = exportBuildAll({ build, library });
+    const { egress } = newRadioBuildForProfile(FIXTURE_PROJECT_ID, 'dm32-baofeng-dm32uv');
+    const result = exportBuildAll({ build, egress, library });
     const fileNames = Object.keys(result.files).sort();
     for (const fileName of DM32_CORE_EXPORT_FILES) {
       expect(fileNames).toContain(fileName);
@@ -653,7 +660,10 @@ describe('DM32 export serialise', () => {
   it('v1.60 fixture headers match export headers for core files', () => {
     const build = minimalDm32ExportBuild();
     const library = minimalDm32ExportLibrary();
-    const exported = serialiseDm32Files({ ...assemble(build, library), library }, library);
+    const exported = serialiseDm32Files(
+      { ...assemble(build, library, DM32_PROJECTION), library },
+      library,
+    );
     for (const fileName of DM32_CORE_EXPORT_FILES) {
       const fixtureCsv = readFileSync(join(fixtureDir, fileName), 'utf8');
       expect(compareCsvHeaders(fixtureCsv, exported[fileName]!)).toBe(true);

@@ -1,20 +1,25 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import type { FormatBuild } from '@core/models/formatBuild.ts';
+import type { RadioBuild } from '@core/models/radioBuild.ts';
 import type { PutResult } from '@integrations/persistence/index.ts';
 import { BuildService } from './buildService.ts';
 import { persistence } from './persistence.ts';
 import { useProjects } from './useProjects.ts';
 
+/**
+ * @deprecated Kept as `useFormatBuilds` to avoid a wide UI rename in #654
+ * Slice 2; returns {@link RadioBuild} rows over the new persistence port.
+ * Full UI rewiring (egress picker, per-egress export) lands in later slices.
+ */
 export interface UseFormatBuildsResult {
   projectId: string | null;
-  builds: FormatBuild[];
+  builds: RadioBuild[];
   loading: boolean;
   reload: () => Promise<void>;
   createBuild: (
-    profileId: string,
+    radioTargetId: string,
     name?: string,
-  ) => Promise<{ ok: true; build: FormatBuild } | { ok: false; reason: string }>;
-  putBuild: (build: FormatBuild, expectedRevision: number | null) => Promise<PutResult>;
+  ) => Promise<{ ok: true; build: RadioBuild } | { ok: false; reason: string }>;
+  putBuild: (build: RadioBuild, expectedRevision: number | null) => Promise<PutResult>;
   deleteBuild: (id: string) => Promise<void>;
 }
 
@@ -23,7 +28,7 @@ export function useFormatBuilds(): UseFormatBuildsResult {
   const serviceRef = useRef<BuildService | null>(null);
   serviceRef.current ??= new BuildService(persistence);
 
-  const [builds, setBuilds] = useState<FormatBuild[]>([]);
+  const [builds, setBuilds] = useState<RadioBuild[]>([]);
   const [loading, setLoading] = useState(true);
 
   const reload = useCallback(async () => {
@@ -62,11 +67,11 @@ export function useFormatBuilds(): UseFormatBuildsResult {
   }, [activeProjectId, reload]);
 
   const createBuild = useCallback(
-    async (profileId: string, name?: string) => {
+    async (radioTargetId: string, name?: string) => {
       if (!activeProjectId) {
         return { ok: false as const, reason: 'No active project' };
       }
-      const outcome = await serviceRef.current!.createBuild(activeProjectId, profileId, name);
+      const outcome = await serviceRef.current!.createBuild(activeProjectId, radioTargetId, name);
       if (outcome.ok) await reload();
       return outcome;
     },
@@ -74,7 +79,7 @@ export function useFormatBuilds(): UseFormatBuildsResult {
   );
 
   const putBuild = useCallback(
-    async (build: FormatBuild, expectedRevision: number | null) => {
+    async (build: RadioBuild, expectedRevision: number | null) => {
       const result = await serviceRef.current!.putBuild(build, expectedRevision);
       if (result.ok) await reload();
       return result;
@@ -106,7 +111,7 @@ export function useFormatBuilds(): UseFormatBuildsResult {
 }
 
 export function useFormatBuild(id: string | undefined): {
-  build: FormatBuild | null;
+  build: RadioBuild | null;
   loading: boolean;
   reload: () => Promise<void>;
 } {

@@ -1,4 +1,4 @@
-import type { BuildEntityOverride, FormatBuild } from '@core/models/formatBuild.ts';
+import type { BuildEntityOverride, RadioBuild } from '@core/models/radioBuild.ts';
 import type { Channel } from '@core/models/library.ts';
 import type { ProjectAggregate } from '@core/import-export/projectDocument.ts';
 
@@ -33,7 +33,7 @@ export function migrateChannelScanListFromBuildOverrides(
   aggregate: ProjectAggregate,
 ): ProjectAggregate {
   const overrideByChannel = new Map<string, string>();
-  for (const build of aggregate.formatBuilds) {
+  for (const build of aggregate.radioBuilds) {
     for (const override of build.channelOverrides) {
       const legacyId = legacyOverrideScanListId(override);
       if (!legacyId) continue;
@@ -57,7 +57,7 @@ export function migrateChannelScanListFromBuildOverrides(
   });
 
   let buildsChanged = false;
-  const formatBuilds: FormatBuild[] = aggregate.formatBuilds.map((build) => {
+  const radioBuilds: RadioBuild[] = aggregate.radioBuilds.map((build) => {
     let buildDirty = false;
     const channelOverrides = build.channelOverrides
       .map((override) => {
@@ -80,6 +80,6 @@ export function migrateChannelScanListFromBuildOverrides(
   return {
     ...aggregate,
     channels,
-    formatBuilds,
+    radioBuilds,
   };
 }

@@ -1,7 +1,8 @@
 import { DEFAULT_CHANNEL_BEHAVIOUR_DEFAULTS } from '@core/models/channelBehaviourDefaults.ts';
 import { DEFAULT_ZONE_BEHAVIOUR_DEFAULTS } from '@core/models/zoneBehaviourDefaults.ts';
 import type { ProjectAggregate } from '../../projectDocument.ts';
-import type { FormatBuild } from '@core/models/formatBuild.ts';
+import type { RadioBuild } from '@core/models/radioBuild.ts';
+import type { EgressPath } from '@core/models/egressPath.ts';
 import type {
   AnalogContact,
   Channel,
@@ -24,6 +25,8 @@ export const FIXTURE_DIGITAL_CONTACT_ID = '66666666-6666-4666-8666-666666666666'
 export const FIXTURE_ANALOG_CONTACT_ID = '77777777-7777-4777-8777-777777777777';
 export const FIXTURE_RX_LIST_ID = '88888888-8888-4888-8888-888888888888';
 export const FIXTURE_BUILD_ID = '99999999-9999-4999-8999-999999999999';
+export const FIXTURE_EGRESS_PATH_ID = 'cccccccc-cccc-4ccc-8ccc-cccccccccccc';
+export const FIXTURE_RADIO_TARGET_ID = 'baofeng-dm1701';
 export const FIXTURE_APRS_CONFIG_ID = 'dddddddd-dddd-4ddd-8ddd-dddddddddddd';
 export const FIXTURE_CHILD_ZONE_ID = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
 export const FIXTURE_PARENT_ZONE_ID = 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb';
@@ -64,7 +67,8 @@ export function minimalProjectAggregate(): ProjectAggregate {
     channelDefaults,
     zoneDefaults,
     aprsConfiguration: null,
-    formatBuilds: [],
+    radioBuilds: [],
+    egressPaths: [],
   };
 }
 
@@ -211,16 +215,16 @@ export function fullLibraryAggregate(): ProjectAggregate {
     channelDefaults,
     zoneDefaults,
     aprsConfiguration,
-    formatBuilds: [],
+    radioBuilds: [],
+    egressPaths: [],
   };
 }
 
-export function projectWithFormatBuildAggregate(): ProjectAggregate {
+export function projectWithRadioBuildAggregate(): ProjectAggregate {
   const base = fullLibraryAggregate();
-  const build: FormatBuild = {
+  const build: RadioBuild = {
     ...rowMeta(FIXTURE_PROJECT_ID, FIXTURE_BUILD_ID),
-    formatId: 'opengd77',
-    profileId: 'opengd77-1701',
+    radioTargetId: FIXTURE_RADIO_TARGET_ID,
     name: 'OpenGD77 1701',
     layout: {
       sections: [
@@ -264,9 +268,18 @@ export function projectWithFormatBuildAggregate(): ProjectAggregate {
     exportUnlinkedRxGroupLists: true,
   };
 
+  const egressPath: EgressPath = {
+    ...rowMeta(FIXTURE_PROJECT_ID, FIXTURE_EGRESS_PATH_ID),
+    radioBuildId: FIXTURE_BUILD_ID,
+    formatId: 'opengd77',
+    profileId: 'opengd77-1701',
+    kind: 'cps-file',
+  };
+
   return {
     ...base,
-    formatBuilds: [build],
+    radioBuilds: [build],
+    egressPaths: [egressPath],
   };
 }
 
@@ -317,6 +330,5 @@ export function glasgowPmrNestedAggregate(): ProjectAggregate {
   return {
     ...base,
     zones: [pmrZone, glasgowZone],
-    formatBuilds: [],
   };
 }

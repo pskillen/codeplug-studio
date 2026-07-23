@@ -1,10 +1,11 @@
 /**
- * Build-scoped CPS wire hydration — labelled export-boundary escape hatch.
+ * Egress-scoped CPS wire hydration — labelled export-boundary escape hatch.
  *
  * Formats may persist unmodelled donor/retain slices here so merge export can
  * rehydrate radio-safe output without stashing modelled wire into the library.
- * Persisted on the format build (IndexedDB) and round-trips with native YAML
- * project export/import. Not library entities; not relationship keys.
+ * Persisted on the {@link EgressPath} (not the RadioBuild, #654) — IndexedDB —
+ * and round-trips with native YAML project export/import. Not library
+ * entities; not relationship keys.
  */
 
 /** Shared capture metadata for any format's hydration bag. */
@@ -18,7 +19,7 @@ export interface CpsWireHydrationBase {
 }
 
 /**
- * Persisted hydration bag on {@link FormatBuild.cpsWireHydration}.
+ * Persisted hydration bag on {@link EgressPath.hydration}.
  * `retain` is opaque at the model layer; each format owns its retain shape.
  */
 export interface CpsWireHydration extends CpsWireHydrationBase {

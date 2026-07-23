@@ -1,43 +1,39 @@
-# Radio profiles on builds
+# Profiles and export limits on radio builds
 
-Operators pick a **radio profile** when creating a format build. The profile defines which organisation capabilities apply and which wire limits the export adapter enforces at the CPS boundary.
+A **radio build** is keyed by catalog `radioTargetId`. Compatible **egress pathways** carry `formatId` / `profileId` (CHIRP, NeonPlug, OpenGD77, …). Profile wire limits and capability copy come from the **active egress** profile (or the catalog default when none is selected).
 
-## When profiles are chosen
+## When radios and profiles are chosen
 
-| Workflow     | Where                                          | Persisted?                              |
-| ------------ | ---------------------------------------------- | --------------------------------------- |
-| New build    | `/builds/new` — format → **profile** → name    | Yes — stored on `FormatBuild.profileId` |
-| Build detail | Target section — `ProfilePicker` (select mode) | Yes — after **Save**                    |
+| Workflow               | Where                                                    | Persisted?                                                                 |
+| ---------------------- | -------------------------------------------------------- | -------------------------------------------------------------------------- |
+| New build              | `/builds/new` — **radio target** → name                  | Yes — `RadioBuild.radioTargetId`; all compatible `EgressPath` rows seeded  |
+| Export pathway         | `/builds/:id/export` — egress switcher                   | Active selection in session + `defaultEgressPathId` on the build           |
+| CHIRP runtime override | Export panel `ProfilePicker` when active egress is CHIRP | Session / export options only (does not rewrite seeded egress `profileId`) |
 
-Change profile in **Target** before exporting — export uses the saved build `profileId`.
+Changing the preferred pathway on Export updates `defaultEgressPathId` so the next session restores it.
 
 ## Operator-facing characteristics
 
 **Radio characteristics** (`/builds/:id/characteristics`) is the read-only place operators see:
 
-- How this profile organises the build (zones, scan behaviour, expansion, …)
-- Export limits (entity counts, member caps, name lengths) — known figures from `formats/*/profiles.ts`, blanks where not yet modelled
+- How this **radio target** organises the build (zones, scan behaviour, expansion, …)
+- Export limits for the **active egress** profile (entity counts, member caps, name lengths)
 - Power ladder (and sibling ladders such as DM32 squelch)
 
-Copy lives in [`buildCapabilityCopy.ts`](../../../src/app/lib/buildCapabilityCopy.ts). Limits are projected by [`getProfileExportLimits`](../../../src/core/import-export/profileExportLimits.ts) — per-format profile types stay separate; the projection only normalises for UI.
+Copy lives in [`buildCapabilityCopy.ts`](../../../src/app/lib/buildCapabilityCopy.ts). Limits are projected by [`getProfileExportLimits`](../../../src/core/import-export/profileExportLimits.ts).
 
-Overview links here from the organisation badges section. Deeper overview / new-build hints remain under [#259](https://github.com/pskillen/codeplug-studio/issues/259).
+## OpenGD77 / multi-variant radios
 
-## OpenGD77 profiles
-
-OpenGD77 has multiple **radio variants** (e.g. Baofeng 1701, MD9600) with different channel caps, zone member limits, and 16-character wire name limits. See [import-export/opengd77](../import-export/opengd77/README.md) for profile vs trait profile.
-
-## Changing profile on an existing build
-
-If the build already has layout sections or entity selections, Studio asks for confirmation before changing profile — limits may differ between variants. After save, **Radio characteristics** reflects the new `profileId`.
+Catalog entries such as Baofeng DM-1701 vs MD-9600 are **separate radio targets**, each with its own OpenGD77 egress profile. See [import-export/opengd77](../import-export/opengd77/README.md).
 
 ## Component
 
-[`ProfilePicker`](../../../src/app/components/builds/ProfilePicker.tsx) — card list for new-build wizard; dropdown on build detail Target section.
+[`ProfilePicker`](../../../src/app/components/builds/ProfilePicker.tsx) — used on Export for CHIRP runtime profile override (limits/filename). New build uses the radio-target catalog, not this picker.
 
 ## Related
 
 - [builds README](README.md)
-- [data-model](../data-model/README.md) — `FormatBuild.profileId`
+- [data-model](../data-model/README.md) — `RadioBuild` / `EgressPath`
 - [DESIGN.md](../../../DESIGN.md) — build capability traits
 - [#515](https://github.com/pskillen/codeplug-studio/issues/515) — Radio characteristics page
+- [#654](https://github.com/pskillen/codeplug-studio/issues/654) — RadioBuild + EgressPath

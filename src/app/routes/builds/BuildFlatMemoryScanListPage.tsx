@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Badge, Group, Stack, Text } from '@mantine/core';
 import { Link, Navigate } from 'react-router-dom';
-import type { BuildExportSettings, FormatBuild } from '@core/models/formatBuild.ts';
+import type { BuildExportSettings, RadioBuild } from '@core/models/radioBuild.ts';
 import { channelDisplayLabel } from '@core/domain/channelNaming.ts';
 import {
   chirpMemoryChannelIds,
@@ -15,7 +15,8 @@ import {
   resolveChannelScanInclusionForExport,
 } from '@core/import-export/scanInclusion/index.ts';
 import type { Channel, ScanInclusion } from '@core/models/library.ts';
-import { showsPerChannelScanListNav } from '@core/models/traits.ts';
+import { radioTargetHasTrait } from '@core/radio-targets/index.ts';
+import { BuildCapabilityTrait } from '@core/models/traits.ts';
 import type { LibrarySlice } from '@core/services/assemble.ts';
 import DefaultScanInclusionSegment from '../../components/builds/DefaultScanInclusionSegment.tsx';
 import ScanInclusionSegment from '../../components/channels/ScanInclusionSegment.tsx';
@@ -24,6 +25,7 @@ import { FormPage, FormSection } from '../../components/ui/index.ts';
 import DataTable from '../../components/ui/DataTable.tsx';
 import { loadLibrarySlice } from '../../lib/loadLibrarySlice.ts';
 import { resolveOptimisticBuild } from '../../lib/resolveOptimisticBuild.ts';
+import { egressIdentityForBuild } from '../../lib/buildEgressUi.ts';
 import { resolvedBuildExportSettings } from '../../lib/buildExportSettingsUi.ts';
 import { useBuildLayout } from './BuildLayoutContext.tsx';
 import { useProjects } from '../../state/useProjects.ts';
@@ -46,9 +48,9 @@ interface ScanListRow {
  * No memory order, wire names, or skip-from-export here — those stay on Channels.
  */
 export default function BuildFlatMemoryScanListPage() {
-  const { build: contextBuild } = useBuildLayout();
+  const { build: contextBuild, activeEgress } = useBuildLayout();
   const buildRef = useRef(contextBuild);
-  const [savedBuild, setSavedBuild] = useState<FormatBuild | null>(null);
+  const [savedBuild, setSavedBuild] = useState<RadioBuild | null>(null);
   const build = resolveOptimisticBuild(contextBuild, savedBuild);
   const { activeProjectId } = useProjects();
   const { putBuild } = useFormatBuilds();
@@ -71,8 +73,10 @@ export default function BuildFlatMemoryScanListPage() {
     buildRef.current = build;
   }, [build]);
 
-  const exportSettings = resolvedBuildExportSettings(build);
-  const formatDefaults = getFormatExportDefaults(build.formatId);
+  const egress = useMemo(() => egressIdentityForBuild(build, activeEgress), [build, activeEgress]);
+
+  const exportSettings = resolvedBuildExportSettings(build, egress.formatId);
+  const formatDefaults = getFormatExportDefaults(egress.formatId);
   const defaultScanValue =
     exportSettings.defaultScanInclusion ?? formatDefaults.defaultScanInclusion;
   const scanContext = buildScanContext({ defaultScanInclusion: defaultScanValue }, formatDefaults);
@@ -114,7 +118,7 @@ export default function BuildFlatMemoryScanListPage() {
     [build, librarySlice],
   );
 
-  if (!showsPerChannelScanListNav(build.profileId)) {
+  if (!radioTargetHasTrait(build.radioTargetId, BuildCapabilityTrait.PerChannelScanFlag)) {
     return <Navigate to={`/builds/${build.id}/channels`} replace />;
   }
 

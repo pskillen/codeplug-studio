@@ -1,18 +1,21 @@
 import { useEffect, useMemo, useState } from 'react';
-import type { FormatBuild } from '@core/models/formatBuild.ts';
+import type { RadioBuild } from '@core/models/formatBuild.ts';
 import { csvToTable, type CsvTable } from '@core/import-export/csvParse.ts';
 import {
   isMultiFileExportAdapter,
   isSingleFileCpsExportAdapter,
 } from '@core/import-export/exportAdapter.ts';
 import { getExportAdapter } from '@core/import-export/registry.ts';
-import type { CpsExportOptions, FormatId } from '@core/import-export/types.ts';
+import type { FormatId } from '@core/import-export/types.ts';
+import type { CpsAppExportOptions } from '../services/buildCpsExportService.ts';
 import { previewCpsExport, previewCpsSingleFile } from '../services/buildCpsExportService.ts';
 import { useProjects } from '../state/useProjects.ts';
 
 export interface UseBuildCpsExportPreviewParams {
-  build: FormatBuild;
-  exportOptions: CpsExportOptions;
+  build: RadioBuild;
+  formatId: FormatId;
+  profileId: string;
+  exportOptions: CpsAppExportOptions;
   enabled: boolean;
 }
 
@@ -24,13 +27,17 @@ interface PreviewSnapshot {
   error: string | null;
 }
 
-function staticPreviewFileNames(build: FormatBuild, exportOptions: CpsExportOptions): string[] {
+function staticPreviewFileNames(
+  formatId: FormatId,
+  profileId: string,
+  exportOptions: CpsAppExportOptions,
+): string[] {
   try {
-    const adapter = getExportAdapter(build.formatId as FormatId);
+    const adapter = getExportAdapter(formatId);
     if (isMultiFileExportAdapter(adapter)) return [...adapter.fileNames];
     if (isSingleFileCpsExportAdapter(adapter)) {
-      const profileId = exportOptions.profileId ?? build.profileId;
-      return [adapter.defaultFileName(profileId)];
+      const resolvedProfileId = exportOptions.profileId ?? profileId;
+      return [adapter.defaultFileName(resolvedProfileId)];
     }
     return [];
   } catch {
@@ -44,6 +51,8 @@ export function isCsvPreviewFileName(fileName: string): boolean {
 
 export function useBuildCpsExportPreview({
   build,
+  formatId,
+  profileId,
   exportOptions,
   enabled,
 }: UseBuildCpsExportPreviewParams) {
@@ -51,8 +60,8 @@ export function useBuildCpsExportPreview({
   const [snapshot, setSnapshot] = useState<PreviewSnapshot | null>(null);
 
   const fallbackFileNames = useMemo(
-    () => staticPreviewFileNames(build, exportOptions),
-    [build, exportOptions],
+    () => staticPreviewFileNames(formatId, profileId, exportOptions),
+    [formatId, profileId, exportOptions],
   );
 
   const requestKey = useMemo(
@@ -74,7 +83,7 @@ export function useBuildCpsExportPreview({
 
     const preview = (() => {
       try {
-        const adapter = getExportAdapter(build.formatId as FormatId);
+        const adapter = getExportAdapter(formatId);
         return isSingleFileCpsExportAdapter(adapter) ? previewCpsSingleFile : previewCpsExport;
       } catch {
         return previewCpsExport;
@@ -106,15 +115,7 @@ export function useBuildCpsExportPreview({
     return () => {
       cancelled = true;
     };
-  }, [
-    enabled,
-    activeProjectId,
-    build.id,
-    build.formatId,
-    requestKey,
-    exportOptions,
-    fallbackFileNames,
-  ]);
+  }, [enabled, activeProjectId, build.id, formatId, requestKey, exportOptions, fallbackFileNames]);
 
   const isCurrentSnapshot = snapshot?.requestKey === requestKey;
   const files = isCurrentSnapshot ? snapshot.files : null;

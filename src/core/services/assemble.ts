@@ -1,4 +1,5 @@
-import type { BuildEntityOverride, FormatBuild } from '@core/models/formatBuild.ts';
+import type { BuildEntityOverride, RadioBuild } from '@core/models/radioBuild.ts';
+import { defaultCompatibleEgress } from '@core/radio-targets/index.ts';
 import type {
   AnalogContact,
   Channel,
@@ -127,8 +128,24 @@ export interface AssembledBuild {
 }
 
 export interface AssembleOptions {
-  /** Export-time profile override — defaults to `build.profileId`. */
+  /** Egress format id — defaults to the radio target's default compatible egress. */
+  formatId?: string;
+  /** Egress profile id — defaults to the radio target's default compatible egress. */
   profileId?: string;
+}
+
+/** Resolve the effective formatId/profileId for assemble output when not given via options. */
+function resolveEgressIds(
+  build: RadioBuild,
+  options?: AssembleOptions,
+): { formatId: string; profileId: string } {
+  const fallback = defaultCompatibleEgress(build.radioTargetId);
+  const formatId = options?.formatId ?? fallback?.formatId;
+  const profileId = options?.profileId ?? fallback?.profileId;
+  if (!formatId || !profileId) {
+    throw new Error(`No compatible egress found for radio target: ${build.radioTargetId}`);
+  }
+  return { formatId, profileId };
 }
 
 function zoneMap(library: LibrarySlice): Map<string, Zone> {
@@ -201,11 +218,11 @@ function expandRefsFromRxLists(
   }
 }
 
-function zoneGroupingSections(build: FormatBuild): ZoneGroupingLayout[] {
+function zoneGroupingSections(build: RadioBuild): ZoneGroupingLayout[] {
   return build.layout.sections.filter((s): s is ZoneGroupingLayout => s.kind === 'zoneGrouping');
 }
 
-function scanListsSections(build: FormatBuild): ScanListsLayout[] {
+function scanListsSections(build: RadioBuild): ScanListsLayout[] {
   return build.layout.sections.filter((s): s is ScanListsLayout => s.kind === 'scanLists');
 }
 
@@ -219,7 +236,7 @@ function resolveChannelScanListWireName(
 }
 
 function assembleScanLists(
-  build: FormatBuild,
+  build: RadioBuild,
   library: LibrarySlice,
   exportedChannelIds: Set<string>,
 ): AssembledScanList[] {
@@ -257,7 +274,7 @@ function assembleScanLists(
 export { channelInAnyZoneMembership } from '@core/domain/zoneMembership.ts';
 
 /** Channel ids that appear in at least one exporting standalone zone (nested flatten included). */
-export function exportReachableChannelIds(build: FormatBuild, library: LibrarySlice): Set<string> {
+export function exportReachableChannelIds(build: RadioBuild, library: LibrarySlice): Set<string> {
   if (buildUsesFlatMemoryList(build)) {
     return new Set(chirpMemoryChannelIds(build, library));
   }
@@ -292,11 +309,11 @@ export function exportReachableChannelIds(build: FormatBuild, library: LibrarySl
 }
 
 /** Channel ids linked via build zone layout and/or library zone membership. */
-export function zoneLinkedChannelIds(build: FormatBuild, library: LibrarySlice): Set<string> {
+export function zoneLinkedChannelIds(build: RadioBuild, library: LibrarySlice): Set<string> {
   return exportReachableChannelIds(build, library);
 }
 
-function withExportInclusionDefaults(build: FormatBuild): FormatBuild {
+function withExportInclusionDefaults(build: RadioBuild): RadioBuild {
   return {
     ...build,
     exportUnlinkedChannels: build.exportUnlinkedChannels ?? true,
@@ -307,7 +324,7 @@ function withExportInclusionDefaults(build: FormatBuild): FormatBuild {
   };
 }
 
-function assembleChannels(build: FormatBuild, library: LibrarySlice): AssembledChannel[] {
+function assembleChannels(build: RadioBuild, library: LibrarySlice): AssembledChannel[] {
   const overrides = build.channelOverrides;
   /** Flat-memory radios only export the memory list — no “orphan” inclusion toggle. */
   const includeUnlinked = !buildUsesFlatMemoryList(build) && build.exportUnlinkedChannels !== false;
@@ -339,7 +356,7 @@ function zoneExportsStandalone(zone: Zone, overrides: BuildEntityOverride[]): bo
 }
 
 function assembleZones(
-  build: FormatBuild,
+  build: RadioBuild,
   library: LibrarySlice,
   exportedChannelIds: Set<string>,
 ): AssembledZone[] {
@@ -414,7 +431,7 @@ function resolveAprsConfiguration(library: LibrarySlice): AprsConfiguration | nu
 }
 
 export function aprsConfigurationWarnings(
-  _build: FormatBuild,
+  _build: RadioBuild,
   library: LibrarySlice,
   assembled: AssembledBuild,
 ): string[] {
@@ -432,7 +449,7 @@ export function aprsConfigurationWarnings(
 
 /** Warnings when orphan library entities are included in export. */
 export function exportInclusionWarnings(
-  build: FormatBuild,
+  build: RadioBuild,
   library: LibrarySlice,
   assembled: AssembledBuild,
 ): string[] {
@@ -518,10 +535,11 @@ export function exportInclusionWarnings(
  * export projection. Wire adapters serialise from this object — not raw rows.
  */
 export function assemble(
-  build: FormatBuild,
+  build: RadioBuild,
   library: LibrarySlice,
   options?: AssembleOptions,
 ): AssembledBuild {
+  const { formatId, profileId } = resolveEgressIds(build, options);
   const migratedBase = migrateFormatBuild(build, library as Library);
   const migratedBuild = buildUsesFlatMemoryList(migratedBase)
     ? migrateFlatMemoryLayoutToOrderOrSlot(migratedBase, library)
@@ -566,8 +584,8 @@ export function assemble(
 
   return {
     buildId: normalizedBuild.id,
-    formatId: normalizedBuild.formatId,
-    profileId: options?.profileId ?? normalizedBuild.profileId,
+    formatId,
+    profileId,
     buildName: normalizedBuild.name,
     channels: channelsWithScanLists,
     zones,

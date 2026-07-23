@@ -5,6 +5,7 @@ import {
   listPowerLadderHints,
   type PowerLadderProfileKey,
 } from '@core/import-export/powerLadderHints.ts';
+import { radioTargetFor } from '@core/radio-targets/index.ts';
 import { useFormatBuilds } from '../../state/useFormatBuilds.ts';
 
 export interface PowerLadderHintsProps {
@@ -25,10 +26,21 @@ export default function PowerLadderHints({ power }: PowerLadderHintsProps) {
   const { builds } = useFormatBuilds();
 
   const buildProfiles = useMemo((): PowerLadderProfileKey[] => {
-    return builds.map((build) => ({
-      formatId: build.formatId as FormatId,
-      profileId: build.profileId,
-    }));
+    const seen = new Set<string>();
+    const profiles: PowerLadderProfileKey[] = [];
+    for (const build of builds) {
+      const compatible = radioTargetFor(build.radioTargetId)?.compatibleEgress ?? [];
+      for (const egress of compatible) {
+        const key = `${egress.formatId}:${egress.profileId}`;
+        if (seen.has(key)) continue;
+        seen.add(key);
+        profiles.push({
+          formatId: egress.formatId as FormatId,
+          profileId: egress.profileId,
+        });
+      }
+    }
+    return profiles;
   }, [builds]);
 
   const rows = useMemo(() => listPowerLadderHints(power, buildProfiles), [power, buildProfiles]);
@@ -37,7 +49,7 @@ export default function PowerLadderHints({ power }: PowerLadderHintsProps) {
 
   const scopeNote =
     buildProfiles.length > 0
-      ? 'From this project’s format builds'
+      ? 'From this project’s radio builds'
       : 'No builds yet — showing all shipped radio profiles';
 
   return (

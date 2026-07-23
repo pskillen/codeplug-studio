@@ -1,28 +1,29 @@
 /**
- * Web Serial connect / read (hydrate FormatBuild) / write (assemble → radio)
- * for builds with a registered radio adapter.
+ * Web Serial connect / read (hydrate EgressPath) / write (assemble → radio)
+ * for egress pathways with a registered radio adapter.
  */
 
 import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Alert, Anchor, Button, Group, Stack, Text } from '@mantine/core';
-import type { FormatBuild } from '@core/models/formatBuild.ts';
+import type { RadioBuild } from '@core/models/radioBuild.ts';
+import type { EgressPath } from '@core/models/egressPath.ts';
 import type { ProgressUpdate, RadioSession } from '@integrations/radio-io/types.ts';
 import { findAttribution } from '../../lib/attributions.ts';
 import { loadLibrarySlice } from '../../lib/loadLibrarySlice.ts';
 import { useUnsavedNavigationGuard } from '../../hooks/useUnsavedNavigationGuard.ts';
 import { BuildService } from '../../state/buildService.ts';
 import { persistence } from '../../state/persistence.ts';
-import { useFormatBuilds } from '../../state/useFormatBuilds.ts';
+import { useBuildLayout } from '../../routes/builds/BuildLayoutContext.tsx';
 import { useProjects } from '../../state/useProjects.ts';
 import {
   buildHasRadioCloneHydration,
   closeRadioSession,
-  descriptorsForBuild,
+  descriptorsForEgress,
   getRadioCloneHydration,
   getWebSerialUnsupportedMessage,
   isWebSerialSupported,
-  openRadioSessionForBuild,
+  openRadioSessionForEgress,
   RadioWriteBlockedError,
   readRadioHydrationForBuild,
   writeBuildToRadio,
@@ -33,15 +34,17 @@ import RadioIoProgressModal, {
 } from './RadioIoProgressModal.tsx';
 
 export interface BuildRadioIoPanelProps {
-  build: FormatBuild;
+  build: RadioBuild;
+  /** Web Serial pathway carrying format/profile/hydration (#654). */
+  egress: EgressPath;
 }
 
 const buildService = new BuildService(persistence);
 
-export default function BuildRadioIoPanel({ build }: BuildRadioIoPanelProps) {
-  const descriptors = descriptorsForBuild(build);
+export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelProps) {
+  const descriptors = descriptorsForEgress(egress);
   const { activeProjectId } = useProjects();
-  const { putBuild } = useFormatBuilds();
+  const { reloadEgressPaths } = useBuildLayout();
   const sessionRef = useRef<RadioSession | null>(null);
   const abortRef = useRef<AbortController | null>(null);
 
@@ -55,8 +58,8 @@ export default function BuildRadioIoPanel({ build }: BuildRadioIoPanelProps) {
   const [lastOccupied, setLastOccupied] = useState<number | null>(null);
 
   const serialOk = isWebSerialSupported();
-  const hydration = getRadioCloneHydration(build);
-  const hasHydration = buildHasRadioCloneHydration(build);
+  const hydration = getRadioCloneHydration(egress);
+  const hasHydration = buildHasRadioCloneHydration(egress);
   const descriptor = descriptors[0];
 
   const { modalOpen: leaveAttempted, stay } = useUnsavedNavigationGuard(busy);
@@ -97,7 +100,7 @@ export default function BuildRadioIoPanel({ build }: BuildRadioIoPanelProps) {
 
   async function ensureSession(): Promise<RadioSession> {
     if (sessionRef.current) return sessionRef.current;
-    const { session } = await openRadioSessionForBuild(build, { forcePortSelection: true });
+    const { session } = await openRadioSessionForEgress(egress, { forcePortSelection: true });
     sessionRef.current = session;
     setConnected(true);
     return session;
@@ -119,15 +122,16 @@ export default function BuildRadioIoPanel({ build }: BuildRadioIoPanelProps) {
       });
       setPhase('saving');
       setProgress(null);
-      const next = buildService.withCpsWireHydration(build, result.hydration);
-      const saved = await putBuild(next, build.revision);
+      const next = buildService.withEgressHydration(egress, result.hydration);
+      const saved = await buildService.putEgressPath(next, egress.revision);
       if (!saved.ok) {
         throw new Error(
           saved.reason === 'revision_conflict'
-            ? 'Build changed elsewhere — reload and try again.'
-            : 'Could not save radio hydration on the build.',
+            ? 'Egress changed elsewhere — reload and try again.'
+            : 'Could not save radio hydration on the egress pathway.',
         );
       }
+      await reloadEgressPaths();
       setLastFirmware(result.firmware);
       setLastOccupied(result.channelCountOccupied);
     } catch (err) {
@@ -155,7 +159,7 @@ export default function BuildRadioIoPanel({ build }: BuildRadioIoPanelProps) {
       const library = await loadLibrarySlice(persistence, activeProjectId);
       const session = await ensureSession();
       setPhase('preparing');
-      await writeBuildToRadio(session, build, library, {
+      await writeBuildToRadio(session, build, egress, library, {
         onProgress,
         signal: abortRef.current.signal,
       });
@@ -183,12 +187,13 @@ export default function BuildRadioIoPanel({ build }: BuildRadioIoPanelProps) {
 
   async function handleClearHydration() {
     if (!hasHydration) return;
-    const next = buildService.clearCpsWireHydration(build);
-    const saved = await putBuild(next, build.revision);
+    const next = buildService.clearEgressHydration(egress);
+    const saved = await buildService.putEgressPath(next, egress.revision);
     if (!saved.ok) {
       setError('Could not clear stored radio image.');
       return;
     }
+    await reloadEgressPaths();
     setLastFirmware(undefined);
     setLastOccupied(null);
   }
@@ -199,7 +204,7 @@ export default function BuildRadioIoPanel({ build }: BuildRadioIoPanelProps) {
         Direct radio (Web Serial)
       </Text>
       <Text size="sm" c="dimmed">
-        Read stores a clone image on this format build so unmodelled settings survive write-back.
+        Read stores a clone image on this egress pathway so unmodelled settings survive write-back.
         Write sends the assembled build into that image — it does not import channels into the
         library.
       </Text>
@@ -265,7 +270,7 @@ export default function BuildRadioIoPanel({ build }: BuildRadioIoPanelProps) {
         </Alert>
       ) : (
         <Text size="xs" c="dimmed">
-          Write requires a prior Read on this build ({descriptor?.label ?? 'compatible radio'}).
+          Write requires a prior Read on this egress ({descriptor?.label ?? 'compatible radio'}).
         </Text>
       )}
       {error ? <Alert color="red">{error}</Alert> : null}

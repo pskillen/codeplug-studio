@@ -1,5 +1,5 @@
 /**
- * Read-only view of Web Serial radio-clone hydration on a Direct radio FormatBuild.
+ * Read-only view of Web Serial radio-clone hydration on the active Direct radio egress.
  * Sibling to NeonPlug settings — unmodelled retain for write-back, not library fields.
  */
 
@@ -18,13 +18,13 @@ function hexOffset(n: number): string {
 }
 
 export default function BuildRadioImageSettingsPage() {
-  const { build } = useBuildLayout();
+  const { build, activeEgress } = useBuildLayout();
 
-  if (build.formatId !== 'radio-io') {
+  if (activeEgress?.formatId !== 'radio-io') {
     return <Navigate to={`/builds/${build.id}/export`} replace />;
   }
 
-  const bag = isRadioCloneHydrationBag(build.cpsWireHydration) ? build.cpsWireHydration : null;
+  const bag = isRadioCloneHydrationBag(activeEgress.hydration) ? activeEgress.hydration : null;
   const isUv5rMini = bag?.retain.radioModelId === UV5R_MINI_MODEL_ID;
   const summary = bag && isUv5rMini ? summariseUv5rMiniClone(bag) : null;
 
@@ -33,7 +33,7 @@ export default function BuildRadioImageSettingsPage() {
       title="Radio image"
       description={
         <Text size="sm" component="span">
-          Read-only view of the clone image stored on this build after{' '}
+          Read-only view of the clone image stored on this Web Serial egress pathway after{' '}
           <Link to={`/builds/${build.id}/export`}>Read from radio</Link>. Unmodelled regions (VFO,
           settings, ANI) are retained for Write so they survive channel updates from the library.
           Settings are not editable in Studio.

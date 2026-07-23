@@ -2,7 +2,7 @@
 
 Canonical checklist for contributors shipping a **new radio interchange format** (OpenGD77 CSV, DM32 CSV, CHIRP CSV, qDMR YAML, …) in Codeplug Studio.
 
-The internal [library + format build model](../data-model/README.md) is the hub — format specifics are applied on import and projected on export. **Native YAML** is Studio's own lossless project interchange; this guide focuses on **external CPS formats** but notes where the same adapter patterns apply.
+The internal [library + radio build model](../data-model/README.md) is the hub — format specifics are applied on import and projected on export through an **egress pathway**. **Native YAML** is Studio's own lossless project interchange; this guide focuses on **external CPS formats** but notes where the same adapter patterns apply.
 
 **Reference implementations today:**
 
@@ -38,16 +38,18 @@ See [export-from-model.mdc](../../../.cursor/rules/export-from-model.mdc) and [D
 
 ## Architecture overview
 
-Studio separates **what operators curate** (library), **how a target radio organises it** (format build + traits), and **how CPS files encode it** (wire adapters).
+Studio separates **what operators curate** (library), **how a target radio organises it** (`RadioBuild` + traits), and **how that assembly leaves Studio** (`EgressPath` + wire adapters).
 
 ```text
 CPS files ──import──► library entities (+ optional build trait layout)
                               │
-FormatBuild (traits, selections, overrides)
+RadioBuild (traits, selections, overrides)
                               │
-                    assemble(build, library)
+                    assemble(radioBuild, library)
                               │
                       AssembledBuild
+                              │
+EgressPath (formatId, profileId, optional hydration)
                               │
               format serialise.ts (+ expansion, derive)
                               │
@@ -56,33 +58,36 @@ FormatBuild (traits, selections, overrides)
 
 Routes and UI call **application services** — not adapters directly:
 
-| Service                                                 | Path                                     | Role                                  |
-| ------------------------------------------------------- | ---------------------------------------- | ------------------------------------- |
-| `assemble`                                              | `src/core/services/assemble.ts`          | Vendor-neutral export projection      |
-| `exportBuildFile` / `exportBuildAll` / `exportBuildZip` | `src/core/services/exportBuild.ts`       | CPS serialisation + ZIP               |
-| `previewWireRows`                                       | `src/core/services/previewWireRows.ts`   | Wire preview tables (expansion-aware) |
-| `importProjectYaml`                                     | `src/core/services/importProjectYaml.ts` | Native YAML → IndexedDB               |
-| `importIntoLibrary`                                     | _(planned Phase 4b)_                     | CPS batch → library + build           |
+| Service                                                 | Path                                     | Role                                                         |
+| ------------------------------------------------------- | ---------------------------------------- | ------------------------------------------------------------ |
+| `assemble`                                              | `src/core/services/assemble.ts`          | Vendor-neutral export projection                             |
+| `exportBuildFile` / `exportBuildAll` / `exportBuildZip` | `src/core/services/exportBuild.ts`       | CPS serialisation + ZIP — takes `{ build, egress, library }` |
+| `previewWireRows`                                       | `src/core/services/previewWireRows.ts`   | Wire preview tables (expansion-aware)                        |
+| `importProjectYaml`                                     | `src/core/services/importProjectYaml.ts` | Native YAML → IndexedDB                                      |
+| `importIntoLibrary`                                     | _(planned Phase 4b)_                     | CPS batch → library + build                                  |
 
 Full export path: [cps-services.md](cps-services.md).
 
-### Library vs build vs format
+**New format registration:** add a `compatibleEgress` entry for each radio target that should expose the format in `src/core/radio-targets/catalog.ts`. Build creation seeds one `EgressPath` per compatible egress on the target. The export UI picks the active egress; `exportBuild*` resolves `formatId` / `profileId` from that row (or catalog default when omitted in tests).
 
-| Concern                                         | Layer                                                | Examples                                                                                     |
-| ----------------------------------------------- | ---------------------------------------------------- | -------------------------------------------------------------------------------------------- |
-| RF semantics (frequency, mode, TG ref)          | Library `Channel`, `TalkGroup`, …                    | Shared across all builds                                                                     |
-| Which entities participate + wire names         | `FormatBuild` selections + `overrides.name`          | Per-build CPS labels                                                                         |
-| Organisation (zones, scan lists, flat memories) | `FormatBuild.layout` (trait-shaped)                  | OpenGD77 zones vs CHIRP flat list                                                            |
-| Zone membership (channels + nested zones)       | Library `Zone.members`                               | `kind: 'channel'` / `kind: 'zone'`                                                           |
-| Omit standalone zone row on export              | Library `Zone.omitFromExport`                        | Nested building blocks                                                                       |
-| Per-build zone wire name / exclude              | `FormatBuild.zoneOverrides`                          | `excluded`, `wireName`                                                                       |
-| Format-only zone flags                          | `ZoneGroupingLayout` on build                        | `exportScanList`, `scanCarrierFrequencyHz`, `scanMemberInclusion`                            |
-| Per-member / projection scan list filter        | Zone behavioural cascade                             | See [zone-behavioural-defaults](../../reference/zone-behavioural-defaults.md)                |
-| Channel scan inclusion                          | Library `Channel.scanInclusion`                      | Tri-state; see [scan-inclusion](../../reference/scan-inclusion.md)                           |
-| Channel behavioural defaults                    | Library `Channel` + `Library.channelDefaults`        | Cascade; see [channel-behavioural-defaults](../../reference/channel-behavioural-defaults.md) |
-| Zone behavioural defaults                       | Library `zoneDefaults` + member + build + projection | See [zone-behavioural-defaults](../../reference/zone-behavioural-defaults.md)                |
-| Export-affecting prefs                          | `FormatBuild.exportSettings`                         | Name shortening, default scan behaviour, DM32 scan master                                    |
-| Format scan default                             | Adapter `defaultExportSettings`                      | e.g. CHIRP `skip`, OpenGD77/DM32 `scan`                                                      |
+### Library vs build vs egress vs format
+
+| Concern                                         | Layer                                                 | Examples                                                                                     |
+| ----------------------------------------------- | ----------------------------------------------------- | -------------------------------------------------------------------------------------------- |
+| RF semantics (frequency, mode, TG ref)          | Library `Channel`, `TalkGroup`, …                     | Shared across all builds                                                                     |
+| Which entities participate + wire names         | `RadioBuild` `*Overrides` (`wireName`, `excluded`, …) | Per-build CPS labels                                                                         |
+| Organisation (zones, scan lists, flat memories) | `RadioBuild.layout` (trait-shaped)                    | OpenGD77 zones vs CHIRP flat list                                                            |
+| Zone membership (channels + nested zones)       | Library `Zone.members`                                | `kind: 'channel'` / `kind: 'zone'`                                                           |
+| Omit standalone zone row on export              | Library `Zone.omitFromExport`                         | Nested building blocks                                                                       |
+| Per-build zone wire name / exclude              | `RadioBuild.zoneOverrides`                            | `excluded`, `wireName`                                                                       |
+| Format-only zone flags                          | `ZoneGroupingLayout` on build                         | `exportScanList`, `scanCarrierFrequencyHz`, `scanMemberInclusion`                            |
+| Per-member / projection scan list filter        | Zone behavioural cascade                              | See [zone-behavioural-defaults](../../reference/zone-behavioural-defaults.md)                |
+| Channel scan inclusion                          | Library `Channel.scanInclusion`                       | Tri-state; see [scan-inclusion](../../reference/scan-inclusion.md)                           |
+| Channel behavioural defaults                    | Library `Channel` + `Library.channelDefaults`         | Cascade; see [channel-behavioural-defaults](../../reference/channel-behavioural-defaults.md) |
+| Zone behavioural defaults                       | Library `zoneDefaults` + member + build + projection  | See [zone-behavioural-defaults](../../reference/zone-behavioural-defaults.md)                |
+| Export-affecting prefs                          | `RadioBuild.exportSettings`                           | Name shortening, default scan behaviour, DM32 scan master                                    |
+| Adapter identity + donor/clone retain           | `EgressPath` (`formatId`, `profileId`, `hydration`)   | NeonPlug merge base, Web Serial clone image                                                  |
+| Format scan default                             | Adapter `defaultExportSettings`                       | e.g. CHIRP `skip`, OpenGD77/DM32 `scan`                                                      |
 
 **Rule for serialisers:** consume `AssembledBuild` — especially `zones[].memberChannelIds` (flat UUID lists). Do **not** re-walk library nesting or `ZoneGroupingLayout.channelIds` as membership source of truth; `assemble` already flattened effective membership.
 
@@ -133,7 +138,7 @@ All formats share `src/core/import-export/`:
 | `multi-file`      | Folder or loose CSV batch | Per-file + ZIP   | OpenGD77, DM32  |
 | `single-file-cps` | One memory CSV            | One CSV download | CHIRP           |
 
-Native YAML uses `single-file` **project** adapters (`parseDocument` / `serialise(aggregate)`) — full library + all builds in one file.
+Native YAML uses `single-file` **project** adapters (`parseDocument` / `serialise(aggregate)`) — full library + all `radioBuilds` + `egressPaths` in one file.
 
 ### Per-format directory
 
@@ -161,6 +166,7 @@ src/core/import-export/formats/<format>/
 - [ ] Register adapter in `importAdapters` and/or `exportAdapters`
 - [ ] Add `TraitProfile` in `src/core/models/traits.ts` — drives build UI composition
 - [ ] Add radio profiles in `formats/<format>/profiles.ts` (`nameLimit` and caps for export warnings)
+- [ ] Register compatible egress on each radio target in `src/core/radio-targets/catalog.ts` (`compatibleEgress` entries with `formatId`, `profileId`, `kind`, `label`)
 - [ ] Extend `resolveMaxNameLength` in `channelExpansion/exportWireNames.ts` for new `profileId` prefixes
 - [ ] Extend `getFormatProfiles()` in `formatProfiles.ts` + `formatProfileWireHint` if needed
 - [ ] Wire ZIP packaging in `exportBuild.ts` if not following OpenGD77/DM32 pattern — `exportBuildZip` branches per multi-file format (`buildOpenGd77Zip`, `buildDm32Zip`, `buildAnytoneZip`, …); add a branch when shipping a new multi-file delivery
@@ -172,7 +178,7 @@ Use `satisfies ImportAdapter` / `satisfies MultiFileExportAdapter` (or single-fi
 | Storage                             | What                                                 | Examples                                                             |
 | ----------------------------------- | ---------------------------------------------------- | -------------------------------------------------------------------- |
 | **Adapter** `defaultExportSettings` | Format-level defaults when build omits a value       | `defaultScanInclusion`, `expandModes`, `expandRxGroupLists`          |
-| **`FormatBuild.exportSettings`**    | Per-build operator choices (IndexedDB + native YAML) | `defaultScanInclusion`, `shortenNames`, `exportZoneDerivedScanLists` |
+| **`RadioBuild.exportSettings`**     | Per-build operator choices (IndexedDB + native YAML) | `defaultScanInclusion`, `shortenNames`, `exportZoneDerivedScanLists` |
 | **Browser `localStorage`**          | Visual-only prefs                                    | Wire-preview hide filter, column visibility                          |
 
 Register defaults on the export adapter and in `getFormatExportDefaults()` for planned formats without a shipped adapter (e.g. CHIRP).
@@ -229,7 +235,7 @@ Register defaults on the export adapter and in `getFormatExportDefaults()` for p
 
 ## 3. Build capability traits
 
-Each format build is created from a **trait profile** (`TRAIT_PROFILES` in `src/core/models/traits.ts`). Traits compose build UI and `FormatBuild.layout` — they are **not** CPS column names.
+Each **radio build** is created from a catalog **`radioTargetId`** whose traits come from `src/core/radio-targets/catalog.ts` (and match a `TraitProfile` in `src/core/models/traits.ts`). Traits compose build UI and `RadioBuild.layout` — they are **not** CPS column names.
 
 | `profileId`                        | `formatId` | Traits (shipped)                                                           |
 | ---------------------------------- | ---------- | -------------------------------------------------------------------------- |
@@ -370,7 +376,7 @@ Primary quality gate: **directional mapping tests**, not full round-trip equalit
 - [ ] Parse by **header name**, never column index
 - [ ] `adapterContract.test.ts`: metadata, `capabilities`, delivery type guards
 - [ ] Committed fixtures under `formats/<format>/__fixtures__/` or `src/test/<format>/` — see [fixtures.md](../../build/testing/fixtures.md)
-- [ ] Export golden: constructed library + `FormatBuild` in memory → expected CSV rows
+- [ ] Export golden: constructed library + `RadioBuild` + `EgressPath` in memory → expected CSV rows
 - [ ] Import golden: CPS fixture → expected library JSON (+ build layout when applicable)
 - [ ] Fill adapter matrix row in [mapping-tests.md](../../build/testing/mapping-tests.md)
 - [ ] Document excluded columns in tests (export-reassigned or lossy fields)
@@ -412,7 +418,7 @@ Studio surfaces formats in **two primary places**: **build creation** (`New buil
 
 - [ ] `TraitProfile` registered — build wizard creates valid empty `layout`
 - [ ] Trait pages implemented or explicitly deferred with hub doc **Known gaps**
-- [ ] `profileId` on new `FormatBuild` resolves in both trait and radio registries
+- [ ] `profileId` on new build resolves in trait profile, radio profile, and catalog egress registries
 - [ ] New build lands on `/builds/:id/export`
 
 ### Build export (`/builds/:id/export`)
@@ -422,7 +428,7 @@ Studio surfaces formats in **two primary places**: **build creation** (`New buil
 | Export panel    | `ExportBuildCpsPanel.tsx`                                 | Gated on `exportStatus === 'shipped'`                                                    |
 | App service     | `buildCpsExportService.ts`                                | `previewCpsExport`, `downloadCpsZip`, Drive upload                                       |
 | CSV preview     | `CpsCsvPreviewModal.tsx`                                  | Tabbed per-file preview ([#151](https://github.com/pskillen/codeplug-studio/issues/151)) |
-| Export settings | `ExportNameSettingsFields`, `DefaultScanInclusionSegment` | `FormatBuild.exportSettings` + adapter `defaultExportSettings`                           |
+| Export settings | `ExportNameSettingsFields`, `DefaultScanInclusionSegment` | `RadioBuild.exportSettings` + adapter `defaultExportSettings`                            |
 
 - [ ] Per-file download + ZIP for `multi-file` adapters
 - [ ] Profile override in export UI (does not mutate build row)
@@ -439,7 +445,7 @@ Studio surfaces formats in **two primary places**: **build creation** (`New buil
 | Bulk edit    | `WirePreviewBulkEditTable.tsx` | Channel wire name + skip (`DataTable`)                                                                               |
 
 - [ ] Add or extend format branch in `previewWireRows.ts` when expansion differs from OpenGD77 defaults
-- [ ] Wire name overrides from `FormatBuild` reflected in preview rows
+- [ ] Wire name overrides from `RadioBuild` reflected in preview rows
 - [ ] Multi-mode / multi-TG fan-out visible before export
 
 ### Google Drive (optional)
@@ -597,7 +603,8 @@ Use as a PR self-review list when shipping a new format slice.
 - [ ] `FormatId` + `formatCatalog` entry
 - [ ] Adapter(s) registered; `adapterContract.test.ts` extended
 - [ ] `TraitProfile` + radio `profiles.ts`
-- [ ] Import maps wire → library (+ build layout); export uses `assemble` → serialise only
+- [ ] Compatible egress registered on radio targets in `src/core/radio-targets/catalog.ts`
+- [ ] Import maps wire → library (+ build layout); export uses `assemble` → serialise via active egress only
 - [ ] Expansion axes chosen and implemented
 - [ ] No wire stash; ASCII wire sanitisation at boundary
 - [ ] Directional mapping tests with fixtures

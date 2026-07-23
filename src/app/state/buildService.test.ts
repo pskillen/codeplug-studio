@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { newFormatBuild, newProjectMeta } from '@core/domain/factories.ts';
+import { newProjectMeta } from '@core/domain/factories.ts';
 import { InMemoryProjectPersistence } from '@integrations/persistence/index.ts';
 import { BuildService } from './buildService.ts';
 
@@ -11,28 +11,47 @@ async function setup() {
 }
 
 describe('BuildService', () => {
-  it('creates and lists format builds', async () => {
+  it('creates a radio build and seeds its compatible egress paths', async () => {
     const { service, projectId } = await setup();
-    const outcome = await service.createBuild(projectId, 'opengd77-1701', 'Handheld');
+    const outcome = await service.createBuild(projectId, 'baofeng-dm1701', 'Handheld');
     expect(outcome.ok).toBe(true);
     if (!outcome.ok) return;
+
+    expect(outcome.build.name).toBe('Handheld');
+    expect(outcome.build.radioTargetId).toBe('baofeng-dm1701');
+    expect(outcome.egressPaths).toHaveLength(1);
+    expect(outcome.egressPaths[0]?.formatId).toBe('opengd77');
 
     const builds = await service.listBuilds(projectId);
     expect(builds).toHaveLength(1);
     expect(builds[0]?.name).toBe('Handheld');
-    expect(builds[0]?.formatId).toBe('opengd77');
+
+    const egressPaths = await service.listEgressPaths(projectId, outcome.build.id);
+    expect(egressPaths).toHaveLength(1);
+    expect(egressPaths[0]?.radioBuildId).toBe(outcome.build.id);
   });
 
-  it('rejects unknown trait profile on create', async () => {
+  it('seeds every compatible egress for multi-egress radio targets', async () => {
     const { service, projectId } = await setup();
-    await expect(service.createBuild(projectId, 'unknown-profile')).rejects.toThrow(
-      /Unknown trait profile/,
+    const outcome = await service.createBuild(projectId, 'baofeng-uv5r-mini');
+    expect(outcome.ok).toBe(true);
+    if (!outcome.ok) return;
+
+    expect(outcome.egressPaths.map((e) => e.formatId)).toEqual(['radio-io', 'neonplug', 'chirp']);
+    expect(outcome.build.defaultEgressPathId).toBe(outcome.egressPaths[0]?.id);
+    expect(outcome.egressPaths[0]?.formatId).toBe('radio-io');
+  });
+
+  it('rejects unknown radio target on create', async () => {
+    const { service, projectId } = await setup();
+    await expect(service.createBuild(projectId, 'unknown-target')).rejects.toThrow(
+      /Unknown radio target/,
     );
   });
 
   it('updates build name via withUpdatedName and putBuild', async () => {
     const { service, projectId } = await setup();
-    const created = await service.createBuild(projectId, 'opengd77-md9600');
+    const created = await service.createBuild(projectId, 'tyt-md9600');
     expect(created.ok).toBe(true);
     if (!created.ok) return;
 
@@ -45,12 +64,48 @@ describe('BuildService', () => {
     expect(reloaded?.revision).toBe(2);
   });
 
-  it('deletes a format build', async () => {
-    const { persistence, service, projectId } = await setup();
-    const build = newFormatBuild(projectId, 'chirp-uv5r');
-    await persistence.putFormatBuild(build, null);
+  it('deletes a radio build and its egress paths', async () => {
+    const { service, projectId } = await setup();
+    const created = await service.createBuild(projectId, 'baofeng-dm32uv');
+    expect(created.ok).toBe(true);
+    if (!created.ok) return;
 
-    await service.deleteBuild(projectId, build.id);
-    expect(await service.getBuild(projectId, build.id)).toBeNull();
+    await service.deleteBuild(projectId, created.build.id);
+
+    expect(await service.getBuild(projectId, created.build.id)).toBeNull();
+    expect(await service.listEgressPaths(projectId, created.build.id)).toHaveLength(0);
+  });
+
+  it('putEgressPath persists egress-scoped changes independently of the build', async () => {
+    const { service, projectId } = await setup();
+    const created = await service.createBuild(projectId, 'baofeng-dm1701');
+    expect(created.ok).toBe(true);
+    if (!created.ok) return;
+    const egress = created.egressPaths[0]!;
+
+    const relabelled = { ...egress, label: 'Custom label' };
+    const result = await service.putEgressPath(relabelled, egress.revision);
+    expect(result.ok).toBe(true);
+
+    const reloaded = await service.getEgressPath(projectId, egress.id);
+    expect(reloaded?.label).toBe('Custom label');
+  });
+
+  it('withEgressHydration and clearEgressHydration round-trip the hydration bag', async () => {
+    const { service, projectId } = await setup();
+    const created = await service.createBuild(projectId, 'baofeng-dm1701');
+    expect(created.ok).toBe(true);
+    if (!created.ok) return;
+    const egress = created.egressPaths[0]!;
+
+    const hydrated = service.withEgressHydration(egress, {
+      formatId: egress.formatId,
+      capturedAt: new Date().toISOString(),
+      retain: { some: 'bytes' },
+    });
+    expect(hydrated.hydration?.retain).toEqual({ some: 'bytes' });
+
+    const cleared = service.clearEgressHydration(hydrated);
+    expect(cleared.hydration).toBeUndefined();
   });
 });

@@ -18,6 +18,8 @@ import { TRAIT_LABELS } from '../../routes/builds/buildHelpers.ts';
 
 export interface ExportBuildSettingsSectionsProps {
   build: FormatBuild;
+  formatId: string;
+  profileId: string;
   saving: boolean;
   settingsError: string | null;
   profileNameLimit?: number;
@@ -38,6 +40,8 @@ export interface ExportBuildSettingsSectionsProps {
 
 export default function ExportBuildSettingsSections({
   build,
+  formatId,
+  profileId,
   saving,
   settingsError,
   profileNameLimit,
@@ -47,10 +51,11 @@ export default function ExportBuildSettingsSections({
   onExportSettingsPatch,
   onExportInclusionChange,
 }: ExportBuildSettingsSectionsProps) {
-  if (build.formatId === 'anytone') {
+  if (formatId === 'anytone') {
     return (
       <ExportAnytoneSettingsSections
         build={build}
+        profileId={profileId}
         saving={saving}
         settingsError={settingsError}
         profileNameLimit={profileNameLimit}
@@ -62,7 +67,7 @@ export default function ExportBuildSettingsSections({
   }
 
   const flatMemory = buildUsesFlatMemoryList(build);
-  const showChannelExpansion = hasMxNChannelExpansion(build.profileId);
+  const showChannelExpansion = hasMxNChannelExpansion(profileId);
 
   return (
     <Stack gap="md">
@@ -156,13 +161,14 @@ export default function ExportBuildSettingsSections({
       <FieldCard
         title="Naming"
         description={
-          build.formatId === 'radio-io'
+          formatId === 'radio-io'
             ? 'Wire name length, abbreviation, and fallback style for radio write.'
             : 'Wire name length, abbreviation, and fallback style for CPS export.'
         }
       >
         <ExportNameSettingsFields
           build={build}
+          formatId={formatId}
           saving={saving}
           onPatch={onExportSettingsPatch}
           profileNameLimit={profileNameLimit}
@@ -172,12 +178,12 @@ export default function ExportBuildSettingsSections({
       <FieldCard
         title="Scanning"
         description={
-          showsDefaultScanInclusion(build.profileId)
+          showsDefaultScanInclusion(profileId)
             ? 'Default scan behaviour for channels and format-specific scan list export.'
             : 'Scan list membership and per-channel assignment for this format.'
         }
       >
-        {showsDefaultScanInclusion(build.profileId) ? (
+        {showsDefaultScanInclusion(profileId) ? (
           <DefaultScanInclusionSegment
             value={defaultScanValue}
             formatDefault={formatDefaults.defaultScanInclusion}
@@ -190,11 +196,11 @@ export default function ExportBuildSettingsSections({
             assignment on the Channels page — not export defaults.
           </Text>
         )}
-        {(build.formatId === 'dm32' || build.formatId === 'anytone') && (
+        {(formatId === 'dm32' || formatId === 'anytone') && (
           <>
             <Switch
               label={
-                build.formatId === 'dm32'
+                formatId === 'dm32'
                   ? 'Export zone-derived scan lists (Scan.csv)'
                   : 'Export zone-derived scan lists (ScanList.CSV)'
               }

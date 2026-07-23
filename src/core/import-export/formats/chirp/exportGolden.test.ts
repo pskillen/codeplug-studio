@@ -30,10 +30,11 @@ describe('chirp/export golden', () => {
     'constructed library + build matches $fileName (except Location, Comment)',
     ({ profileId, fileName }) => {
       const fixtureCsv = readFileSync(join(fixtureDir, fileName), 'utf8');
-      const { library, build } = libraryAndBuildFromChirpFixture(fixtureCsv, profileId);
+      const { library, build, egress } = libraryAndBuildFromChirpFixture(fixtureCsv, profileId);
 
       const result = exportBuildSingleFile({
         build,
+        egress,
         library,
         options: { profileId, shortenNames: false },
       });

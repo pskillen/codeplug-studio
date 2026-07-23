@@ -1,10 +1,11 @@
 import BuildEntityWirePage from './BuildEntityWirePage.tsx';
 import { useBuildLayout } from '../BuildLayoutContext.tsx';
+import { egressIdentityForBuild } from '../../../lib/buildEgressUi.ts';
 
 export default function BuildContactsWirePage() {
-  const { build } = useBuildLayout();
-  const showDigitalContactExportNameMode =
-    build.formatId === 'anytone' || build.formatId === 'opengd77';
+  const { build, activeEgress } = useBuildLayout();
+  const { formatId } = egressIdentityForBuild(build, activeEgress);
+  const showDigitalContactExportNameMode = formatId === 'anytone' || formatId === 'opengd77';
 
   return (
     <BuildEntityWirePage
