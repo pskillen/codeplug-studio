@@ -27,11 +27,17 @@ export interface Uv5rMiniRetainPreviewRow {
 
 const SQUELCH_LIST = ['Off', '1', '2', '3', '4', '5'] as const;
 const LIST_PTTID = ['Off', 'BOT', 'EOT', 'Both'] as const;
-const LIST_TIMEOUT = ['Off', ...Array.from({ length: 12 }, (_, i) => `${15 + i * 15} sec`)] as const;
+const LIST_TIMEOUT = [
+  'Off',
+  ...Array.from({ length: 12 }, (_, i) => `${15 + i * 15} sec`),
+] as const;
 const LIST_DUAL_WATCH = ['Off', 'On'] as const;
 const LIST_POWERON_DISPLAY = ['LOGO', 'Battery voltage'] as const;
 const LIST_VOICE = ['English', 'Chinese'] as const;
-const LIST_BACKLIGHT = ['Always on', ...Array.from({ length: 4 }, (_, i) => `${5 + i * 5} sec`)] as const;
+const LIST_BACKLIGHT = [
+  'Always on',
+  ...Array.from({ length: 4 }, (_, i) => `${5 + i * 5} sec`),
+] as const;
 const LIST_BEEP = ['Off', 'On'] as const;
 const LIST_MODE = ['Name', 'Frequency', 'Channel number'] as const;
 const LIST_SCANMODE = ['Time', 'Carrier', 'Search'] as const;
@@ -75,7 +81,11 @@ function regionPresence(bytes: Uint8Array, offset: number, size: number): string
   return 'Present (opaque)';
 }
 
-function decodeVfoSummary(bytes: Uint8Array, offset: number, label: string): Uv5rMiniRetainPreviewRow {
+function decodeVfoSummary(
+  bytes: Uint8Array,
+  offset: number,
+  label: string,
+): Uv5rMiniRetainPreviewRow {
   if (offset + UV5R_MINI_VFO_SIZE > bytes.length) {
     return { label, value: 'Not in image' };
   }
@@ -98,7 +108,10 @@ export function settingsRetainPreview(bytes: Uint8Array): Uv5rMiniRetainPreviewR
   if (bytes.length < UV5R_MINI_SETTINGS_OFFSET + UV5R_MINI_SETTINGS_SIZE) {
     return [];
   }
-  const s = bytes.subarray(UV5R_MINI_SETTINGS_OFFSET, UV5R_MINI_SETTINGS_OFFSET + UV5R_MINI_SETTINGS_SIZE);
+  const s = bytes.subarray(
+    UV5R_MINI_SETTINGS_OFFSET,
+    UV5R_MINI_SETTINGS_OFFSET + UV5R_MINI_SETTINGS_SIZE,
+  );
   const chbworkmode = s[26]! & 0x0f;
   const chaworkmode = (s[26]! >> 4) & 0x0f;
 
@@ -136,8 +149,14 @@ export function ancillaryRetainPreview(bytes: Uint8Array): Uv5rMiniAncillaryReta
     decodeVfoSummary(bytes, UV5R_MINI_VFO_A_OFFSET, 'VFO A'),
     decodeVfoSummary(bytes, UV5R_MINI_VFO_B_OFFSET, 'VFO B'),
     { label: 'ANI', value: regionPresence(bytes, UV5R_MINI_ANI_OFFSET, UV5R_MINI_ANI_SIZE) },
-    { label: 'PTT ID', value: regionPresence(bytes, UV5R_MINI_PTT_ID_OFFSET, UV5R_MINI_PTT_ID_SIZE) },
-    { label: 'Upcode', value: regionPresence(bytes, UV5R_MINI_UPCODE_OFFSET, UV5R_MINI_UPCODE_SIZE) },
+    {
+      label: 'PTT ID',
+      value: regionPresence(bytes, UV5R_MINI_PTT_ID_OFFSET, UV5R_MINI_PTT_ID_SIZE),
+    },
+    {
+      label: 'Upcode',
+      value: regionPresence(bytes, UV5R_MINI_UPCODE_OFFSET, UV5R_MINI_UPCODE_SIZE),
+    },
     {
       label: 'Downcode',
       value: regionPresence(bytes, UV5R_MINI_DOWNCODE_OFFSET, UV5R_MINI_DOWNCODE_SIZE),

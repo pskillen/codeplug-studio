@@ -23,14 +23,7 @@ import {
 export type Uv5rMiniWriteRole = 'replaced' | 'kept';
 
 export type Uv5rMiniRegionId =
-  | 'channels'
-  | 'vfoA'
-  | 'vfoB'
-  | 'settings'
-  | 'ani'
-  | 'pttId'
-  | 'upcode'
-  | 'downcode';
+  'channels' | 'vfoA' | 'vfoB' | 'settings' | 'ani' | 'pttId' | 'upcode' | 'downcode';
 
 export interface Uv5rMiniRegionManifestEntry {
   id: Uv5rMiniRegionId;
@@ -47,8 +40,7 @@ export const UV5R_MINI_WRITTEN_FROM_BUILD_LABELS: readonly string[] = ['Channels
 
 const REPLACED_ROLE_COPY =
   'Replaced from your build on Write — the library is the source of truth for channels';
-const KEPT_ROLE_COPY =
-  'Kept from Read from radio — not changed when you write from your build';
+const KEPT_ROLE_COPY = 'Kept from Read from radio — not changed when you write from your build';
 
 /** All packed-image regions in address order. */
 export const UV5R_MINI_REGION_MANIFEST: readonly Uv5rMiniRegionManifestEntry[] = [
