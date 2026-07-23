@@ -1,7 +1,8 @@
 import { forbidTransmitFromLegacyBoolean } from '@core/import-export/channelBehaviourDefaults/resolve.ts';
-import { newFormatBuild } from '@core/domain/factories.ts';
+import { newRadioBuildForProfile } from '@core/domain/factories.ts';
 import { DEFAULT_CHANNEL_BEHAVIOUR_OVERRIDES } from '@core/models/channelBehaviourDefaults.ts';
 import { parseCsv } from '@core/import-export/csvParse.ts';
+import type { EgressPath } from '@core/models/egressPath.ts';
 import type { RadioBuild } from '@core/models/radioBuild.ts';
 import type { Channel, ChannelModeProfileAnalog } from '@core/models/library.ts';
 import type { LibrarySlice } from '@core/services/assemble.ts';
@@ -30,7 +31,7 @@ function cell(row: string[], index: number): string {
 export function libraryAndBuildFromChirpFixture(
   csv: string,
   profileId: string,
-): { library: LibrarySlice; build: RadioBuild } {
+): { library: LibrarySlice; build: RadioBuild; egress: EgressPath } {
   const rows = parseCsv(csv.replace(/^\uFEFF/, '').trim());
   if (!rows.length) throw new Error('Empty CHIRP fixture CSV');
 
@@ -99,8 +100,13 @@ export function libraryAndBuildFromChirpFixture(
   }
 
   const channelIds = channels.map((channel) => channel.id);
+  const { build: seededBuild, egress } = newRadioBuildForProfile(
+    GOLDEN_PROJECT_ID,
+    profileId,
+    'CHIRP golden export',
+  );
   const build: RadioBuild = {
-    ...newFormatBuild(GOLDEN_PROJECT_ID, profileId, 'CHIRP golden export'),
+    ...seededBuild,
     id: 'build-chirp-golden',
     layout: { sections: [] },
     channelOverrides: channelIds.map((libraryEntityId, index) => ({
@@ -126,5 +132,6 @@ export function libraryAndBuildFromChirpFixture(
       scanLists: [],
     },
     build,
+    egress: { ...egress, radioBuildId: build.id },
   };
 }

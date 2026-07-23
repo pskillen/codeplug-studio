@@ -14,8 +14,10 @@ import { csvToTable } from '@core/import-export/csvParse.ts';
 import { exportBuildAll } from '@core/services/exportBuild.ts';
 import { previewWireRows } from '@core/services/previewWireRows.ts';
 import { serialiseAnytoneFiles } from './serialise.ts';
+import { anytoneExportEgress } from './exportGoldenFixtures.ts';
 
 const PROJECT_ID = '11111111-1111-4111-8111-111111111111';
+const anytoneEgress = anytoneExportEgress(PROJECT_ID);
 const LONG_TG_NAME = 'Scotland West Regional Talk Group';
 const LONG_ZONE_NAME = 'GLA GLASGOW TOWER ZONE NAME';
 const LONG_RGL_NAME = 'Scotland West Receive Group List';
@@ -98,7 +100,7 @@ describe('anytone export wire context', () => {
       expandRxGroupLists: false,
       exportScratchChannels: false,
     });
-    const fullExport = exportBuildAll({ build, library });
+    const fullExport = exportBuildAll({ build, egress: anytoneEgress, library });
     const amAirCsv = fullExport.files['AMAir.CSV']!;
 
     const channelTable = csvToTable(files['Channel.CSV']);
