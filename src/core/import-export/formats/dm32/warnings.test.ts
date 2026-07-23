@@ -12,7 +12,10 @@ describe('collectDm32ExportWarnings', () => {
   function assembled(): AssembledBuild {
     const build = minimalDm32ExportBuild();
     const library = minimalDm32ExportLibrary();
-    return { ...assemble(build, library, { formatId: 'dm32', profileId: 'dm32-baofeng-dm32uv' }), library };
+    return {
+      ...assemble(build, library, { formatId: 'dm32', profileId: 'dm32-baofeng-dm32uv' }),
+      library,
+    };
   }
 
   it('returns no warnings for minimal export library', () => {

@@ -435,10 +435,12 @@ describe('ExportBuildCpsPanel', () => {
     const neon = egressPaths.find((path) => path.formatId === 'neonplug');
     const chirp = egressPaths.find((path) => path.formatId === 'chirp');
     if (!neon || !chirp) throw new Error('expected UV-5R Mini NeonPlug + CHIRP egresses');
+    const neonEgress = neon;
+    const chirpEgress = chirp;
 
     function Uv5rMiniExportHarness() {
-      const [activeEgressId, setActiveEgressId] = useState(neon.id);
-      const activeEgress = egressPaths.find((path) => path.id === activeEgressId) ?? neon;
+      const [activeEgressId, setActiveEgressId] = useState(neonEgress.id);
+      const activeEgress = egressPaths.find((path) => path.id === activeEgressId) ?? neonEgress;
 
       return (
         <BuildLayoutProvider
@@ -468,5 +470,6 @@ describe('ExportBuildCpsPanel', () => {
     fireEvent.click(screen.getByRole('radio', { name: /CHIRP CSV/i }));
     expect(await screen.findByRole('button', { name: /Download CSV/i })).toBeInTheDocument();
     expect(screen.getByText(/memory CSV using the profile below/i)).toBeInTheDocument();
+    expect(chirpEgress.formatId).toBe('chirp');
   });
 });

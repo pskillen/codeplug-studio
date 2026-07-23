@@ -13,9 +13,12 @@ import {
   isMultiFileExportAdapter,
   isSingleFileCpsExportAdapter,
 } from '@core/import-export/exportAdapter.ts';
-import { formatProfileWireHint, getFormatProfiles } from '@core/import-export/formatProfiles.ts';
+import {
+  formatProfileWireHint,
+  getFormatProfiles,
+  resolveChirpExportProfileId,
+} from '@core/import-export/formatProfiles.ts';
 import type { FormatId } from '@core/import-export/types.ts';
-import { resolveChirpExportProfileId } from '@core/import-export/formats/chirp/profiles.ts';
 import type { CpsAppExportOptions } from '../../services/buildCpsExportService.ts';
 import ExportBuildSettingsSections from './ExportBuildSettingsSections.tsx';
 import ProfilePicker from './ProfilePicker.tsx';
@@ -120,9 +123,7 @@ export default function ExportBuildCpsPanel({ build }: ExportBuildCpsPanelProps)
       egressId: activeEgress?.id,
       profileId: formatId === 'chirp' ? chirpExportProfileId : undefined,
       fileName:
-        formatId === 'chirp'
-          ? defaultCpsSingleFileName(formatId, chirpExportProfileId)
-          : undefined,
+        formatId === 'chirp' ? defaultCpsSingleFileName(formatId, chirpExportProfileId) : undefined,
     }),
     [activeEgress?.id, formatId, chirpExportProfileId],
   );
@@ -514,8 +515,8 @@ export default function ExportBuildCpsPanel({ build }: ExportBuildCpsPanelProps)
         />
         {profileOverridesBuild ? (
           <Text size="sm" c="dimmed">
-            Export uses {traitProfileFor(chirpExportProfileId)?.label ?? chirpExportProfileId}; pathway
-            default is {profileLabel}.
+            Export uses {traitProfileFor(chirpExportProfileId)?.label ?? chirpExportProfileId};
+            pathway default is {profileLabel}.
           </Text>
         ) : null}
         {!hasChannels ? (

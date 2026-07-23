@@ -44,7 +44,10 @@ describe('buildDm32AprsGuide', () => {
   it('returns null when no APRS configuration', () => {
     const build = newFormatBuild(PROJECT_ID, 'dm32-baofeng-dm32uv');
     const library = emptyLibrary([dmrChannel('A')]);
-    const assembled = assemble(build, library, { formatId: 'dm32', profileId: 'dm32-baofeng-dm32uv' });
+    const assembled = assemble(build, library, {
+      formatId: 'dm32',
+      profileId: 'dm32-baofeng-dm32uv',
+    });
     expect(buildDm32AprsGuide(assembled)).toBeNull();
   });
 
@@ -71,7 +74,10 @@ describe('buildDm32AprsGuide', () => {
     };
     const build = newFormatBuild(PROJECT_ID, 'dm32-baofeng-dm32uv');
     const library = { ...emptyLibrary([channel]), aprsConfiguration: config };
-    const assembled = assemble(build, library, { formatId: 'dm32', profileId: 'dm32-baofeng-dm32uv' });
+    const assembled = assemble(build, library, {
+      formatId: 'dm32',
+      profileId: 'dm32-baofeng-dm32uv',
+    });
     const guide = buildDm32AprsGuide(assembled)!;
 
     expect(guide.callType).toBe('group');
@@ -105,7 +111,10 @@ describe('buildDm32AprsGuide', () => {
     };
     const build = newFormatBuild(PROJECT_ID, 'dm32-baofeng-dm32uv');
     const library = { ...emptyLibrary([channel]), aprsConfiguration: config };
-    const assembled = assemble(build, library, { formatId: 'dm32', profileId: 'dm32-baofeng-dm32uv' });
+    const assembled = assemble(build, library, {
+      formatId: 'dm32',
+      profileId: 'dm32-baofeng-dm32uv',
+    });
     const guide = buildDm32AprsGuide(assembled)!;
 
     expect(guide.callType).toBe('group');
@@ -119,7 +128,10 @@ describe('DM32 APRS.md export wiring', () => {
   it('omits APRS.md from file list without config', () => {
     const build = newFormatBuild(PROJECT_ID, 'dm32-baofeng-dm32uv');
     const library = emptyLibrary([dmrChannel('A')]);
-    const assembled = assemble(build, library, { formatId: 'dm32', profileId: 'dm32-baofeng-dm32uv' });
+    const assembled = assemble(build, library, {
+      formatId: 'dm32',
+      profileId: 'dm32-baofeng-dm32uv',
+    });
     expect(resolveDm32ExportFileNames(assembled)).toEqual([...DM32_EXPORT_FILE_NAMES]);
     expect(serialiseDm32Files(assembled, library)[DM32_APRS_GUIDE_FILE_NAME]).toBeUndefined();
   });
@@ -129,7 +141,10 @@ describe('DM32 APRS.md export wiring', () => {
     const config = newAprsConfiguration(PROJECT_ID, 'Home');
     const build = newFormatBuild(PROJECT_ID, 'dm32-baofeng-dm32uv');
     const library = { ...emptyLibrary([channel]), aprsConfiguration: config };
-    const assembled = assemble(build, library, { formatId: 'dm32', profileId: 'dm32-baofeng-dm32uv' });
+    const assembled = assemble(build, library, {
+      formatId: 'dm32',
+      profileId: 'dm32-baofeng-dm32uv',
+    });
 
     expect(resolveDm32ExportFileNames(assembled)).toContain(DM32_APRS_GUIDE_FILE_NAME);
     const files = serialiseDm32Files(assembled, library);
