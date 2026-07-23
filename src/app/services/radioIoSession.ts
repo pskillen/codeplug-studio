@@ -75,7 +75,13 @@ function withBaudsTriedMessage(err: unknown, baudsTried: readonly number[]): Err
 /** Open Web Serial for the first compatible descriptor (or explicit modelId). */
 export async function openRadioSessionForEgress(
   egress: EgressPath,
-  opts?: { modelId?: string; forcePortSelection?: boolean; signal?: AbortSignal },
+  opts?: {
+    modelId?: string;
+    forcePortSelection?: boolean;
+    signal?: AbortSignal;
+    /** Write opens the port without read handshake; upload supplies upload handshake. */
+    purpose?: 'read' | 'write';
+  },
 ): Promise<OpenRadioSessionResult> {
   const candidates = descriptorsForEgress(egress);
   if (candidates.length === 0) {
@@ -105,7 +111,10 @@ export async function openRadioSessionForEgress(
     pipe = await openWebSerialPipe(port, bauds[attempt]!);
     const radio = descriptor.protocolFactory();
     try {
-      await radio.connect(pipe, { signal: opts?.signal });
+      await radio.connect(pipe, {
+        signal: opts?.signal,
+        handshake: opts?.purpose === 'write' ? 'none' : 'read',
+      });
       const session = createRadioSession({ descriptor, pipe, radio });
       return { session, descriptor };
     } catch (err) {

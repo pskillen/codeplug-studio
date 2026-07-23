@@ -123,7 +123,7 @@ export interface RadioDescriptor {
 export interface CloneImageRadio {
   connect(
     pipe: BytePipe,
-    opts?: { signal?: AbortSignal; settleScale?: number },
+    opts?: { signal?: AbortSignal; settleScale?: number; handshake?: 'read' | 'none' },
   ): Promise<IdentResult>;
   disconnect(): Promise<void>;
   download(opts: { onProgress?: ProgressFn; signal?: AbortSignal }): Promise<MemoryMap>;

@@ -188,7 +188,7 @@ describe('Uv5rMiniProtocol', () => {
     pipe.armReadBlocks([]);
 
     const radio = new Uv5rMiniProtocol();
-    await radio.connect(pipe, { settleScale: 0 });
+    await radio.connect(pipe, { handshake: 'none' });
     const map = memoryMapFromBytes(source);
     await radio.upload(map, {});
 

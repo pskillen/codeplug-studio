@@ -42,8 +42,13 @@ type HandshakeMode = 'read' | 'upload';
 
 export interface Uv5rMiniConnectOptions {
   signal?: AbortSignal;
-  /** Multiply NeonPlug settle delays (tests use 0). Default 1. */
+  /** Multiply NeonPlug settle delays (tests use 0). Default 1 for read connect. */
   settleScale?: number;
+  /**
+   * `read` — ident + read magics (download).
+   * `none` — attach pipe only; upload supplies upload handshake (NeonPlug write path).
+   */
+  handshake?: 'read' | 'none';
 }
 
 function scaledMs(baseMs: number, scale: number): number {
@@ -138,12 +143,18 @@ async function handshake(
   mode: HandshakeMode,
   opts?: Uv5rMiniConnectOptions,
 ): Promise<void> {
-  const scale = opts?.settleScale ?? 1;
   const signal = opts?.signal;
+  // NeonPlug `handshakeUpload()` has no post-open settle — only flush + ident + magics.
+  const skipPortSettle = mode === 'upload';
+  const scale = skipPortSettle ? 0 : (opts?.settleScale ?? 1);
   throwIfAborted(signal);
-  await delay(scaledMs(UV5R_MINI_INIT_DELAY_MS, scale), signal);
+  if (!skipPortSettle) {
+    await delay(scaledMs(UV5R_MINI_INIT_DELAY_MS, scale), signal);
+  }
   await flushPipe(pipe);
-  await delay(scaledMs(UV5R_MINI_CLEAR_BUFFER_DELAY_MS, scale), signal);
+  if (!skipPortSettle) {
+    await delay(scaledMs(UV5R_MINI_CLEAR_BUFFER_DELAY_MS, scale), signal);
+  }
   try {
     await sendIdent(pipe, UV5R_MINI_IDENT, UV5R_MINI_IDENT_TIMEOUT_MS);
   } catch (err) {
@@ -178,7 +189,9 @@ export class Uv5rMiniProtocol implements CloneImageRadio {
 
   async connect(pipe: BytePipe, opts?: Uv5rMiniConnectOptions): Promise<IdentResult> {
     this.pipe = pipe;
-    await handshake(pipe, 'read', opts);
+    if (opts?.handshake !== 'none') {
+      await handshake(pipe, 'read', opts);
+    }
     return {
       raw: UV5R_MINI_IDENT.slice(),
       modelHints: ['UV5R-Mini', 'UV-5R Mini'],
@@ -225,10 +238,13 @@ export class Uv5rMiniProtocol implements CloneImageRadio {
       throw new RangeError(`Upload image must be at least 0x${UV5R_MINI_MEM_TOTAL.toString(16)}`);
     }
     const pipe = this.requirePipe();
-    await handshake(pipe, 'upload', { signal: opts.signal });
-
-    // Upload all MEM_* regions so settings/VFO/ANI from the hydrated image survive.
     const addrs = listRadioBlockAddresses();
+    reportProgress(
+      opts.onProgress,
+      { cur: 0, max: addrs.length, msg: 'Upload handshake' },
+      opts.signal,
+    );
+    await handshake(pipe, 'upload', { signal: opts.signal });
     let done = 0;
     const max = addrs.length;
     for (const addr of addrs) {
