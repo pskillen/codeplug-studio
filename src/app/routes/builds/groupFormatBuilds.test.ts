@@ -5,20 +5,6 @@ import { groupFormatBuilds } from './groupFormatBuilds.ts';
 const projectId = '11111111-1111-4111-8111-111111111111';
 
 describe('groupFormatBuilds', () => {
-  it('groups by default egress format with catalog labels', () => {
-    const builds = [
-      { ...newRadioBuildWithEgresses(projectId, 'baofeng-uv5r-mini').build, name: 'A' },
-      { ...newRadioBuildWithEgresses(projectId, 'baofeng-dm1701').build, name: 'B' },
-      { ...newRadioBuildWithEgresses(projectId, 'retevis-rt95').build, name: 'C' },
-    ];
-    const groups = groupFormatBuilds(builds, 'format');
-    expect(groups.map((g) => g.label)).toEqual(['CHIRP CSV', 'Direct radio', 'OpenGD77 CSV']);
-    expect(groups.find((g) => g.label === 'CHIRP CSV')?.builds.map((b) => b.name)).toEqual(['C']);
-    expect(groups.find((g) => g.label === 'Direct radio')?.builds.map((b) => b.name)).toEqual([
-      'A',
-    ]);
-  });
-
   it('groups by radio target label', () => {
     const builds = [
       { ...newRadioBuildWithEgresses(projectId, 'baofeng-uv5r-mini').build, name: 'Mini' },

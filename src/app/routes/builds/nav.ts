@@ -36,7 +36,7 @@ function navFormatIds(build: RadioBuild, egressPaths?: EgressPath[]): Set<string
   return new Set(catalog.map((entry) => entry.formatId));
 }
 
-/** Secondary nav entries for a format build detail shell. */
+/** Secondary nav entries for a radio build detail shell. */
 export function buildNavItems(build: RadioBuild, egressPaths?: EgressPath[]): BuildNavItem[] {
   const base = `/builds/${build.id}`;
   const traits = new Set(traitsForRadioTarget(build.radioTargetId));

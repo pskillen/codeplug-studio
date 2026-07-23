@@ -21,7 +21,6 @@ import { groupFormatBuilds, type BuildsListGroupMode } from './groupFormatBuilds
 const GROUP_OPTIONS = [
   { value: 'list', label: 'List' },
   { value: 'radio', label: 'By radio' },
-  { value: 'format', label: 'By format' },
 ] as const;
 
 export default function BuildsListPage() {
@@ -88,7 +87,7 @@ export default function BuildsListPage() {
   return (
     <ListPage
       title="Builds"
-      description="Radio-target assemblies from your library — wire names and layout per handheld or mobile."
+      description="Named radio configurations from your library — wire names and layout per handheld. Export pathways (Web Serial, NeonPlug, CPS) are chosen per build on Export."
       actions={
         <Button component={Link} to="/builds/new" leftSection={<IconPlus size={16} />}>
           New build
@@ -98,7 +97,8 @@ export default function BuildsListPage() {
       <Stack gap="lg">
         {builds.length === 0 ? (
           <Text c="dimmed">
-            No builds yet. Create one to organise library channels for a target CPS format.
+            No builds yet. Create one for the radio you are programming — you can keep several builds
+            for the same radio type (for example Team A and Team B).
           </Text>
         ) : null}
         {builds.length > 0 ? (
@@ -115,7 +115,7 @@ export default function BuildsListPage() {
             <GradientSegmentedControl
               label="Group"
               size="xs"
-              scheme="three"
+              scheme="two"
               value={groupMode}
               onChange={setGroupMode}
               data={[...GROUP_OPTIONS]}
