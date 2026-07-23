@@ -1,6 +1,6 @@
 # Baofeng DM-32UV
 
-Handheld DMR + analogue dual-band radio (DM-32 family). Studio targets it via DM32 CPS CSV, NeonPlug `.neonplug`, and (planned) Web Serial direct-write.
+Handheld DMR + analogue dual-band radio (DM-32 family). Studio targets it via DM32 CPS CSV, NeonPlug `.neonplug`, and **Web Serial** direct-write.
 
 |                  |                                                |
 | ---------------- | ---------------------------------------------- |
@@ -15,10 +15,11 @@ Handheld DMR + analogue dual-band radio (DM-32 family). Studio targets it via DM
 
 ## Studio profile ids
 
-| Adapter      | `profileId`           | Notes                                                                 |
-| ------------ | --------------------- | --------------------------------------------------------------------- |
-| DM32 CPS CSV | `dm32-baofeng-dm32uv` | Stock CPS ladders and caps                                            |
-| NeonPlug     | `neonplug-dm32uv`     | Binary / ZIP interchange; numeric caps kept in sync with DM32 profile |
+| Adapter      | `profileId`           | Notes                                                                                                         |
+| ------------ | --------------------- | ------------------------------------------------------------------------------------------------------------- |
+| Web Serial   | `radio-io-dm32uv`     | Direct radio egress; V-frame + 4KB block R/W ([#638](https://github.com/pskillen/codeplug-studio/issues/638)) |
+| DM32 CPS CSV | `dm32-baofeng-dm32uv` | Stock CPS ladders and caps                                                                                    |
+| NeonPlug     | `neonplug-dm32uv`     | Binary / ZIP interchange; numeric caps kept in sync with DM32 profile                                         |
 
 ## Documentation map
 
@@ -53,11 +54,11 @@ No CHIRP DM-32 driver. NeonPlug is MIT — cite framing / memory maps; do **not*
 
 ## Attribution
 
-Protocol lineage credit: `/attributions` entry `neonplug` ([#597](https://github.com/pskillen/codeplug-studio/issues/597)). Planned `RadioDescriptor.attributionIds` for the DM-32UV adapter should include NeonPlug.
+Protocol lineage credit: `/attributions` entry `neonplug` ([#597](https://github.com/pskillen/codeplug-studio/issues/597)). `RadioDescriptor.attributionIds` includes NeonPlug (+ CHIRP for shared lineage stubs).
 
-## Planned Studio module
+## Studio module
 
-`src/integrations/radio-io/radios/dm32uv/` — handshake, discovery, encode (see [protocol-kit architecture](../../../../features/radio-read-write/protocol-kit-architecture.md)). This ticket ships **docs only**.
+`src/integrations/radio-io/radios/dm32uv/` — handshake, discovery, sparse `radio-clone` hydration, channel encode/decode ([#638](https://github.com/pskillen/codeplug-studio/issues/638)). See [protocol-kit architecture](../../../../features/radio-read-write/protocol-kit-architecture.md).
 
 ## Related
 

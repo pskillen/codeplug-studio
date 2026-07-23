@@ -16,8 +16,7 @@ export default function Dm32PreferNeonPlugAlert() {
       </Text>
       <Text size="sm" mt="xs">
         Switch to the <strong>Web Serial</strong> pathway on this Export page to read/write the
-        radio in the browser, or use <strong>NeonPlug</strong> (
-        <code>.neonplug</code> via{' '}
+        radio in the browser, or use <strong>NeonPlug</strong> (<code>.neonplug</code> via{' '}
         <Anchor href="https://neonplug.app" target="_blank" rel="noopener noreferrer">
           neonplug.app
         </Anchor>
