@@ -12,6 +12,12 @@ import {
   UV5R_MINI_WRITTEN_FROM_BUILD_LABELS,
   uv5rMiniKeptRegions,
 } from './writeRole.ts';
+import {
+  ancillaryRetainPreview,
+  settingsRetainPreview,
+  type Uv5rMiniAncillaryRetainPreview,
+  type Uv5rMiniRetainPreviewRow,
+} from './retainPreview.ts';
 
 /** @deprecated Use Uv5rMiniRetainGroupSummary — kept for barrel compatibility. */
 export interface RadioCloneRegionSummary {
@@ -40,6 +46,8 @@ export interface Uv5rMiniCloneSummary {
   onRadioCounts: Uv5rMiniOnRadioCounts;
   writtenFromBuild: readonly string[];
   retainGroups: readonly Uv5rMiniRetainGroupSummary[];
+  settingsRetain: readonly Uv5rMiniRetainPreviewRow[];
+  ancillaryRetain: Uv5rMiniAncillaryRetainPreview;
 }
 
 /** Legacy region table derived from write-role manifest. */
@@ -77,5 +85,7 @@ export function summariseUv5rMiniClone(bag: RadioCloneHydrationBag): Uv5rMiniClo
     },
     writtenFromBuild: [...UV5R_MINI_WRITTEN_FROM_BUILD_LABELS],
     retainGroups: buildRetainGroups(),
+    settingsRetain: settingsRetainPreview(bytes),
+    ancillaryRetain: ancillaryRetainPreview(bytes),
   };
 }
