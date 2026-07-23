@@ -61,7 +61,8 @@ function miniDescriptor(radio: CloneImageRadio): RadioDescriptor {
     compatibleProfiles: [{ formatId: 'radio-io', profileId: 'radio-io-uv5r-mini' }],
     writeStrategy: 'full-image',
     hydrationRequiredForWrite: true,
-    baudRate: 38400,
+    baudRate: 115200,
+    baudRateFallback: 38400,
     hydration: miniHydration,
   };
 }
@@ -169,7 +170,14 @@ describe('radioIoSession helpers', () => {
       flush: vi.fn(),
       close,
     };
-    const requestSpy = vi.spyOn(radioIo, 'requestWebSerialPipe').mockResolvedValue(pipe);
+    const port = {
+      readable: null,
+      writable: null,
+      open: vi.fn(async () => undefined),
+      close: vi.fn(async () => undefined),
+    };
+    const portSpy = vi.spyOn(radioIo, 'requestWebSerialPort').mockResolvedValue(port);
+    const openSpy = vi.spyOn(radioIo, 'openWebSerialPipe').mockResolvedValue(pipe);
     const listSpy = vi.spyOn(radioIo, 'listDescriptorsForProfile').mockReturnValue([
       {
         modelIds: ['UV5R-Mini'],
@@ -177,7 +185,7 @@ describe('radioIoSession helpers', () => {
         supportsBle: false,
         protocolFactory: () => ({
           connect: async () => {
-            throw new Error('ident timeout');
+            throw new radioIo.RadioTimeoutError('ident timeout');
           },
           disconnect: vi.fn(),
           download: vi.fn(),
@@ -196,16 +204,19 @@ describe('radioIoSession helpers', () => {
         compatibleProfiles: [{ formatId: 'radio-io', profileId: 'radio-io-uv5r-mini' }],
         writeStrategy: 'full-image',
         hydrationRequiredForWrite: true,
-        baudRate: 38400,
+        baudRate: 115200,
+        baudRateFallback: 38400,
         hydration: miniHydration,
       },
     ]);
 
     const { egress } = uv5rMiniRadioIo();
     await expect(openRadioSessionForBuild(egress)).rejects.toThrow(/ident timeout/);
-    expect(close).toHaveBeenCalledTimes(1);
+    expect(close).toHaveBeenCalledTimes(2);
+    expect(openSpy).toHaveBeenCalledTimes(2);
 
-    requestSpy.mockRestore();
+    portSpy.mockRestore();
+    openSpy.mockRestore();
     listSpy.mockRestore();
   });
 });
