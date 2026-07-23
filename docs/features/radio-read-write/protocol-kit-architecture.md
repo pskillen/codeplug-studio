@@ -210,7 +210,7 @@ MVP **Read** hydrates the FormatBuild only — it does **not** import channels i
 | Item               | Value                                                                                            |
 | ------------------ | ------------------------------------------------------------------------------------------------ |
 | Studio module path | `src/integrations/radio-io/radios/uv5r-mini/`                                                    |
-| Baud               | 38400 (NeonPlug)                                                                                 |
+| Baud               | **115200** primary; **38400** one-shot fallback on ident failure ([#673](https://github.com/pskillen/codeplug-studio/issues/673)) |
 | Ident              | `PROGRAMCOLORPROU` (`MSTRING_UV17PROGPS`)                                                        |
 | Framing            | PROGRAM + R/W; optional payload XOR crypt                                                        |
 | Image size         | `MEM_TOTAL = 0x8240`; multi-region `MEM_STARTS` / `MEM_SIZES`                                    |

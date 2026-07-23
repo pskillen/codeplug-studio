@@ -21,16 +21,27 @@ Cite: NeonPlug `baofengProtocol.ts`, `serialConnection.ts`, `constants.ts`; CHIR
 
 | Source                                             | Baud       |
 | -------------------------------------------------- | ---------- |
-| NeonPlug `UV5RMINI_BAUD_RATE`                      | **38400**  |
 | CHIRP `UV17Pro.BAUD_RATE` (Mini does not override) | **115200** |
+| NeonPlug `UV5RMINI_BAUD_RATE`                      | **38400**  |
 
-**Studio first Web Serial path:** prefer NeonPlug **38400** (browser lineage) and verify on hardware; document both so agents do not silently pick one.
+**Studio Web Serial path ([#673](https://github.com/pskillen/codeplug-studio/issues/673)):** open at **115200** (CHIRP). On ident/handshake timeout or wrong ident, reconnect once at **38400** (NeonPlug). Ident failure messages list baud(s) tried.
+
+## Transport settles and line control
+
+| Step | Studio | NeonPlug | CHIRP |
+| --- | --- | --- | --- |
+| After port open | **300 ms** settle → flush RX buffer → **200 ms** settle | same | `_clean_buffer` drain |
+| Before each magic / write | flush RX buffer | `buf = []` | — |
+| ACK after ident / write | seek `0x06` (discard leading junk) | `waitForByte` | exact after flush |
+| Read block reply | drain to leading `0x52`, then 68 bytes | same | exact 68 bytes |
+| RTS / DTR | assert when Web Serial `setSignals` supported | — | `WANTS_RTS` / `WANTS_DTR` |
 
 ## Handshake
 
-1. Send ident `PROGRAMCOLORPROU`.
-2. Expect ACK `0x06`.
-3. Send magics (`F`, `M`, then `SEND!…` trailer).
+1. Post-open settle and flush (see table above).
+2. Send ident `PROGRAMCOLORPROU`.
+3. Seek ACK `0x06` (may follow junk bytes).
+4. Flush, send each magic (`F`, `M`, then `SEND!…` trailer); flush before each magic write.
 
 ### Magics (NeonPlug)
 
@@ -64,10 +75,10 @@ Do not paste CHIRP’s full table into Studio as GPL source — cite NeonPlug `b
 
 ## Typical session flow
 
-1. Open serial at chosen baud (prefer 38400 for NeonPlug-compatible path).
-2. Ident → ACK → read magics.
-3. Read all `MEM_*` regions in `0x40` blocks → assemble packed `0x8240` image ([memory-layout.md](memory-layout.md)).
-4. For channel upload: upload handshake (NeonPlug trailer `0x01`) → write channel span only (or full clone per CHIRP) → optional settings RMW ([settings.md](settings.md)).
+1. Open serial at **115200**; on ident failure retry once at **38400**.
+2. Settle, flush, ident → seek ACK → read magics (flush before each).
+3. Read all `MEM_*` regions in `0x40` blocks → assemble packed `0x8240` image ([memory-layout.md](memory-layout.md)). Sync each read reply to opcode `0x52`.
+4. For upload: upload handshake (NeonPlug trailer `0x01`) → write all `MEM_*` regions from hydrated image ([settings.md](settings.md)).
 
 ## BLE (follow-up)
 
