@@ -6,34 +6,38 @@ Tier-1 reference for the vendor-neutral **library + format build** model. Wire-f
 
 **Source:** `src/core/models/`
 
-## Two persisted layers (not one export format)
+## Two / three persisted layers (not one export format)
 
-Codeplug Studio separates **what you know about RF** from **how a specific radio/CPS expects it on the wire**. Both are persisted in the project — export is the **union** of library + build, not a one-shot projection from a single internal shape.
+Codeplug Studio separates **what you know about RF** from **how a specific radio configuration is assembled** and **how that assembly leaves Studio**. All are persisted in the project — export / direct-write is the **union** of library + radio build (+ selected egress), not a one-shot projection from a single internal shape.
 
-| Layer            | Model                             | Vendor-neutral?                         | Persisted? | Role                                                                                           |
-| ---------------- | --------------------------------- | --------------------------------------- | ---------- | ---------------------------------------------------------------------------------------------- |
-| **Library**      | `Channel`, `TalkGroup`, `Zone`, … | **Yes**                                 | Yes        | Canonical RF inventory — frequencies, modes, contacts, grouping you curate once                |
-| **Format build** | `FormatBuild` per target workflow | No (scoped to `formatId` + `profileId`) | **Yes**    | Maps that library to one CPS workflow: trait layout, entity selection, **wire-name overrides** |
+| Layer | Model | Vendor-neutral? | Persisted? | Role |
+| --- | --- | --- | --- | --- |
+| **Library** | `Channel`, `TalkGroup`, `Zone`, … | **Yes** | Yes | Canonical RF inventory — frequencies, modes, contacts, grouping you curate once |
+| **Radio build** | `RadioBuild` (`radioTargetId` + overrides / layout) | No (scoped to a catalog radio) | **Yes** | One **named** mapping of the library onto that radio’s traits and wire limits |
+| **Egress path** | `EgressPath` (`formatId` / `profileId` + optional hydration) | No (CPS file or Web Serial) | **Yes** | How that build is written or downloaded; donor / clone retain bags live here |
+
+**Many radio builds may share one `radioTargetId`.** Identity is the build UUID and display `name` (e.g. two UV-5R Mini builds for Team A vs Team B with different channel subsets). Each build owns its own egress children. See [builds hub](../builds/README.md) and [#654](https://github.com/pskillen/codeplug-studio/issues/654).
 
 ```mermaid
 flowchart LR
   subgraph persisted [Persisted in project]
     Lib[Library — vendor-neutral]
-    Build[FormatBuild — per format/profile]
+    Build[RadioBuild — named radio config]
+    Egress[EgressPath — Web Serial / CPS]
   end
-  CPS[CPS wire files]
+  CPS[CPS wire or radio]
   Lib --> Assemble
   Build --> Assemble
-  Assemble["assemble(build, library)"] --> Proj[Export projection]
-  Proj --> Adapter[Wire adapter]
-  Adapter --> CPS
+  Assemble["assemble(radioBuild, library)"] --> Proj[Export projection]
+  Proj --> Egress
+  Egress --> CPS
 ```
 
 ### Contrast with codeplug-tool (archive)
 
 The old repo held **one internal codeplug** already shaped like a single CPS workflow. Choosing another export format re-projected that same in-memory model at click time — there was no durable per-target build state, and wire-name shortening was largely an export-time side effect.
 
-Studio instead keeps a **vendor-neutral library** plus **one or more persisted `FormatBuild` rows** per project. The operator can accept pre-populated build values (from import or profile defaults) or customise them; those customisations survive the next export.
+Studio instead keeps a **vendor-neutral library** plus **one or more persisted `RadioBuild` rows** per project (formerly `FormatBuild`). The operator can accept pre-populated build values (from import or profile defaults) or customise them; those customisations survive the next export.
 
 ### Why format builds exist
 

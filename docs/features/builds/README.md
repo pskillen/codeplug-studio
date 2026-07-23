@@ -1,28 +1,39 @@
 # Format builds
 
-Per-target CPS workflows that map the vendor-neutral [library](../library/README.md) to one radio format and profile.
+Per-target radio workflows that map the vendor-neutral [library](../library/README.md) to one handheld configuration, then egress via Web Serial and/or CPS files.
 
-**Tracking:** Phase 4a [#82](https://github.com/pskillen/codeplug-studio/issues/82) · Epic [#36](https://github.com/pskillen/codeplug-studio/issues/36)
+**Tracking:** Phase 4a [#82](https://github.com/pskillen/codeplug-studio/issues/82) · Epic [#36](https://github.com/pskillen/codeplug-studio/issues/36) · RadioBuild redesign [#654](https://github.com/pskillen/codeplug-studio/issues/654)
 
 **Source:** `src/app/routes/builds/`, `src/app/state/buildService.ts`
 
 ## Problem
 
-The library holds RF semantics once. Each radio/CPS family expects different organisation (zones, flat memories, scan lists) and wire limits. A **format build** is the persisted assembly for one target — selections, trait layout, and wire-name overrides survive between sessions.
+The library holds RF semantics once. Each radio expects different organisation (zones, flat memories, scan lists) and wire limits. A **radio build** (`RadioBuild`) is the persisted assembly for one **named configuration** of a catalog radio target — selections, trait layout, and wire-name overrides survive between sessions. Getting data onto the radio uses **egress pathways** (`EgressPath`: Web Serial, NeonPlug, CHIRP CSV, …) under that build.
+
+## Many builds, same radio type
+
+`radioTargetId` is a **catalog reference**, not a uniqueness key. A project may have several builds for the same handheld type, each with its own overrides and egress children:
+
+| Build name | `radioTargetId` | Example difference |
+| --- | --- | --- |
+| UV-5R Team A | `baofeng-uv5r-mini` | Subset of channels; one scan config |
+| UV-5R Team B | `baofeng-uv5r-mini` | Different inclusions / scan / wire names |
+
+Both share the **library**; each has its own `RadioBuild` → `assemble` → `EgressPath` tree. Creating another build for the same target always allocates a new UUID — no “one build per radio” gate.
 
 ## Operator workflow
 
 1. Curate channels, zones, and contacts in **Library**.
 2. Open **Export for radio** (sidebar) → **New build**.
-3. Pick a CPS format (OpenGD77, CHIRP, …) and a **profile** (trait + wire variant).
-4. Land on **Export** (default) — download CPS files, Drive upload, inclusion and name settings.
-5. Use **Setup** for rename/delete, profile changes, and capability badges; open **Radio characteristics** for organisation and export limits.
+3. Pick a **radio target** (e.g. Baofeng UV-5R Mini) and a display name (use names to distinguish Team A / Team B permutations).
+4. Land on **Export** (default) — choose an **egress** (Web Serial, NeonPlug, CHIRP, …), then download / write / donor merge as that pathway requires.
+5. Use **Setup** for rename/delete and capability badges; open **Radio characteristics** for organisation and export limits.
 6. Shape wire names and zone layout on entity sub-routes — see [wire-preview.md](wire-preview.md).
 7. Switch builds from the secondary-nav **Build** select without returning to the list.
 
-See [profiles.md](profiles.md) for profile picker workflows.
+See [profiles.md](profiles.md) for legacy profile-picker notes; radio-target create is the #654 direction ([progress](radio-build-egress-progress.md)).
 
-Native YAML remains **project interchange** (library + all builds) on **Summary**. It is not created via the new-build flow.
+Native YAML remains **project interchange** (library + all radio builds + egress paths) on **Summary**. It is not created via the new-build flow.
 
 ## Export vs Setup
 

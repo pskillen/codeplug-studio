@@ -75,11 +75,18 @@ export interface BuildEntityOverride {
 }
 
 /**
- * Radio-centric build — one handheld target, shared wire names / slots / layout.
- * CPS file export and Web Serial write are {@link EgressPath} children (#654).
+ * Radio-centric build — one **named configuration** for a catalog radio target
+ * (wire names, slots, inclusions, trait layout). Not unique per `radioTargetId`:
+ * a project may hold many builds for the same handheld type (e.g. “UV-5R Team A”
+ * vs “UV-5R Team B”) sharing the library but with different overrides / scan
+ * settings. Each build owns its own {@link EgressPath} children for Web Serial /
+ * CPS file pathways (#654).
  */
 export interface RadioBuild extends PersistableRow {
-  /** Catalog radio target id (e.g. `baofeng-uv5r-mini`). */
+  /**
+   * Catalog radio target id (e.g. `baofeng-uv5r-mini`).
+   * Many builds in one project may share the same id — identity is {@link PersistableRow.id}.
+   */
   radioTargetId: string;
   name: string;
   layout: TraitLayout;

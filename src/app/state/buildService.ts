@@ -28,6 +28,11 @@ export class BuildService {
     return this.persistence.listEgressPathsForBuild(projectId, radioBuildId);
   }
 
+  /** Every egress path in the project, across all builds (build switcher, list grouping). */
+  async listAllEgressPaths(projectId: string): Promise<EgressPath[]> {
+    return this.persistence.listEgressPaths(projectId);
+  }
+
   async getEgressPath(projectId: string, id: string): Promise<EgressPath | null> {
     return this.persistence.getEgressPath(projectId, id);
   }
@@ -39,6 +44,10 @@ export class BuildService {
   /**
    * Create a radio build for a catalog target and seed every compatible egress
    * pathway for it. Throws if `radioTargetId` is not in the catalog.
+   *
+   * **Many builds per target are allowed** — each call allocates a new build id.
+   * Use distinct `name`s for operator-facing permutations of the same radio
+   * (e.g. Team A vs Team B channel subsets) against one shared library (#654).
    */
   async createBuild(
     projectId: string,
