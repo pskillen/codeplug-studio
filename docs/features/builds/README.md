@@ -46,7 +46,7 @@ Export does not host identity editors; Setup does not host download actions. Sec
 
 Projection settings (scan inclusion, m×n, naming fill-ins, …) stay visible across pathway switches ([#658](https://github.com/pskillen/codeplug-studio/issues/658)). Pathway chrome (CHIRP profile picker, NeonPlug donor, Web Serial, CPS download) follows the active egress.
 
-**Hydration** (NeonPlug donor `.neonplug`, Web Serial `radio-clone` image) is stored on the owning **`EgressPath`**, not on the `RadioBuild` row. NeonPlug settings and Radio image retain pages summarise hydration for that egress child. Secondary nav shows those pages whenever the matching bag is stored — the Export pathway switcher need not be on that egress ([#668](https://github.com/pskillen/codeplug-studio/issues/668)).
+**Hydration** (NeonPlug donor `.neonplug`, Web Serial `radio-clone` image) is stored on the owning **`EgressPath`**, not on the `RadioBuild` row. NeonPlug settings and Radio image retain pages summarise hydration for that egress child. DM-32UV **Radio image** shows on-radio counts, a **Written from your build** list (channels, zones, scan lists, …), and decoded **Kept on Write** settings ([#672](https://github.com/pskillen/codeplug-studio/issues/672)). Secondary nav shows those pages whenever the matching bag is stored — the Export pathway switcher need not be on that egress ([#668](https://github.com/pskillen/codeplug-studio/issues/668)).
 
 ## Routes
 
