@@ -27,7 +27,7 @@ describe('NewBuildPage', () => {
     expect(screen.queryByText('Choose format')).not.toBeInTheDocument();
   });
 
-  it('shows prefer-NeonPlug warning on the DM-32UV radio card', () => {
+  it('does not show prefer-NeonPlug warning on New Radio (export-time only)', () => {
     render(
       <MemoryRouter>
         <MantineProvider>
@@ -37,7 +37,7 @@ describe('NewBuildPage', () => {
     );
 
     expect(screen.getByText('Baofeng DM-32UV')).toBeInTheDocument();
-    expect(screen.getByText(DM32_PREFER_NEONPLUG_TITLE)).toBeInTheDocument();
+    expect(screen.queryByText(DM32_PREFER_NEONPLUG_TITLE)).not.toBeInTheDocument();
   });
 
   it('advances to name step when a radio is selected', () => {
@@ -53,6 +53,5 @@ describe('NewBuildPage', () => {
 
     expect(screen.getByText('Name build')).toBeInTheDocument();
     expect(screen.getByLabelText('Build name')).toHaveValue('Baofeng UV-5R Mini');
-    expect(screen.queryByText(DM32_PREFER_NEONPLUG_TITLE)).not.toBeInTheDocument();
   });
 });

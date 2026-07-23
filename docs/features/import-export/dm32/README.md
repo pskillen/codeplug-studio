@@ -23,7 +23,7 @@ Product behaviour for Baofeng DM-32UV CPS CSV export in Codeplug Studio. Wire co
 | Per-repeater scratch channels   | Shipped | [#140](https://github.com/pskillen/codeplug-studio/issues/140) — [export-projections.md](export-projections.md)                                                                                                               |
 | CRLF export line endings        | Shipped | [#314](https://github.com/pskillen/codeplug-studio/issues/314) — Windows CPS import compatibility                                                                                                                             |
 | APRS channel cols + `APRS.md`   | Shipped | [#250](https://github.com/pskillen/codeplug-studio/issues/250) — [aprs.md](../../../reference/export-formats/dm32/aprs.md)                                                                                                    |
-| Prefer-NeonPlug export warning  | Shipped | [#556](https://github.com/pskillen/codeplug-studio/issues/556) — orange alert at top of export panel and again above download buttons; New build format/profile pills; CSV download remains available                         |
+| Prefer-NeonPlug export warning  | Shipped | [#556](https://github.com/pskillen/codeplug-studio/issues/556) — orange alert on Export when the **dm32 CPS** egress is active (not on New Radio); pathway pills on format/profile pickers; CSV download remains available |
 | CPS import                      | Planned | [#112](https://github.com/pskillen/codeplug-studio/issues/112)                                                                                                                                                                |
 
 ## Trait profile vs radio profile
@@ -47,7 +47,7 @@ Per-radio map: [dm32 profiles.md](../../../reference/export-formats/dm32/profile
 
 ## Prefer NeonPlug for radio write
 
-Baofeng DM-32 CPS CSV import is unreliable. On `/builds/:id/export` for a DM32 build, Studio shows a strong warning to prefer a [NeonPlug](../neonplug/README.md) build and `.neonplug` merge-on-export path. DM32 CSV download stays available for interop and fixtures.
+Baofeng DM-32 CPS CSV import is unreliable. On `/builds/:id/export`, when the active egress is **native DM32 CPS CSV**, Studio shows a strong warning to switch to the [NeonPlug](../neonplug/README.md) pathway (`.neonplug` merge-on-export) or Web Serial when available. The warning is **not** shown on New Radio — pathway choice happens at export time. DM32 CSV download stays available for interop and fixtures.
 
 **Parked CPS fidelity work:** [cps-csv-gaps.md](cps-csv-gaps.md) (from [#404](https://github.com/pskillen/codeplug-studio/issues/404)) — open elicitation tickets remain convertible; do not treat blank [enum-verification](../../../reference/export-formats/dm32/enum-verification.md) Observed cells as blockers.
 
