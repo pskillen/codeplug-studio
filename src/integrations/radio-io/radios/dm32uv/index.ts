@@ -36,4 +36,16 @@ export {
   parseDm32ChannelRecord,
   encodeDm32ChannelRecord,
 } from './channelCodec.ts';
-export { summariseDm32uvClone, type Dm32uvCloneSummary } from './cloneSummary.ts';
+export {
+  summariseDm32uvClone,
+  type Dm32uvCloneSummary,
+  type Dm32RetainGroupSummary,
+  type Dm32RequiredBlockStatus,
+} from './cloneSummary.ts';
+export {
+  dm32WriteRole,
+  dm32BlockLabel,
+  dm32ChannelBankAddresses,
+  DM32_WRITTEN_FROM_BUILD_LABELS,
+  type Dm32WriteRole,
+} from './writeRole.ts';
