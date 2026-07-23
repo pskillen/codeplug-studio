@@ -7,13 +7,12 @@ import type { RadioBuild } from '@core/models/radioBuild.ts';
 import { expandAllMxNChannels, expandMxNZoneMemberNumbers } from '@core/import-export/channelExpansion/mxnExpandAll.ts';
 import { filterExpandedRowsByOverrides } from '@core/domain/formatBuildOverrides.ts';
 import { mergeExportOptions } from '@core/import-export/exportSettingsMerge.ts';
-import { getProfileExportLimits } from '@core/import-export/profileExportLimits.ts';
+import {
+  getProfileExportLimits,
+  type ProfileExportLimits,
+} from '@core/import-export/profileExportLimits.ts';
 import type { FormatId } from '@core/import-export/types.ts';
 import { hasMxNChannelExpansion } from '@core/radio-targets/index.ts';
-import {
-  getRadioIoProfile,
-  isRadioIoDm32uvProfile,
-} from '@core/import-export/formats/radio-io/profiles.ts';
 import { applyListWireNameLimits } from '@core/import-export/channelExpansion/listWireNames.ts';
 import {
   DEFAULT_SCAN_CARRIER_HZ,
@@ -28,6 +27,7 @@ import { DM32_EMPTY_SCAN_LIST_NAME } from '@core/import-export/zoneDerivedScanLi
 import { buildScanContext, effectiveScanSkips } from '@core/import-export/scanInclusion/index.ts';
 import type { RadioChannelDto } from '@integrations/radio-io/radioChannelDto.ts';
 import type {
+  RadioDigitalContactDto,
   RadioRxGroupDto,
   RadioScanListDto,
   RadioTalkGroupDto,
@@ -42,6 +42,41 @@ import {
 
 /** NeonPlug quick-contact group-call type byte. */
 const TG_CALL_TYPE_GROUP = 0x04;
+
+function numericLimit(
+  value: ProfileExportLimits[keyof ProfileExportLimits] | undefined,
+  fallback: number,
+): number {
+  return typeof value === 'number' ? value : fallback;
+}
+
+/** DM-32UV wire caps via allowed app→core limits API (not format adapter imports). */
+function dm32ExportLimits(egress: RadioWireEgressIds): ProfileExportLimits {
+  return (
+    getProfileExportLimits(egress.formatId as FormatId, egress.profileId) ?? {
+      formatId: egress.formatId as FormatId,
+      profileId: egress.profileId,
+      profileLabel: 'DM-32UV',
+      maxChannels: 4000,
+      maxZones: 250,
+      maxScanLists: 32,
+      maxRxGroupLists: 250,
+      maxContacts: null,
+      maxTalkGroups: null,
+      zoneMembers: 64,
+      scanListMembers: 15,
+      rxGroupListMembers: 32,
+      nameLengthChannel: 16,
+      nameLengthZone: 16,
+      nameLengthContact: 16,
+      nameLengthTalkGroup: 16,
+      nameLengthScanList: 10,
+      nameLengthRxGroupList: 10,
+      powerLadder: [],
+      siblingLadders: [],
+    }
+  );
+}
 
 function buildNumbersBySourceChannelId(
   assembled: AssembledBuild,
@@ -118,10 +153,14 @@ function buildDm32Organisation(
   channels: RadioChannelDto[];
   numbersBySourceChannelId: Map<string, number[]>;
 } {
-  const profile = getRadioIoProfile(egress.profileId);
-  if (!isRadioIoDm32uvProfile(profile)) {
-    return { zones: [], scanLists: [], channels, numbersBySourceChannelId };
-  }
+  const limits = dm32ExportLimits(egress);
+  const maxZones = numericLimit(limits.maxZones, 250);
+  const maxScanLists = numericLimit(limits.maxScanLists, 32);
+  const scanListMembersCap = numericLimit(limits.scanListMembers, 15);
+  const maxMemorySlots = numericLimit(limits.maxChannels, 4000);
+  const zoneMembersCap = numericLimit(limits.zoneMembers, 64);
+  const nameLengthZone = numericLimit(limits.nameLengthZone, 16);
+  const nameLengthScanList = numericLimit(limits.nameLengthScanList, 10);
 
   const merged = mergeExportOptions(build, egress.formatId, { profileId: egress.profileId });
   const reservedZoneNames = new Set<string>();
@@ -148,13 +187,13 @@ function buildDm32Organisation(
   const masterOn = scanMasterEnabled(merged);
 
   for (const zone of assembled.zones) {
-    if (zones.length >= profile.maxZones) break;
+    if (zones.length >= maxZones) break;
 
     let channelNumbers = expandMxNZoneMemberNumbers(zone.memberChannelIds, numbers);
     const entry = layoutEntry(layout, zone.zoneId);
     const wantScan = masterOn && (entry?.exportScanList ?? false);
 
-    if (wantScan && scanLists.length < profile.maxScanLists) {
+    if (wantScan && scanLists.length < maxScanLists) {
       const libraryZone = zoneById.get(zone.zoneId);
       if (libraryZone) {
         const memberIds = scanMemberIds(libraryZone, library.zones, {
@@ -169,24 +208,24 @@ function buildDm32Organisation(
         });
 
         let scanMembers = expandMxNZoneMemberNumbers(memberIds, numbers);
-        if (scanMembers.length > profile.scanListMembers) {
+        if (scanMembers.length > scanListMembersCap) {
           warnings.push(
-            `Zone "${zone.wireName}" scan list truncated from ${scanMembers.length} to ${profile.scanListMembers} members`,
+            `Zone "${zone.wireName}" scan list truncated from ${scanMembers.length} to ${scanListMembersCap} members`,
           );
-          scanMembers = scanMembers.slice(0, profile.scanListMembers);
+          scanMembers = scanMembers.slice(0, scanListMembersCap);
         }
 
         if (scanMembers.length > 0) {
           const carrierHz = entry?.scanCarrierFrequencyHz ?? DEFAULT_SCAN_CARRIER_HZ;
           const carrierName = zoneScanCarrierWireName(
             zone.wireName,
-            profile.id,
+            egress.profileId,
             reservedCarrierNames,
             warnings,
           );
           reservedCarrierNames.add(carrierName);
           const carrierSlot = nextFreeSlot(numbers);
-          if (carrierSlot <= profile.maxMemorySlots) {
+          if (carrierSlot <= maxMemorySlots) {
             carrierNumberByZoneId.set(zone.zoneId, carrierSlot);
             nextChannels.push({
               slotIndex: carrierSlot,
@@ -209,10 +248,10 @@ function buildDm32Organisation(
               zone.wireName,
               reservedScanNames,
               merged,
-              profile.id,
+              egress.profileId,
               warnings,
               'Scan list',
-              10,
+              nameLengthScanList,
             );
             const listIndex = scanLists.length + 1;
             scanLists.push({
@@ -234,21 +273,21 @@ function buildDm32Organisation(
     if (carrierNum != null) {
       channelNumbers = [carrierNum, ...channelNumbers.filter((n) => n !== carrierNum)];
     }
-    if (channelNumbers.length > profile.zoneMembers) {
+    if (channelNumbers.length > zoneMembersCap) {
       warnings.push(
-        `Zone "${zone.wireName}" truncated from ${channelNumbers.length} to ${profile.zoneMembers} members`,
+        `Zone "${zone.wireName}" truncated from ${channelNumbers.length} to ${zoneMembersCap} members`,
       );
-      channelNumbers = channelNumbers.slice(0, profile.zoneMembers);
+      channelNumbers = channelNumbers.slice(0, zoneMembersCap);
     }
 
     const wireName = applyListWireNameLimits(
       zone.wireName,
       reservedZoneNames,
       merged,
-      profile.id,
+      egress.profileId,
       warnings,
       'Zone',
-      profile.nameLimit,
+      nameLengthZone,
     );
 
     zones.push({ wireName, channelNumbers });
@@ -286,9 +325,13 @@ function buildTalkGroupsAndRx(
 ): {
   talkGroups: RadioTalkGroupDto[];
   rxGroups: RadioRxGroupDto[];
+  digitalContacts: RadioDigitalContactDto[];
   fkMaps: RadioChannelFkMaps;
 } {
-  const profile = getRadioIoProfile(egress.profileId);
+  const limits = dm32ExportLimits(egress);
+  const nameLen = numericLimit(limits.nameLengthTalkGroup, 16);
+  const maxRx = numericLimit(limits.maxRxGroupLists, 250);
+  const maxRxMembers = numericLimit(limits.rxGroupListMembers, 32);
   const contactIdByEntityId = new Map<string, number>();
   const talkGroups: RadioTalkGroupDto[] = [];
   const reservedTg = new Set<string>();
@@ -302,7 +345,7 @@ function buildTalkGroupsAndRx(
       egress.profileId,
       warnings,
       'Talk group',
-      isRadioIoDm32uvProfile(profile) ? profile.nameLimit : 16,
+      nameLen,
     );
     const index = talkGroups.length + 1;
     talkGroups.push({
@@ -314,11 +357,33 @@ function buildTalkGroupsAndRx(
     contactIdByEntityId.set(row.entity.id, index);
   }
 
+  const digitalContacts: RadioDigitalContactDto[] = [];
+  const reservedDc = new Set<string>();
+  for (const row of assembled.digitalContacts) {
+    if (digitalContacts.length >= 250) break;
+    const wireName = applyListWireNameLimits(
+      row.wireName,
+      reservedDc,
+      undefined,
+      egress.profileId,
+      warnings,
+      'Digital contact',
+      nameLen,
+    );
+    digitalContacts.push({
+      wireName,
+      digitalId: row.entity.digitalId,
+      callsign: row.entity.callsign ?? '',
+      city: row.entity.city ?? '',
+      province: row.entity.state ?? '',
+      country: row.entity.country ?? '',
+      remark: row.entity.remarks ?? '',
+    });
+  }
+
   const rxGroupIndexById = new Map<string, number>();
   const rxGroups: RadioRxGroupDto[] = [];
   const reservedRx = new Set<string>();
-  const maxRx = isRadioIoDm32uvProfile(profile) ? profile.maxRxGroupLists : 32;
-  const maxRxMembers = isRadioIoDm32uvProfile(profile) ? profile.rxGroupListMembers : 32;
 
   for (const row of assembled.rxGroupLists) {
     if (rxGroups.length >= maxRx) break;
@@ -352,6 +417,7 @@ function buildTalkGroupsAndRx(
   return {
     talkGroups,
     rxGroups,
+    digitalContacts,
     fkMaps: { contactIdByEntityId, rxGroupIndexById },
   };
 }
@@ -369,11 +435,13 @@ export function buildRadioWriteProjection(
   let fkMaps: RadioChannelFkMaps | undefined;
   let talkGroups: RadioTalkGroupDto[] = [];
   let rxGroups: RadioRxGroupDto[] = [];
+  let digitalContacts: RadioDigitalContactDto[] = [];
 
   if (egress.profileId === 'radio-io-dm32uv') {
     const tgRx = buildTalkGroupsAndRx(assembled, egress, warnings);
     talkGroups = tgRx.talkGroups;
     rxGroups = tgRx.rxGroups;
+    digitalContacts = tgRx.digitalContacts;
     fkMaps = tgRx.fkMaps;
   }
 
@@ -416,6 +484,7 @@ export function buildRadioWriteProjection(
       scanLists: org.scanLists,
       talkGroups,
       rxGroups,
+      digitalContacts,
     };
   }
 

@@ -17,6 +17,7 @@ import { encodeZonesIntoDm32Image } from './zoneCodec.ts';
 import { encodeScanListsIntoDm32Image } from './scanListCodec.ts';
 import { encodeTalkGroupsIntoDm32Image } from './talkGroupCodec.ts';
 import { encodeRxGroupsIntoDm32Image } from './rxGroupCodec.ts';
+import { encodeDigitalContactsIntoDm32Image } from './contactCodec.ts';
 import type { Dm32DownloadCache } from './protocol.ts';
 
 export const DM32UV_MODEL_ID = DM32_MODEL_IDS[0];
@@ -41,6 +42,8 @@ export function cacheFromBag(bag: RadioCloneHydrationBag): Dm32DownloadCache {
     firmware: bag.retain.firmware,
     discovered,
     blocks,
+    contactsBase: bag.retain.dm32ContactsBase,
+    contactsEnd: bag.retain.dm32ContactsEnd,
   };
 }
 
@@ -83,6 +86,8 @@ export function extractDm32uvHydration(
     capturedVia: 'web-serial',
     sourceFileName: meta?.sourceFileName,
     capturedAt: meta?.capturedAt,
+    dm32ContactsBase: cache.contactsBase,
+    dm32ContactsEnd: cache.contactsEnd,
   });
 }
 
@@ -113,6 +118,17 @@ export function mergeChannelsIntoDm32uvHydration(
   // Indices before channel FK bytes
   if (organisation?.talkGroups) {
     next = encodeTalkGroupsIntoDm32Image(next, ctx, organisation.talkGroups);
+  }
+  if (organisation?.digitalContacts && cache.contactsBase != null) {
+    next = encodeDigitalContactsIntoDm32Image(
+      next,
+      {
+        addressBase: cache.addressBase,
+        contactsBase: cache.contactsBase,
+        discoveredAddresses: [...cache.blocks.keys()],
+      },
+      organisation.digitalContacts,
+    );
   }
   if (organisation?.rxGroups) {
     next = encodeRxGroupsIntoDm32Image(next, ctx, organisation.rxGroups);

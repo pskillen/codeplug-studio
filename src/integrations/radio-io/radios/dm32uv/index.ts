@@ -49,5 +49,6 @@ export {
   dm32BlockLabel,
   dm32ChannelBankAddresses,
   DM32_WRITTEN_FROM_BUILD_LABELS,
+  DM32_ANALOG_CONTACTS_WRITE_GAP,
   type Dm32WriteRole,
 } from './writeRole.ts';

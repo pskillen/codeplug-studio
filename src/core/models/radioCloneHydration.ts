@@ -51,6 +51,10 @@ export interface RadioCloneRetain {
    * to the radio config range (optional; sparse helpers may set this).
    */
   addressBase?: number;
+  /** DM-32UV V-frame contact bank absolute start (when Read included the bank). */
+  dm32ContactsBase?: number;
+  /** DM-32UV V-frame contact bank absolute end (inclusive-ish end from V-frame). */
+  dm32ContactsEnd?: number;
 }
 
 export interface RadioCloneHydrationBag extends CpsWireHydrationBase {
@@ -144,6 +148,8 @@ export function createRadioCloneHydrationBagFromBlocks(input: {
   capturedVia?: RadioCloneRetain['capturedVia'];
   sourceFileName?: string;
   capturedAt?: string;
+  dm32ContactsBase?: number;
+  dm32ContactsEnd?: number;
 }): RadioCloneHydrationBag {
   if (input.blocks.length === 0) {
     throw new RangeError('Sparse radio-clone hydration requires at least one block');
@@ -165,6 +171,10 @@ export function createRadioCloneHydrationBagFromBlocks(input: {
       blocks,
       ...(input.addressBase !== undefined ? { addressBase: input.addressBase } : {}),
       ...(input.firmware !== undefined ? { firmware: input.firmware } : {}),
+      ...(input.dm32ContactsBase !== undefined
+        ? { dm32ContactsBase: input.dm32ContactsBase }
+        : {}),
+      ...(input.dm32ContactsEnd !== undefined ? { dm32ContactsEnd: input.dm32ContactsEnd } : {}),
     },
   };
 }

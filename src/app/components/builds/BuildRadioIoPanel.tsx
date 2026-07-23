@@ -34,6 +34,7 @@ import RadioIoProgressModal, {
   type RadioIoProgressPhase,
 } from './RadioIoProgressModal.tsx';
 import WebSerialExperimentalAlert from './WebSerialExperimentalAlert.tsx';
+import { DM32_ANALOG_CONTACTS_WRITE_GAP } from '@integrations/radio-io/radios/dm32uv/writeRole.ts';
 
 export interface BuildRadioIoPanelProps {
   build: RadioBuild;
@@ -276,6 +277,11 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
             </Anchor>{' '}
             for the retained region map. Settings are not editable here.
           </Text>
+          {egress.profileId === 'radio-io-dm32uv' ? (
+            <Text size="xs" c="dimmed" mt={4}>
+              {DM32_ANALOG_CONTACTS_WRITE_GAP}
+            </Text>
+          ) : null}
           <Button size="xs" variant="subtle" mt="xs" onClick={() => void handleClearHydration()}>
             Clear stored image
           </Button>

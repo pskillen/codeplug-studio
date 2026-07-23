@@ -22,9 +22,13 @@ export const DM32_WRITTEN_FROM_BUILD_LABELS: readonly string[] = [
   'Scan lists',
   'Talk groups',
   'RX group lists',
-  'Contacts',
+  'Digital contacts',
   'APRS settings',
 ] as const;
+
+/** Operator-facing note — analog contacts are not updated on Web Serial Write. */
+export const DM32_ANALOG_CONTACTS_WRITE_GAP =
+  'Analog contacts stay as they were on the radio when you Write. Export a file for your radio’s CPS or NeonPlug if you need to update those.';
 
 /** Operator-facing block label from metadata byte (no hex in output). */
 export function dm32BlockLabel(metadata: number, type: Dm32BlockType): string {
