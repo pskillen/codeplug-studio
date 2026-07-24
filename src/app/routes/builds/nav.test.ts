@@ -100,7 +100,10 @@ describe('buildNavItems', () => {
   });
 
   it('includes Radio image for OpenGD77 DM-1701 when a clone bag exists', () => {
-    const { build, egress, egressPaths } = newRadioBuildForProfile('proj', 'radio-io-opengd77-1701');
+    const { build, egress, egressPaths } = newRadioBuildForProfile(
+      'proj',
+      'radio-io-opengd77-1701',
+    );
     const withClone = egressPaths.map((path) =>
       path.id === egress.id
         ? withHydration(path, {

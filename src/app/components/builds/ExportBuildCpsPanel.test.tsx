@@ -145,7 +145,8 @@ describe('ExportBuildCpsPanel', () => {
   it('renders download ZIP and per-file export actions for shipped OpenGD77 builds', async () => {
     renderExportPanel('opengd77-1701');
 
-    expect(await screen.findByText(/OpenGD77 \(1701\)/)).toBeInTheDocument();
+    expect(await screen.findByText(/Export as/)).toBeInTheDocument();
+    expect(screen.getAllByText('OpenGD77 CSV').length).toBeGreaterThan(0);
     const zipButton = await screen.findByRole('button', { name: 'Download ZIP' });
     expect(zipButton).not.toBeDisabled();
     expect(screen.getByRole('button', { name: 'Save ZIP to Drive' })).not.toBeDisabled();
@@ -188,7 +189,7 @@ describe('ExportBuildCpsPanel', () => {
     unmount();
 
     renderExportPanel('opengd77-1701');
-    expect(await screen.findByText(/OpenGD77 \(1701\)/)).toBeInTheDocument();
+    expect(await screen.findByText(/Export as/)).toBeInTheDocument();
     expect(
       screen.queryByText(/Prefer Web Serial or NeonPlug for your DM-32/),
     ).not.toBeInTheDocument();

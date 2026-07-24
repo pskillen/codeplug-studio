@@ -1,9 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import {
-  OPENGD77_SECTOR,
-  OPENUV380_FLASH_SPANS,
-  OPENUV380_IMAGE_SIZE,
-} from './constants.ts';
+import { OPENGD77_SECTOR, OPENUV380_FLASH_SPANS, OPENUV380_IMAGE_SIZE } from './constants.ts';
 import {
   collectDirtySectors,
   createOpenUv380Image,

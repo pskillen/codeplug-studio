@@ -37,7 +37,7 @@
 ## Next
 
 1. Wire firmware gating [#619](https://github.com/pskillen/codeplug-studio/issues/619) when catalog [#613](https://github.com/pskillen/codeplug-studio/issues/613) is ready (more important for DM-32UV than Mini).
-2. OpenGD77 adapters (kit codec ready): [#624](https://github.com/pskillen/codeplug-studio/issues/624) (DM-1701) · [#625](https://github.com/pskillen/codeplug-studio/issues/625) (MD-9600).
+2. OpenGD77 adapters: [#624](https://github.com/pskillen/codeplug-studio/issues/624) (DM-1701 — **shipped**) · [#625](https://github.com/pskillen/codeplug-studio/issues/625) (MD-9600).
 3. RT95 PROGRAM→QX kit codec [#641](https://github.com/pskillen/codeplug-studio/issues/641) → adapter [#643](https://github.com/pskillen/codeplug-studio/issues/643) (epic [#640](https://github.com/pskillen/codeplug-studio/issues/640); docs [#642](https://github.com/pskillen/codeplug-studio/issues/642) shipped).
 4. Anytone DMR kit codec [#646](https://github.com/pskillen/codeplug-studio/issues/646) → D890 adapter [#649](https://github.com/pskillen/codeplug-studio/issues/649) (epic [#645](https://github.com/pskillen/codeplug-studio/issues/645); docs [#647](https://github.com/pskillen/codeplug-studio/issues/647) shipped).
 

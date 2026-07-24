@@ -5,15 +5,15 @@
 
 ## Status
 
-| Slice | State |
-| --- | --- |
-| 1 Memory + channel codec | Done |
-| 2 Organisation codecs + hydration | Done |
-| 3 Serial protocol | Done |
-| 4 Descriptor / registry / profile | Done |
-| 5 Write projection | Done |
-| 6 Radio image UI | Done |
-| 7 Documentation | Pending |
+| Slice                             | State |
+| --------------------------------- | ----- |
+| 1 Memory + channel codec          | Done  |
+| 2 Organisation codecs + hydration | Done  |
+| 3 Serial protocol                 | Done  |
+| 4 Descriptor / registry / profile | Done  |
+| 5 Write projection                | Done  |
+| 6 Radio image UI                  | Done  |
+| 7 Documentation                   | Done  |
 
 ## Shipped this branch
 
@@ -23,6 +23,7 @@
 - DM-1701 descriptor, registry, `radio-io-opengd77-1701` profile, catalog Web Serial egress
 - `buildRadioWriteProjection` OpenGD77 branch (contacts/RX/zones + scan/forbid stamps) + prepare-write tests
 - Radio image clone summary / retain preview + BuildRadioImageSettingsPage OpenGD77 sections
+- Hub / outstanding / adding-a-radio-adapter / dm-1701 README updates
 
 ## Related
 

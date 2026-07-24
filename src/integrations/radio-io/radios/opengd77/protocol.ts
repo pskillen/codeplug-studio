@@ -16,7 +16,6 @@ import {
   OPENGD77_BLOCK,
   OPENGD77_CMD_OK,
   OPENGD77_SECTOR,
-  OPENGD77_TYPE_WRITE_UV380,
   OPENGD77_WRITE_CMD_FINISH_SECTOR,
   OPENGD77_WRITE_CMD_SECTOR_BUFFER,
   OPENGD77_WRITE_CMD_SET_SECTOR,
@@ -39,7 +38,6 @@ import {
   OPENGD77_MEM_FLASH,
   OPENGD77_WRITE_VARIANT,
   OPENUV380_FLASH_SPANS,
-  OPENUV380_IMAGE_BASE,
 } from './constants.ts';
 import {
   countOccupiedChannels,
@@ -152,9 +150,7 @@ async function writeFlashSector(
   for (let off = 0; off < OPENGD77_SECTOR; off += OPENGD77_BLOCK) {
     throwIfAborted(signal);
     const chunk = payload.subarray(off, off + OPENGD77_BLOCK);
-    await pipe.write(
-      makeWriteSectorBufferFrame(OPENGD77_WRITE_VARIANT, sectorAbs + off, chunk),
-    );
+    await pipe.write(makeWriteSectorBufferFrame(OPENGD77_WRITE_VARIANT, sectorAbs + off, chunk));
     parseWriteAck(
       await pipe.readExact(2, OPENGD77_IO_TIMEOUT_MS),
       OPENGD77_WRITE_VARIANT,
@@ -255,10 +251,7 @@ export class OpenGd77Protocol implements CloneImageRadio {
     this.pipe = null;
   }
 
-  async download(opts: {
-    onProgress?: ProgressFn;
-    signal?: AbortSignal;
-  }): Promise<MemoryMap> {
+  async download(opts: { onProgress?: ProgressFn; signal?: AbortSignal }): Promise<MemoryMap> {
     const pipe = this.pipe;
     if (!pipe) throw new RadioProtocolError('OpenGD77 download: not connected');
 

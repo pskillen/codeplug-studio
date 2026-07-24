@@ -46,9 +46,7 @@ export interface RadioIoOpenGd771701Profile {
 }
 
 export type RadioIoRadioProfile =
-  | RadioIoUv5rMiniProfile
-  | RadioIoDm32uvProfile
-  | RadioIoOpenGd771701Profile;
+  RadioIoUv5rMiniProfile | RadioIoDm32uvProfile | RadioIoOpenGd771701Profile;
 
 export function isRadioIoDm32uvProfile(
   profile: RadioIoRadioProfile,

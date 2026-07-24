@@ -2,7 +2,7 @@
  * Baofeng DM-1701 / RT-84 OpenGD77 radio descriptor.
  */
 
-import type { RadioDescriptor } from '../../types.ts';
+import type { RadioDescriptor, RadioHydrationHooks } from '../../../types.ts';
 import { OPENGD77_BAUD_RATE, OPENGD77_CHANNEL_SLOTS } from '../constants.ts';
 import {
   extractOpenGd77Hydration,
@@ -14,14 +14,29 @@ import { createOpenGd77Dm1701Protocol, OpenGd77Protocol } from '../protocol.ts';
 
 export { OPENGD77_DM1701_MODEL_ID };
 
+const hydration: RadioHydrationHooks = {
+  extractHydration: (image, meta) => {
+    const proto = meta?.protocol;
+    const firmware =
+      proto instanceof OpenGd77Protocol
+        ? (proto.getFirmwareInfo()?.fwRevision ?? undefined)
+        : undefined;
+    return extractOpenGd77Hydration(image, {
+      sourceFileName: meta?.sourceFileName,
+      capturedAt: meta?.capturedAt,
+      firmware,
+    });
+  },
+  mergeChannelsIntoHydration: mergeChannelsIntoOpenGd77Hydration,
+  seedProtocolForUpload: (protocol, bag) => {
+    if (protocol instanceof OpenGd77Protocol) {
+      protocol.seedPriorImage(memoryMapFromOpenGd77Hydration(bag));
+    }
+  },
+};
+
 export const OPENGD77_DM1701_DESCRIPTOR: RadioDescriptor = {
-  modelIds: [
-    OPENGD77_DM1701_MODEL_ID,
-    'DM-1701',
-    'RT-84',
-    'Baofeng DM-1701',
-    'Retevis RT-84',
-  ],
+  modelIds: [OPENGD77_DM1701_MODEL_ID, 'DM-1701', 'RT-84', 'Baofeng DM-1701', 'Retevis RT-84'],
   label: 'Baofeng DM-1701 / RT-84 (OpenGD77)',
   group: 'Baofeng',
   supportsBle: false,
@@ -39,24 +54,5 @@ export const OPENGD77_DM1701_DESCRIPTOR: RadioDescriptor = {
   writeStrategy: 'full-image',
   hydrationRequiredForWrite: true,
   baudRate: OPENGD77_BAUD_RATE,
-  hydration: {
-    extractHydration: (image, meta) => {
-      const proto = meta?.protocol;
-      const firmware =
-        proto instanceof OpenGd77Protocol
-          ? (proto.getFirmwareInfo()?.fwRevision ?? undefined)
-          : undefined;
-      return extractOpenGd77Hydration(image, {
-        sourceFileName: meta?.sourceFileName,
-        capturedAt: meta?.capturedAt,
-        firmware,
-      });
-    },
-    mergeChannelsIntoHydration: mergeChannelsIntoOpenGd77Hydration,
-    seedProtocolForUpload: (protocol, bag) => {
-      if (protocol instanceof OpenGd77Protocol) {
-        protocol.seedPriorImage(memoryMapFromOpenGd77Hydration(bag));
-      }
-    },
-  },
+  hydration,
 };

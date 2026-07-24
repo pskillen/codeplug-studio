@@ -753,12 +753,7 @@ export function buildRadioWriteProjection(
       aprs: radioAprsFromNeonplugPatch(assembled, numbersBySourceChannelId, warnings),
     };
   } else if (egress.profileId === 'radio-io-opengd77-1701') {
-    channels = stampOpenGd77ChannelBehaviour(
-      dtos,
-      assembled,
-      build,
-      numbersBySourceChannelId,
-    );
+    channels = stampOpenGd77ChannelBehaviour(dtos, assembled, build, numbersBySourceChannelId);
     organisation = {
       zones: buildOpenGd77Zones(assembled, egress, numbersBySourceChannelId, warnings),
       talkGroups,

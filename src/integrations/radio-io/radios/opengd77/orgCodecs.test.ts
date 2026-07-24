@@ -12,10 +12,7 @@ import {
 import { encodeZonesIntoImage, decodeZonesFromImage } from './zoneCodec.ts';
 import { encodeRxGroupsIntoImage, decodeRxGroupsFromImage } from './rxGroupCodec.ts';
 import { createOpenUv380Image } from './memory.ts';
-import {
-  extractOpenGd77Hydration,
-  mergeChannelsIntoOpenGd77Hydration,
-} from './hydration.ts';
+import { extractOpenGd77Hydration, mergeChannelsIntoOpenGd77Hydration } from './hydration.ts';
 import type { RadioChannelDto } from '../../radioChannelDto.ts';
 
 describe('opengd77 contactCodec', () => {

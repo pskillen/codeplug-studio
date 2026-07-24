@@ -5,10 +5,7 @@
  */
 
 import type { MemoryMap } from '../../types.ts';
-import type {
-  RadioDigitalContactDto,
-  RadioTalkGroupDto,
-} from '../../radioWriteProjection.ts';
+import type { RadioDigitalContactDto, RadioTalkGroupDto } from '../../radioWriteProjection.ts';
 import {
   OPENGD77_CONTACT_COUNT,
   OPENGD77_CONTACT_NAME_LEN,
@@ -51,8 +48,7 @@ function decodeName(raw: Uint8Array): string {
 /** BCD8 big-endian (qdmr getBCD8_be / setBCD8_be). */
 export function decodeBcd8Be(bytes: Uint8Array): number {
   if (bytes.length < 4) return 0;
-  const val =
-    ((bytes[0]! << 24) | (bytes[1]! << 16) | (bytes[2]! << 8) | bytes[3]!) >>> 0;
+  const val = ((bytes[0]! << 24) | (bytes[1]! << 16) | (bytes[2]! << 8) | bytes[3]!) >>> 0;
   return (
     (val & 0xf) +
     ((val >> 4) & 0xf) * 10 +
@@ -163,14 +159,15 @@ export function encodeContactsIntoImage(
 }
 
 export function decodeContactsFromImage(image: MemoryMap): OpenGd77ContactDto[] {
-  const bank = readAbs(image, OPENUV380_OFFSET.contacts, OPENGD77_CONTACT_COUNT * OPENGD77_CONTACT_SIZE);
+  const bank = readAbs(
+    image,
+    OPENUV380_OFFSET.contacts,
+    OPENGD77_CONTACT_COUNT * OPENGD77_CONTACT_SIZE,
+  );
   const out: OpenGd77ContactDto[] = [];
   for (let i = 0; i < OPENGD77_CONTACT_COUNT; i++) {
     const off = i * OPENGD77_CONTACT_SIZE;
-    const decoded = decodeContactRecord(
-      bank.subarray(off, off + OPENGD77_CONTACT_SIZE),
-      i + 1,
-    );
+    const decoded = decodeContactRecord(bank.subarray(off, off + OPENGD77_CONTACT_SIZE), i + 1);
     if (decoded) out.push(decoded);
   }
   return out;

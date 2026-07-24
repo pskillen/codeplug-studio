@@ -17,11 +17,7 @@ import {
   encodeContactsIntoImage,
   mergeOrganisationContacts,
 } from './contactCodec.ts';
-import {
-  createOpenUv380Image,
-  openUv380ImageFromBytes,
-  openUv380ImageToBytes,
-} from './memory.ts';
+import { createOpenUv380Image, openUv380ImageFromBytes, openUv380ImageToBytes } from './memory.ts';
 import { encodeRxGroupsIntoImage } from './rxGroupCodec.ts';
 import { encodeZonesIntoImage } from './zoneCodec.ts';
 

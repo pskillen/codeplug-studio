@@ -5,7 +5,7 @@ Items discovered or deferred while planning Milestone 2. File-format CSV work st
 ## Open
 
 - [ ] Gate direct-write on firmware catalog — [#619](https://github.com/pskillen/codeplug-studio/issues/619) (depends on [#613](https://github.com/pskillen/codeplug-studio/issues/613))
-- [ ] Baofeng DM-1701 / RT-84 OpenGD77 adapter — [#624](https://github.com/pskillen/codeplug-studio/issues/624) (depends on [#623](https://github.com/pskillen/codeplug-studio/issues/623) docs + [#631](https://github.com/pskillen/codeplug-studio/issues/631) serial kit)
+- [x] Baofeng DM-1701 / RT-84 OpenGD77 adapter — [#624](https://github.com/pskillen/codeplug-studio/issues/624) (depends on [#623](https://github.com/pskillen/codeplug-studio/issues/623) docs + [#631](https://github.com/pskillen/codeplug-studio/issues/631) serial kit)
 - [ ] TYT MD-9600 / RT-90 OpenGD77 adapter — [#625](https://github.com/pskillen/codeplug-studio/issues/625) (depends on [#623](https://github.com/pskillen/codeplug-studio/issues/623) docs + [#631](https://github.com/pskillen/codeplug-studio/issues/631) serial kit)
 - [x] DM-32UV Web Serial adapter — [#638](https://github.com/pskillen/codeplug-studio/issues/638) (depends on [#637](https://github.com/pskillen/codeplug-studio/issues/637) docs + [#630](https://github.com/pskillen/codeplug-studio/issues/630) V-probe; parent epic [#636](https://github.com/pskillen/codeplug-studio/issues/636))
 - [x] DM-32UV full modelled Write encode — [#667](https://github.com/pskillen/codeplug-studio/issues/667) (zones, scan, TGs, RX, digital contacts, APRS; analog contacts remain a known gap — file egress)

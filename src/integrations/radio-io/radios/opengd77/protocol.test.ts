@@ -14,11 +14,7 @@ import {
 import { encodeChannelsIntoImage } from './channelCodec.ts';
 import { OPENUV380_FLASH_SPANS, OPENUV380_OFFSET } from './constants.ts';
 import { createOpenUv380Image, readAbs } from './memory.ts';
-import {
-  OPENGD77_FIRMWARE_INFO_SIZE,
-  OpenGd77Protocol,
-  parseFirmwareInfo,
-} from './protocol.ts';
+import { OPENGD77_FIRMWARE_INFO_SIZE, OpenGd77Protocol, parseFirmwareInfo } from './protocol.ts';
 
 function putU32Le(buf: Uint8Array, offset: number, value: number): void {
   buf[offset] = value & 0xff;
@@ -38,8 +34,8 @@ function makeFirmwareInfoPayload(radioType = 0x08): Uint8Array {
   return payload;
 }
 
-function enqueue(buf: Uint8Array, chunks: Uint8Array[]): Uint8Array {
-  let next = buf;
+function enqueue(buf: Uint8Array, chunks: readonly Uint8Array[]): Uint8Array {
+  let next = new Uint8Array(buf);
   for (const chunk of chunks) {
     const merged = new Uint8Array(next.length + chunk.length);
     merged.set(next);
@@ -52,7 +48,7 @@ function enqueue(buf: Uint8Array, chunks: Uint8Array[]): Uint8Array {
 /** Scripted OpenGD77 BytePipe for connect / download / upload. */
 class OpenGd77ScriptedPipe implements BytePipe {
   readonly writes: Uint8Array[] = [];
-  private readBuf = new Uint8Array(0);
+  private readBuf: Uint8Array = new Uint8Array(0);
   private flash = new Map<number, number>();
 
   constructor(private readonly radioType = 0x08) {
@@ -98,8 +94,7 @@ class OpenGd77ScriptedPipe implements BytePipe {
     }
     if (data[0] === OPENGD77_TYPE_READ) {
       const mem = data[1]!;
-      const addr =
-        ((data[2]! << 24) | (data[3]! << 16) | (data[4]! << 8) | data[5]!) >>> 0;
+      const addr = ((data[2]! << 24) | (data[3]! << 16) | (data[4]! << 8) | data[5]!) >>> 0;
       const length = ((data[6]! << 8) | data[7]!) >>> 0;
       if (mem === 0x09) {
         this.enqueueReadReply(makeFirmwareInfoPayload(this.radioType));
@@ -122,8 +117,7 @@ class OpenGd77ScriptedPipe implements BytePipe {
         return;
       }
       if (cmd === OPENGD77_WRITE_CMD_SECTOR_BUFFER) {
-        const addr =
-          ((data[2]! << 24) | (data[3]! << 16) | (data[4]! << 8) | data[5]!) >>> 0;
+        const addr = ((data[2]! << 24) | (data[3]! << 16) | (data[4]! << 8) | data[5]!) >>> 0;
         const length = ((data[6]! << 8) | data[7]!) >>> 0;
         for (let i = 0; i < length; i++) {
           this.flash.set(addr + i, data[8 + i]!);

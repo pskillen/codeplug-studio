@@ -16,9 +16,7 @@ import { settingsRetainPreview } from './retainPreview.ts';
 describe('summariseOpenGd77Clone', () => {
   it('summarises occupied channels, zones, contacts, and write gaps', () => {
     const image = createOpenUv380Image();
-    encodeContactsIntoImage(image, [
-      { index: 1, wireName: 'TG91', digitalId: 91, callType: 0 },
-    ]);
+    encodeContactsIntoImage(image, [{ index: 1, wireName: 'TG91', digitalId: 91, callType: 0 }]);
     encodeChannelsIntoImage(image, [
       {
         slotIndex: 1,

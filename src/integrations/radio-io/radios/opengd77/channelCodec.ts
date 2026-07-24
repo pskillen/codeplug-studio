@@ -78,10 +78,7 @@ export function decodeSelectiveCall(code: number): RadioTone {
   const inverted = ((code >> 14) & 1) === 1;
   const bcd = code & 0x3fff;
   const value =
-    1000 * ((bcd >> 12) & 0xf) +
-    100 * ((bcd >> 8) & 0xf) +
-    10 * ((bcd >> 4) & 0xf) +
-    (bcd & 0xf);
+    1000 * ((bcd >> 12) & 0xf) + 100 * ((bcd >> 8) & 0xf) + 10 * ((bcd >> 4) & 0xf) + (bcd & 0xf);
   if (!dcs) {
     if (value === 0) return { kind: 'none' };
     return { kind: 'ctcss', hz: value / 10 };
@@ -91,16 +88,9 @@ export function decodeSelectiveCall(code: number): RadioTone {
 
 export function encodeSelectiveCall(tone: RadioTone | null | undefined): number {
   if (!tone || tone.kind === 'none') return 0xffff;
-  let dcs = 0;
-  let inverted = 0;
-  let toneCode = 0;
-  if (tone.kind === 'dcs') {
-    dcs = 1;
-    inverted = tone.polarity === 'I' ? 1 : 0;
-    toneCode = tone.code;
-  } else {
-    toneCode = Math.round(tone.hz * 10);
-  }
+  const dcs = tone.kind === 'dcs' ? 1 : 0;
+  const inverted = tone.kind === 'dcs' && tone.polarity === 'I' ? 1 : 0;
+  const toneCode = tone.kind === 'dcs' ? tone.code : Math.round(tone.hz * 10);
   const bcd =
     (((Math.floor(toneCode / 1000) % 10) << 12) |
       ((Math.floor(toneCode / 100) % 10) << 8) |
@@ -112,16 +102,16 @@ export function encodeSelectiveCall(tone: RadioTone | null | undefined): number 
 
 export function powerPercentToWire(percent: number | null): number {
   if (percent == null) return 0;
-  let best = OPENGD77_1701_POWER_STEPS[0]!;
-  let bestDist = Math.abs(percent - best.percent);
+  let bestWire: number = OPENGD77_1701_POWER_STEPS[0]!.wire;
+  let bestDist = Math.abs(percent - OPENGD77_1701_POWER_STEPS[0]!.percent);
   for (const step of OPENGD77_1701_POWER_STEPS) {
     const dist = Math.abs(percent - step.percent);
     if (dist < bestDist) {
-      best = step;
+      bestWire = step.wire;
       bestDist = dist;
     }
   }
-  return best.wire;
+  return bestWire;
 }
 
 export function powerWireToPercent(wire: number): number | null {
@@ -239,8 +229,7 @@ export function encodeChannelRecord(dto: RadioChannelDto): Uint8Array {
   setU16Le(out, 0x22, encodeSelectiveCall(dto.txTone));
   out[0x26] = 0; // flags — simplex etc. not modelled
   // dmrId @ 0x27 left 0
-  out[0x2b] =
-    dto.rxGroupIndex != null && dto.rxGroupIndex >= 0 ? (dto.rxGroupIndex + 1) & 0xff : 0;
+  out[0x2b] = dto.rxGroupIndex != null && dto.rxGroupIndex >= 0 ? (dto.rxGroupIndex + 1) & 0xff : 0;
   out[0x2c] = (dto.colorCode ?? 0) & 0xff;
   out[0x2d] = 0; // aprsIndex clear
   setU16Le(out, 0x2e, dto.txContactId != null && dto.txContactId > 0 ? dto.txContactId : 0);
@@ -312,10 +301,7 @@ export function decodeChannelsFromImage(image: MemoryMap): RadioChannelDto[] {
       }
       const off = recordOffsetInBank(i);
       channels.push(
-        decodeChannelRecord(
-          bankBytes.subarray(off, off + OPENGD77_CHANNEL_RECORD_SIZE),
-          slotIndex,
-        ),
+        decodeChannelRecord(bankBytes.subarray(off, off + OPENGD77_CHANNEL_RECORD_SIZE), slotIndex),
       );
     }
   }

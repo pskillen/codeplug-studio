@@ -3,11 +3,7 @@
  * Cite: docs/reference/radios/opengd77/settings-aprs.md
  */
 
-import {
-  OPENGD77_SETTINGS_SIZE,
-  OPENGD77_VFO_SIZE,
-  OPENUV380_OFFSET,
-} from './constants.ts';
+import { OPENGD77_SETTINGS_SIZE, OPENGD77_VFO_SIZE, OPENUV380_OFFSET } from './constants.ts';
 import { decodeChannelRecord } from './channelCodec.ts';
 import { readAbs } from './memory.ts';
 import type { MemoryMap } from '../../types.ts';
