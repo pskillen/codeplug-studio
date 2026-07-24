@@ -70,6 +70,8 @@ interface ProgressUpdate {
   cur: number;
   max: number;
   msg: string;
+  /** Optional checklist label (e.g. "Channels") — UI may accumulate as transfer steps. */
+  stage?: string;
 }
 
 type ProgressFn = (p: ProgressUpdate) => void;

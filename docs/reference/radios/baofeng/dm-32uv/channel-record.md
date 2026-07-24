@@ -8,15 +8,15 @@ Cite: NeonPlug `structures.ts` (`parseChannel` / `encodeChannel`), `protocol.ts`
 
 ## Geometry
 
-| Fact              | Value                                                                |
-| ----------------- | -------------------------------------------------------------------- |
-| Record size       | **48** bytes                                                         |
-| Max channels      | **4000** ([limits.md](limits.md))                                    |
-| First block       | Metadata `0x12`; **16-byte header**; channels from `0x10`; **84** ch |
-| Later blocks      | No header; channels from `0x00`; **85** ch                           |
-| Count field       | First block `0x00`–`0x01` u16 LE                                     |
-| Empty / init fill | Encode path fills `0xFF` before writing fields                       |
-| Name length       | 16 ASCII (null-terminated)                                           |
+| Fact              | Value                                                                                                                                                                                                                                   |
+| ----------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Record size       | **48** bytes                                                                                                                                                                                                                            |
+| Max channels      | **4000** ([limits.md](limits.md))                                                                                                                                                                                                       |
+| First block       | Metadata `0x12`; **16-byte header**; channels from `0x10`; **84** ch                                                                                                                                                                    |
+| Later blocks      | No header; channels from `0x00`; **85** ch                                                                                                                                                                                              |
+| Count field       | First block `0x00`–`0x01` u16 LE                                                                                                                                                                                                        |
+| Empty / init fill | Encode path fills `0xFF` before writing fields; **Write** clears unused slots to `0xFF` and encodes every byte of occupied records from projection + NeonPlug defaults ([#685](https://github.com/pskillen/codeplug-studio/issues/685)) |
+| Name length       | 16 ASCII (null-terminated)                                                                                                                                                                                                              |
 
 Last channel offset in first block: `0x10 + 83×48 = 0xFA0`.
 
@@ -63,6 +63,15 @@ Last channel offset in first block: `0x10 + 83×48 = 0xFA0`.
 | `1`   | Medium  |
 | `2`   | High    |
 
+### Forbid TX (`0x18` bit 3) and aviation TX frequency
+
+| Condition                          | Wire behaviour                                                         |
+| ---------------------------------- | ---------------------------------------------------------------------- |
+| `rxOnly` / forbid TX set           | Bit 3 set on `0x18`                                                    |
+| RX in **87–136 MHz** and forbid TX | TX frequency bytes `0x14`–`0x17` = `0xFF` (NeonPlug receive-only band) |
+
+Library `forbidTransmit` maps to `rxOnly` on the Web Serial write path (parity with OpenGD77 / UV-5R Mini).
+
 Internal % mapping for file adapters: [power.md](power.md).
 
 ### Bandwidth (`0x19` bit 7)
@@ -71,6 +80,10 @@ Internal % mapping for file adapters: [power.md](power.md).
 | --- | ----------------- |
 | `0` | 12.5 kHz (narrow) |
 | `1` | 25 kHz (wide)     |
+
+### Unmodelled fields at Write
+
+Studio does not expose encryption, lone-worker, emergency-system, or PTT/signaling CRUD. On Web Serial Write, unmodelled offsets encode to **NeonPlug `createDefaultChannel` / `encodeChannel` defaults** (e.g. squelch level 3 at `0x1C` bits 7–4, encryption id `0` at `0x2A`, DMR radio-ID index `0xFF` at `0x2B`, `0x1E` left `0xFF`). Re-Read of replaced channel regions must not show prior-radio-only values in those bytes.
 
 ## TX contact indirection (talk group)
 

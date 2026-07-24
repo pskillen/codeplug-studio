@@ -109,7 +109,7 @@ Observed non-ACK codes (NeonPlug comments): `0xC0`, `0xC8`, `0x48` — treat as 
 3. Enter PROGRAM mode.
 4. Discover blocks by reading metadata at each `addr + 0xFFF` in the config range.
 5. Bulk-read required 4KB blocks ([memory-layout.md](memory-layout.md)).
-6. Parse offline; write path reuses cached blocks for RMW.
+6. Parse offline; write path merges `RadioWriteProjection` into cached blocks — replaced entities are full-record encode, not in-payload RMW ([#685](https://github.com/pskillen/codeplug-studio/issues/685)).
 
 ## Boot-image side note
 

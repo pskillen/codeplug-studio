@@ -28,6 +28,17 @@ export interface Dm32ChannelDecodeContext {
 const TD = new TextDecoder('ascii', { fatal: false });
 const TE = new TextEncoder();
 
+/** NeonPlug NO_TX band: RX 87–136 MHz exclusive upper bound. */
+const NO_TX_BAND_RX_MIN_HZ = 87_000_000;
+const NO_TX_BAND_RX_MAX_HZ = 136_000_000;
+
+/** Default squelch level when not modelled (NeonPlug createDefaultChannel). */
+const DM32_DEFAULT_SQUELCH_LEVEL = 3;
+
+export function isRxInNoTxBand(rxHz: number): boolean {
+  return rxHz >= NO_TX_BAND_RX_MIN_HZ && rxHz < NO_TX_BAND_RX_MAX_HZ;
+}
+
 /** NeonPlug BCD: freq MHz as float → Studio uses Hz integers. */
 export function decodeBcdFrequencyHz(data: Uint8Array): number {
   if (data.length < 4) return 0;
@@ -150,11 +161,13 @@ export function parseDm32ChannelRecord(data: Uint8Array, slotIndex: number): Rad
 
   const rxHz = decodeBcdFrequencyHz(data.subarray(0x10, 0x14));
   const txBytes = data.subarray(0x14, 0x18);
-  const txHz = txBytes.every((b) => b === 0xff) ? rxHz : decodeBcdFrequencyHz(txBytes);
+  const txAllFf = txBytes.every((b) => b === 0xff);
+  const txHz = txAllFf ? rxHz : decodeBcdFrequencyHz(txBytes);
 
   const modeFlags = data[0x18]!;
   const mode = modeFromWire((modeFlags >> 4) & 0x0f);
   const powerPercent = powerPercentFromWire((modeFlags >> 1) & 0x03);
+  const rxOnly = (modeFlags & 0x08) !== 0 || (isRxInNoTxBand(rxHz) && txAllFf);
 
   const scanBw = data[0x19]!;
   const bandwidth: 'FM' | 'NFM' = (scanBw & 0x80) !== 0 ? 'FM' : 'NFM';
@@ -180,22 +193,37 @@ export function parseDm32ChannelRecord(data: Uint8Array, slotIndex: number): Rad
     colorCode,
     timeslot,
     rxGroupIndex,
+    ...(rxOnly ? { rxOnly: true } : {}),
   };
 }
 
+/**
+ * Encode a full 48-byte channel record from projection fields + NeonPlug wire defaults
+ * for unmodelled offsets (emergency, encryption, PTT/signaling, DMR radio-ID index, …).
+ */
 export function encodeDm32ChannelRecord(ch: RadioChannelDto): Uint8Array {
   const data = new Uint8Array(DM32_CHANNEL_RECORD_SIZE);
   data.fill(0xff);
   if (ch.empty) return data;
 
   const name = TE.encode(ch.wireName.slice(0, 16));
-  data.fill(0, 0, 16);
   data.set(name, 0);
+  if (name.length < 16) data[name.length] = 0;
 
   data.set(encodeBcdFrequencyHz(ch.rxHz), 0x10);
-  data.set(encodeBcdFrequencyHz(ch.txHz || ch.rxHz), 0x14);
+
+  const rxOnly = ch.rxOnly === true;
+  if (isRxInNoTxBand(ch.rxHz) && rxOnly) {
+    data[0x14] = 0xff;
+    data[0x15] = 0xff;
+    data[0x16] = 0xff;
+    data[0x17] = 0xff;
+  } else {
+    data.set(encodeBcdFrequencyHz(ch.txHz || ch.rxHz), 0x14);
+  }
 
   let modeFlags = (wireFromMode(ch.mode) & 0x0f) << 4;
+  if (rxOnly) modeFlags |= 0x08;
   modeFlags |= (powerWireFromPercent(ch.powerPercent) & 0x03) << 1;
   data[0x18] = modeFlags;
 
@@ -205,23 +233,38 @@ export function encodeDm32ChannelRecord(ch: RadioChannelDto): Uint8Array {
     (((ch.scanListId ?? 0) & 0x0f) << 2);
   data[0x19] = scanBw;
 
-  // Talkaround / APRS RX (0x1A) — clear fill so APRS receive is not stuck on from 0xFF.
   let talkaroundAprs = 0x00;
   if (ch.aprsReceive) talkaroundAprs |= 0x04;
   data[0x1a] = talkaroundAprs;
 
-  // Squelch / APRS report (0x1C) — default squelch 0; APRS report from DTO.
+  data[0x1b] = 0x00;
+
   const aprsReportValue =
     ch.aprsReportMode === 'digital' ? 1 : ch.aprsReportMode === 'analog' ? 2 : 0;
-  data[0x1c] = ((0 & 0x0f) << 4) | ((aprsReportValue << 2) & 0x0c);
+  data[0x1c] = ((DM32_DEFAULT_SQUELCH_LEVEL & 0x0f) << 4) | ((aprsReportValue << 2) & 0x0c);
 
-  let digital = (ch.colorCode ?? 1) & 0x0f;
-  if (ch.timeslot === 2) digital |= 0x10;
-  data[0x1d] = digital;
-  data[0x1f] = (ch.rxGroupIndex ?? 0) & 0x3f;
+  const isDigital = isDigitalChannelMode(ch.mode);
+  if (isDigital) {
+    let digital = (ch.colorCode ?? 1) & 0x0f;
+    if (ch.timeslot === 2) digital |= 0x10;
+    data[0x1d] = digital;
+    data[0x1f] = (ch.rxGroupIndex ?? 0) & 0x3f;
+  } else {
+    data[0x1d] = 0x00;
+    data[0x1f] = 0x00;
+  }
 
   data.set(encodeTone(ch.rxTone), 0x21);
   data.set(encodeTone(ch.txTone), 0x23);
+
+  data[0x25] = 0x00;
+  data[0x26] = 0x00;
+  data[0x27] = 0x50; // step 5 kHz, signaling None
+  data[0x28] = 0x00;
+  data[0x29] = 0x00;
+  data[0x2a] = 0x00; // encryption id 0 / analog unknown2A
+  data[0x2b] = 0xff; // DMR radio ID index: none
+
   return data;
 }
 
@@ -268,6 +311,33 @@ function channelOffsetInBank(slotIndex: number): { blockIndex: number; offsetInB
   return { blockIndex, offsetInBlock: indexInBlock * DM32_CHANNEL_RECORD_SIZE };
 }
 
+function writeChannelSlot(
+  image: MemoryMap,
+  cache: Dm32ChannelDecodeContext,
+  channelBlocks: readonly { address: number; metadata: number }[],
+  slotIndex: number,
+  ch: RadioChannelDto,
+): void {
+  const { blockIndex, offsetInBlock } = channelOffsetInBank(slotIndex);
+  const block = channelBlocks[blockIndex];
+  if (!block) return;
+  const base = block.address - cache.addressBase;
+  image.set(base + offsetInBlock, encodeDm32ChannelRecord(ch));
+
+  const txContactId = ch.empty ? 0 : (ch.txContactId ?? 0);
+  const { blockMetadata, offset } = getTxContactOffset(slotIndex);
+  const tx = findBlockByMetadata(image, cache.addressBase, blockMetadata, cache.discovered);
+  if (tx) {
+    const [byte0, byte1] = encodeTxContactEntry(
+      txContactId,
+      !ch.empty && isDigitalChannelMode(ch.mode),
+    );
+    const off = tx.offset + offset;
+    image.bytes[off] = byte0;
+    image.bytes[off + 1] = byte1;
+  }
+}
+
 export function decodeChannelsFromDm32Image(
   image: MemoryMap,
   cache: Dm32ChannelDecodeContext,
@@ -311,33 +381,37 @@ export function encodeChannelsIntoDm32Image(
     .sort((a, b) => a.metadata - b.metadata);
   if (channelBlocks.length === 0) return image;
 
-  const bySlot = new Map(channels.filter((c) => !c.empty).map((c) => [c.slotIndex, c]));
-  const maxSlot = Math.max(0, ...bySlot.keys());
+  const bySlot = new Map(channels.map((c) => [c.slotIndex, c]));
+  const maxProjectedSlot = Math.max(0, ...channels.map((c) => c.slotIndex));
+  const maxActiveSlot = Math.max(0, ...channels.filter((c) => !c.empty).map((c) => c.slotIndex));
+
   const firstOff = channelBlocks[0]!.address - cache.addressBase;
-  image.bytes[firstOff] = maxSlot & 0xff;
-  image.bytes[firstOff + 1] = (maxSlot >>> 8) & 0xff;
+  const prevCount = image.bytes[firstOff]! | (image.bytes[firstOff + 1]! << 8);
+  const clearThrough = Math.min(
+    DM32_LIMITS.CHANNEL_MAX,
+    Math.max(prevCount, maxProjectedSlot, maxActiveSlot),
+  );
 
-  for (const [slot, ch] of bySlot) {
-    const { blockIndex, offsetInBlock } = channelOffsetInBank(slot);
-    const block = channelBlocks[blockIndex];
-    if (!block) continue;
-    const base = block.address - cache.addressBase;
-    image.set(base + offsetInBlock, encodeDm32ChannelRecord(ch));
+  image.bytes[firstOff] = maxActiveSlot & 0xff;
+  image.bytes[firstOff + 1] = (maxActiveSlot >>> 8) & 0xff;
 
-    // TX contact (12-bit nibble split + digital flag — NeonPlug encodeTxContactEntry)
-    if (ch.txContactId != null && ch.txContactId > 0) {
-      const { blockMetadata, offset } = getTxContactOffset(slot);
-      const tx = findBlockByMetadata(image, cache.addressBase, blockMetadata, cache.discovered);
-      if (tx) {
-        const [byte0, byte1] = encodeTxContactEntry(ch.txContactId, isDigitalChannelMode(ch.mode));
-        const off = tx.offset + offset;
-        image.bytes[off] = byte0;
-        image.bytes[off + 1] = byte1;
-      }
-    }
+  for (let slot = 1; slot <= clearThrough; slot++) {
+    const ch =
+      bySlot.get(slot) ??
+      ({
+        slotIndex: slot,
+        empty: true,
+        wireName: '',
+        rxHz: 0,
+        txHz: 0,
+        rxTone: { kind: 'none' },
+        txTone: { kind: 'none' },
+        powerPercent: null,
+        bandwidth: 'NFM',
+      } satisfies RadioChannelDto);
+    writeChannelSlot(image, cache, channelBlocks, slot, ch);
   }
 
-  // Preserve metadata bytes on channel blocks
   for (const block of channelBlocks) {
     const off = block.address - cache.addressBase + DM32_METADATA_OFFSET;
     if (off >= 0 && off < image.size) {

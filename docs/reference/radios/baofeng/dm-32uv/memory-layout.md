@@ -25,7 +25,17 @@ Many metadata prefixes line up (same 4 KB quantum), but **payloads differ** — 
 
 **Ground truth for Studio Write:** NeonPlug serial map and the tables on this page — **not** qDMR virtual offset tables. qDMR remains useful for record-layout cross-checks where structures agree.
 
-## Transfer sizes
+## Sparse absolute addresses are not stable across factory reset
+
+After a **factory reset** (or a full CPS rewrite), the radio can place ZONE / VFO / channel banks at **different absolute addresses** while keeping the same metadata tags. Studio Write is **selective-range**: it uploads only the addresses stored in the last Read hydration.
+
+| Hydration (example, pre-reset) | Live radio (post-reset) | Effect of Write with stale bag                                                        |
+| ------------------------------ | ----------------------- | ------------------------------------------------------------------------------------- |
+| ZONE at `0x77000`              | ZONE at `0x6b000`       | User zones written to orphan address; live bank stays factory `Zone-Ana` / `Zone-Dig` |
+| VFO at `0x86000`               | VFO at `0x63000`        | Startup text / key settings never update on the live settings block                   |
+| SCAN at `0x62000`              | SCAN at `0x62000`       | Scan lists may still land (address unchanged)                                         |
+
+**Operator rule:** after factory reset, **Read on this egress first**, then Write. Studio now verifies metadata tags at seeded addresses before Write and refuses with an explicit error when the map has moved.
 
 | Constant        | Value          | Role                                               |
 | --------------- | -------------- | -------------------------------------------------- |
@@ -110,6 +120,15 @@ Contacts for the **address-book** bank are **not** in this config-range bulk set
 | Subsequent     | No header; channels from `0x00`                          | **85**           |
 
 Last channel in first block: `0x10 + 83×48 = 0xFA0`. Details: [channel-record.md](channel-record.md).
+
+## Write contract (Web Serial)
+
+| Category     | Strategy                                                                                                                                                                                                               |
+| ------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Replaced** | Channels (+ TX-contact banks `0x42`/`0x43`), zones, scan lists, talk groups (`0x44` + counter `0x06` + quick-access `0x0B`), RX groups (`0x0F`), digital contacts (V-frame `0x0F` bank), APRS settings slice in `0x04` |
+| **Kept**     | Radio settings (`0x04` outside APRS slice), analog/digital emergencies, encryption keys, calibration, quick messages, operator DMR radio IDs (`0x67`), VFO A/B bank when not a channel bank                            |
+
+Replaced entities encode **full records** from `RadioWriteProjection` plus NeonPlug defaults for unmodelled bytes; unused list/slot entries are explicit empty/sentinel fill ([#685](https://github.com/pskillen/codeplug-studio/issues/685)). Manifest: `dm32WriteRole` in `writeRole.ts`.
 
 ## Verification
 

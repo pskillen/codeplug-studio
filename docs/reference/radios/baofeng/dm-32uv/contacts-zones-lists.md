@@ -15,10 +15,13 @@ Separate from config-range metadata `0x0F` (RX groups).
 | Fact           | Value                                             |
 | -------------- | ------------------------------------------------- |
 | Range source   | V-frame `0x0F` (start/end + capacity heuristics)  |
+| Capacity hint  | V-frame `0x10` (u32 max) or firmware L01 fallback |
 | Entry size     | **`0x5C` (92)** bytes                             |
 | First block    | 16-byte header; entries from `0x10`; ~44 contacts |
 | Later blocks   | Entries from `0x00`; 44 per 4KB                   |
 | Empty sentinel | Name byte `0x00` or `0xFF`                        |
+
+**Read (Web Serial):** clone download **skips** the digital address-book bank — it is not needed for the hydration stash (channels / zones / scan / TG / RX / settings). Connect still records V-frame `0x0F`/`0x10` range metadata. A count-based fold helper remains on the protocol (`foldContactBankIntoDownloadCache`) for a future contacts Read; do **not** walk V-frame start→end (L01 end near `0xFFF000` caused ~3464-block runaways).
 
 | World                  | Contact storage                             | Record size                       |
 | ---------------------- | ------------------------------------------- | --------------------------------- |
@@ -39,7 +42,7 @@ Studio Web Serial encodes the **serial** address book only.
 | `0x3C`–`0x4B` | Country  | 16 ASCII |
 | `0x4C`–`0x5B` | Remark   | 16 ASCII |
 
-**Studio Web Serial (#667):** digital address-book entries are rewritten from the build on Write. Analog / DTMF contacts are **not** encoded — they stay as on the radio; use CPS / NeonPlug file egress to change them.
+**Studio Web Serial (#667, #685):** digital address-book **encode** remains for when contact blocks are present in the map; clone **Read does not pull** that bank into hydration, so selective-range Write will not upload address-book blocks until a contacts Read (or allocate-on-write) is wired. When packing, entry slots in the packed blocks (and in a **trusted small** V-frame span ≤ `CONTACT_BANK_MAX_BLOCKS`) clear to `0xFF` before packing. A huge L01 `contactsEnd` is **not** treated as a clear/read span. Analog / DTMF contacts are **not** encoded — they stay as on the radio; use CPS / NeonPlug file egress to change them.
 
 ## Talk groups — metadata `0x44` (+ counter `0x06`)
 
@@ -78,13 +81,15 @@ TX-contact indices (`0x42`/`0x43`) point into the **serial** talk-group list (`0
 
 ## Zones — metadata `0x5c`
 
-| Fact             | Value                                                     |
-| ---------------- | --------------------------------------------------------- |
-| Entry size       | **145** bytes                                             |
-| Start offset     | **16** in first block                                     |
-| Per-block approx | `(4096 − 16) / 145 ≈ 28`                                  |
-| Name             | 11 bytes ASCII                                            |
-| Members          | Count at +16; u16 LE channel numbers from +17; max **64** |
+| Fact             | Value                                                                                      |
+| ---------------- | ------------------------------------------------------------------------------------------ |
+| Entry size       | **145** bytes                                                                              |
+| Start offset     | **16** in first block                                                                      |
+| Per-block approx | `(4096 − 16) / 145 ≈ 28`                                                                   |
+| Name             | 11 bytes ASCII                                                                             |
+| Members          | Count at +16; u16 LE channel numbers from +17; max **64**; unused member bytes stay `0xFF` |
+
+**Studio Web Serial Write:** zone blocks are filled `0xFF` then rewritten from projection; shrinking the zone list clears prior zone records. Unused zone slots in each block are explicit `0xFF` empty records (byte 16 must not remain `0xFF` — firmware may treat that as 255 members). Do **not** write a `0x0000` terminator after the last zone (NeonPlug pads with `0xFF` only).
 
 ## Scan lists — metadata `0x11`
 
@@ -93,8 +98,10 @@ TX-contact indices (`0x42`/`0x43`) point into the **serial** talk-group list (`0
 | Entry size   | **57** bytes                           |
 | Count        | Byte at `0x00`                         |
 | Entry offset | `(57 × N) − 56` for list `N` (1-based) |
-| Max lists    | **32**                                 |
+| Max lists    | **32** bank / **15** channel-FK        |
 | Max members  | **15** named channels                  |
+
+**Studio Web Serial Write:** zone-derived scan lists are rewritten from projection; the block is zero-filled so shrink clears stale lists. Each exporting zone gets a `{zone} Scan` carrier channel prepended to the zone and set as designated TX. Channel-record `scanListId` is only **4 bits (1–15)** — Studio caps addressable zone-derived lists at 15 (NeonPlug parity). Shared channels keep the **first** zone’s list (not last-wins). Carriers always keep their own list id.
 
 ### 57-byte entry (summary)
 

@@ -27,6 +27,11 @@ export interface ProgressUpdate {
   cur: number;
   max: number;
   msg: string;
+  /**
+   * Checklist label for the current work set (e.g. "Channels", "Zones").
+   * UI may accumulate these as extra progress list items during transfer.
+   */
+  stage?: string;
 }
 
 export type ProgressFn = (p: ProgressUpdate) => void;

@@ -10,6 +10,7 @@ import { reportProgress, throwIfAborted } from '../../kit/progress.ts';
 import { RadioProtocolError } from '../../kit/errors.ts';
 import {
   DM32_BLOCK_SIZE,
+  DM32_CONNECTION,
   DM32_METADATA,
   DM32_MODEL_IDS,
   DM32_VFRAME,
@@ -20,6 +21,7 @@ import {
   dm32AsciiHandshake,
   dm32EnterProgrammingMode,
   dm32QueryVFrame,
+  dm32ReadMemory,
   dm32WriteMemory,
   parseConfigRangeFromV0a,
   parseFirmwareFromVFrames,
@@ -28,12 +30,22 @@ import {
 import {
   alignConfigEnd,
   bulkReadDm32Blocks,
+  classifyDm32Metadata,
   discoverDm32MemoryBlocks,
+  dm32HydrationAddressMismatches,
+  groupDm32BlocksForProgress,
   readChannelCount,
+  readDm32BlockMetadataTags,
   selectBlocksToBulkRead,
   type Dm32DiscoveredBlock,
 } from './memory.ts';
-import { parseDm32ContactsRange } from './contactCodec.ts';
+import {
+  dm32MaxContactsFromFirmware,
+  parseDm32ContactsRange,
+  parseDm32MaxContacts,
+  planDm32ContactBankBlocks,
+  readDm32ContactCountFromBlock,
+} from './contactCodec.ts';
 
 /** Max MemoryMap span when folding contact bank into config window (bytes). */
 const DM32_MAX_COMBINED_MAP_BYTES = 32 * 1024 * 1024;
@@ -49,6 +61,8 @@ export interface Dm32DownloadCache {
   /** V-frame 0x0F contact bank absolute start (when known). */
   contactsBase?: number;
   contactsEnd?: number;
+  /** Max contacts from V-frame 0x10 or firmware fallback. */
+  maxContacts?: number;
 }
 
 function blocksToMemoryMap(cache: Dm32DownloadCache): MemoryMap {
@@ -109,6 +123,7 @@ export class Dm32uvProtocol implements CloneImageRadio {
         blocks: new Map(seed.blocks),
         contactsBase: seed.contactsBase,
         contactsEnd: seed.contactsEnd,
+        maxContacts: seed.maxContacts,
       };
       return;
     }
@@ -119,6 +134,7 @@ export class Dm32uvProtocol implements CloneImageRadio {
     this.cache.blocks = new Map(seed.blocks);
     this.cache.contactsBase = seed.contactsBase;
     this.cache.contactsEnd = seed.contactsEnd;
+    this.cache.maxContacts = seed.maxContacts;
   }
 
   async connect(
@@ -154,14 +170,19 @@ export class Dm32uvProtocol implements CloneImageRadio {
     const contactsRange = parseDm32ContactsRange(
       vframes.get(DM32_VFRAME.CONTACTS) ?? new Uint8Array(),
     );
+    const firmware = parseFirmwareFromVFrames(vframes);
+    const maxContacts =
+      parseDm32MaxContacts(vframes.get(DM32_VFRAME.MAX_CONTACTS) ?? new Uint8Array()) ??
+      dm32MaxContactsFromFirmware(firmware);
 
     this.cache = {
       addressBase,
       mapSize,
-      firmware: parseFirmwareFromVFrames(vframes),
+      firmware,
       modelString,
       discovered: [],
       blocks: new Map(),
+      maxContacts,
       ...(contactsRange
         ? { contactsBase: contactsRange.start, contactsEnd: contactsRange.end }
         : {}),
@@ -190,7 +211,12 @@ export class Dm32uvProtocol implements CloneImageRadio {
 
     reportProgress(
       opts.onProgress,
-      { cur: 0, max: 100, msg: 'Discovering memory blocks' },
+      {
+        cur: 0,
+        max: 100,
+        msg: 'Discovering memory map…',
+        stage: 'Discover memory map',
+      },
       opts.signal,
     );
     const discovered = await discoverDm32MemoryBlocks(
@@ -208,46 +234,100 @@ export class Dm32uvProtocol implements CloneImageRadio {
     }
 
     const toRead = selectBlocksToBulkRead(discovered, channelCount);
-    reportProgress(
-      opts.onProgress,
-      { cur: 0, max: toRead.length || 1, msg: `Bulk-reading ${toRead.length} blocks` },
-      opts.signal,
-    );
-    this.cache.blocks = await bulkReadDm32Blocks(this.pipe, toRead, {
-      ...settle,
-      onProgress: opts.onProgress,
-    });
-
-    // Fold V-frame contact bank into sparse cache when it fits a reasonable MemoryMap window.
-    if (
-      this.cache.contactsBase != null &&
-      this.cache.contactsEnd != null &&
-      this.cache.contactsEnd > this.cache.contactsBase
-    ) {
-      const contactFirst = Math.floor(this.cache.contactsBase / DM32_BLOCK_SIZE) * DM32_BLOCK_SIZE;
-      const contactLast = Math.floor(this.cache.contactsEnd / DM32_BLOCK_SIZE) * DM32_BLOCK_SIZE;
-      const newBase = Math.min(this.cache.addressBase, contactFirst);
-      const configLast = this.cache.addressBase + this.cache.mapSize - DM32_BLOCK_SIZE;
-      const newLast = Math.max(configLast, contactLast);
-      const combinedSize = newLast - newBase + DM32_BLOCK_SIZE;
-      if (combinedSize > 0 && combinedSize <= DM32_MAX_COMBINED_MAP_BYTES) {
-        const contactBlocks: Dm32DiscoveredBlock[] = [];
-        for (let addr = contactFirst; addr <= contactLast; addr += DM32_BLOCK_SIZE) {
-          contactBlocks.push({ address: addr, metadata: 0xff, type: 'unknown' });
-        }
-        const contactData = await bulkReadDm32Blocks(this.pipe, contactBlocks, {
-          ...settle,
-          onProgress: opts.onProgress,
-        });
-        for (const [addr, data] of contactData) {
-          this.cache.blocks.set(addr, data);
-        }
-        this.cache.addressBase = newBase;
-        this.cache.mapSize = combinedSize;
+    const groups = groupDm32BlocksForProgress(toRead);
+    this.cache.blocks = new Map();
+    for (const group of groups) {
+      reportProgress(
+        opts.onProgress,
+        {
+          cur: 0,
+          max: group.blocks.length || 1,
+          msg: `Reading ${group.stage}…`,
+          stage: group.stage,
+        },
+        opts.signal,
+      );
+      const part = await bulkReadDm32Blocks(this.pipe, group.blocks, {
+        ...settle,
+        onProgress: opts.onProgress,
+        stage: group.stage,
+      });
+      for (const [addr, data] of part) {
+        this.cache.blocks.set(addr, data);
       }
     }
 
+    // Digital address-book (V-frame 0x0F) is intentionally not folded into the hydration
+    // stash — L01 ranges are huge and often empty; modelled Write does not need RMW of
+    // that bank today. Connect still records contactsBase/End/maxContacts. To pull the
+    // bank later (NeonPlug readContacts), call {@link foldContactBankIntoDownloadCache}.
+
     return blocksToMemoryMap(this.cache);
+  }
+
+  /**
+   * Future contacts Read: fold the V-frame 0x0F address book into the sparse cache by
+   * header count (never walk the full L01 end span — that caused ~3464-block runaways).
+   * Not invoked from {@link download}; kept for when hydration needs digital contacts.
+   */
+  async foldContactBankIntoDownloadCache(opts: {
+    onProgress?: ProgressFn;
+    signal?: AbortSignal;
+  }): Promise<void> {
+    if (!this.pipe || !this.cache || !this.programming) {
+      throw new RadioProtocolError('DM-32UV not connected / not in PROGRAM mode');
+    }
+    if (
+      this.cache.contactsBase == null ||
+      this.cache.contactsEnd == null ||
+      this.cache.contactsEnd <= this.cache.contactsBase
+    ) {
+      return;
+    }
+    const settle = { ...this.settle, signal: opts.signal ?? this.settle.signal };
+    const contactsBase = this.cache.contactsBase;
+    const firstBlockAddr = Math.floor(contactsBase / DM32_BLOCK_SIZE) * DM32_BLOCK_SIZE;
+    reportProgress(
+      opts.onProgress,
+      { cur: 0, max: 1, msg: 'Reading contact bank header', stage: 'Digital contacts' },
+      opts.signal,
+    );
+    const firstBlock = await dm32ReadMemory(this.pipe, firstBlockAddr, DM32_BLOCK_SIZE, settle);
+    const countFromHeader = readDm32ContactCountFromBlock(firstBlock, contactsBase, firstBlockAddr);
+    const plan = planDm32ContactBankBlocks({
+      contactsBase,
+      contactsEnd: this.cache.contactsEnd,
+      countFromHeader,
+      maxContacts: this.cache.maxContacts ?? dm32MaxContactsFromFirmware(this.cache.firmware),
+    });
+
+    const contactBlocks: Dm32DiscoveredBlock[] = plan.blockAddresses.map((address) => ({
+      address,
+      metadata: 0xff,
+      type: 'unknown' as const,
+    }));
+    const contactLast = plan.blockAddresses[plan.blockAddresses.length - 1]!;
+    const newBase = Math.min(this.cache.addressBase, firstBlockAddr);
+    const configLast = this.cache.addressBase + this.cache.mapSize - DM32_BLOCK_SIZE;
+    const newLast = Math.max(configLast, contactLast);
+    const combinedSize = newLast - newBase + DM32_BLOCK_SIZE;
+    if (combinedSize <= 0 || combinedSize > DM32_MAX_COMBINED_MAP_BYTES) {
+      return;
+    }
+    this.cache.blocks.set(firstBlockAddr, firstBlock);
+    const remaining = contactBlocks.filter((b) => b.address !== firstBlockAddr);
+    if (remaining.length > 0) {
+      const contactData = await bulkReadDm32Blocks(this.pipe, remaining, {
+        ...settle,
+        onProgress: opts.onProgress,
+        stage: 'Digital contacts',
+      });
+      for (const [addr, data] of contactData) {
+        this.cache.blocks.set(addr, data);
+      }
+    }
+    this.cache.addressBase = newBase;
+    this.cache.mapSize = combinedSize;
   }
 
   async upload(
@@ -270,22 +350,106 @@ export class Dm32uvProtocol implements CloneImageRadio {
         'DM-32UV upload has no sparse blocks — seed from a prior Read hydration before Write',
       );
     }
+
+    // Stale hydration after factory reset / CPS rewrite writes to the wrong absolute
+    // addresses (ZONE/VFO/channel banks move). Verify tags before any Write.
+    reportProgress(
+      opts.onProgress,
+      {
+        cur: 0,
+        max: addresses.length || 1,
+        msg: 'Checking radio memory map…',
+        stage: 'Verify memory map',
+      },
+      opts.signal,
+    );
+    const expected = addresses.map((address) => {
+      const known = this.cache!.discovered.find((b) => b.address === address);
+      const data = this.cache!.blocks.get(address);
+      const metadata = known?.metadata ?? data?.[DM32_BLOCK_SIZE - 1] ?? 0xff;
+      return { address, metadata };
+    });
+    const live = await readDm32BlockMetadataTags(this.pipe, addresses, {
+      ...this.settle,
+      signal: opts.signal ?? this.settle.signal,
+    });
+    const mismatches = dm32HydrationAddressMismatches(expected, live);
+    if (mismatches.length > 0) {
+      const sample = mismatches
+        .slice(0, 3)
+        .map(
+          (m) =>
+            `0x${m.address.toString(16)} expected 0x${m.expected.toString(16)}, radio has 0x${m.live.toString(16)}`,
+        )
+        .join('; ');
+      throw new RadioProtocolError(
+        `Radio memory map changed since the last Read (common after a factory reset). ${sample}. Read from the radio again on this egress, then Write.`,
+      );
+    }
+
     const blocks = memoryMapToDm32Blocks(image, this.cache.addressBase, addresses);
-    const total = addresses.length;
-    for (let i = 0; i < addresses.length; i++) {
-      throwIfAborted(opts.signal);
-      const addr = addresses[i]!;
-      const data = blocks.get(addr)!;
+    const byAddr = new Map(this.cache.discovered.map((b) => [b.address, b]));
+    const discoveredForProgress: Dm32DiscoveredBlock[] = addresses.map((address) => {
+      const known = byAddr.get(address);
+      const data = blocks.get(address) ?? this.cache!.blocks.get(address);
+      const metadata = data?.[DM32_BLOCK_SIZE - 1] ?? known?.metadata ?? 0xff;
+      const type = classifyDm32Metadata(metadata);
+      // Prefer live metadata from the image we are about to write (hydration seed may
+      // have carried type:'unknown' from older bags).
+      if (known && known.metadata === metadata && known.type === type) return known;
+      return { address, metadata, type };
+    });
+    const groups = groupDm32BlocksForProgress(discoveredForProgress);
+    const settle = { ...this.settle, signal: opts.signal ?? this.settle.signal };
+    const scale = settle.settleScale ?? 1;
+    const interBlockMs = scale <= 0 ? 0 : DM32_CONNECTION.BLOCK_READ_DELAY_MS * scale;
+
+    // Seed the progress checklist with every bank before the first write so Channels
+    // is visible even while later groups are still pending.
+    for (const group of groups) {
       reportProgress(
         opts.onProgress,
-        { cur: i + 1, max: total, msg: `Writing block ${i + 1} of ${total}` },
+        {
+          cur: 0,
+          max: group.blocks.length || 1,
+          msg: `Queued ${group.stage} (${group.blocks.length} block${group.blocks.length === 1 ? '' : 's'})`,
+          stage: group.stage,
+        },
         opts.signal,
       );
-      await dm32WriteMemory(this.pipe, addr, data, {
-        ...this.settle,
-        signal: opts.signal ?? this.settle.signal,
-      });
-      this.cache.blocks.set(addr, data);
+    }
+
+    for (const group of groups) {
+      reportProgress(
+        opts.onProgress,
+        {
+          cur: 0,
+          max: group.blocks.length || 1,
+          msg: `Writing ${group.stage}…`,
+          stage: group.stage,
+        },
+        opts.signal,
+      );
+      for (let i = 0; i < group.blocks.length; i++) {
+        throwIfAborted(opts.signal);
+        if (interBlockMs > 0) {
+          await new Promise((r) => setTimeout(r, interBlockMs));
+        }
+        const addr = group.blocks[i]!.address;
+        const data = blocks.get(addr)!;
+        reportProgress(
+          opts.onProgress,
+          {
+            cur: i + 1,
+            max: group.blocks.length,
+            msg: `Writing ${group.stage}: block ${i + 1} of ${group.blocks.length} (0x${addr.toString(16)})`,
+            stage: group.stage,
+          },
+          opts.signal,
+        );
+        await dm32WriteMemory(this.pipe, addr, data, settle);
+        this.cache.blocks.set(addr, data);
+      }
     }
   }
 

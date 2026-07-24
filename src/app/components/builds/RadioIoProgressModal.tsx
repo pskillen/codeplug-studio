@@ -1,6 +1,6 @@
 /**
  * Blocking modal for Web Serial read/write — steps, progress, keep-tab warning.
- * Presentational only; parent owns cancel and phase updates from existing ProgressFn.
+ * Presentational only; parent owns cancel / dismiss and phase updates from ProgressFn.
  */
 
 import { Alert, Button, Group, Modal, Progress, Stack, Text } from '@mantine/core';
@@ -8,46 +8,86 @@ import type { ProgressUpdate } from '@integrations/radio-io/types.ts';
 
 export type RadioIoOperation = 'read' | 'write';
 
-export type RadioIoProgressPhase = 'connecting' | 'preparing' | 'transfer' | 'saving';
+export type RadioIoProgressPhase = 'connecting' | 'preparing' | 'transfer' | 'saving' | 'done';
 
 export interface RadioIoProgressModalProps {
   opened: boolean;
   operation: RadioIoOperation;
   phase: RadioIoProgressPhase;
   progress: ProgressUpdate | null;
+  /**
+   * Transfer checklist labels accumulated from `ProgressUpdate.stage` (e.g. Channels,
+   * Zones). Shown as extra list items between connect and save/upload.
+   */
+  transferStages?: readonly string[];
   /** True when the operator tried to navigate away while busy. */
   navigationBlocked?: boolean;
+  /** Abort in-flight transfer (shown while not complete). */
   onCancel: () => void;
+  /** Dismiss after success (`phase === 'done'`). Write keeps the modal open until this. */
+  onClose?: () => void;
 }
 
 interface StepDef {
-  id: RadioIoProgressPhase;
+  id: string;
   label: string;
 }
 
-const READ_STEPS: readonly StepDef[] = [
-  { id: 'connecting', label: 'Connect and handshake' },
-  { id: 'transfer', label: 'Download clone image' },
-  { id: 'saving', label: 'Save image on this build' },
-];
+function buildSteps(
+  operation: RadioIoOperation,
+  transferStages: readonly string[],
+  phase: RadioIoProgressPhase,
+): StepDef[] {
+  if (operation === 'write') {
+    const steps: StepDef[] = [
+      { id: 'connecting', label: 'Connect and handshake' },
+      { id: 'preparing', label: 'Assemble channels into image' },
+      ...(transferStages.length > 0
+        ? transferStages.map((label) => ({ id: `stage:${label}`, label }))
+        : [{ id: 'transfer', label: 'Upload to radio' }]),
+    ];
+    if (phase === 'done') {
+      steps.push({ id: 'done', label: 'Write complete' });
+    }
+    return steps;
+  }
+  const steps: StepDef[] = [
+    { id: 'connecting', label: 'Connect and handshake' },
+    ...(transferStages.length > 0
+      ? transferStages.map((label) => ({ id: `stage:${label}`, label }))
+      : [{ id: 'transfer', label: 'Download clone image' }]),
+    { id: 'saving', label: 'Save image on this build' },
+  ];
+  if (phase === 'done') {
+    steps.push({ id: 'done', label: 'Read complete' });
+  }
+  return steps;
+}
 
-const WRITE_STEPS: readonly StepDef[] = [
-  { id: 'connecting', label: 'Connect and handshake' },
-  { id: 'preparing', label: 'Assemble channels into image' },
-  { id: 'transfer', label: 'Upload to radio' },
-];
+function activeStepId(
+  phase: RadioIoProgressPhase,
+  progress: ProgressUpdate | null,
+  transferStages: readonly string[],
+): string {
+  if (phase === 'connecting') return 'connecting';
+  if (phase === 'preparing') return 'preparing';
+  if (phase === 'saving') return 'saving';
+  if (phase === 'done') return 'done';
+  if (progress?.stage) return `stage:${progress.stage}`;
+  if (transferStages.length > 0) return `stage:${transferStages[transferStages.length - 1]}`;
+  return 'transfer';
+}
 
 function stepStatus(
-  stepId: RadioIoProgressPhase,
-  phase: RadioIoProgressPhase,
+  stepId: string,
+  activeId: string,
   steps: readonly StepDef[],
 ): 'done' | 'active' | 'pending' {
-  const order = steps.map((s) => s.id);
-  const stepIdx = order.indexOf(stepId);
-  const phaseIdx = order.indexOf(phase);
-  if (stepIdx < 0 || phaseIdx < 0) return 'pending';
-  if (stepIdx < phaseIdx) return 'done';
-  if (stepIdx === phaseIdx) return 'active';
+  const stepIdx = steps.findIndex((s) => s.id === stepId);
+  const activeIdx = steps.findIndex((s) => s.id === activeId);
+  if (stepIdx < 0 || activeIdx < 0) return 'pending';
+  if (stepIdx < activeIdx) return 'done';
+  if (stepIdx === activeIdx) return 'active';
   return 'pending';
 }
 
@@ -56,12 +96,16 @@ export default function RadioIoProgressModal({
   operation,
   phase,
   progress,
+  transferStages = [],
   navigationBlocked = false,
   onCancel,
+  onClose,
 }: RadioIoProgressModalProps) {
-  const steps = operation === 'read' ? READ_STEPS : WRITE_STEPS;
+  const steps = buildSteps(operation, transferStages, phase);
+  const activeId = activeStepId(phase, progress, transferStages);
   const title = operation === 'read' ? 'Reading from radio' : 'Writing to radio';
   const percent = progress?.max ? Math.min(100, (100 * progress.cur) / progress.max) : undefined;
+  const complete = phase === 'done';
 
   return (
     <Modal
@@ -75,12 +119,20 @@ export default function RadioIoProgressModal({
       withCloseButton={false}
     >
       <Stack gap="md">
-        <Alert color="orange" title="Keep this tab open">
-          Do not switch away, close the tab, or navigate elsewhere while the serial link is active.
-          Leaving can interrupt the transfer and leave the radio or port in a bad state.
-        </Alert>
+        {complete ? (
+          <Alert color="green" title={operation === 'write' ? 'Write finished' : 'Read finished'}>
+            {operation === 'write'
+              ? 'All selected blocks were sent. Review the checklist below, then close when ready.'
+              : 'Clone image is saved on this build. You can close this dialog.'}
+          </Alert>
+        ) : (
+          <Alert color="orange" title="Keep this tab open">
+            Do not switch away, close the tab, or navigate elsewhere while the serial link is
+            active. Leaving can interrupt the transfer and leave the radio or port in a bad state.
+          </Alert>
+        )}
 
-        {navigationBlocked ? (
+        {navigationBlocked && !complete ? (
           <Alert color="red" title="Stay on this page">
             Navigation is blocked until this transfer finishes or you cancel.
           </Alert>
@@ -88,7 +140,7 @@ export default function RadioIoProgressModal({
 
         <Stack gap={6}>
           {steps.map((step) => {
-            const status = stepStatus(step.id, phase, steps);
+            const status = stepStatus(step.id, activeId, steps);
             return (
               <Text
                 key={step.id}
@@ -103,7 +155,7 @@ export default function RadioIoProgressModal({
           })}
         </Stack>
 
-        {phase === 'transfer' ? (
+        {!complete && phase === 'transfer' ? (
           <Stack gap={4}>
             <Text size="sm">
               {progress?.msg ?? 'Transferring…'}
@@ -111,20 +163,30 @@ export default function RadioIoProgressModal({
             </Text>
             <Progress value={percent ?? 0} animated={percent == null || percent < 100} size="lg" />
           </Stack>
-        ) : (
+        ) : !complete ? (
           <Text size="sm" c="dimmed">
             {phase === 'connecting'
               ? 'Waiting for port and radio handshake…'
               : phase === 'preparing'
                 ? 'Building the image from this format build…'
-                : 'Saving hydration on the build…'}
+                : phase === 'saving'
+                  ? 'Saving hydration on the build…'
+                  : 'Transferring…'}
           </Text>
-        )}
+        ) : progress?.msg ? (
+          <Text size="sm" c="dimmed">
+            Last: {progress.msg}
+          </Text>
+        ) : null}
 
         <Group justify="flex-end">
-          <Button variant="default" color="gray" onClick={onCancel}>
-            Cancel
-          </Button>
+          {complete ? (
+            <Button onClick={() => onClose?.()}>Close</Button>
+          ) : (
+            <Button variant="default" color="gray" onClick={onCancel}>
+              Cancel
+            </Button>
+          )}
         </Group>
       </Stack>
     </Modal>

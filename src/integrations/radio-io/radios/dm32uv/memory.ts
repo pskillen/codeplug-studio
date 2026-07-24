@@ -78,7 +78,12 @@ export async function discoverDm32MemoryBlocks(
     if (index % 10 === 0 || index === blockCount) {
       reportProgress(
         opts?.onProgress,
-        { cur: index, max: blockCount, msg: `Reading metadata ${index} of ${blockCount}` },
+        {
+          cur: index,
+          max: blockCount,
+          msg: `Discovering memory map: block ${index} of ${blockCount}`,
+          stage: 'Discover memory map',
+        },
         opts?.signal,
       );
     }
@@ -148,6 +153,88 @@ export function selectBlocksToBulkRead(
   return selected;
 }
 
+export interface Dm32ReadBlockGroup {
+  /** Progress checklist label. */
+  stage: string;
+  blocks: Dm32DiscoveredBlock[];
+}
+
+/**
+ * Split selected sparse blocks into named sets for operator progress (Read or Write).
+ * Order matches typical NeonPlug interest: channels → zones → scan → TG/RX → rest.
+ */
+export function groupDm32BlocksForProgress(
+  blocks: readonly Dm32DiscoveredBlock[],
+): Dm32ReadBlockGroup[] {
+  const remaining = [...blocks];
+  const groups: Dm32ReadBlockGroup[] = [];
+
+  const take = (stage: string, pred: (b: Dm32DiscoveredBlock) => boolean): void => {
+    const matched = remaining.filter(pred);
+    if (matched.length === 0) return;
+    const addrs = new Set(matched.map((b) => b.address));
+    for (let i = remaining.length - 1; i >= 0; i--) {
+      if (addrs.has(remaining[i]!.address)) remaining.splice(i, 1);
+    }
+    groups.push({ stage, blocks: matched });
+  };
+
+  take('Channels', (b) => b.type === 'channel');
+  take('Zones', (b) => b.type === 'zone');
+  take('Scan lists', (b) => b.type === 'scan');
+  take(
+    'Talk groups',
+    (b) =>
+      b.metadata === DM32_METADATA.TALK_GROUPS || b.metadata === DM32_METADATA.CONFIG_TG_COUNTER,
+  );
+  take('RX groups', (b) => b.type === 'rxgroup');
+  take(
+    'TX contact index',
+    (b) =>
+      b.metadata === DM32_METADATA.TX_CONTACT_LOW || b.metadata === DM32_METADATA.TX_CONTACT_HIGH,
+  );
+  if (remaining.length > 0) {
+    groups.push({ stage: 'Settings & other', blocks: remaining });
+  }
+  return groups;
+}
+
+/**
+ * Compare hydration-seeded block tags to live radio metadata at the same addresses.
+ * Factory reset / CPS rewrite can move banks (e.g. ZONE 0x5c) to new absolute addresses;
+ * writing a stale sparse map then leaves the live banks untouched.
+ */
+export function dm32HydrationAddressMismatches(
+  expected: readonly { address: number; metadata: number }[],
+  liveMetadataByAddress: ReadonlyMap<number, number>,
+): { address: number; expected: number; live: number }[] {
+  const out: { address: number; expected: number; live: number }[] = [];
+  for (const b of expected) {
+    if (b.metadata === DM32_METADATA.EMPTY || b.metadata === DM32_METADATA.EMPTY_ALT) continue;
+    const live = liveMetadataByAddress.get(b.address);
+    if (live === undefined) continue;
+    if (live !== b.metadata) {
+      out.push({ address: b.address, expected: b.metadata, live });
+    }
+  }
+  return out;
+}
+
+/** Read metadata byte at each address; used before selective-range Write. */
+export async function readDm32BlockMetadataTags(
+  pipe: BytePipe,
+  addresses: readonly number[],
+  opts?: Dm32SettleOptions,
+): Promise<Map<number, number>> {
+  const out = new Map<number, number>();
+  for (const address of addresses) {
+    throwIfAborted(opts?.signal);
+    const metaByte = await dm32ReadMemory(pipe, address + DM32_METADATA_OFFSET, 1, opts);
+    out.set(address, metaByte[0] ?? 0);
+  }
+  return out;
+}
+
 export async function readChannelCount(
   pipe: BytePipe,
   firstChannelBlockAddr: number,
@@ -165,11 +252,12 @@ export async function readChannelCount(
 export async function bulkReadDm32Blocks(
   pipe: BytePipe,
   blocks: readonly Dm32DiscoveredBlock[],
-  opts?: Dm32SettleOptions & { onProgress?: ProgressFn },
+  opts?: Dm32SettleOptions & { onProgress?: ProgressFn; stage?: string },
 ): Promise<Map<number, Uint8Array>> {
   const out = new Map<number, Uint8Array>();
   const total = blocks.length;
   const scale = opts?.settleScale ?? 1;
+  const stage = opts?.stage;
   // NeonPlug CONNECTION.BLOCK_READ_DELAY — radio reboots if 4KB transfers are back-to-back
   // (also settle once before the first full block after a long metadata scan).
   const interBlockMs = scale <= 0 ? 0 : DM32_CONNECTION.BLOCK_READ_DELAY_MS * scale;
@@ -179,12 +267,14 @@ export async function bulkReadDm32Blocks(
       await new Promise((r) => setTimeout(r, interBlockMs));
     }
     const block = blocks[i]!;
+    const setLabel = stage ?? 'Blocks';
     reportProgress(
       opts?.onProgress,
       {
         cur: i + 1,
         max: total,
-        msg: `Reading block ${i + 1} of ${total} (0x${block.address.toString(16)})`,
+        msg: `Reading ${setLabel}: block ${i + 1} of ${total} (0x${block.address.toString(16)})`,
+        stage: setLabel,
       },
       opts?.signal,
     );

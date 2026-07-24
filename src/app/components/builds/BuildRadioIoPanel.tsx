@@ -58,6 +58,7 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
   const [error, setError] = useState<string | null>(null);
   const [writeWarnings, setWriteWarnings] = useState<string[]>([]);
   const [progress, setProgress] = useState<ProgressUpdate | null>(null);
+  const [transferStages, setTransferStages] = useState<string[]>([]);
   const [lastFirmware, setLastFirmware] = useState<string | undefined>();
   const [lastOccupied, setLastOccupied] = useState<number | null>(null);
 
@@ -93,6 +94,19 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
   function onProgress(p: ProgressUpdate) {
     setPhase('transfer');
     setProgress(p);
+    if (p.stage) {
+      setTransferStages((prev) => (prev.includes(p.stage!) ? prev : [...prev, p.stage!]));
+    }
+  }
+
+  function beginBusy(next: RadioIoOperation): void {
+    setError(null);
+    setBusy(true);
+    setOperation(next);
+    setPhase('connecting');
+    setProgress(null);
+    setTransferStages([]);
+    abortRef.current = new AbortController();
   }
 
   async function releaseSession(): Promise<void> {
@@ -114,18 +128,13 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
   }
 
   async function handleRead() {
-    setError(null);
-    setBusy(true);
-    setOperation('read');
-    setPhase('connecting');
-    setProgress(null);
-    abortRef.current = new AbortController();
+    beginBusy('read');
     try {
       const session = await ensureSession();
       setPhase('transfer');
       const result = await readRadioHydrationForBuild(session, {
         onProgress,
-        signal: abortRef.current.signal,
+        signal: abortRef.current!.signal,
       });
       setPhase('saving');
       setProgress(null);
@@ -141,11 +150,11 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
       await reloadEgressPaths();
       setLastFirmware(result.firmware);
       setLastOccupied(result.channelCountOccupied);
+      setPhase('done');
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
       // Always drop the port on failure so the next attempt (or another app) can open it.
       await releaseSession();
-    } finally {
       setBusy(false);
       setProgress(null);
       abortRef.current = null;
@@ -153,13 +162,8 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
   }
 
   async function handleWrite() {
-    setError(null);
     setWriteWarnings([]);
-    setBusy(true);
-    setOperation('write');
-    setPhase('connecting');
-    setProgress(null);
-    abortRef.current = new AbortController();
+    beginBusy('write');
     try {
       if (!activeProjectId) {
         throw new Error('No active project.');
@@ -172,9 +176,10 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
       setPhase('transfer');
       await uploadPreparedRadioWrite(session, egress, image, {
         onProgress,
-        signal: abortRef.current.signal,
+        signal: abortRef.current!.signal,
       });
       if (warnings.length > 0) setWriteWarnings(warnings);
+      setPhase('done');
     } catch (err) {
       if (err instanceof RadioWriteBlockedError) {
         setError(err.message);
@@ -182,7 +187,6 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
         setError(err instanceof Error ? err.message : String(err));
       }
       await releaseSession();
-    } finally {
       setBusy(false);
       setProgress(null);
       abortRef.current = null;
@@ -191,6 +195,12 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
 
   function handleCancel() {
     abortRef.current?.abort();
+  }
+
+  function handleProgressClose() {
+    setBusy(false);
+    setProgress(null);
+    abortRef.current = null;
   }
 
   async function handleDisconnect() {
@@ -219,7 +229,7 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
       <Text size="sm" c="dimmed">
         Read stores a clone image on this egress pathway so unmodelled settings survive write-back.
         Write sends the assembled build into that image — it does not import channels into the
-        library.
+        library. After a factory reset, Read again before Write (memory-bank addresses can move).
       </Text>
       {!serialOk ? <Alert color="yellow">{getWebSerialUnsupportedMessage()}</Alert> : null}
       {attributionNames ? (
@@ -309,8 +319,10 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
         operation={operation}
         phase={phase}
         progress={progress}
+        transferStages={transferStages}
         navigationBlocked={leaveAttempted}
         onCancel={handleCancel}
+        onClose={handleProgressClose}
       />
     </Stack>
   );

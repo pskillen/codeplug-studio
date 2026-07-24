@@ -19,6 +19,7 @@ import { encodeTalkGroupsIntoDm32Image } from './talkGroupCodec.ts';
 import { encodeRxGroupsIntoDm32Image } from './rxGroupCodec.ts';
 import { encodeDigitalContactsIntoDm32Image } from './contactCodec.ts';
 import { encodeAprsIntoDm32Image } from './aprsCodec.ts';
+import { classifyDm32Metadata } from './memory.ts';
 import type { Dm32DownloadCache } from './protocol.ts';
 
 export const DM32UV_MODEL_ID = DM32_MODEL_IDS[0];
@@ -32,11 +33,14 @@ export function cacheFromBag(bag: RadioCloneHydrationBag): Dm32DownloadCache {
   const addressBase = bag.retain.addressBase ?? addresses[0] ?? 0;
   const last = addresses[addresses.length - 1] ?? addressBase;
   const mapSize = last - addressBase + DM32_BLOCK_SIZE;
-  const discovered = addresses.map((address) => ({
-    address,
-    metadata: blocks.get(address)![DM32_BLOCK_SIZE - 1]!,
-    type: 'unknown' as const,
-  }));
+  const discovered = addresses.map((address) => {
+    const metadata = blocks.get(address)![DM32_BLOCK_SIZE - 1]!;
+    return {
+      address,
+      metadata,
+      type: classifyDm32Metadata(metadata),
+    };
+  });
   return {
     addressBase,
     mapSize,
@@ -126,6 +130,7 @@ export function mergeChannelsIntoDm32uvHydration(
       {
         addressBase: cache.addressBase,
         contactsBase: cache.contactsBase,
+        contactsEnd: cache.contactsEnd,
         discoveredAddresses: [...cache.blocks.keys()],
       },
       organisation.digitalContacts,

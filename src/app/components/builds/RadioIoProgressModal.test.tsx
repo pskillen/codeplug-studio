@@ -11,7 +11,13 @@ describe('RadioIoProgressModal', () => {
           opened
           operation="read"
           phase="transfer"
-          progress={{ cur: 10, max: 40, msg: 'Reading 0x280' }}
+          progress={{
+            cur: 10,
+            max: 40,
+            msg: 'Reading Channels: block 10 of 40',
+            stage: 'Channels',
+          }}
+          transferStages={['Discover memory map', 'Channels', 'Zones']}
           onCancel={vi.fn()}
         />
       </MantineProvider>,
@@ -19,8 +25,64 @@ describe('RadioIoProgressModal', () => {
 
     expect(screen.getByText('Reading from radio')).toBeInTheDocument();
     expect(screen.getByText(/Keep this tab open/i)).toBeInTheDocument();
-    expect(screen.getByText(/Download clone image/i)).toBeInTheDocument();
-    expect(screen.getByText(/Reading 0x280 \(10\/40\)/)).toBeInTheDocument();
+    expect(screen.getByText(/Discover memory map/i)).toBeInTheDocument();
+    expect(screen.getByText(/→ Channels/)).toBeInTheDocument();
+    expect(screen.getByText(/· Zones/)).toBeInTheDocument();
+    expect(screen.getByText(/Reading Channels: block 10 of 40 \(10\/40\)/)).toBeInTheDocument();
+  });
+
+  it('shows write transfer stages from ProgressUpdate.stage', () => {
+    render(
+      <MantineProvider>
+        <RadioIoProgressModal
+          opened
+          operation="write"
+          phase="transfer"
+          progress={{
+            cur: 1,
+            max: 2,
+            msg: 'Writing Zones: block 1 of 2 (0x2000)',
+            stage: 'Zones',
+          }}
+          transferStages={['Channels', 'Zones', 'Scan lists']}
+          onCancel={vi.fn()}
+        />
+      </MantineProvider>,
+    );
+
+    expect(screen.getByText('Writing to radio')).toBeInTheDocument();
+    expect(screen.getByText(/✓ Channels/)).toBeInTheDocument();
+    expect(screen.getByText(/→ Zones/)).toBeInTheDocument();
+    expect(screen.getByText(/Writing Zones: block 1 of 2 \(0x2000\) \(1\/2\)/)).toBeInTheDocument();
+  });
+
+  it('keeps write checklist and shows Close when done', () => {
+    const onClose = vi.fn();
+    render(
+      <MantineProvider>
+        <RadioIoProgressModal
+          opened
+          operation="write"
+          phase="done"
+          progress={{
+            cur: 2,
+            max: 2,
+            msg: 'Writing Settings & other: block 2 of 2 (0x4000)',
+            stage: 'Settings & other',
+          }}
+          transferStages={['Channels', 'Zones', 'Settings & other']}
+          onCancel={vi.fn()}
+          onClose={onClose}
+        />
+      </MantineProvider>,
+    );
+
+    expect(screen.getByText(/Write finished/i)).toBeInTheDocument();
+    expect(screen.getByText(/✓ Channels/)).toBeInTheDocument();
+    expect(screen.getByText(/→ Write complete/)).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Cancel' })).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Close' }));
+    expect(onClose).toHaveBeenCalledTimes(1);
   });
 
   it('shows navigation-blocked alert and invokes cancel', () => {

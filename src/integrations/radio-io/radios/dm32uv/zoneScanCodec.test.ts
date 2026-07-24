@@ -35,6 +35,45 @@ describe('encodeDm32Zone', () => {
 });
 
 describe('encodeZonesIntoDm32Image', () => {
+  it('clears prior zone when list shrinks', () => {
+    const zoneData = makeBlock(DM32_METADATA.ZONE);
+    const image = createMemoryMap(DM32_BLOCK_SIZE);
+    image.set(0, zoneData);
+    const ctx = { addressBase: 0, discovered: [{ address: 0, metadata: DM32_METADATA.ZONE }] };
+
+    encodeZonesIntoDm32Image(image, ctx, [
+      { wireName: 'First', channelNumbers: [1, 2] },
+      { wireName: 'Second', channelNumbers: [3] },
+    ]);
+    const secondZoneOff = DM32_ZONE_START_OFFSET + DM32_ZONE_ENTRY_SIZE;
+    expect(image.bytes[secondZoneOff]).toBe('S'.charCodeAt(0));
+
+    encodeZonesIntoDm32Image(image, ctx, [{ wireName: 'Only', channelNumbers: [5] }]);
+    expect(image.bytes[DM32_ZONE_START_OFFSET]).toBe('O'.charCodeAt(0));
+    expect(image.bytes[secondZoneOff]).not.toBe('S'.charCodeAt(0));
+    expect(image.bytes[secondZoneOff]).toBe(0x00);
+    expect(image.bytes[secondZoneOff + 16]).toBe(0x00);
+  });
+
+  it('clears trailing zone slots so byte 16 is not mistaken for count=255', () => {
+    const zoneData = makeBlock(DM32_METADATA.ZONE);
+    const image = createMemoryMap(DM32_BLOCK_SIZE);
+    image.set(0, zoneData);
+    const zones = Array.from({ length: 13 }, (_, i) => ({
+      wireName: `Z${i + 1}`,
+      channelNumbers: [i + 1],
+    }));
+    encodeZonesIntoDm32Image(
+      image,
+      { addressBase: 0, discovered: [{ address: 0, metadata: DM32_METADATA.ZONE }] },
+      zones,
+    );
+    expect(image.bytes[0]).toBe(13);
+    const trailingOff = DM32_ZONE_START_OFFSET + 13 * DM32_ZONE_ENTRY_SIZE;
+    expect(image.bytes[trailingOff + 16]).toBe(0x00);
+    expect(image.bytes[trailingOff]).toBe(0x00);
+  });
+
   it('writes zones into first 0x5c block at offset 16', () => {
     const zoneData = makeBlock(DM32_METADATA.ZONE);
     const image = createMemoryMap(DM32_BLOCK_SIZE);
@@ -68,6 +107,27 @@ describe('encodeDm32ScanList', () => {
 });
 
 describe('encodeScanListsIntoDm32Image', () => {
+  it('clears prior scan list when count shrinks', () => {
+    const scanData = makeBlock(DM32_METADATA.SCAN_LIST);
+    const image = createMemoryMap(DM32_BLOCK_SIZE);
+    image.set(0, scanData);
+    const ctx = { addressBase: 0, discovered: [{ address: 0, metadata: DM32_METADATA.SCAN_LIST }] };
+
+    encodeScanListsIntoDm32Image(image, ctx, [
+      { wireName: 'First', channelNumbers: [1], listIndex: 1 },
+      { wireName: 'Second', channelNumbers: [2], listIndex: 2 },
+    ]);
+    const secondOff = dm32ScanListEntryOffset(2);
+    expect(image.bytes[secondOff]).toBe('S'.charCodeAt(0));
+
+    encodeScanListsIntoDm32Image(image, ctx, [
+      { wireName: 'Only', channelNumbers: [5], listIndex: 1 },
+    ]);
+    expect(image.bytes[dm32ScanListEntryOffset(1)]).toBe('O'.charCodeAt(0));
+    expect(image.bytes[secondOff]).toBe(0x00);
+    expect(image.bytes[0]).toBe(1);
+  });
+
   it('writes count and entry at (57*N)-56', () => {
     const scanData = makeBlock(DM32_METADATA.SCAN_LIST);
     const image = createMemoryMap(DM32_BLOCK_SIZE);

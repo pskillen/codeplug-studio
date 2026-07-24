@@ -271,6 +271,7 @@ export class OpenGd77Protocol implements CloneImageRadio {
           cur: done,
           max: total,
           msg: `Reading FLASH 0x${abs.toString(16)}`,
+          stage: 'FLASH image',
         });
       }
     }
@@ -306,6 +307,7 @@ export class OpenGd77Protocol implements CloneImageRadio {
         cur: i + 1,
         max: Math.max(sectors.length, 1),
         msg: `Writing FLASH sector 0x${sector.sectorAbs.toString(16)}`,
+        stage: 'FLASH sectors',
       });
     }
 

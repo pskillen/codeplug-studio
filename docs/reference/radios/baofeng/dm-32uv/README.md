@@ -58,10 +58,10 @@ Protocol lineage credit: `/attributions` entry `neonplug` ([#597](https://github
 
 ## Studio module
 
-`src/integrations/radio-io/radios/dm32uv/` — handshake, discovery, sparse `radio-clone` hydration, and modelled Write encode ([#638](https://github.com/pskillen/codeplug-studio/issues/638), [#667](https://github.com/pskillen/codeplug-studio/issues/667)): channels, zones, scan lists, talk groups, RX groups, digital contacts, APRS settings slice. Analog contacts stay RMW. See [protocol-kit architecture](../../../../features/radio-read-write/protocol-kit-architecture.md).
+`src/integrations/radio-io/radios/dm32uv/` — handshake, discovery, sparse `radio-clone` hydration, and modelled Write encode ([#638](https://github.com/pskillen/codeplug-studio/issues/638), [#667](https://github.com/pskillen/codeplug-studio/issues/667), [#685](https://github.com/pskillen/codeplug-studio/issues/685)): channels (full 48-byte records + bank/TX-contact clear), zones, scan lists, talk groups, RX groups, digital contacts, APRS settings slice. Analog contacts stay RMW. See [protocol-kit architecture](../../../../features/radio-read-write/protocol-kit-architecture.md).
 
 ## Related
 
 - Parked CPS CSV fidelity: [cps-csv-gaps.md](../../../../features/import-export/dm32/cps-csv-gaps.md)
 - [radio-read-write hub](../../../../features/radio-read-write/README.md)
-- Epic [#636](https://github.com/pskillen/codeplug-studio/issues/636) · memory RE [#637](https://github.com/pskillen/codeplug-studio/issues/637) · adapter [#638](https://github.com/pskillen/codeplug-studio/issues/638) · full Write encode [#667](https://github.com/pskillen/codeplug-studio/issues/667)
+- Epic [#636](https://github.com/pskillen/codeplug-studio/issues/636) · memory RE [#637](https://github.com/pskillen/codeplug-studio/issues/637) · adapter [#638](https://github.com/pskillen/codeplug-studio/issues/638) · full Write encode [#667](https://github.com/pskillen/codeplug-studio/issues/667) · full entity encode [#685](https://github.com/pskillen/codeplug-studio/issues/685)
