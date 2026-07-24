@@ -13,6 +13,12 @@ import {
   DM32_METADATA_OFFSET,
   DM32_OFFSET,
 } from './constants.ts';
+import {
+  encodeTxContactEntry,
+  getTxContactOffset,
+  isDigitalChannelMode,
+  parseTxContactEntry,
+} from './txContactCodec.ts';
 
 export interface Dm32ChannelDecodeContext {
   addressBase: number;
@@ -236,25 +242,15 @@ function readTxContactId(
   discovered: readonly { address: number; metadata: number }[],
   slotIndex: number,
 ): number | undefined {
-  const entrySize = 2;
-  if (slotIndex <= 2048) {
-    const block = findBlockByMetadata(image, addressBase, DM32_METADATA.TX_CONTACT_LOW, discovered);
-    if (!block) return undefined;
-    const off = block.offset + (slotIndex - 1) * entrySize;
-    const b0 = image.bytes[off];
-    const b1 = image.bytes[off + 1];
-    if (b0 === undefined || b1 === undefined) return undefined;
-    const id = b0 | ((b1 & 0x7f) << 8);
-    return id === 0 || id === 0xffff ? undefined : id;
-  }
-  const block = findBlockByMetadata(image, addressBase, DM32_METADATA.TX_CONTACT_HIGH, discovered);
+  const { blockMetadata, offset } = getTxContactOffset(slotIndex);
+  const block = findBlockByMetadata(image, addressBase, blockMetadata, discovered);
   if (!block) return undefined;
-  const off = block.offset + (slotIndex - 2049) * entrySize;
+  const off = block.offset + offset;
   const b0 = image.bytes[off];
   const b1 = image.bytes[off + 1];
   if (b0 === undefined || b1 === undefined) return undefined;
-  const id = b0 | ((b1 & 0x7f) << 8);
-  return id === 0 || id === 0xffff ? undefined : id;
+  const { contactId } = parseTxContactEntry(b0, b1);
+  return contactId === 0 ? undefined : contactId;
 }
 
 function channelOffsetInBank(slotIndex: number): { blockIndex: number; offsetInBlock: number } {
@@ -328,36 +324,18 @@ export function encodeChannelsIntoDm32Image(
     const base = block.address - cache.addressBase;
     image.set(base + offsetInBlock, encodeDm32ChannelRecord(ch));
 
-    // TX contact
-    const entrySize = 2;
+    // TX contact (12-bit nibble split + digital flag — NeonPlug encodeTxContactEntry)
     if (ch.txContactId != null && ch.txContactId > 0) {
-      const id = ch.txContactId & 0x7fff;
-      const lo = id & 0xff;
-      const hi = (id >>> 8) & 0x7f;
-      if (slot <= 2048) {
-        const tx = findBlockByMetadata(
-          image,
-          cache.addressBase,
-          DM32_METADATA.TX_CONTACT_LOW,
-          cache.discovered,
+      const { blockMetadata, offset } = getTxContactOffset(slot);
+      const tx = findBlockByMetadata(image, cache.addressBase, blockMetadata, cache.discovered);
+      if (tx) {
+        const [byte0, byte1] = encodeTxContactEntry(
+          ch.txContactId,
+          isDigitalChannelMode(ch.mode),
         );
-        if (tx) {
-          const off = tx.offset + (slot - 1) * entrySize;
-          image.bytes[off] = lo;
-          image.bytes[off + 1] = hi;
-        }
-      } else {
-        const tx = findBlockByMetadata(
-          image,
-          cache.addressBase,
-          DM32_METADATA.TX_CONTACT_HIGH,
-          cache.discovered,
-        );
-        if (tx) {
-          const off = tx.offset + (slot - 2049) * entrySize;
-          image.bytes[off] = lo;
-          image.bytes[off + 1] = hi;
-        }
+        const off = tx.offset + offset;
+        image.bytes[off] = byte0;
+        image.bytes[off + 1] = byte1;
       }
     }
   }
