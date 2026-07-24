@@ -51,6 +51,35 @@ describe('RadioIoProgressModal', () => {
     expect(screen.getByText(/Writing Zones: block 1 of 2 \(0x2000\) \(1\/2\)/)).toBeInTheDocument();
   });
 
+  it('keeps write checklist and shows Close when done', () => {
+    const onClose = vi.fn();
+    render(
+      <MantineProvider>
+        <RadioIoProgressModal
+          opened
+          operation="write"
+          phase="done"
+          progress={{
+            cur: 2,
+            max: 2,
+            msg: 'Writing Settings & other: block 2 of 2 (0x4000)',
+            stage: 'Settings & other',
+          }}
+          transferStages={['Channels', 'Zones', 'Settings & other']}
+          onCancel={vi.fn()}
+          onClose={onClose}
+        />
+      </MantineProvider>,
+    );
+
+    expect(screen.getByText(/Write finished/i)).toBeInTheDocument();
+    expect(screen.getByText(/✓ Channels/)).toBeInTheDocument();
+    expect(screen.getByText(/→ Write complete/)).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Cancel' })).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Close' }));
+    expect(onClose).toHaveBeenCalledTimes(1);
+  });
+
   it('shows navigation-blocked alert and invokes cancel', () => {
     const onCancel = vi.fn();
     render(

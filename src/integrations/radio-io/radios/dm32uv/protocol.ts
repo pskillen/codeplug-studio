@@ -352,23 +352,37 @@ export class Dm32uvProtocol implements CloneImageRadio {
         'DM-32UV upload has no sparse blocks — seed from a prior Read hydration before Write',
       );
     }
+    const blocks = memoryMapToDm32Blocks(image, this.cache.addressBase, addresses);
     const byAddr = new Map(this.cache.discovered.map((b) => [b.address, b]));
     const discoveredForProgress: Dm32DiscoveredBlock[] = addresses.map((address) => {
       const known = byAddr.get(address);
-      if (known) return known;
-      const data = this.cache!.blocks.get(address);
-      const metadata = data?.[DM32_BLOCK_SIZE - 1] ?? 0xff;
-      return {
-        address,
-        metadata,
-        type: classifyDm32Metadata(metadata),
-      };
+      const data = blocks.get(address) ?? this.cache!.blocks.get(address);
+      const metadata = data?.[DM32_BLOCK_SIZE - 1] ?? known?.metadata ?? 0xff;
+      const type = classifyDm32Metadata(metadata);
+      // Prefer live metadata from the image we are about to write (hydration seed may
+      // have carried type:'unknown' from older bags).
+      if (known && known.metadata === metadata && known.type === type) return known;
+      return { address, metadata, type };
     });
     const groups = groupDm32BlocksForProgress(discoveredForProgress);
-    const blocks = memoryMapToDm32Blocks(image, this.cache.addressBase, addresses);
     const settle = { ...this.settle, signal: opts.signal ?? this.settle.signal };
     const scale = settle.settleScale ?? 1;
     const interBlockMs = scale <= 0 ? 0 : DM32_CONNECTION.BLOCK_READ_DELAY_MS * scale;
+
+    // Seed the progress checklist with every bank before the first write so Channels
+    // is visible even while later groups are still pending.
+    for (const group of groups) {
+      reportProgress(
+        opts.onProgress,
+        {
+          cur: 0,
+          max: group.blocks.length || 1,
+          msg: `Queued ${group.stage} (${group.blocks.length} block${group.blocks.length === 1 ? '' : 's'})`,
+          stage: group.stage,
+        },
+        opts.signal,
+      );
+    }
 
     for (const group of groups) {
       reportProgress(

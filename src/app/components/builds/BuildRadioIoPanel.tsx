@@ -150,11 +150,11 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
       await reloadEgressPaths();
       setLastFirmware(result.firmware);
       setLastOccupied(result.channelCountOccupied);
+      setPhase('done');
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
       // Always drop the port on failure so the next attempt (or another app) can open it.
       await releaseSession();
-    } finally {
       setBusy(false);
       setProgress(null);
       abortRef.current = null;
@@ -179,6 +179,7 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
         signal: abortRef.current!.signal,
       });
       if (warnings.length > 0) setWriteWarnings(warnings);
+      setPhase('done');
     } catch (err) {
       if (err instanceof RadioWriteBlockedError) {
         setError(err.message);
@@ -186,7 +187,6 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
         setError(err instanceof Error ? err.message : String(err));
       }
       await releaseSession();
-    } finally {
       setBusy(false);
       setProgress(null);
       abortRef.current = null;
@@ -195,6 +195,12 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
 
   function handleCancel() {
     abortRef.current?.abort();
+  }
+
+  function handleProgressClose() {
+    setBusy(false);
+    setProgress(null);
+    abortRef.current = null;
   }
 
   async function handleDisconnect() {
@@ -316,6 +322,7 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
         transferStages={transferStages}
         navigationBlocked={leaveAttempted}
         onCancel={handleCancel}
+        onClose={handleProgressClose}
       />
     </Stack>
   );
