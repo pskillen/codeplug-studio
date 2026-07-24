@@ -109,11 +109,7 @@ export default function StyleguideDataTablePage() {
     });
   };
 
-  function BulkReorderOrderCell({
-    row,
-  }: {
-    row: { id: string; name: string };
-  }) {
+  function BulkReorderOrderCell({ row }: { row: { id: string; name: string } }) {
     const dragHandle = useDataTableBulkReorderDragHandle();
     const index = bulkOrderRows.findIndex((r) => r.id === row.id);
     const reorderBlocked = bulkOrderSearch.trim().length > 0;

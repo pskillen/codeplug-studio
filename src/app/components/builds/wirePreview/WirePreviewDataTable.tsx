@@ -407,8 +407,7 @@ export default function WirePreviewDataTable({
               orderedKeys: reorder.orderedKeys,
               onSetOrder: reorder.onSetOrder,
               disabled: reorder.disabled,
-              isRowReorderable: (row) =>
-                row.nestRole !== 'parent' && row.nestRole !== 'child',
+              isRowReorderable: (row) => row.nestRole !== 'parent' && row.nestRole !== 'child',
             }
           : undefined
       }

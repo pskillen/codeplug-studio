@@ -7,7 +7,11 @@ import {
   useSensors,
   type DragEndEvent,
 } from '@dnd-kit/core';
-import { SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from '@dnd-kit/sortable';
+import {
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
 import { Button, Group, Text } from '@mantine/core';
 import { useCallback, useEffect, type ReactNode } from 'react';
 import { reorderKeysByDrag, reorderSelectedKeys } from '@core/domain/zoneOrder.ts';

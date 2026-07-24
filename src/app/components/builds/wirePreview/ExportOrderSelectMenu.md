@@ -4,13 +4,13 @@ Toolbar menu for **flat-memory** build channel export-order lists. Helps operato
 
 ## Props
 
-| Prop | Type | Description |
-| --- | --- | --- |
-| `orderedChannelIds` | `readonly string[]` | Canonical export-order channel ids |
-| `channelById` | `ReadonlyMap<string, Channel>` | Library channels for attribute lookup |
-| `selectedKeys` | `readonly string[]` | Current table selection |
-| `onSelectedKeysChange` | `(keys: string[]) => void` | Selection updater |
-| `disabled` | `boolean` (optional) | Disables menu (e.g. filter active) |
+| Prop                   | Type                           | Description                           |
+| ---------------------- | ------------------------------ | ------------------------------------- |
+| `orderedChannelIds`    | `readonly string[]`            | Canonical export-order channel ids    |
+| `channelById`          | `ReadonlyMap<string, Channel>` | Library channels for attribute lookup |
+| `selectedKeys`         | `readonly string[]`            | Current table selection               |
+| `onSelectedKeysChange` | `(keys: string[]) => void`     | Selection updater                     |
+| `disabled`             | `boolean` (optional)           | Disables menu (e.g. filter active)    |
 
 ## Behaviour
 

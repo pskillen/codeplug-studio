@@ -276,8 +276,11 @@ export default function DataTable<T>({
   const bulkReorderDisabled = bulkReorder?.disabled ?? false;
   const bulkDragEnabled = bulkReorderActive && bulkReorder?.enableDrag !== false;
   const selectable = selectableProp ?? bulkReorderActive;
-  const effectiveVirtualize: DataTableVirtualizeMode =
-    bulkDragEnabled ? false : scale === 'extreme' ? true : virtualize;
+  const effectiveVirtualize: DataTableVirtualizeMode = bulkDragEnabled
+    ? false
+    : scale === 'extreme'
+      ? true
+      : virtualize;
   const orderLocked = orderMode || reorderMode || bulkReorderActive;
   const sortingEnabled = !orderLocked;
 
@@ -423,8 +426,7 @@ export default function DataTable<T>({
   );
   const allSelected =
     selectableRowKeys.length > 0 && selectableRowKeys.every((k) => selectedKeys.includes(k));
-  const someSelected =
-    selectableRowKeys.some((k) => selectedKeys.includes(k)) && !allSelected;
+  const someSelected = selectableRowKeys.some((k) => selectedKeys.includes(k)) && !allSelected;
 
   const toggleAll = useCallback(() => {
     if (allSelected) {
@@ -652,102 +654,103 @@ export default function DataTable<T>({
         >
           <Table striped highlightOnHover withTableBorder>
             <Table.Thead data-testid="datatable-thead">
-            <Table.Tr>
-              {selectable ? (
-                <Table.Th className={classes.stickyTh} style={{ width: 36 }}>
-                  <Checkbox
-                    checked={allSelected}
-                    indeterminate={someSelected}
-                    onChange={toggleAll}
-                    aria-label="Select all rows"
-                  />
-                </Table.Th>
-              ) : null}
-              {showLeadingStoredOrderSort && storedOrderColumnKey ? (
-                <Table.Th className={classes.stickyTh}>
-                  <SortableHeader
-                    label={storedOrderLabel}
-                    columnKey={storedOrderColumnKey}
-                    sortable
-                    sortState={sortState}
-                    onSort={handleSort}
-                    elevated
-                  />
-                </Table.Th>
-              ) : null}
-              {callsignColumn ? (
-                <Table.Th className={classes.stickyTh}>
-                  <SortableHeader
-                    label={callsignColumn.header ?? 'Callsign'}
-                    columnKey={DATATABLE_CALLSIGN_SORT_KEY}
-                    sortable={sortingEnabled && callsignColumn.sortable !== false}
-                    sortState={sortState}
-                    onSort={handleSort}
-                  />
-                </Table.Th>
-              ) : null}
-              <Table.Th className={classes.stickyTh}>
-                <SortableHeader
-                  label={nameColumn.header ?? 'Name'}
-                  columnKey={DATATABLE_NAME_SORT_KEY}
-                  sortable={sortingEnabled && nameColumn.sortable !== false}
-                  sortState={sortState}
-                  onSort={handleSort}
-                />
-              </Table.Th>
-              {visibleColumns.map((col) => {
-                const isStoredOrderCol = !!storedOrderColumnKey && col.key === storedOrderColumnKey;
-                const columnSortable =
-                  sortingEnabled &&
-                  (isStoredOrderCol || (col.sortable !== false && !!col.sortValue));
-                return (
-                  <Table.Th key={col.key} className={classes.stickyTh}>
-                    <SortableHeader
-                      label={col.header}
-                      columnKey={col.key}
-                      sortable={columnSortable}
-                      sortState={sortState}
-                      onSort={handleSort}
-                      elevated={isStoredOrderCol}
+              <Table.Tr>
+                {selectable ? (
+                  <Table.Th className={classes.stickyTh} style={{ width: 36 }}>
+                    <Checkbox
+                      checked={allSelected}
+                      indeterminate={someSelected}
+                      onChange={toggleAll}
+                      aria-label="Select all rows"
                     />
                   </Table.Th>
-                );
-              })}
-            </Table.Tr>
-          </Table.Thead>
-          <Table.Tbody>
-            <DataTableBulkReorderSortable
-              sortableKeys={sortableDragKeys}
-              disabled={bulkReorderDisabled || !bulkDragEnabled}
-            >
-              {sortedRows.length === 0 ? (
-                <Table.Tr>
-                  <Table.Td colSpan={leadingColCount}>
-                    {isFilteredEmpty ? (
-                      <Text size="sm" c="dimmed" ta="center" py="md">
-                        {filteredEmptyMessage}
-                      </Text>
-                    ) : (
-                      (emptyState ?? defaultEmpty)
-                    )}
-                  </Table.Td>
-                </Table.Tr>
-              ) : virtualized ? (
-                <>
-                  {renderVirtualSpacer(paddingTop, 'top')}
-                  {virtualRows.map((virtualRow) => {
-                    const row = sortedRows[virtualRow.index]!;
-                    return renderDataRow(row, rowKey(row));
-                  })}
-                  {renderVirtualSpacer(paddingBottom, 'bottom')}
-                </>
-              ) : (
-                sortedRows.map((row) => renderDataRow(row, rowKey(row)))
-              )}
-            </DataTableBulkReorderSortable>
-          </Table.Tbody>
-        </Table>
-      </ScrollArea.Autosize>
+                ) : null}
+                {showLeadingStoredOrderSort && storedOrderColumnKey ? (
+                  <Table.Th className={classes.stickyTh}>
+                    <SortableHeader
+                      label={storedOrderLabel}
+                      columnKey={storedOrderColumnKey}
+                      sortable
+                      sortState={sortState}
+                      onSort={handleSort}
+                      elevated
+                    />
+                  </Table.Th>
+                ) : null}
+                {callsignColumn ? (
+                  <Table.Th className={classes.stickyTh}>
+                    <SortableHeader
+                      label={callsignColumn.header ?? 'Callsign'}
+                      columnKey={DATATABLE_CALLSIGN_SORT_KEY}
+                      sortable={sortingEnabled && callsignColumn.sortable !== false}
+                      sortState={sortState}
+                      onSort={handleSort}
+                    />
+                  </Table.Th>
+                ) : null}
+                <Table.Th className={classes.stickyTh}>
+                  <SortableHeader
+                    label={nameColumn.header ?? 'Name'}
+                    columnKey={DATATABLE_NAME_SORT_KEY}
+                    sortable={sortingEnabled && nameColumn.sortable !== false}
+                    sortState={sortState}
+                    onSort={handleSort}
+                  />
+                </Table.Th>
+                {visibleColumns.map((col) => {
+                  const isStoredOrderCol =
+                    !!storedOrderColumnKey && col.key === storedOrderColumnKey;
+                  const columnSortable =
+                    sortingEnabled &&
+                    (isStoredOrderCol || (col.sortable !== false && !!col.sortValue));
+                  return (
+                    <Table.Th key={col.key} className={classes.stickyTh}>
+                      <SortableHeader
+                        label={col.header}
+                        columnKey={col.key}
+                        sortable={columnSortable}
+                        sortState={sortState}
+                        onSort={handleSort}
+                        elevated={isStoredOrderCol}
+                      />
+                    </Table.Th>
+                  );
+                })}
+              </Table.Tr>
+            </Table.Thead>
+            <Table.Tbody>
+              <DataTableBulkReorderSortable
+                sortableKeys={sortableDragKeys}
+                disabled={bulkReorderDisabled || !bulkDragEnabled}
+              >
+                {sortedRows.length === 0 ? (
+                  <Table.Tr>
+                    <Table.Td colSpan={leadingColCount}>
+                      {isFilteredEmpty ? (
+                        <Text size="sm" c="dimmed" ta="center" py="md">
+                          {filteredEmptyMessage}
+                        </Text>
+                      ) : (
+                        (emptyState ?? defaultEmpty)
+                      )}
+                    </Table.Td>
+                  </Table.Tr>
+                ) : virtualized ? (
+                  <>
+                    {renderVirtualSpacer(paddingTop, 'top')}
+                    {virtualRows.map((virtualRow) => {
+                      const row = sortedRows[virtualRow.index]!;
+                      return renderDataRow(row, rowKey(row));
+                    })}
+                    {renderVirtualSpacer(paddingBottom, 'bottom')}
+                  </>
+                ) : (
+                  sortedRows.map((row) => renderDataRow(row, rowKey(row)))
+                )}
+              </DataTableBulkReorderSortable>
+            </Table.Tbody>
+          </Table>
+        </ScrollArea.Autosize>
       </DataTableBulkReorderProvider>
 
       {toolbar ? <Group gap="sm">{toolbar}</Group> : null}

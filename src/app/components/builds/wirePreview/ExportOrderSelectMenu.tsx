@@ -116,7 +116,9 @@ export default function ExportOrderSelectMenu({
             {bandOptions.map((band) => (
               <Menu.Item
                 key={band.id}
-                onClick={() => toggleKeys(channelIdsForBand(orderedChannelIds, channelById, band.id))}
+                onClick={() =>
+                  toggleKeys(channelIdsForBand(orderedChannelIds, channelById, band.id))
+                }
               >
                 {band.label} ({band.channelIds.length})
               </Menu.Item>
