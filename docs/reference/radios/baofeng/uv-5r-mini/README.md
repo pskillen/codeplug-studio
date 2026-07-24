@@ -23,16 +23,16 @@ Handheld analogue FM/AM radio (UV-17Pro lineage). Studio targets it via CHIRP CS
 
 ## Documentation map
 
-| Doc                                    | Contents                                                             |
-| -------------------------------------- | -------------------------------------------------------------------- |
-| [limits.md](limits.md)                 | Memory slots, name length                                            |
-| [capabilities.md](capabilities.md)     | Modes, organisation traits, RF summary; Web Serial scan-bit gap      |
-| [power.md](power.md)                   | High / Low ladder (internal %)                                       |
-| [memory-layout.md](memory-layout.md)   | Multi-region image map, packed offsets, FW overlay at `0x1EF0`       |
-| [channel-record.md](channel-record.md) | 32-byte channel layout + enums; duplex-off / TX inhibit gap          |
-| [settings.md](settings.md)             | VFO / settings / ANI / PTT; Studio full-image retain path            |
-| [protocol.md](protocol.md)             | Ident, magics, R/W frames, XOR crypt, baud disagreement              |
-| [fixtures.md](fixtures.md)             | How to capture dumps for tests without committing personal codeplugs |
+| Doc                                    | Contents                                                              |
+| -------------------------------------- | --------------------------------------------------------------------- |
+| [limits.md](limits.md)                 | Memory slots, name length                                             |
+| [capabilities.md](capabilities.md)     | Modes, organisation traits, RF summary; Web Serial scan-bit gap       |
+| [power.md](power.md)                   | High / Low ladder (internal %)                                        |
+| [memory-layout.md](memory-layout.md)   | Multi-region image map, packed offsets, FW overlay at `0x1EF0`        |
+| [channel-record.md](channel-record.md) | 32-byte channel layout + enums; full-span clear + TX inhibit on Write |
+| [settings.md](settings.md)             | VFO / settings / ANI / PTT; Studio full-image retain path             |
+| [protocol.md](protocol.md)             | Ident, magics, R/W frames, XOR crypt, baud disagreement               |
+| [fixtures.md](fixtures.md)             | How to capture dumps for tests without committing personal codeplugs  |
 
 ## Adapter wire (files)
 
@@ -41,7 +41,7 @@ Handheld analogue FM/AM radio (UV-17Pro lineage). Studio targets it via CHIRP CS
 
 ## Direct read/write (binary)
 
-PROGRAM+R/W clone protocol for Web Serial (**shipped**). See the binary docs in the map above. Known Write gaps: channel-span clear + TX inhibit ([#695](https://github.com/pskillen/codeplug-studio/issues/695)), scan bit ([#696](https://github.com/pskillen/codeplug-studio/issues/696)).
+PROGRAM+R/W clone protocol for Web Serial (**shipped**). See the binary docs in the map above. Known Write gaps: scan bit ([#696](https://github.com/pskillen/codeplug-studio/issues/696)), DTCS reverse polarity ([#697](https://github.com/pskillen/codeplug-studio/issues/697)).
 
 ## Ground truth (cite; do not copy)
 

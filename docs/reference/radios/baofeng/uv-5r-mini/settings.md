@@ -28,14 +28,16 @@ NeonPlug parses squelch, save mode, VOX, backlight, dual watch, TOT, beep, voice
 
 ## Upload behaviours (document all three)
 
-| Behaviour             | NeonPlug                                                                  | CHIRP                                     | Studio Web Serial                                                           |
-| --------------------- | ------------------------------------------------------------------------- | ----------------------------------------- | --------------------------------------------------------------------------- |
-| Full clone **read**   | All three `MEM_*` regions → packed `0x8240`                               | Same                                      | Same (`radio-clone` hydration)                                              |
-| Full clone **upload** | Not the default path                                                      | Writes **all** `MEM_STARTS` / `MEM_SIZES` | **Yes** — `writeStrategy: 'full-image'`                                     |
-| Channel write         | After upload handshake, writes radio addrs `0 … 0x7CE0` only (`999 × 32`) | Full multi-region                         | Channels merged into hydrated image; **all three** `MEM_*` regions uploaded |
-| Settings write        | Read-modify-write one 64-byte block                                       | Part of full upload                       | Retained from Read via full-image upload (no separate settings RMW)         |
+| Behaviour             | NeonPlug                                                                  | CHIRP                                     | Studio Web Serial                                                                                                                            |
+| --------------------- | ------------------------------------------------------------------------- | ----------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| Full clone **read**   | All three `MEM_*` regions → packed `0x8240`                               | Same                                      | Same (`radio-clone` hydration)                                                                                                               |
+| Full clone **upload** | Not the default path                                                      | Writes **all** `MEM_STARTS` / `MEM_SIZES` | **Yes** — `writeStrategy: 'full-image'`                                                                                                      |
+| Channel write         | After upload handshake, writes radio addrs `0 … 0x7CE0` only (`999 × 32`) | Full multi-region                         | Merges channels into hydrated image — **full channel span cleared** to empty then encoded from build; **all three** `MEM_*` regions uploaded |
+| Settings write        | Read-modify-write one 64-byte block                                       | Part of full upload                       | Retained from Read via full-image upload (no separate settings RMW)                                                                          |
 
 **Studio intentional path:** Prefer NeonPlug’s **outcome** (VFO / settings / ANI survive a channel Write) via **full-image upload of the hydrated retain**, not NeonPlug’s channel-span-only traffic. That also avoids NeonPlug’s settings-address debt (below). Channel-span-only upload is **out of scope** for the shipped adapter.
+
+**Channel encode contract:** Write clears the packed channel span to empty (`0xFF`) and encodes only slots from the build projection (firmware string at `0x1EF0` preserved inside the span). Orphan memories from a prior Read are not kept.
 
 ## Packed `0x8040` vs radio address caveat
 

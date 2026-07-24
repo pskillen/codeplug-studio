@@ -55,7 +55,11 @@ Do not copy classic UV-5R wide-bit polarity into this codec.
 
 ## Duplex off / TX inhibit
 
-NeonPlug and CHIRP encode duplex-off as TX frequency bytes **`FF × 4`**. Studio Web Serial currently always BCD-encodes `txHz`; library `forbidTransmit` does not yet reach the Mini codec. Tracked with channel-span clear policy by [#695](https://github.com/pskillen/codeplug-studio/issues/695).
+NeonPlug and CHIRP encode duplex-off as TX frequency bytes **`FF × 4`**. Studio Web Serial maps library `forbidTransmit` (via `effectiveForbidTransmit` at the app boundary) to `RadioChannelDto.rxOnly` and writes TX bytes `FF×4` on encode; decode sets `rxOnly` when TX is all `FF`.
+
+## Channel-span Write policy
+
+On Write, Studio **clears the full packed channel span** (`0x0000`…`0x7CE0`) to empty (`0xFF`) before encoding projected channels — orphan slots from a prior Read are removed. The firmware ASCII overlay at `0x1EF0` inside the span is preserved. Upload remains **full-image** so VFO/settings/ANI at `0x8040+` stay Read-retained.
 
 ## Related
 

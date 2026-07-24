@@ -54,7 +54,9 @@ describe('UV-5R Mini hydration', () => {
       },
     ]);
     const slot3Offset = (3 - 1) * 32;
-    expect(merged.bytes.subarray(slot3Offset, slot3Offset + 32).every((b) => b === 0xff)).toBe(true);
+    expect(merged.bytes.subarray(slot3Offset, slot3Offset + 32).every((b) => b === 0xff)).toBe(
+      true,
+    );
     expect(String.fromCharCode(...merged.bytes.subarray(20, 24))).toBe('KEEP');
   });
 
