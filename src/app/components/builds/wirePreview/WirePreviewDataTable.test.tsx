@@ -299,6 +299,7 @@ describe('WirePreviewDataTable', () => {
             reorder={{
               orderedKeys: ['zone-1'],
               onMove: vi.fn(),
+              onSetOrder: vi.fn(),
             }}
           />
         </MantineProvider>

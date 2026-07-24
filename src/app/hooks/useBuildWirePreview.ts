@@ -18,6 +18,7 @@ import { getFormatProfiles } from '@core/import-export/formatProfiles.ts';
 import type { FormatId } from '@core/import-export/types.ts';
 import { mergeExportOptions } from '@core/services/exportBuild.ts';
 import { applyDenseOrderOrSlots, clearAllOrderOrSlots } from '@core/domain/exportOrderOrSlot.ts';
+import { reorderSelectedKeys } from '@core/domain/zoneOrder.ts';
 import { egressIdentityForBuild } from '../lib/buildEgressUi.ts';
 import { useBuildLayout } from '../routes/builds/BuildLayoutContext.tsx';
 import { useProjects } from '../state/useProjects.ts';
@@ -222,6 +223,16 @@ export function useBuildWirePreview(
     [allRows, setEntityOrder],
   );
 
+  const moveSelectedEntities = useCallback(
+    (selectedKeys: readonly string[], direction: 'up' | 'down') => {
+      const ids = allRows.map((row) => row.key);
+      const selected = new Set(selectedKeys.filter((key) => ids.includes(key)));
+      if (selected.size === 0) return;
+      setEntityOrder(reorderSelectedKeys(ids, selected, direction));
+    },
+    [allRows, setEntityOrder],
+  );
+
   return {
     build,
     rows,
@@ -240,6 +251,7 @@ export function useBuildWirePreview(
     setEntityOrder,
     clearEntityOrderOverrides,
     moveEntity,
+    moveSelectedEntities,
     persistBuild,
   };
 }

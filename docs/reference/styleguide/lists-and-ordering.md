@@ -23,16 +23,18 @@ Gold references: Channels (A), Zone member editor (B+C), digital Contacts (D), Z
 
 Prefer these names in code and docs.
 
-| Tool                                  | Where                                       | Mutates model?  | Use when                                                                                   |
-| ------------------------------------- | ------------------------------------------- | --------------- | ------------------------------------------------------------------------------------------ |
-| **`reorderMode`** (alias `orderMode`) | `DataTable`                                 | No by itself    | List’s **only** job is agreed/export order (Zones; wire preview when order arrows present) |
-| **Arrows / Move**                     | Consumer column or C builtins               | Yes             | Reorder one step; disable while filter active                                              |
-| **Per-row arrows (C)**                | `onMoveItem` + `SelectedItemRowMoveButtons` | Yes             | Role C when selection Move alone is easy to miss (e.g. build zone Members)                 |
-| **Drag**                              | C `onReorder` + `SelectedItemDragHandle`    | Yes             | Membership lists; `reorderDisabled` while filtered                                         |
-| **`MembershipSortMenu`**              | Above list / C toolbar                      | Yes (confirm)   | Permanent rewrite by name / callsign / …                                                   |
-| **`storedOrder`**                     | `DataTable`                                 | No — display    | Hybrid: temporary natural sorts + **Return to export order**                               |
-| **Reset to library order**            | Wire preview banner                         | Yes (confirm)   | Clear build `orderOrSlot` / zone member layout hint — **not** `storedOrder` restore        |
-| **Column sorts**                      | `DataTable` browse                          | No — prefs only | Ordinary A lists without agreed order                                                      |
+| Tool                                  | Where                                                                                   | Mutates model?  | Use when                                                                                          |
+| ------------------------------------- | --------------------------------------------------------------------------------------- | --------------- | ------------------------------------------------------------------------------------------------- |
+| **`reorderMode`** (alias `orderMode`) | `DataTable`                                                                             | No by itself    | List’s **only** job is agreed/export order (Zones; wire preview when order arrows present)        |
+| **Arrows / Move**                     | Consumer column or C builtins                                                           | Yes             | Reorder one step; disable while filter active                                                     |
+| **Per-row arrows (C)**                | `onMoveItem` + `SelectedItemRowMoveButtons`                                             | Yes             | Role C when selection Move alone is easy to miss (e.g. build zone Members)                        |
+| **Drag**                              | C `onReorder` + `SelectedItemDragHandle`; A `bulkReorder` + drag handle in Order column | Yes             | Membership lists; large export-order DataTables (`bulkReorder`); `reorderDisabled` while filtered |
+| **`MembershipSortMenu`**              | Above list / C toolbar                                                                  | Yes (confirm)   | Permanent rewrite by name / callsign / …                                                          |
+| **`ExportOrderSelectMenu`**           | Flat-memory Channels toolbar (beside Sort…)                                             | No              | Toggle-select by band / FM·AM mode before drag or Move                                            |
+| **`bulkReorder`**                     | `DataTable`                                                                             | Yes             | Multi-select + drag + toolbar Move for large `reorderMode` lists                                  |
+| **`storedOrder`**                     | `DataTable`                                                                             | No — display    | Hybrid: temporary natural sorts + **Return to export order**                                      |
+| **Reset to library order**            | Wire preview banner                                                                     | Yes (confirm)   | Clear build `orderOrSlot` / zone member layout hint — **not** `storedOrder` restore               |
+| **Column sorts**                      | `DataTable` browse                                                                      | No — prefs only | Ordinary A lists without agreed order                                                             |
 
 ### Rules
 
@@ -40,7 +42,7 @@ Prefer these names in code and docs.
 2. **Role C has no temporary display sort.** Only reorder + permanent Sort….
 3. **Do not invent per-page sort chrome.** Use kit props and `MembershipSortMenu`.
 4. **Filter disables reorder.** Clear messaging when arrows / drag / Sort are blocked.
-5. **DataTable row drag in `reorderMode`** is still a kit gap — Zones keep arrow columns for now.
+5. **Role A bulk reorder** — `DataTable` `bulkReorder` for large export-order lists (~100+ rows): checkboxes, drag handles in the Order column, toolbar **Move up/down** (Alt+↑/↓). Disables virtual tbody. Gold: flat-memory Channels; also build Zones.
 6. **Build order reset ≠ browse restore.** Clearing `orderOrSlot` / member layout hints is permanent (confirm). DataTable **Return to export order** only undoes temporary column sorts.
 7. **Nested projection chrome** (Channels wire preview) uses `getRowClassName` + indented name cells — not card Accordion lists.
 8. **Role C may combine** drag, toolbar **Move up/down** (selection), and **per-row arrows** (`onMoveItem`). Gold: Build → Zones → Members export order.
@@ -61,7 +63,7 @@ column sorts                  →  persisted prefs, no model rewrite
 | `variant="list"`     | Full library / build list pages                                                                                                         |
 | `variant="embedded"` | Inside forms, wizards, import pickers                                                                                                   |
 | `scale="extreme"`    | Digital contacts (D) — virtualise-first, cheap cells                                                                                    |
-| `selectable`         | Multi-select when every row is eligible                                                                                                 |
+| `selectable`         | Multi-select when every row is eligible; implied by `bulkReorder` (reorderable rows only)                                               |
 | Custom select column | When some rows must not be selectable (e.g. existing repeater matches)                                                                  |
 | `toolbar`            | Actions **below** the table (bulk footers). Permanent Sort… on list pages is usually a **sibling Group above** the table, not this slot |
 

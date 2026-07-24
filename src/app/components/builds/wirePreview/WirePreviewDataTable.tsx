@@ -8,7 +8,11 @@ import type { WirePreviewEntityKind, WirePreviewRow } from '@core/services/previ
 import type { ZoneGroupingLayout } from '@core/models/traitLayout.ts';
 import { layoutEntry } from '@core/import-export/zoneDerivedScanLists/members.ts';
 import { LIST_NAME_FILTER_DEBOUNCE_MS } from '@integrations/listPrefs/index.ts';
-import DataTable, { type DataTableSortState } from '../../ui/DataTable.tsx';
+import DataTable, {
+  type DataTableSortState,
+  useDataTableBulkReorderDragHandle,
+} from '../../ui/DataTable.tsx';
+import SelectedItemDragHandle from '../../ui/SelectedItemDragHandle.tsx';
 import dataTableClasses from '../../ui/DataTable.module.css';
 import WirePreviewListNameCell from './WirePreviewListNameCell.tsx';
 import WirePreviewDisplayCell from './WirePreviewDisplayCell.tsx';
@@ -25,7 +29,46 @@ import {
 export interface WirePreviewReorderConfig {
   orderedKeys: string[];
   onMove: (rowKey: string, direction: 'up' | 'down') => void;
+  onSetOrder: (orderedKeys: string[]) => void;
   disabled?: boolean;
+  /** Enable multi-select + drag toolbar (default false). */
+  bulkReorder?: boolean;
+}
+
+function WirePreviewReorderCell({
+  row,
+  reorder,
+  reorderIndexByKey,
+}: {
+  row: WirePreviewTableRow;
+  reorder: WirePreviewReorderConfig;
+  reorderIndexByKey: Map<string, number>;
+}) {
+  const dragHandle = useDataTableBulkReorderDragHandle();
+  const index = reorderIndexByKey.get(row.key) ?? -1;
+  return (
+    <Group gap={4} onClick={(e) => e.stopPropagation()}>
+      {reorder.bulkReorder ? <SelectedItemDragHandle dragHandle={dragHandle} /> : null}
+      <ActionIcon
+        variant="subtle"
+        size="sm"
+        aria-label="Move up"
+        disabled={reorder.disabled || index <= 0}
+        onClick={() => reorder.onMove(row.key, 'up')}
+      >
+        <IconArrowUp size={ICON_SIZE_ACTION} stroke={ICON_STROKE} />
+      </ActionIcon>
+      <ActionIcon
+        variant="subtle"
+        size="sm"
+        aria-label="Move down"
+        disabled={reorder.disabled || index < 0 || index >= reorder.orderedKeys.length - 1}
+        onClick={() => reorder.onMove(row.key, 'down')}
+      >
+        <IconArrowDown size={ICON_SIZE_ACTION} stroke={ICON_STROKE} />
+      </ActionIcon>
+    </Group>
+  );
 }
 
 /** DM32 / Anytone zones table — inline export-as-scan-list toggle per zone row. */
@@ -60,6 +103,8 @@ export interface WirePreviewDataTableProps {
    * When omitted, nest chrome still groups but parent Skip state defaults to false.
    */
   channelOverrides?: readonly BuildEntityOverride[];
+  selectedKeys?: string[];
+  onSelectedKeysChange?: (keys: string[]) => void;
 }
 
 export default function WirePreviewDataTable({
@@ -76,6 +121,8 @@ export default function WirePreviewDataTable({
   inclusionColumn,
   emptyMessage = 'No library entities of this type yet.',
   channelOverrides,
+  selectedKeys,
+  onSelectedKeysChange,
 }: WirePreviewDataTableProps) {
   const [internalSort, setInternalSort] = useState<DataTableSortState | null>(null);
   const effectiveSort = sort !== undefined ? sort : internalSort;
@@ -310,30 +357,12 @@ export default function WirePreviewDataTable({
                       </Text>
                     );
                   }
-                  const index = reorderIndexByKey.get(row.key) ?? -1;
                   return (
-                    <Group gap={4} onClick={(e) => e.stopPropagation()}>
-                      <ActionIcon
-                        variant="subtle"
-                        size="sm"
-                        aria-label="Move up"
-                        disabled={reorder.disabled || index <= 0}
-                        onClick={() => reorder.onMove(row.key, 'up')}
-                      >
-                        <IconArrowUp size={ICON_SIZE_ACTION} stroke={ICON_STROKE} />
-                      </ActionIcon>
-                      <ActionIcon
-                        variant="subtle"
-                        size="sm"
-                        aria-label="Move down"
-                        disabled={
-                          reorder.disabled || index < 0 || index >= reorder.orderedKeys.length - 1
-                        }
-                        onClick={() => reorder.onMove(row.key, 'down')}
-                      >
-                        <IconArrowDown size={ICON_SIZE_ACTION} stroke={ICON_STROKE} />
-                      </ActionIcon>
-                    </Group>
+                    <WirePreviewReorderCell
+                      row={row}
+                      reorder={reorder}
+                      reorderIndexByKey={reorderIndexByKey}
+                    />
                   );
                 },
               },
@@ -369,6 +398,18 @@ export default function WirePreviewDataTable({
         <Text c="dimmed" size="sm">
           {emptyMessage}
         </Text>
+      }
+      selectedKeys={selectedKeys}
+      onSelectedKeysChange={onSelectedKeysChange}
+      bulkReorder={
+        reorder?.bulkReorder
+          ? {
+              orderedKeys: reorder.orderedKeys,
+              onSetOrder: reorder.onSetOrder,
+              disabled: reorder.disabled,
+              isRowReorderable: (row) => row.nestRole !== 'parent' && row.nestRole !== 'child',
+            }
+          : undefined
       }
       caption={
         reorder

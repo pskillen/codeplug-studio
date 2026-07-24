@@ -4,6 +4,7 @@ import {
   applyDenseZoneOrders,
   resolveZoneListOrder,
   sortZonesByExportOrder,
+  reorderKeysByDrag,
   reorderZoneIds,
 } from './zoneOrder.ts';
 import {
@@ -45,6 +46,28 @@ describe('zoneOrder', () => {
   it('reorderZoneIds moves a selected block', () => {
     expect(reorderZoneIds(['a', 'b', 'c'], new Set(['b']), 'up')).toEqual(['b', 'a', 'c']);
     expect(reorderZoneIds(['a', 'b', 'c'], new Set(['a']), 'down')).toEqual(['b', 'a', 'c']);
+  });
+
+  it('reorderKeysByDrag moves a single row (arrayMove semantics)', () => {
+    const keys = ['a', 'b', 'c', 'd', 'e'];
+    expect(reorderKeysByDrag(keys, 'b', 'd')).toEqual(['a', 'c', 'd', 'b', 'e']);
+    expect(reorderKeysByDrag(keys, 'b', 'a')).toEqual(['b', 'a', 'c', 'd', 'e']);
+    expect(reorderKeysByDrag(keys, 'e', 'b')).toEqual(['a', 'e', 'b', 'c', 'd']);
+  });
+
+  it('reorderKeysByDrag moves a multi-select block', () => {
+    const keys = ['a', 'b', 'c', 'd', 'e'];
+    const selected = new Set(['b', 'c']);
+    expect(reorderKeysByDrag(keys, 'b', 'd', selected)).toEqual(['a', 'd', 'b', 'c', 'e']);
+    expect(reorderKeysByDrag(keys, 'b', 'e', selected)).toEqual(['a', 'd', 'e', 'b', 'c']);
+    expect(reorderKeysByDrag(keys, 'b', 'a', selected)).toEqual(['b', 'c', 'a', 'd', 'e']);
+  });
+
+  it('reorderKeysByDrag is a no-op for invalid or in-block drops', () => {
+    const keys = ['a', 'b', 'c'];
+    expect(reorderKeysByDrag(keys, 'b', 'b')).toEqual(keys);
+    expect(reorderKeysByDrag(keys, 'missing', 'a')).toEqual(keys);
+    expect(reorderKeysByDrag(keys, 'b', 'c', new Set(['b', 'c']))).toEqual(keys);
   });
 });
 

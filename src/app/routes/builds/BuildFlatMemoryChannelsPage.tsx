@@ -38,6 +38,7 @@ import BuildEntityExportSettingsCard, {
 } from '../../components/builds/BuildEntityExportSettingsCard.tsx';
 import MembershipSortMenu from '../../components/library/MembershipSortMenu.tsx';
 import ExportOrderOverrideBanner from '../../components/builds/wirePreview/ExportOrderOverrideBanner.tsx';
+import ExportOrderSelectMenu from '../../components/builds/wirePreview/ExportOrderSelectMenu.tsx';
 import WirePreviewDataTable from '../../components/builds/wirePreview/WirePreviewDataTable.tsx';
 import WirePreviewOverrideModal from '../../components/builds/wirePreview/WirePreviewOverrideModal.tsx';
 import { useSyncedWirePreviewRow } from '../../components/builds/wirePreview/useSyncedWirePreviewRow.ts';
@@ -104,6 +105,7 @@ export default function BuildFlatMemoryChannelsPage() {
   const [savingSettings, setSavingSettings] = useState(false);
   const [selectedRowKey, setSelectedRowKey] = useState<string | null>(null);
   const [search, setSearch] = useState('');
+  const [reorderSelectedKeys, setReorderSelectedKeys] = useState<string[]>([]);
 
   useEffect(() => {
     buildRef.current = build;
@@ -269,6 +271,7 @@ export default function BuildFlatMemoryChannelsPage() {
 
   const selectedChannel = activeRow ? channelById.get(activeRow.libraryEntityId) : undefined;
   const channelOrderOverridden = hasAnyOrderOrSlotOverride(build.channelOverrides);
+  const reorderBlocked = saving || search.trim().length > 0;
 
   return (
     <FormPage
@@ -313,16 +316,29 @@ export default function BuildFlatMemoryChannelsPage() {
           </Text>
         ) : null}
 
-        <Group gap="sm" align="center">
+        <Group gap="sm" align="center" wrap="wrap">
           <MembershipSortMenu
             label="Sort channels…"
-            disabled={saving || memoryChannelIds.length < 2}
+            disabled={reorderBlocked || memoryChannelIds.length < 2}
             confirmMessage={buildExportSortConfirmMessage}
             onSort={handleSortChannelsForBuild}
           />
-          <Text size="xs" c="dimmed">
-            Sorts this build’s memory locations only — not your library.
-          </Text>
+          <ExportOrderSelectMenu
+            orderedChannelIds={memoryChannelIds}
+            channelById={channelById}
+            selectedKeys={reorderSelectedKeys}
+            onSelectedKeysChange={setReorderSelectedKeys}
+            disabled={reorderBlocked}
+          />
+          {reorderBlocked ? (
+            <Text size="xs" c="dimmed">
+              Clear search to sort or reorder.
+            </Text>
+          ) : (
+            <Text size="xs" c="dimmed">
+              Sorts this build’s memory locations only — not your library.
+            </Text>
+          )}
         </Group>
 
         <ExportOrderOverrideBanner
@@ -347,8 +363,12 @@ export default function BuildFlatMemoryChannelsPage() {
           reorder={{
             orderedKeys: memoryChannelIds,
             onMove: moveChannel,
-            disabled: saving,
+            onSetOrder: setChannelOrder,
+            disabled: reorderBlocked,
+            bulkReorder: true,
           }}
+          selectedKeys={reorderSelectedKeys}
+          onSelectedKeysChange={setReorderSelectedKeys}
         />
 
         {excludedChannelIds.length > 0 ? (
