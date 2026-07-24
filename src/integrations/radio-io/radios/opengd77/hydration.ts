@@ -54,6 +54,9 @@ export function memoryMapFromOpenGd77Hydration(bag: RadioCloneHydrationBag): Mem
 /**
  * Encode modelled organisation + channels into a copy of the hydrated image.
  * Order: contacts → RX groups → channels → zones (FK dependency).
+ *
+ * Organisation banks are **fully replaced** from the projection (empty arrays wipe
+ * prior payload). Settings / APRS / DTMF / VFO / additional settings are untouched.
  */
 export function mergeChannelsIntoOpenGd77Hydration(
   bag: RadioCloneHydrationBag,
@@ -67,12 +70,8 @@ export function mergeChannelsIntoOpenGd77Hydration(
   );
   encodeContactsIntoImage(image, contacts);
   const byDigitalId = contactIndexByDigitalId(contacts);
-  if (organisation?.rxGroups) {
-    encodeRxGroupsIntoImage(image, organisation.rxGroups, byDigitalId);
-  }
-  encodeChannelsIntoImage(image, channels);
-  if (organisation?.zones) {
-    encodeZonesIntoImage(image, organisation.zones);
-  }
+  encodeRxGroupsIntoImage(image, organisation?.rxGroups ?? [], byDigitalId);
+  encodeChannelsIntoImage(image, channels, { clearUnlisted: true });
+  encodeZonesIntoImage(image, organisation?.zones ?? []);
   return image;
 }

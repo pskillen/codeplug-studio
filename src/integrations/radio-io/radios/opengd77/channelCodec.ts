@@ -309,8 +309,9 @@ export function decodeChannelsFromImage(image: MemoryMap): RadioChannelDto[] {
 }
 
 /**
- * Encode channel DTOs into image banks (mutates). Unlisted occupied slots are
- * cleared when `clearUnlisted` is true (default): write replaces the channel table.
+ * Encode channel DTOs into image banks (mutates). Write always passes
+ * `clearUnlisted: true` so unlisted occupied slots are cleared — the channel
+ * table is fully replaced from the projection, not merged with prior Read bytes.
  */
 export function encodeChannelsIntoImage(
   image: MemoryMap,

@@ -48,8 +48,9 @@ function getU16Le(buf: Uint8Array, offset: number): number {
 }
 
 /**
- * Encode RX groups. Members are contact indices (1-based on wire) resolved from
- * `contactIndexById` (digitalId → 1-based contact index).
+ * Replace the entire RX group list bank from projection (clears unlisted slots).
+ * Members are contact indices (1-based on wire) resolved from `contactIndexById`
+ * (digitalId → 1-based contact index).
  */
 export function encodeRxGroupsIntoImage(
   image: MemoryMap,
