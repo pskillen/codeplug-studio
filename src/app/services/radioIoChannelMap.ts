@@ -73,7 +73,7 @@ function parseChannelTone(tone: ChannelTone | undefined): RadioTone {
 }
 
 function bandwidthFromKHz(bandwidthKHz: number | null | undefined): 'FM' | 'NFM' {
-  if (bandwidthKHz == null) return 'FM';
+  if (bandwidthKHz == null) return 'NFM';
   return bandwidthKHz <= 15 ? 'NFM' : 'FM';
 }
 
