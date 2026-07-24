@@ -79,6 +79,8 @@ Prefer Limit **68** over older Doxygen “250 zones” text.
 
 **OpenUV380 base:** FLASH `0x000ad620` · **GD-77 base:** FLASH `0x08d620`
 
+On Web Serial Write, the **entire** contact, zone, and RX group list banks are replaced from the build projection (empty projection wipes prior payload). Settings / APRS / DTMF regions stay Read-retained — see [channel-record.md](channel-record.md) Write defaults for per-channel unmodelled fields.
+
 ## Scan lists
 
 Stock / Doxygen maps place scan lists in the low image (e.g. around EEPROM `0x01790`, size `0x1640`, 64 lists). qdmr’s OpenGD77 path **does not encode** scan lists and marks them ignored in limits.

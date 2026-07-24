@@ -43,7 +43,7 @@ export const OPENGD77_APRS_WRITE_GAP =
   'FM APRS systems stay as they were on the radio when you Write. Use OpenGD77 CPS CSV export if you need to update those.';
 
 const REPLACED =
-  'Replaced from your build on Write — the library is the source of truth for this region';
+  'Fully replaced from your build on Write — the entire bank is cleared then encoded from your library; prior radio payload in this region is not kept';
 const KEPT = 'Kept from Read from radio — not changed when you write from your build';
 
 export const OPENGD77_REGION_MANIFEST: readonly OpenGd77RegionManifestEntry[] = [
