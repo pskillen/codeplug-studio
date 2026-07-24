@@ -100,6 +100,26 @@ qdmr maps:
 | `2`   | Text    |
 | `3`   | Both    |
 
+## Write defaults (unmodelled fields)
+
+On Web Serial Write, Studio **fully replaces** each occupied channel record from the build projection. Fields below are written to firmware-safe defaults when not carried on `RadioChannelDto` — prior Read bytes in those offsets are **not** retained (no RMW inside channel records).
+
+| Field / offset                               | Write default             | Notes                                                                                                  |
+| -------------------------------------------- | ------------------------- | ------------------------------------------------------------------------------------------------------ |
+| txTimeout @ `0x1b`                           | `0`                       | Infinite (qdmr units of 15 s)                                                                          |
+| latitude / longitude @ `0x1a`–`0x1f`, `0x24` | `0`                       | Location not modelled on Write                                                                         |
+| flags @ `0x26`                               | `0`                       | Simplex / power-save / beep / DMR-ID override clear                                                    |
+| dmrId @ `0x27`                               | `0`                       | No per-channel DMR ID override                                                                         |
+| aprsIndex @ `0x2d`                           | `0`                       | No APRS alias link                                                                                     |
+| alias @ `0x30`                               | `0`                       | Alias mode None                                                                                        |
+| vox / monitor bits @ `0x33`                  | clear                     | Bits 6–3 off                                                                                           |
+| squelch @ `0x37`                             | `0`                       | Global (independent squelch deferred — [#692](https://github.com/pskillen/codeplug-studio/issues/692)) |
+| Empty / unlisted slots                       | `0xFF` fill, bitmap clear | Full channel table replace                                                                             |
+
+Modelled fields (name, frequencies, mode, power, tones, bandwidth, color code, timeslot, TX contact, RX group, scan skip flags when set on DTO) encode from the projection. Tone wire values: see [#690](https://github.com/pskillen/codeplug-studio/issues/690).
+
+Organisation banks (DMR contacts, zones, RX group lists) are also **full-bank replace** on Write — see [contacts-zones-lists.md](contacts-zones-lists.md).
+
 ## VFO extras
 
 `VFOChannelElement` extends the channel layout with TX offset @ `0x34` and step/offset-mode bits @ `0x36`. VFO bases: see [memory-layout.md](memory-layout.md).

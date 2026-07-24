@@ -24,6 +24,7 @@
 - `buildRadioWriteProjection` OpenGD77 branch (contacts/RX/zones + scan/forbid stamps) + prepare-write tests
 - Radio image clone summary / retain preview + BuildRadioImageSettingsPage OpenGD77 sections
 - Hub / outstanding / adding-a-radio-adapter / dm-1701 README updates
+- [#691](https://github.com/pskillen/codeplug-studio/issues/691) — full modelled Write encode: org banks + channel table always replaced from projection; unmodelled channel defaults documented in tier-3 [channel-record.md](../../reference/radios/opengd77/channel-record.md)
 
 ## Related
 
