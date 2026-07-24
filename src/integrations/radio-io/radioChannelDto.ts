@@ -48,4 +48,10 @@ export interface RadioChannelDto {
   aprsReceive?: boolean;
   /** Channel APRS report mode (0x1C bits 3–2). */
   aprsReportMode?: 'off' | 'digital' | 'analog';
+  /** OpenGD77: skipScan bit @ 0x33 bit 4. */
+  skipScan?: boolean;
+  /** OpenGD77: skipZoneScan bit @ 0x33 bit 5. */
+  skipZoneScan?: boolean;
+  /** OpenGD77 / DM-32: RX-only (forbid TX). */
+  rxOnly?: boolean;
 }
