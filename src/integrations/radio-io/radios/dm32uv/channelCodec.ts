@@ -329,10 +329,7 @@ export function encodeChannelsIntoDm32Image(
       const { blockMetadata, offset } = getTxContactOffset(slot);
       const tx = findBlockByMetadata(image, cache.addressBase, blockMetadata, cache.discovered);
       if (tx) {
-        const [byte0, byte1] = encodeTxContactEntry(
-          ch.txContactId,
-          isDigitalChannelMode(ch.mode),
-        );
+        const [byte0, byte1] = encodeTxContactEntry(ch.txContactId, isDigitalChannelMode(ch.mode));
         const off = tx.offset + offset;
         image.bytes[off] = byte0;
         image.bytes[off + 1] = byte1;

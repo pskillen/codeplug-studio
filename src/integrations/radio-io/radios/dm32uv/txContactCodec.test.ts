@@ -1,9 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import {
-  encodeTxContactEntry,
-  getTxContactOffset,
-  parseTxContactEntry,
-} from './txContactCodec.ts';
+import { encodeTxContactEntry, getTxContactOffset, parseTxContactEntry } from './txContactCodec.ts';
 import { DM32_METADATA } from './constants.ts';
 
 describe('txContactCodec', () => {

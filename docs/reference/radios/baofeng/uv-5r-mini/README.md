@@ -15,11 +15,11 @@ Handheld analogue FM/AM radio (UV-17Pro lineage). Studio targets it via CHIRP CS
 
 ## Studio profile ids
 
-| Adapter    | `profileId`         | Notes                                                                                          |
-| ---------- | ------------------- | ---------------------------------------------------------------------------------------------- |
+| Adapter    | `profileId`          | Notes                                                                                                                                                                                                                             |
+| ---------- | -------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Web Serial | `radio-io-uv5r-mini` | Direct radio egress; PROGRAM+R/W ([#617](https://github.com/pskillen/codeplug-studio/issues/617), [#655](https://github.com/pskillen/codeplug-studio/issues/655), [#675](https://github.com/pskillen/codeplug-studio/issues/675)) |
-| CHIRP CSV  | `chirp-uv5r`        | Generic CSV watt strings                                                                       |
-| NeonPlug   | `neonplug-uv5rmini` | Binary / ZIP interchange                                                                       |
+| CHIRP CSV  | `chirp-uv5r`         | Generic CSV watt strings                                                                                                                                                                                                          |
+| NeonPlug   | `neonplug-uv5rmini`  | Binary / ZIP interchange                                                                                                                                                                                                          |
 
 ## Documentation map
 

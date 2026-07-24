@@ -12,15 +12,15 @@ Cite: NeonPlug `memory.ts`, `constants.ts`, `protocol.ts` (`bulkReadRequiredBloc
 
 DM-32UV documentation and Studio Web Serial adapters follow **two related but distinct** memory models. Do not merge qDMR virtual tables into serial Write debugging.
 
-| World | Used by | How blocks are found |
-| --- | --- | --- |
-| **Serial sparse map** | NeonPlug, Studio Web Serial | V-frame `0x0A` config range + metadata byte at `block + 0xFFF` |
+| World                   | Used by                     | How blocks are found                                                                             |
+| ----------------------- | --------------------------- | ------------------------------------------------------------------------------------------------ |
+| **Serial sparse map**   | NeonPlug, Studio Web Serial | V-frame `0x0A` config range + metadata byte at `block + 0xFFF`                                   |
 | **qDMR codeplug image** | qDMR `.rdt` / device upload | Fixed **virtual** offsets in `DM32UVCodeplug::Offset`; metadata tag = `virtAddr >> 12` on upload |
 
 Many metadata prefixes line up (same 4 KB quantum), but **payloads differ** — notably metadata **`0x44`**:
 
-| Metadata | Serial sparse map (NeonPlug / Studio) | qDMR virtual image |
-| --- | --- | --- |
+| Metadata   | Serial sparse map (NeonPlug / Studio)          | qDMR virtual image                                                  |
+| ---------- | ---------------------------------------------- | ------------------------------------------------------------------- |
 | **`0x44`** | **Talk groups** (packed name + DMR ID entries) | **`0x44000`** = **contact bank** (24-byte `ContactElement` records) |
 
 **Ground truth for Studio Write:** NeonPlug serial map and the tables on this page — **not** qDMR virtual offset tables. qDMR remains useful for record-layout cross-checks where structures agree.

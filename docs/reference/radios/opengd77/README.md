@@ -79,8 +79,8 @@ Protocol lineage credit: `/attributions` entry `qdmr` (see attributions lib). `R
 
 Shipped under `src/integrations/radio-io/radios/opengd77/`:
 
-| Radio / profile | Descriptor path | Registry profile |
-| --- | --- | --- |
+| Radio / profile | Descriptor path                                                                                      | Registry profile         |
+| --------------- | ---------------------------------------------------------------------------------------------------- | ------------------------ |
 | Baofeng DM-1701 | [`dm1701/descriptor.ts`](../../../../src/integrations/radio-io/radios/opengd77/dm1701/descriptor.ts) | `radio-io-opengd77-1701` |
 
 Shared codecs (`channelCodec.ts`, `orgCodecs.ts`, `protocol.ts`, …) serve all OpenUV380-class targets. CSV interchange remains under [export-formats/opengd77](../../export-formats/opengd77/README.md).
