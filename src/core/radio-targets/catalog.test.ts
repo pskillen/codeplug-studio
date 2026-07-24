@@ -68,6 +68,7 @@ describe('radio target catalog', () => {
       'neonplug-uv5rmini',
       'radio-io-uv5r-mini',
       'radio-io-dm32uv',
+      'radio-io-opengd77-1701',
     ]) {
       expect(ids).toContain(profileId);
     }

@@ -37,7 +37,11 @@ describe('formatProfiles', () => {
 
   it('lists Direct radio profiles for UI', () => {
     const profiles = getFormatProfiles('radio-io');
-    expect(profiles.map((p) => p.profileId)).toEqual(['radio-io-uv5r-mini', 'radio-io-dm32uv']);
+    expect(profiles.map((p) => p.profileId)).toEqual([
+      'radio-io-uv5r-mini',
+      'radio-io-dm32uv',
+      'radio-io-opengd77-1701',
+    ]);
     expect(profiles[0]?.nameLimit).toBe(12);
     expect(profiles[0]?.maxChannels).toBe(999);
     expect(profiles[1]?.nameLimit).toBe(16);

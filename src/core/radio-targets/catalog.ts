@@ -94,7 +94,10 @@ export const RADIO_TARGETS: Record<string, RadioTarget> = {
     label: 'Baofeng DM-1701 / RT-84 (OpenGD77)',
     group: 'Baofeng',
     traits: opengd77Traits,
-    compatibleEgress: [egress('opengd77', 'opengd77-1701', 'OpenGD77 CSV')],
+    compatibleEgress: [
+      egress('radio-io', 'radio-io-opengd77-1701', 'Web Serial'),
+      egress('opengd77', 'opengd77-1701', 'OpenGD77 CSV'),
+    ],
   },
   'tyt-md9600': {
     id: 'tyt-md9600',

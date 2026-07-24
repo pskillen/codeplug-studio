@@ -19,15 +19,15 @@ describe('BuildService', () => {
 
     expect(outcome.build.name).toBe('Handheld');
     expect(outcome.build.radioTargetId).toBe('baofeng-dm1701');
-    expect(outcome.egressPaths).toHaveLength(1);
-    expect(outcome.egressPaths[0]?.formatId).toBe('opengd77');
+    expect(outcome.egressPaths).toHaveLength(2);
+    expect(outcome.egressPaths.map((e) => e.formatId)).toEqual(['radio-io', 'opengd77']);
 
     const builds = await service.listBuilds(projectId);
     expect(builds).toHaveLength(1);
     expect(builds[0]?.name).toBe('Handheld');
 
     const egressPaths = await service.listEgressPaths(projectId, outcome.build.id);
-    expect(egressPaths).toHaveLength(1);
+    expect(egressPaths).toHaveLength(2);
     expect(egressPaths[0]?.radioBuildId).toBe(outcome.build.id);
   });
 

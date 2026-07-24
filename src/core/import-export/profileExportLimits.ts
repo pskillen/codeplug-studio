@@ -11,7 +11,7 @@ import { getChirpProfile } from './formats/chirp/profiles.ts';
 import { getDm32Profile } from './formats/dm32/profiles.ts';
 import { getOpenGd77Profile } from './formats/opengd77/profiles.ts';
 import { getNeonplugProfile, isNeonplugDm32uvProfile } from './formats/neonplug/profiles.ts';
-import { getRadioIoProfile, isRadioIoDm32uvProfile } from './formats/radio-io/profiles.ts';
+import { getRadioIoProfile, isRadioIoDm32uvProfile, isRadioIoOpenGd771701Profile } from './formats/radio-io/profiles.ts';
 
 /** Known number, unknown blank, or not applicable to this radio workflow. */
 export type ExportLimitValue = number | null | 'not_used';
@@ -275,6 +275,30 @@ export function getProfileExportLimits(
           nameLengthTalkGroup: profile.nameLimit,
           nameLengthScanList: 10,
           nameLengthRxGroupList: 10,
+          powerLadder: profile.powerLadder,
+          siblingLadders: [],
+        };
+      }
+      if (isRadioIoOpenGd771701Profile(profile)) {
+        return {
+          formatId,
+          profileId: profile.id,
+          profileLabel: profile.label,
+          maxChannels: profile.maxMemorySlots,
+          maxZones: profile.maxZones,
+          maxScanLists: profile.maxScanLists,
+          maxRxGroupLists: profile.maxRxGroupLists,
+          maxContacts: null,
+          maxTalkGroups: null,
+          zoneMembers: profile.zoneMembers,
+          scanListMembers: profile.scanListMembers,
+          rxGroupListMembers: profile.rxGroupListMembers,
+          nameLengthChannel: profile.nameLimit,
+          nameLengthZone: profile.nameLimit,
+          nameLengthContact: profile.nameLimit,
+          nameLengthTalkGroup: profile.nameLimit,
+          nameLengthScanList: 'not_used',
+          nameLengthRxGroupList: profile.nameLimit,
           powerLadder: profile.powerLadder,
           siblingLadders: [],
         };

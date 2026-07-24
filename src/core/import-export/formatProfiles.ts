@@ -26,6 +26,7 @@ import {
   RADIO_IO_PROFILES,
   getRadioIoProfile,
   isRadioIoDm32uvProfile,
+  isRadioIoOpenGd771701Profile,
   type RadioIoRadioProfile,
 } from './formats/radio-io/profiles.ts';
 
@@ -201,6 +202,9 @@ export function formatProfileWireHint(formatId: FormatId, profileId: string): st
     try {
       const profile = getRadioIoProfile(profileId);
       if (isRadioIoDm32uvProfile(profile)) {
+        return `${profile.nameLimit}-char wire names · ${profile.maxMemorySlots} channels max · Web Serial`;
+      }
+      if (isRadioIoOpenGd771701Profile(profile)) {
         return `${profile.nameLimit}-char wire names · ${profile.maxMemorySlots} channels max · Web Serial`;
       }
       return `${profile.nameLimit}-char wire names · ${profile.maxMemorySlots} memory slots · Web Serial only`;

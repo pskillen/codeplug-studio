@@ -29,12 +29,37 @@ export interface RadioIoDm32uvProfile {
   powerLadder: readonly PowerLadderEntry[];
 }
 
-export type RadioIoRadioProfile = RadioIoUv5rMiniProfile | RadioIoDm32uvProfile;
+/** OpenGD77 DM-1701 / RT-84 Web Serial — mirrors opengd77-1701 CSV caps. */
+export interface RadioIoOpenGd771701Profile {
+  id: 'radio-io-opengd77-1701';
+  label: string;
+  maxMemorySlots: number;
+  nameLimit: number;
+  maxZones: number;
+  zoneMembers: number;
+  /** Zone-as-scan-list — no dedicated scan lists. */
+  maxScanLists: 'not_used';
+  scanListMembers: 'not_used';
+  maxRxGroupLists: number;
+  rxGroupListMembers: number;
+  powerLadder: readonly PowerLadderEntry[];
+}
+
+export type RadioIoRadioProfile =
+  | RadioIoUv5rMiniProfile
+  | RadioIoDm32uvProfile
+  | RadioIoOpenGd771701Profile;
 
 export function isRadioIoDm32uvProfile(
   profile: RadioIoRadioProfile,
 ): profile is RadioIoDm32uvProfile {
   return profile.id === 'radio-io-dm32uv';
+}
+
+export function isRadioIoOpenGd771701Profile(
+  profile: RadioIoRadioProfile,
+): profile is RadioIoOpenGd771701Profile {
+  return profile.id === 'radio-io-opengd77-1701';
 }
 
 /** High / Low — same facts as NeonPlug UV-5R Mini binary. */
@@ -47,6 +72,19 @@ const DM32_POWER_LADDER: readonly PowerLadderEntry[] = [
   { percent: 100, wire: 'High' },
   { percent: 50, wire: 'Middle' },
   { percent: 20, wire: 'Low' },
+];
+
+/** Same P1–P9 ladder as opengd77-1701 CSV profile. */
+const OPENGD77_1701_POWER_LADDER: readonly PowerLadderEntry[] = [
+  { percent: 100, wire: 'P9', approxWatts: '5 W' },
+  { percent: 80, wire: 'P8', approxWatts: '4 W' },
+  { percent: 60, wire: 'P7', approxWatts: '3 W' },
+  { percent: 40, wire: 'P6', approxWatts: '2 W' },
+  { percent: 20, wire: 'P5', approxWatts: '1 W' },
+  { percent: 15, wire: 'P4', approxWatts: '750 mW' },
+  { percent: 10, wire: 'P3', approxWatts: '500 mW' },
+  { percent: 5, wire: 'P2', approxWatts: '250 mW' },
+  { percent: 1, wire: 'P1', approxWatts: '50 mW' },
 ];
 
 export const RADIO_IO_UV5R_MINI_PROFILE: RadioIoUv5rMiniProfile = {
@@ -71,9 +109,24 @@ export const RADIO_IO_DM32UV_PROFILE: RadioIoDm32uvProfile = {
   powerLadder: DM32_POWER_LADDER,
 };
 
+export const RADIO_IO_OPENGD77_1701_PROFILE: RadioIoOpenGd771701Profile = {
+  id: 'radio-io-opengd77-1701',
+  label: 'Baofeng DM-1701 / RT-84 (OpenGD77)',
+  maxMemorySlots: 1023,
+  nameLimit: 16,
+  maxZones: 68,
+  zoneMembers: 80,
+  maxScanLists: 'not_used',
+  scanListMembers: 'not_used',
+  maxRxGroupLists: 76,
+  rxGroupListMembers: 32,
+  powerLadder: OPENGD77_1701_POWER_LADDER,
+};
+
 export const RADIO_IO_PROFILES: readonly RadioIoRadioProfile[] = [
   RADIO_IO_UV5R_MINI_PROFILE,
   RADIO_IO_DM32UV_PROFILE,
+  RADIO_IO_OPENGD77_1701_PROFILE,
 ];
 
 export function getRadioIoProfile(profileId: string): RadioIoRadioProfile {

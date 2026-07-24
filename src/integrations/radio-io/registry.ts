@@ -6,8 +6,13 @@
 import type { RadioCompatibleProfile, RadioDescriptor } from './types.ts';
 import { UV5R_MINI_DESCRIPTOR } from './radios/uv5r-mini/descriptor.ts';
 import { DM32UV_DESCRIPTOR } from './radios/dm32uv/descriptor.ts';
+import { OPENGD77_DM1701_DESCRIPTOR } from './radios/opengd77/dm1701/descriptor.ts';
 
-const DESCRIPTORS: readonly RadioDescriptor[] = [UV5R_MINI_DESCRIPTOR, DM32UV_DESCRIPTOR];
+const DESCRIPTORS: readonly RadioDescriptor[] = [
+  UV5R_MINI_DESCRIPTOR,
+  DM32UV_DESCRIPTOR,
+  OPENGD77_DM1701_DESCRIPTOR,
+];
 
 /** All registered radio descriptors (order is UI display order). */
 export function listRadioDescriptors(): readonly RadioDescriptor[] {
