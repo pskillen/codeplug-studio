@@ -7,8 +7,8 @@
 
 | Slice | State |
 | --- | --- |
-| 1 Memory + channel codec | In progress |
-| 2 Organisation codecs + hydration | Pending |
+| 1 Memory + channel codec | Done |
+| 2 Organisation codecs + hydration | Done |
 | 3 Serial protocol | Pending |
 | 4 Descriptor / registry / profile | Pending |
 | 5 Write projection | Pending |
@@ -17,7 +17,8 @@
 
 ## Shipped this branch
 
-_(none yet)_
+- OpenUV380 constants, memory helpers, channel codec + tests
+- Zone / contact / RX group codecs, writeRole, hydration merge + tests
 
 ## Related
 
