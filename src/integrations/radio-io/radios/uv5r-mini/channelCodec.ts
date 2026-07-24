@@ -175,12 +175,26 @@ export function decodeChannelsFromImage(image: Uint8Array | MemoryMap): RadioCha
   return channels;
 }
 
-/** Write channel DTOs into image (mutates). Unlisted slots left unchanged. */
+/** Firmware string length preserved inside the channel span at {@link UV5R_MINI_FW_VER_OFFSET}. */
+const UV5R_MINI_FW_VER_LEN = 24;
+
+/** Write channel DTOs into image (mutates). Clears the full channel span to empty (`0xFF`) first. */
 export function encodeChannelsIntoImage(
   image: Uint8Array | MemoryMap,
   channels: readonly RadioChannelDto[],
 ): void {
   const bytes = 'bytes' in image ? image.bytes : image;
+  const span = Math.min(bytes.length, UV5R_MINI_CHANNEL_SPAN);
+  const fwSlice =
+    bytes.length > UV5R_MINI_FW_VER_OFFSET
+      ? bytes
+          .subarray(UV5R_MINI_FW_VER_OFFSET, UV5R_MINI_FW_VER_OFFSET + UV5R_MINI_FW_VER_LEN)
+          .slice()
+      : null;
+  bytes.fill(0xff, 0, span);
+  if (fwSlice) {
+    bytes.set(fwSlice, UV5R_MINI_FW_VER_OFFSET);
+  }
   for (const dto of channels) {
     const index = dto.slotIndex - 1;
     if (index < 0 || index >= UV5R_MINI_CHANNEL_COUNT) {

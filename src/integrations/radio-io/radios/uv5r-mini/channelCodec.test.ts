@@ -13,7 +13,7 @@ import {
   encodeTone,
   readFirmwareFromImage,
 } from './channelCodec.ts';
-import { UV5R_MINI_CHANNEL_SIZE } from './constants.ts';
+import { UV5R_MINI_CHANNEL_SIZE, UV5R_MINI_CHANNEL_SPAN } from './constants.ts';
 
 function sampleDto(overrides: Partial<RadioChannelDto> = {}): RadioChannelDto {
   return {
@@ -67,7 +67,7 @@ describe('channelCodec record', () => {
     expect(decoded.rxTone).toEqual({ kind: 'ctcss', hz: 77 });
   });
 
-  it('writes into image without clobbering firmware region', () => {
+  it('writes into image without clobbering settings region', () => {
     const image = createSyntheticImageBase();
     const settingsMarker = 0xaa;
     image[0x8040] = settingsMarker;
@@ -77,6 +77,30 @@ describe('channelCodec record', () => {
     expect(channels[0]?.wireName).toBe('A1');
     expect(channels[0]?.empty).toBe(false);
     expect(readFirmwareFromImage(image)).toBe('UV5RMINI-TEST');
+  });
+
+  it('clears unlisted slots on sparse encode', () => {
+    const image = createSyntheticImageBase();
+    encodeChannelsIntoImage(image, [sampleDto({ slotIndex: 2, wireName: 'ONLY' })]);
+    encodeChannelsIntoImage(image, [sampleDto({ slotIndex: 1, wireName: 'ONE' })]);
+    const channels = decodeChannelsFromImage(image);
+    expect(channels[0]?.wireName).toBe('ONE');
+    expect(channels[0]?.empty).toBe(false);
+    expect(channels[1]?.empty).toBe(true);
+    expect(channels.slice(2).every((c) => c.empty)).toBe(true);
+    expect(image.subarray(0, UV5R_MINI_CHANNEL_SPAN).every((b) => b === 0xff)).toBe(false);
+    expect(image[UV5R_MINI_CHANNEL_SPAN - 1]).toBe(0xff);
+  });
+
+  it('preserves firmware string inside channel span when clearing', () => {
+    const image = createSyntheticImageBase();
+    encodeChannelsIntoImage(image, [
+      sampleDto({ slotIndex: 10, wireName: 'TEN' }),
+      sampleDto({ slotIndex: 20, wireName: 'TWENTY' }),
+    ]);
+    expect(readFirmwareFromImage(image)).toBe('UV5RMINI-TEST');
+    const fwOffset = 0x1ef0;
+    expect(String.fromCharCode(...image.subarray(fwOffset, fwOffset + 12))).toBe('UV5RMINI-TES');
   });
 
   it('reads empty slots from blank image', () => {
