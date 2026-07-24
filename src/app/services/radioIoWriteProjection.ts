@@ -468,6 +468,222 @@ function radioAprsFromNeonplugPatch(
   };
 }
 
+function openGd77ExportLimits(egress: RadioWireEgressIds): ProfileExportLimits {
+  return (
+    getProfileExportLimits(egress.formatId as FormatId, egress.profileId) ?? {
+      formatId: egress.formatId as FormatId,
+      profileId: egress.profileId,
+      profileLabel: 'OpenGD77 1701',
+      maxChannels: 1023,
+      maxZones: 68,
+      maxScanLists: 'not_used',
+      maxRxGroupLists: 76,
+      maxContacts: null,
+      maxTalkGroups: null,
+      zoneMembers: 80,
+      scanListMembers: 'not_used',
+      rxGroupListMembers: 32,
+      nameLengthChannel: 16,
+      nameLengthZone: 16,
+      nameLengthContact: 16,
+      nameLengthTalkGroup: 16,
+      nameLengthScanList: 'not_used',
+      nameLengthRxGroupList: 15,
+      powerLadder: [],
+      siblingLadders: [],
+    }
+  );
+}
+
+/**
+ * OpenGD77 lean organisation: contacts + RX groups + zones.
+ * Channels stay 1:1 with library (no m×n fan-out) — Contact / TG List FKs on the channel record.
+ */
+function buildOpenGd77ContactsAndRx(
+  assembled: AssembledBuild,
+  egress: RadioWireEgressIds,
+  warnings: string[],
+): {
+  talkGroups: RadioTalkGroupDto[];
+  rxGroups: RadioRxGroupDto[];
+  digitalContacts: RadioDigitalContactDto[];
+  fkMaps: RadioChannelFkMaps;
+} {
+  const limits = openGd77ExportLimits(egress);
+  const nameLen = numericLimit(limits.nameLengthTalkGroup, 16);
+  const nameLenRx = numericLimit(limits.nameLengthRxGroupList, 15);
+  const maxRx = numericLimit(limits.maxRxGroupLists, 76);
+  const maxRxMembers = numericLimit(limits.rxGroupListMembers, 32);
+  const maxContacts = 1024;
+
+  const contactIdByEntityId = new Map<string, number>();
+  const talkGroups: RadioTalkGroupDto[] = [];
+  const reservedTg = new Set<string>();
+
+  for (const row of assembled.talkGroups) {
+    if (talkGroups.length >= maxContacts) break;
+    const wireName = applyListWireNameLimits(
+      row.wireName,
+      reservedTg,
+      undefined,
+      egress.profileId,
+      warnings,
+      'Talk group',
+      nameLen,
+    );
+    const index = talkGroups.length + 1;
+    talkGroups.push({
+      index,
+      wireName,
+      digitalId: row.entity.digitalId,
+      callType: 0, // OpenGD77 group
+    });
+    contactIdByEntityId.set(row.entity.id, index);
+  }
+
+  const digitalContacts: RadioDigitalContactDto[] = [];
+  const reservedDc = new Set<string>();
+  let nextContactIndex = talkGroups.length + 1;
+  for (const row of assembled.digitalContacts) {
+    if (nextContactIndex > maxContacts) break;
+    const wireName = applyListWireNameLimits(
+      row.wireName,
+      reservedDc,
+      undefined,
+      egress.profileId,
+      warnings,
+      'Contact',
+      nameLen,
+    );
+    digitalContacts.push({
+      wireName,
+      digitalId: row.entity.digitalId,
+      callsign: row.entity.callsign ?? '',
+      city: row.entity.city ?? '',
+      province: row.entity.state ?? '',
+      country: row.entity.country ?? '',
+      remark: row.entity.remarks ?? '',
+    });
+    contactIdByEntityId.set(row.entity.id, nextContactIndex);
+    nextContactIndex++;
+  }
+
+  const rxGroupIndexById = new Map<string, number>();
+  const rxGroups: RadioRxGroupDto[] = [];
+  const reservedRx = new Set<string>();
+
+  for (const row of assembled.rxGroupLists) {
+    if (rxGroups.length >= maxRx) break;
+    const wireName = applyListWireNameLimits(
+      row.wireName,
+      reservedRx,
+      undefined,
+      egress.profileId,
+      warnings,
+      'RX group list',
+      nameLenRx,
+    );
+    const memberDigitalIds: number[] = [];
+    for (const member of row.entity.members) {
+      if (memberDigitalIds.length >= maxRxMembers) break;
+      if (member.ref.kind === 'talkGroup') {
+        const tg = assembled.talkGroups.find((t) => t.entity.id === member.ref.id);
+        if (tg) memberDigitalIds.push(tg.entity.digitalId);
+      } else if (member.ref.kind === 'digitalContact') {
+        const dc = assembled.digitalContacts.find((d) => d.entity.id === member.ref.id);
+        if (dc) memberDigitalIds.push(dc.entity.digitalId);
+      }
+    }
+    const index = rxGroups.length + 1;
+    rxGroups.push({ index, wireName, memberDigitalIds });
+    // Channel groupList is 1-based on wire; DTO rxGroupIndex is 0-based.
+    rxGroupIndexById.set(row.entity.id, index - 1);
+  }
+
+  return {
+    talkGroups,
+    rxGroups,
+    digitalContacts,
+    fkMaps: { contactIdByEntityId, rxGroupIndexById },
+  };
+}
+
+function buildOpenGd77Zones(
+  assembled: AssembledBuild,
+  egress: RadioWireEgressIds,
+  numbersBySourceChannelId: Map<string, number[]>,
+  warnings: string[],
+): RadioZoneDto[] {
+  const limits = openGd77ExportLimits(egress);
+  const maxZones = numericLimit(limits.maxZones, 68);
+  const zoneMembersCap = numericLimit(limits.zoneMembers, 80);
+  const nameLengthZone = numericLimit(limits.nameLengthZone, 16);
+
+  const reservedZoneNames = new Set<string>();
+  const zones: RadioZoneDto[] = [];
+
+  for (const zone of assembled.zones) {
+    if (zones.length >= maxZones) break;
+    let channelNumbers: number[] = [];
+    for (const channelId of zone.memberChannelIds) {
+      const nums = numbersBySourceChannelId.get(channelId);
+      if (nums) channelNumbers.push(...nums);
+    }
+    if (channelNumbers.length > zoneMembersCap) {
+      warnings.push(
+        `Zone "${zone.wireName}" truncated from ${channelNumbers.length} to ${zoneMembersCap} members`,
+      );
+      channelNumbers = channelNumbers.slice(0, zoneMembersCap);
+    }
+    const wireName = applyListWireNameLimits(
+      zone.wireName,
+      reservedZoneNames,
+      undefined,
+      egress.profileId,
+      warnings,
+      'Zone',
+      nameLengthZone,
+    );
+    zones.push({ wireName, channelNumbers });
+  }
+  return zones;
+}
+
+function stampOpenGd77ChannelBehaviour(
+  channels: RadioChannelDto[],
+  assembled: AssembledBuild,
+  build: RadioBuild,
+  numbersBySourceChannelId: Map<string, number[]>,
+): RadioChannelDto[] {
+  const merged = mergeExportOptions(build, 'radio-io', { profileId: 'radio-io-opengd77-1701' });
+  const scanContext = buildScanContext(
+    merged.defaultScanInclusion != null
+      ? { defaultScanInclusion: merged.defaultScanInclusion }
+      : undefined,
+    { defaultScanInclusion: 'scan' },
+  );
+
+  const channelByNumber = new Map<number, (typeof assembled.channels)[number]>();
+  for (const row of assembled.channels) {
+    const nums = numbersBySourceChannelId.get(row.entity.id);
+    if (!nums) continue;
+    for (const n of nums) channelByNumber.set(n, row);
+  }
+
+  return channels.map((dto) => {
+    const row = channelByNumber.get(dto.slotIndex);
+    if (!row) return dto;
+    const skip = effectiveScanSkips(row.entity, scanContext);
+    const forbid = row.entity.forbidTransmit === 'forbid';
+    return {
+      ...dto,
+      skipScan: skip,
+      skipZoneScan: skip,
+      rxOnly: forbid || dto.rxOnly,
+    };
+  });
+}
+
 export function buildRadioWriteProjection(
   assembled: AssembledBuild,
   build: RadioBuild,
@@ -482,6 +698,12 @@ export function buildRadioWriteProjection(
 
   if (egress.profileId === 'radio-io-dm32uv') {
     const tgRx = buildTalkGroupsAndRx(assembled, egress, warnings);
+    talkGroups = tgRx.talkGroups;
+    rxGroups = tgRx.rxGroups;
+    digitalContacts = tgRx.digitalContacts;
+    fkMaps = tgRx.fkMaps;
+  } else if (egress.profileId === 'radio-io-opengd77-1701') {
+    const tgRx = buildOpenGd77ContactsAndRx(assembled, egress, warnings);
     talkGroups = tgRx.talkGroups;
     rxGroups = tgRx.rxGroups;
     digitalContacts = tgRx.digitalContacts;
@@ -529,6 +751,19 @@ export function buildRadioWriteProjection(
       rxGroups,
       digitalContacts,
       aprs: radioAprsFromNeonplugPatch(assembled, numbersBySourceChannelId, warnings),
+    };
+  } else if (egress.profileId === 'radio-io-opengd77-1701') {
+    channels = stampOpenGd77ChannelBehaviour(
+      dtos,
+      assembled,
+      build,
+      numbersBySourceChannelId,
+    );
+    organisation = {
+      zones: buildOpenGd77Zones(assembled, egress, numbersBySourceChannelId, warnings),
+      talkGroups,
+      rxGroups,
+      digitalContacts,
     };
   }
 

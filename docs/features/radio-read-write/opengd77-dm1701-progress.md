@@ -9,9 +9,9 @@
 | --- | --- |
 | 1 Memory + channel codec | Done |
 | 2 Organisation codecs + hydration | Done |
-| 3 Serial protocol | Pending |
-| 4 Descriptor / registry / profile | Pending |
-| 5 Write projection | Pending |
+| 3 Serial protocol | Done |
+| 4 Descriptor / registry / profile | Done |
+| 5 Write projection | Done |
 | 6 Radio image UI | Pending |
 | 7 Documentation | Pending |
 
@@ -19,6 +19,9 @@
 
 - OpenUV380 constants, memory helpers, channel codec + tests
 - Zone / contact / RX group codecs, writeRole, hydration merge + tests
+- Serial protocol download (`R` FLASH spans) + `'X'` dirty-sector upload + mocked pipe tests
+- DM-1701 descriptor, registry, `radio-io-opengd77-1701` profile, catalog Web Serial egress
+- `buildRadioWriteProjection` OpenGD77 branch (contacts/RX/zones + scan/forbid stamps) + prepare-write tests
 
 ## Related
 

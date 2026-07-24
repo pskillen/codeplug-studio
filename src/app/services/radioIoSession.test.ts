@@ -7,6 +7,7 @@ import {
   mergeChannelsIntoUv5rMiniHydration,
 } from '@integrations/radio-io/radios/uv5r-mini/hydration.ts';
 import { UV5R_MINI_MEM_TOTAL } from '@integrations/radio-io/radios/uv5r-mini/constants.ts';
+import { OPENUV380_IMAGE_SIZE } from '@integrations/radio-io/radios/opengd77/constants.ts';
 import type {
   CloneImageRadio,
   MemoryMap,
@@ -118,6 +119,35 @@ describe('radioIoSession helpers', () => {
       emptyLibrary([ch]),
     );
     expect(image.size).toBe(UV5R_MINI_MEM_TOTAL);
+  });
+
+  it('prepares OpenGD77 DM-1701 write image from hydration + projection', () => {
+    const imageBytes = new Uint8Array(OPENUV380_IMAGE_SIZE);
+    imageBytes.fill(0xff);
+    const hydration = createRadioCloneHydrationBag({
+      radioModelId: 'DM-1701',
+      imageBytes,
+    });
+    const ch = {
+      ...newChannel('p1', 'Test'),
+      id: 'ch-1',
+      rxFrequency: 145_500_000,
+      txFrequency: 145_500_000,
+      power: 100,
+      modeProfiles: [
+        { mode: 'fm' as const, squelch: null, rxTone: 'none', txTone: 'none', bandwidthKHz: 25 },
+      ],
+    };
+    const { build, egress } = newRadioBuildForProfile('p1', 'radio-io-opengd77-1701');
+    const { image } = prepareRadioWriteImage(
+      {
+        ...build,
+        channelOverrides: [{ libraryEntityId: 'ch-1', wireName: 'TEST', orderOrSlot: 1 }],
+      },
+      { ...egress, hydration },
+      emptyLibrary([ch]),
+    );
+    expect(image.size).toBe(OPENUV380_IMAGE_SIZE);
   });
 
   it('blocks write without hydration', async () => {
