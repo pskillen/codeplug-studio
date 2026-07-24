@@ -35,6 +35,30 @@ export interface AssembledChannelsToRadioDtosResult {
   warnings: string[];
 }
 
+/** Optional radio-native FK maps for TX-contact / RX-group indices. */
+export interface RadioChannelFkMaps {
+  contactIdByEntityId?: ReadonlyMap<string, number>;
+  rxGroupIndexById?: ReadonlyMap<string, number>;
+}
+
+function resolveContactId(
+  ref: { kind: string; id: string } | null | undefined,
+  maps?: RadioChannelFkMaps,
+): number | undefined {
+  if (!ref || !maps?.contactIdByEntityId) return undefined;
+  const id = maps.contactIdByEntityId.get(ref.id);
+  return id != null && id > 0 ? id : undefined;
+}
+
+function resolveRxGroupIndex(
+  rxGroupListId: string | null | undefined,
+  maps?: RadioChannelFkMaps,
+): number | undefined {
+  if (!rxGroupListId || !maps?.rxGroupIndexById) return undefined;
+  const idx = maps.rxGroupIndexById.get(rxGroupListId);
+  return idx != null ? idx : undefined;
+}
+
 function parseChannelTone(tone: ChannelTone | undefined): RadioTone {
   if (!tone || tone === 'none') return { kind: 'none' };
   const s = tone.trim();
@@ -85,7 +109,19 @@ function isDmrProfile(
   return profile.mode === 'dmr';
 }
 
-function digitalFieldsFromChannel(channel: Channel): Partial<RadioChannelDto> {
+function aprsFieldsFromChannel(channel: Channel): Partial<RadioChannelDto> {
+  const aprs = channel.aprs;
+  if (!aprs) return {};
+  return {
+    aprsReceive: aprs.receiveEnabled === true,
+    aprsReportMode: aprs.reportType === 'digital' ? 'digital' : 'off',
+  };
+}
+
+function digitalFieldsFromChannel(
+  channel: Channel,
+  fkMaps?: RadioChannelFkMaps,
+): Partial<RadioChannelDto> {
   const dmr = channel.modeProfiles.find((p) => p.mode === 'dmr');
   const analog = channel.modeProfiles.find((p) => p.mode === 'fm' || p.mode === 'am');
   let mode: RadioChannelMode | undefined;
@@ -94,22 +130,26 @@ function digitalFieldsFromChannel(channel: Channel): Partial<RadioChannelDto> {
   else if (analog) mode = 'analog';
 
   if (!dmr) {
-    return mode ? { mode } : {};
+    return { ...(mode ? { mode } : {}), ...aprsFieldsFromChannel(channel) };
   }
 
   const timeslot = dmr.timeslot === 2 ? 2 : dmr.timeslot === 1 ? 1 : undefined;
+  const txContactId = resolveContactId(dmr.contactRef, fkMaps);
+  const rxGroupIndex = resolveRxGroupIndex(dmr.rxGroupListId, fkMaps);
   return {
     mode: mode ?? 'digital',
     colorCode: dmr.colourCode ?? undefined,
     timeslot,
-    // TX-contact index is radio-native; leave unset so RMW preserves hydrated TG links
-    // until library→radio contact encode lands (#636).
+    ...(txContactId != null ? { txContactId } : {}),
+    ...(rxGroupIndex != null ? { rxGroupIndex } : {}),
+    ...aprsFieldsFromChannel(channel),
   };
 }
 
 function digitalFieldsFromProjection(
   projection: ExpandedMxNChannelRow,
   channel: Channel,
+  fkMaps?: RadioChannelFkMaps,
 ): Partial<RadioChannelDto> {
   const analog = channel.modeProfiles.find((p) => p.mode === 'fm' || p.mode === 'am');
   const dmr = isDmrProfile(projection.modeProfile) ? projection.modeProfile : null;
@@ -119,14 +159,19 @@ function digitalFieldsFromProjection(
   else if (analog) mode = 'analog';
 
   if (!dmr) {
-    return mode ? { mode } : {};
+    return { ...(mode ? { mode } : {}), ...aprsFieldsFromChannel(channel) };
   }
 
   const timeslot = dmr.timeslot === 2 ? 2 : dmr.timeslot === 1 ? 1 : undefined;
+  const txContactId = resolveContactId(projection.txContactRef ?? dmr.contactRef, fkMaps);
+  const rxGroupIndex = resolveRxGroupIndex(projection.rxGroupListId ?? dmr.rxGroupListId, fkMaps);
   return {
     mode: mode ?? 'digital',
     colorCode: dmr.colourCode ?? undefined,
     timeslot,
+    ...(txContactId != null ? { txContactId } : {}),
+    ...(rxGroupIndex != null ? { rxGroupIndex } : {}),
+    ...aprsFieldsFromChannel(channel),
   };
 }
 
@@ -163,6 +208,7 @@ export function assembledChannelsToRadioDtosWithWarnings(
   channels: readonly AssembledChannel[],
   build: RadioBuild,
   egress: RadioWireEgressIds,
+  fkMaps?: RadioChannelFkMaps,
 ): AssembledChannelsToRadioDtosResult {
   const reserved = new Set<string>();
   const warnings: string[] = [];
@@ -183,7 +229,7 @@ export function assembledChannelsToRadioDtosWithWarnings(
       txTone: parseChannelTone(analog && 'txTone' in analog ? analog.txTone : 'none'),
       powerPercent: row.entity.power,
       bandwidth: bandwidthFromKHz(analog && 'bandwidthKHz' in analog ? analog.bandwidthKHz : null),
-      ...digitalFieldsFromChannel(row.entity),
+      ...digitalFieldsFromChannel(row.entity, fkMaps),
     });
   });
   return { dtos: truncateToRadioCapacity(dtos, egress, warnings), warnings };
@@ -197,9 +243,10 @@ export function expandAssembledChannelsToRadioDtos(
   build: RadioBuild,
   library: Pick<LibrarySlice, 'talkGroups' | 'digitalContacts'>,
   egress: RadioWireEgressIds,
+  fkMaps?: RadioChannelFkMaps,
 ): AssembledChannelsToRadioDtosResult {
   if (!hasMxNChannelExpansion(build.radioTargetId)) {
-    return assembledChannelsToRadioDtosWithWarnings(assembled.channels, build, egress);
+    return assembledChannelsToRadioDtosWithWarnings(assembled.channels, build, egress, fkMaps);
   }
 
   const warnings: string[] = [];
@@ -236,7 +283,7 @@ export function expandAssembledChannelsToRadioDtos(
       txTone: parseChannelTone(analog && 'txTone' in analog ? analog.txTone : 'none'),
       powerPercent: channel.power,
       bandwidth: bandwidthFromKHz(analog && 'bandwidthKHz' in analog ? analog.bandwidthKHz : null),
-      ...digitalFieldsFromProjection(projection, channel),
+      ...digitalFieldsFromProjection(projection, channel, fkMaps),
     });
     slotIndex += 1;
   }

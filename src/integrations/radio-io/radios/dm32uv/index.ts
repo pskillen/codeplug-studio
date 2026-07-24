@@ -36,6 +36,8 @@ export {
   parseDm32ChannelRecord,
   encodeDm32ChannelRecord,
 } from './channelCodec.ts';
+export { encodeDm32Zone, encodeZonesIntoDm32Image } from './zoneCodec.ts';
+export { encodeDm32ScanList, encodeScanListsIntoDm32Image } from './scanListCodec.ts';
 export {
   summariseDm32uvClone,
   type Dm32uvCloneSummary,
@@ -47,5 +49,6 @@ export {
   dm32BlockLabel,
   dm32ChannelBankAddresses,
   DM32_WRITTEN_FROM_BUILD_LABELS,
+  DM32_ANALOG_CONTACTS_WRITE_GAP,
   type Dm32WriteRole,
 } from './writeRole.ts';

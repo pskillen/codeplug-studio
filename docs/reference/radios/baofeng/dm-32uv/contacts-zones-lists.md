@@ -18,6 +18,8 @@ Separate from config-range metadata `0x0F` (RX groups).
 | Later blocks   | Entries from `0x00`; 44 per 4KB                   |
 | Empty sentinel | Name byte `0x00` or `0xFF`                        |
 
+**Studio Web Serial (#667):** digital address-book entries are rewritten from the build on Write. Analog / DTMF contacts are **not** encoded — they stay as on the radio; use CPS / NeonPlug file egress to change them.
+
 ### Contact entry (`0x5C`)
 
 | Offset        | Field    | Notes    |

@@ -21,6 +21,16 @@ export type {
 } from './types.ts';
 
 export type { RadioChannelDto, RadioTone } from './radioChannelDto.ts';
+export type {
+  RadioAprsDto,
+  RadioDigitalContactDto,
+  RadioRxGroupDto,
+  RadioScanListDto,
+  RadioTalkGroupDto,
+  RadioWriteOrganisation,
+  RadioWriteProjection,
+  RadioZoneDto,
+} from './radioWriteProjection.ts';
 
 export * from './kit/index.ts';
 export * from './transport/index.ts';

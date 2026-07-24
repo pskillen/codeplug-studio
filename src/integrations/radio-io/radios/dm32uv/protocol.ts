@@ -33,6 +33,10 @@ import {
   selectBlocksToBulkRead,
   type Dm32DiscoveredBlock,
 } from './memory.ts';
+import { parseDm32ContactsRange } from './contactCodec.ts';
+
+/** Max MemoryMap span when folding contact bank into config window (bytes). */
+const DM32_MAX_COMBINED_MAP_BYTES = 32 * 1024 * 1024;
 
 export interface Dm32DownloadCache {
   addressBase: number;
@@ -42,6 +46,9 @@ export interface Dm32DownloadCache {
   discovered: Dm32DiscoveredBlock[];
   /** Absolute address → 4KB payload. */
   blocks: Map<number, Uint8Array>;
+  /** V-frame 0x0F contact bank absolute start (when known). */
+  contactsBase?: number;
+  contactsEnd?: number;
 }
 
 function blocksToMemoryMap(cache: Dm32DownloadCache): MemoryMap {
@@ -100,6 +107,8 @@ export class Dm32uvProtocol implements CloneImageRadio {
         modelString: seed.modelString,
         discovered: seed.discovered.map((b) => ({ ...b })),
         blocks: new Map(seed.blocks),
+        contactsBase: seed.contactsBase,
+        contactsEnd: seed.contactsEnd,
       };
       return;
     }
@@ -108,6 +117,8 @@ export class Dm32uvProtocol implements CloneImageRadio {
     this.cache.firmware = seed.firmware ?? this.cache.firmware;
     this.cache.discovered = seed.discovered.map((b) => ({ ...b }));
     this.cache.blocks = new Map(seed.blocks);
+    this.cache.contactsBase = seed.contactsBase;
+    this.cache.contactsEnd = seed.contactsEnd;
   }
 
   async connect(
@@ -140,6 +151,10 @@ export class Dm32uvProtocol implements CloneImageRadio {
     const alignedEnd = alignConfigEnd(range.end);
     const mapSize = alignedEnd - addressBase + DM32_BLOCK_SIZE;
 
+    const contactsRange = parseDm32ContactsRange(
+      vframes.get(DM32_VFRAME.CONTACTS) ?? new Uint8Array(),
+    );
+
     this.cache = {
       addressBase,
       mapSize,
@@ -147,6 +162,9 @@ export class Dm32uvProtocol implements CloneImageRadio {
       modelString,
       discovered: [],
       blocks: new Map(),
+      ...(contactsRange
+        ? { contactsBase: contactsRange.start, contactsEnd: contactsRange.end }
+        : {}),
     };
 
     await dm32EnterProgrammingMode(pipe, this.settle);
@@ -199,6 +217,35 @@ export class Dm32uvProtocol implements CloneImageRadio {
       ...settle,
       onProgress: opts.onProgress,
     });
+
+    // Fold V-frame contact bank into sparse cache when it fits a reasonable MemoryMap window.
+    if (
+      this.cache.contactsBase != null &&
+      this.cache.contactsEnd != null &&
+      this.cache.contactsEnd > this.cache.contactsBase
+    ) {
+      const contactFirst = Math.floor(this.cache.contactsBase / DM32_BLOCK_SIZE) * DM32_BLOCK_SIZE;
+      const contactLast = Math.floor(this.cache.contactsEnd / DM32_BLOCK_SIZE) * DM32_BLOCK_SIZE;
+      const newBase = Math.min(this.cache.addressBase, contactFirst);
+      const configLast = this.cache.addressBase + this.cache.mapSize - DM32_BLOCK_SIZE;
+      const newLast = Math.max(configLast, contactLast);
+      const combinedSize = newLast - newBase + DM32_BLOCK_SIZE;
+      if (combinedSize > 0 && combinedSize <= DM32_MAX_COMBINED_MAP_BYTES) {
+        const contactBlocks: Dm32DiscoveredBlock[] = [];
+        for (let addr = contactFirst; addr <= contactLast; addr += DM32_BLOCK_SIZE) {
+          contactBlocks.push({ address: addr, metadata: 0xff, type: 'unknown' });
+        }
+        const contactData = await bulkReadDm32Blocks(this.pipe, contactBlocks, {
+          ...settle,
+          onProgress: opts.onProgress,
+        });
+        for (const [addr, data] of contactData) {
+          this.cache.blocks.set(addr, data);
+        }
+        this.cache.addressBase = newBase;
+        this.cache.mapSize = combinedSize;
+      }
+    }
 
     return blocksToMemoryMap(this.cache);
   }

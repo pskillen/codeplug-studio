@@ -77,9 +77,14 @@ export interface RadioHydrationHooks {
       protocol?: CloneImageRadio;
     },
   ): import('@core/models/radioCloneHydration.ts').RadioCloneHydrationBag;
+  /**
+   * Merge modelled channels (and optional organisation) into a hydrated clone image.
+   * Radios without zones/lists ignore {@link organisation}.
+   */
   mergeChannelsIntoHydration(
     bag: import('@core/models/radioCloneHydration.ts').RadioCloneHydrationBag,
     channels: readonly import('./radioChannelDto.ts').RadioChannelDto[],
+    organisation?: import('./radioWriteProjection.ts').RadioWriteOrganisation,
   ): MemoryMap;
   /**
    * Optional: re-bind protocol upload state from a prior Read hydration.

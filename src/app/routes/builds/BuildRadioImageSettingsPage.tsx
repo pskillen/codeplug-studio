@@ -81,6 +81,11 @@ function Dm32WrittenFromBuildSection({ summary }: { summary: Dm32uvCloneSummary 
           <List.Item key={item}>{item}</List.Item>
         ))}
       </List>
+      {summary.analogContactsWriteGap ? (
+        <Text size="sm" c="dimmed" mt="sm">
+          {summary.analogContactsWriteGap}
+        </Text>
+      ) : null}
     </FormSection>
   );
 }

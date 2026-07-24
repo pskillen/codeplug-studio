@@ -26,6 +26,7 @@ import {
   dm32BlockLabel,
   dm32ChannelBankAddresses,
   dm32WriteRole,
+  DM32_ANALOG_CONTACTS_WRITE_GAP,
   DM32_WRITTEN_FROM_BUILD_LABELS,
 } from './writeRole.ts';
 
@@ -47,6 +48,8 @@ export interface Dm32uvCloneSummary {
   capturedVia: RadioCloneHydrationBag['retain']['capturedVia'];
   onRadioCounts: Dm32OnRadioCounts;
   writtenFromBuild: readonly string[];
+  /** Styleguide-compliant note that analog contacts are not written. */
+  analogContactsWriteGap: string;
   retainGroups: readonly Dm32RetainGroupSummary[];
   settingsRetain: readonly Dm32RetainPreviewRow[];
   ancillaryRetain: Dm32AncillaryRetainPreview;
@@ -140,6 +143,7 @@ export function summariseDm32uvClone(bag: RadioCloneHydrationBag): Dm32uvCloneSu
     capturedVia: bag.retain.capturedVia,
     onRadioCounts,
     writtenFromBuild: [...DM32_WRITTEN_FROM_BUILD_LABELS],
+    analogContactsWriteGap: DM32_ANALOG_CONTACTS_WRITE_GAP,
     retainGroups: groupRetainBlocks(blockInputs, channelBankAddresses),
     settingsRetain: settingsBlock ? settingsRetainPreview(settingsBlock) : [],
     ancillaryRetain: ancillaryRetainPreview(blockInputs),

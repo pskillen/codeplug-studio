@@ -193,8 +193,21 @@ export function encodeDm32ChannelRecord(ch: RadioChannelDto): Uint8Array {
   modeFlags |= (powerWireFromPercent(ch.powerPercent) & 0x03) << 1;
   data[0x18] = modeFlags;
 
-  const scanBw = ch.bandwidth === 'FM' ? 0x80 : 0x00;
+  const scanBw =
+    (ch.bandwidth === 'FM' ? 0x80 : 0x00) |
+    (ch.scanAdd ? 0x40 : 0x00) |
+    (((ch.scanListId ?? 0) & 0x0f) << 2);
   data[0x19] = scanBw;
+
+  // Talkaround / APRS RX (0x1A) — clear fill so APRS receive is not stuck on from 0xFF.
+  let talkaroundAprs = 0x00;
+  if (ch.aprsReceive) talkaroundAprs |= 0x04;
+  data[0x1a] = talkaroundAprs;
+
+  // Squelch / APRS report (0x1C) — default squelch 0; APRS report from DTO.
+  const aprsReportValue =
+    ch.aprsReportMode === 'digital' ? 1 : ch.aprsReportMode === 'analog' ? 2 : 0;
+  data[0x1c] = ((0 & 0x0f) << 4) | ((aprsReportValue << 2) & 0x0c);
 
   let digital = (ch.colorCode ?? 1) & 0x0f;
   if (ch.timeslot === 2) digital |= 0x10;

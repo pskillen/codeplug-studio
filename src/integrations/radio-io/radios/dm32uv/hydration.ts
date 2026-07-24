@@ -9,9 +9,16 @@ import {
 } from '@core/models/radioCloneHydration.ts';
 import type { MemoryMap } from '../../types.ts';
 import type { RadioChannelDto } from '../../radioChannelDto.ts';
+import type { RadioWriteOrganisation } from '../../radioWriteProjection.ts';
 import { createMemoryMap } from '../../kit/memoryMap.ts';
 import { DM32_BLOCK_SIZE, DM32_MODEL_IDS } from './constants.ts';
 import { encodeChannelsIntoDm32Image, type Dm32ChannelDecodeContext } from './channelCodec.ts';
+import { encodeZonesIntoDm32Image } from './zoneCodec.ts';
+import { encodeScanListsIntoDm32Image } from './scanListCodec.ts';
+import { encodeTalkGroupsIntoDm32Image } from './talkGroupCodec.ts';
+import { encodeRxGroupsIntoDm32Image } from './rxGroupCodec.ts';
+import { encodeDigitalContactsIntoDm32Image } from './contactCodec.ts';
+import { encodeAprsIntoDm32Image } from './aprsCodec.ts';
 import type { Dm32DownloadCache } from './protocol.ts';
 
 export const DM32UV_MODEL_ID = DM32_MODEL_IDS[0];
@@ -36,6 +43,8 @@ export function cacheFromBag(bag: RadioCloneHydrationBag): Dm32DownloadCache {
     firmware: bag.retain.firmware,
     discovered,
     blocks,
+    contactsBase: bag.retain.dm32ContactsBase,
+    contactsEnd: bag.retain.dm32ContactsEnd,
   };
 }
 
@@ -78,6 +87,8 @@ export function extractDm32uvHydration(
     capturedVia: 'web-serial',
     sourceFileName: meta?.sourceFileName,
     capturedAt: meta?.capturedAt,
+    dm32ContactsBase: cache.contactsBase,
+    dm32ContactsEnd: cache.contactsEnd,
   });
 }
 
@@ -96,6 +107,7 @@ export function extractDm32uvHydrationFromProtocol(
 export function mergeChannelsIntoDm32uvHydration(
   bag: RadioCloneHydrationBag,
   channels: readonly RadioChannelDto[],
+  organisation?: RadioWriteOrganisation,
 ): MemoryMap {
   const cache = cacheFromBag(bag);
   const image = memoryMapFromDm32uvHydration(bag);
@@ -103,5 +115,34 @@ export function mergeChannelsIntoDm32uvHydration(
     addressBase: cache.addressBase,
     discovered: cache.discovered,
   };
-  return encodeChannelsIntoDm32Image(image, ctx, channels);
+  let next = image;
+  // Indices before channel FK bytes
+  if (organisation?.talkGroups) {
+    next = encodeTalkGroupsIntoDm32Image(next, ctx, organisation.talkGroups);
+  }
+  if (organisation?.digitalContacts && cache.contactsBase != null) {
+    next = encodeDigitalContactsIntoDm32Image(
+      next,
+      {
+        addressBase: cache.addressBase,
+        contactsBase: cache.contactsBase,
+        discoveredAddresses: [...cache.blocks.keys()],
+      },
+      organisation.digitalContacts,
+    );
+  }
+  if (organisation?.rxGroups) {
+    next = encodeRxGroupsIntoDm32Image(next, ctx, organisation.rxGroups);
+  }
+  next = encodeChannelsIntoDm32Image(next, ctx, channels);
+  if (organisation?.zones) {
+    next = encodeZonesIntoDm32Image(next, ctx, organisation.zones);
+  }
+  if (organisation?.scanLists) {
+    next = encodeScanListsIntoDm32Image(next, ctx, organisation.scanLists);
+  }
+  if (organisation?.aprs) {
+    next = encodeAprsIntoDm32Image(next, ctx, organisation.aprs);
+  }
+  return next;
 }

@@ -34,6 +34,9 @@ describe('summariseDm32uvClone', () => {
     expect(summary.firmware).toBe('DM32.TEST.001');
     expect(summary.writtenFromBuild).toContain('Channels');
     expect(summary.writtenFromBuild).toContain('Zones');
+    expect(summary.writtenFromBuild).toContain('Digital contacts');
+    expect(summary.writtenFromBuild).not.toContain('Contacts');
+    expect(summary.analogContactsWriteGap).toMatch(/Analog contacts stay/);
     expect(summary.onRadioCounts.occupiedChannels).toBe(0);
     expect(summary.retainGroups.some((g) => g.label === 'Radio settings')).toBe(true);
     expect(summary.retainGroups.some((g) => g.label === 'Channel bank (first)')).toBe(false);

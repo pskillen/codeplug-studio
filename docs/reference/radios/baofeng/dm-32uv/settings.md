@@ -62,11 +62,12 @@ NeonPlug treats VFO A/B as channels **4001** / **4002** parsed from block metada
 
 ## Upload / RMW guidance
 
-| Behaviour              | NeonPlug approach                                                      |
-| ---------------------- | ---------------------------------------------------------------------- |
-| Settings write         | Encode into cached `0x04` block; preserve unknown fields from original |
-| Channel write          | Rewrite channel blocks + TX-contact + related lists as needed          |
-| Safe first Studio path | Cache full discovered set from bulk-read; RMW only changed blocks      |
+| Behaviour                | NeonPlug approach                                                                    |
+| ------------------------ | ------------------------------------------------------------------------------------ |
+| Settings write           | Encode into cached `0x04` block; preserve unknown fields from original               |
+| Channel write            | Rewrite channel blocks + TX-contact + related lists as needed                        |
+| Studio Web Serial (#667) | Replace APRS slice `0x301`–`0x334` from the build; keep other `0x04` bytes from Read |
+| Safe first Studio path   | Cache full discovered set from bulk-read; RMW only changed blocks                    |
 
 ## Related
 
