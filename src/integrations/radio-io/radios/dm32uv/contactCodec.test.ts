@@ -6,7 +6,6 @@ import {
   encodeDigitalContactsIntoDm32Image,
   parseDm32ContactsRange,
   DM32_CONTACT_ENTRY_SIZE,
-  DM32_CONTACTS_PER_BLOCK,
 } from './contactCodec.ts';
 
 describe('contactCodec', () => {

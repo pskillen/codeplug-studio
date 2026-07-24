@@ -1,6 +1,15 @@
 /**
  * DM-32UV write-role manifest — single source of truth for encode vs retain.
- * Cite: tier-3 memory-layout.md; target write contract (#667+ siblings).
+ * Cite: tier-3 memory-layout.md; target write contract (#667, #685).
+ *
+ * **Replaced entities** (channels, zones, scan lists, talk groups, RX groups,
+ * digital contacts, TX-contact banks, APRS slice) are projection-authoritative:
+ * every byte of each record is encoded from `RadioWriteProjection` DTOs plus
+ * documented NeonPlug wire defaults for unmodelled fields — not RMW of prior
+ * Read hydration inside entity payloads. Unused slots are explicit empty/sentinel fill.
+ *
+ * **Kept regions** (settings `0x04` outside APRS slice, emergencies, keys,
+ * calibration, VFO bank, messages, DMR radio-ID bank `0x67`) stay Read-retained.
  */
 
 import { DM32_METADATA } from './constants.ts';

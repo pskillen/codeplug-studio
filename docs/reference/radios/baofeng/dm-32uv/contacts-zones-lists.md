@@ -39,7 +39,7 @@ Studio Web Serial encodes the **serial** address book only.
 | `0x3C`–`0x4B` | Country  | 16 ASCII |
 | `0x4C`–`0x5B` | Remark   | 16 ASCII |
 
-**Studio Web Serial (#667):** digital address-book entries are rewritten from the build on Write. Analog / DTMF contacts are **not** encoded — they stay as on the radio; use CPS / NeonPlug file egress to change them.
+**Studio Web Serial (#667, #685):** digital address-book entries are **fully rewritten** from the build on Write — every entry slot in the V-frame contact span is cleared to `0xFF` before packing so shrink cannot leave stale earlier-block entries. Analog / DTMF contacts are **not** encoded — they stay as on the radio; use CPS / NeonPlug file egress to change them.
 
 ## Talk groups — metadata `0x44` (+ counter `0x06`)
 
@@ -78,13 +78,15 @@ TX-contact indices (`0x42`/`0x43`) point into the **serial** talk-group list (`0
 
 ## Zones — metadata `0x5c`
 
-| Fact             | Value                                                     |
-| ---------------- | --------------------------------------------------------- |
-| Entry size       | **145** bytes                                             |
-| Start offset     | **16** in first block                                     |
-| Per-block approx | `(4096 − 16) / 145 ≈ 28`                                  |
-| Name             | 11 bytes ASCII                                            |
-| Members          | Count at +16; u16 LE channel numbers from +17; max **64** |
+| Fact             | Value                                                                                      |
+| ---------------- | ------------------------------------------------------------------------------------------ |
+| Entry size       | **145** bytes                                                                              |
+| Start offset     | **16** in first block                                                                      |
+| Per-block approx | `(4096 − 16) / 145 ≈ 28`                                                                   |
+| Name             | 11 bytes ASCII                                                                             |
+| Members          | Count at +16; u16 LE channel numbers from +17; max **64**; unused member bytes stay `0xFF` |
+
+**Studio Web Serial Write:** zone blocks are filled `0xFF` then rewritten from projection; shrinking the zone list clears prior zone records (terminator `0x0000` after the last zone when it fits in the first block).
 
 ## Scan lists — metadata `0x11`
 
