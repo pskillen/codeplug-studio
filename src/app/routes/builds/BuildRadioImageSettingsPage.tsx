@@ -19,6 +19,11 @@ import {
   DM32UV_MODEL_ID,
   type Dm32uvCloneSummary,
 } from '@integrations/radio-io/radios/dm32uv/index.ts';
+import {
+  summariseOpenGd77Clone,
+  OPENGD77_DM1701_MODEL_ID,
+  type OpenGd77CloneSummary,
+} from '@integrations/radio-io/radios/opengd77/index.ts';
 import { findEgressByFormatId } from '../../lib/buildEgressUi.ts';
 import { FormPage, FormSection } from '../../components/ui/index.ts';
 import { useBuildLayout } from './BuildLayoutContext.tsx';
@@ -421,6 +426,214 @@ function Uv5rRadioImageSections({
   );
 }
 
+function OpenGd77OnRadioSection({ summary }: { summary: OpenGd77CloneSummary }) {
+  const c = summary.onRadioCounts;
+  return (
+    <FormSection
+      title="On the radio"
+      description="Counts decoded from the stored image — not your build layout."
+    >
+      <Table.ScrollContainer minWidth={360}>
+        <Table withTableBorder withColumnBorders>
+          <Table.Tbody>
+            <Table.Tr>
+              <Table.Td fw={600}>Channels</Table.Td>
+              <Table.Td>
+                {c.occupiedChannels} occupied · {c.emptyChannelSlots} empty slots
+              </Table.Td>
+            </Table.Tr>
+            <Table.Tr>
+              <Table.Td fw={600}>Zones</Table.Td>
+              <Table.Td>{c.zoneCount}</Table.Td>
+            </Table.Tr>
+            <Table.Tr>
+              <Table.Td fw={600}>DMR contacts</Table.Td>
+              <Table.Td>{c.contactCount}</Table.Td>
+            </Table.Tr>
+            <Table.Tr>
+              <Table.Td fw={600}>RX group lists</Table.Td>
+              <Table.Td>{c.rxGroupCount}</Table.Td>
+            </Table.Tr>
+          </Table.Tbody>
+        </Table>
+      </Table.ScrollContainer>
+    </FormSection>
+  );
+}
+
+function OpenGd77WrittenFromBuildSection({ summary }: { summary: OpenGd77CloneSummary }) {
+  return (
+    <FormSection
+      title="Written from your build"
+      description="When you Write to radio, Studio updates these from your build."
+    >
+      <List size="sm" spacing="xs">
+        {summary.writtenFromBuild.map((item) => (
+          <List.Item key={item}>{item}</List.Item>
+        ))}
+      </List>
+      <Text size="sm" c="dimmed" mt="sm">
+        {summary.dtmfContactsWriteGap}
+      </Text>
+      <Text size="sm" c="dimmed" mt="xs">
+        {summary.aprsWriteGap}
+      </Text>
+    </FormSection>
+  );
+}
+
+function OpenGd77KeptOnWriteSection({ summary }: { summary: OpenGd77CloneSummary }) {
+  return (
+    <FormSection
+      title="Kept on Write"
+      description="Everything below stays as it was on Read from radio — Studio does not change it when you write from your build."
+    >
+      {summary.retainGroups.length === 0 ? (
+        <Text size="sm" c="dimmed">
+          No retained regions identified in the stored image.
+        </Text>
+      ) : (
+        <Table.ScrollContainer minWidth={360}>
+          <Table withTableBorder withColumnBorders>
+            <Table.Thead>
+              <Table.Tr>
+                <Table.Th>Region</Table.Th>
+                <Table.Th>Regions</Table.Th>
+              </Table.Tr>
+            </Table.Thead>
+            <Table.Tbody>
+              {summary.retainGroups.map((group) => (
+                <Table.Tr key={group.label}>
+                  <Table.Td>{group.label}</Table.Td>
+                  <Table.Td>{group.regionCount}</Table.Td>
+                </Table.Tr>
+              ))}
+            </Table.Tbody>
+          </Table>
+        </Table.ScrollContainer>
+      )}
+    </FormSection>
+  );
+}
+
+function OpenGd77SettingsRetainSection({ summary }: { summary: OpenGd77CloneSummary }) {
+  return (
+    <FormSection title="Radio settings">
+      {summary.settingsRetain.length === 0 ? (
+        <Text size="sm" c="dimmed">
+          No decoded general settings in the stored image.
+        </Text>
+      ) : (
+        <Table.ScrollContainer minWidth={360}>
+          <Table withTableBorder withColumnBorders>
+            <Table.Thead>
+              <Table.Tr>
+                <Table.Th>Setting</Table.Th>
+                <Table.Th>Value</Table.Th>
+              </Table.Tr>
+            </Table.Thead>
+            <Table.Tbody>
+              {summary.settingsRetain.map((row) => (
+                <Table.Tr key={row.label}>
+                  <Table.Td>{row.label}</Table.Td>
+                  <Table.Td>{row.value}</Table.Td>
+                </Table.Tr>
+              ))}
+            </Table.Tbody>
+          </Table>
+        </Table.ScrollContainer>
+      )}
+    </FormSection>
+  );
+}
+
+function OpenGd77AncillaryRetainSection({ summary }: { summary: OpenGd77CloneSummary }) {
+  return (
+    <FormSection title="Other retained features">
+      <Table.ScrollContainer minWidth={360}>
+        <Table withTableBorder withColumnBorders>
+          <Table.Thead>
+            <Table.Tr>
+              <Table.Th>Feature</Table.Th>
+              <Table.Th>Value</Table.Th>
+            </Table.Tr>
+          </Table.Thead>
+          <Table.Tbody>
+            {summary.ancillaryRetain.rows.map((row) => (
+              <Table.Tr key={row.label}>
+                <Table.Td>{row.label}</Table.Td>
+                <Table.Td>{row.value}</Table.Td>
+              </Table.Tr>
+            ))}
+          </Table.Tbody>
+        </Table>
+      </Table.ScrollContainer>
+    </FormSection>
+  );
+}
+
+function OpenGd77RadioImageSections({
+  summary,
+  bag,
+}: {
+  summary: OpenGd77CloneSummary;
+  bag: RadioCloneHydrationBag;
+}) {
+  return (
+    <>
+      <FormSection title="Capture">
+        <Table.ScrollContainer minWidth={360}>
+          <Table withTableBorder withColumnBorders>
+            <Table.Tbody>
+              <Table.Tr>
+                <Table.Td fw={600}>Source</Table.Td>
+                <Table.Td>{bag.sourceFileName ?? '—'}</Table.Td>
+              </Table.Tr>
+              <Table.Tr>
+                <Table.Td fw={600}>Captured</Table.Td>
+                <Table.Td>{new Date(bag.capturedAt).toLocaleString()}</Table.Td>
+              </Table.Tr>
+              <Table.Tr>
+                <Table.Td fw={600}>Via</Table.Td>
+                <Table.Td>{summary.capturedVia}</Table.Td>
+              </Table.Tr>
+            </Table.Tbody>
+          </Table>
+        </Table.ScrollContainer>
+      </FormSection>
+
+      <FormSection title="Radio info">
+        <Table.ScrollContainer minWidth={360}>
+          <Table withTableBorder withColumnBorders>
+            <Table.Tbody>
+              <Table.Tr>
+                <Table.Td fw={600}>Model</Table.Td>
+                <Table.Td>{summary.radioModelId}</Table.Td>
+              </Table.Tr>
+              <Table.Tr>
+                <Table.Td fw={600}>Firmware</Table.Td>
+                <Table.Td>{summary.firmware?.trim() || '—'}</Table.Td>
+              </Table.Tr>
+              <Table.Tr>
+                <Table.Td fw={600}>Image size</Table.Td>
+                <Table.Td>
+                  {summary.imageByteLength} bytes ({hexOffset(summary.imageByteLength)})
+                </Table.Td>
+              </Table.Tr>
+            </Table.Tbody>
+          </Table>
+        </Table.ScrollContainer>
+      </FormSection>
+
+      <OpenGd77OnRadioSection summary={summary} />
+      <OpenGd77WrittenFromBuildSection summary={summary} />
+      <OpenGd77KeptOnWriteSection summary={summary} />
+      <OpenGd77SettingsRetainSection summary={summary} />
+      <OpenGd77AncillaryRetainSection summary={summary} />
+    </>
+  );
+}
+
 function Dm32RadioImageSections({
   summary,
   bag,
@@ -500,8 +713,13 @@ export default function BuildRadioImageSettingsPage() {
   const isUv5rMini = bag?.retain.radioModelId === UV5R_MINI_MODEL_ID;
   const isDm32 =
     bag?.retain.radioModelId === DM32UV_MODEL_ID || bag?.retain.radioModelId === 'DP570UV';
+  const isOpenGd77 =
+    bag?.retain.radioModelId === OPENGD77_DM1701_MODEL_ID ||
+    bag?.retain.radioModelId === 'DM-1701' ||
+    bag?.retain.radioModelId === 'RT-84';
   const uv5rSummary = bag && isUv5rMini ? summariseUv5rMiniClone(bag) : null;
   const dm32Summary = bag && isDm32 ? summariseDm32uvClone(bag) : null;
+  const openGd77Summary = bag && isOpenGd77 ? summariseOpenGd77Clone(bag) : null;
 
   return (
     <FormPage
@@ -513,9 +731,11 @@ export default function BuildRadioImageSettingsPage() {
           has stored an image — the Export pathway switcher need not be on Direct radio.{' '}
           {isDm32
             ? 'Counts show what is on the radio; retained settings are what Studio keeps when you write channels and other build data from your library.'
-            : isUv5rMini
-              ? 'Counts show what is on the radio; retained settings are what Studio keeps when you write channels from your library.'
-              : 'Unmodelled regions (VFO, settings, ANI) are retained for Write so they survive channel updates from the library. Settings are not editable in Studio.'}
+            : isOpenGd77
+              ? 'Counts show what is on the radio; retained settings, VFO, DTMF, and APRS regions are what Studio keeps when you write channels, zones, and contacts from your library.'
+              : isUv5rMini
+                ? 'Counts show what is on the radio; retained settings are what Studio keeps when you write channels from your library.'
+                : 'Unmodelled regions (VFO, settings, ANI) are retained for Write so they survive channel updates from the library. Settings are not editable in Studio.'}
         </Text>
       }
     >
@@ -528,7 +748,7 @@ export default function BuildRadioImageSettingsPage() {
               into this build. Write stays blocked until a Read succeeds.
             </Text>
           </FormSection>
-        ) : !uv5rSummary && !dm32Summary ? (
+        ) : !uv5rSummary && !dm32Summary && !openGd77Summary ? (
           <FormSection title="Stored image">
             <Text size="sm">
               A radio-clone image is stored (model {bag.retain.radioModelId},{' '}
@@ -538,6 +758,8 @@ export default function BuildRadioImageSettingsPage() {
           </FormSection>
         ) : dm32Summary && bag ? (
           <Dm32RadioImageSections summary={dm32Summary} bag={bag} />
+        ) : openGd77Summary && bag ? (
+          <OpenGd77RadioImageSections summary={openGd77Summary} bag={bag} />
         ) : uv5rSummary && bag ? (
           <Uv5rRadioImageSections summary={uv5rSummary} bag={bag} />
         ) : null}

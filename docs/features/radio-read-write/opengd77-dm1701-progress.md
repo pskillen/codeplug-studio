@@ -12,7 +12,7 @@
 | 3 Serial protocol | Done |
 | 4 Descriptor / registry / profile | Done |
 | 5 Write projection | Done |
-| 6 Radio image UI | Pending |
+| 6 Radio image UI | Done |
 | 7 Documentation | Pending |
 
 ## Shipped this branch
@@ -22,6 +22,7 @@
 - Serial protocol download (`R` FLASH spans) + `'X'` dirty-sector upload + mocked pipe tests
 - DM-1701 descriptor, registry, `radio-io-opengd77-1701` profile, catalog Web Serial egress
 - `buildRadioWriteProjection` OpenGD77 branch (contacts/RX/zones + scan/forbid stamps) + prepare-write tests
+- Radio image clone summary / retain preview + BuildRadioImageSettingsPage OpenGD77 sections
 
 ## Related
 
