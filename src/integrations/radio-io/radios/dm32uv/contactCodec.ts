@@ -53,17 +53,18 @@ function contactBlockSpan(ctx: Dm32ContactEncodeContext): {
   const firstBlockAddr = Math.floor(ctx.contactsBase / DM32_BLOCK_SIZE) * DM32_BLOCK_SIZE;
   const endAddr = ctx.contactsEnd ?? ctx.contactsBase;
   const lastBlockAddr = Math.floor(endAddr / DM32_BLOCK_SIZE) * DM32_BLOCK_SIZE;
-  const blockCount = Math.max(1, Math.floor((lastBlockAddr - firstBlockAddr) / DM32_BLOCK_SIZE) + 1);
+  const blockCount = Math.max(
+    1,
+    Math.floor((lastBlockAddr - firstBlockAddr) / DM32_BLOCK_SIZE) + 1,
+  );
   return { firstBlockAddr, blockCount };
 }
 
-function clearContactEntriesInBlock(
-  image: MemoryMap,
-  mapOff: number,
-  isFirstBlock: boolean,
-): void {
+function clearContactEntriesInBlock(image: MemoryMap, mapOff: number, isFirstBlock: boolean): void {
   for (let i = 0; i < DM32_CONTACTS_PER_BLOCK; i++) {
-    const entryOff = isFirstBlock ? 0x10 + i * DM32_CONTACT_ENTRY_SIZE : i * DM32_CONTACT_ENTRY_SIZE;
+    const entryOff = isFirstBlock
+      ? 0x10 + i * DM32_CONTACT_ENTRY_SIZE
+      : i * DM32_CONTACT_ENTRY_SIZE;
     if (entryOff + DM32_CONTACT_ENTRY_SIZE <= DM32_BLOCK_SIZE - 1) {
       image.bytes.fill(0xff, mapOff + entryOff, mapOff + entryOff + DM32_CONTACT_ENTRY_SIZE);
     }

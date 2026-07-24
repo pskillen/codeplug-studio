@@ -241,8 +241,7 @@ export function encodeDm32ChannelRecord(ch: RadioChannelDto): Uint8Array {
 
   const aprsReportValue =
     ch.aprsReportMode === 'digital' ? 1 : ch.aprsReportMode === 'analog' ? 2 : 0;
-  data[0x1c] =
-    ((DM32_DEFAULT_SQUELCH_LEVEL & 0x0f) << 4) | ((aprsReportValue << 2) & 0x0c);
+  data[0x1c] = ((DM32_DEFAULT_SQUELCH_LEVEL & 0x0f) << 4) | ((aprsReportValue << 2) & 0x0c);
 
   const isDigital = isDigitalChannelMode(ch.mode);
   if (isDigital) {
@@ -384,10 +383,7 @@ export function encodeChannelsIntoDm32Image(
 
   const bySlot = new Map(channels.map((c) => [c.slotIndex, c]));
   const maxProjectedSlot = Math.max(0, ...channels.map((c) => c.slotIndex));
-  const maxActiveSlot = Math.max(
-    0,
-    ...channels.filter((c) => !c.empty).map((c) => c.slotIndex),
-  );
+  const maxActiveSlot = Math.max(0, ...channels.filter((c) => !c.empty).map((c) => c.slotIndex));
 
   const firstOff = channelBlocks[0]!.address - cache.addressBase;
   const prevCount = image.bytes[firstOff]! | (image.bytes[firstOff + 1]! << 8);

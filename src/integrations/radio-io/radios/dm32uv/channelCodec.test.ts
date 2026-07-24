@@ -13,7 +13,12 @@ import { DM32_CHANNEL_RECORD_SIZE, DM32_METADATA } from './constants.ts';
 import { encodeTxContactEntry } from './txContactCodec.ts';
 
 function hexToBytes(hex: string): Uint8Array {
-  return Uint8Array.from(hex.trim().split(/\s+/).map((b) => parseInt(b, 16)));
+  return Uint8Array.from(
+    hex
+      .trim()
+      .split(/\s+/)
+      .map((b) => parseInt(b, 16)),
+  );
 }
 
 function sampleDto(overrides: Partial<RadioChannelDto> = {}): RadioChannelDto {
