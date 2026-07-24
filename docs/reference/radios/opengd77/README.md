@@ -2,7 +2,7 @@
 
 Tier-3 reference for **direct radio read/write** of firmware that speaks the OpenGD77 USB serial protocol: EEPROM/FLASH image regions, record layouts, and handshake notes.
 
-This is **not** the OpenGD77 CPS CSV interchange format. Studio’s shipped file adapters use CSV; binary memory is a separate wire world for future Web Serial adapters ([#624](https://github.com/pskillen/codeplug-studio/issues/624), [#625](https://github.com/pskillen/codeplug-studio/issues/625)).
+This is **not** the OpenGD77 CPS CSV interchange format. Studio ships **both** file adapters (CSV under [export-formats/opengd77](../../export-formats/opengd77/README.md)) and Web Serial binary adapters under `src/integrations/radio-io/radios/opengd77/` ([#624](https://github.com/pskillen/codeplug-studio/issues/624)).
 
 > **CPS CSV wire ≠ binary memory layout.** Column names, name-based FKs, and ZIP packaging live under [export-formats/opengd77](../../export-formats/opengd77/README.md). Offsets, banks, and `C`/`R`/`W`/`X` framing live **here**.
 
@@ -73,11 +73,19 @@ Prefer qdmr `Offset` / `Limit` / `size()` constants over older Doxygen region na
 
 ## Attribution
 
-Protocol lineage credit: `/attributions` entry `qdmr` (see attributions lib). Planned `RadioDescriptor.attributionIds` for OpenGD77 adapters should include `qdmr`.
+Protocol lineage credit: `/attributions` entry `qdmr` (see attributions lib). `RadioDescriptor.attributionIds` for OpenGD77 adapters includes `qdmr`.
 
-## Planned Studio modules
+## Studio Web Serial adapters
 
-`src/integrations/radio-io/radios/` — per-model adapters after transport [#615](https://github.com/pskillen/codeplug-studio/issues/615) and kit [#616](https://github.com/pskillen/codeplug-studio/issues/616). This ticket ships **docs only**.
+Shipped under `src/integrations/radio-io/radios/opengd77/`:
+
+| Radio / profile | Descriptor path | Registry profile |
+| --- | --- | --- |
+| Baofeng DM-1701 | [`dm1701/descriptor.ts`](../../../../src/integrations/radio-io/radios/opengd77/dm1701/descriptor.ts) | `radio-io-opengd77-1701` |
+
+Shared codecs (`channelCodec.ts`, `orgCodecs.ts`, `protocol.ts`, …) serve all OpenUV380-class targets. CSV interchange remains under [export-formats/opengd77](../../export-formats/opengd77/README.md).
+
+Checklist for new targets: [adding-a-radio-adapter.md](../../../features/radio-read-write/adding-a-radio-adapter.md).
 
 ## Related
 
