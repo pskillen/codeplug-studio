@@ -15,10 +15,13 @@ Separate from config-range metadata `0x0F` (RX groups).
 | Fact           | Value                                             |
 | -------------- | ------------------------------------------------- |
 | Range source   | V-frame `0x0F` (start/end + capacity heuristics)  |
+| Capacity hint  | V-frame `0x10` (u32 max) or firmware L01 fallback |
 | Entry size     | **`0x5C` (92)** bytes                             |
 | First block    | 16-byte header; entries from `0x10`; ~44 contacts |
 | Later blocks   | Entries from `0x00`; 44 per 4KB                   |
 | Empty sentinel | Name byte `0x00` or `0xFF`                        |
+
+**Read (Web Serial):** download the contact bank by **header count** (NeonPlug `readContacts`), not by walking every 4KB block from V-frame start→end. L01 end addresses can sit near `0xFFF000` (~thousands of empty blocks); treating that span as “blocks to read” caused a runaway download (e.g. block *n* of 3464). Cap folded contact blocks (`CONTACT_BANK_MAX_BLOCKS`).
 
 | World                  | Contact storage                             | Record size                       |
 | ---------------------- | ------------------------------------------- | --------------------------------- |
@@ -39,7 +42,7 @@ Studio Web Serial encodes the **serial** address book only.
 | `0x3C`–`0x4B` | Country  | 16 ASCII |
 | `0x4C`–`0x5B` | Remark   | 16 ASCII |
 
-**Studio Web Serial (#667, #685):** digital address-book entries are **fully rewritten** from the build on Write — every entry slot in the V-frame contact span is cleared to `0xFF` before packing so shrink cannot leave stale earlier-block entries. Analog / DTMF contacts are **not** encoded — they stay as on the radio; use CPS / NeonPlug file egress to change them.
+**Studio Web Serial (#667, #685):** digital address-book entries are **fully rewritten** from the build on Write — entry slots in the packed blocks (and in a **trusted small** V-frame span ≤ `CONTACT_BANK_MAX_BLOCKS`) clear to `0xFF` before packing so shrink cannot leave stale earlier-block entries. A huge L01 `contactsEnd` is **not** treated as a clear/read span. Analog / DTMF contacts are **not** encoded — they stay as on the radio; use CPS / NeonPlug file egress to change them.
 
 ## Talk groups — metadata `0x44` (+ counter `0x06`)
 

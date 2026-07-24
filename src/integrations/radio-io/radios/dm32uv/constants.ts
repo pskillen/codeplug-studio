@@ -45,6 +45,8 @@ export const DM32_VFRAME = {
   MEMORY_LAYOUT: 0x0a,
   CODEPLUG_VERSION: 0x0b,
   CONTACTS: 0x0f,
+  /** Max contact count (u32 LE); NeonPlug also falls back to firmware L01 heuristics. */
+  MAX_CONTACTS: 0x10,
 } as const;
 
 /** V-frame ids queried at connect (skip 0x0C — NeonPlug list). */
@@ -72,6 +74,16 @@ export const DM32_LIMITS = {
   CHANNEL_MAX: 4000,
   CHANNELS_IN_FIRST_BLOCK: 84,
   CHANNELS_PER_LATER_BLOCK: 85,
+  /**
+   * Hard cap on contact-bank 4KB blocks to fold into a download map.
+   * NeonPlug reads by header count, never the full V-frame 0x0F end address
+   * (L01 ranges can span thousands of empty blocks — see download runaway).
+   */
+  CONTACT_BANK_MAX_BLOCKS: 256,
+  /** Firmware fallback when V-frame 0x10 is missing (non-L01). */
+  CONTACT_MAX_DEFAULT: 50_000,
+  /** Firmware fallback when V-frame 0x10 is missing (L01 extended). */
+  CONTACT_MAX_L01: 150_000,
 } as const;
 
 /** Fixed metadata tags always bulk-read when present (NeonPlug bulkReadRequiredBlocks). */

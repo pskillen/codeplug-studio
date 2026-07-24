@@ -1,11 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import { createMemoryMap } from '../../kit/memoryMap.ts';
-import { DM32_BLOCK_SIZE } from './constants.ts';
+import { DM32_BLOCK_SIZE, DM32_LIMITS } from './constants.ts';
 import {
   encodeDm32ContactEntry,
   encodeDigitalContactsIntoDm32Image,
   parseDm32ContactsRange,
+  parseDm32MaxContacts,
+  planDm32ContactBankBlocks,
   DM32_CONTACT_ENTRY_SIZE,
+  DM32_CONTACTS_PER_BLOCK,
 } from './contactCodec.ts';
 
 describe('contactCodec', () => {
@@ -35,6 +38,42 @@ describe('contactCodec', () => {
     payload[6] = 0x20;
     payload[7] = 0x00; // end
     expect(parseDm32ContactsRange(payload)).toEqual({ start: 0x200000, end: 0x200fff });
+  });
+
+  it('parses V-frame 0x10 max contacts', () => {
+    const payload = new Uint8Array([0x88, 0x13, 0x00, 0x00]); // 5000
+    expect(parseDm32MaxContacts(payload)).toBe(5000);
+  });
+
+  it('plans contact blocks from header count, not full L01 V-frame end', () => {
+    const contactsBase = 0x278000;
+    const contactsEnd = 0xfff000; // absurd span (~3464 blocks if walked)
+    const planEmpty = planDm32ContactBankBlocks({
+      contactsBase,
+      contactsEnd,
+      countFromHeader: 0,
+      maxContacts: 150_000,
+    });
+    expect(planEmpty.blockAddresses).toEqual([0x278000]);
+    expect(planEmpty.contactCount).toBe(0);
+
+    const planFew = planDm32ContactBankBlocks({
+      contactsBase,
+      contactsEnd,
+      countFromHeader: 50,
+      maxContacts: 150_000,
+    });
+    expect(planFew.contactCount).toBe(50);
+    expect(planFew.blockAddresses).toHaveLength(Math.ceil(50 / DM32_CONTACTS_PER_BLOCK));
+    expect(planFew.blockAddresses.length).toBeLessThan(DM32_LIMITS.CONTACT_BANK_MAX_BLOCKS);
+
+    const planGarbage = planDm32ContactBankBlocks({
+      contactsBase,
+      contactsEnd,
+      countFromHeader: 0xffff_ffff,
+      maxContacts: 150_000,
+    });
+    expect(planGarbage.blockAddresses).toHaveLength(1);
   });
 
   it('writes count header and first contact into map', () => {
@@ -98,5 +137,37 @@ describe('contactCodec', () => {
     expect(image.bytes[0x10]).toBe('O'.charCodeAt(0));
     expect(image.bytes[staleOff]).toBe(0xff);
     expect(image.bytes[staleOff + 1]).toBe(0xff);
+  });
+
+  it('does not clear thousands of blocks when V-frame end is near 0xFFF000', () => {
+    const contactsBase = 0;
+    const contactsEnd = 0xfff000;
+    const image = createMemoryMap(DM32_BLOCK_SIZE * 2);
+    image.bytes.fill(0xff);
+    // Untrusted huge span → encode packs only needed blocks; leave block 1 alone.
+    image.bytes[DM32_BLOCK_SIZE] = 'Z'.charCodeAt(0);
+    encodeDigitalContactsIntoDm32Image(
+      image,
+      {
+        addressBase: 0,
+        contactsBase,
+        contactsEnd,
+        discoveredAddresses: [0, DM32_BLOCK_SIZE],
+      },
+      [
+        {
+          wireName: 'One',
+          digitalId: 1,
+          callsign: '',
+          city: '',
+          province: '',
+          country: '',
+          remark: '',
+        },
+      ],
+    );
+    expect(image.bytes[contactsBase]).toBe(1);
+    expect(image.bytes[0x10]).toBe('O'.charCodeAt(0));
+    expect(image.bytes[DM32_BLOCK_SIZE]).toBe('Z'.charCodeAt(0));
   });
 });
