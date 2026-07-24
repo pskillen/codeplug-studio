@@ -2,7 +2,15 @@ import { ActionIcon, Button, Group, Stack, Text, TextInput } from '@mantine/core
 import { IconArrowDown, IconArrowUp } from '@tabler/icons-react';
 import { Link } from 'react-router-dom';
 import { useMemo, useState } from 'react';
-import { DataTable, EmptyState, Page, PageHeader, PageSection } from '../../components/ui/index.ts';
+import {
+  DataTable,
+  EmptyState,
+  Page,
+  PageHeader,
+  PageSection,
+  useDataTableBulkReorderDragHandle,
+} from '../../components/ui/index.ts';
+import SelectedItemDragHandle from '../../components/ui/SelectedItemDragHandle.tsx';
 import { ICON_STROKE } from '../../lib/iconSizes.ts';
 import { COLUMN_PICKER_ROWS, LARGE_VIRTUAL_DEMO_ROWS, STICKY_DEMO_ROWS } from './fixtures.ts';
 
@@ -40,6 +48,14 @@ export default function StyleguideDataTablePage() {
     { id: 'z2', name: 'Bravo zone' },
     { id: 'z3', name: 'Charlie zone' },
   ]);
+  const [bulkOrderRows, setBulkOrderRows] = useState(() =>
+    Array.from({ length: 20 }, (_, index) => ({
+      id: `ch-${index + 1}`,
+      name: `Channel ${String(index + 1).padStart(2, '0')}`,
+    })),
+  );
+  const [bulkOrderSelectedKeys, setBulkOrderSelectedKeys] = useState<string[]>([]);
+  const [bulkOrderSearch, setBulkOrderSearch] = useState('');
   const [extremeSearch, setExtremeSearch] = useState('');
 
   const filteredStickyRows = useMemo(() => {
@@ -71,6 +87,60 @@ export default function StyleguideDataTablePage() {
       return next;
     });
   };
+
+  const bulkOrderFiltered = useMemo(() => {
+    const q = bulkOrderSearch.trim().toLowerCase();
+    if (!q) return bulkOrderRows;
+    return bulkOrderRows.filter((row) => row.name.toLowerCase().includes(q));
+  }, [bulkOrderRows, bulkOrderSearch]);
+
+  const bulkOrderIds = useMemo(() => bulkOrderRows.map((row) => row.id), [bulkOrderRows]);
+
+  const moveBulkOrderRow = (id: string, direction: 'up' | 'down') => {
+    setBulkOrderRows((prev) => {
+      const ids = prev.map((row) => row.id);
+      const index = ids.indexOf(id);
+      if (index < 0) return prev;
+      const swapWith = direction === 'up' ? index - 1 : index + 1;
+      if (swapWith < 0 || swapWith >= ids.length) return prev;
+      const nextIds = [...ids];
+      [nextIds[index], nextIds[swapWith]] = [nextIds[swapWith]!, nextIds[index]!];
+      return nextIds.map((rowId) => prev.find((row) => row.id === rowId)!);
+    });
+  };
+
+  function BulkReorderOrderCell({
+    row,
+  }: {
+    row: { id: string; name: string };
+  }) {
+    const dragHandle = useDataTableBulkReorderDragHandle();
+    const index = bulkOrderRows.findIndex((r) => r.id === row.id);
+    const reorderBlocked = bulkOrderSearch.trim().length > 0;
+    return (
+      <Group gap={4} wrap="nowrap" onClick={(event) => event.stopPropagation()}>
+        <SelectedItemDragHandle dragHandle={dragHandle} />
+        <ActionIcon
+          variant="subtle"
+          size="sm"
+          aria-label={`Move ${row.name} up`}
+          disabled={reorderBlocked || index <= 0}
+          onClick={() => moveBulkOrderRow(row.id, 'up')}
+        >
+          <IconArrowUp size={14} stroke={ICON_STROKE} />
+        </ActionIcon>
+        <ActionIcon
+          variant="subtle"
+          size="sm"
+          aria-label={`Move ${row.name} down`}
+          disabled={reorderBlocked || index < 0 || index >= bulkOrderRows.length - 1}
+          onClick={() => moveBulkOrderRow(row.id, 'down')}
+        >
+          <IconArrowDown size={14} stroke={ICON_STROKE} />
+        </ActionIcon>
+      </Group>
+    );
+  }
 
   return (
     <Page width="default">
@@ -329,6 +399,45 @@ export default function StyleguideDataTablePage() {
                   </Group>
                 );
               },
+            },
+          ]}
+        />
+      </PageSection>
+
+      <PageSection
+        title="DataTable — bulkReorder (multi-select + drag)"
+        description="Large export-order lists: checkboxes, drag handles, Move up/down toolbar. Filter disables reorder."
+      >
+        <DataTable
+          variant="list"
+          reorderMode
+          rows={bulkOrderFiltered}
+          totalRowCount={bulkOrderRows.length}
+          resultCount={bulkOrderFiltered.length}
+          rowKey={(row) => row.id}
+          search={bulkOrderSearch}
+          onSearchChange={setBulkOrderSearch}
+          selectedKeys={bulkOrderSelectedKeys}
+          onSelectedKeysChange={setBulkOrderSelectedKeys}
+          bulkReorder={{
+            orderedKeys: bulkOrderIds,
+            onSetOrder: (orderedIds) => {
+              setBulkOrderRows((prev) =>
+                orderedIds.map((id) => prev.find((row) => row.id === id)!),
+              );
+            },
+            disabled: bulkOrderSearch.trim().length > 0,
+          }}
+          nameColumn={{
+            getName: (row) => row.name,
+            getPath: (row) => `#${row.id}`,
+          }}
+          columns={[
+            {
+              key: 'reorder',
+              header: 'Order',
+              hideable: false,
+              render: (row) => <BulkReorderOrderCell row={row} />,
             },
           ]}
         />

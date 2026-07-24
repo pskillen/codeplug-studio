@@ -17,6 +17,13 @@ import { useCallback, useMemo, useState, type ReactNode } from 'react';
 import EmptyState from './EmptyState.tsx';
 import { useDataTableColumnVisibility } from '../../hooks/useDataTableColumnVisibility.ts';
 import {
+  DataTableBulkReorderProvider,
+  DataTableBulkReorderSortable,
+  DataTableBulkReorderToolbar,
+  type DataTableBulkReorderConfig,
+} from '../../lib/dataTable/DataTableBulkReorder.tsx';
+import DataTableSortableRow from '../../lib/dataTable/DataTableSortableRow.tsx';
+import {
   DATATABLE_CALLSIGN_SORT_KEY,
   DATATABLE_NAME_SORT_KEY,
   DATATABLE_STORED_ORDER_SORT_KEY,
@@ -135,7 +142,16 @@ export interface DataTableProps<T> {
   virtualizeOverscan?: number;
   /** Optional class name(s) for each data row (`Table.Tr`). */
   getRowClassName?: (row: T) => string | undefined;
+  /**
+   * Bulk reorder for large export-order lists: multi-select, drag handles (via
+   * {@link useDataTableBulkReorderDragHandle} in column cells), and toolbar Move.
+   * Forces non-virtual tbody. Implies {@link reorderMode} when set.
+   */
+  bulkReorder?: DataTableBulkReorderConfig<T>;
 }
+
+export type { DataTableBulkReorderConfig };
+export { useDataTableBulkReorderDragHandle } from '../../lib/dataTable/DataTableSortableRow.tsx';
 
 function LinkedCell<T>({
   column,
@@ -252,12 +268,17 @@ export default function DataTable<T>({
   estimatedRowHeight,
   virtualizeOverscan,
   getRowClassName,
+  bulkReorder,
 }: DataTableProps<T>) {
   const isList = variant === 'list';
   const showSearchInput = showSearch ?? (isList && onSearchChange !== undefined);
-  const selectable = selectableProp ?? false;
-  const effectiveVirtualize: DataTableVirtualizeMode = scale === 'extreme' ? true : virtualize;
-  const orderLocked = orderMode || reorderMode;
+  const bulkReorderActive = bulkReorder != null;
+  const bulkReorderDisabled = bulkReorder?.disabled ?? false;
+  const bulkDragEnabled = bulkReorderActive && bulkReorder?.enableDrag !== false;
+  const selectable = selectableProp ?? bulkReorderActive;
+  const effectiveVirtualize: DataTableVirtualizeMode =
+    bulkDragEnabled ? false : scale === 'extreme' ? true : virtualize;
+  const orderLocked = orderMode || reorderMode || bulkReorderActive;
   const sortingEnabled = !orderLocked;
 
   const storedOrderConfig = useMemo(
@@ -364,6 +385,24 @@ export default function DataTable<T>({
     [orderLocked, rows, sortState, sortCtx],
   );
 
+  const isRowReorderable = useCallback(
+    (row: T) => {
+      if (!bulkReorderActive) return false;
+      return bulkReorder?.isRowReorderable?.(row) ?? true;
+    },
+    [bulkReorder, bulkReorderActive],
+  );
+
+  const reorderableRowKeys = useMemo(
+    () => sortedRows.filter(isRowReorderable).map((row) => rowKey(row)),
+    [isRowReorderable, rowKey, sortedRows],
+  );
+
+  const sortableDragKeys = useMemo(() => {
+    if (!bulkDragEnabled || bulkReorderDisabled) return [];
+    return reorderableRowKeys;
+  }, [bulkDragEnabled, bulkReorderDisabled, reorderableRowKeys]);
+
   const showRestoreStoredOrder =
     sortingEnabled && !!storedOrderColumnKey && !isStoredOrderSort(sortState, storedOrderColumnKey);
 
@@ -378,17 +417,23 @@ export default function DataTable<T>({
   const setSelectedKeys = onSelectedKeysChange ?? setInternalSelected;
 
   const rowKeys = useMemo(() => sortedRows.map((row) => rowKey(row)), [sortedRows, rowKey]);
-  const allSelected = rowKeys.length > 0 && rowKeys.every((k) => selectedKeys.includes(k));
-  const someSelected = rowKeys.some((k) => selectedKeys.includes(k)) && !allSelected;
+  const selectableRowKeys = useMemo(
+    () => (bulkReorderActive ? reorderableRowKeys : rowKeys),
+    [bulkReorderActive, reorderableRowKeys, rowKeys],
+  );
+  const allSelected =
+    selectableRowKeys.length > 0 && selectableRowKeys.every((k) => selectedKeys.includes(k));
+  const someSelected =
+    selectableRowKeys.some((k) => selectedKeys.includes(k)) && !allSelected;
 
   const toggleAll = useCallback(() => {
     if (allSelected) {
-      setSelectedKeys(selectedKeys.filter((k) => !rowKeys.includes(k)));
+      setSelectedKeys(selectedKeys.filter((k) => !selectableRowKeys.includes(k)));
     } else {
-      const merged = new Set([...selectedKeys, ...rowKeys]);
+      const merged = new Set([...selectedKeys, ...selectableRowKeys]);
       setSelectedKeys([...merged]);
     }
-  }, [allSelected, rowKeys, selectedKeys, setSelectedKeys]);
+  }, [allSelected, selectableRowKeys, selectedKeys, setSelectedKeys]);
 
   const toggleRow = useCallback(
     (key: string) => {
@@ -445,23 +490,19 @@ export default function DataTable<T>({
   const renderDataRow = useCallback(
     (row: T, reactKey: string) => {
       const key = rowKey(row);
-      return (
-        <Table.Tr
-          key={reactKey}
-          data-testid="datatable-tbody-row"
-          data-selected={selectedKeys.includes(key) || undefined}
-          className={getRowClassName?.(row)}
-          onClick={onRowActivate ? () => onRowActivate(row) : undefined}
-          style={onRowActivate ? { cursor: 'pointer' } : undefined}
-        >
+      const rowSelectable = selectable && (!bulkReorderActive || isRowReorderable(row));
+      const rowCells = (
+        <>
           {selectable ? (
             <Table.Td>
-              <Checkbox
-                checked={selectedKeys.includes(key)}
-                onChange={() => toggleRow(key)}
-                onClick={(e) => e.stopPropagation()}
-                aria-label={`Select row ${nameColumn.getName(row)}`}
-              />
+              {rowSelectable ? (
+                <Checkbox
+                  checked={selectedKeys.includes(key)}
+                  onChange={() => toggleRow(key)}
+                  onClick={(e) => e.stopPropagation()}
+                  aria-label={`Select row ${nameColumn.getName(row)}`}
+                />
+              ) : null}
             </Table.Td>
           ) : null}
           {showLeadingStoredOrderSort ? <Table.Td /> : null}
@@ -476,20 +517,50 @@ export default function DataTable<T>({
           {visibleColumns.map((col) => (
             <Table.Td key={col.key}>{col.render(row)}</Table.Td>
           ))}
+        </>
+      );
+
+      const commonRowProps = {
+        className: getRowClassName?.(row),
+        onClick: onRowActivate ? () => onRowActivate(row) : undefined,
+        style: onRowActivate ? { cursor: 'pointer' as const } : undefined,
+        'data-selected': selectedKeys.includes(key) || undefined,
+      };
+
+      if (bulkDragEnabled && isRowReorderable(row)) {
+        return (
+          <DataTableSortableRow
+            key={reactKey}
+            itemKey={key}
+            dragDisabled={bulkReorderDisabled}
+            {...commonRowProps}
+          >
+            {rowCells}
+          </DataTableSortableRow>
+        );
+      }
+
+      return (
+        <Table.Tr key={reactKey} data-testid="datatable-tbody-row" {...commonRowProps}>
+          {rowCells}
         </Table.Tr>
       );
     },
     [
       rowKey,
-      selectedKeys,
-      onRowActivate,
       selectable,
+      bulkReorderActive,
+      isRowReorderable,
+      selectedKeys,
       toggleRow,
       showLeadingStoredOrderSort,
       nameColumn,
       callsignColumn,
       visibleColumns,
       getRowClassName,
+      onRowActivate,
+      bulkDragEnabled,
+      bulkReorderDisabled,
     ],
   );
 
@@ -553,17 +624,34 @@ export default function DataTable<T>({
         </Group>
       ) : null}
 
-      <ScrollArea.Autosize
-        mah={isList ? '60vh' : '40vh'}
-        type="auto"
-        offsetScrollbars
-        overscrollBehavior="contain"
-        viewportRef={scrollRef}
-        data-testid="datatable-scroll"
-        data-virtualized={virtualized || undefined}
+      {bulkReorderActive ? (
+        <DataTableBulkReorderToolbar
+          selectedKeys={selectedKeys}
+          orderedKeys={bulkReorder.orderedKeys}
+          disabled={bulkReorderDisabled}
+          onSetOrder={bulkReorder.onSetOrder}
+          disabledHint={bulkReorder.disabledHint}
+        />
+      ) : null}
+
+      <DataTableBulkReorderProvider
+        sortableKeys={sortableDragKeys}
+        orderedKeys={bulkReorder?.orderedKeys ?? []}
+        selectedKeys={selectedKeys}
+        disabled={bulkReorderDisabled || !bulkDragEnabled}
+        onSetOrder={bulkReorder?.onSetOrder ?? (() => undefined)}
       >
-        <Table striped highlightOnHover withTableBorder>
-          <Table.Thead data-testid="datatable-thead">
+        <ScrollArea.Autosize
+          mah={isList ? '60vh' : '40vh'}
+          type="auto"
+          offsetScrollbars
+          overscrollBehavior="contain"
+          viewportRef={scrollRef}
+          data-testid="datatable-scroll"
+          data-virtualized={virtualized || undefined}
+        >
+          <Table striped highlightOnHover withTableBorder>
+            <Table.Thead data-testid="datatable-thead">
             <Table.Tr>
               {selectable ? (
                 <Table.Th className={classes.stickyTh} style={{ width: 36 }}>
@@ -628,33 +716,39 @@ export default function DataTable<T>({
             </Table.Tr>
           </Table.Thead>
           <Table.Tbody>
-            {sortedRows.length === 0 ? (
-              <Table.Tr>
-                <Table.Td colSpan={leadingColCount}>
-                  {isFilteredEmpty ? (
-                    <Text size="sm" c="dimmed" ta="center" py="md">
-                      {filteredEmptyMessage}
-                    </Text>
-                  ) : (
-                    (emptyState ?? defaultEmpty)
-                  )}
-                </Table.Td>
-              </Table.Tr>
-            ) : virtualized ? (
-              <>
-                {renderVirtualSpacer(paddingTop, 'top')}
-                {virtualRows.map((virtualRow) => {
-                  const row = sortedRows[virtualRow.index]!;
-                  return renderDataRow(row, rowKey(row));
-                })}
-                {renderVirtualSpacer(paddingBottom, 'bottom')}
-              </>
-            ) : (
-              sortedRows.map((row) => renderDataRow(row, rowKey(row)))
-            )}
+            <DataTableBulkReorderSortable
+              sortableKeys={sortableDragKeys}
+              disabled={bulkReorderDisabled || !bulkDragEnabled}
+            >
+              {sortedRows.length === 0 ? (
+                <Table.Tr>
+                  <Table.Td colSpan={leadingColCount}>
+                    {isFilteredEmpty ? (
+                      <Text size="sm" c="dimmed" ta="center" py="md">
+                        {filteredEmptyMessage}
+                      </Text>
+                    ) : (
+                      (emptyState ?? defaultEmpty)
+                    )}
+                  </Table.Td>
+                </Table.Tr>
+              ) : virtualized ? (
+                <>
+                  {renderVirtualSpacer(paddingTop, 'top')}
+                  {virtualRows.map((virtualRow) => {
+                    const row = sortedRows[virtualRow.index]!;
+                    return renderDataRow(row, rowKey(row));
+                  })}
+                  {renderVirtualSpacer(paddingBottom, 'bottom')}
+                </>
+              ) : (
+                sortedRows.map((row) => renderDataRow(row, rowKey(row)))
+              )}
+            </DataTableBulkReorderSortable>
           </Table.Tbody>
         </Table>
       </ScrollArea.Autosize>
+      </DataTableBulkReorderProvider>
 
       {toolbar ? <Group gap="sm">{toolbar}</Group> : null}
 

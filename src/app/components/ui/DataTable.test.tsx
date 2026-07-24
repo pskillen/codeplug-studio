@@ -204,3 +204,50 @@ describe('DataTable orderMode, storedOrder, and scale', () => {
     expect(scroll).toHaveAttribute('data-virtualized', 'true');
   });
 });
+
+describe('DataTable bulkReorder', () => {
+  beforeEach(() => {
+    mockScrollViewport();
+  });
+
+  it('disables virtualization and calls onSetOrder when Move down is clicked', () => {
+    const onSetOrder = vi.fn();
+    const rows = makeRows(80);
+    const orderedKeys = rows.map((row) => row.id);
+    renderTable(rows, {
+      reorderMode: true,
+      selectedKeys: ['1', '2'],
+      onSelectedKeysChange: vi.fn(),
+      bulkReorder: {
+        orderedKeys,
+        onSetOrder,
+      },
+      columns: [],
+    });
+
+    const scroll = screen.getByTestId('datatable-scroll');
+    expect(scroll).not.toHaveAttribute('data-virtualized');
+    expect(screen.getByRole('button', { name: 'Move down' })).toBeEnabled();
+    fireEvent.click(screen.getByRole('button', { name: 'Move down' }));
+    expect(onSetOrder).toHaveBeenCalled();
+  });
+
+  it('disables move toolbar when bulkReorder.disabled is true', () => {
+    const rows = makeRows(5);
+    renderTable(rows, {
+      reorderMode: true,
+      selectedKeys: ['1'],
+      onSelectedKeysChange: vi.fn(),
+      bulkReorder: {
+        orderedKeys: rows.map((row) => row.id),
+        onSetOrder: vi.fn(),
+        disabled: true,
+      },
+      columns: [],
+    });
+
+    expect(screen.getByRole('button', { name: 'Move up' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Move down' })).toBeDisabled();
+    expect(screen.getByText('Clear search to reorder')).toBeInTheDocument();
+  });
+});

@@ -30,6 +30,7 @@ See [list-kit-roles.md](../../../../docs/features/app-shell/list-kit-roles.md).
 | `virtualize`                                                                        | `boolean \| 'auto'`      | Default `'auto'` — window tbody when `rows.length >= 75`                                             |
 | `estimatedRowHeight` / `virtualizeOverscan`                                         | `number`                 | Virtualizer tuning                                                                                   |
 | `getRowClassName`                                                                   | `(row) => string?`       | Optional `Table.Tr` class (e.g. shaded nest parents on Channels wire preview)                        |
+| `bulkReorder`                                                                       | `DataTableBulkReorderConfig` | Multi-select + drag toolbar for large export-order lists; forces non-virtual tbody              |
 | `mobileColumnPolicy`                                                                | `'none' \| 'collapse'`   | Stub — only `none` implemented                                                                       |
 
 ## Usage
@@ -83,6 +84,7 @@ Prefer `reorderMode` when the list’s only job is agreed/export order. `storedO
 - **Sort** — client-side via `sortDataTableRows`; thead stays outside the virtual window. Disabled in `orderMode`.
 - **Stored order** — when `storedOrder` is set (and not reorder-locked), sorting by the configured key keeps `rows` (asc) or reverses them (desc). Elevated header + restore button when drifted. Distinct from MembershipSortMenu.
 - **Reorder mode** — `reorderMode` / `orderMode`: headers are plain text; display order is `rows` as passed (Zones default).
+- **Bulk reorder** — `bulkReorder`: enables row checkboxes (reorderable rows only), toolbar **Move up/down** (Alt+↑/↓), and dnd-kit drag when `enableDrag` is true. Wire {@link useDataTableBulkReorderDragHandle} in the Order column via {@link SelectedItemDragHandle}. Disables virtual tbody. Implies reorder mode.
 - **Extreme scale** — forces virtualisation regardless of row count; prefer plain-text cells.
 - **Scroll parent** — Mantine `ScrollArea.Autosize` viewport is the virtualizer scroll element; sticky `.stickyTh` header remains in `thead`.
 - **Virtual tbody** — spacer rows pad top/bottom; only visible rows (+ overscan) mount as `Table.Tr`.

@@ -18,7 +18,8 @@ export { default as FormSection } from './FormSection.tsx';
 export type { FormSectionProps } from './FormSection.tsx';
 export { default as AppHeader } from './AppHeader.tsx';
 export type { AppHeaderProps } from './AppHeader.tsx';
-export { default as DataTable } from './DataTable.tsx';
+export { default as DataTable, useDataTableBulkReorderDragHandle } from './DataTable.tsx';
+export type { DataTableBulkReorderConfig } from './DataTable.tsx';
 export type {
   DataTableColumn,
   DataTableLinkedColumn,
