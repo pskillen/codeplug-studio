@@ -113,4 +113,13 @@ describe('channelCodec record', () => {
   it('record size is 32 bytes', () => {
     expect(encodeChannelRecord(sampleDto()).length).toBe(UV5R_MINI_CHANNEL_SIZE);
   });
+
+  it('encodes rxOnly as TX FF×4 and round-trips', () => {
+    const dto = sampleDto({ rxOnly: true, txHz: 145_500_000 });
+    const encoded = encodeChannelRecord(dto);
+    expect(encoded.subarray(4, 8).every((b) => b === 0xff)).toBe(true);
+    const decoded = decodeChannelRecord(encoded, 1);
+    expect(decoded.rxOnly).toBe(true);
+    expect(decoded.rxHz).toBe(145_500_000);
+  });
 });

@@ -129,6 +129,7 @@ export function decodeChannelRecord(raw: Uint8Array, slotIndex: number): RadioCh
     txTone: decodeTone(raw.subarray(10, 12)),
     powerPercent: lowBitsToPowerPercent(raw[14]!),
     bandwidth: wideBit ? 'NFM' : 'FM',
+    ...(txAllFF ? { rxOnly: true } : {}),
   };
 }
 
@@ -140,8 +141,12 @@ export function encodeChannelRecord(dto: RadioChannelDto): Uint8Array {
   }
   out.fill(0);
   out.set(encodeBcdFreq(dto.rxHz), 0);
-  const txHz = dto.txHz > 0 ? dto.txHz : dto.rxHz;
-  out.set(encodeBcdFreq(txHz), 4);
+  if (dto.rxOnly) {
+    out.fill(0xff, 4, 8);
+  } else {
+    const txHz = dto.txHz > 0 ? dto.txHz : dto.rxHz;
+    out.set(encodeBcdFreq(txHz), 4);
+  }
   out.set(encodeTone(dto.rxTone), 8);
   out.set(encodeTone(dto.txTone), 10);
   out[12] = 1;
