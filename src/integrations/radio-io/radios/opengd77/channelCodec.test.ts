@@ -42,6 +42,11 @@ describe('opengd77 channelCodec BCD / tone / power', () => {
     expect(decodeSelectiveCall(code)).toEqual({ kind: 'ctcss', hz: 88.5 });
   });
 
+  it('encodes DCS normal selective call (D023N)', () => {
+    const code = encodeSelectiveCall({ kind: 'dcs', code: 23, polarity: 'N' });
+    expect(decodeSelectiveCall(code)).toEqual({ kind: 'dcs', code: 23, polarity: 'N' });
+  });
+
   it('encodes DCS inverted selective call', () => {
     const code = encodeSelectiveCall({ kind: 'dcs', code: 23, polarity: 'I' });
     expect(decodeSelectiveCall(code)).toEqual({ kind: 'dcs', code: 23, polarity: 'I' });

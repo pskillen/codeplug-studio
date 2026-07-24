@@ -49,6 +49,13 @@ describe('buildModeProfilesFromListing', () => {
     expect(profiles[0]?.mode).toBe('fm');
   });
 
+  it('formats whole-number repeater CTCSS with one decimal place', () => {
+    const profiles = buildModeProfilesFromListing({ ...baseListing, toneHz: 100 });
+    const fm = profiles[0] as ChannelModeProfileAnalog;
+    expect(fm.rxTone).toBe('100.0');
+    expect(fm.txTone).toBe('100.0');
+  });
+
   it('collapses legacy ssb modes to one ssb profile with first sideband', () => {
     const profiles = buildModeProfilesFromListing({
       ...baseListing,
@@ -80,6 +87,13 @@ describe('repeaterListingToChannel', () => {
     const profile = channel.modeProfiles[0] as ChannelModeProfileAnalog;
     expect(profile.mode).toBe('fm');
     expect(profile.rxTone).toBe('110.9');
+  });
+
+  it('maps whole-number repeater toneHz to library CTCSS with decimal', () => {
+    const channel = repeaterListingToChannel({ ...baseListing, toneHz: 100 }, 'p1');
+    const profile = channel.modeProfiles[0] as ChannelModeProfileAnalog;
+    expect(profile.rxTone).toBe('100.0');
+    expect(profile.txTone).toBe('100.0');
   });
 
   it('falls back to callsign when town is missing', () => {
