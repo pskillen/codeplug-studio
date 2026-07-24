@@ -12,6 +12,21 @@ import {
   assembledChannelsToRadioDtos,
   expandAssembledChannelsToRadioDtos,
 } from './radioIoChannelMap.ts';
+import { channelToneToRadioTone } from '@app/lib/channelFields/channelToneToRadioTone.ts';
+
+describe('channelToneToRadioTone', () => {
+  it.each([
+    ['none', { kind: 'none' }],
+    ['103.5', { kind: 'ctcss', hz: 103.5 }],
+    ['100', { kind: 'ctcss', hz: 100 }],
+    ['100.0', { kind: 'ctcss', hz: 100 }],
+    ['D023N', { kind: 'dcs', code: 23, polarity: 'N' }],
+    ['D023P', { kind: 'dcs', code: 23, polarity: 'I' }],
+    ['D023I', { kind: 'dcs', code: 23, polarity: 'I' }],
+  ] as const)('maps %s', (tone, expected) => {
+    expect(channelToneToRadioTone(tone)).toEqual(expected);
+  });
+});
 
 describe('assembledChannelsToRadioDtos', () => {
   it('maps wire name, slot, Hz, and NFM bandwidth', () => {

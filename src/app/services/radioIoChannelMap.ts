@@ -8,7 +8,7 @@
 
 import type { AssembledBuild, AssembledChannel, LibrarySlice } from '@core/services/assemble.ts';
 import type { RadioBuild } from '@core/models/radioBuild.ts';
-import type { Channel, ChannelModeProfile, ChannelTone } from '@core/models/library.ts';
+import type { Channel, ChannelModeProfile } from '@core/models/library.ts';
 import { channelPickForWireExport, composeChannelWireName } from '@core/domain/channelNaming.ts';
 import type { ChannelExportNameMode } from '@core/domain/channelNaming.ts';
 import { applyWireNameLimits } from '@core/import-export/channelExpansion/exportWireNames.ts';
@@ -19,11 +19,8 @@ import { mergeExportOptions } from '@core/import-export/exportSettingsMerge.ts';
 import { getProfileExportLimits } from '@core/import-export/profileExportLimits.ts';
 import type { FormatId } from '@core/import-export/types.ts';
 import { hasMxNChannelExpansion } from '@core/radio-targets/index.ts';
-import type {
-  RadioChannelDto,
-  RadioChannelMode,
-  RadioTone,
-} from '@integrations/radio-io/radioChannelDto.ts';
+import type { RadioChannelDto, RadioChannelMode } from '@integrations/radio-io/radioChannelDto.ts';
+import { channelToneToRadioTone } from '@app/lib/channelFields/channelToneToRadioTone.ts';
 
 export interface RadioWireEgressIds {
   formatId: string;
@@ -57,19 +54,6 @@ function resolveRxGroupIndex(
   if (!rxGroupListId || !maps?.rxGroupIndexById) return undefined;
   const idx = maps.rxGroupIndexById.get(rxGroupListId);
   return idx != null ? idx : undefined;
-}
-
-function parseChannelTone(tone: ChannelTone | undefined): RadioTone {
-  if (!tone || tone === 'none') return { kind: 'none' };
-  const s = tone.trim();
-  if (!s || s === '—' || s.toLowerCase() === 'none') return { kind: 'none' };
-  if (s.includes('.')) {
-    const hz = parseFloat(s);
-    if (!Number.isNaN(hz)) return { kind: 'ctcss', hz };
-  }
-  const code = parseInt(s, 10);
-  if (!Number.isNaN(code) && Number.isInteger(code)) return { kind: 'dcs', code };
-  return { kind: 'none' };
 }
 
 function bandwidthFromKHz(bandwidthKHz: number | null | undefined): 'FM' | 'NFM' {
@@ -225,8 +209,8 @@ export function assembledChannelsToRadioDtosWithWarnings(
       wireName: radioWireName(row, build, egress, reserved, warnings),
       rxHz,
       txHz,
-      rxTone: parseChannelTone(analog && 'rxTone' in analog ? analog.rxTone : 'none'),
-      txTone: parseChannelTone(analog && 'txTone' in analog ? analog.txTone : 'none'),
+      rxTone: channelToneToRadioTone(analog && 'rxTone' in analog ? analog.rxTone : 'none'),
+      txTone: channelToneToRadioTone(analog && 'txTone' in analog ? analog.txTone : 'none'),
       powerPercent: row.entity.power,
       bandwidth: bandwidthFromKHz(analog && 'bandwidthKHz' in analog ? analog.bandwidthKHz : null),
       ...digitalFieldsFromChannel(row.entity, fkMaps),
@@ -279,8 +263,8 @@ export function expandAssembledChannelsToRadioDtos(
       wireName: projection.wireName,
       rxHz,
       txHz,
-      rxTone: parseChannelTone(analog && 'rxTone' in analog ? analog.rxTone : 'none'),
-      txTone: parseChannelTone(analog && 'txTone' in analog ? analog.txTone : 'none'),
+      rxTone: channelToneToRadioTone(analog && 'rxTone' in analog ? analog.rxTone : 'none'),
+      txTone: channelToneToRadioTone(analog && 'txTone' in analog ? analog.txTone : 'none'),
       powerPercent: channel.power,
       bandwidth: bandwidthFromKHz(analog && 'bandwidthKHz' in analog ? analog.bandwidthKHz : null),
       ...digitalFieldsFromProjection(projection, channel, fkMaps),
