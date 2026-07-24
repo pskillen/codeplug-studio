@@ -32,8 +32,10 @@ import {
   bulkReadDm32Blocks,
   classifyDm32Metadata,
   discoverDm32MemoryBlocks,
+  dm32HydrationAddressMismatches,
   groupDm32BlocksForProgress,
   readChannelCount,
+  readDm32BlockMetadataTags,
   selectBlocksToBulkRead,
   type Dm32DiscoveredBlock,
 } from './memory.ts';
@@ -352,6 +354,43 @@ export class Dm32uvProtocol implements CloneImageRadio {
         'DM-32UV upload has no sparse blocks — seed from a prior Read hydration before Write',
       );
     }
+
+    // Stale hydration after factory reset / CPS rewrite writes to the wrong absolute
+    // addresses (ZONE/VFO/channel banks move). Verify tags before any Write.
+    reportProgress(
+      opts.onProgress,
+      {
+        cur: 0,
+        max: addresses.length || 1,
+        msg: 'Checking radio memory map…',
+        stage: 'Verify memory map',
+      },
+      opts.signal,
+    );
+    const expected = addresses.map((address) => {
+      const known = this.cache!.discovered.find((b) => b.address === address);
+      const data = this.cache!.blocks.get(address);
+      const metadata = known?.metadata ?? data?.[DM32_BLOCK_SIZE - 1] ?? 0xff;
+      return { address, metadata };
+    });
+    const live = await readDm32BlockMetadataTags(this.pipe, addresses, {
+      ...this.settle,
+      signal: opts.signal ?? this.settle.signal,
+    });
+    const mismatches = dm32HydrationAddressMismatches(expected, live);
+    if (mismatches.length > 0) {
+      const sample = mismatches
+        .slice(0, 3)
+        .map(
+          (m) =>
+            `0x${m.address.toString(16)} expected 0x${m.expected.toString(16)}, radio has 0x${m.live.toString(16)}`,
+        )
+        .join('; ');
+      throw new RadioProtocolError(
+        `Radio memory map changed since the last Read (common after a factory reset). ${sample}. Read from the radio again on this egress, then Write.`,
+      );
+    }
+
     const blocks = memoryMapToDm32Blocks(image, this.cache.addressBase, addresses);
     const byAddr = new Map(this.cache.discovered.map((b) => [b.address, b]));
     const discoveredForProgress: Dm32DiscoveredBlock[] = addresses.map((address) => {

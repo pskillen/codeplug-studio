@@ -1,10 +1,16 @@
 import { describe, expect, it } from 'vitest';
 import { createMemoryMap } from '../../kit/memoryMap.ts';
 import { DM32_BLOCK_SIZE, DM32_METADATA } from './constants.ts';
-import { classifyDm32Metadata, groupDm32BlocksForProgress, selectBlocksToBulkRead } from './memory.ts';
+import {
+  classifyDm32Metadata,
+  dm32HydrationAddressMismatches,
+  groupDm32BlocksForProgress,
+  selectBlocksToBulkRead,
+} from './memory.ts';
 import { Dm32uvProtocol } from './protocol.ts';
 import {
   Dm32ScriptedPipe,
+  enqueueReadReply,
   enqueueVFrame,
   makeEmptyBlock,
   makeFirstChannelBlock,
@@ -43,8 +49,30 @@ describe('groupDm32BlocksForProgress', () => {
       { address: 0x3000, metadata: DM32_METADATA.SCAN_LIST, type: 'scan' },
       { address: 0x4000, metadata: DM32_METADATA.VFO_SETTINGS, type: 'vfo' },
     ]);
-    expect(groups.map((g) => g.stage)).toEqual(['Channels', 'Zones', 'Scan lists', 'Settings & other']);
+    expect(groups.map((g) => g.stage)).toEqual([
+      'Channels',
+      'Zones',
+      'Scan lists',
+      'Settings & other',
+    ]);
     expect(groups[0]!.blocks).toHaveLength(1);
+  });
+});
+
+describe('dm32HydrationAddressMismatches', () => {
+  it('flags when live metadata no longer matches the hydration seed', () => {
+    const live = new Map<number, number>([
+      [0x77000, 0x00],
+      [0x62000, DM32_METADATA.SCAN_LIST],
+    ]);
+    const mismatches = dm32HydrationAddressMismatches(
+      [
+        { address: 0x77000, metadata: DM32_METADATA.ZONE },
+        { address: 0x62000, metadata: DM32_METADATA.SCAN_LIST },
+      ],
+      live,
+    );
+    expect(mismatches).toEqual([{ address: 0x77000, expected: DM32_METADATA.ZONE, live: 0x00 }]);
   });
 });
 
@@ -114,6 +142,9 @@ describe('Dm32uvProtocol', () => {
     pipe.enqueue(new Uint8Array([0x06]));
     pipe.enqueue(new Uint8Array(8).fill(0xff));
     pipe.enqueue(new Uint8Array([0x06]));
+    // Verify memory map: metadata byte at each seeded address
+    enqueueReadReply(pipe, start + 0xfff, new Uint8Array([DM32_METADATA.CHANNEL_FIRST]));
+    enqueueReadReply(pipe, 0x2000 + 0xfff, new Uint8Array([DM32_METADATA.VFO_SETTINGS]));
     // Two write ACKs
     pipe.enqueue(new Uint8Array([0x06]));
     pipe.enqueue(new Uint8Array([0x06]));

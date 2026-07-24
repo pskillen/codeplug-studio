@@ -229,7 +229,7 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
       <Text size="sm" c="dimmed">
         Read stores a clone image on this egress pathway so unmodelled settings survive write-back.
         Write sends the assembled build into that image — it does not import channels into the
-        library.
+        library. After a factory reset, Read again before Write (memory-bank addresses can move).
       </Text>
       {!serialOk ? <Alert color="yellow">{getWebSerialUnsupportedMessage()}</Alert> : null}
       {attributionNames ? (

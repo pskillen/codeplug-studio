@@ -199,6 +199,42 @@ export function groupDm32BlocksForProgress(
   return groups;
 }
 
+/**
+ * Compare hydration-seeded block tags to live radio metadata at the same addresses.
+ * Factory reset / CPS rewrite can move banks (e.g. ZONE 0x5c) to new absolute addresses;
+ * writing a stale sparse map then leaves the live banks untouched.
+ */
+export function dm32HydrationAddressMismatches(
+  expected: readonly { address: number; metadata: number }[],
+  liveMetadataByAddress: ReadonlyMap<number, number>,
+): { address: number; expected: number; live: number }[] {
+  const out: { address: number; expected: number; live: number }[] = [];
+  for (const b of expected) {
+    if (b.metadata === DM32_METADATA.EMPTY || b.metadata === DM32_METADATA.EMPTY_ALT) continue;
+    const live = liveMetadataByAddress.get(b.address);
+    if (live === undefined) continue;
+    if (live !== b.metadata) {
+      out.push({ address: b.address, expected: b.metadata, live });
+    }
+  }
+  return out;
+}
+
+/** Read metadata byte at each address; used before selective-range Write. */
+export async function readDm32BlockMetadataTags(
+  pipe: BytePipe,
+  addresses: readonly number[],
+  opts?: Dm32SettleOptions,
+): Promise<Map<number, number>> {
+  const out = new Map<number, number>();
+  for (const address of addresses) {
+    throwIfAborted(opts?.signal);
+    const metaByte = await dm32ReadMemory(pipe, address + DM32_METADATA_OFFSET, 1, opts);
+    out.set(address, metaByte[0] ?? 0);
+  }
+  return out;
+}
+
 export async function readChannelCount(
   pipe: BytePipe,
   firstChannelBlockAddr: number,
