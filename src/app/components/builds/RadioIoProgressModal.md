@@ -6,14 +6,15 @@ Blocking modal during Web Serial **Read** / **Write** on a Direct radio FormatBu
 
 ## Props
 
-| Prop                | Type                                                    | Description                                    |
-| ------------------- | ------------------------------------------------------- | ---------------------------------------------- |
-| `opened`            | `boolean`                                               | Show while an operation is in progress         |
-| `operation`         | `'read' \| 'write'`                                     | Chooses step list and title                    |
-| `phase`             | `'connecting' \| 'preparing' \| 'transfer' \| 'saving'` | Active step                                    |
-| `progress`          | `ProgressUpdate \| null`                                | Block-level progress during `transfer`         |
-| `navigationBlocked` | `boolean`                                               | Extra alert after an in-app navigation attempt |
-| `onCancel`          | `() => void`                                            | Abort the in-flight transfer                   |
+| Prop                | Type                                                    | Description                                                                 |
+| ------------------- | ------------------------------------------------------- | --------------------------------------------------------------------------- |
+| `opened`            | `boolean`                                               | Show while an operation is in progress                                      |
+| `operation`         | `'read' \| 'write'`                                     | Chooses step list and title                                                 |
+| `phase`             | `'connecting' \| 'preparing' \| 'transfer' \| 'saving'` | Active coarse phase                                                         |
+| `progress`          | `ProgressUpdate \| null`                                | Block-level progress during `transfer` (`msg`, optional `stage`)            |
+| `transferStages`    | `readonly string[]`                                     | Checklist labels accumulated from `progress.stage` (Channels, Zones, …)     |
+| `navigationBlocked` | `boolean`                                               | Extra alert after an in-app navigation attempt                              |
+| `onCancel`          | `() => void`                                            | Abort the in-flight transfer                                                |
 
 ## Usage
 
@@ -23,6 +24,7 @@ Blocking modal during Web Serial **Read** / **Write** on a Direct radio FormatBu
   operation={operation}
   phase={phase}
   progress={progress}
+  transferStages={transferStages}
   navigationBlocked={navBlockedHint}
   onCancel={handleCancel}
 />
@@ -32,6 +34,7 @@ Blocking modal during Web Serial **Read** / **Write** on a Direct radio FormatBu
 
 - Modal cannot be dismissed via escape, overlay click, or close button — only **Cancel** (parent aborts) or completion.
 - Parent should pair with `useUnsavedNavigationGuard(busy)` + `beforeunload` so route changes and tab close are blocked while open.
+- When adapters emit `ProgressUpdate.stage`, the parent appends unique labels to `transferStages` so the checklist grows (e.g. Discover memory map → Channels → Zones → Scan lists).
 
 ## Related
 

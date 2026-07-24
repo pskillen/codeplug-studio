@@ -15,39 +15,66 @@ export interface RadioIoProgressModalProps {
   operation: RadioIoOperation;
   phase: RadioIoProgressPhase;
   progress: ProgressUpdate | null;
+  /**
+   * Transfer checklist labels accumulated from `ProgressUpdate.stage` (e.g. Channels,
+   * Zones). Shown as extra list items between connect and save/upload.
+   */
+  transferStages?: readonly string[];
   /** True when the operator tried to navigate away while busy. */
   navigationBlocked?: boolean;
   onCancel: () => void;
 }
 
 interface StepDef {
-  id: RadioIoProgressPhase;
+  id: string;
   label: string;
 }
 
-const READ_STEPS: readonly StepDef[] = [
-  { id: 'connecting', label: 'Connect and handshake' },
-  { id: 'transfer', label: 'Download clone image' },
-  { id: 'saving', label: 'Save image on this build' },
-];
+function buildSteps(
+  operation: RadioIoOperation,
+  transferStages: readonly string[],
+): StepDef[] {
+  if (operation === 'write') {
+    return [
+      { id: 'connecting', label: 'Connect and handshake' },
+      { id: 'preparing', label: 'Assemble channels into image' },
+      ...(transferStages.length > 0
+        ? transferStages.map((label) => ({ id: `stage:${label}`, label }))
+        : [{ id: 'transfer', label: 'Upload to radio' }]),
+    ];
+  }
+  return [
+    { id: 'connecting', label: 'Connect and handshake' },
+    ...(transferStages.length > 0
+      ? transferStages.map((label) => ({ id: `stage:${label}`, label }))
+      : [{ id: 'transfer', label: 'Download clone image' }]),
+    { id: 'saving', label: 'Save image on this build' },
+  ];
+}
 
-const WRITE_STEPS: readonly StepDef[] = [
-  { id: 'connecting', label: 'Connect and handshake' },
-  { id: 'preparing', label: 'Assemble channels into image' },
-  { id: 'transfer', label: 'Upload to radio' },
-];
+function activeStepId(
+  phase: RadioIoProgressPhase,
+  progress: ProgressUpdate | null,
+  transferStages: readonly string[],
+): string {
+  if (phase === 'connecting') return 'connecting';
+  if (phase === 'preparing') return 'preparing';
+  if (phase === 'saving') return 'saving';
+  if (progress?.stage) return `stage:${progress.stage}`;
+  if (transferStages.length > 0) return `stage:${transferStages[transferStages.length - 1]}`;
+  return 'transfer';
+}
 
 function stepStatus(
-  stepId: RadioIoProgressPhase,
-  phase: RadioIoProgressPhase,
+  stepId: string,
+  activeId: string,
   steps: readonly StepDef[],
 ): 'done' | 'active' | 'pending' {
-  const order = steps.map((s) => s.id);
-  const stepIdx = order.indexOf(stepId);
-  const phaseIdx = order.indexOf(phase);
-  if (stepIdx < 0 || phaseIdx < 0) return 'pending';
-  if (stepIdx < phaseIdx) return 'done';
-  if (stepIdx === phaseIdx) return 'active';
+  const stepIdx = steps.findIndex((s) => s.id === stepId);
+  const activeIdx = steps.findIndex((s) => s.id === activeId);
+  if (stepIdx < 0 || activeIdx < 0) return 'pending';
+  if (stepIdx < activeIdx) return 'done';
+  if (stepIdx === activeIdx) return 'active';
   return 'pending';
 }
 
@@ -56,12 +83,15 @@ export default function RadioIoProgressModal({
   operation,
   phase,
   progress,
+  transferStages = [],
   navigationBlocked = false,
   onCancel,
 }: RadioIoProgressModalProps) {
-  const steps = operation === 'read' ? READ_STEPS : WRITE_STEPS;
+  const steps = buildSteps(operation, transferStages);
+  const activeId = activeStepId(phase, progress, transferStages);
   const title = operation === 'read' ? 'Reading from radio' : 'Writing to radio';
   const percent = progress?.max ? Math.min(100, (100 * progress.cur) / progress.max) : undefined;
+  const showBar = phase === 'transfer' || phase === 'preparing';
 
   return (
     <Modal
@@ -88,7 +118,7 @@ export default function RadioIoProgressModal({
 
         <Stack gap={6}>
           {steps.map((step) => {
-            const status = stepStatus(step.id, phase, steps);
+            const status = stepStatus(step.id, activeId, steps);
             return (
               <Text
                 key={step.id}
@@ -103,7 +133,7 @@ export default function RadioIoProgressModal({
           })}
         </Stack>
 
-        {phase === 'transfer' ? (
+        {showBar && phase === 'transfer' ? (
           <Stack gap={4}>
             <Text size="sm">
               {progress?.msg ?? 'Transferring…'}
@@ -117,7 +147,9 @@ export default function RadioIoProgressModal({
               ? 'Waiting for port and radio handshake…'
               : phase === 'preparing'
                 ? 'Building the image from this format build…'
-                : 'Saving hydration on the build…'}
+                : phase === 'saving'
+                  ? 'Saving hydration on the build…'
+                  : 'Transferring…'}
           </Text>
         )}
 

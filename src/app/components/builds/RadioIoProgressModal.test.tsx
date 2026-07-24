@@ -11,7 +11,8 @@ describe('RadioIoProgressModal', () => {
           opened
           operation="read"
           phase="transfer"
-          progress={{ cur: 10, max: 40, msg: 'Reading 0x280' }}
+          progress={{ cur: 10, max: 40, msg: 'Reading Channels: block 10 of 40', stage: 'Channels' }}
+          transferStages={['Discover memory map', 'Channels', 'Zones']}
           onCancel={vi.fn()}
         />
       </MantineProvider>,
@@ -19,8 +20,10 @@ describe('RadioIoProgressModal', () => {
 
     expect(screen.getByText('Reading from radio')).toBeInTheDocument();
     expect(screen.getByText(/Keep this tab open/i)).toBeInTheDocument();
-    expect(screen.getByText(/Download clone image/i)).toBeInTheDocument();
-    expect(screen.getByText(/Reading 0x280 \(10\/40\)/)).toBeInTheDocument();
+    expect(screen.getByText(/Discover memory map/i)).toBeInTheDocument();
+    expect(screen.getByText(/→ Channels/)).toBeInTheDocument();
+    expect(screen.getByText(/· Zones/)).toBeInTheDocument();
+    expect(screen.getByText(/Reading Channels: block 10 of 40 \(10\/40\)/)).toBeInTheDocument();
   });
 
   it('shows navigation-blocked alert and invokes cancel', () => {

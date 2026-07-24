@@ -30,6 +30,7 @@ import {
   alignConfigEnd,
   bulkReadDm32Blocks,
   discoverDm32MemoryBlocks,
+  groupDm32BlocksForReadProgress,
   readChannelCount,
   selectBlocksToBulkRead,
   type Dm32DiscoveredBlock,
@@ -206,7 +207,12 @@ export class Dm32uvProtocol implements CloneImageRadio {
 
     reportProgress(
       opts.onProgress,
-      { cur: 0, max: 100, msg: 'Discovering memory blocks' },
+      {
+        cur: 0,
+        max: 100,
+        msg: 'Discovering memory map…',
+        stage: 'Discover memory map',
+      },
       opts.signal,
     );
     const discovered = await discoverDm32MemoryBlocks(
@@ -224,15 +230,28 @@ export class Dm32uvProtocol implements CloneImageRadio {
     }
 
     const toRead = selectBlocksToBulkRead(discovered, channelCount);
-    reportProgress(
-      opts.onProgress,
-      { cur: 0, max: toRead.length || 1, msg: `Bulk-reading ${toRead.length} blocks` },
-      opts.signal,
-    );
-    this.cache.blocks = await bulkReadDm32Blocks(this.pipe, toRead, {
-      ...settle,
-      onProgress: opts.onProgress,
-    });
+    const groups = groupDm32BlocksForReadProgress(toRead);
+    this.cache.blocks = new Map();
+    for (const group of groups) {
+      reportProgress(
+        opts.onProgress,
+        {
+          cur: 0,
+          max: group.blocks.length || 1,
+          msg: `Reading ${group.stage}…`,
+          stage: group.stage,
+        },
+        opts.signal,
+      );
+      const part = await bulkReadDm32Blocks(this.pipe, group.blocks, {
+        ...settle,
+        onProgress: opts.onProgress,
+        stage: group.stage,
+      });
+      for (const [addr, data] of part) {
+        this.cache.blocks.set(addr, data);
+      }
+    }
 
     // Digital address-book (V-frame 0x0F) is intentionally not folded into the hydration
     // stash — L01 ranges are huge and often empty; modelled Write does not need RMW of
@@ -266,7 +285,7 @@ export class Dm32uvProtocol implements CloneImageRadio {
     const firstBlockAddr = Math.floor(contactsBase / DM32_BLOCK_SIZE) * DM32_BLOCK_SIZE;
     reportProgress(
       opts.onProgress,
-      { cur: 0, max: 1, msg: 'Reading contact bank header' },
+      { cur: 0, max: 1, msg: 'Reading contact bank header', stage: 'Digital contacts' },
       opts.signal,
     );
     const firstBlock = await dm32ReadMemory(this.pipe, firstBlockAddr, DM32_BLOCK_SIZE, settle);
@@ -301,6 +320,7 @@ export class Dm32uvProtocol implements CloneImageRadio {
       const contactData = await bulkReadDm32Blocks(this.pipe, remaining, {
         ...settle,
         onProgress: opts.onProgress,
+        stage: 'Digital contacts',
       });
       for (const [addr, data] of contactData) {
         this.cache.blocks.set(addr, data);
@@ -338,7 +358,12 @@ export class Dm32uvProtocol implements CloneImageRadio {
       const data = blocks.get(addr)!;
       reportProgress(
         opts.onProgress,
-        { cur: i + 1, max: total, msg: `Writing block ${i + 1} of ${total}` },
+        {
+          cur: i + 1,
+          max: total,
+          msg: `Writing block ${i + 1} of ${total} (0x${addr.toString(16)})`,
+          stage: 'Upload blocks',
+        },
         opts.signal,
       );
       await dm32WriteMemory(this.pipe, addr, data, {

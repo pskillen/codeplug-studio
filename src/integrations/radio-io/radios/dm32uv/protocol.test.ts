@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { createMemoryMap } from '../../kit/memoryMap.ts';
 import { DM32_BLOCK_SIZE, DM32_METADATA } from './constants.ts';
-import { classifyDm32Metadata, selectBlocksToBulkRead } from './memory.ts';
+import { classifyDm32Metadata, groupDm32BlocksForReadProgress, selectBlocksToBulkRead } from './memory.ts';
 import { Dm32uvProtocol } from './protocol.ts';
 import {
   Dm32ScriptedPipe,
@@ -32,6 +32,19 @@ describe('selectBlocksToBulkRead', () => {
       1,
     );
     expect(selected.map((b) => b.address)).toEqual([0x1000, 0x2000]);
+  });
+});
+
+describe('groupDm32BlocksForReadProgress', () => {
+  it('splits selected blocks into named stage groups', () => {
+    const groups = groupDm32BlocksForReadProgress([
+      { address: 0x1000, metadata: DM32_METADATA.CHANNEL_FIRST, type: 'channel' },
+      { address: 0x2000, metadata: DM32_METADATA.ZONE, type: 'zone' },
+      { address: 0x3000, metadata: DM32_METADATA.SCAN_LIST, type: 'scan' },
+      { address: 0x4000, metadata: DM32_METADATA.VFO_SETTINGS, type: 'vfo' },
+    ]);
+    expect(groups.map((g) => g.stage)).toEqual(['Channels', 'Zones', 'Scan lists', 'Settings & other']);
+    expect(groups[0]!.blocks).toHaveLength(1);
   });
 });
 
