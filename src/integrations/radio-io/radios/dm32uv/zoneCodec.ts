@@ -13,6 +13,12 @@ export const DM32_ZONE_MAX_MEMBERS = 64;
 
 const TE = new TextEncoder();
 
+function clearDm32ZoneSlot(image: MemoryMap, slotOff: number): void {
+  image.bytes.fill(0xff, slotOff, slotOff + DM32_ZONE_ENTRY_SIZE);
+  image.bytes[slotOff] = 0x00;
+  image.bytes[slotOff + 16] = 0x00;
+}
+
 /** Encode one zone to a 145-byte record (0xFF pad; no 0x0000 member terminator). */
 export function encodeDm32Zone(zone: RadioZoneDto): Uint8Array {
   const data = new Uint8Array(DM32_ZONE_ENTRY_SIZE);
@@ -86,20 +92,17 @@ export function encodeZonesIntoDm32Image(
         const src = encoded[firstZoneIdx + i]!;
         image.set(base + destOffset + i * DM32_ZONE_ENTRY_SIZE, src);
       }
+      // Clear unused zone slots so byte 16 is not left 0xFF (radio treats as count=255).
+      const maxSlots = isFirst ? maxFirst : maxPerLater;
+      for (let i = zonesInBlock; i < maxSlots; i++) {
+        clearDm32ZoneSlot(image, base + destOffset + i * DM32_ZONE_ENTRY_SIZE);
+      }
     }
 
     if (isFirst) {
-      image.bytes[base] = Math.min(Math.max(zonesInBlock, encoded.length === 0 ? 0 : 1), maxFirst);
+      image.bytes[base] = zonesInBlock > 0 ? Math.min(zonesInBlock, maxFirst) : 0;
       if (preservedHeader) {
         image.bytes.set(preservedHeader, base + 1);
-      }
-      // Terminator after last zone in first contiguous layout when room
-      if (encoded.length > 0 && encoded.length <= maxFirst) {
-        const termOff = base + DM32_ZONE_START_OFFSET + encoded.length * DM32_ZONE_ENTRY_SIZE;
-        if (termOff + 1 < base + DM32_METADATA_OFFSET) {
-          image.bytes[termOff] = 0x00;
-          image.bytes[termOff + 1] = 0x00;
-        }
       }
     }
 

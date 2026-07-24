@@ -52,6 +52,26 @@ describe('encodeZonesIntoDm32Image', () => {
     expect(image.bytes[DM32_ZONE_START_OFFSET]).toBe('O'.charCodeAt(0));
     expect(image.bytes[secondZoneOff]).not.toBe('S'.charCodeAt(0));
     expect(image.bytes[secondZoneOff]).toBe(0x00);
+    expect(image.bytes[secondZoneOff + 16]).toBe(0x00);
+  });
+
+  it('clears trailing zone slots so byte 16 is not mistaken for count=255', () => {
+    const zoneData = makeBlock(DM32_METADATA.ZONE);
+    const image = createMemoryMap(DM32_BLOCK_SIZE);
+    image.set(0, zoneData);
+    const zones = Array.from({ length: 13 }, (_, i) => ({
+      wireName: `Z${i + 1}`,
+      channelNumbers: [i + 1],
+    }));
+    encodeZonesIntoDm32Image(
+      image,
+      { addressBase: 0, discovered: [{ address: 0, metadata: DM32_METADATA.ZONE }] },
+      zones,
+    );
+    expect(image.bytes[0]).toBe(13);
+    const trailingOff = DM32_ZONE_START_OFFSET + 13 * DM32_ZONE_ENTRY_SIZE;
+    expect(image.bytes[trailingOff + 16]).toBe(0x00);
+    expect(image.bytes[trailingOff]).toBe(0x00);
   });
 
   it('writes zones into first 0x5c block at offset 16', () => {

@@ -86,7 +86,7 @@ TX-contact indices (`0x42`/`0x43`) point into the **serial** talk-group list (`0
 | Name             | 11 bytes ASCII                                                                             |
 | Members          | Count at +16; u16 LE channel numbers from +17; max **64**; unused member bytes stay `0xFF` |
 
-**Studio Web Serial Write:** zone blocks are filled `0xFF` then rewritten from projection; shrinking the zone list clears prior zone records (terminator `0x0000` after the last zone when it fits in the first block).
+**Studio Web Serial Write:** zone blocks are filled `0xFF` then rewritten from projection; shrinking the zone list clears prior zone records. Unused zone slots in each block are explicit `0xFF` empty records (byte 16 must not remain `0xFF` — firmware may treat that as 255 members). Do **not** write a `0x0000` terminator after the last zone (NeonPlug pads with `0xFF` only).
 
 ## Scan lists — metadata `0x11`
 
@@ -95,8 +95,10 @@ TX-contact indices (`0x42`/`0x43`) point into the **serial** talk-group list (`0
 | Entry size   | **57** bytes                           |
 | Count        | Byte at `0x00`                         |
 | Entry offset | `(57 × N) − 56` for list `N` (1-based) |
-| Max lists    | **32**                                 |
+| Max lists    | **32** bank / **15** channel-FK        |
 | Max members  | **15** named channels                  |
+
+**Studio Web Serial Write:** zone-derived scan lists are rewritten from projection; the block is zero-filled so shrink clears stale lists. Each exporting zone gets a `{zone} Scan` carrier channel prepended to the zone and set as designated TX. Channel-record `scanListId` is only **4 bits (1–15)** — Studio caps addressable zone-derived lists at 15 (NeonPlug parity). Shared channels keep the **first** zone’s list (not last-wins). Carriers always keep their own list id.
 
 ### 57-byte entry (summary)
 
