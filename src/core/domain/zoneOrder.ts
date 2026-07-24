@@ -89,3 +89,43 @@ export function reorderSelectedKeys(
   }
   return next;
 }
+
+/**
+ * Reorder by drag-drop (dnd-kit): move `activeKey`, or the full `selectedKeys`
+ * block when active is selected, to the position of `overKey`. Preserves relative
+ * order within the moving block. Mirrors single-item {@link arrayMove} semantics.
+ */
+export function reorderKeysByDrag(
+  keys: readonly string[],
+  activeKey: string,
+  overKey: string,
+  selectedKeys?: ReadonlySet<string>,
+): string[] {
+  const list = [...keys];
+  if (!list.includes(activeKey) || !list.includes(overKey) || activeKey === overKey) {
+    return list;
+  }
+
+  const moving =
+    selectedKeys?.has(activeKey) === true
+      ? list.filter((key) => selectedKeys.has(key))
+      : [activeKey];
+
+  if (moving.length === 0) return list;
+
+  const movingSet = new Set(moving);
+  if (movingSet.has(overKey) && moving.length > 1) return list;
+
+  const activeIndex = list.indexOf(activeKey);
+  const overIndex = list.indexOf(overKey);
+  const remaining = list.filter((key) => !movingSet.has(key));
+  let insertAt = remaining.indexOf(overKey);
+  if (insertAt < 0) return list;
+
+  if (activeIndex < overIndex) {
+    insertAt += 1;
+  }
+
+  remaining.splice(insertAt, 0, ...moving);
+  return remaining;
+}
