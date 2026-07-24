@@ -11,7 +11,12 @@ describe('RadioIoProgressModal', () => {
           opened
           operation="read"
           phase="transfer"
-          progress={{ cur: 10, max: 40, msg: 'Reading Channels: block 10 of 40', stage: 'Channels' }}
+          progress={{
+            cur: 10,
+            max: 40,
+            msg: 'Reading Channels: block 10 of 40',
+            stage: 'Channels',
+          }}
           transferStages={['Discover memory map', 'Channels', 'Zones']}
           onCancel={vi.fn()}
         />

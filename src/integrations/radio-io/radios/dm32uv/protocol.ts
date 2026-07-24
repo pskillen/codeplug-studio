@@ -293,11 +293,7 @@ export class Dm32uvProtocol implements CloneImageRadio {
       opts.signal,
     );
     const firstBlock = await dm32ReadMemory(this.pipe, firstBlockAddr, DM32_BLOCK_SIZE, settle);
-    const countFromHeader = readDm32ContactCountFromBlock(
-      firstBlock,
-      contactsBase,
-      firstBlockAddr,
-    );
+    const countFromHeader = readDm32ContactCountFromBlock(firstBlock, contactsBase, firstBlockAddr);
     const plan = planDm32ContactBankBlocks({
       contactsBase,
       contactsEnd: this.cache.contactsEnd,

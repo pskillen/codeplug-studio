@@ -46,7 +46,10 @@ export interface Dm32ContactEncodeContext {
   discoveredAddresses: readonly number[];
 }
 
-function contactBlockSpan(ctx: Dm32ContactEncodeContext, contactCount: number): {
+function contactBlockSpan(
+  ctx: Dm32ContactEncodeContext,
+  contactCount: number,
+): {
   firstBlockAddr: number;
   blockCount: number;
 } {
@@ -195,11 +198,9 @@ export function planDm32ContactBankBlocks(args: {
   // Valid header wins. Zero or out-of-range → header block only.
   // Do not fall back to min(maxContacts, V-frame span) — L01 end addresses near
   // 0xFFF000 caused a 3464-block download runaway when the full span was walked.
-  const contactCount =
-    header > 0 && header <= maxContacts && header <= maxInRange ? header : 0;
+  const contactCount = header > 0 && header <= maxContacts && header <= maxInRange ? header : 0;
 
-  const blocksNeeded =
-    contactCount <= 0 ? 1 : Math.ceil(contactCount / DM32_CONTACTS_PER_BLOCK);
+  const blocksNeeded = contactCount <= 0 ? 1 : Math.ceil(contactCount / DM32_CONTACTS_PER_BLOCK);
   const blockCount = Math.min(Math.max(1, blocksNeeded), DM32_LIMITS.CONTACT_BANK_MAX_BLOCKS);
 
   const blockAddresses: number[] = [];
@@ -218,9 +219,10 @@ export function readDm32ContactCountFromBlock(
   const off = contactsBase - firstBlockAddr;
   if (off < 0 || off + 4 > firstBlock.length) return 0;
   return (
-    firstBlock[off]! |
-    (firstBlock[off + 1]! << 8) |
-    (firstBlock[off + 2]! << 16) |
-    (firstBlock[off + 3]! << 24)
-  ) >>> 0;
+    (firstBlock[off]! |
+      (firstBlock[off + 1]! << 8) |
+      (firstBlock[off + 2]! << 16) |
+      (firstBlock[off + 3]! << 24)) >>>
+    0
+  );
 }

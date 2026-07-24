@@ -8,12 +8,7 @@ import type { ProgressUpdate } from '@integrations/radio-io/types.ts';
 
 export type RadioIoOperation = 'read' | 'write';
 
-export type RadioIoProgressPhase =
-  | 'connecting'
-  | 'preparing'
-  | 'transfer'
-  | 'saving'
-  | 'done';
+export type RadioIoProgressPhase = 'connecting' | 'preparing' | 'transfer' | 'saving' | 'done';
 
 export interface RadioIoProgressModalProps {
   opened: boolean;

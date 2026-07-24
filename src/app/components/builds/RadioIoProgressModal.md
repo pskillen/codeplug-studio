@@ -6,10 +6,10 @@ Blocking modal during Web Serial **Read** / **Write** on a Direct radio FormatBu
 
 ## Props
 
-| Prop                | Type                                                    | Description                                                                 |
-| ------------------- | ------------------------------------------------------- | --------------------------------------------------------------------------- |
-| `opened`            | `boolean`                                               | Show while an operation is in progress                                      |
-| `operation`         | `'read' \| 'write'`                                     | Chooses step list and title                                                 |
+| Prop                | Type                                                              | Description                                                      |
+| ------------------- | ----------------------------------------------------------------- | ---------------------------------------------------------------- |
+| `opened`            | `boolean`                                                         | Show while an operation is in progress                           |
+| `operation`         | `'read' \| 'write'`                                               | Chooses step list and title                                      |
 | `phase`             | `'connecting' \| 'preparing' \| 'transfer' \| 'saving' \| 'done'` | Active coarse phase                                              |
 | `progress`          | `ProgressUpdate \| null`                                          | Block-level progress during `transfer` (`msg`, optional `stage`) |
 | `transferStages`    | `readonly string[]`                                               | Checklist labels accumulated from `progress.stage`               |
