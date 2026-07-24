@@ -126,6 +126,7 @@ export function mergeChannelsIntoDm32uvHydration(
       {
         addressBase: cache.addressBase,
         contactsBase: cache.contactsBase,
+        contactsEnd: cache.contactsEnd,
         discoveredAddresses: [...cache.blocks.keys()],
       },
       organisation.digitalContacts,

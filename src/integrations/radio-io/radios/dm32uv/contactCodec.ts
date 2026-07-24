@@ -41,26 +41,52 @@ export interface Dm32ContactEncodeContext {
   addressBase: number;
   /** Absolute start of contact bank (from V-frame 0x0F). */
   contactsBase: number;
+  /** Absolute end of contact bank (from V-frame 0x0F), when known. */
+  contactsEnd?: number;
   discoveredAddresses: readonly number[];
+}
+
+function contactBlockSpan(ctx: Dm32ContactEncodeContext): {
+  firstBlockAddr: number;
+  blockCount: number;
+} {
+  const firstBlockAddr = Math.floor(ctx.contactsBase / DM32_BLOCK_SIZE) * DM32_BLOCK_SIZE;
+  const endAddr = ctx.contactsEnd ?? ctx.contactsBase;
+  const lastBlockAddr = Math.floor(endAddr / DM32_BLOCK_SIZE) * DM32_BLOCK_SIZE;
+  const blockCount = Math.max(1, Math.floor((lastBlockAddr - firstBlockAddr) / DM32_BLOCK_SIZE) + 1);
+  return { firstBlockAddr, blockCount };
+}
+
+function clearContactEntriesInBlock(
+  image: MemoryMap,
+  mapOff: number,
+  isFirstBlock: boolean,
+): void {
+  for (let i = 0; i < DM32_CONTACTS_PER_BLOCK; i++) {
+    const entryOff = isFirstBlock ? 0x10 + i * DM32_CONTACT_ENTRY_SIZE : i * DM32_CONTACT_ENTRY_SIZE;
+    if (entryOff + DM32_CONTACT_ENTRY_SIZE <= DM32_BLOCK_SIZE - 1) {
+      image.bytes.fill(0xff, mapOff + entryOff, mapOff + entryOff + DM32_CONTACT_ENTRY_SIZE);
+    }
+  }
 }
 
 /**
  * Pack digital contacts into contact-bank blocks present in the MemoryMap.
- * No-op when contactsBase is outside the map or no covering blocks exist.
+ * Clears every entry slot in the V-frame contact span before writing so shrink
+ * cannot leave stale entries in earlier blocks.
  */
 export function encodeDigitalContactsIntoDm32Image(
   image: MemoryMap,
   ctx: Dm32ContactEncodeContext,
   contacts: readonly RadioDigitalContactDto[],
 ): MemoryMap {
-  const firstBlockAddr = Math.floor(ctx.contactsBase / DM32_BLOCK_SIZE) * DM32_BLOCK_SIZE;
-  const countOffsetInFirst = ctx.contactsBase - firstBlockAddr;
+  const { firstBlockAddr, blockCount } = contactBlockSpan(ctx);
   const firstMapOff = firstBlockAddr - ctx.addressBase;
   if (firstMapOff < 0 || firstMapOff + DM32_BLOCK_SIZE > image.size) {
     return image;
   }
 
-  // Count header at contactsBase
+  const countOffsetInFirst = ctx.contactsBase - firstBlockAddr;
   const n = contacts.length;
   image.bytes[firstMapOff + countOffsetInFirst] = n & 0xff;
   image.bytes[firstMapOff + countOffsetInFirst + 1] = (n >>> 8) & 0xff;
@@ -70,37 +96,27 @@ export function encodeDigitalContactsIntoDm32Image(
     image.bytes[firstMapOff + countOffsetInFirst + 4 + i] = 0x00;
   }
 
-  for (let contactIndex = 0; contactIndex < contacts.length; contactIndex++) {
-    const blockNum = Math.floor(contactIndex / DM32_CONTACTS_PER_BLOCK);
-    const indexInBlock = contactIndex % DM32_CONTACTS_PER_BLOCK;
+  for (let blockNum = 0; blockNum < blockCount; blockNum++) {
     const blockAddr = firstBlockAddr + blockNum * DM32_BLOCK_SIZE;
     const mapOff = blockAddr - ctx.addressBase;
     if (mapOff < 0 || mapOff + DM32_BLOCK_SIZE > image.size) continue;
 
-    const entryOff =
-      blockNum === 0
+    const isFirstBlock = blockNum === 0;
+    clearContactEntriesInBlock(image, mapOff, isFirstBlock);
+
+    const firstContactIndex = blockNum * DM32_CONTACTS_PER_BLOCK;
+    const lastContactIndex = Math.min(
+      contacts.length - 1,
+      (blockNum + 1) * DM32_CONTACTS_PER_BLOCK - 1,
+    );
+    if (lastContactIndex < firstContactIndex) continue;
+
+    for (let contactIndex = firstContactIndex; contactIndex <= lastContactIndex; contactIndex++) {
+      const indexInBlock = contactIndex % DM32_CONTACTS_PER_BLOCK;
+      const entryOff = isFirstBlock
         ? 0x10 + indexInBlock * DM32_CONTACT_ENTRY_SIZE
         : indexInBlock * DM32_CONTACT_ENTRY_SIZE;
-    image.set(mapOff + entryOff, encodeDm32ContactEntry(contacts[contactIndex]!));
-  }
-
-  // Clear remaining slots in last used block with 0xFF
-  const lastIndex = Math.max(0, contacts.length - 1);
-  const lastBlockNum = Math.floor(lastIndex / DM32_CONTACTS_PER_BLOCK);
-  const lastInBlock = lastIndex % DM32_CONTACTS_PER_BLOCK;
-  const lastBlockAddr = firstBlockAddr + lastBlockNum * DM32_BLOCK_SIZE;
-  const lastMapOff = lastBlockAddr - ctx.addressBase;
-  if (lastMapOff >= 0 && lastMapOff + DM32_BLOCK_SIZE <= image.size) {
-    for (let i = lastInBlock + 1; i < DM32_CONTACTS_PER_BLOCK; i++) {
-      const entryOff =
-        lastBlockNum === 0 ? 0x10 + i * DM32_CONTACT_ENTRY_SIZE : i * DM32_CONTACT_ENTRY_SIZE;
-      if (entryOff + DM32_CONTACT_ENTRY_SIZE <= DM32_BLOCK_SIZE - 1) {
-        image.bytes.fill(
-          0xff,
-          lastMapOff + entryOff,
-          lastMapOff + entryOff + DM32_CONTACT_ENTRY_SIZE,
-        );
-      }
+      image.set(mapOff + entryOff, encodeDm32ContactEntry(contacts[contactIndex]!));
     }
   }
 

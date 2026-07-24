@@ -6,6 +6,7 @@ import {
   encodeDigitalContactsIntoDm32Image,
   parseDm32ContactsRange,
   DM32_CONTACT_ENTRY_SIZE,
+  DM32_CONTACTS_PER_BLOCK,
 } from './contactCodec.ts';
 
 describe('contactCodec', () => {
@@ -38,7 +39,6 @@ describe('contactCodec', () => {
   });
 
   it('writes count header and first contact into map', () => {
-    // Count header sits at contactsBase; first entry at +0x10 within the block.
     const contactsBase = 0;
     const image = createMemoryMap(DM32_BLOCK_SIZE);
     image.bytes.fill(0xff);
@@ -59,5 +59,45 @@ describe('contactCodec', () => {
     );
     expect(image.bytes[contactsBase]).toBe(1);
     expect(image.bytes[0x10]).toBe('B'.charCodeAt(0));
+  });
+
+  it('clears stale entries in earlier blocks when contact list shrinks', () => {
+    const contactsBase = 0;
+    const contactsEnd = DM32_BLOCK_SIZE * 2 - 1;
+    const image = createMemoryMap(DM32_BLOCK_SIZE * 2);
+    image.bytes.fill(0x00);
+
+    const stale = encodeDm32ContactEntry({
+      wireName: 'Stale',
+      digitalId: 999,
+      callsign: '',
+      city: '',
+      province: '',
+      country: '',
+      remark: '',
+    });
+    const staleOff = DM32_BLOCK_SIZE;
+    image.set(staleOff, stale);
+
+    encodeDigitalContactsIntoDm32Image(
+      image,
+      { addressBase: 0, contactsBase, contactsEnd, discoveredAddresses: [0, DM32_BLOCK_SIZE] },
+      [
+        {
+          wireName: 'Only',
+          digitalId: 1,
+          callsign: '',
+          city: '',
+          province: '',
+          country: '',
+          remark: '',
+        },
+      ],
+    );
+
+    expect(image.bytes[0]).toBe(1);
+    expect(image.bytes[0x10]).toBe('O'.charCodeAt(0));
+    expect(image.bytes[staleOff]).toBe(0xff);
+    expect(image.bytes[staleOff + 1]).toBe(0xff);
   });
 });

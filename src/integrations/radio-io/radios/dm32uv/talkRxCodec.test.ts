@@ -41,6 +41,32 @@ describe('talkGroupCodec', () => {
     expect(image.bytes[DM32_OFFSET.TALK_GROUP_COUNTER]).toBe(1);
     expect(image.bytes[DM32_BLOCK_SIZE + DM32_METADATA_OFFSET]).toBe(DM32_METADATA.TALK_GROUPS);
   });
+
+  it('replaces prior talk groups when list shrinks', () => {
+    const image = createMemoryMap(DM32_BLOCK_SIZE * 3);
+    image.set(0, blankBlock(DM32_METADATA.CONFIG_TG_COUNTER));
+    image.set(DM32_BLOCK_SIZE, blankBlock(DM32_METADATA.TALK_GROUPS));
+    image.set(DM32_BLOCK_SIZE * 2, blankBlock(DM32_METADATA.METADATA_0x0B));
+    const ctx = {
+      addressBase: 0,
+      discovered: [
+        { address: 0, metadata: DM32_METADATA.CONFIG_TG_COUNTER },
+        { address: DM32_BLOCK_SIZE, metadata: DM32_METADATA.TALK_GROUPS },
+        { address: DM32_BLOCK_SIZE * 2, metadata: DM32_METADATA.METADATA_0x0B },
+      ],
+    };
+    encodeTalkGroupsIntoDm32Image(image, ctx, [
+      { index: 1, wireName: 'First', digitalId: 1, callType: 0x04 },
+      { index: 2, wireName: 'Second', digitalId: 2, callType: 0x04 },
+    ]);
+    expect(image.bytes[DM32_BLOCK_SIZE + 2]).toBe('F'.charCodeAt(0));
+
+    encodeTalkGroupsIntoDm32Image(image, ctx, [
+      { index: 1, wireName: 'Only', digitalId: 9, callType: 0x04 },
+    ]);
+    expect(image.bytes[DM32_BLOCK_SIZE + 2]).toBe('O'.charCodeAt(0));
+    expect(image.bytes[DM32_BLOCK_SIZE + 30]).toBe(0x00);
+  });
 });
 
 describe('rxGroupCodec', () => {
