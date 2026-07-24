@@ -21,7 +21,7 @@ Separate from config-range metadata `0x0F` (RX groups).
 | Later blocks   | Entries from `0x00`; 44 per 4KB                   |
 | Empty sentinel | Name byte `0x00` or `0xFF`                        |
 
-**Read (Web Serial):** download the contact bank by **header count** (NeonPlug `readContacts`), not by walking every 4KB block from V-frame start→end. L01 end addresses can sit near `0xFFF000` (~thousands of empty blocks); treating that span as “blocks to read” caused a runaway download (e.g. block *n* of 3464). Cap folded contact blocks (`CONTACT_BANK_MAX_BLOCKS`).
+**Read (Web Serial):** clone download **skips** the digital address-book bank — it is not needed for the hydration stash (channels / zones / scan / TG / RX / settings). Connect still records V-frame `0x0F`/`0x10` range metadata. A count-based fold helper remains on the protocol (`foldContactBankIntoDownloadCache`) for a future contacts Read; do **not** walk V-frame start→end (L01 end near `0xFFF000` caused ~3464-block runaways).
 
 | World                  | Contact storage                             | Record size                       |
 | ---------------------- | ------------------------------------------- | --------------------------------- |
@@ -42,7 +42,7 @@ Studio Web Serial encodes the **serial** address book only.
 | `0x3C`–`0x4B` | Country  | 16 ASCII |
 | `0x4C`–`0x5B` | Remark   | 16 ASCII |
 
-**Studio Web Serial (#667, #685):** digital address-book entries are **fully rewritten** from the build on Write — entry slots in the packed blocks (and in a **trusted small** V-frame span ≤ `CONTACT_BANK_MAX_BLOCKS`) clear to `0xFF` before packing so shrink cannot leave stale earlier-block entries. A huge L01 `contactsEnd` is **not** treated as a clear/read span. Analog / DTMF contacts are **not** encoded — they stay as on the radio; use CPS / NeonPlug file egress to change them.
+**Studio Web Serial (#667, #685):** digital address-book **encode** remains for when contact blocks are present in the map; clone **Read does not pull** that bank into hydration, so selective-range Write will not upload address-book blocks until a contacts Read (or allocate-on-write) is wired. When packing, entry slots in the packed blocks (and in a **trusted small** V-frame span ≤ `CONTACT_BANK_MAX_BLOCKS`) clear to `0xFF` before packing. A huge L01 `contactsEnd` is **not** treated as a clear/read span. Analog / DTMF contacts are **not** encoded — they stay as on the radio; use CPS / NeonPlug file egress to change them.
 
 ## Talk groups — metadata `0x44` (+ counter `0x06`)
 
