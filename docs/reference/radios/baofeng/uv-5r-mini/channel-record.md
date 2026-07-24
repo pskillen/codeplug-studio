@@ -53,6 +53,10 @@ Internal library % mapping for file adapters: [power.md](power.md).
 
 Do not copy classic UV-5R wide-bit polarity into this codec.
 
+## Duplex off / TX inhibit
+
+NeonPlug and CHIRP encode duplex-off as TX frequency bytes **`FF × 4`**. Studio Web Serial currently always BCD-encodes `txHz`; library `forbidTransmit` does not yet reach the Mini codec. Tracked with channel-span clear policy by [#695](https://github.com/pskillen/codeplug-studio/issues/695).
+
 ## Related
 
 - [memory-layout.md](memory-layout.md) · [settings.md](settings.md)

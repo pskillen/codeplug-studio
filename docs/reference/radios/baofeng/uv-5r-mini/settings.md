@@ -1,10 +1,10 @@
 # UV-5R Mini — settings and upload scope
 
-High-level VFO / settings / ANI / PTT offsets and how NeonPlug vs CHIRP upload differently. Needed for a safe first Web Serial adapter ([#617](https://github.com/pskillen/codeplug-studio/issues/617)).
+High-level VFO / settings / ANI / PTT offsets and how NeonPlug vs CHIRP vs Studio upload differently.
 
 **Hub:** [README.md](README.md) · **Regions:** [memory-layout.md](memory-layout.md)
 
-Cite: NeonPlug `settingsFormat.ts`, `protocol.ts`; CHIRP `UV5RMini` / `_mem_params`.
+Cite: NeonPlug `settingsFormat.ts`, `protocol.ts`; CHIRP `UV5RMini` / `_mem_params`; Studio `writeStrategy: 'full-image'`.
 
 ## Packed-image layout (high half of first region + tail)
 
@@ -26,16 +26,16 @@ CHIRP `_mem_params` places `ani=0x8080`, `pttid=0x80A0` on the same packed map. 
 
 NeonPlug parses squelch, save mode, VOX, backlight, dual watch, TOT, beep, voice, side tone, scan mode, PTT ID mode/delay, display types, BCL, autolock, alarm, roger, A/B, work modes, key lock, power-on display, and related indices from this block (`parseUv5rMiniSettings`). Field-by-field UI lists live in NeonPlug `settingsFormat.ts` / `settingsProfile.ts` — extract further enums into this page only when the adapter needs them.
 
-## Upload behaviours (document both)
+## Upload behaviours (document all three)
 
-| Behaviour             | NeonPlug                                                                  | CHIRP                                     |
-| --------------------- | ------------------------------------------------------------------------- | ----------------------------------------- |
-| Full clone **read**   | All three `MEM_*` regions → packed `0x8240`                               | Same                                      |
-| Full clone **upload** | Not the default path                                                      | Writes **all** `MEM_STARTS` / `MEM_SIZES` |
-| Channel write         | After upload handshake, writes radio addrs `0 … 0x7CE0` only (`999 × 32`) | Full multi-region                         |
-| Settings write        | Read-modify-write one 64-byte block                                       | Part of full upload                       |
+| Behaviour             | NeonPlug                                                                  | CHIRP                                     | Studio Web Serial                                                                 |
+| --------------------- | ------------------------------------------------------------------------- | ----------------------------------------- | --------------------------------------------------------------------------------- |
+| Full clone **read**   | All three `MEM_*` regions → packed `0x8240`                               | Same                                      | Same (`radio-clone` hydration)                                                    |
+| Full clone **upload** | Not the default path                                                      | Writes **all** `MEM_STARTS` / `MEM_SIZES` | **Yes** — `writeStrategy: 'full-image'`                                           |
+| Channel write         | After upload handshake, writes radio addrs `0 … 0x7CE0` only (`999 × 32`) | Full multi-region                         | Channels merged into hydrated image; **all three** `MEM_*` regions uploaded       |
+| Settings write        | Read-modify-write one 64-byte block                                       | Part of full upload                       | Retained from Read via full-image upload (no separate settings RMW)               |
 
-**Studio implication:** Prefer NeonPlug-style **channel-span** (and optional settings RMW) with a **cached full image** so VFO/settings/ANI survive channel uploads — matches adapter [#617](https://github.com/pskillen/codeplug-studio/issues/617) “safe upload ranges / cache image”.
+**Studio intentional path:** Prefer NeonPlug’s **outcome** (VFO / settings / ANI survive a channel Write) via **full-image upload of the hydrated retain**, not NeonPlug’s channel-span-only traffic. That also avoids NeonPlug’s settings-address debt (below). Channel-span-only upload is **out of scope** for the shipped adapter.
 
 ## Packed `0x8040` vs radio address caveat
 
@@ -44,7 +44,7 @@ NeonPlug parses squelch, save mode, VOX, backlight, dual watch, TOT, beep, voice
 | Packed image parse            | Image offset `0x8040` (= radio **`0x9000`** via region map)     |
 | NeonPlug `writeRadioSettings` | `readBlock` / `writeBlock` with addr **`0x8040`** (radio space) |
 
-Those are **not** the same physical region under the `MEM_*` map. Documented as **verify-on-hardware** debt for #617 — do not assume NeonPlug’s settings-write address is correct without a radio check.
+Those are **not** the same physical region under the `MEM_*` map. NeonPlug’s settings RMW address is **verify-on-hardware** debt. Studio does not use that path — full-image upload uses the correct packed ↔ radio map.
 
 ## Related
 
