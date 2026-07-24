@@ -43,7 +43,7 @@ export function memoryMapFromUv5rMiniHydration(bag: RadioCloneHydrationBag): Mem
 
 /**
  * Encode modelled channels into a copy of the hydrated image.
- * Non-channel bytes (settings/VFO/ANI) are preserved.
+ * The channel span is cleared to empty slots before encode; VFO/settings/ANI are preserved.
  */
 export function mergeChannelsIntoUv5rMiniHydration(
   bag: RadioCloneHydrationBag,

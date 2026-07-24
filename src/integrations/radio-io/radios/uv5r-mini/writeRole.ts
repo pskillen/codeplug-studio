@@ -39,7 +39,7 @@ export interface Uv5rMiniRegionManifestEntry {
 export const UV5R_MINI_WRITTEN_FROM_BUILD_LABELS: readonly string[] = ['Channels'] as const;
 
 const REPLACED_ROLE_COPY =
-  'Replaced from your build on Write — the library is the source of truth for channels';
+  'Replaced from your build on Write — the full channel span is cleared then encoded from your library; unlisted slots become empty';
 const KEPT_ROLE_COPY = 'Kept from Read from radio — not changed when you write from your build';
 
 /** All packed-image regions in address order. */

@@ -129,6 +129,7 @@ export function decodeChannelRecord(raw: Uint8Array, slotIndex: number): RadioCh
     txTone: decodeTone(raw.subarray(10, 12)),
     powerPercent: lowBitsToPowerPercent(raw[14]!),
     bandwidth: wideBit ? 'NFM' : 'FM',
+    ...(txAllFF ? { rxOnly: true } : {}),
   };
 }
 
@@ -140,8 +141,12 @@ export function encodeChannelRecord(dto: RadioChannelDto): Uint8Array {
   }
   out.fill(0);
   out.set(encodeBcdFreq(dto.rxHz), 0);
-  const txHz = dto.txHz > 0 ? dto.txHz : dto.rxHz;
-  out.set(encodeBcdFreq(txHz), 4);
+  if (dto.rxOnly) {
+    out.fill(0xff, 4, 8);
+  } else {
+    const txHz = dto.txHz > 0 ? dto.txHz : dto.rxHz;
+    out.set(encodeBcdFreq(txHz), 4);
+  }
   out.set(encodeTone(dto.rxTone), 8);
   out.set(encodeTone(dto.txTone), 10);
   out[12] = 1;
@@ -175,12 +180,26 @@ export function decodeChannelsFromImage(image: Uint8Array | MemoryMap): RadioCha
   return channels;
 }
 
-/** Write channel DTOs into image (mutates). Unlisted slots left unchanged. */
+/** Firmware string length preserved inside the channel span at {@link UV5R_MINI_FW_VER_OFFSET}. */
+const UV5R_MINI_FW_VER_LEN = 24;
+
+/** Write channel DTOs into image (mutates). Clears the full channel span to empty (`0xFF`) first. */
 export function encodeChannelsIntoImage(
   image: Uint8Array | MemoryMap,
   channels: readonly RadioChannelDto[],
 ): void {
   const bytes = 'bytes' in image ? image.bytes : image;
+  const span = Math.min(bytes.length, UV5R_MINI_CHANNEL_SPAN);
+  const fwSlice =
+    bytes.length > UV5R_MINI_FW_VER_OFFSET
+      ? bytes
+          .subarray(UV5R_MINI_FW_VER_OFFSET, UV5R_MINI_FW_VER_OFFSET + UV5R_MINI_FW_VER_LEN)
+          .slice()
+      : null;
+  bytes.fill(0xff, 0, span);
+  if (fwSlice) {
+    bytes.set(fwSlice, UV5R_MINI_FW_VER_OFFSET);
+  }
   for (const dto of channels) {
     const index = dto.slotIndex - 1;
     if (index < 0 || index >= UV5R_MINI_CHANNEL_COUNT) {

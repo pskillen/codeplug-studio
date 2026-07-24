@@ -52,6 +52,6 @@ export interface RadioChannelDto {
   skipScan?: boolean;
   /** OpenGD77: skipZoneScan bit @ 0x33 bit 5. */
   skipZoneScan?: boolean;
-  /** OpenGD77 / DM-32: RX-only (forbid TX). */
+  /** OpenGD77 / DM-32 / UV-5R Mini: RX-only (forbid TX). */
   rxOnly?: boolean;
 }

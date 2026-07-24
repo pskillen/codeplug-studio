@@ -24,6 +24,42 @@ describe('UV-5R Mini hydration', () => {
     expect(restored.bytes[0x8040]).toBe(0x42);
   });
 
+  it('clears orphan channels not in the projection', () => {
+    const source = createSyntheticImageBase();
+    encodeChannelsIntoImage(source, [
+      {
+        slotIndex: 3,
+        empty: false,
+        wireName: 'ORPH',
+        rxHz: 146_520_000,
+        txHz: 146_520_000,
+        rxTone: { kind: 'none' },
+        txTone: { kind: 'none' },
+        powerPercent: 100,
+        bandwidth: 'FM',
+      },
+    ]);
+    const bag = extractUv5rMiniHydration(memoryMapFromBytes(source));
+    const merged = mergeChannelsIntoUv5rMiniHydration(bag, [
+      {
+        slotIndex: 1,
+        empty: false,
+        wireName: 'KEEP',
+        rxHz: 145_500_000,
+        txHz: 145_500_000,
+        rxTone: { kind: 'none' },
+        txTone: { kind: 'none' },
+        powerPercent: 100,
+        bandwidth: 'FM',
+      },
+    ]);
+    const slot3Offset = (3 - 1) * 32;
+    expect(merged.bytes.subarray(slot3Offset, slot3Offset + 32).every((b) => b === 0xff)).toBe(
+      true,
+    );
+    expect(String.fromCharCode(...merged.bytes.subarray(20, 24))).toBe('KEEP');
+  });
+
   it('merges channels without wiping settings bytes', () => {
     const source = createSyntheticImageBase();
     source[0x8040] = 0x99;

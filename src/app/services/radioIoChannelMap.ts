@@ -16,6 +16,7 @@ import { expandAllMxNChannels } from '@core/import-export/channelExpansion/mxnEx
 import type { ExpandedMxNChannelRow } from '@core/import-export/channelExpansion/mxnExpandAll.ts';
 import { filterExpandedRowsByOverrides } from '@core/domain/formatBuildOverrides.ts';
 import { mergeExportOptions } from '@core/import-export/exportSettingsMerge.ts';
+import { effectiveForbidTransmit } from '@core/import-export/channelBehaviourDefaults/index.ts';
 import { getProfileExportLimits } from '@core/import-export/profileExportLimits.ts';
 import type { FormatId } from '@core/import-export/types.ts';
 import { hasMxNChannelExpansion } from '@core/radio-targets/index.ts';
@@ -196,6 +197,7 @@ export function assembledChannelsToRadioDtosWithWarnings(
 ): AssembledChannelsToRadioDtosResult {
   const reserved = new Set<string>();
   const warnings: string[] = [];
+  const merged = mergeExportOptions(build, egress.formatId, { profileId: egress.profileId });
   const dtos: RadioChannelDto[] = [];
   channels.forEach((row, index) => {
     const rxHz = row.entity.rxFrequency;
@@ -203,6 +205,7 @@ export function assembledChannelsToRadioDtosWithWarnings(
     const analog = row.entity.modeProfiles.find((p) => p.mode === 'fm' || p.mode === 'am');
     const txHz = row.entity.txFrequency ?? rxHz;
     const slotIndex = row.orderOrSlot != null && row.orderOrSlot > 0 ? row.orderOrSlot : index + 1;
+    const rxOnly = effectiveForbidTransmit(row.entity, merged.channelBehaviourContext);
     dtos.push({
       slotIndex,
       empty: false,
@@ -213,6 +216,7 @@ export function assembledChannelsToRadioDtosWithWarnings(
       txTone: channelToneToRadioTone(analog && 'txTone' in analog ? analog.txTone : 'none'),
       powerPercent: row.entity.power,
       bandwidth: bandwidthFromKHz(analog && 'bandwidthKHz' in analog ? analog.bandwidthKHz : null),
+      ...(rxOnly ? { rxOnly: true } : {}),
       ...digitalFieldsFromChannel(row.entity, fkMaps),
     });
   });
@@ -257,6 +261,7 @@ export function expandAssembledChannelsToRadioDtos(
     if (rxHz == null || rxHz <= 0) continue;
     const analog = channel.modeProfiles.find((p) => p.mode === 'fm' || p.mode === 'am');
     const txHz = channel.txFrequency ?? rxHz;
+    const rxOnly = effectiveForbidTransmit(channel, merged.channelBehaviourContext);
     dtos.push({
       slotIndex,
       empty: false,
@@ -267,6 +272,7 @@ export function expandAssembledChannelsToRadioDtos(
       txTone: channelToneToRadioTone(analog && 'txTone' in analog ? analog.txTone : 'none'),
       powerPercent: channel.power,
       bandwidth: bandwidthFromKHz(analog && 'bandwidthKHz' in analog ? analog.bandwidthKHz : null),
+      ...(rxOnly ? { rxOnly: true } : {}),
       ...digitalFieldsFromProjection(projection, channel, fkMaps),
     });
     slotIndex += 1;

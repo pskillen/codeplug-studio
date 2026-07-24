@@ -118,6 +118,22 @@ describe('assembledChannelsToRadioDtos', () => {
     };
     expect(assembledChannelsToRadioDtos([{ entity, wireName: 'X' }], build, egress)).toEqual([]);
   });
+
+  it('maps forbidTransmit to rxOnly for UV-5R Mini', () => {
+    const { build, egress } = newRadioBuildForProfile('p1', 'radio-io-uv5r-mini');
+    const entity = {
+      ...newChannel('p1', 'Listen'),
+      id: 'ch-rx',
+      rxFrequency: 145_500_000,
+      txFrequency: 145_500_000,
+      forbidTransmit: 'forbid' as const,
+      modeProfiles: [
+        { mode: 'fm' as const, squelch: null, rxTone: 'none', txTone: 'none', bandwidthKHz: 25 },
+      ],
+    };
+    const dtos = assembledChannelsToRadioDtos([{ entity, wireName: 'Listen' }], build, egress);
+    expect(dtos[0]?.rxOnly).toBe(true);
+  });
 });
 
 describe('expandAssembledChannelsToRadioDtos — MxN', () => {
