@@ -11,6 +11,7 @@ import type {
 } from '@core/models/libraryTypes.ts';
 import type { RepeaterListing } from './types.ts';
 import { defaultModeProfile } from '@core/domain/modeProfiles.ts';
+import { formatCtcssHz } from '@core/domain/tones.ts';
 
 const LEGACY_SSB_SIDEBAND: Record<string, SsbSideband> = {
   'ssb-usb': 'usb',
@@ -56,7 +57,7 @@ function analogKindFromListingMode(
  * collapse to a single profile (first in listing order wins).
  */
 export function buildModeProfilesFromListing(listing: RepeaterListing): ChannelModeProfile[] {
-  const tone: ChannelTone = listing.toneHz ? String(listing.toneHz) : 'none';
+  const tone: ChannelTone = listing.toneHz != null ? formatCtcssHz(listing.toneHz) : 'none';
   const profiles: ChannelModeProfile[] = [];
   let hasAnalogProfile = false;
 
