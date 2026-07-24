@@ -116,7 +116,7 @@ Frequency convention: `rxFrequencyHz` is what the radio **receives** (repeater o
 
 `buildModeProfilesFromListing` creates one `modeProfiles` entry per advertised mode:
 
-- **Analogue (`fm`, …)** — full `ChannelModeProfileAnalog` with CTCSS on RX/TX tone when present.
+- **Analogue (`fm`, …)** — full `ChannelModeProfileAnalog` with CTCSS on RX/TX tone when present (`toneHz` formatted via `formatCtcssHz` so whole numbers become `100.0`, not bare `100`).
 - **DMR** — full `ChannelModeProfileDMR` with colour code from `M:n` flags.
 - **D-STAR, YSF, NXDN, TETRA** — full typed profiles with CPS-informed defaults.
 - **P25, M17** — stub `{ mode }` until dedicated profile types ship.
