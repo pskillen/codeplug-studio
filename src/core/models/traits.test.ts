@@ -92,6 +92,7 @@ describe('trait profiles', () => {
       'opengd77-1701',
       'opengd77-md9600',
       'radio-io-dm32uv',
+      'radio-io-opengd77-1701',
       'radio-io-uv5r-mini',
     ]);
   });

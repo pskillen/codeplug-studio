@@ -113,6 +113,17 @@ export const TRAIT_PROFILES: Record<string, TraitProfile> = {
       BuildCapabilityTrait.MxNChannelExpansion,
     ],
   },
+  /** Web Serial direct-write — OpenGD77 / OpenUV380 (DM-1701). */
+  'radio-io-opengd77-1701': {
+    profileId: 'radio-io-opengd77-1701',
+    formatId: 'radio-io',
+    label: 'Baofeng DM-1701 / RT-84 (OpenGD77)',
+    traits: [
+      BuildCapabilityTrait.ZoneGrouping,
+      BuildCapabilityTrait.ZoneAsScanList,
+      BuildCapabilityTrait.MultiTalkGroupPerChannel,
+    ],
+  },
 };
 
 export function traitProfileFor(profileId: string): TraitProfile | undefined {

@@ -75,7 +75,10 @@ describe('OpenGD77 export serialise', () => {
       rxGroupLists: aggregate.rxGroupLists,
       scanLists: [],
     };
-    return assemble(build, library);
+    return assemble(build, library, {
+      formatId: 'opengd77',
+      profileId: 'opengd77-1701',
+    });
   }
 
   it('defaults analogue bandwidth to 12.5 kHz when unset', () => {
@@ -264,7 +267,10 @@ describe('OpenGD77 export serialise', () => {
         ],
       },
     };
-    const assembled = assemble(build, library);
+    const assembled = assemble(build, library, {
+      formatId: 'opengd77',
+      profileId: 'opengd77-1701',
+    });
     const csv = serialiseZones(assembled);
     const rows = parseCsv(csv);
     const zoneNames = rows

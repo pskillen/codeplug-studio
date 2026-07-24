@@ -36,7 +36,10 @@ describe('assemble', () => {
       scanLists: [],
     };
 
-    const projection = assemble(build, library);
+    const projection = assemble(build, library, {
+      formatId: 'opengd77',
+      profileId: 'opengd77-1701',
+    });
 
     expect(projection.profileId).toBe('opengd77-1701');
     expect(projection.channels).toHaveLength(2);

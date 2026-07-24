@@ -99,6 +99,28 @@ describe('buildNavItems', () => {
     expect(labels).not.toContain('NeonPlug settings');
   });
 
+  it('includes Radio image for OpenGD77 DM-1701 when a clone bag exists', () => {
+    const { build, egress, egressPaths } = newRadioBuildForProfile(
+      'proj',
+      'radio-io-opengd77-1701',
+    );
+    const withClone = egressPaths.map((path) =>
+      path.id === egress.id
+        ? withHydration(path, {
+            ...radioCloneHydration,
+            retain: { ...radioCloneHydration.retain, radioModelId: 'DM-1701' },
+          })
+        : path,
+    );
+    const csvActive = withClone.find((path) => path.formatId === 'opengd77') ?? withClone[0]!;
+    const labels = buildNavItems(build, {
+      egressPaths: withClone,
+      activeEgress: csvActive,
+    }).map((item) => item.label);
+    expect(labels).toContain('Radio image');
+    expect(csvActive.formatId).toBe('opengd77');
+  });
+
   it('includes both retain viewers when both bags exist on one build', () => {
     const { build, egressPaths } = newRadioBuildForProfile('proj', 'radio-io-uv5r-mini');
     const withBoth = egressPaths.map((path) => {

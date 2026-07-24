@@ -15,9 +15,17 @@ TYT MD-UV380 / Retevis RT-3S / Baofeng DM-1701 / Retevis RT-84 share OpenGD77 CP
 
 ## Studio profile ids
 
-| Adapter      | `profileId`     | Notes                                          |
-| ------------ | --------------- | ---------------------------------------------- |
-| OpenGD77 CSV | `opengd77-1701` | Zone members 80, TG list 32, max channels 1023 |
+| Adapter      | `profileId`              | Notes                                                                                                                   |
+| ------------ | ------------------------ | ----------------------------------------------------------------------------------------------------------------------- |
+| OpenGD77 CSV | `opengd77-1701`          | Zone members 80, TG list 32, max channels 1023                                                                          |
+| Web Serial   | `radio-io-opengd77-1701` | Direct radio egress on catalog target `baofeng-dm1701` ([#624](https://github.com/pskillen/codeplug-studio/issues/624)) |
+
+## Studio modules
+
+| Path                                                             | Role                                                               |
+| ---------------------------------------------------------------- | ------------------------------------------------------------------ |
+| `src/integrations/radio-io/radios/opengd77/`                     | Shared OpenUV380 codecs, protocol, hydration, Radio image summary  |
+| `src/integrations/radio-io/radios/opengd77/dm1701/descriptor.ts` | Registry descriptor (`radioType` `08h`/`0ah`, write variant `'X'`) |
 
 ## Documentation map
 
