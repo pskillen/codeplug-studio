@@ -160,12 +160,15 @@ function buildDm32Organisation(
 } {
   const limits = dm32ExportLimits(egress);
   const maxZones = numericLimit(limits.maxZones, 250);
-  const maxScanLists = numericLimit(limits.maxScanLists, 32);
+  // Channel record scanListId is 4 bits (1–15); 0 = none. Match NeonPlug cap.
+  const maxScanLists = Math.min(numericLimit(limits.maxScanLists, 32), 15);
   const scanListMembersCap = numericLimit(limits.scanListMembers, 15);
   const maxMemorySlots = numericLimit(limits.maxChannels, 4000);
   const zoneMembersCap = numericLimit(limits.zoneMembers, 64);
   const nameLengthZone = numericLimit(limits.nameLengthZone, 16);
   const nameLengthScanList = numericLimit(limits.nameLengthScanList, 10);
+  /** Slots reserved for zone scan carriers — never steal their scanListId via shared members. */
+  const carrierSlots = new Set<number>();
 
   const merged = mergeExportOptions(build, egress.formatId, { profileId: egress.profileId });
   const reservedZoneNames = new Set<string>();
@@ -198,7 +201,13 @@ function buildDm32Organisation(
     const entry = layoutEntry(layout, zone.zoneId);
     const wantScan = masterOn && (entry?.exportScanList ?? false);
 
-    if (wantScan && scanLists.length < maxScanLists) {
+    if (wantScan && scanLists.length >= maxScanLists) {
+      if (!warnings.some((w) => w.includes('channel scanListId supports at most'))) {
+        warnings.push(
+          `Additional zone-derived scan list(s) skipped; channel scanListId supports at most ${maxScanLists} lists`,
+        );
+      }
+    } else if (wantScan) {
       const libraryZone = zoneById.get(zone.zoneId);
       if (libraryZone) {
         const memberIds = scanMemberIds(libraryZone, library.zones, {
@@ -232,6 +241,8 @@ function buildDm32Organisation(
           const carrierSlot = nextFreeSlot(numbers);
           if (carrierSlot <= maxMemorySlots) {
             carrierNumberByZoneId.set(zone.zoneId, carrierSlot);
+            carrierSlots.add(carrierSlot);
+            const listIndex = scanLists.length + 1;
             nextChannels.push({
               slotIndex: carrierSlot,
               empty: false,
@@ -243,7 +254,7 @@ function buildDm32Organisation(
               powerPercent: null,
               bandwidth: 'FM',
               mode: 'analog',
-              scanListId: scanLists.length + 1,
+              scanListId: listIndex,
               scanAdd: true,
             });
             // synthetic id map — carrier not in library
@@ -258,15 +269,18 @@ function buildDm32Organisation(
               'Scan list',
               nameLengthScanList,
             );
-            const listIndex = scanLists.length + 1;
             scanLists.push({
               wireName: scanName,
               channelNumbers: scanMembers,
               designatedTxChannel: carrierSlot,
               listIndex,
             });
+            // First-wins for shared members (NeonPlug parity) — do not clobber carriers.
             for (const n of scanMembers) {
-              scanListIdByChannelNumber.set(n, listIndex);
+              if (carrierSlots.has(n)) continue;
+              if (!scanListIdByChannelNumber.has(n)) {
+                scanListIdByChannelNumber.set(n, listIndex);
+              }
             }
             scanListIdByChannelNumber.set(carrierSlot, listIndex);
           }

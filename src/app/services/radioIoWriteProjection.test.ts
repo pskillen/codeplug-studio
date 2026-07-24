@@ -7,6 +7,7 @@ import {
 } from '@core/domain/factories.ts';
 import type { LibrarySlice } from '@core/services/assemble.ts';
 import { assemble } from '@core/services/assemble.ts';
+import { encodeDm32ChannelRecord } from '@integrations/radio-io/radios/dm32uv/channelCodec.ts';
 import { buildRadioWriteProjection } from './radioIoWriteProjection.ts';
 
 function emptyLibrary(channels: LibrarySlice['channels'] = []): LibrarySlice {
@@ -78,5 +79,104 @@ describe('buildRadioWriteProjection', () => {
     expect(projection.organisation.zones).toEqual([
       expect.objectContaining({ wireName: 'Local', channelNumbers: [1] }),
     ]);
+  });
+
+  it('prepends each zone’s own scan carrier and first-wins scanListId for shared members', () => {
+    const shared = {
+      ...newChannel('p1', 'Hotspot'),
+      id: 'ch-shared',
+      rxFrequency: 433_000_000,
+      txFrequency: 433_000_000,
+    };
+    const onlyHome = {
+      ...newChannel('p1', 'HomeOnly'),
+      id: 'ch-home',
+      rxFrequency: 145_500_000,
+      txFrequency: 145_500_000,
+    };
+    const onlyWalk = {
+      ...newChannel('p1', 'WalkOnly'),
+      id: 'ch-walk',
+      rxFrequency: 145_600_000,
+      txFrequency: 145_600_000,
+    };
+    const homeZone = {
+      ...newZone('p1', 'Home Shack'),
+      id: 'zone-home',
+      members: [
+        { kind: 'channel' as const, channelId: 'ch-home' },
+        { kind: 'channel' as const, channelId: 'ch-shared' },
+      ],
+    };
+    const walkZone = {
+      ...newZone('p1', 'Morning Walk'),
+      id: 'zone-walk',
+      members: [
+        { kind: 'channel' as const, channelId: 'ch-walk' },
+        { kind: 'channel' as const, channelId: 'ch-shared' },
+      ],
+    };
+    const library = {
+      ...emptyLibrary([shared, onlyHome, onlyWalk]),
+      zones: [homeZone, walkZone],
+    };
+    const { build: baseBuild, egress } = newRadioBuildForProfile('p1', 'radio-io-dm32uv');
+    const build = {
+      ...baseBuild,
+      layout: {
+        sections: [
+          {
+            kind: 'zoneGrouping' as const,
+            zones: [
+              {
+                id: 'zone-home',
+                name: 'Home Shack',
+                channelIds: ['ch-home', 'ch-shared'],
+                exportScanList: true,
+              },
+              {
+                id: 'zone-walk',
+                name: 'Morning Walk',
+                channelIds: ['ch-walk', 'ch-shared'],
+                exportScanList: true,
+              },
+            ],
+          },
+        ],
+      },
+    };
+    const assembled = assemble(build, library, {
+      formatId: egress.formatId,
+      profileId: egress.profileId,
+    });
+    const projection = buildRadioWriteProjection(assembled, build, library, egress);
+    const zones = projection.organisation.zones ?? [];
+    const home = zones.find((z) => z.wireName.startsWith('Home'));
+    const walk = zones.find((z) => z.wireName.startsWith('Morning'));
+    expect(home).toBeTruthy();
+    expect(walk).toBeTruthy();
+
+    const bySlot = new Map(projection.channels.map((c) => [c.slotIndex, c]));
+    const homeCarrier = home!.channelNumbers[0]!;
+    const walkCarrier = walk!.channelNumbers[0]!;
+    expect(bySlot.get(homeCarrier)?.wireName).toMatch(/Home.*Scan/i);
+    expect(bySlot.get(walkCarrier)?.wireName).toMatch(/Morn.*Scan|Walk.*Scan/i);
+    expect(homeCarrier).not.toBe(walkCarrier);
+    expect(walk!.channelNumbers[0]).not.toBe(homeCarrier);
+
+    expect(bySlot.get(homeCarrier)?.scanListId).toBe(1);
+    expect(bySlot.get(walkCarrier)?.scanListId).toBe(2);
+
+    const sharedNums = projection.numbersBySourceChannelId.get('ch-shared') ?? [];
+    expect(sharedNums.length).toBeGreaterThan(0);
+    // First zone (Home) wins scanListId for the shared hotspot — not Morning Walk’s list.
+    expect(bySlot.get(sharedNums[0]!)?.scanListId).toBe(1);
+
+    const homeRec = encodeDm32ChannelRecord(bySlot.get(homeCarrier)!);
+    const walkRec = encodeDm32ChannelRecord(bySlot.get(walkCarrier)!);
+    expect((homeRec[0x19]! >> 2) & 0x0f).toBe(1);
+    expect((walkRec[0x19]! >> 2) & 0x0f).toBe(2);
+    expect(homeRec[0x19]! & 0x80).toBe(0x80); // FM
+    expect(homeRec[0x19]! & 0x40).toBe(0x40); // scanAdd
   });
 });
