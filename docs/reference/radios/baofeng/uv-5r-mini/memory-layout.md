@@ -41,20 +41,20 @@ Sum: `0x8040 + 0x40 + 0x1C0 = 0x8240`.
 
 ## Notable packed-image offsets
 
-| Offset     | Size / role                                                 |
-| ---------- | ----------------------------------------------------------- |
-| `0x0000` … | Channel records (`999 × 32 = 0x7CE0`)                       |
-| `0x1EF0`   | Firmware version string (`_fw_ver_start`)                   |
-| `0x8000`   | VFO A (32 bytes) — NeonPlug / CHIRP-aligned comment         |
-| `0x8020`   | VFO B (32 bytes)                                            |
-| `0x8040`   | Settings (64 bytes) — see [settings.md](settings.md)        |
-| `0x8080`   | ANI                                                         |
-| `0x80A0`   | PTT ID                                                      |
-| `0x81E0`   | Upcode                                                      |
-| `0x8210`   | Downcode                                                    |
-| `0x8220`   | Modes / end-format area (CHIRP `_end_fmt` seeks here; 32 B) |
+| Offset     | Size / role                                                                                                                                                         |
+| ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `0x0000` … | Channel records (`999 × 32 = 0x7CE0`)                                                                                                                               |
+| `0x1EF0`   | Firmware version string (`_fw_ver_start`) — **overlays channel span** (inside `0…0x7CE0`); preserved via Read hydration unless a channel Write overwrites that slot |
+| `0x8000`   | VFO A (32 bytes) — NeonPlug / CHIRP-aligned comment                                                                                                                 |
+| `0x8020`   | VFO B (32 bytes)                                                                                                                                                    |
+| `0x8040`   | Settings (64 bytes) — see [settings.md](settings.md)                                                                                                                |
+| `0x8080`   | ANI                                                                                                                                                                 |
+| `0x80A0`   | PTT ID                                                                                                                                                              |
+| `0x81E0`   | Upcode                                                                                                                                                              |
+| `0x8210`   | Downcode                                                                                                                                                            |
+| `0x8220`   | Modes / end-format area (CHIRP `_end_fmt` seeks here; 32 B)                                                                                                         |
 
-**Address caveat:** Packed image offset `0x8040` is radio address **`0x9000`** (second `MEM_*` region). NeonPlug settings **parse** uses packed `0x8040`; settings **write** currently uses radio addr `0x8040` — treat as verify-on-hardware debt for adapter [#617](https://github.com/pskillen/codeplug-studio/issues/617). See [settings.md](settings.md).
+**Address caveat:** Packed image offset `0x8040` is radio address **`0x9000`** (second `MEM_*` region). NeonPlug settings **parse** uses packed `0x8040`; NeonPlug settings **write** currently uses radio addr `0x8040` — verify-on-hardware debt. Studio Web Serial avoids that path via full-image hydrated upload — see [settings.md](settings.md).
 
 ## Not classic UV-5R (S/X)
 

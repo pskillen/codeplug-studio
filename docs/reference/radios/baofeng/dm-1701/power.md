@@ -19,6 +19,10 @@ OpenGD77 wire spelling (`Master`, `P1`…`Pn`) is documented generically in [exp
 
 Export picks the nearest ladder step for non-exact percent values. `null` exports as `Master`.
 
+## vs qDMR enums
+
+qdmr collapses power onto fewer wire values (Min / Low / Mid / High / Max → wire `1` / `3` / `6` / `9` / **`10`**). Studio profile `opengd77-1701` uses **`P1`…`P9` → wire `1`…`9`** only — wire **`10`** is intentionally unused here. That difference is a profile choice, not a layout bug.
+
 ## Squelch
 
 Profile-independent OpenGD77 rules: `N%`, `Disabled` → 0%, `Master` → `null` — see [power-squelch.md](../../../export-formats/opengd77/power-squelch.md).

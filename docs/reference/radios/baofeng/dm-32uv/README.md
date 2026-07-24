@@ -23,17 +23,17 @@ Handheld DMR + analogue dual-band radio (DM-32 family). Studio targets it via DM
 
 ## Documentation map
 
-| Doc                                                | Contents                                                                 |
-| -------------------------------------------------- | ------------------------------------------------------------------------ |
-| [limits.md](limits.md)                             | Channels, zones, scan / RX / contacts / TGs, name lengths                |
-| [capabilities.md](capabilities.md)                 | Modes, organisation traits                                               |
-| [power.md](power.md)                               | High / Middle / Low + squelch ladder                                     |
-| [protocol.md](protocol.md)                         | Baud, PSEARCH handshake, PROGRAM entry, V-frames, 4KB R/W wire, timeouts |
-| [memory-layout.md](memory-layout.md)               | V `0x0A` range, metadata discovery, type table, bulk-read set            |
-| [channel-record.md](channel-record.md)             | 48-byte channel; packing 84/85 per block; TX-contact indirection         |
-| [contacts-zones-lists.md](contacts-zones-lists.md) | Contacts (V `0x0F`), TGs, zones, scan, RX groups, radio IDs, TX-contact  |
-| [settings.md](settings.md)                         | Metadata `0x04` settings / APRS; emergency/encryption co-resident notes  |
-| [fixtures.md](fixtures.md)                         | How to capture dumps for tests without committing personal codeplugs     |
+| Doc                                                | Contents                                                                                                   |
+| -------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| [limits.md](limits.md)                             | Channels, zones, scan / RX / contacts / TGs, name lengths                                                  |
+| [capabilities.md](capabilities.md)                 | Modes, organisation traits                                                                                 |
+| [power.md](power.md)                               | High / Middle / Low + squelch ladder                                                                       |
+| [protocol.md](protocol.md)                         | Baud, PSEARCH handshake, PROGRAM entry, V-frames, 4KB R/W wire, timeouts                                   |
+| [memory-layout.md](memory-layout.md)               | V `0x0A` range, metadata discovery, [two memory worlds](memory-layout.md#two-memory-worlds), bulk-read set |
+| [channel-record.md](channel-record.md)             | 48-byte channel; packing 84/85 per block; TX-contact indirection                                           |
+| [contacts-zones-lists.md](contacts-zones-lists.md) | Contacts (V `0x0F`), TGs, zones, scan, RX groups, radio IDs, TX-contact                                    |
+| [settings.md](settings.md)                         | Metadata `0x04` settings / APRS; emergency/encryption co-resident notes                                    |
+| [fixtures.md](fixtures.md)                         | How to capture dumps for tests without committing personal codeplugs                                       |
 
 ## Adapter wire (files)
 

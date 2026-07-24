@@ -6,6 +6,8 @@ Organisation and contact banks for binary codeplug memory. Caps for file adapter
 
 Cite: NeonPlug `structures.ts`, `protocol.ts`, `constants.ts`.
 
+> **Serial vs qDMR:** This page describes the **serial sparse map** used by NeonPlug and Studio Web Serial. qDMR’s virtual image reuses many metadata prefixes but different payloads — see [memory-layout.md — Two memory worlds](memory-layout.md#two-memory-worlds). Do not “fix” Studio Write from qDMR contact-bank tables.
+
 ## Contacts (address book) — V-frame `0x0F`
 
 Separate from config-range metadata `0x0F` (RX groups).
@@ -18,7 +20,12 @@ Separate from config-range metadata `0x0F` (RX groups).
 | Later blocks   | Entries from `0x00`; 44 per 4KB                   |
 | Empty sentinel | Name byte `0x00` or `0xFF`                        |
 
-**Studio Web Serial (#667):** digital address-book entries are rewritten from the build on Write. Analog / DTMF contacts are **not** encoded — they stay as on the radio; use CPS / NeonPlug file egress to change them.
+| World                  | Contact storage                             | Record size                       |
+| ---------------------- | ------------------------------------------- | --------------------------------- |
+| **Serial** (this page) | V-frame `0x0F` address-book blocks          | **92** bytes (`0x5C`) per entry   |
+| **qDMR virtual**       | Metadata prefix `0x44` at virtual `0x44000` | **24** bytes per `ContactElement` |
+
+Studio Web Serial encodes the **serial** address book only.
 
 ### Contact entry (`0x5C`)
 
@@ -32,6 +39,8 @@ Separate from config-range metadata `0x0F` (RX groups).
 | `0x3C`–`0x4B` | Country  | 16 ASCII |
 | `0x4C`–`0x5B` | Remark   | 16 ASCII |
 
+**Studio Web Serial (#667):** digital address-book entries are rewritten from the build on Write. Analog / DTMF contacts are **not** encoded — they stay as on the radio; use CPS / NeonPlug file egress to change them.
+
 ## Talk groups — metadata `0x44` (+ counter `0x06`)
 
 | Fact          | Value                                                           |
@@ -43,14 +52,19 @@ Separate from config-range metadata `0x0F` (RX groups).
 
 NeonPlug `parseQuickContacts`: variable packed entries (flag + 16-char name + 3-byte DMR ID + call type). First entry may skip a leading `0x00` header byte. Prefer NeonPlug encode/parse behaviour over inventing a new packing.
 
-TX-contact indices (`0x42`/`0x43`) point into this TG list (`0` = none).
+| World                          | Metadata `0x44` meaning                                                               |
+| ------------------------------ | ------------------------------------------------------------------------------------- |
+| **Serial** (NeonPlug / Studio) | **Talk groups** — this section                                                        |
+| **qDMR virtual**               | **Contact bank** at `0x44000` — different structure; not authoritative for Web Serial |
+
+TX-contact indices (`0x42`/`0x43`) point into the **serial** talk-group list (`0` = none).
 
 ## TX contact — metadata `0x42` / `0x43`
 
 | Block  | Scope                                                                      |
 | ------ | -------------------------------------------------------------------------- |
-| `0x42` | Channels 1–2048 — 2 bytes/channel; offset `(ch − 1) × 2` for ch 1–2047     |
-| `0x43` | Channels 2049+ — offset `(ch & 0x7FF) × 2`; VFO A `0x0FFA`; VFO B `0x0FFC` |
+| `0x42` | Channels 1–2047 — 2 bytes/channel; offset `(ch − 1) × 2`                   |
+| `0x43` | Channels 2048+ — offset `(ch & 0x7FF) × 2`; VFO A `0x0FFA`; VFO B `0x0FFC` |
 
 ### 2-byte entry
 

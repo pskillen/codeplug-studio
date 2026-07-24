@@ -51,6 +51,29 @@ describe('assembledChannelsToRadioDtos', () => {
     });
   });
 
+  it('defaults null bandwidth to NFM on OpenGD77 projection', () => {
+    const projectId = 'p1';
+    const { build, egress } = newRadioBuildForProfile(projectId, 'radio-io-opengd77-1701');
+    const entity = {
+      ...newChannel(projectId, 'Analog'),
+      id: 'ch-null-bw',
+      rxFrequency: 145_500_000,
+      txFrequency: 145_500_000,
+      modeProfiles: [
+        {
+          mode: 'fm' as const,
+          squelch: null,
+          rxTone: 'none',
+          txTone: 'none',
+          bandwidthKHz: null,
+        },
+      ],
+    };
+    const row: AssembledChannel = { entity, wireName: 'ANALOG', orderOrSlot: 1 };
+    const dtos = assembledChannelsToRadioDtos([row], build, egress);
+    expect(dtos[0]?.bandwidth).toBe('NFM');
+  });
+
   it('shortens long names to the radio-io profile nameLimit', () => {
     const { build, egress } = newRadioBuildForProfile('p1', 'radio-io-uv5r-mini');
     const entity = {

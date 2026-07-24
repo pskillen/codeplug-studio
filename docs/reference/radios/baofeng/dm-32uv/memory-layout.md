@@ -8,6 +8,23 @@ Cite: NeonPlug `memory.ts`, `constants.ts`, `protocol.ts` (`bulkReadRequiredBloc
 
 > Classic UV-5R Mini PROGRAM+R/W packed image (`0x8240`) does **not** apply here.
 
+## Two memory worlds
+
+DM-32UV documentation and Studio Web Serial adapters follow **two related but distinct** memory models. Do not merge qDMR virtual tables into serial Write debugging.
+
+| World                   | Used by                     | How blocks are found                                                                             |
+| ----------------------- | --------------------------- | ------------------------------------------------------------------------------------------------ |
+| **Serial sparse map**   | NeonPlug, Studio Web Serial | V-frame `0x0A` config range + metadata byte at `block + 0xFFF`                                   |
+| **qDMR codeplug image** | qDMR `.rdt` / device upload | Fixed **virtual** offsets in `DM32UVCodeplug::Offset`; metadata tag = `virtAddr >> 12` on upload |
+
+Many metadata prefixes line up (same 4 KB quantum), but **payloads differ** — notably metadata **`0x44`**:
+
+| Metadata   | Serial sparse map (NeonPlug / Studio)          | qDMR virtual image                                                  |
+| ---------- | ---------------------------------------------- | ------------------------------------------------------------------- |
+| **`0x44`** | **Talk groups** (packed name + DMR ID entries) | **`0x44000`** = **contact bank** (24-byte `ContactElement` records) |
+
+**Ground truth for Studio Write:** NeonPlug serial map and the tables on this page — **not** qDMR virtual offset tables. qDMR remains useful for record-layout cross-checks where structures agree.
+
 ## Transfer sizes
 
 | Constant        | Value          | Role                                               |
@@ -79,8 +96,8 @@ NeonPlug `bulkReadRequiredBlocks` always tries to include:
 | `0x0F`                                                                  | RX groups                                                                                |
 | `0x44`                                                                  | Talk groups data (**critical**)                                                          |
 | `0x06`                                                                  | TG counter at offset `0x1FF`                                                             |
-| `0x42`                                                                  | TX-contact low (channels 1–2048) (**critical**)                                          |
-| `0x43`                                                                  | TX-contact high (2049+ / VFOs) (**critical**)                                            |
+| `0x42`                                                                  | TX-contact low (channels 1–2047) (**critical**)                                          |
+| `0x43`                                                                  | TX-contact high (2048+ / VFOs) (**critical**)                                            |
 | all `zone` / `scan` / `message` / `dmrradioid` / `rxgroup` typed blocks | Organisation lists                                                                       |
 
 Contacts for the **address-book** bank are **not** in this config-range bulk set — they use V-frame `0x0F` range and a separate read path ([contacts-zones-lists.md](contacts-zones-lists.md)).
