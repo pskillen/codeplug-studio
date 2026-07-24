@@ -10,6 +10,7 @@ import { reportProgress, throwIfAborted } from '../../kit/progress.ts';
 import { RadioProtocolError } from '../../kit/errors.ts';
 import {
   DM32_BLOCK_SIZE,
+  DM32_CONNECTION,
   DM32_METADATA,
   DM32_MODEL_IDS,
   DM32_VFRAME,
@@ -29,8 +30,9 @@ import {
 import {
   alignConfigEnd,
   bulkReadDm32Blocks,
+  classifyDm32Metadata,
   discoverDm32MemoryBlocks,
-  groupDm32BlocksForReadProgress,
+  groupDm32BlocksForProgress,
   readChannelCount,
   selectBlocksToBulkRead,
   type Dm32DiscoveredBlock,
@@ -230,7 +232,7 @@ export class Dm32uvProtocol implements CloneImageRadio {
     }
 
     const toRead = selectBlocksToBulkRead(discovered, channelCount);
-    const groups = groupDm32BlocksForReadProgress(toRead);
+    const groups = groupDm32BlocksForProgress(toRead);
     this.cache.blocks = new Map();
     for (const group of groups) {
       reportProgress(
@@ -350,27 +352,55 @@ export class Dm32uvProtocol implements CloneImageRadio {
         'DM-32UV upload has no sparse blocks — seed from a prior Read hydration before Write',
       );
     }
+    const byAddr = new Map(this.cache.discovered.map((b) => [b.address, b]));
+    const discoveredForProgress: Dm32DiscoveredBlock[] = addresses.map((address) => {
+      const known = byAddr.get(address);
+      if (known) return known;
+      const data = this.cache!.blocks.get(address);
+      const metadata = data?.[DM32_BLOCK_SIZE - 1] ?? 0xff;
+      return {
+        address,
+        metadata,
+        type: classifyDm32Metadata(metadata),
+      };
+    });
+    const groups = groupDm32BlocksForProgress(discoveredForProgress);
     const blocks = memoryMapToDm32Blocks(image, this.cache.addressBase, addresses);
-    const total = addresses.length;
-    for (let i = 0; i < addresses.length; i++) {
-      throwIfAborted(opts.signal);
-      const addr = addresses[i]!;
-      const data = blocks.get(addr)!;
+    const settle = { ...this.settle, signal: opts.signal ?? this.settle.signal };
+    const scale = settle.settleScale ?? 1;
+    const interBlockMs = scale <= 0 ? 0 : DM32_CONNECTION.BLOCK_READ_DELAY_MS * scale;
+
+    for (const group of groups) {
       reportProgress(
         opts.onProgress,
         {
-          cur: i + 1,
-          max: total,
-          msg: `Writing block ${i + 1} of ${total} (0x${addr.toString(16)})`,
-          stage: 'Upload blocks',
+          cur: 0,
+          max: group.blocks.length || 1,
+          msg: `Writing ${group.stage}…`,
+          stage: group.stage,
         },
         opts.signal,
       );
-      await dm32WriteMemory(this.pipe, addr, data, {
-        ...this.settle,
-        signal: opts.signal ?? this.settle.signal,
-      });
-      this.cache.blocks.set(addr, data);
+      for (let i = 0; i < group.blocks.length; i++) {
+        throwIfAborted(opts.signal);
+        if (interBlockMs > 0) {
+          await new Promise((r) => setTimeout(r, interBlockMs));
+        }
+        const addr = group.blocks[i]!.address;
+        const data = blocks.get(addr)!;
+        reportProgress(
+          opts.onProgress,
+          {
+            cur: i + 1,
+            max: group.blocks.length,
+            msg: `Writing ${group.stage}: block ${i + 1} of ${group.blocks.length} (0x${addr.toString(16)})`,
+            stage: group.stage,
+          },
+          opts.signal,
+        );
+        await dm32WriteMemory(this.pipe, addr, data, settle);
+        this.cache.blocks.set(addr, data);
+      }
     }
   }
 

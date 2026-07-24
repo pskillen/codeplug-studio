@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { createMemoryMap } from '../../kit/memoryMap.ts';
 import { DM32_BLOCK_SIZE, DM32_METADATA } from './constants.ts';
-import { classifyDm32Metadata, groupDm32BlocksForReadProgress, selectBlocksToBulkRead } from './memory.ts';
+import { classifyDm32Metadata, groupDm32BlocksForProgress, selectBlocksToBulkRead } from './memory.ts';
 import { Dm32uvProtocol } from './protocol.ts';
 import {
   Dm32ScriptedPipe,
@@ -35,9 +35,9 @@ describe('selectBlocksToBulkRead', () => {
   });
 });
 
-describe('groupDm32BlocksForReadProgress', () => {
+describe('groupDm32BlocksForProgress', () => {
   it('splits selected blocks into named stage groups', () => {
-    const groups = groupDm32BlocksForReadProgress([
+    const groups = groupDm32BlocksForProgress([
       { address: 0x1000, metadata: DM32_METADATA.CHANNEL_FIRST, type: 'channel' },
       { address: 0x2000, metadata: DM32_METADATA.ZONE, type: 'zone' },
       { address: 0x3000, metadata: DM32_METADATA.SCAN_LIST, type: 'scan' },

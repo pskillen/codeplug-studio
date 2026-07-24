@@ -34,7 +34,7 @@ Blocking modal during Web Serial **Read** / **Write** on a Direct radio FormatBu
 
 - Modal cannot be dismissed via escape, overlay click, or close button — only **Cancel** (parent aborts) or completion.
 - Parent should pair with `useUnsavedNavigationGuard(busy)` + `beforeunload` so route changes and tab close are blocked while open.
-- When adapters emit `ProgressUpdate.stage`, the parent appends unique labels to `transferStages` so the checklist grows (e.g. Discover memory map → Channels → Zones → Scan lists).
+- When adapters emit `ProgressUpdate.stage`, the parent appends unique labels to `transferStages` so the checklist grows (Read: Discover memory map → Channels → Zones → …; Write: Channels → Zones → Scan lists → …).
 
 ## Related
 

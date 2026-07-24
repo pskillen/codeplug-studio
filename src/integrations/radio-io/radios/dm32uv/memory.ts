@@ -160,10 +160,10 @@ export interface Dm32ReadBlockGroup {
 }
 
 /**
- * Split selected bulk-read blocks into named sets for operator progress.
+ * Split selected sparse blocks into named sets for operator progress (Read or Write).
  * Order matches typical NeonPlug interest: channels → zones → scan → TG/RX → rest.
  */
-export function groupDm32BlocksForReadProgress(
+export function groupDm32BlocksForProgress(
   blocks: readonly Dm32DiscoveredBlock[],
 ): Dm32ReadBlockGroup[] {
   const remaining = [...blocks];

@@ -26,6 +26,31 @@ describe('RadioIoProgressModal', () => {
     expect(screen.getByText(/Reading Channels: block 10 of 40 \(10\/40\)/)).toBeInTheDocument();
   });
 
+  it('shows write transfer stages from ProgressUpdate.stage', () => {
+    render(
+      <MantineProvider>
+        <RadioIoProgressModal
+          opened
+          operation="write"
+          phase="transfer"
+          progress={{
+            cur: 1,
+            max: 2,
+            msg: 'Writing Zones: block 1 of 2 (0x2000)',
+            stage: 'Zones',
+          }}
+          transferStages={['Channels', 'Zones', 'Scan lists']}
+          onCancel={vi.fn()}
+        />
+      </MantineProvider>,
+    );
+
+    expect(screen.getByText('Writing to radio')).toBeInTheDocument();
+    expect(screen.getByText(/✓ Channels/)).toBeInTheDocument();
+    expect(screen.getByText(/→ Zones/)).toBeInTheDocument();
+    expect(screen.getByText(/Writing Zones: block 1 of 2 \(0x2000\) \(1\/2\)/)).toBeInTheDocument();
+  });
+
   it('shows navigation-blocked alert and invokes cancel', () => {
     const onCancel = vi.fn();
     render(
