@@ -15,6 +15,10 @@ import {
   type Uv5rMiniCloneSummary,
 } from '@integrations/radio-io/radios/uv5r-mini/index.ts';
 import {
+  summariseUv21ProV2Clone,
+  UV21_PRO_V2_MODEL_ID,
+} from '@integrations/radio-io/radios/uv21-pro-v2/index.ts';
+import {
   summariseDm32uvClone,
   DM32UV_MODEL_ID,
   type Dm32uvCloneSummary,
@@ -35,6 +39,17 @@ import { findEgressByFormatId } from '../../lib/buildEgressUi.ts';
 
 function hexOffset(n: number): string {
   return `0x${n.toString(16).toUpperCase()}`;
+}
+
+function summariseUv17ProFamilyClone(bag: RadioCloneHydrationBag): Uv5rMiniCloneSummary | null {
+  const modelId = bag.retain.radioModelId;
+  if (modelId === UV5R_MINI_MODEL_ID) return summariseUv5rMiniClone(bag);
+  if (modelId === UV21_PRO_V2_MODEL_ID) return summariseUv21ProV2Clone(bag);
+  return null;
+}
+
+function isUv17ProFamilyModel(modelId: string | undefined): boolean {
+  return modelId === UV5R_MINI_MODEL_ID || modelId === UV21_PRO_V2_MODEL_ID;
 }
 
 function Dm32OnRadioSection({ summary }: { summary: Dm32uvCloneSummary }) {
@@ -830,7 +845,7 @@ export default function BuildRadioImageSettingsPage() {
   }
 
   const bag = isRadioCloneHydrationBag(radioEgress.hydration) ? radioEgress.hydration : null;
-  const isUv5rMini = bag?.retain.radioModelId === UV5R_MINI_MODEL_ID;
+  const isUv17ProFamily = isUv17ProFamilyModel(bag?.retain.radioModelId);
   const isDm32 =
     bag?.retain.radioModelId === DM32UV_MODEL_ID || bag?.retain.radioModelId === 'DP570UV';
   const isAtD890 =
@@ -839,7 +854,7 @@ export default function BuildRadioImageSettingsPage() {
     bag?.retain.radioModelId === OPENGD77_DM1701_MODEL_ID ||
     bag?.retain.radioModelId === 'DM-1701' ||
     bag?.retain.radioModelId === 'RT-84';
-  const uv5rSummary = bag && isUv5rMini ? summariseUv5rMiniClone(bag) : null;
+  const uv17ProSummary = bag && isUv17ProFamily ? summariseUv17ProFamilyClone(bag) : null;
   const dm32Summary = bag && isDm32 ? summariseDm32uvClone(bag) : null;
   const atD890Summary = bag && isAtD890 ? summariseAtD890uvClone(bag) : null;
   const openGd77Summary = bag && isOpenGd77 ? summariseOpenGd77Clone(bag) : null;
@@ -858,7 +873,7 @@ export default function BuildRadioImageSettingsPage() {
               ? 'Counts show what is on the radio; local info and unmodelled banks stay Read-retained when you write channels, zones, scan lists, and contacts from your library.'
               : isOpenGd77
                 ? 'Counts show what is on the radio; retained settings, VFO, DTMF, and APRS regions are what Studio keeps when you write channels, zones, and contacts from your library.'
-                : isUv5rMini
+                : isUv17ProFamily
                   ? 'Counts show what is on the radio; retained settings are what Studio keeps when you write channels from your library.'
                   : 'Unmodelled regions (VFO, settings, ANI) are retained for Write so they survive channel updates from the library. Settings are not editable in Studio.'}
         </Text>
@@ -873,7 +888,7 @@ export default function BuildRadioImageSettingsPage() {
               into this build. Write stays blocked until a Read succeeds.
             </Text>
           </FormSection>
-        ) : !uv5rSummary && !dm32Summary && !atD890Summary && !openGd77Summary ? (
+        ) : !uv17ProSummary && !dm32Summary && !atD890Summary && !openGd77Summary ? (
           <FormSection title="Stored image">
             <Text size="sm">
               A radio-clone image is stored (model {bag.retain.radioModelId},{' '}
@@ -887,8 +902,8 @@ export default function BuildRadioImageSettingsPage() {
           <AtD890RadioImageSections summary={atD890Summary} bag={bag} />
         ) : openGd77Summary && bag ? (
           <OpenGd77RadioImageSections summary={openGd77Summary} bag={bag} />
-        ) : uv5rSummary && bag ? (
-          <Uv5rRadioImageSections summary={uv5rSummary} bag={bag} />
+        ) : uv17ProSummary && bag ? (
+          <Uv5rRadioImageSections summary={uv17ProSummary} bag={bag} />
         ) : null}
       </Stack>
     </FormPage>

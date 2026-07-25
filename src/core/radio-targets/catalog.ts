@@ -69,7 +69,10 @@ export const RADIO_TARGETS: Record<string, RadioTarget> = {
     label: 'Baofeng UV-21Pro V2',
     group: 'Baofeng',
     traits: flatAnalog,
-    compatibleEgress: [egress('chirp', 'chirp-uv21', 'CHIRP CSV')],
+    compatibleEgress: [
+      egress('radio-io', 'radio-io-uv21', 'Web Serial'),
+      egress('chirp', 'chirp-uv21', 'CHIRP CSV'),
+    ],
   },
   'retevis-rt95': {
     id: 'retevis-rt95',

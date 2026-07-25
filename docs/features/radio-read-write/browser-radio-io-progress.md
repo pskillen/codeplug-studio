@@ -35,13 +35,16 @@
 | AT-D890UV binary protocol / memory docs        | [#647](https://github.com/pskillen/codeplug-studio/issues/647) | [docs/reference/radios/anytone/at-d890uv/](../../reference/radios/anytone/at-d890uv/README.md); parent [#645](https://github.com/pskillen/codeplug-studio/issues/645)                                                              |
 | AT-D890UV Web Serial adapter                   | [#649](https://github.com/pskillen/codeplug-studio/issues/649) | `radios/at-d890uv/`; `radio-io-at-d890uv` on `anytone-at-d890uv`; sparse selective-ranges Write; FK merge order TG→RX→radio ID→channels→zones→scan                                                                                 |
 | Anytone DMR R/W kit codec                      | [#646](https://github.com/pskillen/codeplug-studio/issues/646) | `kit/codecs/anytoneDmrRw.ts` — PROGRAM→QX + u32 BE + checksum                                                                                                                                                                      |
+| UV-21Pro V2 binary memory docs                 | [#639](https://github.com/pskillen/codeplug-studio/issues/639) | [docs/reference/radios/baofeng/uv-21-pro-v2/](../../reference/radios/baofeng/uv-21-pro-v2/README.md); CHIRP `UV21ProV2`                                                                                                            |
+| UV-21Pro V2 Web Serial adapter                 | [#639](https://github.com/pskillen/codeplug-studio/issues/639) | `radios/uv21-pro-v2/` + `uv17pro-family/`; `radio-io-uv21` on `baofeng-uv21`; full-image Write; hardware verify backlog                                                                                                            |
 
 ## Next
 
 1. Wire firmware gating [#619](https://github.com/pskillen/codeplug-studio/issues/619) when catalog [#613](https://github.com/pskillen/codeplug-studio/issues/613) is ready (more important for DM-32UV than Mini).
-2. OpenGD77 adapters: [#624](https://github.com/pskillen/codeplug-studio/issues/624) (DM-1701 — **shipped**) · [#625](https://github.com/pskillen/codeplug-studio/issues/625) (MD-9600).
-3. RT95 PROGRAM→QX kit codec [#641](https://github.com/pskillen/codeplug-studio/issues/641) → adapter [#643](https://github.com/pskillen/codeplug-studio/issues/643) (epic [#640](https://github.com/pskillen/codeplug-studio/issues/640); docs [#642](https://github.com/pskillen/codeplug-studio/issues/642) shipped).
-4. D878UVII adapter [#650](https://github.com/pskillen/codeplug-studio/issues/650) (epic [#645](https://github.com/pskillen/codeplug-studio/issues/645); docs [#648](https://github.com/pskillen/codeplug-studio/issues/648)).
+2. UV-21Pro V2 hardware Read→Write→Read-back verify; AM encode if library gains AM modelling ([#639](https://github.com/pskillen/codeplug-studio/issues/639)).
+3. OpenGD77 adapters: [#624](https://github.com/pskillen/codeplug-studio/issues/624) (DM-1701 — **shipped**) · [#625](https://github.com/pskillen/codeplug-studio/issues/625) (MD-9600).
+4. RT95 PROGRAM→QX kit codec [#641](https://github.com/pskillen/codeplug-studio/issues/641) → adapter [#643](https://github.com/pskillen/codeplug-studio/issues/643) (epic [#640](https://github.com/pskillen/codeplug-studio/issues/640); docs [#642](https://github.com/pskillen/codeplug-studio/issues/642) shipped).
+5. D878UVII adapter [#650](https://github.com/pskillen/codeplug-studio/issues/650) (epic [#645](https://github.com/pskillen/codeplug-studio/issues/645); docs [#648](https://github.com/pskillen/codeplug-studio/issues/648)).
 
 ## Related
 

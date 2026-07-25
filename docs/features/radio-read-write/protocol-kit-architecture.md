@@ -227,6 +227,17 @@ MVP **Read** hydrates the FormatBuild only — it does **not** import channels i
 
 Classic **UV-5R** uses **S/X**, not this path — do not merge the two into one “Baofeng” codec.
 
+### 6.1 UV-17Pro family variants (shared `uv17pro-family/`)
+
+Parameterise ident, `MEM_*`, channel count, and magics via `Uv17ProLayout` — reuse one protocol + 32-byte channel codec. Thin per-radio folders supply descriptor + registry only.
+
+| Radio       | Module                | Ident              | `MEM_TOTAL` | Channels | Notes                                                          |
+| ----------- | --------------------- | ------------------ | ----------- | -------- | -------------------------------------------------------------- |
+| UV-5R Mini  | `radios/uv5r-mini/`   | `PROGRAMCOLORPROU` | `0x8240`    | 999      | NeonPlug 38400 fallback; upload magic trailer `0x01`           |
+| UV-21Pro V2 | `radios/uv21-pro-v2/` | `PROGRAMBFNORMALU` | `0x8380`    | 1000     | 115200 only; four `MEM_*` regions; CHIRP magics trailer `0x00` |
+
+Ground truth: CHIRP `chirp/drivers/baofeng_uv17Pro.py` — `UV17Pro`, `UV5RMini`, `UV21ProV2`. Cite Sander van der Wel / GPL path only — do not paste sources.
+
 ---
 
 ## 7. Testing strategy

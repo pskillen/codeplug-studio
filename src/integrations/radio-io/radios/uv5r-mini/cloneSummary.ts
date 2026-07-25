@@ -3,89 +3,25 @@
  */
 
 import type { RadioCloneHydrationBag } from '@core/models/radioCloneHydration.ts';
-import { radioCloneImageBytes } from '@core/models/radioCloneHydration.ts';
-import { memoryMapFromBytes } from '../../kit/memoryMap.ts';
-import { UV5R_MINI_CHANNEL_COUNT } from './constants.ts';
-import { decodeChannelsFromImage, readFirmwareFromImage } from './channelCodec.ts';
+import { UV5R_MINI_LAYOUT } from '../uv17pro-family/layout.ts';
 import {
-  UV5R_MINI_REGION_MANIFEST,
-  UV5R_MINI_WRITTEN_FROM_BUILD_LABELS,
-  uv5rMiniKeptRegions,
-} from './writeRole.ts';
-import {
-  ancillaryRetainPreview,
-  settingsRetainPreview,
-  type Uv5rMiniAncillaryRetainPreview,
-  type Uv5rMiniRetainPreviewRow,
-} from './retainPreview.ts';
+  summariseUv17ProClone,
+  buildCloneRegionSummaries,
+  type Uv17ProCloneSummary,
+  type Uv17ProOnRadioCounts,
+  type Uv17ProRetainGroupSummary,
+  type RadioCloneRegionSummary,
+} from '../uv17pro-family/cloneSummary.ts';
 
-/** @deprecated Use Uv5rMiniRetainGroupSummary — kept for barrel compatibility. */
-export interface RadioCloneRegionSummary {
-  label: string;
-  packedOffset: number;
-  sizeBytes: number;
-  role: string;
-}
+export type { RadioCloneRegionSummary };
 
-export interface Uv5rMiniOnRadioCounts {
-  occupiedChannels: number;
-  emptyChannelSlots: number;
-}
+export type Uv5rMiniOnRadioCounts = Uv17ProOnRadioCounts;
+export type Uv5rMiniRetainGroupSummary = Uv17ProRetainGroupSummary;
+export type Uv5rMiniCloneSummary = Uv17ProCloneSummary;
 
-export interface Uv5rMiniRetainGroupSummary {
-  label: string;
-  regionCount: number;
-  role: string;
-}
-
-export interface Uv5rMiniCloneSummary {
-  radioModelId: string;
-  firmware?: string;
-  imageByteLength: number;
-  capturedVia: RadioCloneHydrationBag['retain']['capturedVia'];
-  onRadioCounts: Uv5rMiniOnRadioCounts;
-  writtenFromBuild: readonly string[];
-  retainGroups: readonly Uv5rMiniRetainGroupSummary[];
-  settingsRetain: readonly Uv5rMiniRetainPreviewRow[];
-  ancillaryRetain: Uv5rMiniAncillaryRetainPreview;
-}
-
-/** Legacy region table derived from write-role manifest. */
 export const UV5R_MINI_CLONE_REGION_SUMMARIES: readonly RadioCloneRegionSummary[] =
-  UV5R_MINI_REGION_MANIFEST.map((r) => ({
-    label: r.label,
-    packedOffset: r.packedOffset,
-    sizeBytes: r.sizeBytes,
-    role: r.retainRoleCopy,
-  }));
-
-function buildRetainGroups(): Uv5rMiniRetainGroupSummary[] {
-  return uv5rMiniKeptRegions().map((r) => ({
-    label: r.label,
-    regionCount: 1,
-    role: r.retainRoleCopy,
-  }));
-}
+  buildCloneRegionSummaries(UV5R_MINI_LAYOUT);
 
 export function summariseUv5rMiniClone(bag: RadioCloneHydrationBag): Uv5rMiniCloneSummary {
-  const bytes = radioCloneImageBytes(bag);
-  const image = memoryMapFromBytes(bytes);
-  const channels = decodeChannelsFromImage(image);
-  const occupied = channels.filter((c) => !c.empty).length;
-  const firmware = bag.retain.firmware ?? readFirmwareFromImage(image);
-
-  return {
-    radioModelId: bag.retain.radioModelId,
-    firmware,
-    imageByteLength: bag.retain.imageByteLength,
-    capturedVia: bag.retain.capturedVia,
-    onRadioCounts: {
-      occupiedChannels: occupied,
-      emptyChannelSlots: UV5R_MINI_CHANNEL_COUNT - occupied,
-    },
-    writtenFromBuild: [...UV5R_MINI_WRITTEN_FROM_BUILD_LABELS],
-    retainGroups: buildRetainGroups(),
-    settingsRetain: settingsRetainPreview(bytes),
-    ancillaryRetain: ancillaryRetainPreview(bytes),
-  };
+  return summariseUv17ProClone(UV5R_MINI_LAYOUT, bag);
 }

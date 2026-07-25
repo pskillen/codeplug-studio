@@ -15,6 +15,14 @@ export interface RadioIoUv5rMiniProfile {
   powerLadder: readonly PowerLadderEntry[];
 }
 
+export interface RadioIoUv21Profile {
+  id: 'radio-io-uv21';
+  label: string;
+  maxMemorySlots: number;
+  nameLimit: number;
+  powerLadder: readonly PowerLadderEntry[];
+}
+
 export interface RadioIoDm32uvProfile {
   id: 'radio-io-dm32uv';
   label: string;
@@ -63,6 +71,7 @@ export interface RadioIoOpenGd771701Profile {
 
 export type RadioIoRadioProfile =
   | RadioIoUv5rMiniProfile
+  | RadioIoUv21Profile
   | RadioIoDm32uvProfile
   | RadioIoAtD890uvProfile
   | RadioIoOpenGd771701Profile;
@@ -85,11 +94,14 @@ export function isRadioIoOpenGd771701Profile(
   return profile.id === 'radio-io-opengd77-1701';
 }
 
-/** High / Low — same facts as NeonPlug UV-5R Mini binary. */
-const UV5R_MINI_POWER_LADDER: readonly PowerLadderEntry[] = [
+/** High / Low — UV-17Pro family binary ladder. */
+const UV17PRO_POWER_LADDER: readonly PowerLadderEntry[] = [
   { percent: 100, wire: 'High', approxWatts: '5 W' },
   { percent: 20, wire: 'Low', approxWatts: '1 W' },
 ];
+
+/** @deprecated alias */
+const UV5R_MINI_POWER_LADDER = UV17PRO_POWER_LADDER;
 
 const DM32_POWER_LADDER: readonly PowerLadderEntry[] = [
   { percent: 100, wire: 'High' },
@@ -124,6 +136,14 @@ export const RADIO_IO_UV5R_MINI_PROFILE: RadioIoUv5rMiniProfile = {
   maxMemorySlots: 999,
   nameLimit: 12,
   powerLadder: UV5R_MINI_POWER_LADDER,
+};
+
+export const RADIO_IO_UV21_PROFILE: RadioIoUv21Profile = {
+  id: 'radio-io-uv21',
+  label: 'Baofeng UV-21Pro V2',
+  maxMemorySlots: 1000,
+  nameLimit: 12,
+  powerLadder: UV17PRO_POWER_LADDER,
 };
 
 export const RADIO_IO_DM32UV_PROFILE: RadioIoDm32uvProfile = {
@@ -171,6 +191,7 @@ export const RADIO_IO_OPENGD77_1701_PROFILE: RadioIoOpenGd771701Profile = {
 
 export const RADIO_IO_PROFILES: readonly RadioIoRadioProfile[] = [
   RADIO_IO_UV5R_MINI_PROFILE,
+  RADIO_IO_UV21_PROFILE,
   RADIO_IO_DM32UV_PROFILE,
   RADIO_IO_AT_D890UV_PROFILE,
   RADIO_IO_OPENGD77_1701_PROFILE,
