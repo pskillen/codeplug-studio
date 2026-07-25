@@ -8,6 +8,7 @@ import type { MemoryMap } from '../../types.ts';
 import type { RadioChannelDto, RadioChannelMode, RadioTone } from '../../radioChannelDto.ts';
 import {
   OPENGD77_1701_POWER_STEPS,
+  type OpenGd77PowerStep,
   OPENGD77_CHANNEL_BANKS,
   OPENGD77_CHANNEL_BANK_BITMAP,
   OPENGD77_CHANNEL_BANK_RECORDS,
@@ -100,11 +101,14 @@ export function encodeSelectiveCall(tone: RadioTone | null | undefined): number 
   return ((dcs << 15) | (inverted << 14) | bcd) & 0xffff;
 }
 
-export function powerPercentToWire(percent: number | null): number {
+export function powerPercentToWire(
+  percent: number | null,
+  steps: readonly OpenGd77PowerStep[] = OPENGD77_1701_POWER_STEPS,
+): number {
   if (percent == null) return 0;
-  let bestWire: number = OPENGD77_1701_POWER_STEPS[0]!.wire;
-  let bestDist = Math.abs(percent - OPENGD77_1701_POWER_STEPS[0]!.percent);
-  for (const step of OPENGD77_1701_POWER_STEPS) {
+  let bestWire: number = steps[0]!.wire;
+  let bestDist = Math.abs(percent - steps[0]!.percent);
+  for (const step of steps) {
     const dist = Math.abs(percent - step.percent);
     if (dist < bestDist) {
       bestWire = step.wire;
@@ -114,14 +118,17 @@ export function powerPercentToWire(percent: number | null): number {
   return bestWire;
 }
 
-export function powerWireToPercent(wire: number): number | null {
+export function powerWireToPercent(
+  wire: number,
+  steps: readonly OpenGd77PowerStep[] = OPENGD77_1701_POWER_STEPS,
+): number | null {
   if (wire === 0) return null;
-  const step = OPENGD77_1701_POWER_STEPS.find((s) => s.wire === wire);
+  const step = steps.find((s) => s.wire === wire);
   if (step) return step.percent;
   // Clamp unknown 1…10 to nearest known step.
-  if (wire >= 10) return 100;
+  if (wire >= 10) return steps[steps.length - 1]?.percent ?? 100;
   if (wire < 1) return null;
-  return OPENGD77_1701_POWER_STEPS[Math.min(wire, 9) - 1]?.percent ?? null;
+  return steps[Math.min(wire, 9) - 1]?.percent ?? null;
 }
 
 /** qDMR OpenGD77BaseCodeplug::ChannelElement::setSquelch — Global / Open / Normal / Closed. */
@@ -189,7 +196,11 @@ function setU16Le(buf: Uint8Array, offset: number, value: number): void {
 }
 
 /** Decode one 0x38 channel record. `slotIndex` is 1-based. */
-export function decodeChannelRecord(raw: Uint8Array, slotIndex: number): RadioChannelDto {
+export function decodeChannelRecord(
+  raw: Uint8Array,
+  slotIndex: number,
+  powerSteps: readonly OpenGd77PowerStep[] = OPENGD77_1701_POWER_STEPS,
+): RadioChannelDto {
   if (raw.length < OPENGD77_CHANNEL_RECORD_SIZE) {
     throw new RangeError(`Channel record must be ${OPENGD77_CHANNEL_RECORD_SIZE} bytes`);
   }
@@ -225,7 +236,7 @@ export function decodeChannelRecord(raw: Uint8Array, slotIndex: number): RadioCh
     txHz: txHz > 0 ? txHz : rxHz,
     rxTone: decodeSelectiveCall(getU16Le(raw, 0x20)),
     txTone: decodeSelectiveCall(getU16Le(raw, 0x22)),
-    powerPercent: powerWireToPercent(raw[0x19]!),
+    powerPercent: powerWireToPercent(raw[0x19]!, powerSteps),
     bandwidth: (bits33 & 0x02) !== 0 ? 'FM' : 'NFM',
     mode: modeFromWire(raw[0x18]!),
     colorCode: raw[0x2c]!,
@@ -240,7 +251,10 @@ export function decodeChannelRecord(raw: Uint8Array, slotIndex: number): RadioCh
 }
 
 /** Encode one 0x38 channel record. */
-export function encodeChannelRecord(dto: RadioChannelDto): Uint8Array {
+export function encodeChannelRecord(
+  dto: RadioChannelDto,
+  powerSteps: readonly OpenGd77PowerStep[] = OPENGD77_1701_POWER_STEPS,
+): Uint8Array {
   const out = new Uint8Array(OPENGD77_CHANNEL_RECORD_SIZE);
   if (dto.empty || dto.rxHz <= 0) {
     out.fill(0xff);
@@ -251,7 +265,7 @@ export function encodeChannelRecord(dto: RadioChannelDto): Uint8Array {
   out.set(encodeBcdFreqHz(dto.rxHz), 0x10);
   out.set(encodeBcdFreqHz(dto.txHz > 0 ? dto.txHz : dto.rxHz), 0x14);
   out[0x18] = wireFromMode(dto.mode);
-  out[0x19] = powerPercentToWire(dto.powerPercent);
+  out[0x19] = powerPercentToWire(dto.powerPercent, powerSteps);
   // latitude / timeout / longitude left 0 (not modelled on write)
   setU16Le(out, 0x20, encodeSelectiveCall(dto.rxTone));
   setU16Le(out, 0x22, encodeSelectiveCall(dto.txTone));
@@ -308,7 +322,10 @@ function emptySlot(slotIndex: number): RadioChannelDto {
 }
 
 /** Decode all channel slots from an OpenUV380 MemoryMap. */
-export function decodeChannelsFromImage(image: MemoryMap): RadioChannelDto[] {
+export function decodeChannelsFromImage(
+  image: MemoryMap,
+  powerSteps: readonly OpenGd77PowerStep[] = OPENGD77_1701_POWER_STEPS,
+): RadioChannelDto[] {
   const channels: RadioChannelDto[] = [];
   for (let bank = 0; bank < OPENGD77_CHANNEL_BANKS; bank++) {
     const bankAbs = openUv380ChannelBankAbs(bank);
@@ -329,7 +346,11 @@ export function decodeChannelsFromImage(image: MemoryMap): RadioChannelDto[] {
       }
       const off = recordOffsetInBank(i);
       channels.push(
-        decodeChannelRecord(bankBytes.subarray(off, off + OPENGD77_CHANNEL_RECORD_SIZE), slotIndex),
+        decodeChannelRecord(
+          bankBytes.subarray(off, off + OPENGD77_CHANNEL_RECORD_SIZE),
+          slotIndex,
+          powerSteps,
+        ),
       );
     }
   }
@@ -344,8 +365,9 @@ export function decodeChannelsFromImage(image: MemoryMap): RadioChannelDto[] {
 export function encodeChannelsIntoImage(
   image: MemoryMap,
   channels: readonly RadioChannelDto[],
-  opts?: { clearUnlisted?: boolean },
+  opts?: { clearUnlisted?: boolean; powerSteps?: readonly OpenGd77PowerStep[] },
 ): void {
+  const powerSteps = opts?.powerSteps ?? OPENGD77_1701_POWER_STEPS;
   const clearUnlisted = opts?.clearUnlisted !== false;
   const bySlot = new Map<number, RadioChannelDto>();
   for (const dto of channels) {
@@ -374,7 +396,7 @@ export function encodeChannelsIntoImage(
         bankBytes.fill(0xff, off, off + OPENGD77_CHANNEL_RECORD_SIZE);
       } else {
         setBankBit(bankBytes, i, true);
-        bankBytes.set(encodeChannelRecord(dto), off);
+        bankBytes.set(encodeChannelRecord(dto, powerSteps), off);
       }
     }
     writeAbs(image, bankAbs, bankBytes);

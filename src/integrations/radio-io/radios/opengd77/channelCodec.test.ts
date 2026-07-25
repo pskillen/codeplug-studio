@@ -14,7 +14,7 @@ import {
   powerPercentToWire,
   powerWireToPercent,
 } from './channelCodec.ts';
-import { OPENGD77_CHANNEL_RECORD_SIZE, OPENGD77_CHANNEL_SLOTS } from './constants.ts';
+import { OPENGD77_CHANNEL_RECORD_SIZE, OPENGD77_CHANNEL_SLOTS, OPENGD77_MD9600_POWER_STEPS } from './constants.ts';
 import { createOpenUv380Image } from './memory.ts';
 
 function sampleDto(overrides: Partial<RadioChannelDto> = {}): RadioChannelDto {
@@ -62,6 +62,21 @@ describe('opengd77 channelCodec BCD / tone / power', () => {
   it('maps P9 / 100% to wire 9', () => {
     expect(powerPercentToWire(100)).toBe(9);
     expect(powerWireToPercent(9)).toBe(100);
+  });
+
+  it('maps MD-9600 power ladder nearest steps', () => {
+    expect(powerPercentToWire(63, OPENGD77_MD9600_POWER_STEPS)).toBe(8);
+    expect(powerWireToPercent(8, OPENGD77_MD9600_POWER_STEPS)).toBe(63);
+    expect(powerPercentToWire(25, OPENGD77_MD9600_POWER_STEPS)).toBe(7);
+    expect(powerPercentToWire(13, OPENGD77_MD9600_POWER_STEPS)).toBe(6);
+    expect(powerPercentToWire(1, OPENGD77_MD9600_POWER_STEPS)).toBe(1);
+  });
+
+  it('round-trips MD-9600 power on channel record', () => {
+    const dto = sampleDto({ powerPercent: 63 });
+    const raw = encodeChannelRecord(dto, OPENGD77_MD9600_POWER_STEPS);
+    expect(raw[0x19]).toBe(8);
+    expect(decodeChannelRecord(raw, 1, OPENGD77_MD9600_POWER_STEPS).powerPercent).toBe(63);
   });
 
   it('encodes analogue squelch percent with qDMR Global/Open/Normal/Closed scaling', () => {

@@ -27,6 +27,11 @@ export const OPENGD77_CONTROL_SAVE_REBOOT = 0x00;
 /** DM-1701 / RT-84 radioType values in FirmwareInfo. */
 export const DM1701_RADIO_TYPES = Object.freeze([0x08, 0x0a] as const);
 
+/** TYT MD-9600 / Retevis RT-90 radioType in FirmwareInfo. */
+export const MD9600_RADIO_TYPES = Object.freeze([0x05] as const);
+
+export type OpenGd77PowerStep = Readonly<{ percent: number; wire: number }>;
+
 /**
  * Contiguous MemoryMap covers absolute FLASH [IMAGE_BASE, IMAGE_END).
  * Gaps between registered spans are filled 0xff and never transferred.
@@ -110,7 +115,23 @@ export const OPENGD77_1701_POWER_STEPS = Object.freeze([
   { percent: 60, wire: 7 },
   { percent: 80, wire: 8 },
   { percent: 100, wire: 9 },
-] as const);
+] as const satisfies readonly OpenGd77PowerStep[]);
+
+/**
+ * MD-9600 / RT-90 binary power steps — mirrors `OPENGD77_MD9600_LADDER` in profiles.ts (#441).
+ * Wire byte 0 = Master / radio default. Menu `+W-` (User Power) is not encoded.
+ */
+export const OPENGD77_MD9600_POWER_STEPS = Object.freeze([
+  { percent: 1, wire: 1 },
+  { percent: 2, wire: 2 },
+  { percent: 3, wire: 3 },
+  { percent: 4, wire: 4 },
+  { percent: 5, wire: 5 },
+  { percent: 13, wire: 6 },
+  { percent: 25, wire: 7 },
+  { percent: 63, wire: 8 },
+  { percent: 100, wire: 9 },
+] as const satisfies readonly OpenGd77PowerStep[]);
 
 /** Map absolute FLASH address → offset in contiguous MemoryMap. */
 export function openUv380AbsToOffset(abs: number): number {
