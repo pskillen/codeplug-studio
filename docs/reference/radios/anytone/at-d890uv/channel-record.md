@@ -33,14 +33,14 @@ Assemble decode buffer as `primary ‖ secondary`. Split encode the same way bef
 
 ## ChannelSet bitmap
 
-| Item     | Value                                 |
-| -------- | ------------------------------------- |
-| Base     | `0x3482a00`                           |
-| Size     | `0x200` bytes                         |
-| Sense    | Bit **set** → channel present         |
-| Indexing | Slot `n` → byte `n // 8`, bit `n % 8` |
-| Modelled slots | `0 … 3999` (`MAX_CHANNELS`) — Studio Write clears and re-encodes these bits only |
-| High bits | Bits `4000+` in the `0x200`-byte bitmap are **preserved** on Write (VFO-ish / RE slots; bodies not modelled as library channels) |
+| Item           | Value                                                                                                                            |
+| -------------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| Base           | `0x3482a00`                                                                                                                      |
+| Size           | `0x200` bytes                                                                                                                    |
+| Sense          | Bit **set** → channel present                                                                                                    |
+| Indexing       | Slot `n` → byte `n // 8`, bit `n % 8`                                                                                            |
+| Modelled slots | `0 … 3999` (`MAX_CHANNELS`) — Studio Write clears and re-encodes these bits only                                                 |
+| High bits      | Bits `4000+` in the `0x200`-byte bitmap are **preserved** on Write (VFO-ish / RE slots; bodies not modelled as library channels) |
 
 Empty slots (RX frequency 0 / unset) should clear the bit and skip body writes.
 
@@ -84,15 +84,15 @@ Gaps / unknown bytes: Studio Write **RMW**s each occupied modelled slot — read
 
 ## Studio overlay (v1)
 
-| Offset | Field | Write behaviour |
-| --- | --- | --- |
-| `0x00–0x07` | RX / offset freq | Re-derived from projection (BCD-as-hex) |
-| `0x08–0x09` | Mode / power / tone selects | Re-derived |
-| `0x0a` / `0x0b` | CTCSS indices | Written when tone kind is CTCSS (51 standard Anytone tones; custom index 51 → none) |
-| `0x0c–0x0f` | DCS | Re-derived when DCS selected |
-| `0x13–0x14`, `0x18`, `0x1b`, `0x1c`, `0x21`, `0x34`, `0x44–0x63` | Contact, radio ID, scan, RX group, timeslot, auto scan, name | Re-derived |
-| `0x20` / `0x43` | RX / TX colour code | Written from projection `colorCode` (same value both bytes) |
-| Other | APRS, crypto, R5Tone, … | **Preserved** from hydrated record on RMW |
+| Offset                                                           | Field                                                        | Write behaviour                                                                     |
+| ---------------------------------------------------------------- | ------------------------------------------------------------ | ----------------------------------------------------------------------------------- |
+| `0x00–0x07`                                                      | RX / offset freq                                             | Re-derived from projection (BCD-as-hex)                                             |
+| `0x08–0x09`                                                      | Mode / power / tone selects                                  | Re-derived                                                                          |
+| `0x0a` / `0x0b`                                                  | CTCSS indices                                                | Written when tone kind is CTCSS (51 standard Anytone tones; custom index 51 → none) |
+| `0x0c–0x0f`                                                      | DCS                                                          | Re-derived when DCS selected                                                        |
+| `0x13–0x14`, `0x18`, `0x1b`, `0x1c`, `0x21`, `0x34`, `0x44–0x63` | Contact, radio ID, scan, RX group, timeslot, auto scan, name | Re-derived                                                                          |
+| `0x20` / `0x43`                                                  | RX / TX colour code                                          | Written from projection `colorCode` (same value both bytes)                         |
+| Other                                                            | APRS, crypto, R5Tone, …                                      | **Preserved** from hydrated record on RMW                                           |
 
 Gaps / unknown bytes: preserve on RMW (see table above).
 

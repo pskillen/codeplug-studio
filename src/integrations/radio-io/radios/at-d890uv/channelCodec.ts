@@ -36,10 +36,7 @@ function decodeToneFromDcsU16(low: number, high: number): RadioTone {
 
 function readExistingChannelRecord(image: MemoryMap, idx: number): Uint8Array {
   const combined = new Uint8Array(AT_D890_LIMITS.CHANNEL_RECORD_SIZE);
-  combined.set(
-    image.get(channelPrimaryAddress(idx), AT_D890_LIMITS.CHANNEL_CHUNK_SIZE),
-    0,
-  );
+  combined.set(image.get(channelPrimaryAddress(idx), AT_D890_LIMITS.CHANNEL_CHUNK_SIZE), 0);
   combined.set(
     image.get(channelSecondaryAddress(idx), AT_D890_LIMITS.CHANNEL_CHUNK_SIZE),
     AT_D890_LIMITS.CHANNEL_CHUNK_SIZE,
@@ -162,10 +159,7 @@ export function parseAtD890ChannelRecord(data: Uint8Array, slotIndex: number): R
   };
 }
 
-export function encodeAtD890ChannelRecord(
-  ch: RadioChannelDto,
-  prior?: Uint8Array,
-): Uint8Array {
+export function encodeAtD890ChannelRecord(ch: RadioChannelDto, prior?: Uint8Array): Uint8Array {
   const data =
     prior && prior.length >= AT_D890_LIMITS.CHANNEL_RECORD_SIZE
       ? prior.slice(0, AT_D890_LIMITS.CHANNEL_RECORD_SIZE)

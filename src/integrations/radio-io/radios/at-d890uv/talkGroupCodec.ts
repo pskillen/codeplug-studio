@@ -59,9 +59,7 @@ function talkgroupOrderKey(digitalId: number, callType: number | undefined): num
  * Rebuild TalkgroupOrder at `0x3f00000` (anytone-cps `writeTalkgroupData` companion write).
  * Sorted (key, slotId) pairs; key = (BCD-as-hex DMR ID << 1) + call type; value = 1-based TG index.
  */
-export function encodeAtD890TalkgroupOrder(
-  talkGroups: readonly RadioTalkGroupDto[],
-): Uint8Array {
+export function encodeAtD890TalkgroupOrder(talkGroups: readonly RadioTalkGroupDto[]): Uint8Array {
   const entries: { key: number; slotId: number }[] = [];
   for (const tg of talkGroups) {
     if (tg.digitalId <= 0) continue;

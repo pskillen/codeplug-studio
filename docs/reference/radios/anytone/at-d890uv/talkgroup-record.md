@@ -69,12 +69,12 @@ Studio `RadioWriteProjection` carries NeonPlug quick-contact call types (`0x03` 
 
 Companion write rebuilt whenever the talkgroup bank is encoded (anytone-cps `writeTalkgroupData`). Studio mirrors this on Write.
 
-| Fact | Value |
-| --- | --- |
-| Base | `0x3f00000` |
+| Fact         | Value                                                                          |
+| ------------ | ------------------------------------------------------------------------------ |
+| Base         | `0x3f00000`                                                                    |
 | Record shape | Sorted 8-byte pairs: **key** (u32 BE) + **slot id** (u32 BE, 1-based TG index) |
-| Key | `(BCD-as-hex DMR ID << 1) + call_type` where call type is Anytone `0/1/2` |
-| Padding | Total length rounded up to 16 bytes with `0xff` fill |
+| Key          | `(BCD-as-hex DMR ID << 1) + call_type` where call type is Anytone `0/1/2`      |
+| Padding      | Total length rounded up to 16 bytes with `0xff` fill                           |
 
 Example: DMR ID `9` group call → key `0x13` (`(9 << 1) + 1`); DMR ID `99` group → key `0xc7`.
 
