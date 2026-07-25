@@ -8,33 +8,33 @@ Cite: CHIRP `baofeng_uv17Pro.py` memory object (facts only — no GPL paste).
 
 ## Geometry
 
-| Fact                 | Value                                                                  |
-| -------------------- | ---------------------------------------------------------------------- |
-| Record size          | `32` bytes                                                             |
-| Count                | `1000`                                                                 |
-| Span in packed image | `0x7D00` from `0x0000`                                                 |
-| Empty sentinel       | first byte `0xFF`; CHIRP fills empty slots with `0xFF × 32`            |
-| Name length          | 12 ASCII                                                               |
+| Fact                 | Value                                                       |
+| -------------------- | ----------------------------------------------------------- |
+| Record size          | `32` bytes                                                  |
+| Count                | `1000`                                                      |
+| Span in packed image | `0x7D00` from `0x0000`                                      |
+| Empty sentinel       | first byte `0xFF`; CHIRP fills empty slots with `0xFF × 32` |
+| Name length          | 12 ASCII                                                    |
 
 There is **no** separate channel-count field in the image — occupancy is per-slot empty markers.
 
 ## Field offsets
 
-| Offset        | Field                   | Encoding / notes                                                                                                                                           |
-| ------------- | ----------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `0–3`         | RX frequency            | Little-endian BCD; value × 10 → Hz                                                                                                                         |
-| `4–7`         | TX frequency            | Same; duplex off / RX-only → all `0xFF`                                                                                                                    |
-| `8–9`         | RX tone                 | `u16` LE; `0` / `0xFFFF` = none; `≥ 0x258` = CTCSS × 10; else DTCS index (`index+1` normal, `index+1+0x69` reverse — CHIRP `R`)                            |
-| `10–11`       | TX tone                 | Same                                                                                                                                                       |
-| `12`          | `scode`                 | CHIRP; Studio writes `1`                                                                                                                                   |
-| `13`          | `pttid`                 | CHIRP; Studio writes `0`                                                                                                                                   |
-| `14` bits 0–1 | `lowpower`              | `0` = High; non-zero → Low (see [power.md](power.md))                                                                                                      |
-| `14`          | other bitfields         | CHIRP `scramble` etc.                                                                                                                                      |
-| `15` bit 6    | `wide`                  | **Polarity:** `1` = NFM, `0` = FM (inverted vs classic UV-5R)                                                                                              |
-| `15` bit 2    | `scan`                  | `1` = participate in scan (CHIRP not Skip); Studio maps effective scan inclusion on Write                                                                  |
-| `15` other    | `sqmode`, `bcl`, `fhss` | CHIRP extras                                                                                                                                               |
-| `16–19`       | unknown                 | CHIRP reserved; zeroed on encode                                                                                                                           |
-| `20–31`       | name                    | 12 chars; stop at `0x00` / `0xFF`                                                                                                                          |
+| Offset        | Field                   | Encoding / notes                                                                                                                |
+| ------------- | ----------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| `0–3`         | RX frequency            | Little-endian BCD; value × 10 → Hz                                                                                              |
+| `4–7`         | TX frequency            | Same; duplex off / RX-only → all `0xFF`                                                                                         |
+| `8–9`         | RX tone                 | `u16` LE; `0` / `0xFFFF` = none; `≥ 0x258` = CTCSS × 10; else DTCS index (`index+1` normal, `index+1+0x69` reverse — CHIRP `R`) |
+| `10–11`       | TX tone                 | Same                                                                                                                            |
+| `12`          | `scode`                 | CHIRP; Studio writes `1`                                                                                                        |
+| `13`          | `pttid`                 | CHIRP; Studio writes `0`                                                                                                        |
+| `14` bits 0–1 | `lowpower`              | `0` = High; non-zero → Low (see [power.md](power.md))                                                                           |
+| `14`          | other bitfields         | CHIRP `scramble` etc.                                                                                                           |
+| `15` bit 6    | `wide`                  | **Polarity:** `1` = NFM, `0` = FM (inverted vs classic UV-5R)                                                                   |
+| `15` bit 2    | `scan`                  | `1` = participate in scan (CHIRP not Skip); Studio maps effective scan inclusion on Write                                       |
+| `15` other    | `sqmode`, `bcl`, `fhss` | CHIRP extras                                                                                                                    |
+| `16–19`       | unknown                 | CHIRP reserved; zeroed on encode                                                                                                |
+| `20–31`       | name                    | 12 chars; stop at `0x00` / `0xFF`                                                                                               |
 
 ## Power
 

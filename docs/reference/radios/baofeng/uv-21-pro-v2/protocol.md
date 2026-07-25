@@ -19,9 +19,9 @@ Cite: CHIRP `chirp/drivers/baofeng_uv17Pro.py` — class `UV21ProV2(UV17Pro)` (f
 
 ## Baud
 
-| Source                          | Baud       |
-| ------------------------------- | ---------- |
-| CHIRP `UV17Pro.BAUD_RATE`       | **115200** |
+| Source                    | Baud       |
+| ------------------------- | ---------- |
+| CHIRP `UV17Pro.BAUD_RATE` | **115200** |
 
 **Studio Web Serial path:** open at **115200** only. Unlike UV-5R Mini, there is no NeonPlug 38400 fallback lineage for this model.
 
@@ -44,11 +44,11 @@ Cite: CHIRP `chirp/drivers/baofeng_uv17Pro.py` — class `UV21ProV2(UV17Pro)` (f
 
 ### Magics (CHIRP `UV17Pro`)
 
-| Step | Payload                                                             | Expect   |
-| ---- | ------------------------------------------------------------------- | -------- |
-| 1    | `0x46` (`F`)                                                        | 16 bytes |
-| 2    | `0x4d` (`M`)                                                        | 15 bytes |
-| 3    | `SEND!` + trailer; **last byte `0x00`** for download and upload     | 1 byte   |
+| Step | Payload                                                         | Expect   |
+| ---- | --------------------------------------------------------------- | -------- |
+| 1    | `0x46` (`F`)                                                    | 16 bytes |
+| 2    | `0x4d` (`M`)                                                    | 15 bytes |
+| 3    | `SEND!` + trailer; **last byte `0x00`** for download and upload | 1 byte   |
 
 UV-5R Mini uses the same magics with **last byte `0x01` on upload** (NeonPlug). If hardware upload fails with CHIRP trailer `0x00`, try Mini-style `0x01` as a follow-up — document result on hardware verify.
 
@@ -79,12 +79,12 @@ Do not paste CHIRP’s full table into Studio as GPL source — cite CHIRP drive
 
 ## Differences vs UV-5R Mini
 
-| Item   | UV-21Pro V2              | UV-5R Mini                |
-| ------ | ------------------------ | ------------------------- |
-| Ident  | `PROGRAMBFNORMALU`       | `PROGRAMCOLORPROU`        |
-| Image  | `0x8380`, 4 regions      | `0x8240`, 3 regions       |
-| Slots  | 1000                     | 999                       |
-| Baud   | 115200 only              | 115200 + 38400 fallback   |
+| Item   | UV-21Pro V2               | UV-5R Mini               |
+| ------ | ------------------------- | ------------------------ |
+| Ident  | `PROGRAMBFNORMALU`        | `PROGRAMCOLORPROU`       |
+| Image  | `0x8380`, 4 regions       | `0x8240`, 3 regions      |
+| Slots  | 1000                      | 999                      |
+| Baud   | 115200 only               | 115200 + 38400 fallback  |
 | Magics | CHIRP trailer `0x00` both | NeonPlug `0x00` / `0x01` |
 
 ## Related

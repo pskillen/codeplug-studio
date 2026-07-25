@@ -11,23 +11,23 @@ Handheld analogue FM/AM radio (UV-17Pro lineage). Studio targets it via CHIRP CS
 
 ## Studio profile ids
 
-| Adapter      | `profileId`      | Notes                                           |
-| ------------ | ---------------- | ----------------------------------------------- |
-| Web Serial   | `radio-io-uv21`  | PROGRAM+R/W clone; full-image Write             |
-| CHIRP CSV    | `chirp-uv21`     | Generic CSV watt strings; inherits UV17Pro caps |
+| Adapter    | `profileId`     | Notes                                           |
+| ---------- | --------------- | ----------------------------------------------- |
+| Web Serial | `radio-io-uv21` | PROGRAM+R/W clone; full-image Write             |
+| CHIRP CSV  | `chirp-uv21`    | Generic CSV watt strings; inherits UV17Pro caps |
 
 ## Documentation map
 
-| Doc                                | Contents                               |
-| ---------------------------------- | -------------------------------------- |
-| [limits.md](limits.md)             | Memory slots, name length              |
-| [capabilities.md](capabilities.md) | Modes, organisation traits, RF summary |
-| [power.md](power.md)               | High / Low ladder (internal %)         |
-| [protocol.md](protocol.md)         | PROGRAM+R/W handshake, baud, crypt     |
-| [memory-layout.md](memory-layout.md) | `MEM_*` regions, packed `0x8380`     |
-| [channel-record.md](channel-record.md) | 32-byte channel element            |
-| [settings.md](settings.md)         | VFO/settings retain, upload scope      |
-| [fixtures.md](fixtures.md)         | Synthetic image recipe                 |
+| Doc                                    | Contents                               |
+| -------------------------------------- | -------------------------------------- |
+| [limits.md](limits.md)                 | Memory slots, name length              |
+| [capabilities.md](capabilities.md)     | Modes, organisation traits, RF summary |
+| [power.md](power.md)                   | High / Low ladder (internal %)         |
+| [protocol.md](protocol.md)             | PROGRAM+R/W handshake, baud, crypt     |
+| [memory-layout.md](memory-layout.md)   | `MEM_*` regions, packed `0x8380`       |
+| [channel-record.md](channel-record.md) | 32-byte channel element                |
+| [settings.md](settings.md)             | VFO/settings retain, upload scope      |
+| [fixtures.md](fixtures.md)             | Synthetic image recipe                 |
 
 ## Adapter wire
 
@@ -35,10 +35,10 @@ Handheld analogue FM/AM radio (UV-17Pro lineage). Studio targets it via CHIRP CS
 
 ## Ground truth
 
-| Source                                                                                                                   | Role                                                      |
-| ------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------- |
+| Source                                                                                                                   | Role                                                 |
+| ------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------- |
 | CHIRP `UV21ProV2` in [`baofeng_uv17Pro.py`](https://github.com/kk7ds/chirp/blob/master/chirp/drivers/baofeng_uv17Pro.py) | Caps, power, PROGRAM+R/W layout (inherits `UV17Pro`) |
-| Studio module (when shipped) | `src/integrations/radio-io/radios/uv21-pro-v2/` |
+| Studio module (when shipped)                                                                                             | `src/integrations/radio-io/radios/uv21-pro-v2/`      |
 
 ## Related
 

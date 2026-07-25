@@ -58,7 +58,9 @@ Protocol lineage credit: `/attributions` entries `chirp` and `neonplug` ([#597](
 
 ## Studio module
 
-`src/integrations/radio-io/radios/uv5r-mini/` — handshake, layout, encode/decode, `radio-clone` hydration, full-image Write ([#617](https://github.com/pskillen/codeplug-studio/issues/617)). Registry: `src/integrations/radio-io/registry.ts`. Checklist: [adding-a-radio-adapter.md](../../../../features/radio-read-write/adding-a-radio-adapter.md).
+`src/integrations/radio-io/radios/uv5r-mini/` — thin layout wrapper over shared `uv17pro-family/` ([#617](https://github.com/pskillen/codeplug-studio/issues/617)). Registry: `src/integrations/radio-io/registry.ts`. Checklist: [adding-a-radio-adapter.md](../../../../features/radio-read-write/adding-a-radio-adapter.md).
+
+**Sibling:** [UV-21Pro V2](../uv-21-pro-v2/README.md) — same family module ([#639](https://github.com/pskillen/codeplug-studio/issues/639)).
 
 **Manual verify (not CI):** real UV-5R Mini over Web Serial (Studio primary baud **115200** with NeonPlug **38400** fallback).
 

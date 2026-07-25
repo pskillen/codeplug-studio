@@ -12,11 +12,11 @@ How to obtain binary dumps for **directional** codec tests without committing pe
 
 ## Capture options (future / local)
 
-| Method                 | When   | Notes                                                 |
-| ---------------------- | ------ | ----------------------------------------------------- |
-| CHIRP download         | Desktop tool | Full clone → packed `0x8380`; GPL tool — facts only into docs |
-| Studio Web Serial read | After adapter [#639](https://github.com/pskillen/codeplug-studio/issues/639) | Read registered spans; save hex locally               |
-| CHIRP CSV              | Naming checks only | Prove names/semantics — **not** binary offsets        |
+| Method                 | When                                                                         | Notes                                                         |
+| ---------------------- | ---------------------------------------------------------------------------- | ------------------------------------------------------------- |
+| CHIRP download         | Desktop tool                                                                 | Full clone → packed `0x8380`; GPL tool — facts only into docs |
+| Studio Web Serial read | After adapter [#639](https://github.com/pskillen/codeplug-studio/issues/639) | Read registered spans; save hex locally                       |
+| CHIRP CSV              | Naming checks only                                                           | Prove names/semantics — **not** binary offsets                |
 
 There is no NeonPlug file path for UV-21Pro V2.
 
