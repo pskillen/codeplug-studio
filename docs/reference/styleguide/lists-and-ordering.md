@@ -29,8 +29,8 @@ Prefer these names in code and docs.
 | **Arrows / Move**                     | Consumer column or C builtins                                                           | Yes             | Reorder one step; disable while filter active                                                     |
 | **Per-row arrows (C)**                | `onMoveItem` + `SelectedItemRowMoveButtons`                                             | Yes             | Role C when selection Move alone is easy to miss (e.g. build zone Members)                        |
 | **Drag**                              | C `onReorder` + `SelectedItemDragHandle`; A `bulkReorder` + drag handle in Order column | Yes             | Membership lists; large export-order DataTables (`bulkReorder`); `reorderDisabled` while filtered |
-| **`MembershipSortMenu`**              | Above list / C toolbar                                                                  | Yes (confirm)   | Permanent rewrite by name / callsign / …                                                          |
-| **`ExportOrderSelectMenu`**           | Flat-memory Channels toolbar (beside Sort…)                                             | No              | Toggle-select by band / FM·AM mode before drag or Move                                            |
+| **`MembershipSortMenu`**              | Above list / C toolbar                                                                  | Yes (confirm)   | Permanent rewrite by name / callsign / …; flat-memory also **Sort selection…** (selected only) |
+| **`ExportOrderSelectMenu`**           | Flat-memory Channels toolbar (beside Sort…)                                             | No              | Toggle-select by band / FM·AM / simplex·split before drag, Move, or Sort selection…            |
 | **`bulkReorder`**                     | `DataTable`                                                                             | Yes             | Multi-select + drag + toolbar Move for large `reorderMode` lists                                  |
 | **`storedOrder`**                     | `DataTable`                                                                             | No — display    | Hybrid: temporary natural sorts + **Return to export order**                                      |
 | **Reset to library order**            | Wire preview banner                                                                     | Yes (confirm)   | Clear build `orderOrSlot` / zone member layout hint — **not** `storedOrder` restore               |
@@ -43,14 +43,15 @@ Prefer these names in code and docs.
 3. **Do not invent per-page sort chrome.** Use kit props and `MembershipSortMenu`.
 4. **Filter disables reorder.** Clear messaging when arrows / drag / Sort are blocked.
 5. **Role A bulk reorder** — `DataTable` `bulkReorder` for large export-order lists (~100+ rows): checkboxes, drag handles in the Order column, toolbar **Move up/down** (Alt+↑/↓). Disables virtual tbody. Gold: flat-memory Channels; also build Zones.
-6. **Build order reset ≠ browse restore.** Clearing `orderOrSlot` / member layout hints is permanent (confirm). DataTable **Return to export order** only undoes temporary column sorts.
-7. **Nested projection chrome** (Channels wire preview) uses `getRowClassName` + indented name cells — not card Accordion lists.
-8. **Role C may combine** drag, toolbar **Move up/down** (selection), and **per-row arrows** (`onMoveItem`). Gold: Build → Zones → Members export order.
+6. **Sort selection…** — With ≥2 rows selected on flat-memory Channels, sort only the selection. Split islands **collate** into one contiguous block at the **earliest selected** index; unselected rows between islands close up (relative order preserved); then the chosen Sort criteria apply within the block. Full-list **Sort channels…** remains available.
+7. **Build order reset ≠ browse restore.** Clearing `orderOrSlot` / member layout hints is permanent (confirm). DataTable **Return to export order** only undoes temporary column sorts.
+8. **Nested projection chrome** (Channels wire preview) uses `getRowClassName` + indented name cells — not card Accordion lists.
+9. **Role C may combine** drag, toolbar **Move up/down** (selection), and **per-row arrows** (`onMoveItem`). Gold: Build → Zones → Members export order.
 
 ### Mental model
 
 ```text
-reorderMode / C drag / Sort…  →  mutate Zone.order / membership arrays / orderOrSlot
+reorderMode / C drag / Sort… / Sort selection…  →  mutate Zone.order / membership arrays / orderOrSlot
 Reset to library order        →  clear build order overrides (confirm; permanent)
 storedOrder + restore         →  UI-only browse, then return to export order
 column sorts                  →  persisted prefs, no model rewrite

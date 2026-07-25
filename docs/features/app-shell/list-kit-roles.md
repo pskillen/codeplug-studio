@@ -52,7 +52,7 @@ Also fold charms from Zones list (order-mode honesty) and wire-preview lists (de
 | L9      | APRS channel slots               | **C**-ish / embedded **A**                                                                                                |
 | L10     | APRS channel assignment          | **A** (external filter)                                                                                                   |
 | B1      | Builds list                      | **A**                                                                                                                     |
-| B2–B3   | Wire preview / flat memory       | **A** + `reorderMode`; large lists add **`bulkReorder`** ([#590](https://github.com/pskillen/codeplug-studio/issues/590)) |
+| B2–B3   | Wire preview / flat memory       | **A** + `reorderMode`; large lists add **`bulkReorder`** ([#590](https://github.com/pskillen/codeplug-studio/issues/590)); flat-memory Select… + Sort selection… ([#719](https://github.com/pskillen/codeplug-studio/issues/719)) |
 | B4      | Channels bulk wire edit          | **A** (embedded)                                                                                                          |
 | B5      | Export resolution                | **Specialised** (config matrix)                                                                                           |
 | B6      | CPS CSV preview                  | **Specialised** (wire spreadsheet)                                                                                        |
