@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { encodeAtD890TalkgroupRecord } from './talkGroupCodec.ts';
+import { encodeAtD890TalkgroupOrder, encodeAtD890TalkgroupRecord } from './talkGroupCodec.ts';
 
 describe('encodeAtD890TalkgroupRecord', () => {
   it('encodes Local 99 as BCD-as-hex 00 00 00 99, not binary 00 00 00 63', () => {
@@ -62,5 +62,20 @@ describe('encodeAtD890TalkgroupRecord', () => {
         callType: 0,
       })[0],
     ).toBe(0x00);
+  });
+
+  it('rebuilds TalkgroupOrder with sorted keys and 0xff padding', () => {
+    const order = encodeAtD890TalkgroupOrder([
+      { index: 2, wireName: 'TG2', digitalId: 9, callType: 0x04 },
+      { index: 1, wireName: 'TG1', digitalId: 99, callType: 0x04 },
+    ]);
+    expect(order.length).toBe(32);
+    expect([...order.subarray(0, 8)]).toEqual([
+      0x00, 0x00, 0x00, 0x13, 0x00, 0x00, 0x00, 0x02,
+    ]);
+    expect([...order.subarray(8, 16)]).toEqual([
+      0x00, 0x00, 0x00, 0xc7, 0x00, 0x00, 0x00, 0x01,
+    ]);
+    expect(order[16]).toBe(0xff);
   });
 });

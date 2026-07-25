@@ -53,9 +53,8 @@ describe('atD890RegionLabel / atD890WriteRole', () => {
     expect(atD890WriteRole(addr)).toBe('replaced');
   });
 
-  it('keeps unknown addresses as other retained', () => {
-    // TalkgroupOrder — documented but not modelled / not in v1 download path.
-    expect(atD890RegionLabel(D890_MAP.TalkgroupOrder)).toBe('Other retained region');
-    expect(atD890WriteRole(D890_MAP.TalkgroupOrder)).toBe('kept');
+  it('classifies TalkgroupOrder as replaced when talk groups are rewritten', () => {
+    expect(atD890RegionLabel(D890_MAP.TalkgroupOrder)).toBe('Talk group order');
+    expect(atD890WriteRole(D890_MAP.TalkgroupOrder)).toBe('replaced');
   });
 });
