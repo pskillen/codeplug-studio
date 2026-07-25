@@ -694,11 +694,8 @@ function stampUv5rMiniChannelBehaviour(
     const row = channelByNumber.get(dto.slotIndex);
     if (!row) return dto;
     const scanAdd =
-      resolveChannelScanInclusionForExport(
-        row.entity,
-        row.scanInclusionOverride,
-        scanContext,
-      ) === 'scan';
+      resolveChannelScanInclusionForExport(row.entity, row.scanInclusionOverride, scanContext) ===
+      'scan';
     return { ...dto, scanAdd };
   });
 }

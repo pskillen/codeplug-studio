@@ -7,6 +7,7 @@ import {
 import {
   decodeChannelRecord,
   decodeChannelsFromImage,
+  decodeTone,
   encodeBcdFreq,
   encodeChannelRecord,
   encodeChannelsIntoImage,
@@ -44,6 +45,15 @@ describe('channelCodec BCD / tone', () => {
   it('encodes CTCSS tone', () => {
     const bytes = encodeTone({ kind: 'ctcss', hz: 88.5 });
     expect(bytes[0]! | (bytes[1]! << 8)).toBe(885);
+  });
+
+  it('round-trips DTCS normal and reverse polarity', () => {
+    const normal = { kind: 'dcs' as const, code: 23, polarity: 'N' as const };
+    const reverse = { kind: 'dcs' as const, code: 23, polarity: 'I' as const };
+    expect(decodeTone(encodeTone(normal))).toEqual(normal);
+    expect(decodeTone(encodeTone(reverse))).toEqual(reverse);
+    const reverseWire = encodeTone(reverse);
+    expect(reverseWire[0]! | (reverseWire[1]! << 8)).toBeGreaterThan(0x69);
   });
 });
 

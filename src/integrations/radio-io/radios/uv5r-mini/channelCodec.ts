@@ -61,9 +61,10 @@ export function decodeTone(bytes: Uint8Array): RadioTone {
   const val = bytes[0]! | (bytes[1]! << 8);
   if (val === 0 || val === 0xffff) return { kind: 'none' };
   if (val >= 0x258) return { kind: 'ctcss', hz: val / 10 };
-  const idx = val > 0x69 ? val - 0x6a : val - 1;
+  const reverse = val > 0x69;
+  const idx = reverse ? val - 0x6a : val - 1;
   const code = DTCS_CODES[idx];
-  return code != null ? { kind: 'dcs', code } : { kind: 'none' };
+  return code != null ? { kind: 'dcs', code, polarity: reverse ? 'I' : 'N' } : { kind: 'none' };
 }
 
 export function encodeTone(tone: RadioTone | null | undefined): Uint8Array {
@@ -75,7 +76,7 @@ export function encodeTone(tone: RadioTone | null | undefined): Uint8Array {
   }
   const idx = DTCS_CODES.indexOf(tone.code);
   if (idx >= 0) {
-    const wire = idx + 1;
+    const wire = idx + 1 + (tone.polarity === 'I' ? 0x69 : 0);
     return new Uint8Array([wire & 0xff, (wire >> 8) & 0xff]);
   }
   return new Uint8Array([0, 0]);
