@@ -32,13 +32,12 @@ import {
   bulkReadDm32Blocks,
   classifyDm32Metadata,
   discoverDm32MemoryBlocks,
-  dm32HydrationAddressMismatches,
   groupDm32BlocksForProgress,
   readChannelCount,
-  readDm32BlockMetadataTags,
   selectBlocksToBulkRead,
   type Dm32DiscoveredBlock,
 } from './memory.ts';
+import { remapDm32BlocksByMetadata, remapDm32MemoryMapByTranslations } from './remap.ts';
 import {
   dm32MaxContactsFromFirmware,
   parseDm32ContactsRange,
@@ -49,6 +48,13 @@ import {
 
 /** Max MemoryMap span when folding contact bank into config window (bytes). */
 const DM32_MAX_COMBINED_MAP_BYTES = 32 * 1024 * 1024;
+
+/** V-frame config window from connect — not overwritten when seeding hydration for Write. */
+export interface Dm32LiveLayout {
+  addressBase: number;
+  alignedEnd: number;
+  mapSize: number;
+}
 
 export interface Dm32DownloadCache {
   addressBase: number;
@@ -97,6 +103,8 @@ export class Dm32uvProtocol implements CloneImageRadio {
   private pipe: BytePipe | null = null;
   private settle: Dm32SettleOptions = { settleScale: 1 };
   private cache: Dm32DownloadCache | null = null;
+  /** Live config range from V-frame 0x0A at connect — survives hydration seed. */
+  private liveLayout: Dm32LiveLayout | null = null;
   private programming = false;
 
   /** Last successful download cache (for hydration / RMW). */
@@ -175,6 +183,7 @@ export class Dm32uvProtocol implements CloneImageRadio {
       parseDm32MaxContacts(vframes.get(DM32_VFRAME.MAX_CONTACTS) ?? new Uint8Array()) ??
       dm32MaxContactsFromFirmware(firmware);
 
+    this.liveLayout = { addressBase, alignedEnd, mapSize };
     this.cache = {
       addressBase,
       mapSize,
@@ -344,50 +353,68 @@ export class Dm32uvProtocol implements CloneImageRadio {
       });
       this.programming = true;
     }
-    const addresses = [...this.cache.blocks.keys()].sort((a, b) => a - b);
-    if (addresses.length === 0) {
+    if (this.cache.blocks.size === 0) {
       throw new RadioProtocolError(
         'DM-32UV upload has no sparse blocks — seed from a prior Read hydration before Write',
       );
     }
+    if (!this.liveLayout) {
+      throw new RadioProtocolError('DM-32UV live memory layout unknown — reconnect before Write');
+    }
 
-    // Stale hydration after factory reset / CPS rewrite writes to the wrong absolute
-    // addresses (ZONE/VFO/channel banks move). Verify tags before any Write.
+    const settle = { ...this.settle, signal: opts.signal ?? this.settle.signal };
+    const seededAddressBase = this.cache.addressBase;
+    const seededBlocks = new Map(this.cache.blocks);
+    const seededDiscovered = this.cache.discovered.map((b) => ({ ...b }));
+
     reportProgress(
       opts.onProgress,
       {
         cur: 0,
-        max: addresses.length || 1,
-        msg: 'Checking radio memory map…',
-        stage: 'Verify memory map',
+        max: 100,
+        msg: 'Discovering live memory map…',
+        stage: 'Discover memory map',
       },
       opts.signal,
     );
-    const expected = addresses.map((address) => {
-      const known = this.cache!.discovered.find((b) => b.address === address);
-      const data = this.cache!.blocks.get(address);
-      const metadata = known?.metadata ?? data?.[DM32_BLOCK_SIZE - 1] ?? 0xff;
-      return { address, metadata };
-    });
-    const live = await readDm32BlockMetadataTags(this.pipe, addresses, {
-      ...this.settle,
-      signal: opts.signal ?? this.settle.signal,
-    });
-    const mismatches = dm32HydrationAddressMismatches(expected, live);
-    if (mismatches.length > 0) {
-      const sample = mismatches
+    const liveDiscovered = await discoverDm32MemoryBlocks(
+      this.pipe,
+      this.liveLayout.addressBase,
+      this.liveLayout.alignedEnd,
+      { ...settle, onProgress: opts.onProgress },
+    );
+
+    const remapOutcome = remapDm32BlocksByMetadata(seededBlocks, seededDiscovered, liveDiscovered);
+    if (!remapOutcome.ok) {
+      const sample = remapOutcome.missing
         .slice(0, 3)
         .map(
-          (m) =>
-            `0x${m.address.toString(16)} expected 0x${m.expected.toString(16)}, radio has 0x${m.live.toString(16)}`,
+          (m) => `tag 0x${m.metadata.toString(16)} (hydration 0x${m.seededAddress.toString(16)})`,
         )
         .join('; ');
       throw new RadioProtocolError(
-        `Radio memory map changed since the last Read (common after a factory reset). ${sample}. Read from the radio again on this egress, then Write.`,
+        `Live radio memory map is missing required banks (${sample}). Read from the radio to refresh unmodelled settings, or reprogram with vendor CPS.`,
       );
     }
 
-    const blocks = memoryMapToDm32Blocks(image, this.cache.addressBase, addresses);
+    const { blocks: remappedBlocks, discovered: remappedDiscovered, translations } = remapOutcome;
+    const addresses = [...remappedBlocks.keys()].sort((a, b) => a - b);
+
+    const remappedImage = remapDm32MemoryMapByTranslations(
+      image,
+      seededAddressBase,
+      this.liveLayout.addressBase,
+      this.liveLayout.mapSize,
+      translations,
+      addresses,
+    );
+
+    this.cache.addressBase = this.liveLayout.addressBase;
+    this.cache.mapSize = this.liveLayout.mapSize;
+    this.cache.discovered = remappedDiscovered;
+    this.cache.blocks = remappedBlocks;
+
+    const blocks = memoryMapToDm32Blocks(remappedImage, this.cache.addressBase, addresses);
     const byAddr = new Map(this.cache.discovered.map((b) => [b.address, b]));
     const discoveredForProgress: Dm32DiscoveredBlock[] = addresses.map((address) => {
       const known = byAddr.get(address);
@@ -400,7 +427,6 @@ export class Dm32uvProtocol implements CloneImageRadio {
       return { address, metadata, type };
     });
     const groups = groupDm32BlocksForProgress(discoveredForProgress);
-    const settle = { ...this.settle, signal: opts.signal ?? this.settle.signal };
     const scale = settle.settleScale ?? 1;
     const interBlockMs = scale <= 0 ? 0 : DM32_CONNECTION.BLOCK_READ_DELAY_MS * scale;
 
