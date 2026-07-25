@@ -25,6 +25,7 @@ import {
 import {
   RADIO_IO_PROFILES,
   getRadioIoProfile,
+  isRadioIoAtD890uvProfile,
   isRadioIoDm32uvProfile,
   isRadioIoOpenGd771701Profile,
   type RadioIoRadioProfile,
@@ -150,6 +151,15 @@ export function scanListMemberCapForProfile(formatId: FormatId, profileId: strin
     const profile = getNeonplugProfile(profileId);
     if (isNeonplugDm32uvProfile(profile)) return profile.scanListMembers;
   }
+  if (formatId === 'radio-io') {
+    try {
+      const profile = getRadioIoProfile(profileId);
+      if (isRadioIoDm32uvProfile(profile)) return profile.scanListMembers;
+      if (isRadioIoAtD890uvProfile(profile)) return profile.scanListMembers;
+    } catch {
+      /* fall through */
+    }
+  }
   return 16;
 }
 
@@ -202,6 +212,9 @@ export function formatProfileWireHint(formatId: FormatId, profileId: string): st
     try {
       const profile = getRadioIoProfile(profileId);
       if (isRadioIoDm32uvProfile(profile)) {
+        return `${profile.nameLimit}-char wire names · ${profile.maxMemorySlots} channels max · Web Serial`;
+      }
+      if (isRadioIoAtD890uvProfile(profile)) {
         return `${profile.nameLimit}-char wire names · ${profile.maxMemorySlots} channels max · Web Serial`;
       }
       if (isRadioIoOpenGd771701Profile(profile)) {

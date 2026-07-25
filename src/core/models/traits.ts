@@ -113,6 +113,17 @@ export const TRAIT_PROFILES: Record<string, TraitProfile> = {
       BuildCapabilityTrait.MxNChannelExpansion,
     ],
   },
+  /** Web Serial direct-write — Anytone AT-D890UV sparse D890_MAP. */
+  'radio-io-at-d890uv': {
+    profileId: 'radio-io-at-d890uv',
+    formatId: 'radio-io',
+    label: 'Anytone AT-D890UV',
+    traits: [
+      BuildCapabilityTrait.ZoneGrouping,
+      BuildCapabilityTrait.DedicatedScanLists,
+      BuildCapabilityTrait.MxNChannelExpansion,
+    ],
+  },
   /** Web Serial direct-write — OpenGD77 / OpenUV380 (DM-1701). */
   'radio-io-opengd77-1701': {
     profileId: 'radio-io-opengd77-1701',

@@ -111,7 +111,10 @@ export const RADIO_TARGETS: Record<string, RadioTarget> = {
     label: 'Anytone AT-D890UV',
     group: 'Anytone',
     traits: anytoneTraits,
-    compatibleEgress: [egress('anytone', 'anytone-at-d890uv', 'Anytone CSV')],
+    compatibleEgress: [
+      egress('radio-io', 'radio-io-at-d890uv', 'Web Serial'),
+      egress('anytone', 'anytone-at-d890uv', 'Anytone CSV'),
+    ],
   },
 };
 

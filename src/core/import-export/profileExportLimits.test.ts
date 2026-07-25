@@ -138,4 +138,15 @@ describe('getProfileExportLimits', () => {
     expect(limits!.maxScanLists).toBe('not_used');
     expect(limits!.powerLadder.map((e) => e.wire)).toEqual(['High', 'Low']);
   });
+
+  it('projects Anytone AT-D890UV Direct radio limits from radio-io profile', () => {
+    const limits = getProfileExportLimits('radio-io', 'radio-io-at-d890uv');
+    expect(limits).not.toBeNull();
+    expect(limits!.maxChannels).toBe(4000);
+    expect(limits!.nameLengthChannel).toBe(16);
+    expect(limits!.maxScanLists).toBe(100);
+    expect(limits!.scanListMembers).toBe(100);
+    expect(limits!.zoneMembers).toBe(64);
+    expect(limits!.powerLadder.map((e) => e.wire)).toEqual(['Turbo', 'High', 'Mid', 'Low']);
+  });
 });

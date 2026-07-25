@@ -68,6 +68,7 @@ describe('radio target catalog', () => {
       'neonplug-uv5rmini',
       'radio-io-uv5r-mini',
       'radio-io-dm32uv',
+      'radio-io-at-d890uv',
       'radio-io-opengd77-1701',
     ]) {
       expect(ids).toContain(profileId);
@@ -82,6 +83,7 @@ describe('radio target catalog', () => {
     expect(radioTargetHasCompatibleFormat('baofeng-dm32uv', 'dm32')).toBe(true);
     expect(radioTargetHasCompatibleFormat('baofeng-dm32uv', 'radio-io')).toBe(true);
     expect(radioTargetHasCompatibleFormat('anytone-at-d890uv', 'anytone')).toBe(true);
+    expect(radioTargetHasCompatibleFormat('anytone-at-d890uv', 'radio-io')).toBe(true);
   });
 
   it('gates Export projection traits by radio target for multi-egress Mini', () => {

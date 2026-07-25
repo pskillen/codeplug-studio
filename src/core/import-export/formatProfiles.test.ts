@@ -40,6 +40,7 @@ describe('formatProfiles', () => {
     expect(profiles.map((p) => p.profileId)).toEqual([
       'radio-io-uv5r-mini',
       'radio-io-dm32uv',
+      'radio-io-at-d890uv',
       'radio-io-opengd77-1701',
     ]);
     expect(profiles[0]?.nameLimit).toBe(12);
