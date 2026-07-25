@@ -34,6 +34,18 @@ describe('talkGroupCodec', () => {
     const set = image.get(D890_MAP.TalkgroupSet, 0x4f0);
     expect(listSetBits(set, true)).toEqual([0]);
   });
+
+  it('addresses talkgroup slots with stride 0xc8', () => {
+    const image = createMemoryMap(0x500_0000);
+    image.fill(0, 0x500_0000, 0xff);
+    encodeTalkgroupsIntoAtD890Image(image, [
+      { index: 1, wireName: 'A', digitalId: 1, callType: 0x04 },
+      { index: 2, wireName: 'B', digitalId: 2, callType: 0x04 },
+    ]);
+    expect(image.get(D890_MAP.TalkgroupData + 0xc8, 1)[0]).toBe(0x04);
+    // Slot 1 must not sit at the old wrong pitch 0xd0
+    expect(image.get(D890_MAP.TalkgroupData + 0xd0, 1)[0]).not.toBe(0x04);
+  });
 });
 
 describe('zone shrink on merge', () => {

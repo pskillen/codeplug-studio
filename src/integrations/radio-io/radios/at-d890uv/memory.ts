@@ -186,7 +186,7 @@ export function applyAtD890WriteImageToCache(cache: AtD890DownloadCache, image: 
     putCacheBytes(
       cache,
       talkgroupAddress(idx),
-      image.get(talkgroupAddress(idx), AT_D890_LIMITS.TALKGROUP_STRIDE),
+      image.get(talkgroupAddress(idx), AT_D890_LIMITS.TALKGROUP_IO_LENGTH),
     );
   }
 

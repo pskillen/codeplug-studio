@@ -38,7 +38,7 @@ export function encodeTalkgroupsIntoAtD890Image(
   clearBitmap(set, true);
   const max = set.length * 8;
   for (let i = 0; i < max; i++) {
-    image.fill(talkgroupAddress(i), AT_D890_LIMITS.TALKGROUP_STRIDE, 0);
+    image.fill(talkgroupAddress(i), AT_D890_LIMITS.TALKGROUP_RECORD_SIZE, 0);
   }
   for (const tg of talkGroups) {
     if (tg.digitalId <= 0) continue;
@@ -63,7 +63,7 @@ export function syncTalkgroupRegionsToCache(cache: AtD890DownloadCache, image: M
     putCacheBytes(
       cache,
       talkgroupAddress(idx),
-      image.get(talkgroupAddress(idx), AT_D890_LIMITS.TALKGROUP_STRIDE),
+      image.get(talkgroupAddress(idx), AT_D890_LIMITS.TALKGROUP_IO_LENGTH),
     );
   }
 }

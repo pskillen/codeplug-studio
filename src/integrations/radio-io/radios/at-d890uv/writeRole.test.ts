@@ -35,6 +35,7 @@ describe('atD890RegionLabel / atD890WriteRole', () => {
     expect(addr).toBeGreaterThan(D890_MAP.ReceiveGroupSet);
     expect(atD890RegionLabel(addr)).toBe('Talk groups');
     expect(atD890WriteRole(addr)).toBe('replaced');
+    expect(talkgroupAddress(1)).toBe(D890_MAP.TalkgroupData + 0xc8);
     expect(atD890RegionLabel(talkgroupAddress(9))).toBe('Talk groups');
   });
 

@@ -29,7 +29,6 @@ import {
   talkgroupAddress,
   receiveGroupAddress,
   radioIdAddress,
-  alignAtD890ReadLength,
   type AtD890DownloadCache,
 } from './memory.ts';
 import { decodeChannelsFromAtD890Cache, encodeChannelsIntoAtD890Image } from './channelCodec.ts';
@@ -127,7 +126,7 @@ export async function downloadAtD890SparseRegions(
       pipe,
       cache,
       talkgroupAddress(idx),
-      alignAtD890ReadLength(AT_D890_LIMITS.TALKGROUP_STRIDE),
+      AT_D890_LIMITS.TALKGROUP_IO_LENGTH,
       signal,
     );
   }

@@ -36,8 +36,11 @@ export const AT_D890_LIMITS = {
   RADIO_ID_SET_BYTES: 0x20,
   RADIO_ID_STRIDE: 0x40,
   TALKGROUP_SET_BYTES: 0x4f0,
-  TALKGROUP_STRIDE: 0xd0,
+  /** Index pitch (`D890_MAP.TalkgroupDataOffset`); not the serial transfer length. */
+  TALKGROUP_STRIDE: 0xc8,
   TALKGROUP_RECORD_SIZE: 0xc8,
+  /** 16-aligned sparse R/W length (`align(0xc8)`); may overlap next slot by 8 bytes. */
+  TALKGROUP_IO_LENGTH: 0xd0,
   CHANNEL_RECORD_SIZE: 0x80,
   CHANNEL_CHUNK_SIZE: 0x40,
 } as const;
@@ -72,7 +75,7 @@ export const D890_MAP = {
   ScanListLength: 0xd0,
   TalkgroupSet: 0x398_0000,
   TalkgroupData: 0x3a0_0000,
-  TalkgroupStride: 0xd0,
+  TalkgroupStride: 0xc8,
   TalkgroupLength: 0xc8,
   TalkgroupOrder: 0x3f0_0000,
   ReceiveGroupSet: 0x370_1510,
