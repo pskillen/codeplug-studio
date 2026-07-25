@@ -79,7 +79,10 @@ export const RADIO_TARGETS: Record<string, RadioTarget> = {
     label: 'Retevis RT95 VOX',
     group: 'Retevis',
     traits: flatAnalog,
-    compatibleEgress: [egress('chirp', 'chirp-rt95', 'CHIRP CSV')],
+    compatibleEgress: [
+      egress('radio-io', 'radio-io-rt95', 'Web Serial'),
+      egress('chirp', 'chirp-rt95', 'CHIRP CSV'),
+    ],
   },
   'baofeng-dm32uv': {
     id: 'baofeng-dm32uv',

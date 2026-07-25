@@ -37,12 +37,23 @@ describe('radio target catalog', () => {
     expect(uv21!.compatibleEgress.map((e) => e.profileId)).toEqual(['radio-io-uv21', 'chirp-uv21']);
   });
 
+  it('lists RT95 VOX with Web Serial and CHIRP egress', () => {
+    const rt95 = radioTargetFor('retevis-rt95');
+    expect(rt95).toBeDefined();
+    expect(rt95!.compatibleEgress.map((e) => e.profileId)).toEqual([
+      'radio-io-rt95',
+      'chirp-rt95',
+    ]);
+  });
+
   it('maps legacy profile ids to a single Mini radio target', () => {
     expect(radioTargetIdForProfile('chirp-uv5r')).toBe('baofeng-uv5r-mini');
     expect(radioTargetIdForProfile('neonplug-uv5rmini')).toBe('baofeng-uv5r-mini');
     expect(radioTargetIdForProfile('radio-io-uv5r-mini')).toBe('baofeng-uv5r-mini');
     expect(radioTargetIdForProfile('radio-io-uv21')).toBe('baofeng-uv21');
     expect(radioTargetIdForProfile('chirp-uv21')).toBe('baofeng-uv21');
+    expect(radioTargetIdForProfile('radio-io-rt95')).toBe('retevis-rt95');
+    expect(radioTargetIdForProfile('chirp-rt95')).toBe('retevis-rt95');
   });
 
   it('exposes flat-memory traits for Mini', () => {
@@ -81,6 +92,7 @@ describe('radio target catalog', () => {
       'radio-io-dm32uv',
       'radio-io-at-d890uv',
       'radio-io-opengd77-1701',
+      'radio-io-rt95',
     ]) {
       expect(ids).toContain(profileId);
     }
