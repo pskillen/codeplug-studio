@@ -28,10 +28,7 @@ describe('encodeRadioIdsIntoAtD890Image', () => {
     const oldSet = new Uint8Array(AT_D890_LIMITS.RADIO_ID_SET_BYTES);
     setBitmapBit(oldSet, 1, true);
     image.set(D890_MAP.RadioIdSet, oldSet);
-    image.set(
-      radioIdAddress(1),
-      encodeAtD890RadioIdRecord({ index: 1, dmrId: 111, name: 'Old' }),
-    );
+    image.set(radioIdAddress(1), encodeAtD890RadioIdRecord({ index: 1, dmrId: 111, name: 'Old' }));
 
     encodeRadioIdsIntoAtD890Image(image, [{ index: 0, dmrId: 999, name: 'New' }]);
 
