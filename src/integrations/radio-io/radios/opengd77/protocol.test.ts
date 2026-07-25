@@ -14,7 +14,12 @@ import {
 import { encodeChannelsIntoImage } from './channelCodec.ts';
 import { OPENUV380_FLASH_SPANS, OPENUV380_OFFSET } from './constants.ts';
 import { createOpenUv380Image, readAbs } from './memory.ts';
-import { OPENGD77_FIRMWARE_INFO_SIZE, OpenGd77Protocol, createOpenGd77Md9600Protocol, parseFirmwareInfo } from './protocol.ts';
+import {
+  OPENGD77_FIRMWARE_INFO_SIZE,
+  OpenGd77Protocol,
+  createOpenGd77Md9600Protocol,
+  parseFirmwareInfo,
+} from './protocol.ts';
 
 function putU32Le(buf: Uint8Array, offset: number, value: number): void {
   buf[offset] = value & 0xff;

@@ -14,7 +14,11 @@ import {
   powerPercentToWire,
   powerWireToPercent,
 } from './channelCodec.ts';
-import { OPENGD77_CHANNEL_RECORD_SIZE, OPENGD77_CHANNEL_SLOTS, OPENGD77_MD9600_POWER_STEPS } from './constants.ts';
+import {
+  OPENGD77_CHANNEL_RECORD_SIZE,
+  OPENGD77_CHANNEL_SLOTS,
+  OPENGD77_MD9600_POWER_STEPS,
+} from './constants.ts';
 import { createOpenUv380Image } from './memory.ts';
 
 function sampleDto(overrides: Partial<RadioChannelDto> = {}): RadioChannelDto {

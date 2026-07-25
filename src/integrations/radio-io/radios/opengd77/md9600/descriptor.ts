@@ -3,7 +3,11 @@
  */
 
 import type { RadioDescriptor, RadioHydrationHooks } from '../../../types.ts';
-import { OPENGD77_BAUD_RATE, OPENGD77_CHANNEL_SLOTS, OPENGD77_MD9600_POWER_STEPS } from '../constants.ts';
+import {
+  OPENGD77_BAUD_RATE,
+  OPENGD77_CHANNEL_SLOTS,
+  OPENGD77_MD9600_POWER_STEPS,
+} from '../constants.ts';
 import {
   extractOpenGd77Hydration,
   mergeChannelsIntoOpenGd77Hydration,
@@ -40,13 +44,7 @@ const hydration: RadioHydrationHooks = {
 };
 
 export const OPENGD77_MD9600_DESCRIPTOR: RadioDescriptor = {
-  modelIds: [
-    OPENGD77_MD9600_MODEL_ID,
-    'MD-9600',
-    'RT-90',
-    'TYT MD-9600',
-    'Retevis RT-90',
-  ],
+  modelIds: [OPENGD77_MD9600_MODEL_ID, 'MD-9600', 'RT-90', 'TYT MD-9600', 'Retevis RT-90'],
   label: 'TYT MD-9600 / RT-90 (OpenGD77)',
   group: 'TYT',
   supportsBle: false,
