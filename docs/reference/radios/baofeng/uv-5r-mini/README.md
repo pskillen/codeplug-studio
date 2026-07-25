@@ -26,7 +26,7 @@ Handheld analogue FM/AM radio (UV-17Pro lineage). Studio targets it via CHIRP CS
 | Doc                                    | Contents                                                              |
 | -------------------------------------- | --------------------------------------------------------------------- |
 | [limits.md](limits.md)                 | Memory slots, name length                                             |
-| [capabilities.md](capabilities.md)     | Modes, organisation traits, RF summary; Web Serial scan-bit gap       |
+| [capabilities.md](capabilities.md)     | Modes, organisation traits, RF summary                                |
 | [power.md](power.md)                   | High / Low ladder (internal %)                                        |
 | [memory-layout.md](memory-layout.md)   | Multi-region image map, packed offsets, FW overlay at `0x1EF0`        |
 | [channel-record.md](channel-record.md) | 32-byte channel layout + enums; full-span clear + TX inhibit on Write |
@@ -41,7 +41,7 @@ Handheld analogue FM/AM radio (UV-17Pro lineage). Studio targets it via CHIRP CS
 
 ## Direct read/write (binary)
 
-PROGRAM+R/W clone protocol for Web Serial (**shipped**). See the binary docs in the map above. Known Write gaps: scan bit ([#696](https://github.com/pskillen/codeplug-studio/issues/696)), DTCS reverse polarity ([#697](https://github.com/pskillen/codeplug-studio/issues/697)).
+PROGRAM+R/W clone protocol for Web Serial (**shipped**). See the binary docs in the map above. Known Write gap: DTCS reverse polarity ([#697](https://github.com/pskillen/codeplug-studio/issues/697)).
 
 ## Ground truth (cite; do not copy)
 

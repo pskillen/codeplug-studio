@@ -31,7 +31,8 @@ There is **no** separate channel-count field in the image — occupancy is per-s
 | `14` bits 0–1 | `lowpower`                      | `0` = High; non-zero → Low (see [power.md](power.md))                    |
 | `14`          | other bitfields                 | CHIRP `scramble` etc.; NeonPlug largely ignores on decode                |
 | `15` bit 6    | `wide`                          | **Polarity:** `1` = NFM, `0` = FM (inverted vs classic UV-5R)            |
-| `15` other    | `sqmode`, `bcl`, `scan`, `fhss` | CHIRP extras; NeonPlug decode focuses on wide bit                        |
+| `15` bit 2    | `scan`                          | `1` = participate in scan (CHIRP not Skip); Studio maps effective scan inclusion on Write ([#696](https://github.com/pskillen/codeplug-studio/issues/696)) |
+| `15` other    | `sqmode`, `bcl`, `fhss`         | CHIRP extras; NeonPlug decode focuses on wide bit                        |
 | `16–19`       | unknown                         | CHIRP reserved                                                           |
 | `20–31`       | name                            | 12 chars; stop at `0x00` / `0xFF`                                        |
 
