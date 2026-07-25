@@ -27,15 +27,17 @@ Many metadata prefixes line up (same 4 KB quantum), but **payloads differ** — 
 
 ## Sparse absolute addresses are not stable across factory reset
 
-After a **factory reset** (or a full CPS rewrite), the radio can place ZONE / VFO / channel banks at **different absolute addresses** while keeping the same metadata tags. Studio Write is **selective-range**: it uploads only the addresses stored in the last Read hydration.
+After a **factory reset** (or a full CPS rewrite), the radio can place ZONE / VFO / channel banks at **different absolute addresses** while keeping the same metadata tags. Studio Write is **selective-range**: it uploads only the sparse blocks from the last Read hydration, but **remaps them onto the live map before upload**.
 
-| Hydration (example, pre-reset) | Live radio (post-reset) | Effect of Write with stale bag                                                        |
+| Hydration (example, pre-reset) | Live radio (post-reset) | Without remap (historical)                                                            |
 | ------------------------------ | ----------------------- | ------------------------------------------------------------------------------------- |
 | ZONE at `0x77000`              | ZONE at `0x6b000`       | User zones written to orphan address; live bank stays factory `Zone-Ana` / `Zone-Dig` |
 | VFO at `0x86000`               | VFO at `0x63000`        | Startup text / key settings never update on the live settings block                   |
 | SCAN at `0x62000`              | SCAN at `0x62000`       | Scan lists may still land (address unchanged)                                         |
 
-**Operator rule:** after factory reset, **Read on this egress first**, then Write. Studio now verifies metadata tags at seeded addresses before Write and refuses with an explicit error when the map has moved.
+**Write behaviour (#703):** before every upload, Studio runs a **lightweight metadata discover** over the V-frame `0x0A` config range (one byte per 4KB block — not a full clone Read). Hydration blocks and the prepared write image are **remapped by metadata tag** onto live absolute addresses, then uploaded. Refuse only when a required tag from the hydration bag is missing on the live radio.
+
+**Full Read** remains the path to refresh **unmodelled retain payloads** (settings slices not replaced by the build) from the radio — it is not required solely to learn current block addresses.
 
 | Constant        | Value          | Role                                               |
 | --------------- | -------------- | -------------------------------------------------- |
