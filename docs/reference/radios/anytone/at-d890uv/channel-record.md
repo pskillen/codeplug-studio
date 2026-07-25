@@ -39,6 +39,8 @@ Assemble decode buffer as `primary ‖ secondary`. Split encode the same way bef
 | Size     | `0x200` bytes                         |
 | Sense    | Bit **set** → channel present         |
 | Indexing | Slot `n` → byte `n // 8`, bit `n % 8` |
+| Modelled slots | `0 … 3999` (`MAX_CHANNELS`) — Studio Write clears and re-encodes these bits only |
+| High bits | Bits `4000+` in the `0x200`-byte bitmap are **preserved** on Write (VFO-ish / RE slots; bodies not modelled as library channels) |
 
 Empty slots (RX frequency 0 / unset) should clear the bit and skip body writes.
 
