@@ -14,7 +14,7 @@ import {
 import { encodeChannelsIntoImage } from './channelCodec.ts';
 import { OPENUV380_FLASH_SPANS, OPENUV380_OFFSET } from './constants.ts';
 import { createOpenUv380Image, readAbs } from './memory.ts';
-import { OPENGD77_FIRMWARE_INFO_SIZE, OpenGd77Protocol, parseFirmwareInfo } from './protocol.ts';
+import { OPENGD77_FIRMWARE_INFO_SIZE, OpenGd77Protocol, createOpenGd77Md9600Protocol, parseFirmwareInfo } from './protocol.ts';
 
 function putU32Le(buf: Uint8Array, offset: number, value: number): void {
   buf[offset] = value & 0xff;
@@ -177,6 +177,14 @@ describe('OpenGd77Protocol', () => {
 
     const image = await proto.download({});
     expect(readAbs(image, OPENUV380_OFFSET.channelBank0 + 0x10, 1)[0]).toBe(0xaa);
+  });
+
+  it('connects MD-9600 radioType 0x05', async () => {
+    const pipe = new OpenGd77ScriptedPipe(0x05);
+    const proto = createOpenGd77Md9600Protocol() as OpenGd77Protocol;
+    const ident = await proto.connect(pipe);
+    expect(ident.firmwareHint).toBe('R20240101000000');
+    expect(proto.getFirmwareInfo()?.radioType).toBe(0x05);
   });
 
   it('uploads dirty flash sectors with X framing', async () => {
