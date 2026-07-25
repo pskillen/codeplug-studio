@@ -1,6 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import { encodeAtD890ChannelRecord, parseAtD890ChannelRecord } from './channelCodec.ts';
+import { createMemoryMap } from '../../kit/memoryMap.ts';
+import {
+  encodeAtD890ChannelRecord,
+  encodeChannelsIntoAtD890Image,
+  parseAtD890ChannelRecord,
+} from './channelCodec.ts';
 import type { RadioChannelDto } from '../../radioChannelDto.ts';
+import { AT_D890_LIMITS, AT_D890_MAP_SIZE, D890_MAP } from './constants.ts';
+import { setBitmapBit } from './bitmap.ts';
 
 describe('encodeAtD890ChannelRecord', () => {
   it('round-trips a simple FM channel', () => {
@@ -45,6 +52,34 @@ describe('encodeAtD890ChannelRecord', () => {
     expect(decoded.rxTone).toEqual({ kind: 'dcs', code: 123, polarity: 'N' });
     expect(decoded.txTone).toEqual({ kind: 'dcs', code: 456, polarity: 'I' });
     expect(decoded.timeslot).toBe(2);
+  });
+
+  it('preserves ChannelSet bits at or above MAX_CHANNELS on Write', () => {
+    const image = createMemoryMap(AT_D890_MAP_SIZE);
+    const set = image.get(D890_MAP.ChannelSet, AT_D890_LIMITS.CHANNEL_SET_BYTES);
+    setBitmapBit(set, 4000, true);
+    setBitmapBit(set, 4001, true);
+    image.set(D890_MAP.ChannelSet, set);
+
+    encodeChannelsIntoAtD890Image(image, [
+      {
+        slotIndex: 1,
+        empty: false,
+        wireName: 'CH1',
+        rxHz: 145_520_000,
+        txHz: 145_520_000,
+        rxTone: { kind: 'none' },
+        txTone: { kind: 'none' },
+        powerPercent: 100,
+        bandwidth: 'FM',
+        mode: 'analog',
+      },
+    ]);
+
+    const after = image.get(D890_MAP.ChannelSet, AT_D890_LIMITS.CHANNEL_SET_BYTES);
+    expect((after[500]! & 0x01) !== 0).toBe(true); // bit 4000
+    expect((after[500]! & 0x02) !== 0).toBe(true); // bit 4001
+    expect((after[0]! & 0x01) !== 0).toBe(true); // bit 0 set for channel 1
   });
 
   it('returns empty record for vacant slot', () => {
