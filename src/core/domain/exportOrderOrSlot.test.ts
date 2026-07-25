@@ -4,10 +4,12 @@ import { newChannel } from '@core/domain/factories.ts';
 import { newFormatBuild } from '@core/domain/factories.ts';
 import {
   applyDenseChannelOrderOrSlots,
+  buildCopyOrderFromBuildConfirmMessage,
   chirpMemoryChannelIds,
   clearAllOrderOrSlots,
   hasAnyOrderOrSlotOverride,
   migrateFlatMemoryLayoutToOrderOrSlot,
+  projectFlatMemoryOrderFromSource,
   resolveChirpChannelMemorySlots,
 } from './exportOrderOrSlot.ts';
 
@@ -165,6 +167,70 @@ describe('exportOrderOrSlot', () => {
     expect(chirpMemoryChannelIds(migrated, library)).toEqual(['ch-2', 'ch-1']);
     expect(migrated.channelOverrides.find((row) => row.libraryEntityId === 'ch-3')?.excluded).toBe(
       true,
+    );
+  });
+
+  describe('projectFlatMemoryOrderFromSource', () => {
+    it('preserves full overlap in source order', () => {
+      expect(
+        projectFlatMemoryOrderFromSource(['a', 'b', 'c'], ['a', 'b', 'c']),
+      ).toEqual({
+        orderedIds: ['a', 'b', 'c'],
+        matchedCount: 3,
+        unmatchedCount: 0,
+      });
+    });
+
+    it('reorders partial overlap and appends unmatched target channels', () => {
+      expect(
+        projectFlatMemoryOrderFromSource(['c', 'a'], ['a', 'b', 'c']),
+      ).toEqual({
+        orderedIds: ['c', 'a', 'b'],
+        matchedCount: 2,
+        unmatchedCount: 1,
+      });
+    });
+
+    it('returns target order when source is empty', () => {
+      expect(projectFlatMemoryOrderFromSource([], ['a', 'b'])).toEqual({
+        orderedIds: ['a', 'b'],
+        matchedCount: 0,
+        unmatchedCount: 2,
+      });
+    });
+
+    it('returns empty when target is empty', () => {
+      expect(projectFlatMemoryOrderFromSource(['a', 'b'], [])).toEqual({
+        orderedIds: [],
+        matchedCount: 0,
+        unmatchedCount: 0,
+      });
+    });
+
+    it('keeps target order when there is no overlap', () => {
+      expect(projectFlatMemoryOrderFromSource(['x', 'y'], ['a', 'b'])).toEqual({
+        orderedIds: ['a', 'b'],
+        matchedCount: 0,
+        unmatchedCount: 2,
+      });
+    });
+
+    it('ignores duplicate source ids', () => {
+      expect(
+        projectFlatMemoryOrderFromSource(['a', 'a', 'b'], ['a', 'b', 'c']),
+      ).toEqual({
+        orderedIds: ['a', 'b', 'c'],
+        matchedCount: 2,
+        unmatchedCount: 1,
+      });
+    });
+  });
+
+  it('buildCopyOrderFromBuildConfirmMessage reports match and unmatched counts', () => {
+    expect(buildCopyOrderFromBuildConfirmMessage('CHIRP UV-5R', 3, 0)).toContain('CHIRP UV-5R');
+    expect(buildCopyOrderFromBuildConfirmMessage('CHIRP UV-5R', 3, 0)).toContain('3 channels');
+    expect(buildCopyOrderFromBuildConfirmMessage('NeonPlug', 2, 1)).toContain(
+      '1 channel on this build',
     );
   });
 
