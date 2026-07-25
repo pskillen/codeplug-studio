@@ -117,10 +117,7 @@ describe('anytoneDmrRwCodec frames', () => {
 
 describe('enterAnytoneDmrProgramMode', () => {
   it('accepts QX\\x06 enter reply', async () => {
-    const { pipe, writes } = mockPipe([
-      new Uint8Array([0x51]),
-      new Uint8Array([0x58, 0x06]),
-    ]);
+    const { pipe, writes } = mockPipe([new Uint8Array([0x51]), new Uint8Array([0x58, 0x06])]);
     await enterAnytoneDmrProgramMode(pipe, 100);
     expect(new TextDecoder().decode(writes[0])).toBe('PROGRAM');
   });
@@ -132,9 +129,7 @@ describe('enterAnytoneDmrProgramMode', () => {
 
   it('rejects unexpected enter reply', async () => {
     const { pipe } = mockPipe([new Uint8Array([0xff])]);
-    await expect(enterAnytoneDmrProgramMode(pipe, 100)).rejects.toBeInstanceOf(
-      RadioProtocolError,
-    );
+    await expect(enterAnytoneDmrProgramMode(pipe, 100)).rejects.toBeInstanceOf(RadioProtocolError);
   });
 });
 

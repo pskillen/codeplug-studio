@@ -159,10 +159,7 @@ export function parseAnytoneDmrReadReply(frame: Uint8Array, expectedLength?: num
 /**
  * Enter program mode: PROGRAM → QX + 0x06 (anytone-cps also tolerates lone 0x00).
  */
-export async function enterAnytoneDmrProgramMode(
-  pipe: BytePipe,
-  timeoutMs: number,
-): Promise<void> {
+export async function enterAnytoneDmrProgramMode(pipe: BytePipe, timeoutMs: number): Promise<void> {
   await pipe.write(PROGRAM_ENTER);
 
   const first = await pipe.readExact(1, timeoutMs);
@@ -188,10 +185,7 @@ export async function enterAnytoneDmrProgramMode(
  * Version probe after enter: send 0x02 and read until trailing 0x06.
  * Returns raw bytes — model/version parsing belongs in radio modules.
  */
-export async function probeAnytoneDmrIdent(
-  pipe: BytePipe,
-  timeoutMs: number,
-): Promise<Uint8Array> {
+export async function probeAnytoneDmrIdent(pipe: BytePipe, timeoutMs: number): Promise<Uint8Array> {
   await pipe.write(new Uint8Array([0x02]));
 
   const deadline = Date.now() + timeoutMs;
