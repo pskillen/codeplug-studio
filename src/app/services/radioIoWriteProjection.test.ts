@@ -23,6 +23,18 @@ function emptyLibrary(channels: LibrarySlice['channels'] = []): LibrarySlice {
   };
 }
 
+function uv5rFlatMemoryBuild(
+  baseBuild: ReturnType<typeof newRadioBuildForProfile>['build'],
+  channelIds: string[],
+) {
+  return {
+    ...baseBuild,
+    layout: {
+      sections: [{ kind: 'flatMemory' as const, channelIds, scanFlags: {} }],
+    },
+  };
+}
+
 describe('buildRadioWriteProjection', () => {
   it('maps channels and source→number map for radio-io-dm32uv', () => {
     const ch = {
@@ -178,5 +190,68 @@ describe('buildRadioWriteProjection', () => {
     expect((walkRec[0x19]! >> 2) & 0x0f).toBe(2);
     expect(homeRec[0x19]! & 0x80).toBe(0x80); // FM
     expect(homeRec[0x19]! & 0x40).toBe(0x40); // scanAdd
+  });
+
+  it('stamps UV-5R Mini scanAdd from effective scan inclusion', () => {
+    const skipLib = {
+      ...newChannel('p1', 'Skip'),
+      id: 'ch-skip',
+      rxFrequency: 145_500_000,
+      txFrequency: 145_500_000,
+      scanInclusion: 'skip' as const,
+    };
+    const defaultLib = {
+      ...newChannel('p1', 'Default'),
+      id: 'ch-default',
+      rxFrequency: 145_600_000,
+      txFrequency: 145_600_000,
+      scanInclusion: 'default' as const,
+    };
+    const overrideLib = {
+      ...newChannel('p1', 'Override'),
+      id: 'ch-override',
+      rxFrequency: 145_700_000,
+      txFrequency: 145_700_000,
+      scanInclusion: 'default' as const,
+    };
+    const library = emptyLibrary([skipLib, defaultLib, overrideLib]);
+    const { build: baseBuild, egress } = newRadioBuildForProfile('p1', 'radio-io-uv5r-mini');
+    const build = uv5rFlatMemoryBuild(baseBuild, ['ch-skip', 'ch-default', 'ch-override']);
+    const buildWithScan = {
+      ...build,
+      exportSettings: { defaultScanInclusion: 'scan' as const },
+      channelOverrides: [{ libraryEntityId: 'ch-override', scanInclusion: 'alwaysScan' as const }],
+    };
+    const assembled = assemble(buildWithScan, library, {
+      formatId: egress.formatId,
+      profileId: egress.profileId,
+    });
+    const projection = buildRadioWriteProjection(assembled, buildWithScan, library, egress);
+    const bySlot = new Map(projection.channels.map((c) => [c.slotIndex, c]));
+    const skipSlot = projection.numbersBySourceChannelId.get('ch-skip')?.[0];
+    const defaultSlot = projection.numbersBySourceChannelId.get('ch-default')?.[0];
+    const overrideSlot = projection.numbersBySourceChannelId.get('ch-override')?.[0];
+    expect(bySlot.get(skipSlot!)?.scanAdd).toBe(false);
+    expect(bySlot.get(defaultSlot!)?.scanAdd).toBe(true);
+    expect(bySlot.get(overrideSlot!)?.scanAdd).toBe(true);
+  });
+
+  it('uses radio-io default skip when build omits defaultScanInclusion', () => {
+    const ch = {
+      ...newChannel('p1', 'A'),
+      id: 'ch-a',
+      rxFrequency: 145_500_000,
+      txFrequency: 145_500_000,
+      scanInclusion: 'default' as const,
+    };
+    const library = emptyLibrary([ch]);
+    const { build: baseBuild, egress } = newRadioBuildForProfile('p1', 'radio-io-uv5r-mini');
+    const build = uv5rFlatMemoryBuild(baseBuild, ['ch-a']);
+    const assembled = assemble(build, library, {
+      formatId: egress.formatId,
+      profileId: egress.profileId,
+    });
+    const projection = buildRadioWriteProjection(assembled, build, library, egress);
+    expect(projection.channels[0]?.scanAdd).toBe(false);
   });
 });

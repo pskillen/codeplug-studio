@@ -27,7 +27,12 @@ import {
   scanMemberIds,
 } from '@core/import-export/zoneDerivedScanLists/members.ts';
 import { DM32_EMPTY_SCAN_LIST_NAME } from '@core/import-export/zoneDerivedScanLists/derive.ts';
-import { buildScanContext, effectiveScanSkips } from '@core/import-export/scanInclusion/index.ts';
+import {
+  buildScanContext,
+  effectiveScanSkips,
+  resolveChannelScanInclusionForExport,
+} from '@core/import-export/scanInclusion/index.ts';
+import { getFormatExportDefaults } from '@core/import-export/registry.ts';
 import type { RadioChannelDto } from '@integrations/radio-io/radioChannelDto.ts';
 import type {
   RadioAprsDto,
@@ -663,6 +668,41 @@ function buildOpenGd77Zones(
   return zones;
 }
 
+function stampUv5rMiniChannelBehaviour(
+  channels: RadioChannelDto[],
+  assembled: AssembledBuild,
+  build: RadioBuild,
+  egress: RadioWireEgressIds,
+  numbersBySourceChannelId: Map<string, number[]>,
+): RadioChannelDto[] {
+  const merged = mergeExportOptions(build, egress.formatId, { profileId: egress.profileId });
+  const scanContext = buildScanContext(
+    merged.defaultScanInclusion != null
+      ? { defaultScanInclusion: merged.defaultScanInclusion }
+      : undefined,
+    getFormatExportDefaults(egress.formatId, egress.profileId),
+  );
+
+  const channelByNumber = new Map<number, (typeof assembled.channels)[number]>();
+  for (const row of assembled.channels) {
+    const nums = numbersBySourceChannelId.get(row.entity.id);
+    if (!nums) continue;
+    for (const n of nums) channelByNumber.set(n, row);
+  }
+
+  return channels.map((dto) => {
+    const row = channelByNumber.get(dto.slotIndex);
+    if (!row) return dto;
+    const scanAdd =
+      resolveChannelScanInclusionForExport(
+        row.entity,
+        row.scanInclusionOverride,
+        scanContext,
+      ) === 'scan';
+    return { ...dto, scanAdd };
+  });
+}
+
 function stampOpenGd77ChannelBehaviour(
   channels: RadioChannelDto[],
   assembled: AssembledBuild,
@@ -774,6 +814,14 @@ export function buildRadioWriteProjection(
       rxGroups,
       digitalContacts,
     };
+  } else if (egress.profileId === 'radio-io-uv5r-mini') {
+    channels = stampUv5rMiniChannelBehaviour(
+      dtos,
+      assembled,
+      build,
+      egress,
+      numbersBySourceChannelId,
+    );
   }
 
   return {
