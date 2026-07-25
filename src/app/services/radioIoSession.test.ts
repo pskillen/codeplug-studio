@@ -24,6 +24,7 @@ import {
   writeBuildToRadio,
 } from './radioIoSession.ts';
 import * as radioIo from '@integrations/radio-io/index.ts';
+import * as radioWriteEnvGate from './radioWriteEnvGate.ts';
 
 function emptyLibrary(channels: LibrarySlice['channels'] = []): LibrarySlice {
   return {
@@ -170,6 +171,21 @@ describe('radioIoSession helpers', () => {
       RadioWriteBlockedError,
     );
     expect(radio.upload).not.toHaveBeenCalled();
+  });
+
+  it('blocks prepare when prod write gate is hidden', () => {
+    vi.spyOn(radioWriteEnvGate, 'resolveRadioWriteGate').mockReturnValue('hidden');
+    const imageBytes = new Uint8Array(UV5R_MINI_MEM_TOTAL);
+    imageBytes.fill(0xff);
+    const hydration = createRadioCloneHydrationBag({
+      radioModelId: 'UV5R-Mini',
+      imageBytes,
+    });
+    const { build, egress } = uv5rMiniRadioIo();
+    expect(() =>
+      prepareRadioWriteImage(build, { ...egress, hydration }, emptyLibrary()),
+    ).toThrow(RadioWriteBlockedError);
+    vi.restoreAllMocks();
   });
 
   it('writes via assemble when hydration present', async () => {

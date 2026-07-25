@@ -28,6 +28,10 @@ import {
 } from '@integrations/radio-io/index.ts';
 import { buildRadioWriteProjection } from './radioIoWriteProjection.ts';
 import type { RadioWriteOrganisation } from '@integrations/radio-io/radioWriteProjection.ts';
+import {
+  RADIO_WRITE_PROD_DISABLED_MESSAGE,
+  resolveRadioWriteGate,
+} from './radioWriteEnvGate.ts';
 
 export { isWebSerialSupported, getWebSerialUnsupportedMessage };
 
@@ -197,6 +201,11 @@ export function prepareRadioWriteImage(
   egress: EgressPath,
   library: LibrarySlice,
 ): { image: MemoryMap; warnings: string[] } {
+  const descriptor = descriptorsForEgress(egress)[0];
+  if (descriptor && resolveRadioWriteGate(descriptor) === 'hidden') {
+    throw new RadioWriteBlockedError(RADIO_WRITE_PROD_DISABLED_MESSAGE);
+  }
+
   const hydration = getRadioCloneHydration(egress);
   if (!hydration) {
     throw new RadioWriteBlockedError('Missing radio clone hydration on this egress path.');
