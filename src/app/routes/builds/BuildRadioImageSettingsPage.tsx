@@ -31,6 +31,7 @@ import {
 import {
   summariseOpenGd77Clone,
   OPENGD77_DM1701_MODEL_ID,
+  OPENGD77_MD9600_MODEL_ID,
   type OpenGd77CloneSummary,
 } from '@integrations/radio-io/radios/opengd77/index.ts';
 import {
