@@ -27,6 +27,7 @@ import { RadioProtocolError, RadioWrongIdentError } from '../../kit/errors.ts';
 import { reportProgress, throwIfAborted } from '../../kit/progress.ts';
 import {
   DM1701_RADIO_TYPES,
+  type OpenGd77PowerStep,
   OPENGD77_BAUD_RATE,
   OPENGD77_CMD_CLOSE_CPS,
   OPENGD77_CMD_CONTROL,
@@ -38,6 +39,9 @@ import {
   OPENGD77_MEM_FLASH,
   OPENGD77_WRITE_VARIANT,
   OPENUV380_FLASH_SPANS,
+  OPENGD77_1701_POWER_STEPS,
+  OPENGD77_MD9600_POWER_STEPS,
+  MD9600_RADIO_TYPES,
 } from './constants.ts';
 import {
   countOccupiedChannels,
@@ -170,6 +174,10 @@ export interface OpenGd77ProtocolOptions {
   /** Allowed radioType values (default DM-1701 / RGB). */
   allowedRadioTypes?: readonly number[];
   modelHints?: readonly string[];
+  /** Binary power ladder for channel encode/decode (default 1701). */
+  powerSteps?: readonly OpenGd77PowerStep[];
+  /** Short label for ident mismatch errors. */
+  identLabel?: string;
 }
 
 export class OpenGd77Protocol implements CloneImageRadio {
@@ -179,10 +187,14 @@ export class OpenGd77Protocol implements CloneImageRadio {
   private priorImage: MemoryMap | null = null;
   private readonly allowedRadioTypes: readonly number[];
   private readonly modelHints: readonly string[];
+  private readonly powerSteps: readonly OpenGd77PowerStep[];
+  private readonly identLabel: string;
 
   constructor(opts?: OpenGd77ProtocolOptions) {
     this.allowedRadioTypes = opts?.allowedRadioTypes ?? DM1701_RADIO_TYPES;
     this.modelHints = opts?.modelHints ?? ['DM-1701', 'RT-84'];
+    this.powerSteps = opts?.powerSteps ?? OPENGD77_1701_POWER_STEPS;
+    this.identLabel = opts?.identLabel ?? 'DM-1701/RT-84';
   }
 
   /** Seed prior image from hydration before upload (write path). */
@@ -228,7 +240,7 @@ export class OpenGd77Protocol implements CloneImageRadio {
 
     if (!this.allowedRadioTypes.includes(info.radioType)) {
       throw new RadioWrongIdentError(
-        `OpenGD77 radioType 0x${info.radioType.toString(16)} is not a supported DM-1701/RT-84 (expected ${[...this.allowedRadioTypes].map((t) => `0x${t.toString(16)}`).join('/')})`,
+        `OpenGD77 radioType 0x${info.radioType.toString(16)} is not supported for ${this.identLabel} (expected ${[...this.allowedRadioTypes].map((t) => `0x${t.toString(16)}`).join('/')})`,
       );
     }
 
@@ -324,12 +336,12 @@ export class OpenGd77Protocol implements CloneImageRadio {
   }
 
   decodeChannels(image: MemoryMap): RadioChannelDto[] {
-    return decodeChannelsFromImage(image);
+    return decodeChannelsFromImage(image, this.powerSteps);
   }
 
   encodeChannels(image: MemoryMap, channels: RadioChannelDto[]): MemoryMap {
     const next = openUv380ImageFromBytes(image.bytes);
-    encodeChannelsIntoImage(next, channels);
+    encodeChannelsIntoImage(next, channels, { powerSteps: this.powerSteps });
     return next;
   }
 
@@ -343,6 +355,17 @@ export function createOpenGd77Dm1701Protocol(): CloneImageRadio {
   return new OpenGd77Protocol({
     allowedRadioTypes: DM1701_RADIO_TYPES,
     modelHints: ['DM-1701', 'RT-84', 'Baofeng DM-1701'],
+    powerSteps: OPENGD77_1701_POWER_STEPS,
+    identLabel: 'DM-1701/RT-84',
+  });
+}
+
+export function createOpenGd77Md9600Protocol(): CloneImageRadio {
+  return new OpenGd77Protocol({
+    allowedRadioTypes: MD9600_RADIO_TYPES,
+    modelHints: ['MD-9600', 'RT-90', 'TYT MD-9600', 'Retevis RT-90'],
+    powerSteps: OPENGD77_MD9600_POWER_STEPS,
+    identLabel: 'MD-9600/RT-90',
   });
 }
 

@@ -26,6 +26,10 @@ The radio menu also offers **`+W-`** (User Power / ADC → PA). Studio does **no
 
 Export picks the nearest ladder step for non-exact percent values. `null` exports as `Master`.
 
+## Binary Web Serial (channel byte `0x19`)
+
+Direct radio Write uses wire bytes **1…9** (not CPS `P1`…`P9` strings). Mapping mirrors the table above — see `OPENGD77_MD9600_POWER_STEPS` in [`constants.ts`](../../../../src/integrations/radio-io/radios/opengd77/constants.ts) and profile `radio-io-opengd77-md9600`. Wire **0** = `Master` / `power: null`. Menu **`+W-`** is not encoded on CSV or binary paths.
+
 ## Squelch
 
 Profile-independent OpenGD77 rules: `N%`, `Disabled` → 0%, `Master` → `null` — see [power-squelch.md](../../../export-formats/opengd77/power-squelch.md).

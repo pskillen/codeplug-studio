@@ -16,6 +16,7 @@ import {
   isRadioIoAtD890uvProfile,
   isRadioIoDm32uvProfile,
   isRadioIoOpenGd771701Profile,
+  isRadioIoOpenGd77Md9600Profile,
 } from './formats/radio-io/profiles.ts';
 
 /** Known number, unknown blank, or not applicable to this radio workflow. */
@@ -308,7 +309,7 @@ export function getProfileExportLimits(
           siblingLadders: [],
         };
       }
-      if (isRadioIoOpenGd771701Profile(profile)) {
+      if (isRadioIoOpenGd771701Profile(profile) || isRadioIoOpenGd77Md9600Profile(profile)) {
         return {
           formatId,
           profileId: profile.id,

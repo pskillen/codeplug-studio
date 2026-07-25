@@ -8,6 +8,7 @@ import { UV5R_MINI_DESCRIPTOR } from './radios/uv5r-mini/descriptor.ts';
 import { UV21_PRO_V2_DESCRIPTOR } from './radios/uv21-pro-v2/descriptor.ts';
 import { DM32UV_DESCRIPTOR } from './radios/dm32uv/descriptor.ts';
 import { OPENGD77_DM1701_DESCRIPTOR } from './radios/opengd77/dm1701/descriptor.ts';
+import { OPENGD77_MD9600_DESCRIPTOR } from './radios/opengd77/md9600/descriptor.ts';
 import { AT_D890UV_DESCRIPTOR } from './radios/at-d890uv/descriptor.ts';
 import { RT95_DESCRIPTOR } from './radios/rt95/descriptor.ts';
 
@@ -18,6 +19,7 @@ const DESCRIPTORS: readonly RadioDescriptor[] = [
   AT_D890UV_DESCRIPTOR,
   RT95_DESCRIPTOR,
   OPENGD77_DM1701_DESCRIPTOR,
+  OPENGD77_MD9600_DESCRIPTOR,
 ];
 
 /** All registered radio descriptors (order is UI display order). */

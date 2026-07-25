@@ -31,6 +31,7 @@ import {
 import {
   summariseOpenGd77Clone,
   OPENGD77_DM1701_MODEL_ID,
+  OPENGD77_MD9600_MODEL_ID,
   type OpenGd77CloneSummary,
 } from '@integrations/radio-io/radios/opengd77/index.ts';
 import {
@@ -995,8 +996,11 @@ export default function BuildRadioImageSettingsPage() {
     bag?.retain.radioModelId === AT_D890UV_MODEL_ID || bag?.retain.radioModelId === 'ID890UV';
   const isOpenGd77 =
     bag?.retain.radioModelId === OPENGD77_DM1701_MODEL_ID ||
+    bag?.retain.radioModelId === OPENGD77_MD9600_MODEL_ID ||
     bag?.retain.radioModelId === 'DM-1701' ||
-    bag?.retain.radioModelId === 'RT-84';
+    bag?.retain.radioModelId === 'RT-84' ||
+    bag?.retain.radioModelId === 'MD-9600' ||
+    bag?.retain.radioModelId === 'RT-90';
   const isRt95 = bag?.retain.radioModelId === RT95_MODEL_ID;
   const uv17ProSummary = bag && isUv17ProFamily ? summariseUv17ProFamilyClone(bag) : null;
   const dm32Summary = bag && isDm32 ? summariseDm32uvClone(bag) : null;

@@ -10,7 +10,7 @@ import {
 import type { MemoryMap } from '../../types.ts';
 import type { RadioChannelDto } from '../../radioChannelDto.ts';
 import type { RadioWriteOrganisation } from '../../radioWriteProjection.ts';
-import { OPENUV380_IMAGE_SIZE } from './constants.ts';
+import { OPENUV380_IMAGE_SIZE, type OpenGd77PowerStep } from './constants.ts';
 import { encodeChannelsIntoImage } from './channelCodec.ts';
 import {
   contactIndexByDigitalId,
@@ -22,10 +22,16 @@ import { encodeRxGroupsIntoImage } from './rxGroupCodec.ts';
 import { encodeZonesIntoImage } from './zoneCodec.ts';
 
 export const OPENGD77_DM1701_MODEL_ID = 'DM-1701';
+export const OPENGD77_MD9600_MODEL_ID = 'MD-9600';
 
 export function extractOpenGd77Hydration(
   image: MemoryMap,
-  meta?: { sourceFileName?: string; capturedAt?: string; firmware?: string },
+  meta?: {
+    sourceFileName?: string;
+    capturedAt?: string;
+    firmware?: string;
+    radioModelId?: string;
+  },
 ): RadioCloneHydrationBag {
   const bytes = openUv380ImageToBytes(image);
   if (bytes.length < OPENUV380_IMAGE_SIZE) {
@@ -34,7 +40,7 @@ export function extractOpenGd77Hydration(
     );
   }
   return createRadioCloneHydrationBag({
-    radioModelId: OPENGD77_DM1701_MODEL_ID,
+    radioModelId: meta?.radioModelId ?? OPENGD77_DM1701_MODEL_ID,
     imageBytes: bytes,
     firmware: meta?.firmware,
     capturedVia: 'web-serial',
@@ -62,6 +68,7 @@ export function mergeChannelsIntoOpenGd77Hydration(
   bag: RadioCloneHydrationBag,
   channels: readonly RadioChannelDto[],
   organisation?: RadioWriteOrganisation,
+  opts?: { powerSteps?: readonly OpenGd77PowerStep[] },
 ): MemoryMap {
   const image = memoryMapFromOpenGd77Hydration(bag);
   const contacts = mergeOrganisationContacts(
@@ -71,7 +78,10 @@ export function mergeChannelsIntoOpenGd77Hydration(
   encodeContactsIntoImage(image, contacts);
   const byDigitalId = contactIndexByDigitalId(contacts);
   encodeRxGroupsIntoImage(image, organisation?.rxGroups ?? [], byDigitalId);
-  encodeChannelsIntoImage(image, channels, { clearUnlisted: true });
+  encodeChannelsIntoImage(image, channels, {
+    clearUnlisted: true,
+    powerSteps: opts?.powerSteps,
+  });
   encodeZonesIntoImage(image, organisation?.zones ?? []);
   return image;
 }

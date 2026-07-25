@@ -72,6 +72,15 @@ describe('radio target catalog', () => {
     expect(ordered.map((p) => p.formatId)).toEqual(['radio-io', 'neonplug', 'chirp']);
   });
 
+  it('lists MD-9600 with Web Serial and OpenGD77 CSV egress', () => {
+    const md9600 = radioTargetFor('tyt-md9600');
+    expect(md9600).toBeDefined();
+    expect(md9600!.compatibleEgress.map((e) => e.profileId)).toEqual([
+      'radio-io-opengd77-md9600',
+      'opengd77-md9600',
+    ]);
+  });
+
   it('covers every shipped TRAIT_PROFILES radio via catalog egress', () => {
     const ids = listRadioTargets().flatMap((t) => t.compatibleEgress.map((e) => e.profileId));
     for (const profileId of [
@@ -89,6 +98,7 @@ describe('radio target catalog', () => {
       'radio-io-dm32uv',
       'radio-io-at-d890uv',
       'radio-io-opengd77-1701',
+      'radio-io-opengd77-md9600',
       'radio-io-rt95',
     ]) {
       expect(ids).toContain(profileId);

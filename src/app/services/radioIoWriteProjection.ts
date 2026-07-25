@@ -798,13 +798,18 @@ function stampUv17ProFlatMemoryChannelBehaviour(
   });
 }
 
+function isOpenGd77RadioIoEgress(profileId: string): boolean {
+  return profileId === 'radio-io-opengd77-1701' || profileId === 'radio-io-opengd77-md9600';
+}
+
 function stampOpenGd77ChannelBehaviour(
   channels: RadioChannelDto[],
   assembled: AssembledBuild,
   build: RadioBuild,
   numbersBySourceChannelId: Map<string, number[]>,
+  profileId: string,
 ): RadioChannelDto[] {
-  const merged = mergeExportOptions(build, 'radio-io', { profileId: 'radio-io-opengd77-1701' });
+  const merged = mergeExportOptions(build, 'radio-io', { profileId });
   const scanContext = buildScanContext(
     merged.defaultScanInclusion != null
       ? { defaultScanInclusion: merged.defaultScanInclusion }
@@ -857,7 +862,7 @@ export function buildRadioWriteProjection(
       ...tgRx.fkMaps,
       dmrIdIndexByValue: radioIdBank.dmrIdIndexByValue,
     };
-  } else if (egress.profileId === 'radio-io-opengd77-1701') {
+  } else if (isOpenGd77RadioIoEgress(egress.profileId)) {
     const tgRx = buildOpenGd77ContactsAndRx(assembled, egress, warnings);
     talkGroups = tgRx.talkGroups;
     rxGroups = tgRx.rxGroups;
@@ -935,8 +940,14 @@ export function buildRadioWriteProjection(
       rxGroups,
       radioIds: dm32RadioIds,
     };
-  } else if (egress.profileId === 'radio-io-opengd77-1701') {
-    channels = stampOpenGd77ChannelBehaviour(dtos, assembled, build, numbersBySourceChannelId);
+  } else if (isOpenGd77RadioIoEgress(egress.profileId)) {
+    channels = stampOpenGd77ChannelBehaviour(
+      dtos,
+      assembled,
+      build,
+      numbersBySourceChannelId,
+      egress.profileId,
+    );
     organisation = {
       zones: buildOpenGd77Zones(assembled, egress, numbersBySourceChannelId, warnings),
       talkGroups,
