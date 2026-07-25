@@ -2,8 +2,10 @@ import { describe, expect, it } from 'vitest';
 import { newChannel, newDigitalContact, newTalkGroup, newZone } from '@core/domain/factories.ts';
 import {
   buildExportSortConfirmMessage,
+  buildExportSortSelectionConfirmMessage,
   sortChannelIdsByMode,
   sortRxGroupListMembersByMode,
+  sortSelectedChannelIdsInOrder,
   sortZoneMembersByMode,
   sortZonesByName,
 } from './membershipSort.ts';
@@ -119,5 +121,60 @@ describe('membershipSort', () => {
     const message = buildExportSortConfirmMessage('name');
     expect(message).toContain('this radio build');
     expect(message).toContain('library order stays the same');
+  });
+
+  it('buildExportSortSelectionConfirmMessage mentions selection count and collate', () => {
+    const message = buildExportSortSelectionConfirmMessage('band', 4);
+    expect(message).toContain('4 selected');
+    expect(message).toContain('brought together');
+    expect(message).toContain('library order stays the same');
+  });
+
+  it('sortSelectedChannelIdsInOrder collates split selection then sorts the block', () => {
+    const alpha = { ...newChannel(projectId, 'Alpha'), id: 'alpha' };
+    const bravo = { ...newChannel(projectId, 'Bravo'), id: 'bravo' };
+    const charlie = { ...newChannel(projectId, 'Charlie'), id: 'charlie' };
+    const delta = { ...newChannel(projectId, 'Delta'), id: 'delta' };
+    const echo = { ...newChannel(projectId, 'Echo'), id: 'echo' };
+    const byId = new Map([
+      [alpha.id, alpha],
+      [bravo.id, bravo],
+      [charlie.id, charlie],
+      [delta.id, delta],
+      [echo.id, echo],
+    ]);
+    // Order: alpha, echo, charlie, bravo, delta — select echo + bravo (split)
+    const ordered = ['alpha', 'echo', 'charlie', 'bravo', 'delta'];
+    expect(sortSelectedChannelIdsInOrder(ordered, ['echo', 'bravo'], byId, 'name')).toEqual([
+      'alpha',
+      'bravo',
+      'echo',
+      'charlie',
+      'delta',
+    ]);
+  });
+
+  it('sortSelectedChannelIdsInOrder is identity for contiguous already-sorted selection', () => {
+    const a = { ...newChannel(projectId, 'A'), id: 'a' };
+    const b = { ...newChannel(projectId, 'B'), id: 'b' };
+    const c = { ...newChannel(projectId, 'C'), id: 'c' };
+    const byId = new Map([
+      [a.id, a],
+      [b.id, b],
+      [c.id, c],
+    ]);
+    const ordered = ['a', 'b', 'c'];
+    expect(sortSelectedChannelIdsInOrder(ordered, ['a', 'b'], byId, 'name')).toEqual(ordered);
+  });
+
+  it('sortSelectedChannelIdsInOrder is identity when fewer than 2 selected', () => {
+    const a = { ...newChannel(projectId, 'A'), id: 'a' };
+    const b = { ...newChannel(projectId, 'B'), id: 'b' };
+    const byId = new Map([
+      [a.id, a],
+      [b.id, b],
+    ]);
+    expect(sortSelectedChannelIdsInOrder(['a', 'b'], ['b'], byId, 'name')).toEqual(['a', 'b']);
+    expect(sortSelectedChannelIdsInOrder(['a', 'b'], [], byId, 'name')).toEqual(['a', 'b']);
   });
 });

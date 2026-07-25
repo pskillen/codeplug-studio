@@ -7,7 +7,8 @@ import type {
   ZoneMemberEntry,
 } from '@core/models/library.ts';
 import { bandForFrequencyHz } from '@core/domain/bandPlan.ts';
-import { applyDenseZoneOrders } from '@core/domain/zoneOrder.ts';
+import { isSimplex } from '@core/domain/channelDuplex.ts';
+import { applyDenseZoneOrders, collateSelectedKeys } from '@core/domain/zoneOrder.ts';
 import { normalizeZoneMemberEntry } from '@core/domain/zoneMembers.ts';
 import { rxGroupListMemberKey } from '@core/domain/membershipOrder.ts';
 
@@ -21,11 +22,6 @@ export const MEMBERSHIP_SORT_MODE_LABELS: Record<MembershipSortMode, string> = {
   band: 'By band',
   mode: 'By mode',
 };
-
-function isSimplex(rxHz: number | null, txHz: number | null): boolean {
-  if (rxHz == null || txHz == null) return false;
-  return rxHz === txHz;
-}
 
 function primaryMode(channel: Channel): string {
   return channel.modeProfiles[0]?.mode ?? 'fm';
@@ -83,6 +79,33 @@ export function sortChannelIdsByMode(
     if (!b) return -1;
     return compareTuples(channelSortTuple(a, mode), channelSortTuple(b, mode));
   });
+}
+
+/**
+ * Collate a (possibly split) selection at the earliest selected index, then sort
+ * only that block. Unselected relative order outside the block is preserved.
+ * Identity when fewer than 2 selected ids appear in `orderedIds`.
+ */
+export function sortSelectedChannelIdsInOrder(
+  orderedIds: readonly string[],
+  selectedIds: readonly string[],
+  channelsById: ReadonlyMap<string, Channel>,
+  mode: MembershipSortMode,
+): string[] {
+  const selected = new Set(selectedIds);
+  const selectedInList = orderedIds.filter((id) => selected.has(id));
+  if (selectedInList.length < 2) return [...orderedIds];
+
+  const collated = collateSelectedKeys(orderedIds, selected);
+  const firstSelectedIndex = collated.findIndex((id) => selected.has(id));
+  if (firstSelectedIndex < 0) return [...orderedIds];
+
+  const sortedBlock = sortChannelIdsByMode(selectedInList, channelsById, mode);
+  return [
+    ...collated.slice(0, firstSelectedIndex),
+    ...sortedBlock,
+    ...collated.slice(firstSelectedIndex + selectedInList.length),
+  ];
 }
 
 /** Rewrite zone member order (channels + nested zones). */
@@ -177,5 +200,18 @@ export function buildExportSortConfirmMessage(mode: MembershipSortMode): string 
     `Sort this build’s export order by “${MEMBERSHIP_SORT_MODE_LABELS[mode]}”?\n\n` +
     'This only changes this radio build. Your library order stays the same. ' +
     'Existing build order overrides for this list will be replaced.'
+  );
+}
+
+/** Confirm copy for selection-scoped Sort… (collates then sorts the selection only). */
+export function buildExportSortSelectionConfirmMessage(
+  mode: MembershipSortMode,
+  selectedCount: number,
+): string {
+  return (
+    `Sort ${selectedCount} selected channels by “${MEMBERSHIP_SORT_MODE_LABELS[mode]}”?\n\n` +
+    'Selected channels are brought together at the first selected position, then sorted. ' +
+    'Other channels keep their relative order. This only changes this radio build; ' +
+    'your library order stays the same.'
   );
 }

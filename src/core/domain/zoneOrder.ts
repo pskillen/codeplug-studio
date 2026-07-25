@@ -129,3 +129,29 @@ export function reorderKeysByDrag(
   remaining.splice(insertAt, 0, ...moving);
   return remaining;
 }
+
+/**
+ * Gather selected keys into one contiguous block at the earliest selected index.
+ * Unselected keys keep relative order; selected keys keep encounter order within the block.
+ * Keys in `selected` that are not in `keys` are ignored.
+ */
+export function collateSelectedKeys(
+  keys: readonly string[],
+  selected: ReadonlySet<string>,
+): string[] {
+  if (selected.size === 0) return [...keys];
+
+  const selectedInOrder = keys.filter((key) => selected.has(key));
+  if (selectedInOrder.length === 0) return [...keys];
+
+  const firstSelectedIndex = keys.findIndex((key) => selected.has(key));
+  const before: string[] = [];
+  const after: string[] = [];
+  for (let i = 0; i < keys.length; i++) {
+    const key = keys[i]!;
+    if (selected.has(key)) continue;
+    if (i < firstSelectedIndex) before.push(key);
+    else after.push(key);
+  }
+  return [...before, ...selectedInOrder, ...after];
+}

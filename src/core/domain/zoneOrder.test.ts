@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { newFormatBuild, newZone } from '@core/domain/factories.ts';
 import {
   applyDenseZoneOrders,
+  collateSelectedKeys,
   resolveZoneListOrder,
   sortZonesByExportOrder,
   reorderKeysByDrag,
@@ -68,6 +69,19 @@ describe('zoneOrder', () => {
     expect(reorderKeysByDrag(keys, 'b', 'b')).toEqual(keys);
     expect(reorderKeysByDrag(keys, 'missing', 'a')).toEqual(keys);
     expect(reorderKeysByDrag(keys, 'b', 'c', new Set(['b', 'c']))).toEqual(keys);
+  });
+
+  it('collateSelectedKeys gathers split islands at the first selected index', () => {
+    const keys = ['a', 'b', 'c', 'd', 'e'];
+    expect(collateSelectedKeys(keys, new Set(['b', 'd']))).toEqual(['a', 'b', 'd', 'c', 'e']);
+    expect(collateSelectedKeys(keys, new Set(['b', 'c']))).toEqual(['a', 'b', 'c', 'd', 'e']);
+    expect(collateSelectedKeys(keys, new Set(['a', 'e']))).toEqual(['a', 'e', 'b', 'c', 'd']);
+  });
+
+  it('collateSelectedKeys is identity for empty or unknown selection', () => {
+    const keys = ['a', 'b', 'c'];
+    expect(collateSelectedKeys(keys, new Set())).toEqual(keys);
+    expect(collateSelectedKeys(keys, new Set(['missing']))).toEqual(keys);
   });
 });
 

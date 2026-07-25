@@ -1,5 +1,6 @@
 import type { Channel } from '@core/models/library.ts';
 import type { ChannelMode } from '@core/models/libraryTypes.ts';
+import { isSimplex as isSimplexCore } from '@core/domain/channelDuplex.ts';
 import { channelHasGeolocation } from '@core/domain/mapProjection.ts';
 import { haversineDistanceM } from '@core/domain/geoDistance.ts';
 
@@ -19,10 +20,8 @@ export function channelMatchesModeFilter(channel: Channel, modeFilter: string[])
   return modeFilter.some((m) => modes.includes(m as ChannelMode));
 }
 
-export function isSimplex(rxHz: number | null, txHz: number | null): boolean {
-  if (rxHz == null || txHz == null) return false;
-  return rxHz === txHz;
-}
+/** Re-export core duplex helper for app callers. */
+export const isSimplex = isSimplexCore;
 
 export function filterChannelsByDistance(
   channels: Channel[],
