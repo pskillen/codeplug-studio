@@ -7,11 +7,13 @@ import {
 import {
   decodeChannelRecord,
   decodeChannelsFromImage,
+  decodeTone,
   encodeBcdFreq,
   encodeChannelRecord,
   encodeChannelsIntoImage,
   encodeTone,
   readFirmwareFromImage,
+  UV5R_MINI_SCAN_BIT,
 } from './channelCodec.ts';
 import { UV5R_MINI_CHANNEL_SIZE, UV5R_MINI_CHANNEL_SPAN } from './constants.ts';
 
@@ -43,6 +45,15 @@ describe('channelCodec BCD / tone', () => {
   it('encodes CTCSS tone', () => {
     const bytes = encodeTone({ kind: 'ctcss', hz: 88.5 });
     expect(bytes[0]! | (bytes[1]! << 8)).toBe(885);
+  });
+
+  it('round-trips DTCS normal and reverse polarity', () => {
+    const normal = { kind: 'dcs' as const, code: 23, polarity: 'N' as const };
+    const reverse = { kind: 'dcs' as const, code: 23, polarity: 'I' as const };
+    expect(decodeTone(encodeTone(normal))).toEqual(normal);
+    expect(decodeTone(encodeTone(reverse))).toEqual(reverse);
+    const reverseWire = encodeTone(reverse);
+    expect(reverseWire[0]! | (reverseWire[1]! << 8)).toBeGreaterThan(0x69);
   });
 });
 
@@ -121,5 +132,19 @@ describe('channelCodec record', () => {
     const decoded = decodeChannelRecord(encoded, 1);
     expect(decoded.rxOnly).toBe(true);
     expect(decoded.rxHz).toBe(145_500_000);
+  });
+
+  it('encodes scanAdd on byte 15 bit 2 and round-trips', () => {
+    const inScan = encodeChannelRecord(sampleDto({ scanAdd: true }));
+    const skipped = encodeChannelRecord(sampleDto({ scanAdd: false }));
+    expect(inScan[15]! & UV5R_MINI_SCAN_BIT).toBe(UV5R_MINI_SCAN_BIT);
+    expect(skipped[15]! & UV5R_MINI_SCAN_BIT).toBe(0);
+    expect(decodeChannelRecord(inScan, 1).scanAdd).toBe(true);
+    expect(decodeChannelRecord(skipped, 1).scanAdd).toBe(false);
+  });
+
+  it('clears scan bit on omitted scanAdd (full-record default)', () => {
+    const encoded = encodeChannelRecord(sampleDto());
+    expect(encoded[15]! & UV5R_MINI_SCAN_BIT).toBe(0);
   });
 });

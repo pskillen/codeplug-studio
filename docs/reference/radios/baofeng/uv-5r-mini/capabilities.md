@@ -18,9 +18,9 @@ Flat memory list only:
 
 Studio Build → Channels uses the shared **flat-memory** Channels page for this radio’s profiles.
 
-### Web Serial Write gap — scan bit
+### Web Serial Write — scan bit
 
-Binary Web Serial Write does **not** yet map `scanInclusion` to channel record byte `15` bit 2. CHIRP CSV and NeonPlug **file** egress still honour the flag. Tracked by [#696](https://github.com/pskillen/codeplug-studio/issues/696).
+Binary Web Serial Write maps **effective** scan inclusion (build override → library `scanInclusion` → `exportSettings.defaultScanInclusion` → radio-io format default) to channel record byte `15` bit 2 (`scan` = participate). Same resolution as CHIRP `Skip` and NeonPlug file `scanAdd` — see [scan-inclusion.md](../../../scan-inclusion.md). Shipped [#696](https://github.com/pskillen/codeplug-studio/issues/696).
 
 ## Related
 

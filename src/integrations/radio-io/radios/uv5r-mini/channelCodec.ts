@@ -12,7 +12,12 @@ import {
   UV5R_MINI_FW_VER_OFFSET,
 } from './constants.ts';
 
-/** Standard DTCS codes used by UV-17Pro family (NeonPlug sorted list). */
+/** Byte 15 bit 2 — CHIRP `scan` (MSB-first bitfield packing in `baofeng_uv17Pro.py`). */
+export const UV5R_MINI_SCAN_BIT = 0x04;
+
+/** Byte 15 bit 6 — inverted wide/NFM polarity vs classic UV-5R. */
+export const UV5R_MINI_WIDE_BIT = 0x40;
+
 const DTCS_CODES = Object.freeze(
   [
     23, 25, 26, 31, 32, 36, 43, 47, 51, 53, 54, 65, 71, 72, 73, 74, 114, 115, 116, 122, 125, 131,
@@ -56,9 +61,10 @@ export function decodeTone(bytes: Uint8Array): RadioTone {
   const val = bytes[0]! | (bytes[1]! << 8);
   if (val === 0 || val === 0xffff) return { kind: 'none' };
   if (val >= 0x258) return { kind: 'ctcss', hz: val / 10 };
-  const idx = val > 0x69 ? val - 0x6a : val - 1;
+  const reverse = val > 0x69;
+  const idx = reverse ? val - 0x6a : val - 1;
   const code = DTCS_CODES[idx];
-  return code != null ? { kind: 'dcs', code } : { kind: 'none' };
+  return code != null ? { kind: 'dcs', code, polarity: reverse ? 'I' : 'N' } : { kind: 'none' };
 }
 
 export function encodeTone(tone: RadioTone | null | undefined): Uint8Array {
@@ -70,7 +76,7 @@ export function encodeTone(tone: RadioTone | null | undefined): Uint8Array {
   }
   const idx = DTCS_CODES.indexOf(tone.code);
   if (idx >= 0) {
-    const wire = idx + 1;
+    const wire = idx + 1 + (tone.polarity === 'I' ? 0x69 : 0);
     return new Uint8Array([wire & 0xff, (wire >> 8) & 0xff]);
   }
   return new Uint8Array([0, 0]);
@@ -118,7 +124,8 @@ export function decodeChannelRecord(raw: Uint8Array, slotIndex: number): RadioCh
   const txAllZero = raw[4] === 0 && raw[5] === 0 && raw[6] === 0 && raw[7] === 0;
   const txFilled = !txAllFF && !txAllZero;
   const txHz = txFilled ? decodeBcdFreq(raw.subarray(4, 8)) : rxHz;
-  const wideBit = (raw[15]! >> 6) & 1;
+  const wideBit = (raw[15]! & UV5R_MINI_WIDE_BIT) !== 0;
+  const scanAdd = (raw[15]! & UV5R_MINI_SCAN_BIT) !== 0;
   return {
     slotIndex,
     empty: false,
@@ -129,6 +136,7 @@ export function decodeChannelRecord(raw: Uint8Array, slotIndex: number): RadioCh
     txTone: decodeTone(raw.subarray(10, 12)),
     powerPercent: lowBitsToPowerPercent(raw[14]!),
     bandwidth: wideBit ? 'NFM' : 'FM',
+    scanAdd,
     ...(txAllFF ? { rxOnly: true } : {}),
   };
 }
@@ -153,8 +161,9 @@ export function encodeChannelRecord(dto: RadioChannelDto): Uint8Array {
   out[13] = 0;
   const lowBits = powerPercentToLowBits(dto.powerPercent);
   out[14] = (out[14]! & 0xcc) | (lowBits & 3);
-  const wideBit = dto.bandwidth === 'NFM' ? 1 : 0;
-  out[15] = (out[15]! & 0x82) | (wideBit << 6);
+  const wideBit = dto.bandwidth === 'NFM' ? UV5R_MINI_WIDE_BIT : 0;
+  const scanBit = dto.scanAdd ? UV5R_MINI_SCAN_BIT : 0;
+  out[15] = wideBit | scanBit;
   const nameStr = (dto.wireName || '').trim().slice(0, 12);
   const nameBytes = new TextEncoder().encode(nameStr);
   for (let i = 20; i < 32; i++) {
