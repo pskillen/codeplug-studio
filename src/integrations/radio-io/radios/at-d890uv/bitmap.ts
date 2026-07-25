@@ -33,3 +33,14 @@ export function setBitmapBit(
 export function clearBitmap(data: Uint8Array, inverted = false): void {
   data.fill(inverted ? 0xff : 0);
 }
+
+/** Clear occupancy bits in `[0, maxBitExclusive)`; leave bits at or above `maxBitExclusive` unchanged. */
+export function clearBitmapBitsBelow(
+  data: Uint8Array,
+  maxBitExclusive: number,
+  inverted = false,
+): void {
+  for (let idx = 0; idx < maxBitExclusive; idx++) {
+    setBitmapBit(data, idx, false, inverted);
+  }
+}

@@ -176,6 +176,15 @@ export function clearTalkgroupDataBlocksFromCache(cache: AtD890DownloadCache): v
   }
 }
 
+/** Drop cached TalkgroupOrder blocks before rewriting the order table on upload. */
+export function clearTalkgroupOrderBlocksFromCache(cache: AtD890DownloadCache): void {
+  const base = D890_MAP.TalkgroupOrder;
+  const end = base + 0x1000;
+  for (const addr of [...cache.blocks.keys()]) {
+    if (addr >= base && addr < end) cache.blocks.delete(addr);
+  }
+}
+
 /** Merge a possibly unaligned image region into 16-byte cache keys. */
 export function mergeImageRegionIntoCache(
   cache: AtD890DownloadCache,

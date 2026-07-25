@@ -10,19 +10,22 @@ import {
   mergeMapRegionsIntoCache,
   mergeImageRegionIntoCache,
   clearTalkgroupDataBlocksFromCache,
+  clearTalkgroupOrderBlocksFromCache,
   talkgroupAddress,
   type AtD890DownloadCache,
 } from './memory.ts';
-import { encodeBcdAsHexU32 } from './bcd.ts';
+import { encodeBcdAsHexU32, decodeBcdAsHexU32 } from './bcd.ts';
 import { encodeWideCharName } from './wideChar.ts';
 
 /** Anytone D890 wire call type: Private=0, Group=1, All=2. */
 const ANYTONE_CALL_TYPE_GROUP = 0x01;
 
-/** NeonPlug quick-contact call types (DM-32 projection). */
-const NEONPLUG_CALL_TYPE_PRIVATE = 0x03;
-const NEONPLUG_CALL_TYPE_GROUP = 0x04;
-const NEONPLUG_CALL_TYPE_ALL = 0x05;
+function writeU32Be(buf: Uint8Array, offset: number, value: number): void {
+  buf[offset] = (value >> 24) & 0xff;
+  buf[offset + 1] = (value >> 16) & 0xff;
+  buf[offset + 2] = (value >> 8) & 0xff;
+  buf[offset + 3] = value & 0xff;
+}
 
 function encodeAtD890TalkgroupCallType(callType: number | undefined): number {
   switch (callType) {
@@ -39,6 +42,46 @@ function encodeAtD890TalkgroupCallType(callType: number | undefined): number {
     default:
       return ANYTONE_CALL_TYPE_GROUP;
   }
+}
+
+/** NeonPlug quick-contact call types (DM-32 projection). */
+const NEONPLUG_CALL_TYPE_PRIVATE = 0x03;
+const NEONPLUG_CALL_TYPE_GROUP = 0x04;
+const NEONPLUG_CALL_TYPE_ALL = 0x05;
+
+function talkgroupOrderKey(digitalId: number, callType: number | undefined): number {
+  const wireCallType = encodeAtD890TalkgroupCallType(callType);
+  const bcdNum = decodeBcdAsHexU32(encodeBcdAsHexU32(digitalId));
+  return (bcdNum << 1) + wireCallType;
+}
+
+/**
+ * Rebuild TalkgroupOrder at `0x3f00000` (anytone-cps `writeTalkgroupData` companion write).
+ * Sorted (key, slotId) pairs; key = (BCD-as-hex DMR ID << 1) + call type; value = 1-based TG index.
+ */
+export function encodeAtD890TalkgroupOrder(talkGroups: readonly RadioTalkGroupDto[]): Uint8Array {
+  const entries: { key: number; slotId: number }[] = [];
+  for (const tg of talkGroups) {
+    if (tg.digitalId <= 0) continue;
+    entries.push({
+      key: talkgroupOrderKey(tg.digitalId, tg.callType),
+      slotId: tg.index,
+    });
+  }
+  entries.sort((a, b) => a.key - b.key);
+
+  const raw = new Uint8Array(entries.length * 8);
+  for (let i = 0; i < entries.length; i++) {
+    const entry = entries[i]!;
+    writeU32Be(raw, i * 8, entry.key);
+    writeU32Be(raw, i * 8 + 4, entry.slotId);
+  }
+
+  const padTo = raw.length + 0x10 - (raw.length % 0x10);
+  const out = new Uint8Array(padTo);
+  out.fill(0xff);
+  out.set(raw);
+  return out;
 }
 
 export function encodeAtD890TalkgroupRecord(tg: RadioTalkGroupDto): Uint8Array {
@@ -70,10 +113,15 @@ export function encodeTalkgroupsIntoAtD890Image(
     image.set(talkgroupAddress(idx), encodeAtD890TalkgroupRecord(tg));
   }
   image.set(D890_MAP.TalkgroupSet, set);
+  image.set(D890_MAP.TalkgroupOrder, encodeAtD890TalkgroupOrder(talkGroups));
   return image;
 }
 
-export function syncTalkgroupRegionsToCache(cache: AtD890DownloadCache, image: MemoryMap): void {
+export function syncTalkgroupRegionsToCache(
+  cache: AtD890DownloadCache,
+  image: MemoryMap,
+  talkGroups?: readonly RadioTalkGroupDto[],
+): void {
   mergeMapRegionsIntoCache(cache, image, [
     { address: D890_MAP.TalkgroupSet, length: AT_D890_LIMITS.TALKGROUP_SET_BYTES },
   ]);
@@ -89,5 +137,10 @@ export function syncTalkgroupRegionsToCache(cache: AtD890DownloadCache, image: M
       talkgroupAddress(idx),
       AT_D890_LIMITS.TALKGROUP_RECORD_SIZE,
     );
+  }
+  if (talkGroups) {
+    clearTalkgroupOrderBlocksFromCache(cache);
+    const order = encodeAtD890TalkgroupOrder(talkGroups);
+    mergeImageRegionIntoCache(cache, image, D890_MAP.TalkgroupOrder, order.length);
   }
 }
