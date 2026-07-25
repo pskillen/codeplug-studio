@@ -102,6 +102,13 @@ export const TRAIT_PROFILES: Record<string, TraitProfile> = {
     label: 'Baofeng UV-5R Mini',
     traits: [BuildCapabilityTrait.FlatMemoryList, BuildCapabilityTrait.PerChannelScanFlag],
   },
+  /** Web Serial direct-write — UV-17Pro family (UV-21Pro V2). */
+  'radio-io-uv21': {
+    profileId: 'radio-io-uv21',
+    formatId: 'radio-io',
+    label: 'Baofeng UV-21Pro V2',
+    traits: [BuildCapabilityTrait.FlatMemoryList, BuildCapabilityTrait.PerChannelScanFlag],
+  },
   /** Web Serial direct-write — DM-32UV V-frame / 4KB blocks. */
   'radio-io-dm32uv': {
     profileId: 'radio-io-dm32uv',
