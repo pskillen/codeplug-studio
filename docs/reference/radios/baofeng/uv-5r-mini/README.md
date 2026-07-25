@@ -41,7 +41,7 @@ Handheld analogue FM/AM radio (UV-17Pro lineage). Studio targets it via CHIRP CS
 
 ## Direct read/write (binary)
 
-PROGRAM+R/W clone protocol for Web Serial (**shipped**). See the binary docs in the map above. Known Write gap: DTCS reverse polarity ([#697](https://github.com/pskillen/codeplug-studio/issues/697)).
+PROGRAM+R/W clone protocol for Web Serial (**shipped**). See the binary docs in the map above.
 
 ## Ground truth (cite; do not copy)
 
