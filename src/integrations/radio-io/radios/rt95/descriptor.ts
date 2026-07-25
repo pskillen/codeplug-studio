@@ -4,10 +4,7 @@
 
 import type { RadioDescriptor } from '../../types.ts';
 import { RT95_BAUD_RATE, RT95_CHANNEL_COUNT, RT95_MODEL_ID } from './constants.ts';
-import {
-  extractRt95Hydration,
-  mergeChannelsIntoRt95Hydration,
-} from './hydration.ts';
+import { extractRt95Hydration, mergeChannelsIntoRt95Hydration } from './hydration.ts';
 import { createRt95Protocol } from './protocol.ts';
 
 export const RT95_DESCRIPTOR: RadioDescriptor = {

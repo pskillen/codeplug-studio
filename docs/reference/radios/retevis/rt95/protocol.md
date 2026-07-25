@@ -18,7 +18,7 @@ Cite: CHIRP `anytone778uv.py` (`AnyTone778UVBase` / `RetevisRT95vox`) — facts 
 | Transport | **Echo-strip** required (shared TX/RX)          | Not this kit                                                                      |
 | Image     | Contiguous ≈ `0x0000`–`0x3290` (`0x32A0` bytes) | Multi-region packed `0x8240`                                                      |
 
-Kit codec for this family is sibling [#641](https://github.com/pskillen/codeplug-studio/issues/641) (`programQx.ts`) — **out of scope** here; docs may cross-link.
+Kit codec for this family is shipped as [#641](https://github.com/pskillen/codeplug-studio/issues/641) (`programQx.ts`); adapter [#643](https://github.com/pskillen/codeplug-studio/issues/643).
 
 ## Identity
 
@@ -112,4 +112,4 @@ Upload path also issues a priming read at radio address **`0x3b10`** (outside th
 ## Related
 
 - [fixtures.md](fixtures.md) · [memory-layout.md](memory-layout.md) · [settings.md](settings.md)
-- Planned kit: [#641](https://github.com/pskillen/codeplug-studio/issues/641) · adapter [#643](https://github.com/pskillen/codeplug-studio/issues/643)
+- Shipped kit: [#641](https://github.com/pskillen/codeplug-studio/issues/641) (`programQx.ts`) · adapter [#643](https://github.com/pskillen/codeplug-studio/issues/643) (`radios/rt95/`)

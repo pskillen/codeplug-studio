@@ -40,10 +40,7 @@ describe('radio target catalog', () => {
   it('lists RT95 VOX with Web Serial and CHIRP egress', () => {
     const rt95 = radioTargetFor('retevis-rt95');
     expect(rt95).toBeDefined();
-    expect(rt95!.compatibleEgress.map((e) => e.profileId)).toEqual([
-      'radio-io-rt95',
-      'chirp-rt95',
-    ]);
+    expect(rt95!.compatibleEgress.map((e) => e.profileId)).toEqual(['radio-io-rt95', 'chirp-rt95']);
   });
 
   it('maps legacy profile ids to a single Mini radio target', () => {

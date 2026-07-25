@@ -13,7 +13,9 @@ Items discovered or deferred while planning Milestone 2. File-format CSV work st
 - [x] RT95 VOX Web Serial adapter — [#643](https://github.com/pskillen/codeplug-studio/issues/643) (`radios/rt95/`, `radio-io-rt95` on `retevis-rt95`; parent epic [#640](https://github.com/pskillen/codeplug-studio/issues/640))
 - [x] RT95 full channel-span Write + occupancy bitfield — [#733](https://github.com/pskillen/codeplug-studio/issues/733) (baked into [#643](https://github.com/pskillen/codeplug-studio/issues/643); `forbidTransmit` → `tx_off`)
 - [x] RT95 scan bitfield on binary Write — [#734](https://github.com/pskillen/codeplug-studio/issues/734) (`scan_enabled_bitfield` @ `0x1960`; parent [#640](https://github.com/pskillen/codeplug-studio/issues/640))
+- [x] RT95 CTCSS/DTCS polarity on binary Write — [#735](https://github.com/pskillen/codeplug-studio/issues/735) (DTCS invert bits; custom CTCSS `0x33` gap documented; parent [#640](https://github.com/pskillen/codeplug-studio/issues/640))
 - [x] RT95 Radio image retain inspector — [#732](https://github.com/pskillen/codeplug-studio/issues/732) (`writeRole`, `cloneSummary`, Radio image page; parent [#640](https://github.com/pskillen/codeplug-studio/issues/640))
+- [x] RT95 tier-3 docs align — [#736](https://github.com/pskillen/codeplug-studio/issues/736) (shipped module paths; epic [#640](https://github.com/pskillen/codeplug-studio/issues/640) children done — [#644](https://github.com/pskillen/codeplug-studio/issues/644) siblings remain open)
 - [x] Anytone DMR R/W kit codec — [#646](https://github.com/pskillen/codeplug-studio/issues/646) (`kit/codecs/anytoneDmrRw.ts`; sibling surface; 921600 + u32 BE; not RT95 `programQx` / Mini `BlockCodec`; parent epic [#645](https://github.com/pskillen/codeplug-studio/issues/645))
 - [x] AT-D890UV Web Serial adapter — [#649](https://github.com/pskillen/codeplug-studio/issues/649) (depends on [#647](https://github.com/pskillen/codeplug-studio/issues/647) docs + [#646](https://github.com/pskillen/codeplug-studio/issues/646) codec; parent epic [#645](https://github.com/pskillen/codeplug-studio/issues/645))
 - [x] UV-21Pro V2 Web Serial adapter — [#639](https://github.com/pskillen/codeplug-studio/issues/639) (`radios/uv21-pro-v2/`, `uv17pro-family/`, `radio-io-uv21` egress; hardware verify + AM encode backlog)
@@ -35,7 +37,8 @@ Items discovered or deferred while planning Milestone 2. File-format CSV work st
 - [x] Anytone DMR R/W kit codec — [#646](https://github.com/pskillen/codeplug-studio/issues/646) (`kit/codecs/anytoneDmrRw.ts`)
 - [x] UV-5R Mini clone adapter + registry — [#617](https://github.com/pskillen/codeplug-studio/issues/617) (`radios/uv5r-mini/`, `registry.ts`, `radio-clone` hydration)
 - [x] UV-21Pro V2 binary memory reference — [#639](https://github.com/pskillen/codeplug-studio/issues/639) (docs: [radios/baofeng/uv-21-pro-v2](../../reference/radios/baofeng/uv-21-pro-v2/README.md))
-- [x] UV-21Pro V2 Web Serial adapter — [#639](https://github.com/pskillen/codeplug-studio/issues/639) (`radios/uv21-pro-v2/`, `radio-io-uv21` egress)
+- [x] RT95 VOX Web Serial adapter — [#643](https://github.com/pskillen/codeplug-studio/issues/643) (`radios/rt95/`, `radio-io-rt95` egress)
+- [x] RT95 tier-3 docs align — [#736](https://github.com/pskillen/codeplug-studio/issues/736) (`radios/retevis/rt95/`)
 
 ## Explicitly out of MVP
 

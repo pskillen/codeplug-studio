@@ -13,9 +13,10 @@ CHIRP radio driver labels are Low / Medium / High (~5 / 10 / 25 W). Studio expor
 
 ## Adapter wire spelling
 
-| Adapter           | Profile      | Notes                                        |
-| ----------------- | ------------ | -------------------------------------------- |
-| CHIRP Generic CSV | `chirp-rt95` | Watt strings for `parse_power` / Generic CSV |
+| Adapter           | Profile         | Notes                                        |
+| ----------------- | --------------- | -------------------------------------------- |
+| CHIRP Generic CSV | `chirp-rt95`    | Watt strings for `parse_power` / Generic CSV |
+| Web Serial I/O    | `radio-io-rt95` | Binary txpower enum in channel record        |
 
 CHIRP column mapping for `Power`: [channels.md](../../../export-formats/chirp/channels.md).
 

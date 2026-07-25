@@ -1,6 +1,6 @@
 # Retevis RT95 VOX
 
-Mobile / base analogue FM radio (AnyTone 778UV family). Studio targets it via CHIRP CSV (`RetevisRT95vox`) and (planned) Web Serial direct-write.
+Mobile / base analogue FM radio (AnyTone 778UV family). Studio targets it via CHIRP CSV (`RetevisRT95vox`) and **Web Serial** direct-write (`radio-io-rt95`).
 
 |                  |                                               |
 | ---------------- | --------------------------------------------- |
@@ -12,13 +12,14 @@ Mobile / base analogue FM radio (AnyTone 778UV family). Studio targets it via CH
 
 > **CHIRP CSV wire ≠ binary clone image.** File interchange lives under [export-formats/chirp](../../../export-formats/chirp/README.md). PROGRAM→QX memory maps, channel records, and handshake framing live in the binary docs below.
 
-**Product hub:** [radio-read-write](../../../../features/radio-read-write/README.md) · **Tracking:** [#642](https://github.com/pskillen/codeplug-studio/issues/642) (blocks adapter [#643](https://github.com/pskillen/codeplug-studio/issues/643); parent epic [#640](https://github.com/pskillen/codeplug-studio/issues/640))
+**Product hub:** [radio-read-write](../../../../features/radio-read-write/README.md) · **Tracking:** epic [#640](https://github.com/pskillen/codeplug-studio/issues/640) (memory RE [#642](https://github.com/pskillen/codeplug-studio/issues/642) · kit [#641](https://github.com/pskillen/codeplug-studio/issues/641) · adapter [#643](https://github.com/pskillen/codeplug-studio/issues/643))
 
 ## Studio profile ids
 
-| Adapter   | `profileId`  | Notes                                             |
-| --------- | ------------ | ------------------------------------------------- |
-| CHIRP CSV | `chirp-rt95` | Generic CSV watt strings; 6-char names, 200 slots |
+| Adapter        | `profileId`     | Notes                                             |
+| -------------- | --------------- | ------------------------------------------------- |
+| CHIRP CSV      | `chirp-rt95`    | Generic CSV watt strings; 6-char names, 200 slots |
+| Web Serial I/O | `radio-io-rt95` | PROGRAM→QX @ 9600; `retevis-rt95` radio target    |
 
 ## Documentation map
 
@@ -39,7 +40,12 @@ Mobile / base analogue FM radio (AnyTone 778UV family). Studio targets it via CH
 
 ## Direct read/write (binary)
 
-PROGRAM→QX clone protocol for Web Serial. See the binary docs in the map above. Kit codec for this family is sibling [#641](https://github.com/pskillen/codeplug-studio/issues/641) (`programQx.ts`) — out of scope for this docs ticket.
+PROGRAM→QX clone protocol for Web Serial — see the binary docs in the map above.
+
+| Layer         | Path                                                                                                                 |
+| ------------- | -------------------------------------------------------------------------------------------------------------------- |
+| Kit codec     | `src/integrations/radio-io/kit/codecs/programQx.ts` ([#641](https://github.com/pskillen/codeplug-studio/issues/641)) |
+| Radio adapter | `src/integrations/radio-io/radios/rt95/` ([#643](https://github.com/pskillen/codeplug-studio/issues/643))            |
 
 ## Ground truth (cite; do not copy)
 
@@ -52,14 +58,14 @@ CHIRP is **GPL**. Extract **facts** only — do **not** paste GPL sources into S
 
 ## Attribution
 
-Protocol lineage credit: `/attributions` entry `chirp` ([#597](https://github.com/pskillen/codeplug-studio/issues/597)). Planned `RadioDescriptor.attributionIds` for the RT95 adapter should include `chirp`.
+Protocol lineage credit: `/attributions` entry `chirp` ([#597](https://github.com/pskillen/codeplug-studio/issues/597)). `RadioDescriptor.attributionIds` includes `chirp`.
 
-## Planned Studio module
+## Shipped Studio module
 
-`src/integrations/radio-io/radios/rt95/` — handshake, layout, encode (see [protocol-kit architecture](../../../../features/radio-read-write/protocol-kit-architecture.md)). This ticket ships **docs only**.
+`src/integrations/radio-io/radios/rt95/` — full-image RMW Write (channels + occupancy/scan bitfields); settings / DTMF / bandlimit retained from Read. Radio image inspector ([#732](https://github.com/pskillen/codeplug-studio/issues/732)). Hardware Read→Write→Read-back verification still pending.
 
 ## Related
 
 - [radio-read-write hub](../../../../features/radio-read-write/README.md)
-- Epic [#640](https://github.com/pskillen/codeplug-studio/issues/640) · memory RE [#642](https://github.com/pskillen/codeplug-studio/issues/642) · adapter [#643](https://github.com/pskillen/codeplug-studio/issues/643) · kit codec [#641](https://github.com/pskillen/codeplug-studio/issues/641)
+- Epic [#640](https://github.com/pskillen/codeplug-studio/issues/640) · sibling radios [#644](https://github.com/pskillen/codeplug-studio/issues/644) (out of scope)
 - CHIRP CSV extract [#621](https://github.com/pskillen/codeplug-studio/issues/621) · earlier epic [#594](https://github.com/pskillen/codeplug-studio/issues/594)

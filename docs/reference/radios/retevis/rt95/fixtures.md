@@ -13,12 +13,12 @@ How to obtain binary dumps for **directional** codec tests without committing pe
 
 ## Capture options (future / local)
 
-| Method                 | When                                                                                                                                  | Notes                                                      |
-| ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------- |
-| CHIRP download         | Desktop tool today                                                                                                                    | Contiguous `0x32A0` image; GPL tool — facts only into docs |
-| Studio Web Serial read | After [#641](https://github.com/pskillen/codeplug-studio/issues/641) + [#643](https://github.com/pskillen/codeplug-studio/issues/643) | Echo-strip PROGRAM→QX; save hex locally                    |
-| CHIRP CSV              | Naming / watt checks only                                                                                                             | Prove names/semantics — **not** binary offsets             |
-| NeonPlug               | N/A                                                                                                                                   | **No** RT95 / 778 path                                     |
+| Method                 | When                                                                                                                                      | Notes                                                       |
+| ---------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------- |
+| CHIRP download         | Desktop tool today                                                                                                                        | Contiguous `0x32A0` image; GPL tool — facts only into docs  |
+| Studio Web Serial read | Shipped ([#641](https://github.com/pskillen/codeplug-studio/issues/641) + [#643](https://github.com/pskillen/codeplug-studio/issues/643)) | Echo-strip PROGRAM→QX; save hex locally for hardware verify |
+| CHIRP CSV              | Naming / watt checks only                                                                                                                 | Prove names/semantics — **not** binary offsets              |
+| NeonPlug               | N/A                                                                                                                                       | **No** RT95 / 778 path                                      |
 
 ## Synthetic fixture recipe
 
@@ -27,7 +27,7 @@ How to obtain binary dumps for **directional** codec tests without committing pe
 3. Set occupied bit 0 in the bitfield at `0x1940`.
 4. Optionally set `bandlimit` at `0x326D` to `0x01` (wide amateur table).
 5. Keep callsigns / IDs fake.
-6. When adapters land, store under `src/integrations/radio-io/**/__fixtures__/` — never under docs with real operator data.
+6. Synthetic fixture: `src/integrations/radio-io/radios/rt95/__fixtures__/syntheticImage.ts`.
 
 ## What this ticket verified without a dump
 

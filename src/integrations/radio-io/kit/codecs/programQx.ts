@@ -212,12 +212,7 @@ export async function enterProgramQxMode(
   timeoutMs = DEFAULT_ECHO_TIMEOUT_MS,
 ): Promise<void> {
   const reply = await sendProgramQxCommand(pipe, PROGRAM_ENTER, 3, timeoutMs);
-  if (
-    reply.length !== 3 ||
-    reply[0] !== 0x51 ||
-    reply[1] !== 0x58 ||
-    reply[2] !== PROGRAM_QX_ACK
-  ) {
+  if (reply.length !== 3 || reply[0] !== 0x51 || reply[1] !== 0x58 || reply[2] !== PROGRAM_QX_ACK) {
     throw new RadioProtocolError(
       `PROGRAM→QX enter expected QX\\x06, got ${[...reply].map((b) => `0x${b.toString(16)}`).join(' ')}`,
     );
@@ -262,9 +257,7 @@ export function parseProgramQxWriteAck(byte: number): void {
   if (byte === PROGRAM_QX_NACK) {
     throw new RadioProtocolError('PROGRAM→QX write NACK (0x0a)');
   }
-  throw new RadioProtocolError(
-    `PROGRAM→QX write expected ACK 0x06, got 0x${byte.toString(16)}`,
-  );
+  throw new RadioProtocolError(`PROGRAM→QX write expected ACK 0x06, got 0x${byte.toString(16)}`);
 }
 
 /** Exit program mode (best-effort; no reply required). */

@@ -61,9 +61,7 @@ function buildReadReply(addr: number, payload: Uint8Array): Uint8Array {
 
 describe('programQxCodec frames', () => {
   it('builds read frames as R + u16 BE addr + length', () => {
-    expect(makeProgramQxReadFrame(0x0000, 0x10)).toEqual(
-      new Uint8Array([0x52, 0x00, 0x00, 0x10]),
-    );
+    expect(makeProgramQxReadFrame(0x0000, 0x10)).toEqual(new Uint8Array([0x52, 0x00, 0x00, 0x10]));
     expect(programQxCodec.makeReadFrame(0x3290, 0x10)).toEqual(
       new Uint8Array([0x52, 0x32, 0x90, 0x10]),
     );

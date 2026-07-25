@@ -42,7 +42,6 @@ const DUPLEX_MINUS = 2;
 const DUPLEX_SPLIT = 3;
 
 const WIDTH_NFM = 0;
-const WIDTH_20K = 1;
 const WIDTH_FM = 2;
 
 function getBit(byte: number, bit: number): boolean {
@@ -74,15 +73,9 @@ function decodeRadioToneFromCtcssIndex(index: number): RadioTone {
   return hz != null ? { kind: 'ctcss', hz } : { kind: 'none' };
 }
 
-function decodeRadioToneFromDtcs(
-  low: number,
-  high: number,
-  invert: boolean,
-): RadioTone {
+function decodeRadioToneFromDtcs(low: number, high: number, invert: boolean): RadioTone {
   const code = dtcsBitsToCode(low, high);
-  return code != null
-    ? { kind: 'dcs', code, polarity: invert ? 'I' : 'N' }
-    : { kind: 'none' };
+  return code != null ? { kind: 'dcs', code, polarity: invert ? 'I' : 'N' } : { kind: 'none' };
 }
 
 function powerPercentFromTxPower(txpower: number): number | null {
@@ -122,10 +115,7 @@ export function decodeChannelRecord(
     throw new RangeError(`Channel record must be ${RT95_CHANNEL_RECORD_SIZE} bytes`);
   }
 
-  const occupied =
-    image != null
-      ? isMemoryOccupied(image, slotIndex)
-      : !isRecordBlank(raw);
+  const occupied = image != null ? isMemoryOccupied(image, slotIndex) : !isRecordBlank(raw);
 
   if (!occupied || isRecordBlank(raw)) {
     return {
@@ -167,26 +157,17 @@ export function decodeChannelRecord(
   if (ctcssEncEn) {
     txTone = decodeRadioToneFromCtcssIndex(raw[13]!);
   } else if (dtcsEncEn) {
-    txTone = decodeRadioToneFromDtcs(
-      raw[16]!,
-      getBit(raw[17]!, 7) ? 1 : 0,
-      getBit(raw[17]!, 6),
-    );
+    txTone = decodeRadioToneFromDtcs(raw[16]!, getBit(raw[17]!, 7) ? 1 : 0, getBit(raw[17]!, 6));
   }
 
   let rxTone: RadioTone = { kind: 'none' };
   if (ctcssDecEn) {
     rxTone = decodeRadioToneFromCtcssIndex(raw[12]!);
   } else if (dtcsDecEn) {
-    rxTone = decodeRadioToneFromDtcs(
-      raw[14]!,
-      getBit(raw[15]!, 7) ? 1 : 0,
-      getBit(raw[15]!, 6),
-    );
+    rxTone = decodeRadioToneFromDtcs(raw[14]!, getBit(raw[15]!, 7) ? 1 : 0, getBit(raw[15]!, 6));
   }
 
-  const scanAdd =
-    image != null ? isMemoryScanEnabled(image, slotIndex) : getBit(raw[20]!, 0);
+  const scanAdd = image != null ? isMemoryScanEnabled(image, slotIndex) : getBit(raw[20]!, 0);
 
   return {
     slotIndex,
@@ -304,11 +285,7 @@ export function decodeChannelsFromImage(image: Uint8Array | MemoryMap): RadioCha
   for (let i = 0; i < RT95_CHANNEL_COUNT; i++) {
     const offset = i * RT95_CHANNEL_RECORD_SIZE;
     channels.push(
-      decodeChannelRecord(
-        bytes.subarray(offset, offset + RT95_CHANNEL_RECORD_SIZE),
-        i + 1,
-        bytes,
-      ),
+      decodeChannelRecord(bytes.subarray(offset, offset + RT95_CHANNEL_RECORD_SIZE), i + 1, bytes),
     );
   }
   return channels;

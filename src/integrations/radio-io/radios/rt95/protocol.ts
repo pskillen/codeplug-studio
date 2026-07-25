@@ -20,7 +20,6 @@ import { createMemoryMap, memoryMapFromBytes } from '../../kit/memoryMap.ts';
 import { RadioProtocolError } from '../../kit/errors.ts';
 import { reportProgress, throwIfAborted } from '../../kit/progress.ts';
 import {
-  RT95_BANDLIMIT_OFFSET,
   RT95_BLOCK_ADDR_END,
   RT95_BLOCK_ADDR_START,
   RT95_BLOCK_SIZE,
@@ -83,7 +82,12 @@ export class Rt95Protocol implements CloneImageRadio {
 
   private async readBlock(pipe: BytePipe, addr: number): Promise<Uint8Array> {
     const frame = makeProgramQxReadFrame(addr, PROGRAM_QX_BLOCK_SIZE);
-    const reply = await sendProgramQxCommand(pipe, frame, PROGRAM_QX_READ_REPLY_LEN, RT95_IO_TIMEOUT_MS);
+    const reply = await sendProgramQxCommand(
+      pipe,
+      frame,
+      PROGRAM_QX_READ_REPLY_LEN,
+      RT95_IO_TIMEOUT_MS,
+    );
     return parseProgramQxReadReply(reply, PROGRAM_QX_BLOCK_SIZE);
   }
 
@@ -99,8 +103,7 @@ export class Rt95Protocol implements CloneImageRadio {
   async download(opts: { onProgress?: ProgressFn; signal?: AbortSignal }): Promise<MemoryMap> {
     const pipe = this.requirePipe();
     const image = createMemoryMap(RT95_IMAGE_SIZE);
-    const blockCount =
-      (RT95_BLOCK_ADDR_END - RT95_BLOCK_ADDR_START) / RT95_BLOCK_SIZE + 1;
+    const blockCount = (RT95_BLOCK_ADDR_END - RT95_BLOCK_ADDR_START) / RT95_BLOCK_SIZE + 1;
     let done = 0;
 
     for (let addr = RT95_BLOCK_ADDR_START; addr <= RT95_BLOCK_ADDR_END; addr += RT95_BLOCK_SIZE) {
@@ -150,8 +153,7 @@ export class Rt95Protocol implements CloneImageRadio {
     const primeFrame = makeProgramQxReadFrame(RT95_UPLOAD_PRIME_ADDR, PROGRAM_QX_BLOCK_SIZE);
     await sendProgramQxCommand(pipe, primeFrame, PROGRAM_QX_READ_REPLY_LEN, RT95_IO_TIMEOUT_MS);
 
-    const blockCount =
-      (RT95_BLOCK_ADDR_END - RT95_BLOCK_ADDR_START) / RT95_BLOCK_SIZE + 1;
+    const blockCount = (RT95_BLOCK_ADDR_END - RT95_BLOCK_ADDR_START) / RT95_BLOCK_SIZE + 1;
     let done = 0;
 
     try {

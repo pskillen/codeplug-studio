@@ -7,7 +7,11 @@ import {
   encodeChannelRecord,
   encodeChannelsIntoImage,
 } from './channelCodec.ts';
-import { occupiedBitAt, scanBitAt, buildSyntheticRt95Image } from './__fixtures__/syntheticImage.ts';
+import {
+  occupiedBitAt,
+  scanBitAt,
+  buildSyntheticRt95Image,
+} from './__fixtures__/syntheticImage.ts';
 import { RT95_CHANNEL_SPAN, RT95_IMAGE_SIZE, RT95_SCAN_BITFIELD_OFFSET } from './constants.ts';
 
 function sampleDto(overrides: Partial<RadioChannelDto> = {}): RadioChannelDto {
@@ -92,9 +96,11 @@ describe('rt95 channelCodec', () => {
     image[RT95_SCAN_BITFIELD_OFFSET] = 0xff;
     encodeChannelsIntoImage(image, []);
     expect(scanBitAt(image, 1)).toBe(false);
-    expect(image.subarray(RT95_SCAN_BITFIELD_OFFSET, RT95_SCAN_BITFIELD_OFFSET + 32).every((b) => b === 0)).toBe(
-      true,
-    );
+    expect(
+      image
+        .subarray(RT95_SCAN_BITFIELD_OFFSET, RT95_SCAN_BITFIELD_OFFSET + 32)
+        .every((b) => b === 0),
+    ).toBe(true);
   });
 
   it('round-trips DTCS invert polarity on encode/decode', () => {

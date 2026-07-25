@@ -1021,8 +1021,8 @@ export default function BuildRadioImageSettingsPage() {
                 : isRt95
                   ? 'Counts show what is on the radio; retained settings, DTMF, and bandlimit regions are what Studio keeps when you write channels from your library.'
                   : isUv17ProFamily
-                  ? 'Counts show what is on the radio; retained settings are what Studio keeps when you write channels from your library.'
-                  : 'Unmodelled regions (VFO, settings, ANI) are retained for Write so they survive channel updates from the library. Settings are not editable in Studio.'}
+                    ? 'Counts show what is on the radio; retained settings are what Studio keeps when you write channels from your library.'
+                    : 'Unmodelled regions (VFO, settings, ANI) are retained for Write so they survive channel updates from the library. Settings are not editable in Studio.'}
         </Text>
       }
     >
@@ -1035,7 +1035,11 @@ export default function BuildRadioImageSettingsPage() {
               into this build. Write stays blocked until a Read succeeds.
             </Text>
           </FormSection>
-        ) : !uv17ProSummary && !dm32Summary && !atD890Summary && !openGd77Summary && !rt95Summary ? (
+        ) : !uv17ProSummary &&
+          !dm32Summary &&
+          !atD890Summary &&
+          !openGd77Summary &&
+          !rt95Summary ? (
           <FormSection title="Stored image">
             <Text size="sm">
               A radio-clone image is stored (model {bag.retain.radioModelId},{' '}

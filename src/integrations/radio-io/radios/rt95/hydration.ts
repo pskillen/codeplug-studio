@@ -22,9 +22,7 @@ export function extractRt95Hydration(
 ): RadioCloneHydrationBag {
   const bytes = memoryMapToBytes(image);
   if (bytes.length < RT95_IMAGE_SIZE) {
-    throw new RangeError(
-      `RT95 hydration expects image ≥ 0x${RT95_IMAGE_SIZE.toString(16)} bytes`,
-    );
+    throw new RangeError(`RT95 hydration expects image ≥ 0x${RT95_IMAGE_SIZE.toString(16)} bytes`);
   }
   return createRadioCloneHydrationBag({
     radioModelId: RT95_MODEL_ID,

@@ -40,18 +40,21 @@ describe('formatProfiles', () => {
     expect(profiles.map((p) => p.profileId)).toEqual([
       'radio-io-uv5r-mini',
       'radio-io-uv21',
+      'radio-io-rt95',
       'radio-io-dm32uv',
       'radio-io-at-d890uv',
       'radio-io-opengd77-1701',
     ]);
     expect(profiles.find((p) => p.profileId === 'radio-io-uv21')?.nameLimit).toBe(12);
     expect(profiles.find((p) => p.profileId === 'radio-io-uv21')?.maxChannels).toBe(1000);
+    expect(profiles.find((p) => p.profileId === 'radio-io-rt95')?.nameLimit).toBe(6);
+    expect(profiles.find((p) => p.profileId === 'radio-io-rt95')?.maxChannels).toBe(200);
     expect(profiles[0]?.nameLimit).toBe(12);
     expect(profiles[0]?.maxChannels).toBe(999);
     expect(profiles[1]?.nameLimit).toBe(12);
     expect(profiles[1]?.maxChannels).toBe(1000);
-    expect(profiles[2]?.nameLimit).toBe(16);
-    expect(profiles[2]?.maxChannels).toBe(4000);
+    expect(profiles[3]?.nameLimit).toBe(16);
+    expect(profiles[3]?.maxChannels).toBe(4000);
   });
 
   it('returns wire hint for OpenGD77 and CHIRP profiles', () => {
@@ -78,5 +81,8 @@ describe('formatProfiles', () => {
     expect(formatProfileWireHint('radio-io', 'radio-io-uv21')).toMatch(/12-char/);
     expect(formatProfileWireHint('radio-io', 'radio-io-uv21')).toMatch(/1000/);
     expect(formatProfileWireHint('radio-io', 'radio-io-uv21')).toMatch(/Web Serial/);
+    expect(formatProfileWireHint('radio-io', 'radio-io-rt95')).toMatch(/6-char/);
+    expect(formatProfileWireHint('radio-io', 'radio-io-rt95')).toMatch(/200/);
+    expect(formatProfileWireHint('radio-io', 'radio-io-rt95')).toMatch(/Web Serial/);
   });
 });

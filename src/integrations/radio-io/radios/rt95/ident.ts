@@ -3,10 +3,7 @@
  */
 
 import { RadioWrongIdentError } from '../../kit/errors.ts';
-import {
-  RT95_ALLOWED_MODEL,
-  RT95_ALLOWED_VERSION,
-} from './constants.ts';
+import { RT95_ALLOWED_MODEL, RT95_ALLOWED_VERSION } from './constants.ts';
 
 export interface Rt95IdentResult {
   model: string;

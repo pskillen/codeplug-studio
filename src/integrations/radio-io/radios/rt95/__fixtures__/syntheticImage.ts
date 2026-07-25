@@ -24,7 +24,11 @@ export function buildSyntheticRt95Image(): Uint8Array {
   ch.set(name, 24);
 
   image.set(ch, 0);
-  image.fill(0x00, RT95_OCCUPIED_BITFIELD_OFFSET, RT95_OCCUPIED_BITFIELD_OFFSET + RT95_BITFIELD_BYTES);
+  image.fill(
+    0x00,
+    RT95_OCCUPIED_BITFIELD_OFFSET,
+    RT95_OCCUPIED_BITFIELD_OFFSET + RT95_BITFIELD_BYTES,
+  );
   image[RT95_OCCUPIED_BITFIELD_OFFSET] = 0x01;
   image[RT95_BANDLIMIT_OFFSET] = 0x01;
 
