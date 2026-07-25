@@ -29,5 +29,4 @@ export const AT_D890_WRITE_EXPERIMENTAL_TITLE = 'Highly experimental — soft-br
 export const AT_D890_WRITE_EXPERIMENTAL_LEAD =
   'Direct serial Write to the Anytone AT-D890UV has roughly a 50/50 chance of soft-bricking your radio.';
 
-export const AT_D890_WRITE_EXPERIMENTAL_PREFER_CSV =
-  'Prefer the Anytone CSV export route for now.';
+export const AT_D890_WRITE_EXPERIMENTAL_PREFER_CSV = 'Prefer the Anytone CSV export route for now.';

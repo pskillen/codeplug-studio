@@ -28,10 +28,7 @@ import {
 } from '@integrations/radio-io/index.ts';
 import { buildRadioWriteProjection } from './radioIoWriteProjection.ts';
 import type { RadioWriteOrganisation } from '@integrations/radio-io/radioWriteProjection.ts';
-import {
-  RADIO_WRITE_PROD_DISABLED_MESSAGE,
-  resolveRadioWriteGate,
-} from './radioWriteEnvGate.ts';
+import { RADIO_WRITE_PROD_DISABLED_MESSAGE, resolveRadioWriteGate } from './radioWriteEnvGate.ts';
 
 export { isWebSerialSupported, getWebSerialUnsupportedMessage };
 

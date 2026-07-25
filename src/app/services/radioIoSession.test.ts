@@ -182,9 +182,9 @@ describe('radioIoSession helpers', () => {
       imageBytes,
     });
     const { build, egress } = uv5rMiniRadioIo();
-    expect(() =>
-      prepareRadioWriteImage(build, { ...egress, hydration }, emptyLibrary()),
-    ).toThrow(RadioWriteBlockedError);
+    expect(() => prepareRadioWriteImage(build, { ...egress, hydration }, emptyLibrary())).toThrow(
+      RadioWriteBlockedError,
+    );
     vi.restoreAllMocks();
   });
 
