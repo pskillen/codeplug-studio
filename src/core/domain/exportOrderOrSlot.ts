@@ -160,6 +160,62 @@ export function exportOrderResetConfirmMessage(): string {
   );
 }
 
+export interface FlatMemoryOrderProjection {
+  orderedIds: string[];
+  matchedCount: number;
+  unmatchedCount: number;
+}
+
+/**
+ * Project source flat-memory order onto a target included-channel list.
+ * Matched ids follow source relative order; unmatched target ids append in prior target order.
+ */
+export function projectFlatMemoryOrderFromSource(
+  sourceOrderedIds: readonly string[],
+  targetOrderedIds: readonly string[],
+): FlatMemoryOrderProjection {
+  const targetSet = new Set(targetOrderedIds);
+  const matched: string[] = [];
+  const seenMatched = new Set<string>();
+
+  for (const channelId of sourceOrderedIds) {
+    if (!targetSet.has(channelId) || seenMatched.has(channelId)) continue;
+    matched.push(channelId);
+    seenMatched.add(channelId);
+  }
+
+  const unmatched: string[] = [];
+  for (const channelId of targetOrderedIds) {
+    if (!seenMatched.has(channelId)) unmatched.push(channelId);
+  }
+
+  return {
+    orderedIds: [...matched, ...unmatched],
+    matchedCount: matched.length,
+    unmatchedCount: unmatched.length,
+  };
+}
+
+/** Confirm copy for copying flat-memory order from another build (permanent, like Sort…). */
+export function buildCopyOrderFromBuildConfirmMessage(
+  sourceBuildName: string,
+  matchedCount: number,
+  unmatchedCount: number,
+): string {
+  const unmatchedLine =
+    unmatchedCount > 0
+      ? `${unmatchedCount} channel${unmatchedCount === 1 ? '' : 's'} on this build will keep their relative order after the matched block.\n\n`
+      : '';
+
+  return (
+    `Copy memory order from “${sourceBuildName}”?\n\n` +
+    `${matchedCount} channel${matchedCount === 1 ? '' : 's'} will follow that build’s order. ` +
+    unmatchedLine +
+    'This only changes this radio build. Your library order stays the same. ' +
+    'Existing build order overrides for this list will be replaced.'
+  );
+}
+
 /** Order-only migration when library is unavailable (IndexedDB read). */
 export function migrateFlatMemoryLayoutOrderOnly(build: RadioBuild): RadioBuild {
   const flatMemory = findFlatMemorySection(build);

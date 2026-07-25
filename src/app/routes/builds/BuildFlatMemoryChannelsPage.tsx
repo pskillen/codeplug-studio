@@ -12,11 +12,14 @@ import {
 } from '@core/domain/formatBuildOverrides.ts';
 import {
   applyDenseChannelOrderOrSlots,
+  buildCopyOrderFromBuildConfirmMessage,
+  buildUsesFlatMemoryList,
   chirpMemoryChannelIds,
   clearAllOrderOrSlots,
   exportOrderResetConfirmMessage,
   hasAnyOrderOrSlotOverride,
   isChirpFlatMemoryChannel,
+  projectFlatMemoryOrderFromSource,
 } from '@core/domain/exportOrderOrSlot.ts';
 import {
   buildExportSortConfirmMessage,
@@ -40,6 +43,7 @@ import BuildEntityExportSettingsCard, {
 } from '../../components/builds/BuildEntityExportSettingsCard.tsx';
 import MembershipSortMenu from '../../components/library/MembershipSortMenu.tsx';
 import ExportOrderOverrideBanner from '../../components/builds/wirePreview/ExportOrderOverrideBanner.tsx';
+import CopyOrderFromBuildMenu from '../../components/builds/wirePreview/CopyOrderFromBuildMenu.tsx';
 import ExportOrderSelectMenu from '../../components/builds/wirePreview/ExportOrderSelectMenu.tsx';
 import WirePreviewDataTable from '../../components/builds/wirePreview/WirePreviewDataTable.tsx';
 import WirePreviewOverrideModal from '../../components/builds/wirePreview/WirePreviewOverrideModal.tsx';
@@ -91,7 +95,7 @@ export default function BuildFlatMemoryChannelsPage() {
   const [savedBuild, setSavedBuild] = useState<RadioBuild | null>(null);
   const build = resolveOptimisticBuild(contextBuild, savedBuild);
   const { activeProjectId } = useProjects();
-  const { putBuild } = useFormatBuilds();
+  const { builds, putBuild } = useFormatBuilds();
   const [librarySlice, setLibrarySlice] = useState<LibrarySlice>({
     channels: [],
     zones: [],
@@ -146,6 +150,12 @@ export default function BuildFlatMemoryChannelsPage() {
   const memoryChannelIds = useMemo(
     () => chirpMemoryChannelIds(build, librarySlice),
     [build, librarySlice],
+  );
+
+  const eligibleSourceBuilds = useMemo(
+    () =>
+      builds.filter((candidate) => candidate.id !== build.id && buildUsesFlatMemoryList(candidate)),
+    [build.id, builds],
   );
 
   const previewRows = useMemo(
@@ -270,6 +280,26 @@ export default function BuildFlatMemoryChannelsPage() {
     );
   }
 
+  function resolveCopyOrderStats(sourceBuildId: string) {
+    const source = eligibleSourceBuilds.find((candidate) => candidate.id === sourceBuildId);
+    if (!source) return null;
+    const { matchedCount, unmatchedCount } = projectFlatMemoryOrderFromSource(
+      chirpMemoryChannelIds(source, librarySlice),
+      memoryChannelIds,
+    );
+    return { matchedCount, unmatchedCount };
+  }
+
+  function handleCopyOrderFromBuild(sourceBuildId: string) {
+    const source = eligibleSourceBuilds.find((candidate) => candidate.id === sourceBuildId);
+    if (!source) return;
+    const { orderedIds } = projectFlatMemoryOrderFromSource(
+      chirpMemoryChannelIds(source, librarySlice),
+      memoryChannelIds,
+    );
+    setChannelOrder(orderedIds);
+  }
+
   function includeChannel(channelId: string) {
     const current = buildRef.current;
     void persistBuild(
@@ -346,14 +376,28 @@ export default function BuildFlatMemoryChannelsPage() {
             onSelectedKeysChange={setReorderSelectedKeys}
             disabled={reorderBlocked}
           />
+          <CopyOrderFromBuildMenu
+            builds={eligibleSourceBuilds}
+            disabled={reorderBlocked}
+            confirmMessage={(source, stats) =>
+              buildCopyOrderFromBuildConfirmMessage(
+                source.name,
+                stats.matchedCount,
+                stats.unmatchedCount,
+              )
+            }
+            resolveStats={resolveCopyOrderStats}
+            onCopy={handleCopyOrderFromBuild}
+          />
           {reorderBlocked ? (
             <Text size="xs" c="dimmed">
-              Clear search to sort or reorder.
+              Clear search to sort, reorder, or copy order.
             </Text>
           ) : (
             <Text size="xs" c="dimmed">
               Sorts this build’s memory locations only — not your library. Sort selection… collates
-              a split selection at the first selected row.
+              a split selection at the first selected row. Copy order from… matches channels by
+              library id.
             </Text>
           )}
         </Group>

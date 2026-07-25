@@ -31,6 +31,7 @@ Prefer these names in code and docs.
 | **Drag**                              | C `onReorder` + `SelectedItemDragHandle`; A `bulkReorder` + drag handle in Order column | Yes             | Membership lists; large export-order DataTables (`bulkReorder`); `reorderDisabled` while filtered |
 | **`MembershipSortMenu`**              | Above list / C toolbar                                                                  | Yes (confirm)   | Permanent rewrite by name / callsign / …; flat-memory also **Sort selection…** (selected only)    |
 | **`ExportOrderSelectMenu`**           | Flat-memory Channels toolbar (beside Sort…)                                             | No              | Toggle-select by band / FM·AM / simplex·split before drag, Move, or Sort selection…               |
+| **`CopyOrderFromBuildMenu`**          | Flat-memory Channels toolbar (beside Select…)                                           | Yes (confirm)   | Copy memory order from another same-project `FlatMemoryList` build by library channel UUID        |
 | **`bulkReorder`**                     | `DataTable`                                                                             | Yes             | Multi-select + drag + toolbar Move for large `reorderMode` lists                                  |
 | **`storedOrder`**                     | `DataTable`                                                                             | No — display    | Hybrid: temporary natural sorts + **Return to export order**                                      |
 | **Reset to library order**            | Wire preview banner                                                                     | Yes (confirm)   | Clear build `orderOrSlot` / zone member layout hint — **not** `storedOrder` restore               |
@@ -41,17 +42,18 @@ Prefer these names in code and docs.
 1. **Agreed-order lists stay in reorder mode.** Zones, role C membership, wire member order → not temporary column sorts as the primary UX.
 2. **Role C has no temporary display sort.** Only reorder + permanent Sort….
 3. **Do not invent per-page sort chrome.** Use kit props and `MembershipSortMenu`.
-4. **Filter disables reorder.** Clear messaging when arrows / drag / Sort are blocked.
+4. **Filter disables reorder.** Clear messaging when arrows / drag / Sort / Copy order from… are blocked.
 5. **Role A bulk reorder** — `DataTable` `bulkReorder` for large export-order lists (~100+ rows): checkboxes, drag handles in the Order column, toolbar **Move up/down** (Alt+↑/↓). Disables virtual tbody. Gold: flat-memory Channels; also build Zones.
 6. **Sort selection…** — With ≥2 rows selected on flat-memory Channels, sort only the selection. Split islands **collate** into one contiguous block at the **earliest selected** index; unselected rows between islands close up (relative order preserved); then the chosen Sort criteria apply within the block. Full-list **Sort channels…** remains available.
-7. **Build order reset ≠ browse restore.** Clearing `orderOrSlot` / member layout hints is permanent (confirm). DataTable **Return to export order** only undoes temporary column sorts.
-8. **Nested projection chrome** (Channels wire preview) uses `getRowClassName` + indented name cells — not card Accordion lists.
-9. **Role C may combine** drag, toolbar **Move up/down** (selection), and **per-row arrows** (`onMoveItem`). Gold: Build → Zones → Members export order.
+7. **Copy order from…** — Flat-memory Channels only (label provisional). Pick another same-project `FlatMemoryList` build; matched library channels follow that build’s memory order; unmatched channels on this build append in prior relative order; confirm shows match/unmatch counts; densifies `orderOrSlot` to `1…n` ([#739](https://github.com/pskillen/codeplug-studio/issues/739)).
+8. **Build order reset ≠ browse restore.** Clearing `orderOrSlot` / member layout hints is permanent (confirm). DataTable **Return to export order** only undoes temporary column sorts.
+9. **Nested projection chrome** (Channels wire preview) uses `getRowClassName` + indented name cells — not card Accordion lists.
+10. **Role C may combine** drag, toolbar **Move up/down** (selection), and **per-row arrows** (`onMoveItem`). Gold: Build → Zones → Members export order.
 
 ### Mental model
 
 ```text
-reorderMode / C drag / Sort… / Sort selection…  →  mutate Zone.order / membership arrays / orderOrSlot
+reorderMode / C drag / Sort… / Sort selection… / Copy order from…  →  mutate Zone.order / membership arrays / orderOrSlot
 Reset to library order        →  clear build order overrides (confirm; permanent)
 storedOrder + restore         →  UI-only browse, then return to export order
 column sorts                  →  persisted prefs, no model rewrite
@@ -87,15 +89,16 @@ Gold: Zones → Edit, Scan list edit, Receive Group List edit (`RxGroupListMembe
 
 ## Naming catalogue
 
-| Control / concept              | Canonical label / name                                   | Notes                                  |
-| ------------------------------ | -------------------------------------------------------- | -------------------------------------- |
-| Permanent membership sort      | **Sort channels…** / **Sort zones…** / **Sort members…** | Ellipsis; confirm overwrites order     |
-| Zones list intro               | Operator-facing order explanation                        | No `Zone.order` in UI copy             |
-| Include-in-scan on zone member | **Include in scan list**                                 | Labelled; prefer RHS of row            |
-| Membership remove              | Tooltip **Remove from zone** (etc.)                      | Trash icon                             |
-| Entity delete                  | **Delete …** via list action                             | Same trash chrome; different semantics |
-| Receive Group Lists            | Full phrase in titles / nav                              | Not “RX group lists” in page chrome    |
-| Reorder disabled hint          | Plain language                                           | “Clear filter to drag-reorder”         |
+| Control / concept              | Canonical label / name                                   | Notes                                     |
+| ------------------------------ | -------------------------------------------------------- | ----------------------------------------- |
+| Permanent membership sort      | **Sort channels…** / **Sort zones…** / **Sort members…** | Ellipsis; confirm overwrites order        |
+| Copy flat-memory order         | **Copy order from…** (provisional)                       | Flat-memory Channels; confirm; UUID match |
+| Zones list intro               | Operator-facing order explanation                        | No `Zone.order` in UI copy                |
+| Include-in-scan on zone member | **Include in scan list**                                 | Labelled; prefer RHS of row               |
+| Membership remove              | Tooltip **Remove from zone** (etc.)                      | Trash icon                                |
+| Entity delete                  | **Delete …** via list action                             | Same trash chrome; different semantics    |
+| Receive Group Lists            | Full phrase in titles / nav                              | Not “RX group lists” in page chrome       |
+| Reorder disabled hint          | Plain language                                           | “Clear filter to drag-reorder”            |
 
 ## Checklist for a new list surface
 
