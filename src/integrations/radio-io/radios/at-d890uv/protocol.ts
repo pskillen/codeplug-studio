@@ -264,7 +264,8 @@ export class AtD890uvProtocol implements CloneImageRadio {
     }
   }
 
-  decodeChannels(_image: MemoryMap): RadioChannelDto[] {
+  decodeChannels(image: MemoryMap): RadioChannelDto[] {
+    void image;
     if (!this.cache) return [];
     return decodeChannelsFromAtD890Cache(this.cache);
   }
