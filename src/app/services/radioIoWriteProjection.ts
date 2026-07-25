@@ -450,12 +450,18 @@ function buildTalkGroupsAndRx(
       10,
     );
     const memberDigitalIds: number[] = [];
+    const useTalkgroupBankSlots = egress.profileId === 'radio-io-at-d890uv';
     for (const member of row.entity.members) {
       if (memberDigitalIds.length >= maxRxMembers) break;
       if (member.ref.kind === 'talkGroup') {
-        const tg = assembled.talkGroups.find((t) => t.entity.id === member.ref.id);
-        if (tg) memberDigitalIds.push(tg.entity.digitalId);
-      } else if (member.ref.kind === 'digitalContact') {
+        if (useTalkgroupBankSlots) {
+          const bankIndex = contactIdByEntityId.get(member.ref.id);
+          if (bankIndex != null) memberDigitalIds.push(bankIndex - 1);
+        } else {
+          const tg = assembled.talkGroups.find((t) => t.entity.id === member.ref.id);
+          if (tg) memberDigitalIds.push(tg.entity.digitalId);
+        }
+      } else if (!useTalkgroupBankSlots && member.ref.kind === 'digitalContact') {
         const dc = assembled.digitalContacts.find((d) => d.entity.id === member.ref.id);
         if (dc) memberDigitalIds.push(dc.entity.digitalId);
       }
