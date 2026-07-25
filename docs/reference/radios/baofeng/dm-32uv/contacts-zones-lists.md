@@ -136,7 +136,7 @@ TX-contact indices (`0x42`/`0x43`) point into the **serial** talk-group list (`0
 | Count        | Byte at `0x00` (max **250**)                        |
 | Entries from | `0x10`                                              |
 | Entry size   | **16** bytes                                        |
-| Channel ref  | Channel byte `0x2B` is 0-based index; `0xFF` = none |
+| Channel ref  | Channel byte `0x2B` is 0-based index; `0xFF` = none — Web Serial Write builds the bank from distinct channel `ModeProfile.dmrId` values ([#687](https://github.com/pskillen/codeplug-studio/issues/687)) |
 
 ## Related
 

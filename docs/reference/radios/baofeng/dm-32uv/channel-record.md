@@ -43,7 +43,7 @@ Last channel offset in first block: `0x10 + 83×48 = 0xFA0`.
 | `0x28`        | Reserved                              | —                                                                    |
 | `0x29`        | PTT ID type                           | Bits 7–4 Off/BOT/EOT/Both                                            |
 | `0x2A`        | Encryption key id (digital)           | `0` = none; `1`–`8` key index                                        |
-| `0x2B`        | DMR radio ID index                    | `0xFF` = none; else 0-based index into radio-ID list                 |
+| `0x2B`        | DMR radio ID index                    | `0xFF` = none; else 0-based index into operator radio-ID bank (`0x67`) from channel `ModeProfile.dmrId` on Write |
 | `0x2C`–`0x2F` | Reserved                              | —                                                                    |
 
 ### Mode (`0x18` bits 7–4)
@@ -83,7 +83,7 @@ Internal % mapping for file adapters: [power.md](power.md).
 
 ### Unmodelled fields at Write
 
-Studio does not expose encryption, lone-worker, emergency-system, or PTT/signaling CRUD. On Web Serial Write, unmodelled offsets encode to **NeonPlug `createDefaultChannel` / `encodeChannel` defaults** (e.g. squelch level 3 at `0x1C` bits 7–4, encryption id `0` at `0x2A`, DMR radio-ID index `0xFF` at `0x2B`, `0x1E` left `0xFF`). Re-Read of replaced channel regions must not show prior-radio-only values in those bytes.
+Studio does not expose encryption, lone-worker, emergency-system, or PTT/signaling CRUD. On Web Serial Write, unmodelled offsets encode to **NeonPlug `createDefaultChannel` / `encodeChannel` defaults** (e.g. squelch level 3 at `0x1C` bits 7–4, encryption id `0` at `0x2A`, DMR radio-ID index from projection at `0x2B`, `0x1E` left `0xFF`). Re-Read of replaced channel regions must not show prior-radio-only values in those bytes.
 
 ## TX contact indirection (talk group)
 
