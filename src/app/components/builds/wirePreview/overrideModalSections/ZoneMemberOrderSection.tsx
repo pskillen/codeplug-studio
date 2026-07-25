@@ -2,6 +2,7 @@ import { ActionIcon, Badge, Checkbox, Group, Stack, Text } from '@mantine/core';
 import { IconChevronDown, IconChevronRight } from '@tabler/icons-react';
 import { useMemo, useState } from 'react';
 import type { Channel, Zone } from '@core/models/library.ts';
+import type { RadioBuild } from '@core/models/radioBuild.ts';
 import type { ZoneGroupingZoneEntry } from '@core/models/traitLayout.ts';
 import type { ExpandedMxNChannelRow } from '@core/import-export/channelExpansion/mxnExpandAll.ts';
 import { resolveEffectiveZoneChannelIds } from '@core/domain/zoneHierarchy.ts';
@@ -17,6 +18,7 @@ import {
   type MembershipSortMode,
 } from '@core/domain/membershipSort.ts';
 import { channelDisplayLabel } from '@core/domain/channelNaming.ts';
+import { filterChannelIdsEligibleForBuild } from '@core/domain/channelEligibility.ts';
 import MembershipSortMenu from '../../../library/MembershipSortMenu.tsx';
 import SelectedItemDragHandle from '../../../ui/SelectedItemDragHandle.tsx';
 import SelectedItemList from '../../../ui/SelectedItemList.tsx';
@@ -25,6 +27,7 @@ import ExportOrderOverrideBanner from '../ExportOrderOverrideBanner.tsx';
 import { ICON_SIZE_ACTION, ICON_STROKE } from '../../../../lib/iconSizes.ts';
 
 export interface ZoneMemberOrderSectionProps {
+  build: RadioBuild;
   zone: Zone;
   zones: Zone[];
   entry: ZoneGroupingZoneEntry | undefined;
@@ -36,6 +39,7 @@ export interface ZoneMemberOrderSectionProps {
 }
 
 export default function ZoneMemberOrderSection({
+  build,
   zone,
   zones,
   entry,
@@ -47,9 +51,20 @@ export default function ZoneMemberOrderSection({
   const [selected, setSelected] = useState<string[]>([]);
   const [collapsedParents, setCollapsedParents] = useState<Set<string>>(() => new Set());
 
-  const effective = resolveEffectiveZoneChannelIds(zone, zones);
+  const effective = filterChannelIdsEligibleForBuild(
+    build,
+    resolveEffectiveZoneChannelIds(zone, zones),
+    channelById,
+  );
   const orderedIds = entry?.channelIds?.length
-    ? orderChannelIdsByLayoutHint(effective, entry.channelIds)
+    ? filterChannelIdsEligibleForBuild(
+        build,
+        orderChannelIdsByLayoutHint(
+          resolveEffectiveZoneChannelIds(zone, zones),
+          entry.channelIds,
+        ),
+        channelById,
+      )
     : effective;
   const orderOverridden = isZoneMemberOrderOverridden(zone, zones, entry?.channelIds);
 

@@ -34,6 +34,10 @@ import {
   zoneLinkedChannelIds,
   type LibrarySlice,
 } from './assemble.ts';
+import {
+  channelEligibleForRadio,
+  resolveChannelEligibilityOptions,
+} from '@core/domain/channelEligibility.ts';
 import type { RadioBuild } from '@core/models/radioBuild.ts';
 import type { Channel, ChannelModeProfileDMR, Zone } from '@core/models/library.ts';
 import type { DMRTimeSlot, EntityRef } from '@core/models/libraryTypes.ts';
@@ -137,8 +141,16 @@ export function overrideFieldForEntityKind(entityKind: WirePreviewEntityKind): O
   }
 }
 
-function zoneDirectMembersPreview(zone: Zone, library: LibrarySlice): WirePreviewZoneDirectMembers {
-  const channelIds = directZoneMemberChannelIds(zone);
+function zoneDirectMembersPreview(
+  zone: Zone,
+  library: LibrarySlice,
+  build: RadioBuild,
+): WirePreviewZoneDirectMembers {
+  const eligibilityOptions = resolveChannelEligibilityOptions(build);
+  const channelIds = directZoneMemberChannelIds(zone).filter((id) => {
+    const ch = library.channels.find((row) => row.id === id);
+    return ch != null && channelEligibleForRadio(ch, build.radioTargetId, eligibilityOptions);
+  });
   const zoneIds = directZoneMemberZoneIds(zone);
   const channelById = new Map(library.channels.map((ch) => [ch.id, ch]));
   const zoneById = new Map(library.zones.map((row) => [row.id, row]));
@@ -264,6 +276,9 @@ export function previewWireRows(
         formatId === 'dm32' || profileId === 'radio-io-dm32uv'
           ? false
           : (_options?.expandModes ?? true);
+      const eligibilityOptions = resolveChannelEligibilityOptions(build);
+      const channelPassesRfEligibility = (channel: Channel) =>
+        channelEligibleForRadio(channel, build.radioTargetId, eligibilityOptions);
       const rows: WirePreviewRow[] = [];
       const reserved = new Set<string>();
       const warnings: string[] = [];
@@ -316,6 +331,7 @@ export function previewWireRows(
         for (const channel of library.channels) {
           if (memorySet.has(channel.id)) continue;
           if (!isChirpAnalogueExportable(channel)) continue;
+          if (!channelPassesRfEligibility(channel)) continue;
           pushChannelRow(channel, PREVIEW_ROW_NOT_IN_MEMORY_LIST_NOTE);
         }
 
@@ -364,6 +380,7 @@ export function previewWireRows(
         const behaviourContext = _options?.channelBehaviourContext;
 
         for (const channel of library.channels) {
+          if (!channelPassesRfEligibility(channel)) continue;
           if (formatId === 'anytone') {
             if (anytoneBank === 'dmr' && isAmAirbandBankChannel(channel, behaviourContext))
               continue;
@@ -431,6 +448,7 @@ export function previewWireRows(
         build.exportUnlinkedChannels === false ? zoneLinkedChannelIds(build, library) : null;
 
       for (const channel of library.channels) {
+        if (!channelPassesRfEligibility(channel)) continue;
         const generatedExpansions = expandChannelWireRows(
           channel,
           undefined,
@@ -505,7 +523,7 @@ export function previewWireRows(
       return zonesForPreview.map((zone) => {
         const omitFromExport = zone.omitFromExport === true;
         const forceInclude = isEntityForceIncluded(build.zoneOverrides, zone.id);
-        const zoneDirectMembers = zoneDirectMembersPreview(zone, library);
+        const zoneDirectMembers = zoneDirectMembersPreview(zone, library, build);
         const assembledZone = projection.zones.find((row) => row.zoneId === zone.id);
         const baseWireName = assembledZone?.wireName ?? zone.name;
         const generatedWireName = shortenListNames

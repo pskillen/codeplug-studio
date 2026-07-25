@@ -90,6 +90,33 @@ export function resolveChannelEligibilityOptions(build: RadioBuild): ChannelElig
   };
 }
 
+export function isChannelEligibleForBuild(channel: Channel, build: RadioBuild): boolean {
+  return channelEligibleForRadio(
+    channel,
+    build.radioTargetId,
+    resolveChannelEligibilityOptions(build),
+  );
+}
+
+/** Build-scoped channel list for Radio Build pages (modes + optional frequency gate). */
+export function filterChannelsEligibleForBuild(
+  build: RadioBuild,
+  channels: readonly Channel[],
+): Channel[] {
+  return channels.filter((channel) => isChannelEligibleForBuild(channel, build));
+}
+
+export function filterChannelIdsEligibleForBuild(
+  build: RadioBuild,
+  channelIds: readonly string[],
+  channelById: ReadonlyMap<string, Channel>,
+): string[] {
+  return channelIds.filter((id) => {
+    const channel = channelById.get(id);
+    return channel != null && isChannelEligibleForBuild(channel, build);
+  });
+}
+
 /** Channels skipped by RF eligibility (not excluded by build override). */
 export function listIneligibleChannels(
   build: RadioBuild,

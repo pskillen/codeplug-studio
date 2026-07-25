@@ -8,4 +8,4 @@ Items **skipped**, **incomplete**, or **discovered during execution** — not th
 
 ## Deferred from plan
 
-_(none yet)_
+- Wire-preview **Channels** and zone member pickers were not filtering by RF eligibility on zone-organised builds (fixed post-PR — `previewWireRows` + zone member UI).

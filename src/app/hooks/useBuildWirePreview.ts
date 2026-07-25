@@ -16,6 +16,7 @@ import {
 } from '@core/services/previewWireRows.ts';
 import { getFormatProfiles } from '@core/import-export/formatProfiles.ts';
 import type { FormatId } from '@core/import-export/types.ts';
+import { filterChannelsEligibleForBuild } from '@core/domain/channelEligibility.ts';
 import { mergeExportOptions } from '@core/services/exportBuild.ts';
 import { applyDenseOrderOrSlots, clearAllOrderOrSlots } from '@core/domain/exportOrderOrSlot.ts';
 import { reorderSelectedKeys } from '@core/domain/zoneOrder.ts';
@@ -84,7 +85,7 @@ export function useBuildWirePreview(
     if (!library) return false;
     switch (entityKind) {
       case 'channel':
-        return library.channels.length > 0;
+        return filterChannelsEligibleForBuild(build, library.channels).length > 0;
       case 'zone':
         return library.zones.length > 0;
       case 'scanList': {

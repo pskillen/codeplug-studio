@@ -9,7 +9,7 @@ Operators should not have to guess which library channels their radio can use. S
 | Layer                                      | RF caps applied?                                  |
 | ------------------------------------------ | ------------------------------------------------- |
 | Library CRUD                               | No — all modes and frequencies allowed            |
-| Radio Build lists / pickers                | Yes — via `channelEligibleForRadio`               |
+| Radio Build lists / pickers                | Yes — via `channelEligibleForRadio` (including wire-preview **Channels** and zone member pickers) |
 | `assemble` / CPS export / Web Serial Write | Yes — ineligible channels never reach serialisers |
 
 Wire translation (NeonPlug no-TX sentinels, Anytone receive banks, CHIRP analogue-only rows, etc.) is unchanged. Eligibility **drops candidates** before adapters run; it does not rewrite channel fields or infer forbid-transmit from band tables.
