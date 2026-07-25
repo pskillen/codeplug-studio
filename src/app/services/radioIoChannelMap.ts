@@ -37,6 +37,8 @@ export interface AssembledChannelsToRadioDtosResult {
 export interface RadioChannelFkMaps {
   contactIdByEntityId?: ReadonlyMap<string, number>;
   rxGroupIndexById?: ReadonlyMap<string, number>;
+  /** DM-32UV: DMR ID value → 0-based operator radio-ID bank index. */
+  dmrIdIndexByValue?: ReadonlyMap<number, number>;
 }
 
 function resolveContactId(
@@ -121,12 +123,15 @@ function digitalFieldsFromChannel(
   const timeslot = dmr.timeslot === 2 ? 2 : dmr.timeslot === 1 ? 1 : undefined;
   const txContactId = resolveContactId(dmr.contactRef, fkMaps);
   const rxGroupIndex = resolveRxGroupIndex(dmr.rxGroupListId, fkMaps);
+  const dmrRadioIdIndex =
+    dmr.dmrId != null ? fkMaps?.dmrIdIndexByValue?.get(dmr.dmrId) : undefined;
   return {
     mode: mode ?? 'digital',
     colorCode: dmr.colourCode ?? undefined,
     timeslot,
     ...(txContactId != null ? { txContactId } : {}),
     ...(rxGroupIndex != null ? { rxGroupIndex } : {}),
+    ...(dmrRadioIdIndex != null ? { dmrRadioIdIndex } : {}),
     ...aprsFieldsFromChannel(channel),
   };
 }
@@ -150,12 +155,15 @@ function digitalFieldsFromProjection(
   const timeslot = dmr.timeslot === 2 ? 2 : dmr.timeslot === 1 ? 1 : undefined;
   const txContactId = resolveContactId(projection.txContactRef ?? dmr.contactRef, fkMaps);
   const rxGroupIndex = resolveRxGroupIndex(projection.rxGroupListId ?? dmr.rxGroupListId, fkMaps);
+  const dmrRadioIdIndex =
+    dmr.dmrId != null ? fkMaps?.dmrIdIndexByValue?.get(dmr.dmrId) : undefined;
   return {
     mode: mode ?? 'digital',
     colorCode: dmr.colourCode ?? undefined,
     timeslot,
     ...(txContactId != null ? { txContactId } : {}),
     ...(rxGroupIndex != null ? { rxGroupIndex } : {}),
+    ...(dmrRadioIdIndex != null ? { dmrRadioIdIndex } : {}),
     ...aprsFieldsFromChannel(channel),
   };
 }

@@ -263,7 +263,11 @@ export function encodeDm32ChannelRecord(ch: RadioChannelDto): Uint8Array {
   data[0x28] = 0x00;
   data[0x29] = 0x00;
   data[0x2a] = 0x00; // encryption id 0 / analog unknown2A
-  data[0x2b] = 0xff; // DMR radio ID index: none
+  if (ch.dmrRadioIdIndex != null && ch.dmrRadioIdIndex >= 0 && ch.dmrRadioIdIndex <= 254) {
+    data[0x2b] = ch.dmrRadioIdIndex & 0xff;
+  } else {
+    data[0x2b] = 0xff; // DMR radio ID index: none
+  }
 
   return data;
 }

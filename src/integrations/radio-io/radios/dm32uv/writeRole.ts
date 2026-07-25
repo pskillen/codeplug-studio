@@ -3,13 +3,14 @@
  * Cite: tier-3 memory-layout.md; target write contract (#667, #685).
  *
  * **Replaced entities** (channels, zones, scan lists, talk groups, RX groups,
- * digital contacts, TX-contact banks, APRS slice) are projection-authoritative:
+ * digital contacts, TX-contact banks, operator radio-ID bank `0x67`, APRS slice)
+ * are projection-authoritative:
  * every byte of each record is encoded from `RadioWriteProjection` DTOs plus
  * documented NeonPlug wire defaults for unmodelled fields — not RMW of prior
  * Read hydration inside entity payloads. Unused slots are explicit empty/sentinel fill.
  *
  * **Kept regions** (settings `0x04` outside APRS slice, emergencies, keys,
- * calibration, VFO bank, messages, DMR radio-ID bank `0x67`) stay Read-retained.
+ * calibration, VFO bank, messages) stay Read-retained.
  */
 
 import { DM32_METADATA } from './constants.ts';
@@ -32,6 +33,7 @@ export const DM32_WRITTEN_FROM_BUILD_LABELS: readonly string[] = [
   'Talk groups',
   'RX group lists',
   'Digital contacts',
+  'Operator radio IDs',
   'APRS settings',
 ] as const;
 
@@ -143,6 +145,9 @@ export function dm32WriteRole(
   }
   if (metadata === DM32_METADATA.VFO_BANK) {
     return 'kept';
+  }
+  if (metadata === DM32_METADATA.DMR_RADIO_IDS || type === 'dmrradioid') {
+    return 'replaced';
   }
   if (type === 'empty') {
     return 'kept';
