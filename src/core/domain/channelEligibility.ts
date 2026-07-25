@@ -1,0 +1,87 @@
+import type { Channel } from '@core/models/library.ts';
+import type { ChannelMode } from '@core/models/libraryTypes.ts';
+import {
+  getRadioRfCapabilities,
+  type RadioFrequencyRange,
+  type RadioRfCapabilities,
+} from '@core/radio-targets/rfCapabilities.ts';
+
+export type ChannelIneligibilityReason = 'unsupported-mode' | 'out-of-range';
+
+export interface ChannelEligibilityOptions {
+  /** When true (default), channels outside supported frequency ranges are ineligible. */
+  hideOutsideFrequencyRange?: boolean;
+}
+
+const DEFAULT_OPTIONS: Required<ChannelEligibilityOptions> = {
+  hideOutsideFrequencyRange: true,
+};
+
+function resolveOptions(options?: ChannelEligibilityOptions): Required<ChannelEligibilityOptions> {
+  return {
+    hideOutsideFrequencyRange:
+      options?.hideOutsideFrequencyRange ?? DEFAULT_OPTIONS.hideOutsideFrequencyRange,
+  };
+}
+
+/** Modes on the channel that the radio target supports. */
+export function supportedChannelModes(
+  channel: Channel,
+  caps: RadioRfCapabilities,
+): ChannelMode[] {
+  const supported = new Set(caps.supportedModes);
+  return channel.modeProfiles.map((profile) => profile.mode).filter((mode) => supported.has(mode));
+}
+
+function rxFrequencyMhz(channel: Channel): number | null {
+  if (channel.rxFrequency == null) return null;
+  return channel.rxFrequency / 1_000_000;
+}
+
+function frequencyInRange(mhz: number, band: RadioFrequencyRange): boolean {
+  return mhz >= band.minMhz && mhz <= band.maxMhz;
+}
+
+function channelMatchesFrequencyRange(
+  channel: Channel,
+  band: RadioFrequencyRange,
+  eligibleModes: readonly ChannelMode[],
+): boolean {
+  const bandModes = new Set(band.modes);
+  const overlappingModes = eligibleModes.filter((mode) => bandModes.has(mode));
+  if (overlappingModes.length === 0) return false;
+
+  const rxMhz = rxFrequencyMhz(channel);
+  if (rxMhz == null) return false;
+  return frequencyInRange(rxMhz, band);
+}
+
+export function getChannelIneligibilityReason(
+  channel: Channel,
+  radioTargetId: string,
+  options?: ChannelEligibilityOptions,
+): ChannelIneligibilityReason | null {
+  const caps = getRadioRfCapabilities(radioTargetId);
+  if (!caps) return null;
+
+  const resolved = resolveOptions(options);
+  const eligibleModes = supportedChannelModes(channel, caps);
+  if (eligibleModes.length === 0) return 'unsupported-mode';
+
+  if (!resolved.hideOutsideFrequencyRange) return null;
+
+  const matchesBand = caps.frequencyRanges.some((band) =>
+    channelMatchesFrequencyRange(channel, band, eligibleModes),
+  );
+  if (!matchesBand) return 'out-of-range';
+
+  return null;
+}
+
+export function channelEligibleForRadio(
+  channel: Channel,
+  radioTargetId: string,
+  options?: ChannelEligibilityOptions,
+): boolean {
+  return getChannelIneligibilityReason(channel, radioTargetId, options) == null;
+}

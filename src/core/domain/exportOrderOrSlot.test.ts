@@ -20,6 +20,7 @@ describe('exportOrderOrSlot', () => {
     return {
       ...newChannel(projectId, name),
       id,
+      rxFrequency: 145_500_000,
       modeProfiles: [
         {
           mode: 'fm' as const,

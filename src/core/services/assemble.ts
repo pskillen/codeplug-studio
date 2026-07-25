@@ -32,6 +32,7 @@ import {
   resolveChirpChannelMemorySlots,
   type ExportMemorySlot,
 } from '@core/domain/exportOrderOrSlot.ts';
+import { channelEligibleForRadio } from '@core/domain/channelEligibility.ts';
 import { migrateFormatBuild } from '@core/domain/migrateFormatBuild.ts';
 import { sortZonesByExportOrder } from '@core/domain/zoneOrder.ts';
 import type { Library } from '@core/models/library.ts';
@@ -332,6 +333,7 @@ function assembleChannels(build: RadioBuild, library: LibrarySlice): AssembledCh
   const assembled: AssembledChannel[] = [];
   for (const entity of library.channels) {
     if (isEntityExcluded(overrides, entity.id)) continue;
+    if (!channelEligibleForRadio(entity, build.radioTargetId)) continue;
     const hasOverride = overrideByEntityId(overrides).has(entity.id);
     const reachable = exportReachable.has(entity.id);
     if (!reachable && !hasOverride) {

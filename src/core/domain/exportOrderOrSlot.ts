@@ -7,7 +7,7 @@ import {
   overrideOrderOrSlot,
   upsertOverride,
 } from '@core/domain/formatBuildOverrides.ts';
-import { channelHasFmAmProfile } from '@core/domain/modeProfiles.ts';
+import { channelEligibleForRadio } from '@core/domain/channelEligibility.ts';
 import { BuildCapabilityTrait } from '@core/models/traits.ts';
 import { radioTargetHasTrait } from '@core/radio-targets/index.ts';
 
@@ -27,12 +27,12 @@ export function findFlatMemorySection(build: RadioBuild): FlatMemoryLayout | und
 }
 
 /** Analogue FM/AM channel eligible for flat-memory export (CHIRP + NeonPlug UV5R). */
-export function isChirpFlatMemoryChannel(channel: Channel): boolean {
-  return channelHasFmAmProfile(channel);
+export function isChirpFlatMemoryChannel(channel: Channel, radioTargetId: string): boolean {
+  return channelEligibleForRadio(channel, radioTargetId);
 }
 
 function flatMemoryEligibleChannel(build: RadioBuild, channel: Channel): boolean {
-  if (buildUsesFlatMemoryList(build) && !isChirpFlatMemoryChannel(channel)) {
+  if (!channelEligibleForRadio(channel, build.radioTargetId)) {
     return false;
   }
   return true;

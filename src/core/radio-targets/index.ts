@@ -17,3 +17,9 @@ export {
   type CompatibleEgress,
   type RadioTarget,
 } from './catalog.ts';
+export {
+  getRadioRfCapabilities,
+  RADIO_RF_CAPABILITIES,
+  type RadioFrequencyRange,
+  type RadioRfCapabilities,
+} from './rfCapabilities.ts';
