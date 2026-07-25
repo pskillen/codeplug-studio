@@ -12,6 +12,7 @@ import {
   encodeChannelsIntoImage,
   encodeTone,
   readFirmwareFromImage,
+  UV5R_MINI_SCAN_BIT,
 } from './channelCodec.ts';
 import { UV5R_MINI_CHANNEL_SIZE, UV5R_MINI_CHANNEL_SPAN } from './constants.ts';
 
@@ -121,5 +122,19 @@ describe('channelCodec record', () => {
     const decoded = decodeChannelRecord(encoded, 1);
     expect(decoded.rxOnly).toBe(true);
     expect(decoded.rxHz).toBe(145_500_000);
+  });
+
+  it('encodes scanAdd on byte 15 bit 2 and round-trips', () => {
+    const inScan = encodeChannelRecord(sampleDto({ scanAdd: true }));
+    const skipped = encodeChannelRecord(sampleDto({ scanAdd: false }));
+    expect(inScan[15]! & UV5R_MINI_SCAN_BIT).toBe(UV5R_MINI_SCAN_BIT);
+    expect(skipped[15]! & UV5R_MINI_SCAN_BIT).toBe(0);
+    expect(decodeChannelRecord(inScan, 1).scanAdd).toBe(true);
+    expect(decodeChannelRecord(skipped, 1).scanAdd).toBe(false);
+  });
+
+  it('clears scan bit on omitted scanAdd (full-record default)', () => {
+    const encoded = encodeChannelRecord(sampleDto());
+    expect(encoded[15]! & UV5R_MINI_SCAN_BIT).toBe(0);
   });
 });
