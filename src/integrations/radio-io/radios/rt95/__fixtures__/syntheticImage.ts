@@ -4,6 +4,7 @@ import {
   RT95_CHANNEL_RECORD_SIZE,
   RT95_IMAGE_SIZE,
   RT95_OCCUPIED_BITFIELD_OFFSET,
+  RT95_SCAN_BITFIELD_OFFSET,
 } from '../constants.ts';
 import { encodeBcdFreq } from '../bcd.ts';
 import { getBitfieldBit } from '../bitfield.ts';
@@ -31,6 +32,10 @@ export function buildSyntheticRt95Image(): Uint8Array {
 
 export function occupiedBitAt(image: Uint8Array, memoryNumber: number): boolean {
   return getBitfieldBit(image, RT95_OCCUPIED_BITFIELD_OFFSET, memoryNumber);
+}
+
+export function scanBitAt(image: Uint8Array, memoryNumber: number): boolean {
+  return getBitfieldBit(image, RT95_SCAN_BITFIELD_OFFSET, memoryNumber);
 }
 
 export { RT95_BITFIELD_BYTES };

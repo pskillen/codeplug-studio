@@ -7,8 +7,8 @@ import {
   encodeChannelRecord,
   encodeChannelsIntoImage,
 } from './channelCodec.ts';
-import { occupiedBitAt, buildSyntheticRt95Image } from './__fixtures__/syntheticImage.ts';
-import { RT95_CHANNEL_SPAN, RT95_IMAGE_SIZE } from './constants.ts';
+import { occupiedBitAt, scanBitAt, buildSyntheticRt95Image } from './__fixtures__/syntheticImage.ts';
+import { RT95_CHANNEL_SPAN, RT95_IMAGE_SIZE, RT95_SCAN_BITFIELD_OFFSET } from './constants.ts';
 
 function sampleDto(overrides: Partial<RadioChannelDto> = {}): RadioChannelDto {
   return {
@@ -67,5 +67,50 @@ describe('rt95 channelCodec', () => {
     expect(decoded.rxTone).toEqual({ kind: 'dcs', code: 23, polarity: 'I' });
     expect(decoded.scanAdd).toBe(true);
     expect(occupiedBitAt(image, 1)).toBe(true);
+  });
+
+  it('stamps scan bitfield for slots 1, 200, and mid-byte edges', () => {
+    const image = new Uint8Array(RT95_IMAGE_SIZE);
+    image.fill(0xff);
+    encodeChannelsIntoImage(image, [
+      sampleDto({ slotIndex: 1, scanAdd: true }),
+      sampleDto({ slotIndex: 8, wireName: 'MID008', scanAdd: true }),
+      sampleDto({ slotIndex: 200, wireName: 'END200', scanAdd: true }),
+      sampleDto({ slotIndex: 50, wireName: 'OFF50', scanAdd: false }),
+    ]);
+
+    expect(scanBitAt(image, 1)).toBe(true);
+    expect(scanBitAt(image, 8)).toBe(true);
+    expect(scanBitAt(image, 200)).toBe(true);
+    expect(scanBitAt(image, 50)).toBe(false);
+    expect(image[RT95_SCAN_BITFIELD_OFFSET]).toBe(0x81);
+    expect(image[RT95_SCAN_BITFIELD_OFFSET + 24]).toBe(0x80);
+  });
+
+  it('clears scan bits for unused slots on shrink encode', () => {
+    const image = buildSyntheticRt95Image();
+    image[RT95_SCAN_BITFIELD_OFFSET] = 0xff;
+    encodeChannelsIntoImage(image, []);
+    expect(scanBitAt(image, 1)).toBe(false);
+    expect(image.subarray(RT95_SCAN_BITFIELD_OFFSET, RT95_SCAN_BITFIELD_OFFSET + 32).every((b) => b === 0)).toBe(
+      true,
+    );
+  });
+
+  it('round-trips DTCS invert polarity on encode/decode', () => {
+    const dto = sampleDto({
+      txTone: { kind: 'dcs', code: 23, polarity: 'I' },
+      rxTone: { kind: 'dcs', code: 754, polarity: 'N' },
+    });
+    const raw = encodeChannelRecord(dto);
+    expect((raw[17]! >> 6) & 1).toBe(1);
+    expect((raw[15]! >> 6) & 1).toBe(0);
+
+    const image = new Uint8Array(RT95_IMAGE_SIZE);
+    image.fill(0xff);
+    encodeChannelsIntoImage(image, [dto]);
+    const decoded = decodeChannelsFromImage(image).find((c) => c.slotIndex === 1)!;
+    expect(decoded.txTone).toEqual({ kind: 'dcs', code: 23, polarity: 'I' });
+    expect(decoded.rxTone).toEqual({ kind: 'dcs', code: 754, polarity: 'N' });
   });
 });

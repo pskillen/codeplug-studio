@@ -23,6 +23,15 @@ export interface RadioIoUv21Profile {
   powerLadder: readonly PowerLadderEntry[];
 }
 
+/** Retevis RT95 VOX Web Serial — mirrors chirp-rt95 caps. */
+export interface RadioIoRt95Profile {
+  id: 'radio-io-rt95';
+  label: string;
+  maxMemorySlots: number;
+  nameLimit: number;
+  powerLadder: readonly PowerLadderEntry[];
+}
+
 export interface RadioIoDm32uvProfile {
   id: 'radio-io-dm32uv';
   label: string;
@@ -72,6 +81,7 @@ export interface RadioIoOpenGd771701Profile {
 export type RadioIoRadioProfile =
   | RadioIoUv5rMiniProfile
   | RadioIoUv21Profile
+  | RadioIoRt95Profile
   | RadioIoDm32uvProfile
   | RadioIoAtD890uvProfile
   | RadioIoOpenGd771701Profile;
@@ -130,6 +140,12 @@ const OPENGD77_1701_POWER_LADDER: readonly PowerLadderEntry[] = [
   { percent: 1, wire: 'P1', approxWatts: '50 mW' },
 ];
 
+const RT95_POWER_LADDER: readonly PowerLadderEntry[] = [
+  { percent: 100, wire: 'High', approxWatts: '25 W' },
+  { percent: 40, wire: 'Medium', approxWatts: '10 W' },
+  { percent: 20, wire: 'Low', approxWatts: '5 W' },
+];
+
 export const RADIO_IO_UV5R_MINI_PROFILE: RadioIoUv5rMiniProfile = {
   id: 'radio-io-uv5r-mini',
   label: 'Baofeng UV-5R Mini',
@@ -144,6 +160,14 @@ export const RADIO_IO_UV21_PROFILE: RadioIoUv21Profile = {
   maxMemorySlots: 1000,
   nameLimit: 12,
   powerLadder: UV17PRO_POWER_LADDER,
+};
+
+export const RADIO_IO_RT95_PROFILE: RadioIoRt95Profile = {
+  id: 'radio-io-rt95',
+  label: 'Retevis RT95 VOX',
+  maxMemorySlots: 200,
+  nameLimit: 6,
+  powerLadder: RT95_POWER_LADDER,
 };
 
 export const RADIO_IO_DM32UV_PROFILE: RadioIoDm32uvProfile = {
@@ -192,6 +216,7 @@ export const RADIO_IO_OPENGD77_1701_PROFILE: RadioIoOpenGd771701Profile = {
 export const RADIO_IO_PROFILES: readonly RadioIoRadioProfile[] = [
   RADIO_IO_UV5R_MINI_PROFILE,
   RADIO_IO_UV21_PROFILE,
+  RADIO_IO_RT95_PROFILE,
   RADIO_IO_DM32UV_PROFILE,
   RADIO_IO_AT_D890UV_PROFILE,
   RADIO_IO_OPENGD77_1701_PROFILE,
