@@ -10,7 +10,7 @@ import {
 import type { MemoryMap } from '../../types.ts';
 import type { RadioChannelDto } from '../../radioChannelDto.ts';
 import type { RadioWriteOrganisation } from '../../radioWriteProjection.ts';
-import { cacheToMemoryMap, type AtD890DownloadCache } from './memory.ts';
+import { cacheToMemoryMap, putCacheBytes, type AtD890DownloadCache } from './memory.ts';
 import { encodeChannelsIntoAtD890Image, syncChannelRegionsToCache } from './channelCodec.ts';
 import { encodeZonesIntoAtD890Image, syncZoneRegionsToCache } from './zoneCodec.ts';
 import { encodeScanListsIntoAtD890Image, syncScanListRegionsToCache } from './scanListCodec.ts';
@@ -24,14 +24,15 @@ import type { AtD890DownloadCache as ProtocolCache } from './protocol.ts';
 export const AT_D890UV_MODEL_ID = AT_D890UV_MODEL_IDS[0];
 
 export function cacheFromBag(bag: RadioCloneHydrationBag): AtD890DownloadCache {
-  const blocks = new Map<number, Uint8Array>();
-  for (const b of radioCloneSparseBlockBytes(bag)) {
-    blocks.set(b.address, b.data);
-  }
-  return {
+  const cache: AtD890DownloadCache = {
     firmware: bag.retain.firmware,
-    blocks,
+    blocks: new Map(),
   };
+  for (const b of radioCloneSparseBlockBytes(bag)) {
+    // Normalize to 16-byte keys (bags may still hold longer Read blobs).
+    putCacheBytes(cache, b.address, b.data);
+  }
+  return cache;
 }
 
 export function memoryMapFromAtD890uvHydration(bag: RadioCloneHydrationBag): MemoryMap {

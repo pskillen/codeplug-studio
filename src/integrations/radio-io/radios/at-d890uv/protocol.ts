@@ -29,6 +29,7 @@ import {
   talkgroupAddress,
   receiveGroupAddress,
   radioIdAddress,
+  alignedSpanForAtD890Region,
   type AtD890DownloadCache,
 } from './memory.ts';
 import { decodeChannelsFromAtD890Cache, encodeChannelsIntoAtD890Image } from './channelCodec.ts';
@@ -122,13 +123,12 @@ export async function downloadAtD890SparseRegions(
   const tgSet = cache.blocks.get(D890_MAP.TalkgroupSet)!;
   for (const idx of listSetBits(tgSet, true)) {
     throwIfAborted(signal);
-    await readRegion(
-      pipe,
-      cache,
-      talkgroupAddress(idx),
-      AT_D890_LIMITS.TALKGROUP_IO_LENGTH,
-      signal,
+    const slot = talkgroupAddress(idx);
+    const { start, length } = alignedSpanForAtD890Region(
+      slot,
+      AT_D890_LIMITS.TALKGROUP_RECORD_SIZE,
     );
+    await readRegion(pipe, cache, start, length, signal);
   }
 
   stage('Reading RX groups…');
