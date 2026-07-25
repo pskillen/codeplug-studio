@@ -142,10 +142,7 @@ export function mergeChannelsIntoDm32uvHydration(
   }
   next = encodeChannelsIntoDm32Image(next, ctx, channels);
   if (organisation?.zones) {
-    const channelCount = Math.max(
-      0,
-      ...channels.filter((c) => !c.empty).map((c) => c.slotIndex),
-    );
+    const channelCount = Math.max(0, ...channels.filter((c) => !c.empty).map((c) => c.slotIndex));
     next = encodeZonesIntoDm32Image(next, ctx, organisation.zones, { channelCount });
   }
   if (organisation?.scanLists) {
