@@ -32,15 +32,16 @@
 | DM-32UV V-frame / block clone adapter          | [#638](https://github.com/pskillen/codeplug-studio/issues/638) | `radios/dm32uv/`; sparse `radio-clone` retain; `radio-io-dm32uv` on `baofeng-dm32uv`                                                                                                                                                         |
 | DM-32UV full modelled Write encode             | [#667](https://github.com/pskillen/codeplug-studio/issues/667) | `RadioWriteProjection` + zone/scan/TG/RX/digital-contact/APRS codecs; analog contacts gap in UI                                                                                                                                              |
 | RT95 VOX binary protocol / memory docs         | [#642](https://github.com/pskillen/codeplug-studio/issues/642) | [docs/reference/radios/retevis/rt95/](../../reference/radios/retevis/rt95/README.md); blocks [#643](https://github.com/pskillen/codeplug-studio/issues/643); parent [#640](https://github.com/pskillen/codeplug-studio/issues/640)           |
-| AT-D890UV binary protocol / memory docs        | [#647](https://github.com/pskillen/codeplug-studio/issues/647) | [docs/reference/radios/anytone/at-d890uv/](../../reference/radios/anytone/at-d890uv/README.md); blocks [#649](https://github.com/pskillen/codeplug-studio/issues/649); parent [#645](https://github.com/pskillen/codeplug-studio/issues/645) |
-| Anytone DMR R/W kit codec                      | [#646](https://github.com/pskillen/codeplug-studio/issues/646) | `kit/codecs/anytoneDmrRw.ts` — PROGRAM→QX + u32 BE + checksum; blocks [#649](https://github.com/pskillen/codeplug-studio/issues/649)                                                                                                         |
+| AT-D890UV binary protocol / memory docs        | [#647](https://github.com/pskillen/codeplug-studio/issues/647) | [docs/reference/radios/anytone/at-d890uv/](../../reference/radios/anytone/at-d890uv/README.md); parent [#645](https://github.com/pskillen/codeplug-studio/issues/645) |
+| AT-D890UV Web Serial adapter                   | [#649](https://github.com/pskillen/codeplug-studio/issues/649) | `radios/at-d890uv/`; `radio-io-at-d890uv` on `anytone-at-d890uv`; sparse selective-ranges Write; FK merge order TG→RX→radio ID→channels→zones→scan |
+| Anytone DMR R/W kit codec                      | [#646](https://github.com/pskillen/codeplug-studio/issues/646) | `kit/codecs/anytoneDmrRw.ts` — PROGRAM→QX + u32 BE + checksum                                                                                                         |
 
 ## Next
 
 1. Wire firmware gating [#619](https://github.com/pskillen/codeplug-studio/issues/619) when catalog [#613](https://github.com/pskillen/codeplug-studio/issues/613) is ready (more important for DM-32UV than Mini).
 2. OpenGD77 adapters: [#624](https://github.com/pskillen/codeplug-studio/issues/624) (DM-1701 — **shipped**) · [#625](https://github.com/pskillen/codeplug-studio/issues/625) (MD-9600).
 3. RT95 PROGRAM→QX kit codec [#641](https://github.com/pskillen/codeplug-studio/issues/641) → adapter [#643](https://github.com/pskillen/codeplug-studio/issues/643) (epic [#640](https://github.com/pskillen/codeplug-studio/issues/640); docs [#642](https://github.com/pskillen/codeplug-studio/issues/642) shipped).
-4. AT-D890UV adapter [#649](https://github.com/pskillen/codeplug-studio/issues/649) (epic [#645](https://github.com/pskillen/codeplug-studio/issues/645); codec [#646](https://github.com/pskillen/codeplug-studio/issues/646) + docs [#647](https://github.com/pskillen/codeplug-studio/issues/647) shipped).
+4. D878UVII adapter [#650](https://github.com/pskillen/codeplug-studio/issues/650) (epic [#645](https://github.com/pskillen/codeplug-studio/issues/645); docs [#648](https://github.com/pskillen/codeplug-studio/issues/648)).
 
 ## Related
 
