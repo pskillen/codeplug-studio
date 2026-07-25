@@ -766,7 +766,7 @@ function buildOpenGd77Zones(
   return zones;
 }
 
-function stampUv5rMiniChannelBehaviour(
+function stampUv17ProFlatMemoryChannelBehaviour(
   channels: RadioChannelDto[],
   assembled: AssembledBuild,
   build: RadioBuild,
@@ -920,7 +920,7 @@ export function buildRadioWriteProjection(
       warnings,
       numericLimit(d890Limits.maxScanLists, 100),
     );
-    channels = stampUv5rMiniChannelBehaviour(
+    channels = stampUv17ProFlatMemoryChannelBehaviour(
       org.channels,
       assembled,
       build,
@@ -943,8 +943,8 @@ export function buildRadioWriteProjection(
       rxGroups,
       digitalContacts,
     };
-  } else if (egress.profileId === 'radio-io-uv5r-mini') {
-    channels = stampUv5rMiniChannelBehaviour(
+  } else if (egress.profileId === 'radio-io-uv5r-mini' || egress.profileId === 'radio-io-uv21') {
+    channels = stampUv17ProFlatMemoryChannelBehaviour(
       dtos,
       assembled,
       build,

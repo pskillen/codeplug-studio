@@ -31,10 +31,21 @@ describe('radio target catalog', () => {
     ]);
   });
 
+  it('lists UV-21 with Web Serial and CHIRP egress', () => {
+    const uv21 = radioTargetFor('baofeng-uv21');
+    expect(uv21).toBeDefined();
+    expect(uv21!.compatibleEgress.map((e) => e.profileId)).toEqual([
+      'radio-io-uv21',
+      'chirp-uv21',
+    ]);
+  });
+
   it('maps legacy profile ids to a single Mini radio target', () => {
     expect(radioTargetIdForProfile('chirp-uv5r')).toBe('baofeng-uv5r-mini');
     expect(radioTargetIdForProfile('neonplug-uv5rmini')).toBe('baofeng-uv5r-mini');
     expect(radioTargetIdForProfile('radio-io-uv5r-mini')).toBe('baofeng-uv5r-mini');
+    expect(radioTargetIdForProfile('radio-io-uv21')).toBe('baofeng-uv21');
+    expect(radioTargetIdForProfile('chirp-uv21')).toBe('baofeng-uv21');
   });
 
   it('exposes flat-memory traits for Mini', () => {
@@ -69,6 +80,7 @@ describe('radio target catalog', () => {
       'neonplug-dm32uv',
       'neonplug-uv5rmini',
       'radio-io-uv5r-mini',
+      'radio-io-uv21',
       'radio-io-dm32uv',
       'radio-io-at-d890uv',
       'radio-io-opengd77-1701',
