@@ -1,5 +1,10 @@
 import { describe, expect, it, vi } from 'vitest';
-import { newChannel, newRadioBuildForProfile, newRxGroupList, newTalkGroup } from '@core/domain/factories.ts';
+import {
+  newChannel,
+  newRadioBuildForProfile,
+  newRxGroupList,
+  newTalkGroup,
+} from '@core/domain/factories.ts';
 import type { LibrarySlice } from '@core/services/assemble.ts';
 import { D890_MAP } from '@integrations/radio-io/radios/at-d890uv/constants.ts';
 import {

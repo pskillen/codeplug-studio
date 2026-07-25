@@ -8,15 +8,15 @@ Cite: anytone-cps `ReceiveGroup::encode` — facts only; do not paste GPL source
 
 ## Geometry
 
-| Fact             | Value                                                                                     |
-| ---------------- | ----------------------------------------------------------------------------------------- |
-| Record size      | `0x120` (288) bytes encode                                                                |
-| Stride           | `0x200` between slots                                                                     |
-| Max slots        | `ReceiveGroupSet` bitmap `0x10` bytes × 8 bits                                            |
-| Occupancy        | Bit **set** → slot occupied ([memory-layout.md](memory-layout.md))                       |
-| Max members      | 32 per list ([limits.md](limits.md))                                                      |
-| Name storage     | `0x20` bytes at offset `0x100` (wide-char / UTF-16 style packing)                         |
-| Name display cap | 10 chars (CSV / [limits.md](limits.md))                                                   |
+| Fact             | Value                                                              |
+| ---------------- | ------------------------------------------------------------------ |
+| Record size      | `0x120` (288) bytes encode                                         |
+| Stride           | `0x200` between slots                                              |
+| Max slots        | `ReceiveGroupSet` bitmap `0x10` bytes × 8 bits                     |
+| Occupancy        | Bit **set** → slot occupied ([memory-layout.md](memory-layout.md)) |
+| Max members      | 32 per list ([limits.md](limits.md))                               |
+| Name storage     | `0x20` bytes at offset `0x100` (wide-char / UTF-16 style packing)  |
+| Name display cap | 10 chars (CSV / [limits.md](limits.md))                            |
 
 ## Address formula
 
