@@ -95,6 +95,38 @@ describe('buildRadioWriteProjection', () => {
     ]);
   });
 
+  it('maps channels, zones, and contacts for radio-io-opengd77-md9600', () => {
+    const ch = {
+      ...newChannel('p1', 'A'),
+      id: 'ch-a',
+      rxFrequency: 145_500_000,
+      txFrequency: 145_500_000,
+      power: 63,
+    };
+    const zone = {
+      ...newZone('p1', 'Local'),
+      id: 'zone-a',
+      members: [{ kind: 'channel' as const, channelId: 'ch-a' }],
+    };
+    const tg = { ...newTalkGroup('p1', 'TG91', 91), id: 'tg-91' };
+    const library = {
+      ...emptyLibrary([ch]),
+      zones: [zone],
+      talkGroups: [tg],
+    };
+    const { build, egress } = newRadioBuildForProfile('p1', 'radio-io-opengd77-md9600');
+    const assembled = assemble(build, library, {
+      formatId: egress.formatId,
+      profileId: egress.profileId,
+    });
+    const projection = buildRadioWriteProjection(assembled, build, library, egress);
+    expect(projection.channels.length).toBeGreaterThanOrEqual(1);
+    expect(projection.channels[0]?.powerPercent).toBe(63);
+    expect(projection.organisation.zones).toEqual([
+      expect.objectContaining({ wireName: 'Local', channelNumbers: [1] }),
+    ]);
+  });
+
   it('prepends each zone’s own scan carrier and first-wins scanListId for shared members', () => {
     const shared = {
       ...newChannel('p1', 'Hotspot'),
