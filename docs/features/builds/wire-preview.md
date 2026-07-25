@@ -2,7 +2,7 @@
 
 Operator workflow for reviewing and shaping CPS wire names before export. Each build entity type has a dedicated sub-route under `/builds/:id/*` with a **read-only list** (`WirePreviewDataTable`), a **per-row override modal** (`WirePreviewOverrideModal`), and (for channels) a **bulk-edit** surface for wire names and skip toggles.
 
-**Tracking:** [#87](https://github.com/pskillen/codeplug-studio/issues/87) · UI rework [#349](https://github.com/pskillen/codeplug-studio/issues/349) · zone modal tabs [#472](https://github.com/pskillen/codeplug-studio/issues/472) · zones reorder preview [#468](https://github.com/pskillen/codeplug-studio/issues/468) · build Sort… / inclusion [#457](https://github.com/pskillen/codeplug-studio/issues/457) · bulk export-order reorder [#590](https://github.com/pskillen/codeplug-studio/issues/590)
+**Tracking:** [#87](https://github.com/pskillen/codeplug-studio/issues/87) · UI rework [#349](https://github.com/pskillen/codeplug-studio/issues/349) · zone modal tabs [#472](https://github.com/pskillen/codeplug-studio/issues/472) · zones reorder preview [#468](https://github.com/pskillen/codeplug-studio/issues/468) · build Sort… / inclusion [#457](https://github.com/pskillen/codeplug-studio/issues/457) · bulk export-order reorder [#590](https://github.com/pskillen/codeplug-studio/issues/590) · select-by-attribute + Sort selection… [#719](https://github.com/pskillen/codeplug-studio/issues/719)
 
 **Code:** `src/core/services/previewWireRows.ts`, `src/app/hooks/useBuildWirePreview.ts`, `src/app/routes/builds/wire-preview/`, `src/app/components/builds/wirePreview/`
 
@@ -19,9 +19,9 @@ Operator workflow for reviewing and shaping CPS wire names before export. Each b
 
 When build `orderOrSlot` (or zone member layout order) differs from the library default, an **`ExportOrderOverrideBanner`** appears with **Reset to library order** (confirmed via `window.confirm`, same seriousness as permanent Sort…). Reset clears densified `orderOrSlot` on the list, or writes zone member `channelIds` back to `resolveEffectiveZoneChannelIds`. This is **not** DataTable `storedOrder` “Return to export order” (display-only).
 
-**Column sort and filter** on list pages are client-side convenience only — they do **not** change export order. CHIRP memory order and zone `orderOrSlot` are updated via up/down reorder, drag (when **bulkReorder** is on), build **Sort…**, or library edits — not table column sort. Reorder and Sort… are disabled while search or “hide not included” filters are active (zones page and flat-memory Channels).
+**Column sort and filter** on list pages are client-side convenience only — they do **not** change export order. CHIRP memory order and zone `orderOrSlot` are updated via up/down reorder, drag (when **bulkReorder** is on), build **Sort…** / **Sort selection…**, or library edits — not table column sort. Reorder and Sort… are disabled while search or “hide not included” filters are active (zones page and flat-memory Channels).
 
-**Flat-memory Channels** (CHIRP / NeonPlug UV-5R) add **Select…** helpers ([`ExportOrderSelectMenu`](../../../src/app/components/builds/wirePreview/ExportOrderSelectMenu.md)) to toggle-select by band or FM/AM mode before dragging a block into place.
+**Flat-memory Channels** (CHIRP / NeonPlug UV-5R) add **Select…** helpers ([`ExportOrderSelectMenu`](../../../src/app/components/builds/wirePreview/ExportOrderSelectMenu.md)) to toggle-select by band, FM/AM mode, or simplex/split before dragging a block or running **Sort selection…**. **Sort selection…** collates a split multi-select at the earliest selected index, sorts only that block, and leaves unselected relative order outside the block unchanged ([#719](https://github.com/pskillen/codeplug-studio/issues/719)).
 
 List **Skip / Force** column: **Skip from export** for most rows; zones with library **Don't export as its own zone** show **Force export** only (red when on). Turn force off to honour the library omit.
 
