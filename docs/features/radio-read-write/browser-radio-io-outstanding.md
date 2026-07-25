@@ -11,7 +11,7 @@ Items discovered or deferred while planning Milestone 2. File-format CSV work st
 - [x] DM-32UV full modelled Write encode — [#667](https://github.com/pskillen/codeplug-studio/issues/667) (zones, scan, TGs, RX, digital contacts, APRS; analog contacts remain a known gap — file egress)
 - [ ] PROGRAM→QX kit codec (`programQx.ts`) — [#641](https://github.com/pskillen/codeplug-studio/issues/641) (sibling surface; not Mini `BlockCodec`)
 - [ ] RT95 VOX Web Serial adapter — [#643](https://github.com/pskillen/codeplug-studio/issues/643) (depends on [#642](https://github.com/pskillen/codeplug-studio/issues/642) docs + [#641](https://github.com/pskillen/codeplug-studio/issues/641) codec; parent epic [#640](https://github.com/pskillen/codeplug-studio/issues/640))
-- [ ] Anytone DMR R/W kit codec — [#646](https://github.com/pskillen/codeplug-studio/issues/646) (sibling surface; 921600 + u32 BE; not RT95 `programQx` / Mini `BlockCodec`; parent epic [#645](https://github.com/pskillen/codeplug-studio/issues/645))
+- [x] Anytone DMR R/W kit codec — [#646](https://github.com/pskillen/codeplug-studio/issues/646) (`kit/codecs/anytoneDmrRw.ts`; sibling surface; 921600 + u32 BE; not RT95 `programQx` / Mini `BlockCodec`; parent epic [#645](https://github.com/pskillen/codeplug-studio/issues/645))
 - [ ] AT-D890UV Web Serial adapter — [#649](https://github.com/pskillen/codeplug-studio/issues/649) (depends on [#647](https://github.com/pskillen/codeplug-studio/issues/647) docs + [#646](https://github.com/pskillen/codeplug-studio/issues/646) codec; parent epic [#645](https://github.com/pskillen/codeplug-studio/issues/645))
 
 ## Done (spike / docs / kit / first adapter / UI)
@@ -25,7 +25,7 @@ Items discovered or deferred while planning Milestone 2. File-format CSV work st
 - [x] WebSerial `BytePipe` transport — [#615](https://github.com/pskillen/codeplug-studio/issues/615) (`src/integrations/radio-io/transport/`)
 - [x] Protocol kit core (session, MemoryMap, R/W codec) — [#616](https://github.com/pskillen/codeplug-studio/issues/616) (`src/integrations/radio-io/kit/`)
 - [x] V-probe kit codec — [#630](https://github.com/pskillen/codeplug-studio/issues/630) (`kit/codecs/vProbe.ts`)
-- [x] OpenGD77/OpenUV380 serial kit codec — [#631](https://github.com/pskillen/codeplug-studio/issues/631) (`kit/codecs/opengd77Serial.ts`)
+- [x] Anytone DMR R/W kit codec — [#646](https://github.com/pskillen/codeplug-studio/issues/646) (`kit/codecs/anytoneDmrRw.ts`)
 - [x] UV-5R Mini clone adapter + registry — [#617](https://github.com/pskillen/codeplug-studio/issues/617) (`radios/uv5r-mini/`, `registry.ts`, `radio-clone` hydration)
 - [x] Connect/read/write UI + in-flow attribution — [#618](https://github.com/pskillen/codeplug-studio/issues/618) (`BuildRadioIoPanel` on Export)
 
