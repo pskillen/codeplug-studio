@@ -5,6 +5,7 @@
 import type { MemoryMap } from '../../types.ts';
 import type { RadioScanListDto } from '../../radioWriteProjection.ts';
 import { clearBitmap, setBitmapBit } from './bitmap.ts';
+import { toAtD890ChannelIndex } from './channelIndex.ts';
 import { AT_D890_LIMITS, D890_MAP } from './constants.ts';
 import {
   mergeMapRegionsIntoCache,
@@ -23,8 +24,10 @@ export function encodeAtD890ScanListRecord(scan: RadioScanListDto): Uint8Array {
   const data = new Uint8Array(AT_D890_LIMITS.SCAN_LIST_RECORD_SIZE);
   data.fill(0);
   data[0x1] = 0;
-  writeU16Le(data, 0x2, scan.designatedTxChannel ?? scan.channelNumbers[0] ?? 0);
-  writeU16Le(data, 0x4, scan.channelNumbers[1] ?? 0);
+  const priority1 = scan.designatedTxChannel ?? scan.channelNumbers[0];
+  writeU16Le(data, 0x2, priority1 != null && priority1 > 0 ? toAtD890ChannelIndex(priority1) : 0);
+  const priority2 = scan.channelNumbers[1];
+  writeU16Le(data, 0x4, priority2 != null && priority2 > 0 ? toAtD890ChannelIndex(priority2) : 0);
   writeU16Le(data, 0x6, 5);
   writeU16Le(data, 0x8, 5);
   writeU16Le(data, 0xa, 1);
@@ -34,7 +37,7 @@ export function encodeAtD890ScanListRecord(scan: RadioScanListDto): Uint8Array {
   members.fill(0xff);
   const count = Math.min(scan.channelNumbers.length, 50);
   for (let i = 0; i < count; i++) {
-    writeU16Le(members, i * 2, scan.channelNumbers[i]!);
+    writeU16Le(members, i * 2, toAtD890ChannelIndex(scan.channelNumbers[i]!));
   }
   const combined = new Uint8Array(0xd0);
   combined.set(data, 0);

@@ -14,6 +14,7 @@ import {
   zoneNameAddress,
   type AtD890DownloadCache,
 } from './memory.ts';
+import { toAtD890ChannelIndex } from './channelIndex.ts';
 import { encodeWideCharName } from './wideChar.ts';
 
 function writeU16Le(buf: Uint8Array, offset: number, value: number): void {
@@ -26,7 +27,7 @@ export function encodeAtD890ZoneMembership(channelNumbers: readonly number[]): U
   buf.fill(0xff);
   const count = Math.min(channelNumbers.length, AT_D890_LIMITS.ZONE_MAX_MEMBERS);
   for (let i = 0; i < count; i++) {
-    writeU16Le(buf, i * 2, channelNumbers[i]!);
+    writeU16Le(buf, i * 2, toAtD890ChannelIndex(channelNumbers[i]!));
   }
   return buf;
 }
@@ -55,9 +56,8 @@ export function encodeZonesIntoAtD890Image(
     const nameBytes = encodeWideCharName(zone.wireName, D890_MAP.ZoneDataLength);
     image.set(zoneNameAddress(zIdx), nameBytes);
     image.set(zoneChannelsAddress(zIdx), encodeAtD890ZoneMembership(zone.channelNumbers));
-    const first = zone.channelNumbers[0] ?? 0;
-    writeU16Le(zoneA, zIdx * 2, first);
-    writeU16Le(zoneB, zIdx * 2, zone.channelNumbers[1] ?? first);
+    writeU16Le(zoneA, zIdx * 2, 0);
+    writeU16Le(zoneB, zIdx * 2, zone.channelNumbers.length > 1 ? 1 : 0);
     void zoneHide;
   });
 
