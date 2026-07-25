@@ -125,10 +125,10 @@ Last channel in first block: `0x10 + 83×48 = 0xFA0`. Details: [channel-record.m
 
 ## Write contract (Web Serial)
 
-| Category     | Strategy                                                                                                                                                                                                               |
-| ------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Replaced** | Channels (+ TX-contact banks `0x42`/`0x43`), zones, scan lists, talk groups (`0x44` + counter `0x06` + quick-access `0x0B`), RX groups (`0x0F`), digital contacts (V-frame `0x0F` bank), APRS settings slice in `0x04` |
-| **Kept**     | Radio settings (`0x04` outside APRS slice), analog/digital emergencies, encryption keys, calibration, quick messages, operator DMR radio IDs (`0x67`), VFO A/B bank when not a channel bank                            |
+| Category     | Strategy                                                                                                                                                                                                                                                |
+| ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Replaced** | Channels (+ TX-contact banks `0x42`/`0x43`), zones, scan lists, talk groups (`0x44` + counter `0x06` + quick-access `0x0B`), RX groups (`0x0F`), digital contacts (V-frame `0x0F` bank), operator DMR radio IDs (`0x67`), APRS settings slice in `0x04` |
+| **Kept**     | Radio settings (`0x04` outside APRS slice), analog/digital emergencies, encryption keys, calibration, quick messages, VFO A/B bank when not a channel bank                                                                                              |
 
 Replaced entities encode **full records** from `RadioWriteProjection` plus NeonPlug defaults for unmodelled bytes; unused list/slot entries are explicit empty/sentinel fill ([#685](https://github.com/pskillen/codeplug-studio/issues/685)). Manifest: `dm32WriteRole` in `writeRole.ts`.
 

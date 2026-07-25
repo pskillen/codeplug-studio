@@ -66,6 +66,29 @@ describe('assembledChannelsToRadioDtos', () => {
     });
   });
 
+  it('maps explicit 25 kHz FM bandwidth to wide FM', () => {
+    const projectId = 'p1';
+    const { build, egress } = newRadioBuildForProfile(projectId, 'radio-io-opengd77-1701');
+    const entity = {
+      ...newChannel(projectId, 'Wide'),
+      id: 'ch-wide-bw',
+      rxFrequency: 145_500_000,
+      txFrequency: 145_500_000,
+      modeProfiles: [
+        {
+          mode: 'fm' as const,
+          squelch: null,
+          rxTone: 'none',
+          txTone: 'none',
+          bandwidthKHz: 25,
+        },
+      ],
+    };
+    const row: AssembledChannel = { entity, wireName: 'WIDE', orderOrSlot: 1 };
+    const dtos = assembledChannelsToRadioDtos([row], build, egress);
+    expect(dtos[0]?.bandwidth).toBe('FM');
+  });
+
   it('defaults null bandwidth to NFM on OpenGD77 projection', () => {
     const projectId = 'p1';
     const { build, egress } = newRadioBuildForProfile(projectId, 'radio-io-opengd77-1701');

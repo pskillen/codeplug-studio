@@ -17,10 +17,13 @@ describe('dm32WriteRole', () => {
     expect(dm32WriteRole(DM32_METADATA.RX_GROUPS, 'rxgroup')).toBe('replaced');
   });
 
+  it('marks operator radio-ID bank as replaced', () => {
+    expect(dm32WriteRole(DM32_METADATA.DMR_RADIO_IDS, 'dmrradioid')).toBe('replaced');
+  });
+
   it('marks retain regions as kept', () => {
     expect(dm32WriteRole(DM32_METADATA.VFO_SETTINGS, 'vfo')).toBe('kept');
     expect(dm32WriteRole(DM32_METADATA.QUICK_MESSAGES, 'message')).toBe('kept');
-    expect(dm32WriteRole(DM32_METADATA.DMR_RADIO_IDS, 'dmrradioid')).toBe('kept');
     expect(dm32WriteRole(DM32_METADATA.CALIBRATION, 'calibration')).toBe('kept');
   });
 

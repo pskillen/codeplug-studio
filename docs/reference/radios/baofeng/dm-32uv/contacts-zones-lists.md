@@ -105,17 +105,17 @@ TX-contact indices (`0x42`/`0x43`) point into the **serial** talk-group list (`0
 
 ### 57-byte entry (summary)
 
-| Offset  | Field                                   |
-| ------- | --------------------------------------- |
-| `+0x00` | Name (11)                               |
-| `+0x0B` | Channel count                           |
-| `+0x0C` | CTC / TX mode nibbles                   |
-| `+0x0D` | Hang time (tenths of s)                 |
-| `+0x0E` | Priority types                          |
-| `+0x0F` | Priority ch 1 (u16 LE)                  |
-| `+0x11` | Designated TX (encoded)                 |
-| `+0x13` | Priority ch 2 (encoded)                 |
-| `+0x1A` | Channel list (30 bytes, u16 LE, max 15) |
+| Offset  | Field                                                                                                     |
+| ------- | --------------------------------------------------------------------------------------------------------- |
+| `+0x00` | Name (11)                                                                                                 |
+| `+0x0B` | Channel count                                                                                             |
+| `+0x0C` | CTC detection **0**; TX mode **1** (current) or **2** (designated TX channel) — Web Serial Write defaults |
+| `+0x0D` | Hang time **50** (5.0 s) — Web Serial Write default when unmodelled                                       |
+| `+0x0E` | Priority types                                                                                            |
+| `+0x0F` | Priority ch 1 (u16 LE)                                                                                    |
+| `+0x11` | Designated TX (encoded)                                                                                   |
+| `+0x13` | Priority ch 2 (encoded)                                                                                   |
+| `+0x1A` | Channel list (30 bytes, u16 LE, max 15)                                                                   |
 
 ## RX groups — metadata `0x0F`
 
@@ -131,12 +131,12 @@ TX-contact indices (`0x42`/`0x43`) point into the **serial** talk-group list (`0
 
 ## DMR radio IDs — metadata `0x67`
 
-| Fact         | Value                                               |
-| ------------ | --------------------------------------------------- |
-| Count        | Byte at `0x00` (max **250**)                        |
-| Entries from | `0x10`                                              |
-| Entry size   | **16** bytes                                        |
-| Channel ref  | Channel byte `0x2B` is 0-based index; `0xFF` = none |
+| Fact         | Value                                                                                                                                                                                                    |
+| ------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Count        | Byte at `0x00` (max **250**)                                                                                                                                                                             |
+| Entries from | `0x10`                                                                                                                                                                                                   |
+| Entry size   | **16** bytes                                                                                                                                                                                             |
+| Channel ref  | Channel byte `0x2B` is 0-based index; `0xFF` = none — Web Serial Write builds the bank from distinct channel `ModeProfile.dmrId` values ([#687](https://github.com/pskillen/codeplug-studio/issues/687)) |
 
 ## Related
 

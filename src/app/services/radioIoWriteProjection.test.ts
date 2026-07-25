@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   newChannel,
+  newDigitalContact,
   newRadioBuildForProfile,
   newTalkGroup,
   newZone,
@@ -173,6 +174,8 @@ describe('buildRadioWriteProjection', () => {
     const walkCarrier = walk!.channelNumbers[0]!;
     expect(bySlot.get(homeCarrier)?.wireName).toMatch(/Home.*Scan/i);
     expect(bySlot.get(walkCarrier)?.wireName).toMatch(/Morn.*Scan|Walk.*Scan/i);
+    expect(bySlot.get(homeCarrier)?.bandwidth).toBe('NFM');
+    expect(bySlot.get(walkCarrier)?.bandwidth).toBe('NFM');
     expect(homeCarrier).not.toBe(walkCarrier);
     expect(walk!.channelNumbers[0]).not.toBe(homeCarrier);
 
@@ -188,7 +191,7 @@ describe('buildRadioWriteProjection', () => {
     const walkRec = encodeDm32ChannelRecord(bySlot.get(walkCarrier)!);
     expect((homeRec[0x19]! >> 2) & 0x0f).toBe(1);
     expect((walkRec[0x19]! >> 2) & 0x0f).toBe(2);
-    expect(homeRec[0x19]! & 0x80).toBe(0x80); // FM
+    expect(homeRec[0x19]! & 0x80).toBe(0x00); // NFM (narrow)
     expect(homeRec[0x19]! & 0x40).toBe(0x40); // scanAdd
   });
 
@@ -253,5 +256,80 @@ describe('buildRadioWriteProjection', () => {
     });
     const projection = buildRadioWriteProjection(assembled, build, library, egress);
     expect(projection.channels[0]?.scanAdd).toBe(false);
+  });
+
+  it('warns and truncates talk groups beyond DM-32UV quick-contact cap', () => {
+    const projectId = 'p1';
+    const talkGroups = Array.from({ length: 801 }, (_, i) =>
+      newTalkGroup(projectId, `TG${i}`, 1000 + i),
+    );
+    const library = {
+      ...emptyLibrary([]),
+      talkGroups,
+    };
+    const { build, egress } = newRadioBuildForProfile(projectId, 'radio-io-dm32uv');
+    const assembled = assemble(build, library, {
+      formatId: egress.formatId,
+      profileId: egress.profileId,
+    });
+    const projection = buildRadioWriteProjection(assembled, build, library, egress);
+    expect(projection.organisation.talkGroups).toHaveLength(800);
+    expect(projection.organisation.talkGroups?.every((tg) => tg.callType === 0x04)).toBe(true);
+    expect(projection.warnings.some((w) => /801 talk group/.test(w) && /800/.test(w))).toBe(true);
+  });
+
+  it('warns and truncates digital contacts beyond DM-32UV address-book cap', () => {
+    const projectId = 'p1';
+    const digitalContacts = Array.from({ length: 251 }, (_, i) =>
+      newDigitalContact(projectId, `DC${i}`, 2000 + i),
+    );
+    const library = {
+      ...emptyLibrary([]),
+      digitalContacts,
+    };
+    const { build, egress } = newRadioBuildForProfile(projectId, 'radio-io-dm32uv');
+    const assembled = assemble(build, library, {
+      formatId: egress.formatId,
+      profileId: egress.profileId,
+    });
+    const projection = buildRadioWriteProjection(assembled, build, library, egress);
+    expect(projection.organisation.digitalContacts).toHaveLength(250);
+    expect(projection.warnings.some((w) => /251 digital contact/.test(w) && /250/.test(w))).toBe(
+      true,
+    );
+  });
+
+  it('projects operator radio IDs and channel bank indices from ModeProfile.dmrId', () => {
+    const projectId = 'p1';
+    const ch = {
+      ...newChannel(projectId, 'Repeater'),
+      id: 'ch-dmr',
+      callsign: 'MM9PDY',
+      rxFrequency: 439_000_000,
+      txFrequency: 430_000_000,
+      modeProfiles: [
+        {
+          mode: 'dmr' as const,
+          colourCode: 1,
+          timeslot: 1 as const,
+          dmrId: 2_351_123,
+          contactRef: null,
+          rxGroupListId: null,
+        },
+      ],
+    };
+    const library = emptyLibrary([ch]);
+    const { build, egress } = newRadioBuildForProfile(projectId, 'radio-io-dm32uv');
+    const assembled = assemble(build, library, {
+      formatId: egress.formatId,
+      profileId: egress.profileId,
+    });
+    const projection = buildRadioWriteProjection(assembled, build, library, egress);
+    expect(projection.organisation.radioIds).toEqual([
+      { index: 0, dmrId: 2_351_123, name: 'MM9PDY' },
+    ]);
+    expect(projection.channels[0]?.dmrRadioIdIndex).toBe(0);
+    const encoded = encodeDm32ChannelRecord(projection.channels[0]!);
+    expect(encoded[0x2b]).toBe(0);
   });
 });

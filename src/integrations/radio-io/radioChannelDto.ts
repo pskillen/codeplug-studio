@@ -59,4 +59,6 @@ export interface RadioChannelDto {
   skipZoneScan?: boolean;
   /** OpenGD77 / DM-32 / UV-5R Mini: RX-only (forbid TX). */
   rxOnly?: boolean;
+  /** DM-32UV: 0-based operator radio-ID bank index; omit or 0xFF on wire when unset. */
+  dmrRadioIdIndex?: number;
 }

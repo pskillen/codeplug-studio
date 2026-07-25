@@ -2,8 +2,9 @@
  * Build RadioWriteProjection from assemble + shared m×n expand for Web Serial Write.
  */
 
-import type { AssembledBuild, LibrarySlice } from '@core/services/assemble.ts';
+import type { Channel, ChannelModeProfile } from '@core/models/library.ts';
 import type { RadioBuild } from '@core/models/radioBuild.ts';
+import type { AssembledBuild, LibrarySlice } from '@core/services/assemble.ts';
 import {
   expandAllMxNChannels,
   expandMxNZoneMemberNumbers,
@@ -37,6 +38,7 @@ import type { RadioChannelDto } from '@integrations/radio-io/radioChannelDto.ts'
 import type {
   RadioAprsDto,
   RadioDigitalContactDto,
+  RadioRadioIdDto,
   RadioRxGroupDto,
   RadioScanListDto,
   RadioTalkGroupDto,
@@ -50,8 +52,13 @@ import {
   type RadioWireEgressIds,
 } from './radioIoChannelMap.ts';
 
-/** NeonPlug quick-contact group-call type byte. */
+/** NeonPlug quick-contact group-call type byte (DM-32UV always writes group call). */
 const TG_CALL_TYPE_GROUP = 0x04;
+
+/** Tier-3 DM-32UV caps — contacts / quick-contact talk groups / operator radio IDs. */
+const DM32_DEFAULT_MAX_TALK_GROUPS = 800;
+const DM32_DEFAULT_MAX_DIGITAL_CONTACTS = 250;
+const DM32_DEFAULT_MAX_RADIO_IDS = 250;
 
 function numericLimit(
   value: ProfileExportLimits[keyof ProfileExportLimits] | undefined,
@@ -71,8 +78,8 @@ function dm32ExportLimits(egress: RadioWireEgressIds): ProfileExportLimits {
       maxZones: 250,
       maxScanLists: 32,
       maxRxGroupLists: 250,
-      maxContacts: null,
-      maxTalkGroups: null,
+      maxContacts: DM32_DEFAULT_MAX_DIGITAL_CONTACTS,
+      maxTalkGroups: DM32_DEFAULT_MAX_TALK_GROUPS,
       zoneMembers: 64,
       scanListMembers: 15,
       rxGroupListMembers: 32,
@@ -257,7 +264,7 @@ function buildDm32Organisation(
               rxTone: { kind: 'none' },
               txTone: { kind: 'none' },
               powerPercent: null,
-              bandwidth: 'FM',
+              bandwidth: 'NFM',
               mode: 'analog',
               scanListId: listIndex,
               scanAdd: true,
@@ -354,14 +361,17 @@ function buildTalkGroupsAndRx(
 } {
   const limits = dm32ExportLimits(egress);
   const nameLen = numericLimit(limits.nameLengthTalkGroup, 16);
+  const maxTalkGroups = numericLimit(limits.maxTalkGroups, DM32_DEFAULT_MAX_TALK_GROUPS);
+  const maxDigitalContacts = numericLimit(limits.maxContacts, DM32_DEFAULT_MAX_DIGITAL_CONTACTS);
   const maxRx = numericLimit(limits.maxRxGroupLists, 250);
   const maxRxMembers = numericLimit(limits.rxGroupListMembers, 32);
   const contactIdByEntityId = new Map<string, number>();
   const talkGroups: RadioTalkGroupDto[] = [];
   const reservedTg = new Set<string>();
+  const talkGroupTotal = assembled.talkGroups.length;
 
   for (const row of assembled.talkGroups) {
-    if (talkGroups.length >= 800) break;
+    if (talkGroups.length >= maxTalkGroups) break;
     const wireName = applyListWireNameLimits(
       row.wireName,
       reservedTg,
@@ -380,11 +390,17 @@ function buildTalkGroupsAndRx(
     });
     contactIdByEntityId.set(row.entity.id, index);
   }
+  if (talkGroupTotal > maxTalkGroups) {
+    warnings.push(
+      `Build has ${talkGroupTotal} talk group(s); only ${maxTalkGroups} export to radio quick contacts`,
+    );
+  }
 
   const digitalContacts: RadioDigitalContactDto[] = [];
   const reservedDc = new Set<string>();
+  const digitalContactTotal = assembled.digitalContacts.length;
   for (const row of assembled.digitalContacts) {
-    if (digitalContacts.length >= 250) break;
+    if (digitalContacts.length >= maxDigitalContacts) break;
     const wireName = applyListWireNameLimits(
       row.wireName,
       reservedDc,
@@ -403,6 +419,11 @@ function buildTalkGroupsAndRx(
       country: row.entity.country ?? '',
       remark: row.entity.remarks ?? '',
     });
+  }
+  if (digitalContactTotal > maxDigitalContacts) {
+    warnings.push(
+      `Build has ${digitalContactTotal} digital contact(s); only ${maxDigitalContacts} export to radio address book`,
+    );
   }
 
   const rxGroupIndexById = new Map<string, number>();
@@ -444,6 +465,69 @@ function buildTalkGroupsAndRx(
     digitalContacts,
     fkMaps: { contactIdByEntityId, rxGroupIndexById },
   };
+}
+
+function isDmrProfile(
+  profile: ChannelModeProfile,
+): profile is Extract<ChannelModeProfile, { mode: 'dmr' }> {
+  return profile.mode === 'dmr';
+}
+
+function buildDm32RadioIdBank(
+  assembled: AssembledBuild,
+  build: RadioBuild,
+  library: Pick<LibrarySlice, 'talkGroups' | 'digitalContacts'>,
+  egress: RadioWireEgressIds,
+  warnings: string[],
+): { radioIds: RadioRadioIdDto[]; dmrIdIndexByValue: Map<number, number> } {
+  const limits = dm32ExportLimits(egress);
+  const maxRadioIds = numericLimit(limits.maxContacts, DM32_DEFAULT_MAX_RADIO_IDS);
+  const seen = new Map<number, { dmrId: number; name: string }>();
+
+  const considerDmrId = (dmrId: number | null | undefined, channel: Channel) => {
+    if (dmrId == null || dmrId <= 0 || seen.has(dmrId)) return;
+    const label = channel.callsign?.trim() || channel.name?.trim() || 'Radio ID';
+    seen.set(dmrId, { dmrId, name: label.slice(0, 11) });
+  };
+
+  for (const row of assembled.channels) {
+    for (const profile of row.entity.modeProfiles) {
+      if (isDmrProfile(profile)) {
+        considerDmrId(profile.dmrId, row.entity);
+      }
+    }
+  }
+
+  if (hasMxNChannelExpansion(build.radioTargetId)) {
+    const merged = mergeExportOptions(build, egress.formatId, { profileId: egress.profileId });
+    const expanded = filterExpandedRowsByOverrides(
+      expandAllMxNChannels({
+        assembled,
+        library,
+        radioTargetId: build.radioTargetId,
+        options: merged,
+        warnings,
+      }),
+      build.channelOverrides,
+    );
+    const channelById = new Map(assembled.channels.map((row) => [row.entity.id, row.entity]));
+    for (const projection of expanded) {
+      const channel = channelById.get(projection.sourceChannelId);
+      if (!channel || !isDmrProfile(projection.modeProfile)) continue;
+      considerDmrId(projection.modeProfile.dmrId, channel);
+    }
+  }
+
+  const entries = [...seen.values()];
+  if (entries.length > maxRadioIds) {
+    warnings.push(
+      `Build has ${entries.length} distinct DMR radio ID(s); only ${maxRadioIds} export to operator radio-ID bank`,
+    );
+  }
+  const capped = entries.slice(0, maxRadioIds);
+  const radioIds = capped.map((entry, index) => ({ index, ...entry }));
+  const dmrIdIndexByValue = new Map(capped.map((entry, index) => [entry.dmrId, index]));
+  return { radioIds, dmrIdIndexByValue };
 }
 
 /**
@@ -746,13 +830,19 @@ export function buildRadioWriteProjection(
   let talkGroups: RadioTalkGroupDto[] = [];
   let rxGroups: RadioRxGroupDto[] = [];
   let digitalContacts: RadioDigitalContactDto[] = [];
+  let dm32RadioIds: RadioRadioIdDto[] = [];
 
   if (egress.profileId === 'radio-io-dm32uv') {
     const tgRx = buildTalkGroupsAndRx(assembled, egress, warnings);
     talkGroups = tgRx.talkGroups;
     rxGroups = tgRx.rxGroups;
     digitalContacts = tgRx.digitalContacts;
-    fkMaps = tgRx.fkMaps;
+    const radioIdBank = buildDm32RadioIdBank(assembled, build, library, egress, warnings);
+    dm32RadioIds = radioIdBank.radioIds;
+    fkMaps = {
+      ...tgRx.fkMaps,
+      dmrIdIndexByValue: radioIdBank.dmrIdIndexByValue,
+    };
   } else if (egress.profileId === 'radio-io-opengd77-1701') {
     const tgRx = buildOpenGd77ContactsAndRx(assembled, egress, warnings);
     talkGroups = tgRx.talkGroups;
@@ -801,6 +891,7 @@ export function buildRadioWriteProjection(
       talkGroups,
       rxGroups,
       digitalContacts,
+      radioIds: dm32RadioIds,
       aprs: radioAprsFromNeonplugPatch(assembled, numbersBySourceChannelId, warnings),
     };
   } else if (egress.profileId === 'radio-io-opengd77-1701') {

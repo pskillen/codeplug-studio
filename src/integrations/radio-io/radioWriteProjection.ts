@@ -30,7 +30,7 @@ export interface RadioTalkGroupDto {
   index: number;
   wireName: string;
   digitalId: number;
-  /** Call type: 0 private, 1 group, 2 all-call — NeonPlug quick-contact flag. */
+  /** NeonPlug quick-contact call type: 0x03 private, 0x04 group, 0x05 all — Studio DM-32UV Write always uses group (0x04). */
   callType: number;
 }
 
@@ -52,6 +52,15 @@ export interface RadioDigitalContactDto {
   province: string;
   country: string;
   remark: string;
+}
+
+/** Operator DMR radio ID in metadata 0x67 bank. */
+export interface RadioRadioIdDto {
+  /** 0-based bank index (channel byte 0x2B). */
+  index: number;
+  dmrId: number;
+  /** Up to 11 characters + null on wire. */
+  name: string;
 }
 
 /** APRS / GPS position slice on settings block (offsets 0x301–0x334). */
@@ -79,6 +88,8 @@ export interface RadioWriteOrganisation {
   talkGroups?: readonly RadioTalkGroupDto[];
   rxGroups?: readonly RadioRxGroupDto[];
   digitalContacts?: readonly RadioDigitalContactDto[];
+  /** Operator DMR radio IDs (metadata 0x67) — DM-32UV Web Serial Write. */
+  radioIds?: readonly RadioRadioIdDto[];
   aprs?: RadioAprsDto | null;
 }
 
