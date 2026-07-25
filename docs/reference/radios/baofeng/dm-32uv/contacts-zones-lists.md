@@ -109,8 +109,8 @@ TX-contact indices (`0x42`/`0x43`) point into the **serial** talk-group list (`0
 | ------- | --------------------------------------- |
 | `+0x00` | Name (11)                               |
 | `+0x0B` | Channel count                           |
-| `+0x0C` | CTC / TX mode nibbles                   |
-| `+0x0D` | Hang time (tenths of s)                 |
+| `+0x0C` | CTC detection **0**; TX mode **1** (current) or **2** (designated TX channel) — Web Serial Write defaults |
+| `+0x0D` | Hang time **50** (5.0 s) — Web Serial Write default when unmodelled |
 | `+0x0E` | Priority types                          |
 | `+0x0F` | Priority ch 1 (u16 LE)                  |
 | `+0x11` | Designated TX (encoded)                 |
