@@ -1,10 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import { AT_D890UV_DESCRIPTOR } from '@integrations/radio-io/radios/at-d890uv/descriptor.ts';
+import { RT95_DESCRIPTOR } from '@integrations/radio-io/radios/rt95/descriptor.ts';
 import { UV5R_MINI_DESCRIPTOR } from '@integrations/radio-io/radios/uv5r-mini/descriptor.ts';
 import {
   isProdBuildEnv,
   resolveRadioWriteGate,
+  resolveRadioWriteExperimentalCopy,
+  resolveRadioWriteProdDisabledMessage,
   RADIO_WRITE_PROD_DISABLED_MESSAGE,
+  RT95_WRITE_PROD_DISABLED_MESSAGE,
 } from './radioWriteEnvGate.ts';
 
 describe('radioWriteEnvGate', () => {
@@ -30,6 +34,27 @@ describe('radioWriteEnvGate', () => {
     for (const env of ['local', 'dev', 'main', 'staging'] as const) {
       expect(resolveRadioWriteGate(AT_D890UV_DESCRIPTOR, env)).toBe('warn');
     }
+  });
+
+  it('hides RT95 write on prod and warns on pre-prod', () => {
+    expect(resolveRadioWriteGate(RT95_DESCRIPTOR, 'prod')).toBe('hidden');
+    expect(resolveRadioWriteGate(RT95_DESCRIPTOR, 'staging')).toBe('warn');
+  });
+
+  it('resolves profile-specific prod-disabled messages', () => {
+    expect(resolveRadioWriteProdDisabledMessage('radio-io-rt95')).toBe(
+      RT95_WRITE_PROD_DISABLED_MESSAGE,
+    );
+    expect(resolveRadioWriteProdDisabledMessage('radio-io-at-d890uv')).toBe(
+      RADIO_WRITE_PROD_DISABLED_MESSAGE,
+    );
+    expect(resolveRadioWriteProdDisabledMessage('radio-io-rt95')).toMatch(/CHIRP CSV/i);
+  });
+
+  it('resolves experimental write copy for gated radios', () => {
+    expect(resolveRadioWriteExperimentalCopy('radio-io-rt95')?.title).toMatch(/hardware/i);
+    expect(resolveRadioWriteExperimentalCopy('radio-io-rt95')?.preferEgress).toMatch(/Sorry/i);
+    expect(resolveRadioWriteExperimentalCopy('radio-io-at-d890uv')?.title).toMatch(/experimental/i);
   });
 
   it('exports a prod-disabled operator message', () => {

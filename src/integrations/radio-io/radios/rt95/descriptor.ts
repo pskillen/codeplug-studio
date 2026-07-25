@@ -24,6 +24,7 @@ export const RT95_DESCRIPTOR: RadioDescriptor = {
   compatibleProfiles: [{ formatId: 'radio-io', profileId: 'radio-io-rt95' }],
   writeStrategy: 'full-image',
   hydrationRequiredForWrite: true,
+  prodWriteDisabled: true,
   baudRate: RT95_BAUD_RATE,
   hydration: {
     extractHydration: extractRt95Hydration,

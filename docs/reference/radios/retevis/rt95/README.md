@@ -62,7 +62,7 @@ Protocol lineage credit: `/attributions` entry `chirp` ([#597](https://github.co
 
 ## Shipped Studio module
 
-`src/integrations/radio-io/radios/rt95/` — full-image RMW Write (channels + occupancy/scan bitfields); settings / DTMF / bandlimit retained from Read. Radio image inspector ([#732](https://github.com/pskillen/codeplug-studio/issues/732)). Hardware Read→Write→Read-back verification still pending.
+`src/integrations/radio-io/radios/rt95/` — full-image RMW Write (channels + occupancy/scan bitfields); settings / DTMF / bandlimit retained from Read. Radio image inspector ([#732](https://github.com/pskillen/codeplug-studio/issues/732)). **Write prod-gated** (`prodWriteDisabled`) until hardware Read→Write verify — prefer CHIRP CSV on production.
 
 ## Related
 
