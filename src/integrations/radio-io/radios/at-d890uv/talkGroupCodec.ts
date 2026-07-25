@@ -8,7 +8,8 @@ import { clearBitmap, setBitmapBit } from './bitmap.ts';
 import { AT_D890_LIMITS, D890_MAP } from './constants.ts';
 import {
   mergeMapRegionsIntoCache,
-  putCacheBytes,
+  mergeImageRegionIntoCache,
+  clearTalkgroupDataBlocksFromCache,
   talkgroupAddress,
   type AtD890DownloadCache,
 } from './memory.ts';
@@ -38,7 +39,7 @@ export function encodeTalkgroupsIntoAtD890Image(
   clearBitmap(set, true);
   const max = set.length * 8;
   for (let i = 0; i < max; i++) {
-    image.fill(talkgroupAddress(i), AT_D890_LIMITS.TALKGROUP_STRIDE, 0);
+    image.fill(talkgroupAddress(i), AT_D890_LIMITS.TALKGROUP_RECORD_SIZE, 0);
   }
   for (const tg of talkGroups) {
     if (tg.digitalId <= 0) continue;
@@ -55,15 +56,17 @@ export function syncTalkgroupRegionsToCache(cache: AtD890DownloadCache, image: M
   mergeMapRegionsIntoCache(cache, image, [
     { address: D890_MAP.TalkgroupSet, length: AT_D890_LIMITS.TALKGROUP_SET_BYTES },
   ]);
+  clearTalkgroupDataBlocksFromCache(cache);
   const set = image.get(D890_MAP.TalkgroupSet, AT_D890_LIMITS.TALKGROUP_SET_BYTES);
   for (let idx = 0; idx < set.length * 8; idx++) {
     const byte = Math.floor(idx / 8);
     const bit = idx % 8;
     if ((set[byte]! & (1 << bit)) !== 0) continue;
-    putCacheBytes(
+    mergeImageRegionIntoCache(
       cache,
+      image,
       talkgroupAddress(idx),
-      image.get(talkgroupAddress(idx), AT_D890_LIMITS.TALKGROUP_STRIDE),
+      AT_D890_LIMITS.TALKGROUP_RECORD_SIZE,
     );
   }
 }

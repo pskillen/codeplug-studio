@@ -2,11 +2,25 @@
  * AT-D890UV CloneImageRadio — sparse 16-byte selective download/upload.
  */
 
-import type { BytePipe, CloneImageRadio, IdentResult, MemoryMap, ProgressFn } from '../../types.ts';
-import type { RadioChannelDto } from '../../radioChannelDto.ts';
-import { reportProgress, throwIfAborted } from '../../kit/progress.ts';
-import { RadioProtocolError } from '../../kit/errors.ts';
+import {
+  applyAtD890WriteImageToCache,
+  cacheToMemoryMap,
+  channelPrimaryAddress,
+  channelSecondaryAddress,
+  putCacheBytes,
+  getCacheBytes,
+  listWriteChunks,
+  zoneChannelsAddress,
+  zoneNameAddress,
+  scanListAddress,
+  talkgroupAddress,
+  receiveGroupAddress,
+  radioIdAddress,
+  alignedSpanForAtD890Region,
+  type AtD890DownloadCache,
+} from './memory.ts';
 import { AT_D890_LIMITS, AT_D890_SAFE_SKIP_WRITE_ADDR, D890_MAP } from './constants.ts';
+import { listSetBits } from './bitmap.ts';
 import {
   atD890EnterProgram,
   atD890ExitProgram,
@@ -15,24 +29,11 @@ import {
   atD890WriteMemory,
   atD890ModelHints,
 } from './connection.ts';
-import { listSetBits } from './bitmap.ts';
-import {
-  applyAtD890WriteImageToCache,
-  cacheToMemoryMap,
-  channelPrimaryAddress,
-  channelSecondaryAddress,
-  putCacheBytes,
-  listWriteChunks,
-  zoneChannelsAddress,
-  zoneNameAddress,
-  scanListAddress,
-  talkgroupAddress,
-  receiveGroupAddress,
-  radioIdAddress,
-  alignAtD890ReadLength,
-  type AtD890DownloadCache,
-} from './memory.ts';
 import { decodeChannelsFromAtD890Cache, encodeChannelsIntoAtD890Image } from './channelCodec.ts';
+import { reportProgress, throwIfAborted } from '../../kit/progress.ts';
+import { RadioProtocolError } from '../../kit/errors.ts';
+import type { BytePipe, CloneImageRadio, IdentResult, MemoryMap, ProgressFn } from '../../types.ts';
+import type { RadioChannelDto } from '../../radioChannelDto.ts';
 
 export type { AtD890DownloadCache };
 
@@ -79,7 +80,7 @@ export async function downloadAtD890SparseRegions(
 
   stage('Reading channel bitmap…');
   await readRegion(pipe, cache, D890_MAP.ChannelSet, AT_D890_LIMITS.CHANNEL_SET_BYTES, signal);
-  const channelSet = cache.blocks.get(D890_MAP.ChannelSet)!;
+  const channelSet = getCacheBytes(cache, D890_MAP.ChannelSet, AT_D890_LIMITS.CHANNEL_SET_BYTES);
   for (const idx of listSetBits(channelSet)) {
     throwIfAborted(signal);
     const primary = await atD890ReadMemory(
@@ -103,7 +104,7 @@ export async function downloadAtD890SparseRegions(
   await readRegion(pipe, cache, D890_MAP.ZoneHide, AT_D890_LIMITS.ZONE_SET_BYTES, signal);
   await readRegion(pipe, cache, D890_MAP.ZoneAChannel, D890_MAP.ZoneTableBytes, signal);
   await readRegion(pipe, cache, D890_MAP.ZoneBChannel, D890_MAP.ZoneTableBytes, signal);
-  const zoneSet = cache.blocks.get(D890_MAP.ZoneSet)!;
+  const zoneSet = getCacheBytes(cache, D890_MAP.ZoneSet, AT_D890_LIMITS.ZONE_SET_BYTES);
   for (const idx of listSetBits(zoneSet)) {
     throwIfAborted(signal);
     await readRegion(pipe, cache, zoneNameAddress(idx), D890_MAP.ZoneDataLength, signal);
@@ -112,7 +113,7 @@ export async function downloadAtD890SparseRegions(
 
   stage('Reading scan lists…');
   await readRegion(pipe, cache, D890_MAP.ScanListSet, AT_D890_LIMITS.SCAN_LIST_SET_BYTES, signal);
-  const scanSet = cache.blocks.get(D890_MAP.ScanListSet)!;
+  const scanSet = getCacheBytes(cache, D890_MAP.ScanListSet, AT_D890_LIMITS.SCAN_LIST_SET_BYTES);
   for (const idx of listSetBits(scanSet)) {
     throwIfAborted(signal);
     await readRegion(pipe, cache, scanListAddress(idx), AT_D890_LIMITS.SCAN_LIST_STRIDE, signal);
@@ -120,16 +121,15 @@ export async function downloadAtD890SparseRegions(
 
   stage('Reading talk groups…');
   await readRegion(pipe, cache, D890_MAP.TalkgroupSet, AT_D890_LIMITS.TALKGROUP_SET_BYTES, signal);
-  const tgSet = cache.blocks.get(D890_MAP.TalkgroupSet)!;
+  const tgSet = getCacheBytes(cache, D890_MAP.TalkgroupSet, AT_D890_LIMITS.TALKGROUP_SET_BYTES);
   for (const idx of listSetBits(tgSet, true)) {
     throwIfAborted(signal);
-    await readRegion(
-      pipe,
-      cache,
-      talkgroupAddress(idx),
-      alignAtD890ReadLength(AT_D890_LIMITS.TALKGROUP_STRIDE),
-      signal,
+    const slot = talkgroupAddress(idx);
+    const { start, length } = alignedSpanForAtD890Region(
+      slot,
+      AT_D890_LIMITS.TALKGROUP_RECORD_SIZE,
     );
+    await readRegion(pipe, cache, start, length, signal);
   }
 
   stage('Reading RX groups…');
@@ -140,7 +140,7 @@ export async function downloadAtD890SparseRegions(
     AT_D890_LIMITS.RX_GROUP_SET_BYTES,
     signal,
   );
-  const rxSet = cache.blocks.get(D890_MAP.ReceiveGroupSet)!;
+  const rxSet = getCacheBytes(cache, D890_MAP.ReceiveGroupSet, AT_D890_LIMITS.RX_GROUP_SET_BYTES);
   for (const idx of listSetBits(rxSet)) {
     throwIfAborted(signal);
     await readRegion(pipe, cache, receiveGroupAddress(idx), AT_D890_LIMITS.RX_GROUP_STRIDE, signal);
@@ -148,7 +148,7 @@ export async function downloadAtD890SparseRegions(
 
   stage('Reading operator radio IDs…');
   await readRegion(pipe, cache, D890_MAP.RadioIdSet, AT_D890_LIMITS.RADIO_ID_SET_BYTES, signal);
-  const ridSet = cache.blocks.get(D890_MAP.RadioIdSet)!;
+  const ridSet = getCacheBytes(cache, D890_MAP.RadioIdSet, AT_D890_LIMITS.RADIO_ID_SET_BYTES);
   for (const idx of listSetBits(ridSet)) {
     throwIfAborted(signal);
     await readRegion(pipe, cache, radioIdAddress(idx), AT_D890_LIMITS.RADIO_ID_STRIDE, signal);
@@ -171,17 +171,16 @@ export class AtD890uvProtocol implements CloneImageRadio {
     if (seed.blocks.size === 0) {
       throw new RadioProtocolError('AT-D890UV hydration has no sparse blocks to write');
     }
-    if (!this.cache) {
-      this.cache = {
-        firmware: seed.firmware,
-        modelString: seed.modelString,
-        blocks: new Map(seed.blocks),
-      };
-      return;
+    const blocks = new Map<number, Uint8Array>();
+    const normalized: AtD890DownloadCache = {
+      firmware: seed.firmware,
+      modelString: seed.modelString,
+      blocks,
+    };
+    for (const [address, data] of seed.blocks) {
+      putCacheBytes(normalized, address, data);
     }
-    this.cache.firmware = seed.firmware ?? this.cache.firmware;
-    this.cache.modelString = seed.modelString ?? this.cache.modelString;
-    this.cache.blocks = new Map(seed.blocks);
+    this.cache = normalized;
   }
 
   async connect(

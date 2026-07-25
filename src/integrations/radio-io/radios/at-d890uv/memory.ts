@@ -49,6 +49,24 @@ export function talkgroupAddress(index: number): number {
   return D890_MAP.TalkgroupData + index * D890_MAP.TalkgroupStride;
 }
 
+/** Floor address to a 16-byte serial/cache boundary. */
+export function alignDownAtD890Address(address: number): number {
+  return Math.floor(address / AT_D890_BLOCK_SIZE) * AT_D890_BLOCK_SIZE;
+}
+
+/**
+ * 16-aligned span covering `[address, address + length)`.
+ * Needed when record stride is not a multiple of 16 (talkgroups: pitch `0xc8`).
+ */
+export function alignedSpanForAtD890Region(
+  address: number,
+  length: number,
+): { start: number; length: number } {
+  const start = alignDownAtD890Address(address);
+  const end = Math.ceil((address + length) / AT_D890_BLOCK_SIZE) * AT_D890_BLOCK_SIZE;
+  return { start, length: end - start };
+}
+
 export function receiveGroupAddress(index: number): number {
   return D890_MAP.ReceiveGroupData + index * D890_MAP.ReceiveGroupStride;
 }
@@ -62,7 +80,17 @@ export function putCacheBytes(cache: AtD890DownloadCache, address: number, data:
   if (address % AT_D890_BLOCK_SIZE !== 0) {
     throw new RangeError(`D890 cache address must be 16-byte aligned: 0x${address.toString(16)}`);
   }
-  cache.blocks.set(address, data.slice());
+  for (let off = 0; off < data.length; off += AT_D890_BLOCK_SIZE) {
+    const slice = data.subarray(off, Math.min(off + AT_D890_BLOCK_SIZE, data.length));
+    if (slice.length === AT_D890_BLOCK_SIZE) {
+      cache.blocks.set(address + off, slice.slice());
+      continue;
+    }
+    const padded = new Uint8Array(AT_D890_BLOCK_SIZE);
+    padded.fill(0xff);
+    padded.set(slice);
+    cache.blocks.set(address + off, padded);
+  }
 }
 
 export function getCacheBytes(
@@ -72,12 +100,20 @@ export function getCacheBytes(
 ): Uint8Array {
   const out = new Uint8Array(length);
   out.fill(0xff);
-  for (let off = 0; off < length; off += AT_D890_BLOCK_SIZE) {
-    const addr = address + off;
-    const chunk = cache.blocks.get(addr);
-    if (chunk) {
-      out.set(chunk.subarray(0, Math.min(chunk.length, length - off)), off);
+  let abs = address;
+  const end = address + length;
+  while (abs < end) {
+    const blockBase = alignDownAtD890Address(abs);
+    const chunk = cache.blocks.get(blockBase);
+    const offsetInBlock = abs - blockBase;
+    const copyLen = Math.min(AT_D890_BLOCK_SIZE - offsetInBlock, end - abs);
+    if (chunk && chunk.length > offsetInBlock) {
+      out.set(
+        chunk.subarray(offsetInBlock, Math.min(chunk.length, offsetInBlock + copyLen)),
+        abs - address,
+      );
     }
+    abs += copyLen;
   }
   return out;
 }
@@ -126,6 +162,31 @@ export function listWriteChunks(
 
 export function alignAtD890ReadLength(length: number): number {
   return Math.ceil(length / AT_D890_BLOCK_SIZE) * AT_D890_BLOCK_SIZE;
+}
+
+/**
+ * Drop cached blocks in the TalkgroupData bank so a prior Read with a wrong
+ * stride (e.g. `0xd0`) cannot leak stale addresses into upload.
+ */
+export function clearTalkgroupDataBlocksFromCache(cache: AtD890DownloadCache): void {
+  const base = D890_MAP.TalkgroupData;
+  const end = D890_MAP.TalkgroupOrder;
+  for (const addr of [...cache.blocks.keys()]) {
+    if (addr >= base && addr < end) cache.blocks.delete(addr);
+  }
+}
+
+/** Merge a possibly unaligned image region into 16-byte cache keys. */
+export function mergeImageRegionIntoCache(
+  cache: AtD890DownloadCache,
+  image: MemoryMap,
+  address: number,
+  length: number,
+): void {
+  const { start, length: spanLen } = alignedSpanForAtD890Region(address, length);
+  for (let off = 0; off < spanLen; off += AT_D890_BLOCK_SIZE) {
+    putCacheBytes(cache, start + off, image.get(start + off, AT_D890_BLOCK_SIZE));
+  }
 }
 
 /** Push modelled regions from a merged MemoryMap back into the upload cache. */
@@ -181,12 +242,14 @@ export function applyAtD890WriteImageToCache(cache: AtD890DownloadCache, image: 
     );
   }
 
+  clearTalkgroupDataBlocksFromCache(cache);
   const tgSet = image.get(D890_MAP.TalkgroupSet, AT_D890_LIMITS.TALKGROUP_SET_BYTES);
   for (const idx of listSetBits(tgSet, true)) {
-    putCacheBytes(
+    mergeImageRegionIntoCache(
       cache,
+      image,
       talkgroupAddress(idx),
-      image.get(talkgroupAddress(idx), AT_D890_LIMITS.TALKGROUP_STRIDE),
+      AT_D890_LIMITS.TALKGROUP_RECORD_SIZE,
     );
   }
 
@@ -215,10 +278,6 @@ export function mergeMapRegionsIntoCache(
   regions: readonly { address: number; length: number }[],
 ): void {
   for (const { address, length } of regions) {
-    for (let off = 0; off < length; off += AT_D890_BLOCK_SIZE) {
-      const addr = address + off;
-      const slice = image.get(addr, Math.min(AT_D890_BLOCK_SIZE, length - off));
-      putCacheBytes(cache, addr, slice);
-    }
+    mergeImageRegionIntoCache(cache, image, address, length);
   }
 }

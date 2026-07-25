@@ -29,6 +29,10 @@ export function encodeRadioIdsIntoAtD890Image(
   image: MemoryMap,
   radioIds: readonly RadioRadioIdDto[],
 ): MemoryMap {
+  // Empty projection must not wipe a hydrated RadioId bank (channels often omit dmrId).
+  if (!radioIds.some((rid) => rid.dmrId > 0)) {
+    return image;
+  }
   const set = image.get(D890_MAP.RadioIdSet, AT_D890_LIMITS.RADIO_ID_SET_BYTES).slice();
   clearBitmap(set);
   const max = set.length * 8;
