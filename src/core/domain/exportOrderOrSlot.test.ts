@@ -172,9 +172,7 @@ describe('exportOrderOrSlot', () => {
 
   describe('projectFlatMemoryOrderFromSource', () => {
     it('preserves full overlap in source order', () => {
-      expect(
-        projectFlatMemoryOrderFromSource(['a', 'b', 'c'], ['a', 'b', 'c']),
-      ).toEqual({
+      expect(projectFlatMemoryOrderFromSource(['a', 'b', 'c'], ['a', 'b', 'c'])).toEqual({
         orderedIds: ['a', 'b', 'c'],
         matchedCount: 3,
         unmatchedCount: 0,
@@ -182,9 +180,7 @@ describe('exportOrderOrSlot', () => {
     });
 
     it('reorders partial overlap and appends unmatched target channels', () => {
-      expect(
-        projectFlatMemoryOrderFromSource(['c', 'a'], ['a', 'b', 'c']),
-      ).toEqual({
+      expect(projectFlatMemoryOrderFromSource(['c', 'a'], ['a', 'b', 'c'])).toEqual({
         orderedIds: ['c', 'a', 'b'],
         matchedCount: 2,
         unmatchedCount: 1,
@@ -216,9 +212,7 @@ describe('exportOrderOrSlot', () => {
     });
 
     it('ignores duplicate source ids', () => {
-      expect(
-        projectFlatMemoryOrderFromSource(['a', 'a', 'b'], ['a', 'b', 'c']),
-      ).toEqual({
+      expect(projectFlatMemoryOrderFromSource(['a', 'a', 'b'], ['a', 'b', 'c'])).toEqual({
         orderedIds: ['a', 'b', 'c'],
         matchedCount: 2,
         unmatchedCount: 1,

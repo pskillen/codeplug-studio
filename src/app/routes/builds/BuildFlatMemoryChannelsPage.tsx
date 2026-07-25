@@ -153,7 +153,8 @@ export default function BuildFlatMemoryChannelsPage() {
   );
 
   const eligibleSourceBuilds = useMemo(
-    () => builds.filter((candidate) => candidate.id !== build.id && buildUsesFlatMemoryList(candidate)),
+    () =>
+      builds.filter((candidate) => candidate.id !== build.id && buildUsesFlatMemoryList(candidate)),
     [build.id, builds],
   );
 

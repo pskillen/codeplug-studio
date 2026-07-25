@@ -31,7 +31,7 @@ Prefer these names in code and docs.
 | **Drag**                              | C `onReorder` + `SelectedItemDragHandle`; A `bulkReorder` + drag handle in Order column | Yes             | Membership lists; large export-order DataTables (`bulkReorder`); `reorderDisabled` while filtered |
 | **`MembershipSortMenu`**              | Above list / C toolbar                                                                  | Yes (confirm)   | Permanent rewrite by name / callsign / …; flat-memory also **Sort selection…** (selected only)    |
 | **`ExportOrderSelectMenu`**           | Flat-memory Channels toolbar (beside Sort…)                                             | No              | Toggle-select by band / FM·AM / simplex·split before drag, Move, or Sort selection…               |
-| **`CopyOrderFromBuildMenu`**          | Flat-memory Channels toolbar (beside Select…)                                          | Yes (confirm)   | Copy memory order from another same-project `FlatMemoryList` build by library channel UUID        |
+| **`CopyOrderFromBuildMenu`**          | Flat-memory Channels toolbar (beside Select…)                                           | Yes (confirm)   | Copy memory order from another same-project `FlatMemoryList` build by library channel UUID        |
 | **`bulkReorder`**                     | `DataTable`                                                                             | Yes             | Multi-select + drag + toolbar Move for large `reorderMode` lists                                  |
 | **`storedOrder`**                     | `DataTable`                                                                             | No — display    | Hybrid: temporary natural sorts + **Return to export order**                                      |
 | **Reset to library order**            | Wire preview banner                                                                     | Yes (confirm)   | Clear build `orderOrSlot` / zone member layout hint — **not** `storedOrder` restore               |
@@ -89,16 +89,16 @@ Gold: Zones → Edit, Scan list edit, Receive Group List edit (`RxGroupListMembe
 
 ## Naming catalogue
 
-| Control / concept              | Canonical label / name                                   | Notes                                  |
-| ------------------------------ | -------------------------------------------------------- | -------------------------------------- |
-| Permanent membership sort      | **Sort channels…** / **Sort zones…** / **Sort members…** | Ellipsis; confirm overwrites order     |
+| Control / concept              | Canonical label / name                                   | Notes                                     |
+| ------------------------------ | -------------------------------------------------------- | ----------------------------------------- |
+| Permanent membership sort      | **Sort channels…** / **Sort zones…** / **Sort members…** | Ellipsis; confirm overwrites order        |
 | Copy flat-memory order         | **Copy order from…** (provisional)                       | Flat-memory Channels; confirm; UUID match |
-| Zones list intro               | Operator-facing order explanation                        | No `Zone.order` in UI copy             |
-| Include-in-scan on zone member | **Include in scan list**                                 | Labelled; prefer RHS of row            |
-| Membership remove              | Tooltip **Remove from zone** (etc.)                      | Trash icon                             |
-| Entity delete                  | **Delete …** via list action                             | Same trash chrome; different semantics |
-| Receive Group Lists            | Full phrase in titles / nav                              | Not “RX group lists” in page chrome    |
-| Reorder disabled hint          | Plain language                                           | “Clear filter to drag-reorder”         |
+| Zones list intro               | Operator-facing order explanation                        | No `Zone.order` in UI copy                |
+| Include-in-scan on zone member | **Include in scan list**                                 | Labelled; prefer RHS of row               |
+| Membership remove              | Tooltip **Remove from zone** (etc.)                      | Trash icon                                |
+| Entity delete                  | **Delete …** via list action                             | Same trash chrome; different semantics    |
+| Receive Group Lists            | Full phrase in titles / nav                              | Not “RX group lists” in page chrome       |
+| Reorder disabled hint          | Plain language                                           | “Clear filter to drag-reorder”            |
 
 ## Checklist for a new list surface
 

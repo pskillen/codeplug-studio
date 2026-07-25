@@ -4,13 +4,13 @@ Toolbar menu for **flat-memory** build Channels. Copies memory location order fr
 
 ## Props
 
-| Prop             | Type                                                              | Description                                      |
-| ---------------- | ----------------------------------------------------------------- | ------------------------------------------------ |
-| `builds`         | `RadioBuild[]`                                                    | Eligible source builds (current build excluded)  |
-| `disabled`       | `boolean` (optional)                                              | Disables menu (e.g. filter active, no peers)     |
-| `confirmMessage` | `(source, stats) => string`                                       | Confirm dialog body before apply                 |
-| `resolveStats`   | `(sourceBuildId) => CopyOrderFromBuildStats \| null`              | Match/unmatch counts for confirm copy            |
-| `onCopy`         | `(sourceBuildId: string) => void`                                 | Apply projected order after confirm              |
+| Prop             | Type                                                 | Description                                     |
+| ---------------- | ---------------------------------------------------- | ----------------------------------------------- |
+| `builds`         | `RadioBuild[]`                                       | Eligible source builds (current build excluded) |
+| `disabled`       | `boolean` (optional)                                 | Disables menu (e.g. filter active, no peers)    |
+| `confirmMessage` | `(source, stats) => string`                          | Confirm dialog body before apply                |
+| `resolveStats`   | `(sourceBuildId) => CopyOrderFromBuildStats \| null` | Match/unmatch counts for confirm copy           |
+| `onCopy`         | `(sourceBuildId: string) => void`                    | Apply projected order after confirm             |
 
 ## Behaviour
 
