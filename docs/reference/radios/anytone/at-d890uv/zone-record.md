@@ -46,7 +46,7 @@ listAddr = 0x2000000 + (zoneIndex * 0x200)
 ```
 
 - Buffer length `0x200`.
-- Entries are **u16** channel indices at offsets `0, 2, 4, …`.
+- Entries are **u16** **0-based global channel indices** (`channels.at(idx)` / `ch->id`) at offsets `0, 2, 4, …`.
 - Skip `0xFFFF`.
 - CSV export warns at **64** members ([limits.md](limits.md)); binary capacity of the `0x200` buffer is larger (`0x100` u16 slots) — adapter should still respect the product/CSV policy unless a later ticket expands it.
 
@@ -54,12 +54,14 @@ listAddr = 0x2000000 + (zoneIndex * 0x200)
 
 Packed tables (not per-zone sparse reads):
 
-| Table | Address     | Entry                    |
-| ----- | ----------- | ------------------------ |
-| A     | `0x3500400` | `u16` at `zoneIndex * 2` |
-| B     | `0x3500600` | `u16` at `zoneIndex * 2` |
+Indices are **0-based positions into that zone’s member list** (`member_channels.indexOf(aChannel)` in anytone-cps), **not** global channel numbers.
 
-Indices refer into the channel list / membership semantics used by anytone-cps (zone-local vs global — confirm at adapter time against decode path). Preserve unknown values on RMW.
+| Table | Address     | Entry                    | Semantics                                                              |
+| ----- | ----------- | ------------------------ | ---------------------------------------------------------------------- |
+| A     | `0x3500400` | `u16` at `zoneIndex * 2` | Zone-local member index (default **0**)                                |
+| B     | `0x3500600` | `u16` at `zoneIndex * 2` | Zone-local member index (default **1**, or **0** when only one member) |
+
+Studio Write sets A=`0` and B=`1` (or B=`0` for single-member zones). Preserve unknown values on RMW.
 
 ## Read path (summary)
 
