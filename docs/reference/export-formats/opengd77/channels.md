@@ -90,7 +90,9 @@ Export derives wire from **model fields + `Channel.mode`** — never from hidden
 | `DMR ID`              | `None` when unset; else integer string     | always empty                              |
 | `Contact` / `TG List` | `None` when unset; else resolved wire name | empty when unset; else resolved wire name |
 
-`Disabled` squelch and `Master` both map to `squelch: null` on import (radio default).
+| `Disabled` squelch and `Master` both map to `squelch: null` on import (radio default).
+
+Binary Web Serial encode uses the same internal percent with qDMR scaling at channel offset `0x37` — see [radios/opengd77/channel-record.md](../../radios/opengd77/channel-record.md#squelch-0x37). CSV elicitation may evolve in [#439](https://github.com/pskillen/codeplug-studio/issues/439); binary write follows library fields as source of truth.
 
 ## Digital channel patterns
 

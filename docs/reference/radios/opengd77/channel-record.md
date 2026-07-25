@@ -91,6 +91,12 @@ qdmr maps:
 | `15`  | Closed                |
 | other | Normal (scaled level) |
 
+**Web Serial Write:** analogue channels encode `squelchPercent` on `RadioChannelDto` using the same qDMR `setSquelch` scaling (`1 + (14×level)/10` for Normal, level 0–10 from internal percent). `null` / unset → Global (`0`). Digital / fixed-digital channels always write Global — qDMR does not store per-channel squelch on digital rows. Library `analogSquelchMode` (carrier vs tone) is **not** represented in this byte; see [export-formats/opengd77/power-squelch.md](../../export-formats/opengd77/power-squelch.md) for CSV wire rules ([#439](https://github.com/pskillen/codeplug-studio/issues/439) may extend elicitation).
+
+### Scan skip bits @ `0x33`
+
+OpenGD77 distinguishes **skip all-scan** (bit 4) and **skip zone-scan** (bit 5). The library exposes a single **scan inclusion** flag per channel — there is no separate all-scan vs zone-scan model. Web Serial Write therefore sets **both** `skipScan` and `skipZoneScan` from the same resolved scan-inclusion trait (`effectiveScanSkips` in `stampOpenGd77ChannelBehaviour`). This is intentional until a future library/build trait splits the two semantics.
+
 ### Alias (bits @ `0x30`)
 
 | Value | Meaning |
@@ -113,10 +119,11 @@ On Web Serial Write, Studio **fully replaces** each occupied channel record from
 | aprsIndex @ `0x2d`                           | `0`                       | No APRS alias link                                                                                     |
 | alias @ `0x30`                               | `0`                       | Alias mode None                                                                                        |
 | vox / monitor bits @ `0x33`                  | clear                     | Bits 6–3 off                                                                                           |
-| squelch @ `0x37`                             | `0`                       | Global (independent squelch deferred — [#692](https://github.com/pskillen/codeplug-studio/issues/692)) |
+| squelch @ `0x37`                             | from projection           | Analogue: library `squelch` % via qDMR scaling; digital: Global (`0`). See Squelch section above       |
+| skipScan / skipZoneScan @ `0x33` bits 4–5    | from projection           | Both bits set together from scan-inclusion trait (no separate library fields)                          |
 | Empty / unlisted slots                       | `0xFF` fill, bitmap clear | Full channel table replace                                                                             |
 
-Modelled fields (name, frequencies, mode, power, tones, bandwidth, color code, timeslot, TX contact, RX group, scan skip flags when set on DTO) encode from the projection. Tone wire values: see [#690](https://github.com/pskillen/codeplug-studio/issues/690).
+Modelled fields (name, frequencies, mode, power, tones, bandwidth, color code, timeslot, TX contact, RX group, scan skip flags when set on DTO, analogue squelch when set on DTO) encode from the projection. Tone wire values: see [#690](https://github.com/pskillen/codeplug-studio/issues/690).
 
 Organisation banks (DMR contacts, zones, RX group lists) are also **full-bank replace** on Write — see [contacts-zones-lists.md](contacts-zones-lists.md).
 
