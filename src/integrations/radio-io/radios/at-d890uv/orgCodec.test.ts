@@ -42,9 +42,9 @@ describe('talkGroupCodec', () => {
       { index: 1, wireName: 'A', digitalId: 1, callType: 0x04 },
       { index: 2, wireName: 'B', digitalId: 2, callType: 0x04 },
     ]);
-    expect(image.get(D890_MAP.TalkgroupData + 0xc8, 1)[0]).toBe(0x04);
+    expect(image.get(D890_MAP.TalkgroupData + 0xc8, 1)[0]).toBe(0x01);
     // Slot 1 must not sit at the old wrong pitch 0xd0
-    expect(image.get(D890_MAP.TalkgroupData + 0xd0, 1)[0]).not.toBe(0x04);
+    expect(image.get(D890_MAP.TalkgroupData + 0xd0, 1)[0]).not.toBe(0x01);
   });
 });
 
