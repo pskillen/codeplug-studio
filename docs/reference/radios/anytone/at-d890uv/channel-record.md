@@ -80,7 +80,21 @@ Offsets are into the concatenated buffer. Exact bit packing follows anytone-cps 
 | `0x43`        | TX colour code index                                                             |                                                                                                                                                                   |
 | `0x44–0x63`   | Name                                                                             | `0x20` bytes; wide-char pack on D890 encode                                                                                                                       |
 
-Gaps / unknown bytes: preserve on RMW.
+Gaps / unknown bytes: Studio Write **RMW**s each occupied modelled slot — reads the hydrated `0x80`, overlays modelled fields, and leaves unmodelled offsets (APRS, crypto, R5Tone, custom CTCSS, …) intact. Fresh slots encode as zeros except for fields the projection supplies.
+
+## Studio overlay (v1)
+
+| Offset | Field | Write behaviour |
+| --- | --- | --- |
+| `0x00–0x07` | RX / offset freq | Re-derived from projection (BCD-as-hex) |
+| `0x08–0x09` | Mode / power / tone selects | Re-derived |
+| `0x0a` / `0x0b` | CTCSS indices | Written when tone kind is CTCSS (51 standard Anytone tones; custom index 51 → none) |
+| `0x0c–0x0f` | DCS | Re-derived when DCS selected |
+| `0x13–0x14`, `0x18`, `0x1b`, `0x1c`, `0x21`, `0x34`, `0x44–0x63` | Contact, radio ID, scan, RX group, timeslot, auto scan, name | Re-derived |
+| `0x20` / `0x43` | RX / TX colour code | Written from projection `colorCode` (same value both bytes) |
+| Other | APRS, crypto, R5Tone, … | **Preserved** from hydrated record on RMW |
+
+Gaps / unknown bytes: preserve on RMW (see table above).
 
 ## Power (`tx_power` in byte `0x08`)
 
