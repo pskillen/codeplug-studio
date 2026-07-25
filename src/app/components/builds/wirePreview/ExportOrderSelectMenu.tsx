@@ -1,6 +1,7 @@
 import { Button, Menu } from '@mantine/core';
 import { IconListCheck } from '@tabler/icons-react';
 import { useMemo } from 'react';
+import { isSimplex } from '@core/domain/channelDuplex.ts';
 import { pickFmAmModeProfile } from '@core/domain/modeProfiles.ts';
 import type { Channel } from '@core/models/library.ts';
 import { bandsFromFrequencies } from '../../../lib/bands.ts';
@@ -38,6 +39,19 @@ function channelIdsForMode(
     const channel = channelById.get(channelId);
     if (!channel) return false;
     return pickFmAmModeProfile(channel)?.mode === mode;
+  });
+}
+
+function channelIdsForDuplex(
+  orderedChannelIds: readonly string[],
+  channelById: ReadonlyMap<string, Channel>,
+  kind: 'simplex' | 'split',
+): string[] {
+  return orderedChannelIds.filter((channelId) => {
+    const channel = channelById.get(channelId);
+    if (!channel) return false;
+    const simplex = isSimplex(channel.rxFrequency, channel.txFrequency);
+    return kind === 'simplex' ? simplex : !simplex;
   });
 }
 
@@ -82,6 +96,19 @@ export default function ExportOrderSelectMenu({
     return [...modes].sort();
   }, [channelById, orderedChannelIds]);
 
+  const duplexOptions = useMemo(() => {
+    const simplexIds = channelIdsForDuplex(orderedChannelIds, channelById, 'simplex');
+    const splitIds = channelIdsForDuplex(orderedChannelIds, channelById, 'split');
+    const options: { kind: 'simplex' | 'split'; label: string; channelIds: string[] }[] = [];
+    if (simplexIds.length > 0) {
+      options.push({ kind: 'simplex', label: 'Simplex', channelIds: simplexIds });
+    }
+    if (splitIds.length > 0) {
+      options.push({ kind: 'split', label: 'Split', channelIds: splitIds });
+    }
+    return options;
+  }, [channelById, orderedChannelIds]);
+
   const toggleKeys = (keys: string[]) => {
     if (!keys.length) return;
     const next = new Set(selectedKeys);
@@ -94,7 +121,8 @@ export default function ExportOrderSelectMenu({
     onSelectedKeysChange([...next]);
   };
 
-  const hasHelpers = bandOptions.length > 0 || modeOptions.length > 0;
+  const hasHelpers =
+    bandOptions.length > 0 || modeOptions.length > 0 || duplexOptions.length > 0;
 
   return (
     <Menu shadow="md" width={280} position="bottom-start">
@@ -135,6 +163,17 @@ export default function ExportOrderSelectMenu({
                 onClick={() => toggleKeys(channelIdsForMode(orderedChannelIds, channelById, mode))}
               >
                 {modeLabel(mode)} ({channelIdsForMode(orderedChannelIds, channelById, mode).length})
+              </Menu.Item>
+            ))}
+          </>
+        ) : null}
+        {duplexOptions.length > 0 ? (
+          <>
+            {bandOptions.length > 0 || modeOptions.length > 0 ? <Menu.Divider /> : null}
+            <Menu.Label>Select by duplex</Menu.Label>
+            {duplexOptions.map((option) => (
+              <Menu.Item key={option.kind} onClick={() => toggleKeys(option.channelIds)}>
+                {option.label} ({option.channelIds.length})
               </Menu.Item>
             ))}
           </>

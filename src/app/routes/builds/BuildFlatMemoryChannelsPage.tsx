@@ -20,7 +20,9 @@ import {
 } from '@core/domain/exportOrderOrSlot.ts';
 import {
   buildExportSortConfirmMessage,
+  buildExportSortSelectionConfirmMessage,
   sortChannelIdsByMode,
+  sortSelectedChannelIdsInOrder,
   type MembershipSortMode,
 } from '@core/domain/membershipSort.ts';
 import { getFormatProfiles } from '@core/import-export/formatProfiles.ts';
@@ -262,6 +264,12 @@ export default function BuildFlatMemoryChannelsPage() {
     setChannelOrder(sortChannelIdsByMode(memoryChannelIds, channelById, mode));
   }
 
+  function handleSortSelectionForBuild(mode: MembershipSortMode) {
+    setChannelOrder(
+      sortSelectedChannelIdsInOrder(memoryChannelIds, reorderSelectedKeys, channelById, mode),
+    );
+  }
+
   function includeChannel(channelId: string) {
     const current = buildRef.current;
     void persistBuild(
@@ -323,6 +331,14 @@ export default function BuildFlatMemoryChannelsPage() {
             confirmMessage={buildExportSortConfirmMessage}
             onSort={handleSortChannelsForBuild}
           />
+          <MembershipSortMenu
+            label="Sort selection…"
+            disabled={reorderBlocked || reorderSelectedKeys.length < 2}
+            confirmMessage={(mode) =>
+              buildExportSortSelectionConfirmMessage(mode, reorderSelectedKeys.length)
+            }
+            onSort={handleSortSelectionForBuild}
+          />
           <ExportOrderSelectMenu
             orderedChannelIds={memoryChannelIds}
             channelById={channelById}
@@ -336,7 +352,8 @@ export default function BuildFlatMemoryChannelsPage() {
             </Text>
           ) : (
             <Text size="xs" c="dimmed">
-              Sorts this build’s memory locations only — not your library.
+              Sorts this build’s memory locations only — not your library. Sort selection…
+              collates a split selection at the first selected row.
             </Text>
           )}
         </Group>

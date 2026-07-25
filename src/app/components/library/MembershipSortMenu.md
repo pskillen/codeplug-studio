@@ -16,10 +16,12 @@ One-shot **Sort…** menu for library membership / zone order. Confirms before c
 
 ## Behaviour
 
-- Uses `window.confirm` with `membershipSortConfirmMessage` by default, or `buildExportSortConfirmMessage` on build wire surfaces.
+- Uses `window.confirm` with `membershipSortConfirmMessage` by default, or `buildExportSortConfirmMessage` / `buildExportSortSelectionConfirmMessage` on build wire surfaces.
 - Does **not** persist a sort setting — callers rewrite ordered arrays / `Zone.order` / build `orderOrSlot`.
+- Flat-memory Channels uses two instances: **Sort channels…** (full list) and **Sort selection…** (collate + sort selected only; disabled when fewer than 2 rows selected).
 
 ## Related
 
 - [`membershipSort.ts`](../../../../src/core/domain/membershipSort.ts)
 - [zone-member-picker.md](../../../../docs/features/library/zone-member-picker.md)
+- [`BuildFlatMemoryChannelsPage`](../../routes/builds/BuildFlatMemoryChannelsPage.tsx)
