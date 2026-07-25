@@ -6,6 +6,10 @@ import {
   encodeZonesIntoDm32Image,
   DM32_ZONE_ENTRY_SIZE,
   DM32_ZONE_START_OFFSET,
+  DM32_ZONE_HEADER_CHANNEL_INDEX_A,
+  DM32_ZONE_HEADER_CHANNEL_INDEX_B,
+  DM32_ZONE_HEADER_ZONE_INDEX_A,
+  DM32_ZONE_HEADER_ZONE_INDEX_B,
 } from './zoneCodec.ts';
 import {
   encodeDm32ScanList,
@@ -89,6 +93,49 @@ describe('encodeZonesIntoDm32Image', () => {
     expect(image.bytes[nameOff + 16]).toBe(1);
     expect(image.bytes[nameOff + 17] | (image.bytes[nameOff + 18]! << 8)).toBe(5);
     expect(image.bytes[DM32_METADATA_OFFSET]).toBe(DM32_METADATA.ZONE);
+  });
+
+  it('clamps stale VFO A/B zone and channel indices when projection shrinks', () => {
+    const zoneData = makeBlock(DM32_METADATA.ZONE);
+    zoneData[DM32_ZONE_HEADER_CHANNEL_INDEX_A] = 47;
+    zoneData[DM32_ZONE_HEADER_CHANNEL_INDEX_B] = 40;
+    zoneData[DM32_ZONE_HEADER_ZONE_INDEX_A] = 12;
+    zoneData[DM32_ZONE_HEADER_ZONE_INDEX_B] = 8;
+    const image = createMemoryMap(DM32_BLOCK_SIZE);
+    image.set(0, zoneData);
+    encodeZonesIntoDm32Image(
+      image,
+      { addressBase: 0, discovered: [{ address: 0, metadata: DM32_METADATA.ZONE }] },
+      [{ wireName: 'Only', channelNumbers: [3] }],
+      { channelCount: 5 },
+    );
+    expect(image.bytes[DM32_ZONE_HEADER_CHANNEL_INDEX_A]).toBe(1);
+    expect(image.bytes[DM32_ZONE_HEADER_CHANNEL_INDEX_B]).toBe(1);
+    expect(image.bytes[DM32_ZONE_HEADER_ZONE_INDEX_A]).toBe(1);
+    expect(image.bytes[DM32_ZONE_HEADER_ZONE_INDEX_B]).toBe(1);
+  });
+
+  it('preserves in-range VFO indices and leaves unset at 0', () => {
+    const zoneData = makeBlock(DM32_METADATA.ZONE);
+    zoneData[DM32_ZONE_HEADER_CHANNEL_INDEX_A] = 3;
+    zoneData[DM32_ZONE_HEADER_CHANNEL_INDEX_B] = 0;
+    zoneData[DM32_ZONE_HEADER_ZONE_INDEX_A] = 2;
+    zoneData[DM32_ZONE_HEADER_ZONE_INDEX_B] = 0;
+    const image = createMemoryMap(DM32_BLOCK_SIZE);
+    image.set(0, zoneData);
+    encodeZonesIntoDm32Image(
+      image,
+      { addressBase: 0, discovered: [{ address: 0, metadata: DM32_METADATA.ZONE }] },
+      [
+        { wireName: 'Z1', channelNumbers: [1] },
+        { wireName: 'Z2', channelNumbers: [2] },
+      ],
+      { channelCount: 10 },
+    );
+    expect(image.bytes[DM32_ZONE_HEADER_CHANNEL_INDEX_A]).toBe(3);
+    expect(image.bytes[DM32_ZONE_HEADER_CHANNEL_INDEX_B]).toBe(0);
+    expect(image.bytes[DM32_ZONE_HEADER_ZONE_INDEX_A]).toBe(2);
+    expect(image.bytes[DM32_ZONE_HEADER_ZONE_INDEX_B]).toBe(0);
   });
 });
 

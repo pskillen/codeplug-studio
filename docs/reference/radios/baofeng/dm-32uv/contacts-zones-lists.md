@@ -89,7 +89,21 @@ TX-contact indices (`0x42`/`0x43`) point into the **serial** talk-group list (`0
 | Name             | 11 bytes ASCII                                                                             |
 | Members          | Count at +16; u16 LE channel numbers from +17; max **64**; unused member bytes stay `0xFF` |
 
-**Studio Web Serial Write:** zone blocks are filled `0xFF` then rewritten from projection; shrinking the zone list clears prior zone records. Unused zone slots in each block are explicit `0xFF` empty records (byte 16 must not remain `0xFF` — firmware may treat that as 255 members). Do **not** write a `0x0000` terminator after the last zone (NeonPlug pads with `0xFF` only).
+### First-block header (bytes 0–15)
+
+VFO A/B selected zone and channel indices live in the **zone bank** first block header (not settings `0x04`). Offsets cite qDMR `ZoneBankElement`; wire values are **1-based** (`0` = unset).
+
+| Offset | Field                    |
+| ------ | ------------------------ |
+| `0x00` | Zone count (first block) |
+| `0x01` | Channel index A          |
+| `0x03` | Channel index B          |
+| `0x05` | Zone index A             |
+| `0x07` | Zone index B             |
+
+**Studio Web Serial Write:** bytes 1–15 are preserved from the last Read bag, then **sanitized** — if a retained index exceeds the projected zone or channel count after a shrink, it is clamped to `1` (or cleared to `0` when the count is zero). Prevents radio UI hang when stale header values reference removed zones/channels ([#708](https://github.com/pskillen/codeplug-studio/issues/708)).
+
+**Studio Web Serial Write (zone records):** zone blocks are filled `0xFF` then rewritten from projection; shrinking the zone list clears prior zone records. Unused zone slots in each block are explicit `0xFF` empty records (byte 16 must not remain `0xFF` — firmware may treat that as 255 members). Do **not** write a `0x0000` terminator after the last zone (NeonPlug pads with `0xFF` only).
 
 ## Scan lists — metadata `0x11`
 
