@@ -67,13 +67,13 @@ function numericLimit(
   return typeof value === 'number' ? value : fallback;
 }
 
-/** DM-32UV wire caps via allowed app→core limits API (not format adapter imports). */
-function dm32ExportLimits(egress: RadioWireEgressIds): ProfileExportLimits {
+/** Radio-io profile caps via allowed app→core limits API. */
+function radioIoExportLimits(egress: RadioWireEgressIds): ProfileExportLimits {
   return (
     getProfileExportLimits(egress.formatId as FormatId, egress.profileId) ?? {
       formatId: egress.formatId as FormatId,
       profileId: egress.profileId,
-      profileLabel: 'DM-32UV',
+      profileLabel: 'Radio I/O',
       maxChannels: 4000,
       maxZones: 250,
       maxScanLists: 32,
@@ -93,6 +93,11 @@ function dm32ExportLimits(egress: RadioWireEgressIds): ProfileExportLimits {
       siblingLadders: [],
     }
   );
+}
+
+/** @deprecated use {@link radioIoExportLimits} */
+function dm32ExportLimits(egress: RadioWireEgressIds): ProfileExportLimits {
+  return radioIoExportLimits(egress);
 }
 
 function buildNumbersBySourceChannelId(
@@ -164,16 +169,18 @@ function buildDm32Organisation(
   numbersBySourceChannelId: Map<string, number[]>,
   channels: RadioChannelDto[],
   warnings: string[],
+  scanListWireCap?: number,
 ): {
   zones: RadioZoneDto[];
   scanLists: RadioScanListDto[];
   channels: RadioChannelDto[];
   numbersBySourceChannelId: Map<string, number[]>;
 } {
-  const limits = dm32ExportLimits(egress);
+  const limits = radioIoExportLimits(egress);
   const maxZones = numericLimit(limits.maxZones, 250);
-  // Channel record scanListId is 4 bits (1–15); 0 = none. Match NeonPlug cap.
-  const maxScanLists = Math.min(numericLimit(limits.maxScanLists, 32), 15);
+  const maxScanLists =
+    scanListWireCap ??
+    Math.min(numericLimit(limits.maxScanLists, 32), 15);
   const scanListMembersCap = numericLimit(limits.scanListMembers, 15);
   const maxMemorySlots = numericLimit(limits.maxChannels, 4000);
   const zoneMembersCap = numericLimit(limits.zoneMembers, 64);
@@ -359,10 +366,13 @@ function buildTalkGroupsAndRx(
   digitalContacts: RadioDigitalContactDto[];
   fkMaps: RadioChannelFkMaps;
 } {
-  const limits = dm32ExportLimits(egress);
+  const limits = radioIoExportLimits(egress);
   const nameLen = numericLimit(limits.nameLengthTalkGroup, 16);
   const maxTalkGroups = numericLimit(limits.maxTalkGroups, DM32_DEFAULT_MAX_TALK_GROUPS);
-  const maxDigitalContacts = numericLimit(limits.maxContacts, DM32_DEFAULT_MAX_DIGITAL_CONTACTS);
+  const maxDigitalContacts =
+    egress.profileId === 'radio-io-at-d890uv' || limits.maxContacts === 'not_used'
+      ? 0
+      : numericLimit(limits.maxContacts, DM32_DEFAULT_MAX_DIGITAL_CONTACTS);
   const maxRx = numericLimit(limits.maxRxGroupLists, 250);
   const maxRxMembers = numericLimit(limits.rxGroupListMembers, 32);
   const contactIdByEntityId = new Map<string, number>();
@@ -832,7 +842,7 @@ export function buildRadioWriteProjection(
   let digitalContacts: RadioDigitalContactDto[] = [];
   let dm32RadioIds: RadioRadioIdDto[] = [];
 
-  if (egress.profileId === 'radio-io-dm32uv') {
+  if (egress.profileId === 'radio-io-dm32uv' || egress.profileId === 'radio-io-at-d890uv') {
     const tgRx = buildTalkGroupsAndRx(assembled, egress, warnings);
     talkGroups = tgRx.talkGroups;
     rxGroups = tgRx.rxGroups;
@@ -893,6 +903,33 @@ export function buildRadioWriteProjection(
       digitalContacts,
       radioIds: dm32RadioIds,
       aprs: radioAprsFromNeonplugPatch(assembled, numbersBySourceChannelId, warnings),
+    };
+  } else if (egress.profileId === 'radio-io-at-d890uv') {
+    const d890Limits = radioIoExportLimits(egress);
+    const org = buildDm32Organisation(
+      assembled,
+      build,
+      library,
+      egress,
+      numbersBySourceChannelId,
+      [...dtos],
+      warnings,
+      numericLimit(d890Limits.maxScanLists, 100),
+    );
+    channels = stampUv5rMiniChannelBehaviour(
+      org.channels,
+      assembled,
+      build,
+      egress,
+      org.numbersBySourceChannelId,
+    );
+    numbersBySourceChannelId = org.numbersBySourceChannelId;
+    organisation = {
+      zones: org.zones,
+      scanLists: org.scanLists,
+      talkGroups,
+      rxGroups,
+      radioIds: dm32RadioIds,
     };
   } else if (egress.profileId === 'radio-io-opengd77-1701') {
     channels = stampOpenGd77ChannelBehaviour(dtos, assembled, build, numbersBySourceChannelId);
