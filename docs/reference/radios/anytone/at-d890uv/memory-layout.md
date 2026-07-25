@@ -2,7 +2,7 @@
 
 Sparse multi‑MB codeplug regions for Anytone AT-D890UV (`D890_MAP`). There is **no** single contiguous clone image like RT95 (`0x32A0`) or UV-5R Mini (`0x8240`).
 
-**Hub:** [README.md](README.md) · **Protocol:** [protocol.md](protocol.md) · **Records:** [channel-record.md](channel-record.md) · [talkgroup-record.md](talkgroup-record.md) · [zone-record.md](zone-record.md)
+**Hub:** [README.md](README.md) · **Protocol:** [protocol.md](protocol.md) · **Records:** [channel-record.md](channel-record.md) · [talkgroup-record.md](talkgroup-record.md) · [receive-group-record.md](receive-group-record.md) · [zone-record.md](zone-record.md)
 
 > Bases below are **D890 only**. D878UVII uses a different map (`D878II_MAP`) — see [#648](https://github.com/pskillen/codeplug-studio/issues/648). Do not mix.
 
@@ -43,7 +43,7 @@ Addresses are **radio absolute** (u32). Read only enabled slots via each region�
 | `TalkgroupData`              | `0x3a00000`  | Stride `0xc8`; encode length `0xc8`            | Talkgroup records — [talkgroup-record.md](talkgroup-record.md). CPS reads `0x80` (used fields fit). Studio sparse R/W uses a **16-aligned span** covering each slot (`alignDown(base+idx*0xc8)` …) — odd indices are not 16-aligned themselves. |
 | `TalkgroupOrder`             | `0x3f00000`  | (order table — defer detail)                   | Sort / order                                                                                                                                                                                                                                    |
 | `ReceiveGroupSet`            | `0x3701510`  | Bitmap `0x10`                                  | RX-group occupancy                                                                                                                                                                                                                              |
-| `ReceiveGroupData`           | `0x3780000`  | Stride `0x200`; length `0x120`                 | Receive-group lists                                                                                                                                                                                                                             |
+| `ReceiveGroupData`           | `0x3780000`  | Stride `0x200`; length `0x120`                 | Receive-group lists — [receive-group-record.md](receive-group-record.md) (members = talkgroup bank slot indices) |
 | `MasterIdData`               | `0x3684000`  | Length `0x40`                                  | Master / default radio ID                                                                                                                                                                                                                       |
 
 Zone record detail: [zone-record.md](zone-record.md). Channel geometry: [channel-record.md](channel-record.md).

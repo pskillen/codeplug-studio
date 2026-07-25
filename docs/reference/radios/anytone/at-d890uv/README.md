@@ -35,6 +35,7 @@ Provisional CSV caps mirror `profiles.ts` (`ANYTONE_PROFILES`); still verify aga
 | [memory-layout.md](memory-layout.md)       | `D890_MAP` region table (first-adapter subset) + address formulas                    |
 | [channel-record.md](channel-record.md)     | 0x80 combined channel (0x40+0x40); address formula; ChannelSet bitmap                |
 | [talkgroup-record.md](talkgroup-record.md) | Stride `0xc8`; BCD-as-hex DMR ID; call type 0/1/2; inverted TalkgroupSet             |
+| [receive-group-record.md](receive-group-record.md) | Stride `0x200`; u32 LE talkgroup bank slot indices; wide-char name at `0x100` |
 | [zone-record.md](zone-record.md)           | ZoneSet / ZonesName / ZoneChannels / A/B indices                                     |
 | [fixtures.md](fixtures.md)                 | How to capture dumps for tests without committing personal codeplugs                 |
 
