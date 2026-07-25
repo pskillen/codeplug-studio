@@ -21,7 +21,9 @@ function range(
   modes: readonly ChannelMode[],
   txAllowed = true,
 ): RadioFrequencyRange {
-  return txAllowed === false ? { minMhz, maxMhz, modes, txAllowed: false } : { minMhz, maxMhz, modes };
+  return txAllowed === false
+    ? { minMhz, maxMhz, modes, txAllowed: false }
+    : { minMhz, maxMhz, modes };
 }
 
 const UV5R_MINI: RadioRfCapabilities = {

@@ -338,7 +338,10 @@ function assembleChannels(build: RadioBuild, library: LibrarySlice): AssembledCh
   const assembled: AssembledChannel[] = [];
   for (const entity of library.channels) {
     if (isEntityExcluded(overrides, entity.id)) continue;
-    if (!channelEligibleForRadio(entity, build.radioTargetId, resolveChannelEligibilityOptions(build))) continue;
+    if (
+      !channelEligibleForRadio(entity, build.radioTargetId, resolveChannelEligibilityOptions(build))
+    )
+      continue;
     const hasOverride = overrideByEntityId(overrides).has(entity.id);
     const reachable = exportReachable.has(entity.id);
     if (!reachable && !hasOverride) {

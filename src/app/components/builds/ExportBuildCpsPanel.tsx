@@ -2,9 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Alert, Button, Group, Modal, SegmentedControl, Stack, Text } from '@mantine/core';
 import { IconDownload, IconPackage, IconTable } from '@tabler/icons-react';
 import type { BuildExportSettings, RadioBuild } from '@core/models/formatBuild.ts';
-import {
-  prepareBuildForFrequencyRangeExportPatch,
-} from '../../lib/frequencyRangeExportSettingsPatch.ts';
+import { prepareBuildForFrequencyRangeExportPatch } from '../../lib/frequencyRangeExportSettingsPatch.ts';
 import type { EgressPath } from '@core/models/egressPath.ts';
 import { traitProfileFor } from '@core/models/traits.ts';
 import { formatCatalogEntry, getExportAdapter } from '@core/import-export/registry.ts';

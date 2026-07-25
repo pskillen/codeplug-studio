@@ -90,7 +90,9 @@ export default function ExportBuildSettingsSections({
   return (
     <Stack gap="md">
       <FrequencyRangeEligibilityFields
-        hideOutsideFrequencyRange={build.exportSettings?.hideChannelsOutsideFrequencyRange !== false}
+        hideOutsideFrequencyRange={
+          build.exportSettings?.hideChannelsOutsideFrequencyRange !== false
+        }
         saving={saving}
         onPatch={onExportSettingsPatch}
       />

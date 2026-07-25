@@ -92,9 +92,7 @@ export function reconcileBuildAfterFrequencyHideToggle(
         orderMayNeedRedo = true;
         const hint = zoneEntry.channelIds ?? [];
         const kept = hint.filter((id) => after.has(id));
-        const appended = newlyIncluded.filter(
-          (id) => effective.includes(id) && !kept.includes(id),
-        );
+        const appended = newlyIncluded.filter((id) => effective.includes(id) && !kept.includes(id));
         section = updateZoneChannelIds(section, zone.id, [...kept, ...appended]);
       } else if (!overridden) {
         section = updateZoneChannelIds(section, zone.id, effectiveEligible);

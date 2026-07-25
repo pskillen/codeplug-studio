@@ -12,11 +12,11 @@
 
 Inclusive MHz bands used when filtering build lists and export ([#612](https://github.com/pskillen/codeplug-studio/issues/612)). See [channel-eligibility.md](../../../../features/builds/channel-eligibility.md).
 
-| Band (MHz) | Modes | TX |
-| --- | --- | --- |
-| 136–174 | FM, DMR | Yes |
-| 400–480 | FM, DMR | Yes |
-| 87–136 | FM, AM | Receive-only |
+| Band (MHz) | Modes   | TX           |
+| ---------- | ------- | ------------ |
+| 136–174    | FM, DMR | Yes          |
+| 400–480    | FM, DMR | Yes          |
+| 87–136     | FM, AM  | Receive-only |
 
 Source: qDMR `dm32uv_limits.cc` + Studio NeonPlug 87–136 MHz receive note.
 

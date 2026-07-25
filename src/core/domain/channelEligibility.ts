@@ -26,10 +26,7 @@ function resolveOptions(options?: ChannelEligibilityOptions): Required<ChannelEl
 }
 
 /** Modes on the channel that the radio target supports. */
-export function supportedChannelModes(
-  channel: Channel,
-  caps: RadioRfCapabilities,
-): ChannelMode[] {
+export function supportedChannelModes(channel: Channel, caps: RadioRfCapabilities): ChannelMode[] {
   const supported = new Set(caps.supportedModes);
   return channel.modeProfiles.map((profile) => profile.mode).filter((mode) => supported.has(mode));
 }
@@ -89,8 +86,7 @@ export function channelEligibleForRadio(
 
 export function resolveChannelEligibilityOptions(build: RadioBuild): ChannelEligibilityOptions {
   return {
-    hideOutsideFrequencyRange:
-      build.exportSettings?.hideChannelsOutsideFrequencyRange !== false,
+    hideOutsideFrequencyRange: build.exportSettings?.hideChannelsOutsideFrequencyRange !== false,
   };
 }
 

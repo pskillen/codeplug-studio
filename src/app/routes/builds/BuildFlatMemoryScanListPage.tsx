@@ -100,10 +100,7 @@ export default function BuildFlatMemoryScanListPage() {
     [librarySlice.channels],
   );
 
-  const eligibilityOptions = useMemo(
-    () => resolveChannelEligibilityOptions(build),
-    [build],
-  );
+  const eligibilityOptions = useMemo(() => resolveChannelEligibilityOptions(build), [build]);
 
   const rows = useMemo((): ScanListRow[] => {
     const slots = resolveChirpChannelMemorySlots(build, librarySlice);
@@ -111,10 +108,7 @@ export default function BuildFlatMemoryScanListPage() {
     for (const slot of slots) {
       if (slot.channelId == null) continue;
       const channel = channelById.get(slot.channelId);
-      if (
-        !channel ||
-        !isChirpFlatMemoryChannel(channel, build.radioTargetId, eligibilityOptions)
-      ) {
+      if (!channel || !isChirpFlatMemoryChannel(channel, build.radioTargetId, eligibilityOptions)) {
         continue;
       }
       const scanInclusion =
@@ -136,15 +130,11 @@ export default function BuildFlatMemoryScanListPage() {
   async function handleExportSettingsPatch(patch: Partial<BuildExportSettings>) {
     setSavingSettings(true);
     setSettingsError(null);
-    const prepared = await prepareBuildForFrequencyRangeExportPatch(
-      buildRef.current,
-      patch,
-      {
-        buildService,
-        loadLibrary: async () =>
-          activeProjectId ? loadLibrarySlice(persistence, activeProjectId) : null,
-      },
-    );
+    const prepared = await prepareBuildForFrequencyRangeExportPatch(buildRef.current, patch, {
+      buildService,
+      loadLibrary: async () =>
+        activeProjectId ? loadLibrarySlice(persistence, activeProjectId) : null,
+    });
     if (prepared.status === 'cancelled') {
       setSavingSettings(false);
       return;

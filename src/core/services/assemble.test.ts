@@ -800,7 +800,10 @@ describe('assemble', () => {
 
   it('assembles cyclic nested zones with partial flatten and export warnings', () => {
     const projectId = 'proj-cycle';
-    const pmrChannel = withExportEligibleDefaults({ ...newChannel(projectId, 'PMR ch'), id: 'ch-pmr' });
+    const pmrChannel = withExportEligibleDefaults({
+      ...newChannel(projectId, 'PMR ch'),
+      id: 'ch-pmr',
+    });
     const glasgowChannel = withExportEligibleDefaults({
       ...newChannel(projectId, 'Glasgow ch'),
       id: 'ch-g',

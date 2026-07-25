@@ -46,9 +46,9 @@ describe('reconcileBuildAfterFrequencyHideToggle', () => {
     const { build: next } = reconcileBuildAfterFrequencyHideToggle(build, library, true);
     const section = next.layout.sections.find((s) => s.kind === 'zoneGrouping');
     expect(section?.zones[0]?.channelIds).toEqual(['ch-in']);
-    expect(
-      isZoneMemberOrderOverridden(zone, library.zones, section?.zones[0]?.channelIds),
-    ).toBe(false);
+    expect(isZoneMemberOrderOverridden(zone, library.zones, section?.zones[0]?.channelIds)).toBe(
+      false,
+    );
   });
 
   it('appends newly included channels when zone order was overridden', () => {

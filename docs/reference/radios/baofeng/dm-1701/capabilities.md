@@ -17,10 +17,10 @@
 
 Inclusive MHz bands used when filtering build lists and export ([#612](https://github.com/pskillen/codeplug-studio/issues/612)). See [channel-eligibility.md](../../../../features/builds/channel-eligibility.md).
 
-| Band (MHz) | Modes | TX |
-| --- | --- | --- |
-| 136–174 | FM, DMR | Yes |
-| 400–470 | FM, DMR | Yes |
+| Band (MHz) | Modes   | TX  |
+| ---------- | ------- | --- |
+| 136–174    | FM, DMR | Yes |
+| 400–470    | FM, DMR | Yes |
 
 Source: qDMR `opengd77_limits.cc` (OpenGD77 family).
 

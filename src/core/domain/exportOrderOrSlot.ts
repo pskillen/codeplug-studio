@@ -39,7 +39,11 @@ export function isChirpFlatMemoryChannel(
 }
 
 function flatMemoryEligibleChannel(build: RadioBuild, channel: Channel): boolean {
-  return channelEligibleForRadio(channel, build.radioTargetId, resolveChannelEligibilityOptions(build));
+  return channelEligibleForRadio(
+    channel,
+    build.radioTargetId,
+    resolveChannelEligibilityOptions(build),
+  );
 }
 
 function includedChirpChannels(build: RadioBuild, library: LibrarySlice): Channel[] {

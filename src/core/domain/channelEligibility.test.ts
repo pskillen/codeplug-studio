@@ -9,11 +9,7 @@ import { getRadioRfCapabilities } from '@core/radio-targets/rfCapabilities.ts';
 
 const projectId = '11111111-1111-4111-8111-111111111111';
 
-function channelWith(
-  modes: Array<'fm' | 'am' | 'dmr'>,
-  rxHz: number | null,
-  name = 'Test',
-) {
+function channelWith(modes: Array<'fm' | 'am' | 'dmr'>, rxHz: number | null, name = 'Test') {
   const ch = newChannel(projectId, name);
   ch.rxFrequency = rxHz;
   ch.modeProfiles = modes.map((mode) => {

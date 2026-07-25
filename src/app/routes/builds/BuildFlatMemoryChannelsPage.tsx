@@ -212,15 +212,11 @@ export default function BuildFlatMemoryChannelsPage() {
   async function handleExportSettingsPatch(patch: Partial<BuildExportSettings>) {
     setSavingSettings(true);
     setSettingsError(null);
-    const prepared = await prepareBuildForFrequencyRangeExportPatch(
-      buildRef.current,
-      patch,
-      {
-        buildService,
-        loadLibrary: async () =>
-          activeProjectId ? loadLibrarySlice(persistence, activeProjectId) : null,
-      },
-    );
+    const prepared = await prepareBuildForFrequencyRangeExportPatch(buildRef.current, patch, {
+      buildService,
+      loadLibrary: async () =>
+        activeProjectId ? loadLibrarySlice(persistence, activeProjectId) : null,
+    });
     if (prepared.status === 'cancelled') {
       setSavingSettings(false);
       return;

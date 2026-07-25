@@ -6,10 +6,10 @@ Operators should not have to guess which library channels their radio can use. S
 
 ## Purpose
 
-| Layer | RF caps applied? |
-| --- | --- |
-| Library CRUD | No — all modes and frequencies allowed |
-| Radio Build lists / pickers | Yes — via `channelEligibleForRadio` |
+| Layer                                      | RF caps applied?                                  |
+| ------------------------------------------ | ------------------------------------------------- |
+| Library CRUD                               | No — all modes and frequencies allowed            |
+| Radio Build lists / pickers                | Yes — via `channelEligibleForRadio`               |
 | `assemble` / CPS export / Web Serial Write | Yes — ineligible channels never reach serialisers |
 
 Wire translation (NeonPlug no-TX sentinels, Anytone receive banks, CHIRP analogue-only rows, etc.) is unchanged. Eligibility **drops candidates** before adapters run; it does not rewrite channel fields or infer forbid-transmit from band tables.
@@ -23,8 +23,8 @@ Per-radio tables live in `src/core/radio-targets/rfCapabilities.ts` and are mirr
 
 ## Export setting
 
-| Field | Default | Effect |
-| --- | --- | --- |
+| Field                               | Default     | Effect                                                             |
+| ----------------------------------- | ----------- | ------------------------------------------------------------------ |
 | `hideChannelsOutsideFrequencyRange` | `true` (on) | Hide out-of-band channels on build pages and omit them from export |
 
 Toggle on **Export** (and flat-memory **Channels** / **Scan list** export settings). Persisted on `RadioBuild.exportSettings`; round-trips in native YAML.
@@ -35,24 +35,24 @@ When export skips channels, `assemble` adds a single grouped warning (count + na
 
 Changing the frequency hide toggle may surface channels that were previously filtered out. Studio does **not** fully reorder flat-memory slots or zone members automatically.
 
-| Order state | Behaviour |
-| --- | --- |
-| Matches library grouping | Zone member hints reset to the new eligible set |
+| Order state                                            | Behaviour                                            |
+| ------------------------------------------------------ | ---------------------------------------------------- |
+| Matches library grouping                               | Zone member hints reset to the new eligible set      |
 | Overridden (`orderOrSlot` or custom zone member order) | Existing order kept; newly eligible IDs **appended** |
 
 A confirm dialog warns that slot/member order may need redoing.
 
 ## Code anchors
 
-| Module | Role |
-| --- | --- |
-| `src/core/radio-targets/rfCapabilities.ts` | Authoritative Hz/MHz tables per `radioTargetId` |
-| `src/core/domain/channelEligibility.ts` | `channelEligibleForRadio`, warnings |
-| `src/core/domain/channelEligibilityReconcile.ts` | Toggle reconciliation |
-| `src/core/services/assemble.ts` | Filters `assembleChannels` |
-| `src/core/domain/exportOrderOrSlot.ts` | Flat-memory candidate sets |
-| `src/app/components/builds/FrequencyRangeEligibilityFields.tsx` | Export toggle UI |
-| `src/app/components/builds/RadioRfCapabilitiesSection.tsx` | Characteristics display |
+| Module                                                          | Role                                            |
+| --------------------------------------------------------------- | ----------------------------------------------- |
+| `src/core/radio-targets/rfCapabilities.ts`                      | Authoritative Hz/MHz tables per `radioTargetId` |
+| `src/core/domain/channelEligibility.ts`                         | `channelEligibleForRadio`, warnings             |
+| `src/core/domain/channelEligibilityReconcile.ts`                | Toggle reconciliation                           |
+| `src/core/services/assemble.ts`                                 | Filters `assembleChannels`                      |
+| `src/core/domain/exportOrderOrSlot.ts`                          | Flat-memory candidate sets                      |
+| `src/app/components/builds/FrequencyRangeEligibilityFields.tsx` | Export toggle UI                                |
+| `src/app/components/builds/RadioRfCapabilitiesSection.tsx`      | Characteristics display                         |
 
 ## Manual verify
 
