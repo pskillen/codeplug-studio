@@ -110,4 +110,10 @@ export interface RadioBuild extends PersistableRow {
   exportSettings?: BuildExportSettings;
   /** Preferred egress for Export UI. */
   defaultEgressPathId?: string;
+  /**
+   * Denormalised default pathway ids — mirror the egress row so assemble/preview can
+   * resolve format/profile without loading egress paths (#654).
+   */
+  defaultEgressFormatId?: string;
+  defaultEgressProfileId?: string;
 }

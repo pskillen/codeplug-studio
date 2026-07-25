@@ -190,6 +190,30 @@ export function defaultCompatibleEgress(radioTargetId: string): CompatibleEgress
   return radioTargetFor(radioTargetId)?.compatibleEgress[0];
 }
 
+/** Resolve the build's default pathway — denormalised ids win over catalog first egress. */
+export function resolveBuildDefaultEgress(build: {
+  radioTargetId: string;
+  defaultEgressFormatId?: string;
+  defaultEgressProfileId?: string;
+}): CompatibleEgress | undefined {
+  if (build.defaultEgressFormatId && build.defaultEgressProfileId) {
+    const target = radioTargetFor(build.radioTargetId);
+    const fromCatalog = target?.compatibleEgress.find(
+      (entry) =>
+        entry.formatId === build.defaultEgressFormatId &&
+        entry.profileId === build.defaultEgressProfileId,
+    );
+    if (fromCatalog) return fromCatalog;
+    return {
+      formatId: build.defaultEgressFormatId,
+      profileId: build.defaultEgressProfileId,
+      kind: egressKindForFormatId(build.defaultEgressFormatId),
+      label: build.defaultEgressProfileId,
+    };
+  }
+  return defaultCompatibleEgress(build.radioTargetId);
+}
+
 /**
  * Sort persisted egress rows into catalog preference order (first = default /
  * easiest pathway, e.g. Web Serial for UV-5R Mini). IndexedDB list order is

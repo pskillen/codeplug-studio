@@ -95,11 +95,26 @@ export class BuildService {
   }
 
   /** Change the preferred egress for the Export UI (formatId/profileId live on the egress, #654). */
-  withDefaultEgressPathId(build: RadioBuild, egressPathId: string | undefined): RadioBuild {
+  withDefaultEgressPathId(
+    build: RadioBuild,
+    egress: Pick<EgressPath, 'id' | 'formatId' | 'profileId'> | undefined,
+  ): RadioBuild {
     const now = isoNow();
+    if (!egress) {
+      return {
+        ...build,
+        defaultEgressPathId: undefined,
+        defaultEgressFormatId: undefined,
+        defaultEgressProfileId: undefined,
+        updatedAt: now,
+        revision: nextRevision(build.revision),
+      };
+    }
     return {
       ...build,
-      defaultEgressPathId: egressPathId,
+      defaultEgressPathId: egress.id,
+      defaultEgressFormatId: egress.formatId,
+      defaultEgressProfileId: egress.profileId,
       updatedAt: now,
       revision: nextRevision(build.revision),
     };

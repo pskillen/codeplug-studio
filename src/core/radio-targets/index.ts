@@ -10,6 +10,7 @@ export {
   radioTargetHasCompatibleFormat,
   radioTargetHasTrait,
   radioTargetIdForProfile,
+  resolveBuildDefaultEgress,
   showsDefaultScanInclusion,
   showsPerChannelScanListNav,
   traitsForRadioTarget,

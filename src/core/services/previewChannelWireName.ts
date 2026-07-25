@@ -7,7 +7,7 @@ import { applyWireNameLimits } from '@core/import-export/channelExpansion/export
 import type { CpsExportOptions } from '@core/import-export/types.ts';
 import type { RadioBuild } from '@core/models/radioBuild.ts';
 import type { Channel } from '@core/models/library.ts';
-import { defaultCompatibleEgress } from '@core/radio-targets/index.ts';
+import { resolveBuildDefaultEgress } from '@core/radio-targets/index.ts';
 import { mergeExportOptions } from './exportBuild.ts';
 
 /**
@@ -26,7 +26,7 @@ export function previewGeneratedChannelWireName(
   build: RadioBuild,
   options?: WirePreviewChannelNameOptions,
 ): string {
-  const defaultEgress = defaultCompatibleEgress(build.radioTargetId);
+  const defaultEgress = resolveBuildDefaultEgress(build);
   const formatId = options?.formatId ?? defaultEgress?.formatId ?? '';
   const merged = mergeExportOptions(build, formatId, {
     ...options,

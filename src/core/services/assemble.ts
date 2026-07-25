@@ -1,5 +1,5 @@
 import type { BuildEntityOverride, RadioBuild } from '@core/models/radioBuild.ts';
-import { defaultCompatibleEgress } from '@core/radio-targets/index.ts';
+import { resolveBuildDefaultEgress } from '@core/radio-targets/index.ts';
 import type {
   AnalogContact,
   Channel,
@@ -139,7 +139,7 @@ function resolveEgressIds(
   build: RadioBuild,
   options?: AssembleOptions,
 ): { formatId: string; profileId: string } {
-  const fallback = defaultCompatibleEgress(build.radioTargetId);
+  const fallback = resolveBuildDefaultEgress(build);
   const formatId = options?.formatId ?? fallback?.formatId;
   const profileId = options?.profileId ?? fallback?.profileId;
   if (!formatId || !profileId) {

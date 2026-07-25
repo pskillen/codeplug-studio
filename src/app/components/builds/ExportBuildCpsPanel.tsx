@@ -390,7 +390,9 @@ export default function ExportBuildCpsPanel({ build }: ExportBuildCpsPanelProps)
   async function handleActiveEgressChange(egressId: string) {
     setActiveEgressId(egressId);
     if (build.defaultEgressPathId === egressId) return;
-    const next = buildService.withDefaultEgressPathId(build, egressId);
+    const egress = egressPaths.find((path) => path.id === egressId);
+    if (!egress) return;
+    const next = buildService.withDefaultEgressPathId(build, egress);
     const result = await putBuild(next, build.revision);
     if (!result.ok) {
       setSettingsError(
