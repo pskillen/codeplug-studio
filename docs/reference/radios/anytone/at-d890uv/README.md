@@ -43,7 +43,7 @@ Provisional CSV caps mirror `profiles.ts` (`ANYTONE_PROFILES`); still verify aga
 
 ## Direct read/write (binary)
 
-Anytone DMR PROGRAM→QX session at **921600** baud with **u32 BE** addresses and sparse multi‑MB regions. See the binary docs in the map above. Kit codec for this family is sibling [#646](https://github.com/pskillen/codeplug-studio/issues/646) — out of scope for this docs ticket.
+Anytone DMR PROGRAM→QX session at **921600** baud with **u32 BE** addresses and sparse multi‑MB regions. See the binary docs in the map above. Kit codec: `src/integrations/radio-io/kit/codecs/anytoneDmrRw.ts` ([#646](https://github.com/pskillen/codeplug-studio/issues/646) — shipped). Adapter [#649](https://github.com/pskillen/codeplug-studio/issues/649) is planned.
 
 ## Ground truth (cite; do not copy)
 
@@ -60,7 +60,7 @@ anytone-cps and qdmr are **GPL**. Extract **facts** only — do **not** paste GP
 
 ## Planned Studio module
 
-`src/integrations/radio-io/radios/at-d890uv/` — handshake, sparse layout, encode (see [protocol-kit architecture](../../../../features/radio-read-write/protocol-kit-architecture.md)). This ticket ships **docs only**.
+`src/integrations/radio-io/radios/at-d890uv/` — handshake, sparse layout, encode (see [protocol-kit architecture](../../../../features/radio-read-write/protocol-kit-architecture.md)). Kit codec shipped ([#646](https://github.com/pskillen/codeplug-studio/issues/646)); adapter [#649](https://github.com/pskillen/codeplug-studio/issues/649) is next.
 
 ## Related
 

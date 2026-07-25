@@ -18,7 +18,7 @@ Cite: anytone-cps `SerialDevice`; qdmr `anytone_interface` for handshake cross-c
 | Image | **Sparse multi‑MB regions**                          | Contiguous ≈ `0x32A0`                     | Contiguous `0x8240`     |
 | Extra | Skip write `0x2fa0010`; no echo-strip in anytone-cps | Echo-strip                                | XOR crypt               |
 
-Kit codec for Anytone DMR R/W is sibling [#646](https://github.com/pskillen/codeplug-studio/issues/646) — **out of scope** here; docs may cross-link. Do not reuse RT95 `programQx.ts` (#641) framing (u16 + echo-strip) for this radio.
+Kit codec for Anytone DMR R/W is shipped in `src/integrations/radio-io/kit/codecs/anytoneDmrRw.ts` ([#646](https://github.com/pskillen/codeplug-studio/issues/646)) — do not reuse RT95 `programQx.ts` (#641) framing (u16 + echo-strip) for this radio.
 
 ## Identity
 
@@ -92,5 +92,5 @@ Checksum (anytone-cps): 8-bit sum over command bytes after the opcode (`cmd[1:]`
 ## Related
 
 - [fixtures.md](fixtures.md) · [memory-layout.md](memory-layout.md) · [channel-record.md](channel-record.md)
-- Planned kit: [#646](https://github.com/pskillen/codeplug-studio/issues/646) · adapter [#649](https://github.com/pskillen/codeplug-studio/issues/649)
+- Planned kit: `kit/codecs/anytoneDmrRw.ts` ([#646](https://github.com/pskillen/codeplug-studio/issues/646) — shipped) · adapter [#649](https://github.com/pskillen/codeplug-studio/issues/649) (planned)
 - Family sibling docs: D878UVII [#648](https://github.com/pskillen/codeplug-studio/issues/648)
