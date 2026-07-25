@@ -7,13 +7,13 @@
 
 ## Overall status
 
-**Status:** In progress
+**Status:** In progress (slices 0–3 shipped; slice 4 in commit)
 
 ---
 
 ## Slice 0 — Kickoff docs + RT95 AM correction
 
-**Status:** In progress
+**Status:** Done
 
 **Delivered**
 
@@ -24,25 +24,46 @@
 
 ## Slice 1 — RF capability model
 
-**Status:** Not started
+**Status:** Done
+
+**Delivered**
+
+- `src/core/radio-targets/rfCapabilities.ts` — confirmed tables for all seven radios
+- `channelEligibleForRadio` + tests; wired into assemble and flat-memory export order
 
 ---
 
 ## Slice 2 — Toggle + assemble/export warnings
 
-**Status:** Not started
+**Status:** Done
+
+**Delivered**
+
+- `hideChannelsOutsideFrequencyRange` on `BuildExportSettings` (default on)
+- Native YAML parse; assemble warnings for skipped channels
 
 ---
 
 ## Slice 3 — Toggle reconciliation
 
-**Status:** Not started
+**Status:** Done
+
+**Delivered**
+
+- `reconcileBuildAfterFrequencyHideToggle` — append on overridden order; library-order reset otherwise
+- Confirm message + unit tests
 
 ---
 
 ## Slice 4 — Radio Build UI + characteristics bands
 
-**Status:** Not started
+**Status:** Done (this commit)
+
+**Delivered**
+
+- Export settings toggle (`FrequencyRangeEligibilityFields`)
+- Radio characteristics RF bands/modes section
+- Flat-memory channel/scan lists filter via eligibility; shared frequency-toggle reconcile helper
 
 ---
 

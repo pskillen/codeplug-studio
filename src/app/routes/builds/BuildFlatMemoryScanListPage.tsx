@@ -8,6 +8,7 @@ import {
   isChirpFlatMemoryChannel,
   resolveChirpChannelMemorySlots,
 } from '@core/domain/exportOrderOrSlot.ts';
+import { resolveChannelEligibilityOptions } from '@core/domain/channelEligibility.ts';
 import { overrideScanInclusion } from '@core/domain/formatBuildOverrides.ts';
 import {
   buildScanContext,
@@ -23,6 +24,7 @@ import { BandPillForChannel } from '../../components/pills/BandPill.tsx';
 import { FormPage, FormSection } from '../../components/ui/index.ts';
 import DataTable from '../../components/ui/DataTable.tsx';
 import { loadLibrarySlice } from '../../lib/loadLibrarySlice.ts';
+import { prepareBuildForFrequencyRangeExportPatch } from '../../lib/frequencyRangeExportSettingsPatch.ts';
 import { resolveOptimisticBuild } from '../../lib/resolveOptimisticBuild.ts';
 import {
   radioBuildFormatExportDefaults,
@@ -98,19 +100,29 @@ export default function BuildFlatMemoryScanListPage() {
     [librarySlice.channels],
   );
 
+  const eligibilityOptions = useMemo(
+    () => resolveChannelEligibilityOptions(build),
+    [build],
+  );
+
   const rows = useMemo((): ScanListRow[] => {
     const slots = resolveChirpChannelMemorySlots(build, librarySlice);
     const out: ScanListRow[] = [];
     for (const slot of slots) {
       if (slot.channelId == null) continue;
       const channel = channelById.get(slot.channelId);
-      if (!channel || !isChirpFlatMemoryChannel(channel)) continue;
+      if (
+        !channel ||
+        !isChirpFlatMemoryChannel(channel, build.radioTargetId, eligibilityOptions)
+      ) {
+        continue;
+      }
       const scanInclusion =
         overrideScanInclusion(build.channelOverrides, channel.id) ?? channel.scanInclusion;
       out.push({ id: channel.id, slot: slot.slot, channel, scanInclusion });
     }
     return out;
-  }, [build, librarySlice, channelById]);
+  }, [build, librarySlice, channelById, eligibilityOptions]);
 
   const memoryCount = useMemo(
     () => chirpMemoryChannelIds(build, librarySlice).length,
@@ -124,11 +136,28 @@ export default function BuildFlatMemoryScanListPage() {
   async function handleExportSettingsPatch(patch: Partial<BuildExportSettings>) {
     setSavingSettings(true);
     setSettingsError(null);
-    const next = buildService.withExportSettings(buildRef.current, patch);
-    const result = await putBuild(next, buildRef.current.revision);
+    const prepared = await prepareBuildForFrequencyRangeExportPatch(
+      buildRef.current,
+      patch,
+      {
+        buildService,
+        loadLibrary: async () =>
+          activeProjectId ? loadLibrarySlice(persistence, activeProjectId) : null,
+      },
+    );
+    if (prepared.status === 'cancelled') {
+      setSavingSettings(false);
+      return;
+    }
+    if (prepared.status === 'error') {
+      setSavingSettings(false);
+      setSettingsError(prepared.message);
+      return;
+    }
+    const result = await putBuild(prepared.build, buildRef.current.revision);
     setSavingSettings(false);
     if (result.ok) {
-      const saved = { ...next, revision: result.revision };
+      const saved = { ...prepared.build, revision: result.revision };
       buildRef.current = saved;
       setSavedBuild(saved);
     } else {

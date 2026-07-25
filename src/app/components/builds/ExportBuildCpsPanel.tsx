@@ -2,6 +2,9 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Alert, Button, Group, Modal, SegmentedControl, Stack, Text } from '@mantine/core';
 import { IconDownload, IconPackage, IconTable } from '@tabler/icons-react';
 import type { BuildExportSettings, RadioBuild } from '@core/models/formatBuild.ts';
+import {
+  prepareBuildForFrequencyRangeExportPatch,
+} from '../../lib/frequencyRangeExportSettingsPatch.ts';
 import type { EgressPath } from '@core/models/egressPath.ts';
 import { traitProfileFor } from '@core/models/traits.ts';
 import { formatCatalogEntry, getExportAdapter } from '@core/import-export/registry.ts';
@@ -53,6 +56,7 @@ import {
   validateNeonplugDonorBase,
 } from '../../services/buildCpsExportService.ts';
 import { useBuildCpsExportFileNames } from '../../hooks/useBuildCpsExportFileNames.ts';
+import { loadLibrarySlice } from '../../lib/loadLibrarySlice.ts';
 import { useGoogleDrive } from '../../hooks/useGoogleDrive.ts';
 
 export interface ExportBuildCpsPanelProps {
@@ -186,8 +190,23 @@ export default function ExportBuildCpsPanel({ build }: ExportBuildCpsPanelProps)
   ): Promise<boolean> {
     setSavingSettings(true);
     setSettingsError(null);
-    const next = buildService.withExportSettings(build, patch);
-    const result = await putBuild(next, expectedRevision);
+
+    const prepared = await prepareBuildForFrequencyRangeExportPatch(build, patch, {
+      buildService,
+      loadLibrary: async () =>
+        activeProjectId ? loadLibrarySlice(persistence, activeProjectId) : null,
+    });
+    if (prepared.status === 'cancelled') {
+      setSavingSettings(false);
+      return false;
+    }
+    if (prepared.status === 'error') {
+      setSettingsError(prepared.message);
+      setSavingSettings(false);
+      return false;
+    }
+
+    const result = await putBuild(prepared.build, expectedRevision);
     setSavingSettings(false);
     if (!result.ok) {
       setSettingsError(
