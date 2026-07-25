@@ -17,7 +17,9 @@ export function decodeBcdAsHexU32(data: Uint8Array): number {
 }
 
 export function encodeBcdAsHexU32(value: number): Uint8Array {
-  const digits = String(Math.max(0, Math.round(value))).padStart(8, '0').slice(-8);
+  const digits = String(Math.max(0, Math.round(value)))
+    .padStart(8, '0')
+    .slice(-8);
   const out = new Uint8Array(4);
   for (let i = 0; i < 4; i++) {
     out[i] = Number.parseInt(digits.slice(i * 2, i * 2 + 2), 16) & 0xff;
