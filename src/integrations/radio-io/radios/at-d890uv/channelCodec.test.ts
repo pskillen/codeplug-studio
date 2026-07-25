@@ -18,6 +18,8 @@ describe('encodeAtD890ChannelRecord', () => {
     };
     const encoded = encodeAtD890ChannelRecord(ch);
     expect(encoded.length).toBe(0x80);
+    // 145.520 MHz → BCD-as-hex digits 14552000 → 14 55 20 00
+    expect([...encoded.subarray(0, 4)]).toEqual([0x14, 0x55, 0x20, 0x00]);
     const decoded = parseAtD890ChannelRecord(encoded, 1);
     expect(decoded.rxHz).toBe(145_520_000);
     expect(decoded.wireName).toBe('Test CH');
