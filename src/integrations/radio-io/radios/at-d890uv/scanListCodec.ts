@@ -25,17 +25,9 @@ export function encodeAtD890ScanListRecord(scan: RadioScanListDto): Uint8Array {
   data.fill(0);
   data[0x1] = 0;
   const priority1 = scan.designatedTxChannel ?? scan.channelNumbers[0];
-  writeU16Le(
-    data,
-    0x2,
-    priority1 != null && priority1 > 0 ? toAtD890ChannelIndex(priority1) : 0,
-  );
+  writeU16Le(data, 0x2, priority1 != null && priority1 > 0 ? toAtD890ChannelIndex(priority1) : 0);
   const priority2 = scan.channelNumbers[1];
-  writeU16Le(
-    data,
-    0x4,
-    priority2 != null && priority2 > 0 ? toAtD890ChannelIndex(priority2) : 0,
-  );
+  writeU16Le(data, 0x4, priority2 != null && priority2 > 0 ? toAtD890ChannelIndex(priority2) : 0);
   writeU16Le(data, 0x6, 5);
   writeU16Le(data, 0x8, 5);
   writeU16Le(data, 0xa, 1);
