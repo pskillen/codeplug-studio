@@ -6,11 +6,7 @@ import type { BytePipe, CloneImageRadio, IdentResult, MemoryMap, ProgressFn } fr
 import type { RadioChannelDto } from '../../radioChannelDto.ts';
 import { reportProgress, throwIfAborted } from '../../kit/progress.ts';
 import { RadioProtocolError } from '../../kit/errors.ts';
-import {
-  AT_D890_LIMITS,
-  AT_D890_SAFE_SKIP_WRITE_ADDR,
-  D890_MAP,
-} from './constants.ts';
+import { AT_D890_LIMITS, AT_D890_SAFE_SKIP_WRITE_ADDR, D890_MAP } from './constants.ts';
 import {
   atD890EnterProgram,
   atD890ProbeIdent,
@@ -35,10 +31,7 @@ import {
   alignAtD890ReadLength,
   type AtD890DownloadCache,
 } from './memory.ts';
-import {
-  decodeChannelsFromAtD890Cache,
-  encodeChannelsIntoAtD890Image,
-} from './channelCodec.ts';
+import { decodeChannelsFromAtD890Cache, encodeChannelsIntoAtD890Image } from './channelCodec.ts';
 
 export type { AtD890DownloadCache };
 
@@ -121,13 +114,7 @@ export async function downloadAtD890SparseRegions(
   const scanSet = cache.blocks.get(D890_MAP.ScanListSet)!;
   for (const idx of listSetBits(scanSet)) {
     throwIfAborted(signal);
-    await readRegion(
-      pipe,
-      cache,
-      scanListAddress(idx),
-      AT_D890_LIMITS.SCAN_LIST_STRIDE,
-      signal,
-    );
+    await readRegion(pipe, cache, scanListAddress(idx), AT_D890_LIMITS.SCAN_LIST_STRIDE, signal);
   }
 
   stage('Reading talk groups…');
@@ -145,17 +132,17 @@ export async function downloadAtD890SparseRegions(
   }
 
   stage('Reading RX groups…');
-  await readRegion(pipe, cache, D890_MAP.ReceiveGroupSet, AT_D890_LIMITS.RX_GROUP_SET_BYTES, signal);
+  await readRegion(
+    pipe,
+    cache,
+    D890_MAP.ReceiveGroupSet,
+    AT_D890_LIMITS.RX_GROUP_SET_BYTES,
+    signal,
+  );
   const rxSet = cache.blocks.get(D890_MAP.ReceiveGroupSet)!;
   for (const idx of listSetBits(rxSet)) {
     throwIfAborted(signal);
-    await readRegion(
-      pipe,
-      cache,
-      receiveGroupAddress(idx),
-      AT_D890_LIMITS.RX_GROUP_STRIDE,
-      signal,
-    );
+    await readRegion(pipe, cache, receiveGroupAddress(idx), AT_D890_LIMITS.RX_GROUP_STRIDE, signal);
   }
 
   stage('Reading operator radio IDs…');

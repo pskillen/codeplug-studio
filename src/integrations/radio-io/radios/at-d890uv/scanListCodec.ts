@@ -6,7 +6,12 @@ import type { MemoryMap } from '../../types.ts';
 import type { RadioScanListDto } from '../../radioWriteProjection.ts';
 import { clearBitmap, setBitmapBit } from './bitmap.ts';
 import { AT_D890_LIMITS, D890_MAP } from './constants.ts';
-import { mergeMapRegionsIntoCache, putCacheBytes, scanListAddress, type AtD890DownloadCache } from './memory.ts';
+import {
+  mergeMapRegionsIntoCache,
+  putCacheBytes,
+  scanListAddress,
+  type AtD890DownloadCache,
+} from './memory.ts';
 import { encodeWideCharName } from './wideChar.ts';
 
 function writeU16Le(buf: Uint8Array, offset: number, value: number): void {

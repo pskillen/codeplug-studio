@@ -4,12 +4,7 @@
 
 import { createMemoryMap } from '../../kit/memoryMap.ts';
 import type { MemoryMap } from '../../types.ts';
-import {
-  AT_D890_BLOCK_SIZE,
-  AT_D890_MAP_SIZE,
-  AT_D890_LIMITS,
-  D890_MAP,
-} from './constants.ts';
+import { AT_D890_BLOCK_SIZE, AT_D890_MAP_SIZE, AT_D890_LIMITS, D890_MAP } from './constants.ts';
 import { listSetBits } from './bitmap.ts';
 
 export interface AtD890SparseBlock {
@@ -70,7 +65,11 @@ export function putCacheBytes(cache: AtD890DownloadCache, address: number, data:
   cache.blocks.set(address, data.slice());
 }
 
-export function getCacheBytes(cache: AtD890DownloadCache, address: number, length: number): Uint8Array {
+export function getCacheBytes(
+  cache: AtD890DownloadCache,
+  address: number,
+  length: number,
+): Uint8Array {
   const out = new Uint8Array(length);
   out.fill(0xff);
   for (let off = 0; off < length; off += AT_D890_BLOCK_SIZE) {
@@ -130,10 +129,7 @@ export function alignAtD890ReadLength(length: number): number {
 }
 
 /** Push modelled regions from a merged MemoryMap back into the upload cache. */
-export function applyAtD890WriteImageToCache(
-  cache: AtD890DownloadCache,
-  image: MemoryMap,
-): void {
+export function applyAtD890WriteImageToCache(cache: AtD890DownloadCache, image: MemoryMap): void {
   const staticRegions: { address: number; length: number }[] = [
     { address: D890_MAP.ChannelSet, length: AT_D890_LIMITS.CHANNEL_SET_BYTES },
     { address: D890_MAP.ZoneSet, length: AT_D890_LIMITS.ZONE_SET_BYTES },
@@ -164,7 +160,11 @@ export function applyAtD890WriteImageToCache(
 
   const zoneSet = image.get(D890_MAP.ZoneSet, AT_D890_LIMITS.ZONE_SET_BYTES);
   for (const idx of listSetBits(zoneSet)) {
-    putCacheBytes(cache, zoneNameAddress(idx), image.get(zoneNameAddress(idx), D890_MAP.ZoneDataLength));
+    putCacheBytes(
+      cache,
+      zoneNameAddress(idx),
+      image.get(zoneNameAddress(idx), D890_MAP.ZoneDataLength),
+    );
     putCacheBytes(
       cache,
       zoneChannelsAddress(idx),

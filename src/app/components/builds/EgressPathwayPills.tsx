@@ -21,10 +21,7 @@ export function pathwayPillTone(formatId: string): PathwayPillTone {
   return 'csv';
 }
 
-const TONE_STYLES: Record<
-  PathwayPillTone,
-  { color: string; variant: 'light' | 'outline' }
-> = {
+const TONE_STYLES: Record<PathwayPillTone, { color: string; variant: 'light' | 'outline' }> = {
   happiest: { color: 'teal', variant: 'light' },
   neutral: { color: 'gray', variant: 'light' },
   csv: { color: 'yellow', variant: 'light' },
@@ -54,9 +51,7 @@ export function EgressPathwayPill({ entry }: { entry: CompatibleEgress }) {
       color={style.color}
       leftSection={pathwayPillIcon(tone)}
       styles={
-        tone === 'warning'
-          ? { root: { borderColor: 'var(--mantine-color-orange-3)' } }
-          : undefined
+        tone === 'warning' ? { root: { borderColor: 'var(--mantine-color-orange-3)' } } : undefined
       }
     >
       {entry.label}

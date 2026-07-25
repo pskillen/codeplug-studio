@@ -27,9 +27,7 @@ export class AtD890ScriptedPipe implements BytePipe {
   async readExact(n: number, timeoutMs: number): Promise<Uint8Array> {
     void timeoutMs;
     if (this.bytes.length < n) {
-      throw new Error(
-        `AtD890ScriptedPipe: need ${n} bytes, have ${this.bytes.length}`,
-      );
+      throw new Error(`AtD890ScriptedPipe: need ${n} bytes, have ${this.bytes.length}`);
     }
     return new Uint8Array(this.bytes.splice(0, n));
   }

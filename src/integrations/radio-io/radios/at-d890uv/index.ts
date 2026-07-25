@@ -9,11 +9,7 @@ export {
   AT_D890UV_MODEL_IDS,
   D890_MAP,
 } from './constants.ts';
-export {
-  createAtD890uvProtocol,
-  AtD890uvProtocol,
-  type AtD890DownloadCache,
-} from './protocol.ts';
+export { createAtD890uvProtocol, AtD890uvProtocol, type AtD890DownloadCache } from './protocol.ts';
 export { AT_D890UV_DESCRIPTOR, AT_D890UV_MODEL_ID } from './descriptor.ts';
 export {
   extractAtD890uvHydration,

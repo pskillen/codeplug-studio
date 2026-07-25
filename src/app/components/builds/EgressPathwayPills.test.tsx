@@ -1,11 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { MantineProvider } from '@mantine/core';
-import {
-  EgressPathwayPill,
-  EgressPathwayPills,
-  pathwayPillTone,
-} from './EgressPathwayPills.tsx';
+import { EgressPathwayPill, EgressPathwayPills, pathwayPillTone } from './EgressPathwayPills.tsx';
 import type { CompatibleEgress } from '@core/radio-targets/index.ts';
 
 function entry(formatId: string, label: string): CompatibleEgress {

@@ -8,19 +8,19 @@ On [NewBuildPage](../../routes/builds/NewBuildPage.tsx), each radio lists compat
 
 ## Props
 
-| Component            | Props                         | Role                                      |
-| -------------------- | ----------------------------- | ----------------------------------------- |
+| Component            | Props                                 | Role                              |
+| -------------------- | ------------------------------------- | --------------------------------- |
 | `EgressPathwayPills` | `egress: readonly CompatibleEgress[]` | Row of pills for one radio target |
-| `EgressPathwayPill`  | `entry: CompatibleEgress`     | Single pill                               |
+| `EgressPathwayPill`  | `entry: CompatibleEgress`             | Single pill                       |
 
 ## Tone map
 
-| `formatId`   | Tone       | Pill treatment                    |
-| ------------ | ---------- | --------------------------------- |
-| `radio-io`   | happiest   | Teal light + plug-connected       |
-| `neonplug`   | neutral    | Gray light + browser              |
-| `dm32`       | warning    | Orange outline + caution triangle |
-| Other (CSV)  | csv        | Yellow light + CSV file icon      |
+| `formatId`  | Tone     | Pill treatment                    |
+| ----------- | -------- | --------------------------------- |
+| `radio-io`  | happiest | Teal light + plug-connected       |
+| `neonplug`  | neutral  | Gray light + browser              |
+| `dm32`      | warning  | Orange outline + caution triangle |
+| Other (CSV) | csv      | Yellow light + CSV file icon      |
 
 ## Usage
 

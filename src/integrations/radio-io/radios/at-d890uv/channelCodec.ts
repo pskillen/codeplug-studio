@@ -7,10 +7,7 @@ import type { MemoryMap } from '../../types.ts';
 import type { RadioChannelDto, RadioChannelMode, RadioTone } from '../../radioChannelDto.ts';
 import { decodeBcdFrequencyHz, encodeBcdFrequencyHz } from './bcd.ts';
 import { clearBitmap, listSetBits, setBitmapBit } from './bitmap.ts';
-import {
-  AT_D890_LIMITS,
-  D890_MAP,
-} from './constants.ts';
+import { AT_D890_LIMITS, D890_MAP } from './constants.ts';
 import {
   cacheToMemoryMap,
   channelPrimaryAddress,
@@ -162,7 +159,11 @@ export function encodeAtD890ChannelRecord(ch: RadioChannelDto): Uint8Array {
   data.set(encodeBcdFrequencyHz(offsetHz(rxHz, txHz)), 4);
   const power = powerWireFromPercent(ch.powerPercent);
   const bw = ch.bandwidth === 'NFM' ? 1 : 0;
-  data[8] = ((duplex & 0x3) << 6) | ((bw & 0x3) << 4) | ((power & 0x3) << 2) | (wireFromMode(ch.mode) & 0x3);
+  data[8] =
+    ((duplex & 0x3) << 6) |
+    ((bw & 0x3) << 4) |
+    ((power & 0x3) << 2) |
+    (wireFromMode(ch.mode) & 0x3);
 
   let b9 = 0;
   if (ch.rxOnly) b9 |= 1 << 5;
@@ -201,7 +202,11 @@ export function decodeChannelsFromAtD890Cache(cache: AtD890DownloadCache): Radio
   const occupied = listSetBits(setData);
   const out: RadioChannelDto[] = [];
   for (const idx of occupied) {
-    const primary = getCacheBytes(cache, channelPrimaryAddress(idx), AT_D890_LIMITS.CHANNEL_CHUNK_SIZE);
+    const primary = getCacheBytes(
+      cache,
+      channelPrimaryAddress(idx),
+      AT_D890_LIMITS.CHANNEL_CHUNK_SIZE,
+    );
     const secondary = getCacheBytes(
       cache,
       channelSecondaryAddress(idx),
@@ -246,10 +251,7 @@ export function encodeChannelsIntoAtD890Image(
   return image;
 }
 
-export function syncChannelRegionsToCache(
-  cache: AtD890DownloadCache,
-  image: MemoryMap,
-): void {
+export function syncChannelRegionsToCache(cache: AtD890DownloadCache, image: MemoryMap): void {
   mergeMapRegionsIntoCache(cache, image, [
     { address: D890_MAP.ChannelSet, length: AT_D890_LIMITS.CHANNEL_SET_BYTES },
   ]);

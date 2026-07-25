@@ -71,7 +71,10 @@ export async function atD890ReadMemory(
     const chunkLen = ANYTONE_DMR_BLOCK_SIZE;
     const addr = address + off;
     await pipe.write(makeAnytoneDmrReadFrame(addr, chunkLen));
-    const reply = await pipe.readExact(ANYTONE_DMR_BLOCK_SIZE + 8, AT_D890_CONNECTION.TIMEOUT.READ_MS);
+    const reply = await pipe.readExact(
+      ANYTONE_DMR_BLOCK_SIZE + 8,
+      AT_D890_CONNECTION.TIMEOUT.READ_MS,
+    );
     const payload = parseAnytoneDmrReadReply(reply, chunkLen);
     out.set(payload, off);
   }

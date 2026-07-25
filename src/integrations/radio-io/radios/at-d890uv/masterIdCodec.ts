@@ -16,7 +16,10 @@ export function encodeMasterIdIntoAtD890Image(
   if (!master || master.dmrId <= 0) {
     return image;
   }
-  image.set(D890_MAP.MasterIdData, encodeAtD890RadioIdRecord(master).subarray(0, D890_MAP.MasterIdLength));
+  image.set(
+    D890_MAP.MasterIdData,
+    encodeAtD890RadioIdRecord(master).subarray(0, D890_MAP.MasterIdLength),
+  );
   return image;
 }
 

@@ -6,7 +6,12 @@ import type { MemoryMap } from '../../types.ts';
 import type { RadioRadioIdDto } from '../../radioWriteProjection.ts';
 import { clearBitmap, setBitmapBit } from './bitmap.ts';
 import { AT_D890_LIMITS, D890_MAP } from './constants.ts';
-import { mergeMapRegionsIntoCache, putCacheBytes, radioIdAddress, type AtD890DownloadCache } from './memory.ts';
+import {
+  mergeMapRegionsIntoCache,
+  putCacheBytes,
+  radioIdAddress,
+  type AtD890DownloadCache,
+} from './memory.ts';
 import { encodeWideCharName } from './wideChar.ts';
 
 export function encodeAtD890RadioIdRecord(rid: RadioRadioIdDto): Uint8Array {
@@ -48,6 +53,10 @@ export function syncRadioIdRegionsToCache(cache: AtD890DownloadCache, image: Mem
     const byte = Math.floor(idx / 8);
     const bit = idx % 8;
     if ((set[byte]! & (1 << bit)) === 0) continue;
-    putCacheBytes(cache, radioIdAddress(idx), image.get(radioIdAddress(idx), AT_D890_LIMITS.RADIO_ID_STRIDE));
+    putCacheBytes(
+      cache,
+      radioIdAddress(idx),
+      image.get(radioIdAddress(idx), AT_D890_LIMITS.RADIO_ID_STRIDE),
+    );
   }
 }

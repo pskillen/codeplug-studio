@@ -19,10 +19,10 @@ Provisional CSV caps mirror `profiles.ts` (`ANYTONE_PROFILES`); still verify aga
 
 ## Studio profile ids
 
-| Adapter     | `profileId`         | Notes                                                               |
-| ----------- | ------------------- | ------------------------------------------------------------------- |
-| Anytone CSV | `anytone-at-d890uv` | Epic [#228](https://github.com/pskillen/codeplug-studio/issues/228) |
-| Web Serial  | `radio-io-at-d890uv`| Direct radio egress on `anytone-at-d890uv` ([#649](https://github.com/pskillen/codeplug-studio/issues/649)) |
+| Adapter     | `profileId`          | Notes                                                                                                       |
+| ----------- | -------------------- | ----------------------------------------------------------------------------------------------------------- |
+| Anytone CSV | `anytone-at-d890uv`  | Epic [#228](https://github.com/pskillen/codeplug-studio/issues/228)                                         |
+| Web Serial  | `radio-io-at-d890uv` | Direct radio egress on `anytone-at-d890uv` ([#649](https://github.com/pskillen/codeplug-studio/issues/649)) |
 
 ## Documentation map
 

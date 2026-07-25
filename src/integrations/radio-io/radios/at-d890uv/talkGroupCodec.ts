@@ -6,7 +6,12 @@ import type { MemoryMap } from '../../types.ts';
 import type { RadioTalkGroupDto } from '../../radioWriteProjection.ts';
 import { clearBitmap, setBitmapBit } from './bitmap.ts';
 import { AT_D890_LIMITS, D890_MAP } from './constants.ts';
-import { mergeMapRegionsIntoCache, putCacheBytes, talkgroupAddress, type AtD890DownloadCache } from './memory.ts';
+import {
+  mergeMapRegionsIntoCache,
+  putCacheBytes,
+  talkgroupAddress,
+  type AtD890DownloadCache,
+} from './memory.ts';
 import { encodeWideCharName } from './wideChar.ts';
 
 const CALL_TYPE_GROUP = 0x04;

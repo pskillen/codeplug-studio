@@ -82,9 +82,7 @@ describe('mergeChannelsIntoAtD890uvHydration', () => {
       },
     ];
     const image = mergeChannelsIntoAtD890uvHydration(bag, channels, {
-      talkGroups: [
-        { index: 1, wireName: 'TG1', digitalId: 1234, callType: 0x04 },
-      ],
+      talkGroups: [{ index: 1, wireName: 'TG1', digitalId: 1234, callType: 0x04 }],
     });
     const tgSet = image.get(D890_MAP.TalkgroupSet, 0x4f0);
     expect(listSetBits(tgSet, true)).toEqual([0]);

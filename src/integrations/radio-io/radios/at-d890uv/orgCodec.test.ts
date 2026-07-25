@@ -14,9 +14,7 @@ describe('zoneCodec', () => {
   it('clears removed zone membership with 0xFFFF fillers', () => {
     const image = createMemoryMap(0x500_0000);
     image.fill(0, 0x500_0000, 0xff);
-    encodeZonesIntoAtD890Image(image, [
-      { wireName: 'Z1', channelNumbers: [1, 2] },
-    ]);
+    encodeZonesIntoAtD890Image(image, [{ wireName: 'Z1', channelNumbers: [1, 2] }]);
     const members = image.get(D890_MAP.ZoneChannels, 0x200);
     expect(members[0]).toBe(1);
     expect(members[1]).toBe(0);
@@ -76,9 +74,7 @@ describe('zone shrink on merge', () => {
     });
     const members = listZoneMemberIndicesFromCache(
       {
-        blocks: new Map([
-          [D890_MAP.ZoneChannels, image.get(D890_MAP.ZoneChannels, 0x200)],
-        ]),
+        blocks: new Map([[D890_MAP.ZoneChannels, image.get(D890_MAP.ZoneChannels, 0x200)]]),
       },
       0,
     );

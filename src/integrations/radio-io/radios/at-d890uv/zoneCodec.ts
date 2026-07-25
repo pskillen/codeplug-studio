@@ -77,7 +77,11 @@ export function syncZoneRegionsToCache(cache: AtD890DownloadCache, image: Memory
   ]);
   const set = image.get(D890_MAP.ZoneSet, AT_D890_LIMITS.ZONE_SET_BYTES);
   for (const idx of listSetBits(set)) {
-    putCacheBytes(cache, zoneNameAddress(idx), image.get(zoneNameAddress(idx), D890_MAP.ZoneDataLength));
+    putCacheBytes(
+      cache,
+      zoneNameAddress(idx),
+      image.get(zoneNameAddress(idx), D890_MAP.ZoneDataLength),
+    );
     putCacheBytes(
       cache,
       zoneChannelsAddress(idx),

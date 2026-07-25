@@ -834,8 +834,7 @@ export default function BuildRadioImageSettingsPage() {
   const isDm32 =
     bag?.retain.radioModelId === DM32UV_MODEL_ID || bag?.retain.radioModelId === 'DP570UV';
   const isAtD890 =
-    bag?.retain.radioModelId === AT_D890UV_MODEL_ID ||
-    bag?.retain.radioModelId === 'ID890UV';
+    bag?.retain.radioModelId === AT_D890UV_MODEL_ID || bag?.retain.radioModelId === 'ID890UV';
   const isOpenGd77 =
     bag?.retain.radioModelId === OPENGD77_DM1701_MODEL_ID ||
     bag?.retain.radioModelId === 'DM-1701' ||
@@ -858,10 +857,10 @@ export default function BuildRadioImageSettingsPage() {
             : isAtD890
               ? 'Counts show what is on the radio; local info and unmodelled banks stay Read-retained when you write channels, zones, scan lists, and contacts from your library.'
               : isOpenGd77
-              ? 'Counts show what is on the radio; retained settings, VFO, DTMF, and APRS regions are what Studio keeps when you write channels, zones, and contacts from your library.'
-              : isUv5rMini
-                ? 'Counts show what is on the radio; retained settings are what Studio keeps when you write channels from your library.'
-                : 'Unmodelled regions (VFO, settings, ANI) are retained for Write so they survive channel updates from the library. Settings are not editable in Studio.'}
+                ? 'Counts show what is on the radio; retained settings, VFO, DTMF, and APRS regions are what Studio keeps when you write channels, zones, and contacts from your library.'
+                : isUv5rMini
+                  ? 'Counts show what is on the radio; retained settings are what Studio keeps when you write channels from your library.'
+                  : 'Unmodelled regions (VFO, settings, ANI) are retained for Write so they survive channel updates from the library. Settings are not editable in Studio.'}
         </Text>
       }
     >

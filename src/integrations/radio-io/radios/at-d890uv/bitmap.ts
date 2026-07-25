@@ -13,7 +13,12 @@ export function listSetBits(data: Uint8Array, inverted = false): number[] {
   return out;
 }
 
-export function setBitmapBit(data: Uint8Array, index: number, occupied: boolean, inverted = false): void {
+export function setBitmapBit(
+  data: Uint8Array,
+  index: number,
+  occupied: boolean,
+  inverted = false,
+): void {
   const byteIndex = Math.floor(index / 8);
   const bitIndex = index % 8;
   if (byteIndex < 0 || byteIndex >= data.length) return;
@@ -21,7 +26,7 @@ export function setBitmapBit(data: Uint8Array, index: number, occupied: boolean,
   if (shouldSet) {
     data[byteIndex] = (data[byteIndex]! | (1 << bitIndex)) & 0xff;
   } else {
-    data[byteIndex] = (data[byteIndex]! & ~(1 << bitIndex)) & 0xff;
+    data[byteIndex] = data[byteIndex]! & ~(1 << bitIndex) & 0xff;
   }
 }
 
